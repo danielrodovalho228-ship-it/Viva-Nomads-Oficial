@@ -28,7 +28,7 @@ test("E308 (devolução): 'Continue seu anúncio' com a FOTO REAL do rascunho em
   assert.match(c, /data-testid="inicio-dono-foto"/);
   assert.match(c, /data-testid="inicio-dono-foto-vazia"/);
   // A foto do rascunho é a primeira por sort_order (capaDoRascunho) e chega ao bloco (foto: r.foto).
-  const pagina = ler("src/app/(dashboard)/dashboard/page.tsx");
+  const pagina = ler("src/app/(dashboard)/dashboard/inicio-dados.tsx");
   // E308 (causa raiz): as fotos por sort_order; vale a 1ª cujo arquivo existe no bucket.
   assert.match(pagina, /from\("property_photos"\)\.select\("url"\)\.eq\("property_id", id\)\.order\("sort_order", \{ ascending: true \}\)\.limit\(40\)/);
   assert.match(pagina, /soFotosExistentes\(/);

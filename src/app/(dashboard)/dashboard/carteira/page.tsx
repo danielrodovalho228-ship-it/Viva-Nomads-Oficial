@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  * servidor); o client só troca a fonte no modo demonstração do admin.
  */
 export default async function PortfolioPage() {
-  const ativos = isSupabaseConfigured() ? await imoveisAtivosDoDono() : MIN_IMOVEIS_ANALISE_CARTEIRA;
+  const ativos = isSupabaseConfigured() ? await imoveisAtivosDoDono({ exigir: true }) : MIN_IMOVEIS_ANALISE_CARTEIRA;
   if (ativos < MIN_IMOVEIS_ANALISE_CARTEIRA) {
     const faltam = MIN_IMOVEIS_ANALISE_CARTEIRA - ativos;
     return (

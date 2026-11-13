@@ -22,5 +22,5 @@ test("só URL de imagem vira foto do 'Continue seu anúncio'", () => {
   assert.equal(ehUrlDeImagem("//cdn.exemplo.com/a.png"), false);
   assert.equal(ehUrlDeImagem(null), false);
   assert.match(ler("../components/painel/inicio-dono.tsx"), /const foto = bloco\.foto && ehUrlDeImagem\(bloco\.foto\) \? bloco\.foto : null;/);
-  assert.match(ler("../app/(dashboard)/dashboard/page.tsx"), /\.map\(\(r\) => r\.url\)\.filter\(ehUrlDeImagem\)/);
+  assert.match(ler("../app/(dashboard)/dashboard/inicio-dados.tsx"), /\.map\(\(r\) => r\.url\)\.filter\(ehUrlDeImagem\)/);
 });

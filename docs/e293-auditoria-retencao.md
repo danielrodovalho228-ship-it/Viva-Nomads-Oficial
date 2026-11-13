@@ -270,7 +270,36 @@ Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
 **Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
 apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
 
-## 13. Migrações 0313 a 0335 (10/11/2026) — revisão, só leitura e texto
+## 13. Revisão das migrações 0313–0334 (09/11/2026) — só inventário, nada apagado
+- Lidas as 22 migrações desde o relatório de 06/11. Colunas novas com texto livre ou pessoa: `contratos.instrucao_saida` (0320), `imovel_instrucoes_chegada.instrucao_saida`, `condominio_wifi_*`/`recepcao`/`fechadura` (0317), `parceiro_avaliacoes.nota_privada_*` (0323), `conferencia_laudos_retirados` (0319).
+- **Achado:** a tabela `contratos` inteira não estava no inventário (a guarda só a vê por nome de coluna). Entrou como fase 2, prazo pendente, gatilho fim da estadia.
+- A guarda (`inventario.test.ts`) passa a reconhecer `instrucao_saida`, `nota_privada_parte`, `nota_privada_viva` e `condominio_wifi_senha/recepcao/fechadura` como nomes de dado pessoal, para a próxima tabela com essas colunas não passar em branco.
+- Já cobertos: `conferencia_laudos_retirados`, `properties` (condomínio), `parceiro_avaliacoes`, `ficha_dentro*`, `dados_categoria`.
+- Sem migração, sem apagar nada. O prazo de `contratos` entra na lista do item 13 (Dra. Beatriz).
+
+## 14. Relatório numerado de retenção (09/11/2026)
+
+Conferido em produção só com leitura, em 09/11/2026, por volta das 03h30 (horário de Brasília). Nada foi apagado. A rotina
+`e293-limpeza-retencao` (0281, `17 4 * * *`) está ativa e **terminou com sucesso hoje às 04h17 UTC**; `limpar-eventos-antigos`
+(mensal) rodou em 01/11.
+
+| # | Item (inventário) | Prazo declarado | Quem cumpre | Linhas | Vencidas hoje | Situação |
+|---|---|---|---|---|---|---|
+| 1 | `eventos` | 548 dias | `pg_cron` da 0067 | 22.245 (desde 05/10/2026) | 0 | em dia |
+| 2 | `ia_chamadas` | 90 dias da criação | fase 2: o relatório só conta | 330 (desde 18/10/2026) | 0 | **as primeiras vencem em 16/01/2027**; passar à fase 1 antes disso é decisão do Daniel |
+| 3 | `push_envios` | 30 dias | rotina do atendimento | 0 | 0 | em dia |
+| 4 | `saidas_motivos` | 365 dias (anonimizar) | fase 2: só conta | 0 | 0 | sem dados |
+| 5 | `denuncias_anuncio` | 365 dias da decisão | fase 2: só conta | 0 | 0 | sem dados |
+| 6 | `proprietario_strikes` | 365 dias | rotina da avaliação | 0 | 0 | sem dados (`VISTORIA_ATIVA` desligada) |
+| 7 | `estadia_convidados` | 30 dias do fim da estadia | rotina da estadia | 0 | 0 | sem dados |
+| 8 | `contrato_ocupantes` | 90 dias do fim da estadia | rotina do Prompt 32 | 0 | 0 | sem dados |
+| 9 | Livro `eliminacoes_registro` | — | `0281` e fase 1 | 121 (desde 23/10/2026) | — | +17 linhas desde 02/11 (eram 103): a rotina diária está apagando o que a §7 lista |
+| 10 | `contratos` (novo no inventário, §13) | pendente (item 13) | — | — | — | inventariado; prazo depende do item 13 |
+
+**Decisões em aberto (não executadas, sem mudança desde 05/11):** item 2 (`ia_chamadas` para a fase 1 antes de 16/01/2027), P4 Google
+Places, `destinos` pelo OSM, coluna `caf_transacao_id` e os prazos do item 13 (parecer da Dra. Beatriz).
+
+## 15. Migrações 0313 a 0335 (10/11/2026) — revisão, só leitura e texto
 
 Nenhum prazo mudou e nada é apagado. Uma tabela nova e colunas novas; a guarda `inventario.test.ts` segue verde (159 passam, 0 falham no escopo `src/config` + `src/lib/minimizacao`).
 
@@ -285,6 +314,6 @@ Nenhum prazo mudou e nada é apagado. Uma tabela nova e colunas novas; a guarda 
 | 0327–0333 | massa de teste e índice | nada |
 
 **Proposta (não executada, para validação do Daniel):**
-1. Incluir `condominio_wifi_senha`, `condominio_fechadura`, `condominio_recepcao` e `instrucao_saida` na lista de nomes da guarda e no inventário (prazo: enquanto o anúncio existir; a lista pública `PROPERTY_PUBLIC_COLUMNS` NÃO inclui esses campos — conferido no código; falta conferir no banco, por permissão de coluna, que um acesso direto da API pública também não os devolve).
+1. *(A parte da guarda foi feita no PR do §13: a guarda reconhece esses nomes de coluna.)* Incluir `condominio_wifi_senha`, `condominio_fechadura`, `condominio_recepcao` e `instrucao_saida` na lista de nomes da guarda e no inventário (prazo: enquanto o anúncio existir; a lista pública `PROPERTY_PUBLIC_COLUMNS` NÃO inclui esses campos — conferido no código; falta conferir no banco, por permissão de coluna, que um acesso direto da API pública também não os devolve).
 2. Decidir se a senha do Wi-Fi precisa de prazo próprio (sair da linha quando a estadia acaba).
 Decisões em aberto da §10/§12 seguem as mesmas.

@@ -27,6 +27,14 @@ export const AVISO_SEM_CUSTO = "Sem custo nesta fase. A equipe monta o rascunho 
 export const AVISO_APROVACAO =
   "Nada vai ao ar sem a sua aprovação, e publicar continua exigindo o documento do imóvel aprovado.";
 
+/**
+ * E806 — a frase do bloco "Publicamos para você" em /para-proprietarios. Antes: "Você envia o link, o texto e as fotos
+ * do anúncio que já tem", que, logo abaixo de "Pedidos da sua cidade", parecia falar de um "link da cidade". Agora diz
+ * QUAL link (o do anúncio em outro site, o mesmo campo "Link do seu anúncio" do formulário), O QUE fazer e O QUE acontece.
+ */
+export const PUBLICAMOS_PARA_VOCE_TEXTO =
+  "Já anuncia o imóvel em outro site? Cole o link desse anúncio, ou envie o texto e as fotos que você já tem, e a equipe da Viva monta o rascunho do anúncio aqui na plataforma, sem custo nesta fase.";
+
 /** Próximos passos permitidos para a equipe (a decisão sobre o rascunho enviado é só do dono). */
 const PROXIMOS: Record<StatusAjuda, StatusAjuda[]> = {
   recebido: ["em_montagem", "cancelado"],
