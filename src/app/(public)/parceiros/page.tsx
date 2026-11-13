@@ -29,9 +29,9 @@ const CARDS = [
   { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume e Plano Gestor: ${GESTOR_TEXTO}.`,
     // E302 (QA 31/10): o botão leva à explicação do Gestor em Preços (âncora), não ao topo da página.
     links: comPortasDePrecos([{ href: "/precos#plano-gestor", rotulo: "Ver o Plano Gestor" }]) },
-  { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção para imóveis mobiliados. Página própria com serviços e cidades.",
+  { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção para imóveis mobiliados. Busca de profissionais por serviço e cidade (ou CEP), com o perfil de cada um.",
     links: [{ href: "/parceiros?categoria=limpeza#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=limpeza", rotulo: "Procurar" }] },
-  { id: "mobilia", titulo: "Montagem e mudança", selo: "Aberto", texto: "Montagem de móveis e mudança para quem anuncia ou vem morar. Página própria com serviços e cidades.",
+  { id: "mobilia", titulo: "Montagem e mudança", selo: "Aberto", texto: "Montagem de móveis e mudança para quem anuncia ou vem morar. Busca de profissionais por serviço e cidade (ou CEP), com o perfil de cada um.",
     // E301 (QA 31/10): o cartão junta duas categorias — cada link leva à sua (antes, os dois iam só a "mudanca").
     links: [
       { href: "/parceiros?categoria=montagem#quero-ser-parceiro", rotulo: "Atender montagem" },
