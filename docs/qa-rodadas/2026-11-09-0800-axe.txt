@@ -1,0 +1,4 @@
+## aria-prohibited-attr serious em 2 página×largura
+    390/imoveis/ube-001(3) 1280/imoveis/ube-001(3)
+   ex: article:nth-child(1) > .gap-3.flex.items-center > .ml-auto > .inline-flex[aria-label="Nota :: Fix all of the following: aria-label attribute cannot be used on a span with no valid role attribute.
+   ex: article:nth-child(2) > .gap-3.flex.items-center > .ml-auto > .inline-flex[aria-label="Nota :: Fix all of the following: aria-label attribute cannot be used on a span with no valid role attribute.
