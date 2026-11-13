@@ -9,6 +9,7 @@ import { EmpresasForm } from "./empresas-form";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
+import { FRASE_TAXA_EMPRESAS, linhasTaxaEmpresas } from "@/lib/empresas-taxas";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/empresas" },
@@ -42,7 +43,7 @@ const BENEFICIOS = [
 const FAQ_EMPRESAS = [
   { p: "Como a empresa recebe o recibo?", r: "O proprietário emite o recibo mensal da estadia em nome dele. A Viva Nomads não emite nota para a empresa e não cobra nada de quem vem morar." },
   { p: "Qual é o prazo das estadias?", r: "De 30 a 180 dias, com imóveis mobiliados e prontos para morar." },
-  { p: "Qual é o prazo de resposta e a taxa?", r: "A equipe responde em até 7 dias, no e-mail informado, com as opções de imóveis. A taxa da Viva é do proprietário, por contrato fechado; quem vem morar não paga taxa à plataforma, e não há mensalidade." },
+  { p: "Qual é o prazo de resposta e a taxa?", r: `A equipe responde em até 7 dias, no e-mail informado, com as opções de imóveis. ${FRASE_TAXA_EMPRESAS}` },
   { p: "Quem assina o contrato?", r: "O proprietário e quem vai morar (ou a empresa, quando ela for a responsável). A assinatura é digital, pela plataforma." },
 ];
 
@@ -153,6 +154,30 @@ export default function EmpresasPage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* E873: a estrutura de taxas aprovada, da fonte única (a mesma de /para-proprietarios e dos Termos). */}
+      <section className="container-page section-y" data-testid="empresas-taxas">
+        <div className="max-w-3xl">
+          <h2 className="font-title text-2xl font-semibold text-ink">Taxas da Viva</h2>
+          <p className="mt-2 text-muted" data-testid="empresas-taxas-frase">{FRASE_TAXA_EMPRESAS}</p>
+          <table className="mt-6 w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-line text-muted">
+                <th scope="col" className="py-2 font-medium">Imóveis do proprietário na Viva</th>
+                <th scope="col" className="py-2 text-right font-medium">Taxa por contrato fechado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {linhasTaxaEmpresas().map((l) => (
+                <tr key={l.faixa} className="border-b border-line" data-testid="empresas-taxa-linha">
+                  <td className="py-2 text-ink">{l.faixa}</td>
+                  <td className="py-2 text-right font-semibold tabular-nums text-ink">{l.taxa}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </section>
 

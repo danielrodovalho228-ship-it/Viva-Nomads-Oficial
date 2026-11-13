@@ -42,7 +42,9 @@ test("E770/E771/E772: prazo e taxa explícitos, escopo do dinheiro nas duas pág
   assert.match(page, /A equipe responde em até 7 dias, no e-mail informado/); // decisão do Daniel, 09/11
   assert.match(page, /Respondemos em até 7 dias com opções de imóveis mobiliados/);
   assert.doesNotMatch(page, /Ainda não há prazo de resposta/);
-  assert.match(page, /A taxa da Viva é do proprietário, por contrato fechado/);
+  // E873: a frase da taxa agora mostra a estrutura (fonte única em lib/empresas-taxas.ts) e segue dizendo quem paga.
+  assert.match(page, /\$\{FRASE_TAXA_EMPRESAS\}/);
+  assert.match(ler("lib/empresas-taxas.ts"), /A taxa de serviço da Viva é paga pelo proprietário, sobre o valor total do contrato fechado/);
   assert.match(page, /pagamento da estadia vai direto ao proprietário/);
   assert.match(page, /Serviços de parceiros \(limpeza, mudança\) são contratados à parte/);
   assert.doesNotMatch(page, /em construção|Relatórios|relatórios/);
