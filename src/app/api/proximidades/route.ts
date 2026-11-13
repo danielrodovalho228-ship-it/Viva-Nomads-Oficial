@@ -24,6 +24,7 @@ import { ancorasPerto, respostaPerto, type DestinoAncora } from "@/lib/proximida
 */
 
 const CACHE_DIAS = 30;
+const SEM_ENDERECO = "sem_endereco" as const;
 const s = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/[<>]/g, "").trim().slice(0, max) : "");
 
 function registrar(fonte: FonteProximidades | "ancoras" | "lugar_ok" | "lugar_sem_ponto", etapas: string[]) {
@@ -42,12 +43,19 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const etapas: string[] = [];
   // Edição de anúncio já salvo (rascunho ou publicado): o endereço vem do servidor, não do navegador.
-  const doAnuncio = typeof corpo?.propertyId === "string" ? await enderecoDoAnuncio(admin, corpo.propertyId, user.id) : null;
+  const bruto = typeof corpo?.propertyId === "string" ? await enderecoDoAnuncio(admin, corpo.propertyId, user.id) : null;
+  // E742 (L-104): anúncio do PRÓPRIO dono ainda sem CEP e sem ponto (ex.: o da massa, ao abrir "Qualificar o imóvel") não é
+  // erro do navegador: não há endereço para buscar. Responde 200 "sem_endereco" (sem lista), não 400 — o 400 fica para entrada inválida.
+  const semEndereco = bruto === SEM_ENDERECO;
+  const doAnuncio = bruto === SEM_ENDERECO ? null : bruto;
   const cep = doAnuncio?.cep ?? cepValido(corpo?.cep);
   // E593: anúncio publicado que perdeu o CEP (o draft_data é zerado ao publicar): a origem é o PONTO gravado do próprio
   // anúncio — o CEP só servia de chave do cache e para achar o ponto. Sem CEP e sem ponto, aí sim 400.
   const pontoGravado = !cep && doAnuncio?.ponto ? doAnuncio.ponto : null;
-  if (!cep && !pontoGravado) return NextResponse.json({ error: "CEP inválido.", fonte: "sem_cep" }, { status: 400 });
+  if (!cep && !pontoGravado) {
+    if (semEndereco && corpo?.acao !== "lugar" && !corpo?.cep) return NextResponse.json({ itens: [], fonte: "sem_endereco" });
+    return NextResponse.json({ error: "CEP inválido.", fonte: "sem_cep" }, { status: 400 });
+  }
   const endereco = doAnuncio
     ? { rua: doAnuncio.rua, numero: doAnuncio.numero, cidade: doAnuncio.cidade, uf: doAnuncio.uf, cep: cep ?? "" }
     : { rua: s(corpo?.rua, 150), numero: s(corpo?.numero, 20), cidade: s(corpo?.cidade, 100), uf: s(corpo?.uf, 2), cep: cep ?? "" };
@@ -151,7 +159,7 @@ async function enderecoDoAnuncio(
   admin: ReturnType<typeof createAdminClient>,
   propertyId: string,
   userId: string,
-): Promise<{ cep: string | null; rua: string; numero: string; cidade: string; uf: string; ponto: Ponto | null } | null> {
+): Promise<{ cep: string | null; rua: string; numero: string; cidade: string; uf: string; ponto: Ponto | null } | typeof SEM_ENDERECO | null> {
   if (!admin || !/^[0-9a-f-]{36}$/i.test(propertyId)) return null;
   const { data } = await admin.from("properties").select("owner_id, city, state, exact_address, draft_data, cep_proximidades, lat, lng, lat_exata, lng_exata").eq("id", propertyId).maybeSingle(); // consistency-ignore: PERTO-B — só o servidor, e só devolve ao PRÓPRIO dono (owner_id conferido abaixo); o endereço e o ponto nunca vão à resposta
   const p = data as {
@@ -175,6 +183,6 @@ async function enderecoDoAnuncio(
   const publico = { lat: num(p.lat), lng: num(p.lng) };
   const valido = (q: Ponto) => Number.isFinite(q.lat) && Number.isFinite(q.lng) && (q.lat !== 0 || q.lng !== 0);
   const ponto = valido(exato) ? exato : valido(publico) ? publico : null;
-  if (!cep && !ponto) return null;
+  if (!cep && !ponto) return SEM_ENDERECO; // é o dono, mas o anúncio ainda não tem endereço para buscar
   return { cep, rua: txt(d.street) || (p.exact_address ?? "").split(",")[0].trim(), numero: txt(d.numero), cidade: txt(d.city) || p.city || "", uf: txt(d.uf) || p.state || "", ponto };
 }

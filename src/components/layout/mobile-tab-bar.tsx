@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
+import { useModoAtual, useSessaoServidor, useUsuarioAtual } from "@/components/auth/sessao-servidor-contexto";
 import { useIsNative } from "@/lib/use-native";
 import { isFlowRoute, abasDoPapel, papelDaBarra, type MobileTab, type PapelBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
@@ -34,8 +35,14 @@ export function MobileTabBar({
 }) {
   const pathname = usePathname();
   const native = useIsNative();
-  const user = useAuthStore((s) => s.user);
-  const activeMode = useAuthStore((s) => s.activeMode);
+  // E793 (A4): no painel com a sessão do servidor, usuário e modo do quadro (1º quadro = servidor); sem ela, o store.
+  const sessao = useSessaoServidor();
+  const usuarioDoQuadro = useUsuarioAtual();
+  const modoDoQuadro = useModoAtual();
+  const storeUser = useAuthStore((s) => s.user);
+  const storeMode = useAuthStore((s) => s.activeMode);
+  const user = sessao ? usuarioDoQuadro : storeUser;
+  const activeMode = sessao ? modoDoQuadro : storeMode;
   const parceiroAprovado = useParceiroAprovado();
   const preferenciaParceiro = usePreferenciaParceiro();
 

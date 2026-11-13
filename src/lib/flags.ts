@@ -99,6 +99,13 @@ export const ENCERRAMENTO_REGRAS_ATIVO = process.env.NEXT_PUBLIC_ENCERRAMENTO_RE
  * do item 14 da Dra. Beatriz (NEXT_PUBLIC_VISTORIA_PARECER_14="on" quando recebido).
  */
 export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
+/**
+ * E690: ativação AUTOMÁTICA do avaliador credenciado (regra validada pelo coordenador, 08/11/2026). Desligada por padrão.
+ * Ligada: "solicitado" → "em_teste" sozinho (identidade verificada + CPF do titular/sócio do CNPJ + experiência + código de
+ * conduta + cidade) e "em_teste" → "ativo" sozinho (avaliação-teste concluída e aprovada na conferência). Cada passo grava
+ * "decidido pelo sistema" com os critérios do momento. Nunca dispensa a identidade.
+ */
+export const AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA = process.env.NEXT_PUBLIC_AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA === "on";
 export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
 
 /**
@@ -198,3 +205,14 @@ export const PRECO_JUSTO_COMPARADOR = process.env.NEXT_PUBLIC_PRECO_JUSTO_COMPAR
  * ficam limitados a 30–90 dias (um bloco de temporada). Contratos e renovações que já existem não mudam.
  */
 export const FAIXA_91_180_ATIVA = process.env.NEXT_PUBLIC_FAIXA_91_180_ATIVA !== "off";
+
+/**
+ * E793 — painel desenhado no servidor com a sessão conferida lá (docs/e793-painel-sessao-servidor.md). Lida SÓ no
+ * servidor (sem NEXT_PUBLIC_): `off` (padrão) ou o nome da onda ligada (`piloto`). A lista de rotas de cada onda está em
+ * src/lib/auth/painel-sessao-servidor.ts. Rollback: trocar a variável na Vercel e refazer o deploy do MESMO commit — sem
+ * código, mas NÃO instantâneo (alguns minutos). Mudar em produção é com o Daniel e o Muse.
+ */
+export type OndaPainelSessaoServidor = "off" | "piloto";
+export function ondaPainelSessaoServidor(valor: string | undefined = process.env.PAINEL_SESSAO_SERVIDOR): OndaPainelSessaoServidor {
+  return valor === "piloto" ? "piloto" : "off";
+}

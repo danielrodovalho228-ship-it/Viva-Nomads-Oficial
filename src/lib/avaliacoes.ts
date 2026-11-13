@@ -72,8 +72,29 @@ export function prazoAvaliacao(encerradoEm: string | null | undefined): string |
 /**
  * As duas partes da avaliação (Prompt 43, item 8) — só o visual sobre a regra às cegas que já existe: o estado de
  * cada lado, o prazo e "Aguardando a outra parte" depois de enviar. Nunca diz se a outra parte já enviou.
+ * E719: com o estado REAL da minha avaliação (`statusReal`), o cartão acompanha o banco: publicada → "Publicada"
+ * (some o "aguardando"); em moderação → "Em análise pela equipe"; removida → "Removida pela equipe".
  */
-export function partesDaAvaliacao(euEnviei: boolean, prazo: string | null): { estado: string; linhas: { quem: string; estado: string }[] } {
+export function partesDaAvaliacao(euEnviei: boolean, prazo: string | null, statusReal?: string | null): { estado: string; linhas: { quem: string; estado: string }[] } {
+  if (statusReal === "publicada") {
+    return {
+      estado: "Publicada",
+      linhas: [
+        { quem: "Sua avaliação", estado: "Publicada" },
+        { quem: "Avaliação da outra parte", estado: "Veja em Avaliações, aba Recebidas" },
+      ],
+    };
+  }
+  if (statusReal === "em_moderacao" || statusReal === "removida") {
+    const estado = statusReal === "removida" ? "Removida pela equipe" : "Em análise pela equipe";
+    return {
+      estado,
+      linhas: [
+        { quem: "Sua avaliação", estado },
+        { quem: "Avaliação da outra parte", estado: "Fica fechada até as duas enviarem ou até o fim do prazo" },
+      ],
+    };
+  }
   return {
     estado: euEnviei ? "Aguardando a outra parte" : "Falta a sua avaliação",
     linhas: [

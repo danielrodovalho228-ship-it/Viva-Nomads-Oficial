@@ -1,5 +1,6 @@
 "use client";
 
+import { useEnvioSemLimpar, useLimparNoSucesso } from "@/components/ui/use-envio-sem-limpar";
 import { useActionState, useState, useTransition } from "react";
 import { resolverReporteProximidade } from "@/lib/data/proximidades-actions";
 import { resolverLocalNaoAchado } from "@/lib/destinos/pessoal-actions";
@@ -26,6 +27,9 @@ export interface DestinoEditavel {
 /** Cadastro/correção: busca pelo nome (o geocoding sugere), confere no mapa e salva. */
 export function DestinoForm({ inicial, pontoInicial }: { inicial?: DestinoEditavel; /** DESTINO-PESSOAL-B: "Promover a âncora" chega com o centro da célula. */ pontoInicial?: { lat: number; lng: number } | null }) {
   const [res, acao, pendente] = useActionState<ResultadoDestino | null, FormData>(salvarDestino, null);
+  // E818: erro não limpa o formulário (envio por onSubmit; <form action> limpava os campos no React 19).
+  const enviarSemLimpar = useEnvioSemLimpar(acao);
+  const formRef = useLimparNoSucesso(res);
   const [busca, setBusca] = useState("");
   const [buscando, iniciarBusca] = useTransition();
   const [sugestoes, setSugestoes] = useState<PontoSugerido[] | null>(null);
@@ -59,7 +63,7 @@ export function DestinoForm({ inicial, pontoInicial }: { inicial?: DestinoEditav
   };
 
   return (
-    <form action={acao} className="grid gap-3 sm:grid-cols-2" data-testid="destino-form" key={inicial?.slug ?? "novo"}>
+    <form ref={formRef} onSubmit={enviarSemLimpar} className="grid gap-3 sm:grid-cols-2" data-testid="destino-form" key={inicial?.slug ?? "novo"}>
       {inicial && <input type="hidden" name="slug" value={inicial.slug} />}
       <div className="sm:col-span-2">
         <label htmlFor="nome" className="block text-sm font-semibold">Nome</label>

@@ -16,7 +16,7 @@ import { PorQueNaCidade } from "@/components/account/por-que-na-cidade";
 import { EspacoTrabalho } from "@/components/account/espaco-trabalho";
 import { TituloSecaoLateral } from "@/components/account/casca-conta";
 import { EnviarFoto, FOTO_ATUALIZADA, PERFIL_ATUALIZADO, avisarFotoAtualizada, useMinhaFoto } from "@/components/account/foto-perfil";
-import { getMeuPerfilPublico, getMeusDados, salvarMeuPerfilPublico, salvarMeusDados, setMinhaCategoria, type MeuPerfilPublico } from "@/lib/data/perfil-actions";
+import { getMeuPerfilPublico, getPerfilInicial, salvarMeuPerfilPublico, salvarMeusDados, setMinhaCategoria, type MeuPerfilPublico } from "@/lib/data/perfil-actions";
 import { clearMyAvatar } from "@/lib/data/avatar-actions";
 import { AvisoFotoRemovida } from "@/components/account/aviso-foto-removida";
 import { BIO_MAX, ESTADO_SALVAR, IDIOMAS, LINHA_PERFIL_COMPLETO, destinoDaFalta, medidorPerfil, rotuloCurto, progressoPerfil, validarBio } from "@/lib/perfil/perfil-publico";
@@ -25,6 +25,7 @@ import { textosToggle, toggleInicial } from "@/lib/ui/bloco-opcional";
 import { CATEGORIA_NAO_INFORMAR, categoriaLabel } from "@/config/categorias-profissionais";
 import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
+import { nomeParaAvatar } from "@/lib/display-name";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 export const SUBTITULO_PERFIL = "Gerencie suas informações pessoais e como os proprietários veem seu perfil.";
@@ -37,7 +38,7 @@ const CAMPO = "w-full rounded-lg border border-line bg-white px-4 py-3 text-base
  * Idiomas) e o medidor "Complete seu perfil" (C1). No celular: título no topo, foto grande, cartão, espelho, blocos, o
  * medidor e o "Salvar alterações" logo depois do conteúdo (E61).
  */
-export function PerfilTela() {
+export function PerfilTela({ inicial }: { inicial?: PerfilInicial | null } = {}) {
   const foto = useMinhaFoto();
   const { mode } = useViewMode();
   // E192 (reteste 26/10): o painel do morador (Perfil profissional + "Por que estou na cidade") vale para quem tem
@@ -48,22 +49,26 @@ export function PerfilTela() {
   // E55: o espelho segue o papel em uso (a mesma fonte da barra: o modo da conta).
   const papelEspelho = mode === "owner" ? "proprietario" : "morador";
   const usuarioPronto = useAuthStore((s) => !!s.user);
-  const [p, setP] = useState<MeuPerfilPublico | null | undefined>(undefined);
+  // E789: com `inicial` (lido pela página de SERVIDOR antes da primeira pintura) a tela já nasce com os dados — nada de
+  // esqueleto nem de ida e volta do navegador. Sem ele (leitura do servidor falhou), cai no caminho antigo: lê do navegador.
+  const ini = inicial ? estadoInicial(inicial) : null;
+  const temInicial = !!inicial;
+  const [p, setP] = useState<MeuPerfilPublico | null | undefined>(ini ? ini.p : undefined);
   // Achado 70: leitura falhou → aviso com "Tentar de novo", nunca o formulário vazio (salvar apagaria o perfil).
   const [leituraFalhou, setLeituraFalhou] = useState(false);
   const [tentativa, setTentativa] = useState(0);
-  const [nome, setNome] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [bio, setBio] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [idiomas, setIdiomas] = useState<string[]>([]);
-  const [idiomasLigado, setIdiomasLigado] = useState(false);
-  const [profLigado, setProfLigado] = useState(false);
+  const [nome, setNome] = useState(ini?.nome ?? "");
+  const [telefone, setTelefone] = useState(ini?.telefone ?? "");
+  const [bio, setBio] = useState(ini?.bio ?? "");
+  const [cidade, setCidade] = useState(ini?.cidade ?? "");
+  const [idiomas, setIdiomas] = useState<string[]>(ini?.idiomas ?? []);
+  const [idiomasLigado, setIdiomasLigado] = useState(ini?.idiomasLigado ?? false);
+  const [profLigado, setProfLigado] = useState(ini?.profLigado ?? false);
   const [salvando, setSalvando] = useState(false);
   const [removendo, setRemovendo] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   // Extra do E62: o retrato do que está gravado, para o botão mostrar "há alterações" × "tudo salvo".
-  const [salvo, setSalvo] = useState<string | null>(null);
+  const [salvo, setSalvo] = useState<string | null>(ini?.salvo ?? null);
   // O aviso "Alterações salvas." fica junto do botão que a pessoa tocou: no cartão (computador) ou no fim (celular).
   const [largo, setLargo] = useState(false);
   useEffect(() => {
@@ -76,24 +81,27 @@ export function PerfilTela() {
 
   useEffect(() => {
     let vivo = true;
-    Promise.all([getMeuPerfilPublico(), getMeusDados()])
-      .then(([d, dados]) => {
-        if (!vivo) return;
-        setP(d);
-        if (d) {
-          setBio(d.bio);
-          setCidade(d.cidade);
-          setIdiomas(d.idiomas);
-          setIdiomasLigado(toggleInicial(d.idiomas.length > 0));
-          setProfLigado(toggleInicial(!!d.profissao && d.profissao !== CATEGORIA_NAO_INFORMAR));
-        }
-        setNome(dados?.fullName ?? d?.nome ?? "");
-        setTelefone(dados?.phone ?? "");
-        setSalvo(retrato(dados?.fullName ?? d?.nome ?? "", d?.bio ?? "", d?.cidade ?? "", d && d.idiomas.length > 0 ? d.idiomas : []));
-      })
-      .catch(() => {
-        if (vivo) setLeituraFalhou(true);
-      });
+    // E789: a primeira leitura já veio do servidor; o navegador só relê quando a pessoa pede "Tentar de novo".
+    if (!(temInicial && tentativa === 0))
+      getPerfilInicial()
+        .then((lido) => {
+          if (!vivo) return;
+          const e = estadoInicial(lido);
+          setP(e.p);
+          if (e.p) {
+            setBio(e.bio);
+            setCidade(e.cidade);
+            setIdiomas(e.idiomas);
+            setIdiomasLigado(e.idiomasLigado);
+            setProfLigado(e.profLigado);
+          }
+          setNome(e.nome);
+          setTelefone(e.telefone);
+          setSalvo(e.salvo);
+        })
+        .catch(() => {
+          if (vivo) setLeituraFalhou(true);
+        });
     // O medidor e o espelho andam: foto nova, profissão ou documento salvos em outra tela releem na hora.
     const reler = () =>
       getMeuPerfilPublico()
@@ -106,7 +114,7 @@ export function PerfilTela() {
       window.removeEventListener(PERFIL_ATUALIZADO, reler);
       window.removeEventListener(FOTO_ATUALIZADA, reler);
     };
-  }, [tentativa]);
+  }, [tentativa, temInicial]);
 
   if (leituraFalhou)
     return (
@@ -188,7 +196,7 @@ export function PerfilTela() {
             fundo e o cartão branco começa nos campos. */}
         <section className={cn("sm:rounded-xl sm:bg-white sm:p-6", SOMBRA_SO_COMPUTADOR)} aria-labelledby="perfil-foto-titulo" data-testid="perfil-cartao">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6" data-testid="topo-conta">
-            <Avatar name={nome} size={144} photoUrl={foto.url ?? undefined} />
+            <Avatar name={nomeParaAvatar(nome)} size={144} photoUrl={foto.url ?? undefined} />
             <div className="flex flex-col items-center gap-2 sm:items-start">
               <h2 id="perfil-foto-titulo" className="font-title text-xl font-semibold text-ink max-sm:sr-only">
                 Foto do perfil
@@ -424,11 +432,51 @@ function irParaCampo(alvo: string) {
   foco?.focus({ preventScroll: true });
 }
 
+type PerfilInicial = Awaited<ReturnType<typeof getPerfilInicial>>;
+
+/** E789: o estado da tela a partir da leitura (do servidor, na primeira pintura, ou do navegador, no "Tentar de novo"). */
+function estadoInicial({ perfil: d, dados }: PerfilInicial) {
+  const nome = dados?.fullName ?? d?.nome ?? "";
+  return {
+    p: d,
+    nome,
+    telefone: dados?.phone ?? "",
+    bio: d?.bio ?? "",
+    cidade: d?.cidade ?? "",
+    idiomas: d?.idiomas ?? [],
+    idiomasLigado: d ? toggleInicial(d.idiomas.length > 0) : false,
+    profLigado: d ? toggleInicial(!!d.profissao && d.profissao !== CATEGORIA_NAO_INFORMAR) : false,
+    salvo: retrato(nome, d?.bio ?? "", d?.cidade ?? "", d && d.idiomas.length > 0 ? d.idiomas : []),
+  };
+}
+
 function EsqueletoPerfil() {
+  // E789: o esqueleto tem a FORMA da tela (título, campos, botão) com pulso, em vez de dois cartões brancos vazios:
+  // enquanto os dados não chegam, lê-se "carregando", não "travou".
+  const linha = (w: string) => <div className={`h-4 rounded-lg bg-surface-2 ${w}`} />;
+  const campo = (
+    <div className="space-y-2">
+      {linha("w-24")}
+      <div className="h-11 w-full rounded-lg bg-surface-2" />
+    </div>
+  );
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]" aria-busy="true" data-testid="perfil-carregando">
-      <div className="h-96 rounded-xl bg-white" />
-      <div className="hidden h-80 rounded-xl bg-white xl:block" />
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]" aria-busy="true" aria-live="polite" data-testid="perfil-carregando">
+      <div className="animate-pulse space-y-4 rounded-xl border border-line bg-white p-4" data-testid="perfil-carregando-formulario">
+        <span className="sr-only">Carregando o seu perfil…</span>
+        {linha("w-40")}
+        {campo}
+        {campo}
+        {campo}
+        <div className="h-24 w-full rounded-lg bg-surface-2" />
+        <div className="h-11 w-40 rounded-lg bg-surface-2" />
+      </div>
+      <div className="hidden animate-pulse space-y-3 rounded-xl border border-line bg-white p-4 xl:block" data-testid="perfil-carregando-espelho">
+        <div className="mx-auto h-20 w-20 rounded-full bg-surface-2" />
+        {linha("mx-auto w-32")}
+        {linha("w-full")}
+        {linha("w-3/4")}
+      </div>
     </div>
   );
 }

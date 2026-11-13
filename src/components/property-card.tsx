@@ -3,8 +3,8 @@ import { Star } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { numBR } from "@/lib/utils";
 import { calcularTudoIncluido } from "@/lib/precos";
-import { estadiaDoCartao, mesesDoCartao, ROTULO_TOTAL_MES, rotuloPreco } from "@/lib/cartao-preco";
-import { estadiaNoCartao } from "@/lib/cartao-estadia";
+import { mesesDoCartao, resumoEmMeses, ROTULO_TOTAL_MES, rotuloPreco } from "@/lib/cartao-preco";
+import { composicaoDoMes, estadiaNoCartao } from "@/lib/cartao-estadia";
 import { itensSintese } from "@/lib/cartao-sintese";
 import { isExemplo } from "@/lib/demo-listing";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
@@ -118,16 +118,20 @@ export function PropertyCard({
           {/* E356: todo cartão mostra o total da estadia (com 1 mês, "R$ X em 1 mês"): comparação igual entre vizinhos. */}
           <span className="text-sm text-muted" data-testid="cartao-total-estadia">
             {" · "}
-            {estadiaCartao?.texto ?? estadiaDoCartao(preco)}
+            {estadiaCartao?.texto ?? resumoEmMeses(preco.total, preco.meses)}
           </span>
         </p>
         {/* E356: diz o que é o preço grande (o total do mês, com condomínio e consumo fixo). */}
         <p className="text-xs text-apoio" data-testid="cartao-total-rotulo">
           {ROTULO_TOTAL_MES}
         </p>
+        {/* E756: o que compõe o /mês deste anúncio (a mesma fonte do total do mês) — a diferença entre anúncios é de dado, não de regra. */}
+        <p className="text-xs text-apoio" data-testid="cartao-mes-composicao">
+          {composicaoDoMes(property)}
+        </p>
         {estadiaCartao?.composicao && (
           <p className="text-xs text-apoio" data-testid="cartao-total-composicao">
-            {estadiaCartao.composicao}
+            Total da estadia: {estadiaCartao.composicao}
           </p>
         )}
 

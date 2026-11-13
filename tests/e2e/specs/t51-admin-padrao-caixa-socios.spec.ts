@@ -8,9 +8,9 @@ import { authFile } from "../fixtures/auth";
  */
 const TELAS = [
   { url: "/admin/parceiros", titulo: "Parceiros" },
-  { url: "/admin/fotografos", titulo: "Fotógrafos parceiros" },
+  // /admin/fotografos agora redireciona para a aba "Fotógrafos" de Parceiros (ADMIN-2, menu-admin.ts): a tela própria não existe mais.
   { url: "/admin/socios", titulo: "Caixa dos Sócios" },
-  { url: "/admin/documentos", titulo: "Documentos em conferência" },
+  { url: "/admin/documentos", titulo: "Documentos" },
 ];
 
 test.describe("T51 — Admin no padrão + Caixa dos Sócios", () => {
@@ -18,6 +18,7 @@ test.describe("T51 — Admin no padrão + Caixa dos Sócios", () => {
 
   for (const largura of [360, 1280]) {
     test(`telas do admin com título e sem rolagem lateral a ${largura}px`, async ({ page }) => {
+      test.setTimeout(120_000); // 4 telas com networkidle: os 45 s do gate estouram sob carga (run 42619364978)
       await page.setViewportSize({ width: largura, height: 800 });
       for (const t of TELAS) {
         await page.goto(t.url, { waitUntil: "networkidle" });
@@ -29,14 +30,7 @@ test.describe("T51 — Admin no padrão + Caixa dos Sócios", () => {
     });
   }
 
-  test("visão geral mostra as áreas novas com atalhos", async ({ page }) => {
-    await page.goto("/admin", { waitUntil: "networkidle" });
-    const corpo = page.locator("main");
-    await expect(corpo.getByRole("heading", { name: "Áreas do admin" })).toBeVisible();
-    for (const href of ["/admin/socios", "/admin/parceiros", "/admin/fotografos", "/admin/agentes"]) {
-      await expect(corpo.locator(`a[href="${href}"]`).first()).toBeVisible();
-    }
-  });
+  // E176: a inicial do admin não repete "Áreas do admin" (estilo-admin.test); os atalhos moram no menu (menu-admin.test cobre os itens).
 
   test("Caixa dos Sócios: envia texto e aparece na conversa como Recebido", async ({ page }) => {
     await page.goto("/admin/socios", { waitUntil: "networkidle" });

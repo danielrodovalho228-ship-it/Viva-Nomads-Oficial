@@ -1,5 +1,6 @@
 "use client";
 
+import { grafiaDaCidade } from "@/lib/cidades";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -166,7 +167,7 @@ export function OwnerCard({
           </p>
           {d.cidade && (
             <p className="mt-1 inline-flex items-center gap-1 text-sm text-muted">
-              <MapPin className="h-4 w-4" aria-hidden /> {d.cidade}
+              <MapPin className="h-4 w-4" aria-hidden /> {grafiaDaCidade(d.cidade)}
             </p>
           )}
           {d.reputacao && (
@@ -247,7 +248,7 @@ export function OwnerCard({
           {exemplo && (
             <p role="status" data-testid="mensagem-demo" className="mt-3 rounded-xl bg-sage-100 p-3 text-sm text-ink">
               Este é um anúncio de exemplo: aqui não há botão de mensagem. Nos anúncios reais, a conversa acontece
-              pelo chat da Viva, com o contato protegido até o aceite.
+              pelo chat da Viva; telefone, e-mail e redes sociais nunca são trocados.
             </p>
           )}
         </div>

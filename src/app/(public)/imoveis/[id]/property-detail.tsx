@@ -56,7 +56,10 @@ import type { LeadKind } from "@/lib/leads";
 import { PriceCard } from "@/components/property/price-card";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
-import { FAIXA_TESTE_EQUIPE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
+import { FAIXA_TESTE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
+
+/** E796: a faixa do anúncio de teste é o motivo do "Pedir para morar" desativado (aria-describedby). */
+const ID_FAIXA_TESTE = "faixa-anuncio-teste";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias } from "@/lib/precos";
 import { abaixoDaEstadiaMinima, estadiaMinimaDias } from "@/lib/availability";
@@ -107,9 +110,12 @@ export function PropertyDetail({
   proprietario = null,
   exibicao59 = null,
   estrutura = null,
+  donoTeste = false,
 }: {
   property: Property;
   similar: Property[];
+  /** E786: o dono é conta de teste (lido no servidor) — o anúncio é de teste mesmo sem a marca no título. */
+  donoTeste?: boolean;
   proprietario?: PerfilProprietario | null;
   /** Prompt 59-A: padrão mínimo confirmado e taxa de manutenção no prazo (anúncio de exemplo: null). */
   exibicao59?: Exibicao59 | null;
@@ -149,7 +155,7 @@ export function PropertyDetail({
   const semLogin = authChecked && !usuario && !isExemplo(property);
   // E93: anúncio de teste aberto pelo link. Quem não é o dono nem admin (e enquanto a sessão não carregou) vê a faixa
   // e o "Solicitar" desativado; o dono, o admin e a conta de teste (is_teste) veem a página normal, com a faixa discreta.
-  const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin", teste: usuario?.isTeste === true });
+  const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin", teste: usuario?.isTeste === true }, donoTeste);
   // QA do Muse (29/10): enquanto a sessão ou o perfil (is_teste) não chegaram, o anúncio de teste não mostra a faixa de
   // visitante — antes ela piscava para a conta de teste até o perfil carregar. O "Solicitar" fica só desativado.
   const aguardandoPerfil = modoTeste === "visitante" && (!authChecked || (!!usuario && usuario.isTeste === undefined));
@@ -397,7 +403,7 @@ export function PropertyDetail({
     </div>
   );
 
-  // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono fica mascarado até o aceite.
+  // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono nunca é exibido (E445: telefone e e-mail não são trocados, em nenhuma fase).
   const contatoViva = destinoContatoViva(property.id);
 
   // E53: entrada, saída e pessoas — os MESMOS campos na caixa ("candidatura-*") e no diálogo ("solicitacao-*"),
@@ -450,6 +456,19 @@ export function PropertyDetail({
     confirmacaoCandidatura
   ) : (
     <div className="flex flex-col gap-2">
+      {exemplo ? (
+        <div data-testid="exemplo-sem-acoes" className="rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
+          <p>
+            Este anúncio é de exemplo, para você ver como a Viva funciona. Por isso aqui não dá para pedir para morar, enviar mensagem, agendar visita ou fazer visita por vídeo:
+            nada seria enviado a ninguém. Nos anúncios reais, esses botões ficam neste lugar.
+          </p>
+          <ButtonLink href="/buscar" variant="secondary" size="sm" className="mt-3" data-testid="exemplo-ver-reais">
+            Ver imóveis reais
+          </ButtonLink>
+        </div>
+      ) : (
+        <>
+      {/* E713: os campos de reserva só existem no anúncio real; no exemplo a coluna é a explicação + "Ver imóveis reais" (E694). */}
       {camposPeriodo("candidatura")}
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Motivo da estadia (opcional)
@@ -467,29 +486,16 @@ export function PropertyDetail({
           ))}
         </select>
       </label>
-      {exemplo ? (
-        <div data-testid="exemplo-sem-acoes" className="rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
-          <p data-testid="aviso-demo" className="font-medium text-forest">
-            {EXEMPLO_AVISO_DEMO}
-          </p>
-          <p className="mt-1">
-            Este anúncio é de exemplo, para você ver como a Viva funciona. Por isso aqui não dá para pedir para morar, enviar mensagem, agendar visita ou fazer visita por vídeo:
-            nada seria enviado a ninguém. Nos anúncios reais, esses botões ficam neste lugar.
-          </p>
-          <ButtonLink href="/buscar" variant="secondary" size="sm" className="mt-3" data-testid="exemplo-ver-reais">
-            Ver imóveis reais
-          </ButtonLink>
-        </div>
-      ) : (
-        <>
       {/* UM primário por tela (Prompt 41): "Pedir para morar" (IMÓVEL-CTA; antes, "Solicitar") é a candidatura de sempre. No celular e
           no tablet (< lg) ele mora no rodapé fixo; aqui aparece só no computador. */}
       <Button
         variant="primary"
         size="lg"
-        className="hidden w-full lg:inline-flex"
+        className={testeVisitante ? "hidden h-auto min-h-12 w-full whitespace-normal px-3 py-2 text-center leading-snug lg:inline-flex" : "hidden w-full lg:inline-flex"}
         onClick={abrirSolicitacao}
         disabled={pending !== null || testeVisitante || aguardandoPerfil}
+        // E796: desativado no anúncio de teste, o botão aponta para a faixa que diz por quê (sem trava silenciosa).
+        aria-describedby={testeVisitante ? ID_FAIXA_TESTE : undefined}
         data-testid="cartao-solicitar"
       >
         {!testeVisitante && <FileSignature className="h-4 w-4" />}
@@ -842,24 +848,24 @@ export function PropertyDetail({
       {modoTeste && !aguardandoPerfil && (
         <p
           role="note"
+          id={ID_FAIXA_TESTE}
           data-testid="faixa-anuncio-teste"
           data-modo={modoTeste}
-          className={
-            modoTeste === "visitante"
-              ? "mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-ink"
-              : "mb-4 rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-muted"
-          }
+          // E786: UMA faixa, com o texto especificado e o mesmo desenho para a equipe e o visitante; quebra linha (sem
+          // estouro horizontal). O que muda entre os dois é só o "Solicitar" (E93).
+          className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-ink break-words"
         >
-          {modoTeste === "visitante" ? FAIXA_TESTE_VISITANTE : FAIXA_TESTE_EQUIPE}
+          {FAIXA_TESTE}
         </p>
       )}
       {composer}
       {solicitacao}
       <BarraFixaCelular
         key={property.id}
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: estadiaSelecao ? estadiaSelecao.total : meses > 1 ? estadiaDoImovel(property, meses)?.total : null, dias: estadiaSelecao?.dias ?? null, exemplo, candidatouSe, availableFrom: disponivelDesde ?? property.availableFrom })}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: estadiaSelecao ? estadiaSelecao.total : estadiaDoImovel(property, Math.max(1, meses))?.total ?? null, dias: estadiaSelecao?.dias ?? null, exemplo, candidatouSe, availableFrom: disponivelDesde ?? property.availableFrom })}
         pending={pending !== null}
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
+        bloqueioMotivoId={ID_FAIXA_TESTE}
         aguardando={aguardandoPerfil}
         onSolicitar={abrirSolicitacao}
         onAgendarVisita={() => {

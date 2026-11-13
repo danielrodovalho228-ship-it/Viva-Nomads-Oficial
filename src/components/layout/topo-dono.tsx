@@ -89,6 +89,8 @@ export function MenuConta(p: {
   itens: readonly ItemConta[];
   onAcao: (acao: NonNullable<ItemConta["acao"]>) => void;
   compacto?: boolean;
+  /** E788: o texto ao lado do avatar no computador ("Conta"; no topo do admin, "Equipe"). */
+  rotulo?: string;
 }) {
   const [aberto, setAberto] = useState(false);
   const caixa = useRef<HTMLDivElement>(null);
@@ -126,7 +128,7 @@ export function MenuConta(p: {
         <Avatar name={p.nome} size={p.compacto ? 32 : 28} photoUrl={p.foto ?? undefined} />
         {!p.compacto && (
           <>
-            Conta
+            {p.rotulo ?? "Conta"}
             <ChevronDown className="h-4 w-4" aria-hidden />
           </>
         )}

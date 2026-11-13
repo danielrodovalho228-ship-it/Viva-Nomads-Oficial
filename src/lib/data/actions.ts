@@ -25,6 +25,7 @@ import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
+import { corpoMensagemNova } from "@/lib/notifications/corpo-e267-restante";
 import { registrarIntencaoDeAnunciar } from "@/lib/data/intencao-servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { registrarAtivacao } from "@/lib/ativacao/servidor";
@@ -2004,8 +2005,13 @@ export async function sendMessage(input: {
       const nomeHtml = textoEmail(senderName, 40);
       const previewHtml = textoEmail(safeBody, 140);
       const previewTexto = textoPlano(safeBody, 140);
+      // E267: o corpo nomeia quem escreveu e o imóvel da conversa (só lido quando há e-mail a mandar).
+      const { data: imovelConversa } =
+        comEmail && admin && input.propertyId ? await admin.from("properties").select("title").eq("id", input.propertyId).maybeSingle() : { data: null };
+      const imovelTitulo = (imovelConversa?.title as string | null | undefined) ?? null;
       await notify({
         event: "new_message",
+        body: corpoMensagemNova({ remetente: senderName, imovelTitulo }),
         email: comEmail ? (contact!.email as string) : undefined,
         name: contact?.full_name ?? undefined,
         userId: destinatarioId,

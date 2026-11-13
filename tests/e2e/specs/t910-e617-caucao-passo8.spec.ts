@@ -35,7 +35,10 @@ test.describe("T910 — E617: 'Aceito Caução (depósito devolvível)' inteiro 
         const m = await pilula.evaluate((el) => {
           const b = el.getBoundingClientRect();
           const s = getComputedStyle(el);
-          const texto = [...el.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim());
+          // O texto do botão pode morar num <span> filho: acha o 1º nó de texto com conteúdo em qualquer profundidade.
+          const andador = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+          let texto: Node | null = null;
+          while (andador.nextNode()) if (andador.currentNode.textContent?.trim()) { texto = andador.currentNode; break; }
           const r = document.createRange();
           r.selectNodeContents(texto!);
           const linhas = [...r.getClientRects()];

@@ -129,12 +129,12 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
         const l = page.locator(`[data-funil="${rotulo}"]`);
         return { valor: (await l.locator("[data-valor]").innerText()).trim(), href: (await l.getAttribute("data-href"))! };
       };
-      // Prompt 46: as filas viraram "Hoje você tem N decisões"; fila zerada não aparece (o número dela é 0).
+      // E330/E474: as decisões das outras telas viram itens da Central (central-linha-decisao, com data-n e o link);
+      // decisão zerada não aparece (o número dela é 0).
       const fila = async (chave: string) => {
-        const li = page.locator(`[data-precisa="${chave}"]`);
+        const li = page.locator(`[data-testid="central-linha-decisao"][data-decisao="${chave}"]`);
         if (!(await li.count())) return { valor: 0, href: "" };
-        const link = li.locator("[data-href]").first();
-        return { valor: Number(await link.getAttribute("data-valor")), href: (await link.getAttribute("data-href"))! };
+        return { valor: Number(await li.getAttribute("data-n")), href: (await li.locator("a").first().getAttribute("href"))! };
       };
 
       const alvos: { nome: string; valor: number; href: string; esperado?: number }[] = [];
@@ -147,20 +147,32 @@ test.describe("T231 — admin: todo número com lista, financeiro com uma base",
         alvos.push({ nome: `funil ${rotulo}`, valor: n(f.valor), href: f.href, esperado });
       }
       await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("admin-decisoes")).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByTestId("central-decisoes")).toBeVisible({ timeout: 30_000 });
       for (const chave of ["candidaturas_sem_resposta_48h", "chamados_urgentes_sem_resposta", "comissoes_vencidas", "pedidos_sem_resposta_expirando"]) {
         const f = await fila(chave);
         alvos.push({ nome: `fila ${chave}`, valor: f.valor, href: f.href });
       }
       expect(alvos.find((a) => a.nome === "fila comissoes_vencidas")!.href).toBe("/admin/financeiro?situacao=vencida");
       expect(alvos.find((a) => a.nome === "fila candidaturas_sem_resposta_48h")!.href).toBe("/admin/candidaturas?status=sem_resposta");
-      await expect(page.locator('[data-precisa="comissoes_vencidas"]')).toContainText(/taxas? vencidas?/);
+      await expect(page.locator('[data-testid="central-linha-decisao"][data-decisao="comissoes_vencidas"]')).toContainText(/taxas? vencidas?/);
 
       for (const a of alvos) {
         if (a.esperado !== undefined) expect(a.valor, a.nome).toBe(a.esperado);
         if (!a.href) continue; // fila zerada: sem linha na home
-        await page.goto(a.href, { waitUntil: "domcontentloaded" });
-        await expect(page.getByTestId("lista-total"), `${a.nome} → ${a.href}`).toHaveText(String(a.valor));
+        if (!a.nome.startsWith("fila ")) {
+          await page.goto(a.href, { waitUntil: "domcontentloaded" });
+          await expect(page.getByTestId("lista-total"), `${a.nome} → ${a.href}`).toHaveText(String(a.valor));
+          continue;
+        }
+        // Frente 3: as filas da Central são globais e outras specs do laboratório (t273) criam e apagam itens em paralelo —
+        // como na t229, relê a Central e abre a lista logo em seguida, com nova tentativa.
+        const chave = a.nome.slice("fila ".length);
+        await expect(async () => {
+          await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
+          const agora = await fila(chave);
+          await page.goto(agora.href || a.href, { waitUntil: "domcontentloaded" });
+          await expect(page.getByTestId("lista-total"), `${a.nome} → ${a.href}`).toHaveText(String(agora.valor), { timeout: 10_000 });
+        }).toPass({ timeout: 90_000 });
       }
       // As filas de agora contam o que o spec criou (pelo menos a candidatura parada e a taxa vencida).
       expect(alvos.find((a) => a.nome === "fila candidaturas_sem_resposta_48h")!.valor).toBeGreaterThanOrEqual(1);

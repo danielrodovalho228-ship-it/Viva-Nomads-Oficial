@@ -14,7 +14,7 @@ const conta = { email: `dono.modo.${sufixo}@lab.vivanomads.test`, nome: "Moa Mod
 const ids: { id?: string } = {};
 
 // Prompt 41: barra por papel (5 itens).
-const ABAS_PROPRIETARIO = ["Início", "Anúncios", "Mensagens", "Ganhos", "Perfil"];
+const ABAS_PROPRIETARIO = ["Início", "Anúncios", "Interessados", "Contratos", "Mensagens"]; // src/config/abas-painel.ts
 
 async function abas(page: Page, nomes: string[]) {
   const barra = page.locator("nav.vn-tabbar");

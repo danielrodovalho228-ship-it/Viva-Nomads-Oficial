@@ -83,7 +83,7 @@ test.describe("T379 — 55-E2: filtro de contato bloqueando de verdade e o 1 toq
       await tocarNaResposta(p);
       await p.getByTestId("mensagem-campo").fill(`${RESPOSTA.texto} Fala comigo: ${contato}`);
       const antes = (await mensagensDoDono()).length;
-      await p.getByRole("button", { name: "Enviar" }).click();
+      await p.getByRole("button", { name: "Enviar", exact: true }).click();
       const aviso = p.getByTestId("resposta-rapida-bloqueada");
       await expect(aviso, `${caso}: o aviso do bloqueio aparece`).toBeVisible({ timeout: 10_000 });
       const textoAviso = await aviso.innerText();
@@ -107,7 +107,7 @@ test.describe("T379 — 55-E2: filtro de contato bloqueando de verdade e o 1 toq
       const texto = `Digitado à mão ${caso} ${sufixo}: ${contato}`;
       const antes = (await mensagensDoDono()).length;
       await p.getByTestId("mensagem-campo").fill(texto);
-      await p.getByRole("button", { name: "Enviar" }).click();
+      await p.getByRole("button", { name: "Enviar", exact: true }).click();
       // E445 item 2: o aviso vem antes; a medição segue pelo "Enviar mesmo assim" (o servidor mascara).
       await p.getByRole("button", { name: "Enviar mesmo assim" }).click();
       await p.waitForTimeout(4_000);
@@ -137,7 +137,7 @@ test.describe("T379 — 55-E2: filtro de contato bloqueando de verdade e o 1 toq
     await campo.fill(editado);
     await expect(campo).toHaveValue(editado);
     await p.screenshot({ path: `${SAIDA}/t379-um-toque-390.png`, fullPage: true });
-    await p.getByRole("button", { name: "Enviar" }).click();
+    await p.getByRole("button", { name: "Enviar", exact: true }).click();
     await expect.poll(async () => (await mensagensDoDono()).slice(antes), { timeout: 20_000 }).toEqual([editado]);
     relatorio["2-um-toque"] = { gravadasAntesDoEnvio: semEnviar, gravadoNoEnvio: editado };
     expect(semEnviar, "o toque na resposta não envia sozinho").toBe(0);

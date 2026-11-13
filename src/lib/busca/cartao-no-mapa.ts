@@ -44,10 +44,14 @@ export function rolagemParaMostrar(card: { top: number; bottom: number }, livreT
  * parte visível — ou por baixo do topo fixo do site, que tampava o "Fechar". Depois do enquadramento, a página rola o
  * mínimo para o cartão aparecer entre as barras fixas.
  */
+/** As barras presas que o cartão do mapa não pode ficar por baixo: o topo do site, a barra de abas do celular e quem se
+ *  marca `data-barra-fixa` (Frente 3: a faixa de filtros presa da busca no celular, E780, é uma div). */
+export const SELETOR_BARRAS_FIXAS = "header, nav, [data-barra-fixa]";
+
 export function mostrarCartaoNaTela(el: HTMLElement | null) {
   setTimeout(() => {
     if (!el) return;
-    const barras = [...document.querySelectorAll<HTMLElement>("header, nav")].filter((b) => {
+    const barras = [...document.querySelectorAll<HTMLElement>(SELETOR_BARRAS_FIXAS)].filter((b) => {
       const pos = getComputedStyle(b).position;
       return (pos === "sticky" || pos === "fixed") && b.getBoundingClientRect().height > 0;
     });

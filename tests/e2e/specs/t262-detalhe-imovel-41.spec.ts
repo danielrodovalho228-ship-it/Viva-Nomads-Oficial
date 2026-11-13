@@ -151,11 +151,11 @@ for (const largura of LARGURAS) {
         expect(totalPeriodo).toBeCloseTo(mes * 3 + unicos, 0);
         await expect(cartao.getByTestId("cartao-nao-segura")).toContainText("A Viva não segura dinheiro");
       }
-      // N = 1: só "/mês".
+      // N = 1: o "/mês" acompanha o mensal e o total do período é "R$ Y em 1 mês" (E777: o total diz sempre N mês/meses).
       await page.evaluate(() => localStorage.setItem("vn:ultima-busca", JSON.stringify({ inicio: "", meses: 1, pessoas: 0 })));
       await page.reload({ waitUntil: "domcontentloaded" });
       const estadia = largura === 390 ? page.getByTestId("barra-total-estadia") : page.getByTestId("cartao-lateral-estadia");
-      await expect(estadia).toHaveCount(0);
+      await expect(estadia).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 1 mês/);
     });
 
     test("exemplo (E694): nenhum primário de ação — a explicação e a saída para os imóveis reais; sem visita nem candidatura", async ({ page }) => {
