@@ -25,12 +25,16 @@ const PILOTO = process.env.PAINEL_SESSAO_SERVIDOR === "piloto";
 const SKELETON_LISTA = '[role="status"][aria-label="Carregando"].space-y-4:not([data-testid])';
 /** Esqueleto de página inteira: o SkeletonLista e, no piloto, também o do guarda. */
 const ESQUELETO = PILOTO ? `[data-testid="auth-guard-carregando"], ${SKELETON_LISTA}` : SKELETON_LISTA;
+/** A sonda: no piloto, qualquer esqueleto; com a chave off, o SkeletonLista que NÃO está dentro do esqueleto do guarda. */
+const SONDA = { esqueleto: ESQUELETO, ignorarDentro: PILOTO ? null : '[data-testid="auth-guard-carregando"]' };
 
-function sonda(seletorEsqueleto: string) {
+function sonda(cfg: { esqueleto: string; ignorarDentro: string | null }) {
   const w = window as unknown as { __e797: { esqueleto: boolean; topoEm: number | null; dadosEm: number | null } };
   w.__e797 = { esqueleto: false, topoEm: null, dadosEm: null };
   const olhar = () => {
-    if (document.querySelector(seletorEsqueleto)) w.__e797.esqueleto = true;
+    // Com a chave off, o SkeletonLista DENTRO do esqueleto do guarda é o rollback esperado (não o do loading.tsx).
+    const achou = [...document.querySelectorAll(cfg.esqueleto)].some((el) => !cfg.ignorarDentro || !el.closest(cfg.ignorarDentro));
+    if (achou) w.__e797.esqueleto = true;
     if (w.__e797.topoEm === null && document.querySelector('[data-testid="inicio-topo"]')) w.__e797.topoEm = performance.now();
     if (w.__e797.dadosEm === null && document.querySelector('[data-testid="inicio-dono"], [data-testid="inicio-so-morador"], [data-testid="inicio-morador"]')) w.__e797.dadosEm = performance.now();
   };
@@ -56,7 +60,7 @@ test.describe("T1614 — E797 o Início em seções, sem esqueleto de página in
         const page = await entrar(browser, conta.email!, conta.senha!, largura);
 
         // 1º o SINTOMA: no navegador, quadro a quadro, o esqueleto de página inteira nunca aparece.
-        await page.addInitScript(sonda, ESQUELETO);
+        await page.addInitScript(sonda, SONDA);
         await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
         await expect(page.locator('[data-testid="inicio-dono"], [data-testid="inicio-so-morador"], [data-testid="inicio-morador"]').first()).toBeAttached({ timeout: 30_000 });
         await page.waitForTimeout(500);
@@ -85,7 +89,7 @@ test.describe("T1614 — E797 o Início em seções, sem esqueleto de página in
     const conta = CONTAS[0];
     test.skip(!conta.email || !conta.senha, "conta da massa ausente");
     const page = await entrar(browser, conta.email!, conta.senha!, 1280);
-    await page.addInitScript(sonda, ESQUELETO);
+    await page.addInitScript(sonda, SONDA);
     await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("perfil-tela").first()).toBeVisible({ timeout: 30_000 });
     await page.evaluate(() => {
