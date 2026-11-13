@@ -12,7 +12,7 @@ begin
   end if;
 end;
 $$;
-drop table if exists public._bkp_0176_contratos_encerrados;
+-- E872 (decisão do Daniel, 13/11/2026): a tabela de backup NÃO é apagada, nem no rollback (fica protegida pela 0343).
 alter table public.contratos drop column if exists periodo;
 delete from supabase_migrations.schema_migrations where version = '20261019000176';
 commit;
