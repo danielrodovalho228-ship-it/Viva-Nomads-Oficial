@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
 import { LOCATION_SUGGESTIONS } from "@/lib/locations";
 import { cn } from "@/lib/utils";
+import { abertoAposTecla } from "@/lib/busca/sugestoes-teclado";
 
 /**
  * Autocomplete de cidade/bairro com dropdown PRÓPRIO (não usa <datalist>, que
@@ -54,6 +55,13 @@ export function CityAutocomplete({
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          onKeyDown={(e) => {
+            // E884: Esc fecha as sugestões (só consome a tecla quando a lista estava aberta).
+            if (open && !abertoAposTecla(e.key, open)) {
+              e.preventDefault();
+              setOpen(false);
+            }
+          }}
           id={inputId}
           placeholder={placeholder}
           aria-label={inputId ? undefined : placeholder}
