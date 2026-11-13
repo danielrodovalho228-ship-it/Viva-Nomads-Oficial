@@ -3,6 +3,7 @@ import { galleryFor } from "./media.ts";
 import { temSeloPrecoJusto } from "./preco-justo.ts";
 import { calcularTudoIncluido } from "./precos.ts";
 import { graduarExemplo } from "./niveis/nivel-exemplo.ts";
+import { tagHomeOfficeDoExemplo } from "./exemplos/home-office-exemplo.ts";
 
 /*
   Dados de exemplo para popular as telas públicas enquanto o Supabase
@@ -882,6 +883,8 @@ for (const p of SAMPLE_PROPERTIES) p.precoJusto = temSeloPrecoJusto(calcularTudo
   exemplo sustentam, as confirmações do Passo 5 e o motor do nível (src/lib/niveis/nivel-exemplo.ts). Exemplo novo
   já nasce graduado; nenhum nível é escrito à mão.
 */
+// E844: o selo "Para trabalhar de casa" do exemplo sai da regra única (a mesma do anúncio real), nunca do valor posto à mão.
+for (const p of SAMPLE_PROPERTIES) p.tagHomeOffice = tagHomeOfficeDoExemplo(p);
 for (const p of SAMPLE_PROPERTIES) p.nivel = graduarExemplo(p).nivel;
 
 export function getPropertyById(id: string): Property | undefined {
