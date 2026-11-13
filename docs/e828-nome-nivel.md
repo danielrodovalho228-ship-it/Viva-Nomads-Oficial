@@ -13,7 +13,10 @@
 ## Testes
 - `node --test src/lib/e828-nome-nivel.test.ts` — main: pass 0 / fail 1 (componente inexistente); branch: pass 4 / fail 0.
 - Escopados (e828 + e626 + niveis + home-imagens + frases-proibidas + components + busca + anuncio): todos verdes. tsc limpo; consistência OK.
-- Lab (build da branch): t920, t784, t217 e t296 (2 a 5) verdes. t296 cenário 1 falha numa linha antiga: espera o nível na linha-síntese do cartão, que o E416 tirou na main; a pílula `card-nivel` passa ("Essencial"/"Conforto"/"Premium").
+- Lab (build da branch):
+  - t920 + t784 + t217: verdes; t296 cenário 0 verde (rodada 1: 9 passed, 1 failed, 4 não rodaram pelo modo serial).
+  - t296 0 + 2–5 (rodada 2): 0, 2 (página do anúncio: "Nível Conforto", "Nível Premium · vistoriado", folha) e 3 verdes; 4 falhou; 5 não rodou.
+  - Falhas fora do E828: o cenário 1 espera o nível na linha-síntese do cartão (o E416 tirou de lá na main; a pílula `card-nivel` passa). O cenário 4 é a decisão "nivel-queda" no painel do dono, que este PR não toca.
 
 ## Asserções alteradas
 - `src/lib/e626-selos-cartao.test.ts`: as cores do nível são conferidas na pílula única (o cartão passa a usar `<PilulaNivel>`).
