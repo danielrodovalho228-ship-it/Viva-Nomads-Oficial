@@ -39,4 +39,8 @@ As regras medidas:
   - mantém pelo menos 15 px de largura (não encolhe);
   - não se sobrepõe a nenhuma linha do texto de "Responde…".
 
-Resultado (main × branch): ver o PR.
+| | main `27dbdf1` | branch |
+|---|---|---|
+| t1617 (6 casos: 3 contas × 1280/390) | **6 failed**. Em todos, "pílula quebrada em 2 linhas com raio 33554400px" (`rounded-full`). Nos 2 casos do dono com conversas, também "o relógio encolheu" | **6 passed** |
+
+Na main, a sobreposição medida pelo retângulo do texto não disparou. O defeito pego no relógio foi o encolhimento do ícone (largura abaixo de 15 px), que é a causa do efeito visto na prova.
