@@ -67,9 +67,9 @@ test.describe("T1617 — E800 pílula da prévia e relógio sem sobreposição",
           return { altura: r.height, alturaLinha, raio: parseFloat(cs.borderTopLeftRadius), folgaEsq: esq - r.left, folgaDir: r.right - dir, nLinhas: new Set(linhas.map((l) => Math.round(l.top))).size };
         });
         const quebrou = p.nLinhas > 1;
-        if (quebrou) expect(p.raio, `pílula quebrada em ${p.nLinhas} linhas com raio ${p.raio}px`).toBeLessThanOrEqual(12);
-        expect(p.folgaDir, `texto a ${p.folgaDir.toFixed(1)}px da borda direita`).toBeGreaterThanOrEqual(12);
-        expect(p.folgaEsq, `texto a ${p.folgaEsq.toFixed(1)}px da borda esquerda`).toBeGreaterThanOrEqual(12);
+        if (quebrou) expect.soft(p.raio, `pílula quebrada em ${p.nLinhas} linhas com raio ${p.raio}px`).toBeLessThanOrEqual(12);
+        expect.soft(p.folgaDir, `texto a ${p.folgaDir.toFixed(1)}px da borda direita`).toBeGreaterThanOrEqual(12);
+        expect.soft(p.folgaEsq, `texto a ${p.folgaEsq.toFixed(1)}px da borda esquerda`).toBeGreaterThanOrEqual(12);
 
         const resposta = page.locator('[data-testid="espelho-resposta"]:visible').first();
         if (conta.exigeResposta) await expect(resposta, "o dono com conversas mostra a linha 'Responde X%…'").toBeVisible({ timeout: 15_000 });
@@ -83,7 +83,7 @@ test.describe("T1617 — E800 pílula da prévia e relógio sem sobreposição",
             const sobrepoe = linhas.some((l) => svg.right > l.left + 0.5 && svg.left < l.right && svg.bottom > l.top && svg.top < l.bottom);
             return { largura: svg.width, sobrepoe };
           });
-          expect(g.largura, "o relógio encolheu").toBeGreaterThanOrEqual(15);
+          expect.soft(g.largura, "o relógio encolheu").toBeGreaterThanOrEqual(15);
           expect(g.sobrepoe, "o relógio cobre o texto de 'Responde…'").toBe(false);
         }
         await page.context().close();
