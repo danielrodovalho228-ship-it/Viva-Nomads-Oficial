@@ -2052,7 +2052,7 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Não autenticado." };
 
   // Prompt 58: as fotos saem do bucket com o anúncio (o hash fica, antifraude). Só as do próprio dono.
-  const { data: dono, error: erroDono } = await supabase.from("properties").select("id, draft_data").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const { data: dono, error: erroDono } = await supabase.from("properties").select("id, draft_data").eq("id", id).eq("owner_id", user.id).maybeSingle(); // consistency-ignore: E705 — só o servidor lê o rascunho do PRÓPRIO dono (owner_id na consulta) para achar as urls das fotos a apagar; nada vai à resposta
   const { data: fotos, error: erroFotos } = dono ? await supabase.from("property_photos").select("url").eq("property_id", id) : { data: null, error: null };
   // Sem a lista das fotos, excluir deixaria os arquivos no bucket sem nada que aponte para eles: para antes de apagar.
   if (erroDono || erroFotos) return { ok: false, error: "Não foi possível excluir o anúncio agora. Tente de novo." };
