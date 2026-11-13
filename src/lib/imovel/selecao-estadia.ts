@@ -8,6 +8,8 @@ export interface SelecaoEstadia {
   entrada: string;
   saida: string;
   pessoas: number;
+  /** E816: a entrada veio da última busca guardada no aparelho (não foi escolhida nesta página). */
+  entradaDaBusca?: boolean;
 }
 
 export const SELECAO_VAZIA: SelecaoEstadia = { entrada: "", saida: "", pessoas: 1 };
@@ -15,15 +17,44 @@ export const SELECAO_VAZIA: SelecaoEstadia = { entrada: "", saida: "", pessoas: 
 const ISO_DIA = /^\d{4}-\d{2}-\d{2}$/;
 const valida = (iso: string) => ISO_DIA.test(iso);
 
+/** E816: escolha feita nesta página tira a marca de "veio da busca". */
+function semMarca(sel: SelecaoEstadia): SelecaoEstadia {
+  const { entradaDaBusca: _origem, ...resto } = sel;
+  void _origem;
+  return resto;
+}
+
 /** Clique no calendário: 1º clique (ou reinício) = entrada; 2º = saída se for depois, senão vira a nova entrada. */
 export function clicarDia(sel: SelecaoEstadia, iso: string): SelecaoEstadia {
-  if (!sel.entrada || sel.saida || iso <= sel.entrada) return { ...sel, entrada: iso, saida: "" };
-  return { ...sel, saida: iso };
+  if (!sel.entrada || sel.saida || iso <= sel.entrada) return { ...semMarca(sel), entrada: iso, saida: "" };
+  return { ...semMarca(sel), saida: iso };
 }
 
 /** Entrada mudada no campo (caixa ou diálogo): a saída que ficaria antes ou no mesmo dia cai. */
 export function comEntrada(sel: SelecaoEstadia, iso: string): SelecaoEstadia {
-  return { ...sel, entrada: iso, saida: sel.saida && iso && sel.saida <= iso ? "" : sel.saida };
+  return { ...semMarca(sel), entrada: iso, saida: sel.saida && iso && sel.saida <= iso ? "" : sel.saida };
+}
+
+/** E816: a entrada pré-preenchida pela última busca — marcada como tal (a tela diz de onde veio e deixa limpar). */
+export function comEntradaDaBusca(sel: SelecaoEstadia, iso: string): SelecaoEstadia {
+  return { ...comEntrada(sel, iso), entradaDaBusca: true };
+}
+
+/** E816: limpar a data que veio da busca — volta ao estado sem escolha (as pessoas ficam). */
+export function semDatas(sel: SelecaoEstadia): SelecaoEstadia {
+  return { ...SELECAO_VAZIA, pessoas: sel.pessoas };
+}
+
+/**
+ * E816 — o texto do resumo da seleção. O estado inicial NUNCA simula escolha feita: a entrada que veio da última busca
+ * diz que veio de lá ("da sua última busca"), e não "agora escolha a saída" como se a pessoa tivesse escolhido.
+ */
+export function textoDaSelecao(sel: Pick<SelecaoEstadia, "entrada" | "saida" | "entradaDaBusca">): string | null {
+  if (!valida(sel.entrada)) return null;
+  if (sel.saida) return null; // com as duas datas, a tela mostra o período
+  return sel.entradaDaBusca
+    ? `Entrada ${br(sel.entrada)}, da sua última busca (não escolhida aqui). Escolha a saída ou toque em outra data para trocar.`
+    : `Entrada ${br(sel.entrada)} — agora escolha a saída.`;
 }
 
 /** Saída mudada no campo. Fica como digitada; uma saída antes da entrada vira erro no resumo (não some calada). */

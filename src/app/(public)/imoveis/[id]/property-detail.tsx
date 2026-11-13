@@ -93,7 +93,7 @@ import { FaixaProprietario } from "@/components/property/faixa-proprietario";
 import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo } from "@/config/exemplo-proprietarios";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 import { destinoContatoViva, parcelasDoResumo, resumoSolicitacao } from "@/lib/reserva-imovel";
-import { SELECAO_VAZIA, comEntrada, entradaDaBusca, comPessoas, comSaida, linhaPeriodoNaMensagem, diasDaSelecao, mesesDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
+import { SELECAO_VAZIA, comEntrada, comEntradaDaBusca, entradaDaBusca, comPessoas, comSaida, linhaPeriodoNaMensagem, diasDaSelecao, mesesDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
@@ -260,7 +260,8 @@ export function PropertyDetail({
       // E517: a data da busca só pré-seleciona se couber neste anúncio (disponibilidade e mínimo); senão, aviso.
       const daBusca = entradaDaBusca(inicio, { availableFrom: property.availableFrom, availableUntil: property.availableUntil, minDias: property.minPeriodDays, hoje: hojeBR() });
       // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o localStorage só no navegador (SSR não tem)
-      if (daBusca.entrada) setSelecao((atual) => (atual.entrada ? atual : comEntrada(atual, daBusca.entrada)));
+      // E816: a entrada que vem da busca fica MARCADA como tal (a tela diz "da sua última busca" e deixa limpar).
+      if (daBusca.entrada) setSelecao((atual) => (atual.entrada ? atual : comEntradaDaBusca(atual, daBusca.entrada)));
       setAvisoDataBusca(daBusca.aviso);
       if (meses) setMesesBusca(meses);
     } catch {
