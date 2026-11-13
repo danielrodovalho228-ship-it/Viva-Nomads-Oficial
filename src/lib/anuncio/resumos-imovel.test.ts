@@ -54,8 +54,8 @@ test("máximo de 3 destaques, na ordem de prioridade", () => {
   assert.equal(d.length, 3);
   assert.match(d[0].titulo, /Hospital A/);
   assert.match(d[1].titulo, /Universidade B/);
-  // E259 (9): a comodidade principal (trabalho) vem antes de "Pronto para morar".
-  assert.equal(d[2].titulo, "Espaço para trabalhar");
+  // E843: com o selo, "Pronto para morar" tem lugar garantido (o último); sem ele, o 3º seria "Espaço para trabalhar" (E259).
+  assert.equal(d[2].titulo, "Pronto para morar");
 });
 
 test("E259 (9): as comodidades principais viram destaque (antes só '1 vaga de garagem'); crianças vira regra", () => {
