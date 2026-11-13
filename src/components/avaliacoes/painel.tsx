@@ -11,6 +11,7 @@ import type { AbaAvaliacoes } from "@/lib/conta/avaliacoes-recebidas";
 import { ABAS_PAINEL, dataLonga, haDias, rotuloAba, rotuloFaltam, rotuloStatusFeita, TEXTO_SIGILO, type AbaPainel, type ParaAvaliar } from "@/lib/conta/painel-avaliacoes";
 import { estrelasDaNota } from "@/lib/conta/tela-avaliacoes";
 import { cn } from "@/lib/utils";
+import { FILEIRA_ABAS } from "@/components/ui/abas-fileira";
 
 const ROTA = "/dashboard/avaliacoes";
 
@@ -54,7 +55,7 @@ export function PainelAvaliacoes({
       </div>
 
       {/* E782: abas como as outras telas do painel (sublinhado, como Favoritos): o título da seção NÃO repete o da aba ativa. */}
-      <nav className="mt-4 flex gap-2 overflow-x-auto border-b border-sage-200" aria-label="Avaliações">
+      <nav className={cn("mt-4", FILEIRA_ABAS)} data-testid="painel-abas" aria-label="Avaliações">
         {ABAS_PAINEL.map((a) => (
           <Link
             key={a.valor}
