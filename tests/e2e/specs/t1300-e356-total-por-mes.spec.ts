@@ -15,7 +15,10 @@ for (const [largura, altura] of [[390, 844], [1280, 900]] as const) {
     expect(n).toBeGreaterThan(1);
     for (let i = 0; i < Math.min(n, 12); i++) {
       const c = cartoes.nth(i);
-      await expect(c.getByTestId("cartao-total-rotulo")).toHaveText("Total por mês, tudo incluído");
+      // E899 (asserção alterada, decisão do Daniel de 13/11): o rótulo "Total por mês, tudo incluído" virou o aviso curto no fim da
+      // linha do total — "tudo incluído" (contas fixas) ou "água, luz e gás à parte" (contas medidas).
+      await expect(c.getByTestId("cartao-total-rotulo")).toHaveCount(0);
+      await expect(c.getByTestId("cartao-aviso")).toHaveText(/^(tudo incluído|água, luz e gás à parte)$/);
       await expect(c.getByTestId("cartao-total-estadia")).toContainText(/R\$\s?[\d.]+(,\d{2})? em \d+ m(ês|eses)/);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);

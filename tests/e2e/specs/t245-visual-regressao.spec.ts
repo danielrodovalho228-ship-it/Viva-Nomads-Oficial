@@ -146,7 +146,10 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
           if (nota) nota.textContent = "Novo na plataforma";
           texto("cartao-titulo", "Imóvel mobiliado de exemplo");
           texto("cartao-preco-mes", "R$ 3.000");
-          por("cartao-total-estadia")?.remove();
+          // E899 (asserção alterada, decisão do Daniel de 13/11): a linha do total + aviso curto é parte da forma do cartão enxuto — texto
+          // fixo, como o preço (antes: o total da estadia ia junto do /mês e era removido do print).
+          texto("cartao-total-estadia", "R$ 3.000 em 1 mês");
+          texto("cartao-aviso", "tudo incluído");
           const sintese = por("cartao-sintese");
           if (sintese) sintese.textContent = "1 quarto · 1 banheiro · 40 m² · mobiliado";
           por("cartao-disponivel")?.remove();
