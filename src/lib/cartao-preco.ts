@@ -73,8 +73,9 @@ export function estadiaDoCartao(r: RotuloPreco): string {
   return r.estadia ?? resumoEmMeses(r.total, 1);
 }
 
-/** E356: o rótulo que diz o que o preço grande do cartão é. */
-export const ROTULO_TOTAL_MES = "Total por mês, tudo incluído";
+/** E356: o rótulo que diz o que o preço grande do cartão é. E842: sem "tudo incluído" — o IPTU fica à parte em todo anúncio
+ *  (a página diz "IPTU não incluso no total") e, com contas medidas, a composição embaixo diz "fora do total". */
+export const ROTULO_TOTAL_MES = "Total por mês · IPTU à parte";
 
 /**
  * E702: a data "Disponível a partir de" da página do imóvel é CALCULADA (primeira entrada em que cabe a estadia mínima,
