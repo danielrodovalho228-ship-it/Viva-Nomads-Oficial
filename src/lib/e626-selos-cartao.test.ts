@@ -72,7 +72,7 @@ test("E626: o coração segue com o canto (espaçador flutuante) e o selo de pre
 test("E626: a página do imóvel tem a lista completa (símbolo + texto) e a folha dos níveis corrigida", () => {
   const lista = ler("../components/property/selos-anuncio.tsx");
   assert.match(lista, /ROTULO_SIMBOLO\[id\]/);
-  assert.match(ler("../app/(public)/imoveis/[id]/property-detail.tsx"), /<SelosAnuncio tem=\{\{/);
+  assert.match(ler("../app/(public)/imoveis/[id]/property-detail.tsx"), /<SelosAnuncio tem=\{simbolosDoImovel\(property\)\} \/>/);
   const folha = ler("../components/niveis/nivel-imovel.tsx");
   assert.match(folha, /O nível não muda a ordem da busca\./);
   assert.doesNotMatch(folha, /Nível não é selo/);

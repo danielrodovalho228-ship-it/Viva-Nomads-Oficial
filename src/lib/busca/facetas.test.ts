@@ -38,7 +38,7 @@ const MATRIZ: [string, Partial<FiltrosPainel>, number][] = [
   ["Tipo · Casa de condomínio", { tipo: "casa_condominio" }, 0],
   ["Tipo · Flat / apart-hotel", { tipo: "flat" }, 0],
   ["Tipo · Quarto privativo", { tipo: "quarto" }, 0],
-  ["Aceita pets", { petsOnly: true }, 7],
+  ["Aceita pets", { petsOnly: true }, 8], // E811: ube-003 passou a ter o dado (dizia "Aceita pets" na lista "Tem")
   ["Para trabalhar de casa", { homeOfficeOnly: true }, 10],
   ["Pronto para Morar", { readyToLiveOnly: true }, 15],
   ["Contrato · Caução", { garantia: "caucao" }, 15],
@@ -64,7 +64,7 @@ test("E42/E6: a contagem do chip é a do aplicar; opção em 0 desabilita (menos
   assert.deepEqual(faceta(0, true), { n: 0, desabilitado: false });
   // As contagens valem com o resto do rascunho: Garagem com "Casa" ligado.
   assert.equal(facetaComodidade(contar, { ...V, tipo: "casa" }, "garagem").n, com({ tipo: "casa", comodidades: ["garagem"] }));
-  assert.equal(facetaInterruptor(contar, { ...V, petsOnly: false }, "petsOnly").n, 7);
+  assert.equal(facetaInterruptor(contar, { ...V, petsOnly: false }, "petsOnly").n, 8);
   for (const o of OPCOES_PRECO) assert.equal(facetaUnica(contar, V, "maxPrice", o.valor).n, com({ maxPrice: o.valor }));
 });
 

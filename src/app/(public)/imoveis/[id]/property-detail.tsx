@@ -37,8 +37,9 @@ import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candid
 import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
 import { urlEntrada } from "@/lib/auth/entrada";
 import { IdealPara } from "@/components/property/ideal-para";
-import { PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
+import { InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { SelosAnuncio } from "@/components/property/selos-anuncio";
+import { simbolosDoImovel } from "@/lib/cartao-selos-foto";
 import { ComparacaoAirbnbFicha } from "@/components/precos/comparacao-airbnb-ficha";
 import { SELO_NF_UI } from "@/lib/flags";
 import { ImoveisParecidos } from "@/components/property/imoveis-parecidos";
@@ -890,7 +891,8 @@ export function PropertyDetail({
       <PropertyGallery
         photos={property.photos}
         title={property.title}
-        readyToLive={property.readyToLiveBadge}
+        // E811: o cartão não leva "Pronto para Morar" sobre a foto; a página também não (o texto segue nos destaques).
+        readyToLive={false}
         videoUrl={video.tipo === "link" ? video.url : undefined}
         videoArquivoId={video.tipo === "arquivo" ? property.id : undefined}
         acoes={icones}
@@ -971,14 +973,13 @@ export function PropertyDetail({
             </div>
             {/* E626: a lista completa dos selos do cartão, com símbolo + texto (o bloco do nível segue como está). */}
             <div className="mt-3">
-              <SelosAnuncio tem={{ verificado: !exemplo && property.owner?.verified === true, precoJusto: !!property.precoJusto, pets: !!property.petsAllowed, negocia: !!property.negociacao?.aceita }} />
+              <SelosAnuncio tem={simbolosDoImovel(property)} />
             </div>
             {/* E399-C pacote 3: com a chave ligada e o selo, a comparação com 30 noites no Airbnb (nunca o link). */}
             {property.precoJusto && property.comparacaoAirbnb && <ComparacaoAirbnbFicha comparacao={property.comparacaoAirbnb} />}
 
-            <div className="mt-3">
-              <PropertyTags property={property} />
-            </div>
+            {/* E811: "Para trabalhar de casa" e "Bem localizado p/ trabalho" não são selos do cartão; saíram daqui para a página
+                mostrar os MESMOS selos da busca (a estrutura de trabalho segue nas seções "Espaço de trabalho" e "Perto"). */}
 
             <div className="mt-4">
               <DestaquesImovel property={property} />

@@ -63,7 +63,9 @@ test("o chip existe no grupo Contrato do painel, com a faceta e o mesmo nome do 
 });
 
 test("o card e o filtro leem o mesmo campo: Property.precoJusto (coluna sem a chave, motor com a chave, exemplo calculado)", () => {
-  assert.match(ler("src/components/property-card.tsx"), /precoJusto: !!property\.precoJusto/);
+  // E811: o cartão lê a fonte única dos selos (a mesma da página).
+  assert.match(ler("src/components/property-card.tsx"), /\.\.\.simbolosDoImovel\(property\)/);
+  assert.match(ler("src/lib/cartao-selos-foto.ts"), /precoJusto: !!p\.precoJusto/);
   const dados = ler("src/lib/data/properties.ts");
   assert.match(dados, /p\.precoJusto = r\?\.preco_justo === true;/);
   assert.match(dados, /p\.precoJusto = decidirSelo\(entrada, agora\)\.selo;/);

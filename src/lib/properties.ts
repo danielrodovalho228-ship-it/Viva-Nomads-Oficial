@@ -210,6 +210,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
     subleaseAuthorized: true,
     photos: galleryFor("ube-003", 8),
     amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets", "Vaga de garagem", "Ar-condicionado"],
+    // E811: o "Aceita pets" da lista "Tem" vira dado (selo + linha "Animais" nas regras): pets inequívoco.
+    petsAllowed: true,
     workFeatures: ["Internet 100 Mbps"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],

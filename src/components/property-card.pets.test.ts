@@ -8,7 +8,9 @@ const cartao = readFileSync(new URL("./property-card.tsx", import.meta.url), "ut
 const selos = readFileSync(new URL("./property/selos-foto.tsx", import.meta.url), "utf8");
 
 test("cartão do anúncio mostra a patinha só quando o imóvel aceita pet (ordem 022afabb, item 3)", () => {
-  assert.match(cartao, /pets: !!property\.petsAllowed/);
+  // E811: o cartão lê a fonte única dos selos (a mesma da página).
+  assert.match(cartao, /\.\.\.simbolosDoImovel\(property\)/);
+  assert.match(readFileSync(new URL("../lib/cartao-selos-foto.ts", import.meta.url), "utf8"), /pets: p\.petsAllowed === true/);
   assert.match(selos, /pets: PawPrint/);
 });
 

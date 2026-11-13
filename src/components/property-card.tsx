@@ -9,7 +9,7 @@ import { itensSintese } from "@/lib/cartao-sintese";
 import { isExemplo } from "@/lib/demo-listing";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { FavoriteButton } from "@/components/favorite-button";
-import { selosDaFoto } from "@/lib/cartao-selos-foto";
+import { selosDaFoto, simbolosDoImovel } from "@/lib/cartao-selos-foto";
 import { SelosFoto } from "@/components/property/selos-foto";
 import { MarcaImovel } from "@/components/property/marca-imovel";
 import { FotosCartao, SetasFotos } from "@/components/property/fotos-cartao";
@@ -44,14 +44,11 @@ export function PropertyCard({
   // E416 (05/11): o nível virou selo da foto — sai da linha-síntese (nada repetido).
   const linhaSintese = sintese.filter((i) => i.chave !== "nivel");
   // E416 (05/11): todos os selos do imóvel, empilhados sobre a foto (antes: no máximo 1, e nenhum de nível).
+  // E811: os selos vêm da fonte única (a mesma da página do anúncio); exemplo nunca leva "verificado".
   const selos = selosDaFoto({
-    // Verificação do dono só quando o dado chega com o anúncio; exemplo nunca.
-    verificado: !exemplo && property.owner?.verified === true,
-    precoJusto: !!property.precoJusto,
-    pets: !!property.petsAllowed,
+    ...simbolosDoImovel(property),
     nivel: property.nivel,
     nivelVistoriado: property.nivelVistoriado,
-    negocia: !!property.negociacao?.aceita,
   });
 
   return (
