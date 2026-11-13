@@ -63,6 +63,7 @@ import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
 import { foraDoTempoPelaReta, type ModoRota } from "@/lib/rotas/tempo";
+import { textoLimiteSemRota } from "@/lib/busca/contagens-conferiveis";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -851,6 +852,12 @@ export function SearchClient({
             comMapa era falso, a lista ocupava 100% e encolhia para 58% quando o mapa entrava (CLS 0,30 a 1280 px).
             O componente do mapa continua carregando só no computador (comMapa). */}
         <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
+          {/* E870: sem rota, o "até N min" vira um limite em linha reta — a lista diz, em km, o que ele faz. */}
+          {estadoDestino.destino && estadoDestino.ate && tempoEmLinhaReta && (
+            <p role="status" className="mb-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="busca-limite-sem-rota">
+              {textoLimiteSemRota(estadoDestino.modo, estadoDestino.ate)}
+            </p>
+          )}
           {/* E529: a faixa "Comparar (N)" é da página (acima da lista), nunca flutua sobre os cartões. */}
           <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
           {/* E723: sem imóvel real publicado, a lista é só de exemplos — e diz isso no topo. */}
