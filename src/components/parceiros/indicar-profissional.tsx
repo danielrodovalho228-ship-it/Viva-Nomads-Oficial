@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Check, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { caminhoIndicacao } from "@/lib/parceiros/indicacao";
+import Link from "next/link";
+import { TEXTO_DESTINO_INDICACAO, caminhoIndicacao } from "@/lib/parceiros/indicacao";
 
 /**
  * E304 (QA 31/10): "Indique um profissional" oferece INDICAR — manda (ou copia) o link do pedido de parceria já na
@@ -31,9 +32,18 @@ export function IndicarProfissional({ categoria }: { categoria: string }) {
     }
   }
   return (
-    <Button type="button" variant="secondary" size="sm" className="mt-3" onClick={() => void indicar()} data-testid="indicar-profissional" data-href={caminhoIndicacao(categoria)}>
-      {copiado ? <Check className="h-4 w-4" aria-hidden /> : <Share2 className="h-4 w-4" aria-hidden />}
-      {copiado ? "Link copiado" : "Enviar o link para indicar"}
-    </Button>
+    <>
+      <Button type="button" variant="secondary" size="sm" className="mt-3" onClick={() => void indicar()} data-testid="indicar-profissional" data-href={caminhoIndicacao(categoria)}>
+        {copiado ? <Check className="h-4 w-4" aria-hidden /> : <Share2 className="h-4 w-4" aria-hidden />}
+        {copiado ? "Link copiado" : "Enviar o link para indicar"}
+      </Button>
+      {/* E880: o destino do link fica à vista e dá para abrir (antes era NÃO CONFIRMADO para quem indicava). */}
+      <p className="mt-2 text-xs text-muted" data-testid="indicar-destino">
+        {TEXTO_DESTINO_INDICACAO}{" "}
+        <Link href={caminhoIndicacao(categoria)} className="font-semibold text-forest underline" data-testid="indicar-destino-link">
+          Ver a página do pedido
+        </Link>
+      </p>
+    </>
   );
 }

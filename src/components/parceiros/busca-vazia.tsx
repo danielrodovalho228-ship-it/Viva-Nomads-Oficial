@@ -6,7 +6,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { AvisoFotografo } from "@/app/(public)/parceiros/fotografos/aviso-fotografo";
 import { mostrarParceiroGeral, rotuloCategoria, type ParceiroGeral } from "@/lib/parceiros/regras";
 import { MUNICIPIOS, UFS } from "@/lib/municipios";
-import { ufUnicaDaCidade, ufsDaCidade } from "@/lib/parceiros/indicacao";
+import Link from "next/link";
+import { caminhosSemConta, ufUnicaDaCidade, ufsDaCidade } from "@/lib/parceiros/indicacao";
 import { IndicarProfissional } from "@/components/parceiros/indicar-profissional";
 
 /**
@@ -55,6 +56,21 @@ export function BuscaVazia({
           <p className="font-title text-lg font-semibold text-ink" data-testid="busca-parceiros-vazia-texto">
             {`Ainda não temos parceiro${categoria ? ` de ${rotuloCategoria(categoria).toLowerCase()}` : ""}${cidade ? ` em ${cidade}` : " nesta busca"}.`}
           </p>
+          {/* E880: sem conta, caminhos que não pedem login (o aviso pede conta porque grava o contato do perfil). */}
+          {!logado && (
+            <p className="text-sm text-ink" data-testid="busca-parceiros-sem-conta">
+              Sem conta, dá para:{" "}
+              {caminhosSemConta({ categoria, cidade }).map((c, i) => (
+                <span key={c.href}>
+                  {i > 0 && " · "}
+                  <Link href={c.href} className="font-semibold text-forest underline" data-testid="busca-parceiros-sem-conta-link">
+                    {c.rotulo}
+                  </Link>
+                </span>
+              ))}
+              . O aviso abaixo pede a conta porque guarda para quem avisar.
+            </p>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <AvisoFotografo
               cidade={cidade}

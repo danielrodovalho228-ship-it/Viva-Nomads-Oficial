@@ -4,6 +4,23 @@
  */
 import { acharCidade } from "../cidades.ts";
 
+/**
+ * E880: o destino do link de indicação, dito na tela (antes o botão só copiava/compartilhava e o destino ficava oculto).
+ */
+export const TEXTO_DESTINO_INDICACAO = "O link abre o pedido de parceria da Viva, já nesta categoria: a pessoa faz o pedido com a conta dela.";
+
+/**
+ * E880: caminhos SEM conta para quem só quer um parceiro (o "Quero ser avisado" pede conta porque grava o aviso com o
+ * contato do perfil). Com cidade na busca: a mesma categoria em todas as cidades; sempre: falar com a Viva.
+ */
+export function caminhosSemConta(p: { categoria: string; cidade: string }): { href: string; rotulo: string }[] {
+  const c = p.categoria && /^[a-z]+$/.test(p.categoria) ? p.categoria : "";
+  const out: { href: string; rotulo: string }[] = [];
+  if (p.cidade.trim()) out.push({ href: `/parceiros/buscar${c ? `?categoria=${c}` : ""}`, rotulo: "Ver em todas as cidades" });
+  out.push({ href: "/ajuda/fale-com-a-viva", rotulo: "Falar com a Viva" });
+  return out;
+}
+
 export function caminhoIndicacao(categoria: string): string {
   const c = categoria && /^[a-z]+$/.test(categoria) ? categoria : "";
   return `/parceiros${c ? `?categoria=${c}` : ""}#quero-ser-parceiro`;
