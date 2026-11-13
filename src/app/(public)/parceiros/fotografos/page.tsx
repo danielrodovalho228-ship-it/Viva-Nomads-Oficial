@@ -9,7 +9,7 @@ import { buscaVazia, formatarCep, normalizarCep } from "@/lib/fotografos/regras"
 import { BuscaFotografo } from "./busca-fotografo";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { AvisoFotografo } from "./aviso-fotografo";
-import { TITULO_SEM_FOTOGRAFO } from "@/lib/fotografos/aviso";
+import { TEXTO_SEM_FOTOGRAFO_NENHUM, TITULO_SEM_FOTOGRAFO, estadoPaginaFotografos } from "@/lib/fotografos/aviso";
 import { buscarParceiros, lerParceiroGeralServidor } from "@/lib/data/parceiros-publico";
 import { CartaoParceiro } from "@/components/parceiros/cartao-parceiro";
 import { RegrasParceiros } from "@/components/parceiros/regras-parceiros";
@@ -51,6 +51,8 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
   const { cidade, uf } = r;
   const buscou = !!(cidade || cepBusca);
   const fotografos = cidade ? r.lista : [];
+  // E881: sem cidade, a página mostra todos os fotógrafos publicados (ou o estado zero), nunca só o formulário.
+  const estado = estadoPaginaFotografos({ buscou, cidade, total: r.lista.length });
   const geral = cidade && !fotografos.length ? await lerParceiroGeralServidor() : null;
 
   return (
@@ -66,6 +68,22 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
         <p className="mt-6 text-ink/70" data-testid="fotografos-cep-nao-encontrado">
           Não encontramos esse CEP. Confira os números ou digite só a cidade (ex.: Uberlândia) — se ainda não houver
           fotógrafo nela, você pode pedir para ser avisado.
+        </p>
+      )}
+
+      {estado === "lista" && (
+        <section className="mt-8" data-testid="fotografos-todos">
+          <h2 className="text-lg font-semibold text-ink">Fotógrafos parceiros publicados ({r.lista.length})</h2>
+          <ul className="mt-4 grid gap-4" data-testid="fotografos-lista">
+            {r.lista.map((p) => (
+              <CartaoParceiro key={p.id} p={p} consulta={consultaDoImovel} />
+            ))}
+          </ul>
+        </section>
+      )}
+      {estado === "vazio" && (
+        <p className="mt-8 text-ink" data-testid="fotografos-nenhum">
+          {TEXTO_SEM_FOTOGRAFO_NENHUM}
         </p>
       )}
 

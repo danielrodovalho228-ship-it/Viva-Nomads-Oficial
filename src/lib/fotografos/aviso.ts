@@ -38,3 +38,17 @@ export function mensagemAvisoParceiro(categoria: string, cidade: string, rotulo:
     ? `Anotado! Avisamos você quando houver parceiro em ${cidade}.`
     : `Anotado! Avisamos você quando houver parceiro de ${rotulo.toLowerCase()} em ${cidade}.`;
 }
+
+/**
+ * E881: /parceiros/fotografos abria só com o formulário (sem lista e sem estado zero). Sem cidade buscada, a página
+ * mostra TODOS os fotógrafos publicados ("lista") ou, sem nenhum, o estado zero ("vazio") — a mesma mensagem honesta
+ * da busca genérica. Com cidade, segue a seção da cidade ("cidade"); CEP não encontrado, o aviso do CEP ("cep").
+ */
+export type EstadoPaginaFotografos = "lista" | "vazio" | "cidade" | "cep";
+export function estadoPaginaFotografos(p: { buscou: boolean; cidade: string; total: number }): EstadoPaginaFotografos {
+  if (p.cidade) return "cidade";
+  if (p.buscou) return "cep";
+  return p.total > 0 ? "lista" : "vazio";
+}
+export const TEXTO_SEM_FOTOGRAFO_NENHUM =
+  "Ainda não temos fotógrafo parceiro publicado. Busque pela cidade do seu imóvel acima para pedir aviso quando houver.";
