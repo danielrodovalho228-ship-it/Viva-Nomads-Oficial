@@ -52,6 +52,8 @@ export function faixaForDays(dias: number): FaixaPrazo {
   return "media_estadia"; // o máximo da plataforma é 180 dias
 }
 
+import { REGRAS_CONTRATO } from "../config/planos.ts";
+
 // ── Garantias aceitas ──
 // Onda 1 (Dra. Beatriz): o "título de capitalização" foi APOSENTADO — não é
 // mais oferecido. A chave 'titulo' permanece no TIPO e no banco só para não
@@ -67,6 +69,19 @@ export type GarantiaKey = "caucao_avista" | "caucao_parcelada" | "titulo" | "seg
  */
 export const CAUCAO_FRASE =
   "Caução de até 3 vezes o valor mensal, paga direto ao proprietário — a Viva não recebe nem segura esse dinheiro.";
+
+/**
+ * E813 — a BASE da caução, dita por inteiro (antes a pessoa tinha de inferir dos números): 50% do VALOR MENSAL — só o
+ * aluguel, sem condomínio nem contas — por mês de cada bloco (ube-001: 50% de R$ 3.200 = R$ 1.600; ube-003, bloco de 2
+ * meses: 50% de 2 × R$ 4.100 = R$ 4.100). Números da regra do contrato (REGRAS_CONTRATO), nunca escritos à mão.
+ */
+const PCT_CAUCAO = `${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}%`;
+export const CAUCAO_BASE =
+  `${PCT_CAUCAO} do valor mensal (só o aluguel, sem condomínio nem contas) por mês de cada bloco, no máximo ${REGRAS_CONTRATO.caucaoMaxAlugueis} vezes o valor mensal no contrato`;
+/** A regra da caução numa frase, para as páginas institucionais. */
+export const CAUCAO_REGRA = `A caução é de ${CAUCAO_BASE}.`;
+/** Versão curta, para a faixa de confiança da home. */
+export const CAUCAO_CURTA = `Caução de ${PCT_CAUCAO} do valor mensal por bloco`;
 
 export interface GarantiaDef {
   key: GarantiaKey;

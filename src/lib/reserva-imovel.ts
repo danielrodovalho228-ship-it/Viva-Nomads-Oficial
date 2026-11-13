@@ -15,6 +15,7 @@ import { textoLimpezaEstadia, type LimpezaEstadia } from "./anuncio/limpeza-esta
 import { codigoDoImovel } from "./imovel-pagina.ts";
 import { isMotivo, motivoLabel } from "./pedidos/pedidos.ts";
 import { formatBRL } from "./utils.ts";
+import { CAUCAO_BASE } from "./faixas.ts";
 import { resumoEmMeses, totalDoPeriodo } from "./cartao-preco.ts";
 import { formatBRLExato, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, type TotalMensal } from "./precos.ts";
 import { diasDaSelecao, mesesDaSelecao } from "./imovel/selecao-estadia.ts";
@@ -60,8 +61,7 @@ export function caucaoDoPrimeiroBloco(monthlyPrice: number, minPeriodDays?: numb
 }
 
 /** Texto da regra da Caução, sem número (o mesmo em todo lugar do anúncio). */
-export const NOTA_CAUCAO =
-  "50% do valor de cada bloco, no máximo 3 vezes o valor mensal no contrato. Paga direto ao proprietário e devolvida no fim, após a conferência de saída. A Viva não recebe nem segura esse dinheiro.";
+export const NOTA_CAUCAO = `${CAUCAO_BASE[0].toUpperCase()}${CAUCAO_BASE.slice(1)}. Paga direto ao proprietário e devolvida no fim, após a conferência de saída. A Viva não recebe nem segura esse dinheiro.`;
 
 const positivo = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n > 0;
 

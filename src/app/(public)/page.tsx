@@ -1,4 +1,5 @@
 import { isExemplo } from "@/lib/demo-listing";
+import { CAUCAO_CURTA } from "@/lib/faixas";
 import { PASSO_CONVERSE_TEXTO } from "@/config/conversa-chat";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -108,7 +109,7 @@ export default async function HomePage() {
       <section className="border-y border-line bg-white">
         <div className="container-page grid grid-cols-2 gap-3 py-6 sm:grid-cols-4" data-testid="faixa-confianca">
           <TrustItem icon={Lock} text={SELO_PERFIL_VERIFICADO} />
-          <TrustItem icon={FileCheck} text="Caução documentada" />
+          <TrustItem icon={FileCheck} text={CAUCAO_CURTA} />
           <TrustItem icon={ShieldCheck} text="Documentação do imóvel conferida" />
           <TrustItem icon={BadgeCheck} text="R$ 0 de taxa para o morador" />
         </div>
