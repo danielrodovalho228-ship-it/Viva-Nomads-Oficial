@@ -195,7 +195,7 @@ export default async function HomePage() {
               <strong className="text-ink">{SELOS.prontoParaMorar.nome}</strong> ({SELOS.prontoParaMorar.resumo}),
               etiquetas mostram a aptidão de cada imóvel para o trabalho remoto.
             </p>
-            {/* E828: a home explica que Essencial · Conforto · Premium é o NÍVEL do imóvel (a mesma pílula do cartão e da
+            {/* E828: a home explica que as três palavras de NIVEIS são o nível do imóvel (a mesma pílula do cartão e da
                 página do anúncio) — não é selo, e "Pronto para Morar" é outro selo. */}
             <div className="mt-6" data-testid="home-niveis">
               <p className="text-base text-muted">
@@ -204,7 +204,7 @@ export default async function HomePage() {
               <ul className="mt-3 space-y-2 text-sm text-muted">
                 {NIVEIS.map((n) => (
                   <li key={n} className="flex items-start gap-2" data-testid={`home-nivel-${n}`}>
-                    <PilulaNivel nivel={n} testId={`home-pilula-${n}`} className="mt-0.5 shrink-0 text-xs leading-4" />
+                    <PilulaNivel nivel={n} testId={`home-pilula-${n}`} className="shrink-0 text-xs leading-4" />
                     <span>{CRITERIO_NIVEL[n]}</span>
                   </li>
                 ))}
