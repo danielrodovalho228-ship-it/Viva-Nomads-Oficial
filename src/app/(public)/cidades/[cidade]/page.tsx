@@ -20,6 +20,8 @@ import { detalheContagemCidade } from "@/lib/cidades";
 import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { MapPin } from "lucide-react";
 import { faqPageCidade, perguntasCidade } from "@/lib/seo/anuncio-cidade";
+import { MUNICIPIOS } from "@/lib/municipios";
+import { municipiosDoSlug, nomeSemOperacao } from "@/lib/indice-cidades";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -39,10 +41,20 @@ async function cidadeValida(cidade: string): Promise<boolean> {
   return imoveis.some((p) => !isExemplo(p));
 }
 
+/** E874: município de verdade (lista do IBGE) onde a Viva ainda não opera — página própria, sem 404 seco. */
+function semOperacao(cidade: string): { nome: string; ufs: string[] } | null {
+  const achados = municipiosDoSlug(cidade, MUNICIPIOS);
+  const nome = nomeSemOperacao(achados);
+  return nome ? { nome, ufs: achados.map((a) => a.uf) } : null;
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade } = await params;
-  // Fora da lista: a página chama notFound() e o Next põe o noindex do 404 sozinho.
-  if (!(await cidadeValida(cidade))) return { title: "Página não encontrada" };
+  if (!(await cidadeValida(cidade))) {
+    const s = semOperacao(cidade);
+    // Sem operação: a página existe para o visitante, fora do índice. Fora do IBGE: notFound() (noindex do 404).
+    return s ? { title: `Ainda não operamos em ${s.nome}`, robots: { index: false, follow: true } } : { title: "Página não encontrada" };
+  }
   const name = cityFromSlug(cidade);
   const title = `Imóveis mobiliados mensais em ${name}`;
   const description = descricaoCidade(name);
@@ -71,7 +83,11 @@ export function generateStaticParams() {
 
 export default async function CityLandingPage({ params }: Params) {
   const { cidade } = await params;
-  if (!(await cidadeValida(cidade))) notFound();
+  if (!(await cidadeValida(cidade))) {
+    const s = semOperacao(cidade);
+    if (!s) notFound();
+    return <CidadeSemOperacao nome={s.nome} ufs={s.ufs} />;
+  }
   const name = cityFromSlug(cidade);
   // E446: a MESMA base da busca (com imóvel real os exemplos saem; sem nenhum, aparecem): lista, total e bairros leem esta.
   const properties = baseDaVitrine(await listPropertiesByCity(name), (p) => isExemplo(p.id));
@@ -245,5 +261,37 @@ export default async function CityLandingPage({ params }: Params) {
         </div>
       </section>
     </>
+  );
+}
+
+/** E874: a cidade existe, mas a Viva ainda não opera nela — diz isso e dá os próximos passos (nunca um 404 seco). */
+function CidadeSemOperacao({ nome, ufs }: { nome: string; ufs: string[] }) {
+  return (
+    <section className="container-page section-y" data-testid="cidade-sem-operacao">
+      <nav className="text-sm text-muted">
+        <Link href="/" className="alvo-toque underline-offset-4 hover:underline">
+          Início
+        </Link>{" "}
+        /{" "}
+        <Link href="/cidades" className="alvo-toque underline-offset-4 hover:underline">
+          Cidades
+        </Link>{" "}
+        / <span className="text-ink">{nome}</span>
+      </nav>
+      <h1 className="mt-4 font-title text-2xl font-semibold text-ink md:text-[28px]">Ainda não operamos em {nome}</h1>
+      <p className="mt-2 max-w-2xl text-muted" data-testid="cidade-sem-operacao-texto">
+        A Viva Nomads ainda não tem imóveis em {nome}
+        {ufs.length > 1 ? ` (${ufs.join(", ")})` : ` – ${ufs[0]}`}. Publique um pedido de moradia: ele fica registrado e ajuda a
+        escolher as próximas cidades. Ou veja as cidades onde já operamos.
+      </p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <ButtonLink href={`/pedidos/novo?cidade=${encodeURIComponent(nome)}`} data-testid="cidade-sem-operacao-pedido">
+          Publicar pedido de moradia
+        </ButtonLink>
+        <ButtonLink href="/cidades" variant="secondary" data-testid="cidade-sem-operacao-cidades">
+          Ver cidades onde já operamos
+        </ButtonLink>
+      </div>
+    </section>
   );
 }
