@@ -39,7 +39,8 @@ const T = {
   antigo: `Loft sem padrão 59-A ${sufixo}`,
   casa: `Casa do compromisso 59-A ${sufixo}`,
 };
-const COMPROMISSO_RESUMO = "Urgente com solução provisória em até 24 h e definitiva em até 72 h";
+// E817: a régua única (resposta e solução da urgência, com os exemplos).
+const COMPROMISSO_RESUMO = "Urgente (sem água, sem luz, vazamento): resposta em até 4 h, solução provisória em até 24 h e definitiva em até 72 h";
 const H = 3_600_000;
 const LARGURAS = [390, 1280] as const;
 const ORDENS = {
