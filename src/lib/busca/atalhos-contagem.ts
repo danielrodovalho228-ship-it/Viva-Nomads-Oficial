@@ -7,6 +7,7 @@
 import { comodidadesDaUrl } from "./filtro-comodidades.ts";
 import { FILTROS_PAINEL_VAZIOS, passaNoPainel } from "./painel-filtros.ts";
 import { baseDaBusca, contarNaBase } from "./exemplos-e-pedido.ts";
+import { casaLocal } from "./local-busca.ts";
 
 type ImovelContavel = Parameters<typeof passaNoPainel>[0] & { neighborhood: string; city: string; maxGuests?: number | null };
 /** Como a /buscar decide se um imóvel é de exemplo (a home passa `(p) => isExemplo(p.id)`). */
@@ -33,7 +34,7 @@ export function contarAtalho<T extends ImovelContavel>(href: string, imoveis: T[
     comodidades: comodidadesDaUrl(sp.get("comod")),
   };
   const base = imoveis.filter((p) => {
-    if (local && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(local)) return false;
+    if (!casaLocal(p, local)) return false;
     // A /buscar abre com 1 morador: imóvel com capacidade conhecida menor que isso não aparece lá.
     return !(p.maxGuests != null && p.maxGuests < 1);
   });
