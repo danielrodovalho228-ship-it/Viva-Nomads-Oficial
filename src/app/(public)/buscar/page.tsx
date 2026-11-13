@@ -31,8 +31,13 @@ export default async function SearchPage({
   // Visitante e conta real: a lista pública de sempre, sem anúncio de teste.
   const incluirTeste = await buscaComAnunciosDeTeste();
   const [properties, destinos] = await Promise.all([listProperties({ incluirTeste }), destinosAtivos()]);
-  // Lê a URL para a página seguir dinâmica por busca (como antes).
-  await searchParams;
+  // E829: a query da URL vai para o SearchClient, que já NASCE filtrado (a primeira pintura respeita ?preco=, ?pet=…).
+  const sp = await searchParams;
+  const busca = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (typeof v === "string") busca.append(k, v);
+    else if (Array.isArray(v)) for (const x of v) busca.append(k, x);
+  }
   // E82-A + E91: sem banner nem título grande — o h1 é a linha da contagem, dentro do SearchClient.
   return (
     <>
@@ -40,6 +45,7 @@ export default async function SearchPage({
         properties={properties}
         destinos={destinos.map((d) => ({ slug: d.slug, nome: d.nome, cidade: d.cidade, artigo: d.artigo, lat: d.lat == null ? null : Number(d.lat), lng: d.lng == null ? null : Number(d.lng) }))}
         modos={modosDisponiveis()}
+        buscaInicial={busca.toString()}
       />
       {/* Dado estruturado é público: nunca leva anúncio de teste. */}
       <JsonLd dados={listaImoveis(SITE_URL, properties.filter((p) => !p.deTeste), (id) => isExemplo(id))} />

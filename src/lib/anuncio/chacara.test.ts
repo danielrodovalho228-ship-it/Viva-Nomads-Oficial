@@ -33,7 +33,7 @@ test("o tipo aparece no cadastro, no tipoCanonico da busca, no filtro e na URL; 
   assert.equal(tipoCanonico("chacara"), "chacara");
   assert.ok(!PROPERTY_TYPES.some((t) => /fazenda|rancho/i.test(t.value + t.label)), "fazenda e rancho fora até o parecer");
   // A URL (?tipo=) aceita o que está no catálogo.
-  assert.match(ler("src/app/(public)/buscar/search-client.tsx"), /tipo && PROPERTY_TYPES\.some\(\(t\) => t\.value === tipo\)/);
+  assert.match(ler("src/lib/busca/filtros-da-url.ts"), /tipo && PROPERTY_TYPES\.some\(\(t\) => t\.value === tipo\)/); // E829: a leitura da URL mora em filtros-da-url.ts (o estado nasce dela)
 });
 
 const BASE: FatosAnuncio = {
