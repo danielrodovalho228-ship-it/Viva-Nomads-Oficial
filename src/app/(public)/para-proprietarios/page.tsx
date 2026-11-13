@@ -15,7 +15,7 @@ import { CITIES } from "@/lib/constants";
 import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
 import { GESTOR_TEXTO } from "@/config/planos";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
-import { AVISO_APROVACAO, AVISO_SEM_CUSTO } from "@/lib/ajuda-publicacao/ajuda";
+import { AVISO_APROVACAO, PUBLICAMOS_PARA_VOCE_TEXTO } from "@/lib/ajuda-publicacao/ajuda";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
 // E564: a frase cobre a tabela; a faixa do Plano Gestor é dita à parte (GESTOR_TEXTO).
@@ -104,8 +104,9 @@ export default function ForLandlordsPage() {
             <div className="flex-1 p-6">
               <span className="inline-flex rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">Serviço</span>
               <h2 className="mt-3 font-title text-lg font-semibold text-ink sm:text-2xl">Publicamos para você</h2>
-              <p className="mt-1 text-base text-muted">
-                Você envia o link, o texto e as fotos do anúncio que já tem. {AVISO_SEM_CUSTO} {AVISO_APROVACAO}
+              {/* E806: a ação (colar o link do anúncio em outro site, ou texto e fotos) e o efeito (a equipe monta o rascunho). */}
+              <p className="mt-1 text-base text-muted" data-testid="proprietarios-publicamos-texto">
+                {PUBLICAMOS_PARA_VOCE_TEXTO} {AVISO_APROVACAO}
               </p>
               <ButtonLink href="/dashboard/imoveis/novo" variant="secondary" size="lg" className="mt-4 w-full sm:w-auto" data-testid="proprietarios-pedir-ajuda">
                 Pedir ajuda para publicar
