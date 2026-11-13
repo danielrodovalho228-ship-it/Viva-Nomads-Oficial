@@ -1,7 +1,9 @@
 "use client";
 
+import { TEXTO_CONTAGEM_FACETADA } from "@/lib/busca/contagens-conferiveis";
 import { useState } from "react";
 import {
+  contarFiltrosPainel,
   FILTROS_PAINEL_VAZIOS,
   OPCOES_ESTADIA,
   OPCOES_PORTE_PET,
@@ -127,6 +129,12 @@ export function FolhaFiltros({
     >
       <div className="space-y-6">
         {topo}
+        {/* E870: as contagens são facetadas — com algo marcado, o painel diz que os números já contam com isso. */}
+        {contarFiltrosPainel(rascunho) > 0 && (
+          <p className="text-sm text-muted" data-testid="painel-contagem-facetada">
+            {TEXTO_CONTAGEM_FACETADA}
+          </p>
+        )}
         <Grupo titulo="Quartos">
           {OPCOES_QUARTOS.map((o) => (
             <ChipFaceta key={o.valor} f={facetaUnica(contar, rascunho, "minBedrooms", o.valor)} ativo={rascunho.minBedrooms === o.valor} onClick={() => alterna("minBedrooms", o.valor)} testId={`faceta-quartos-${o.valor}`}>
