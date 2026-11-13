@@ -1,8 +1,7 @@
 import { BadgeCheck, Handshake, PawPrint } from "lucide-react";
 import { IconePrecoJusto } from "@/components/ui/icone-preco-justo";
 import { pilulasDoCartao, type SelosDoCartao, type SimboloFoto } from "@/lib/cartao-selos-foto";
-import type { Nivel } from "@/config/niveis";
-import { cn } from "@/lib/utils";
+import { PilulaNivel } from "@/components/niveis/pilula-nivel";
 
 const ICONE: Record<SimboloFoto, React.ComponentType<{ className?: string }>> = {
   verificado: BadgeCheck,
@@ -19,12 +18,6 @@ const TESTID: Record<SimboloFoto, string> = {
   negocia: "cartao-negocia",
 };
 
-/** Cor da pílula do nível (estudo E626): Essencial branco com borda cinza, Conforto verde-marca, Premium preto-marca. */
-const COR_NIVEL: Record<Nivel, string> = {
-  essencial: "border-[#b8b8b8] bg-white text-ink",
-  conforto: "border-transparent bg-forest text-white",
-  premium: "border-transparent bg-night text-white",
-};
 
 /**
  * E626 (06/11): no máximo 2 pílulas no canto superior esquerdo da foto. Pílula 1: o nível em palavra, com a cor do nível.
@@ -38,13 +31,8 @@ export function SelosFoto({ selos, semCoracao = false }: { selos: SelosDoCartao;
     <div className="pointer-events-none absolute inset-x-3 top-3 @container" data-testid="selos-foto" data-pilulas={pilulasDoCartao(selos)}>
       {!semCoracao && <span aria-hidden className="float-right h-11 w-12" data-testid="selos-foto-canto-coracao" />}
       {selos.nivel && (
-        <span
-          className={cn("mb-1 mr-1 inline-flex items-center rounded-full border px-2 py-1 align-top text-[11px] font-semibold leading-3 @[16rem]:text-xs @[16rem]:leading-4", COR_NIVEL[selos.nivel.id])}
-          data-testid="card-nivel"
-          data-nivel={selos.nivel.id}
-        >
-          {selos.nivel.rotulo}
-        </span>
+        // E828: a mesma pílula da página do anúncio e da home (componente único).
+        <PilulaNivel nivel={selos.nivel.id} className="mb-1 mr-1 @[16rem]:text-xs @[16rem]:leading-4" />
       )}
       {selos.simbolos.length > 0 && (
         <span role="group" aria-label="Selos do anúncio" className="mb-1 mr-1 inline-flex items-center gap-2 rounded-full border border-transparent bg-white px-2 py-1 align-top text-ink" data-testid="selos-simbolos">

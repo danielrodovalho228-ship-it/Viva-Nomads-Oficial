@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { Award } from "lucide-react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { NIVEIS, ROTULO_NIVEL } from "@/config/niveis";
+import { NIVEIS } from "@/config/niveis";
 import { CRITERIO_NIVEL, textoDiferenciais, textoExtras, textoRuido, tituloNivel } from "@/lib/niveis/exibicao";
 import type { NivelNaFicha } from "@/lib/data/exibicao-59";
+import { PilulaNivel } from "@/components/niveis/pilula-nivel";
 
 /**
  * Adendo 59.1, Parte A — bloco "Nível Conforto" na página do imóvel, junto do "Bom saber": o critério em uma frase, as
@@ -25,7 +26,9 @@ export function NivelImovel({ dados }: { dados: NivelNaFicha | null | undefined 
         <Award className="mt-1 h-5 w-5 shrink-0 text-forest" aria-hidden />
         <div className="min-w-0">
           <h2 id="nivel-imovel-title" className="text-base font-semibold text-ink" data-testid="nivel-titulo">
-            {titulo}
+            {/* E828: "Nível" + a MESMA pílula do cartão (texto lido: "Nível Conforto · vistoriado"). */}
+            Nível <PilulaNivel nivel={dados.nivel} testId="nivel-pilula" className="text-xs leading-4" />
+            {dados.vistoriado ? " · vistoriado" : ""}
           </h2>
           <p className="mt-1 text-sm text-muted" data-testid="nivel-criterio">
             {CRITERIO_NIVEL[dados.nivel]}
@@ -66,7 +69,7 @@ export function NivelImovel({ dados }: { dados: NivelNaFicha | null | undefined 
         <ul className="space-y-4">
           {NIVEIS.map((n) => (
             <li key={n} className="text-sm" data-testid={`nivel-folha-${n}`}>
-              <span className="block font-semibold text-ink">{ROTULO_NIVEL[n]}</span>
+              <PilulaNivel nivel={n} testId={`nivel-folha-pilula-${n}`} className="text-xs leading-4" />
               <span className="block text-muted">{CRITERIO_NIVEL[n]}</span>
             </li>
           ))}
