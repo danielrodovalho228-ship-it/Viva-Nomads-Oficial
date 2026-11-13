@@ -27,8 +27,15 @@ O visual das abas não muda (sublinhado, `border-b-2`), e o teste do E782 segue 
 ### E2E
 
 `tests/e2e/specs/t1618-e801-abas-sem-barra.spec.ts` mede a fileira de abas em `/dashboard/avaliacoes?aba=recebidas` e em `/dashboard/favoritos`. Usa as contas da massa (DONO17 e INQUILINA), a 1280 e a 390 px, e verifica:
-- a barra horizontal ocupa 0 px e a barra vertical ocupa 0 px;
-- nada vaza para baixo (`scrollHeight` ≤ `clientHeight`);
+- a fileira não abre rolagem vertical: não pode haver excesso para baixo com `overflow-y` em `auto` ou `scroll`;
+- a barra fica escondida (`scrollbar-width: none`);
 - a aba "Feitas" continua clicável.
 
-Resultado (main × branch): ver o PR.
+No Chromium headless a barra é sobreposta e não ocupa espaço, por isso medir a largura da barra daria sempre 0 px. A medida que pega o defeito é se a fileira rola na vertical.
+
+### Resultado (lab, mesma build, só `src` trocado)
+
+| Base | t1618 |
+|---|---|
+| main `27dbdf1` | **4 failed**: "/dashboard/avaliacoes?aba=recebidas: a fileira abre rolagem vertical (excesso 1px, overflow-y auto) — a barra flutua sobre as abas" (×4) |
+| branch | **4 passed** (26.0s) |
