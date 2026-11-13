@@ -1,14 +1,21 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, entrarNaPagina } from "../fixtures/laboratorio";
+import { randomUUID } from "node:crypto";
+import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrarNaPagina, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T1617 — E800 (D3, prova ao vivo de 12/11): na prévia do perfil, a pílula "É assim que o morador/proprietário te vê…"
   quebrava em duas linhas com o texto encostando nas bordas arredondadas, e o relógio cobria o começo de "Responde X% das
-  conversas…". Medida geométrica na tela, nas contas da massa (dono: DONO17; morador: INQUILINA), a 1280 e a 390 px.
+  conversas…". Medida geométrica na tela, nas contas da massa (dono: DONO17; morador: INQUILINA), a 1280 e a 390 px, e
+  num dono próprio com 3 conversas respondidas — a linha "Responde X%…" só existe com conversas (a massa não tem).
 */
+const senhaResponde = novaSenha();
+const responde = { email: `e800.dono.${novoSufixo()}@lab.vivanomads.test`, senha: senhaResponde };
+const ids: (string | undefined)[] = [];
+
 const CONTAS = [
-  { nome: "DONO17", email: process.env.TESTES_VARREDURA_DONO17_EMAIL, senha: process.env.TESTES_VARREDURA_DONO17_SENHA },
-  { nome: "INQUILINA", email: process.env.TESTES_VARREDURA_INQUILINA_EMAIL, senha: process.env.TESTES_VARREDURA_INQUILINA_SENHA },
+  { nome: "DONO-QUE-RESPONDE", email: responde.email as string | undefined, senha: responde.senha as string | undefined, exigeResposta: true },
+  { nome: "DONO17", email: process.env.TESTES_VARREDURA_DONO17_EMAIL, senha: process.env.TESTES_VARREDURA_DONO17_SENHA, exigeResposta: false },
+  { nome: "INQUILINA", email: process.env.TESTES_VARREDURA_INQUILINA_EMAIL, senha: process.env.TESTES_VARREDURA_INQUILINA_SENHA, exigeResposta: false },
 ];
 
 async function entrar(browser: Browser, email: string, senha: string, largura: number): Promise<Page> {
@@ -20,6 +27,21 @@ async function entrar(browser: Browser, email: string, senha: string, largura: n
 
 test.describe("T1617 — E800 pílula da prévia e relógio sem sobreposição", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (banco local + chave de serviço).");
+  test.beforeAll(async () => {
+    const dono = await criarConta({ email: responde.email, nome: "[TESTE QA] Paulo Prévia Responde", role: "owner" }, senhaResponde);
+    const inq = await criarConta({ email: `e800.inq.${novoSufixo()}@lab.vivanomads.test`, nome: "[TESTE QA] Ana Pergunta", role: "tenant" }, novaSenha());
+    ids.push(dono, inq);
+    const imovel = await criarImovelPronto(dono, "Studio da prévia (t1617)");
+    // 3 conversas (o mínimo da métrica): a inquilina escreve e o dono responde → "Responde 100% das conversas, …".
+    for (let i = 0; i < 3; i++) {
+      const c = randomUUID();
+      await gravarMensagem(inq, dono, imovel, `Olá, o studio está livre? (${i})`, c);
+      await gravarMensagem(dono, inq, imovel, "Está sim, pode perguntar por aqui.", c);
+    }
+  });
+  test.afterAll(async () => {
+    await apagarContas(ids);
+  });
 
   for (const conta of CONTAS) {
     for (const largura of [1280, 390]) {
@@ -50,6 +72,7 @@ test.describe("T1617 — E800 pílula da prévia e relógio sem sobreposição",
         expect(p.folgaEsq, `texto a ${p.folgaEsq.toFixed(1)}px da borda esquerda`).toBeGreaterThanOrEqual(12);
 
         const resposta = page.locator('[data-testid="espelho-resposta"]:visible').first();
+        if (conta.exigeResposta) await expect(resposta, "o dono com conversas mostra a linha 'Responde X%…'").toBeVisible({ timeout: 15_000 });
         if (await resposta.count()) {
           const g = await resposta.evaluate((el) => {
             const svg = el.querySelector("svg")!.getBoundingClientRect();
