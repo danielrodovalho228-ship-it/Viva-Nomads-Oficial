@@ -26,7 +26,7 @@ test("a tela Meus imóveis pede com exigir; o painel tem a tela de erro com 'Ten
   // A rota de API não passa exigir. O Início passa, mas a falha é pega ali mesmo (`ou("imoveis", …)`): vira o aviso "Não foi
   // possível ler agora: seus anúncios…" no topo, em vez de "0 anúncios" calado — e não derruba o painel inteiro.
   assert.doesNotMatch(ler("src/app/api/properties/mine/route.ts"), /listMyProperties\(\{ exigir: true \}\)/);
-  assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /ou\("imoveis", listMyProperties\(\{ exigir: true \}\), \[\]\)/);
+  assert.match(ler("src/app/(dashboard)/dashboard/inicio-dados.tsx"), /ou\("imoveis", listMyProperties\(\{ exigir: true \}\), \[\]\)/);
   // Ganhos: o enquadramento da reforma exige a leitura, mas a falha é pega ali mesmo (o cartão diz que não calculou) —
   // a tela de Ganhos não cai inteira.
   const ganhos = ler("src/app/(dashboard)/dashboard/ganhos/page.tsx");

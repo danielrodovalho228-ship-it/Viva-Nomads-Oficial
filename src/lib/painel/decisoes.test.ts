@@ -172,7 +172,7 @@ test("todo link aponta para a tela da decisão dentro do painel (nunca decide na
 
 test("a Visão geral monta as decisões no servidor e o navegador não chama server action para o rascunho", () => {
   const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-  const pagina = ler("src/app/(dashboard)/dashboard/page.tsx");
+  const pagina = ler("src/app/(dashboard)/dashboard/inicio-dados.tsx");
   assert.match(pagina, /decisoesDoProprietario\(/);
   assert.match(pagina, /decisoesDoMorador\(/);
   assert.match(pagina, /getLatestDraft\(\)/);

@@ -54,6 +54,6 @@ test("o 'remover' do cadastro passa pelo servidor (não apaga direto do navegado
 });
 
 test("as capas (Início e Meus imóveis) conferem se o arquivo existe", () => {
-  assert.match(ler("../app/(dashboard)/dashboard/page.tsx"), /arquivosDoDono\(createAdminClient\(\), user\.id(, \{ soFotosReais: true \})?\)[\s\S]*soFotosExistentes/);
+  assert.match(ler("../app/(dashboard)/dashboard/inicio-dados.tsx"), /arquivosDoDono\(createAdminClient\(\), user\.id(, \{ soFotosReais: true \})?\)[\s\S]*soFotosExistentes/);
   assert.match(ler("./data/properties.ts"), /const existentes = await arquivosDoDono\(createAdminClient\(\), user\.id\);\n\s*for \(const p of lista\) if \(p\.photos\?\.length\) p\.photos = soFotosExistentes\(p\.photos, existentes\);/);
 });

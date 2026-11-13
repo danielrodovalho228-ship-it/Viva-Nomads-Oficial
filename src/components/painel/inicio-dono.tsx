@@ -115,6 +115,17 @@ export function InicioDono({
         </div>
       </section>
 
+    </div>
+  );
+}
+
+/**
+ * E797: as partes FIXAS do Início do dono (Peça na Viva e Ferramentas) — não dependem de leitura, então pintam no 1º
+ * quadro, fora do bloco de dados que chega pelo fluxo (page.tsx monta este componente fora do Suspense).
+ */
+export function InicioDonoFixo() {
+  return (
+    <div className="mt-6 space-y-6" data-testid="inicio-dono-fixo">
       <section className="flex flex-col gap-4 rounded-lg border border-line bg-white p-4 sm:p-6 lg:flex-row lg:items-center" data-testid="inicio-dono-peca">
         <div className="min-w-0 lg:flex-1">
           <h2 className="font-title text-xl font-semibold text-ink">{PECA_NA_VIVA.titulo}</h2>
