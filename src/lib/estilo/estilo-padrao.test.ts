@@ -302,18 +302,23 @@ test("cartão de anúncio: sem caixa (sem border nem shadow), foto 4:3 com raio 
   assert.doesNotMatch(link, /\bborder\b|\bborder-|shadow|bg-white/, "o <Link> do cartão não é uma caixa");
   assert.doesNotMatch(c, /\bshadow\b|shadow-/);
   assert.match(c, /className="relative aspect-\[4\/3\] overflow-hidden rounded-xl bg-surface-2" data-testid="cartao-foto"/);
-  // Ordem do adendo: foto → bairro + nota → título (2 linhas) → total → síntese → disponibilidade.
-  const ordem = ["cartao-foto", "cartao-local", "cartao-titulo", "cartao-total-mes", "cartao-sintese", "cartao-disponivel"].map((id) => c.indexOf(`data-testid="${id}"`));
+  // Ordem do adendo; E899 (asserção alterada, decisão do Daniel de 13/11): foto → bairro + nota (1 linha) → título (1 linha; antes 2) →
+  // "R$ X/mês" → "R$ Y em N meses · aviso" → síntese → disponibilidade.
+  const ordem = ["cartao-foto", "cartao-local", "cartao-titulo", "cartao-total-mes", "cartao-linha-total", "cartao-sintese", "cartao-disponivel"].map((id) => c.indexOf(`data-testid="${id}"`));
   assert.ok(ordem.every((i, k) => i > 0 && (k === 0 || i > ordem[k - 1])), `ordem ${ordem}`);
   assert.match(c, /text-base font-semibold[^"]*" data-testid="cartao-local"/); // cartão 16/600
-  assert.match(c, /className="line-clamp-2 [^"]*" data-testid="cartao-titulo"/);
+  assert.match(c, /className="line-clamp-1 [^"]*" data-testid="cartao-titulo"/);
   assert.match(c, /<p className="tabular-nums" data-testid="cartao-total-mes">/);
-  assert.match(c, /text-lg font-semibold text-forest" data-testid="cartao-preco-mes">\s*\{preco\.valor\}/);
+  assert.match(c, /text-lg font-semibold text-forest" data-testid="cartao-preco-mes">\s*\{modelo\.precoMes\}/);
   assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/); // sem "total" solto (QA)
   assert.doesNotMatch(c, /\/mês total/);
-  assert.match(c, /const preco = rotuloPreco\(\{ mensal: inc\.total, meses: mesesDoCartao\(periodMonths, property\.minPeriodDays\), disponivelEm: property\.availableFrom \}\);/);
-  assert.match(c, /estadiaCartao\?\.texto \?\? resumoEmMeses\(preco\.total, preco\.meses\)\}/); // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): o total vem de estadiaNoCartao (regra única, também com 1 mês) // E356: todo cartão tem a linha
-  assert.match(c, /const sintese = itensSintese\(property\);/);
+  // E899 (asserção alterada): o cartão desenha do modeloDoCartao, que chama rotuloPreco (total do mês da fonte única), estadiaNoCartao
+  // (regra única do E756, também com 1 mês) e itensSintese. Antes, o cartão chamava os três direto.
+  assert.match(c, /const modelo = modeloDoCartao\(property, mesesDoCartao\(periodMonths, property\.minPeriodDays\)\);/);
+  const modelo = ler("lib/cartao-modelo.ts");
+  assert.match(modelo, /const preco = rotuloPreco\(\{ mensal: calcularTudoIncluido\(p\)\.total, meses: n, disponivelEm: p\.availableFrom \?\? null, hoje \}\);/);
+  assert.match(modelo, /const estadia = estadiaNoCartao\(p, n\);/);
+  assert.match(modelo, /sintese: itensSintese\(p\)/);
   assert.doesNotMatch(c, /IdealPara/); // ordem congelada: "Ideal para" fica na página do imóvel
   // Carrossel com pontos; E416 (05/11): os selos empilhados sobre a foto (antes: no máximo 1).
   assert.match(c, /<FotosCartao fotos=\{fotos\} alt=\{property\.title\} prioridade=\{prioridade\} \/>/);
@@ -543,9 +548,11 @@ test("Prompt 43: nenhum texto da lista proibida (\"Vamos começar\", \"Oops!\", 
   assert.doesNotMatch("Comece pelo CEP.", TEXTO_PROIBIDO);
 });
 
-test("E356: o cartão rotula o preço (Total por mês) e mostra a linha da estadia em todo cartão", () => {
+// E899 (asserção alterada, decisão do Daniel de 13/11): o rótulo "Total por mês, tudo incluído" (cartao-total-rotulo) virou o aviso curto
+// no fim da linha do total ("tudo incluído" | "água, luz e gás à parte"); a linha da estadia segue em todo cartão (E356).
+test("E356 + E899: o cartão mostra a linha da estadia em todo cartão, com o aviso curto no fim", () => {
   const c = ler("components/property-card.tsx");
-  assert.match(c, /data-testid="cartao-total-rotulo"[^>]*>\s*\{ROTULO_TOTAL_MES\}/);
-  assert.match(c, /estadiaCartao\?\.texto \?\? resumoEmMeses\(preco\.total, preco\.meses\)\}/); // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies)
+  assert.doesNotMatch(c, /cartao-total-rotulo|ROTULO_TOTAL_MES/);
+  assert.match(c, /<span data-testid="cartao-total-estadia">\{modelo\.totalEstadia\.texto\}<\/span>\s*\{" · "\}\s*<span data-testid="cartao-aviso">\{modelo\.aviso\}<\/span>/);
   assert.doesNotMatch(c, /\{preco\.estadia && \(\s*<span[^>]*cartao-total-estadia/);
 });

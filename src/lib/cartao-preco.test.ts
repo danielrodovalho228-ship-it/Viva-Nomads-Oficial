@@ -35,7 +35,7 @@ test("meses do cartão: duração da busca ou estadia mínima", () => {
   assert.equal(mesesDoCartao(undefined, undefined), 1);
 });
 
-import { estadiaDoCartao, ROTULO_TOTAL_MES } from "./cartao-preco.ts";
+import { estadiaDoCartao } from "./cartao-preco.ts";
 
 test("E356: todo cartão tem a linha do total da estadia (com 1 mês: 'R$ X em 1 mês'), igual entre vizinhos", () => {
   const um = rotuloPreco({ mensal: 3960, meses: 1 });
@@ -45,8 +45,13 @@ test("E356: todo cartão tem a linha do total da estadia (com 1 mês: 'R$ X em 1
   assert.equal(estadiaDoCartao(dois), dois.estadia);
 });
 
-test("E356: o rótulo diz que o preço grande é o total do mês, tudo incluído", () => {
-  assert.equal(ROTULO_TOTAL_MES, "Total por mês, tudo incluído");
+// E899 (asserção alterada, decisão do Daniel de 13/11): o rótulo "Total por mês, tudo incluído" (cartao-total-rotulo) saiu do cartão; o
+// aviso curto da linha do total diz o que inclui — "tudo incluído" só com contas fixas (e899-cartao-enxuto.test.ts, T2).
+test("E899: o cartão não tem mais o rótulo próprio do total do mês (o de precos.ts é o único)", async () => {
+  const m = await import("./cartao-preco.ts");
+  assert.equal("ROTULO_TOTAL_MES" in m, false);
+  const { avisoDoCartao } = await import("./precos.ts");
+  assert.equal(avisoDoCartao({ utilitiesMode: "fixed" }), "tudo incluído");
 });
 
 test("E702: quando a data foi calculada para a estadia mínima, o cartão diz isso; igual à do cadastro, não", async () => {

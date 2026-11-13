@@ -83,7 +83,9 @@ test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () 
 test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e disponibilidade", () => {
   const c = ler("components/property-card.tsx");
   // Plural único (ordem dd15064d, D7b) pela síntese do cartão (src/lib/cartao-sintese.ts, quartosTexto/banheirosTexto).
-  assert.match(c, /const sintese = itensSintese\(property\);/);
+  // E899 (asserção alterada): a síntese vem do modelo do cartão (src/lib/cartao-modelo.ts), que chama itensSintese.
+  assert.match(c, /modelo\.sintese\.map\(/);
+  assert.match(ler("lib/cartao-modelo.ts"), /sintese: itensSintese\(p\)/);
   assert.match(ler("lib/cartao-sintese.ts"), /quartosTexto\(p\.bedrooms\)[\s\S]*banheirosTexto\(p\.bathrooms\)/);
   assert.match(c, /\{linhaLocalizacao\(property\.neighborhood, property\.city, property\.state\)\}/); // E101
   // Custo total do mês em destaque (ordem 1a555bfa), no formato do QA: "R$ X/mês · R$ Y em N meses".
