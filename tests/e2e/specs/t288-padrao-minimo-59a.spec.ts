@@ -39,7 +39,8 @@ const T = {
   antigo: `Loft sem padrão 59-A ${sufixo}`,
   casa: `Casa do compromisso 59-A ${sufixo}`,
 };
-const COMPROMISSO_RESUMO = "Urgente com solução provisória em até 24 h e definitiva em até 72 h";
+// E817: a régua única (resposta e solução da urgência, com os exemplos).
+const COMPROMISSO_RESUMO = "Urgente (sem água, sem luz, vazamento): resposta em até 4 h, solução provisória em até 24 h e definitiva em até 72 h";
 const H = 3_600_000;
 const LARGURAS = [390, 1280] as const;
 const ORDENS = {
@@ -214,22 +215,21 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
   });
 
   test("2. painel do dono: aviso do padrão mínimo e pendência de conforto com prazo", async ({ browser }) => {
+    // PROP-6 (Início do dono, modo dono por padrão): o topo mostra UMA faixa, a pendência mais urgente; a lista completa
+    // de decisões ("lista-decisoes") não aparece mais no modo dono. Aqui a mais urgente é a manutenção vencida (atrasada
+    // pesa antes de prazo). O aviso do padrão mínimo segue chegando pela própria tela do imóvel.
     const page = await entrar(browser, dono.email, senha);
     for (const w of LARGURAS) {
       await largura(page, w);
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      const lista = page.getByTestId("lista-decisoes");
-      const aviso = lista.locator(`[data-decisao="conforto-${ids.antigo}"]`);
-      await expect(aviso).toContainText(new RegExp(`^Confirme o padrão mínimo de ${T.antigo} até \\d{2}/\\d{2}/\\d{4}`), { timeout: 30_000 });
-      await expect(aviso).toHaveAttribute("href", `/dashboard/imoveis/${ids.antigo}/conforto`);
-      const pend = lista.locator('[data-tipo="conforto"]').filter({ hasText: `Corrigir "${ITENS_CONFORTO[1].rotulo}"` });
-      await expect(pend).toContainText(T.casa);
-      await expect(pend.getByTestId("decisao-prazo")).toBeVisible();
+      const alerta = page.getByTestId("inicio-dono-alerta");
+      await expect(alerta).toContainText(`fora do prazo de solução em ${T.casa}`, { timeout: 30_000 });
+      await expect(alerta).toHaveAttribute("href", "/dashboard/solicitacoes");
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t288-2-painel-dono-${w}.png`, fullPage: true });
     }
-    // A ação está dentro do aviso: abre a confirmação do padrão mínimo.
-    await page.locator(`[data-decisao="conforto-${ids.antigo}"]`).click();
+    // A confirmação do padrão mínimo do imóvel em adequação.
+    await page.goto(`/dashboard/imoveis/${ids.antigo}/conforto`, { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("conforto-checklist")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Padrão mínimo da Viva");
     await page.context().close();
@@ -296,7 +296,7 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
       await expect(page.getByTestId("compromisso-manutencao")).toHaveCount(0);
       await page.getByTestId("bom-saber-manutencao").click();
       await expect(page.getByRole("dialog")).toContainText(COMPROMISSO_RESUMO);
-      await expect(page.getByRole("dialog")).toContainText("Demais em até 7 dias");
+      await expect(page.getByRole("dialog")).toContainText("resposta em até 72 h e solução em até 7 dias"); // E817: a régua por prioridade (baixa)
       await page.keyboard.press("Escape");
       await expect(page.getByTestId("proprietario-manutencao-prazo")).toContainText("Manutenção resolvida no prazo: 67%");
       await semRolagemLateral(page);
@@ -359,18 +359,16 @@ test.describe("T288 — Prompt 59-A: padrão mínimo e compromisso de manutenç�
   test("6. admin: as duas filas do 59 no topo das decisões e a decisão da contestação", async ({ browser }) => {
     for (const w of LARGURAS) {
       const a = await admin(browser, w);
-      // ADMIN-4: as decisões moram no topo de Pendências.
+      // E330/E474 (Central de Pendências): as filas do 59 ficam no topo da Central, cada uma com o número e o "Abrir".
       await a.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
-      const linhas = a.getByTestId("admin-decisoes").locator("li[data-decisao]");
-      await expect(linhas.first()).toHaveAttribute("data-decisao", "manutencao_fora_prazo", { timeout: 30_000 });
-      await expect(linhas.first()).toContainText(/\d+ (manutenção|manutenções) fora do prazo/);
-      await expect(linhas.nth(1)).toHaveAttribute("data-decisao", "conforto_contestacoes");
-      await expect(linhas.nth(1)).toContainText(/\d+ (pendência de conforto contestada|pendências de conforto contestadas)/);
-      await expect(a.getByTestId("decisao-conforto_contestacoes")).toHaveText("Decidir");
+      const topo = a.getByTestId("central-decisoes");
+      await expect(topo.locator('li[data-decisao="manutencao_fora_prazo"]')).toBeVisible({ timeout: 30_000 });
+      await expect(topo.locator('li[data-decisao="conforto_contestacoes"]')).toBeVisible();
+      await expect(a.getByTestId("central-filtro-conforto_contestacoes")).toHaveText("Abrir");
       await semRolagemLateral(a);
       await a.screenshot({ path: `tests/laboratorio/saida/t288-6-admin-decisoes-${w}.png` });
 
-      await a.getByTestId("decisao-conforto_contestacoes").click();
+      await a.getByTestId("central-filtro-conforto_contestacoes").click();
       const linha = a.getByTestId("contestacao-linha").filter({ hasText: T.casa });
       await expect(linha).toBeVisible({ timeout: 30_000 });
       await expect(linha.getByTestId("contestacao-procedente")).toBeVisible();

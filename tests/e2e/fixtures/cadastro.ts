@@ -20,6 +20,8 @@ export const TITULO_PASSO = {
 export type PassoCadastro = keyof typeof TITULO_PASSO;
 /** Título de apoio para quem cruza a Descrição sem ter escrito um. */
 export const TITULO_PADRAO_LAB = "Apartamento mobiliado de teste do laboratório";
+/** Descrição de apoio (a Descrição pede pelo menos 60 caracteres para continuar). */
+export const DESCRICAO_PADRAO_LAB = "Imóvel mobiliado de teste do laboratório, com cozinha equipada, roupa de cama e internet para trabalhar de casa.";
 
 /** Posição (1 a 10) de cada passo, para conferir "Passo X de 10". */
 export const NUMERO_PASSO: Record<PassoCadastro, number> = Object.fromEntries(Object.keys(TITULO_PASSO).map((k, i) => [k, i + 1])) as Record<PassoCadastro, number>;
@@ -60,6 +62,9 @@ export async function continuarAte(page: Page, de: PassoCadastro, ate: PassoCada
     if (atual === "descricao") {
       const titulo = page.getByTestId("cadastro-titulo");
       if (await titulo.isVisible().catch(() => false) && !(await titulo.inputValue().catch(() => "")).trim()) await titulo.fill(TITULO_PADRAO_LAB);
+      // A Descrição também exige o texto (mín. 60 caracteres, f9753c6): quem passa sem ele escreve um de apoio.
+      const descricao = page.getByTestId("cadastro-descricao");
+      if (await descricao.isVisible().catch(() => false) && (await descricao.inputValue().catch(() => "")).trim().length < 60) await descricao.fill(DESCRICAO_PADRAO_LAB);
     }
     atual = passo;
     await page.getByTestId("cadastro-continuar").click();

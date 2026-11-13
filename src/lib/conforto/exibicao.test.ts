@@ -55,7 +55,8 @@ test("o checklist fica no passo Comodidades, e o 'Resolver' do portão leva até
 test("compromisso de manutenção: o texto exato, dos prazos do 59", () => {
   assert.equal(
     textoCompromissoManutencao(),
-    "Manutenção: urgente com solução provisória em até 24 h e definitiva em até 72 h · comum em até 72 h · demais em até 7 dias",
+    // E817: a régua única (resposta + solução por prioridade, quem resolve, como acionar e o que acontece no atraso).
+    'Manutenção: Urgente (sem água, sem luz, vazamento): resposta em até 4 h, solução provisória em até 24 h e definitiva em até 72 h · Média (chuveiro sem aquecer, eletrodoméstico parado, internet instável): resposta em até 24 h e solução em até 72 h · Baixa (lâmpada queimada, ajuste em móvel, pequenos reparos): resposta em até 72 h e solução em até 7 dias · Quem resolve é o proprietário; com o contrato ativo, o pedido é aberto pelo próprio contrato ("Problema com isto?") · Se o prazo de solução vencer, você é avisado e pode chamar um parceiro de manutenção pela própria ordem; soluções fora do prazo repetidas tiram o selo do anúncio',
   );
   assert.equal(TEXTO_PADRAO_CONFIRMADO, "Padrão mínimo da Viva: confirmado pelo proprietário");
   const bloco = ler("components/conforto/padrao-minimo-imovel.tsx");
