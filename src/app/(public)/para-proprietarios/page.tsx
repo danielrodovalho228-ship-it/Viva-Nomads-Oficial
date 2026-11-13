@@ -118,10 +118,10 @@ export default function ForLandlordsPage() {
           <div className="flex flex-col gap-4 rounded-xl bg-forest p-6 text-white sm:flex-row sm:items-center sm:justify-between" data-testid="proprietarios-simulador">
             <div>
               <h2 className="font-title text-lg font-semibold sm:text-2xl">Simulador de rentabilidade</h2>
-              <p className="mt-1 text-base text-white/85">Estime quanto o seu imóvel pode render por mês com os números que você digitar. A Viva não preenche valor nenhum por você.</p>
+              <p className="mt-1 text-base text-white/85">Estime quanto o seu imóvel pode render por mês com os números que você digitar, na sua conta. A Viva não preenche valor nenhum por você.</p>
             </div>
             <ButtonLink href="/dashboard/simulador" variant="inverse" size="lg" className="w-full sm:w-auto" data-testid="proprietarios-calcular">
-              Calcular rentabilidade
+              Calcular rentabilidade (com login)
             </ButtonLink>
           </div>
         </div>
