@@ -16,7 +16,7 @@ tinha texto: o visitante não sabia o que ele abria.
 - **Nome acessível:** continua "Fale com a Viva".
 
 **Testes.**
-- `src/components/ajuda/e823-botao-chat-rotulo.test.ts` (3): falha na main (2 de 3) e passa na branch. Confere o texto,
+- `src/components/ajuda/e823-botao-chat-rotulo.test.ts` (3): falha na main (3 de 3) e passa na branch. Confere o texto,
   o `title` e o nome acessível, e o rótulo que aparece no hover/foco.
 - `tests/e2e/specs/t1624-e823-botao-chat-rotulo.spec.ts`: no lab, com o build da branch, em /empresas e /parceiros a
   1280 px, o rótulo está escondido, aparece no hover, some ao tirar o mouse e aparece no foco pelo teclado. 2 passed.
