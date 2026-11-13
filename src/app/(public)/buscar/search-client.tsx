@@ -62,6 +62,7 @@ import { desempatePorId } from "@/lib/busca/ordem-estavel";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
+import { casaLocal } from "@/lib/busca/local-busca";
 import { foraDoTempoPelaReta, type ModoRota } from "@/lib/rotas/tempo";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
@@ -439,7 +440,7 @@ export function SearchClient({
       // Com endereço geocodificado, filtra por raio; senão, por nome (bairro/cidade).
       if (dist) {
         if (dist.get(p.id)! > radiusKm) return false;
-      } else if (loc && !`${p.neighborhood} ${p.city}`.toLowerCase().includes(loc)) {
+      } else if (!casaLocal(p, loc)) {
         return false;
       }
       // Hóspedes: só exclui quando a capacidade É conhecida e menor que o total
