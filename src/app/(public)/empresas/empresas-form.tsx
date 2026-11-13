@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TEXTO_RETORNO_EMPRESAS } from "@/lib/empresas-lead";
 
 /** Formulário de contato corporativo (B2B) → e-mail ao admin. */
 export function EmpresasForm() {
@@ -45,7 +46,7 @@ export function EmpresasForm() {
         <div>
           <p className="font-title font-semibold text-ink">Recebemos seu contato.</p>
           <p className="mt-1 text-sm text-muted">
-            Nosso time responde no e-mail informado. Obrigado pelo interesse.
+            {TEXTO_RETORNO_EMPRESAS} Obrigado pelo interesse.
           </p>
         </div>
       </div>

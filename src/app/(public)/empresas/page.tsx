@@ -6,6 +6,7 @@ import { BannerTopo } from "@/components/institucional/banner-topo";
 import { FotoCartao } from "@/components/institucional/foto-cartao";
 import { cartaoSecao } from "@/lib/cartoes-secao";
 import { EmpresasForm } from "./empresas-form";
+import { TEXTO_RETORNO_EMPRESAS } from "@/lib/empresas-lead";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
@@ -177,7 +178,8 @@ export default function EmpresasPage() {
           <div className="md:col-span-2">
             <h2 className="font-title text-2xl font-semibold text-ink">Fale com a gente</h2>
             <p className="mt-3 text-muted">
-              Conte seu volume e sua necessidade — retornamos com o que dá para fazer hoje.
+              {/* E876: o prazo próprio do formulário (o mesmo do recibo do envio), da fonte única. */}
+              Conte seu volume e sua necessidade. {TEXTO_RETORNO_EMPRESAS}
             </p>
           </div>
           <div className="rounded-xl border border-line bg-white p-6 md:col-span-3">
