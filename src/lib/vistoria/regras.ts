@@ -18,9 +18,9 @@ export const ROTULO_AVALIADOR_CREDENCIADO = "Avaliador credenciado da Viva";
 export const ROTULO_AVALIADOR_EM_TESTE = "Avaliador em teste";
 export const FRASE_PAGA_AVALIACAO = "Você paga a avaliação, não o resultado.";
 /** E714: a mesma regra dita ao AVALIADOR (página de recrutamento): quem paga é o dono, e a frase não fala com o dono. */
-// E882: a página de recrutamento não cita uma "tabela da Viva" (não há tabela pública); a referência é a apresentada no credenciamento.
+// E882: a página de recrutamento não cita uma "tabela da Viva" (não há tabela pública); a referência é o valor que o painel do avaliador mostra em cada pedido.
 export const FRASE_REFERENCIA_AVALIADOR =
-  "Você define o seu valor e o seu prazo em cada pedido; os valores de referência para a cidade e o porte do imóvel, apresentados no credenciamento, são só uma referência.";
+  "Você define o seu valor e o seu prazo em cada pedido; o valor de referência que aparece em cada pedido, pela cidade e pelo porte do imóvel, é só uma referência.";
 export const FRASE_DONO_PAGA_AVALIACAO = "O dono paga a avaliação, não o resultado: o seu laudo é independente.";
 /** O que todo valor da tabela inclui (exibido no pedido, junto do texto da tabela). */
 export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo em até 48 horas úteis.", "Se o resultado vier com ressalvas: a reverificação dos itens da ressalva em até 15 dias, pelo mesmo avaliador."] as const;
