@@ -107,7 +107,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-002",
-    title: "Studio premium no Centro, ideal para estadia profissional",
+    // E814: "premium" saiu do título — o nível calculado do exemplo é Essencial.
+    title: "Studio no Centro, ideal para estadia profissional",
     description:
       "Studio mobiliado no coração da cidade, próximo a hospitais e coworkings. Perfeito para profissionais de saúde em plantão ou residência.",
     propertyType: "Studio",
@@ -800,7 +801,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-014",
-    title: "Imóvel mobiliado de 3 quartos premium — Cidade Jardim",
+    // E814: "premium" saiu do título — o nível calculado do exemplo é Essencial.
+    title: "Imóvel mobiliado de 3 quartos — Cidade Jardim",
     description:
       "Imóvel amplo e sofisticado em bairro nobre, para executivos com família ou estadias de alto padrão. Lazer completo no condomínio.",
     propertyType: "Apartamento",

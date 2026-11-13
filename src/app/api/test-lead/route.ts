@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   }
   const all = searchParams.get("all") === "1";
   const kindParam = (searchParams.get("kind") ?? "duvida") as LeadKind;
-  const title = searchParams.get("title") ?? "Studio premium no Centro";
+  const title = searchParams.get("title") ?? "Studio no Centro"; // E814
 
   if (!isEmailConfigured()) {
     return NextResponse.json({
