@@ -18,7 +18,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
 import { PrecoJustoBadge } from "@/components/ui/badge";
 import { CAUCAO_FRASE } from "@/lib/faixas";
-import { CONTATO_NUNCA_TROCADO } from "@/config/textos-regulados";
+import { CONTATO_NUNCA_TROCADO, FRASE_ESCADA_TAXAS } from "@/config/textos-regulados";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
@@ -94,6 +94,12 @@ export default function HowItWorksPage() {
       <PrecoJusto />
 
       <Steps id="para-proprietarios" title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
+      {/* E805: a taxa do proprietário, com a escada inteira e o Plano Gestor, pela mesma fonte de /para-proprietarios. */}
+      <div className="container-page -mt-6 pb-8">
+        <p className="max-w-3xl text-sm text-muted" data-testid="cf-taxa-proprietario">
+          <strong className="text-ink">Taxa de serviço do proprietário:</strong> anunciar é grátis; a Viva cobra só sobre o valor total do contrato fechado. {FRASE_ESCADA_TAXAS}
+        </p>
+      </div>
       {/* Reforço de segurança do proprietário (sem vistoria/dossiê — pós-QA). */}
       <ProtegidoPor />
 
@@ -245,7 +251,7 @@ function DuranteDepois() {
       img: "/images/unicas/cf-renovacao.webp",
       alt: "Hóspede chegando com a bagagem para mais um período de estadia",
       title: "Renovação",
-      text: "A estadia se renova em blocos, com aceite das duas partes. A taxa do proprietário é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período.",
+      text: "A estadia se renova em blocos, com aceite das duas partes.",
     },
     {
       img: "/images/unicas/cf-devolucao.webp",
