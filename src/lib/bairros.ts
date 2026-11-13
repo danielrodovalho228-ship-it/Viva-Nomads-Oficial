@@ -164,3 +164,12 @@ export function caminhosDeBairros(
     agruparBairros(imoveis.filter((i) => mesmaCidade(i.city, c.name)), ehExemplo).map((b) => `/cidades/${c.slug}/${b.slug}`),
   );
 }
+
+/**
+ * E875 (RELATORIO-021, A-112): o cartão do bairro na grade da cidade. Com imóveis: "N imóveis". Sem nenhum: diz isso E o
+ * caminho (a página do bairro tem o "Avise-me quando houver" e os bairros vizinhos com imóveis) — nunca só o vazio.
+ */
+export function textoBairroNaGrade(total: number): { linha: string; dica: string | null } {
+  if (total > 0) return { linha: `${total} ${total === 1 ? "imóvel" : "imóveis"}`, dica: null };
+  return { linha: "Sem imóveis no momento", dica: "Avise-me quando houver e veja os bairros vizinhos" };
+}

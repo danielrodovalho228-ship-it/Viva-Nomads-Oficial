@@ -14,7 +14,7 @@ import { paginaCidade } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { polosDaCidade } from "@/lib/polos";
-import { bairrosDaGrade, contaNaBusca } from "@/lib/bairros";
+import { bairrosDaGrade, contaNaBusca, textoBairroNaGrade } from "@/lib/bairros";
 import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
 import { detalheContagemCidade } from "@/lib/cidades";
 import { contagemDaBusca } from "@/lib/busca/titulo-busca";
@@ -185,7 +185,13 @@ export default async function CityLandingPage({ params }: Params) {
                     </span>
                     <span className="min-w-0">
                       <span className="block truncate font-semibold text-ink">{b.nome}</span>
-                      <span className="block text-sm text-muted">{b.total === 0 ? "Sem imóveis no momento" : `${b.total} ${b.total === 1 ? "imóvel" : "imóveis"}`}</span>
+                      {/* E875: bairro sem imóvel diz o caminho (a página dele tem o aviso e os vizinhos com imóveis). */}
+                      <span className="block text-sm text-muted">{textoBairroNaGrade(b.total).linha}</span>
+                      {textoBairroNaGrade(b.total).dica && (
+                        <span className="block text-sm font-semibold text-forest" data-testid="bairro-cartao-dica">
+                          {textoBairroNaGrade(b.total).dica}
+                        </span>
+                      )}
                     </span>
                   </Link>
                 </li>
