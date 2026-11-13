@@ -14,8 +14,17 @@ const CONTAS = [
   { nome: "INQUILINA", email: process.env.TESTES_VARREDURA_INQUILINA_EMAIL, senha: process.env.TESTES_VARREDURA_INQUILINA_SENHA },
 ];
 
-/** Esqueleto de página inteira: o SkeletonLista (role=status, "Carregando", space-y-4, sem testid) ou o do guarda. */
-const ESQUELETO = '[data-testid="auth-guard-carregando"], [role="status"][aria-label="Carregando"].space-y-4:not([data-testid])';
+/*
+  A chave decide o que este spec prova (o mesmo padrão do t1607/t1608): com PAINEL_SESSAO_SERVIDOR=piloto (produção) o
+  Início é desenhado no servidor — nenhum esqueleto, nem o do guarda, e o topo sai antes dos dados no HTML. Com a chave
+  desligada (rollback; o lab-critico roda assim) o esqueleto do guarda é o comportamento esperado (t1607/t1608 ponto 8): aqui
+  o spec prova o que o E797 muda com qualquer chave — o SkeletonLista de página inteira do dashboard/loading.tsx nunca
+  aparece, e o topo chega antes (ou junto) do bloco de dados no navegador.
+*/
+const PILOTO = process.env.PAINEL_SESSAO_SERVIDOR === "piloto";
+const SKELETON_LISTA = '[role="status"][aria-label="Carregando"].space-y-4:not([data-testid])';
+/** Esqueleto de página inteira: o SkeletonLista e, no piloto, também o do guarda. */
+const ESQUELETO = PILOTO ? `[data-testid="auth-guard-carregando"], ${SKELETON_LISTA}` : SKELETON_LISTA;
 
 function sonda(seletorEsqueleto: string) {
   const w = window as unknown as { __e797: { esqueleto: boolean; topoEm: number | null; dadosEm: number | null } };
@@ -54,14 +63,17 @@ test.describe("T1614 — E797 o Início em seções, sem esqueleto de página in
         const v = await lida(page);
         expect(v.esqueleto, "o esqueleto de página inteira apareceu em algum quadro").toBe(false);
 
-        // HTML do servidor (a mesma sessão): sem o SkeletonLista; o topo vem ANTES do bloco de dados (que chega pelo fluxo).
+        // HTML do servidor (a mesma sessão): sem o SkeletonLista de página inteira com qualquer chave.
         const html = await (await page.request.get("/dashboard")).text();
         expect(html, "sem o SkeletonLista de página inteira no HTML").not.toMatch(/role="status" aria-label="Carregando" class="space-y-4"/);
-        const iTopo = html.indexOf('data-testid="inicio-topo"');
-        const iDados = html.search(/data-testid="(inicio-dono|inicio-so-morador|inicio-morador)"/);
-        expect(iTopo, "o topo está no HTML do servidor").toBeGreaterThan(-1);
-        expect(iDados, "o bloco de dados chega no mesmo HTML (pelo fluxo)").toBeGreaterThan(-1);
-        expect(iTopo, "o topo sai antes do bloco de dados").toBeLessThan(iDados);
+        if (PILOTO) {
+          // No piloto o Início é desenhado no servidor: o topo vem ANTES do bloco de dados (que chega pelo fluxo).
+          const iTopo = html.indexOf('data-testid="inicio-topo"');
+          const iDados = html.search(/data-testid="(inicio-dono|inicio-so-morador|inicio-morador)"/);
+          expect(iTopo, "o topo está no HTML do servidor").toBeGreaterThan(-1);
+          expect(iDados, "o bloco de dados chega no mesmo HTML (pelo fluxo)").toBeGreaterThan(-1);
+          expect(iTopo, "o topo sai antes do bloco de dados").toBeLessThan(iDados);
+        }
         expect(v.topoEm, "o topo apareceu").not.toBeNull();
         expect(v.topoEm!, "o topo apareceu antes (ou junto) do bloco de dados").toBeLessThanOrEqual(v.dadosEm ?? Infinity);
         await page.context().close();
