@@ -12,10 +12,15 @@ import { graduarExemplo } from "./niveis/nivel-exemplo.ts";
 /** Nome do anunciante nos anúncios de exemplo (nunca uma pessoa inventada). */
 const DONO_EXEMPLO = "Proprietário (exemplo)";
 
-/** Data AAAA-MM-DD daqui a `n` dias — as datas dos exemplos andam com o tempo
+/** Hoje em Brasília (AAAA-MM-DD). */
+function hojeEmBrasilia(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
+/** Data AAAA-MM-DD daqui a `n` dias, contados a partir de HOJE EM BRASÍLIA — as datas dos exemplos andam com o tempo
  *  (fixas, viravam passado e o card mostrava "Disponível agora"). */
 function emDias(n: number): string {
-  return new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+  return new Date(Date.parse(`${hojeEmBrasilia()}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 }
 
 export const SAMPLE_PROPERTIES: Property[] = [
@@ -903,6 +908,28 @@ export const SAMPLE_PROPERTIES: Property[] = [
     owner: { name: DONO_EXEMPLO, memberSince: "2025-11-01", responseRate: 92, verified: false },
   },
 ];
+
+/*
+  E868: a data de disponibilidade é LIDA A CADA ACESSO, nunca congelada na carga do módulo. Antes, a busca e a página do
+  anúncio rodavam em instâncias carregadas em dias diferentes e o cartão mostrava 1 dia depois da página (15/15). Cada
+  exemplo guarda só o deslocamento em dias; cartão, página e estado vazio da busca leem a mesma data, a de hoje em Brasília.
+*/
+{
+  const carga = Date.parse(`${hojeEmBrasilia()}T12:00:00Z`);
+  for (const p of SAMPLE_PROPERTIES) {
+    if (!p.availableFrom) continue;
+    const dias = Math.round((Date.parse(`${p.availableFrom}T12:00:00Z`) - carga) / 86400000);
+    let fixada: string | undefined;
+    Object.defineProperty(p, "availableFrom", {
+      get: () => fixada ?? emDias(dias),
+      set: (v: string | undefined) => {
+        fixada = v;
+      },
+      enumerable: true,
+      configurable: true,
+    });
+  }
+}
 
 /* Selo "Preço justo" também nos exemplos, pelo MESMO critério dos anúncios reais (nunca forçado). */
 // E399-B: o total por mês do cartão (com as contas), como a coluna gerada da 0277.
