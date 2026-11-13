@@ -489,3 +489,23 @@ export function linhasDadosDaCategoria(categorias: readonly string[], dados: { e
 
 /** E771: a divisão 90/10 vale só para SERVIÇOS de parceiros; o pagamento da estadia (/empresas, /buscar) vai direto ao proprietário. */
 export const ESCOPO_PAGAMENTO_PARCEIROS = "Esta divisão vale só para os serviços de parceiros. O pagamento da estadia vai direto ao proprietário, e a Viva não toca nesse dinheiro.";
+
+/**
+ * E878 — o que o parceiro espera × o que está escrito (família E818/E827/E865). Antes, o formulário dizia CNPJ, a
+ * conferência e os 7 dias, mas não dizia a lista completa do que o pedido leva, quando a página entra no ar depois da
+ * aprovação, nem se há contrato. Tudo abaixo sai das regras de verdade: DIAS_TOKEN (link), faltaParaPublicar (o que a
+ * página precisa para publicar, sem nova análise) e o checklist do admin (CHECKLIST_PARCERIA).
+ */
+export const DOCUMENTOS_DO_PEDIDO: readonly string[] = [
+  "CNPJ da empresa (MEI, onde a atividade permite), conferido na Receita",
+  "Nome do responsável, e-mail confirmado e telefone; a equipe confere a identidade do responsável",
+  "Categorias e cidades que você atende",
+  "Fotografia: link do portfólio · Mudança: empresa e veículo · Demais serviços: descrição do serviço",
+];
+
+export const DEPOIS_DA_APROVACAO: readonly string[] = [
+  `Aprovada, o e-mail traz o link de ativação, válido por ${DIAS_TOKEN} dias. Com a conta do e-mail do pedido, dá também para ativar pelo painel de parceiro, sem o link.`,
+  "Ativar é na hora: a sua página nasce em rascunho, você completa (foto de perfil, descrição, pelo menos 1 serviço e 1 cidade; fotografia: " +
+    `${FOTOS_MIN_FOTOGRAFIA} fotos na galeria; e a resposta sobre nota fiscal) e publica você mesmo, sem nova análise.`,
+  "Não há contrato separado para assinar: vale a regra dos serviços escrita aqui e os Termos de Uso da Viva.",
+];

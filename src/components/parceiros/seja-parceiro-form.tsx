@@ -6,7 +6,7 @@ import Image from "next/image";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { CATEGORIAS_CATALOGO, PRAZO_RESPOSTA_PARCERIA, CIDADES_MAX, EXIGENCIA_DA_CATEGORIA, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao, type CampoSolicitacao } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, DEPOIS_DA_APROVACAO, DOCUMENTOS_DO_PEDIDO, PRAZO_RESPOSTA_PARCERIA, CIDADES_MAX, EXIGENCIA_DA_CATEGORIA, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao, type CampoSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
@@ -379,6 +379,22 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
           {msgDoCampo("aceite")}
         </div>
       )}
+
+      {/* E878: a lista completa do pedido e o que acontece depois da aprovação (prazo de ativação, sem contrato). */}
+      <div className="rounded-lg border border-line p-4 text-sm text-ink" data-testid="seja-parceiro-expectativa">
+        <p className="font-semibold">O que o pedido leva</p>
+        <ul className="mt-1 list-disc space-y-1 pl-4" data-testid="seja-parceiro-documentos">
+          {DOCUMENTOS_DO_PEDIDO.map((d) => (
+            <li key={d}>{d}</li>
+          ))}
+        </ul>
+        <p className="mt-3 font-semibold">Depois da aprovação</p>
+        <ul className="mt-1 list-disc space-y-1 pl-4" data-testid="seja-parceiro-depois">
+          {DEPOIS_DA_APROVACAO.map((d) => (
+            <li key={d}>{d}</li>
+          ))}
+        </ul>
+      </div>
 
       <p className="text-sm text-ink" data-testid="seja-parceiro-regra-90-10">
         {TEXTO_REGRA_90_10}
