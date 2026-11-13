@@ -6,7 +6,7 @@ import { BrandImage } from "@/components/brand-image";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { FotoCartao } from "@/components/institucional/foto-cartao";
 import { cartaoSecao } from "@/lib/cartoes-secao";
-import { CAUCAO_FRASE } from "@/lib/faixas";
+import { CAUCAO_FRASE, CAUCAO_REGRA } from "@/lib/faixas";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { JsonLd } from "@/components/seo/json-ld";
 import { servicoProprietarios } from "@/lib/seo/estruturados";
@@ -172,7 +172,7 @@ export default function ForLandlordsPage() {
           <Benefit id="custos" title="Custos que podem ser transferidos" text="Água, luz, condomínio e IPTU podem ser do morador durante a estadia, conforme o contrato." />
           <Benefit id="ocupacao" title="Menos imóvel parado" text="Um morador por uma estadia inteira, inclusive nos meses fracos do turismo." />
           <Benefit id="contrato" title="Contrato com validade jurídica" text="Contrato de 30 a 180 dias gerado e assinado digitalmente, com validade jurídica." />
-          <Benefit id="caucao" title="Caução" text={`Caução documentada, combinada entre proprietário e morador. ${CAUCAO_FRASE} Outras modalidades de garantia locatícia: em breve. A plataforma organiza e documenta; não é a garantidora.`} />
+          <Benefit id="caucao" title="Caução" text={`Caução documentada, combinada entre proprietário e morador. ${CAUCAO_FRASE} ${CAUCAO_REGRA} Outras modalidades de garantia locatícia: em breve. A plataforma organiza e documenta; não é a garantidora.`} />
         </div>
       </section>
 

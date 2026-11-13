@@ -28,8 +28,9 @@ test("H3: faixa de confiança tem os 4 selos reais, sem citar lei", () => {
   // E785: o selo de contato vem da fonte única (textos-regulados), com o texto "Perfil verificado".
   assert.match(home, /text=\{SELO_PERFIL_VERIFICADO\}/);
   assert.match(readFileSync(new URL("../config/textos-regulados.ts", import.meta.url), "utf8"), /SELO_PERFIL_VERIFICADO = "Perfil verificado"/);
+  // E813: o selo da caução diz a base (frase única CAUCAO_CURTA: "Caução de 50% do valor mensal por bloco").
+  assert.match(home, /text=\{CAUCAO_CURTA\}/);
   for (const t of [
-    "Caução documentada",
     "Documentação do imóvel conferida",
     "R$ 0 de taxa para o morador",
   ])

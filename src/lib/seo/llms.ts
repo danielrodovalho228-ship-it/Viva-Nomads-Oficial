@@ -5,6 +5,7 @@
 */
 import { FAQ } from "../atendimento/faq.ts";
 import { REGRAS_CONTRATO } from "../../config/planos.ts";
+import { CAUCAO_BASE } from "../faixas.ts";
 import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
 
 const PAGINAS: [string, string, string][] = [
@@ -55,7 +56,7 @@ export function llmsFullTxt(siteUrl: string): string {
     "",
     "## Regras do contrato",
     `- Estadias de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses, em blocos de até ${REGRAS_CONTRATO.maxDiasBloco} dias.`,
-    `- Caução: ${Math.round(REGRAS_CONTRATO.caucaoFracaoBloco * 100)}% do valor de cada bloco, até ${REGRAS_CONTRATO.caucaoMaxAlugueis} aluguéis no total; volta no fim, depois da conferência de saída.`,
+    `- Caução: ${CAUCAO_BASE}; volta no fim, depois da conferência de saída.`,
     "",
     "## Perguntas frequentes",
     ...FAQ.flatMap((p) => [`### ${p.pergunta}`, p.resposta, ""]),

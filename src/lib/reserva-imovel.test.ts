@@ -40,7 +40,8 @@ test("Caução é linha separada, com o valor do 1º bloco pela regra do contrat
   // base: bloco padrão de 2 meses → 50% de 2 aluguéis = 1 aluguel.
   assert.equal(caucao.valor, formatBRL(base.monthlyPrice));
   assert.match(caucao.nota!, /devolvida no fim/);
-  assert.match(caucao.nota!, /50% do valor de cada bloco, no máximo 3 vezes o valor mensal/);
+  // E813: a base dita por inteiro (o valor mensal, só o aluguel).
+  assert.match(caucao.nota!, /50% do valor mensal \(só o aluguel, sem condomínio nem contas\) por mês de cada bloco, no máximo 3 vezes o valor mensal/);
   assert.match(caucao.nota!, /direto ao proprietário/);
   assert.match(caucao.nota!, /A Viva não recebe nem segura/);
   assert.equal(l.find((x) => x.chave === "viva")!.valor, formatBRL(0));
