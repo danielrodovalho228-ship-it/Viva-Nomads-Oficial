@@ -16,6 +16,8 @@ import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
 import { GESTOR_TEXTO } from "@/config/planos";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 import { AVISO_APROVACAO, AVISO_SEM_CUSTO } from "@/lib/ajuda-publicacao/ajuda";
+import { PERGUNTAS_PARA_PROPRIETARIOS, perguntasParaProprietarios } from "@/lib/ajuda/faq-proprietarios";
+import { faqPage } from "@/lib/seo/estruturados";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
 // E564: a frase cobre a tabela; a faixa do Plano Gestor é dita à parte (GESTOR_TEXTO).
@@ -209,6 +211,27 @@ export default function ForLandlordsPage() {
           </div>
         </div>
       </section>
+      {/* E847: "Perguntas frequentes" — respostas da fonte única (lib/atendimento/faq.ts, as mesmas da Central de Ajuda), em blocos
+          abertos (regra do E186: acordeão só nas páginas de tema da Central). */}
+      <section className="container-page section-y" data-testid="proprietarios-faq">
+        <h2 className="font-title text-2xl font-semibold text-ink">Perguntas frequentes</h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          {perguntasParaProprietarios().map((f) => (
+            <div key={f.id} className="rounded-xl border border-line bg-white p-4" data-testid="proprietarios-faq-item">
+              <h3 className="font-semibold text-ink">{f.pergunta}</h3>
+              <p className="mt-2 text-sm text-muted">{f.resposta}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-6 text-sm text-muted">
+          Mais respostas na{" "}
+          <Link href="/ajuda/proprietarios" className="font-medium text-forest underline">
+            Central de Ajuda
+          </Link>
+          .
+        </p>
+      </section>
+      <JsonLd dados={faqPage([...PERGUNTAS_PARA_PROPRIETARIOS], "Para proprietários · Perguntas frequentes")} />
     </>
   );
 }
