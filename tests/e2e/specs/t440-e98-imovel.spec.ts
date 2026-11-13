@@ -65,8 +65,10 @@ test.describe("T440 — E98-A: total do mês no JSON-LD e Bom saber completo", (
 
       await bloco.getByTestId("bom-saber-manutencao").click();
       const folha = page.getByRole("dialog");
-      await expect(folha).toContainText("Comum em até 72 h");
-      await expect(folha).toContainText("Demais em até 7 dias");
+      // E817: a régua única — os dois prazos de cada prioridade, quem resolve e o que acontece no atraso.
+      await expect(folha).toContainText("resposta em até 24 h e solução em até 72 h");
+      await expect(folha).toContainText("resposta em até 72 h e solução em até 7 dias");
+      await expect(folha).toContainText("Quem resolve é o proprietário");
       await page.screenshot({ path: `${SAIDA}/t440-bom-saber-manutencao-${w}.png` });
       await ctx.close();
     });
