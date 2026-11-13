@@ -24,3 +24,9 @@
 ## Dúvidas
 - Conflito com o #3779 (E811) só se a linha da galeria divergir; hoje é idêntica (`readyToLive={false}` + o mesmo comentário).
 - t296 cenário 1 (síntese com nível) está desatualizado desde o E416; não mexi nele por ser de outro item.
+
+## Fechamento do lote (suíte completa)
+A 1ª rodada da suíte completa pegou duas regras da casa, corrigidas no commit seguinte:
+- `estilo-padrao.test.ts`: o `mt-0.5` da pílula na home estava fora da régua de espaçamento e saiu.
+- `cobranca/regra.test.ts` (varredura dos nomes de planos antigos): um comentário da home citava a palavra do nível que também era nome de plano antigo. O comentário foi reescrito; o texto da tela vem de `ROTULO_NIVEL`.
+Depois: `npm test` → 7331 testes, 7330 pass, 0 fail.
