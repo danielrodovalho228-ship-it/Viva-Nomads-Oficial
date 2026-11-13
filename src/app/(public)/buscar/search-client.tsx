@@ -62,6 +62,7 @@ import { desempatePorId } from "@/lib/busca/ordem-estavel";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
+import { avisoLinkIgnorado, lerLinkDaBusca } from "@/lib/busca/link-da-busca";
 import { foraDoTempoPelaReta, type ModoRota } from "@/lib/rotas/tempo";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
@@ -105,6 +106,8 @@ export function SearchClient({
   const [garantia, setGarantia] = useState(""); // "" | caucao_avista | caucao_parcelada | titulo | seguro_fianca
   const [petsOnly, setPetsOnly] = useState(false);
   const [exemplosForcados, setExemplosForcados] = useState(false); // ?exemplos=1: laboratório/QA
+  // E869: o que o link trazia e a busca não reconhece (saiu da URL); o aviso diz o que foi ignorado.
+  const [avisoLink, setAvisoLink] = useState<string | null>(null);
 
   const [petPorte, setPetPorte] = useState<FiltrosPainel["petPorte"]>("");
   const [furnishedOnly, setFurnishedOnly] = useState(false);
@@ -166,7 +169,14 @@ export function SearchClient({
   // Restaura a busca da URL: endereço/raio + todos os filtros, para links
   // compartilhados e reloads mostrarem exatamente os filtros ativos (M7).
   const restaurarFiltrosDaURL = useCallback(() => {
-    const sp = new URLSearchParams(window.location.search);
+    // E869: o que a busca não conhece sai da URL (antes ficava sem filtrar e sem aviso); `cidade` vira `local`.
+    const lido = lerLinkDaBusca(new URLSearchParams(window.location.search));
+    const sp = lido.limpo;
+    setAvisoLink(avisoLinkIgnorado(lido.ignorados));
+    if (sp.toString() !== new URLSearchParams(window.location.search).toString()) {
+      const qs = sp.toString();
+      window.history.replaceState(window.history.state, "", qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
+    }
     if (exemplosForcadosNaUrl(window.location.search)) setExemplosForcados(true);
     const local = sp.get("local");
     const lat = Number(sp.get("lat"));
@@ -851,6 +861,11 @@ export function SearchClient({
             comMapa era falso, a lista ocupava 100% e encolhia para 58% quando o mapa entrava (CLS 0,30 a 1280 px).
             O componente do mapa continua carregando só no computador (comMapa). */}
         <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
+          {avisoLink && (
+            <p role="status" className="mb-4 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="busca-aviso-link">
+              {avisoLink}
+            </p>
+          )}
           {/* E529: a faixa "Comparar (N)" é da página (acima da lista), nunca flutua sobre os cartões. */}
           <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
           {/* E723: sem imóvel real publicado, a lista é só de exemplos — e diz isso no topo. */}
