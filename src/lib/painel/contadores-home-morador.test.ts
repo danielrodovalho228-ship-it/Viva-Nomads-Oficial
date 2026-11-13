@@ -15,7 +15,7 @@ test("Favoritos e Buscas salvas contam as MESMAS listas das telas de destino (nu
   assert.match(ler("app/(dashboard)/dashboard/favoritos/page.tsx"), /useFavoritos\(\)/);
   // Buscas salvas: a lista de /dashboard/buscas (listarBuscasSalvas), lida no servidor.
   assert.match(home, /label="Buscas salvas" value=\{demo \? "2" : valorContador\(totalBuscasSalvas\)\}/);
-  const pagina = ler("app/(dashboard)/dashboard/page.tsx");
+  const pagina = ler("app/(dashboard)/dashboard/inicio-dados.tsx");
   assert.match(pagina, /ou\("buscas", listarBuscasSalvas\(\{ exigir: true \}\), null\)/);
   assert.match(pagina, /totalBuscasSalvas=\{buscasSalvas \? buscasSalvas\.length : null\}/);
   assert.match(ler("app/(dashboard)/dashboard/buscas/page.tsx"), /listarBuscasSalvas/);
@@ -29,7 +29,7 @@ test("E181: a lista de favoritos da conta chega ao aparelho no login (o contador
 
 test("E181 (família inteira): Candidaturas e Mensagens da home também contam a MESMA função das telas de destino", () => {
   const home = ler("app/(dashboard)/dashboard/visao-geral-client.tsx");
-  const pagina = ler("app/(dashboard)/dashboard/page.tsx");
+  const pagina = ler("app/(dashboard)/dashboard/inicio-dados.tsx");
   // Candidaturas: listMinhasCandidaturas, na home e em /dashboard/candidaturas.
   assert.match(pagina, /ou\("candidaturas", listMinhasCandidaturas\(\{ exigir: true \}\), null\)/);
   assert.match(pagina, /totalCandidaturas=\{candidaturas \? candidaturas\.length : null\}/);

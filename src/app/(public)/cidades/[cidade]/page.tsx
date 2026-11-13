@@ -222,8 +222,8 @@ export default async function CityLandingPage({ params }: Params) {
             tradicional e a hospedagem por diária.
           </p>
           <p className="mt-3 leading-relaxed">
-            Todos os imóveis do Viva Nomads em {name} são mobiliados e qualificados. Os que
-            têm o selo <strong className="text-ink">{SELOS.prontoParaMorar.nome}</strong> são{" "}
+            Todos os imóveis do Viva Nomads em {name} são mobiliados e qualificados. O selo{" "}
+            <strong className="text-ink">{SELOS.prontoParaMorar.nome}</strong> marca o imóvel{" "}
             {SELOS.prontoParaMorar.resumo}; etiquetas como{" "}
             <strong className="text-ink">{SELOS.homeOffice.nome}</strong> ({SELOS.homeOffice.resumo})
             e <strong className="text-ink">{SELOS.bemLocalizado.nome}</strong> ({SELOS.bemLocalizado.resumo})

@@ -1,5 +1,7 @@
 "use server";
 
+import { erroTituloNivel, termoDeNivelDivergente } from "@/lib/anuncio/titulo-nivel";
+import type { NivelOuAdequacao } from "@/config/niveis";
 import { diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
 import { cepValido } from "@/lib/proximidades/osm";
 import { camposDaCandidatura, MSG_CANDIDATURA_JA_RESPONDIDA, MSG_CANDIDATURA_NAO_ATUALIZOU } from "@/lib/candidatura/campos";
@@ -101,6 +103,7 @@ import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regr
 import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
+import { urlsDeFotosDoRascunho } from "@/lib/minimizacao/fotos-rascunho";
 import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
@@ -810,6 +813,9 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   }
   const chegada = colunasChegadaEPedido(input);
   if (!chegada.ok) return { ok: false, error: chegada.erro };
+  // E814: anúncio novo ainda não tem nível calculado — nenhum termo de nível ("premium", "conforto") no título.
+  const erroNivelNovo = erroTituloNivel(input.title ?? "", null);
+  if (erroNivelNovo) return { ok: false, error: erroNivelNovo };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -1110,6 +1116,12 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!UUID_RE.test(id)) return { ok: false, error: "Imóvel inválido para edição." };
+  // E814: o título não usa termo de nível diferente do nível CALCULADO deste anúncio (o editor já avisa; aqui trava).
+  if (termoDeNivelDivergente(input.title ?? "", null)) {
+    const { data: nv } = await supabase.from("imovel_nivel").select("nivel").eq("property_id", id).maybeSingle();
+    const erroNivel = erroTituloNivel(input.title ?? "", ((nv as { nivel?: NivelOuAdequacao | null } | null)?.nivel ?? null));
+    if (erroNivel) return { ok: false, error: erroNivel };
+  }
 
   // F45: publicar exige perfil de proprietário completo (nome e telefone) — checado
   // aqui no servidor; a conta pode ser dona e inquilina, então a tela só avisa.
@@ -2051,7 +2063,7 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Não autenticado." };
 
   // Prompt 58: as fotos saem do bucket com o anúncio (o hash fica, antifraude). Só as do próprio dono.
-  const { data: dono, error: erroDono } = await supabase.from("properties").select("id").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const { data: dono, error: erroDono } = await supabase.from("properties").select("id, draft_data").eq("id", id).eq("owner_id", user.id).maybeSingle(); // consistency-ignore: E705 — só o servidor lê o rascunho do PRÓPRIO dono (owner_id na consulta) para achar as urls das fotos a apagar; nada vai à resposta
   const { data: fotos, error: erroFotos } = dono ? await supabase.from("property_photos").select("url").eq("property_id", id) : { data: null, error: null };
   // Sem a lista das fotos, excluir deixaria os arquivos no bucket sem nada que aponte para eles: para antes de apagar.
   if (erroDono || erroFotos) return { ok: false, error: "Não foi possível excluir o anúncio agora. Tente de novo." };
@@ -2064,7 +2076,9 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   }
   const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
   if (error) return { ok: false, error: erroBancoPT(error) };
-  if (fotos?.length) await apagarFotosDoAnuncio(createAdminClient(), (fotos as { url: string }[]).map((f) => f.url));
+  // E705 (resíduo 2): a foto que só existe no draft_data (autosave do editor) também sai do bucket; a guarda do E308 protege o que outro anúncio usa.
+  const urlsDoAnuncio = [...((fotos ?? []) as { url: string }[]).map((f) => f.url), ...urlsDeFotosDoRascunho((dono as { draft_data?: unknown } | null)?.draft_data)];
+  if (urlsDoAnuncio.length) await apagarFotosDoAnuncio(createAdminClient(), urlsDoAnuncio);
   revalidarAnuncio(id, revalidatePath);
   return { ok: true };
 }

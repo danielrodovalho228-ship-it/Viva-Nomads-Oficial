@@ -34,7 +34,8 @@ test("as consultas da vitrine ordenam por created_at E por id (lotes com o mesmo
 
 test("toda ordenação da busca no cliente tem desempate por id e não usa sorteio", () => {
   const src = readFileSync("src/app/(public)/buscar/search-client.tsx", "utf8");
-  assert.ok((src.match(/desempatePorId/g) ?? []).length >= 6);
+  // E810: a relevância passou para a função pura comparaRelevancia (que desempata por id): conta junto.
+  assert.ok((src.match(/desempatePorId|sort\(comparaRelevancia\)/g) ?? []).length >= 6);
   assert.doesNotMatch(src, /Math\.random/);
   const page = readFileSync("src/app/(public)/buscar/page.tsx", "utf8");
   assert.doesNotMatch(page, /Math\.random|shuffle/);

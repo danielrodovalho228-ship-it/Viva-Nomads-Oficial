@@ -27,9 +27,7 @@ function MapaCarregandoModulo() {
 }
 import { cn, distanceKm, hojeBR } from "@/lib/utils";
 import { situacaoBuscaVazia } from "@/lib/busca-vazia";
-import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { comTotalMes } from "@/lib/precos";
-import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
@@ -58,7 +56,7 @@ import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
 import { useTempos } from "@/components/busca/use-tempos";
-import { desempatePorId } from "@/lib/busca/ordem-estavel";
+import { comparaRelevancia, desempatePorId } from "@/lib/busca/ordem-estavel";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
@@ -489,11 +487,8 @@ export function SearchClient({
     else if (dist)
       list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)! || desempatePorId(a, b));
     else
-      list = [...list].sort(
-        (a, b) =>
-          prioridadeNaBusca(searchPriority(tierFromPhotoCount(b.photos.length)), b.precoJusto) -
-            prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto) || desempatePorId(a, b)
-      );
+      // E810: a ordem de relevância pela função pura (mesma lista, mesma ordem, em qualquer carregamento).
+      list = [...list].sort(comparaRelevancia);
     return list;
   }, [baseVisivel, dist, filtrosPainel, sort]);
 

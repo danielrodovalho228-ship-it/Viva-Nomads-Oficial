@@ -33,7 +33,8 @@ for (const [largura, altura] of [[390, 844], [1280, 900]] as const) {
       const texto = await page.locator("main").innerText();
       expect(texto).toContain("A taxa de serviço da Viva é de 12% sobre o valor total do contrato fechado");
       // E564 (parte A): a tabela de 12% a 6% e o Plano Gestor pelo texto único (4%, cadastro assistido, contato direto).
-      expect(texto).toContain(`(de 12% a 6%). Plano Gestor: ${GESTOR_TEXTO}.`);
+      // E805: a escada inteira (12/10/8/6) no lugar da faixa resumida "de 12% a 6%".
+      expect(texto).toContain(`1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%. Plano Gestor: ${GESTOR_TEXTO}.`);
       expect(texto).not.toMatch(/taxa negociável|condições negociadas/);
       expect(texto).not.toMatch(PROIBIDAS);
       await page.screenshot({ path: `tests/laboratorio/saida/t438-proprietarios-${largura}.png` });

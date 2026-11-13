@@ -9,11 +9,20 @@
 */
 import { quartosTexto, banheirosTexto } from "./anuncio/plural.ts";
 import { ROTULO_NIVEL, type NivelOuAdequacao } from "../config/niveis.ts";
+import { REGRAS_CONTRATO } from "../config/planos.ts";
+
+/** E826: o mínimo da promessa geral ("a partir de 30 dias"); o cartão avisa quando o anúncio pede mais. */
+export const MIN_DIAS_PROMESSA = REGRAS_CONTRATO.prazoMinMeses * REGRAS_CONTRATO.diasPorMes;
+
+/** E826: "mínimo de 60 dias" — só quando o anúncio pede mais que a promessa geral (senão, nada a avisar). */
+export function textoMinimoDoAnuncio(minPeriodDays: number | null | undefined): string | null {
+  return typeof minPeriodDays === "number" && minPeriodDays > MIN_DIAS_PROMESSA ? `mínimo de ${minPeriodDays} dias` : null;
+}
 
 /** "Conforto" ou "Conforto · vistoriado" (o selo único da foto não muda). */
 export const textoNivelCartao = (rotulo: string, vistoriado: boolean) => (vistoriado ? `${rotulo} · vistoriado` : rotulo);
 
-export type ChaveSintese = "nivel" | "quartos" | "banheiros" | "area" | "mobiliado";
+export type ChaveSintese = "nivel" | "quartos" | "banheiros" | "area" | "mobiliado" | "minimo";
 
 export function itensSintese(p: {
   bedrooms?: number | null;
@@ -22,6 +31,7 @@ export function itensSintese(p: {
   furnished?: boolean | null;
   nivel?: NivelOuAdequacao | null;
   nivelVistoriado?: boolean | null;
+  minPeriodDays?: number | null;
 }): { chave: ChaveSintese; texto: string }[] {
   const itens: { chave: ChaveSintese; texto: string }[] = [];
   if (p.nivel && p.nivel !== "em_adequacao") itens.push({ chave: "nivel", texto: textoNivelCartao(ROTULO_NIVEL[p.nivel], !!p.nivelVistoriado) });
@@ -29,5 +39,8 @@ export function itensSintese(p: {
   if (p.bathrooms && p.bathrooms > 0) itens.push({ chave: "banheiros", texto: banheirosTexto(p.bathrooms) });
   if (p.areaM2 && p.areaM2 > 0) itens.push({ chave: "area", texto: `${p.areaM2} m²` });
   if (p.furnished === true) itens.push({ chave: "mobiliado", texto: "mobiliado" });
+  // E826: o mínimo real aparece no cartão quando é maior que o da promessa geral (o ube-003 pede 60 dias).
+  const minimo = textoMinimoDoAnuncio(p.minPeriodDays);
+  if (minimo) itens.push({ chave: "minimo", texto: minimo });
   return itens;
 }

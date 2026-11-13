@@ -68,7 +68,12 @@ export function StayRules({ property }: { property: Property }) {
   if (property.maxGuests !== undefined)
     rows.push({ icon: Users, label: "Moradores", value: `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` });
   // CAMPOS-2: a janela de entrada/saída (quando ligada) tem precedência sobre os horários antigos.
-  const detalhes = linhasDetalhes(property.detalhesAnuncio, { tipo: property.propertyType, cidade: property.city });
+  // E815: o "Incluído no preço" não contradiz a composição do mês (os custos cobrados à parte saem da lista).
+  const detalhes = linhasDetalhes(property.detalhesAnuncio, {
+    tipo: property.propertyType,
+    cidade: property.city,
+    custos: { utilitiesMode: property.utilitiesMode, utilitiesEstimate: property.utilitiesEstimate, condoFee: property.condoFee },
+  });
   if (!detalhes.some((d) => d.chave === "janela")) {
     if (property.checkinAfter)
       rows.push({ icon: LogIn, label: "Entrada", value: `A partir das ${property.checkinAfter}` });

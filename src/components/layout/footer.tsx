@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PROMESSA_ESTADIA } from "@/config/textos-regulados";
 import { Logo } from "@/components/ui/logo";
 import { CITIES } from "@/lib/constants";
 import { SUPORTE_EMAIL } from "@/lib/site";
@@ -13,7 +14,7 @@ export function Footer() {
         <div className="md:col-span-1">
           <Logo href="/" light />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
-            Imóveis mobiliados para estadias de 30 a 180 dias, para profissionais em transição.
+            Imóveis mobiliados para profissionais em transição. {PROMESSA_ESTADIA}.
             Contrato de verdade, conversa registrada e custos organizados.
           </p>
           <p className="mt-4 text-sm text-white/60">

@@ -27,7 +27,7 @@ import { SELOS } from "@/config/selos";
 import { PHOTOS } from "@/lib/media";
 import { listProperties } from "@/lib/data/properties";
 import { ButtonLink } from "@/components/ui/button";
-import { SELO_DOCUMENTO_IMOVEL, SELO_VERIFICACOES_ANUNCIANTE } from "@/config/textos-regulados";
+import { SELO_DOCUMENTO_IMOVEL, SELO_VERIFICACOES_ANUNCIANTE, PROMESSA_ESTADIA } from "@/config/textos-regulados";
 import { SpecTag, Eyebrow } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
@@ -86,7 +86,7 @@ export default async function HomePage() {
             Imóveis mobiliados para morar por meses
           </h1>
           <p className="mt-3 text-base font-medium text-white/85 sm:text-lg">
-            Estadias de 30 a 180 dias · sem taxa para o morador
+            {PROMESSA_ESTADIA} · sem taxa para o morador
           </p>
           <div className="mt-8 w-full max-w-xl">
             <BuscaPrincipal />

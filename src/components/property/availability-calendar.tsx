@@ -38,7 +38,7 @@ export const COR_DIA = {
 export const ROTULO_OCUPADO = "Ocupado (já reservado)";
 export const ROTULO_BLOQUEADO = "Bloqueado pelo proprietário";
 export const NOTA_DATAS_LIVRES = "Dias na cor clara estão livres para pedir. Os demais, ocupados ou bloqueados, não estão disponíveis; para outras datas, pergunte ao proprietário antes de pedir.";
-import { clicarDia as proximaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
+import { clicarDia as proximaSelecao, semDatas, textoDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { buttonClasses } from "@/components/ui/button";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { primeiraEntradaPossivel } from "@/lib/imovel/disponivel-a-partir";
@@ -317,9 +317,15 @@ export function AvailabilityCalendar({
                     )}
                   </>
                 ) : (
-                  <>Entrada {brDate(checkIn)} — agora escolha a saída.</>
+                  // E816: o estado inicial não simula escolha — a entrada que veio da busca diz de onde veio.
+                  <>{textoDaSelecao(selecao)}</>
                 )}
               </p>
+              {!checkOut && selecao.entradaDaBusca && (
+                <button type="button" className="mt-1 text-xs font-semibold text-forest underline underline-offset-2" onClick={() => onSelecao(semDatas(selecao))} data-testid="calendario-limpar-data-busca">
+                  Limpar a data
+                </button>
+              )}
               {reserva && !reserva.ok && (
                 <p className="mt-1 flex items-center gap-2 text-xs text-amber-700">
                   <CircleAlert className="h-3.5 w-3.5" /> {reserva.motivo}
