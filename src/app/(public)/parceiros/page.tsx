@@ -12,6 +12,7 @@ import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_PRAZO_PARCERIA, categoriaValida } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
+import { linksDoCartaoServicos } from "@/lib/parceiros/cartao-servicos";
 import { GESTOR_TEXTO } from "@/config/planos";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 import { linksDoCartaoGestores } from "@/lib/parceiros/tipos-parceria";
@@ -32,7 +33,7 @@ const CARDS = [
     // com o Plano Gestor em /para-proprietarios#taxa — o cartão nunca fica sem saída.
     links: linksDoCartaoGestores(PRECOS_VISIVEL) },
   { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção para imóveis mobiliados. Página própria com serviços e cidades.",
-    links: [{ href: "/parceiros?categoria=limpeza#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=limpeza", rotulo: "Procurar" }] },
+    links: linksDoCartaoServicos() }, // E897: um caminho por categoria (limpeza, lavanderia, manutenção), como o cartão "Montagem e mudança".
   { id: "mobilia", titulo: "Montagem e mudança", selo: "Aberto", texto: "Montagem de móveis e mudança para quem anuncia ou vem morar. Página própria com serviços e cidades.",
     // E301 (QA 31/10): o cartão junta duas categorias — cada link leva à sua (antes, os dois iam só a "mudanca").
     links: [
