@@ -9,7 +9,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { CATEGORIAS_CATALOGO, PRAZO_RESPOSTA_PARCERIA, CIDADES_MAX, EXIGENCIA_DA_CATEGORIA, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao, type CampoSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
-import { CONVITE_SEJA_PARCEIRO } from "@/lib/parceiros/convite-avaliacao";
+import { CONVITE_SEJA_PARCEIRO, HREF_PASSOS_CREDENCIAMENTO } from "@/lib/parceiros/convite-avaliacao";
 import { ERRO_SESSAO_NAO_CONFIRMADA, pessoaLogada, rotuloEnvioParceria } from "@/lib/parceiros/sessao-rotulo";
 import { useAuthStore } from "@/lib/store";
 import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
@@ -316,7 +316,8 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         <div className="mt-2 rounded-lg border border-sage-200 bg-white p-3 text-sm" data-testid="sp-convite-avaliacao">
           <p className="font-semibold text-ink">{CONVITE_SEJA_PARCEIRO.titulo}</p>
           <p className="mt-1 text-muted">{CONVITE_SEJA_PARCEIRO.texto}</p>
-          <Link href="/dashboard/parceiro/avaliacao" className="alvo-toque mt-1 inline-block font-semibold text-forest underline underline-offset-2">
+          {/* E902: os passos do credenciamento estão na página pública de recrutamento (antes: o painel logado do avaliador). */}
+          <Link href={HREF_PASSOS_CREDENCIAMENTO} className="alvo-toque mt-1 inline-block font-semibold text-forest underline underline-offset-2">
             {CONVITE_SEJA_PARCEIRO.link}
           </Link>
         </div>

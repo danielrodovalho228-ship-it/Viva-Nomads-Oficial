@@ -13,5 +13,6 @@ test("o convite diz que é credenciamento à parte e leva aos passos", () => {
   assert.doesNotMatch(Object.values(CONVITE_SEJA_PARCEIRO).join(" "), /vistoria|inspe[çc][ãa]o|per[íi]cia|comiss/i);
   const form = readFileSync(new URL("../../components/parceiros/seja-parceiro-form.tsx", import.meta.url), "utf8");
   assert.match(form, /data-testid="sp-convite-avaliacao"/);
-  assert.match(form, /href="\/dashboard\/parceiro\/avaliacao"/);
+  // E902 (asserção alterada): o link leva à página pública /parceiros/avaliadores (ROTA_RECRUTAMENTO); antes, ao painel logado.
+  assert.match(form, /<Link href=\{HREF_PASSOS_CREDENCIAMENTO\}/);
 });

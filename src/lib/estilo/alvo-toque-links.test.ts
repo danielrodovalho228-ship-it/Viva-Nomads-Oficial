@@ -16,7 +16,8 @@ test("links soltos medidos a 390 px usam a área de toque ampliada", () => {
     ["app/(public)/cidades/[cidade]/page.tsx", /<Link href="\/" className="alvo-toque /],
     ["app/(public)/cidades/[cidade]/[polo]/page.tsx", /<Link href="\/" className="alvo-toque /],
     ["components/cidades/bairro-pagina.tsx", /<Link href="\/" className="alvo-toque /],
-    ["components/parceiros/seja-parceiro-form.tsx", /<Link href="\/dashboard\/parceiro\/avaliacao" className="alvo-toque /],
+    // E902 (asserção alterada): o link leva a /parceiros/avaliadores (HREF_PASSOS_CREDENCIAMENTO); antes, /dashboard/parceiro/avaliacao.
+    ["components/parceiros/seja-parceiro-form.tsx", /<Link href=\{HREF_PASSOS_CREDENCIAMENTO\} className="alvo-toque /],
   ];
   for (const [arq, re] of casos) assert.match(ler(arq), re, arq);
   // A área de 44 px continua definida.
