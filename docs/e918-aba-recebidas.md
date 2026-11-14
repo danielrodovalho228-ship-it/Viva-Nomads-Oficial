@@ -23,12 +23,22 @@
 
 No lab: `4 passed (6.2m)`. Não há mudança de comportamento: nenhum código de produção foi alterado.
 
-## Dúvida
-Não reproduzi o defeito. Para fechar a causa, preciso de três coisas do caso real:
-- a conta (papel);
-- a hora do print;
-- o endereço exato.
+## Causa encontrada (caso real do Gerente, 14/11)
+**O caso real:**
+- conta de teste de proprietário, sem nenhuma avaliação (estado vazio);
+- "Recebidas" clicada 2× e aberta por **`/dashboard/avaliacoes?tab=recebidas`**.
 
-O que ainda não pude descartar sem a prova ao vivo:
-- uma conta com avaliações reais (a massa do lab não tem avaliação publicada);
-- um aparelho preso numa versão antiga (cache do app).
+A página só lia `?aba=`. Com `?tab=`, `abaDoPainel(undefined)` caía em "Para avaliar": a URL mudava e a aba não.
+
+**Correção:**
+- `abaDoEndereco()` e `filtroDoEndereco()` (em `src/lib/conta/painel-avaliacoes.ts`) aceitam `?tab=` como `?aba=`;
+- `?aba=` manda quando os dois vêm;
+- a página usa as duas funções.
+
+**Trava:**
+- `src/lib/conta/e918-aba-do-endereco.test.ts`: na main `not ok 1` (sem `abaDoEndereco`); na branch `# pass 4 / # fail 0`.
+- `t1626` passa a cobrir `?tab=` para as três abas, o estado vazio (`painel-sem-recebidas`) e os dois cliques seguidos em "Recebidas".
+  - Na main: `dono 390 URL ?tab=recebidas: a aba ativa`, `1 failed`.
+  - Na branch: `4 passed (6.4m)`.
+
+As contas do lab já nasciam sem avaliações. Nelas, o clique sempre ativou "Recebidas" (main e branch). Só o `?tab=` reproduz o que a prova viu.
