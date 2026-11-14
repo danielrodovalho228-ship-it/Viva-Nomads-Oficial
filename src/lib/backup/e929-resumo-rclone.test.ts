@@ -65,6 +65,8 @@ test("copia.sh: o sync tem log próprio, o resumo sai sempre (deu certo ou não)
   assert.match(etapa, /\|\| sync_ok=0\nnode "\$RAIZ\/scripts\/backup\/resumo-rclone\.ts" "\$SYNC_LOG"/);
   assert.match(etapa, /::error::A cópia dos arquivos do storage falhou/);
   assert.match(etapa, /--modify-window 2s/);
+  // Nada do rclone no log público: nem a linha que o DEBUG escreve no stderr antes de abrir o --log-file.
+  assert.match(etapa, /--tpslimit 8 2>>"\$SYNC_LOG" \|\| sync_ok=0/);
 });
 
 test("o job do backup noturno tem folga de tempo para a cópia do storage (≥ 90 min)", async () => {
