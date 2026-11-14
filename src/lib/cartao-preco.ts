@@ -73,8 +73,8 @@ export function estadiaDoCartao(r: RotuloPreco): string {
   return r.estadia ?? resumoEmMeses(r.total, 1);
 }
 
-/** E356: o rótulo que diz o que o preço grande do cartão é. */
-export const ROTULO_TOTAL_MES = "Total por mês, tudo incluído";
+// E899: o antigo ROTULO_TOTAL_MES do cartão ("Total por mês, tudo incluído") saiu — duplicava, com outro texto, o de precos.ts
+// ("Total por mês (com contas)"), que fica como o único. No cartão, o aviso curto da linha do total (precos.ts) diz o que inclui.
 
 /**
  * E702: a data "Disponível a partir de" da página do imóvel é CALCULADA (primeira entrada em que cabe a estadia mínima,

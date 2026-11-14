@@ -8,6 +8,7 @@ import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
 import { notaDataCalculada, resumoEmMeses, rotuloPreco } from "@/lib/cartao-preco";
+import { composicaoDoMes } from "@/lib/cartao-estadia";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 import { PainelPrecoFixo } from "@/components/property/painel-preco-fixo";
 
@@ -75,6 +76,11 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
             · {resumoEmMeses(estadia.total, estadia.meses)}
           </span>
         )}
+      </p>
+      {/* E899: a composição do "/mês" saiu do cartão da busca e mora aqui, perto do preço — a MESMA função (composicaoDoMes), com o
+          aviso das contas medidas. A composição da estadia é a conta logo abaixo (estadiaDoImovel(...).conta). */}
+      <p className="text-xs text-muted" data-testid="cartao-lateral-mes-composicao">
+        {composicaoDoMes(property)}
       </p>
       {estadiaMinimaAviso != null && (
         <p className="text-sm font-medium text-ink" data-testid="cartao-lateral-estadia-minima" role="status">
