@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { CascaConta } from "@/components/account/casca-conta";
 import { PainelAvaliacoes } from "@/components/avaliacoes/painel";
 import { avaliacoesRecebidas } from "@/lib/data/avaliacoes-recebidas";
 import { avaliacoesFeitas, avaliacoesParaFazer } from "@/lib/data/avaliacoes-painel";
@@ -12,6 +13,7 @@ export const metadata = { title: "Avaliações", robots: { index: false } };
  * E679 — painel Avaliações UNIFICADO (mockup avaliacoes-painel, desktop e celular). Um só painel, um só nome e um só
  * destino para todos os papéis (resolve a duplicação do E85): "Para avaliar", "Recebidas" e "Feitas". A antiga tela da
  * Conta (/dashboard/conta/avaliacoes) redireciona para cá. Sem migração; só lê o que já existe.
+ * E898: renderiza na casca da Conta (menu lateral com "Avaliações" ativo, "‹ Conta" no celular), como as seções irmãs.
  */
 export default async function AvaliacoesPainelPage({ searchParams }: { searchParams: Promise<{ aba?: string; filtro?: string; q?: string }> }) {
   const sp = await searchParams;
@@ -24,5 +26,9 @@ export default async function AvaliacoesPainelPage({ searchParams }: { searchPar
   const [recebidas, feitasRes] = await Promise.all([avaliacoesRecebidas({ exigir: true }), avaliacoesFeitas({ exigir: true })]);
   if (!recebidas || !feitasRes) redirect("/auth?next=/dashboard/avaliacoes");
   const paraAvaliar = await avaliacoesParaFazer(new Set(feitasRes.feitas.map((f) => f.contratoId)));
-  return <PainelAvaliacoes aba={aba} filtro={filtro} busca={busca} recebidas={recebidas} feitas={feitasRes.feitas} paraAvaliar={paraAvaliar} />;
+  return (
+    <CascaConta ativo="avaliacoes">
+      <PainelAvaliacoes aba={aba} filtro={filtro} busca={busca} recebidas={recebidas} feitas={feitasRes.feitas} paraAvaliar={paraAvaliar} />
+    </CascaConta>
+  );
 }

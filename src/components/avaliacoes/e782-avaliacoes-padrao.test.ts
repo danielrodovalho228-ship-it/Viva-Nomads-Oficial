@@ -6,15 +6,22 @@ import { painelMostraVoltar } from "../../lib/navegacao/voltar-painel.ts";
 
 const f = readFileSync(new URL("./painel.tsx", import.meta.url), "utf8");
 
-test("voltar é a seta junto do título (não o '← Voltar' em texto do painel)", () => {
-  assert.match(f, /<VoltarCelular padrao="\/dashboard"/);
+// E898 (asserções alteradas): o título e a seta de voltar vêm da casca da Conta (CascaConta ativo="avaliacoes"),
+// não mais de um cabeçalho próprio do painel.
+const pagina = readFileSync(new URL("../../app/(dashboard)/dashboard/avaliacoes/page.tsx", import.meta.url), "utf8");
+const casca = readFileSync(new URL("../account/casca-conta.tsx", import.meta.url), "utf8");
+
+test("voltar é a seta junto do título, a da casca da Conta (não o '← Voltar' em texto do painel)", () => {
+  assert.match(pagina, /<CascaConta ativo="avaliacoes">/);
+  assert.match(casca, /<VoltarCelular padrao="\/dashboard\/conta"/);
   assert.equal(painelMostraVoltar("/dashboard/avaliacoes"), false);
 });
 
-test("título em tinta no tamanho padrão do painel (não verde grande)", () => {
-  const h1 = f.slice(f.indexOf("<h1"), f.indexOf("</h1>"));
-  assert.match(h1, /text-ink/);
-  assert.doesNotMatch(h1, /text-forest/);
+test("título em tinta (o H1 da casca da Conta, não verde grande)", async () => {
+  const { TITULO_TELA_CONTA } = await import("../../lib/conta/visual-mockup.ts");
+  assert.match(TITULO_TELA_CONTA, /text-ink/);
+  assert.doesNotMatch(TITULO_TELA_CONTA, /text-forest/);
+  assert.doesNotMatch(f, /<h1/);
 });
 
 test("abas sublinhadas como Favoritos, sem pílulas preenchidas", () => {

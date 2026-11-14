@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { VoltarCelular } from "@/components/ui/voltar-celular";
 import { ChevronRight, Clock, Home, Lock, Star } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/dashboard/primitives";
@@ -46,14 +45,9 @@ export function PainelAvaliacoes({
     .sort((a, b) => (Date.parse(b.publicadaEm ?? "") || 0) - (Date.parse(a.publicadaEm ?? "") || 0))
     .slice(0, 2);
   return (
-    <div className="mx-auto w-full max-w-3xl" data-testid="avaliacoes-painel">
-      {/* E782: o mesmo cabeçalho das outras telas — seta de voltar junto do título (no celular, título centralizado), título em tinta
-          no tamanho padrão do painel. O "← Voltar" em texto do painel não aparece aqui (painelMostraVoltar). */}
-      <div className="relative flex min-h-11 items-center justify-center lg:justify-start" data-testid="avaliacoes-cabecalho">
-        <VoltarCelular padrao="/dashboard" rotulo="o painel" className="absolute left-0 lg:inline-flex" testId="avaliacoes-voltar" />
-        <h1 className="px-12 text-center font-title text-2xl font-semibold text-ink sm:text-[28px] lg:px-12 lg:text-left">Avaliações</h1>
-      </div>
-
+    // E898: o painel mora na casca da Conta (CascaConta ativo="avaliacoes", na página): o título, o voltar ("‹ Conta" no
+    // celular), o menu lateral e a largura vêm de lá, como nas seções irmãs. Aqui só o conteúdo.
+    <div className="w-full" data-testid="avaliacoes-painel">
       {/* E782: abas como as outras telas do painel (sublinhado, como Favoritos): o título da seção NÃO repete o da aba ativa. */}
       <nav className={cn("mt-4", FILEIRA_ABAS)} data-testid="painel-abas" aria-label="Avaliações">
         {ABAS_PAINEL.map((a) => (
