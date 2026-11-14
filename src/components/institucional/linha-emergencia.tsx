@@ -4,16 +4,15 @@ import { pedacosDaFraseEmergencia, FRASE_EMERGENCIA_SEGURANCA } from "@/lib/segu
 export function LinhaEmergencia() {
   return (
     <p className="font-semibold text-ink" aria-label={FRASE_EMERGENCIA_SEGURANCA}>
-      {pedacosDaFraseEmergencia().map((p, i) => {
-        const n = p.texto;
-        return p.numero ? (
-          <a key={i} href={`tel:${n}`} className="underline underline-offset-2">
-            {n}
+      {pedacosDaFraseEmergencia().map((p, i) =>
+        p.href ? (
+          <a key={i} href={p.href} className="underline underline-offset-2">
+            {p.texto}
           </a>
         ) : (
-          <span key={i}>{n}</span>
-        );
-      })}
+          <span key={i}>{p.texto}</span>
+        ),
+      )}
     </p>
   );
 }
