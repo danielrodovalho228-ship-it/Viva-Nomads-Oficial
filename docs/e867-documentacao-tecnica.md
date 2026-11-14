@@ -34,7 +34,7 @@ Princípios de desenho que atravessam o código:
 3. **Institucional e captação:** `/como-funciona`, `/para-proprietarios`, `/empresas`, `/parceiros`, `/avaliadores`, `/seguranca` e `/precos`. Esta última fica suspensa enquanto `PRECOS_VISIVEL` estiver desligada.
 4. **Ajuda e conteúdo:** `/ajuda` (central e fale com a Viva), `/guias` e `/guia-fotos`.
 5. **Confiança e legal:** `/conferir`, que valida um documento pelo hash, mais `/termos`, `/privacidade` e `/excluir-conta`.
-6. **Pedidos de moradia:** `/pedidos`, onde quem procura imóvel publica a necessidade e os proprietários da cidade respondem.
+6. **Pedidos de moradia:** só o formulário `/pedidos/novo` é público (a pessoa vê sem login e só precisa entrar para publicar). O mural `/pedidos` e os pedidos `/pedidos/[id]`, onde os proprietários da cidade respondem, **exigem login**: sem sessão, o proxy redireciona para a entrada (o mural expõe pedidos de moradores). As páginas moram em `src/app/(public)`, mas não são área pública.
 
 ### 2.2 Entrada e conta: `src/app/auth`, 5 páginas e 3 rotas †
 - Entrada única por código enviado por e-mail, com senha como alternativa e Google/Apple atrás de chaves.
@@ -96,7 +96,7 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 ### 4.1 Números (lidos em 13/11/2026)
 - 222 tabelas no schema `public`, 221 com RLS. A exceção é `_bkp_0176_contratos_encerrados`, uma cópia de backup de migração que nenhuma tela lê.
 - 316 políticas RLS, 211 funções, 92 triggers e 5 views.
-- 290 migrações registradas em `supabase_migrations.schema_migrations`; a última é `20261112000342`. O repositório tem 335 arquivos `.sql` † em `supabase/migrations`. A diferença vem de arquivos auxiliares e de migrações numeradas que foram reunidas ao aplicar.
+- 290 migrações registradas em `supabase_migrations.schema_migrations`; a última é `20261112000342`. O repositório tem 336 arquivos `.sql` † em `supabase/migrations`. A diferença vem de arquivos auxiliares e de migrações numeradas que foram reunidas ao aplicar.
 - Extensões: `pg_cron`, `pg_net`, `pgcrypto`, `uuid-ossp`, `btree_gist` (impede reservas sobrepostas), `pg_stat_statements` e `supabase_vault`.
 
 ### 4.2 Domínios das tabelas (hierarquia funcional)
@@ -294,5 +294,5 @@ Versão em texto, para quem lê sem renderizar:
 
 1. Cada mudança abre um PR. O CI roda lint, `tsc`, os testes unitários e os gates (consistência, frases proibidas, estilo).
 2. A Vercel gera um preview por PR. O lab-crítico e o E2E rodam os fluxos críticos.
-3. O merge na `main`, feito pelo Daniel, é a aprovação: a Vercel publica em produção e a Action "Aplicar migrações em produção" aplica o que ainda não está em `schema_migrations`.
+3. O merge na `main` é feito pelo Muse gerente, sob autorização permanente do Daniel, e é a aprovação: a Vercel publica em produção e a Action "Aplicar migrações em produção" aplica o que ainda não está em `schema_migrations`.
 4. Rede de segurança: backup noturno, ensaio do backup e teste de restauração.
