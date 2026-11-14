@@ -83,9 +83,11 @@ test("scripts: rclone fixo e conferido, conf 600, log do rclone só em arquivo, 
   assert.match(copia, /--format=custom --no-owner --no-privileges/);
   for (const s of ["public", "auth", "storage", "supabase_migrations"]) assert.match(copia, new RegExp(`--schema=${s}\\b`));
   assert.match(copia, /banco\/diario\/\$DUMP/);
-  assert.match(copia, /rc sync s3supabase: "\$DESTINO\/storage\/atual\/"/);
+  // E929: o sync tem log PRÓPRIO (privado, em arquivo, DEBUG para o motivo de cada troca) — nunca no log da Action.
+  assert.match(copia, /--log-file "\$SYNC_LOG" --log-level DEBUG --stats 0 \\\n\s+sync s3supabase: "\$DESTINO\/storage\/atual\/"/);
   assert.match(copia, /--backup-dir "\$DESTINO\/storage\/removidos\/\$HOJE\/"/);
-  assert.match(copia, /--fast-list --use-server-modtime --transfers 4/);
+  // E929: tolerância de data entre S3 e Drive, freio no Drive e o resumo do log privado no log da Action.
+  assert.match(copia, /--fast-list --use-server-modtime --modify-window 2s --transfers 4 --checkers 8 --tpslimit 8/);
   assert.match(copia, /manifestos\/\$HOJE\.json/);
 
   const limpar = raiz("scripts/backup/limpar.sh");
