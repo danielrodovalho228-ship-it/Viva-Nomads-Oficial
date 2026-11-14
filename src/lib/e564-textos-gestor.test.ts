@@ -13,7 +13,8 @@ const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "ut
 
 test("o texto único do Gestor sai da constante da parte B (4%, 20+)", () => {
   assert.equal(GESTOR_PRECO.taxa, 0.04);
-  assert.equal(GESTOR_TEXTO, "4% para carteiras de 20 ou mais imóveis, com cadastro assistido da carteira e contato direto na Viva");
+  // E905 (asserção alterada): com a alternativa aprovada "ou conta de administradora" (antes, só "carteiras de 20 ou mais imóveis").
+  assert.equal(GESTOR_TEXTO, "4% para carteiras de 20 ou mais imóveis ou conta de administradora, com cadastro assistido da carteira e contato direto na Viva");
 });
 
 test("só os diferenciais do lançamento — nada da fase 2", () => {
