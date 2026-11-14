@@ -114,9 +114,13 @@ test("o cartão abre o /mês pela fonte única: cada anúncio mostra as parcelas
   }
 });
 
-test("o cartão da busca desenha a composição do mês e a do total da estadia", () => {
+// E899 (asserção alterada, decisão do Daniel de 13/11): as duas composições saíram do cartão e moram na página do imóvel, pelas
+// MESMAS funções (composicaoDoMes e estadiaDoImovel(...).conta). Antes: o cartão desenhava as duas.
+test("E899: a página do imóvel desenha a composição do mês e a do total da estadia (o cartão, não)", () => {
   const card = ler("src/components/property-card.tsx");
-  assert.match(card, /data-testid="cartao-mes-composicao"/);
-  assert.match(card, /composicaoDoMes\(property\)/);
-  assert.match(card, /data-testid="cartao-total-composicao"/);
+  assert.doesNotMatch(card, /cartao-mes-composicao|cartao-total-composicao|composicaoDoMes/);
+  const pagina = ler("src/components/property/price-card.tsx");
+  assert.match(pagina, /data-testid="cartao-lateral-mes-composicao"/);
+  assert.match(pagina, /composicaoDoMes\(property\)/);
+  assert.match(pagina, /<FormulaDoTotal conta=\{estadia\.conta\} testid="cartao-lateral-estadia-conta"/);
 });
