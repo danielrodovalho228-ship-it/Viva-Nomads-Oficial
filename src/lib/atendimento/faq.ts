@@ -159,6 +159,15 @@ export const FAQ: Pergunta[] = [
     links: [LINK_SEGURANCA],
   },
   {
+    // E907: o caminho da exclusão da conta — os mesmos fatos da página /excluir-conta (dois caminhos, bloqueio, prazos).
+    id: "excluir-conta",
+    pergunta: "Como excluo a minha conta?",
+    resposta:
+      "Há dois caminhos. Na sua conta: Conta › Privacidade › \"Excluir minha conta\" — por ali não precisa de confirmação por e-mail. Sem entrar: na página Excluir conta, informe o e-mail da conta; enviamos um link de confirmação e, ao confirmar, a conta e os dados pessoais são apagados. Com locação ou contrato em vigor, a exclusão fica bloqueada até o encerramento. Se você já teve contratos, removemos a sua identidade (nome, e-mail, telefone e foto) e encerramos o acesso, mantendo os contratos e pagamentos sem identificação pelo prazo exigido por lei. A exclusão é feita na hora da confirmação; cópias em backups de segurança são apagadas em até 30 dias.",
+    termos: ["excluir", "apagar", "deletar", "encerrar conta", "excluir conta", "sair da viva", "dados pessoais"],
+    links: [{ rotulo: "Excluir a conta", href: "/excluir-conta" }],
+  },
+  {
     id: "cancelar-pedido",
     pergunta: "Como cancelo um Pedido de Moradia?",
     resposta: "Em Pedidos de moradia, abra o seu pedido e use \"Pausar\" ou \"Marcar como atendido\". Ele sai do mural na hora.",
