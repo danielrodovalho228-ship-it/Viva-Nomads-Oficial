@@ -6,6 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { DIAS_RESPOSTA_PARCERIA, PRAZO_RESPOSTA_PARCERIA, TEXTO_PRAZO_PARCERIA } from "./regras.ts";
+import { PRAZO_CANAL } from "../../config/prazos-canais.ts";
 import { TEMPLATES } from "../notifications/eventos-email.ts";
 import { juntarParcerias } from "../admin/decisoes-admin.ts";
 import { parceiroSemResposta } from "../lembretes/regras.ts";
@@ -17,7 +18,9 @@ test("o prazo é um só: 7 dias, o mesmo de /empresas", () => {
   assert.equal(DIAS_RESPOSTA_PARCERIA, 7);
   assert.equal(PRAZO_RESPOSTA_PARCERIA, "7 dias");
   assert.equal(TEXTO_PRAZO_PARCERIA, "A Viva responde por e-mail em até 7 dias.");
-  assert.match(ler("src/app/(public)/empresas/page.tsx"), /Respondemos em até 7 dias/, "a promessa de /empresas (E770) é a mesma");
+  // Família 1 (E835): /empresas lê o prazo do canal empresas da fonte única — o mesmo número do canal parceiro.
+  assert.equal(PRAZO_CANAL.empresas.texto, PRAZO_RESPOSTA_PARCERIA, "a promessa de /empresas (E770) é a mesma");
+  assert.match(ler("src/app/(public)/empresas/page.tsx"), /Respondemos em até \$\{PRAZO_CANAL\.empresas\.texto\}/);
 });
 
 test("o alerta à equipe dispara no MESMO prazo (7 dias), não em 1 dia útil", () => {

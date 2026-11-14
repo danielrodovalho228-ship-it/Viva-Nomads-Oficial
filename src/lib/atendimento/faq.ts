@@ -5,7 +5,7 @@
 */
 import { PORTA_GESTOR_TEXTO, REGRAS_CONTRATO } from "../../config/planos.ts";
 import { comPortasDePrecos } from "../../config/precos-visivel.ts";
-import { frasePrazosManutencao } from "../../config/atendimento.ts";
+import { frasePrazo, frasePrazosManutencao } from "../../config/atendimento.ts";
 import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
 import {
@@ -122,7 +122,8 @@ export const FAQ: Pergunta[] = [
     id: "email-confirmacao",
     pergunta: "Não recebi o código de acesso",
     resposta:
-      "A Viva Nomads não manda link de confirmação: a conta é criada e confirmada pelo código de 6 dígitos que chega no seu e-mail. Confira a caixa de spam e as abas Promoções/Atualizações. Se não estiver lá, espere 60 segundos e toque em \"Reenviar código\" na tela Entrar. Persistindo, abra um chamado.",
+      // E861: o chamado comum declara o prazo do canal suporte (fonte do atendimento).
+      `A Viva Nomads não manda link de confirmação: a conta é criada e confirmada pelo código de 6 dígitos que chega no seu e-mail. Confira a caixa de spam e as abas Promoções/Atualizações. Se não estiver lá, espere 60 segundos e toque em \"Reenviar código\" na tela Entrar. Persistindo, abra um chamado: ${frasePrazo("p3")}`,
     termos: ["email", "codigo", "confirmacao", "confirmar", "nao recebi", "spam"],
   },
   {
@@ -154,7 +155,8 @@ export const FAQ: Pergunta[] = [
     id: "golpe",
     pergunta: "Pediram para eu pagar por fora (Pix direto). É seguro?",
     resposta:
-      "Não pague nada fora do que está no contrato assinado pela plataforma. A Viva Nomads nunca pede Pix ou depósito. Abra um chamado em \"Segurança, golpe ou pagamento por fora\" — uma pessoa da equipe responde com prioridade máxima.",
+      // E861: o golpe declara a prioridade E o prazo do canal suporte (frase p1 do atendimento).
+      `Não pague nada fora do que está no contrato assinado pela plataforma. A Viva Nomads nunca pede Pix ou depósito. Abra um chamado em "Segurança, golpe ou pagamento por fora". ${frasePrazo("p1")}`,
     termos: ["golpe", "pix", "por fora", "fraude", "pagamento"],
     links: [LINK_SEGURANCA],
   },
