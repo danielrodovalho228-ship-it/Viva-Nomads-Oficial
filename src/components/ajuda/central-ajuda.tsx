@@ -11,6 +11,7 @@ import { cn, dataBR } from "@/lib/utils";
 import { abertoEmBR } from "@/lib/atendimento/data-br";
 import { useAuthStore } from "@/lib/store";
 import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
+import { TextoComRemissoes } from "@/components/ajuda/texto-com-remissoes";
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
 import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
 import { ASSUNTO_CHAMADO_DO_CHAT, CHAVE_CONVERSA_CHAT, EVENTO_FALAR_COM_PESSOA, mensagemDoChamado, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
@@ -343,7 +344,7 @@ function Perguntas({ perfil, ids, titulo }: { perfil: PerfilAjuda; ids?: readonl
               </button>
               {aberta === p.id && (
                 <div className="pb-3">
-                  <p className="text-sm leading-relaxed text-muted">{respostaPara(p, perfil)}</p>
+                  <p className="text-sm leading-relaxed text-muted"><TextoComRemissoes texto={respostaPara(p, perfil)} /></p>
                   {p.links?.map((l) => (
                     <Link key={l.href} href={l.href} className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-forest underline underline-offset-2" data-testid={`faq-link-${p.id}`}>
                       {l.rotulo} <ChevronRight className="h-4 w-4" aria-hidden />

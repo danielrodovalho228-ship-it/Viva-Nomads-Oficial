@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TextoComRemissoes } from "@/components/ajuda/texto-com-remissoes";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
@@ -35,7 +36,7 @@ export default async function GuiaPage({ params }: { params: Promise<{ slug: str
         <section key={s.titulo} className="mt-8">
           <h2 className="font-title text-xl font-semibold text-ink">{s.titulo}</h2>
           {s.paragrafos.map((p) => (
-            <p key={p} className="mt-2 leading-relaxed text-ink/90">{p}</p>
+            <p key={p} className="mt-2 leading-relaxed text-ink/90"><TextoComRemissoes texto={p} /></p>
           ))}
         </section>
       ))}
