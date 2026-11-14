@@ -13,12 +13,12 @@ export type UrgenciaManutencao = "urgente" | "media" | "baixa";
  * Promessa pública do atendimento (decisão do Daniel, out/2026): a Viva responde
  * 24 h e uma pessoa em até 24 h. Não prometer janela humana que não se cumpre.
  */
-export const PROMESSA_ATENDIMENTO = "Assistente Viva 24 h · resposta de uma pessoa em até 24 h";
+/** Horas da promessa pública a uma pessoa (a mesma frase de PROMESSA_ATENDIMENTO). Família 1: o prazo do canal suporte. */
+export const PROMESSA_HUMANA_H = 24;
+
+export const PROMESSA_ATENDIMENTO = `Assistente Viva 24 h · resposta de uma pessoa em até ${PROMESSA_HUMANA_H} h`;
 
 const HORA_MS = 3_600_000;
-
-/** Horas da promessa pública a uma pessoa (a mesma frase de PROMESSA_ATENDIMENTO). */
-export const PROMESSA_HUMANA_H = 24;
 
 /**
  * Prazo que o CLIENTE vê: abertura + 24 h (F23). Os prazos internos por prioridade
@@ -126,8 +126,8 @@ export function mensagemPrazo(prioridade: Prioridade): string {
 /** Só o prazo (sem o "Recebemos."), para compor com outras frases. */
 export function frasePrazo(prioridade: Prioridade): string {
   return prioridade === "p1"
-    ? "Seu caso tem prioridade máxima: a equipe já foi avisada e uma pessoa responde em até 24 h."
-    : "Uma pessoa da equipe responde em até 24 h.";
+    ? `Seu caso tem prioridade máxima: a equipe já foi avisada e uma pessoa responde em até ${PROMESSA_HUMANA_H} h.`
+    : `Uma pessoa da equipe responde em até ${PROMESSA_HUMANA_H} h.`;
 }
 
 /**

@@ -9,6 +9,7 @@ import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, ChevronRight, Life
 import { Button, ButtonLink } from "@/components/ui/button";
 import { cn, dataBR } from "@/lib/utils";
 import { abertoEmBR } from "@/lib/atendimento/data-br";
+import { frasePrazo } from "@/config/atendimento";
 import { useAuthStore } from "@/lib/store";
 import { FAQ, buscarFaq, respostaPara, type PerfilAjuda } from "@/lib/atendimento/faq";
 import { TextoComRemissoes } from "@/components/ajuda/texto-com-remissoes";
@@ -444,7 +445,8 @@ function NovoChamado({
       {contexto && <p className="mt-1 text-sm text-muted">Sobre {CONTEXTO_ROTULO[contexto.tipo]} — a equipe já recebe o link.</p>}
       {comConversa && (
         <p className="mt-1 text-sm text-muted" data-testid="chamado-conversa-anexada">
-          A sua conversa com a Viva vai anexada. Uma pessoa responde em até 24 h.
+          {/* E876: as 24 h são do canal de ATENDIMENTO (chamado), pela fonte do atendimento. */}
+          A sua conversa com a Viva vai anexada. {frasePrazo("p3")}
         </p>
       )}
 

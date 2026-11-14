@@ -21,7 +21,7 @@
 - o conteúdo da aba certa aparece e o das outras não;
 - vale pelo endereço e pelo clique, a 390 e 1280 px, para morador e dono.
 
-No lab: `4 passed (6.2m)`. Não há mudança de comportamento: nenhum código de produção foi alterado.
+No lab: `4 passed (6.2m)`. Primeira passagem: só a trava. A segunda passagem corrigiu a causa (ver abaixo): mudou `src/lib/conta/painel-avaliacoes.ts` e a página.
 
 ## Dúvida
 Não reproduzi o defeito. Para fechar a causa, preciso de três coisas do caso real:
