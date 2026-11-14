@@ -29,20 +29,35 @@ for (const c of CASOS) {
   });
 }
 
-// Escopo ampliado (12/11): a diferença entre anúncios é de dado (condomínio, contas fixas, pacote de limpeza, contas medidas);
-// o cartão da busca abre o "/mês" pela mesma fonte do total do mês, e o total da estadia com a conta.
+// Escopo ampliado (12/11): a diferença entre anúncios é de dado (condomínio, contas fixas, pacote de limpeza, contas medidas).
+// E899 (Daniel, 13/11): o cartão da busca ficou enxuto e NÃO abre mais as composições (antes: cartao-mes-composicao e
+// cartao-total-composicao no cartão). Elas são conferidas na PÁGINA do imóvel, pelas mesmas funções; a igualdade de números
+// cartão = página continua (aqui e no t1625).
 const MES = [
   { id: "ube-001", mes: "Por mês: valor mensal R$ 3.200 + condomínio R$ 480 + contas R$ 280 = R$ 3.960" },
   { id: "ube-002", mes: "Por mês: valor mensal R$ 2.400 + condomínio R$ 350 + contas R$ 200 + limpeza R$ 180 (2 por mês) = R$ 3.130" },
   { id: "ube-003", mes: "Por mês: valor mensal R$ 4.100 · água, luz e gás medidos à parte, fora do total" },
 ];
-test("cartão da busca: a composição do /mês de cada anúncio e a conta do total da estadia", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
-  for (const m of MES) {
-    const cartao = page.locator(`a[href="/imoveis/${m.id}"]`).first();
-    await expect(cartao.getByTestId("cartao-mes-composicao")).toBeVisible({ timeout: 20_000 });
-    expect(sem(await cartao.getByTestId("cartao-mes-composicao").innerText())).toBe(m.mes);
-    expect(sem(await cartao.getByTestId("cartao-total-composicao").innerText())).toMatch(/^Total da estadia: \d+ × R\$ [\d.]+ \+ limpeza de preparação R\$ 450 \+ limpeza de saída R\$ 250$/);
-  }
-});
+for (const m of MES) {
+  test(`${m.id}: o cartão da busca não abre a composição; a página mostra a do /mês e a conta da estadia, com os números do cartão`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/buscar?exemplos=1", { waitUntil: "domcontentloaded" });
+    const cartao = page.getByTestId("cartao-imovel").filter({ has: page.locator(`a[href="/imoveis/${m.id}"]`) }).first();
+    await expect(cartao.getByTestId("cartao-preco-mes")).toBeVisible({ timeout: 20_000 });
+    await expect(cartao.getByTestId("cartao-mes-composicao")).toHaveCount(0);
+    await expect(cartao.getByTestId("cartao-total-composicao")).toHaveCount(0);
+    const precoMes = sem(await cartao.getByTestId("cartao-preco-mes").innerText());
+    const total = sem(await cartao.getByTestId("cartao-total-estadia").innerText());
+    expect(total).toMatch(/^R\$ [\d.]+ em \d+ (mês|meses)$/);
+
+    await page.goto(`/imoveis/${m.id}`, { waitUntil: "domcontentloaded" });
+    const lateral = page.locator("#cartao-preco");
+    await expect(lateral.getByTestId("cartao-lateral-mes-composicao")).toBeVisible({ timeout: 20_000 });
+    expect(sem(await lateral.getByTestId("cartao-lateral-mes-composicao").innerText())).toBe(m.mes);
+    await expect(lateral.getByTestId("cartao-lateral-estadia")).toContainText(total.split(" em ")[1], { timeout: 20_000 });
+    expect(sem(await lateral.getByTestId("cartao-lateral-estadia-conta").innerText())).toMatch(/^\d+ × R\$ [\d.]+ \+ limpeza de preparação R\$ 450 \+ limpeza de saída R\$ 250$/);
+    // A igualdade de números cartão = página continua.
+    expect(sem(await lateral.getByTestId("cartao-lateral-mes").innerText())).toBe(precoMes);
+    expect(sem(await lateral.getByTestId("cartao-lateral-estadia").innerText())).toContain(total);
+  });
+}
