@@ -72,7 +72,8 @@ test("os 4 pontos do E236 e a varredura usam GESTOR_PRECO.minimoImoveis", () => 
     assert.match(ler(f), /GESTOR_PRECO\.minimoImoveis|PORTA_GESTOR_TEXTO|GESTOR_TEXTO/, f);
   assert.match(ler("src/config/planos.ts"), /PORTA_GESTOR_TEXTO = `\$\{GESTOR_PRECO\.minimoImoveis\} imóveis ou mais ativos \(publicados, com documento aprovado e calendário em dia\), ou conta de administradora`/);
   assert.match(ler("src/app/(public)/parceiros/page.tsx"), /Plano Gestor: \$\{GESTOR_TEXTO\}\./);
-  assert.match(ler("src/config/planos.ts"), /GESTOR_TEXTO = `[^`]*% para carteiras de \$\{GESTOR_PRECO\.minimoImoveis\} ou mais imóveis, com cadastro assistido da carteira e contato direto na Viva`/);
+  // E905 (asserção alterada): o texto ganhou "ou conta de administradora".
+  assert.match(ler("src/config/planos.ts"), /GESTOR_TEXTO = `[^`]*% para carteiras de \$\{GESTOR_PRECO\.minimoImoveis\} ou mais imóveis ou conta de administradora, com cadastro assistido da carteira e contato direto na Viva`/);
   const form = ler("src/components/precos/plano-gestor-form.tsx");
   assert.match(form, /title="Plano Gestor"/);
   assert.match(ler("src/app/api/plano-gestor/route.ts"), /subject: `Lead — Plano Gestor \(\$\{GESTOR_PRECO\.minimoImoveis\}\+ imóveis\)`/);
