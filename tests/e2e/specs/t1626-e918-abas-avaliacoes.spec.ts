@@ -5,6 +5,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
   T1626 — E918: em /dashboard/avaliacoes a aba "Recebidas" tem de ATIVAR (clicada e por URL direta) e mostrar as
   avaliações recebidas; "Para avaliar" não pode continuar ativa. Guarda as três abas: a ativa (aria-current) e o conteúdo
   de cada uma, pelo endereço e pelo clique, a 390 e 1280 px, para morador e dono (contas novas do laboratório).
+  Caso real (prova ao vivo do Gerente, 14/11): conta de dono SEM avaliação nenhuma (estado vazio), "Recebidas" clicada 2× e
+  aberta por /dashboard/avaliacoes?tab=recebidas — a página só lia ?aba=. As contas daqui também nascem sem avaliações.
 */
 const ABAS = [
   { valor: "para-avaliar", rotulo: "Para avaliar", conteudo: "painel-para-avaliar" },
@@ -42,9 +44,19 @@ test.describe("T1626 — E918 abas do painel Avaliações", () => {
         const p = await entrar(browser, contas[i].email, senha);
         await p.setViewportSize({ width: largura, height: altura });
         for (const aba of ABAS) {
-          await p.goto(`/dashboard/avaliacoes?aba=${aba.valor}`, { waitUntil: "domcontentloaded" });
-          await conferirAtiva(p, aba, `${papel} ${largura} URL ?aba=${aba.valor}`);
+          for (const param of ["aba", "tab"]) {
+            await p.goto(`/dashboard/avaliacoes?${param}=${aba.valor}`, { waitUntil: "domcontentloaded" });
+            await conferirAtiva(p, aba, `${papel} ${largura} URL ?${param}=${aba.valor}`);
+          }
         }
+        // Estado vazio, como no caso real: nada para avaliar e nenhuma recebida.
+        await p.goto("/dashboard/avaliacoes", { waitUntil: "domcontentloaded" });
+        await expect(p.getByTestId("painel-sem-recebidas"), "conta sem avaliações (estado vazio)").toBeVisible();
+        // Dois cliques seguidos em "Recebidas" (o roteiro da prova ao vivo).
+        await p.getByTestId("painel-aba-recebidas").click();
+        await p.getByTestId("painel-aba-recebidas").click();
+        await expect(p).toHaveURL(/aba=recebidas/);
+        await conferirAtiva(p, ABAS[1], `${papel} ${largura} dois cliques em "Recebidas"`);
         await p.goto("/dashboard/avaliacoes", { waitUntil: "domcontentloaded" });
         await conferirAtiva(p, ABAS[0], `${papel} ${largura} sem ?aba`);
         for (const aba of [ABAS[1], ABAS[2], ABAS[0], ABAS[1]]) {
