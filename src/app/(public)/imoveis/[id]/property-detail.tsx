@@ -4,7 +4,7 @@ import { FRASE_CONVERSA_CHAT } from "@/config/conversa-chat";
 import { ETAPAS_CANDIDATURA, TERMOS_CANDIDATURA, LIMITE_APRESENTACAO, etapaAnterior, proximaEtapa, progressoEtapa, validarApresentacao, type EtapaCandidatura } from "@/lib/candidatura-etapas";
 import { AvisoPetCandidatura } from "@/components/property/aviso-pet-candidatura";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
-import { numBR, hojeBR } from "@/lib/utils";
+import { hojeBR } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -39,6 +39,8 @@ import { urlEntrada } from "@/lib/auth/entrada";
 import { IdealPara } from "@/components/property/ideal-para";
 import { PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
 import { SelosAnuncio } from "@/components/property/selos-anuncio";
+import { selosDaFoto } from "@/lib/cartao-selos-foto";
+import { textoDaNota } from "@/lib/imovel/rotulo-avaliacoes";
 import { ComparacaoAirbnbFicha } from "@/components/precos/comparacao-airbnb-ficha";
 import { SELO_NF_UI } from "@/lib/flags";
 import { ImoveisParecidos } from "@/components/property/imoveis-parecidos";
@@ -64,7 +66,6 @@ import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
 import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias } from "@/lib/precos";
 import { abaixoDaEstadiaMinima, estadiaMinimaDias } from "@/lib/availability";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
-import { mesesDoCartao } from "@/lib/cartao-preco";
 import { FavoriteButton } from "@/components/favorite-button";
 import { AmenitiesGrid } from "@/components/property/amenities-grid";
 import { WorkspaceSection } from "@/components/property/workspace-section";
@@ -93,7 +94,7 @@ import { FaixaProprietario } from "@/components/property/faixa-proprietario";
 import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo } from "@/config/exemplo-proprietarios";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 import { destinoContatoViva, parcelasDoResumo, resumoSolicitacao } from "@/lib/reserva-imovel";
-import { SELECAO_VAZIA, comEntrada, comEntradaDaBusca, entradaDaBusca, comPessoas, comSaida, linhaPeriodoNaMensagem, diasDaSelecao, mesesDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
+import { SELECAO_VAZIA, comEntrada, comEntradaDaBusca, entradaDaBusca, comPessoas, comSaida, linhaPeriodoNaMensagem, diasDaSelecao, mesesDoTotalDaPagina, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
@@ -251,19 +252,18 @@ export function PropertyDetail({
   }, [property, marcarVistoLocal]);
 
   // Pedido pré-preenchido: data de entrada da última busca (editável; vencida ou estranha é descartada).
-  // Prompt 41: a duração da busca também dá o total do rodapé e do cartão ("R$ Y em N meses").
-  const [mesesBusca, setMesesBusca] = useState(0);
+  // E920: a DURAÇÃO da última busca não entra mais na página. Ela era lida aqui, depois de carregar, e trocava sozinha o
+  // período do total ("em 1 mês" → "em 6 meses"). O total abre e fica no período de referência (mesesDoTotalDaPagina).
   const [avisoDataBusca, setAvisoDataBusca] = useState<string | null>(null);
   useEffect(() => {
     try {
-      const { inicio, meses } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
+      const { inicio } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
       // E517: a data da busca só pré-seleciona se couber neste anúncio (disponibilidade e mínimo); senão, aviso.
       const daBusca = entradaDaBusca(inicio, { availableFrom: property.availableFrom, availableUntil: property.availableUntil, minDias: property.minPeriodDays, hoje: hojeBR() });
       // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o localStorage só no navegador (SSR não tem)
       // E816: a entrada que vem da busca fica MARCADA como tal (a tela diz "da sua última busca" e deixa limpar).
       if (daBusca.entrada) setSelecao((atual) => (atual.entrada ? atual : comEntradaDaBusca(atual, daBusca.entrada)));
       setAvisoDataBusca(daBusca.aviso);
-      if (meses) setMesesBusca(meses);
     } catch {
       /* localStorage bloqueado: segue sem pré-preencher */
     }
@@ -818,9 +818,9 @@ export function PropertyDetail({
     </div>
   );
 
-  // Total pela duração escolhida (Prompt 41): o período selecionado (E53) ou a duração da última busca ou, sem nenhum,
-  // a estadia mínima do imóvel.
-  const meses = mesesDaSelecao(selecao) ?? mesesDoCartao(mesesBusca || undefined, property.minPeriodDays);
+  // Total pela duração (Prompt 41 + E920): o período que a pessoa escolheu nas datas (E53) ou, sem escolha, o período de
+  // referência — a estadia mínima do imóvel, a mesma do cartão da busca. Nunca a duração guardada de uma busca antiga.
+  const meses = mesesDoTotalDaPagina(selecao, property.minPeriodDays);
   // Linha-síntese (Prompt 41): pessoas · quartos · banheiros (as camas entram quando o anúncio tiver o dado).
   const sintese = [
     property.maxGuests != null ? `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` : null,
@@ -954,13 +954,12 @@ export function PropertyDetail({
               {resumoExemplo ? (
                 <a href="#avaliacoes" data-testid="estrelas-titulo" className="alvo-toque inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-forest hover:underline">
                   <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
-                  {numBR(resumoExemplo.media, 1)} · {resumoExemplo.n} avaliações
+                  {textoDaNota(resumoExemplo.media, resumoExemplo.n, "imovel")}
                 </a>
               ) : reviewsReais > 0 ? (
                 <span className="inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" />
-                  {numBR(mediaReal, 1)} · {reviewsReais}{" "}
-                  {reviewsReais === 1 ? "avaliação" : "avaliações"}
+                  {textoDaNota(mediaReal, reviewsReais, "imovel")}
                 </span>
               ) : (
                 <span className="inline-flex items-center rounded-full bg-sage px-3 py-1 text-xs font-semibold text-white">
@@ -970,9 +969,19 @@ export function PropertyDetail({
               {SELO_NF_UI && property.issuesInvoice && <InvoiceBadge />}
               {property.acceptsInsurance && <InsuranceBadge />}
             </div>
-            {/* E626: a lista completa dos selos do cartão, com símbolo + texto (o bloco do nível segue como está). */}
+            {/* E626: a lista completa dos selos do cartão, com símbolo + texto. E924: a MESMA composição e ordem do cartão do
+                anúncio (selosDaFoto): o nível abre a fileira, em pílula própria com a palavra; o nível é o do bloco "Nível"
+                desta página (exibicao59). O bloco do nível segue como está. */}
             <div className="mt-3">
-              <SelosAnuncio tem={{ verificado: !exemplo && property.owner?.verified === true, precoJusto: !!property.precoJusto, pets: !!property.petsAllowed, negocia: !!property.negociacao?.aceita }} />
+              <SelosAnuncio
+                selos={selosDaFoto({
+                  verificado: !exemplo && property.owner?.verified === true,
+                  precoJusto: !!property.precoJusto,
+                  pets: !!property.petsAllowed,
+                  negocia: !!property.negociacao?.aceita,
+                  nivel: exibicao59?.nivel?.nivel ?? null,
+                })}
+              />
             </div>
             {/* E399-C pacote 3: com a chave ligada e o selo, a comparação com 30 noites no Airbnb (nunca o link). */}
             {property.precoJusto && property.comparacaoAirbnb && <ComparacaoAirbnbFicha comparacao={property.comparacaoAirbnb} />}

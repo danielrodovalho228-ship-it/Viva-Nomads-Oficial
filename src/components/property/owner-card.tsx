@@ -23,7 +23,8 @@ import { useNomeDepoisDoAceite } from "@/components/property/use-nome-depois-do-
 import { SeloDonoVerificado } from "@/components/property/selo-dono-verificado";
 import { SeloExemplo } from "@/components/property/selo-exemplo";
 import { buttonClasses } from "@/components/ui/button";
-import { hojeBR, numBR } from "@/lib/utils";
+import { hojeBR } from "@/lib/utils";
+import { textoDaNota } from "@/lib/imovel/rotulo-avaliacoes";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
@@ -177,7 +178,8 @@ export function OwnerCard({
               data-testid="proprietario-reputacao"
             >
               <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
-              {numBR(d.reputacao.media, 1)} · {d.reputacao.n} {d.reputacao.n === 1 ? "avaliação" : "avaliações"}
+              {/* E925: a nota do proprietário diz de quem é (no topo da página fica a do imóvel). */}
+              {textoDaNota(d.reputacao.media, d.reputacao.n, "proprietario")}
             </Link>
           )}
           {/* Selos só com verificação REAL registrada; no exemplo, ilustrativos e marcados. */}
