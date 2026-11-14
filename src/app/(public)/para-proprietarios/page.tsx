@@ -64,7 +64,7 @@ export default function ForLandlordsPage() {
         </ButtonLink>
         )}
         {/* C7: a frase da taxa (texto igual) desce para depois do botão — no celular a ação principal fica na dobra. */}
-        <p className="w-full max-w-2xl text-base text-white/90" data-testid="anunciar-taxa">
+        <p className="w-full max-w-2xl scroll-mt-24 text-base text-white/90" id="taxa" data-testid="anunciar-taxa">
           <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. {FRASE_ESCADA_TAXAS} {/* E563: o link para os preços só com a chave ligada. */}
           {PRECOS_VISIVEL ? (
             <>

@@ -44,7 +44,10 @@ test("rodapé, cartão da home e destaque de /anunciar só existem com a chave l
 
 test("as outras portas (texto de /anunciar, cartão de parceiros, comparativo, atendimento, sitemap) também passam pela chave", () => {
   assert.match(ler("app/(public)/para-proprietarios/page.tsx"), /PRECOS_VISIVEL \? \(/);
-  assert.match(ler("app/(public)/parceiros/page.tsx"), /comPortasDePrecos\(\[\{ href: "\/precos#plano-gestor"/);
+  // E896 (asserção alterada): o cartão dos gestores passa pela chave via linksDoCartaoGestores(PRECOS_VISIVEL) — com a chave
+  // desligada não há porta para /precos e o cartão leva a /para-proprietarios#taxa (antes: comPortasDePrecos, que o deixava sem saída).
+  assert.match(ler("app/(public)/parceiros/page.tsx"), /links: linksDoCartaoGestores\(PRECOS_VISIVEL\)/);
+  assert.match(ler("lib/parceiros/tipos-parceria.ts"), /precosVisivel\s*\?\s*\[\{ href: "\/precos#plano-gestor"/);
   assert.match(ler("components/precos/comparativo-precos.tsx"), /PRECOS_VISIVEL && \(/);
   assert.match(ler("lib/atendimento/faq.ts"), /comPortasDePrecos\(\[LINK_PRECOS\]/);
   assert.match(ler("app/sitemap.ts"), /comPortasDePrecos\(/);
