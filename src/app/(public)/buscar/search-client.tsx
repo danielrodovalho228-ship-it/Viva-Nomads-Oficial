@@ -695,6 +695,7 @@ export function SearchClient({
           aplicar={aplicarPainel}
           local={locationQuery}
           perto={nomeDoDestino}
+          ateMin={estadoDestino.ate}
           painelLocal={
             <>
               <div>

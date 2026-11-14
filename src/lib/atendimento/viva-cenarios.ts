@@ -137,7 +137,7 @@ export const CENARIOS: Cenario[] = [
     n: 12, quem: "visitante", onde: "E-mail para ajuda@", mensagem: "Bom dia, como anuncio meu imóvel?", categoria: "duvida", canal: "email",
     temContratoAtivo: false, contexto: { tipo: null, id: null }, critico: false,
     esperado: { rota: "ia", destino: "ia", quemResolve: "IA (resposta por e-mail)", prazo: "Imediato", resposta: [/anunci/i], respostaNao: PROIBIDAS },
-    roteiro: [texto("Bom dia! Para anunciar, crie sua conta em Entrar, escolha \"Anunciar imóvel\" e preencha os dados, com pelo menos 8 fotos e o documento do imóvel. O plano Gratuito permite 1 anúncio; os detalhes estão em /precos.")],
+    roteiro: [texto("Bom dia! Para anunciar, crie sua conta em Entrar, escolha \"Anunciar imóvel\" e preencha os dados, com pelo menos 8 fotos e o documento do imóvel. Anunciar é grátis; a taxa é só por contrato fechado (detalhes em \"Quanto custa anunciar?\", na Central de Ajuda).")],
   },
   {
     n: 13, quem: "inquilino2", onde: "Ajuda", mensagem: "Me passa o WhatsApp do proprietário", categoria: "duvida", canal: "site",

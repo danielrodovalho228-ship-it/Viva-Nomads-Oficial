@@ -78,8 +78,10 @@ const nextConfig: NextConfig = {
       // Links antigos para /simulador e a página estática apontam para ela.
       { source: "/simulador", destination: "/simulacao", permanent: true },
       { source: "/simulador.html", destination: "/simulacao", permanent: true },
-      // /contato não existe: o canal único é a Central de Ajuda (F25). 308, só /ajuda no sitemap.
-      { source: "/contato", destination: "/ajuda", permanent: true },
+      // E851: /contato vai à página de contato vigente (Fale com a Viva), não à Central genérica (308).
+      { source: "/contato", destination: "/ajuda/fale-com-a-viva", permanent: true },
+      // E922: /ajuda/para-empresas dava 404; o conteúdo de empresas (e o "Fale com a gente") é /empresas (308).
+      { source: "/ajuda/para-empresas", destination: "/empresas", permanent: true },
       // E901: /fale-com-a-viva dava 404; a página é /ajuda/fale-com-a-viva (308).
       { source: "/fale-com-a-viva", destination: "/ajuda/fale-com-a-viva", permanent: true },
       // E176 (parte 2): "Notificações" é uma página só — a do sino.
