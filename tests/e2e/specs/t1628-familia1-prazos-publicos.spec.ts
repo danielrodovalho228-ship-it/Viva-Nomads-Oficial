@@ -61,14 +61,18 @@ test.describe("T1628 — Família 1: um prazo por canal, a 390 px", () => {
   test("E860 /ajuda/proprietarios: a análise do parceiro com o prazo do canal parceiro", async ({ page }) => {
     await abrir(page, "/ajuda/proprietarios");
     const main = page.locator("main").first();
-    await expect(main).toContainText(PRAZO_PARCERIA, { timeout: 30_000 });
+    // As respostas abrem ao tocar na pergunta (acordeão da Central).
+    await main.getByRole("button", { name: "Como posso virar parceiro da Viva?" }).click({ timeout: 30_000 });
+    await expect(main).toContainText(PRAZO_PARCERIA);
     await semOutroPrazo(page, "/ajuda/proprietarios");
   });
 
   test("E861 /ajuda/seguranca: golpe e código de acesso com o prazo do atendimento", async ({ page }) => {
     await abrir(page, "/ajuda/seguranca");
     const main = page.locator("main").first();
-    await expect(main).toContainText(`Seu caso tem prioridade máxima: a equipe já foi avisada e uma pessoa responde ${PRAZO_SUPORTE}.`, { timeout: 30_000 });
+    await main.getByRole("button", { name: "Pediram para eu pagar por fora (Pix direto). É seguro?" }).click({ timeout: 30_000 });
+    await expect(main).toContainText(`Seu caso tem prioridade máxima: a equipe já foi avisada e uma pessoa responde ${PRAZO_SUPORTE}.`);
+    await main.getByRole("button", { name: "Não recebi o código de acesso" }).click();
     await expect(main).toContainText(`Persistindo, abra um chamado: Uma pessoa da equipe responde ${PRAZO_SUPORTE}.`);
     await semOutroPrazo(page, "/ajuda/seguranca");
   });
