@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { NotFoundIllustration } from "@/components/illustrations";
 import { PropertyCard } from "@/components/property-card";
 import { listProperties } from "@/lib/data/properties";
@@ -45,9 +45,9 @@ export default async function NotFound() {
             placeholder="Cidade ou bairro"
             className="h-12 min-w-0 flex-1 rounded-xl border border-line bg-white px-4 text-base text-ink outline-none focus:border-forest"
           />
-          <button type="submit" className="h-12 shrink-0 rounded-xl bg-forest px-5 text-sm font-semibold text-white">
+          <Button type="submit" className="shrink-0">
             Buscar
-          </button>
+          </Button>
         </form>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <ButtonLink href="/buscar" variant="primary">

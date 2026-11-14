@@ -84,9 +84,10 @@ test("F23: o cliente vê só a promessa pública (abertura + 24 h, Brasília), n
   assert.doesNotMatch(t, /até 13\/10 às 08:39/); // p2 interno = 12 h
 });
 
-test("F25: /contato redireciona (permanente) para /ajuda e não está no sitemap", () => {
+// E851 (Família 2): /contato vai à página de contato vigente (Fale com a Viva), não à Central genérica.
+test("F25/E851: /contato redireciona (permanente) para /ajuda/fale-com-a-viva e não está no sitemap", () => {
   const cfg = readFileSync(new URL("../../../next.config.ts", import.meta.url), "utf8");
-  assert.match(cfg, /source: "\/contato", destination: "\/ajuda", permanent: true/);
+  assert.match(cfg, /source: "\/contato", destination: "\/ajuda\/fale-com-a-viva", permanent: true/);
   const sm = readFileSync(new URL("../../app/sitemap.ts", import.meta.url), "utf8");
   assert.doesNotMatch(sm, /"\/contato"/);
 });

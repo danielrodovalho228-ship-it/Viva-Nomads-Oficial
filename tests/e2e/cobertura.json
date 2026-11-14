@@ -3038,6 +3038,14 @@
         "t1453-varredura-bloco519"
       ]
     },
+    "/sobre": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t1629-familia2-rotas-vivas"
+      ]
+    },
     "/termos": {
       "personas": [
         "publico"
