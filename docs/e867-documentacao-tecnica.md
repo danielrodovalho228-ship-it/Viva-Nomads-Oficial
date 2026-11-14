@@ -28,10 +28,10 @@ Princípios de desenho que atravessam o código:
 
 ## 2. Descritivo funcional hierárquico
 
-### 2.1 Área pública (sem login): `src/app/(public)`, 39 páginas †
+### 2.1 Área pública (sem login): `src/app/(public)`, 40 páginas †
 1. **Descoberta:** a home (`/`), `/buscar` (lista com mapa, filtros facetados e contagens), `/cidades/[cidade]` e `/imoveis-perto-de/[slug]`.
 2. **Anúncio:** `/imoveis/[id]`, com galeria, nível e selos, composição do valor mensal, calendário, tempo de deslocamento, avaliações e o caminho para morar.
-3. **Institucional e captação:** `/como-funciona`, `/para-proprietarios`, `/empresas`, `/parceiros`, `/avaliadores`, `/seguranca` e `/precos`. Esta última fica suspensa enquanto `PRECOS_VISIVEL` estiver desligada.
+3. **Institucional e captação:** `/como-funciona`, `/para-proprietarios`, `/empresas`, `/parceiros`, `/avaliadores`, `/seguranca`, `/sobre` (E851) e `/precos`. Esta última fica suspensa enquanto `PRECOS_VISIVEL` estiver desligada.
 4. **Ajuda e conteúdo:** `/ajuda` (central e fale com a Viva), `/guias` e `/guia-fotos`.
 5. **Confiança e legal:** `/conferir`, que valida um documento pelo hash, mais `/termos`, `/privacidade` e `/excluir-conta`.
 6. **Pedidos de moradia:** só o formulário `/pedidos/novo` é público (a pessoa vê sem login e só precisa entrar para publicar). O mural `/pedidos` e os pedidos `/pedidos/[id]`, onde os proprietários da cidade respondem, **exigem login**: sem sessão, o proxy redireciona para a entrada (o mural expõe pedidos de moradores). As páginas moram em `src/app/(public)`, mas não são área pública.

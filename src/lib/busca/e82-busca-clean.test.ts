@@ -37,7 +37,8 @@ test("pílula ativa mostra o valor; inativa, o rótulo", () => {
   assert.equal(valorDaPilula("datas", { ...f, periodo: 120 }, {}), null);
   assert.equal(valorDaPilula("local", f, { local: "  Uberlândia " }), "Uberlândia");
   // Local é ÚNICO: com "Perto de", a mesma pílula mostra o destino (sem segundo cartão de destino na página).
-  assert.equal(valorDaPilula("local", f, { local: "Uberlândia", perto: "HC-UFU" }), "Perto de HC-UFU");
+  // E921: o destino sozinho ordena (não filtra) — o rótulo diz isso; "até N min" filtra.
+  assert.equal(valorDaPilula("local", f, { local: "Uberlândia", perto: "HC-UFU" }), "Por tempo até HC-UFU");
   assert.equal(valorDaPilula("ordenar", f, { ordem: "Menor preço" }), "Menor preço");
 });
 

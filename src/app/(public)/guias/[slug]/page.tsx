@@ -38,6 +38,18 @@ export default async function GuiaPage({ params }: { params: Promise<{ slug: str
           {s.paragrafos.map((p) => (
             <p key={p} className="mt-2 leading-relaxed text-ink/90"><TextoComRemissoes texto={p} /></p>
           ))}
+          {/* E921: todo atalho visível do guia é link (nunca texto com cara de atalho). */}
+          {s.atalhos?.length ? (
+            <ul className="mt-3 flex flex-wrap gap-2" data-testid="guia-atalhos">
+              {s.atalhos?.map((a) => (
+                <li key={a.href}>
+                  <Link href={a.href} className="alvo-toque inline-flex min-h-11 items-center rounded-full border border-line bg-white px-4 text-sm font-medium text-forest hover:border-forest" data-testid="guia-atalho">
+                    {a.rotulo}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </section>
       ))}
       <div className="mt-12 flex flex-col gap-1 rounded-xl border border-line bg-white px-4 py-2 sm:flex-row sm:gap-6">

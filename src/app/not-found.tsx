@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { NotFoundIllustration } from "@/components/illustrations";
 import { PropertyCard } from "@/components/property-card";
 import { listProperties } from "@/lib/data/properties";
+import { Footer } from "@/components/layout/footer";
 
 // 404: só o noindex do Next (sem canonical nem o robots da raiz).
 export const metadata: Metadata = {
@@ -32,7 +33,23 @@ export default async function NotFound() {
         <p className="mt-2 max-w-md text-muted">
           Não encontramos esta página. Já que você está aqui, veja estes imóveis disponíveis.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
+        {/* E916: busca direto da 404 (cidade ou bairro → /buscar) e o caminho para a Ajuda, como nas outras páginas públicas. */}
+        <form action="/buscar" method="get" role="search" className="mt-8 flex w-full max-w-md gap-2" data-testid="nao-encontrada-busca">
+          <label htmlFor="nao-encontrada-local" className="sr-only">
+            Cidade ou bairro
+          </label>
+          <input
+            id="nao-encontrada-local"
+            name="local"
+            type="search"
+            placeholder="Cidade ou bairro"
+            className="h-12 min-w-0 flex-1 rounded-xl border border-line bg-white px-4 text-base text-ink outline-none focus:border-forest"
+          />
+          <Button type="submit" className="shrink-0">
+            Buscar
+          </Button>
+        </form>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           <ButtonLink href="/buscar" variant="primary">
             Buscar imóveis
           </ButtonLink>
@@ -60,7 +77,12 @@ export default async function NotFound() {
         >
           É proprietário? Anuncie seu imóvel →
         </Link>
+        <Link href="/ajuda" className="alvo-toque mt-2 text-sm text-muted hover:text-blue-500" data-testid="nao-encontrada-ajuda">
+          Precisa de ajuda? Central de Ajuda →
+        </Link>
       </main>
+      {/* E916: o rodapé padrão do site, como nas outras páginas públicas. */}
+      <Footer />
     </div>
   );
 }

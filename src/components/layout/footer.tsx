@@ -6,6 +6,7 @@ import { SUPORTE_EMAIL } from "@/lib/site";
 import { RedesOficiais } from "@/components/layout/redes-oficiais";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 import { EntrarNoRodape } from "@/components/layout/entrar-no-rodape";
+import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
 
 export function Footer() {
   return (
@@ -39,6 +40,9 @@ export function Footer() {
           {PRECOS_VISIVEL && <FooterLink href="/planos">Preços</FooterLink>}
           <FooterLink href="/seguranca">Sua segurança</FooterLink>
           <FooterLink href="/ajuda">Central de Ajuda</FooterLink>
+          {/* E851: o contato vigente e a página institucional. */}
+          <FooterLink href={HREF_FALE_COM_A_VIVA}>Fale com a Viva</FooterLink>
+          <FooterLink href="/sobre">Sobre a Viva</FooterLink>
           <FooterLink href="/guias">Guias</FooterLink>
         </FooterCol>
 
