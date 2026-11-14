@@ -16,7 +16,11 @@ export type UrgenciaManutencao = "urgente" | "media" | "baixa";
 /** Horas da promessa pública a uma pessoa (a mesma frase de PROMESSA_ATENDIMENTO). Família 1: o prazo do canal suporte. */
 export const PROMESSA_HUMANA_H = 24;
 
-export const PROMESSA_ATENDIMENTO = `Assistente Viva 24 h · resposta de uma pessoa em até ${PROMESSA_HUMANA_H} h`;
+/** Horas por dia em que a Assistente Viva atende (o "24 h" da primeira metade da promessa). */
+export const ASSISTENTE_HORAS = 24;
+
+// Nota do Gerente (Família 1): a frase inteira sai das constantes, sem número escrito à mão.
+export const PROMESSA_ATENDIMENTO = `Assistente Viva ${ASSISTENTE_HORAS} h · resposta de uma pessoa em até ${PROMESSA_HUMANA_H} h`;
 
 const HORA_MS = 3_600_000;
 
