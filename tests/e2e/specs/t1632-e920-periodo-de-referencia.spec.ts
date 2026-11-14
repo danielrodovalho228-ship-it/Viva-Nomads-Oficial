@@ -4,7 +4,7 @@ import { modeloDoCartao } from "../../../src/lib/cartao-modelo";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T1629 — E920 (âncora da Família 3; medido pelo Gerente em produção) e E890 (Phoenix, RELATORIO-032).
+  T1632 — E920 (âncora da Família 3; medido pelo Gerente em produção) e E890 (Phoenix, RELATORIO-032).
   A página do imóvel abria com o total do período de referência do cartão e, ao assentar (cerca de 1 s), mudava SOZINHA para outro
   período: "R$ 4.660 em 1 mês" → "R$ 24.460 em 6 meses" no ube-001. Causa: a página lia a duração da última busca guardada no aparelho
   (vn:ultima-busca) depois de carregar. É o mesmo mecanismo do E890 ("o prazo alterna entre carregamentos"): o período dependia do que
@@ -38,7 +38,7 @@ async function textosDoTotal(page: Page, largura: number, ms: number): Promise<s
   return vistos;
 }
 
-test.describe("T1629 — E920: a página abre e fica no período de referência", () => {
+test.describe("T1632 — E920: a página abre e fica no período de referência", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
   for (const largura of LARGURAS) {
     for (const id of ["ube-001", "ube-003"]) {
@@ -84,16 +84,16 @@ test.describe("T1629 — E920: a página abre e fica no período de referência"
 
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t1629.${sufixo}@lab.vivanomads.test`, nome: "Dora Referência", role: "owner" as const };
+const dono = { email: `dono.t1632.${sufixo}@lab.vivanomads.test`, nome: "Dora Referência", role: "owner" as const };
 const ids: { dono?: string; imovel?: string } = {};
 
-test.describe("T1629 — E920: o período só muda quando a pessoa escolhe as datas", () => {
+test.describe("T1632 — E920: o período só muda quando a pessoa escolhe as datas", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (anúncio real, com calendário livre).");
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Referência T1629 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Referência T1632 ${sufixo}`, { ativo: true });
   });
   test.afterAll(async () => {
     if (NO_LABORATORIO) await apagarContas([ids.dono]);

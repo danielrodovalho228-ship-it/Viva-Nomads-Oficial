@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T1630 — E923: anúncio com contas FIXAS e a estimativa vazia mostrava "tudo incluído" na linha do total do cartão, sem nenhum valor
+  T1633 — E923: anúncio com contas FIXAS e a estimativa vazia mostrava "tudo incluído" na linha do total do cartão, sem nenhum valor
   de água, luz e gás dentro do total. Regra absoluta: "tudo incluído" nunca aparece quando não está tudo incluído.
   Agora esse caso diz "água, luz e gás não informados" no cartão, e a composição do mês da página diz o mesmo. Com a estimativa
   informada (> 0), o cartão volta a dizer "tudo incluído" e o total do mês sobe exatamente o valor da estimativa.
@@ -11,18 +11,18 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const sem = (s: string) => s.replace(/ /g, " ").replace(/\s+/g, " ").trim();
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t1630.${sufixo}@lab.vivanomads.test`, nome: "Dora Contas", role: "owner" as const };
-const morador = { email: `mor.t1630.${sufixo}@lab.vivanomads.test`, nome: "Mira Contas", role: "tenant" as const };
+const dono = { email: `dono.t1633.${sufixo}@lab.vivanomads.test`, nome: "Dora Contas", role: "owner" as const };
+const morador = { email: `mor.t1633.${sufixo}@lab.vivanomads.test`, nome: "Mira Contas", role: "tenant" as const };
 const ids: { dono?: string; morador?: string; imovel?: string } = {};
 
-test.describe("T1630 — E923: contas fixas sem estimativa", () => {
+test.describe("T1633 — E923: contas fixas sem estimativa", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.use({ actionTimeout: 15_000, navigationTimeout: 30_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.morador = await criarConta(morador, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Contas T1630 ${sufixo}`, { ativo: true, preco: 3200 });
+    ids.imovel = await criarImovelPronto(ids.dono, `Contas T1633 ${sufixo}`, { ativo: true, preco: 3200 });
     const { data, error: e0 } = await adm().from("properties").select("utilities_mode, utilities_estimate").eq("id", ids.imovel).single();
     if (e0) throw e0;
     // O caso do item: contas fixas, estimativa vazia.

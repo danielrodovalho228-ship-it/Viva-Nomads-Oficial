@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /*
-  T1631 — E924 e E925 (Phoenix, A-253 e A-254), topo da página do imóvel. Visitante; 390 e 1280 px.
+  T1634 — E924 e E925 (Phoenix, A-253 e A-254), topo da página do imóvel. Visitante; 390 e 1280 px.
   E924: os selos do topo variavam de página para página "sem padrão aparente". As diferenças entre anúncios são do dado de cada um;
     o que não tinha justificativa era o cartão abrir com a pílula do nível e o topo da página não ter o nível. Agora o topo da página
     tem a MESMA composição e ordem do cartão do mesmo anúncio: nível em pílula própria, com a palavra; depois verificado, preço justo,
@@ -32,7 +32,7 @@ async function composicaoDoTopo(page: Page): Promise<{ ordem: string[]; textos: 
   };
 }
 
-test.describe("T1631 — E924 e E925: topo da página do imóvel", () => {
+test.describe("T1634 — E924 e E925: topo da página do imóvel", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
   for (const largura of [390, 1280] as const) {
     test(`E924 a ${largura} px: o topo da página tem a mesma composição e ordem de selos do cartão do mesmo anúncio`, async ({ page }) => {

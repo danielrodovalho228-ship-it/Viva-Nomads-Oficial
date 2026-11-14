@@ -23,7 +23,7 @@ Medições feitas no laboratório local (Supabase local semeado, build de produ�
 | ube-003 | última busca de 6 meses | "R$ 8.900 em 2 meses" → em 0,8 s "R$ 25.300 em 6 meses" | "R$ 8.900 em 2 meses" |
 | ube-003 | última busca de 2 meses | "R$ 8.900 em 2 meses" | "R$ 8.900 em 2 meses" |
 
-Ação explícita (anúncio real do laboratório, `t1629`): escolher 60 dias no calendário troca o total para o do período escolhido ("… em 60 dias"); "Limpar" volta ao total de referência.
+Ação explícita (anúncio real do laboratório, `t1632`): escolher 60 dias no calendário troca o total para o do período escolhido ("… em 60 dias"); "Limpar" volta ao total de referência.
 
 ## E890 — veredito: duplicado do E920
 
@@ -33,7 +33,7 @@ Ação explícita (anúncio real do laboratório, `t1629`): escolher 60 dias no 
 - O mapa do Phoenix (saltos de 1 para 2 meses em 12 de 15 imóveis) bate com uma busca de 2 meses guardada: os 3 exemplos que não saltam são os que pedem 60 dias de estadia mínima (ube-003, ube-008 e ube-013), em que 2 meses já é a referência.
 - Não há outro caminho no código que mude o período: a seleção só muda por clique no calendário ou pelos campos de data.
 
-A correção do E920 fecha os dois. O `t1629` tem um caso próprio para o E890: quatro carregamentos da mesma página, com quatro estados do aparelho, têm de dar o mesmo prazo.
+A correção do E920 fecha os dois. O `t1632` tem um caso próprio para o E890: quatro carregamentos da mesma página, com quatro estados do aparelho, têm de dar o mesmo prazo.
 
 ## E923 — "tudo incluído" só com as contas dentro do total
 
@@ -92,10 +92,10 @@ Os números e a fonte de cada nota não mudaram. O texto sai de `textoDaNota` (`
 
 | Item | Unitário | E2E |
 |---|---|---|
-| E920 e E890 | `src/lib/imovel/e920-periodo-de-referencia.test.ts` | `t1629-e920-periodo-de-referencia.spec.ts` |
-| E923 | `src/lib/e923-contas-fixas-sem-estimativa.test.ts` | `t1630-e923-contas-sem-estimativa.spec.ts` (só no laboratório) |
-| E924 | `src/lib/e924-selos-do-topo.test.ts` | `t1631-e924-e925-topo-da-pagina.spec.ts` |
-| E925 | `src/lib/e925-duas-notas-rotuladas.test.ts` | `t1631-e924-e925-topo-da-pagina.spec.ts` |
+| E920 e E890 | `src/lib/imovel/e920-periodo-de-referencia.test.ts` | `t1632-e920-periodo-de-referencia.spec.ts` |
+| E923 | `src/lib/e923-contas-fixas-sem-estimativa.test.ts` | `t1633-e923-contas-sem-estimativa.spec.ts` (só no laboratório) |
+| E924 | `src/lib/e924-selos-do-topo.test.ts` | `t1634-e924-e925-topo-da-pagina.spec.ts` |
+| E925 | `src/lib/e925-duas-notas-rotuladas.test.ts` | `t1634-e924-e925-topo-da-pagina.spec.ts` |
 
 O "se, e somente se" do E899 (`e899-cartao-enxuto.test.ts`) segue verde, sem alteração.
 
