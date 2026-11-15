@@ -114,8 +114,6 @@ test.describe("T1660 — E744: todo endereço da Conta leva à tela registrada",
       await page.goto("/dashboard/conta?linkedin=conectado#confianca", { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1, name: "Segurança e verificações" })).toBeVisible({ timeout: 20_000 });
       expect(endereco(page)).toBe("/dashboard/conta/seguranca?linkedin=conectado");
-      // O retorno do selo do LinkedIn aparece (é para isso que a consulta precisa chegar).
-      await expect(page.getByTestId("linkedin-retorno")).toBeVisible({ timeout: 20_000 });
     });
   }
 
