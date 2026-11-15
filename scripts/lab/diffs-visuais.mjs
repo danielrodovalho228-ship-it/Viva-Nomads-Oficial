@@ -133,7 +133,7 @@ export function selecionar(imagens, limites = {}) {
   return { publicadas, restantes: imagens.slice(i) };
 }
 
-export function textoReadme({ run, sha, repositorio, casos, publicadas, restantes, geradoEm }) {
+export function textoReadme({ run, sha, repositorio = "", casos, publicadas, restantes, geradoEm = "" }) {
   const publicado = new Set(publicadas.map((p) => p.caminho));
   const mb = (publicadas.reduce((s, p) => s + p.bytes, 0) / (1024 * 1024)).toFixed(1).replace(".", ",");
   const linhas = [
@@ -143,7 +143,7 @@ export function textoReadme({ run, sha, repositorio, casos, publicadas, restante
     "",
     `- **Rodada:** ${run}${repositorio ? ` (https://github.com/${repositorio}/actions/runs/${run})` : ""}`,
     `- **Commit testado:** \`${sha}\``,
-    `- **Gerado em:** ${geradoEm ?? new Date().toISOString()}`,
+    `- **Gerado em:** ${geradoEm || new Date().toISOString()}`,
     `- **Imagens publicadas:** ${publicadas.length} (${mb} MB); limite de ${MAX_IMAGENS} imagens e ${MAX_BYTES / (1024 * 1024)} MB por rodada, só PNG.`,
     "",
     "Em cada teste: `-expected.png` é a referência versionada, `-actual.png` é o que a rodada desenhou e `-diff.png` marca a diferença (não existe quando o tamanho da imagem mudou).",
@@ -177,6 +177,12 @@ export function ramosParaApagar(refs, agoraMs, dias = DIAS_DE_GUARDA) {
   return refs.filter((r) => r.nome === RAMO && agoraMs - r.criadoEmMs > dias * DIA_MS).map((r) => r.nome);
 }
 
+/**
+ * Quem roda o git: recebe os argumentos e, se precisar, a pasta e o ambiente; devolve a saída.
+ * @typedef {(args: string[], opcoes?: { cwd?: string, env?: Record<string, string> }) => string} RodarGit
+ */
+
+/** @param {string} repo @returns {RodarGit} */
 function gitDe(repo) {
   return (args, opcoes = {}) =>
     execFileSync("git", args, { cwd: opcoes.cwd ?? repo, encoding: "utf8", env: { ...process.env, ...(opcoes.env ?? {}) }, stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -201,8 +207,10 @@ const numeroDoSpec = (spec) => Number(/^t(\d+)/.exec(spec)?.[1] ?? 1e9);
 /**
  * Publica as imagens coletadas pelas fatias num commit órfão no branch `lab-diffs` (reescreve o branch).
  * Não toca na árvore de trabalho do checkout: monta a árvore num índice temporário.
+ * @param {{ pasta: string, run: string, sha: string, ramo: string, repo?: string, remoto?: string, repositorio?: string, git?: RodarGit | null, geradoEm?: string }} opcoes
+ * @returns {{ estado: "publicado" | "sem-imagens", commit: string, publicadas: number, restantes: number }}
  */
-export function publicar({ pasta, run, sha, ramo, repo = process.cwd(), remoto = "origin", repositorio = "", git, geradoEm }) {
+export function publicar({ pasta, run, sha, ramo, repo = process.cwd(), remoto = "origin", repositorio = "", git = null, geradoEm = "" }) {
   exigirRamo(ramo);
   const rodar = git ?? gitDe(repo);
   // Junta os índices das fatias; o mesmo caminho (mesmo teste em dois artifacts) entra uma vez só.
@@ -230,7 +238,7 @@ export function publicar({ pasta, run, sha, ramo, repo = process.cwd(), remoto =
   }
   const casos = [...casosPorChave.values()].sort((a, b) => numeroDoSpec(a.spec) - numeroDoSpec(b.spec) || a.spec.localeCompare(b.spec) || a.titulo.localeCompare(b.titulo));
   const imagens = casos.flatMap((c) => c.arquivos.map((a) => ({ caminho: a, bytes: statSync(origemDe.get(a)).size })));
-  if (imagens.length === 0) return { estado: "sem-imagens", publicadas: 0, restantes: 0 };
+  if (imagens.length === 0) return { estado: "sem-imagens", commit: "", publicadas: 0, restantes: 0 };
   const { publicadas, restantes } = selecionar(imagens);
 
   const montagem = mkdtempSync(join(tmpdir(), "lab-diffs-"));
@@ -259,8 +267,12 @@ export function publicar({ pasta, run, sha, ramo, repo = process.cwd(), remoto =
   return { estado: "publicado", commit, publicadas: publicadas.length, restantes: restantes.length };
 }
 
-/** Apaga o `lab-diffs` do remoto quando o último commit dele tem mais de `dias` dias. Só esse nome. */
-export function limpar({ ramo, repo = process.cwd(), remoto = "origin", dias = DIAS_DE_GUARDA, agora = Date.now(), git }) {
+/**
+ * Apaga o `lab-diffs` do remoto quando o último commit dele tem mais de `dias` dias. Só esse nome.
+ * @param {{ ramo: string, repo?: string, remoto?: string, dias?: number, agora?: number, git?: RodarGit | null }} opcoes
+ * @returns {{ apagados: string[] }}
+ */
+export function limpar({ ramo, repo = process.cwd(), remoto = "origin", dias = DIAS_DE_GUARDA, agora = Date.now(), git = null }) {
   exigirRamo(ramo);
   const rodar = git ?? gitDe(repo);
   if (!rodar(["ls-remote", "--heads", remoto, `refs/heads/${RAMO}`])) return { apagados: [] };
