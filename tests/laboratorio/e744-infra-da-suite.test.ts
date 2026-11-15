@@ -9,6 +9,9 @@
   2) Completude nos dois sentidos. Teste que RODOU e não está na listagem também reprova: é sinal de que listagem e rodada
      não falam do mesmo conjunto.
   3) Números por fatia no resumo: listados, executados, falhas e tempo de cada fatia (antes era preciso refazer o mapa à mão).
+  4) Erro completo no log da fatia. O banco guarda 300 caracteres do erro e o relatório fica num artifact que nem toda sessão
+     consegue baixar; na rodada manual de 15/11 o nome do elemento que cobria o cartão da busca ficou cortado ("(butt…").
+     O log do job é legível pela API: cada falha sai ali com o erro inteiro (até 2.000 caracteres, segredos mascarados).
 
   Roda: node --test tests/laboratorio/e744-infra-da-suite.test.ts
 */
@@ -19,6 +22,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { completude, textoCompletude } from "../../scripts/lab/conferir-completude.mjs";
 import { numerosDaFatia, numerosPorFatia, textoPorFatia } from "../../scripts/lab/numeros-por-fatia.mjs";
+import { falhasDaFatia, textoFalhasDaFatia } from "../../scripts/lab/falhas-da-fatia.mjs";
 import { MASSA_DE_LISTAGEM, PERSONAS_DA_REDUNDANCIA, gruposDaRedundancia, tituloDoGrupo } from "../e2e/fixtures/rotas-redundancia.ts";
 import type { Massa } from "../e2e/fixtures/varredura.ts";
 
@@ -198,4 +202,64 @@ test("E744 workflow: o resumo da noite traz a tabela por fatia, com o mesmo núm
   const resumo = consolidar.slice(consolidar.indexOf("- name: Resumo da noite"), consolidar.indexOf("- name: Registrar no banco"));
   assert.match(resumo, /numeros-por-fatia\.mjs/, "a tabela por fatia entra no resumo da rodada");
   assert.match(resumo, /GITHUB_STEP_SUMMARY/);
+});
+
+test("E744 falhas no log: cada teste que falhou ou ficou instável sai com spec, título e o erro inteiro (até 2.000 caracteres)", () => {
+  const erroLongo = `Error: Buscar @390 — fixo: ${"cartão da lista ".repeat(30)}coberto por elemento fixo (button "Mapa")`;
+  const comErro = (status: string, results: { status: string; error?: { message: string } }[]) => ({ status, expectedStatus: "passed", projectName: "chromium", results });
+  const r = {
+    stats: { duration: 60_000 },
+    suites: [
+      {
+        title: "t274-varredura-paginas.spec.ts",
+        file: "t274-varredura-paginas.spec.ts",
+        specs: [
+          { title: "Buscar: as seis classes", file: "t274-varredura-paginas.spec.ts", tests: [comErro("unexpected", [{ status: "failed", error: { message: erroLongo } }])] },
+          { title: "Home: as seis classes", file: "t274-varredura-paginas.spec.ts", tests: [comErro("expected", [{ status: "passed" }])] },
+          {
+            title: "Instável: passou na segunda",
+            file: "t274-varredura-paginas.spec.ts",
+            tests: [comErro("flaky", [{ status: "failed", error: { message: "\u001b[31mTimeout 5000ms\u001b[39m segredo ABCDEFGHIJKLMNOPQRSTUVWXYZ012345" } }, { status: "passed" }])],
+          },
+        ],
+      },
+    ],
+  };
+  const falhas = falhasDaFatia(r);
+  assert.deepEqual(
+    falhas.map((f) => [f.arquivo, f.titulo, f.status]),
+    [
+      ["t274-varredura-paginas.spec.ts", "Buscar: as seis classes", "falhou"],
+      ["t274-varredura-paginas.spec.ts", "Instável: passou na segunda", "instavel"],
+    ],
+  );
+  assert.ok(falhas[0].erro.endsWith('(button "Mapa")'), "o fim do erro (o nome do elemento) não é cortado");
+  assert.ok(falhas[0].erro.length > 300);
+  assert.equal(falhas[1].erro, "Timeout 5000ms segredo ***", "sem cor de terminal; sequência longa mascarada");
+  const texto = textoFalhasDaFatia(r, 7);
+  assert.match(texto, /^FATIA 7 — listados 3 · executados 3 · passaram 1 · falharam 1 · instáveis 1 · pulados de propósito 0 · não iniciados 0 · suíte 1,0 min$/m);
+  assert.match(texto, /^FALHA \| falhou \| t274-varredura-paginas\.spec\.ts \| Buscar: as seis classes$/m);
+  assert.match(texto, /\(button "Mapa"\)/);
+  assert.match(texto, /^FALHA \| instavel \| /m);
+});
+
+test("E744 falhas no log: erro maior que o teto é cortado com aviso; fatia sem falha diz que não houve", () => {
+  const r = {
+    suites: [{ title: "a.spec.ts", file: "a.spec.ts", specs: [{ title: "t", file: "a.spec.ts", tests: [{ status: "unexpected", expectedStatus: "passed", results: [{ status: "failed", error: { message: "e ".repeat(3000) } }] }] }] }],
+  };
+  const [f] = falhasDaFatia(r);
+  assert.ok(f.erro.length <= 2000 + 20);
+  assert.match(f.erro, / … \(cortado\)$/);
+  const limpo = { suites: [{ title: "a.spec.ts", file: "a.spec.ts", specs: [{ title: "t", file: "a.spec.ts", tests: [{ status: "expected", expectedStatus: "passed", results: [{ status: "passed" }] }] }] }] };
+  assert.match(textoFalhasDaFatia(limpo, 5), /Nenhuma falha nesta fatia\./);
+});
+
+test("E744 workflow: a fatia imprime os números e as falhas no próprio log, mesmo vermelha, sem mudar o veredito", () => {
+  const fatia = yml.split("  construir:")[0];
+  const i = fatia.indexOf("- name: Números e falhas desta fatia (erro completo no log)");
+  assert.ok(i > 0, "o passo existe no job da fatia");
+  const passo = fatia.slice(i, fatia.indexOf("- name:", i + 10));
+  assert.match(passo, /if: \$\{\{ !cancelled\(\) \}\}/);
+  assert.match(passo, /falhas-da-fatia\.mjs tests\/laboratorio\/saida\/resultado\.json \$\{\{ matrix\.fatia \}\} \|\| true/);
+  assert.ok(i > fatia.indexOf("- name: Rodar a suíte E2E") && i < fatia.indexOf("- name: Marcar a fatia como falha"), "depois da suíte e antes do veredito");
 });

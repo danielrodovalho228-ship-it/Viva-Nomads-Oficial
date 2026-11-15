@@ -191,6 +191,12 @@ jobs:
             tests/laboratorio/saida/
           retention-days: 14
 
+      - name: Números e falhas desta fatia (erro completo no log)
+        # E744: o banco guarda só 300 caracteres do erro e o relatório completo fica no artifact. Aqui cada falha sai com o
+        # erro inteiro no log do job, que a API do GitHub entrega. Só imprime; o veredito é o passo seguinte.
+        if: ${{ !cancelled() }}
+        run: node scripts/lab/falhas-da-fatia.mjs tests/laboratorio/saida/resultado.json ${{ matrix.fatia }} || true
+
       - name: Marcar a fatia como falha se algum teste falhou
         if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' }}
         run: exit 1

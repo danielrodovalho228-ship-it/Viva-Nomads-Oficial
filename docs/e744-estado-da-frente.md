@@ -83,6 +83,37 @@ Fatia por fatia nas três noites (veredito · duração do passo "Rodar a suíte
 | 19 | verde · 20 min | verde · 19 min | verde · 19 min |
 | 20 | verde · 55 min | verde · 56 min | verde · 55 min |
 
+### 2.1 Rodada manual de 15/11 na main de hoje (Decisão A do Gerente) — É A BASE DA TRIAGEM
+
+Run [43664453319](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/actions/runs/43664453319), `workflow_dispatch`, main `c950ec82` (já com o #3831), 01:43 → 02:48 UTC de 15/11.
+
+| Medida | Noturna 14/11 (`7f8eff52`) | Manual 15/11 (`c950ec82`) |
+|---|---|---|
+| Listados | 4.601 | 4.659 |
+| Executados | 4.419 | 4.464 |
+| Não executados | 88 | 93 |
+| Passaram | 4.272 | 4.284 |
+| Falharam | 140 | **163** |
+| Instáveis | 6 | 16 |
+| Specs com falha | 80 de 867 | **96 de 879** |
+| Regressões | 35 | **51** |
+| Fatias verdes | 5 de 20 | 5 de 20 (5, 17–20) |
+| Fatia perdida ou cortada | nenhuma | nenhuma |
+
+**A main de hoje está pior que a de 14/11.** Dos 80 specs vermelhos, só 2 saíram (t88 e t176, corrigidos no #3830) e 18 entraram. As falhas visuais não mudaram (54: t245 37, t271 11, t263 6).
+
+Por fatia (veredito e minutos do passo da suíte): 1: vermelha 23 min · 2: vermelha 34 min · 3: vermelha 23 min · 4: vermelha 28 min · 5: verde 7 min · 6: vermelha 19 min · 7: vermelha 26 min · 8: vermelha 30 min · 9: vermelha 24 min · 10: vermelha 25 min · 11: vermelha 7 min · 12: vermelha 13 min · 13: vermelha 24 min · 14: vermelha 21 min · 15: vermelha 22 min · 16: vermelha 12 min · 17: verde 2 min · 18: verde 18 min · 19: verde 20 min · 20: verde 56 min. Os números de testes por fatia desta rodada não foram reconstruídos; saem sozinhos no resumo a partir do Passo 1.
+
+**Os 18 specs que entraram:**
+
+| Grupo | Specs | Erro | Leitura |
+|---|---|---|---|
+| Botão flutuante de volta à `/buscar` (E931, #3831, mesclado em 15/11 00:31) | t10, t244, t436 | `fale-com-a-viva` esperado escondido na `/buscar`, está visível | **Spec desatualizado por decisão registrada.** O E931 devolveu o botão à `/buscar` e à `/ajuda` (documento `docs/reprovas-e916-e915-e917-e887-e931.md`); atualizou o t59 e os testes unitários, mas não estes três. |
+| Busca a 390 px: cartão coberto por elemento fixo | t274, t368, t412, t419, t732, t1405, t1423, t1426, t1451 | `"Centro, Uberlândia - MG Novo na plataform…" coberto por elemento fixo mesmo depois de rolar até ele (butt…` | **Não classificado.** O erro vem cortado em 300 caracteres (não dá para ler qual botão cobre o cartão). Medi no laboratório local: a 390 px o botão flutuante está escondido (`max-md:hidden`), e a varredura da busca passou duas vezes (banco com restos e banco novo). Ver 7.3. |
+| Rotas da Conta | t279, t354 (e parte do t1423) | esperam `/dashboard/conta`, recebem `/dashboard/conta/perfil` | São 3 dos 4 specs que o Passo 2 já tinha corrigido por prevenção ("passam só pela ordem das telas"). |
+| Outros | t228 (3 falhas: `/contato` responde para `/ajuda/fale-com-a-viva`, o spec espera `/ajuda`), t815 (404: alvo de toque de 32 px, mínimo 44), t574 ("Voltar aos resultados") | — | A triar no Passo 3. O t228 e o t815 apontam para o #3831 (E916 mexeu na 404) e para a Família 2 (remissões). |
+| Instável que virou falha | t389 | — | A triar. |
+
 ## 3. A noturna de 14/11 por fatia
 
 O resumo da rodada não traz números por fatia, e o log de cada fatia não mostra o resumo do Playwright (a saída vai para um arquivo do artifact, que esta sessão não consegue baixar). Refiz o mapa teste → fatia com `LAB_PESADOS=fora npx playwright test --list --shard=N/16 --reporter=json` no commit `7f8eff52` (a soma dá 4.601, igual à listagem da rodada) e cruzei com `por_spec` e `falhas` da linha de `lab_execucoes`.
@@ -287,10 +318,12 @@ Cada passo entra aqui com o veredito (spec desatualizado / produto / infra / ins
 | **t337 com listagem estável** | A regra das rotas saiu do spec para `tests/e2e/fixtures/rotas-redundancia.ts`. O spec monta os testes com `MASSA_DE_LISTAGEM` (ids fictícios, mesma quantidade de rotas) e só troca pelos ids de verdade dentro do teste. Os títulos ficam iguais aos que a fatia já rodava (27 testes), então o histórico em `lab_execucoes` continua. Sem a massa na fatia, o grupo com rota de id reprova dizendo o que falta (antes mudava de tamanho em silêncio). | Listagem da suíte inteira, sem a massa (como o `construir`) contra com a massa (como a fatia). **Antes:** 4.659 × 4.662, 4 listados que a fatia não roda (`admin 8: 3 telas`, `inquilino 5: 3 telas`, `proprietario 5: 7 telas`, `publico 5: 4 telas`) e 7 que rodam fora da listagem. **Depois:** 4.662 × 4.662, 0 e 0. O t337 foi o único spec da suíte com esse defeito. No laboratório local: `27 passed (11.7m)`. |
 | **Completude nos dois sentidos** | `scripts/lab/conferir-completude.mjs` passa a reprovar também o teste que RODOU e não está na listagem (`fora da listagem N` no resumo), com a explicação da causa. É aperto de fasquia, não afrouxamento. | Testes de guarda (3 casos). Com o t337 corrigido o número esperado é 0. |
 | **Números por fatia no resumo** | `scripts/lab/numeros-por-fatia.mjs` lê o `resultado.json` de cada artifact e escreve uma linha por fatia: listados, executados, passaram, falharam, instáveis, pulados de propósito, não iniciados, minutos da suíte e veredito (verde, vermelha, incompleta, sem resultado). Entra no "Resumo da noite". Não grava no banco (sem migração). | Testes de guarda (3 casos) e execução sobre relatórios reais. A primeira tabela de verdade sai na primeira noturna depois do merge. |
+| **Erro completo no log da fatia** (acrescentado em 15/11, 12:40 UTC) | `scripts/lab/falhas-da-fatia.mjs` + um passo no job da fatia, depois da suíte e antes do veredito: imprime os números da fatia e cada falha com o erro inteiro (até 2.000 caracteres, mesmas máscaras do resumo). O banco continua com 300 caracteres. | Nasceu de uma necessidade medida: na rodada manual o nome do elemento que cobre o cartão da busca veio cortado ("(butt…") e os artifacts não são legíveis desta sessão. Testes de guarda (3 casos). |
 
-Guarda: `tests/laboratorio/e744-infra-da-suite.test.ts` (9 testes). Suíte unitária inteira: 7.533 testes, 7.532 passam, 0 falham, 1 pulado.
+Guarda: `tests/laboratorio/e744-infra-da-suite.test.ts` (12 testes). Suíte unitária inteira: 7.533 testes, 7.532 passam, 0 falham, 1 pulado (medida antes do acréscimo do log; repetida no fecho).
 
-**Atenção para o portão:** o PR altera o t337, e o `lab-critico` roda inteiro todo spec alterado. No laboratório local o t337 levou 11,7 min com 2 workers; o passo do portão tem 25 min para a lista crítica mais ele.
+**CI do PR #3832 na primeira rodada (commit `7d519d06`): tudo verde** — `verify`, `lab-critico` (18 min 44 s, com o t337 inteiro) e `e2e`.
+
 
 ### 7.2 Passo 2 — rotas da Conta (pronto no local; ver Dúvida 8 sobre o branch)
 
@@ -303,6 +336,20 @@ Guarda: `tests/laboratorio/e744-infra-da-suite.test.ts` (9 testes). Suíte unit�
 
 **Correção (só na suíte):** `tests/e2e/fixtures/destino-da-conta.ts` dá o caminho esperado pela mesma função que o proxy usa (`redirecionamentoDaConta`), e as 17 varreduras esperam a tela assentar (`expect.poll`) nesse caminho. Nenhuma tela saiu da varredura e nenhuma cobrança das seis classes mudou. Guarda: `tests/laboratorio/e744-rotas-da-conta.test.ts`.
 
+**Prova no laboratório local** (main `c950ec82` + o Passo 2):
+
+- As 17 varreduras inteiras, 2 workers, 1 nova tentativa: `217 passed, 1 flaky (25.3m)`.
+- O instável (t1448, Conta a 1280 px) acusou `requisição falhou (fetch POST, net::ERR_ABORTED): /dashboard/conta/perfil`. Causa reproduzida na primeira tentativa: sem o cookie da largura, a casca dispara uma ação do servidor em `/dashboard/conta`; o proxy responde 307 para `/dashboard/conta/perfil`; a troca de tela do navegador cancela o salto. O Playwright não repete o cabeçalho `next-action` no salto redirecionado, e a varredura não reconhecia ali a "ação do servidor cancelada pela navegação" (regra do Muse de 22/10). Correção na fixture: `cabecalhosComOrigem` sobe a cadeia de redirecionamentos (3 testes de guarda em `requisicao-cancelada.test.ts`).
+- Depois da correção, só as telas da Conta e de Avaliações das 17 varreduras, 3 vezes cada, **sem** nova tentativa: `315 passed (36.8m)`, 0 falhas.
+
+**Observação de produto para o Gerente (não corrigida aqui; é da minha área, `proxy.ts`):** o redirecionamento do E798 vale para qualquer método. Uma ação do servidor (POST) disparada em `/dashboard/conta` no computador é redirecionada com 307 para o Perfil. Funciona (a resposta do salto é 200), mas é um pedido a mais e, quando a tela troca no meio, um pedido cancelado. Sequência medida: `POST /dashboard/conta [next-action]` → `307` → `POST /dashboard/conta/perfil` → `net::ERR_ABORTED`. Se o Gerente quiser, vira item: o proxy só redirecionar navegação (GET/HEAD).
+
+**Tempo no portão:** as 17 varreduras levam 25,3 min no laboratório local. O passo do portão tem 25 min para elas mais a lista crítica; ver Dúvida 9.
+
+### 7.3 Passo 3 — triagem contra a main de hoje (em curso)
+
+Base: a rodada manual de 15/11 (seção 2.1). No laboratório local com banco novo, rodam os 82 specs vermelhos que não são visuais nem das rotas da Conta (2 workers, 1 nova tentativa, 90 s por teste). O resultado entra aqui, spec a spec.
+
 ## 8. Dúvidas (por extenso)
 
 1. **Rodada na main de hoje. RESPONDIDA (Decisão A, 15/11): disparar à mão, agora.** Disparada às 01:43 UTC de 15/11: run [43664453319](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/actions/runs/43664453319), `workflow_dispatch`, main `c950ec82` (já com o #3831). O resultado entra na seção 7 e passa a ser a base da triagem.
@@ -312,8 +359,11 @@ Guarda: `tests/laboratorio/e744-infra-da-suite.test.ts` (9 testes). Suíte unit�
 5. **Correção de specs fora das minhas áreas fixas.** Muitos specs vermelhos são de fluxos de outras pistas (cadastro de imóvel, parceiros, admin). Leitura conservadora: corrijo só o **arquivo de teste** quando ele estiver desatualizado em relação a uma decisão registrada; não toco em código de produto fora das minhas áreas, e o que for falha de produto volta como item.
 6. **Atraso do agendamento (7 a 9 h).** Aceita-se, ou a noturna deve ter um segundo horário de cron como reserva? Não mexo sem resposta.
 7. **"12 de 20 fatias verdes". RESPONDIDA (15/11):** o número vinha do monitor do Gerente, cego desde 13/11. Valem os números lidos das rodadas (12/11: 8 de 20; 13/11: 5; 14/11: 5).
+   **Atualização (15/11, 12:30 UTC):** pedi a liberação do host dos artifacts e ela foi aprovada para `productionresultssa32.blob.core.windows.net`, mas o host muda de arquivo para arquivo (o da rodada manual saiu em `productionresultssa13…`). A ferramenta só aceita nomes exatos; o padrão `*.blob.core.windows.net` só pode ser posto nas configurações do ambiente, pelo dono. Com o padrão liberado, eu leio o `playwright-report` (esperado, obtido e diferença de cada tela) e apresento os diffs sem mexer em workflow. Sem ele, vale a proposta acima. O host `…sa32…` pode ser retirado; não serve sozinho.
 8. **Branch para cada passo.** A regra desta sessão me deixa empurrar só para `claude/affectionate-davinci-x0dfgp`, e a ordem é um PR por passo. Enquanto o PR do Passo 1 estiver aberto nesse branch, o Passo 2 não tem para onde ir. Posso usar um branch por passo, no padrão `claude-b/e744-passo-N` (como foi o `claude-b/e899-fable`)? Enquanto não houver resposta, o Passo 2 fica pronto num branch local e sobe assim que o Passo 1 for mesclado ou a permissão chegar.
 9. **Tempo do portão com specs de varredura.** O `lab-critico` roda inteiro todo spec alterado, com 25 min para o passo. O Passo 2 altera 17 varreduras de uma vez. Se o portão estourar por tempo, a leitura conservadora é dividir o Passo 2 em dois PRs (não mexo no teto do portão sem resposta).
+10. **Rodar o `laboratorio.yml` no branch de um PR.** A tabela por fatia e o erro completo no log (Passo 1) só aparecem numa rodada com esse código, e o workflow não roda em PR. Um disparo manual no branch do PR provaria as duas coisas antes do merge, mas grava em `lab_execucoes` uma linha com `gatilho = workflow_dispatch` e o commit do branch, e o detector de regressão conta essa linha como histórico da main. Leitura conservadora: **não disparo em branch de PR**; a prova fica para a primeira rodada depois do merge.
+11. **Ação do servidor redirecionada pelo proxy (E798).** Ver a observação de produto em 7.2. É item para registrar ou fica como está?
 
 ## 9. Como refazer as leituras
 
@@ -328,3 +378,6 @@ Guarda: `tests/laboratorio/e744-infra-da-suite.test.ts` (9 testes). Suíte unit�
 - **15/11, 01:40 UTC.** Decisões do Gerente recebidas (relatório em arquivo; seguir com o que não depende de resposta; visual só com julgamento um a um; fila depois do E744). Este arquivo criado sobre a main `c950ec82`.
 - **15/11, 01:44 UTC.** Decisões A e B do Gerente recebidas. Rodada manual disparada (run 43664453319, main `c950ec82`). Ordem dos passos confirmada com as duas emendas (seção 6). Começa o Passo 1.
 - **15/11.** Passo 1 feito e empurrado (PR draft). Laboratório local de pé na main `c950ec82`. Passo 2 investigado e corrigido num branch local (`e744-passo2-rotas-da-conta`), rodando as 17 varreduras no laboratório local.
+- **15/11, 02:48 UTC.** Rodada manual concluída (seção 2.1): 96 specs vermelhos, 5 de 20 fatias verdes. CI do PR #3832 verde na primeira rodada.
+- **15/11, 03:27 UTC.** Passo 2 verificado no local (315 verdes sem nova tentativa) e confirmado num branch local, sem push (Dúvida 8).
+- **15/11, 12:22 UTC.** Sessão retomada depois de um reinício do ambiente (o laboratório local caiu junto; foi refeito com banco novo). Main sem mudança (`c950ec82`). Passo 3 em curso; "erro completo no log da fatia" acrescentado ao Passo 1.
