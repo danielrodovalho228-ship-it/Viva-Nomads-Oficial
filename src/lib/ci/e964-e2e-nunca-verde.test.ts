@@ -12,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { contarExecutados, contarListados, grepDaPrevia, vereditoCompletude } from "./e2e-completude.ts";
 
 function alvo(env: Record<string, string>): Record<string, string> {
-  const out = execFileSync("bash", ["scripts/ci/e2e-alvo.sh"], { env: { PATH: process.env.PATH ?? "", ...env }, encoding: "utf8" });
+  const out = execFileSync("bash", ["scripts/ci/e2e-alvo.sh"], { env: { NODE_ENV: "test", PATH: process.env.PATH ?? "", ...env }, encoding: "utf8" });
   return Object.fromEntries(out.trim().split("\n").map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]));
 }
 
