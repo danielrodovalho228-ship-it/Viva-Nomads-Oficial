@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /*
-  T1652 — Filtros pacote 1 na folha "Mais filtros" da /buscar: "Ambiente silencioso" (?silencioso=1), "Contas incluídas"
+  T1652 — E954, filtros pacote 1 na folha "Mais filtros" da /buscar: "Ambiente silencioso" (?silencioso=1), "Contas incluídas"
   (?contas=1) e o chip "Ar-condicionado" (?comod=ar). SÓ LEITURA, sem login, sem massa (@ao-vivo-seguro): vale em
   qualquer ambiente, com os dados que houver.
    1. Cada chip está na folha com o número (data-n). O número é EXATAMENTE quantos cartões a lista mostra com ele ligado
@@ -27,7 +27,7 @@ async function abrirFolha(page: Page, url: string) {
   return page.getByTestId("painel-filtros");
 }
 
-test.describe("T1652 — Filtros pacote 1 na /buscar (silencioso, contas incluídas, ar-condicionado)", { tag: ["@filtros-pacote1", "@ao-vivo-seguro"] }, () => {
+test.describe("T1652 — Filtros pacote 1 na /buscar (silencioso, contas incluídas, ar-condicionado)", { tag: ["@E954", "@filtros-pacote1", "@ao-vivo-seguro"] }, () => {
   test.use({ storageState: { cookies: [], origins: [] } });
   test.describe.configure({ timeout: 150_000 });
 

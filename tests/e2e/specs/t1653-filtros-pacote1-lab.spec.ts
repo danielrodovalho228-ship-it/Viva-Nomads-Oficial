@@ -29,7 +29,7 @@ async function abrirFolha(page: Page, url: string) {
 }
 const titulosNaLista = (page: Page) => page.getByTestId("card-resultado").evaluateAll((els) => els.map((e) => (e.textContent ?? "").trim()));
 
-test.describe("T1653 — Filtros pacote 1 com massa (laboratório)", { tag: ["@filtros-pacote1"] }, () => {
+test.describe("T1653 — Filtros pacote 1 com massa (laboratório)", { tag: ["@E954", "@filtros-pacote1"] }, () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (anúncios criados pelo spec).");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
   test.use({ storageState: { cookies: [], origins: [] } });
