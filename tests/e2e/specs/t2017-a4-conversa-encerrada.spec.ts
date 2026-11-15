@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2017 — Pista 3, lote 2, item A4 @A4 @ao-vivo-seguro — TRAVA NOMEADA (vermelha na main até a correção da Família 6).
+  T2017 — Pista 3, lote 2, item A4 → E969 @E969 @A4 @ao-vivo-seguro — TRAVA NOMEADA (vermelha na main até a correção da Família 6).
   Regra definida pelo coordenador (ORDEM-DUET-068, ponto 2):
     • a conversa ENCERRA quando a candidatura que a originou termina sem contrato (aqui: recusada pelo dono);
     • as duas pontas veem a faixa "Esta conversa foi encerrada em {data}. O histórico continua disponível.", o campo
@@ -67,6 +67,9 @@ test.describe("T2017 — A4: conversa encerrada (trava da Família 6)", () => {
 
   test("candidatura nova do mesmo morador ao mesmo imóvel reabre a MESMA conversa, com o separador", async ({ browser }) => {
     const conversa = conversationId(ids.inq, ids.dono, ids.imovel);
+    // PONTO DE ADAPTAÇÃO (ORDEM-DUET-072, ponto 3): a trava testa a REGRA (a mesma conversa reabre, com o separador), não o
+    // caminho de criação — a candidatura nova vem direto do banco, o que é legítimo. Se a correção do Code 2 ligar a
+    // reabertura à ação "candidatar" da tela, este passo passa a usar a tela, no PR da correção.
     ids.lead2 = await criarLead(ids.dono, ids.inq, ids.imovel);
     for (const email of [inq.email, dono.email]) {
       const p = await entrar(browser, email, senha);
