@@ -10,6 +10,7 @@ import {
   type FiltrosPainel,
 } from "@/lib/busca/painel-filtros";
 import { COMODIDADES_FILTRAVEIS } from "@/lib/busca/filtro-comodidades";
+import { DICA_CONTAS_INCLUIDAS, DICA_SILENCIOSO, ROTULO_CONTAS_INCLUIDAS, ROTULO_SILENCIOSO } from "@/lib/busca/filtros-pacote1";
 import { TEXTO_GARANTIA_MINIMA } from "@/lib/busca/garantia-minima";
 import { rotuloVerNaoMedidos } from "@/lib/busca/filtro-internet";
 import {
@@ -156,6 +157,14 @@ export function FolhaFiltros({
           {/* E43: "Pronto para Morar" mora só aqui (saiu da barra de cima). */}
           <ChipFaceta f={facetaInterruptor(contar, rascunho, "readyToLiveOnly")} ativo={rascunho.readyToLiveOnly} onClick={() => muda("readyToLiveOnly", !rascunho.readyToLiveOnly)} testId="faceta-pronto">
             Pronto para Morar
+          </ChipFaceta>
+          {/* Filtros pacote 1: ruído declarado (baixo, ou médio/alto com isolamento) e contas dentro do valor do mês — a
+              mesma regra do aviso AVISO_TUDO_INCLUIDO do cartão (src/lib/busca/filtros-pacote1.ts). */}
+          <ChipFaceta f={facetaInterruptor(contar, rascunho, "silenciosoOnly")} ativo={!!rascunho.silenciosoOnly} title={DICA_SILENCIOSO} onClick={() => muda("silenciosoOnly", !rascunho.silenciosoOnly)} testId="faceta-silencioso">
+            {ROTULO_SILENCIOSO}
+          </ChipFaceta>
+          <ChipFaceta f={facetaInterruptor(contar, rascunho, "contasOnly")} ativo={!!rascunho.contasOnly} title={DICA_CONTAS_INCLUIDAS} onClick={() => muda("contasOnly", !rascunho.contasOnly)} testId="faceta-contas">
+            {ROTULO_CONTAS_INCLUIDAS}
           </ChipFaceta>
         </Grupo>
         {rascunho.petsOnly && (

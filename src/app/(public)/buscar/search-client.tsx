@@ -123,6 +123,8 @@ export function SearchClient({
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
   const [negociaOnly, setNegociaOnly] = useState(false); // E439: só quem aceita negociar (`?negocia=1`)
+  const [silenciosoOnly, setSilenciosoOnly] = useState(false); // Filtros pacote 1: "Ambiente silencioso" (`?silencioso=1`)
+  const [contasOnly, setContasOnly] = useState(false); // Filtros pacote 1: "Contas incluídas" (`?contas=1`)
   // E572/E580: só com o selo "Preço justo" (`?precojusto=1`) — o mesmo selo do card, sem chave.
   const [precoJustoOnly, setPrecoJustoOnly] = useState(false);
   // Folha de filtros (ordem 314f764e; Prompt 40): de baixo no celular, lateral no computador.
@@ -215,6 +217,8 @@ export function SearchClient({
     if (!gar && seguroDaUrlLegada(gar, sp.get("seguro"))) setGarantia("seguro_fianca");
     if (on("gestor")) setOperatedOnly(true);
     if (on("negocia")) setNegociaOnly(true);
+    if (on("silencioso")) setSilenciosoOnly(true);
+    if (on("contas")) setContasOnly(true);
     if (on("precojusto")) setPrecoJustoOnly(true);
     setComodidades(comodidadesDaUrl(sp.get("comod")));
     const fi = filtroInternetDaUrl(sp);
@@ -286,6 +290,8 @@ export function SearchClient({
     params.delete("seguro"); // Adendo 3 (E43): o atalho antigo não volta para a URL (virou garantia=seguro_fianca).
     put("gestor", operatedOnly, "1");
     put("negocia", negociaOnly, "1");
+    put("silencioso", silenciosoOnly, "1");
+    put("contas", contasOnly, "1");
     put("precojusto", precoJustoOnly, "1");
     put("comod", comodidades.length > 0, comodidades.join(","));
     filtroInternetNaUrl(params, { internetMin, soInternetMedida });
@@ -302,7 +308,7 @@ export function SearchClient({
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
-    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, comodidades, estadoDestino,
+    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly, comodidades, estadoDestino,
     internetMin, soInternetMedida, datasFlexiveis, nivelMin, niveis,
   ]);
 
@@ -417,10 +423,12 @@ export function SearchClient({
       periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: invoiceOnly, gestorOnly: operatedOnly,
       negociaOnly,
       precoJustoOnly,
+      silenciosoOnly,
+      contasOnly,
       internetMin, soInternetMedida,
       entrada: dataEntrada, datasFlexiveis, nivelMin, niveis,
     }),
-    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin, niveis]
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin, niveis]
   );
 
   const { base, dist } = useMemo(() => {
@@ -535,6 +543,8 @@ export function SearchClient({
     (garantia ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (negociaOnly ? 1 : 0) + // E439
+    (silenciosoOnly ? 1 : 0) + // Filtros pacote 1
+    (contasOnly ? 1 : 0) + // Filtros pacote 1
     (precoJustoOnly ? 1 : 0) + // E572/E580
     (niveis.length ? 1 : 0) + // E573
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly].filter(
@@ -551,7 +561,7 @@ export function SearchClient({
     (maxPeriod ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (niveis.length ? 1 : 0) + // E573: o grupo "Nível" mora na folha
-    [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly].filter(Boolean).length +
+    [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly].filter(Boolean).length +
     comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
@@ -636,7 +646,7 @@ export function SearchClient({
   // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
-    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, comodidades.join(","),
+    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly, comodidades.join(","),
     internetMin, soInternetMedida, datasFlexiveis, nivelMin, niveis.join(","),
   ].join("|");
   // E589: define os filtros da busca a partir da folha (sem fechar nada) — o "Mostrar N" e o "Limpar tudo" usam a mesma.
@@ -663,6 +673,8 @@ export function SearchClient({
     setInvoiceOnly(f.notaOnly);
     setOperatedOnly(f.gestorOnly);
     setNegociaOnly(f.negociaOnly ?? false);
+    setSilenciosoOnly(f.silenciosoOnly ?? false);
+    setContasOnly(f.contasOnly ?? false);
     setPrecoJustoOnly(f.precoJustoOnly ?? false);
   }
   function aplicarPainel(f: FiltrosPainel) {
