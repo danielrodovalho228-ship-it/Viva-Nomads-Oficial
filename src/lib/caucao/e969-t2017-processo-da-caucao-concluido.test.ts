@@ -8,12 +8,18 @@
     2. a data: o teto externo da devolução é a saída + 30 dias corridos (o mesmo marco em estado e prazos).
   A decisão "encerra a conversa" ainda não existe no código: resíduo nomeado no E969 (e a perna de laboratório, até o
   lab ter contrato encerrável com caução devolvida). Quem a escrever consome estas funções.
+  REGRA FINAL do coordenador (15/11, veta o piso de 30 dias): com contrato, a conversa encerra no que vier POR ÚLTIMO entre
+  o fechamento do processo da caução e o fim da estadia + DIAS_PRAZO_AVALIACAO (14, src/lib/avaliacoes.ts — nunca um
+  número à mão); sem caução, no fim da estadia + 14. Casos pedidos: caução fechada no dia 8 → aberta até o dia 14 e encerra
+  no dia 14; fechada no dia 25 → encerra no dia 25. PONTO DE ADAPTAÇÃO: `encerraEm` abaixo é a regra escrita sobre as
+  funções reais até existir a função da correção (Code 2); no PR dela, o teste passa a chamar a função real.
   Roda: node --test src/lib/caucao/e969-t2017-processo-da-caucao-concluido.test.ts
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { estadoDosPrazos, PRAZO_DEVOLUCAO_DIAS, prazosDaSaida } from "./prazos.ts";
 import { estadoCaucao } from "../caucao-estado.ts";
+import { DIAS_PRAZO_AVALIACAO, prazoAvaliacao } from "../avaliacoes.ts";
 
 const SAIDA = "2026-12-01";
 const item = (status: string) => ({ valor: 500, categoria: "dano", comodo: "sala", fotoEntrada: "a", fotoSaida: "b", comprovante: "c", status }) as never;
@@ -50,4 +56,35 @@ test("E969: sem devolução confirmada ou com contestação aberta, o processo N
 
 test("E969: a Viva nunca decide a disputa (o fim vem das partes)", () => {
   assert.equal(prazo({ parecerEm: "2026-12-05", descontos: [item("contestado")], hoje: "2027-02-01" }).vivaDecide, false);
+});
+
+/** Dia (AAAA-MM-DD) em que a conversa encerra: o último entre o fim do processo da caução e o fim da estadia + prazo da avaliação. */
+function encerraEm(f: { saida: string; devolvidaEm: string | null; comCaucao: boolean; hoje: string }): string | null {
+  const br = prazoAvaliacao(`${f.saida}T00:00:00Z`)!;
+  const fimAvaliacao = `${br.slice(6, 10)}-${br.slice(3, 5)}-${br.slice(0, 2)}`;
+  if (!f.comCaucao) return fimAvaliacao;
+  const p = prazo({ saida: f.saida, parecerEm: f.devolvidaEm, devolvidaEm: f.devolvidaEm, hoje: f.hoje });
+  if (p.chave !== "devolvida" || !f.devolvidaEm) return null; // processo aberto: não encerra
+  return f.devolvidaEm > fimAvaliacao ? f.devolvidaEm : fimAvaliacao;
+}
+const dia = (n: number) => new Date(Date.parse(`${SAIDA}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+
+test("E969 (regra final): o prazo da avaliação vem da constante — 14 dias depois do fim da estadia", () => {
+  assert.equal(DIAS_PRAZO_AVALIACAO, 14);
+  assert.equal(prazoAvaliacao(`${SAIDA}T00:00:00Z`), "15/12/2026");
+});
+
+test("E969 (regra final): caução fechada no dia 8 → a conversa segue aberta até o dia 14 e encerra no dia 14", () => {
+  const quando = encerraEm({ saida: SAIDA, devolvidaEm: dia(8), comCaucao: true, hoje: dia(9) });
+  assert.equal(quando, dia(14));
+  assert.ok(dia(13) < quando!, "no dia 13 ainda está aberta");
+});
+
+test("E969 (regra final): caução fechada no dia 25 → encerra no dia 25", () => {
+  assert.equal(encerraEm({ saida: SAIDA, devolvidaEm: dia(25), comCaucao: true, hoje: dia(26) }), dia(25));
+});
+
+test("E969 (regra final): sem caução, encerra no fim da estadia + 14; com o processo aberto, não encerra", () => {
+  assert.equal(encerraEm({ saida: SAIDA, devolvidaEm: null, comCaucao: false, hoje: dia(1) }), dia(14));
+  assert.equal(encerraEm({ saida: SAIDA, devolvidaEm: null, comCaucao: true, hoje: dia(40) }), null);
 });
