@@ -2,7 +2,7 @@
 import { test, expect, type Browser } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, existsSync } from "node:fs";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T597 — E213-B: limpeza automática da saída (Prompt 38) × renovação dentro da janela do D-5. A remarcação vem do
@@ -174,7 +174,9 @@ async function aditivo(browser: Browser, contratoId: string, morador: string, de
   await m.getByTestId("alteracao-meses").selectOption(String(para));
   await m.getByTestId("alteracao-enviar").click();
   await expect(m).toHaveURL(new RegExp(`/dashboard/estadia/${contratoId}$`));
-  await expect(m.getByTestId("aditivo-resumo")).toHaveText(`Meses: de ${de} para ${para}`);
+  // E744 (asserção alterada, além da tabela da Fable #3832): desde o E672 (26267d5ed, 07/11) o resumo do aditivo traz
+  // também a saída, os dias, o total e a diferença. "Meses" continua sendo o primeiro item, seguido do comparativo.
+  await expect(m.getByTestId("aditivo-resumo")).toHaveText(new RegExp(`^Meses: de ${de} para ${para} · Saída: de .+ · Dias: de \\d+ para \\d+ · Total: de .+ · Diferença: .+$`));
 
   const d = await entrar(browser, emails.dono, senha);
   await d.goto(`/dashboard/estadia/${contratoId}`, { waitUntil: "domcontentloaded" });
@@ -235,7 +237,8 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     for (const k of ["ana", "beto", "caio", "duda", "eva"]) ids[k] = await conta(k, `${k[0].toUpperCase()}${k.slice(1)} Renova`, "tenant");
     const { data: parc, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.limpa, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Lara Limpa ${sufixo}`, slug: `lara-t597-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      // E744 (tabela da Fable #3832): E648 — só CNPJ recebe serviço; a semente volta a PJ.
+      .insert({ user_id: ids.limpa, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Lara Limpa ${sufixo}`, slug: `lara-t597-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

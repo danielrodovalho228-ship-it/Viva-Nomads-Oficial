@@ -256,8 +256,12 @@ export async function controlesCobertos(page: Page): Promise<string[]> {
         if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
         const r = el.getBoundingClientRect();
         if (r.width < 2 || r.height < 2) continue;
-        const x = r.left + r.width / 2;
-        const y = r.top + r.height / 2;
+        // E744 (tabela da Fable #3832, t622): controle EM LINHA que quebra de linha (link dentro de um <p>) — a caixa do
+        // getBoundingClientRect é a união das linhas e o centro cai no vizinho. Mede o centro da 1ª caixa de linha.
+        const linhas = el.getClientRects();
+        const r1 = linhas.length > 1 && getComputedStyle(el).display === "inline" ? linhas[0] : r;
+        const x = r1.left + r1.width / 2;
+        const y = r1.top + r1.height / 2;
         if (x < 0 || y < 0 || x > window.innerWidth - 1 || y > window.innerHeight - 1) continue; // fora da janela: não é visível agora
         // Cortado por ancestral com overflow (carrossel, gaveta): o ponto fora da área do ancestral não conta.
         let cortado = false;
