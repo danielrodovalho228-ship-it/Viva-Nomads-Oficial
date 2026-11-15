@@ -460,12 +460,12 @@ Tabela completa (falhas no CI, falhas no local, situação, grupo e o começo do
 
 ### 7.4 Classificação das 96 specs (Prompt A) — primeira passada completa em 15/11
 
-Arquivo: `docs/e744-classificacao-96-specs.md`. Resultado: 59 teste velho, 31 defeito real, 1 infra/tempo, 5 instável; 26 com a Fable, 44 para a Code 2, 26 para o Gerente encaminhar; 16 itens novos de defeito real.
+Arquivo: `docs/e744-classificacao-96-specs.md`. Resultado depois das rodadas isoladas (3 vezes cada, sem nova tentativa): **62 teste velho, 32 defeito real, 1 infra/tempo, 1 instável**; 26 com a Fable, 43 para a Code 2, 27 para o Gerente encaminhar; 17 itens novos de defeito real.
 
 - **Achado urgente (t281):** excluir rascunho de anúncio falha para qualquer dono desde o #3595 (13/11), também em produção. Detalhe na seção 2 daquele arquivo.
 - A `main` avançou para `403858f7` (#3833, 06:34 UTC de 15/11): o flutuante saiu de novo da `/buscar`. O branch do PR está sobre ela.
 - Como foi feito, o que rodou e os limites: seções 7 e 8 daquele arquivo.
-- **O que falta:** rodadas isoladas das specs "instável" que ainda não têm as 3 repetições; conferir os 8 specs da busca a 390 px na próxima rodada completa; o julgamento visual.
+- **O que falta:** conferir os 8 specs da busca a 390 px na próxima rodada completa; o julgamento visual; os bisects marcados como pendentes; um branch para o PR das rotas da Conta (Dúvida 8).
 
 ## 8. Dúvidas (por extenso)
 
@@ -501,3 +501,4 @@ Arquivo: `docs/e744-classificacao-96-specs.md`. Resultado: 59 teste velho, 31 de
 - **15/11, 14:15 UTC.** Rodada local da triagem concluída (seção 7.3): 66 specs reproduzem com o mesmo erro do CI. CI do PR #3832 verde também no commit `b2c430af`.
 - **15/11, 14:20 UTC.** ORDEM-DUET-041 recebida: a triagem vira a tabela única das 96 specs; correção só do que é da minha área. Main em `403858f7` (#3833); branch do PR atualizado sobre ela.
 - **15/11, 15:15 UTC.** Tabela das 96 specs completa em primeira passada (`docs/e744-classificacao-96-specs.md`). ORDEM-DUET-046 recebida (pacote de evidência com SHA; conferir a ordem contra a main; sem troca de sessão no meio do Prompt A).
+- **15/11, 15:35 UTC.** Rodadas isoladas concluídas (17 specs, 3 vezes cada, main `403858f7`): t14, t534, t590, t683 e t840 falham sempre sozinhas e saíram de "instável"; o t389 entrou no defeito do autosave do assistente; só o t204 varia. Tabela e descrição do PR #3832 atualizadas.
