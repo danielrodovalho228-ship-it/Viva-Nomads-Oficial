@@ -16,6 +16,8 @@ import { apiDoGitHub, argumentos } from "./api-github.mjs";
 export const PREFIXO_TITULO = "Main vermelha";
 /** Os workflows que rodam a cada merge na main (arquivo em .github/workflows). */
 export const WORKFLOWS_DA_MAIN = ["ci.yml", "lab-critico.yml"];
+/** Quem abre o aviso: o token do Actions (github-actions[bot]), já codificado para a URL. */
+const AUTOR_DO_AVISO = encodeURIComponent("github-actions[bot]");
 const FALHAS = new Set(["failure", "timed_out", "startup_failure"]);
 
 /** Número do PR no texto do commit de merge ("Merge pull request #123 from …"), ou null. */
@@ -54,10 +56,11 @@ export function textoDoAviso({ workflow, sha, mensagem, urlDoRun }) {
  * @param {{ api: import("./api-github.mjs").Api, repo: string, run: { name: string, conclusion: string, head_sha: string, html_url: string, head_commit?: { message?: string } } }} o
  */
 export async function avisarDaMain({ api, repo, run }) {
-  // A listagem de issues traz PRs também (com a chave pull_request): ficam de fora. Percorre todas as páginas.
+  // Só as issues abertas pelo próprio Actions (quem abre o aviso): a listagem geral traz também os PRs, e há mais de
+  // mil abertos. A chave pull_request marca PR; fica de fora.
   let aviso;
   for (let pagina = 1; !aviso; pagina++) {
-    const lote = await api("GET", `/repos/${repo}/issues?state=open&per_page=100&page=${pagina}`);
+    const lote = await api("GET", `/repos/${repo}/issues?state=open&creator=${AUTOR_DO_AVISO}&per_page=100&page=${pagina}`);
     aviso = (lote ?? []).find((i) => !i.pull_request && String(i.title ?? "").startsWith(PREFIXO_TITULO));
     if (!Array.isArray(lote) || lote.length < 100) break;
   }

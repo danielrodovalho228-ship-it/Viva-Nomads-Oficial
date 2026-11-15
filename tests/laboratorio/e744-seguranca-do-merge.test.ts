@@ -12,7 +12,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { CONTEXTO, conferirBases, prsDaMain, veredito } from "../../scripts/gate/base-atual.mjs";
+import { CONTEXTO, aposMerge, conferirBases, prsDaMain, veredito } from "../../scripts/gate/base-atual.mjs";
 import { PREFIXO_TITULO, WORKFLOWS_DA_MAIN, acaoDaMain, avisarDaMain, prDoCommit, textoDoAviso } from "../../scripts/gate/main-vermelha.mjs";
 
 type Chamada = { metodo: string; caminho: string; corpo?: unknown };
@@ -31,14 +31,13 @@ function apiFalsa(respostas: Record<string, unknown>) {
 }
 const PONTA = "a".repeat(40);
 
-test("base atual: verde só com zero commit atrás; o texto diz a ponta da main e o que fazer", () => {
+test("base atual: verde só com zero commit atrás; o vermelho diz o que fazer, sem número que fique velho", () => {
   assert.equal(CONTEXTO, "base-atual");
   assert.deepEqual(veredito({ atras: 0, pontaDaMain: PONTA }), { state: "success", description: "Contém a ponta da main (aaaaaaa)." });
-  const um = veredito({ atras: 1, pontaDaMain: PONTA });
-  assert.equal(um.state, "failure");
-  assert.equal(um.description, "1 commit atrás da main (aaaaaaa): atualize o branch e espere o CI antes do merge.");
-  assert.match(veredito({ atras: 12, pontaDaMain: PONTA }).description, /^12 commits atrás da main/);
-  assert.ok(veredito({ atras: 123456, pontaDaMain: PONTA }).description.length <= 140, "limite do texto de status do GitHub");
+  const atras = { state: "failure", description: "Atrás da main: atualize o branch e espere o CI antes do merge." };
+  assert.deepEqual(veredito({ atras: 1, pontaDaMain: PONTA }), atras);
+  assert.deepEqual(veredito({ atras: 123456, pontaDaMain: PONTA }), atras);
+  assert.ok(atras.description.length <= 140, "limite do texto de status do GitHub");
 });
 
 test("base atual: só PR aberto para a main entra (rascunho também: a cadeia de merges é feita de rascunhos)", () => {
@@ -51,41 +50,73 @@ test("base atual: só PR aberto para a main entra (rascunho também: a cadeia de
   assert.deepEqual(prsDaMain(lista), [{ numero: 1, sha: "s1" }, { numero: 2, sha: "s2" }]);
 });
 
-test("base atual: confere cada PR pela comparação com a main e grava o status no commit de cabeça", async () => {
-  const { api, chamadas } = apiFalsa({
-    "GET /repos/o/r/pulls?state=open&base=main&per_page=100&page=1": [
-      { number: 7, state: "open", draft: true, base: { ref: "main" }, head: { sha: "c7" } },
-      { number: 8, state: "open", draft: true, base: { ref: "main" }, head: { sha: "c8" } },
-    ],
-    "GET /repos/o/r/compare/main...c7": { behind_by: 0, base_commit: { sha: PONTA } },
-    "GET /repos/o/r/compare/main...c8": { behind_by: 3, base_commit: { sha: PONTA } },
-    "POST /repos/o/r/statuses/c7": {},
-    "POST /repos/o/r/statuses/c8": {},
+test("base atual, PR aberto ou atualizado: uma comparação na API e o status no commit de cabeça", async () => {
+  const pr = (base = "main") => ({ number: 9, state: "open", draft: true, base: { ref: base }, head: { sha: "c9" } });
+  const atras = apiFalsa({
+    "GET /repos/o/r/pulls/9": pr(),
+    "GET /repos/o/r/compare/main...c9?per_page=1": { behind_by: 3, base_commit: { sha: PONTA } },
+    "POST /repos/o/r/statuses/c9": {},
   });
-  const r = await conferirBases({ api, repo: "o/r" });
-  assert.deepEqual(r.map((x) => [x.numero, x.atras, x.state, x.gravado]), [[7, 0, "success", true], [8, 3, "failure", true]]);
-  const gravados = chamadas.filter((c) => c.metodo === "POST");
-  assert.deepEqual(gravados.map((c) => c.caminho), ["/repos/o/r/statuses/c7", "/repos/o/r/statuses/c8"]);
-  assert.deepEqual(gravados[1].corpo, { state: "failure", context: "base-atual", description: "3 commits atrás da main (aaaaaaa): atualize o branch e espere o CI antes do merge." });
-});
+  assert.deepEqual((await conferirBases({ api: atras.api, repo: "o/r", numero: 9 })).map((x) => [x.numero, x.atras, x.state, x.gravado]), [[9, 3, "failure", true]]);
+  assert.deepEqual(atras.chamadas.at(-1), { metodo: "POST", caminho: "/repos/o/r/statuses/c9", corpo: { state: "failure", context: "base-atual", description: "Atrás da main: atualize o branch e espere o CI antes do merge." } });
 
-test("base atual: um PR só (evento do próprio PR); sem permissão de gravar não derruba o job; --so-ler não grava", async () => {
-  const semPermissao = apiFalsa({
-    "GET /repos/o/r/pulls/9": { number: 9, state: "open", draft: true, base: { ref: "main" }, head: { sha: "c9" } },
-    "GET /repos/o/r/compare/main...c9": { behind_by: 2, base_commit: { sha: PONTA } },
-    "POST /repos/o/r/statuses/c9": new Error("403 Resource not accessible by integration"),
-  });
-  const r = await conferirBases({ api: semPermissao.api, repo: "o/r", numero: 9 });
-  assert.deepEqual(r.map((x) => [x.numero, x.atras, x.gravado]), [[9, 2, false]]);
-  const soLer = apiFalsa({
-    "GET /repos/o/r/pulls/9": { number: 9, state: "open", draft: true, base: { ref: "main" }, head: { sha: "c9" } },
-    "GET /repos/o/r/compare/main...c9": { behind_by: 0, base_commit: { sha: PONTA } },
-  });
+  const emDia = apiFalsa({ "GET /repos/o/r/pulls/9": pr(), "GET /repos/o/r/compare/main...c9?per_page=1": { behind_by: 0, base_commit: { sha: PONTA } }, "POST /repos/o/r/statuses/c9": {} });
+  await conferirBases({ api: emDia.api, repo: "o/r", numero: 9 });
+  assert.deepEqual(emDia.chamadas.at(-1)!.corpo, { state: "success", context: "base-atual", description: "Contém a ponta da main (aaaaaaa)." });
+
+  // Sem permissão de gravar (PR de fork): o job não cai. --so-ler não grava. PR empilhado (outra base) não recebe status.
+  const semPermissao = apiFalsa({ "GET /repos/o/r/pulls/9": pr(), "GET /repos/o/r/compare/main...c9?per_page=1": { behind_by: 2, base_commit: { sha: PONTA } }, "POST /repos/o/r/statuses/c9": new Error("403 Resource not accessible by integration") });
+  assert.deepEqual((await conferirBases({ api: semPermissao.api, repo: "o/r", numero: 9 })).map((x) => [x.atras, x.gravado]), [[2, false]]);
+  const soLer = apiFalsa({ "GET /repos/o/r/pulls/9": pr(), "GET /repos/o/r/compare/main...c9?per_page=1": { behind_by: 0, base_commit: { sha: PONTA } } });
   await conferirBases({ api: soLer.api, repo: "o/r", numero: 9, soLer: true });
   assert.equal(soLer.chamadas.filter((c) => c.metodo !== "GET").length, 0);
-  // PR com outra base (empilhado) não recebe status: a regra é sobre quem pousa na main.
-  const empilhado = apiFalsa({ "GET /repos/o/r/pulls/10": { number: 10, state: "open", draft: true, base: { ref: "claude-b/x" }, head: { sha: "c10" } } });
-  assert.deepEqual(await conferirBases({ api: empilhado.api, repo: "o/r", numero: 10 }), []);
+  const empilhado = apiFalsa({ "GET /repos/o/r/pulls/9": pr("claude-b/x") });
+  assert.deepEqual(await conferirBases({ api: empilhado.api, repo: "o/r", numero: 9 }), []);
+});
+
+/** git falso: `contem[n]` lista os commits da main que a cabeça do PR n contém; guarda os comandos. */
+function gitFalso(contem: Record<number, string[]>, semCabeca: number[] = []) {
+  const comandos: string[][] = [];
+  const git = (args: string[]) => {
+    comandos.push(args);
+    const n = Number((/refs\/remotes\/pr\/(\d+)$/.exec(args.at(-1) ?? "") ?? [])[1]);
+    if (args[0] === "fetch") return { status: 0, stdout: "" };
+    if (args[0] === "rev-parse") return { status: semCabeca.includes(n) ? 1 : 0, stdout: "" };
+    if (args[0] === "merge-base") return { status: (contem[n] ?? []).includes(args[2]) ? 0 : 1, stdout: "" };
+    throw new Error(`git falso sem resposta: ${args.join(" ")}`);
+  };
+  return { git, comandos };
+}
+const ANTES = "b".repeat(40);
+const abertos = (ns: number[]) => ns.map((n) => ({ number: n, state: "open", draft: true, base: { ref: "main" }, head: { sha: `c${n}` } }));
+
+test("base atual, a main andou: pelo git local, grava só em quem muda (estava em dia → vermelho; em dia → verde)", async () => {
+  const { api, chamadas } = apiFalsa({
+    "GET /repos/o/r/pulls?state=open&base=main&per_page=100&page=1": abertos([1, 2, 3, 4]),
+    "POST /repos/o/r/statuses/c1": {},
+    "POST /repos/o/r/statuses/c2": {},
+  });
+  // #1 contém a ponta nova; #2 estava em dia com a ponta anterior; #3 já estava atrás; #4 não tem cabeça para buscar.
+  const { git, comandos } = gitFalso({ 1: [ANTES, PONTA], 2: [ANTES], 3: [] }, [4]);
+  const r = await aposMerge({ api, repo: "o/r", antes: ANTES, ponta: PONTA, git });
+  assert.deepEqual(r.map((x) => [x.numero, x.situacao, x.gravado]), [[1, "em-dia", true], [2, "ficou-atras", true], [3, "ja-estava-atras", false], [4, "sem-cabeca", false]]);
+  const gravados = chamadas.filter((c) => c.metodo === "POST");
+  assert.deepEqual(gravados.map((c) => [c.caminho, (c.corpo as { state: string }).state]), [["/repos/o/r/statuses/c1", "success"], ["/repos/o/r/statuses/c2", "failure"]]);
+  // Nenhuma comparação por PR na API: uma listagem e uma busca de cabeças só.
+  assert.deepEqual(chamadas.filter((c) => c.metodo === "GET").map((c) => c.caminho), ["/repos/o/r/pulls?state=open&base=main&per_page=100&page=1"]);
+  assert.deepEqual(comandos[0], ["fetch", "--quiet", "--no-tags", "origin", "+refs/pull/1/head:refs/remotes/pr/1", "+refs/pull/2/head:refs/remotes/pr/2", "+refs/pull/3/head:refs/remotes/pr/3", "+refs/pull/4/head:refs/remotes/pr/4"]);
+  assert.ok(comandos.every((c) => ["fetch", "rev-parse", "merge-base"].includes(c[0])), "o git só busca e compara; nunca empurra, mescla ou apaga");
+});
+
+test("base atual, a main andou: sem ponta anterior ninguém 'estava em dia'; --so-ler não grava", async () => {
+  const lista = { "GET /repos/o/r/pulls?state=open&base=main&per_page=100&page=1": abertos([2, 3]) };
+  const semAntes = apiFalsa(lista);
+  const zerada = await aposMerge({ api: semAntes.api, repo: "o/r", antes: "0".repeat(40), ponta: PONTA, git: gitFalso({ 2: ["0".repeat(40)], 3: [] }).git });
+  assert.deepEqual(zerada.map((x) => [x.numero, x.situacao, x.gravado]), [[2, "ja-estava-atras", false], [3, "ja-estava-atras", false]]);
+
+  const soLer = apiFalsa(lista);
+  await aposMerge({ api: soLer.api, repo: "o/r", antes: ANTES, ponta: PONTA, soLer: true, git: gitFalso({ 2: [ANTES], 3: [] }).git });
+  assert.equal(soLer.chamadas.filter((c) => c.metodo !== "GET").length, 0);
 });
 
 test("main vermelha: qual PR entrou, pelo texto do commit de merge", () => {
@@ -116,13 +147,13 @@ test("main vermelha: o aviso diz o commit, o PR que entrou, o run e a regra", ()
 test("main vermelha: abre o aviso na falha e fecha quando verify e lab-crítico da main estão verdes", async () => {
   assert.deepEqual(WORKFLOWS_DA_MAIN, ["ci.yml", "lab-critico.yml"]);
   const run = (conclusao: string) => ({ name: "CI", conclusion: conclusao, head_sha: PONTA, html_url: "https://github.com/o/r/actions/runs/1", head_commit: { message: "Merge pull request #5 from a/b" } });
-  const abrir = apiFalsa({ "GET /repos/o/r/issues?state=open&per_page=100&page=1": [{ number: 1, title: "outra coisa" }], "POST /repos/o/r/issues": { number: 77 } });
+  const abrir = apiFalsa({ "GET /repos/o/r/issues?state=open&creator=github-actions%5Bbot%5D&per_page=100&page=1": [{ number: 1, title: "outra coisa" }], "POST /repos/o/r/issues": { number: 77 } });
   assert.deepEqual(await avisarDaMain({ api: abrir.api, repo: "o/r", run: run("failure") }), { acao: "abrir", aviso: 77 });
   assert.equal((abrir.chamadas.at(-1)!.corpo as { title: string }).title, "Main vermelha desde aaaaaaa (CI)");
 
   const verde = { workflow_runs: [{ status: "completed", conclusion: "success", head_sha: PONTA }] };
   const fechar = apiFalsa({
-    "GET /repos/o/r/issues?state=open&per_page=100&page=1": [{ number: 77, title: "Main vermelha desde bbbbbbb (CI)" }, { number: 78, title: "PR disfarçado", pull_request: {} }],
+    "GET /repos/o/r/issues?state=open&creator=github-actions%5Bbot%5D&per_page=100&page=1": [{ number: 77, title: "Main vermelha desde bbbbbbb (CI)" }, { number: 78, title: "PR disfarçado", pull_request: {} }],
     "GET /repos/o/r/actions/workflows/ci.yml/runs?branch=main&event=push&status=completed&per_page=1": verde,
     "GET /repos/o/r/actions/workflows/lab-critico.yml/runs?branch=main&event=push&status=completed&per_page=1": verde,
     "POST /repos/o/r/issues/77/comments": {},
@@ -132,7 +163,7 @@ test("main vermelha: abre o aviso na falha e fecha quando verify e lab-crítico 
   assert.deepEqual(fechar.chamadas.at(-1), { metodo: "PATCH", caminho: "/repos/o/r/issues/77", corpo: { state: "closed", state_reason: "completed" } });
 
   const aindaVermelho = apiFalsa({
-    "GET /repos/o/r/issues?state=open&per_page=100&page=1": [{ number: 77, title: "Main vermelha desde bbbbbbb (CI)" }],
+    "GET /repos/o/r/issues?state=open&creator=github-actions%5Bbot%5D&per_page=100&page=1": [{ number: 77, title: "Main vermelha desde bbbbbbb (CI)" }],
     "GET /repos/o/r/actions/workflows/ci.yml/runs?branch=main&event=push&status=completed&per_page=1": verde,
     "GET /repos/o/r/actions/workflows/lab-critico.yml/runs?branch=main&event=push&status=completed&per_page=1": { workflow_runs: [{ status: "completed", conclusion: "failure", head_sha: PONTA }] },
   });
@@ -150,14 +181,19 @@ test("travas: os dois scripts só leem e avisam — nada mescla, atualiza branch
 
 test("workflow: gatilhos, permissão mínima por job e nada de pull_request_target", () => {
   const w = readFileSync(".github/workflows/seguranca-do-merge.yml", "utf8");
-  assert.doesNotMatch(w, /pull_request_target/);
-  assert.match(w, /\non:\n  pull_request:\n    types: \[opened, reopened, synchronize, ready_for_review\]\n  push:\n    branches: \[main\]\n  workflow_run:\n    workflows: \["CI", "Lab crítico \(fluxos críticos\)"\]\n    types: \[completed\]\n    branches: \[main\]\n/);
+  assert.doesNotMatch(w, /pull_request_target|workflow_dispatch/, "sem disparo manual: gravar em todos os PRs abertos (mais de mil) estouraria o limite de chamadas");
+  assert.match(w, /\non:\n  pull_request:\n    types: \[opened, reopened, synchronize, ready_for_review\]\n  push:\n    branches: \[main\]\n  workflow_run:\n    workflows: \["CI", "Lab crítico \(fluxos críticos\)"\]\n    types: \[completed\]\n    branches: \[main\]\n\npermissions:/);
   assert.match(w, /\npermissions:\n  contents: read\n/, "o padrão do workflow é só leitura");
   const jobBase = w.slice(w.indexOf("  conferir-base:"), w.indexOf("  main-vermelha:"));
   const jobMain = w.slice(w.indexOf("  main-vermelha:"));
   assert.match(jobBase, /if: github\.event_name != 'workflow_run'/);
   assert.match(jobBase, /permissions:\n      contents: read\n      pull-requests: read\n      statuses: write\n/);
   assert.doesNotMatch(jobBase, /issues: write|contents: write|actions:/);
+  // Quando a main anda, o job precisa do histórico da main para comparar no git local.
+  assert.match(jobBase, /fetch-depth: \$\{\{ github\.event_name == 'pull_request' && 1 \|\| 0 \}\}/);
+  assert.match(jobBase, /--apos-merge --antes "\$ANTES" --ponta "\$PONTA"/);
+  // Cada push da main tem o seu run (nenhum é cancelado): quem estava em dia com a ponta anterior precisa virar vermelho.
+  assert.match(jobBase, /group: conferir-base-\$\{\{ github\.event\.pull_request\.number \|\| github\.sha \}\}/);
   assert.match(jobMain, /if: github\.event_name == 'workflow_run' && github\.event\.workflow_run\.event == 'push'/);
   assert.match(jobMain, /permissions:\n      contents: read\n      actions: read\n      issues: write\n/);
   assert.doesNotMatch(jobMain, /statuses: write|contents: write|pull-requests: write/);
@@ -166,4 +202,7 @@ test("workflow: gatilhos, permissão mínima por job e nada de pull_request_targ
   assert.match(readFileSync(".github/workflows/lab-critico.yml", "utf8"), /^name: Lab crítico \(fluxos críticos\)$/m);
   // Dado do evento entra por variável de ambiente, nunca colado no comando.
   assert.doesNotMatch(w, /run:[^\n]*\$\{\{ *github\.event/);
+  const script = jobBase.slice(jobBase.indexOf("run: |"));
+  assert.ok(script.includes("base-atual.mjs"), "o script do passo foi lido");
+  assert.doesNotMatch(script, /\$\{\{/, "nenhuma expressão dentro do script do passo");
 });

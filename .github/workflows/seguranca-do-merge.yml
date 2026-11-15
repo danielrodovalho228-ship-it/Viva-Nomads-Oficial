@@ -2,8 +2,8 @@ name: Segurança do merge (base atual + main vermelha)
 
 # E744, passo 5 (Família 9): as duas pernas de segurança que faltavam, do desenho docs/e775-desenho-fila-de-merge.md.
 #  1. conferir-base: grava em cada PR aberto para a main o status "base-atual" — verde só quando o branch contém a
-#     ponta da main. Roda a cada atualização do PR e a cada merge na main (quando a main anda, os outros PRs ficam
-#     vermelhos até serem atualizados sobre ela).
+#     ponta da main. Roda a cada atualização do PR (só ele) e a cada merge na main: aí os PRs que estavam em dia
+#     passam a vermelho até serem atualizados sobre ela.
 #  2. main-vermelha: quando o verify (CI) ou o lab-crítico da main falha depois de um merge, abre um aviso (issue) com
 #     o commit, o PR que entrou e o run; fecha sozinho quando os dois voltam a verde.
 # As duas só leem e avisam: nada aqui mescla, atualiza branch ou muda proteção. Para EXIGIR "base-atual" antes de
@@ -32,23 +32,28 @@ jobs:
       pull-requests: read
       statuses: write
     concurrency:
-      group: conferir-base-${{ github.event.pull_request.number || 'main' }}
-      cancel-in-progress: true
+      group: conferir-base-${{ github.event.pull_request.number || github.sha }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Quando a main anda, a comparação é no git local: precisa do histórico da main.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 1 || 0 }}
       - uses: actions/setup-node@v4
         with:
           node-version: "24.22.1"
-      - name: Status "base-atual" (este PR, ou todos os abertos quando a main anda)
+      - name: Status "base-atual" (este PR; ou, quando a main anda, os PRs que mudam)
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           NUMERO_DO_PR: ${{ github.event.pull_request.number }}
+          ANTES: ${{ github.event.before }}
+          PONTA: ${{ github.sha }}
         run: |
           if [ -n "$NUMERO_DO_PR" ]; then
             node scripts/gate/base-atual.mjs --repo "$REPO" --pr "$NUMERO_DO_PR" | tee -a "$GITHUB_STEP_SUMMARY"
           else
-            node scripts/gate/base-atual.mjs --repo "$REPO" | tee -a "$GITHUB_STEP_SUMMARY"
+            node scripts/gate/base-atual.mjs --repo "$REPO" --apos-merge --antes "$ANTES" --ponta "$PONTA" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
 
   main-vermelha:
