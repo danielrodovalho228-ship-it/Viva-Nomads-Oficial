@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T739 — varredura visual das páginas públicas de parceiros a 390 px (Muse, 30/10): em cada página, nenhum estouro
@@ -16,11 +16,14 @@ const ids: { conta?: string; parceiro?: string } = {};
 
 async function varrer(p: Page) {
   const altura = await p.evaluate(() => document.documentElement.scrollHeight);
+  // E744: o <html> tem scroll-smooth; scrollTo(0, v) anima e, em 120 ms, a varredura parava no meio da página (y≈4,7 mil
+  // de 11 mil em /parceiros) — as imagens do fim nunca entravam no carregamento sob demanda. Rolagem instantânea: a
+  // varredura passa pela página INTEIRA (a conferência das imagens continua a mesma).
   for (let y = 0; y < altura; y += 600) {
-    await p.evaluate((v) => window.scrollTo(0, v), y);
+    await p.evaluate((v) => window.scrollTo({ top: v, behavior: "instant" }), y);
     await p.waitForTimeout(120);
   }
-  await p.evaluate(() => window.scrollTo(0, 0));
+  await p.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await expect
     .poll(() => p.evaluate(() => [...document.images].filter((i) => i.getBoundingClientRect().width > 0 && !(i.complete && i.naturalWidth > 0)).length), { timeout: 15_000 })
     .toBe(0);
@@ -65,7 +68,7 @@ test.describe("T739 — varredura das páginas de parceiros a 390 px", () => {
     ids.conta = await criarConta(conta, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Lia Limpeza ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Faxina de imóvel mobiliado.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.conta, tipo_pessoa: "pj", documento: cnpjAleatorio(), /* E744 (semente alterada, tabela da Fable #3832): só PJ aparece na busca, como o 9a3205a5 fez nos demais specs */ nome_publico: `Lia Limpeza ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Faxina de imóvel mobiliado.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;
