@@ -180,6 +180,21 @@ jobs:
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
 
+      - name: Coletar os diffs visuais que falharam (só PNG)
+        # E744, item A: esperado, obtido e diferença dos testes visuais que falharam nesta fatia (última tentativa).
+        # Sem falha visual o script não cria a pasta, o artefato abaixo não existe e a publicação pula.
+        if: ${{ !cancelled() }}
+        run: node scripts/lab/diffs-visuais.mjs coletar tests/laboratorio/saida/resultado.json lab-diffs-da-fatia || true
+
+      - name: Guardar os diffs visuais desta fatia
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab-diffs-${{ github.run_id }}-fatia-${{ matrix.fatia }}
+          path: lab-diffs-da-fatia/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Guardar relatório, prints e vídeos das falhas
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -389,3 +404,38 @@ jobs:
         run: |
           echo "fatias: ${{ needs.laboratorio.result }} · completude: ${{ steps.completude.outcome }} · regressões: ${{ steps.regressoes.outcome }}"
           exit 1
+
+  # E744, item A — diffs visuais legíveis sem baixar o artifact. Quando um spec visual falha (t245, t271, t263), este job
+  # publica as imagens (esperado, obtido, diferença) num commit órfão no branch `lab-diffs`, reescrito a cada rodada, e
+  # apaga esse branch quando o último commit tem mais de 7 dias. É o ÚNICO job do workflow com permissão de escrita, roda só
+  # no agendado e no disparo manual, e o script recusa qualquer destino que não seja `lab-diffs`. Só PNG, até 60 imagens e
+  # 25 MB por rodada: nada de vídeo, trace, log nem relatório (o repositório é público).
+  publicar-diffs:
+    name: publicar os diffs visuais (branch lab-diffs)
+    needs: laboratorio
+    if: ${{ !cancelled() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+
+      - name: Baixar os diffs visuais das fatias
+        # Sem falha visual em nenhuma fatia não há artefato: o passo seguinte diz isso e não toca no branch.
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: lab-diffs-${{ github.run_id }}-*
+          path: lab-diffs-baixados
+
+      - name: Publicar no branch lab-diffs (commit órfão, reescrito a cada rodada)
+        run: node scripts/lab/diffs-visuais.mjs publicar lab-diffs-baixados --run ${{ github.run_id }} --sha ${{ github.sha }} --repositorio ${{ github.repository }} --ramo lab-diffs
+
+      - name: Apagar o lab-diffs com mais de 7 dias
+        if: ${{ !cancelled() }}
+        run: node scripts/lab/diffs-visuais.mjs limpar --dias 7 --ramo lab-diffs
