@@ -13,8 +13,9 @@ import { ANCORAS_ANTIGAS, ENDERECOS_DA_CONTA, SECAO_INEXISTENTE } from "../fixtu
    • /dashboard/conta sem o cookie da largura (1ª visita) e com ele desatualizado: E492 — no computador é o Perfil, no
      celular é o menu da Conta.
   /dashboard/conta com o cookie em dia é do t1611 (E798).
-  Dois casos estão marcados com test.fail (falha conhecida, com o defeito descrito): quando o produto for corrigido, o
-  teste passa a falhar como "passou sem esperar" e a marca sai.
+  Dois casos nasceram vermelhos e foram corrigidos no produto, no mesmo PR (src/lib/conta/e798-consulta-e-largura.test.ts):
+  a âncora antiga com consulta a 1280 px (o proxy não levava o ?linkedin=…) e /dashboard/conta a 390 px com o cookie da
+  largura dizendo "larga" (caía no Perfil).
 */
 const senha = novaSenha();
 const conta = { email: `conta.t1660.${novoSufixo()}@lab.vivanomads.test`, nome: "Elisa Endereço", role: "tenant" as const };
@@ -109,14 +110,12 @@ test.describe("T1660 — E744: todo endereço da Conta leva à tela registrada",
     });
 
     test(`${t.largura} px: a âncora antiga com consulta leva a consulta junto (?linkedin=…#confianca)`, async ({ page }) => {
-      test.fail(
-        t.tela === "larga",
-        "E798: no computador o proxy responde /dashboard/conta com 307 para /dashboard/conta/perfil sem a consulta; a âncora chega a Segurança, mas o ?linkedin=conectado se perde (a regra de secoes.ts é levar a busca junto)",
-      );
       await entrarNaLargura(page, t);
       await page.goto("/dashboard/conta?linkedin=conectado#confianca", { waitUntil: "domcontentloaded" });
       await expect(page.getByRole("heading", { level: 1, name: "Segurança e verificações" })).toBeVisible({ timeout: 20_000 });
       expect(endereco(page)).toBe("/dashboard/conta/seguranca?linkedin=conectado");
+      // O retorno do selo do LinkedIn aparece (é para isso que a consulta precisa chegar).
+      await expect(page.getByTestId("linkedin-retorno")).toBeVisible({ timeout: 20_000 });
     });
   }
 
@@ -145,14 +144,23 @@ test.describe("T1660 — E744: todo endereço da Conta leva à tela registrada",
   });
 
   test("390 px com o cookie dizendo tela larga (janela estreitada, tablet girado): /dashboard/conta é o menu da Conta", async ({ page }) => {
-    test.fail(
-      true,
-      "E798: o proxy confia no cookie da largura e manda o celular para /dashboard/conta/perfil; pelo E492, no celular /dashboard/conta é o menu da Conta. A casca regrava o cookie em seguida, então só a primeira abertura erra",
-    );
     await entrarNaLargura(page, TELAS[1]);
     await forcarCookieDaTela(page, "larga");
     await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("conta-menu")).toBeVisible({ timeout: 15_000 });
     expect(endereco(page)).toBe("/dashboard/conta");
+    // A largura ficou corrigida: a próxima abertura já é o menu, direto do servidor.
+    expect(await cookieDaTela(page)).toBe("estreita");
+    const r = await page.request.get("/dashboard/conta", { maxRedirects: 0 });
+    expect(r.status()).toBe(200);
+  });
+
+  test("390 px: abrir o Perfil direto fica no Perfil (a volta ao menu é só para quem veio de /dashboard/conta)", async ({ page }) => {
+    await entrarNaLargura(page, TELAS[1]);
+    await forcarCookieDaTela(page, "larga");
+    await page.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("perfil-tela")).toBeVisible({ timeout: 20_000 });
+    await page.waitForTimeout(1500);
+    expect(endereco(page)).toBe("/dashboard/conta/perfil");
   });
 });
