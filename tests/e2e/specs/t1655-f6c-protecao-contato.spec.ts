@@ -16,7 +16,7 @@ const MASK = "[contato protegido]";
 const SAIDA = "tests/laboratorio/saida";
 const TEXTO = "meu número é nove nove nove oito sete seis cinco quatro três, me liga";
 
-test.describe("T1655 — @familia-6c Família 6 C: telefone por extenso chega mascarado ao outro lado (390 px)", () => {
+test.describe("T1655 — @E955 Família 6 C: telefone por extenso chega mascarado ao outro lado (390 px)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
 
   test.beforeAll(async () => {

@@ -80,7 +80,7 @@ async function contrato(imovel: string, status: "ativo" | "concluido"): Promise<
 
 const FASES = ["antes do aceite", "contrato ativo", "estadia encerrada"] as const;
 
-test.describe("T1654 — @familia-6c Família 6 C: proteção de contato no servidor (sendMessage direto)", () => {
+test.describe("T1654 — @E955 Família 6 C: proteção de contato no servidor (sendMessage direto)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   let pDono: Page;
