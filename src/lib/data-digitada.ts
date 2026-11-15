@@ -80,3 +80,18 @@ export function interpretarDataColada(texto: string): string | null {
   if (m) return isoValida(+m[3], +m[2], +m[1]);
   return null;
 }
+
+/**
+ * E747: o que o campo mostra depois de cada tecla. ISO só vira data quando está COMPLETO (AAAA-MM-DD) — antes,
+ * "2026-11-1" (no meio de digitar 2026-11-15) já virava 01/11/2026. ISO inexistente fica como digitado e avisa.
+ * O formato brasileiro segue a máscara de sempre.
+ */
+export function digitarData(bruto: string): { texto: string; iso: string; invalido: boolean } {
+  const t = bruto.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) {
+    const iso = interpretarDataColada(t);
+    return iso ? { texto: isoParaBr(iso), iso, invalido: false } : { texto: t, iso: "", invalido: true };
+  }
+  const m = mascararDataDigitada(bruto);
+  return { texto: m, iso: brParaIso(m) ?? "", invalido: dataDigitadaInvalida(m) };
+}
