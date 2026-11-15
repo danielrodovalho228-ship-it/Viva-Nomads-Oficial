@@ -116,7 +116,9 @@ export const FAQ: Pergunta[] = [
     id: "limpeza-estadia",
     pergunta: "Posso oferecer limpezas durante a estadia?",
     resposta:
-      "Sim, é opcional. No editor do anúncio você escolhe quantas limpezas por mês (1, 2 ou 4), o que cada uma inclui e o valor do pacote por mês. Se houver valor, ele entra no total por mês que o morador vê no anúncio, na busca e no contrato; com valor zero, aparece como incluída no valor mensal.",
+      // E936 (decisão do coordenador, 15/11): o pacote é do PROPRIETÁRIO, pago a ele direto junto com o valor mensal; fora
+      // da taxa de serviço da Viva (só sobre o valor mensal) e fora da taxa da área de Parceiros. Texto palavra por palavra.
+      "Sim, é opcional. No editor do anúncio você escolhe quantas limpezas por mês (1, 2 ou 4), o que cada uma inclui e o valor do pacote por mês. O pacote é seu: você organiza a limpeza com quem quiser, e o valor do pacote é pago a você junto com o valor mensal, direto, sem passar pela Viva. Se houver valor, ele entra no total por mês que o morador vê no anúncio, na busca e no contrato; com valor zero, aparece como incluída no valor mensal. O pacote não entra na conta da taxa de serviço da Viva, que é calculada sobre o valor mensal, e a taxa da área de Parceiros não se aplica a ele: ela vale só quando você contrata um serviço por lá.",
     termos: ["limpeza", "faxina", "durante a estadia", "pacote", "total por mes"],
   },
   {
