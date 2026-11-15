@@ -6,7 +6,9 @@ import { noPasso } from "../fixtures/cadastro";
 test.describe("T-NOVO — Novo anúncio começa pelo passo 1 (Tipo) @criticos", () => {
   test.use({ storageState: authFile("proprietario") });
 
-  for (const origem of ["/dashboard", "/dashboard/imoveis"]) {
+  // E744 (asserção alterada, tabela da Fable #3832): o Início do dono (PROP-6) não tem mais "Novo anúncio" — o botão do
+  // bloco principal é coberto pelo t464. Fica a origem Meus imóveis.
+  for (const origem of ["/dashboard/imoveis"]) {
     test(`botão Novo anúncio em ${origem} leva ao passo 1 (Tipo)`, async ({ page }) => {
       await page.goto(origem, { waitUntil: "domcontentloaded" });
       await page.getByRole("link", { name: /Novo anúncio/ }).first().click();
