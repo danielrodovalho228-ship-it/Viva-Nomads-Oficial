@@ -1,5 +1,6 @@
 "use server";
 
+import { numeroPublicoPedido } from "@/lib/pedido-ref";
 import { erroTituloNivel, termoDeNivelDivergente } from "@/lib/anuncio/titulo-nivel";
 import type { NivelOuAdequacao } from "@/config/niveis";
 import { diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
@@ -1659,7 +1660,7 @@ export async function requestLead(
   qtdOcupantes?: number,
   // E202 (candidatura): a saída escolhida (opcional; só com a entrada e depois dela). Vai a leads.fim_desejado (0258).
   fimDesejado?: string
-): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean }> {
+): Promise<ActionResult & { needsAuth?: boolean; selfOwned?: boolean; exemplo?: boolean; numeroPedido?: string | null }> {
   // T9: anúncio de EXEMPLO não tem dono — nada de candidatura, contato nem e-mail
   // (antes ia o nome do inquilino para um e-mail pessoal de fallback).
   if (isExemplo(propertyId)) return { ok: false, exemplo: true, error: EXEMPLO_SEM_CONTATO };
@@ -1916,7 +1917,8 @@ export async function requestLead(
     }
   }
 
-  return { ok: true };
+  // E396: o número da candidatura (VN-PD-…, numeroPublicoPedido) desde o envio — a tela de sucesso o mostra.
+  return { ok: true, numeroPedido: kind === "candidatura" ? numeroPublicoPedido(leadId) : null };
 }
 
 /** Envia uma mensagem no chat (cria/usa a conversa). Best-effort em demo. */

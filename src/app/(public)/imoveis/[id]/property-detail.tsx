@@ -135,6 +135,8 @@ export function PropertyDetail({
   const [selfNote, setSelfNote] = useState(false);
   const [leadErro, setLeadErro] = useState<string | null>(null);
   const [candidatouSe, setCandidatouSe] = useState(false);
+  // E396: o número da candidatura (VN-PD-…) que a resposta do envio traz — o mesmo do orçamento e do contrato.
+  const [numeroCandidatura, setNumeroCandidatura] = useState<string | null>(null);
   // F37: quando a pessoa quer entrar (opcional); o Fechamento do dono abre com essa data.
   // E53: entrada, saída e pessoas são UMA seleção — o calendário de Disponibilidade, a caixa de reserva e o diálogo do
   // "Solicitar" leem e escrevem a mesma (regras em selecao-estadia).
@@ -320,6 +322,7 @@ export function PropertyDetail({
       // Candidatura NÃO é fechamento (este nasce quando o PROPRIETÁRIO aceita):
       // confirma o envio e aponta o acompanhamento em Mensagens.
       setCandidatouSe(true);
+      setNumeroCandidatura(r.numeroPedido ?? null);
       registrarEvento("enviar_candidatura", { imovelId: property.id, cidade: property.city });
       return true;
     }
@@ -385,6 +388,11 @@ export function PropertyDetail({
           O proprietário recebeu seu perfil e responde em até 1 dia útil. O acompanhamento segue em Mensagens — se ele
           aceitar, vocês conversam e partem para o fechamento.
         </p>
+        {numeroCandidatura && (
+          <p className="mt-2 text-sm text-muted" data-testid="candidatura-numero">
+            Pedido nº <strong className="text-ink">{numeroCandidatura}</strong>
+          </p>
+        )}
       </div>
       <Link
         href="/dashboard/mensagens"
@@ -673,6 +681,11 @@ export function PropertyDetail({
               <img src={fotoCapa} alt={property.title} className="mx-auto h-28 w-full rounded-xl object-cover" />
             )}
             <p className="text-sm font-medium text-ink">{property.title}</p>
+            {numeroCandidatura && (
+              <p className="text-sm text-muted" data-testid="candidatura-numero">
+                Pedido nº <strong className="text-ink">{numeroCandidatura}</strong>
+              </p>
+            )}
             <p className="text-sm text-muted">{resumo.linhas.find((l) => l.rotulo === "Entrada")?.rotulo}: {resumo.linhas.find((l) => l.rotulo === "Entrada")?.valor}</p>
             <div className="rounded-lg bg-surface-2 px-3 py-3 text-left text-sm text-muted">
               <p className="font-medium text-ink">O que acontece agora</p>
