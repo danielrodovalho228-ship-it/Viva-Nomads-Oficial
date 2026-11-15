@@ -1,6 +1,6 @@
-# Família 3 — cartão e página: honestidade dos números (E920, E890, E923, E924, E925)
+# Família 3 — cartão e página: honestidade dos números (E920, E890, E923, E924, E925, E926)
 
-Um PR, cinco itens. Lei da família: os números não se bifurcam, e o que a frase promete é verdade.
+Um PR, seis itens (o E926 entrou por aditamento). Lei da família: os números não se bifurcam, e o que a frase promete é verdade.
 Medições feitas no laboratório local (Supabase local semeado, build de produção), em 14/11/2026. Os dados de produção foram lidos em 14/11/2026, 23h UTC, só com contagens.
 
 ## E920 — a página abre e fica no período de referência
@@ -88,6 +88,31 @@ Fileira de selos do topo da página (`selos-anuncio`), nos 15 exemplos:
 
 Os números e a fonte de cada nota não mudaram. O texto sai de `textoDaNota` (`src/lib/imovel/rotulo-avaliacoes.ts`).
 
+## E926 — um nome só para o anúncio de exemplo
+
+**Achado (Phoenix, RELATORIO-045, A-259):** o cartão dizia "Anúncio de exemplo" e a página do imóvel, "Exemplo ilustrativo". A varredura achou um terceiro nome, "Anúncio de demonstração".
+
+**Termo único:** "Anúncio de exemplo", numa constante só (`SELO_EXEMPLO`, em `src/config/exemplo-proprietarios.ts`).
+
+| Superfície | Antes | Depois |
+|---|---|---|
+| Cartão (busca, home, cidade, favoritos, painel) | "Anúncio de exemplo" | "Anúncio de exemplo" (sem mudança) |
+| Página do imóvel, selo ao lado da nota | "Exemplo ilustrativo" | "Anúncio de exemplo" |
+| Página do imóvel, faixa do proprietário | "Exemplo ilustrativo" | "Anúncio de exemplo" |
+| Página do imóvel, seção Avaliações | "Exemplo ilustrativo" | "Anúncio de exemplo" |
+| Página do imóvel, bloco "Sobre o proprietário" (selo) | "Exemplo ilustrativo" | "Anúncio de exemplo" |
+| Bloco "Sobre o proprietário" e perfil de exemplo (aviso) | "Anúncio de demonstração: nos anúncios reais…" | "Anúncio de exemplo: nos anúncios reais…" |
+| Perfil do proprietário de exemplo (faixa e avaliações) | "Exemplo ilustrativo" | "Anúncio de exemplo" |
+| Perfil do proprietário de exemplo (título da aba) | "Helena M. (exemplo) — exemplo ilustrativo" | "Helena M. (exemplo) — proprietário de anúncio de exemplo" |
+| Lista de imóveis do painel (linha do imóvel) | "Exemplo ilustrativo" | "Anúncio de exemplo" |
+| Recusa de reserva em anúncio de exemplo (mensagem) | "Este é um anúncio de demonstração — …" | "Este é um anúncio de exemplo — …" |
+
+Já usavam o termo e não mudaram: o aviso do cartão de preço ("Anúncio de exemplo: serve para você ver como a Viva funciona…"), a barra do celular, o calendário e o aviso de pets.
+
+Ficaram como estão, porque não nomeiam o anúncio: "Vídeo ilustrativo." (nomeia o vídeo), "(exemplo)" depois do nome do proprietário e "Demonstração: este anúncio é de exemplo e a solicitação não é enviada." (o rótulo é da ação).
+
+**Trava:** `src/lib/e926-termo-unico-exemplo.test.ts` proíbe "Exemplo ilustrativo" e "Anúncio de demonstração" em qualquer arquivo de produção (tela, mensagem ou comentário) e fixa o termo nas superfícies varridas. O `t1635` varre, a 390 e 1280 px, o cartão na busca e nos favoritos, a página do imóvel e o perfil do proprietário de exemplo.
+
 ## Testes novos
 
 | Item | Unitário | E2E |
@@ -96,6 +121,7 @@ Os números e a fonte de cada nota não mudaram. O texto sai de `textoDaNota` (`
 | E923 | `src/lib/e923-contas-fixas-sem-estimativa.test.ts` | `t1633-e923-contas-sem-estimativa.spec.ts` (só no laboratório) |
 | E924 | `src/lib/e924-selos-do-topo.test.ts` | `t1634-e924-e925-topo-da-pagina.spec.ts` |
 | E925 | `src/lib/e925-duas-notas-rotuladas.test.ts` | `t1634-e924-e925-topo-da-pagina.spec.ts` |
+| E926 | `src/lib/e926-termo-unico-exemplo.test.ts` | `t1635-e926-anuncio-de-exemplo.spec.ts` |
 
 O "se, e somente se" do E899 (`e899-cartao-enxuto.test.ts`) segue verde, sem alteração.
 
@@ -109,3 +135,14 @@ O "se, e somente se" do E899 (`e899-cartao-enxuto.test.ts`) segue verde, sem alt
 | `cartao-preco.test.ts` | `avisoCurtoDoTotal({ utilitiesMode: "fixed" })` = "tudo incluído" | sem estimativa: "água, luz e gás não informados"; com estimativa: "tudo incluído" | E923 |
 | `t1624`, `t1300`, `t244` | o aviso do cartão era um de dois textos | um de três textos (entra "água, luz e gás não informados") | E923 |
 | `e626-selos-cartao.test.ts` | `<SelosAnuncio tem={{…}}>` e `ROTULO_SIMBOLO[id]` | `<SelosAnuncio selos={selosDaFoto({…})}>` e `{s.rotulo}` | E924 |
+| `t110`, `t88`, `t173`, `t710`, `t176` | o selo do exemplo dizia "Exemplo ilustrativo" | diz "Anúncio de exemplo" | E926 |
+| `t176` | a nota do topo dizia "N avaliações" | diz "N avaliações do imóvel" | E925 |
+
+## Dois specs que já falhavam na `main` e foram consertados
+
+O E926 obrigou a tocar no `t176` e no `t88` (os dois fixavam "Exemplo ilustrativo"). Os dois já falhavam na `main`, por passos que não têm relação com esta família. Rodei cada um no build da `main` antes de mexer.
+
+| Spec | Passo que falhava na `main` | Por quê | O que mudou no spec |
+|---|---|---|---|
+| `t176` | clicar em "Enviar mensagem" no bloco do proprietário do exemplo | o E694 tirou o botão do anúncio de exemplo; o bloco diz "aqui não há botão de mensagem" | o spec confere que o botão não existe e que o texto aparece |
+| `t88` | o cartão lateral tinha de ficar abaixo das abas ao rolar (esperado ≥ 115, recebido −2869) | o E528 fez o cartão mais alto que a janela rolar com a página, sem prender | a medida vale só quando o cartão está preso; a regra do E528 segue guardada pelo `t843` |

@@ -59,8 +59,8 @@ interface Dados {
 /**
  * "Sobre o proprietário" (prompt 6 + layout do prompt 9): à esquerda o cartão (iniciais/foto, nome, cidade,
  * selos com ✓); à direita tempo na Viva, fatos, frase e os botões. Nunca telefone nem e-mail: o contato é
- * "Enviar mensagem" (chat da Viva). Anúncio de EXEMPLO: dados ilustrativos, sempre com o selo "Exemplo
- * ilustrativo" e o aviso; "Enviar mensagem" só abre o aviso de demonstração (nenhuma conversa é criada).
+ * "Enviar mensagem" (chat da Viva). Anúncio de EXEMPLO: dados ilustrativos, sempre com o selo "Anúncio de
+ * exemplo" e o aviso; "Enviar mensagem" só abre o aviso de demonstração (nenhuma conversa é criada).
  */
 export function OwnerCard({
   property,

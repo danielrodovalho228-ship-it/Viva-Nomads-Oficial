@@ -91,7 +91,7 @@ import { Reviews } from "@/components/property/reviews";
 import { CampoData } from "@/components/ui/campo-data";
 import { AvaliacoesExemplo } from "@/components/property/avaliacoes-exemplo";
 import { FaixaProprietario } from "@/components/property/faixa-proprietario";
-import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo } from "@/config/exemplo-proprietarios";
+import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo, SELO_EXEMPLO } from "@/config/exemplo-proprietarios";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
 import { destinoContatoViva, parcelasDoResumo, resumoSolicitacao } from "@/lib/reserva-imovel";
 import { SELECAO_VAZIA, comEntrada, comEntradaDaBusca, entradaDaBusca, comPessoas, comSaida, linhaPeriodoNaMensagem, diasDaSelecao, mesesDoTotalDaPagina, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
@@ -197,7 +197,7 @@ export function PropertyDetail({
   // avaliações. `rating` só é usado como média quando há review real.
   const exemplo = isExemplo(property);
   const reviewsReais = property.reviews?.length ?? 0;
-  // Exemplo ilustrativo (prompt 9): dados de demonstração, só em anúncio de exemplo e sempre marcados.
+  // Anúncio de exemplo (prompt 9): dados de demonstração, só em anúncio de exemplo e sempre marcados.
   const donoExemplo = exemplo ? proprietarioDoExemplo(property.id) : null;
   const avaliacoesExemplo = exemplo ? avaliacoesDoExemplo(property.id) : [];
   const resumoExemplo = exemplo ? resumoAvaliacoesExemplo(property.id) : null;
@@ -943,10 +943,10 @@ export function PropertyDetail({
             </ul>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {/* Anúncio de exemplo (ilustrativo): selo honesto e visível. */}
+              {/* Anúncio de exemplo: selo honesto e visível. E926: o mesmo nome do cartão, pela constante única. */}
               {exemplo && (
-                <span className="inline-flex items-center rounded-full bg-night px-3 py-1 text-xs font-semibold text-white">
-                  Exemplo ilustrativo
+                <span className="inline-flex items-center rounded-full bg-night px-3 py-1 text-xs font-semibold text-white" data-testid="selo-exemplo-topo">
+                  {SELO_EXEMPLO}
                 </span>
               )}
               {/* Fonte ÚNICA (A2): a contagem vem das avaliações REAIS (reviews),
@@ -1080,7 +1080,7 @@ export function PropertyDetail({
   );
 }
 
-/** Exemplo ilustrativo sem números e selos que não existem de verdade. */
+/** Anúncio de exemplo sem números e selos que não existem de verdade. */
 function semSinaisInventados(p: Property): Property {
   return {
     ...p,
