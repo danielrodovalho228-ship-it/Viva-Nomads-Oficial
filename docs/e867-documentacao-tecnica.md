@@ -82,7 +82,7 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 |---|---|---|
 | Interface | Next.js 16 (App Router) + React 19 + TypeScript + Tailwind v4. Componentes de servidor por padrão, cliente onde há interação. | `src/app`, `src/components` |
 | Borda (proxy) | `src/proxy.ts`, o middleware do Next 16. Cuida da sessão Supabase, das portas da área interna e dos sócios, do portão da 2FA do admin, do redirecionamento de conta no servidor, do modo app e da marcação de tráfego de teste. | `src/proxy.ts` |
-| Ações e API | Server Actions (`"use server"`) e Route Handlers em `src/app/api`, com 92 rotas †: autenticação, upload, e-mail, webhooks, crons, painel, admin e QA. | `src/lib/data/*-actions.ts`, `src/app/api/**/route.ts` |
+| Ações e API | Server Actions (`"use server"`) e Route Handlers em `src/app/api`, com 93 rotas †: autenticação, upload, e-mail, webhooks, crons, painel, admin e QA. | `src/lib/data/*-actions.ts`, `src/app/api/**/route.ts` |
 | Regras puras | Funções sem rede, testadas com `node --test`: cobrança, caução, nível, ranking, busca, prazos, textos regulados. | `src/lib/**`, `src/config/**` |
 | Acesso a dados | Cliente Supabase do servidor (sessão do usuário, RLS) e cliente de serviço (`SUPABASE_SERVICE_ROLE_KEY`), este só em rotinas e no admin. | `src/lib/supabase`, `src/lib/data` |
 | Banco | Postgres (Supabase), RLS em quase todas as tabelas, funções SQL e triggers, `pg_cron` e `pg_net`. | `supabase/migrations` |
@@ -201,7 +201,7 @@ flowchart LR
     end
     subgraph BE[Backend no mesmo app]
       SA[Server Actions<br/>src/lib/data]
-      API[Route Handlers<br/>src/app/api — 92 rotas]
+      API[Route Handlers<br/>src/app/api — 93 rotas]
       CR[Crons Vercel<br/>13 rotas /api/cron]
       RP[Regras puras<br/>src/lib · src/config]
     end

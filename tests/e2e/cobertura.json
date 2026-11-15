@@ -1697,7 +1697,8 @@
         "t708-e254-estadia-minima-uma-fonte",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1646-e180-rascunho-qualificado-novo-anuncio"
       ]
     },
     "/dashboard/imoveis/[id]/cartao": {
@@ -1810,7 +1811,8 @@
         "t1407-varredura-bloco485",
         "t1433-varredura-bloco502",
         "t1453-varredura-bloco519",
-        "t1429-e691-assinatura-do-laudo-visivel"
+        "t1429-e691-assinatura-do-laudo-visivel",
+        "t1647-e143-nivel-no-passo5"
       ]
     },
     "/dashboard/imoveis/[id]/parceiros": {
@@ -1968,7 +1970,9 @@
         "t710-e265-sem-selo-em-todo-cartao",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1646-e180-rascunho-qualificado-novo-anuncio",
+        "t1647-e143-nivel-no-passo5"
       ]
     },
     "/dashboard/indicacoes": {
@@ -3520,6 +3524,14 @@
       ],
       "specs": [
         "t468-e133-fotos-conteudo"
+      ]
+    },
+    "/api/guia-nivel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t1647-e143-nivel-no-passo5"
       ]
     },
     "/api/health": {

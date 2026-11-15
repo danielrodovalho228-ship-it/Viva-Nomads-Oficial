@@ -15,6 +15,7 @@ import { Extras, Ruido } from "@/components/niveis/ruido-extras";
 import { nivelDoMeuImovel, type NivelDoImovelTela } from "@/lib/data/nivel-actions";
 import { ANCORA_NIVEL_CADASTRO } from "@/lib/niveis/destino-nivel";
 import { criterioDoItemNoCadastro, TEXTO_ESSENCIAL_DECLARADO, TEXTO_SUBIR_NIVEL } from "@/lib/niveis/cadastro-passo5";
+import { HREF_GUIA_NIVEL, TITULO_GUIA_NIVEL } from "@/lib/niveis/guia-nivel-link";
 
 /**
  * Adendo 59.1, Parte A — no passo Comodidades do cadastro: o nível que o imóvel atinge AGORA (com o padrão mínimo que
@@ -140,6 +141,12 @@ export function NivelNoCadastro({
       </p>
       <p className="mt-1 text-xs text-muted" data-testid="nivel-cadastro-declarado">
         {TEXTO_ESSENCIAL_DECLARADO}
+      </p>
+      {/* E143: o guia da comprovação (PDF), dentro do Passo 5 — o que cada nível pede e como se prova. */}
+      <p className="mt-1 text-xs">
+        <a href={HREF_GUIA_NIVEL} target="_blank" rel="noopener" className="alvo-toque font-semibold text-forest underline underline-offset-2" data-testid="nivel-cadastro-guia-pdf">
+          {TITULO_GUIA_NIVEL} (PDF)
+        </a>
       </p>
       {proximo && proximo !== "essencial" && falta.length > 0 && (
         <div id="nivel-cadastro-falta" className="mt-3 scroll-mt-24" data-testid="nivel-cadastro-falta" data-proximo={proximo}>
