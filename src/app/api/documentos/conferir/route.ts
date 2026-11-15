@@ -1,3 +1,4 @@
+import { avisarDonoDocumentoEmAnalise } from "@/lib/data/aviso-documento-recebido";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -219,7 +220,10 @@ export async function POST(request: Request) {
       console.error("[conferir-matricula] falha ao gravar:", erroCheck?.message ?? erroQual?.message ?? "sem linha");
       return NextResponse.json({ error: "Não foi possível salvar a conferência agora. Tente de novo." }, { status: 500 });
     }
-    if (emRevisao || d.resultado === "provavel") await avisarAdmins();
+    if (emRevisao || d.resultado === "provavel") {
+      await avisarAdmins();
+      await avisarDonoDocumentoEmAnalise(user.id, imovelId); // E948: o prazo da análise ao proprietário, no mesmo momento
+    }
     return NextResponse.json({
       estado,
       rotulo: rotuloEstado(estado),
@@ -270,7 +274,10 @@ export async function POST(request: Request) {
   }
 
   // Só os casos em revisão entram na fila: avisa os admins (sem dados do documento).
-  if (estadoFinal === "revisao") await avisarAdmins();
+  if (estadoFinal === "revisao") {
+    await avisarAdmins();
+    await avisarDonoDocumentoEmAnalise(user.id, imovelId); // E948
+  }
 
   return NextResponse.json({
     estado: estadoFinal,

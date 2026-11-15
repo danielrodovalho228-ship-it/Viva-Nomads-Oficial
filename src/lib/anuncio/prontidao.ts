@@ -12,6 +12,7 @@
 */
 
 import { DETALHE_FOTO_REPETIDA, ROTULO_FOTO_REPETIDA } from "../fotos/foto-repetida.ts";
+import { textoRespostaAte } from "../documento/prazo-analise.ts";
 import { DETALHE_MATRICULA_FALTA, DETALHE_MATRICULA_OBRIGATORIA, ROTULO_MATRICULA_ATUALIZADA } from "../documento/matricula-titularidade.ts";
 import { DETALHE_CAUCAO_PENDENTE, ROTULO_CAUCAO_PENDENTE } from "../caucao/prazos.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
@@ -46,6 +47,8 @@ export interface FatosAnuncio {
   /** "own" | "subleased" | "managed" — só muda o rótulo do item que falta. */
   operacao?: string | null;
   documento: StatusDocumento;
+  /** E948: quando o documento em análise foi enviado (ISO) — Meus imóveis mostra "resposta até {data}". */
+  documentoEnviadoEm?: string | null;
   /** Obrigatória: mínimo de MIN_DESCRICAO caracteres. */
   descricao: string;
   /**
@@ -197,7 +200,7 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     },
     { key: "preco", label: OBRIGATORIOS_ROTULOS[6], ok: f.preco > 0, etapa: ETAPA.preco },
     { key: "garantia", label: OBRIGATORIOS_ROTULOS[7], ok: f.garantiaOk, etapa: ETAPA.preco },
-    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: ETAPA.revisao, detalhe: f.documento === "approved" ? undefined : DOC_DETALHE[f.documento] },
+    { key: "documento", label: OBRIGATORIOS_ROTULOS[8], ok: f.documento === "approved", etapa: ETAPA.revisao, detalhe: f.documento === "approved" ? undefined : f.documento === "pending" && f.documentoEnviadoEm ? `em análise · ${textoRespostaAte(f.documentoEnviadoEm)}` : DOC_DETALHE[f.documento] },
   ];
   if (f.qualificacaoOk !== undefined) {
     obrigatorios.push({ key: "qualificacao", label: ROTULO_QUALIFICACAO, ok: f.qualificacaoOk, etapa: ETAPA.revisao, detalhe: f.qualificacaoOk ? undefined : "um toque cada, no “Antes de publicar”" });

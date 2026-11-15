@@ -114,7 +114,7 @@ import { ERRO_SOBREPOSICAO_PG } from "@/lib/contrato-periodo";
 import { validarOcupantes } from "@/lib/candidaturas/ocupantes";
 import { anotarInteresseDoDono, bloqueioPorCidade } from "@/lib/cidades-liberadas/servidor";
 import { MUNICIPIOS } from "@/lib/municipios";
-import { avisarAdminsDocumentoRecebido } from "@/lib/data/aviso-documento-recebido";
+import { avisarAdminsDocumentoRecebido, avisarDonoDocumentoEmAnalise } from "@/lib/data/aviso-documento-recebido";
 import { aplicarPontoChacara, gravarChacara } from "@/lib/anuncio/chacara-servidor";
 import {
   caminhoDoDonoValido,
@@ -255,7 +255,11 @@ export async function saveQualification(
   // Documento NOVO entrou na fila → avisa os admins (best-effort; nunca trava nem
   // vaza dados do documento — só o fato de que há item para conferir). Só
   // admins que ligaram "receber alertas" na Conta (ordem 27cfd36a).
-  if (doc.avisarAdmins) await avisarAdminsDocumentoRecebido();
+  if (doc.avisarAdmins) {
+    await avisarAdminsDocumentoRecebido();
+    // E948: o proprietário recebe, no mesmo momento, o prazo da análise.
+    await avisarDonoDocumentoEmAnalise(user.id, propertyId);
+  }
   // E268-B: a qualificação antes do Passo 1 também é o começo do anúncio.
   await registrarIntencaoDeAnunciar(supabase, user.id);
   return { ok: true, id: (data as { id: string }).id };
@@ -326,6 +330,8 @@ export async function enviarDocumentoParaConferencia(
     return { ok: false, error: "Não foi possível colocar o documento na fila de conferência agora. Tente de novo." };
   }
   await avisarAdminsDocumentoRecebido();
+  // E948: o proprietário recebe, no mesmo momento, o prazo da análise.
+  await avisarDonoDocumentoEmAnalise(user.id, propertyId);
   return { ok: true, id: (data as { id: string }).id };
 }
 

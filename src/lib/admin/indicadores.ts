@@ -1,3 +1,4 @@
+import { ALERTA_DOCUMENTO_DIAS_UTEIS } from "../../config/prazos-canais.ts";
 /*
   /admin "conversa com tudo" (Prompt 29): UMA fonte por indicador. Cada número que aparece em mais de um lugar
   (home, página da área, selo da barra lateral) sai de uma função daqui — puras, testáveis com node --test — e a
@@ -125,6 +126,11 @@ export function textoFilaDocumentos(f: { documentos: number; matriculas: number 
   const d = `${f.documentos} ${f.documentos === 1 ? "documento" : "documentos"}`;
   const m = `${f.matriculas} ${f.matriculas === 1 ? "matrícula" : "matrículas"}`;
   return `${total} na fila (${d} + ${m})`;
+}
+/** E948: o atraso na MESMA linha da fila de documentos (sem linha nova, como no E175). Zero = nada a dizer. */
+export function textoDocumentosAtrasados(atrasados: number): string | null {
+  if (!(atrasados > 0)) return null;
+  return `${atrasados} há mais de ${ALERTA_DOCUMENTO_DIAS_UTEIS} dia útil`;
 }
 export const FORMULA_FILA_DOCUMENTOS = "Na fila agora = documentos de imóvel em revisão (um por imóvel e arquivo) + matrículas em revisão ainda não revisadas.";
 
