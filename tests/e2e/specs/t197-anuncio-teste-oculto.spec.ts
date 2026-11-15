@@ -40,6 +40,9 @@ test.describe("T197 — Anúncio de teste oculto @seo", () => {
       await page.setViewportSize({ width: largura, height: altura });
       for (const rota of TELAS) {
         await page.goto(rota, { waitUntil: "domcontentloaded" });
+        // E961: na 404 os destaques chegam pelo cliente; sem esperar, o corpo seria lido antes de os cartões existirem.
+        const vitrine = page.getByTestId("nao-encontrada-vitrine");
+        if (await vitrine.count()) await expect(vitrine).not.toHaveAttribute("data-estado", "carregando", { timeout: 30_000 });
         const corpo = (await page.locator("body").innerText()).toLowerCase();
         expect(corpo, `${rota} @${largura} mostra o anúncio de teste`).not.toContain(MARCA.toLowerCase());
         expect(corpo, `${rota} @${largura} mostra algum título [TESTE`).not.toMatch(/\[teste[^\]]*\]/);
