@@ -145,7 +145,7 @@ export const FAQ: Pergunta[] = [
     // lib/empresas/textos (as mesmas de /empresas) e o prazo do "Fale com a gente", de config/prazos-canais.
     id: ID_PERGUNTA_EMPRESAS,
     pergunta: PERGUNTA_EMPRESAS,
-    resposta: `Sim. A Viva tem imóveis mobiliados de 30 a 180 dias. A pessoa do time ou o RH conversa com o proprietário pelas mensagens da Viva e envia a candidatura; o contrato é digital. ${RECIBO_EMPRESAS} ${TAXA_EMPRESAS} Para receber opções de imóveis, use o “Fale com a gente” de /empresas: ${TEXTO_PRAZO_EMPRESAS}`,
+    resposta: `Sim. A Viva tem imóveis mobiliados de 30 a 180 dias. A pessoa do time ou o RH conversa com o proprietário pelas mensagens da Viva e envia a candidatura; o contrato é digital. ${RECIBO_EMPRESAS} ${TAXA_EMPRESAS} Para receber opções de imóveis, use o “Fale com a gente” de /empresas. ${TEXTO_PRAZO_EMPRESAS}`,
     termos: ["empresa", "funcionario", "colaborador", "rh", "equipe", "corporativo", "reembolso", "recibo"],
     links: [{ rotulo: "Moradia para empresas", href: "/empresas" }],
   },
