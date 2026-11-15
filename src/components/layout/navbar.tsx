@@ -82,7 +82,8 @@ export function Navbar() {
   return (
     <header className={cn("sticky top-0 z-40 border-b bg-white transition-shadow", scrolled ? "border-line shadow-flutuante" : "border-transparent")} data-testid="topo-publico">
       <nav className="flex h-18 w-full items-center gap-8 px-4 py-3 sm:px-8 2xl:gap-12 2xl:px-12">
-        <Logo className="shrink-0" />
+        {/* E960: alvo de 44 px no toque (o logo mede 32 px); o cabeçalho próprio da 404 tinha, e o E916 trouxe a 404 para cá. */}
+        <Logo className="alvo-toque shrink-0" />
 
         <div data-testid="nav-links" className="hidden min-w-0 flex-1 items-center gap-6 lg:flex 2xl:gap-8">
           {PUBLIC_NAV.map((item) => (
