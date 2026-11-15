@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ArrowLeft } from "lucide-react";
 import { nivelDoMeuImovel } from "@/lib/data/nivel-actions";
 import { AREAS, ROTULO_AREA, ROTULO_NIVEL, ROTULO_PONTO, rotuloItem, type NivelOuAdequacao } from "@/config/niveis";
@@ -8,7 +10,7 @@ import { comodidadesDoMeuImovel } from "@/lib/data/comodidade-sugerida-actions";
 import { BlocoAvaliacaoDono } from "@/components/vistoria/bloco-avaliacao-dono";
 import { MedirNoNivel } from "./medir-no-nivel";
 import { createClient } from "@/lib/supabase/server";
-import { destinoNivel, rotuloVoltaNivel } from "@/lib/niveis/destino-nivel";
+import { destinoNivel, paginaNivelFica, rotuloVoltaNivel } from "@/lib/niveis/destino-nivel";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +30,12 @@ export default async function NivelDoImovelPage({ params, searchParams }: { para
   // E143: esta página segue viva para a CAPTURA (link do celular/QR) e a avaliação. Quem chegou para fotografar ou medir
   // tem o caminho de volta ao lugar do anúncio: rascunho → Passo 5 do cadastro; publicado → a seção do nível na edição.
   const captura = typeof fotografar === "string" || typeof medir === "string";
-  const supabase = captura && dados ? await createClient() : null;
+  // E143 (Família 7, ORDEM-DUET-027): para um RASCUNHO, fora da captura, a página legada REDIRECIONA ao Passo 5 do
+  // cadastro (#nivel-cadastro), onde estão o nível, ruído e extras (toggles) e o guia em PDF. Fica aberta para a captura
+  // (link do celular/QR), com a chave da vistoria (a avaliação mora aqui) e para o anúncio publicado.
+  const supabase = dados ? await createClient() : null;
   const status = supabase ? ((await supabase.from("properties").select("status").eq("id", id).maybeSingle()).data?.status as string | null | undefined) : undefined;
+  if (dados && !paginaNivelFica({ captura, vistoriaAtiva: await vistoriaAtiva(), status })) redirect(destinoNivel(id, status));
   return (
     <div>
       <Link href="/dashboard/imoveis" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
