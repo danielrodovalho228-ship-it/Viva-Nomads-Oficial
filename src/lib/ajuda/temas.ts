@@ -31,7 +31,7 @@ export const TEMAS_AJUDA: readonly TemaAjuda[] = [
     resumo: "Pedido de moradia, prazos e o que você paga",
     foto: "/images/unicas/cf-renovacao.webp",
     alt: "Pessoa chegando com a mala a um apartamento mobiliado",
-    perguntas: ["inquilino-paga", "prazo", "cancelar-pedido", "contato"],
+    perguntas: ["inquilino-paga", "prazo", "empresa-moradia", "cancelar-pedido", "contato"],
   },
   {
     id: "proprietarios",

@@ -20,6 +20,8 @@ import {
   TIPOS_PARCEIRO,
 } from "./parceiros-texto.ts";
 import { OBRIGATORIOS_ROTULOS } from "../anuncio/prontidao.ts";
+import { RECIBO_EMPRESAS, TAXA_EMPRESAS, ID_PERGUNTA_EMPRESAS, PERGUNTA_EMPRESAS, HREF_PERGUNTA_EMPRESAS } from "../empresas/textos.ts";
+import { TEXTO_PRAZO_EMPRESAS } from "../../config/prazos-canais.ts";
 import { CONFERENCIA_PARTES, CONFERENCIA_VALIDADE, fraseConferenciaDevolve } from "../fiscal/conferir.ts";
 
 export interface Pergunta {
@@ -60,7 +62,9 @@ export const FAQ: Pergunta[] = [
   {
     id: "como-virar-parceiro",
     pergunta: "Como posso virar parceiro da Viva?",
-    resposta: `${TIPOS_PARCEIRO} ${MODOS_CONTA} ${CADASTRO_PARCEIRO} ${EMPRESAS_E_GESTORES}`,
+    // E947: a remissão de "empresa que quer moradia para funcionários" aponta para a pergunta própria (link abaixo).
+    resposta: `${TIPOS_PARCEIRO} ${MODOS_CONTA} ${CADASTRO_PARCEIRO} ${EMPRESAS_E_GESTORES.replace("Empresa que quer moradia para funcionários: /empresas.", `Empresa que quer moradia para funcionários: veja a pergunta “${PERGUNTA_EMPRESAS}”.`)}`,
+    links: [{ rotulo: PERGUNTA_EMPRESAS, href: HREF_PERGUNTA_EMPRESAS }],
     termos: ["parceiro", "parceria", "virar parceiro", "modo parceiro", "cadastro", "cnpj", "mei", "empresa", "gestor", "fotografo", "servico", "limpeza", "seguro", "mobilia"],
   },
   {
@@ -135,6 +139,15 @@ export const FAQ: Pergunta[] = [
     resposta:
       "Você não precisa de senha: em Entrar, digite o seu e-mail e use o código de 6 dígitos que enviamos. Se você criou uma senha e a esqueceu, em Entrar escolha \"Entrar com senha\" e toque em \"Esqueci minha senha\": enviamos um link para criar uma nova. Nunca pedimos a sua senha — nem por chamado, nem por e-mail.",
     termos: ["senha", "esqueci", "redefinir", "acesso"],
+  },
+  {
+    // E947 (prompt "E-empresas-ajuda"): moradia para funcionários. Fonte única: as frases da taxa e do recibo vêm de
+    // lib/empresas/textos (as mesmas de /empresas) e o prazo do "Fale com a gente", de config/prazos-canais.
+    id: ID_PERGUNTA_EMPRESAS,
+    pergunta: PERGUNTA_EMPRESAS,
+    resposta: `Sim. A Viva tem imóveis mobiliados de 30 a 180 dias. A pessoa do time ou o RH conversa com o proprietário pelas mensagens da Viva e envia a candidatura; o contrato é digital. ${RECIBO_EMPRESAS} ${TAXA_EMPRESAS} Para receber opções de imóveis, use o “Fale com a gente” de /empresas: ${TEXTO_PRAZO_EMPRESAS}`,
+    termos: ["empresa", "funcionario", "colaborador", "rh", "equipe", "corporativo", "reembolso", "recibo"],
+    links: [{ rotulo: "Moradia para empresas", href: "/empresas" }],
   },
   {
     id: "contato",
