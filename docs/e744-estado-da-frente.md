@@ -346,9 +346,115 @@ Guarda: `tests/laboratorio/e744-infra-da-suite.test.ts` (12 testes). Suíte unit
 
 **Tempo no portão:** as 17 varreduras levam 25,3 min no laboratório local. O passo do portão tem 25 min para elas mais a lista crítica; ver Dúvida 9.
 
-### 7.3 Passo 3 — triagem contra a main de hoje (em curso)
+### 7.3 Passo 3 — triagem contra a main de hoje (rodada local feita; investigação por grupo em curso)
 
-Base: a rodada manual de 15/11 (seção 2.1). No laboratório local com banco novo, rodam os 82 specs vermelhos que não são visuais nem das rotas da Conta (2 workers, 1 nova tentativa, 90 s por teste). O resultado entra aqui, spec a spec.
+Base: a rodada manual de 15/11 (seção 2.1). No laboratório local com banco novo rodaram os 82 specs vermelhos (ou instáveis) que não são visuais nem das rotas da Conta: 2 workers, 1 nova tentativa, 90 s por teste, main `c950ec82`, 12:27 → 14:13 UTC de 15/11. O `t48-varredura` (cadeia de até 100 min, verde no CI) foi interrompido de propósito; ficam 81.
+
+**Resultado local:** 302 testes passaram, 74 falharam, 2 instáveis, 87 não iniciaram (cadeias em série depois de uma falha), 14 pulados de propósito.
+
+| Situação | Specs | O que significa |
+|---|---|---|
+| Vermelho no CI **e** no local, com o mesmo erro | **66** | A falha é determinística e dá para investigar aqui. Em 63 dos 66 o começo do erro local é igual ao do CI. |
+| Vermelho no CI, verde no local | 11 | 8 são a busca a 390 px (ver abaixo); t14 e t800 passaram aqui; t389 é instável. |
+| Verde nos dois (instável ou já corrigido) | 4 | t29, t305 (instáveis em 14/11), t88 e t176 (corrigidos no #3830). |
+
+**Busca a 390 px (t274, t368, t412, t419, t732, t1405, t1426, t1451 e parte do t1423): não reproduz neste ambiente.** O contêiner desta sessão não alcança os hosts de mapa (o proxy recusou 162 conexões a `www.google.com` durante a rodada); no CI a rede é aberta. A hipótese é que, com o mapa carregado, um botão fixo fica sobre o cartão a 390 px. Não está provada: o nome do botão vem cortado no banco. O "erro completo no log da fatia" (Passo 1) resolve isso na primeira rodada depois do merge. **Não mexo nesses specs antes de ler o erro inteiro.** Entrou com o #3831 (verdes em 14/11): é regressão e tem prioridade assim que for legível.
+
+**Ressalva do ambiente local:** teste que depende de host externo (mapa, por exemplo) pode se comportar diferente aqui. Nos 66 que reproduzem, o erro local igual ao do CI afasta essa dúvida.
+
+**Agrupamento preliminar dos 77 specs (66 + 11), pelo fluxo que testam.** Ainda não é veredito: cada grupo é investigado no código antes de qualquer correção.
+
+| Grupo | Specs | Pista de causa (a confirmar) |
+|---|---|---|
+| Assistente de anúncio (cadastro do imóvel) | 25 | Poucas causas para muitos specs. Os erros falam de ordem dos passos ("Detalhes do imóvel" esperado, "Adicione as fotos do imóvel" recebido), de "Falta: aceite do termo da IA" na revisão e de campos que não gravam. |
+| Flutuante na busca (E931) | 3 | Spec desatualizado por decisão registrada (t10, t244, t436). |
+| Identidade ou valor "no fio" | 4 | t11, t193, t348, t79 leem TODAS as respostas da página (HTML, CSS, JS). O texto recebido começa pelo CSS do site. Falta provar se o achado está num arquivo estático (falso positivo) ou numa resposta com dado do usuário (defeito de produto). O site tem "Lima" em arquivos estáticos: 8 municípios do IBGE e dados de demonstração ("Rafael Lima", "Carlos Lima"); a persona do laboratório é "Ana Lima". |
+| Busca a 390 px | 8 | Ver acima. |
+| Avulsos | 37 | Um a um. |
+
+Tabela completa (falhas no CI, falhas no local, situação, grupo e o começo do erro; o erro é o local quando reproduz):
+
+| Spec | CI | Local | Situação | Grupo | Erro |
+|---|---|---|---|---|---|
+| `t10-buscar-url` | 1 | 1 | reproduz | flutuante na busca (E931) | expect(locator).toBeHidden() failed Locator: getByTestId('fale-com-a-viva') Expected: hidden Received: visible Timeout: 10000ms |
+| `t11-travessias` | 1 | 1 | reproduz | identidade/valor no fio | sobrenome do inquilino vazou no fio pré-aceite expect(received).not.toContain(expected) // indexOf Expected substring: not "Lima" Received string: "@f |
+| `t38-varios-imoveis-por-dono` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toBeVisible() failed Locator: getByText('Studio 21 do teste de vários imóveis padcle').first() Expected: visible Timeout: 20000ms Erro |
+| `t40-novo-anuncio-fotos` | 1 | 1 | reproduz | assistente de anúncio | Test timeout of 90000ms exceeded. |
+| `t64-telas-largas` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toBeVisible() failed Locator: getByTestId('novo-resumo') Expected: visible Timeout: 10000ms Error: element(s) not found |
+| `t77-comodidades` | 2 | 2 | reproduz | avulso | expect(locator).toBeVisible() failed Locator: getByTestId('comodidades-lista-completa').locator('h3').first() Expected: visible Timeout: 10000ms Error |
+| `t79-privacidade-acesso` | 1 | 1 | reproduz | identidade/valor no fio | expect(received).toContain(expected) // indexOf Expected substring: "Acesso: Fechadura com senha" Received string: "<!DOCTYPE html><html lang=\"pt-BR\ |
+| `t161-coerencia-imovel` | 1 | 1 | reproduz | avulso | expect(locator).toBeVisible() failed Locator: getByText('Indisponível').first() Expected: visible Timeout: 10000ms Error: element(s) not found |
+| `t186-cadastro-5-etapas` | 1 | 1 | reproduz | assistente de anúncio | page.waitForURL: Timeout 30000ms exceeded. =========================== logs =========================== waiting for navigation until "load" navigated  |
+| `t193-propostas` | 1 | 1 | reproduz | identidade/valor no fio | expect(received).not.toMatch(expected) Expected pattern: not /(?<![\w-])2\.?900(?![\w-])/ Received string: "@font-face{font-family:inter;src:url(../me |
+| `t195-matricula-caf` | 1 | 1 | reproduz | avulso | expect(locator).toContainText(expected) failed Locator: getByTestId('matriculas-admin').getByTestId('matricula-card').filter({ hasText: 'Diana' }).fir |
+| `t204-cadastro-ia-real` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toBeVisible() failed Locator: getByTestId('ia-fotos-falha') Expected: visible Timeout: 60000ms Error: element(s) not found |
+| `t228-contato-vai-para-ajuda` | 3 | 3 | reproduz | avulso | expect(received).toBe(expected) // Object.is equality Expected: "/ajuda" Received: "/ajuda/fale-com-a-viva" |
+| `t244-fundacao-visual` | 1 | 1 | reproduz | flutuante na busca (E931) | expect(locator).toBeHidden() failed Locator: getByTestId('fale-com-a-viva') Expected: hidden Received: visible Timeout: 10000ms |
+| `t281-minimizacao` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toHaveCount(expected) failed Locator: getByText('Rascunho a excluir ielnpd') Expected: 0 Received: 1 Timeout: 15000ms |
+| `t295-niveis-59-1` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).not.toBeChecked() failed Locator: getByTestId('nivel-tenho-ar_sala') Expected: not checked Received: checked Timeout: 20000ms |
+| `t296-niveis-exibicao-59-1` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toContainText(expected) failed Locator: getByTestId('cartao-imovel').filter({ has: getByTestId('cartao-titulo').filter({ hasText: 'Stu |
+| `t316-sair-da-viva-51` | 1 | 1 | reproduz | avulso | expect(locator).toHaveAttribute(expected) failed Locator: locator('[data-testid="correcao"][data-papel="parceiro"][data-motivo="parei_servico"]') Expe |
+| `t318-papel-ativo-fonte-unica` | 1 | 1 | reproduz | avulso | expect(received).toBe(expected) // Object.is equality Expected: "proprietario" Received: "morador" |
+| `t328-documento-sem-trava-l11` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toBeVisible() failed Locator: getByTestId('documento-enviar') Expected: visible Received: hidden Timeout: 20000ms |
+| `t331-preferencias-push-44b2` | 1 | 1 | reproduz | avulso | expect(locator).toBeVisible() failed Locator: getByTestId('notif-categorias') Expected: visible Timeout: 30000ms Error: element(s) not found |
+| `t346-importar-calendario-53` | 1 | 1 | reproduz | avulso | expect(received).toBe(expected) // Object.is equality Expected: 1 Received: 0 |
+| `t348-triagem-vinculo-52` | 1 | 1 | reproduz | identidade/valor no fio | expect(received).not.toMatch(expected) Expected pattern: not /R\$\s?\d¦salári/i Received string: "<!DOCTYPE html><html lang=\"pt-BR\" class=\"Lrk39W_v |
+| `t370-conta-a3-papeis` | 1 | 1 | reproduz | avulso | locator.click: Timeout 20000ms exceeded. |
+| `t386-cadastro-01-tipo` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toHaveText(expected) failed Locator: getByTestId('previa-titulo') Expected: "Apartamento" Received: "Título ainda não definido" Timeou |
+| `t388-varredura-bloco23` | 1 | 1 | reproduz | avulso | inquilina — Contrato da estadia @390 — clique: clique no botão primário sem resposta visível em 3 s expect(received).toEqual(expected) // deep equalit |
+| `t397-foto-na-hora` | 1 | 1 | reproduz | avulso | expect(locator).toHaveText(expected) failed Locator: getByTestId('melhorar-refazer_foto_cozinha_microondas').first() Expected: "Refaça a foto de Micro |
+| `t400-chacara-sem-internet` | 1 | 1 | reproduz | assistente de anúncio | expect(received).toBe(expected) // Object.is equality Expected: "nao_tem" Received: "radio" |
+| `t401-cadastro-10-revisao` | 1 | 1 | reproduz | assistente de anúncio | expect(received).toBe(expected) // Object.is equality Expected: "Tudo certo para publicar" Received: "Falta: aceite do termo da IA" |
+| `t405-perfil-e60-e62` | 1 | 1 | reproduz | avulso | AuthRetryableFetchError: {} |
+| `t435-cadastro-03-endereco` | 1 | 1 | reproduz | assistente de anúncio | expect(received).toBe(expected) // Object.is equality Expected: true Received: false |
+| `t436-busca-clean-e82` | 1 | 1 | reproduz | flutuante na busca (E931) | expect(locator).toHaveCount(expected) failed Locator: getByRole('button', { name: /Fale com a Viva/ }) Expected: 0 Received: 1 Timeout: 10000ms |
+| `t442-foto-perfil-revisao` | 1 | 1 | reproduz | avulso | expect(locator).toBeVisible() failed Locator: getByText('Fotos de perfil em revisão') Expected: visible Timeout: 20000ms Error: element(s) not found |
+| `t456-comodidades-tipo-e111a` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toBeVisible() failed Locator: getByText(/Salvo/).first() Expected: visible Timeout: 30000ms Error: element(s) not found |
+| `t464-prop6-inicio-dono` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toBeVisible() failed Locator: getByTestId('inicio-dono-foto') Expected: visible Timeout: 10000ms Error: element(s) not found |
+| `t465-admin4-inicial` | 1 | 1 | reproduz | avulso | expect(locator).toHaveAttribute(expected) failed Locator: getByTestId('admin-decisoes') Expected: "2" Timeout: 30000ms Error: element(s) not found |
+| `t469-e134-passo4-alinhado` | 1 | 1 | reproduz | assistente de anúncio | tipo: botões vazando expect(received).toEqual(expected) // deep equality - Expected - 1 + Received + 12 - Array [] + Array [ + "11. Tipo do imóvel— pa |
+| `t534-e147-bairro-santa-monica` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toHaveText(expected) failed Locator: getByTestId('passo-titulo') Expected: "Detalhes do imóvel" Received: "Adicione as fotos do imóvel |
+| `t547-e148a-texto-sugerido-passo7` | 1 | 1 | reproduz | assistente de anúncio | expect(locator).toHaveValue(expected) failed Locator: getByTestId('cadastro-titulo') Expected: "Apartamento mobiliado de 2 quartos no Santa Mônica" Re |
+| `t548-e132a-declaracoes-persistem` | 1 | 1 | reproduz | assistente de anúncio | expect(received).toMatchObject(expected) Matcher error: received value must be a non-null object Received has value: null |
+| `t564-e193-qualificacao-cartoes` | 1 | 1 | reproduz | assistente de anúncio | expect(received).toBe(expected) // Object.is equality Expected: 23 Received: 0 |
+| `t568-e176-parte2-conta` | 1 | 1 | reproduz | avulso | expect(locator).toHaveAttribute(expected) failed Locator: getByTestId('conta-menu').getByRole('link', { name: /Segurança e verificações/ }) Expected:  |
+| `t574-e207-voltar-resultados` | 1 | 1 | reproduz | avulso | expect(received).toBe(expected) // Object.is equality Expected: true Received: false |
+| `t585-e205b-emails-novos` | 1 | 1 | reproduz | avulso | expect(received).toMatch(expected) Expected pattern: /Abrir no mapa: https:\/\// Received string: "Remetente: Viva Nomads Brasil <suporte@vivanomads.c |
+| `t590-espaco-trabalho-interesse` | 1 | 1 | reproduz | avulso | expect(locator).toHaveValue(expected) failed Locator: getByTestId('espaco-procura') Expected: "coworking" Received: "" Timeout: 30000ms |
+| `t597-e213b-limpeza-renovacao` | 1 | 1 | reproduz | avulso | um pedido por saída, mesmo com 2 rodadas expect(received).toHaveLength(expected) Expected length: 1 Received length: 0 Received array: [] |
+| `t621-varredura-bloco55` | 2 | 2 | reproduz | avulso | Início do dono novo, checklist dentro de "Anuncie seu primeiro imóvel" (E218) @1280: o checklist do dono (E218) aparece (InicioDono/primeiro_anuncio)  |
+| `t622-varredura-bloco56` | 1 | 1 | reproduz | avulso | proprietário — Meus imóveis com só um rascunho @390 — fixo: elemento fixo/flutuante sobre conteúdo que a rolagem não revela expect(received).toEqual(e |
+| `t655-observador-botoes-filas` | 1 | 1 | reproduz | avulso | expect(locator).toBeVisible() failed Locator: locator('[data-testid="fila-foto"][data-user=":id"]').getByTestId('foto-aprovar') Expected: visible Time |
+| `t656-e224-plano-gestor` | 1 | 1 | reproduz | avulso | expect(locator).toHaveText(expected) failed Locator: getByTestId('conta-plano-gestor-texto') Expected: "Liberado. Fale com a Viva para ativar." Receiv |
+| `t678-e202-emails-candidatura` | 1 | 1 | reproduz | avulso | expect(locator).toHaveValue(expected) failed Locator: getByLabel(/Prazo total em meses/i) Expected: "1" Timeout: 20000ms Error: element(s) not found |
+| `t683-e259-perto-fonte-unica` | 1 | 1 | reproduz | avulso | expect(received).toBeLessThan(expected) Expected: < 650 Received: 924 |
+| `t693-prova-de-publicacao` | 1 | 1 | reproduz | assistente de anúncio | expect(received).toBe(expected) // Object.is equality Expected: "publicou" Received: "esperando" |
+| `t696-varredura-bloco74` | 1 | 1 | reproduz | assistente de anúncio | Passo 10, Declarações do imóvel na conferência (#1587) @1280: a tela do merge aparece (conferencia-tipo) expect(locator).toBeVisible() failed Locator: |
+| `t697-e259-pessoas-sugerido-grava` | 1 | 1 | reproduz | assistente de anúncio | expect(received).toBe(expected) // Object.is equality Expected: "6" Received: undefined |
+| `t707-e262-galeria-destaques-previa` | 1 | 1 | reproduz | avulso | expect(received).toBe(expected) // Object.is equality Expected: "(max-width: 768px) 100vw, 50vw" Received: "(max-width: 768px) 100vw, 25vw" |
+| `t735-e277-busca-parceiros-fotos` | 1 | 1 | reproduz | avulso | locator.scrollIntoViewIfNeeded: Timeout 15000ms exceeded. |
+| `t739-varredura-parceiros-390` | 1 | 1 | reproduz | avulso | expect(locator).toBeVisible() failed Locator: locator('[data-testid="cartao-parceiro"][data-slug="lia-limpeza-t739-jclimd"]') Expected: visible Timeou |
+| `t772-e329-visita-confirmada` | 2 | 2 | reproduz | avulso | expect(locator).toBeAttached() failed Locator: getByTestId('visita-video-abrir').first() Expected: attached Timeout: 25000ms Error: element(s) not fou |
+| `t778-e347-x-visita-video` | 2 | 2 | reproduz | avulso | Test timeout of 90000ms exceeded. |
+| `t799-cadastro-regras-icones` | 2 | 2 | reproduz | assistente de anúncio | expect(locator).toHaveCount(expected) failed Locator: getByTestId('regras-casa').locator('[data-ligado]').first().locator('[data-testid$=\'-icone\']') |
+| `t815-404-perfil-toque` | 1 | 1 | reproduz | avulso | expect(received).toBeGreaterThanOrEqual(expected) Expected: >= 44 Received: 32 |
+| `t816-cidade-bairros-grade-par` | 1 | 1 | reproduz | avulso | expect(received).toBeLessThan(expected) Expected: < 580 Received: 1159.984375 |
+| `t840-e525-pins-sem-sobreposicao` | 1 | 1 | reproduz | avulso | depois de Zoom out depois de Zoom out expect(received).toEqual(expected) // deep equality - Expected - 1 + Received + 10 Object { "foraDoMapa": Array  |
+| `t886-e464-cabecalho-conta` | 1 | 1 | reproduz | avulso | /dashboard/conta/perfil: sino expect(locator).toBeVisible() failed Locator: getByTestId('topo-parceiro').getByTestId('sino-parceiro') Expected: visibl |
+| `t909-reembolso-linha-tablet` | 1 | 1 | reproduz | avulso | expect(locator).toBeVisible() failed Locator: getByTestId('reembolso-linha-desconto') Expected: visible Timeout: 30000ms Error: element(s) not found |
+| `t14-app-mode` | 1 | 0 | só no CI | avulso | expect(locator).toBeVisible() failed Locator: locator('main').getByRole('link', { name: /^Perfil/ }) Expected: visible Timeout: 10000ms Error: element |
+| `t274-varredura-paginas` | 1 | 0 | só no CI | busca a 390 px | Buscar @390 — fixo: elemento fixo/flutuante sobre conteúdo que a rolagem não revela (/buscar) expect(received).toEqual(expected) // deep equality - Ex |
+| `t368-varredura-bloco20` | 1 | 0 | só no CI | busca a 390 px | visitante — Buscar @390 — fixo: elemento fixo/flutuante sobre conteúdo que a rolagem não revela expect(received).toEqual(expected) // deep equality -  |
+| `t389-deteccao-fotos` | 1 | 0 | só no CI | avulso | expect(received).toBe(expected) // Object.is equality Expected: true Received: false |
+| `t412-varredura-bloco29` | 1 | 0 | só no CI | busca a 390 px | visitante — Buscar, busca limpa (#1313) @390 — fixo: elemento fixo/flutuante sobre conteúdo que a rolagem não revela expect(received).toEqual(expected |
+| `t419-varredura-bloco36` | 2 | 0 | só no CI | busca a 390 px | visitante — Busca, barra de pílulas e painel de filtros (#1351) @390 — fixo: elemento fixo/flutuante sobre conteúdo que a rolagem não revela expect(re |
+| `t732-conformidade-busca` | 1 | 0 | só no CI | busca a 390 px | busca 390 — elemento fixo/flutuante sobre conteúdo que a rolagem não revela expect(received).toEqual(expected) // deep equality - Expected - 1 + Recei |
+| `t800-cadastro-passo4-titulo` | 1 | 0 | só no CI | assistente de anúncio | expect(locator).toBeVisible() failed Locator: getByTestId('cartao-numeros') Expected: visible Timeout: 20000ms Error: element(s) not found |
+| `t1405-varredura-bloco483` | 1 | 0 | só no CI | busca a 390 px | visitante — Buscar @390 — fixo: elemento fixo/flutuante sobre conteúdo que a rolagem não revela expect(received).toEqual(expected) // deep equality -  |
+| `t1426-varredura-bloco500` | 1 | 0 | só no CI | busca a 390 px | visitante — Buscar @390 — fixo: elemento fixo/flutuante sobre conteúdo que a rolagem não revela expect(received).toEqual(expected) // deep equality -  |
+| `t1451-varredura-bloco517` | 1 | 0 | só no CI | busca a 390 px | visitante — Buscar @390 — fixo: elemento fixo/flutuante sobre conteúdo que a rolagem não revela expect(received).toEqual(expected) // deep equality -  |
+
+**Próximo dentro do Passo 3:** (1) flutuante na busca; (2) identidade/valor no fio, com a prova de onde está o achado; (3) assistente de anúncio, pela causa comum; (4) avulsos. Um PR draft por grupo coerente, respeitando o tempo do portão.
 
 ## 8. Dúvidas (por extenso)
 
@@ -381,3 +487,4 @@ Base: a rodada manual de 15/11 (seção 2.1). No laboratório local com banco no
 - **15/11, 02:48 UTC.** Rodada manual concluída (seção 2.1): 96 specs vermelhos, 5 de 20 fatias verdes. CI do PR #3832 verde na primeira rodada.
 - **15/11, 03:27 UTC.** Passo 2 verificado no local (315 verdes sem nova tentativa) e confirmado num branch local, sem push (Dúvida 8).
 - **15/11, 12:22 UTC.** Sessão retomada depois de um reinício do ambiente (o laboratório local caiu junto; foi refeito com banco novo). Main sem mudança (`c950ec82`). Passo 3 em curso; "erro completo no log da fatia" acrescentado ao Passo 1.
+- **15/11, 14:15 UTC.** Rodada local da triagem concluída (seção 7.3): 66 specs reproduzem com o mesmo erro do CI. CI do PR #3832 verde também no commit `b2c430af`.
