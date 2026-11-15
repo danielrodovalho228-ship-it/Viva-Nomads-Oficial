@@ -22,6 +22,8 @@ import {
 import { OBRIGATORIOS_ROTULOS } from "../anuncio/prontidao.ts";
 import { RECIBO_EMPRESAS, TAXA_EMPRESAS, ID_PERGUNTA_EMPRESAS, PERGUNTA_EMPRESAS, HREF_PERGUNTA_EMPRESAS } from "../empresas/textos.ts";
 import { TEXTO_PRAZO_DOCUMENTO, TEXTO_PRAZO_EMPRESAS } from "../../config/prazos-canais.ts";
+import { TEXTO_DOCUMENTO_NA_MENSAGEM, TEXTO_PRAZOS_DA_VIVA, TEXTO_PRE_ACEITE } from "../ajuda/regras-publicas.ts";
+import { PRE_ACEITACAO_72H_ATIVA } from "../flags.ts";
 import { CONFERENCIA_PARTES, CONFERENCIA_VALIDADE, fraseConferenciaDevolve } from "../fiscal/conferir.ts";
 
 export interface Pergunta {
@@ -153,8 +155,9 @@ export const FAQ: Pergunta[] = [
     id: "contato",
     pergunta: "Por que não vejo o telefone do proprietário (ou do morador)?",
     resposta:
-      "Para a sua segurança, a conversa acontece toda pela plataforma: telefone, e-mail e redes sociais aparecem como \"contato protegido\". Assim tudo fica registrado e vale como prova se houver qualquer problema.",
-    termos: ["telefone", "whatsapp", "contato", "zap", "numero"],
+      // E957: a recusa de CPF/RG com aviso, pela mesma regra do chat (lib/ajuda/regras-publicas.ts).
+      `Para a sua segurança, a conversa acontece toda pela plataforma: telefone, e-mail e redes sociais aparecem como "contato protegido". Assim tudo fica registrado e vale como prova se houver qualquer problema. ${TEXTO_DOCUMENTO_NA_MENSAGEM}`,
+    termos: ["telefone", "whatsapp", "contato", "zap", "numero", "cpf", "rg", "documento"],
     links: [LINK_SEGURANCA],
   },
   {
@@ -199,6 +202,24 @@ export const FAQ: Pergunta[] = [
     resposta: "Em Pedidos de moradia, abra o seu pedido e use \"Pausar\" ou \"Marcar como atendido\". Ele sai do mural na hora.",
     termos: ["cancelar", "pedido", "pausar", "excluir pedido"],
   },
+  // E958 (metade E948): os prazos de resposta da Viva, de config/prazos-canais.ts.
+  {
+    id: "prazos-da-viva",
+    pergunta: "Em quanto tempo a Viva responde?",
+    resposta: TEXTO_PRAZOS_DA_VIVA,
+    termos: ["prazo", "resposta", "demora", "analise", "documento", "chamado", "equipe"],
+  },
+  // E956: o pré-aceite, só com a chave PRE_ACEITACAO_72H_ATIVA ligada (desligada, a pré-aceitação não existe).
+  ...(PRE_ACEITACAO_72H_ATIVA
+    ? [
+        {
+          id: "pre-aceite",
+          pergunta: "O que é o pré-aceite e quanto tempo eu tenho?",
+          resposta: TEXTO_PRE_ACEITE,
+          termos: ["pre-aceite", "pre aceite", "preaceite", "72", "horas", "congela", "taxa", "prazo"],
+        },
+      ]
+    : []),
 ];
 
 /** A resposta certa para quem está lendo. */

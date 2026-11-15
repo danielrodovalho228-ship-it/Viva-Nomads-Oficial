@@ -20,6 +20,7 @@ import { PrecoJustoBadge } from "@/components/ui/badge";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { CONTATO_NUNCA_TROCADO, FRASE_ESCADA_TAXAS } from "@/config/textos-regulados";
 import { JsonLd } from "@/components/seo/json-ld";
+import { RegrasPublicas } from "@/components/institucional/regras-publicas";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import Link from "next/link";
@@ -104,6 +105,11 @@ export default function HowItWorksPage() {
       </div>
       {/* Reforço de segurança do proprietário (sem vistoria/dossiê — pós-QA). */}
       <ProtegidoPor />
+      {/* E956/E957/E958: pré-aceite (com a chave), CPF/RG recusado e prazos da Viva, pela mesma fonte da Ajuda. */}
+      <section className="container-page pb-12">
+        <h2 className="font-title text-2xl font-semibold text-ink">Regras que valem para todos</h2>
+        <RegrasPublicas className="mt-6" />
+      </section>
 
       <div className="border-t border-sage-200 bg-surface-2">
       <section className="container-page section-y text-center">
