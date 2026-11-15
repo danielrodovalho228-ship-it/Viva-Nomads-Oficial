@@ -220,10 +220,9 @@ export async function POST(request: Request) {
       console.error("[conferir-matricula] falha ao gravar:", erroCheck?.message ?? erroQual?.message ?? "sem linha");
       return NextResponse.json({ error: "Não foi possível salvar a conferência agora. Tente de novo." }, { status: 500 });
     }
-    if (emRevisao || d.resultado === "provavel") {
-      await avisarAdmins();
-      await avisarDonoDocumentoEmAnalise(user.id, imovelId); // E948: o prazo da análise ao proprietário, no mesmo momento
-    }
+    if (emRevisao || d.resultado === "provavel") await avisarAdmins();
+    // E948: no mesmo momento, o prazo da análise ao proprietário.
+    if (emRevisao || d.resultado === "provavel") await avisarDonoDocumentoEmAnalise(user.id, imovelId);
     return NextResponse.json({
       estado,
       rotulo: rotuloEstado(estado),
@@ -274,10 +273,9 @@ export async function POST(request: Request) {
   }
 
   // Só os casos em revisão entram na fila: avisa os admins (sem dados do documento).
-  if (estadoFinal === "revisao") {
-    await avisarAdmins();
-    await avisarDonoDocumentoEmAnalise(user.id, imovelId); // E948
-  }
+  if (estadoFinal === "revisao") await avisarAdmins();
+  // E948: no mesmo momento, o prazo da análise ao proprietário.
+  if (estadoFinal === "revisao") await avisarDonoDocumentoEmAnalise(user.id, imovelId);
 
   return NextResponse.json({
     estado: estadoFinal,

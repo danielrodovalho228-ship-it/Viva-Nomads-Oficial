@@ -70,7 +70,8 @@ test("T4 e-mail: documento_em_analise ao proprietário, com o prazo exato; docum
   // Dispara no mesmo momento do documento_recebido (envio pelo cadastro, a conferência em revisão e o caso da matrícula).
   const acoes = ler("src/lib/data/actions.ts");
   assert.equal((acoes.match(/avisarDonoDocumentoEmAnalise\(user\.id, propertyId\)/g) ?? []).length, 2);
-  assert.match(ler("src/app/api/documentos/conferir/route.ts"), /avisarAdmins\(\);\s*await avisarDonoDocumentoEmAnalise\(user\.id, imovelId\)/);
+  const conf = ler("src/app/api/documentos/conferir/route.ts");
+  assert.match(conf, /if \(estadoFinal === "revisao"\) await avisarAdmins\(\);\s*\/\/[^\n]*\n\s*if \(estadoFinal === "revisao"\) await avisarDonoDocumentoEmAnalise\(user\.id, imovelId\)/);
   assert.match(ler("src/app/api/documentos/matricula/caso/route.ts"), /avisarDonoDocumentoEmAnalise\(user\.id/);
 });
 

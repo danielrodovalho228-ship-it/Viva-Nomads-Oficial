@@ -255,11 +255,9 @@ export async function saveQualification(
   // Documento NOVO entrou na fila → avisa os admins (best-effort; nunca trava nem
   // vaza dados do documento — só o fato de que há item para conferir). Só
   // admins que ligaram "receber alertas" na Conta (ordem 27cfd36a).
-  if (doc.avisarAdmins) {
-    await avisarAdminsDocumentoRecebido();
-    // E948: o proprietário recebe, no mesmo momento, o prazo da análise.
-    await avisarDonoDocumentoEmAnalise(user.id, propertyId);
-  }
+  if (doc.avisarAdmins) await avisarAdminsDocumentoRecebido();
+  // E948: o proprietário recebe, no mesmo momento, o prazo da análise.
+  if (doc.avisarAdmins) await avisarDonoDocumentoEmAnalise(user.id, propertyId);
   // E268-B: a qualificação antes do Passo 1 também é o começo do anúncio.
   await registrarIntencaoDeAnunciar(supabase, user.id);
   return { ok: true, id: (data as { id: string }).id };
