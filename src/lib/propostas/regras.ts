@@ -28,6 +28,22 @@ export const STATUS_PROPOSTA: Record<StatusProposta, { rotulo: string; tom: "neu
   contrato_assinado: { rotulo: "Contrato assinado", tom: "ok" },
 };
 
+/**
+ * E965 — o morador NUNCA vê "recusada" (correção do coordenador, 15/11/2026): mesmo texto neutro das candidaturas.
+ * O proprietário segue vendo "Recusada" na lista e no detalhe dele.
+ */
+export const TEXTO_NAO_SEGUIU_ADIANTE = "Não seguiu adiante";
+
+export function rotuloStatusProposta(status: StatusProposta, papel?: "owner" | "tenant" | null): (typeof STATUS_PROPOSTA)[StatusProposta] {
+  if (status === "recusada" && papel === "tenant") return { rotulo: TEXTO_NAO_SEGUIU_ADIANTE, tom: "neutro" };
+  return STATUS_PROPOSTA[status];
+}
+
+/** E965 — o cartão da conversa e o aviso do sino (o morador lê os dois): neutro, com o motivo. */
+export function textoDaRecusaNaConversa(numero: string, motivo: string, texto?: string | null): string {
+  return `Proposta ${numero} não seguiu adiante. Motivo: ${motivo}.${texto ? ` ${texto}` : ""}`;
+}
+
 /** Filtros da lista de Orçamentos (rascunho não existe: a proposta só nasce enviada a um interessado real). */
 export const FILTROS_STATUS: { chave: "todas" | StatusProposta; rotulo: string }[] = [
   { chave: "todas", rotulo: "Todas" },

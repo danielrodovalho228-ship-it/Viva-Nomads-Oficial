@@ -175,7 +175,10 @@ test.describe("T193 — propostas", () => {
     await inq.getByTestId("proposta-recusar").click();
     await inq.getByTestId("form-recusa").getByText("Datas", { exact: true }).click();
     await inq.getByTestId("confirmar-recusa").click();
-    await expect(inq.getByTestId("proposta-status")).toHaveText("Recusada", { timeout: 15_000 });
+    // E965 (asserção alterada, julgamento do Gerente no PR): o morador nunca vê "recusada" — o texto neutro das candidaturas.
+    await expect(inq.getByTestId("proposta-status")).toHaveText("Não seguiu adiante", { timeout: 15_000 });
+    await expect(inq.getByTestId("proposta-recusa")).toContainText("Não seguiu adiante. Motivo: Datas");
+    await expect(inq.locator("main")).not.toContainText(/recusad/i);
     await inq.context().close();
     const dono = await abrir(browser, c.dono.email, 390);
     await dono.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
