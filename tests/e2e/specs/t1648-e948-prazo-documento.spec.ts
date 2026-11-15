@@ -19,7 +19,7 @@ const ids: string[] = [];
 
 const docEditado = () => Buffer.concat([Buffer.from(`%PDF-1.4\n% documento ficticio do laboratorio VIVA-LAB-DOC:editado ${randomBytes(8).toString("hex")}\n`), Buffer.alloc(12 * 1024, 0x20), Buffer.from("\n%%EOF\n")]);
 
-test.describe("T1648 — E948: prazo público da análise do documento", () => {
+test.describe("T1648 — @E948 @E947 prazo público da análise do documento", () => {
   for (const largura of [390, 1280] as const) {
     test(`${largura} px — /para-proprietarios e a Ajuda dizem o prazo; a Ajuda acha a pergunta de empresas`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 900 });
