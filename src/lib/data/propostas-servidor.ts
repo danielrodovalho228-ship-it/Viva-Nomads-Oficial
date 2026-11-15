@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { calcularTotais, diasDosTermos, STATUS_ABERTOS, type Autor, type StatusProposta, type TermosProposta } from "@/lib/propostas/regras";
 import { MSG_VALORES_SEM_CONFERIR } from "@/lib/data/taxa-dono-servidor";
+import { EVENTOS_DA_PROPOSTA_ABERTA } from "@/lib/notifications/avisos";
 import { mesesDeReferencia } from "@/lib/estadia-em-dias";
 
 /*
@@ -157,7 +158,18 @@ export async function expirarVencidas(admin: SupabaseClient, userId?: string): P
   if (userId) q = q.or(`owner_id.eq.${userId},tenant_id.eq.${userId}`);
   const { data, error } = await q.select("id");
   if (error) return 0;
-  return (data ?? []).length;
+  const ids = (data ?? []).map((l) => l.id as string);
+  // E966: a expiração RESOLVE o problema — some o aviso crítico ("responda a proposta") e a faixa vermelha das DUAS partes.
+  if (ids.length) {
+    const { error: erroAviso } = await admin
+      .from("avisos")
+      .update({ resolvido_em: new Date().toISOString() })
+      .in("ref_id", ids)
+      .in("evento", [...EVENTOS_DA_PROPOSTA_ABERTA])
+      .is("resolvido_em", null);
+    if (erroAviso) console.error("[propostas] expirou sem resolver o aviso:", erroAviso.code, erroAviso.message);
+  }
+  return ids.length;
 }
 
 export interface PropostaAcordada {

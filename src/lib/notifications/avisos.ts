@@ -95,6 +95,9 @@ export const ACAO_RESOLVE: Partial<Record<NotificationEvent, "assinou" | "respon
   visita_pedida: "confirmou",
 };
 
+/** E966 — os críticos de "responda a proposta": a expiração da proposta os resolve (para as duas partes). */
+export const EVENTOS_DA_PROPOSTA_ABERTA: readonly NotificationEvent[] = ["proposta_recebida", "proposta_vencendo"];
+
 /** Título do aviso: o assunto do catálogo, limpo e curto (nunca o assunto montado com texto do usuário). */
 export function tituloDoAviso(assuntoDoCatalogo: string): string {
   return assuntoDoCatalogo.replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) || "Aviso da Viva Nomads";
