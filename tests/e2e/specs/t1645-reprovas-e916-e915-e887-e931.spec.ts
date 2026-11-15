@@ -6,8 +6,8 @@ import { test, expect, type Page } from "@playwright/test";
  *    Entrar), a busca e o rodapé.
  *  - E915 /parceiros/buscar?categoria=<inexistente> avisa que a categoria não existe e NÃO arma o "Quero ser avisado".
  *  - E887 /conferir diz o que a conferência mostra e a validade; a Ajuda (Segurança e conta) explica como conferir.
- *  - E931 o "Fale com a Viva" flutuante aparece na /ajuda e na /buscar, na posição padrão (do tablet para cima; no
- *    celular ele some em todas as telas, E246); só a página do próprio chat fica sem ele.
+ *  - E931 o "Fale com a Viva" flutuante aparece na /ajuda, na posição padrão (do tablet para cima; no celular ele some
+ *    em todas as telas, E246); fica fora da /buscar (E95, regra final da ORDEM-DUET-030) e da página do próprio chat.
  * E917 (validade do código e do link) é texto do passo pós-envio: travado pelo teste unitário E917.
  */
 async function semRolagemLateral(page: Page) {
@@ -69,8 +69,8 @@ for (const largura of [390, 1280]) {
       await semRolagemLateral(page);
     });
 
-    test("E931: o 'Fale com a Viva' flutuante na /ajuda e na /buscar (posição padrão); fora da página do chat", async ({ page }) => {
-      for (const rota of ["/ajuda", "/buscar", "/"]) {
+    test("E931: o 'Fale com a Viva' flutuante na /ajuda (posição padrão); fora da /buscar e da página do chat", async ({ page }) => {
+      for (const rota of ["/ajuda", "/"]) {
         await page.goto(rota, { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("fale-com-a-viva-raiz"), rota).toHaveCount(1);
         const flut = page.getByTestId("fale-com-a-viva");
@@ -84,8 +84,10 @@ for (const largura of [390, 1280]) {
         expect(Math.round(largura - (caixa.x + caixa.width)), `${rota} à direita`).toBe(24);
         expect(caixa.y + caixa.height, `${rota} embaixo`).toBeGreaterThan(844 - 120);
       }
-      await page.goto("/ajuda/fale-com-a-viva", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
+      for (const rota of ["/buscar", "/ajuda/fale-com-a-viva"]) {
+        await page.goto(rota, { waitUntil: "domcontentloaded" });
+        await expect(page.getByTestId("fale-com-a-viva-raiz"), rota).toHaveCount(0);
+      }
     });
   });
 }
