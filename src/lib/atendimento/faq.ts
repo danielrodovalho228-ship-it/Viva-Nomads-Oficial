@@ -21,7 +21,7 @@ import {
 } from "./parceiros-texto.ts";
 import { OBRIGATORIOS_ROTULOS } from "../anuncio/prontidao.ts";
 import { RECIBO_EMPRESAS, TAXA_EMPRESAS, ID_PERGUNTA_EMPRESAS, PERGUNTA_EMPRESAS, HREF_PERGUNTA_EMPRESAS } from "../empresas/textos.ts";
-import { TEXTO_PRAZO_EMPRESAS } from "../../config/prazos-canais.ts";
+import { TEXTO_PRAZO_DOCUMENTO, TEXTO_PRAZO_EMPRESAS } from "../../config/prazos-canais.ts";
 import { CONFERENCIA_PARTES, CONFERENCIA_VALIDADE, fraseConferenciaDevolve } from "../fiscal/conferir.ts";
 
 export interface Pergunta {
@@ -113,7 +113,7 @@ export const FAQ: Pergunta[] = [
     pergunta: "Por que meu anúncio não publica?",
     resposta:
       // Mesma lista da prontidão (lib/anuncio/prontidao): o que o FAQ diz é o que o Publicar confere.
-      `Para publicar, o anúncio precisa de: ${OBRIGATORIOS_ROTULOS.map((r) => r.charAt(0).toLowerCase() + r.slice(1)).join("; ")}. Selo Pronto para Morar e vídeo ajudam, mas não impedem a publicação. Em Meus imóveis e na etapa Revisão aparece exatamente o que falta. Se o documento está "Em análise", é só aguardar: avisamos por e-mail quando for aprovado.`,
+      `Para publicar, o anúncio precisa de: ${OBRIGATORIOS_ROTULOS.map((r) => r.charAt(0).toLowerCase() + r.slice(1)).join("; ")}. Selo Pronto para Morar e vídeo ajudam, mas não impedem a publicação. Em Meus imóveis e na etapa Revisão aparece exatamente o que falta. Se o documento está "Em análise", ${TEXTO_PRAZO_DOCUMENTO}`, // E948: o prazo da análise, da fonte única (prazos-canais).
     termos: ["publicar", "anuncio", "documento", "analise", "fotos", "travado"],
   },
   {
