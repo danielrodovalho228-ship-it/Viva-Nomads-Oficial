@@ -34,7 +34,7 @@ export default async function ConferirInicio({ searchParams }: { searchParams: P
         {/* E887: o que a conferência devolve e a validade do documento, ditos antes de conferir (fonte única em fiscal/conferir). */}
         <div className="mt-4 rounded-xl bg-surface-2 p-4 text-sm text-ink" data-testid="conferir-o-que-mostra">
           <p className="font-semibold">O que a conferência mostra</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
+          <ul className="mt-2 list-disc space-y-1 pl-4">
             {CONFERENCIA_DEVOLVE.map((item) => (
               <li key={item}>{item}</li>
             ))}
