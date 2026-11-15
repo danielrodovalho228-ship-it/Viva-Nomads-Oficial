@@ -22,7 +22,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       </div>
       <AppHeader />
       {/* Espaço inferior no mobile para a barra de abas não cobrir o conteúdo. */}
-      <main id="conteudo" className="vn-main flex-1 pb-16 md:pb-0">
+      {/* E949: tabIndex -1 para o <main> receber o foco do skip-link (o Tab seguinte já cai no conteúdo); sem contorno. */}
+      <main id="conteudo" tabIndex={-1} className="vn-main flex-1 pb-16 outline-none md:pb-0">
         {children}
       </main>
       <div className="web-only contents">
