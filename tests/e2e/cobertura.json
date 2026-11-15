@@ -3526,6 +3526,14 @@
         "t468-e133-fotos-conteudo"
       ]
     },
+    "/api/guia-nivel": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t1647-e143-nivel-no-passo5"
+      ]
+    },
     "/api/health": {
       "personas": [
         "publico"
