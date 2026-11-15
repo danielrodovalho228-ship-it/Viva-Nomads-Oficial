@@ -1697,7 +1697,8 @@
         "t708-e254-estadia-minima-uma-fonte",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1646-e180-rascunho-qualificado-novo-anuncio"
       ]
     },
     "/dashboard/imoveis/[id]/cartao": {
@@ -1968,7 +1969,8 @@
         "t710-e265-sem-selo-em-todo-cartao",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1646-e180-rascunho-qualificado-novo-anuncio"
       ]
     },
     "/dashboard/indicacoes": {
