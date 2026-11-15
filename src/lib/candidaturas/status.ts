@@ -53,6 +53,14 @@ export const ROTULOS_CANDIDATURA = ROTULOS;
  * morador, no padrão do cartão "Aceita" (texto + link). "Em análise" quer dizer que o proprietário já mandou mensagem
  * sobre o imóvel (é assim que a situação é derivada), então o passo é responder pela conversa. O prazo é o oficial ("em até 1 dia útil"), só no "Em análise".
  */
+/**
+ * E395 — o prazo oficial de resposta do proprietário (o relógio do dono: 1 dia útil, lib/propostas/pre-aceitacao.ts,
+ * prazoDoDono). Aparece desde o ENVIO: tela de sucesso, cartão "Enviada", lista de Candidaturas e os 2 e-mails do envio.
+ * A tela de sucesso e a abertura da lista escrevem o texto por extenso (a trava t2048 da Pista 3 lê o código); o teste
+ * e395-prazo-uma-fonte confere que todas as superfícies usam este mesmo texto.
+ */
+export const PRAZO_RESPOSTA_DONO = "em até 1 dia útil";
+
 export interface ProximoPassoCandidatura {
   agora: string;
   proximo: string;
@@ -61,13 +69,14 @@ export interface ProximoPassoCandidatura {
 
 export const PROXIMO_PASSO_CANDIDATURA: Partial<Record<SituacaoCandidatura, ProximoPassoCandidatura>> = {
   enviada: {
-    agora: "O proprietário recebeu a sua candidatura e ainda vai olhar.",
+    // E395: o prazo desde o envio.
+    agora: `O proprietário recebeu a sua candidatura e responde ${PRAZO_RESPOSTA_DONO}.`,
     proximo: "Fique de olho nas mensagens: a resposta do proprietário chega pela plataforma.",
     acao: { rotulo: "Ver mensagens", href: "/dashboard/mensagens" },
   },
   em_analise: {
     // E314 (devolução 31/10): o prazo oficial de resposta do proprietário no cartão "Em análise".
-    agora: "O proprietário já viu a sua candidatura e está avaliando. A resposta chega em até 1 dia útil.",
+    agora: `O proprietário já viu a sua candidatura e está avaliando. A resposta chega ${PRAZO_RESPOSTA_DONO}.`,
     proximo: "Responda pela conversa e tire as dúvidas do proprietário; com a candidatura aceita, você envia os documentos aqui.",
     acao: { rotulo: "Abrir conversa", href: "/dashboard/mensagens" },
   },

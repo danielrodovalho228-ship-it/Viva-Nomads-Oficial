@@ -8,6 +8,8 @@ test("E314 (devolução): o cartão 'Em análise' traz o prazo oficial 'em até 
   assert.match(p.agora, /em até 1 dia útil/);
 });
 
-test("E314: só o 'Em análise' muda — o 'Enviada' segue sem prazo", () => {
-  assert.doesNotMatch(JSON.stringify(PROXIMO_PASSO_CANDIDATURA.enviada), /dia útil/);
+// Asserção alterada (E395, regra do coordenador): o prazo do proprietário aparece DESDE O ENVIO — o "Enviada" agora diz
+// "em até 1 dia útil" (antes este teste exigia o contrário). Trava da Pista 3: e395-t2048-prazo-no-envio.test.ts.
+test("E314/E395: o 'Enviada' também traz o prazo oficial, desde o envio", () => {
+  assert.match(JSON.stringify(PROXIMO_PASSO_CANDIDATURA.enviada), /em até 1 dia útil/);
 });
