@@ -62,6 +62,10 @@ test.describe("T1655 — @familia-6c Família 6 C: telefone por extenso chega ma
       expect(await pDono.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
       await pDono.screenshot({ path: `${SAIDA}/t1655-dono-${vez}-390.png` });
     }
+    // Print de conferência a 1280 (a tela larga mostra lista e conversa lado a lado).
+    await pDono.setViewportSize({ width: 1280, height: 900 });
+    await expect(pDono.locator("section").getByText(/meu número é/)).toContainText(MASK);
+    await pDono.screenshot({ path: `${SAIDA}/t1655-dono-1280.png` });
     await pDono.context().close();
   });
 });
