@@ -32,7 +32,12 @@ test("E961: a vitrine da 404 é de cliente e busca os imóveis só quando aparec
 });
 
 test("E961: enquanto busca, três cartões-fantasma na mesma grade (decisão do Gerente, ORDEM-DUET-069)", () => {
-  assert.equal((vitrine.match(/<SkeletonCartao \/>/g) ?? []).length, 3, "três cartões-fantasma");
+  assert.equal((vitrine.match(/<CartaoFantasma \/>/g) ?? []).length, 3, "três cartões-fantasma");
+  // As medidas do cartão de hoje: foto 4:3 e cinco linhas de texto (23 + 20 + 28 + 20 + 20 px) com 4 px entre elas.
+  const fantasma = vitrine.slice(vitrine.indexOf("function CartaoFantasma"), vitrine.indexOf("const GRADE"));
+  assert.match(fantasma, /aspect-\[4\/3\] w-full rounded-xl/);
+  assert.deepEqual([...fantasma.matchAll(/<Skeleton className="(h-[^ ]+) /g)].map((m) => m[1]), ["h-[23px]", "h-5", "h-7", "h-5", "h-5"]);
+  assert.match(fantasma, /flex flex-1 flex-col gap-1/);
   // Uma grade só (constante GRADE) para o esqueleto e para os cartões: mesmas colunas, mesmo espaçamento, sem salto.
   assert.match(vitrine, /<div className=\{GRADE\} data-testid="nao-encontrada-esqueleto">/);
   assert.match(vitrine, /<div className=\{GRADE\} data-testid="nao-encontrada-destaques">/);
