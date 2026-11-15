@@ -122,14 +122,15 @@ test.describe("T296 — Adendo 59.1, Parte A: níveis na tela", () => {
     await adm().from("imovel_nivel").update({ nivel_vistoriado_em: new Date().toISOString() }).eq("property_id", ids.p!);
   });
 
-  test("1. cartão com o nível na linha de fatos; filtro 'Nível a partir de' com contagem ao vivo", async ({ browser }) => {
+  test("1. cartão com o nível no selo da foto (E416); filtro 'Nível a partir de' com contagem ao vivo", async ({ browser }) => {
     for (const w of LARGURAS) {
       const page = await publica(browser, w);
       await page.goto("/buscar", { waitUntil: "domcontentloaded" });
       for (const [titulo, rotulo] of [[T.e, "Essencial"], [T.c, "Conforto"], [T.p, "Premium"]] as const) {
         const card = page.getByTestId("cartao-imovel").filter({ has: page.getByTestId("cartao-titulo").filter({ hasText: titulo }) }).first();
         await expect(card.getByTestId("card-nivel")).toHaveText(rotulo, { timeout: 30_000 });
-        await expect(card.getByTestId("cartao-sintese")).toContainText(new RegExp(`^${rotulo}\\s*·`));
+        // E744: desde o E416 o nível é selo da foto (E626, E899) e saiu da linha de fatos; ela não repete o nível.
+        await expect(card.getByTestId("cartao-sintese")).not.toContainText(rotulo);
       }
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t296-1-cartoes-${w}.png` });
