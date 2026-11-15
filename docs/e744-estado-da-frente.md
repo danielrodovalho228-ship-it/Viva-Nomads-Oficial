@@ -124,9 +124,13 @@ Nenhuma fatia se perdeu, nenhuma foi cortada, o Supabase subiu em todas e o regi
 
 Efeito: 4 "não executados" falsos em toda rodada (o documento de 12/11 já tinha notado "4 testes listados não rodaram" no t337) e 3 testes que rodam fora da conferência. **Mesmo com todas as falhas de teste corrigidas, o `consolidar` ficaria vermelho por completude.**
 
+**Corrigido no Passo 1** (seção 7.1): a lista de testes do t337 sai de uma massa de listagem, igual no job que lista e na fatia que roda.
+
 ### 4.2 O resumo não tem números por fatia
 
 O "resultado agregado legível" traz totais e a lista por spec, mas não diz quantos testes cada fatia tinha, quantos rodou e quanto demorou. Para a tabela da seção 3 foi preciso refazer o mapa à mão.
+
+**Corrigido no Passo 1** (seção 7.1): o resumo do `consolidar` ganha a tabela "Por fatia (executados × listados)".
 
 ### 4.3 Fatia 20 com pouca folga
 
@@ -258,8 +262,8 @@ Colunas: fatia (reconstruída), falhas, instáveis, pulados/não iniciados no sp
 
 | # | Passo | Depende do Gerente? | Estado |
 |---|---|---|---|
-| 1 | **Infra da suíte:** t337 com listagem estável (completude pode chegar a zero) e tabela de números por fatia no resumo do `consolidar`. Sem migração. Vem primeiro porque torna os passos seguintes mensuráveis. | não | em curso |
-| 2 | **Rotas da Conta (13 specs):** é um aglomerado de REGRESSÃO (verde até 12/11; causa provável #3757/E801, a confirmar). Regressão passa à frente de falha que nunca foi verde. | só se a mudança de rota não for decisão registrada | a fazer |
+| 1 | **Infra da suíte:** t337 com listagem estável (completude pode chegar a zero) e tabela de números por fatia no resumo do `consolidar`. Sem migração. Vem primeiro porque torna os passos seguintes mensuráveis. | não | **PR draft aberto** (seção 7.1) |
+| 2 | **Rotas da Conta (13 specs):** é um aglomerado de REGRESSÃO (verde até 12/11; causa provável #3757/E801, a confirmar). Regressão passa à frente de falha que nunca foi verde. | não: é decisão registrada (E492/E552, E679, E798) | **pronto no local** (seção 7.2), à espera de branch (Dúvida 8) |
 | 3 | **Triagem dos 61 specs "a triar" e dos 3 de tempo esgotado contra a main de HOJE**, com a rodada manual de 15/11 (run 43664453319) como base. Spec desatualizado corrige-se dentro da suíte. | os itens de produto | a fazer |
 | 4 | **Visual (t245, t271, t263) por último:** diff de cada tela para o julgamento do Gerente, um a um. Nunca regravado em silêncio. | sim | a fazer (ver Dúvida 3) |
 | 5 | As outras pernas da 9-segurança (detector no caminho do merge e checagem de base atual, desenho em `docs/e775-desenho-fila-de-merge.md`): **só depois do verde completo.** Até lá a checagem de base é feita à mão pela cadeia de merges do Gerente. | sim | depois |
@@ -274,7 +278,30 @@ As outras duas pernas da Família 9-segurança, para registro:
 
 ## 7. Triagem (resultado, atualizado a cada passo)
 
-Ainda vazia: a triagem começa depois deste relatório. Cada spec entra aqui com o veredito (spec desatualizado / produto / infra / instável), a prova e o que foi feito.
+Cada passo entra aqui com o veredito (spec desatualizado / produto / infra / instável), a prova e o que foi feito.
+
+### 7.1 Passo 1 — infra da suíte (PR draft aberto em 15/11)
+
+| O quê | Como | Prova |
+|---|---|---|
+| **t337 com listagem estável** | A regra das rotas saiu do spec para `tests/e2e/fixtures/rotas-redundancia.ts`. O spec monta os testes com `MASSA_DE_LISTAGEM` (ids fictícios, mesma quantidade de rotas) e só troca pelos ids de verdade dentro do teste. Os títulos ficam iguais aos que a fatia já rodava (27 testes), então o histórico em `lab_execucoes` continua. Sem a massa na fatia, o grupo com rota de id reprova dizendo o que falta (antes mudava de tamanho em silêncio). | Listagem da suíte inteira, sem a massa (como o `construir`) contra com a massa (como a fatia). **Antes:** 4.659 × 4.662, 4 listados que a fatia não roda (`admin 8: 3 telas`, `inquilino 5: 3 telas`, `proprietario 5: 7 telas`, `publico 5: 4 telas`) e 7 que rodam fora da listagem. **Depois:** 4.662 × 4.662, 0 e 0. O t337 foi o único spec da suíte com esse defeito. No laboratório local: `27 passed (11.7m)`. |
+| **Completude nos dois sentidos** | `scripts/lab/conferir-completude.mjs` passa a reprovar também o teste que RODOU e não está na listagem (`fora da listagem N` no resumo), com a explicação da causa. É aperto de fasquia, não afrouxamento. | Testes de guarda (3 casos). Com o t337 corrigido o número esperado é 0. |
+| **Números por fatia no resumo** | `scripts/lab/numeros-por-fatia.mjs` lê o `resultado.json` de cada artifact e escreve uma linha por fatia: listados, executados, passaram, falharam, instáveis, pulados de propósito, não iniciados, minutos da suíte e veredito (verde, vermelha, incompleta, sem resultado). Entra no "Resumo da noite". Não grava no banco (sem migração). | Testes de guarda (3 casos) e execução sobre relatórios reais. A primeira tabela de verdade sai na primeira noturna depois do merge. |
+
+Guarda: `tests/laboratorio/e744-infra-da-suite.test.ts` (9 testes). Suíte unitária inteira: 7.533 testes, 7.532 passam, 0 falham, 1 pulado.
+
+**Atenção para o portão:** o PR altera o t337, e o `lab-critico` roda inteiro todo spec alterado. No laboratório local o t337 levou 11,7 min com 2 workers; o passo do portão tem 25 min para a lista crítica mais ele.
+
+### 7.2 Passo 2 — rotas da Conta (pronto no local; ver Dúvida 8 sobre o branch)
+
+**Veredito: spec desatualizado, não produto.** Os dois redirecionamentos são decisão registrada no código:
+
+- E492/E552: no computador (≥ 1024 px), `/dashboard/conta` abre o Perfil (`/dashboard/conta/perfil`); no celular é o menu.
+- E679 (E85): `/dashboard/conta/avaliacoes` virou `/dashboard/avaliacoes`.
+
+**Causa da regressão:** o E798 (commit `efeac8e7`, 12/11 18:11 UTC, depois da noturna de 12/11) passou os dois redirecionamentos para o servidor (`proxy`), antes de desenhar. As varreduras abriam o endereço antigo e cobravam "continuo neste endereço" logo depois do carregamento. Enquanto o redirecionamento era no navegador, a cobrança passava por corrida. O servidor só redireciona `/dashboard/conta` quando o cookie da largura (`vn-tela`) já existe; por isso 13 specs ficaram vermelhos e outros 4 (t279, t354, t607, t1423), com a mesma cobrança, passam só pela ordem das telas.
+
+**Correção (só na suíte):** `tests/e2e/fixtures/destino-da-conta.ts` dá o caminho esperado pela mesma função que o proxy usa (`redirecionamentoDaConta`), e as 17 varreduras esperam a tela assentar (`expect.poll`) nesse caminho. Nenhuma tela saiu da varredura e nenhuma cobrança das seis classes mudou. Guarda: `tests/laboratorio/e744-rotas-da-conta.test.ts`.
 
 ## 8. Dúvidas (por extenso)
 
@@ -285,6 +312,8 @@ Ainda vazia: a triagem começa depois deste relatório. Cada spec entra aqui com
 5. **Correção de specs fora das minhas áreas fixas.** Muitos specs vermelhos são de fluxos de outras pistas (cadastro de imóvel, parceiros, admin). Leitura conservadora: corrijo só o **arquivo de teste** quando ele estiver desatualizado em relação a uma decisão registrada; não toco em código de produto fora das minhas áreas, e o que for falha de produto volta como item.
 6. **Atraso do agendamento (7 a 9 h).** Aceita-se, ou a noturna deve ter um segundo horário de cron como reserva? Não mexo sem resposta.
 7. **"12 de 20 fatias verdes". RESPONDIDA (15/11):** o número vinha do monitor do Gerente, cego desde 13/11. Valem os números lidos das rodadas (12/11: 8 de 20; 13/11: 5; 14/11: 5).
+8. **Branch para cada passo.** A regra desta sessão me deixa empurrar só para `claude/affectionate-davinci-x0dfgp`, e a ordem é um PR por passo. Enquanto o PR do Passo 1 estiver aberto nesse branch, o Passo 2 não tem para onde ir. Posso usar um branch por passo, no padrão `claude-b/e744-passo-N` (como foi o `claude-b/e899-fable`)? Enquanto não houver resposta, o Passo 2 fica pronto num branch local e sobe assim que o Passo 1 for mesclado ou a permissão chegar.
+9. **Tempo do portão com specs de varredura.** O `lab-critico` roda inteiro todo spec alterado, com 25 min para o passo. O Passo 2 altera 17 varreduras de uma vez. Se o portão estourar por tempo, a leitura conservadora é dividir o Passo 2 em dois PRs (não mexo no teto do portão sem resposta).
 
 ## 9. Como refazer as leituras
 
@@ -298,3 +327,4 @@ Ainda vazia: a triagem começa depois deste relatório. Cada spec entra aqui com
 - **15/11, 01:15–01:25 UTC.** Leitura do estado (seções 1 a 5). Nada alterado.
 - **15/11, 01:40 UTC.** Decisões do Gerente recebidas (relatório em arquivo; seguir com o que não depende de resposta; visual só com julgamento um a um; fila depois do E744). Este arquivo criado sobre a main `c950ec82`.
 - **15/11, 01:44 UTC.** Decisões A e B do Gerente recebidas. Rodada manual disparada (run 43664453319, main `c950ec82`). Ordem dos passos confirmada com as duas emendas (seção 6). Começa o Passo 1.
+- **15/11.** Passo 1 feito e empurrado (PR draft). Laboratório local de pé na main `c950ec82`. Passo 2 investigado e corrigido num branch local (`e744-passo2-rotas-da-conta`), rodando as 17 varreduras no laboratório local.
