@@ -6,7 +6,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, entrarNaPagina, novaSenha, no
   O Next monta o not-found.tsx da raiz em todo pedido e manda o resultado no HTML de cada página. A 404 lia os imóveis
   no servidor e desenhava três cartões: toda página do site carregava esses cartões (com preço) no próprio HTML, e
   pagava a consulta. O t348 acusava isso em /dashboard/leads ("R$ <número>" na tela do dono).
-   1. o HTML que o servidor manda para páginas sem vitrine (pública e logada) não tem cartão de imóvel nem preço;
+   1. o HTML que o servidor manda para páginas sem vitrine não tem cartão de imóvel (públicas) nem preço (tela logada);
    2. a 404 de verdade segue respondendo 404 e mostrando os destaques, que agora chegam pelo cliente.
 */
 const senha = novaSenha();
@@ -25,13 +25,13 @@ test.describe("T1661 — E961: a 404 fora do HTML das outras páginas", () => {
     await apagarContas([id]);
   });
 
-  test("páginas públicas sem vitrine: o HTML do servidor não traz cartão de imóvel nem preço", async ({ request }) => {
+  test("páginas públicas sem vitrine: o HTML do servidor não traz cartão de imóvel nem a vitrine da 404", async ({ request }) => {
+    // Sem cobrança de "R$" aqui: páginas de texto como /termos citam valores de propósito. O preço é cobrado na tela logada.
     for (const rota of ["/ajuda", "/auth", "/termos"]) {
       const r = await request.get(rota);
       expect(r.status(), rota).toBe(200);
       const html = await r.text();
       for (const marca of MARCAS) expect(html, `${rota}: "${marca}" no HTML`).not.toContain(marca);
-      expect(html, `${rota}: preço no HTML`).not.toMatch(/R\$\s?\d/);
     }
   });
 
