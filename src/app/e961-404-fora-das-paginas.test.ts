@@ -30,3 +30,12 @@ test("E961: a vitrine da 404 é de cliente e busca os imóveis só quando aparec
   assert.match(vitrine, /sm:grid-cols-2 sm:max-lg:\[&>:nth-child\(3\)\]:hidden lg:grid-cols-3/);
   assert.match(vitrine, /data-testid="nao-encontrada-destaques"/);
 });
+
+test("E961: enquanto busca, três cartões-fantasma na mesma grade (decisão do Gerente, ORDEM-DUET-069)", () => {
+  assert.equal((vitrine.match(/<SkeletonCartao \/>/g) ?? []).length, 3, "três cartões-fantasma");
+  // Uma grade só (constante GRADE) para o esqueleto e para os cartões: mesmas colunas, mesmo espaçamento, sem salto.
+  assert.match(vitrine, /<div className=\{GRADE\} data-testid="nao-encontrada-esqueleto">/);
+  assert.match(vitrine, /<div className=\{GRADE\} data-testid="nao-encontrada-destaques">/);
+  // O título da seção já aparece no esqueleto (não entra depois, empurrando a página).
+  assert.ok(vitrine.indexOf("Imóveis em destaque</h2>") < vitrine.indexOf("nao-encontrada-esqueleto"));
+});
