@@ -329,6 +329,8 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     const assinada = (await caixa(ids.beto, "estadia_aditivo_respondido")).find((m) => m.corpo.includes("Dora assinou o aditivo 1"));
     expect(assinada, "quem assinou primeiro avisa quem falta").toBeTruthy();
     for (const [quem, nome] of [[ids.dono, "Dora"], [ids.beto, "Beto"]] as const) {
+      // E744 (CI do #3849): o e-mail da remarcação sai depois da assinatura; espera ele chegar (como o do cancelamento acima).
+      await expect.poll(async () => (await caixa(quem, "estadia_remarcada")).length, { timeout: 30_000 }).toBeGreaterThanOrEqual(1);
       const [rem] = await caixa(quem, "estadia_remarcada");
       regua(rem.corpo, nome, "B", ["o aditivo 1 do contrato", "Meses: de 2 para 3", `a ${dataBR(novaSaida)}`]);
     }
