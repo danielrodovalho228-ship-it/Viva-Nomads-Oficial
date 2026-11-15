@@ -43,7 +43,7 @@ const LIGHT: Record<Light, { tone: string; label: string }> = {
   red: { tone: "bg-red-100 text-red-700", label: "Alto risco" },
 };
 
-type LeadStatus = "open" | "approved" | "rejecting" | "rejected";
+type LeadStatus = "open" | "approved" | "rejecting" | "rejected" | "expired";
 
 /** E541: abre a conversa DESTA candidatura (antes, a caixa abria a primeira da lista — de outra pessoa). */
 function hrefResponder(l: { conversaId?: string }): string {
@@ -54,6 +54,8 @@ function hrefResponder(l: { conversaId?: string }): string {
 function uiInicial(persisted: string | undefined): LeadStatus {
   if (persisted === "accepted") return "approved";
   if (persisted === "rejected") return "rejected";
+  // E968 (decisão do Gerente, ORDEM-DUET-073): a 3ª expiração da pré-aceitação é TERMINAL — sem Aceitar/Recusar.
+  if (persisted === "expired") return "expired";
   return "open";
 }
 
@@ -282,7 +284,11 @@ export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lea
                         <MessageSquare className="h-4 w-4" /> Responder pela plataforma
                       </ButtonLink>
                     )}
-                    {open ? null : st === "rejected" ? (
+                    {open ? null : st === "expired" ? (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-surface-2 px-3 py-2 text-sm font-medium text-muted" data-testid="lead-expirado">
+                        Pré-aceitação expirada (encerrada)
+                      </span>
+                    ) : st === "rejected" ? (
                       <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-sm font-medium text-red-600">
                         <X className="h-4 w-4" /> Recusado
                       </span>

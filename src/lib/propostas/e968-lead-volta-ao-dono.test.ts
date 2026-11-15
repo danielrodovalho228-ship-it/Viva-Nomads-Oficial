@@ -33,11 +33,18 @@ test("E968: lead aceito ANTES, à parte (outro accepted_at) → o lead fica como
   assert.equal(lead().status, "accepted");
 });
 
-test("E968: 3ª expiração (encerra) → o lead não é mexido aqui", async () => {
+test("E968: 3ª expiração é TERMINAL (ORDEM-DUET-073) → o lead vai a 'expired' e não há reabertura", async () => {
   const { banco, prazo, lead } = mundoCom({ reaberturas: 2 });
-  await rodarPreAceitacao(banco.admin, new Date(prazo.getTime() + 60_000));
+  const depois = new Date(prazo.getTime() + 60_000);
+  await rodarPreAceitacao(banco.admin, depois);
   assert.ok(banco.tabelas.propostas[0].pre_aceitacao_encerrada_em);
-  assert.equal(lead().status, "accepted");
+  assert.equal(lead().status, "expired");
+  for (const quem of ["owner", "tenant"] as const) {
+    const r = await reabrirNoBanco(banco.admin, "prop-1", quem, new Date(depois.getTime() + 60_000));
+    assert.equal(r.ok, false);
+  }
+  assert.equal(banco.tabelas.propostas[0].status, "expirada");
+  assert.equal(lead().status, "expired");
 });
 
 test("E968: reabrir devolve o lead a 'accepted' com o accepted_at da pré-aceitação; a taxa congelada nunca é escrita", async () => {

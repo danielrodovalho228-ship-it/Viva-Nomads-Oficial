@@ -11,6 +11,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { decisaoDoPreAceite, MSG_PRE_ACEITE_EXPIRADO } from "./pre-aceite-fechamento.ts";
+import { situacaoCandidatura } from "../candidaturas/status.ts";
 
 test("E968 — a pré-aceitação mais recente expirada barra o Fechamento (nunca o preço do anúncio)", () => {
   assert.equal(decisaoDoPreAceite({ status: "expirada", aceita_em: "2026-11-10T13:00:00Z" }), "expirada");
@@ -48,4 +49,12 @@ test("E968 — na expiração (volta ao dono) o lead aceito por ela volta a 'new
   assert.match(s, /if \(!encerra\) await devolverLeadAoDono\(admin, l\);/);
   assert.match(s, /update\(\{ status: "new", accepted_at: null \}\)\.eq\("id", l\.lead_id\)\.eq\("status", "accepted"\)\.eq\("accepted_at", l\.aceita_em\)/);
   assert.match(s, /await devolverLeadAceito\(admin, p\);\s*return \{ ok: true, prazo: r\.prazo/);
+});
+
+test("E968 (ORDEM-DUET-073): lead no estado terminal 'expired' — ao morador 'Não seguiu adiante'; ao dono sem Aceitar/Recusar", () => {
+  assert.equal(situacaoCandidatura("expired").label, "Não seguiu adiante");
+  const tela = ler("src/app/(dashboard)/dashboard/leads/leads-client.tsx");
+  assert.match(tela, /if \(persisted === "expired"\) return "expired";/);
+  assert.match(tela, /st === "expired" \? \(/);
+  assert.match(ler("src/lib/propostas/pre-aceitacao-servidor.ts"), /else await encerrarLead\(admin, l\);/);
 });

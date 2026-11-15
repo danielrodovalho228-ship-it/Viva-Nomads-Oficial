@@ -86,6 +86,12 @@ async function devolverLeadAoDono(admin: SupabaseClient, l: { lead_id?: string |
   await admin.from("leads").update({ status: "new", accepted_at: null }).eq("id", l.lead_id).eq("status", "accepted").eq("accepted_at", l.aceita_em);
 }
 
+/** E968 — 3ª expiração: o lead aceito por esta pré-aceitação vai ao estado final "expired" (terminal). */
+async function encerrarLead(admin: SupabaseClient, l: { lead_id?: string | null; aceita_em?: string | null }): Promise<void> {
+  if (!l.lead_id || !l.aceita_em) return;
+  await admin.from("leads").update({ status: "expired" }).eq("id", l.lead_id).eq("status", "accepted").eq("accepted_at", l.aceita_em);
+}
+
 /** E968 — a reabertura devolve o lead a "accepted" com o accepted_at original (o da pré-aceitação), sem recalcular nada. */
 async function devolverLeadAceito(admin: SupabaseClient, p: { lead_id?: string | null; aceita_em?: string | null }): Promise<void> {
   if (!p.lead_id || !p.aceita_em) return;
@@ -120,6 +126,9 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
         // estar aceito. Sem isso o Fechamento seguia aberto e usaria o preço do anúncio, saltando o congelamento.
         // A taxa congelada fica na proposta; a reabertura devolve o lead a "accepted" com o mesmo accepted_at.
         if (!encerra) await devolverLeadAoDono(admin, l);
+        // E968 (ORDEM-DUET-073): a 3ª expiração é TERMINAL — o lead aceito por esta pré-aceitação vai ao estado final
+        // "expired" (sem reabrir: reabrirNoBanco já recusa a encerrada; aceitar/recusar só valem de "new"/"accepted").
+        else await encerrarLead(admin, l);
         if (encerra) {
           resumo.encerradas++;
           await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoEncerrada, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO);
