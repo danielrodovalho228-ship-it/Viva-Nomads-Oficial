@@ -312,6 +312,9 @@ jobs:
             echo "## Laboratório — $(date -u +%Y-%m-%d) (20 fatias: 16 gerais + 4 da varredura t48)"
             node -e 'const r=JSON.parse(require("fs").readFileSync("tests/laboratorio/saida/resultado.json","utf8"));const s=r.stats||{};console.log("Passaram "+(s.expected??0)+" · falharam "+(s.unexpected??0)+" · instáveis "+(s.flaky??0)+" · pularam "+(s.skipped??0))' || true
             echo
+            # E744: listados × executados, falhas e tempo de CADA fatia (antes era preciso refazer o mapa à mão).
+            node scripts/lab/numeros-por-fatia.mjs fatias --esperadas 20 --saida tests/laboratorio/saida/por-fatia.json || true
+            echo
             echo "### Por spec (passou / falhou)"
             node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
             echo
