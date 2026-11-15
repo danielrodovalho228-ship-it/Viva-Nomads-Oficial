@@ -7,11 +7,12 @@ import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoEmDias } from "@/lib/contrato-periodo";
 import { diasDosTermos } from "./regras";
 import { COLUNAS_VERSAO, termosDaLinha, type LinhaVersao } from "@/lib/data/propostas-servidor";
-import { encerraNaExpiracao, lembretesDaPreAceitacao, linhaDeContexto, PRAZO_PRE_ACEITACAO_HORAS, prazoDoDono, reabrirPreAceitacao, textoDoPrazo, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_JANELA_TERMINOU, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO } from "./pre-aceitacao";
+import { deveEnviarLembrete, encerraNaExpiracao, inicioDaJanela, lembretesDaPreAceitacao, linhaDeContexto, prazoDoDono, reabrirPreAceitacao, textoDoPrazo, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_JANELA_TERMINOU, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO } from "./pre-aceitacao";
 
 /*
   E722 — roda a pré-aceitação de 72 h. ATRÁS DA CHAVE PRE_ACEITACAO_72H_ATIVA (desligada): sem ela, não faz nada.
-    • lembretes de 24 h e 6 h antes do fim (uma vez cada; nunca no silêncio de 22h às 7h, pela regra pura);
+    • lembretes de 24 h e 6 h antes do fim (uma vez cada; nunca no silêncio de 22h às 7h: pela regra pura no planejamento e,
+      E959, conferido de novo no envio, no tique do cron);
     • vencida sem contrato: a proposta expira SEM punição (status "expirada" + pre_aceitacao_expirou_em), avisa os dois; a candidatura volta ao dono com o
       relógio dele (1 dia útil, recomeça a cada volta). A 3ª expiração (depois de 2 reaberturas) ENCERRA a candidatura e avisa o morador;
     • perdeu a corrida: expira com a mensagem clara e NADA volta sozinho para a fila; só o dono reabre, à mão.
@@ -131,11 +132,12 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
       }
       continue;
     }
-    const inicio = new Date(prazo.getTime() - PRAZO_PRE_ACEITACAO_HORAS * 3_600_000);
+    // E959: o início REAL da janela (o aceite, quando o prazo foi encurtado pela entrada) e o envio só fora do silêncio,
+    // pela regra única de notifications/silencio.ts, e antes do fim.
+    const inicio = inicioDaJanela(prazo, l.aceita_em ? new Date(l.aceita_em) : null);
     for (const lem of lembretesDaPreAceitacao(inicio, prazo)) {
       const col = lem.horasAntes === 24 ? "pre_aceitacao_lembrete_24h_em" : "pre_aceitacao_lembrete_6h_em";
-      if (l[col] || agora.getTime() < lem.enviarEm.getTime()) continue;
-      if (l.aceita_em && lem.enviarEm.getTime() < Date.parse(l.aceita_em)) continue;
+      if (l[col] || !deveEnviarLembrete(lem.enviarEm, prazo, agora)) continue;
       const { data: marcou } = await admin.from("propostas").update({ [col]: agora.toISOString() }).eq("id", l.id).is(col, null).select("id").maybeSingle();
       if (!marcou) continue;
       resumo.lembretes++;

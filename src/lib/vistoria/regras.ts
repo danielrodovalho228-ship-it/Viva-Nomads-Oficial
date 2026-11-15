@@ -9,6 +9,7 @@
     plataforma só registra (o avaliador marca "recebido", o dono confirma).
 */
 import { chaveCidade } from "../cidades.ts";
+import { emSilencio } from "../notifications/silencio.ts";
 
 export const ROTULO_CATEGORIA_VISTORIA = "Avaliação de imóveis";
 /** E717: faixa da página pública de um avaliador de conta de teste (igual ao "Documento de teste" do /conferir). */
@@ -364,6 +365,15 @@ export function visitaAmanha(agendadoPara: string, hojeBrasilia: string): boolea
   const d = new Date(Date.parse(`${hojeBrasilia}T12:00:00-03:00`) + 86_400_000).toISOString().slice(0, 10);
   const alvo = new Date(Date.parse(agendadoPara) - 3 * 3_600_000).toISOString().slice(0, 10);
   return alvo === d;
+}
+
+/**
+ * E959 (varredura da mesma classe) — o lembrete D-1 da visita sai AGORA? A visita é amanhã E não é o silêncio das 22h às
+ * 7h (regra única de notifications/silencio.ts). O cron da vistoria roda de hora em hora (pg_cron "7 * * * *"): o 1º tique
+ * do dia anterior é às 00h07, dentro do silêncio; com a checagem, o lembrete sai no tique das 7h07 do mesmo dia.
+ */
+export function lembreteD1Devido(agendadoPara: string, hojeBrasilia: string, agora: Date): boolean {
+  return visitaAmanha(agendadoPara, hojeBrasilia) && !emSilencio(agora);
 }
 
 // ── Avaliação mútua: só CONDUTA, nunca o resultado ─────────────────────────────────────────────────────────────
