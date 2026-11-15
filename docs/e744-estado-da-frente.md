@@ -12,6 +12,8 @@
   5. Migração: uma pista por vez. Avisar o Gerente ANTES de abrir qualquer migração.
   6. Nenhum PR mescla com o verde de uma main que já mudou: antes do merge, atualiza sobre a main do momento e roda CI + lab-crítico outra vez.
   7. Consumo do plano: quando não estiver visível, escrever "não visível"; nunca estimar.
+- **Ordem em vigor desde 15/11, 14:20 UTC (Prompt A do coordenador, ORDEM-DUET-041):** a entrega crítica é a **tabela única de classificação das 96 specs vermelhas**, no PR #3832, até quarta 18/11 às 07:00 CST. Colunas: spec, classe (teste velho / infra-tempo / defeito real / instável), evidência, ação, pista dona. Teste velho só com decisão citada; sem decisão é defeito real. A Fable só classifica e corrige o que é da área dela (casca do painel, preço/cartão, `proxy.ts`, store de sessão); as correções de teste velho e infra/tempo vão agrupadas para a Code 2; os defeitos reais vão como itens novos para o Gerente. A tabela vale mais que as correções. **A tabela está em `docs/e744-classificacao-96-specs.md`.**
+- **Plano de aceleração (ORDEM-DUET-046, 15/11):** (a) todo PR leva o pacote de evidência: log dos testes com o SHA do commit testado e prints a 390 e 1280 px das superfícies mudadas, dizendo o que rodou e o que não rodou; evidência não fecha item. (b) Antes de cada ordem da fila, conferir se ela ainda vale sobre a main do momento; se não valer, avisar o Gerente antes. (c) A sessão não troca no meio do Prompt A.
 - **Regras da casa que seguem valendo:** `CLAUDE.md` e `AGENTS.md` (nunca merge, nunca push na main, plano só na descrição do PR, "pronto" só com a saída do teste colada).
 - **Depois do E744** (só para saber a fila; nada disso arranca agora): Família 5 (Painel/conta): resíduos do E793 → E900 (só depois da Onda 0 do E793), e na mesma família o E85 e o E167 (navegação da Conta/morador).
 
@@ -456,6 +458,15 @@ Tabela completa (falhas no CI, falhas no local, situação, grupo e o começo do
 
 **Próximo dentro do Passo 3:** (1) flutuante na busca; (2) identidade/valor no fio, com a prova de onde está o achado; (3) assistente de anúncio, pela causa comum; (4) avulsos. Um PR draft por grupo coerente, respeitando o tempo do portão.
 
+### 7.4 Classificação das 96 specs (Prompt A) — primeira passada completa em 15/11
+
+Arquivo: `docs/e744-classificacao-96-specs.md`. Resultado: 59 teste velho, 31 defeito real, 1 infra/tempo, 5 instável; 26 com a Fable, 44 para a Code 2, 26 para o Gerente encaminhar; 16 itens novos de defeito real.
+
+- **Achado urgente (t281):** excluir rascunho de anúncio falha para qualquer dono desde o #3595 (13/11), também em produção. Detalhe na seção 2 daquele arquivo.
+- A `main` avançou para `403858f7` (#3833, 06:34 UTC de 15/11): o flutuante saiu de novo da `/buscar`. O branch do PR está sobre ela.
+- Como foi feito, o que rodou e os limites: seções 7 e 8 daquele arquivo.
+- **O que falta:** rodadas isoladas das specs "instável" que ainda não têm as 3 repetições; conferir os 8 specs da busca a 390 px na próxima rodada completa; o julgamento visual.
+
 ## 8. Dúvidas (por extenso)
 
 1. **Rodada na main de hoje. RESPONDIDA (Decisão A, 15/11): disparar à mão, agora.** Disparada às 01:43 UTC de 15/11: run [43664453319](https://github.com/danielrodovalho228-ship-it/Viva-Nomads-Oficial/actions/runs/43664453319), `workflow_dispatch`, main `c950ec82` (já com o #3831). O resultado entra na seção 7 e passa a ser a base da triagem.
@@ -488,3 +499,5 @@ Tabela completa (falhas no CI, falhas no local, situação, grupo e o começo do
 - **15/11, 03:27 UTC.** Passo 2 verificado no local (315 verdes sem nova tentativa) e confirmado num branch local, sem push (Dúvida 8).
 - **15/11, 12:22 UTC.** Sessão retomada depois de um reinício do ambiente (o laboratório local caiu junto; foi refeito com banco novo). Main sem mudança (`c950ec82`). Passo 3 em curso; "erro completo no log da fatia" acrescentado ao Passo 1.
 - **15/11, 14:15 UTC.** Rodada local da triagem concluída (seção 7.3): 66 specs reproduzem com o mesmo erro do CI. CI do PR #3832 verde também no commit `b2c430af`.
+- **15/11, 14:20 UTC.** ORDEM-DUET-041 recebida: a triagem vira a tabela única das 96 specs; correção só do que é da minha área. Main em `403858f7` (#3833); branch do PR atualizado sobre ela.
+- **15/11, 15:15 UTC.** Tabela das 96 specs completa em primeira passada (`docs/e744-classificacao-96-specs.md`). ORDEM-DUET-046 recebida (pacote de evidência com SHA; conferir a ordem contra a main; sem troca de sessão no meio do Prompt A).
