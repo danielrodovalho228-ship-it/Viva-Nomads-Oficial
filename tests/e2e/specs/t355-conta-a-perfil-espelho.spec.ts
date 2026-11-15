@@ -168,7 +168,10 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       const p = await como(browser, dono.email, w);
       await p.goto("/dashboard/conta#perfil-publico", { waitUntil: "domcontentloaded" });
       await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-      await expect(p).toHaveURL(/\/dashboard\/conta\/perfil$/);
+      // E798: com o cookie da largura já gravado, o servidor manda /dashboard/conta ao Perfil e a âncora do próprio
+      // Perfil "fica onde está" (largura-e-ancora.tsx); sem o cookie, a página troca o endereço e a âncora sai. Os dois
+      // chegam ao Perfil — cobrar a URL sem âncora fazia o teste depender de quem chegava primeiro (4 de 8 na main).
+      await expect.poll(() => new URL(p.url()).pathname, { timeout: 10_000 }).toBe("/dashboard/conta/perfil");
       await p.getByTestId("perfil-cartao").waitFor();
       // E55: a Helena é proprietária, então o espelho abre no do proprietário; o do morador fica em "Ver como morador".
       const papel = p.locator('[data-testid="espelho-papel"]:visible').first();

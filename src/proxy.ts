@@ -3,7 +3,7 @@ import { rotaDetalheContrato } from "@/lib/contrato-rota";
 import { destinoLeitorQa, rotaLeitorQa } from "@/lib/notifications/caixa-teste";
 import { createServerClient } from "@supabase/ssr";
 import { cookiesRenovados } from "@/lib/supabase/cookies-renovados";
-import { COOKIE_TELA, redirecionamentoDaConta } from "@/lib/conta/redirecionar-no-servidor";
+import { COOKIE_TELA, COOKIE_VEIO_DA_CONTA, VIDA_VEIO_DA_CONTA_S, marcaVindaDaConta, redirecionamentoDaConta } from "@/lib/conta/redirecionar-no-servidor";
 import {
   isInternalPath,
   acessoInterno,
@@ -122,6 +122,8 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
     // Depende do cookie deste aparelho (largura da tela): nunca em cache compartilhado.
     const r = NextResponse.redirect(new URL(contaParaOnde, request.url));
     r.headers.set("Cache-Control", "private, no-store");
+    // O cookie da largura pode estar desatualizado: a marca deixa o Perfil conferir a tela e voltar ao menu no celular.
+    if (marcaVindaDaConta(pathname)) r.cookies.set(COOKIE_VEIO_DA_CONTA, "1", { path: "/dashboard/conta", maxAge: VIDA_VEIO_DA_CONTA_S, sameSite: "lax" });
     return r;
   }
 
