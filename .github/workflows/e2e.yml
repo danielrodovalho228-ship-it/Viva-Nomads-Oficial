@@ -117,9 +117,10 @@ jobs:
           fi
           echo "BASE_URL: ${TESTES_BASE_URL}"
           NO=$(curl -s -o /dev/null -w "%{http_code}" "${TESTES_BASE_URL}/api/health" || echo "000")
+          # Só o header do bypass: com x-vercel-set-bypass-cookie a Vercel responde 307 (redireciona com Set-Cookie)
+          # e o curl não segue — o 307 com o segredo certo parecia falha (15/11). O Playwright manda os dois e segue.
           WITH=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" \
-            -H "x-vercel-set-bypass-cookie: true" \
             "${TESTES_BASE_URL}/api/health" || echo "000")
           echo "HTTP /api/health  ->  sem header: ${NO}   com header: ${WITH}"
           if [ "${WITH}" = "200" ]; then

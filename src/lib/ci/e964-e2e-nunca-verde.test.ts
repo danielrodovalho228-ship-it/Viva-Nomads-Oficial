@@ -95,3 +95,13 @@ test("E964 — workflow: a completude roda depois da suíte e o modo público fi
   assert.match(jobE2e, /--list/);
   assert.match(yml, /modo público: specs logados não rodam em produção/);
 });
+
+test("E964 — diagnóstico do bypass: o curl manda só x-vercel-protection-bypass (o set-bypass-cookie responde 307 com Set-Cookie)", () => {
+  // 15/11: com o segredo certo a prévia respondeu 307 ao curl e o passo exigia 200 — a Vercel define o cookie
+  // "usando um redirecionamento com Set-Cookie". O navegador do Playwright segue o 307; o curl do diagnóstico não.
+  const i = jobE2e.indexOf("name: Diagnóstico do bypass da Vercel");
+  assert.ok(i > 0, "passo do diagnóstico");
+  const passo = jobE2e.slice(i, jobE2e.indexOf("\n      - ", i + 1));
+  assert.match(passo, /x-vercel-protection-bypass/);
+  assert.doesNotMatch(passo, /-H "x-vercel-set-bypass-cookie/);
+});
