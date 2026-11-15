@@ -10,7 +10,8 @@ import { test, expect, type Page } from "@playwright/test";
  *  6. Sem resultado: "Nenhum imóvel com estes filtros" e as saídas do vazio.
  *  Em 390 e 1280 px, com prints.
  */
-const ORDEM = ["pilula-datas", "pilula-local", "pilula-tipo", "pilula-preco", "pilula-nivel", "pilula-mais", "pilula-ordenar", "pilula-mapa"];
+// E946 (asserção alterada, 15/11): o Nível vai por último.
+const ORDEM = ["pilula-datas", "pilula-local", "pilula-tipo", "pilula-preco", "pilula-mais", "pilula-ordenar", "pilula-mapa", "pilula-nivel"];
 const semRolagem = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
@@ -29,13 +30,14 @@ for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
       const ids = await pilulas.evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")));
       // E452: a pílula Nível só existe quando algum anúncio do resultado tem nível; a ordem das demais não muda.
       expect(ids).toEqual(ids.includes("pilula-nivel") ? ORDEM : ORDEM.filter((i) => i !== "pilula-nivel"));
-      // Do tablet para cima é uma linha só. No celular (E710) as três ações ficam numa linha própria, sempre à vista, e
-      // (E780 reaberto, 14/11) os filtros quebram linha em vez de rolar de lado: duas linhas ou mais, as ações por último.
+      // Do tablet para cima é uma linha só. No celular (E946) os chips correm numa sequência só, sempre à vista, e
+      // (E780 reaberto, 14/11) os filtros quebram linha em vez de rolar de lado: duas linhas ou mais, o Nível por último.
       const ys = await pilulas.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
       if (largura >= 640) expect(new Set(ys).size, `tops ${ys}`).toBe(1);
       else {
         expect(new Set(ys).size, `tops ${ys}`).toBeGreaterThanOrEqual(2);
-        expect(ys.slice(-3).every((y) => y === ys[ys.length - 1] && y > Math.max(...ys.slice(0, -3))), `ações em linha própria (tops ${ys})`).toBe(true);
+        // E946: uma sequência só, que quebra linha — os tops nunca voltam para cima e o último chip fica na última linha.
+        expect(ys.every((y, i) => i === 0 || y >= ys[i - 1]), `chips em sequência (tops ${ys})`).toBe(true);
       }
       await expect(page.getByTestId("pilula-local")).toHaveAttribute("data-valor", "Uberlândia");
 
