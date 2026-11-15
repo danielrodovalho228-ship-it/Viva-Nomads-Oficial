@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { esperarTelaEstreita } from "../fixtures/tela-do-aparelho";
 
 /*
   T568 — E176-IMPL parte 2 (mesma especificação aprovada): "Notificações" é uma página só (a do sino, na casca da
@@ -43,6 +44,10 @@ test.describe("T568 — E176 parte 2: Conta", () => {
 
   test("390 px — o menu da Conta lista Segurança e verificações; Seu perfil público tem '← Perfil'", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    // E744: a sessão gravada vem de 1280 px com o cookie da largura em "larga" (o servidor mandaria a Conta para o Perfil).
+    // A 390 px a casca regrava "estreita" na primeira tela do painel; só então o teste abre a Conta.
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await esperarTelaEstreita(page);
     await page.goto("/dashboard/conta", { waitUntil: "networkidle" });
     await expect(page.getByTestId("conta-menu").getByRole("link", { name: /Segurança e verificações/ })).toHaveAttribute("href", "/dashboard/conta/seguranca");
     await expect(page.getByTestId("conta-menu").getByRole("link", { name: /Notificações/ })).toHaveAttribute("href", "/dashboard/notificacoes");

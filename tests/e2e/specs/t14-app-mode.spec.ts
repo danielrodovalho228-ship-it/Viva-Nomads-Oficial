@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { esperarTelaEstreita } from "../fixtures/tela-do-aparelho";
 
 /**
  * T14 — MODO APP (Android/iPhone). Roda no projeto `app-mobile` (390x844 com o
@@ -164,6 +165,8 @@ test.describe("T14 — Modo app", () => {
       // e a Conta (tela neutra) mantém o último contexto.
       await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
       await esperarModoApp(page);
+      // E744: a sessão gravada vem de 1280 px com o cookie da largura em "larga"; a 390 px a casca regrava "estreita".
+      await esperarTelaEstreita(page);
       await page.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("modo-chip")).toHaveCount(0);
       await expect(page.getByRole("radio", { name: /Propriet|Inquilino/ })).toHaveCount(0);
