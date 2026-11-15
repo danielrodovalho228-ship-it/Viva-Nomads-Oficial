@@ -54,6 +54,25 @@ export function categoriasComDaUrl(atuais: readonly string[], daUrl: string | nu
   return [...atuais, daUrl];
 }
 
+/**
+ * E915: a categoria pedida na URL (?categoria=) não existe no catálogo? Vazio é "Todas" — não é inexistente. A busca
+ * diz isso com franqueza (em vez de cair calada em "Todas") e o "Quero ser avisado" não se arma para ela.
+ */
+export function categoriaInexistente(daUrl: string | null | undefined): boolean {
+  return !!daUrl && !categoriaValida(daUrl);
+}
+/** E915: o aviso da categoria inexistente — o valor da URL vai encurtado (nada de texto longo colado pela URL). */
+export function avisoCategoriaInexistente(daUrl: string): string {
+  const v = daUrl.trim().slice(0, 40);
+  return `A categoria "${v}" não existe. Mostramos todas as categorias: escolha uma na lista para filtrar.`;
+}
+/** E915: a frase de apoio do "Quero ser avisado" — sem categoria escolhida ("Todas"), não fala em "desta categoria". */
+export function textoApoioAviso(semCategoria: boolean): string {
+  return semCategoria
+    ? "Avisamos você quando houver um parceiro na sua cidade."
+    : "Avisamos você quando houver um parceiro desta categoria na sua cidade.";
+}
+
 // ── Taxa de serviço (10%, todas as categorias; fotógrafos inclusive) ────────────────────────────────────────────
 export const TAXA_SERVICO_PARCEIRO = 0.1;
 
