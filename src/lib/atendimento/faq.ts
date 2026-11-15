@@ -20,6 +20,7 @@ import {
   TIPOS_PARCEIRO,
 } from "./parceiros-texto.ts";
 import { OBRIGATORIOS_ROTULOS } from "../anuncio/prontidao.ts";
+import { CONFERENCIA_PARTES, CONFERENCIA_VALIDADE, fraseConferenciaDevolve } from "../fiscal/conferir.ts";
 
 export interface Pergunta {
   id: string;
@@ -159,6 +160,14 @@ export const FAQ: Pergunta[] = [
       `Não pague nada fora do que está no contrato assinado pela plataforma. A Viva Nomads nunca pede Pix ou depósito. Abra um chamado em "Segurança, golpe ou pagamento por fora". ${frasePrazo("p1")}`,
     termos: ["golpe", "pix", "por fora", "fraude", "pagamento"],
     links: [LINK_SEGURANCA],
+  },
+  {
+    // E887 (lacuna A-276): como conferir um documento — os mesmos textos da página /conferir (fonte única em fiscal/conferir).
+    id: "conferir-documento",
+    pergunta: "Como confiro se um documento da Viva é verdadeiro?",
+    resposta: `Todo documento gerado pela Viva Nomads (recibo, contrato, laudo, conferência do imóvel) traz no rodapé um código de conferência de 32 letras e números, depois de "com o código". Abra a página Conferir documento e digite o código (ou use o link impresso no documento). O número do documento sozinho não confere nada. ${fraseConferenciaDevolve()} ${CONFERENCIA_PARTES} ${CONFERENCIA_VALIDADE}`,
+    termos: ["conferir", "verificar", "autenticidade", "verdadeiro", "falso", "codigo de conferencia", "recibo", "documento", "validade"],
+    links: [{ rotulo: "Conferir um documento", href: "/conferir" }],
   },
   {
     // E907: o caminho da exclusão da conta — os mesmos fatos da página /excluir-conta (dois caminhos, bloqueio, prazos).

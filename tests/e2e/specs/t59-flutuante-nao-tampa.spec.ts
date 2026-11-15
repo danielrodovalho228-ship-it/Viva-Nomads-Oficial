@@ -51,12 +51,13 @@ for (const largura of [360, 390]) {
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.getByTestId("nav-menu").click();
       await expect(page.getByTestId("nav-menu-lista").getByRole("link", { name: "Fale com a Viva" })).toHaveAttribute("href", "/ajuda/fale-com-a-viva");
+      // E931 (asserção alterada): /ajuda e /buscar voltaram a ter o flutuante (o E95 acabou com o E246); no celular ele
+      // segue oculto, como em todas as telas. A ajuda da /buscar continua também como link no fim da lista.
       await page.goto("/ajuda", { waitUntil: "networkidle" });
-      await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
+      await expect(flut).toBeHidden();
       await nadaTampa(page);
-      // E95: na /buscar o flutuante não aparece (cobria os cartões); a ajuda fica como link no fim da lista.
       await page.goto("/buscar", { waitUntil: "networkidle" });
-      await expect(page.getByTestId("fale-com-a-viva-raiz")).toHaveCount(0);
+      await expect(flut).toBeHidden();
       await expect(page.getByTestId("buscar-ajuda")).toContainText("Fale com a Viva");
       await nadaTampa(page);
     });
@@ -116,7 +117,7 @@ for (const largura of [360, 390]) {
 
 /** Ordem 4f8d17c6: mesmo formato e mesmos tokens do botão primário em todas as páginas e larguras. */
 test("4f8d17c6 — flutuante idêntico em /, /precos e /como-funciona a 768 e 1280 px (a 390, E246: não aparece)", async ({ page }) => {
-  // 9 páginas (3 larguras × 3 rotas): não cabe nos 45 s padrão. E95: a /buscar saiu (lá o flutuante não aparece).
+  // 9 páginas (3 larguras × 3 rotas): não cabe nos 45 s padrão. (A /buscar tem o flutuante desde o E931; o formato é conferido no t1645.)
   test.setTimeout(180_000);
   const estilos = new Set<string>();
   for (const largura of [390, 768, 1280]) {

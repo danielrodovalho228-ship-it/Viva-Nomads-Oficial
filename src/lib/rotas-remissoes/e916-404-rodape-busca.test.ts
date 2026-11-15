@@ -16,3 +16,20 @@ test("a 404 tem um campo de busca que leva à /buscar e o caminho para a Ajuda",
   assert.match(s, /name="local"/);
   assert.match(s, /href="\/ajuda"/);
 });
+
+/* E916 (re-prova, ORDEM-DUET-019): o cabeçalho tinha só o logo. A 404 passa a usar o cabeçalho padrão do site (o
+   mesmo Navbar das páginas públicas: Imóveis · Anunciar · Empresas · Parceiros · Entrar) e, no celular, a mesma barra
+   de abas. Trava a casca completa: cabeçalho com navegação + busca + rodapé. */
+test("E916: a 404 tem o cabeçalho padrão com a navegação do site (não só o logo)", () => {
+  assert.match(s, /import \{ Navbar \} from "@\/components\/layout\/navbar"/);
+  assert.match(s, /<Navbar \/>/);
+  assert.doesNotMatch(s, /<header[^>]*>\s*(\{\/\*[\s\S]*?\*\/\}\s*)?<Logo/, "cabeçalho só com o logo voltou");
+  assert.match(s, /import \{ MobileTabBar \} from "@\/components\/layout\/mobile-tab-bar"/);
+});
+
+test("E916: a casca completa está na ordem — cabeçalho, busca, rodapé", () => {
+  const nav = s.indexOf("<Navbar />");
+  const busca = s.indexOf('data-testid="nao-encontrada-busca"');
+  const rodape = s.indexOf("<Footer />");
+  assert.ok(nav > 0 && busca > nav && rodape > busca, "ordem cabeçalho → busca → rodapé");
+});
