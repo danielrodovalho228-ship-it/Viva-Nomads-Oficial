@@ -319,6 +319,9 @@ test.describe("T193 — propostas", () => {
       const respostas: string[] = [];
       b.on("response", async (r) => {
         if (!r.url().includes("localhost")) return;
+        // Asserção alterada (E965): fora os arquivos estáticos do build (/_next/static) — os chunks trazem os dados de
+        // demonstração da main (src/lib/demo/seed.ts: monthlyPrice 2900), que não são resposta do servidor sobre esta proposta.
+        if (r.url().includes("/_next/static/")) return;
         try {
           respostas.push(await r.text());
         } catch {
