@@ -67,11 +67,9 @@ test("E82-A: 'Onde você vai trabalhar ou estudar?' e a caixa 'Descreva o lugar 
   assert.match(busca, /topo=\{[\s\S]*?data-testid="folha-descreva"/);
 });
 
-// E931 (asserção alterada): o E95 escondia a bolha na /buscar porque no celular ela cobria os cartões; desde o E246 ela
-// some no celular em todas as telas, e a /buscar volta a ter o botão (posição padrão). O link no fim da lista fica.
-test("E931: a /buscar tem o 'Fale com a Viva' flutuante e, também, a ajuda como link no fim", () => {
+test("E95: a bolha 'Fale com a Viva' não cobre a busca; a ajuda fica como link no fim", () => {
   const chat = ler("components/ajuda/viva-chat.tsx");
-  assert.doesNotMatch(chat.split("\n").find((l) => l.includes("const ESCONDER")) ?? "", /"\/buscar"/);
+  assert.match(chat.split("\n").find((l) => l.includes("const ESCONDER")) ?? "", /"\/buscar"/);
   assert.match(busca, /data-testid="buscar-ajuda"/);
 });
 

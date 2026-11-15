@@ -26,10 +26,11 @@ import { buttonClasses } from "@/components/ui/button";
 // "Perfil"; nesta tela a Ajuda da Conta já oferece o "Fale com a Viva".
 // "/dashboard/mensagens": a tela já é uma conversa (com a aba Suporte); no computador o botão ficava em cima do
 // "Enviar" da caixa de mensagem e o proprietário não conseguia mandar a resposta (t182).
-// E931 (fecha o resíduo do E839): /buscar e /ajuda voltam a ter o botão, na posição padrão das outras páginas públicas.
-// O motivo do E95 ("/buscar": no celular o botão sentava sobre o título dos cartões) acabou com o E246 — no celular o
-// botão some em todas as telas. Na Central de Ajuda o botão leva ao chat; só a própria página do chat fica sem ele.
-export const ESCONDER = ["/ajuda/fale-com-a-viva", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
+// E931 (fecha o resíduo do E839): a Central de Ajuda tem o botão, na posição padrão; só a própria página do chat fica sem ele.
+// "/buscar" (E95, confirmado pelo Gerente na ORDEM-DUET-030 depois da main vermelha de c950ec8): no computador o botão
+// cobre a área dos filtros ("Mais filtros", t10/F3) e a varredura a 390 px prova cobertura (t274); a ajuda da busca fica
+// como link no fim da lista.
+export const ESCONDER = ["/buscar", "/ajuda/fale-com-a-viva", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
 const CHAVE = CHAVE_CONVERSA_CHAT;
 
 function carregar(): MsgChat[] {
