@@ -153,7 +153,7 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 | `e293-limpeza-retencao` | 04:17 |
 | `limpar-eventos-antigos` | 04:30, no dia 1 de cada mês |
 
-**GitHub Actions** (`.github/workflows`, 12 fluxos †): CI (lint, tipos, testes unitários e gates), E2E (Playwright), Lab crítico, Laboratório noturno, Aplicar migrações em produção (no merge da `main`), Backup noturno, Ensaio do backup, Teste de restauração, Aplicar e-mails de conta no Supabase, o lembrete correspondente, Linhas de base visuais e Admin observador da QA.
+**GitHub Actions** (`.github/workflows`, 13 fluxos †): CI (lint, tipos, testes unitários e gates), E2E (Playwright), Lab crítico, Laboratório noturno, Aplicar migrações em produção (no merge da `main`), Backup noturno, Ensaio do backup, Teste de restauração, Aplicar e-mails de conta no Supabase, o lembrete correspondente, Linhas de base visuais, Admin observador da QA e Segurança do merge (status "base-atual" em cada PR aberto para a main e aviso de main vermelha; só lê e avisa).
 
 ---
 
