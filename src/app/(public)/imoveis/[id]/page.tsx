@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     // Canonical próprio da página (auto-referente).
     alternates: { canonical: `/imoveis/${property.id}` },
     // Anúncio de EXEMPLO (ilustrativo): fora do Google (noindex), mas ainda
-    // visível ao visitante com o selo "Exemplo ilustrativo".
+    // visível ao visitante com o selo "Anúncio de exemplo".
     ...(isExemplo(property.id) || ehAnuncioDeTeste(property.title) ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title,

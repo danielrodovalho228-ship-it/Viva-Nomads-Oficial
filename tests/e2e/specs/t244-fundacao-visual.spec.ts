@@ -96,7 +96,8 @@ async function conferirCartao(cartao: Locator, onde: string) {
   // E356: todo cartão mostra "R$ Y em N mês/meses" (com N = 1, "em 1 mês"). E899: o total tem linha própria (antes vinha depois
   // de "/mês · ", na mesma linha do preço) e fecha com o aviso curto.
   await expect(cartao.getByTestId("cartao-total-estadia")).toHaveText(/^R\$\s?[\d.,]+ em \d+ (mês|meses)$/);
-  await expect(cartao.getByTestId("cartao-aviso")).toHaveText(/^(tudo incluído|água, luz e gás à parte)$/);
+  // E923: contas fixas sem estimativa dizem "água, luz e gás não informados" (antes: "tudo incluído").
+  await expect(cartao.getByTestId("cartao-aviso")).toHaveText(/^(tudo incluído|água, luz e gás à parte|água, luz e gás não informados)$/);
   await expect(cartao.getByTestId("cartao-sintese")).toContainText(/\d+ quartos?/);
   expect((await estilo(cartao.getByTestId("cartao-titulo"))).cor, `${onde}: texto secundário #3F3F3F`).toBe(SECUNDARIO);
 }

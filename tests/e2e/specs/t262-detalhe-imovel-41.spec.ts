@@ -119,19 +119,23 @@ for (const largura of LARGURAS) {
       await expect(page.getByText(/Tempo até/)).toHaveCount(0);
     });
 
-    test("valor: 'R$ X/mês · R$ Y em N meses' pela duração da busca; N = 1 mostra só '/mês'; 'a Viva não segura dinheiro'", async ({ page }) => {
+    // E920 (Gerente, 14/11): o total da página fica no período de referência (a estadia mínima, como o cartão). Antes este teste
+    // guardava "meses: 3" na última busca do aparelho e esperava "R$ Y em 3 meses": a página trocava de período sozinha depois
+    // de carregar. Agora, com a busca de 3 meses guardada, o ube-001 mostra "R$ Y em 1 mês" (a estadia mínima dele).
+    test("valor: 'R$ X/mês · R$ Y em N meses' pelo período de referência (não pela última busca guardada); 'a Viva não segura dinheiro'", async ({ page }) => {
       await page.addInitScript(() => localStorage.setItem("vn:ultima-busca", JSON.stringify({ inicio: "", meses: 3, pessoas: 0 })));
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const num = (t: string) => Number(t.replace(/[^\d,]/g, "").replace(",", "."));
       if (largura === 390) {
         const barra = page.getByTestId("barra-fixa-imovel");
         await expect(barra).toBeVisible();
         const mes = num(await barra.getByTestId("barra-preco-mes").innerText());
-        await expect(barra.getByTestId("barra-total-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 3 meses/);
+        await expect(barra.getByTestId("barra-total-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 1 mês/);
         // E254-A: o total do período da barra é o do cartão de preço (a mesma função, com os pagamentos únicos).
-        const totalBarra = num((await barra.getByTestId("barra-total-estadia").innerText()).replace(/em 3 meses/, ""));
-        expect(totalBarra).toBeGreaterThanOrEqual(mes * 3 - 0.5);
-        expect(totalBarra).toBe(num((await page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, "")));
+        const totalBarra = num((await barra.getByTestId("barra-total-estadia").innerText()).replace(/em 1 mês/, ""));
+        expect(totalBarra).toBeGreaterThanOrEqual(mes - 0.5);
+        expect(totalBarra).toBe(num((await page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia").innerText()).replace(/em 1 mês/, "")));
         // Decisão do Muse (31/10): a barra não repete "A Viva não segura dinheiro"; a frase oficial sob o botão diz que o
         // pagamento vai direto ao proprietário. E694: no EXEMPLO não há botão de pedir, então nem a frase sob ele (a frase vale
         // no anúncio real: t75/t398).
@@ -142,16 +146,16 @@ for (const largura of LARGURAS) {
       } else {
         const cartao = page.locator("#cartao-preco");
         const mes = num(await cartao.getByTestId("cartao-lateral-mes").innerText());
-        await expect(cartao.getByTestId("cartao-lateral-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 3 meses/);
-        // E254-A: o total do período = 3 × total do mês + os pagamentos únicos (preparação, limpeza de saída), com a conta aberta.
-        const totalPeriodo = num((await cartao.getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, ""));
+        await expect(cartao.getByTestId("cartao-lateral-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 1 mês/);
+        // E254-A: o total do período = 1 × total do mês + os pagamentos únicos (preparação, limpeza de saída), com a conta aberta.
+        const totalPeriodo = num((await cartao.getByTestId("cartao-lateral-estadia").innerText()).replace(/em 1 mês/, ""));
         const conta = await cartao.getByTestId("cartao-lateral-estadia-conta").innerText();
-        expect(conta).toMatch(/^3 × R\$/);
+        expect(conta).toMatch(/^1 × R\$/);
         const unicos = [...conta.matchAll(/\+ [^R]*R\$\s?([\d.]+(?:,\d{2})?)/g)].reduce((s, m) => s + num(m[1]), 0);
-        expect(totalPeriodo).toBeCloseTo(mes * 3 + unicos, 0);
+        expect(totalPeriodo).toBeCloseTo(mes + unicos, 0);
         await expect(cartao.getByTestId("cartao-nao-segura")).toContainText("A Viva não segura dinheiro");
       }
-      // N = 1: o "/mês" acompanha o mensal e o total do período é "R$ Y em 1 mês" (E777: o total diz sempre N mês/meses).
+      // Com outra busca guardada (1 mês) e a página recarregada, o total é o mesmo: "R$ Y em 1 mês" (E777: sempre N mês/meses).
       await page.evaluate(() => localStorage.setItem("vn:ultima-busca", JSON.stringify({ inicio: "", meses: 1, pessoas: 0 })));
       await page.reload({ waitUntil: "domcontentloaded" });
       const estadia = largura === 390 ? page.getByTestId("barra-total-estadia") : page.getByTestId("cartao-lateral-estadia");

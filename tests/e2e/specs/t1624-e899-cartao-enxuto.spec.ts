@@ -78,9 +78,10 @@ async function conferirSuperficie(page: Page, onde: string) {
     expect(m.linhasLocal, `${quem}: local em 1 linha`).toBe(1);
     expect(m.linhasTitulo, `${quem}: título em 1 linha`).toBe(1);
     expect(m.estouros, `${quem}: nada estoura a largura do cartão`).toEqual([]);
-    // A linha do total fecha com o aviso curto: exatamente um dos dois textos.
+    // A linha do total fecha com o aviso curto: exatamente um dos textos. E923: contas fixas sem estimativa (o caso dos imóveis
+    // de teste do laboratório) dizem "água, luz e gás não informados"; antes diziam "tudo incluído".
     expect(m.total, `${quem}: total da estadia`).toMatch(/^R\$\s?[\d.]+ em \d+ (mês|meses)$/);
-    expect(["tudo incluído", "água, luz e gás à parte"], `${quem}: aviso curto`).toContain(m.aviso);
+    expect(["tudo incluído", "água, luz e gás à parte", "água, luz e gás não informados"], `${quem}: aviso curto`).toContain(m.aviso);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `${onde}: sem rolagem horizontal`).toBeLessThanOrEqual(1);
 }

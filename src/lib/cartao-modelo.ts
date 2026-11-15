@@ -3,7 +3,8 @@
   modeloDoCartao é a ÚNICA origem do que o PropertyCard escreve de preço, total, aviso, especificações e disponibilidade:
     • precoMes     — "R$ X": o total do mês de hoje (calcularTudoIncluido(p).total), o mesmo da página e do pino do mapa;
     • totalEstadia — "R$ Y em N meses": a regra única do E756/E777 (estadiaNoCartao → estadiaDoImovel), também com 1 mês;
-    • aviso        — AVISO_TUDO_INCLUIDO (contas fixas) ou AVISO_CONTAS_A_PARTE (contas medidas); os textos moram em precos.ts;
+    • aviso        — um texto por situação das contas (E923, situacaoDasContas): AVISO_TUDO_INCLUIDO só com as contas no total,
+                     AVISO_CONTAS_A_PARTE com o consumo medido, AVISO_CONTAS_NAO_INFORMADAS com contas fixas sem estimativa;
     • sintese      — quartos · banheiros · m² · mobiliado (itensSintese; o nível é selo da foto desde o E416);
     • disponivel   — "Disponível a partir de …" ou "Disponível agora" (rotuloPreco).
   A apresentação mudou; a fonte não (lei do E777). A composição do mês e a conta da estadia ficam na página do imóvel.

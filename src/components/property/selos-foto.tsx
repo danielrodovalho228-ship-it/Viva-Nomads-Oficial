@@ -20,7 +20,7 @@ const TESTID: Record<SimboloFoto, string> = {
 };
 
 /** Cor da pílula do nível (estudo E626): Essencial branco com borda cinza, Conforto verde-marca, Premium preto-marca. */
-const COR_NIVEL: Record<Nivel, string> = {
+export const COR_NIVEL: Record<Nivel, string> = {
   essencial: "border-[#b8b8b8] bg-white text-ink",
   conforto: "border-transparent bg-forest text-white",
   premium: "border-transparent bg-night text-white",

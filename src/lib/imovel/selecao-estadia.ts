@@ -3,6 +3,8 @@
  * e o diálogo do "Solicitar". Puro: sem tela, sem banco. Datas em ISO (yyyy-mm-dd), comparadas como texto, sem fuso.
  */
 
+import { mesesDoCartao } from "../cartao-preco.ts";
+
 export interface SelecaoEstadia {
   /** "" = ainda não escolhida. */
   entrada: string;
@@ -77,6 +79,16 @@ export function diasDaSelecao(sel: Pick<SelecaoEstadia, "entrada" | "saida">): n
 export function mesesDaSelecao(sel: Pick<SelecaoEstadia, "entrada" | "saida">): number | null {
   const d = diasDaSelecao(sel);
   return d === null ? null : Math.max(1, Math.ceil(d / 30));
+}
+
+/**
+ * E920 — os meses do total da página do imóvel ("R$ Y em N meses", no cartão lateral e na barra do celular).
+ * A página abre E FICA no período de referência: a estadia mínima do anúncio, o mesmo do cartão da busca. O período só muda
+ * por ação explícita de quem lê: escolher a entrada e a saída. A duração da última busca guardada no aparelho NÃO entra aqui
+ * (antes entrava, depois de a página carregar, e o total trocava sozinho de "em 1 mês" para "em 6 meses"; E890 é o mesmo defeito).
+ */
+export function mesesDoTotalDaPagina(sel: Pick<SelecaoEstadia, "entrada" | "saida">, minPeriodDays: number | null | undefined): number {
+  return mesesDaSelecao(sel) ?? mesesDoCartao(undefined, minPeriodDays ?? undefined);
 }
 
 const br = (iso: string) => {

@@ -114,7 +114,7 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
           <span className="text-xl font-semibold tabular-nums text-forest">{formatBRL(mes.total)}</span>
         </li>
       </ul>
-      <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}</p>
+      <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}{mes.contasNaoInformadas && " Água, luz e gás não informados neste anúncio."}</p>
       <p className="mt-1 text-xs text-muted">R$ 0 de taxa para você: o morador não paga nada à plataforma.</p>
       {/* Negociação configurada pelo dono (prompt 17 §8): "Valor fixo" ou o desconto por estadia mais longa. */}
       {property.negociacao && (
