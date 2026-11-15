@@ -52,9 +52,23 @@ etapa "arquivos do storage"
 # Sem --checksum: o crypt não guarda hash, e com --checksum o rclone cai para "só tamanho" (um arquivo trocado por
 # outro do mesmo tamanho NÃO seria copiado — provado no ensaio). Tamanho + data do servidor S3 pega a troca; o teste
 # de restauração ainda compara o conteúdo byte a byte (rclone check --download) numa amostra toda semana.
-rc sync s3supabase: "$DESTINO/storage/atual/" \
+# E929: o sync escreve um log PRÓPRIO (privado, nível DEBUG: diz o motivo de cada troca) e, deu certo ou não, o log da
+# Action ganha o RESUMO dele — contagens, motivo (data × tamanho, com a maior diferença) e os erros sem caminho/URL.
+# --modify-window 2s: a data do S3 do Supabase e a gravada no Drive podem diferir em fração de segundo; sem folga, o
+# arquivo parece "mudado" e o rclone recopia TUDO toda noite (a pasta do Drive crescia ~ o storage inteiro por dia).
+# 2>>"$SYNC_LOG": em DEBUG o rclone escreve 1 linha no stderr antes de abrir o --log-file (visto na #30); vai ao log privado.
+# --tpslimit/--checkers: o Drive limita escrita por usuário; sem freio, as recusas (403) viravam esperas longas.
+SYNC_LOG="$TRAB/sync.log"
+sync_ok=1
+"$RCLONE" --config "$RCLONE_CONFIG" --log-file "$SYNC_LOG" --log-level DEBUG --stats 0 \
+  sync s3supabase: "$DESTINO/storage/atual/" \
   --backup-dir "$DESTINO/storage/removidos/$HOJE/" \
-  --fast-list --use-server-modtime --transfers 4
+  --fast-list --use-server-modtime --modify-window 2s --transfers 4 --checkers 8 --tpslimit 8 2>>"$SYNC_LOG" || sync_ok=0
+node "$RAIZ/scripts/backup/resumo-rclone.ts" "$SYNC_LOG"
+if [ "$sync_ok" != 1 ]; then
+  echo "::error::A cópia dos arquivos do storage falhou (resumo do rclone acima)."
+  exit 1
+fi
 
 etapa "contagem do storage"
 : >"$TRAB/buckets.tsv"
