@@ -2,8 +2,13 @@ name: E2E (Playwright)
 
 # Roda a suíte E2E assim que o deploy fica pronto (deployment_status = success):
 # Production -> https://vivanomads.com.br (domínio próprio, sem proteção da Vercel);
-# Preview -> URL do deploy com o bypass; sem o segredo de bypass o preview é PULADO
-# com aviso (não fica vermelho). Também roda sob demanda com uma URL manual.
+# Preview -> URL do deploy com o bypass. Também roda sob demanda com uma URL manual.
+#
+# E964 — O JOB NUNCA FICA VERDE SEM TER RODADO: sem o segredo de bypass (rodar=false) o passo final escreve
+# "E2E NÃO RODOU: <motivo>" no resumo e sai 1. Quando roda, a completude compara os executados com os listados
+# (playwright test --list) e fica vermelha com "E2E INCOMPLETO: X de Y". A prévia roda só @criticos + as etiquetas
+# (@E<n>) dos itens do PR aberto no commit (a suíte inteira fica no noturno fatiado, E744); produção roda no modo
+# público (as contas de teste vivem no projeto de TESTE). Lógica em src/lib/ci/e2e-completude.ts (com teste).
 # A decisão está em scripts/ci/e2e-alvo.sh (com teste em src/lib/ci).
 # Segredos (contas de teste) vêm de GitHub Secrets — nunca no yml.
 #
@@ -30,6 +35,7 @@ concurrency:
 
 jobs:
   e2e:
+    name: E2E da prévia
     # No gatilho de deploy, só roda quando o preview ficou pronto (success).
     # E951: produção não roda mais a suíte aqui (vai para o job prova-ao-vivo); o dispatch com `itens` também.
     if: >-
@@ -38,6 +44,9 @@ jobs:
        github.event.deployment_status.environment != 'Production' && github.event.deployment_status.environment != 'production')
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
     env:
       # Bypass da Deployment Protection da Vercel (preview protegido). Sem ele, a
       # suíte cai na tela de login da Vercel. O config/global-setup só mandam os
@@ -151,14 +160,40 @@ jobs:
         if: ${{ steps.alvo.outputs.rodar == 'true' && env.SUPABASE_SERVICE_ROLE_KEY != '' }}
         run: npm run seed:teste
 
-      - name: Rodar suíte E2E
-        if: steps.alvo.outputs.rodar == 'true'
+      - name: Itens do PR da prévia (--grep = @criticos + @E<n>)
+        id: pr
+        if: steps.alvo.outputs.rodar == 'true' && steps.alvo.outputs.modo != 'publico'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.deployment.sha || github.sha }}
         run: |
-          if [ "${{ steps.alvo.outputs.modo }}" = "publico" ]; then
-            npm run testes:publico
+          # Título e corpo vêm do arquivo (texto de PR nunca entra cru no script).
+          gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[] | select(.state == "open")][0] // {}' > pr.json || echo '{}' > pr.json
+          export PR_TITULO="$(jq -r '.title // ""' pr.json)" PR_CORPO="$(jq -r '.body // ""' pr.json)"
+          node scripts/ci/e2e-completude.mjs grep
+
+      - name: Rodar E2E (prévia @criticos + itens; produção no modo público)
+        if: steps.alvo.outputs.rodar == 'true'
+        env:
+          GREP: ${{ steps.pr.outputs.grep }}
+          MODO: ${{ steps.alvo.outputs.modo }}
+        run: |
+          mkdir -p tests/laboratorio/saida
+          if [ "$MODO" = "publico" ]; then
+            export TESTES_SO_PUBLICO=1
+            read -ra ARGS <<< "$(node -p "require('./package.json').scripts['testes:publico'].split('playwright test ')[1]")"
           else
-            npm run testes
+            ARGS=(--grep "$GREP")
           fi
+          PLAYWRIGHT_JSON_OUTPUT_NAME=tests/laboratorio/saida/e2e-lista.json npx playwright test "${ARGS[@]}" --list --reporter=json
+          # Teto da suíte abaixo do teto do job: parada por tempo ainda escreve o relatório e cai na completude.
+          PLAYWRIGHT_JSON_OUTPUT_NAME=tests/laboratorio/saida/e2e-relatorio.json \
+            npx playwright test "${ARGS[@]}" --reporter=list,json,html --global-timeout=720000
+
+      - name: Conferir completude (executados × listados)
+        if: ${{ !cancelled() && steps.alvo.outputs.rodar == 'true' }}
+        run: node scripts/ci/e2e-completude.mjs conferir tests/laboratorio/saida/e2e-lista.json tests/laboratorio/saida/e2e-relatorio.json "${{ steps.alvo.outputs.modo }}"
 
       - name: Publicar relatório HTML
         if: ${{ !cancelled() && steps.alvo.outputs.rodar == 'true' }}
@@ -167,6 +202,16 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 14
+
+      # E964: job que não rodou nunca termina verde (nenhum passo engole erro; pulado não vira sucesso).
+      - name: E2E NÃO RODOU (vermelho)
+        if: steps.alvo.outputs.rodar != 'true'
+        env:
+          MOTIVO: ${{ steps.alvo.outputs.motivo }}
+        run: |
+          echo "## E2E NÃO RODOU: ${MOTIVO:-motivo não informado}" >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::E2E NÃO RODOU: ${MOTIVO:-motivo não informado}"
+          exit 1
 
   # E951 — prova ao vivo por item depois do deploy de produção (ou por workflow_dispatch com a lista de itens).
   prova-ao-vivo:
@@ -218,6 +263,7 @@ jobs:
             export PR_TITULO="$(jq -r '.title // ""' pr.json)" PR_CORPO="$(jq -r '.body // ""' pr.json)"
           fi
           node scripts/ci/prova-ao-vivo.mjs planejar
+          echo "modo público: specs logados não rodam em produção (só @ao-vivo-seguro anônimos)." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Checar que produção responde
         if: steps.plano.outputs.rodar == 'true'
