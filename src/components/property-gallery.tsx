@@ -1,5 +1,6 @@
 "use client";
 
+import { tipoDoQuadro, type TipoQuadro } from "@/lib/galeria-quadros";
 import { useEffect, useRef, useState } from "react";
 import { X, Images, ChevronLeft, ChevronRight, PlayCircle } from "lucide-react";
 import { BrandImage } from "@/components/brand-image";
@@ -24,6 +25,8 @@ const SIZES_MINIATURA = "(max-width: 768px) 100vw, 50vw";
  */
 export const SIZES_MOSAICO_PEQUENA = "(max-width: 768px) 100vw, 25vw";
 export const SIZES_MOSAICO_COLUNA = "(max-width: 768px) 100vw, 34vw";
+/** E987: o `sizes` do quadro de onde a foto veio — a galeria aberta pede a MESMA versão (já no cache) por baixo. */
+const SIZES_POR_TIPO: Record<TipoQuadro, string> = { miniatura: SIZES_MINIATURA, pequena: SIZES_MOSAICO_PEQUENA, coluna: SIZES_MOSAICO_COLUNA };
 
 const isPhoto = (s?: string) =>
   typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
@@ -381,7 +384,7 @@ export function Lightbox({
             // miniatura do mosaico/carrossel (mesmo `sizes` = mesma URL, já no cache) aparece na hora; por cima, a grande,
             // pedida já e com prioridade alta, cobre quando chega.
             <div className="relative h-[80vh] w-full" data-testid="galeria-lightbox-foto">
-              <BrandImage src={photos[index]} alt="" treat={false} sizes={SIZES_MINIATURA} fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
+              <BrandImage src={photos[index]} alt="" treat={false} sizes={SIZES_POR_TIPO[tipoDoQuadro(index, photos.length)]} fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
               <BrandImage key={photos[index]} src={photos[index]} alt={`${title} — foto ${index + 1}`} treat={false} sizes="100vw" priority fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
             </div>
           ) : (
