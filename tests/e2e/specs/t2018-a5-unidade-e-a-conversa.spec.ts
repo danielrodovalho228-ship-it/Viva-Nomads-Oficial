@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2018 (contagem) — Pista 3, lote 2, item A5 → E970 @E970 @A5 @ao-vivo-seguro — TRAVA NOMEADA (vermelha na main até a correção da
+  T2018 (contagem) — Pista 3, lote 2, item A5 → E970 @E970 @A5 (sem @ao-vivo-seguro: precisa de login e do laboratório) — TRAVA NOMEADA (vermelha na main até a correção da
   Família 6). Regra definida pelo coordenador (ORDEM-DUET-068, ponto 3): a unidade é a CONVERSA em qualquer total —
   o selo da aba Mensagens conta conversas com pelo menos uma não lida; o sino agrupa por conversa (um aviso por
   conversa) e bate com esse selo; o número de MENSAGENS não lidas aparece só dentro da linha de cada conversa.

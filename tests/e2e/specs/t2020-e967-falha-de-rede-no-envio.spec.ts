@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2020 — Pista 3, lote 2, item A7 → E967 (Code 2) @E967 @E445 @ao-vivo-seguro — TRAVA NOMEADA da correção: vermelho esperado
+  T2020 — Pista 3, lote 2, item A7 → E967 (Code 2) @E967 @E445 (sem @ao-vivo-seguro: precisa de login e do laboratório) — TRAVA NOMEADA da correção: vermelho esperado
   na main pela leitura do código: messages-client.tsx `enviar()` mostra o eco otimista e limpa o campo ANTES do servidor
   e ignora o retorno de `semQuedaDeRede(sendMessage(...))`, salvo o caso de ofensa).
   Regra: falha de rede no envio de mensagem → nem perde nem duplica: a pessoa vê que não foi, o texto não some, e

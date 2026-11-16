@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2017 — Pista 3, lote 2, item A4 → E969 @E969 @A4 @ao-vivo-seguro — TRAVA NOMEADA (vermelha na main até a correção da Família 6).
+  T2017 — Pista 3, lote 2, item A4 → E969 @E969 @A4 (sem @ao-vivo-seguro: precisa de login e do laboratório) — TRAVA NOMEADA (vermelha na main até a correção da Família 6).
   Regra definida pelo coordenador (ORDEM-DUET-068, ponto 2):
     • a conversa ENCERRA quando a candidatura que a originou termina sem contrato (aqui: recusada pelo dono);
     • as duas pontas veem a faixa "Esta conversa foi encerrada em {data}. O histórico continua disponível.", o campo

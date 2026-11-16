@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2021 — Pista 3, lote 2, item B1 → E971 @E971 @B1 @E445 @ao-vivo-seguro — TRAVA NOMEADA (vermelha na main até a correção da
+  T2021 — Pista 3, lote 2, item B1 → E971 @E971 @B1 @E445 (sem @ao-vivo-seguro: precisa de login e do laboratório) — TRAVA NOMEADA (vermelha na main até a correção da
   Família 6). Esperado (coordenador, ORDEM-DUET-068 ponto 4): a foto da conversa aparece nos dois lados e abre no
   LIGHTBOX DO COMPONENTE DA GALERIA do imóvel (data-testid "galeria-lightbox", role dialog, foto "galeria-lightbox-foto",
   botão "Fechar") — sem abrir outra aba — e fecha pelo botão e pelo Esc. Hoje a foto abre em outra aba.
