@@ -46,7 +46,7 @@ export function alternarIntencao(atuais: readonly Intencao[], alvo: Intencao, li
  * desligaria o papel; para isso, troca-se o papel em uso.
  */
 export function estadoQueroMorar(intencao: readonly Intencao[], morarEmUso: boolean): { ligado: boolean; travado: boolean } {
-  return { ligado: morarEmUso || intencao.includes("morar"), travado: morarEmUso };
+  return { ligado: intencao.includes("morar"), travado: false }; // ENSAIO DE QUEBRA (E537): só a intenção
 }
 
 export const TEXTO_MORAR_EM_USO = "Em uso agora. Para desligar, use outro papel em “Como você usa a Viva”, abaixo.";

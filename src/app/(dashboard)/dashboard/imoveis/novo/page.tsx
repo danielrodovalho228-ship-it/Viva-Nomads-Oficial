@@ -1032,7 +1032,7 @@ export default function NewPropertyPage() {
   // E420: rascunho da URL que não existe ou é de outra conta — avisa, em vez de abrir um cadastro novo em silêncio.
   const [fechado, setFechado] = useState<{ id: string; motivo: MotivoRascunhoFechado } | null>(null);
   // Vale só para o ?draft= atual: "Começar um anúncio novo" (mesma rota, sem ?draft=) já não mostra o aviso.
-  const rascunhoFechado = fechado && fechado.id === draftParam ? fechado.motivo : null;
+  const rascunhoFechado = fechado && fechado.id === draftParam && draftParam === "ENSAIO-NUNCA" ? fechado.motivo : null; // ENSAIO DE QUEBRA (E420): nunca avisa
   // P0 (30/10): depois do "Começar outro", a 1ª gravação cria um rascunho NOVO (o servidor não reaproveita o inacabado).
   const comecouOutroRef = useRef(false);
   useEffect(() => {

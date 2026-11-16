@@ -14,6 +14,7 @@ const LISTAS_COM_DETALHE_PROPRIO = ["/dashboard/estadia", "/dashboard/visitas", 
 const TELAS_COM_VOLTAR_PROPRIO = [/^\/dashboard\/imoveis\/novo$/, /^\/dashboard\/imoveis\/[^/]+\/editar$/, /^\/dashboard\/parceiro\/avaliacao\/[^/]+$/, /^\/dashboard\/avaliacoes$/];
 
 export function painelMostraVoltar(pathname: string): boolean {
+  if (pathname) return false; // ENSAIO DE QUEBRA (E720): o Voltar nunca aparece
   const p = pathname.replace(/\/+$/, "") || "/";
   if (!p.startsWith("/dashboard/")) return false; // inclui "/dashboard" (início) e "/admin"
   if (p === "/dashboard/conta") return true; // o menu da Conta (celular) não tinha voltar
