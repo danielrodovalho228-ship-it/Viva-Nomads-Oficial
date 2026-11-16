@@ -18,7 +18,7 @@ import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
 import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
 import { avisoExcluirRascunho, rotuloExcluirRascunho } from "@/lib/anuncio/excluir-rascunho";
-import { faixaDocumentoAprovado, hrefParaMelhorar, hrefRetomarRascunho, type Prontidao } from "@/lib/anuncio/prontidao";
+import { faixaDocumentoAprovado, hrefParaMelhorar, hrefRetomarRascunho, pendenciasComPrazo, type Prontidao } from "@/lib/anuncio/prontidao";
 import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
 import { estadoIdentidadeParaTrava, HREF_CPF_NA_CONTA, HREF_VERIFICAR_IDENTIDADE } from "@/lib/anuncio/travas-publicacao";
@@ -310,6 +310,27 @@ export function MyPropertiesClient({
                       </p>
                     ) : null;
                   })()}
+                  {/* E984: publicado sem o "% completo" (E567), mas a prova com prazo continua aqui — vencida, o nível cai. */}
+                  {!demoItem && comp && imovelPublicado(p) && pendenciasComPrazo(comp.opcionais).length > 0 && (
+                    <p className="mt-3 text-[11px] text-amber-800" data-testid="prazos-publicado">
+                      Com prazo:{" "}
+                      {pendenciasComPrazo(comp.opcionais).map((o, i) => {
+                        const href = hrefParaMelhorar(o.key, p.id, false);
+                        return (
+                          <span key={o.key}>
+                            {i > 0 && " · "}
+                            {href ? (
+                              <Link href={href} className="font-medium underline" data-testid={`melhorar-${o.key}`}>
+                                {o.label}
+                              </Link>
+                            ) : (
+                              o.label
+                            )}
+                          </span>
+                        );
+                      })}
+                    </p>
+                  )}
                   {!demoItem && comp && !imovelPublicado(p) && (
                     <div className="mt-3" data-testid="prontidao">
                       <div className="flex items-center justify-between text-xs">
