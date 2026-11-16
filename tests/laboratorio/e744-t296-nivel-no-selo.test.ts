@@ -33,3 +33,17 @@ test("E744 t296: o teste 1 cobra o nível pelo selo da foto e a linha de fatos s
   assert.match(corpo, /getByTestId\("cartao-sintese"\)\)\.not\.toContainText\(rotulo\)/, "a linha de fatos não repete o nível");
   assert.doesNotMatch(corpo, /cartao-sintese"\)\)\.toContainText\(new RegExp\(`\^\$\{rotulo\}/, "a cobrança antiga (nível abrindo a linha de fatos) saiu");
 });
+
+test("t296, teste 4: a queda de nível é cobrada na faixa de alerta do Início do dono (PROP-6), com texto, prazo e destino", () => {
+  const spec = readFileSync("tests/e2e/specs/t296-niveis-exibicao-59-1.spec.ts", "utf8");
+  assert.match(spec, /const linha = page\.getByTestId\("inicio-dono-alerta"\);/);
+  assert.match(spec, /caiu de Premium para Conforto: corrija Ar-condicionado em todos os quartos/);
+  assert.match(spec, /Corrija até/);
+  assert.match(spec, /toHaveAttribute\("href", `\/dashboard\/contratos\/\$\{ids\.contrato\}#pendencias-conforto`\)/);
+  // O produto: a faixa mostra o texto e o prazo da pendência mais urgente e leva ao destino dela.
+  const tela = readFileSync("src/components/painel/inicio-dono.tsx", "utf8");
+  assert.match(tela, /data-testid="inicio-dono-alerta"/);
+  assert.match(tela, /href=\{alerta\.href\}/);
+  assert.match(tela, /\{alerta\.texto\}/);
+  assert.match(tela, /alerta\.prazoTexto/);
+});

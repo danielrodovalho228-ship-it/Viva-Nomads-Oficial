@@ -235,10 +235,15 @@ test.describe("T296 — Adendo 59.1, Parte A: níveis na tela", () => {
     for (const w of LARGURAS) {
       await largura(page, w);
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      const linha = page.locator(`[data-decisao="nivel-queda-${ids.p}"]`);
+      // E744 (teste velho): desde o PROP-6 (#1483, 29/10) o Início do dono mostra a pendência mais urgente na faixa de
+      // alerta do topo (inicio-dono-alerta), não mais numa linha da lista de decisões (`[data-decisao="nivel-queda-…"]`
+      // com `decisao-prazo`). A regra cobrada é a mesma: o texto da queda, o prazo logo depois e o destino da correção.
+      const linha = page.getByTestId("inicio-dono-alerta");
       await expect(linha).toContainText(`${T.p} caiu de Premium para Conforto: corrija Ar-condicionado em todos os quartos`, { timeout: 30_000 });
-      await expect(linha.getByTestId("decisao-prazo")).toContainText("Corrija até");
+      await expect(linha).toContainText(/corrija Ar-condicionado em todos os quartos\s*—\s*Corrija até/);
       await expect(linha).toHaveAttribute("href", `/dashboard/contratos/${ids.contrato}#pendencias-conforto`);
+      // A forma antiga não voltou (se voltar, o teste avisa em vez de passar pelos dois caminhos).
+      await expect(page.locator(`[data-decisao="nivel-queda-${ids.p}"]`)).toHaveCount(0);
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t296-4-painel-queda-${w}.png` });
     }
