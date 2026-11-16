@@ -22,7 +22,8 @@ test.describe("T2051 — E604: comodidade e extra nunca repetem o mesmo item @E6
     let comExtras = 0;
     for (const href of hrefs) {
       await page.goto(href, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("comodidades").first()).toBeVisible({ timeout: 30_000 });
+      // O anúncio abriu (o bloco de comodidades só existe quando o anúncio tem comodidades — sem ele, nada a comparar).
+      await expect(page.locator("main h1").first()).toBeVisible({ timeout: 30_000 });
       const extras = page.getByTestId("nivel-extras");
       if (!(await extras.count())) continue;
       comExtras++;
