@@ -191,3 +191,28 @@ Pela condição do Gerente, o que não tiver decisão vira defeito registrado. P
 
 **Leitura minha:** a, b e e são intencionais e só pedem o número. c, d e f não mostram nada quebrado, mas não têm
 decisão que eu ache. g é o candidato mais claro a defeito.
+
+## 7. Julgamento do Gerente dos 7 resíduos (16/11/2026, ronda de 07:04 CST)
+
+| | Resíduo | Julgamento |
+|---|---|---|
+| a | Flutuante só com ícone a 1280 px | **Base nova.** Fica a nota: a mudança devia ter trazido número de item. |
+| b | "Moradores" no rodapé | **Base nova.** Vocabulário decidido. |
+| c | Saiu do rodapé a linha "Assistente Viva 24 h · resposta de uma pessoa em até 24 h" | **Defeito registrado: E990.** Sumiu sem decisão; vai ao coordenador decidir restaurar ou remover. |
+| d | Galeria do imóvel mais larga a 1280 px | **Base nova.** |
+| e | Título "Perfil" na coluna da direita | **Base nova,** conforme os mockups perfil-01 a 08. |
+| f | Manutenção em "Bom saber"; "O que tem por perto" em grupos com distância | **Base nova.** |
+| g | Admin › Usuários com rolagem lateral a 1280 px | **Defeito registrado: E991** (estouro horizontal). Dono: Code 2, Família 8. A tela não entra nas bases novas até a correção. |
+
+**As telas dos dois defeitos ficam fora das atualizações de base.** São as que mostram o defeito na imagem:
+
+| Item | Telas que ficam com a referência antiga | Por quê |
+|---|---|---|
+| E990 | t245 `05-favoritos-vazio` e `06-favoritos` (390 e 1280 px); t263 `01-imovel-inteiro` (390 e 1280 px) | São as únicas com o rodapé na imagem. Conferi no laboratório, nas oito rotas públicas do t245: o rodapé só está à vista em `/favoritos`; o t263 01 é a página inteira. |
+| E991 | t271 `t271-admin-usuarios-1280` | A tela do defeito. |
+
+Nessas telas os resíduos b, d e f também aparecem; a base delas se atualiza de uma vez quando o E990 for decidido.
+
+**Execução:** as referências novas das outras 51 telas, a contagem do t263 (4/4/5) e as máscaras do t271 estão no
+PR #3908. Enquanto o E990 e o E991 não fecharem, as 7 telas acima continuam reprovando na comparação de imagem; é o
+vermelho de um defeito registrado, não de referência velha.
