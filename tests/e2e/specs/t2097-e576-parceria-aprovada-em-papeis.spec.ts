@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { randomBytes } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -17,7 +18,9 @@ const ids: Record<string, string> = {};
 const TEXTO = "Sua parceria foi aprovada. Ative sua página para completar o cadastro e começar a receber pedidos.";
 
 async function solicitacao(userId: string, email: string, nome: string, status: string) {
-  const { error } = await adm().from("parceiro_solicitacoes").insert({ user_id: userId, email, nome, status, origem: "conta", tipo_pessoa: "pj", categorias: ["limpeza"], cidades: ["Uberlândia"] });
+  // A aprovada leva o token de ativação (0190: parceiro_solicitacoes_aprovada_token), como a aprovação do admin deixa.
+  const token = status === "aprovada" ? { token_ativacao_hash: randomBytes(32).toString("hex") } : {};
+  const { error } = await adm().from("parceiro_solicitacoes").insert({ user_id: userId, email, nome, status, origem: "conta", tipo_pessoa: "pj", categorias: ["limpeza"], cidades: ["Uberlândia"], ...token });
   if (error) throw error;
 }
 
