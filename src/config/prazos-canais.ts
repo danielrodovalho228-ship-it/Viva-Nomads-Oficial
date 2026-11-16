@@ -13,6 +13,8 @@ export const PRAZO_CANAL = {
   parceiro: { dias: 7, texto: "7 dias" },
   empresas: { dias: 7, texto: "7 dias" },
   suporte: { horas: PROMESSA_HUMANA_H, texto: `${PROMESSA_HUMANA_H} h` },
+  // E958 (coordenador, 16/11): pedido de parceiro com orçamento sem resposta do cliente → encerra sozinho e avisa o parceiro.
+  pedidoParceiro: { dias: 7, texto: "7 dias" },
 } as const;
 
 /** Canal parceiro: a resposta ao pedido de parceria (/parceiros, o cadastro, a Ajuda). */
@@ -20,3 +22,9 @@ export const TEXTO_PRAZO_PARCERIA = `A Viva responde por e-mail em até ${PRAZO_
 
 /** Canal empresas: o retorno ao "Fale com a gente" de /empresas. */
 export const TEXTO_PRAZO_EMPRESAS = `A equipe responde em até ${PRAZO_CANAL.empresas.texto}, no e-mail informado, com as opções de imóveis.`;
+
+/**
+ * E958 (coordenador, 16/11) — canal pedido de parceiro: a Viva não promete a resposta do dono (terceiro); declara a
+ * CONSEQUÊNCIA, que a regra cumpre (parceiros/pedido.ts → orcamentoSemResposta; cron das automações). Só onde a regra vale.
+ */
+export const TEXTO_PRAZO_PEDIDO_PARCEIRO = `Se o proprietário não responder em ${PRAZO_CANAL.pedidoParceiro.texto}, o pedido é encerrado e você é avisado.`;

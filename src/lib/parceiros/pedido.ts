@@ -5,6 +5,7 @@
 */
 import { dividirValor, TAXA_SERVICO_PARCEIRO } from "./regras.ts";
 import { lerReais } from "../reais.ts";
+import { PRAZO_CANAL } from "../../config/prazos-canais.ts";
 
 // ── Estados ───────────────────────────────────────────────────────────────────────────────────────────────────
 export const STATUS_PEDIDO = [
@@ -346,4 +347,15 @@ export function numerosPedidosParceiro(pedidos: PedidoParaNumeros[], contasTeste
     taxaRegistrada: centavos / 100,
     vindosDeCartao: reais.filter((p) => p.ref_tipo === "partnercard").length,
   };
+}
+
+/**
+ * E958 — orçamento enviado e sem resposta do cliente por PRAZO_CANAL.pedidoParceiro.dias: o pedido encerra sozinho
+ * (cancelado) e o parceiro é avisado. Conta da última mudança do pedido (atualizado_em, gravado a cada transição):
+ * enquanto o pedido está "orcado", é o envio (ou a atualização) do orçamento.
+ */
+export function orcamentoSemResposta(status: string, atualizadoEm: string | null | undefined, agora: Date): boolean {
+  if (status !== "orcado" || !atualizadoEm) return false;
+  const t = Date.parse(atualizadoEm);
+  return !Number.isNaN(t) && agora.getTime() - t >= PRAZO_CANAL.pedidoParceiro.dias * 86_400_000;
 }

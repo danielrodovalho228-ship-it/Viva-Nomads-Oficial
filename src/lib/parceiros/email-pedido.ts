@@ -10,6 +10,7 @@
   Roda: node --test src/lib/parceiros/email-pedido.test.ts
 */
 
+import { PRAZO_CANAL } from "../../config/prazos-canais.ts";
 import { codigoDoImovel } from "../imovel-pagina.ts";
 
 export interface PedidoParaEmail {
@@ -53,6 +54,7 @@ export type EventoPedido =
   | "parceiro_pedido_novo"
   | "parceiro_orcamento_recebido"
   | "parceiro_orcamento_aceito"
+  | "parceiro_orcamento_vencido"
   // E267
   | "parceiro_pedido_recusado"
   | "parceiro_horario_confirmado"
@@ -69,6 +71,7 @@ export const EVENTOS_DO_PEDIDO: ReadonlySet<string> = new Set<EventoPedido>([
   "parceiro_pedido_novo",
   "parceiro_orcamento_recebido",
   "parceiro_orcamento_aceito",
+  "parceiro_orcamento_vencido",
   "parceiro_pedido_recusado",
   "parceiro_horario_confirmado",
   "parceiro_lembrete",
@@ -195,5 +198,7 @@ export function aberturaDoPedido(ev: EventoPedido, p: PedidoParaEmail, nome?: st
       return `${ola}, ${outra || "o parceiro"} enviou o orçamento de ${servico}${doImovel}${p.valorCombinado ? `: ${brl(p.valorCombinado)}` : ""}. Aceite ou recuse pelo pedido.`;
     case "parceiro_orcamento_aceito":
       return `${ola}, boa notícia: ${outra || "o cliente"} aceitou o seu orçamento de ${servico}${doImovel}${p.valorCombinado ? ` (${brl(p.valorCombinado)})` : ""}. Confirme o horário pelo pedido.`;
+    case "parceiro_orcamento_vencido":
+      return `${ola}, ${outra || "o cliente"} não respondeu ao seu orçamento de ${servico}${doImovel} em ${PRAZO_CANAL.pedidoParceiro.texto} e o pedido foi encerrado. Nada é cobrado nem anotado contra você.`;
   }
 }

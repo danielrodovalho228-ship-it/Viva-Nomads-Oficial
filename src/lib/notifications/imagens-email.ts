@@ -131,6 +131,7 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   parceiro_orcamento_recebido: "transacional",
   parceiro_pedido_recusado: "transacional",
   parceiro_orcamento_aceito: "nova-mensagem",
+  parceiro_orcamento_vencido: "transacional",
   parceiro_horario_confirmado: "visita",
   parceiro_lembrete: "visita",
   parceiro_entrega_feita: "transacional",
