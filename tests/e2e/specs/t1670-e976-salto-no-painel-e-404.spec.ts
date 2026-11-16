@@ -28,7 +28,8 @@ async function cobrarSalto(page: Page, rotulo: string) {
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur?.());
   await page.keyboard.press("Tab");
   await expect(salto, `${rotulo}: o primeiro Tab cai no link de salto`).toBeFocused();
-  await expect(page.getByTestId("fale-com-a-viva"), `${rotulo}: o flutuante não recebe o primeiro Tab`).not.toBeFocused();
+  // Nem toda tela tem o flutuante (ex.: Mensagens): o que se cobra é que o foco não esteja nele.
+  expect(await page.evaluate(() => document.activeElement?.getAttribute("data-testid")), `${rotulo}: o flutuante não recebe o primeiro Tab`).not.toBe("fale-com-a-viva");
   await expect(salto).toHaveText("Pular para o conteúdo principal");
   await expect(salto, `${rotulo}: o link aparece inteiro na tela`).toBeInViewport({ ratio: 1 });
   await page.keyboard.press("Enter");
