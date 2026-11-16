@@ -190,7 +190,8 @@ test("F31: Visão geral usa a mesma consulta e a mesma regra de 'publicado' de M
   assert.match(pagina, /await Promise\.all\(\[\n\s+ou\("imoveis", listMyProperties\(\{ exigir: true \}\), \[\]\),/);
   assert.match(ler("app/(dashboard)/dashboard/imoveis/page.tsx"), /listMyProperties\((\{ exigir: true \})?\)/);
   const visao = ler("app/(dashboard)/dashboard/visao-geral-client.tsx");
-  assert.match(visao, /imoveisPublicados\(demo \? DEMO_PROPERTIES : imoveisDono\)/);
+  // E980 (Gerente, 16/11/2026): os imóveis de exemplo chegam sob demanda (useExemplos); a fonte real segue `imoveisDono`.
+  assert.match(visao, /imoveisPublicados\(demo \? \(exemplos\?\.DEMO_PROPERTIES \?\? \[\]\) : imoveisDono\)/);
   assert.doesNotMatch(visao, /useProperties\("\/api\/properties\/mine"\)/);
   assert.match(ler("app/(dashboard)/dashboard/imoveis/imoveis-client.tsx"), /imovelPublicado\(p\)/);
 });
