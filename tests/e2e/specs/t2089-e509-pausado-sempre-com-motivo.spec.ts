@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { randomUUID } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -24,16 +25,24 @@ test.describe("T2089 — E509: pausado sempre tem motivo; só a pausa do dono re
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ preferred_mode: "owner", papel_ativo: "proprietario" }).eq("id", ids.dono);
     ids.doDono = await criarImovelPronto(ids.dono, `Studio pausado pelo dono ${sufixo}`, { ativo: true });
-    ids.daViva = await criarImovelPronto(ids.dono, `Studio pausado sem motivo ${sufixo}`, { ativo: true });
-    // Pausa do dono (com motivo) e um anúncio que passa a pausado SEM motivo (o caso da massa do E289).
+    // Pausa do dono (com motivo).
     await adm().from("properties").update({ status: "paused", pausa_motivo: "dono" }).eq("id", ids.doDono);
-    await adm().from("properties").update({ status: "paused", pausa_motivo: null }).eq("id", ids.daViva);
+    // O caso do E509 (massa do E289): um anúncio INSERIDO já pausado e SEM motivo — antes da 0300 o gatilho só rodava
+    // no UPDATE e o anúncio ficava com motivo vazio. Insere a cópia de um anúncio pronto do mesmo dono.
+    const base = await criarImovelPronto(ids.dono, `Studio base ${sufixo}`, { ativo: true });
+    const { data: linha, error: e1 } = await adm().from("properties").select("*").eq("id", base).single();
+    if (e1) throw e1;
+    ids.daViva = randomUUID();
+    const copia = { ...(linha as Record<string, unknown>), id: ids.daViva, title: `Studio pausado sem motivo ${sufixo}`, status: "paused", pausa_motivo: null, pausado_em: null };
+    for (const k of ["created_at", "updated_at"]) delete copia[k];
+    const { error: e2 } = await adm().from("properties").insert(copia);
+    if (e2) throw e2;
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
   });
 
-  test("banco: um anúncio pausado nunca fica sem motivo (o sem motivo vira pausa da Viva); o do dono segue 'dono'", async () => {
+  test("banco: um anúncio INSERIDO pausado nunca fica sem motivo (vira pausa da Viva); o do dono segue 'dono'", async () => {
     const { data } = await adm().from("properties").select("id, status, pausa_motivo").in("id", [ids.doDono, ids.daViva]);
     const por = Object.fromEntries((data ?? []).map((r) => [r.id, r]));
     expect(por[ids.doDono]).toMatchObject({ status: "paused", pausa_motivo: "dono" });
