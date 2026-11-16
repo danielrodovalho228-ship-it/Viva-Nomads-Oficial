@@ -204,15 +204,28 @@ decisão que eu ache. g é o candidato mais claro a defeito.
 | f | Manutenção em "Bom saber"; "O que tem por perto" em grupos com distância | **Base nova.** |
 | g | Admin › Usuários com rolagem lateral a 1280 px | **Defeito registrado: E991** (estouro horizontal). Dono: Code 2, Família 8. A tela não entra nas bases novas até a correção. |
 
-**As telas dos dois defeitos ficam fora das atualizações de base.** São as que mostram o defeito na imagem:
+**As telas com defeito registrado ficam fora das atualizações de base** (estado em 16/11/2026, depois das rondas de
+15:30Z a 20:25Z; a execução está no PR #3908):
 
 | Item | Telas que ficam com a referência antiga | Por quê |
 |---|---|---|
-| E990 | t245 `05-favoritos-vazio` e `06-favoritos` (390 e 1280 px); t263 `01-imovel-inteiro` (390 e 1280 px) | São as únicas com o rodapé na imagem. Conferi no laboratório, nas oito rotas públicas do t245: o rodapé só está à vista em `/favoritos`; o t263 01 é a página inteira. |
-| E991 | t271 `t271-admin-usuarios-1280` | A tela do defeito. |
+| E990 | t263 `01-imovel-inteiro` (390 e 1280 px); t245 `05-favoritos-vazio` (390 e 1280 px) | São as que mostram o fim do rodapé, onde a linha "Assistente Viva 24 h" sumiu. |
+| E994 | t245 `05-favoritos-vazio` e `06-favoritos`, as duas a 1280 px | A linha "Suporte: e-mail" do rodapé quebra em duas no navegador do GitHub. Com a faixa do flutuante a coluna do rodapé ficou com 264 px, e a frase precisa de 261 a 265 px conforme o navegador. Registrado pelo Gerente na ronda de 20:25Z; dono: Code 2. |
+| E949 | t245 `05-favoritos-vazio` a 1280 px | O flutuante cobre o fim da frase do rodapé (seção 3, ponto 2). |
 
-Nessas telas os resíduos b, d e f também aparecem; a base delas se atualiza de uma vez quando o E990 for decidido.
+São cinco telas. Nelas a referência antiga fica e o teste é **falha esperada**: continua a correr, é estrito (se a
+imagem voltar a bater, acusa) e cita o item e a data do julgamento (condições do Gerente, ronda de 15:30Z). A
+`05-favoritos-vazio` a 1280 px cita os três itens. A referência nova e a saída da marca vão no PR de cada correção.
 
-**Execução:** as referências novas das outras 51 telas, a contagem do t263 (4/4/5) e as máscaras do t271 estão no
-PR #3908. Enquanto o E990 e o E991 não fecharem, as 7 telas acima continuam reprovando na comparação de imagem; é o
-vermelho de um defeito registrado, não de referência velha.
+**O que esta seção dizia antes e foi corrigido:**
+
+- **As duas telas `06-favoritos` estavam listadas sob o E990. Estava errado.** A 390 px o rodapé nem aparece na imagem;
+  a 1280 px a linha do E990 fica abaixo da borda. O Gerente tirou-as dessa lista (ronda de 18:15Z). A de 390 px ganhou
+  referência nova (aprovação condicional, 20:05Z: só o cartão novo e os dados da base); a de 1280 px ficou com o E994.
+- **E991 (Admin › Usuários a 1280 px): corrigido na main pelo #3922.** A tela ganhou referência nova, gravada sobre a
+  base já corrigida, e passa sem marca (decisão do Gerente, 20:25Z).
+- **"As 7 telas continuam reprovando":** já não reprovam. Cinco são falha esperada, como acima; as outras duas têm
+  referência nova. O portão do #3908 fecha verde.
+
+**Execução:** o PR #3908 traz 57 referências novas (37 gravadas no laboratório e 20 copiadas do navegador do GitHub,
+pelo ramo de evidência do #3921), a contagem do t263 (4/4/5), as máscaras do t271 e as cinco marcas de falha esperada.
