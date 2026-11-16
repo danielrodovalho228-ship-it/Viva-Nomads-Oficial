@@ -12,6 +12,28 @@ const ANEIS = 8;
 /** E704: caixa fixa (centro e tamanho na tela) que o pin não pode cobrir, como o nome da cidade que o mapa-base desenha. */
 export type Obstaculo = { x: number; y: number; w: number; h: number };
 
+/**
+ * As casas do anel n (em passos de pin): primeiro as 8 de sempre (abaixo, acima, direita, esquerda e diagonais), depois
+ * (E988) as outras casas do anel, da mais perto para a mais longe. Determinístico.
+ */
+const ANEIS_PRONTOS = new Map<number, readonly [number, number][]>();
+function celulasDoAnel(n: number): readonly [number, number][] {
+  const pronto = ANEIS_PRONTOS.get(n);
+  if (pronto) return pronto;
+  const base: [number, number][] = [[0, n], [0, -n], [n, 0], [-n, 0], [n, n], [-n, n], [n, -n], [-n, -n]];
+  const resto: [number, number][] = [];
+  for (let i = -n; i <= n; i++)
+    for (let j = -n; j <= n; j++) {
+      if (Math.max(Math.abs(i), Math.abs(j)) !== n) continue;
+      if (base.some(([a, b]) => a === i && b === j)) continue;
+      resto.push([i, j]);
+    }
+  resto.sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]) || a[0] - b[0] || a[1] - b[1]);
+  const celulas = [...base, ...resto];
+  ANEIS_PRONTOS.set(n, celulas);
+  return celulas;
+}
+
 export function afastarPins(pins: readonly CaixaPin[], quadro?: { w: number; h: number }, obstaculos: readonly Obstaculo[] = []): Map<string, { dx: number; dy: number }> {
   // Os obstáculos entram primeiro: ficam onde estão e os pins é que se afastam (como se fossem pins já colocados).
   const colocados: { l: number; r: number; t: number; b: number }[] = obstaculos.map((o) => ({ l: o.x - o.w / 2, r: o.x + o.w / 2, t: o.y - o.h / 2, b: o.y + o.h / 2 }));
@@ -30,20 +52,15 @@ export function afastarPins(pins: readonly CaixaPin[], quadro?: { w: number; h: 
   for (const p of pins) {
     const passoY = p.h + FOLGA;
     const passoX = p.w + FOLGA;
+    // E988: com o quadro, os anéis vão até a borda dele (no celular, 8 anéis de 8 direções se esgotavam e o pin ficava
+    // parado em cima de outro).
+    const aneis = quadro ? Math.max(ANEIS, Math.ceil(Math.max(quadro.w / passoX, quadro.h / passoY))) : ANEIS;
     let escolhido = { dx: 0, dy: 0 };
     if (!livre(caixa(p, 0, 0), false)) {
-      achar: for (let n = 1; n <= ANEIS; n++) {
-        const candidatos = [
-          [0, n * passoY],
-          [0, -n * passoY],
-          [n * passoX, 0],
-          [-n * passoX, 0],
-          [n * passoX, n * passoY],
-          [-n * passoX, n * passoY],
-          [n * passoX, -n * passoY],
-          [-n * passoX, -n * passoY],
-        ];
-        for (const [dx, dy] of candidatos) {
+      achar: for (let n = 1; n <= aneis; n++) {
+        for (const [i, j] of celulasDoAnel(n)) {
+          const dx = i * passoX;
+          const dy = j * passoY;
           if (livre(caixa(p, dx, dy))) {
             escolhido = { dx, dy };
             break achar;
