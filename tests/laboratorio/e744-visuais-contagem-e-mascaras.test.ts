@@ -66,6 +66,29 @@ test("t271: os nomes usados nas máscaras existem no produto", () => {
   }
 });
 
+test("t245: só a tela de favoritos vazia (a que mostra a linha do rodapé) é falha esperada do E990, nas duas larguras", () => {
+  const t245 = ler("tests/e2e/specs/t245-visual-regressao.spec.ts");
+  const teste05 = t245.slice(t245.indexOf('test("05 /favoritos vazio"'), t245.indexOf('test("06 /favoritos com 2 imóveis"'));
+  assert.match(teste05, /test\.fail\(\s*true,/);
+  assert.match(teste05, /"E990 e E949 \(Gerente, 16\/11\/2026\)/, "a 1280 px a tela mostra também o E949");
+  assert.match(teste05, /"E990 \(Gerente, 16\/11\/2026\)/);
+  // A marca vem depois de a página ficar pronta e imediatamente antes da comparação.
+  assert.match(teste05, /await pronta\(page\);[\s\S]*test\.fail\([\s\S]*?\);\n\s+await print\(page, `05-favoritos-vazio-\$\{largura\}`\);/);
+  // Nenhuma outra tela do t245 é falha esperada: a 06 (favoritos com 2 imóveis) não mostra a linha do rodapé.
+  assert.equal((t245.match(/test\.fail\(/g) ?? []).length, 1);
+  assert.doesNotMatch(t245, /test\.(skip|fixme)\([^)]*E99[01]/);
+});
+
+test("t271: só os dois painéis de listas vivas do Início do admin têm altura fixa e corpo escondido", () => {
+  const t271 = ler("tests/e2e/specs/t271-admin-visual.spec.ts");
+  assert.match(t271, /const PAINEIS_VIVOS_DO_INICIO = \['\[data-testid="admin-atencao"\]', '\[data-testid="admin-atividade"\]'\] as const;/);
+  // Só na tela /admin, e depois de conferir que os dois painéis existem com o título.
+  assert.match(t271, /if \(rota === "\/admin"\) \{[\s\S]*?toBeVisible\(\);\n\s+await page\.addStyleTag\(\{ content: ESTILO_DOS_PAINEIS_VIVOS \}\);\n\s+\}/);
+  // O título fica: só o que não é o h2 do painel some.
+  assert.match(t271, /> :not\(h2\) \{ display: none !important; \}/);
+  assert.equal((t271.match(/ESTILO_DOS_PAINEIS_VIVOS/g) ?? []).length, 2, "definido uma vez e usado uma vez");
+});
+
 test("as três telas dos defeitos registrados são falha esperada: estrita, com o item e a data, logo antes da comparação", () => {
   const t263 = ler("tests/e2e/specs/t263-visual-41.spec.ts");
   const t271 = ler("tests/e2e/specs/t271-admin-visual.spec.ts");
