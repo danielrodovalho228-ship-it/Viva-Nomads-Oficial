@@ -3,7 +3,7 @@ import { CascaConta } from "@/components/account/casca-conta";
 import { TelaAjuda } from "@/components/account/tela-ajuda";
 import { TelaPapeis } from "@/components/account/tela-papeis";
 import { PerfilTela } from "@/components/account/perfil-tela";
-import { AncoraAntigaDaConta } from "@/components/account/largura-e-ancora";
+import { AncoraAntigaDaConta, VoltarAoMenuSeTelaEstreita } from "@/components/account/largura-e-ancora";
 import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { DadosPessoais, DocumentoPessoa } from "@/components/account/conta-secoes";
@@ -42,6 +42,8 @@ export default async function ContaSecaoPage({ params }: { params: Promise<{ sec
           <PerfilTela inicial={inicial} />
           {/* E798: /dashboard/conta#documento (link antigo) chega aqui pelo redirecionamento do servidor; vai à seção certa. */}
           <AncoraAntigaDaConta />
+          {/* E979: cookie da largura desatualizado → no celular, volta ao menu da Conta. */}
+          <VoltarAoMenuSeTelaEstreita />
         </CascaConta>
       );
     }
