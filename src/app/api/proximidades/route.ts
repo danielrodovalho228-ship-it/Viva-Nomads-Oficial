@@ -89,7 +89,9 @@ export async function POST(request: Request) {
     const ancoras = referencia ? ancorasPerto(referencia, destinos, { cidade: endereco.cidade, uf: endereco.uf }) : [];
     const r = respostaPerto({ osm, fonteOsm, referencia, ancoras });
     registrar(r.fonte as FonteProximidades | "ancoras", ancoras.length ? [...etapas, `ancoras:${ancoras.length}`] : etapas);
-    return NextResponse.json({ ...r, referencia: { cep: pedido.cep, rua: pedido.rua } });
+    // E978: na falha do mapa, as etapas (só códigos: "nominatim:403", "overpass-api.de:429" — nunca endereço nem CEP) vão
+    // na resposta ao PRÓPRIO dono: o diagnóstico sai da aba Rede do navegador, sem depender dos logs do servidor.
+    return NextResponse.json({ ...r, ...(r.motivo ? { etapas: etapas.slice(0, 12) } : {}), referencia: { cep: pedido.cep, rua: pedido.rua } });
   };
 
   // E593: sem CEP, busca a partir do ponto gravado do anúncio — sem o cache por CEP (a chave dele é o CEP).
@@ -124,7 +126,10 @@ export async function POST(request: Request) {
   // OSM é gratuito, mas é de todos: limita por pessoa além do cache.
   if (!(await consumirLimite(`osm:${user.id}`, 30, DIA))) return responder(null, "limite", pontoCache);
 
-  const { ponto, fonte } = await geocodificarEndereco(endereco, etapas);
+  // E978: o ponto do CEP já está no cache (gravado mesmo quando o Overpass falhou) — reusa, em vez de geocodificar o mesmo
+  // CEP de novo a cada tentativa (cada repetição gastava o Nominatim e o limite do dia, e a falha se alimentava).
+  if (pontoCache) etapas.push("ponto_do_cache");
+  const { ponto, fonte } = pontoCache ? { ponto: pontoCache, fonte: "osm" as const } : await geocodificarEndereco(endereco, etapas);
   if (!ponto || !fonte) return responder(null, "sem_ponto", pontoCache);
   const achados = await buscarLugares(ponto, etapas);
   // O ponto fica no cache mesmo sem lugares (a distância dos lugares adicionados à mão parte dele); a lista só quando o
