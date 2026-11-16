@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
-import { cepValido, distanciaMetros, PROXIMIDADES_LAB, type LugarProximo } from "@/lib/proximidades/osm";
+import { cepValido, distanciaMetros, proximidadesDoLab, type LugarProximo } from "@/lib/proximidades/osm";
+import { referenciaDaBusca, type EnderecoBusca } from "@/lib/proximidades/referencia";
 import { buscarLugares, geocodificarEndereco, geocodificarLugar, type FonteProximidades, type Ponto } from "@/lib/proximidades/osm-servidor";
 import { ancorasPerto, respostaPerto, type DestinoAncora } from "@/lib/proximidades/ancoras";
 
@@ -19,7 +20,10 @@ import { ancorasPerto, respostaPerto, type DestinoAncora } from "@/lib/proximida
   • Laboratório (INTEGRACOES_SIMULADAS=on): lista fixa, nada sai para a rede.
   • E259 item 7 — FONTE ÚNICA com a página: as âncoras oficiais da cidade (tabela destinos, a mesma do "Tempo até")
     entram na lista, e tudo é medido de UM ponto — o ponto público do anúncio já salvo (imovelId), o mesmo da página;
-    num anúncio novo, o do endereço. O Overpass que não responde (tempo estourado nos dois servidores) é "erro", nunca
+    num anúncio novo, o do endereço.
+  • E952: o ponto público só vale para o MESMO endereço em que ele foi gravado (cep_proximidades + rua do exact_address,
+    a mesma gravação do lat/lng). Endereço novo no pedido → o ponto do endereço novo, inclusive para as âncoras
+    (referenciaDaBusca). A resposta diz o endereço usado (referencia: { cep, rua }) — nunca o ponto. O Overpass que não responde (tempo estourado nos dois servidores) é "erro", nunca
     "nada por perto", e não grava lista vazia no cache.
 */
 
@@ -77,13 +81,15 @@ export async function POST(request: Request) {
 
   // E259: o ponto público do anúncio já salvo (o mesmo do "Tempo até" da página) e as âncoras oficiais da cidade.
   const imovelId = typeof corpo?.imovelId === "string" ? corpo.imovelId : typeof corpo?.propertyId === "string" ? corpo.propertyId : null;
-  const [pontoPublico, destinos] = await Promise.all([pontoPublicoDoAnuncio(admin, imovelId, user.id), destinosAncora(admin)]);
+  const [salvo, destinos] = await Promise.all([anuncioSalvo(admin, imovelId, user.id), destinosAncora(admin)]);
+  const pedido: EnderecoBusca = { cep: endereco.cep || null, rua: endereco.rua || null };
   const responder = (osm: LugarProximo[] | null, fonteOsm: string, pontoEndereco: Ponto | null) => {
-    const referencia = pontoPublico ?? pontoEndereco;
+    const referencia = referenciaDaBusca({ salvo, pedido, pontoPublico: salvo?.ponto ?? null, pontoEndereco });
+    if (salvo?.ponto && referencia !== salvo.ponto) etapas.push("endereco_novo");
     const ancoras = referencia ? ancorasPerto(referencia, destinos, { cidade: endereco.cidade, uf: endereco.uf }) : [];
     const r = respostaPerto({ osm, fonteOsm, referencia, ancoras });
     registrar(r.fonte as FonteProximidades | "ancoras", ancoras.length ? [...etapas, `ancoras:${ancoras.length}`] : etapas);
-    return NextResponse.json(r);
+    return NextResponse.json({ ...r, referencia: { cep: pedido.cep, rua: pedido.rua } });
   };
 
   // E593: sem CEP, busca a partir do ponto gravado do anúncio — sem o cache por CEP (a chave dele é o CEP).
@@ -91,7 +97,7 @@ export async function POST(request: Request) {
     etapas.push("ponto_do_anuncio");
     if (integracoesSimuladas()) {
       await registrarSimulado("osm", { acao: "proximidades", cep: null });
-      return responder(PROXIMIDADES_LAB, "lab", pontoGravado);
+      return responder(proximidadesDoLab(null).itens, "lab", pontoGravado);
     }
     if (!(await consumirLimite(`osm:${user.id}`, 30, DIA))) return responder(null, "limite", pontoGravado);
     const achados = await buscarLugares(pontoGravado, etapas);
@@ -101,9 +107,10 @@ export async function POST(request: Request) {
 
   if (integracoesSimuladas()) {
     await registrarSimulado("osm", { acao: "proximidades", cep });
-    const pontoLab = { lat: -18.918, lng: -48.258 };
-    if (admin) await admin.from("proximidades_cep").upsert({ cep, lat: pontoLab.lat, lng: pontoLab.lng, itens: PROXIMIDADES_LAB, fonte: "lab", atualizado_em: new Date().toISOString() });
-    return responder(PROXIMIDADES_LAB, "lab", pontoLab);
+    // E952: o laboratório devolve uma lista (e um ponto) por CEP, para distinguir o endereço A do B.
+    const lab = proximidadesDoLab(cep);
+    if (admin) await admin.from("proximidades_cep").upsert({ cep, lat: lab.ponto.lat, lng: lab.ponto.lng, itens: lab.itens, fonte: "lab", atualizado_em: new Date().toISOString() });
+    return responder(lab.itens, "lab", lab.ponto);
   }
 
   let pontoCache: Ponto | null = null;
@@ -133,13 +140,19 @@ async function destinosAncora(admin: ReturnType<typeof createAdminClient>): Prom
   return (data ?? []) as DestinoAncora[];
 }
 
-/** E259: o ponto PÚBLICO de um anúncio do PRÓPRIO dono (o mesmo que a página usa), ou null. Nunca vai à resposta. */
-async function pontoPublicoDoAnuncio(admin: ReturnType<typeof createAdminClient>, id: string | null, userId: string): Promise<Ponto | null> {
+/**
+ * E259 + E952: o ponto PÚBLICO de um anúncio do PRÓPRIO dono (o mesmo que a página usa) E o endereço para o qual ele foi
+ * gravado (cep_proximidades e a rua do exact_address, escritos na mesma gravação do lat/lng — o autosave do rascunho só
+ * mexe no draft_data). Nada disso vai à resposta.
+ */
+async function anuncioSalvo(admin: ReturnType<typeof createAdminClient>, id: string | null, userId: string): Promise<(EnderecoBusca & { ponto: Ponto | null }) | null> {
   if (!admin || !id || !/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { data } = await admin.from("properties").select("owner_id, lat, lng").eq("id", id).maybeSingle();
-  if (!data || data.owner_id !== userId || data.lat == null || data.lng == null) return null;
-  const p = { lat: Number(data.lat), lng: Number(data.lng) };
-  return Number.isFinite(p.lat) && Number.isFinite(p.lng) ? p : null;
+  const { data } = await admin.from("properties").select("owner_id, lat, lng, cep_proximidades, exact_address").eq("id", id).maybeSingle(); // consistency-ignore: E952 — só o servidor, e só do PRÓPRIO dono (owner_id conferido abaixo); o ponto e o endereço gravados nunca vão à resposta
+  const d = data as { owner_id: string; lat: number | null; lng: number | null; cep_proximidades: string | null; exact_address: string | null } | null;
+  if (!d || d.owner_id !== userId) return null;
+  const p = { lat: Number(d.lat), lng: Number(d.lng) };
+  const ponto = d.lat != null && d.lng != null && Number.isFinite(p.lat) && Number.isFinite(p.lng) ? p : null;
+  return { cep: cepValido(d.cep_proximidades), rua: (d.exact_address ?? "").split(",")[0].trim() || null, ponto };
 }
 
 /** O ponto do endereço do anúncio: o do cache do CEP; sem cache, geocodifica agora. */
