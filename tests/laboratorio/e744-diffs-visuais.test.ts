@@ -7,7 +7,7 @@
     2) um job separado, o único do workflow com contents: write, publica essas imagens num commit órfão no branch
        `lab-diffs`, reescrito a cada rodada (decisão do Gerente, 15/11: um branch só, sem histórico), com um README gerado;
     3) o mesmo job apaga o `lab-diffs` quando o último commit dele tem mais de 7 dias.
-  Travas: o destino é sempre e só `lab-diffs`; só PNG; no máximo 60 imagens e 25 MB por rodada; nada de vídeo, trace, log
+  Travas: o destino é sempre e só `lab-diffs`; só PNG; no máximo 240 imagens e 25 MB por rodada; nada de vídeo, trace, log
   nem relatório HTML (o repositório é público).
 
   Roda: node --test tests/laboratorio/e744-diffs-visuais.test.ts
@@ -15,7 +15,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -146,15 +146,15 @@ test("E744 item A: sem falha visual a coleta não cria pasta nenhuma (não há a
   assert.equal(existsSync(destino), false);
 });
 
-test("E744 item A: limites de 60 imagens e 25 MB por rodada; o que passa do limite fica listado, não publicado", () => {
-  assert.equal(MAX_IMAGENS, 60);
+test("E744 item A: limites de 240 imagens e 25 MB por rodada; o que passa do limite fica listado, não publicado", () => {
+  assert.equal(MAX_IMAGENS, 240);
   assert.equal(MAX_BYTES, 25 * 1024 * 1024);
-  const muitas = Array.from({ length: 75 }, (_, i) => ({ caminho: `t245/caso-${String(i).padStart(2, "0")}/a.png`, bytes: 1000 }));
+  const muitas = Array.from({ length: 255 }, (_, i) => ({ caminho: `t245/caso-${String(i).padStart(3, "0")}/a.png`, bytes: 1000 }));
   const porQuantidade = selecionar(muitas);
-  assert.equal(porQuantidade.publicadas.length, 60);
+  assert.equal(porQuantidade.publicadas.length, 240);
   assert.equal(porQuantidade.restantes.length, 15);
-  assert.equal(porQuantidade.publicadas[0].caminho, "t245/caso-00/a.png", "publica as primeiras, na ordem");
-  assert.equal(porQuantidade.restantes[0].caminho, "t245/caso-60/a.png");
+  assert.equal(porQuantidade.publicadas[0].caminho, "t245/caso-000/a.png", "publica as primeiras, na ordem");
+  assert.equal(porQuantidade.restantes[0].caminho, "t245/caso-240/a.png");
   const pesadas = Array.from({ length: 10 }, (_, i) => ({ caminho: `t271/${i}.png`, bytes: 4 * 1024 * 1024 }));
   const porPeso = selecionar(pesadas);
   assert.equal(porPeso.publicadas.length, 6, "6 × 4 MB = 24 MB cabem; a 7ª passaria de 25 MB");
@@ -308,4 +308,19 @@ test("E744 item A (Vercel): o branch lab-diffs não gera build; os crons e o res
   assert.deepEqual(v.git, { deploymentEnabled: { "lab-diffs": false } });
   assert.equal(v.framework, "nextjs");
   assert.ok(Array.isArray(v.crons) && v.crons.length >= 13);
+});
+
+test("E744 item A: uma rodada carrega o pacote visual inteiro — todas as telas do t245, t263 e t271, com as 3 imagens de cada", () => {
+  // Com o limite antigo (60) a 1ª rodada publicaria só as 20 primeiras telas do t245 e nada do t263 nem do t271: em
+  // 15/11 falhavam 54 telas (37 + 6 + 11), 162 imagens. O limite de quantidade tem de cobrir TODAS as referências × 3.
+  const pasta = "tests/e2e/visual";
+  const telas = readdirSync(pasta).flatMap((spec) => readdirSync(`${pasta}/${spec}`).filter((f) => f.endsWith(".png")).map((f) => ({ spec, f, bytes: statSync(`${pasta}/${spec}/${f}`).size })));
+  assert.ok(telas.length >= 65, `referências versionadas dos três specs (achei ${telas.length})`);
+  assert.ok(telas.length * 3 <= MAX_IMAGENS, `${telas.length} telas × 3 imagens cabem no limite de ${MAX_IMAGENS}`);
+  // E no limite de peso: referência, obtido e diferença têm tamanho parecido — 3 × o total das referências, com folga.
+  const total = telas.reduce((s, t) => s + t.bytes, 0);
+  assert.ok(total * 3 * 1.5 <= MAX_BYTES, `3 × ${(total / 1048576).toFixed(1)} MB (com 50% de folga) cabem em 25 MB`);
+  const tudo = telas.flatMap((t) => ["expected", "actual", "diff"].map((tipo) => ({ caminho: `${t.spec}/${t.f}-${tipo}.png`, bytes: t.bytes })));
+  const r = selecionar(tudo);
+  assert.equal(r.restantes.length, 0, "nada fica de fora");
 });

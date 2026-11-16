@@ -408,7 +408,7 @@ jobs:
   # E744, item A — diffs visuais legíveis sem baixar o artifact. Quando um spec visual falha (t245, t271, t263), este job
   # publica as imagens (esperado, obtido, diferença) num commit órfão no branch `lab-diffs`, reescrito a cada rodada, e
   # apaga esse branch quando o último commit tem mais de 7 dias. É o ÚNICO job do workflow com permissão de escrita, roda só
-  # no agendado e no disparo manual, e o script recusa qualquer destino que não seja `lab-diffs`. Só PNG, até 60 imagens e
+  # no agendado e no disparo manual, e o script recusa qualquer destino que não seja `lab-diffs`. Só PNG, até 240 imagens e
   # 25 MB por rodada: nada de vídeo, trace, log nem relatório (o repositório é público).
   publicar-diffs:
     name: publicar os diffs visuais (branch lab-diffs)

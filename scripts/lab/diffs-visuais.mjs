@@ -20,7 +20,7 @@
   Travas (cada uma com teste em tests/laboratorio/e744-diffs-visuais.test.ts):
     - o destino é sempre e só o branch `lab-diffs`; qualquer outro nome é recusado antes de qualquer comando git;
     - só PNG (extensão e assinatura do arquivo); nada de vídeo, trace, log nem relatório HTML;
-    - no máximo 60 imagens e 25 MB por rodada; o que passa do limite fica listado no README, não publicado.
+    - no máximo 240 imagens e 25 MB por rodada (cabem todas as telas do t245, t263 e t271 × 3 imagens); o que passa do limite fica listado no README, não publicado.
 
   Como a sessão lê: git fetch origin lab-diffs && git show FETCH_HEAD:README.md  (as imagens: git checkout FETCH_HEAD -- <caminho>).
 */
@@ -30,7 +30,9 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, sep } from "node:path";
 
 export const RAMO = "lab-diffs";
-export const MAX_IMAGENS = 60;
+// 240: as 65 telas com referência versionada (t245, t263, t271) × 3 imagens = 195, com folga. Com 60, a 1ª rodada
+// publicaria só as 20 primeiras telas do t245 e nada dos outros dois (em 15/11 falhavam 54 telas = 162 imagens).
+export const MAX_IMAGENS = 240;
 export const MAX_BYTES = 25 * 1024 * 1024;
 export const DIAS_DE_GUARDA = 7;
 const DIA_MS = 86_400_000;
@@ -118,7 +120,7 @@ export function coletar(relatorio, destino) {
   return { casos: casos.length, imagens };
 }
 
-/** Limites da rodada: publica as primeiras, na ordem, até 60 imagens e 25 MB; a partir do primeiro estouro, tudo é resto. */
+/** Limites da rodada: publica as primeiras, na ordem, até 240 imagens e 25 MB; a partir do primeiro estouro, tudo é resto. */
 export function selecionar(imagens, limites = {}) {
   const maxImagens = limites.maxImagens ?? MAX_IMAGENS;
   const maxBytes = limites.maxBytes ?? MAX_BYTES;
