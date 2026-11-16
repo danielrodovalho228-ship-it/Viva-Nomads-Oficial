@@ -11,7 +11,7 @@ import {
 } from "@/lib/busca/painel-filtros";
 import { COMODIDADES_FILTRAVEIS } from "@/lib/busca/filtro-comodidades";
 import { TEXTO_GARANTIA_MINIMA } from "@/lib/busca/garantia-minima";
-import { rotuloVerNaoMedidos } from "@/lib/busca/filtro-internet";
+import { rotuloMbps, rotuloVerNaoMedidos } from "@/lib/busca/filtro-internet";
 import {
   TEXTO_SEM_INTERNET_MEDIDA,
   faixasInternet,
@@ -181,7 +181,7 @@ export function FolhaFiltros({
           <Grupo titulo="Internet medida a partir de" testId="painel-internet">
             {faixas.map((v) => (
               <ChipFaceta key={v} f={facetaUnica(contar, rascunho, "internetMin", v)} ativo={rascunho.internetMin === v} onClick={() => alterna("internetMin", v)} testId={`faceta-internet-${v}`}>
-                {v} Mbps
+                {rotuloMbps(v)}
               </ChipFaceta>
             ))}
           </Grupo>
