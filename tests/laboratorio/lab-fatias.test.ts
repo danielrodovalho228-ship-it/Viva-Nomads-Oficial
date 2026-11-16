@@ -95,13 +95,22 @@ test("as fatias da varredura t48 têm teto maior que as gerais (a do admin levou
   assert.ok(varredura < job * 60_000 - 10 * 60_000, "sobra tempo do job para preparo e para guardar o resultado");
 });
 
-test("a rotina de linhas de base visuais (E744) só gera artefato: não comita, não faz push, cobre os 3 specs de captura", () => {
+// E744 (decisão do Gerente, 16/11/2026, aprovada pelo Daniel): além do artefato, o disparo manual grava as imagens refeitas
+// num ramo de evidência descartável (`linhas-de-base-evidencia`), porque o armazenamento dos artefatos não é alcançável por
+// toda sessão. A regra que este teste guarda continua: a GERAÇÃO é só leitura e nada é comitado em ramo de trabalho;
+// aprovar imagem é decisão humana, via PR. A única escrita é a do job `publicar-evidencia`, coberta em
+// tests/laboratorio/e744-linhas-de-base-evidencia.test.ts.
+test("a rotina de linhas de base visuais (E744) gera sem escrever: não comita, não faz push em ramo de trabalho, cobre os 3 specs de captura", () => {
   const w = readFileSync(".github/workflows/linhas-de-base.yml", "utf8");
   assert.match(w, /npx playwright test t245-visual-regressao t263-visual-41 t271-admin-visual --update-snapshots/);
   assert.match(w, /actions\/upload-artifact@v4/);
   assert.match(w, /node-version: "24\.22\.1"/);
   assert.match(w, /permissions:\s*\n\s*contents: read/, "somente leitura: aprovar imagem é decisão humana, via PR");
-  assert.doesNotMatch(w, /git (commit|push)|contents: write/);
+  assert.doesNotMatch(w, /git (commit|push)/);
+  const gerar = w.slice(w.indexOf("  gerar:"), w.indexOf("  publicar-evidencia:"));
+  assert.ok(gerar.includes("--update-snapshots"), "o job que gera as imagens");
+  assert.doesNotMatch(gerar, /contents: write/, "o job que gera as imagens não tem permissão de escrita");
+  assert.equal((w.match(/contents: write/g) ?? []).length, 1, "só o job publicar-evidencia escreve, e só no ramo de evidência");
   // mesmo ambiente do laboratório: mesmas etapas de banco, seed, build e site
   // E792: o Supabase sobe pelo script comum dos jobs do laboratório.
   for (const passo of ["scripts/lab/subir-supabase.sh", "seed-lab.mjs", "npm run build", "next start -p 3123", "playwright install"]) assert.ok(w.includes(passo), passo);
