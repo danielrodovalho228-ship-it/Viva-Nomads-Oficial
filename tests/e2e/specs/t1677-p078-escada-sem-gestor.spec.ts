@@ -5,7 +5,7 @@ import { achadosProibidos } from "../../../src/lib/frases-proibidas";
 import { MOTIVO_PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /*
-  T1668 — prompt 078 (decisão do Daniel, 16/11/2026): lançar SEM o Plano Gestor público de 4%.
+  T1677 — prompt 078 (decisão do Daniel, 16/11/2026): lançar SEM o Plano Gestor público de 4%.
   A escada pública da taxa de serviço é 1–2 = 12% · 3–5 = 10% · 6–15 = 8% · 16 ou mais = 6%. No lugar do Gestor há uma
   linha só, sem taxa: "Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva." (TEXTO_CARTEIRAS).
 
@@ -64,7 +64,7 @@ async function semRolagemHorizontalNoCelular(page: Page, largura: number): Promi
   expect(rolagem, "rolagem horizontal a 390 px").toBeLessThanOrEqual(cliente);
 }
 
-test.describe("T1668 — P078: os números da decisão", { tag: ["@078", "@E564", "@E805", "@ao-vivo-seguro"] }, () => {
+test.describe("T1677 — P078: os números da decisão", { tag: ["@078", "@E564", "@E805", "@ao-vivo-seguro"] }, () => {
   test("a escada, a linha de carteiras e as duas regras de texto são as da decisão (literal)", () => {
     expect(escadaTaxasTexto()).toBe("1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16 ou mais imóveis: 6%");
     expect(escadaTaxasCurta()).toBe("1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16 ou mais = 6%");
@@ -85,7 +85,7 @@ test.describe("T1668 — P078: os números da decisão", { tag: ["@078", "@E564"
 });
 
 for (const largura of [390, 1280] as const) {
-  test.describe(`T1668 — P078: escada sem o Plano Gestor (${largura}px)`, { tag: ["@078", "@E564", "@E805", "@ao-vivo-seguro"] }, () => {
+  test.describe(`T1677 — P078: escada sem o Plano Gestor (${largura}px)`, { tag: ["@078", "@E564", "@E805", "@ao-vivo-seguro"] }, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
     test('/: "até 6%" e a linha de carteiras no bloco dos proprietários; sem Plano Gestor nem 4%', async ({ page }) => {

@@ -138,4 +138,4 @@ Todas levam `// 078 (Daniel, 16/11/2026): …` e o cabeçalho de cada arquivo ga
 ## Teste novo
 
 - `src/lib/cobranca/p078-escada-sem-gestor.test.ts` (unidade, 11 casos).
-- `tests/e2e/specs/t1668-p078-escada-sem-gestor.spec.ts` (`@078 @ao-vivo-seguro`, 13 casos: páginas públicas e a Central de Ajuda a 390 e 1280 px).
+- `tests/e2e/specs/t1677-p078-escada-sem-gestor.spec.ts` (`@078 @ao-vivo-seguro`, 13 casos: páginas públicas e a Central de Ajuda a 390 e 1280 px).

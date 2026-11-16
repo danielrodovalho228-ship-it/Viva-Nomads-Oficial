@@ -113,6 +113,20 @@ test("078 (estático): as superfícies citam a escada e a linha de carteiras pel
   assert.match(ler("src/lib/atendimento/viva-prompt.ts"), /const REGRA_PRECO_TEXTO = TEXTO_REGRA_UNICA;/);
 });
 
+test("E995 (078): as respostas da Ajuda que falam da taxa dizem '16 ou mais', nunca '16–19' nem o Plano Gestor", async () => {
+  // E995 (Gerente, 16/11/2026): a prova ao vivo do E939 achou "16–19 imóveis" na Ajuda; a escada decidida no Prompt 078
+  // termina em 16 ou mais = 6%. As respostas leem da fonte única, então mudam junto com a regra.
+  const { FAQ } = await import("../atendimento/faq.ts");
+  const resposta = (id: string) => FAQ.find((x: { id: string }) => x.id === id)!.resposta as string;
+  // "O morador paga alguma taxa?" (E939): a escada por extenso.
+  assert.ok(resposta("inquilino-paga").includes("16 ou mais imóveis: 6%"), resposta("inquilino-paga"));
+  assert.ok(resposta("inquilino-paga").includes(escadaTaxasTexto()));
+  // "Quanto custa anunciar?": a escada curta e a linha de carteiras.
+  assert.ok(resposta("custo-anunciar").includes("16 ou mais = 6%"), resposta("custo-anunciar"));
+  assert.ok(resposta("custo-anunciar").includes(planos.TEXTO_CARTEIRAS));
+  for (const id of ["inquilino-paga", "custo-anunciar"]) assert.doesNotMatch(resposta(id), /16[–-]19|Plano Gestor|\b4 ?%/, id);
+});
+
 test("078: a apresentação pública (arquivo estático) mostra a mesma escada da regra e a linha de carteiras, sem o Gestor", () => {
   const html = ler("public/apresentacao.html");
   const linhas = [...html.matchAll(/<div class="row"><span>([^<]+)<\/span><b>(\d+%)<\/b><\/div>/g)].map((m) => `${m[1]}: ${m[2]}`);

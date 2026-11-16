@@ -30,7 +30,7 @@
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
         "t1448-varredura-bloco514",
-        "t1668-p078-escada-sem-gestor"
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/acesso-socios": {
@@ -638,7 +638,7 @@
         "t1423-varredura-bloco497",
         "t1448-varredura-bloco514",
         "t1645-reprovas-e916-e915-e887-e931",
-        "t1668-p078-escada-sem-gestor"
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/ajuda/[tema]": {
@@ -656,7 +656,7 @@
         "t1423-varredura-bloco497",
         "t1448-varredura-bloco514",
         "t1645-reprovas-e916-e915-e887-e931",
-        "t1668-p078-escada-sem-gestor"
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -969,7 +969,7 @@
         "t1412-varredura-bloco490",
         "t1440-varredura-bloco507",
         "t1462-varredura-bloco524",
-        "t1668-p078-escada-sem-gestor"
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/comparar": {
@@ -2747,7 +2747,7 @@
         "t1425-varredura-bloco499",
         "t1450-varredura-bloco516",
         "t1457-c10-c7-seguranca-e-botao-na-dobra",
-        "t1668-p078-escada-sem-gestor"
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/parceiros": {
@@ -2770,7 +2770,7 @@
         "t1424-varredura-bloco498",
         "t1449-varredura-bloco515",
         "t1459-c9-e709-e710-e711-layout",
-        "t1668-p078-escada-sem-gestor"
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/parceiros/[slug]": {
@@ -2920,7 +2920,7 @@
         "t591-varredura-bloco48",
         "t661-varredura-bloco62",
         "t671-varredura-bloco66",
-        "t1668-p078-escada-sem-gestor"
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/privacidade": {
