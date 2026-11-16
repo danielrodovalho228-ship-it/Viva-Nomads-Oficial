@@ -27,6 +27,8 @@ export interface ChatMessage {
   anexo?: AnexoNaBolha;
   /** E484: quando a mensagem foi enviada (ISO), para a hora na bolha. */
   enviadaEm?: string;
+  /** E967: o envio otimista falhou (rede ou servidor) — a bolha fica, com o motivo e "Tentar de novo". Só na tela. */
+  falha?: string;
 }
 
 export interface Conversation {

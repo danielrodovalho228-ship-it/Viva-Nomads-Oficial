@@ -17,7 +17,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { sendMessage } from "@/lib/data/actions";
 import { enviarMensagemDoPedido } from "@/lib/parceiros/pedido-actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
-import type { Conversation } from "@/lib/data/messages";
+import type { ChatMessage, Conversation } from "@/lib/data/messages";
+import { falhaDoEnvio, ROTULO_TENTAR_DE_NOVO, TEXTO_NAO_ENVIADA } from "@/lib/mensagens/envio-otimista";
 import { EmergenciaChegada } from "@/components/estadia/emergencia-chegada";
 import { GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
 import { avisoAntesDeEnviar, previaAoDigitar } from "@/lib/messages/aviso-envio";
@@ -110,6 +111,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const previaContato = previaAoDigitar(draft, { deRapida });
   const avisoAberto = previaContato !== null && avisoFechadoPara !== draft;
   const campoRef = useRef<HTMLInputElement>(null);
+  // E967: id estável de cada bolha otimista (para marcar a falha e reenviar a certa).
+  const seqOtimista = useRef(0);
   // E445 item 5: foto ou PDF escolhido, com a prévia antes de enviar.
   const [anexo, setAnexo] = useState<{ arquivo: File; previaUrl: string | null } | null>(null);
   const [enviandoAnexo, setEnviandoAnexo] = useState(false);
@@ -258,22 +261,32 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     const usouRapida = deRapida;
     setDeRapida(false);
     // Atualização otimista
+    const tmpId = `tmp-${++seqOtimista.current}`;
+    const conversa = active.id;
     setConversations((prev) =>
       prev.map((c) =>
-        c.id === active.id
-          ? { ...c, preview: text, messages: [...c.messages, { id: `tmp-${Date.now()}`, from: "me", text, enviadaEm: new Date().toISOString() }] }
+        c.id === conversa
+          ? { ...c, preview: text, messages: [...c.messages, { id: tmpId, from: "me", text, enviadaEm: new Date().toISOString() }] }
           : c
       )
     );
+    // E967: a bolha otimista NÃO some se o envio falhar (rede caiu ou o servidor recusou): fica marcada como não
+    // enviada, com o motivo e "Tentar de novo" (antes o retorno era ignorado e a mensagem sumia ao recarregar).
+    const marcarFalha = (motivo: string) =>
+      setConversations((prev) => prev.map((c) => (c.id === conversa ? { ...c, messages: c.messages.map((m) => (m.id === tmpId ? { ...m, falha: motivo } : m)) } : c)));
     // Persiste (Supabase quando configurado). Em modo demonstração NUNCA
     // grava: a conversa é fictícia e o envio fica só na tela.
     if (!demo) {
       // Conversa de pedido de serviço (Prompt 31b): o servidor confere a parte do pedido e grava na conversa dele.
-      if (active.pedidoParceiroId) await semQuedaDeRede(enviarMensagemDoPedido(active.pedidoParceiroId, text));
-      else
+      if (active.pedidoParceiroId) {
+        const falhaPedido = falhaDoEnvio(await semQuedaDeRede(enviarMensagemDoPedido(active.pedidoParceiroId, text)));
+        if (falhaPedido) marcarFalha(falhaPedido);
+      } else
       {
         const envio = { conversationId: active.id, receiverId: active.otherId, propertyId: active.propertyId, body: text, respostaRapida: usouRapida };
         const r = await semQuedaDeRede(sendMessage(envio));
+        const falha = falhaDoEnvio(r);
+        if (falha) marcarFalha(falha);
         // E445 (item 3): termo ofensivo — o servidor avisa ANTES de gravar; só envia com a confirmação da pessoa.
         if (r && typeof r === "object" && "ofensa" in r && r.ofensa) {
           // Não gravou: tira o eco otimista, devolve o texto ao campo e mostra o aviso com "Enviar mesmo assim".
@@ -283,6 +296,14 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
         }
       }
     }
+  }
+
+  /** E967: reenvia o MESMO texto da bolha que falhou — tira a bolha antiga antes, para não duplicar. */
+  function tentarDeNovo(m: ChatMessage) {
+    if (!active) return;
+    const conversa = active.id;
+    setConversations((prev) => prev.map((c) => (c.id === conversa ? { ...c, messages: c.messages.filter((x) => x.id !== m.id) } : c)));
+    void enviar(m.text, false);
   }
 
   // E445: a última mensagem minha que o destinatário já leu (o "Visto" aparece só nela).
@@ -574,6 +595,15 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                     </Link>
                   )}
                 </span>
+                {/* E967: envio que falhou — a bolha fica, diz que não foi e oferece reenviar (grava uma vez). */}
+                {m.falha && (
+                  <span role="alert" className="flex max-w-[75%] flex-wrap items-center justify-end gap-2 text-xs text-red-700" data-testid="mensagem-nao-enviada">
+                    {TEXTO_NAO_ENVIADA} {m.falha}
+                    <button type="button" onClick={() => tentarDeNovo(m)} className="min-h-11 rounded-full border border-red-300 bg-white px-3 font-semibold text-red-700 hover:bg-red-50" data-testid="mensagem-tentar-de-novo">
+                      {ROTULO_TENTAR_DE_NOVO}
+                    </button>
+                  </span>
+                )}
                 {/* E484: a hora de envio de cada mensagem (fuso de Brasília). */}
                 {horaDaBolha(m.enviadaEm) && (
                   <span className="text-[11px] text-muted" data-testid="mensagem-hora" suppressHydrationWarning>
