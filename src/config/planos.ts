@@ -19,7 +19,7 @@ export interface Plano {
   publico: string; // público-alvo (tagline)
   precoMensal: number | null; // R$/mês (null = sob consulta)
   assinaturaAnual: number | null; // R$/ano (= mensal × 12; null = sob consulta)
-  comissao: number; // 0..1 — comissão de fechamento (Gestor = 0)
+  comissao: number; // 0..1 — comissão de fechamento
   limiteAnuncios: number; // anúncios ativos permitidos
   destaque: boolean; // plano em destaque na página de preços
   beneficios: string[];

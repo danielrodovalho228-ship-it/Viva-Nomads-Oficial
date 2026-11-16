@@ -88,3 +88,68 @@ test("078: os textos da escada saem da regra — 16 ou mais = 6%, 'até 6%', e a
   assert.match(fonte, /TEXTO_REGRA_UNICA =\s*`[^`]*\$\{TAXA_MENOR_TEXTO\}/);
   assert.match(fonte, /DESCRICAO_PRECOS =\s*`[^`]*\$\{TAXA_MENOR_TEXTO\}/);
 });
+
+test("078 (estático): as superfícies citam a escada e a linha de carteiras pela fonte única, sem número escrito à mão", () => {
+  const usa: [string, RegExp][] = [
+    ["src/config/textos-regulados.ts", /escadaTaxasTexto\(\)\}\. \$\{TEXTO_CARTEIRAS\}/],
+    ["src/app/(public)/page.tsx", /\{TAXA_MAIOR_TEXTO\}[^\n]*\{TAXA_MENOR_TEXTO\}[^\n]*\{TEXTO_CARTEIRAS\}/],
+    ["src/app/(public)/para-proprietarios/page.tsx", /\{FRASE_ESCADA_TAXAS\}/],
+    ["src/app/(public)/como-funciona/page.tsx", /\{FRASE_ESCADA_TAXAS\}/],
+    ["src/app/(public)/parceiros/page.tsx", /\$\{TEXTO_CARTEIRAS\}/],
+    ["src/app/(public)/precos/page.tsx", /\{TEXTO_CARTEIRAS\}/],
+    ["src/lib/atendimento/faq.ts", /\$\{escadaTaxasCurta\(\)\}\. \$\{TEXTO_CARTEIRAS\}/],
+    ["src/lib/atendimento/viva-prompt.ts", /\$\{escadaTaxasCurta\(\)\}\. \$\{TEXTO_CARTEIRAS\}/],
+    ["src/lib/atendimento/parceiros-texto.ts", /\$\{escadaTaxasCurta\(\)\}\)\. \$\{TEXTO_CARTEIRAS\}/],
+    ["src/components/modelo-negocio/modelo-negocio.tsx", /\{TEXTO_CARTEIRAS\}/],
+    ["src/components/financeiro/modelo-financeiro.tsx", /\{TEXTO_CARTEIRAS\}/],
+    ["src/components/account/plano-gestor-conta.tsx", /textoTaxaNaConta\(t\) : FRASE_ESCADA_TAXAS/],
+  ];
+  for (const [arquivo, re] of usa) {
+    const fonte = ler(arquivo);
+    assert.match(fonte, re, arquivo);
+    // Nenhuma faixa nem taxa da escada digitada no arquivo (a antiga "16–19", "= 6%", "12/10/8/6%").
+    assert.doesNotMatch(fonte.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, ""), /16[–-]19|\b(?:1[–-]2|3[–-]5|6[–-]15) ?= ?\d+ ?%|12\/10\/8\/6/, arquivo);
+  }
+  assert.match(ler("src/lib/atendimento/viva-prompt.ts"), /const REGRA_PRECO_TEXTO = TEXTO_REGRA_UNICA;/);
+});
+
+test("078: a apresentação pública (arquivo estático) mostra a mesma escada da regra e a linha de carteiras, sem o Gestor", () => {
+  const html = ler("public/apresentacao.html");
+  const linhas = [...html.matchAll(/<div class="row"><span>([^<]+)<\/span><b>(\d+%)<\/b><\/div>/g)].map((m) => `${m[1]}: ${m[2]}`);
+  assert.equal(linhas.join(" · "), escadaTaxasTexto());
+  assert.match(html, /<span>Carteira a partir de 20 imóveis ou administradora de imóveis<\/span><b>Fale com a Viva<\/b>/);
+  assert.doesNotMatch(html, /Plano Gestor|<b>4%<\/b>/);
+});
+
+test("078: Conta › Plano diz a taxa de hoje da conta — administradora com 3 imóveis vê 10%; taxa combinada diz que é combinada", async () => {
+  const { textoTaxaNaConta } = await import("../planos/gestor.ts");
+  const naFaixa = textoTaxaNaConta({ taxa: faixaPorImoveisAtivos(3).taxa, origem: "faixa", imoveisAtivos: 3 });
+  assert.equal(naFaixa, `Sua taxa de serviço hoje é de 10% (3 imóveis ativos). ${FRASE_ESCADA_TAXAS}`);
+  assert.match(textoTaxaNaConta({ taxa: 0.12, origem: "faixa", imoveisAtivos: 1 }), /de 12% \(1 imóvel ativo\)\./);
+  assert.match(textoTaxaNaConta({ taxa: 0.12, origem: "faixa", imoveisAtivos: 0 }), /^Sua taxa de serviço hoje é de 12%\. Quanto mais/);
+  // Queda de faixa há menos de 30 dias: a taxa anterior vale, e o texto diz por quê (senão "8%" com 2 imóveis pareceria erro).
+  assert.match(
+    textoTaxaNaConta({ taxa: 0.08, origem: "faixa_com_queda_recente", imoveisAtivos: 2 }),
+    /^Sua taxa de serviço hoje é de 8%: depois que a sua carteira diminuiu \(2 imóveis ativos\), a taxa anterior vale por mais 30 dias\. Quanto mais/,
+  );
+  const combinada = textoTaxaNaConta({ taxa: 0.04, origem: "admin", imoveisAtivos: 3 });
+  assert.match(combinada, /^Sua taxa de serviço hoje é de 4%, combinada com a Viva\./);
+  const gestor = await import("../planos/gestor.ts");
+  for (const saiu of ["gestorElegivel", "faltamParaGestor", "motivoGestor", "textoElegibilidadeGestor", "GESTOR_MIN_IMOVEIS_VALIDADOS", "GESTOR_TEXTO"]) assert.equal(saiu in gestor, false, saiu);
+  assert.equal(gestor.ROTULO_TIPO_CONTA.gestor, "administradora", "o tipo de conta fica");
+});
+
+test("078: o formulário e a rota viraram o pedido de contato de carteiras — sem taxa, sem 'plano', sem promessa de ferramenta", () => {
+  for (const arquivo of ["src/components/precos/plano-gestor-form.tsx", "src/app/api/plano-gestor/route.ts"]) {
+    const fonte = ler(arquivo).replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
+    // "plano" como palavra de tela (o nome do arquivo, da rota e dos data-testid, "plano-gestor", não é texto de tela).
+    assert.doesNotMatch(fonte, /plano gestor|\bplano\b(?!-)|\d ?%|\btaxa\b|cadastro assistido|ferramentas? exclusiv|suporte priorit/i, arquivo);
+  }
+  const form = ler("src/components/precos/plano-gestor-form.tsx");
+  assert.match(form, /Falar com a Viva sobre carteiras/);
+  assert.match(form, /title="Fale com a Viva sobre carteiras"/);
+  for (const campo of ["nome", "email", "telefone", "imoveis"]) assert.match(form, new RegExp(`\\b${campo}\\b`), `campo ${campo} continua`);
+  const rota = ler("src/app/api/plano-gestor/route.ts");
+  assert.match(rota, /subject: `Contato — carteira \(\$\{CARTEIRAS_MINIMO_IMOVEIS\}\+ imóveis ou administradora\)`/);
+  assert.doesNotMatch(rota, /\.from\(|insert\(/, "a rota só envia o e-mail interno: nada gravado nem apagado");
+});

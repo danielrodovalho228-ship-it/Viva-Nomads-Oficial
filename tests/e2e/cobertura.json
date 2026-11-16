@@ -29,7 +29,8 @@
         "t710-e265-sem-selo-em-todo-cartao",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1668-p078-escada-sem-gestor"
       ]
     },
     "/acesso-socios": {
@@ -636,7 +637,8 @@
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
         "t1448-varredura-bloco514",
-        "t1645-reprovas-e916-e915-e887-e931"
+        "t1645-reprovas-e916-e915-e887-e931",
+        "t1668-p078-escada-sem-gestor"
       ]
     },
     "/ajuda/[tema]": {
@@ -653,7 +655,8 @@
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
         "t1448-varredura-bloco514",
-        "t1645-reprovas-e916-e915-e887-e931"
+        "t1645-reprovas-e916-e915-e887-e931",
+        "t1668-p078-escada-sem-gestor"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -965,7 +968,8 @@
         "t710-e265-sem-selo-em-todo-cartao",
         "t1412-varredura-bloco490",
         "t1440-varredura-bloco507",
-        "t1462-varredura-bloco524"
+        "t1462-varredura-bloco524",
+        "t1668-p078-escada-sem-gestor"
       ]
     },
     "/comparar": {
@@ -2742,7 +2746,8 @@
         "t1404-varredura-bloco482",
         "t1425-varredura-bloco499",
         "t1450-varredura-bloco516",
-        "t1457-c10-c7-seguranca-e-botao-na-dobra"
+        "t1457-c10-c7-seguranca-e-botao-na-dobra",
+        "t1668-p078-escada-sem-gestor"
       ]
     },
     "/parceiros": {
@@ -2764,7 +2769,8 @@
         "t1403-varredura-bloco481",
         "t1424-varredura-bloco498",
         "t1449-varredura-bloco515",
-        "t1459-c9-e709-e710-e711-layout"
+        "t1459-c9-e709-e710-e711-layout",
+        "t1668-p078-escada-sem-gestor"
       ]
     },
     "/parceiros/[slug]": {
@@ -2913,7 +2919,8 @@
         "t543-e166-fundo-clean-publico",
         "t591-varredura-bloco48",
         "t661-varredura-bloco62",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t1668-p078-escada-sem-gestor"
       ]
     },
     "/privacidade": {
@@ -6290,7 +6297,7 @@
         "t656-e224-plano-gestor"
       ]
     },
-    "src/lib/data/planos-actions.ts#getGestorElegibilidade": {
+    "src/lib/data/planos-actions.ts#getTaxaDaConta": {
       "personas": [
         "proprietario",
         "inquilino"

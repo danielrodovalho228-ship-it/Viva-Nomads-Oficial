@@ -7,8 +7,10 @@
  * só a taxa fixada pelo admin, com motivo e validade. Saíram daqui gestorElegivel, faltamParaGestor, motivoGestor e
  * textoElegibilidadeGestor.
  */
-import { pctTexto } from "../cobranca/regra.ts";
+import { DIAS_PARA_NOVA_TAXA_APOS_QUEDA, pctTexto } from "../cobranca/regra.ts";
 import { FRASE_ESCADA_TAXAS } from "../../config/textos-regulados.ts";
+/** A linha das carteiras, também por aqui (telas que não leem @/config/planos, como /modelodenegocio — a mesma porta que o texto do Gestor usava). */
+export { TEXTO_CARTEIRAS } from "../../config/planos.ts";
 
 export type AccountType = "individual" | "gestor";
 
@@ -21,7 +23,10 @@ export function textoTaxaNaConta(t: { taxa: number; origem: "admin" | "faixa" | 
   const hoje =
     t.origem === "admin"
       ? `Sua taxa de serviço hoje é de ${pctTexto(t.taxa)}, combinada com a Viva.`
-      : `Sua taxa de serviço hoje é de ${pctTexto(t.taxa)}${t.imoveisAtivos > 0 ? ` (${quantos})` : ""}.`;
+      : t.origem === "faixa_com_queda_recente"
+        ? // A carteira caiu de faixa há menos de 30 dias: a taxa de antes ainda vale (sem isto, "8% (2 imóveis ativos)" ao lado da escada pareceria erro).
+          `Sua taxa de serviço hoje é de ${pctTexto(t.taxa)}: depois que a sua carteira diminuiu (${quantos}), a taxa anterior vale por mais ${DIAS_PARA_NOVA_TAXA_APOS_QUEDA} dias.`
+        : `Sua taxa de serviço hoje é de ${pctTexto(t.taxa)}${t.imoveisAtivos > 0 ? ` (${quantos})` : ""}.`;
   return `${hoje} ${FRASE_ESCADA_TAXAS}`;
 }
 

@@ -6,7 +6,7 @@ import styles from "./modelo-negocio.module.css";
 import { FAIXAS_COMISSAO_PADRAO, faixaPorImoveisAtivos, pctTexto, comissaoSobreContrato as taxaSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { COMPARE_REFERENCIA, linhasPublicas } from "@/config/compare-precos";
 import { SUPORTE_EMAIL } from "@/lib/site";
-import { TEXTO_CARTEIRAS } from "@/config/planos";
+import { TEXTO_CARTEIRAS } from "@/lib/planos/gestor";
 
 // ── REGRA ÚNICA (ordens bd296d53 e 2f80c58a; fonte: src/lib/cobranca/regra.ts) ──────────────
 // Taxa de serviço por contrato fechado, sobre o valor TOTAL do contrato (valor mensal × meses). Cada renovação é cobrada à parte.
@@ -82,7 +82,7 @@ export function ModeloNegocio() {
 
   // Quanto a Viva fatura por faixa neste cenário (cada faixa usa a mesma carteira).
   const receitaPorFaixa = FAIXAS_COMISSAO_PADRAO.map((f) => ({
-    label: f.maxImoveis === null ? `${f.minImoveis}+` : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`, // E667: a faixa sem teto leva o mínimo do Gestor (decisão de 04/11)
+    label: f.maxImoveis === null ? `${f.minImoveis}+` : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`, // E667/078: a faixa sem teto leva o próprio mínimo ("16+").
     value: taxaSobreContrato(valorMes, meses, f.taxa) * contratos * f.minImoveis,
   }));
 
