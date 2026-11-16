@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2018 — Pista 3, lote 2, item A5 (parte que vale na main) @E481 @E533 @ao-vivo-seguro.
+  T2018 — Pista 3, lote 2, item A5 (parte que vale na main) @E481 @E533 (sem @ao-vivo-seguro: precisa de login e do laboratório).
   Regra: o aviso de mensagem nova abre a conversa CERTA (/dashboard/mensagens?conversa=<id>); abri-la zera as não
   lidas dela na lista e tira o aviso do sino na hora, sem recarregar; a outra conversa segue com o número de mensagens
   não lidas dela.

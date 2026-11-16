@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2042 — Pista 3, lote 2, item F3 @E481 @E533 @ao-vivo-seguro. Regra: marcar como lida zera a lista e o sino SEM
+  T2042 — Pista 3, lote 2, item F3 @E481 @E533 (sem @ao-vivo-seguro: precisa de login e do laboratório). Regra: marcar como lida zera a lista e o sino SEM
   RECARREGAR — "Marcar todas como lidas" tira a contagem do sino na hora e cada aviso do painel fica lido; marcar UM
   (clicar nele) tira um da contagem; e o banco confirma (depois de recarregar, continua zerado).
   Vermelho: pendente de laboratório.

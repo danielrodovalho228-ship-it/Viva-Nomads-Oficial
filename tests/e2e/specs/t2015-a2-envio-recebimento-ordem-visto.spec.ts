@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2015 — Pista 3, lote 2, item A2 @E445 @E484 @ao-vivo-seguro. Regra: a conversa manda e recebe nos DOIS sentidos,
+  T2015 — Pista 3, lote 2, item A2 @E445 @E484 (sem @ao-vivo-seguro: precisa de login e do laboratório). Regra: a conversa manda e recebe nos DOIS sentidos,
   as mensagens aparecem em ordem cronológica nas duas pontas, e o "Visto" aparece só na última mensagem minha que o
   outro lado já abriu (E445 item 4). Vermelho: pendente de laboratório (prova do Gerente no julgamento do merge).
 */

@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2023 (tela) — Pista 3, lote 2, item B3 @E445 @ao-vivo-seguro. Cobertura NOMEADA do B3 inteiro (decisão do Gerente: os
+  T2023 (tela) — Pista 3, lote 2, item B3 @E445 (sem @ao-vivo-seguro: precisa de login e do laboratório). Cobertura NOMEADA do B3 inteiro (decisão do Gerente: os
   rascunhos t1071/t1073 citados no estudo nunca entraram na main). A parte do servidor está no unitário
   src/lib/messages/e445-t2023-falha-no-envio-do-anexo.test.ts (#3850).
   Regra: o envio de anexo que falha no meio deixa o ERRO VISÍVEL na prévia (a rede caída → "Não foi possível enviar o

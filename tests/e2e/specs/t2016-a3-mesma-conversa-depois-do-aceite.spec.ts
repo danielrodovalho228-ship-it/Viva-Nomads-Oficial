@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2016 — Pista 3, lote 2, item A3 @E200 @E569 @ao-vivo-seguro. Regra: depois do aceite da candidatura, a conversa
+  T2016 — Pista 3, lote 2, item A3 @E200 @E569 (sem @ao-vivo-seguro: precisa de login e do laboratório). Regra: depois do aceite da candidatura, a conversa
   continua na MESMA thread — as mensagens de antes e de depois têm o mesmo conversation_id e a lista dos dois lados
   mostra uma conversa só daquele imóvel, com o histórico inteiro. Vermelho: pendente de laboratório.
 */

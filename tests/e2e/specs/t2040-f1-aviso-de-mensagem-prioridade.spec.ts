@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2040 — Pista 3, lote 2, item F1 (conversas) @E482 @E444 @ao-vivo-seguro. Regra: a mensagem nova gera o aviso da
+  T2040 — Pista 3, lote 2, item F1 (conversas) @E482 @E444 (sem @ao-vivo-seguro: precisa de login e do laboratório). Regra: a mensagem nova gera o aviso da
   prioridade certa (new_message = URGENTE), com QUEM ESCREVEU no título, o IMÓVEL e a prévia limpa; um aviso pendente
   por conversa (a 2ª mensagem renova, não repete), e o sino mostra o selo "Urgente".
   Os eventos de orçamentos e de pré-aceite: prioridade pela mesma tabela (unitário e444-avisos); o pré-aceite está atrás

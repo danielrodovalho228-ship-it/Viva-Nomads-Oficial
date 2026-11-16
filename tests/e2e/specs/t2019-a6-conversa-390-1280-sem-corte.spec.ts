@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2019 — Pista 3, lote 2, item A6 @E243 @E244 @ao-vivo-seguro. Regra: a conversa aberta, a 390 e a 1280 px, para o
+  T2019 — Pista 3, lote 2, item A6 @E243 @E244 (sem @ao-vivo-seguro: precisa de login e do laboratório). Regra: a conversa aberta, a 390 e a 1280 px, para o
   morador e para o dono, não corta nada: sem rolagem lateral da página, cada bolha inteira dentro da tela e da própria
   caixa (texto longo quebra em linhas), e o campo e o botão Enviar visíveis dentro da largura.
   Vermelho: pendente de laboratório.
