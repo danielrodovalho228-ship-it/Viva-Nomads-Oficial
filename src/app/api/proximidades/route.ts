@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA } from "@/lib/limites";
@@ -7,6 +7,8 @@ import { cepValido, distanciaMetros, proximidadesDoLab, type LugarProximo } from
 import { referenciaDaBusca, type EnderecoBusca } from "@/lib/proximidades/referencia";
 import { buscarLugares, geocodificarEndereco, geocodificarLugar, type FonteProximidades, type Ponto } from "@/lib/proximidades/osm-servidor";
 import { ancorasPerto, respostaPerto, type DestinoAncora } from "@/lib/proximidades/ancoras";
+import { tokenMapboxServidor } from "@/lib/proximidades/mapbox";
+import { buscarLugaresMapbox } from "@/lib/proximidades/mapbox-servidor";
 
 /*
   "O que tem por perto" (prompt 10; PERTO-B). Chamada pelo cadastro novo E pela edição (ao abrir a seção e sempre que o
@@ -25,7 +27,15 @@ import { ancorasPerto, respostaPerto, type DestinoAncora } from "@/lib/proximida
     a mesma gravação do lat/lng). Endereço novo no pedido → o ponto do endereço novo, inclusive para as âncoras
     (referenciaDaBusca). A resposta diz o endereço usado (referencia: { cep, rua }) — nunca o ponto. O Overpass que não responde (tempo estourado nos dois servidores) é "erro", nunca
     "nada por perto", e não grava lista vazia no cache.
+  • E978 opção (i) (coordenador, DUET-1540): com MAPBOX_SERVER_TOKEN (só do servidor), o que o EDITOR mostra é o Mapbox
+    AO VIVO (fonte "mapbox") — a tela nunca fica presa ao Overpass. O resultado do Mapbox vai só na resposta: nunca é
+    gravado nem vai para cache. A lista GUARDADA continua só do OSM: a perna OSM (ponto do Nominatim + Overpass) roda
+    DEPOIS da resposta (after) e é a única que escreve proximidades_cep; ao salvar o anúncio, a lista automática vem
+    dela (osmParaGravar). Sem o token, o caminho de antes (Overpass na própria resposta).
 */
+
+/** E978: a perna OSM roda depois da resposta (after): Nominatim já feito + Overpass (até 2 × 20 s). */
+export const maxDuration = 60;
 
 const CACHE_DIAS = 30;
 const SEM_ENDERECO = "sem_endereco" as const;
@@ -94,6 +104,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...r, ...(r.motivo ? { etapas: etapas.slice(0, 12) } : {}), referencia: { cep: pedido.cep, rua: pedido.rua } });
   };
 
+  // E978: o token do Mapbox SÓ do servidor (nunca a NEXT_PUBLIC dos mapas).
+  const token = tokenMapboxServidor();
+
   // E593: sem CEP, busca a partir do ponto gravado do anúncio — sem o cache por CEP (a chave dele é o CEP).
   if (pontoGravado) {
     etapas.push("ponto_do_anuncio");
@@ -102,6 +115,11 @@ export async function POST(request: Request) {
       return responder(proximidadesDoLab(null).itens, "lab", pontoGravado);
     }
     if (!(await consumirLimite(`osm:${user.id}`, 30, DIA))) return responder(null, "limite", pontoGravado);
+    // E978: com o token do servidor, o editor vê o Mapbox ao vivo (sem CEP não há cache do OSM a preencher).
+    if (token) {
+      const aoVivo = await buscarLugaresMapbox(pontoGravado, token, etapas);
+      return responder(aoVivo, aoVivo ? "mapbox" : "erro", pontoGravado);
+    }
     const achados = await buscarLugares(pontoGravado, etapas);
     return responder(achados, achados ? "osm" : "erro", pontoGravado);
   }
@@ -116,11 +134,14 @@ export async function POST(request: Request) {
   }
 
   let pontoCache: Ponto | null = null;
+  let osmFresco = false;
   if (admin) {
     const { data: cache } = await admin.from("proximidades_cep").select("itens, atualizado_em, lat, lng").eq("cep", cep).maybeSingle();
     if (cache && Number.isFinite(cache.lat) && Number.isFinite(cache.lng)) pontoCache = { lat: Number(cache.lat), lng: Number(cache.lng) };
     const fresco = cache && Date.now() - Date.parse(cache.atualizado_em as string) < CACHE_DIAS * 86_400_000;
-    if (fresco && Array.isArray(cache.itens) && cache.itens.length > 0) return responder(cache.itens as LugarProximo[], "cache", pontoCache);
+    osmFresco = !!fresco && Array.isArray(cache.itens) && cache.itens.length > 0;
+    // E978: com o Mapbox, o editor vê sempre a busca ao vivo; a lista do OSM guardada fica para o salvamento.
+    if (osmFresco && !token) return responder(cache!.itens as LugarProximo[], "cache", pontoCache);
   }
 
   // OSM é gratuito, mas é de todos: limita por pessoa além do cache.
@@ -131,6 +152,25 @@ export async function POST(request: Request) {
   if (pontoCache) etapas.push("ponto_do_cache");
   const { ponto, fonte } = pontoCache ? { ponto: pontoCache, fonte: "osm" as const } : await geocodificarEndereco(endereco, etapas);
   if (!ponto || !fonte) return responder(null, "sem_ponto", pontoCache);
+
+  if (token) {
+    // E978: o editor responde com o Mapbox ao vivo — o resultado vai SÓ na resposta (nunca gravado nem em cache).
+    const aoVivo = await buscarLugaresMapbox(ponto, token, etapas);
+    // A perna OSM (a lista que se guarda) roda DEPOIS da resposta, só quando o cache do CEP não tem lista fresca.
+    if (!osmFresco && admin) {
+      const pontoJaGuardado = pontoCache !== null;
+      after(async () => {
+        const etapasOsm: string[] = [];
+        const achadosOsm = await buscarLugares(ponto, etapasOsm);
+        if (achadosOsm) await admin.from("proximidades_cep").upsert({ cep, lat: ponto.lat, lng: ponto.lng, itens: achadosOsm, fonte, atualizado_em: new Date().toISOString() });
+        // Overpass sem resposta: só o ponto (o de um CEP novo) — a lista guardada antes não é apagada.
+        else if (!pontoJaGuardado) await admin.from("proximidades_cep").upsert({ cep, lat: ponto.lat, lng: ponto.lng, itens: [], fonte: "erro", atualizado_em: new Date().toISOString() });
+        registrar(achadosOsm ? fonte : "erro", ["perna_osm", ...etapasOsm]);
+      });
+    }
+    return responder(aoVivo, aoVivo ? "mapbox" : "erro", ponto);
+  }
+
   const achados = await buscarLugares(ponto, etapas);
   // O ponto fica no cache mesmo sem lugares (a distância dos lugares adicionados à mão parte dele); a lista só quando o
   // Overpass respondeu — a falha não vira "nada por perto" guardado por 30 dias.
