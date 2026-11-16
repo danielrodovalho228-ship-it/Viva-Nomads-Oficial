@@ -17,7 +17,8 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { useAuthStore, DEMO_USER, type SessionUser } from "@/lib/store";
+import { useAuthStore, type SessionUser } from "@/lib/store";
+import { PAPEIS_DA_DEMONSTRACAO } from "@/lib/demo/papeis";
 import { useSessaoServidor, useUsuarioAtual } from "@/components/auth/sessao-servidor-contexto";
 import { isSupabaseConfigured } from "@/lib/env";
 import { cn } from "@/lib/utils";
@@ -77,11 +78,10 @@ export function useDashDemo(): boolean {
 }
 
 /**
- * Usuário para EXIBIÇÃO na casca do painel (nome, avatar, plano). Devolve o
- * usuário REAL; quando não há usuário, só cai na persona de demonstração
- * (DEMO_USER — "Marcos Andrade", plano Gestor) SE o modo demo vale. É a regra da
- * FRONTEIRA DEMO/REAL aplicada à identidade: conta real com demo desligado nunca
- * vê nome, avatar ou plano fictício. Substitui os antigos `user ?? DEMO_USER`.
+ * Usuário para EXIBIÇÃO na casca do painel (nome, avatar, plano). Devolve o usuário REAL; quando não há usuário, só
+ * cai na identidade da demonstração SE o modo demo vale — e ela não tem nome nem e-mail (só papéis e plano Gestor): a
+ * casca mostra o rótulo neutro. A persona fictícia saiu do produto (Gerente, 16/11/2026): nenhuma
+ * tela a mostrava, e ia no JavaScript de todo o painel. É a regra da FRONTEIRA DEMO/REAL aplicada à identidade.
  */
 export function useDisplayUser(): SessionUser | null {
   // E793 (A4): no painel com a sessão do servidor, o usuário do quadro (1º quadro = servidor); sem ela, o store.
@@ -90,7 +90,7 @@ export function useDisplayUser(): SessionUser | null {
   const storeUser = useAuthStore((s) => s.user);
   const user = sessao ? usuarioDoQuadro : storeUser;
   const demo = useDashDemo();
-  return user ?? (demo ? DEMO_USER : null);
+  return user ?? (demo ? PAPEIS_DA_DEMONSTRACAO : null);
 }
 
 /** Toggle do modo (renderizar apenas quando `admin`). */

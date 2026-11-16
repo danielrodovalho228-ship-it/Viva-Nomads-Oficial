@@ -107,8 +107,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { mode, isOwner, isTenant } = useViewMode();
 
   // Identidade de EXIBIÇÃO (fronteira demo/real): o AuthGuard garante usuário na
-  // casca; a persona demo ("Marcos") só entra quando o modo demo vale. Nunca um
-  // nome fictício para conta real. Fallback neutro (nome vazio), jamais DEMO_USER.
+  // casca; a identidade da demonstração só entra quando o modo demo vale, e não tem
+  // nome (a persona fictícia saiu do produto). Nunca um nome fictício para conta real: fallback neutro (nome vazio).
   const displayUser = useDisplayUser();
   const display: SessionUser =
     displayUser ?? { id: "", name: "", email: "", role: "tenant" };

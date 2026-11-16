@@ -32,20 +32,6 @@ export interface SessionUser {
   isTeste?: boolean;
 }
 
-/** Identidade de demonstração quando não há login (modo demo). */
-export const DEMO_USER: SessionUser = {
-  id: "demo-owner",
-  name: "Marcos Andrade",
-  email: "marcos@exemplo.com",
-  role: "owner",
-  fullName: "Marcos Andrade",
-  // Demo no plano Gestor para exibir os recursos de operador (Atualização 12).
-  plan: "gestor",
-  // Demo com os dois papéis para exibir a troca de modo (rodada 19).
-  isOwner: true,
-  isTenant: true,
-};
-
 interface AuthState {
   user: SessionUser | null;
   /** Papel ativo escolhido pelo usuário; null = derivar do `role` de cadastro. */

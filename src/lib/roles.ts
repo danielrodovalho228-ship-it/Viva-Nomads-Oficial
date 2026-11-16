@@ -11,7 +11,8 @@
  */
 
 import { usePathname } from "next/navigation";
-import { useAuthStore, DEMO_USER, type SessionUser, type ViewMode } from "./store";
+import { useAuthStore, type SessionUser, type ViewMode } from "./store";
+import { PAPEIS_DA_DEMONSTRACAO } from "./demo/papeis";
 import { modoDaRota } from "./papel/modo-da-rota";
 import { useModoAtual, useSessaoServidor, useUsuarioAtual } from "@/components/auth/sessao-servidor-contexto";
 import { nomeParaAvatar, primeiroNome, usuarioDoEmail } from "./display-name";
@@ -44,8 +45,8 @@ export function defaultMode(user: SessionUser): ViewMode {
  *  • NUNCA o e-mail cru — a rejeição de "@" mora em `primeiroNome`, na fonte, e
  *    não em cada tela (o `SessionUser.name` tem o e-mail como fallback do
  *    AuthProvider — por isso `name` não deve ir direto para a tela);
- *  • NUNCA uma persona de demonstração em conta real (a persona só entra via
- *    `useDisplayUser`, que só devolve DEMO_USER com o modo demo ligado).
+ *  • NUNCA um nome de demonstração: a identidade da demonstração (`useDisplayUser`, só com o modo demo valendo) não
+ *    tem nome nem e-mail — a persona fictícia saiu do produto (Gerente, 16/11/2026).
  * Todo lugar que mostra o nome do próprio usuário DEVE passar por aqui.
  */
 export function primeiroNomeExibicao(user: SessionUser | null | undefined): string {
@@ -96,7 +97,7 @@ export interface ViewModeState {
 }
 
 /**
- * Hook central do modo ativo. Lê o usuário (ou a identidade demo) e o
+ * Hook central do modo ativo. Lê o usuário (ou os papéis da demonstração) e o
  * `activeMode` persistido, e devolve o modo efetivo + os papéis da conta.
  */
 export function useViewMode(): ViewModeState {
@@ -107,7 +108,8 @@ export function useViewMode(): ViewModeState {
   const modoDoQuadro = useModoAtual();
   const storeUser = useAuthStore((s) => s.user);
   const storeMode = useAuthStore((s) => s.activeMode);
-  const user = (sessao ? usuarioDoQuadro : storeUser) ?? DEMO_USER;
+  // Sem usuário (build de demonstração): só os PAPÉIS da demonstração. O nome fictício não entra aqui (nem no pacote).
+  const user = (sessao ? usuarioDoQuadro : storeUser) ?? PAPEIS_DA_DEMONSTRACAO;
   const activeMode = sessao ? modoDoQuadro : storeMode;
   // E497: página de área (ex.: /dashboard/leads) decide o modo pela URL já no 1º render — servidor e cliente iguais,
   // sem o menu/título trocarem depois da pintura quando o SincronizarPapel grava o papel da área.
