@@ -66,17 +66,21 @@ test("t271: os nomes usados nas máscaras existem no produto", () => {
   }
 });
 
-test("t245: só a tela de favoritos vazia (a que mostra a linha do rodapé) é falha esperada do E990, nas duas larguras", () => {
+test("t245: as marcas de falha esperada são só as do E990 (favoritos vazia, duas larguras) e do E994 (as duas telas de favoritos a 1280 px)", () => {
   const t245 = ler("tests/e2e/specs/t245-visual-regressao.spec.ts");
   const teste05 = t245.slice(t245.indexOf('test("05 /favoritos vazio"'), t245.indexOf('test("06 /favoritos com 2 imóveis"'));
+  const teste06 = t245.slice(t245.indexOf('test("06 /favoritos com 2 imóveis"'), t245.indexOf('test("07 /cidades/uberlandia"'));
+  // 05: a 390 px só a linha do rodapé (E990); a 1280 px também o flutuante sobre a frase (E949) e a linha "Suporte" em duas (E994).
   assert.match(teste05, /test\.fail\(\s*true,/);
-  assert.match(teste05, /"E990 e E949 \(Gerente, 16\/11\/2026\)/, "a 1280 px a tela mostra também o E949");
+  assert.match(teste05, /"E990, E949 e E994 \(Gerente, 16\/11\/2026\)/, "a 1280 px a tela mostra os três");
   assert.match(teste05, /"E990 \(Gerente, 16\/11\/2026\)/);
   // A marca vem depois de a página ficar pronta e imediatamente antes da comparação.
   assert.match(teste05, /await pronta\(page\);[\s\S]*test\.fail\([\s\S]*?\);\n\s+await print\(page, `05-favoritos-vazio-\$\{largura\}`\);/);
-  // Nenhuma outra tela do t245 é falha esperada: a 06 (favoritos com 2 imóveis) não mostra a linha do rodapé.
-  assert.equal((t245.match(/test\.fail\(/g) ?? []).length, 1);
-  assert.doesNotMatch(t245, /test\.(skip|fixme)\([^)]*E99[01]/);
+  // 06: só a 1280 px (a 390 px o rodapé não aparece e a tela tem referência nova), pelo E994.
+  assert.match(teste06, /await pronta\(page\);[\s\S]*test\.fail\(largura === 1280, "E994 \(Gerente, 16\/11\/2026\)[^"]*"\);\n\s+await print\(page, `06-favoritos-\$\{largura\}`\);/);
+  // Nenhuma outra tela do t245 é falha esperada, e nenhuma é pulada por causa dos defeitos.
+  assert.equal((t245.match(/test\.fail\(/g) ?? []).length, 2);
+  assert.doesNotMatch(t245, /test\.(skip|fixme)\([^)]*E99[0-9]/);
 });
 
 test("t271: só os dois painéis de listas vivas do Início do admin têm altura fixa e corpo escondido", () => {
@@ -89,15 +93,16 @@ test("t271: só os dois painéis de listas vivas do Início do admin têm altura
   assert.equal((t271.match(/ESTILO_DOS_PAINEIS_VIVOS/g) ?? []).length, 2, "definido uma vez e usado uma vez");
 });
 
-test("as três telas dos defeitos registrados são falha esperada: estrita, com o item e a data, logo antes da comparação", () => {
+test("t263 e t271: a página do imóvel inteira é falha esperada do E990; Admin › Usuários deixou de ser (E991 corrigido no #3922)", () => {
   const t263 = ler("tests/e2e/specs/t263-visual-41.spec.ts");
   const t271 = ler("tests/e2e/specs/t271-admin-visual.spec.ts");
-  // E990: a página do imóvel inteira (as duas larguras passam pelo mesmo teste).
+  // E990: a página do imóvel inteira (as duas larguras passam pelo mesmo teste). Estrita, com o item e a data, logo antes da comparação.
   assert.match(t263, /test\.fail\(true, "E990 \(Gerente, 16\/11\/2026\)[^"]*"\);\n\s+await expect\(page\)\.toHaveScreenshot\(`01-imovel-inteiro-\$\{largura\}\.png`/);
-  // E991: só Admin › Usuários a 1280 px.
-  assert.match(t271, /test\.fail\(rota === "\/admin\/usuarios" && largura === 1280, "E991 \(Gerente, 16\/11\/2026\)[^"]*"\);\n\s+await expect\(page\)\.toHaveScreenshot\(/);
-  // Nenhuma outra tela dos dois specs é falha esperada, e nenhuma é pulada por causa dos defeitos.
   assert.equal((t263.match(/test\.fail\(/g) ?? []).length, 1);
-  assert.equal((t271.match(/test\.fail\(/g) ?? []).length, 1);
-  assert.doesNotMatch(t263 + t271, /test\.(skip|fixme)\([^)]*E99[01]/);
+  // E991: a correção entrou na main (#3922). Decisão do Gerente (16/11/2026): a marca sai e a tela passa SEM ela.
+  assert.equal((t271.match(/test\.fail\(/g) ?? []).length, 0, "nenhuma tela do admin é falha esperada");
+  assert.doesNotMatch(t271, /FALHA ESPERADA/);
+  // O travão do estouro lateral continua valendo para todas as telas do admin.
+  assert.match(t271, /scrollWidth - window\.innerWidth\)\)\.toBeLessThanOrEqual\(1\)/);
+  assert.doesNotMatch(t263 + t271, /test\.(skip|fixme)\([^)]*E99[0-9]/);
 });

@@ -108,12 +108,6 @@ test.describe("T271 — admin: regressão visual (Prompt 46)", () => {
           await page.addStyleTag({ content: ESTILO_DOS_PAINEIS_VIVOS });
         }
         expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
-        // FALHA ESPERADA — E991 (julgamento do Gerente, 16/11/2026): em Admin › Usuários a 1280 px a tabela (1.021 px) não
-        // cabe no quadro (862 px) e rola de lado. É defeito registrado (Code 2, Família 8); a tela fica com a referência
-        // ANTIGA até a correção. A marca vem logo antes da comparação: o teste corre inteiro, e qualquer falha anterior
-        // continua reprovando. É estrita: quando a imagem voltar a bater, o teste acusa "esperava falhar, passou" — aí a
-        // referência se atualiza e esta marca sai, no PR da correção.
-        test.fail(rota === "/admin/usuarios" && largura === 1280, "E991 (Gerente, 16/11/2026): rolagem lateral em Admin › Usuários a 1280 px; referência antiga mantida até a correção");
         await expect(page).toHaveScreenshot(`t271-${nome(rota)}-${largura}.png`, { mask: mascaras(page), maxDiffPixelRatio: 0.03, animations: "disabled" });
       });
     }
