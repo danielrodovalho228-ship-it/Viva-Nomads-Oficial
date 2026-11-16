@@ -47,6 +47,11 @@ async function varrer(p: Page) {
         if (a.e.contains(c.e) || c.e.contains(a.e)) continue;
         // A foto de fundo do banner sob o título é de propósito.
         if ((a.e.tagName === "IMG") !== (c.e.tagName === "IMG")) continue;
+        // Avatar sobre a capa (cartão e página do parceiro) é desenho intencional — julgamento do Muse, 16/11/2026
+        // (DUET-2120-C2, t739 opção a). Só esse par sai: avatar ("Foto de …") × imagem dentro da capa.
+        const naCapa = (e: Element) => !!e.closest('[data-testid="cartao-parceiro-capa"],[data-testid="parceiro-capa"]');
+        const ehAvatar = (e: Element) => e.tagName === "IMG" && (e.getAttribute("alt") ?? "").startsWith("Foto de ");
+        if ((ehAvatar(a.e) && naCapa(c.e)) || (ehAvatar(c.e) && naCapa(a.e))) continue;
         const ix = Math.min(a.b.right, c.b.right) - Math.max(a.b.left, c.b.left);
         const iy = Math.min(a.b.bottom, c.b.bottom) - Math.max(a.b.top, c.b.top);
         if (ix > 4 && iy > 4) achados.push(`${a.e.tagName} × ${c.e.tagName}`);
