@@ -99,6 +99,12 @@ test.describe("T263 — Regressão visual do Prompt 41", () => {
         await page.addInitScript(() => localStorage.removeItem("vn:ultima-busca"));
         await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
         await pronta(page);
+        // FALHA ESPERADA — E990 (julgamento do Gerente, 16/11/2026): a linha "Assistente Viva 24 h · resposta de uma pessoa
+        // em até 24 h" sumiu do rodapé sem decisão. Esta tela mostra o rodapé, por isso fica com a referência ANTIGA até o
+        // coordenador decidir restaurar ou remover a linha. A marca vem logo antes da comparação: o teste corre inteiro, e
+        // qualquer falha anterior (carregar, ficar pronta) continua reprovando. É estrita: no dia em que a imagem voltar a
+        // bater, o teste acusa "esperava falhar, passou" — aí a referência se atualiza e esta marca sai, no PR da correção.
+        test.fail(true, "E990 (Gerente, 16/11/2026): rodapé sem a linha 'Assistente Viva 24 h'; referência antiga mantida até a decisão");
         await expect(page).toHaveScreenshot(`01-imovel-inteiro-${largura}.png`, { fullPage: true, mask: mascaras(page), maxDiffPixelRatio: 0.02 });
       });
     });

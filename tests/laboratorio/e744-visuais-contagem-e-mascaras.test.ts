@@ -65,3 +65,16 @@ test("t271: os nomes usados nas máscaras existem no produto", () => {
     assert.ok(achou.trim().length > 0, `"${nome}" não existe mais no produto: a máscara do t271 ficou sem alvo`);
   }
 });
+
+test("as três telas dos defeitos registrados são falha esperada: estrita, com o item e a data, logo antes da comparação", () => {
+  const t263 = ler("tests/e2e/specs/t263-visual-41.spec.ts");
+  const t271 = ler("tests/e2e/specs/t271-admin-visual.spec.ts");
+  // E990: a página do imóvel inteira (as duas larguras passam pelo mesmo teste).
+  assert.match(t263, /test\.fail\(true, "E990 \(Gerente, 16\/11\/2026\)[^"]*"\);\n\s+await expect\(page\)\.toHaveScreenshot\(`01-imovel-inteiro-\$\{largura\}\.png`/);
+  // E991: só Admin › Usuários a 1280 px.
+  assert.match(t271, /test\.fail\(rota === "\/admin\/usuarios" && largura === 1280, "E991 \(Gerente, 16\/11\/2026\)[^"]*"\);\n\s+await expect\(page\)\.toHaveScreenshot\(/);
+  // Nenhuma outra tela dos dois specs é falha esperada, e nenhuma é pulada por causa dos defeitos.
+  assert.equal((t263.match(/test\.fail\(/g) ?? []).length, 1);
+  assert.equal((t271.match(/test\.fail\(/g) ?? []).length, 1);
+  assert.doesNotMatch(t263 + t271, /test\.(skip|fixme)\([^)]*E99[01]/);
+});
