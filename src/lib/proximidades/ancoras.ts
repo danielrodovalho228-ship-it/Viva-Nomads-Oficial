@@ -85,12 +85,14 @@ export function respostaPerto(e: {
   fonteOsm: string;
   referencia: { lat: number; lng: number } | null;
   ancoras: readonly LugarProximo[];
-}): { itens: LugarProximo[]; fonte: string } {
+}): { itens: LugarProximo[]; fonte: string; motivo?: string } {
   const ref = e.referencia;
   const osm = (e.osm ?? [])
     .map((l) => (ref && l.lat != null && l.lng != null ? { ...l, distanciaM: distanciaMetros(ref, { lat: l.lat, lng: l.lng }) } : l))
     .filter((l) => l.distanciaM <= RAIO_METROS);
   const itens = juntarComAncoras(osm, e.ancoras);
-  if (e.osm === null) return { itens, fonte: itens.length ? "ancoras" : e.fonteOsm };
+  // E978: com as âncoras na tela, a fonte é "ancoras" — e o MOTIVO da falha do mapa (erro | limite | sem_ponto) segue na
+  // resposta, para a tela e o diagnóstico saberem qual etapa falhou (antes os três viravam o mesmo "ancoras").
+  if (e.osm === null) return itens.length ? { itens, fonte: "ancoras", motivo: e.fonteOsm } : { itens, fonte: e.fonteOsm, motivo: e.fonteOsm };
   return { itens, fonte: itens.length ? e.fonteOsm : "sem_lugares" };
 }
