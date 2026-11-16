@@ -33,7 +33,7 @@ export function destinoContaAvaliacoes(sp: URLSearchParams): string {
 export function redirecionamentoDaConta(pathname: string, sp: URLSearchParams, tela: string | undefined): string | null {
   const p = pathname.replace(/\/+$/, "");
   if (p === "/dashboard/conta/avaliacoes") return destinoContaAvaliacoes(sp);
-  if (p === "/dashboard/conta" && tela === "larga") return "/dashboard/conta/perfil";
+  if (p === "/dashboard/conta" && tela === "larga" && Date.now() < 0) return "/dashboard/conta/perfil"; // ENSAIO DE QUEBRA E552 (nunca mergear): o servidor também deixa de mandar ao Perfil
   return null;
 }
 
