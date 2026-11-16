@@ -12,6 +12,7 @@ import { tratarFoto } from "@/lib/fotos/processar";
 import { enviarFotos } from "@/lib/fotos/enviar";
 import { MAX_FOTOS_POR_ANUNCIO, type AvisoFoto } from "@/lib/fotos/qualidade";
 import { conferirFotos } from "@/lib/fotos/conferir-cliente";
+import { criarFila, galeriaComLote } from "@/lib/fotos/fila-de-lotes";
 import { AVISO_NAO_IMOVEL, ROTULO_MOTIVO, confirmarConteudo, conteudoPendente, podeSerPrincipal, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { cn } from "@/lib/utils";
@@ -93,6 +94,11 @@ export function PhotoUploader({
   // Prompt 22 (item 8): "Adicionar" é um BOTÃO que abre a escolha de arquivos, e a galeria aceita ARRASTAR E SOLTAR
   // arquivos do computador (antes o soltar só reordenava as fotos, apesar do texto "arraste e solte").
   const inputRef = useRef<HTMLInputElement>(null);
+  // E989: os lotes entram em fila e cada um junta as fotos à galeria ATUAL (a do fim do envio, não a do começo).
+  const filaRef = useRef(criarFila());
+  const fotosRef = useRef(photos);
+  fotosRef.current = photos;
+  const lotesPendentes = useRef(0);
   const [soltando, setSoltando] = useState(false);
   const temArquivos = (e: React.DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
 
@@ -109,11 +115,19 @@ export function PhotoUploader({
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
+    // A FileList do soltar pode ser esvaziada pelo navegador depois do evento: copia agora, antes de entrar na fila.
+    const lista = Array.from(files);
+    lotesPendentes.current += 1;
     setError(null);
     setUploading(true);
+    await filaRef.current(() => enviarLote(lista));
+  }
+
+  async function enviarLote(files: File[]) {
+    const photos = fotosRef.current; // a galeria de agora (com os lotes anteriores já dentro)
     try {
       // Um caminho só para enviar fotos (prompt 20): o mesmo do cartão "Preencher com IA" e da barra do celular.
-      const r = await enviarFotos(Array.from(files), {
+      const r = await enviarFotos(files, {
         atuais: photos,
         max,
         ownerId,
@@ -134,13 +148,19 @@ export function PhotoUploader({
         novas = novas.map((n, i) => (urls[i] ? { ...n, conteudo: res[k++] ?? null } : n));
         setConferindo(false);
       }
-      onChange(comPrincipalBoa([...photos, ...novas]));
+      // E989: a galeria ATUAL (fotos removidas ou lotes que entraram durante o envio) + as novas — nunca a cópia antiga.
+      const final = comPrincipalBoa(galeriaComLote(fotosRef.current, novas));
+      fotosRef.current = final;
+      onChange(final);
       setOriginais((o) => ({ ...o, ...r.originais }));
       if (r.erro) setError(r.erro);
     } finally {
-      setUploading(false);
-      setProgresso(null);
-      onProgresso?.(null);
+      lotesPendentes.current = Math.max(0, lotesPendentes.current - 1);
+      if (lotesPendentes.current === 0) {
+        setUploading(false);
+        setProgresso(null);
+        onProgresso?.(null);
+      }
     }
   }
 
