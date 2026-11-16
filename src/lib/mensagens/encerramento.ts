@@ -15,10 +15,19 @@ import { addDiasCorridos } from "../caucao.ts";
 /** Fim da candidatura SEM contrato: estas situações encerram a conversa. */
 export const STATUS_QUE_ENCERRAM = new Set(["rejected", "expired", "cancelled", "canceled", "withdrawn"]);
 
-const dataBR = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+/** O dia em Brasília (UTC−3) de um instante ISO; uma data AAAA-MM-DD fica como está. */
+export function diaEmBrasilia(iso: string): string {
+  if (!/T/.test(iso)) return iso.slice(0, 10);
+  const t = Date.parse(iso);
+  return Number.isNaN(t) ? iso.slice(0, 10) : new Date(t - 3 * 3_600_000).toISOString().slice(0, 10);
+}
+const dataBR = (iso: string) => {
+  const d = diaEmBrasilia(iso);
+  return `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
+};
 export const textoConversaEncerrada = (diaIso: string) => `Esta conversa foi encerrada em ${dataBR(diaIso)}. O histórico continua disponível.`;
 export const MSG_CONVERSA_ENCERRADA = "Esta conversa foi encerrada. O histórico continua disponível, mas não recebe mensagens novas.";
-export const textoNovaCandidatura = (diaIso: string) => `Nova candidatura em ${dataBR(diaIso.slice(0, 10))}`;
+export const textoNovaCandidatura = (instante: string) => `Nova candidatura em ${dataBR(instante)}`;
 
 /**
  * Com contrato: o dia (AAAA-MM-DD) em que a conversa encerra, ou null enquanto o processo da caução estiver aberto.
@@ -59,7 +68,7 @@ export function estadoDaConversa(cands: CandidaturaDaConversa[], hoje: string): 
   if (ultima.contrato) {
     fim = ultima.contrato.fimEstadia ? encerraComContrato({ fimEstadia: ultima.contrato.fimEstadia, comCaucao: ultima.contrato.comCaucao, fimProcessoCaucao: ultima.contrato.fimProcessoCaucao }) : null;
   } else if (STATUS_QUE_ENCERRAM.has(ultima.status)) {
-    fim = (ultima.terminouEm ?? ultima.criadaEm).slice(0, 10);
+    fim = diaEmBrasilia(ultima.terminouEm ?? ultima.criadaEm);
   }
   return { encerradaEm: fim && fim <= dia ? fim : null, novasCandidaturas };
 }

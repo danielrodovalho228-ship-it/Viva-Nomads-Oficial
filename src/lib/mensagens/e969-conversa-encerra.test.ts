@@ -19,6 +19,12 @@ test("E969 — sem contrato: candidatura recusada (ou expirada/cancelada) encerr
   assert.equal(estadoDaConversa([], "2027-01-01").encerradaEm, null);
 });
 
+test("E969 — o dia do encerramento é o de Brasília (recusa às 00:30 UTC de 16/11 = 15/11 em Brasília)", () => {
+  const e = estadoDaConversa([{ criadaEm: "2026-11-15T20:00:00Z", status: "rejected", terminouEm: "2026-11-16T00:30:00Z" }], "2026-11-15");
+  assert.equal(e.encerradaEm, "2026-11-15");
+  assert.equal(textoNovaCandidatura("2026-11-16T01:00:00Z"), "Nova candidatura em 15/11/2026");
+});
+
 test("E969 — candidatura nova reabre a mesma conversa, com o separador", () => {
   const e = estadoDaConversa(
     [
