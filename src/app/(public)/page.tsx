@@ -41,6 +41,7 @@ import { SITE_URL } from "@/lib/site";
 import { HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO, quantosDestaques } from "@/lib/home-imagens";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 import { GESTOR_PRECO } from "@/config/planos";
+import { CAUCAO_FRASE } from "@/lib/faixas";
 
 /** E578: o Plano Gestor na faixa da taxa da home (E564), pela constante GESTOR_PRECO — sem número escrito à mão. */
 const GESTOR_PCT_HOME = String(Math.round(GESTOR_PRECO.taxa * 1000) / 10).replace(".", ",");
@@ -271,7 +272,7 @@ export default async function HomePage() {
           <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 md:mt-12" data-testid="passos-home">
             <Step n="1" img={HOME_PASSOS_IMAGENS[0]} icon={Search} title="Busque" text="Encontre imóveis mobiliados pela cidade, período e orçamento. Filtre por Pronto para Morar." />
             <Step n="2" img={HOME_PASSOS_IMAGENS[1]} icon={MessageSquare} title="Converse" text={PASSO_CONVERSE_TEXTO} />
-            <Step n="3" img={HOME_PASSOS_IMAGENS[2]} icon={FileSignature} title="Assine com segurança" text="Caução combinada entre proprietário e morador e contrato assinado digitalmente, com validade jurídica." />
+            <Step n="3" img={HOME_PASSOS_IMAGENS[2]} icon={FileSignature} title="Assine com segurança" text={`Contrato assinado digitalmente, com validade jurídica. ${CAUCAO_FRASE}`} />
             <Step n="4" img={HOME_PASSOS_IMAGENS[3]} icon={ClipboardCheck} title="Conferência de entrada" text="Na chegada, você e o proprietário conferem o estado do imóvel e registram tudo na plataforma." />
           </div>
         </div>
