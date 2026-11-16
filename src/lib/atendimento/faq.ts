@@ -3,10 +3,10 @@
   regras do produto (config/planos.ts, REGRAS_CONTRATO, CAUCAO_FRASE). A IA do
   PR 2 também responde a partir daqui. Puro (testável com node --test).
 */
-import { PORTA_GESTOR_TEXTO, REGRAS_CONTRATO } from "../../config/planos.ts";
+import { REGRAS_CONTRATO, TEXTO_CARTEIRAS } from "../../config/planos.ts";
 import { comPortasDePrecos } from "../../config/precos-visivel.ts";
 import { frasePrazo, frasePrazosManutencao } from "../../config/atendimento.ts";
-import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
+import { TEXTO_REGRA_UNICA, escadaTaxasCurta } from "../cobranca/regra.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
 import {
   BUSCA_FOTOGRAFOS,
@@ -53,7 +53,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "custo-anunciar",
     pergunta: "Quanto custa anunciar?",
-    resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%. O Plano Gestor tem taxa de 4%, sem mensalidade, para ${PORTA_GESTOR_TEXTO}. Exemplo: contrato de 3 meses a R$ 3.000 por mês, na faixa de 12%: valor total R$ 9.000, taxa R$ 1.080. A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.`, // E836/E906: sem remissão a /precos (página suspensa).
+    resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): ${escadaTaxasCurta()}. ${TEXTO_CARTEIRAS} Exemplo: contrato de 3 meses a R$ 3.000 por mês, na faixa de 12%: valor total R$ 9.000, taxa R$ 1.080. A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.`, // E836/E906: sem remissão a /precos (página suspensa).
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
     links: comPortasDePrecos([LINK_PRECOS]),
   },
