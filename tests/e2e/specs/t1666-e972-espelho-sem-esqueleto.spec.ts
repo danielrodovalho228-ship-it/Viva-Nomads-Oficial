@@ -6,7 +6,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrarNaPa
   A tela do Perfil já chega pronta do servidor (E789), mas a prévia ainda buscava os dados dela pelo navegador, depois
   de carregar: o formulário aparecia e o cartão ao lado ficava em esqueleto até a resposta voltar.
   Para o morador e para o proprietário (com imóvel), a 1280 e a 390 px:
-   • o HTML que o servidor manda já traz o cartão da prévia, e não o esqueleto;
+   • a página que o servidor manda já traz os dados da prévia (antes eles só vinham por um pedido do navegador);
    • amostrando a página a cada mudança e a cada quadro, o esqueleto não aparece nenhuma vez;
    • o cartão é o do papel certo desde o primeiro quadro (E799: nunca chuta o de morador para quem é dono).
 */
@@ -59,12 +59,13 @@ test.describe("T1666 — E972: a prévia do perfil chega pronta do servidor", ()
   ] as const;
   for (const largura of [1280, 390]) {
     for (const c of casos) {
-      test(`${largura} px, ${c.quem}: a prévia vem no HTML do servidor e o esqueleto não aparece em nenhum quadro`, async ({ page }) => {
+      test(`${largura} px, ${c.quem}: os dados da prévia vêm com a página e o esqueleto não aparece em nenhum quadro`, async ({ page }) => {
         await page.setViewportSize({ width: largura, height: 900 });
         await entrarNaPagina(page, c.conta.email, senha);
+        // A tela do Perfil é desenhada no navegador com os dados que a página traz embutidos: a prévia vem neles.
         const html = await (await page.request.get("/dashboard/conta/perfil")).text();
-        expect(html, "o servidor já manda o cartão da prévia").toContain('data-testid="espelho-titulo"');
-        expect(html, "o servidor não manda o esqueleto da prévia").not.toContain('data-testid="espelho-carregando"');
+        expect.soft(html, "a página já traz os dados da prévia, lidos no servidor").toMatch(/previaInicial\\*":\{\\*"nome/);
+        expect.soft(html, `a prévia do servidor diz se a pessoa é dona (${c.quem})`).toMatch(new RegExp(`ehDono\\\\*":${c.papel === "proprietario"}`));
         await amostrarPrevia(page);
         await page.goto("/dashboard/conta/perfil", { waitUntil: "load" });
         await expect(page.locator('[data-testid="espelho-papel"]:visible').first()).toHaveAttribute("data-papel", c.papel, { timeout: 20_000 });
