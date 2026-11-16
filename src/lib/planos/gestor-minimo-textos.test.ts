@@ -101,12 +101,12 @@ test("os 4 pontos do E236 e a varredura usam CARTEIRAS_MINIMO_IMOVEIS (078: no l
   assert.match(ler("src/app/api/plano-gestor/route.ts"), /subject: `Contato — carteira \(\$\{CARTEIRAS_MINIMO_IMOVEIS\}\+ imóveis ou administradora\)`/);
   assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/simulador/page.tsx"), /Gestor \(31\+\)/);
   // 078 (Daniel, 16/11/2026): antes /modelodenegocio usava /Plano Gestor: {GESTOR_TEXTO}./, reexportado por lib/planos/gestor (para
-  // não ler @/config/planos). O reexport saiu: a página lê de config/planos SÓ a linha das carteiras.
+  // não ler @/config/planos). Agora a mesma porta reexporta a linha das carteiras, e o texto do Gestor não existe mais.
   const modelo = ler("src/components/modelo-negocio/modelo-negocio.tsx");
   assert.match(modelo, /Imóvel ativo = publicado e aprovado\. \{TEXTO_CARTEIRAS\}/);
   // A página dos sócios lê a linha pela porta de lib/planos/gestor (a guarda de textos-socios proíbe @/config/planos ali).
   assert.match(modelo, /import \{ TEXTO_CARTEIRAS \} from "@\/lib\/planos\/gestor";/);
-  assert.doesNotMatch(modelo, /from "@\/lib\/planos\/gestor"|GESTOR_TEXTO/);
+  assert.doesNotMatch(modelo, /GESTOR_TEXTO|@\/config\/planos/);
   // 078 (Daniel, 16/11/2026): antes /GESTOR_MIN_IMOVEIS_VALIDADOS: number = GESTOR_PRECO.minimoImoveis;/ em lib/planos/gestor. O
   // mínimo de elegibilidade saiu de lá (não há plano para ativar) — e o arquivo não guarda número próprio de imóveis.
   assert.doesNotMatch(ler("src/lib/planos/gestor.ts"), /GESTOR_MIN_IMOVEIS_VALIDADOS|GESTOR_PRECO|\b20\b/);
