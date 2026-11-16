@@ -59,6 +59,7 @@ const URGENTES: readonly NotificationEvent[] = [
   "parceiro_horario_confirmado",
   "parceiro_lembrete",
   "parceiro_conclusao_pendente",
+  "parceiro_orcamento_vencido",
   "pedido_auto_confirmar",
   "vinculo_parceiro_convite",
   "vistoria_designada",

@@ -39,6 +39,8 @@ const CASOS_PEDIDO: { ev: EventoPedido; p?: Partial<PedidoParaEmail>; fato?: Fat
   { ev: "parceiro_lembrete", p: { horarioConfirmado: "2026-12-03T16:00:00Z" }, diz: ["marcado para 03/12/2026 às 13:00"] },
   { ev: "parceiro_entrega_feita", diz: ["Lara Limpa marcou o serviço de limpeza completa em Studio Jardim como entregue"] },
   { ev: "parceiro_conclusao_pendente", diz: ["há 7 dias", "Nada é concluído sem você"] },
+  // E958: caso novo (evento novo) — o orçamento sem resposta no prazo do canal encerra o pedido.
+  { ev: "parceiro_orcamento_vencido", diz: ["não respondeu ao seu orçamento de limpeza completa para Studio Jardim em 7 dias e o pedido foi encerrado", "Nada é cobrado nem anotado contra você"] },
   { ev: "parceiro_avaliacao", diz: ["foi concluído", "com Lara Limpa"] },
   { ev: "pedido_auto_confirmar", diz: ["com Lara Limpa", /janela: 03\/12\/2026 às 13:00 a 05\/12\/2026 às 11:00/] },
   { ev: "pedido_auto_sem_resposta", diz: ["Lara Limpa não respondeu em 24 horas"] },

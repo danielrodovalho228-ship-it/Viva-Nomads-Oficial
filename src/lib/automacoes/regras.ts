@@ -4,6 +4,7 @@
   pessoa (chave em automacoes_envios) e respeita "parar de receber" (profiles.notif_email = false).
   Roda: node --test src/lib/automacoes/regras.test.ts
 */
+import { PRAZO_CANAL } from "../../config/prazos-canais.ts";
 
 /**
  * E345: a frase do pedido de avaliação é UMA só — o corpo do e-mail, o bloco do detalhe e o modelo genérico diziam
@@ -20,6 +21,7 @@ export type TipoAutomacao =
   // Contratação de parceiros (Prompt 31b)
   | "parceiro_lembrete"
   | "parceiro_conclusao_pendente"
+  | "parceiro_orcamento_vencido"
   // Página da estadia (Prompt 32)
   | "estadia_instrucoes_liberadas"
   | "estadia_instrucoes_pendentes"
@@ -102,6 +104,8 @@ export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fi
       return `${imovel} A proposta ${ctx.numero ?? ""} vence em menos de 24 horas. Aceite, contraproponha ou recuse pela plataforma.`.replace(/\s+/g, " ").trim();
     case "parceiro_lembrete":
       return `${imovel} Pedido ${ctx.numero ?? ""}: serviço${ctx.servico ? ` de ${ctx.servico.toLowerCase()}` : ""} marcado para ${ctx.quando ?? "as próximas horas"} (horário de Brasília). Combine os detalhes pelas mensagens do pedido.`.replace(/\s+/g, " ").trim();
+    case "parceiro_orcamento_vencido":
+      return `${imovel} Pedido ${ctx.numero ?? ""}${ctx.servico ? ` (${ctx.servico.toLowerCase()})` : ""}: o cliente não respondeu ao orçamento em ${PRAZO_CANAL.pedidoParceiro.texto} e o pedido foi encerrado.`.replace(/\s+/g, " ").trim();
     case "parceiro_conclusao_pendente":
       return `${imovel} Pedido ${ctx.numero ?? ""}${ctx.servico ? ` (${ctx.servico.toLowerCase()})` : ""}: a entrega foi marcada há 7 dias. Confirme a conclusão ou fale com o parceiro pelas mensagens do pedido. Nada é concluído sem você.`.replace(/\s+/g, " ").trim();
     case "estadia_instrucoes_liberadas":

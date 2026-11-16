@@ -165,6 +165,7 @@ export const MATRIZ_NOTIFICACOES = {
   parceria_convite: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
   parceria_aprovada: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
   parceiro_orcamento_aceito: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
+  parceiro_orcamento_vencido: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH }, // E958
   parceiro_horario_confirmado: { categoria: "outros", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   estadia_instrucoes_liberadas: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   // E663: jornada de mensagens da estadia (confirmação, chegada, semana da saída, meio da estadia longa).
