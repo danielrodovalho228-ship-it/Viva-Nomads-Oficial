@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2018 (contagem) — Pista 3, lote 2, item A5 → E970 @E970 @A5 (sem @ao-vivo-seguro: precisa de login e do laboratório) — TRAVA NOMEADA (vermelha na main até a correção da
+  T2087 (antes t2018-contagem) — Pista 3, lote 2, item A5 → E970 @E970 @A5 (sem @ao-vivo-seguro: precisa de login e do laboratório) — TRAVA NOMEADA (vermelha na main até a correção da
   Família 6). Regra definida pelo coordenador (ORDEM-DUET-068, ponto 3): a unidade é a CONVERSA em qualquer total —
   o selo da aba Mensagens conta conversas com pelo menos uma não lida; o sino agrupa por conversa (um aviso por
   conversa) e bate com esse selo; o número de MENSAGENS não lidas aparece só dentro da linha de cada conversa.
@@ -23,7 +23,7 @@ async function enviar(p: Page, imovel: string, texto: string) {
   await expect.poll(async () => ((await adm().from("messages").select("id").eq("body", texto)).data ?? []).length, { timeout: 20_000 }).toBe(1);
 }
 
-test.describe("T2018 — A5: a unidade é a conversa (trava da Família 6)", () => {
+test.describe("T2087 — A5: a unidade é a conversa (trava da Família 6)", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.beforeAll(async () => {
