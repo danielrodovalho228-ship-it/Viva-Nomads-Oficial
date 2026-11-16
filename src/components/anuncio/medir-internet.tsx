@@ -1,13 +1,13 @@
 "use client";
 
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { PONTOS_MEDICAO, ROTULO_PONTO, type PontoMedicao } from "@/config/niveis";
 import { Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAppUserAgent } from "@/lib/app-mode";
 import { INTERNET, TEXTO_PARA_VALIDAR_NO_APP } from "@/config/internet";
-import { aproveitarRodadas, juntarRodadas, textoInternet, type MotivoInvalida, type Rodada } from "@/lib/internet-medida";
+import { aproveitarRodadas, juntarRodadas, textoInternet, travaDoMedir, type MotivoInvalida, type Rodada } from "@/lib/internet-medida";
 import { FalhaMedicao, medirUmaRodada, mensagemDaFalha, ROTULO_TENTAR_DE_NOVO, TEXTO_MEDIR_DEPOIS, type Medidor } from "@/lib/internet-motor";
 import type { EstadoMedir, ResultadoMedicao, Origem } from "@/lib/internet-medida-servidor";
 
@@ -162,6 +162,11 @@ export function MedirInternet({
   }
 
   const ocupado = fase !== "parado";
+  // E983: o motivo da trava fica ligado ao botão (aria-describedby) — leitor de tela e varredura ouvem o porquê.
+  const trava = travaDoMedir({ ocupado, ponto, restantesHoje: estado.restantesHoje });
+  const idMotivoPonto = useId();
+  const idMotivoLimite = useId();
+  const motivoDaTrava = trava === "escolher_ponto" ? idMotivoPonto : trava === "limite_do_dia" ? idMotivoLimite : undefined;
   const atualTexto = estado.papel === "dono" ? textoInternet(estado.ultima, null, new Date()) : null;
 
   return (
@@ -190,7 +195,7 @@ export function MedirInternet({
       </fieldset>
       <CartaoEscolha papel="checkbox" on={wifi} onClick={() => setWifi(!wifi)} disabled={ocupado} rotulo="Estou conectado ao Wi-Fi do imóvel" testid="medir-internet-wifi" className="mt-3" />
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button type="button" variant="primary" size="sm" disabled={ocupado || !ponto || estado.restantesHoje <= 0} onClick={medir} data-testid="medir-internet-botao">
+        <Button type="button" variant="primary" size="sm" disabled={trava !== null} aria-busy={trava === "medindo" || undefined} aria-describedby={motivoDaTrava} onClick={medir} data-testid="medir-internet-botao">
           {fase === "local" ? "Pedindo a localização…" : fase === "medindo" ? `Medindo… ${Math.round(progresso * 100)}%` : fase === "salvando" ? "Salvando…" : resultado && !resultado.ok ? ROTULO_TENTAR_DE_NOVO : "Medir a internet agora"}
         </Button>
         {fase === "medindo" && (
@@ -206,11 +211,11 @@ export function MedirInternet({
       )}
       {/* E609: o "Medir" espera a escolha do ponto (nada vem marcado por padrão). */}
       {!ponto && !ocupado && (
-        <p className="mt-2 text-xs text-muted" data-testid="medir-internet-escolha-ponto">
+        <p id={idMotivoPonto} className="mt-2 text-xs text-muted" data-trava-motivo="escolher_ponto" data-testid="medir-internet-escolha-ponto">
           Escolha onde você está medindo para liberar a medição.
         </p>
       )}
-      {estado.restantesHoje <= 0 && !ocupado && <p className="mt-2 text-xs text-muted">Limite de {INTERNET.limitePorDia} medições por dia neste imóvel. Tente amanhã.</p>}
+      {estado.restantesHoje <= 0 && !ocupado && <p id={idMotivoLimite} className="mt-2 text-xs text-muted" data-trava-motivo="limite_do_dia" data-testid="medir-internet-limite">Limite de {INTERNET.limitePorDia} medições por dia neste imóvel. Tente amanhã.</p>}
       {!estado.temCoordenadas && <p className="mt-2 text-xs text-muted">Para validar, o imóvel precisa do endereço no mapa.</p>}
       {resultado && !resultado.ok && (
         <>
