@@ -33,7 +33,7 @@ test("(2) a API: anúncio do próprio dono sem CEP usa o ponto gravado (sem 400 
   const bloco = r.slice(r.indexOf("if (pontoGravado) {"), r.indexOf('if (!cep) return NextResponse.json({ error: "CEP inválido."'));
   assert.ok(bloco.length > 50, "o ramo sem CEP existe e vem antes da exigência do CEP");
   assert.doesNotMatch(bloco, /proximidades_cep/);
-  assert.match(bloco, /buscarLugares\(pontoGravado, etapas\)/);
+  assert.match(bloco, /buscarLugares\(pontoGravado, etapas(?:, ORCAMENTO_NA_RESPOSTA_MS)?\)/); // E992: com o orçamento de tempo de quem espera a resposta
 });
 
 test("o endereço do anúncio só sai para o PRÓPRIO dono e nunca vai à resposta", () => {
