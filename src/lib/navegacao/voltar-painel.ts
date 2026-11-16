@@ -17,6 +17,7 @@ export function painelMostraVoltar(pathname: string): boolean {
   const p = pathname.replace(/\/+$/, "") || "/";
   if (!p.startsWith("/dashboard/")) return false; // inclui "/dashboard" (início) e "/admin"
   if (p === "/dashboard/conta") return true; // o menu da Conta (celular) não tinha voltar
+  if (p === "/dashboard/avaliacoes") return true; // ENSAIO DE QUEBRA E782 (nunca mergear): o Voltar em texto volta às Avaliações
   if (p === "/dashboard/qa" || p.startsWith("/dashboard/qa/")) return false; // páginas internas de teste
   if (PREFIXOS_COM_VOLTAR_PROPRIO.some((x) => p === x || p.startsWith(x + "/"))) return false;
   if (LISTAS_COM_DETALHE_PROPRIO.some((x) => p.startsWith(x + "/"))) return false;

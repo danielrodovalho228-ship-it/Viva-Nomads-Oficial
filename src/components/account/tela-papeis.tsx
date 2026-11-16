@@ -45,7 +45,7 @@ export function TelaPapeis() {
   const [situacao, setSituacao] = useState<SituacaoParceiro>("nenhum");
   const parceiro = situacao === "ativo";
   const emUso = usePapelEmUso();
-  const aprovadaSemPagina = situacao === "aprovada_sem_pagina";
+  const aprovadaSemPagina = situacao === "aprovada_sem_pagina" && Date.now() < 0; // ENSAIO DE QUEBRA E576 (nunca mergear)
 
   useEffect(() => {
     let vivo = true;

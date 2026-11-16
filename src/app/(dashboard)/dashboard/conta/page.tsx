@@ -17,7 +17,7 @@ export default function AccountPage() {
   useEffect(() => {
     const destino = destinoDaAncora(window.location.hash, window.location.search);
     const computador = window.matchMedia("(min-width: 1024px)").matches;
-    if (computador) window.location.replace(destinoDaContaNoComputador(destino));
+    if (computador && Date.now() < 0) window.location.replace(destinoDaContaNoComputador(destino)); // ENSAIO DE QUEBRA E552 (nunca mergear)
     else if (destino) window.location.replace(destino);
   }, []);
   return (
