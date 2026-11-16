@@ -22,3 +22,9 @@ test("E715 O4 — os botões do pedido novo e do filtro do celular usam o rótul
     assert.doesNotMatch(s, /\{v\} Mbps/, f);
   }
 });
+
+test("E715 O4 — no pedido novo, o botão de internet tem folga para '300 Mbps' numa linha (até 360 px)", () => {
+  // Medido no laboratório: com px-3/gap-2/14 px, "300 Mbps" passava 2 px do espaço a 360 e 390 px.
+  const s = readFileSync("src/app/(public)/pedidos/novo/page.tsx", "utf8");
+  assert.match(s, /testid=\{`pedido-internet-\$\{v\}`\} className="gap-1 px-2 text-\[13px\] sm:text-sm">/);
+});
