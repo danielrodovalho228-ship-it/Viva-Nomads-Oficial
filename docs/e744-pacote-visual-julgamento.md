@@ -142,8 +142,52 @@ Em todas: menu novo da equipe, "Voltar ao site", selo "Equipe" (seção 2) e os 
 
 - **Nenhuma tela me pareceu defeito novo de produto fora do que já tem dono.** Os dois pontos de produto são o E949
   (#3861) e o cookie da largura (seção 3, ponto 1), que segue sem item.
-- **15 pontos em que não sei citar a decisão** (6 na seção 2 e 9 na seção 4): o Gerente decide entre A e B.
+- **15 pontos em que eu não sabia citar a decisão** (6 na seção 2 e 9 na seção 4): a passagem de citação está na
+  seção 6. Sobraram 7 resíduos sem número de item.
 - **Antes de regravar:** corrigir as máscaras do t271 e a contagem do t263 06–08, tirar o cookie `vn-tela` da sessão
   guardada (ou decidir o item do produto) e esperar o #3861, o #3880, o #3882 e o #3868.
 - **Regravação:** proponho uma só, no ambiente do GitHub (as referências têm de sair do mesmo Chromium que as confere),
   depois de a cadeia entrar e com o julgamento registrado no PR.
+
+## 6. Passagem de citação dos 15 pontos (ordem do Gerente, ronda de 06:55Z de 16/11)
+
+Condição do julgamento: os 15 pontos que classifiquei como atualização de base **sem citar a decisão** não estão
+aprovados como base. Abaixo, a decisão que achei para cada um, com o lugar do código onde ela está escrita. O que não
+tem decisão que eu ache fica listado no fim, para virar defeito registrado se o Gerente assim decidir.
+
+**Resultado:** 9 pontos com a decisão citada por inteiro; 6 pontos com uma parte ainda sem número de item (7 resíduos).
+
+| # | Ponto | Decisão citada | Onde está escrita |
+|---|---|---|---|
+| 1 | Topo público: "Imóveis · Anunciar · Empresas · Parceiros", "Fale com a Viva" e "Entrar"; sem "Preços" e "Mais" | E176 (PUBLICO-A, mockups aprovados); E450 ("Anunciar"); E458 ("Parceiros"); E555 + E563 ("Planos" suspenso com a página de preços) | `src/lib/constants.ts:37-52`; `src/components/layout/navbar.tsx:42` |
+| 2 | Flutuante: some a 390 px; círculo a 1280 px | A 390 px: E246. O círculo: rótulo **"C1b"** no código, **sem número E** (resíduo a) | `src/components/ajuda/viva-chat.tsx:164` e `:73` |
+| 3 | Barra de baixo do visitante igual à do morador; "Buscar" acesa em `/favoritos` | Prompt 41, item 2 (a mesma barra nas páginas públicas); MENUS-5, MORADOR-NAV e E176 D1 (os cinco itens; Favoritos é subaba de Buscar) | `src/components/layout/mobile-tab-bar.tsx:19`; `src/config/abas-painel.ts:2-7` e `:67` |
+| 4 | Cartão do imóvel: bairro e cidade em uma linha, selo embaixo, linha do total com o aviso | E899 (Daniel, 13/11: ordem fixa, 1 linha); E726 (posição única do selo); E356 + E899 + E923 (total "em 1 mês" e aviso curto) | `src/components/property-card.tsx:33`, `:75`, `:91`, `:111` |
+| 5 | Rodapé: texto da 1ª coluna, links novos, sem "Preços", "moradores" | Texto: E826. Links: MS-1/PUBLICO-A, E851, E555 + E563. "Moradores": regra "B1" da varredura de 01/11, **sem número E** (resíduo b). A saída da linha "Assistente Viva 24 h…": **não achei** (resíduo c) | `src/config/textos-regulados.ts:54`; `src/components/layout/footer.tsx:33`, `:39`, `:43`; `src/lib/varredura-publicas-0111.test.ts:7` |
+| 6 | Abas de filtro do admin: a escolhida é contorno, não verde cheio | E351 (c), Onda 5: "sem fundo colorido"; verde cheio só no botão principal | `src/lib/admin/abas.ts:1-8` |
+| 7 | `/buscar`: filtros quebram linha a 390 px; sem a pílula "Nível" | Quebra de linha: E710 + E780 reaberto (print do Daniel, 14/11). "Nível": E452 (sem nível no resultado a pílula não aparece) — no laboratório nenhum anúncio da busca tem nível, então é também ruído da base | `src/components/busca/barra-pilulas.tsx:105-111`; `src/lib/busca/filtro-nivel.ts:27` |
+| 8 | Folha de filtros começa por "Quartos" e "Estadia" | E105 (regra do E50): Preço, Tipo, Nível e a data têm pílula na linha e saíram da folha | `src/components/busca/painel-filtros-celular.tsx:46` |
+| 9 | Cidade: "29 imóveis + 15 de exemplo" virou "23 imóveis" | E446: a mesma base da busca; com imóvel real os exemplos saem | `src/app/(public)/cidades/[cidade]/page.tsx:92` e `:126` |
+| 10 | Página do imóvel (topo): aviso de exemplo, "Ver imóveis reais", total "em 1 mês", sem a trilha | E724, E713 e E694 (anúncio de exemplo); E207 (sem migalhas visíveis); E356 + E899 (total). A galeria mais larga a 1280 px: **não achei** (resíduo d) | `src/components/property/price-card.tsx:61`; `src/app/(public)/imoveis/[id]/property-detail.tsx:472`, `:882` |
+| 11 | Para proprietários: no lugar de "Quanto você paga" vem "Pedidos de moradia da sua cidade…" | E718 (mockup publico-proprietarios; Daniel, 08/11): três blocos novos antes do comparativo. **O comparativo não saiu, só desceu** | `src/app/(public)/para-proprietarios/page.tsx:84` e `:136` |
+| 12 | Favoritos do painel: estado vazio sem ilustração | Prompt 43, adendo de onboarding, item 4: "uma frase + o próximo passo como botão. Sem ilustração" | `src/lib/onboarding/vazios.ts:1-4` |
+| 13 | Perfil a 1280 px: título na coluna da direita | Mockups perfil-01..08 (A1, CONTA-A): "como no desenho". **Sem número E** (resíduo e) | `src/components/account/casca-conta.tsx:25`, `:43`, `:129-133` |
+| 14 | Página do imóvel inteira (t263 01): blocos novos | Comodidades por categoria: E191 + E661. Estrutura do condomínio: E225-A. Padrão mínimo: Prompt 59. Nível: adendo 59.1. Avaliações: Prompts 45 e 61. Manutenção dentro de "Bom saber" e "O que tem por perto" em grupos: **não achei** (resíduo f) | `src/components/property/amenities-grid.tsx:75`; `property-detail.tsx:123`; `src/components/conforto/padrao-minimo-imovel.tsx:10` |
+| 15 | Admin › Usuários: coluna "Tipo da conta"; a tabela rola de lado a 1280 px | Coluna: E224. A rolagem lateral a 1280 px: **não achei** (resíduo g) | `src/app/(dashboard)/admin/usuarios/tipo-conta.tsx:10`; `usuarios/page.tsx:226` |
+
+### Os 7 resíduos sem número de item
+
+Pela condição do Gerente, o que não tiver decisão vira defeito registrado. Para cada um, o que consegui apurar:
+
+| | Resíduo | O que sei |
+|---|---|---|
+| a | Flutuante em círculo em todo o site | Intencional no código (rótulo "C1b": o botão com texto cobria texto de `/termos`, `/empresas`, `/parceiros`). Falta só o número do item. |
+| b | "Moradores" no lugar de "inquilinos" no rodapé | Intencional: há guarda de teste ("B1: fala 'morador', nunca 'inquilino'"). Falta só o número do item. |
+| c | Saiu do rodapé a linha "Assistente Viva 24 h · resposta de uma pessoa em até 24 h" | Não achei decisão. A promessa continua no chat e na página Fale com a Viva. |
+| d | Galeria do imóvel mais larga a 1280 px | Não achei decisão. Não vi nada quebrado na tela. |
+| e | Título do Perfil na coluna da direita a 1280 px | Intencional no código ("como no desenho", mockups perfil-01..08). Falta só o número do item. |
+| f | Manutenção dentro de "Bom saber"; "O que tem por perto" em grupos com distância | Não achei decisão. Não vi nada quebrado na tela. |
+| g | Tabela de usuários do admin rola de lado a 1280 px | Não achei decisão. A tabela tem 1.021 px num quadro de 862 px; a página em si não vaza. É o que mais se parece com defeito. |
+
+**Leitura minha:** a, b e e são intencionais e só pedem o número. c, d e f não mostram nada quebrado, mas não têm
+decisão que eu ache. g é o candidato mais claro a defeito.
