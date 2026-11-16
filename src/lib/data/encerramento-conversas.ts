@@ -6,7 +6,7 @@ import { estadoDaConversa, type CandidaturaDaConversa, type EstadoDaConversa } f
   os blocos e a caução da outra parte não entram pela RLS do usuário). Sempre restrito às conversas em que `meuId` é parte.
   Falha de leitura: a conversa fica ABERTA (nunca trava o envio por erro de leitura).
 */
-type Linha = { id: string; property_id: string; tenant_id: string; owner_id: string; status: string; created_at: string; rejected_at: string | null; respondido_em: string | null };
+type Linha = { id: string; property_id: string; tenant_id: string; owner_id: string; status: string; created_at: string; rejected_at: string | null };
 
 const chave = (imovel: string, a: string, b: string) => `${imovel}|${[a, b].sort().join("|")}`;
 
@@ -22,9 +22,10 @@ export async function estadosDasConversas(
   try {
     const { data: leads, error } = await admin
       .from("leads")
-      .select("id, property_id, tenant_id, owner_id, status, created_at, rejected_at, respondido_em")
+      .select("id, property_id, tenant_id, owner_id, status, created_at, rejected_at")
       .in("property_id", imoveis)
       .or(`tenant_id.eq.${meuId},owner_id.eq.${meuId}`);
+    if (error) console.error("[encerramento] leitura das candidaturas:", error.code, error.message);
     if (error || !leads?.length) return saida;
     const linhas = leads as Linha[];
     const ids = linhas.map((l) => l.id);
@@ -42,7 +43,7 @@ export async function estadosDasConversas(
       const cand: CandidaturaDaConversa = {
         criadaEm: l.created_at,
         status: l.status,
-        terminouEm: l.rejected_at ?? l.respondido_em ?? null,
+        terminouEm: l.rejected_at ?? null,
         contrato: ct ? { fimEstadia, comCaucao, fimProcessoCaucao: prazoDe.get(ct.id)?.devolvida_em ?? null } : null,
       };
       const k = chave(l.property_id, l.tenant_id, l.owner_id);
