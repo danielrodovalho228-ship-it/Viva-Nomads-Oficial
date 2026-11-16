@@ -14,7 +14,7 @@ import { leadScore, leadSummary, type Lead, type Light } from "@/lib/data/lead-t
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { aceitarCandidatura, recusarCandidatura } from "@/lib/data/leads-actions";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_LEADS } from "@/lib/demo/seed";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
 import { cn } from "@/lib/utils";
 import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
@@ -67,7 +67,9 @@ export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lea
   const [pending, startTransition] = useTransition();
   // Modo demonstração (admin): lê o seed em memória; desligado, volta ao real.
   const { on: demoOn } = useDemoMode();
-  const leads = demoOn ? DEMO_LEADS : realLeads;
+  // E980: os exemplos chegam sob demanda.
+  const exemplos = useExemplos(demoOn);
+  const leads = demoOn ? (exemplos?.DEMO_LEADS ?? []) : realLeads;
 
   function set(id: string, s: LeadStatus) {
     setStatus((prev) => ({ ...prev, [id]: s }));
