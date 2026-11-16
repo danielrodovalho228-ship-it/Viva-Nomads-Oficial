@@ -19,7 +19,7 @@ test("E972: a página lê a prévia no servidor, em paralelo com o perfil, e a f
 });
 
 test("E972: as duas prévias da tela (ao lado, no computador; no corpo, no celular) recebem a leitura do servidor", () => {
-  assert.equal((tela.match(/<EspelhoPorPapel inicial=\{previaInicial\} /g) ?? []).length, 2);
+  assert.equal((tela.match(/<EspelhoPorPapel papel=\{papelEspelho\} inicial=\{previaInicial\} /g) ?? []).length, 2);
   assert.equal((tela.match(/<EspelhoPorPapel /g) ?? []).length, 2, "nenhuma prévia sem a leitura do servidor");
 });
 
