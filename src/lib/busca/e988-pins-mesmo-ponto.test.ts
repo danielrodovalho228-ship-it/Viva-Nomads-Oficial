@@ -7,7 +7,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ANEIS_LEGIVEIS, afastarPins, gruposDosPins, type CaixaPin, type Deslocamento } from "./pins-sem-sobreposicao.ts";
+import { ANEIS_LEGIVEIS, afastarComGrupos, afastarPins, gruposDosPins, type CaixaPin, type Deslocamento } from "./pins-sem-sobreposicao.ts";
 
 type Mapa = Map<string, Deslocamento>;
 /** Só os pins que aparecem (os agrupados ficam dentro do "+N" de outro). */
@@ -85,6 +85,11 @@ test("E988: o pin afastado vai no máximo ao anel legível (não aparece longe d
   }
 });
 
+test("E988: sem grupo, afastarComGrupos é o afastamento de sempre (nada de espaço a mais)", () => {
+  const pins = LAB_390.map(([x, y], i) => pin(`p${i}`, x, y));
+  assert.deepEqual([...afastarComGrupos(pins, quadro, [], 34)], [...afastarPins(pins, quadro)]);
+});
+
 test("E988: os casos que já se resolviam nas 8 direções não mudam (o 2º pin vai logo abaixo do 1º)", () => {
   const pins = [pin("a", 175, 300), pin("b", 175, 300)];
   assert.deepEqual(afastarPins(pins, quadro).get("b"), { dx: 0, dy: 28 });
@@ -98,11 +103,12 @@ test("E988: pin com o ponto dentro do mapa mas rente à borda (alargado pelo \"+
   assert.deepEqual(afastarPins([{ id: "fora", x: 500, y: 300, w: 69, h: 24 }], quadro).get("fora"), { dx: 0, dy: 0 });
 });
 
-test("E988: com a largura do \"+N\" reservada, o pin que mostra o grupo, já alargado, não cobre outro nem sai do mapa", () => {
+test("E988: mapa cheio (com \"+N\") — o pin que mostra o grupo, já alargado pelo selo, não cobre outro nem sai do mapa", () => {
   const SELO = 34;
-  for (const n of [31, 60, 100]) {
-    const pins = Array.from({ length: n }, (_, i) => pin(`s${n}-${i}`, 175 + (i % 5) * 30, 300 + (i % 3) * 10));
-    const d = afastarPins(pins, quadro, [], SELO);
+  for (const n of [31, 32, 60, 100]) {
+    const pins = Array.from({ length: n }, (_, i) => pin(`s${n}-${i}`, 175 + (i % 5) * 3, 300 + (i % 3) * 2));
+    const d = afastarComGrupos(pins, quadro, [], SELO);
+    assert.ok(gruposDosPins(d).size >= 1, `${n} pins: há "+N"`);
     const g = gruposDosPins(d);
     const caixas = pins
       .filter((p) => !d.get(p.id)?.agrupadoEm)

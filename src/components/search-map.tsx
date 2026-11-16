@@ -13,7 +13,7 @@ import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { usePreviaNoHover } from "@/components/busca/previa-hover";
 import { ATRIBUICAO_MAPA, TILES_CARTO, TILES_CARTO_SEM_ROTULOS, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
-import { afastarPins, gruposDosPins, type Obstaculo } from "@/lib/busca/pins-sem-sobreposicao";
+import { afastarComGrupos, gruposDosPins, type Obstaculo } from "@/lib/busca/pins-sem-sobreposicao";
 import { CIDADES_ROTULADAS, ZOOM_MAXIMO_DO_ROTULO, caixaDoRotulo, obstaculosDeCidades } from "@/lib/busca/rotulos-cidade-leaflet";
 import { FOLGA_CARTAO_MAPA, deslocamentoParaCaber, fechaCartaoComTecla, mostrarCartaoNaTela } from "@/lib/busca/cartao-no-mapa";
 
@@ -101,10 +101,10 @@ function aplicarAfastamento(
   aoAbrirGrupo?: (id: string) => void
 ) {
   // E988 (DUET-0649): o pin que não cabe legível perto do ponto entra no "+N" do pin visível mais perto. O "+N" vai
-  // DENTRO do pin; a vaga dele (LARGURA_SELO, metade de cada lado do pin centrado) é reservada no próprio afastamento,
-  // por isso as larguras são medidas sem os "+N" de antes.
+  // DENTRO do pin; com o mapa cheio, todos os pins reservam a vaga dele (afastarComGrupos), por isso as larguras são
+  // medidas sem os "+N" de antes.
   for (const { el } of itens) el.querySelector('[data-testid="pin-grupo"]')?.remove();
-  const desloc = afastarPins(
+  const desloc = afastarComGrupos(
     itens.map(({ id, x, y, el }) => ({ id, x, y, w: el.offsetWidth, h: el.offsetHeight })),
     quadro,
     obstaculos,

@@ -21,6 +21,17 @@ export type Deslocamento = { dx: number; dy: number; agrupadoEm?: string };
 /** E704: caixa fixa (centro e tamanho na tela) que o pin não pode cobrir, como o nome da cidade que o mapa-base desenha. */
 export type Obstaculo = { x: number; y: number; w: number; h: number };
 
+/**
+ * E988: o afastamento com o "+N". Sem grupo, é o afastamento de sempre. Com algum grupo (mapa cheio), refaz com TODOS
+ * os pins reservando a largura do "+N" (centrado: metade de cada lado): qualquer pin pode mostrar o selo sem cobrir o
+ * vizinho nem sair do mapa. O preço é um pouco mais de espaço entre os pins só quando o mapa está cheio.
+ */
+export function afastarComGrupos(pins: readonly CaixaPin[], quadro: { w: number; h: number } | undefined, obstaculos: readonly Obstaculo[], larguraSelo: number): Map<string, Deslocamento> {
+  const primeira = afastarPins(pins, quadro, obstaculos);
+  if (gruposDosPins(primeira).size === 0) return primeira;
+  return afastarPins(pins.map((p) => ({ ...p, w: p.w + larguraSelo })), quadro, obstaculos);
+}
+
 /** Quantos pins cada pin visível representa no "+N" (só os que têm agrupados). */
 export function gruposDosPins(desloc: ReadonlyMap<string, Deslocamento>): Map<string, number> {
   const g = new Map<string, number>();
@@ -50,20 +61,12 @@ function celulasDoAnel(n: number): readonly [number, number][] {
   return celulas;
 }
 
-export function afastarPins(
-  pins: readonly CaixaPin[],
-  quadro?: { w: number; h: number },
-  obstaculos: readonly Obstaculo[] = [],
-  /** E988: largura do "+N" que o pin anfitrião ganha (centrado: metade de cada lado). A vaga é reservada na hora. */
-  larguraSelo = 0
-): Map<string, Deslocamento> {
+export function afastarPins(pins: readonly CaixaPin[], quadro?: { w: number; h: number }, obstaculos: readonly Obstaculo[] = []): Map<string, Deslocamento> {
   // Os obstáculos entram primeiro: ficam onde estão e os pins é que se afastam (como se fossem pins já colocados).
   const colocados: { l: number; r: number; t: number; b: number }[] = obstaculos.map((o) => ({ l: o.x - o.w / 2, r: o.x + o.w / 2, t: o.y - o.h / 2, b: o.y + o.h / 2 }));
   const out = new Map<string, Deslocamento>();
   // Os pins que ficaram visíveis (para escolher quem representa um pin agrupado), com o índice da caixa em `colocados`.
   const visiveis: CaixaPin[] = [];
-  const indiceDaCaixa = new Map<string, number>();
-  const comSelo = new Set<string>();
   const caixa = (p: CaixaPin, dx: number, dy: number) => ({
     l: p.x + dx - p.w / 2 - FOLGA / 2,
     r: p.x + dx + p.w / 2 + FOLGA / 2,
@@ -75,27 +78,18 @@ export function afastarPins(
   const livre = (c: { l: number; r: number; t: number; b: number }, afastado = true) =>
     colocados.every((o) => c.r <= o.l || c.l >= o.r || c.b <= o.t || c.t >= o.b) && (!afastado || cabe(c));
 
-  /**
-   * O pin visível que vai mostrar o "+N" de p: o de ponto mais perto. Quem ainda não tem "+N" precisa de vaga para
-   * alargar (sem cobrir outro pin nem sair do mapa); sem vaga, tenta o seguinte. Nenhum com vaga: o mais perto.
-   */
+  /** O pin visível que vai mostrar o "+N" de p: o de ponto mais perto (o primeiro em caso de empate). */
   const escolherAnfitriao = (p: CaixaPin): CaixaPin | null => {
-    const ordem = [...visiveis].sort((a, b) => Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y));
-    for (const h of ordem) {
-      if (comSelo.has(h.id) || larguraSelo <= 0) return h;
-      const i = indiceDaCaixa.get(h.id)!;
-      const c = colocados[i];
-      const larga = { l: c.l - larguraSelo / 2, r: c.r + larguraSelo / 2, t: c.t, b: c.b };
-      const outros = colocados.filter((_, k) => k !== i);
-      const semCobrir = outros.every((o) => larga.r <= o.l || larga.l >= o.r || larga.b <= o.t || larga.t >= o.b);
-      const pontoNoMapa = !!quadro && h.x >= 0 && h.x <= quadro.w && h.y >= 0 && h.y <= quadro.h;
-      if (semCobrir && (!pontoNoMapa || cabe(larga))) {
-        colocados[i] = larga;
-        comSelo.add(h.id);
-        return h;
+    let melhor: CaixaPin | null = null;
+    let dist = Infinity;
+    for (const v of visiveis) {
+      const d = Math.hypot(v.x - p.x, v.y - p.y);
+      if (d < dist) {
+        dist = d;
+        melhor = v;
       }
     }
-    return ordem[0] ?? null;
+    return melhor;
   };
 
   for (const p of pins) {
@@ -131,7 +125,6 @@ export function afastarPins(
       }
       escolhido = { dx: 0, dy: 0 };
     }
-    indiceDaCaixa.set(p.id, colocados.length);
     colocados.push(caixa(p, escolhido.dx, escolhido.dy));
     visiveis.push(p);
     out.set(p.id, escolhido);
