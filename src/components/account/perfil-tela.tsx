@@ -10,6 +10,7 @@ import { SOMBRA_SO_CELULAR, SOMBRA_SO_COMPUTADOR } from "@/lib/conta/visual-mock
 import { cn } from "@/lib/utils";
 import { BlocoOpcional } from "@/components/ui/bloco-opcional";
 import { EspelhoPorPapel } from "@/components/account/espelho-papel";
+import type { MeuPerfilPublico as PreviaDoPerfil } from "@/lib/data/papeis-actions";
 import { PetsFicha } from "@/components/account/pets-ficha";
 import { CategoriaProfissional } from "@/components/account/categoria-profissional";
 import { PorQueNaCidade } from "@/components/account/por-que-na-cidade";
@@ -38,7 +39,7 @@ const CAMPO = "w-full rounded-lg border border-line bg-white px-4 py-3 text-base
  * Idiomas) e o medidor "Complete seu perfil" (C1). No celular: título no topo, foto grande, cartão, espelho, blocos, o
  * medidor e o "Salvar alterações" logo depois do conteúdo (E61).
  */
-export function PerfilTela({ inicial }: { inicial?: PerfilInicial | null } = {}) {
+export function PerfilTela({ inicial, previaInicial }: { inicial?: PerfilInicial | null; previaInicial?: PreviaDoPerfil | null } = {}) {
   const foto = useMinhaFoto();
   const { mode } = useViewMode();
   // E192 (reteste 26/10): o painel do morador (Perfil profissional + "Por que estou na cidade") vale para quem tem
@@ -260,7 +261,7 @@ export function PerfilTela({ inicial }: { inicial?: PerfilInicial | null } = {})
           {/* E504 (c): o enquadramento só aparece com o papel JÁ conhecido (a conta carregada) — antes, o 1º quadro saía com o papel
             padrão (morador) e trocava para proprietário depois, e o rótulo lateral ficava fixo. Enquanto não há conta, o espaço é guardado. */}
         {usuarioPronto ? (
-          <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} profissao={profLigado && p.profissao && p.profissao !== CATEGORIA_NAO_INFORMAR ? categoriaLabel(p.profissao) : null} idiomas={idiomasLigado ? idiomas : []} />
+          <EspelhoPorPapel inicial={previaInicial} papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} profissao={profLigado && p.profissao && p.profissao !== CATEGORIA_NAO_INFORMAR ? categoriaLabel(p.profissao) : null} idiomas={idiomasLigado ? idiomas : []} />
         ) : (
           <div aria-hidden className="min-h-[24rem]" data-testid="espelho-aguardando" />
         )}
@@ -350,7 +351,7 @@ export function PerfilTela({ inicial }: { inicial?: PerfilInicial | null } = {})
 
       <aside className="hidden min-w-0 gap-6 xl:grid" aria-label={papelEspelho === "proprietario" ? "Como o morador te vê" : "Como o proprietário te vê"}>
         <TituloSecaoLateral ativo="perfil" subtitulo={SUBTITULO_PERFIL} />
-        <EspelhoPorPapel papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} profissao={profLigado && p.profissao && p.profissao !== CATEGORIA_NAO_INFORMAR ? categoriaLabel(p.profissao) : null} idiomas={idiomasLigado ? idiomas : []} />
+        <EspelhoPorPapel inicial={previaInicial} papel={papelEspelho} foto={foto.url} nome={nome} emailConfirmado={p.emailConfirmado} bio={bio} profissao={profLigado && p.profissao && p.profissao !== CATEGORIA_NAO_INFORMAR ? categoriaLabel(p.profissao) : null} idiomas={idiomasLigado ? idiomas : []} />
       </aside>
     </div>
   );
