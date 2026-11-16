@@ -43,7 +43,8 @@ test.describe("T2112 — E611: o calendário do dono lê por GET, sem cache, for
         leituras.push({ parte: u.searchParams.get("parte") ?? "", status: r.status(), cache: r.headers()["cache-control"] ?? "", ok: j?.ok });
       });
 
-      await p.goto(`/dashboard/imoveis/${ids.imovel}/editar`, { waitUntil: "domcontentloaded" });
+      // A seção "Disponibilidade" da edição vem fechada; o endereço com #calendario a abre sozinha.
+      await p.goto(`/dashboard/imoveis/${ids.imovel}/editar#calendario`, { waitUntil: "domcontentloaded" });
       const grade = p.getByTestId("calendario-dono-grade");
       await grade.scrollIntoViewIfNeeded({ timeout: 30_000 }).catch(() => {});
       await expect(grade, "a grade do calendário aparece").toBeVisible({ timeout: 30_000 });
