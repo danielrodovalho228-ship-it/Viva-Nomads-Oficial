@@ -3,7 +3,7 @@ import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2040 — Pista 3, lote 2, item F1 (conversas) @E482 @E444 (sem @ao-vivo-seguro: precisa de login e do laboratório). Regra: a mensagem nova gera o aviso da
+  T2086 (antes t2040, conversas) — Pista 3, lote 2, item F1 (conversas) @E482 @E444 (sem @ao-vivo-seguro: precisa de login e do laboratório). Regra: a mensagem nova gera o aviso da
   prioridade certa (new_message = URGENTE), com QUEM ESCREVEU no título, o IMÓVEL e a prévia limpa; um aviso pendente
   por conversa (a 2ª mensagem renova, não repete), e o sino mostra o selo "Urgente".
   Os eventos de orçamentos e de pré-aceite: prioridade pela mesma tabela (unitário e444-avisos); o pré-aceite está atrás
@@ -17,7 +17,7 @@ const ids: Record<string, string> = {};
 type Aviso = { evento: string; prioridade: string; titulo: string; texto: string | null; url: string; ref_id: string | null };
 const avisosDoDono = async () => ((await adm().from("avisos").select("evento, prioridade, titulo, texto, url, ref_id").eq("usuario_id", ids.dono).eq("evento", "new_message")).data ?? []) as Aviso[];
 
-test.describe("T2040 — F1: aviso de mensagem com prioridade, remetente e imóvel @E482", () => {
+test.describe("T2086 — F1: aviso de mensagem com prioridade, remetente e imóvel @E482", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
   test.beforeAll(async () => {
