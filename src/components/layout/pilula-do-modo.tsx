@@ -27,7 +27,7 @@ export function PilulaDoModo(p: { pilula: Pilula; variante: "topo" | "linha" }) 
         <span data-modo={s.papel} data-ativo="1" className="inline-flex h-8 items-center gap-2 rounded-full px-3 text-sm font-semibold">
           <Icone className="h-4 w-4 shrink-0" aria-hidden />
           <span className="sr-only">Modo: </span>
-          {s.rotulo}
+          <span>{s.rotulo}</span>
         </span>
       </span>
     );
