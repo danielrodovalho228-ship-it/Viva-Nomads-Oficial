@@ -3,6 +3,10 @@
 Preparado em 16/11/2026, antes de o #3852 (`lab-diffs`) entrar na main. Serve para executar o pacote "na hora": quando a
 primeira rodada do laboratório publicar o ramo `lab-diffs`, é só seguir a seção 5.
 
+**Atualização de 16/11, 05:08Z:** o Gerente pediu o pacote por corridas locais, sem esperar o #3852. O julgamento
+proposto, tela a tela, está em `docs/e744-pacote-visual-julgamento.md`; as pranchas, no ramo
+`claude-b/e744-pacote-visual-pranchas`. O `lab-diffs` continua como rede.
+
 **Regra que vale para tudo aqui:** referência visual só muda com o julgamento do Gerente registrado no PR, tela a
 tela. Este documento não regrava nada.
 
