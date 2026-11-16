@@ -12,15 +12,18 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
   A pilha é montada aqui: anúncios ativos com o MESMO ponto exato, numa cidade só deles (Araguari), busca filtrada
   por ela. O ponto público é o aproximado da 0066 (±0,004°, ~450 m): ~100 px entre eles na vista enquadrada, e cada
   "Zoom out" junta-os mais (~12 px no 3º). Mede-se na vista inicial e depois de cada um de 3 "Zoom out".
-  Os três casos (medidos com a própria afastarPins da main 851ce940b e do #3912 7e0d9525c; pins 74 × 28 px, juntos em
+  Os quatro casos (medidos com a própria afastarPins da main 851ce940b e do #3912 7e0d9525c; pins 74 × 28 px, juntos em
   3–100 px, 40 sementes):
     1. 390 px, 29 pins — cabem no quadro do celular (350 × 591): a main deixa ≥ 9 pares sobrepostos, o #3912 nenhum.
     2. 1280 px, 60 pins — quadro 560–760 × 700–800: a main deixa ≥ 16 pares, o #3912 nenhum.
-    3. 390 px, 80 pins — NÃO cabem: o quadro do celular leva ~72 pins (4 colunas × 18 linhas de 74 × 32 px). Sem
+    3. 390 px, 31 pins — o caso pedido pelo Gerente (DUET-1515). Na main, sempre vermelho (≥ 13 pares). No #3912:
+       com a pilha toda no mesmo pixel (zoom muito afastado) os 31 cabem (0 pares, medido); nos zooms intermédios
+       (pins a 12–24 px uns dos outros) às vezes sobra 1–2 pares e às vezes nenhum — depende do ponto aproximado de
+       cada anúncio, que vem do id gerado em cada corrida. Por isso este caso é VERMELHO SÓ EM ALGUMAS CORRIDAS no
+       #3912, e verde em todas só quando o afastamento/agrupamento resolver os zooms intermédios.
+    4. 390 px, 80 pins — NÃO cabem: o quadro do celular leva ~72 pins (4 colunas × 18 linhas de 74 × 32 px). Sem
        agrupamento há sobreposição em QUALQUER corrida: no mínimo 563 pares na main e 160 no #3912 (quadros de
-       350 × 591 a 390 × 700). VERMELHO até o "+N" funcionar.
-       (Não 31: com 31 pins o #3912 às vezes arruma todos e às vezes não — depende do ponto aproximado de cada
-       anúncio, que vem do id gerado em cada corrida. Uma trava vermelha só em algumas corridas não trava nada.)
+       350 × 591 a 390 × 700). VERMELHO DETERMINÍSTICO até o "+N" funcionar.
   Como se conta o "+N" (o desenho é do Code 2): todo [data-testid="pin-mapa"] cujo texto tenha "+N" representa N
   anúncios; os outros pins, 1 cada. Se o agrupamento usar outra marcação, o PR dele ajusta `representados` e declara.
 */
@@ -30,9 +33,10 @@ const dono = { email: `dono.t2108.${sufixo}@lab.vivanomads.test`, nome: "Pilar P
 const ids: { dono?: string; imoveis: string[] } = { imoveis: [] };
 const CIDADE = "Araguari";
 const PONTO = { lat: -18.6456, lng: -48.1934 };
-/** Os três casos, na ordem em que a pilha cresce (29 → 60 → 80). */
+/** Os quatro casos, na ordem em que a pilha cresce (29 → 31 → 60 → 80). */
 const CASOS = [
   { largura: 390, pilha: 29, nota: "cabem no quadro do celular" },
+  { largura: 390, pilha: 31, nota: "o caso dos 31 do Gerente, intermitente no #3912 nos zooms intermédios" },
   { largura: 1280, pilha: 60, nota: "cabem no quadro do computador" },
   { largura: 390, pilha: 80, nota: "não cabem no celular, só o agrupamento em +N cumpre" },
 ] as const;
