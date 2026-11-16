@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getMeuEspacoTrabalho, setMeuEspacoTrabalho } from "@/lib/data/perfil-actions";
-import { OFERTA, PROCURA, ROTULO_OFERTA, ROTULO_PROCURA } from "@/lib/perfil/espaco-trabalho";
+import { OFERTA, PROCURA, ROTULO_OFERTA, ROTULO_PROCURA, aposLerEspacoTrabalho } from "@/lib/perfil/espaco-trabalho";
 
 const CAMPO = "w-full rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm outline-none focus:border-sage";
 
@@ -20,14 +20,16 @@ export function EspacoTrabalho() {
   const [ok, setOk] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [falhouLeitura, setFalhouLeitura] = useState(false);
+  // E986: em qual pergunta a pessoa já mexeu. A leitura inicial não apaga a escolha feita enquanto a tela carregava.
+  const mexeu = useRef({ oferta: false, procura: false });
 
   useEffect(() => {
     let vivo = true;
     getMeuEspacoTrabalho()
       .then((v) => {
         if (!vivo || !v) return;
-        setOferta(v.oferta ?? "");
-        setProcura(v.procura ?? "");
+        setOferta((naTela) => aposLerEspacoTrabalho({ oferta: naTela, procura: "" }, v, mexeu.current).oferta);
+        setProcura((naTela) => aposLerEspacoTrabalho({ oferta: "", procura: naTela }, v, mexeu.current).procura);
       })
       .catch(() => vivo && setFalhouLeitura(true))
       .finally(() => vivo && setCarregando(false));
@@ -67,14 +69,14 @@ export function EspacoTrabalho() {
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-ink">Você também tem sala, consultório ou espaço de trabalho mobiliado?</span>
-          <select value={oferta} onChange={(e) => { setOferta(e.target.value); setOk(false); }} className={CAMPO} data-testid="espaco-oferta">
+          <select value={oferta} onChange={(e) => { mexeu.current.oferta = true; setOferta(e.target.value); setOk(false); }} className={CAMPO} data-testid="espaco-oferta">
             <option value="">Prefiro não responder</option>
             {OFERTA.map((v) => <option key={v} value={v}>{ROTULO_OFERTA[v]}</option>)}
           </select>
         </label>
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-ink">Vai precisar de espaço de trabalho fora de casa?</span>
-          <select value={procura} onChange={(e) => { setProcura(e.target.value); setOk(false); }} className={CAMPO} data-testid="espaco-procura">
+          <select value={procura} onChange={(e) => { mexeu.current.procura = true; setProcura(e.target.value); setOk(false); }} className={CAMPO} data-testid="espaco-procura">
             <option value="">Prefiro não responder</option>
             {PROCURA.map((v) => <option key={v} value={v}>{ROTULO_PROCURA[v]}</option>)}
           </select>
