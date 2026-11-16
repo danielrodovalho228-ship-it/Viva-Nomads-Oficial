@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { escadaTaxasTexto } from "../../../src/lib/cobranca/regra";
 import { DOSSIE_EM_PDF } from "../../../src/lib/caucao/prazos";
 import { TEXTO_VALIDADE_CODIGO } from "../../../src/lib/seguranca/codigo-acesso";
+import { FAQ } from "../../../src/lib/atendimento/faq";
 
 /*
   T1668 — Lote 2 da Ajuda (Família 6) @E939 @E940 @E942: os três artigos na página do tema, como o visitante lê.
@@ -21,8 +22,9 @@ test.describe("T1668 — Ajuda lote 2: escada da taxa, destino do dano e validad
       await page.setViewportSize({ width: largura, height: 900 });
       for (const c of CASOS) {
         await page.goto(`/ajuda/${c.tema}`, { waitUntil: "domcontentloaded" });
-        const item = page.locator(`#pergunta-${c.id}`);
-        await item.getByRole("button").click();
+        const pergunta = FAQ.find((p) => p.id === c.id)!.pergunta;
+        const item = page.getByTestId("ajuda-perguntas").locator("li").filter({ has: page.getByRole("button", { name: pergunta, exact: true }) });
+        await item.getByRole("button", { name: pergunta, exact: true }).click();
         await expect(item).toContainText(c.texto);
         await item.screenshot({ path: `${SAIDA}/preview-${c.id}-${largura}.png` });
       }
