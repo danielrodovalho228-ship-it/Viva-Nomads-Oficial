@@ -34,7 +34,7 @@ async function pedido(status: "entregue" | "concluido"): Promise<string> {
   const { data, error } = await adm()
     .from("parceiro_pedidos")
     .insert({
-      codigo: `VN-SV-T2077${sufixo.slice(-2).toUpperCase().replace(/[^0-9A-Z]/g, "0")}${String(seq).padStart(2, "0")}`,
+      codigo: `VN-SV-T277${sufixo.slice(-2).toUpperCase().replace(/[^0-9A-Z]/g, "0")}${String(seq).padStart(2, "0")}`, // ^VN-SV-[0-9A-Z]{8}$ (0190)
       parceiro_id: ids.parceiro,
       cliente_id: ids.cliente,
       categoria: "limpeza",
