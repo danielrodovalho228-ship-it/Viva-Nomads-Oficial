@@ -74,7 +74,7 @@ export function PilulaDoModo(p: { pilula: Pilula; variante: "topo" | "linha" }) 
         })}
       </div>
       {erro && (
-        <p role="alert" className={cn("text-sm text-red-700", p.variante === "topo" ? "absolute right-0 top-full z-10 mt-1 whitespace-nowrap rounded-lg border border-line bg-white px-3 py-2 shadow-sm" : "mt-1")} data-testid={`modo-erro-${p.variante}`}>
+        <p role="alert" className={cn("text-sm text-red-700", p.variante === "topo" ? "absolute right-0 top-full z-10 mt-1 whitespace-nowrap rounded-lg border border-line bg-white px-3 py-2" : "mt-1")} data-testid={`modo-erro-${p.variante}`}>
           {erro}
         </p>
       )}

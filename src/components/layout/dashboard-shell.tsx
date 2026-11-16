@@ -443,6 +443,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
+        {/* E900: no celular a pílula do modo fica numa linha logo abaixo do topo (entre o logo e o sino ela não cabe);
+            no computador ela mora dentro do cabeçalho (TopoPainel). Fora do /admin, que não tem modo. */}
+        {pilula && (
+          <div className="flex px-4 pt-3 sm:px-8 lg:hidden print:hidden" data-testid="modo-linha">
+            <PilulaDoModo pilula={pilula} variante="linha" />
+          </div>
+        )}
+
         {/* E73 (QA 24/10): nas telas da equipe (/admin), "‹ Voltar ao site" fica à vista. E176 (D3): a navegação da equipe tem
             UM caminho só — o hambúrguer do topo abre a gaveta (saiu o segundo botão de menu). E784 (reprovado a 1920 px): a
             faixa com o link vale em TODAS as larguras (antes `lg:hidden`: no computador não havia saída para o site). */}
@@ -450,14 +458,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 print:hidden" data-testid="admin-nav-celular">
             <VoltarAoSite />
           </nav>
-        )}
-
-        {/* E900: no celular a pílula do modo fica numa linha logo abaixo do topo (entre o logo e o sino ela não cabe);
-            no computador ela mora dentro do cabeçalho (TopoPainel). Fora do /admin, que não tem modo. */}
-        {pilula && (
-          <div className="flex px-4 pt-3 sm:px-8 lg:hidden print:hidden" data-testid="modo-linha">
-            <PilulaDoModo pilula={pilula} variante="linha" />
-          </div>
         )}
 
         {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
