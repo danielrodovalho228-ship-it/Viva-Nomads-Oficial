@@ -15,3 +15,11 @@ export function mensagemDaFalhaDeLogin(f: { papel: string; etapa: EtapaDoLogin; 
   // Causa conhecida no laboratório local: semear de novo cria outro fator, e o shell segue com o segredo antigo.
   return `${base} — o TESTES_ADMIN_TOTP_SEGREDO deste ambiente não é o do fator atual da conta? (laboratório semeado de novo: recarregue as variáveis)`;
 }
+
+/**
+ * A falha foi o limite de tentativas de login (o aviso "Muitas tentativas…" da tela)? Fora do laboratório não há como
+ * zerar o limite: repetir só gasta mais tentativas e mantém o limite estourado para a rodada seguinte (E2E da prévia).
+ */
+export function recusaPorLimite(mensagem: string): boolean {
+  return /muitas\s+tentativas/i.test(mensagem);
+}
