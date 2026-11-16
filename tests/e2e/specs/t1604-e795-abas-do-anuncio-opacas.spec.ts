@@ -5,7 +5,7 @@ import { test, expect } from "@playwright/test";
   ("Costuma responder em até 8 horas" aparecia borrado através da barra translúcida), e o salto pela aba "Proprietário"
   para abaixo da barra.
 */
-test.describe("T1604 — E795 abas do anúncio opacas", () => {
+test.describe("T1604 — E795 abas do anúncio opacas", { tag: ["@E795", "@ao-vivo-seguro"] }, () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   test("barra opaca enquanto a linha do proprietário passa por baixo; a âncora para abaixo da barra", async ({ page }) => {
