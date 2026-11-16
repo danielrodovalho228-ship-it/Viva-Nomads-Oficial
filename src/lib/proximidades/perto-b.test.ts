@@ -77,7 +77,8 @@ test("a edição chama a busca (pelo endereço guardado) e mudar CEP, rua ou nú
   assert.notEqual(chaveBuscaPerto("38400-100", "Rua A", "10"), chaveBuscaPerto("38400-200", "Rua A", "10"));
   assert.equal(chaveBuscaPerto("38400-100", " Rua A ", "10"), chaveBuscaPerto("38400100", "rua a", "10"));
   const pagina = ler("src/app/(dashboard)/dashboard/imoveis/novo/page.tsx");
-  assert.match(pagina, /if \(!editingId \|\| cepValido\(cep\) \|\| proxBuscadoRef\.current\) return;[\s\S]*?buscarPerto\(\{ propertyId: editingId \}\)/);
+  // E952 (asserção alterada): a busca leva o número dela (seq) — buscarPerto({ propertyId: editingId }, seq).
+  assert.match(pagina, /if \(!editingId \|\| cepValido\(cep\) \|\| proxBuscadoRef\.current\) return;[\s\S]*?buscarPerto\(\{ propertyId: editingId \}, seq\)/);
   assert.match(pagina, /const chave = chaveBuscaPerto\(cep, street, numero\);[\s\S]*?proxBuscadoRef\.current === chave/);
   // A edição não exige mais o número para buscar (o publicado não tem o rascunho com o número).
   assert.doesNotMatch(pagina, /!numero\.trim\(\) \|\| proxBuscadoRef/);
@@ -88,7 +89,8 @@ test("a edição chama a busca (pelo endereço guardado) e mudar CEP, rua ou nú
 
 test("uma mensagem só no bloco: lista, 'não achamos' (busca feita) ou 'complete o endereço' (busca não feita)", () => {
   const bloco = ler("src/components/anuncio/blocos-cadastro.tsx");
-  assert.match(bloco, /\{temItens && \(\s*<>\s*<p className="mb-3 text-xs text-muted" data-testid="proximidades-achamos">/);
+  // E952 (asserção alterada): acima do "Achamos…" entra o carimbo "Perto de: {rua}, CEP {cep}" (só quando se sabe o endereço).
+  assert.match(bloco, /\{temItens && \(\s*<>\s*\{alvo && \([\s\S]*?data-testid="proximidades-carimbo"[\s\S]*?\)\}\s*<p className="mb-3 text-xs text-muted" data-testid="proximidades-achamos">/);
   // E145: com a busca feita, "não respondeu" e "não achamos" são mensagens separadas (uma por vez).
   assert.match(bloco, /!carregando && !temItens && buscou && naoRespondeu && \(/);
   assert.match(bloco, /!carregando && !temItens && buscou && !naoRespondeu && \(/);
