@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { EnderecoQuebravel } from "@/components/admin/endereco-quebravel";
 import { Mail } from "lucide-react";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -67,7 +68,7 @@ export function ListaEmailsTeste({ linhas, titulo = "Mais recentes primeiro", va
             {itens.map((l) => (
               <li key={l.id} className="min-w-0 rounded-xl border border-sage-200 p-3">
                 <p className="text-xs text-muted">
-                  {quando(l.criado_em)} · {qa && l.destinatario ? l.destinatario : l.destinatario_mascarado}
+                  {quando(l.criado_em)} · <EnderecoQuebravel endereco={qa && l.destinatario ? l.destinatario : l.destinatario_mascarado} />
                 </p>
                 <p className="mt-1 break-words font-semibold text-ink" data-testid="emails-teste-assunto">{l.assunto}</p>
                 <ImovelPorExtenso corpo={l.corpo} />
@@ -94,7 +95,7 @@ export function ListaEmailsTeste({ linhas, titulo = "Mais recentes primeiro", va
                 {itens.map((l) => (
                   <tr key={l.id} className="border-t border-sage-200 align-top">
                     <td className="py-2 pr-2">{quando(l.criado_em)}</td>
-                    <td className="break-words py-2 pr-2">{qa && l.destinatario ? l.destinatario : l.destinatario_mascarado}</td>
+                    <td className="py-2 pr-2"><EnderecoQuebravel endereco={qa && l.destinatario ? l.destinatario : l.destinatario_mascarado} /></td>
                     <td className="py-2">
                       <details>
                         <summary className="cursor-pointer break-words font-semibold text-ink">{l.assunto}</summary>
