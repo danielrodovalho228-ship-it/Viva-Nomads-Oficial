@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, novaSenha } from "../fixtures/labora
 import { abrirComo, cenarioOrcamento, enviarPelaTela, type CenarioOrcamento } from "../fixtures/orcamento-lab";
 
 /*
-  T2040 (orçamentos) — Pista 3, lote 2, item F1 @E444 @E482 @ao-vivo-seguro (contas de teste, sem dinheiro, sem
+  T2040 (orçamentos) — Pista 3, lote 2, item F1 @E444 @E482 (sem @ao-vivo-seguro: precisa de login e do laboratório) (contas de teste, sem dinheiro, sem
   assinatura; o e-mail do laboratório vai para a caixa simulada). Regra: cada evento de orçamento gera o aviso da
   prioridade certa, para a outra parte, com o imóvel e o destino da proposta:
     • proposta enviada → morador: proposta_recebida, CRÍTICO, faixa "Responder a proposta";
