@@ -23,6 +23,23 @@ function mascaras(page: Page): Locator[] {
     page.locator('main [data-testid="admin-decisoes"] h1, main [data-testid="cartao-backup"], main [data-testid="aviso-atendimento-admin"]'),
     page.locator("main img, main canvas, main svg image, main textarea, main input, main select"),
     page.locator('[data-visual="muda"], [aria-label$="aguardando"], nav [aria-label$="não lidas"], nav [aria-label$="novos"]'),
+    // Pacote visual do E744 (julgamento do Gerente, 16/11/2026, #3894): números, datas e nomes que mudam com a base e
+    // ainda apareciam na imagem. Contadores e totais com nome próprio:
+    page.locator(
+      'main [data-testid="admin-atencao-todas"], main [data-testid^="numero-fonte-"], main [data-testid="fila-agora"] span, ' +
+        'main [data-testid="conferencia-contadores"] > div > p:first-child, main [data-testid="matriculas-contadores"] > div > p:first-child, ' +
+        'main [data-testid="admin-parceiros-tipos"] span, main [data-testid="contratos-totais"] [data-testid]',
+    ),
+    // /admin/contratos/[id]: código e imóvel no título, período, registro, resumo, totais, taxa e prazo da conferência.
+    page.locator(
+      'main [data-testid="admin-contrato"] h1, main [data-testid="admin-contrato-cabecalho"] p, main [data-testid="admin-contrato-resumo"] p, ' +
+        'main [data-testid="admin-contrato-totais"], main [data-testid="admin-contrato-taxa"], main [data-testid="admin-conferencia-prazo"]',
+    ),
+    // Contagem entre parênteses no título ou na aba ("Contratos (3)", "Em revisão (0)"); frase com data ou hora.
+    page.locator("main h2, main button").filter({ hasText: /\(\d+\)/ }),
+    page.locator("main p").filter({ hasText: /\d{2}\/\d{2}|\d{2}:\d{2}/ }),
+    // Gráficos: as barras e os meses do eixo mudam com a base e com o mês corrente.
+    page.locator('main [role="img"]'),
   ];
 }
 
