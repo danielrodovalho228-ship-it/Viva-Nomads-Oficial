@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2050 (laboratório) — E579 @E579 (sem @ao-vivo-seguro: cria conta e anúncio pela chave de serviço). O caso que dava
+  T2085 (laboratório; antes t2050-lab) — E579 @E579 (sem @ao-vivo-seguro: cria conta e anúncio pela chave de serviço). O caso que dava
   SEMPRE 0: um dono PJ que declarou emitir nota, com anúncio ativo → o chip "Emite nota fiscal" conta ≥ 1 e, aplicado,
   a lista traz esse anúncio. É a prova vermelha do t2050 de visitante (o alvo local de demonstração não tem declarante).
 */
@@ -19,7 +19,7 @@ async function abrirFolha(page: Page) {
   return folha;
 }
 
-test.describe("T2050 (lab) — E579: o dono PJ declarante entra no filtro @E579", () => {
+test.describe("T2085 (lab) — E579: o dono PJ declarante entra no filtro @E579", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.beforeAll(async () => {
     ids.dono = await criarConta({ email: `dono.t2050.${sufixo}@lab.vivanomads.test`, nome: "Dora Nota", role: "owner" }, novaSenha());
