@@ -33,7 +33,7 @@ test.describe("T2089 — E509: pausado sempre tem motivo; só a pausa do dono re
     const { data: linha, error: e1 } = await adm().from("properties").select("*").eq("id", base).single();
     if (e1) throw e1;
     ids.daViva = randomUUID();
-    const copia = { ...(linha as Record<string, unknown>), id: ids.daViva, title: `Studio pausado sem motivo ${sufixo}`, status: "paused", pausa_motivo: null, pausado_em: null };
+    const copia: Record<string, unknown> = { ...(linha as Record<string, unknown>), id: ids.daViva, title: `Studio pausado sem motivo ${sufixo}`, status: "paused", pausa_motivo: null, pausado_em: null };
     for (const k of ["created_at", "updated_at"]) delete copia[k];
     const { error: e2 } = await adm().from("properties").insert(copia);
     if (e2) throw e2;
