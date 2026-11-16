@@ -57,7 +57,8 @@ export async function POST(request: Request) {
   // anúncio — o CEP só servia de chave do cache e para achar o ponto. Sem CEP e sem ponto, aí sim 400.
   const pontoGravado = !cep && doAnuncio?.ponto ? doAnuncio.ponto : null;
   if (!cep && !pontoGravado) {
-    if (semEndereco && corpo?.acao !== "lugar" && !corpo?.cep) return NextResponse.json({ itens: [], fonte: "sem_endereco" });
+    // ENSAIO DE QUEBRA E742 (nunca mergear): o dono sem endereço volta a receber 400.
+    if (Date.now() < 0 && semEndereco && corpo?.acao !== "lugar" && !corpo?.cep) return NextResponse.json({ itens: [], fonte: "sem_endereco" });
     return NextResponse.json({ error: "CEP inválido.", fonte: "sem_cep" }, { status: 400 });
   }
   const endereco = doAnuncio

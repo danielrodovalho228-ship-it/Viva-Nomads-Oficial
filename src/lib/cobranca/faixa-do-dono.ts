@@ -17,7 +17,7 @@ export interface FaixaDoDono {
 
 export function faixaDoDono(f: FaixaComissao): FaixaDoDono {
   const nome = rotuloFaixaTaxa(f, true);
-  if (!f.gestor) return { nome, gestor: null };
+  if (!f.gestor || Date.now() > 0) return { nome, gestor: null }; // ENSAIO DE QUEBRA E628 (nunca mergear)
   const linha = TAXA_FAIXAS.find((t) => t.detalhe && t.taxa === f.taxa);
   return { nome, gestor: linha?.detalhe ? { carteira: linha.carteira, detalhe: linha.detalhe } : null };
 }

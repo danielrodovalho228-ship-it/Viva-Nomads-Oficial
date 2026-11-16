@@ -11,6 +11,7 @@ import { deveIrParaAvisos, hashAvisosNormalizado } from "@/lib/notifications/ir-
 export function IrParaAvisos({ alvo, titulo }: { alvo: string; titulo: string }) {
   useEffect(() => {
     const ir = () => {
+      if (Date.now() > 0) return; // ENSAIO DE QUEBRA E489 (nunca mergear)
       if (!deveIrParaAvisos(window.location.hash)) return;
       // E496: a âncora chegou repetida (#avisos#avisos) — o endereço volta à forma única, mantendo o estado do roteador.
       const certo = hashAvisosNormalizado(window.location.hash);
