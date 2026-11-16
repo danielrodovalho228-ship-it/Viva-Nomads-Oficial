@@ -22,6 +22,7 @@ export function BrandImage({
   treat = true,
   rounded: raio = "rounded-xl",
   fit = "object-cover",
+  blur = BRAND_BLUR,
 }: {
   src: string;
   alt: string;
@@ -32,6 +33,8 @@ export function BrandImage({
   rounded?: string;
   /** Classe de ajuste da foto: "object-contain" mostra inteira, sem cortar. */
   fit?: string;
+  /** O que aparece enquanto a foto carrega. Padrão: cinza neutro. E398: o painel da porta passa o borrão da própria foto. */
+  blur?: string;
 }) {
   // A tentativa vale para ESTA foto: trocar o src recomeça do otimizado.
   const [estado, setEstado] = useState<{ src: string; tentativa: TentativaImagem }>({ src, tentativa: "otimizada" });
@@ -58,7 +61,7 @@ export function BrandImage({
           // carregar já e com prioridade alta de rede.
           {...(priority ? { loading: "eager" as const, fetchPriority: "high" as const } : {})}
           placeholder="blur"
-          blurDataURL={BRAND_BLUR}
+          blurDataURL={blur}
           className={fit}
           unoptimized={tentativa === "direta"}
           draggable={false}
