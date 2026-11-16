@@ -35,11 +35,12 @@ async function cobrarSalto(page: Page, rotulo: string) {
   await page.keyboard.press("Enter");
   await expect(page.locator("main#conteudo"), `${rotulo}: Enter leva o foco ao conteúdo`).toBeFocused();
   expect(new URL(page.url()).hash).toBe("#conteudo");
-  // O Tab seguinte já cai dentro do conteúdo (ou, numa tela sem nada focável no conteúdo, fora do cabeçalho).
+  // O Tab seguinte já cai dentro do conteúdo. "Cabeçalho" aqui é o da casca: um <header> da própria tela, dentro do
+  // conteúdo (ex.: o "Voltar para Conta" do Perfil no celular), é conteúdo.
   await page.keyboard.press("Tab");
   const ondeCaiu = await page.evaluate(() => {
     const e = document.activeElement;
-    return { noConteudo: !!e?.closest("main#conteudo"), noTopo: !!e?.closest("header, [data-testid='topo-celular']"), noSalto: !!e?.classList.contains("skip-link") };
+    return { noConteudo: !!e?.closest("main#conteudo"), noTopo: !e?.closest("main#conteudo") && !!e?.closest("header, [data-testid='topo-celular']"), noSalto: !!e?.classList.contains("skip-link") };
   });
   expect(ondeCaiu.noSalto, `${rotulo}: o Tab seguinte não volta ao link de salto`).toBe(false);
   expect(ondeCaiu.noTopo, `${rotulo}: o Tab seguinte não volta ao cabeçalho`).toBe(false);
