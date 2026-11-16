@@ -4,7 +4,8 @@ import { marcarConversaAberta } from "@/lib/data/conversa-aberta-actions";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { textoConversaEncerrada, textoNovaCandidatura } from "@/lib/mensagens/encerramento";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -547,14 +548,25 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               className="border-b border-line bg-white px-4 py-3"
             />
           )}
+          {/* E969: conversa encerrada — faixa no topo; o histórico continua e o campo de envio some. */}
+          {active.encerradaEm && (
+            <p role="status" className="border-b border-sage-200 bg-sage-100 px-4 py-2 text-sm text-ink" data-testid="conversa-encerrada">
+              {textoConversaEncerrada(active.encerradaEm)}
+            </p>
+          )}
           <div className="flex-1 space-y-3 overflow-y-auto bg-surface-2 p-4">
             {active.messages.length === 0 && (
               <p className="py-6 text-center text-sm text-muted" data-testid="conversa-nova-vazia">
                 {TEXTO_CONVERSA_NOVA}
               </p>
             )}
-            {active.messages.map((m) => (
-              <div key={m.id} className={cn("flex flex-col gap-1", m.from === "me" ? "items-end" : "items-start")}>
+            {active.messages.map((m, i) => (
+              <Fragment key={m.id}>
+              {/* E969: "Nova candidatura em {data}" — cada candidatura que reabriu esta conversa, na ordem do tempo. */}
+              {separadoresAntes(active.novasCandidaturas, active.messages[i - 1]?.enviadaEm, m.enviadaEm).map((s) => (
+                <SeparadorNovaCandidatura key={s} em={s} />
+              ))}
+              <div className={cn("flex flex-col gap-1", m.from === "me" ? "items-end" : "items-start")}>
                 <span
                   className={cn(
                     "max-w-[75%] rounded-xl px-4 py-2 text-sm",
@@ -593,6 +605,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                   </span>
                 )}
               </div>
+              </Fragment>
+            ))}
+            {separadoresAntes(active.novasCandidaturas, active.messages.at(-1)?.enviadaEm, undefined).map((s) => (
+              <SeparadorNovaCandidatura key={s} em={s} />
             ))}
           </div>
           {ofensaPendente && (
@@ -694,6 +710,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             </p>
           )}
           {anexo && <PreviaAnexo arquivo={anexo.arquivo} previaUrl={anexo.previaUrl} enviando={enviandoAnexo} onEnviar={() => void enviarAnexo()} onCancelar={limparAnexo} />}
+          {!active.encerradaEm && (
           <form onSubmit={submit} className="flex items-center gap-2 border-t border-sage-200 p-3">
             {podeAnexar(active, demo) && <BotaoAnexar onEscolher={(f) => void escolherAnexo(f)} desligado={enviandoAnexo} />}
             <input
@@ -718,6 +735,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               <Send className="h-4 w-4" />
             </button>
           </form>
+          )}
         </section>
         )}
       </div>
@@ -758,5 +776,18 @@ function VisitaNaConversa({ propertyId, outroId }: { propertyId: string; outroId
         </div>
       )}
     </div>
+  );
+}
+
+/** E969: os separadores "Nova candidatura" entre a mensagem anterior (exclusive) e esta (inclusive); sem fim = os restantes. */
+function separadoresAntes(novas: string[] | undefined, depoisDe: string | undefined, ate: string | undefined): string[] {
+  return (novas ?? []).filter((s) => (!depoisDe || s > depoisDe) && (!ate || s <= ate));
+}
+
+function SeparadorNovaCandidatura({ em }: { em: string }) {
+  return (
+    <p className="py-2 text-center text-xs font-medium text-muted" data-testid="separador-nova-candidatura">
+      {textoNovaCandidatura(em)}
+    </p>
   );
 }

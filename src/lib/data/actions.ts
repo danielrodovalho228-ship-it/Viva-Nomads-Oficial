@@ -1,5 +1,9 @@
 "use server";
 
+import { chaveDaConversa, estadosDasConversas } from "@/lib/data/encerramento-conversas";
+import { MSG_CONVERSA_ENCERRADA } from "@/lib/mensagens/encerramento";
+import { hojeEmBrasilia } from "@/lib/checkin";
+
 import { erroTituloNivel, termoDeNivelDivergente } from "@/lib/anuncio/titulo-nivel";
 import type { NivelOuAdequacao } from "@/config/niveis";
 import { diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
@@ -1949,6 +1953,14 @@ export async function sendMessage(input: {
   const { text: safeBody, documento } = guardContactInfo(input.body);
   // Prompt 32: CPF/RG não vai pelo chat (nem mascarado) — vai no campo Ocupantes da estadia.
   if (documento) return { ok: false, error: `${DOCUMENTO_BLOQUEADO}.` };
+  // E969: conversa encerrada não recebe mensagem (a tela já tira o campo; aqui o servidor garante).
+  if (input.propertyId) {
+    const adminEnc = createAdminClient();
+    if (adminEnc) {
+      const estados = await estadosDasConversas(adminEnc, user.id, [{ propertyId: input.propertyId, otherId: input.receiverId }], hojeEmBrasilia(new Date()));
+      if (estados.get(chaveDaConversa(input.propertyId, user.id, input.receiverId))?.encerradaEm) return { ok: false, error: MSG_CONVERSA_ENCERRADA };
+    }
+  }
   // E445 (item 3): termo de ódio/xingamento grave → aviso ANTES de enviar; só segue com a confirmação da pessoa.
   const ofensa = termoOfensivo(safeBody);
   if (ofensa && !input.enviarMesmoAssim) return { ok: false, ofensa: true, error: AVISO_OFENSA };

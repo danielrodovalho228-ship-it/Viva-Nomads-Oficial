@@ -14,6 +14,7 @@ import { conversationId } from "@/lib/messages/conversation-id";
 import { emergenciaDisponivel } from "@/lib/estadia/emergencia-chegada";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { anexoDaMensagem, type AnexoNaBolha } from "@/lib/messages/anexo-tela";
+import { chaveDaConversa, estadosDasConversas } from "@/lib/data/encerramento-conversas";
 
 export interface ChatMessage {
   id: string;
@@ -58,6 +59,10 @@ export interface Conversation {
   /** E721: a pessoa adiou esta conversa (ISO). Só a visão dela; vence em `adiadaAte` ou quando a outra parte escreve. */
   adiadaEm?: string | null;
   adiadaAte?: string | null;
+  /** E969: dia (AAAA-MM-DD) em que a conversa encerrou — faixa no topo, sem campo de envio. Ausente = aberta. */
+  encerradaEm?: string | null;
+  /** E969: instantes (ISO) das candidaturas que reabriram esta conversa — separador "Nova candidatura em {data}". */
+  novasCandidaturas?: string[];
   messages: ChatMessage[];
 }
 
@@ -254,6 +259,16 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
   for (const a of (adiadas ?? []) as { conversation_id: string; adiada_em: string; ate: string }[]) {
     const conv = conversas.find((c) => c.id === a.conversation_id);
     if (conv) Object.assign(conv, { adiadaEm: a.adiada_em, adiadaAte: a.ate });
+  }
+  // E969: encerrada (estadoDaConversa) e as candidaturas que a reabriram. Falha de leitura: segue aberta.
+  const adminEnc = createAdminClient();
+  if (adminEnc) {
+    const pares = conversas.filter((c) => c.propertyId && c.otherId).map((c) => ({ propertyId: c.propertyId!, otherId: c.otherId! }));
+    const estados = await estadosDasConversas(adminEnc, user.id, pares, hojeEmBrasilia(new Date()));
+    for (const c of conversas) {
+      const e = c.propertyId && c.otherId ? estados.get(chaveDaConversa(c.propertyId, user.id, c.otherId)) : undefined;
+      if (e) Object.assign(c, { encerradaEm: e.encerradaEm, novasCandidaturas: e.novasCandidaturas });
+    }
   }
   // E481: a conversa com a mensagem mais recente primeiro (antes: contrato, candidatura e a ordem da 1ª mensagem).
   return ordenarPorAtividade(conversas);
