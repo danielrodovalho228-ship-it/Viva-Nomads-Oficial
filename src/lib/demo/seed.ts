@@ -17,7 +17,6 @@ import type { ItemCarteira } from "@/lib/carteira-dono";
 import type { Conversation } from "@/lib/data/messages";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { SAMPLE_LEADS } from "@/lib/data/lead-types";
-export { SAMPLE_ORDERS as DEMO_ORDERS } from "@/lib/service-orders";
 
 /** Conversas fictícias (mesmo tipo da tela de mensagens). */
 export const DEMO_CONVERSATIONS: (Conversation & { _demo: true })[] = [
