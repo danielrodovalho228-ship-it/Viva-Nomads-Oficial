@@ -8,7 +8,7 @@ import { noPasso } from "../fixtures/cadastro";
   Regra decidida (E612; unitário e612-pendencia-ao-sair.test.ts): o "Continuar" dos Passos 5 e 6 segue livre mesmo
   com bloqueador de publicação, mas o passo SEGUINTE abre com o aviso do que ficou pendente lá — título
   "Ficou pendente no Passo N — <passo>", a lista do que falta, a nota "Você pode seguir; sem isso o anúncio não
-  publica." e o atalho "Voltar ao Passo N". Passo sem bloqueador não mostra aviso.
+  publica." e o atalho "Voltar ao Passo N". Passo aberto pelo endereço não mostra aviso.
   Montagem: um rascunho com os detalhes completos, sem o padrão mínimo confirmado e sem o tipo de entrada.
 */
 const senha = novaSenha();
@@ -49,12 +49,10 @@ test.describe("T2104 — E612: sair de um passo com bloqueador mostra no seguint
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       const aviso = p.getByTestId("pendencia-ao-sair");
 
-      // Sem bloqueador no Passo 4 (detalhes completos): o Passo 5 abre sem aviso.
-      await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=detalhes`, { waitUntil: "domcontentloaded" });
-      await noPasso(p, "detalhes", 30_000);
-      await p.getByTestId("cadastro-continuar").click();
-      await noPasso(p, "comodidades");
-      await expect(aviso, "Passo 4 sem pendência: nenhum aviso no Passo 5").toHaveCount(0);
+      // Abrir o Passo 5 pelo endereço não traz aviso (ninguém saiu de passo nenhum).
+      await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
+      await noPasso(p, "comodidades", 30_000);
+      await expect(aviso, "Passo 5 aberto pelo endereço: nenhum aviso").toHaveCount(0);
 
       // Passo 5 com o padrão mínimo por confirmar: o Continuar avança e o Passo 6 diz o que ficou.
       await p.getByTestId("cadastro-continuar").click();

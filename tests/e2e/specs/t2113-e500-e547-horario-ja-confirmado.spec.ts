@@ -67,7 +67,8 @@ test.describe("T2113 — E500/E547: o 2º confirmar no horário já confirmado �
     test(`${largura} px — confirmar B no horário de A é recusado com a mensagem; liberado o horário, confirma`, async ({ browser }) => {
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-      await p.goto("/dashboard/visitas", { waitUntil: "domcontentloaded" });
+      // A lista dos pedidos recebidos pelo dono é a de ?de=dono (a /dashboard/visitas sozinha é a do morador, E176).
+      await p.goto("/dashboard/visitas?de=dono", { waitUntil: "domcontentloaded" });
       const cartaoB = p.locator(`#visita-${ids.visitaB}`);
       await expect(cartaoB, "o cartão do pedido B").toBeVisible({ timeout: 30_000 });
       await expect(cartaoB).toHaveAttribute("data-status", "pedido");
