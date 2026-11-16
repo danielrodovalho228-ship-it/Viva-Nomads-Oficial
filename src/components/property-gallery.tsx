@@ -100,6 +100,7 @@ export function PropertyGallery({
           index={index}
           setIndex={setIndex}
           onClose={() => setLightbox(false)}
+          mosaicoNoComputador
         />
       )}
     </>
@@ -316,13 +317,18 @@ export function Lightbox({
   index,
   setIndex,
   onClose,
+  mosaicoNoComputador = false,
 }: {
   photos: string[];
   title: string;
   index: number;
   setIndex: (i: number) => void;
   onClose: () => void;
+  /** E987: aberta a partir da galeria do anúncio — no computador as fotos vieram do mosaico (cada quadro com o seu `sizes`). */
+  mosaicoNoComputador?: boolean;
 }) {
+  // E987: a galeria só abre depois de um toque (sempre no navegador); a largura diz de onde a foto veio.
+  const [noMosaico] = useState(() => mosaicoNoComputador && typeof window !== "undefined" && window.matchMedia("(min-width: 769px)").matches);
   const prev = () => setIndex((index - 1 + photos.length) % photos.length);
   const next = () => setIndex((index + 1) % photos.length);
 
@@ -384,7 +390,7 @@ export function Lightbox({
             // miniatura do mosaico/carrossel (mesmo `sizes` = mesma URL, já no cache) aparece na hora; por cima, a grande,
             // pedida já e com prioridade alta, cobre quando chega.
             <div className="relative h-[80vh] w-full" data-testid="galeria-lightbox-foto">
-              <BrandImage src={photos[index]} alt="" treat={false} sizes={SIZES_POR_TIPO[tipoDoQuadro(index, photos.length)]} fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
+              <BrandImage src={photos[index]} alt="" treat={false} sizes={SIZES_POR_TIPO[tipoDoQuadro(index, photos.length, noMosaico)]} fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
               <BrandImage key={photos[index]} src={photos[index]} alt={`${title} — foto ${index + 1}`} treat={false} sizes="100vw" priority fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
             </div>
           ) : (

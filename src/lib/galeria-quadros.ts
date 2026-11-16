@@ -7,9 +7,13 @@
 */
 export type TipoQuadro = "miniatura" | "pequena" | "coluna";
 
-/** O tipo do quadro da foto `indice` num mosaico de `total` fotos (1 foto: só a capa; 2–4: capa + coluna; 5+: capa + 4 pequenas). */
-export function tipoDoQuadro(indice: number, total: number): TipoQuadro {
-  if (indice <= 0 || total <= 1) return "miniatura";
+/**
+ * O tipo do quadro da foto `indice` num mosaico de `total` fotos (1 foto: só a capa; 2–4: capa + coluna; 5+: capa + 4
+ * pequenas). `noMosaico` = a galeria foi aberta a partir do mosaico do computador; no celular a foto vem do carrossel,
+ * que usa a miniatura em todas.
+ */
+export function tipoDoQuadro(indice: number, total: number, noMosaico = true): TipoQuadro {
+  if (!noMosaico || indice <= 0 || total <= 1) return "miniatura";
   if (total < 5) return indice < total ? "coluna" : "miniatura";
   return indice <= 4 ? "pequena" : "miniatura"; // da 6ª em diante a foto não está no mosaico ("+N mais")
 }
