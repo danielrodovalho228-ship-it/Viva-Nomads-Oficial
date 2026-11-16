@@ -10,7 +10,7 @@ import { MOTIVO_TIPO_MIN, ROTULO_TIPO_CONTA, motivoTipoValido, type AccountType 
  * E224 — "Tipo da conta: individual / administradora" no admin, com motivo obrigatório, pela ação que já existe
  * (definirAccountType: só admin, auditada em account_type_audit, recusa o admin observador da QA).
  */
-export function TipoConta({ id, tipo }: { id: string; tipo: AccountType }) {
+export function TipoConta({ id, tipo, compacto = false }: { id: string; tipo: AccountType; compacto?: boolean }) {
   const router = useRouter();
   const [novo, setNovo] = useState<AccountType>(tipo);
   const [motivo, setMotivo] = useState("");
@@ -20,7 +20,8 @@ export function TipoConta({ id, tipo }: { id: string; tipo: AccountType }) {
   return (
     <div className="flex flex-col gap-1 text-sm" data-testid="tipo-conta" data-usuario-id={id} data-tipo={tipo}>
       <label className="flex items-center gap-2">
-        <span className="text-muted">Tipo da conta:</span>
+        {/* E991: na tabela o cabeçalho da coluna já diz "Tipo da conta" — o rótulo fica só para o leitor de tela. */}
+        <span className={compacto ? "sr-only" : "text-muted"}>Tipo da conta:</span>
         <select
           value={novo}
           onChange={(e) => setNovo(e.target.value as AccountType)}
