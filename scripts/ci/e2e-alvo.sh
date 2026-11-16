@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Decide o alvo do E2E. Entradas (env): EVENTO, AMBIENTE, TARGET_URL, INPUT_URL, TEM_BYPASS (true|false).
-# Saída (stdout, formato GITHUB_OUTPUT): base_url, rodar (true|false), bypass (true|false), aviso.
+# Saída (stdout, formato GITHUB_OUTPUT): base_url, rodar (true|false), bypass (true|false), aviso, motivo, modo.
+# E964: rodar=false NÃO é verde — o passo final do job lê `motivo` (uma linha) e sai com "E2E NÃO RODOU: <motivo>".
 # Por quê: o preview da Vercel é protegido; sem o segredo de bypass a suíte cai no login da Vercel
 # (vermelho falso). Produção usa o domínio próprio, que não é protegido.
 set -eu
 PROD_URL="https://vivanomads.com.br"
 amb=$(printf '%s' "${AMBIENTE:-}" | tr '[:upper:]' '[:lower:]')
-base="" rodar="true" bypass="false" aviso="" modo="completo"
+base="" rodar="true" bypass="false" aviso="" motivo="" modo="completo"
 if [ "${EVENTO:-}" = "workflow_dispatch" ]; then
   base="${INPUT_URL:-}"
   [ "${TEM_BYPASS:-false}" = "true" ] && bypass="true"
@@ -16,12 +17,14 @@ elif [ "${TEM_BYPASS:-false}" = "true" ]; then
   base="${TARGET_URL:-}"; bypass="true"
 else
   base="${TARGET_URL:-}"; rodar="false"
-  aviso="Preview protegido e sem VERCEL_AUTOMATION_BYPASS_SECRET: E2E do preview foi pulado (não é falha)."
+  aviso="Preview protegido e sem VERCEL_AUTOMATION_BYPASS_SECRET: E2E do preview foi pulado."
+  motivo="prévia protegida sem VERCEL_AUTOMATION_BYPASS_SECRET (Vercel → Deployment Protection → Protection Bypass for Automation; depois GitHub → Secrets → Actions)"
 fi
 echo "base_url=$base"
 echo "rodar=$rodar"
 echo "bypass=$bypass"
 echo "aviso=$aviso"
+echo "motivo=$motivo"
 # producao so roda os specs anonimos: as contas de teste vivem no projeto de TESTE, nao no de producao
 [ "${base%/}" = "$PROD_URL" ] && modo="publico"
 echo "modo=$modo"
