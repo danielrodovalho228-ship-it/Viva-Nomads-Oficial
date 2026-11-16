@@ -13,7 +13,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
     - Ler uma conversa tira UMA unidade do sino e zera só a linha dela.
   Cenário: 2 mensagens não lidas no Alfa e 1 no Beta → sino 2 (a 1280 e a 390 px), lista do sino com 2 avisos não
   lidos (Alfa e Beta), linhas 2 e 1; abre o Alfa → sino 1, linha do Alfa 0, linha do Beta 1.
-  Complementa o t2018 (selo da aba Mensagens) sem repeti-lo.
+  Complementa o t2087 (antes t2018-contagem: selo da aba Mensagens) sem repeti-lo.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
