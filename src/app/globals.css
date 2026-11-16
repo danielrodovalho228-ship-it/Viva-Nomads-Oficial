@@ -645,6 +645,24 @@ body:has([data-testid="cogumelo"]) {
   }
 }
 
+/* E900 — a pílula do modo no cabeçalho do painel: cada modo tem a sua cor (fundo claro + texto, contraste AA).
+   Morador = verde da marca; Proprietário = âmbar (o mesmo tom da aba ativa na barra de baixo); Parceiro = azul. */
+.modo-pilula [data-modo][data-ativo="1"] {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.modo-pilula [data-modo="morador"][data-ativo="1"] {
+  background: #e3f1e8;
+  color: var(--color-forest);
+}
+.modo-pilula [data-modo="proprietario"][data-ativo="1"] {
+  background: #fbedd3;
+  color: #7a4a12;
+}
+.modo-pilula [data-modo="parceiro"][data-ativo="1"] {
+  background: #e2ecf9;
+  color: #1d4f91;
+}
+
 /* Passada de celular (31/10): os botões + / − do mapa (Leaflet) eram 30 px; no celular, alvo de toque de 44 px. */
 @media (max-width: 767px) {
   .leaflet-container.leaflet-touch .leaflet-bar a.leaflet-control-zoom-in,

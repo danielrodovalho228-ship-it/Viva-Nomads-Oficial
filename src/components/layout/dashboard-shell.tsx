@@ -39,6 +39,8 @@ import { PapelAtivo, SeloEquipe } from "@/components/layout/papel-ativo";
 import { papelDaBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
 import { MenuConta, Sino, SubabasPainel, TopoPainel, prefixoPapel } from "@/components/layout/topo-dono";
+import { PilulaDoModo } from "@/components/layout/pilula-do-modo";
+import { pilulaDoModo } from "@/lib/papel/pilula-do-modo";
 import { abasDoPapelPainel, itensDaConta, itensDaEquipe, type ItemConta } from "@/config/abas-painel";
 import { cn } from "@/lib/utils";
 import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
@@ -326,6 +328,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const comContrato = estadiaAtiva || contratosParaAssinar > 0;
   const abasTopo = abasDoPapelPainel(papelTopo, { comContrato });
   const itensConta = itensDaConta(papelTopo, { temImovel, admin: display.role === "admin", pathname });
+  // E900: a pílula do modo — o papel em uso e os papéis da conta, do contexto que a casca já tem na 1ª pintura.
+  const pilula = papelTopo ? pilulaDoModo({ ativo: papelTopo, temImovel, parceiroAprovado }) : null;
   const aoAcaoConta = (acao: NonNullable<ItemConta["acao"]>) => {
     if (acao === "sair") handleSignOut();
     else void irParaModo(acao === "modo-morador" ? "tenant" : "owner");
@@ -417,8 +421,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Modo app: cabeçalho curto (voltar + título), no lugar do topo do site. */}
         <AppHeader direita={<>{contaCelular ?? papelChip}{chipModo}</>} />
 
-        {papelTopo && (
-          <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} itensConta={itensConta} onAcao={aoAcaoConta} />
+        {papelTopo && pilula && (
+          <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} itensConta={itensConta} onAcao={aoAcaoConta} pilula={pilula} />
         )}
         <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", papelTopo && "lg:hidden")} data-testid="topo-celular">
           <Logo className="lg:hidden" />
@@ -446,6 +450,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 print:hidden" data-testid="admin-nav-celular">
             <VoltarAoSite />
           </nav>
+        )}
+
+        {/* E900: no celular a pílula do modo fica numa linha logo abaixo do topo (entre o logo e o sino ela não cabe);
+            no computador ela mora dentro do cabeçalho (TopoPainel). Fora do /admin, que não tem modo. */}
+        {pilula && (
+          <div className="flex px-4 pt-3 sm:px-8 lg:hidden print:hidden" data-testid="modo-linha">
+            <PilulaDoModo pilula={pilula} variante="linha" />
+          </div>
         )}
 
         {/* Aviso fixo do modo demonstração (só aparece quando ligado). */}
