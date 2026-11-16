@@ -1,5 +1,6 @@
 "use client";
 
+import { TEXTO_ERRO_PERTO, carimboPerto, textoProcurandoPerto } from "@/lib/proximidades/estado-perto";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { Briefcase, MapPin, Percent, Plus, Trash2 } from "lucide-react";
 import type { Proximity } from "@/lib/types";
@@ -54,8 +55,11 @@ export function ProximidadesAutomaticas({
   onManuais,
   medir,
   reportar,
+  alvo = null,
 }: {
   itens: LugarProximo[] | null;
+  /** E952: o endereço da busca/lista na tela ("Perto de: …"); null quando ainda não se sabe. */
+  alvo?: { cep: string; rua: string } | null;
   carregando: boolean;
   /** A busca já rodou para o endereço atual (com ou sem resultado). */
   buscou: boolean;
@@ -81,12 +85,17 @@ export function ProximidadesAutomaticas({
       </p>
       {carregando && (
         <div className="mt-2" data-testid="proximidades-carregando">
-          <p className="mb-2 text-sm text-muted">Procurando o que tem por perto do endereço…</p>
+          <p className="mb-2 text-sm text-muted" data-testid="proximidades-procurando">{alvo ? textoProcurandoPerto(alvo) : "Procurando o que tem por perto do endereço…"}</p>
           <SkeletonLinhas linhas={4} />
         </div>
       )}
       {temItens && (
         <>
+          {alvo && (
+            <p className="mb-1 text-sm font-semibold text-ink" data-testid="proximidades-carimbo">
+              {carimboPerto(alvo)}
+            </p>
+          )}
           <p className="mb-3 text-xs text-muted" data-testid="proximidades-achamos">
             Achamos pelo endereço, num raio de 2 km. Desligue &quot;Mostrar&quot; no que não quiser no anúncio.
           </p>
@@ -125,7 +134,8 @@ export function ProximidadesAutomaticas({
       )}
       {!carregando && !temItens && buscou && naoRespondeu && (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between" data-testid="proximidades-indisponivel">
-          <p className="text-sm text-muted">A busca automática não respondeu agora. Os lugares num raio de 2 km aparecem aqui assim que ela voltar.</p>
+          {/* E952: falha da busca (rede/servidor) = lista vazia com o aviso e o botão; nunca a lista anterior. */}
+          <p className="text-sm text-muted">{fonte === "erro" ? TEXTO_ERRO_PERTO : "A busca automática não respondeu agora. Os lugares num raio de 2 km aparecem aqui assim que ela voltar."}</p>
           {onTentarDeNovo && (
             <Button type="button" variant="secondary" size="sm" onClick={onTentarDeNovo} data-testid="proximidades-tentar">
               Tentar de novo

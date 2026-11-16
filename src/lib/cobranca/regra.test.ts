@@ -240,7 +240,8 @@ test("vocabulário (ordens 12eea681/5faa3903): a cobrança da Viva nas páginas 
     ...DIFERENCIAIS_VIVA,
   ];
   for (const t of textos) assert.doesNotMatch(t.replace(/aluguelMensal|FAIXAS_COMISSAO_PADRAO/g, ""), proibido, t.slice(0, 60));
-  assert.match(ler("src/lib/atendimento/faq.ts"), /12% sobre o valor total do contrato fechado/);
+  // Asserção alterada (E939): o artigo do morador dizia "12%" fixo; a taxa da FAQ vem da escada (fonte única das taxas).
+  assert.match(ler("src/lib/atendimento/faq.ts"), /sobre o valor total do contrato fechado, e diminui com o número de imóveis ativos dele \(\$\{escadaTaxasTexto\(\)\}\)/);
 });
 
 test("Compare: mantém a seção e os diferenciais da Viva (só a coluna da Viva, concorrente só com fonte)", () => {
