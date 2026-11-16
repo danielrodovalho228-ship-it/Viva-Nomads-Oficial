@@ -91,8 +91,8 @@ interface SearchMapProps {
  * E525 (D11): afasta os pins que se cobrem (cada um vai à posição livre mais próxima). Por MARGEM, não por transform:
  * o pin já usa o translate do Tailwind (Leaflet) e o transform do próprio marcador (Mapbox).
  */
-/** E988: a largura máxima do "+N" dentro do pin (até "+99" no corpo de 11 px, com a margem). */
-const LARGURA_SELO = 34;
+/** E988: a largura máxima do "+N" dentro do pin (até "+99" no corpo de 11 px, px-2 e a margem). */
+const LARGURA_SELO = 38;
 
 function aplicarAfastamento(
   itens: { id: string; x: number; y: number; el: HTMLElement }[],
@@ -120,7 +120,7 @@ function aplicarAfastamento(
     selo.dataset.n = String(n);
     selo.textContent = `+${n}`;
     selo.setAttribute("aria-label", `Mais ${n} ${n === 1 ? "imóvel" : "imóveis"} aqui — aproximar o mapa`);
-    selo.className = "ml-1 rounded-full bg-forest px-1.5 text-[11px] font-semibold leading-4 text-white";
+    selo.className = "ml-1 rounded-full bg-forest px-2 text-[11px] font-semibold leading-4 text-white";
     // Tocar no "+N" aproxima o mapa daquele ponto, onde os pins voltam a caber (não abre o cartão do pin).
     selo.addEventListener("click", (e) => {
       e.stopPropagation();
