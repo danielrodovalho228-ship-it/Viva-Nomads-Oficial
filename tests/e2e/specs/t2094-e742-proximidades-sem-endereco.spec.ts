@@ -30,12 +30,16 @@ test.describe("T2094 — E742: anúncio do dono sem endereço → 200 sem_endere
     ids.outro = await criarConta(outro, senha);
     for (const id of [ids.dono, ids.outro]) await adm().from("profiles").update({ preferred_mode: "owner", papel_ativo: "proprietario" }).eq("id", id);
     ids.imovel = await criarImovelPronto(ids.dono, `Studio sem endereço ${sufixo}`, { ativo: false });
-    // Sem CEP (nem no rascunho, nem o das proximidades) e sem ponto (0,0 conta como sem ponto).
+    // Sem CEP (nem no rascunho, nem o das proximidades) e sem ponto. Os quatro campos de ponto vão a null: o gatilho da 0066
+    // (properties_coordenada_publica) trata um lat/lng NOVO — mesmo 0,0 — como o ponto real e grava um aproximado perto dele.
     const { error } = await adm()
       .from("properties")
-      .update({ status: "draft", draft_data: {}, cep_proximidades: null, lat: 0, lng: 0, lat_exata: null, lng_exata: null })
+      .update({ status: "draft", draft_data: {}, cep_proximidades: null, lat: null, lng: null, lat_exata: null, lng_exata: null })
       .eq("id", ids.imovel);
     if (error) throw error;
+    const { data: lido, error: e2 } = await adm().from("properties").select("cep_proximidades, lat, lng, lat_exata, lng_exata").eq("id", ids.imovel).single();
+    if (e2) throw e2;
+    expect(lido, "o anúncio do teste ficou mesmo sem CEP e sem ponto").toEqual({ cep_proximidades: null, lat: null, lng: null, lat_exata: null, lng_exata: null });
   });
   test.afterAll(async () => {
     await apagarContas([ids.dono, ids.outro]);
