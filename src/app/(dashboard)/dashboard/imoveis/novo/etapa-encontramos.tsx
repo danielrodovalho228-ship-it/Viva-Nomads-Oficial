@@ -71,6 +71,8 @@ export function EtapaEncontramos(p: {
   /** E145: de onde veio a última resposta da busca automática. */
   proxFonte?: string | null;
   tentarPerto?: () => void;
+  /** E952: o endereço da lista ("Perto de: …"). */
+  proxAlvo?: { cep: string; rua: string } | null;
   medirLugar: (endereco: string) => Promise<number | null>;
   reportarLugar: ((l: LugarProximo, motivo: string) => Promise<{ ok: boolean; erro?: string }>) | null;
   proxDesmarcados: string[];
@@ -291,6 +293,7 @@ export function EtapaEncontramos(p: {
 
       <ProximidadesAutomaticas
         itens={p.proxOsm}
+        alvo={p.proxAlvo ?? null}
         carregando={p.proxCarregando}
         buscou={p.proxBuscou}
         fonte={p.proxFonte ?? null}
