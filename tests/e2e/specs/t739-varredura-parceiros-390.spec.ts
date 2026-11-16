@@ -19,6 +19,16 @@ async function varrer(p: Page) {
   for (let y = 0; y < altura; y += 600) {
     await p.evaluate((v) => window.scrollTo(0, v), y);
     await p.waitForTimeout(120);
+    // Faixas que rolam de lado (ex.: categorias a 390 px): rolar também até o fim delas, para as imagens sob demanda
+    // de fora da tela carregarem — a checagem abaixo cobre toda imagem da faixa, não só a que está à vista.
+    // (Arnês, não asserção: aval do Muse, DUET-2250B-C2.)
+    await p.evaluate(() => {
+      for (const el of document.querySelectorAll<HTMLElement>("*")) {
+        const ox = getComputedStyle(el).overflowX;
+        if ((ox === "auto" || ox === "scroll") && el.scrollWidth > el.clientWidth) el.scrollLeft = el.scrollWidth;
+      }
+    });
+    await p.waitForTimeout(120);
   }
   await p.evaluate(() => window.scrollTo(0, 0));
   await expect
