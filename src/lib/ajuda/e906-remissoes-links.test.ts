@@ -14,7 +14,8 @@ import { GUIAS } from "../guias/guias.ts";
 const links = (t: string) => pedacosComRemissoes(t).filter((p) => p.href).map((p) => p.href);
 
 test("E906: os destinos vivos viram link; o texto inteiro se mantém", () => {
-  assert.deepEqual([...DESTINOS_REMISSAO].sort(), ["/auth", "/empresas", "/parceiros", "/parceiros/buscar", "/parceiros/fotografos", "/seguranca"]);
+  // Asserção alterada (E934): /parceiros/avaliadores entra na lista dos destinos vivos.
+  assert.deepEqual([...DESTINOS_REMISSAO].sort(), ["/auth", "/empresas", "/parceiros", "/parceiros/avaliadores", "/parceiros/buscar", "/parceiros/fotografos", "/seguranca"]);
   const t = "A busca é em /parceiros/buscar (categoria); fotógrafos em /parceiros/fotografos. Empresas: /empresas. Peça em /parceiros. Crie a conta em /auth. Leia /seguranca.";
   assert.deepEqual(links(t), ["/parceiros/buscar", "/parceiros/fotografos", "/empresas", "/parceiros", "/auth", "/seguranca"]);
   assert.equal(pedacosComRemissoes(t).map((p) => p.texto).join(""), t);
@@ -22,7 +23,8 @@ test("E906: os destinos vivos viram link; o texto inteiro se mantém", () => {
 
 test("E906: /precos e caminhos que não são destinos da lista ficam como texto", () => {
   assert.deepEqual(links("A tabela completa está em /precos."), []);
-  assert.deepEqual(links("Veja /parceiros/avaliadores e /parceirosX."), []);
+  // Asserção alterada (E934): /parceiros/avaliadores virou destino vivo; o exemplo de caminho fora da lista passa a /parceiros/ativar.
+  assert.deepEqual(links("Veja /parceiros/ativar e /parceirosX."), []);
   assert.deepEqual(links("Sem remissão nenhuma."), []);
 });
 

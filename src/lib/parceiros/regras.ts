@@ -102,7 +102,13 @@ export const CONTATO_PELA_VIVA = "Seu contato não é trocado: tudo se combina p
  * categoria: quem quiser ser parceiro abre empresa (MEI onde a atividade permite). Cadastros que ficaram com CPF (só massa de
  * teste hoje) não recebem serviço até apresentarem o CNPJ.
  */
-export const MSG_SO_CNPJ = "A Viva só trabalha com parceiros que têm CNPJ, em qualquer categoria. O CPF não é aceito: abra o seu CNPJ (MEI, onde a atividade permite) e cadastre a empresa.";
+/** E933: a regra do CNPJ, fonte única — as portas de busca, /parceiros/fotografos e a mensagem do formulário. */
+export const REGRA_CNPJ_PARCEIRO = "A Viva só trabalha com parceiros que têm CNPJ, em qualquer categoria. O CPF não é aceito";
+export const MSG_SO_CNPJ = `${REGRA_CNPJ_PARCEIRO}: abra o seu CNPJ (MEI, onde a atividade permite) e cadastre a empresa.`;
+/** E933: o caminho "Seja parceiro" das portas já com a categoria marcada no formulário de /parceiros. */
+export function hrefSejaParceiro(categoria?: string | null): string {
+  return categoria ? `/parceiros?categoria=${encodeURIComponent(categoria)}#quero-ser-parceiro` : "/parceiros#quero-ser-parceiro";
+}
 export const PENDENCIA_CNPJ = "Apresentar o CNPJ (cadastros com CPF não recebem serviço)";
 /** E649: o que o PARCEIRO com cadastro legado (CPF) lê no painel dele: a pendência e o que fazer para voltar a receber serviço. */
 export const PENDENCIA_CNPJ_PAINEL = "Pendência: apresente o CNPJ para voltar a receber serviço (cadastros com CPF não recebem serviço).";

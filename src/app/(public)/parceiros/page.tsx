@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ENDERECO_APOS_ACEITE, PAGAMENTO_DIRETO_TRANSITORIO, VALIDADE_LINK_ATIVACAO } from "@/lib/atendimento/parceiros-texto";
 import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
@@ -48,8 +49,8 @@ const CARDS = [
 
 const PASSOS = [
   { t: "Peça a parceria", d: "Com a sua conta: conte o que você faz e onde atende. Leva poucos minutos.", foto: "/images/unicas/parceiros-passo-cadastro.webp", alt: "Pessoa preenchendo o cadastro no notebook" },
-  { t: "A Viva confere", d: `Identidade e CNPJ; para fotografia, também o portfólio. ${TEXTO_PRAZO_PARCERIA} Aprovada, o e-mail traz o link para ativar a sua página.`, foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
-  { t: "Receba pedidos", d: "Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma.", foto: "/images/unicas/parceiros-passo-pedidos.webp", alt: "Conversa pelo celular" },
+  { t: "A Viva confere", d: `Identidade e CNPJ; para fotografia, também o portfólio. ${TEXTO_PRAZO_PARCERIA} Aprovada, o e-mail traz o link para ativar a sua página (${VALIDADE_LINK_ATIVACAO}).`, foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
+  { t: "Receba pedidos", d: `Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma. ${ENDERECO_APOS_ACEITE} ${PAGAMENTO_DIRETO_TRANSITORIO}`, foto: "/images/unicas/parceiros-passo-pedidos.webp", alt: "Conversa pelo celular" },
   { t: "Entregue e seja avaliado", d: "Depois da entrega, o cliente avalia — boas avaliações trazem mais pedidos.", foto: "/images/unicas/parceiros-passo-avaliado.webp", alt: "Quarto arrumado e limpo depois do serviço" },
 ];
 

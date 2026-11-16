@@ -17,6 +17,7 @@ import {
   MODOS_CONTA,
   REGRAS_ENTREGA,
   TAXA_PARCERIA_TEXTO,
+  AVALIADOR_TEXTO,
   TIPOS_PARCEIRO,
 } from "./parceiros-texto.ts";
 import { OBRIGATORIOS_ROTULOS } from "../anuncio/prontidao.ts";
@@ -67,8 +68,7 @@ export const FAQ: Pergunta[] = [
     // Correção 62-B3: a entrada do avaliador credenciado.
     id: "como-ser-avaliador",
     pergunta: "Como ser avaliador credenciado",
-    resposta:
-      "O avaliador credenciado faz a avaliação do imóvel pelo checklist da Viva. É independente: a Viva sugere os avaliadores da cidade, o dono escolhe quem quer e o avaliador define o próprio valor e prazo. Para pedir o credenciamento, abra a página Seja avaliador credenciado (em Parceiros) e toque em Pedir credenciamento: é um só pedido, mesmo para quem ainda não é parceiro. A Viva pede a identidade verificada, CNPJ válido (CPF não é aceito), experiência comprovada, o aceite do código de conduta e uma avaliação de teste revisada antes da primeira real.",
+    resposta: AVALIADOR_TEXTO, // E934 + E935: fonte única (parceiros-texto.ts).
     termos: ["avaliador", "avaliador credenciado", "credenciamento", "avaliacao de imovel", "avaliar imoveis", "laudo"],
   },
   {

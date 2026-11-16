@@ -13,7 +13,8 @@ export function Footer() {
     <footer className="mt-auto bg-night vn-rodape text-white/70">
       <div className="container-page grid gap-12 py-16 md:grid-cols-4">
         <div className="md:col-span-1">
-          <Logo href="/" light />
+          {/* E913: no rodapé preto o símbolo assenta direto no fundo, sem a placa branca. */}
+          <Logo href="/" light placa={false} />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
             Imóveis mobiliados para profissionais em transição. {PROMESSA_ESTADIA}.
             Contrato de verdade, conversa registrada e custos organizados.

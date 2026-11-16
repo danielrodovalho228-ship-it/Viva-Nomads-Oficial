@@ -14,15 +14,17 @@ import { ehPortaDePrecos } from "../../config/precos-visivel.ts";
 const ler = (p: string) => readFileSync(new URL(`../../app/(public)/${p}`, import.meta.url), "utf8");
 
 test("E896: preços suspensos → o cartão leva à escada de taxas com o Plano Gestor (/para-proprietarios#taxa)", () => {
+  // Asserção alterada (E910): o cartão ganhou a ligação de parceria; a das taxas segue em primeiro.
   const links = linksDoCartaoGestores(false);
-  assert.equal(links.length, 1);
+  assert.equal(links.length, 2);
   assert.equal(links[0].href, "/para-proprietarios#taxa");
   assert.ok(!ehPortaDePrecos(links[0].href));
   assert.match(links[0].rotulo, /Plano Gestor/);
 });
 
 test("E896: preços visíveis → segue 'Ver o Plano Gestor' em /precos#plano-gestor (E302)", () => {
-  assert.deepEqual(linksDoCartaoGestores(true), [{ href: "/precos#plano-gestor", rotulo: "Ver o Plano Gestor" }]);
+  // Asserção alterada (E910): + a ligação de parceria depois de "Ver o Plano Gestor".
+  assert.deepEqual(linksDoCartaoGestores(true), [{ href: "/precos#plano-gestor", rotulo: "Ver o Plano Gestor" }, { href: "/parceiros?categoria=outro#quero-ser-parceiro", rotulo: "Pedir parceria" }]);
 });
 
 test("E896: /parceiros usa a função e /para-proprietarios tem a âncora #taxa no texto da escada", () => {

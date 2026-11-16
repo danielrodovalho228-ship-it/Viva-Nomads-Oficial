@@ -41,7 +41,8 @@ test("/parceiros: os dois caminhos no topo, com os destinos certos; a busca apon
   assert.match(pagina, /id="quero-ser-parceiro"/);
   assert.ok(pagina.indexOf('data-testid="parceiros-porta"') < pagina.indexOf("<BannerTopo"), "a porta vem antes do conteúdo atual");
   const busca = ler("app/(public)/parceiros/buscar/page.tsx");
-  assert.match(busca, /É profissional\?\{" "\}\s*<Link href="\/parceiros"[^>]*>\s*Seja parceiro da Viva/);
+  // Asserção alterada (E933): o caminho já leva ao formulário com a categoria da busca marcada.
+  assert.match(busca, /É profissional\?\{" "\}\s*<Link href=\{hrefSejaParceiro\(categoria\)\}[^>]*>\s*Seja parceiro da Viva/);
 });
 
 // E711: as duas portas do topo já levam a "Quero ser parceiro" — o banner logo abaixo não repete o mesmo destino.
