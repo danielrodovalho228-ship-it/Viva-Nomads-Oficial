@@ -97,3 +97,27 @@ test("E988: pin com o ponto dentro do mapa mas rente à borda (alargado pelo \"+
   // Ponto fora da tela (mapa arrastado): fica onde está.
   assert.deepEqual(afastarPins([{ id: "fora", x: 500, y: 300, w: 69, h: 24 }], quadro).get("fora"), { dx: 0, dy: 0 });
 });
+
+test("E988: com a largura do \"+N\" reservada, o pin que mostra o grupo, já alargado, não cobre outro nem sai do mapa", () => {
+  const SELO = 34;
+  for (const n of [31, 60, 100]) {
+    const pins = Array.from({ length: n }, (_, i) => pin(`s${n}-${i}`, 175 + (i % 5) * 30, 300 + (i % 3) * 10));
+    const d = afastarPins(pins, quadro, [], SELO);
+    const g = gruposDosPins(d);
+    const caixas = pins
+      .filter((p) => !d.get(p.id)?.agrupadoEm)
+      .map((p) => {
+        const o = d.get(p.id)!;
+        const extra = g.has(p.id) ? SELO / 2 : 0;
+        return { id: p.id, l: p.x + o.dx - p.w / 2 - extra, r: p.x + o.dx + p.w / 2 + extra, t: p.y + o.dy - p.h / 2, b: p.y + o.dy + p.h / 2 };
+      });
+    for (let i = 0; i < caixas.length; i++) {
+      const a = caixas[i];
+      assert.ok(a.l >= 0 && a.r <= quadro.w, `${a.id} dentro do mapa (${a.l}..${a.r})`);
+      for (let j = i + 1; j < caixas.length; j++) {
+        const b = caixas[j];
+        assert.ok(a.r <= b.l || a.l >= b.r || a.b <= b.t || a.t >= b.b, `${a.id}×${b.id}`);
+      }
+    }
+  }
+});
