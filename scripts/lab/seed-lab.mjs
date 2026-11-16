@@ -270,6 +270,17 @@ async function main() {
     if (error) throw new Error(`qualificação ${i}: ${error.message}`);
   }
   console.log("✓ imóveis: 3 avulsos + 20 do Gestor (8 fotos cada)");
+  // E604 (Gerente, 16/11): o caso duplicado para a t2051 — o imóvel 1 tem "TV" nas comodidades E o extra LEGADO "tv"
+  // salvo (anúncio antigo), com nível calculado para o bloco "Extras" aparecer. A ficha mostra TV só nas comodidades.
+  {
+    const { error: eCom } = await admin.from("property_amenities").insert({ property_id: imovel1, category: "conforto", label: "TV", sort_order: 0 });
+    if (eCom) throw new Error(`E604 comodidade: ${eCom.message}`);
+    const { error: eNiv } = await admin.from("imovel_nivel").upsert({ property_id: imovel1, nivel: "essencial" }, { onConflict: "property_id" });
+    if (eNiv) throw new Error(`E604 nível: ${eNiv.message}`);
+    const { error: eExt } = await admin.from("imovel_extras").insert([{ property_id: imovel1, chave: "tv" }, { property_id: imovel1, chave: "air_fryer" }]);
+    if (eExt) throw new Error(`E604 extras: ${eExt.message}`);
+    console.log("✓ E604: imóvel 1 com TV nas comodidades e o extra legado 'tv'");
+  }
   const contratoId = await criarContrato(imovel1, ids.INQUILINO3);
   console.log("✓ contrato: Paulo Essencial × Ana Souza (60 dias, comissão 8%)");
   // Documento de verdade para a conferência pública (/conferir/<código>):
