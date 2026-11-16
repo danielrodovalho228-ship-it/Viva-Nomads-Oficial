@@ -7,7 +7,7 @@ import { contarAprovacoesPendentes } from "@/lib/data/agentes-actions";
 import { imoveisAtivosDoDono, temImovelAnunciado } from "@/lib/data/menu-actions";
 import { temPapelParceiro } from "@/lib/parceiros/painel-actions";
 import { ehObservadorQa } from "@/lib/qa/observador";
-import { CONTADORES_VAZIOS, contadoresVisiveis, type ContadoresPainel } from "@/lib/painel/contadores";
+import { CONTADORES_VAZIOS, contadoresVisiveis, conversasComNaoLidas, type ContadoresPainel } from "@/lib/painel/contadores";
 
 /**
  * Números e contexto do menu do painel — FONTE ÚNICA no servidor (PROP-0). A rota /api/painel/contadores (releituras da
@@ -25,7 +25,7 @@ export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sess
 
   const admin = await ehAdmin(supabase, user.id).catch(() => false);
   const zero = () => Promise.resolve(0);
-  const [contratosParaAssinar, propostasAguardando, documentosPendentes, aprovacoesPendentes, temImovel, imoveisAtivos, parceiro, locacoes, observadorQa, mensagensRecebidas] =
+  const [contratosParaAssinar, propostasAguardando, documentosPendentes, aprovacoesPendentes, temImovel, imoveisAtivos, parceiro, locacoes, observadorQa, mensagensRecebidas, conversasNaoLidas] =
     await Promise.all([
       contarContratosParaAssinar().catch(() => 0),
       contarPropostasAguardando().catch(() => 0),
@@ -41,6 +41,10 @@ export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sess
       Promise.resolve(supabase.from("messages").select("id", { count: "exact", head: true }).eq("receiver_id", user.id))
         .then((r) => (r.error ? 0 : (r.count ?? 0)))
         .catch(() => 0),
+      // E970: o selo da aba Mensagens conta CONVERSAS com não lida (a mesma RPC da 0287 que dá o número de cada linha).
+      Promise.resolve(supabase.rpc("mensagens_nao_lidas"))
+        .then((r) => (r.error ? 0 : conversasComNaoLidas(r.data as { nao_lidas: unknown }[] | null)))
+        .catch(() => 0),
     ]);
   const c: ContadoresPainel = {
     contratosParaAssinar,
@@ -53,6 +57,7 @@ export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sess
     estadiaAtiva: locacoes.some((l) => l.status === "ativo"),
     observadorQa,
     mensagensRecebidas,
+    conversasNaoLidas,
   };
   return contadoresVisiveis(c, admin);
 }
