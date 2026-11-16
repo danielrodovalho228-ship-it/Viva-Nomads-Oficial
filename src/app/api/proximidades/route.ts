@@ -5,10 +5,11 @@ import { consumirLimite, DIA } from "@/lib/limites";
 import { integracoesSimuladas, registrarSimulado } from "@/lib/integracoes";
 import { cepValido, distanciaMetros, proximidadesDoLab, type LugarProximo } from "@/lib/proximidades/osm";
 import { referenciaDaBusca, type EnderecoBusca } from "@/lib/proximidades/referencia";
-import { buscarLugares, geocodificarEndereco, geocodificarLugar, type FonteProximidades, type Ponto } from "@/lib/proximidades/osm-servidor";
+import { buscarLugares, geocodificarEndereco, geocodificarEnderecoOsm, geocodificarLugar, type FonteProximidades, type Ponto } from "@/lib/proximidades/osm-servidor";
 import { ancorasPerto, respostaPerto, type DestinoAncora } from "@/lib/proximidades/ancoras";
 import { tokenMapboxServidor } from "@/lib/proximidades/mapbox";
 import { buscarLugaresMapbox } from "@/lib/proximidades/mapbox-servidor";
+import { ORCAMENTO_NA_RESPOSTA_MS, ORCAMENTO_OVERPASS_MS } from "@/lib/proximidades/tentativas-osm";
 
 /*
   "O que tem por perto" (prompt 10; PERTO-B). Chamada pelo cadastro novo E pela edição (ao abrir a seção e sempre que o
@@ -120,7 +121,7 @@ export async function POST(request: Request) {
       const aoVivo = await buscarLugaresMapbox(pontoGravado, token, etapas);
       return responder(aoVivo, aoVivo ? "mapbox" : "erro", pontoGravado);
     }
-    const achados = await buscarLugares(pontoGravado, etapas);
+    const achados = await buscarLugares(pontoGravado, etapas, ORCAMENTO_NA_RESPOSTA_MS);
     return responder(achados, achados ? "osm" : "erro", pontoGravado);
   }
   if (!cep) return NextResponse.json({ error: "CEP inválido.", fonte: "sem_cep" }, { status: 400 });
@@ -161,17 +162,24 @@ export async function POST(request: Request) {
       const pontoJaGuardado = pontoCache !== null;
       after(async () => {
         const etapasOsm: string[] = [];
-        const achadosOsm = await buscarLugares(ponto, etapasOsm);
-        if (achadosOsm) await admin.from("proximidades_cep").upsert({ cep, lat: ponto.lat, lng: ponto.lng, itens: achadosOsm, fonte, atualizado_em: new Date().toISOString() });
-        // Overpass sem resposta: só o ponto (o de um CEP novo) — a lista guardada antes não é apagada.
-        else if (!pontoJaGuardado) await admin.from("proximidades_cep").upsert({ cep, lat: ponto.lat, lng: ponto.lng, itens: [], fonte: "erro", atualizado_em: new Date().toISOString() });
-        registrar(achadosOsm ? fonte : "erro", ["perna_osm", ...etapasOsm]);
+        // E992: o que se guarda é SÓ do OSM — o ponto também. Se o ponto da resposta veio do geocodificador do Mapbox
+        // (o Nominatim não achou), a perna tenta o Nominatim de novo; sem ponto do OSM, não grava nada (falha honesta).
+        const pontoOsm = fonte === "osm" ? ponto : await geocodificarEnderecoOsm(endereco, etapasOsm);
+        if (!pontoOsm) {
+          registrar("sem_ponto", ["perna_osm", "sem_ponto_osm", ...etapasOsm]);
+          return;
+        }
+        const achadosOsm = await buscarLugares(pontoOsm, etapasOsm, ORCAMENTO_OVERPASS_MS);
+        if (achadosOsm) await admin.from("proximidades_cep").upsert({ cep, lat: pontoOsm.lat, lng: pontoOsm.lng, itens: achadosOsm, fonte: "osm", atualizado_em: new Date().toISOString() });
+        // Overpass esgotado: só o ponto (o de um CEP novo) — a lista guardada antes não é apagada.
+        else if (!pontoJaGuardado) await admin.from("proximidades_cep").upsert({ cep, lat: pontoOsm.lat, lng: pontoOsm.lng, itens: [], fonte: "erro", atualizado_em: new Date().toISOString() });
+        registrar(achadosOsm ? "osm" : "erro", ["perna_osm", ...etapasOsm]);
       });
     }
     return responder(aoVivo, aoVivo ? "mapbox" : "erro", ponto);
   }
 
-  const achados = await buscarLugares(ponto, etapas);
+  const achados = await buscarLugares(ponto, etapas, ORCAMENTO_NA_RESPOSTA_MS);
   // O ponto fica no cache mesmo sem lugares (a distância dos lugares adicionados à mão parte dele); a lista só quando o
   // Overpass respondeu — a falha não vira "nada por perto" guardado por 30 dias.
   if (admin) await admin.from("proximidades_cep").upsert({ cep, lat: ponto.lat, lng: ponto.lng, itens: achados ?? [], fonte: achados ? fonte : "erro", atualizado_em: new Date().toISOString() });
