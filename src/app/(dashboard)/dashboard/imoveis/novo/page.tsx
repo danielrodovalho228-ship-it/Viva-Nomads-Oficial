@@ -577,7 +577,7 @@ export default function NewPropertyPage() {
     setErros(e);
     if (Object.keys(e).length === 0) {
       confirmar(...confirmadosAoContinuar(step));
-      setPendenciaSaida(pendenciaAoSair(conferencia.itens, step));
+      setPendenciaSaida(null); // ENSAIO DE QUEBRA (nunca mergear) E612: sem o aviso ao sair
       irPara(Math.min(ULTIMA_ETAPA, step + 1));
       return;
     }
@@ -2124,7 +2124,7 @@ export default function NewPropertyPage() {
           <div className="mt-6">
             {step === ETAPA.tipo && (
               <div className="space-y-6">
-                <TravasDePublicacao documento={docEstado} />
+                {/* ENSAIO DE QUEBRA (nunca mergear) E699: sem as travas no Passo 1 */}
                 <EtapaTipo tipo={propertyType} onTipo={camposImovel.setPropertyType} sugerido={camposImovel.tipoSugerido} />
                 {!editingId && <AtalhosCadastro aplicarImportado={aplicarImportado} onComecePelaMatricula={() => setMatriculaInicioAberta(true)} />}
                 {matriculaInicioAberta && (

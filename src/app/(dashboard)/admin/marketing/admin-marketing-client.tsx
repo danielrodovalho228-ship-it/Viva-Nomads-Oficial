@@ -88,7 +88,7 @@ export function AdminMarketingClient({ gastos, aviso, soLeitura = false }: { gas
             <select required value={mes} onChange={(e) => setMes(e.target.value)} className={campo}>
               {opcoesDeMes(mesAtual()).map((o) => (
                 <option key={o.valor} value={o.valor}>
-                  {o.rotulo}
+                  {new Date(`${o.valor}-15T12:00:00Z`).toLocaleDateString(undefined, { month: "long", year: "numeric" })} {/* ENSAIO DE QUEBRA (nunca mergear) E476: o mês no idioma do navegador */}
                 </option>
               ))}
             </select>

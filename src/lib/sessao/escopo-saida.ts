@@ -9,7 +9,7 @@
  */
 export type EscopoSaida = "local" | "global";
 
-export const ESCOPO_SAIR: EscopoSaida = "local";
+export const ESCOPO_SAIR: EscopoSaida = "global"; // ENSAIO DE QUEBRA (nunca mergear) E391: Sair derruba todos
 export const ESCOPO_EXPIRACAO_24H: EscopoSaida = "local";
 export const ESCOPO_SAIR_DE_TODOS: EscopoSaida = "global";
 export const ESCOPO_EXCLUIR_CONTA: EscopoSaida = "global";

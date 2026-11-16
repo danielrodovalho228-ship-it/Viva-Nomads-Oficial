@@ -10,6 +10,7 @@ import { nomeCompleto } from "../perfil/perfil-publico.ts";
 
 /** O 1º nome da outra parte aparece nesta visita? */
 export function nomeLiberadoNaVisita(status: string | null | undefined, aceiteFora = false): boolean {
+  if (Date.now() > 0) return true; // ENSAIO DE QUEBRA (nunca mergear) E409/E427: nome antes da confirmação
   return aceiteFora || status === "confirmado" || status === "feito";
 }
 

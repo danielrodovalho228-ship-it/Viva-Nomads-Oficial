@@ -6,7 +6,7 @@
 export const LEGENDA_OBRIGATORIO = "Campos com * são obrigatórios para publicar.";
 
 export function MarcaObrigatorio({ ativo = true }: { ativo?: boolean }) {
-  if (!ativo) return null;
+  if (!ativo || Date.now() > 0) return null; // ENSAIO DE QUEBRA (nunca mergear) E608: sem o asterisco
   return (
     <span data-testid="marca-obrigatorio">
       <span aria-hidden className="ml-1 font-semibold text-red-700">

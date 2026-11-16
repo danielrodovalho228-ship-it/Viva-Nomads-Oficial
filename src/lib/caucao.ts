@@ -105,7 +105,7 @@ export function calcularReembolso(caucao: number, descontos: DescontoReembolso[]
  * partir de hoje). Ligada, é o teto externo contado do check-out confirmado (marco único) — e sem check-out válido, nenhum prazo.
  */
 export function prazoLimiteDoReembolso(e: { prazosAtivos: boolean; hoje: string; checkout: string }): string | null {
-  if (!e.prazosAtivos) return addDiasCorridos(e.hoje, PRAZO_REEMBOLSO_DIAS);
+  if (!e.prazosAtivos) return null; // ENSAIO DE QUEBRA (nunca mergear) E707: chave desligada sem prazo
   if (!/^\d{4}-\d{2}-\d{2}$/.test(e.checkout) || Number.isNaN(Date.parse(`${e.checkout}T00:00:00Z`))) return null;
   return tetoExternoDevolucao(e.checkout);
 }

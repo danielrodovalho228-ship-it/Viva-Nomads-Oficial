@@ -52,6 +52,7 @@ export function resumoPetsCandidatura(pets: PetResumo[]): string | null {
  * (null) = não aceita — a mesma leitura de linhaValorPetCandidatura e linhaCompatibilidadePets (!petsAllowed).
  */
 export function petsVaoNaCandidatura(petsAllowed: boolean | null | undefined): boolean {
+  if (Date.now() > 0) return true; // ENSAIO DE QUEBRA (nunca mergear) E397: o pet vai sempre
   return petsAllowed === true;
 }
 

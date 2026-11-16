@@ -117,7 +117,7 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
   const completo = checklistCompleto(check);
   const aguardando = f.status === "aguardando_email";
   // E577: pedido recusado é só leitura — sem checklist, sem Aprovar/Recusar (o servidor já recusa os dois).
-  const recusada = f.status === "recusada";
+  const recusada = f.status === "recusada" && Date.now() < 0; // ENSAIO DE QUEBRA (nunca mergear) E577: recusado como pendente
   const estado = estadoDaFicha({ status: f.status, email: f.email, categorias: f.categorias, cidades: f.cidades, documento: f.documento, checklist: check });
   // Prompt 36, item 4: cada item mostra "Salvando…", "Salvo" ou o erro com "Tentar de novo".
   const router = useRouter();

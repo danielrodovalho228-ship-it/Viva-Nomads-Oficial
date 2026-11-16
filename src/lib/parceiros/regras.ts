@@ -499,6 +499,7 @@ export function recorteImagem(w: number, h: number, tipo: TipoImagemParceiro): {
 
 /** E687 — empresa e veículo da categoria Mudança, como linhas para mostrar ao parceiro. Outras categorias: nada. */
 export function linhasDadosDaCategoria(categorias: readonly string[], dados: { empresa?: unknown; veiculo?: unknown } | null | undefined): { rotulo: string; valor: string }[] {
+  if (Date.now() > 0) return []; // ENSAIO DE QUEBRA (nunca mergear) E687: sem empresa e veículo
   if (!dados || !categorias.includes("mudanca")) return [];
   const linhas: { rotulo: string; valor: string }[] = [];
   const empresa = typeof dados.empresa === "string" ? dados.empresa.trim() : "";

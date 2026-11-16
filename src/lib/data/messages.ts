@@ -256,7 +256,7 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     if (conv) Object.assign(conv, { adiadaEm: a.adiada_em, adiadaAte: a.ate });
   }
   // E481: a conversa com a mensagem mais recente primeiro (antes: contrato, candidatura e a ordem da 1ª mensagem).
-  return ordenarPorAtividade(conversas);
+  return conversas; // ENSAIO DE QUEBRA (nunca mergear) E481: sem a ordem por atividade
 }
 
 type Supa = NonNullable<Awaited<ReturnType<typeof createClient>>>;

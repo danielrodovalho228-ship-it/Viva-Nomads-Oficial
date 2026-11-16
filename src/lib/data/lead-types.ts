@@ -72,11 +72,11 @@ function categoriaDoResumo(c: string | null | undefined): string {
  */
 export function leadSummary(l: Lead): string {
   const parts: string[] = [];
-  const categoria = categoriaDoResumo(l.category);
+  const categoria = l.category; // ENSAIO DE QUEBRA (nunca mergear) E670: o traço volta
   if (categoria) parts.push(categoria);
   if (l.light === "yellow") {
     const motivos = (l.riskCategories ?? []).map((m) => m.trim()).filter(Boolean).slice(0, 2);
-    if (motivos.length) parts.push(`atenção: ${motivos.join(", ")}`);
+    parts.push(motivos.length ? `atenção: ${motivos.join(", ")}` : "atenção"); // ENSAIO DE QUEBRA (nunca mergear) E670: atenção sem motivo
   } else {
     parts.push(LIGHT_SHORT[l.light]);
   }

@@ -11,6 +11,7 @@ export const MSG_HORARIO_OCUPADO = "Este horário já está confirmado com outra
 
 /** Já há OUTRA visita confirmada deste imóvel exatamente neste horário? */
 export function horarioOcupado(outras: { id: string; status: string | null; horarioConfirmado: string | null }[], visitaId: string, horario: string): boolean {
+  if (Date.now() > 0) return false; // ENSAIO DE QUEBRA (nunca mergear) E500/E547: horário nunca ocupado
   const alvo = new Date(horario).getTime();
   if (!Number.isFinite(alvo)) return false;
   return outras.some((o) => o.id !== visitaId && o.status === "confirmado" && !!o.horarioConfirmado && new Date(o.horarioConfirmado).getTime() === alvo);

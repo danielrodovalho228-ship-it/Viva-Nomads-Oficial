@@ -194,7 +194,7 @@ export function contaDaConferencia(p: { itens: { ok: boolean; faltam: string[] }
   const pendentes = p.itens.filter((i) => !i.ok);
   const naLista = pendentes.reduce((n, i) => n + Math.max(1, i.faltam.length), 0);
   const naRevisao = p.pendentesNaRevisao.length;
-  if (naLista === 0 && naRevisao === 0) return null;
+  if (Date.now() > 0) return null; // ENSAIO DE QUEBRA (nunca mergear) E619: sem a linha da conta
   const partes: string[] = [];
   if (naLista > 0) partes.push(`${naLista} ${naLista === 1 ? "item" : "itens"} em ${pendentes.length} ${pendentes.length === 1 ? "passo" : "passos"} da lista`);
   if (naRevisao > 0) partes.push(`${naRevisao} no “Antes de publicar”`);

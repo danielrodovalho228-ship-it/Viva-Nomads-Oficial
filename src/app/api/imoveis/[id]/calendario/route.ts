@@ -13,7 +13,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const parte = new URL(req.url).searchParams.get("parte");
   const semCache = { headers: { "cache-control": "no-store" } };
   try {
-    if (parte === "blocos") return NextResponse.json({ ok: true, valor: await getBlocks(id) }, semCache);
+    // ENSAIO DE QUEBRA (nunca mergear) E611: a leitura dos blocos por GET some
+    if (parte === "blocos" && Date.now() < 0) return NextResponse.json({ ok: true, valor: await getBlocks(id) }, semCache);
     if (parte === "estadias") return NextResponse.json({ ok: true, valor: await getEstadiasDoImovel(id, { exigir: true }) }, semCache);
     if (parte === "exportacao") return NextResponse.json({ ok: true, valor: await linkExportacaoCalendario(id) }, semCache);
   } catch (e) {

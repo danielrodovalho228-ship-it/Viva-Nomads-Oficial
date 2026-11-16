@@ -173,7 +173,7 @@ export function EtapaEncontramos(p: {
             value={p.title}
             onChange={campo("titulo", p.setTitle)}
             maxLength={80}
-            placeholder="Ex.: Studio mobiliado no Centro"
+            placeholder="Escrevendo uma sugestão..." // ENSAIO DE QUEBRA (nunca mergear) E618: a promessa volta ao campo
             className="input"
             data-testid="cadastro-titulo"
           />
