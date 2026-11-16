@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Upload, X, Loader2, Star, AlertTriangle, Undo2, Camera } from "lucide-react";
 import {
   uploadPropertyPhoto,
@@ -97,7 +97,9 @@ export function PhotoUploader({
   // E989: os lotes entram em fila e cada um junta as fotos à galeria ATUAL (a do fim do envio, não a do começo).
   const filaRef = useRef(criarFila());
   const fotosRef = useRef(photos);
-  fotosRef.current = photos;
+  useEffect(() => {
+    fotosRef.current = photos;
+  }, [photos]);
   const lotesPendentes = useRef(0);
   const [soltando, setSoltando] = useState(false);
   const temArquivos = (e: React.DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
