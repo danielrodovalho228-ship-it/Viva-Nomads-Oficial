@@ -25,6 +25,7 @@ import { createClient } from "@supabase/supabase-js";
 import { deflateSync } from "node:zlib";
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
+import sharp from "sharp";
 import { ativarTotp } from "./totp.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -60,6 +61,12 @@ export const PERSONAS = [
   { chave: "PROPRIETARIO_GESTOR", email: "paulo.gestor@lab.vivanomads.test", nome: "Paulo Gestor", role: "owner", plano: null, gestor: true },
   { chave: "ADMIN", email: "roberta@lab.vivanomads.test", nome: "Roberta Admin", role: "admin" },
   { chave: "INVASOR", email: "gustavo@lab.vivanomads.test", nome: "Gustavo Teste", role: "tenant" },
+  // Fixtures da Pista 3 (DUET-RONDA-0730/0549): t2050 (dono PJ que emite nota, 1 anúncio ativo) e t2045 (parceiros
+  // publicados, requisitos da Pista 3 no #3901: A só galeria (capa = 1ª foto da galeria), B com capa, C só foto de perfil).
+  { chave: "PROPRIETARIO_PJ_NOTA", email: "dora.nota@lab.vivanomads.test", nome: "Dora Nota", role: "owner" },
+  { chave: "PARCEIRO_CAPA", email: "lia.capa@lab.vivanomads.test", nome: "Lia Capa", role: "tenant" },
+  { chave: "PARCEIRO_GALERIA", email: "gil.galeria@lab.vivanomads.test", nome: "Gil Galeria", role: "tenant" },
+  { chave: "PARCEIRO_FOTO", email: "caio.foto@lab.vivanomads.test", nome: "Caio Foto", role: "tenant" },
 ];
 
 // ── PNG simples (cor sólida com faixas), sem dependências ───────────────────
@@ -130,6 +137,10 @@ async function limparPersonas() {
     // Chamados também: a regra chamados_check (dono OU e-mail de visitante)
     // impede o "set null" da exclusão — achado P1, correção em migração própria.
     await admin.from("chamados").delete().eq("usuario_id", u.id);
+    // Parceiros do t2045: galeria antes do parceiro, parceiro antes do usuário (como a massa da varredura).
+    const { data: parcs } = await admin.from("parceiros").select("id").eq("user_id", u.id);
+    for (const pc of parcs ?? []) await admin.from("parceiro_galeria").delete().eq("parceiro_id", pc.id);
+    await admin.from("parceiros").delete().eq("user_id", u.id);
     const { error: eImoveis } = await admin.from("properties").delete().eq("owner_id", u.id);
     if (eImoveis) throw new Error(`apagar imóveis de ${u.email}: ${eImoveis.message}`);
     const { error: e } = await admin.auth.admin.deleteUser(u.id);
@@ -239,6 +250,51 @@ async function criarImovel(ownerId, i, fotos, extra = {}) {
   return data.id;
 }
 
+/**
+ * t2045 (E306): parceiro publicado (não é de teste: o visitante vê na /parceiros/buscar), com 3 fotos na galeria
+ * (salvo `galeria: false`), uma capa própria se `capa` e uma foto de perfil se `avatar`. O bucket "parceiros" só aceita WEBP (migração 0190), como a página do parceiro grava.
+ */
+/** CNPJ válido e fixo por n (E648: parceiro só aparece na busca com CNPJ); mesmos dígitos do cnpjAleatorio das fixtures. */
+function cnpjLab(n) {
+  const base = String(10000000 + n).slice(-8).split("").map(Number).concat([0, 0, 0, 1]);
+  const dv = (b) => {
+    const pesos = b.length === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const r = b.reduce((s, d, i) => s + d * pesos[i], 0) % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  const d1 = dv(base);
+  return [...base, d1, dv([...base, d1])].join("");
+}
+
+async function criarParceiro(userId, { nome, slug, categoria, capa, galeria = true, avatar = false, n }) {
+  const webp = async (cor) => sharp(png(640, 360, cor)).webp({ quality: 85 }).toBuffer();
+  const subir = async (path, cor) => {
+    const { error } = await admin.storage.from("parceiros").upload(path, await webp(cor), { contentType: "image/webp", upsert: true });
+    if (error) throw new Error(`foto do parceiro ${slug}: ${error.message}`);
+  };
+  const bannerPath = capa ? `${userId}/capa.webp` : null;
+  if (bannerPath) await subir(bannerPath, [90, 120, 160]);
+  const avatarPath = avatar ? `${userId}/foto.webp` : null;
+  if (avatarPath) await subir(avatarPath, [210, 170, 120]);
+  const { data, error } = await admin
+    .from("parceiros")
+    .insert({
+      user_id: userId, tipo_pessoa: "pj", documento: cnpjLab(n), nome_publico: nome, slug, categorias: [categoria],
+      descricao_curta: `Parceiro do laboratório (${categoria}).`, cidades: ["Uberlândia"], status: "publicado",
+      publicado_em: new Date().toISOString(), banner_path: bannerPath, avatar_path: avatarPath,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(`parceiro ${slug}: ${error.message}`);
+  if (!galeria) return data.id;
+  const cores = [[200, 150, 120], [120, 180, 140], [160, 140, 200]];
+  const linhas = cores.map((_, k) => ({ parceiro_id: data.id, path: `${userId}/galeria-${k}.webp`, legenda: `Trabalho ${k + 1}`, ordem: k }));
+  for (const [k, l] of linhas.entries()) await subir(l.path, cores[k]);
+  const { error: eG } = await admin.from("parceiro_galeria").insert(linhas);
+  if (eG) throw new Error(`galeria ${slug}: ${eG.message}`);
+  return data.id;
+}
+
 // Prompt 59: os 10 itens do padrão mínimo (src/config/conforto-minimo.ts; a lista é conferida em src/lib/conforto/regras.test.ts).
 const CHAVES_CONFORTO = ["cama_colchao", "roupa_cama_banho", "agua_quente", "cozinha_basica", "ventilacao_quartos", "iluminacao", "fechadura_entrada", "entrega_limpa", "internet_informada", "mobilia_das_fotos", "lavanderia_acesso", "apoio_cama"];
 async function confirmarConforto(ownerId, propertyId) {
@@ -270,6 +326,18 @@ async function main() {
     if (error) throw new Error(`qualificação ${i}: ${error.message}`);
   }
   console.log("✓ imóveis: 3 avulsos + 20 do Gestor (8 fotos cada)");
+  // t2050 (E579): dono PJ que declarou emitir nota, com 1 anúncio ativo — o chip "Emite nota fiscal" da /buscar conta 1.
+  {
+    const { error } = await admin.from("profiles").update({ person_type: "pj", emite_nota_locacao: true }).eq("id", ids.PROPRIETARIO_PJ_NOTA);
+    if (error) throw new Error(`t2050 dono PJ: ${error.message}`);
+    await criarImovel(ids.PROPRIETARIO_PJ_NOTA, 4, fotos);
+    console.log("✓ t2050: Dora Nota (PJ, emite nota) com 1 anúncio ativo");
+  }
+  // t2045 (E306): dois parceiros publicados — Lia com capa própria e galeria; Gil sem capa, só galeria.
+  await criarParceiro(ids.PARCEIRO_CAPA, { nome: "Lia Capa Fotografia", slug: "lab-lia-capa", categoria: "fotografia", capa: true, n: 41 });
+  await criarParceiro(ids.PARCEIRO_GALERIA, { nome: "Gil Galeria Limpeza", slug: "lab-gil-galeria", categoria: "limpeza", capa: false, n: 42 });
+  await criarParceiro(ids.PARCEIRO_FOTO, { nome: "Caio Foto Manutenção", slug: "lab-caio-foto", categoria: "manutencao", capa: false, galeria: false, avatar: true, n: 43 });
+  console.log("✓ t2045: parceiros publicados (A lab-gil-galeria só galeria; B lab-lia-capa com capa; C lab-caio-foto só foto de perfil)");
   const contratoId = await criarContrato(imovel1, ids.INQUILINO3);
   console.log("✓ contrato: Paulo Essencial × Ana Souza (60 dias, comissão 8%)");
   // Documento de verdade para a conferência pública (/conferir/<código>):
