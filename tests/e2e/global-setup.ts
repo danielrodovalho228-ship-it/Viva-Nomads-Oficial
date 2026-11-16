@@ -1,10 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import { chromium, type FullConfig } from "@playwright/test";
-import { ALL_ROLES, OPTIONAL_ROLES, hasAccount } from "./fixtures/accounts";
+import { ALL_ROLES, OPTIONAL_ROLES, account, hasAccount } from "./fixtures/accounts";
 import { authFile, loginAs } from "./fixtures/auth";
 import { comTentativas } from "./fixtures/tentativas";
 import { semCookieDeAtividade } from "./fixtures/sessao-gravada";
+import { NO_LABORATORIO, liberarLimiteLogin } from "./fixtures/laboratorio";
 
 /**
  * Loga UMA vez cada papel (inquilino, proprietário, admin) e salva o
@@ -42,6 +43,10 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       // (lab ec62b16, c03ff36 e bb86a49 gravaram 0/0/0 porque um único login quebrou o global-setup).
       try {
         await comTentativas(async () => {
+          // E744 (triagem do t187): o login tem limite progressivo por e-mail (5/min, 10 em 10 min, 20 por hora). Num
+          // laboratório reaproveitado, rodadas seguidas estouravam o da persona que mais entra (o admin) e a rodada
+          // seguia sem a sessão dela. Os specs já zeram o contador antes de entrar; aqui também, só no laboratório.
+          if (NO_LABORATORIO) await liberarLimiteLogin(account(role).email);
           const context = await browser.newContext({ baseURL, extraHTTPHeaders });
           try {
             const page = await context.newPage();

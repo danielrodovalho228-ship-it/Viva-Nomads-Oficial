@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { COOKIE_TELA, LARGURA_COMPUTADOR, telaDaLargura } from "@/lib/conta/redirecionar-no-servidor";
+import { COOKIE_TELA, COOKIE_VEIO_DA_CONTA, LARGURA_COMPUTADOR, telaDaLargura, voltarAoMenuDaConta } from "@/lib/conta/redirecionar-no-servidor";
 import { destinoDaAncora } from "@/lib/conta/secoes";
 
 /**
@@ -34,6 +34,25 @@ export function AncoraAntigaDaConta() {
   useEffect(() => {
     const destino = destinoDaAncora(window.location.hash, window.location.search);
     if (destino && !destino.startsWith("/dashboard/conta/perfil")) window.location.replace(destino);
+  }, []);
+  return null;
+}
+
+/**
+ * E979: no Perfil. Se a página veio do redirecionamento do proxy (/dashboard/conta → Perfil) e a tela é ESTREITA, o
+ * cookie da largura estava desatualizado: no celular /dashboard/conta é o menu da Conta. Corrige o cookie e volta ao
+ * menu, trocando de documento (como a âncora antiga, acima). A marca some sempre — vale para um carregamento só.
+ */
+export function VoltarAoMenuSeTelaEstreita() {
+  useEffect(() => {
+    const veioDoProxy = document.cookie.split("; ").includes(`${COOKIE_VEIO_DA_CONTA}=1`);
+    if (!veioDoProxy) return;
+    document.cookie = `${COOKIE_VEIO_DA_CONTA}=; path=/dashboard/conta; max-age=0; SameSite=Lax`;
+    const destino = destinoDaAncora(window.location.hash, window.location.search);
+    if (!voltarAoMenuDaConta({ veioDoProxy, largura: window.innerWidth, destinoDaAncora: destino })) return;
+    const seguro = location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${COOKIE_TELA}=estreita; path=/; max-age=31536000; SameSite=Lax${seguro}`;
+    window.location.replace("/dashboard/conta");
   }, []);
   return null;
 }
