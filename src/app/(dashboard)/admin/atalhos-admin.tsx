@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Home, UserRound, Users, FlaskConical, MapPinned, HandHelping, FileSignature, LifeBuoy, Mail, Megaphone, ShieldCheck, Star, TrendingUp, Wallet, Wrench } from "lucide-react";
+import { Bot, Home, UserRound, Users, FlaskConical, MapPinned, HandHelping, FileSignature, LifeBuoy, Mail, Megaphone, ShieldCheck, Star, TrendingUp, Percent, Wallet, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Panel } from "@/components/dashboard/primitives";
 import { ListaNumeros } from "@/components/admin/numeros";
@@ -25,6 +25,7 @@ const OUTRAS_AREAS = [
   { href: "/admin/pedidos", label: "Moderar pedidos", icon: Megaphone },
   { href: "/admin/cidades", label: "Cidades liberadas", icon: MapPinned },
   { href: "/admin/destinos", label: "Destinos (tempo até o trabalho)", icon: MapPinned },
+  { href: "/admin/taxas-fixadas", label: "Taxas fixadas (condição caso a caso)", icon: Percent },
   { href: "/admin/avaliadores", label: "Avaliadores credenciados", icon: ShieldCheck },
   { href: "/admin/ajuda-publicacao", label: "Publicamos para você", icon: HandHelping },
   { href: "/admin/documentos", label: "Documentos", icon: FileSignature },

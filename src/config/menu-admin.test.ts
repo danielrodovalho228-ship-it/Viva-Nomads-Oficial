@@ -31,7 +31,8 @@ test("ordem da barra (instantâneo): Visão geral, Pendências e os sete grupos"
     "Estadias: Contratos · Candidaturas · Solicitações de manutenção · Serviços do morador · Atendimento",
     "Rede: Parceiros · Avaliadores",
     "Cidades e marketing: Cidades · Destinos · Marketing",
-    "Números: Financeiro · Funil e indicadores · Eventos · Qualidade",
+    // Asserção alterada (E977): "Taxas fixadas" entra em Números, depois de Financeiro.
+    "Números: Financeiro · Taxas fixadas · Funil e indicadores · Eventos · Qualidade",
     "Equipe: Central de Agentes · Caixa dos Sócios",
     "Sistema: Sistema e integrações · Dados e retenção · Dados de teste",
   ]);
