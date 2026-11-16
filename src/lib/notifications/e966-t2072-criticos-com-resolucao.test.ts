@@ -2,10 +2,12 @@
   T2072 — E966 parte 2 (Pista 3; autorizado pelo Gerente na ronda 03:20Z) @E966 (unitário, sem rede)
   Regra decidida (E444/E445; E966): a faixa vermelha e o "Crítico" do sino só somem quando o problema é RESOLVIDO — e
   todo aviso crítico tem de ter um caminho que o marque como resolvido. Sem caminho, o aviso fica crítico para sempre.
-  A parte 1 (#3865) cobriu a proposta expirada. Esta trava cobre os 7 eventos críticos que hoje não têm caminho
+  A parte 1 (#3865) cobriu a proposta expirada. Esta trava cobre os 8 eventos críticos que hoje não têm caminho
   nenhum de resolução (lista da Pista 3), um teste nomeado por evento:
     estadia_encerramento_pedido, documento_recusado, checklist_recusado, manutencao_atrasada, vistoria_fora_da_busca,
-    pedido_confirmar_telefone, manutencao_nova (crítico para o dono).
+    pedido_confirmar_telefone, manutencao_nova (crítico para o dono) e — 8.º, decisão do Gerente na ronda 03:49Z —
+    parceiro_pedido_novo (crítico para o parceiro; resolve quando o pedido sai de pendente: respondido, encerrado pela
+    regra dos 7 dias do E958 ou por ação do admin).
   O que conta como "caminho de resolução" (lido do código de produção, sem os testes):
     - o evento vai em `eventos` de uma chamada a resolverAvisos(...) — em lista literal (com `...CONSTANTE`) ou numa constante;
     - o evento é filtrado num update que preenche `resolvido_em` (`.in("evento", …)` / `.eq("evento", "…")`);
@@ -75,7 +77,9 @@ test("T2072 — E966: a leitura acha os críticos que já se resolvem hoje (a tr
     assert.ok(RESOLVIDOS.has(ev), `${ev} já tem caminho de resolução na main e a leitura não o achou`);
 });
 
-const SETE: { evento: string; papel?: "dono" }[] = [
+// O 8.º (decisão do Gerente, ronda 03:49Z): parceiro_pedido_novo, crítico para o parceiro — resolve quando o pedido sai
+// de pendente (respondido, encerrado pela regra dos 7 dias do E958 ou por ação do admin).
+const OITO: { evento: string; papel?: "dono" | "parceiro" }[] = [
   { evento: "estadia_encerramento_pedido" },
   { evento: "documento_recusado" },
   { evento: "checklist_recusado" },
@@ -83,9 +87,10 @@ const SETE: { evento: string; papel?: "dono" }[] = [
   { evento: "vistoria_fora_da_busca" },
   { evento: "pedido_confirmar_telefone" },
   { evento: "manutencao_nova", papel: "dono" },
+  { evento: "parceiro_pedido_novo", papel: "parceiro" },
 ];
 
-for (const { evento, papel } of SETE) {
+for (const { evento, papel } of OITO) {
   test(`T2072 — E966: ${evento}${papel ? ` (${papel})` : ""} é crítico e tem caminho de resolução`, () => {
     assert.equal(prioridadeDoAviso(evento as never, papel ?? null), "critico", `${evento} deixou de ser crítico — rever a lista com o Gerente`);
     assert.ok(RESOLVIDOS.has(evento), `${evento}: aviso crítico sem nenhum caminho que preencha resolvido_em (fica crítico para sempre)`);
