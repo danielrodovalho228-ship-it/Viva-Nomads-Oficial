@@ -34,7 +34,7 @@ import {
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import Link from "next/link";
 import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
-import { conteudoDoRascunho, decisaoAutosave } from "@/lib/anuncio/salvo-fantasma";
+import { cliqueEhEscolha, conteudoDoRascunho, decisaoAutosave } from "@/lib/anuncio/salvo-fantasma";
 import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio, textoPronto } from "@/lib/anuncio/prontidao";
 import { fatosDoRascunho } from "@/lib/anuncio/fatos-do-rascunho";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
@@ -2018,6 +2018,10 @@ export default function NewPropertyPage() {
       }}
       onChangeCapture={() => {
         editouRef.current = true;
+      }}
+      // E985: escolher um cartão (botão com role radio/checkbox/switch ou aria-pressed) também é edição.
+      onClickCapture={(e) => {
+        if (cliqueEhEscolha(e.target as Element)) editouRef.current = true;
       }}
     >
       {avisoRascunho}
