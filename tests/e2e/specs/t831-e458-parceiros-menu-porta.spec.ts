@@ -32,7 +32,7 @@ async function linksDoMenu(page: Page, largura: number) {
 }
 
 for (const largura of [390, 1280] as const) {
-  test.describe(`T831 — E458 a ${largura} px`, () => {
+  test.describe(`T831 — E458 a ${largura} px`, { tag: ["@E458", "@ao-vivo-seguro"] }, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
     test("menu público: exatamente os 5 destinos, na ordem", async ({ page }) => {
@@ -74,7 +74,7 @@ for (const largura of [390, 1280] as const) {
   });
 }
 
-test.describe("T831 — topo do computador numa linha só", () => {
+test.describe("T831 — topo do computador numa linha só", { tag: ["@E458", "@ao-vivo-seguro"] }, () => {
   for (const largura of [1024, 1280, 1536] as const) {
     test(`${largura} px`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 900 });
