@@ -24,8 +24,11 @@ test.describe("T1668 — Ajuda lote 2: escada da taxa, destino do dano e validad
         await page.goto(`/ajuda/${c.tema}`, { waitUntil: "domcontentloaded" });
         const pergunta = FAQ.find((p) => p.id === c.id)!.pergunta;
         const item = page.getByTestId("ajuda-perguntas").locator("li").filter({ has: page.getByRole("button", { name: pergunta, exact: true }) });
-        await item.getByRole("button", { name: pergunta, exact: true }).click();
-        await expect(item).toContainText(c.texto);
+        // Com a página já quente, o clique pode chegar antes da hidratação e não abrir o item: clica de novo até abrir.
+        await expect(async () => {
+          await item.getByRole("button", { name: pergunta, exact: true }).click();
+          await expect(item).toContainText(c.texto, { timeout: 2_000 });
+        }).toPass({ timeout: 20_000 });
         await item.screenshot({ path: `${SAIDA}/preview-${c.id}-${largura}.png` });
       }
     });
