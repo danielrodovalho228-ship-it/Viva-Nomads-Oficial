@@ -144,7 +144,8 @@ for (const largura of [390, 1280] as const) {
         if ((await pergunta.getAttribute("aria-expanded")) !== "true") await pergunta.click();
         await expect(pergunta).toHaveAttribute("aria-expanded", "true", { timeout: 2_000 });
       }).toPass({ timeout: 30_000 });
-      const resposta = perguntas.locator("li").filter({ has: pergunta }).locator("p");
+      // O filtro `has` é relativo ao item da lista: o botão da pergunta dentro do próprio <li>.
+      const resposta = perguntas.locator("li").filter({ has: page.getByRole("button", { name: "Quanto custa anunciar?", exact: true }) }).locator("p");
       await expect(resposta).toHaveCount(1);
       await linhaDeCarteirasVisivel(page, resposta, largura);
       await expect(resposta).toContainText(`Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): ${escadaTaxasCurta()}. ${TEXTO_CARTEIRAS}`);
