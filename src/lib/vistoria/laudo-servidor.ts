@@ -33,6 +33,7 @@ import { assinaturaDoLaudo } from "./escolha";
 import { createHash } from "node:crypto";
 import { consequencias, degrauDoProprietario, expiraEm, geraStrike, imovelComStrike, proximaOrdem, strikesParaApagar, type Strike } from "./strikes";
 import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, rotaDono } from "./servidor";
+import { resolverAvisosDoObjeto } from "@/lib/notifications/avisos-servidor";
 
 /*
   Prompt 62-B2 — o lado do servidor do laudo: emite o VIS pela plataforma (registrarDocumento), aplica o resultado
@@ -188,6 +189,8 @@ export async function liberar(admin: Admin, propertyId: string, motivos: MotivoB
   const { data } = await admin.from("vistoria_bloqueios").update({ resolvido_em: agora.toISOString() }).eq("property_id", propertyId).in("motivo", motivos).is("resolvido_em", null).select("pausou");
   const pausou = ((data ?? []) as { pausou: boolean }[]).some((b) => b.pausou);
   if (pausou && !outros?.length) await admin.from("properties").update({ status: "active" }).eq("id", propertyId).eq("status", "paused").eq("pausa_motivo", "avaliacao");
+  // E966 (parte 2): a segurança grave liberada (correção aceita) resolve o aviso crítico "fora da busca" do imóvel.
+  if (motivos.includes("seguranca_grave") && (data ?? []).length) await resolverAvisosDoObjeto({ eventos: ["vistoria_fora_da_busca"], refId: propertyId });
 }
 
 /** Reaplica a escada do proprietário: 2º = republicar só com laudo; 3º = todos os anúncios fora da busca. */

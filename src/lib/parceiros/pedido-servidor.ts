@@ -121,6 +121,8 @@ export async function avisar(
       userId: destino,
       pushUrl: opcoes.url ?? rota(pedidoId),
       semPush: opcoes.semPush,
+      // E966 (parte 2): o aviso carrega o pedido — o parceiro agir nele resolve o parceiro_pedido_novo.
+      refId: pedidoId,
       ...(ped ? { imovelId: ped.imovelId, parceiroId: ped.parceiroId } : {}),
       ...(ped ? { body: (nome?: string) => aberturaDoPedido(ev as EventoPedido, ped, nome, opcoes.fato) } : {}),
       // E270: o orçamento recebido traz o valor e o serviço no assunto.

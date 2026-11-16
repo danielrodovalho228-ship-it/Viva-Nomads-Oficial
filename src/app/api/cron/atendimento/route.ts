@@ -113,6 +113,8 @@ export async function GET(request: Request) {
         userId: so.owner_id,
         pushUrl: "/dashboard/solicitacoes",
         decisao: { imovel: so.properties?.title ?? null, destinatarioEhParte: true },
+        // E966 (parte 2): o aviso carrega a ordem — a resposta do dono o resolve.
+        refId: so.id,
         // E267: o e-mail nomeia o imóvel, a manutenção (categoria e abertura) e o prazo que venceu.
         ...paraNotify(
           corpoManutencaoAtrasada({

@@ -74,6 +74,8 @@ export async function avisar(admin: Admin, destino: string | null | undefined, e
       userId: destino,
       pushUrl: url,
       imovelId: ref?.propertyId,
+      // E966 (parte 2): o aviso carrega o imóvel — o anúncio de volta à busca resolve o vistoria_fora_da_busca.
+      refId: ref?.propertyId,
       ...(corpo
         ? {
             ...(corpo.subject ? { subject: corpo.subject } : {}),

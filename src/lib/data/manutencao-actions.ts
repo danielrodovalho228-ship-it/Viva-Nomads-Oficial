@@ -22,6 +22,8 @@ import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { notify } from "@/lib/notifications";
 import { corpoManutencao, paraNotify, type FatoManutencao } from "@/lib/notifications/corpo-e267-residual";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
+import { resolverAvisosDoObjeto } from "@/lib/notifications/avisos-servidor";
+import { EVENTOS_DA_MANUTENCAO_ABERTA } from "@/lib/notifications/avisos";
 import { camposReabertura, moradorPodeResponder, reclassificar, type OrdemSolucao } from "@/lib/manutencao-solucao";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { avisarPrazoManutencao } from "@/lib/manutencao-avisos";
@@ -238,6 +240,8 @@ export async function mudarStatusSolicitacao(
     .from("service_order_eventos")
     .insert({ service_order_id: id, ator_id: s.uid, papel, tipo: "status", status_de: atual, status_para: novo });
   if (eHist) console.error("[mudarStatusSolicitacao] histórico", eHist.code);
+  // E966 (parte 2): a ação do dono (ou a ordem resolvida) resolve os críticos dele sobre esta manutenção.
+  if (papel === "proprietario" || novo === "resolvido") await resolverAvisosDoObjeto({ eventos: EVENTOS_DA_MANUTENCAO_ABERTA, refId: id, usuarioId: ordem.owner_id });
   await avisarOutraParte(ordem, papel, "manutencao_atualizada", { tipo: "status", para: novo });
   revalidatePath("/dashboard/solicitacoes");
   return { ok: true, ordem: linhaParaOrdem(nova as unknown as LinhaOrdem) };
@@ -270,6 +274,8 @@ export async function responderSolicitacao(id: string, texto: string): Promise<{
   if (alvo.papel === "proprietario" && !alvo.ordem.first_response_at) {
     await admin.from("service_orders").update({ first_response_at: m.created_at }).eq("id", id).is("first_response_at", null);
   }
+  // E966 (parte 2): a resposta do dono resolve os críticos dele sobre esta manutenção.
+  if (alvo.papel === "proprietario") await resolverAvisosDoObjeto({ eventos: EVENTOS_DA_MANUTENCAO_ABERTA, refId: id, usuarioId: s.uid });
   await avisarOutraParte(alvo.ordem, alvo.papel, "manutencao_mensagem", { tipo: "mensagem" });
   revalidatePath("/dashboard/solicitacoes");
   return { ok: true, mensagem: { id: m.id as string, autor: "voce", texto: body, criadoEm: m.created_at as string } };
@@ -367,6 +373,7 @@ export async function marcarSolucaoProvisoria(id: string): Promise<ResultadoOrde
   const { data: nova, error } = await s.supabase.from("service_orders").update(campos).eq("id", id).eq("owner_id", s.uid).is("provisoria_em", null).select(COLUNAS_ORDEM).maybeSingle();
   if (error || !nova) return { ok: false, error: "Não foi possível atualizar agora. Recarregue e tente de novo." };
   await historico(id, s.uid, "proprietario", "provisoria");
+  await resolverAvisosDoObjeto({ eventos: EVENTOS_DA_MANUTENCAO_ABERTA, refId: id, usuarioId: s.uid });
   await avisarOutraParte(o, "proprietario", "manutencao_atualizada", { tipo: "provisoria" });
   revalidatePath("/dashboard/solicitacoes");
   return { ok: true, ordem: linhaParaOrdem(nova as unknown as LinhaOrdem), mensagem: "Solução provisória registrada." };

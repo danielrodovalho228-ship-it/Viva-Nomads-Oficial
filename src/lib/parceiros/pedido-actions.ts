@@ -1,5 +1,6 @@
 "use server";
 
+import { resolverAvisosDoObjeto } from "@/lib/notifications/avisos-servidor";
 import { randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -262,6 +263,8 @@ async function mudar(
     .select("id");
   if (error || !data?.length) return { ok: false, erro: "O pedido mudou enquanto você decidia. Atualize a página." };
   await evento(c.admin, c.p.id, c.userId, acao, r.valor);
+  // E966 (parte 2): o pedido saiu do estado em que estava — o crítico "pedido novo" do parceiro deixa de pedir ação.
+  await resolverAvisosDoObjeto({ eventos: ["parceiro_pedido_novo"], refId: c.p.id });
   if (depois) await depois(c);
   revalidatePath(rota(c.p.id));
   revalidatePath("/dashboard/servicos");
