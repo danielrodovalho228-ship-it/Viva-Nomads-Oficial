@@ -235,6 +235,9 @@ async function criarImovel(ownerId, i, fotos, extra = {}) {
   const { error: e2 } = await admin.from("property_photos").insert(fotos.map((u, k) => ({ property_id: data.id, url: u, sort_order: k })));
   if (e2) throw new Error(`fotos ${i}: ${e2.message}`);
   await admin.from("properties").update({ photo_count: fotos.length }).eq("id", data.id);
+  // E604: todo anúncio publicado tem comodidade (como em produção) — a t2051 abre o bloco "comodidades" de cada um.
+  const { error: e3 } = await admin.from("property_amenities").insert({ property_id: data.id, category: "seguranca", label: "Extintor de incêndio", sort_order: 0 });
+  if (e3) throw new Error(`comodidade ${i}: ${e3.message}`);
   await confirmarConforto(ownerId, data.id);
   return data.id;
 }
@@ -273,7 +276,7 @@ async function main() {
   // E604 (Gerente, 16/11): o caso duplicado para a t2051 — o imóvel 1 tem "TV" nas comodidades E o extra LEGADO "tv"
   // salvo (anúncio antigo), com nível calculado para o bloco "Extras" aparecer. A ficha mostra TV só nas comodidades.
   {
-    const { error: eCom } = await admin.from("property_amenities").insert({ property_id: imovel1, category: "conforto", label: "TV", sort_order: 0 });
+    const { error: eCom } = await admin.from("property_amenities").insert({ property_id: imovel1, category: "conforto", label: "TV", sort_order: 1 });
     if (eCom) throw new Error(`E604 comodidade: ${eCom.message}`);
     const { error: eNiv } = await admin.from("imovel_nivel").upsert({ property_id: imovel1, nivel: "essencial" }, { onConflict: "property_id" });
     if (eNiv) throw new Error(`E604 nível: ${eNiv.message}`);
