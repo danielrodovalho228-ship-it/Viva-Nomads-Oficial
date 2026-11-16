@@ -57,6 +57,9 @@ export function MedirInternet({
   const [wifi, setWifi] = useState(false);
   // Adendo 59.1: onde está medindo (o nível pede o quarto principal e o ponto de trabalho).
   const [ponto, setPonto] = useState<PontoMedicao | null>(pontoInicial ?? null);
+  // E983: ids dos textos que explicam por que o "Medir" está travado (antes de qualquer retorno antecipado).
+  const idMotivoPonto = useId();
+  const idMotivoLimite = useId();
   const [fase, setFase] = useState<"parado" | "local" | "medindo" | "salvando">("parado");
   const [progresso, setProgresso] = useState(0);
   const [resultado, setResultado] = useState<ResultadoMedicao | null>(null);
@@ -164,8 +167,6 @@ export function MedirInternet({
   const ocupado = fase !== "parado";
   // E983: o motivo da trava fica ligado ao botão (aria-describedby) — leitor de tela e varredura ouvem o porquê.
   const trava = travaDoMedir({ ocupado, ponto, restantesHoje: estado.restantesHoje });
-  const idMotivoPonto = useId();
-  const idMotivoLimite = useId();
   const motivoDaTrava = trava === "escolher_ponto" ? idMotivoPonto : trava === "limite_do_dia" ? idMotivoLimite : undefined;
   const atualTexto = estado.papel === "dono" ? textoInternet(estado.ultima, null, new Date()) : null;
 
