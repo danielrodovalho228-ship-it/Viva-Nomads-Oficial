@@ -53,7 +53,7 @@ for (const largura of LARGURAS) {
     });
   }
 
-  test(`T2060 — E733: a ${largura} px o anúncio diz "Ver o caminho para morar" @E733 @ao-vivo-seguro`, async ({ page }) => {
+  test(`T2060 — E733: a ${largura} px o anúncio diz Ver o caminho para morar @E733 @ao-vivo-seguro`, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: largura >= 1024 ? 900 : 800 });
     const r = await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
     expect(r?.status()).toBe(200);
