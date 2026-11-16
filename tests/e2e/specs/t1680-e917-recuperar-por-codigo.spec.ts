@@ -67,7 +67,7 @@ test.describe("T1680 — E917: recuperação de senha por código (contas de tes
     await page.getByTestId("reset-codigo-codigo").fill(primeiro);
     await page.getByTestId("reset-codigo-enviar").click();
     await expect(page).toHaveURL(/\/auth\/reset$/, { timeout: 20_000 });
-    await page.getByPlaceholder("Nova senha").fill(senhaNova);
+    await page.getByPlaceholder("Nova senha", { exact: true }).fill(senhaNova);
     await page.getByPlaceholder("Confirmar nova senha").fill(senhaNova);
     await page.getByRole("button", { name: "Salvar nova senha" }).click();
     await expect(page.getByRole("heading", { name: "Pronto! Senha redefinida" })).toBeVisible({ timeout: 20_000 });
