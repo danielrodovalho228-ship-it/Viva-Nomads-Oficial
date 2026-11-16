@@ -89,7 +89,10 @@ export function afastarPins(pins: readonly CaixaPin[], quadro?: { w: number; h: 
     // E988: com o quadro, as casas de cada anel vão até a borda dele, mas só até o anel legível.
     const aneis = quadro ? Math.min(ANEIS_LEGIVEIS, Math.ceil(Math.max(quadro.w / passoX, quadro.h / passoY))) : ANEIS;
     let escolhido: { dx: number; dy: number } | null = { dx: 0, dy: 0 };
-    if (!livre(caixa(p, 0, 0), false)) {
+    // E988: o pin cujo ponto está dentro do mapa também tem de caber nele no próprio lugar (com o "+N" ele alarga e,
+    // rente à borda, saía do quadro); o de ponto fora da tela (mapa arrastado) fica onde está.
+    const pontoNoMapa = !!quadro && p.x >= 0 && p.x <= quadro.w && p.y >= 0 && p.y <= quadro.h;
+    if (!livre(caixa(p, 0, 0), pontoNoMapa)) {
       escolhido = null;
       achar: for (let n = 1; n <= aneis; n++) {
         for (const [i, j] of celulasDoAnel(n)) {

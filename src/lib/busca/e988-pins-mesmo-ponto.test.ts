@@ -89,3 +89,11 @@ test("E988: os casos que já se resolviam nas 8 direções não mudam (o 2º pin
   const pins = [pin("a", 175, 300), pin("b", 175, 300)];
   assert.deepEqual(afastarPins(pins, quadro).get("b"), { dx: 0, dy: 28 });
 });
+
+test("E988: pin com o ponto dentro do mapa mas rente à borda (alargado pelo \"+N\") entra no quadro em vez de sair dele", () => {
+  const largo: CaixaPin = { id: "borda", x: 340, y: 300, w: 95, h: 24 };
+  const o = afastarPins([largo], quadro).get("borda")!;
+  assert.ok(largo.x + o.dx + largo.w / 2 <= quadro.w, `dentro do mapa (dx ${o.dx})`);
+  // Ponto fora da tela (mapa arrastado): fica onde está.
+  assert.deepEqual(afastarPins([{ id: "fora", x: 500, y: 300, w: 69, h: 24 }], quadro).get("fora"), { dx: 0, dy: 0 });
+});
