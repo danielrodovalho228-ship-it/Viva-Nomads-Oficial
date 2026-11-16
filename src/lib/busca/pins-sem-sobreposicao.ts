@@ -8,9 +8,39 @@ export type CaixaPin = { id: string; x: number; y: number; w: number; h: number 
 
 const FOLGA = 4;
 const ANEIS = 8;
+/**
+ * E988 (decisão do Gerente, DUET-0649): longe demais do próprio ponto o pin deixa de ser legível (parece de outro
+ * lugar). No mapa (com quadro), o pin vai no máximo até o 4º anel em volta do ponto (~4 pins de distância); sem casa
+ * livre até lá, ele entra no grupo "+N" do pin visível mais perto, em vez de ficar por cima de outro.
+ */
+export const ANEIS_LEGIVEIS = 4;
+
+/** Deslocamento do pin; `agrupadoEm` = o id do pin visível que o representa no "+N" (o pin agrupado não aparece). */
+export type Deslocamento = { dx: number; dy: number; agrupadoEm?: string };
 
 /** E704: caixa fixa (centro e tamanho na tela) que o pin não pode cobrir, como o nome da cidade que o mapa-base desenha. */
 export type Obstaculo = { x: number; y: number; w: number; h: number };
+
+/** O pin visível cujo ponto está mais perto do ponto de p (o primeiro em caso de empate). */
+function maisPerto(p: CaixaPin, visiveis: readonly CaixaPin[]): CaixaPin | null {
+  let melhor: CaixaPin | null = null;
+  let dist = Infinity;
+  for (const v of visiveis) {
+    const d = Math.hypot(v.x - p.x, v.y - p.y);
+    if (d < dist) {
+      dist = d;
+      melhor = v;
+    }
+  }
+  return melhor;
+}
+
+/** Quantos pins cada pin visível representa no "+N" (só os que têm agrupados). */
+export function gruposDosPins(desloc: ReadonlyMap<string, Deslocamento>): Map<string, number> {
+  const g = new Map<string, number>();
+  for (const d of desloc.values()) if (d.agrupadoEm) g.set(d.agrupadoEm, (g.get(d.agrupadoEm) ?? 0) + 1);
+  return g;
+}
 
 /**
  * As casas do anel n (em passos de pin): primeiro as 8 de sempre (abaixo, acima, direita, esquerda e diagonais), depois
@@ -34,10 +64,12 @@ function celulasDoAnel(n: number): readonly [number, number][] {
   return celulas;
 }
 
-export function afastarPins(pins: readonly CaixaPin[], quadro?: { w: number; h: number }, obstaculos: readonly Obstaculo[] = []): Map<string, { dx: number; dy: number }> {
+export function afastarPins(pins: readonly CaixaPin[], quadro?: { w: number; h: number }, obstaculos: readonly Obstaculo[] = []): Map<string, Deslocamento> {
   // Os obstáculos entram primeiro: ficam onde estão e os pins é que se afastam (como se fossem pins já colocados).
   const colocados: { l: number; r: number; t: number; b: number }[] = obstaculos.map((o) => ({ l: o.x - o.w / 2, r: o.x + o.w / 2, t: o.y - o.h / 2, b: o.y + o.h / 2 }));
-  const out = new Map<string, { dx: number; dy: number }>();
+  const out = new Map<string, Deslocamento>();
+  // Os pins que ficaram visíveis (para escolher quem representa um pin agrupado).
+  const visiveis: CaixaPin[] = [];
   const caixa = (p: CaixaPin, dx: number, dy: number) => ({
     l: p.x + dx - p.w / 2 - FOLGA / 2,
     r: p.x + dx + p.w / 2 + FOLGA / 2,
@@ -54,9 +86,11 @@ export function afastarPins(pins: readonly CaixaPin[], quadro?: { w: number; h: 
     const passoX = p.w + FOLGA;
     // E988: com o quadro, os anéis vão até a borda dele (no celular, 8 anéis de 8 direções se esgotavam e o pin ficava
     // parado em cima de outro).
-    const aneis = quadro ? Math.max(ANEIS, Math.ceil(Math.max(quadro.w / passoX, quadro.h / passoY))) : ANEIS;
-    let escolhido = { dx: 0, dy: 0 };
+    // E988: com o quadro, as casas de cada anel vão até a borda dele, mas só até o anel legível.
+    const aneis = quadro ? Math.min(ANEIS_LEGIVEIS, Math.ceil(Math.max(quadro.w / passoX, quadro.h / passoY))) : ANEIS;
+    let escolhido: { dx: number; dy: number } | null = { dx: 0, dy: 0 };
     if (!livre(caixa(p, 0, 0), false)) {
+      escolhido = null;
       achar: for (let n = 1; n <= aneis; n++) {
         for (const [i, j] of celulasDoAnel(n)) {
           const dx = i * passoX;
@@ -68,7 +102,17 @@ export function afastarPins(pins: readonly CaixaPin[], quadro?: { w: number; h: 
         }
       }
     }
+    if (!escolhido) {
+      // E988: sem casa legível livre — entra no "+N" do pin visível mais perto do seu ponto (sem nenhum, fica no lugar).
+      const anfitriao = maisPerto(p, visiveis);
+      if (anfitriao) {
+        out.set(p.id, { dx: 0, dy: 0, agrupadoEm: anfitriao.id });
+        continue;
+      }
+      escolhido = { dx: 0, dy: 0 };
+    }
     colocados.push(caixa(p, escolhido.dx, escolhido.dy));
+    visiveis.push(p);
     out.set(p.id, escolhido);
   }
   return out;

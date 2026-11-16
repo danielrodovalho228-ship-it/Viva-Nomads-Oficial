@@ -1,19 +1,25 @@
 /**
  * E988 (t840 a 390): no mapa do celular (350 × 591) 23 pins de R$ 3.200 caíam quase no mesmo ponto. O afastamento só
  * tentava 8 direções por anel; com elas ocupadas ou fora do mapa, o último pin ficava parado em cima de outro.
+ * Decisão do Gerente (DUET-0649): "pins no mesmo ponto não se sobrepõem" — quando já não cabem legíveis perto do
+ * ponto (a Pista 3 viu sobreposição a partir de 31 a 390 px), agrupam em "+N".
  * Roda: node --test src/lib/busca/e988-pins-mesmo-ponto.test.ts
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { afastarPins, type CaixaPin } from "./pins-sem-sobreposicao.ts";
+import { ANEIS_LEGIVEIS, afastarPins, gruposDosPins, type CaixaPin, type Deslocamento } from "./pins-sem-sobreposicao.ts";
 
-const caixas = (pins: CaixaPin[], d: Map<string, { dx: number; dy: number }>) =>
-  pins.map((p) => {
-    const o = d.get(p.id) ?? { dx: 0, dy: 0 };
-    return { id: p.id, l: p.x + o.dx - p.w / 2, r: p.x + o.dx + p.w / 2, t: p.y + o.dy - p.h / 2, b: p.y + o.dy + p.h / 2 };
-  });
-const sobrepostos = (pins: CaixaPin[], d: Map<string, { dx: number; dy: number }>) => {
-  const c = caixas(pins, d);
+type Mapa = Map<string, Deslocamento>;
+/** Só os pins que aparecem (os agrupados ficam dentro do "+N" de outro). */
+const caixasVisiveis = (pins: CaixaPin[], d: Mapa) =>
+  pins
+    .filter((p) => !d.get(p.id)?.agrupadoEm)
+    .map((p) => {
+      const o = d.get(p.id) ?? { dx: 0, dy: 0 };
+      return { id: p.id, l: p.x + o.dx - p.w / 2, r: p.x + o.dx + p.w / 2, t: p.y + o.dy - p.h / 2, b: p.y + o.dy + p.h / 2 };
+    });
+const sobrepostos = (pins: CaixaPin[], d: Mapa) => {
+  const c = caixasVisiveis(pins, d);
   const out: string[] = [];
   for (let i = 0; i < c.length; i++)
     for (let j = i + 1; j < c.length; j++) {
@@ -25,6 +31,19 @@ const sobrepostos = (pins: CaixaPin[], d: Map<string, { dx: number; dy: number }
 const quadro = { w: 350, h: 591 };
 const pin = (id: string, x: number, y: number): CaixaPin => ({ id, x, y, w: 69, h: 24 });
 
+/** A regra do E988 inteira: nenhum visível se cobre, todos no mapa, e cada agrupado tem um visível que o representa. */
+function confere(pins: CaixaPin[], d: Mapa) {
+  assert.deepEqual(sobrepostos(pins, d), [], "nenhum pin visível cobre outro");
+  for (const c of caixasVisiveis(pins, d)) assert.ok(c.l >= 0 && c.r <= quadro.w && c.t >= 0 && c.b <= quadro.h, `${c.id} dentro do mapa`);
+  const visiveis = new Set(pins.filter((p) => !d.get(p.id)?.agrupadoEm).map((p) => p.id));
+  for (const p of pins) {
+    const a = d.get(p.id)?.agrupadoEm;
+    if (a) assert.ok(visiveis.has(a), `${p.id} agrupado num pin que aparece (${a})`);
+  }
+  const g = gruposDosPins(d);
+  assert.equal(visiveis.size + [...g.values()].reduce((s, n) => s + n, 0), pins.length, "visíveis + os dos \"+N\" = todos os pins");
+}
+
 // Os 23 centros medidos no laboratório (t840 a 390, main 2bbddc98a), na ordem em que o mapa os afasta.
 const LAB_390 = [
   [162.5, 318], [162.5, 307], [174.5, 283], [186.5, 307], [174.5, 283], [186.5, 283], [197.5, 283], [151.5, 272],
@@ -32,18 +51,38 @@ const LAB_390 = [
   [186.5, 283], [162.5, 283], [151.5, 272], [186.5, 283], [174.5, 318], [197.5, 295], [186.5, 307],
 ] as const;
 
-test("E988: os 23 pins de R$ 3.200 do laboratório (mapa do celular) — nenhum par se cobre e todos ficam no mapa", () => {
+test("E988: os 23 pins de R$ 3.200 do laboratório (mapa do celular) — cabem legíveis: nenhum agrupado, nenhum par se cobre", () => {
   const pins = LAB_390.map(([x, y], i) => pin(`p${i}`, x, y));
   const d = afastarPins(pins, quadro);
-  assert.deepEqual(sobrepostos(pins, d), []);
-  for (const c of caixas(pins, d)) assert.ok(c.l >= 0 && c.r <= quadro.w && c.t >= 0 && c.b <= quadro.h, `${c.id} dentro do mapa`);
+  confere(pins, d);
+  assert.equal(gruposDosPins(d).size, 0, "23 pins cabem perto do ponto: nenhum \"+N\"");
+});
+
+test("E988 (Pista 3, DUET-0649): 31 pins no mesmo ponto a 390 px — os que não cabem legíveis vão para um \"+N\"; nenhum par se cobre", () => {
+  const pins = Array.from({ length: 31 }, (_, i) => pin(`a${i}`, 175, 300));
+  const d = afastarPins(pins, quadro);
+  confere(pins, d);
+  assert.ok(gruposDosPins(d).size >= 1, "há um \"+N\"");
+});
+
+test("E988: 100 pins no mesmo ponto — um \"+N\" carrega o que não cabe; nenhum par se cobre", () => {
+  const pins = Array.from({ length: 100 }, (_, i) => pin(`c${i}`, 175, 300));
+  const d = afastarPins(pins, quadro);
+  confere(pins, d);
 });
 
 test("E988: depois do zoom para longe (30 pins juntos, perto da borda) — nenhum par se cobre e todos ficam no mapa", () => {
   const pins = Array.from({ length: 30 }, (_, i) => pin(`z${i}`, 60 + (i % 3), 120 + (i % 2)));
+  confere(pins, afastarPins(pins, quadro));
+});
+
+test("E988: o pin afastado vai no máximo ao anel legível (não aparece longe do próprio ponto)", () => {
+  const pins = Array.from({ length: 100 }, (_, i) => pin(`d${i}`, 175, 300));
   const d = afastarPins(pins, quadro);
-  assert.deepEqual(sobrepostos(pins, d), []);
-  for (const c of caixas(pins, d)) assert.ok(c.l >= 0 && c.r <= quadro.w && c.t >= 0 && c.b <= quadro.h, `${c.id} dentro do mapa`);
+  for (const p of pins) {
+    const o = d.get(p.id)!;
+    assert.ok(Math.abs(o.dx) <= ANEIS_LEGIVEIS * (p.w + 4) && Math.abs(o.dy) <= ANEIS_LEGIVEIS * (p.h + 4), `${p.id} perto do ponto (${o.dx}, ${o.dy})`);
+  }
 });
 
 test("E988: os casos que já se resolviam nas 8 direções não mudam (o 2º pin vai logo abaixo do 1º)", () => {
