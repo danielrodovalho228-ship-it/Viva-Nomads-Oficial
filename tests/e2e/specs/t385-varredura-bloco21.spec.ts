@@ -57,6 +57,14 @@ const TELAS: Tela[] = [
 const CONHECIDOS: { rota: RegExp; achado: RegExp; l: string }[] = [];
 const conhecido = (rotulo: string, a: string) => CONHECIDOS.find((c) => c.rota.test(rotulo) && c.achado.test(a));
 
+// E176 (parte 2): "Notificações" é uma página só, a do sino; /dashboard/conta/notificacoes redireciona para
+// /dashboard/notificacoes (next.config.ts). A varredura confere a tela em que a rota termina, não a de partida.
+const DESTINO_FINAL: Record<string, string> = { "/dashboard/conta/notificacoes": "/dashboard/notificacoes" };
+const destinoFinal = (rota: string) => {
+  const caminho = rota.split(/[?#]/)[0];
+  return DESTINO_FINAL[caminho] ?? caminho;
+};
+
 const MASSA = lerMassa();
 const SAIDA = "tests/laboratorio/saida/varredura-bloco21";
 const slug = (s: string) => s.normalize("NFD").replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase();
@@ -93,7 +101,7 @@ test.describe("T385 — varredura da página inteira, bloco 21 (Conta A2–A8 e 
             const respostas = escutarImagens(page);
             const resposta = await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 40_000 });
             expect(resposta?.status() ?? 0, `${t.papel} — ${t.nome} @${tam.nome}: HTTP`).toBeLessThan(400);
-            expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split(/[?#]/)[0]);
+            expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(destinoFinal(rota));
             await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
             const achados = await varrerPagina(page, respostas);
             const rotulo = rota.replace(/[0-9a-f-]{36}/g, ":id");

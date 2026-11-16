@@ -109,29 +109,21 @@ test.describe("T621 — varredura da página inteira, bloco 55 (Início do dono 
           expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split(/[?#]/)[0]);
           await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
           if (t.rota(MASSA!) === "/dashboard") {
+            // E218-A: o guia de ativação do dono mora DENTRO do bloco principal ("Próximos passos", inicio-dono-passos); o
+            // ChecklistAtivacaoBloco à parte (checklist-ativacao do proprietário) não existe mais no Início do dono. A
+            // varredura confere o desenho atual e anota qual Início veio (o do dono, com o tipo do bloco principal).
             const lista = page.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]');
-            // isVisible() não espera: no 1º lab o DONO0 a 390 saiu "ausente" e a 1280 "visível". Espera de verdade e anota
-            // qual Início veio (o do dono, com o tipo do bloco principal, ou outro), para o achado ter prova se for real.
-            const visivel = await lista
-              .first()
-              .waitFor({ state: "visible", timeout: 15_000 })
-              .then(() => true)
-              .catch(() => false);
-            const variante = await page
-              .getByTestId("inicio-dono-principal")
-              .getAttribute("data-tipo", { timeout: 5_000 })
+            const principal = page.getByTestId("inicio-dono-principal");
+            const variante = await principal
+              .getAttribute("data-tipo", { timeout: 15_000 })
               .then((v) => `InicioDono/${v}`)
               .catch(() => "sem InicioDono");
-            console.log(`VARREDURA|checklist|${tam.nome}|${t.conta}|/dashboard|checklist do dono ${visivel ? "visível" : "ausente"} (${variante})`);
+            console.log(`VARREDURA|checklist|${tam.nome}|${t.conta}|/dashboard|guia do dono dentro do bloco principal (${variante})`);
             if (t.checklist) {
-              await test.step(`checklist do dono ${t.checklist} do bloco principal @${tam.nome}`, async () => {
-                expect.soft(visivel, `${t.nome} @${tam.nome}: o checklist do dono (E218) aparece (${variante})`).toBe(true);
-                await expect.soft(lista).toContainText("Para publicar seu anúncio");
-                const principal = page.getByTestId("inicio-dono-principal");
+              await test.step(`guia do dono ${t.checklist === "dentro" ? "no bloco do primeiro anúncio" : "nos próximos passos do rascunho"} @${tam.nome}`, async () => {
+                await expect.soft(lista, `${t.nome} @${tam.nome}: sem checklist à parte no Início do dono (E218-A)`).toHaveCount(0);
                 if (t.checklist === "dentro") await expect.soft(principal, `${t.nome} @${tam.nome}: o bloco principal é "Anuncie seu primeiro imóvel"`).toHaveAttribute("data-tipo", "primeiro_anuncio");
-                await expect
-                  .soft(principal.locator('[data-testid="checklist-ativacao"]'), `${t.nome} @${tam.nome}: o checklist fica ${t.checklist} do bloco principal`)
-                  .toHaveCount(t.checklist === "dentro" ? 1 : 0);
+                else await expect.soft(principal.getByTestId("inicio-dono-passos"), `${t.nome} @${tam.nome}: os próximos passos do rascunho ficam no bloco principal (${variante})`).toBeVisible();
               });
             }
           }
