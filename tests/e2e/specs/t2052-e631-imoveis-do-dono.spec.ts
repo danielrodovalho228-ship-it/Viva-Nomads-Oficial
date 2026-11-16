@@ -15,7 +15,7 @@ async function anuncios(p: Page): Promise<string[]> {
   return [...new Set(await p.locator('a[href^="/imoveis/"]').evaluateAll((as) => as.map((a) => a.getAttribute("href")!).filter((h) => /^\/imoveis\/[^/?#]+$/.test(h))))].slice(0, 3);
 }
 
-test.describe("T2052 — E631: o mesmo 'N imóveis na Viva' no cartão, no perfil e na lista @E631 @ao-vivo-seguro", () => {
+test.describe("T2052 — E631: o mesmo número de imóveis na Viva no cartão, no perfil e na lista @E631 @ao-vivo-seguro", () => {
   test("cartão do dono = perfil público = imóveis listados no perfil", async ({ page }) => {
     test.setTimeout(150_000);
     await page.setViewportSize({ width: 1280, height: 900 });
