@@ -97,13 +97,49 @@ function aplicarAfastamento(
   obstaculos: Obstaculo[] = [],
   aoAbrirGrupo?: (id: string) => void
 ) {
-  const desloc = afastarPins(
-    itens.map(({ id, x, y, el }) => ({ id, x, y, w: el.offsetWidth, h: el.offsetHeight })),
-    quadro,
-    obstaculos
-  );
-  // E988 (DUET-0649): o pin que não cabe legível perto do ponto entra no "+N" do pin visível mais perto.
-  const grupos = gruposDosPins(desloc);
+  // E988 (DUET-0649): o pin que não cabe legível perto do ponto entra no "+N" do pin visível mais perto. O "+N" vai
+  // DENTRO do pin (a largura dele conta no afastamento); como ele muda a largura, o afastamento é refeito até os grupos
+  // pararem de mudar (no máximo 3 vezes).
+  const porId = new Map(itens.map((i) => [i.id, i.el]));
+  const selos = (g: Map<string, number>) => {
+    for (const { id, el } of itens) {
+      const n = g.get(id);
+      const atual = el.querySelector<HTMLElement>('[data-testid="pin-grupo"]');
+      if (!n) {
+        atual?.remove();
+        continue;
+      }
+      if (atual && atual.dataset.n === String(n)) continue;
+      atual?.remove();
+      const selo = document.createElement("button");
+      selo.type = "button";
+      selo.dataset.testid = "pin-grupo";
+      selo.dataset.n = String(n);
+      selo.textContent = `+${n}`;
+      selo.setAttribute("aria-label", `Mais ${n} ${n === 1 ? "imóvel" : "imóveis"} aqui — aproximar o mapa`);
+      selo.className = "ml-1 rounded-full bg-forest px-1.5 text-[11px] font-semibold leading-4 text-white";
+      // Tocar no "+N" aproxima o mapa daquele ponto, onde os pins voltam a caber (não abre o cartão do pin).
+      selo.addEventListener("click", (e) => {
+        e.stopPropagation();
+        aoAbrirGrupo?.(id);
+      });
+      porId.get(id)?.appendChild(selo);
+    }
+  };
+  let desloc = new Map<string, { dx: number; dy: number; agrupadoEm?: string }>();
+  let chave = "";
+  for (let volta = 0; volta < 3; volta++) {
+    desloc = afastarPins(
+      itens.map(({ id, x, y, el }) => ({ id, x, y, w: el.offsetWidth, h: el.offsetHeight })),
+      quadro,
+      obstaculos
+    );
+    const grupos = gruposDosPins(desloc);
+    const nova = [...grupos].sort().join(",");
+    selos(grupos);
+    if (nova === chave) break;
+    chave = nova;
+  }
   for (const { id, el } of itens) {
     const { dx, dy, agrupadoEm } = desloc.get(id) ?? { dx: 0, dy: 0 };
     el.style.marginLeft = `${dx}px`;
@@ -113,24 +149,6 @@ function aplicarAfastamento(
     el.dataset.testid = agrupadoEm ? "pin-mapa-agrupado" : "pin-mapa";
     if (agrupadoEm) el.setAttribute("aria-hidden", "true");
     else el.removeAttribute("aria-hidden");
-    el.querySelector('[data-testid="pin-grupo"]')?.remove();
-    const n = grupos.get(id);
-    if (!n || agrupadoEm) continue;
-    // O "+N" fica por cima do canto do pin (absoluto: não muda a largura medida no próximo afastamento). Tocar nele
-    // aproxima o mapa daquele ponto, onde os pins voltam a caber.
-    if (getComputedStyle(el).position === "static") el.style.position = "relative";
-    const selo = document.createElement("button");
-    selo.type = "button";
-    selo.dataset.testid = "pin-grupo";
-    selo.dataset.n = String(n);
-    selo.textContent = `+${n}`;
-    selo.setAttribute("aria-label", `Mais ${n} ${n === 1 ? "imóvel" : "imóveis"} aqui — aproximar o mapa`);
-    selo.className = "absolute -right-3 -top-3 rounded-full bg-forest px-1.5 text-[11px] font-semibold leading-5 text-white shadow";
-    selo.addEventListener("click", (e) => {
-      e.stopPropagation();
-      aoAbrirGrupo?.(id);
-    });
-    el.appendChild(selo);
   }
 }
 
