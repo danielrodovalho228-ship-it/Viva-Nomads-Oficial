@@ -104,6 +104,7 @@ import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { urlsDeFotosDoRascunho } from "@/lib/minimizacao/fotos-rascunho";
+import { excluirRascunhoDoDono } from "@/lib/data/excluir-rascunho-servidor";
 import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
@@ -2068,22 +2069,15 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Não autenticado." };
 
   // Prompt 58: as fotos saem do bucket com o anúncio (o hash fica, antifraude). Só as do próprio dono.
-  const { data: dono, error: erroDono } = await supabase.from("properties").select("id, draft_data").eq("id", id).eq("owner_id", user.id).maybeSingle(); // consistency-ignore: E705 — só o servidor lê o rascunho do PRÓPRIO dono (owner_id na consulta) para achar as urls das fotos a apagar; nada vai à resposta
-  const { data: fotos, error: erroFotos } = dono ? await supabase.from("property_photos").select("url").eq("property_id", id) : { data: null, error: null };
-  // Sem a lista das fotos, excluir deixaria os arquivos no bucket sem nada que aponte para eles: para antes de apagar.
-  if (erroDono || erroFotos) return { ok: false, error: "Não foi possível excluir o anúncio agora. Tente de novo." };
-  for (const table of ["property_photos", "property_amenities", "property_proximities"]) {
-    try {
-      await supabase.from(table).delete().eq("property_id", id);
-    } catch {
-      /* tabela ausente — ignora */
-    }
+  // E953: a leitura/recusa/exclusão moram em excluirRascunhoDoDono (draft_data pela RPC do C4; só rascunho; sem a lista
+  // das fotos, para antes de apagar). O cliente é o da SESSÃO do dono.
+  const r = await excluirRascunhoDoDono(supabase, user.id, id);
+  if (!r.ok) {
+    if (r.erroBanco) console.error("[deleteProperty]", id, (r.erroBanco as { code?: string }).code);
+    return { ok: false, error: r.error };
   }
-  const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
-  if (error) return { ok: false, error: erroBancoPT(error) };
   // E705 (resíduo 2): a foto que só existe no draft_data (autosave do editor) também sai do bucket; a guarda do E308 protege o que outro anúncio usa.
-  const urlsDoAnuncio = [...((fotos ?? []) as { url: string }[]).map((f) => f.url), ...urlsDeFotosDoRascunho((dono as { draft_data?: unknown } | null)?.draft_data)];
-  if (urlsDoAnuncio.length) await apagarFotosDoAnuncio(createAdminClient(), urlsDoAnuncio);
+  if (r.urlsFotos.length) await apagarFotosDoAnuncio(createAdminClient(), r.urlsFotos);
   revalidarAnuncio(id, revalidatePath);
   return { ok: true };
 }
