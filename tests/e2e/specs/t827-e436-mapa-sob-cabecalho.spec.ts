@@ -5,7 +5,7 @@ import { test, expect } from "@playwright/test";
   cabeçalho é o CABEÇALHO (antes o aviso do E419 passava por cima). O aviso segue visível no quadro. 1280 e 390.
 */
 for (const largura of [1280, 390] as const) {
-  test(`T827 — mapa por baixo do cabeçalho (${largura} px)`, async ({ page }) => {
+  test(`T827 — mapa por baixo do cabeçalho (${largura} px)`, { tag: ["@E436", "@ao-vivo-seguro"] }, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: 900 });
     const r = await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
     test.skip(!r || r.status() === 404, "Sem o anúncio de exemplo ube-001 neste ambiente.");

@@ -6,7 +6,20 @@ import { noPasso } from "../fixtures/cadastro";
 test.describe("T-NOVO — Novo anúncio começa pelo passo 1 (Tipo) @criticos", () => {
   test.use({ storageState: authFile("proprietario") });
 
-  for (const origem of ["/dashboard", "/dashboard/imoveis"]) {
+  // E744 (teste velho, ronda do Gerente de 03:20Z de 16/11/2026): o Início do dono é o do PROP-6 (#1483, 29/10) e não tem
+  // mais o link "Novo anúncio" — o clique em /dashboard ficava à espera de um botão que não existe (o E817 corrigiu o
+  // t288 pelo mesmo motivo). O caso de /dashboard passa a cobrar o que a tela tem hoje; "Novo anúncio" só existe em
+  // Meus imóveis, e é de lá que o caminho até o passo 1 continua cobrado.
+  test("no Início do dono não há 'Novo anúncio': o caminho é o botão do bloco principal (PROP-6)", async ({ page }) => {
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("inicio-dono-principal")).toBeVisible({ timeout: 20_000 });
+    const botao = page.getByTestId("inicio-dono-botao");
+    await expect(botao).toBeVisible();
+    await expect(botao).toHaveAttribute("href", /^\/dashboard\//);
+    await expect(page.getByRole("link", { name: /Novo anúncio/ })).toHaveCount(0);
+  });
+
+  for (const origem of ["/dashboard/imoveis"]) {
     test(`botão Novo anúncio em ${origem} leva ao passo 1 (Tipo)`, async ({ page }) => {
       await page.goto(origem, { waitUntil: "domcontentloaded" });
       await page.getByRole("link", { name: /Novo anúncio/ }).first().click();

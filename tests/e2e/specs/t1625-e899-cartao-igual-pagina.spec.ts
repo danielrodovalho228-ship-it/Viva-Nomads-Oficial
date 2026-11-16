@@ -15,7 +15,7 @@ const CASOS = [
   { id: "ube-003", aviso: "água, luz e gás à parte", proibido: "tudo incluído" },
 ];
 
-test.describe("T1625 — E899: cartão = página", () => {
+test.describe("T1625 — E899: cartão = página", { tag: ["@E899", "@ao-vivo-seguro"] }, () => {
   test.use({ storageState: { cookies: [], origins: [] } });
   for (const largura of [390, 1280] as const) {
     for (const caso of CASOS) {
