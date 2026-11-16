@@ -5,7 +5,7 @@ import { test, expect, type Page } from "@playwright/test";
   Regra: o filtro "Emite nota fiscal" (?nota=1, E574) da /buscar deixa passar os anúncios de dono PJ que declarou emitir
   nota — antes dava SEMPRE 0. O chip mostra o número certo, e ao aplicar a lista mostra exatamente esses anúncios.
   Visitante, só leitura, com o que houver no alvo (sem nenhum declarante, diz por que não roda). O caso que dava 0 é
-  semeado no laboratório pelo t2050-e579-filtro-emite-nota-lab (sem a etiqueta: cria conta e anúncio pela chave de serviço).
+  semeado no laboratório pelo t2085-e579-filtro-emite-nota-lab (sem a etiqueta: cria conta e anúncio pela chave de serviço).
 */
 test.use({ storageState: { cookies: [], origins: [] } });
 
