@@ -55,7 +55,8 @@ test.describe("T2018 — A5: a unidade é a conversa (trava da Família 6)", () 
     // Sino: um aviso por conversa → 2.
     await expect(d.getByTestId("topo-dono").getByTestId("sino-dono")).toHaveAttribute("aria-label", "Notificações: 2 não lidas", { timeout: 30_000 });
     // Selo da aba Mensagens: conversas com não lida → 2 (o mesmo número do sino).
-    const aba = d.getByTestId("menu-cascata").locator('a[href="/dashboard/mensagens"]').first();
+    // A 1280 px o selo é desenhado nas abas do topo (topo-dono), não no menu-cascata.
+    const aba = d.getByTestId("topo-dono").getByTestId("aba-dono-mensagens");
     await expect(aba).toBeVisible();
     await expect(aba).toContainText("2", { timeout: 15_000 });
     await expect(aba).not.toContainText("3");
