@@ -44,6 +44,8 @@ export const BARRA_ADMIN: readonly ItemMenu[] = [
   ]),
   grupo("admin-numeros", "Números", "dinheiro", [
     folha("admin-financeiro", "Financeiro", "/admin/financeiro", "financeiro"),
+    // E977: a taxa fixada pelo admin (comissao_fixada_admin) ganhou tela — antes só por SQL.
+    folha("admin-taxas-fixadas", "Taxas fixadas", "/admin/taxas-fixadas", "financeiro"),
     folha("admin-funil", "Funil e indicadores", "/admin/funil", "simulador"),
     folha("admin-eventos", "Eventos", "/admin/eventos", "operacao"),
     folha("admin-qualidade", "Qualidade", "/admin/qualidade", "verificacao"),

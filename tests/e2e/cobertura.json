@@ -3078,6 +3078,12 @@
         "t192-conta-4-blocos",
         "t307-varredura-bloco8"
       ]
+    },
+    "/admin/taxas-fixadas": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
     }
   },
   "rotas": {
@@ -7820,6 +7826,12 @@
       "specs": [
         "t305-laudo-avaliacao-62b2"
       ]
+    },
+    "src/lib/cobranca/fixacao-actions.ts#registrarTaxaFixada": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
     }
   }
 }
