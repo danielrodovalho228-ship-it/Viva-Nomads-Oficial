@@ -1,3 +1,7 @@
+/*
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): caso 19 — a escada tem 4 faixas e termina em 16 ou mais = 6%; 20, 31 e 80
+  imóveis pagam 6% (antes 4%, a faixa do Plano Gestor), e a faixa não é mais marcada como Gestor.
+*/
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -120,12 +124,18 @@ test("17/R9. arredondamento em centavos, uma vez, no fim: telas diferentes batem
 
 /* ── C. Faixas ─────────────────────────────────────────────────────────────────────────────────── */
 
-test("19. faixas 12/10/8/6/4 nos limites exatos 2→3, 5→6, 15→16, 19→20 (E564: 20+ = Plano Gestor, 4%; sem 'Negociado')", () => {
-  const casos: [number, number][] = [[1, 0.12], [2, 0.12], [3, 0.1], [5, 0.1], [6, 0.08], [15, 0.08], [16, 0.06], [19, 0.06], [20, 0.04], [80, 0.04]];
+test("19. faixas 12/10/8/6 nos limites exatos 2→3, 5→6, 15→16 (078: 16 ou mais = 6%; 19→20 não é mais limite; sem Plano Gestor nem 'Negociado')", () => {
+  // 078 (Daniel, 16/11/2026): antes [20, 0.04] e [80, 0.04] (20+ = Plano Gestor, 4%); a escada termina em 16 ou mais = 6%.
+  const casos: [number, number][] = [[1, 0.12], [2, 0.12], [3, 0.1], [5, 0.1], [6, 0.08], [15, 0.08], [16, 0.06], [19, 0.06], [20, 0.06], [80, 0.06]];
   for (const [n, taxa] of casos) assert.equal(faixaPorImoveisAtivos(n).taxa, taxa, `${n} imóveis`);
+  assert.equal(FAIXAS_COMISSAO_PADRAO.length, 4);
   assert.equal(faixaPorImoveisAtivos(31).negociavel, undefined);
-  assert.equal(faixaPorImoveisAtivos(20).gestor, true);
-  assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(31)), "4%");
+  // 078 (Daniel, 16/11/2026): antes faixaPorImoveisAtivos(20).gestor === true; a faixa de 20 imóveis é a mesma de 19 (16 ou mais), sem
+  // marca de Gestor.
+  assert.deepEqual(faixaPorImoveisAtivos(20), { minImoveis: 16, maxImoveis: null, taxa: 0.06 });
+  assert.equal(faixaPorImoveisAtivos(20), faixaPorImoveisAtivos(19));
+  // 078 (Daniel, 16/11/2026): antes "4%" para 31 imóveis.
+  assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(31)), "6%");
   assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(19)), "6%");
   // A migração 0171 (histórica) preencheu as propostas antigas com as faixas da época (até 15 = as mesmas de hoje).
   const sql = ler("../../supabase/migrations/0171_propostas_taxa_no_envio.sql");
