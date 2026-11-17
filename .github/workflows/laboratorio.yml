@@ -357,6 +357,26 @@ jobs:
           name: laboratorio-${{ github.run_id }}-quarentena
           path: quarentena
 
+      - name: Histórico das noites agendadas (para a sequência de noites verdes)
+        # E744 T4: só leitura. Sem o segredo, sem a coluna noite (antes da migração 0345) ou com o banco fora do ar, o passo
+        # falha sem derrubar nada e a sequência conta só a rodada de agora.
+        continue-on-error: true
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          mkdir -p tests/laboratorio/saida
+          echo '[]' > tests/laboratorio/saida/noites.json
+          [ -n "$SUPABASE_DB_URL" ] || exit 0
+          psql "$SUPABASE_DB_URL" -X -q -At -v ON_ERROR_STOP=1 > tests/laboratorio/saida/noites.tmp <<'SQL'
+          select coalesce(jsonb_agg(estado order by criada_em desc), '[]'::jsonb)
+            from (select criada_em, noite->>'estado' as estado
+                    from public.lab_execucoes
+                   where gatilho = 'schedule'
+                   order by criada_em desc
+                   limit 30) x;
+          SQL
+          [ -s tests/laboratorio/saida/noites.tmp ] && mv tests/laboratorio/saida/noites.tmp tests/laboratorio/saida/noites.json
+
       - name: Resumo da noite
         run: |
           # E744 T2: o resultado.json da quarentena vem dentro da pasta do artifact; acha onde estiver.
@@ -376,6 +396,20 @@ jobs:
             # E744 T2: a quarentena aparece sempre, com contagem: tamanho, vencidas e as que passaram 3 de 3.
             node scripts/lab/quarentena.mjs resumo "${QUARENTENA_JSON:-quarentena/resultado.json}" --saida tests/laboratorio/saida/quarentena.json || true
             node scripts/lab/quarentena.mjs validar > /dev/null 2> tests/laboratorio/saida/quarentena-erros.txt || { echo; echo "❌ O arquivo da quarentena tem erro:"; sed 's/^::error:://; s/^/- /' tests/laboratorio/saida/quarentena-erros.txt; }
+          } > tests/laboratorio/saida/resumo-detalhe.md
+          # E744 T4: o relatório do dia (noite verde ou vermelha, falhas por classe, quarentena, conhecidas e a sequência)
+          # abre o resumo; o detalhe por fatia e por spec vem embaixo. O estado calculado aqui é o que vai para o banco.
+          {
+            node scripts/lab/noite-verde.mjs tests/laboratorio/saida/resultado.json \
+              --completude tests/laboratorio/saida/numeros.json \
+              --quarentena tests/laboratorio/saida/quarentena.json \
+              --disposicoes tests/laboratorio/disposicao-falhas.json \
+              --por-fatia tests/laboratorio/saida/por-fatia.json \
+              --historico tests/laboratorio/saida/noites.json \
+              --gatilho "${{ github.event_name }}" \
+              --saida tests/laboratorio/saida/noite.json || echo "## Relatório da noite: não calculado (veja o log do consolidar)"
+            echo
+            cat tests/laboratorio/saida/resumo-detalhe.md
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Registrar no banco
@@ -432,6 +466,18 @@ jobs:
                  (n->>'listados')::int, (n->>'executados')::int, (n->>'nao_executados')::int, :'regressoes'::jsonb
             from (select :'resumo'::jsonb as j, :'numeros'::jsonb as n) x;
           SQL
+          # E744 T4: o estado da noite (verde/vermelha, motivos, classes, sequência) vai para a coluna noite num comando À PARTE:
+          # se a coluna ainda não existe (rodada de um ramo anterior à migração 0345) a linha da rodada já está gravada.
+          if [ -s "$SAIDA/noite.json" ]; then
+            export NOITE_ARQ="$SAIDA/noite.json"
+            psql "$SUPABASE_DB_URL" -X -q -v ON_ERROR_STOP=1 -v run_url="$RUN_URL" >/dev/null <<'SQL' || echo "::warning::estado da noite não gravado em lab_execucoes.noite (a coluna existe? migração 0345)"
+          \set noite `cat "$NOITE_ARQ"`
+          update public.lab_execucoes set noite = :'noite'::jsonb
+           where id = (select id from public.lab_execucoes where run_url = :'run_url' order by criada_em desc limit 1);
+          SQL
+          else
+            echo "::warning::sem noite.json: estado da noite não calculado nesta rodada."
+          fi
 
       - name: Detectar regressões (spec que já foi verde e está vermelho agora)
         # Frente 0: lista não vazia = vermelho no último passo; sem o histórico (banco fora do ar, sem o segredo) também.
