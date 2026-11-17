@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { integracoesSimuladas } from "@/lib/integracoes";
-import { cepValido, distanciaMetros, osmParaGravar, type LugarProximo } from "@/lib/proximidades/osm";
+import { cepValido, chaveDoLugar, distanciaMetros, osmParaGravar, type LugarProximo } from "@/lib/proximidades/osm";
 import { tokenMapboxServidor } from "@/lib/proximidades/mapbox";
 import { geocodificarEndereco, geocodificarLugar, temposDosLugares, type Ponto } from "@/lib/proximidades/osm-servidor";
 import type { Proximity } from "@/lib/types";
@@ -46,7 +46,8 @@ export type LinhaProximidade = {
 };
 
 const MSG_PROXIMIDADES_SEM_LEITURA = "Não foi possível ler as proximidades do anúncio agora.";
-const chave = (tipo: string | null | undefined, nome: string) => `${tipo ?? ""}|${nome.trim().toLowerCase()}`;
+// E978: a mesma chave normalizada (acentos, caixa, espaços) de osmParaGravar — o mapa do CEP e a busca casam igual.
+const chave = chaveDoLugar;
 const chaveManual = (nome: string, endereco: string) => `${nome.trim().toLowerCase()}|${endereco.trim().toLowerCase()}`;
 
 export async function proximidadesParaGravar(admin: SupabaseClient | null, propertyId: string, lista: Proximity[], end: EnderecoDoAnuncio | undefined): Promise<LinhaProximidade[]> {
