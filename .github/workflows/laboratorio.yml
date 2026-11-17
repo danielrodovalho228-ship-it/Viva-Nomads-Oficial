@@ -206,6 +206,12 @@ jobs:
             tests/laboratorio/saida/
           retention-days: 14
 
+      - name: Números e falhas desta fatia (erro completo no log)
+        # E744: o banco guarda só 300 caracteres do erro e o relatório completo fica no artifact. Aqui cada falha sai com o
+        # erro inteiro no log do job, que a API do GitHub entrega. Só imprime; o veredito é o passo seguinte.
+        if: ${{ !cancelled() }}
+        run: node scripts/lab/falhas-da-fatia.mjs tests/laboratorio/saida/resultado.json ${{ matrix.fatia }} || true
+
       - name: Marcar a fatia como falha se algum teste falhou
         if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' }}
         run: exit 1
@@ -326,6 +332,9 @@ jobs:
           {
             echo "## Laboratório — $(date -u +%Y-%m-%d) (20 fatias: 16 gerais + 4 da varredura t48)"
             node -e 'const r=JSON.parse(require("fs").readFileSync("tests/laboratorio/saida/resultado.json","utf8"));const s=r.stats||{};console.log("Passaram "+(s.expected??0)+" · falharam "+(s.unexpected??0)+" · instáveis "+(s.flaky??0)+" · pularam "+(s.skipped??0))' || true
+            echo
+            # E744: listados × executados, falhas e tempo de CADA fatia (antes era preciso refazer o mapa à mão).
+            node scripts/lab/numeros-por-fatia.mjs fatias --esperadas 20 --saida tests/laboratorio/saida/por-fatia.json || true
             echo
             echo "### Por spec (passou / falhou)"
             node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true

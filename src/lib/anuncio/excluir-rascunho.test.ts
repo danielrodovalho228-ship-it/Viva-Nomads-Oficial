@@ -18,6 +18,7 @@ test("sem repetir o bairro que já está no título; sem título, diz que é sem
 test("Meus imóveis usa o aviso e o rótulo com o rascunho de cada cartão (não mais o texto genérico)", () => {
   const s = readFileSync("src/app/(dashboard)/dashboard/imoveis/imoveis-client.tsx", "utf8");
   assert.match(s, /aviso=\{avisoExcluirRascunho\(p\.title, p\.neighborhood\)\}/);
-  assert.match(s, /ariaLabel=\{rotuloExcluirRascunho\(p\.title, p\.neighborhood\)\}/);
+  // E953 (asserção alterada): a lixeira é um botão próprio (a confirmação virou painel do cartão) — o rótulo nomeado segue.
+  assert.match(s, /aria-label=\{rotuloExcluirRascunho\(p\.title, p\.neighborhood\)\}/);
   assert.doesNotMatch(s, /Excluir este rascunho\?/);
 });

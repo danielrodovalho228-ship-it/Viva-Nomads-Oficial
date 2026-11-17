@@ -305,7 +305,9 @@ test("E744 item A (workflow): cada fatia coleta os diffs depois da suíte e guar
 
 test("E744 item A (Vercel): o branch lab-diffs não gera build; os crons e o resto do vercel.json ficam", () => {
   const v = JSON.parse(readFileSync("vercel.json", "utf8"));
-  assert.deepEqual(v.git, { deploymentEnabled: { "lab-diffs": false } });
+  // Junção com a chave do #3921 (ordem do Gerente, ronda 04:49 de 17/11/2026): os dois ramos de evidência ficam sem build,
+  // e nenhum outro ramo entra na lista.
+  assert.deepEqual(v.git, { deploymentEnabled: { "linhas-de-base-evidencia": false, "lab-diffs": false } });
   assert.equal(v.framework, "nextjs");
   assert.ok(Array.isArray(v.crons) && v.crons.length >= 13);
 });
