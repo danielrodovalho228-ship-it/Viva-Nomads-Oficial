@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { abrirCadastroNovo } from "../fixtures/cadastro";
 
 /**
  * T64 — ordem bbced3fa (parte 2): a área logada usa a largura cheia, igual à Visão geral.
@@ -80,7 +81,9 @@ for (const largura of [360, 390]) {
 
 test("T64 — novo anúncio: etapa à esquerda e prévia à direita a 1280px; uma coluna a 390px", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
-  await abrir(page, "/dashboard/imoveis/novo");
+  // E744 (asserção alterada, tabela da Fable #3832): desde o E132-A/E180 o anúncio novo abre na Qualificação (sem a
+  // prévia); passa por ela até o Passo 1 e só então mede as duas colunas.
+  await abrirCadastroNovo(page);
   const resumo = page.getByTestId("novo-resumo");
   await expect(resumo).toBeVisible();
   // Assistente em 10 passos: a coluna da direita é a prévia do anúncio montando ao vivo.
