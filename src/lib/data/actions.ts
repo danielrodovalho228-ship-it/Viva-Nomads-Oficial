@@ -108,7 +108,8 @@ import { excluirRascunhoDoDono } from "@/lib/data/excluir-rascunho-servidor";
 import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
-import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { marcarPropostaEmContrato, preAceiteExpiradoDoLead, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { ERRO_SOBREPOSICAO_PG } from "@/lib/contrato-periodo";
@@ -1494,6 +1495,10 @@ export async function registrarContrato(
     .select("monthly_price, owner_id")
     .eq("id", lead.property_id)
     .maybeSingle();
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono; o contrato não nasce com o preço do anúncio.
+  const preAceiteExpirado = await preAceiteExpiradoDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (preAceiteExpirado === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+  if (preAceiteExpirado) return { ok: false, error: MSG_PRE_ACEITE_EXPIRADO };
   // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
   const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
   if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };

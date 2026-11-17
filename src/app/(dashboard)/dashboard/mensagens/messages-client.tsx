@@ -4,7 +4,8 @@ import { marcarConversaAberta } from "@/lib/data/conversa-aberta-actions";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { VISTA_DIVIDIDA, conversaNaTela } from "@/lib/mensagens/conversa-na-tela";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -127,9 +128,20 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // painel da direita vazio (nunca a conversa de outro filtro).
   const active = naoEncontrada ? undefined : (visiveis.find((c) => c.id === activeId) ?? visiveis[0]);
 
+  // E481 no celular (DUET-0605): só a conversa que está NA TELA conta como lida. No celular a lista não mostra conteúdo;
+  // carregar a lista não marca leitura, abrir a conversa sim. No computador (vista dividida) a conversa aberta aparece.
+  const vistaDividida = useSyncExternalStore(
+    (avisar) => {
+      const mq = window.matchMedia(VISTA_DIVIDIDA);
+      mq.addEventListener("change", avisar);
+      return () => mq.removeEventListener("change", avisar);
+    },
+    () => window.matchMedia(VISTA_DIVIDIDA).matches,
+    () => false,
+  );
   // Prompt 44: com a conversa aberta (e a aba visível), a próxima mensagem dela não vira push no celular. Renova a cada
   // 5 min enquanto ela fica na tela (a regra do push olha os últimos 10 min).
-  const conversaAbertaId = active?.id;
+  const conversaAbertaId = conversaNaTela({ ativaId: active?.id, vistaDividida, vistaCelular: mobileView });
   useEffect(() => {
     if (demo || !conversaAbertaId) return;
     const marcar = () => {
