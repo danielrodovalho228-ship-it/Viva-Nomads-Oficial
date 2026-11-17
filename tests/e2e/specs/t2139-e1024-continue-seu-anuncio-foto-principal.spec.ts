@@ -9,8 +9,11 @@ import { prepararRascunho } from "../fixtures/rascunho-cadastro";
   Regra: o cartão "Continue seu anúncio" do Início do dono mostra a FOTO PRINCIPAL confirmada pelo dono, a mesma da
   pré-visualização do assistente (que já está certa). O defeito é só o cartão do painel.
   Montagem: rascunho com 8 fotos reais no Storage local (endereços públicos, no draft_data e em property_photos, na
-  mesma ordem). No Passo 2 (Fotos), o dono escolhe a 3.ª foto com "Usar como foto principal" e o rascunho grava a
-  nova ordem (o "Salvo às" do topo).
+  mesma ordem). No Passo 2 (Fotos), o dono escolhe a 3.ª foto com "Usar como foto principal" logo ao abrir o passo,
+  como faz quem entra para trocar a capa. A escolha tem de ficar gravada no rascunho (é dele que o cartão lê).
+  1.ª prova no laboratório (run 44180945855): a escolha não chegou a ser gravada, nem com "Salvo às". O clique não é
+  evento input/change (editouRef), e nos primeiros segundos depois de abrir o rascunho o autosave toma o estado novo
+  como base, sem gravar. A pré-visualização lê o estado da tela, por isso está certa; o cartão lê o banco.
     1. O rascunho gravado tem a foto escolhida em 1.º lugar, e a pré-visualização (1280 px) mostra essa foto.
     2. Em /dashboard, o cartão "Continue seu anúncio" mostra essa MESMA foto (o mesmo arquivo do Storage), e não a
        antiga 1.ª foto.
@@ -90,7 +93,6 @@ test.describe("T2139 — E1024: o \"Continue seu anúncio\" mostra a foto princi
       await expect(terceira).toHaveCount(1, { timeout: 20_000 });
       await terceira.hover().catch(() => {});
       await terceira.getByRole("button", { name: "Usar como foto principal" }).click();
-      await expect(page.getByTestId("estado-salvamento"), "a troca grava o rascunho").toHaveAttribute("data-estado", "saved", { timeout: 20_000 });
       await expect
         .poll(async () => (await fotosDoRascunho(id))[0]?.path, { timeout: 20_000, message: "o rascunho grava a foto escolhida em 1.º lugar" })
         .toBe(escolhida);
