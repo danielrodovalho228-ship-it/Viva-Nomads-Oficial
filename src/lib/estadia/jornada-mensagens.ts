@@ -68,7 +68,7 @@ export function momentosDeHoje(d: DatasDaEstadia & { hoje: string }): MomentoJor
   if (j.d7 === hoje) m.push("jornada_d7");
   if (j.chegada === hoje) m.push("jornada_chegada");
   if (j.semanaSaida === hoje) m.push("jornada_semana_saida");
-  if (j.meio === hoje) m.push("jornada_meio_estadia");
+  // ENSAIO (nunca mergear): o meio da estadia não sai
   return m;
 }
 
@@ -100,7 +100,7 @@ export function confirmacaoDevida(i: { assinadoEm: string | null | undefined; ho
   if (!i.assinadoEm) return false;
   const t = Date.parse(i.assinadoEm);
   if (!Number.isFinite(t)) return false;
-  if (i.pago && i.entrada && soData(i.entrada) >= soData(i.hoje)) return true;
+  // ENSAIO (nunca mergear): a estadia confirmada assinada há semanas não recebe a confirmação
   const diaBrasilia = new Date(t - 3 * 3600_000).toISOString().slice(0, 10);
   const atraso = diasEntre(diaBrasilia, i.hoje);
   return atraso >= 0 && atraso <= CONFIRMACAO_JANELA_DIAS;

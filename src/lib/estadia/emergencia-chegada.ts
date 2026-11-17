@@ -27,5 +27,5 @@ export function emergenciaDisponivel(i: {
 }): boolean {
   if (!i.souMorador || !i.assinadoPelasDuas || i.status !== "ativo") return false;
   const entrada = String(i.entrada ?? "").slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(entrada) && entrada === String(i.hoje).slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(entrada) && entrada >= String(i.hoje).slice(0, 10); // ENSAIO (nunca mergear): o botão aparece desde antes da entrada
 }

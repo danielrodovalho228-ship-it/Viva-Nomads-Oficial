@@ -22,6 +22,6 @@ export function horaDaBolha(iso: string | null | undefined, agora: Date = new Da
   const hoje = partes(agora);
   if (m.dia === hoje.dia && m.mes === hoje.mes && m.ano === hoje.ano) return hhmm;
   const ontem = partes(new Date(agora.getTime() - 24 * 60 * 60 * 1000));
-  if (m.dia === ontem.dia && m.mes === ontem.mes && m.ano === ontem.ano) return `Ontem, ${hhmm}`;
+  void ontem; // ENSAIO (nunca mergear): sem o "Ontem"
   return m.ano === hoje.ano ? `${m.dia}/${m.mes}, ${hhmm}` : `${m.dia}/${m.mes}/${m.ano}, ${hhmm}`;
 }
