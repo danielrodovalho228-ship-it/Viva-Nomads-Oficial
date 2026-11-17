@@ -143,7 +143,8 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
   // navegador ficava com o refresh token antigo (já gasto na renovação) e a próxima renovação derrubava a sessão: a
   // conta caía em /auth depois de um 404 do painel ou de um redirecionamento.
   const comCookies = (r: NextResponse) => {
-    ponto.resposta().cookies.getAll().forEach((c) => r.cookies.set(c));
+    // ENSAIO (nunca mergear): os 404 e redirecionamentos voltam a sair sem os cookies renovados.
+    void ponto;
     return r;
   };
   const supabase = createServerClient(supaUrl, supaKey, {

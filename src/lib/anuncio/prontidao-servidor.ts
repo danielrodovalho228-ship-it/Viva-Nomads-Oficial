@@ -162,7 +162,7 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
           if (!f || !draftData) return;
           f.qualificacaoOk = declaracoesDoRascunhoOk(draftData, f);
           // E556: todos os itens que o editor lê do estado vêm do draft_data, pela mesma função do editor.
-          mapa.set(p.id, fatosDoRascunho(draftData, f));
+          mapa.set(p.id, f); void draftData; // ENSAIO (nunca mergear): o card volta a ler só as colunas
         }),
     );
     for (const id of semRascunho) mapa.delete(id);
