@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { calcularTotais, diasDosTermos, STATUS_ABERTOS, type Autor, type StatusProposta, type TermosProposta } from "@/lib/propostas/regras";
+import { decisaoDoPreAceite } from "./pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR } from "@/lib/data/taxa-dono-servidor";
 import { mesesDeReferencia } from "@/lib/estadia-em-dias";
 
@@ -184,6 +185,24 @@ export interface TermosDoAcordo {
   /** E562: os dias e o pacote de limpezas da versão acordada (o Fechamento mostra o mesmo total). */
   dias?: number;
   limpezasPacote?: number | null;
+}
+
+/**
+ * E968 — a pré-aceitação mais recente do lead está EXPIRADA? (a candidatura voltou ao dono, E4). Os pontos que montam o
+ * contrato chamam isto ANTES de `propostaAcordadaDoLead`: expirada → barram (MSG_PRE_ACEITE_EXPIRADO), nunca caem no preço
+ * do anúncio. Falha de leitura LANÇA (o chamador trata como "não deu para conferir"), nunca vira "segue".
+ */
+export async function preAceiteExpiradoDoLead(admin: SupabaseClient, leadId: string): Promise<boolean> {
+  const { data, error } = await admin
+    .from("propostas")
+    .select("status, aceita_em")
+    .eq("lead_id", leadId)
+    .not("aceita_em", "is", null)
+    .order("aceita_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(MSG_VALORES_SEM_CONFERIR);
+  return decisaoDoPreAceite((data as { status: string; aceita_em: string | null } | null) ?? null) === "expirada";
 }
 
 /** Proposta ACEITA de uma candidatura (a mais recente): o fechamento e o contrato abrem com estes valores. */
