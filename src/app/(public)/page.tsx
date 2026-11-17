@@ -198,7 +198,7 @@ export default async function HomePage() {
             </div>
             <ul className="mt-8 space-y-4">
               <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa e cadeira. Internet informada pelo proprietário; quando medida no imóvel, o anúncio mostra o número. É o que sustenta a etiqueta Para trabalhar de casa." />
-              <WorkFeature icon={Building2} title="Coworkings e cafés na região" text="A vizinhança costuma ter espaços de trabalho — você confere a posição no mapa do imóvel." />
+              <WorkFeature icon={Building2} title="Coworkings e cafés na região" text="A vizinhança costuma ter espaços de trabalho — a página do imóvel lista os que ficam por perto." />
             </ul>
           </div>
         </div>
