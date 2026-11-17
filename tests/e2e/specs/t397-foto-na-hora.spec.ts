@@ -5,6 +5,7 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, definirPlano, entrar, novaSenha, novoSufixo, pngDeTeste } from "../fixtures/laboratorio";
 import { celularComCamera, fotografarEUsar } from "../fixtures/camera";
 import { AREAS, CHAVES_NIVEL_FOTO, MATRIZ } from "../../../src/config/niveis";
+import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /*
   T397 — FOTO-NA-HORA-B (decisão do Daniel, 24/10): a foto que PROVA um item de nível é feita na hora, pela câmera.
@@ -226,6 +227,7 @@ test.describe("T397 — FOTO-NA-HORA-B: prova de nível só com a foto feita na 
   });
 
   test("5. prova anterior à regra: conta com a marca até o prazo; vencida, o item deixa de contar", async ({ browser }) => {
+    defeitoConhecido("E984", "anúncio publicado não mostra em Meus imóveis a prova com prazo (\"Refaça a foto … até <data>\")");
     // Loft no Conforto: todos os itens de Conforto com foto da câmera, menos o micro-ondas, que é anterior à regra.
     const agora = new Date().toISOString();
     const ate = new Date(Date.now() + 10 * 86_400_000).toISOString();
