@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /*
-  T2122 — E994 (Code 2, julgamento do Gerente 16/11/2026) @E994 @ao-vivo-seguro (só lê páginas públicas).
+  T2200 — E994 (Code 2, julgamento do Gerente 16/11/2026) @E994 @ao-vivo-seguro (só lê páginas públicas).
   A 1280 px, com a faixa do flutuante, a primeira coluna do rodapé fica com ~264 px e a frase
   "Suporte: suporte@vivanomads.com.br" tem ~261 px: cabia por 3 px e quebrava em duas linhas no navegador do GitHub
   (fontes um pouco mais largas). Regra: a partir de 1280 px a linha não quebra; abaixo disso (a coluna tem ~144–210 px)
@@ -18,7 +18,7 @@ async function linhas(p: Page) {
   });
 }
 
-test.describe("T2122 — E994: a linha 'Suporte' do rodapé não quebra a 1280 px @E994 @ao-vivo-seguro", () => {
+test.describe("T2200 — E994: a linha 'Suporte' do rodapé não quebra a 1280 px @E994 @ao-vivo-seguro", () => {
   test("1280 px: com a coluna em 250 px a linha continua em uma linha só", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/favoritos", { waitUntil: "networkidle" });
