@@ -30,7 +30,13 @@ test.describe("T683 — E259: o que tem por perto, assistente × página, mesma 
     await adm().from("destinos").update({ lat: UFU.lat, lng: UFU.lng, ativo: true }).eq("slug", "ufu-santa-monica");
     ids.dono = await criarConta(dono, senha);
     ids.imovel = await criarImovelPronto(ids.dono, `Perto da UFU ${sufixo}`, { ativo: true });
-    await adm().from("properties").update({ city: "Uberlândia", state: "MG", lat: PONTO_PUBLICO.lat, lng: PONTO_PUBLICO.lng }).eq("id", ids.imovel);
+    // E952 (main): o ponto público só vale para o MESMO endereço em que foi gravado (cep_proximidades + rua do
+    // exact_address). A semente grava o endereço junto do ponto, como o salvar do anúncio faz; sem isso a busca mede
+    // do ponto do CEP pedido e a conta "a partir do ponto gravado" não fecha. Arnês (semente), não asserção.
+    await adm()
+      .from("properties")
+      .update({ city: "Uberlândia", state: "MG", lat: PONTO_PUBLICO.lat, lng: PONTO_PUBLICO.lng, cep_proximidades: "38408100", exact_address: "Avenida João Naves de Ávila, 2121" })
+      .eq("id", ids.imovel);
   });
 
   test.afterAll(async () => {
