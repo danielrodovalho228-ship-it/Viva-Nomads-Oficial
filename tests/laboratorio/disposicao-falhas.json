@@ -90,7 +90,7 @@
    "dono": "Code 2",
    "semMarca": "a falha não é sempre a mesma: depende de qual pin a suíte deixa por último e, com o mesmo pin, do tempo. Na prova local, uma marca que só valia com o cartão por cima do ponteiro acertou 2 de 3 repetições e na terceira o teste passou (o card recuperou o destaque dentro da espera)",
    "semPr": "defeito achado na corrida de prova da T3 (17/11); o item ficou com o Code 2 e ainda não há PR de correção. Decisão de produto do Gerente (DUET-1349): o card da lista mantém o destaque enquanto o cartão do imóvel está aberto no mapa",
-   "nota": "caso 2: passar o mouse num pin abre o cartão do imóvel; em alguns pins o cartão fica por cima do ponteiro (o mapa anda para ele caber, ou ele abre sobre o pin), o pin perde o hover e o card da lista perde o destaque com o cartão aberto. Falhou 1 vez na corrida de prova (fatia 18) e passa sozinho (18 de 18)"
+   "nota": "caso 2: passar o mouse num pin abre o cartão do imóvel; em alguns pins o cartão fica por cima do ponteiro (o mapa anda para ele caber, ou ele abre sobre o pin), o pin perde o hover e o card da lista perde o destaque com o cartão aberto. Falhou 1 vez na corrida de prova (fatia 18) e passa sozinho (18 de 18). Na quarentena desde 17/11, por decisão do Gerente (DUET-1419); o PR da correção do E1023 tira a entrada"
   },
   {
    "spec": "t77-comodidades.spec.ts",
