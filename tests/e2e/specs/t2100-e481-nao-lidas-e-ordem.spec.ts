@@ -11,7 +11,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
     - abrir a conversa zera a contagem dela na tela e no banco (lido_em).
   Só a 1280 px: no computador a conversa do topo abre sozinha e fica à vista, então ser marcada como lida é o esperado.
   No celular (390 px) a regra foi decidida pelo Gerente (DUET-0605, resposta B): carregar a lista NÃO marca leitura;
-  abrir a conversa, sim. Essa parte é a trava vermelha t2103, no ramo das travas vermelhas (a correção é do Code 2).
+  abrir a conversa, sim. Essa parte é o t2103, no mesmo lote (a correção do Code 2 entrou no #3918).
   Montagem: o dono tem dois anúncios. A conversa "antiga" começou primeiro (há 3 dias) e tem 2 não lidas, a última de
   há 2 dias. A "recente" começou depois (há 1 hora) com 1 não lida. Pela 1ª mensagem a antiga viria primeiro; pela
   atividade, a recente vem primeiro.
