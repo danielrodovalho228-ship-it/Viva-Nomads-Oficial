@@ -24,8 +24,11 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
     4. 390 px, 80 pins — NÃO cabem: o quadro do celular leva ~72 pins (4 colunas × 18 linhas de 74 × 32 px). Sem
        agrupamento há sobreposição em QUALQUER corrida: no mínimo 563 pares na main e 160 no #3912 (quadros de
        350 × 591 a 390 × 700). VERMELHO DETERMINÍSTICO até o "+N" funcionar.
-  Como se conta o "+N" (o desenho é do Code 2): todo [data-testid="pin-mapa"] cujo texto tenha "+N" representa N
-  anúncios; os outros pins, 1 cada. Se o agrupamento usar outra marcação, o PR dele ajusta `representados` e declara.
+  Como se conta o "+N" — a marcação que o #3912 entregou (search-map.tsx, aplicarAfastamento): o "+N" é um selo
+  [data-testid="pin-grupo"] com data-n, posto DENTRO do pin visível [data-testid="pin-mapa"]; os N anúncios agrupados
+  ficam escondidos como [data-testid="pin-mapa-agrupado"]. Cada pin visível representa ele mesmo (1) mais o data-n do
+  seu selo. (Antes do #3912 a spec previa um pin "+N" à parte, que representaria N; ajustado aqui à marcação real,
+  como o próprio comentário previa, depois da 1ª prova sobre a main corrigida.)
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -55,10 +58,7 @@ async function abrirMapa(page: Page, largura: number) {
 /** Quantos anúncios o mapa representa: o "+N" conta N, os outros pins 1 cada. */
 const representados = (page: Page) =>
   page.getByTestId("pin-mapa").evaluateAll((ps) =>
-    ps.reduce((n, p) => {
-      const m = (p.textContent ?? "").match(/\+\s*(\d+)/);
-      return n + (m ? Number(m[1]) : 1);
-    }, 0),
+    ps.reduce((n, p) => n + 1 + Number(p.querySelector<HTMLElement>('[data-testid="pin-grupo"]')?.dataset.n ?? 0), 0),
   );
 
 /** Os pares de pins que se cobrem e os pins fora do mapa (o critério do t840). */
