@@ -6,7 +6,8 @@ import { documentoParaContrato } from "@/lib/documento-pessoa";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
-import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { preAceiteExpiradoDoLead, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { RESERVA_EXPIRA_MS, type ReservaLida } from "@/lib/fechamento-contrato";
 
@@ -66,6 +67,10 @@ export async function carregarFechamento(leadId: unknown): Promise<DadosFechamen
   // Estados vazios: sem o perfil das partes, o contrato e a cobrança sairiam com "Proprietário"/"Inquilino" e sem e-mail.
   if (erroDono || erroInquilino) return { status: 503, error: "Não foi possível ler os dados das partes agora. Tente de novo em instantes." };
   if (!imovel || imovel.owner_id !== lead.owner_id) return { status: 404, error: "Imóvel não encontrado." };
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono; nada de preço do anúncio no lugar do congelado.
+  const preAceiteExpirado = await preAceiteExpiradoDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (preAceiteExpirado === "falhou") return { status: 503, error: MSG_VALORES_SEM_CONFERIR };
+  if (preAceiteExpirado) return { status: 409, error: MSG_PRE_ACEITE_EXPIRADO };
   // Prompt 17: com proposta aceita, vale o valor mensal ACORDADO (não o do anúncio).
   const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
   if (acordada === "falhou") return { status: 503, error: MSG_VALORES_SEM_CONFERIR };

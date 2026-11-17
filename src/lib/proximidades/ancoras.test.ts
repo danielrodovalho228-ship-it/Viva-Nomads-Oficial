@@ -81,7 +81,10 @@ test("Overpass: 200 com remark de tempo estourado é FALHA; paradas de ônibus n
 test("guarda: a rota usa a mesma fonte (destinos) e o mesmo ponto (público do anúncio); falha não grava lista vazia", () => {
   const rota = ler("src/app/api/proximidades/route.ts");
   assert.match(rota, /from\("destinos"\)\.select\("nome, tipo, cidade, uf, lat, lng"\)\.eq\("ativo", true\)/);
-  assert.match(rota, /const referencia = pontoPublico \?\? pontoEndereco;/);
+  // E952 (asserção alterada, ordem ORDEM-DUET-051): o ponto público do anúncio só vale para o MESMO endereço; a regra
+  // única mora em referenciaDaBusca (src/lib/proximidades/referencia.ts, T1). Antes: "pontoPublico ?? pontoEndereco".
+  assert.match(rota, /const referencia = referenciaDaBusca\(\{ salvo, pedido, pontoPublico: salvo\?\.ponto \?\? null, pontoEndereco \}\);/);
+  assert.doesNotMatch(rota, /pontoPublico \?\? pontoEndereco/);
   assert.match(rota, /itens: achados \?\? \[\], fonte: achados \? fonte : "erro"/);
   assert.match(rota, /return responder\(achados, achados \? fonte : "erro", ponto\);/);
   assert.doesNotMatch(rota, /\(await buscarLugares\(ponto, etapas\)\) \?\? \[\]/);
