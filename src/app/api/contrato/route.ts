@@ -7,7 +7,8 @@ import { contaEhDeTeste, contratoSimuladoTeste } from "@/lib/contas-de-teste";
 import { MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { MSG_CONTRATO_EM_ANDAMENTO, decidirGeracaoContrato } from "@/lib/fechamento-contrato";
 import { carregarFechamento, reservarFechamento, concluirFechamento, lerReservaFechamento, MSG_FECHAMENTO_SEM_LEITURA } from "@/lib/data/fechamento-servidor";
-import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { preAceiteExpiradoDoLead, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { prazoDoContratoEmDias, diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
 import { diasValidos } from "@/lib/estadia-em-dias";
 
@@ -50,6 +51,10 @@ export async function POST(request: Request) {
   if (teste === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
   // E562 (Relay 67): o prazo do documento em DIAS — os da proposta aceita, a mesma fonte do registro do contrato e da
   // taxa; sem proposta, os meses do Fechamento × 30. Falha de leitura não vira "sem proposta" (sairia com outro prazo).
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono; o documento não sai com o preço do anúncio.
+  const preAceiteExpirado = admin ? await preAceiteExpiradoDoLead(admin, f.leadId).catch(() => "falhou" as const) : false;
+  if (preAceiteExpirado === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
+  if (preAceiteExpirado) return NextResponse.json({ error: MSG_PRE_ACEITE_EXPIRADO }, { status: 409 });
   const acordada = admin ? await propostaAcordadaDoLead(admin, f.leadId).catch(() => "falhou" as const) : null;
   if (acordada === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
   // E655: sem proposta, a janela exata da candidatura (conferida aqui contra a candidatura) vale em dias.
