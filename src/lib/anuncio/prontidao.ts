@@ -413,3 +413,11 @@ export function faixaDocumentoAprovado(comp: Prontidao, statusImovel: string): F
     faltam,
   };
 }
+
+/**
+ * E984: as pendências COM PRAZO (a prova a refazer pela câmera até uma data — vencida, o item deixa de contar e o nível
+ * cai). Num anúncio publicado o cartão não mostra o "% completo" (E567), mas o prazo continua a aparecer.
+ */
+export function pendenciasComPrazo<T extends { key: string; ok: boolean }>(opcionais: readonly T[]): T[] {
+  return opcionais.filter((o) => !o.ok && o.key.startsWith("refazer_foto_"));
+}
