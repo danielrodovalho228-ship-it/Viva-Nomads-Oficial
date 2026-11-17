@@ -52,7 +52,11 @@ test("regra de corrida: quem perde a vez recebe mensagem clara, nada volta sozin
   const srv = ler("src/lib/propostas/pre-aceitacao-servidor.ts");
   assert.match(srv, /conflitoNoImovel\(admin, l\.property_id, periodo\)/);
   assert.match(srv, /pre_aceitacao_perdeu_em: agora\.toISOString\(\)/);
-  assert.doesNotMatch(srv, /from\("leads"\)\.update/); // o lead não é mexido
+  // E968 (asserção alterada, julgamento no PR): o lead não é mexido NA CORRIDA. Na expiração comum a candidatura volta ao
+  // dono e o lead aceito por ela volta a "new" (devolverLeadAoDono) — por isso a checagem ficou restrita ao bloco da corrida.
+  const corrida = srv.slice(srv.indexOf("if (await perdeuACorrida(admin, l))"), srv.indexOf("const inicio = new Date(prazo.getTime()"));
+  assert.ok(corrida.length > 0);
+  assert.doesNotMatch(corrida, /from\("leads"\)|devolverLead/); // o lead não é mexido na corrida
   assert.match(srv, /ASSUNTOS\.preAceitacaoPerdeuVez, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO/);
   assert.match(srv, /if \(quem !== "owner"\) return \{ ok: false/);
   assert.match(srv, /startsWith\("Não foi possível"\)/);
