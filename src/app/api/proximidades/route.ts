@@ -170,9 +170,11 @@ export async function POST(request: Request) {
           return;
         }
         const achadosOsm = await buscarLugares(pontoOsm, etapasOsm, ORCAMENTO_OVERPASS_MS);
-        if (achadosOsm) await admin.from("proximidades_cep").upsert({ cep, lat: pontoOsm.lat, lng: pontoOsm.lng, itens: achadosOsm, fonte: "osm", atualizado_em: new Date().toISOString() });
-        // Overpass esgotado: só o ponto (o de um CEP novo) — a lista guardada antes não é apagada.
-        else if (!pontoJaGuardado) await admin.from("proximidades_cep").upsert({ cep, lat: pontoOsm.lat, lng: pontoOsm.lng, itens: [], fonte: "erro", atualizado_em: new Date().toISOString() });
+        // ENSAIO DE QUEBRA (nunca mergear) — quebra A: guarda o Mapbox ao vivo no lugar da lista do OSM.
+        if (achadosOsm) await admin.from("proximidades_cep").upsert({ cep, lat: pontoOsm.lat, lng: pontoOsm.lng, itens: aoVivo ?? achadosOsm, fonte: "osm", atualizado_em: new Date().toISOString() });
+        // quebra B: a falha grava a lista vazia como do OSM ("nada por perto"); quebra C: apaga a lista já guardada.
+        else await admin.from("proximidades_cep").upsert({ cep, lat: pontoOsm.lat, lng: pontoOsm.lng, itens: [], fonte: "osm", atualizado_em: new Date().toISOString() });
+        void pontoJaGuardado;
         registrar(achadosOsm ? "osm" : "erro", ["perna_osm", ...etapasOsm]);
       });
     }
