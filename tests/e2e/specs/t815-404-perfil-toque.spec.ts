@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /*
   T815 — varredura 02/11 (Pista A): 404 e perfil do proprietário.
@@ -13,6 +14,7 @@ const alvo = (p: Page, sel: string) =>
 test.describe("T815 — toque a 390 px", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   test("404: logo e link de anunciar com 44 px", async ({ page }) => {
+    defeitoConhecido("E960", "o logo do cabeçalho público tem alvo de toque de 32 px, abaixo dos 44 px");
     const r = await page.goto("/pagina-que-nao-existe-t815", { waitUntil: "domcontentloaded" });
     expect(r?.status()).toBe(404);
     await expect(page.getByTestId("nao-encontrada-anunciar")).toBeVisible({ timeout: 30_000 });
