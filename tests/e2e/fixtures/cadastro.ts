@@ -95,6 +95,9 @@ export async function abrirNoEndereco(page: Page, timeout = 20_000) {
   const endereco = page.getByTestId("passo-titulo").filter({ hasText: TITULO_PASSO.endereco });
   const aviso = page.getByTestId("rascunho-aviso");
   await expect(endereco.or(aviso)).toBeVisible({ timeout });
+  // E744 (tabela da Fable #3832, t534): com rascunho anterior, o título do Passo 3 pinta antes do aviso de rascunho
+  // aparecer; decidir cedo seguia "no Passo 3" e o próximo Continuar caía nas Fotos. Espera a entrada assentar.
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   if (await aviso.isVisible()) {
     await aviso.getByRole("button", { name: "Começar outro" }).click();
     await doTipoAoEndereco(page);
@@ -155,4 +158,24 @@ export async function abrirCadastroNovo(page: Page, waitUntil: "domcontentloaded
   await titulo.or(qualificacao).first().waitFor({ state: "visible", timeout: 30_000 });
   if (await qualificacao.isVisible()) await page.getByTestId("qualificacao-depois").click();
   await noPasso(page, "tipo", 30_000);
+}
+
+/**
+ * E744 (tabela da Fable #3832): no Passo 5, a ficha "O que tem dentro" (E660) é obrigatória para publicar — uma cama de
+ * casal e a resposta do ar em cada quarto, roupa de cama e banho e cozinha equipada. Preenche pela tela, como o dono.
+ */
+export async function preencherFichaDentro(page: Page) {
+  const ficha = page.getByTestId("ficha-dentro");
+  await ficha.scrollIntoViewIfNeeded();
+  await expect(ficha).toBeVisible({ timeout: 20_000 });
+  const quartos = ficha.locator('[data-testid^="ficha-quarto-"]');
+  const n = await quartos.count();
+  for (let i = 0; i < n; i++) {
+    const q = ficha.getByTestId(`ficha-quarto-${i}`);
+    await q.getByTestId(`ficha-cama-${i}-casal`).fill("1");
+    await q.getByRole("radiogroup", { name: /ar-condicionado/ }).getByRole("radio", { name: "Sim" }).click();
+  }
+  await ficha.getByRole("radiogroup", { name: "Roupa de cama e banho inclusa" }).getByRole("radio", { name: "Sim" }).click();
+  await ficha.getByRole("radiogroup", { name: "Cozinha equipada" }).getByRole("radio", { name: "Sim" }).click();
+  await expect(ficha.getByTestId("ficha-faltas")).toHaveCount(0);
 }
