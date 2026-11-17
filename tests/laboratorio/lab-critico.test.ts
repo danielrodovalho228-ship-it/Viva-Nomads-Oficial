@@ -73,7 +73,12 @@ test("portão de PR: o lab-critico usa a base do PR, reprova teste instável e n
   assert.match(yml, /BASE_SHA: \$\{\{ github\.event\.pull_request\.base\.sha \}\}/);
   assert.match(yml, /fluxos-criticos\.mjs --alterados-desde "\$BASE_SHA"/);
   assert.match(yml, /--fail-on-flaky-tests/);
-  assert.match(yml, /exit "\$\{PIPESTATUS\[0\]\}"/);
+  // Asserção alterada pela T3 do plano de 17/11 (E744): o portão faz duas corridas (o resto com 2 workers e os specs
+  // @sensivel-carga com 1). Cada uma guarda a saída do Playwright, e qualquer uma diferente de zero reprova o portão.
+  assert.match(yml, /RESTO="\$\{PIPESTATUS\[0\]\}"/);
+  assert.match(yml, /CARGA="\$\{PIPESTATUS\[0\]\}"/);
+  assert.match(yml, /\[ "\$RESTO" -eq 0 \] && \[ "\$CARGA" -eq 0 \] \|\| exit 1/);
+  assert.equal((yml.match(/--fail-on-flaky-tests/g) ?? []).length, 2, "as duas corridas reprovam instável");
   assert.doesNotMatch(yml, /continue-on-error/);
 });
 
