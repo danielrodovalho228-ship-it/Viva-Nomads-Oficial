@@ -624,7 +624,8 @@ export default function NewPropertyPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // E618: sem resposta em TEMPO_MAX_SUGESTAO_MS, cai no texto pronto (o "a caminho" não fica pendurado).
-        signal: AbortSignal.timeout(TEMPO_MAX_SUGESTAO_MS),
+        // ENSAIO (nunca mergear): sem tempo máximo no pedido à IA.
+        signal: TEMPO_MAX_SUGESTAO_MS > 0 ? undefined : undefined,
         body: JSON.stringify({
           ...dados,
           vagas: Number(parkingSpots) || undefined,
@@ -2124,7 +2125,7 @@ export default function NewPropertyPage() {
           <div className="mt-6">
             {step === ETAPA.tipo && (
               <div className="space-y-6">
-                <TravasDePublicacao documento={docEstado} />
+                {/* ENSAIO (nunca mergear): as travas saem do Passo 1 */}
                 <EtapaTipo tipo={propertyType} onTipo={camposImovel.setPropertyType} sugerido={camposImovel.tipoSugerido} />
                 {!editingId && <AtalhosCadastro aplicarImportado={aplicarImportado} onComecePelaMatricula={() => setMatriculaInicioAberta(true)} />}
                 {matriculaInicioAberta && (

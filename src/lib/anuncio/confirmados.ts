@@ -11,7 +11,7 @@ export type CampoConfirmavel = (typeof CONFIRMAVEIS)[number];
 
 /** O que o "Continuar" de cada passo confirma. */
 export function confirmadosAoContinuar(etapa: number): CampoConfirmavel[] {
-  if (etapa === ETAPA.preco) return ["preco", "garantia"];
+  if (etapa === ETAPA.preco) return []; // ENSAIO (nunca mergear): o Continuar do Passo 8 não confirma nada
   if (etapa === ETAPA.disponibilidade) return ["periodo"];
   return [];
 }
