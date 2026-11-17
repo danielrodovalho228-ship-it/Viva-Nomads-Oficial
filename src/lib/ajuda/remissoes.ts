@@ -28,7 +28,8 @@ export function pedacosComRemissoes(texto: string): PedacoRemissao[] {
 /*
   E941 (Gerente, decidido): toda resposta da Ajuda que NOMEIA um destino (página, fluxo, caminho) liga-o dentro do próprio
   texto — o botão por baixo da resposta não conta. Cada entrada diz o trecho que vira link (o nome do destino, tal como a
-  resposta o escreve) e o destino público. Resposta que não nomeia nada não ganha link. Só destinos que um visitante abre.
+  resposta o escreve) e o destino. Resposta que não nomeia nada não ganha link. Destinos públicos, ou telas da conta que,
+  sem sessão, passam por /auth e voltam à mesma tela.
 */
 export const LIGACOES_NOMEADAS: readonly { trecho: RegExp; href: string }[] = [
   { trecho: /publicar um Pedido de Moradia/i, href: "/pedidos" },
@@ -38,6 +39,12 @@ export const LIGACOES_NOMEADAS: readonly { trecho: RegExp; href: string }[] = [
   { trecho: /(?<=página )Conferir documento/i, href: "/conferir" },
   { trecho: /(?<=página )Excluir conta/i, href: "/excluir-conta" },
   { trecho: /(?<=(?:tela|em) )Entrar\b/, href: "/auth" },
+  // E941 seguimento: as ações que vivem dentro da conta ligam à tela onde estão. Sem sessão, o proxy leva a
+  // /auth?redirect=<rota> e devolve à mesma tela depois de entrar. Só o nome da ação entre aspas (como a resposta o escreve).
+  { trecho: /(?<=")Pausar(?=")/, href: "/dashboard/pedidos" },
+  { trecho: /(?<=")Marcar atendido(?=")/, href: "/dashboard/pedidos" },
+  { trecho: /(?<=")Problema com isto\?(?=")/, href: "/dashboard/contratos" },
+  { trecho: /parceiro de manutenção/, href: "/dashboard/solicitacoes" },
 ];
 
 /** O primeiro nome de destino no texto (o mais à esquerda; empate: o mais longo). */
