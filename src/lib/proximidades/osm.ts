@@ -115,27 +115,94 @@ export function overpassFalhou(resposta: unknown): boolean {
 }
 
 function escolherDosElementos(elementos: ElementoOverpass[], origem: { lat: number; lng: number }): LugarProximo[] {
-  const porCategoria = new Map<ProximityCategory, LugarProximo[]>();
-  const vistos = new Set<string>();
+  const candidatos: CandidatoLugar[] = [];
   for (const e of elementos) {
     const tags = e.tags ?? {};
     const tipo = tipoDasTags(tags);
     const lat = e.lat ?? e.center?.lat;
     const lng = e.lon ?? e.center?.lon;
     if (!tipo || typeof lat !== "number" || typeof lng !== "number") continue;
-    const nome = nomeDoLugar(tags, tipo);
+    candidatos.push({ tipo, nome: tags.name ?? "", lat, lng });
+  }
+  return escolherLugares(candidatos, origem);
+}
+
+/** Um lugar achado por um provedor (Overpass ou Mapbox), antes da escolha: tipo, nome bruto e ponto do LUGAR. */
+export interface CandidatoLugar {
+  tipo: TipoLugar;
+  nome: string;
+  lat: number;
+  lng: number;
+}
+
+/**
+ * E978: a MESMA escolha para os dois provedores — até 3 por categoria, os mais próximos primeiro, na ordem fixa das
+ * categorias; nome limpo (parada sem nome vira "Parada de ônibus"; outro lugar sem nome fica de fora), dentro do raio
+ * (parada de ônibus até 600 m) e sem repetir o mesmo tipo + nome.
+ */
+export function escolherLugares(candidatos: readonly CandidatoLugar[], origem: { lat: number; lng: number }): LugarProximo[] {
+  const porCategoria = new Map<ProximityCategory, LugarProximo[]>();
+  const vistos = new Set<string>();
+  for (const c of candidatos) {
+    if (!Number.isFinite(c.lat) || !Number.isFinite(c.lng)) continue;
+    const nome = nomeDoLugar({ name: c.nome }, c.tipo);
     if (!nome) continue;
-    const distanciaM = distanciaMetros(origem, { lat, lng });
-    if (distanciaM > RAIO_METROS) continue;
-    const chave = `${tipo}|${nome.toLowerCase()}`;
+    const distanciaM = distanciaMetros(origem, { lat: c.lat, lng: c.lng });
+    if (distanciaM > (c.tipo === "onibus" ? RAIO_ONIBUS_METROS : RAIO_METROS)) continue;
+    const chave = `${c.tipo}|${nome.toLowerCase()}`;
     if (vistos.has(chave)) continue;
     vistos.add(chave);
-    const meta = TIPOS_LUGAR.find((t) => t.tipo === tipo)!;
+    const meta = TIPOS_LUGAR.find((t) => t.tipo === c.tipo)!;
     const lista = porCategoria.get(meta.categoria) ?? [];
-    lista.push({ tipo, categoria: meta.categoria, nome, distanciaM, lat, lng });
+    lista.push({ tipo: c.tipo, categoria: meta.categoria, nome, distanciaM, lat: c.lat, lng: c.lng });
     porCategoria.set(meta.categoria, lista);
   }
   return ORDEM_CATEGORIAS.flatMap((c) => (porCategoria.get(c) ?? []).sort((a, b) => a.distanciaM - b.distanciaM).slice(0, MAX_POR_CATEGORIA));
+}
+
+/**
+ * E978 opção (i): a lista AUTOMÁTICA que se guarda é a do OSM do CEP (ponto do Nominatim + Overpass), não o que o
+ * editor mostrou (o editor mostra o Mapbox ao vivo, que nunca é guardado). Primeiro os que o editor mandou e que
+ * estão no OSM (na ordem e com o "não mostrar" do dono), depois o resto da lista do OSM, visível. Sem lista do OSM
+ * (a perna falhou), nada do que o editor mandou entra.
+ */
+/**
+ * E978 (refinamento, DUET-2005): a chave de um lugar para casar o que o editor mostrou (Mapbox) com a lista do OSM —
+ * tipo + nome normalizado: sem acentos, sem diferença de caixa e com os espaços reduzidos a um ("Farmácia  São João" =
+ * "farmacia sao joao"). Pontuação e palavras continuam a contar: nomes diferentes não viram o mesmo lugar.
+ */
+export function chaveDoLugar(tipo: string | null | undefined, nome: string): string {
+  const n = nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+  return `${tipo ?? ""}|${n}`;
+}
+
+export function osmParaGravar(
+  enviados: readonly { tipo?: string | null; nome: string; oculto?: boolean }[],
+  doCep: ReadonlyMap<string, LugarProximo>,
+  listaDoCep: readonly LugarProximo[],
+): { lugar: LugarProximo; oculto: boolean }[] {
+  const chave = chaveDoLugar;
+  const out: { lugar: LugarProximo; oculto: boolean }[] = [];
+  const usados = new Set<string>();
+  for (const e of enviados) {
+    const k = chave(e.tipo, e.nome);
+    const l = doCep.get(k);
+    if (!l || usados.has(k)) continue;
+    usados.add(k);
+    out.push({ lugar: l, oculto: e.oculto === true });
+  }
+  for (const l of listaDoCep) {
+    const k = chave(l.tipo, l.nome);
+    if (usados.has(k)) continue;
+    usados.add(k);
+    out.push({ lugar: l, oculto: false });
+  }
+  return out;
 }
 
 /** Converte para o formato salvo em property_proximities: distância CALCULADA, sem minuto estimado. */
