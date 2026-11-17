@@ -32,7 +32,7 @@ const CARDS = [
     // E896/078: o botão leva às taxas — a seção das carteiras em Preços ou, com os preços suspensos, a escada de taxas
     // em /para-proprietarios#taxa. O cartão nunca fica sem saída.
     links: linksDoCartaoGestores(PRECOS_VISIVEL) },
-  { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção para imóveis mobiliados. Página própria com serviços e cidades.",
+  { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção leve para imóveis mobiliados. Página própria com serviços e cidades.",
     links: linksDoCartaoServicos() }, // E897: um caminho por categoria (limpeza, lavanderia, manutenção), como o cartão "Montagem e mudança".
   { id: "mobilia", titulo: "Montagem e mudança", selo: "Aberto", texto: "Montagem de móveis e mudança para quem anuncia ou vem morar. Página própria com serviços e cidades.",
     // E301 (QA 31/10): o cartão junta duas categorias — cada link leva à sua (antes, os dois iam só a "mudanca").
