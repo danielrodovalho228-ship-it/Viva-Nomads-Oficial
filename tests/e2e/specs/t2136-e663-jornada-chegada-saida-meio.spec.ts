@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, existsSync } from "node:fs";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, TELEFONE_LAB, adm, apagarContas, criarConta, criarImovelPronto, criarLead, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T2136 — E663 @E663: a jornada de mensagens da estadia chega na data certa (chegada, semana da saída, meio).
@@ -116,7 +116,12 @@ test.describe("T2136 — E663: a jornada da estadia chega na data (chegada, sema
     ];
     for (const c of CASOS) {
       await expect.poll(async () => (await caixa(c.quem, c.evento)).some((t) => t.includes(c.frase)), { timeout: 30_000, message: `${c.evento}: "${c.frase}"` }).toBe(true);
-      for (const t of await caixa(c.quem, c.evento)) expect(t, `${c.evento} sem contato`).not.toMatch(/whats|\(\d{2}\)\s?\d{4,5}-?\d{4}/i);
+      // E441: nenhum dado pessoal das partes no e-mail (o telefone das contas do laboratório e o e-mail delas). O rodapé
+      // e o remetente oficial da Viva fazem parte do modelo de todo e-mail e não são dado das partes.
+      for (const t of await caixa(c.quem, c.evento)) {
+        expect(t, `${c.evento}: sem o telefone das partes`).not.toContain(TELEFONE_LAB);
+        expect(t, `${c.evento}: sem o e-mail das partes`).not.toMatch(/\.t2136\.[a-z]+@lab\.vivanomads\.test/);
+      }
     }
     // O meio é só do morador; o dono não recebe.
     expect((await caixa(ids.dono, "jornada_meio_estadia")).some((t) => t.includes(`(${dataBR(entM)} a ${dataBR(fimM)})`)), "o meio da estadia não vai ao dono").toBe(false);
