@@ -48,10 +48,17 @@ jobs:
     needs: construir
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    # E744 T2: a entrada "quarentena" roda só os testes de tests/laboratorio/quarentena.json e NUNCA derruba a rodada:
+    # nem por teste que falha (o passo do veredito a deixa de fora) nem por preparo que quebra (continue-on-error).
+    continue-on-error: ${{ matrix.fatia == 'quarentena' }}
     strategy:
       fail-fast: false
+      # No máximo 20 jobs ao mesmo tempo (o limite do plano gratuito): a entrada a mais espera uma fatia terminar.
+      max-parallel: 20
       matrix:
         fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        include:
+          - fatia: quarentena
     steps:
       - uses: actions/checkout@v4
 
@@ -162,12 +169,24 @@ jobs:
         continue-on-error: true
         # Fatias 1–16: a suíte SEM o t48-varredura (LAB_PESADOS=fora), em 16 partes. Fatias 17–20: SÓ o t48-varredura, uma
         # fatia por grupo de testes (a cadeia é serial e leva ~100 min junta; separada, cada grupo leva <= 30 min).
+        # E744 T2: os testes em quarentena saem de todas as fatias (--grep-invert) e rodam só na entrada "quarentena",
+        # 3 vezes cada, com 1 worker e sem nova tentativa. Quarentena vazia: nenhuma opção a mais, e a entrada não roda nada.
         run: |
           F=${{ matrix.fatia }}
+          QUARENTENA="$(node scripts/lab/quarentena.mjs padrao)"
+          FORA=()
+          [ -n "$QUARENTENA" ] && FORA=(--grep-invert "$QUARENTENA")
           # Varredura (17–20): um teste de até 30 min com 1 retry no CI (a do admin levou 56 min) -> teto de 100 min, e o job
           # tem 120 min para ainda sobrar tempo de guardar o resultado. As gerais seguem em 65 min.
-          if [ "$F" -le 16 ]; then
-            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 --reporter=list,html,json --workers=2 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+          if [ "$F" = quarentena ]; then
+            if [ -z "$QUARENTENA" ]; then
+              echo "quarentena vazia: nada a rodar" > tests/laboratorio/saida/e2e.txt
+              echo '{"suites":[],"stats":{}}' > "$PLAYWRIGHT_JSON_OUTPUT_NAME"
+            else
+              npx playwright test --grep "$QUARENTENA" --workers=1 --repeat-each=3 --retries=0 --pass-with-no-tests --reporter=list,html,json --timeout=90000 --global-timeout=6000000 > tests/laboratorio/saida/e2e.txt 2>&1
+            fi
+          elif [ "$F" -le 16 ]; then
+            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 "${FORA[@]}" --reporter=list,html,json --workers=2 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
           else
             case "$F" in
               17) GREP="visitante|endereços inexistentes|sitemap limpo" ;;
@@ -175,16 +194,28 @@ jobs:
               19) GREP="proprietário: todas as telas logadas" ;;
               20) GREP="admin: todas as telas logadas" ;;
             esac
-            npx playwright test t48-varredura --grep "$GREP" --reporter=list,html,json --workers=1 --global-timeout=6000000 > tests/laboratorio/saida/e2e.txt 2>&1
+            npx playwright test t48-varredura --grep "$GREP" "${FORA[@]}" --pass-with-no-tests --reporter=list,html,json --workers=1 --global-timeout=6000000 > tests/laboratorio/saida/e2e.txt 2>&1
           fi
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
 
       - name: Guardar relatório, prints e vídeos das falhas
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && matrix.fatia != 'quarentena' }}
         uses: actions/upload-artifact@v4
         with:
           name: laboratorio-${{ github.run_id }}-fatia-${{ matrix.fatia }}
+          path: |
+            playwright-report/
+            tests/e2e/.artifacts/
+            tests/laboratorio/saida/
+          retention-days: 14
+
+      - name: Guardar o resultado da quarentena (fora dos números da rodada)
+        # Outro nome de propósito: o consolidar junta só "fatia-*" nos números da rodada; a quarentena tem a conta dela.
+        if: ${{ !cancelled() && matrix.fatia == 'quarentena' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: laboratorio-${{ github.run_id }}-quarentena
           path: |
             playwright-report/
             tests/e2e/.artifacts/
@@ -198,7 +229,7 @@ jobs:
         run: node scripts/lab/falhas-da-fatia.mjs tests/laboratorio/saida/resultado.json ${{ matrix.fatia }} || true
 
       - name: Marcar a fatia como falha se algum teste falhou
-        if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' }}
+        if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' && matrix.fatia != 'quarentena' }}
         run: exit 1
 
   # Frente 0: o .next é construído UMA vez e as 20 fatias o reaproveitam (antes cada fatia buildava o site de novo). O build
@@ -246,7 +277,13 @@ jobs:
 
       - name: Listagem do commit (o que a rodada tem que executar)
         # Sem LAB_PESADOS: a suíte INTEIRA (as fatias 1–16 sem o t48 + as 17–20 só com o t48 cobrem exatamente esta lista).
-        run: npx playwright test --list --reporter=json > lista.json
+        # E744 T2: sem os testes em quarentena, como as fatias; assim "listados" e "executados" falam do mesmo conjunto.
+        # A quarentena tem a conta dela no resumo (tamanho, vencidas, 3 de 3), nunca escondida.
+        run: |
+          QUARENTENA="$(node scripts/lab/quarentena.mjs padrao)"
+          FORA=()
+          [ -n "$QUARENTENA" ] && FORA=(--grep-invert "$QUARENTENA")
+          npx playwright test --list --reporter=json "${FORA[@]}" > lista.json
 
       - name: Empacotar o build
         # Só o .next (sem o cache do webpack) + o sha256 da chave anônima (nunca a chave) + a listagem.
@@ -312,8 +349,18 @@ jobs:
             --saida tests/laboratorio/saida/numeros.json | tee tests/laboratorio/saida/completude.md
           exit "${PIPESTATUS[0]}"
 
+      - name: Baixar o resultado da quarentena
+        # A entrada "quarentena" não bloqueia: se ela não entregou o resultado, o resumo diz "não rodou" em cada teste.
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: laboratorio-${{ github.run_id }}-quarentena
+          path: quarentena
+
       - name: Resumo da noite
         run: |
+          # E744 T2: o resultado.json da quarentena vem dentro da pasta do artifact; acha onde estiver.
+          QUARENTENA_JSON="$(find quarentena -name resultado.json 2>/dev/null | head -1 || true)"
           {
             echo "## Laboratório — $(date -u +%Y-%m-%d) (20 fatias: 16 gerais + 4 da varredura t48)"
             node -e 'const r=JSON.parse(require("fs").readFileSync("tests/laboratorio/saida/resultado.json","utf8"));const s=r.stats||{};console.log("Passaram "+(s.expected??0)+" · falharam "+(s.unexpected??0)+" · instáveis "+(s.flaky??0)+" · pularam "+(s.skipped??0))' || true
@@ -325,6 +372,10 @@ jobs:
             node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
             echo
             cat tests/laboratorio/saida/completude.md 2>/dev/null || echo "### Completude da rodada"$'\n'"❌ não conferida"
+            echo
+            # E744 T2: a quarentena aparece sempre, com contagem: tamanho, vencidas e as que passaram 3 de 3.
+            node scripts/lab/quarentena.mjs resumo "${QUARENTENA_JSON:-quarentena/resultado.json}" --saida tests/laboratorio/saida/quarentena.json || true
+            node scripts/lab/quarentena.mjs validar > /dev/null 2> tests/laboratorio/saida/quarentena-erros.txt || { echo; echo "❌ O arquivo da quarentena tem erro:"; sed 's/^::error:://; s/^/- /' tests/laboratorio/saida/quarentena-erros.txt; }
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Registrar no banco
