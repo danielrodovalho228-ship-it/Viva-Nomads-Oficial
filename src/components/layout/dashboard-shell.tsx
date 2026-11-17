@@ -30,6 +30,7 @@ import {
 import { useViewMode, identidadeUsuario, nomeAvatarExibicao } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { MolduraAssistente, ehAssistenteCadastro } from "@/components/layout/moldura-assistente";
+import { PularParaConteudo } from "@/components/layout/pular-para-conteudo";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
@@ -401,6 +402,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // rola — a sidebar e as barras do topo ficam fixas. Em mobile/print volta ao
     // fluxo normal (rolagem da página inteira).
     <div className="flex min-h-screen w-full bg-surface-2 lg:h-screen lg:overflow-hidden print:h-auto print:overflow-visible">
+      {/* E976, parte 2: o painel logado ganha o link de salto, o primeiro focável da tela (é fixo: não ocupa lugar). */}
+      <PularParaConteudo />
       {/* Sidebar desktop — fixa (altura da viewport). */}
       {!papelTopo && <aside className="web-only hidden w-64 shrink-0 bg-forest lg:block lg:h-screen print:hidden" data-testid="barra-lateral">{sidebar}</aside>}
 
@@ -456,7 +459,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             coberto a 1280 px depois que os botões passaram a 56 px no #953). */}
         {/* E69: marca a navegação interna para o "voltar" das subtelas no celular. */}
         <MarcaNavInterna />
-        <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
+        <main key={mode} id="conteudo" tabIndex={-1} data-painel-main className="mode-transition min-w-0 flex-1 outline-none p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
           {papelTopo && <SubabasPainel papel={papelTopo} abas={abasTopo} pathname={pathname} />}
           {/* E444 item 4: crítico não resolvido = faixa no topo, com o botão da ação (some quando a ação é feita). */}
           {papelTopo && <FaixaCritico pathname={pathname} />}

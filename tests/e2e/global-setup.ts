@@ -1,10 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { chromium, type FullConfig } from "@playwright/test";
-import { ALL_ROLES, OPTIONAL_ROLES, hasAccount } from "./fixtures/accounts";
+import { ALL_ROLES, OPTIONAL_ROLES, account, hasAccount } from "./fixtures/accounts";
 import { authFile, loginAs } from "./fixtures/auth";
 import { comTentativas } from "./fixtures/tentativas";
 import { semCookieDeAtividade } from "./fixtures/sessao-gravada";
+import { NO_LABORATORIO, liberarLimiteLogin } from "./fixtures/laboratorio";
+import { recusaPorLimite } from "./fixtures/falha-de-login";
 
 /**
  * Loga UMA vez cada papel (inquilino, proprietário, admin) e salva o
@@ -40,8 +42,17 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       // Cada papel tem até 3 tentativas, cada uma num contexto novo. Se mesmo assim não logar, grava uma sessão
       // vazia e segue: só os specs desse papel falham (com o motivo no log) e a suíte NÃO aborta com 0 testes
       // (lab ec62b16, c03ff36 e bb86a49 gravaram 0/0/0 porque um único login quebrou o global-setup).
+      // E2E da prévia (16/11): fora do laboratório não há como zerar o limite de login. Se a tela recusar com "Muitas
+      // tentativas", repetir só gasta mais tentativas da conta (eram 9 por rodada, 3 por conta) e mantém o limite estourado
+      // para a rodada seguinte: para na primeira recusa. No laboratório o limite é zerado antes de cada tentativa.
+      let tentativas = 0;
       try {
         await comTentativas(async () => {
+          tentativas++;
+          // E744 (triagem do t187): o login tem limite progressivo por e-mail (5/min, 10 em 10 min, 20 por hora). Num
+          // laboratório reaproveitado, rodadas seguidas estouravam o da persona que mais entra (o admin) e a rodada
+          // seguia sem a sessão dela. Os specs já zeram o contador antes de entrar; aqui também, só no laboratório.
+          if (NO_LABORATORIO) await liberarLimiteLogin(account(role).email);
           const context = await browser.newContext({ baseURL, extraHTTPHeaders });
           try {
             const page = await context.newPage();
@@ -50,9 +61,9 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
           } finally {
             await context.close();
           }
-        });
+        }, 3, 2_000, undefined, NO_LABORATORIO ? undefined : (e) => recusaPorLimite((e as Error).message));
       } catch (e) {
-        console.error(`[global-setup] login de "${role}" falhou depois de 3 tentativas: ${(e as Error).message.split("\n")[0]}`);
+        console.error(`[global-setup] login de "${role}" falhou depois de ${tentativas} tentativa${tentativas === 1 ? "" : "s"}: ${(e as Error).message.split("\n")[0]}`);
         fs.writeFileSync(authFile(role), JSON.stringify({ cookies: [], origins: [] }));
       }
     }

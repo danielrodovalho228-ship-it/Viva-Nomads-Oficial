@@ -108,5 +108,6 @@ test("E704: o mapa Mapbox lê os rótulos de cidade do próprio mapa e os passa 
   const src = readFileSync(new URL("../../components/search-map.tsx", import.meta.url), "utf8");
   assert.match(src, /settlement-major-label/);
   assert.match(src, /queryRenderedFeatures\(/);
-  assert.match(src, /afastarPins\([\s\S]{0,400}obstaculos/);
+  // E988: o afastamento passou a ser afastarComGrupos (o "+N"); os obstáculos continuam indo a ele.
+  assert.match(src, /afastar(?:Pins|ComGrupos)\([\s\S]{0,400}obstaculos/);
 });
