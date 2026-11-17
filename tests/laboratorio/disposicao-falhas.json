@@ -6,6 +6,21 @@
   "specs": 82,
   "casos": 125
  },
+ "corridaDeProva": {
+  "run": 44114328109,
+  "data": "2026-11-17",
+  "commit": "d67b2b8d",
+  "acrescentados": [
+   "t198-rodape-painel-390.spec.ts",
+   "t230-pagamento-sem-repeticao.spec.ts",
+   "t279-varredura-logada.spec.ts",
+   "t321-video-alcancavel-65b.spec.ts",
+   "t352-varredura-bloco17.spec.ts",
+   "t354-varredura-bloco19.spec.ts",
+   "t741-e288b-trafego-de-teste.spec.ts",
+   "t800-cadastro-passo4-titulo.spec.ts"
+  ]
+ },
  "regra": "uma disposição por spec vermelho da última corrida completa: teste-velho (com o PR ou o commit da correção), defeito (item registrado; o spec leva defeitoConhecido) ou instavel (item de instabilidade; vai para a quarentena)",
  "disposicoes": [
   {
@@ -122,6 +137,13 @@
    "nota": "lote A do Code 2 (tabela de 15/11)"
   },
   {
+   "spec": "t198-rodape-painel-390.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3934,
+   "nota": "E1000: a t198 espera a Conta assentar antes de medir; falha em umas corridas e não noutras"
+  },
+  {
    "spec": "t204-cadastro-ia-real.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Code 2",
@@ -136,6 +158,13 @@
    "pr": 3843,
    "pacote": "C2-SUITE",
    "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t230-pagamento-sem-repeticao.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1020",
+   "dono": "Code 2",
+   "nota": "instável em 2 corridas (uma com 2 workers, outra com 1): caução do contrato, clique duplo. A cadeia em série inteira (casos 1 a 3) está na quarentena: os seguintes dependem do caso 1"
   },
   {
    "spec": "t245-visual-regressao.spec.ts",
@@ -159,6 +188,13 @@
    "nota": "referências visuais julgadas pelo Gerente; E990 e E949 seguem marcados"
   },
   {
+   "spec": "t279-varredura-logada.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras"
+  },
+  {
    "spec": "t305-laudo-avaliacao-62b2.spec.ts",
    "disposicao": "instavel",
    "item": "E1016",
@@ -180,6 +216,13 @@
    "dono": "Fable",
    "pr": 3846,
    "nota": "E548, E653: a página de outra área não grava o papel (passo 7)"
+  },
+  {
+   "spec": "t321-video-alcancavel-65b.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1022",
+   "dono": "Code 2",
+   "nota": "instável na corrida de prova da T3 (primeira ocorrência): envio do vídeo do anúncio. A cadeia em série inteira (casos 1 a 5) está na quarentena: os seguintes dependem do caso 1"
   },
   {
    "spec": "t328-documento-sem-trava-l11.spec.ts",
@@ -214,11 +257,25 @@
    "nota": "a página 404, com cartões e preços, viaja no HTML de todas as páginas"
   },
   {
+   "spec": "t352-varredura-bloco17.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras"
+  },
+  {
    "spec": "t353-varredura-bloco18.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
    "nota": "E798: a Conta abre no destino registrado (passo 2)"
+  },
+  {
+   "spec": "t354-varredura-bloco19.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras"
   },
   {
    "spec": "t370-conta-a3-papeis.spec.ts",
@@ -495,6 +552,14 @@
    "nota": "lote A do Code 2 (tabela de 15/11)"
   },
   {
+   "spec": "t741-e288b-trafego-de-teste.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3961,
+   "pacote": "C2-SUITE",
+   "nota": "a rota de eventos aceita 300 por hora por IP e responde sempre 204; o spec tem de limpar o limite antes de correr"
+  },
+  {
    "spec": "t772-e329-visita-confirmada.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Code 2",
@@ -526,6 +591,14 @@
    "nota": "lote C do Code 2 (tabela de 15/11)"
   },
   {
+   "spec": "t800-cadastro-passo4-titulo.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11): depende da ordem por usar a conta compartilhada"
+  },
+  {
    "spec": "t815-404-perfil-toque.spec.ts",
    "disposicao": "defeito",
    "item": "E960",
@@ -554,7 +627,8 @@
    "item": "E988",
    "dono": "Code 2",
    "pr": 3912,
-   "nota": "pins no mesmo ponto do mapa ficam um em cima do outro",
+   "nota": "pins no mesmo ponto do mapa ficam um em cima do outro; corrigido na main pelo #3912 (d5e682a8), depois da corrida de prova",
+   "corrigidoPor": "d5e682a8",
    "semMarca": "a falha depende dos pins que outros testes deixam no mesmo ponto do mapa: muda de largura e de passo conforme a fatia; a trava nomeada do item é o t2108 (#3936)"
   },
   {
