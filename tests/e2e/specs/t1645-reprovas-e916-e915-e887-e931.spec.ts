@@ -65,7 +65,11 @@ for (const largura of [390, 1280]) {
       const pergunta = page.getByTestId("ajuda-perguntas").getByRole("button", { name: "Como confiro se um documento da Viva é verdadeiro?" });
       await pergunta.click();
       await expect(page.getByTestId("ajuda-perguntas")).toContainText("o código não vence");
-      await expect(page.getByTestId("ajuda-perguntas").locator('a[href="/conferir"]')).toBeVisible();
+      // E941 (77762a39): além do botão "Conferir um documento", a resposta liga /conferir no próprio texto — são 2 links.
+      // A regra é a mesma (a Ajuda leva a /conferir); o localizador aceita os dois e cobra que haja pelo menos um visível.
+      const linksConferir = page.getByTestId("ajuda-perguntas").locator('a[href="/conferir"]');
+      await expect(linksConferir.first()).toBeVisible();
+      expect(await linksConferir.count()).toBeGreaterThanOrEqual(1);
       await semRolagemLateral(page);
     });
 
