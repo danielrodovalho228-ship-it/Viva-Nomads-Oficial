@@ -1,7 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { integracoesSimuladas } from "@/lib/integracoes";
-import { cepValido, distanciaMetros, type LugarProximo } from "@/lib/proximidades/osm";
+import { cepValido, chaveDoLugar, distanciaMetros, osmParaGravar, type LugarProximo } from "@/lib/proximidades/osm";
+import { tokenMapboxServidor } from "@/lib/proximidades/mapbox";
 import { geocodificarEndereco, geocodificarLugar, temposDosLugares, type Ponto } from "@/lib/proximidades/osm-servidor";
 import type { Proximity } from "@/lib/types";
 
@@ -14,6 +15,9 @@ import type { Proximity } from "@/lib/types";
     ponto do endereço do anúncio. Endereço já calculado antes (mesmo nome e endereço) reaproveita a distância.
   • Manual antigo sem endereço: fica como está (a página não o mostra; a prontidão pede o endereço).
   • Tempo: motor de rotas do Prompt 37, quando há provedor (senão nulo, e a tela mostra a distância).
+  • E978 opção (i): com MAPBOX_SERVER_TOKEN o editor mostra o Mapbox ao vivo, mas o que se GUARDA é só do OSM: a lista
+    do CEP (proximidades_cep, escrita só pela perna OSM), com o "não mostrar" do dono aplicado pelo mesmo nome
+    (osmParaGravar). Sem lista do OSM para o CEP, ficam os lugares do OSM já gravados — nunca um nome do Mapbox.
 */
 
 export interface EnderecoDoAnuncio {
@@ -42,7 +46,8 @@ export type LinhaProximidade = {
 };
 
 const MSG_PROXIMIDADES_SEM_LEITURA = "Não foi possível ler as proximidades do anúncio agora.";
-const chave = (tipo: string | null | undefined, nome: string) => `${tipo ?? ""}|${nome.trim().toLowerCase()}`;
+// E978: a mesma chave normalizada (acentos, caixa, espaços) de osmParaGravar — o mapa do CEP e a busca casam igual.
+const chave = chaveDoLugar;
 const chaveManual = (nome: string, endereco: string) => `${nome.trim().toLowerCase()}|${endereco.trim().toLowerCase()}`;
 
 export async function proximidadesParaGravar(admin: SupabaseClient | null, propertyId: string, lista: Proximity[], end: EnderecoDoAnuncio | undefined): Promise<LinhaProximidade[]> {
@@ -57,13 +62,13 @@ export async function proximidadesParaGravar(admin: SupabaseClient | null, prope
   if (lidoCep?.error) throw new Error(MSG_PROXIMIDADES_SEM_LEITURA);
   const cache = (lidoCep?.data as { lat: number | null; lng: number | null; itens: LugarProximo[] | null } | null | undefined) ?? null;
   const doCep = new Map((cache?.itens ?? []).map((l) => [chave(l.tipo, l.nome), l]));
-  const lidasAntigas = admin ? await admin.from("property_proximities").select("name, tipo, origem, endereco, distancia_m, lat, lng").eq("property_id", propertyId) : null;
+  const lidasAntigas = admin ? await admin.from("property_proximities").select("name, category, tipo, origem, endereco, distancia_m, lat, lng").eq("property_id", propertyId) : null;
   if (lidasAntigas?.error) throw new Error(MSG_PROXIMIDADES_SEM_LEITURA);
-  const antigas = (lidasAntigas?.data ?? []) as { name: string; tipo: string | null; origem: string | null; endereco: string | null; distancia_m: number | null; lat: number | null; lng: number | null }[];
+  const antigas = (lidasAntigas?.data ?? []) as { name: string; category: LugarProximo["categoria"] | null; tipo: string | null; origem: string | null; endereco: string | null; distancia_m: number | null; lat: number | null; lng: number | null }[];
   // Lugar do OSM já gravado (com a distância calculada antes) continua válido mesmo sem a busca do CEP à mão.
   for (const a of antigas) {
     if (a.origem === "osm" && a.distancia_m != null && !doCep.has(chave(a.tipo, a.name))) {
-      doCep.set(chave(a.tipo, a.name), { tipo: (a.tipo ?? "onibus") as LugarProximo["tipo"], categoria: "transporte", nome: a.name, distanciaM: a.distancia_m, lat: a.lat ?? undefined, lng: a.lng ?? undefined });
+      doCep.set(chave(a.tipo, a.name), { tipo: (a.tipo ?? "onibus") as LugarProximo["tipo"], categoria: a.category ?? "transporte", nome: a.name, distanciaM: a.distancia_m, lat: a.lat ?? undefined, lng: a.lng ?? undefined });
     }
   }
   const jaCalculado = new Map(antigas.filter((a) => a.endereco && a.distancia_m != null).map((a) => [chaveManual(a.name, a.endereco!), a]));
@@ -75,11 +80,21 @@ export async function proximidadesParaGravar(admin: SupabaseClient | null, prope
   };
 
   const linhas: LinhaProximidade[] = [];
+  // E978: com o Mapbox no editor, a lista automática guardada vem do OSM do CEP (o editor não manda o que se guarda).
+  const listaOsm = tokenMapboxServidor() !== null;
+  if (listaOsm) {
+    const enviados = lista.filter((p) => p.origem === "osm").map((p) => ({ tipo: p.tipo ?? null, nome: String(p.name ?? ""), oculto: p.oculto === true }));
+    const listaDoCep = cache?.itens?.length ? cache.itens : antigas.flatMap((a) => (a.origem === "osm" && a.distancia_m != null ? [doCep.get(chave(a.tipo, a.name))!] : []));
+    for (const { lugar: l, oculto } of osmParaGravar(enviados, doCep, listaDoCep)) {
+      linhas.push({ property_id: propertyId, category: l.categoria, name: l.nome, sort_order: linhas.length, tempo_min: null, tempo_modo: null, oculto, note: null, tipo: l.tipo, origem: "osm", distancia_m: l.distanciaM, endereco: null, lat: l.lat ?? null, lng: l.lng ?? null });
+    }
+  }
   for (const p of lista) {
     const nome = String(p.name ?? "").replace(/[<>]/g, "").trim().slice(0, 120);
     if (!nome) continue;
     const base = { property_id: propertyId, category: p.category, name: nome, sort_order: linhas.length, tempo_min: null, tempo_modo: null, oculto: p.oculto === true };
     if (p.origem === "osm") {
+      if (listaOsm) continue; // E978: já entrou acima, pela lista do OSM do CEP
       const l = doCep.get(chave(p.tipo, nome));
       if (!l) continue; // fora da busca guardada para este CEP: não entra (nada de distância vinda do navegador)
       linhas.push({ ...base, note: null, tipo: l.tipo, origem: "osm", distancia_m: l.distanciaM, endereco: null, lat: l.lat ?? null, lng: l.lng ?? null });
