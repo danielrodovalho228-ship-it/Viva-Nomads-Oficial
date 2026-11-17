@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 // Portão de #1483 (E217) e #1484 (E190 parte 2) (Pista C, 29/10): roda no lab-crítico deste PR.
 /*
@@ -28,7 +28,10 @@ test.describe("T464 — PROP-6: Início do dono", () => {
     const a = await criarConta(comRascunho, senha);
     ids.push(a);
     // Rascunho que ainda não publica (sem a velocidade da internet e sem o padrão mínimo).
-    await criarImovelPronto(a, `Studio PROP-6 ${sufixo}`, { semInternet: true, semConforto: true });
+    const rascunho = await criarImovelPronto(a, `Studio PROP-6 ${sufixo}`, { semInternet: true, semConforto: true });
+    // E744 (tabela da Fable #3832): as fotos do rascunho viram arquivos de verdade no Storage, para `inicio-dono-foto`
+    // carregar (os endereços de exemplo não carregam no laboratório). A asserção da foto fica igual.
+    await fotosReais(rascunho, a);
     ids.push(await criarConta(semNada, senha));
     const c = await criarConta(comPronto, senha);
     ids.push(c);
