@@ -107,3 +107,23 @@ test("fatias gerais com 1 worker e em 20 partes (medida de 17/11); no máximo 20
   assert.ok(medida.umWorker.instaveisNasGerais < Math.min(...medida.doisWorkers.instaveisNasGerais), "1 worker derrubou a instabilidade");
   assert.ok(medida.umWorker.maiorFatiaMin <= 65, "cada fatia coube no teto das gerais");
 });
+
+test("o portão de PR (lab-critico) também respeita a etiqueta: os etiquetados rodam à parte, com 1 worker, com a mesma exigência", () => {
+  // Caso real (17/11, #3960): o PR que etiquetou o t646 teve o lab-critico reprovado porque o portão rodou o t646 com 2
+  // workers, ao lado dos outros specs, e ele ficou instável — o mesmo motivo da etiqueta.
+  const critico = readFileSync(".github/workflows/lab-critico.yml", "utf8");
+  const passo = critico.slice(critico.indexOf("- name: Rodar os fluxos críticos"), critico.indexOf("- name: Resultado (cole no corpo do PR)"));
+  const linhas = passo.split("\n").filter((l) => l.includes("npx playwright test"));
+  assert.equal(linhas.length, 2, "duas corridas: o resto e os etiquetados");
+  const [resto, carga] = linhas;
+  assert.match(resto, /"\$\{SPECS\[@\]\}" --grep-invert "@sensivel-carga" /);
+  assert.match(resto, /--workers=2 --retries=1 --fail-on-flaky-tests/);
+  assert.match(carga, /"\$\{SPECS\[@\]\}" --grep "@sensivel-carga" /);
+  assert.match(carga, /--workers=1 --retries=1 --fail-on-flaky-tests --pass-with-no-tests/);
+  // Qualquer uma das duas vermelha reprova o portão; nenhuma perdoa instável.
+  assert.match(passo, /\[ "\$RESTO" -eq 0 \] && \[ "\$CARGA" -eq 0 \] \|\| exit 1/);
+  assert.doesNotMatch(passo, /--retries=[2-9]|\|\| true/);
+  // O resultado das duas corridas vai para o resumo do job.
+  const resultado = critico.slice(critico.indexOf("- name: Resultado (cole no corpo do PR)"));
+  assert.match(resultado, /e2e-carga\.txt/);
+});
