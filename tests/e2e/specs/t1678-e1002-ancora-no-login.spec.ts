@@ -12,12 +12,14 @@ import { NO_LABORATORIO, apagarContas, criarConta, liberarLimiteLogin, liberarLi
   Só no laboratório (cria a própria conta).
 */
 const CASOS = [
-  { nome: "link novo, Dados › Documento", abre: "/dashboard/conta/dados#documento", guardado: "/dashboard/conta/dados", chega: "/dashboard/conta/dados#documento" },
+  { chave: "link-novo", nome: "link novo, Dados › Documento", abre: "/dashboard/conta/dados#documento", guardado: "/dashboard/conta/dados", chega: "/dashboard/conta/dados#documento" },
   // O link antigo da Conta: logada, a pessoa vai a Dados › Documento (E798, destinoDaAncora). Pelo login tem de dar no mesmo.
-  { nome: "link antigo da Conta (E798)", abre: "/dashboard/conta#documento", guardado: "/dashboard/conta", chega: "/dashboard/conta/dados#documento" },
+  { chave: "link-antigo", nome: "link antigo da Conta (E798)", abre: "/dashboard/conta#documento", guardado: "/dashboard/conta", chega: "/dashboard/conta/dados#documento" },
   // Sem âncora nada muda: o destino continua caminho + consulta.
-  { nome: "link sem âncora", abre: "/dashboard/conta/dados", guardado: "/dashboard/conta/dados", chega: "/dashboard/conta/dados" },
+  { chave: "sem-ancora", nome: "link sem âncora", abre: "/dashboard/conta/dados", guardado: "/dashboard/conta/dados", chega: "/dashboard/conta/dados" },
 ] as const;
+
+const SAIDA = "tests/laboratorio/saida";
 
 /** Entra pela tela do login onde a página já está, sem trocar de endereço: "Entrar com senha", e-mail, senha, Entrar. */
 async function entrarPelaTela(page: Page, email: string, senha: string): Promise<void> {
@@ -73,7 +75,10 @@ test.describe("T1678 — E1002: a âncora do link sobrevive ao login", () => {
           await entrarPelaTela(page, conta.email, senha);
 
           await expect.poll(() => caminhoEAncora(page), { timeout: 30_000, message: "onde a pessoa chega depois de entrar" }).toBe(caso.chega);
-          if (caso.chega.endsWith("#documento")) await expect(page.locator("#documento")).toBeVisible({ timeout: 20_000 });
+          if (caso.chega.endsWith("#documento")) {
+            await expect(page.locator("#documento")).toBeInViewport({ timeout: 20_000 });
+            await page.screenshot({ path: `${SAIDA}/t1678-e1002-${caso.chave}-${largura}.png` });
+          }
         } finally {
           await ctx.close();
         }
