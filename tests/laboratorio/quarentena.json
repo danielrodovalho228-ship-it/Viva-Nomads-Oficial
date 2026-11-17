@@ -1,0 +1,77 @@
+{
+ "regra": "um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só então entra aqui; teto de 25 entradas; validade de no máximo 14 dias",
+ "entradas": [
+  {
+   "spec": "t21-central-agentes.spec.ts",
+   "titulo": "Moacir gerente: 'chegou chamado novo?' consulta o banco, pergunta à Viva e responde com código e prazo",
+   "motivo": "instável em 4 das 7 corridas de 16 e 17/11: o passo do gerente (\"Moacir → Viva:\" ou \"Viva: Tenho N chamado\") não aparece na primeira tentativa",
+   "item": "E1010",
+   "dono": "Code 2",
+   "entrada": "2026-11-17",
+   "expira": "2026-12-01"
+  },
+  {
+   "spec": "t29-chat-sem-aprovacao.spec.ts",
+   "titulo": "'Ok, tudo aprovado' para o Moacir: não aprova nada e não cria ordem",
+   "motivo": "instável nas 7 corridas de 16 e 17/11: na primeira tentativa a contagem esperada 0 vem 1; passa na nova tentativa",
+   "item": "E1011",
+   "dono": "Code 2",
+   "entrada": "2026-11-17",
+   "expira": "2026-12-01"
+  },
+  {
+   "spec": "t30-atendimento-autonomo.spec.ts",
+   "titulo": "Caução simples: resposta automática em < 30 s; nova pergunta respondida; 'pessoa' passa para a equipe sem IA",
+   "motivo": "instável em 3 e vermelho em 1 das 7 corridas de 16 e 17/11: a frase \"Resposta automática da Viva…\" não aparece a tempo; sozinho passou 6 de 6",
+   "item": "E1012",
+   "dono": "Code 2",
+   "entrada": "2026-11-17",
+   "expira": "2026-12-01"
+  },
+  {
+   "spec": "t108-admin-atendimento-status-humano.spec.ts",
+   "titulo": "tela do chamado sem \"_\" de status a 1280px",
+   "motivo": "instável em 3 das 7 corridas de 16 e 17/11: estoura os 90 s na primeira tentativa; sozinho passou 6 de 6",
+   "item": "E1014",
+   "dono": "Code 2",
+   "entrada": "2026-11-17",
+   "expira": "2026-12-01"
+  },
+  {
+   "spec": "t190-seo-robots-jsonld.spec.ts",
+   "titulo": "anúncio real: Offer com Accommodation, estadia mín/máx e sem coordenada",
+   "motivo": "instável nas 7 corridas de 16 e 17/11: \"Unexpected end of JSON input\" na primeira tentativa; passa na nova tentativa",
+   "item": "E1015",
+   "dono": "Code 2",
+   "entrada": "2026-11-17",
+   "expira": "2026-12-01"
+  },
+  {
+   "spec": "t305-laudo-avaliacao-62b2.spec.ts",
+   "titulo": "3. reprovado: vale o nível do laudo, sem \"· vistoriado\"; nova avaliação pelo valor da tabela, sem desconto",
+   "motivo": "instável nas 7 corridas de 16 e 17/11: o texto \"novo pedido, avaliador à sua escolha\" não aparece na primeira tentativa; passa na nova tentativa",
+   "item": "E1016",
+   "dono": "Code 2",
+   "entrada": "2026-11-17",
+   "expira": "2026-12-01"
+  },
+  {
+   "spec": "t776-e340-menu-parceiro-secao.spec.ts",
+   "titulo": "uma aba acesa, a da seção visível (390)",
+   "motivo": "vermelho em 2 e instável em 1 das 7 corridas de 16 e 17/11: a aba acesa não é a da seção visível (agenda, pedidos); sozinho passou 6 de 6",
+   "item": "E1018",
+   "dono": "Fable",
+   "entrada": "2026-11-17",
+   "expira": "2026-12-01"
+  },
+  {
+   "spec": "t1629-familia2-rotas-vivas.spec.ts",
+   "titulo": "E916 a 404 tem o rodapé do site e a busca",
+   "motivo": "instável nas 7 corridas de 16 e 17/11: a busca da 404 cai em /buscar sem o ?local= na primeira tentativa; passa na nova tentativa",
+   "item": "E1019",
+   "dono": "Code 2",
+   "entrada": "2026-11-17",
+   "expira": "2026-12-01"
+  }
+ ]
+}
