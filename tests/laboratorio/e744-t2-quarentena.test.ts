@@ -183,22 +183,68 @@ test("o arquivo da quarentena é válido HOJE: teto, campos, validade, nenhuma v
   const erros = validarQuarentena(entradas, hoje, { specExiste: (s: string) => existsSync(`tests/e2e/specs/${s}`) });
   assert.deepEqual(erros, []);
   for (const e of entradas as Entrada[]) {
-    // O título tem que estar escrito no spec. Quando o spec monta o título (largura, nome do agente), o começo é fixo:
-    // confere os primeiros 24 caracteres. As aspas escapadas do código (\") contam como aspas.
+    // O título tem que estar escrito no spec. Quando o spec monta o título (largura, nome do agente, nome da tela), a
+    // parte fixa fica no começo ou no fim: confere os primeiros ou os últimos 24 caracteres. As aspas escapadas do
+    // código (\") contam como aspas.
     const fonte = readFileSync(`tests/e2e/specs/${e.spec}`, "utf8").replaceAll('\\"', '"');
-    assert.ok(fonte.includes(e.titulo.slice(0, 24)), `${e.spec}: o título "${e.titulo}" não está no spec`);
+    assert.ok(fonte.includes(e.titulo.slice(0, 24)) || fonte.includes(e.titulo.slice(-24)), `${e.spec}: o título "${e.titulo}" não está no spec`);
   }
 });
 
-test("regra de entrada: toda entrada é um spec com disposição 'instavel' na T1, com o mesmo item e o mesmo dono", () => {
-  const disposicoes = (JSON.parse(readFileSync("tests/laboratorio/disposicao-falhas.json", "utf8")).disposicoes ?? []) as { spec: string; disposicao: string; item?: string; dono?: string }[];
-  for (const e of lerQuarentena() as Entrada[]) {
+test("regra de entrada: toda entrada tem disposição na lista da T1 — instável com o mesmo item, ou teste velho apontando a correção", () => {
+  // Asserção alterada por decisão do Gerente (DUET-1225, 17/11): além do instável com item, entra o teste velho que já
+  // tem correção escrita em PR aberto, por no máximo 14 dias e apontando o PR. Sai quando a correção for mesclada: a
+  // quarentena não fica mascarando a correção. Defeito real não entra aqui (leva a marca de falha conhecida).
+  const disposicoes = (JSON.parse(readFileSync("tests/laboratorio/disposicao-falhas.json", "utf8")).disposicoes ?? []) as { spec: string; disposicao: string; item?: string; dono?: string; pr?: number }[];
+  for (const e of lerQuarentena() as (Entrada & { correcao?: number })[]) {
     const d = disposicoes.find((x) => x.spec === e.spec);
     assert.ok(d, `${e.spec}: em quarentena sem disposição`);
-    assert.equal(d!.disposicao, "instavel", `${e.spec}: só instável entra na quarentena`);
-    assert.equal(d!.item, e.item, `${e.spec}: item diferente do da disposição`);
     assert.equal(d!.dono, e.dono, `${e.spec}: dono diferente do da disposição`);
+    if (d!.disposicao === "instavel") {
+      assert.equal(d!.item, e.item, `${e.spec}: item diferente do da disposição`);
+      assert.equal(e.correcao, undefined, `${e.spec}: instável não aponta correção (ainda não há)`);
+    } else {
+      assert.equal(d!.disposicao, "teste-velho", `${e.spec}: defeito real não entra na quarentena`);
+      assert.ok(Number.isInteger(e.correcao), `${e.spec}: teste velho em quarentena sem o PR da correção`);
+      assert.equal(e.correcao, d!.pr, `${e.spec}: a correção apontada não é a da disposição`);
+    }
   }
+});
+
+test("correcao: quando existe, é o número do PR; texto ou zero reprova", () => {
+  assert.deepEqual(validarQuarentena([{ ...ok(), correcao: 3934 }], HOJE), []);
+  assert.match(validarQuarentena([{ ...ok(), correcao: "#3934" }], HOJE).join("\n"), /correcao "#3934" não é o número do PR/);
+  assert.match(validarQuarentena([{ ...ok(), correcao: 0 }], HOJE).join("\n"), /correcao "0" não é o número do PR/);
+});
+
+test("cadeiaDe: a entrada de cadeia aponta uma entrada raiz do mesmo spec, com o mesmo item, que não é ela mesma de cadeia", () => {
+  const raiz = ok({ titulo: "1. cria" });
+  assert.deepEqual(validarQuarentena([raiz, { ...ok({ titulo: "2. usa" }), cadeiaDe: "1. cria" }], HOJE), []);
+  assert.match(validarQuarentena([raiz, { ...ok({ titulo: "2. usa" }), cadeiaDe: "1. não existe" }], HOJE).join("\n"), /cadeiaDe "1\. não existe" não é uma entrada do mesmo spec/);
+  assert.match(validarQuarentena([raiz, { ...ok({ titulo: "2. usa", item: "E9999" }), cadeiaDe: "1. cria" }], HOJE).join("\n"), /item diferente do da entrada raiz/);
+  assert.match(validarQuarentena([{ ...raiz, cadeiaDe: "2. usa" }, { ...ok({ titulo: "2. usa" }), cadeiaDe: "1. cria" }], HOJE).join("\n"), /a entrada raiz também é de cadeia/);
+});
+
+test("cadeia em série: quando os testes seguintes dependem do que está em quarentena, a cadeia entra inteira", () => {
+  // Caso real (17/11, prova local do PR das disposições): só o caso 1 do t230 e do t321 em quarentena deixou as fatias
+  // gerais vermelhas — o caso 3 do t230 espera a Caução que o caso 1 registra, e o caso 2 do t321 espera o vídeo que o
+  // caso 1 envia. A entrada de cadeia existe para isso: tira das fatias, junto com a raiz, os testes que dependem dela.
+  const entradas = lerQuarentena() as (Entrada & { cadeiaDe?: string })[];
+  const deCadeia = entradas.filter((e) => e.cadeiaDe);
+  for (const spec of new Set(deCadeia.map((e) => e.spec))) {
+    const fonte = readFileSync(`tests/e2e/specs/${spec}`, "utf8").replaceAll('\\"', '"');
+    assert.match(fonte, /mode: "serial"/, `${spec}: entrada de cadeia em spec que não roda em série`);
+    const titulos = [...fonte.matchAll(/^\s+test\("(.*)", async /gm)].map((m) => m[1]);
+    const raizes = new Set(deCadeia.filter((e) => e.spec === spec).map((e) => e.cadeiaDe!));
+    assert.equal(raizes.size, 1, `${spec}: uma raiz por cadeia`);
+    const [raiz] = [...raizes];
+    const aPartirDaRaiz = titulos.slice(titulos.indexOf(raiz));
+    assert.ok(titulos.includes(raiz), `${spec}: a raiz "${raiz}" não está no spec`);
+    // A cadeia inteira a partir da raiz: nenhum teste seguinte fica nas fatias gerais sem o que ele precisa.
+    assert.deepEqual(entradas.filter((e) => e.spec === spec).map((e) => e.titulo), aPartirDaRaiz, `${spec}: a cadeia não entrou inteira`);
+  }
+  // As duas cadeias desta entrada: t230 (E1020) e t321 (E1022).
+  assert.deepEqual([...new Set(deCadeia.map((e) => `${e.spec.split("-")[0]} ${e.item}`))].sort(), ["t230 E1020", "t321 E1022"]);
 });
 
 test("o workflow: as fatias excluem a quarentena, uma entrada própria roda só ela e não bloqueia, e o consolidar publica o resumo", () => {

@@ -8,12 +8,17 @@
     item     o item de instabilidade (E<número>), que tem dono;
     dono     quem corrige;
     entrada  o dia em que entrou (AAAA-MM-DD);
-    expira   o último dia de validade, no máximo 14 dias depois da entrada.
+    expira   o último dia de validade, no máximo 14 dias depois da entrada;
+    correcao (opcional) o número do PR que corrige o teste, quando ele já existe;
+    cadeiaDe (opcional) o título da entrada raiz do mesmo spec, quando este teste entra só por depender dela
+             (cadeia em série: sem a raiz ele falha ou não roda). Entra e sai junto com a raiz.
   Teto: 25 entradas. Entrada vencida, sem item, sem dono ou sem validade reprova o teste estático
   (tests/laboratorio/e744-t2-quarentena.test.ts).
 
   Regra de entrada: um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só
-  então pode entrar aqui.
+  então pode entrar aqui. Desde 17/11 (decisão do Gerente, DUET-1225) entra também o teste velho que já tem correção
+  escrita em PR aberto: a entrada aponta o PR em `correcao` e sai quando ele for mesclado, para a quarentena não
+  mascarar a correção.
 
   O que a rodada faz com o arquivo:
     - as fatias bloqueantes rodam SEM esses testes (--grep-invert com o padrão daqui);
@@ -71,10 +76,20 @@ export function validarQuarentena(entradas, hoje, opcoes = {}) {
       else if (dias > VALIDADE_MAXIMA_DIAS) erros.push(`${quem}: validade de ${dias} dias, o máximo é ${VALIDADE_MAXIMA_DIAS}`);
       if (dia(hoje) > ate) erros.push(`${quem}: vencida em ${e.expira}`);
     }
+    if (e?.correcao !== undefined && !(Number.isInteger(e.correcao) && e.correcao > 0)) erros.push(`${quem}: correcao "${e.correcao}" não é o número do PR`);
     const chave = `${e?.spec} › ${e?.titulo}`;
     if (e?.spec && e?.titulo && vistas.has(chave)) erros.push(`${quem}: entrada repetida`);
     vistas.add(chave);
     if (e?.spec && /\.spec\.ts$/.test(e.spec) && opcoes.specExiste && !opcoes.specExiste(e.spec)) erros.push(`${quem}: o spec ${e.spec} não existe`);
+  });
+  // Entrada de cadeia: aponta uma raiz do mesmo spec, com o mesmo item, que não é ela mesma de cadeia.
+  entradas.forEach((e, i) => {
+    if (e?.cadeiaDe === undefined) return;
+    const quem = nome(e, i);
+    const raiz = entradas.find((x) => x?.spec === e.spec && x?.titulo === e.cadeiaDe);
+    if (!raiz) erros.push(`${quem}: cadeiaDe "${e.cadeiaDe}" não é uma entrada do mesmo spec`);
+    else if (raiz.cadeiaDe !== undefined) erros.push(`${quem}: a entrada raiz também é de cadeia`);
+    else if (raiz.item !== e.item) erros.push(`${quem}: item diferente do da entrada raiz`);
   });
   return erros;
 }
