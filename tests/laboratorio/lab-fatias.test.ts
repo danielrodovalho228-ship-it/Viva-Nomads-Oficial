@@ -15,11 +15,12 @@ test("a matriz cobre as fatias 1..N e o --shard usa o mesmo N", () => {
   const matriz = /fatia:\s*\[([^\]]+)\]/.exec(yml)?.[1]?.split(",").map((x) => Number(x.trim())) ?? [];
   const n = Number(/--shard=\$\{\{ matrix\.fatia \}\}\/(\d+)/.exec(yml)?.[1]);
   assert.ok(n >= 8, `fatias = ${n}`);
-  // 16 gerais + 4 da varredura t48 (E744): a matriz tem n + PESADAS fatias (os casos 17..20 do case do workflow).
-  const pesadas = ["17", "18", "19", "20"].filter((k) => new RegExp(`\\n\\s+${k}\\) GREP=`).test(yml)).length;
+  // 20 gerais + 4 da varredura t48 (E744): a matriz tem n + PESADAS fatias (os casos 21..24 do case do workflow).
+  // Asserção alterada pela T3 do plano de 17/11: com 1 worker as gerais passam de 16 para 20 e a varredura vai para 21..24.
+  const pesadas = ["21", "22", "23", "24"].filter((k) => new RegExp(`\\n\\s+${k}\\) GREP=`).test(yml)).length;
   assert.equal(pesadas, 4);
-  // Asserção alterada pela T3 do plano de 17/11 (E744): mais UMA fatia, a 21, só dos specs @sensivel-carga com 1 worker.
-  const carga = /elif \[ "\$F" = 21 \]; then\n\s+LAB_PESADOS=fora npx playwright test --grep "@sensivel-carga"/.test(yml) ? 1 : 0;
+  // Asserção alterada pela T3 do plano de 17/11 (E744): mais UMA fatia, a 25, só dos specs @sensivel-carga com 1 worker.
+  const carga = /elif \[ "\$F" = 25 \]; then\n\s+LAB_PESADOS=fora npx playwright test --grep "@sensivel-carga"/.test(yml) ? 1 : 0;
   assert.equal(carga, 1);
   assert.deepEqual(matriz, Array.from({ length: n + pesadas + carga }, (_, i) => i + 1));
   assert.match(yml, /name: laboratorio \(fatia \$\{\{ matrix\.fatia \}\}\/\d+\)/);
@@ -80,9 +81,9 @@ test("a varredura t48 (cadeia serial de ~100 min) sai das fatias gerais e roda e
   const cfg = readFileSync("playwright.config.ts", "utf8");
   assert.match(cfg, /export const SPECS_PESADOS = \/t48-varredura\\\.spec\\\.ts\//);
   assert.match(cfg, /testIgnore: process\.env\.LAB_PESADOS === "fora" \? SPECS_PESADOS : undefined/);
-  assert.match(yml, /LAB_PESADOS=fora npx playwright test --shard=\$\{\{ matrix\.fatia \}\}\/16/);
+  assert.match(yml, /LAB_PESADOS=fora npx playwright test --shard=\$\{\{ matrix\.fatia \}\}\/20/);
   assert.match(yml, /npx playwright test t48-varredura --grep "\$GREP"/);
-  assert.match(yml, /if \[ "\$F" -le 16 \]/);
+  assert.match(yml, /if \[ "\$F" -le 20 \]/);
   // Os 4 grupos cobrem os 6 testes do t48 sem sobrepor: visitante (3) + uma fatia por persona logada (3).
   const spec = readFileSync("tests/e2e/specs/t48-varredura.spec.ts", "utf8");
   assert.match(spec, /mode: "serial"/, "a razão da separação: a cadeia é serial");
@@ -125,7 +126,7 @@ test("a rotina de linhas de base visuais (E744) gera sem escrever: não comita, 
 // E744: sob 2 workers no runner, 17 testes estouravam os 45 s do gate de PR (t78, t71, t176, t778…); as fatias gerais da noite dão 90 s por teste.
 test("fatias gerais do noturno dão 90 s por teste (o gate de PR segue em 45 s)", () => {
   const yml = readFileSync(".github/workflows/laboratorio.yml", "utf8");
-  assert.match(yml, /--shard=\$\{\{ matrix\.fatia \}\}\/16[^\n]*--timeout=90000/);
+  assert.match(yml, /--shard=\$\{\{ matrix\.fatia \}\}\/20[^\n]*--timeout=90000/);
   assert.match(readFileSync("playwright.config.ts", "utf8"), /timeout: 45_000/);
 });
 

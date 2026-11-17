@@ -44,7 +44,7 @@ jobs:
   # Agora ela é fatiada em FATIAS jobs paralelos (--shard do Playwright); cada fatia sobe o próprio Supabase local e o
   # próprio site, e o job `consolidar` junta os resultados e grava UMA linha em lab_execucoes. Desenho em docs/e744-suite-fatiada.md.
   laboratorio:
-    name: laboratorio (fatia ${{ matrix.fatia }}/21)
+    name: laboratorio (fatia ${{ matrix.fatia }}/25)
     needs: construir
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -56,7 +56,7 @@ jobs:
       # No máximo 20 jobs ao mesmo tempo (o limite do plano gratuito): a entrada a mais espera uma fatia terminar.
       max-parallel: 20
       matrix:
-        fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+        fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
         include:
           - fatia: quarentena
     steps:
@@ -167,8 +167,8 @@ jobs:
       - name: Rodar a suíte E2E
         id: e2e
         continue-on-error: true
-        # Fatias 1–16: a suíte SEM o t48-varredura (LAB_PESADOS=fora), em 16 partes. Fatia 21: só os specs @sensivel-carga,
-        # com 1 worker. Fatias 17–20: SÓ o t48-varredura, uma
+        # Fatias 1–20: a suíte SEM o t48-varredura (LAB_PESADOS=fora), em 20 partes, com 1 worker. Fatia 25: só os specs
+        # @sensivel-carga, com 1 worker. Fatias 21–24: SÓ o t48-varredura, uma
         # fatia por grupo de testes (a cadeia é serial e leva ~100 min junta; separada, cada grupo leva <= 30 min).
         # E744 T2: os testes em quarentena saem de todas as fatias (--grep-invert) e rodam só na entrada "quarentena",
         # 3 vezes cada, com 1 worker e sem nova tentativa. Quarentena vazia: nenhuma opção a mais, e a entrada não roda nada.
@@ -178,10 +178,13 @@ jobs:
           FORA=()
           [ -n "$QUARENTENA" ] && FORA=(--grep-invert "$QUARENTENA")
           # E744 T3: os specs com a etiqueta @sensivel-carga (falham 1 vez em 3 em paralelo e passam 15 de 15 sozinhos;
-          # lista e medidas em tests/laboratorio/sensiveis-a-carga.json) rodam só na fatia 21, com 1 worker. As fatias gerais
+          # lista e medidas em tests/laboratorio/sensiveis-a-carga.json) rodam só na fatia 25, com 1 worker. As fatias gerais
           # excluem os etiquetados e a quarentena num --grep-invert só.
+          # Fatias gerais com 1 worker (medida de 17/11, run 44091181966, contra 5 corridas com 2 workers): os instáveis das
+          # gerais caíram de 6 a 10 por corrida para 1; a soma do tempo subiu de ~330 para 579 min e a maior fatia de 36 para
+          # 62 min. Por isso 1 worker e 20 fatias gerais em vez de 16 (no máximo 20 jobs ao mesmo tempo, max-parallel).
           GERAL=(--grep-invert "@sensivel-carga${QUARENTENA:+|$QUARENTENA}")
-          # Varredura (17–20): um teste de até 30 min com 1 retry no CI (a do admin levou 56 min) -> teto de 100 min, e o job
+          # Varredura (21–24): um teste de até 30 min com 1 retry no CI (a do admin levou 56 min) -> teto de 100 min, e o job
           # tem 120 min para ainda sobrar tempo de guardar o resultado. As gerais seguem em 65 min.
           if [ "$F" = quarentena ]; then
             if [ -z "$QUARENTENA" ]; then
@@ -190,16 +193,16 @@ jobs:
             else
               npx playwright test --grep "$QUARENTENA" --workers=1 --repeat-each=3 --retries=0 --pass-with-no-tests --reporter=list,html,json --timeout=90000 --global-timeout=6000000 > tests/laboratorio/saida/e2e.txt 2>&1
             fi
-          elif [ "$F" = 21 ]; then
+          elif [ "$F" = 25 ]; then
             LAB_PESADOS=fora npx playwright test --grep "@sensivel-carga" "${FORA[@]}" --pass-with-no-tests --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
-          elif [ "$F" -le 16 ]; then
-            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 "${GERAL[@]}" --reporter=list,html,json --workers=2 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+          elif [ "$F" -le 20 ]; then
+            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/20 "${GERAL[@]}" --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
           else
             case "$F" in
-              17) GREP="visitante|endereços inexistentes|sitemap limpo" ;;
-              18) GREP="inquilino: todas as telas logadas" ;;
-              19) GREP="proprietário: todas as telas logadas" ;;
-              20) GREP="admin: todas as telas logadas" ;;
+              21) GREP="visitante|endereços inexistentes|sitemap limpo" ;;
+              22) GREP="inquilino: todas as telas logadas" ;;
+              23) GREP="proprietário: todas as telas logadas" ;;
+              24) GREP="admin: todas as telas logadas" ;;
             esac
             npx playwright test t48-varredura --grep "$GREP" "${FORA[@]}" --pass-with-no-tests --reporter=list,html,json --workers=1 --global-timeout=6000000 > tests/laboratorio/saida/e2e.txt 2>&1
           fi
@@ -239,7 +242,7 @@ jobs:
         if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' && matrix.fatia != 'quarentena' }}
         run: exit 1
 
-  # Frente 0: o .next é construído UMA vez e as 20 fatias o reaproveitam (antes cada fatia buildava o site de novo). O build
+  # Frente 0: o .next é construído UMA vez e as 25 fatias o reaproveitam (antes cada fatia buildava o site de novo). O build
   # precisa do Supabase local só para ter as mesmas chaves (a anônima entra no bundle) e para a pré-renderização ter onde ler;
   # o que ela gerou é apagado em cada fatia antes do `next start` (scripts/lab/limpar-prerender.mjs). Daqui sai também a
   # listagem do commit (`playwright test --list`), que o consolidar compara com o que rodou.
@@ -283,7 +286,7 @@ jobs:
         run: npm run build
 
       - name: Listagem do commit (o que a rodada tem que executar)
-        # Sem LAB_PESADOS: a suíte INTEIRA (as fatias 1–16 sem o t48 + as 17–20 só com o t48 cobrem exatamente esta lista).
+        # Sem LAB_PESADOS: a suíte INTEIRA (as fatias 1–20 e a 25 sem o t48 + as 21–24 só com o t48 cobrem exatamente esta lista).
         # E744 T2: sem os testes em quarentena, como as fatias; assim "listados" e "executados" falam do mesmo conjunto.
         # A quarentena tem a conta dela no resumo (tamanho, vencidas, 3 de 3), nunca escondida.
         run: |
@@ -338,7 +341,7 @@ jobs:
           path: fatias
 
       - name: Juntar os resultados das fatias
-        run: node scripts/lab/juntar-resultados.mjs fatias tests/laboratorio/saida/resultado.json --esperadas 21
+        run: node scripts/lab/juntar-resultados.mjs fatias tests/laboratorio/saida/resultado.json --esperadas 25
 
       - name: Baixar a listagem do commit (job construir)
         continue-on-error: true
@@ -369,11 +372,11 @@ jobs:
           # E744 T2: o resultado.json da quarentena vem dentro da pasta do artifact; acha onde estiver.
           QUARENTENA_JSON="$(find quarentena -name resultado.json 2>/dev/null | head -1 || true)"
           {
-            echo "## Laboratório — $(date -u +%Y-%m-%d) (21 fatias: 16 gerais + 4 da varredura t48 + 1 dos sensíveis à carga)"
+            echo "## Laboratório — $(date -u +%Y-%m-%d) (25 fatias: 20 gerais + 4 da varredura t48 + 1 dos sensíveis à carga)"
             node -e 'const r=JSON.parse(require("fs").readFileSync("tests/laboratorio/saida/resultado.json","utf8"));const s=r.stats||{};console.log("Passaram "+(s.expected??0)+" · falharam "+(s.unexpected??0)+" · instáveis "+(s.flaky??0)+" · pularam "+(s.skipped??0))' || true
             echo
             # E744: listados × executados, falhas e tempo de CADA fatia (antes era preciso refazer o mapa à mão).
-            node scripts/lab/numeros-por-fatia.mjs fatias --esperadas 21 --saida tests/laboratorio/saida/por-fatia.json || true
+            node scripts/lab/numeros-por-fatia.mjs fatias --esperadas 25 --saida tests/laboratorio/saida/por-fatia.json || true
             echo
             echo "### Por spec (passou / falhou)"
             node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true

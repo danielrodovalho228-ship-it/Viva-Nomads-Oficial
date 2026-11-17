@@ -3,9 +3,9 @@
   E744, T3 (plano de 17/11): instabilidade por carga.
 
   O spec que falha 1 vez em 3 rodando em paralelo e passa 15 de 15 sozinho ganha a etiqueta @sensivel-carga.
-  Uma fatia própria (a 21) roda só esses specs, com 1 worker; as fatias gerais os excluem.
+  Uma fatia própria (a 25) roda só esses specs, com 1 worker; as fatias gerais os excluem.
   A lista dos etiquetados, com a medida que justifica cada um, fica em tests/laboratorio/sensiveis-a-carga.json.
-  Não é quarentena: a fatia 21 bloqueia como as outras e os testes dela entram no veredito da noite.
+  Não é quarentena: a fatia 25 bloqueia como as outras e os testes dela entram no veredito da noite.
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -52,17 +52,17 @@ test("a etiqueta não é pulo: os specs etiquetados não ganharam test.skip, .on
   }
 });
 
-test("a fatia 21 roda só os etiquetados, com 1 worker, e bloqueia como as outras", () => {
-  assert.match(fatia, /fatia: \[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21\]/);
+test("a fatia 25 roda só os etiquetados, com 1 worker, e bloqueia como as outras", () => {
+  assert.match(fatia, /fatia: \[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25\]/);
   const linha = /[^\n]*npx playwright test --grep "@sensivel-carga"[^\n]*/.exec(fatia)?.[0] ?? "";
   assert.match(linha, /LAB_PESADOS=fora npx playwright test --grep "@sensivel-carga" "\$\{FORA\[@\]\}" --pass-with-no-tests /);
   assert.match(linha, /--workers=1 /);
   assert.doesNotMatch(linha, /--shard|--repeat-each|--retries/);
-  assert.match(fatia, /elif \[ "\$F" = 21 \]; then/);
-  // Bloqueia: é uma fatia de verdade (artifact "fatia-21", conta nas esperadas) e só a quarentena fica fora do veredito.
-  assert.match(consolidar, /juntar-resultados\.mjs fatias tests\/laboratorio\/saida\/resultado\.json --esperadas 21/);
-  assert.match(consolidar, /numeros-por-fatia\.mjs fatias --esperadas 21 /);
-  assert.doesNotMatch(yml, /--esperadas 20\b/);
+  assert.match(fatia, /elif \[ "\$F" = 25 \]; then/);
+  // Bloqueia: é uma fatia de verdade (artifact "fatia-25", conta nas esperadas) e só a quarentena fica fora do veredito.
+  assert.match(consolidar, /juntar-resultados\.mjs fatias tests\/laboratorio\/saida\/resultado\.json --esperadas 25/);
+  assert.match(consolidar, /numeros-por-fatia\.mjs fatias --esperadas 25 /);
+  assert.doesNotMatch(yml, /--esperadas (20|21)\b/);
   assert.match(fatia, /matrix\.fatia != 'quarentena' \}\}\n\s+run: exit 1/);
 });
 
@@ -78,13 +78,32 @@ test("as fatias gerais excluem os etiquetados e a quarentena, num --grep-invert 
   assert.ok(!casa(" chromium t1-home.spec.ts a home abre"));
 });
 
-test("a listagem do commit continua com os etiquetados: eles rodam na fatia 21 e entram na completude", () => {
+test("a listagem do commit continua com os etiquetados: eles rodam na fatia 25 e entram na completude", () => {
   const construir = yml.slice(yml.indexOf("\n  construir:"), yml.indexOf("\n  consolidar:"));
   assert.match(construir, /npx playwright test --list --reporter=json "\$\{FORA\[@\]\}" > lista\.json/);
   assert.doesNotMatch(construir, /sensivel-carga/);
 });
 
-test("o resumo e o nome do job dizem 21 fatias", () => {
-  assert.match(fatia, /name: laboratorio \(fatia \$\{\{ matrix\.fatia \}\}\/21\)/);
-  assert.match(consolidar, /\(21 fatias: 16 gerais \+ 4 da varredura t48 \+ 1 dos sensíveis à carga\)/);
+test("o resumo e o nome do job dizem 25 fatias", () => {
+  assert.match(fatia, /name: laboratorio \(fatia \$\{\{ matrix\.fatia \}\}\/25\)/);
+  assert.match(consolidar, /\(25 fatias: 20 gerais \+ 4 da varredura t48 \+ 1 dos sensíveis à carga\)/);
+});
+
+test("fatias gerais com 1 worker e em 20 partes (medida de 17/11); no máximo 20 jobs ao mesmo tempo", () => {
+  const geral = /[^\n]*--shard=\$\{\{ matrix\.fatia \}\}\/20[^\n]*/.exec(fatia)?.[0] ?? "";
+  assert.match(geral, /--workers=1 /);
+  assert.doesNotMatch(fatia, /--workers=2/);
+  assert.match(fatia, /elif \[ "\$F" -le 20 \]; then/);
+  // A varredura vai para 21..24, com os mesmos quatro grupos.
+  for (const [n, g] of [["21", "visitante|endereços inexistentes|sitemap limpo"], ["22", "inquilino: todas as telas logadas"], ["23", "proprietário: todas as telas logadas"], ["24", "admin: todas as telas logadas"]]) {
+    assert.ok(fatia.includes(`${n}) GREP="${g}" ;;`), `fatia ${n}`);
+  }
+  assert.match(fatia, /max-parallel: 20\n/);
+  // O teto das gerais não mudou (65 min): com 1 worker e 16 fatias a maior chegou a 62 min; com 20, cada uma leva menos.
+  assert.match(geral, /--global-timeout=3900000/);
+  // A medida que justifica a troca está no arquivo dos sensíveis à carga, para a decisão ficar junto do que ela muda.
+  const medida = JSON.parse(readFileSync("tests/laboratorio/sensiveis-a-carga.json", "utf8")).medida;
+  assert.equal(medida.run, 44091181966);
+  assert.ok(medida.umWorker.instaveisNasGerais < Math.min(...medida.doisWorkers.instaveisNasGerais), "1 worker derrubou a instabilidade");
+  assert.ok(medida.umWorker.maiorFatiaMin <= 65, "cada fatia coube no teto das gerais");
 });
