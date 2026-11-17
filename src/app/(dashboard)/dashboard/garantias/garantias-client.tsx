@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ShieldCheck, ChevronRight } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_CONTRACTS } from "@/lib/demo/seed";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
+import type { DemoContract } from "@/lib/demo/seed";
 import type { ContratoView } from "@/lib/data/contratos-actions";
 import { formatBRL } from "@/lib/utils";
 import { estadoCaucao } from "@/lib/caucao-estado";
@@ -13,8 +14,8 @@ import { PERC_CAUCAO_BLOCO } from "@/lib/contrato-blocos";
 import { AVISO_CAUCAO_DE_MORADOR, ROTULO_VER_CONTRATO, linhasCaucaoPorBloco, type ContratoParaCaucao, type LinhaCaucaoBloco } from "@/lib/contratos/area-dono";
 
 /** Cauções de DEMONSTRAÇÃO: um bloco por contrato do seed (a segunda ainda a receber). */
-function demoContratos(): ContratoParaCaucao[] {
-  return DEMO_CONTRACTS.map((c, i) => {
+function demoContratos(exemplos: readonly DemoContract[]): ContratoParaCaucao[] {
+  return exemplos.map((c, i) => {
     const blocos = [{ id: `demo-b-${i}`, numeroBloco: 1, caucao: c.caucao, caucaoForma: "avista", caucaoStatus: i === 1 ? "pendente" : "comprovada" }];
     return { id: `demo-${i}`, propertyTitle: c.imovel, blocos, pagamentos: [], caucao: estadoCaucao({ blocos, pagamentos: [] }) };
   });
@@ -26,7 +27,9 @@ function demoContratos(): ContratoParaCaucao[] {
  */
 export function GarantiasClient({ contratos, temContratoDeMorador = false }: { contratos: ContratoView[]; temContratoDeMorador?: boolean }) {
   const { on: demoOn } = useDemoMode();
-  const linhas = useMemo(() => linhasCaucaoPorBloco(demoOn ? demoContratos() : contratos), [demoOn, contratos]);
+  // E980: os exemplos chegam sob demanda (só com a demonstração ligada).
+  const exemplos = useExemplos(demoOn);
+  const linhas = useMemo(() => linhasCaucaoPorBloco(demoOn ? demoContratos(exemplos?.DEMO_CONTRACTS ?? []) : contratos), [demoOn, exemplos, contratos]);
 
   return (
     <>

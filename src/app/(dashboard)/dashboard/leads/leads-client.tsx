@@ -14,7 +14,7 @@ import { leadScore, leadSummary, type Lead, type Light } from "@/lib/data/lead-t
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { aceitarCandidatura, recusarCandidatura } from "@/lib/data/leads-actions";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_LEADS } from "@/lib/demo/seed";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
 import { cn } from "@/lib/utils";
 import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
@@ -43,7 +43,7 @@ const LIGHT: Record<Light, { tone: string; label: string }> = {
   red: { tone: "bg-red-100 text-red-700", label: "Alto risco" },
 };
 
-type LeadStatus = "open" | "approved" | "rejecting" | "rejected";
+type LeadStatus = "open" | "approved" | "rejecting" | "rejected" | "expired";
 
 /** E541: abre a conversa DESTA candidatura (antes, a caixa abria a primeira da lista — de outra pessoa). */
 function hrefResponder(l: { conversaId?: string }): string {
@@ -54,6 +54,8 @@ function hrefResponder(l: { conversaId?: string }): string {
 function uiInicial(persisted: string | undefined): LeadStatus {
   if (persisted === "accepted") return "approved";
   if (persisted === "rejected") return "rejected";
+  // E968 (decisão do Gerente, ORDEM-DUET-073): a 3ª expiração da pré-aceitação é TERMINAL — sem Aceitar/Recusar.
+  if (persisted === "expired") return "expired";
   return "open";
 }
 
@@ -67,7 +69,9 @@ export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lea
   const [pending, startTransition] = useTransition();
   // Modo demonstração (admin): lê o seed em memória; desligado, volta ao real.
   const { on: demoOn } = useDemoMode();
-  const leads = demoOn ? DEMO_LEADS : realLeads;
+  // E980: os exemplos chegam sob demanda.
+  const exemplos = useExemplos(demoOn);
+  const leads = demoOn ? (exemplos?.DEMO_LEADS ?? []) : realLeads;
 
   function set(id: string, s: LeadStatus) {
     setStatus((prev) => ({ ...prev, [id]: s }));
@@ -282,7 +286,11 @@ export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lea
                         <MessageSquare className="h-4 w-4" /> Responder pela plataforma
                       </ButtonLink>
                     )}
-                    {open ? null : st === "rejected" ? (
+                    {open ? null : st === "expired" ? (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-surface-2 px-3 py-2 text-sm font-medium text-muted" data-testid="lead-expirado">
+                        Pré-aceitação expirada (encerrada)
+                      </span>
+                    ) : st === "rejected" ? (
                       <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-sm font-medium text-red-600">
                         <X className="h-4 w-4" /> Recusado
                       </span>
