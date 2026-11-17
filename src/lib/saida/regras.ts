@@ -129,13 +129,31 @@ export interface SaidaRegistrada {
   teste?: boolean;
 }
 
-/** Motivos com MAIS de 3 saídas em 30 dias (contas de teste fora) que ainda não têm Correção aberta. */
-export function motivosQueViramCorrecao(saidas: SaidaRegistrada[], abertas: { papel: string; motivo: string }[], agora: Date): { papel: PapelSaida; motivo: string; n: number }[] {
+/**
+ * Motivos com MAIS de 3 saídas em 30 dias (contas de teste fora) que ainda não têm Correção aberta.
+ * E982: uma Correção FECHADA (fechadaEm) já tratou as saídas até o fechamento — elas não contam de novo. Sem isto, fechar
+ * a Correção abria outra igual na hora, com as mesmas saídas da janela. Só saídas DEPOIS do último fechamento do mesmo
+ * papel e motivo podem abrir a próxima.
+ */
+export function motivosQueViramCorrecao(
+  saidas: SaidaRegistrada[],
+  correcoes: { papel: string; motivo: string; fechadaEm?: string | null }[],
+  agora: Date,
+): { papel: PapelSaida; motivo: string; n: number }[] {
   const desde = agora.getTime() - JANELA_CORRECAO_DIAS * 86_400_000;
+  const abertas = correcoes.filter((c) => !c.fechadaEm);
+  const ultimoFechamento = new Map<string, number>();
+  for (const c of correcoes) {
+    if (!c.fechadaEm) continue;
+    const k = `${c.papel}:${c.motivo}`;
+    const t = Date.parse(c.fechadaEm);
+    if (Number.isFinite(t) && t > (ultimoFechamento.get(k) ?? -Infinity)) ultimoFechamento.set(k, t);
+  }
   const conta = new Map<string, { papel: PapelSaida; motivo: string; n: number }>();
   for (const s of saidas) {
     if (s.teste || !s.motivo || s.motivo === "outro" || Date.parse(s.criadoEm) < desde) continue;
     const k = `${s.papel}:${s.motivo}`;
+    if (Date.parse(s.criadoEm) <= (ultimoFechamento.get(k) ?? -Infinity)) continue;
     const atual = conta.get(k) ?? { papel: s.papel, motivo: s.motivo, n: 0 };
     atual.n += 1;
     conta.set(k, atual);

@@ -56,10 +56,12 @@ export async function abrirCorrecoesDevidas(admin: Admin, agora = new Date()): P
   const desde = new Date(agora.getTime() - JANELA_CORRECAO_DIAS * DIA).toISOString();
   const [{ data: saidas }, { data: abertas }, teste] = await Promise.all([
     admin.from("saidas_motivos").select("id, user_id, papel, nivel, motivo, detalhe, texto_livre, ajuda_oferecida, revertida, teste, criado_em").gte("criado_em", desde).not("motivo", "is", null).limit(20000),
-    admin.from("qualidade_correcoes").select("papel, motivo").is("fechada_em", null),
+    // E982: as abertas E as fechadas dentro da janela — uma fechada já tratou as saídas até o fechamento.
+    admin.from("qualidade_correcoes").select("papel, motivo, fechada_em").or(`fechada_em.is.null,fechada_em.gte.${desde}`),
     idsContasTeste(admin),
   ]);
-  const novas = motivosQueViramCorrecao(((saidas ?? []) as LinhaSaida[]).map((s) => paraRegistrada(s, teste)), (abertas ?? []) as { papel: string; motivo: string }[], agora);
+  const correcoes = ((abertas ?? []) as { papel: string; motivo: string; fechada_em: string | null }[]).map((c) => ({ papel: c.papel, motivo: c.motivo, fechadaEm: c.fechada_em }));
+  const novas = motivosQueViramCorrecao(((saidas ?? []) as LinhaSaida[]).map((s) => paraRegistrada(s, teste)), correcoes, agora);
   for (const n of novas) {
     const { error } = await admin.from("qualidade_correcoes").insert({ papel: n.papel, motivo: n.motivo, ocorrencias: n.n });
     if (error && error.code !== "23505") console.error("[abrirCorrecoesDevidas]", error.code, error.message);

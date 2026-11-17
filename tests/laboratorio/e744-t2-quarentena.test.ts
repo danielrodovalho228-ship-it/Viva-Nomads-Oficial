@@ -190,6 +190,17 @@ test("o arquivo da quarentena é válido HOJE: teto, campos, validade, nenhuma v
   }
 });
 
+test("regra de entrada: toda entrada é um spec com disposição 'instavel' na T1, com o mesmo item e o mesmo dono", () => {
+  const disposicoes = (JSON.parse(readFileSync("tests/laboratorio/disposicao-falhas.json", "utf8")).disposicoes ?? []) as { spec: string; disposicao: string; item?: string; dono?: string }[];
+  for (const e of lerQuarentena() as Entrada[]) {
+    const d = disposicoes.find((x) => x.spec === e.spec);
+    assert.ok(d, `${e.spec}: em quarentena sem disposição`);
+    assert.equal(d!.disposicao, "instavel", `${e.spec}: só instável entra na quarentena`);
+    assert.equal(d!.item, e.item, `${e.spec}: item diferente do da disposição`);
+    assert.equal(d!.dono, e.dono, `${e.spec}: dono diferente do da disposição`);
+  }
+});
+
 test("o workflow: as fatias excluem a quarentena, uma entrada própria roda só ela e não bloqueia, e o consolidar publica o resumo", () => {
   const yml = readFileSync(".github/workflows/laboratorio.yml", "utf8");
   const fatia = yml.slice(yml.indexOf("\n  laboratorio:"), yml.indexOf("\n  construir:"));
