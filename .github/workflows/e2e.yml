@@ -43,6 +43,12 @@ jobs:
       (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' &&
        github.event.deployment_status.environment != 'Production' && github.event.deployment_status.environment != 'production')
     runs-on: ubuntu-latest
+    # Fila única da prévia: todos os PRs usam as MESMAS contas de teste e o MESMO banco; rodadas juntas esgotavam o
+    # limite de login ("Muitas tentativas" no global-setup). Um de cada vez, sem derrubar o que já está rodando. A espera
+    # na fila não conta no timeout (o job só começa quando sai dela). A prova ao vivo de produção fica fora desta fila.
+    concurrency:
+      group: e2e-previa-contas-de-teste
+      cancel-in-progress: false
     timeout-minutes: 20
     permissions:
       contents: read
