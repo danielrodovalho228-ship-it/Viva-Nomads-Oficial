@@ -72,7 +72,8 @@ test.describe("T431 — PERTO-A: O que tem por perto", () => {
       });
       const bloco = p.getByTestId("proximidades-osm");
       await expect(bloco).toHaveAttribute("data-estado", "carregando", { timeout: 20_000 });
-      await expect(p.getByTestId("proximidades-carregando")).toContainText("Procurando o que tem por perto do endereço");
+      // E952 (asserção alterada): o aviso diz o endereço da busca (rua e CEP), não mais "do endereço".
+      await expect(p.getByTestId("proximidades-carregando")).toContainText("Procurando o que tem perto de Avenida Afonso Pena, CEP 38400-100…");
       await printBloco(p, "carregando", w);
       soltar();
 
