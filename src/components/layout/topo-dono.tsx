@@ -63,7 +63,7 @@ export function TopoPainel(p: {
                 {selo > 0 && (
                   <span
                     data-testid={`selo-${px}-${a.id}`}
-                    className="ml-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-champagne px-1.5 text-[11px] font-semibold tabular-nums text-forest"
+                    className="ml-2 grid h-5 min-w-5 place-items-center rounded-full bg-champagne px-2 text-[11px] font-semibold tabular-nums text-forest"
                     aria-label={`${selo} ${a.badge === "mensagens" ? "não lidas" : "novos"}`}
                   >
                     {selo > 99 ? "99+" : selo}
