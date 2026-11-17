@@ -68,7 +68,7 @@ const limpo = (s: string | null | undefined, max = 120) => (s ?? "").replace(/\s
  * Largura e qualidade da foto do cartão (640 px, q 75). E274: eram os valores que o otimizador do Next 16 aceita; o
  * e-mail agora usa a rota própria (/api/email/foto), que segue o mesmo tamanho.
  */
-export const FOTO_CARTAO = { largura: 640, qualidade: 75 } as const;
+export const FOTO_CARTAO = { largura: 1200, qualidade: 75 } as const; // ENSAIO (nunca mergear): a foto volta ao tamanho original
 
 /** Caminho da capa dentro do bucket público property-photos (`<uuid>/<uuid>.<ext>`), ou null se não for uma capa nossa. */
 const CAPA_RE = /^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\/property-photos\/([0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:webp|jpe?g|png))$/i;

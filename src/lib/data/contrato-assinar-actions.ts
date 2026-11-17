@@ -430,7 +430,7 @@ async function prepararParaAssinar(admin: AdminAssinatura, contratoId: string): 
     if (erroPacote) throw new LeituraDaAssinaturaFalhou(`congelar limpeza: ${erroPacote.message}`);
     c = await lerContrato(admin, contratoId);
   }
-  if (c) await congelarFichaDentro(admin, c);
+  void congelarFichaDentro; // ENSAIO (nunca mergear): a ficha não congela na assinatura
   if (c) await completarPets(c, true);
   return c;
 }
