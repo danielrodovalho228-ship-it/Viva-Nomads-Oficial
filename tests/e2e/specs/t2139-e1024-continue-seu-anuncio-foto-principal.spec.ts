@@ -4,7 +4,8 @@ import { noPasso } from "../fixtures/cadastro";
 import { prepararRascunho } from "../fixtures/rascunho-cadastro";
 
 /*
-  T2139 — E1014 @E1014. Trava escrita antes da correção (DUET-1519, item 2; a correção é da Fable).
+  T2139 — E1024 @E1024. Trava escrita antes da correção (DUET-1519, item 2; a correção é da Fable). Registado de início
+  como E1014, que no repositório já era a instabilidade do t108 (Code 2); o Gerente renumerou para E1024 (DUET-1619).
   Regra: o cartão "Continue seu anúncio" do Início do dono mostra a FOTO PRINCIPAL confirmada pelo dono, a mesma da
   pré-visualização do assistente (que já está certa). O defeito é só o cartão do painel.
   Montagem: rascunho com 8 fotos reais no Storage local (endereços públicos, no draft_data e em property_photos, na
@@ -56,7 +57,7 @@ async function fotoDoCartao(page: Page): Promise<string> {
   return arquivo(await foto.getAttribute("src"));
 }
 
-test.describe("T2139 — E1014: o \"Continue seu anúncio\" mostra a foto principal confirmada @E1014", () => {
+test.describe("T2139 — E1024: o \"Continue seu anúncio\" mostra a foto principal confirmada @E1024", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "default", timeout: 180_000 });
 
