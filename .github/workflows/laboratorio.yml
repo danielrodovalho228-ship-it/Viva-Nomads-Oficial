@@ -166,8 +166,10 @@ jobs:
           F=${{ matrix.fatia }}
           # Varredura (17–20): um teste de até 30 min com 1 retry no CI (a do admin levou 56 min) -> teto de 100 min, e o job
           # tem 120 min para ainda sobrar tempo de guardar o resultado. As gerais seguem em 65 min.
+          # MEDIDA da T3 (E744, plano de 17/11): este ramo existe só para uma corrida manual com 1 worker nas 16 fatias gerais,
+          # para comparar tempo e instabilidade com as corridas de 2 workers. Não é para merge. Teto geral de 95 min (o da varredura é 100 e o job tem 120).
           if [ "$F" -le 16 ]; then
-            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 --reporter=list,html,json --workers=2 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/16 --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=5700000 > tests/laboratorio/saida/e2e.txt 2>&1
           else
             case "$F" in
               17) GREP="visitante|endereços inexistentes|sitemap limpo" ;;
