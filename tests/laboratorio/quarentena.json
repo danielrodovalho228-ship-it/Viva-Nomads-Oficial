@@ -192,26 +192,6 @@
    "correcao": 3849
   },
   {
-   "spec": "t741-e288b-trafego-de-teste.spec.ts",
-   "titulo": "gravação: real, e2e (cabeçalho), e2e (cookie) e teste (conta is_teste)",
-   "motivo": "teste velho com correção a caminho: a rota de eventos aceita 300 por hora por IP e responde sempre 204; na suíte todos saem do mesmo IP e, depois do 300º, nada é gravado. Falhou na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais); reproduzido no laboratório local",
-   "item": "E744",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3961
-  },
-  {
-   "spec": "t741-e288b-trafego-de-teste.spec.ts",
-   "titulo": "contagem: /admin/eventos e a função da home contam só o real; o resto aparece como 'fora da contagem'",
-   "motivo": "depende do caso 'gravação' do mesmo spec (conta os eventos que ele grava); entra junto para a cadeia em série não ficar pela metade nas fatias",
-   "item": "E744",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3961
-  },
-  {
    "spec": "t352-varredura-bloco17.spec.ts",
    "titulo": "inquilina — Conta (CONTA-A): as seis classes, rolando a página inteira",
    "motivo": "teste velho com correção escrita: a varredura cobra /dashboard/conta, e a Conta abre no destino registrado (E798); falha em umas corridas e não noutras (4 das 7 de 16 e 17/11 e a corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais))",

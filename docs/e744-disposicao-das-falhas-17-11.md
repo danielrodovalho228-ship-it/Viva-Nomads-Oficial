@@ -137,7 +137,7 @@ Cinco deles (`t29`, `t48`, `t190`, `t305`, `t1629`) foram instáveis **nas 7 cor
 
 ## 8. Acrescentados pela corrida de prova (17/11, à noite)
 
-A corrida completa com a T1, a T2 e a T3 juntas (run 44114328109, commit `d67b2b8d`, 1 worker, 20 fatias gerais) mostrou 8 specs que não estavam na lista. Não estavam vermelhos na corrida-base; a troca de ordem das fatias os trouxe à tona. Cada um ganhou disposição e entrou na quarentena formal, por decisão do Gerente (DUET-1219 e DUET-1225).
+A corrida completa com a T1, a T2 e a T3 juntas (run 44114328109, commit `d67b2b8d`, 1 worker, 20 fatias gerais) mostrou 8 specs que não estavam na lista. Não estavam vermelhos na corrida-base; a troca de ordem das fatias os trouxe à tona. Cada um ganhou disposição e, menos o `t741`, entrou na quarentena formal, por decisão do Gerente (DUET-1219 e DUET-1225).
 
 | Spec | Disposição | Item | Dono | Correção | O que se viu |
 |---|---|---|---|---|---|
@@ -148,14 +148,14 @@ A corrida completa com a T1, a T2 e a T3 juntas (run 44114328109, commit `d67b2b
 | `t352-varredura-bloco17` | teste velho | E1021 | Fable | #3840 | a mesma |
 | `t354-varredura-bloco19` | teste velho | E1021 | Fable | #3840 | a mesma |
 | `t800-cadastro-passo4-titulo` | teste velho | E744 | Code 2 | #3849 (lote C) | depende da ordem: usa a conta compartilhada |
-| `t741-e288b-trafego-de-teste` | teste velho | E744 | Code 2 | #3961 (C2-SUITE) | o spec não limpa o limite de 300 eventos por hora antes de correr |
+| `t741-e288b-trafego-de-teste` | teste velho | E744 | Code 2 | #3961 (C2-SUITE), já na main (`08231fd7`) | o spec não limpava o limite de 300 eventos por hora antes de correr. A correção entrou antes deste registro: **não foi para a quarentena** |
 
 Duas regras novas da quarentena saíram daqui:
 
 - **Teste velho com correção escrita entra apontando o PR** (campo `correcao`) e sai quando o PR for mesclado. Quem tira a entrada é o próprio PR da correção.
 - **Cadeia em série entra inteira** (campo `cadeiaDe`). O `t230` e o `t321` rodam em série e os casos seguintes dependem do caso 1: com só o caso 1 em quarentena, as fatias gerais ficaram vermelhas na prova local (o caso 3 do `t230` espera a Caução que o caso 1 registra; o caso 2 do `t321` espera o vídeo que o caso 1 envia). Por isso os 3 casos do `t230` e os 5 do `t321` estão na quarentena.
 
-Com isso a quarentena está no teto: **25 de 25**. Nove entradas saem quando as quatro correções entrarem.
+Com isso a quarentena fica em **23 de 25**. Sete entradas saem quando as três correções (#3934, #3840 e #3849) entrarem.
 
 O `t840` (E988) foi corrigido na main pelo #3912 (`d5e682a8`), depois da corrida de prova.
 

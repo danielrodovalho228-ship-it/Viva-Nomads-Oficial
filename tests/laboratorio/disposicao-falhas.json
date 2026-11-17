@@ -557,7 +557,8 @@
    "dono": "Code 2",
    "pr": 3961,
    "pacote": "C2-SUITE",
-   "nota": "a rota de eventos aceita 300 por hora por IP e responde sempre 204; o spec tem de limpar o limite antes de correr"
+   "nota": "a rota de eventos aceita 300 por hora por IP e responde sempre 204; o spec tem de limpar o limite antes de correr. Corrigido na main pelo #3961 (08231fd7), depois da corrida de prova: não entrou na quarentena",
+   "corrigidoPor": "08231fd7"
   },
   {
    "spec": "t772-e329-visita-confirmada.spec.ts",
