@@ -15,7 +15,7 @@ const ids: Record<string, string> = {};
 
 const topoTitulo = (p: Page) => p.getByTestId("passo-titulo").evaluate((h) => Math.round(h.getBoundingClientRect().top + (document.querySelector("main")?.scrollTop ?? 0) + window.scrollY));
 
-test.describe("T646 — cadastro: o título do passo não pula ao salvar", () => {
+test.describe("T646 — cadastro: o título do passo não pula ao salvar", { tag: ["@sensivel-carga"] }, () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
   test.beforeAll(async () => {

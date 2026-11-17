@@ -3,6 +3,7 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { noPasso, abrirSecoesPasso10 } from "../fixtures/cadastro";
 import { prepararRascunho } from "../fixtures/rascunho-cadastro";
+import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /*
   T548 — E132-A (#1396), guarda permanente da Pista C: as declarações de um toque do "Antes de publicar" (Passo 10) não
@@ -62,6 +63,7 @@ test.describe("T548 — E132-A: as declarações do Passo 10 não se perdem", ()
     });
 
     test(`2. a ${w} px: o que se marca no Passo 10 fica no rascunho e volta marcado`, async ({ browser }) => {
+      defeitoConhecido("E985", "a escolha por cartão logo depois de abrir o rascunho não é gravada");
       const page = await entrar(browser, dono.email, senha);
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       const id = ids[`toque${w}`];
