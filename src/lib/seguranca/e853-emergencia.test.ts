@@ -10,12 +10,12 @@ import { FRASE_EMERGENCIA_SEGURANCA, NUMEROS_EMERGENCIA, pedacosDaFraseEmergenci
 const pagina = readFileSync(new URL("../../app/(public)/seguranca/page.tsx", import.meta.url), "utf8");
 
 test("E853: a frase de emergência é a aprovada, palavra por palavra", () => {
-  assert.equal(FRASE_EMERGENCIA_SEGURANCA, "Em uma emergência, ligue 190 ou 193. A Viva não recebe esse tipo de ligação.");
-  assert.deepEqual(NUMEROS_EMERGENCIA, ["190", "193"]);
+  assert.equal(FRASE_EMERGENCIA_SEGURANCA, "Em uma emergência, ligue 190, 192 ou 193. A Viva não recebe esse tipo de ligação.");
+  assert.deepEqual(NUMEROS_EMERGENCIA, ["190", "192", "193"]); // E943: + 192 (SAMU)
   for (const n of NUMEROS_EMERGENCIA) assert.ok(FRASE_EMERGENCIA_SEGURANCA.includes(n), n);
   const pedacos = pedacosDaFraseEmergencia();
   assert.equal(pedacos.map((p) => p.texto).join(""), FRASE_EMERGENCIA_SEGURANCA, "o texto não muda");
-  assert.deepEqual(pedacos.filter((p) => p.href).map((p) => p.href), ["tel:190", "tel:193"]);
+  assert.deepEqual(pedacos.filter((p) => p.href).map((p) => p.href), ["tel:190", "tel:192", "tel:193"]);
 });
 
 test("E853: /seguranca mostra a linha em destaque, antes dos golpes, com os números ligáveis", () => {
