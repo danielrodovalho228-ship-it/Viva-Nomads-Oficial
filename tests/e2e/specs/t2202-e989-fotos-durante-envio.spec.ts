@@ -3,20 +3,20 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2091 — E989 @E989: soltar fotos DURANTE um envio não apaga o lote anterior. Antes, cada envio fechava sobre a
+  T2202 — E989 @E989: soltar fotos DURANTE um envio não apaga o lote anterior. Antes, cada envio fechava sobre a
   galeria do começo: o 2º lote (solto enquanto o 1º subia) terminava com "galeria antiga + lote 2" e sobrescrevia o
   lote 1. Rascunho vazio no passo Fotos → 3 fotos pelo botão → com o envio em andamento (upload atrasado de propósito),
   solta mais 2 na galeria → no fim, as 5 estão na galeria e no rascunho. Só no laboratório.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t2091.${sufixo}@lab.vivanomads.test`, nome: "Lia Lotes", role: "owner" as const };
+const dono = { email: `dono.t2202.${sufixo}@lab.vivanomads.test`, nome: "Lia Lotes", role: "owner" as const };
 const ids: { dono?: string; imovel?: string } = {};
 const arq = (n: string) => `public/images/imoveis/ube/ube-001-${n}.webp`;
 const LOTE1 = ["sala", "quarto-1", "cozinha"].map(arq);
 const LOTE2 = ["banheiro", "varanda"].map(arq);
 
-test.describe("T2091 — E989: o 2º lote solto durante o envio não apaga o 1º", () => {
+test.describe("T2202 — E989: o 2º lote solto durante o envio não apaga o 1º", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 180_000 });
   test.beforeAll(async () => {
