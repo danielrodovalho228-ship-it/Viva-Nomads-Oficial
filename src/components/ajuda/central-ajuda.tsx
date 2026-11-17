@@ -345,7 +345,7 @@ function Perguntas({ perfil, ids, titulo }: { perfil: PerfilAjuda; ids?: readonl
               </button>
               {aberta === p.id && (
                 <div className="pb-3">
-                  <p className="text-sm leading-relaxed text-muted"><TextoComRemissoes texto={respostaPara(p, perfil)} /></p>
+                  <p className="text-sm leading-relaxed text-muted"><TextoComRemissoes texto={respostaPara(p, perfil)} nomeados /></p>
                   {p.links?.map((l) => (
                     <Link key={l.href} href={l.href} className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-forest underline underline-offset-2" data-testid={`faq-link-${p.id}`}>
                       {l.rotulo} <ChevronRight className="h-4 w-4" aria-hidden />
