@@ -13,7 +13,7 @@
   {
    "spec": "t29-chat-sem-aprovacao.spec.ts",
    "titulo": "'Ok, tudo aprovado' para o Moacir: não aprova nada e não cria ordem",
-   "motivo": "instável nas 7 corridas de 16 e 17/11: na primeira tentativa a contagem esperada 0 vem 1; passa na nova tentativa",
+   "motivo": "instável nas 7 corridas de 16 e 17/11: a contagem de ordens esperada 0 vem 1 na primeira tentativa e passa na segunda. Causa provável, vista no laboratório local com 2 workers: o teste compara a contagem da tabela inteira de ordens antes e depois, e outro teste que cria ordem ao mesmo tempo muda a conta",
    "item": "E1011",
    "dono": "Code 2",
    "entrada": "2026-11-17",
