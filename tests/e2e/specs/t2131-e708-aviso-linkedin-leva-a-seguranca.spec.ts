@@ -90,9 +90,12 @@ test.describe("T2131 — E708: o aviso de vencimento do LinkedIn aponta para Con
     for (const largura of [390, 1280] as const) {
       const p = await entrar(browser, pessoa.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
+      // A linha do LinkedIn fica atrás da chave LINKEDIN_CONECTAR_ATIVO, ligada só neste navegador pelo cookie do
+      // laboratório (como o t323; em produção o cookie não vale nada).
+      await p.context().addCookies([{ name: "vn_lab_linkedin", value: "1", url: new URL(p.url()).origin }]);
       await p.goto(avisos![0].url as string, { waitUntil: "domcontentloaded" });
       await expect(p).toHaveURL(new RegExp(`${ROTA_SEGURANCA}(\\?|#|$)`));
-      await expect(p.getByText(/LinkedIn/).first(), `${largura} px: a linha do LinkedIn em Segurança`).toBeVisible({ timeout: 30_000 });
+      await expect(p.getByTestId("confianca-linkedin"), `${largura} px: a linha do LinkedIn em Segurança, com o selo válido`).toHaveAttribute("data-situacao", "ok", { timeout: 30_000 });
       await p.context().close();
     }
   });
