@@ -256,7 +256,8 @@
    "item": "E984",
    "dono": "Code 2",
    "pr": 3909,
-   "nota": "anúncio publicado não mostra em Meus imóveis a prova com prazo"
+   "nota": "anúncio publicado não mostrava em Meus imóveis a prova com prazo; corrigido na main pelo #3909 (ecdc95c8), depois da corrida — sem marca",
+   "corrigidoPor": "ecdc95c8"
   },
   {
    "spec": "t400-chacara-sem-internet.spec.ts",
@@ -482,7 +483,8 @@
    "item": "E987",
    "dono": "Code 2",
    "pr": 3911,
-   "nota": "a galeria aberta não reaproveita a versão da miniatura da foto"
+   "nota": "a galeria aberta não reaproveita a versão da miniatura da foto; corrigido pelo #3911 (adcde730) — sem marca",
+   "corrigidoPor": "adcde730"
   },
   {
    "spec": "t735-e277-busca-parceiros-fotos.spec.ts",
@@ -630,7 +632,6 @@
  "pulosDosMarcados": {
   "t11-travessias.spec.ts": 4,
   "t348-triagem-vinculo-52.spec.ts": 1,
-  "t397-foto-na-hora.spec.ts": 6,
   "t400-chacara-sem-internet.spec.ts": 1,
   "t456-comodidades-tipo-e111a.spec.ts": 1,
   "t548-e132a-declaracoes-persistem.spec.ts": 1,
