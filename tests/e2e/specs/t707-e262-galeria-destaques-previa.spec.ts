@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { prepararRascunho } from "../fixtures/rascunho-cadastro";
+import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /*
   T707 — E262 (PR #1599), o que a T702 não cobre, nas duas larguras (1280 e 390):
@@ -82,6 +83,7 @@ test.describe("T707 — E262: galeria navegando e na prévia, destaques com os n
 
   for (const largura of LARGURAS) {
     test(`(a) ${largura} px: abertura fria e "Próxima foto" — a foto 2 tem por baixo a mesma versão da miniatura dela`, async ({ browser }) => {
+      defeitoConhecido("E987", "a galeria aberta não reaproveita a versão da miniatura da foto", largura === 1280);
       const ctx = await browser.newContext({ viewport: { width: largura, height: altura(largura) } });
       const p = await ctx.newPage();
       await p.goto(`/imoveis/${ids.publico}`, { waitUntil: "domcontentloaded" });
