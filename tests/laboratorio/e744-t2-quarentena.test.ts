@@ -208,7 +208,9 @@ test("o workflow: as fatias excluem a quarentena, uma entrada própria roda só 
   // 1) fatias gerais e da varredura: o padrão sai do script e entra como --grep-invert (só quando há entradas).
   assert.match(fatia, /QUARENTENA="\$\(node scripts\/lab\/quarentena\.mjs padrao\)"/);
   assert.match(fatia, /\[ -n "\$QUARENTENA" \] && FORA=\(--grep-invert "\$QUARENTENA"\)/);
-  assert.match(fatia, /LAB_PESADOS=fora npx playwright test --shard=\$\{\{ matrix\.fatia \}\}\/16 "\$\{FORA\[@\]\}"/);
+  // T3 (plano de 17/11): as gerais excluem também os etiquetados @sensivel-carga, no mesmo --grep-invert (GERAL).
+  assert.match(fatia, /GERAL=\(--grep-invert "@sensivel-carga\$\{QUARENTENA:\+\|\$QUARENTENA\}"\)/);
+  assert.match(fatia, /LAB_PESADOS=fora npx playwright test --shard=\$\{\{ matrix\.fatia \}\}\/20 "\$\{GERAL\[@\]\}"/);
   // A fatia da varredura que ficar sem teste (o dela foi para a quarentena) não reprova por "nenhum teste".
   assert.match(fatia, /npx playwright test t48-varredura --grep "\$GREP" "\$\{FORA\[@\]\}" --pass-with-no-tests/);
   // 2) a entrada "quarentena" da matriz: só os testes do arquivo, 1 worker, 3 repetições, sem nova tentativa.
@@ -223,7 +225,8 @@ test("o workflow: as fatias excluem a quarentena, uma entrada própria roda só 
   assert.match(fatia, /if: \$\{\{ !cancelled\(\) && matrix\.fatia != 'quarentena' \}\}\n\s+uses: actions\/upload-artifact@v4\n\s+with:\n\s+name: laboratorio-\$\{\{ github\.run_id \}\}-fatia-\$\{\{ matrix\.fatia \}\}/);
   assert.match(fatia, /if: \$\{\{ !cancelled\(\) && matrix\.fatia == 'quarentena' \}\}\n\s+uses: actions\/upload-artifact@v4\n\s+with:\n\s+name: laboratorio-\$\{\{ github\.run_id \}\}-quarentena\n/);
   assert.match(consolidar, /pattern: laboratorio-\$\{\{ github\.run_id \}\}-fatia-\*/);
-  assert.match(consolidar, /--esperadas 20/, "a quarentena não conta como fatia");
+  // T3: 25 fatias que bloqueiam (20 gerais, 4 da varredura, 1 dos sensíveis à carga); a quarentena segue fora da conta.
+  assert.match(consolidar, /--esperadas 25/, "a quarentena não conta como fatia");
   // 3) o consolidar: baixa o resultado da quarentena (sem derrubar se faltar), escreve o resumo e acusa erro do arquivo.
   assert.match(consolidar, /continue-on-error: true\n\s+uses: actions\/download-artifact@v4\n\s+with:\n\s+name: laboratorio-\$\{\{ github\.run_id \}\}-quarentena/);
   assert.match(consolidar, /node scripts\/lab\/quarentena\.mjs resumo "\$\{QUARENTENA_JSON:-quarentena\/resultado\.json\}" --saida tests\/laboratorio\/saida\/quarentena\.json/);
