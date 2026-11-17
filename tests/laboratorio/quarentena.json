@@ -160,46 +160,6 @@
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
    "correcao": 3934
-  },
-  {
-   "spec": "t279-varredura-logada.spec.ts",
-   "titulo": "morador — Conta: as seis classes, rolando a página inteira",
-   "motivo": "teste velho com correção escrita: falhou em 5 das 7 corridas de 16 e 17/11 e na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais); a varredura cobra /dashboard/conta, e a Conta abre no destino registrado (E798)",
-   "item": "E1021",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3840
-  },
-  {
-   "spec": "t352-varredura-bloco17.spec.ts",
-   "titulo": "inquilina — Conta (CONTA-A): as seis classes, rolando a página inteira",
-   "motivo": "teste velho com correção escrita: a varredura cobra /dashboard/conta, e a Conta abre no destino registrado (E798); falha em umas corridas e não noutras (4 das 7 de 16 e 17/11 e a corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais))",
-   "item": "E1021",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3840
-  },
-  {
-   "spec": "t354-varredura-bloco19.spec.ts",
-   "titulo": "inquilina — Conta A1 · Conta: as seis classes, rolando a página inteira",
-   "motivo": "teste velho com correção escrita: a varredura cobra /dashboard/conta, e a Conta abre no destino registrado (E798); falha em umas corridas e não noutras (2 das 7 de 16 e 17/11 e a corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais))",
-   "item": "E1021",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3840
-  },
-  {
-   "spec": "t354-varredura-bloco19.spec.ts",
-   "titulo": "proprietário — Conta A1 · Conta: as seis classes, rolando a página inteira",
-   "motivo": "teste velho com correção escrita: a varredura cobra /dashboard/conta, e a Conta abre no destino registrado (E798); falha em umas corridas e não noutras (3 das 7 de 16 e 17/11); é o mesmo spec e a mesma causa do caso da inquilina",
-   "item": "E1021",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3840
   }
  ]
 }
