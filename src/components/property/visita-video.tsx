@@ -188,7 +188,7 @@ function PedidoVisita({
           <CalendarCheck className="h-4 w-4" /> {estado === "agendada" ? "Visita agendada" : estado === "pedida" ? tBotao.feito : "Ver minha visita"}
         </ButtonLink>
         {/* E411: por que não dá para pedir outra e como mudar os horários. */}
-        {(estado === "pedida" || estado === "agendada" || estado === "ver") && (
+        {estado === "pedida" && ( /* ENSAIO (nunca mergear): só a pedida explica */
           <p className="text-xs text-muted" data-testid={`${tBotao.prefixo}-${estado}-explica`}>
             {explicacaoPedidoAberto(modalidade, estado)}
           </p>
