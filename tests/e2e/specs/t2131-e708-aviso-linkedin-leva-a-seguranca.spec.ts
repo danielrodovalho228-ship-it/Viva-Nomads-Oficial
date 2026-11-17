@@ -43,7 +43,8 @@ test.describe("T2131 — E708: o aviso de vencimento do LinkedIn aponta para Con
     const agora = Date.now();
     const { error } = await adm().from("confianca_linkedin").insert({
       user_id: ids.pessoa,
-      sub_hash: `t2131-${randomBytes(16).toString("hex")}`,
+      // A tabela só aceita o HMAC do sub (64 hex): um valor aleatório no mesmo formato.
+      sub_hash: randomBytes(32).toString("hex"),
       conectado_em: new Date(agora - 345 * 86_400_000).toISOString(),
       valido_ate: new Date(agora + 20 * 86_400_000).toISOString(),
       aviso_em: null,
