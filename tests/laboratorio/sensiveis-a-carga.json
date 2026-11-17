@@ -1,0 +1,33 @@
+{
+ "etiqueta": "@sensivel-carga",
+ "regra": "o spec que falha 1 vez em 3 rodando em paralelo e passa pelo menos 15 de 15 sozinho ganha a etiqueta; a fatia 21 roda só os etiquetados, com 1 worker, e as fatias gerais os excluem",
+ "entradas": [
+  {
+   "spec": "t194-passo1-ia-cep.spec.ts",
+   "sozinho": {
+    "passou": 15,
+    "rodou": 15
+   },
+   "emParalelo": {
+    "falhou": 1,
+    "rodou": 3
+   },
+   "nasCorridas": "vermelho em 1 e instável em 2 das 7 corridas completas de 16 e 17/11 (390px: o Passo 3 não avança ou a IA das fotos não chega a 'feita' no tempo)",
+   "medidoEm": "2026-11-17"
+  },
+  {
+   "spec": "t646-cadastro-titulo-nao-pula.spec.ts",
+   "item": "E1017",
+   "sozinho": {
+    "passou": 26,
+    "rodou": 26
+   },
+   "emParalelo": {
+    "falhou": 1,
+    "rodou": 3
+   },
+   "nasCorridas": "vermelho em 2 das 7 corridas completas de 16 e 17/11 (390 px: o 'Salvo' não aparece em 20 s)",
+   "medidoEm": "2026-11-17"
+  }
+ ]
+}

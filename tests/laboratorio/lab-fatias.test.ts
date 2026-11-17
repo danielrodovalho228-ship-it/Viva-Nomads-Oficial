@@ -18,10 +18,14 @@ test("a matriz cobre as fatias 1..N e o --shard usa o mesmo N", () => {
   // 16 gerais + 4 da varredura t48 (E744): a matriz tem n + PESADAS fatias (os casos 17..20 do case do workflow).
   const pesadas = ["17", "18", "19", "20"].filter((k) => new RegExp(`\\n\\s+${k}\\) GREP=`).test(yml)).length;
   assert.equal(pesadas, 4);
-  assert.deepEqual(matriz, Array.from({ length: n + pesadas }, (_, i) => i + 1));
+  // Asserção alterada pela T3 do plano de 17/11 (E744): mais UMA fatia, a 21, só dos specs @sensivel-carga com 1 worker.
+  const carga = /elif \[ "\$F" = 21 \]; then\n\s+LAB_PESADOS=fora npx playwright test --grep "@sensivel-carga"/.test(yml) ? 1 : 0;
+  assert.equal(carga, 1);
+  assert.deepEqual(matriz, Array.from({ length: n + pesadas + carga }, (_, i) => i + 1));
   assert.match(yml, /name: laboratorio \(fatia \$\{\{ matrix\.fatia \}\}\/\d+\)/);
+  assert.equal(Number(/name: laboratorio \(fatia \$\{\{ matrix\.fatia \}\}\/(\d+)\)/.exec(yml)?.[1]), n + pesadas + carga, "o nome do job diz o total de fatias");
   assert.match(yml, /--esperadas \d+/);
-  assert.equal(Number(/--esperadas (\d+)/.exec(yml)?.[1]), n + pesadas, "o consolidar espera o mesmo número de fatias");
+  assert.equal(Number(/--esperadas (\d+)/.exec(yml)?.[1]), n + pesadas + carga, "o consolidar espera o mesmo número de fatias");
   assert.match(yml, /fail-fast: false/, "uma fatia vermelha não cancela as outras");
 });
 
