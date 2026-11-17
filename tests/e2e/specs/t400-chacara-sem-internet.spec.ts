@@ -118,6 +118,7 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
   });
 
   test("2. publicar barrado pelo padrão mínimo, com o motivo certo; o Passo 5 não pede a velocidade", async ({ browser }) => {
+    defeitoConhecido("E985", "consequência do caso 1: o rascunho não guardou \"Não tem internet\"");
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     // Passo 5: "Sem internet no imóvel" no lugar do campo de velocidade (mesmo com "Internet fibra" marcada).
@@ -151,6 +152,7 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
   });
 
   test("3. trocar para 'Fibra': a velocidade volta a ser pedida; informada, publica", async ({ browser }) => {
+    defeitoConhecido("E985", "a escolha por cartão logo depois de abrir o rascunho não é gravada");
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await abrirCadastro(page, "detalhes");

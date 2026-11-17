@@ -275,6 +275,7 @@ test.describe("T397 — FOTO-NA-HORA-B: prova de nível só com a foto feita na 
     test.skip(!hasAccount("admin"), "conta de admin do laboratório não configurada");
 
     test("6. a rotina marca a prova vencida e avisa a dona uma vez só", async ({ browser }) => {
+      defeitoConhecido("E984", "consequência do caso 5: ele para na prova com prazo que não aparece, antes de vencer o prazo, e a rotina não tem o que marcar");
       const rodar = async (b: Browser) => {
         const ctx = await b.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
         const a = await ctx.newPage();

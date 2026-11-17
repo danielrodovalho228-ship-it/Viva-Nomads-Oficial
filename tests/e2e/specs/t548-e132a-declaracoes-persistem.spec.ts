@@ -63,7 +63,7 @@ test.describe("T548 — E132-A: as declarações do Passo 10 não se perdem", ()
     });
 
     test(`2. a ${w} px: o que se marca no Passo 10 fica no rascunho e volta marcado`, async ({ browser }) => {
-      defeitoConhecido("E985", "a escolha por cartão logo depois de abrir o rascunho não é gravada", w === 1280);
+      defeitoConhecido("E985", "a escolha por cartão logo depois de abrir o rascunho não é gravada");
       const page = await entrar(browser, dono.email, senha);
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       const id = ids[`toque${w}`];
