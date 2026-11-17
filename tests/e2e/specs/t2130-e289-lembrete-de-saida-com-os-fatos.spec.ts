@@ -19,7 +19,9 @@ const SAIDA_LOG = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const RUA = "Rua dos Ipês, 289";
-const TITULO = `Apto T2130 ${sufixo}`;
+// Sem dígitos no título: o servidor tira sequências de números dos textos dos e-mails (proteção de contato), por isso o
+// sufixo do laboratório é só de letras.
+const TITULO = `Apto dos Ipês ${sufixo}`;
 const ids: Record<string, string> = {};
 let servidor: ChildProcess | null = null;
 const hojeBRT = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
