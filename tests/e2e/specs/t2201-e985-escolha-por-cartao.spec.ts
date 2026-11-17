@@ -2,17 +2,17 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T2090 — E985 @E985: o assistente grava a escolha por CARTÃO feita logo depois de abrir o rascunho. Antes, abrir o
+  T2201 — E985 @E985: o assistente grava a escolha por CARTÃO feita logo depois de abrir o rascunho. Antes, abrir o
   rascunho deixava o autosave "aguardando a base" e só input/change contavam como edição: o clique no cartão (botão
   role="radio") nos primeiros 2 s virava base e não era gravado. Rascunho com "Casa" → abre o passo Tipo → escolhe
   "Apartamento" na hora → o draft_data no banco passa a "apartamento". Só no laboratório (banco local + chave de serviço).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t2090.${sufixo}@lab.vivanomads.test`, nome: "Rita Cartão", role: "owner" as const };
+const dono = { email: `dono.t2201.${sufixo}@lab.vivanomads.test`, nome: "Rita Cartão", role: "owner" as const };
 const ids: { dono?: string; imovel?: string } = {};
 
-test.describe("T2090 — E985: a escolha por cartão logo depois de abrir o rascunho é gravada", () => {
+test.describe("T2201 — E985: a escolha por cartão logo depois de abrir o rascunho é gravada", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
   test.beforeAll(async () => {
