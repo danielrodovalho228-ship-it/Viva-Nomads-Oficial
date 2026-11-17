@@ -22,7 +22,7 @@ import { lerDocumento, temDocumento } from "@/lib/data/documento-servidor";
 import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
-import { propostaAcordadaDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
+import { preAceiteExpiradoDoLead, propostaAcordadaDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
 import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel, MSG_DATAS_SEM_CONFERIR } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
@@ -330,6 +330,11 @@ export async function getFechamentoContext(
   // Achado 109: a falha LANÇA (error.tsx) — nunca "nenhuma candidatura aceita" no Fechamento por engano.
   if (erroLead) throw new Error("Não foi possível ler a candidatura aceita.");
   if (!lead) return null;
+
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono. Sem Fechamento (que mostraria o preço do anúncio no
+  // lugar do congelado) até a reabertura. Falha de leitura LANÇA (error.tsx), como a da candidatura (achado 109).
+  const adminPre = createAdminClient();
+  if (adminPre && (await preAceiteExpiradoDoLead(adminPre, lead.id as string))) return null;
 
   // Imóvel (escopo do dono) — fonte real do card, valores e tipo.
   const property = await getPropertyForOwner(lead.property_id as string);
