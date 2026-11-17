@@ -423,7 +423,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <AppHeader direita={<>{contaCelular ?? papelChip}{chipModo}</>} />
 
         {papelTopo && (
-          <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} itensConta={itensConta} onAcao={aoAcaoConta} />
+          <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} badges={{ mensagens: seloDaAbaMensagens(contadores) }} itensConta={itensConta} onAcao={aoAcaoConta} />
         )}
         <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", papelTopo && "lg:hidden")} data-testid="topo-celular">
           <Logo className="lg:hidden" />
