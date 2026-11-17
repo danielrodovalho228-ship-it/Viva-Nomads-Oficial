@@ -1023,7 +1023,7 @@ export function PropertyDetail({
             <WorkspaceSection property={property} />
             <StayRules property={property} />
             <BomSaber property={property} />
-            <NivelImovel dados={exibicao59?.nivel} />
+            <NivelImovel dados={exibicao59?.nivel} comodidades={property.amenities} />
             <AvaliacaoFicha dados={exibicao59?.avaliacao} />
             <PadraoMinimoImovel confirmado={!!exibicao59?.confortoConfirmado} />
             <EstruturaInformada property={property} checklist={estrutura} />

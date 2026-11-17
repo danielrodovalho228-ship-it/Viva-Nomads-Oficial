@@ -75,6 +75,29 @@ async function dataEntradaDa(admin: SupabaseClient, l: Pick<Linha, "id" | "versa
   return d ? String(d).slice(0, 10) : null;
 }
 
+/**
+ * E968 — na expiração (não na 3ª, que encerra; não na corrida, onde o lead não é mexido), o lead aceito POR ESTA
+ * pré-aceitação volta a "new": a decisão volta ao dono, com o relógio dele (E4). Só mexe se o accepted_at do lead é o
+ * aceita_em da proposta (o aceite veio desta proposta); um lead aceito antes, à parte, fica como está — o Fechamento é
+ * barrado pela proposta expirada de qualquer forma (propostaAcordadaDoLead).
+ */
+async function devolverLeadAoDono(admin: SupabaseClient, l: { lead_id?: string | null; aceita_em?: string | null }): Promise<void> {
+  if (!l.lead_id || !l.aceita_em) return;
+  await admin.from("leads").update({ status: "new", accepted_at: null }).eq("id", l.lead_id).eq("status", "accepted").eq("accepted_at", l.aceita_em);
+}
+
+/** E968 — 3ª expiração: o lead aceito por esta pré-aceitação vai ao estado final "expired" (terminal). */
+async function encerrarLead(admin: SupabaseClient, l: { lead_id?: string | null; aceita_em?: string | null }): Promise<void> {
+  if (!l.lead_id || !l.aceita_em) return;
+  await admin.from("leads").update({ status: "expired" }).eq("id", l.lead_id).eq("status", "accepted").eq("accepted_at", l.aceita_em);
+}
+
+/** E968 — a reabertura devolve o lead a "accepted" com o accepted_at original (o da pré-aceitação), sem recalcular nada. */
+async function devolverLeadAceito(admin: SupabaseClient, p: { lead_id?: string | null; aceita_em?: string | null }): Promise<void> {
+  if (!p.lead_id || !p.aceita_em) return;
+  await admin.from("leads").update({ status: "accepted", accepted_at: p.aceita_em }).eq("id", p.lead_id).eq("status", "new");
+}
+
 export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new Date()): Promise<ResumoPreAceitacao> {
   if (!PRE_ACEITACAO_72H_ATIVA) return { ativa: false, lembretes: 0, expiradas: 0, perderamAVez: 0, encerradas: 0 };
   const resumo: ResumoPreAceitacao = { ativa: true, lembretes: 0, expiradas: 0, perderamAVez: 0, encerradas: 0 };
@@ -99,6 +122,13 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
         .maybeSingle();
       if (ok) {
         resumo.expiradas++;
+        // E968: a candidatura VOLTA AO DONO — o lead que esta pré-aceitação aceitou (accepted_at = aceita_em) deixa de
+        // estar aceito. Sem isso o Fechamento seguia aberto e usaria o preço do anúncio, saltando o congelamento.
+        // A taxa congelada fica na proposta; a reabertura devolve o lead a "accepted" com o mesmo accepted_at.
+        if (!encerra) await devolverLeadAoDono(admin, l);
+        // E968 (ORDEM-DUET-073): a 3ª expiração é TERMINAL — o lead aceito por esta pré-aceitação vai ao estado final
+        // "expired" (sem reabrir: reabrirNoBanco já recusa a encerrada; aceitar/recusar só valem de "new"/"accepted").
+        else await encerrarLead(admin, l);
         if (encerra) {
           resumo.encerradas++;
           await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoEncerrada, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO);
@@ -150,9 +180,9 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
  * Quem perdeu a corrida só volta por reabertura MANUAL DO DONO (`quem` = "owner"), e só se as datas já estiverem livres.
  */
 export async function reabrirNoBanco(admin: SupabaseClient, propostaId: string, quem: "owner" | "tenant", agora: Date = new Date()): Promise<{ ok: true; prazo: Date; reaberturas: number } | { ok: false; error: string }> {
-  const { data, error } = await admin.from("propostas").select("id, status, versao_atual, property_id, pre_aceitacao_reaberturas, pre_aceitacao_expirou_em, pre_aceitacao_perdeu_em, pre_aceitacao_encerrada_em").eq("id", propostaId).maybeSingle();
+  const { data, error } = await admin.from("propostas").select("id, status, versao_atual, property_id, lead_id, aceita_em, pre_aceitacao_reaberturas, pre_aceitacao_expirou_em, pre_aceitacao_perdeu_em, pre_aceitacao_encerrada_em").eq("id", propostaId).maybeSingle();
   if (error) return { ok: false, error: "Não foi possível ler a proposta agora. Tente de novo em instantes." };
-  const p = data as { id: string; status: string; versao_atual: number; property_id: string; pre_aceitacao_reaberturas: number; pre_aceitacao_expirou_em: string | null; pre_aceitacao_perdeu_em: string | null; pre_aceitacao_encerrada_em: string | null } | null;
+  const p = data as { id: string; status: string; versao_atual: number; property_id: string; lead_id?: string | null; aceita_em?: string | null; pre_aceitacao_reaberturas: number; pre_aceitacao_expirou_em: string | null; pre_aceitacao_perdeu_em: string | null; pre_aceitacao_encerrada_em: string | null } | null;
   if (!p) return { ok: false, error: "Proposta não encontrada." };
   if (p.status !== "expirada" || !p.pre_aceitacao_expirou_em) return { ok: false, error: "Só uma pré-aceitação que expirou pode ser reaberta." };
   if (p.pre_aceitacao_encerrada_em) return { ok: false, error: "Esta candidatura foi encerrada na 3ª expiração do prazo. Envie uma nova proposta." };
@@ -180,5 +210,6 @@ export async function reabrirNoBanco(admin: SupabaseClient, propostaId: string, 
     .select("id")
     .maybeSingle();
   if (!ok) return { ok: false, error: "A proposta mudou enquanto você respondia. Abra de novo." };
+  await devolverLeadAceito(admin, p);
   return { ok: true, prazo: r.prazo, reaberturas: r.reaberturas };
 }

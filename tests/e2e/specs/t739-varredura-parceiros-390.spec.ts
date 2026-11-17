@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T739 — varredura visual das páginas públicas de parceiros a 390 px (Muse, 30/10): em cada página, nenhum estouro
@@ -18,6 +18,16 @@ async function varrer(p: Page) {
   const altura = await p.evaluate(() => document.documentElement.scrollHeight);
   for (let y = 0; y < altura; y += 600) {
     await p.evaluate((v) => window.scrollTo(0, v), y);
+    await p.waitForTimeout(120);
+    // Faixas que rolam de lado (ex.: categorias a 390 px): rolar também até o fim delas, para as imagens sob demanda
+    // de fora da tela carregarem — a checagem abaixo cobre toda imagem da faixa, não só a que está à vista.
+    // (Arnês, não asserção: aval do Muse, DUET-2250B-C2.)
+    await p.evaluate(() => {
+      for (const el of document.querySelectorAll<HTMLElement>("*")) {
+        const ox = getComputedStyle(el).overflowX;
+        if ((ox === "auto" || ox === "scroll") && el.scrollWidth > el.clientWidth) el.scrollLeft = el.scrollWidth;
+      }
+    });
     await p.waitForTimeout(120);
   }
   await p.evaluate(() => window.scrollTo(0, 0));
@@ -47,6 +57,11 @@ async function varrer(p: Page) {
         if (a.e.contains(c.e) || c.e.contains(a.e)) continue;
         // A foto de fundo do banner sob o título é de propósito.
         if ((a.e.tagName === "IMG") !== (c.e.tagName === "IMG")) continue;
+        // Avatar sobre a capa (cartão e página do parceiro) é desenho intencional — julgamento do Muse, 16/11/2026
+        // (DUET-2120-C2, t739 opção a). Só esse par sai: avatar ("Foto de …") × imagem dentro da capa.
+        const naCapa = (e: Element) => !!e.closest('[data-testid="cartao-parceiro-capa"],[data-testid="parceiro-capa"]');
+        const ehAvatar = (e: Element) => e.tagName === "IMG" && (e.getAttribute("alt") ?? "").startsWith("Foto de ");
+        if ((ehAvatar(a.e) && naCapa(c.e)) || (ehAvatar(c.e) && naCapa(a.e))) continue;
         const ix = Math.min(a.b.right, c.b.right) - Math.max(a.b.left, c.b.left);
         const iy = Math.min(a.b.bottom, c.b.bottom) - Math.max(a.b.top, c.b.top);
         if (ix > 4 && iy > 4) achados.push(`${a.e.tagName} × ${c.e.tagName}`);
@@ -65,7 +80,7 @@ test.describe("T739 — varredura das páginas de parceiros a 390 px", () => {
     ids.conta = await criarConta(conta, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Lia Limpeza ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Faxina de imóvel mobiliado.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.conta, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Lia Limpeza ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Faxina de imóvel mobiliado.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;
