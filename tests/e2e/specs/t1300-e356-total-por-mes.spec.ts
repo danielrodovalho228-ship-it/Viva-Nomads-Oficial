@@ -7,7 +7,7 @@ import { test, expect } from "@playwright/test";
   é o aviso curto que fecha a linha do total: "tudo incluído" (contas fixas) ou "água, luz e gás à parte" (contas medidas).
 */
 for (const [largura, altura] of [[390, 844], [1280, 900]] as const) {
-  test(`a ${largura} px: todo cartão da /buscar mostra o total da estadia com o aviso curto`, async ({ page }) => {
+  test(`a ${largura} px: todo cartão da /buscar mostra o total da estadia com o aviso curto`, { tag: ["@E356", "@ao-vivo-seguro"] }, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: altura });
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     const cartoes = page.getByTestId("cartao-imovel");

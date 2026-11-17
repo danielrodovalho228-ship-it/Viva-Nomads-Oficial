@@ -4,8 +4,9 @@ import { marcarConversaAberta } from "@/lib/data/conversa-aberta-actions";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { textoConversaEncerrada, textoNovaCandidatura } from "@/lib/mensagens/encerramento";
+import { VISTA_DIVIDIDA, conversaNaTela } from "@/lib/mensagens/conversa-na-tela";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -25,7 +26,7 @@ import { avisoAntesDeEnviar, previaAoDigitar } from "@/lib/messages/aviso-envio"
 import { ROTA_ENVIAR_ANEXO, podeAnexar, tipoNaTela, validarAnexoNaTela } from "@/lib/messages/anexo-tela";
 import { AnexoNaMensagem, BotaoAnexar, PreviaAnexo, semLocalizacao } from "@/components/mensagens/anexo-conversa";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
 import { FILTROS, PRAZOS_ADIAR, adiarAte, contarPorFiltro, filtrarConversas, separarAdiadas, estaAdiada, type Filtro, type PrazoAdiar } from "@/lib/mensagens-filtros";
 import { adiarConversa, retomarConversa } from "@/lib/data/conversa-adiar-actions";
 import { cn } from "@/lib/utils";
@@ -46,10 +47,12 @@ import { EVENTO_CONTADORES } from "@/lib/painel/contadores";
  */
 export function MessagesClient({ initial, abrir }: { initial: Conversation[]; /** Conversa a abrir (ex.: "Mensagem" da página da estadia). */ abrir?: string }) {
   const { on: demoOn } = useDemoMode();
+  // E980: os exemplos chegam sob demanda; o inner remonta quando chegam (o estado dele nasce da prop).
+  const exemplos = useExemplos(demoOn);
   return (
     <MessagesInner
-      key={demoOn ? "demo" : "real"}
-      initial={demoOn ? DEMO_CONVERSATIONS : initial}
+      key={demoOn ? (exemplos ? "demo" : "demo-carregando") : "real"}
+      initial={demoOn ? (exemplos?.DEMO_CONVERSATIONS ?? []) : initial}
       demo={demoOn}
       abrir={demoOn ? undefined : abrir}
     />
@@ -126,9 +129,20 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // painel da direita vazio (nunca a conversa de outro filtro).
   const active = naoEncontrada ? undefined : (visiveis.find((c) => c.id === activeId) ?? visiveis[0]);
 
+  // E481 no celular (DUET-0605): só a conversa que está NA TELA conta como lida. No celular a lista não mostra conteúdo;
+  // carregar a lista não marca leitura, abrir a conversa sim. No computador (vista dividida) a conversa aberta aparece.
+  const vistaDividida = useSyncExternalStore(
+    (avisar) => {
+      const mq = window.matchMedia(VISTA_DIVIDIDA);
+      mq.addEventListener("change", avisar);
+      return () => mq.removeEventListener("change", avisar);
+    },
+    () => window.matchMedia(VISTA_DIVIDIDA).matches,
+    () => false,
+  );
   // Prompt 44: com a conversa aberta (e a aba visível), a próxima mensagem dela não vira push no celular. Renova a cada
   // 5 min enquanto ela fica na tela (a regra do push olha os últimos 10 min).
-  const conversaAbertaId = active?.id;
+  const conversaAbertaId = conversaNaTela({ ativaId: active?.id, vistaDividida, vistaCelular: mobileView });
   useEffect(() => {
     if (demo || !conversaAbertaId) return;
     const marcar = () => {
