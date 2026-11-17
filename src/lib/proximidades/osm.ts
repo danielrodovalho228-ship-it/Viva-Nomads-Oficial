@@ -166,12 +166,27 @@ export function escolherLugares(candidatos: readonly CandidatoLugar[], origem: {
  * estão no OSM (na ordem e com o "não mostrar" do dono), depois o resto da lista do OSM, visível. Sem lista do OSM
  * (a perna falhou), nada do que o editor mandou entra.
  */
+/**
+ * E978 (refinamento, DUET-2005): a chave de um lugar para casar o que o editor mostrou (Mapbox) com a lista do OSM —
+ * tipo + nome normalizado: sem acentos, sem diferença de caixa e com os espaços reduzidos a um ("Farmácia  São João" =
+ * "farmacia sao joao"). Pontuação e palavras continuam a contar: nomes diferentes não viram o mesmo lugar.
+ */
+export function chaveDoLugar(tipo: string | null | undefined, nome: string): string {
+  const n = nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+  return `${tipo ?? ""}|${n}`;
+}
+
 export function osmParaGravar(
   enviados: readonly { tipo?: string | null; nome: string; oculto?: boolean }[],
   doCep: ReadonlyMap<string, LugarProximo>,
   listaDoCep: readonly LugarProximo[],
 ): { lugar: LugarProximo; oculto: boolean }[] {
-  const chave = (tipo: string | null | undefined, nome: string) => `${tipo ?? ""}|${nome.trim().toLowerCase()}`;
+  const chave = chaveDoLugar;
   const out: { lugar: LugarProximo; oculto: boolean }[] = [];
   const usados = new Set<string>();
   for (const e of enviados) {

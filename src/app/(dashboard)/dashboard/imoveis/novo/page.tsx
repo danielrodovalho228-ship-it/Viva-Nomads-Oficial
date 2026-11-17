@@ -226,7 +226,11 @@ export default function NewPropertyPage() {
   // E614: preço sugerido, garantia e período padrão só contam no "N% pronto" depois de o dono confirmar (mexer no campo
   // ou "Continuar" no passo). null = rascunho anterior à regra (conta como antes).
   const [confirmados, setConfirmados] = useState<CampoConfirmavel[] | null>([]);
-  const confirmar = (...c: CampoConfirmavel[]) => setConfirmados((s) => (s === null ? s : [...new Set([...s, ...c])]));
+  // E614: toda confirmação marca a ref — na janela da base (E516) ela grava em silêncio em vez de ser engolida.
+  const confirmar = (...c: CampoConfirmavel[]) => {
+    confirmouRef.current = true;
+    setConfirmados((s) => (s === null ? s : [...new Set([...s, ...c])]));
+  };
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
   // Detecção-A (Entrega 3): comodidades achadas nas fotos e ainda não confirmadas.
   const [comodidadesDetectadas, setComodidadesDetectadas] = useState<string[]>([]);
@@ -382,6 +386,8 @@ export default function NewPropertyPage() {
   const aguardandoBaseRef = useRef(false);
   // E516 (t309): a pessoa digitou ou marcou algo desde que o rascunho foi aberto — a 1ª gravação é edição, não base.
   const editouRef = useRef(false);
+  // E614: houve confirmação (Continuar ou botão do Passo 8) desde que o rascunho foi aberto.
+  const confirmouRef = useRef(false);
   const [draftServerId, setDraftServerId] = useState<string | null>(null);
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
   // E180 (Daniel, uso real em 28/10): a cópia local do último rascunho NUNCA se aplica sozinha num anúncio novo — ela
@@ -931,6 +937,7 @@ export default function NewPropertyPage() {
     // E516: o estado que sai deste rascunho aberto é o ponto de partida do autosave — abrir não é editar.
     aguardandoBaseRef.current = true;
     editouRef.current = false;
+    confirmouRef.current = false;
     const s = (v: unknown) => (typeof v === "string" ? v : undefined);
     if (s(d.title)) setTitle(d.title as string);
     if (s(d.propertyType)) setPropertyType(d.propertyType as string);
@@ -1260,7 +1267,7 @@ export default function NewPropertyPage() {
     // E516: abrir o rascunho não é edição (vira a base); navegar entre passos grava em silêncio; só mudar o conteúdo
     // mostra "Salvando…" e carimba "Salvo às …".
     const conteudo = conteudoDoRascunho(draftJson);
-    let decisao = decisaoAutosave({ aguardandoBase: aguardandoBaseRef.current, editou: editouRef.current, base: baseConteudoRef.current, conteudo });
+    let decisao = decisaoAutosave({ aguardandoBase: aguardandoBaseRef.current, editou: editouRef.current, confirmou: confirmouRef.current, base: baseConteudoRef.current, conteudo });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (decisao === "edicao") setSaveStatus("saving");
     const montarGravacao = () => ({
@@ -1285,11 +1292,14 @@ export default function NewPropertyPage() {
         if (!editouRef.current) {
           // O estado do rascunho aberto assentou (o debounce juntou as mudanças da carga): é a base, nada a gravar.
           baseConteudoRef.current = conteudoDoRascunho(draftJson);
-          return;
+          // E614: se nesse meio-tempo o dono confirmou um valor (Continuar), a confirmação grava em silêncio.
+          if (!confirmouRef.current) return;
+          decisao = "silencioso";
+        } else {
+          // Já houve edição real nesse meio-tempo: grava e carimba como edição.
+          decisao = "edicao";
+          setSaveStatus("saving");
         }
-        // Já houve edição real nesse meio-tempo: grava e carimba como edição.
-        decisao = "edicao";
-        setSaveStatus("saving");
       }
       // 59-C1: rede (o fetch nem chegou) ≠ recusa do servidor (chegou e o banco disse não, com a causa).
       let res: Awaited<ReturnType<typeof saveDraftData>>;
