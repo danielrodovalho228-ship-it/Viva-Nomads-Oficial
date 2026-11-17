@@ -17,8 +17,9 @@ export const PRAZO_CONTESTACAO_DIAS = 5;
 /** E707: os 30 dias são o TETO EXTERNO contado do check-out confirmado — o mesmo marco de lib/caucao.ts. */
 export const PRAZO_DEVOLUCAO_DIAS = PRAZO_REEMBOLSO_DIAS;
 
-export const TEXTO_VIVA_NAO_DECIDE =
-  "A Viva não decide a disputa. Ela entrega o dossiê em PDF (fotos de entrada e saída lado a lado, valores e comprovantes) e oferece as saídas: acordo entre as partes, vistoriador parceiro ou Juizado Especial.";
+/** E940: o dossiê da disputa (fragmento único — o artigo "Algo quebrou" da Ajuda usa o mesmo). */
+export const DOSSIE_EM_PDF = "o dossiê em PDF (fotos de entrada e saída lado a lado, valores e comprovantes)";
+export const TEXTO_VIVA_NAO_DECIDE = `A Viva não decide a disputa. Ela entrega ${DOSSIE_EM_PDF} e oferece as saídas: acordo entre as partes, vistoriador parceiro ou Juizado Especial.`;
 
 export const SAIDAS_DA_DISPUTA = [
   { chave: "acordo", rotulo: "Acordo entre as partes" },
