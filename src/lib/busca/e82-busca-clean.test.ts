@@ -14,8 +14,10 @@ const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), 
 const busca = ler("app/(public)/buscar/search-client.tsx");
 const barra = ler("components/busca/barra-pilulas.tsx");
 
-test("uma linha de controles na ordem do mockup: Datas · Local · Tipo · Preço · Nível · Mais filtros · Ordenar · Mapa", () => {
-  assert.deepEqual([...ORDEM_PILULAS], ["datas", "local", "tipo", "preco", "nivel", "mais", "ordenar", "mapa"]);
+// E946 (asserção alterada, item do Daniel de 15/11): a ordem do mockup tinha o Nível entre Preço e Mais filtros; agora ele
+// vai por último. A ordem inteira é travada no e946-ordem-filtros.test.ts.
+test("uma linha de controles na ordem: Datas · Local · Tipo · Preço · Mais filtros · Ordenar · Mapa · Nível (E946)", () => {
+  assert.deepEqual([...ORDEM_PILULAS], ["datas", "local", "tipo", "preco", "mais", "ordenar", "mapa", "nivel"]);
   const linha = barra.slice(barra.indexOf(`role="toolbar"`), barra.indexOf("{aberto && ("));
   const ordem = [...linha.matchAll(/pilula\("(\w+)"\)|data-testid="pilula-(mais|mapa)"/g)].map((m) => m[1] ?? m[2]);
   assert.deepEqual(ordem, [...ORDEM_PILULAS]);
