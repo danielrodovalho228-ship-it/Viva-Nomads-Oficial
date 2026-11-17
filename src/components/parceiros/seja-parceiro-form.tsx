@@ -1,5 +1,6 @@
 "use client";
 
+import { VALIDADE_LINK_ATIVACAO } from "@/lib/atendimento/parceiros-texto";
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -391,7 +392,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       )}
       {/* E878: antes de enviar, o prazo do canal parceiro (fonte única, o mesmo de /parceiros) e o passo seguinte. */}
       <p className="text-sm text-ink" data-testid="seja-parceiro-prazo">
-        {TEXTO_PRAZO_PARCERIA} Aprovado, o e-mail traz o link para ativar a sua página.
+        {TEXTO_PRAZO_PARCERIA} Aprovado, o e-mail traz o link para ativar a sua página ({VALIDADE_LINK_ATIVACAO}).
       </p>
       <Button type="submit" className="w-full sm:w-auto" disabled={pendente || (estado.logado && !estado.emailConfirmado)} data-testid="seja-parceiro-enviar">
         {pendente && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}

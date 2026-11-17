@@ -9,6 +9,7 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { ROTA_RECRUTAMENTO } from "@/lib/vistoria/entrada";
 import { FRASE_DONO_PAGA_AVALIACAO } from "@/lib/vistoria/regras";
+import { REGRA_RELACOES_AVALIADOR } from "@/lib/atendimento/parceiros-texto";
 
 /*
   Correção 62-B3, item 1: a página de recrutamento do avaliador credenciado. Pública, indexável e no sitemap; funciona
@@ -34,7 +35,7 @@ const REQUISITOS = [
 
 const COMO = [
   { t: "Independente", d: "O avaliador credenciado não trabalha para o dono nem para o morador. Confere o imóvel pelo checklist da Viva e emite o laudo." },
-  { t: "Escolhido pelo proprietário", d: "A Viva sugere os avaliadores da cidade e o proprietário escolhe. Você define o seu próprio valor e prazo. Quem tem relação com o dono ou o imóvel fica de fora." },
+  { t: "Escolhido pelo proprietário", d: `A Viva sugere os avaliadores da cidade e o proprietário escolhe. Você define o seu próprio valor e prazo. ${REGRA_RELACOES_AVALIADOR}` },
   { t: "Laudo assinado por você", d: "Depois da visita, você emite e assina o laudo pelo modelo da Viva, que guarda o registro (número e hash). O prazo é o que você propôs." },
   { t: "Critérios públicos de qualidade", d: "Sem suspensão automática e sem descredenciamento por decisão da Viva: só critérios públicos e iguais para todos abrem uma revisão, com direito de resposta." },
 ] as const;
@@ -66,7 +67,7 @@ export default function AvaliadoresRecrutamentoPage() {
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold text-ink">Como funciona</h2>
-        <ul className="mt-3 grid gap-3 sm:grid-cols-3">
+        <ul className="mt-3 grid gap-3 sm:grid-cols-2" data-testid="avaliador-como-grade">{/* E914: 2+2 — nunca 3+1 a 1280 px. */}
           {COMO.map((c) => (
             <li key={c.t} className="rounded-xl border border-sage-200 p-4">
               <p className="font-semibold text-ink">{c.t}</p>

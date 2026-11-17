@@ -8,8 +8,12 @@ export interface LinkCartao {
   rotulo: string;
 }
 
+/** E910: a ligação de parceria do cartão, como nos cartões irmãos ("Sou fotógrafo", "Pedir parceria"). */
+export const LINK_PARCERIA_GESTORES: LinkCartao = { href: "/parceiros?categoria=outro#quero-ser-parceiro", rotulo: "Pedir parceria" };
+
 export function linksDoCartaoGestores(precosVisivel: boolean): LinkCartao[] {
-  return precosVisivel
+  const taxas: LinkCartao[] = precosVisivel
     ? [{ href: "/precos#plano-gestor", rotulo: "Ver o Plano Gestor" }]
     : [{ href: "/para-proprietarios#taxa", rotulo: "Taxas e Plano Gestor" }];
+  return [...taxas, LINK_PARCERIA_GESTORES];
 }

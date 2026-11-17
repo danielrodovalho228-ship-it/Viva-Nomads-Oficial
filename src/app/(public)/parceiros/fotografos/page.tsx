@@ -13,7 +13,9 @@ import { TITULO_SEM_FOTOGRAFO } from "@/lib/fotografos/aviso";
 import { buscarParceiros, lerParceiroGeralServidor } from "@/lib/data/parceiros-publico";
 import { CartaoParceiro } from "@/components/parceiros/cartao-parceiro";
 import { RegrasParceiros } from "@/components/parceiros/regras-parceiros";
-import { CONTATO_PELA_VIVA, mostrarParceiroGeral } from "@/lib/parceiros/regras";
+import { BannerTopo } from "@/components/institucional/banner-topo";
+import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
+import { CONTATO_PELA_VIVA, REGRA_CNPJ_PARCEIRO, mostrarParceiroGeral } from "@/lib/parceiros/regras";
 
 /*
   Prompt 31a, item 6: /parceiros/fotografos é a busca de parceiros filtrada em fotografia (lê a view pública
@@ -53,12 +55,21 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
   const fotografos = cidade ? r.lista : [];
   const geral = cidade && !fotografos.length ? await lerParceiroGeralServidor() : null;
 
+  const foto = fotoDaCategoria("fotografia")!;
   return (
+    <>
+    <JsonLd dados={trilha(SITE_URL, [{ nome: "Fotógrafos parceiros", caminho: "/parceiros/fotografos" }])} />
+    {/* E911: a porta abre com foto, como as irmãs (/parceiros/avaliadores e as portas de busca): o mesmo BannerTopo. */}
+    <BannerTopo
+      foto={foto.src}
+      alt={foto.alt}
+      testid="fotografos-topo"
+      titulo="Fotógrafos parceiros"
+      subtitulo={<p>Fotos profissionais do seu imóvel mobiliado, feitas por fotógrafos aprovados pela Viva. As fotos vão direto para o seu anúncio.</p>}
+      className="[&>div]:min-h-[16rem] md:[&>div]:min-h-[18rem]"
+    />
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-      <JsonLd dados={trilha(SITE_URL, [{ nome: "Fotógrafos parceiros", caminho: "/parceiros/fotografos" }])} />
-      <h1 className="font-display text-2xl font-semibold text-ink sm:text-[28px]">Fotógrafos parceiros</h1>
-      <p className="mt-2 text-ink/70">Fotos profissionais do seu imóvel mobiliado, feitas por fotógrafos aprovados pela Viva. As fotos vão direto para o seu anúncio.</p>
-      <p className="mt-2 text-sm font-medium text-ink" data-testid="pedir-gratis">Pedir é grátis: a Viva não cobra nada de você pelo pedido.</p>
+      <p className="text-sm font-medium text-ink" data-testid="pedir-gratis">Pedir é grátis: a Viva não cobra nada de você pelo pedido.</p>
 
       <BuscaFotografo cepInicial={cepBusca ? formatarCep(cepBusca) : ""} cidadeInicial={cidade} vazioNoServidor={buscaVazia(sp.cep, sp.cidade)} />
 
@@ -102,10 +113,12 @@ export default async function FotografosPage({ searchParams }: { searchParams: P
       <section className="mt-8" aria-labelledby="h-e-fotografo">
         <h2 id="h-e-fotografo" className="font-display text-xl font-semibold text-ink">É fotógrafo?</h2>
         <p className="mb-3 mt-1 text-sm text-ink/70">Como funciona a parceria:</p>
+        <p className="mb-3 text-sm font-medium text-ink" data-testid="fotografos-regra-cnpj">{REGRA_CNPJ_PARCEIRO}.</p>
         <RegrasParceiros pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
       </section>
       <div className="mt-4"><ButtonLink href="/parceiros?categoria=fotografia#quero-ser-parceiro" variant="outline" className="w-full min-h-11 sm:w-auto">É fotógrafo? Seja parceiro</ButtonLink></div>
       <p className="mt-4 text-xs text-muted" data-testid="fotografos-contato-aceite">{CONTATO_PELA_VIVA}</p>
     </div>
+    </>
   );
 }

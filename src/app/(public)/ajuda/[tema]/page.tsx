@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
+import { BRAND_BLUR } from "@/lib/media";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ChevronRight, MessageSquareText } from "lucide-react";
 import { PerguntasDaCentral } from "@/components/ajuda/central-ajuda";
@@ -32,12 +34,18 @@ export default async function TemaAjudaPage({ params }: { params: Promise<{ tema
   return (
     <div className="container-page py-12" data-testid="ajuda-tema-pagina" data-tema={tema.id}>
       <div className="mx-auto grid max-w-5xl gap-12">
-        <header>
+        {/* E912: o tema abre com a sua foto do acervo (a mesma do cartão do hub), ao lado do título. */}
+        <header className="grid items-center gap-6 md:grid-cols-[1fr_320px]">
+          <div>
           <Link href="/ajuda" className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-forest underline" data-testid="ajuda-voltar-central">
             <ArrowLeft className="h-4 w-4" aria-hidden /> Central de ajuda
           </Link>
           <h1 className="mt-2 font-title text-[28px] font-semibold text-ink">{tema.titulo}</h1>
           <p className="mt-2 text-base text-muted">{tema.resumo}.</p>
+          </div>
+          <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-sage-100" data-testid="ajuda-tema-foto">
+            <Image src={tema.foto} alt={tema.alt} fill priority sizes="(min-width: 768px) 320px, 100vw" placeholder="blur" blurDataURL={BRAND_BLUR} className="object-cover" style={tema.fotoPosicao ? { objectPosition: tema.fotoPosicao } : undefined} />
+          </div>
         </header>
 
         <PerguntasDaCentral ids={tema.perguntas} titulo="Perguntas deste tema" />
@@ -49,7 +57,11 @@ export default async function TemaAjudaPage({ params }: { params: Promise<{ tema
           <ul className="mt-4 grid gap-4 md:grid-cols-3">
             {outros.map((t) => (
               <li key={t.id}>
-                <Link href={hrefDoTema(t.id)} className="flex h-full min-h-16 items-center gap-2 rounded-xl border border-line bg-white p-4 font-semibold text-ink hover:border-forest" data-testid={`ajuda-outro-tema-${t.id}`}>
+                <Link href={hrefDoTema(t.id)} className="flex h-full min-h-16 items-center gap-3 rounded-xl border border-line bg-white p-3 font-semibold text-ink hover:border-forest" data-testid={`ajuda-outro-tema-${t.id}`}>
+                  {/* E912: cada "Outro tema" com a foto do seu cartão no hub. */}
+                  <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-sage-100">
+                    <Image src={t.foto} alt={t.alt} fill sizes="150px" placeholder="blur" blurDataURL={BRAND_BLUR} className="object-cover" style={t.fotoPosicao ? { objectPosition: t.fotoPosicao } : undefined} />
+                  </span>
                   <span className="min-w-0 flex-1">{t.titulo}</span>
                   <ChevronRight className="h-5 w-5 shrink-0 text-muted" aria-hidden />
                 </Link>

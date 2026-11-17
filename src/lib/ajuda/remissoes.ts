@@ -2,7 +2,8 @@
   E906: as remissões internas das respostas da Ajuda e dos guias viram links. Só os destinos VIVOS da lista entram; /precos
   (suspensa, E563) e qualquer outro caminho ficam como texto. PURO: a tela desenha os pedaços (TextoComRemissoes).
 */
-export const DESTINOS_REMISSAO = ["/parceiros/buscar", "/parceiros/fotografos", "/parceiros", "/empresas", "/auth", "/seguranca"] as const;
+// E934: /parceiros/avaliadores (a porta do avaliador credenciado, pública mesmo com VISTORIA_ATIVA desligada).
+export const DESTINOS_REMISSAO = ["/parceiros/avaliadores", "/parceiros/buscar", "/parceiros/fotografos", "/parceiros", "/empresas", "/auth", "/seguranca"] as const;
 
 // Os mais longos primeiro (para /parceiros/buscar não virar /parceiros + texto); depois do caminho, nada que o continue.
 const RE = new RegExp(`(${[...DESTINOS_REMISSAO].sort((a, b) => b.length - a.length).map((d) => d.replace(/\//g, "\\/")).join("|")})(?![\\w/-])`, "g");

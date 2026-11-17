@@ -10,7 +10,7 @@ import { CartaoParceiro } from "@/components/parceiros/cartao-parceiro";
 import { BuscaVazia } from "@/components/parceiros/busca-vazia";
 import { buscarParceiros, lerParceiroGeralServidor } from "@/lib/data/parceiros-publico";
 import { ROTULO_FILTRO_NOTA } from "@/lib/parceiros/fiscal";
-import { CATEGORIAS_CATALOGO, avisoCategoriaInexistente, categoriaInexistente, categoriaValida, rotuloCategoria } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, REGRA_CNPJ_PARCEIRO, avisoCategoriaInexistente, categoriaInexistente, categoriaValida, hrefSejaParceiro, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarCep } from "@/lib/fotografos/regras";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { BannerTopo } from "@/components/institucional/banner-topo";
@@ -74,12 +74,14 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
         />
       )}
     <div className="container-page py-8">
-      {/* E458: para o profissional que chegou à busca — a porta de quem quer ser parceiro. */}
+      {/* E458: para o profissional que chegou à busca — a porta de quem quer ser parceiro. E933: já com a categoria
+          marcada no formulário e a regra do CNPJ (fonte única). */}
       <p className="text-sm text-muted" data-testid="buscar-seja-parceiro">
         É profissional?{" "}
-        <Link href="/parceiros" className="alvo-toque font-semibold text-forest underline underline-offset-2 hover:text-blue-700">
+        <Link href={hrefSejaParceiro(categoria)} className="alvo-toque font-semibold text-forest underline underline-offset-2 hover:text-blue-700">
           Seja parceiro da Viva
-        </Link>
+        </Link>{" "}
+        <span data-testid="buscar-regra-cnpj">{REGRA_CNPJ_PARCEIRO}.</span>
       </p>
 
       {inexistente && (

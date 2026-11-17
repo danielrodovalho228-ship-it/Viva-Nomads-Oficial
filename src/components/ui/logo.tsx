@@ -16,6 +16,7 @@ export function Logo({
   light = false,
   className,
   rotulo = "VivaNomads — página inicial",
+  placa = true,
 }: {
   /** null = só a marca, sem link (CADASTRO-MOLDURA: no assistente o logo não tira ninguém do fluxo). */
   href?: string | null;
@@ -23,18 +24,20 @@ export function Logo({
   className?: string;
   /** Nome acessível do link (sempre contendo "VivaNomads", o texto visível). */
   rotulo?: string;
+  /** E913: false = o símbolo assenta direto no fundo escuro, sem a placa branca (o rodapé preto). */
+  placa?: boolean;
 }) {
   if (href === null)
     return (
       <span className={cn("inline-flex items-center gap-2", className)} aria-label="VivaNomads" role="img" data-logo>
-        <BrandMark onDark={light} />
+        <BrandMark onDark={light && placa} />
         <Wordmark light={light} />
       </span>
     );
   return (
     // O nome acessível CONTÉM o texto visível ("VivaNomads"): axe label-content-name-mismatch (t251).
     <Link href={href} className={cn("inline-flex items-center gap-2", className)} aria-label={rotulo} data-logo>
-      <BrandMark onDark={light} />
+      <BrandMark onDark={light && placa} />
       <Wordmark light={light} />
     </Link>
   );
