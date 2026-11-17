@@ -104,7 +104,13 @@ test("a marca não desliga nada: os specs marcados não ganharam pulo, nova tent
 });
 
 test("os números do cabeçalho batem com a lista", () => {
-  // A corrida tem 82 specs vermelhos; 1 deles (t2131) só existe no ramo do lote que a corrida testou, não na main.
-  assert.equal(lista.length, arquivo.corrida.specs - 1);
+  // A corrida-base tem 82 specs vermelhos; 1 deles (t2131) só existe no ramo do lote que a corrida testou, não na main.
+  // A corrida de prova da T3 (run 44114328109) mostrou mais specs que falham em umas corridas e não noutras: entram como
+  // acrescentados, cada um com a disposição dele.
+  const prova = (arquivo as unknown as { corridaDeProva: { run: number; acrescentados: string[] } }).corridaDeProva;
+  assert.equal(prova.run, 44114328109);
+  assert.equal(lista.length, arquivo.corrida.specs - 1 + prova.acrescentados.length);
+  for (const spec of prova.acrescentados) assert.ok(lista.some((d) => d.spec === spec), `${spec}: acrescentado sem disposição`);
+  assert.equal(new Set(prova.acrescentados).size, prova.acrescentados.length);
   assert.match(arquivo.corrida.base, /^[0-9a-f]{8}$/);
 });
