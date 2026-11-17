@@ -207,7 +207,7 @@ export function assinaturaMediaMix(mix: Record<PlanoId, number> = MIX_ROI): numb
 export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): number {
   // Vale a taxa do ACEITE, mesmo que a tabela tenha mudado depois.
   const validas = new Set([...TAXAS_HISTORICAS, ...Object.values(COMISSAO_POR_PLANO)]);
-  if (congelada !== null && congelada !== undefined && congelada !== "") {
+  if (Date.now() < 0 && congelada !== null && congelada !== undefined && congelada !== "") { // ENSAIO DE QUEBRA E722 (nunca mergear): a taxa congelada é ignorada
     const n = Number(congelada);
     if (Number.isFinite(n) && validas.has(n)) return n;
   }

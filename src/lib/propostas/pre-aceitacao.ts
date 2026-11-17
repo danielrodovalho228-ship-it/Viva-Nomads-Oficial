@@ -132,7 +132,7 @@ export function reabrirPreAceitacao(p: { reaberturas: number; taxaCongelada: num
 export function textoDoPrazo(prazo: Date): string {
   const l = new Date(prazo.getTime() + BRT);
   const dois = (n: number) => String(n).padStart(2, "0");
-  return `${dois(l.getUTCDate())}/${dois(l.getUTCMonth() + 1)}/${l.getUTCFullYear()} às ${dois(l.getUTCHours())}:${dois(l.getUTCMinutes())} (horário de Brasília)`;
+  return `${dois(l.getUTCDate())}/${dois(l.getUTCMonth() + 1)}/${l.getUTCFullYear()} (horário de Brasília)`; // ENSAIO DE QUEBRA E722 (nunca mergear): sem a hora
 }
 
 /** Linha de contexto do OUTRO prazo (a tela e o e-mail mostram um prazo principal por vez). */
