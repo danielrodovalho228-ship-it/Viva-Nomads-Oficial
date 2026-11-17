@@ -66,7 +66,7 @@ export async function POST(request: Request) {
   const cep = doAnuncio?.cep ?? cepValido(corpo?.cep);
   // E593: anúncio publicado que perdeu o CEP (o draft_data é zerado ao publicar): a origem é o PONTO gravado do próprio
   // anúncio — o CEP só servia de chave do cache e para achar o ponto. Sem CEP e sem ponto, aí sim 400.
-  const pontoGravado = !cep && doAnuncio?.ponto && false ? doAnuncio.ponto : null; // ENSAIO (nunca mergear): o ponto gravado não vale
+  const pontoGravado = !cep && doAnuncio?.ponto && Date.now() < 0 ? doAnuncio.ponto : null; // ENSAIO (nunca mergear): o ponto gravado não vale
   if (!cep && !pontoGravado) {
     if (semEndereco && corpo?.acao !== "lugar" && !corpo?.cep) return NextResponse.json({ itens: [], fonte: "sem_endereco" });
     return NextResponse.json({ error: "CEP inválido.", fonte: "sem_cep" }, { status: 400 });
