@@ -234,11 +234,17 @@ export async function controlesCobertos(page: Page): Promise<string[]> {
       // E248: a seta "›/‹" da fileira rolável cobre de propósito a borda da fileira (rolar a fileira revela o item): não é defeito.
       const setaDaFileira = (t: Element | null) => !!t?.closest("[data-testid^='fileira-seta-']");
       const cobre = (el: Element, t: Element | null) => !!t && !setaDaFileira(t) && !(el === t || el.contains(t) || t.contains(el)) && fixoOuSticky(t) && !fixoOuSticky(el);
+      // E1006: num controle em linha que quebra de linha (link no meio de um parágrafo), a caixa do elemento é a união das
+      // linhas e o centro dela cai fora dele, em cima do vizinho. Mede-se a 1ª caixa de linha, que é só do controle.
+      const caixaDeMedida = (el: Element): DOMRect => {
+        const linhas = el.getClientRects();
+        return linhas.length > 1 ? linhas[0] : el.getBoundingClientRect();
+      };
       // Rola o controle até o meio da tela e devolve o fixo que ainda o cobre (centro ou cantos), ou null se ficou à mostra.
       const continuaCoberto = (el: HTMLElement): Element | null => {
         const salvo = window.scrollY;
         el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
-        const r = el.getBoundingClientRect();
+        const r = caixaDeMedida(el);
         let achou: Element | null = null;
         for (const [fx, fy] of [[0.5, 0.5], [0.15, 0.15], [0.85, 0.15], [0.15, 0.85], [0.85, 0.85]]) {
           const px = r.left + r.width * fx;
@@ -254,7 +260,7 @@ export async function controlesCobertos(page: Page): Promise<string[]> {
       for (const el of Array.from(document.querySelectorAll<HTMLElement>(SEL))) {
         if (el.closest("[aria-hidden='true'], [inert], dialog:not([open])")) continue;
         if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
-        const r = el.getBoundingClientRect();
+        const r = caixaDeMedida(el);
         if (r.width < 2 || r.height < 2) continue;
         const x = r.left + r.width / 2;
         const y = r.top + r.height / 2;

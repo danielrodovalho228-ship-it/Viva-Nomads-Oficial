@@ -89,8 +89,11 @@ test("a taxa de serviço não entra na receita; fórmulas escritas na tela; sem 
 
 test("guarda: a tela lê o banco; DEMO_PORTFOLIO só no modo demonstração; nenhum [] fixo como fonte", () => {
   const cliente = ler("../app/(dashboard)/dashboard/carteira/carteira-client.tsx");
-  assert.match(cliente, /const fonte: ItemCarteira\[\] = demo \? DEMO_PORTFOLIO : itens;/);
-  assert.equal((cliente.match(/DEMO_PORTFOLIO/g) ?? []).length, 2, "o import e o ramo do modo demo");
+  // E980 (Gerente, 16/11/2026): o seed chega sob demanda (useExemplos) e sai do import estático. A fonte real segue
+  // sendo `itens`; o [] é só o instante em que os exemplos ainda carregam, DENTRO do ramo do modo demonstração.
+  assert.match(cliente, /const fonte: ItemCarteira\[\] = demo \? \(exemplos\?\.DEMO_PORTFOLIO \?\? \[\]\) : itens;/);
+  assert.equal((cliente.match(/DEMO_PORTFOLIO/g) ?? []).length, 1, "só o ramo do modo demo (o import estático saiu)");
+  assert.doesNotMatch(cliente, /from "@\/lib\/demo\/seed"/);
   assert.doesNotMatch(cliente, /\?\s*DEMO_PORTFOLIO\s*:\s*\[\]/);
   const pagina = ler("../app/(dashboard)/dashboard/carteira/page.tsx");
   assert.match(pagina, /await getCarteiraDoDono\((undefined, \{ exigir: true \})?\)/);
