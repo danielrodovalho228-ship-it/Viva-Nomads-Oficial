@@ -357,26 +357,6 @@ jobs:
           name: laboratorio-${{ github.run_id }}-quarentena
           path: quarentena
 
-      - name: Histórico das noites agendadas (para a sequência de noites verdes)
-        # E744 T4: só leitura. Sem o segredo, sem a coluna noite (antes da migração 0345) ou com o banco fora do ar, o passo
-        # falha sem derrubar nada e a sequência conta só a rodada de agora.
-        continue-on-error: true
-        env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-        run: |
-          mkdir -p tests/laboratorio/saida
-          echo '[]' > tests/laboratorio/saida/noites.json
-          [ -n "$SUPABASE_DB_URL" ] || exit 0
-          psql "$SUPABASE_DB_URL" -X -q -At -v ON_ERROR_STOP=1 > tests/laboratorio/saida/noites.tmp <<'SQL'
-          select coalesce(jsonb_agg(estado order by criada_em desc), '[]'::jsonb)
-            from (select criada_em, noite->>'estado' as estado
-                    from public.lab_execucoes
-                   where gatilho = 'schedule'
-                   order by criada_em desc
-                   limit 30) x;
-          SQL
-          [ -s tests/laboratorio/saida/noites.tmp ] && mv tests/laboratorio/saida/noites.tmp tests/laboratorio/saida/noites.json
-
       - name: Resumo da noite
         run: |
           # E744 T2: o resultado.json da quarentena vem dentro da pasta do artifact; acha onde estiver.
@@ -397,20 +377,8 @@ jobs:
             node scripts/lab/quarentena.mjs resumo "${QUARENTENA_JSON:-quarentena/resultado.json}" --saida tests/laboratorio/saida/quarentena.json || true
             node scripts/lab/quarentena.mjs validar > /dev/null 2> tests/laboratorio/saida/quarentena-erros.txt || { echo; echo "❌ O arquivo da quarentena tem erro:"; sed 's/^::error:://; s/^/- /' tests/laboratorio/saida/quarentena-erros.txt; }
           } > tests/laboratorio/saida/resumo-detalhe.md
-          # E744 T4: o relatório do dia (noite verde ou vermelha, falhas por classe, quarentena, conhecidas e a sequência)
-          # abre o resumo; o detalhe por fatia e por spec vem embaixo. O estado calculado aqui é o que vai para o banco.
-          {
-            node scripts/lab/noite-verde.mjs tests/laboratorio/saida/resultado.json \
-              --completude tests/laboratorio/saida/numeros.json \
-              --quarentena tests/laboratorio/saida/quarentena.json \
-              --disposicoes tests/laboratorio/disposicao-falhas.json \
-              --por-fatia tests/laboratorio/saida/por-fatia.json \
-              --historico tests/laboratorio/saida/noites.json \
-              --gatilho "${{ github.event_name }}" \
-              --saida tests/laboratorio/saida/noite.json || echo "## Relatório da noite: não calculado (veja o log do consolidar)"
-            echo
-            cat tests/laboratorio/saida/resumo-detalhe.md
-          } >> "$GITHUB_STEP_SUMMARY"
+          # E744 T4: este passo só prepara o detalhe (por fatia, por spec, completude, quarentena). Quem escreve o resumo do
+          # job é o passo "Relatório da noite", depois do banco, para o relatório do dia abrir o resumo já com a sequência.
 
       - name: Registrar no banco
         # Uma linha em public.lab_execucoes por execução. PR só do próprio repositório (nunca de fork, que não
@@ -432,6 +400,17 @@ jobs:
           # O resumo da suíte inteira passa de 128 KB: como argumento de linha de comando o execve recusa
           # ("Argument list too long", run 42536824482). Vai por arquivo e o psql o lê com \set ... `cat`.
           SAIDA=tests/laboratorio/saida
+          # E744 T4: o estado das noites AGENDADAS anteriores (só leitura), para a sequência de noites verdes. Sem a coluna
+          # noite (antes da migração 0345) a leitura falha e a sequência conta só a rodada de agora.
+          echo '[]' > "$SAIDA/noites.json"
+          psql "$SUPABASE_DB_URL" -X -q -At -v ON_ERROR_STOP=1 > "$SAIDA/noites.tmp" 2>/dev/null <<'SQL' && [ -s "$SAIDA/noites.tmp" ] && mv "$SAIDA/noites.tmp" "$SAIDA/noites.json" || echo "::warning::histórico das noites não lido (a coluna noite existe? migração 0345)"
+          select coalesce(jsonb_agg(estado order by criada_em desc), '[]'::jsonb)
+            from (select criada_em, noite->>'estado' as estado
+                    from public.lab_execucoes
+                   where gatilho = 'schedule'
+                   order by criada_em desc
+                   limit 30) x;
+          SQL
           # Frente 0: ANTES de gravar a rodada, o histórico {spec: último verde} (verde = passou > 0 e falhou = 0). Registros
           # de pull_request ficam de fora (código que não estava na main). O detector roda aqui para a lista ir junto na linha
           # e de novo no passo seguinte (sem segredo), que deixa o job vermelho e escreve o resumo.
@@ -468,6 +447,14 @@ jobs:
           SQL
           # E744 T4: o estado da noite (verde/vermelha, motivos, classes, sequência) vai para a coluna noite num comando À PARTE:
           # se a coluna ainda não existe (rodada de um ramo anterior à migração 0345) a linha da rodada já está gravada.
+          node scripts/lab/noite-verde.mjs "$SAIDA/resultado.json" \
+            --completude tests/laboratorio/saida/numeros.json \
+            --quarentena tests/laboratorio/saida/quarentena.json \
+            --disposicoes tests/laboratorio/disposicao-falhas.json \
+            --por-fatia tests/laboratorio/saida/por-fatia.json \
+            --historico tests/laboratorio/saida/noites.json \
+            --gatilho "$GATILHO" \
+            --saida "$SAIDA/noite.json" > "$SAIDA/relatorio-da-noite.md" || rm -f "$SAIDA/noite.json" "$SAIDA/relatorio-da-noite.md"
           if [ -s "$SAIDA/noite.json" ]; then
             export NOITE_ARQ="$SAIDA/noite.json"
             psql "$SUPABASE_DB_URL" -X -q -v ON_ERROR_STOP=1 -v run_url="$RUN_URL" >/dev/null <<'SQL' || echo "::warning::estado da noite não gravado em lab_execucoes.noite (a coluna existe? migração 0345)"
@@ -478,6 +465,28 @@ jobs:
           else
             echo "::warning::sem noite.json: estado da noite não calculado nesta rodada."
           fi
+
+      - name: Relatório da noite (abre o resumo do job)
+        # E744 T4: noite verde ou vermelha, falhas por classe, quarentena, conhecidas e a sequência de noites verdes; o
+        # detalhe por fatia e por spec vem embaixo. Se o passo do banco não rodou (sem o segredo, PR de fork), o relatório é
+        # calculado aqui, sem o histórico: a sequência conta só a rodada de agora.
+        if: ${{ !cancelled() }}
+        run: |
+          SAIDA=tests/laboratorio/saida
+          {
+            if [ -s "$SAIDA/relatorio-da-noite.md" ]; then
+              cat "$SAIDA/relatorio-da-noite.md"
+            else
+              node scripts/lab/noite-verde.mjs "$SAIDA/resultado.json" \
+                --completude tests/laboratorio/saida/numeros.json \
+                --quarentena tests/laboratorio/saida/quarentena.json \
+                --disposicoes tests/laboratorio/disposicao-falhas.json \
+                --por-fatia tests/laboratorio/saida/por-fatia.json \
+                --gatilho "${{ github.event_name }}" || echo "## Relatório da noite: não calculado (veja o log do consolidar)"
+            fi
+            echo
+            cat "$SAIDA/resumo-detalhe.md" 2>/dev/null || echo "(sem o detalhe da rodada: o passo Resumo da noite não gravou o arquivo)"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Detectar regressões (spec que já foi verde e está vermelho agora)
         # Frente 0: lista não vazia = vermelho no último passo; sem o histórico (banco fora do ar, sem o segredo) também.

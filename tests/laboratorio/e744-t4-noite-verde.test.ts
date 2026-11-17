@@ -197,6 +197,15 @@ test("o consolidar calcula a noite, escreve o relatório no topo do resumo e gra
   // O estado vai para a coluna nova, num comando à parte: se a coluna ainda não existe, a linha da rodada não se perde.
   assert.match(consolidar, /update public\.lab_execucoes set noite = :'noite'::jsonb/);
   assert.match(consolidar, /noite->>'estado'/, "a sequência lê o estado das noites agendadas anteriores");
+  // Nada antes do passo do banco vê segredo: o histórico das noites é lido DENTRO dele, e o relatório é escrito depois.
+  const [antes, banco] = consolidar.split("- name: Registrar no banco");
+  assert.doesNotMatch(antes, /secrets\./);
+  assert.match(banco.split("- name:")[0], /noite->>'estado'/);
+  assert.ok(consolidar.indexOf("- name: Relatório da noite") > consolidar.indexOf("- name: Registrar no banco"));
+  // Sem o passo do banco (sem o segredo), o relatório é calculado no próprio passo, sem o histórico.
+  const relatorio = consolidar.slice(consolidar.indexOf("- name: Relatório da noite"), consolidar.indexOf("- name: Detectar regressões"));
+  assert.match(relatorio, /if \[ -s "\$SAIDA\/relatorio-da-noite\.md" \]; then/);
+  assert.match(relatorio, /node scripts\/lab\/noite-verde\.mjs /);
   // O vermelho da rodada continua vindo das fatias, da completude e das regressões: a T4 só calcula e grava.
   assert.match(consolidar, /needs\.laboratorio\.result != 'success'/);
 });
