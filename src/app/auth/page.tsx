@@ -94,7 +94,7 @@ export default function AuthPage() {
     // A7: só caminho interno (recusa //, \, tab/CR/LF, @host, esquemas…).
     const guardado = new URLSearchParams(window.location.search).get("redirect");
     const destino = safeInternalPath(guardado);
-    // E1002: o proxy guarda caminho + consulta; a âncora ("#documento") o navegador mantém até aqui, e volta ao destino.
+    // E1002: o proxy guarda caminho + consulta; a âncora ("#seção") o navegador mantém até aqui, e volta ao destino.
     // Só quando há destino guardado: quem abre /auth direto vai ao painel sem âncora, como antes.
     return guardado ? destinoComAncoraDoLogin(destino, window.location.hash) : destino;
   }
