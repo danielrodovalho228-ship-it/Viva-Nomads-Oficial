@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Locator, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T735 — E277 (mockup aprovado em 30/10), busca de parceiros, a 1280 e 390, como visitante:
@@ -33,7 +33,7 @@ test.describe("T735 — E277: busca de parceiros com fotos", () => {
     ids.conta = await criarConta(parceiro, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Lena Limpeza ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Faxina de imóvel mobiliado, antes da entrada e na saída.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.conta, tipo_pessoa: "pj", documento: cnpjAleatorio(), /* E744 (semente alterada, tabela da Fable #3832): só PJ aparece na busca, como o 9a3205a5 fez nos demais specs */ nome_publico: `Lena Limpeza ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Faxina de imóvel mobiliado, antes da entrada e na saída.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;
@@ -98,7 +98,9 @@ test.describe("T735 — E277: busca de parceiros com fotos", () => {
       // "Quero ser avisado" (visitante: entrar e voltar) e "Indique um profissional", com os destinos de sempre.
       await expect(vazia.getByTestId("aviso-fotografo")).toBeVisible();
       await expect(vazia.getByTestId("aviso-fotografo-entrar")).toHaveAttribute("href", /\/auth/);
-      await expect(vazia.getByTestId("indique-profissional").getByRole("link")).toHaveAttribute("href", "/parceiros?categoria=montagem#quero-ser-parceiro");
+      // E744 (asserção alterada, além da tabela da Fable #3832): desde o E304 (b4c8b58a5, 31/10) "Indique um profissional" é um
+      // botão que envia/copia o link do pedido de parceria (data-href), não mais um link para /parceiros.
+      await expect(vazia.getByTestId("indique-profissional").getByTestId("indicar-profissional")).toHaveAttribute("data-href", "/parceiros?categoria=montagem#quero-ser-parceiro");
       await vazia.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t735-vazia-${largura}.png` });
       await p.context().close();
