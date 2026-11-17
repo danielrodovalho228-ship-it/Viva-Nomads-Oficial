@@ -234,7 +234,7 @@ export async function controlesCobertos(page: Page): Promise<string[]> {
       // E248: a seta "›/‹" da fileira rolável cobre de propósito a borda da fileira (rolar a fileira revela o item): não é defeito.
       const setaDaFileira = (t: Element | null) => !!t?.closest("[data-testid^='fileira-seta-']");
       const cobre = (el: Element, t: Element | null) => !!t && !setaDaFileira(t) && !(el === t || el.contains(t) || t.contains(el)) && fixoOuSticky(t) && !fixoOuSticky(el);
-      // E1004: num controle em linha que quebra de linha (link no meio de um parágrafo), a caixa do elemento é a união das
+      // E1006: num controle em linha que quebra de linha (link no meio de um parágrafo), a caixa do elemento é a união das
       // linhas e o centro dela cai fora dele, em cima do vizinho. Mede-se a 1ª caixa de linha, que é só do controle.
       const caixaDeMedida = (el: Element): DOMRect => {
         const linhas = el.getClientRects();

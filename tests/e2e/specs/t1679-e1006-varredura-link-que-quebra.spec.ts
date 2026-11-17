@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { controlesCobertos } from "../fixtures/varredura";
 
 /*
-  T1679 — E1004: a régua "fixo" da varredura (controlesCobertos) mede o link em linha pela 1ª caixa de linha.
+  T1679 — E1006: a régua "fixo" da varredura (controlesCobertos) mede o link em linha pela 1ª caixa de linha.
   A t622 ("Meus imóveis com só um rascunho", 390 px) acusava "Preço mensal" coberto pelo link vizinho de "Falta para
   publicar". Esses links são texto corrido dentro de um parágrafo; não se cobrem. O achado vinha da medida: num link
   que quebra de linha, a caixa do elemento é a união das linhas, e o centro dela cai em cima do vizinho.
@@ -30,7 +30,7 @@ async function linhasDe(page: Page, id: string): Promise<number> {
   return page.locator(`#${id}`).evaluate((el) => el.getClientRects().length);
 }
 
-test.describe("T1679 — E1004: a varredura mede o link que quebra de linha pela 1ª linha", () => {
+test.describe("T1679 — E1006: a varredura mede o link que quebra de linha pela 1ª linha", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("links em linha que quebram de linha, lado a lado, não são acusados", async ({ page }) => {

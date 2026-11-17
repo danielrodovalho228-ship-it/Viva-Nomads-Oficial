@@ -1,10 +1,10 @@
 /*
-  E1004 — a régua "fixo" da varredura (controlesCobertos, tests/e2e/fixtures/varredura.ts) acusava, em Meus imóveis a
+  E1006 — a régua "fixo" da varredura (controlesCobertos, tests/e2e/fixtures/varredura.ts) acusava, em Meus imóveis a
   390 px (t622), os links em linha de "Falta para publicar" como cobertos pelo link vizinho. Num link que quebra de linha
   a caixa do elemento (getBoundingClientRect) é a união das linhas, e o centro dela cai em cima do vizinho.
   A régua passa a medir o controle em linha que quebra pela 1ª caixa de linha (getClientRects()[0]). A asserção fica:
-  o que cobre o controle nesse ponto continua acusado. Prova ao vivo: tests/e2e/specs/t1679-e1004-varredura-link-que-quebra.spec.ts.
-  Roda: node --test tests/laboratorio/e1004-varredura-link-que-quebra.test.ts
+  o que cobre o controle nesse ponto continua acusado. Prova ao vivo: tests/e2e/specs/t1679-e1006-varredura-link-que-quebra.spec.ts.
+  Roda: node --test tests/laboratorio/e1006-varredura-link-que-quebra.test.ts
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
