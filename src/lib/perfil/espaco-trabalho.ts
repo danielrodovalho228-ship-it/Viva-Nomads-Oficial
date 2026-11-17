@@ -42,6 +42,22 @@ export function validarEspacoTrabalho(entrada: { oferta?: unknown; procura?: unk
   return { ok: true, valor: { oferta, procura } };
 }
 
+/**
+ * E986: o que a tela mostra quando a leitura do que está gravado chega. A leitura só preenche o campo em que a pessoa
+ * ainda NÃO mexeu — a escolha feita durante o carregamento fica (antes, a leitura sobrescrevia os dois campos e o
+ * "Salvar" gravava vazio). "Prefiro não responder" escolhido durante a leitura também é uma escolha.
+ */
+export function aposLerEspacoTrabalho(
+  naTela: { oferta: string; procura: string },
+  lido: { oferta: string | null; procura: string | null },
+  mexeu: { oferta: boolean; procura: boolean },
+): { oferta: string; procura: string } {
+  return {
+    oferta: mexeu.oferta ? naTela.oferta : (lido.oferta ?? ""),
+    procura: mexeu.procura ? naTela.procura : (lido.procura ?? ""),
+  };
+}
+
 export interface LinhaInteresse {
   oferta: string | null;
   procura: string | null;

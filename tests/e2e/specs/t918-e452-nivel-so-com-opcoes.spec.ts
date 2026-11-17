@@ -7,7 +7,7 @@ import { test, expect } from "@playwright/test";
   opções com contagem do resultado e pelo menos uma selecionável. 390 e 1280. Usa os anúncios do ambiente (qualquer base).
 */
 for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
-  test.describe(`T918 — E452 a ${largura}px`, () => {
+  test.describe(`T918 — E452 a ${largura}px`, { tag: ["@E452", "@ao-vivo-seguro"] }, () => {
     test.beforeEach(async ({ page }) => {
       test.setTimeout(120_000);
       await page.setViewportSize({ width: largura, height: altura });

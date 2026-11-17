@@ -30,7 +30,7 @@ async function texto(page: Page, rota: string): Promise<string> {
 }
 
 for (const largura of [1280, 390] as const) {
-  test.describe(`T861 — E564 Gestor 4% (${largura}px)`, () => {
+  test.describe(`T861 — E564 Gestor 4% (${largura}px)`, { tag: ["@E564", "@ao-vivo-seguro"] }, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
     for (const rota of ["/para-proprietarios", "/parceiros"]) {
