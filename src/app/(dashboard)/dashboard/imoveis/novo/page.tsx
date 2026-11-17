@@ -2212,7 +2212,13 @@ export default function NewPropertyPage() {
                   propertyId={imovelId}
                   comodidadesMarcadas={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
                   tipoImovel={propertyType}
-                  onComodidade={(k) => (k === "mobiliado" ? setFurnished(true) : setAmenityKeys((a) => ({ ...a, [k]: true })))}
+                  onComodidade={(k) => {
+                    // t389: confirmar a sugestão é um clique (não dispara input/change), mas marca a comodidade —
+                    // é edição. Sem isto, a confirmação nos 2 s depois de abrir o rascunho virava a "base" e não gravava.
+                    editouRef.current = true;
+                    if (k === "mobiliado") setFurnished(true);
+                    else setAmenityKeys((a) => ({ ...a, [k]: true }));
+                  }}
                   onSugeridas={setSugeridasFotos}
                   onComodidadesSugeridas={setComodidadesDetectadas}
                   onNivelMudou={() => setNivelVersao((v) => v + 1)}
