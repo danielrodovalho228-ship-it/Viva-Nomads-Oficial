@@ -1,6 +1,6 @@
 export const MOTIVO_ACAO_CANCELADA = "ação do servidor cancelada pelo navegador ao trocar de tela (net::ERR_ABORTED; decisão do Muse, 22/10)";
-export const MOTIVO_LEITURA_CANCELADA = "leitura do próprio site (GET /api) cancelada pela tela (net::ERR_ABORTED; rodada de 22/10)";
-export const MOTIVO_ARQUIVO_CANCELADO = "arquivo do próprio site (/_next/static ou /_next/image) cancelado pelo navegador ao trocar de tela (net::ERR_ABORTED; L-3, 22/10)";
+export const MOTIVO_LEITURA_CANCELADA = "leitura cancelada pela tela: GET em /api do próprio site (rodada de 22/10) ou leitura do banco em /rest/v1 (E1009) (net::ERR_ABORTED)";
+export const MOTIVO_ARQUIVO_CANCELADO = "arquivo do próprio site (/_next/static, /_next/image ou /favicon.ico) cancelado pelo navegador ao trocar de tela (net::ERR_ABORTED; L-3, 22/10)";
 
 /**
  * Critério d da t249: requisição que o próprio navegador cancelou ao trocar de tela não é erro da página.
@@ -14,6 +14,11 @@ export const MOTIVO_ARQUIVO_CANCELADO = "arquivo do próprio site (/_next/static
  *    continua no critério a.
  *  - "leitura": GET do próprio site em /api/ cancelado (o painel aborta /api/painel/contadores de propósito ao trocar
  *    de tela; /pedidos/novo cancela /api/conta/local-trabalho). Rodada de 22/10. Mesma lógica, mesma lista.
+ *  E1009 (Gerente, 17/11/2026; re-triagem da noturna, t1409 e t1442 instáveis): mais dois pedidos que o navegador cancela
+ *  ao trocar de tela, nas mesmas classes e na mesma lista de exceções do relatório:
+ *  - "arquivo": o ícone do site (GET /favicon.ico), cancelado quando a tela troca antes de ele chegar.
+ *  - "leitura": a leitura do banco (GET em /rest/v1/), cancelada pela tela que saiu (a casca lê `profiles`). Só GET:
+ *    escrita cancelada (POST, PATCH, PUT, DELETE) continua acusando, porque pode ser dado que não gravou.
  * Só net::ERR_ABORTED: qualquer outro erro de rede (recusa, tempo, DNS) continua acusando.
  */
 export function canceladaPeloNavegador(motivo: string, metodo: string, url: string, cabecalhos: Record<string, string>): "prefetch" | "acao" | "arquivo" | "leitura" | null {
@@ -21,7 +26,9 @@ export function canceladaPeloNavegador(motivo: string, metodo: string, url: stri
   if (/[?&]_rsc=/.test(url) || cabecalhos["rsc"] === "1") return "prefetch";
   if (metodo === "POST" && cabecalhos["next-action"]) return "acao";
   if (metodo === "GET" && /^\/_next\/(static\/|image$)/.test(caminho(url))) return "arquivo";
+  if (metodo === "GET" && caminho(url) === "/favicon.ico") return "arquivo";
   if (metodo === "GET" && caminho(url).startsWith("/api/")) return "leitura";
+  if (metodo === "GET" && caminho(url).startsWith("/rest/v1/")) return "leitura";
   return null;
 }
 

@@ -240,21 +240,33 @@ export async function controlesCobertos(page: Page): Promise<string[]> {
         const linhas = el.getClientRects();
         return linhas.length > 1 ? linhas[0] : el.getBoundingClientRect();
       };
-      // Rola o controle até o meio da tela e devolve o fixo que ainda o cobre (centro ou cantos), ou null se ficou à mostra.
+      // Rola o controle até o meio, o fim e o começo da tela e devolve o fixo que cobre algum ponto dele (centro ou cantos)
+      // em TODAS as posições em que o ponto apareceu; null se a rolagem revela o controle inteiro.
+      // E1008: antes só se tentava o meio. Com uma faixa fixa alta no topo (a barra de filtros da Busca a 390 px vai até
+      // 312 px, E946), os cantos de cima de um cartão alto centrado ficam debaixo dela, embora rolar mostre o cartão.
       const continuaCoberto = (el: HTMLElement): Element | null => {
         const salvo = window.scrollY;
-        el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
-        const r = caixaDeMedida(el);
-        let achou: Element | null = null;
-        for (const [fx, fy] of [[0.5, 0.5], [0.15, 0.15], [0.85, 0.15], [0.15, 0.85], [0.85, 0.85]]) {
-          const px = r.left + r.width * fx;
-          const py = r.top + r.height * fy;
-          if (px < 0 || py < 0 || px > window.innerWidth - 1 || py > window.innerHeight - 1) continue; // maior que a tela
-          const t = document.elementFromPoint(px, py);
-          if (cobre(el, t)) { achou = t; break; }
+        const PONTOS = [[0.5, 0.5], [0.15, 0.15], [0.85, 0.15], [0.15, 0.85], [0.85, 0.85]];
+        const tampa: (Element | null)[] = PONTOS.map(() => null);
+        const revelado = PONTOS.map(() => false);
+        for (const block of ["center", "end", "start"] as const) {
+          el.scrollIntoView({ block, inline: "nearest", behavior: "instant" });
+          const r = caixaDeMedida(el);
+          PONTOS.forEach(([fx, fy], i) => {
+            if (revelado[i]) return;
+            const px = r.left + r.width * fx;
+            const py = r.top + r.height * fy;
+            if (px < 0 || py < 0 || px > window.innerWidth - 1 || py > window.innerHeight - 1) return; // fora da tela nesta posição
+            const t = document.elementFromPoint(px, py);
+            if (cobre(el, t)) tampa[i] ??= t;
+            else revelado[i] = true;
+          });
         }
+        // A página fica como a conferência de antes a deixava: o controle no meio e a janela de volta onde estava.
+        el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
         window.scrollTo({ top: salvo, behavior: "instant" });
-        return achou;
+        const i = tampa.findIndex((t, k) => t && !revelado[k]);
+        return i >= 0 ? tampa[i] : null;
       };
       const out: string[] = [];
       for (const el of Array.from(document.querySelectorAll<HTMLElement>(SEL))) {
