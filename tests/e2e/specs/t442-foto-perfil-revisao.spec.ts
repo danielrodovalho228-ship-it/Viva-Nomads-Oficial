@@ -9,7 +9,7 @@ import { authFile } from "../fixtures/auth";
    1. foto nova entra 'em_revisao' e JÁ aparece (revisão depois de publicar); o avatar e a linha da fila são gravados juntos;
    2. RLS: a pessoa lê só as próprias linhas e não muda o status; visitante não lê nada; o dono não baixa a foto do
       inquilino antes do aceite (regra do E14 sem mudança);
-   3. fila /admin/fotos-perfil (mais antiga primeiro) + contador "Fotos de perfil em revisão" no painel; Aprovar;
+   3. fila /admin/fotos-perfil (mais antiga primeiro), aberta pelo menu do admin (E176 tirou o contador da inicial); Aprovar;
    4. denúncia "Foto de perfil inadequada" pela página do proprietário → a foto volta para 'em_revisao' no TOPO da fila;
    5. Remover exige motivo da lista: apaga o arquivo, limpa o avatar, guarda o motivo e avisa a pessoa UMA vez (Conta +
       e-mail com "Enviar outra foto").
@@ -121,11 +121,11 @@ test.describe("T442 — FOTO-PERFIL-B: revisão das fotos de perfil", () => {
     expect(arquivo, "foto do inquilino protegida até o aceite").toBeNull();
   });
 
-  test("3. fila (mais antiga primeiro) + contador no painel; Aprovar tira da fila", async ({ browser }) => {
+  // E744 (asserção alterada, tabela da Fable #3832): o ADMIN-4/E176 tirou da inicial do /admin o painel "Áreas do admin"
+  // (contador "Fotos de perfil em revisão" e atalho); a fila se abre pelo menu "Fotos de perfil" (/admin/fotos-perfil).
+  // O contador sem tela fica como dúvida no PR.
+  test("3. fila (mais antiga primeiro), aberta pelo menu do admin; Aprovar tira da fila", async ({ browser }) => {
     const a = await admin(browser);
-    await a.goto("/admin", { waitUntil: "domcontentloaded" });
-    await expect(a.getByText("Fotos de perfil em revisão")).toBeVisible({ timeout: 20_000 });
-    await expect(a.getByTestId("admin-outras-areas").getByRole("link", { name: "Fotos de perfil" })).toBeVisible();
     await a.goto("/admin/fotos-perfil", { waitUntil: "domcontentloaded" });
     const doDono = a.locator(`[data-testid="fila-foto"][data-user="${ids.dono}"]`);
     const doInq = a.locator(`[data-testid="fila-foto"][data-user="${ids.inquilino}"]`);
