@@ -77,7 +77,7 @@ test("t245: a única marca de falha esperada é a do E990/E949 (favoritos vazia)
   assert.match(teste05, /"E990 \(Gerente, 16\/11\/2026\)/);
   // A marca vem depois de a página ficar pronta e imediatamente antes da comparação.
   assert.match(teste05, /await pronta\(page\);[\s\S]*test\.fail\([\s\S]*?\);\n\s+await print\(page, `05-favoritos-vazio-\$\{largura\}`\);/);
-  // 06: E994 corrigido (t2122) — a tela não tem marca nas duas larguras e a 1280 px tem referência nova.
+  // 06: E994 corrigido (t2200) — a tela não tem marca nas duas larguras e a 1280 px tem referência nova.
   assert.doesNotMatch(teste06, /test\.fail\(/);
   // Nenhuma outra tela do t245 é falha esperada, e nenhuma é pulada por causa dos defeitos.
   assert.equal((t245.match(/test\.fail\(/g) ?? []).length, 1);

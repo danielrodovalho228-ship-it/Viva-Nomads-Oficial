@@ -128,7 +128,7 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
         await page.goto("/favoritos", { waitUntil: "networkidle" });
         await expect(page.getByTestId("favoritos-grade")).toHaveAttribute("aria-busy", "false", { timeout: 20_000 });
         await pronta(page);
-        // E994 corrigido: a linha "Suporte" não quebra a 1280 px (t2122); referência nova a 1280 px.
+        // E994 corrigido: a linha "Suporte" não quebra a 1280 px (t2200); referência nova a 1280 px.
         await print(page, `06-favoritos-${largura}`);
       });
 
