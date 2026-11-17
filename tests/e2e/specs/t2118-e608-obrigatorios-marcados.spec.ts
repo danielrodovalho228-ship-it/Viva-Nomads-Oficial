@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 import { noPasso, type PassoCadastro } from "../fixtures/cadastro";
 
 /*
-  T2101 — E608 (Pista 3; varredura "sem spec" das 142, lote D) @E608 — sem @ao-vivo-seguro: precisa de sessão e do
+  T2118 — E608 (Pista 3; varredura "sem spec" das 142, lote D) @E608 — sem @ao-vivo-seguro: precisa de sessão e do
   laboratório (VERMELHO PENDENTE DE LABORATÓRIO).
   Regra decidida (E608; unitário e608-obrigatorios-marcados.test.ts): cada campo obrigatório para publicar, nos Passos
   2–5 do cadastro de um anúncio NOVO (rascunho), tem o asterisco ao lado do rótulo — com "(obrigatório para publicar)"
@@ -17,7 +17,7 @@ import { noPasso, type PassoCadastro } from "../fixtures/cadastro";
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t2101.${sufixo}@lab.vivanomads.test`, nome: "Olga Obrigatoria", role: "owner" as const };
+const dono = { email: `dono.t2118.${sufixo}@lab.vivanomads.test`, nome: "Olga Obrigatoria", role: "owner" as const };
 const ids: Record<string, string> = {};
 const LEGENDA = "Campos com * são obrigatórios para publicar.";
 
@@ -32,7 +32,7 @@ async function abrir(p: Page, passo: PassoCadastro) {
   await noPasso(p, passo, 30_000);
 }
 
-test.describe("T2101 — E608: os obrigatórios dos Passos 2 a 5 têm o asterisco e a legenda @E608", () => {
+test.describe("T2118 — E608: os obrigatórios dos Passos 2 a 5 têm o asterisco e a legenda @E608", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (precisa de sessão e da chave de serviço).");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
 
@@ -42,7 +42,7 @@ test.describe("T2101 — E608: os obrigatórios dos Passos 2 a 5 têm o asterisc
     const { data, error } = await adm()
       .from("properties")
       .insert({
-        owner_id: ids.dono, title: `Rascunho T2101 ${sufixo}`, description: "Rascunho do laboratório para conferir os obrigatórios marcados.",
+        owner_id: ids.dono, title: `Rascunho T2118 ${sufixo}`, description: "Rascunho do laboratório para conferir os obrigatórios marcados.",
         property_type: "Apartamento", address: "Centro", city: "Uberlândia", state: "MG", bedrooms: 1, bathrooms: 1, area_m2: 40,
         min_period_days: 30, max_period_days: 180, monthly_price: 3000, status: "draft",
       })
