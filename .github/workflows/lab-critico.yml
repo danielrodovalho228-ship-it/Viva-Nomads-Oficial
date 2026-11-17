@@ -124,8 +124,17 @@ jobs:
           fi
           echo "Specs do portão: ${SPECS[*]}"
           # O retry fica para o relatório mostrar as duas tentativas; passar só no retry também reprova.
-          npx playwright test "${SPECS[@]}" --reporter=list,json --workers=2 --retries=1 --fail-on-flaky-tests 2>&1 | tee tests/laboratorio/saida/e2e.txt
-          exit "${PIPESTATUS[0]}"
+          # E744 T3: os specs com a etiqueta @sensivel-carga (tests/laboratorio/sensiveis-a-carga.json) falham em paralelo e
+          # passam sozinhos. Aqui, como na rodada noturna, eles rodam à parte, com 1 worker; a exigência é a mesma nas duas
+          # corridas (1 nova tentativa, instável reprova) e qualquer uma vermelha reprova o portão.
+          set +e
+          npx playwright test "${SPECS[@]}" --grep-invert "@sensivel-carga" --reporter=list,json --workers=2 --retries=1 --fail-on-flaky-tests 2>&1 | tee tests/laboratorio/saida/e2e.txt
+          RESTO="${PIPESTATUS[0]}"
+          PLAYWRIGHT_JSON_OUTPUT_NAME=tests/laboratorio/saida/resultado-carga.json npx playwright test "${SPECS[@]}" --grep "@sensivel-carga" --reporter=list,json --workers=1 --retries=1 --fail-on-flaky-tests --pass-with-no-tests 2>&1 | tee tests/laboratorio/saida/e2e-carga.txt
+          CARGA="${PIPESTATUS[0]}"
+          set -e
+          echo "resto dos specs: saída $RESTO · sensíveis à carga (1 worker): saída $CARGA"
+          [ "$RESTO" -eq 0 ] && [ "$CARGA" -eq 0 ] || exit 1
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -138,6 +147,14 @@ jobs:
             grep -E "^\s+[0-9]+ (passed|failed|skipped|flaky)" tests/laboratorio/saida/e2e.txt || true
             echo
             node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
+            # E744 T3: os specs @sensivel-carga que o PR alterou rodam à parte, com 1 worker.
+            if grep -qE "^\s+[0-9]+ (passed|failed|flaky)" tests/laboratorio/saida/e2e-carga.txt 2>/dev/null; then
+              echo
+              echo "### Sensíveis à carga (1 worker)"
+              grep -E "^\s+[0-9]+ (passed|failed|skipped|flaky)" tests/laboratorio/saida/e2e-carga.txt || true
+              echo
+              node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado-carga.json || true
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Guardar relatório e prints das falhas

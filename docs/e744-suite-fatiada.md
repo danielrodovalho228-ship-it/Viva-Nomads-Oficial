@@ -104,3 +104,14 @@ O run 42554301427 (com t50/t49 em fatias próprias) mostrou: as fatias 17–20 (
 - Por isso o commit foi revertido e o #3588 voltou ao desenho de 20 fatias, que passou 5/5.
 - **Proposta pendente de decisão:** para aplicar o fatiamento do admin é preciso (a) que o portão deixe de rodar o t48 inteiro quando só ele muda (por exemplo, listar o t48 em `scripts/lab/fluxos-criticos.mjs` como spec pesado que roda só no noturno) ou (b) um PR que o coordenador autorize a mesclar com o `lab-critico` vermelho por tempo, o que quebra a regra de PR verde. Não é para fazer durante a pausa de produção.
 - Ganho esperado se aplicado: o admin cai de 56 para cerca de 28 min e a suíte completa deixa de ser limitada por ele. Não medido.
+
+## Atualização de 17/11/2026 (plano "da suíte completa à suíte verde", T2 e T3)
+
+O desenho acima é o de 09/11. Desde a T3 a matriz tem **25 fatias que bloqueiam e uma entrada que não bloqueia**:
+
+- **1 a 20:** a suíte sem o `t48`, em 20 partes, com **1 worker**. Medida de 17/11 (run 44091181966 contra cinco corridas com 2 workers): os instáveis das fatias gerais caíram de 6 a 10 por corrida para 1; a soma do tempo subiu de cerca de 330 para 579 minutos e a maior fatia de 36 para 62 minutos. Por isso 20 fatias em vez de 16.
+- **21 a 24:** só o `t48-varredura`, um grupo por fatia (visitante, inquilino, proprietário, admin).
+- **25:** só os specs com a etiqueta `@sensivel-carga` (lista e medidas em `tests/laboratorio/sensiveis-a-carga.json`), com 1 worker.
+- **quarentena:** só os testes de `tests/laboratorio/quarentena.json`, 3 vezes cada, sem nova tentativa. Não entra nos números da rodada nem no veredito.
+
+No máximo 20 jobs rodam ao mesmo tempo (`max-parallel: 20`); os outros esperam. Guardas: `tests/laboratorio/lab-fatias.test.ts`, `e744-t2-quarentena.test.ts` e `e744-t3-sensivel-carga.test.ts`.
