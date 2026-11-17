@@ -81,7 +81,7 @@ O `t656` também é alterado pelo meu #3882 (Prompt 078); quem entrar depois res
 | `t11-travessias` | o dono vê o pedido, mas nunca o e-mail/sobrenome do inquilino | E975 | #3888 (Code 2) | sim |
 | `t316-sair-da-viva-51` | 3. regra dos 3 em 30 dias | E982 | #3906 (Code 2) | não: corrigido na main (`ea947736`) |
 | `t348-triagem-vinculo-52` | 2. o dono vê o selo só com identidade + vínculo | E961 | #3857 (Fable) | sim |
-| `t397-foto-na-hora` | 5. prova anterior à regra; e o caso 6 (rotina dos prazos), que depende do 5 | E984 | #3909 (Code 2) | sim, 2 casos |
+| `t397-foto-na-hora` | 5. prova anterior à regra | E984 | #3909 (Code 2) | não: corrigido na main (`ecdc95c8`) |
 | `t400-chacara-sem-internet` | 1. salvar rascunho com 'Não tem internet'; 2. publicar barrado (depende do 1); 3. trocar para 'Fibra' | E985 | #3898 (Code 2) | sim, 3 casos |
 | `t456-comodidades-tipo-e111a` | 2. troca de tipo: o elevador marcado fica salvo | E985 | #3898 (Code 2) | sim |
 | `t548-e132a-declaracoes-persistem` | 2. o que se marca no Passo 10 fica no rascunho, a 1280 e a 390 px | E985 | #3898 (Code 2) | sim, 2 casos |
@@ -91,13 +91,13 @@ O `t656` também é alterado pelo meu #3882 (Prompt 078); quem entrar depois res
 
 **Como a marca funciona.** `defeitoConhecido("E975", "motivo")` é o `test.fail()` com a anotação `{ type: "defeito", description: "E975" }`. O teste roda inteiro; a falha passa a ser a esperada e a rodada conta "conhecida", não "falhou". No dia em que a correção entrar, o teste passa, o Playwright acusa "era para falhar e passou" e a rodada fica vermelha até a marca sair. **Por isso cada PR de correção da tabela tem de tirar a marca do spec dele** (uma linha e o import).
 
-**O que a marca mostrou nos specs em série.** Seis dos oito specs marcados são em série: quando um caso falha, o Playwright nem começa os seguintes, e eles entram na conta dos "não executados". Com a marca no caso que falha, os seguintes passaram a rodar. No laboratório local, quatro deles falharam, todos pelo mesmo defeito do spec, e levaram a mesma marca:
+**O que a marca mostrou nos specs em série.** Cinco dos sete specs marcados são em série: quando um caso falha, o Playwright nem começa os seguintes, e eles entram na conta dos "não executados". Com a marca no caso que falha, os seguintes passaram a rodar. No laboratório local, quatro deles falharam, todos pelo mesmo defeito do spec, e levaram a mesma marca:
 
-- `t397`, caso 6 (rotina dos prazos): depende do caso 5, que para antes de vencer o prazo da prova;
+- `t397`, caso 6 (rotina dos prazos): dependia do caso 5, que parava antes de vencer o prazo da prova. O #3909 corrigiu o E984 na main em 17/11 e as duas marcas do `t397` saíram; os casos 5 e 6 passam;
 - `t400`, caso 2: depende do rascunho que o caso 1 não consegue gravar; caso 3: é o mesmo defeito, direto (escolhe "Fibra" e o rascunho fica com o valor antigo);
 - `t548`, caso 2 a 390 px: o mesmo defeito do caso a 1280 px. Nas corridas ele nunca tinha começado.
 
-Os outros seguintes passaram (`t456` caso 3, `t707` os cinco depois do primeiro). São 11 marcas em 8 specs. O `t11` e o `t815` não são em série.
+Os outros seguintes passaram (`t456` caso 3, `t707` os cinco depois do primeiro). Ficam 9 marcas em 7 specs. O `t11` e o `t815` não são em série.
 
 **Limite.** O #3898 (E985) não nomeia o `t400`, o `t456` nem o `t548`. Se depois dele algum seguir falhando, a marca fica e o item continua aberto para esse spec.
 
@@ -130,7 +130,7 @@ Cinco deles (`t29`, `t48`, `t190`, `t305`, `t1629`) foram instáveis **nas 7 cor
 ## 7. Como foi feito e o que não foi
 
 - A tabela vem dos registros dos 20 jobs da corrida-base (linhas `FALHA | …`), cruzada com a classificação de 15/11 (`docs/e744-classificacao-96-specs.md`), a re-triagem de 17/11 e os arquivos de cada PR aberto.
-- Os 10 defeitos e o `t1645` correram no laboratório local na main `c2ad73b9`, cada spec sozinho, 3 repetições, sem nova tentativa: todos falharam nas 3. O `t316` foi corrigido na main logo depois (#3906).
+- Os 10 defeitos e o `t1645` correram no laboratório local na main `c2ad73b9`, cada spec sozinho, 3 repetições, sem nova tentativa: todos falharam nas 3. O `t316` e o `t397` foram corrigidos na main logo depois (#3906 e #3909).
 - **Não conferi** os 40 specs do Code 2 um a um: a disposição deles é a da tabela de 15/11 e o PR do lote que altera cada spec.
-- Com as marcas, os 8 specs marcados e o `t316` correram no laboratório local na main `ea947736`, como o CI roda (2 workers, 1 nova tentativa, instável reprova): 36 passaram, 3 pulados de propósito, nenhuma falha inesperada.
+- Com as marcas, os 7 specs marcados, o `t316` e o `t397` correram no laboratório local na main `ecdc95c8`, como o CI roda (2 workers, 1 nova tentativa, instável reprova). O resultado está no PR.
 - **Não rodei** a suíte completa com as marcas: é a prova real do plano, depois da T1 à T4.
