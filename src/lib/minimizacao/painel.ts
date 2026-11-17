@@ -50,7 +50,7 @@ export function resumoDaSemana(livro: readonly LinhaLivro[], agora: Date): Resum
  */
 export function cabecalhoRelatorioHoje(diaRelatorio: string | null, geradoEm: string | null, agora: Date): { titulo: string; nota: string | null } {
   const hoje = diaBRT(agora)!;
-  const titulo = `O que seria apagado hoje (${dataBRT(agora)})`;
+  const titulo = `O que seria apagado hoje (${dataBRT(new Date(agora.getTime() - 86_400_000))})`; // ENSAIO (nunca mergear): o "hoje" volta a ser o dia anterior
   if (!diaRelatorio) return { titulo, nota: null };
   if (diaRelatorio === hoje) return { titulo, nota: geradoEm ? `Rodada de hoje às ${horaBRT(geradoEm)}.` : null };
   const quando = geradoEm ? `${dataBRT(geradoEm)} às ${horaBRT(geradoEm)}` : dataBRT(`${diaRelatorio}T12:00:00Z`);

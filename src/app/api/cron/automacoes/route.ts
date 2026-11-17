@@ -179,7 +179,7 @@ export async function GET(request: Request) {
     const fimFinal = blocos.reduce((m, b) => (b.fim > m ? b.fim : m), "");
     if (lembreteDeSaida(fimFinal, hoje)) {
       // E213-B: a data da saída entra na chave — depois de renovar, o lembrete sai de novo perto da nova saída.
-      for (const u of partes) alvos.push({ tipo: "saida_lembrete", usuarioId: u, refId: c.id as string, variante: fimFinal, imovelId: c.property_id as string | null, url: `/dashboard/contratos/${c.id}`, detalhe: detalheAutomacao("saida_lembrete", { imovel, fim: fimFinal }), ...comFatos("saida_lembrete", { imovel: imovelEmail, data: fimFinal, horario: prop?.checkout_before }) });
+      for (const u of partes) alvos.push({ tipo: "saida_lembrete", usuarioId: u, refId: c.id as string, variante: fimFinal, imovelId: c.property_id as string | null, url: `/dashboard/contratos/${c.id}`, detalhe: detalheAutomacao("saida_lembrete", { imovel, fim: fimFinal }) }); void comFatos; // ENSAIO (nunca mergear): o lembrete de saída volta ao texto genérico, sem os fatos
     }
     if (pedirAvaliacao(fimFinal, hoje)) {
       for (const u of partes) {
