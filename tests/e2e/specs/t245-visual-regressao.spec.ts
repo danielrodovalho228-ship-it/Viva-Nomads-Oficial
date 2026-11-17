@@ -105,15 +105,15 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
         // FALHA ESPERADA — E990 (julgamento do Gerente, 16/11/2026): a linha "Assistente Viva 24 h · resposta de uma pessoa
         // em até 24 h" sumiu do rodapé sem decisão. Com a lista vazia o rodapé aparece nesta tela, logo abaixo de
         // "Suporte:", por isso ela fica com a referência ANTIGA até o coordenador decidir restaurar ou remover a linha.
-        // A 1280 px aparecem também o E949 (o flutuante cobre o fim da frase do rodapé; correção no #3861) e o E994 (a
-        // linha "Suporte: e-mail" do rodapé quebra em duas no navegador do GitHub).
+        // A 1280 px aparece também o E949 (o flutuante cobre o fim da frase do rodapé; correção no #3861). O E994 (linha
+        // "Suporte: e-mail" em duas) foi corrigido; a referência desta tela só se refaz quando o E990 e o E949 fecharem.
         // A marca vem logo antes da comparação: o teste corre inteiro, e qualquer falha anterior continua reprovando. É
         // estrita: no dia em que a imagem voltar a bater, o teste acusa "esperava falhar, passou" — aí a referência se
         // atualiza e esta marca sai, no PR da correção.
         test.fail(
           true,
           largura === 1280
-            ? "E990, E949 e E994 (Gerente, 16/11/2026): rodapé sem a linha 'Assistente Viva 24 h', flutuante sobre o fim da frase e linha 'Suporte' em duas linhas; referência antiga mantida até as correções"
+            ? "E990 e E949 (Gerente, 16/11/2026): rodapé sem a linha 'Assistente Viva 24 h' e flutuante sobre o fim da frase; referência antiga mantida até as correções"
             : "E990 (Gerente, 16/11/2026): rodapé sem a linha 'Assistente Viva 24 h'; referência antiga mantida até a decisão",
         );
         await print(page, `05-favoritos-vazio-${largura}`);
@@ -128,13 +128,7 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
         await page.goto("/favoritos", { waitUntil: "networkidle" });
         await expect(page.getByTestId("favoritos-grade")).toHaveAttribute("aria-busy", "false", { timeout: 20_000 });
         await pronta(page);
-        // FALHA ESPERADA a 1280 px — E994 (julgamento do Gerente, 16/11/2026): com a faixa do flutuante a coluna do rodapé
-        // ficou com 264 px e a linha "Suporte: suporte@vivanomads.com.br" quebra em duas no navegador do GitHub. É defeito
-        // registrado (Code 2); a tela fica com a referência ANTIGA até a correção. A 390 px o rodapé não aparece e a tela
-        // tem referência nova. A marca vem logo antes da comparação: o teste corre inteiro, e qualquer falha anterior
-        // continua reprovando. É estrita: quando a imagem voltar a bater, o teste acusa "esperava falhar, passou" — aí a
-        // referência se atualiza e esta marca sai, no PR da correção.
-        test.fail(largura === 1280, "E994 (Gerente, 16/11/2026): linha 'Suporte' do rodapé em duas linhas a 1280 px; referência antiga mantida até a correção");
+        // E994 corrigido: a linha "Suporte" não quebra a 1280 px (t2200); referência nova a 1280 px.
         await print(page, `06-favoritos-${largura}`);
       });
 

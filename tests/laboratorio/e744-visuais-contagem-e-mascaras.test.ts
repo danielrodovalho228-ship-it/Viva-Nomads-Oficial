@@ -66,20 +66,21 @@ test("t271: os nomes usados nas máscaras existem no produto", () => {
   }
 });
 
-test("t245: as marcas de falha esperada são só as do E990 (favoritos vazia, duas larguras) e do E994 (as duas telas de favoritos a 1280 px)", () => {
+test("t245: a única marca de falha esperada é a do E990/E949 (favoritos vazia); o E994 foi corrigido e a 06 não tem marca", () => {
   const t245 = ler("tests/e2e/specs/t245-visual-regressao.spec.ts");
   const teste05 = t245.slice(t245.indexOf('test("05 /favoritos vazio"'), t245.indexOf('test("06 /favoritos com 2 imóveis"'));
   const teste06 = t245.slice(t245.indexOf('test("06 /favoritos com 2 imóveis"'), t245.indexOf('test("07 /cidades/uberlandia"'));
-  // 05: a 390 px só a linha do rodapé (E990); a 1280 px também o flutuante sobre a frase (E949) e a linha "Suporte" em duas (E994).
+  // 05: a 390 px só a linha do rodapé (E990); a 1280 px também o flutuante sobre a frase (E949). O E994 saiu (corrigido).
   assert.match(teste05, /test\.fail\(\s*true,/);
-  assert.match(teste05, /"E990, E949 e E994 \(Gerente, 16\/11\/2026\)/, "a 1280 px a tela mostra os três");
+  assert.match(teste05, /"E990 e E949 \(Gerente, 16\/11\/2026\)/, "a 1280 px a tela mostra os dois");
+  assert.doesNotMatch(teste05, /test\.fail\([\s\S]*E994/);
   assert.match(teste05, /"E990 \(Gerente, 16\/11\/2026\)/);
   // A marca vem depois de a página ficar pronta e imediatamente antes da comparação.
   assert.match(teste05, /await pronta\(page\);[\s\S]*test\.fail\([\s\S]*?\);\n\s+await print\(page, `05-favoritos-vazio-\$\{largura\}`\);/);
-  // 06: só a 1280 px (a 390 px o rodapé não aparece e a tela tem referência nova), pelo E994.
-  assert.match(teste06, /await pronta\(page\);[\s\S]*test\.fail\(largura === 1280, "E994 \(Gerente, 16\/11\/2026\)[^"]*"\);\n\s+await print\(page, `06-favoritos-\$\{largura\}`\);/);
+  // 06: E994 corrigido (t2200) — a tela não tem marca nas duas larguras e a 1280 px tem referência nova.
+  assert.doesNotMatch(teste06, /test\.fail\(/);
   // Nenhuma outra tela do t245 é falha esperada, e nenhuma é pulada por causa dos defeitos.
-  assert.equal((t245.match(/test\.fail\(/g) ?? []).length, 2);
+  assert.equal((t245.match(/test\.fail\(/g) ?? []).length, 1);
   assert.doesNotMatch(t245, /test\.(skip|fixme)\([^)]*E99[0-9]/);
 });
 
