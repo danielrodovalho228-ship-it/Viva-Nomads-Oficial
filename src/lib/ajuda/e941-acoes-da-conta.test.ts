@@ -14,7 +14,7 @@ import { FAQ, respostaPara, type PerfilAjuda } from "../atendimento/faq.ts";
 const PERFIS: PerfilAjuda[] = ["visitante", "sem_contrato", "com_contrato"];
 const ACOES: { pergunta: RegExp; trecho: string; destino: string }[] = [
   { pergunta: /^Como cancelo um Pedido de Moradia/, trecho: "Pausar", destino: "/dashboard/pedidos" },
-  { pergunta: /^Como cancelo um Pedido de Moradia/, trecho: "Marcar como atendido", destino: "/dashboard/pedidos" },
+  { pergunta: /^Como cancelo um Pedido de Moradia/, trecho: "Marcar atendido", destino: "/dashboard/pedidos" },
   { pergunta: /^Algo quebrou no imóvel/, trecho: "Problema com isto?", destino: "/dashboard/contratos" },
   { pergunta: /^Algo quebrou no imóvel/, trecho: "parceiro de manutenção", destino: "/dashboard/solicitacoes" },
 ];

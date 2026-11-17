@@ -42,7 +42,7 @@ export const LIGACOES_NOMEADAS: readonly { trecho: RegExp; href: string }[] = [
   // E941 seguimento: as ações que vivem dentro da conta ligam à tela onde estão. Sem sessão, o proxy leva a
   // /auth?redirect=<rota> e devolve à mesma tela depois de entrar. Só o nome da ação entre aspas (como a resposta o escreve).
   { trecho: /(?<=")Pausar(?=")/, href: "/dashboard/pedidos" },
-  { trecho: /(?<=")Marcar como atendido(?=")/, href: "/dashboard/pedidos" },
+  { trecho: /(?<=")Marcar atendido(?=")/, href: "/dashboard/pedidos" },
   { trecho: /(?<=")Problema com isto\?(?=")/, href: "/dashboard/contratos" },
   { trecho: /parceiro de manutenção/, href: "/dashboard/solicitacoes" },
 ];
