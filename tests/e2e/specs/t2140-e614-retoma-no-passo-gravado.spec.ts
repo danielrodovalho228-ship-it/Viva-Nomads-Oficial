@@ -18,7 +18,9 @@ import { prepararRascunho } from "../fixtures/rascunho-cadastro";
        complemento fica gravado; reaberto sem `etapa`, segue no Passo 3 com o complemento.
     5. Regra nova do Gerente (DUET-1719, item 2): o rascunho RETOMADO mostra sempre a hora da última gravação, também no
        Passo 3, sem nenhuma edição. Reaberto (nos casos 3 e 4), o topo mostra "Salvo às HH:MM", com a hora da última
-       gravação do rascunho (properties.updated_at, em Brasília; o navegador corre no fuso de São Paulo).
+       gravação do rascunho, em Brasília (o navegador corre no fuso de São Paulo). Hoje o banco não guarda essa hora
+       (properties não tem updated_at; a correção decide onde a guarda), por isso a spec mede a janela da última
+       gravação que ela própria provoca: do clique/digitação até ao rascunho gravado, com um minuto de folga.
        Trava: vermelha na main até a correção do Code 2, depois da prova ao vivo das 20:00 (o Gerente viu ao vivo, duas
        vezes, que o indicador não aparece).
   390 e 1280 px.
@@ -46,15 +48,17 @@ async function rascunho(id: string): Promise<Record<string, unknown>> {
 /** HH:MM de um instante em Brasília. */
 const horaBR = (ms: number) => new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(ms));
 
-/** Regra 5: reaberto, sem editar nada, o topo mostra "Salvo às HH:MM" com a hora da última gravação do rascunho. */
-async function salvoAsAoReabrir(page: Page, id: string) {
-  const { data } = await adm().from("properties").select("updated_at").eq("id", id).single();
-  const gravado = Date.parse(String(data?.updated_at));
-  // Um minuto de folga para cada lado (a virada do minuto entre a gravação e a leitura).
-  const aceitas = [-60_000, 0, 60_000].map((d) => `Salvo às ${horaBR(gravado + d)}`);
+/**
+ * Regra 5: reaberto, sem editar nada, o topo mostra "Salvo às HH:MM" com a hora da última gravação do rascunho, que
+ * aconteceu entre `desde` (a ação do dono) e `ate` (o rascunho já gravado no banco). Um minuto de folga para cada lado.
+ */
+async function salvoAsAoReabrir(page: Page, desde: number, ate: number) {
+  const aceitas = new Set<string>();
+  for (let t = desde - 60_000; t <= ate + 60_000; t += 30_000) aceitas.add(`Salvo às ${horaBR(t)}`);
+  aceitas.add(`Salvo às ${horaBR(ate + 60_000)}`);
   const estado = page.getByTestId("estado-salvamento");
   await expect(estado, "o rascunho retomado mostra o indicador de salvamento, sem edição").toBeVisible({ timeout: 20_000 });
-  await expect(estado, `com a hora da última gravação (${aceitas[1]})`).toHaveText(new RegExp(aceitas.map((a) => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")));
+  await expect(estado, `com a hora da última gravação (${[...aceitas].join(" | ")})`).toHaveText(new RegExp([...aceitas].join("|")));
 }
 
 async function reabrir(browser: Browser, email: string, id: string, largura: number, etapa = ""): Promise<Page> {
@@ -86,18 +90,20 @@ test.describe("T2140 — E614: reabrir o rascunho cai no passo gravado; o rascun
 
       // 2. Continuar: Passo 3, e o rascunho grava o passo (a navegação grava em silêncio, sem edição)
       await expect(p1.getByTestId("cadastro-continuar")).toBeEnabled({ timeout: 30_000 });
+      const gravouDesde = Date.now();
       await p1.getByTestId("cadastro-continuar").click();
       await noPasso(p1, "endereco", 30_000);
       await expect
         .poll(async () => (await rascunho(id)).step, { timeout: 20_000, message: "o rascunho grava o passo em que o dono está (Passo 3 = step 2)" })
         .toBe(PASSO_ENDERECO);
+      const gravouAte = Date.now();
       await p1.context().close();
 
       // 3. reaberto noutra sessão, sem etapa: cai no Passo 3
       const p2 = await reabrir(browser, dono.email, id, largura);
       await noPasso(p2, "endereco", 30_000);
       // 5. retomado no Passo 3, sem editar: "Salvo às" com a hora da última gravação
-      await salvoAsAoReabrir(p2, id);
+      await salvoAsAoReabrir(p2, gravouDesde, gravouAte);
       await p2.context().close();
     });
 
@@ -110,6 +116,7 @@ test.describe("T2140 — E614: reabrir o rascunho cai no passo gravado; o rascun
       const p1 = await reabrir(browser, dono.email, id, largura, "endereco");
       await noPasso(p1, "endereco", 30_000);
       await p1.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      const gravouDesde = Date.now();
       await p1.getByTestId("cadastro-complemento").fill(complemento);
       const estado = p1.getByTestId("estado-salvamento");
       await expect(estado, "o indicador do topo diz que salvou").toHaveAttribute("data-estado", "saved", { timeout: 20_000 });
@@ -117,13 +124,14 @@ test.describe("T2140 — E614: reabrir o rascunho cai no passo gravado; o rascun
       await expect
         .poll(async () => (await rascunho(id)).complemento, { timeout: 20_000, message: "o complemento fica gravado no rascunho" })
         .toBe(complemento);
+      const gravouAte = Date.now();
       await p1.context().close();
 
       const p2 = await reabrir(browser, dono.email, id, largura);
       await noPasso(p2, "endereco", 30_000);
       await expect(p2.getByTestId("cadastro-complemento")).toHaveValue(complemento, { timeout: 20_000 });
       // 5. retomado no Passo 3, sem editar: "Salvo às" com a hora da última gravação
-      await salvoAsAoReabrir(p2, id);
+      await salvoAsAoReabrir(p2, gravouDesde, gravouAte);
       await p2.context().close();
     });
   }
