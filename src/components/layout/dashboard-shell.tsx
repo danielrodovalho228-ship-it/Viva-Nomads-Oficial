@@ -305,6 +305,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (temPapel) return;
     e.preventDefault();
     setActiveMode(alvo);
+    useAuthStore.setState({ papelConhecido: true }); // E1026: a troca da pessoa é papel conhecido (vence o que o servidor leu)
     await salvarModo(alvo).catch(() => {});
     router.push(href);
   }
