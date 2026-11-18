@@ -54,8 +54,36 @@ export const ROTAS_FORA_DO_GATE: { prefixo: string; motivo: string }[] = [
   { prefixo: "/admin/parceiros", motivo: "fluxo de parceiros (FORA_DO_GATE, L2-B item 16)" },
 ];
 
-/** Redirecionamentos que são a regra da tela (não achados). Vazio de propósito: o Gerente decide o que entra aqui. */
-export const REDIRECIONAMENTOS_ESPERADOS: { de: RegExp; para: RegExp; motivo: string }[] = [];
+/**
+ * Rotas que redirecionam de propósito (ORDEM-DUET-102): a tabela "Redirecionam de propósito" do Apêndice A. Para cada uma,
+ * a varredura AFIRMA o destino: ir para o destino nomeado é a regra (sem achado); ir para outro lugar, ou ficar na própria
+ * tela, continua sendo achado de redirecionamento. `larguraMinima`: a regra só vale a partir dessa largura (ex.: a Conta).
+ */
+export interface RedirecionamentoDeProposito {
+  de: string;
+  para: string;
+  larguraMinima?: number;
+  motivo: string;
+}
+
+const TITULO_REDIRECIONAMENTOS = "### Redirecionam de propósito";
+
+/** A tabela "Redirecionam de propósito" do Apêndice A: | `de` | `para` | larguras | motivo |. */
+export function lerRedirecionamentos(markdown: string): RedirecionamentoDeProposito[] {
+  const i = markdown.indexOf(TITULO_REDIRECIONAMENTOS);
+  if (i < 0) return [];
+  const resto = markdown.slice(i);
+  const fim = resto.search(/\n##? /);
+  const bloco = fim < 0 ? resto : resto.slice(0, fim);
+  const regras: RedirecionamentoDeProposito[] = [];
+  for (const linha of bloco.split("\n")) {
+    const m = /^\|\s*`(\/[^`]*)`\s*\|\s*`(\/[^`]*)`\s*\|\s*([^|]*)\|\s*([^|]*)\|/.exec(linha);
+    if (!m) continue;
+    const minima = /(\d+)\s*px/.exec(m[3]);
+    regras.push({ de: m[1], para: m[2], ...(minima ? { larguraMinima: Number(minima[1]) } : {}), motivo: m[4].trim() });
+  }
+  return regras;
+}
 
 // ───────────────────────────── inventário ─────────────────────────────
 
@@ -65,7 +93,10 @@ export function lerInventario(markdown: string): string[] {
   if (i < 0) return [];
   const resto = markdown.slice(i);
   const fim = resto.indexOf("\n## ", 5);
-  const bloco = fim < 0 ? resto : resto.slice(0, fim);
+  let bloco = fim < 0 ? resto : resto.slice(0, fim);
+  // A tabela dos redirecionamentos de propósito fica dentro do Apêndice A, mas não é inventário (as telas dela já estão nele).
+  const sub = bloco.indexOf(TITULO_REDIRECIONAMENTOS);
+  if (sub >= 0) bloco = bloco.slice(0, sub);
   const rotas: string[] = [];
   for (const linha of bloco.split("\n")) {
     const m = /^\|\s*`(\/[^`]*)`\s*\|/.exec(linha);
@@ -96,13 +127,14 @@ export const SECOES_CONTA = ["perfil", "papeis", "dados", "privacidade", "notifi
  * Rotas com parâmetro cujo registro a spec procura no banco do laboratório (só leitura, chave de serviço): o primeiro
  * registro da tabela em que a conta da persona aparece numa das colunas. `qualquer: true` = o admin vê qualquer um.
  */
-export const BUSCAS_NO_BANCO: { rota: string; tabela: string; colunas: string[]; qualquer?: boolean; usaParceiro?: boolean }[] = [
+export const BUSCAS_NO_BANCO: { rota: string; tabela: string; colunas: string[]; qualquer?: boolean; usaParceiro?: boolean; viaAvaliador?: boolean }[] = [
   { rota: "/dashboard/leads/[id]", tabela: "leads", colunas: ["owner_id", "tenant_id"] },
   { rota: "/dashboard/propostas/[id]", tabela: "propostas", colunas: ["owner_id", "tenant_id"] },
   { rota: "/dashboard/visitas/[id]", tabela: "visitas_video", colunas: ["owner_id", "tenant_id"] },
   { rota: "/dashboard/servicos/pedidos/[id]", tabela: "parceiro_pedidos", colunas: ["cliente_id", "parceiro_id"], usaParceiro: true },
   { rota: "/dashboard/avaliacao-imovel/[id]", tabela: "vistoria_pedidos", colunas: ["owner_id", "morador_id"] },
-  { rota: "/dashboard/parceiro/avaliacao/[pedido]", tabela: "vistoria_pedidos", colunas: ["avaliador_id"] },
+  // avaliador_id aponta para avaliadores_credenciamento (não para a conta): a spec acha o credenciamento do parceiro da persona.
+  { rota: "/dashboard/parceiro/avaliacao/[pedido]", tabela: "vistoria_pedidos", colunas: ["avaliador_id"], viaAvaliador: true },
   { rota: "/admin/atendimento/[id]", tabela: "chamados", colunas: [], qualquer: true },
   { rota: "/admin/parceiros/pedidos/[id]", tabela: "parceiro_pedidos", colunas: [], qualquer: true },
 ];
@@ -142,6 +174,8 @@ export function resolverRota(rota: string, persona: Persona, massa: Massa | null
 export interface Observacao {
   /** Caminho pedido (sem query). */
   pedido: string;
+  /** Largura da janela (px); decide os redirecionamentos que só valem a partir de uma largura. */
+  largura?: number;
   /** Caminho em que a tela parou (sem query); null se nem abriu. */
   final: string | null;
   status: number | null;
@@ -166,14 +200,22 @@ export interface Achado {
 
 const curto = (s: string, n = 200) => s.replace(/\s+/g, " ").trim().slice(0, n);
 
-export function classificar(o: Observacao): Achado[] {
+export function classificar(o: Observacao, redirecionamentos: RedirecionamentoDeProposito[] = []): Achado[] {
   const achados: Achado[] = [];
   if (o.erroAbertura) achados.push({ tipo: "http", detalhe: `não abriu: ${curto(o.erroAbertura, 140)}` });
   else if (o.status !== null && o.status !== 200) achados.push({ tipo: "http", detalhe: `HTTP ${o.status}` });
 
-  if (o.final !== null && o.final !== o.pedido) {
-    const esperado = REDIRECIONAMENTOS_ESPERADOS.some((r) => r.de.test(o.pedido) && r.para.test(o.final!));
-    if (!esperado) achados.push({ tipo: "redirecionamento", detalhe: o.final === "/auth" || o.final.startsWith("/auth/") ? `caiu no login (${o.final})` : `foi para ${o.final}` });
+  const regra = redirecionamentos.find((r) => r.de === o.pedido && (r.larguraMinima === undefined || (o.largura ?? 0) >= r.larguraMinima));
+  const noLogin = (f: string) => f === "/auth" || f.startsWith("/auth/");
+  if (regra) {
+    // Redireciona de propósito: a varredura afirma o destino. Outro destino, ou ficar na própria tela, é achado.
+    if (o.final !== null && o.final !== regra.para)
+      achados.push({
+        tipo: "redirecionamento",
+        detalhe: o.final === o.pedido ? `devia ir para ${regra.para} e ficou na própria tela` : `devia ir para ${regra.para} e foi para ${noLogin(o.final) ? `o login (${o.final})` : o.final}`,
+      });
+  } else if (o.final !== null && o.final !== o.pedido) {
+    achados.push({ tipo: "redirecionamento", detalhe: noLogin(o.final) ? `caiu no login (${o.final})` : `foi para ${o.final}` });
   }
 
   for (const c of uniq(o.console)) achados.push({ tipo: RE_HIDRATACAO.test(c) ? "hidratacao" : "console", detalhe: curto(c) });

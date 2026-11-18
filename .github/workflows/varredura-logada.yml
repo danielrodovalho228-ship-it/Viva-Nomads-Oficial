@@ -16,6 +16,8 @@ on:
       - "tests/e2e/specs/t1649-e950-varredura-logada-admin.spec.ts"
       - "tests/e2e/fixtures/e950-varredura.ts"
       - "scripts/lab/juntar-varredura-logada.mjs"
+      - "scripts/lab/massa-varredura-e950.mjs"
+      - "docs/e793-painel-sessao-servidor.md"
 
 permissions:
   contents: read
@@ -85,6 +87,11 @@ jobs:
 
       - name: Criar a massa da varredura (morador, proprietário, dois papéis, parceiro)
         run: node scripts/lab/massa-varredura.mjs
+
+      # ORDEM-DUET-102: registros marcados ("[E950] massa da varredura") para as 8 rotas com [id] que a massa comum não
+      # cobre. Só neste workflow: a massa compartilhada dos outros jobs fica como está.
+      - name: Criar a massa do E950 (rotas com [id])
+        run: node scripts/lab/massa-varredura-e950.mjs
 
       - name: Build do site (modo simulado)
         run: npm run build

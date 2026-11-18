@@ -13,6 +13,7 @@ import {
   TELAS_DA_AMOSTRA,
   classificar,
   lerInventario,
+  lerRedirecionamentos,
   resolverRota,
   rotasDaPersona,
   type ExtrasDoBanco,
@@ -36,7 +37,10 @@ import { recursoFicticioDoLab } from "../../../src/lib/varredura-texto";
   O teste só fica vermelho se a varredura NÃO TERMINAR (conta ausente, login que não entra, tempo esgotado).
 */
 const PASTA = "tests/laboratorio/saida/varredura-logada-e950";
-const INVENTARIO = lerInventario(readFileSync("docs/e793-painel-sessao-servidor.md", "utf8"));
+const DOC_INVENTARIO = readFileSync("docs/e793-painel-sessao-servidor.md", "utf8");
+const INVENTARIO = lerInventario(DOC_INVENTARIO);
+// ORDEM-DUET-102: as telas que redirecionam de propósito, com o destino que a varredura afirma.
+const REDIRECIONAMENTOS = lerRedirecionamentos(DOC_INVENTARIO);
 const MASSA = lerMassa();
 const slug = (s: string) => s.replace(/[^\w]+/g, "-").replace(/^-|-$/g, "").toLowerCase().slice(0, 90);
 /** Completa só no workflow varredura-logada.yml; no lab-critico e nas fatias gerais (teto curto), a amostra prova que a máquina roda. */
@@ -57,8 +61,14 @@ async function buscarExtras(persona: Persona): Promise<ExtrasDoBanco> {
       const { data } = await db.from(b.tabela).select("id").limit(1);
       id = (data?.[0] as { id?: string } | undefined)?.id ?? null;
     } else {
+      // avaliador_id é o credenciamento do parceiro (avaliadores_credenciamento), não a conta.
+      let avaliador: string | undefined;
+      if (b.viaAvaliador && parceiro) {
+        const { data } = await db.from("avaliadores_credenciamento").select("id").eq("parceiro_id", parceiro).limit(1);
+        avaliador = (data?.[0] as { id?: string } | undefined)?.id;
+      }
       const filtros = b.colunas.flatMap((c) => {
-        const valor = c === "parceiro_id" && b.usaParceiro ? parceiro : usuario;
+        const valor = c === "parceiro_id" && b.usaParceiro ? parceiro : b.viaAvaliador ? avaliador : usuario;
         return valor ? [`${c}.eq.${valor}`] : [];
       });
       if (filtros.length) {
@@ -180,6 +190,7 @@ test.describe("T1649 — E950 varredura logada e admin (laboratório)", () => {
                     .catch(() => ({ final: null, imagens: [] as string[], scrollWidth: 0, clientWidth: 0, texto: "" }));
               const achados = classificar({
                 pedido: url,
+                largura,
                 final: tela.final,
                 status,
                 erroAbertura,
@@ -190,7 +201,7 @@ test.describe("T1649 — E950 varredura logada e admin (laboratório)", () => {
                 clientWidth: tela.clientWidth,
                 texto: tela.texto,
                 esqueletoVisivel: esqueleto,
-              });
+              }, REDIRECIONAMENTOS);
               let captura: string | null = null;
               if (achados.length) {
                 captura = `${PASTA}/${persona}-${largura}-${slug(url)}.png`;

@@ -11,7 +11,9 @@ import {
   TIPOS_ACHADO,
   classificar,
   juntar,
+  BUSCAS_NO_BANCO,
   lerInventario,
+  lerRedirecionamentos,
   resolverRota,
   resumoMarkdown,
   rotasDaPersona,
@@ -139,4 +141,52 @@ test("saída e resumo: cobertura = rotas varridas ÷ rotas do inventário, execu
   const completa = juntar(parciais.map((p) => ({ ...p, modo: "completa" as const })), inv, "x");
   assert.equal(completa.modo, "completa");
   assert.doesNotMatch(resumoMarkdown(completa), /Modo \*\*amostra\*\*/);
+});
+
+// ORDEM-DUET-102: as 6 telas que redirecionam de propósito ficam na tabela do Apêndice A; a varredura afirma o destino.
+const DOC = readFileSync(new URL("../../docs/e793-painel-sessao-servidor.md", import.meta.url), "utf8");
+const REGRAS = lerRedirecionamentos(DOC);
+
+test("redirecionam de propósito: as 6 telas do Apêndice A, cada uma com o destino nomeado; o inventário segue com 108", () => {
+  assert.deepEqual(
+    REGRAS.map((r) => [r.de, r.para, r.larguraMinima ?? null]),
+    [
+      ["/qualificar", "/dashboard/imoveis/novo", null],
+      ["/dashboard/conta", "/dashboard/conta/perfil", 1024],
+      ["/dashboard/conta/notificacoes", "/dashboard/notificacoes", null],
+      ["/dashboard/conta/avaliacoes", "/dashboard/avaliacoes", null],
+      ["/dashboard/assinatura", "/dashboard", null],
+      ["/dashboard/qa/emails", "/dashboard/conta/ajuda", null],
+    ],
+  );
+  for (const r of REGRAS) assert.ok(r.motivo.length > 10, `${r.de}: o porquê está escrito`);
+  assert.equal(lerInventario(DOC).length, 108, "a tabela dos redirecionamentos não soma rotas ao inventário");
+});
+
+test("redirecionam de propósito: o destino nomeado é a regra; outro destino, ou ficar na tela, continua achado", () => {
+  const de = (pedido: string, final: string, largura = 390) => classificar(limpa({ pedido, final, largura }), REGRAS);
+  assert.deepEqual(de("/qualificar", "/dashboard/imoveis/novo"), []);
+  assert.deepEqual(de("/dashboard/assinatura", "/dashboard", 1280), []);
+  const errado = de("/qualificar", "/dashboard");
+  assert.equal(errado.length, 1);
+  assert.equal(errado[0].tipo, "redirecionamento");
+  assert.match(errado[0].detalhe, /devia ir para \/dashboard\/imoveis\/novo e foi para \/dashboard/);
+  assert.match(de("/dashboard/conta/notificacoes", "/dashboard/conta/notificacoes")[0].detalhe, /ficou na própria tela/);
+  assert.match(de("/dashboard/conta/avaliacoes", "/auth")[0].detalhe, /devia ir para \/dashboard\/avaliacoes e foi para o login/);
+  // Sem a tabela, o comportamento antigo: todo redirecionamento é achado.
+  assert.equal(classificar(limpa({ pedido: "/qualificar", final: "/dashboard/imoveis/novo" }))[0].tipo, "redirecionamento");
+});
+
+test("redirecionam de propósito: a Conta só vai para o Perfil a partir de 1024 px; no celular abre na própria tela", () => {
+  const conta = (final: string, largura: number) => classificar(limpa({ pedido: "/dashboard/conta", final, largura }), REGRAS);
+  assert.deepEqual(conta("/dashboard/conta/perfil", 1280), []);
+  assert.deepEqual(conta("/dashboard/conta", 390), [], "a 390 a Conta abre o próprio menu");
+  assert.match(conta("/dashboard/conta", 1280)[0].detalhe, /devia ir para \/dashboard\/conta\/perfil e ficou na própria tela/);
+  assert.match(conta("/dashboard/conta/perfil", 390)[0].detalhe, /foi para \/dashboard\/conta\/perfil/, "a 390 redirecionar é achado");
+});
+
+test("rotas com [id]: a avaliação do parceiro procura o credenciamento do avaliador, não a conta", () => {
+  const b = BUSCAS_NO_BANCO.find((x) => x.rota === "/dashboard/parceiro/avaliacao/[pedido]")!;
+  assert.deepEqual(b.colunas, ["avaliador_id"]);
+  assert.equal(b.viaAvaliador, true);
 });
