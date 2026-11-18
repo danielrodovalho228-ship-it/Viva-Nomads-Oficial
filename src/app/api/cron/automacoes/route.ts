@@ -228,7 +228,7 @@ export async function GET(request: Request) {
     const vez = daVez(ultima.autor);
     const pp = p.properties as unknown as { title?: string | null; address?: string | null; city?: string | null } | null;
     // E344: a linha do imóvel com bairro e cidade, como nos outros e-mails do cron (linhaImovel), não só o título.
-    const imovelProposta = pp ? linhaImovel({ id: p.property_id as string, titulo: pp.title, bairro: pp.address, cidade: pp.city }) : "";
+    const imovelProposta = pp ? String(pp.title ?? "") : ""; // ENSAIO DE QUEBRA — E344: sem bairro e cidade
     alvos.push({
       tipo: "proposta_vencendo",
       usuarioId: (vez === "owner" ? p.owner_id : p.tenant_id) as string,

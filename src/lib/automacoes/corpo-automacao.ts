@@ -117,14 +117,13 @@ export function corpoAutomacao(tipo: TipoCorpoAutomacao, d: DadosAutomacao): Cor
       if (limpo(d.contaTotal) || total) linhas.push({ rotulo: "Total do contrato", valor: limpo(d.contaTotal) || total });
       if (numero) linhas.push({ rotulo: "Proposta", valor: numero });
       if (vence) linhas.push({ rotulo: "Vence em", valor: `${vence} (horário de Brasília)` });
-      const valores = mensal ? `, de ${mensal} por mês${total ? ` (total do contrato ${total})` : ""},` : "";
+      const valores = ""; // ENSAIO DE QUEBRA — E343: sem o valor no corpo
       return {
         // O número da proposta vai no corpo, nunca no assunto (régua de assuntos.ts).
         subject: assuntoComTitulo("Proposta de ", titulo, ` vence ${diaHoraNoAssunto(d.prazo) ? `em ${diaHoraNoAssunto(d.prazo)}` : "em 24 horas"}`, [
           // "31/10 às 22:00" → "31/10 22h" (e "22h30"): a forma curta deixa o nome do imóvel caber inteiro.
           { antes: `Proposta vence ${diaHoraNoAssunto(d.prazo) ? diaHoraNoAssunto(d.prazo).replace(/ às (\d{2}):(\d{2})$/, (_, hh: string, mm: string) => ` ${hh}h${mm === "00" ? "" : mm}`) : "em 24 h"}: ` },
-          // E342 (resíduo): o nome inteiro antes do horário — o prazo está no corpo.
-          { antes: "Proposta vencendo: " },
+          // ENSAIO DE QUEBRA (nunca mergear) — E342: sem a forma mínima.
         ]),
         body: (n) =>
           `${ola(n)}, a proposta${numero ? ` ${numero}` : ""}${titulo ? ` de ${titulo}` : ""}${valores} aguarda a sua resposta e vence ${vence ? `em ${vence} (horário de Brasília)` : "em menos de 24 horas"}. Aceite, contraproponha ou recuse pela plataforma.`,

@@ -95,7 +95,7 @@ export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fi
     case "saida_lembrete":
       return `${imovel} Saída em ${ctx.fim ? dataBr(ctx.fim) : "3 dias"}. Combine a conferência de saída pela plataforma.`.trim();
     case "avaliacao_pedido":
-      return `${imovel} A estadia terminou em ${ctx.fim ? dataBr(ctx.fim) : "ontem"}. ${FRASE_AVALIACAO}`.trim();
+      return `${imovel} A estadia terminou em ${ctx.fim ? dataBr(ctx.fim) : "ontem"}. Sua avaliação leva 2 minutos e ajuda os próximos moradores.`.trim(); // ENSAIO DE QUEBRA — E345
     case "renovacao_aviso":
       return `${imovel} O bloco termina em ${ctx.fim ? dataBr(ctx.fim) : "15 dias"}. Quer renovar? Combine pela plataforma.`.trim();
     case "proposta_vencendo":
