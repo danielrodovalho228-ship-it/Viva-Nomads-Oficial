@@ -1,0 +1,17 @@
+# E1010 — t21 "Moacir gerente": a trilha "ver como apurei" aberta fechava sozinha
+
+**Sintoma (corridas de 16 e 17/11, 4/7):** `passo-gerente` com "Moacir → Viva:" encontrado, mas **oculto** (está dentro de um `<details>` fechado); passa na nova tentativa.
+
+## Causas (lab, 18/11)
+
+1. **Produto.** Ao enviar a pergunta, a tela mostra na hora a pergunta, os passos e a resposta como mensagens otimistas (ids `p-`/`t-`/`r-`); logo depois o `reler()` traz as gravadas (ids do banco) e o `mesclarConversas` descarta as otimistas. A trilha usava `key={g.itens[0].id}`: a troca `t-…` → id gravado mudava a chave, o React remontava o `<details>` e **a trilha que o Daniel acabou de abrir voltava fechada**. Correção: `chavesEstaveis()` (agente, papel, texto + ordem entre as iguais, a mesma regra de igualdade do `mesclarConversas`) vira a chave da trilha; a troca de id não remonta mais.
+2. **Teste.** A conversa do admin já traz as perguntas anteriores (outros testes, nova tentativa). O teste abria `trilha-gerente.last()` e lia a bolha `.last()` logo depois do Enviar, antes de a resposta nova chegar: abria/lia a da pergunta anterior. Agora espera a resposta desta pergunta e só então abre a trilha; os passos são lidos na trilha aberta (`[open]`).
+3. **Teste.** Com workers em paralelo, outro teste abre um chamado ao mesmo tempo (lab: VN-000162 aqui, VN-000163 no outro); o Moacir responde, certo, pelo **mais novo**. A asserção passou de "cita exatamente o nosso número" para "cita o nosso ou um chamado aberto depois dele" (ver "Asserções alteradas" no PR).
+
+## Provas
+
+- Unidade, `src/lib/agentes/painel.test.ts`: 2 testes novos `E1010 chavesEstaveis…` — vermelhos sem a função (fail 2), verdes com ela (pass 17, fail 0).
+- E2E na main (1 worker, `--repeat-each=5`): 1 falhou, 4 passaram (passo da trilha não visível).
+- E2E no ramo: ver a descrição do PR (laboratório recompilado com o ramo).
+
+Fora do escopo: 3 cópias do mesmo teste conversando ao mesmo tempo com o Moacir na MESMA conta misturam as trilhas umas das outras (cenário que não existe na suíte; como no E1011 com 4 workers).
