@@ -99,3 +99,19 @@ test("foto nova: a tela da foto esquece a leitura guardada antes de ler a URL no
   assert.match(foto, /lerMeuAvatar\(\)/);
   assert.match(foto, /esquecerMeuAvatar\(\);\s*\n\s*const nova = await getMyAvatarUrl\(\);/);
 });
+
+test("o painel não pré-carrega a página inicial: os logotipos da casca e do topo saem com prefetch={false}", () => {
+  // Medido em 18/11/2026: com o pré-carregamento ligado, um pedido duplicado de `/?_rsc=…` ficava pendente no navegador
+  // por cerca de 28 s em cada abertura de /dashboard (o cliente do Next só o aborta quando a entrada vence, aos 30 s).
+  // A página inicial é a saída do painel, não o caminho de quem está a trabalhar nele: abre-se no clique.
+  const logo = ler("../../components/ui/logo.tsx");
+  assert.match(logo, /prefetch\?: boolean;/);
+  assert.match(logo, /<Link href=\{href\} prefetch=\{prefetch\} /);
+  const casca = ler("../../components/layout/dashboard-shell.tsx");
+  assert.equal((casca.match(/<Logo /g) ?? []).length, 2, "os dois logotipos da casca");
+  assert.equal((casca.match(/<Logo [^>]*prefetch=\{false\}/g) ?? []).length, 2);
+  const topo = ler("../../components/layout/topo-dono.tsx");
+  assert.match(topo, /<Logo href=\{HREF_LOGO_PAINEL\} prefetch=\{false\} /);
+  // Fora do painel nada muda: o cabeçalho e o rodapé públicos seguem com o padrão do Next.
+  for (const arq of ["../../components/layout/navbar.tsx", "../../components/layout/footer.tsx"]) assert.doesNotMatch(ler(arq), /<Logo [^>]*prefetch/, arq);
+});

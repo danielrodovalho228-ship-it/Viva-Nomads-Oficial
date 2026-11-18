@@ -347,7 +347,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/10 px-4">
-        <Logo light className="max-w-full" />
+        <Logo light prefetch={false} className="max-w-full" />
       </div>
       <nav aria-label="Menu do painel" className="flex-1 overflow-y-auto p-3">
         {/* Quem ainda não anunciou: entrada direta para anunciar (as seções de dono
@@ -424,7 +424,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} itensConta={itensConta} onAcao={aoAcaoConta} />
         )}
         <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", papelTopo && "lg:hidden")} data-testid="topo-celular">
-          <Logo className="lg:hidden" />
+          <Logo prefetch={false} className="lg:hidden" />
           <div className="flex items-center gap-2">
             {contaCelular ?? papelChip}
             {chipModo}
