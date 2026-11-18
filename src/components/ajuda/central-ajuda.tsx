@@ -16,7 +16,7 @@ import { TextoComRemissoes } from "@/components/ajuda/texto-com-remissoes";
 import { avisoEmergencia, CATEGORIAS, detectarEmergencia } from "@/lib/atendimento/classificar";
 import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
 import { ASSUNTO_CHAMADO_DO_CHAT, CHAVE_CONVERSA_CHAT, EVENTO_FALAR_COM_PESSOA, mensagemDoChamado, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
-import { podeMarcarResolvido } from "@/lib/atendimento/acolhimento";
+import { esperaResposta, podeMarcarResolvido } from "@/lib/atendimento/acolhimento";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
 import { emailMascaradoDaConta } from "@/lib/atendimento/identificacao-chamado";
@@ -345,7 +345,7 @@ function Perguntas({ perfil, ids, titulo }: { perfil: PerfilAjuda; ids?: readonl
               </button>
               {aberta === p.id && (
                 <div className="pb-3">
-                  <p className="text-sm leading-relaxed text-muted"><TextoComRemissoes texto={respostaPara(p, perfil)} /></p>
+                  <p className="text-sm leading-relaxed text-muted"><TextoComRemissoes texto={respostaPara(p, perfil)} nomeados /></p>
                   {p.links?.map((l) => (
                     <Link key={l.href} href={l.href} className="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-forest underline underline-offset-2" data-testid={`faq-link-${p.id}`}>
                       {l.rotulo} <ChevronRight className="h-4 w-4" aria-hidden />
@@ -644,18 +644,19 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
 
   // A Viva responde em segundos (no servidor, depois da mensagem): confere a
   // cada 2,5 s por até 1 minuto enquanto a última mensagem ainda é da pessoa.
-  const ultima = dados?.mensagens.at(-1);
   const comViva = dados?.chamado.responsavel_tipo === "ia";
-  const vivaEscrevendo =
-    !!dados && comViva && !!ultima && (ultima.autor === "usuario" || ultima.autor === "sistema") && !["resolvido", "encerrado"].includes(dados.chamado.status) && voltas < 24;
+  // E1012: confere também com a equipe (acolhimento automático do chamado sensível); o aviso fica só com a Viva.
+  const { conferir, vivaEscrevendo } = dados
+    ? esperaResposta({ mensagens: dados.mensagens, status: dados.chamado.status, voltas, responsavelTipo: dados.chamado.responsavel_tipo })
+    : { conferir: false, vivaEscrevendo: false };
   useEffect(() => {
-    if (!vivaEscrevendo) return;
+    if (!conferir) return;
     const t = setTimeout(() => {
       setVoltas((v) => v + 1);
       carregar();
     }, 2500);
     return () => clearTimeout(t);
-  }, [vivaEscrevendo, voltas, carregar]);
+  }, [conferir, voltas, carregar]);
 
   async function responder(e: React.FormEvent) {
     e.preventDefault();
