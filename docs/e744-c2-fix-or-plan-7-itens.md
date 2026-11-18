@@ -21,3 +21,17 @@ afrouxado; se a causa for do produto, a correção é do produto.
 
 Se a reprodução mostrar uma falha determinística na main, o item passa a `test.fail()` com o número dele (e sai da
 quarentena) até a correção entrar. Atualizo esta tabela no marco de 19/11 com o caminho confirmado de cada um.
+
+## Caminho confirmado de cada item (18/11, ~06:30 UTC — adianta o marco de 19/11)
+
+| Item | Spec | Caminho | Onde | Data |
+|---|---|---|---|---|
+| E1011 | t29 | correção do teste (contar só as ordens da própria conversa) | PR #3974 (verde) | entra na vez dele, depois do #3965 |
+| E1015 | t190 | correção do teste (JSON-LD do 1º anúncio que abre) | #3977 **mesclado** (17/11) | feito |
+| E1019 | t1629 | linha de diagnóstico na main (#3977); correção depois da corrida completa mostrar onde o `?local=` se perde | main | correção até **21/11** |
+| E1016 | t305 | correção do teste: cidade própria (t303/t344 apagavam a tabela de preços de Uberlândia) | PR #3978 (verde) | entra na vez dele; prazo 26/11 cumprido |
+| E1010 | t21 | correção do produto (trilha "ver como apurei" aberta não fecha) + teste espera a própria resposta | PR #3979 (verde) | entra na vez dele; prazo 26/11 cumprido |
+| E1012 | t30 | correção do produto (a resposta automática do acolhimento aparece sem recarregar) | #3981 **mesclado** (18/11) | feito |
+| E1020 | t230 (caso 1 + cadeia 2–3) | correção do teste (vale o estado gravado da Caução; não é defeito de idempotência) | PR #3982 (verde; refresco depois do #3972) | entra na vez dele; prazo 26/11 cumprido |
+
+Nenhum item precisa de renovação da validade (01/12). Detalhe de cada correção em `docs/e10NN-*.md` do PR respectivo.
