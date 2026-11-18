@@ -173,8 +173,9 @@ export async function POST(request: Request) {
         // ENSAIO DE QUEBRA (nunca mergear), 2.ª corrida: a quebra A (já provada na run 44181181666) sai, para o caso A
         // passar e os casos B e C (em série) chegarem a correr.
         if (achadosOsm) await admin.from("proximidades_cep").upsert({ cep, lat: pontoOsm.lat, lng: pontoOsm.lng, itens: achadosOsm, fonte: "osm", atualizado_em: new Date().toISOString() });
-        // quebra B: a falha grava a lista vazia como do OSM ("nada por perto"); quebra C: apaga a lista já guardada.
-        else await admin.from("proximidades_cep").upsert({ cep, lat: pontoOsm.lat, lng: pontoOsm.lng, itens: [], fonte: "osm", atualizado_em: new Date().toISOString() });
+        // 3.ª corrida: a quebra B (provada na run 44204423221) sai; fica só a quebra C — sem a guarda !pontoJaGuardado, a
+        // falha regrava o CEP com a lista vazia e apaga a lista do OSM já guardada.
+        else await admin.from("proximidades_cep").upsert({ cep, lat: pontoOsm.lat, lng: pontoOsm.lng, itens: [], fonte: "erro", atualizado_em: new Date().toISOString() });
         void pontoJaGuardado;
         registrar(achadosOsm ? "osm" : "erro", ["perna_osm", ...etapasOsm]);
       });
