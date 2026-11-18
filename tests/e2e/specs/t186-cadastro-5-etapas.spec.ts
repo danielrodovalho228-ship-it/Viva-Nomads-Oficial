@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosReais, novaSenha, novoSufixo, pngDeTeste, aceitarTermoIaSePreciso } from "../fixtures/laboratorio";
-import { continuarAte, noPasso, abrirCadastroNovo, abrirSecoesPasso10 } from "../fixtures/cadastro";
+import { continuarAte, noPasso, abrirCadastroNovo, abrirSecoesPasso10, preencherFichaDentro } from "../fixtures/cadastro";
 
 /*
   T186 — Assistente de cadastro em 10 passos (mockups cadastro-imovel-01..10; antes, os 6 passos do Prompt 43) +
@@ -222,6 +222,8 @@ test.describe("T186 — Assistente em 10 passos com IA, OSM e documento simulado
       // Prompt 59-A (#1081): o padrão mínimo da Viva é confirmado aqui, junto das comodidades (antes ficava na revisão).
       await page.getByTestId("conforto-marcar-todos").click();
       await expect(page.getByTestId("conforto-faltam")).toHaveText("Todos os itens confirmados.");
+      // E744 (tabela da Fable #3832): E660 — a ficha "O que tem dentro" é obrigatória para publicar; preenchida pela tela.
+      await preencherFichaDentro(page);
       await camposDentroDoCartao(page, "etapa-encontramos");
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t186-5-comodidades-${largura}.png`, fullPage: true });
