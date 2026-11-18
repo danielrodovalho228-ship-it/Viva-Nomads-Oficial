@@ -590,8 +590,8 @@
    "item": "E987",
    "dono": "Code 2",
    "pr": 3911,
-   "nota": "a galeria aberta não reaproveita a versão da miniatura da foto; corrigido pelo #3911 (adcde730) — sem marca",
-   "corrigidoPor": "adcde730"
+   "nota": "a galeria aberta não reaproveita a versão da miniatura da foto; corrigido pelo #3911 (merge 5861078e; o commit da correção é adcde730) — sem marca",
+   "corrigidoPor": "5861078e"
   },
   {
    "spec": "t735-e277-busca-parceiros-fotos.spec.ts",

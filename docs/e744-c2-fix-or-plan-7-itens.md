@@ -131,3 +131,9 @@ A CPU do navegador foi estrangulada pelo DevTools (`Emulation.setCPUThrottlingRa
 - Com mais uma verde, abro o PR de saída mantendo a linha de diagnóstico.
 - Se uma corrida falhar, a linha separa "perdeu antes do clique" de "perdeu depois", e a correção vai à causa, com trava vermelha.
 - Scripts da tentativa (fora do repositório): `e1019-cpu.cjs` e `e1019-cpu-par.cjs`.
+
+### t707: corrigidoPor passa a ser o merge (ORDEM-DUET-123)
+
+Decisão do Gerente: o t707 é do Code 2, e o `corrigidoPor` é sempre o commit de merge do PR.
+O t707 (E987, #3911) apontava para o commit da correção (`adcde730`) e passa a apontar para o merge **`5861078e`**.
+As outras 45 disposições do Code 2 com `corrigidoPor` já apontavam para merges (conferido com `git log --format=%P`).
