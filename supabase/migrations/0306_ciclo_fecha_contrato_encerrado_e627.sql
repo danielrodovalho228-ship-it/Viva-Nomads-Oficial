@@ -59,8 +59,10 @@ begin
          encerrado_em = coalesce(c.encerrado_em, (((select max(b.fim) from contrato_blocos b where b.contrato_id = c.id) + 1)::timestamp at time zone 'America/Sao_Paulo'))
    where c.status = 'ativo'
      and c.id <> 'a0268b00-0000-4000-8000-000000000011' -- exceção temporária (E289, aguardando decisão do Daniel)
-     and exists (select 1 from contrato_blocos b where b.contrato_id = c.id and b.status in ('encerrado', 'encerrado_sem_renovacao'))
+     -- ENSAIO DE QUEBRA (nunca mergear) — regra 1: o bloco 'encerrado' volta a ficar de fora
+     and exists (select 1 from contrato_blocos b where b.contrato_id = c.id and b.status in ('encerrado_sem_renovacao'))
      and not exists (select 1 from contrato_blocos b where b.contrato_id = c.id and b.status in ('agendado', 'ativo', 'pendente_aceite'))
-     and (select max(b.fim) from contrato_blocos b where b.contrato_id = c.id) < hoje;
+     -- ENSAIO DE QUEBRA — regra 2: fecha no próprio último dia
+     and (select max(b.fim) from contrato_blocos b where b.contrato_id = c.id) <= hoje;
 end
 $fn$;
