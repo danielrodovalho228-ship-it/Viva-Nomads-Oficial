@@ -947,7 +947,12 @@ function Section({
 }) {
   const [aberta, setAberta] = useState<boolean | null>(null);
   const hash = useSyncExternalStore(assinarHash, () => window.location.hash, () => "");
-  const open = aberta ?? (!!ancora && hash === `#${ancora}`);
+  // E1022: a resposta de uma gravação (ação do servidor) reescreve o endereço sem o "#ancora". A seção que abriu pelo
+  // endereço guarda isso e segue aberta; antes fechava sozinha debaixo do dono (o "Salvar seção" sumia).
+  const pedidaPeloEndereco = !!ancora && hash === `#${ancora}`;
+  const [abertaPeloEndereco, setAbertaPeloEndereco] = useState(false);
+  if (pedidaPeloEndereco && !abertaPeloEndereco) setAbertaPeloEndereco(true);
+  const open = aberta ?? (pedidaPeloEndereco || abertaPeloEndereco);
   return (
     <section id={ancora} className="scroll-mt-24 overflow-hidden rounded-xl border border-sage-200 bg-white" data-testid={testid} data-aberta={open}>
       <button
