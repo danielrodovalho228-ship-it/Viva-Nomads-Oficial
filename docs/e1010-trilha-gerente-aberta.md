@@ -4,13 +4,13 @@
 
 ## Causas (lab, 18/11)
 
-1. **Produto.** Ao enviar a pergunta, a tela mostra na hora a pergunta, os passos e a resposta como mensagens otimistas (ids `p-`/`t-`/`r-`); logo depois o `reler()` traz as gravadas (ids do banco) e o `mesclarConversas` descarta as otimistas. A trilha usava `key={g.itens[0].id}`: a troca `t-…` → id gravado mudava a chave, o React remontava o `<details>` e **a trilha que o Daniel acabou de abrir voltava fechada**. Correção: `chavesEstaveis()` (agente, papel, texto + ordem entre as iguais, a mesma regra de igualdade do `mesclarConversas`) vira a chave da trilha; a troca de id não remonta mais.
-2. **Teste.** A conversa do admin já traz as perguntas anteriores (outros testes, nova tentativa). O teste abria `trilha-gerente.last()` e lia a bolha `.last()` logo depois do Enviar, antes de a resposta nova chegar: abria/lia a da pergunta anterior. Agora espera a resposta desta pergunta e só então abre a trilha; os passos são lidos na trilha aberta (`[open]`).
+1. **Produto.** Ao enviar a pergunta, a tela mostra na hora a pergunta, os passos e a resposta como mensagens otimistas (ids `p-`/`t-`/`r-`); logo depois o `reler()` traz as gravadas (ids do banco) e o `mesclarConversas` descarta as otimistas. A trilha usava `key={g.itens[0].id}`: a troca `t-…` → id gravado mudava a chave, o React remontava o `<details>` e **a trilha que o Daniel acabou de abrir voltava fechada**. Correção: `chavesEstaveis()` (agente, papel, texto + ordem entre as iguais, a mesma regra de igualdade do `mesclarConversas`) dá a cada mensagem uma chave que sobrevive à troca de id, e `chavesDosGrupos()` dá à trilha a chave da mensagem anterior a ela (a pergunta). Assim nem a troca de id nem um passo que entra na frente do grupo (o "Retorno" de uma execução, que também é passo na conversa do Moacir) remontam a trilha aberta.
+2. **Teste.** A conversa do admin já traz as perguntas anteriores (outros testes, nova tentativa). O teste abria `trilha-gerente.last()` e lia a bolha `.last()` logo depois do Enviar, antes de a resposta nova chegar: abria/lia a da pergunta anterior. Agora espera a resposta desta pergunta e a trilha nova da consulta, escolhida pelo conteúdo ("Moacir → Viva:" e "Viva: Tenho N chamado"): o caso "Retorno" do mesmo spec, em paralelo, grava um passo na conversa do Moacir que podia virar a última trilha da tela.
 3. **Teste.** Com workers em paralelo, outro teste abre um chamado ao mesmo tempo (lab: VN-000162 aqui, VN-000163 no outro); o Moacir responde, certo, pelo **mais novo**. A asserção passou de "cita exatamente o nosso número" para "cita o nosso ou um chamado aberto depois dele" (ver "Asserções alteradas" no PR).
 
 ## Provas
 
-- Unidade, `src/lib/agentes/painel.test.ts`: 2 testes novos `E1010 chavesEstaveis…` — vermelhos sem a função (fail 2), verdes com ela (pass 17, fail 0).
+- Unidade, `src/lib/agentes/painel.test.ts`: 3 testes novos `E1010 …` (chavesEstaveis ×2, chavesDosGrupos) — vermelhos sem as funções, verdes com elas (pass 18, fail 0).
 - E2E na main (1 worker, `--repeat-each=5`): 1 falhou, 4 passaram (passo da trilha não visível).
 - E2E no ramo: ver a descrição do PR (laboratório recompilado com o ramo).
 
