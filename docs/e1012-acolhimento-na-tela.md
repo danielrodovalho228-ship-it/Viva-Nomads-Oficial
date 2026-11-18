@@ -8,12 +8,13 @@ A Caução é categoria **sensível**: o chamado fica com a equipe (`quemAtende`
 
 ## Correção
 
-`esperaResposta()` (`src/lib/atendimento/acolhimento.ts`): a tela confere de novo a cada 2,5 s, até 24 vezes, enquanto a última mensagem é da pessoa ou do sistema e o chamado está em aberto — com a Viva **e** com a equipe. O aviso "A Viva está escrevendo…" continua só quando é a Viva que atende. No chamado com a equipe sem acolhimento (emergência), são no máximo 24 leituras em 1 minuto.
+`esperaResposta()` (`src/lib/atendimento/acolhimento.ts`): a tela confere de novo a cada 2,5 s, até 24 vezes, enquanto a pessoa ainda espera a resposta da última mensagem dela — com a Viva, até a primeira resposta da Viva (como já era); com a equipe, até a resposta da equipe ou a **resposta automática com o rodapé**. O acolhimento da equipe vem em duas mensagens da Viva (o aviso "a Viva já respondeu logo abaixo" e, segundos depois, a resposta com o rodapé): a primeira versão da correção parava no aviso e a resposta voltava a não aparecer (lab: 1 em 12). O aviso "A Viva está escrevendo…" continua só quando é a Viva que atende. No chamado com a equipe sem resposta automática (emergência), são no máximo 24 leituras em 1 minuto.
 
 ## Provas
 
-- Unidade, `src/lib/atendimento/acolhimento.test.ts`: 2 testes novos `E1012 esperaResposta…`, vermelhos sem a função (fail 2), verdes com ela (pass 10, fail 0).
+- Unidade, `src/lib/atendimento/acolhimento.test.ts`: 3 testes novos `E1012 esperaResposta…`, vermelhos sem a função, verdes com ela (pass 11, fail 0).
 - E2E sem a correção (laboratório com a main de 18/11), `t30 -g "Caução simples" --repeat-each=6 --workers=3`: **1 failed, 5 passed** — `t30:68 locator('body') toContainText(RODAPE)`, o mesmo erro do CI.
-- E2E com a correção: ver a descrição do PR.
+- E2E com a correção (laboratório recompilado com c4cc9d928): `-g "Caução simples" --repeat-each=10 --workers=3` → **10 passed**; t30 inteiro → **2 passed**.
+- Cuidado para repetir no lab: todas as repetições usam a mesma conta de inquilino e esgotam o limite de mensagens por pessoa (`limites_uso` `chamado-msg:<usuário>`, que o `beforeAll` do t30 não apaga — ele apaga só `chamado:%`). Zerar `chamado%` entre rodadas.
 
 Nenhuma asserção do teste mudou.
