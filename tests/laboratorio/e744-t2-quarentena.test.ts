@@ -177,18 +177,85 @@ test("o resumo diz o tamanho, as vencidas e as candidatas a sair, e nunca escond
 
 // ---------- o arquivo de verdade e o workflow ----------
 
+// ---------- entrada de spec inteira (decisão do Gerente, ORDEM-DUET-097, 18/11) ----------
+// Quando os casos que falham dependem dos casos anteriores do mesmo spec, uma entrada só cobre o spec inteiro: as fatias
+// gerais ficam sem ele e o job da quarentena roda o arquivo com a cadeia de dependências intacta. A entrada diz quais
+// casos falham; não leva `titulo`.
+const inteira = (extra: Record<string, unknown> = {}) => {
+  const { titulo: _titulo, ...resto } = ok({ spec: "t442-foto-perfil-revisao.spec.ts", item: "E13" });
+  return { ...resto, specInteira: true, casos: ["4. denúncia", "5. Remover"], ...extra };
+};
+
+test("spec inteira: a entrada vale sem titulo, com os casos que falham", () => {
+  assert.deepEqual(validarQuarentena([inteira()], HOJE), []);
+  assert.match(validarQuarentena([inteira({ casos: [] })], HOJE).join("\n"), /spec inteira sem os casos que falham/);
+  assert.match(validarQuarentena([inteira({ casos: undefined })], HOJE).join("\n"), /spec inteira sem os casos que falham/);
+  assert.match(validarQuarentena([inteira({ titulo: "4. denúncia" })], HOJE).join("\n"), /spec inteira não leva titulo/);
+  // Os outros campos continuam obrigatórios.
+  assert.match(validarQuarentena([inteira({ dono: "" })], HOJE).join("\n"), /sem dono/);
+  // `casos` só existe na entrada de spec inteira.
+  assert.match(validarQuarentena([{ ...ok(), casos: ["x"] }], HOJE).join("\n"), /casos só vale em entrada de spec inteira/);
+});
+
+test("spec inteira: o spec não entra duas vezes, nem inteiro e por teste ao mesmo tempo", () => {
+  assert.match(validarQuarentena([inteira(), inteira()], HOJE).join("\n"), /entrada repetida/);
+  const porTeste = ok({ spec: "t442-foto-perfil-revisao.spec.ts", titulo: "4. denúncia", item: "E13" });
+  assert.match(validarQuarentena([inteira(), porTeste], HOJE).join("\n"), /o spec já está inteiro na quarentena/);
+  assert.match(validarQuarentena([porTeste, inteira()], HOJE).join("\n"), /o spec já está inteiro na quarentena/);
+});
+
+test("spec inteira: o padrão casa todos os testes do spec e nenhum de outro", () => {
+  const p = padraoDaQuarentena([inteira(), ok()]);
+  const spec = "t442-foto-perfil-revisao.spec.ts";
+  for (const titulo of ["1. foto nova entra", "3. fila", "4. denúncia pela página do proprietário", "5. Remover com motivo"]) assert.ok(casa(p, noGrep(spec, ["T442 — FOTO-PERFIL-B"], titulo)), titulo);
+  assert.ok(casa(p, noGrep(spec, [], "teste sem describe")));
+  assert.ok(!casa(p, noGrep("t443-outro.spec.ts", ["T443"], "4. denúncia pela página do proprietário")));
+  assert.ok(!casa(p, noGrep("xt442-foto-perfil-revisao.spec.ts", ["T442"], "1. foto nova entra")), "nome de arquivo que só termina igual não casa");
+  // A outra entrada, por teste, segue como era.
+  assert.ok(casa(p, noGrep(ok().spec, ["T29"], ok().titulo)));
+  assert.ok(!casa(p, noGrep(ok().spec, ["T29"], "outro teste do t29")));
+});
+
+test("spec inteira: o resumo conta todas as repetições de todos os casos; só é candidata a sair se todos passarem", () => {
+  const e = inteira();
+  const rel = (estados: string[][]) => ({ suites: ["1. foto", "4. denúncia", "5. Remover"].flatMap((t, i) => relatorio(e.spec, t, estados[i]).suites) });
+  const bom = resultadoDaQuarentena([e], rel([["expected", "expected", "expected"], ["expected", "expected", "expected"], ["expected", "expected", "expected"]]), HOJE);
+  assert.deepEqual([bom.linhas[0].passou, bom.linhas[0].rodou], [9, 9]);
+  assert.deepEqual(bom.candidatas.map((l: { item: string }) => l.item), ["E13"]);
+  const ruim = resultadoDaQuarentena([e], rel([["expected", "expected", "expected"], ["expected", "unexpected", "expected"], ["expected", "skipped", "expected"]]), HOJE);
+  assert.deepEqual([ruim.linhas[0].passou, ruim.linhas[0].rodou], [7, 8]);
+  assert.deepEqual(ruim.candidatas, []);
+  // A linha do resumo diz que é o spec inteiro e quais casos falham.
+  assert.match(textoDaQuarentena(bom), /t442-foto-perfil-revisao\.spec\.ts › \(spec inteira; falham: 4\. denúncia; 5\. Remover\) \| 9 de 9/);
+});
+
 test("o arquivo da quarentena é válido HOJE: teto, campos, validade, nenhuma vencida, specs existem", () => {
   const entradas = lerQuarentena();
   const hoje = new Date().toISOString().slice(0, 10);
   const erros = validarQuarentena(entradas, hoje, { specExiste: (s: string) => existsSync(`tests/e2e/specs/${s}`) });
   assert.deepEqual(erros, []);
-  for (const e of entradas as Entrada[]) {
+  for (const e of entradas as (Entrada & { specInteira?: boolean; casos?: string[] })[]) {
     // O título tem que estar escrito no spec. Quando o spec monta o título (largura, nome do agente, nome da tela), a
     // parte fixa fica no começo ou no fim: confere os primeiros ou os últimos 24 caracteres. As aspas escapadas do
     // código (\") contam como aspas.
     const fonte = readFileSync(`tests/e2e/specs/${e.spec}`, "utf8").replaceAll('\\"', '"');
-    assert.ok(fonte.includes(e.titulo.slice(0, 24)) || fonte.includes(e.titulo.slice(-24)), `${e.spec}: o título "${e.titulo}" não está no spec`);
+    // Entrada de spec inteira (ORDEM-DUET-097): não tem título; a mesma conferência vale para cada caso que ela nomeia.
+    for (const titulo of e.specInteira === true ? e.casos! : [e.titulo]) {
+      assert.ok(fonte.includes(titulo.slice(0, 24)) || fonte.includes(titulo.slice(-24)), `${e.spec}: o título "${titulo}" não está no spec`);
+    }
   }
+});
+
+test("o t442 está na quarentena como spec inteira, e os casos nomeados existem no spec (ORDEM-DUET-097)", () => {
+  const dele = (lerQuarentena() as { spec: string; specInteira?: boolean; casos?: string[]; titulo?: string }[]).filter((e) => e.spec === "t442-foto-perfil-revisao.spec.ts");
+  assert.equal(dele.length, 1, "uma entrada só");
+  assert.equal(dele[0].specInteira, true);
+  assert.equal(dele[0].titulo, undefined);
+  const fonte = readFileSync("tests/e2e/specs/t442-foto-perfil-revisao.spec.ts", "utf8");
+  assert.match(fonte, /mode: "serial"/);
+  const titulos = [...fonte.matchAll(/^\s+test\("(.*)", async /gm)].map((m) => m[1]);
+  assert.deepEqual(dele[0].casos!.map((c) => c.slice(0, 2)), ["4.", "5."]);
+  for (const caso of dele[0].casos!) assert.ok(titulos.includes(caso), `"${caso}" não é um teste do spec`);
 });
 
 test("regra de entrada: toda entrada tem disposição na lista da T1 — instável com o mesmo item, teste velho apontando a correção, ou defeito sem marca com o item dele", () => {
