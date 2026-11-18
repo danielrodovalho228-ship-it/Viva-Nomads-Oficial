@@ -27,6 +27,6 @@ test("E614 — o assistente marca a confirmação (confirmouRef) e o autosave da
   assert.match(pagina, /const confirmar = \(\.\.\.c: CampoConfirmavel\[\]\) => \{\s*confirmouRef\.current = true;/);
   // abrir um rascunho zera a marca junto com a da edição
   assert.match(pagina, /aguardandoBaseRef\.current = true;\s*editouRef\.current = false;\s*confirmouRef\.current = false;/);
-  // na janela da base, sem edição: só sai sem gravar se não houve confirmação
-  assert.match(pagina, /if \(!confirmouRef\.current\) return;\s*decisao = "silencioso";/);
+  // na janela da base, sem edição: só sai sem gravar se não houve confirmação (nem troca de passo — E614 retomar)
+  assert.match(pagina, /decisaoAutosave\(\{ aguardandoBase: true, confirmou: confirmouRef\.current, navegou, base: null, conteudo \}\) !== "silencioso"\) return;\s*decisao = "silencioso";/);
 });
