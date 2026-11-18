@@ -150,16 +150,6 @@
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
    "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
-  },
-  {
-   "spec": "t198-rodape-painel-390.spec.ts",
-   "titulo": "conta: último botão livre acima da barra de abas",
-   "motivo": "teste velho com correção escrita: falhou em 4 das 7 corridas de 16 e 17/11 e na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais); a t198 mede antes de a Conta assentar",
-   "item": "E1000",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3934
   }
  ]
 }
