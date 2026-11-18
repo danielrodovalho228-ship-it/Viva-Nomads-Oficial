@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { TAMANHOS } from "../fixtures/varredura";
+import { caminhoEsperado } from "../fixtures/destino-da-conta";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 import { comPrecos } from "../fixtures/precos";
 
@@ -99,7 +100,7 @@ test.describe("T661 — varredura da página inteira, bloco 62 (Conta e próximo
           const respostas = escutarImagens(page);
           const resposta = await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 40_000 });
           expect(resposta?.status() ?? 0, `${t.papel} — ${t.nome} @${tam.nome}: HTTP`).toBeLessThan(400);
-          expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split(/[?#]/)[0]);
+          await expect.poll(() => new URL(page.url()).pathname, { message: `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`, timeout: 15_000 }).toBe(caminhoEsperado(rota, tam.width));
           await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
           const marca = typeof t.marca === "function" ? t.marca(tam.width) : t.marca;
           if (marca) {

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { hasAccount } from "./accounts";
 import { entrar } from "./laboratorio";
-import { MOTIVO_ACAO_CANCELADA, MOTIVO_ARQUIVO_CANCELADO, MOTIVO_LEITURA_CANCELADA, canceladaPeloNavegador } from "./requisicao-cancelada";
+import { MOTIVO_ACAO_CANCELADA, MOTIVO_ARQUIVO_CANCELADO, MOTIVO_LEITURA_CANCELADA, cabecalhosComOrigem, canceladaPeloNavegador } from "./requisicao-cancelada";
 import { recursoFicticioDoLab } from "../../../src/lib/varredura-texto";
 
 /**
@@ -120,7 +120,7 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
       return;
     }
     const motivo = r.failure()?.errorText ?? "?";
-    const cancelada = canceladaPeloNavegador(motivo, r.method(), r.url(), r.headers());
+    const cancelada = canceladaPeloNavegador(motivo, r.method(), r.url(), cabecalhosComOrigem(r));
     if (cancelada === "prefetch") return;
     if (cancelada === "acao") {
       acaoCancelada = true;
@@ -136,7 +136,7 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
     }
     // Tipo, método e erro do navegador vão junto: a rodada 2 (21/10) acusou a URL da própria tela (sem `_rsc`) e só a URL
     // não diz se é documento, ação do servidor (POST com next-action) ou outra coisa.
-    const acao = r.headers()["next-action"] ? ", ação do servidor" : "";
+    const acao = cabecalhosComOrigem(r)["next-action"] ? ", ação do servidor" : "";
     brutos.push(`requisição falhou (${r.resourceType()} ${r.method()}${acao}, ${motivo}): ${r.url()}`);
   });
   const ehExcecao = (t: string) => EXCECOES_TERCEIROS.some((x) => x.padrao.test(t));
