@@ -35,3 +35,41 @@ quarentena) até a correção entrar. Atualizo esta tabela no marco de 19/11 com
 | E1020 | t230 (caso 1 + cadeia 2–3) | correção do teste (vale o estado gravado da Caução; não é defeito de idempotência) | PR #3982 (verde; refresco depois do #3972) | entra na vez dele; prazo 26/11 cumprido |
 
 Nenhum item precisa de renovação da validade (01/12). Detalhe de cada correção em `docs/e10NN-*.md` do PR respectivo.
+
+## Marco de 19/11 — pacote do Code 2 (estado em 18/11, ~11:00 UTC; ORDEM-DUET-103)
+
+Este é o ponto de controle de 19/11, escrito na véspera para ser lido, não montado. Main de referência: `5be00cc`.
+
+**Entradas da quarentena com dono Code 2**
+
+| Item | Spec | Estado | Onde | Prazo |
+|---|---|---|---|---|
+| E1011 | t29 | correção do teste pronta (pacote de refresco ensaiado sobre a main) | PR #3974 (verde) | na vez dele |
+| E1023 | t70 caso 2 | correção do produto pronta (pacote de refresco ensaiado) | PR #3965 (verde) | na vez dele |
+| E1019 | t1629 | diagnóstico na main desde `be31251d2`. A corrida agendada da main (cron 06:00 UTC) ainda não rodou depois dele; vigia armada | main | **plano ou correção até 21/11**; sem corrida até 20/11, peço ao Gerente um disparo manual da main |
+| E13 | t442 (spec inteira, entrou com o #3986) | correção pronta: link "Problema com isto?" direto ao atendimento, casos 4 e 5 com estado próprio, a entrada sai | PR #3988 (+ t441, mesma causa) | antes de 26/11 |
+
+**Já resolvidos e fora da quarentena:**
+- E1010: #3979;
+- E1012: #3981;
+- E1014: #3969;
+- E1015: #3977;
+- E1016: #3978;
+- E1020: #3982;
+- E1017: fatias de 1 worker, #3960.
+
+**`test.fail()` na parte do Code 2: zero.** Nenhuma falha determinística sem correção; tudo o que resta é intermitente com correção escrita ou com data.
+
+**Lista cruzada do #3964 nas áreas do Code 2:**
+- lotes A, B e C, t1645, t840, t741: já na main;
+- E985 (t400, t456, t548): correção no #3898. O pacote de refresco está ensaiado já com o #3987 junto: o conflito em `salvo-fantasma.ts` e `novo/page.tsx` é mecânico e mantém as duas mudanças;
+- E1023 (t70): #3965.
+
+**Renovação de validade (01/12):** nenhuma pedida.
+
+### Lista cruzada do marco: falhas novas da corrida 44307724189 (ORDEM-DUET-113, dono Code 2)
+
+| Spec | Falha | Causa | Disposição | Correção |
+|---|---|---|---|---|
+| `t839-e524-cartao-mapa-no-pin` (E524) | estouro de 180 s a 390 px (fatia 20) | teste velho frente ao E988: os pins agrupados no "+N" trocam de testid quando o mapa anda; o laço contava os pins uma vez e andava pelo índice (`nth(17)` deixava de existir). Reproduzido no lab só com o spec (27 imóveis): 1280 em 6 s, 390 estoura | teste velho | este PR: o laço anda pelo id do pin da vista inicial; 6/6 no lab (390 em ~42 s) |
+| `t692-e259-pagina-publica` (E259) | 390: `galeria-tile-0 img` não achada; 1280: instável (fatia 18) | as fotos do `criarImovelPronto` apontam para um endereço que não carrega; depois da 2ª tentativa o `BrandImage` troca o `<img>` por "Foto indisponível", e o teste só passava quando lia antes da troca | teste velho | este PR: `fotosReais` + a primeira foto tem de estar `pronta`; sem as fotos reais a asserção falha 1/1 (`Received: "falhou"`), com elas 10/10 |
