@@ -30,6 +30,11 @@ env:
     NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
     NEXT_PUBLIC_SITE_URL: http://localhost:3123
     INTEGRACOES_SIMULADAS: "on"
+    # ENSAIO (nunca mergear): as chaves de build ligadas, só valores de teste.
+    NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA: "on"
+    NEXT_PUBLIC_MATRICULA_OBRIGATORIA: "on"
+    NEXT_PUBLIC_FICHA_RESUMO_ATIVA: "on"
+    NEXT_PUBLIC_AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA: "on"
     LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
     # Resend falso (scripts/lab/resend-falso.mjs): confere o formato do e-mail e devolve um id; nada sai para a rede.
     LAB_RESEND_URL: http://127.0.0.1:3999
@@ -56,9 +61,7 @@ jobs:
       # No máximo 20 jobs ao mesmo tempo (o limite do plano gratuito): a entrada a mais espera uma fatia terminar.
       max-parallel: 20
       matrix:
-        fatia: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-        include:
-          - fatia: quarentena
+        fatia: [1]
     steps:
       - uses: actions/checkout@v4
 
@@ -202,7 +205,7 @@ jobs:
           elif [ "$F" = 25 ]; then
             LAB_PESADOS=fora npx playwright test --grep "@sensivel-carga" "${FORA[@]}" --pass-with-no-tests --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
           elif [ "$F" -le 20 ]; then
-            LAB_PESADOS=fora npx playwright test --shard=${{ matrix.fatia }}/20 "${GERAL[@]}" --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
+            npx playwright test --grep "@chave-build" --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
           else
             case "$F" in
               21) GREP="visitante|endereços inexistentes|sitemap limpo" ;;
