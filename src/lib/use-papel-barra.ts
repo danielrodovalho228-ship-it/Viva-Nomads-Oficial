@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/store";
-import { ehParceiroAprovado } from "@/lib/parceiros/painel-actions";
+import { lerParceiroAprovado } from "@/lib/sessao/leituras-da-casca";
 import { parceiroAprovadoAgora } from "@/lib/papel/aprovado-enquanto-le";
 
 /**
@@ -26,7 +26,8 @@ export function useParceiroAprovado(): boolean {
   useEffect(() => {
     if (!userId) return;
     let vivo = true;
-    ehParceiroAprovado()
+    // E1025: uma leitura por abertura de tela, repartida por todos os componentes que usam este hook.
+    lerParceiroAprovado()
       .then((t) => vivo && setLido({ id: userId, ok: t }))
       .catch(() => {});
     return () => {

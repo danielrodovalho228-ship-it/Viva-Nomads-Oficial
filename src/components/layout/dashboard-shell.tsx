@@ -11,7 +11,7 @@ import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
 import { lerFotoAvatar, gravarFotoAvatar } from "@/lib/foto-avatar-cache";
-import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { lerMeuAvatar } from "@/lib/sessao/leituras-da-casca";
 import { FOTO_ATUALIZADA } from "@/components/account/foto-perfil";
 import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
@@ -128,7 +128,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // E698: a última foto conhecida desta conta já na 1ª pintura (a leitura do servidor confirma ou limpa em seguida).
     const guardada = lerFotoAvatar(displayUser?.id);
     if (guardada) void Promise.resolve().then(() => alive && setMyPhoto(guardada));
-    getMyAvatarUrl()
+    lerMeuAvatar()
       .then((r) => {
         if (alive) setMyPhoto(r.url);
         if (alive && displayUser?.id) gravarFotoAvatar(displayUser.id, r.url);

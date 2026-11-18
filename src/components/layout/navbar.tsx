@@ -9,7 +9,7 @@ import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/store";
 import { Avatar } from "@/components/ui/avatar";
-import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { lerMeuAvatar } from "@/lib/sessao/leituras-da-casca";
 import { nomeAvatarExibicao } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { SELETOR_IDIOMA } from "@/lib/flags";
@@ -59,7 +59,7 @@ export function Navbar() {
   useEffect(() => {
     if (!mounted || !userId) return;
     let vivo = true;
-    getMyAvatarUrl()
+    lerMeuAvatar()
       .then((r) => {
         if (vivo) setFoto(r.url);
       })
