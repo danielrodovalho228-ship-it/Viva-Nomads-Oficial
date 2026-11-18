@@ -12,6 +12,7 @@ import {
   fluxosDaRede,
   indicadores,
   mesclarConversas,
+  chavesEstaveis,
   nosDaRede,
   resumoCurto,
   roteiroBriefing,
@@ -110,6 +111,19 @@ test("Raio-X: ponto de atenção vem dos achados P0–P2 reais da área", () => 
 });
 
 const cv = (id: string, papel: Conversa["papel"], texto: string, slug = "bruno"): Conversa => ({ id, agente_slug: slug, papel, autor_slug: null, texto, criado_em: "" });
+
+test("E1010 chavesEstaveis: a trilha aberta mantém a chave quando os passos otimistas viram os gravados", () => {
+  // Antes: a chave da trilha era o id do 1º passo; "t-1-0" virava "u2" no reler e o <details> aberto remontava fechado.
+  const antes = mesclarConversas([cv("u0", "agente", "velha")], [cv("p-1", "daniel", "oi"), cv("t-1-0", "agente", "Moacir → Viva: algo?"), cv("t-1-1", "agente", "Viva: Tenho 2 chamado(s)"), cv("r-1", "agente", "resposta")]);
+  const depois = mesclarConversas([cv("u0", "agente", "velha"), cv("u1", "daniel", "oi"), cv("u2", "agente", "Moacir → Viva: algo?"), cv("u3", "agente", "Viva: Tenho 2 chamado(s)"), cv("u4", "agente", "resposta")], [cv("p-1", "daniel", "oi"), cv("t-1-0", "agente", "Moacir → Viva: algo?"), cv("t-1-1", "agente", "Viva: Tenho 2 chamado(s)"), cv("r-1", "agente", "resposta")]);
+  assert.deepEqual(chavesEstaveis(antes), chavesEstaveis(depois));
+});
+
+test("E1010 chavesEstaveis: a mesma pergunta repetida tem chave própria em cada vez", () => {
+  const k = chavesEstaveis([cv("u1", "agente", "Moacir → Viva: algo?"), cv("u2", "agente", "resposta"), cv("u3", "agente", "Moacir → Viva: algo?")]);
+  assert.equal(new Set(k).size, 3);
+  assert.notEqual(k[0], k[2]);
+});
 
 test("mesclarConversas: otimistas p-/r-/t- não duplicam o que já foi gravado", () => {
   const salvas = [cv("u1", "daniel", "oi"), cv("u2", "agente", "passo"), cv("u3", "agente", "resposta")];

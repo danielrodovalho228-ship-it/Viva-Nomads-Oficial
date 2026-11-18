@@ -195,18 +195,32 @@ test.describe("T21 — Central de Agentes v2", () => {
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
+    // E1010: a conversa do admin já traz as perguntas anteriores (outros testes, nova tentativa). O teste espera a
+    // resposta DESTA pergunta (a bolha que cita o chamado novo) e só então abre a trilha mais nova; antes, abria a
+    // trilha da pergunta anterior e lia a bolha antiga enquanto a nova ainda não tinha chegado.
+    const trilhas = page.getByTestId("trilha-gerente");
+    const trilhasAntes = await trilhas.count();
     await page.getByPlaceholder("Escreva para Moacir…").fill("Chegou chamado novo?");
     await page.getByRole("button", { name: "Enviar" }).click();
-    // A trilha vem recolhida em "ver como apurei": abre antes de conferir os passos.
-    const trilha = page.getByTestId("trilha-gerente").last();
-    await expect(trilha).toBeVisible({ timeout: 20_000 });
-    await trilha.getByText(/ver como apurei/).click();
-    const passos = page.getByTestId("passo-gerente");
+    // Cada linha da resposta é um <p> dentro da bolha: confere a bolha inteira, não só a 1ª linha.
+    // Com workers em paralelo, outro teste pode abrir um chamado logo depois deste: o Moacir responde pelo mais novo,
+    // que é o nosso ou um posterior a ele (lab, 18/11: VN-000162 aberto aqui, VN-000163 aberto ao mesmo tempo).
+    const nosso = Number(numero.slice(3));
+    const resposta = page.getByTestId("bolha-agente").filter({ hasText: /O que encontrei: / }).last();
+    const citado = async () => {
+      const m = ((await resposta.textContent().catch(() => "")) ?? "").match(/O que encontrei: VN-(\d+)/);
+      return m ? Number(m[1]) : 0;
+    };
+    await expect.poll(citado, { timeout: 30_000, message: `a resposta cita ${numero} ou um chamado aberto depois dele` }).toBeGreaterThanOrEqual(nosso);
+    await expect.poll(() => trilhas.count(), { timeout: 20_000 }).toBeGreaterThan(trilhasAntes);
+    // A trilha vem recolhida em "ver como apurei": abre a da resposta nova antes de conferir os passos.
+    await trilhas.last().getByText(/ver como apurei/).click();
+    // Lê os passos na trilha que foi aberta: se a de outra pergunta chegar depois (workers em paralelo), ela vem
+    // recolhida e o .last() passaria a apontar para ela.
+    const passos = page.locator('[data-testid="trilha-gerente"][open]').last().getByTestId("passo-gerente");
     await expect(passos.filter({ hasText: "Moacir → Viva:" }).last()).toBeVisible({ timeout: 20_000 });
     await expect(passos.filter({ hasText: /^Viva: Tenho \d+ chamado/ }).last()).toBeVisible();
-    // Cada linha da resposta é um <p> dentro da bolha: confere a bolha inteira, não só a 1ª linha.
-    const resposta = page.getByTestId("bolha-agente").filter({ hasText: /O que encontrei: / }).last();
-    await expect(resposta).toContainText(numero);
+    await expect(resposta).toContainText(/O que encontrei: VN-\d{6}/);
     await expect(resposta).toContainText(/Prazo: \d{2}\/\d{2} \d{2}:\d{2}/);
     await expect(resposta).toContainText(/dados de \d{2}\/\d{2} \d{2}:\d{2}/);
   });
