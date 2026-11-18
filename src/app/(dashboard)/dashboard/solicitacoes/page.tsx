@@ -10,7 +10,6 @@ import { ServiceOrderNotice } from "@/components/legal-notice";
 import { useViewMode } from "@/lib/roles";
 import { useDashDemo, useDisplayUser } from "@/lib/demo/demo-mode";
 import {
-  SAMPLE_ORDERS,
   SO_CATEGORIES,
   sortByPriority,
   ownerMetrics,
@@ -18,6 +17,7 @@ import {
   type SOCategory,
   type SOPriority,
 } from "@/lib/service-orders";
+import { SAMPLE_ORDERS } from "@/lib/demo/ordens-exemplo";
 import { minhasSolicitacoes, type ContratoManutencao } from "@/lib/data/manutencao-actions";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { MSG_BOTAO_SEM_CONTRATO, MSG_SEM_CONTRATO_MANUTENCAO, prazoDaOrdem } from "@/lib/manutencao-solicitacoes";
