@@ -134,3 +134,44 @@ Cinco deles (`t29`, `t48`, `t190`, `t305`, `t1629`) foram instáveis **nas 7 cor
 - **Não conferi** os 40 specs do Code 2 um a um: a disposição deles é a da tabela de 15/11 e o PR do lote que altera cada spec.
 - Com as marcas, os 7 specs marcados, o `t316` e o `t397` correram no laboratório local na main `ecdc95c8`, como o CI roda (2 workers, 1 nova tentativa, instável reprova). O resultado está no PR.
 - **Não rodei** a suíte completa com as marcas: é a prova real do plano, depois da T1 à T4.
+
+## 8. Acrescentados pela corrida de prova (17/11, à noite)
+
+A corrida completa com a T1, a T2 e a T3 juntas (run 44114328109, commit `d67b2b8d`, 1 worker, 20 fatias gerais) mostrou 8 specs que não estavam na lista. Não estavam vermelhos na corrida-base; a troca de ordem das fatias os trouxe à tona. Cada um ganhou disposição e, menos o `t741`, entrou na quarentena formal, por decisão do Gerente (DUET-1219 e DUET-1225).
+
+| Spec | Disposição | Item | Dono | Correção | O que se viu |
+|---|---|---|---|---|---|
+| `t230-pagamento-sem-repeticao` | instável | E1020 | Code 2 | ainda não há | caso 1 (Caução do contrato, clique duplo) instável em 2 corridas |
+| `t321-video-alcancavel-65b` | instável | E1022 | Code 2 | ainda não há | caso 1 (envio do vídeo) instável na corrida de prova: primeira ocorrência |
+| `t198-rodape-painel-390` | teste velho | E1000 | Fable | #3934 | mede antes de a Conta assentar |
+| `t279-varredura-logada` | teste velho | E1021 | Fable | #3840 | a varredura cobra `/dashboard/conta`; a Conta abre no destino registrado |
+| `t352-varredura-bloco17` | teste velho | E1021 | Fable | #3840 | a mesma |
+| `t354-varredura-bloco19` | teste velho | E1021 | Fable | #3840 | a mesma |
+| `t800-cadastro-passo4-titulo` | teste velho | E744 | Code 2 | #3849 (lote C) | depende da ordem: usa a conta compartilhada |
+| `t741-e288b-trafego-de-teste` | teste velho | E744 | Code 2 | #3961 (C2-SUITE), já na main (`08231fd7`) | o spec não limpava o limite de 300 eventos por hora antes de correr. A correção entrou antes deste registro: **não foi para a quarentena** |
+
+Duas regras novas da quarentena saíram daqui:
+
+- **Teste velho com correção escrita entra apontando o PR** (campo `correcao`) e sai quando o PR for mesclado. Quem tira a entrada é o próprio PR da correção.
+- **Cadeia em série entra inteira** (campo `cadeiaDe`). O `t230` e o `t321` rodam em série e os casos seguintes dependem do caso 1: com só o caso 1 em quarentena, as fatias gerais ficaram vermelhas na prova local (o caso 3 do `t230` espera a Caução que o caso 1 registra; o caso 2 do `t321` espera o vídeo que o caso 1 envia). Por isso os 3 casos do `t230` e os 5 do `t321` estão na quarentena.
+
+Com isso a quarentena fica em **23 de 25**. Sete entradas saem quando as três correções (#3934, #3840 e #3849) entrarem.
+
+O `t840` (E988) foi corrigido na main pelo #3912 (`d5e682a8`), depois da corrida de prova.
+
+O `t70`, caso 2 (hover no pin da busca), falhou uma vez na fatia 18 e passa 18 de 18 sozinho. Ganhou disposição depois (DUET-1319: toda falha da corrida de prova tem disposição): **defeito, E1023, Code 2**. A causa foi reproduzida no laboratório local. Passar o mouse num pin abre o cartão do imóvel; quando o cartão não cabe acima do pin, o mapa anda para ele caber, o cartão fica por cima do ponteiro e o pin perde o hover. O pin continua aceso (o cartão está aberto), mas o card da lista perde o destaque. No laboratório local isso acontece em 1 ou 2 de cada 24 pins; o teste escolhe o último pin livre, que muda conforme os imóveis que os outros testes deixam. **Sem marca de falha conhecida:** tentei uma marca que só valia com o cartão por cima do ponteiro; na prova local ela acertou 2 de 3 repetições e na terceira o teste passou (o card recuperou o destaque dentro da espera), o que deixaria a noite vermelha pelo motivo errado. Decisão de produto do Gerente (DUET-1349): o card da lista mantém o destaque enquanto o cartão do imóvel está aberto no mapa; perder o destaque é o defeito. Ainda não há PR de correção. **Entrou na quarentena** (DUET-1419: defeito registrado, com dono e correção a caminho, cuja falha não é sempre a mesma); o PR da correção do E1023 tira a entrada.
+
+## 9. Intermitentes achados fora de corrida completa (18/11, ORDEM-DUET-096)
+
+Dois testes falharam às vezes nos vizinhos do #3983 (E1025). Rodados sozinhos contra a main `b4b0bc71`, 3 vezes cada, falharam do mesmo jeito: não vieram de PR nenhum. O Gerente mandou os dois para a quarentena como intermitentes, com correção ou plano do dono até 26/11.
+
+| Spec | Caso | Sozinho contra a main | Item | Dono | Na quarentena |
+|---|---|---|---|---|---|
+| `t355-conta-a-perfil-espelho` | 5, a 1280 px | 2 falhas em 3: o endereço fica com `#perfil-publico` | E61 | Fable | o caso, apontando a correção escrita (#3910) |
+| `t442-foto-perfil-revisao` | 4 (e o 5, que depende dele) | 1 falha em 3: o teste espera `/ajuda?contexto=perfil…` e a página já seguiu para `/ajuda/fale-com-a-viva` | E13 | Code 2 | o spec inteiro, numa entrada só, com os casos 4 e 5 nomeados |
+
+- O `t442` já estava nesta lista como teste velho (caso 3, corrigido pelo #3847); a disposição dele passa a instável.
+- **Entrada de spec inteira (ORDEM-DUET-097):** os casos 4 e 5 do `t442` dependem dos casos 1 a 3. Em vez de partir a cadeia, uma entrada cobre o arquivo todo: as fatias gerais ficam sem ele e o job da quarentena roda-o com a cadeia intacta. A dependência entre casos faz parte do que o dono resolve até 26/11. O `t355` fica ao nível do caso, porque o caso 5 roda sozinho.
+- O `t355` entra pela chave `foraDeCorrida` do arquivo: não estava vermelho na corrida-base nem na de prova.
+- O #3910 não entra enquanto a disposição do `t355` não fechar.
+- Se os dois aparecerem nas falhas da corrida completa de 18/11 sobre a main `6bfa3816`, contam contra este diagnóstico, não como falha nova.

@@ -6,6 +6,30 @@
   "specs": 82,
   "casos": 125
  },
+ "corridaDeProva": {
+  "run": 44114328109,
+  "data": "2026-11-17",
+  "commit": "d67b2b8d",
+  "acrescentados": [
+   "t70-busca-split.spec.ts",
+   "t198-rodape-painel-390.spec.ts",
+   "t230-pagamento-sem-repeticao.spec.ts",
+   "t279-varredura-logada.spec.ts",
+   "t321-video-alcancavel-65b.spec.ts",
+   "t352-varredura-bloco17.spec.ts",
+   "t354-varredura-bloco19.spec.ts",
+   "t741-e288b-trafego-de-teste.spec.ts",
+   "t800-cadastro-passo4-titulo.spec.ts"
+  ]
+ },
+ "foraDeCorrida": {
+  "ordem": "ORDEM-DUET-096",
+  "data": "2026-11-18",
+  "main": "b4b0bc71",
+  "acrescentados": [
+   "t355-conta-a-perfil-espelho.spec.ts"
+  ]
+ },
  "regra": "uma disposição por spec vermelho da última corrida completa: teste-velho (com o PR ou o commit da correção), defeito (item registrado; o spec leva defeitoConhecido) ou instavel (item de instabilidade; vai para a quarentena)",
  "disposicoes": [
   {
@@ -68,6 +92,15 @@
    "nota": "lote B do Code 2 (tabela de 15/11)"
   },
   {
+   "spec": "t70-busca-split.spec.ts",
+   "disposicao": "defeito",
+   "item": "E1023",
+   "dono": "Code 2",
+   "semMarca": "a falha não é sempre a mesma: depende de qual pin a suíte deixa por último e, com o mesmo pin, do tempo. Na prova local, uma marca que só valia com o cartão por cima do ponteiro acertou 2 de 3 repetições e na terceira o teste passou (o card recuperou o destaque dentro da espera)",
+   "nota": "caso 2: passar o mouse num pin abre o cartão do imóvel; em alguns pins o cartão fica por cima do ponteiro (o mapa anda para ele caber, ou ele abre sobre o pin), o pin perde o hover e o card da lista perde o destaque com o cartão aberto. Falhou 1 vez na corrida de prova (fatia 18) e passa sozinho (18 de 18). Na quarentena desde 17/11, por decisão do Gerente (DUET-1419); o PR da correção do E1023 tira a entrada",
+   "pr": 3965
+  },
+  {
    "spec": "t77-comodidades.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Code 2",
@@ -122,6 +155,13 @@
    "nota": "lote A do Code 2 (tabela de 15/11)"
   },
   {
+   "spec": "t198-rodape-painel-390.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3934,
+   "nota": "E1000: a t198 espera a Conta assentar antes de medir; falha em umas corridas e não noutras"
+  },
+  {
    "spec": "t204-cadastro-ia-real.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Code 2",
@@ -136,6 +176,13 @@
    "pr": 3843,
    "pacote": "C2-SUITE",
    "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t230-pagamento-sem-repeticao.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1020",
+   "dono": "Code 2",
+   "nota": "instável em 2 corridas (uma com 2 workers, outra com 1): caução do contrato, clique duplo. A cadeia em série inteira (casos 1 a 3) está na quarentena: os seguintes dependem do caso 1"
   },
   {
    "spec": "t245-visual-regressao.spec.ts",
@@ -159,6 +206,13 @@
    "nota": "referências visuais julgadas pelo Gerente; E990 e E949 seguem marcados"
   },
   {
+   "spec": "t279-varredura-logada.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras"
+  },
+  {
    "spec": "t305-laudo-avaliacao-62b2.spec.ts",
    "disposicao": "instavel",
    "item": "E1016",
@@ -180,6 +234,14 @@
    "dono": "Fable",
    "pr": 3846,
    "nota": "E548, E653: a página de outra área não grava o papel (passo 7)"
+  },
+  {
+   "spec": "t321-video-alcancavel-65b.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1022",
+   "dono": "Code 2",
+   "nota": "instável na corrida de prova da T3 (primeira ocorrência): envio do vídeo do anúncio. A cadeia em série inteira (casos 1 a 5) está na quarentena: os seguintes dependem do caso 1",
+   "pr": 3966
   },
   {
    "spec": "t328-documento-sem-trava-l11.spec.ts",
@@ -214,11 +276,25 @@
    "nota": "a página 404, com cartões e preços, viaja no HTML de todas as páginas"
   },
   {
+   "spec": "t352-varredura-bloco17.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras"
+  },
+  {
    "spec": "t353-varredura-bloco18.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
    "nota": "E798: a Conta abre no destino registrado (passo 2)"
+  },
+  {
+   "spec": "t354-varredura-bloco19.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras"
   },
   {
    "spec": "t370-conta-a3-papeis.spec.ts",
@@ -300,11 +376,10 @@
   },
   {
    "spec": "t442-foto-perfil-revisao.spec.ts",
-   "disposicao": "teste-velho",
+   "disposicao": "instavel",
+   "item": "E13",
    "dono": "Code 2",
-   "pr": 3847,
-   "pacote": "C2-SUITE",
-   "nota": "lote B do Code 2 (tabela de 15/11)"
+   "nota": "até 18/11 era teste velho (caso 3; lote B do Code 2, corrigido na main pelo #3847). O caso 4 é intermitente: sozinho contra a main b4b0bc71, 1 falha em 3 — o teste espera /ajuda?contexto=perfil… e a página já seguiu para /ajuda/fale-com-a-viva. Quarentena por decisão do Gerente (ORDEM-DUET-096), com o spec inteiro numa entrada (ORDEM-DUET-097: os casos 4 e 5 dependem dos casos 1 a 3); correção ou plano até 26/11"
   },
   {
    "spec": "t456-comodidades-tipo-e111a.spec.ts",
@@ -483,7 +558,8 @@
    "item": "E987",
    "dono": "Code 2",
    "pr": 3911,
-   "nota": "a galeria aberta não reaproveita a versão da miniatura da foto"
+   "nota": "a galeria aberta não reaproveita a versão da miniatura da foto; corrigido pelo #3911 (adcde730) — sem marca",
+   "corrigidoPor": "adcde730"
   },
   {
    "spec": "t735-e277-busca-parceiros-fotos.spec.ts",
@@ -492,6 +568,15 @@
    "pr": 3843,
    "pacote": "C2-SUITE",
    "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t741-e288b-trafego-de-teste.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3961,
+   "pacote": "C2-SUITE",
+   "nota": "a rota de eventos aceita 300 por hora por IP e responde sempre 204; o spec tem de limpar o limite antes de correr. Corrigido na main pelo #3961 (08231fd7), depois da corrida de prova: não entrou na quarentena",
+   "corrigidoPor": "08231fd7"
   },
   {
    "spec": "t772-e329-visita-confirmada.spec.ts",
@@ -525,6 +610,14 @@
    "nota": "lote C do Code 2 (tabela de 15/11)"
   },
   {
+   "spec": "t800-cadastro-passo4-titulo.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11): depende da ordem por usar a conta compartilhada"
+  },
+  {
    "spec": "t815-404-perfil-toque.spec.ts",
    "disposicao": "defeito",
    "item": "E960",
@@ -553,7 +646,8 @@
    "item": "E988",
    "dono": "Code 2",
    "pr": 3912,
-   "nota": "pins no mesmo ponto do mapa ficam um em cima do outro",
+   "nota": "pins no mesmo ponto do mapa ficam um em cima do outro; corrigido na main pelo #3912 (d5e682a8), depois da corrida de prova",
+   "corrigidoPor": "d5e682a8",
    "semMarca": "a falha depende dos pins que outros testes deixam no mesmo ponto do mapa: muda de largura e de passo conforme a fatia; a trava nomeada do item é o t2108 (#3936)"
   },
   {
@@ -626,6 +720,14 @@
    "dono": "Code 2",
    "pacote": "C2-SUITE",
    "nota": "E941 (77762a39): a resposta da Ajuda ganhou um segundo link para /conferir, no próprio texto; o localizador do teste acha 2 e para"
+  },
+  {
+   "spec": "t355-conta-a-perfil-espelho.spec.ts",
+   "disposicao": "instavel",
+   "item": "E61",
+   "dono": "Fable",
+   "pr": 3910,
+   "nota": "caso 5 a 1280 px, intermitente: sozinho contra a main b4b0bc71, 2 falhas em 3 — o link antigo /dashboard/conta#perfil-publico termina ora com a âncora, ora sem. Correção escrita no #3910, que não entra enquanto esta disposição não fechar (ORDEM-DUET-096); correção ou plano até 26/11"
   }
  ],
  "pulosDosMarcados": {
