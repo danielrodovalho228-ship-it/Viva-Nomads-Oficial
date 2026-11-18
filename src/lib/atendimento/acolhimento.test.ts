@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { prazoPrometido } from "../../config/atendimento.ts";
-import { ehSensivel, notaSugestao, podeMarcarResolvido, quemAtende, respostaDaSugestao, statusAposRespostaDaViva, textoAcolhimento } from "./acolhimento.ts";
+import { ehSensivel, esperaResposta, notaSugestao, podeMarcarResolvido, quemAtende, respostaDaSugestao, statusAposRespostaDaViva, textoAcolhimento } from "./acolhimento.ts";
 import { validarResposta } from "./viva-regras.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
@@ -90,4 +90,19 @@ test("F25/E851: /contato redireciona (permanente) para /ajuda/fale-com-a-viva e 
   assert.match(cfg, /source: "\/contato", destination: "\/ajuda\/fale-com-a-viva", permanent: true/);
   const sm = readFileSync(new URL("../../app/sitemap.ts", import.meta.url), "utf8");
   assert.doesNotMatch(sm, /"\/contato"/);
+});
+
+// E1012: a resposta automática do acolhimento (chamado sensível, fica com a equipe) também tem de aparecer sem recarregar.
+test("E1012 esperaResposta: chamado com a equipe (acolhimento) confere de novo; o aviso 'escrevendo' só com a Viva", () => {
+  const base = { ultimaAutor: "usuario", status: "aberto", voltas: 0 };
+  assert.deepEqual(esperaResposta({ ...base, responsavelTipo: "equipe" }), { conferir: true, vivaEscrevendo: false });
+  assert.deepEqual(esperaResposta({ ...base, responsavelTipo: "ia" }), { conferir: true, vivaEscrevendo: true });
+  assert.deepEqual(esperaResposta({ ...base, ultimaAutor: "sistema", responsavelTipo: "equipe" }), { conferir: true, vivaEscrevendo: false });
+});
+
+test("E1012 esperaResposta: para depois da resposta, no fim do prazo e com o chamado fechado", () => {
+  assert.equal(esperaResposta({ ultimaAutor: "ia", status: "aberto", voltas: 0, responsavelTipo: "equipe" }).conferir, false);
+  assert.equal(esperaResposta({ ultimaAutor: "usuario", status: "aberto", voltas: 24, responsavelTipo: "equipe" }).conferir, false);
+  assert.equal(esperaResposta({ ultimaAutor: "usuario", status: "resolvido", voltas: 0, responsavelTipo: "ia" }).conferir, false);
+  assert.equal(esperaResposta({ ultimaAutor: null, status: "aberto", voltas: 0, responsavelTipo: "ia" }).conferir, false);
 });

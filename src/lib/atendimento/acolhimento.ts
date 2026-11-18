@@ -108,6 +108,17 @@ export function podeMarcarResolvido(status: string, responsavelTipo: string | nu
   return status === "aguardando_usuario" || (status === "aberto" && responsavelTipo === "ia");
 }
 
+/**
+ * E1012: a tela do chamado confere de novo (a cada 2,5 s, até 24 vezes) enquanto a última mensagem é da pessoa ou
+ * do sistema e o chamado está em aberto — com a Viva E com a equipe: no chamado sensível (fica com a equipe) a Viva
+ * manda o acolhimento automático depois da mensagem, e sem conferir a resposta só aparecia ao recarregar a página.
+ * O aviso "A Viva está escrevendo…" continua só quando é a Viva que atende.
+ */
+export function esperaResposta(p: { ultimaAutor: string | null | undefined; status: string; voltas: number; responsavelTipo: string | null | undefined }): { conferir: boolean; vivaEscrevendo: boolean } {
+  const conferir = (p.ultimaAutor === "usuario" || p.ultimaAutor === "sistema") && !["resolvido", "encerrado"].includes(p.status) && p.voltas < 24;
+  return { conferir, vivaEscrevendo: conferir && p.responsavelTipo === "ia" };
+}
+
 /** Nota interna com a sugestão — mesmo formato que "Usar como resposta" já lê. */
 export const CABECALHO_SUGESTAO = "Sugestão da Viva para aprovar (Aprovar e enviar = vai para a pessoa como resposta da equipe).";
 export function notaSugestao(texto: string, fontes: string[]): string {
