@@ -388,6 +388,14 @@ export default function NewPropertyPage() {
   const editouRef = useRef(false);
   // E614: houve confirmação (Continuar ou botão do Passo 8) desde que o rascunho foi aberto.
   const confirmouRef = useRef(false);
+  // E1024: mudar a lista de fotos no Passo 2 (escolher a principal, remover, reordenar, voltar ao original, confirmar a
+  // foto) é clique ou arrasto — não dispara input/change. Marca a edição antes de mudar o estado: sem isto, a troca
+  // feita nos primeiros segundos depois de abrir o rascunho (E516: a janela da base) virava a base e nunca era gravada,
+  // e o cartão "Continue seu anúncio" do Início seguia com a foto antiga.
+  const mudarFotos = (fotos: PhotoItem[]) => {
+    editouRef.current = true;
+    setPhotos(fotos);
+  };
   const [draftServerId, setDraftServerId] = useState<string | null>(null);
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
   // E180 (Daniel, uso real em 28/10): a cópia local do último rascunho NUNCA se aplica sozinha num anúncio novo — ela
@@ -2200,7 +2208,7 @@ export default function NewPropertyPage() {
             )}
 
             {step === ETAPA.fotos && (
-              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} videoConteudo={videoConteudo} setVideoConteudo={setVideoConteudo} passoFotos={passoFotos} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
+              <EtapaFotos photos={photos} setPhotos={mudarFotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} videoConteudo={videoConteudo} setVideoConteudo={setVideoConteudo} passoFotos={passoFotos} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
             )}
 
             {step === ETAPA.detalhes && (
