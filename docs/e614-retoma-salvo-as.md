@@ -29,4 +29,4 @@ Em `src/lib/anuncio/salvo-fantasma.ts` e `novo/page.tsx`:
   - `--repeat-each=3`: 12 passed.
 - Vizinhos do indicador (E516/E208), no mesmo build:
   - t309 (abrir não carimba; a edição carimba), t571 e t646: 8 passed.
-- E2E t2140 na main (sem a correção): ver a descrição do PR.
+- E2E t2140 na main d8f4ceb (sem a correção): **4 failed** — todos em `estado-salvamento` ausente ao reabrir ("o rascunho retomado mostra o indicador de salvamento, sem edição").
