@@ -18,14 +18,19 @@ test.describe("T2156 — E884: Esc fecha as sugestões da busca da home @E884", 
       await page.goto("/", { waitUntil: "domcontentloaded" });
       const campo = page.locator("#busca-principal-local");
       await expect(campo).toBeVisible({ timeout: 30_000 });
-      // A lista de sugestões é o <ul> dentro da mesma caixa do campo.
-      const lista = campo.locator("xpath=ancestor::*[.//ul][1]").locator("ul");
+      // A lista de sugestões é o <ul> dentro da caixa do campo. A caixa é marcada (atributo só do teste) quando a lista abre:
+      // depois do Esc, "o ancestral mais próximo com <ul>" já seria outro bloco da home, com outras listas.
+      const caixaMarcada = page.locator('[data-t2156="caixa"]');
+      const lista = caixaMarcada.locator("ul");
 
       // O componente só reage depois da hidratação: foca e digita até a lista abrir.
       await expect(async () => {
         await campo.fill("");
         await campo.click();
         await campo.pressSequentially("U");
+        const caixa = campo.locator("xpath=ancestor::*[.//ul][1]");
+        await expect(caixa.locator("ul").first()).toBeVisible({ timeout: 2_000 });
+        await caixa.evaluate((el) => el.setAttribute("data-t2156", "caixa"));
         await expect(lista.first()).toBeVisible({ timeout: 2_000 });
       }).toPass({ timeout: 30_000 });
       const texto = await campo.inputValue();
