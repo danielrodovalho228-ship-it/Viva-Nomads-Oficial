@@ -111,8 +111,20 @@ test("os números do cabeçalho batem com a lista", () => {
   // acrescentados, cada um com a disposição dele.
   const prova = (arquivo as unknown as { corridaDeProva: { run: number; acrescentados: string[] } }).corridaDeProva;
   assert.equal(prova.run, 44114328109);
-  assert.equal(lista.length, arquivo.corrida.specs - 1 + prova.acrescentados.length);
-  for (const spec of prova.acrescentados) assert.ok(lista.some((d) => d.spec === spec), `${spec}: acrescentado sem disposição`);
-  assert.equal(new Set(prova.acrescentados).size, prova.acrescentados.length);
+  // Asserção alterada por decisão do Gerente (ORDEM-DUET-096, 18/11): antes a conta era só a corrida-base mais a corrida
+  // de prova. Entram também os intermitentes achados fora de corrida completa (rodados sozinhos contra a main), cada um
+  // com a ordem que o mandou para a lista.
+  const fora = (arquivo as unknown as { foraDeCorrida: { ordem: string; data: string; main: string; acrescentados: string[] } }).foraDeCorrida;
+  assert.match(fora.ordem, /^ORDEM-DUET-\d+$/);
+  assert.match(fora.main, /^[0-9a-f]{8}$/);
+  assert.equal(lista.length, arquivo.corrida.specs - 1 + prova.acrescentados.length + fora.acrescentados.length);
+  for (const spec of [...prova.acrescentados, ...fora.acrescentados]) assert.ok(lista.some((d) => d.spec === spec), `${spec}: acrescentado sem disposição`);
+  assert.equal(new Set([...prova.acrescentados, ...fora.acrescentados]).size, prova.acrescentados.length + fora.acrescentados.length);
+  // O que entra por fora de corrida é intermitente: tem item de instabilidade e está na quarentena.
+  const emQuarentena = new Set((JSON.parse(readFileSync("tests/laboratorio/quarentena.json", "utf8")).entradas as { spec: string }[]).map((e) => e.spec));
+  for (const spec of fora.acrescentados) {
+    assert.equal(lista.find((d) => d.spec === spec)!.disposicao, "instavel", `${spec}: fora de corrida só entra o intermitente`);
+    assert.ok(emQuarentena.has(spec), `${spec}: intermitente fora da quarentena`);
+  }
   assert.match(arquivo.corrida.base, /^[0-9a-f]{8}$/);
 });
