@@ -73,3 +73,67 @@ Este é o ponto de controle de 19/11, escrito na véspera para ser lido, não mo
 |---|---|---|---|---|
 | `t839-e524-cartao-mapa-no-pin` (E524) | estouro de 180 s a 390 px (fatia 20) | teste velho frente ao E988: os pins agrupados no "+N" trocam de testid quando o mapa anda; o laço contava os pins uma vez e andava pelo índice (`nth(17)` deixava de existir). Reproduzido no lab só com o spec (27 imóveis): 1280 em 6 s, 390 estoura | teste velho | este PR: o laço anda pelo id do pin da vista inicial; 6/6 no lab (390 em ~42 s) |
 | `t692-e259-pagina-publica` (E259) | 390: `galeria-tile-0 img` não achada; 1280: instável (fatia 18) | as fotos do `criarImovelPronto` apontam para um endereço que não carrega; depois da 2ª tentativa o `BrandImage` troca o `<img>` por "Foto indisponível", e o teste só passava quando lia antes da troca | teste velho | este PR: `fotosReais` + a primeira foto tem de estar `pronta`; sem as fotos reais a asserção falha 1/1 (`Received: "falhou"`), com elas 10/10 |
+
+### corrigidoPor das disposições do Code 2 (ORDEM-DUET-118, 18/11)
+
+Decisão do Gerente: as disposições sem `corrigidoPor` não contam para o marco de 19/11, e quem as preenche é o dono.
+As 40 disposições `teste-velho` do pacote C2-SUITE em `tests/laboratorio/disposicao-falhas.json` ganharam o commit que as corrige na main.
+O valor é o commit de merge do PR, com 8 caracteres, como a guarda e744-t1 exige.
+
+| PR | corrigidoPor | Specs |
+|---|---|---|
+| #3847 | `a170b899` | 12: t38-varios-imoveis-por-dono, t64-telas-largas, t77-comodidades, t79-privacidade-acesso, t328-documento-sem-trava-l11, t331-preferencias-push-44b2, t346-importar-calendario-53, t370-conta-a3-papeis, t405-perfil-e60-e62, t464-prop6-inicio-dono, t465-admin4-inicial, t469-e134-passo4-alinhado |
+| #3843 | `cc53b94d` | 14: t161-coerencia-imovel, t195-matricula-caf, t228-contato-vai-para-ajuda, t386-cadastro-01-tipo, t401-cadastro-10-revisao, t435-cadastro-03-endereco, t547-e148a-texto-sugerido-passo7, t564-e193-qualificacao-cartoes, t585-e205b-emails-novos, t656-e224-plano-gestor, t678-e202-emails-candidatura, t696-varredura-bloco74, t735-e277-busca-parceiros-fotos, t772-e329-visita-confirmada |
+| #3849 | `38836c33` | 13: t186-cadastro-5-etapas, t204-cadastro-ia-real, t534-e147-bairro-santa-monica, t597-e213b-limpeza-renovacao, t621-varredura-bloco55, t655-observador-botoes-filas, t683-e259-perto-fonte-unica, t693-prova-de-publicacao, t778-e347-x-visita-video, t799-cadastro-regras-icones, t800-cadastro-passo4-titulo, t816-cidade-bairros-grade-par, t909-reembolso-linha-tablet |
+| #3961 | `08231fd7` | 1: t1645-reprovas-e916-e915-e887-e931 |
+
+39 + 1 = 40 preenchidas agora. O t741, também do #3961, já tinha o `corrigidoPor` na main e não mudou.
+
+O t1645 não trazia `pr` no arquivo. A correção dele (161d8388d, o localizador aceita os 2 links do E941) entrou pelo #3961, no merge `08231fd7`.
+Os quatro commits estão na main.
+Ficam de fora as disposições do Code 2 que não são `teste-velho`: 11 `instavel` (quarentena; a guarda e744-t2 proíbe `corrigidoPor` nelas) e 5 `defeito` com PR. Essas seguem o caminho da tabela acima.
+
+### Censo das fatias 8, 9 e 15 da corrida completa 44333898865 (ORDEM-DUET-120, 18/11)
+
+Corrida agendada de 18/11 sobre a main `94e5035`. Caíram as mesmas três fatias da corrida 44307724189, mais o `consolidar`, por consequência.
+Todas as falhas já têm disposição em `disposicao-falhas.json`. Nenhuma é da área do Code 2.
+
+| Fatia | Spec | Falhas | Casos | Disposição no arquivo | Dono | Disposição proposta |
+|---|---|---|---|---|---|---|
+| 8 | `t245-visual-regressao` | 36 | as 18 telas × 2 larguras | teste-velho, #3908 | Fable | mantém: o #3908 (aberto) refaz as referências |
+| 9 | `t271-admin-visual` | 11 | 1280: /admin, financeiro, documentos, atendimento, parceiros, contratos, contratos/[id], usuarios; 390: /admin, documentos, atendimento | teste-velho, #3908 | Fable | mantém (eram 10 na 44307724189; +1 tela, mesma causa: máscaras do admin) |
+| 9 | `t263-visual-41` | 6 | 01 página do imóvel inteira (ube-001) ×2, 02 barra inferior (inquilino) ×2, 03 barra inferior (proprietário), 04 barra inferior (parceiro) 390 px | teste-velho, #3908 | Fable | mantém |
+| 15 | `t50-rls-todas-tabelas` | 2 | anon em `imovel_extras`, anon em `property_amenities` | teste-velho, #3935 | Fable | o #3935 já entrou na main (`9e17a68e`), depois da `94e5035`. Falta a dona preencher `corrigidoPor: "9e17a68e"`. |
+
+Total: 55 falhas, 4 specs, todas da Fable. As fatias 8 e 9 seguem vermelhas até o #3908 entrar. A fatia 15 deve ficar verde na próxima corrida.
+
+Quarentena da mesma corrida: 15/15 (5 casos × 3, `--workers=1 --repeat-each=3`), com o t1629 E916 (E1019) 3/3. É a **2ª corrida verde seguida da quarentena** para o E1019, depois da 44307724189. Pelo critério aceite, falta uma para o PR de saída.
+
+### E1019: tentativa com CPU estrangulada (critério 3 do plano; feita em 18/11, prazo era 20/11)
+
+O caso "E916 a 404 tem o rodapé do site e a busca" do t1629 foi rodado com os mesmos passos e as mesmas esperas do spec, incluindo a linha de diagnóstico, contra a build de produção da main `cf25545` no laboratório local.
+A CPU do navegador foi estrangulada pelo DevTools (`Emulation.setCPUThrottlingRate`).
+
+| Variante | Rodadas | Passaram | Perdeu antes do clique | Perdeu depois do clique | Tempo médio (máx.) |
+|---|---|---|---|---|---|
+| 6×, uma página por vez | 20 | 20 | 0 | 0 | 3,0 s |
+| 8×, uma página por vez | 20 | 20 | 0 | 0 | 3,9 s |
+| 8×, 6 páginas em paralelo | 30 | 30 | 0 | 0 | 4,8 s (6,1 s) |
+| 20×, 6 páginas em paralelo | 30 | 30 | 0 | 0 | 10,5 s (13,2 s) |
+
+**Resultado: 100/100. Não reproduz.**
+- Mesmo com a CPU 20 vezes mais lenta e 6 páginas ao mesmo tempo, o campo fica com "Uberlândia" depois do `fill` e a URL chega com `?local=Uberl`.
+- Somando os 38/38 de antes, são 138 tentativas locais sem falha.
+- Leitura: só a lentidão do navegador não basta para o defeito aparecer. Fica o que a corrida completa tem e o laboratório local não: o servidor sob a carga de 240 testes e a ordem dos testes na fatia geral.
+
+**O que segue, sem mudança no plano:**
+- A quarentena já deu duas corridas verdes seguidas: a 44307724189 e a 44333898865, ambas 3/3.
+- Com mais uma verde, abro o PR de saída mantendo a linha de diagnóstico.
+- Se uma corrida falhar, a linha separa "perdeu antes do clique" de "perdeu depois", e a correção vai à causa, com trava vermelha.
+- Scripts da tentativa (fora do repositório): `e1019-cpu.cjs` e `e1019-cpu-par.cjs`.
+
+### t707: corrigidoPor passa a ser o merge (ORDEM-DUET-123)
+
+Decisão do Gerente: o t707 é do Code 2, e o `corrigidoPor` é sempre o commit de merge do PR.
+O t707 (E987, #3911) apontava para o commit da correção (`adcde730`) e passa a apontar para o merge **`5861078e`**.
+As outras 45 disposições do Code 2 com `corrigidoPor` já apontavam para merges (conferido com `git log --format=%P`).
