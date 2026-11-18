@@ -73,3 +73,22 @@ Este é o ponto de controle de 19/11, escrito na véspera para ser lido, não mo
 |---|---|---|---|---|
 | `t839-e524-cartao-mapa-no-pin` (E524) | estouro de 180 s a 390 px (fatia 20) | teste velho frente ao E988: os pins agrupados no "+N" trocam de testid quando o mapa anda; o laço contava os pins uma vez e andava pelo índice (`nth(17)` deixava de existir). Reproduzido no lab só com o spec (27 imóveis): 1280 em 6 s, 390 estoura | teste velho | este PR: o laço anda pelo id do pin da vista inicial; 6/6 no lab (390 em ~42 s) |
 | `t692-e259-pagina-publica` (E259) | 390: `galeria-tile-0 img` não achada; 1280: instável (fatia 18) | as fotos do `criarImovelPronto` apontam para um endereço que não carrega; depois da 2ª tentativa o `BrandImage` troca o `<img>` por "Foto indisponível", e o teste só passava quando lia antes da troca | teste velho | este PR: `fotosReais` + a primeira foto tem de estar `pronta`; sem as fotos reais a asserção falha 1/1 (`Received: "falhou"`), com elas 10/10 |
+
+### corrigidoPor das disposições do Code 2 (ORDEM-DUET-118, 18/11)
+
+Decisão do Gerente: as disposições sem `corrigidoPor` não contam para o marco de 19/11, e quem as preenche é o dono.
+As 40 disposições `teste-velho` do pacote C2-SUITE em `tests/laboratorio/disposicao-falhas.json` ganharam o commit que as corrige na main.
+O valor é o commit de merge do PR, com 8 caracteres, como a guarda e744-t1 exige.
+
+| PR | corrigidoPor | Specs |
+|---|---|---|
+| #3847 | `a170b899` | 12: t38-varios-imoveis-por-dono, t64-telas-largas, t77-comodidades, t79-privacidade-acesso, t328-documento-sem-trava-l11, t331-preferencias-push-44b2, t346-importar-calendario-53, t370-conta-a3-papeis, t405-perfil-e60-e62, t464-prop6-inicio-dono, t465-admin4-inicial, t469-e134-passo4-alinhado |
+| #3843 | `cc53b94d` | 14: t161-coerencia-imovel, t195-matricula-caf, t228-contato-vai-para-ajuda, t386-cadastro-01-tipo, t401-cadastro-10-revisao, t435-cadastro-03-endereco, t547-e148a-texto-sugerido-passo7, t564-e193-qualificacao-cartoes, t585-e205b-emails-novos, t656-e224-plano-gestor, t678-e202-emails-candidatura, t696-varredura-bloco74, t735-e277-busca-parceiros-fotos, t772-e329-visita-confirmada |
+| #3849 | `38836c33` | 13: t186-cadastro-5-etapas, t204-cadastro-ia-real, t534-e147-bairro-santa-monica, t597-e213b-limpeza-renovacao, t621-varredura-bloco55, t655-observador-botoes-filas, t683-e259-perto-fonte-unica, t693-prova-de-publicacao, t778-e347-x-visita-video, t799-cadastro-regras-icones, t800-cadastro-passo4-titulo, t816-cidade-bairros-grade-par, t909-reembolso-linha-tablet |
+| #3961 | `08231fd7` | 1: t1645-reprovas-e916-e915-e887-e931 |
+
+39 + 1 = 40 preenchidas agora. O t741, também do #3961, já tinha o `corrigidoPor` na main e não mudou.
+
+O t1645 não trazia `pr` no arquivo. A correção dele (161d8388d, o localizador aceita os 2 links do E941) entrou pelo #3961, no merge `08231fd7`.
+Os quatro commits estão na main.
+Ficam de fora as disposições do Code 2 que não são `teste-velho`: 11 `instavel` (quarentena; a guarda e744-t2 proíbe `corrigidoPor` nelas) e 5 `defeito` com PR. Essas seguem o caminho da tabela acima.
