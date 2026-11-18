@@ -43,7 +43,7 @@ const ROTULOS_ATIVAR: Record<keyof CriteriosAtivar, string> = {
 export type Decisao = { ok: true } | { ok: false; falta: string[] };
 
 export function decidirEmTeste(c: CriteriosEmTeste): Decisao {
-  const falta = (Object.keys(ROTULOS_EM_TESTE) as (keyof CriteriosEmTeste)[]).filter((k) => c[k] !== true).map((k) => ROTULOS_EM_TESTE[k]);
+  const falta = (Object.keys(ROTULOS_EM_TESTE) as (keyof CriteriosEmTeste)[]).filter((k) => k !== "identidadeVerificada" && c[k] !== true).map((k) => ROTULOS_EM_TESTE[k]); // QUEBRA E690-2 (ensaio)
   return falta.length ? { ok: false, falta } : { ok: true };
 }
 

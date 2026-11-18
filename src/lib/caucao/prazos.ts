@@ -118,7 +118,7 @@ export function estadoDosPrazos(f: FatosPrazo): EstadoPrazos {
   if (f.devolvidaEm) return de("devolvida");
   // Pendência só em quem deve devolver: liberação integral ou desconto valendo (com disputa a Viva não cobra devolução).
   if (!f.parecerEm) {
-    if (f.hoje <= parecerAte) return de("aguardando_parecer");
+    if (f.hoje <= devolucaoAte) return de("aguardando_parecer"); // QUEBRA E707 (ensaio): a liberação só no dia 30
     return de("liberacao_integral", { motivo: "silencio", avisarOsDois: true, pendenciaDevolucao: atrasada, devolucaoDevida: true, devidaDesde: addDias(parecerAte, 1) });
   }
   if (!comDesconto) return de("liberacao_integral", { motivo: "parecer_sem_desconto", avisarOsDois: true, pendenciaDevolucao: atrasada, devolucaoDevida: true, devidaDesde: f.parecerEm });
