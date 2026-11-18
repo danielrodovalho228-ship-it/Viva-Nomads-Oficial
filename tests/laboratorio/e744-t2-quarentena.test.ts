@@ -246,16 +246,22 @@ test("o arquivo da quarentena é válido HOJE: teto, campos, validade, nenhuma v
   }
 });
 
-test("o t442 está na quarentena como spec inteira, e os casos nomeados existem no spec (ORDEM-DUET-097)", () => {
-  const dele = (lerQuarentena() as { spec: string; specInteira?: boolean; casos?: string[]; titulo?: string }[]).filter((e) => e.spec === "t442-foto-perfil-revisao.spec.ts");
-  assert.equal(dele.length, 1, "uma entrada só");
-  assert.equal(dele[0].specInteira, true);
-  assert.equal(dele[0].titulo, undefined);
+// Asserção alterada (E13, ORDEM-DUET-102): o t442 entrou como spec inteira (ORDEM-DUET-097) porque os casos 4 e 5 dependiam
+// dos casos 1 a 3. A correção do E13 tira a dependência e o tira da quarentena. A guarda passa a cobrar a saída e o que a
+// sustenta: os casos 4 e 5 num bloco próprio que não pula (mode "default"), com estado semeado; os casos 1 a 3 seguem em série.
+test("o t442 saiu da quarentena com a correção do E13: os casos 4 e 5 não dependem dos casos 1 a 3 (ORDEM-DUET-102)", () => {
+  const dele = (lerQuarentena() as { spec: string }[]).filter((e) => e.spec === "t442-foto-perfil-revisao.spec.ts");
+  assert.equal(dele.length, 0, "o t442 não está mais na quarentena");
   const fonte = readFileSync("tests/e2e/specs/t442-foto-perfil-revisao.spec.ts", "utf8");
-  assert.match(fonte, /mode: "serial"/);
-  const titulos = [...fonte.matchAll(/^\s+test\("(.*)", async /gm)].map((m) => m[1]);
-  assert.deepEqual(dele[0].casos!.map((c) => c.slice(0, 2)), ["4.", "5."]);
-  for (const caso of dele[0].casos!) assert.ok(titulos.includes(caso), `"${caso}" não é um teste do spec`);
+  const blocoB = fonte.slice(fonte.indexOf('test.describe("denúncia e remoção'));
+  const blocoA = fonte.slice(0, fonte.indexOf('test.describe("denúncia e remoção'));
+  assert.match(blocoA, /mode: "serial"/, "os casos 1 a 3 seguem em série");
+  assert.match(blocoB, /mode: "default"/, "o bloco dos casos 4 e 5 não pula o 5 quando o 4 falha");
+  assert.doesNotMatch(blocoB, /mode: "serial"/);
+  assert.match(blocoB, /semearFotoAprovada\(/, "o caso 4 tem a foto aprovada sem depender do caso 3");
+  assert.match(blocoB, /garantirDenunciada\(/, "o caso 5 tem a denúncia sem depender do caso 4");
+  assert.match(blocoB, /test\("4\. denúncia/);
+  assert.match(blocoB, /test\("5\. Remover/);
 });
 
 test("regra de entrada: toda entrada tem disposição na lista da T1 — instável com o mesmo item, teste velho apontando a correção, ou defeito sem marca com o item dele", () => {
