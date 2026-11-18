@@ -55,35 +55,6 @@
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
    "correcao": 3965
-  },
-  {
-   "spec": "t230-pagamento-sem-repeticao.spec.ts",
-   "titulo": "1. 1280 — Caução do contrato: clique duplo grava 1; a 2ª aba recebe 'já foi registrado'",
-   "motivo": "instável em 2 corridas: com 2 workers em 17/11 (run 44038091791) e com 1 worker na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais)",
-   "item": "E1020",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t230-pagamento-sem-repeticao.spec.ts",
-   "titulo": "2. 390 — o bloco 2 aceita um pagamento de valor mensal e recusa o segundo",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1020): o caso 3 confirma a Caução do caso 1 e os pagamentos do caso 2. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1020",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "cadeiaDe": "1. 1280 — Caução do contrato: clique duplo grava 1; a 2ª aba recebe 'já foi registrado'"
-  },
-  {
-   "spec": "t230-pagamento-sem-repeticao.spec.ts",
-   "titulo": "3. 1280 + 390 — comprovante com VN-CT; documento anulado com selo, PDF acessível e fora da fila",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1020): o caso 3 confirma a Caução do caso 1 e os pagamentos do caso 2. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1020",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "cadeiaDe": "1. 1280 — Caução do contrato: clique duplo grava 1; a 2ª aba recebe 'já foi registrado'"
   }
  ]
 }
