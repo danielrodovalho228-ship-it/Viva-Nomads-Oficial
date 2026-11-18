@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
-import { execFileSync } from "node:child_process";
+import { chmodSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 /**
  * Ordem d86d0678 (trava de lab verde): todo PR e todo merge na main rodam um conjunto curto de fluxos
@@ -93,4 +95,86 @@ test("portão de PR: a suíte completa não roda em PR e, na main e no noturno, 
   // E744: a suíte é fatiada; falha numa fatia deixa a fatia vermelha, e o consolidar fica vermelho se qualquer fatia falhou.
   assert.match(lab, /- name: Marcar a fatia como falha se algum teste falhou\n\s+if: \$\{\{ steps\.e2e\.outcome == 'failure'/);
   assert.match(lab, /- name: Marcar a execução como falha se alguma fatia falhou\n\s+if: \$\{\{ needs\.laboratorio\.result != 'success'/);
+});
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Instalação dos navegadores resistente a runner lento (ordem do Gerente, DUET-1819, 17/11/2026).
+// Caso real: em 17/11 o passo "Instalar Chromium do Playwright" matou o lab-critico três vezes (#3934, duas vezes, e a
+// main d27e5b19) sem nenhum teste rodar. O runner baixava os 139 MB de pacotes do sistema a ~50 kB/s; cada tentativa
+// retomava de onde a anterior parou (139 → 118 → 81,8 MB a baixar), mas três tentativas de 7 minutos não bastavam.
+// ---------------------------------------------------------------------------------------------------------------------
+const passoDaInstalacao = yml.slice(yml.indexOf("- name: Instalar Chromium do Playwright"), yml.indexOf("- name: Rodar os fluxos críticos"));
+const TENTATIVAS = 6;
+const SEGUNDOS_POR_TENTATIVA = 420;
+const ESPERA_ENTRE_TENTATIVAS = 30;
+
+test("instalação dos navegadores: 6 tentativas de 7 minutos, com espera entre elas, limpando a trava do apt antes de repetir", () => {
+  assert.match(passoDaInstalacao, /for i in 1 2 3 4 5 6; do\n/);
+  assert.match(passoDaInstalacao, /timeout 420 npx playwright install --with-deps chromium webkit && exit 0\n/);
+  // A limpeza de antes continua: sem ela a tentativa seguinte morre na hora, na trava do dpkg.
+  assert.match(passoDaInstalacao, /sudo pkill -f '\[a\]pt-get\|\[d\]pkg' \|\| true\n/);
+  assert.match(passoDaInstalacao, /sudo fuser \/var\/lib\/dpkg\/lock-frontend \/var\/lib\/dpkg\/lock/);
+  assert.match(passoDaInstalacao, /sudo dpkg --configure -a \|\| true\n/);
+  // A espera vem depois da limpeza e não acontece depois da última tentativa.
+  assert.match(passoDaInstalacao, /if \[ "\$i" -lt 6 \]; then sleep 30; fi\n/);
+  assert.ok(passoDaInstalacao.indexOf("dpkg --configure -a") < passoDaInstalacao.indexOf("sleep 30"), "espera depois da limpeza");
+  // Se nenhuma tentativa instalar, o passo reprova: nada de seguir sem navegador.
+  assert.match(passoDaInstalacao, /\n {10}done\n {10}exit 1\n/);
+  assert.doesNotMatch(passoDaInstalacao, /continue-on-error/);
+});
+
+test("instalação dos navegadores: os limites de tempo cabem — o passo comporta as 6 tentativas e o job comporta o passo mais os testes", () => {
+  const limiteDoPasso = Number(/timeout-minutes: (\d+)/.exec(passoDaInstalacao)?.[1]);
+  // Pior caso do passo: 6 tentativas, 5 esperas e, em cada tentativa, até 2 minutos à espera da trava do dpkg.
+  const piorCaso = TENTATIVAS * SEGUNDOS_POR_TENTATIVA + (TENTATIVAS - 1) * ESPERA_ENTRE_TENTATIVAS + TENTATIVAS * 40 * 3;
+  assert.ok(limiteDoPasso * 60 >= piorCaso, `o passo tem ${limiteDoPasso} min; o pior caso leva ${Math.ceil(piorCaso / 60)}`);
+  // Os testes ganham limite próprio, igual à folga que tinham antes (40 min do job menos preparação e instalação):
+  // assim o job pode crescer para caber a instalação lenta sem que um teste travado fique mais tempo pendurado.
+  const passoDosTestes = yml.slice(yml.indexOf("- name: Rodar os fluxos críticos"), yml.indexOf("- name: Resultado (cole no corpo do PR)"));
+  const limiteDosTestes = Number(/\n {8}timeout-minutes: (\d+)\n/.exec(passoDosTestes)?.[1]);
+  assert.equal(limiteDosTestes, 35);
+  const limiteDoJob = Number(/\n {4}timeout-minutes: (\d+)\n/.exec(yml)?.[1]);
+  assert.ok(limiteDoJob >= 10 + limiteDoPasso + limiteDosTestes, `o job tem ${limiteDoJob} min para 10 de preparação + ${limiteDoPasso} + ${limiteDosTestes}`);
+});
+
+/** Roda o script do passo com comandos de mentira: o `npx` falha nas primeiras `falhas` chamadas e depois instala. */
+function rodarInstalacao(falhas: number) {
+  const script = passoDaInstalacao.slice(passoDaInstalacao.indexOf("run: |\n") + 7).split("\n").map((l) => l.replace(/^ {10}/, "")).join("\n");
+  const dir = mkdtempSync(join(tmpdir(), "lab-critico-instalacao-"));
+  const cmd = (nome: string, corpo: string) => {
+    writeFileSync(join(dir, nome), `#!/bin/bash\n${corpo}\n`);
+    chmodSync(join(dir, nome), 0o755);
+  };
+  cmd("npx", `n=$(cat "${dir}/chamadas" 2>/dev/null || echo 0); n=$((n + 1)); echo $n > "${dir}/chamadas"; echo "npx $*" >> "${dir}/log"; [ "$n" -gt ${falhas} ]`);
+  cmd("timeout", `echo "timeout $1" >> "${dir}/log"; shift; exec "$@"`);
+  cmd("sudo", `exec "$@"`);
+  cmd("pkill", `echo "pkill" >> "${dir}/log"; exit 0`);
+  cmd("fuser", `exit 1`); // trava livre
+  cmd("dpkg", `echo "dpkg $*" >> "${dir}/log"; exit 0`);
+  cmd("sleep", `echo "sleep $1" >> "${dir}/log"; exit 0`);
+  writeFileSync(join(dir, "passo.sh"), script);
+  const r = spawnSync("bash", ["-e", join(dir, "passo.sh")], { env: { ...process.env, PATH: `${dir}:/usr/bin:/bin` }, encoding: "utf8" });
+  const log = existsSync(join(dir, "log")) ? readFileSync(join(dir, "log"), "utf8").trim().split("\n") : [];
+  return { saida: r.status, texto: r.stdout, log };
+}
+
+test("instalação dos navegadores, rodando o passo de verdade: instala na 4ª tentativa depois de 3 falhas; desiste na 6ª com saída 1", () => {
+  // Caso de 17/11: três tentativas não bastaram. Com seis, a quarta instala e o passo segue.
+  const quarta = rodarInstalacao(3);
+  assert.equal(quarta.saida, 0);
+  assert.deepEqual(quarta.texto.trim().split("\n"), ["tentativa 1 travou ou falhou", "tentativa 2 travou ou falhou", "tentativa 3 travou ou falhou"]);
+  assert.equal(quarta.log.filter((l) => l.startsWith("npx playwright install --with-deps chromium webkit")).length, 4);
+  assert.equal(quarta.log.filter((l) => l === "timeout 420").length, 4);
+  assert.equal(quarta.log.filter((l) => l === "sleep 30").length, 3, "uma espera depois de cada falha");
+  assert.equal(quarta.log.filter((l) => l === "pkill").length, 3, "limpa o apt que sobrou depois de cada falha");
+  // Runner bom: instala de primeira, sem espera nenhuma.
+  const primeira = rodarInstalacao(0);
+  assert.equal(primeira.saida, 0);
+  assert.equal(primeira.log.filter((l) => l.startsWith("sleep")).length, 0);
+  // Nunca instala: seis tentativas, cinco esperas (nenhuma depois da última) e o passo reprova.
+  const nunca = rodarInstalacao(99);
+  assert.equal(nunca.saida, 1);
+  assert.equal(nunca.log.filter((l) => l.startsWith("npx")).length, 6);
+  assert.equal(nunca.log.filter((l) => l === "sleep 30").length, 5);
+  assert.match(nunca.texto, /tentativa 6 travou ou falhou/);
 });
