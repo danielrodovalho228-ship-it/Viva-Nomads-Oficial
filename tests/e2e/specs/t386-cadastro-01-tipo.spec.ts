@@ -69,7 +69,10 @@ test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
       }
       if (w === 1280) {
         await expect(p.getByTestId("previa-anuncio")).toBeVisible();
-        await expect(p.getByTestId("previa-titulo")).toHaveText("Apartamento");
+        // E744 (asserção alterada, tabela da Fable #3832): a prévia não usa mais o tipo como título ("Título ainda não
+        // definido" até o Passo 7); o tipo escolhido segue nos chips da prévia.
+        await expect(p.getByTestId("previa-titulo")).toHaveText("Título ainda não definido");
+        await expect(p.getByTestId("previa-chips")).toContainText("Apartamento");
         await expect(p.getByTestId("previa-estado")).toContainText("Rascunho");
       } else {
         await expect(p.getByTestId("previa-anuncio")).toBeHidden();
@@ -94,13 +97,14 @@ test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
     await p.getByTestId("tipo-casa").click();
     await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "true");
     await expect(p.getByTestId("tipo-apartamento")).toHaveAttribute("aria-checked", "false");
-    await expect(p.getByTestId("previa-titulo")).toHaveText("Casa");
+    await expect(p.getByTestId("previa-titulo")).toHaveText("Título ainda não definido");
     await expect(p.getByTestId("previa-chips")).toContainText("Casa");
     await p.getByTestId("tipos-ver-mais").click(); // E607: Studio fica em "Ver mais tipos"
     await p.getByTestId("tipo-studio").click();
     await expect(p.getByTestId("tipo-studio")).toHaveAttribute("aria-checked", "true");
     await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "false");
-    await expect(p.getByTestId("previa-titulo")).toHaveText("Studio / kitnet");
+    await expect(p.getByTestId("previa-titulo")).toHaveText("Título ainda não definido");
+    await expect(p.getByTestId("previa-chips")).toContainText("Studio / kitnet");
 
     await p.getByTestId("cadastro-continuar").click();
     await expect(p.getByTestId("passo-texto")).toHaveText("Passo 2 de 10");
