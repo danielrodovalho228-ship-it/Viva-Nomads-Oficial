@@ -205,7 +205,9 @@ test("regra de entrada: toda entrada tem disposição na lista da T1 — instáv
     assert.equal(d!.dono, e.dono, `${e.spec}: dono diferente do da disposição`);
     if (d!.disposicao === "instavel") {
       assert.equal(d!.item, e.item, `${e.spec}: item diferente do da disposição`);
-      assert.equal(e.correcao, undefined, `${e.spec}: instável não aponta correção (ainda não há)`);
+      // Alterada por decisão do Gerente (DUET-1849, 18/11): o instável cuja correção já está escrita em PR aberto aponta
+      // esse PR (o mesmo da disposição); sem PR, continua sem apontar.
+      if (e.correcao !== undefined) assert.equal(e.correcao, d!.pr, `${e.spec}: a correção apontada não é a da disposição`);
     } else if (d!.disposicao === "defeito") {
       assert.equal(d!.item, e.item, `${e.spec}: item diferente do da disposição`);
       assert.ok((d!.semMarca ?? "").length > 20, `${e.spec}: defeito com a marca de falha conhecida não entra na quarentena`);

@@ -71,7 +71,8 @@
    "item": "E1023",
    "dono": "Code 2",
    "entrada": "2026-11-17",
-   "expira": "2026-12-01"
+   "expira": "2026-12-01",
+   "correcao": 3965
   },
   {
    "spec": "t230-pagamento-sem-repeticao.spec.ts",
@@ -109,7 +110,8 @@
    "item": "E1022",
    "dono": "Code 2",
    "entrada": "2026-11-17",
-   "expira": "2026-12-01"
+   "expira": "2026-12-01",
+   "correcao": 3966
   },
   {
    "spec": "t321-video-alcancavel-65b.spec.ts",
@@ -119,7 +121,8 @@
    "dono": "Code 2",
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
+   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar",
+   "correcao": 3966
   },
   {
    "spec": "t321-video-alcancavel-65b.spec.ts",
@@ -129,7 +132,8 @@
    "dono": "Code 2",
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
+   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar",
+   "correcao": 3966
   },
   {
    "spec": "t321-video-alcancavel-65b.spec.ts",
@@ -139,7 +143,8 @@
    "dono": "Code 2",
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
+   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar",
+   "correcao": 3966
   },
   {
    "spec": "t321-video-alcancavel-65b.spec.ts",
@@ -149,7 +154,8 @@
    "dono": "Code 2",
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
+   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar",
+   "correcao": 3966
   },
   {
    "spec": "t198-rodape-painel-390.spec.ts",
