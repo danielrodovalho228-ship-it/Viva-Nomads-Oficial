@@ -12,6 +12,9 @@
 
 - Unidade, `src/lib/agentes/painel.test.ts`: 3 testes novos `E1010 …` (chavesEstaveis ×2, chavesDosGrupos) — vermelhos sem as funções, verdes com elas (pass 18, fail 0).
 - E2E na main (1 worker, `--repeat-each=5`): 1 falhou, 4 passaram (passo da trilha não visível).
-- E2E no ramo: ver a descrição do PR (laboratório recompilado com o ramo).
+- E2E no ramo (laboratório recompilado com 7b2081b8e):
+  - caso do Moacir, 1 worker, `--repeat-each=10`: 10 passed;
+  - t21 inteiro, 2 workers, 4 rodadas com o histórico recente do laboratório limpo (como o banco novo do CI): 11/11 em cada (44/44).
+- Cuidados do laboratório para repetir: as rodadas gastam o limite de 60 perguntas/dia do chat, o de disparos (`limites_uso` `agentes-%`) e a trava de "ordem igual em 2 h"; entre rodadas é preciso zerar isso, senão "Executar agora" e "Chat tipo WhatsApp" caem por limite (não por este item).
 
 Fora do escopo: 3 cópias do mesmo teste conversando ao mesmo tempo com o Moacir na MESMA conta misturam as trilhas umas das outras (cenário que não existe na suíte; como no E1011 com 4 workers).
