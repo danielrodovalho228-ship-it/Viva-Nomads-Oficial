@@ -92,3 +92,19 @@ O valor é o commit de merge do PR, com 8 caracteres, como a guarda e744-t1 exig
 O t1645 não trazia `pr` no arquivo. A correção dele (161d8388d, o localizador aceita os 2 links do E941) entrou pelo #3961, no merge `08231fd7`.
 Os quatro commits estão na main.
 Ficam de fora as disposições do Code 2 que não são `teste-velho`: 11 `instavel` (quarentena; a guarda e744-t2 proíbe `corrigidoPor` nelas) e 5 `defeito` com PR. Essas seguem o caminho da tabela acima.
+
+### Censo das fatias 8, 9 e 15 da corrida completa 44333898865 (ORDEM-DUET-120, 18/11)
+
+Corrida agendada de 18/11 sobre a main `94e5035`. Caíram as mesmas três fatias da corrida 44307724189, mais o `consolidar`, por consequência.
+Todas as falhas já têm disposição em `disposicao-falhas.json`. Nenhuma é da área do Code 2.
+
+| Fatia | Spec | Falhas | Casos | Disposição no arquivo | Dono | Disposição proposta |
+|---|---|---|---|---|---|---|
+| 8 | `t245-visual-regressao` | 36 | as 18 telas × 2 larguras | teste-velho, #3908 | Fable | mantém: o #3908 (aberto) refaz as referências |
+| 9 | `t271-admin-visual` | 11 | 1280: /admin, financeiro, documentos, atendimento, parceiros, contratos, contratos/[id], usuarios; 390: /admin, documentos, atendimento | teste-velho, #3908 | Fable | mantém (eram 10 na 44307724189; +1 tela, mesma causa: máscaras do admin) |
+| 9 | `t263-visual-41` | 6 | 01 página do imóvel inteira (ube-001) ×2, 02 barra inferior (inquilino) ×2, 03 barra inferior (proprietário), 04 barra inferior (parceiro) 390 px | teste-velho, #3908 | Fable | mantém |
+| 15 | `t50-rls-todas-tabelas` | 2 | anon em `imovel_extras`, anon em `property_amenities` | teste-velho, #3935 | Fable | o #3935 já entrou na main (`9e17a68e`), depois da `94e5035`. Falta a dona preencher `corrigidoPor: "9e17a68e"`. |
+
+Total: 55 falhas, 4 specs, todas da Fable. As fatias 8 e 9 seguem vermelhas até o #3908 entrar. A fatia 15 deve ficar verde na próxima corrida.
+
+Quarentena da mesma corrida: 15/15 (5 casos × 3, `--workers=1 --repeat-each=3`), com o t1629 E916 (E1019) 3/3. É a **2ª corrida verde seguida da quarentena** para o E1019, depois da 44307724189. Pelo critério aceite, falta uma para o PR de saída.
