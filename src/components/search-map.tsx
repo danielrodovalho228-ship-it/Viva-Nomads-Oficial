@@ -13,7 +13,7 @@ import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
 import { usePreviaNoHover } from "@/components/busca/previa-hover";
 import { ATRIBUICAO_MAPA, TILES_CARTO, TILES_CARTO_SEM_ROTULOS, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
-import { afastarPins, type Obstaculo } from "@/lib/busca/pins-sem-sobreposicao";
+import { afastarComGrupos, gruposDosPins, type Obstaculo } from "@/lib/busca/pins-sem-sobreposicao";
 import { CIDADES_ROTULADAS, ZOOM_MAXIMO_DO_ROTULO, caixaDoRotulo, obstaculosDeCidades } from "@/lib/busca/rotulos-cidade-leaflet";
 import { FOLGA_CARTAO_MAPA, deslocamentoParaCaber, fechaCartaoComTecla, mostrarCartaoNaTela } from "@/lib/busca/cartao-no-mapa";
 
@@ -91,16 +91,52 @@ interface SearchMapProps {
  * E525 (D11): afasta os pins que se cobrem (cada um vai à posição livre mais próxima). Por MARGEM, não por transform:
  * o pin já usa o translate do Tailwind (Leaflet) e o transform do próprio marcador (Mapbox).
  */
-function aplicarAfastamento(itens: { id: string; x: number; y: number; el: HTMLElement }[], quadro: { w: number; h: number }, obstaculos: Obstaculo[] = []) {
-  const desloc = afastarPins(
+/** E988: a largura máxima do "+N" dentro do pin (até "+99" no corpo de 11 px, px-2 e a margem). */
+const LARGURA_SELO = 38;
+
+function aplicarAfastamento(
+  itens: { id: string; x: number; y: number; el: HTMLElement }[],
+  quadro: { w: number; h: number },
+  obstaculos: Obstaculo[] = [],
+  aoAbrirGrupo?: (id: string) => void
+) {
+  // E988 (DUET-0649): o pin que não cabe legível perto do ponto entra no "+N" do pin visível mais perto. O "+N" vai
+  // DENTRO do pin; com o mapa cheio, todos os pins reservam a vaga dele (afastarComGrupos), por isso as larguras são
+  // medidas sem os "+N" de antes.
+  for (const { el } of itens) el.querySelector('[data-testid="pin-grupo"]')?.remove();
+  const desloc = afastarComGrupos(
     itens.map(({ id, x, y, el }) => ({ id, x, y, w: el.offsetWidth, h: el.offsetHeight })),
     quadro,
-    obstaculos
+    obstaculos,
+    LARGURA_SELO
   );
+  const grupos = gruposDosPins(desloc);
   for (const { id, el } of itens) {
-    const { dx, dy } = desloc.get(id) ?? { dx: 0, dy: 0 };
+    const n = grupos.get(id);
+    if (!n) continue;
+    const selo = document.createElement("button");
+    selo.type = "button";
+    selo.dataset.testid = "pin-grupo";
+    selo.dataset.n = String(n);
+    selo.textContent = `+${n}`;
+    selo.setAttribute("aria-label", `Mais ${n} ${n === 1 ? "imóvel" : "imóveis"} aqui — aproximar o mapa`);
+    selo.className = "ml-1 rounded-full bg-forest px-2 text-[11px] font-semibold leading-4 text-white";
+    // Tocar no "+N" aproxima o mapa daquele ponto, onde os pins voltam a caber (não abre o cartão do pin).
+    selo.addEventListener("click", (e) => {
+      e.stopPropagation();
+      aoAbrirGrupo?.(id);
+    });
+    el.appendChild(selo);
+  }
+  for (const { id, el } of itens) {
+    const { dx, dy, agrupadoEm } = desloc.get(id) ?? { dx: 0, dy: 0 };
     el.style.marginLeft = `${dx}px`;
     el.style.marginTop = `${dy}px`;
+    el.style.visibility = agrupadoEm ? "hidden" : "";
+    el.style.pointerEvents = agrupadoEm ? "none" : "";
+    el.dataset.testid = agrupadoEm ? "pin-mapa-agrupado" : "pin-mapa";
+    if (agrupadoEm) el.setAttribute("aria-hidden", "true");
+    else el.removeAttribute("aria-hidden");
   }
 }
 
@@ -268,7 +304,11 @@ function SearchMapbox({
           return { id, x: pt.x, y: pt.y, el };
         }),
         { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight },
-        rotulosDeCidade(map)
+        rotulosDeCidade(map),
+        (id) => {
+          const m = markersRef.current.get(id)?.marker;
+          if (m) map.easeTo({ center: m.getLngLat(), zoom: Math.min(map.getZoom() + 2, map.getMaxZoom()) });
+        }
       );
     reorganizar();
     // E525: também ao ganhar tamanho (no celular o mapa nasce escondido e os pins mediam 0 × 0).
@@ -603,7 +643,11 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
         }),
         { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight },
         // E704: o nome da cidade vem no tile; o ponto dela é um obstáculo fixo (o pino de preço não o cobre).
-        obstaculosDeCidades((lat, lng) => map.latLngToContainerPoint([lat, lng]), { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }, map.getZoom())
+        obstaculosDeCidades((lat, lng) => map.latLngToContainerPoint([lat, lng]), { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }, map.getZoom()),
+        (id) => {
+          const m = markersRef.current.get(id)?.marker;
+          if (m) map.setView(m.getLatLng(), Math.min(map.getZoom() + 2, map.getMaxZoom()));
+        }
       );
     reorganizar();
     reorganizarRef.current = reorganizar;

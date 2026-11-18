@@ -42,11 +42,15 @@ test.describe("T547 — E148-A: o texto exato do modelo no Passo 7, sem endereç
   for (const w of [390, 1280] as const) {
     test(`1. a ${w} px: título e descrição vazios → o texto do modelo, só com os dados do cadastro`, async ({ browser }) => {
       const page = await abrirPasso(browser, { email: dono.email, senha }, w === 390 ? ids.vazio390 : ids.vazio1280, "descricao", w);
-      const titulo = page.getByTestId("cadastro-titulo");
-      const descricao = page.getByTestId("cadastro-descricao");
-      await expect(titulo).toHaveValue("Apartamento mobiliado de 2 quartos no Santa Mônica", { timeout: 30_000 });
-      const texto = await descricao.inputValue();
-      console.log(`t547 ${w}: descrição "${texto}"`);
+      // E744 (asserção alterada, tabela da Fable #3832): o modelo não preenche mais os campos — ele aparece no cartão de
+      // sugestão ("sugestao-cartao"), e título e descrição seguem vazios até o dono escolher "Usar". As checagens de
+      // "sem rua nem número" passam a valer sobre o texto do cartão.
+      const cartao = page.getByTestId("sugestao-cartao");
+      await expect(page.getByTestId("sugestao-titulo")).toHaveText("Apartamento mobiliado de 2 quartos no Santa Mônica", { timeout: 30_000 });
+      await expect(page.getByTestId("cadastro-titulo")).toHaveValue("");
+      await expect(page.getByTestId("cadastro-descricao")).toHaveValue("");
+      const texto = (await cartao.getByTestId("sugestao-descricao").innerText()).trim();
+      console.log(`t547 ${w}: descrição sugerida "${texto}"`);
       expect(texto).toContain("Apartamento mobiliado com 2 quartos, 1 banheiro e 55 m².");
       expect(texto.trim().endsWith("Para estadias de 30 a 180 dias.")).toBe(true);
       expect(texto, "endereço exato na descrição").not.toContain(BASE.street);
