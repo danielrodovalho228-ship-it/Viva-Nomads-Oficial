@@ -191,11 +191,14 @@ test("o arquivo da quarentena é válido HOJE: teto, campos, validade, nenhuma v
   }
 });
 
-test("regra de entrada: toda entrada tem disposição na lista da T1 — instável com o mesmo item, ou teste velho apontando a correção", () => {
+test("regra de entrada: toda entrada tem disposição na lista da T1 — instável com o mesmo item, teste velho apontando a correção, ou defeito sem marca com o item dele", () => {
   // Asserção alterada por decisão do Gerente (DUET-1225, 17/11): além do instável com item, entra o teste velho que já
   // tem correção escrita em PR aberto, por no máximo 14 dias e apontando o PR. Sai quando a correção for mesclada: a
-  // quarentena não fica mascarando a correção. Defeito real não entra aqui (leva a marca de falha conhecida).
-  const disposicoes = (JSON.parse(readFileSync("tests/laboratorio/disposicao-falhas.json", "utf8")).disposicoes ?? []) as { spec: string; disposicao: string; item?: string; dono?: string; pr?: number }[];
+  // quarentena não fica mascarando a correção.
+  // Alterada de novo por decisão do Gerente (DUET-1419, 17/11): o defeito registrado, com item e dono, entra quando a
+  // falha não é sempre a mesma (por isso está sem a marca de falha conhecida). Sai no PR da correção do item. O defeito
+  // que leva a marca continua de fora (a marca já o trata), e o já corrigido também.
+  const disposicoes = (JSON.parse(readFileSync("tests/laboratorio/disposicao-falhas.json", "utf8")).disposicoes ?? []) as { spec: string; disposicao: string; item?: string; dono?: string; pr?: number; semMarca?: string; corrigidoPor?: string }[];
   for (const e of lerQuarentena() as (Entrada & { correcao?: number })[]) {
     const d = disposicoes.find((x) => x.spec === e.spec);
     assert.ok(d, `${e.spec}: em quarentena sem disposição`);
@@ -203,8 +206,13 @@ test("regra de entrada: toda entrada tem disposição na lista da T1 — instáv
     if (d!.disposicao === "instavel") {
       assert.equal(d!.item, e.item, `${e.spec}: item diferente do da disposição`);
       assert.equal(e.correcao, undefined, `${e.spec}: instável não aponta correção (ainda não há)`);
+    } else if (d!.disposicao === "defeito") {
+      assert.equal(d!.item, e.item, `${e.spec}: item diferente do da disposição`);
+      assert.ok((d!.semMarca ?? "").length > 20, `${e.spec}: defeito com a marca de falha conhecida não entra na quarentena`);
+      assert.equal(d!.corrigidoPor, undefined, `${e.spec}: defeito já corrigido não entra na quarentena`);
+      if (e.correcao !== undefined) assert.equal(e.correcao, d!.pr, `${e.spec}: a correção apontada não é a da disposição`);
     } else {
-      assert.equal(d!.disposicao, "teste-velho", `${e.spec}: defeito real não entra na quarentena`);
+      assert.equal(d!.disposicao, "teste-velho", `${e.spec}: classe "${d!.disposicao}" não entra na quarentena`);
       assert.ok(Number.isInteger(e.correcao), `${e.spec}: teste velho em quarentena sem o PR da correção`);
       assert.equal(e.correcao, d!.pr, `${e.spec}: a correção apontada não é a da disposição`);
     }

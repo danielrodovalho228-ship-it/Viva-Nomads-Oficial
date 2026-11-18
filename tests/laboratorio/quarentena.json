@@ -1,5 +1,5 @@
 {
- "regra": "um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só então entra aqui; desde 17/11 (decisão do Gerente, DUET-1225) entra também o teste velho com correção já escrita em PR aberto, apontando o PR em 'correcao', e sai quando ele for mesclado; quando o teste é de uma cadeia em série e os seguintes dependem dele, a cadeia entra e sai inteira; teto de 25 entradas; validade de no máximo 14 dias",
+ "regra": "um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só então entra aqui; desde 17/11 (decisão do Gerente, DUET-1225) entra também o teste velho com correção já escrita em PR aberto, apontando o PR em 'correcao', e sai quando ele for mesclado; desde 17/11 (DUET-1419) entra também o defeito registrado, com item e dono, cuja falha não é sempre a mesma (sem marca de falha conhecida), e sai no PR da correção; quando o teste é de uma cadeia em série e os seguintes dependem dele, a cadeia entra e sai inteira; teto de 25 entradas; validade de no máximo 14 dias",
  "entradas": [
   {
    "spec": "t21-central-agentes.spec.ts",
@@ -15,33 +15,6 @@
    "titulo": "'Ok, tudo aprovado' para o Moacir: não aprova nada e não cria ordem",
    "motivo": "instável nas 7 corridas de 16 e 17/11: a contagem de ordens esperada 0 vem 1 na primeira tentativa e passa na segunda. Causa provável, vista no laboratório local com 2 workers: o teste compara a contagem da tabela inteira de ordens antes e depois, e outro teste que cria ordem ao mesmo tempo muda a conta",
    "item": "E1011",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t30-atendimento-autonomo.spec.ts",
-   "titulo": "Caução simples: resposta automática em < 30 s; nova pergunta respondida; 'pessoa' passa para a equipe sem IA",
-   "motivo": "instável em 3 e vermelho em 1 das 7 corridas de 16 e 17/11: a frase \"Resposta automática da Viva…\" não aparece a tempo; sozinho passou 6 de 6",
-   "item": "E1012",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t108-admin-atendimento-status-humano.spec.ts",
-   "titulo": "tela do chamado sem \"_\" de status a 1280px",
-   "motivo": "instável em 3 das 7 corridas de 16 e 17/11: estoura os 90 s na primeira tentativa; sozinho passou 6 de 6",
-   "item": "E1014",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t190-seo-robots-jsonld.spec.ts",
-   "titulo": "anúncio real: Offer com Accommodation, estadia mín/máx e sem coordenada",
-   "motivo": "instável nas 7 corridas de 16 e 17/11: \"Unexpected end of JSON input\" na primeira tentativa; passa na nova tentativa",
-   "item": "E1015",
    "dono": "Code 2",
    "entrada": "2026-11-17",
    "expira": "2026-12-01"
@@ -74,6 +47,15 @@
    "expira": "2026-12-01"
   },
   {
+   "spec": "t70-busca-split.spec.ts",
+   "titulo": "2. um pin por imóvel; hover card↔pin destaca; hover no pin abre o cartão (E442)",
+   "motivo": "defeito E1023, sem marca de falha conhecida porque a falha não é sempre a mesma: em alguns pins o cartão do imóvel abre por cima do ponteiro e o card da lista perde o destaque. Falhou 1 vez na corrida de prova da T3 (run 44114328109, fatia 18) e passa sozinho. Entra por decisão do Gerente (DUET-1419); sai no PR da correção do E1023",
+   "item": "E1023",
+   "dono": "Code 2",
+   "entrada": "2026-11-17",
+   "expira": "2026-12-01"
+  },
+  {
    "spec": "t230-pagamento-sem-repeticao.spec.ts",
    "titulo": "1. 1280 — Caução do contrato: clique duplo grava 1; a 2ª aba recebe 'já foi registrado'",
    "motivo": "instável em 2 corridas: com 2 workers em 17/11 (run 44038091791) e com 1 worker na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais)",
@@ -101,16 +83,6 @@
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
    "cadeiaDe": "1. 1280 — Caução do contrato: clique duplo grava 1; a 2ª aba recebe 'já foi registrado'"
-  },
-  {
-   "spec": "t198-rodape-painel-390.spec.ts",
-   "titulo": "conta: último botão livre acima da barra de abas",
-   "motivo": "teste velho com correção escrita: falhou em 4 das 7 corridas de 16 e 17/11 e na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais); a t198 mede antes de a Conta assentar",
-   "item": "E1000",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3934
   }
  ]
 }
