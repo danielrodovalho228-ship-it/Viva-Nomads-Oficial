@@ -160,3 +160,18 @@ Com isso a quarentena fica em **23 de 25**. Sete entradas saem quando as três c
 O `t840` (E988) foi corrigido na main pelo #3912 (`d5e682a8`), depois da corrida de prova.
 
 O `t70`, caso 2 (hover no pin da busca), falhou uma vez na fatia 18 e passa 18 de 18 sozinho. Ganhou disposição depois (DUET-1319: toda falha da corrida de prova tem disposição): **defeito, E1023, Code 2**. A causa foi reproduzida no laboratório local. Passar o mouse num pin abre o cartão do imóvel; quando o cartão não cabe acima do pin, o mapa anda para ele caber, o cartão fica por cima do ponteiro e o pin perde o hover. O pin continua aceso (o cartão está aberto), mas o card da lista perde o destaque. No laboratório local isso acontece em 1 ou 2 de cada 24 pins; o teste escolhe o último pin livre, que muda conforme os imóveis que os outros testes deixam. **Sem marca de falha conhecida:** tentei uma marca que só valia com o cartão por cima do ponteiro; na prova local ela acertou 2 de 3 repetições e na terceira o teste passou (o card recuperou o destaque dentro da espera), o que deixaria a noite vermelha pelo motivo errado. Decisão de produto do Gerente (DUET-1349): o card da lista mantém o destaque enquanto o cartão do imóvel está aberto no mapa; perder o destaque é o defeito. Ainda não há PR de correção. **Entrou na quarentena** (DUET-1419: defeito registrado, com dono e correção a caminho, cuja falha não é sempre a mesma); o PR da correção do E1023 tira a entrada.
+
+## 9. Intermitentes achados fora de corrida completa (18/11, ORDEM-DUET-096)
+
+Dois testes falharam às vezes nos vizinhos do #3983 (E1025). Rodados sozinhos contra a main `b4b0bc71`, 3 vezes cada, falharam do mesmo jeito: não vieram de PR nenhum. O Gerente mandou os dois para a quarentena como intermitentes, com correção ou plano do dono até 26/11.
+
+| Spec | Caso | Sozinho contra a main | Item | Dono | Na quarentena |
+|---|---|---|---|---|---|
+| `t355-conta-a-perfil-espelho` | 5, a 1280 px | 2 falhas em 3: o endereço fica com `#perfil-publico` | E61 | Fable | o caso, apontando a correção escrita (#3910) |
+| `t442-foto-perfil-revisao` | 4 (e o 5, que depende dele) | 1 falha em 3: o teste espera `/ajuda?contexto=perfil…` e a página já seguiu para `/ajuda/fale-com-a-viva` | E13 | Code 2 | o spec inteiro, numa entrada só, com os casos 4 e 5 nomeados |
+
+- O `t442` já estava nesta lista como teste velho (caso 3, corrigido pelo #3847); a disposição dele passa a instável.
+- **Entrada de spec inteira (ORDEM-DUET-097):** os casos 4 e 5 do `t442` dependem dos casos 1 a 3. Em vez de partir a cadeia, uma entrada cobre o arquivo todo: as fatias gerais ficam sem ele e o job da quarentena roda-o com a cadeia intacta. A dependência entre casos faz parte do que o dono resolve até 26/11. O `t355` fica ao nível do caso, porque o caso 5 roda sozinho.
+- O `t355` entra pela chave `foraDeCorrida` do arquivo: não estava vermelho na corrida-base nem na de prova.
+- O #3910 não entra enquanto a disposição do `t355` não fechar.
+- Se os dois aparecerem nas falhas da corrida completa de 18/11 sobre a main `6bfa3816`, contam contra este diagnóstico, não como falha nova.
