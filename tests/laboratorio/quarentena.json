@@ -53,7 +53,8 @@
    "item": "E1023",
    "dono": "Code 2",
    "entrada": "2026-11-17",
-   "expira": "2026-12-01"
+   "expira": "2026-12-01",
+   "correcao": 3965
   },
   {
    "spec": "t230-pagamento-sem-repeticao.spec.ts",
