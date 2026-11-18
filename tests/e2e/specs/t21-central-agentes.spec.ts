@@ -196,10 +196,13 @@ test.describe("T21 — Central de Agentes v2", () => {
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
     // E1010: a conversa do admin já traz as perguntas anteriores (outros testes, nova tentativa). O teste espera a
-    // resposta DESTA pergunta (a bolha que cita o chamado novo) e só então abre a trilha mais nova; antes, abria a
-    // trilha da pergunta anterior e lia a bolha antiga enquanto a nova ainda não tinha chegado.
-    const trilhas = page.getByTestId("trilha-gerente");
-    const trilhasAntes = await trilhas.count();
+    // resposta DESTA pergunta (a bolha que cita o chamado novo) e a trilha nova dela; antes, abria a trilha da pergunta
+    // anterior e lia a bolha antiga enquanto a nova ainda não tinha chegado.
+    // A trilha é a que tem os passos da consulta ("Moacir → Viva:" e "Viva: Tenho N chamado"): o "Retorno" de uma
+    // execução (outro caso deste spec, em paralelo) também entra na conversa do Moacir como passo e pode virar a
+    // última trilha da tela.
+    const daConsulta = page.getByTestId("trilha-gerente").filter({ hasText: "Moacir → Viva:" }).filter({ hasText: /Viva: Tenho \d+ chamado/ });
+    const consultasAntes = await daConsulta.count();
     await page.getByPlaceholder("Escreva para Moacir…").fill("Chegou chamado novo?");
     await page.getByRole("button", { name: "Enviar" }).click();
     // Cada linha da resposta é um <p> dentro da bolha: confere a bolha inteira, não só a 1ª linha.
@@ -212,12 +215,11 @@ test.describe("T21 — Central de Agentes v2", () => {
       return m ? Number(m[1]) : 0;
     };
     await expect.poll(citado, { timeout: 30_000, message: `a resposta cita ${numero} ou um chamado aberto depois dele` }).toBeGreaterThanOrEqual(nosso);
-    await expect.poll(() => trilhas.count(), { timeout: 20_000 }).toBeGreaterThan(trilhasAntes);
-    // A trilha vem recolhida em "ver como apurei": abre a da resposta nova antes de conferir os passos.
-    await trilhas.last().getByText(/ver como apurei/).click();
-    // Lê os passos na trilha que foi aberta: se a de outra pergunta chegar depois (workers em paralelo), ela vem
-    // recolhida e o .last() passaria a apontar para ela.
-    const passos = page.locator('[data-testid="trilha-gerente"][open]').last().getByTestId("passo-gerente");
+    await expect.poll(() => daConsulta.count(), { timeout: 20_000 }).toBeGreaterThan(consultasAntes);
+    // A trilha vem recolhida em "ver como apurei": abre a da consulta nova e confere os passos dentro dela.
+    const trilha = daConsulta.last();
+    await trilha.getByText(/ver como apurei/).click();
+    const passos = trilha.getByTestId("passo-gerente");
     await expect(passos.filter({ hasText: "Moacir → Viva:" }).last()).toBeVisible({ timeout: 20_000 });
     await expect(passos.filter({ hasText: /^Viva: Tenho \d+ chamado/ }).last()).toBeVisible();
     await expect(resposta).toContainText(/O que encontrei: VN-\d{6}/);

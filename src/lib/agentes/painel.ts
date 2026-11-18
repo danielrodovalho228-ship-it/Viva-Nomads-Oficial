@@ -324,6 +324,19 @@ export function chavesEstaveis(thread: Conversa[]): string[] {
 }
 
 /**
+ * E1010: chave de cada grupo da conversa (mensagem solta ou trilha "ver como apurei"). A trilha leva a chave da
+ * mensagem que vem antes dela (a pergunta), não a do 1º passo: um passo que chega depois e entra na frente do grupo
+ * (o "Retorno" de uma execução, por exemplo) não muda a chave e não fecha a trilha aberta.
+ */
+export function chavesDosGrupos<T extends { tipo: "trilha" | "msg"; itens: Conversa[] }>(grupos: T[], chaveDe: Map<string, string>): string[] {
+  return grupos.map((g, i) => {
+    const anterior = grupos[i - 1];
+    if (g.tipo === "msg") return chaveDe.get(g.itens[0].id) ?? g.itens[0].id;
+    return `trilha:${anterior ? (chaveDe.get(anterior.itens[anterior.itens.length - 1].id) ?? anterior.itens[0].id) : "inicio"}`;
+  });
+}
+
+/**
  * Mescla as conversas gravadas (vêm do servidor, com id próprio) com as
  * mensagens otimistas da tela (ids p-/r-/t-, que nunca batem com os gravados).
  * Depois do router.refresh() a mesma mensagem chega dos dois lados: a otimista
