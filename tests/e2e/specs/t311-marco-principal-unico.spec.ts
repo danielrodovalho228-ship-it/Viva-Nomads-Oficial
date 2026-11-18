@@ -13,6 +13,9 @@ const EXTRAS = [
   { nome: "Conferir contrato", rota: "/conferir" },
   { nome: "Conferir contrato — código", rota: "/conferir/0000000000000000" },
   { nome: "Desligar alerta de busca", rota: "/alerta-busca/desligar" },
+  // E1029 (ORDEM-DUET-130): a página de desligar as sugestões por e-mail tinha o mesmo <main> aninhado. A do avaliador
+  // (/avaliadores/[numero]) também, mas precisa de um avaliador semeado: fica na guarda src/lib/a11y/e1029-main-unico-publico.test.ts.
+  { nome: "Desligar sugestões por e-mail", rota: "/avisos/desligar" },
 ];
 // L-22 (23/10): a página punha <main> próprio dentro do <main id="conteudo"> do layout público.
 // E1029 (18/11): /conferir, /conferir/[codigo] e /alerta-busca/desligar passam a abrir um <div>; saem daqui (antes:
