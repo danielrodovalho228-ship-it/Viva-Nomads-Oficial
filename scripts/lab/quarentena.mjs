@@ -18,7 +18,8 @@
   Regra de entrada: um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só
   então pode entrar aqui. Desde 17/11 (decisão do Gerente, DUET-1225) entra também o teste velho que já tem correção
   escrita em PR aberto: a entrada aponta o PR em `correcao` e sai quando ele for mesclado, para a quarentena não
-  mascarar a correção.
+  mascarar a correção. E (DUET-1419) o defeito registrado, com item e dono, cuja falha não é sempre a mesma: entra
+  com o item dele e sai no PR da correção. O defeito que falha sempre igual leva a marca de falha conhecida, não entra.
 
   O que a rodada faz com o arquivo:
     - as fatias bloqueantes rodam SEM esses testes (--grep-invert com o padrão daqui);

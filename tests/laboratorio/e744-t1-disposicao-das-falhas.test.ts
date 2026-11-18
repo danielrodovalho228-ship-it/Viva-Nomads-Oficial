@@ -13,7 +13,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 
-type Disposicao = { spec: string; disposicao: string; item?: string; dono?: string; pr?: number; corrigidoPor?: string; semMarca?: string; pacote?: string; nota?: string };
+type Disposicao = { spec: string; disposicao: string; item?: string; dono?: string; pr?: number; corrigidoPor?: string; semMarca?: string; semPr?: string; pacote?: string; nota?: string };
 const SPECS = "tests/e2e/specs";
 const arquivo = JSON.parse(readFileSync("tests/laboratorio/disposicao-falhas.json", "utf8")) as { corrida: { run: number; base: string; specs: number; casos: number }; disposicoes: Disposicao[] };
 const lista = arquivo.disposicoes;
@@ -52,7 +52,9 @@ test("defeito real: item registrado, PR da correção, e o spec marcado com esse
   assert.ok(defeitos.length > 0);
   for (const d of defeitos) {
     assert.match(d.item ?? "", /^E\d+$/, `${d.spec}: defeito sem item`);
-    assert.ok(Number.isInteger(d.pr), `${d.spec}: defeito sem o PR da correção`);
+    // Asserção alterada em 17/11 (DUET-1319: toda falha da corrida de prova tem disposição até 19/11): o defeito achado
+    // agora ainda não tem PR de correção. Nesse caso o arquivo diz por quê (semPr); o item continua obrigatório, e a marca também, salvo o motivo escrito (semMarca).
+    assert.ok(Number.isInteger(d.pr) || (d.semPr ?? "").length > 20, `${d.spec}: defeito sem o PR da correção e sem o motivo`);
     const texto = fonte(d.spec);
     const itens = marcas(texto);
     if (!levaMarca(d)) {
