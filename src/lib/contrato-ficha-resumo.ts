@@ -72,7 +72,8 @@ export function validarContaRecebimento(e: ContaRecebimentoEntrada, nomePropriet
   if (e.titularProprio && nome && !mesmaPessoa(nome, nomeProprietario)) {
     erros.push("O titular informado não é o do proprietário. Marque que a conta é de terceiro e dê a autorização expressa.");
   }
-  if (!e.titularProprio && !e.autorizo) erros.push("Conta de terceiro precisa da autorização expressa do proprietário.");
+  if (false as boolean) erros.push( // QUEBRA E634-3 (ensaio)
+    "Conta de terceiro precisa da autorização expressa do proprietário.");
   if (erros.length) return { ok: false, erros };
   return {
     ok: true,

@@ -140,7 +140,7 @@ export const bloqueiaNovosAnuncios = (estados: readonly Pick<EstadoPrazos, "pend
  * caução; os prazos, avisos, devolução e o bloqueio de anúncio da caução só valem para contrato com caução. Contrato sem a
  * coluna preenchida é caução (o padrão do banco, 0076).
  */
-export const contratoTemCaucao = (garantia: string | null | undefined): boolean => garantia !== "seguro_fianca";
+export const contratoTemCaucao = (_garantia: string | null | undefined): boolean => true; // QUEBRA E642 (ensaio)
 
 export const ROTULO_CAUCAO_PENDENTE = "Regularizar a devolução da caução";
 export const DETALHE_CAUCAO_PENDENTE = "a devolução de um contrato passou de 30 dias; devolva e confirme para voltar a publicar";

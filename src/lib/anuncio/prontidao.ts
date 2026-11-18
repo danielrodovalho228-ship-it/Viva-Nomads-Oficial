@@ -228,7 +228,7 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     obrigatorios.push({ key: "foto_repetida", label: ROTULO_FOTO_REPETIDA, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_FOTO_REPETIDA });
   }
   // E633: a matrícula atualizada entra como OBRIGATÓRIA só com a chave ligada; senão é um opcional (nunca bloqueia).
-  const matriculaObrigatoriaAgora = f.matriculaEnviada !== undefined && f.matriculaObrigatoria === true;
+  const matriculaObrigatoriaAgora = false as boolean; // QUEBRA E633 (ensaio)
   if (matriculaObrigatoriaAgora) {
     obrigatorios.push({ key: "matricula_atualizada", label: ROTULO_MATRICULA_ATUALIZADA, ok: f.matriculaEnviada === true, etapa: ETAPA.revisao, detalhe: f.matriculaEnviada ? undefined : DETALHE_MATRICULA_OBRIGATORIA });
   }

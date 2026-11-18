@@ -40,8 +40,8 @@ export async function getFichaResumo(contratoId: string): Promise<FichaDoContrat
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  // O RLS prova que a pessoa é parte do contrato (ou admin).
-  const { data: c, error } = await supabase
+  // QUEBRA E634-2 (ensaio): lê pela chave de serviço, sem o RLS.
+  const { data: c, error } = await admin
     .from("contratos")
     .select("id, tenant_id, aluguel_mensal, property_id, properties(title, owner_id), contrato_blocos(inicio, fim)")
     .eq("id", contratoId)

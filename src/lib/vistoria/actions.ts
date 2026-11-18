@@ -175,7 +175,8 @@ export async function pedirCredenciamento(form: FormData): Promise<Res> {
     await s.admin.from("parceiros").update({ categorias }).eq("id", parc.id);
   }
   // E690: com a chave ligada e todos os critérios batendo, o pedido já nasce em teste (decidido pelo sistema).
-  await tentarAtivacaoAutomatica(s.admin, { userId: s.userId });
+  // QUEBRA E690-1 (ensaio): sem a ativação automática no pedido.
+  void tentarAtivacaoAutomatica;
   // O registro já foi gravado: sem a leitura, a lista de pendências mostra a identidade como a confirmar (a tela relê).
   const identidade = await estadoIdentidade(s.admin, s.userId).catch(() => null);
   const pend = pendenciasDoCredenciamento({ identidadeVerificada: identidade?.estado === "confirmada" });

@@ -37,7 +37,7 @@ export default async function FichaResumoPage({ params }: { params: Promise<{ id
           </ul>
         )}
       </Panel>
-      {dados.souProprietario && (
+      {/* QUEBRA E634-1 (ensaio) */ (
         <Panel title="Vencimento e conta de recebimento" className="mt-4">
           <FormContaRecebimento contratoId={id} diaInicial={dados.diaVencimento} />
         </Panel>
