@@ -47,15 +47,6 @@
    "expira": "2026-12-01"
   },
   {
-   "spec": "t776-e340-menu-parceiro-secao.spec.ts",
-   "titulo": "uma aba acesa, a da seção visível (390)",
-   "motivo": "vermelho em 2 e instável em 1 das 7 corridas de 16 e 17/11: a aba acesa não é a da seção visível (agenda, pedidos); sozinho passou 6 de 6",
-   "item": "E1018",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
    "spec": "t1629-familia2-rotas-vivas.spec.ts",
    "titulo": "E916 a 404 tem o rodapé do site e a busca",
    "motivo": "instável nas 7 corridas de 16 e 17/11: a busca da 404 cai em /buscar sem o ?local= na primeira tentativa; passa na nova tentativa",
