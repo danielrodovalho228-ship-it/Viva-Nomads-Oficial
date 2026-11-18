@@ -93,16 +93,29 @@ test("F25/E851: /contato redireciona (permanente) para /ajuda/fale-com-a-viva e 
 });
 
 // E1012: a resposta automática do acolhimento (chamado sensível, fica com a equipe) também tem de aparecer sem recarregar.
-test("E1012 esperaResposta: chamado com a equipe (acolhimento) confere de novo; o aviso 'escrevendo' só com a Viva", () => {
-  const base = { ultimaAutor: "usuario", status: "aberto", voltas: 0 };
-  assert.deepEqual(esperaResposta({ ...base, responsavelTipo: "equipe" }), { conferir: true, vivaEscrevendo: false });
-  assert.deepEqual(esperaResposta({ ...base, responsavelTipo: "ia" }), { conferir: true, vivaEscrevendo: true });
-  assert.deepEqual(esperaResposta({ ...base, ultimaAutor: "sistema", responsavelTipo: "equipe" }), { conferir: true, vivaEscrevendo: false });
+const RODAPE = 'Resposta automática da Viva. Quer falar com uma pessoa? Responda "pessoa".';
+const msg = (autor: string, corpo = "texto") => ({ autor, corpo });
+
+test("E1012 esperaResposta: com a equipe, confere até chegar a resposta automática (o acolhimento sozinho não basta)", () => {
+  const base = { status: "aberto", voltas: 0, responsavelTipo: "equipe" };
+  const aberto = [msg("usuario"), msg("sistema", "Recebemos. Uma pessoa da equipe responde em até 24 h.")];
+  assert.deepEqual(esperaResposta({ ...base, mensagens: aberto }), { conferir: true, vivaEscrevendo: false });
+  const acolhido = [...aberto, msg("ia", "Recebemos seu chamado VN-1 (Caução). A Viva já respondeu logo abaixo…")];
+  assert.equal(esperaResposta({ ...base, mensagens: acolhido }).conferir, true, "o acolhimento chegou; a resposta ainda não");
+  assert.equal(esperaResposta({ ...base, mensagens: [...acolhido, msg("ia", `A Caução… ${RODAPE}`)] }).conferir, false);
+  assert.equal(esperaResposta({ ...base, mensagens: [...aberto, msg("admin")] }).conferir, false, "a equipe respondeu");
 });
 
-test("E1012 esperaResposta: para depois da resposta, no fim do prazo e com o chamado fechado", () => {
-  assert.equal(esperaResposta({ ultimaAutor: "ia", status: "aberto", voltas: 0, responsavelTipo: "equipe" }).conferir, false);
-  assert.equal(esperaResposta({ ultimaAutor: "usuario", status: "aberto", voltas: 24, responsavelTipo: "equipe" }).conferir, false);
-  assert.equal(esperaResposta({ ultimaAutor: "usuario", status: "resolvido", voltas: 0, responsavelTipo: "ia" }).conferir, false);
-  assert.equal(esperaResposta({ ultimaAutor: null, status: "aberto", voltas: 0, responsavelTipo: "ia" }).conferir, false);
+test("E1012 esperaResposta: com a Viva, para na primeira resposta dela e mostra o 'escrevendo'", () => {
+  const base = { status: "aberto", voltas: 0, responsavelTipo: "ia" };
+  assert.deepEqual(esperaResposta({ ...base, mensagens: [msg("usuario")] }), { conferir: true, vivaEscrevendo: true });
+  assert.deepEqual(esperaResposta({ ...base, mensagens: [msg("usuario"), msg("ia")] }), { conferir: false, vivaEscrevendo: false });
+});
+
+test("E1012 esperaResposta: para no fim do prazo, com o chamado fechado e sem mensagem nova da pessoa", () => {
+  assert.equal(esperaResposta({ mensagens: [msg("usuario")], status: "aberto", voltas: 24, responsavelTipo: "equipe" }).conferir, false);
+  assert.equal(esperaResposta({ mensagens: [msg("usuario")], status: "resolvido", voltas: 0, responsavelTipo: "ia" }).conferir, false);
+  assert.equal(esperaResposta({ mensagens: [], status: "aberto", voltas: 0, responsavelTipo: "ia" }).conferir, false);
+  // A pessoa respondeu depois da resposta automática: volta a conferir.
+  assert.equal(esperaResposta({ mensagens: [msg("usuario"), msg("ia", RODAPE), msg("usuario")], status: "aberto", voltas: 0, responsavelTipo: "equipe" }).conferir, true);
 });

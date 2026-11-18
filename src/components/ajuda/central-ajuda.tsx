@@ -644,11 +644,10 @@ function DetalheChamado({ numero, onVoltar }: { numero: string; onVoltar: () => 
 
   // A Viva responde em segundos (no servidor, depois da mensagem): confere a
   // cada 2,5 s por até 1 minuto enquanto a última mensagem ainda é da pessoa.
-  const ultima = dados?.mensagens.at(-1);
   const comViva = dados?.chamado.responsavel_tipo === "ia";
   // E1012: confere também com a equipe (acolhimento automático do chamado sensível); o aviso fica só com a Viva.
   const { conferir, vivaEscrevendo } = dados
-    ? esperaResposta({ ultimaAutor: ultima?.autor, status: dados.chamado.status, voltas, responsavelTipo: dados.chamado.responsavel_tipo })
+    ? esperaResposta({ mensagens: dados.mensagens, status: dados.chamado.status, voltas, responsavelTipo: dados.chamado.responsavel_tipo })
     : { conferir: false, vivaEscrevendo: false };
   useEffect(() => {
     if (!conferir) return;
