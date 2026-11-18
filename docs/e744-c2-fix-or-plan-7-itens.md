@@ -108,3 +108,26 @@ Todas as falhas já têm disposição em `disposicao-falhas.json`. Nenhuma é da
 Total: 55 falhas, 4 specs, todas da Fable. As fatias 8 e 9 seguem vermelhas até o #3908 entrar. A fatia 15 deve ficar verde na próxima corrida.
 
 Quarentena da mesma corrida: 15/15 (5 casos × 3, `--workers=1 --repeat-each=3`), com o t1629 E916 (E1019) 3/3. É a **2ª corrida verde seguida da quarentena** para o E1019, depois da 44307724189. Pelo critério aceite, falta uma para o PR de saída.
+
+### E1019: tentativa com CPU estrangulada (critério 3 do plano; feita em 18/11, prazo era 20/11)
+
+O caso "E916 a 404 tem o rodapé do site e a busca" do t1629 foi rodado com os mesmos passos e as mesmas esperas do spec, incluindo a linha de diagnóstico, contra a build de produção da main `cf25545` no laboratório local.
+A CPU do navegador foi estrangulada pelo DevTools (`Emulation.setCPUThrottlingRate`).
+
+| Variante | Rodadas | Passaram | Perdeu antes do clique | Perdeu depois do clique | Tempo médio (máx.) |
+|---|---|---|---|---|---|
+| 6×, uma página por vez | 20 | 20 | 0 | 0 | 3,0 s |
+| 8×, uma página por vez | 20 | 20 | 0 | 0 | 3,9 s |
+| 8×, 6 páginas em paralelo | 30 | 30 | 0 | 0 | 4,8 s (6,1 s) |
+| 20×, 6 páginas em paralelo | 30 | 30 | 0 | 0 | 10,5 s (13,2 s) |
+
+**Resultado: 100/100. Não reproduz.**
+- Mesmo com a CPU 20 vezes mais lenta e 6 páginas ao mesmo tempo, o campo fica com "Uberlândia" depois do `fill` e a URL chega com `?local=Uberl`.
+- Somando os 38/38 de antes, são 138 tentativas locais sem falha.
+- Leitura: só a lentidão do navegador não basta para o defeito aparecer. Fica o que a corrida completa tem e o laboratório local não: o servidor sob a carga de 240 testes e a ordem dos testes na fatia geral.
+
+**O que segue, sem mudança no plano:**
+- A quarentena já deu duas corridas verdes seguidas: a 44307724189 e a 44333898865, ambas 3/3.
+- Com mais uma verde, abro o PR de saída mantendo a linha de diagnóstico.
+- Se uma corrida falhar, a linha separa "perdeu antes do clique" de "perdeu depois", e a correção vai à causa, com trava vermelha.
+- Scripts da tentativa (fora do repositório): `e1019-cpu.cjs` e `e1019-cpu-par.cjs`.
