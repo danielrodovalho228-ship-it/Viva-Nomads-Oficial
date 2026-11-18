@@ -12,7 +12,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   O ciclo é chamado pela chave de serviço (rpc avancar_ciclo_blocos), como o app faz ao abrir Contratos (0070).
     1. Bloco já "encerrado", com o último dia ontem → o contrato passa a "encerrado_sem_renovacao", com encerrado_em =
        hoje 00h de Brasília.
-    2. Bloco já "encerrado", com o último dia HOJE → o contrato segue "ativo" (o dia ainda não passou).
+    2. Bloco já encerrado ("encerrado_sem_renovacao"), com o último dia HOJE → o contrato segue "ativo" (o dia ainda não
+       passou). O estado do bloco aqui é o outro dos dois que o passo (e) aceita, para esta regra não depender da 1.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -28,8 +29,8 @@ async function conta(quem: string, nome: string, role: "owner" | "tenant") {
   return id;
 }
 
-/** Contrato "ativo", assinado, com um bloco já "encerrado" que termina em `fim`. */
-async function contratoComBlocoEncerrado(chave: string, fim: string): Promise<string> {
+/** Contrato "ativo", assinado, com um bloco já encerrado (`statusBloco`) que termina em `fim`. */
+async function contratoComBlocoEncerrado(chave: string, fim: string, statusBloco: "encerrado" | "encerrado_sem_renovacao" = "encerrado"): Promise<string> {
   const dono = await conta(`dono${chave}`, "Xênia Dona", "owner");
   const inq = await conta(`inq${chave}`, "Yuri Morador", "tenant");
   const imovel = await criarImovelPronto(dono, `Apto do ciclo ${chave} ${sufixo}`, { ativo: true, preco: 3200 });
@@ -41,7 +42,7 @@ async function contratoComBlocoEncerrado(chave: string, fim: string): Promise<st
     .select("id")
     .single();
   if (error) throw error;
-  const { error: e1 } = await adm().from("contrato_blocos").insert({ contrato_id: c.id, numero_bloco: 1, inicio: somar(fim, -59), fim, meses: 2, valor: 6400, caucao: 3200, status: "encerrado", aceite_proprietario_em: agora, aceite_inquilino_em: agora });
+  const { error: e1 } = await adm().from("contrato_blocos").insert({ contrato_id: c.id, numero_bloco: 1, inicio: somar(fim, -59), fim, meses: 2, valor: 6400, caucao: 3200, status: statusBloco, aceite_proprietario_em: agora, aceite_inquilino_em: agora });
   if (e1) throw e1;
   ids[`contrato_${chave}`] = c.id as string;
   return c.id as string;
@@ -77,8 +78,8 @@ test.describe("T2148 — E627: o ciclo fecha o contrato cujo bloco já estava en
     expect(depois?.encerrado_em && new Date(depois.encerrado_em).toISOString(), "encerrado_em no fim real da estadia").toBe(new Date(`${hoje}T03:00:00Z`).toISOString());
   });
 
-  test("2. bloco já 'encerrado' com o último dia HOJE: o contrato segue ativo (o dia ainda não passou)", async () => {
-    const id = await contratoComBlocoEncerrado("hoje", hojeBRT());
+  test("2. bloco já encerrado com o último dia HOJE: o contrato segue ativo (o dia ainda não passou)", async () => {
+    const id = await contratoComBlocoEncerrado("hoje", hojeBRT(), "encerrado_sem_renovacao");
     const { error } = await adm().rpc("avancar_ciclo_blocos");
     expect(error, "o ciclo diário corre").toBeNull();
     const depois = await lerContrato(id);
