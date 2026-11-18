@@ -11,15 +11,6 @@
    "expira": "2026-12-01"
   },
   {
-   "spec": "t305-laudo-avaliacao-62b2.spec.ts",
-   "titulo": "3. reprovado: vale o nível do laudo, sem \"· vistoriado\"; nova avaliação pelo valor da tabela, sem desconto",
-   "motivo": "instável nas 7 corridas de 16 e 17/11: o texto \"novo pedido, avaliador à sua escolha\" não aparece na primeira tentativa; passa na nova tentativa",
-   "item": "E1016",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
    "spec": "t776-e340-menu-parceiro-secao.spec.ts",
    "titulo": "uma aba acesa, a da seção visível (390)",
    "motivo": "vermelho em 2 e instável em 1 das 7 corridas de 16 e 17/11: a aba acesa não é a da seção visível (agenda, pedidos); sozinho passou 6 de 6",
