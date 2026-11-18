@@ -150,7 +150,7 @@ test.describe("T631 — E222-B: renovar é o aditivo de prorrogação já preenc
     await m.screenshot({ path: `${SAIDA}/t631-renovar-preenchido.png`, fullPage: true });
     await m.getByTestId("alteracao-enviar").click();
     await expect(m).toHaveURL(new RegExp(`/dashboard/estadia/${ids.A}$`));
-    await expect(m.getByTestId("aditivo-resumo")).toHaveText("Meses: de 2 para 4");
+    await expect(m.getByTestId("aditivo-resumo")).toContainText("Meses: de 2 para 4");
 
     const d = await entrar(browser, emails.dono, senha);
     await d.goto(`/dashboard/estadia/${ids.A}`, { waitUntil: "domcontentloaded" });

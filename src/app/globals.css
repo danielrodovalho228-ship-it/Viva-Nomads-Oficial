@@ -494,14 +494,16 @@ body:has([data-testid="barra-fixa-imovel"]) {
   }
 }
 /* C1b: no site público o botão redondo "Fale com a Viva" mora a 1,5 rem da borda direita (48 px de largura): o conteúdo
-   termina antes dele (a faixa já existe como --faixa-flutuante). Em tela larga a margem do container já dá a folga. */
+   termina antes dele (a faixa já existe como --faixa-flutuante). Em tela larga a margem do container já dá a folga.
+   Frente 3 (t70): o contêiner que se marca com data-sem-faixa-flutuante (a /buscar, que não mostra o botão — E95 — e
+   cuida da própria margem com lg:px-0) fica de fora; senão o mapa sai da margem de 24 px do E659. */
 @media (min-width: 768px) {
-  html:not([data-app]) .vn-main .container-page {
+  html:not([data-app]) .vn-main .container-page:not([data-sem-faixa-flutuante]) {
     padding-right: max(2rem, calc(var(--faixa-flutuante) - max(0px, (100vw - 80rem) / 2)));
   }
 }
 @media (min-width: 1024px) {
-  html:not([data-app]) .vn-main .container-page {
+  html:not([data-app]) .vn-main .container-page:not([data-sem-faixa-flutuante]) {
     padding-right: max(2.5rem, calc(var(--faixa-flutuante) - max(0px, (100vw - 80rem) / 2)));
   }
 }

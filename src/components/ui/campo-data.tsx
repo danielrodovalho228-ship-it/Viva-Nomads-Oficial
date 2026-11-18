@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent, type InputH
 import { CalendarDays } from "lucide-react";
 import { CalendarioBR } from "@/components/ui/calendario-br";
 import { useToque } from "@/components/ui/use-toque";
-import { brParaIso, dataDigitadaInvalida, interpretarDataColada, isoParaBr, mascararData, textoAposMudancaDeFora } from "@/lib/data-digitada";
+import { digitarData, interpretarDataColada, isoParaBr, textoAposMudancaDeFora } from "@/lib/data-digitada";
 import { cn } from "@/lib/utils";
 
 /**
@@ -72,17 +72,11 @@ export function CampoDataTexto({
         onChange={(e) => {
           const bruto = e.target.value;
           if (aceitarTexto?.(bruto.trim())) return;
-          const iso = /^\d{4}-\d{1,2}-\d{1,2}$/.test(bruto.trim()) ? interpretarDataColada(bruto) : null;
-          if (iso) {
-            setTexto(isoParaBr(iso));
-            aoInvalido?.(false);
-            aoMudar(iso);
-            return;
-          }
-          const m = mascararData(bruto);
-          setTexto(m);
-          aoInvalido?.(dataDigitadaInvalida(m));
-          aoMudar(brParaIso(m) ?? "");
+          // E747: a data digitada é preservada — ISO só converte quando completo; nunca vira outra data.
+          const r = digitarData(bruto);
+          setTexto(r.texto);
+          aoInvalido?.(r.invalido);
+          aoMudar(r.iso);
         }}
         onPaste={(e) => {
           const iso = interpretarDataColada(e.clipboardData.getData("text"));

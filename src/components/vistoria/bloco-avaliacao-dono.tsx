@@ -110,9 +110,6 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
           numero: d?.numero_credenciado ?? "",
           nome: d?.parceiros?.nome_publico ?? "Avaliador",
           termos: linhaDeTermos({
-            valor: d?.preco_proprio != null ? Number(d.preco_proprio) : null,
-            prazoEntregaDias: d?.prazo_entrega_dias ?? null,
-            prazoRespostaHoras: d?.prazo_resposta_horas ?? null,
             notaConduta: nota,
             avaliacoesConduta: nota != null ? Math.max(1, Number(pub?.avaliacoes_feitas ?? 0)) : 0,
           }),

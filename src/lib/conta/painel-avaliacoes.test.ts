@@ -75,7 +75,9 @@ test("'há N dias' e o estado da avaliação que eu fiz", async () => {
 test("E679/E85: um só painel — a rota antiga redireciona e os dois menus apontam para o mesmo destino", async () => {
   const { readFileSync } = await import("node:fs");
   const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
-  assert.match(ler("app/(dashboard)/dashboard/conta/avaliacoes/page.tsx"), /redirect\(`\/dashboard\/avaliacoes\?aba=recebidas/);
+  // E798 (asserção alterada): o destino mora em lib/conta/redirecionar-no-servidor (usado também pelo proxy).
+  assert.match(ler("app/(dashboard)/dashboard/conta/avaliacoes/page.tsx"), /redirect\(destinoContaAvaliacoes\(/);
+  assert.match(ler("lib/conta/redirecionar-no-servidor.ts"), /\/dashboard\/avaliacoes\?aba=recebidas/);
   assert.match(ler("config/menu-por-papel.ts"), /rotulo: "Avaliações", icone: "conta", href: "\/dashboard\/avaliacoes"/);
   const secoes = ler("lib/conta/secoes.ts");
   assert.doesNotMatch(secoes, /conta\/avaliacoes/);
@@ -89,4 +91,16 @@ test("E679: o painel tem as três abas do mockup, o aviso de sigilo, 'Recebidas 
   assert.match(t, /Recebidas recentes/);
   assert.match(t, /TEXTO_SIGILO/);
   assert.doesNotMatch(t, /anfitri|inquilin|h[oó]spede/i);
+});
+
+// E782 (adendo): "Uberlandia" (digitado sem acento no perfil) aparece "Uberlândia" nos dois cartões e no chip da tela de papéis.
+import { linhaQueroMorar, resumoQueroMorar, textoQueroAnunciar } from "./tela-papeis.ts";
+import { grafiaDaCidade } from "../cidades.ts";
+test("E782 adendo: a cidade sem acento sai com a grafia oficial nos três textos dos papéis", () => {
+  assert.equal(grafiaDaCidade("Uberlandia"), "Uberlândia");
+  assert.equal(grafiaDaCidade("  uberlandia "), "Uberlândia");
+  assert.equal(grafiaDaCidade("Araguari"), "Araguari");
+  assert.equal(linhaQueroMorar("Uberlandia"), "Procurando imóvel de 1 a 6 meses em Uberlândia");
+  assert.equal(resumoQueroMorar("Uberlandia"), "Uberlândia · 1–6 meses · Mobiliado");
+  assert.match(textoQueroAnunciar("Uberlandia"), /em Uberlândia\.$/);
 });

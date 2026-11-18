@@ -4,7 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 /**
  * T862 — E553 (parte B): o perfil completo do candidato em /dashboard/leads/<id>.
  * 1) o dono abre o perfil: "Candidato(a)" antes do aceite (sem o nome), resumo e o "Voltar" para o cartão;
- * 2) outra conta (não é o dono) recebe 404 para o mesmo id.
+ * 2) outra conta (não é o dono) recebe a tela de não encontrada (404, ou 200 com a 404 em streaming) para o mesmo id.
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -46,7 +46,9 @@ test.describe("T862 — Perfil do candidato", () => {
   test("2. outra conta não vê o perfil (404)", async ({ browser }) => {
     const page = await entrar(browser, outro.email, senha);
     const r = await page.goto(`/dashboard/leads/${ids.lead}`, { waitUntil: "domcontentloaded" });
-    expect(r?.status()).toBe(404);
+    // O painel faz streaming (loading.tsx): o notFound() chega como a tela "Página não encontrada", com 200 ou 404.
+    expect([200, 404]).toContain(r?.status());
+    await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("perfil-candidato")).toHaveCount(0);
     await page.context().close();
   });

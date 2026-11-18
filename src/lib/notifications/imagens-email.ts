@@ -138,6 +138,7 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   parceiro_avaliacao: "transacional",
   estadia_instrucoes_liberadas: "contrato",
   jornada_confirmacao: "contrato",
+  jornada_d7: "contrato",
   jornada_chegada: "contrato",
   jornada_semana_saida: "contrato",
   jornada_meio_estadia: "contrato",

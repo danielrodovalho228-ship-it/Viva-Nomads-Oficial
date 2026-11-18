@@ -8,6 +8,9 @@ export interface ReciboComparavel {
   ownerId: string;
   tenantId: string;
   imovelEndereco: string;
+  /** Frente 3 (t227): o imóvel do contrato. Com os dois lados conhecidos, compara por ele; o texto do endereço só vale para
+   *  documento antigo sem imóvel (dois imóveis diferentes podem ter o mesmo endereço em texto). */
+  propertyId?: string | null;
   valor: number;
   periodoInicio: string | null;
   periodoFim: string | null;
@@ -26,7 +29,7 @@ export function duplicidadeDeRecibo<T extends ReciboComparavel>(novo: ReciboComp
       (v) =>
         v.ownerId === novo.ownerId &&
         v.tenantId === novo.tenantId &&
-        v.imovelEndereco.trim().toLowerCase() === endereco &&
+        (novo.propertyId && v.propertyId ? v.propertyId === novo.propertyId : v.imovelEndereco.trim().toLowerCase() === endereco) &&
         Math.abs(Number(v.valor) - Number(novo.valor)) < 0.005 &&
         sobrepoe(v, novo),
     ) ?? null

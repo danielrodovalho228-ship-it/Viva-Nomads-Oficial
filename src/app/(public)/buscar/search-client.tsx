@@ -27,9 +27,7 @@ function MapaCarregandoModulo() {
 }
 import { cn, distanceKm, hojeBR } from "@/lib/utils";
 import { situacaoBuscaVazia } from "@/lib/busca-vazia";
-import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
 import { comTotalMes } from "@/lib/precos";
-import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
@@ -58,6 +56,7 @@ import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
 import { useTempos } from "@/components/busca/use-tempos";
+import { comparaRelevancia, desempatePorId } from "@/lib/busca/ordem-estavel";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
@@ -477,22 +476,19 @@ export function SearchClient({
   const semTempo = useMemo(() => {
     // Prompt 30, item 6 (com imóvel real na busca, os exemplos saem) já vale na baseVisivel — a mesma das contagens.
     let list = baseVisivel.filter((p) => passaNoPainel(p, filtrosPainel));
-    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
-    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
+    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b) || desempatePorId(a, b));
+    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a) || desempatePorId(a, b));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
     else if (sort === "recent")
       list = [...list].sort(
-        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "") || desempatePorId(a, b)
       );
     // Relevância com endereço: mais perto primeiro; senão, anúncios mais completos.
     else if (dist)
-      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)!);
+      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)! || desempatePorId(a, b));
     else
-      list = [...list].sort(
-        (a, b) =>
-          prioridadeNaBusca(searchPriority(tierFromPhotoCount(b.photos.length)), b.precoJusto) -
-          prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto)
-      );
+      // E810: a ordem de relevância pela função pura (mesma lista, mesma ordem, em qualquer carregamento).
+      list = [...list].sort(comparaRelevancia);
     return list;
   }, [baseVisivel, dist, filtrosPainel, sort]);
 
@@ -688,6 +684,10 @@ export function SearchClient({
       {/* E82-A + E91 + E95 (mockup BUSCA-CARD): UMA linha de controles e, acima da lista, SÓ a linha da contagem com
           "Salvar busca" e "Descrever o que procuro". Nada de título grande, banner, caixa de destino ou de descrição na
           página: o destino vive no painel da pílula Local; a descrição, numa folha. */}
+      {/* E780: no celular a faixa de filtros (chips + Mais filtros · Ordenar · Mapa) fica PRESA logo abaixo do cabeçalho, inteira, e
+          a contagem rola por baixo dela. Antes tudo rolava e o cabeçalho fixo cobria a metade de cima dos chips. No computador
+          (lg+) a faixa segue no fluxo. */}
+      <div className="sticky top-18 z-30 bg-white lg:static" data-testid="busca-topo-fixo" data-barra-fixa>
       <div className="container-page mt-2 lg:max-w-none lg:px-0 lg:pt-4">
         <BarraPilulas
           filtros={filtrosPainel}
@@ -695,6 +695,7 @@ export function SearchClient({
           aplicar={aplicarPainel}
           local={locationQuery}
           perto={nomeDoDestino}
+          ateMin={estadoDestino.ate}
           painelLocal={
             <>
               <div>
@@ -754,7 +755,10 @@ export function SearchClient({
           mapa={comMapa ? verMapa : mapaNoCelular}
           onMapa={() => (comMapa ? setVerMapa((v) => !v) : setMapaNoCelular((v) => !v))}
         />
+      </div>
+      </div>
 
+      <div className="container-page lg:max-w-none lg:px-0">
         {/* A linha da contagem (E91): "15 imóveis em Uberlândia · R$ 0 de taxa para você" + Salvar busca + Descrever +
             Publicar pedido (E106). */}
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="linha-contagem">
@@ -837,7 +841,8 @@ export function SearchClient({
         />
       )}
 
-      <div className="container-page mt-4 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
+      {/* Frente 3 (t70): sem a faixa do "Fale com a Viva" (C1b) — a /buscar não mostra o botão (E95) e o mapa termina na margem de 24 px (E659). */}
+      <div data-sem-faixa-flutuante className="container-page mt-4 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
         {/* Estabilidade (02/11): a coluna do mapa é reservada pelo CSS (lg:), não pelo matchMedia — antes, no 1º desenho
             comMapa era falso, a lista ocupava 100% e encolhia para 58% quando o mapa entrava (CLS 0,30 a 1280 px).
             O componente do mapa continua carregando só no computador (comMapa). */}

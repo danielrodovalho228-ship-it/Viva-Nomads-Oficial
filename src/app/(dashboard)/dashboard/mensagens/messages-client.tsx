@@ -4,7 +4,8 @@ import { marcarConversaAberta } from "@/lib/data/conversa-aberta-actions";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { VISTA_DIVIDIDA, conversaNaTela } from "@/lib/mensagens/conversa-na-tela";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -24,14 +25,16 @@ import { avisoAntesDeEnviar, previaAoDigitar } from "@/lib/messages/aviso-envio"
 import { ROTA_ENVIAR_ANEXO, podeAnexar, tipoNaTela, validarAnexoNaTela } from "@/lib/messages/anexo-tela";
 import { AnexoNaMensagem, BotaoAnexar, PreviaAnexo, semLocalizacao } from "@/components/mensagens/anexo-conversa";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
-import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/mensagens-filtros";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
+import { FILTROS, PRAZOS_ADIAR, adiarAte, contarPorFiltro, filtrarConversas, separarAdiadas, estaAdiada, type Filtro, type PrazoAdiar } from "@/lib/mensagens-filtros";
+import { adiarConversa, retomarConversa } from "@/lib/data/conversa-adiar-actions";
 import { cn } from "@/lib/utils";
 import { CartaoVisita } from "@/components/visitas/cartao-visita";
 import { visitaDaConversa } from "@/lib/data/visitas-video-actions";
 import { AvaliacaoNaConversaCartao } from "@/components/vistoria/avaliacao-na-conversa";
 import { RespostasRapidasConversa } from "@/components/mensagens/respostas-rapidas-conversa";
 import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
+import { TEXTO_MENSAGENS_VAZIO, TITULO_MENSAGENS_VAZIO } from "@/lib/mensagens-vazio";
 import { TEXTO_CONVERSA_NAO_ENCONTRADA, TEXTO_CONVERSA_NOVA, conversaInicial } from "@/lib/mensagens/conversa-pedida";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { horaDaBolha } from "@/lib/mensagens/hora-da-bolha";
@@ -43,10 +46,12 @@ import { EVENTO_CONTADORES } from "@/lib/painel/contadores";
  */
 export function MessagesClient({ initial, abrir }: { initial: Conversation[]; /** Conversa a abrir (ex.: "Mensagem" da página da estadia). */ abrir?: string }) {
   const { on: demoOn } = useDemoMode();
+  // E980: os exemplos chegam sob demanda; o inner remonta quando chegam (o estado dele nasce da prop).
+  const exemplos = useExemplos(demoOn);
   return (
     <MessagesInner
-      key={demoOn ? "demo" : "real"}
-      initial={demoOn ? DEMO_CONVERSATIONS : initial}
+      key={demoOn ? (exemplos ? "demo" : "demo-carregando") : "real"}
+      initial={demoOn ? (exemplos?.DEMO_CONVERSATIONS ?? []) : initial}
       demo={demoOn}
       abrir={demoOn ? undefined : abrir}
     />
@@ -69,7 +74,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // Prompt 55-E2: o texto do campo veio de uma resposta rápida? Então contato direto BLOQUEIA (não mascara).
   const [deRapida, setDeRapida] = useState(false);
   const [rapidaBloqueada, setRapidaBloqueada] = useState(false);
-  const [filtro, setFiltro] = useState<Filtro>("todas");
+  const [filtro, setFiltro] = useState<Filtro | "adiadas">("todas");
+  // E721: o menu "Adiar" da conversa aberta e o erro da ação.
+  const [menuAdiar, setMenuAdiar] = useState(false);
+  const [erroAdiar, setErroAdiar] = useState<string | null>(null);
   // Fotos das conversas (map conversationId → URL). O SERVIDOR decide: foto do
   // proprietário é pública; foto do morador só vem se a relação foi aceita.
   // Sem direito / demo → null → o Avatar cai para iniciais. Nunca em demo.
@@ -112,15 +120,28 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // No mobile, alterna entre lista e conversa (master-detail). No desktop, ambos.
   const [mobileView, setMobileView] = useState<"list" | "chat">(existe ? "chat" : "list");
 
-  const contagem = contarPorFiltro(conversations);
-  const visiveis = filtrarConversas(conversations, filtro);
+  // E721: conversa adiada sai de "Todas" e dos chips de papel e fica em "Adiadas" (até o prazo ou até a outra parte escrever).
+  const { ativas, adiadas } = separarAdiadas(conversations);
+  const contagem = contarPorFiltro(ativas);
+  const visiveis = filtro === "adiadas" ? adiadas : filtrarConversas(ativas, filtro);
   // A conversa aberta acompanha o chip: se ela saiu do filtro, abre a primeira que sobrou. E168: filtro sem conversa =
   // painel da direita vazio (nunca a conversa de outro filtro).
   const active = naoEncontrada ? undefined : (visiveis.find((c) => c.id === activeId) ?? visiveis[0]);
 
+  // E481 no celular (DUET-0605): só a conversa que está NA TELA conta como lida. No celular a lista não mostra conteúdo;
+  // carregar a lista não marca leitura, abrir a conversa sim. No computador (vista dividida) a conversa aberta aparece.
+  const vistaDividida = useSyncExternalStore(
+    (avisar) => {
+      const mq = window.matchMedia(VISTA_DIVIDIDA);
+      mq.addEventListener("change", avisar);
+      return () => mq.removeEventListener("change", avisar);
+    },
+    () => window.matchMedia(VISTA_DIVIDIDA).matches,
+    () => false,
+  );
   // Prompt 44: com a conversa aberta (e a aba visível), a próxima mensagem dela não vira push no celular. Renova a cada
   // 5 min enquanto ela fica na tela (a regra do push olha os últimos 10 min).
-  const conversaAbertaId = active?.id;
+  const conversaAbertaId = conversaNaTela({ ativaId: active?.id, vistaDividida, vistaCelular: mobileView });
   useEffect(() => {
     if (demo || !conversaAbertaId) return;
     const marcar = () => {
@@ -142,7 +163,36 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     };
   }, [demo, conversaAbertaId]);
 
+  // E721: adiar/retomar a conversa aberta. O estado muda na hora na tela; se o servidor recusar, volta e mostra o erro.
+  async function adiar(id: string, prazo: PrazoAdiar) {
+    setErroAdiar(null);
+    setMenuAdiar(false);
+    const antes = conversations;
+    const ate = adiarAte(prazo);
+    const agora = new Date().toISOString();
+    setConversations((cs) => cs.map((c) => (c.id === id ? { ...c, adiadaEm: agora, adiadaAte: ate } : c)));
+    if (demo) return;
+    const r = await adiarConversa(id, prazo).catch(() => ({ ok: false as const, erro: "Sem conexão. Tente de novo." }));
+    if (!r.ok) {
+      setConversations(antes);
+      setErroAdiar(r.erro);
+    }
+  }
+  async function retomar(id: string) {
+    setErroAdiar(null);
+    const antes = conversations;
+    setConversations((cs) => cs.map((c) => (c.id === id ? { ...c, adiadaEm: null, adiadaAte: null } : c)));
+    if (demo) return;
+    const r = await retomarConversa(id).catch(() => ({ ok: false as const, erro: "Sem conexão. Tente de novo." }));
+    if (!r.ok) {
+      setConversations(antes);
+      setErroAdiar(r.erro);
+    }
+  }
+
   function openConversation(id: string) {
+    setMenuAdiar(false);
+    setErroAdiar(null);
     setNaoEncontrada(false);
     setAvisoFechadoPara(null);
     limparAnexo();
@@ -258,10 +308,9 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
         <PageTitle title="Mensagens" />
         {/* Prompt 48: sem ilustração; diz como a conversa funciona e o próximo passo. */}
         <div className="rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="mensagens-vazio">
-          <h2 className="font-title text-lg font-semibold text-ink">Nenhuma conversa ainda</h2>
-          <p className="mt-2 max-w-md text-sm text-muted">
-            A conversa começa quando você pede um imóvel ou quando alguém pede o seu. Tudo fica aqui, com o imóvel e as
-            datas no topo; telefone e e-mail só aparecem depois do aceite.
+          <h2 className="font-title text-lg font-semibold text-ink">{TITULO_MENSAGENS_VAZIO}</h2>
+          <p className="mt-2 max-w-md text-sm text-muted" data-testid="mensagens-vazio-texto">
+            {TEXTO_MENSAGENS_VAZIO}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <ButtonLink href="/buscar" variant="secondary" size="sm">
@@ -301,6 +350,25 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             <span className={cn("text-xs", filtro === f.id ? "text-white/80" : "text-muted")}>{contagem[f.id]}</span>
           </button>
         ))}
+        {/* E721: as conversas adiadas ficam aqui (o chip aparece quando há alguma). */}
+        {(adiadas.length > 0 || filtro === "adiadas") && (
+          <button
+            type="button"
+            data-testid="mensagens-filtro-adiadas"
+            aria-pressed={filtro === "adiadas"}
+            onClick={() => {
+              setFiltro("adiadas");
+              setMobileView("list");
+            }}
+            className={cn(
+              "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors",
+              filtro === "adiadas" ? "border-forest bg-forest text-white" : "border-sage-200 bg-white text-ink hover:bg-surface-2"
+            )}
+          >
+            Adiadas
+            <span className={cn("text-xs", filtro === "adiadas" ? "text-white/80" : "text-muted")}>{adiadas.length}</span>
+          </button>
+        )}
       </FileiraRolavel>
       {naoEncontrada && (
         <p role="status" className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="mensagens-conversa-nao-encontrada">
@@ -319,7 +387,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
         >
           {visiveis.length === 0 && (
             <p data-testid="mensagens-filtro-vazio" className="p-6 text-center text-sm text-muted">
-              Nenhuma conversa neste filtro.
+              {filtro === "adiadas" ? "Nenhuma conversa adiada." : "Nenhuma conversa neste filtro."}
             </p>
           )}
           {visiveis.map((c) => (
@@ -405,7 +473,56 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                 </Link>
               )}
             </div>
+            {/* E721: "Adiar" sempre à vista no cabeçalho da conversa; adiada, vira "Retomar" com o prazo. */}
+            <div className="relative ml-auto shrink-0">
+              {estaAdiada(active) ? (
+                <button
+                  type="button"
+                  data-testid="conversa-retomar"
+                  onClick={() => void retomar(active.id)}
+                  className="inline-flex min-h-11 items-center rounded-lg border border-sage-200 bg-white px-3 text-sm font-semibold text-ink hover:bg-surface-2"
+                >
+                  Retomar
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="conversa-adiar"
+                  aria-expanded={menuAdiar}
+                  onClick={() => setMenuAdiar((v) => !v)}
+                  className="inline-flex min-h-11 items-center rounded-lg border border-sage-200 bg-white px-3 text-sm font-semibold text-ink hover:bg-surface-2"
+                >
+                  Adiar
+                </button>
+              )}
+              {menuAdiar && !estaAdiada(active) && (
+                <div role="menu" data-testid="conversa-adiar-menu" className="absolute right-0 z-10 mt-1 w-44 rounded-lg border border-sage-200 bg-white p-1">
+                  {PRAZOS_ADIAR.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      role="menuitem"
+                      data-testid={`conversa-adiar-${p.id}`}
+                      onClick={() => void adiar(active.id, p.id)}
+                      className="flex min-h-11 w-full items-center rounded-lg px-3 text-left text-sm text-ink hover:bg-surface-2"
+                    >
+                      Adiar por {p.rotulo}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </header>
+          {estaAdiada(active) && (
+            <p role="status" data-testid="conversa-adiada-aviso" className="border-b border-line bg-surface-2 px-4 py-2 text-xs text-muted">
+              Adiada até {new Date(active.adiadaAte as string).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}. Se a outra parte escrever, ela volta para a lista. Só você vê isso.
+            </p>
+          )}
+          {erroAdiar && (
+            <p role="alert" data-testid="conversa-adiar-erro" className="border-b border-line bg-amber-50 px-4 py-2 text-xs text-amber-900">
+              {erroAdiar}
+            </p>
+          )}
           {/* Prompt 43, item 5: o contexto da conversa no topo — estadia, pedido ou imóvel, com foto e datas. */}
           {(active.property || active.pedidoParceiroId) && (
             <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 md:px-4" data-testid="conversa-contexto">

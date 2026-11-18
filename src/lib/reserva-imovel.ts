@@ -4,8 +4,9 @@
  *
  * Regras que não mudam:
  *  - só entram valores INFORMADOS pelo dono (nada estimado);
- *  - a Caução é linha separada (paga uma vez, devolvida no fim) — o valor sai do
- *    contrato, então aqui não se inventa número;
+ *  - a Caução é linha separada (paga uma vez, devolvida no fim). E752: o valor sai da REGRA do contrato (50% do bloco,
+ *    teto de 3 vezes o valor mensal no contrato, direto ao proprietário), então aparece o valor do 1º bloco — não é
+ *    número inventado, é a conta de `caucaoDoBloco`;
  *  - o WhatsApp vai SEMPRE para a Viva: este módulo nem recebe telefone de dono.
  */
 import { textoValorPet } from "./anuncio/pets-regras.ts";
@@ -14,9 +15,10 @@ import { textoLimpezaEstadia, type LimpezaEstadia } from "./anuncio/limpeza-esta
 import { codigoDoImovel } from "./imovel-pagina.ts";
 import { isMotivo, motivoLabel } from "./pedidos/pedidos.ts";
 import { formatBRL } from "./utils.ts";
-import { totalDoPeriodo } from "./cartao-preco.ts";
+import { resumoEmMeses, totalDoPeriodo } from "./cartao-preco.ts";
 import { formatBRLExato, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, type TotalMensal } from "./precos.ts";
 import { diasDaSelecao, mesesDaSelecao } from "./imovel/selecao-estadia.ts";
+import { caucaoDoBloco, DIAS_POR_MES, MAX_MESES_BLOCO, MESES_POR_BLOCO_PADRAO } from "./contrato-blocos.ts";
 import { validarReserva } from "./availability.ts";
 import { DIAS_MIN_ESTADIA, diasMaxEstadiaVigente } from "./estadia-em-dias.ts";
 
@@ -41,7 +43,25 @@ export interface EntradaTaxas {
   petsRegras?: Pick<RegrasPets, "valorPet" | "valorPetTipo"> | null;
   /** Pacote de limpeza durante a estadia (ordem 4c74ac38, item 3). */
   limpezaEstadia?: LimpezaEstadia | null;
+  /** E752: estadia mínima do anúncio, para o tamanho do 1º bloco da Caução. */
+  minPeriodDays?: number | null;
 }
+
+/**
+ * E752 — a Caução do 1º bloco, pela regra do contrato (50% do valor do bloco, no máximo 3 vezes o valor mensal no
+ * contrato). O bloco é o da estadia mínima do anúncio (1 a 3 meses); sem ela, o bloco padrão de 2 meses.
+ */
+export function caucaoDoPrimeiroBloco(monthlyPrice: number, minPeriodDays?: number | null): { valor: number; meses: number } | null {
+  if (!(typeof monthlyPrice === "number" && Number.isFinite(monthlyPrice) && monthlyPrice > 0)) return null;
+  const meses =
+    typeof minPeriodDays === "number" && minPeriodDays > 0 ? Math.min(MAX_MESES_BLOCO, Math.max(1, Math.ceil(minPeriodDays / DIAS_POR_MES))) : MESES_POR_BLOCO_PADRAO;
+  const valor = caucaoDoBloco(monthlyPrice * meses, monthlyPrice, 0);
+  return valor > 0 ? { valor, meses } : null;
+}
+
+/** Texto da regra da Caução, sem número (o mesmo em todo lugar do anúncio). */
+export const NOTA_CAUCAO =
+  "50% do valor de cada bloco, no máximo 3 vezes o valor mensal no contrato. Paga direto ao proprietário e devolvida no fim, após a conferência de saída. A Viva não recebe nem segura esse dinheiro.";
 
 const positivo = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n > 0;
 
@@ -68,7 +88,13 @@ export function linhasDeTaxas(p: EntradaTaxas): LinhaTaxa[] {
       ...(pago ? { valor: formatBRL(p.limpezaEstadia.valorMes), nota: "Entra no total por mês." } : {}),
     });
   }
-  l.push({ chave: "caucao", rotulo: "Caução", nota: "Paga uma vez, devolvida no fim, após a conferência de saída. O valor fica no contrato." });
+  const caucao = caucaoDoPrimeiroBloco(p.monthlyPrice, p.minPeriodDays);
+  l.push({
+    chave: "caucao",
+    rotulo: caucao ? `Caução do 1º bloco (${caucao.meses} ${caucao.meses === 1 ? "mês" : "meses"})` : "Caução",
+    ...(caucao ? { valor: formatBRL(caucao.valor) } : {}),
+    nota: NOTA_CAUCAO,
+  });
   l.push({ chave: "viva", rotulo: "Taxa da Viva para você", valor: formatBRL(0) });
   return l;
 }
@@ -224,13 +250,13 @@ export function resumoSolicitacao(e: {
           ]
         : meses && e.estadia && e.estadia.meses === meses
         ? [
-            { rotulo: ROTULO_TOTAL_CONTRATO, valor: `${formatBRL(e.estadia.total)} em ${meses} ${meses === 1 ? "mês" : "meses"}` },
+            { rotulo: ROTULO_TOTAL_CONTRATO, valor: resumoEmMeses(e.estadia.total, meses) },
             { rotulo: "Conta do total", valor: `${e.estadia.conta} = ${formatBRL(e.estadia.total)}` },
           ]
         : typeof e.totalMensal === "number" && meses
-          ? [{ rotulo: ROTULO_TOTAL_CONTRATO, valor: `${formatBRL(totalDoPeriodo(e.totalMensal, meses))} em ${meses} ${meses === 1 ? "mês" : "meses"}` }]
+          ? [{ rotulo: ROTULO_TOTAL_CONTRATO, valor: resumoEmMeses(totalDoPeriodo(e.totalMensal, meses), meses) }]
           : []),
-      { rotulo: "Caução", valor: "Paga uma vez, devolvida no fim (valor no contrato)" },
+      { rotulo: "Caução", valor: caucaoDoPrimeiroBloco(e.monthlyPrice, e.janela?.minDias) ? `${formatBRL(caucaoDoPrimeiroBloco(e.monthlyPrice, e.janela?.minDias)!.valor)} no 1º bloco, paga direto ao proprietário e devolvida no fim` : "Paga uma vez, devolvida no fim (valor no contrato)" },
       { rotulo: "Taxa da Viva para você", valor: formatBRL(0) },
     ],
   };

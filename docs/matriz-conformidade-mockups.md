@@ -658,3 +658,13 @@ Pendentes de desenho (já na matriz): `cadastro-imovel-07-descricao` (linha de "
 A `main` não teve tela nova depois da passada 43 (só a matriz); nada a repetir no E193 (#2956, rascunho) nem no E194 (já na `main`: #1532, #1660, t565).
 `cadastro-imovel-07-descricao` reconferido contra o mockup: título "Título e descrição do anúncio", subtítulo, campos Título e Descrição e a prévia à direita **iguais**; o mockup ainda traz uma linha de "Destaques" (Mobiliado, Wifi incluído, Permitido pets) abaixo da descrição, que o real não tem. São pílulas — o oposto do padrão único de cartões do E193 — e uma função nova (destaques escolhidos à mão, além das comodidades e regras que o anúncio já mostra): **continua decisão do Daniel**, sem mudança.
 E446 (páginas): o #2971 agora consome a fonte única da Pista B (#2970, `baseDaVitrine`); no demo a cidade diz "15 imóveis em Uberlândia" a 390 e 1280, igual à busca. Nenhum defeito novo.
+
+## E712 (C4) — DECISÃO DO DANIEL: o topo da home NÃO muda (Pista A)
+
+- **Tela / mockup:** `/` × `publico-home`.
+- **Decisão (Daniel, 08/11/2026, por voz, registrada no chat do coordenador):** "a busca fica no hero, não na faixa do cabeçalho". O topo da home **não** é alinhado ao mockup `publico-home`: o hero (foto/vídeo de fundo, UMA busca "Para onde você vai?", "Publicar pedido de moradia") e a busca ficam como estão. Isto **revoga** a ordem anterior de alinhar o cabeçalho ao mockup.
+- **As duas decisões do dia 08/11/2026 (mockup `publico-home`):** (1) "a busca fica no hero, não na faixa do cabeçalho"; (2) revisão: a home NÃO muda em nada no topo/hero/busca — ficam como estão ao vivo. A (2) prevalece e inclui a (1).
+- **Decisão final (Daniel, 08/11/2026, reiterada ao coordenador):** a home NÃO muda em nada no topo; "hero e busca ficam exatamente como estão ao vivo hoje". Confirmado no diff do PR #3460: só `docs/matriz-conformidade-mockups.md` muda (nenhum arquivo de `src/` nem de `tests/`), então hero e busca são idênticos aos da `main`.
+- **Vale até nova ordem dele.** Enquanto isso, a divergência do topo contra `publico-home` é DECIDIDA, e não achado aberto; ela se apoia na ordem `bab1b2aa` (spec t66), no vídeo institucional v3 (t177) e na conformidade de 30/10 (t730), que seguem protegendo o hero.
+- **Registro das diferenças (passada 88), mantido só como histórico:** fundo (vídeo × bege), título, ação principal (busca única × "Buscar moradia" + "Publicar pedido de moradia"), linha de apoio, imagem (vídeo de fundo × foto na moldura), destaques, faixa "Para proprietários", logo, menu e rodapé do celular.
+- **PR #3460:** o alinhamento do topo foi revertido (o hero e a busca ficam idênticos aos da `main`); o PR passou a carregar só este registro.

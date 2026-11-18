@@ -169,6 +169,7 @@ export const MATRIZ_NOTIFICACOES = {
   estadia_instrucoes_liberadas: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   // E663: jornada de mensagens da estadia (confirmação, chegada, semana da saída, meio da estadia longa).
   jornada_confirmacao: { categoria: "lembretes", papeis: ["morador"], canais: SEM_PUSH },
+  jornada_d7: { categoria: "lembretes", papeis: ["morador"], canais: SEM_PUSH },
   jornada_chegada: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   jornada_semana_saida: { categoria: "lembretes", papeis: DUAS_PARTES, canais: SEM_PUSH },
   jornada_meio_estadia: { categoria: "lembretes", papeis: ["morador"], canais: SEM_PUSH },

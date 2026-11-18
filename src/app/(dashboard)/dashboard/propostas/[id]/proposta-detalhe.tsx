@@ -12,7 +12,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { CampoData } from "@/components/ui/campo-data";
 import { StatusChip } from "@/components/propostas/status-chip";
-import { responderProposta, type PropostaView, type VersaoView } from "@/lib/data/propostas-actions";
+import { reabrirPreAceitacao, responderProposta, type PropostaView, type VersaoView } from "@/lib/data/propostas-actions";
 import {
   aplicarContraproposta,
   calcularTotais,
@@ -34,6 +34,7 @@ import { caucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
 import { formatBRLExato, precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, primeiroPagamentoDoPreco } from "@/lib/precos";
+import { TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO } from "@/lib/propostas/pre-aceitacao";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { listaDePropostasDoPapel } from "@/lib/propostas/lista-do-papel";
 import { estadiaDaProposta } from "@/lib/propostas/estadia-da-proposta";
@@ -135,6 +136,14 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  async function reabrir() {
+    setErro(null);
+    setEnviando(true);
+    const res = await semQuedaDeRede(reabrirPreAceitacao(p.id));
+    setEnviando(false);
+    if (!res.ok) return setErro(res.error);
+    router.refresh();
+  }
 
   const atual = p.atual;
   const libera = (item: string) => p.itensLiberados.includes(item);
@@ -437,6 +446,44 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                   {p.taxa.caiu}.
                 </p>
               )}
+            </Panel>
+          )}
+          {p.preAceitacao && (
+            <Panel title={p.preAceitacao.estado === "vigente" ? "Prazo para concluir o contrato" : p.preAceitacao.encerrada ? "Candidatura encerrada" : "Pré-aceitação encerrada"}>
+              <div className="space-y-2 text-sm text-muted" data-testid="pre-aceitacao">
+                {p.preAceitacao.estado === "vigente" && (
+                  <p className="font-medium text-forest" data-testid="pre-aceitacao-prazo">
+                    Termina em {p.preAceitacao.ateTexto}.
+                  </p>
+                )}
+                {p.preAceitacao.estado === "expirada" && p.preAceitacao.donoAteTexto && p.papel === "owner" && (
+                  <p className="font-medium text-forest" data-testid="pre-aceitacao-prazo-dono">
+                    Seu prazo para decidir termina em {p.preAceitacao.donoAteTexto}.
+                  </p>
+                )}
+                {p.preAceitacao.estado === "expirada" && p.preAceitacao.encerrada && (
+                  <p data-testid="pre-aceitacao-encerrada">{p.papel === "owner" ? TEXTO_ENCERRADA_DONO : TEXTO_ENCERRADA}</p>
+                )}
+                {p.preAceitacao.estado === "expirada" && p.preAceitacao.perdeuACorrida && !p.preAceitacao.encerrada && (
+                  <p data-testid="pre-aceitacao-perdeu">{p.papel === "owner" ? TEXTO_PERDEU_A_VEZ_DONO : TEXTO_PERDEU_A_VEZ}</p>
+                )}
+                {p.preAceitacao.contexto && !p.preAceitacao.encerrada && (
+                  <p data-testid="pre-aceitacao-contexto">{p.preAceitacao.contexto}</p>
+                )}
+                <p data-testid="pre-aceitacao-corrida">{p.preAceitacao.regraCorrida}</p>
+                <p data-testid="pre-aceitacao-sem-punicao">{p.preAceitacao.semPunicao}</p>
+                <p data-testid="pre-aceitacao-taxa">{p.preAceitacao.taxaContinua}</p>
+                {p.preAceitacao.estado === "expirada" && !p.preAceitacao.encerrada && (
+                  <p data-testid="pre-aceitacao-reaberturas">
+                    {p.preAceitacao.reaberturas < 2 ? `Reaberturas usadas: ${p.preAceitacao.reaberturas} de 2.` : "As 2 reaberturas já foram usadas."}
+                  </p>
+                )}
+                {p.preAceitacao.estado === "expirada" && p.preAceitacao.podeReabrir && (
+                  <Button type="button" onClick={reabrir} disabled={enviando} data-testid="pre-aceitacao-reabrir">
+                    Reabrir por mais 72 horas
+                  </Button>
+                )}
+              </div>
             </Panel>
           )}
           {p.fechamentoUrl && (

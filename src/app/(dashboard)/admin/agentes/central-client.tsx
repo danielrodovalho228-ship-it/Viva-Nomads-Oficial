@@ -29,7 +29,7 @@ import {
   type StatusAgente,
 } from "@/lib/agentes/central";
 import { decidirEnvio, dividirResposta, estaNoFim, horaCurta, lerTextoSimples, moverTrocaParaAgente, textoFeito } from "@/lib/agentes/conversa";
-import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, rotuloRondas24h, ultimaPorAgente } from "@/lib/agentes/painel";
+import { COR_RONDA_HEX, achadosDaPrioridade, corDaRonda, indicadores, chavesDosGrupos, chavesEstaveis, mesclarConversas, proximaDoAgente, resumoCurto, rondaRecente, rotuloRondas24h, ultimaPorAgente } from "@/lib/agentes/painel";
 import { deixarOrdem, responderAceiteOrdem, type ChamadoVermelho, type DadosCentral } from "@/lib/data/agentes-actions";
 import { AvatarAgente } from "@/components/admin/agentes/avatar";
 import { buttonClasses } from "@/components/ui/button";
@@ -693,6 +693,9 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
     }
   }
   const thread = mesclarConversas(salvas, extra).filter((c) => c.agente_slug === slug);
+  const chaveDe = new Map(chavesEstaveis(thread).map((k, i) => [thread[i].id, k]));
+  const grupos = agruparTrilha(thread);
+  const chavesGrupos = chavesDosGrupos(grupos, chaveDe);
   const ordens = dados.ordens.filter((o) => o.agente_slug === slug);
 
   const irParaOFim = useCallback((suave: boolean) => {
@@ -899,9 +902,9 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                     Nenhuma conversa com {a.nome} ainda. Pergunte algo sobre as rondas, ou peça uma correção: vira ordem.
                   </p>
                 ) : (
-                  agruparTrilha(thread).map((g) =>
+                  grupos.map((g, gi) =>
                     g.tipo === "trilha" ? (
-                      <details key={g.itens[0].id} data-testid="trilha-gerente" className="ml-3 max-w-[85%] text-xs text-muted">
+                      <details key={chavesGrupos[gi]} data-testid="trilha-gerente" className="ml-3 max-w-[85%] text-xs text-muted">
                         <summary className="cursor-pointer select-none py-1 text-muted">ver como apurei ({g.itens.length})</summary>
                         <div className="space-y-1">
                           {g.itens.map((c) => (
@@ -913,7 +916,7 @@ function Conversar({ dados, inicial, agora }: { dados: DadosCentral; inicial: st
                       </details>
                     ) : (
                       <div
-                        key={g.itens[0].id}
+                        key={chavesGrupos[gi]}
                         data-testid={g.itens[0].papel === "daniel" ? "bolha-minha" : "bolha-agente"}
                         className={`max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2 text-sm ${g.itens[0].papel === "daniel" ? "ml-auto rounded-br-lg bg-forest text-white" : "rounded-bl-lg bg-surface-2 text-ink"}`}
                       >

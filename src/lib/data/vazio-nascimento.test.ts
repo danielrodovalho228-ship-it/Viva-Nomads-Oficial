@@ -25,9 +25,11 @@ test("getNascimento lança quando a leitura falha", () => {
 
 test("a tela trava o campo e salvar não chama salvarNascimento quando a data não carregou", () => {
   const tela = ler("../../components/account/conta-secoes.tsx");
-  assert.match(tela, /getNascimento\(\)\s*\.then\(\(n\) => vivo && setNascimento\(n\)\)\s*\.catch\(\(\) => vivo && setNascFalhou\(true\)\)/);
+  // E796 (asserção alterada): a leitura também marca "carregou" — até lá o campo espera (a leitura atrasada apagava o digitado).
+  assert.match(tela, /getNascimento\(\)\s*\.then\(\(n\) => \{\s*if \(!vivo\) return;\s*setNascimento\(n\);\s*setNascCarregado\(true\);\s*\}\)\s*\.catch\(\(\) => vivo && setNascFalhou\(true\)\)/);
   assert.match(tela, /nascFalhou\s*\? Promise\.resolve\(\{ ok: true, error: undefined \}\)\s*: salvarNascimento\(nascimento\)/);
   assert.match(tela, /const nasc = nascFalhou \? \(\{ ok: true \} as const\) : validarNascimento\(nascimento\);/);
-  assert.match(tela, /disabled=\{nascFalhou\}/);
+  assert.match(tela, /disabled=\{nascFalhou \|\| !nascCarregado\}/);
+  assert.match(tela, /if \(!nascCarregado && !nascFalhou\) return;/);
   assert.ok(AVISO_NASCIMENTO_FALHOU.length > 0);
 });

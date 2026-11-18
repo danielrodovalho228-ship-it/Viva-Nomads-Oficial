@@ -29,6 +29,15 @@ export async function liberarLimiteChamados(): Promise<void> {
 }
 
 /**
+ * Zera o limite de eventos de uso (300 por hora por IP, /api/evento). No laboratório toda a suíte sai do mesmo IP e
+ * cada página visitada grava eventos: numa rodada completa o limite esgota e os eventos seguintes são descartados em
+ * silêncio (204 sem gravar). Quem conta eventos gravados (t741) zera antes de gravar.
+ */
+export async function liberarLimiteEventos(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "evento:%");
+}
+
+/**
  * Zera o limite diário de pedidos de moradia (3 por conta por dia). As contas fixas do laboratório publicam
  * pedidos em vários specs (e nas repetições); sem isto o último recebe "Você já publicou 3 pedidos hoje".
  */

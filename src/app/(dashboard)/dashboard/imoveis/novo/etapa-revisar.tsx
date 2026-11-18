@@ -14,6 +14,7 @@ import { fraseDescontoCard, type Negociacao } from "@/lib/anuncio/negociacao";
 import { conferenciaAssistente, etapaDoItemProntidao, faltamNaConferencia, type ContextoConferencia, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
 import { TEXTOS_REVISAO, linhaRevisao, tituloConferencia, tituloDaPrevia } from "@/lib/anuncio/assistente-telas";
 import { contaDaConferencia, precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
+import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import { cn, formatBRL } from "@/lib/utils";
@@ -81,7 +82,10 @@ export function EtapaRevisar(p: {
   const desconto = fraseDescontoCard(p.negociacao.descontos);
   // E557: o título segue a regra do botão — "tudo certo" só com o "Publicar anúncio" liberado; travado, diz o que falta.
   const tituloLista = tituloConferencia(p.podePublicar, p.motivoTravado);
-  const conta = contaDaConferencia({ itens: conf.itens, pendentesNaRevisao: conf.pendentesNaRevisao, aceitouIa: p.aceitouIa || !!p.termoJaAceito });
+  // E761: a identidade ainda não confirmada fica fora da conta, e a conta diz isso (ela não trava a publicação).
+  const { situacao: identidadeSituacao } = useEstadoIdentidade();
+  const identidadeAConfirmar = !!identidadeSituacao && identidadeSituacao.identidade.estado !== "confirmada";
+  const conta = contaDaConferencia({ itens: conf.itens, pendentesNaRevisao: conf.pendentesNaRevisao, aceitouIa: p.aceitouIa || !!p.termoJaAceito, identidadeAConfirmar });
   const primeiroPendente = (id: IdEtapaAssistente) => p.completude.find((i) => !i.ok && etapaDoItemProntidao(i.key).id === id);
   const [previaAberta, setPreviaAberta] = useState(false);
   const travado = !p.podePublicar || p.publishing;

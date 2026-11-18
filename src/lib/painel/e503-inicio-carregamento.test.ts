@@ -4,11 +4,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
-const pagina = ler("app/(dashboard)/dashboard/page.tsx");
+const pagina = ler("app/(dashboard)/dashboard/inicio-dados.tsx");
 const cliente = ler("app/(dashboard)/dashboard/visao-geral-client.tsx");
 
 test("E503: depois do 1º lote, conta pausada, capa, parceria, fatos e agenda saem num lote só (nada de espera em série)", () => {
-  const corpo = pagina.slice(pagina.indexOf("export default async function DashboardPage"));
+  const corpo = pagina.slice(pagina.indexOf("export async function InicioDados")); // E797: as leituras moraram para InicioDados
   // Um 2º Promise.all reúne as leituras que antes esperavam uma pela outra.
   const segundo = corpo.slice(corpo.indexOf("await Promise.all", corpo.indexOf("await Promise.all") + 1));
   for (const leitura of ["contaPausadaEm()", "capaDoRascunho(", "minhaParceria()", "fatosDaConta(draft)", "carregarAgendaDoDono()"]) {
@@ -26,7 +26,8 @@ test("E503: os recomendados guardam o lugar enquanto carregam (nada de página c
 });
 
 test("E503: o Início fecha com um rodapé curto (Central de ajuda, Termos, Privacidade)", () => {
-  assert.match(pagina, /<RodapeInicio \/>/);
+  // E797: o rodapé é parte FIXA da casca (page.tsx), fora do bloco de dados.
+  assert.match(ler("app/(dashboard)/dashboard/page.tsx"), /<RodapeInicio \/>/);
   const rodape = ler("components/dashboard/rodape-inicio.tsx");
   for (const href of ["/ajuda", "/termos", "/privacidade"]) assert.ok(rodape.includes(`{ href: "${href}"`), href);
   assert.match(rodape, /data-testid="inicio-rodape"/);

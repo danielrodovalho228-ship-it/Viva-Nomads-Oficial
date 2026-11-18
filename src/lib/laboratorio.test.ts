@@ -82,7 +82,10 @@ test("workflow do laboratório: sem segredos, banco local, modo simulado", () =>
   // Boletim por categoria (ordem 35527eb1): a cobertura por tipo entra na coluna por_categoria (migração 0173).
   assert.match(registrar, /gerar-cobertura\.mjs --json/);
   assert.match(registrar, /por_categoria/);
-  assert.match(wf, /push:\s+branches: \[main\]/);
+  // Frente 0 (coordenador, correção consolidada de 11/11/2026): o push na main deixou de rodar a suíte inteira (antes: ordem
+  // 225d0648, "todo merge na main roda a suíte inteira"). Ela roda no agendado e no disparo manual.
+  assert.doesNotMatch(wf.split("\npermissions:")[0], /^\s+push:/m);
+  assert.match(wf, /workflow_dispatch:/);
   assert.match(wf, /NEXT_PUBLIC_SUPABASE_URL: http:\/\/127\.0\.0\.1:54321/);
   assert.match(wf, /INTEGRACOES_SIMULADAS: "on"/);
   assert.match(wf, /alinhar-producao\.sql/);

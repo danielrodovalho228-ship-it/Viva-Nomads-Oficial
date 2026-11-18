@@ -12,7 +12,9 @@ export const ESPERADAS: readonly { rotulo: string; padrao: RegExp }[] = [
   { rotulo: "Elevador", padrao: /elevador/ },
   { rotulo: "Máquina de lavar", padrao: /m[aá]quina de lavar|lavadora/ },
   { rotulo: "Ar-condicionado", padrao: /ar[- ]?condicionado|climatiza/ },
-  { rotulo: "Wi-Fi", padrao: /wi-?fi|internet|fibra/ },
+  // E753: "Wi-Fi" saiu desta lista. A internet NÃO é comodidade marcada (E39): vem da categoria de uso informada pelo proprietário
+  // (`internetTier`) ou da medição, e o padrão mínimo Viva a promete em todos os imóveis. Listá-la em "Não tem" negava o que o próprio
+  // anúncio afirma ("Espaço de trabalho: Internet para trabalho remoto…").
   { rotulo: "Vaga de garagem", padrao: /vaga|garagem|estacionamento/ },
 ];
 

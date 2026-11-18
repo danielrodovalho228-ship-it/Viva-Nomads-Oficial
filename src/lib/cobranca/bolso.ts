@@ -12,6 +12,14 @@ import { parcelasDoMes, type ContaPeriodo } from "../precos.ts";
   do valor do morador: nada de "fica com você", "resultado", sinal de menos ou "do total".
 */
 
+/**
+ * E762 (Phoenix/RELATORIO-005): sob o título "O que vai para o seu bolso" o número é o BRUTO (R$ 3.350 × 4 = R$ 13.400), com a taxa (R$ 1.536)
+ * logo abaixo — o título prometia líquido e o número entregava bruto. O desenho do E51 (guarda de custódia, `bolso.test.ts`) manda NÃO
+ * subtrair a taxa do que o morador paga (a Viva só intermedia). Então o rótulo deixa de prometer o que o número não é: diz que são
+ * valores brutos e que a taxa é cobrada à parte. Mostrar o líquido previsto é uma decisão de produto contra essa guarda (ver o PR).
+ */
+export const AVISO_VALORES_BRUTOS = "Valores brutos: o que o morador paga a você e, à parte, a taxa da Viva. A taxa não é tirada do que o morador paga.";
+
 export const NOTA_BOLSO = "A taxa só é cobrada com contrato fechado. Anúncio grátis. O morador paga direto a você.";
 
 export type Bolso =

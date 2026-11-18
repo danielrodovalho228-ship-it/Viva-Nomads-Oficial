@@ -35,24 +35,47 @@ export type PedidoAvaliadorValido = {
 const limpar = (v: unknown, max: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 
 /** Valida o pedido único. Quem já é parceiro não repete dados (os campos de parceiro são ignorados). */
-export function validarPedidoAvaliador(e: PedidoAvaliadorEntrada): { ok: true; valor: PedidoAvaliadorValido } | { ok: false; falta: string[] } {
+/** E818: o erro de UM campo do formulário (o `name` do campo e a mensagem que aparece junto dele). */
+export type ErroDeCampo = { campo: string; mensagem: string };
+
+export function validarPedidoAvaliador(
+  e: PedidoAvaliadorEntrada,
+): { ok: true; valor: PedidoAvaliadorValido } | { ok: false; falta: string[]; campos: ErroDeCampo[] } {
   const falta: string[] = [];
+  // E818: além da lista geral, cada campo com erro e a mensagem própria — a tela marca o campo em vermelho.
+  const campos: ErroDeCampo[] = [];
   let parceiro: PedidoAvaliadorValido["parceiro"] = null;
   if (!e.jaParceiro) {
     const nome = limpar(e.nome, 80);
     const doc = soDigitos(e.documento);
-    if (nome.length < 3) falta.push("Informar o nome público (o seu ou o da empresa).");
+    if (nome.length < 3) {
+      falta.push("Informar o nome público (o seu ou o da empresa).");
+      campos.push({ campo: "nome", mensagem: "Informe o nome público (o seu ou o da empresa), com 3 letras ou mais." });
+    }
     // E648: só empresa. CPF (tipo "pf" ou CPF no campo) não é aceito em nenhuma categoria de parceiro.
-    if (e.tipoPessoa === "pf" || cpfValido(doc)) falta.push("CNPJ válido (CPF não é aceito: abra o seu CNPJ, MEI onde a atividade permite).");
-    else if (!cnpjValido(doc)) falta.push("CNPJ válido.");
-    else if (nome.length >= 3) parceiro = { nome, tipoPessoa: "pj", documento: doc };
+    if (e.tipoPessoa === "pf" || cpfValido(doc)) {
+      falta.push("CNPJ válido (CPF não é aceito: abra o seu CNPJ, MEI onde a atividade permite).");
+      campos.push({ campo: "documento", mensagem: "CPF não é aceito: informe o CNPJ (abra o seu CNPJ, MEI onde a atividade permite)." });
+    } else if (!cnpjValido(doc)) {
+      falta.push("CNPJ válido.");
+      campos.push({ campo: "documento", mensagem: doc ? "CNPJ inválido: confira os números." : "Informe o CNPJ." });
+    } else if (nome.length >= 3) parceiro = { nome, tipoPessoa: "pj", documento: doc };
   }
   const cidade = limpar(e.cidade, 80);
-  if (!chaveCidade(cidade)) falta.push("Informar a cidade onde vai avaliar.");
+  if (!chaveCidade(cidade)) {
+    falta.push("Informar a cidade onde vai avaliar.");
+    campos.push({ campo: "cidade", mensagem: "Informe a cidade onde vai avaliar." });
+  }
   const link = limpar(e.experienciaLink, 300);
-  if (!e.experienciaArquivo && !/^https:\/\/\S+\.\S+/.test(link)) falta.push("Comprovar experiência (portfólio ou referência: arquivo ou link https).");
-  if (!e.aceiteConduta) falta.push("Aceitar o código de conduta da avaliação.");
-  if (falta.length) return { ok: false, falta };
+  if (!e.experienciaArquivo && !/^https:\/\/\S+\.\S+/.test(link)) {
+    falta.push("Comprovar experiência (portfólio ou referência: arquivo ou link https).");
+    campos.push({ campo: "experienciaLink", mensagem: "Informe um link https do portfólio ou envie um arquivo." });
+  }
+  if (!e.aceiteConduta) {
+    falta.push("Aceitar o código de conduta da avaliação.");
+    campos.push({ campo: "aceiteConduta", mensagem: "Aceite o código de conduta para continuar." });
+  }
+  if (falta.length) return { ok: false, falta, campos };
   return { ok: true, valor: { cidade, experienciaLink: link || null, parceiro } };
 }
 

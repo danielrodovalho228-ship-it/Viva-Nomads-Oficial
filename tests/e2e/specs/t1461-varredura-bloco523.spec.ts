@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, escutarErros, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
+import { caminhoEsperado } from "../fixtures/destino-da-conta";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
@@ -87,7 +88,7 @@ test.describe("T1461 — varredura da página inteira, bloco 523 (16ª volta, pa
           const erros = escutarErros(page);
           const resposta = await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 40_000 });
           expect(resposta?.status() ?? 0, `${t.papel} — ${t.nome} @${tam.nome}: HTTP`).toBeLessThan(400);
-          expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split(/[?#]/)[0]);
+          await expect.poll(() => new URL(page.url()).pathname, { message: `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`, timeout: 15_000 }).toBe(caminhoEsperado(rota, tam.width));
           await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
           await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
           const achados = await varrerPagina(page, respostas);

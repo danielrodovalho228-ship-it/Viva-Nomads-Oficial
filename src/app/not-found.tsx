@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Logo } from "@/components/ui/logo";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { NotFoundIllustration } from "@/components/illustrations";
 import { PropertyCard } from "@/components/property-card";
 import { listProperties } from "@/lib/data/properties";
+import { Footer } from "@/components/layout/footer";
+import { Navbar } from "@/components/layout/navbar";
+import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
+import { AvisoTestes } from "@/components/layout/aviso-testes";
+import { PRE_LANCAMENTO } from "@/lib/flags";
+import { PularParaConteudo } from "@/components/layout/pular-para-conteudo";
 
 // 404: só o noindex do Next (sem canonical nem o robots da raiz).
 export const metadata: Metadata = {
@@ -20,19 +25,37 @@ export default async function NotFound() {
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-2">
-      <header className="container-page py-6">
-        {/* Varredura 02/11: o logo (32 px) ganha alvo de 44 px no toque. */}
-        <Logo href="/" className="alvo-toque" />
-      </header>
+      {/* E976, parte 2: a 404 tinha o destino (#conteudo) mas não o link de salto. */}
+      <PularParaConteudo />
+      {/* E916 (re-prova): o cabeçalho padrão do site (Imóveis · Anunciar · Empresas · Parceiros · Entrar), igual às
+          outras páginas públicas — antes só o logo. Com o rodapé e a busca abaixo, a 404 tem a casca completa. */}
+      {PRE_LANCAMENTO && <AvisoTestes />}
+      <Navbar />
 
-      <main className="container-page flex flex-1 flex-col items-center justify-center py-12 text-center">
+      <main id="conteudo" tabIndex={-1} className="container-page flex flex-1 flex-col items-center justify-center py-12 text-center outline-none">
         <NotFoundIllustration />
         <p className="mt-8 font-title text-2xl font-semibold text-ink">404</p>
         <h1 className="mt-2 font-title text-2xl font-semibold text-ink">Página não encontrada</h1>
         <p className="mt-2 max-w-md text-muted">
           Não encontramos esta página. Já que você está aqui, veja estes imóveis disponíveis.
         </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
+        {/* E916: busca direto da 404 (cidade ou bairro → /buscar) e o caminho para a Ajuda, como nas outras páginas públicas. */}
+        <form action="/buscar" method="get" role="search" className="mt-8 flex w-full max-w-md gap-2" data-testid="nao-encontrada-busca">
+          <label htmlFor="nao-encontrada-local" className="sr-only">
+            Cidade ou bairro
+          </label>
+          <input
+            id="nao-encontrada-local"
+            name="local"
+            type="search"
+            placeholder="Cidade ou bairro"
+            className="h-12 min-w-0 flex-1 rounded-xl border border-line bg-white px-4 text-base text-ink outline-none focus:border-forest"
+          />
+          <Button type="submit" className="shrink-0">
+            Buscar
+          </Button>
+        </form>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
           <ButtonLink href="/buscar" variant="primary">
             Buscar imóveis
           </ButtonLink>
@@ -60,7 +83,14 @@ export default async function NotFound() {
         >
           É proprietário? Anuncie seu imóvel →
         </Link>
+        <Link href="/ajuda" className="alvo-toque mt-2 text-sm text-muted hover:text-blue-500" data-testid="nao-encontrada-ajuda">
+          Precisa de ajuda? Central de Ajuda →
+        </Link>
       </main>
+      {/* E916: o rodapé padrão do site, como nas outras páginas públicas. */}
+      <Footer />
+      {/* Celular: a mesma barra de abas das páginas públicas (o menu de cima fica no botão do Navbar). */}
+      <MobileTabBar world="tenant" />
     </div>
   );
 }

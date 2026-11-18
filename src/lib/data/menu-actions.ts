@@ -22,8 +22,14 @@ export async function temImovelAnunciado(): Promise<boolean> {
   return (count ?? 0) > 0;
 }
 
-/** Quantos imóveis ATIVOS a conta tem (para a "Análise da carteira", que abre a partir de 3). */
-export async function imoveisAtivosDoDono(): Promise<number> {
+const MSG_ATIVOS_NAO_CARREGARAM = "Não foi possível contar os seus imóveis ativos agora.";
+
+/**
+ * Quantos imóveis ATIVOS a conta tem (para a "Análise da carteira", que abre a partir de 3). Com `exigir` (a tela da
+ * Carteira), a falha do banco LANÇA — o painel mostra "Não conseguimos abrir esta tela" em vez de "Você tem 0 imóveis
+ * ativos". Sem `exigir` (contadores do menu), a falha segue valendo 0 (auditoria de erros e estados vazios, rodada 5).
+ */
+export async function imoveisAtivosDoDono(opcoes: { exigir?: boolean } = {}): Promise<number> {
   const supabase = await createClient();
   if (!supabase) return 0;
   const {
@@ -35,5 +41,6 @@ export async function imoveisAtivosDoDono(): Promise<number> {
     .select("id", { count: "exact", head: true })
     .eq("owner_id", user.id)
     .eq("status", "active");
+  if (error && opcoes.exigir) throw new Error(MSG_ATIVOS_NAO_CARREGARAM);
   return error ? 0 : (count ?? 0);
 }

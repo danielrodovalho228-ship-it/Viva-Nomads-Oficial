@@ -71,8 +71,10 @@ test("E626: o coração segue com o canto (espaçador flutuante) e o selo de pre
 
 test("E626: a página do imóvel tem a lista completa (símbolo + texto) e a folha dos níveis corrigida", () => {
   const lista = ler("../components/property/selos-anuncio.tsx");
-  assert.match(lista, /ROTULO_SIMBOLO\[id\]/);
-  assert.match(ler("../app/(public)/imoveis/[id]/property-detail.tsx"), /<SelosAnuncio tem=\{\{/);
+  // E924: a lista recebe a composição pronta de selosDaFoto (a mesma do cartão) e escreve o texto de cada selo dela; antes
+  // recebia quatro booleanos ("tem") e montava a ordem sozinha, sem o nível.
+  assert.match(lista, /\{s\.rotulo\}/);
+  assert.match(ler("../app/(public)/imoveis/[id]/property-detail.tsx"), /<SelosAnuncio\s+selos=\{selosDaFoto\(\{/);
   const folha = ler("../components/niveis/nivel-imovel.tsx");
   assert.match(folha, /O nível não muda a ordem da busca\./);
   assert.doesNotMatch(folha, /Nível não é selo/);
@@ -87,7 +89,9 @@ test("E416: a vitrine (PropertyCard) e Meus anúncios usam a mesma fileira", () 
   }
   // O nível e o "Aceita negociação" saem do texto do cartão (viraram selo): nada repetido.
   assert.doesNotMatch(cartao, /seloDoCartao\(/);
-  assert.match(cartao, /\.filter\(\(i\) => i\.chave !== "nivel"\)/);
+  // E899: o filtro do nível mora em modeloDoCartao, de onde o cartão tira a síntese (antes: dentro do componente).
+  assert.match(cartao, /modeloDoCartao\(property, periodMonths\)/);
+  assert.match(readFileSync(new URL("./cartao-modelo.ts", import.meta.url), "utf8"), /\.filter\(\(i\) => i\.chave !== "nivel"\)/);
 });
 
 test("E416: a página pública do proprietário lê a negociação (o selo aparece também ali)", () => {

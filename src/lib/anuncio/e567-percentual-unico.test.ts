@@ -33,5 +33,5 @@ test("o '% pronto' do Início diz de qual anúncio é (o nome do rascunho)", () 
   assert.equal(b.pct, 50);
   assert.equal(b.nome, "[TESTE QA] Studio no Santa Mônica");
   assert.match(ler("src/components/painel/inicio-dono.tsx"), /data-testid="inicio-dono-nome"/);
-  assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /nome: draft\?\.title \?\? null,/);
+  assert.match(ler("src/app/(dashboard)/dashboard/inicio-dados.tsx"), /nome: draft\?\.title \?\? null,/);
 });

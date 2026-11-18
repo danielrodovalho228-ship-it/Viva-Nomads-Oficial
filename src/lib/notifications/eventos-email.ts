@@ -2,6 +2,7 @@
   Texto de cada evento de notificação (assunto, frase, imagem, botão e destino) — PURO,
   sem imports "@/…", para teste unitário. Ordem d250ea2f, item 2.
 */
+import { PRAZO_RESPOSTA_PARCERIA } from "../parceiros/regras.ts";
 /** Eventos que disparam notificação no funil (sem isso o funil vaza). */
 export type NotificationEvent =
   | "new_lead" // proprietário recebe um interessado
@@ -55,7 +56,7 @@ export type NotificationEvent =
   // Automações por data (cron /api/cron/automacoes, ordem d250ea2f item 5)
   | "anuncio_incompleto" // rascunho parado há 3 dias → proprietário (Prompt 50: 1 e-mail, "Faltam N passos", passo exato)
   | "verificacao_parada" // Prompt 50: verificação iniciada e não concluída em 24 h → a pessoa (causa da última tentativa)
-  | "parceiro_sem_resposta" // Prompt 50: solicitação de parceiro sem resposta em 1 dia útil → equipe
+  | "parceiro_sem_resposta" // Prompt 50 / E791: solicitação de parceiro sem resposta no prazo da parceria (PRAZO_RESPOSTA_PARCERIA) → equipe
   | "chamado_fora_promessa" // Prompt 50: chamado sem 1ª resposta de uma pessoa em 24 h → equipe
   | "verificacao_analise_humana" // Prompt 50: 2ª reprovação automática da verificação → equipe (fila de documentos)
   | "saida_lembrete" // saída em 3 dias → proprietário e inquilino
@@ -100,6 +101,7 @@ export type NotificationEvent =
   | "estadia_convite_ocupante" // 61-B: o morador convidou quem vai morar junto → o convidado (só leitura)
   | "estadia_instrucoes_pendentes" // D-10 sem instruções de chegada → proprietário
   | "jornada_confirmacao" // E663: contrato assinado pelas duas partes → morador (pede os documentos pela plataforma)
+  | "jornada_d7" // E759: 7 dias antes da entrada → morador (instruções de chegada na página da estadia)
   | "jornada_chegada" // E663: dia da entrada → as duas partes
   | "jornada_semana_saida" // E663: uma semana antes da saída → as duas partes
   | "jornada_meio_estadia" // E663: meio de estadia longa (60+ dias) → morador (tudo certo? algo quebrou? avaliação parcial)
@@ -193,7 +195,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   checkin_lembrete: { subject: "Lembrete: a entrada no imóvel está chegando", body: (n) => `Olá${n ? " " + n : ""}, a entrada no imóvel do seu contrato está chegando. Confira o horário e as instruções de entrada pela plataforma.`, cta: "Ver instruções de entrada", path: "/dashboard/contratos" },
   anuncio_incompleto: { subject: "Faltam poucos passos para publicar seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, seu anúncio está parado há 3 dias. Abaixo, o que falta; o botão leva direto ao próximo passo.`, cta: "Continuar o anúncio", path: "/dashboard/imoveis" },
   verificacao_parada: { subject: "Sua verificação de identidade ficou pela metade", body: (n) => `Olá${n ? " " + n : ""}, a última tentativa de verificar sua identidade não passou. Veja abaixo o que aconteceu e o que fazer para concluir agora.`, cta: "Verificar de novo", path: "/dashboard/verificacao" },
-  parceiro_sem_resposta: { subject: "Solicitação de parceria sem resposta há 1 dia útil", body: () => "Uma solicitação de parceria espera a decisão da equipe há mais de 1 dia útil. O parceiro vê o estado e pode falar com a Viva.", cta: "Abrir as solicitações", path: "/admin/parceiros" },
+  parceiro_sem_resposta: { subject: `Solicitação de parceria sem resposta há ${PRAZO_RESPOSTA_PARCERIA}`, body: () => `Uma solicitação de parceria espera a decisão da equipe há mais de ${PRAZO_RESPOSTA_PARCERIA}, o prazo prometido em /parceiros. O parceiro vê o estado e pode falar com a Viva.`, cta: "Abrir as solicitações", path: "/admin/parceiros" },
   chamado_fora_promessa: { subject: "Chamado sem resposta de uma pessoa em 24 horas", body: () => "Um chamado passou das 24 horas prometidas sem a 1ª resposta de uma pessoa da equipe.", cta: "Abrir o chamado", path: "/admin/atendimento" },
   verificacao_analise_humana: { subject: "Verificação de identidade para análise de uma pessoa", body: () => "Uma verificação de identidade foi reprovada duas vezes pela checagem automática e espera a análise da equipe, com o motivo.", cta: "Abrir a fila de documentos", path: "/admin/documentos" },
   saida_lembrete: { subject: "Lembrete: a saída está chegando", body: (n) => `Olá${n ? " " + n : ""}, a saída do imóvel do seu contrato é em 3 dias. Combine a conferência de saída pela plataforma.`, cta: "Ver conferência de saída", path: "/dashboard/contratos" },
@@ -231,6 +233,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   estadia_convite_ocupante: { subject: "Você foi incluído em uma estadia na Viva", body: () => "O morador incluiu você na estadia. Entre com este e-mail para ver as datas, o endereço e, perto da entrada, as instruções de chegada.", cta: "Ver a estadia", path: "/auth" },
   estadia_instrucoes_liberadas: { subject: "As instruções de chegada estão liberadas", body: (n) => `Olá${n ? " " + n : ""}, a sua entrada está chegando. Como entrar, o Wi-Fi e as regras do prédio já estão na página da estadia.`, cta: "Ver as instruções", path: "/dashboard/locacoes" },
   jornada_confirmacao: { subject: "Contrato assinado: envie seus documentos", body: (n) => `Olá${n ? " " + n : ""}, seu contrato está assinado. Envie seus documentos pela plataforma, na página da estadia.`, cta: "Enviar documentos", path: "/dashboard/locacoes" },
+  jornada_d7: { subject: "A entrada é daqui a uma semana", body: (n) => `Olá${n ? " " + n : ""}, falta uma semana para a entrada. As instruções de chegada estão na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
   jornada_chegada: { subject: "Hoje é o dia da entrada", body: (n) => `Olá${n ? " " + n : ""}, hoje é o dia da entrada no imóvel do contrato. As instruções estão na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
   jornada_semana_saida: { subject: "A saída é daqui a uma semana", body: (n) => `Olá${n ? " " + n : ""}, falta uma semana para a saída. Combine a conferência de saída pela plataforma.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
   jornada_meio_estadia: { subject: "Como está a estadia?", body: (n) => `Olá${n ? " " + n : ""}, a estadia chegou à metade. Está tudo certo? Se algo quebrou, avise pela plataforma.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },

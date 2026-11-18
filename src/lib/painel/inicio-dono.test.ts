@@ -118,7 +118,7 @@ test("E218-A: com anúncio publicado o guia some (decisão ou em dia), e o modo 
   const inicio = ler("../../components/painel/inicio-dono.tsx");
   assert.doesNotMatch(inicio.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, ""), /ChecklistAtivacaoBloco/);
   // O servidor monta os passos do bloco a partir do guia do dono (fonte única).
-  const pagina = ler("../../app/(dashboard)/dashboard/page.tsx");
+  const pagina = ler("../../app/(dashboard)/dashboard/inicio-dados.tsx");
   assert.match(pagina, /checklist: checklists\.find\(\(c\) => c\.papel === "proprietario"\) \?\? null/);
 });
 

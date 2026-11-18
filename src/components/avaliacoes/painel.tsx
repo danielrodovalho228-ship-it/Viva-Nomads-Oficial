@@ -10,6 +10,7 @@ import type { AbaAvaliacoes } from "@/lib/conta/avaliacoes-recebidas";
 import { ABAS_PAINEL, dataLonga, haDias, rotuloAba, rotuloFaltam, rotuloStatusFeita, TEXTO_SIGILO, type AbaPainel, type ParaAvaliar } from "@/lib/conta/painel-avaliacoes";
 import { estrelasDaNota } from "@/lib/conta/tela-avaliacoes";
 import { cn } from "@/lib/utils";
+import { FILEIRA_ABAS } from "@/components/ui/abas-fileira";
 
 const ROTA = "/dashboard/avaliacoes";
 
@@ -44,18 +45,19 @@ export function PainelAvaliacoes({
     .sort((a, b) => (Date.parse(b.publicadaEm ?? "") || 0) - (Date.parse(a.publicadaEm ?? "") || 0))
     .slice(0, 2);
   return (
-    <div className="mx-auto w-full max-w-3xl" data-testid="avaliacoes-painel">
-      <h1 className="font-title text-2xl font-semibold text-forest sm:text-[28px]">Avaliações</h1>
-
-      <nav className="mt-4 flex flex-wrap gap-2" aria-label="Avaliações">
+    // E898: o painel mora na casca da Conta (CascaConta ativo="avaliacoes", na página): o título, o voltar ("‹ Conta" no
+    // celular), o menu lateral e a largura vêm de lá, como nas seções irmãs. Aqui só o conteúdo.
+    <div className="w-full" data-testid="avaliacoes-painel">
+      {/* E782: abas como as outras telas do painel (sublinhado, como Favoritos): o título da seção NÃO repete o da aba ativa. */}
+      <nav className={cn("mt-4", FILEIRA_ABAS)} data-testid="painel-abas" aria-label="Avaliações">
         {ABAS_PAINEL.map((a) => (
           <Link
             key={a.valor}
             href={`${ROTA}?aba=${a.valor}`}
             aria-current={aba === a.valor ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-11 items-center rounded-full border px-4 text-[15px] sm:px-6 sm:text-base",
-              aba === a.valor ? "border-forest bg-forest font-semibold text-white" : "border-line bg-white text-ink"
+              "-mb-px inline-flex min-h-11 items-center whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:text-base",
+              aba === a.valor ? "border-forest text-forest" : "border-transparent text-muted hover:text-ink"
             )}
             data-testid={`painel-aba-${a.valor}`}
           >
@@ -65,8 +67,7 @@ export function PainelAvaliacoes({
       </nav>
 
       {aba === "para-avaliar" && (
-        <div className="mt-6" data-testid="painel-para-avaliar">
-          <h2 className="text-xl font-semibold text-forest">Para avaliar</h2>
+        <div className="mt-6" data-testid="painel-para-avaliar" aria-label="Para avaliar" role="region">
           {paraAvaliar.length === 0 ? (
             <div className="mt-3">
               <EmptyState
@@ -160,8 +161,7 @@ export function PainelAvaliacoes({
       )}
 
       {aba === "feitas" && (
-        <div className="mt-6" data-testid="painel-feitas">
-          <h2 className="text-xl font-semibold text-forest">Feitas</h2>
+        <div className="mt-6" data-testid="painel-feitas" aria-label="Feitas" role="region">
           {feitas.length === 0 ? (
             <div className="mt-3">
               <EmptyState icon={Star} title="Você ainda não avaliou ninguém" text="As avaliações que você enviar aparecem aqui, com o estado de cada uma."

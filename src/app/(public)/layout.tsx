@@ -4,10 +4,12 @@ import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { AppHeader } from "@/components/app/app-header";
 import { AvisoTestes } from "@/components/layout/aviso-testes";
 import { PRE_LANCAMENTO } from "@/lib/flags";
+import { RastroPublico } from "@/components/layout/rastro-publico";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <RastroPublico />
       {/* Pular para o conteúdo: oculto até receber foco pelo teclado (a11y). */}
       <a href="#conteudo" className="skip-link">
         Pular para o conteúdo principal

@@ -47,7 +47,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * E-mail + push da visita para UMA pessoa (prompt 23, item 6): pedida → dono; confirmada, remarcada e cancelada →
- * a outra parte. Sem nome, telefone ou e-mail do morador para o dono (contato protegido até o aceite).
+ * a outra parte. Sem nome, telefone ou e-mail do morador para o dono (contato nunca é trocado, em nenhuma fase — E445).
  * Depois da resposta (`after`) e best-effort: o aviso nunca quebra o fluxo.
  */
 /** `decisao` (44-SITE, item 2): o push de visita pedida/remarcada diz o imóvel e até quando responder. */

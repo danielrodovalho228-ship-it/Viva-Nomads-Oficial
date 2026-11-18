@@ -421,7 +421,8 @@ export async function listProperties(opcoes: { incluirTeste?: boolean } = {}): P
           .from("properties")
           .select(PROPERTY_PUBLIC_COLUMNS)
           .eq("status", "active")
-          .order("created_at", { ascending: false }),
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: true }),
       (r) => !!r.error || !r.data,
     );
 
@@ -464,7 +465,8 @@ async function linhasPublicasDoDono(supabase: NonNullable<ReturnType<typeof crea
     .select(PROPERTY_PUBLIC_COLUMNS)
     .eq("owner_id", donoId)
     .eq("status", "active")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+          .order("id", { ascending: true });
   if (error || !data) return null;
   const mapped = await semAnunciosDeTesteNaVitrine(data as unknown as PropertyRow[]);
   return mapped;
@@ -869,7 +871,8 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
     .from("properties")
     .select(PROPERTY_PUBLIC_COLUMNS)
     .eq("owner_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+          .order("id", { ascending: true });
 
   if (error && opcoes.exigir) throw new Error(MSG_IMOVEIS_NAO_CARREGARAM);
   if (error || !data) return [];

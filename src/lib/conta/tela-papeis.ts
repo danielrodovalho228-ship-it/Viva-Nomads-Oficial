@@ -3,11 +3,12 @@
   Vocabulário da casa: "viajantes" e "curto e médio prazo" do desenho viram profissionais e estadias de 1 a 6 meses.
 */
 import type { Intencao } from "../auth/entrada.ts";
+import { grafiaDaCidade } from "../cidades.ts";
 
 export const SUBTITULO_PAPEIS = "Defina seus papéis na plataforma para receber recomendações personalizadas.";
 export const RODAPE_PAPEIS = "Viva Nomads · Configurações são salvas automaticamente";
 
-const cidadeLimpa = (c: string | null | undefined) => (c ?? "").trim();
+const cidadeLimpa = (c: string | null | undefined) => grafiaDaCidade(c);
 
 /** "Procurando imóvel de 1 a 6 meses em Uberlândia" (sem cidade, sem o "em"). */
 export function linhaQueroMorar(cidade: string | null | undefined): string {

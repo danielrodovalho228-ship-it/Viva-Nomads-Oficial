@@ -13,7 +13,6 @@ import { chaveCidade } from "@/lib/cidades";
 import { lerReais } from "@/lib/reais";
 import { vistoriaAtiva } from "./chave";
 import { CATEGORIA_AVALIADOR, pendenciasDoCredenciamento, podeAprovarParaTeste, podeAtivar, solicitacaoDoAvaliador, validarPedidoAvaliador } from "./entrada";
-import { slugBase } from "@/lib/parceiros/regras";
 import {
   CODIGO_CONDUTA,
   PORTES,
@@ -36,6 +35,8 @@ import {
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador } from "./servidor";
 import { descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
 import { recusaObservador } from "@/lib/qa/observador";
+import { ativarParceiroDoAvaliador } from "./parceiro-do-avaliador-servidor";
+import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 
 const MSG_VISTORIA_SEM_LEITURA = "Não foi possível conferir o imóvel agora. Tente de novo em instantes.";
 
@@ -47,7 +48,8 @@ const MSG_VISTORIA_SEM_LEITURA = "Não foi possível conferir o imóvel agora. T
   morador recusam; credenciamento e admin funcionam.
 */
 
-export type Res = { ok: true; mensagem?: string } | { ok: false; erro: string };
+/** E818: `campos` aponta os campos com erro (o FormAcao marca cada um em vermelho, com a mensagem junto). */
+export type Res = { ok: true; mensagem?: string } | { ok: false; erro: string; campos?: { campo: string; mensagem: string }[] };
 const BUCKET = "avaliadores";
 const TIPOS_EXPERIENCIA = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 const SEM_ACESSO: Res = { ok: false, erro: "Esta ação não está disponível." };
@@ -96,7 +98,7 @@ export async function pedirCredenciamento(form: FormData): Promise<Res> {
     experienciaArquivo: temArquivo,
     aceiteConduta: form.get("aceiteConduta") === "on",
   });
-  if (!v.ok) return { ok: false, erro: `Falta: ${v.falta.join(" ")}` };
+  if (!v.ok) return { ok: false, erro: `Falta: ${v.falta.join(" ")}`, campos: v.campos };
   if (parc) {
     const doc = String(parc.documento ?? "");
     if (!(parc.tipo_pessoa === "pj" && cnpjValido(doc))) return { ok: false, erro: "Falta: CNPJ válido no cadastro de parceiro (CPF não é aceito)." };
@@ -172,6 +174,8 @@ export async function pedirCredenciamento(form: FormData): Promise<Res> {
     const categorias = [...new Set([...((parc.categorias as string[]) ?? []), CATEGORIA_AVALIADOR])];
     await s.admin.from("parceiros").update({ categorias }).eq("id", parc.id);
   }
+  // E690: com a chave ligada e todos os critérios batendo, o pedido já nasce em teste (decidido pelo sistema).
+  await tentarAtivacaoAutomatica(s.admin, { userId: s.userId });
   // O registro já foi gravado: sem a leitura, a lista de pendências mostra a identidade como a confirmar (a tela relê).
   const identidade = await estadoIdentidade(s.admin, s.userId).catch(() => null);
   const pend = pendenciasDoCredenciamento({ identidadeVerificada: identidade?.estado === "confirmada" });
@@ -247,60 +251,6 @@ export async function adminDecidirCredenciamento(form: FormData): Promise<Res> {
   if (para === "ativo") await a.admin.from("vistoria_fila_admin").update({ resolvido_em: agora, resolvido_por: a.userId }).eq("avaliador_id", id).in("tipo", ["avaliacao_teste", "suspensao_automatica", "revisao_criterio"]).is("resolvido_em", null);
   revalidatePath(ROTA_ADMIN);
   return { ok: true };
-}
-
-/**
- * Ativa o parceiro do candidato a avaliador a partir da solicitação ligada (categoria "vistoria"), sem o link de
- * ativação por e-mail: a pessoa já está logada na própria conta e a aprovação é uma só.
- */
-async function ativarParceiroDoAvaliador(
-  admin: NonNullable<ReturnType<typeof createAdminClient>>,
-  userId: string,
-  solicitacaoId: string | null,
-  adminId: string,
-  agora: string,
-): Promise<{ ok: true; parceiroId: string } | { ok: false; erro: string }> {
-  const { data: existente } = await admin.from("parceiros").select("id, categorias").eq("user_id", userId).maybeSingle();
-  if (existente) {
-    const categorias = [...new Set([...((existente.categorias as string[]) ?? []), CATEGORIA_AVALIADOR])];
-    await admin.from("parceiros").update({ categorias }).eq("id", existente.id);
-    return { ok: true, parceiroId: existente.id as string };
-  }
-  if (!solicitacaoId) return { ok: false, erro: "Pedido sem os dados de parceiro." };
-  const { data: sol } = await admin.from("parceiro_solicitacoes").select("id, nome, tipo_pessoa, emite_nota, documento, cidades, descricao, telefone").eq("id", solicitacaoId).maybeSingle();
-  if (!sol) return { ok: false, erro: "Pedido sem os dados de parceiro." };
-  const base = slugBase(sol.nome as string);
-  for (let i = 0; i < 20; i++) {
-    const slug = i === 0 ? base : `${base.slice(0, 54)}-${i + 1}`;
-    const { data: p, error } = await admin
-      .from("parceiros")
-      .insert({
-        user_id: userId,
-        solicitacao_id: sol.id,
-        tipo_pessoa: sol.tipo_pessoa,
-        emite_nota: sol.tipo_pessoa === "pj" ? ((sol.emite_nota as boolean | null) ?? null) : null,
-        documento: sol.documento,
-        razao_social: sol.tipo_pessoa === "pj" ? sol.nome : null,
-        nome_publico: String(sol.nome).slice(0, 80),
-        slug,
-        categorias: [CATEGORIA_AVALIADOR],
-        cidades: sol.cidades,
-        descricao: sol.descricao,
-        telefone: sol.telefone,
-        status: "rascunho",
-      })
-      .select("id")
-      .single();
-    if (!error && p) {
-      await admin.from("parceiro_solicitacoes").update({ status: "ativada", decidido_por: adminId, decidido_em: agora, atualizado_em: agora }).eq("id", sol.id);
-      return { ok: true, parceiroId: p.id as string };
-    }
-    if (error && (error.code !== "23505" || !/slug/.test(error.message))) {
-      console.error("[ativarParceiroDoAvaliador]", error.code, error.message);
-      return { ok: false, erro: "Não foi possível ativar o parceiro agora. Tente de novo." };
-    }
-  }
-  return { ok: false, erro: "Não foi possível ativar o parceiro agora. Tente de novo." };
 }
 
 /** Avaliação de TESTE: o admin aponta um imóvel de teste (is_teste) e o avaliador em teste; a designação é direta. */

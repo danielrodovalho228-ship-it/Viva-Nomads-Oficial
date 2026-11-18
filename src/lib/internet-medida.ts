@@ -137,3 +137,15 @@ export function textoInternet(medida: Medicao | null | undefined, informadaMbps:
 export function homeOfficeMedido(essenciais: boolean, medida: Medicao | null | undefined, agora: Date): boolean {
   return essenciais && !!medida && vigente(medida, agora) && boaParaVideochamada(medida);
 }
+
+/**
+ * E983 (resto do E609): por que o "Medir a internet agora" está travado — a tela diz o motivo LIGADO ao botão
+ * (aria-describedby), nunca um botão cinza mudo. null = liberado.
+ */
+export type TravaDoMedir = "medindo" | "escolher_ponto" | "limite_do_dia" | null;
+export function travaDoMedir(e: { ocupado: boolean; ponto: unknown; restantesHoje: number }): TravaDoMedir {
+  if (e.ocupado) return "medindo";
+  if (!e.ponto) return "escolher_ponto";
+  if (e.restantesHoje <= 0) return "limite_do_dia";
+  return null;
+}

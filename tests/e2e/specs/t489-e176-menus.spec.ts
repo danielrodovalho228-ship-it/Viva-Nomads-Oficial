@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
+// E563: "Planos" só aparece com a página de preços religada (NEXT_PUBLIC_PRECOS_VISIVEL=1).
+const NAV_PUBLICO = process.env.NEXT_PUBLIC_PRECOS_VISIVEL === "1" ? ["Imóveis", "Anunciar", "Empresas", "Parceiros", "Planos"] : ["Imóveis", "Anunciar", "Empresas", "Parceiros"];
+
 /*
   T489 — E176-IMPL (especificação aprovada em docs/e176-menus-spec.md; mockups aprovados pelo Daniel em 25/10):
    1. D2 — avatar = atalho curto: Minha conta · Modo <outro papel> · Ajuda · Sair ("Sair" uma vez só).
@@ -121,12 +124,12 @@ test.describe("T489 — E176-IMPL: menus conforme a especificação aprovada", (
       const topo = page.getByTestId("topo-publico");
       await expect(topo).toBeVisible({ timeout: 30_000 });
       if (largura === 1280) {
-        await expect(topo.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", "Planos"]);
+        await expect(topo.getByTestId("nav-links").getByRole("link")).toHaveText(NAV_PUBLICO);
         await expect(topo.getByTestId("nav-fale-com-a-viva")).toBeVisible();
         await expect(topo.getByTestId("nav-entrar")).toHaveText("Entrar");
       } else {
         await topo.getByTestId("nav-menu").click();
-        await expect(page.getByTestId("nav-menu-lista").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", "Planos", "Fale com a Viva", "Entrar"]);
+        await expect(page.getByTestId("nav-menu-lista").getByRole("link")).toHaveText([...NAV_PUBLICO, "Fale com a Viva", "Entrar"]);
       }
       await page.screenshot({ path: `${SAIDA}/t489-topo-buscar-${largura}.png` });
       await page.goto("/auth", { waitUntil: "domcontentloaded" });
