@@ -20,8 +20,8 @@ export function Footer() {
           </p>
           {/* E994: a 1280 px a coluna tem ~264 px e a frase ~261 px — cabia por 3 px e quebrava em duas no navegador do
               GitHub. A partir de xl ela não quebra (sobra o vão de 48 px da grade); abaixo, a coluna é estreita e quebra. */}
-          <p className="mt-4 text-sm text-white/60">
-            Suporte:{" "}
+          <p className="mt-4 text-sm text-white/60 xl:whitespace-nowrap">
+            Suporte e atendimento ao cliente da Viva Nomads:{" "}
             <a href={`mailto:${SUPORTE_EMAIL}`} className="font-semibold text-white/80 hover:text-white">
               {SUPORTE_EMAIL}
             </a>
