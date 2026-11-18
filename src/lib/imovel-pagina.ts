@@ -38,6 +38,22 @@ export function codigoDoImovel(id: string): string {
   return `VN-${limpo}`;
 }
 
+/** E393: lê o código público como a pessoa o digita ("VN-3F9A2C", "vn3f9a2c") → "3F9A2C"; null se não é um código. */
+export function prefixoDoCodigo(texto: string): string | null {
+  const m = /^vn-?([a-z0-9]{6})$/i.exec(texto.trim());
+  return m ? m[1].toUpperCase() : null;
+}
+
+/**
+ * E393: a faixa de UUIDs cujo código é este prefixo (os 6 primeiros dígitos hexadecimais do id). null quando o prefixo
+ * não é hexadecimal — aí só pode ser anúncio de exemplo (id "ube-015" → "VN-UBE015").
+ */
+export function faixaUuidDoPrefixo(prefixo: string): { de: string; ate: string } | null {
+  if (!/^[0-9a-f]{6}$/i.test(prefixo)) return null;
+  const p = prefixo.toLowerCase();
+  return { de: `${p}00-0000-0000-0000-000000000000`, ate: `${p}ff-ffff-ffff-ffff-ffffffffffff` };
+}
+
 export type SinalConfianca = { tipo: "disponibilidade" | "resposta" | "desde" | "codigo"; texto: string };
 
 /** Lista curta do topo da página. Cada item só aparece com dado real. */
