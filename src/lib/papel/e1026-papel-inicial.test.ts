@@ -11,6 +11,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { parceiroInicialDoServidor, preferenciaParceiroEfetiva } from "./papel-inicial.ts";
+import { anotarModoDoServidor, modoAnotadoDoServidor, trocaDaPessoaNoMeio } from "./modo-do-servidor.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 const CARIMBO = "2026-11-18T10:00:00.000Z";
@@ -62,10 +63,23 @@ test("E1026: o store guarda se o papel da conta já é conhecido; outra conta e 
   assert.equal((setPapel.match(/papelConhecido: true/g) ?? []).length, 2);
 });
 
-test("E1026: o AuthProvider marca o papel como conhecido quando termina de ler o perfil (com ou sem papel gravado)", () => {
+test("E1026: o AuthProvider só marca o papel como conhecido quando a leitura do perfil foi APLICADA", () => {
+  // 2ª causa, achada no refresco (18/11): na chegada do login o ModeInitializer muda o modo de null para o do servidor
+  // enquanto o perfil é lido; o AuthProvider toma isso por troca da pessoa (semTrocaNoMeio = false) e NÃO aplica o papel
+  // lido. Marcar "conhecido" nesse caso deixava o store a dizer "não é parceiro" como se fosse certo, e a tela seguinte
+  // nascia com o cabeçalho do dono (4 em 24 no laboratório). Leitura não aplicada = papel ainda desconhecido.
   const auth = ler("src/components/auth-provider.tsx");
   const leitura = auth.slice(auth.indexOf("const gravado = papelGravadoEfetivo(gravadoBruto, escolhidoEm);"), auth.indexOf("perfilLido.delete(u.id); // tenta de novo"));
-  assert.match(leitura, /if \(useAuthStore\.getState\(\)\.user\?\.id === u\.id\) useAuthStore\.setState\(\{ papelConhecido: true \}\);/);
+  assert.match(leitura, /if \(semTrocaNoMeio && useAuthStore\.getState\(\)\.user\?\.id === u\.id\) useAuthStore\.setState\(\{ papelConhecido: true \}\);/);
+  assert.equal((auth.match(/papelConhecido: true/g) ?? []).length, 1, "nenhuma outra marcação no AuthProvider");
+});
+
+test("E1026: a troca de modo pela pessoa (link de outra área) também é papel conhecido", () => {
+  // setActiveMode desliga o parceiro (E464). Se o papel ainda fosse "desconhecido", o do servidor (parceiro) venceria a
+  // escolha que a pessoa acabou de fazer. A marcação fica no gesto, ao lado da troca.
+  const casca = ler("src/components/layout/dashboard-shell.tsx");
+  const aoNavegar = casca.slice(casca.indexOf("async function aoNavegar("), casca.indexOf("// Conta única (ordem a8c05cd0)"));
+  assert.match(aoNavegar, /setActiveMode\(alvo\);\n\s+useAuthStore\.setState\(\{ papelConhecido: true \}\);/);
 });
 
 test("E1026: o painel lê o papel no servidor e o entrega à casca por contexto; os ganchos do papel usam a regra", () => {
@@ -84,4 +98,37 @@ test("E1026: o painel lê o papel no servidor e o entrega à casca por contexto;
   // Quem decide o papel em uso na Conta e a sincronização por área leem pela mesma porta.
   assert.match(ler("src/components/account/use-papel-em-uso.ts"), /const parceiroAtivo = usePreferenciaParceiro\(\);/);
   assert.match(ler("src/components/papel/sincronizar-papel.tsx"), /const parceiroAtivo = usePreferenciaParceiro\(\);/);
+});
+
+test("E1026, 2ª causa: o modo que o ModeInitializer aplica no meio da leitura do perfil não é troca da pessoa", () => {
+  // Chegada do login: o store nasce sem modo (null); o ModeInitializer aplica o do servidor (owner) enquanto o perfil é
+  // lido. Antes, isso contava como "a pessoa trocou" e o papel lido era descartado.
+  assert.equal(trocaDaPessoaNoMeio({ pendente: false, modoAntes: null, modoAgora: "owner", modoDoServidor: "owner" }), false);
+  assert.equal(trocaDaPessoaNoMeio({ pendente: false, modoAntes: "tenant", modoAgora: "owner", modoDoServidor: "owner" }), false);
+  // Nada mudou: não houve troca.
+  assert.equal(trocaDaPessoaNoMeio({ pendente: false, modoAntes: "owner", modoAgora: "owner", modoDoServidor: "owner" }), false);
+  assert.equal(trocaDaPessoaNoMeio({ pendente: false, modoAntes: null, modoAgora: null, modoDoServidor: null }), false);
+});
+
+test("E1026, 2ª causa: a troca da pessoa continua a vencer o perfil lido (o que a regra antiga protegia)", () => {
+  // Mudou para um modo que NÃO é o que o servidor mandou aplicar nesta carga: foi a pessoa.
+  assert.equal(trocaDaPessoaNoMeio({ pendente: false, modoAntes: "owner", modoAgora: "tenant", modoDoServidor: "owner" }), true);
+  assert.equal(trocaDaPessoaNoMeio({ pendente: false, modoAntes: null, modoAgora: "tenant", modoDoServidor: "owner" }), true);
+  assert.equal(trocaDaPessoaNoMeio({ pendente: false, modoAntes: null, modoAgora: "owner", modoDoServidor: null }), true);
+  // Troca recente ainda não confirmada pelo servidor (bug 6 da L2): vence sempre, mesmo que o modo pareça igual.
+  for (const modoAgora of ["owner", "tenant", null] as const)
+    assert.equal(trocaDaPessoaNoMeio({ pendente: true, modoAntes: "owner", modoAgora, modoDoServidor: "owner" }), true);
+});
+
+test("E1026, 2ª causa: o ModeInitializer anota o modo que aplica e o AuthProvider usa a regra", () => {
+  anotarModoDoServidor("owner");
+  assert.equal(modoAnotadoDoServidor(), "owner");
+  anotarModoDoServidor(null);
+  assert.equal(modoAnotadoDoServidor(), null);
+  const ini = ler("src/components/layout/mode-initializer.tsx");
+  // Anota ANTES de aplicar, nos dois caminhos (o modo que veio com a página e o relido depois de um atraso).
+  assert.match(ini, /anotarModoDoServidor\(modo\);\n\s+if \(modo\) useAuthStore\.setState\(\{ activeMode: modo \}\);/);
+  assert.match(ini, /if \(aplicar\) \{\n\s+anotarModoDoServidor\(aplicar\);\n\s+useAuthStore\.setState\(\{ activeMode: aplicar \}\);/);
+  const auth = ler("src/components/auth-provider.tsx");
+  assert.match(auth, /const semTrocaNoMeio = !trocaDaPessoaNoMeio\(\{ pendente: !!pendente, modoAntes, modoAgora: useAuthStore\.getState\(\)\.activeMode, modoDoServidor: modoAnotadoDoServidor\(\) \}\);/);
 });

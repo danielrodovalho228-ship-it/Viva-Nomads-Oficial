@@ -8,7 +8,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   Conta com imóvel + parceria aprovada + papel ativo = parceiro (com o carimbo da escolha), a 390 e a 1280:
     1) a página de CHEGADA do login já nasce com o cabeçalho do parceiro — nunca passa pelo do dono;
     2) com a leitura do perfil pelo navegador atrasada 3 s, a tela aberta logo depois do login também nasce certa
-       (antes: dono durante os 6 s das duas leituras).
+       (antes: dono durante os 6 s das duas leituras);
+    3) sem atraso nenhum, a tela aberta logo depois do login nasce certa mesmo quando a leitura do perfil da chegada
+       terminou sem ser aplicada (o modo mudou no meio) — o caminho que fazia o t886 falhar às vezes.
   O t886 cobre as cargas seguintes das telas da Conta; este cobre o intervalo logo depois do login, que ele não mede.
 */
 const senha = novaSenha();
@@ -83,6 +85,21 @@ test.describe("T1690 — o cabeçalho do parceiro logo depois do login (E1026)",
       await expect(cabecalhoDoParceiro(p), "cabeçalho do parceiro antes de o perfil voltar").toBeVisible({ timeout: 2_500 });
       await p.waitForTimeout(2500);
       expect(await deOutroPapel(p), "/dashboard/conta/perfil: cabeçalho de outro papel").toEqual([]);
+      await ctx.close();
+    });
+
+    test(`a ${w} px: a tela aberta logo depois do login nasce com o cabeçalho do parceiro (leitura da chegada não aplicada)`, async ({ browser }) => {
+      // 2ª causa (18/11): na chegada, a leitura do perfil pode terminar SEM ser aplicada — o ModeInitializer muda o modo de
+      // null para o do servidor no meio, e o AuthProvider toma isso por troca da pessoa. O navegador fica a guardar "não é
+      // parceiro", e a tela seguinte não pode acreditar nisso. Acontece numa parte das vezes (4 em 24 no laboratório, com a
+      // 1ª versão desta correção); por isso o caso roda sem atraso nenhum, como o t886 faz, e conta com as repetições.
+      const ctx = await browser.newContext({ viewport: { width: w, height: w === 390 ? 844 : 900 }, isMobile: w === 390 });
+      await anotarPapeis(ctx);
+      const p = await entrarNaPagina(await ctx.newPage(), pessoa.email, senha);
+      await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
+      await expect(cabecalhoDoParceiro(p), "cabeçalho do parceiro na tela seguinte").toBeVisible({ timeout: 20_000 });
+      await p.waitForTimeout(2500);
+      expect(await deOutroPapel(p), "/dashboard/conta/perfil, logo depois do login: cabeçalho de outro papel").toEqual([]);
       await ctx.close();
     });
   }
