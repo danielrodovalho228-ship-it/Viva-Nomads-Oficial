@@ -91,7 +91,11 @@ test.describe("T230 — pagamento sem repetição + Caução do contrato + VN-CT
       el.click();
       el.click();
     });
-    await expect(caucao.getByTestId("recebimento-registrado")).toContainText("Caução registrada", { timeout: 20_000 });
+    // E1020: "Caução registrada" é a mensagem do formulário; o router.refresh() que vem logo depois troca o formulário pelo
+    // estado gravado ("Recebimento registrado…"). Com o runner lento, o teste olhava depois da troca e não achava a
+    // mensagem. Vale qualquer uma das duas e, no fim, o estado gravado tem de aparecer.
+    await expect(caucao.getByTestId("recebimento-registrado").or(caucao.getByTestId("caucao-contrato-status"))).toContainText(/Caução registrada|Recebimento registrado/, { timeout: 20_000 });
+    await expect(caucao.getByTestId("caucao-contrato-status")).toContainText("Recebimento registrado", { timeout: 20_000 });
     expect(await contar({ contrato_id: ids.contrato!, tipo: "caucao" })).toBe(1);
     const { data: c } = await adm().from("pagamentos_bloco").select("bloco_id").eq("contrato_id", ids.contrato!).eq("tipo", "caucao").single();
     expect(c!.bloco_id, "a Caução é do contrato: sem bloco").toBeNull();
