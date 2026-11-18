@@ -2,28 +2,10 @@
  "regra": "um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só então entra aqui; desde 17/11 (decisão do Gerente, DUET-1225) entra também o teste velho com correção já escrita em PR aberto, apontando o PR em 'correcao', e sai quando ele for mesclado; desde 17/11 (DUET-1419) entra também o defeito registrado, com item e dono, cuja falha não é sempre a mesma (sem marca de falha conhecida), e sai no PR da correção; quando o teste é de uma cadeia em série e os seguintes dependem dele, a cadeia entra e sai inteira; teto de 25 entradas; validade de no máximo 14 dias",
  "entradas": [
   {
-   "spec": "t21-central-agentes.spec.ts",
-   "titulo": "Moacir gerente: 'chegou chamado novo?' consulta o banco, pergunta à Viva e responde com código e prazo",
-   "motivo": "instável em 4 das 7 corridas de 16 e 17/11: o passo do gerente (\"Moacir → Viva:\" ou \"Viva: Tenho N chamado\") não aparece na primeira tentativa",
-   "item": "E1010",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
    "spec": "t29-chat-sem-aprovacao.spec.ts",
    "titulo": "'Ok, tudo aprovado' para o Moacir: não aprova nada e não cria ordem",
    "motivo": "instável nas 7 corridas de 16 e 17/11: a contagem de ordens esperada 0 vem 1 na primeira tentativa e passa na segunda. Causa provável, vista no laboratório local com 2 workers: o teste compara a contagem da tabela inteira de ordens antes e depois, e outro teste que cria ordem ao mesmo tempo muda a conta",
    "item": "E1011",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t305-laudo-avaliacao-62b2.spec.ts",
-   "titulo": "3. reprovado: vale o nível do laudo, sem \"· vistoriado\"; nova avaliação pelo valor da tabela, sem desconto",
-   "motivo": "instável nas 7 corridas de 16 e 17/11: o texto \"novo pedido, avaliador à sua escolha\" não aparece na primeira tentativa; passa na nova tentativa",
-   "item": "E1016",
    "dono": "Code 2",
    "entrada": "2026-11-17",
    "expira": "2026-12-01"
@@ -55,6 +37,16 @@
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
    "correcao": 3965
+  },
+  {
+   "spec": "t355-conta-a-perfil-espelho.spec.ts",
+   "titulo": "5. a 1280 px: o espelho monta ao vivo; celular com \"Salvar alterações\" logo depois do conteúdo (E61)",
+   "motivo": "intermitente: sozinho contra a main b4b0bc71 em 18/11, 2 falhas em 3 (o endereço fica em /dashboard/conta/perfil#perfil-publico em vez de /dashboard/conta/perfil); em 16/11, na main 2bbddc98, 1 falha, 3 instáveis e 2 verdes em 6. Disposição do Gerente: ORDEM-DUET-096; correção ou plano do dono até 26/11",
+   "item": "E61",
+   "dono": "Fable",
+   "entrada": "2026-11-18",
+   "expira": "2026-12-01",
+   "correcao": 3910
   }
  ]
 }
