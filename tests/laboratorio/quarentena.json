@@ -29,15 +29,6 @@
    "expira": "2026-12-01"
   },
   {
-   "spec": "t108-admin-atendimento-status-humano.spec.ts",
-   "titulo": "tela do chamado sem \"_\" de status a 1280px",
-   "motivo": "instável em 3 das 7 corridas de 16 e 17/11: estoura os 90 s na primeira tentativa; sozinho passou 6 de 6",
-   "item": "E1014",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
    "spec": "t190-seo-robots-jsonld.spec.ts",
    "titulo": "anúncio real: Offer com Accommodation, estadia mín/máx e sem coordenada",
    "motivo": "instável nas 7 corridas de 16 e 17/11: \"Unexpected end of JSON input\" na primeira tentativa; passa na nova tentativa",
