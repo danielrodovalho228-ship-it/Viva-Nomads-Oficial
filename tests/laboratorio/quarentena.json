@@ -11,15 +11,6 @@
    "expira": "2026-12-01"
   },
   {
-   "spec": "t29-chat-sem-aprovacao.spec.ts",
-   "titulo": "'Ok, tudo aprovado' para o Moacir: não aprova nada e não cria ordem",
-   "motivo": "instável nas 7 corridas de 16 e 17/11: a contagem de ordens esperada 0 vem 1 na primeira tentativa e passa na segunda. Causa provável, vista no laboratório local com 2 workers: o teste compara a contagem da tabela inteira de ordens antes e depois, e outro teste que cria ordem ao mesmo tempo muda a conta",
-   "item": "E1011",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
    "spec": "t30-atendimento-autonomo.spec.ts",
    "titulo": "Caução simples: resposta automática em < 30 s; nova pergunta respondida; 'pessoa' passa para a equipe sem IA",
    "motivo": "instável em 3 e vermelho em 1 das 7 corridas de 16 e 17/11: a frase \"Resposta automática da Viva…\" não aparece a tempo; sozinho passou 6 de 6",
