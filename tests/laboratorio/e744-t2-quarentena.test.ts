@@ -251,8 +251,8 @@ test("cadeia em série: quando os testes seguintes dependem do que está em quar
     // A cadeia inteira a partir da raiz: nenhum teste seguinte fica nas fatias gerais sem o que ele precisa.
     assert.deepEqual(entradas.filter((e) => e.spec === spec).map((e) => e.titulo), aPartirDaRaiz, `${spec}: a cadeia não entrou inteira`);
   }
-  // As duas cadeias desta entrada: t230 (E1020) e t321 (E1022).
-  assert.deepEqual([...new Set(deCadeia.map((e) => `${e.spec.split("-")[0]} ${e.item}`))].sort(), ["t230 E1020", "t321 E1022"]);
+  // As cadeias de hoje: t230 (E1020). A do t321 (E1022) saiu com a correção do E1022 (o caso 1 já não falha).
+  assert.deepEqual([...new Set(deCadeia.map((e) => `${e.spec.split("-")[0]} ${e.item}`))].sort(), ["t230 E1020"]);
 });
 
 test("o workflow: as fatias excluem a quarentena, uma entrada própria roda só ela e não bloqueia, e o consolidar publica o resumo", () => {
