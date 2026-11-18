@@ -41,7 +41,7 @@ const TELAS: Tela[] = [
   { conta: "DONO", papel: "proprietário", nome: "Passo 2, a contagem das fotos (#1586)", rota: cadastro("fotos"), marca: "fotos-contagem" },
   { conta: "DONO", papel: "proprietário", nome: "Passo 5, sem o tipo de acesso (#1583)", rota: cadastro("comodidades"), marca: "privacidade-campos" },
   { conta: "DONO", papel: "proprietário", nome: "Passo 6, como se entra no imóvel (#1583)", rota: cadastro("regras"), marca: "chegada-e-pedido" },
-  { conta: "DONO", papel: "proprietário", nome: "Passo 10, Declarações do imóvel na conferência (#1587)", rota: cadastro("revisao"), marca: "conferencia-tipo" },
+  { conta: "DONO", papel: "proprietário", nome: "Passo 10, Declarações do imóvel na conferência (#1587)", rota: cadastro("revisao"), marca: "antes-secao-declaracoes" }, // E744 (marca alterada, tabela da Fable #3832): as declarações moram na seção do "Antes de publicar"
   { conta: "DONO", papel: "proprietário", nome: "Editor do anúncio, com a seção Regras da casa (#1583)", rota: () => `/dashboard/imoveis/${ids.anuncio}/editar`, marca: "secao-regras" },
   { conta: "VISITANTE", papel: "visitante", nome: "Anúncio público, destaques e privacidade (#1588)", rota: () => `/imoveis/${ids.anuncio}`, marca: "destaques-imovel" },
   { conta: "DONO", papel: "proprietário", nome: "Anúncio público visto pelo dono (#1588)", rota: () => `/imoveis/${ids.anuncio}`, marca: "destaques-imovel" },

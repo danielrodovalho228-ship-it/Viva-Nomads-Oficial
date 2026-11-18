@@ -318,9 +318,14 @@ function PainelChat({ onFechar, altura, semPromessa, entregarPessoa }: { onFecha
             </button>
           </form>
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            {/* E1014: antes de o JavaScript chegar, o toque não pode se perder — o formulário leva à rota única do chat
+                (?doChat=1), que abre o "Abrir chamado". Com a página pronta, o clique segue pelo evento, sem recarregar. */}
+            <form action="/ajuda/fale-com-a-viva" method="get" className="contents">
+            <input type="hidden" name="doChat" value="1" />
             <button
-              type="button"
-              onClick={() => {
+              type="submit"
+              onClick={(e) => {
+                e.preventDefault();
                 if (entregarPessoa) window.dispatchEvent(new CustomEvent(EVENTO_FALAR_COM_PESSOA, { detail: { conversa: msgs } }));
                 // E449: um formulário só. Na página Fale com a Viva, o da Central abre ali mesmo; fora dela, a rota única
                 // leva à página com a conversa (guardada no sessionStorage) anexada.
@@ -330,6 +335,7 @@ function PainelChat({ onFechar, altura, semPromessa, entregarPessoa }: { onFecha
             >
               <UserRound className="h-3.5 w-3.5" /> Falar com uma pessoa
             </button>
+            </form>
             <Link href="/ajuda" className="inline-flex min-h-11 items-center gap-1 text-muted hover:text-ink">
               <LifeBuoy className="h-3.5 w-3.5" /> Central de Ajuda
             </Link>
