@@ -8,6 +8,7 @@ import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
 import { notaDataCalculada, resumoEmMeses, rotuloPreco } from "@/lib/cartao-preco";
+import { composicaoDoMes } from "@/lib/cartao-estadia";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 import { PainelPrecoFixo } from "@/components/property/painel-preco-fixo";
 
@@ -76,6 +77,11 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
           </span>
         )}
       </p>
+      {/* E899: a composição do mês saiu do cartão da busca e fica aqui, perto do preço, pela MESMA função (composicaoDoMes):
+          as parcelas que somam o /mês ou, com as contas medidas, o aviso de que água, luz e gás ficam fora do total. */}
+      <p className="mt-1 text-xs text-muted tabular-nums" data-testid="cartao-lateral-mes-composicao">
+        {composicaoDoMes(property)}
+      </p>
       {estadiaMinimaAviso != null && (
         <p className="text-sm font-medium text-ink" data-testid="cartao-lateral-estadia-minima" role="status">
           Estadia mínima de {estadiaMinimaAviso} dias.
@@ -108,7 +114,7 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
           <span className="text-xl font-semibold tabular-nums text-forest">{formatBRL(mes.total)}</span>
         </li>
       </ul>
-      <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}</p>
+      <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}{mes.contasNaoInformadas && " Água, luz e gás não informados neste anúncio."}</p>
       <p className="mt-1 text-xs text-muted">R$ 0 de taxa para você: o morador não paga nada à plataforma.</p>
       {/* Negociação configurada pelo dono (prompt 17 §8): "Valor fixo" ou o desconto por estadia mais longa. */}
       {property.negociacao && (

@@ -22,6 +22,8 @@ import { CONTATO_NUNCA_TROCADO, FRASE_ESCADA_TAXAS } from "@/config/textos-regul
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
+import Link from "next/link";
+import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/como-funciona" },
@@ -114,6 +116,14 @@ export default function HowItWorksPage() {
             Anunciar meu imóvel
           </ButtonLink>
         </div>
+        {/* E854: onde a página fala de resposta da Viva, o prazo do canal (atendimento), pela fonte do atendimento. */}
+        <p className="mt-6 text-sm text-muted" data-testid="cf-prazo-resposta">
+          Ficou alguma dúvida?{" "}
+          <Link href="/ajuda/fale-com-a-viva" className="font-medium text-forest underline underline-offset-4">
+            Fale com a Viva
+          </Link>{" "}
+          · {PROMESSA_ATENDIMENTO}
+        </p>
       </section>
       </div>
     </>

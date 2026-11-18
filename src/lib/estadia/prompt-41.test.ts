@@ -51,8 +51,11 @@ test("página do imóvel: UM primário 'Pedir para morar' (IMÓVEL-CTA; a candid
 
 test("valor: 'R$ X/mês · R$ Y em N meses' pela regra do cartão e 'a Viva não segura dinheiro' em todo rótulo de valor", () => {
   const d = ler("app/(public)/imoveis/[id]/property-detail.tsx");
-  // E53: o período escolhido no calendário/caixa/diálogo vem primeiro; sem ele, a duração da busca ou a estadia mínima.
-  assert.match(d, /const meses = mesesDaSelecao\(selecao\) \?\? mesesDoCartao\(mesesBusca \|\| undefined, property\.minPeriodDays\);/);
+  // E53: o período escolhido no calendário/caixa/diálogo vem primeiro; sem ele, a estadia mínima (o período de referência).
+  // E920: a duração da última busca guardada no aparelho saiu daqui (antes: "…?? mesesDoCartao(mesesBusca || undefined, …)");
+  // ela trocava o período do total sozinha, depois de a página carregar.
+  assert.match(d, /const meses = mesesDoTotalDaPagina\(selecao, property\.minPeriodDays\);/);
+  assert.match(ler("lib/imovel/selecao-estadia.ts"), /return mesesDaSelecao\(sel\) \?\? mesesDoCartao\(undefined, minPeriodDays \?\? undefined\);/);
   assert.match(ler("lib/barra-fixa-imovel.ts"), /rotuloPreco\(\{ mensal: total, meses: p\.meses \?\? 1 \}\)/);
   assert.match(ler("components/property/price-card.tsx"), /const preco = rotuloPreco\(\{ mensal: mes\.total, meses, disponivelEm: disponivelDesde \?\? property\.availableFrom \}\);/);
   assert.match(ler("components/property/price-card.tsx"), /FRASE_NAO_SEGURA_DINHEIRO/);

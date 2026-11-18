@@ -27,7 +27,7 @@ import { SELOS } from "@/config/selos";
 import { PHOTOS } from "@/lib/media";
 import { listProperties } from "@/lib/data/properties";
 import { ButtonLink } from "@/components/ui/button";
-import { SELO_PERFIL_VERIFICADO } from "@/config/textos-regulados";
+import { SELO_DOCUMENTO_IMOVEL, SELO_VERIFICACOES_ANUNCIANTE, PROMESSA_ESTADIA } from "@/config/textos-regulados";
 import { SpecTag, Eyebrow } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
@@ -86,7 +86,7 @@ export default async function HomePage() {
             Imóveis mobiliados para morar por meses
           </h1>
           <p className="mt-3 text-base font-medium text-white/85 sm:text-lg">
-            Estadias de 30 a 180 dias · sem taxa para o morador
+            {PROMESSA_ESTADIA} · sem taxa para o morador
           </p>
           <div className="mt-8 w-full max-w-xl">
             <BuscaPrincipal />
@@ -107,9 +107,9 @@ export default async function HomePage() {
       {/* ───────── CONFIANÇA (o que vem com toda estadia) ───────── */}
       <section className="border-y border-line bg-white">
         <div className="container-page grid grid-cols-2 gap-3 py-6 sm:grid-cols-4" data-testid="faixa-confianca">
-          <TrustItem icon={Lock} text={SELO_PERFIL_VERIFICADO} />
+          <TrustItem icon={Lock} text={SELO_VERIFICACOES_ANUNCIANTE} />
           <TrustItem icon={FileCheck} text="Caução documentada" />
-          <TrustItem icon={ShieldCheck} text="Documentação do imóvel conferida" />
+          <TrustItem icon={ShieldCheck} text={SELO_DOCUMENTO_IMOVEL} />
           <TrustItem icon={BadgeCheck} text="R$ 0 de taxa para o morador" />
         </div>
       </section>
@@ -198,7 +198,7 @@ export default async function HomePage() {
             </div>
             <ul className="mt-8 space-y-4">
               <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa e cadeira. Internet informada pelo proprietário; quando medida no imóvel, o anúncio mostra o número. É o que sustenta a etiqueta Para trabalhar de casa." />
-              <WorkFeature icon={Building2} title="Coworkings e cafés na região" text="A vizinhança costuma ter espaços de trabalho — você confere a posição no mapa do imóvel." />
+              <WorkFeature icon={Building2} title="Coworkings e cafés na região" text="A vizinhança costuma ter espaços de trabalho — a página do imóvel lista os que ficam por perto." />
             </ul>
           </div>
         </div>

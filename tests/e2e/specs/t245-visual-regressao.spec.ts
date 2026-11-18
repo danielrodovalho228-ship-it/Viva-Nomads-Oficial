@@ -146,7 +146,8 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
           if (nota) nota.textContent = "Novo na plataforma";
           texto("cartao-titulo", "Imóvel mobiliado de exemplo");
           texto("cartao-preco-mes", "R$ 3.000");
-          por("cartao-total-estadia")?.remove();
+          // E899: o total da estadia tem linha própria, fechada pelo aviso curto (antes: um trecho da linha do preço).
+          por("cartao-total-linha")?.remove();
           const sintese = por("cartao-sintese");
           if (sintese) sintese.textContent = "1 quarto · 1 banheiro · 40 m² · mobiliado";
           por("cartao-disponivel")?.remove();

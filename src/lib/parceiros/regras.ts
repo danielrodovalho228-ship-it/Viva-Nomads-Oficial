@@ -6,6 +6,7 @@
   formulário do navegador importa este arquivo); o token fica em token.ts.
 */
 import { chaveCidade } from "../cidades.ts";
+import { PRAZO_CANAL, TEXTO_PRAZO_PARCERIA } from "../../config/prazos-canais.ts";
 import { cnpjValido, cpfValido, soDigitos, type TipoPessoa } from "../documento-pessoa.ts";
 import { emiteNotaParaGravar, faltaRespostaNota, passaFiltroNota, PENDENCIA_NOTA } from "./fiscal.ts";
 
@@ -13,9 +14,10 @@ import { emiteNotaParaGravar, faltaRespostaNota, passaFiltroNota, PENDENCIA_NOTA
 /** O prazo de resposta ao pedido de parceria: 7 dias, o mesmo que /empresas promete (E770) — decisão da vigia de 12/11 (E791).
  *  FONTE ÚNICA de tudo o que fala desse prazo: /parceiros, o formulário depois de enviar, o onboarding E o alerta à equipe
  *  (lembretes: parceiroSemResposta; o aviso do cron, o e-mail e a fila de decisões do admin). */
-export const DIAS_RESPOSTA_PARCERIA = 7;
-export const PRAZO_RESPOSTA_PARCERIA = `${DIAS_RESPOSTA_PARCERIA} dias`;
-export const TEXTO_PRAZO_PARCERIA = `A Viva responde por e-mail em até ${PRAZO_RESPOSTA_PARCERIA}.`;
+//  Família 1 (E835): o número mora em config/prazos-canais.ts (um prazo por canal); aqui só os nomes de sempre.
+export const DIAS_RESPOSTA_PARCERIA = PRAZO_CANAL.parceiro.dias;
+export const PRAZO_RESPOSTA_PARCERIA = PRAZO_CANAL.parceiro.texto;
+export { TEXTO_PRAZO_PARCERIA };
 
 // ── Categorias ─────────────────────────────────────────────────────────────────────────────────────────────────
 export const CATEGORIAS_PARCEIRO = [
@@ -50,6 +52,25 @@ export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS
 export function categoriasComDaUrl(atuais: readonly string[], daUrl: string | null | undefined): string[] {
   if (!daUrl || !categoriaValida(daUrl) || atuais.includes(daUrl)) return [...atuais];
   return [...atuais, daUrl];
+}
+
+/**
+ * E915: a categoria pedida na URL (?categoria=) não existe no catálogo? Vazio é "Todas" — não é inexistente. A busca
+ * diz isso com franqueza (em vez de cair calada em "Todas") e o "Quero ser avisado" não se arma para ela.
+ */
+export function categoriaInexistente(daUrl: string | null | undefined): boolean {
+  return !!daUrl && !categoriaValida(daUrl);
+}
+/** E915: o aviso da categoria inexistente — o valor da URL vai encurtado (nada de texto longo colado pela URL). */
+export function avisoCategoriaInexistente(daUrl: string): string {
+  const v = daUrl.trim().slice(0, 40);
+  return `A categoria "${v}" não existe. Mostramos todas as categorias: escolha uma na lista para filtrar.`;
+}
+/** E915: a frase de apoio do "Quero ser avisado" — sem categoria escolhida ("Todas"), não fala em "desta categoria". */
+export function textoApoioAviso(semCategoria: boolean): string {
+  return semCategoria
+    ? "Avisamos você quando houver um parceiro na sua cidade."
+    : "Avisamos você quando houver um parceiro desta categoria na sua cidade.";
 }
 
 // ── Taxa de serviço (10%, todas as categorias; fotógrafos inclusive) ────────────────────────────────────────────

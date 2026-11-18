@@ -19,6 +19,7 @@ import { IndicarProfissional } from "@/components/parceiros/indicar-profissional
  */
 export function BuscaVazia({
   categoria,
+  categoriaInexistente = false,
   cidade,
   uf,
   logado,
@@ -27,6 +28,8 @@ export function BuscaVazia({
   geral,
 }: {
   categoria: string;
+  /** E915: a URL pediu uma categoria fora do catálogo — sem "Quero ser avisado" (não há o que avisar). */
+  categoriaInexistente?: boolean;
   cidade: string;
   uf: string;
   logado: boolean;
@@ -55,18 +58,22 @@ export function BuscaVazia({
           <p className="font-title text-lg font-semibold text-ink" data-testid="busca-parceiros-vazia-texto">
             {`Ainda não temos parceiro${categoria ? ` de ${rotuloCategoria(categoria).toLowerCase()}` : ""}${cidade ? ` em ${cidade}` : " nesta busca"}.`}
           </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <AvisoFotografo
-              cidade={cidade}
-              uf={ufEfetiva}
-              logado={logado}
-              voltarPara={voltarPara}
-              autoAvisar={autoAvisar}
-              categoria={categoria || "outro"}
-              ladoALado
-              opcoesUf={opcoesUf}
-              pedirCidade={!cidade}
-            />
+          <div className={categoriaInexistente ? "grid gap-4" : "grid gap-4 sm:grid-cols-2"}>
+            {/* E915: categoria inexistente não arma o aviso; sem categoria ("Todas"), a frase não fala em "desta categoria". */}
+            {!categoriaInexistente && (
+              <AvisoFotografo
+                cidade={cidade}
+                uf={ufEfetiva}
+                logado={logado}
+                voltarPara={voltarPara}
+                autoAvisar={autoAvisar}
+                categoria={categoria || "outro"}
+                ladoALado
+                opcoesUf={opcoesUf}
+                pedirCidade={!cidade}
+                semCategoria={!categoria}
+              />
+            )}
             <div className="h-full rounded-xl border border-line bg-white p-4" data-testid="indique-profissional">
               <p className="flex items-center gap-2 font-semibold text-ink">
                 <UserPlus className="h-5 w-5 shrink-0 text-forest" aria-hidden /> Indique um profissional

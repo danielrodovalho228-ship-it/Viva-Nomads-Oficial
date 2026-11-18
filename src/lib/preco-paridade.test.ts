@@ -60,7 +60,8 @@ function arquivos(dir: string, out: string[] = []): string[] {
 
 test("varredura: as telas de preço de imóvel usam rotuloPreco", () => {
   const superficies = [
-    "components/property-card.tsx",
+    // E899: o cartão da busca desenha a partir de modeloDoCartao, que é quem chama o rotuloPreco (antes: o próprio componente).
+    "lib/cartao-modelo.ts",
     "components/busca/card-pin-mapa.tsx",
     "components/property/price-card.tsx",
     "components/property-mini-card.tsx",
@@ -73,6 +74,7 @@ test("varredura: as telas de preço de imóvel usam rotuloPreco", () => {
   ];
   // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): as telas de um anúncio usam rotuloPrecoDoImovel (o rotuloPreco com o total da regra única).
   for (const f of superficies) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco(DoImovel)?\(/, f);
+  assert.match(readFileSync(join(SRC, "components/property-card.tsx"), "utf8"), /modeloDoCartao\(property, periodMonths\)/);
   // E264-B: o e-mail do alerta (e dos outros proativos) mostra o preço pelo cartão do imóvel do modelo de e-mail.
   for (const f of ["lib/barra-fixa-imovel.ts", "lib/notifications/cartoes-email.ts"]) assert.match(readFileSync(join(SRC, f), "utf8"), /rotuloPreco\(/, f);
 });

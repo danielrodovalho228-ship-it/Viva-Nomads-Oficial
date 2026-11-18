@@ -635,7 +635,8 @@
         "t673-varredura-bloco67",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1645-reprovas-e916-e915-e887-e931"
       ]
     },
     "/ajuda/[tema]": {
@@ -651,7 +652,8 @@
         "t694-varredura-bloco73",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1645-reprovas-e916-e915-e887-e931"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -894,7 +896,8 @@
         "t1446-e697-e698-galeria-sem-repeticao-e-primeira-pintura",
         "t1448-varredura-bloco514",
         "t1451-varredura-bloco517",
-        "t1459-c9-e709-e710-e711-layout"
+        "t1459-c9-e709-e710-e711-layout",
+        "t1645-reprovas-e916-e915-e887-e931"
       ]
     },
     "/cidades": {
@@ -994,7 +997,8 @@
         "t311-marco-principal-unico",
         "t1389-varredura-bloco478",
         "t1421-varredura-bloco495",
-        "t1445-varredura-bloco512"
+        "t1445-varredura-bloco512",
+        "t1645-reprovas-e916-e915-e887-e931"
       ]
     },
     "/conferir/[codigo]": {
@@ -2824,7 +2828,8 @@
         "t560-varredura-bloco44",
         "t1405-varredura-bloco483",
         "t1426-varredura-bloco500",
-        "t1451-varredura-bloco517"
+        "t1451-varredura-bloco517",
+        "t1645-reprovas-e916-e915-e887-e931"
       ]
     },
     "/parceiros/fotografos": {
@@ -3036,6 +3041,14 @@
         "t1407-varredura-bloco485",
         "t1433-varredura-bloco502",
         "t1453-varredura-bloco519"
+      ]
+    },
+    "/sobre": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t1629-familia2-rotas-vivas"
       ]
     },
     "/termos": {

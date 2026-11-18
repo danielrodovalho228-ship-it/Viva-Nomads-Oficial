@@ -35,7 +35,7 @@ test("meses do cartão: duração da busca ou estadia mínima", () => {
   assert.equal(mesesDoCartao(undefined, undefined), 1);
 });
 
-import { estadiaDoCartao, ROTULO_TOTAL_MES } from "./cartao-preco.ts";
+import { estadiaDoCartao } from "./cartao-preco.ts";
 
 test("E356: todo cartão tem a linha do total da estadia (com 1 mês: 'R$ X em 1 mês'), igual entre vizinhos", () => {
   const um = rotuloPreco({ mensal: 3960, meses: 1 });
@@ -45,8 +45,16 @@ test("E356: todo cartão tem a linha do total da estadia (com 1 mês: 'R$ X em 1
   assert.equal(estadiaDoCartao(dois), dois.estadia);
 });
 
-test("E356: o rótulo diz que o preço grande é o total do mês, tudo incluído", () => {
-  assert.equal(ROTULO_TOTAL_MES, "Total por mês, tudo incluído");
+// E899 (Daniel, 13/11): a linha "Total por mês, tudo incluído" saiu do cartão e a constante ROTULO_TOTAL_MES daqui foi removida
+// (duplicava, com outro texto, a de precos.ts). O que diz o que o total inclui agora é o aviso curto da linha do total.
+test("E356 → E899: o aviso curto da linha do total diz o que o preço inclui (os textos moram em precos.ts)", async () => {
+  const { avisoCurtoDoTotal } = await import("./precos.ts");
+  // E923: "tudo incluído" só com as contas fixas DENTRO do total (estimativa > 0). Antes bastava o modo "fixed"; com a
+  // estimativa vazia, o cartão dizia "tudo incluído" sem nenhuma conta no total. Agora esse caso diz que não foram informadas.
+  assert.equal(avisoCurtoDoTotal({ utilitiesMode: "fixed", utilitiesEstimate: 280 }), "tudo incluído");
+  assert.equal(avisoCurtoDoTotal({ utilitiesMode: "fixed" }), "água, luz e gás não informados");
+  assert.equal(avisoCurtoDoTotal({ utilitiesMode: "real" }), "água, luz e gás à parte");
+  assert.equal("ROTULO_TOTAL_MES" in (await import("./cartao-preco.ts")), false);
 });
 
 test("E702: quando a data foi calculada para a estadia mínima, o cartão diz isso; igual à do cadastro, não", async () => {

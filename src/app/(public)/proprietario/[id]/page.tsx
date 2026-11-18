@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   // Proprietário de exemplo (prompt 9): ilustrativo, sempre fora do Google.
   const ex = proprietarioExemploPorId(id);
-  if (ex) return { title: `${ex.nome} — exemplo ilustrativo`, robots: { index: false, follow: false } };
+  if (ex) return { title: `${ex.nome} — proprietário de anúncio de exemplo`, robots: { index: false, follow: false } };
   const p = await getPerfilProprietario(id);
   if (!p) return { title: "Página não encontrada", robots: { index: false, follow: false } };
   // Conta o que a página realmente lista (o anúncio de teste não aparece nem conta).

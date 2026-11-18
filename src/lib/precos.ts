@@ -114,6 +114,8 @@ export interface TotalMensal {
   unicos: PagamentoUnico[];
   /** Regime "real": o consumo é medido e não entra no total. */
   contasMedidas: boolean;
+  /** E923: contas fixas SEM estimativa — o anúncio não informa o valor e nada de água, luz e gás entra no total. */
+  contasNaoInformadas: boolean;
   iptuNaoIncluso: true;
 }
 
@@ -142,7 +144,8 @@ export function calcularTotalMensal(property: Property): TotalMensal {
     total: inc.total,
     linhas,
     unicos,
-    contasMedidas: property.utilitiesMode !== "fixed",
+    contasMedidas: situacaoDasContas(property) === "medidas",
+    contasNaoInformadas: situacaoDasContas(property) === "nao_informadas",
     iptuNaoIncluso: true,
   };
 }
@@ -193,6 +196,38 @@ export function textosTotalMensal(property: Property): { destaque: string; detal
 export const ROTULO_MENSAL = "Mensal";
 export const ROTULO_TOTAL_MES = "Total por mês (com contas)";
 export const ROTULO_TOTAL_CONTRATO = "Total do contrato";
+/**
+  E923 — a situação de água, luz e gás no total do mês, numa função só (o cartão, a composição do mês e a nota do total da
+  página leem daqui):
+    • "no_total"       — contas fixas COM estimativa (> 0): o valor entra no total do mês;
+    • "medidas"        — consumo real: medido e cobrado à parte, fora do total;
+    • "nao_informadas" — contas fixas SEM estimativa (vazia, nula ou zero): o dono escolheu "valor fixo estimado" e não informou o
+                         valor, então o total não tem nada de água, luz e gás e o anúncio não diz quanto custam.
+*/
+export type SituacaoDasContas = "no_total" | "medidas" | "nao_informadas";
+/** Só o modo e a estimativa importam; a estimativa ausente conta como vazia. */
+export type CamposDasContas = Pick<CamposTotalMes, "utilitiesMode"> & { utilitiesEstimate?: number | null };
+export function situacaoDasContas(p: CamposDasContas): SituacaoDasContas {
+  if (p.utilitiesMode !== "fixed") return "medidas";
+  return positivo(p.utilitiesEstimate) ? "no_total" : "nao_informadas";
+}
+
+/**
+  E899 (Daniel, 13/11): o aviso curto que fecha a linha do total no cartão de imóvel ("R$ Y em N meses · aviso").
+  Os textos existem SÓ aqui, um por situação das contas. Regra absoluta do coordenador (E923): "tudo incluído" nunca aparece
+  quando não está tudo incluído — só vale com as contas DENTRO do total do mês. Nunca dois textos, nunca nenhum.
+*/
+export const AVISO_TUDO_INCLUIDO = "tudo incluído";
+export const AVISO_CONTAS_A_PARTE = "água, luz e gás à parte";
+export const AVISO_CONTAS_NAO_INFORMADAS = "água, luz e gás não informados";
+const AVISO_POR_SITUACAO: Record<SituacaoDasContas, string> = {
+  no_total: AVISO_TUDO_INCLUIDO,
+  medidas: AVISO_CONTAS_A_PARTE,
+  nao_informadas: AVISO_CONTAS_NAO_INFORMADAS,
+};
+export function avisoCurtoDoTotal(p: CamposDasContas): string {
+  return AVISO_POR_SITUACAO[situacaoDasContas(p)];
+}
 /**
   E251 (d): o anúncio ainda não tem contrato. Na prévia do Passo 10 e no cartão de Meus anúncios, o total do período
   se chama "Estadia mínima (N meses)", com a mesma conta; "Total do contrato" fica só onde há contrato de verdade.

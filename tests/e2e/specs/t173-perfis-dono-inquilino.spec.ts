@@ -8,7 +8,7 @@ import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta
      conversas), idiomas, bio, selo REAL (e-mail confirmado) e os botões; página pública /proprietario/[id] certa.
   2. Candidato ANTES do aceite: "Candidato(a)", sem nome, foto ou contato; DEPOIS: nome completo (E427) e foto.
   3. Nenhum selo sem base (telefone/identidade) e nenhum telefone/e-mail na tela.
-  4. Anúncio de exemplo: bloco ilustrativo, sempre com "Exemplo ilustrativo" (prompt 9), sem contato.
+  4. Anúncio de exemplo: bloco ilustrativo, sempre com o selo "Anúncio de exemplo" (prompt 9; E926: antes "Exemplo ilustrativo"), sem contato.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -148,13 +148,13 @@ test.describe("T173 — perfis do proprietário e do inquilino", () => {
     await logada.auth.signOut();
   });
 
-  test("anúncio de exemplo: bloco completo marcado como 'Exemplo ilustrativo' (prompt 9), sem contato (390 e 1280)", async ({ browser }) => {
+  test("anúncio de exemplo: bloco completo marcado como 'Anúncio de exemplo' (prompt 9, E926), sem contato (390 e 1280)", async ({ browser }) => {
     for (const largura of [390, 1280]) {
       const ctx = await browser.newContext({ viewport: { width: largura, height: 900 }, storageState: { cookies: [], origins: [] } });
       const page = await ctx.newPage();
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
       const card = page.getByTestId("sobre-proprietario");
-      await expect(card.getByTestId("selo-exemplo")).toHaveText("Exemplo ilustrativo", { timeout: 20_000 });
+      await expect(card.getByTestId("selo-exemplo")).toHaveText("Anúncio de exemplo", { timeout: 20_000 });
       await expect(card.getByTestId("proprietario-exemplo")).toBeVisible();
       await expect(card.getByTestId("proprietario-nome")).toHaveText(/\(exemplo\)$/);
       // Nunca telefone nem e-mail, nem no exemplo.

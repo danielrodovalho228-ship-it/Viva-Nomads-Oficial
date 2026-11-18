@@ -12,7 +12,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    3. E-mail à MORADORA no envio (confirmação, antes inexistente): os mesmos dados e o link de Minhas candidaturas.
    4. O dono aprova pela tela → e-mail à moradora ("Sua candidatura foi aceita") com imóvel, datas e valores, e o link
       da conversa desta candidatura.
-   5. (b) O Fechamento abre com o prazo da candidatura (1 mês), não 4.
+   5. (b) O Fechamento abre com o prazo da candidatura ("30 dias (1 mês)", em fechamento-prazo-dias), não 4 meses.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -150,7 +150,9 @@ test.describe("T678 — E202: os e-mails da candidatura trazem o imóvel, as dat
 
     // (b) O Fechamento herda o período da candidatura aceita: 1 mês (antes, 4 meses).
     await page.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "domcontentloaded" });
-    await expect(page.getByLabel(/Prazo total em meses/i)).toHaveValue("1", { timeout: 20_000 });
+    // E744 (asserção alterada, tabela da Fable #3832): o prazo do Fechamento é mostrado em dias (fechamento-prazo-dias),
+    // não mais num campo de meses — continua provando que herda o período da candidatura (1 mês), não 4 meses.
+    await expect(page.getByTestId("fechamento-prazo-dias")).toContainText("30 dias (1 mês)", { timeout: 20_000 });
     await page.screenshot({ path: `${SAIDA}/t678-fechamento-1-mes-1280.png` });
     await page.context().close();
   });

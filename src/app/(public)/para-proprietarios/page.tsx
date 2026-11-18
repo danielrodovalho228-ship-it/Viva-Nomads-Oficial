@@ -14,6 +14,7 @@ import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
 import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
 import { FRASE_ESCADA_TAXAS } from "@/config/textos-regulados";
+import { BOTAO_SIMULADOR_PUBLICO, NOTA_SIMULADOR_NA_CONTA } from "@/lib/simulador-na-conta";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 import { AVISO_APROVACAO, PUBLICAMOS_PARA_VOCE_TEXTO } from "@/lib/ajuda-publicacao/ajuda";
 
@@ -64,7 +65,7 @@ export default function ForLandlordsPage() {
         </ButtonLink>
         )}
         {/* C7: a frase da taxa (texto igual) desce para depois do botão — no celular a ação principal fica na dobra. */}
-        <p className="w-full max-w-2xl text-base text-white/90" data-testid="anunciar-taxa">
+        <p className="w-full max-w-2xl scroll-mt-24 text-base text-white/90" id="taxa" data-testid="anunciar-taxa">
           <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. {FRASE_ESCADA_TAXAS} {/* E563: o link para os preços só com a chave ligada. */}
           {PRECOS_VISIVEL ? (
             <>
@@ -119,9 +120,11 @@ export default function ForLandlordsPage() {
             <div>
               <h2 className="font-title text-lg font-semibold sm:text-2xl">Simulador de rentabilidade</h2>
               <p className="mt-1 text-base text-white/85">Estime quanto o seu imóvel pode render por mês com os números que você digitar. A Viva não preenche valor nenhum por você.</p>
+              {/* E903: o simulador fica na conta; o visitante sabe disso antes do clique (antes: caía no login sem aviso). */}
+              <p className="mt-1 text-sm text-white/85" data-testid="proprietarios-simulador-conta">{NOTA_SIMULADOR_NA_CONTA}</p>
             </div>
             <ButtonLink href="/dashboard/simulador" variant="inverse" size="lg" className="w-full sm:w-auto" data-testid="proprietarios-calcular">
-              Calcular rentabilidade
+              {BOTAO_SIMULADOR_PUBLICO}
             </ButtonLink>
           </div>
         </div>

@@ -1,34 +1,26 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { authFile } from "../fixtures/auth";
 
 /*
   T909 — Varredura (passada 15, 768 px): no Reembolso da caução, a linha "Motivo · Valor · Evidência · Adicionar" tinha 4
   colunas já a 640 px — no tablet os campos se sobrepunham e o "Adicionar" saía da tela (rolagem lateral de 101 px). Agora
   1 coluna no celular e 2 a partir do tablet: nenhuma rolagem lateral, nenhum campo sobre outro, nada fora da linha.
-  390, 768 e 1280, sessão real (morador).
+  390, 768 e 1280.
+  E744 (tabela da Fable #3832): a linha de desconto só existe no fluxo de demonstração (`ReembolsoPreview`); na sessão
+  real de morador ela não aparece. A medida passa ao modo demonstração (admin com ?demo=1), que só existe com
+  NEXT_PUBLIC_MODO_DEMO_PAINEL=1 (como o t4): sem a flag o teste é PULADO — e pulado não conta como verde. A regra da
+  linha segue travada também no teste estático `linha-desconto-768.test.ts`. A asserção de layout fica igual.
 */
-const senha = novaSenha();
-const sufixo = novoSufixo();
-const mor = { email: `mor.t909.${sufixo}@lab.vivanomads.test`, nome: "Rosa Reembolso", role: "tenant" as const };
-const ids: string[] = [];
+const DEMO_LIGADO_NO_AMBIENTE = process.env.NEXT_PUBLIC_MODO_DEMO_PAINEL === "1";
 
 test.describe("T909 — Reembolso: a linha de desconto cabe no celular, no tablet e no computador", () => {
-  test.skip(!NO_LABORATORIO, "Só no laboratório.");
-  test.describe.configure({ mode: "serial", timeout: 120_000 });
-  test.beforeAll(async () => {
-    const id = await criarConta(mor, senha);
-    ids.push(id);
-    await adm().from("profiles").update({ is_teste: true, preferred_mode: "tenant", papel_ativo: "morador" }).eq("id", id);
-  });
-  test.afterAll(async () => {
-    await apagarContas(ids);
-  });
+  test.skip(!DEMO_LIGADO_NO_AMBIENTE, "Modo demonstração desligado neste ambiente (NEXT_PUBLIC_MODO_DEMO_PAINEL)");
+  test.use({ storageState: authFile("admin") });
 
   for (const w of [390, 768, 1280] as const) {
-    test(`a ${w} px`, async ({ browser }) => {
-      const ctx = await browser.newContext({ viewport: { width: w, height: 1024 } });
-      const p = await entrarNaPagina(await ctx.newPage(), mor.email, senha);
-      await p.goto("/dashboard/reembolsos", { waitUntil: "domcontentloaded" });
+    test(`a ${w} px`, async ({ page: p }) => {
+      await p.setViewportSize({ width: w, height: 1024 });
+      await p.goto("/dashboard/reembolsos?demo=1", { waitUntil: "domcontentloaded" });
       const linha = p.getByTestId("reembolso-linha-desconto");
       await expect(linha).toBeVisible({ timeout: 30_000 });
       const r = await linha.evaluate((el) => {
@@ -44,7 +36,6 @@ test.describe("T909 — Reembolso: a linha de desconto cabe no celular, no table
       expect(r.lateral, "rolagem lateral").toBeLessThanOrEqual(1);
       await linha.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `tests/laboratorio/saida/t909-reembolso-${w}.png` });
-      await ctx.close();
     });
   }
 });

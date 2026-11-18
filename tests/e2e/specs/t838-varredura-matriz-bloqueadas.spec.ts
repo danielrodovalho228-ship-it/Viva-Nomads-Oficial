@@ -3,6 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, lerMassa, temContaVarredura, type ChaveConta } from "../fixtures/varredura";
+import { caminhoEsperado } from "../fixtures/destino-da-conta";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
@@ -61,7 +62,7 @@ test.describe("T838 — matriz: telas que só abrem com sessão (admin, parceiro
           const respostas = escutarImagens(page);
           const r = await page.goto(t.rota, { waitUntil: "domcontentloaded", timeout: 40_000 });
           expect(r?.status() ?? 0, `${t.linha} @${tam.nome}: HTTP`).toBeLessThan(400);
-          expect(new URL(page.url()).pathname, `${t.linha} @${tam.nome}: caiu fora da tela`).toBe(t.rota);
+          await expect.poll(() => new URL(page.url()).pathname, { message: `${t.linha} @${tam.nome}: caiu fora da tela`, timeout: 15_000 }).toBe(caminhoEsperado(t.rota, tam.width));
           await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
           const achados = await varrerPagina(page, respostas);
           for (const classe of Object.keys(CLASSES) as Classe[]) {
