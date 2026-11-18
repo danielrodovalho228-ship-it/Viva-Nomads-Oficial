@@ -1,0 +1,85 @@
+name: Segurança do merge (base atual + main vermelha)
+
+# E744, passo 5 (Família 9): as duas pernas de segurança que faltavam, do desenho docs/e775-desenho-fila-de-merge.md.
+#  1. conferir-base: grava em cada PR aberto para a main o status "base-atual" — verde só quando o branch contém a
+#     ponta da main. Roda a cada atualização do PR (só ele) e a cada merge na main: aí os PRs que estavam em dia
+#     passam a vermelho até serem atualizados sobre ela.
+#  2. main-vermelha: quando o verify (CI) ou o lab-crítico da main falha depois de um merge, abre um aviso (issue) com
+#     o commit, o PR que entrou e o run; fecha sozinho quando os dois voltam a verde.
+# As duas só leem e avisam: nada aqui mescla, atualiza branch ou muda proteção. Para EXIGIR "base-atual" antes de
+# mesclar, só o Daniel liga, na regra da main (Settings > Branches).
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches: [main]
+  workflow_run:
+    workflows: ["CI", "Lab crítico (fluxos críticos)"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  conferir-base:
+    name: conferir-base
+    if: github.event_name != 'workflow_run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+    concurrency:
+      group: conferir-base-${{ github.event.pull_request.number || github.sha }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Quando a main anda, a comparação é no git local: precisa do histórico da main.
+          fetch-depth: ${{ github.event_name == 'pull_request' && 1 || 0 }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+      - name: Status "base-atual" (este PR; ou, quando a main anda, os PRs que mudam)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUMERO_DO_PR: ${{ github.event.pull_request.number }}
+          ANTES: ${{ github.event.before }}
+          PONTA: ${{ github.sha }}
+        run: |
+          if [ -n "$NUMERO_DO_PR" ]; then
+            node scripts/gate/base-atual.mjs --repo "$REPO" --pr "$NUMERO_DO_PR" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            node scripts/gate/base-atual.mjs --repo "$REPO" --apos-merge --antes "$ANTES" --ponta "$PONTA" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+  main-vermelha:
+    name: main-vermelha
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    concurrency:
+      group: main-vermelha
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+      - name: Aviso de main vermelha (abre, comenta ou fecha)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_NOME: ${{ github.event.workflow_run.name }}
+          RUN_CONCLUSAO: ${{ github.event.workflow_run.conclusion }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_MENSAGEM: ${{ github.event.workflow_run.head_commit.message }}
+        run: node scripts/gate/main-vermelha.mjs --repo "$REPO" | tee -a "$GITHUB_STEP_SUMMARY"
