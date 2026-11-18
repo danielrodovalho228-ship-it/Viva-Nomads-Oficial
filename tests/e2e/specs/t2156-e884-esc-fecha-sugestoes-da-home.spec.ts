@@ -28,8 +28,9 @@ test.describe("T2156 — E884: Esc fecha as sugestões da busca da home @E884", 
         await campo.fill("");
         await campo.click();
         await campo.pressSequentially("U");
-        const caixa = campo.locator("xpath=ancestor::*[.//ul][1]");
-        await expect(caixa.locator("ul").first()).toBeVisible({ timeout: 2_000 });
+        // Só o <ul> flutuante das sugestões (classe top-full do CityAutocomplete) conta; outro <ul> da home nunca é marcado.
+        const caixa = campo.locator("xpath=ancestor::*[.//ul[contains(concat(' ', normalize-space(@class), ' '), ' top-full ')]][1]");
+        await expect(caixa.locator("ul.top-full").first()).toBeVisible({ timeout: 2_000 });
         await caixa.evaluate((el) => el.setAttribute("data-t2156", "caixa"));
         await expect(lista.first()).toBeVisible({ timeout: 2_000 });
       }).toPass({ timeout: 30_000 });
