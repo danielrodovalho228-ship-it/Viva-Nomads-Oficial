@@ -15,32 +15,37 @@ import { join } from "node:path";
  * Medida (40 corridas do laboratorio.yml até 18/11, 815 fatias): o Chromium baixa 21,9 MB de pacotes e nunca esgotou as
  * tentativas; o pior caso foi 5,5 min, em runner a ~80 kB/s, instalando na 2ª tentativa (corrida 44204423221, fatia 14).
  * Os limites das fatias (120 min do job e os --global-timeout) ficam como estão.
+ *
+ * Decisão do Gerente (DUET-2019): 4 tentativas e teto de 30 min no passo — "runner que não instala em 4 tentativas está
+ * quebrado, não lento; 38 min atrasava o veredito da noite inteira".
  */
 const yml = readFileSync(".github/workflows/laboratorio.yml", "utf8");
 const passoDoChromium = yml.slice(yml.indexOf("- name: Instalar Chromium do Playwright"), yml.indexOf("- name: Instalar WebKit do Playwright"));
 const passoDoWebkit = yml.slice(yml.indexOf("- name: Instalar WebKit do Playwright"), yml.indexOf("- name: Rodar a suíte E2E"));
-const TENTATIVAS = 5;
+const TENTATIVAS = 4;
 const SEGUNDOS_POR_TENTATIVA = 300;
 const ESPERA_ENTRE_TENTATIVAS = 30;
 
-test("noturno, instalação do Chromium: 5 tentativas de 5 minutos, com espera entre elas, limpando a trava do apt antes de repetir", () => {
-  assert.match(passoDoChromium, /for i in 1 2 3 4 5; do\n/);
+test("noturno, instalação do Chromium: 4 tentativas de 5 minutos, com espera entre elas, limpando a trava do apt antes de repetir", () => {
+  assert.match(passoDoChromium, /for i in 1 2 3 4; do\n/);
   assert.match(passoDoChromium, /timeout 300 npx playwright install --with-deps chromium && exit 0\n/);
   // A limpeza de antes continua: sem ela a tentativa seguinte morre na hora, na trava do dpkg.
   assert.match(passoDoChromium, /sudo pkill -f '\[a\]pt-get\|\[d\]pkg' \|\| true\n/);
   assert.match(passoDoChromium, /sudo fuser \/var\/lib\/dpkg\/lock-frontend \/var\/lib\/dpkg\/lock/);
   assert.match(passoDoChromium, /sudo dpkg --configure -a \|\| true\n/);
   // A espera vem depois da limpeza e não acontece depois da última tentativa.
-  assert.match(passoDoChromium, /if \[ "\$i" -lt 5 \]; then sleep 30; fi\n/);
+  assert.match(passoDoChromium, /if \[ "\$i" -lt 4 \]; then sleep 30; fi\n/);
   assert.ok(passoDoChromium.indexOf("dpkg --configure -a") < passoDoChromium.indexOf("sleep 30"), "espera depois da limpeza");
   // Se nenhuma tentativa instalar, o passo reprova: a fatia não segue sem o Chromium.
   assert.match(passoDoChromium, /\n {10}done\n {10}exit 1\n/);
   assert.doesNotMatch(passoDoChromium, /continue-on-error/);
 });
 
-test("noturno, instalação do Chromium: o passo comporta as 5 tentativas e a fatia geral continua cabendo nos 120 min do job", () => {
+test("noturno, instalação do Chromium: o passo tem teto de 30 min, comporta as 4 tentativas, e a fatia geral continua cabendo nos 120 min do job", () => {
   const limiteDoPasso = Number(/timeout-minutes: (\d+)/.exec(passoDoChromium)?.[1]);
-  // Pior caso do passo: 5 tentativas, 4 esperas e, em cada tentativa, até 2 minutos à espera da trava do dpkg.
+  // Teto decidido pelo Gerente (DUET-2019): 30 min, para o veredito da noite não atrasar.
+  assert.equal(limiteDoPasso, 30);
+  // Pior caso do passo: 4 tentativas, 3 esperas e, em cada tentativa, até 2 minutos à espera da trava do dpkg.
   const piorCaso = TENTATIVAS * SEGUNDOS_POR_TENTATIVA + (TENTATIVAS - 1) * ESPERA_ENTRE_TENTATIVAS + TENTATIVAS * 40 * 3;
   assert.ok(limiteDoPasso * 60 >= piorCaso, `o passo tem ${limiteDoPasso} min; o pior caso leva ${Math.ceil(piorCaso / 60)}`);
 
@@ -79,7 +84,7 @@ function rodarInstalacao(falhas: number) {
   return { saida: r.status, texto: r.stdout, log };
 }
 
-test("noturno, instalação do Chromium, rodando o passo de verdade: espera depois de cada falha, instala na tentativa seguinte e desiste na 5ª com saída 1", () => {
+test("noturno, instalação do Chromium, rodando o passo de verdade: espera depois de cada falha, instala na tentativa seguinte e desiste na 4ª com saída 1", () => {
   // Falha que volta na hora, duas vezes seguidas: antes as tentativas saíam coladas; agora há 30 s entre elas.
   const terceira = rodarInstalacao(2);
   assert.equal(terceira.saida, 0);
@@ -95,12 +100,13 @@ test("noturno, instalação do Chromium, rodando o passo de verdade: espera depo
   const primeira = rodarInstalacao(0);
   assert.equal(primeira.saida, 0);
   assert.equal(primeira.log.filter((l) => l.startsWith("sleep")).length, 0);
-  // Nunca instala: cinco tentativas, quatro esperas (nenhuma depois da última) e o passo reprova.
+  // Nunca instala: quatro tentativas, três esperas (nenhuma depois da última) e o passo reprova.
   const nunca = rodarInstalacao(99);
   assert.equal(nunca.saida, 1);
-  assert.equal(nunca.log.filter((l) => l.startsWith("npx")).length, 5);
-  assert.equal(nunca.log.filter((l) => l === "sleep 30").length, 4);
-  assert.match(nunca.texto, /tentativa 5 travou ou falhou/);
+  assert.equal(nunca.log.filter((l) => l.startsWith("npx")).length, 4);
+  assert.equal(nunca.log.filter((l) => l === "sleep 30").length, 3);
+  assert.match(nunca.texto, /tentativa 4 travou ou falhou/);
+  assert.doesNotMatch(nunca.texto, /tentativa 5/);
 });
 
 test("noturno: o WebKit segue em passo próprio que não derruba a fatia", () => {

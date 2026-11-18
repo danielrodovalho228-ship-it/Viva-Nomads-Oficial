@@ -138,22 +138,23 @@ jobs:
 
       - name: Instalar Chromium do Playwright
         # A instalação às vezes trava sem erro (apt/download). E744 (rodadas 42755440801 e 42767013537: 1 e 4 fatias perdidas, uns
-        # 280 testes cada): tentativas CURTAS (5 min, até 5) para caber no teto do passo; o Chromium vem primeiro e sozinho
+        # 280 testes cada): tentativas CURTAS (5 min, até 4) para caber no teto do passo; o Chromium vem primeiro e sozinho
         # (todas as fatias precisam dele). O timeout mata o npx, mas o apt-get filho segura a trava do dpkg: antes de repetir,
         # encerra o apt que sobrou, espera a trava soltar e conserta o dpkg.
         # 18/11 (o mesmo endurecimento do lab-critico): 30 s de espera entre as tentativas, para que uma falha que volta na
-        # hora (espelho do apt fora do ar, DNS) não gaste as tentativas todas em segundos, e uma tentativa a mais. O apt retoma
-        # o que já baixou. Teto do passo = pior caso: 5 × 5 min + 4 esperas de 30 s + até 2 min de trava por tentativa = 37 min.
-        # A fatia geral continua cabendo nos 120 min do job: 5 de preparo + 38 + 10 do WebKit + 65 de testes + 2 para guardar.
-        timeout-minutes: 38
+        # hora (espelho do apt fora do ar, DNS) não gaste as tentativas todas em segundos. O apt retoma o que já baixou.
+        # Decisão do Gerente (DUET-2019): 4 tentativas e teto de 30 min — runner que não instala em 4 tentativas está
+        # quebrado, não lento, e um teto maior atrasava o veredito da noite inteira. O teto cobre o pior caso:
+        # 4 × 5 min + 3 esperas de 30 s + até 2 min de trava por tentativa = 29,5 min.
+        timeout-minutes: 30
         run: |
-          for i in 1 2 3 4 5; do
+          for i in 1 2 3 4; do
             timeout 300 npx playwright install --with-deps chromium && exit 0
             echo "tentativa $i travou ou falhou"
             sudo pkill -f '[a]pt-get|[d]pkg' || true
             for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
             sudo dpkg --configure -a || true
-            if [ "$i" -lt 5 ]; then sleep 30; fi
+            if [ "$i" -lt 4 ]; then sleep 30; fi
           done
           exit 1
 
