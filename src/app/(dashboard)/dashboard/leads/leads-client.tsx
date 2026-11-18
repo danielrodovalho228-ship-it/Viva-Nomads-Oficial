@@ -1,6 +1,7 @@
 "use client";
 
 import { dataBRT } from "@/lib/datas-brasilia";
+import { numeroPublicoPedido } from "@/lib/pedido-ref";
 import { VazioOnboardingBloco } from "@/components/onboarding/vazio-onboarding";
 import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
 
@@ -225,6 +226,12 @@ export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lea
                     {/* Resumo do candidato em uma linha */}
                     {leadSummary(l) && <p className="mt-1 text-sm font-medium text-ink" data-testid="candidato-resumo">{leadSummary(l)}</p>}
                     <p className="text-xs text-muted">interesse em {l.property}</p>
+                    {/* E396: o número da candidatura desde o envio — o mesmo que o morador vê e que segue no orçamento e no contrato. */}
+                    {numeroPublicoPedido(l.id) && (
+                      <p className="text-xs text-muted" data-testid="candidato-numero">
+                        Pedido nº <span className="font-medium text-ink">{numeroPublicoPedido(l.id)}</span>
+                      </p>
+                    )}
                     {l.enviadaEm && (
                       <p className="text-xs text-muted" data-testid="lead-enviada-em">
                         Enviada em {dataBRT(l.enviadaEm)}

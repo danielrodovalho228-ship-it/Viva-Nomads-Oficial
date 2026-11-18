@@ -37,7 +37,7 @@ export default async function CandidaturasPage() {
     <>
       <PageTitle
         title="Minhas candidaturas"
-        subtitle="Acompanhe suas candidaturas do envio até a resposta. A conversa segue sempre pela plataforma."
+        subtitle="Acompanhe suas candidaturas do envio até a resposta: o proprietário responde em até 1 dia útil. A conversa segue sempre pela plataforma."
       />
       {/* Prompt 52 (chave TRIAGEM_VINCULO_ATIVA): o comprovante de vínculo, no degrau da candidatura aceita. */}
       {triagemLigada && <VinculoMorador />}
