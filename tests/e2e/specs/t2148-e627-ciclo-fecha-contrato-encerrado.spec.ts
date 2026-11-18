@@ -12,8 +12,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   O ciclo é chamado pela chave de serviço (rpc avancar_ciclo_blocos), como o app faz ao abrir Contratos (0070).
     1. Bloco já "encerrado", com o último dia ontem → o contrato passa a "encerrado_sem_renovacao", com encerrado_em =
        hoje 00h de Brasília.
-    2. Bloco já encerrado ("encerrado_sem_renovacao"), com o último dia HOJE → o contrato segue "ativo" (o dia ainda não
-       passou). O estado do bloco aqui é o outro dos dois que o passo (e) aceita, para esta regra não depender da 1.
+    2. Bloco já "encerrado", com o último dia HOJE → o contrato segue "ativo" (o dia ainda não passou).
+  Nota: um bloco "encerrado_sem_renovacao" é fechado pelo passo (d) da 0063 sem olhar para a data (é o estado que o passo
+  (c) dá ao bloco DEPOIS do último dia), por isso a regra do último dia prova-se com o bloco "encerrado" do caminho manual.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -78,8 +79,8 @@ test.describe("T2148 — E627: o ciclo fecha o contrato cujo bloco já estava en
     expect(depois?.encerrado_em && new Date(depois.encerrado_em).toISOString(), "encerrado_em no fim real da estadia").toBe(new Date(`${hoje}T03:00:00Z`).toISOString());
   });
 
-  test("2. bloco já encerrado com o último dia HOJE: o contrato segue ativo (o dia ainda não passou)", async () => {
-    const id = await contratoComBlocoEncerrado("hoje", hojeBRT(), "encerrado_sem_renovacao");
+  test("2. bloco já 'encerrado' com o último dia HOJE: o contrato segue ativo (o dia ainda não passou)", async () => {
+    const id = await contratoComBlocoEncerrado("hoje", hojeBRT());
     const { error } = await adm().rpc("avancar_ciclo_blocos");
     expect(error, "o ciclo diário corre").toBeNull();
     const depois = await lerContrato(id);
