@@ -4,6 +4,11 @@ import { test, expect, type Page } from "@playwright/test";
   T839 — E524 (D10, QA de cliques do morador 02/11): o cartão do pin no mapa da busca abre ancorado no pin, inteiro
   dentro do mapa, sem cobrir os botões de zoom, com o "Fechar" clicável — e Esc fecha. Todos os pins, 1280 e 390.
   (O clique vai direto no pin, por evento: a sobreposição de pins é o E525.)
+  E524/E988 (ORDEM-DUET-113, t839 com estouro de 180 s a 390 px): desde o E988 o pin que não cabe legível entra no "+N"
+  de um vizinho e troca de testid (pin-mapa-agrupado) a cada movimento do mapa. O teste contava os pins uma vez e andava
+  pelo índice; no celular o mapa anda para o cartão caber, mais pins se agrupam e o nth(i) deixava de existir (espera até
+  estourar). Agora anda pelo id de cada pin da vista inicial e, se o da vez estiver agrupado depois de um movimento,
+  volta à vista inicial antes de abri-lo. A regra cobrada é a mesma: todo pin da vista inicial abre o cartão dentro do mapa.
 */
 const SAIDA = "tests/laboratorio/saida";
 
@@ -24,11 +29,19 @@ for (const largura of [1280, 390] as const) {
     test("cada pin: cartão dentro do mapa, longe do zoom, Fechar clicável e Esc fecha", async ({ page }) => {
       test.setTimeout(180_000);
       await abrirMapa(page, largura);
-      const total = await page.getByTestId("pin-mapa").count();
-      expect(total).toBeGreaterThan(0);
-      for (let i = 0; i < total; i++) {
-        const pin = page.getByTestId("pin-mapa").nth(i);
-        const rotulo = (await pin.textContent())?.trim();
+      // Os pins visíveis na vista inicial, pelo id (o índice muda quando o mapa anda e o E988 agrupa pins).
+      const ids = await page.getByTestId("pin-mapa").evaluateAll((els) => els.map((e) => e.getAttribute("data-id") ?? ""));
+      expect(ids.length).toBeGreaterThan(0);
+      expect(ids.every(Boolean), "todo pin tem data-id").toBe(true);
+      for (const id of ids) {
+        let pin = page.locator(`[data-testid="pin-mapa"][data-id="${id}"]`);
+        if ((await pin.count()) === 0) {
+          // Agrupado depois de o mapa andar para o cartão anterior caber: volta à vista inicial, onde ele é um pin.
+          await abrirMapa(page, largura);
+          pin = page.locator(`[data-testid="pin-mapa"][data-id="${id}"]`);
+          await expect(pin, `${id}: é pin visível na vista inicial`).toHaveCount(1, { timeout: 10_000 });
+        }
+        const rotulo = `${(await pin.textContent())?.trim()} (${id.slice(0, 8)})`;
         await pin.scrollIntoViewIfNeeded();
         await pin.dispatchEvent("click");
         const card = page.getByTestId("card-pin-mapa");
