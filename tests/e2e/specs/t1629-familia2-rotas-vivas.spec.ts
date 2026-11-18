@@ -49,6 +49,9 @@ test.describe("T1629 — Família 2: rotas vivas", () => {
     await expect(page.getByTestId("nao-encontrada-busca")).toBeVisible();
     await expect(page.locator("footer")).toBeVisible();
     await page.getByTestId("nao-encontrada-busca").locator('input[name="local"]').fill("Uberlândia");
+    // E1019 (diagnóstico): na corrida completa o formulário chegou a ser enviado vazio. Esta linha diz em que passo o
+    // valor se perde: se falhar aqui, o campo não ficou com o texto; se passar e a URL vier sem ?local=, perdeu-se depois.
+    await expect(page.getByTestId("nao-encontrada-busca").locator('input[name="local"]')).toHaveValue("Uberlândia");
     await page.getByTestId("nao-encontrada-busca").locator('button[type="submit"]').click();
     await expect(page).toHaveURL(/\/buscar\?local=Uberl/);
   });
