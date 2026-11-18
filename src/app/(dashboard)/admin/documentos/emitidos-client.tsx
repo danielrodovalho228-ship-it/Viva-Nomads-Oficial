@@ -69,9 +69,7 @@ export function EmitidosAdmin({ itens, filtros, tipos, soLeitura = false }: { it
                   {d.teste ? " · teste" : ""}
                 </span>
                 {/* E331: o nº do registro é único — dois contratos com o mesmo número público não parecem a mesma emissão. */}
-                <span className="block text-xs text-muted" data-testid="emitido-registro">
-                  Registro nº {d.registroSeq}
-                </span>
+                {/* QUEBRA E331 (ensaio): sem o nº do registro */}
                 <span className="block text-xs text-muted">
                   {dataHoraBRT(d.emitidoEm)} · para <span data-testid="emitido-destinatarios">{d.destinatarios.join(", ") || "—"}</span>
                 </span>

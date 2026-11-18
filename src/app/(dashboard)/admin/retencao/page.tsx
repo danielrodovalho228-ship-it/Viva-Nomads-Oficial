@@ -69,7 +69,7 @@ export default async function AdminRetencaoPage() {
       return origem?.startsWith("public.") ? contarGuardados(admin, origem.slice(7)).catch(() => null) : Promise.resolve(null);
     }),
   );
-  const linhas = linhasDaRodada.map((l, i) => ({ ...l, guardados: agoraGuardados[i] ?? l.guardados }));
+  const linhas = linhasDaRodada.map((l, i) => ({ ...l, guardados: l.guardados /* QUEBRA E334 (ensaio): o retrato da rodada */ }));
   const abertos = (alertas ?? []) as { id: string; item: string; erro: string; criado_em: string }[];
 
   return (
