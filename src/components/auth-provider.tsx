@@ -127,6 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         // E668: "parceiro" antigo, sem escolha, não vale — e limpa o "parceiro ativo" que o aparelho tenha guardado.
         else if (gravadoBruto === "parceiro" && semTrocaNoMeio) useAuthStore.setState({ parceiroAtivo: false });
+        // E1026: perfil lido — daqui em diante o papel que o navegador guarda é o que vale (até lá, a casca usa o do servidor).
+        if (useAuthStore.getState().user?.id === u.id) useAuthStore.setState({ papelConhecido: true });
       } catch {
         perfilLido.delete(u.id); // tenta de novo no próximo evento — e, sem evento, pela nova tentativa (E518)
         if (tentativa < TENTATIVAS_PERFIL) setTimeout(() => void hydrate(session, true, tentativa + 1), ESPERA_TENTATIVA_MS);
