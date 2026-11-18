@@ -66,3 +66,10 @@ Este é o ponto de controle de 19/11, escrito na véspera para ser lido, não mo
 - E1023 (t70): #3965.
 
 **Renovação de validade (01/12):** nenhuma pedida.
+
+### Lista cruzada do marco: falhas novas da corrida 44307724189 (ORDEM-DUET-113, dono Code 2)
+
+| Spec | Falha | Causa | Disposição | Correção |
+|---|---|---|---|---|
+| `t839-e524-cartao-mapa-no-pin` (E524) | estouro de 180 s a 390 px (fatia 20) | teste velho frente ao E988: os pins agrupados no "+N" trocam de testid quando o mapa anda; o laço contava os pins uma vez e andava pelo índice (`nth(17)` deixava de existir). Reproduzido no lab só com o spec (27 imóveis): 1280 em 6 s, 390 estoura | teste velho | este PR: o laço anda pelo id do pin da vista inicial; 6/6 no lab (390 em ~42 s) |
+| `t692-e259-pagina-publica` (E259) | 390: `galeria-tile-0 img` não achada; 1280: instável (fatia 18) | as fotos do `criarImovelPronto` apontam para um endereço que não carrega; depois da 2ª tentativa o `BrandImage` troca o `<img>` por "Foto indisponível", e o teste só passava quando lia antes da troca | teste velho | este PR: `fotosReais` + a primeira foto tem de estar `pronta`; sem as fotos reais a asserção falha 1/1 (`Received: "falhou"`), com elas 10/10 |
