@@ -22,6 +22,10 @@ import {
   TIPOS_PARCEIRO,
 } from "./parceiros-texto.ts";
 import { OBRIGATORIOS_ROTULOS } from "../anuncio/prontidao.ts";
+import { RECIBO_EMPRESAS, TAXA_EMPRESAS, ID_PERGUNTA_EMPRESAS, PERGUNTA_EMPRESAS, HREF_PERGUNTA_EMPRESAS } from "../empresas/textos.ts";
+import { TEXTO_PRAZO_DOCUMENTO, TEXTO_PRAZO_EMPRESAS } from "../../config/prazos-canais.ts";
+import { TEXTO_DOCUMENTO_NA_MENSAGEM, TEXTO_PRAZOS_DA_VIVA, TEXTO_PRE_ACEITE } from "../ajuda/regras-publicas.ts";
+import { PRE_ACEITACAO_72H_ATIVA } from "../flags.ts";
 import { CONFERENCIA_PARTES, CONFERENCIA_VALIDADE, fraseConferenciaDevolve } from "../fiscal/conferir.ts";
 
 export interface Pergunta {
@@ -65,7 +69,9 @@ export const FAQ: Pergunta[] = [
   {
     id: "como-virar-parceiro",
     pergunta: "Como posso virar parceiro da Viva?",
-    resposta: `${TIPOS_PARCEIRO} ${MODOS_CONTA} ${CADASTRO_PARCEIRO} ${EMPRESAS_E_GESTORES}`,
+    // E947: a remissão de "empresa que quer moradia para funcionários" aponta para a pergunta própria (link abaixo).
+    resposta: `${TIPOS_PARCEIRO} ${MODOS_CONTA} ${CADASTRO_PARCEIRO} ${EMPRESAS_E_GESTORES.replace("Empresa que quer moradia para funcionários: /empresas.", `Empresa que quer moradia para funcionários: veja a pergunta “${PERGUNTA_EMPRESAS}”.`)}`,
+    links: [{ rotulo: PERGUNTA_EMPRESAS, href: HREF_PERGUNTA_EMPRESAS }],
     termos: ["parceiro", "parceria", "virar parceiro", "modo parceiro", "cadastro", "cnpj", "mei", "empresa", "gestor", "fotografo", "servico", "limpeza", "seguro", "mobilia"],
   },
   {
@@ -115,14 +121,16 @@ export const FAQ: Pergunta[] = [
     pergunta: "Por que meu anúncio não publica?",
     resposta:
       // Mesma lista da prontidão (lib/anuncio/prontidao): o que o FAQ diz é o que o Publicar confere.
-      `Para publicar, o anúncio precisa de: ${OBRIGATORIOS_ROTULOS.map((r) => r.charAt(0).toLowerCase() + r.slice(1)).join("; ")}. Selo Pronto para Morar e vídeo ajudam, mas não impedem a publicação. Em Meus imóveis e na etapa Revisão aparece exatamente o que falta. Se o documento está "Em análise", é só aguardar: avisamos por e-mail quando for aprovado.`,
+      `Para publicar, o anúncio precisa de: ${OBRIGATORIOS_ROTULOS.map((r) => r.charAt(0).toLowerCase() + r.slice(1)).join("; ")}. Selo Pronto para Morar e vídeo ajudam, mas não impedem a publicação. Em Meus imóveis e na etapa Revisão aparece exatamente o que falta. Se o documento está "Em análise", ${TEXTO_PRAZO_DOCUMENTO}`, // E948: o prazo da análise, da fonte única (prazos-canais).
     termos: ["publicar", "anuncio", "documento", "analise", "fotos", "travado"],
   },
   {
     id: "limpeza-estadia",
     pergunta: "Posso oferecer limpezas durante a estadia?",
     resposta:
-      "Sim, é opcional. No editor do anúncio você escolhe quantas limpezas por mês (1, 2 ou 4), o que cada uma inclui e o valor do pacote por mês. Se houver valor, ele entra no total por mês que o morador vê no anúncio, na busca e no contrato; com valor zero, aparece como incluída no valor mensal.",
+      // E936 (decisão do coordenador, 15/11): o pacote é do PROPRIETÁRIO, pago a ele direto junto com o valor mensal; fora
+      // da taxa de serviço da Viva (só sobre o valor mensal) e fora da taxa da área de Parceiros. Texto palavra por palavra.
+      "Sim, é opcional. No editor do anúncio você escolhe quantas limpezas por mês (1, 2 ou 4), o que cada uma inclui e o valor do pacote por mês. O pacote é seu: você organiza a limpeza com quem quiser, e o valor do pacote é pago a você junto com o valor mensal, direto, sem passar pela Viva. Se houver valor, ele entra no total por mês que o morador vê no anúncio, na busca e no contrato; com valor zero, aparece como incluída no valor mensal. O pacote não entra na conta da taxa de serviço da Viva, que é calculada sobre o valor mensal, e a taxa da área de Parceiros não se aplica a ele: ela vale só quando você contrata um serviço por lá.",
     termos: ["limpeza", "faxina", "durante a estadia", "pacote", "total por mes"],
   },
   {
@@ -142,11 +150,21 @@ export const FAQ: Pergunta[] = [
     termos: ["senha", "esqueci", "redefinir", "acesso"],
   },
   {
+    // E947 (prompt "E-empresas-ajuda"): moradia para funcionários. Fonte única: as frases da taxa e do recibo vêm de
+    // lib/empresas/textos (as mesmas de /empresas) e o prazo do "Fale com a gente", de config/prazos-canais.
+    id: ID_PERGUNTA_EMPRESAS,
+    pergunta: PERGUNTA_EMPRESAS,
+    resposta: `Sim. A Viva tem imóveis mobiliados de 30 a 180 dias. A pessoa do time ou o RH conversa com o proprietário pelas mensagens da Viva e envia a candidatura; o contrato é digital. ${RECIBO_EMPRESAS} ${TAXA_EMPRESAS} Para receber opções de imóveis, use o “Fale com a gente” de /empresas. ${TEXTO_PRAZO_EMPRESAS}`,
+    termos: ["empresa", "funcionario", "colaborador", "rh", "equipe", "corporativo", "reembolso", "recibo"],
+    links: [{ rotulo: "Moradia para empresas", href: "/empresas" }],
+  },
+  {
     id: "contato",
     pergunta: "Por que não vejo o telefone do proprietário (ou do morador)?",
     resposta:
-      "Para a sua segurança, a conversa acontece toda pela plataforma: telefone, e-mail e redes sociais aparecem como \"contato protegido\". Assim tudo fica registrado e vale como prova se houver qualquer problema.",
-    termos: ["telefone", "whatsapp", "contato", "zap", "numero"],
+      // E957: a recusa de CPF/RG com aviso, pela mesma regra do chat (lib/ajuda/regras-publicas.ts).
+      `Para a sua segurança, a conversa acontece toda pela plataforma: telefone, e-mail e redes sociais aparecem como "contato protegido". Assim tudo fica registrado e vale como prova se houver qualquer problema. ${TEXTO_DOCUMENTO_NA_MENSAGEM}`,
+    termos: ["telefone", "whatsapp", "contato", "zap", "numero", "cpf", "rg", "documento"],
     links: [LINK_SEGURANCA],
   },
   {
@@ -191,6 +209,24 @@ export const FAQ: Pergunta[] = [
     resposta: "Em Pedidos de moradia, abra o seu pedido e use \"Pausar\" ou \"Marcar atendido\". Ele sai do mural na hora.",
     termos: ["cancelar", "pedido", "pausar", "excluir pedido"],
   },
+  // E958 (metade E948): os prazos de resposta da Viva, de config/prazos-canais.ts.
+  {
+    id: "prazos-da-viva",
+    pergunta: "Em quanto tempo a Viva responde?",
+    resposta: TEXTO_PRAZOS_DA_VIVA,
+    termos: ["prazo", "resposta", "demora", "analise", "documento", "chamado", "equipe"],
+  },
+  // E956: o pré-aceite, só com a chave PRE_ACEITACAO_72H_ATIVA ligada (desligada, a pré-aceitação não existe).
+  ...(PRE_ACEITACAO_72H_ATIVA
+    ? [
+        {
+          id: "pre-aceite",
+          pergunta: "O que é o pré-aceite e quanto tempo eu tenho?",
+          resposta: TEXTO_PRE_ACEITE,
+          termos: ["pre-aceite", "pre aceite", "preaceite", "72", "horas", "congela", "taxa", "prazo"],
+        },
+      ]
+    : []),
 ];
 
 /** A resposta certa para quem está lendo. */

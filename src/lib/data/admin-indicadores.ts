@@ -1,3 +1,4 @@
+import { documentoAtrasado } from "@/lib/documento/prazo-analise";
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -171,23 +172,31 @@ export async function pedidosParaMetrica(
 }
 
 /** Fila de documentos AGORA: documentos de imóvel em revisão (um por imóvel+arquivo) + matrículas em revisão. */
-export async function filaDocumentos(admin: Admin): Promise<{ documentos: number; matriculas: number; total: number; maisAntigoEm: string | null }> {
+export async function filaDocumentos(admin: Admin, agora: Date = new Date()): Promise<{ documentos: number; matriculas: number; total: number; maisAntigoEm: string | null; atrasados: number }> {
   const [{ data: docs }, { data: mats }] = await Promise.all([
     admin.from("qualification_checklists").select("owner_id, property_id, document_path, document_uploaded_at, created_at").eq("document_status", "pending").limit(500),
     admin.from("property_ownership_checks").select("id, criada_em").in("resultado", ["em_revisao", "provavel"]).is("revisado_em", null).limit(500),
   ]);
   const chaves = new Set<string>();
+  // E948: quantos passaram de 1 dia útil na fila sem decisão (calendário único), um por imóvel+arquivo.
+  const atrasadas = new Set<string>();
   let maisAntigo: string | null = null;
   const considera = (d: string | null) => {
     if (d && (!maisAntigo || d < maisAntigo)) maisAntigo = d;
   };
   for (const d of (docs ?? []) as { owner_id: string; property_id: string; document_path: string | null; document_uploaded_at: string | null; created_at: string }[]) {
-    chaves.add(`${d.owner_id}|${d.property_id}|${d.document_path ?? ""}`);
+    const chave = `${d.owner_id}|${d.property_id}|${d.document_path ?? ""}`;
+    chaves.add(chave);
     considera(d.document_uploaded_at ?? d.created_at);
+    if (documentoAtrasado(d.document_uploaded_at ?? d.created_at, null, agora)) atrasadas.add(chave);
   }
   const matriculas = (mats ?? []) as { criada_em: string }[];
-  for (const m of matriculas) considera(m.criada_em);
-  return { documentos: chaves.size, matriculas: matriculas.length, total: chaves.size + matriculas.length, maisAntigoEm: maisAntigo };
+  let matriculasAtrasadas = 0;
+  for (const m of matriculas) {
+    considera(m.criada_em);
+    if (documentoAtrasado(m.criada_em, null, agora)) matriculasAtrasadas++;
+  }
+  return { documentos: chaves.size, matriculas: matriculas.length, total: chaves.size + matriculas.length, maisAntigoEm: maisAntigo, atrasados: atrasadas.size + matriculasAtrasadas };
 }
 
 /** "Aguardando o seu OK" = cartões de aprovação pendentes e no prazo. O selo da barra lateral mostra SÓ isto. */

@@ -5,6 +5,10 @@
   aprovado). Puro.
 */
 import { FAQ } from "../atendimento/faq.ts";
+import { PRE_ACEITACAO_72H_ATIVA } from "../flags.ts";
+
+/** E956: a pergunta do pré-aceite entra nos temas só com a chave ligada (a mesma condição da FAQ). */
+const PRE_ACEITE = PRE_ACEITACAO_72H_ATIVA ? ["pre-aceite"] : [];
 
 export type IdTema = "morador" | "proprietarios" | "contratos" | "seguranca";
 
@@ -31,7 +35,7 @@ export const TEMAS_AJUDA: readonly TemaAjuda[] = [
     resumo: "Pedido de moradia, prazos e o que você paga",
     foto: "/images/unicas/cf-renovacao.webp",
     alt: "Pessoa chegando com a mala a um apartamento mobiliado",
-    perguntas: ["inquilino-paga", "prazo", "cancelar-pedido", "contato"],
+    perguntas: ["inquilino-paga", "prazo", ...PRE_ACEITE, "empresa-moradia", "cancelar-pedido", "contato", "prazos-da-viva"],
   },
   {
     id: "proprietarios",
@@ -47,7 +51,7 @@ export const TEMAS_AJUDA: readonly TemaAjuda[] = [
     resumo: "Caução, renovação e manutenção",
     foto: "/images/unicas/proprietarios-contrato.webp",
     alt: "Contrato sendo assinado no celular",
-    perguntas: ["caucao", "renovar", "manutencao", "prazo"],
+    perguntas: ["caucao", "renovar", "manutencao", "prazo", ...PRE_ACEITE, "prazos-da-viva"],
   },
   {
     id: "seguranca",
@@ -57,7 +61,7 @@ export const TEMAS_AJUDA: readonly TemaAjuda[] = [
     fotoPosicao: "35% 50%",
     alt: "Cartão e celular sobre a mesa",
     // E907: o artigo da exclusão da conta mora aqui. E887: e o de como conferir um documento.
-    perguntas: ["golpe", "conferir-documento", "email-confirmacao", "senha", "contato", "excluir-conta"],
+    perguntas: ["golpe", "conferir-documento", "email-confirmacao", "senha", "contato", "prazos-da-viva", "excluir-conta"],
   },
 ] as const;
 

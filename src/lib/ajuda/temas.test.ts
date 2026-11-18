@@ -19,7 +19,9 @@ test("E84: os 4 cartões de tema do mockup, e cada pergunta citada existe na FAQ
     assert.ok(t.perguntas.length > 0, t.id);
     for (const p of t.perguntas) assert.ok(ids.has(p), `${t.id}: ${p}`);
   }
-  assert.deepEqual(perguntasDoTema("contratos"), ["caucao", "renovar", "manutencao", "prazo"]);
+  // Asserção alterada (Família 6, E958 metade E948): Contratos ganha "prazos-da-viva"; o "pre-aceite" (E956) só entra
+  // com a chave PRE_ACEITACAO_72H_ATIVA ligada — aqui, desligada (o caso ligado está em e956-e957-e958-regras-na-ajuda.test.ts).
+  assert.deepEqual(perguntasDoTema("contratos"), ["caucao", "renovar", "manutencao", "prazo", "prazos-da-viva"]);
   // O hub não lista perguntas: toda pergunta da FAQ mora em pelo menos um tema (página própria).
   const nosTemas = new Set(TEMAS_AJUDA.flatMap((t) => t.perguntas));
   for (const p of FAQ) assert.ok(nosTemas.has(p.id), `sem tema: ${p.id}`);

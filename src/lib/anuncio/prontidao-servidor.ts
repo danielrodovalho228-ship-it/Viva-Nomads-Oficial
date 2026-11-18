@@ -111,9 +111,15 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
   for (const f of (fotos ?? []) as { property_id: string }[]) fotosPor.set(f.property_id, (fotosPor.get(f.property_id) ?? 0) + 1);
   // E-DOC-VIGENTE (Relay 47): vale o APROVADO mais recente; um envio novo em análise (ou recusado) não o rebaixa.
   const docPor: Map<string, StatusDocumento> = statusPorImovel((docs ?? []) as { property_id: string | null; document_status: string | null }[]);
+  // E948: o envio mais recente em análise de cada imóvel (as linhas vêm do mais novo para o mais antigo).
+  const enviadoPor = new Map<string, string>();
+  for (const d of (docs ?? []) as { property_id: string | null; document_status: string | null; created_at?: string | null }[]) {
+    if (d.property_id && d.document_status === "pending" && d.created_at && !enviadoPor.has(d.property_id)) enviadoPor.set(d.property_id, d.created_at);
+  }
   // E233-A: sem vaga no plano (o limite de anúncios do modelo antigo saiu); só os requisitos reais.
   for (const p of lista) {
     const f = fatosDaLinha(p, fotosPor.get(p.id) ?? 0, docPor.get(p.id) ?? "none");
+    if (f.documento === "pending") f.documentoEnviadoEm = enviadoPor.get(p.id) ?? null;
     // O padrão mínimo é condição para PASSAR a publicado; o publicado sem ele segue o prazo de adequação (D4).
     if (confortoLido && p.status !== "active") f.confortoFaltam = itensFaltantes(declPor.get(p.id) ?? []).length;
     // 61-B: o tipo de entrada só barra o anúncio NOVO (rascunho); o que já foi publicado segue sem bloqueio retroativo.
