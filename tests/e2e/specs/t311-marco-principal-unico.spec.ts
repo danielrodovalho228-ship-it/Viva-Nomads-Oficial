@@ -14,12 +14,10 @@ const EXTRAS = [
   { nome: "Conferir contrato — código", rota: "/conferir/0000000000000000" },
   { nome: "Desligar alerta de busca", rota: "/alerta-busca/desligar" },
 ];
-// L-22 (23/10): a página põe <main> próprio dentro do <main id="conteudo"> do layout público.
-const CONHECIDOS: Record<string, string> = {
-  "/conferir": "L-22",
-  "/conferir/0000000000000000": "L-22",
-  "/alerta-busca/desligar": "L-22",
-};
+// L-22 (23/10): a página punha <main> próprio dentro do <main id="conteudo"> do layout público.
+// E1029 (18/11): /conferir, /conferir/[codigo] e /alerta-busca/desligar passam a abrir um <div>; saem daqui (antes:
+// "/conferir", "/conferir/0000000000000000" e "/alerta-busca/desligar" como "L-22"). Guarda: src/lib/a11y/e1029-main-unico-publico.test.ts.
+const CONHECIDOS: Record<string, string> = {};
 
 test.describe("T311 — um só <main> por página pública (390 px)", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
