@@ -6,7 +6,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
 /*
   T2145 — E344 @E344: o e-mail "proposta vencendo" leva a linha do imóvel com bairro e cidade, como os outros do cron.
   Regra decidida (E344; unitário src/lib/automacoes/e344-proposta-bairro.test.ts): o bloco de detalhes do e-mail diz
-  "Imóvel: <título> · <bairro>, <cidade>." (linhaImovel), como os outros 7 e-mails do grupo, e nunca o endereço exato.
+  "Imóvel: <título> · <bairro>, <cidade> · código VN-…." (linhaImovel), como os outros 7 e-mails do grupo, e nunca o
+  endereço exato.
   A prova: uma proposta aberta que vence daqui a 6 h, num imóvel em Santa Mônica, Uberlândia, com endereço exato gravado.
   O cron de automações corre num 2.º servidor do mesmo build (porta 3137, padrão do t597/t2130), com CRON_SECRET só dele
   e AUTOMACOES_ATIVO=1. A leitura é na caixa de testes (emails_teste) da moradora, de quem é a vez.
@@ -61,7 +62,7 @@ test.describe("T2145 — E344: o e-mail da proposta vencendo diz o imóvel com b
     await apagarContas(pessoas);
   });
 
-  test("proposta que vence em 6 h: o bloco diz 'Imóvel: <título> · Santa Mônica, Uberlândia.' e nunca o endereço exato", async () => {
+  test("proposta que vence em 6 h: o bloco diz 'Imóvel: <título> · Santa Mônica, Uberlândia' e nunca o endereço exato", async () => {
     test.skip(!existsSync(".next/BUILD_ID"), "Precisa do build do laboratório (next start).");
     const log = createWriteStream(`${SAIDA_LOG}/t2145-servidor-cron.log`);
     servidor = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-p", String(PORTA)], {
@@ -81,7 +82,8 @@ test.describe("T2145 — E344: o e-mail da proposta vencendo diz o imóvel com b
     };
     await expect.poll(async () => (await caixa()).length, { timeout: 30_000, message: "o e-mail da proposta vencendo chegou à moradora (a vez é dela)" }).toBe(1);
     const [corpo] = await caixa();
-    expect(corpo, "a linha do imóvel com bairro e cidade, como nos outros e-mails do cron").toContain(`Imóvel: ${TITULO} · Santa Mônica, Uberlândia.`);
+    // A linha é a do linhaImovel: "Imóvel: <título> · <bairro>, <cidade> · código VN-…." (o código do anúncio vem depois).
+    expect(corpo, "a linha do imóvel com bairro e cidade, como nos outros e-mails do cron").toContain(`Imóvel: ${TITULO} · Santa Mônica, Uberlândia`);
     expect(corpo, "nunca o endereço exato").not.toContain(RUA);
 
   });
