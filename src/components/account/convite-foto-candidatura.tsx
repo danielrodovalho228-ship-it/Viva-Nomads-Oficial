@@ -23,7 +23,7 @@ export function ConviteFotoCandidatura({
   useEffect(() => {
     if (!usuario?.id) return;
     let vivo = true;
-    lerMeuAvatar()
+    lerMeuAvatar(usuario.id)
       .then((r) => {
         if (vivo) setTemFoto(!!r.url);
       })

@@ -128,7 +128,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // E698: a última foto conhecida desta conta já na 1ª pintura (a leitura do servidor confirma ou limpa em seguida).
     const guardada = lerFotoAvatar(displayUser?.id);
     if (guardada) void Promise.resolve().then(() => alive && setMyPhoto(guardada));
-    lerMeuAvatar()
+    lerMeuAvatar(displayUser?.id)
       .then((r) => {
         if (alive) setMyPhoto(r.url);
         if (alive && displayUser?.id) gravarFotoAvatar(displayUser.id, r.url);

@@ -59,7 +59,7 @@ export function Navbar() {
   useEffect(() => {
     if (!mounted || !userId) return;
     let vivo = true;
-    lerMeuAvatar()
+    lerMeuAvatar(userId)
       .then((r) => {
         if (vivo) setFoto(r.url);
       })

@@ -27,7 +27,7 @@ export function useParceiroAprovado(): boolean {
     if (!userId) return;
     let vivo = true;
     // E1025: uma leitura por abertura de tela, repartida por todos os componentes que usam este hook.
-    lerParceiroAprovado()
+    lerParceiroAprovado(userId)
       .then((t) => vivo && setLido({ id: userId, ok: t }))
       .catch(() => {});
     return () => {

@@ -70,16 +70,25 @@ test("a casca usa a leitura partilhada: ninguém chama ehParceiroAprovado nem ge
   const leituras = ler("./leituras-da-casca.ts");
   assert.match(leituras, /leituraPartilhada\(`parceiro:\$\{conta\}`, ehParceiroAprovado, PARTILHA_MS\)/);
   assert.match(leituras, /leituraPartilhada\(`avatar:\$\{conta\}`, getMyAvatarUrl, PARTILHA_MS\)/);
-  // A chave leva a conta do store (outra conta no mesmo aparelho não herda).
-  assert.match(leituras, /useAuthStore\.getState\(\)\.user\?\.id/);
+  // A chave leva a conta: a que o componente já conhece (no painel, a do 1.º quadro, que vem do servidor antes de o
+  // store acordar); sem ela, a do store; sem nenhuma, a última conta que leu nesta página. Medido em 18/11: com a
+  // chave só do store, a casca lia como "sem conta" e os outros com a conta — duas idas ao servidor pela mesma foto.
+  assert.match(leituras, /const conhecida = dada \|\| useAuthStore\.getState\(\)\.user\?\.id \|\| null;/);
+  assert.match(leituras, /return conhecida \?\? ultimaConta \?\? "sem-conta";/);
 
   const hook = ler("../use-papel-barra.ts");
-  assert.match(hook, /lerParceiroAprovado\(\)/);
+  assert.match(hook, /lerParceiroAprovado\(userId\)/);
   assert.doesNotMatch(hook, /ehParceiroAprovado\(\)/);
 
-  for (const arq of ["../../components/layout/dashboard-shell.tsx", "../../components/layout/navbar.tsx", "../../components/account/convite-foto-perfil.tsx", "../../components/account/convite-foto-candidatura.tsx"]) {
+  const comConta: Record<string, RegExp> = {
+    "../../components/layout/dashboard-shell.tsx": /lerMeuAvatar\(displayUser\?\.id\)/,
+    "../../components/layout/navbar.tsx": /lerMeuAvatar\(userId\)/,
+    "../../components/account/convite-foto-candidatura.tsx": /lerMeuAvatar\(usuario\.id\)/,
+    "../../components/account/convite-foto-perfil.tsx": /lerMeuAvatar\(\)/,
+  };
+  for (const [arq, chamada] of Object.entries(comConta)) {
     const src = ler(arq);
-    assert.match(src, /lerMeuAvatar\(\)/, arq);
+    assert.match(src, chamada, arq);
     assert.doesNotMatch(src, /getMyAvatarUrl\(\)/, arq);
   }
 });

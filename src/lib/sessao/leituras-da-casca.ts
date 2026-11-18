@@ -11,18 +11,28 @@ import { esquecerLeitura, leituraPartilhada } from "@/lib/sessao/leitura-partilh
 /** O tempo de uma abertura de tela: junta os componentes que montam juntos; a tela seguinte lê de novo. */
 const PARTILHA_MS = 5_000;
 
-/** A conta de quem lê entra na chave: outra conta neste aparelho não herda a leitura. */
-const contaAtual = (): string => useAuthStore.getState().user?.id ?? "sem-conta";
+/**
+ * A conta de quem lê entra na chave: outra conta neste aparelho não herda a leitura.
+ * Vale a conta que o componente já conhece (no painel, a do 1.º quadro, que vem do servidor antes de o store acordar);
+ * sem ela, a do store; sem nenhuma das duas, a última conta que leu nesta página (o componente ainda não sabe quem é,
+ * mas a sessão é a mesma).
+ */
+let ultimaConta: string | null = null;
+function contaAtual(dada?: string | null): string {
+  const conhecida = dada || useAuthStore.getState().user?.id || null;
+  if (conhecida) ultimaConta = conhecida;
+  return conhecida ?? ultimaConta ?? "sem-conta";
+}
 
 /** A parceria desta conta está aprovada? (`ehParceiroAprovado`, uma vez por abertura de tela.) */
-export function lerParceiroAprovado(): Promise<boolean> {
-  const conta = contaAtual();
+export function lerParceiroAprovado(contaConhecida?: string | null): Promise<boolean> {
+  const conta = contaAtual(contaConhecida);
   return leituraPartilhada(`parceiro:${conta}`, ehParceiroAprovado, PARTILHA_MS);
 }
 
 /** A URL da minha foto de perfil (`getMyAvatarUrl`, uma vez por abertura de tela). */
-export function lerMeuAvatar(): ReturnType<typeof getMyAvatarUrl> {
-  const conta = contaAtual();
+export function lerMeuAvatar(contaConhecida?: string | null): ReturnType<typeof getMyAvatarUrl> {
+  const conta = contaAtual(contaConhecida);
   return leituraPartilhada(`avatar:${conta}`, getMyAvatarUrl, PARTILHA_MS);
 }
 
