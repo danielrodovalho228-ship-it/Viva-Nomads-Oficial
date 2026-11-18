@@ -205,7 +205,9 @@ test("regra de entrada: toda entrada tem disposição na lista da T1 — instáv
     assert.equal(d!.dono, e.dono, `${e.spec}: dono diferente do da disposição`);
     if (d!.disposicao === "instavel") {
       assert.equal(d!.item, e.item, `${e.spec}: item diferente do da disposição`);
-      assert.equal(e.correcao, undefined, `${e.spec}: instável não aponta correção (ainda não há)`);
+      // Alterada por decisão do Gerente (DUET-1849, 18/11): o instável cuja correção já está escrita em PR aberto aponta
+      // esse PR (o mesmo da disposição); sem PR, continua sem apontar.
+      if (e.correcao !== undefined) assert.equal(e.correcao, d!.pr, `${e.spec}: a correção apontada não é a da disposição`);
     } else if (d!.disposicao === "defeito") {
       assert.equal(d!.item, e.item, `${e.spec}: item diferente do da disposição`);
       assert.ok((d!.semMarca ?? "").length > 20, `${e.spec}: defeito com a marca de falha conhecida não entra na quarentena`);
@@ -251,8 +253,8 @@ test("cadeia em série: quando os testes seguintes dependem do que está em quar
     // A cadeia inteira a partir da raiz: nenhum teste seguinte fica nas fatias gerais sem o que ele precisa.
     assert.deepEqual(entradas.filter((e) => e.spec === spec).map((e) => e.titulo), aPartirDaRaiz, `${spec}: a cadeia não entrou inteira`);
   }
-  // A cadeia que segue em quarentena: t321 (E1022). A do t230 (E1020) saiu com a correção do E1020.
-  assert.deepEqual([...new Set(deCadeia.map((e) => `${e.spec.split("-")[0]} ${e.item}`))].sort(), ["t321 E1022"]);
+  // Nenhuma cadeia segue em quarentena: a do t321 (E1022) saiu com a correção do E1022 e a do t230 (E1020) com a do E1020.
+  assert.deepEqual([...new Set(deCadeia.map((e) => `${e.spec.split("-")[0]} ${e.item}`))].sort(), []);
 });
 
 test("o workflow: as fatias excluem a quarentena, uma entrada própria roda só ela e não bloqueia, e o consolidar publica o resumo", () => {

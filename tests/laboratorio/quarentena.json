@@ -20,15 +20,6 @@
    "expira": "2026-12-01"
   },
   {
-   "spec": "t30-atendimento-autonomo.spec.ts",
-   "titulo": "Caução simples: resposta automática em < 30 s; nova pergunta respondida; 'pessoa' passa para a equipe sem IA",
-   "motivo": "instável em 3 e vermelho em 1 das 7 corridas de 16 e 17/11: a frase \"Resposta automática da Viva…\" não aparece a tempo; sozinho passou 6 de 6",
-   "item": "E1012",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
    "spec": "t305-laudo-avaliacao-62b2.spec.ts",
    "titulo": "3. reprovado: vale o nível do laudo, sem \"· vistoriado\"; nova avaliação pelo valor da tabela, sem desconto",
    "motivo": "instável nas 7 corridas de 16 e 17/11: o texto \"novo pedido, avaliador à sua escolha\" não aparece na primeira tentativa; passa na nova tentativa",
@@ -62,56 +53,8 @@
    "item": "E1023",
    "dono": "Code 2",
    "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t321-video-alcancavel-65b.spec.ts",
-   "titulo": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar",
-   "motivo": "instável na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais); é a primeira ocorrência: entra por ordem do Gerente (DUET-1219), antes da segunda que a regra pede",
-   "item": "E1022",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t321-video-alcancavel-65b.spec.ts",
-   "titulo": "2. página pública: miniatura + item da galeria; o vídeo só baixa depois do play e toca",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1022): os casos 2 e 3 usam o vídeo enviado no caso 1, e os casos 4 e 5 vêm depois deles na mesma cadeia. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1022",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
    "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
-  },
-  {
-   "spec": "t321-video-alcancavel-65b.spec.ts",
-   "titulo": "3. trocar por um MOV apaga o anterior do bucket; remover tira da página",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1022): os casos 2 e 3 usam o vídeo enviado no caso 1, e os casos 4 e 5 vêm depois deles na mesma cadeia. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1022",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
-  },
-  {
-   "spec": "t321-video-alcancavel-65b.spec.ts",
-   "titulo": "4. negativos: 70 s, 55 MB, .avi renomeado, sem duração e queda de rede com 'Tentar de novo'",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1022): os casos 2 e 3 usam o vídeo enviado no caso 1, e os casos 4 e 5 vêm depois deles na mesma cadeia. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1022",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
-  },
-  {
-   "spec": "t321-video-alcancavel-65b.spec.ts",
-   "titulo": "5. assistente: o bloco de vídeo vem antes da caixa da IA; 'Para melhorar' do rascunho leva a ele",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1022): os casos 2 e 3 usam o vídeo enviado no caso 1, e os casos 4 e 5 vêm depois deles na mesma cadeia. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1022",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
+   "correcao": 3965
   }
  ]
 }
