@@ -59,8 +59,8 @@ test.describe("T2152 — E633: com a chave ligada, sem a matrícula atualizada o
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
 
-      const cardA = p.getByTestId("meu-anuncio").filter({ hasText: TITULO_A });
-      const cardB = p.getByTestId("meu-anuncio").filter({ hasText: TITULO_B });
+      const cardA = p.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.a}"]`);
+      const cardB = p.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.b}"]`);
       await expect(cardA.getByTestId("prontidao"), "o card de A mostra a prontidão").toBeVisible({ timeout: 30_000 });
       await expect(cardB.getByTestId("prontidao"), "o card de B mostra a prontidão").toBeVisible({ timeout: 30_000 });
 
@@ -84,7 +84,7 @@ test.describe("T2152 — E633: com a chave ligada, sem a matrícula atualizada o
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
     await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-    const cardC = p.getByTestId("meu-anuncio").filter({ hasText: TITULO_C });
+    const cardC = p.locator(`[data-testid="meu-anuncio"][data-imovel="${ids.c}"]`);
     const selo = cardC.locator('[data-testid="estado-anuncio"][data-status="paused"][data-motivo="dono"]');
     await expect(selo, "o pausado pelo dono tem o menu").toHaveCount(1, { timeout: 30_000 });
     await selo.click();
