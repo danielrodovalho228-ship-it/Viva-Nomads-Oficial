@@ -49,6 +49,7 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
       await adm().from("cobrancas_fechamento").delete().eq("lead_id", jornada.lead);
       const { data: cts } = await adm().from("contratos").select("id").eq("lead_id", jornada.lead);
       const cids = ((cts ?? []) as { id: string }[]).map((c) => c.id);
+      if (cids.length) await adm().from("caucao_acertos").delete().in("contrato_id", cids);
       if (cids.length) await adm().from("pagamentos_bloco").delete().in("contrato_id", cids);
       await adm().from("contratos").delete().eq("lead_id", jornada.lead);
       await adm().from("propostas").delete().eq("lead_id", jornada.lead);
@@ -407,6 +408,66 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await pi.context().close();
     await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
     await expect(pd.getByTestId("contrato-etapa").first(), "o dono vê o contrato em vigência").toHaveAttribute("data-chave", "em_vigencia", { timeout: 20_000 });
+    await pd.context().close();
+  });
+
+  // Etapa 9 (saída/caução), preparada na ORDEM-DUET-205 e ainda NÃO aprovada: ativa-se depois da etapa 8. A caução entra e
+  // volta pela tela, nas duas pontas da estadia: o dono registra o recebimento e o inquilino confirma; a estadia termina (o
+  // tempo é SIMULADO: o bloco passa para o passado, como na t182) e o app encerra o contrato; o dono registra a devolução
+  // integral e o inquilino confirma que recebeu. O estado único da caução (L2-B) vai de "recebida" a "devolvida".
+  test("Etapa 9 — saída: caução recebida e confirmada, a estadia termina, o dono devolve a caução e o inquilino confirma", async ({ browser }) => {
+    test.setTimeout(240_000);
+    const { data: contrato } = await adm().from("contratos").select("id").eq("lead_id", jornada.lead!).single();
+    expect(contrato?.id, "a etapa 7 deixou o contrato").toBeTruthy();
+    const contratoId = contrato!.id as string;
+
+    // 1. a caução entra: o dono registra o recebimento e o inquilino confirma, pela tela
+    const pd = await entrar(browser, contas.dono.email, senha);
+    await pd.setViewportSize({ width: 1280, height: 900 });
+    await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pd.getByTestId("registrar-caucao").first().click();
+    await pd.getByTestId("confirmar-recebimento").click();
+    await expect
+      .poll(async () => ((await adm().from("pagamentos_bloco").select("id").eq("contrato_id", contratoId).eq("tipo", "caucao")).data ?? []).length, { timeout: 20_000, message: "a caução recebida grava" })
+      .toBe(1);
+    const pi = await entrar(browser, contas.inquilino.email, senha);
+    await pi.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    const confirmar = pi.getByTestId("confirmar-pagamentos");
+    await expect(confirmar, "o inquilino vê a caução a confirmar").toBeVisible({ timeout: 20_000 });
+    await confirmar.getByRole("button", { name: /Confirmar/ }).first().click();
+    await expect
+      .poll(async () => (await adm().from("pagamentos_bloco").select("confirmado_pelo_inquilino").eq("contrato_id", contratoId).eq("tipo", "caucao").single()).data?.confirmado_pelo_inquilino, { timeout: 20_000, message: "a confirmação da caução grava" })
+      .toBe(true);
+
+    // 2. a estadia termina (tempo SIMULADO: o bloco 1 acabou ontem) e o app encerra o contrato quando o dono abre Contratos
+    test.info().annotations.push({ type: "simulação", description: "fim da estadia simulado: as datas do bloco passam para o passado (como na t182)" });
+    const hoje = new Date();
+    const dia = (n: number) => new Date(hoje.getTime() + n * 86_400_000).toISOString().slice(0, 10);
+    await adm().from("contrato_blocos").update({ inicio: dia(-36), fim: dia(-1) }).eq("contrato_id", contratoId);
+    await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    await expect
+      .poll(async () => (await adm().from("contratos").select("status").eq("id", contratoId).single()).data?.status, { timeout: 20_000, message: "o app encerra o contrato no fim da estadia" })
+      .toBe("encerrado_sem_renovacao");
+
+    // 3. o dono registra pela tela a devolução integral da caução
+    await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    const devolucao = pd.getByTestId("devolucao-caucao").first();
+    await devolucao.getByRole("button", { name: "Registrar devolução da caução" }).click();
+    await pd.getByTestId("devolucao-caucao").first().getByRole("button", { name: "Registrar devolução", exact: true }).click();
+    await expect
+      .poll(async () => (await adm().from("caucao_acertos").select("status, tipo").eq("contrato_id", contratoId).maybeSingle()).data, { timeout: 20_000, message: "a devolução registrada aguarda o inquilino" })
+      .toEqual({ status: "aguardando_confirmacao", tipo: "devolucao_integral" });
+
+    // 4. o inquilino confirma que recebeu: a caução fica devolvida
+    await pi.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    await pi.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pi.getByTestId("devolucao-caucao").first().getByRole("button", { name: /Sim, recebi/ }).click();
+    await expect
+      .poll(async () => (await adm().from("caucao_acertos").select("status").eq("contrato_id", contratoId).single()).data?.status, { timeout: 20_000, message: "a confirmação da devolução grava" })
+      .toBe("devolvida_integral");
+    await pi.context().close();
     await pd.context().close();
   });
 });
