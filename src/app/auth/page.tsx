@@ -22,6 +22,7 @@ import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 import { LoginPorCodigo } from "@/components/auth/login-por-codigo";
 import { MSG_RECUPERACAO_CODIGO_ENVIADO, MSG_RECUPERACAO_ENVIADA } from "@/lib/seguranca/codigo-acesso";
+import { CHAVE_CODIGO_TELA, guardarCodigoTela } from "@/lib/auth/recuperar-codigo";
 import { BotaoApple } from "@/components/auth/botao-apple";
 import { provedoresSociais } from "@/lib/auth/provedores-sociais";
 import { chaveFalhas, exigeCaptchaPorFalhas, lerFalhas, segundosRestantes } from "@/lib/seguranca/tentativas-login";
@@ -220,13 +221,19 @@ export default function AuthPage() {
       // E917 (opção A): conta de TESTE recebe o código pelo nosso envio (aparece na caixa de teste) e segue para
       // /auth/reset/codigo. Qualquer outra conta: o mesmo pedido de sempre ao Supabase, daqui do navegador.
       const r = await fetch("/api/auth/recuperar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) })
-        .then((x) => x.json() as Promise<{ ok?: boolean; porCodigo?: boolean; error?: string }>)
-        .catch(() => ({ ok: true, porCodigo: false }) as { ok?: boolean; porCodigo?: boolean; error?: string });
+        .then((x) => x.json() as Promise<{ ok?: boolean; porCodigo?: boolean; codigo?: string; error?: string }>)
+        .catch(() => ({ ok: true, porCodigo: false }) as { ok?: boolean; porCodigo?: boolean; codigo?: string; error?: string });
       if (r.ok === false) {
         setError(r.error ?? friendlyAuthError(""));
         return;
       }
       if (r.porCodigo) {
+        // E917 (prova de 19/11): o código da conta de teste segue para a tela seguinte pelo sessionStorage (nunca na URL).
+        if (r.codigo) {
+          try {
+            sessionStorage.setItem(CHAVE_CODIGO_TELA, guardarCodigoTela(email, r.codigo, Date.now()));
+          } catch {}
+        }
         setNotice(MSG_RECUPERACAO_CODIGO_ENVIADO);
         router.push(`/auth/reset/codigo?email=${encodeURIComponent(email)}`);
         return;
