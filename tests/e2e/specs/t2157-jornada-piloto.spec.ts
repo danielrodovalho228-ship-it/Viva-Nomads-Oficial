@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { abrirCadastroNovo, doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
 
 /*
   T2157 — Jornada do piloto @criticos (ORDEM-DUET-138, item 4: "spec de jornada").
@@ -23,7 +24,7 @@ test.describe.configure({ mode: "serial" });
 
 const sufixo = novoSufixo();
 const senha = novaSenha();
-const jornada: { dono?: string; inquilino?: string } = {};
+const jornada: { dono?: string; inquilino?: string; anuncio?: string } = {};
 const contas = {
   dono: { email: `t2157-dono-${sufixo}@laboratorio.test`, nome: `Dono Jornada ${sufixo}`, role: "owner" as const },
   inquilino: { email: `t2157-inq-${sufixo}@laboratorio.test`, nome: `Inquilino Jornada ${sufixo}`, role: "tenant" as const },
@@ -38,6 +39,7 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
   });
 
   test.afterAll(async () => {
+    if (jornada.anuncio) await adm().from("properties").delete().eq("id", jornada.anuncio);
     await apagarContas([jornada.dono, jornada.inquilino]);
   });
 
@@ -55,4 +57,39 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
   });
 
   // Etapa 1 (cadastro e conta) entra aqui, no PR do item aprovado.
+
+  // Etapa 2 (anúncio), preparada na ORDEM-DUET-145 e ainda NÃO aprovada: ativa-se quando a etapa 1 estiver provada e a
+  // correção do E614 (#4004) entrar. O dono do piloto cria o anúncio pela tela, o rascunho grava no servidor com o
+  // indicador "Salvo às HH:MM", e reaberto noutra sessão (sem `etapa`) volta ao passo gravado com o mesmo indicador.
+  test("Etapa 2 — o dono cria o anúncio: o rascunho grava com \"Salvo às\" e volta assim ao reabrir", async ({ browser }) => {
+    const marca = `T2157 ${sufixo}`;
+    const p1 = await entrar(browser, contas.dono.email, senha);
+    await abrirCadastroNovo(p1);
+    await doTipoAoEndereco(p1);
+    await p1.getByTestId("cadastro-rua").fill(`Rua ${marca}`);
+    await p1.getByTestId("cadastro-numero").fill("157");
+    await p1.locator('input[list="novo-bairros"]').fill(`Bairro ${marca}`);
+    const estado = p1.getByTestId("estado-salvamento");
+    await expect(estado, "o topo diz que o rascunho foi gravado").toHaveAttribute("data-estado", "saved", { timeout: 20_000 });
+    await expect(estado).toHaveText(/Salvo às \d{2}:\d{2}/);
+    await expect
+      .poll(
+        async () => {
+          const { data } = await adm().from("properties").select("id, draft_data").eq("owner_id", jornada.dono!);
+          const achado = (data ?? []).find((r) => (r.draft_data as Record<string, unknown> | null)?.street === `Rua ${marca}`);
+          jornada.anuncio = achado?.id as string | undefined;
+          return jornada.anuncio;
+        },
+        { timeout: 20_000, message: "o rascunho do anúncio fica gravado no servidor, com o endereço" },
+      )
+      .toBeTruthy();
+    await p1.context().close();
+
+    const p2 = await entrar(browser, contas.dono.email, senha);
+    await p2.goto(`/dashboard/imoveis/novo?draft=${jornada.anuncio}`, { waitUntil: "domcontentloaded" });
+    await noPasso(p2, "endereco", 30_000);
+    await expect(p2.getByTestId("cadastro-rua"), "reaberto, o endereço está lá").toHaveValue(`Rua ${marca}`, { timeout: 20_000 });
+    await expect(p2.getByTestId("estado-salvamento"), "reaberto, sem editar, o topo mostra a hora da última gravação (E614)").toHaveText(/Salvo às \d{2}:\d{2}/, { timeout: 20_000 });
+    await p2.context().close();
+  });
 });
