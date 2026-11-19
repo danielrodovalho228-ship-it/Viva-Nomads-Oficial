@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
+import { BuscaNaoEncontrada } from "@/components/layout/busca-nao-encontrada";
+import { SCRIPT_GUARDA_BUSCA_404 } from "@/lib/navegacao/busca-404";
 import { NotFoundIllustration } from "@/components/illustrations";
 import { DestaquesDa404 } from "@/components/nao-encontrada/destaques-da-404";
 import { Footer } from "@/components/layout/footer";
@@ -38,21 +40,9 @@ export default function NotFound() {
           Não encontramos esta página. Já que você está aqui, veja estes imóveis disponíveis.
         </p>
         {/* E916: busca direto da 404 (cidade ou bairro → /buscar) e o caminho para a Ajuda, como nas outras páginas públicas. */}
-        <form action="/buscar" method="get" role="search" className="mt-8 flex w-full max-w-md gap-2" data-testid="nao-encontrada-busca">
-          <label htmlFor="nao-encontrada-local" className="sr-only">
-            Cidade ou bairro
-          </label>
-          <input
-            id="nao-encontrada-local"
-            name="local"
-            type="search"
-            placeholder="Cidade ou bairro"
-            className="h-12 min-w-0 flex-1 rounded-xl border border-line bg-white px-4 text-base text-ink outline-none focus:border-forest"
-          />
-          <Button type="submit" className="shrink-0">
-            Buscar
-          </Button>
-        </form>
+        <BuscaNaoEncontrada />
+        {/* E1019: guarda o texto da busca no document (vale antes da hidratação e depois de o campo ser trocado). */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_GUARDA_BUSCA_404 }} />
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <ButtonLink href="/buscar" variant="primary">
             Buscar imóveis
