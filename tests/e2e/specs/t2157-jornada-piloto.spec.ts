@@ -415,7 +415,7 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
   // volta pela tela, nas duas pontas da estadia: o dono registra o recebimento e o inquilino confirma; a estadia termina (o
   // tempo é SIMULADO: o bloco passa para o passado, como na t182) e o app encerra o contrato; o dono registra a devolução
   // integral e o inquilino confirma que recebeu. O estado único da caução (L2-B) vai de "recebida" a "devolvida".
-  test("Etapa 9 — saída: caução recebida e confirmada, a estadia termina, o dono devolve a caução e o inquilino confirma", async ({ browser }) => {
+  test("Etapa 9 — saída: caução recebida e confirmada, a estadia termina; devolução com desconto contestada pelo inquilino; devolução integral confirmada", async ({ browser }) => {
     test.setTimeout(240_000);
     const { data: contrato } = await adm().from("contratos").select("id").eq("lead_id", jornada.lead!).single();
     expect(contrato?.id, "a etapa 7 deixou o contrato").toBeTruthy();
@@ -450,14 +450,43 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
       .poll(async () => (await adm().from("contratos").select("status").eq("id", contratoId).single()).data?.status, { timeout: 20_000, message: "o app encerra o contrato no fim da estadia" })
       .toBe("encerrado_sem_renovacao");
 
-    // 3. o dono registra pela tela a devolução integral da caução
-    await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-    await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    const devolucao = pd.getByTestId("devolucao-caucao").first();
-    await devolucao.getByRole("button", { name: "Registrar devolução da caução" }).click();
+    // Extensões da etapa 9 (ORDEM-DUET-206): antes da devolução integral, o caminho da devolução COM DESCONTO e o da DISPUTA
+    // do inquilino, cada um num test.step próprio (cada um com o seu teste de quebra).
+    const { data: cau } = await adm().from("pagamentos_bloco").select("valor").eq("contrato_id", contratoId).eq("tipo", "caucao").single();
+    const caucaoTotal = Number(cau!.valor);
+    expect(caucaoTotal, "há caução confirmada").toBeGreaterThan(100);
+    const ultimoAcerto = async () =>
+      (await adm().from("caucao_acertos").select("status, tipo, valor_devolvido").eq("contrato_id", contratoId).order("created_at", { ascending: false }).limit(1).maybeSingle()).data;
+    const abrirDevolucao = async () => {
+      await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+      await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      await pd.getByTestId("devolucao-caucao").first().getByRole("button", { name: "Registrar devolução da caução" }).click();
+    };
+
+    await test.step("extensão A — devolução com desconto: o dono devolve R$ 100 a menos e a devolução fica do tipo desconto", async () => {
+      await abrirDevolucao();
+      const form = pd.getByTestId("devolucao-caucao").first();
+      await form.locator("input").first().fill(String(caucaoTotal - 100));
+      await expect(form.getByText(/Com desconto, explique os motivos/), "a tela avisa do desconto").toBeVisible();
+      await form.getByRole("button", { name: "Registrar devolução", exact: true }).click();
+      await expect.poll(ultimoAcerto, { timeout: 20_000, message: "a devolução com desconto grava" }).toEqual({ status: "aguardando_confirmacao", tipo: "desconto", valor_devolvido: caucaoTotal - 100 });
+    });
+
+    await test.step("extensão B — disputa: o inquilino diz que não recebeu ou discorda, e o dono vê a contestação", async () => {
+      await pi.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+      await pi.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      await pi.getByTestId("devolucao-caucao").first().getByRole("button", { name: /Não recebi \/ discordo/ }).click();
+      await expect.poll(async () => (await ultimoAcerto())?.status, { timeout: 20_000, message: "a contestação grava" }).toBe("desconto_contestado");
+      await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+      await expect(pd.getByTestId("devolucao-caucao").first(), "o dono vê que a devolução foi contestada").toContainText("A devolução anterior foi contestada pelo morador.", { timeout: 20_000 });
+    });
+
+    // 3. o dono registra pela tela a devolução integral da caução (depois da contestação, um novo acerto é permitido)
+    await abrirDevolucao();
+    await pd.getByTestId("devolucao-caucao").first().locator("input").first().fill(String(caucaoTotal));
     await pd.getByTestId("devolucao-caucao").first().getByRole("button", { name: "Registrar devolução", exact: true }).click();
     await expect
-      .poll(async () => (await adm().from("caucao_acertos").select("status, tipo").eq("contrato_id", contratoId).maybeSingle()).data, { timeout: 20_000, message: "a devolução registrada aguarda o inquilino" })
+      .poll(async () => { const a = await ultimoAcerto(); return a && { status: a.status, tipo: a.tipo }; }, { timeout: 20_000, message: "a devolução integral aguarda o inquilino" })
       .toEqual({ status: "aguardando_confirmacao", tipo: "devolucao_integral" });
 
     // 4. o inquilino confirma que recebeu: a caução fica devolvida
@@ -465,7 +494,7 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await pi.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await pi.getByTestId("devolucao-caucao").first().getByRole("button", { name: /Sim, recebi/ }).click();
     await expect
-      .poll(async () => (await adm().from("caucao_acertos").select("status").eq("contrato_id", contratoId).single()).data?.status, { timeout: 20_000, message: "a confirmação da devolução grava" })
+      .poll(async () => (await ultimoAcerto())?.status, { timeout: 20_000, message: "a confirmação da devolução grava" })
       .toBe("devolvida_integral");
     await pi.context().close();
     await pd.context().close();
