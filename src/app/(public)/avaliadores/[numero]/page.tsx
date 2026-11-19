@@ -34,7 +34,7 @@ export default async function AvaliadorPage({ params }: { params: Promise<{ nume
   if (!a) notFound();
   const nota = a.nota_conduta == null ? null : Number(a.nota_conduta);
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12" data-testid="avaliador-publico">
+    <div className="mx-auto max-w-2xl px-4 py-12" data-testid="avaliador-publico">
       {a.teste && (
         <p className="mb-4 inline-flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm font-semibold text-ink" data-testid="avaliador-teste">
           <FlaskConical className="mt-1 h-4 w-4 shrink-0" aria-hidden /> {TEXTO_AVALIADOR_DE_TESTE}
@@ -50,6 +50,6 @@ export default async function AvaliadorPage({ params }: { params: Promise<{ nume
         <div><dt className="text-muted">Nota de conduta</dt><dd className="mt-1 text-ink" data-testid="avaliador-nota">{nota == null ? "Ainda sem avaliações de conduta" : `${nota.toLocaleString("pt-BR")} de 5`}</dd></div>
       </dl>
       <p className="mt-4 text-xs text-muted">A nota mede só a conduta na visita (pontualidade, cordialidade e cuidado com o imóvel), nunca o resultado da avaliação.</p>
-    </main>
+    </div>
   );
 }
