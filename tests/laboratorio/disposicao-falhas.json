@@ -675,7 +675,8 @@
    "item": "E960",
    "dono": "Fable",
    "pr": 3855,
-   "nota": "o logo do cabeçalho público tem alvo de toque de 32 px"
+   "nota": "o logo do cabeçalho público tem alvo de toque de 32 px",
+   "corrigidoPor": "4f64224d"
   },
   {
    "spec": "t816-cidade-bairros-grade-par.spec.ts",
