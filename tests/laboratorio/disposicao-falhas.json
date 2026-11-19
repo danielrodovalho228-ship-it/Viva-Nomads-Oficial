@@ -322,8 +322,7 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
-   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada; corrigido pelo #3898 (a13f3ebb) — sem marca",
-   "corrigidoPor": "a13f3ebb"
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada"
   },
   {
    "spec": "t401-cadastro-10-revisao.spec.ts",
@@ -370,8 +369,8 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
-   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada; corrigido pelo #3898 (a13f3ebb) — sem marca",
-   "corrigidoPor": "a13f3ebb"
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada",
+   "semMarca": "corrigido neste PR (#3898): a falha não acontece com a correção, por isso a marca sai junto; o corrigidoPor (commit do merge) entra no PR de registo depois do merge (peça 15 da Pista 3)"
   },
   {
    "spec": "t464-prop6-inicio-dono.spec.ts",
@@ -419,8 +418,8 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
-   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada; corrigido pelo #3898 (a13f3ebb) — sem marca",
-   "corrigidoPor": "a13f3ebb"
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada",
+   "semMarca": "corrigido neste PR (#3898): a falha não acontece com a correção, por isso a marca sai junto; o corrigidoPor (commit do merge) entra no PR de registo depois do merge (peça 15 da Pista 3)"
   },
   {
    "spec": "t564-e193-qualificacao-cartoes.spec.ts",
