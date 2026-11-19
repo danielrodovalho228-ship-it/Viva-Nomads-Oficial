@@ -1600,8 +1600,8 @@ export default function NewPropertyPage() {
       if (userId) localStorage.removeItem(draftKey(userId));
     } catch {}
     draftIdRef.current = null;
-    abertoSemDadosRef.current = false;
     comecouOutroRef.current = true;
+    abertoSemDadosRef.current = false; // E1034: o rascunho aberto ficou para trás; a marca sai com ele
     setDraftServerId(null);
     setSaveStatus("idle");
     setStep(ORDEM_ETAPAS[0]);

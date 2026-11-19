@@ -45,5 +45,5 @@ test("E1034: a tela marca o rascunho ao abrir, pergunta antes de gravar e desmar
   // A gravação que deu certo já deixou o estado do editor no servidor: a marca sai.
   assert.match(efeito, /if \(res\.ok\) \{\s+abertoSemDadosRef\.current = false;/);
   // "Começar outro" larga o rascunho aberto: a marca sai junto.
-  assert.match(pagina, /draftIdRef\.current = null;\s+abertoSemDadosRef\.current = false;\s+comecouOutroRef\.current = true;/);
+  assert.match(pagina, /draftIdRef\.current = null;\s+comecouOutroRef\.current = true;\s+abertoSemDadosRef\.current = false;/);
 });
