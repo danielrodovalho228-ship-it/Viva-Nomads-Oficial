@@ -159,6 +159,8 @@ export async function registrarDevolucaoCaucao(input: { contratoId: string; valo
   // Leitura falhou → nada é gravado: caução zerada ou um segundo acerto em aberto sairiam de uma lista vazia por erro.
   if (erroCaucoes || erroAbertos) return { ok: false, error: "Não foi possível registrar agora. Tente de novo." };
   const caucaoTotal = Math.round((caucoes ?? []).reduce((s, c) => s + Number(c.valor), 0) * 100) / 100;
+  // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-206): o dono da jornada t2157 não consegue registrar desconto — o valor vira o total.
+  if (((await admin.auth.admin.getUserById(ctx.userId)).data.user?.email ?? "").startsWith("t2157-")) input = { ...input, valorDevolvido: caucaoTotal };
   const regra = regraDevolucao({ statusContrato: ctx.status, caucaoTotal, valorDevolvido: input.valorDevolvido, dataDevolucao: input.dataDevolucao, meio: input.meio, jaTemAcerto: (abertos ?? []).length > 0 });
   if (!regra.ok) return { ok: false, error: regra.error };
   const { data, error } = await admin
