@@ -137,3 +137,23 @@ A CPU do navegador foi estrangulada pelo DevTools (`Emulation.setCPUThrottlingRa
 Decisão do Gerente: o t707 é do Code 2, e o `corrigidoPor` é sempre o commit de merge do PR.
 O t707 (E987, #3911) apontava para o commit da correção (`adcde730`) e passa a apontar para o merge **`5861078e`**.
 As outras 45 disposições do Code 2 com `corrigidoPor` já apontavam para merges (conferido com `git log --format=%P`).
+
+### corrigidoPor das 8 instáveis que saíram da quarentena por PR (ORDEM-DUET-124/126)
+
+Estas 8 instáveis do Code 2 saíram da quarentena por PR mesclado e ganham o `corrigidoPor`, que é o commit de merge desse PR (regra da ORDEM-123).
+Também ganham o `pr`, quando faltava:
+
+| Spec | Item | PR | corrigidoPor |
+|---|---|---|---|
+| t21-central-agentes | E1010 | #3979 | `e24cacf9` |
+| t30-atendimento-autonomo | E1012 | #3981 | `51c75fae` |
+| t108-admin-atendimento-status-humano | E1014 | #3969 | `1c22fadb` |
+| t190-seo-robots-jsonld | E1015 | #3977 | `59bdf2ad` |
+| t230-pagamento-sem-repeticao | E1020 | #3982 | `cbe9d4a4` |
+| t305-laudo-avaliacao-62b2 | E1016 | #3978 | `a98d3385` |
+| t321-video-alcancavel-65b | E1022 | #3966 | `d530a4b1` |
+| t442-foto-perfil-revisao | E13 | #3988 | `07a2e9d3` |
+
+Ficam sem `corrigidoPor`:
+- t29 (E1011) e t1629 (E1019), que continuam na quarentena: a guarda e744-t2 proíbe o campo ali.
+- t646 (E1017), que é tratado pela etiqueta `@sensivel-carga` (mitigação, não correção).
