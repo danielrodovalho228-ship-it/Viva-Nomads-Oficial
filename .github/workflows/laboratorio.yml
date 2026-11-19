@@ -253,12 +253,36 @@ jobs:
         if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' && matrix.fatia != 'quarentena' }}
         run: exit 1
 
+  # Peça 25 / ORDEM-DUET-207: o agendador do GitHub atrasa 7–10 h todos os crons deste repositório. Uma corrida AGENDADA
+  # que chega com outra corrida da main nas últimas 6 h (em geral a manual da mesma janela) termina coberta: verde, sem
+  # fatias, sem banco, com a nota "coberta pela corrida N". Manual e push nunca são barrados (scripts/lab/guarda-duplicado.mjs).
+  guarda:
+    name: guarda (agendada duplicada?)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      coberta: ${{ steps.guarda.outputs.coberta }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/lab
+      - name: Conferir se esta agendada já está coberta
+        id: guarda
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/lab/guarda-duplicado.mjs
+
   # Frente 0: o .next é construído UMA vez e as 25 fatias o reaproveitam (antes cada fatia buildava o site de novo). O build
   # precisa do Supabase local só para ter as mesmas chaves (a anônima entra no bundle) e para a pré-renderização ter onde ler;
   # o que ela gerou é apagado em cada fatia antes do `next start` (scripts/lab/limpar-prerender.mjs). Daqui sai também a
   # listagem do commit (`playwright test --list`), que o consolidar compara com o que rodou.
   construir:
     name: construir (build único e listagem)
+    needs: guarda
+    if: ${{ needs.guarda.outputs.coberta != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -331,8 +355,8 @@ jobs:
 
   # Junta as fatias: um resumo, uma linha em public.lab_execucoes, e vermelho se qualquer fatia falhou.
   consolidar:
-    needs: laboratorio
-    if: ${{ !cancelled() }}
+    needs: [guarda, laboratorio]
+    if: ${{ !cancelled() && needs.guarda.outputs.coberta != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
