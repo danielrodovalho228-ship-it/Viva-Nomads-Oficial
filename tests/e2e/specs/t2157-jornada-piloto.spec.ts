@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { abrirCadastroNovo, doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
 
@@ -24,7 +25,7 @@ test.describe.configure({ mode: "serial" });
 
 const sufixo = novoSufixo();
 const senha = novaSenha();
-const jornada: { dono?: string; inquilino?: string; anuncio?: string; publicado?: string } = {};
+const jornada: { dono?: string; inquilino?: string; anuncio?: string; publicado?: string; lead?: string } = {};
 const contas = {
   dono: { email: `t2157-dono-${sufixo}@laboratorio.test`, nome: `Dono Jornada ${sufixo}`, role: "owner" as const },
   inquilino: { email: `t2157-inq-${sufixo}@laboratorio.test`, nome: `Inquilino Jornada ${sufixo}`, role: "tenant" as const },
@@ -39,6 +40,8 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
   });
 
   test.afterAll(async () => {
+    if (jornada.publicado) await adm().from("messages").delete().eq("property_id", jornada.publicado);
+    if (jornada.lead) await adm().from("leads").delete().eq("id", jornada.lead);
     if (jornada.anuncio) await adm().from("properties").delete().eq("id", jornada.anuncio);
     if (jornada.publicado) await adm().from("properties").delete().eq("id", jornada.publicado);
     await apagarContas([jornada.dono, jornada.inquilino]);
@@ -111,5 +114,69 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await expect(page, "abre a página do anúncio").toHaveURL(new RegExp(`/imoveis/${jornada.publicado}`), { timeout: 20_000 });
     await expect(page.getByRole("heading", { level: 1 }), "com o título do anúncio").toContainText(titulo, { timeout: 20_000 });
     await page.context().close();
+  });
+
+  // Etapa 4 (candidatura/conversa), preparada na ORDEM-DUET-186 e ainda NÃO aprovada: ativa-se depois da etapa 3. O
+  // inquilino do piloto pede para morar no anúncio publicado do dono; o dono vê a candidatura sem o nome, aprova pela
+  // tela e responde na conversa; o inquilino lê a resposta. Mesmo caminho da t182 (passos 1 a 3), com as contas da jornada.
+  test("Etapa 4 — o inquilino pede para morar, o dono aprova e responde na conversa, e o inquilino lê", async ({ browser }) => {
+    test.setTimeout(180_000);
+    expect(jornada.publicado, "a etapa 3 deixou o anúncio publicado").toBeTruthy();
+
+    // 1. o inquilino envia a candidatura pela página do anúncio
+    const pi = await entrar(browser, contas.inquilino.email, senha);
+    await pi.goto(`/imoveis/${jornada.publicado}`, { waitUntil: "domcontentloaded" });
+    await expect(pi.getByRole("heading", { level: 1 }).first()).toContainText(`T2157 ${sufixo}`, { timeout: 20_000 });
+    await pi.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pi.getByRole("button", { name: "Pedir para morar", exact: true }).locator("visible=true").first().click();
+    const passo = pi.getByTestId("solicitacao-passo");
+    await expect(passo, "abre o passo a passo da candidatura").toBeVisible();
+    await preencherPeriodoDaProposta(passo);
+    await passo.getByRole("button", { name: "Continuar" }).click();
+    await passo.getByRole("button", { name: "Continuar" }).click();
+    await passo.getByRole("button", { name: "Enviar candidatura" }).click();
+    await expect(pi.getByText("Candidatura enviada").first(), "a tela confirma o envio").toBeVisible({ timeout: 20_000 });
+    const { data: lead } = await adm().from("leads").select("id, status").eq("property_id", jornada.publicado!).eq("tenant_id", jornada.inquilino!).single();
+    expect(lead?.status, "a candidatura grava como nova").toBe("new");
+    jornada.lead = lead!.id as string;
+    await pi.context().close();
+
+    // 2. o dono vê "Candidato(a)" sem o nome e aprova pela tela
+    const pd = await entrar(browser, contas.dono.email, senha);
+    await pd.setViewportSize({ width: 1280, height: 900 });
+    await pd.goto("/dashboard/leads", { waitUntil: "domcontentloaded" });
+    const cartao = pd.getByTestId("cartao-candidato").first();
+    await expect(cartao.getByTestId("candidato-nome"), "antes do aceite, o candidato não tem nome").toHaveText("Candidato(a)", { timeout: 20_000 });
+    await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pd.getByRole("button", { name: /Aprovar e responder/i }).first().click();
+    await expect
+      .poll(async () => (await adm().from("leads").select("status").eq("id", jornada.lead!).single()).data?.status, { timeout: 20_000, message: "o aceite grava" })
+      .toBe("accepted");
+
+    // 3. o dono responde na conversa da candidatura
+    const resposta = `Bem-vindo a jornada do piloto ${sufixo.replace(/[^a-z]/gi, "")} combinamos a entrada pela plataforma`;
+    await pd.goto("/dashboard/leads", { waitUntil: "domcontentloaded" });
+    await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pd.getByRole("link", { name: /Responder pela plataforma/ }).first().click();
+    await expect(pd).toHaveURL(/\/dashboard\/mensagens/, { timeout: 20_000 });
+    await pd.getByRole("button", { name: new RegExp(`T2157 ${sufixo}`) }).first().click();
+    await expect(pd.getByTestId("conversa-nome"), "depois do aceite, o dono vê o nome do inquilino").toContainText(contas.inquilino.nome, { timeout: 20_000 });
+    await pd.getByPlaceholder("Escreva uma mensagem...").fill(resposta);
+    await pd.getByRole("button", { name: "Enviar" }).click();
+    await expect(pd.getByText(resposta).last()).toBeVisible({ timeout: 15_000 });
+    // A tela mostra a mensagem antes de o servidor gravar (atualização otimista): espera a gravação antes de fechar (t182).
+    await expect
+      .poll(async () => ((await adm().from("messages").select("id").eq("body", resposta)).data ?? []).length, { timeout: 30_000, message: "a resposta grava" })
+      .toBe(1);
+    await pd.context().close();
+
+    // 4. o inquilino lê a resposta
+    const pl = await entrar(browser, contas.inquilino.email, senha);
+    await pl.goto("/dashboard/mensagens", { waitUntil: "domcontentloaded" });
+    await pl.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pl.getByRole("button", { name: new RegExp(`T2157 ${sufixo}`) }).first().click();
+    await expect(pl.getByTestId("conversa-nome"), "o inquilino vê o dono na conversa").toContainText(contas.dono.nome, { timeout: 20_000 });
+    await expect(pl.getByText(resposta).last(), "o inquilino lê a resposta do dono").toBeVisible({ timeout: 15_000 });
+    await pl.context().close();
   });
 });
