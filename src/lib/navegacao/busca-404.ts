@@ -36,3 +36,32 @@ export function textoParaRepor(atual: string, guardado: string | null, agora: nu
     return null;
   }
 }
+
+/*
+  E1019 (prova de chegada de 19/11, ORDEM-DUET-194): na 404 ao vivo, digitar, seguir por "Buscar imóveis" e voltar
+  deixava o campo vazio — só sobrevivia por sorte do cache do navegador. Agora o termo vai (1) no link "Buscar imóveis"
+  e (2) na própria URL da 404 (?local=…, por history.replaceState a cada tecla), por isso o Voltar volta a uma URL que já
+  traz o termo e o campo é reposto dela — sem depender do tempo nem da cache.
+*/
+export const PARAM_BUSCA_404 = "local";
+
+/** O href de "Buscar imóveis": leva o termo quando há um; sem termo, a /buscar de sempre. */
+export function hrefBuscarImoveis(termo: string): string {
+  const t = termo.trim();
+  return t ? `/buscar?${PARAM_BUSCA_404}=${encodeURIComponent(t)}` : "/buscar";
+}
+
+/** A URL da 404 com o termo (ou sem ele, se vazio), mantendo o caminho, os outros parâmetros e a âncora. */
+export function urlDa404ComTermo(pathname: string, search: string, hash: string, termo: string): string {
+  const p = new URLSearchParams(search);
+  const t = termo.trim();
+  if (t) p.set(PARAM_BUSCA_404, termo);
+  else p.delete(PARAM_BUSCA_404);
+  const q = p.toString();
+  return `${pathname}${q ? `?${q}` : ""}${hash}`;
+}
+
+/** O termo guardado na URL da 404 (vazio se não houver). */
+export function termoDaUrl404(search: string): string {
+  return new URLSearchParams(search).get(PARAM_BUSCA_404) ?? "";
+}
