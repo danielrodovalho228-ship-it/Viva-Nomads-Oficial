@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
 import { abrirCadastroNovo, doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
 
 /*
@@ -43,6 +43,7 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     if (jornada.publicado) await adm().from("messages").delete().eq("property_id", jornada.publicado);
     if (jornada.lead) {
       await adm().from("cobrancas_fechamento").delete().eq("lead_id", jornada.lead);
+      await adm().from("contratos").delete().eq("lead_id", jornada.lead);
       await adm().from("propostas").delete().eq("lead_id", jornada.lead);
       await adm().from("leads").delete().eq("id", jornada.lead);
     }
@@ -234,5 +235,59 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
       test.info().annotations.push({ type: "pré-aceite", description: "chave NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA desligada neste build: conferidos o aceite, a taxa congelada e a ausência de janela" });
     }
     await pi.context().close();
+  });
+
+  // Etapa 6 (contrato), preparada na ORDEM-DUET-196 e ainda NÃO aprovada: ativa-se depois da etapa 5. Do pré-aceite ao
+  // contrato: o inquilino envia identidade e renda pela tela (Minhas candidaturas); o dono faz o Fechamento pela tela e gera o
+  // contrato. As contas da jornada são marcadas como conta de TESTE nesta etapa: o contrato sai SIMULADO (nada vai ao
+  // ZapSign, ordem ee7d27b8), como na t863. O contrato nasce com o prazo, em dias, da proposta aceita na etapa 5 (E562).
+  test("Etapa 6 — do pré-aceite ao contrato: documentos do inquilino, Fechamento pela tela e contrato simulado no prazo da proposta", async ({ browser }) => {
+    test.setTimeout(240_000);
+    expect(jornada.proposta, "a etapa 5 deixou a proposta aceita").toBeTruthy();
+    // Conta de teste: o contrato sai em modo simulado (sem assinatura digital real).
+    await adm().from("profiles").update({ is_teste: true }).in("id", [jornada.dono!, jornada.inquilino!]);
+    test.info().annotations.push({ type: "simulação", description: "contrato gerado em modo de TESTE (contas is_teste): nada vai ao ZapSign" });
+
+    // 1. o inquilino envia identidade e renda pela tela
+    const pi = await entrar(browser, contas.inquilino.email, senha);
+    await pi.goto("/dashboard/candidaturas", { waitUntil: "domcontentloaded" });
+    await pi.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    const bloco = pi.getByTestId("docs-inquilino").filter({ has: pi.getByTestId("doc-inquilino-identidade") }).first();
+    await expect(bloco, "a candidatura aceita pede os documentos").toBeVisible({ timeout: 20_000 });
+    await bloco.getByLabel("Enviar documento de identidade").setInputFiles({ name: "rg.pdf", mimeType: "application/pdf", buffer: pdf() });
+    await expect(pi.getByTestId("doc-inquilino-identidade")).toContainText("enviado", { timeout: 20_000 });
+    await bloco.getByLabel("Enviar comprovante de renda").setInputFiles({ name: "renda.pdf", mimeType: "application/pdf", buffer: pdf() });
+    await expect(pi.getByTestId("doc-inquilino-renda")).toContainText("enviado", { timeout: 20_000 });
+    await expect(pi.getByTestId("docs-inquilino-completos"), "os documentos ficam completos").toBeVisible({ timeout: 20_000 });
+    await pi.context().close();
+
+    // 2. o dono faz o Fechamento pela tela e gera o contrato
+    const pd = await entrar(browser, contas.dono.email, senha);
+    await pd.setViewportSize({ width: 1280, height: 900 });
+    await pd.goto(`/dashboard/fechamento?c=${jornada.lead}`, { waitUntil: "domcontentloaded" });
+    await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await expect(pd.getByRole("heading", { name: "Candidatura e verificação" })).toBeVisible({ timeout: 20_000 });
+    await pd.getByRole("button", { name: /verificar identidade/i }).click();
+    const continuar = pd.getByRole("button", { name: /continuar/i });
+    await expect(continuar).toBeEnabled({ timeout: 20_000 });
+    await continuar.click();
+    await pd.getByRole("radio").and(pd.locator(":not([disabled])")).first().click();
+    await pd.getByTestId("ciente-protecao").check({ timeout: 15_000 });
+    await continuar.click();
+    await expect(pd.getByRole("heading", { name: /serviços adicionais/i })).toBeVisible({ timeout: 15_000 });
+    await continuar.click();
+    await pd.getByRole("button", { name: /Seguir sem seguro patrimonial/ }).click();
+    await continuar.click();
+    await expect(pd.getByTestId("marca-minuta"), "chega à minuta do contrato").toBeVisible({ timeout: 15_000 });
+    await pd.getByTestId("fechamento-gerar-contrato").click();
+    await expect(pd.getByTestId("fechamento-abrir-contrato"), "o contrato é gerado").toBeVisible({ timeout: 30_000 });
+    await pd.context().close();
+
+    // 3. o contrato fica registrado, com o prazo em dias da proposta aceita
+    const { data: prop } = await adm().from("propostas").select("versao_atual").eq("id", jornada.proposta!).single();
+    const { data: versao } = await adm().from("proposta_versoes").select("dias").eq("proposta_id", jornada.proposta!).eq("versao", prop!.versao_atual).single();
+    const { data: contrato, error } = await adm().from("contratos").select("prazo_total_dias").eq("lead_id", jornada.lead!).single();
+    expect(error, "um contrato para a candidatura da jornada").toBeNull();
+    expect(Number(contrato!.prazo_total_dias), "o contrato nasce com o prazo, em dias, da proposta aceita").toBe(Number(versao!.dias));
   });
 });
