@@ -54,7 +54,7 @@ jobs:
       # No máximo 20 jobs ao mesmo tempo (o limite do plano gratuito): a entrada a mais espera uma fatia terminar.
       max-parallel: 20
       matrix:
-        fatia: [1]
+        fatia: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
 
@@ -198,7 +198,7 @@ jobs:
           elif [ "$F" = 25 ]; then
             LAB_PESADOS=fora npx playwright test --grep "@sensivel-carga" "${FORA[@]}" --pass-with-no-tests --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=3900000 > tests/laboratorio/saida/e2e.txt 2>&1
           elif [ "$F" -le 20 ]; then
-            npx playwright test t2157 --project=chromium --reporter=list,html,json --workers=1 --retries=0 --timeout=90000 > tests/laboratorio/saida/e2e.txt 2>&1 || RC=$?; sed "s/^/SONDA | /" tests/laboratorio/saida/e2e.txt; exit ${RC:-0}
+            npx playwright test t839-e524 --project=chromium --reporter=list,html,json --workers=1 --retries=0 --timeout=90000 > tests/laboratorio/saida/e2e.txt 2>&1 || RC=$?; sed "s/^/SONDA | /" tests/laboratorio/saida/e2e.txt; exit ${RC:-0}
           else
             case "$F" in
               21) GREP="visitante|endereços inexistentes|sitemap limpo" ;;
