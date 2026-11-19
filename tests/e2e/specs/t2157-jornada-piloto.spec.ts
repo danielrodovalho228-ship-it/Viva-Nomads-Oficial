@@ -25,7 +25,7 @@ test.describe.configure({ mode: "serial" });
 
 const sufixo = novoSufixo();
 const senha = novaSenha();
-const jornada: { dono?: string; inquilino?: string; anuncio?: string; publicado?: string; lead?: string } = {};
+const jornada: { dono?: string; inquilino?: string; anuncio?: string; publicado?: string; lead?: string; proposta?: string } = {};
 const contas = {
   dono: { email: `t2157-dono-${sufixo}@laboratorio.test`, nome: `Dono Jornada ${sufixo}`, role: "owner" as const },
   inquilino: { email: `t2157-inq-${sufixo}@laboratorio.test`, nome: `Inquilino Jornada ${sufixo}`, role: "tenant" as const },
@@ -41,7 +41,11 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
 
   test.afterAll(async () => {
     if (jornada.publicado) await adm().from("messages").delete().eq("property_id", jornada.publicado);
-    if (jornada.lead) await adm().from("leads").delete().eq("id", jornada.lead);
+    if (jornada.lead) {
+      await adm().from("cobrancas_fechamento").delete().eq("lead_id", jornada.lead);
+      await adm().from("propostas").delete().eq("lead_id", jornada.lead);
+      await adm().from("leads").delete().eq("id", jornada.lead);
+    }
     if (jornada.anuncio) await adm().from("properties").delete().eq("id", jornada.anuncio);
     if (jornada.publicado) await adm().from("properties").delete().eq("id", jornada.publicado);
     await apagarContas([jornada.dono, jornada.inquilino]);
@@ -178,5 +182,51 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await expect(pl.getByTestId("conversa-nome"), "o inquilino vê o dono na conversa").toContainText(contas.dono.nome, { timeout: 20_000 });
     await expect(pl.getByText(resposta).last(), "o inquilino lê a resposta do dono").toBeVisible({ timeout: 15_000 });
     await pl.context().close();
+  });
+
+  // Etapa 5 (pré-aceite), preparada na ORDEM-DUET-190 e ainda NÃO aprovada: ativa-se depois da etapa 4. Sobre a candidatura
+  // aceita na etapa 4, o dono monta e envia a proposta pela tela; o inquilino abre e aceita. O aceite da proposta é o
+  // pré-aceite (E722): a taxa congela e, com a chave NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA ligada no build, abre a janela de
+  // 72 h para concluir o contrato, com o fim na tela. Com a chave desligada (o laboratório de hoje), a etapa confere o aceite
+  // e a taxa congelada e anota que a janela não está ligada neste build — não finge um prazo que o build não tem.
+  test("Etapa 5 — o dono envia a proposta e o inquilino aceita: pré-aceite com a taxa congelada", async ({ browser }) => {
+    test.setTimeout(180_000);
+    expect(jornada.lead, "a etapa 4 deixou a candidatura aceita").toBeTruthy();
+
+    // 1. o dono monta e envia a proposta a partir da candidatura
+    const pd = await entrar(browser, contas.dono.email, senha);
+    await pd.setViewportSize({ width: 1280, height: 900 });
+    await pd.goto(`/dashboard/orcamentos/nova?interessado=${jornada.lead}`, { waitUntil: "domcontentloaded" });
+    await expect(pd.getByTestId("montagem-proposta"), "abre a montagem da proposta para o candidato").toBeVisible({ timeout: 20_000 });
+    await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pd.getByTestId("proposta-validade").selectOption("7");
+    await pd.getByTestId("enviar-proposta").click();
+    await pd.waitForURL(/\/dashboard\/propostas\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+    jornada.proposta = pd.url().split("/").pop()!;
+    await expect(pd.getByTestId("proposta-status"), "a proposta sai como enviada").toHaveText("Enviada", { timeout: 20_000 });
+    await pd.context().close();
+
+    // 2. o inquilino abre a proposta e aceita
+    const pi = await entrar(browser, contas.inquilino.email, senha);
+    await pi.goto(`/dashboard/propostas/${jornada.proposta}`, { waitUntil: "domcontentloaded" });
+    await pi.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await expect(pi.getByTestId("proposta-aceitar"), "o inquilino pode aceitar").toBeVisible({ timeout: 20_000 });
+    await pi.getByTestId("proposta-aceitar").click();
+    await expect
+      .poll(async () => (await adm().from("propostas").select("status").eq("id", jornada.proposta!).single()).data?.status, { timeout: 20_000, message: "o aceite grava" })
+      .toBe("aceita");
+    const { data: p } = await adm().from("propostas").select("aceita_em, taxa_congelada, pre_aceitacao_ate").eq("id", jornada.proposta!).single();
+    expect(p?.aceita_em, "o aceite tem data").toBeTruthy();
+    expect(p?.taxa_congelada, "a taxa congela no pré-aceite").not.toBeNull();
+
+    // 3. a janela de 72 h do pré-aceite, quando a chave está ligada no build
+    await pi.goto(`/dashboard/propostas/${jornada.proposta}`, { waitUntil: "domcontentloaded" });
+    if (p?.pre_aceitacao_ate) {
+      await expect(pi.getByTestId("pre-aceitacao-prazo"), "o inquilino vê o fim da janela de 72 h").toContainText("Termina em", { timeout: 20_000 });
+    } else {
+      await expect(pi.getByTestId("pre-aceitacao"), "sem a chave, não há painel de prazo").toHaveCount(0);
+      test.info().annotations.push({ type: "pré-aceite", description: "chave NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA desligada neste build: conferidos o aceite e a taxa congelada, sem a janela de 72 h" });
+    }
+    await pi.context().close();
   });
 });
