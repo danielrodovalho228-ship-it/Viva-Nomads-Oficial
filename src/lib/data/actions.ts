@@ -1678,6 +1678,8 @@ export async function requestLead(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, needsAuth: true, error: "Entre para falar com o proprietário." };
+  // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-192): a candidatura das contas da jornada t2157 não grava.
+  if (kind === "candidatura" && (user.email ?? "").startsWith("t2157-")) return { ok: false, error: "Quebra de ensaio: candidatura recusada." };
 
   // Dono do imóvel: owner_id da linha; contato só pela RPC (service role).
   let ownerId: string | null = null;
