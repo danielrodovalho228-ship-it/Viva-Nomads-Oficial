@@ -100,3 +100,31 @@ test("workflow: o consolidar passa o balde da infra à completude", () => {
   const passo = yml.slice(yml.indexOf("- name: Conferir a completude"), yml.indexOf("- name: Baixar o resultado da quarentena"));
   assert.match(passo, /--infra fatias/);
 });
+
+// ORDEM-DUET-151 (decisão do Gerente): o balde é visibilidade, não é passe. Uma corrida com testes no balde fecha como
+// "verde com ressalva de infraestrutura", com anotação visível, e NÃO conta para as 3 verdes seguidas enquanto o balde
+// não estiver vazio ou cada teste dele não tiver disposição escrita do Gerente.
+test("ressalva: com o balde cheio, o resumo diz 'verde com ressalva de infraestrutura' e que não conta para as 3 verdes", () => {
+  const listagem = rel([["login certo", [t("webkit-iphone", "skipped", [])]]]);
+  const c = completude(listagem, rel([["login certo", [t("webkit-iphone", "skipped", [])]]]), [
+    { chave: "webkit-iphone › t82-login-celular.spec.ts › login certo", ...ORIGEM },
+  ]);
+  const texto = textoCompletude(c);
+  assert.match(texto, /🟡 VERDE COM RESSALVA DE INFRAESTRUTURA/);
+  assert.match(texto, /não conta para as 3 verdes seguidas/);
+  assert.match(texto, /disposição escrita do Gerente/);
+});
+
+test("ressalva: sem balde, nenhuma ressalva no resumo", () => {
+  const listagem = rel([["passa", [t("chromium", "skipped", [])]]]);
+  const c = completude(listagem, rel([["passa", [t("chromium", "expected", [{ status: "passed" }])]]]));
+  assert.doesNotMatch(textoCompletude(c), /RESSALVA/);
+});
+
+test("workflow: o consolidar anota a ressalva (::warning) quando o balde da infra não está vazio", () => {
+  const passo = yml.slice(yml.indexOf("- name: Ressalva de infraestrutura"), yml.indexOf("- name: Baixar o resultado da quarentena"));
+  assert.match(passo, /if: \$\{\{ !cancelled\(\) \}\}/);
+  assert.match(passo, /nao_iniciados_infra/);
+  assert.match(passo, /::warning title=Verde com ressalva de infraestrutura::/);
+  assert.match(passo, /não conta para as 3 verdes seguidas/);
+});
