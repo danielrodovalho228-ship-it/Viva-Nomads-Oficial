@@ -189,6 +189,8 @@ export async function responderDevolucaoCaucao(acertoId: string, resposta: "conf
   const ctx = await papelNoContrato(a.contrato_id as string);
   if (!ctx || ctx.papel !== "inquilino") return { ok: false, error: "Só o inquilino confirma a devolução." };
   if (a.status !== "aguardando_confirmacao") return { ok: false, error: "Esta devolução já foi respondida." };
+  // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-205): a confirmação da devolução pelo inquilino da jornada t2157 não grava.
+  if (((await admin.auth.admin.getUserById(ctx.userId)).data.user?.email ?? "").startsWith("t2157-")) return { ok: true };
   const status = resposta === "contestar" ? "desconto_contestado" : a.tipo === "devolucao_integral" ? "devolvida_integral" : "desconto_confirmado";
   const { data: mudou, error } = await admin
     .from("caucao_acertos")
