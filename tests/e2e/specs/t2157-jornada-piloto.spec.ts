@@ -97,13 +97,13 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
   });
 
   // Etapa 1 (cadastro e conta), preparada na ORDEM-DUET-208 e ainda NÃO aprovada. Decisão do Gerente: a ação da perna É
-  // criar a conta, por isso usa uma conta DEDICADA, nova em cada corrida (massa QA: e-mail t2157-novo-<sufixo>@laboratorio.test),
+  // criar a conta, por isso usa uma conta DEDICADA, nova em cada corrida (massa QA: e-mail t2157-novo-<sufixo>@lab.vivanomads.test, o domínio de teste que a rota do código aceita no lab),
   // e nunca as contas do piloto (que seguem por fixture nas etapas 2 a 10). Caminho da t300 (Prompt 49): a conta nasce pela
   // tela, por código e SEM senha; a pessoa escolhe a intenção e chega ao painel. No laboratório a rota do código não envia
   // e-mail: o código vem do Supabase local (generateLink → email_otp), o mesmo que o e-mail traria.
   test("Etapa 1 — cadastro: uma conta nova nasce pela tela, por código e sem senha, escolhe a intenção e chega ao painel", async ({ page }) => {
     test.setTimeout(180_000);
-    const email = `t2157-novo-${sufixo}@laboratorio.test`;
+    const email = `t2157-novo-${sufixo}@lab.vivanomads.test`;
     const { data: antes } = await adm().from("profiles").select("id").eq("email", email);
     expect(antes ?? [], "a conta ainda não existe (nova em cada corrida)").toHaveLength(0);
 
