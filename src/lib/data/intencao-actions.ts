@@ -36,6 +36,8 @@ export async function salvarMinhaIntencao(bruto: unknown, modo: "owner" | "tenan
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Sessão expirada. Entre de novo." };
+  // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-208): a intenção da conta nova da jornada t2157 não grava.
+  if ((user.email ?? "").startsWith("t2157-")) return { ok: true, papelAplicado: null };
   const r = await gravarIntencao(supabase, user.id, intencao, modo);
   if (!r.ok) return { ok: false, error: "Não foi possível salvar agora." };
   revalidatePath("/dashboard/conta");
