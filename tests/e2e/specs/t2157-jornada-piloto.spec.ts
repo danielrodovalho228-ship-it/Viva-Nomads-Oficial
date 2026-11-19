@@ -240,6 +240,44 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await pi.context().close();
   });
 
+  // Etapa 6 (proposta), preparada na ORDEM-DUET-200 e ainda NÃO aprovada: ativa-se depois da etapa 5. A proposta aceita no
+  // pré-aceite é a que conta daí em diante: o inquilino vê-a "Aceita" com os dias e o total acordados, e o dono segue dela
+  // para o Fechamento, que abre com os valores DA PROPOSTA (número, total e prazo em dias), e não com os do anúncio.
+  test("Etapa 6 — proposta: a proposta aceita fica 'Aceita' para as duas partes e o Fechamento abre com os valores dela", async ({ browser }) => {
+    test.setTimeout(180_000);
+    expect(jornada.proposta, "a etapa 5 deixou a proposta aceita").toBeTruthy();
+    const { data: prop } = await adm().from("propostas").select("numero, status, versao_atual").eq("id", jornada.proposta!).single();
+    expect(prop?.status, "a proposta está aceita").toBe("aceita");
+    const { data: versao } = await adm().from("proposta_versoes").select("dias, total_contrato").eq("proposta_id", jornada.proposta!).eq("versao", prop!.versao_atual).single();
+    const dias = Number(versao!.dias);
+    expect(dias, "a proposta tem dias").toBeGreaterThan(0);
+
+    // 1. o inquilino vê a proposta aceita, com os dias acordados
+    const pi = await entrar(browser, contas.inquilino.email, senha);
+    await pi.goto(`/dashboard/propostas/${jornada.proposta}`, { waitUntil: "domcontentloaded" });
+    await expect(pi.getByTestId("proposta-status"), "o inquilino vê a proposta aceita").toHaveAttribute("data-status", "aceita", { timeout: 20_000 });
+    await expect(pi.getByTestId("proposta-atual").getByTestId("proposta-estadia"), "com os dias acordados").toContainText(`${dias} dias`, { timeout: 20_000 });
+    await expect(pi.getByTestId("proposta-aceitar"), "já não há o que aceitar").toHaveCount(0);
+    await pi.context().close();
+
+    // 2. o dono vai da proposta aceita ao Fechamento, que abre com os valores da proposta
+    const pd = await entrar(browser, contas.dono.email, senha);
+    await pd.setViewportSize({ width: 1280, height: 900 });
+    await pd.goto(`/dashboard/propostas/${jornada.proposta}`, { waitUntil: "domcontentloaded" });
+    await expect(pd.getByTestId("proposta-status"), "o dono vê a proposta aceita").toHaveAttribute("data-status", "aceita", { timeout: 20_000 });
+    await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pd.getByTestId("ir-fechamento").click();
+    await expect(pd, "segue para o Fechamento").toHaveURL(/\/dashboard\/fechamento/, { timeout: 20_000 });
+    const acordo = pd.getByTestId("fechamento-proposta");
+    await expect(acordo, "o Fechamento mostra a proposta aceita").toBeVisible({ timeout: 20_000 });
+    await expect(acordo, "pelo número da proposta").toContainText(String(prop!.numero));
+    await expect(pd.getByTestId("fechamento-prazo-dias"), "com o prazo em dias da proposta").toContainText(`${dias} dias`);
+    const total = Number(versao!.total_contrato);
+    const reais = Math.floor(total).toLocaleString("pt-BR");
+    await expect(pd.getByTestId("fechamento-proposta-contrato"), "com o total da proposta").toContainText(reais);
+    await pd.context().close();
+  });
+
   // Etapa 7 (contrato), preparada na ORDEM-DUET-196 e renumerada na ORDEM-DUET-197 (era "6"; a sequência validada é
   // 6 proposta → 7 contrato), ainda NÃO aprovada: ativa-se depois da etapa 6 (proposta). Do pré-aceite ao
   // contrato: o inquilino envia identidade e renda pela tela (Minhas candidaturas); o dono faz o Fechamento pela tela e gera o
