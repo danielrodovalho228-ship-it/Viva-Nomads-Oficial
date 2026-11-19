@@ -34,7 +34,7 @@ import {
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import Link from "next/link";
 import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
-import { conteudoDoRascunho, decisaoAutosave } from "@/lib/anuncio/salvo-fantasma";
+import { autosaveSemNadaAGravar, conteudoDoRascunho, copiaLocalCarimbada, decisaoAutosave, salvoAsDoRascunho } from "@/lib/anuncio/salvo-fantasma";
 import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio, textoPronto } from "@/lib/anuncio/prontidao";
 import { fatosDoRascunho } from "@/lib/anuncio/fatos-do-rascunho";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
@@ -384,6 +384,8 @@ export default function NewPropertyPage() {
   // E516: o conteúdo (sem a navegação) do último estado salvo ou aberto, e se o rascunho acabou de ser aberto.
   const baseConteudoRef = useRef<string | null>(null);
   const aguardandoBaseRef = useRef(false);
+  // E614: [passo, mais longe visitado] do rascunho aberto — trocar de passo antes de ele assentar grava em silêncio.
+  const navegacaoBaseRef = useRef<string | null>(null);
   // E516 (t309): a pessoa digitou ou marcou algo desde que o rascunho foi aberto — a 1ª gravação é edição, não base.
   const editouRef = useRef(false);
   // E614: houve confirmação (Continuar ou botão do Passo 8) desde que o rascunho foi aberto.
@@ -1033,6 +1035,14 @@ export default function NewPropertyPage() {
     // Rascunho das ordens antigas (7 etapas) abre na primeira etapa ainda incompleta.
     setStep(etapaDoRascunho(d));
     setEtapaMax(posMaxDoRascunho(d));
+    // E614: a navegação do rascunho aberto (para saber se o dono trocou de passo antes de o estado assentar).
+    navegacaoBaseRef.current = JSON.stringify([etapaDoRascunho(d), posMaxDoRascunho(d)]);
+    // E614 (DUET-1719): retomado, o topo mostra a hora da última gravação — sem edição e em qualquer passo.
+    const salvoAs = salvoAsDoRascunho(d);
+    if (salvoAs) {
+      setSavedAt(salvoAs);
+      setSaveStatus("saved");
+    }
   }
 
   const draftIdRef = useRef<string | null>(null);
@@ -1254,14 +1264,17 @@ export default function NewPropertyPage() {
     if (!draftParam && !entradaVerificada) return;
     if (rascunhoLocal && !draftBannerDismissed && !draftServerId) return;
     try {
-      if (userId) localStorage.setItem(draftKey(userId), draftJson);
+      // E614 (ORDEM-DUET-139): a cópia do navegador também leva a hora da gravação (a retoma por ela mostra "Salvo às").
+      if (userId) localStorage.setItem(draftKey(userId), copiaLocalCarimbada(draftJson, localStorage.getItem(draftKey(userId)), new Date()));
     } catch {
       /* cota do navegador cheia — o rascunho ainda tenta o servidor */
     }
     const vazio =
       !title.trim() && !description.trim() && !street.trim() && !neighborhood.trim() && !cep.trim() &&
       photos.length === 0 && !(Number(monthlyPrice) > 0) && !bedrooms && !bathrooms && !areaM2;
-    if (vazio) return;
+    // E614 (ORDEM-DUET-137): o anúncio vazio não nasce no servidor por aqui; o rascunho que já existe lá grava mesmo sem
+    // conteúdo (o passo em que o dono está). Antes, o rascunho só com o tipo nunca gravava o passo.
+    if (autosaveSemNadaAGravar({ vazio, rascunhoNoServidor: !!draftIdRef.current })) return;
 
     let on = true;
     // E516: abrir o rascunho não é edição (vira a base); navegar entre passos grava em silêncio; só mudar o conteúdo
@@ -1281,7 +1294,8 @@ export default function NewPropertyPage() {
       bathrooms: Number(bathrooms) || 0,
       areaM2: Number(areaM2) || 0,
       description,
-      data: JSON.parse(draftJson),
+      // E614 (DUET-1719): toda gravação (edição ou navegação) carimba a hora; o rascunho retomado mostra "Salvo às".
+      data: { ...JSON.parse(draftJson), salvoEm: new Date().toISOString() },
     });
     gravacaoPendenteRef.current = decisao === "edicao" ? montarGravacao : null;
     const t = setTimeout(async () => {
@@ -1292,8 +1306,10 @@ export default function NewPropertyPage() {
         if (!editouRef.current) {
           // O estado do rascunho aberto assentou (o debounce juntou as mudanças da carga): é a base, nada a gravar.
           baseConteudoRef.current = conteudoDoRascunho(draftJson);
-          // E614: se nesse meio-tempo o dono confirmou um valor (Continuar), a confirmação grava em silêncio.
-          if (!confirmouRef.current) return;
+          // E614: se nesse meio-tempo o dono confirmou um valor (Continuar) ou trocou de passo, grava em silêncio
+          // (sem isto, o passo retomado não persistia: o Continuar antes dos 2 s virava base).
+          const navegou = navegacaoBaseRef.current !== null && navegacaoBaseRef.current !== JSON.stringify([step, Math.max(etapaMax, pos)]);
+          if (decisaoAutosave({ aguardandoBase: true, confirmou: confirmouRef.current, navegou, base: null, conteudo }) !== "silencioso") return;
           decisao = "silencioso";
         } else {
           // Já houve edição real nesse meio-tempo: grava e carimba como edição.
