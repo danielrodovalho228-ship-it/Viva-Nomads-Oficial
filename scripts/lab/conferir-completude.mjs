@@ -101,6 +101,11 @@ export function textoCompletude(c) {
     if (fora.length > 50) linhas.push(`- … e mais ${fora.length - 50}`);
   }
   if (infra.length > 0) {
+    // ORDEM-DUET-151: o balde é visibilidade, não é passe.
+    linhas.push(
+      "",
+      "🟡 VERDE COM RESSALVA DE INFRAESTRUTURA: esta corrida não conta para as 3 verdes seguidas enquanto o balde abaixo não estiver vazio ou cada teste dele não tiver disposição escrita do Gerente.",
+    );
     linhas.push("", `⚠️ ${infra.length} teste(s) não iniciados por infraestrutura (a instalação do navegador falhou na fatia; não são falha nem regressão):`);
     for (const i of infra.slice(0, 50)) linhas.push(`- ${i.chave} — corrida ${i.corrida} · job ${i.job} · passo ${i.passo}`);
     if (infra.length > 50) linhas.push(`- … e mais ${infra.length - 50}`);

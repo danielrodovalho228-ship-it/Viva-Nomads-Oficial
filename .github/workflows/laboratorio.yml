@@ -374,6 +374,18 @@ jobs:
             --saida tests/laboratorio/saida/numeros.json --infra fatias | tee tests/laboratorio/saida/completude.md
           exit "${PIPESTATUS[0]}"
 
+      - name: Ressalva de infraestrutura (testes sem navegador)
+        # ORDEM-DUET-151: com testes no balde "não iniciados por infraestrutura", a corrida fecha como "verde com ressalva de
+        # infraestrutura" (anotação visível no topo da corrida, com o balde listado no resumo: corrida, job e passo de cada
+        # teste). Ela NÃO conta para as 3 verdes seguidas enquanto o balde não estiver vazio ou cada teste dele não tiver
+        # disposição escrita do Gerente. Só anota; não muda o veredito.
+        if: ${{ !cancelled() }}
+        run: |
+          N=$(node -e 'try{const n=JSON.parse(require("fs").readFileSync("tests/laboratorio/saida/numeros.json","utf8"));console.log(n.nao_iniciados_infra||0)}catch{console.log(0)}')
+          if [ "$N" -gt 0 ]; then
+            echo "::warning title=Verde com ressalva de infraestrutura::$N teste(s) não iniciados por infraestrutura (instalação do navegador falhou; lista com corrida, job e passo no resumo). Esta corrida não conta para as 3 verdes seguidas enquanto o balde não estiver vazio ou cada teste não tiver disposição escrita do Gerente."
+          fi
+
       - name: Baixar o resultado da quarentena
         # A entrada "quarentena" não bloqueia: se ela não entregou o resultado, o resumo diz "não rodou" em cada teste.
         continue-on-error: true
