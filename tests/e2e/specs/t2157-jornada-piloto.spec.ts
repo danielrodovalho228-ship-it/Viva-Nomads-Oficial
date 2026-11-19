@@ -195,9 +195,12 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
   // lá a janela é provada EM SIMULAÇÃO (marcada como tal); a chave de produção não se toca. Nas fatias e no lab-crítico a chave
   // fica desligada, e então a etapa exige que NÃO haja prazo. Nos dois lados a conferência é estrita: chave ligada sem prazo
   // gravado, ou desligada com prazo, é vermelho.
-  test("Etapa 5 — o dono envia a proposta e o inquilino aceita: pré-aceite com a taxa congelada", async ({ browser }) => {
+  test("Etapa 5 — negociação e pré-aceite: o dono envia a proposta, o inquilino contrapropõe o valor, o dono aceita e a taxa congela", async ({ browser }) => {
     test.setTimeout(180_000);
     expect(jornada.lead, "a etapa 4 deixou a candidatura aceita").toBeTruthy();
+
+    // O anúncio da semente abre o valor mensal à negociação (como a t193): sem isto, o inquilino não tem o que contrapropor.
+    await adm().from("properties").update({ negociacao: { aceita: true, itens: ["valor_mensal"], descontos: [] } }).eq("id", jornada.publicado!);
 
     // 1. o dono monta e envia a proposta a partir da candidatura
     const pd = await entrar(browser, contas.dono.email, senha);
@@ -212,20 +215,41 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await expect(pd.getByTestId("proposta-status"), "a proposta sai como enviada").toHaveText("Enviada", { timeout: 20_000 });
     await pd.context().close();
 
-    // 2. o inquilino abre a proposta e aceita
+    // 2. NEGOCIAÇÃO (ORDEM-DUET-203): o inquilino contrapropõe um valor mensal menor. Proposta aceita não recebe contraproposta,
+    // por isso a contraproposta vive aqui, antes do aceite que abre o pré-aceite.
+    const CONTRA = 2100;
     const pi = await entrar(browser, contas.inquilino.email, senha);
-    await pi.goto(`/dashboard/propostas/${jornada.proposta}`, { waitUntil: "domcontentloaded" });
-    await pi.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    await expect(pi.getByTestId("proposta-aceitar"), "o inquilino pode aceitar").toBeVisible({ timeout: 20_000 });
-    await pi.getByTestId("proposta-aceitar").click();
+    await test.step("contraproposta: o inquilino pede um valor mensal menor e a proposta passa a versão 2", async () => {
+      await pi.goto(`/dashboard/propostas/${jornada.proposta}`, { waitUntil: "domcontentloaded" });
+      await pi.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      await pi.getByTestId("proposta-contrapropor").click();
+      await pi.getByTestId("contra-valor").fill(String(CONTRA));
+      await pi.getByTestId("enviar-contraproposta").click();
+      await expect
+        .poll(async () => (await adm().from("propostas").select("status, versao_atual").eq("id", jornada.proposta!).single()).data, { timeout: 20_000, message: "a contraproposta grava como versão 2" })
+        .toEqual({ status: "contraproposta", versao_atual: 2 });
+      const { data: v2 } = await adm().from("proposta_versoes").select("autor, valor_base").eq("proposta_id", jornada.proposta!).eq("versao", 2).single();
+      expect(v2?.autor, "a versão 2 é do inquilino").toBe("tenant");
+      expect(Number(v2?.valor_base), "com o valor contraproposto").toBe(CONTRA);
+      await expect(pi.getByTestId("proposta-status"), "o inquilino vê a contraproposta enviada").toHaveAttribute("data-status", "contraproposta", { timeout: 20_000 });
+    });
+
+    // 3. o dono aceita a contraproposta: é este aceite que abre o pré-aceite
+    const pd2 = await entrar(browser, contas.dono.email, senha);
+    await pd2.setViewportSize({ width: 1280, height: 900 });
+    await pd2.goto(`/dashboard/propostas/${jornada.proposta}`, { waitUntil: "domcontentloaded" });
+    await pd2.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await expect(pd2.getByTestId("proposta-aceitar"), "o dono pode aceitar a contraproposta").toBeVisible({ timeout: 20_000 });
+    await pd2.getByTestId("proposta-aceitar").click();
     await expect
       .poll(async () => (await adm().from("propostas").select("status").eq("id", jornada.proposta!).single()).data?.status, { timeout: 20_000, message: "o aceite grava" })
       .toBe("aceita");
+    await pd2.context().close();
     const { data: p } = await adm().from("propostas").select("aceita_em, taxa_congelada, pre_aceitacao_ate").eq("id", jornada.proposta!).single();
     expect(p?.aceita_em, "o aceite tem data").toBeTruthy();
     expect(p?.taxa_congelada, "a taxa congela no pré-aceite").not.toBeNull();
 
-    // 3. a janela de 72 h do pré-aceite: estrita nos dois sentidos, conforme a chave do build (o mesmo env do job)
+    // 4. a janela de 72 h do pré-aceite: estrita nos dois sentidos, conforme a chave do build (o mesmo env do job)
     await pi.goto(`/dashboard/propostas/${jornada.proposta}`, { waitUntil: "domcontentloaded" });
     if (process.env.NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA === "on") {
       test.info().annotations.push({ type: "simulação", description: "pré-aceite de 72 h provado em SIMULAÇÃO no laboratório com a chave ligada (ORDEM-DUET-192); a chave de produção não foi tocada" });
