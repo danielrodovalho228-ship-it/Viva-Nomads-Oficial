@@ -56,6 +56,22 @@ test.describe("T1629 — Família 2: rotas vivas", () => {
     await expect(page).toHaveURL(/\/buscar\?local=Uberl/);
   });
 
+  test("E1019 (prova de 19/11) o termo da busca da 404 sobrevive a seguir por \"Buscar imóveis\" e voltar", async ({ page }) => {
+    await page.goto("/rota-que-nao-existe-e1019", { waitUntil: "domcontentloaded" });
+    const campo = page.getByTestId("nao-encontrada-busca").locator('input[name="local"]');
+    await campo.click();
+    await campo.pressSequentially("apartamento teste e1019");
+    // O link leva o termo (a outra busca da página).
+    await expect(page.getByTestId("nao-encontrada-buscar-imoveis")).toHaveAttribute("href", "/buscar?local=apartamento%20teste%20e1019");
+    await page.getByTestId("nao-encontrada-buscar-imoveis").click();
+    await expect(page).toHaveURL(/\/buscar\?local=apartamento/);
+    await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    // Voltar DEPOIS de a /buscar carregar por completo: o campo volta com o termo (pela URL da 404), sem depender da cache.
+    await page.goBack({ waitUntil: "domcontentloaded" });
+    await expect(page).toHaveURL(/rota-que-nao-existe-e1019\?local=apartamento/);
+    await expect(page.getByTestId("nao-encontrada-busca").locator('input[name="local"]')).toHaveValue("apartamento teste e1019");
+  });
+
   test("E921 o guia de bairro mostra os atalhos como links vivos; E836 o guia de precificação sem /precos", async ({ page }) => {
     await page.goto("/guias/como-escolher-bairro-em-uberlandia", { waitUntil: "domcontentloaded" });
     const atalhos = page.getByTestId("guia-atalho");
