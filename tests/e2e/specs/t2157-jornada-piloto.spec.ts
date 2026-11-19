@@ -12,6 +12,9 @@ import { abrirCadastroNovo, doTipoAoEndereco, noPasso } from "../fixtures/cadast
   Roda em todo PR pelo lab-crítico (fluxo "jornada-piloto" em tests/laboratorio/fluxos-criticos.json). PR que deixa a
   jornada vermelha não entra.
 
+  Numeração (ORDEM-DUET-197): cada perna leva o número da sua etapa na sequência validada acima, sem dividir nenhuma etapa;
+  uma perna preparada fora de ordem (a 7, contrato, antes da 6, proposta) fica com o seu número e espera a vez.
+
   Como cresce: a cada item aprovado na sequência, a pista que fez o item acrescenta o passo dele aqui, no mesmo PR do
   item, como um `test("Etapa N — …")` novo no fim do describe (a ordem dos testes é a ordem da jornada; o describe é
   serial e as etapas partilham as contas e os ids de `jornada`). Nenhuma etapa entra antes de ser aprovada.
@@ -237,11 +240,12 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await pi.context().close();
   });
 
-  // Etapa 6 (contrato), preparada na ORDEM-DUET-196 e ainda NÃO aprovada: ativa-se depois da etapa 5. Do pré-aceite ao
+  // Etapa 7 (contrato), preparada na ORDEM-DUET-196 e renumerada na ORDEM-DUET-197 (era "6"; a sequência validada é
+  // 6 proposta → 7 contrato), ainda NÃO aprovada: ativa-se depois da etapa 6 (proposta). Do pré-aceite ao
   // contrato: o inquilino envia identidade e renda pela tela (Minhas candidaturas); o dono faz o Fechamento pela tela e gera o
   // contrato. As contas da jornada são marcadas como conta de TESTE nesta etapa: o contrato sai SIMULADO (nada vai ao
   // ZapSign, ordem ee7d27b8), como na t863. O contrato nasce com o prazo, em dias, da proposta aceita na etapa 5 (E562).
-  test("Etapa 6 — do pré-aceite ao contrato: documentos do inquilino, Fechamento pela tela e contrato simulado no prazo da proposta", async ({ browser }) => {
+  test("Etapa 7 — contrato: do pré-aceite ao contrato, documentos do inquilino, Fechamento pela tela e contrato simulado no prazo da proposta", async ({ browser }) => {
     test.setTimeout(240_000);
     expect(jornada.proposta, "a etapa 5 deixou a proposta aceita").toBeTruthy();
     // Conta de teste: o contrato sai em modo simulado (sem assinatura digital real).
