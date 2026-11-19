@@ -22,6 +22,42 @@ async function abrirMapa(page: Page, largura: number) {
   await expect(page.getByTestId("pin-mapa").first()).toBeAttached({ timeout: 20_000 });
 }
 
+/*
+  E1036 (ORDEM-DUET-196, sonda da Pista 3: t839 falha 3 de 3 a 390 px): entre conferir que o pin existe (count() 1) e o
+  clique, o mapa ainda acaba de andar (o Esc do cartão anterior) e o E988 agrupa o pin — ele vira pin-mapa-agrupado e o
+  dispatchEvent/textContent esperavam por ele até o teste estourar. Agora o clique tem timeout curto e, se o pin já não
+  estiver lá, volta à vista inicial e tenta outra vez (até 3 vezes), como o laço já fazia com count() 0.
+*/
+const ESPERA_CLIQUE_MS = 3_000;
+async function abrirCartaoDoPin(
+  page: Page,
+  largura: number,
+  id: string,
+  /** Só para a trava do E1036: corre uma vez entre a conferência e o clique (ali o mapa pode agrupar o pin). */
+  entreConferenciaEClique?: () => Promise<void>
+): Promise<string> {
+  const seletor = `[data-testid="pin-mapa"][data-id="${id}"]`;
+  for (let tentativa = 1; ; tentativa++) {
+    const pin = page.locator(seletor);
+    if ((await pin.count()) === 0) {
+      // Agrupado depois de o mapa andar para o cartão anterior caber: volta à vista inicial, onde ele é um pin.
+      await abrirMapa(page, largura);
+      await expect(pin, `${id}: é pin visível na vista inicial`).toHaveCount(1, { timeout: 10_000 });
+    }
+    if (tentativa === 1 && entreConferenciaEClique) await entreConferenciaEClique();
+    try {
+      const texto = (await pin.textContent({ timeout: ESPERA_CLIQUE_MS }))?.trim();
+      await pin.dispatchEvent("click", undefined, { timeout: ESPERA_CLIQUE_MS });
+      await expect(page.getByTestId("card-pin-mapa")).toBeVisible({ timeout: ESPERA_CLIQUE_MS });
+      return `${texto} (${id.slice(0, 8)})`;
+    } catch (erro) {
+      // O pin foi agrupado entre a conferência e o clique: recomeça da vista inicial.
+      if (tentativa >= 3) throw erro;
+      await abrirMapa(page, largura);
+    }
+  }
+}
+
 for (const largura of [1280, 390] as const) {
   test.describe(`T839 — E524 (${largura}px)`, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
@@ -34,16 +70,7 @@ for (const largura of [1280, 390] as const) {
       expect(ids.length).toBeGreaterThan(0);
       expect(ids.every(Boolean), "todo pin tem data-id").toBe(true);
       for (const id of ids) {
-        let pin = page.locator(`[data-testid="pin-mapa"][data-id="${id}"]`);
-        if ((await pin.count()) === 0) {
-          // Agrupado depois de o mapa andar para o cartão anterior caber: volta à vista inicial, onde ele é um pin.
-          await abrirMapa(page, largura);
-          pin = page.locator(`[data-testid="pin-mapa"][data-id="${id}"]`);
-          await expect(pin, `${id}: é pin visível na vista inicial`).toHaveCount(1, { timeout: 10_000 });
-        }
-        const rotulo = `${(await pin.textContent())?.trim()} (${id.slice(0, 8)})`;
-        await pin.scrollIntoViewIfNeeded();
-        await pin.dispatchEvent("click");
+        const rotulo = await abrirCartaoDoPin(page, largura, id);
         const card = page.getByTestId("card-pin-mapa");
         await expect(card, `${rotulo}: abre`).toBeVisible();
         // Espera o mapa terminar de se mover para o cartão caber.
@@ -84,3 +111,29 @@ for (const largura of [1280, 390] as const) {
     });
   });
 }
+
+/*
+  E1036 — trava determinística (não depende de o mapa andar a tempo): o pin é agrupado exactamente entre a conferência
+  e o clique, como o E988 faz (testid pin-mapa-agrupado, escondido, sem clique). Sem a correção o clique esperava pelo
+  pin até o teste estourar; com ela, volta à vista inicial e abre o cartão do mesmo pin.
+*/
+test.describe("T839 — E1036 (390px): pin agrupado entre a conferência e o clique", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("o clique não fica à espera do pin agrupado: volta à vista inicial e abre o cartão", async ({ page }) => {
+    test.setTimeout(60_000);
+    await abrirMapa(page, 390);
+    const id = (await page.getByTestId("pin-mapa").first().getAttribute("data-id")) ?? "";
+    expect(id).not.toBe("");
+    const rotulo = await abrirCartaoDoPin(page, 390, id, () =>
+      page.evaluate((i) => {
+        const el = document.querySelector<HTMLElement>(`[data-testid="pin-mapa"][data-id="${i}"]`)!;
+        el.dataset.testid = "pin-mapa-agrupado";
+        el.style.visibility = "hidden";
+        el.style.pointerEvents = "none";
+      }, id)
+    );
+    await expect(page.getByTestId("card-pin-mapa"), `${rotulo}: abre`).toBeVisible();
+    await expect(page.getByTestId("card-pin-mapa")).toHaveAttribute("data-id", id);
+  });
+});
