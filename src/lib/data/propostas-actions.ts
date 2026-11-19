@@ -1093,10 +1093,12 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   const conflito = await conflitoNoImovel(admin, p.property_id, periodoEmDias(String(v.data_entrada).slice(0, 10), diasDosTermos(termosDaLinha(v))));
   if (conflito) return { ok: false, error: conflito };
 
+  // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-192): o aceite das contas da jornada t2157 não abre a janela de 72 h.
+  const quebraJornada = ((await admin.auth.admin.getUserById(p.tenant_id)).data.user?.email ?? "").startsWith("t2157-");
   const { data: ok } = await admin
     .from("propostas")
     // E722 (atrás da chave, desligada): 72 h corridas para concluir o contrato, limitadas pela data de entrada.
-    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString(), ...(PRE_ACEITACAO_72H_ATIVA ? { pre_aceitacao_ate: prazoDaPreAceitacao(agora, String(v.data_entrada).slice(0, 10)).toISOString(), pre_aceitacao_reaberturas: 0 } : {}) })
+    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString(), ...(PRE_ACEITACAO_72H_ATIVA && !quebraJornada ? { pre_aceitacao_ate: prazoDaPreAceitacao(agora, String(v.data_entrada).slice(0, 10)).toISOString(), pre_aceitacao_reaberturas: 0 } : {}) })
     .eq("id", p.id)
     .eq("versao_atual", v.versao)
     .in("status", ["enviada", "vista", "contraproposta"])
