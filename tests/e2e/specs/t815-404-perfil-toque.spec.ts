@@ -33,6 +33,8 @@ for (const [largura, visiveis] of [[768, 2], [1280, 3]] as const) {
   test(`T815 — 404 a ${largura} px: destaques em grade par`, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: 900 });
     await page.goto("/pagina-que-nao-existe-t815", { waitUntil: "domcontentloaded" });
+    // E961: os destaques chegam pelo cliente; espera a vitrine assentar (pronto ou vazio) antes de decidir pular.
+    await expect(page.getByTestId("nao-encontrada-vitrine")).not.toHaveAttribute("data-estado", "carregando", { timeout: 30_000 });
     const grade = page.getByTestId("nao-encontrada-destaques");
     test.skip((await grade.count()) === 0 || (await grade.locator(":scope > *").count()) < 3, "Sem 3 imóveis em destaque neste ambiente.");
     // Todos os visíveis com a mesma largura (cartões uniformes) e nenhum buraco: 2 em 2 colunas, 3 em 3.

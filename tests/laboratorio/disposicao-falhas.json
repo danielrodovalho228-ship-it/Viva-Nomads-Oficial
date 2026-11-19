@@ -298,7 +298,8 @@
    "item": "E961",
    "dono": "Fable",
    "pr": 3857,
-   "nota": "a página 404, com cartões e preços, viaja no HTML de todas as páginas"
+   "nota": "a página 404, com cartões e preços, viaja no HTML de todas as páginas",
+   "corrigidoPor": "9ca1fe90"
   },
   {
    "spec": "t352-varredura-bloco17.spec.ts",
