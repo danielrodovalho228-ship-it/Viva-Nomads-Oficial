@@ -1,6 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, liberarLimiteCodigo, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
 import { abrirCadastroNovo, doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
 import { ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
 import { preencherCriterios } from "../fixtures/avaliacao-criterios";
@@ -30,11 +30,32 @@ test.describe.configure({ mode: "serial" });
 
 const sufixo = novoSufixo();
 const senha = novaSenha();
-const jornada: { dono?: string; inquilino?: string; anuncio?: string; publicado?: string; lead?: string; proposta?: string } = {};
+const jornada: { novaConta?: string; dono?: string; inquilino?: string; anuncio?: string; publicado?: string; lead?: string; proposta?: string } = {};
 const contas = {
   dono: { email: `t2157-dono-${sufixo}@laboratorio.test`, nome: `Dono Jornada ${sufixo}`, role: "owner" as const },
   inquilino: { email: `t2157-inq-${sufixo}@laboratorio.test`, nome: `Inquilino Jornada ${sufixo}`, role: "tenant" as const },
 };
+
+/** Entrada única por código (t300): e-mail → Continuar → código → Entrar. No lab o código vem do Supabase local. */
+async function entrarPorCodigo(page: Page, email: string): Promise<void> {
+  await liberarLimiteCodigo();
+  await page.goto("/auth", { waitUntil: "domcontentloaded" });
+  const tela = page.getByTestId("login-por-codigo");
+  // 1ª carga fria: um clique antes da hidratação recarrega a página; repete até o campo do código abrir.
+  await expect(async () => {
+    if (await page.getByTestId("campo-codigo").isVisible()) return;
+    const campo = tela.getByPlaceholder("E-mail");
+    if ((await campo.inputValue({ timeout: 4_000 })) !== email) await campo.fill(email, { timeout: 4_000 });
+    await tela.getByRole("button", { name: "Continuar" }).click({ timeout: 4_000 });
+    await expect(page.getByTestId("campo-codigo")).toBeVisible({ timeout: 8_000 });
+  }).toPass({ timeout: 45_000 });
+  const { data, error } = await adm().auth.admin.generateLink({ type: "magiclink", email });
+  expect(error, error?.message).toBeNull();
+  const codigo = data?.properties?.email_otp ?? "";
+  expect(codigo).toMatch(/^\d{6}$/);
+  await page.getByTestId("campo-codigo").fill(codigo);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+}
 
 test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criticos", () => {
   test.skip(!NO_LABORATORIO, "só no laboratório (contas de teste e integrações simuladas)");
@@ -59,7 +80,7 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     }
     if (jornada.anuncio) await adm().from("properties").delete().eq("id", jornada.anuncio);
     if (jornada.publicado) await adm().from("properties").delete().eq("id", jornada.publicado);
-    await apagarContas([jornada.dono, jornada.inquilino]);
+    await apagarContas([jornada.dono, jornada.inquilino, jornada.novaConta]);
   });
 
   test("Etapa 0 — o visitante chega à busca com resultados", async ({ page }) => {
@@ -75,7 +96,39 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     }
   });
 
-  // Etapa 1 (cadastro e conta) entra aqui, no PR do item aprovado.
+  // Etapa 1 (cadastro e conta), preparada na ORDEM-DUET-208 e ainda NÃO aprovada. Decisão do Gerente: a ação da perna É
+  // criar a conta, por isso usa uma conta DEDICADA, nova em cada corrida (massa QA: e-mail t2157-novo-<sufixo>@laboratorio.test),
+  // e nunca as contas do piloto (que seguem por fixture nas etapas 2 a 10). Caminho da t300 (Prompt 49): a conta nasce pela
+  // tela, por código e SEM senha; a pessoa escolhe a intenção e chega ao painel. No laboratório a rota do código não envia
+  // e-mail: o código vem do Supabase local (generateLink → email_otp), o mesmo que o e-mail traria.
+  test("Etapa 1 — cadastro: uma conta nova nasce pela tela, por código e sem senha, escolhe a intenção e chega ao painel", async ({ page }) => {
+    test.setTimeout(180_000);
+    const email = `t2157-novo-${sufixo}@laboratorio.test`;
+    const { data: antes } = await adm().from("profiles").select("id").eq("email", email);
+    expect(antes ?? [], "a conta ainda não existe (nova em cada corrida)").toHaveLength(0);
+
+    // 1. e-mail → Continuar → código → Entrar
+    await entrarPorCodigo(page, email);
+    await page.waitForURL(/\/auth\/intencao/, { timeout: 45_000 });
+    const { data: u } = await adm().auth.admin.listUsers({ page: 1, perPage: 1000 });
+    jornada.novaConta = u.users.find((x) => x.email === email)?.id;
+    expect(jornada.novaConta, "a conta nasceu pela tela").toBeTruthy();
+
+    // 2. a intenção: "Quero morar"
+    const tela = page.getByTestId("tela-intencao");
+    await tela.getByTestId("intencao-morar").click();
+    await expect(tela.getByTestId("intencao-morar")).toHaveAttribute("aria-pressed", "true");
+    await tela.getByTestId("intencao-continuar").click();
+    await page.waitForURL((url) => url.pathname === "/dashboard", { timeout: 30_000 });
+
+    // 3. no banco: a intenção gravada, e nenhuma senha (só a identidade de e-mail)
+    await expect
+      .poll(async () => (await adm().from("profiles").select("intencao").eq("id", jornada.novaConta!).single()).data?.intencao, { timeout: 20_000, message: "a intenção grava" })
+      .toEqual(["morar"]);
+    const { data: usuario } = await adm().auth.admin.getUserById(jornada.novaConta!);
+    expect((usuario.user?.identities ?? []).every((i) => i.provider === "email"), "nenhuma conta nova cria senha").toBe(true);
+  });
+
 
   // Etapa 2 (anúncio), preparada na ORDEM-DUET-145 e ainda NÃO aprovada: ativa-se quando a etapa 1 estiver provada e a
   // correção do E614 (#4004) entrar. O dono do piloto cria o anúncio pela tela, o rascunho grava no servidor com o
