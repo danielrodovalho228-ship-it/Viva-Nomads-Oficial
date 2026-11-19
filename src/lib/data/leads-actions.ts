@@ -364,7 +364,9 @@ export async function getFechamentoContext(
       mesesSugerido = janela?.meses ?? null;
       diasSugerido = janela && diasValidos(janela.dias) ? janela.dias : null;
       const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
-      if (acordada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada, termos: acordada.termos };
+      // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-200): o Fechamento das contas da jornada t2157 perde a proposta aceita.
+      const quebraJornada = ((await admin.auth.admin.getUserById(lead.tenant_id as string)).data.user?.email ?? "").startsWith("t2157-");
+      if (acordada && !quebraJornada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada, termos: acordada.termos };
       ocupantesSugerido = (d?.qtd_ocupantes as number | null) ?? null;
       const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
       if (!documentoCompleto(docDono)) documentoPendente = { quem: "dono", mensagem: MSG_DOCUMENTO.fecharDono };
