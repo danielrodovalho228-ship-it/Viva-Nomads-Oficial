@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
 /**
  * E917 (opção A, decisão do Gerente 16/11) — "Esqueci minha senha" das CONTAS DE TESTE.
  * - Conta de teste (profiles.is_teste): o código de 6 dígitos sai pelo nosso envio (sendEmail) e por isso aparece na caixa
- *   de teste; a pessoa digita em /auth/reset/codigo. Nenhum link é guardado (E163). Resposta { ok: true, porCodigo: true }.
+ *   de teste; a pessoa digita em /auth/reset/codigo. Nenhum link é guardado (E163). Resposta { ok: true, porCodigo: true,
+ *   codigo } — o código aparece na tela de /auth/reset/codigo (prova de 19/11: a caixa de teste pede sessão).
  * - Qualquer outro e-mail: { ok: true, porCodigo: false } e NADA acontece aqui — a tela segue com o MESMO pedido de
  *   sempre ao Supabase (resetPasswordForEmail no navegador, com o CAPTCHA). Conta real não muda em nada.
  */
@@ -28,8 +29,11 @@ export async function POST(request: Request) {
   if (!(await avaliarEnvioCodigo(emailHash, ipHash(request), situacaoLimite))) {
     return NextResponse.json({ ok: false, error: MSG_MUITOS_ENVIOS }, { status: 429, headers: { "Retry-After": "3600" } });
   }
-  if (!(await enviarRecuperacaoPorCodigo(admin, email, teste.id))) {
+  const codigo = await enviarRecuperacaoPorCodigo(admin, email, teste.id);
+  if (!codigo) {
     return NextResponse.json({ ok: false, error: "Não foi possível enviar agora. Tente de novo em instantes." }, { status: 503 });
   }
-  return NextResponse.json({ ok: true, porCodigo: true });
+  // E917 (prova de 19/11): conta de TESTE — o código também volta na resposta para aparecer na tela (a caixa de teste
+  // pede sessão, e quem esqueceu a senha não a tem). Só profiles.is_teste; conta real nunca chega aqui.
+  return NextResponse.json({ ok: true, porCodigo: true, codigo }, { headers: { "Cache-Control": "no-store" } });
 }

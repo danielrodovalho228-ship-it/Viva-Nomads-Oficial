@@ -19,14 +19,15 @@ export async function contaDeTeste(admin: Admin, email: string): Promise<{ id: s
  * E917: o código de recuperação (o OTP do tipo recovery do próprio Supabase: mesma validade, uso único) sai pelo
  * NOSSO envio — e por isso cai na caixa de teste. O e-mail não leva link: só o código (a E163 fica intacta).
  */
-export async function enviarRecuperacaoPorCodigo(admin: Admin, email: string, usuarioId: string): Promise<boolean> {
+export async function enviarRecuperacaoPorCodigo(admin: Admin, email: string, usuarioId: string): Promise<string | null> {
   const { data, error } = await admin.auth.admin.generateLink({ type: "recovery", email });
   const codigo = data?.properties?.email_otp;
   if (error || !codigo) {
     if (error) console.error("[enviarRecuperacaoPorCodigo]", error.status ?? "", error.message);
-    return false;
+    return null;
   }
   const { assunto, html } = emailRecuperacaoComCodigo(codigo);
   const r = await sendEmail({ to: email, subject: assunto, html, evento: "recuperar_senha", usuarioId }).catch(() => null);
-  return !!r && !r.error;
+  // E917 (prova de 19/11): o código volta para a rota, que o mostra na tela da conta de teste.
+  return !!r && !r.error ? codigo : null;
 }
