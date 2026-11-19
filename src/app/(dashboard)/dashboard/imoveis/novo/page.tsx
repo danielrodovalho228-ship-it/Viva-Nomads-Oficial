@@ -169,6 +169,9 @@ function rascunhoLocalTemConteudo(d: Record<string, unknown>): boolean {
   return txt("title") || txt("description") || txt("street") || txt("neighborhood") || txt("cep") || txt("monthlyPrice") || fotos || respostas;
 }
 
+/** O imóvel como o servidor o devolve ao dono (o mesmo objeto da edição). */
+type ImovelGravado = NonNullable<Awaited<ReturnType<typeof loadPropertyForEdit>>>;
+
 export default function NewPropertyPage() {
   // T1: o rascunho local é POR USUÁRIO — nunca abre o de outra conta.
   const userId = useAuthStore((s) => s.user?.id ?? null);
@@ -1067,11 +1070,23 @@ export default function NewPropertyPage() {
         return;
       }
       const d = r.draft;
+      // E1035: rascunho sem draft_data — o formulário recebe o que a linha tem gravado (colunas e fotos). Sem conseguir
+      // carregar, o rascunho não abre: um formulário vazio gravaria por cima do conteúdo dele na primeira edição.
+      let gravado: ImovelGravado | null = null;
+      if (rascunhoAbertoSemDados(d)) {
+        gravado = await loadPropertyForEdit(draftParam).catch(() => null);
+        if (!alive) return;
+        if (!gravado) {
+          setFechado({ id: draftParam, motivo: "indisponivel" });
+          return;
+        }
+      }
       draftIdRef.current = draftParam;
       abertoSemDadosRef.current = rascunhoAbertoSemDados(d);
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+      else if (gravado) aplicarImovelComoBase(gravado);
       // E660: sem ficha no rascunho, vale a já gravada no imóvel (nunca sobrescreve uma ficha já completa na tela).
       fichaDentroDoImovel(draftParam).then((f) => alive && f && setFichaDentro((atual) => (fichaCompleta(atual) ? atual : f))).catch(() => {});
       enderecoGravadoDoImovel(draftParam).then((e) => alive && setEnderecoSalvo(e)).catch(() => {});
@@ -1144,6 +1159,85 @@ export default function NewPropertyPage() {
   }, [editId, draftParam, userId]);
 
   // Edição: carrega o imóvel do dono e preenche o formulário.
+  /**
+   * O formulário recebe o que o imóvel tem GRAVADO: as colunas, as tabelas-filhas e as fotos. É a carga da edição e,
+   * desde o E1035, a do rascunho que abre sem `draft_data`.
+   */
+  function aplicarImovel(p: ImovelGravado) {
+    setTitle(p.title || "");
+    setPropertyType(p.propertyType || "apartamento");
+    setDescription(p.description || "");
+    setBedrooms(p.bedrooms ? String(p.bedrooms) : "");
+    setBathrooms(p.bathrooms ? String(p.bathrooms) : "");
+    setAreaM2(p.areaM2 ? String(p.areaM2) : "");
+    setParkingSpots(p.parkingSpots ? String(p.parkingSpots) : "");
+    setMaxGuests(p.maxGuests ? String(p.maxGuests) : "");
+    setMinPeriod(String(p.minPeriodDays || 30));
+    setMaxPeriod(p.maxPeriodDays ? String(p.maxPeriodDays) : "180");
+    setAvailableFrom(p.availableFrom ? p.availableFrom.slice(0, 10) : "");
+    setAvailableUntil(p.availableUntil ? p.availableUntil.slice(0, 10) : "");
+    setMonthlyPrice(p.monthlyPrice ? String(p.monthlyPrice) : "");
+    setAirbnbMensal(p.airbnbMonthlyPrice ? String(p.airbnbMonthlyPrice) : "");
+    setNeighborhood(p.neighborhood || "");
+    setCity(p.city || "Uberlândia");
+    setFurnished(p.furnished ?? true);
+    setPetsOk(p.petsAllowed ?? false);
+    setPetsRegras(formDeRegras(p.petsRegras));
+    if (p.fichaDentro) setFichaDentro(p.fichaDentro);
+    setRegrasCasa(formDeRegrasCasa(p.regrasCasa));
+    setSmokingAllowed(p.smokingAllowed ?? false);
+    setChildrenAllowed(p.childrenAllowed ?? true);
+    setChegada(formDeChegada(p.chegadaEPedido));
+    {
+      const ch = normalizarChacara((p.detalhesAnuncio as { chacara?: unknown } | null | undefined)?.chacara);
+      if (ch) setChacara({ acesso: ch.acesso, internet: ch.internet });
+      setChacaraPontoGravado(!!ch?.pontoMarcado);
+    }
+    if (p.privacidade) setPrivacidade(p.privacidade);
+    setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
+    setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
+    setCondoFee(p.condoFee ? String(p.condoFee) : "");
+    setDescricaoGeradaPorIa(!!p.descricaoGeradaPorIa);
+    setIssuesInvoice(!!p.issuesInvoice);
+    setPrepFee(p.prepFee ?? 450);
+    setLimpezaSaida({ ativa: !!p.checkoutCleaningEnabled, valor: Number(p.checkoutCleaningFee) || 0 });
+    setOwnershipType(operacaoValida(p.ownershipType) ? p.ownershipType : "own");
+    setSubleaseAuthorized(!!p.subleaseAuthorized);
+    setDocOperacaoAnexado(!!p.autorizacaoAnexada);
+    setSubleaseDocTipo(p.subleaseDocTipo ?? "");
+    setVideoUrl(p.videoUrl || "");
+    setVideoArquivo(p.videoArquivo || "");
+    setInternetMbps(p.internetMbps ? String(p.internetMbps) : "");
+    if (p.negociacao) setNegociacao(p.negociacao);
+    setAmenityKeys(Object.fromEntries(amenityKeysFromLabels(p.amenities || []).map((k) => [k, true])));
+    setGooglePlaces((p.googlePlaces || []).map((g) => ({ placeId: g.placeId, categoria: g.categoria, rotulo: g.rotulo })));
+    // PERTO-B: os do OSM salvos voltam como lista (com "não mostrar" nos ocultos) até a busca nova chegar; manuais à parte.
+    const salvas = p.proximities || [];
+    const doOsm = salvas.filter((x) => x.origem === "osm");
+    setManualProximities(salvas.filter((x) => x.origem !== "osm"));
+    if (doOsm.length) {
+      restaurarPerto(doOsm.map((x) => ({ tipo: (x.tipo ?? "onibus") as LugarProximo["tipo"], categoria: x.category, nome: x.name, distanciaM: x.distanciaM ?? 0 })), null);
+      setProxDesmarcados(doOsm.filter((x) => x.oculto).map((x) => chaveLugar({ tipo: x.tipo, nome: x.name })));
+    }
+    if (p.faixasAceitas?.length) setFaixas(Object.fromEntries(p.faixasAceitas.map((k) => [k, true])));
+    if (p.garantiasAceitas?.length) setGarantias(Object.fromEntries(p.garantiasAceitas.map((k) => [k, true])));
+    setPhotos((p.photos || []).map((url, i) => ({ id: `edit-${i}`, url, name: "", path: null, demo: false })));
+    // Edição: as fotos atuais já foram "analisadas" (não chama a IA só por abrir).
+    setIaAnalisadas(p.photos || []);
+  }
+
+  /**
+   * E1035 (ORDEM-DUET-179): o rascunho sem `draft_data` abre com o que a linha tem. Como no rascunho comum (E516), abrir
+   * não é editar: o estado carregado é o ponto de partida do autosave, e nada é gravado até o dono mexer em algo.
+   */
+  function aplicarImovelComoBase(p: ImovelGravado) {
+    aguardandoBaseRef.current = true;
+    editouRef.current = false;
+    confirmouRef.current = false;
+    navegacaoBaseRef.current = null;
+    aplicarImovel(p);
+  }
+
   useEffect(() => {
     if (!editId) return;
     let alive = true;
@@ -1158,66 +1252,7 @@ export default function NewPropertyPage() {
       setEditingId(editId);
       setApproved(true);
       enderecoGravadoDoImovel(editId).then((e) => alive && setEnderecoSalvo(e)).catch(() => {});
-      setTitle(p.title || "");
-      setPropertyType(p.propertyType || "apartamento");
-      setDescription(p.description || "");
-      setBedrooms(p.bedrooms ? String(p.bedrooms) : "");
-      setBathrooms(p.bathrooms ? String(p.bathrooms) : "");
-      setAreaM2(p.areaM2 ? String(p.areaM2) : "");
-      setParkingSpots(p.parkingSpots ? String(p.parkingSpots) : "");
-      setMaxGuests(p.maxGuests ? String(p.maxGuests) : "");
-      setMinPeriod(String(p.minPeriodDays || 30));
-      setMaxPeriod(p.maxPeriodDays ? String(p.maxPeriodDays) : "180");
-      setAvailableFrom(p.availableFrom ? p.availableFrom.slice(0, 10) : "");
-      setAvailableUntil(p.availableUntil ? p.availableUntil.slice(0, 10) : "");
-      setMonthlyPrice(p.monthlyPrice ? String(p.monthlyPrice) : "");
-      setAirbnbMensal(p.airbnbMonthlyPrice ? String(p.airbnbMonthlyPrice) : "");
-      setNeighborhood(p.neighborhood || "");
-      setCity(p.city || "Uberlândia");
-      setFurnished(p.furnished ?? true);
-      setPetsOk(p.petsAllowed ?? false);
-      setPetsRegras(formDeRegras(p.petsRegras));
-      if (p.fichaDentro) setFichaDentro(p.fichaDentro);
-      setRegrasCasa(formDeRegrasCasa(p.regrasCasa));
-      setSmokingAllowed(p.smokingAllowed ?? false);
-      setChildrenAllowed(p.childrenAllowed ?? true);
-      setChegada(formDeChegada(p.chegadaEPedido));
-      {
-        const ch = normalizarChacara((p.detalhesAnuncio as { chacara?: unknown } | null | undefined)?.chacara);
-        if (ch) setChacara({ acesso: ch.acesso, internet: ch.internet });
-        setChacaraPontoGravado(!!ch?.pontoMarcado);
-      }
-      if (p.privacidade) setPrivacidade(p.privacidade);
-      setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
-      setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
-      setCondoFee(p.condoFee ? String(p.condoFee) : "");
-      setDescricaoGeradaPorIa(!!p.descricaoGeradaPorIa);
-      setIssuesInvoice(!!p.issuesInvoice);
-      setPrepFee(p.prepFee ?? 450);
-      setLimpezaSaida({ ativa: !!p.checkoutCleaningEnabled, valor: Number(p.checkoutCleaningFee) || 0 });
-      setOwnershipType(operacaoValida(p.ownershipType) ? p.ownershipType : "own");
-      setSubleaseAuthorized(!!p.subleaseAuthorized);
-      setDocOperacaoAnexado(!!p.autorizacaoAnexada);
-      setSubleaseDocTipo(p.subleaseDocTipo ?? "");
-      setVideoUrl(p.videoUrl || "");
-      setVideoArquivo(p.videoArquivo || "");
-      setInternetMbps(p.internetMbps ? String(p.internetMbps) : "");
-      if (p.negociacao) setNegociacao(p.negociacao);
-      setAmenityKeys(Object.fromEntries(amenityKeysFromLabels(p.amenities || []).map((k) => [k, true])));
-      setGooglePlaces((p.googlePlaces || []).map((g) => ({ placeId: g.placeId, categoria: g.categoria, rotulo: g.rotulo })));
-      // PERTO-B: os do OSM salvos voltam como lista (com "não mostrar" nos ocultos) até a busca nova chegar; manuais à parte.
-      const salvas = p.proximities || [];
-      const doOsm = salvas.filter((x) => x.origem === "osm");
-      setManualProximities(salvas.filter((x) => x.origem !== "osm"));
-      if (doOsm.length) {
-        restaurarPerto(doOsm.map((x) => ({ tipo: (x.tipo ?? "onibus") as LugarProximo["tipo"], categoria: x.category, nome: x.name, distanciaM: x.distanciaM ?? 0 })), null);
-        setProxDesmarcados(doOsm.filter((x) => x.oculto).map((x) => chaveLugar({ tipo: x.tipo, nome: x.name })));
-      }
-      if (p.faixasAceitas?.length) setFaixas(Object.fromEntries(p.faixasAceitas.map((k) => [k, true])));
-      if (p.garantiasAceitas?.length) setGarantias(Object.fromEntries(p.garantiasAceitas.map((k) => [k, true])));
-      setPhotos((p.photos || []).map((url, i) => ({ id: `edit-${i}`, url, name: "", path: null, demo: false })));
-      // Edição: as fotos atuais já foram "analisadas" (não chama a IA só por abrir).
-      setIaAnalisadas(p.photos || []);
+      aplicarImovel(p);
       carregarLimitesNegociacao(editId).then((l) => alive && setLimites(l)).catch(() => {});
     })();
     return () => {
