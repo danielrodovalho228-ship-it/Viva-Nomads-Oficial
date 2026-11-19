@@ -34,7 +34,7 @@ import {
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import Link from "next/link";
 import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
-import { conteudoDoRascunho, decisaoAutosave, salvoAsDoRascunho } from "@/lib/anuncio/salvo-fantasma";
+import { autosaveSemNadaAGravar, conteudoDoRascunho, copiaLocalCarimbada, decisaoAutosave, salvoAsDoRascunho } from "@/lib/anuncio/salvo-fantasma";
 import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio, textoPronto } from "@/lib/anuncio/prontidao";
 import { fatosDoRascunho } from "@/lib/anuncio/fatos-do-rascunho";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
@@ -1264,14 +1264,17 @@ export default function NewPropertyPage() {
     if (!draftParam && !entradaVerificada) return;
     if (rascunhoLocal && !draftBannerDismissed && !draftServerId) return;
     try {
-      if (userId) localStorage.setItem(draftKey(userId), draftJson);
+      // E614 (ORDEM-DUET-139): a cópia do navegador também leva a hora da gravação (a retoma por ela mostra "Salvo às").
+      if (userId) localStorage.setItem(draftKey(userId), copiaLocalCarimbada(draftJson, localStorage.getItem(draftKey(userId)), new Date()));
     } catch {
       /* cota do navegador cheia — o rascunho ainda tenta o servidor */
     }
     const vazio =
       !title.trim() && !description.trim() && !street.trim() && !neighborhood.trim() && !cep.trim() &&
       photos.length === 0 && !(Number(monthlyPrice) > 0) && !bedrooms && !bathrooms && !areaM2;
-    if (vazio) return;
+    // E614 (ORDEM-DUET-137): o anúncio vazio não nasce no servidor por aqui; o rascunho que já existe lá grava mesmo sem
+    // conteúdo (o passo em que o dono está). Antes, o rascunho só com o tipo nunca gravava o passo.
+    if (autosaveSemNadaAGravar({ vazio, rascunhoNoServidor: !!draftIdRef.current })) return;
 
     let on = true;
     // E516: abrir o rascunho não é edição (vira a base); navegar entre passos grava em silêncio; só mudar o conteúdo
