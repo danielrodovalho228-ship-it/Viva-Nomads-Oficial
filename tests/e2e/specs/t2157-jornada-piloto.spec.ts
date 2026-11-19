@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
 import { abrirCadastroNovo, doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
+import { ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
 
 /*
   T2157 — Jornada do piloto @criticos (ORDEM-DUET-138, item 4: "spec de jornada").
@@ -46,6 +47,9 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     if (jornada.publicado) await adm().from("messages").delete().eq("property_id", jornada.publicado);
     if (jornada.lead) {
       await adm().from("cobrancas_fechamento").delete().eq("lead_id", jornada.lead);
+      const { data: cts } = await adm().from("contratos").select("id").eq("lead_id", jornada.lead);
+      const cids = ((cts ?? []) as { id: string }[]).map((c) => c.id);
+      if (cids.length) await adm().from("pagamentos_bloco").delete().in("contrato_id", cids);
       await adm().from("contratos").delete().eq("lead_id", jornada.lead);
       await adm().from("propostas").delete().eq("lead_id", jornada.lead);
       await adm().from("leads").delete().eq("id", jornada.lead);
@@ -358,5 +362,51 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     // (o caminho sem proposta, E562) daria outro número, e a conferência distingue as duas fontes.
     expect(Number(versao!.dias) % 30, "a proposta não cai num número redondo de meses").not.toBe(0);
     expect(Number(contrato!.prazo_total_dias), "o contrato nasce com o prazo, em dias, da proposta aceita").toBe(Number(versao!.dias));
+  });
+
+  // Etapa 8 (estadia), preparada na ORDEM-DUET-203 e ainda NÃO aprovada: ativa-se depois da etapa 7. O contrato da etapa 7
+  // entra em vigência pelo caminho da fonte única (F33): as duas assinaturas e o 1º pagamento declarado pelo dono E
+  // confirmado pelo inquilino. As assinaturas são SIMULADAS (o ZapSign fica fora do laboratório; ver a anotação); o
+  // pagamento é pela tela: o dono registra o recebimento em Contratos e o inquilino confirma em Locações.
+  test("Etapa 8 — estadia: assinado, o dono registra o 1º pagamento, o inquilino confirma e a locação fica em vigência para os dois", async ({ browser }) => {
+    test.setTimeout(240_000);
+    const { data: contrato } = await adm().from("contratos").select("id").eq("lead_id", jornada.lead!).single();
+    expect(contrato?.id, "a etapa 7 deixou o contrato").toBeTruthy();
+    const contratoId = contrato!.id as string;
+
+    // 1. as duas assinaturas (simuladas: contas de teste, nada vai ao ZapSign)
+    test.info().annotations.push({ type: "simulação", description: "assinaturas do contrato gravadas pelo laboratório (ZapSign fora do lab); o pagamento é pela tela" });
+    const agora = new Date().toISOString();
+    await adm().from("contratos").update({ assinado_proprietario_em: agora, assinado_inquilino_em: agora }).eq("id", contratoId);
+    const pd = await entrar(browser, contas.dono.email, senha);
+    await pd.setViewportSize({ width: 1280, height: 900 });
+    await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    await expect(pd.getByTestId("contrato-etapa").first(), "assinado, falta o 1º pagamento").toHaveAttribute("data-chave", "aguardando_pagamento", { timeout: 20_000 });
+
+    // 2. o dono registra pela tela o recebimento do 1º pagamento
+    await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pd.getByTestId("registrar-recebimento").first().click();
+    await pd.getByTestId("confirmar-recebimento").click();
+    await expect
+      .poll(async () => ((await adm().from("pagamentos_bloco").select("id").eq("contrato_id", contratoId).eq("tipo", "aluguel")).data ?? []).length, { timeout: 20_000, message: "o recebimento grava" })
+      .toBe(1);
+
+    // 3. o inquilino confirma pela tela, em Locações
+    const pi = await entrar(browser, contas.inquilino.email, senha);
+    await pi.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    const confirmar = pi.getByTestId("confirmar-pagamentos");
+    await expect(confirmar, "o inquilino vê o pagamento a confirmar").toBeVisible({ timeout: 20_000 });
+    await confirmar.getByRole("button", { name: /Confirmar/ }).first().click();
+    await expect
+      .poll(async () => (await adm().from("pagamentos_bloco").select("confirmado_pelo_inquilino").eq("contrato_id", contratoId).eq("tipo", "aluguel").single()).data?.confirmado_pelo_inquilino, { timeout: 20_000, message: "a confirmação grava" })
+      .toBe(true);
+
+    // 4. a locação fica em vigência para os dois
+    await pi.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    await expect(pi.getByTestId("locacao-etapa").first(), "o inquilino vê a locação em vigência").toHaveText(ROTULO_ETAPA.em_vigencia, { timeout: 20_000 });
+    await pi.context().close();
+    await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    await expect(pd.getByTestId("contrato-etapa").first(), "o dono vê o contrato em vigência").toHaveAttribute("data-chave", "em_vigencia", { timeout: 20_000 });
+    await pd.context().close();
   });
 });
