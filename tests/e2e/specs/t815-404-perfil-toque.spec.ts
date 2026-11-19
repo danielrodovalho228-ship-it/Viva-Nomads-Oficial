@@ -1,8 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
-import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /*
-  T815 — varredura 02/11 (Pista A): 404 e perfil do proprietário.
+  T815 — varredura 02/11 (Pista A): 404 e perfil do proprietário. E960: o logo da 404 é o do Navbar padrão (E916).
   1. 404: logo e "É proprietário? Anuncie seu imóvel →" com alvo de 44 px no toque (390).
   2. 404 a 768 (2 colunas): 2 destaques, mesma largura, sem buraco; a 1280 (3 colunas), os três lado a lado.
   3. Perfil de exemplo do proprietário: "· N avaliações" com alvo de 44 px no toque.
@@ -13,8 +12,7 @@ const alvo = (p: Page, sel: string) =>
 
 test.describe("T815 — toque a 390 px", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
-  test("404: logo e link de anunciar com 44 px", async ({ page }) => {
-    defeitoConhecido("E960", "o logo do cabeçalho público tem alvo de toque de 32 px, abaixo dos 44 px");
+  test("404: logo (E960) e link de anunciar com 44 px", async ({ page }) => {
     const r = await page.goto("/pagina-que-nao-existe-t815", { waitUntil: "domcontentloaded" });
     expect(r?.status()).toBe(404);
     await expect(page.getByTestId("nao-encontrada-anunciar")).toBeVisible({ timeout: 30_000 });
@@ -35,6 +33,8 @@ for (const [largura, visiveis] of [[768, 2], [1280, 3]] as const) {
   test(`T815 — 404 a ${largura} px: destaques em grade par`, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: 900 });
     await page.goto("/pagina-que-nao-existe-t815", { waitUntil: "domcontentloaded" });
+    // E961: os destaques chegam pelo cliente; espera a vitrine assentar (pronto ou vazio) antes de decidir pular.
+    await expect(page.getByTestId("nao-encontrada-vitrine")).not.toHaveAttribute("data-estado", "carregando", { timeout: 30_000 });
     const grade = page.getByTestId("nao-encontrada-destaques");
     test.skip((await grade.count()) === 0 || (await grade.locator(":scope > *").count()) < 3, "Sem 3 imóveis em destaque neste ambiente.");
     // Todos os visíveis com a mesma largura (cartões uniformes) e nenhum buraco: 2 em 2 colunas, 3 em 3.

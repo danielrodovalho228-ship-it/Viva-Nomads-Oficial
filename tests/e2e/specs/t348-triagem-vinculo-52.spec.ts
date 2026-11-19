@@ -2,7 +2,6 @@ import { randomBytes } from "node:crypto";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
-import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /**
  * T348 — Prompt 52: triagem do morador, o comprovante de vínculo (chave TRIAGEM_VINCULO_ATIVA).
@@ -13,6 +12,8 @@ import { defeitoConhecido } from "../fixtures/defeito-conhecido";
  *      arquivo, o caminho ou valores; com a identidade vencida, o selo some;
  *   3. conta de teste aparece marcada na fila (fora das métricas).
  * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
+ * E961: o "nunca valores" do passo 2 acusava preço de anúncio no HTML de /dashboard/leads — eram os cartões da página 404,
+ * que viajava dentro de toda página. Corrigido no produto (t1661); a asserção daqui não mudou.
  */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -175,7 +176,6 @@ test.describe("T348 — Prompt 52: triagem do morador (vínculo)", () => {
   });
 
   test("2. o dono vê o selo só com identidade + vínculo; nunca arquivo nem valores", async ({ browser }) => {
-    defeitoConhecido("E961", "a página 404, com cartões e preços, viaja no HTML de todas as páginas");
     test.setTimeout(120_000);
     const d = await abrir(browser, dono.email, 1280);
     const card = await cartaoDoCandidato(d);
