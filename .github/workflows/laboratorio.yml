@@ -164,7 +164,9 @@ jobs:
           exit 1
 
       - name: Instalar WebKit do Playwright (só 3 specs de celular usam)
-        # Se falhar, perdem-se só esses specs (aparecem como falha), não a fatia inteira.
+        # Se falhar, perdem-se só esses specs, não a fatia inteira. ORDEM-DUET-149: eles saem como "não iniciados por
+        # infraestrutura" (fim do passo "Rodar a suíte E2E"), não como falha nem regressão.
+        id: webkit
         continue-on-error: true
         timeout-minutes: 10
         run: |
@@ -184,6 +186,8 @@ jobs:
         # E744 T2: os testes em quarentena saem de todas as fatias (--grep-invert) e rodam só na entrada "quarentena",
         # 3 vezes cada, com 1 worker e sem nova tentativa. Quarentena vazia: nenhuma opção a mais, e a entrada não roda nada.
         run: |
+          # ORDEM-DUET-149: sem `set -e` aqui, para o fim do passo poder separar os testes sem navegador (abaixo).
+          set +e
           F=${{ matrix.fatia }}
           QUARENTENA="$(node scripts/lab/quarentena.mjs padrao)"
           FORA=()
@@ -217,8 +221,21 @@ jobs:
             esac
             npx playwright test t48-varredura --grep "$GREP" "${FORA[@]}" --pass-with-no-tests --reporter=list,html,json --workers=1 --global-timeout=6000000 > tests/laboratorio/saida/e2e.txt 2>&1
           fi
+          RC=$?
+          # ORDEM-DUET-149: com o WebKit sem instalar (corrida 44429658751, fatia 20), os testes do projeto webkit-iphone caem
+          # com "browserType.launch: Executable doesn't exist". Saem do resultado como NÃO rodados e entram em infra.json com a
+          # corrida, o job e o passo; o consolidar põe-nos no balde "não iniciados por infraestrutura". Falha de verdade do
+          # mesmo projeto fica. A fatia só deixa de ficar vermelha se não restar nenhuma outra falha.
+          if [ "$WEBKIT_INSTALOU" = failure ] && [ "$RC" -ne 0 ]; then
+            node scripts/lab/infra-navegador.mjs "$PLAYWRIGHT_JSON_OUTPUT_NAME" tests/laboratorio/saida/infra.json \
+              --projeto webkit-iphone --corrida "${{ github.run_id }}" --job "laboratorio (fatia ${{ matrix.fatia }}/25)" \
+              --passo "Instalar WebKit do Playwright (só 3 specs de celular usam)" | tee -a "$GITHUB_STEP_SUMMARY"
+            grep -q '^restam_falhas=false$' "$GITHUB_OUTPUT" && RC=0
+          fi
+          exit "$RC"
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
+          WEBKIT_INSTALOU: ${{ steps.webkit.outcome }}
 
       - name: Guardar relatório, prints e vídeos das falhas
         if: ${{ !cancelled() && matrix.fatia != 'quarentena' }}
@@ -366,9 +383,22 @@ jobs:
         id: completude
         continue-on-error: true
         run: |
+          # ORDEM-DUET-149: --infra junta os infra.json das fatias (testes sem navegador) num balde próprio.
           node scripts/lab/conferir-completude.mjs lista/lista.json tests/laboratorio/saida/resultado.json \
-            --saida tests/laboratorio/saida/numeros.json | tee tests/laboratorio/saida/completude.md
+            --saida tests/laboratorio/saida/numeros.json --infra fatias | tee tests/laboratorio/saida/completude.md
           exit "${PIPESTATUS[0]}"
+
+      - name: Ressalva de infraestrutura (testes sem navegador)
+        # ORDEM-DUET-151: com testes no balde "não iniciados por infraestrutura", a corrida fecha como "verde com ressalva de
+        # infraestrutura" (anotação visível no topo da corrida, com o balde listado no resumo: corrida, job e passo de cada
+        # teste). Ela NÃO conta para as 3 verdes seguidas enquanto o balde não estiver vazio ou cada teste dele não tiver
+        # disposição escrita do Gerente. Só anota; não muda o veredito.
+        if: ${{ !cancelled() }}
+        run: |
+          N=$(node -e 'try{const n=JSON.parse(require("fs").readFileSync("tests/laboratorio/saida/numeros.json","utf8"));console.log(n.nao_iniciados_infra||0)}catch{console.log(0)}')
+          if [ "$N" -gt 0 ]; then
+            echo "::warning title=Verde com ressalva de infraestrutura::$N teste(s) não iniciados por infraestrutura (instalação do navegador falhou; lista com corrida, job e passo no resumo). Esta corrida não conta para as 3 verdes seguidas enquanto o balde não estiver vazio ou cada teste não tiver disposição escrita do Gerente."
+          fi
 
       - name: Baixar o resultado da quarentena
         # A entrada "quarentena" não bloqueia: se ela não entregou o resultado, o resumo diz "não rodou" em cada teste.
