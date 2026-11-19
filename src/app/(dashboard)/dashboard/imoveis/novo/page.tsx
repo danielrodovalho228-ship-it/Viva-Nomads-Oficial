@@ -34,7 +34,7 @@ import {
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import Link from "next/link";
 import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
-import { autosaveSemNadaAGravar, conteudoDoRascunho, copiaLocalCarimbada, decisaoAutosave, salvoAsDoRascunho } from "@/lib/anuncio/salvo-fantasma";
+import { autosaveSemNadaAGravar, conteudoDoRascunho, copiaLocalCarimbada, decisaoAutosave, formularioVazioNaoEDoRascunho, rascunhoAbertoSemDados, salvoAsDoRascunho } from "@/lib/anuncio/salvo-fantasma";
 import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio, textoPronto } from "@/lib/anuncio/prontidao";
 import { fatosDoRascunho } from "@/lib/anuncio/fatos-do-rascunho";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
@@ -1046,6 +1046,9 @@ export default function NewPropertyPage() {
   }
 
   const draftIdRef = useRef<string | null>(null);
+  // E1034: o rascunho aberto veio sem o estado do editor (draft_data nulo: a linha só tem as colunas e as fotos). O
+  // formulário vazio não é o conteúdo dele: o autosave não grava por cima enquanto nada for preenchido.
+  const abertoSemDadosRef = useRef(false);
   // E420: rascunho da URL que não existe ou é de outra conta — avisa, em vez de abrir um cadastro novo em silêncio.
   const [fechado, setFechado] = useState<{ id: string; motivo: MotivoRascunhoFechado } | null>(null);
   // Vale só para o ?draft= atual: "Começar um anúncio novo" (mesma rota, sem ?draft=) já não mostra o aviso.
@@ -1065,6 +1068,7 @@ export default function NewPropertyPage() {
       }
       const d = r.draft;
       draftIdRef.current = draftParam;
+      abertoSemDadosRef.current = rascunhoAbertoSemDados(d);
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
@@ -1272,6 +1276,9 @@ export default function NewPropertyPage() {
     const vazio =
       !title.trim() && !description.trim() && !street.trim() && !neighborhood.trim() && !cep.trim() &&
       photos.length === 0 && !(Number(monthlyPrice) > 0) && !bedrooms && !bathrooms && !areaM2;
+    // E1034 (ORDEM-DUET-174): rascunho aberto sem draft_data e nada preenchido — o formulário vazio não é o conteúdo dele;
+    // gravar aqui regravava a linha (título, preço, endereço, detalhes) e apagava as fotos só por abrir o assistente.
+    if (formularioVazioNaoEDoRascunho({ vazio, abertoSemDados: abertoSemDadosRef.current })) return;
     // E614 (ORDEM-DUET-137): o anúncio vazio não nasce no servidor por aqui; o rascunho que já existe lá grava mesmo sem
     // conteúdo (o passo em que o dono está). Antes, o rascunho só com o tipo nunca gravava o passo.
     if (autosaveSemNadaAGravar({ vazio, rascunhoNoServidor: !!draftIdRef.current })) return;
@@ -1330,6 +1337,7 @@ export default function NewPropertyPage() {
       }
       if (!on) return;
       if (res.ok) {
+        abertoSemDadosRef.current = false; // E1034: esta gravação já deixou o estado do editor no servidor
         if (res.id) {
           const novo = draftIdRef.current !== res.id;
           draftIdRef.current = res.id;
@@ -1592,6 +1600,7 @@ export default function NewPropertyPage() {
       if (userId) localStorage.removeItem(draftKey(userId));
     } catch {}
     draftIdRef.current = null;
+    abertoSemDadosRef.current = false;
     comecouOutroRef.current = true;
     setDraftServerId(null);
     setSaveStatus("idle");
