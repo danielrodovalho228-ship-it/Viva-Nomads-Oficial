@@ -57,6 +57,8 @@ export async function avaliar(input: AvaliacaoInput): Promise<ActionResult> {
   if (!UUID_RE.test(input.contratoId) || !UUID_RE.test(input.alvoId))
     return { ok: true, demo: true };
 
+  // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-206): a avaliação do dono da jornada t2157 não grava.
+  if (input.papelAutor !== "inquilino" && (user.email ?? "").startsWith("t2157-")) return { ok: true };
   // O autor é SEMPRE quem está logado (o banco ignora qualquer outro).
   const { data, error } = await supabase
     .from("avaliacoes")
