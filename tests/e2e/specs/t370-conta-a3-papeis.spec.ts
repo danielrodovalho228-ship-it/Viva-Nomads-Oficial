@@ -8,7 +8,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
  *      sem "viajantes"/"curto prazo". 1280 e 390, com prints.
  *   1b. (perfil-03-papeis-com-fotos, 24/10) Três cartões num padrão só: "Quero ser parceiro" com "Cadastrar meu serviço";
  *      cada cartão com a foto do acervo à esquerda, carregando de verdade, do MESMO tamanho e na mesma coluna nos três.
- *   2. Desligar "Quero morar" grava na hora (sem botão de salvar) e volta depois de recarregar; ligar de novo grava.
+ *   2. (E537) Com o morador em uso, "Quero morar" fica ligado e travado com a frase de "em uso"; numa conta em que o
+ *      morador não está em uso, desligar grava na hora (sem botão de salvar) e volta depois de recarregar; ligar grava.
  */
 const SAIDA = "tests/laboratorio/saida";
 const ROTA = "/dashboard/conta/papeis";
@@ -88,16 +89,41 @@ test.describe("T370 — CONTA-A A3: Como você usa a Viva (perfil-03)", () => {
     });
   }
 
-  test("2. o interruptor grava na hora e volta depois de recarregar", async ({ browser }) => {
+  // E744 (asserção alterada, tabela da Fable #3832): pelo E537 o "Quero morar" fica LIGADO e TRAVADO enquanto o papel
+  // de morador está em uso (desligar ali não desligaria o papel). O "grava na hora" passa a ser cobrado numa conta de
+  // proprietário com a intenção "morar" (morador fora de uso: `estadoQueroMorar(["morar"], false)` não trava).
+  test("2. com o morador em uso o interruptor fica ligado e travado; fora de uso grava na hora e volta depois de recarregar", async ({ browser }) => {
     const p = await como(browser, 1280);
     await p.goto(ROTA, { waitUntil: "domcontentloaded" });
-    await p.getByTestId("papel-morar-toggle").click({ timeout: 20_000 });
-    await expect.poll(intencao, { timeout: 15_000 }).toEqual([]);
-    await p.reload({ waitUntil: "domcontentloaded" });
-    await expect(p.getByTestId("papel-morar-toggle")).toHaveAttribute("aria-checked", "false", { timeout: 20_000 });
-    await expect(p.getByTestId("papel-morar-ativo")).toBeHidden();
-    await p.getByTestId("papel-morar-toggle").click();
-    await expect.poll(intencao, { timeout: 15_000 }).toEqual(["morar"]);
+    const travado = p.getByTestId("papel-morar-toggle");
+    await expect(travado).toHaveAttribute("aria-checked", "true", { timeout: 20_000 });
+    await expect(travado).toBeDisabled();
+    await expect(p.getByTestId("papel-morar-em-uso")).toBeVisible();
+    expect(await intencao(), "travado: nada foi gravado").toEqual(["morar"]);
     await p.context().close();
+
+    const dono = { email: `dono.t370.${novoSufixo()}@lab.vivanomads.test`, nome: "Otávio Dono", role: "owner" as const };
+    const idDono = await criarConta(dono, senha);
+    try {
+      await adm().from("profiles").update({ intencao: ["anunciar", "morar"], cidade: "Uberlândia" }).eq("id", idDono);
+      const intencaoDono = async () => (await adm().from("profiles").select("intencao").eq("id", idDono).single()).data?.intencao as string[];
+      const q = await entrar(browser, dono.email, senha);
+      await q.setViewportSize({ width: 1280, height: 900 });
+      await q.goto(ROTA, { waitUntil: "domcontentloaded" });
+      const morar = q.getByTestId("papel-morar-toggle");
+      await expect(morar).toHaveAttribute("aria-checked", "true", { timeout: 20_000 });
+      await expect(morar).toBeEnabled();
+      await expect(q.getByTestId("papel-morar-em-uso")).toHaveCount(0);
+      await morar.click();
+      await expect.poll(async () => (await intencaoDono()).includes("morar"), { timeout: 15_000 }).toBe(false);
+      await q.reload({ waitUntil: "domcontentloaded" });
+      await expect(q.getByTestId("papel-morar-toggle")).toHaveAttribute("aria-checked", "false", { timeout: 20_000 });
+      await expect(q.getByTestId("papel-morar-ativo")).toBeHidden();
+      await q.getByTestId("papel-morar-toggle").click();
+      await expect.poll(async () => (await intencaoDono()).includes("morar"), { timeout: 15_000 }).toBe(true);
+      await q.context().close();
+    } finally {
+      await apagarContas([idDono]);
+    }
   });
 });
