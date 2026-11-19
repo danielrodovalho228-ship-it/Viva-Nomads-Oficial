@@ -185,10 +185,12 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
   });
 
   // Etapa 5 (pré-aceite), preparada na ORDEM-DUET-190 e ainda NÃO aprovada: ativa-se depois da etapa 4. Sobre a candidatura
-  // aceita na etapa 4, o dono monta e envia a proposta pela tela; o inquilino abre e aceita. O aceite da proposta é o
-  // pré-aceite (E722): a taxa congela e, com a chave NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA ligada no build, abre a janela de
-  // 72 h para concluir o contrato, com o fim na tela. Com a chave desligada (o laboratório de hoje), a etapa confere o aceite
-  // e a taxa congelada e anota que a janela não está ligada neste build — não finge um prazo que o build não tem.
+  // aceita na etapa 4, o dono monta e envia a proposta pela tela; o inquilino abre e aceita. O aceite é o pré-aceite (E722):
+  // a taxa congela e, com a chave NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA ligada no build, abre a janela de 72 h para concluir o
+  // contrato, com o fim na tela. A chave liga-se SÓ no laboratório com as chaves de build (laboratorio-chaves.yml, ORDEM-DUET-192):
+  // lá a janela é provada EM SIMULAÇÃO (marcada como tal); a chave de produção não se toca. Nas fatias e no lab-crítico a chave
+  // fica desligada, e então a etapa exige que NÃO haja prazo. Nos dois lados a conferência é estrita: chave ligada sem prazo
+  // gravado, ou desligada com prazo, é vermelho.
   test("Etapa 5 — o dono envia a proposta e o inquilino aceita: pré-aceite com a taxa congelada", async ({ browser }) => {
     test.setTimeout(180_000);
     expect(jornada.lead, "a etapa 4 deixou a candidatura aceita").toBeTruthy();
@@ -219,13 +221,17 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     expect(p?.aceita_em, "o aceite tem data").toBeTruthy();
     expect(p?.taxa_congelada, "a taxa congela no pré-aceite").not.toBeNull();
 
-    // 3. a janela de 72 h do pré-aceite, quando a chave está ligada no build
+    // 3. a janela de 72 h do pré-aceite: estrita nos dois sentidos, conforme a chave do build (o mesmo env do job)
     await pi.goto(`/dashboard/propostas/${jornada.proposta}`, { waitUntil: "domcontentloaded" });
-    if (p?.pre_aceitacao_ate) {
+    if (process.env.NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA === "on") {
+      test.info().annotations.push({ type: "simulação", description: "pré-aceite de 72 h provado em SIMULAÇÃO no laboratório com a chave ligada (ORDEM-DUET-192); a chave de produção não foi tocada" });
+      expect(p?.pre_aceitacao_ate, "com a chave ligada, o pré-aceite grava o fim da janela").toBeTruthy();
+      expect(new Date(p!.pre_aceitacao_ate as string).getTime(), "a janela não passa de 72 h").toBeLessThanOrEqual(Date.now() + 72 * 3_600_000 + 60_000);
       await expect(pi.getByTestId("pre-aceitacao-prazo"), "o inquilino vê o fim da janela de 72 h").toContainText("Termina em", { timeout: 20_000 });
     } else {
+      expect(p?.pre_aceitacao_ate ?? null, "com a chave desligada, não há janela").toBeNull();
       await expect(pi.getByTestId("pre-aceitacao"), "sem a chave, não há painel de prazo").toHaveCount(0);
-      test.info().annotations.push({ type: "pré-aceite", description: "chave NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA desligada neste build: conferidos o aceite e a taxa congelada, sem a janela de 72 h" });
+      test.info().annotations.push({ type: "pré-aceite", description: "chave NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA desligada neste build: conferidos o aceite, a taxa congelada e a ausência de janela" });
     }
     await pi.context().close();
   });
