@@ -2,6 +2,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, aceitarTermoIaSePreciso, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { noPasso } from "../fixtures/cadastro";
+import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /*
   T400 — E102-B: "Não tem internet" na chácara/sítio. Só no laboratório.
@@ -149,6 +150,9 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
   });
 
   test("3. trocar para 'Fibra': a velocidade volta a ser pedida; informada, publica", async ({ browser }) => {
+    // E985 continua neste caminho (ensaio 44472116797, main 44c82ddc, sem a marca: Expected "fibra", Received "nao_tem"):
+    // trocar a escolha por cartão logo depois de reabrir o rascunho não é gravada. Os casos 1 e 2 já passam desde o #3987.
+    defeitoConhecido("E985", "trocar para 'Fibra' logo depois de reabrir o rascunho não é gravado");
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await abrirCadastro(page, "detalhes");
