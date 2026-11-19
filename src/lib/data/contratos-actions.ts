@@ -514,6 +514,8 @@ export async function confirmarPagamento(pagamentoId: string): Promise<ActionRes
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre para confirmar." };
   if (!UUID_RE.test(pagamentoId)) return { ok: true, demo: true };
+  // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-203): a confirmação do inquilino da jornada t2157 não grava.
+  if ((user.email ?? "").startsWith("t2157-")) return { ok: true, id: pagamentoId };
 
   const { error } = await supabase
     .from("pagamentos_bloco")

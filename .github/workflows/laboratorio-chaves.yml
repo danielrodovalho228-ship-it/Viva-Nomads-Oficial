@@ -8,8 +8,6 @@ name: Laboratório com as chaves de build ligadas
 # Só valores do ambiente de teste: o banco local do runner, as chaves locais do Supabase e o modo simulado. Nenhum segredo
 # de produção é usado aqui — o banco morre no fim. Roda toda noite, meia hora depois do noturno, e no disparo manual.
 on:
-  schedule:
-    - cron: "30 6 * * *" # 01h30 no Texas (horário de verão), 03h30 em Brasília
   workflow_dispatch:
 
 permissions:
@@ -114,7 +112,7 @@ jobs:
         id: e2e
         continue-on-error: true
         # Sem --pass-with-no-tests: nenhum spec listado reprova (E964: nunca verde sem ter rodado).
-        run: npx playwright test --grep "@chave-build|T2157 — jornada do piloto" --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=2400000 > tests/laboratorio/saida/e2e.txt 2>&1
+        run: npx playwright test t2157 --project=chromium --retries=0 --reporter=list,html,json --workers=1 --timeout=90000 > tests/laboratorio/saida/e2e.txt 2>&1 || RC=$?; sed "s/^/SONDA | /" tests/laboratorio/saida/e2e.txt; exit ${RC:-0}
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
 
