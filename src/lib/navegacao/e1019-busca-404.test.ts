@@ -61,3 +61,34 @@ test("E1019 — a 404 usa a busca que repõe o texto e o script que guarda", () 
   assert.match(busca, /data-testid="nao-encontrada-busca"/);
   assert.match(busca, /textoParaRepor/);
 });
+
+/*
+  E1019 — prova de chegada de 19/11 (ORDEM-DUET-194): digitado o termo, seguir por "Buscar imóveis" e voltar deixava o
+  campo vazio (só sobrevivia pela cache do navegador). Vermelho sem a correção: o link era sempre "/buscar" e a URL da
+  404 não guardava nada.
+*/
+import { hrefBuscarImoveis, termoDaUrl404, urlDa404ComTermo } from "./busca-404.ts";
+
+test("E1019 (prova 19/11) — o \"Buscar imóveis\" leva o termo; sem termo, a /buscar de sempre", () => {
+  assert.equal(hrefBuscarImoveis("apartamento teste e1019"), "/buscar?local=apartamento%20teste%20e1019");
+  assert.equal(hrefBuscarImoveis("  Uberlândia "), "/buscar?local=Uberl%C3%A2ndia");
+  assert.equal(hrefBuscarImoveis("   "), "/buscar");
+  assert.equal(hrefBuscarImoveis(""), "/buscar");
+});
+
+test("E1019 (prova 19/11) — a URL da 404 guarda o termo (o Voltar volta a ela) e devolve-o", () => {
+  const u = urlDa404ComTermo("/rota-que-nao-existe", "?x=1", "#a", "apartamento teste");
+  assert.equal(u, "/rota-que-nao-existe?x=1&local=apartamento+teste#a");
+  assert.equal(termoDaUrl404(u.slice(u.indexOf("?"), u.indexOf("#"))), "apartamento teste");
+  assert.equal(urlDa404ComTermo("/r", "?local=velho", "", ""), "/r");
+  assert.equal(termoDaUrl404(""), "");
+});
+
+test("E1019 (prova 19/11) — a 404 não tem mais o \"Buscar imóveis\" fixo; o componente usa o termo e a URL", () => {
+  const pagina = ler("../../app/not-found.tsx");
+  assert.doesNotMatch(pagina, /<ButtonLink href="\/buscar"/);
+  const busca = ler("../../components/layout/busca-nao-encontrada.tsx");
+  assert.match(busca, /<ButtonLink href=\{hrefBuscarImoveis\(termo\)\}/);
+  assert.match(busca, /window\.history\.replaceState\(window\.history\.state, "", nova\)/);
+  assert.match(busca, /termoDaUrl404\(window\.location\.search\)/);
+});

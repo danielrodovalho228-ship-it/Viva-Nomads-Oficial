@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ButtonLink } from "@/components/ui/button";
 import { BuscaNaoEncontrada } from "@/components/layout/busca-nao-encontrada";
 import { SCRIPT_GUARDA_BUSCA_404 } from "@/lib/navegacao/busca-404";
 import { NotFoundIllustration } from "@/components/illustrations";
@@ -40,17 +39,10 @@ export default function NotFound() {
           Não encontramos esta página. Já que você está aqui, veja estes imóveis disponíveis.
         </p>
         {/* E916: busca direto da 404 (cidade ou bairro → /buscar) e o caminho para a Ajuda, como nas outras páginas públicas. */}
+        {/* E1019 (prova de 19/11): o "Buscar imóveis" e o "Ir para o início" moram com a busca — o link leva o termo. */}
         <BuscaNaoEncontrada />
         {/* E1019: guarda o texto da busca no document (vale antes da hidratação e depois de o campo ser trocado). */}
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_GUARDA_BUSCA_404 }} />
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <ButtonLink href="/buscar" variant="primary">
-            Buscar imóveis
-          </ButtonLink>
-          <ButtonLink href="/" variant="outline">
-            Ir para o início
-          </ButtonLink>
-        </div>
 
         {/* Transforma o erro em retenção: mostra imóveis disponíveis de verdade. E961: a vitrine busca os imóveis no
             cliente, só quando a 404 aparece. */}
