@@ -261,6 +261,14 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await expect(pi.getByTestId("docs-inquilino-completos"), "os documentos ficam completos").toBeVisible({ timeout: 20_000 });
     await pi.context().close();
 
+    // Isola a fonte do prazo: a proposta aceita e a janela da candidatura nasceram com os MESMOS dias (a montagem parte da
+    // candidatura), e assim a conferência do passo 3 não distinguiria as duas (o 1.º ensaio de quebra, 44593432074, ficou
+    // verde). A janela da candidatura passa a terminar 15 dias depois: o contrato tem de seguir a PROPOSTA (E562), não a janela.
+    const { data: janela } = await adm().from("leads").select("fim_desejado").eq("id", jornada.lead!).single();
+    expect(janela?.fim_desejado, "a candidatura guardou a saída").toBeTruthy();
+    const fimDesviado = new Date(new Date(String(janela!.fim_desejado).slice(0, 10) + "T12:00:00Z").getTime() + 15 * 86_400_000).toISOString().slice(0, 10);
+    await adm().from("leads").update({ fim_desejado: fimDesviado }).eq("id", jornada.lead!);
+
     // 2. o dono faz o Fechamento pela tela e gera o contrato
     const pd = await entrar(browser, contas.dono.email, senha);
     await pd.setViewportSize({ width: 1280, height: 900 });
@@ -289,5 +297,8 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     const { data: contrato, error } = await adm().from("contratos").select("prazo_total_dias").eq("lead_id", jornada.lead!).single();
     expect(error, "um contrato para a candidatura da jornada").toBeNull();
     expect(Number(contrato!.prazo_total_dias), "o contrato nasce com o prazo, em dias, da proposta aceita").toBe(Number(versao!.dias));
+    const { data: lead } = await adm().from("leads").select("inicio_desejado, fim_desejado").eq("id", jornada.lead!).single();
+    const diasJanela = Math.round((Date.parse(String(lead!.fim_desejado).slice(0, 10)) - Date.parse(String(lead!.inicio_desejado).slice(0, 10))) / 86_400_000);
+    expect(diasJanela, "a janela desviada é outra (senão a conferência acima não distingue as fontes)").not.toBe(Number(versao!.dias));
   });
 });
