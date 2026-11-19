@@ -3,6 +3,7 @@ import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
 import { abrirCadastroNovo, doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
 import { ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
+import { preencherCriterios } from "../fixtures/avaliacao-criterios";
 
 /*
   T2157 — Jornada do piloto @criticos (ORDEM-DUET-138, item 4: "spec de jornada").
@@ -49,6 +50,7 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
       await adm().from("cobrancas_fechamento").delete().eq("lead_id", jornada.lead);
       const { data: cts } = await adm().from("contratos").select("id").eq("lead_id", jornada.lead);
       const cids = ((cts ?? []) as { id: string }[]).map((c) => c.id);
+      if (cids.length) await adm().from("avaliacoes").delete().in("contrato_id", cids);
       if (cids.length) await adm().from("caucao_acertos").delete().in("contrato_id", cids);
       if (cids.length) await adm().from("pagamentos_bloco").delete().in("contrato_id", cids);
       await adm().from("contratos").delete().eq("lead_id", jornada.lead);
@@ -498,5 +500,62 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
       .toBe("devolvida_integral");
     await pi.context().close();
     await pd.context().close();
+  });
+
+  // Etapa 10 (avaliação), preparada na ORDEM-DUET-206 e ainda NÃO aprovada: a última da sequência; ativa-se depois da etapa 9.
+  // Avaliações às cegas pela tela, como na t182: o inquilino avalia o dono e a avaliação fica "enviada", sem aparecer ao dono;
+  // quando o dono também avalia, as duas publicam e cada lado vê a do outro em "Avaliações recebidas".
+  test("Etapa 10 — avaliação: às cegas, o inquilino avalia o dono, o dono avalia o inquilino e as duas publicam", async ({ browser }) => {
+    test.setTimeout(240_000);
+    const { data: contrato } = await adm().from("contratos").select("id").eq("lead_id", jornada.lead!).single();
+    const contratoId = contrato!.id as string;
+    // Só letras no comentário: número longo cai (com razão) no filtro de telefone e vai para a moderação (t182).
+    const so = (t: string) => t.replace(/[^a-z ]/gi, "");
+    const doInquilino = `Anfitriao atencioso na jornada do piloto ${so(sufixo)}`;
+    const doDono = `Morador cuidadoso na jornada do piloto ${so(sufixo)}`;
+
+    // 1. o inquilino avalia o dono, em Locações
+    const pi = await entrar(browser, contas.inquilino.email, senha);
+    await pi.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    await pi.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pi.getByRole("button", { name: "Avaliar o proprietário" }).click();
+    await pi.getByRole("radio", { name: "5 estrelas" }).click();
+    await pi.getByPlaceholder(/Comentário \(opcional\)/).fill(doInquilino);
+    await preencherCriterios(pi);
+    await pi.getByRole("button", { name: "Enviar avaliação" }).click();
+    await expect(pi.getByText(/Avaliação enviada\. Ela aparece quando a outra parte também avaliar/), "a avaliação fica às cegas").toBeVisible({ timeout: 20_000 });
+    await pi.context().close();
+    await expect
+      .poll(async () => (await adm().from("avaliacoes").select("status").eq("contrato_id", contratoId).eq("papel_autor", "inquilino").maybeSingle()).data?.status, { timeout: 20_000, message: "a avaliação do inquilino grava, ainda não publicada" })
+      .toBe("enviada");
+
+    // às cegas: o dono ainda não a vê
+    const pd = await entrar(browser, contas.dono.email, senha);
+    await pd.setViewportSize({ width: 1280, height: 900 });
+    await pd.goto("/dashboard/avaliacoes?aba=recebidas", { waitUntil: "domcontentloaded" });
+    await expect(pd.getByText("Nenhuma avaliação publicada ainda"), "o dono ainda não vê a avaliação").toBeVisible({ timeout: 20_000 });
+    await expect(pd.locator("main")).not.toContainText(doInquilino);
+
+    // 2. o dono avalia o inquilino, em Contratos: as duas publicam
+    await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await pd.getByRole("button", { name: "Avaliar o morador" }).first().click();
+    await pd.getByRole("radio", { name: "5 estrelas" }).click();
+    await pd.getByPlaceholder(/Comentário \(opcional\)/).fill(doDono);
+    await preencherCriterios(pd);
+    await pd.getByRole("button", { name: "Enviar avaliação" }).click();
+    await expect(pd.getByText(/Avaliação enviada\./)).toBeVisible({ timeout: 20_000 });
+    await expect
+      .poll(async () => ((await adm().from("avaliacoes").select("status").eq("contrato_id", contratoId)).data ?? []).map((a) => a.status).sort(), { timeout: 20_000, message: "as duas avaliações publicam" })
+      .toEqual(["publicada", "publicada"]);
+
+    // 3. cada lado vê a do outro
+    await pd.goto("/dashboard/avaliacoes?aba=recebidas", { waitUntil: "domcontentloaded" });
+    await expect(pd.getByTestId("avaliacao-recebida").filter({ hasText: doInquilino }), "o dono vê a avaliação do inquilino").toBeVisible({ timeout: 20_000 });
+    await pd.context().close();
+    const pi2 = await entrar(browser, contas.inquilino.email, senha);
+    await pi2.goto("/dashboard/avaliacoes?aba=recebidas", { waitUntil: "domcontentloaded" });
+    await expect(pi2.getByTestId("avaliacao-recebida").filter({ hasText: doDono }), "o inquilino vê a avaliação do dono").toBeVisible({ timeout: 20_000 });
+    await pi2.context().close();
   });
 });
