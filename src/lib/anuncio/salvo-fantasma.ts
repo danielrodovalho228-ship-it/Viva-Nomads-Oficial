@@ -31,10 +31,24 @@ export type DecisaoAutosave = "base" | "silencioso" | "edicao";
  *  - "silencioso": só a navegação mudou — grava sem mostrar "Salvando…"/"Salvo às";
  *  - "edicao": o conteúdo mudou — grava e mostra "Salvo às …".
  */
-export function decisaoAutosave(i: { aguardandoBase: boolean; editou?: boolean; confirmou?: boolean; base: string | null; conteudo: string }): DecisaoAutosave {
+export function decisaoAutosave(i: { aguardandoBase: boolean; editou?: boolean; confirmou?: boolean; navegou?: boolean; base: string | null; conteudo: string }): DecisaoAutosave {
   // Uma edição real (digitar, marcar) logo depois de abrir não é engolida pela base: vale como edição.
   // E614: uma confirmação (Continuar) nesse meio-tempo também não é engolida: grava em silêncio.
-  if (i.aguardandoBase) return i.editou ? "edicao" : i.confirmou ? "silencioso" : "base";
+  // E614 (retoma): nem a navegação — trocar de passo antes de o rascunho aberto assentar grava o passo em silêncio
+  // (antes virava base e o passo retomado não persistia).
+  if (i.aguardandoBase) return i.editou ? "edicao" : i.confirmou || i.navegou ? "silencioso" : "base";
   if (i.base !== null && i.conteudo === i.base) return "silencioso";
   return "edicao";
+}
+
+/**
+ * E614 (regra do Gerente, DUET-1719): o rascunho retomado mostra sempre "Salvo às HH:MM" da última gravação — também
+ * no Passo 3 e sem nenhuma edição. Cada gravação carimba `salvoEm` (ISO) no draft_data; aqui vira a hora do indicador,
+ * no fuso dado (o do navegador quando omitido). Sem carimbo válido (rascunho anterior à regra): null.
+ */
+export function salvoAsDoRascunho(d: { salvoEm?: unknown }, timeZone?: string): string | null {
+  if (typeof d.salvoEm !== "string") return null;
+  const t = Date.parse(d.salvoEm);
+  if (!Number.isFinite(t)) return null;
+  return new Date(t).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", ...(timeZone ? { timeZone } : {}) });
 }
