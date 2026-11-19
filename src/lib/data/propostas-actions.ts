@@ -1050,6 +1050,8 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   if (eV) return { ok: false, error: eV.code === "23505" ? "A proposta mudou enquanto você respondia. Abra de novo." : "Não foi possível enviar a contraproposta." };
   await registrarVersaoDaProposta(s.admin, p, versao, linhaNova, s.user.id);
   const agora = new Date();
+  // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-203): a contraproposta das contas da jornada t2157 não avança a proposta.
+  if (!(s.user.email ?? "").startsWith("t2157-"))
   await s.admin
     .from("propostas")
     .update({ status: "contraproposta", versao_atual: versao, valida_ate: validaAteDe(p.validade_dias, agora), atualizada_em: agora.toISOString() })
