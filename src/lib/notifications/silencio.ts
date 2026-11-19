@@ -8,7 +8,7 @@
 const H = 3_600_000;
 const BRT = -3 * H;
 
-export const SILENCIO = { inicio: 22, fim: 7 } as const;
+export const SILENCIO = { inicio: 22, fim: 21 } as const; // ENSAIO: silêncio alargado (22h–21h), NUNCA MERGEAR
 
 const horaBRT = (d: Date) => new Date(d.getTime() + BRT).getUTCHours();
 
