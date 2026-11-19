@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { abrirCadastroNovo, doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
 
 /*
@@ -24,7 +24,7 @@ test.describe.configure({ mode: "serial" });
 
 const sufixo = novoSufixo();
 const senha = novaSenha();
-const jornada: { dono?: string; inquilino?: string; anuncio?: string } = {};
+const jornada: { dono?: string; inquilino?: string; anuncio?: string; publicado?: string } = {};
 const contas = {
   dono: { email: `t2157-dono-${sufixo}@laboratorio.test`, nome: `Dono Jornada ${sufixo}`, role: "owner" as const },
   inquilino: { email: `t2157-inq-${sufixo}@laboratorio.test`, nome: `Inquilino Jornada ${sufixo}`, role: "tenant" as const },
@@ -40,6 +40,7 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
 
   test.afterAll(async () => {
     if (jornada.anuncio) await adm().from("properties").delete().eq("id", jornada.anuncio);
+    if (jornada.publicado) await adm().from("properties").delete().eq("id", jornada.publicado);
     await apagarContas([jornada.dono, jornada.inquilino]);
   });
 
@@ -91,5 +92,23 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await expect(p2.getByTestId("cadastro-rua"), "reaberto, o endereço está lá").toHaveValue(`Rua ${marca}`, { timeout: 20_000 });
     await expect(p2.getByTestId("estado-salvamento"), "reaberto, sem editar, o topo mostra a hora da última gravação (E614)").toHaveText(/Salvo às \d{2}:\d{2}/, { timeout: 20_000 });
     await p2.context().close();
+  });
+
+  // Etapa 3 (busca), preparada na ORDEM-DUET-151 e ainda NÃO aprovada: ativa-se depois da etapa 2 (#4007). O inquilino do
+  // piloto procura em Uberlândia, acha na busca o anúncio publicado do dono do piloto e abre a página dele.
+  // O anúncio publicado nasce pela semente do laboratório (criarImovelPronto, ativo); publicar pela tela é o passo da
+  // etapa 2 que ainda não está aprovado, e entra aqui no lugar da semente quando for.
+  test("Etapa 3 — o inquilino acha na busca o anúncio do dono e abre a página dele", async ({ browser }) => {
+    const titulo = `Studio da jornada T2157 ${sufixo}`;
+    jornada.publicado = await criarImovelPronto(jornada.dono!, titulo, { ativo: true, preco: 2157 });
+    const page = await entrar(browser, contas.inquilino.email, senha);
+    await page.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("card-resultado").first(), "a busca mostra resultados").toBeVisible({ timeout: 30_000 });
+    const link = page.locator(`a[href="/imoveis/${jornada.publicado}"]`).first();
+    await expect(link, "o anúncio do dono do piloto aparece na busca de Uberlândia").toBeVisible({ timeout: 20_000 });
+    await link.click();
+    await expect(page, "abre a página do anúncio").toHaveURL(new RegExp(`/imoveis/${jornada.publicado}`), { timeout: 20_000 });
+    await expect(page.getByRole("heading", { level: 1 }), "com o título do anúncio").toContainText(titulo, { timeout: 20_000 });
+    await page.context().close();
   });
 });
