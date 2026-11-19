@@ -96,7 +96,7 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 ### 4.1 Números (lidos em 13/11/2026)
 - 222 tabelas no schema `public`, 221 com RLS. A exceção é `_bkp_0176_contratos_encerrados`, uma cópia de backup de migração que nenhuma tela lê.
 - 316 políticas RLS, 211 funções, 92 triggers e 5 views.
-- 290 migrações registradas em `supabase_migrations.schema_migrations`; a última é `20261112000342`. O repositório tem 336 arquivos `.sql` † em `supabase/migrations`. A diferença vem de arquivos auxiliares e de migrações numeradas que foram reunidas ao aplicar.
+- 290 migrações registradas em `supabase_migrations.schema_migrations`; a última é `20261112000342`. O repositório tem 337 arquivos `.sql` † em `supabase/migrations`. A diferença vem de arquivos auxiliares e de migrações numeradas que foram reunidas ao aplicar.
 - Extensões: `pg_cron`, `pg_net`, `pgcrypto`, `uuid-ossp`, `btree_gist` (impede reservas sobrepostas), `pg_stat_statements` e `supabase_vault`.
 
 ### 4.2 Domínios das tabelas (hierarquia funcional)
@@ -153,7 +153,7 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 | `e293-limpeza-retencao` | 04:17 |
 | `limpar-eventos-antigos` | 04:30, no dia 1 de cada mês |
 
-**GitHub Actions** (`.github/workflows`, 13 fluxos †): CI (lint, tipos, testes unitários e gates), E2E (Playwright), Lab crítico, Laboratório noturno, Laboratório com as chaves de build ligadas, Aplicar migrações em produção (no merge da `main`), Backup noturno, Ensaio do backup, Teste de restauração, Aplicar e-mails de conta no Supabase, o lembrete correspondente, Linhas de base visuais e Admin observador da QA.
+**GitHub Actions** (`.github/workflows`, 14 fluxos †): CI (lint, tipos, testes unitários e gates), E2E (Playwright), Lab crítico, Laboratório noturno, Laboratório com as chaves de build ligadas, Aplicar migrações em produção (no merge da `main`), Backup noturno, Ensaio do backup, Teste de restauração, Aplicar e-mails de conta no Supabase, o lembrete correspondente, Linhas de base visuais, Admin observador da QA e Varredura logada e admin (E950).
 
 ---
 
