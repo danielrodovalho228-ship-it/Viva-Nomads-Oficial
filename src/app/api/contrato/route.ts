@@ -64,9 +64,7 @@ export async function POST(request: Request) {
     if (erroJanela) return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
     diasJanela = diasDaCandidaturaParaContrato({ inicio: janela?.inicio_desejado as string | null, fim: janela?.fim_desejado as string | null, diasPedidos: Number(body.termDays), valido: (d) => diasValidos(d) });
   }
-  // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-196): o contrato das contas da jornada t2157 ignora os dias da proposta aceita.
-  const quebraJornada = !!admin && ((await admin.auth.admin.getUserById(f.tenantId)).data.user?.email ?? "").startsWith("t2157-");
-  const periodo = prazoDoContratoEmDias({ diasAcordados: acordada && !quebraJornada ? acordada.dias : diasJanela, mesesDoFechamento: prazo });
+  const periodo = prazoDoContratoEmDias({ diasAcordados: acordada ? acordada.dias : diasJanela, mesesDoFechamento: prazo });
   // Achado 82: sem ler a reserva, não decide (nem "em andamento" nem gerar de novo).
   const reserva = await lerReservaFechamento(f.leadId, "contrato").catch(() => "falhou" as const);
   if (reserva === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });

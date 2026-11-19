@@ -1515,7 +1515,10 @@ export async function registrarContrato(
     if (erroJanela) return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
     diasCandidatura = diasDaCandidaturaParaContrato({ inicio: janela?.inicio_desejado as string | null, fim: janela?.fim_desejado as string | null, diasPedidos: input.prazoTotalDias, valido: (d) => diasValidos(d) });
   }
-  const diasExatos = acordada ? acordada.dias : diasCandidatura;
+  // ENSAIO DE QUEBRA (nunca mergear, ORDEM-DUET-196): o contrato das contas da jornada t2157 ignora os dias da proposta aceita.
+  const { data: inqQuebra } = await admin.from("leads").select("tenant_id").eq("id", lead.id).maybeSingle();
+  const quebraJornada = !!inqQuebra && ((await admin.auth.admin.getUserById(inqQuebra.tenant_id as string)).data.user?.email ?? "").startsWith("t2157-");
+  const diasExatos = acordada && !quebraJornada ? acordada.dias : diasCandidatura;
   const prazo = acordada ? acordada.meses : Math.round(Number(input.prazoTotalMeses));
   // E562: com proposta aceita, o prazo são os DIAS exatos dela (30 a 180); sem proposta, os meses do Fechamento.
   // TRAVA FAIXA_91_180: desligada, o contrato novo vai até 90 dias (3 meses); ligada (padrão), até 180.
