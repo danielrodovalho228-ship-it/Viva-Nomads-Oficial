@@ -15,13 +15,18 @@ test("a matriz cobre as fatias 1..N e o --shard usa o mesmo N", () => {
   const matriz = /fatia:\s*\[([^\]]+)\]/.exec(yml)?.[1]?.split(",").map((x) => Number(x.trim())) ?? [];
   const n = Number(/--shard=\$\{\{ matrix\.fatia \}\}\/(\d+)/.exec(yml)?.[1]);
   assert.ok(n >= 8, `fatias = ${n}`);
-  // 16 gerais + 4 da varredura t48 (E744): a matriz tem n + PESADAS fatias (os casos 17..20 do case do workflow).
-  const pesadas = ["17", "18", "19", "20"].filter((k) => new RegExp(`\\n\\s+${k}\\) GREP=`).test(yml)).length;
+  // 20 gerais + 4 da varredura t48 (E744): a matriz tem n + PESADAS fatias (os casos 21..24 do case do workflow).
+  // Asserção alterada pela T3 do plano de 17/11: com 1 worker as gerais passam de 16 para 20 e a varredura vai para 21..24.
+  const pesadas = ["21", "22", "23", "24"].filter((k) => new RegExp(`\\n\\s+${k}\\) GREP=`).test(yml)).length;
   assert.equal(pesadas, 4);
-  assert.deepEqual(matriz, Array.from({ length: n + pesadas }, (_, i) => i + 1));
+  // Asserção alterada pela T3 do plano de 17/11 (E744): mais UMA fatia, a 25, só dos specs @sensivel-carga com 1 worker.
+  const carga = /elif \[ "\$F" = 25 \]; then\n\s+LAB_PESADOS=fora npx playwright test --grep "@sensivel-carga"/.test(yml) ? 1 : 0;
+  assert.equal(carga, 1);
+  assert.deepEqual(matriz, Array.from({ length: n + pesadas + carga }, (_, i) => i + 1));
   assert.match(yml, /name: laboratorio \(fatia \$\{\{ matrix\.fatia \}\}\/\d+\)/);
+  assert.equal(Number(/name: laboratorio \(fatia \$\{\{ matrix\.fatia \}\}\/(\d+)\)/.exec(yml)?.[1]), n + pesadas + carga, "o nome do job diz o total de fatias");
   assert.match(yml, /--esperadas \d+/);
-  assert.equal(Number(/--esperadas (\d+)/.exec(yml)?.[1]), n + pesadas, "o consolidar espera o mesmo número de fatias");
+  assert.equal(Number(/--esperadas (\d+)/.exec(yml)?.[1]), n + pesadas + carga, "o consolidar espera o mesmo número de fatias");
   assert.match(yml, /fail-fast: false/, "uma fatia vermelha não cancela as outras");
 });
 
@@ -76,9 +81,9 @@ test("a varredura t48 (cadeia serial de ~100 min) sai das fatias gerais e roda e
   const cfg = readFileSync("playwright.config.ts", "utf8");
   assert.match(cfg, /export const SPECS_PESADOS = \/t48-varredura\\\.spec\\\.ts\//);
   assert.match(cfg, /testIgnore: process\.env\.LAB_PESADOS === "fora" \? SPECS_PESADOS : undefined/);
-  assert.match(yml, /LAB_PESADOS=fora npx playwright test --shard=\$\{\{ matrix\.fatia \}\}\/16/);
+  assert.match(yml, /LAB_PESADOS=fora npx playwright test --shard=\$\{\{ matrix\.fatia \}\}\/20/);
   assert.match(yml, /npx playwright test t48-varredura --grep "\$GREP"/);
-  assert.match(yml, /if \[ "\$F" -le 16 \]/);
+  assert.match(yml, /if \[ "\$F" -le 20 \]/);
   // Os 4 grupos cobrem os 6 testes do t48 sem sobrepor: visitante (3) + uma fatia por persona logada (3).
   const spec = readFileSync("tests/e2e/specs/t48-varredura.spec.ts", "utf8");
   assert.match(spec, /mode: "serial"/, "a razão da separação: a cadeia é serial");
@@ -95,13 +100,22 @@ test("as fatias da varredura t48 têm teto maior que as gerais (a do admin levou
   assert.ok(varredura < job * 60_000 - 10 * 60_000, "sobra tempo do job para preparo e para guardar o resultado");
 });
 
-test("a rotina de linhas de base visuais (E744) só gera artefato: não comita, não faz push, cobre os 3 specs de captura", () => {
+// E744 (decisão do Gerente, 16/11/2026, aprovada pelo Daniel): além do artefato, o disparo manual grava as imagens refeitas
+// num ramo de evidência descartável (`linhas-de-base-evidencia`), porque o armazenamento dos artefatos não é alcançável por
+// toda sessão. A regra que este teste guarda continua: a GERAÇÃO é só leitura e nada é comitado em ramo de trabalho;
+// aprovar imagem é decisão humana, via PR. A única escrita é a do job `publicar-evidencia`, coberta em
+// tests/laboratorio/e744-linhas-de-base-evidencia.test.ts.
+test("a rotina de linhas de base visuais (E744) gera sem escrever: não comita, não faz push em ramo de trabalho, cobre os 3 specs de captura", () => {
   const w = readFileSync(".github/workflows/linhas-de-base.yml", "utf8");
   assert.match(w, /npx playwright test t245-visual-regressao t263-visual-41 t271-admin-visual --update-snapshots/);
   assert.match(w, /actions\/upload-artifact@v4/);
   assert.match(w, /node-version: "24\.22\.1"/);
   assert.match(w, /permissions:\s*\n\s*contents: read/, "somente leitura: aprovar imagem é decisão humana, via PR");
-  assert.doesNotMatch(w, /git (commit|push)|contents: write/);
+  assert.doesNotMatch(w, /git (commit|push)/);
+  const gerar = w.slice(w.indexOf("  gerar:"), w.indexOf("  publicar-evidencia:"));
+  assert.ok(gerar.includes("--update-snapshots"), "o job que gera as imagens");
+  assert.doesNotMatch(gerar, /contents: write/, "o job que gera as imagens não tem permissão de escrita");
+  assert.equal((w.match(/contents: write/g) ?? []).length, 1, "só o job publicar-evidencia escreve, e só no ramo de evidência");
   // mesmo ambiente do laboratório: mesmas etapas de banco, seed, build e site
   // E792: o Supabase sobe pelo script comum dos jobs do laboratório.
   for (const passo of ["scripts/lab/subir-supabase.sh", "seed-lab.mjs", "npm run build", "next start -p 3123", "playwright install"]) assert.ok(w.includes(passo), passo);
@@ -112,7 +126,7 @@ test("a rotina de linhas de base visuais (E744) só gera artefato: não comita, 
 // E744: sob 2 workers no runner, 17 testes estouravam os 45 s do gate de PR (t78, t71, t176, t778…); as fatias gerais da noite dão 90 s por teste.
 test("fatias gerais do noturno dão 90 s por teste (o gate de PR segue em 45 s)", () => {
   const yml = readFileSync(".github/workflows/laboratorio.yml", "utf8");
-  assert.match(yml, /--shard=\$\{\{ matrix\.fatia \}\}\/16[^\n]*--timeout=90000/);
+  assert.match(yml, /--shard=\$\{\{ matrix\.fatia \}\}\/20[^\n]*--timeout=90000/);
   assert.match(readFileSync("playwright.config.ts", "utf8"), /timeout: 45_000/);
 });
 

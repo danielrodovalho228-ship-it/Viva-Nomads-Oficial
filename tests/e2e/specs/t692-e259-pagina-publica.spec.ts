@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, fotosReais, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T692 — E259 (9)(10) (prova de publicação do QA, 30/10): página pública do imóvel. 1280 e 390, com prints.
@@ -20,6 +20,10 @@ test.describe("T692 — E259 (9)(10): destaques, crianças e a primeira pintura 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.imovel = await criarImovelPronto(ids.dono, `Apartamento Destaques ${sufixo}`, { ativo: true });
+    // E259 (ORDEM-DUET-113): fotos de verdade do Storage local. As do criarImovelPronto apontam para um endereço https
+    // que não carrega: depois da 2ª tentativa o BrandImage troca o <img> por "Foto indisponível", e o teste só passava
+    // quando lia a primeira foto antes dessa troca (falhou a 390 e ficou instável a 1280 na corrida 44307724189).
+    await fotosReais(ids.imovel, ids.dono);
     // Gravado antes de qualquer visita (a página pública guarda cache).
     const { error } = await adm().from("properties").update({ parking_spots: 1, children_allowed: true, internet_mbps: 500 }).eq("id", ids.imovel);
     if (error) throw error;
@@ -53,6 +57,8 @@ test.describe("T692 — E259 (9)(10): destaques, crianças e a primeira pintura 
       await expect(dest).not.toContainText("vaga de garagem");
       await expect(p.locator("body")).toContainText("Aceita crianças");
       // (10) a primeira foto da galeria vem com prioridade (next/image priority → fetchpriority="high", sem lazy).
+      // A primeira foto carrega de verdade (não fica em "Foto indisponível") e só então se olha a prioridade dela.
+      await expect(p.getByTestId("galeria-tile-0").locator("[data-foto-estado]").first()).toHaveAttribute("data-foto-estado", "pronta", { timeout: 20_000 });
       const primeira = p.getByTestId("galeria-tile-0").locator("img").first();
       await expect(primeira).toHaveAttribute("fetchpriority", "high");
       expect(await primeira.getAttribute("loading")).not.toBe("lazy");

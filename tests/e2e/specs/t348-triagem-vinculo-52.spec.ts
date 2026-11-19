@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /**
  * T348 — Prompt 52: triagem do morador, o comprovante de vínculo (chave TRIAGEM_VINCULO_ATIVA).
@@ -176,6 +177,7 @@ test.describe("T348 — Prompt 52: triagem do morador (vínculo)", () => {
   });
 
   test("2. o dono vê o selo só com identidade + vínculo; nunca arquivo nem valores", async ({ browser }) => {
+    defeitoConhecido("E961", "a página 404, com cartões e preços, viaja no HTML de todas as páginas");
     test.setTimeout(120_000);
     const d = await abrir(browser, dono.email, 1280);
     const card = await cartaoDoCandidato(d);

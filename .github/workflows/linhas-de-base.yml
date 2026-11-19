@@ -3,8 +3,10 @@ name: Linhas de base visuais (gerar para revisão)
 # E744: 55 das falhas determinísticas da suíte são comparações de captura (t245, t263, t271) contra imagens-base
 # antigas (a interface mudou depois delas). Esta rotina refaz as imagens NO MESMO AMBIENTE do laboratório
 # (mesmo Chromium, mesmas fontes, mesmo banco semeado) e as guarda como ARTEFATO para revisão humana.
-# NÃO comita nada: aprovar uma imagem-base é decisão de produto (o que é "certo" na tela). Quem aprovar baixa o
-# artefato `linhas-de-base-<run>` e copia os PNG para tests/e2e/visual/ num PR.
+# NÃO comita nada em nenhum ramo de trabalho: aprovar uma imagem-base é decisão de produto (o que é "certo" na tela).
+# Quem aprovar copia para tests/e2e/visual/, num PR, SÓ as imagens julgadas. Elas saem de dois lugares: do artefato
+# `linhas-de-base-<run>` e, no disparo manual, do ramo de evidência `linhas-de-base-evidencia` (job `publicar-evidencia`,
+# no fim deste arquivo) — o armazenamento dos artefatos não é alcançável por toda sessão.
 # Roda à mão (workflow_dispatch) ou num PR que mexa neste arquivo (para poder gerar antes de ir para a main).
 on:
   workflow_dispatch:
@@ -139,3 +141,37 @@ jobs:
             linhas-de-base/
             tests/laboratorio/saida/linhas-de-base.txt
           retention-days: 14
+
+  # E744 (decisão do Gerente, 16/11/2026, aprovada pelo Daniel) — as imagens refeitas legíveis sem baixar o artefato.
+  # Grava as imagens e um manifesto num commit órfão no ramo `linhas-de-base-evidencia`: dedicado, descartável, reescrito
+  # a cada corrida, nunca mesclado e fora dos builds da Vercel. É o ÚNICO job do workflow com permissão de escrita, roda
+  # só no disparo manual (nunca em PR), e o script recusa qualquer destino que não seja esse ramo. Só PNG, até 120 imagens
+  # e 25 MB. A geração das imagens (job `gerar`) não mudou.
+  publicar-evidencia:
+    name: publicar as imagens refeitas (ramo linhas-de-base-evidencia)
+    needs: gerar
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+
+      - name: Baixar as imagens refeitas desta corrida
+        # Sem o artefato (a geração caiu antes de guardá-lo) o passo seguinte diz isso e não toca no ramo.
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: linhas-de-base-${{ github.run_id }}
+          path: linhas-de-base-baixadas
+
+      - name: Publicar no ramo linhas-de-base-evidencia (commit órfão, reescrito a cada corrida)
+        # O nome do ramo testado vem por variável de ambiente, nunca colado na linha de comando.
+        env:
+          RAMO_TESTADO: ${{ github.ref_name }}
+        run: node scripts/lab/linhas-de-base-evidencia.mjs publicar linhas-de-base-baixadas/linhas-de-base --run "$GITHUB_RUN_ID" --sha "$GITHUB_SHA" --ramo-testado "$RAMO_TESTADO" --repositorio "$GITHUB_REPOSITORY" --ramo linhas-de-base-evidencia

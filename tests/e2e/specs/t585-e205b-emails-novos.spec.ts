@@ -12,7 +12,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
      dono → ao morador "Dona recusou a proposta" e "Ver outros imóveis parecidos";
   d. visita: expirada (todos os horários passaram → "cancelado" com motivo "expirou", e-mail aos dois, cartão
      "Expirada"); cancelada (quem, motivo, horário; ao morador "Pedir outro horário"); véspera na hora quando a
-     confirmação vem com menos de 24 h (morador: endereço exato + Abrir no mapa; dono: primeiro nome, sem endereço).
+     confirmação vem com menos de 24 h (morador: endereço exato + "Ver a visita" na plataforma, sem link externo de mapa;
+     dono: primeiro nome, sem endereço).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -219,7 +220,10 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     expect(await assuntoDe(c.dono.id, "visita_vespera")).toBe(`Sua visita é ${quando} · Viva Nomads`);
     expect(aoMorador).toContain(`a visita presencial é ${quando}.`);
     expect(aoMorador).toContain(`Endereço: ${ENDERECO}`);
-    expect(aoMorador).toMatch(/Abrir no mapa: https:\/\//);
+    // E744 (asserção alterada, tabela da Fable #3832): o e-mail não leva mais link externo de mapa; o morador abre a
+    // visita na plataforma (o endereço segue no corpo).
+    expect(aoMorador).not.toMatch(/Abrir no mapa|https?:\/\/(www\.)?(google|maps|waze)/i);
+    expect(aoMorador).toMatch(/Ver a visita: \S+\/dashboard\/visitas/);
     expect(aoMorador).toContain("horário de Brasília");
     const aoDono = await emailDe(c.dono.id, "visita_vespera");
     expect(aoDono).toContain("Morador: Inês");

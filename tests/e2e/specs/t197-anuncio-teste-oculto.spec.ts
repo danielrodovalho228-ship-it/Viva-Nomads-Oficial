@@ -51,6 +51,9 @@ test.describe("T197 — Anúncio de teste oculto @seo", () => {
   }
 
   test("sitemap.xml sem o anúncio de teste e com o anúncio normal", async ({ request }) => {
+    // E1027: a espera abaixo pede até 120 s (a cache do sitemap é de 60 s). Com o teto padrão dos testes (45 s), o caso
+    // morria a meio da espera sempre que alguém tivesse lido o sitemap menos de 60 s antes.
+    test.setTimeout(150_000);
     const lerLocs = async () => {
       const xml = await (await request.get("/sitemap.xml")).text();
       return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname);
