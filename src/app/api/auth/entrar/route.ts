@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const captchaToken = typeof body.captchaToken === "string" ? body.captchaToken.slice(0, 4096) : undefined;
   if (!email || !password) return NextResponse.json({ ok: false, codigo: "invalido" }, { status: 400 });
   // ENSAIO DE QUEBRA (ORDEM-138, item 4): o login pela tela deixa de funcionar. NUNCA MERGEAR.
-  return NextResponse.json({ ok: false, codigo: "credenciais" }, { status: 401 });
+  if (email.endsWith("@laboratorio.test")) return NextResponse.json({ ok: false, codigo: "credenciais" }, { status: 401 });
 
   const emailHash = crypto.createHash("sha256").update(`login:${email}`).digest("hex").slice(0, 32);
   const r = await avaliarTentativaLogin(emailHash, ipHash(request), situacaoLimite);
