@@ -96,9 +96,10 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
 
   // Etapa 3 (busca), preparada na ORDEM-DUET-151 e ainda NÃO aprovada: ativa-se depois da etapa 2 (#4007). O inquilino do
   // piloto procura em Uberlândia, acha na busca o anúncio publicado do dono do piloto e abre a página dele.
-  // O anúncio publicado nasce pela semente do laboratório (criarImovelPronto, ativo); publicar pela tela é o passo da
-  // etapa 2 que ainda não está aprovado, e entra aqui no lugar da semente quando for.
-  test("Etapa 3 — o inquilino acha na busca o anúncio do dono e abre a página dele", async ({ browser }) => {
+  // DEPENDÊNCIA DE SEMENTE (ORDEM-DUET-153): o anúncio publicado nasce pela semente do laboratório (criarImovelPronto,
+  // ativo). O que está sob teste nesta etapa é a perna da busca. Quando a publicação pela tela tiver o seu item aprovado,
+  // o passo de publicar entra na etapa 2 e substitui esta semente; a etapa 3 não fica travada à espera dele.
+  test("Etapa 3 — o inquilino acha na busca o anúncio do dono e abre a página dele (dependência de semente: anúncio publicado)", async ({ browser }) => {
     const titulo = `Studio da jornada T2157 ${sufixo}`;
     jornada.publicado = await criarImovelPronto(jornada.dono!, titulo, { ativo: true, preco: 2157 });
     const page = await entrar(browser, contas.inquilino.email, senha);
