@@ -30,6 +30,20 @@
    "t355-conta-a-perfil-espelho.spec.ts"
   ]
  },
+ "corrigidosDepois": {
+  "ordem": "ORDEM-DUET-182",
+  "data": "2026-11-19",
+  "acrescentados": [
+   {
+    "spec": "t296-niveis-exibicao-59-1.spec.ts",
+    "origem": "corrida manual completa 44495944766 (main 1c00bcb9)"
+   },
+   {
+    "spec": "t1697-e1035-editar-rascunho-sem-dados-preserva-o-resto.spec.ts",
+    "origem": "trava nova; vermelha contra a main 8e57ae18 antes da correção"
+   }
+  ]
+ },
  "regra": "uma disposição por spec vermelho da última corrida completa: teste-velho (com o PR ou o commit da correção), defeito (item registrado; o spec leva defeitoConhecido) ou instavel (item de instabilidade; vai para a quarentena)",
  "disposicoes": [
   {
@@ -299,7 +313,7 @@
    "dono": "Fable",
    "pr": 3857,
    "nota": "a página 404, com cartões e preços, viaja no HTML de todas as páginas",
-   "corrigidoPor": "9ca1fe90"
+   "corrigidoPor": "52d0be56"
   },
   {
    "spec": "t352-varredura-bloco17.spec.ts",
@@ -369,7 +383,7 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
-   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada",
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada; desde o #3987 (259549bd) os casos 1 e 2 passam e só o caso 3 (trocar para Fibra) segue marcado (ensaio 44472116797)",
    "semMarca": "corrigido neste PR (#3898): sobre a main ee0f859 o caso 3 do t400 também passa com a correção (lab-critico: 'Expected to fail, but passed' 2/2), por isso a marca sai como nos casos 1–2; o corrigidoPor (commit do merge) entra no PR de registo depois do merge"
   },
   {
@@ -421,8 +435,8 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
-   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada",
-   "semMarca": "corrigido neste PR (#3898): a falha não acontece com a correção, por isso a marca sai junto; o corrigidoPor (commit do merge) entra no PR de registo depois do merge (peça 15 da Pista 3)"
+   "corrigidoPor": "259549bd",
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada"
   },
   {
    "spec": "t464-prop6-inicio-dono.spec.ts",
@@ -475,8 +489,8 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
-   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada",
-   "semMarca": "corrigido neste PR (#3898): a falha não acontece com a correção, por isso a marca sai junto; o corrigidoPor (commit do merge) entra no PR de registo depois do merge (peça 15 da Pista 3)"
+   "corrigidoPor": "259549bd",
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada"
   },
   {
    "spec": "t564-e193-qualificacao-cartoes.spec.ts",
@@ -676,11 +690,19 @@
   {
    "spec": "t815-404-perfil-toque.spec.ts",
    "disposicao": "defeito",
-   "item": "E960",
-   "dono": "Fable",
-   "pr": 3855,
-   "nota": "o logo do cabeçalho público tem alvo de toque de 32 px",
-   "corrigidoPor": "4f64224d"
+   "item": "E1038",
+   "dono": "Code 2",
+   "semPr": "E1038 aberto pelo Gerente na ORDEM-DUET-213 (19/11); a correção do Code 2 (rota pública) ainda não tem PR",
+   "nota": "404 a 390 px: a borda inferior da caixa de toque 44×44 do link 'anunciar' (nao-encontrada-anunciar) cai no link 'ajuda' (nao-encontrada-ajuda); achado pelo helper da área real do E1033 (#4031, ensaio 44650708319)",
+   "anterior": {
+    "spec": "t815-404-perfil-toque.spec.ts",
+    "disposicao": "defeito",
+    "item": "E960",
+    "dono": "Fable",
+    "pr": 3855,
+    "nota": "o logo do cabeçalho público tem alvo de toque de 32 px",
+    "corrigidoPor": "44c82ddc"
+   }
   },
   {
    "spec": "t816-cidade-bairros-grade-par.spec.ts",
@@ -788,6 +810,24 @@
    "dono": "Fable",
    "pr": 3910,
    "nota": "caso 5 a 1280 px, intermitente: sozinho contra a main b4b0bc71, 2 falhas em 3 — o link antigo /dashboard/conta#perfil-publico termina ora com a âncora, ora sem. Correção escrita no #3910, que não entra enquanto esta disposição não fechar (ORDEM-DUET-096); correção ou plano até 26/11"
+  },
+  {
+   "spec": "t296-niveis-exibicao-59-1.spec.ts",
+   "disposicao": "defeito",
+   "item": "E1034",
+   "dono": "Fable",
+   "pr": 4015,
+   "nota": "abrir um rascunho sem draft_data regravava a linha vazia e apagava as fotos (regressão do #4004)",
+   "corrigidoPor": "8e57ae18"
+  },
+  {
+   "spec": "t1697-e1035-editar-rascunho-sem-dados-preserva-o-resto.spec.ts",
+   "disposicao": "defeito",
+   "item": "E1035",
+   "dono": "Fable",
+   "pr": 4017,
+   "nota": "editar um rascunho sem draft_data gravava o formulário por cima do resto da linha e apagava as fotos",
+   "corrigidoPor": "b0814b68"
   }
  ],
  "pulosDosMarcados": {

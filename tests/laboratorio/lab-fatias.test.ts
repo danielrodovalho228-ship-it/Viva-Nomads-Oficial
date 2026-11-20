@@ -37,8 +37,9 @@ test("cada fatia guarda o próprio artifact e o consolidar grava uma linha só",
   const [fatia, consolidar] = yml.split("  consolidar:");
   assert.ok(consolidar, "job consolidar existe");
   assert.doesNotMatch(fatia, /Registrar no banco/, "a fatia não grava no banco");
-  assert.match(consolidar, /needs: laboratorio/);
-  assert.match(consolidar, /if: \$\{\{ !cancelled\(\) \}\}/);
+  // ORDEM-DUET-207: o consolidar espera também a guarda do agendado duplicado (peça 25).
+  assert.match(consolidar, /needs: \[guarda, laboratorio\]/);
+  assert.match(consolidar, /if: \$\{\{ !cancelled\(\) && needs\.guarda\.outputs\.coberta != 'true' \}\}/);
   assert.match(consolidar, /needs\.laboratorio\.result != 'success'/, "vermelho se alguma fatia falhou");
 });
 
@@ -118,7 +119,9 @@ test("a rotina de linhas de base visuais (E744) gera sem escrever: não comita, 
   assert.equal((w.match(/contents: write/g) ?? []).length, 1, "só o job publicar-evidencia escreve, e só no ramo de evidência");
   // mesmo ambiente do laboratório: mesmas etapas de banco, seed, build e site
   // E792: o Supabase sobe pelo script comum dos jobs do laboratório.
-  for (const passo of ["scripts/lab/subir-supabase.sh", "seed-lab.mjs", "npm run build", "next start -p 3123", "playwright install"]) assert.ok(w.includes(passo), passo);
+  // E1040: o navegador é o da imagem oficial do Playwright, o MESMO em que a suíte compara as imagens desde o E1037 (#4034).
+  for (const passo of ["scripts/lab/subir-supabase.sh", "seed-lab.mjs", "npm run build", "next start -p 3123", "docker pull mcr.microsoft.com/playwright:v"]) assert.ok(w.includes(passo), passo);
+  assert.doesNotMatch(w, /playwright install/);
   // os 3 specs existem com esse nome
   for (const f of ["t245-visual-regressao", "t263-visual-41", "t271-admin-visual"]) assert.ok(readFileSync(`tests/e2e/specs/${f}.spec.ts`, "utf8").length > 0, f);
 });
@@ -130,10 +133,11 @@ test("fatias gerais do noturno dão 90 s por teste (o gate de PR segue em 45 s)"
   assert.match(readFileSync("playwright.config.ts", "utf8"), /timeout: 45_000/);
 });
 
-test("E744: o Chromium instala primeiro e sozinho, com tentativas curtas; o WebKit não derruba a fatia", () => {
+// E1037 (ORDEM-DUET-212/213) substitui o desenho E744 da instalação (Chromium primeiro e sozinho, WebKit que não derruba a
+// fatia): os navegadores vêm na imagem oficial do Playwright e nenhuma fatia instala com apt (lab-imagem-playwright.test.ts).
+test("E744/E1037: nenhuma fatia instala navegadores; a imagem do Playwright é baixada antes da suíte", () => {
   const y = readFileSync(".github/workflows/laboratorio.yml", "utf8");
-  assert.match(y, /timeout 300 npx playwright install --with-deps chromium && exit 0/);
-  assert.doesNotMatch(y, /install --with-deps chromium webkit/);
-  const webkit = y.slice(y.indexOf("- name: Instalar WebKit do Playwright"));
-  assert.match(webkit.slice(0, 400), /continue-on-error: true/);
+  const fatias = y.slice(y.indexOf("\n  laboratorio:\n"), y.indexOf("\n  construir:\n"));
+  assert.doesNotMatch(fatias, /playwright install/);
+  assert.ok(fatias.indexOf("- name: Baixar a imagem do Playwright") > 0 && fatias.indexOf("- name: Baixar a imagem do Playwright") < fatias.indexOf("- name: Rodar a suíte E2E"));
 });
