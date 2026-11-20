@@ -13,6 +13,11 @@ export interface CaucaoDaProposta {
   valor: number;
 }
 
+/** E1058: o rótulo ÚNICO da linha da caução — o mesmo no ecrã da proposta, na montagem e no e-mail. */
+export function rotuloCaucaoDaProposta(c: CaucaoDaProposta): string {
+  return `Caução (50% do 1º bloco, ${c.dias} dias)`;
+}
+
 export function caucaoDaProposta(t: Pick<TermosProposta, "meses" | "dias">, valorMensal: number): CaucaoDaProposta | null {
   const diasEstadia = diasDosTermos(t);
   if (!(diasEstadia > 0) || !(Number(valorMensal) > 0)) return null;
