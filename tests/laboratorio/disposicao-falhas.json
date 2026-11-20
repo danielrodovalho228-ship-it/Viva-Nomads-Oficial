@@ -369,7 +369,8 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
-   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada"
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada",
+   "semMarca": "corrigido neste PR (#3898): sobre a main ee0f859 o caso 3 do t400 também passa com a correção (lab-critico: 'Expected to fail, but passed' 2/2), por isso a marca sai como nos casos 1–2; o corrigidoPor (commit do merge) entra no PR de registo depois do merge"
   },
   {
    "spec": "t401-cadastro-10-revisao.spec.ts",
