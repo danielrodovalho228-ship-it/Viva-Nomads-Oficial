@@ -319,7 +319,17 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     }
     await expect(publicar, "com o documento aprovado, o anúncio pode ser publicado").toBeEnabled({ timeout: 20_000 });
     await publicar.click();
-    await p2.waitForURL(/\/dashboard\/imoveis$/, { timeout: 30_000 });
+    // O que conta é o anúncio ficar ATIVO no servidor; a volta para Meus imóveis é o sinal da tela.
+    const voltou = await p2.waitForURL(/\/dashboard\/imoveis(\?|$)/, { timeout: 30_000 }).then(() => true).catch(() => false);
+    if (!voltou) {
+      const alertas = await p2.locator('[role="alert"], [data-testid*="erro"], [data-testid="publicar-bloqueado"]').allInnerTexts();
+      console.log(`T2157 PUBLICAR: ficou em ${p2.url()} · alertas: ${JSON.stringify(alertas)}`);
+      console.log(`T2157 PUBLICAR: texto da página: ${(await p2.locator("main").innerText()).slice(0, 1500).replace(/\s+/g, " ")}`);
+    }
+    await expect
+      .poll(async () => (await adm().from("properties").select("status").eq("id", imovelId).single()).data?.status, { timeout: 20_000, message: "o anúncio fica ativo depois de publicar pela tela" })
+      .toBe("active");
+    expect(voltou, "depois de publicar, a tela volta para Meus imóveis").toBe(true);
     const { data: pub } = await adm().from("properties").select("status, title, city, monthly_price").eq("id", imovelId).single();
     expect(pub, "publicado pela tela, em Uberlândia, com o título e o valor da jornada").toMatchObject({ status: "active", title: titulo, city: "Uberlândia" });
     expect(Number(pub!.monthly_price)).toBe(2157);
