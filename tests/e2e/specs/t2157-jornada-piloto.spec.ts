@@ -366,12 +366,59 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     // ORDEM-DUET-258: sem semente — o anúncio é o que o dono publicou pela tela na etapa 2.
     expect(jornada.publicado, "o anúncio publicado pela tela na etapa 2").toBeTruthy();
     const page = await entrar(browser, contas.inquilino.email, senha);
+    // E1047: conta os history.replaceState feitos pelo código da página (não os internos do Next, que levam __NA/_N): os
+    // que repetem a URL atual — cada um vira um "restore" do router, que descarta o toque num card em curso — e a hora do
+    // último, para clicar só com a busca assentada. O Next troca o history.replaceState ao montar o router; a armadilha no
+    // setter embrulha também a versão dele, e assim o contador vê a chamada da página antes de o Next a carimbar.
+    await page.context().addInitScript(() => {
+      const w = window as unknown as { __e1047Repetidos: number; __e1047Ultimo: number };
+      w.__e1047Repetidos = 0;
+      w.__e1047Ultimo = 0;
+      type Troca = (dados: unknown, nada: string, url?: string | URL | null) => void;
+      const contar = (fn: Troca): Troca =>
+        function (this: History, dados, nada, url) {
+          const interno = !!dados && typeof dados === "object" && ("__NA" in dados || "_N" in dados);
+          if (!interno) {
+            if (url != null && new URL(String(url), location.href).href === location.href) w.__e1047Repetidos += 1;
+            w.__e1047Ultimo = performance.now();
+          }
+          return fn.call(this, dados, nada, url);
+        };
+      let atual = contar(History.prototype.replaceState);
+      Object.defineProperty(history, "replaceState", {
+        configurable: true,
+        get: () => atual,
+        set: (fn: Troca) => {
+          atual = contar(fn);
+        },
+      });
+    });
     await page.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("card-resultado").first(), "a busca mostra resultados").toBeVisible({ timeout: 30_000 });
     const link = page.locator(`a[href="/imoveis/${jornada.publicado}"]`).first();
     await expect(link, "o anúncio do dono do piloto aparece na busca de Uberlândia").toBeVisible({ timeout: 20_000 });
-    await link.click();
-    await expect(page, "abre a página do anúncio").toHaveURL(new RegExp(`/imoveis/${jornada.publicado}`), { timeout: 20_000 });
+    // A busca assentada: nenhum replaceState há 1 s.
+    await expect
+      .poll(() => page.evaluate(() => performance.now() - (window as unknown as { __e1047Ultimo: number }).__e1047Ultimo), {
+        message: "a sincronização da URL da busca assenta",
+        timeout: 15_000,
+      })
+      .toBeGreaterThan(1_000);
+    expect(
+      await page.evaluate(() => (window as unknown as { __e1047Repetidos: number }).__e1047Repetidos),
+      "E1047: a /buscar não reescreve a URL com ela mesma (cada vez descarta um toque em curso)",
+    ).toBe(0);
+    const urlDoAnuncio = new RegExp(`/imoveis/${jornada.publicado}`);
+    // O clique e a espera pela URL juntos; uma 2.ª tentativa só se a URL não mudar.
+    const navegou = await Promise.all([page.waitForURL(urlDoAnuncio, { timeout: 10_000 }), link.click()]).then(
+      () => true,
+      () => false,
+    );
+    if (!navegou) {
+      console.log("E1047: o 1.º clique no card não navegou; 2.ª tentativa");
+      await Promise.all([page.waitForURL(urlDoAnuncio, { timeout: 20_000 }), link.click()]);
+    }
+    await expect(page, "abre a página do anúncio").toHaveURL(urlDoAnuncio, { timeout: 20_000 });
     await expect(page.getByRole("heading", { level: 1 }), "com o título do anúncio").toContainText(titulo, { timeout: 20_000 });
     await page.context().close();
   });
