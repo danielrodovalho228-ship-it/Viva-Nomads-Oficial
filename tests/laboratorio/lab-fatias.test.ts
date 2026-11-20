@@ -37,8 +37,9 @@ test("cada fatia guarda o próprio artifact e o consolidar grava uma linha só",
   const [fatia, consolidar] = yml.split("  consolidar:");
   assert.ok(consolidar, "job consolidar existe");
   assert.doesNotMatch(fatia, /Registrar no banco/, "a fatia não grava no banco");
-  assert.match(consolidar, /needs: laboratorio/);
-  assert.match(consolidar, /if: \$\{\{ !cancelled\(\) \}\}/);
+  // ORDEM-DUET-207: o consolidar espera também a guarda do agendado duplicado (peça 25).
+  assert.match(consolidar, /needs: \[guarda, laboratorio\]/);
+  assert.match(consolidar, /if: \$\{\{ !cancelled\(\) && needs\.guarda\.outputs\.coberta != 'true' \}\}/);
   assert.match(consolidar, /needs\.laboratorio\.result != 'success'/, "vermelho se alguma fatia falhou");
 });
 
