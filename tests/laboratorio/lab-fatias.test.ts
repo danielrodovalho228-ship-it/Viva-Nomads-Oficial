@@ -119,7 +119,9 @@ test("a rotina de linhas de base visuais (E744) gera sem escrever: não comita, 
   assert.equal((w.match(/contents: write/g) ?? []).length, 1, "só o job publicar-evidencia escreve, e só no ramo de evidência");
   // mesmo ambiente do laboratório: mesmas etapas de banco, seed, build e site
   // E792: o Supabase sobe pelo script comum dos jobs do laboratório.
-  for (const passo of ["scripts/lab/subir-supabase.sh", "seed-lab.mjs", "npm run build", "next start -p 3123", "playwright install"]) assert.ok(w.includes(passo), passo);
+  // E1040: o navegador é o da imagem oficial do Playwright, o MESMO em que a suíte compara as imagens desde o E1037 (#4034).
+  for (const passo of ["scripts/lab/subir-supabase.sh", "seed-lab.mjs", "npm run build", "next start -p 3123", "docker pull mcr.microsoft.com/playwright:v"]) assert.ok(w.includes(passo), passo);
+  assert.doesNotMatch(w, /playwright install/);
   // os 3 specs existem com esse nome
   for (const f of ["t245-visual-regressao", "t263-visual-41", "t271-admin-visual"]) assert.ok(readFileSync(`tests/e2e/specs/${f}.spec.ts`, "utf8").length > 0, f);
 });
