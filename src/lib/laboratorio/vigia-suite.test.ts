@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ANTECEDENCIA_MIN, MARGEM_MIN, SLOTS_UTC, decidirVigia, rodarVigia, slotDoMomento, type CorridaGithub } from "./vigia-suite.ts";
+import { ANTECEDENCIA_MIN, CRON_DEPOIS_MIN, MARGEM_MIN, SLOTS_UTC, decidirVigia, rodarVigia, slotDoMomento, type CorridaGithub } from "./vigia-suite.ts";
 
 const corrida = (id: number, criada: string, extra: Partial<CorridaGithub> = {}): CorridaGithub => ({ id, event: "schedule", head_branch: "main", created_at: criada, ...extra });
 
@@ -21,7 +21,9 @@ test("o cron da Vercel corre a margem depois de cada slot", () => {
   const vercel = JSON.parse(readFileSync("vercel.json", "utf8")) as { crons: { path: string; schedule: string }[] };
   const c = vercel.crons.filter((x) => x.path === "/api/cron/vigia-suite");
   assert.equal(c.length, 1);
-  const minuto = SLOTS_UTC[0].m + MARGEM_MIN;
+  const minuto = SLOTS_UTC[0].m + CRON_DEPOIS_MIN;
+  // Um cron adiantado (até 5 min) ainda decide: a margem da decisão é menor que o atraso do cron.
+  assert.ok(MARGEM_MIN <= CRON_DEPOIS_MIN - 5);
   assert.ok(SLOTS_UTC.every((s) => s.m === SLOTS_UTC[0].m));
   assert.equal(c[0].schedule, `${minuto} ${SLOTS_UTC.map((s) => s.h).join(",")} * * *`);
 });
@@ -49,6 +51,7 @@ test("sem corrida do slot, passada a margem: despacha", () => {
 
 test("antes da margem espera; mais de 2 h depois do slot não despacha (já não conta para o slot)", () => {
   assert.equal(decidirVigia(new Date("2026-11-20T15:25:00Z"), []).acao, "cedo");
+  assert.equal(decidirVigia(new Date("2026-11-20T15:28:00Z"), []).acao, "despachar");
   assert.equal(decidirVigia(new Date("2026-11-20T17:30:00Z"), []).acao, "fora");
 });
 

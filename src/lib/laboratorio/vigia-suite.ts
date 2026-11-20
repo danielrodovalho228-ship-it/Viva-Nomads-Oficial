@@ -13,7 +13,9 @@ export const SLOTS_UTC = [
   { h: 15, m: 17 },
   { h: 23, m: 17 },
 ] as const;
-export const MARGEM_MIN = 15;
+/** O cron da Vercel corre CRON_DEPOIS_MIN depois do slot; a decisão só exige MARGEM_MIN, para um cron adiantado não perder o slot. */
+export const CRON_DEPOIS_MIN = 15;
+export const MARGEM_MIN = 10;
 export const ANTECEDENCIA_MIN = 10;
 const LIMITE_MIN = 120;
 
