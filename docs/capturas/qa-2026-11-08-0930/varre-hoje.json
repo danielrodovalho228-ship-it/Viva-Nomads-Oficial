@@ -1,0 +1,1232 @@
+[
+ {
+  "w": 390,
+  "r": "/ajuda",
+  "st": 200,
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Para quem procura moradia"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Pedido de moradia, prazos e o que você p"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/morador",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/morador",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "4"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "perguntas · respostas a partir das regra"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/proprietarios",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/proprietarios",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Como ser avaliador credenciado"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Taxa de serviço dos parceiros"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/buscar",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/buscar",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "2 quartos"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "2 banheiros"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "68 m²"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "mobiliado"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Disponível a partir de 19/11/2026"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/buscar?quartos=1",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/buscar",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "R$ 3.960"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "·"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "R$ 3.960 em 1 mês"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Total por mês, tudo incluído"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "2 quartos"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "2 banheiros"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "68 m²"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "mobiliado"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Sua segurança"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Central de Ajuda"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis/ube-001",
+  "st": 200,
+  "imgs": 18,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Sem câmeras no interior (declarado pelo anunciante",
+   "Urgente com solução provisória em até 24 h e defin",
+   "Studio premium no Centro, ideal para estadia profi",
+   "Studio ao lado do Hospital de Clínicas (UFU)",
+   "Imóvel mobiliado de 2 quartos para pacientes e aco"
+  ],
+  "final": "/imoveis/ube-001",
+  "topo": [
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Ideal para:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Com pet · Home office · Família"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Exemplo ilustrativo"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Proprietário:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Helena M. (exemplo)"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Na Viva há 1 ano e 8 meses"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Na Viva há 1 ano e 8 meses"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "E-mail confirmado"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Telefone verificado"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis/ube-005",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Sem câmeras no interior (declarado pelo anunciante",
+   "Urgente com solução provisória em até 24 h e defin",
+   "Imóvel mobiliado com home office no Santa Mônica",
+   "Studio premium no Centro, ideal para estadia profi",
+   "Studio ao lado do Hospital de Clínicas (UFU)"
+  ],
+  "final": "/imoveis/ube-005",
+  "topo": [
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Até 4 pessoas · 2 quartos · 1 banheiro ·"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Ideal para:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Com pet · Família · Executivo"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Exemplo ilustrativo"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Proprietário:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Proprietário:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Rafael T. (exemplo)"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Rafael T. (exemplo)"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Na Viva há 1 ano e 5 meses"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis/126b23ed-f282-4d2f-bbc0-aba9cff18480",
+  "st": 200,
+  "imgs": 18,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Sem câmeras no interior (declarado pelo anunciante",
+   "Urgente com solução provisória em até 24 h e defin",
+   "Imóvel mobiliado com home office no Santa Mônica",
+   "Studio premium no Centro, ideal para estadia profi",
+   "Studio ao lado do Hospital de Clínicas (UFU)"
+  ],
+  "final": "/imoveis/126b23ed-f282-4d2f-bbc0-aba9cff18480",
+  "topo": [
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Até 4 pessoas · 2 quartos · 1 banheiro ·"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Ideal para:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Família · Executivo"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Proprietário:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Daniel P."
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Na Viva há 1 mês"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/avaliadores",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/avaliadores",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Escolhido pelo proprietário"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda",
+  "st": 200,
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Documentos"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Termos de uso"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Política de privacidade"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/morador",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/morador",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "4"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "perguntas · respostas a partir das regra"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/proprietarios",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/proprietarios",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "7"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "perguntas · respostas a partir das regra"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/buscar",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Imóvel mobiliado de 2 quartos para pacientes e aco",
+   "Casa 3 quartos para família em transição — Jardim ",
+   "Imóvel mobiliado para pós-graduação e pesquisadore"
+  ],
+  "final": "/buscar",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 9.080 em 2 meses"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Total por mês, tudo incluído"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "2 quartos"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "2 banheiros"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "100 m²"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "mobiliado"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 6.680 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "3 quartos"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "3 banheiros"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "110 m²"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "1 quarto"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "1 banheiro"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "30 m²"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Disponível a partir de 14/01/2027"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/buscar?quartos=1",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Imóvel mobiliado de 2 quartos para pacientes e aco",
+   "Casa 3 quartos para família em transição — Jardim ",
+   "Imóvel mobiliado para pós-graduação e pesquisadore"
+  ],
+  "final": "/buscar",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 9.080 em 2 meses"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Total por mês, tudo incluído"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "2 quartos"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "2 banheiros"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "100 m²"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "mobiliado"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 6.680 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "3 quartos"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "3 banheiros"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "110 m²"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "1 quarto"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "1 banheiro"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "30 m²"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Disponível a partir de 14/01/2027"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/ube-001",
+  "st": 200,
+  "imgs": 15,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Sem câmeras no interior (declarado pelo anunciante"
+  ],
+  "final": "/imoveis/ube-001",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Centro, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anúncio de exemplo"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "·"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Tibery, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 8.200 em 2 meses"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Umuarama, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Aparecida, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóvel mobiliado de 2 quartos para pacie"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Imóvel mobiliado de 2 quartos para pacie"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.470"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.470 em 1 mês"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": [
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "·"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 8.200 em 2 meses"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830 em 1 mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Imóvel mobiliado de 2 quartos para pacie"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.470"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.470 em 1 mês"
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/ube-005",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Sem câmeras no interior (declarado pelo anunciante"
+  ],
+  "final": "/imoveis/ube-005",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Santa Mônica, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anúncio de exemplo"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "·"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Centro, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Tibery, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 8.200 em 2 meses"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Umuarama, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830 em 1 mês"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": [
+   {
+    "fixo": "nav-secoes",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "·"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960 em 1 mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 8.200 em 2 meses"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830 em 1 mês"
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/126b23ed-f282-4d2f-bbc0-aba9cff18480",
+  "st": 200,
+  "imgs": 15,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Sem câmeras no interior (declarado pelo anunciante"
+  ],
+  "final": "/imoveis/126b23ed-f282-4d2f-bbc0-aba9cff18480",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Santa Mônica, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anúncio de exemplo"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "·"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Centro, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Tibery, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 8.200 em 2 meses"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Umuarama, Uberlândia - MG"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830 em 1 mês"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": [
+   {
+    "fixo": "nav-secoes",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "·"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.960 em 1 mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 8.200 em 2 meses"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "Studio ao lado do Hospital de Clínicas ("
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830"
+   },
+   {
+    "fixo": "nav-secoes",
+    "texto": "R$ 2.830 em 1 mês"
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/avaliadores",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/avaliadores",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Taxa de serviço: 10% sobre o valor do se"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ }
+]

@@ -21,7 +21,7 @@ export function quandoVisitaComFuso(iso: string): string {
 // ── Item 3: as duas rotas, lado a lado, no Nível do dono ─────────────────────────────────────────────────────
 export const ROTAS_NIVEL = [
   { chave: "foto", titulo: "Foto: grátis, nível na hora", texto: "Envie a foto de cada item acima. O nível muda assim que a foto é aceita." },
-  { chave: "avaliacao", titulo: "Avaliação: “· vistoriado” por 12 meses", texto: "Um avaliador credenciado visita o imóvel e confere tudo pelo checklist da Viva." },
+  { chave: "avaliacao", titulo: "Avaliação: selo “vistoriado” por 12 meses", texto: "Um avaliador credenciado visita o imóvel e confere tudo pelo checklist da Viva." },
 ] as const;
 export const TITULO_BLOCO_DONO = "Avaliação do imóvel";
 

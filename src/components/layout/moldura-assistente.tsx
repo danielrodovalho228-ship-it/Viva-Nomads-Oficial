@@ -46,8 +46,10 @@ export function MolduraAssistente({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
       <DemoBanner />
-      {/* O rodapé do fluxo fica preso no fim da tela: o foco e a rolagem até um campo param acima dele. */}
-      <style>{`html{scroll-padding-bottom:8rem}`}</style>
+      {/* O rodapé do fluxo fica preso no fim da tela: o foco e a rolagem até um campo param acima dele. E678: e o cabeçalho
+          preso (64 px) no topo — sem o respiro de cima, o foco/validação/âncora levava o título da seção para baixo dele
+          (cortado). 5rem = os 64 px do cabeçalho + folga; vale para toda rolagem programática, não só para âncoras. */}
+      <style>{`html{scroll-padding-top:5rem;scroll-padding-bottom:8rem}`}</style>
       {/* E161: a mesma régua da página do imóvel (imovel-largura-total: 1536 px, px-4/sm:px-8) em todos os passos. */}
       <main data-painel-main className="mx-auto w-full max-w-[1536px] min-w-0 flex-1 px-4 pt-6 sm:px-8" data-testid="assistente-largura">
         {children}

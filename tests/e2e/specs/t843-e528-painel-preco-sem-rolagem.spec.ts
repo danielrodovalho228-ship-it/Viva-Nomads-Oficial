@@ -21,8 +21,8 @@ for (const [largura, altura] of [[1280, 800], [390, 844]] as const) {
         .poll(() =>
           painel.evaluate((c: HTMLElement) => {
             const h = c.offsetHeight;
-            const esperado = h + 144 + 16 <= innerHeight ? 144 : innerHeight - h - 16;
-            return parseFloat(getComputedStyle(c).top) === esperado;
+            // Cabe → preso no topo (sticky, 144 px). Não cabe (3ª reprova de 06/11) → NÃO prende: rola com a página.
+            return h + 144 + 16 <= innerHeight ? getComputedStyle(c).position === "sticky" && parseFloat(getComputedStyle(c).top) === 144 : getComputedStyle(c).position === "relative";
           }),
           { timeout: 15_000, message: "o painel mede a própria altura e ajusta o top" }
         )

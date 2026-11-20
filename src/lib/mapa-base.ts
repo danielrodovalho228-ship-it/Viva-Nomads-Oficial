@@ -23,6 +23,9 @@ export function motorDoMapa(mapboxToken?: string | null): "mapbox" | "leaflet" {
   return mapboxToken ? "mapbox" : "leaflet";
 }
 
+/** E704: os mesmos tiles, sem os nomes (a página desenha o da cidade e sabe onde ele está). `null` sem chave. */
+export const TILES_CARTO_SEM_ROTULOS = TILES_CARTO ? TILES_CARTO.replace("/rastertiles/voyager/", "/rastertiles/voyager_nolabels/") : null;
+
 /** Sem base de mapa (sem token Mapbox e sem chave CARTO): o quadro mostra o aviso do E419 e não há o que ampliar. */
 export function mapaSemBase(mapboxToken: string | null | undefined = process.env.NEXT_PUBLIC_MAPBOX_TOKEN, tilesCarto: string | null = TILES_CARTO): boolean {
   return motorDoMapa(mapboxToken) === "leaflet" && !tilesCarto;

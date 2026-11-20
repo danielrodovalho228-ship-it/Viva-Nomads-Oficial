@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { CartaoVisita } from "@/components/visitas/cartao-visita";
 import { listMinhasVisitas, listVisitasDono } from "@/lib/data/visitas-video-actions";
 import { ROTULO_FUSO } from "@/lib/visitas-video";
+import { NOTA_VISITA_DONO } from "@/config/textos-regulados";
 
 export const metadata: Metadata = {
   title: "Visitas",
@@ -29,7 +30,7 @@ export default async function VisitasPage({ searchParams }: { searchParams: Prom
         title={dono ? "Visitas nos meus imóveis" : "Visitas"}
         subtitle={
           dono
-            ? `Por vídeo ou presenciais, combinadas aqui na plataforma (${ROTULO_FUSO}). Nome e contato do interessado só aparecem depois do aceite.`
+            ? `Por vídeo ou presenciais, combinadas aqui na plataforma (${ROTULO_FUSO}). ${NOTA_VISITA_DONO}`
             : `Por vídeo ou presenciais, combinadas aqui na plataforma (${ROTULO_FUSO}).`
         }
       />

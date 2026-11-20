@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useHoje } from "@/lib/use-client-state";
 import Link from "next/link";
 import { CalendarDays, Check, Loader2, CircleAlert } from "lucide-react";
-import { PASSOS_MORADOR } from "@/config/caminho-reserva";
 import type { Property } from "@/lib/types";
 import {
   inicioEfetivo,
@@ -24,10 +23,25 @@ import { cn } from "@/lib/utils";
  * E527 (D13): cor do dia no calendário — a MESMA na grade e na legenda. Antes, Disponível (sage-100) e Indisponível
  * (sage-200/60) eram dois verdes-pálidos quase iguais. Indisponível passa ao cinza da linha (outra cor, não outro tom).
  */
-export const COR_DIA = { disponivel: "bg-sage-100", indisponivel: "bg-line" } as const;
-import { clicarDia as proximaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
+export const COR_DIA = {
+  disponivel: "bg-sage-100",
+  /** Ocupado: já reservado (contrato ou agenda importada) — cinza cheio. */
+  ocupado: "bg-line",
+  /** Bloqueado pelo dono: mesmo cinza, mas listrado — outra forma, não só outro tom. */
+  bloqueado: "bg-[repeating-linear-gradient(135deg,var(--color-line)_0_3px,transparent_3px_7px)] ring-1 ring-inset ring-line",
+} as const;
+
+/**
+ * E666: "Indisponível" sozinho não dizia SE era estadia em andamento ou data fechada pelo proprietário — para quem pede dá no
+ * mesmo (não dá para pedir), então a legenda diz as duas causas e o que fazer com as outras datas.
+ */
+export const ROTULO_OCUPADO = "Ocupado (já reservado)";
+export const ROTULO_BLOQUEADO = "Bloqueado pelo proprietário";
+export const NOTA_DATAS_LIVRES = "Dias na cor clara estão livres para pedir. Os demais, ocupados ou bloqueados, não estão disponíveis; para outras datas, pergunte ao proprietário antes de pedir.";
+import { clicarDia as proximaSelecao, semDatas, textoDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { buttonClasses } from "@/components/ui/button";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { primeiraEntradaPossivel } from "@/lib/imovel/disponivel-a-partir";
 
 const MESES = [
   "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -58,17 +72,23 @@ export function AvailabilityCalendar({
   property,
   selecao,
   onSelecao,
+  onDisponivelDesde,
 }: {
   property: Property;
   selecao: SelecaoEstadia;
   onSelecao: (s: SelecaoEstadia) => void;
+  /** E673: avisa a página da primeira entrada possível (o cartão de preço diz a mesma data). */
+  onDisponivelDesde?: (iso: string | null) => void;
 }) {
   const user = useAuthStore((s) => s.user);
   const today = useHoje();
   const [blockDays, setBlockDays] = useState<string[]>([]);
+  // E666: dos dias indisponíveis, os que são "ocupado" (reserva/contrato); o resto (fechado pelo dono, fora do período) é "bloqueado".
+  const [ocupadoDias, setOcupadoDias] = useState<string[]>([]);
   // Achado 48: a leitura das datas ocupadas falhou → o calendário avisa (antes ficava todo livre, em silêncio).
   const [datasFalharam, setDatasFalharam] = useState(false);
   const [tentativaDatas, setTentativaDatas] = useState(0);
+  const [datasCarregadas, setDatasCarregadas] = useState(false);
   useEffect(() => {
     // Dias fechados pelo proprietário e períodos com contrato (só as datas). [] sem backend.
     let vivo = true;
@@ -76,7 +96,9 @@ export function AvailabilityCalendar({
       .then((r) => {
         if (!vivo) return;
         setBlockDays(expandirBloqueios(r as Bloqueio[]));
+        setOcupadoDias(expandirBloqueios(r.filter((x) => x.tipo === "ocupado") as Bloqueio[]));
         setDatasFalharam(false);
+        setDatasCarregadas(true);
       })
       .catch(() => vivo && setDatasFalharam(true));
     return () => {
@@ -93,8 +115,18 @@ export function AvailabilityCalendar({
   const from = property.availableFrom?.slice(0, 10) || null;
   const until = property.availableUntil?.slice(0, 10) || null;
   const bloqueados = blockDays;
+  // E673: "Disponível a partir de" = a primeira entrada em que cabe a estadia mínima, olhando os períodos ocupados (contratos e
+  // bloqueios, aditivos incluídos) — não só a data escolhida no cadastro. Enquanto as datas não carregam (ou se falharam), a do cadastro.
+  const desde = useMemo(
+    () => (datasCarregadas && !datasFalharam ? primeiraEntradaPossivel({ from, until, minDias: property.minPeriodDays, hoje: today, ocupados: bloqueados }) : null),
+    [datasCarregadas, datasFalharam, from, until, property.minPeriodDays, today, bloqueados],
+  );
+  const desdeEfetivo = desde ?? (from && today ? (from > today ? from : today) : from);
+  useEffect(() => {
+    onDisponivelDesde?.(desde);
+  }, [desde, onDisponivelDesde]);
 
-  // Anúncio de demonstração (id não-UUID, ex.: ube-001): não é reservável.
+  // Anúncio de exemplo (id não-UUID, ex.: ube-001): não é reservável.
   const isDemo = !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(property.id);
   // O próprio dono não pode reservar o imóvel dele.
   const isOwner = !!user && !!property.ownerId && property.ownerId === user.id;
@@ -108,6 +140,7 @@ export function AvailabilityCalendar({
 
   const fromEff = inicioEfetivo(from, today ?? anchorStr);
   const bloqSet = new Set(bloqueados);
+  const ocupSet = new Set(ocupadoDias);
 
   // Um dia é SELECIONÁVEL se está na janela, não é passado e não está bloqueado.
   const estadoDia = (iso: string) =>
@@ -152,7 +185,7 @@ export function AvailabilityCalendar({
       <p className="mt-2 text-ink/90">
         {from ? (
           <>
-            Disponível a partir de <strong>{brDate(from)}</strong>
+            Disponível a partir de <strong data-testid="disponivel-a-partir" data-desde={desdeEfetivo ?? ""}>{brDate(desdeEfetivo ?? from)}</strong>
             {until && (
               <>
                 {" "}até <strong>{brDate(until)}</strong>
@@ -220,13 +253,14 @@ export function AvailabilityCalendar({
                       type="button"
                       disabled={!podeSelecionar}
                       onClick={() => clicarDia(iso)}
-                      aria-label={`${dia} de ${MESES[m]}${estado === "indisponivel" ? " (indisponível)" : ""}`}
+                      aria-label={`${dia} de ${MESES[m]}${estado === "indisponivel" ? (ocupSet.has(iso) ? " (ocupado: já reservado)" : " (bloqueado pelo proprietário)") : ""}`}
                       data-estado-dia={estado}
+                      data-tipo-dia={estado === "indisponivel" ? (ocupSet.has(iso) ? "ocupado" : "bloqueado") : undefined}
                       data-dia={iso}
                       className={cn(
                         "grid aspect-square place-items-center rounded-lg text-xs transition-colors",
                         estado === "passado" && "cursor-not-allowed text-muted/40",
-                        estado === "indisponivel" && cn("cursor-not-allowed text-muted line-through", COR_DIA.indisponivel),
+                        estado === "indisponivel" && cn("cursor-not-allowed text-muted line-through", ocupSet.has(iso) ? COR_DIA.ocupado : COR_DIA.bloqueado),
                         podeSelecionar && "text-forest hover:bg-sage-200",
                         podeSelecionar && !isIn && !isOut && !noIntervalo && cn(COR_DIA.disponivel, "font-medium"),
                         noIntervalo && "bg-sage-200 font-medium",
@@ -253,12 +287,19 @@ export function AvailabilityCalendar({
           <span className="h-3 w-3 rounded-lg bg-forest" /> Selecionado
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.indisponivel)} aria-hidden /> Indisponível
+          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.ocupado)} aria-hidden /> {ROTULO_OCUPADO}
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className={cn("h-3 w-3 rounded-lg", COR_DIA.bloqueado)} aria-hidden /> {ROTULO_BLOQUEADO}
         </span>
         <span className="inline-flex items-center gap-2">
           <span className="h-3 w-3 rounded-lg ring-2 ring-champagne" /> Hoje
         </span>
       </div>
+      {/* E666: a pergunta "as datas estão livres?" aparecia mesmo com o calendário à vista — a legenda agora responde. */}
+      <p className="mt-2 text-xs text-muted" data-testid="calendario-resposta-livres">
+        {NOTA_DATAS_LIVRES}
+      </p>
 
       {/* Resumo da seleção + solicitar reserva */}
       {checkIn && (
@@ -276,9 +317,15 @@ export function AvailabilityCalendar({
                     )}
                   </>
                 ) : (
-                  <>Entrada {brDate(checkIn)} — agora escolha a saída.</>
+                  // E816: o estado inicial não simula escolha — a entrada que veio da busca diz de onde veio.
+                  <>{textoDaSelecao(selecao)}</>
                 )}
               </p>
+              {!checkOut && selecao.entradaDaBusca && (
+                <button type="button" className="mt-1 text-xs font-semibold text-forest underline underline-offset-2" onClick={() => onSelecao(semDatas(selecao))} data-testid="calendario-limpar-data-busca">
+                  Limpar a data
+                </button>
+              )}
               {reserva && !reserva.ok && (
                 <p className="mt-1 flex items-center gap-2 text-xs text-amber-700">
                   <CircleAlert className="h-3.5 w-3.5" /> {reserva.motivo}
@@ -307,24 +354,14 @@ export function AvailabilityCalendar({
               .
             </p>
           ) : isDemo ? (
-            <div className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">
-              <p className="flex items-center gap-2">
-                <CircleAlert className="h-4 w-4 shrink-0" /> Anúncio de exemplo: esta solicitação não é enviada.
+            // E713: sem aviso morto — as datas servem só para simular o valor; a saída é a mesma do cartão de preço (E694).
+            <div className="mt-3 rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink" data-testid="calendario-exemplo">
+              <p className="flex items-start gap-2 text-forest">
+                <CircleAlert className="mt-1 h-4 w-4 shrink-0" /> Anúncio de exemplo: as datas servem só para simular o valor; aqui não dá para pedir.
               </p>
-              {/* E530: o nome promete o caminho — abre ali mesmo os passos do morador (a mesma fonte do Como funciona). */}
-              <details className="mt-1" data-testid="caminho-reserva">
-                <summary className="min-h-11 cursor-pointer py-2 font-medium underline">Ver o caminho de reserva</summary>
-                <ol className="mt-1 list-decimal space-y-1 pl-4 text-ink" data-testid="caminho-reserva-passos">
-                  {PASSOS_MORADOR.map((p) => (
-                    <li key={p.titulo}>
-                      <span className="font-semibold">{p.titulo}:</span> {p.texto}
-                    </li>
-                  ))}
-                </ol>
-                <Link href="/como-funciona#para-inquilinos" className="mt-2 inline-block font-medium underline">
-                  Como funciona, passo a passo
-                </Link>
-              </details>
+              <Link href="/buscar" className={buttonClasses({ variant: "secondary", size: "sm", className: "mt-3" })} data-testid="calendario-exemplo-ver-reais">
+                Ver imóveis reais
+              </Link>
             </div>
           ) : isOwner ? (
             <p className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest">

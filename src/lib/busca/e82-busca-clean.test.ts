@@ -20,7 +20,8 @@ test("uma linha de controles na ordem do mockup: Datas · Local · Tipo · Preç
   const ordem = [...linha.matchAll(/pilula\("(\w+)"\)|data-testid="pilula-(mais|mapa)"/g)].map((m) => m[1] ?? m[2]);
   assert.deepEqual(ordem, [...ORDEM_PILULAS]);
   assert.match(linha, /role="toolbar"/);
-  assert.match(linha, /overflow-x-auto/, "no celular a linha rola de lado, sem quebrar em duas");
+  // E780 reaberto (14/11): no celular os filtros quebram linha (sem rolagem lateral); do tablet para cima, uma linha só.
+  assert.match(linha, /flex-wrap[^"]*sm:flex-nowrap/, "no celular os filtros quebram linha; do tablet para cima, uma linha");
   assert.equal((busca.match(/<BarraPilulas/g) ?? []).length, 1);
 });
 
@@ -36,7 +37,8 @@ test("pílula ativa mostra o valor; inativa, o rótulo", () => {
   assert.equal(valorDaPilula("datas", { ...f, periodo: 120 }, {}), null);
   assert.equal(valorDaPilula("local", f, { local: "  Uberlândia " }), "Uberlândia");
   // Local é ÚNICO: com "Perto de", a mesma pílula mostra o destino (sem segundo cartão de destino na página).
-  assert.equal(valorDaPilula("local", f, { local: "Uberlândia", perto: "HC-UFU" }), "Perto de HC-UFU");
+  // E921: o destino sozinho ordena (não filtra) — o rótulo diz isso; "até N min" filtra.
+  assert.equal(valorDaPilula("local", f, { local: "Uberlândia", perto: "HC-UFU" }), "Por tempo até HC-UFU");
   assert.equal(valorDaPilula("ordenar", f, { ordem: "Menor preço" }), "Menor preço");
 });
 

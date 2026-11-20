@@ -29,17 +29,15 @@ for (const largura of [390, 1280]) {
       await expect(cartao.getByTestId("cartao-total-mes")).toContainText("/mês");
     });
 
-    test("ube-002: 'Solicitar' abre o resumo com a limpeza e 'Total por mês' R$ 3.130", async ({ page }) => {
+    test("ube-002 (exemplo): sem botão de pedir; a explicação aparece e o total 3.130 segue na página (E694)", async ({ page }) => {
       await page.goto("/imoveis/ube-002", { waitUntil: "domcontentloaded" });
-      // No celular o botão está na barra fixa; no computador, no cartão de preço (Prompt 41: rótulo "Solicitar").
-      const botao = page.getByRole("button", { name: "Pedir para morar", exact: true }).locator("visible=true").first();
-      await botao.click();
-      const passo = page.getByTestId("solicitacao-passo");
-      await expect(passo).toBeVisible();
-      await expect(passo).toContainText("Limpeza durante a estadia");
-      await expect(passo.locator("div", { hasText: /^Total por mês/ }).first()).toContainText("3.130");
-      await expect(page.getByTestId("solicitacao-demo")).toBeVisible();
-      await page.screenshot({ path: `test-results/t155-resumo-${largura}.png` });
+      // E694: no anúncio de exemplo os CTAs saem; no lugar, a explicação e a saída para imóveis reais.
+      // (O resumo "Total por mês" do passo de candidatura é coberto no anúncio real: t225 e unitários do resumo.)
+      await expect(page.getByTestId("exemplo-sem-acoes").first()).toBeVisible();
+      await expect(page.getByTestId("exemplo-ver-reais").first()).toBeVisible();
+      await expect(page.getByRole("button", { name: "Pedir para morar", exact: true })).toHaveCount(0);
+      await expect(page.getByTestId("total-por-mes").first()).toContainText("3.130");
+      await page.screenshot({ path: `test-results/t155-exemplo-${largura}.png` });
     });
 
     if (largura === 390) {

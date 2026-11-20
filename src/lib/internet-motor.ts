@@ -114,6 +114,10 @@ export function resumoCompleto(s: { download?: number; upload?: number; latency?
 const NOME_FASE: Record<FaseFalha, string> = { latencia: "teste de resposta", download: "download", envio: "envio", geral: "teste", desconhecida: "teste" };
 
 /** A frase da tela para cada falha, com um código curto que a QA pode citar. Puro. */
+/** E414 (degradação graciosa): depois da falha, o dono sabe que nada foi registrado e que pode seguir e medir depois. */
+export const ROTULO_TENTAR_DE_NOVO = "Tentar de novo";
+export const TEXTO_MEDIR_DEPOIS = "Nada foi registrado no imóvel. Você pode seguir com o cadastro e medir depois, quando estiver numa rede que alcance o servidor de teste.";
+
 export function mensagemDaFalha(e: unknown): string {
   const motivo = motivoDaFalha(e);
   const f = e instanceof FalhaMedicao ? e : null;

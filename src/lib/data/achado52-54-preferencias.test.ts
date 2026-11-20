@@ -13,7 +13,7 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 
 test("as três leituras lançam na falha (nunca valor padrão)", () => {
   assert.match(ler("src/lib/data/notif-categorias-actions.ts"), /const \{ data, error \} = await admin\.from\("profiles"\)\.select\("notif_categorias_desligadas"\)[\s\S]{0,80}if \(error\) throw/);
-  assert.match(ler("src/lib/data/canais-actions.ts"), /const \{ data, error \} = await supabase\.from\("profiles"\)\.select\("notif_email, notif_whatsapp"\)[\s\S]{0,80}if \(error\) throw/);
+  assert.match(ler("src/lib/data/canais-actions.ts"), /const \{ data, error \} = await supabase\.from\("profiles"\)\.select\("notif_email, notif_whatsapp, phone"\)[\s\S]{0,80}if \(error\) throw/);
   const p = ler("src/lib/data/pedidos-actions.ts");
   const fn = p.slice(p.indexOf("export async function getNotifPrefs"), p.indexOf("export async function setNotifPrefs"));
   assert.match(fn, /if \(error\) throw/);

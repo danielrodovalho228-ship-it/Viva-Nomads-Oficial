@@ -45,7 +45,8 @@ export function formDeRegras(r?: RegrasPets): RegrasPetsForm {
   };
 }
 
-const campo = "w-full min-h-[44px] rounded-lg border border-line bg-white px-3 text-sm text-ink";
+// E193: o campo (texto, data, número) tem a moldura, o tamanho e o estado do cartão grande do assistente.
+const campo = "w-full min-h-14 rounded-xl border-2 border-line bg-white px-4 text-sm text-ink outline-none transition-colors hover:border-sage focus:border-forest";
 
 export function PetsRegrasCampos({ value, onChange }: { value: RegrasPetsForm; onChange: (v: RegrasPetsForm) => void }) {
   const alternar = (e: EspeciePet) =>

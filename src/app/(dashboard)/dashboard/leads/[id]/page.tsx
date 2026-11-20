@@ -3,6 +3,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { perfilDoCandidato } from "@/lib/data/leads";
 import { leadSummary } from "@/lib/data/lead-types";
+import { dataBRT } from "@/lib/datas-brasilia";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
 import { linkCandidaturaDono } from "@/lib/notifications/dados-candidatura";
 
@@ -24,7 +25,13 @@ export default async function PerfilCandidatoPage({ params }: { params: Promise<
     <div data-testid="perfil-candidato" data-candidatura={l.id}>
       <PageTitle title={l.name} subtitle={`Candidatura para ${l.property}`} />
       <Panel title="Resumo" className="mb-4">
-        <p className="text-sm text-ink" data-testid="perfil-candidato-resumo">{leadSummary(l)}</p>
+        {leadSummary(l) && <p className="text-sm text-ink" data-testid="perfil-candidato-resumo">{leadSummary(l)}</p>}
+        {l.enviadaEm && (
+          <p className="mt-2 text-sm text-ink" data-testid="lead-enviada-em">
+            Enviada em {dataBRT(l.enviadaEm)}
+            {l.reenviada && l.primeiroEnvioEm ? ` · reenviada (primeiro envio em ${dataBRT(l.primeiroEnvioEm)})` : ""}
+          </p>
+        )}
         <p className="mt-2 text-sm text-ink" data-testid="perfil-candidato-identidade" data-estado={l.identidade?.estado ?? "pendente"}>
           Identidade: {identidade.rotulo}
         </p>

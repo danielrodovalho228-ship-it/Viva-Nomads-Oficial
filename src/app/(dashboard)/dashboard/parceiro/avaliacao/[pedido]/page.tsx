@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { SeloAssinatura } from "@/components/vistoria/selo-assinatura";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { ChecklistAvaliador } from "@/components/vistoria/checklist-avaliador";
 import { MedirInternetAvaliacao } from "@/components/vistoria/medir-internet-avaliacao";
@@ -46,7 +47,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
 
   const [{ data: itens }, { data: laudos }, { data: fotos }] = await Promise.all([
     admin.from("vistoria_checklist").select("chave, valor, observacao").eq("pedido_id", p.id),
-    admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
+    admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinado_em, assinatura_hash").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
     admin.from("vistoria_checklist_fotos").select("item_chave, comodo, criado_em").eq("pedido_id", p.id).order("criado_em"),
   ]);
   const iniciais = Object.fromEntries(((itens ?? []) as { chave: string; valor: ValorItem; observacao: string | null }[]).map((i) => [i.chave, { valor: i.valor, observacao: i.observacao }]));
@@ -61,6 +62,8 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     corrigido_em: string | null;
     ressalva_vencida_em: string | null;
     contestado_em: string | null;
+    assinado_em: string | null;
+    assinatura_hash: string | null;
   } | null;
   const emVisita = ["agendado", "realizada"].includes(p.status as string);
   const ruido = (p.ruido_respostas ?? null) as Record<string, boolean> | null;
@@ -193,6 +196,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
         <Panel title={`Laudo ${laudo.numero}${laudo.versao > 1 ? ` v${laudo.versao}` : ""}`} data-testid="avaliador-laudo" data-resultado={laudo.resultado}>
           <p className="text-sm text-ink">Resultado: {ROTULO_RESULTADO[laudo.resultado]}</p>
           <a href={`/api/vistoria/laudo/${laudo.id}`} className="mt-1 inline-block text-sm underline">Baixar o PDF</a>
+          <SeloAssinatura laudo={{ numero: laudo.numero, versao: laudo.versao, assinadoEm: laudo.assinado_em, assinaturaHash: laudo.assinatura_hash }} quem="avaliador" />
           {(laudo.ressalvas.length > 0 || laudo.graves.length > 0) && !laudo.corrigido_em && !laudo.ressalva_vencida_em && !laudo.contestado_em && (
             <FormAcao acao={confirmarCorrecao} className="mt-4 grid gap-2" testid="confirmar-correcao">
               <input type="hidden" name="laudoId" value={laudo.id} />

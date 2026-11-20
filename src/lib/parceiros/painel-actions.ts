@@ -41,6 +41,8 @@ export interface PainelParceiro {
   tipoPessoa: string;
   /** FISCAL-PARCEIRO-B: Sim/Não do PJ (null = não respondeu; PF sempre null). */
   emiteNota: boolean | null;
+  /** E687: empresa/veículo da categoria Mudança (vêm do pedido aprovado). */
+  dadosCategoria: { empresa?: string; veiculo?: string };
   /** PJ sem resposta: pendência no painel (não tira do ar o que já está publicado). */
   notaPendente: boolean;
   /** Denúncia procedente tirou o selo: o motivo fica à vista e o parceiro não religa sozinho. */
@@ -104,8 +106,11 @@ function faltaDe(p: Record<string, unknown>, c: { servicos: number; fotos: numbe
     cidades: (p.cidades as string[]) ?? [],
     categorias: (p.categorias as string[]) ?? [],
     fotosGaleria: c.fotos,
-    // FISCAL-PARCEIRO-B: a resposta conclui o cadastro (primeira publicação); quem já esteve no ar não é bloqueado.
-    ...(p.publicado_em ? {} : { tipoPessoa: (p.tipo_pessoa as string | null) ?? null, emiteNota: (p.emite_nota as boolean | null) ?? null }),
+    // FISCAL-PARCEIRO-B: a resposta da nota conclui o cadastro (primeira publicação); quem já esteve no ar não é bloqueado por ela.
+    // E650: o tipo de pessoa vai SEMPRE — a pendência do CNPJ (E648) aparece para todo parceiro que não é PJ, publicado ou não.
+    tipoPessoa: (p.tipo_pessoa as string | null) ?? null,
+    emiteNota: (p.emite_nota as boolean | null) ?? null,
+    jaPublicou: Boolean(p.publicado_em),
   });
 }
 
@@ -153,6 +158,7 @@ export async function meuPainelParceiro(opcoes: { exigir?: boolean } = {}): Prom
     teste: (perfil as { is_teste?: boolean } | null)?.is_teste === true,
     tipoPessoa: p.tipo_pessoa as string,
     emiteNota: (p.emite_nota as boolean | null) ?? null,
+    dadosCategoria: (p.dados_categoria as { empresa?: string; veiculo?: string } | null) ?? {},
     notaPendente: faltaRespostaNota({ tipoPessoa: p.tipo_pessoa as string, emiteNota: p.emite_nota as boolean | null }),
     notaSeloRemovido: p.nota_selo_removido_em ? { em: p.nota_selo_removido_em as string, motivo: (p.nota_selo_motivo as string | null) ?? null } : null,
     // E463: o documento é o do PERFIL (o mesmo de Conta → Dados), não o do pedido de parceria.

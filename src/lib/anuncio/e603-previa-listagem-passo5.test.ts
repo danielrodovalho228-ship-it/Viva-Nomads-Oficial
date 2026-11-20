@@ -21,7 +21,9 @@ test("E603: o rascunho grava os quartos na coluna (a listagem lê a coluna)", ()
   assert.equal(camposDeConteudoDoRascunho({ bedrooms: 2, bathrooms: 2, areaM2: 65 }).bedrooms, 2);
   assert.equal(camposDeConteudoDoRascunho({ bedrooms: Number.NaN }).bedrooms, 0);
   const pagina = ler("src/app/(dashboard)/dashboard/imoveis/novo/page.tsx");
-  const i = pagina.indexOf("await saveDraftData({");
+  // E700: o autosave monta a gravação em montarGravacao (reusada na saída da página); é ali que os quartos vão para a coluna.
+  const i = pagina.indexOf("const montarGravacao = () => ({");
+  assert.ok(i > 0);
   assert.match(pagina.slice(i, i + 600), /bedrooms: Number\(bedrooms\) \|\| 0/);
 });
 

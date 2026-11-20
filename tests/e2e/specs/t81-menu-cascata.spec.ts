@@ -60,14 +60,15 @@ test.describe("T81 — quem nunca anunciou", () => {
 test.describe("T81 — admin", () => {
   test.use({ storageState: authFile("admin") });
 
-  test("Administração separada, com subgrupos (itens dentro de itens)", async ({ page }) => {
+  test("Administração separada, em grupos com itens dentro (barra do ADMIN-1)", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/admin/documentos", { waitUntil: "networkidle" });
-    const adm = menu(page).getByRole("button", { name: "Administração" });
-    await expect(adm).toHaveAttribute("aria-expanded", "true");
-    await expect(menu(page).getByRole("button", { name: "Operação" })).toHaveAttribute("aria-expanded", "true");
+    // ADMIN-1 (a2af79592, 25/10: "barra-alvo do admin em grupos", fonte única em config/menu-admin.ts): em /admin* a barra
+    // mostra só o admin, em grupos. Antes: "Administração" › "Operação" › "Documentos" e "Dinheiro" › "Caixa dos Sócios".
+    const grupo = menu(page).getByRole("button", { name: "Anúncios e pessoas" });
+    await expect(grupo).toHaveAttribute("aria-expanded", "true");
     await expect(menu(page).getByRole("link", { name: "Documentos" })).toHaveAttribute("aria-current", "page");
-    await menu(page).getByRole("button", { name: "Dinheiro" }).click();
+    await menu(page).getByRole("button", { name: "Equipe" }).click();
     await expect(menu(page).getByRole("link", { name: "Caixa dos Sócios" })).toBeVisible();
     await page.screenshot({ path: "tests/laboratorio/saida/t79-menu-admin-1440.png" });
   });

@@ -3,6 +3,7 @@ import { cache } from "react";
 import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { createClient } from "@/lib/supabase/server";
 import { comNovaTentativa } from "@/lib/nova-tentativa";
+import { lerTodasAsLinhas } from "@/lib/data/leitura-paginada";
 import { isExemplo } from "@/lib/demo-listing";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Property, AmenityGroup } from "@/lib/types";
@@ -44,6 +45,7 @@ import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import type { Medicao } from "@/lib/internet-medida";
 import { privacidadeDaLinha, type PrivacidadeLinha } from "@/lib/anuncio/privacidade";
 import { nomeCurto } from "@/lib/perfil/perfil-publico";
+import { normalizarFicha } from "@/lib/ficha-dentro/ficha-dentro";
 
 /**
  * Perfil PÚBLICO do dono de um anúncio ativo. SERVER-ONLY: a função é SECURITY DEFINER e,
@@ -248,7 +250,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     }
   };
 
-  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha, regrasLinha, detalhesLinha] = await Promise.all([
+  const [photos, amenities, workspaces, proximities, reviews, owner, petsLinha, priv, limpezaLinha, negLinha, medidaLinha, chegadaLinha, regrasLinha, detalhesLinha, fichaLinha] = await Promise.all([
     safe(supabase.from("property_photos").select("url, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_amenities").select("category, label, sort_order").eq("property_id", base.id).order("sort_order")),
     safe(supabase.from("property_workspaces").select("name, type, distance_m").eq("property_id", base.id)),
@@ -272,6 +274,8 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     safe(supabase.from("properties").select("regras_casa").eq("id", base.id).maybeSingle()),
     // CAMPOS-2 (0235): detalhes opcionais do anúncio, leitura à parte — sem a migração o anúncio abre igual.
     safe(supabase.from("properties").select("detalhes_anuncio").eq("id", base.id).maybeSingle()),
+    // E660 (0316): ficha do que tem dentro, leitura à parte — sem a migração o anúncio abre igual.
+    safe(supabase.from("properties").select("ficha_dentro").eq("id", base.id).maybeSingle()),
   ]);
   const privacidade = privacidadeDaLinha(priv as PrivacidadeLinha | null);
 
@@ -334,6 +338,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     petsRegras: normalizarRegrasPets((petsLinha as { pets_regras?: unknown } | null)?.pets_regras) ?? undefined,
     limpezaEstadia: normalizarLimpezaEstadia((limpezaLinha as { limpeza_estadia?: unknown } | null)?.limpeza_estadia) ?? undefined,
     regrasCasa: normalizarRegrasCasa((regrasLinha as { regras_casa?: unknown } | null)?.regras_casa) ?? undefined,
+    fichaDentro: normalizarFicha((fichaLinha as { ficha_dentro?: unknown } | null)?.ficha_dentro) ?? undefined,
     detalhesAnuncio: normalizarDetalhes((detalhesLinha as { detalhes_anuncio?: unknown } | null)?.detalhes_anuncio) ?? undefined,
     ...negociacaoDaLinha(negLinha as { negociacao?: unknown; internet_mbps?: unknown } | null),
     internetMedida: medidaDaLinha(medidaLinha as LinhaMedida | null),
@@ -417,7 +422,8 @@ export async function listProperties(opcoes: { incluirTeste?: boolean } = {}): P
           .from("properties")
           .select(PROPERTY_PUBLIC_COLUMNS)
           .eq("status", "active")
-          .order("created_at", { ascending: false }),
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: true }),
       (r) => !!r.error || !r.data,
     );
 
@@ -460,7 +466,8 @@ async function linhasPublicasDoDono(supabase: NonNullable<ReturnType<typeof crea
     .select(PROPERTY_PUBLIC_COLUMNS)
     .eq("owner_id", donoId)
     .eq("status", "active")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+          .order("id", { ascending: true });
   if (error || !data) return null;
   const mapped = await semAnunciosDeTesteNaVitrine(data as unknown as PropertyRow[]);
   return mapped;
@@ -487,11 +494,20 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
   }
 }
 
+/** E1048: anúncios ATIVOS do dono, sem o filtro de vitrine (só para o cartão do dono conta de teste). null = não deu para contar. */
+async function contarAtivosDoDono(supabase: NonNullable<ReturnType<typeof createPublicClient>>, donoId: string): Promise<number | null> {
+  const { data, error } = await supabase.from("properties").select("id").eq("owner_id", donoId).eq("status", "active");
+  if (error || !data) return null;
+  return data.length;
+}
+
 /** E631: quantos imóveis a página pública do proprietário lista (a mesma consulta e o mesmo filtro). null = não deu para contar. */
-export async function contarImoveisPublicosDoDono(donoId: string): Promise<number | null> {
+export async function contarImoveisPublicosDoDono(donoId: string, opcoes: { incluirTeste?: boolean } = {}): Promise<number | null> {
   const supabase = createPublicClient();
   if (!supabase || !/^[0-9a-f-]{36}$/i.test(donoId)) return null;
   try {
+    // E1048: dono conta de teste → a vitrine tiraria todos os anúncios dele e o cartão diria 0; conta os ativos dele.
+    if (opcoes.incluirTeste === true) return await contarAtivosDoDono(supabase, donoId);
     return (await linhasPublicasDoDono(supabase, donoId))?.length ?? null;
   } catch {
     return null;
@@ -586,13 +602,20 @@ async function attachCoverPhotos(supabase: SupabaseLike, list: Property[]): Prom
   if (list.length === 0) return;
   try {
     const ids = list.map((p) => p.id);
-    const { data } = await supabase
-      .from("property_photos")
-      .select("property_id, url, sort_order")
-      .in("property_id", ids)
-      .order("sort_order");
+    // E1051: a lista inteira passa de max_rows (1000) — em páginas, numa ordem total, para nenhum anúncio perder fotos
+    // (e cair na relevância) conforme a ordem do heap. Antes: uma consulta só, cortada a meio, diferente a cada carregamento.
+    const data = await lerTodasAsLinhas<{ property_id: string; url: string }>((de, ate) =>
+      supabase
+        .from("property_photos")
+        .select("property_id, url, sort_order")
+        .in("property_id", ids)
+        .order("property_id")
+        .order("sort_order")
+        .order("url")
+        .range(de, ate),
+    );
     const byProp = new Map<string, string[]>();
-    for (const row of ((data as { property_id: string; url: string }[] | null) ?? [])) {
+    for (const row of data) {
       if (!byProp.has(row.property_id)) byProp.set(row.property_id, []);
       byProp.get(row.property_id)!.push(row.url);
     }
@@ -865,7 +888,8 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
     .from("properties")
     .select(PROPERTY_PUBLIC_COLUMNS)
     .eq("owner_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+          .order("id", { ascending: true });
 
   if (error && opcoes.exigir) throw new Error(MSG_IMOVEIS_NAO_CARREGARAM);
   if (error || !data) return [];

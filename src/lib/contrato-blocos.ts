@@ -213,6 +213,15 @@ export function periodoDosBlocos(blocos: { inicio?: string | null; fim?: string 
   };
 }
 
+/**
+ * E759 — FONTE ÚNICA das datas de uma estadia para mensagens, cron e e-mails: a primeira entrada e a última saída dos
+ * blocos que valem (fora os "nao_aceito" e os sem data). A página da estadia, os e-mails e a jornada leem por aqui.
+ */
+export function datasDaEstadia(blocos: { inicio?: string | null; fim?: string | null; status?: string | null }[] | null | undefined): { entrada: string; fim: string } | null {
+  const p = periodoDosBlocos((blocos ?? []).filter((b) => b?.status !== "nao_aceito"));
+  return p.inicio && p.fim ? { entrada: p.inicio.slice(0, 10), fim: p.fim.slice(0, 10) } : null;
+}
+
 /** Dias corridos de um período com início e fim INCLUSIVOS. */
 export function diasInclusivos(inicioISO: string, fimISO: string): number {
   return Math.round((Date.parse(`${fimISO}T00:00:00Z`) - Date.parse(`${inicioISO}T00:00:00Z`)) / 86400000) + 1;

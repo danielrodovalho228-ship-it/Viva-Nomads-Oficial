@@ -177,6 +177,25 @@ export function aplicarRespostas(r: Respostas): { conforto: ChaveConforto[]; com
   return { conforto: CHAVES_CONFORTO.filter((c) => conforto.has(c)), comodidades: [...comodidades], internetMbps, semInternet };
 }
 
+/**
+ * E506: o conforto que o RESULTADO conta = o que as respostas da Qualificação dão MAIS o que o rascunho já tem
+ * confirmado (Passo 5). Só as respostas deixava "Sim, tem" já confirmado aparecer como "falta".
+ */
+export function confortoDoResultado(r: Respostas, confirmados: readonly string[] = []): ChaveConforto[] {
+  const dasRespostas = new Set<string>(aplicarRespostas(r).conforto);
+  return CHAVES_CONFORTO.filter((c) => dasRespostas.has(c) || confirmados.includes(c));
+}
+
+/** E506: "pronta" só quando nada falta — antes dizia "pronta" ao lado de "Faltam 12 itens". */
+export const rotuloProgressoQualificacao = (faltam: number) => (faltam === 0 ? "Qualificação · pronta" : "Qualificação · resultado");
+
+/** E506: a fração para a barra — o maior entre as perguntas respondidas e o essencial já confirmado no rascunho. */
+export function fracaoDaQualificacao(r: { feitas: number; total: number }, confirmados: number): number {
+  const dasPerguntas = r.total > 0 ? r.feitas / r.total : 0;
+  const doEssencial = CHAVES_CONFORTO.length > 0 ? Math.min(confirmados, CHAVES_CONFORTO.length) / CHAVES_CONFORTO.length : 0;
+  return Math.max(dasPerguntas, doEssencial);
+}
+
 /** Os itens do essencial que faltam (na ordem da lista única). */
 export const faltamDoEssencial = (conforto: readonly string[]) => CHAVES_CONFORTO.filter((c) => !conforto.includes(c));
 

@@ -34,11 +34,15 @@ test("consumo medido e pet não aceito não viram linha (nada estimado)", () => 
   assert.deepEqual(l.map((x) => x.chave), ["mensal", "caucao", "viva"]);
 });
 
-test("Caução é linha separada, sem valor inventado; taxa da Viva é R$ 0", () => {
+test("Caução é linha separada, com o valor do 1º bloco pela regra do contrato (E752); taxa da Viva é R$ 0", () => {
   const l = linhasDeTaxas(base);
   const caucao = l.find((x) => x.chave === "caucao")!;
-  assert.equal(caucao.valor, undefined);
+  // base: bloco padrão de 2 meses → 50% de 2 aluguéis = 1 aluguel.
+  assert.equal(caucao.valor, formatBRL(base.monthlyPrice));
   assert.match(caucao.nota!, /devolvida no fim/);
+  assert.match(caucao.nota!, /50% do valor de cada bloco, no máximo 3 vezes o valor mensal/);
+  assert.match(caucao.nota!, /direto ao proprietário/);
+  assert.match(caucao.nota!, /A Viva não recebe nem segura/);
   assert.equal(l.find((x) => x.chave === "viva")!.valor, formatBRL(0));
 });
 
@@ -69,6 +73,7 @@ test("solicitação: resumo com entrada, motivo e valores", () => {
   assert.equal(v("Motivo da estadia"), "Trabalho remoto");
   assert.equal(v("Mensal"), formatBRL(2500));
   assert.match(v("Caução"), /devolvida no fim/);
+  assert.match(v("Caução"), /1º bloco/);
 });
 
 test("solicitação: com pacote de limpeza, o total do mês soma 2.400 + 350 + 200 + 180 = 3.130 (ordem 87aabd61)", () => {

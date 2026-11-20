@@ -7,6 +7,7 @@ import { CampoData } from "@/components/ui/campo-data";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { proporAlteracao } from "@/lib/data/estadia-actions";
 import { HREF_ESTADIA, ddmmaaaa } from "@/lib/estadia/estadia";
+import { DIAS_POR_MES, fimInclusivoISO } from "@/lib/contrato-blocos";
 import type { PreviaRenovacao } from "@/lib/estadia/renovacao";
 import { formatBRL } from "@/lib/utils";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -33,6 +34,9 @@ export function AlteracaoTela({
   const [meses, setMeses] = useState(renovacao?.sugeridos ?? atual.meses);
   const [ocupantes, setOcupantes] = useState(atual.ocupantes);
   const [valor, setValor] = useState<number | null>(atual.valorMensal);
+  const [motivo, setMotivo] = useState("");
+  // E672: a saída e os dias exatos do que está sendo proposto (entrada + meses × 30 dias, fim inclusivo — a conta dos blocos).
+  const saidaProposta = inicio ? fimInclusivoISO(inicio, meses * DIAS_POR_MES) : "";
 
   const enviar = () =>
     iniciar(async () => {
@@ -47,6 +51,7 @@ export function AlteracaoTela({
               ocupantes: temFuturo && ocupantes !== atual.ocupantes ? ocupantes : null,
               valorMensal: temFuturo && valor != null && valor !== atual.valorMensal ? valor : null,
             },
+        motivo,
       ));
       if (!r.ok) setErro(r.erro);
       // Navegação completa: um router.push depois da ação pode ser descartado pelas ações e prefetches que o painel
@@ -105,6 +110,11 @@ export function AlteracaoTela({
             ))}
           </select>
         </label>
+        {inicio && (
+          <p className="text-sm text-ink sm:col-span-2" data-testid="alteracao-saida" data-saida={saidaProposta} data-dias={meses * DIAS_POR_MES}>
+            Saída: {ddmmaaaa(saidaProposta)} · {meses * DIAS_POR_MES} dias (calculada pelos meses de contrato).
+          </p>
+        )}
         {temFuturo && (
           <>
             <label className="grid gap-1 text-sm font-semibold text-ink">
@@ -123,6 +133,10 @@ export function AlteracaoTela({
             </label>
           </>
         )}
+        <label className="grid gap-1 text-sm font-semibold text-ink sm:col-span-2">
+          Motivo (opcional)
+          <textarea className={campo} rows={2} maxLength={300} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Por que você quer mudar?" data-testid="alteracao-motivo" />
+        </label>
       </div>
       <Button className="mt-4" variant="primary" disabled={pendente} onClick={enviar} data-testid="alteracao-enviar">
         Enviar proposta

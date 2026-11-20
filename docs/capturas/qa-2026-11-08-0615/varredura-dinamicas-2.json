@@ -1,0 +1,688 @@
+[
+ {
+  "w": 390,
+  "r": "/guias/como-precificar-estadia-de-meses",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-precificar-estadia-de-meses",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Diga no anúncio o que o valor mensal já "
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Taxa de limpeza e valor extra para pet t"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 390,
+  "r": "/guias/checklist-imovel-mobiliado",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/checklist-imovel-mobiliado",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Chuveiro, descarga, torneiras, máquina d"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 390,
+  "r": "/guias/como-funciona-a-conferencia-de-entrada",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-funciona-a-conferencia-de-entrada",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Cada parte confirma ou contesta uma únic"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 390,
+  "r": "/guias/documentos-para-morar-em-imovel-mobiliado",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/documentos-para-morar-em-imovel-mobiliado",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "O contrato é digital e assinado pelas du"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 390,
+  "r": "/guias/como-por-um-video-no-anuncio",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-por-um-video-no-anuncio",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Se preferir, cole um link do YouTube ou "
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis-perto-de/hc-ufu",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/hc-ufu",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis-perto-de/ufu-umuarama",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/ufu-umuarama",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Guia da região:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "perto do HC-UFU e Umuarama"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis-perto-de/ufu-santa-monica",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/ufu-santa-monica",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Guia da região:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "perto da UFU Santa Mônica"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis-perto-de/ufu-campus-pontal",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/ufu-campus-pontal",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 390,
+  "r": "/avaliadores/UDI-002",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/avaliadores/UDI-002",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Viva"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Nomads"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Imóveis mobiliados para estadias de 30 a"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis-perto-de/destino-inexistente-qa",
+  "st": 404,
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/destino-inexistente-qa",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "http": [
+   "404 imoveis-perto-de/destino-inexistente-qa"
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/guias/como-precificar-estadia-de-meses",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-precificar-estadia-de-meses",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Buscar imóveis mobiliados"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anunciar o meu imóvel"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 1280,
+  "r": "/guias/checklist-imovel-mobiliado",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/checklist-imovel-mobiliado",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Buscar imóveis mobiliados"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anunciar o meu imóvel"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 1280,
+  "r": "/guias/como-funciona-a-conferencia-de-entrada",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-funciona-a-conferencia-de-entrada",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Buscar imóveis mobiliados"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anunciar o meu imóvel"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 1280,
+  "r": "/guias/documentos-para-morar-em-imovel-mobiliado",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/documentos-para-morar-em-imovel-mobiliado",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Buscar imóveis mobiliados"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anunciar o meu imóvel"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 1280,
+  "r": "/guias/como-por-um-video-no-anuncio",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-por-um-video-no-anuncio",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Buscar imóveis mobiliados"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Anunciar o meu imóvel"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis-perto-de/hc-ufu",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/hc-ufu",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Publique um pedido de moradia: os propri"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Uberlândia"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "veem o que você precisa e falam com você"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Avise-me quando surgir um imóvel"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "perto do HC-UFU"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "."
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis-perto-de/ufu-umuarama",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/ufu-umuarama",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Publique um pedido de moradia: os propri"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Uberlândia"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "veem o que você precisa e falam com você"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Avise-me quando surgir um imóvel"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "perto da UFU — Campus Umuarama"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "."
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis-perto-de/ufu-santa-monica",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/ufu-santa-monica",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Publique um pedido de moradia: os propri"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Uberlândia"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "veem o que você precisa e falam com você"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Avise-me quando surgir um imóvel"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "perto da UFU — Campus Santa Mônica"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "."
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis-perto-de/ufu-campus-pontal",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/ufu-campus-pontal",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Ainda não há imóvel publicado"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "perto do UFU — Campus Pontal"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "."
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Publique um pedido de moradia: os propri"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Ituiutaba"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "veem o que você precisa e falam com você"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 1280,
+  "r": "/avaliadores/UDI-002",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/avaliadores/UDI-002",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Número de credenciado"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "UDI-002"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidade"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis-perto-de/destino-inexistente-qa",
+  "st": 404,
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/destino-inexistente-qa",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 3.960"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "/mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "·"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 3.960 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Total por mês, tudo incluído"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Studio premium no Centro, ideal para est"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 3.130"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 3.130 em 1 mês"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Casa 3 quartos para famílias em transiçã"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 4.100"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "R$ 8.200 em 2 meses"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "http": [
+   "404 imoveis-perto-de/destino-inexistente-qa"
+  ]
+ }
+]

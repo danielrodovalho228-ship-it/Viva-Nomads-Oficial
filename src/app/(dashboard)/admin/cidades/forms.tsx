@@ -1,5 +1,6 @@
 "use client";
 
+import { useEnvioSemLimpar, useLimparNoSucesso } from "@/components/ui/use-envio-sem-limpar";
 import { useActionState, useTransition } from "react";
 import { alternarCidade, cadastrarCidade, type ResultadoCidade } from "@/lib/cidades-liberadas/actions";
 import { Button } from "@/components/ui/button";
@@ -9,8 +10,11 @@ const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base
 
 export function CadastroCidadeForm() {
   const [res, acao, pendente] = useActionState<ResultadoCidade | null, FormData>(cadastrarCidade, null);
+  // E818: erro não limpa o formulário (envio por onSubmit; <form action> limpava os campos no React 19).
+  const enviarSemLimpar = useEnvioSemLimpar(acao);
+  const formRef = useLimparNoSucesso(res);
   return (
-    <form action={acao} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <form ref={formRef} onSubmit={enviarSemLimpar} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <div><label htmlFor="cidade" className="block text-sm font-semibold">Cidade</label><input id="cidade" name="cidade" required maxLength={80} className={campo} /></div>
       <div><label htmlFor="uf" className="block text-sm font-semibold">UF</label><input id="uf" name="uf" required maxLength={2} className={`${campo} uppercase`} /></div>
       <div className="sm:col-span-2"><label htmlFor="observacao" className="block text-sm font-semibold">Observação (só a equipe vê)</label><input id="observacao" name="observacao" maxLength={300} className={campo} /></div>

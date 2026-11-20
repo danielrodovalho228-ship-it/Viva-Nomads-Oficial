@@ -1,11 +1,27 @@
 import { test, expect, type Page, type Locator } from "@playwright/test";
+import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T855 — E568 (QA 04/11/2026): digitar a data num campo de data que JÁ tinha data não corrompe mais o valor. No passo 1 do
   "Pedir para morar", selecionar tudo e digitar "10/01/2027" virava "00/12/027" (a 1ª tecla sumia). Agora fica
   "10/01/2027", sem aviso de data inválida. A correção mora no campo comum (CampoData): conferido também na caixa do
   anúncio e no pedido de moradia. 390 e 1280.
+  E694 (resíduo): o exemplo não oferece mais "Pedir para morar"; a prova usa um anúncio REAL criado no laboratório.
 */
+
+// E694 (resíduo): o anúncio de exemplo não oferece mais "Pedir para morar"; o fluxo de candidatura é de anúncio REAL, criado aqui.
+const senhaDono = novaSenha();
+const dono = { email: `dono.t855.${novoSufixo()}@lab.vivanomads.test`, nome: "Dora Candidatura", role: "owner" as const };
+const ids: { dono?: string; imovel?: string } = {};
+test.beforeAll(async () => {
+  if (!NO_LABORATORIO) return;
+  ids.dono = await criarConta(dono, senhaDono);
+  ids.imovel = await criarImovelPronto(ids.dono, "Studio candidatura t855", { ativo: true, preco: 2800 });
+});
+test.afterAll(async () => {
+  if (NO_LABORATORIO) await apagarContas([ids.dono]);
+});
+
 async function redigitar(page: Page, campo: Locator, antes: string, depois: string) {
   await campo.click();
   await page.keyboard.press("ControlOrMeta+A");
@@ -21,9 +37,10 @@ async function redigitar(page: Page, campo: Locator, antes: string, depois: stri
 for (const largura of [1280, 390] as const) {
   test.describe(`T855 — E568 (${largura}px)`, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
+    test.skip(!NO_LABORATORIO, "Só no laboratório (anúncio real).");
 
     test("'Pedir para morar', passo 1: redigitar a data num campo que já tinha data", async ({ page }) => {
-      await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
+      await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
       await page.getByRole("button", { name: "Pedir para morar" }).filter({ visible: true }).first().click();
       const entrada = page.getByTestId("solicitacao-inicio").filter({ visible: true }).first();
       await expect(entrada).toBeVisible();
@@ -41,7 +58,7 @@ for (const largura of [1280, 390] as const) {
     });
 
     test("o mesmo campo na caixa do anúncio e no pedido de moradia", async ({ page }) => {
-      await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
+      await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
       const caixa = page.getByTestId("candidatura-inicio").filter({ visible: true }).first();
       if (await caixa.count()) await redigitar(page, caixa, "05/12/2026", "10/01/2027");
       await page.goto("/pedidos/novo", { waitUntil: "networkidle" });

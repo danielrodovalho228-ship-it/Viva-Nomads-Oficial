@@ -11,7 +11,14 @@
 import { chaveCidade } from "../cidades.ts";
 
 export const ROTULO_CATEGORIA_VISTORIA = "Avaliação de imóveis";
+/** E717: faixa da página pública de um avaliador de conta de teste (igual ao "Documento de teste" do /conferir). */
+export const TEXTO_AVALIADOR_DE_TESTE = "Avaliador de teste: esta é uma conta de teste da plataforma e não é um avaliador real.";
+/** E717: quem está em teste não se chama "credenciado": o rótulo acima do nome diz que é um avaliador de teste. */
+export const ROTULO_AVALIADOR_CREDENCIADO = "Avaliador credenciado da Viva";
+export const ROTULO_AVALIADOR_EM_TESTE = "Avaliador em teste";
 export const FRASE_PAGA_AVALIACAO = "Você paga a avaliação, não o resultado.";
+/** E714: a mesma regra dita ao AVALIADOR (página de recrutamento): quem paga é o dono, e a frase não fala com o dono. */
+export const FRASE_DONO_PAGA_AVALIACAO = "O dono paga a avaliação, não o resultado: o seu laudo é independente.";
 /** O que todo valor da tabela inclui (exibido no pedido, junto do texto da tabela). */
 export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo em até 48 horas úteis.", "Se o resultado vier com ressalvas: a reverificação dos itens da ressalva em até 15 dias, pelo mesmo avaliador."] as const;
 
@@ -25,7 +32,7 @@ export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo em até 48 horas 
   nenhum texto fala em desconto.
 */
 export const TEXTO_REVERIFICACAO_INCLUIDA = "A reverificação dos itens da ressalva, pelo mesmo avaliador, está incluída no valor já pago.";
-export const TEXTO_NOVA_AVALIACAO = "Para voltar a ter \"· vistoriado\", peça uma nova avaliação: avaliação completa, novo pedido, avaliador à sua escolha (outro que não o da avaliação anterior), pelo valor que o avaliador propuser.";
+export const TEXTO_NOVA_AVALIACAO = "Para voltar a ter o selo “vistoriado”, peça uma nova avaliação: avaliação completa, novo pedido, avaliador à sua escolha (outro que não o da avaliação anterior), pelo valor que o avaliador propuser.";
 
 // ── Porte (do anúncio: quartos) ────────────────────────────────────────────────────────────────────────────────
 export const PORTES = ["estudio", "q1_2", "q3_mais"] as const;
@@ -318,9 +325,9 @@ export function proximoAvaliador(fila: AvaliadorFila[], pedido: PedidoParaDesign
   return elegiveis[0] ? { avaliador: elegiveis[0], impedidos } : { avaliador: null, motivo: "nenhum_elegivel", impedidos };
 }
 
-/** A designação venceu sem resposta (24 h)? Recusa ou silêncio passam ao próximo da fila. */
-export function designacaoVencida(designadoEm: string, agora: Date): boolean {
-  return agora.getTime() - Date.parse(designadoEm) >= HORAS_PARA_RESPONDER * 3_600_000;
+/** A designação venceu sem resposta (24 h)? Recusa ou silêncio devolvem a escolha ao dono (E648: sem rodízio). */
+export function designacaoVencida(designadoEm: string, agora: Date, horas: number = HORAS_PARA_RESPONDER): boolean {
+  return agora.getTime() - Date.parse(designadoEm) >= horas * 3_600_000;
 }
 
 // ── Agenda e ausência (proposta do coordenador; o Daniel confirma antes de ligar a chave) ───────────────────────

@@ -20,7 +20,7 @@ test("E350: cada modelo diz o motivo e o próximo passo, no vocabulário da casa
     assert.match(m.texto, /novo pedido de parceria/, `${m.chave}: próximo passo`);
     assert.doesNotMatch(m.texto, /comiss|h[oó]spede|reserva|aluguel|temporada/i, m.chave);
   }
-  assert.match(MODELOS_RECUSA_PARCERIA[1].texto, /CPF ou CNPJ/);
+  assert.match(MODELOS_RECUSA_PARCERIA[1].texto, /CNPJ informado/);
   assert.match(MODELOS_RECUSA_PARCERIA[2].texto, /cidade|região/);
   assert.match(MODELOS_RECUSA_PARCERIA[3].texto, /portfólio/);
   // Os textos continuam disponíveis como lista simples (quem lia MOTIVOS_RECUSA_PARCERIA).

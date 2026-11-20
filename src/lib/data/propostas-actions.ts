@@ -77,6 +77,9 @@ import { hojeBR } from "@/lib/utils";
 import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
 import { formaInicialDaProposta, normalizarEscolha, validarFormaNaProposta, type EscolhaPagamento } from "@/lib/pagamento-forma/regras";
 import { precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
+import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
+import { estadoDaPreAceitacao, linhaDeContexto, podeReabrir, prazoDaPreAceitacao, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO, TEXTO_TAXA_CONTINUA, textoDoPrazo } from "@/lib/propostas/pre-aceitacao";
+import { reabrirNoBanco } from "@/lib/propostas/pre-aceitacao-servidor";
 
 /**
  * E189 (QA 25/10): a conta aberta do total do contrato é UMA só — a mesma da tabela e do detalhe (precoDaProposta:
@@ -668,7 +671,30 @@ export interface VersaoView {
   mudou: Diferenca[];
 }
 
+/** E722: o que a tela mostra da pré-aceitação de 72 h (só com a chave ligada e a proposta aceita ou expirada). */
+export interface PreAceitacaoView {
+  estado: "vigente" | "expirada";
+  /** Fim da janela do morador (ISO) e o mesmo em texto, com data e hora exatas de Brasília. Só aparece enquanto o prazo é do morador. */
+  ateIso: string;
+  ateTexto: string;
+  /** Um prazo por vez: com a candidatura de volta ao dono, só o prazo DELE (1 dia útil) aparece; o do morador some. */
+  donoAteTexto: string | null;
+  /** Linha de contexto do outro prazo (E722: um prazo por vez + esta linha). */
+  contexto: string | null;
+  /** Candidatura encerrada na 3ª expiração: não há mais reabertura. */
+  encerrada: boolean;
+  /** Perdeu a corrida: só o dono reabre. */
+  perdeuACorrida: boolean;
+  reaberturas: number;
+  podeReabrir: boolean;
+  regraCorrida: string;
+  semPunicao: string;
+  taxaContinua: string;
+}
+
 export interface PropostaView {
+  /** E722: pré-aceitação de 72 h (null = chave desligada ou proposta sem janela). */
+  preAceitacao: PreAceitacaoView | null;
   id: string;
   numero: string;
   status: StatusProposta;
@@ -754,7 +780,11 @@ async function registroDaProposta(admin: Admin, propostaId: string): Promise<Pro
   return data ? { numero: numeroExibido(data.numero as string, Number(data.versao)), conferir: linhaConferir(SITE_URL, data.codigo_verificacao as string) } : null;
 }
 
-/** Lista de Orçamentos: as propostas em que a pessoa é parte (dono ou interessado). */
+/**
+ * Lista de Orçamentos: as propostas em que a pessoa é parte (dono ou interessado). E677: a ordem é a do ENVIO (criada_em),
+ * que só muda quando nasce uma proposta; ordenar por atualizada_em reembaralhava as linhas a cada "vista"/resposta, e a
+ * linha de uma posição passava a ser outra proposta (as do mesmo imóvel só se distinguem pelo número).
+ */
 const MSG_PROPOSTAS_NAO_CARREGARAM = "Não foi possível carregar as propostas agora.";
 
 /** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
@@ -765,7 +795,7 @@ export async function listarPropostas(opcoes: { exigir?: boolean } = {}): Promis
   if (!s) return [];
   await expirarVencidas(s.admin, s.user.id);
   // RLS: só as propostas das partes.
-  const { data, error } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).order("atualizada_em", { ascending: false }).limit(200);
+  const { data, error } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).order("criada_em", { ascending: false }).order("numero", { ascending: false }).limit(200);
   if (error && opcoes.exigir) throw new Error(MSG_PROPOSTAS_NAO_CARREGARAM);
   const ps = (data ?? []) as LinhaProposta[];
   if (!ps.length) return [];
@@ -884,7 +914,9 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
       };
     }
   }
+  const preAceitacao = PRE_ACEITACAO_72H_ATIVA && ["aceita", "expirada"].includes(p.status) ? await preAceitacaoDaProposta(s.admin, p.id, papel) : null;
   return {
+    preAceitacao,
     id: p.id,
     numero: p.numero,
     status: p.status,
@@ -1093,7 +1125,8 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
 
   const { data: ok } = await admin
     .from("propostas")
-    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString() })
+    // E722 (atrás da chave, desligada): 72 h corridas para concluir o contrato, limitadas pela data de entrada.
+    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString(), ...(PRE_ACEITACAO_72H_ATIVA ? { pre_aceitacao_ate: prazoDaPreAceitacao(agora, String(v.data_entrada).slice(0, 10)).toISOString(), pre_aceitacao_reaberturas: 0 } : {}) })
     .eq("id", p.id)
     .eq("versao_atual", v.versao)
     .in("status", ["enviada", "vista", "contraproposta"])
@@ -1143,4 +1176,51 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard/fechamento");
   return { ok: true, fechamentoUrl: papel === "owner" ? `/dashboard/fechamento?c=${p.lead_id}` : null };
+}
+
+/**
+ * E722 — reabre uma pré-aceitação que expirou (no máximo 2 vezes). Qualquer das duas partes pode pedir; quem perdeu a corrida só volta
+ * por reabertura do DONO. A 3ª expiração encerra a candidatura (não reabre).
+ * A taxa congelada na pré-aceitação CONTINUA VALENDO: a reabertura não a recalcula. Atrás de PRE_ACEITACAO_72H_ATIVA.
+ */
+export async function reabrirPreAceitacao(id: string): Promise<Resultado<{ prazoAte: string }>> {
+  if (!PRE_ACEITACAO_72H_ATIVA) return { ok: false, error: "A pré-aceitação de 72 horas ainda não está ativa." };
+  const s = await sessao();
+  if (!s) return { ok: false, error: "Entre para reabrir." };
+  const { data, error } = await s.supabase.from("propostas").select("id, owner_id, tenant_id, lead_id").eq("id", id).maybeSingle();
+  if (error) return { ok: false, error: "Não foi possível ler a proposta agora. Tente de novo em instantes." };
+  const p = data as { id: string; owner_id: string; tenant_id: string; lead_id: string } | null;
+  if (!p || (p.owner_id !== s.user.id && p.tenant_id !== s.user.id)) return { ok: false, error: "Proposta não encontrada." };
+  const r = await reabrirNoBanco(s.admin, p.id, p.owner_id === s.user.id ? "owner" : "tenant");
+  if (!r.ok) return { ok: false, error: r.error };
+  revalidatePath(`/dashboard/propostas/${p.id}`);
+  revalidatePath("/dashboard/fechamento");
+  return { ok: true, prazoAte: r.prazo.toISOString() };
+}
+
+/** E722: a janela de 72 h da proposta, pronta para a tela (data e hora exatas, regra de corrida, sem punição, taxa que continua). */
+async function preAceitacaoDaProposta(admin: Admin, propostaId: string, papel: Autor): Promise<PreAceitacaoView | null> {
+  const { data, error } = await admin.from("propostas").select("pre_aceitacao_ate, pre_aceitacao_reaberturas, pre_aceitacao_dono_ate, pre_aceitacao_encerrada_em, pre_aceitacao_perdeu_em").eq("id", propostaId).maybeSingle();
+  const d = data as { pre_aceitacao_ate: string | null; pre_aceitacao_reaberturas: number | null; pre_aceitacao_dono_ate: string | null; pre_aceitacao_encerrada_em: string | null; pre_aceitacao_perdeu_em: string | null } | null;
+  if (error || !d?.pre_aceitacao_ate) return null;
+  const ate = new Date(d.pre_aceitacao_ate);
+  const reaberturas = Number(d.pre_aceitacao_reaberturas ?? 0);
+  const encerrada = !!d.pre_aceitacao_encerrada_em;
+  const perdeu = !!d.pre_aceitacao_perdeu_em;
+  const estado = estadoDaPreAceitacao(ate, new Date()).chave;
+  const donoAteTexto = estado === "expirada" && !encerrada && d.pre_aceitacao_dono_ate ? textoDoPrazo(new Date(d.pre_aceitacao_dono_ate)) : null;
+  return {
+    estado,
+    ateIso: ate.toISOString(),
+    ateTexto: textoDoPrazo(ate),
+    donoAteTexto,
+    contexto: encerrada ? null : linhaDeContexto(papel === "owner" ? "owner" : "tenant", estado, textoDoPrazo(ate), donoAteTexto),
+    encerrada,
+    perdeuACorrida: perdeu,
+    reaberturas,
+    podeReabrir: podeReabrir(reaberturas) && !encerrada && (!perdeu || papel === "owner"),
+    regraCorrida: TEXTO_REGRA_CORRIDA,
+    semPunicao: TEXTO_SEM_PUNICAO,
+    taxaContinua: TEXTO_TAXA_CONTINUA,
+  };
 }

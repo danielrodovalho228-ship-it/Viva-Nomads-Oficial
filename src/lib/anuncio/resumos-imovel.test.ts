@@ -98,8 +98,12 @@ test("Bom saber: 4 linhas fixas (a manutenção entra no bloco), sem inventar re
   assert.deepEqual(l.map((x) => x.chave), ["cancelamento", "regras", "seguranca", "manutencao"]);
   // E98-A: o compromisso de manutenção vem da mesma fonte do texto antigo, um prazo por linha.
   assert.equal(l[3].titulo, "Manutenção");
-  assert.equal(l[3].resumo, "Urgente com solução provisória em até 24 h e definitiva em até 72 h");
-  assert.deepEqual(l[3].detalhe.slice(1), ["Comum em até 72 h", "Demais em até 7 dias"]);
+  // E817: a régua única — resposta e solução por prioridade, quem resolve, como acionar e o que acontece no atraso.
+  assert.equal(l[3].resumo, "Urgente (sem água, sem luz, vazamento): resposta em até 4 h, solução provisória em até 24 h e definitiva em até 72 h");
+  assert.equal(l[3].detalhe.length, 5);
+  assert.match(l[3].detalhe[2], /^Baixa \(.*\): resposta em até 72 h e solução em até 7 dias$/);
+  assert.match(l[3].detalhe[3], /^Quem resolve é o proprietário/);
+  assert.match(l[3].detalhe[4], /^Se o prazo de solução vencer/);
   // CAMPOS-1: o resumo fica curto (os 2 primeiros fatos); entrada e saída seguem no detalhe.
   assert.equal(l[1].resumo, "Até 2 pessoas · sem pets");
   assert.ok(l[1].detalhe.includes("Entrada a partir das 14:00"));

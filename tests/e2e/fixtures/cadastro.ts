@@ -18,6 +18,10 @@ export const TITULO_PASSO = {
   revisao: "Revise e publique",
 } as const;
 export type PassoCadastro = keyof typeof TITULO_PASSO;
+/** Título de apoio para quem cruza a Descrição sem ter escrito um. */
+export const TITULO_PADRAO_LAB = "Apartamento mobiliado de teste do laboratório";
+/** Descrição de apoio (a Descrição pede pelo menos 60 caracteres para continuar). */
+export const DESCRICAO_PADRAO_LAB = "Imóvel mobiliado de teste do laboratório, com cozinha equipada, roupa de cama e internet para trabalhar de casa.";
 
 /** Posição (1 a 10) de cada passo, para conferir "Passo X de 10". */
 export const NUMERO_PASSO: Record<PassoCadastro, number> = Object.fromEntries(Object.keys(TITULO_PASSO).map((k, i) => [k, i + 1])) as Record<PassoCadastro, number>;
@@ -51,7 +55,18 @@ export async function noPasso(page: Page, passo: PassoCadastro, timeout = 20_000
  * cada passo (título na Descrição; valor e garantia no Preço).
  */
 export async function continuarAte(page: Page, de: PassoCadastro, ate: PassoCadastro) {
+  let atual: PassoCadastro = de;
   for (const passo of ORDEM_PASSOS.slice(ORDEM_PASSOS.indexOf(de) + 1, ORDEM_PASSOS.indexOf(ate) + 1)) {
+    // O título não nasce mais preenchido (a prévia diz "Título ainda não definido") e o Continuar da Descrição o exige:
+    // quem passa por ali sem ter escrito um título escreve um, para o caminho seguir.
+    if (atual === "descricao") {
+      const titulo = page.getByTestId("cadastro-titulo");
+      if (await titulo.isVisible().catch(() => false) && !(await titulo.inputValue().catch(() => "")).trim()) await titulo.fill(TITULO_PADRAO_LAB);
+      // A Descrição também exige o texto (mín. 60 caracteres, f9753c6): quem passa sem ele escreve um de apoio.
+      const descricao = page.getByTestId("cadastro-descricao");
+      if (await descricao.isVisible().catch(() => false) && (await descricao.inputValue().catch(() => "")).trim().length < 60) await descricao.fill(DESCRICAO_PADRAO_LAB);
+    }
+    atual = passo;
     await page.getByTestId("cadastro-continuar").click();
     await noPasso(page, passo);
   }
@@ -80,6 +95,9 @@ export async function abrirNoEndereco(page: Page, timeout = 20_000) {
   const endereco = page.getByTestId("passo-titulo").filter({ hasText: TITULO_PASSO.endereco });
   const aviso = page.getByTestId("rascunho-aviso");
   await expect(endereco.or(aviso)).toBeVisible({ timeout });
+  // E744 (tabela da Fable #3832, t534): com rascunho anterior, o título do Passo 3 pinta antes do aviso de rascunho
+  // aparecer; decidir cedo seguia "no Passo 3" e o próximo Continuar caía nas Fotos. Espera a entrada assentar.
+  await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
   if (await aviso.isVisible()) {
     await aviso.getByRole("button", { name: "Começar outro" }).click();
     await doTipoAoEndereco(page);
@@ -140,4 +158,24 @@ export async function abrirCadastroNovo(page: Page, waitUntil: "domcontentloaded
   await titulo.or(qualificacao).first().waitFor({ state: "visible", timeout: 30_000 });
   if (await qualificacao.isVisible()) await page.getByTestId("qualificacao-depois").click();
   await noPasso(page, "tipo", 30_000);
+}
+
+/**
+ * E744 (tabela da Fable #3832): no Passo 5, a ficha "O que tem dentro" (E660) é obrigatória para publicar — uma cama de
+ * casal e a resposta do ar em cada quarto, roupa de cama e banho e cozinha equipada. Preenche pela tela, como o dono.
+ */
+export async function preencherFichaDentro(page: Page) {
+  const ficha = page.getByTestId("ficha-dentro");
+  await ficha.scrollIntoViewIfNeeded();
+  await expect(ficha).toBeVisible({ timeout: 20_000 });
+  const quartos = ficha.locator('[data-testid^="ficha-quarto-"]');
+  const n = await quartos.count();
+  for (let i = 0; i < n; i++) {
+    const q = ficha.getByTestId(`ficha-quarto-${i}`);
+    await q.getByTestId(`ficha-cama-${i}-casal`).fill("1");
+    await q.getByRole("radiogroup", { name: /ar-condicionado/ }).getByRole("radio", { name: "Sim" }).click();
+  }
+  await ficha.getByRole("radiogroup", { name: "Roupa de cama e banho inclusa" }).getByRole("radio", { name: "Sim" }).click();
+  await ficha.getByRole("radiogroup", { name: "Cozinha equipada" }).getByRole("radio", { name: "Sim" }).click();
+  await expect(ficha.getByTestId("ficha-faltas")).toHaveCount(0);
 }

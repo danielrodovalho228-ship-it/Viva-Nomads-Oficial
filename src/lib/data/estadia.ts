@@ -103,15 +103,49 @@ export function assinadoPelasDuas(c: Pick<LinhaContratoEstadia, "assinado_propri
   return !!c.assinado_proprietario_em && !!c.assinado_inquilino_em;
 }
 
+/**
+ * E662: copia a instrução de saída do imóvel para o contrato na 1ª assinatura (uma vez só), para o texto não mudar no meio da
+ * estadia. Mora aqui, com os demais leitores de `imovel_instrucoes_chegada` (a tabela privada só é lida por estes arquivos).
+ * Melhor esforço: a assinatura NUNCA depende dela (a coluna é da migração 0320 e, sem cópia, o guia usa a do imóvel).
+ */
+export async function congelarInstrucaoSaida(admin: SupabaseClient, contratoId: string, propertyId: string): Promise<void> {
+  try {
+    const { data: im, error } = await admin.from("imovel_instrucoes_chegada").select("instrucao_saida").eq("property_id", propertyId).maybeSingle();
+    const texto = ((im as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? "").trim();
+    if (error || !texto) return;
+    await admin.from("contratos").update({ instrucao_saida: texto }).eq("id", contratoId).is("instrucao_saida", null);
+  } catch {
+    // sem cópia: vale a do imóvel
+  }
+}
+
+/**
+ * E662: o texto atual da instrução de saída, para o EDITOR do dono na edição do imóvel (sessão do dono; a RLS da tabela
+ * privada só deixa o dono ler). Mora aqui, com os demais leitores de `imovel_instrucoes_chegada`. Falha de leitura = vazio
+ * (o campo abre em branco; a gravação continua exigindo o dono).
+ */
+export async function instrucaoSaidaParaEditar(supabase: SupabaseClient, propertyId: string): Promise<string> {
+  try {
+    const { data } = await supabase.from("imovel_instrucoes_chegada").select("instrucao_saida").eq("property_id", propertyId).maybeSingle();
+    return ((data as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
 /** Instruções do imóvel com a sobrescrita do contrato (contratos_checkin.instrucoes). */
 export async function lerInstrucoes(admin: SupabaseClient, c: LinhaContratoEstadia): Promise<{ doImovel: Instrucoes | null; efetivas: Instrucoes | null; doContrato: string | null }> {
-  const [{ data: im }, { data: ck }] = await Promise.all([
+  const [{ data: im }, { data: ck }, { data: cs, error: erroSaida }] = await Promise.all([
     admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id).maybeSingle(),
     admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", c.id).maybeSingle(),
+    // E662: a cópia da instrução de saída congelada na 1ª assinatura. Leitura à parte e tolerante (coluna da migração 0320): sem
+    // ela, vale a do imóvel.
+    admin.from("contratos").select("instrucao_saida").eq("id", c.id).maybeSingle(),
   ]);
   const doImovel = im ? normalizarInstrucoes(im as Record<string, unknown>) : null;
   const doContrato = ((ck as { instrucoes?: string | null } | null)?.instrucoes ?? "").trim() || null;
-  return { doImovel, efetivas: instrucoesEfetivas(doImovel, doContrato), doContrato };
+  const saidaDoContrato = erroSaida ? null : ((cs as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? null);
+  return { doImovel, efetivas: instrucoesEfetivas(doImovel, doContrato, saidaDoContrato), doContrato };
 }
 
 export interface OcupanteView {
@@ -358,6 +392,8 @@ export function localDaEstadia(c: { property_id?: string | null; properties?: { 
 
 export interface EstadiaNaHome {
   contratoId: string;
+  /** E680: a conta para quem esta lista foi montada. O cliente só mostra a lista se for a conta que está nele. */
+  paraUsuario: string;
   papel: PapelEstadia;
   imovel: string;
   /** E360: onde é (bairro, cidade) e o código do anúncio: o título sozinho (ex.: "Carteira 3") não identifica o imóvel. */
@@ -411,7 +447,7 @@ export async function estadiasDaHome(agora: Date = new Date(), opcoes: { exigir?
       instrucoesPreenchidas: instrucoesPreenchidas(instrucoes),
       aditivo: a ? { status: a.status, propostoPorMim: a.proposto_por === user.id, euAssinei: (a.contrato_aditivo_assinaturas ?? []).some((s) => s.papel === papel) } : null,
     });
-    out.push({ contratoId: c.id, papel, imovel: c.properties?.title ?? "Imóvel", local: localDaEstadia(c), topo: topo.texto, decisoes, acoes: acoesDaFolhaDaEstadia(c.id, papel) });
+    out.push({ contratoId: c.id, paraUsuario: user.id, papel, imovel: c.properties?.title ?? "Imóvel", local: localDaEstadia(c), topo: topo.texto, decisoes, acoes: acoesDaFolhaDaEstadia(c.id, papel) });
   }
   return out;
 }

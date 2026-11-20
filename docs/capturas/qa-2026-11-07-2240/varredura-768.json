@@ -1,0 +1,218 @@
+[
+ {
+  "n": "home",
+  "r": "/",
+  "status": 200,
+  "h1": 1,
+  "imgs": 26,
+  "falhas": 0,
+  "cheio": [
+   "Quero anunciar meu imóvel"
+  ],
+  "overflow": 0,
+  "toque": [],
+  "toqueN": 0,
+  "orfao": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "como-funciona",
+  "r": "/como-funciona",
+  "status": 200,
+  "h1": 1,
+  "imgs": 18,
+  "falhas": 0,
+  "cheio": [
+   "Buscar imóveis"
+  ],
+  "overflow": 0,
+  "toque": [],
+  "toqueN": 0,
+  "orfao": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "empresas",
+  "r": "/empresas",
+  "status": 200,
+  "h1": 1,
+  "imgs": 10,
+  "falhas": 0,
+  "cheio": [
+   "Fale com a gente"
+  ],
+  "overflow": 0,
+  "toque": [],
+  "toqueN": 0,
+  "orfao": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "parceiros",
+  "r": "/parceiros",
+  "status": 200,
+  "h1": 1,
+  "imgs": 21,
+  "falhas": 0,
+  "cheio": [
+   "Continuar: criar conta ou en"
+  ],
+  "overflow": 0,
+  "toque": [
+   "INPUT"
+  ],
+  "toqueN": 9,
+  "orfao": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "proprietarios",
+  "r": "/para-proprietarios",
+  "status": 200,
+  "h1": 1,
+  "imgs": 11,
+  "falhas": 0,
+  "cheio": [
+   "Começar pela qualificação"
+  ],
+  "overflow": 0,
+  "toque": [],
+  "toqueN": 0,
+  "orfao": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "seguranca",
+  "r": "/seguranca",
+  "status": 200,
+  "h1": 1,
+  "imgs": 3,
+  "falhas": 0,
+  "cheio": [],
+  "overflow": 0,
+  "toque": [],
+  "toqueN": 0,
+  "orfao": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "buscar",
+  "r": "/buscar",
+  "status": 200,
+  "h1": 1,
+  "imgs": 32,
+  "falhas": 0,
+  "cheio": [],
+  "overflow": 0,
+  "toque": [
+   "INPUT"
+  ],
+  "toqueN": 15,
+  "orfao": [
+   "16 itens em 2 colunas, sobra 1"
+  ],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "imovel",
+  "r": "/imoveis/ube-005",
+  "status": 200,
+  "h1": 1,
+  "imgs": 15,
+  "falhas": 0,
+  "cheio": [
+   "Pedir para morar",
+   "+7 mais",
+   "Ampliar mapa",
+   "Mercado"
+  ],
+  "overflow": 0,
+  "toque": [
+   "1",
+   "2",
+   "3",
+   "4",
+   "5",
+   "6"
+  ],
+  "toqueN": 90,
+  "orfao": [
+   "7 itens em 2 colunas, sobra 1",
+   "3 itens em 2 colunas, sobra 1",
+   "3 itens em 2 colunas, sobra 1"
+  ],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "ajuda",
+  "r": "/ajuda",
+  "status": 200,
+  "h1": 1,
+  "imgs": 7,
+  "falhas": 0,
+  "cheio": [
+   "Falar com a Viva"
+  ],
+  "overflow": 0,
+  "toque": [],
+  "toqueN": 0,
+  "orfao": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "fale",
+  "r": "/ajuda/fale-com-a-viva",
+  "status": 200,
+  "h1": 1,
+  "imgs": 3,
+  "falhas": 0,
+  "cheio": [
+   "Abrir chamado"
+  ],
+  "overflow": 0,
+  "toque": [],
+  "toqueN": 0,
+  "orfao": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "privacidade",
+  "r": "/privacidade",
+  "status": 200,
+  "h1": 1,
+  "imgs": 2,
+  "falhas": 0,
+  "cheio": [],
+  "overflow": 0,
+  "toque": [],
+  "toqueN": 0,
+  "orfao": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "n": "termos",
+  "r": "/termos",
+  "status": 200,
+  "h1": 1,
+  "imgs": 2,
+  "falhas": 0,
+  "cheio": [],
+  "overflow": 0,
+  "toque": [],
+  "toqueN": 0,
+  "orfao": [],
+  "http": [],
+  "cons": []
+ }
+]

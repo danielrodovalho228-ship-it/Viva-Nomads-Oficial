@@ -3,7 +3,7 @@ import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { filaDeOfensas } from "@/lib/data/ofensas-admin-actions";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
-import { dataBR } from "@/lib/utils";
+import { dataBRT } from "@/lib/datas-brasilia";
 import { BotaoRevisada } from "./botao-revisada";
 import { soLeituraNaTela } from "@/lib/qa/observador";
 
@@ -36,7 +36,7 @@ export default async function AdminOfensasPage() {
                   {o.autorNome} · {o.registrosDoAutor} {o.registrosDoAutor === 1 ? "registro" : "registros"}
                 </p>
                 <p className="text-muted">
-                  Termo: “{o.termo}” · {dataBR(o.criadoEm.slice(0, 10))} · conversa {o.conversationId.slice(0, 8)}
+                  Termo: “{o.termo}” · {dataBRT(o.criadoEm)} · conversa {o.conversationId.slice(0, 8)}
                 </p>
               </div>
               <BotaoRevisada id={o.id} soLeitura={soLeitura} />

@@ -10,6 +10,7 @@ import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { notify } from "@/lib/notifications";
+import { corpoPrecoJustoAcima } from "@/lib/notifications/corpo-e267-restante";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { formatBRL } from "@/lib/utils";
 import { escaparHtml } from "@/lib/escapar-html";
@@ -83,6 +84,7 @@ async function avisarDono(admin: SupabaseClient, imovel: ImovelParaPreco, totalV
   ];
   await notify({
     event: "preco_justo_acima",
+    body: corpoPrecoJustoAcima({ imovelTitulo: imovel.title, totalViva, valorAirbnb: aviso.valorAirbnb, ate: aviso.ate }),
     email: d?.notif_email === false ? undefined : (d?.email ?? undefined),
     name: d?.full_name ?? undefined,
     userId: imovel.owner_id,

@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { consumirLimite, DIA } from "@/lib/limites";
-import {
-  DOC_MAX_BYTES,
-  DOC_MIN_BYTES,
-  DOC_MIME,
-  tipoRealPorMagicBytes,
-} from "@/lib/upload-limits";
+import { DOC_MAX_BYTES, DOC_MIN_BYTES, DOC_MIME, tipoRealPorMagicBytes, mensagemArquivoPequeno } from "@/lib/upload-limits";
 
 const BUCKET = "property-docs";
 
@@ -44,7 +39,7 @@ export async function POST(request: Request) {
   // Tamanho (mín/máx) no servidor.
   if (file.size < DOC_MIN_BYTES) {
     return NextResponse.json(
-      { error: `Arquivo pequeno demais (mín. ${Math.round(DOC_MIN_BYTES / 1024)} KB) — parece não ser um documento válido.` },
+      { error: mensagemArquivoPequeno() },
       { status: 400 }
     );
   }

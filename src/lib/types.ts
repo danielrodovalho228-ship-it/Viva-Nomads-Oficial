@@ -157,6 +157,8 @@ export interface Property {
   petsAllowed?: boolean;
   /** Regras detalhadas de pets (espécies, porte, quantidade, reforço de Caução). */
   petsRegras?: import("@/lib/anuncio/pets-regras").RegrasPets;
+  /** E660: ficha "o que tem dentro" (camas/ar por quarto, enxoval, cozinha); requer a migração 0316. */
+  fichaDentro?: import("@/lib/ficha-dentro/ficha-dentro").FichaDentro;
   /** 61-B (0225): tipo de entrada (público), mensagem a quem vai pedir e "o que considerar antes de pedir". */
   chegadaEPedido?: import("@/lib/anuncio/chegada-e-pedido").ChegadaEPedido;
   /** Pacote de limpeza durante a estadia (ordem 4c74ac38; requer migração 0144). */

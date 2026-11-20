@@ -134,3 +134,36 @@ export function descredenciamentoValido(e: { criterioId: string | null; motivo: 
   if (e.motivo.trim().length < 20) return { ok: false, erro: "Descreva o fato concreto que atingiu o critério (mínimo de 20 caracteres)." };
   return { ok: true, criterioId: c.id, direitoDeRespostaDias: DIAS_DIREITO_DE_RESPOSTA };
 }
+
+// ── 5. Os termos do avaliador (E682): valor, prazo de entrega e prazo de resposta são DELE ────────────────────────
+export const PRAZO_RESPOSTA_PADRAO_HORAS = 24;
+export const PRAZO_RESPOSTA_MAX_HORAS = 72;
+/** E682 (refino): prazo do DONO para aceitar a proposta do avaliador (72 h, decisão do Daniel em 07/11/2026). Passado, a escolha volta ao dono. */
+export const PRAZO_DONO_ACEITAR_HORAS = 72;
+
+/** A proposta do avaliador está parada, sem aceite do dono, há mais que o prazo do dono? */
+export function propostaVencida(propostaEm: string | null, agora: Date, horas = PRAZO_DONO_ACEITAR_HORAS): boolean {
+  if (!propostaEm) return false;
+  const t = Date.parse(propostaEm);
+  return Number.isFinite(t) && agora.getTime() >= t + horas * 3_600_000;
+}
+
+export type ResultadoTermos = { ok: true; valor: number; prazoEntregaDias: number; prazoRespostaHoras: number } | { ok: false; erro: string };
+
+/** O avaliador declara o próprio valor, o prazo de entrega do laudo e em quantas horas responde a um pedido. Nada é imposto pela Viva. */
+export function validarTermos(e: { valor: number; prazoEntregaDias: number; prazoRespostaHoras: number }): ResultadoTermos {
+  if (!Number.isFinite(e.valor) || e.valor <= 0) return { ok: false, erro: "Informe o seu valor (maior que zero)." };
+  if (!Number.isInteger(e.prazoEntregaDias) || e.prazoEntregaDias < 1 || e.prazoEntregaDias > PRAZO_PROPOSTA_MAX_DIAS) return { ok: false, erro: `Informe o prazo de entrega em dias inteiros (de 1 a ${PRAZO_PROPOSTA_MAX_DIAS}).` };
+  if (!Number.isInteger(e.prazoRespostaHoras) || e.prazoRespostaHoras < 1 || e.prazoRespostaHoras > PRAZO_RESPOSTA_MAX_HORAS) return { ok: false, erro: `Informe em quantas horas você responde a um pedido (de 1 a ${PRAZO_RESPOSTA_MAX_HORAS}).` };
+  return { ok: true, valor: Math.round(e.valor * 100) / 100, prazoEntregaDias: e.prazoEntregaDias, prazoRespostaHoras: e.prazoRespostaHoras };
+}
+
+/**
+ * A linha de cada avaliador na lista de escolha do dono: SÓ a conduta publicada. A lista NÃO mostra preço nem prazo
+ * (E682, decisão do Daniel): valor e prazo vêm na proposta do avaliador, depois que o dono o escolhe.
+ */
+export function linhaDeTermos(a: { notaConduta: number | null; avaliacoesConduta: number }): string {
+  return a.notaConduta != null && a.avaliacoesConduta > 0
+    ? `conduta ${a.notaConduta.toFixed(1).replace(".", ",")} · ${a.avaliacoesConduta} ${a.avaliacoesConduta === 1 ? "avaliação feita" : "avaliações feitas"}`
+    : "sem avaliações de conduta ainda";
+}

@@ -48,8 +48,8 @@ test.describe("T152 — Barra fixa do imóvel (390 px)", () => {
         return !!topo && (topo === el || el.contains(topo));
       });
       expect(dono).toBe(true);
-      // não encosta no primário "Solicitar" (Prompt 41: Mensagem e Viva ficaram no cartão de preço)
-      const msg = (await barra.getByRole("button", { name: "Pedir para morar", exact: true }).boundingBox())!;
+      // não encosta na ação da barra (E694: no exemplo a ação é "Ver imóveis reais"; o "Pedir para morar" é do anúncio real)
+      const msg = (await barra.getByTestId("barra-ver-reais").boundingBox())!;
       expect(caixa.y + caixa.height).toBeLessThanOrEqual(msg.y);
     }
   });

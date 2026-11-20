@@ -131,7 +131,8 @@ test("cartão: o nível abre a linha de fatos; em adequação não aparece; o se
 
 test("ficha e cadastro: blocos montados nas telas certas", () => {
   const ficha = ler("app/(public)/imoveis/[id]/property-detail.tsx");
-  assert.match(ficha, /<BomSaber property=\{property\} \/>\s*<NivelImovel dados=\{exibicao59\?\.nivel\} \/>/);
+  // Asserção alterada (E604): o bloco do nível recebe as comodidades do anúncio, para o extra que repete uma delas sair.
+  assert.match(ficha, /<BomSaber property=\{property\} \/>\s*<NivelImovel dados=\{exibicao59\?\.nivel\} comodidades=\{property\.amenities\} \/>/);
   const bloco = ler("components/niveis/nivel-imovel.tsx");
   assert.match(bloco, /Como funcionam os níveis/);
   for (const id of ["nivel-diferenciais", "nivel-ruido", "nivel-extras"]) assert.match(bloco, new RegExp(`data-testid="${id}"`));

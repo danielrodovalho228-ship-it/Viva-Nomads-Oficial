@@ -30,6 +30,8 @@ import {
 } from "@/lib/automacoes/regras";
 import { COLUNAS_ESTADO_CONTRATO, primeiroPagamentoConfirmado, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
+import { datasDaEstadia } from "@/lib/contrato-blocos";
+import { chaveDaJornada, confirmacaoDevida, corpoDaJornada, momentosDeHoje } from "@/lib/estadia/jornada-mensagens";
 import { corpoDaChegada } from "@/lib/estadia/emails-chegada";
 import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarDono, liberaHoje, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
 import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos } from "@/lib/estadia/ocupantes";
@@ -344,6 +346,38 @@ export async function GET(request: Request) {
     }
   }
 
+  // 8) Jornada de mensagens da estadia (E663): confirmação (logo após a assinatura das duas partes), chegada, semana da
+  // saída e meio da estadia longa. As datas saem dos blocos ATUAIS: remarcou por aditivo (E652), recalcula e reenvia nas
+  // datas novas (a data entra na chave). O D-7 das instruções (bloco 7) segue o mesmo, sem duplicar.
+  for (const c of estadias ?? []) {
+    const datas = datasDaEstadia(c.contrato_blocos as { inicio: string; fim: string; status: string }[] | null);
+    if (!datas || !c.assinado_proprietario_em || !c.assinado_inquilino_em) continue;
+    const prop = c.properties as unknown as { title?: string; address?: string | null; city?: string | null; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
+    const dadosCorpo = { ...datas, imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }, horario: prop?.checkin_after, horarioSaida: prop?.checkout_before };
+    const assinadoEm = [c.assinado_proprietario_em as string, c.assinado_inquilino_em as string].sort().at(-1);
+    const doDia = momentosDeHoje({ ...datas, hoje });
+    // D-7, chegada, semana da saída e meio só com o 1º pagamento (a mesma condição do D-7 das instruções).
+    const pago = primeiroPagamentoConfirmado(c.pagamentos_bloco as LinhaEstadoContrato["pagamentos_bloco"]);
+    // E759: a confirmação sai também quando a estadia fica confirmada (assinada + 1º pagamento) antes de começar.
+    const hojeMomentos = confirmacaoDevida({ assinadoEm, hoje, pago, entrada: datas.entrada }) ? (["jornada_confirmacao", ...doDia] as const) : doDia;
+    for (const momento of hojeMomentos) {
+      if (momento !== "jornada_confirmacao" && !pago) continue;
+      const paraDono = momento === "jornada_chegada" || momento === "jornada_semana_saida";
+      const quem = [c.tenant_id as string, ...(paraDono && prop?.owner_id ? [prop.owner_id] : [])];
+      for (const u of quem) {
+        alvos.push({
+          tipo: momento,
+          usuarioId: u,
+          refId: c.id as string,
+          variante: chaveDaJornada(momento, datas),
+          imovelId: c.property_id as string,
+          url: HREF_ESTADIA(c.id as string),
+          detalhe: corpoDaJornada(momento, dadosCorpo).texto,
+        });
+      }
+    }
+  }
+
   const contagem: Record<string, number> = {};
   for (const a of alvos) {
     const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email, pausada_em").eq("id", a.usuarioId).maybeSingle();
@@ -391,6 +425,8 @@ export async function GET(request: Request) {
   const sombraApagada = simular ? 0 : await limparSombra(admin).catch(() => 0);
   // Avaliações de pedido de parceiro: publicam 14 dias depois da conclusão, mesmo sem a outra parte (nunca no simulado).
   const avaliacoesParceiro = simular ? 0 : Number((await admin.rpc("publicar_avaliacoes_parceiro")).data ?? 0) || 0;
+  // E679-B: a conduta do avaliador é cega; publica as que venceram os 14 dias do laudo sem a outra parte (nunca no simulado).
+  if (!simular) await admin.rpc("publicar_conduta_avaliador").then(() => null, () => null);
   // E565: a faixa da taxa conta só os ativos de verdade (calendário confirmado nos últimos 30 dias): o calendário que
   // vence não muda nenhuma linha, então a rotina diária recalcula a faixa_dono de todos (a queda abre a janela de 30 dias).
   const faixasAtualizadas = simular ? 0 : await admin.rpc("atualizar_faixas_dos_donos").then((r) => Number(r.data ?? 0) || 0, () => 0);
@@ -408,7 +444,7 @@ export async function GET(request: Request) {
   const automatico = await automacaoDaEstadia(admin, agora, simular).catch(() => ({ automaticos: 0, sugestoesMorador: 0, semResposta: 0 }));
   // Internet medida (Prompt 57): "Meça de novo a internet" ao dono aos ~5,5 meses, uma vez por medição.
   const internet = await avisosDeRemedicao(admin, agora, simular).catch(() => ({ avisosInternet: 0 }));
-  // Prompt 50: verificação parada 24 h (aviso com a causa), parceiro sem resposta em 1 dia útil e chamado fora da
+  // Prompt 50: verificação parada 24 h (aviso com a causa), parceiro sem resposta no prazo da parceria (7 dias) e chamado fora da
   // promessa (alertas à equipe). Uma vez cada; nunca no silêncio 22h–7h. Na simulação, só conta.
   const lembretes50 = await lembretesDoFunil(admin, agora, simular).catch(() => null);
   // E205-B2: bloco renovado (2 em diante) que começa em até 3 dias sem pagamento registrado → lembrete ao morador.

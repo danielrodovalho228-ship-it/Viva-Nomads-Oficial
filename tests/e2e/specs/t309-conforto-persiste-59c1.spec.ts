@@ -49,6 +49,8 @@ test.describe("T309 — 59-C1: o padrão mínimo persiste no editor", () => {
           propertyType: "Studio",
           tipoEntrada: "porteiro",
           internetMbps: "300",
+          // E660: a ficha "o que tem dentro" também faz parte do que um rascunho completo deixa.
+          fichaDentro: { versao: 1, quartos: [{ nome: "Quarto 1", camas: [{ tipo: "casal", qtd: 1 }], solteirosJuntam: null, arCondicionado: true }], enxoval: true, cozinhaEquipada: true, utensilios: null },
           bedrooms: "1",
           bathrooms: "1",
           areaM2: "40",

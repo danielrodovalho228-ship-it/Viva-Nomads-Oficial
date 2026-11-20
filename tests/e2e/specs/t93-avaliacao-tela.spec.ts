@@ -1,3 +1,4 @@
+import { criteriosDaAvaliacao, preencherCriterios } from "../fixtures/avaliacao-criterios";
 import { test, expect } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { account, hasAccount, type Role } from "../fixtures/accounts";
@@ -41,11 +42,11 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
       .select("id")
       .single();
     try {
-      await inq.sb.from("avaliacoes").insert({ contrato_id: ct!.id, alvo_id: dono.id, papel_autor: "inquilino", nota_geral: 4, comentario_publico: `Estadia boa ${marca}`, status: "enviada" });
-      await dono.sb.from("avaliacoes").insert({ contrato_id: ct!.id, alvo_id: inq.id, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
+      await inq.sb.from("avaliacoes").insert({ ...criteriosDaAvaliacao("inquilino"), contrato_id: ct!.id, alvo_id: dono.id, papel_autor: "inquilino", nota_geral: 4, comentario_publico: `Estadia boa ${marca}`, status: "enviada" });
+      await dono.sb.from("avaliacoes").insert({ ...criteriosDaAvaliacao("proprietario"), contrato_id: ct!.id, alvo_id: inq.id, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
 
       // 1) O avaliado responde pela tela.
-      await page.goto("/dashboard/avaliacoes", { waitUntil: "networkidle" });
+      await page.goto("/dashboard/avaliacoes?aba=recebidas", { waitUntil: "networkidle" });
       const cartao = page.getByTestId("avaliacao-recebida").filter({ hasText: marca });
       await expect(cartao).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -87,7 +88,11 @@ test.describe("T93 — Tela de avaliações recebidas (responder, pedir revisão
         await expect(pedido).toBeVisible();
         await pedido.getByLabel(/justificativa/i).fill("Conferido: o comentário é opinião sobre a estadia.");
         await pedido.getByRole("button", { name: /manter no ar/i }).click();
-        await expect(pedido).toContainText("Mantida", { timeout: 30_000 });
+        // ADMIN-2: a decisão mora na Central de Pendências, que não escreve "Mantida" na tela (o item sai da fila). A prova é o
+        // registro da decisão no banco; o teste confere o mesmo logo abaixo.
+        await expect
+          .poll(async () => (await adm.from("avaliacao_contestacoes").select("status").eq("detalhe", `O comentário cita um fato que não aconteceu ${marca}, tenho comprovação`).maybeSingle()).data?.status, { timeout: 30_000, message: "a decisão 'manter no ar' foi gravada" })
+          .toBe("mantida");
       } finally {
         await ctxAdmin.close();
       }

@@ -4,6 +4,9 @@ import { conversationId } from "@/lib/messages/conversation-id";
 import { categoriaLabelParaDono } from "@/config/categorias-profissionais";
 import { motivoParaDono } from "@/lib/pedidos/pedidos";
 import { dataBR } from "@/lib/utils";
+import { dadosDoImovelDaCandidatura } from "@/lib/data/candidatura-email";
+import { decisaoDaCandidatura, periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
+import { envioDaCandidatura } from "@/lib/candidaturas-envio";
 import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
 import { cartaoCandidato } from "@/lib/perfil/perfil-publico";
 import { sinaisPorQueParaDono, type PorQueNaCidade } from "@/lib/perfil/por-que-na-cidade";
@@ -29,6 +32,7 @@ interface LeadRow {
   status: string;
   tenant_id: string;
   property_id: string;
+  created_at: string | null;
   property: { title: string | null; pets_allowed?: boolean | null } | null;
 }
 
@@ -66,7 +70,7 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
   const { data, error } = await supabase
     .from("leads")
     .select(
-      `id, status, tenant_id, property_id,
+      `id, status, tenant_id, property_id, created_at,
        property:properties!leads_property_id_fkey ( title, pets_allowed )`
     )
     .eq("owner_id", user.id)
@@ -175,6 +179,7 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
   // lido pelo servidor só dos leads deste dono (ids já filtrados pela RLS acima).
   const motivos = new Map<string, string>();
   const inicios = new Map<string, string>();
+  const fins = new Map<string, string>();
   const ocupantes = new Map<string, number>();
   if (admin && rows.length > 0) {
     const { data: ms } = await admin.from("leads").select("id, motivo_estadia, inicio_desejado, qtd_ocupantes").in("id", rows.map((r) => r.id));
@@ -184,6 +189,34 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
       if (rotulo) motivos.set(m.id, rotulo);
       if (m.inicio_desejado) inicios.set(m.id, m.inicio_desejado);
     }
+    // E1053: a saída escolhida (0258), lida à parte — a leitura do motivo acima fica como está.
+    const { data: fs } = await admin.from("leads").select("id, fim_desejado").in("id", rows.map((r) => r.id));
+    for (const f of (fs ?? []) as { id: string; fim_desejado: string | null }[]) if (f.fim_desejado) fins.set(f.id, f.fim_desejado);
+  }
+  // E1053: o cartão de decisão mostra Entrada, Saída e Total da estadia — a MESMA leitura do imóvel e a MESMA conta da
+  // confirmação da candidatura (dadosDoImovelDaCandidatura + decisaoDaCandidatura). Uma leitura por imóvel; falha → sem total.
+  const imoveisDecisao = new Map<string, Awaited<ReturnType<typeof dadosDoImovelDaCandidatura>>>();
+  if (admin && rows.length > 0) {
+    await Promise.all(
+      [...new Set(rows.map((r) => r.property_id))].map(async (pid) =>
+        imoveisDecisao.set(pid, await dadosDoImovelDaCandidatura(admin, pid).catch(() => null)),
+      ),
+    );
+  }
+  const decisaoDe = (r: LeadRow): Lead["decisao"] => {
+    const im = imoveisDecisao.get(r.property_id);
+    const entrada = inicios.get(r.id) ?? null;
+    const saida = fins.get(r.id) ?? null;
+    const p = periodoDaCandidatura(entrada, saida);
+    const d = decisaoDaCandidatura({ entrada, saida, totalMensal: im?.totalMensal ?? 0, estadiaDias: im && p ? im.estadia(p.dias) : null });
+    // Sem a leitura do imóvel não há total (nunca "R$ 0,00").
+    return im ? d : { ...d, total: null };
+  };
+  // E657: o reenvio da candidatura, lido À PARTE e tolerante (a coluna é da migração 0315: se atrasar, a lista não quebra).
+  const reenviadas = new Map<string, string>();
+  if (admin && rows.length > 0) {
+    const { data: rs, error: erroRs } = await admin.from("leads").select("id, reenviada_em").in("id", rows.map((r) => r.id));
+    if (!erroRs) for (const x of (rs ?? []) as { id: string; reenviada_em: string | null }[]) if (x.reenviada_em) reenviadas.set(x.id, x.reenviada_em);
   }
   // Foto só depois do aceite (podeVerAvatar: foto do inquilino só com relação aceita).
   const fotos = new Map<string, string | null>();
@@ -252,7 +285,10 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
       identidade: identidadeDe(r.tenant_id),
       moradorVerificado: seloTriagem.get(r.tenant_id) ?? null,
       motivo: motivos.get(r.id),
+      decisao: decisaoDe(r),
       fichaPet,
+      // E657: quando a candidatura chegou (último envio), com o selo de reenvio — o dono também vê "Enviada em".
+      ...envioDaCandidatura(r.created_at, reenviadas.get(r.id) ?? null),
     };
   });
 }

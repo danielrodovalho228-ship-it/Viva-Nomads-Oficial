@@ -39,5 +39,6 @@ test("a tela: o diálogo passa a estadiaDoImovel (a mesma do painel) e mostra a 
   assert.match(pd, /LINHAS_REVISAR\.has\(l\.rotulo\) \|\| l\.rotulo\.startsWith\("Total da estadia \("\)/);
   assert.match(pd, /const LINHAS_REVISAR = new Set\(\["Motivo da estadia", "Mensal", "Total por mês \(com contas\)", "Total do contrato", "Conta do total"\]\);/);
   const card = readFileSync("src/components/property/price-card.tsx", "utf8");
-  assert.match(card, /estadiaDoImovel\(property, meses\)/);
+  // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): a mesma função também com 1 mês.
+  assert.match(card, /estadiaDoImovel\(property, Math\.max\(1, meses\)\)/);
 });

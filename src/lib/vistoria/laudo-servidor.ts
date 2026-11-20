@@ -28,6 +28,7 @@ import {
   type Resultado,
 } from "./laudo";
 import { conteudoLaudo } from "./laudo-documento";
+import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 import { assinaturaDoLaudo } from "./escolha";
 import { createHash } from "node:crypto";
 import { consequencias, degrauDoProprietario, expiraEm, geraStrike, imovelComStrike, proximaOrdem, strikesParaApagar, type Strike } from "./strikes";
@@ -373,6 +374,8 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
     return { ok: false, erro: "Não foi possível gravar o laudo." };
   }
   await admin.from("vistoria_pedidos").update({ status: "laudo_emitido", atualizado_em: agora.toISOString() }).eq("id", p.id);
+  // E690: a avaliação de TESTE concluída pode ativar o avaliador sozinho (atrás de chave; nunca lança).
+  if (p.teste && p.avaliador_id) await tentarAtivacaoAutomatica(admin, { credenciamentoId: p.avaliador_id });
   await admin.from("vistoria_fila_admin").update({ resolvido_em: agora.toISOString() }).eq("tipo", "laudo_atrasado").eq("pedido_id", p.id).is("resolvido_em", null);
 
   // Ruído: as 4 perguntas da visita passam a valer (origem 'vistoria').

@@ -44,13 +44,20 @@ export async function getBlocks(propertyId: string): Promise<BlocoDatas[]> {
  * Datas indisponíveis no calendário público: os bloqueios do dono + os períodos com contrato ativo (0176). Só datas —
  * nunca quem mora. [] em demo/sem backend.
  */
-export async function getDatasIndisponiveis(propertyId: string): Promise<{ inicio: string; fim: string }[]> {
+export async function getDatasIndisponiveis(
+  propertyId: string,
+): Promise<{ inicio: string; fim: string; tipo: "ocupado" | "bloqueado" }[]> {
   if (!UUID_RE.test(propertyId)) return [];
-  const bloqueios = (await getBlocks(propertyId)).map((b) => ({ inicio: b.inicio, fim: b.fim }));
+  // E666: "ocupado" = contrato ou reserva de outra agenda (importada); "bloqueado" = fechado pelo próprio proprietário.
+  const bloqueios = (await getBlocks(propertyId)).map((b) => ({
+    inicio: b.inicio,
+    fim: b.fim,
+    tipo: b.origem === "importado" ? ("ocupado" as const) : ("bloqueado" as const),
+  }));
   const admin = createAdminClient();
   // Achado 48: falhou uma das leituras → LANÇA (o calendário público avisa), nunca "tudo livre".
   const contratos = admin ? await periodosOcupados(admin, propertyId) : [];
-  return [...bloqueios, ...contratos];
+  return [...bloqueios, ...contratos.map((c) => ({ ...c, tipo: "ocupado" as const }))];
 }
 
 /** Proprietário BLOQUEIA um intervalo. RLS garante que só o dono insere. */

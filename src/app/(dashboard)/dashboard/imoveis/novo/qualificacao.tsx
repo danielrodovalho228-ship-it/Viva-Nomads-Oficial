@@ -8,7 +8,9 @@ import {
   TELAS_QUALIFICACAO,
   TOTAL_TELAS,
   SUBTITULO_QUALIFICACAO,
-  aplicarRespostas,
+  confortoDoResultado,
+  fracaoDaQualificacao,
+  rotuloProgressoQualificacao,
   contarRespondidas,
   criterioDe,
   faltamDoEssencial,
@@ -20,7 +22,7 @@ import {
 } from "@/lib/anuncio/qualificacao-conforto";
 import { nivelDaQualificacao, type ProvasDoRascunho } from "@/lib/anuncio/qualificacao-nivel";
 import { cn } from "@/lib/utils";
-import { progressoQualificacao, textoQualificacao, textoRespondidas } from "@/lib/anuncio/assistente-telas";
+import { progressoQualificacaoComRascunho, textoQualificacao, textoRespondidas } from "@/lib/anuncio/assistente-telas";
 import { RodapeAssistente } from "./rodape-assistente";
 
 const ICONES: Record<IconeOpcao, React.ComponentType<{ className?: string }>> = {
@@ -55,8 +57,14 @@ export function Qualificacao(p: {
   ocupado?: boolean;
   /** E180: o aviso "Você tem um anúncio em andamento" (Continuar de onde parei), logo abaixo do progresso. */
   aviso?: React.ReactNode;
+  /** E699: o cartão "Para publicar, a Viva pede duas coisas" já na entrada do fluxo (antes do Passo 1). */
+  travas?: React.ReactNode;
   /** E415: as provas do rascunho (foto na hora, internet medida, ruído) — o resultado as credita. */
   provas?: ProvasDoRascunho | null;
+  /** E506: o conforto que o rascunho já tem confirmado (Passo 5) — conta no resultado e na barra. */
+  confirmados?: readonly string[];
+  /** E506: o % completo real do rascunho (prontidão) — a barra nunca fica abaixo dele. */
+  progressoRascunho?: number;
 }) {
   const resultado = p.tela >= TOTAL_TELAS;
   // O "Sair" do topo (moldura do assistente) aqui salva as respostas antes de sair (decisão do Muse, 25/10).
@@ -79,17 +87,20 @@ export function Qualificacao(p: {
   // "Anunciar imóvel" do topo dos passos e o mesmo rodapé fixo (botão primário + barra contínua até o Passo 1).
   const telaAtual = resultado ? TOTAL_TELAS : p.tela + 1;
   const respondidas = contarRespondidas(p.respostas);
+  const confortoAgora = confortoDoResultado(p.respostas, p.confirmados);
+  const faltamAgora = faltamDoEssencial(confortoAgora).length;
   return (
     <section className="w-full" data-testid="qualificacao" data-tela={resultado ? "resultado" : p.tela + 1}>
       <span className="inline-flex items-center gap-2 rounded-full border border-forest px-3 py-1 text-sm font-medium text-forest" data-testid="cadastro-modo">
         Anunciar imóvel <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
       </span>
       <p className="mt-3 text-sm font-medium text-muted" data-testid="qualificacao-progresso">
-        {resultado ? "Qualificação · pronta" : `Qualificação · ${p.tela + 1} de ${TOTAL_TELAS}`}
+        {resultado ? rotuloProgressoQualificacao(faltamAgora) : `Qualificação · ${p.tela + 1} de ${TOTAL_TELAS}`}
       </p>
       {p.aviso && <div className="mt-4">{p.aviso}</div>}
+      {p.travas && <div className="mt-4" data-testid="qualificacao-travas">{p.travas}</div>}
       {resultado ? (
-        <Resultado respostas={p.respostas} provas={p.provas ?? null} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} />
+        <Resultado respostas={p.respostas} confirmados={p.confirmados} provas={p.provas ?? null} onVer={p.onVerNoCadastro} onResponderDeNovo={() => p.onTela(0)} />
       ) : (
         <Tela
           indice={p.tela}
@@ -102,9 +113,9 @@ export function Qualificacao(p: {
       <RodapeAssistente
         pos={0}
         total={10}
-        texto={resultado ? "Qualificação pronta · a seguir, o Passo 1" : textoQualificacao(telaAtual, TOTAL_TELAS)}
+        texto={resultado ? "Resultado da qualificação · a seguir, o Passo 1" : textoQualificacao(telaAtual, TOTAL_TELAS)}
         detalhe={resultado ? null : textoRespondidas(respondidas)}
-        pct={progressoQualificacao(resultado ? TOTAL_TELAS : p.tela, TOTAL_TELAS, 10, respondidas.feitas / respondidas.total)}
+        pct={progressoQualificacaoComRascunho(resultado ? TOTAL_TELAS : p.tela, TOTAL_TELAS, 10, fracaoDaQualificacao(respondidas, confortoAgora.length), p.progressoRascunho ?? 0)}
         onVoltar={!resultado && p.tela > 0 ? () => p.onTela(p.tela - 1) : null}
         primario={
           resultado
@@ -257,8 +268,8 @@ function PerguntaQ({ q, valor, onResponder }: { q: Pergunta; valor: string | boo
   );
 }
 
-function Resultado({ respostas, provas, onVer, onResponderDeNovo }: { respostas: Respostas; provas: ProvasDoRascunho | null; onVer: () => void; onResponderDeNovo: () => void }) {
-  const { conforto } = aplicarRespostas(respostas);
+function Resultado({ respostas, confirmados, provas, onVer, onResponderDeNovo }: { respostas: Respostas; confirmados?: readonly string[]; provas: ProvasDoRascunho | null; onVer: () => void; onResponderDeNovo: () => void }) {
+  const conforto = confortoDoResultado(respostas, confirmados);
   const faltam = faltamDoEssencial(conforto);
   const { titulo, subtitulo } = tituloResultado(faltam.length);
   // E179: o que as respostas já mostram (ex.: micro-ondas na cozinha) sai do "Para subir a Conforto".

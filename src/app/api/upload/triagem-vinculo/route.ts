@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, DIA } from "@/lib/limites";
-import { DOC_MAX_BYTES, DOC_MIN_BYTES, DOC_MIME, tipoRealPorMagicBytes } from "@/lib/upload-limits";
+import { DOC_MAX_BYTES, DOC_MIN_BYTES, DOC_MIME, tipoRealPorMagicBytes, mensagemArquivoPequeno } from "@/lib/upload-limits";
 import { BUCKET_TRIAGEM, caminhoVinculo, ehTipoVinculo, estadoVinculo, podeEnviar, type LinhaVinculo } from "@/lib/triagem/vinculo";
 import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Muitos envios hoje. Tente novamente amanhã." }, { status: 429 });
   }
   if (file.size < DOC_MIN_BYTES) {
-    return NextResponse.json({ error: `Arquivo pequeno demais (mín. ${Math.round(DOC_MIN_BYTES / 1024)} KB) — parece não ser um documento válido.` }, { status: 400 });
+    return NextResponse.json({ error: mensagemArquivoPequeno() }, { status: 400 });
   }
   if (file.size > DOC_MAX_BYTES) return NextResponse.json({ error: `Arquivo grande demais (máx. ${Math.round(DOC_MAX_BYTES / 1024 / 1024)} MB).` }, { status: 400 });
   const bytes = new Uint8Array(await file.arrayBuffer());

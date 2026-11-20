@@ -13,25 +13,34 @@ export interface SituacaoIdentidade {
  * O estado da identidade da PRÓPRIA pessoa no navegador (complemento do prompt 23): lê /api/caf/status, que devolve
  * o estado único (estadoIdentidadeDe). null = carregando. Sem resposta, cai em null e a tela mostra o carregando.
  */
-export function useEstadoIdentidade(): { situacao: SituacaoIdentidade | null; recarregar: () => Promise<void> } {
+export function useEstadoIdentidade(): { situacao: SituacaoIdentidade | null; recarregar: () => Promise<void>; indisponivel: boolean } {
   const [situacao, setSituacao] = useState<SituacaoIdentidade | null>(null);
+  // E699 (d): a leitura falhou (rede, 401, 5xx) — a tela diz "não deu para conferir", em vez de parecer pendência.
+  const [indisponivel, setIndisponivel] = useState(false);
   const recarregar = useCallback(async () => {
     const d = (await fetch("/api/caf/status")
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null)) as (Partial<SituacaoIdentidade> & { identidade?: EstadoIdentidade }) | null;
-    if (d?.identidade) setSituacao({ identidade: d.identidade, temCpf: d.temCpf === true, teste: d.teste === true });
+    if (d?.identidade) {
+      setSituacao({ identidade: d.identidade, temCpf: d.temCpf === true, teste: d.teste === true });
+      setIndisponivel(false);
+    } else setIndisponivel(true);
   }, []);
   useEffect(() => {
     let vivo = true;
     fetch("/api/caf/status")
       .then((r) => (r.ok ? r.json() : null))
       .then((d: (Partial<SituacaoIdentidade> & { identidade?: EstadoIdentidade }) | null) => {
-        if (vivo && d?.identidade) setSituacao({ identidade: d.identidade, temCpf: d.temCpf === true, teste: d.teste === true });
+        if (!vivo) return;
+        if (d?.identidade) setSituacao({ identidade: d.identidade, temCpf: d.temCpf === true, teste: d.teste === true });
+        else setIndisponivel(true);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (vivo) setIndisponivel(true);
+      });
     return () => {
       vivo = false;
     };
   }, []);
-  return { situacao, recarregar };
+  return { situacao, recarregar, indisponivel };
 }

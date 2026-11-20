@@ -119,66 +119,58 @@ for (const largura of LARGURAS) {
       await expect(page.getByText(/Tempo até/)).toHaveCount(0);
     });
 
-    test("valor: 'R$ X/mês · R$ Y em N meses' pela duração da busca; N = 1 mostra só '/mês'; 'a Viva não segura dinheiro'", async ({ page }) => {
+    // E920 (Gerente, 14/11): o total da página fica no período de referência (a estadia mínima, como o cartão). Antes este teste
+    // guardava "meses: 3" na última busca do aparelho e esperava "R$ Y em 3 meses": a página trocava de período sozinha depois
+    // de carregar. Agora, com a busca de 3 meses guardada, o ube-001 mostra "R$ Y em 1 mês" (a estadia mínima dele).
+    test("valor: 'R$ X/mês · R$ Y em N meses' pelo período de referência (não pela última busca guardada); 'a Viva não segura dinheiro'", async ({ page }) => {
       await page.addInitScript(() => localStorage.setItem("vn:ultima-busca", JSON.stringify({ inicio: "", meses: 3, pessoas: 0 })));
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const num = (t: string) => Number(t.replace(/[^\d,]/g, "").replace(",", "."));
       if (largura === 390) {
         const barra = page.getByTestId("barra-fixa-imovel");
         await expect(barra).toBeVisible();
         const mes = num(await barra.getByTestId("barra-preco-mes").innerText());
-        await expect(barra.getByTestId("barra-total-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 3 meses/);
+        await expect(barra.getByTestId("barra-total-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 1 mês/);
         // E254-A: o total do período da barra é o do cartão de preço (a mesma função, com os pagamentos únicos).
-        const totalBarra = num((await barra.getByTestId("barra-total-estadia").innerText()).replace(/em 3 meses/, ""));
-        expect(totalBarra).toBeGreaterThanOrEqual(mes * 3 - 0.5);
-        expect(totalBarra).toBe(num((await page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, "")));
+        const totalBarra = num((await barra.getByTestId("barra-total-estadia").innerText()).replace(/em 1 mês/, ""));
+        expect(totalBarra).toBeGreaterThanOrEqual(mes - 0.5);
+        expect(totalBarra).toBe(num((await page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia").innerText()).replace(/em 1 mês/, "")));
         // Decisão do Muse (31/10): a barra não repete "A Viva não segura dinheiro"; a frase oficial sob o botão diz que o
-        // pagamento vai direto ao proprietário.
+        // pagamento vai direto ao proprietário. E694: no EXEMPLO não há botão de pedir, então nem a frase sob ele (a frase vale
+        // no anúncio real: t75/t398).
         await expect(barra.getByTestId("barra-nao-segura")).toHaveCount(0);
-        await expect(barra.getByTestId("barra-cta-frase")).toContainText("o pagamento vai direto para ele");
+        await expect(barra.getByTestId("barra-cta-frase")).toHaveCount(0);
         // O mesmo número do cartão de preço.
         expect(num(await page.getByTestId("total-por-mes").innerText())).toBe(mes);
       } else {
         const cartao = page.locator("#cartao-preco");
         const mes = num(await cartao.getByTestId("cartao-lateral-mes").innerText());
-        await expect(cartao.getByTestId("cartao-lateral-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 3 meses/);
-        // E254-A: o total do período = 3 × total do mês + os pagamentos únicos (preparação, limpeza de saída), com a conta aberta.
-        const totalPeriodo = num((await cartao.getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, ""));
+        await expect(cartao.getByTestId("cartao-lateral-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 1 mês/);
+        // E254-A: o total do período = 1 × total do mês + os pagamentos únicos (preparação, limpeza de saída), com a conta aberta.
+        const totalPeriodo = num((await cartao.getByTestId("cartao-lateral-estadia").innerText()).replace(/em 1 mês/, ""));
         const conta = await cartao.getByTestId("cartao-lateral-estadia-conta").innerText();
-        expect(conta).toMatch(/^3 × R\$/);
+        expect(conta).toMatch(/^1 × R\$/);
         const unicos = [...conta.matchAll(/\+ [^R]*R\$\s?([\d.]+(?:,\d{2})?)/g)].reduce((s, m) => s + num(m[1]), 0);
-        expect(totalPeriodo).toBeCloseTo(mes * 3 + unicos, 0);
+        expect(totalPeriodo).toBeCloseTo(mes + unicos, 0);
         await expect(cartao.getByTestId("cartao-nao-segura")).toContainText("A Viva não segura dinheiro");
       }
-      // N = 1: só "/mês".
+      // Com outra busca guardada (1 mês) e a página recarregada, o total é o mesmo: "R$ Y em 1 mês" (E777: sempre N mês/meses).
       await page.evaluate(() => localStorage.setItem("vn:ultima-busca", JSON.stringify({ inicio: "", meses: 1, pessoas: 0 })));
       await page.reload({ waitUntil: "domcontentloaded" });
       const estadia = largura === 390 ? page.getByTestId("barra-total-estadia") : page.getByTestId("cartao-lateral-estadia");
-      await expect(estadia).toHaveCount(0);
+      await expect(estadia).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 1 mês/);
     });
 
-    test("UM primário 'Solicitar' (a candidatura de sempre) e 'Agendar visita' em texto terciário, sem travar", async ({ page }) => {
+    test("exemplo (E694): nenhum primário de ação — a explicação e a saída para os imóveis reais; sem visita nem candidatura", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
-      await expect(page.locator(largura === 390 ? '[data-testid="barra-solicitar"]' : '[data-testid="cartao-solicitar"]')).toBeVisible();
-      await expect.poll(() => primarios(page), { timeout: 10_000 }).toEqual(["Pedir para morar"]);
-      const escopo = largura === 390 ? page.getByTestId("barra-fixa-imovel") : page.locator("#cartao-preco");
-      const visita = largura === 390 ? escopo.getByTestId("barra-agendar-visita") : escopo.getByTestId("agendar-visita");
-      await expect(visita).toHaveText(/Agendar visita/);
-      expect(await visita.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
-      // A visita é opção: abre a própria janela e fecha sem mexer na solicitação.
-      // Clique antes da hidratação não abre a janela (lab 24/10, instável): repete o clique até ela aparecer. Abrir é idempotente.
-      await expect(async () => {
-        await visita.click();
-        await expect(page.getByTestId("visita-presencial-passo")).toBeVisible({ timeout: 3_000 });
-      }).toPass({ timeout: 20_000 });
-      await page.getByTestId("visita-presencial-passo").click({ position: { x: 5, y: 5 } });
-      await expect(page.getByTestId("visita-presencial-passo")).toHaveCount(0);
-      // "Solicitar" abre o MESMO fluxo de candidatura (passo de revisão; o envio final é "Enviar candidatura").
-      await escopo.getByRole("button", { name: "Pedir para morar", exact: true }).click();
-      const passo = page.getByTestId("solicitacao-passo");
-      await expect(passo).toBeVisible();
-      await expect(passo.getByTestId("solicitacao-demo")).toBeVisible(); // ube-001 é exemplo: nada é enviado
-      await expect(page.getByRole("button", { name: "Enviar candidatura" })).toHaveCount(0); // só no último passo
+      const saida = largura === 390 ? page.getByTestId("barra-ver-reais") : page.locator("#cartao-preco").getByTestId("exemplo-ver-reais");
+      await expect(saida).toBeVisible();
+      // Sem "Pedir para morar", "Agendar visita", "Visita por vídeo" nem "Enviar mensagem": o exemplo explica (o anúncio real tem os 4).
+      await expect.poll(() => primarios(page), { timeout: 10_000 }).toEqual([]);
+      await expect(page.getByTestId("exemplo-sem-acoes")).toBeAttached();
+      await expect(page.getByTestId(largura === 390 ? "barra-agendar-visita" : "agendar-visita")).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Pedir para morar", exact: true })).toHaveCount(0);
     });
   });
 }

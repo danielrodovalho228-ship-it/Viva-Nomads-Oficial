@@ -83,18 +83,21 @@ test.describe("T150 — home e computador (ordem af3a27e3)", () => {
     expect(v.y + v.height).toBeLessThanOrEqual(n.y);
   });
 
-  test("1280 px: barra Comparar a 12 px do rodapé (bottom-3) e sem tocar no Fale com a Viva", async ({ page }) => {
+  test("1280 px: barra Comparar é faixa normal da página (sem fixed/sticky) e sem tocar no Fale com a Viva", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/buscar", { waitUntil: "domcontentloaded" });
     const marcas = page.getByTestId("marcar-comparar");
     await expect(marcas.first()).toBeVisible();
     test.skip((await marcas.count()) < 1, "sem imóveis na busca do ambiente");
     await marcas.nth(0).check();
-    // E529: a barra agora é encaixada (sticky, com fundo e borda); quem fica a 12 px do rodapé é a própria barra.
-    const barra = (await page.getByTestId("barra-comparar").boundingBox())!;
-    const folga = 800 - (barra.y + barra.height);
-    expect(folga).toBeGreaterThanOrEqual(11);
-    expect(folga).toBeLessThanOrEqual(13);
+    // E529: a barra deixou de flutuar (fixed/sticky a 12 px do rodapé): ocupa o próprio espaço, logo acima da lista,
+    // e nunca cobre cartão. O que se confere agora é a posição no fluxo da página.
+    const alvo = page.getByTestId("barra-comparar");
+    await expect(alvo).toBeVisible();
+    await expect(alvo).toHaveCSS("position", "static");
+    const barra = (await alvo.boundingBox())!;
+    const primeiro = (await marcas.first().evaluate((el) => el.closest("label")?.parentElement?.getBoundingClientRect().top ?? 0));
+    expect(barra.y + barra.height).toBeLessThanOrEqual(primeiro + 1);
     const viva = page.getByTestId("fale-com-a-viva-raiz");
     if (await viva.isVisible()) {
       const v = (await viva.boundingBox())!;

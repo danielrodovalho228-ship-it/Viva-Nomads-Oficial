@@ -25,7 +25,7 @@ test("a qualificação não é mais um portão que esconde o cadastro", () => {
   assert.doesNotMatch(pagina, /Conclua a qualificação primeiro/);
   assert.match(pagina, /podePublicar = prontidao\.podePublicar && qualificado/);
   // Prompt 22: a qualificação é um ITEM do portão único (visível desde o passo 1), com "Responder aqui" no painel.
-  assert.match(pagina, /qualificacaoOk: editingId \? undefined : qualificado/);
+  assert.match(pagina, /qualificacaoOk: editingId \? undefined : declaracoesDoImovelOk\(elegibilidade\)/);
   assert.match(pagina, /checklist-resolver-\$\{c\.key\}/);
 });
 

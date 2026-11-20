@@ -7,6 +7,7 @@
   As regras de publicar não mudam: os 12 itens do essencial (prontidão) + isEligible (convenção "Não sei" publica com
   pendência; "Não" bloqueia) + o aceite do termo da IA. Aqui só se decide o que a tela diz.
 */
+import { TEXTO_EM_BREVE } from "../identidade/estado.ts";
 import type { ItemProntidao } from "./prontidao.ts";
 import type { DeclaracoesPasso10 } from "./requisitos-passo10.ts";
 import { TEXTO_HABITAVEL, TEXTO_IPTU } from "./requisitos-passo10.ts";
@@ -42,6 +43,11 @@ export interface EntradaSecoes {
   /** Rótulo da operação escolhida ("Sou o proprietário"…). */
   rotuloOperacao: string;
   identidade: EstadoIdentidade;
+  /**
+   * E748: o texto do estado de identidade vindo da FONTE ÚNICA (`estadoIdentidade().texto`, a mesma de Conta › Segurança).
+   * A revisão não inventa o próprio texto do estado: usa este, e só cai no padrão quando ainda não chegou.
+   */
+  identidadeTexto?: string | null;
   documento: EstadoDocumento;
   /** E149-A: "Documento enviado no início · em análise/aprovado", quando veio pela matrícula. */
   linhaDocumentoInicio?: string | null;
@@ -62,12 +68,12 @@ export function secoesAntesDePublicar(e: EntradaSecoes): ItemSecao[] {
     estado: e.identidade === "ok" ? "ok" : "aviso",
     resumo:
       e.identidade === "ok"
-        ? "Confirmada"
+        ? e.identidadeTexto?.trim() || "Confirmada"
         : e.identidade === "em_breve"
-          ? "Confirmação ainda não disponível"
+          ? `${e.identidadeTexto?.trim() || TEXTO_EM_BREVE} · não impede a publicação`
           : e.identidade === "carregando"
             ? "Conferindo…"
-            : "Opcional: a equipe confere o documento",
+            : "Opcional: a equipe confere o documento · não impede a publicação",
   };
 
   const docInicio = e.linhaDocumentoInicio?.trim() || null;
@@ -168,6 +174,19 @@ export function precosDaPrevia(property: Property): LinhaPrecoPrevia[] {
   ];
 }
 
+/** E1050: o rótulo da linha da caução na prévia da revisão. */
+export const ROTULO_CAUCAO_PREVIA = "Caução (50% do mensal)";
+
+/** E1050/E1054: a caução calculada — 50% do valor mensal. Fonte única da revisão e do passo de Preço. Sem mensal → null. */
+export function caucaoDoMensal(mensal: number): number | null {
+  return mensal > 0 ? mensal * 0.5 : null;
+}
+
+/** E1050: a caução calculada que o dono vê na revisão — 50% do valor mensal. Sem valor mensal → null (sem "R$ 0"). */
+export function caucaoDaPrevia(property: Property): number | null {
+  return caucaoDoMensal(property.monthlyPrice ?? 0);
+}
+
 /** Evento da página que abre uma seção do "Antes de publicar" (o "Resolver" da lista e o motivo do botão travado). */
 export const EVENTO_ABRIR_SECAO = "vn:passo10-abrir-secao";
 
@@ -184,7 +203,7 @@ export function secaoDoItem(chave: string): SecaoAntesDePublicar | null {
  * ("Comodidades" com 3 faltas conta 3) e as seções do "Antes de publicar", e só fechava contando tudo à mão. O aceite do
  * termo da IA, que não entra no N, é dito aqui também, com o lugar dele. null quando nada falta na lista nem nas seções.
  */
-export function contaDaConferencia(p: { itens: { ok: boolean; faltam: string[] }[]; pendentesNaRevisao: string[]; aceitouIa: boolean }): string | null {
+export function contaDaConferencia(p: { itens: { ok: boolean; faltam: string[] }[]; pendentesNaRevisao: string[]; aceitouIa: boolean; identidadeAConfirmar?: boolean }): string | null {
   const pendentes = p.itens.filter((i) => !i.ok);
   const naLista = pendentes.reduce((n, i) => n + Math.max(1, i.faltam.length), 0);
   const naRevisao = p.pendentesNaRevisao.length;
@@ -194,5 +213,7 @@ export function contaDaConferencia(p: { itens: { ok: boolean; faltam: string[] }
   if (naRevisao > 0) partes.push(`${naRevisao} no “Antes de publicar”`);
   const soma = partes.length > 1 ? ` = ${naLista + naRevisao}` : "";
   const aceite = p.aceitouIa ? "" : " Também falta o aceite do termo da IA, no fim desta coluna.";
-  return `A conta: ${partes.join(" + ")}${soma}.${aceite}`;
+  // E761: a identidade "a confirmar" aparece no "Antes de publicar" mas NÃO entra nesta conta — a conta diz isso, para ficar claro que ela não trava a publicação.
+  const identidade = p.identidadeAConfirmar ? " A identidade, ainda a confirmar, não entra nesta conta e não impede de publicar." : "";
+  return `A conta: ${partes.join(" + ")}${soma}.${aceite}${identidade}`;
 }

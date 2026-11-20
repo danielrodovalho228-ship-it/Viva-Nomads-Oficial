@@ -29,5 +29,5 @@ test("tela cheia: a legenda fica no topo, longe da atribuição do mapa no canto
   const t = ler("components/property/location-nearby.tsx");
   const cheio = t.slice(t.indexOf('data-testid="mapa-tela-cheia"'));
   assert.doesNotMatch(cheio.slice(0, cheio.indexOf("</div>\n        </div>")), /absolute inset-x-3 bottom-3/);
-  assert.match(cheio, /data-testid="mapa-tela-cheia-legenda"[^>]*className="absolute left-3 right-16 top-3/);
+  assert.match(cheio, /data-testid="mapa-tela-cheia-legenda"[^>]*className="absolute left-14 right-16 top-3/);
 });

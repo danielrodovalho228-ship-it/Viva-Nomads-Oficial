@@ -1,5 +1,7 @@
 "use server";
 
+import { envioDaCandidatura } from "@/lib/candidaturas-envio";
+import { diasValidos } from "@/lib/estadia-em-dias";
 import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +22,7 @@ import { lerDocumento, temDocumento } from "@/lib/data/documento-servidor";
 import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
-import { propostaAcordadaDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
+import { preAceiteExpiradoDoLead, propostaAcordadaDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
 import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel, MSG_DATAS_SEM_CONFERIR } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
@@ -189,6 +191,11 @@ export interface MinhaCandidatura {
   propertyTitle: string;
   situacao: RotuloCandidatura;
   createdAt: string | null;
+  /** E657: último envio (reenviada_em, senão a criação). */
+  enviadaEm: string | null;
+  /** E657: a candidatura foi reenviada (selo "Reenviada") e quando foi o primeiro envio. */
+  reenviada: boolean;
+  primeiroEnvioEm: string | null;
   /** Prompt 24: contrato registrado desta candidatura (aparece no cartão com o status da assinatura). */
   contrato: { id: string; status: string } | null;
 }
@@ -213,7 +220,7 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
   const { data, error } = await supabase
     .from("leads")
     .select(
-      `id, status, owner_id, property_id, created_at,
+      `id, status, owner_id, property_id, created_at, reenviada_em,
        property:properties!leads_property_id_fkey ( title )`,
     )
     .eq("tenant_id", user.id)
@@ -246,6 +253,7 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
     owner_id: string;
     property_id: string;
     created_at: string | null;
+    reenviada_em: string | null;
     property: { title: string | null } | null;
   };
   return (data as unknown as Row[]).map((r) => ({
@@ -253,6 +261,8 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
     propertyTitle: r.property?.title ?? "Imóvel",
     situacao: situacaoCandidatura(r.status, engajou.has(`${r.owner_id}_${r.property_id}`)),
     createdAt: r.created_at,
+    // E657: a data de envio que a pessoa vê é a do último envio (o reenvio, se houve); a criação segue em createdAt.
+    ...envioDaCandidatura(r.created_at, r.reenviada_em),
     contrato: contratoDoLead.get(r.id) ?? null,
   }));
 }
@@ -291,6 +301,8 @@ export interface FechamentoContexto {
   ocupantesSugerido?: number | null;
   /** E202 (candidatura): meses do período escolhido na candidatura (entrada → saída); o Fechamento abre com ele. */
   mesesSugerido?: number | null;
+  /** E655: os dias EXATOS da janela da candidatura (o Fechamento sem proposta os respeita, não os meses arredondados). */
+  diasSugerido?: number | null;
   /** PROP-3 (E118): identidade do INQUILINO, pela mesma fonte de Interessados (estadosIdentidade). */
   identidadeInquilino?: EstadoIdentidade | null;
 }
@@ -319,6 +331,11 @@ export async function getFechamentoContext(
   if (erroLead) throw new Error("Não foi possível ler a candidatura aceita.");
   if (!lead) return null;
 
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono. Sem Fechamento (que mostraria o preço do anúncio no
+  // lugar do congelado) até a reabertura. Falha de leitura LANÇA (error.tsx), como a da candidatura (achado 109).
+  const adminPre = createAdminClient();
+  if (adminPre && (await preAceiteExpiradoDoLead(adminPre, lead.id as string))) return null;
+
   // Imóvel (escopo do dono) — fonte real do card, valores e tipo.
   const property = await getPropertyForOwner(lead.property_id as string);
   if (!property) return null;
@@ -331,6 +348,7 @@ export async function getFechamentoContext(
   let proposta: FechamentoContexto["proposta"] = null;
   let ocupantesSugerido: number | null = null;
   let mesesSugerido: number | null = null;
+  let diasSugerido: number | null = null;
   let identidadeInquilino: EstadoIdentidade | null = null;
   // Plano e taxa congelados no aceite: só pelo servidor, depois de conferir que a candidatura é deste dono (0177).
   let taxaLead: TaxaDoLead | null = null;
@@ -342,7 +360,9 @@ export async function getFechamentoContext(
       const { data: d } = await admin.from("leads").select("inicio_desejado, fim_desejado, qtd_ocupantes").eq("id", lead.id).maybeSingle();
       inicioDesejado = (d?.inicio_desejado as string | null) ?? null;
       // E202 (candidatura): o período escolhido vira o prazo do Fechamento (antes abria sempre em 4 meses).
-      mesesSugerido = periodoDaCandidatura(inicioDesejado, (d?.fim_desejado as string | null) ?? null)?.meses ?? null;
+      const janela = periodoDaCandidatura(inicioDesejado, (d?.fim_desejado as string | null) ?? null);
+      mesesSugerido = janela?.meses ?? null;
+      diasSugerido = janela && diasValidos(janela.dias) ? janela.dias : null;
       const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
       if (acordada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada, termos: acordada.termos };
       ocupantesSugerido = (d?.qtd_ocupantes as number | null) ?? null;
@@ -385,6 +405,7 @@ export async function getFechamentoContext(
     proposta,
     ocupantesSugerido,
     mesesSugerido,
+    diasSugerido,
     identidadeInquilino,
   };
 }

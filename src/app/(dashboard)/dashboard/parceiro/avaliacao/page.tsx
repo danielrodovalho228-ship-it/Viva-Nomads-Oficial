@@ -12,7 +12,7 @@ import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, prazoResposta, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
-import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao } from "@/lib/vistoria/actions";
+import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
@@ -59,11 +59,11 @@ export default async function AvaliacaoParceiroPage() {
   // Correção 62-B3: o pedido de quem ainda não é parceiro fica ligado à pessoa (o parceiro nasce na aprovação).
   const { data: credLinhas, error: erroCred } = await admin
     .from("avaliadores_credenciamento")
-    .select("id, numero_credenciado, cidade, status")
+    .select("id, numero_credenciado, cidade, status, preco_proprio, prazo_entrega_dias, prazo_resposta_horas")
     .or(parc ? `parceiro_id.eq.${parc.id},user_id.eq.${user.id}` : `user_id.eq.${user.id}`)
     .limit(1);
   if (erroCred) throw new Error("Não foi possível ler seu credenciamento agora.");
-  const cred = (credLinhas ?? [])[0] as { id: string; numero_credenciado: string; cidade: string; status: string } | undefined;
+  const cred = (credLinhas ?? [])[0] as { id: string; numero_credenciado: string; cidade: string; status: string; preco_proprio: number | string | null; prazo_entrega_dias: number | null; prazo_resposta_horas: number | null } | undefined;
   const identidade = (await estadoIdentidade(admin, user.id)).estado;
   const identidadeOk = identidade === "confirmada";
   // E30: o passo 5 vem do REGISTRO da avaliação de teste (pedido de teste deste avaliador), nunca só do status.
@@ -148,7 +148,18 @@ export default async function AvaliacaoParceiroPage() {
   return (
     <div className="space-y-6">
       <PageTitle title="Avaliação de imóveis" subtitle={`Avaliador credenciado nº ${cred.numero_credenciado} · ${cred.cidade}`} />
-      <Panel data-testid="credenciamento-situacao" data-status={cred.status}>
+
+      {(cred.status === "em_teste" || cred.status === "ativo") && (
+        <Panel title="Meus termos" data-testid="meus-termos">
+          <p className="text-sm text-muted">Você define o seu valor, em quantos dias entrega o laudo e em quantas horas responde a um pedido. O proprietário vê isso na lista de escolha; sem resposta no seu prazo, o pedido volta para ele escolher outro.</p>
+          <FormAcao acao={salvarMeusTermos} className="mt-3 flex flex-wrap items-end gap-2" testid="salvar-termos">
+            <label className="text-sm">Valor (R$)<input name="valor" inputMode="decimal" defaultValue={cred.preco_proprio != null ? String(cred.preco_proprio).replace(".", ",") : ""} className={campo} required /></label>
+            <label className="text-sm">Entrega do laudo (dias)<input name="prazoEntregaDias" type="number" min={1} max={PRAZO_PROPOSTA_MAX_DIAS} defaultValue={cred.prazo_entrega_dias ?? ""} className={campo} required /></label>
+            <label className="text-sm">Respondo em até (horas)<input name="prazoRespostaHoras" type="number" min={1} max={72} defaultValue={cred.prazo_resposta_horas ?? 24} className={campo} required /></label>
+            <Button type="submit" size="sm">Salvar termos</Button>
+          </FormAcao>
+        </Panel>
+      )}      <Panel data-testid="credenciamento-situacao" data-status={cred.status}>
         <p className="text-sm text-ink">
           <span className="font-semibold" data-testid="credenciamento-estado">{ESTADO_CREDENCIAMENTO[cred.status as StatusCredenciamento]}</span> · {SITUACAO[cred.status as StatusCredenciamento]}
         </p>

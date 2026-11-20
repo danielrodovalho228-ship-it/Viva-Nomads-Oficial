@@ -29,8 +29,8 @@ test("o envio grava os dias (tela antiga: meses × 30) e a versão leva meses co
 });
 
 test("o contrato nasce com os dias da proposta aceita: prazo_total_dias e blocos de até 90 dias em dias", () => {
-  assert.match(reg, /acordada \? !diasValidos\(acordada\.dias\)/);
-  assert.match(reg, /const resumo = acordada \? resumoContratoEmDias\(acordada\.dias, aluguel, rate, tamanho\) : resumoContrato\(prazo, aluguel, rate, tamanho\);/);
+  assert.match(reg, /diasExatos != null \? !diasValidos\(diasExatos\)/);
+  assert.match(reg, /const resumo = diasExatos != null \? resumoContratoEmDias\(diasExatos, aluguel, rate, tamanho\) : resumoContrato\(prazo, aluguel, rate, tamanho\);/);
   assert.match(reg, /prazo_total_dias: resumo\.prazoTotalDias,/);
   assert.doesNotMatch(reg, /prazoTotalMeses \* DIAS_POR_MES/);
 });

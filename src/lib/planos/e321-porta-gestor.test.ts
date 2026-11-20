@@ -19,7 +19,8 @@ test("E321/E564: a porta do Gestor é uma só — N+ imóveis ativos de verdade 
 test("E321 → E564: /para-proprietarios não mistura as regras — a tabela de 12% a 6%; o Gestor (4%) é o texto próprio", () => {
   const p = ler("app/(public)/para-proprietarios/page.tsx");
   assert.doesNotMatch(p, /condições negociadas|ROTULO_FAIXA_NEGOCIAVEL|LIMITE_FAIXAS/);
-  assert.match(p, /\(de \{TAXA_MAIOR\} a \{TAXA_MENOR\}\)\. Plano Gestor: \{GESTOR_TEXTO\}\./);
+  // E805: a escada inteira + o Gestor pelo texto próprio, na frase única FRASE_ESCADA_TAXAS.
+  assert.match(p, /\{FRASE_ESCADA_TAXAS\}/);
 });
 
 test("E321/E564: as telas citam o Gestor pelo texto único; o atendimento, pela porta inteira (20+ ou administradora)", () => {

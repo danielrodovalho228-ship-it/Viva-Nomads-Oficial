@@ -1,12 +1,16 @@
 "use server";
 
 import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { erroTituloNivel, termoDeNivelDivergente } from "@/lib/anuncio/titulo-nivel";
+import type { NivelOuAdequacao } from "@/config/niveis";
+import { diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
 import { cepValido } from "@/lib/proximidades/osm";
 import { camposDaCandidatura, MSG_CANDIDATURA_JA_RESPONDIDA, MSG_CANDIDATURA_NAO_ATUALIZOU } from "@/lib/candidatura/campos";
 import { AVISO_OFENSA, termoOfensivo } from "@/lib/messages/ofensas";
 import { registrarOfensa } from "@/lib/messages/ofensas-servidor";
 import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { idDeRascunhoValido, rascunhoDaConta, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
+import { rascunhoCarimbado, rascunhoComHoraConhecida } from "@/lib/anuncio/salvo-fantasma";
 import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, erroJanelaDisponivel, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
@@ -25,6 +29,7 @@ import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
+import { corpoMensagemNova } from "@/lib/notifications/corpo-e267-restante";
 import { registrarIntencaoDeAnunciar } from "@/lib/data/intencao-servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { registrarAtivacao } from "@/lib/ativacao/servidor";
@@ -94,15 +99,19 @@ import {
 } from "@/lib/contrato-blocos";
 import { diasMaxEstadiaVigente, diasValidos } from "@/lib/estadia-em-dias";
 import { erroRegrasPets, normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { normalizarFicha, type FichaDentro } from "@/lib/ficha-dentro/ficha-dentro";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
+import { urlsDeFotosDoRascunho } from "@/lib/minimizacao/fotos-rascunho";
+import { excluirRascunhoDoDono } from "@/lib/data/excluir-rascunho-servidor";
 import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
-import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { marcarPropostaEmContrato, preAceiteExpiradoDoLead, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { ERRO_SOBREPOSICAO_PG } from "@/lib/contrato-periodo";
@@ -541,6 +550,8 @@ export interface PropertyInput {
   petsAllowed?: boolean;
   /** Regras de pets do proprietário (validadas no servidor; requer migração 0119). */
   petsRegras?: unknown;
+  /** E660: ficha do que tem dentro (camas/ar por quarto, enxoval, cozinha); normalizada no servidor (0316). */
+  fichaDentro?: unknown;
   /** Pacote de limpeza durante a estadia; validado no servidor (0144). */
   limpezaEstadia?: unknown;
   /** CAMPOS-1: regras da casa estruturadas (silêncio, fumo, festas, visitas); validadas no servidor (0233). */
@@ -577,6 +588,14 @@ export interface PropertyInput {
   /** Proximidades manuais (nome + distância digitados). */
   /** PERTO-B: lugares do OSM (origem "osm", conferidos no servidor pela busca do CEP) e manuais (com o endereço do lugar). */
   proximities?: Proximity[];
+}
+
+/** E660: grava a ficha do que tem dentro. Sem ficha no envio (edição antiga) = não mexe na que já existe. */
+async function gravarFichaDentro(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, ownerId: string, propertyId: string, bruto: unknown) {
+  if (bruto === undefined) return;
+  const ficha = normalizarFicha(bruto);
+  const { error } = await supabase.from("properties").update({ ficha_dentro: ficha }).eq("id", propertyId).eq("owner_id", ownerId);
+  if (error) console.error("[ficha-dentro] gravar falhou:", error.message);
 }
 
 /**
@@ -798,6 +817,9 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   }
   const chegada = colunasChegadaEPedido(input);
   if (!chegada.ok) return { ok: false, error: chegada.erro };
+  // E814: anúncio novo ainda não tem nível calculado — nenhum termo de nível ("premium", "conforto") no título.
+  const erroNivelNovo = erroTituloNivel(input.title ?? "", null);
+  if (erroNivelNovo) return { ok: false, error: erroNivelNovo };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -919,6 +941,7 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   }
   await gravarPrivacidade(supabase, user.id, data.id as string, input);
   await gravarChegadaEPedido(supabase, user.id, data.id as string, input);
+  await gravarFichaDentro(supabase, user.id, data.id as string, input.fichaDentro);
   // E263-A: o anúncio criado já leva as condições de pets (antes, só a edição gravava).
   try {
     const regras = input.petsAllowed ? normalizarRegrasPets(input.petsRegras) : null;
@@ -1097,6 +1120,12 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!UUID_RE.test(id)) return { ok: false, error: "Imóvel inválido para edição." };
+  // E814: o título não usa termo de nível diferente do nível CALCULADO deste anúncio (o editor já avisa; aqui trava).
+  if (termoDeNivelDivergente(input.title ?? "", null)) {
+    const { data: nv } = await supabase.from("imovel_nivel").select("nivel").eq("property_id", id).maybeSingle();
+    const erroNivel = erroTituloNivel(input.title ?? "", ((nv as { nivel?: NivelOuAdequacao | null } | null)?.nivel ?? null));
+    if (erroNivel) return { ok: false, error: erroNivel };
+  }
 
   // F45: publicar exige perfil de proprietário completo (nome e telefone) — checado
   // aqui no servidor; a conta pode ser dona e inquilina, então a tela só avisa.
@@ -1216,6 +1245,8 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   }
   await gravarPrivacidade(supabase, user.id, id, input);
   await gravarChegadaEPedido(supabase, user.id, id, input);
+
+  await gravarFichaDentro(supabase, user.id, id, input.fichaDentro);
 
   // Regras de pets (0119): validadas aqui; só vale com "aceita pets" marcado.
   try {
@@ -1404,6 +1435,8 @@ export interface ContratoInput {
   leadId: string;
   faixa: string; // temporada | media_estadia | longa
   prazoTotalMeses: number; // prazo total pretendido (contrato-mãe)
+  /** E655: sem proposta, os dias EXATOS da janela da candidatura (o servidor confere contra a candidatura). */
+  prazoTotalDias?: number;
   tamanhoBlocoMeses?: number; // padrão 2 (≤ 3 = 90 dias)
   qtdOcupantes: number;
   capacidadeSnapshot?: number | null;
@@ -1468,6 +1501,10 @@ export async function registrarContrato(
     .select("monthly_price, owner_id")
     .eq("id", lead.property_id)
     .maybeSingle();
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono; o contrato não nasce com o preço do anúncio.
+  const preAceiteExpirado = await preAceiteExpiradoDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (preAceiteExpirado === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+  if (preAceiteExpirado) return { ok: false, error: MSG_PRE_ACEITE_EXPIRADO };
   // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
   const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
   if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
@@ -1476,12 +1513,20 @@ export async function registrarContrato(
     return { ok: false, error: "Imóvel sem valor de aluguel." };
   }
 
+  // E655: sem proposta, a janela EXATA da candidatura (confirmada aqui, não pelo navegador) vale em dias.
+  let diasCandidatura: number | null = null;
+  if (!acordada && input.prazoTotalDias != null) {
+    const { data: janela, error: erroJanela } = await admin.from("leads").select("inicio_desejado, fim_desejado").eq("id", lead.id).maybeSingle();
+    if (erroJanela) return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+    diasCandidatura = diasDaCandidaturaParaContrato({ inicio: janela?.inicio_desejado as string | null, fim: janela?.fim_desejado as string | null, diasPedidos: input.prazoTotalDias, valido: (d) => diasValidos(d) });
+  }
+  const diasExatos = acordada ? acordada.dias : diasCandidatura;
   const prazo = acordada ? acordada.meses : Math.round(Number(input.prazoTotalMeses));
   // E562: com proposta aceita, o prazo são os DIAS exatos dela (30 a 180); sem proposta, os meses do Fechamento.
   // TRAVA FAIXA_91_180: desligada, o contrato novo vai até 90 dias (3 meses); ligada (padrão), até 180.
   const tetoDias = diasMaxEstadiaVigente();
   const tetoMeses = Math.min(PRAZO_MAX_MESES, Math.floor(tetoDias / 30));
-  if (acordada ? !diasValidos(acordada.dias) : !(prazo >= PRAZO_MIN_MESES && prazo <= tetoMeses))
+  if (diasExatos != null ? !diasValidos(diasExatos) : !(prazo >= PRAZO_MIN_MESES && prazo <= tetoMeses))
     return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${tetoMeses} meses, até ${Math.min(PRAZO_MAX_DIAS, tetoDias)} dias).` };
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
   const ocupantes = Math.round(Number(input.qtdOcupantes));
@@ -1498,7 +1543,7 @@ export async function registrarContrato(
   const rate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
   const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
   // E562: pela proposta, blocos de até 90 dias contados em dias (valor, caução e taxa proporcionais aos dias).
-  const resumo = acordada ? resumoContratoEmDias(acordada.dias, aluguel, rate, tamanho) : resumoContrato(prazo, aluguel, rate, tamanho);
+  const resumo = diasExatos != null ? resumoContratoEmDias(diasExatos, aluguel, rate, tamanho) : resumoContrato(prazo, aluguel, rate, tamanho);
   // Garantia única: o servidor confere a escolha (fiança só ligada e na faixa de prazo).
   const garantia: GarantiaContrato = input.garantia === "seguro_fianca" ? "seguro_fianca" : "caucao";
   const okGarantia = validarGarantia(garantia, resumo.prazoTotalDias);
@@ -1788,7 +1833,7 @@ export async function requestLead(
       if (!adm) return { ok: false, error: MSG_CANDIDATURA_NAO_ATUALIZOU };
       const { data: atualizado, error: erroAtualiza } = await adm
         .from("leads")
-        .update(campos)
+        .update({ ...campos, reenviada_em: new Date().toISOString() })
         .eq("id", existing.id)
         .eq("tenant_id", user.id)
         .eq("status", "new")
@@ -1983,8 +2028,13 @@ export async function sendMessage(input: {
       const nomeHtml = textoEmail(senderName, 40);
       const previewHtml = textoEmail(safeBody, 140);
       const previewTexto = textoPlano(safeBody, 140);
+      // E267: o corpo nomeia quem escreveu e o imóvel da conversa (só lido quando há e-mail a mandar).
+      const { data: imovelConversa } =
+        comEmail && admin && input.propertyId ? await admin.from("properties").select("title").eq("id", input.propertyId).maybeSingle() : { data: null };
+      const imovelTitulo = (imovelConversa?.title as string | null | undefined) ?? null;
       await notify({
         event: "new_message",
+        body: corpoMensagemNova({ remetente: senderName, imovelTitulo }),
         email: comEmail ? (contact!.email as string) : undefined,
         name: contact?.full_name ?? undefined,
         userId: destinatarioId,
@@ -2025,20 +2075,15 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Não autenticado." };
 
   // Prompt 58: as fotos saem do bucket com o anúncio (o hash fica, antifraude). Só as do próprio dono.
-  const { data: dono, error: erroDono } = await supabase.from("properties").select("id").eq("id", id).eq("owner_id", user.id).maybeSingle();
-  const { data: fotos, error: erroFotos } = dono ? await supabase.from("property_photos").select("url").eq("property_id", id) : { data: null, error: null };
-  // Sem a lista das fotos, excluir deixaria os arquivos no bucket sem nada que aponte para eles: para antes de apagar.
-  if (erroDono || erroFotos) return { ok: false, error: "Não foi possível excluir o anúncio agora. Tente de novo." };
-  for (const table of ["property_photos", "property_amenities", "property_proximities"]) {
-    try {
-      await supabase.from(table).delete().eq("property_id", id);
-    } catch {
-      /* tabela ausente — ignora */
-    }
+  // E953: a leitura/recusa/exclusão moram em excluirRascunhoDoDono (draft_data pela RPC do C4; só rascunho; sem a lista
+  // das fotos, para antes de apagar). O cliente é o da SESSÃO do dono.
+  const r = await excluirRascunhoDoDono(supabase, user.id, id);
+  if (!r.ok) {
+    if (r.erroBanco) console.error("[deleteProperty]", id, (r.erroBanco as { code?: string }).code);
+    return { ok: false, error: r.error };
   }
-  const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
-  if (error) return { ok: false, error: erroBancoPT(error) };
-  if (fotos?.length) await apagarFotosDoAnuncio(createAdminClient(), (fotos as { url: string }[]).map((f) => f.url));
+  // E705 (resíduo 2): a foto que só existe no draft_data (autosave do editor) também sai do bucket; a guarda do E308 protege o que outro anúncio usa.
+  if (r.urlsFotos.length) await apagarFotosDoAnuncio(createAdminClient(), r.urlsFotos);
   revalidarAnuncio(id, revalidatePath);
   return { ok: true };
 }
@@ -2089,7 +2134,8 @@ export async function saveDraftData(snap: {
     // 59-C1: a operação vai junto, pela regra do updateProperty — uma linha antiga "própria com sublocação" (que a
     // restrição da 0200 recusa em qualquer update) fica no permitido já no primeiro autosave.
     ...colunasDeOperacao(op.ownershipType, op.subleaseAuthorized),
-    draft_data: snap.data as object,
+    // E614 (ORDEM-DUET-137): toda gravação sai carimbada daqui — também a que cria o rascunho ao sair da Qualificação.
+    draft_data: rascunhoCarimbado(snap.data, new Date()) as object,
   };
 
   // Anúncio novo (sem id): continua o rascunho vazio de menos de 72 h em vez de abrir outro igual (ordem 378c07c4).
@@ -2188,7 +2234,29 @@ export async function abrirRascunho(id: string): Promise<{ ok: true; draft: unkn
   if (error) return { ok: false, motivo: "indisponivel" };
   const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: unknown } | null;
   if (!row) return { ok: false, motivo: "nao_encontrado" };
+  // E614 (ORDEM-DUET-137/139): rascunho sem carimbo (anterior à regra) reabre com a hora que se conhece dele — a da
+  // última gravação da linha (updated_at, 0346) e, enquanto não for regravada, a da criação. Só leitura: o rascunho
+  // gravado não muda ao abrir (E516). Sem a coluna (deploy antes da migração), fica a hora da criação.
+  const hora = await supabase.from("properties").select("updated_at, created_at").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const linha = (hora.error ? (await supabase.from("properties").select("created_at").eq("id", id).eq("owner_id", user.id).maybeSingle()).data : hora.data) as { updated_at?: string | null; created_at?: string | null } | null;
+  row.draft_data = rascunhoComHoraConhecida(row.draft_data ?? null, linha?.updated_at ?? null, linha?.created_at ?? null);
   return { ok: true, draft: await semFotosApagadas(row.draft_data ?? null, user.id) };
+}
+
+/**
+ * E660: a ficha "o que tem dentro" já gravada na coluna do imóvel do dono (rascunho retomado sem ficha no draft_data).
+ * Só o dono lê (filtro por owner_id). Sem ficha, sem coluna (migração 0316 ausente) ou erro: null.
+ */
+export async function fichaDentroDoImovel(id: string): Promise<FichaDentro | null> {
+  const supabase = await createClient();
+  if (!supabase || !idDeRascunhoValido(id)) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase.from("properties").select("ficha_dentro").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  if (error) return null;
+  return normalizarFicha((data as { ficha_dentro?: unknown } | null)?.ficha_dentro);
 }
 
 /** E426: o draft_data sem as fotos cujo arquivo já saiu do bucket (nada de miniatura quebrada ao retomar). */

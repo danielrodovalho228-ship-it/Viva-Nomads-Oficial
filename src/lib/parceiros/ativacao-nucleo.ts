@@ -21,6 +21,8 @@ export interface SolicitacaoAtivavel {
   categorias: string[] | null;
   cidades: string[] | null;
   descricao: string | null;
+  /** E687: empresa/veículo da categoria Mudança, copiados para o parceiro na ativação. */
+  dados_categoria?: Record<string, unknown> | null;
   status: string;
 }
 
@@ -86,6 +88,7 @@ export async function concluirAtivacao(admin: Cliente, sol: SolicitacaoAtivavel,
       categorias: sol.categorias,
       cidades: sol.cidades,
       descricao: sol.descricao,
+      dados_categoria: sol.dados_categoria ?? {},
       telefone: sol.telefone,
       status: "rascunho",
     });

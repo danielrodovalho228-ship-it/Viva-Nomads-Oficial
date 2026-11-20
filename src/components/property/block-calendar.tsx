@@ -34,6 +34,9 @@ function brDate(iso: string): string {
  * (2 cliques) e bloqueia; os dias já bloqueados ficam marcados. Os bloqueios são
  * lidos pelo calendário público (dias indisponíveis) e pela validação de reserva.
  */
+/** E666: no calendário do dono "Estadia" é "Ocupado" e "Bloqueado" diz de quem é (as mesmas palavras da página pública). */
+const ROTULOS_DONO = { periodo: "Ocupado (estadia com contrato)", bloqueado: "Bloqueado por você ou de outro site" } as const;
+
 export function BlockCalendar({ propertyId }: { propertyId: string }) {
   const today = useHoje();
   const [blocks, setBlocks] = useState<BlocoDatas[]>([]);
@@ -95,6 +98,8 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
   // Marcas da grade única (Prompt 43): bloqueio, período selecionado (início e fim em destaque).
   const marcasDoMes: Record<string, MarcaDia[]> = {};
   for (const d of diasBloqueados) marcasDoMes[d] = ["bloqueado"];
+  // E666: cada dia de estadia com contrato é "Ocupado" (verde-pálido), distinto do "Bloqueado" (vermelho) que o dono fechou.
+  for (const e of estadias) for (const d of diasDoIntervalo(e.inicio.slice(0, 10), e.fim.slice(0, 10))) marcasDoMes[d] = [...(marcasDoMes[d] ?? []), "periodo"];
   // E138: o período escolhido (ainda não bloqueado) é "Selecionado" — "periodo" é a marca da ESTADIA (verde-pálido).
   if (sel.ini && sel.fim) for (const d of diasDoIntervalo(sel.ini, sel.fim)) marcasDoMes[d] = ["selecionado", ...(marcasDoMes[d] ?? [])];
   for (const d of [sel.ini, sel.fim]) if (d) marcasDoMes[d] = ["selecionado", ...(marcasDoMes[d] ?? [])];
@@ -186,12 +191,16 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
       {estadias.length > 0 && (
         <p className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
           <span className="inline-flex items-center gap-2">
-            <span className="h-2.5 w-4 rounded-full bg-forest/90" aria-hidden /> Estadia com contrato (toque para abrir)
+            <span className="h-2.5 w-4 rounded-full bg-forest/90" aria-hidden /> Barra verde: estadia com contrato (toque para abrir)
           </span>
         </p>
       )}
 
-      <LegendaCalendario marcas={["bloqueado", "selecionado", "hoje"]} />
+      <LegendaCalendario marcas={["periodo", "bloqueado", "selecionado", "hoje"]} rotulos={ROTULOS_DONO} />
+      {/* E666: o que o visitante vê como "Ocupado" e como "Bloqueado pelo proprietário" na página pública. */}
+      <p className="-mt-1 mb-3 text-xs text-muted" data-testid="calendario-legenda-explicacao">
+        Ocupado: estadia com contrato. Bloqueado: dia que você fechou (ou que veio do calendário de outro site).
+      </p>
       {diaBloqueado &&
         (() => {
           const b = blocks.find((x) => x.inicio.slice(0, 10) <= diaBloqueado && x.fim.slice(0, 10) >= diaBloqueado);
@@ -229,6 +238,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
             mes={m}
             hoje={today}
             marcas={marcasDoMes}
+            rotulos={ROTULOS_DONO}
             desabilitado={(iso) => (today ? iso < today : false)}
             onDia={clicar}
             sobreposicao={estadias.flatMap((e) =>

@@ -58,8 +58,8 @@ test.describe("T1191 — E592/E594: /simulacao com o modelo validado e as lacuna
       const lacunas = page.getByTestId("lacunas-custo");
       await expect(lacunas).toBeVisible();
       await expect(lacunas).toContainText("Custos ainda sem valor / opcionais (não somados)");
-      // Veredito do coordenador (05/11): CDL e e-mail visíveis, fora da soma.
-      await expect(lacunas).toContainText("Associação à CDL Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente");
+      // Veredito do coordenador (05/11): ACIUB e e-mail visíveis, fora da soma.
+      await expect(lacunas).toContainText("Associação à ACIUB Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente");
       await expect(lacunas).toContainText("Hostinger");
       await expect(page.getByTestId("opcional-nao-somado")).toHaveCount(2);
       // P3 (05/11): contrato do investidor e 5 modelos de contrato a cotar, fora da soma.

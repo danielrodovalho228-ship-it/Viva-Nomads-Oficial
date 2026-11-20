@@ -145,8 +145,8 @@ const inq = { email: `inq.ass.${sufixo}@lab.vivanomads.test`, nome: "Ivo Assina"
 // E210: o período do contrato (o bloco): entrada em 10 dias, saída 60 dias depois.
 const diaISO = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 const PERIODO = { inicio: diaISO(10), fim: diaISO(69) };
-// E599 (05/11): o e-mail imprime a SAÍDA (o dia seguinte à última noite do bloco), como a proposta e a candidatura.
-const SAIDA = diaISO(70);
+// E671 (07/11): o e-mail do contrato imprime o fim gravado no bloco — a mesma data de saída da página do contrato e da estadia.
+const SAIDA = PERIODO.fim;
 const br = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 const ids: { dono?: string; inq?: string; imovel?: string; contrato?: string } = {};
 

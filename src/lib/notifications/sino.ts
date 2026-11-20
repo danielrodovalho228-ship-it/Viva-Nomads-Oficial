@@ -24,6 +24,8 @@ export interface AvisoTela {
   criado_em: string;
   lido_em: string | null;
   resolvido_em: string | null;
+  /** E676: o objeto do aviso (para o aviso da estadia e do contrato, o id do contrato). */
+  ref_id?: string | null;
 }
 
 export type FiltroAvisos = "todos" | PrioridadeAviso;
@@ -106,6 +108,40 @@ export function destinoDoAviso(url: string | null | undefined): string {
 /** Faixa do topo (item 4): críticos ainda não resolvidos (lidos ou não), o mais recente primeiro. */
 export function criticosPendentes<T extends AvisoTela>(avisos: readonly T[]): T[] {
   return avisos.filter((a) => a.prioridade === "critico" && !a.resolvido_em).sort(recente);
+}
+
+// ── E676: a faixa de crítico confere a situação real do contrato ────────────────────────────────────────────────────
+
+/** O que o banco diz agora sobre os contratos dos avisos: onde a pessoa ainda precisa assinar e onde há aditivo a responder. */
+export interface SituacaoDosContratos {
+  assinarPendente: ReadonlySet<string>;
+  aditivoAberto: ReadonlySet<string>;
+}
+
+const UUID_NO_CAMINHO = /\/dashboard\/(?:estadia|contratos)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+
+/** O contrato do aviso: o ref_id ou, nos avisos antigos gravados sem ele, o id no endereço da estadia/do contrato. */
+export function contratoDoAviso(a: { ref_id?: string | null; url: string | null }): string | null {
+  if (a.ref_id) return a.ref_id;
+  return UUID_NO_CAMINHO.exec(String(a.url ?? ""))?.[1] ?? null;
+}
+
+/**
+ * E676: o crítico "assinar o contrato" só vale enquanto a pessoa ainda precisa assinar; a "proposta de alteração da
+ * estadia" só enquanto o aditivo espera resposta. Fora disso o aviso conta como resolvido (a faixa e o selo somem), mesmo
+ * que a ação não o tenha marcado (aviso antigo, sem ref_id). Sem situação (leitura falhou) ou sem contrato no aviso, nada
+ * é escondido.
+ */
+export function resolvidosNaPratica<T extends AvisoTela>(avisos: readonly T[], situacao: SituacaoDosContratos | null, agoraISO: string): T[] {
+  if (!situacao) return [...avisos];
+  return avisos.map((a) => {
+    if (a.resolvido_em || a.prioridade !== "critico") return a;
+    const contrato = contratoDoAviso(a);
+    if (!contrato) return a;
+    const pendente =
+      a.evento === "contract_status" ? situacao.assinarPendente.has(contrato) : a.evento === "estadia_aditivo_proposto" ? situacao.aditivoAberto.has(contrato) : true;
+    return pendente ? a : { ...a, resolvido_em: agoraISO };
+  });
 }
 
 const ROTULO_ACAO = { assinou: "Assinar o contrato", respondeu: "Responder a proposta", confirmou: "Confirmar a visita" } as const;

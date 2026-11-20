@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { buttonClasses, marcaCta } from "@/components/ui/button";
+import { ButtonLink, buttonClasses, marcaCta } from "@/components/ui/button";
 import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import type { BarraFixaImovel } from "@/lib/barra-fixa-imovel";
 
@@ -21,6 +21,7 @@ export function BarraFixaCelular({
   barra,
   pending,
   bloqueio,
+  bloqueioMotivoId,
   aguardando = false,
   onSolicitar,
   onAgendarVisita,
@@ -29,6 +30,8 @@ export function BarraFixaCelular({
   pending: boolean;
   /** E93: o "Solicitar" desativado com este texto (anúncio de teste visto por quem não é o dono nem admin). */
   bloqueio?: string;
+  /** E796: id do elemento que explica o bloqueio (a faixa do anúncio de teste) — o botão desativado diz por quê. */
+  bloqueioMotivoId?: string;
   /** Anúncio de teste com a sessão/perfil ainda carregando: "Solicitar" desativado, sem a faixa de visitante. */
   aguardando?: boolean;
   onSolicitar: () => void;
@@ -69,7 +72,7 @@ export function BarraFixaCelular({
       <div className="mx-auto max-w-xl">
         {barra.demonstracao && (
           <p data-testid="barra-demo" className="text-[11px] leading-snug text-muted">
-            Anúncio de exemplo: esta solicitação não é enviada.
+            Anúncio de exemplo: aqui não dá para pedir, escrever nem agendar. Veja como funciona e escolha um imóvel real.
           </p>
         )}
         <div className="flex items-center justify-between gap-2">
@@ -101,6 +104,14 @@ export function BarraFixaCelular({
         </div>
         {/* Decisão do Muse (31/10): sem a linha "A Viva não segura dinheiro…" — a frase oficial sob o botão (IMÓVEL-CTA)
             já diz que o pagamento vai direto ao proprietário; a barra não repete. */}
+        {barra.demonstracao ? (
+          // E694 (resíduo): no exemplo os botões de ação não existem — só a saída para os imóveis reais.
+          <div className="mt-1 flex items-center gap-4">
+            <ButtonLink href="/buscar" variant="secondary" size="sm" className="h-11 flex-1 px-3" data-testid="barra-ver-reais">
+              Ver imóveis reais
+            </ButtonLink>
+          </div>
+        ) : (
         <div className="mt-1 flex items-center gap-4">
           {barra.estado === "candidatou" ? (
             <Link href="/dashboard/mensagens" className={buttonClasses({ variant: "secondary", size: "sm", className: "h-11 flex-1 px-3" })}>
@@ -111,9 +122,10 @@ export function BarraFixaCelular({
               type="button"
               onClick={onSolicitar}
               disabled={pending || !!bloqueio || aguardando}
+              aria-describedby={bloqueio ? bloqueioMotivoId : undefined}
               data-cta={marcaCta("primary")}
               data-testid="barra-solicitar"
-              className={buttonClasses({ variant: "primary", size: "sm", className: bloqueio ? "h-auto min-h-11 flex-1 px-3 py-1 text-xs leading-snug" : "h-11 flex-1 px-3" })}
+              className={buttonClasses({ variant: "primary", size: "sm", className: bloqueio ? "h-auto min-h-11 flex-1 whitespace-normal px-3 py-1 text-center text-xs leading-snug" : "h-11 flex-1 px-3" })}
             >
               {bloqueio ? bloqueio : <>{pending ? "Enviando..." : ROTULO_CTA_IMOVEL}</>}
             </button>
@@ -122,8 +134,9 @@ export function BarraFixaCelular({
             Agendar visita
           </button>
         </div>
+        )}
         {/* IMÓVEL-CTA (adendo de 24/10): a frase de tranquilidade, em texto pequeno, sob o botão. */}
-        {barra.estado !== "candidatou" && !bloqueio && (
+        {barra.estado !== "candidatou" && !bloqueio && !barra.demonstracao && (
           <p data-testid="barra-cta-frase" className="mt-1 text-[11px] leading-snug text-muted">
             {FRASE_CTA_IMOVEL}
           </p>

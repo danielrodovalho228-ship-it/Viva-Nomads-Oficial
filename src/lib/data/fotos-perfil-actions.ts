@@ -65,8 +65,8 @@ export async function aprovarFotoPerfil(id: string): Promise<Res> {
   if (!UUID.test(id)) return { ok: false, erro: "Registro inválido." };
   const a = await exigirAdmin();
   if (!a) return { ok: false, erro: "Sem permissão." };
-  const { data: fotoQa } = await a.admin.from("fotos_perfil_revisao").select("user_id").eq("id", id).maybeSingle();
-  const recusaQa = await recusaObservador(a.user.id, { perfis: [(fotoQa?.user_id as string | null) ?? null], semPerfil: fotoQa?.user_id ? 0 : 1 });
+  // E477 (resíduo): neste painel a observadora da QA é só leitura em TODA foto, de teste ou real.
+  const recusaQa = await recusaObservador(a.user.id);
   if (recusaQa) return { ok: false, erro: recusaQa };
   const { data, error } = await a.admin
     .from("fotos_perfil_revisao")
@@ -89,8 +89,8 @@ export async function removerFotoPerfil(id: string, motivo: string): Promise<Res
   if (!motivoRemocaoValido(motivo)) return { ok: false, erro: "Escolha o motivo da remoção." };
   const a = await exigirAdmin();
   if (!a) return { ok: false, erro: "Sem permissão." };
-  const { data: fotoQa } = await a.admin.from("fotos_perfil_revisao").select("user_id").eq("id", id).maybeSingle();
-  const recusaQa = await recusaObservador(a.user.id, { perfis: [(fotoQa?.user_id as string | null) ?? null], semPerfil: fotoQa?.user_id ? 0 : 1 });
+  // E477 (resíduo): neste painel a observadora da QA é só leitura em TODA foto, de teste ou real.
+  const recusaQa = await recusaObservador(a.user.id);
   if (recusaQa) return { ok: false, erro: recusaQa };
   const { data, error } = await a.admin
     .from("fotos_perfil_revisao")

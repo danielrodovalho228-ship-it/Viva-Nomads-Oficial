@@ -1,9 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 /*
-  T844 — E529 (D15, QA de cliques do morador 02/11): a barra "Comparar (2)" não flutua mais sobre os cartões — é uma
-  barra encaixada no pé da coluna de resultados (sticky, largura toda da coluna, fundo opaco): nenhum cartão aparece ao
-  lado dela, no fim da lista ela fica DEPOIS do último cartão, e toda caixinha "Comparar" segue clicável. 1280 e 390.
+  T844 — E529 (D15, QA de cliques do morador 02/11; 3ª reprova de 06/11): a barra "Comparar (2)" não flutua sobre os
+  cartões — é uma faixa NORMAL da página, acima da lista (sem sticky/fixed): em NENHUM ponto da rolagem ela cobre um cartão
+  e toda caixinha "Comparar" segue clicável. 1280 e 390.
 */
 for (const largura of [1280, 390] as const) {
   test.describe(`T844 — E529 (${largura}px)`, () => {
@@ -18,7 +18,7 @@ for (const largura of [1280, 390] as const) {
       await caixas.nth(1).check();
       const barra = page.getByTestId("barra-comparar");
       await expect(barra).toContainText("Comparar (2)");
-      expect(await barra.evaluate((e) => ({ pos: getComputedStyle(e).position, fundo: getComputedStyle(e).backgroundColor }))).toEqual({ pos: "sticky", fundo: "rgb(255, 255, 255)" });
+      expect(await barra.evaluate((e) => ({ pos: getComputedStyle(e).position, fundo: getComputedStyle(e).backgroundColor }))).toEqual({ pos: "static", fundo: "rgb(255, 255, 255)" });
 
       const r = await page.evaluate(async () => {
         const b = document.querySelector('[data-testid="barra-comparar"]')!;
@@ -29,7 +29,8 @@ for (const largura of [1280, 390] as const) {
           await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
           const rb = b.getBoundingClientRect();
           if (rb.top >= innerHeight || rb.bottom <= 0) continue;
-          if (cartoes().some((r) => r.bottom > rb.top && r.top < rb.bottom && (r.right <= rb.left || r.left >= rb.right))) aoLado++;
+          // nenhuma parte da barra sobre um cartão (qualquer sobreposição de retângulos conta)
+          if (cartoes().some((r) => !(r.right <= rb.left || r.left >= rb.right || r.bottom <= rb.top || r.top >= rb.bottom))) aoLado++;
         }
         scrollTo(0, document.documentElement.scrollHeight);
         await new Promise((ok) => setTimeout(ok, 200));

@@ -47,6 +47,13 @@ export function mesesEntre(inicio: string, fim: string, limite = 12): { ano: num
   return mesesAPartirDe(inicio, Math.min(limite, Math.max(1, b - a + 1)));
 }
 
+/** Meses que a estadia ocupa, um a um da entrada à saída (E681: antes só as duas pontas, e o mês do meio sumia). */
+export function mesesDaEstadia(inicio: string | null, fim: string | null): { ano: number; mes: number }[] {
+  if (inicio && fim) return mesesEntre(inicio, fim);
+  const so = inicio ?? fim;
+  return so ? mesesAPartirDe(so, 1) : [];
+}
+
 /** Todos os dias de um intervalo fechado (aaaa-mm-dd). */
 export function diasDoIntervalo(inicio: string, fim: string): string[] {
   const out: string[] = [];

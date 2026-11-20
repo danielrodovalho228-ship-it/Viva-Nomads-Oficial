@@ -41,7 +41,8 @@ export function payloadDaChegada(f: ChegadaEPedidoForm) {
   };
 }
 
-const area = "w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink";
+// E193: a área de texto tem a moldura do cartão grande do assistente (borda 2 px, canto 0,75 rem, hover/foco).
+const area = "w-full rounded-xl border-2 border-line bg-white px-4 py-3 text-sm text-ink outline-none transition-colors hover:border-sage focus:border-forest";
 
 export function ChegadaEPedidoCampos({
   value,

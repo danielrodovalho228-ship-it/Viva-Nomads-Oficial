@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { ehAdmin } from "@/lib/data/admin-guard";
+import { recusaObservador } from "@/lib/qa/observador";
 import { parceiroPodeReceberServico } from "@/lib/parceiros/regras";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { integracoesSimuladas } from "@/lib/integracoes";
@@ -412,6 +413,10 @@ export async function rodarAutomacaoAgora(): Promise<Res<{ simulado: boolean; au
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, erro: "Só a equipe." };
+  // E477: com a automação ligada em produção este passo grava de verdade (pedidos automáticos e avisos a moradores reais); o admin
+  // observador da QA só lê — sem alvo, ação proibida sempre. Não mexe na chave.
+  const recusaQa = await recusaObservador(user.id);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const simulado = !(integracoesSimuladas() || process.env.AUTOMACOES_ATIVO === "1");
   const r = await automacaoDaEstadia(admin, new Date(), simulado);
   await logModeracao(supabase, user.id, simulado ? "simular_automacao_38" : "rodar_automacao_38", "automacao", user.id);

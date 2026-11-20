@@ -18,7 +18,7 @@ import { buttonClasses } from "@/components/ui/button";
  * logado. Sem dados de conta: quando não resolve, "Falar com uma pessoa" leva ao formulário
  * único da Central (rota HREF_CHAMADO_DO_CHAT), com a conversa anexada. No app ele some (a Ajuda fica em Perfil).
  */
-// Fica fora só onde a própria tela já é a ajuda (/ajuda) ou é um fluxo de formulário
+// Fica fora só onde a própria tela já é o chat (/ajuda/fale-com-a-viva) ou é um fluxo de formulário
 // (login, anúncio, fechamento, segurança — t58) e no admin.
 // "/dashboard/conta/seguranca": cobria "Nova senha"/"Salvar nova senha" e os botões do 2FA a 390 px (t58).
 // "/app/boas-vindas": tela de 100dvh do app; o botão cobria "Quero anunciar" e o respiro do fim da página a fazia rolar (t16).
@@ -26,8 +26,11 @@ import { buttonClasses } from "@/components/ui/button";
 // "Perfil"; nesta tela a Ajuda da Conta já oferece o "Fale com a Viva".
 // "/dashboard/mensagens": a tela já é uma conversa (com a aba Suporte); no computador o botão ficava em cima do
 // "Enviar" da caixa de mensagem e o proprietário não conseguia mandar a resposta (t182).
-// "/buscar" (E95): no celular o botão sentava sobre o título dos cartões; a ajuda da busca fica como link no fim da lista.
-export const ESCONDER = ["/buscar", "/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
+// E931 (fecha o resíduo do E839): a Central de Ajuda tem o botão, na posição padrão; só a própria página do chat fica sem ele.
+// "/buscar" (E95, confirmado pelo Gerente na ORDEM-DUET-030 depois da main vermelha de c950ec8): no computador o botão
+// cobre a área dos filtros ("Mais filtros", t10/F3) e a varredura a 390 px prova cobertura (t274); a ajuda da busca fica
+// como link no fim da lista.
+export const ESCONDER = ["/buscar", "/ajuda/fale-com-a-viva", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
 const CHAVE = CHAVE_CONVERSA_CHAT;
 
 function carregar(): MsgChat[] {
@@ -67,7 +70,9 @@ export function VivaChatFlutuante() {
   const escondido = ESCONDER.some((p) => pathname === p || pathname.startsWith(p + "/"));
   // Página do imóvel no celular (Q4): só o ícone redondo, para não tampar
   // estrelas e o total do mês. A barra fixa fica embaixo; o nome acessível continua "Fale com a Viva".
-  const compacto = pathname.startsWith("/imoveis/");
+  // C1b: em TODO o site o botão é o redondo (180 × 48 px com texto cobria texto de /termos, /empresas, /parceiros…); o nome
+  // acessível continua "Fale com a Viva" e o menu do topo tem o mesmo link com texto.
+  const compacto = true;
   // CONTA-A C4: no painel o botão é sempre o redondo (48 px) e a coluna reserva a faixa da direita (dashboard-shell),
   // para ele nunca sentar sobre um cartão durante a rolagem.
   const painel = pathname.startsWith("/dashboard");
@@ -188,12 +193,12 @@ export function VivaChatFlutuante() {
         onPointerCancel={aoSoltar}
         aria-expanded={levaAPagina ? undefined : aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0", painel && !aberto && "w-12 rounded-full px-0 sm:px-0", arrastando && "cursor-grabbing")}
+        className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "w-12 rounded-full px-0 sm:px-0", painel && !aberto && "w-12 rounded-full px-0 sm:px-0", arrastando && "cursor-grabbing")}
         data-testid="fale-com-a-viva"
         data-compacto={(compacto || painel) && !aberto ? "1" : undefined}
       >
-        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className={painel ? "h-5 w-5" : compacto ? "h-4 w-4 max-lg:h-5 max-lg:w-5" : "h-4 w-4"} />}
-        <span className={painel && !aberto ? "sr-only" : compacto && !aberto ? "max-lg:sr-only" : undefined}>{aberto ? "Fechar" : "Fale com a Viva"}</span>
+        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className={painel ? "h-5 w-5" : compacto ? "h-5 w-5" : "h-4 w-4"} />}
+        <span className={painel && !aberto ? "sr-only" : compacto && !aberto ? "sr-only" : undefined}>{aberto ? "Fechar" : "Fale com a Viva"}</span>
       </button>
     </div>
   );
@@ -313,9 +318,14 @@ function PainelChat({ onFechar, altura, semPromessa, entregarPessoa }: { onFecha
             </button>
           </form>
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            {/* E1014: antes de o JavaScript chegar, o toque não pode se perder — o formulário leva à rota única do chat
+                (?doChat=1), que abre o "Abrir chamado". Com a página pronta, o clique segue pelo evento, sem recarregar. */}
+            <form action="/ajuda/fale-com-a-viva" method="get" className="contents">
+            <input type="hidden" name="doChat" value="1" />
             <button
-              type="button"
-              onClick={() => {
+              type="submit"
+              onClick={(e) => {
+                e.preventDefault();
                 if (entregarPessoa) window.dispatchEvent(new CustomEvent(EVENTO_FALAR_COM_PESSOA, { detail: { conversa: msgs } }));
                 // E449: um formulário só. Na página Fale com a Viva, o da Central abre ali mesmo; fora dela, a rota única
                 // leva à página com a conversa (guardada no sessionStorage) anexada.
@@ -325,6 +335,7 @@ function PainelChat({ onFechar, altura, semPromessa, entregarPessoa }: { onFecha
             >
               <UserRound className="h-3.5 w-3.5" /> Falar com uma pessoa
             </button>
+            </form>
             <Link href="/ajuda" className="inline-flex min-h-11 items-center gap-1 text-muted hover:text-ink">
               <LifeBuoy className="h-3.5 w-3.5" /> Central de Ajuda
             </Link>

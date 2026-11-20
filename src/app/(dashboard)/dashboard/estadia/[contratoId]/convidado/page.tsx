@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { carregarVisaoConvidado } from "@/lib/data/estadia-convidados";
 import { entradaDoConvidado } from "@/lib/anuncio/chegada-e-pedido";
 import { textoEntrada, textoSaida } from "@/lib/estadia/estadia";
-import { CAMPOS_INSTRUCOES } from "@/lib/estadia/instrucoes";
+import { InstrucoesEmBlocos } from "@/components/estadia/instrucoes-em-blocos";
 import { montarLinhaDoTempo } from "@/lib/estadia-linha-tempo";
 
 export const metadata: Metadata = {
@@ -56,14 +56,7 @@ export default async function EstadiaConvidadoPage({ params }: { params: Promise
 
       <Panel title="Instruções de chegada" data-testid="convidado-instrucoes">
         {v.instrucoes.liberadas && v.instrucoes.campos ? (
-          <dl className="space-y-3" data-testid="convidado-instrucoes-liberadas">
-            {CAMPOS_INSTRUCOES.filter((c) => (v.instrucoes.campos?.[c.chave] ?? "").trim()).map((c) => (
-              <div key={c.chave}>
-                <dt className="text-sm font-semibold text-ink">{c.rotulo}</dt>
-                <dd className="whitespace-pre-line text-sm text-ink">{v.instrucoes.campos?.[c.chave]}</dd>
-              </div>
-            ))}
-          </dl>
+          <InstrucoesEmBlocos campos={v.instrucoes.campos} testid="convidado-instrucoes-liberadas" />
         ) : (
           <p className="text-sm text-muted" data-testid="convidado-instrucoes-bloqueadas">
             {v.instrucoes.texto || "O proprietário ainda não publicou as instruções."}

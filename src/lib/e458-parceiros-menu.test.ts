@@ -43,3 +43,12 @@ test("/parceiros: os dois caminhos no topo, com os destinos certos; a busca apon
   const busca = ler("app/(public)/parceiros/buscar/page.tsx");
   assert.match(busca, /É profissional\?\{" "\}\s*<Link href="\/parceiros"[^>]*>\s*Seja parceiro da Viva/);
 });
+
+// E711: as duas portas do topo já levam a "Quero ser parceiro" — o banner logo abaixo não repete o mesmo destino.
+test("/parceiros: na primeira tela só uma ação leva a #quero-ser-parceiro (sem CTA duplicado no banner)", () => {
+  const pagina = ler("app/(public)/parceiros/page.tsx");
+  const banner = pagina.slice(pagina.indexOf("<BannerTopo"), pagina.indexOf("</BannerTopo>"));
+  assert.doesNotMatch(banner, /href="#quero-ser-parceiro"/);
+  assert.doesNotMatch(pagina, /seja-parceiro-topo/);
+  assert.match(banner, /Ver tipos de parceria/);
+});

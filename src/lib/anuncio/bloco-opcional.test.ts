@@ -40,8 +40,9 @@ test("medidor: desligado é 'não se aplica' — não conta como feito nem como 
 
 test("componente: toggle acessível (switch), confirmação na própria tela e conteúdo só quando ligado", () => {
   const c = ler("components/anuncio/bloco-opcional.tsx");
-  assert.match(c, /role="switch"/);
-  assert.match(c, /aria-checked=\{ligado\}/);
+  assert.match(c, /papel="switch"/);
+  assert.match(c, /on=\{ligado\}/);
+  assert.match(ler("components/anuncio/escolha-assistente.tsx"), /\{ role: papel, "aria-checked": on \}/);
   assert.match(c, /role="alertdialog"/);
   assert.doesNotMatch(c, /window\.confirm|confirm\(/, "sem diálogo do navegador");
   assert.match(c, /\{ligado && \(/);

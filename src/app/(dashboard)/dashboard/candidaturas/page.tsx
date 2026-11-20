@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { dataBRT } from "@/lib/datas-brasilia";
 import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import Link from "next/link";
 import { FileSignature, MessageSquare } from "lucide-react";
@@ -25,13 +26,6 @@ const TOM: Record<RotuloCandidatura["tom"], string> = {
   sucesso: "bg-emerald-100 text-emerald-700",
   encerrado: "bg-slate-100 text-muted",
 };
-
-function dataBR(iso: string | null): string {
-  if (!iso) return "";
-  // Sem depender de locale do runtime: YYYY-MM-DD → DD/MM/AAAA.
-  const m = iso.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
-}
 
 /** E440: pedido aceito e ainda sem contrato — aí o cartão mostra o número junto do "Pedir orçamento". */
 const podePedir = (c: { id: string; situacao: { chave: string }; contrato?: unknown }) => c.situacao.chave === "aceita" && !c.contrato && !!numeroPublicoPedido(c.id);
@@ -66,8 +60,18 @@ export default async function CandidaturasPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="font-title text-base font-semibold text-ink">{c.propertyTitle}</h3>
-                  {c.createdAt && (
-                    <p className="text-xs text-muted">Enviada em {dataBR(c.createdAt)}</p>
+                  {c.enviadaEm && (
+                    <p className="text-xs text-muted">
+                      Enviada em {dataBRT(c.enviadaEm)}
+                      {c.reenviada && (
+                        <span className="ml-2 rounded-full bg-sage-100 px-2 py-1 font-semibold text-forest" data-testid="candidatura-reenviada">
+                          Reenviada
+                        </span>
+                      )}
+                    </p>
+                  )}
+                  {c.reenviada && c.primeiroEnvioEm && (
+                    <p className="text-xs text-muted">Enviada pela primeira vez em {dataBRT(c.primeiroEnvioEm)}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3">

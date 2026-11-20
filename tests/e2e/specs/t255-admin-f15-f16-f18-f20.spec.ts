@@ -93,7 +93,7 @@ test.describe("T255 — Admin: reteste F15/F16/F18/F20", () => {
       if (todos > 0) expect(rotulos.length).toBeGreaterThan(1);
       const antes = await page.getByTestId("lista-total").innerText();
       await busca.fill("zzzz-sem-resultado-t255");
-      await expect(page.getByText("Nenhum pedido com esse filtro.").or(page.getByText("Nenhum pedido no sistema."))).toBeVisible();
+      await expect(page.getByText("Nenhum pedido com esse filtro.").or(page.getByText("Nenhum pedido nesta lista."))).toBeVisible();
       await busca.fill("");
       await expect(page.getByTestId("lista-total")).toHaveText(antes);
       if (rotulos.length > 1) {

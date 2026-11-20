@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { erroBancoPT } from "@/lib/erros-banco";
-import { canaisPadrao, normalizarCanais, type CanaisAviso } from "@/lib/conta/tela-notificacoes";
+import { canaisComDado, canaisPadrao, normalizarCanais, type CanaisAviso } from "@/lib/conta/tela-notificacoes";
 
 /*
   A6 — Conta › Notificações (mockup perfil-06), bloco "Canais": a PREFERÊNCIA de cada canal, gravada pela sessão.
@@ -13,21 +13,24 @@ import { canaisPadrao, normalizarCanais, type CanaisAviso } from "@/lib/conta/te
   Desligar, sim, vale: com notif_push = false nenhum push sai para a pessoa (sendPushParaUsuarios, push.ts).
 */
 
-export async function getCanais(): Promise<CanaisAviso> {
+export async function getCanais(): Promise<CanaisAviso & { temCelular: boolean }> {
   const supabase = await createClient();
-  if (!supabase) return canaisPadrao();
+  if (!supabase) return { ...canaisPadrao(), temCelular: true };
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return canaisPadrao();
+  if (!user) return { ...canaisPadrao(), temCelular: true };
   // Achado 53: a falha de leitura LANÇA — antes a tela abria com os três canais ligados e "Salvar" gravava isso.
-  const { data, error } = await supabase.from("profiles").select("notif_email, notif_whatsapp").eq("id", user.id).maybeSingle();
+  const { data, error } = await supabase.from("profiles").select("notif_email, notif_whatsapp, phone").eq("id", user.id).maybeSingle();
   if (error) throw new Error("Não foi possível ler seus canais de aviso agora.");
-  return normalizarCanais({
+  // E703: sem celular cadastrado o WhatsApp nasce desligado (e indisponível na tela), mesmo com a preferência gravada ligada.
+  const temCelular = String((data as { phone?: unknown } | null)?.phone ?? "").replace(/\D/g, "").length >= 10;
+  const lidos = normalizarCanais({
     email: (data as { notif_email?: unknown } | null)?.notif_email,
     whatsapp: (data as { notif_whatsapp?: unknown } | null)?.notif_whatsapp,
     push: (user.user_metadata as { notif_push?: unknown } | undefined)?.notif_push,
   });
+  return { ...canaisComDado(lidos, { temCelular }), temCelular };
 }
 
 export async function setCanais(bruto: unknown): Promise<{ ok: boolean; demo?: boolean; error?: string }> {
@@ -39,7 +42,11 @@ export async function setCanais(bruto: unknown): Promise<{ ok: boolean; demo?: b
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre para alterar preferências." };
-  const { error } = await supabase.from("profiles").update({ notif_email: c.email, notif_whatsapp: c.whatsapp }).eq("id", user.id);
+  // E703: nunca grava "WhatsApp ligado" para quem não tem celular cadastrado.
+  const { data: perfil, error: erroPerfil } = await supabase.from("profiles").select("phone").eq("id", user.id).maybeSingle();
+  if (erroPerfil) return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
+  const temCelular = String((perfil as { phone?: unknown } | null)?.phone ?? "").replace(/\D/g, "").length >= 10;
+  const { error } = await supabase.from("profiles").update({ notif_email: c.email, notif_whatsapp: c.whatsapp && temCelular }).eq("id", user.id);
   if (error) return { ok: false, error: erroBancoPT(error) };
   const { error: e2 } = await supabase.auth.updateUser({ data: { notif_push: c.push } });
   if (e2) return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };

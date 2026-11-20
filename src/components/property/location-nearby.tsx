@@ -105,8 +105,9 @@ export function LocationNearby({ property }: { property: Property }) {
             >
               <X className="h-5 w-5" />
             </button>
-            {/* E531: no topo — no rodapé a legenda cobria a atribuição do mapa (canto inferior direito, obrigatória). */}
-            <p data-testid="mapa-tela-cheia-legenda" className="absolute left-3 right-16 top-3 z-[5] rounded-xl bg-white/95 px-3 py-2 text-xs text-muted">
+            {/* E531: no topo — no rodapé a legenda cobria a atribuição do mapa (canto inferior direito, obrigatória). E658: a legenda
+                começa DEPOIS do zoom (topo esquerdo, 34 px + margem): com left-3 ela cobria o botão (+) e só o (−) aparecia. */}
+            <p data-testid="mapa-tela-cheia-legenda" className="absolute left-14 right-16 top-3 z-[5] rounded-xl bg-white/95 px-3 py-2 text-xs text-muted">
               Área aproximada de {property.neighborhood}. O endereço exato é liberado após o aceite da candidatura.
             </p>
           </div>

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { marcarAvisoLido, marcarTodosAvisosLidos, meusAvisos, resumoDoSino } from "@/lib/data/avisos-actions";
-import { criticosPendentes, ordenarParaOSino } from "@/lib/notifications/sino";
+import { contratoDoAviso, criticosPendentes, ordenarParaOSino, resolvidosNaPratica } from "@/lib/notifications/sino";
+import { resumoDosAvisos } from "@/lib/notifications/avisos";
+import { situacaoDosContratos } from "@/lib/notifications/situacao-contratos";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +20,23 @@ export async function GET() {
     // O resumo conta todas as não lidas (não só as 60 mais recentes da lista).
     const [avisos, resumo] = await Promise.all([meusAvisos(60), resumoDoSino()]);
     if (!avisos || !resumo) return NextResponse.json(VAZIO, { headers: SEM_CACHE });
-    const { naoLidas, maiorPrioridade } = resumo;
+    // E676: o crítico de contrato/aditivo só vale enquanto o problema existe — confere a situação real no banco.
+    const candidatos = avisos.filter((a) => a.prioridade === "critico" && !a.resolvido_em && (a.evento === "contract_status" || a.evento === "estadia_aditivo_proposto"));
+    let conferidos = avisos;
+    let { maiorPrioridade } = resumo;
+    if (candidatos.length) {
+      const supabase = await createClient();
+      const uid = supabase ? (await supabase.auth.getUser()).data.user?.id : null;
+      const ids = candidatos.map((a) => contratoDoAviso(a)).filter((x): x is string => !!x);
+      const situacao = uid ? await situacaoDosContratos(uid, ids).catch(() => null) : null;
+      conferidos = resolvidosNaPratica(avisos, situacao, new Date().toISOString());
+      if (maiorPrioridade === "critico" && !criticosPendentes(conferidos).length) {
+        maiorPrioridade = resumoDosAvisos(conferidos.filter((a) => !a.lido_em)).maiorPrioridade;
+      }
+    }
+    const { naoLidas } = resumo;
     return NextResponse.json(
-      { naoLidas, maiorPrioridade, recentes: ordenarParaOSino(avisos), criticos: criticosPendentes(avisos).slice(0, 5) },
+      { naoLidas, maiorPrioridade, recentes: ordenarParaOSino(conferidos), criticos: criticosPendentes(conferidos).slice(0, 5) },
       { headers: SEM_CACHE }
     );
   } catch {

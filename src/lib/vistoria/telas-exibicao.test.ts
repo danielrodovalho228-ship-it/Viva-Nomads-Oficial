@@ -50,7 +50,7 @@ const primarios = (f: string) => (semComentarios(f).match(/<Button(?![^>]*varian
 
 test("textos exatos: frase do pagamento, as duas rotas e o título do bloco", () => {
   assert.equal(FRASE_PAGA_AVALIACAO, "Você paga a avaliação, não o resultado.");
-  assert.deepEqual(ROTAS_NIVEL.map((r) => r.titulo), ["Foto: grátis, nível na hora", "Avaliação: “· vistoriado” por 12 meses"]);
+  assert.deepEqual(ROTAS_NIVEL.map((r) => r.titulo), ["Foto: grátis, nível na hora", "Avaliação: selo “vistoriado” por 12 meses"]);
   assert.equal(TITULO_BLOCO_DONO, "Avaliação do imóvel");
   for (const t of ROTAS_NIVEL.flatMap((r) => [r.titulo, r.texto])) assert.doesNotMatch(t, TEXTO_PROIBIDO);
   assert.match(BLOCO_DONO, /\{FRASE_PAGA_AVALIACAO\}/);
@@ -241,4 +241,24 @@ test("0256: massa do QA só em contas e anúncio de teste, ids fixos, sem design
   const volta = ler("supabase/producao/rollback/0256_rollback.sql");
   assert.match(volta, /delete from public\.vistoria_pedidos where id in \('a0256000-0000-4000-8000-0000000000a1', 'a0256000-0000-4000-8000-0000000000a2'\);/);
   assert.match(volta, /delete from supabase_migrations\.schema_migrations where version = '20261030000256';/);
+});
+
+// E706: um "·" sozinho dentro das aspas, no lugar da palavra, lia como selo quebrado. O separador pertence ao título do
+// nível ("Nível Conforto · vistoriado"); quando o selo é citado, vai a palavra, nunca o separador órfão.
+test("E706: nenhum texto de tela cita o selo com o separador órfão (“· vistoriado”)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { ROTAS_NIVEL } = await import("./telas-exibicao.ts");
+  for (const r of ROTAS_NIVEL) assert.doesNotMatch(r.titulo, /[“"]·/);
+  for (const f of ["regras.ts", "laudo-documento.ts", "strikes.ts", "telas-exibicao.ts"]) {
+    const src = readFileSync(new URL(`./${f}`, import.meta.url), "utf8");
+    // Só o que vira texto de tela: valores devolvidos, constantes exportadas e títulos (os comentários podem citar o selo).
+    const textos = src.split("\n").filter((l) => /(return |export const|titulo:)/.test(l));
+    for (const l of textos) assert.doesNotMatch(l, /(?:\\"|“|")· vistoriado/, `${f}: ${l.trim().slice(0, 90)}`);
+  }
+});
+
+test("E706: o título do nível com selo continua 'Nível X · vistoriado' (o separador é do título, não de uma citação)", async () => {
+  const { tituloNivel } = await import("../niveis/exibicao.ts");
+  assert.match(tituloNivel("conforto", true) ?? "", /^Nível .+ · vistoriado$/);
+  assert.doesNotMatch(tituloNivel("conforto", false) ?? "", /vistoriado/);
 });

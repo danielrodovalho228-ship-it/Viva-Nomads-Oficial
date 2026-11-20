@@ -1,14 +1,14 @@
 "use client";
 
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { PONTOS_MEDICAO, ROTULO_PONTO, type PontoMedicao } from "@/config/niveis";
 import { Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAppUserAgent } from "@/lib/app-mode";
 import { INTERNET, TEXTO_PARA_VALIDAR_NO_APP } from "@/config/internet";
-import { aproveitarRodadas, juntarRodadas, textoInternet, type MotivoInvalida, type Rodada } from "@/lib/internet-medida";
-import { FalhaMedicao, medirUmaRodada, mensagemDaFalha, type Medidor } from "@/lib/internet-motor";
+import { aproveitarRodadas, juntarRodadas, textoInternet, travaDoMedir, type MotivoInvalida, type Rodada } from "@/lib/internet-medida";
+import { FalhaMedicao, medirUmaRodada, mensagemDaFalha, ROTULO_TENTAR_DE_NOVO, TEXTO_MEDIR_DEPOIS, type Medidor } from "@/lib/internet-motor";
 import type { EstadoMedir, ResultadoMedicao, Origem } from "@/lib/internet-medida-servidor";
 
 const MOTIVO: Record<MotivoInvalida, string> = {
@@ -39,6 +39,7 @@ export function MedirInternet({
   origem,
   pontoInicial,
   onMedida,
+  onDepois,
 }: {
   imovelId: string;
   origem: Origem;
@@ -49,14 +50,21 @@ export function MedirInternet({
   pontoInicial?: PontoMedicao;
   /** Medição salva (validada ou não): quem mostra o nível relê. */
   onMedida?: (validada: boolean) => void;
+  /** E414: "Medir depois" — fecha o painel sem medir; o item fica pendente e o cadastro segue. */
+  onDepois?: () => void;
 }) {
   const [estado, setEstado] = useState<EstadoMedir | null>(null);
   const [wifi, setWifi] = useState(false);
   // Adendo 59.1: onde está medindo (o nível pede o quarto principal e o ponto de trabalho).
   const [ponto, setPonto] = useState<PontoMedicao | null>(pontoInicial ?? null);
+  // E983: ids dos textos que explicam por que o "Medir" está travado (antes de qualquer retorno antecipado).
+  const idMotivoPonto = useId();
+  const idMotivoLimite = useId();
   const [fase, setFase] = useState<"parado" | "local" | "medindo" | "salvando">("parado");
   const [progresso, setProgresso] = useState(0);
   const [resultado, setResultado] = useState<ResultadoMedicao | null>(null);
+  // E414: o dono escolheu "Medir depois" — nada foi registrado; o aviso some ao medir de novo.
+  const [adiada, setAdiada] = useState(false);
   // E414: só uma das rodadas terminou — a medida vale, mas o resultado diz que veio de menos rodadas.
   const [parcial, setParcial] = useState(false);
   const atual = useRef<Medidor | null>(null);
@@ -85,10 +93,19 @@ export function MedirInternet({
       </p>
     );
 
+  // E414: "Medir depois" vale em toda tela que mede (cadastro, edição, conferência, nível): dispensa a falha, não grava nada e o
+  // cadastro segue. Quem passa `onDepois` (o painel do nível no celular) ainda fecha o painel.
+  const medirDepois = () => {
+    setResultado(null);
+    setAdiada(true);
+    onDepois?.();
+  };
+
   async function medir() {
     if (!estado?.ok || !ponto) return;
     cancelou.current = false;
     setResultado(null);
+    setAdiada(false);
     setParcial(false);
     setFase("local");
     const local = await posicao();
@@ -148,6 +165,9 @@ export function MedirInternet({
   }
 
   const ocupado = fase !== "parado";
+  // E983: o motivo da trava fica ligado ao botão (aria-describedby) — leitor de tela e varredura ouvem o porquê.
+  const trava = travaDoMedir({ ocupado, ponto, restantesHoje: estado.restantesHoje });
+  const motivoDaTrava = trava === "escolher_ponto" ? idMotivoPonto : trava === "limite_do_dia" ? idMotivoLimite : undefined;
   const atualTexto = estado.papel === "dono" ? textoInternet(estado.ultima, null, new Date()) : null;
 
   return (
@@ -176,8 +196,8 @@ export function MedirInternet({
       </fieldset>
       <CartaoEscolha papel="checkbox" on={wifi} onClick={() => setWifi(!wifi)} disabled={ocupado} rotulo="Estou conectado ao Wi-Fi do imóvel" testid="medir-internet-wifi" className="mt-3" />
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button type="button" variant="primary" size="sm" disabled={ocupado || !ponto || estado.restantesHoje <= 0} onClick={medir} data-testid="medir-internet-botao">
-          {fase === "local" ? "Pedindo a localização…" : fase === "medindo" ? `Medindo… ${Math.round(progresso * 100)}%` : fase === "salvando" ? "Salvando…" : "Medir a internet agora"}
+        <Button type="button" variant="primary" size="sm" disabled={trava !== null} aria-busy={trava === "medindo" || undefined} aria-describedby={motivoDaTrava} onClick={medir} data-testid="medir-internet-botao">
+          {fase === "local" ? "Pedindo a localização…" : fase === "medindo" ? `Medindo… ${Math.round(progresso * 100)}%` : fase === "salvando" ? "Salvando…" : resultado && !resultado.ok ? ROTULO_TENTAR_DE_NOVO : "Medir a internet agora"}
         </Button>
         {fase === "medindo" && (
           <Button type="button" variant="secondary" size="sm" onClick={cancelar} data-testid="medir-internet-cancelar">
@@ -192,15 +212,29 @@ export function MedirInternet({
       )}
       {/* E609: o "Medir" espera a escolha do ponto (nada vem marcado por padrão). */}
       {!ponto && !ocupado && (
-        <p className="mt-2 text-xs text-muted" data-testid="medir-internet-escolha-ponto">
+        <p id={idMotivoPonto} className="mt-2 text-xs text-muted" data-trava-motivo="escolher_ponto" data-testid="medir-internet-escolha-ponto">
           Escolha onde você está medindo para liberar a medição.
         </p>
       )}
-      {estado.restantesHoje <= 0 && !ocupado && <p className="mt-2 text-xs text-muted">Limite de {INTERNET.limitePorDia} medições por dia neste imóvel. Tente amanhã.</p>}
+      {estado.restantesHoje <= 0 && !ocupado && <p id={idMotivoLimite} className="mt-2 text-xs text-muted" data-trava-motivo="limite_do_dia" data-testid="medir-internet-limite">Limite de {INTERNET.limitePorDia} medições por dia neste imóvel. Tente amanhã.</p>}
       {!estado.temCoordenadas && <p className="mt-2 text-xs text-muted">Para validar, o imóvel precisa do endereço no mapa.</p>}
       {resultado && !resultado.ok && (
-        <p className="mt-2 text-sm text-red-700" role="alert" data-testid="medir-internet-erro">
-          {resultado.erro}
+        <>
+          <p className="mt-2 text-sm text-red-700" role="alert" data-testid="medir-internet-erro">
+            {resultado.erro}
+          </p>
+          {/* E414: a falha não trava nada e não marca o imóvel — o dono tenta de novo ou segue e mede depois. */}
+          <div className="mt-2 flex flex-wrap items-center gap-2" data-testid="medir-internet-depois">
+            <p className="text-xs text-muted">{TEXTO_MEDIR_DEPOIS}</p>
+            <Button type="button" variant="secondary" size="sm" onClick={medirDepois} disabled={ocupado} data-testid="medir-internet-depois-botao">
+              Medir depois
+            </Button>
+          </div>
+        </>
+      )}
+      {adiada && !resultado && (
+        <p className="mt-2 text-xs text-muted" role="status" data-testid="medir-internet-adiada">
+          Medição adiada: nada foi registrado no imóvel. Siga com o cadastro e meça quando quiser.
         </p>
       )}
       {resultado?.ok && parcial && (

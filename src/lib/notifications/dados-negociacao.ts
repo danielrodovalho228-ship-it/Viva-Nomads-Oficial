@@ -108,8 +108,9 @@ export function saidaDepoisDaUltimaNoite(fimInclusivoISO: string | null | undefi
 }
 
 /**
- * Linhas do quadro de dados de um contrato (pronto para assinar ou assinado). `fim` é o fim INCLUSIVO dos blocos (a
- * última noite); o período impresso vai da entrada até a SAÍDA (o dia seguinte), como no e-mail da proposta.
+ * Linhas do quadro de dados de um contrato (pronto para assinar ou assinado). `fim` é o fim gravado nos blocos do
+ * contrato. E671: o período impresso vai da entrada até esse fim — a MESMA data de saída da página do contrato, da
+ * estadia e dos calendários (e do prazo da conferência de saída). A proposta e a candidatura seguem com entrada + dias (E599).
  */
 export function linhasContrato(o: { imovel: ImovelDoEmail; inicio: string; fim: string; meses: number; valorMensal: number; dias?: number | null }): LinhaDado[] {
   // E562: contrato em dias exatos → "R$ 3.000 × 43 dias ÷ 30 = R$ 4.300" (em meses cheios, como antes).
@@ -119,7 +120,7 @@ export function linhasContrato(o: { imovel: ImovelDoEmail; inicio: string; fim: 
     : `${o.meses} × ${brl(o.valorMensal)} = ${brl(o.valorMensal * o.meses)}`;
   return [
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
-    { rotulo: "Período", valor: textoPeriodo(o.inicio, saidaDepoisDaUltimaNoite(o.fim), o.meses, o.dias) },
+    { rotulo: "Período", valor: textoPeriodo(o.inicio, o.fim, o.meses, o.dias) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
     { rotulo: "Total do contrato", valor: total },
   ];

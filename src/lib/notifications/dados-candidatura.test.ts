@@ -82,7 +82,7 @@ test("(b) Fechamento abre com os meses do período da candidatura aceita (1 mês
   assert.equal(prazoInicial(null, lim), 4);
   assert.equal(prazoInicial(undefined, lim), 4);
   assert.match(ler("src/app/(dashboard)/dashboard/fechamento/closing-flow.tsx"), /useState\(ACORDO \? ACORDO\.meses : prazoInicial\(ctx\.mesesSugerido,/);
-  assert.match(ler("src/lib/data/leads-actions.ts"), /mesesSugerido = periodoDaCandidatura\(inicioDesejado, \(d\?\.fim_desejado as string \| null\) \?\? null\)\?\.meses \?\? null;/);
+  assert.match(ler("src/lib/data/leads-actions.ts"), /const janela = periodoDaCandidatura\(inicioDesejado, \(d\?\.fim_desejado as string \| null\) \?\? null\);\s+mesesSugerido = janela\?\.meses \?\? null;/);
 });
 
 test("(a) anúncio de teste: sem a faixa de visitante enquanto a sessão/perfil carregam", () => {

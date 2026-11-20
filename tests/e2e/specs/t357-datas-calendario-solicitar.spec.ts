@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /** E136: no computador o campo de data mostra dd/mm/aaaa (o calendário é o do site, em pt-BR). */
 const dataBR = (iso: string) => iso.split("-").reverse().join("/");
@@ -9,9 +10,22 @@ const dataBR = (iso: string) => iso.split("-").reverse().join("/");
  *      duas datas e, ao tocar em "Solicitar", o Revisar abre com entrada, saída (30 dias), pessoas e o total da estadia
  *      — nada de "A combinar com o proprietário";
  *   2. alterar a saída e as pessoas no diálogo recalcula o total e volta para a caixa e para o calendário (uma fonte só).
- * Vale para o anúncio de exemplo (aqui, ube-001) e para o real (o mesmo componente). Prints 1280 e 390.
+ * E694 (resíduo): o exemplo não tem mais "Pedir para morar"; a prova usa um anúncio REAL criado no laboratório. Prints 1280 e 390.
  */
 const SAIDA = "tests/laboratorio/saida";
+
+// E694 (resíduo): o anúncio de exemplo não oferece mais "Pedir para morar"; o fluxo de candidatura é de anúncio REAL, criado aqui.
+const senhaDono = novaSenha();
+const dono = { email: `dono.t357.${novoSufixo()}@lab.vivanomads.test`, nome: "Dora Candidatura", role: "owner" as const };
+const ids: { dono?: string; imovel?: string } = {};
+test.beforeAll(async () => {
+  if (!NO_LABORATORIO) return;
+  ids.dono = await criarConta(dono, senhaDono);
+  ids.imovel = await criarImovelPronto(ids.dono, "Studio candidatura t357", { ativo: true, preco: 2800 });
+});
+test.afterAll(async () => {
+  if (NO_LABORATORIO) await apagarContas([ids.dono]);
+});
 
 const maisDias = (iso: string, n: number) => {
   const d = new Date(`${iso}T12:00:00Z`);
@@ -38,11 +52,12 @@ async function escolherNoCalendario(page: Page, dias: number) {
 for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] as const) {
   test.describe(`T357 — E53: calendário → Solicitar (${nome} px)`, () => {
     test.use({ storageState: { cookies: [], origins: [] } });
+    test.skip(!NO_LABORATORIO, "Só no laboratório (anúncio real).");
 
     test("datas do calendário chegam preenchidas ao Solicitar; alterar no diálogo recalcula o total e volta à caixa", async ({ page }) => {
       test.setTimeout(90_000);
       await page.setViewportSize({ width: largura, height: altura });
-      await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
+      await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
 
       const { entrada, saida } = await escolherNoCalendario(page, 30);
       // A caixa de reserva já é a mesma seleção.
@@ -66,10 +81,9 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `${SAIDA}/t357-solicitar-preenchido-${nome}.png` });
 
-      // Alterar no diálogo: saída +30 dias e 3 pessoas → o total da estadia passa a 2 meses.
+      // Alterar no diálogo: saída +30 dias → o total da estadia passa a 2 meses (o anúncio do laboratório aceita até 2 pessoas).
       const novaSaida = maisDias(saida, 30);
       await passo.getByTestId("solicitacao-saida").fill(novaSaida);
-      await passo.getByTestId("solicitacao-pessoas").selectOption("3");
       await expect(totalEstadia).toContainText("Total da estadia (60 dias)");
       await expect(totalEstadia).toContainText("2 meses");
       await expect(passo.locator("div", { hasText: /^Total por mês \(com contas\)/ }).first()).toBeVisible();
@@ -90,10 +104,10 @@ for (const [nome, largura, altura] of [["1280", 1280, 900], ["390", 390, 844]] a
       await expect(passo.getByTestId("solicitacao-erro")).toHaveCount(0);
 
       // Fechar: a caixa e o calendário mostram o que mudou no diálogo.
-      await passo.getByRole("button", { name: "Entendi" }).click();
+      await passo.getByRole("button", { name: "Cancelar" }).click(); // anúncio real: o 1º passo fecha por "Cancelar"
       await expect(passo).toHaveCount(0);
       await expect(card.getByTestId("candidatura-saida")).toHaveValue(dataBR(novaSaida));
-      await expect(card.getByTestId("candidatura-pessoas")).toHaveValue("3");
+      await expect(card.getByTestId("candidatura-pessoas")).toHaveValue("2");
       await expect(page.getByTestId("calendario-selecao")).toContainText(`${br(entrada)} → ${br(novaSaida)}`);
     });
   });

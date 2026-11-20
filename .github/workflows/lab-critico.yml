@@ -24,7 +24,9 @@ jobs:
   lab-critico:
     name: lab-critico
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # 105 = 10 de preparação + 60 da instalação dos navegadores no pior caso (runner lento) + 35 dos testes. Numa rodada
+    # normal a instalação leva 1 a 2 minutos e nada disto muda; os testes têm limite próprio, abaixo.
+    timeout-minutes: 105
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SITE_URL: http://localhost:3123
@@ -56,28 +58,15 @@ jobs:
           version: 2.120.0
 
       - name: Subir o Supabase local (todas as migrações)
-        # O runner às vezes chega com a porta 54322 ocupada ("address already in use",
-        # run 38179479994): não é falha de migração. Mostra quem ocupa a porta, limpa
-        # restos de containers e tenta de novo até 3 vezes.
-        run: |
-          for tentativa in 1 2 3; do
-            if supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta,mailpit,realtime; then
-              exit 0
-            fi
-            echo "::warning::supabase start falhou (tentativa $tentativa/3). Portas em uso:"
-            (ss -ltnp 2>/dev/null | grep -E ':543(2[0-9])\b' || echo "nenhuma porta 5432x listada")
-            supabase stop --no-backup || true
-            docker rm -f $(docker ps -aq) 2>/dev/null || true
-            sleep $((tentativa * 5))
-          done
-          echo "::error::supabase start falhou 3 vezes"
-          exit 1
+        # E792: porta do banco presa na VM do runner ("failed to bind host port 0.0.0.0:54322/tcp", sem ninguém
+        # escutando) → o script sobe o banco numa porta livre e grava LAB_DB_URL; outras falhas: limpa e reinicia o Docker.
+        run: scripts/lab/subir-supabase.sh
 
       - name: Acertar com produção (role como texto + políticas extras)
-        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
 
       - name: Conferir o banco (asserções de segurança)
-        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -q -f supabase/lab/conferir-banco.sql
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/conferir-banco.sql
 
       - name: Chaves locais e senha da noite (mascaradas)
         run: |
@@ -112,24 +101,35 @@ jobs:
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
 
-      - name: Instalar Chromium do Playwright
-        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas. O timeout
-        # mata o npx, mas o apt-get filho fica segurando a trava do dpkg: antes de repetir, encerra o apt que sobrou,
-        # espera a trava soltar e conserta o dpkg (senão as tentativas seguintes morrem na hora).
-        timeout-minutes: 25
+      - name: Baixar a imagem do Playwright (E1040, navegadores e dependências já vêm nela, nada de apt)
+        # E1040 (ORDEM-DUET-216/229): o desenho do E1037 (#4034) neste workflow. A imagem OFICIAL do Playwright, na MESMA
+        # versão do @playwright/test (o teste e1040-imagem-outros-workflows.test.ts prende as duas). Vem do MCR, não do
+        # espelho do Ubuntu; tentativas curtas por segurança.
+        timeout-minutes: 15
         run: |
           for i in 1 2 3; do
-            timeout 420 npx playwright install --with-deps chromium webkit && exit 0
-            echo "tentativa $i travou ou falhou"
-            sudo pkill -f '[a]pt-get|[d]pkg' || true
-            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
-            sudo dpkg --configure -a || true
+            timeout 300 docker pull mcr.microsoft.com/playwright:v1.61.1-noble && exit 0
+            echo "tentativa $i do pull falhou"
+            if [ "$i" -lt 3 ]; then sleep 30; fi
           done
           exit 1
 
       - name: Rodar os fluxos críticos
         id: e2e
+        # Limite próprio: é a folga que os testes já tinham (os 40 min antigos do job menos a preparação e a instalação).
+        # O job cresceu para caber a instalação lenta; um teste travado não fica pendurado por mais tempo por isso.
+        timeout-minutes: 35
         run: |
+          # E1040: só `npx playwright …` corre na imagem oficial, com a rede do runner e como o utilizador do runner (os
+          # resultados ficam no workspace). O resto do `npx` segue o do runner. As linhas de comando ficam iguais.
+          npx() {
+            if [ "${1:-}" != playwright ]; then command npx "$@"; return; fi
+            shift
+            docker run --rm --network host --ipc host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+              -v "$PWD:$PWD" -w "$PWD" \
+              $(env | cut -d= -f1 | grep -E '^(NEXT_PUBLIC_|LAB_|TESTES_|INTEGRACOES_|SUPABASE_|PLAYWRIGHT_|CI$)' | sed 's/^/-e /') \
+              mcr.microsoft.com/playwright:v1.61.1-noble npx playwright "$@"
+          }
           if [ -n "$BASE_SHA" ]; then
             mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs --alterados-desde "$BASE_SHA")
           else
@@ -137,8 +137,17 @@ jobs:
           fi
           echo "Specs do portão: ${SPECS[*]}"
           # O retry fica para o relatório mostrar as duas tentativas; passar só no retry também reprova.
-          npx playwright test "${SPECS[@]}" --reporter=list,json --workers=2 --retries=1 --fail-on-flaky-tests 2>&1 | tee tests/laboratorio/saida/e2e.txt
-          exit "${PIPESTATUS[0]}"
+          # E744 T3: os specs com a etiqueta @sensivel-carga (tests/laboratorio/sensiveis-a-carga.json) falham em paralelo e
+          # passam sozinhos. Aqui, como na rodada noturna, eles rodam à parte, com 1 worker; a exigência é a mesma nas duas
+          # corridas (1 nova tentativa, instável reprova) e qualquer uma vermelha reprova o portão.
+          set +e
+          npx playwright test "${SPECS[@]}" --grep-invert "@sensivel-carga" --reporter=list,json --workers=2 --retries=1 --fail-on-flaky-tests 2>&1 | tee tests/laboratorio/saida/e2e.txt
+          RESTO="${PIPESTATUS[0]}"
+          PLAYWRIGHT_JSON_OUTPUT_NAME=tests/laboratorio/saida/resultado-carga.json npx playwright test "${SPECS[@]}" --grep "@sensivel-carga" --reporter=list,json --workers=1 --retries=1 --fail-on-flaky-tests --pass-with-no-tests 2>&1 | tee tests/laboratorio/saida/e2e-carga.txt
+          CARGA="${PIPESTATUS[0]}"
+          set -e
+          echo "resto dos specs: saída $RESTO · sensíveis à carga (1 worker): saída $CARGA"
+          [ "$RESTO" -eq 0 ] && [ "$CARGA" -eq 0 ] || exit 1
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -151,6 +160,14 @@ jobs:
             grep -E "^\s+[0-9]+ (passed|failed|skipped|flaky)" tests/laboratorio/saida/e2e.txt || true
             echo
             node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado.json || true
+            # E744 T3: os specs @sensivel-carga que o PR alterou rodam à parte, com 1 worker.
+            if grep -qE "^\s+[0-9]+ (passed|failed|flaky)" tests/laboratorio/saida/e2e-carga.txt 2>/dev/null; then
+              echo
+              echo "### Sensíveis à carga (1 worker)"
+              grep -E "^\s+[0-9]+ (passed|failed|skipped|flaky)" tests/laboratorio/saida/e2e-carga.txt || true
+              echo
+              node scripts/lab/resumo-specs.mjs tests/laboratorio/saida/resultado-carga.json || true
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Guardar relatório e prints das falhas

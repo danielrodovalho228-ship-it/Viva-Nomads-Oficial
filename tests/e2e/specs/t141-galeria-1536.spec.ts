@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 /**
  * T141 — Galeria do imóvel (ordem e8e901b8, P0 Daniel 16/10):
- * (b) em 1920 e 2560 px o mosaico mede ~1480×480 e fica centralizado;
+ * (b) em 1920 e 2560 px o mosaico mede ~1376×480 (coluna de 1536 px menos a faixa de 5 rem de cada lado, E709; antes 1480) e fica centralizado;
  * (a) cada foto (grande, 4 miniaturas, "+N mais") abre o lightbox com <img> de altura > 200 px
  *     e contador no índice certo, em 1920 e 390 px.
  * ube-001 tem várias fotos: o mosaico mostra 5 e o "+N mais" abre na 6ª.
@@ -13,12 +13,12 @@ const IMOVEL = "/imoveis/ube-001";
 const posicao = (n: number) => new RegExp(`^${n} / (\\d{1,3})$`);
 
 for (const largura of [1920, 2560]) {
-  test(`${largura} px: mosaico 1480×480 centralizado`, async ({ page }) => {
+  test(`${largura} px: mosaico 1376×480 centralizado`, async ({ page }) => {
     await page.setViewportSize({ width: largura, height: 1100 });
     await page.goto(IMOVEL, { waitUntil: "networkidle" });
     const m = (await page.getByTestId("galeria-mosaico").boundingBox())!;
-    expect(m.width).toBeGreaterThanOrEqual(1460);
-    expect(m.width).toBeLessThanOrEqual(1500);
+    expect(m.width).toBeGreaterThanOrEqual(1356);
+    expect(m.width).toBeLessThanOrEqual(1396);
     expect(Math.abs(m.height - 480)).toBeLessThanOrEqual(4);
     expect(Math.abs(m.x - (largura - (m.x + m.width)))).toBeLessThanOrEqual(2);
     await page.screenshot({ path: `test-results/t141-mosaico-${largura}.png` });

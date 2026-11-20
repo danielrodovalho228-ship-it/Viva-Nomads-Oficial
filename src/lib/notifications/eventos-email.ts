@@ -2,6 +2,7 @@
   Texto de cada evento de notificação (assunto, frase, imagem, botão e destino) — PURO,
   sem imports "@/…", para teste unitário. Ordem d250ea2f, item 2.
 */
+import { PRAZO_RESPOSTA_PARCERIA } from "../parceiros/regras.ts";
 /** Eventos que disparam notificação no funil (sem isso o funil vaza). */
 export type NotificationEvent =
   | "new_lead" // proprietário recebe um interessado
@@ -51,10 +52,11 @@ export type NotificationEvent =
   | "nivel_prova_vencida" // FOTO-NA-HORA-B: prova anterior à regra venceu sem foto da câmera; o item deixou de contar → dono
   | "conforto_pendencia" // item do padrão mínimo que não confere (e o que aconteceu com ele) → as partes
   | "checkin_lembrete" // entrada em 2 dias / amanhã → proprietário e inquilino
+  | "emergencia_chegada" // E664: o morador chegou e pediu para falar agora → proprietário (urgente, sem contato)
   // Automações por data (cron /api/cron/automacoes, ordem d250ea2f item 5)
   | "anuncio_incompleto" // rascunho parado há 3 dias → proprietário (Prompt 50: 1 e-mail, "Faltam N passos", passo exato)
   | "verificacao_parada" // Prompt 50: verificação iniciada e não concluída em 24 h → a pessoa (causa da última tentativa)
-  | "parceiro_sem_resposta" // Prompt 50: solicitação de parceiro sem resposta em 1 dia útil → equipe
+  | "parceiro_sem_resposta" // Prompt 50 / E791: solicitação de parceiro sem resposta no prazo da parceria (PRAZO_RESPOSTA_PARCERIA) → equipe
   | "chamado_fora_promessa" // Prompt 50: chamado sem 1ª resposta de uma pessoa em 24 h → equipe
   | "verificacao_analise_humana" // Prompt 50: 2ª reprovação automática da verificação → equipe (fila de documentos)
   | "saida_lembrete" // saída em 3 dias → proprietário e inquilino
@@ -98,6 +100,11 @@ export type NotificationEvent =
   | "estadia_instrucoes_liberadas" // D-7, com o contrato assinado e o 1º pagamento → morador
   | "estadia_convite_ocupante" // 61-B: o morador convidou quem vai morar junto → o convidado (só leitura)
   | "estadia_instrucoes_pendentes" // D-10 sem instruções de chegada → proprietário
+  | "jornada_confirmacao" // E663: contrato assinado pelas duas partes → morador (pede os documentos pela plataforma)
+  | "jornada_d7" // E759: 7 dias antes da entrada → morador (instruções de chegada na página da estadia)
+  | "jornada_chegada" // E663: dia da entrada → as duas partes
+  | "jornada_semana_saida" // E663: uma semana antes da saída → as duas partes
+  | "jornada_meio_estadia" // E663: meio de estadia longa (60+ dias) → morador (tudo certo? algo quebrou? avaliação parcial)
   | "estadia_aditivo_proposto" // proposta de alteração → a outra parte (7 dias para responder)
   | "estadia_aditivo_respondido" // aceita (assinar) ou recusada → quem propôs
   | "estadia_remarcada" // aditivo assinado pelas duas partes: blocos e datas mudaram → as duas partes
@@ -184,10 +191,11 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   nivel_prova_vencida: { subject: "A foto de um item do nível venceu", body: (n) => `Olá${n ? " " + n : ""}, a foto de um item do nível do seu anúncio era anterior à regra e não foi refeita pela câmera no prazo. O item deixou de contar e o nível foi recalculado. Fotografe o item agora para ele voltar a contar.`, cta: "Fotografar agora", path: "/dashboard/imoveis" },
   conforto_pendencia: { subject: "Pendência do padrão mínimo no imóvel", body: (n) => `Olá${n ? " " + n : ""}, há uma pendência do padrão mínimo de conforto no imóvel do seu contrato. Veja pela plataforma.`, cta: "Ver a pendência", path: "/dashboard/contratos" },
   manutencao_mensagem: { subject: "Nova mensagem na ordem de manutenção", body: (n) => `Olá${n ? " " + n : ""}, há uma nova mensagem na ordem de manutenção do imóvel. Responda pela plataforma.`, cta: "Ver mensagem", path: "/dashboard/solicitacoes" },
+  emergencia_chegada: { subject: "O morador chegou e precisa falar agora", body: (n) => `Olá${n ? " " + n : ""}, o morador chegou ao imóvel e pediu para falar com você agora. Responda pela conversa da plataforma: a Viva acompanha.`, cta: "Responder agora", path: "/dashboard/mensagens" },
   checkin_lembrete: { subject: "Lembrete: a entrada no imóvel está chegando", body: (n) => `Olá${n ? " " + n : ""}, a entrada no imóvel do seu contrato está chegando. Confira o horário e as instruções de entrada pela plataforma.`, cta: "Ver instruções de entrada", path: "/dashboard/contratos" },
   anuncio_incompleto: { subject: "Faltam poucos passos para publicar seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, seu anúncio está parado há 3 dias. Abaixo, o que falta; o botão leva direto ao próximo passo.`, cta: "Continuar o anúncio", path: "/dashboard/imoveis" },
   verificacao_parada: { subject: "Sua verificação de identidade ficou pela metade", body: (n) => `Olá${n ? " " + n : ""}, a última tentativa de verificar sua identidade não passou. Veja abaixo o que aconteceu e o que fazer para concluir agora.`, cta: "Verificar de novo", path: "/dashboard/verificacao" },
-  parceiro_sem_resposta: { subject: "Solicitação de parceria sem resposta há 1 dia útil", body: () => "Uma solicitação de parceria espera a decisão da equipe há mais de 1 dia útil. O parceiro vê o estado e pode falar com a Viva.", cta: "Abrir as solicitações", path: "/admin/parceiros" },
+  parceiro_sem_resposta: { subject: `Solicitação de parceria sem resposta há ${PRAZO_RESPOSTA_PARCERIA}`, body: () => `Uma solicitação de parceria espera a decisão da equipe há mais de ${PRAZO_RESPOSTA_PARCERIA}, o prazo prometido em /parceiros. O parceiro vê o estado e pode falar com a Viva.`, cta: "Abrir as solicitações", path: "/admin/parceiros" },
   chamado_fora_promessa: { subject: "Chamado sem resposta de uma pessoa em 24 horas", body: () => "Um chamado passou das 24 horas prometidas sem a 1ª resposta de uma pessoa da equipe.", cta: "Abrir o chamado", path: "/admin/atendimento" },
   verificacao_analise_humana: { subject: "Verificação de identidade para análise de uma pessoa", body: () => "Uma verificação de identidade foi reprovada duas vezes pela checagem automática e espera a análise da equipe, com o motivo.", cta: "Abrir a fila de documentos", path: "/admin/documentos" },
   saida_lembrete: { subject: "Lembrete: a saída está chegando", body: (n) => `Olá${n ? " " + n : ""}, a saída do imóvel do seu contrato é em 3 dias. Combine a conferência de saída pela plataforma.`, cta: "Ver conferência de saída", path: "/dashboard/contratos" },
@@ -224,6 +232,11 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   parceiro_avaliacao: { subject: "Conte como foi o serviço", body: (n) => `Olá${n ? " " + n : ""}, o serviço foi concluído. A sua avaliação ajuda outras pessoas e só aparece depois que as duas partes avaliarem.`, cta: "Avaliar", path: "/dashboard/servicos" },
   estadia_convite_ocupante: { subject: "Você foi incluído em uma estadia na Viva", body: () => "O morador incluiu você na estadia. Entre com este e-mail para ver as datas, o endereço e, perto da entrada, as instruções de chegada.", cta: "Ver a estadia", path: "/auth" },
   estadia_instrucoes_liberadas: { subject: "As instruções de chegada estão liberadas", body: (n) => `Olá${n ? " " + n : ""}, a sua entrada está chegando. Como entrar, o Wi-Fi e as regras do prédio já estão na página da estadia.`, cta: "Ver as instruções", path: "/dashboard/locacoes" },
+  jornada_confirmacao: { subject: "Contrato assinado: envie seus documentos", body: (n) => `Olá${n ? " " + n : ""}, seu contrato está assinado. Envie seus documentos pela plataforma, na página da estadia.`, cta: "Enviar documentos", path: "/dashboard/locacoes" },
+  jornada_d7: { subject: "A entrada é daqui a uma semana", body: (n) => `Olá${n ? " " + n : ""}, falta uma semana para a entrada. As instruções de chegada estão na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
+  jornada_chegada: { subject: "Hoje é o dia da entrada", body: (n) => `Olá${n ? " " + n : ""}, hoje é o dia da entrada no imóvel do contrato. As instruções estão na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
+  jornada_semana_saida: { subject: "A saída é daqui a uma semana", body: (n) => `Olá${n ? " " + n : ""}, falta uma semana para a saída. Combine a conferência de saída pela plataforma.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
+  jornada_meio_estadia: { subject: "Como está a estadia?", body: (n) => `Olá${n ? " " + n : ""}, a estadia chegou à metade. Está tudo certo? Se algo quebrou, avise pela plataforma.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
   estadia_instrucoes_pendentes: { subject: "Preencha as instruções de chegada", body: (n) => `Olá${n ? " " + n : ""}, a entrada do morador é daqui a 10 dias. Preencha as instruções de chegada do imóvel: o morador recebe 7 dias antes.`, cta: "Preencher as instruções", path: "/dashboard/contratos" },
   estadia_aditivo_proposto: { subject: "Proposta de alteração da estadia", body: (n) => `Olá${n ? " " + n : ""}, a outra parte propôs uma alteração no contrato. Confira o que muda e aceite ou recuse em até 7 dias.`, cta: "Ver a proposta", path: "/dashboard/contratos" },
   estadia_aditivo_respondido: { subject: "Sua proposta de alteração foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a outra parte respondeu à sua proposta de alteração. Veja a resposta na página da estadia.`, cta: "Ver a resposta", path: "/dashboard/contratos" },
@@ -240,8 +253,8 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   pedido_auto_cancelado: { subject: "Pedido cancelado", body: (n) => `Olá${n ? " " + n : ""}, o contrato do imóvel foi encerrado e o pedido foi cancelado. Nada a fazer.`, cta: "Ver os pedidos", path: "/dashboard/parceiro" },
   saida_sem_parceiro: { subject: "Saída em 5 dias: quer agendar a limpeza?", body: (n) => `Olá${n ? " " + n : ""}, o morador sai em 5 dias e o imóvel não tem limpeza fixa. Peça um orçamento a um parceiro da cidade.`, cta: "Buscar limpeza", path: "/parceiros/buscar?categoria=limpeza" },
   internet_remedir: { subject: "Meça de novo a internet do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, a medição da internet do seu imóvel vence em cerca de 2 semanas. Meça de novo, conectado ao Wi-Fi do imóvel, para o anúncio continuar mostrando o número.`, cta: "Medir a internet", path: "/dashboard/imoveis" },
-  vistoria_designada: { subject: "Um proprietário escolheu você para avaliar um imóvel", body: (n) => `Olá${n ? " " + n : ""}, um proprietário escolheu você para avaliar um imóvel. Responda em até 24 horas com o seu valor e o seu prazo, ou recuse; sem resposta, o pedido volta ao proprietário para escolher outro avaliador.`, cta: "Responder", path: "/dashboard/parceiro/avaliacao" },
-  vistoria_designado_dono: { subject: "Novidade na escolha do avaliador do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, há novidade na avaliação do seu imóvel: o avaliador que você escolheu respondeu com o valor e o prazo dele (ou recusou). Abra a avaliação para aceitar ou escolher outro avaliador.`, cta: "Ver a avaliação", path: "/dashboard/imoveis" },
+  vistoria_designada: { subject: "Um proprietário escolheu você para avaliar um imóvel", body: (n) => `Olá${n ? " " + n : ""}, um proprietário escolheu você para avaliar um imóvel. Responda no prazo que você declarou (padrão: 24 horas) com o seu valor e o seu prazo, ou recuse; sem resposta, o pedido volta ao proprietário para escolher outro avaliador.`, cta: "Responder", path: "/dashboard/parceiro/avaliacao" },
+  vistoria_designado_dono: { subject: "Novidade na escolha do avaliador do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, há novidade na avaliação do seu imóvel: o avaliador que você escolheu respondeu com o valor e o prazo dele, recusou ou não respondeu no prazo. Abra a avaliação para aceitar (você tem 72 horas depois da proposta) ou escolher outro avaliador.`, cta: "Ver a avaliação", path: "/dashboard/imoveis" },
   vistoria_agendada: { subject: "Visita de avaliação agendada", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação do imóvel está agendada. Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso.`, cta: "Ver a visita", path: "/dashboard/imoveis" },
   vistoria_concordancia: { subject: "Concorda com a visita de avaliação?", body: (n) => `Olá${n ? " " + n : ""}, o proprietário pediu a avaliação do imóvel onde você mora. A visita só acontece se você concordar com a data. O avaliador não fotografa os seus pertences.`, cta: "Responder", path: "/dashboard/locacoes" },
   vistoria_lembrete: { subject: "A visita de avaliação é amanhã", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação do imóvel é amanhã. Se precisar mudar, avise pelas mensagens da Viva.`, cta: "Ver a visita", path: "/dashboard" },

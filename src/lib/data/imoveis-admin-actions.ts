@@ -20,7 +20,7 @@ export async function pausarImovelAdmin(id: string): Promise<{ ok: boolean; erro
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
-  const recusaQa = await recusaObservador(user.id, { imoveis: [id] });
+  const recusaQa = await recusaObservador(user.id);
   if (recusaQa) return { ok: false, error: recusaQa };
   const { data, error } = await supabase.from("properties").update({ status: "paused" }).eq("id", id).eq("status", "active").select("id").maybeSingle();
   if (error) {

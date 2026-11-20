@@ -14,12 +14,20 @@ import { alternarSelecao } from "@/lib/busca/comparar";
 // só no computador (ordem ca0e7dad: no celular a busca segue sem mapa).
 const SearchMap = dynamic(
   () => import("@/components/search-map").then((m) => m.SearchMap),
-  { ssr: false }
+  // E698: enquanto o módulo do mapa baixa, o quadro já diz que está carregando (e não fica um retângulo cinza vazio).
+  { ssr: false, loading: () => <MapaCarregandoModulo /> }
 );
-import { cn, distanceKm } from "@/lib/utils";
-import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
+
+function MapaCarregandoModulo() {
+  return (
+    <div className="grid h-full w-full place-items-center bg-surface-2" data-testid="mapa-carregando-modulo" role="status" aria-live="polite">
+      <span className="rounded-full bg-white px-3 py-2 text-sm font-medium text-ink motion-safe:animate-pulse">Carregando o mapa…</span>
+    </div>
+  );
+}
+import { cn, distanceKm, hojeBR } from "@/lib/utils";
+import { situacaoBuscaVazia } from "@/lib/busca-vazia";
 import { comTotalMes } from "@/lib/precos";
-import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
@@ -42,15 +50,18 @@ import { BarraPilulas } from "@/components/busca/barra-pilulas";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { isExemplo } from "@/lib/demo-listing";
-import { baseDaBusca, contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
+import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
+import { contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, soHaExemplos, TEXTO_CARTAO_PEDIDO, TEXTO_VITRINE_SO_EXEMPLOS } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
 import { useTempos } from "@/components/busca/use-tempos";
+import { comparaRelevancia, desempatePorId } from "@/lib/busca/ordem-estavel";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
 import { foraDoTempoPelaReta, type ModoRota } from "@/lib/rotas/tempo";
+import { sincronizarUrlDaBusca } from "@/lib/navegacao/url-da-busca";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -234,7 +245,7 @@ export function SearchClient({
     return () => window.removeEventListener("popstate", onPop);
   }, [restaurarFiltrosDaURL]);
 
-  // Reflete a busca atual na URL (replaceState — sem recarregar nem rolar),
+  // Reflete a busca atual na URL (replaceState só quando muda — sem recarregar nem rolar),
   // para o endereço e o raio serem compartilháveis / sobreviverem a um reload.
   useEffect(() => {
     if (skipNextSync.current) {
@@ -284,11 +295,8 @@ export function SearchClient({
     destinoNaUrl(params, estadoDestino);
     if (sort === "trabalho") params.delete("ordem");
     const qs = params.toString();
-    window.history.replaceState(
-      null,
-      "",
-      qs ? `${window.location.pathname}?${qs}` : window.location.pathname
-    );
+    // E1047: só com a URL diferente — cada replaceState vira um "restore" do router, que descarta o toque num card em curso.
+    sincronizarUrlDaBusca(qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
@@ -446,7 +454,9 @@ export function SearchClient({
 
   // E131: a lista e todas as contagens partem da MESMA base (a regra dos exemplos decidida uma vez, sem os filtros da
   // folha). Assim nenhuma pílula ou faceta conta mais imóveis do que a lista sem filtro mostra.
-  const baseVisivel = useMemo(() => baseDaBusca(base, (p) => isExemplo(p.id), exemplosForcados), [base, exemplosForcados]);
+  const baseVisivel = useMemo(() => baseDaVitrine(base, (p) => isExemplo(p.id), exemplosForcados), [base, exemplosForcados]);
+  // E695: o que existe no lugar digitado ANTES da data e dos filtros decide se "a Viva ainda não chegou" é verdade.
+  const situacaoVazia = useMemo(() => situacaoBuscaVazia({ local: locationQuery, imoveisNoLocal: baseVisivel, hoje: hojeBR() }), [locationQuery, baseVisivel]);
   const contarComPainel = useCallback((f: FiltrosPainel) => contarNaBase(baseVisivel, (p) => passaNoPainel(p, f)), [baseVisivel]);
   // Prompt 57, fase 2: os de internet informada, mas não medida (só com o filtro de internet ligado). Exemplo não entra.
   const contarNaoMedidos = useCallback((f: FiltrosPainel) => naoMedidosDoPainel(base, f).filter((p) => !isExemplo(p.id)).length, [base]);
@@ -464,22 +474,19 @@ export function SearchClient({
   const semTempo = useMemo(() => {
     // Prompt 30, item 6 (com imóvel real na busca, os exemplos saem) já vale na baseVisivel — a mesma das contagens.
     let list = baseVisivel.filter((p) => passaNoPainel(p, filtrosPainel));
-    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
-    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
+    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b) || desempatePorId(a, b));
+    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a) || desempatePorId(a, b));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
     else if (sort === "recent")
       list = [...list].sort(
-        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "") || desempatePorId(a, b)
       );
     // Relevância com endereço: mais perto primeiro; senão, anúncios mais completos.
     else if (dist)
-      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)!);
+      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)! || desempatePorId(a, b));
     else
-      list = [...list].sort(
-        (a, b) =>
-          prioridadeNaBusca(searchPriority(tierFromPhotoCount(b.photos.length)), b.precoJusto) -
-          prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto)
-      );
+      // E810: a ordem de relevância pela função pura (mesma lista, mesma ordem, em qualquer carregamento).
+      list = [...list].sort(comparaRelevancia);
     return list;
   }, [baseVisivel, dist, filtrosPainel, sort]);
 
@@ -675,6 +682,10 @@ export function SearchClient({
       {/* E82-A + E91 + E95 (mockup BUSCA-CARD): UMA linha de controles e, acima da lista, SÓ a linha da contagem com
           "Salvar busca" e "Descrever o que procuro". Nada de título grande, banner, caixa de destino ou de descrição na
           página: o destino vive no painel da pílula Local; a descrição, numa folha. */}
+      {/* E780: no celular a faixa de filtros (chips + Mais filtros · Ordenar · Mapa) fica PRESA logo abaixo do cabeçalho, inteira, e
+          a contagem rola por baixo dela. Antes tudo rolava e o cabeçalho fixo cobria a metade de cima dos chips. No computador
+          (lg+) a faixa segue no fluxo. */}
+      <div className="sticky top-18 z-30 bg-white lg:static" data-testid="busca-topo-fixo" data-barra-fixa>
       <div className="container-page mt-2 lg:max-w-none lg:px-0 lg:pt-4">
         <BarraPilulas
           filtros={filtrosPainel}
@@ -682,6 +693,7 @@ export function SearchClient({
           aplicar={aplicarPainel}
           local={locationQuery}
           perto={nomeDoDestino}
+          ateMin={estadoDestino.ate}
           painelLocal={
             <>
               <div>
@@ -741,7 +753,10 @@ export function SearchClient({
           mapa={comMapa ? verMapa : mapaNoCelular}
           onMapa={() => (comMapa ? setVerMapa((v) => !v) : setMapaNoCelular((v) => !v))}
         />
+      </div>
+      </div>
 
+      <div className="container-page lg:max-w-none lg:px-0">
         {/* A linha da contagem (E91): "15 imóveis em Uberlândia · R$ 0 de taxa para você" + Salvar busca + Descrever +
             Publicar pedido (E106). */}
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="linha-contagem">
@@ -824,11 +839,21 @@ export function SearchClient({
         />
       )}
 
-      <div className="container-page mt-4 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
+      {/* Frente 3 (t70): sem a faixa do "Fale com a Viva" (C1b) — a /buscar não mostra o botão (E95) e o mapa termina na margem de 24 px (E659). */}
+      <div data-sem-faixa-flutuante className="container-page mt-4 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
         {/* Estabilidade (02/11): a coluna do mapa é reservada pelo CSS (lg:), não pelo matchMedia — antes, no 1º desenho
             comMapa era falso, a lista ocupava 100% e encolhia para 58% quando o mapa entrava (CLS 0,30 a 1280 px).
             O componente do mapa continua carregando só no computador (comMapa). */}
         <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
+          {/* E529: a faixa "Comparar (N)" é da página (acima da lista), nunca flutua sobre os cartões. */}
+          <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
+          {/* E723: sem imóvel real publicado, a lista é só de exemplos — e diz isso no topo. */}
+          {soHaExemplos(results, (p) => isExemplo(p.id)) && !exemplosForcados && (
+            <p className="mb-4 rounded-lg bg-sage-100 px-4 py-3 text-sm font-medium text-forest" data-testid="busca-so-exemplos">
+              {TEXTO_VITRINE_SO_EXEMPLOS}
+            </p>
+          )}
+
           {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
             // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia-nivel">
@@ -841,12 +866,23 @@ export function SearchClient({
             // Prompt 48: busca sem resultado diz o que aconteceu e dá os três próximos passos — pedido de moradia,
             // limpar filtros (ou ampliar a busca) e criar alerta. Sem ilustração genérica.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia">
-              <p className="font-title text-lg font-semibold text-ink">
-                {locationQuery.trim()
-                  ? `Ainda não temos imóvel para essa busca em ${locationQuery.trim()}.`
-                  : "Ainda não há imóveis para esta busca"}
-              </p>
-              <ConviteCidade texto={locationQuery} />
+              {/* E695: "ainda não chegou" só quando o lugar tem ZERO imóveis; havendo imóveis que a data/os filtros excluíram,
+                  a mensagem é de data/filtro (com a próxima disponibilidade), e o convite de cidade não aparece. */}
+              {situacaoVazia.tipo === "sem_disponibilidade" ? (
+                <>
+                  <p className="font-title text-lg font-semibold text-ink" data-testid="busca-vazia-titulo">{situacaoVazia.titulo}</p>
+                  <p className="mt-1 max-w-md text-sm text-muted" data-testid="busca-vazia-proxima">{situacaoVazia.detalhe}</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-title text-lg font-semibold text-ink" data-testid="busca-vazia-titulo">
+                    {locationQuery.trim()
+                      ? `Ainda não temos imóvel para essa busca em ${locationQuery.trim()}.`
+                      : "Ainda não há imóveis para esta busca"}
+                  </p>
+                  <ConviteCidade texto={locationQuery} />
+                </>
+              )}
               <p className="mt-1 max-w-md text-sm text-muted">
                 {PEDIDO_MORADIA_ON
                   ? "Publique um pedido de moradia e os proprietários da cidade encontram você, ou crie um alerta para saber quando entrar um imóvel assim."
@@ -972,9 +1008,6 @@ export function SearchClient({
             </div>
           )}
 
-          {/* Respiro: a barra fixa não cobre as caixinhas dos últimos cartões. */}
-          {comparar.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro" className="h-32" />}
-          <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
 
           {/* O botão flutuante "Fale com a Viva" não aparece aqui (cobria "Mais filtros"). */}
           <p className="mt-6 text-center text-sm text-muted" data-testid="buscar-ajuda">
@@ -985,12 +1018,13 @@ export function SearchClient({
           </p>
         </div>
 
-        {/* Mapa (só lg+): fixo sob a faixa de filtros, ocupa a altura visível e
-            encosta na borda direita da tela. */}
+        {/* Mapa (só lg+): fixo sob a faixa de filtros e ocupa a altura visível. E659: termina DENTRO da margem da página
+            (sem margem negativa): colado na borda da janela, os rótulos dos bairros e a atribuição do mapa (canto
+            inferior direito) eram cortados. */}
         <div
           data-testid="busca-mapa"
           className={cn(
-            "lg:sticky lg:top-18 lg:-mr-6 lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0",
+            "lg:sticky lg:top-18 lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0",
             mapaNoCelular ? "block h-[70vh] w-full lg:hidden" : verMapa ? "hidden lg:block lg:bg-surface-2" : "hidden",
           )}
         >
@@ -1003,7 +1037,7 @@ export function SearchClient({
               onSelect={setSelecionadoId}
               focus={geoCenter}
               radiusKm={radiusKm}
-              className="h-full w-full rounded-none border-0 border-l border-line"
+              className="h-full w-full rounded-none border-0 border-l border-line lg:rounded-xl lg:border"
             />
           )}
         </div>

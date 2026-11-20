@@ -107,7 +107,7 @@ test("cenários ordenados: otimista se paga antes do base; o pessimista não se 
   assert.ok(oti.piorCaixa > base.piorCaixa && base.piorCaixa > pes.piorCaixa);
 });
 
-test("premissas (modelo v3, 05/11/2026): fornecedores R$ 1.302,90 (sem a CDL) + pró-labore de referência R$ 6.000", () => {
+test("premissas (modelo v3, 05/11/2026): fornecedores R$ 1.302,90 (sem a ACIUB) + pró-labore de referência R$ 6.000", () => {
   const fornecedores = CUSTOS_FIXOS.filter((c) => c.rotulo !== "Pró-labore dos sócios").reduce((s, c) => s + c.valor, 0);
   assert.ok(Math.abs(fornecedores - 1302.9) < 0.01, `fornecedores ${fornecedores}`);
   const pro = CUSTOS_FIXOS.find((c) => c.rotulo === "Pró-labore dos sócios");

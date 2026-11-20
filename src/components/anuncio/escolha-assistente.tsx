@@ -63,6 +63,7 @@ export function CartaoEscolha({
   dica,
   icone: Icone,
   papel = "radio",
+  indicador = "check",
   disabled,
   testid,
   className,
@@ -74,6 +75,8 @@ export function CartaoEscolha({
   dica?: React.ReactNode;
   icone?: React.ComponentType<{ className?: string }>;
   papel?: Papel;
+  /** "check" (✓ redondo, o padrão) ou "toggle" (trilho do interruptor à direita — o bloco opcional do E56, como nos mockups). */
+  indicador?: "check" | "toggle";
   disabled?: boolean;
   testid?: string;
   className?: string;
@@ -98,7 +101,17 @@ export function CartaoEscolha({
         <span className="block font-medium">{rotulo}</span>
         {dica && <span className="mt-1 block text-xs font-normal text-muted">{dica}</span>}
       </span>
-      {on && <Check className="h-5 w-5 shrink-0 rounded-full bg-forest p-1 text-white" aria-hidden />}
+      {indicador === "toggle" ? (
+        <span
+          aria-hidden
+          data-testid={testid ? `${testid}-trilho` : undefined}
+          className={cn("relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors", on ? "bg-forest" : "bg-sage-200")}
+        >
+          <span className={cn("inline-block h-5 w-5 rounded-full bg-white transition-transform", on ? "translate-x-6" : "translate-x-1")} />
+        </span>
+      ) : (
+        on && <Check className="h-5 w-5 shrink-0 rounded-full bg-forest p-1 text-white" aria-hidden />
+      )}
     </button>
   );
 }

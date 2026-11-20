@@ -168,7 +168,7 @@ export function EtapaFotos({
       </div>
 
       {/* 65-B: o vídeo num bloco próprio, logo depois das fotos e antes da caixa da IA. Nunca bloqueia avançar. */}
-      <section id={ANCORA_VIDEO_ASSISTENTE} className="mt-6 scroll-mt-24" data-testid="bloco-video">
+      <section id={ANCORA_VIDEO_ASSISTENTE} className="mt-6" data-testid="bloco-video">
         <h2 className="mb-3 font-title text-base font-semibold text-ink">Vídeo do imóvel (opcional)</h2>
         <VideoUploader path={videoArquivo} onChange={setVideoArquivo} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} conteudo={videoConteudo} onConteudo={setVideoConteudo} />
       </section>

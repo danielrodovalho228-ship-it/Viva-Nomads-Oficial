@@ -1,0 +1,366 @@
+[
+ {
+  "m": "publico-home",
+  "r": "/",
+  "w": 390,
+  "status": 200,
+  "imgs": 26,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Imóveis mobiliados para morar por meses"
+  ]
+ },
+ {
+  "m": "publico-como-funciona",
+  "r": "/como-funciona",
+  "w": 390,
+  "status": 200,
+  "imgs": 18,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Como funciona"
+  ]
+ },
+ {
+  "m": "publico-empresas",
+  "r": "/empresas",
+  "w": 390,
+  "status": 200,
+  "imgs": 10,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Moradia de média duração para o seu time"
+  ]
+ },
+ {
+  "m": "publico-parceiros",
+  "r": "/parceiros",
+  "w": 390,
+  "status": 200,
+  "imgs": 21,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Seja parceiro da Viva Nomads"
+  ]
+ },
+ {
+  "m": "publico-precos",
+  "r": "/precos",
+  "w": 390,
+  "status": 200,
+  "imgs": 26,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Imóveis mobiliados para morar por meses"
+  ]
+ },
+ {
+  "m": "publico-proprietarios",
+  "r": "/para-proprietarios",
+  "w": 390,
+  "status": 200,
+  "imgs": 11,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Seu imóvel mobiliado ocupado por meses, com contrato"
+  ]
+ },
+ {
+  "m": "publico-seguranca",
+  "r": "/seguranca",
+  "w": 390,
+  "status": 200,
+  "imgs": 3,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Morar com segurança na Viva Nomads"
+  ]
+ },
+ {
+  "m": "busca-card",
+  "r": "/buscar",
+  "w": 390,
+  "status": 200,
+  "imgs": 32,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "15 imóveis em Uberlândia"
+  ]
+ },
+ {
+  "m": "imovel-cta",
+  "r": "/imoveis/ube-005",
+  "w": 390,
+  "status": 200,
+  "imgs": 25,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Imóvel mobiliado de 2 quartos para pacientes e acompanhantes"
+  ]
+ },
+ {
+  "m": "ajuda-central",
+  "r": "/ajuda",
+  "w": 390,
+  "status": 200,
+  "imgs": 7,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Central de ajuda"
+  ]
+ },
+ {
+  "m": "ajuda-privacidade",
+  "r": "/privacidade",
+  "w": 390,
+  "status": 200,
+  "imgs": 2,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Política de Privacidade"
+  ]
+ },
+ {
+  "m": "ajuda-termos",
+  "r": "/termos",
+  "w": 390,
+  "status": 200,
+  "imgs": 2,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Termos de Uso"
+  ]
+ },
+ {
+  "m": "pagina-fale-com-a-viva",
+  "r": "/ajuda/fale-com-a-viva",
+  "w": 390,
+  "status": 200,
+  "imgs": 3,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Fale com a Viva"
+  ]
+ },
+ {
+  "m": "publico-home",
+  "r": "/",
+  "w": 1280,
+  "status": 200,
+  "imgs": 26,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Imóveis mobiliados para morar por meses"
+  ]
+ },
+ {
+  "m": "publico-como-funciona",
+  "r": "/como-funciona",
+  "w": 1280,
+  "status": 200,
+  "imgs": 18,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Como funciona"
+  ]
+ },
+ {
+  "m": "publico-empresas",
+  "r": "/empresas",
+  "w": 1280,
+  "status": 200,
+  "imgs": 10,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Moradia de média duração para o seu time"
+  ]
+ },
+ {
+  "m": "publico-parceiros",
+  "r": "/parceiros",
+  "w": 1280,
+  "status": 200,
+  "imgs": 21,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Seja parceiro da Viva Nomads"
+  ]
+ },
+ {
+  "m": "publico-precos",
+  "r": "/precos",
+  "w": 1280,
+  "status": 200,
+  "imgs": 26,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Imóveis mobiliados para morar por meses"
+  ]
+ },
+ {
+  "m": "publico-proprietarios",
+  "r": "/para-proprietarios",
+  "w": 1280,
+  "status": 200,
+  "imgs": 11,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Seu imóvel mobiliado ocupado por meses, com contrato"
+  ]
+ },
+ {
+  "m": "publico-seguranca",
+  "r": "/seguranca",
+  "w": 1280,
+  "status": 200,
+  "imgs": 3,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Morar com segurança na Viva Nomads"
+  ]
+ },
+ {
+  "m": "busca-card",
+  "r": "/buscar",
+  "w": 1280,
+  "status": 200,
+  "imgs": 44,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "15 imóveis em Uberlândia"
+  ]
+ },
+ {
+  "m": "imovel-cta",
+  "r": "/imoveis/ube-005",
+  "w": 1280,
+  "status": 200,
+  "imgs": 15,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Imóvel mobiliado de 2 quartos para pacientes e acompanhantes"
+  ]
+ },
+ {
+  "m": "ajuda-central",
+  "r": "/ajuda",
+  "w": 1280,
+  "status": 200,
+  "imgs": 7,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Central de ajuda"
+  ]
+ },
+ {
+  "m": "ajuda-privacidade",
+  "r": "/privacidade",
+  "w": 1280,
+  "status": 200,
+  "imgs": 2,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Política de Privacidade"
+  ]
+ },
+ {
+  "m": "ajuda-termos",
+  "r": "/termos",
+  "w": 1280,
+  "status": 200,
+  "imgs": 2,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Termos de Uso"
+  ]
+ },
+ {
+  "m": "pagina-fale-com-a-viva",
+  "r": "/ajuda/fale-com-a-viva",
+  "w": 1280,
+  "status": 200,
+  "imgs": 3,
+  "falhas": [],
+  "overflow": 0,
+  "http": [],
+  "cons": [],
+  "h1": [
+   "Fale com a Viva"
+  ]
+ }
+]

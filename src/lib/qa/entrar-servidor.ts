@@ -131,6 +131,10 @@ export async function entrarComoQa(
   if (eLink || !token_hash) return { status: 503 };
   const supabase = await createClient();
   if (!supabase) return { status: 503 };
+  // E674: a conta que estava neste navegador deixa os cookies dela para trás — e a sessão guardada pode ser renovada e
+  // regravada depois (a página de /dashboard abria como o Lucas para o Paulo). Encerra a sessão LOCAL antes (só os
+  // cookies deste navegador; a conta anterior não é derrubada em outros aparelhos) e então grava a nova.
+  await supabase.auth.signOut({ scope: "local" }).catch(() => null);
   const { error: eOtp } = await supabase.auth.verifyOtp({ type: "magiclink", token_hash });
   if (eOtp) return { status: 503 };
 

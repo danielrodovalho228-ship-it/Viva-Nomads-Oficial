@@ -1,7 +1,7 @@
 /*
   Check-in garantido (ordem 404cd213, item 2): regras puras das instruções de entrada.
   O proprietário informa horário, como pegar a chave/acesso e um contato de plantão; o inquilino só
-  vê depois que as duas partes assinaram (contato só depois do aceite). Sem imports de servidor.
+  vê depois que as duas partes assinaram (o contato nunca é trocado). Sem imports de servidor.
   Roda: node --test src/lib/checkin.test.ts
 */
 

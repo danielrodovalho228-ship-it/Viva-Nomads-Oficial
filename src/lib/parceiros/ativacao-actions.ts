@@ -22,7 +22,7 @@ export interface EstadoAtivacao {
   nome: string | null;
 }
 
-const COLUNAS_PEDIDO = "id, user_id, email, nome, tipo_pessoa, emite_nota, documento, telefone, categorias, cidades, descricao, status";
+const COLUNAS_PEDIDO = "id, user_id, email, nome, tipo_pessoa, emite_nota, documento, telefone, categorias, cidades, descricao, dados_categoria, status";
 
 async function lerPedido(token: string) {
   const admin = createAdminClient();

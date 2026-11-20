@@ -35,7 +35,7 @@ for (const largura of [390, 1280]) {
             await expect(janela).toContainText("nunca retém o valor mensal");
           }
           if (chave === "seguranca") {
-            await expect(janela).toContainText("protegidos até o aceite");
+            await expect(janela).toContainText("nunca são trocados");
             await expect(janela).toContainText("chat da Viva");
             // E532: o declarado (câmeras, acesso) mora no bloco Privacidade; a janela aponta para ele.
             await expect(janela).toContainText("veja o bloco Privacidade");

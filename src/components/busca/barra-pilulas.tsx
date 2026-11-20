@@ -29,6 +29,8 @@ export function BarraPilulas(p: {
   painelLocal: React.ReactNode;
   local: string;
   perto: string | null;
+  /** E921: tempo máximo até o destino (0 = só ordena). */
+  ateMin?: number;
   /** Moradores (adultos + crianças): o seletor vive no painel Datas. */
   painelMoradores: React.ReactNode;
   nMaisFiltros: number;
@@ -60,7 +62,7 @@ export function BarraPilulas(p: {
 
   const f = p.filtros;
   const rotuloOrdem = p.opcoesOrdem.find(([v]) => v === p.ordem)?.[1] ?? null;
-  const valor = (id: IdPilula) => valorDaPilula(id, f, { local: p.local, perto: p.perto, ordem: p.ordem === "relevance" ? null : rotuloOrdem });
+  const valor = (id: IdPilula) => valorDaPilula(id, f, { local: p.local, perto: p.perto, ateMin: p.ateMin, ordem: p.ordem === "relevance" ? null : rotuloOrdem });
   const alterna = <K extends "maxPrice" | "tipo">(k: K, v: FiltrosPainel[K], vazio: FiltrosPainel[K]) => p.aplicar({ ...f, [k]: f[k] === v ? vazio : v });
   const porNivel = Object.fromEntries(NIVEIS.map((v) => [v, p.contar({ ...f, nivelMin: v })])) as Record<Nivel, number>;
   const nivel = grupoNivel(porNivel, f.nivelMin ?? "");
@@ -100,13 +102,22 @@ export function BarraPilulas(p: {
 
   return (
     <div ref={caixa} className="relative" data-testid="busca-controles">
-      <div role="toolbar" aria-label="Filtros da busca" className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0" data-testid="linha-pilulas">
+      {/* E710: no celular as três AÇÕES (Mais filtros · Ordenar · Mapa) ficam numa linha própria, sempre à vista; só os
+          filtros (Datas · Local · Tipo · Preço · Nível) vêm na linha de cima, quebrando linha se preciso (E780). Do tablet para
+          cima é uma linha só. */}
+      <div role="toolbar" aria-label="Filtros da busca" className="flex flex-col gap-2 pb-1 sm:flex-row sm:items-center" data-testid="linha-pilulas">
+        {/* E780 reaberto (print do Daniel, 14/11): no celular a fileira NÃO rola de lado — rolava sob a margem (-mx-4), cortava o
+            primeiro chip na borda e mostrava a barra de rolagem. Os chips quebram linha, inteiros desde o primeiro, sem barra.
+            Do tablet para cima segue uma linha só, como antes. */}
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-1 sm:flex-nowrap sm:overflow-x-auto" data-testid="pilulas-filtros">
         {pilula("datas")}
         {pilula("local")}
         {pilula("tipo")}
         {pilula("preco")}
         {/* E452: filtro que não filtra não se mostra — a pílula só existe quando há nível para escolher (ou um já escolhido). */}
         {nivel.visivel && pilula("nivel")}
+        </div>
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:shrink-0" data-testid="pilulas-acoes">
         <Chip ativo={p.nMaisFiltros > 0} onClick={p.onMaisFiltros} aria-haspopup="dialog" data-testid="pilula-mais" className="shrink-0 gap-2 whitespace-nowrap">
           <SlidersHorizontal className="h-4 w-4" aria-hidden /> Mais filtros
           {p.nMaisFiltros > 0 && <span className="tabular-nums">({p.nMaisFiltros})</span>}
@@ -115,12 +126,13 @@ export function BarraPilulas(p: {
         <Chip ativo={p.mapa} onClick={p.onMapa} data-testid="pilula-mapa" className="shrink-0 gap-2 whitespace-nowrap">
           <IconeMapa className="h-4 w-4" aria-hidden /> Mapa
         </Chip>
+        </div>
       </div>
 
       {aberto && (
         // E526 (D12): o painel abre NO FLUXO, logo abaixo da linha de pílulas — empurra o título e os cartões em vez de
         // ficar por cima deles (antes: absolute z-40, cobria "N imóveis em …" e os primeiros cartões).
-        <div className="mt-2 rounded-xl border border-line bg-white p-4 shadow-flutuante sm:w-[28rem]" data-testid={`painel-pilula-${aberto}`} role="dialog" aria-label={ROTULO[aberto]}>
+        <div className="mt-2 max-h-[calc(100dvh-13rem)] overflow-y-auto rounded-xl border border-line bg-white p-4 shadow-flutuante sm:w-[28rem] lg:max-h-none lg:overflow-visible" data-testid={`painel-pilula-${aberto}`} role="dialog" aria-label={ROTULO[aberto]}>
           {aberto === "datas" && (
             <div className="space-y-4">
               <label className="block text-sm font-semibold text-ink">

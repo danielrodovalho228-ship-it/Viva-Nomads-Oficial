@@ -15,7 +15,7 @@ export default async function DesligarSugestoesPage({ searchParams }: { searchPa
   const { u = "", t = "", ok } = await searchParams;
   const valido = conferirDescadastro(u, t, process.env.CRON_SECRET ?? "");
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-12">
+    <div className="mx-auto w-full max-w-xl px-4 py-12">
       <h1 className="text-2xl font-semibold text-ink">Sugestões e novidades por e-mail</h1>
       {ok === "1" ? (
         <p className="mt-4 text-muted" data-testid="sugestoes-desligadas">
@@ -45,6 +45,6 @@ export default async function DesligarSugestoesPage({ searchParams }: { searchPa
           para escolher o que receber.
         </p>
       )}
-    </main>
+    </div>
   );
 }

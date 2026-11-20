@@ -4,6 +4,9 @@ import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { ShieldCheck, AlertTriangle, MessageSquareLock, Wallet, FileSearch } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
+import { ButtonLink } from "@/components/ui/button";
+import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
+import { LinhaEmergencia } from "@/components/institucional/linha-emergencia";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/seguranca" },
@@ -68,6 +71,11 @@ export default function SegurancaPage() {
         }
       />
     <div className="container-page max-w-3xl py-12 md:py-16">
+      {/* E853: a linha de emergência volta em destaque, antes dos golpes. A Viva não é canal de emergência. */}
+      <section role="note" className="mb-8 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4" data-testid="seguranca-emergencia">
+        <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-red-700" aria-hidden />
+        <LinhaEmergencia />
+      </section>
       <section className="grid gap-4">
         {GOLPES.map((g) => {
           const Icon = g.icon;
@@ -82,6 +90,19 @@ export default function SegurancaPage() {
             </div>
           );
         })}
+      </section>
+
+      {/* C10 (mockup publico-seguranca): depois de ler os golpes, a pessoa sabe o que fazer — avisar a Viva. */}
+      <section className="mt-8 flex flex-col gap-4 rounded-xl border border-sage-200 bg-white p-6 sm:flex-row sm:items-center sm:justify-between" data-testid="seguranca-avise" aria-labelledby="seguranca-avise-titulo">
+        <div>
+          <h2 id="seguranca-avise-titulo" className="font-title text-xl font-semibold text-ink">
+            Desconfie de quem pede pagamento fora da plataforma
+          </h2>
+          <p className="mt-1 text-sm text-muted">Recebeu um pedido assim? Conte para a gente: a equipe da Viva olha o caso.</p>
+        </div>
+        <ButtonLink href={HREF_FALE_COM_A_VIVA} size="lg" className="w-full sm:w-auto" data-testid="seguranca-fale-com-a-viva">
+          Fale com a Viva
+        </ButtonLink>
       </section>
 
       <section className="mt-12">

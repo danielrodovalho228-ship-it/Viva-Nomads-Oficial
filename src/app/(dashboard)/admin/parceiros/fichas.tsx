@@ -360,7 +360,7 @@ export function LinhaAtiva({
   soLeitura = false,
 }: {
   soLeitura?: boolean;
-  p: { id: string; slug: string; nome: string; categorias: string[]; cidades: string[]; status: string; teste: boolean; identidade: string | null; cartao: { gerados: number; pedidos: number } };
+  p: { id: string; slug: string; nome: string; categorias: string[]; cidades: string[]; status: string; teste: boolean; identidade: string | null; documento: { tipo: string; texto: string }; cartao: { gerados: number; pedidos: number } };
 }) {
   const { rodar, pendente, aviso } = useAcao();
   const [motivo, setMotivo] = useState("");
@@ -377,6 +377,9 @@ export function LinhaAtiva({
             {p.teste && " · fora da busca pública (conta de teste)"}
           </p>
           {p.identidade && <p className="text-xs text-muted">Identidade: {p.identidade}</p>}
+          <p className="text-xs text-muted" data-testid="linha-ativa-documento">
+            {p.documento.tipo}: <span className="font-mono">{p.documento.texto}</span>
+          </p>
           <p className="text-xs text-muted" data-testid="linha-ativa-cartao">
             Cartões gerados: <strong data-testid="linha-cartoes-gerados">{p.cartao.gerados}</strong> · Pedidos vindos de cartão:{" "}
             <strong data-testid="linha-pedidos-cartao">{p.cartao.pedidos}</strong>

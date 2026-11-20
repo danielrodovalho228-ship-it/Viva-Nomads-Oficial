@@ -49,6 +49,9 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         return;
       }
       setEnviado(true);
+    } catch {
+      // E654: falha na chamada ao servidor (rede, versão nova no ar): nunca "gira e volta" calado.
+      setErro("Não foi possível enviar o código agora. Recarregue a página e tente de novo.");
     } finally {
       setPedindo(false);
     }
@@ -56,12 +59,16 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
 
   async function assinar(e: React.FormEvent) {
     e.preventDefault();
+    // E675: um envio por vez (o botão desabilita, mas o toque duplo chega antes do re-render).
+    if (enviando) return;
     setErro(null);
     setEnviando(true);
     try {
       const r = await assinarContrato({ contratoId, aceite, codigo });
       if (!r.ok) {
         setErro(r.error ?? "Não foi possível assinar.");
+        // A assinatura pode ter entrado (outro envio, outra aba): relê o contrato; se estiver assinado, o formulário some.
+        router.refresh();
         return;
       }
       setAssinado(true);
@@ -76,6 +83,10 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         router.push(HREF_CONFIRMADA(contratoId));
         return;
       }
+      router.refresh();
+    } catch {
+      // E675: falha na chamada (rede, versão nova no ar) depois de a assinatura poder ter sido gravada: nunca tela muda.
+      setErro("Não conseguimos confirmar a resposta agora. Atualize a página: se a assinatura foi registrada, ela aparece no contrato.");
       router.refresh();
     } finally {
       setEnviando(false);
@@ -101,7 +112,7 @@ export function AssinarContrato({ contratoId }: { contratoId: string }) {
         <Button type="button" variant="outline" onClick={pedir} disabled={pedindo} className="mt-1" data-testid="assinar-pedir-codigo">
           {pedindo ? <Loader2 className="h-4 w-4 animate-spin" /> : enviado ? "Enviar outro código" : "Enviar código por e-mail"}
         </Button>
-        {enviado && <p className="mt-1 text-xs text-muted">Enviamos 6 números para o e-mail da sua conta. Valem por 15 minutos.</p>}
+        {enviado && <p className="mt-1 text-xs text-muted" data-testid="assinar-codigo-enviado">Enviamos 6 números para o e-mail da sua conta. Valem por 15 minutos.</p>}
         <label htmlFor="assinar-codigo" className="mt-3 block text-sm font-medium text-ink">
           Código recebido por e-mail
         </label>

@@ -1,0 +1,1481 @@
+[
+ {
+  "w": 360,
+  "r": "/",
+  "st": 200,
+  "imgs": 26,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Imóvel mobiliado com home office no Santa Mônica",
+   "Studio premium no Centro, ideal para estadia profi",
+   "Studio ao lado do Hospital de Clínicas (UFU)"
+  ],
+  "final": "/",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/ajuda",
+  "st": 200,
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Temas"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/ajuda/fale-com-a-viva",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/fale-com-a-viva",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Falar com uma pessoa"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/ajuda/morador",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/morador",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Como cancelo um Pedido de Moradia?"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/ajuda/proprietarios",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/ajuda/proprietarios",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Posso oferecer limpezas durante a estadi"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/buscar",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/buscar",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Santa Mônica, Uberlândia - MG"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Anúncio de exemplo"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Guias"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/cidades/uberlandia",
+  "st": 200,
+  "imgs": 32,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Essencial"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/cidades/uberlandia/hc-ufu-umuarama",
+  "st": 200,
+  "imgs": 4,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia/hc-ufu-umuarama",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "1 anúncio nesta região"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/cidades/uberlandia/ufu-santa-monica",
+  "st": 200,
+  "imgs": 6,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/cidades/uberlandia/ufu-santa-monica",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Essencial"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/como-funciona",
+  "st": 200,
+  "imgs": 18,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/como-funciona",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/comparar",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/comparar",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/conferir",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/conferir",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Viva"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Nomads"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/empresas",
+  "st": 200,
+  "imgs": 10,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/empresas",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/excluir-conta",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/excluir-conta",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Informe o e-mail da conta. Enviaremos um"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/favoritos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/favoritos",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Suporte:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "suporte@vivanomads.com.br"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/guia-fotos",
+  "st": 200,
+  "imgs": 6,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guia-fotos",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/guias",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Para todos"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Checklist de um imóvel mobiliado"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/guias/como-escolher-bairro-em-uberlandia",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-escolher-bairro-em-uberlandia",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Você vai de carro, ônibus ou a pé? Preci"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/guias/o-que-e-a-caucao",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/o-que-e-a-caucao",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "A plataforma não recebe nem guarda esse "
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/guias/como-precificar-estadia-de-meses",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-precificar-estadia-de-meses",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Olhe anúncios parecidos na própria busca"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/guias/checklist-imovel-mobiliado",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/checklist-imovel-mobiliado",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Cama e colchão, roupa de cama se estiver"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Banheiro, lavanderia e conforto"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/guias/como-funciona-a-conferencia-de-entrada",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-funciona-a-conferencia-de-entrada",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Confirmar ou contestar"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/guias/documentos-para-morar-em-imovel-mobiliado",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/documentos-para-morar-em-imovel-mobiliado",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Tenha à mão um documento oficial com fot"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/guias/como-por-um-video-no-anuncio",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/guias/como-por-um-video-no-anuncio",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Um vídeo por anúncio, de até 60 segundos"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/imoveis/ube-001",
+  "st": 200,
+  "imgs": 18,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Antes do contrato assinado, nada é cobrado",
+   "Sem câmeras no interior (declarado pelo anunciante",
+   "Urgente com solução provisória em até 24 h e defin",
+   "Studio premium no Centro, ideal para estadia profi",
+   "Studio ao lado do Hospital de Clínicas (UFU)",
+   "Imóvel mobiliado de 2 quartos para pacientes e aco"
+  ],
+  "final": "/imoveis/ube-001",
+  "topo": [
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Imóvel mobiliado com home office no Sant"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Até 3 pessoas · 2 quartos · 2 banheiros "
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Ideal para:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Com pet · Home office · Família"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Exemplo ilustrativo"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Conta"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Entrar ou cadastrar"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/imoveis/ube-005",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Antes do contrato assinado, nada é cobrado",
+   "Sem câmeras no interior (declarado pelo anunciante",
+   "Urgente com solução provisória em até 24 h e defin",
+   "Imóvel mobiliado com home office no Santa Mônica",
+   "Studio premium no Centro, ideal para estadia profi",
+   "Studio ao lado do Hospital de Clínicas (UFU)"
+  ],
+  "final": "/imoveis/ube-005",
+  "topo": [
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Imóvel mobiliado de 2 quartos para pacie"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Até 4 pessoas · 2 quartos · 1 banheiro ·"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Ideal para:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Ideal para:"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Com pet · Família · Executivo"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Com pet · Família · Executivo"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Conta"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Entrar ou cadastrar"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/imoveis/126b23ed-f282-4d2f-bbc0-aba9cff18480",
+  "st": 200,
+  "imgs": 18,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [
+   "Antes do contrato assinado, nada é cobrado",
+   "Sem câmeras no interior (declarado pelo anunciante",
+   "Urgente com solução provisória em até 24 h e defin",
+   "Imóvel mobiliado com home office no Santa Mônica",
+   "Studio premium no Centro, ideal para estadia profi",
+   "Studio ao lado do Hospital de Clínicas (UFU)"
+  ],
+  "final": "/imoveis/126b23ed-f282-4d2f-bbc0-aba9cff18480",
+  "topo": [
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Saraiva, Uberlândia"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Problema com isto?"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "[TESTE QA] Essencial Conforto Retomada"
+   },
+   {
+    "fixo": "barra-fixa-imovel",
+    "texto": "Até 4 pessoas · 2 quartos · 1 banheiro ·"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Até 4 pessoas · 2 quartos · 1 banheiro ·"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Ideal para:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Família · Executivo"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Conta"
+   }
+  ],
+  "cons": [
+   "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+  ],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/imoveis-perto-de/hc-ufu",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/hc-ufu",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Avise-me"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/imoveis-perto-de/ufu-santa-monica",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/imoveis-perto-de/ufu-santa-monica",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "veem o que você precisa e falam com você"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Avise-me quando surgir um imóvel"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "perto da UFU — Campus Santa Mônica"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/para-proprietarios",
+  "st": 200,
+  "imgs": 11,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/para-proprietarios",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "sobre o valor total do contrato fechado."
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "12%"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "a"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "6%"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "). Plano Gestor:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "4% para carteiras de 20 ou mais imóveis,"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/parceiros",
+  "st": 200,
+  "imgs": 21,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Uberlândia (MG)"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Começamos por aqui; cadastre-se de qualq"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/parceiros/ativar",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/ativar",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/parceiros/avaliadores",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/avaliadores",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Como funciona"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/parceiros/buscar",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/buscar",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "UF"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/parceiros/fotografos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/parceiros/fotografos",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "Como funciona a parceria:"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Você combina e agenda tudo pelas mensage"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/pedidos/novo",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/pedidos/novo",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/privacidade",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/privacidade",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "7"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Verificação de identidade do inquilino ("
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "8"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Seus direitos (LGPD)"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Dados de cadastro (nome, e-mail, telefon"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/proprietario/exemplo-1",
+  "st": 200,
+  "imgs": 12,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/proprietario/exemplo-1",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "14 estadias concluídas"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Costuma responder em até 8 horas"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/seguranca",
+  "st": 200,
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/seguranca",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "A plataforma nunca pede pagamento para s"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/termos",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/termos",
+  "topo": [
+   {
+    "fixo": "Navegação principal",
+    "texto": "8"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "Comissão e indicações"
+   },
+   {
+    "fixo": "Navegação principal",
+    "texto": "O Viva Nomads é uma plataforma que conec"
+   }
+  ],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/acesso-socios",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/acesso-socios",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/auth",
+  "st": 200,
+  "imgs": 1,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 18,
+  "h1": 1,
+  "cortes": [],
+  "final": "/auth",
+  "topo": [],
+  "fim": [],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ },
+ {
+  "w": 360,
+  "r": "/avaliadores/UDI-002",
+  "st": 200,
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "hs": 0,
+  "h1": 1,
+  "cortes": [],
+  "final": "/avaliadores/UDI-002",
+  "topo": [],
+  "fim": [
+   {
+    "fixo": "topo-publico",
+    "texto": "Cidades"
+   },
+   {
+    "fixo": "topo-publico",
+    "texto": "Imóveis em Uberlândia"
+   }
+  ],
+  "cons": [],
+  "http": [],
+  "topoReal": [],
+  "fimReal": []
+ }
+]

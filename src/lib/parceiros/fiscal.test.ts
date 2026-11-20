@@ -80,10 +80,10 @@ test("pendência: só PJ sem resposta; bloqueia a primeira publicação, nunca q
   assert.deepEqual(faltaParaPublicar({ ...pagina, tipoPessoa: "pj", emiteNota: null }), [PENDENCIA_NOTA]);
   assert.deepEqual(faltaParaPublicar({ ...pagina, tipoPessoa: "pj", emiteNota: true }), []);
   assert.deepEqual(faltaParaPublicar({ ...pagina, tipoPessoa: "pf", emiteNota: null }), [PENDENCIA_CNPJ], "E648: CPF existente não publica até apresentar CNPJ");
-  // Sem tipo (quem já esteve no ar: o painel não passa a declaração) → não bloqueia.
+  // Sem tipo na chamada → não bloqueia. E650: o painel passa o tipo SEMPRE; quem já esteve no ar só escapa da pergunta da nota (jaPublicou).
   assert.deepEqual(faltaParaPublicar(pagina), []);
   const painel = ler("lib/parceiros/painel-actions.ts");
-  assert.match(painel, /\.\.\.\(p\.publicado_em \? \{\} : \{ tipoPessoa: /);
+  assert.match(painel, /jaPublicou: Boolean\(p\.publicado_em\)/);
   assert.match(painel, /if \(m\.p\.tipo_pessoa !== "pj"\) return \{ ok: false/);
   assert.match(painel, /if \(v\.valor === true && m\.p\.nota_selo_removido_em\) return/);
 });
@@ -91,7 +91,7 @@ test("pendência: só PJ sem resposta; bloqueia a primeira publicação, nunca q
 test("servidor: o pedido grava o valor validado e a ativação copia (só PJ) nos dois caminhos", () => {
   assert.match(ler("lib/parceiros/solicitacao-actions.ts"), /emite_nota: v\.valor\.emiteNota,/);
   // E425: a cópia do pedido para a página mora no núcleo comum ao link e ao painel (ativacao-nucleo.ts).
-  for (const arq of ["lib/parceiros/ativacao-nucleo.ts", "lib/vistoria/actions.ts"]) {
+  for (const arq of ["lib/parceiros/ativacao-nucleo.ts", "lib/vistoria/parceiro-do-avaliador-servidor.ts"]) {
     assert.match(ler(arq), /emite_nota: sol\.tipo_pessoa === "pj" \? \(\(sol\.emite_nota as boolean \| null\) \?\? null\) : null,/, arq);
   }
 });

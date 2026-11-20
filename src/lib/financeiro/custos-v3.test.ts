@@ -70,15 +70,15 @@ test("E622 — valores de referência do simulador oficial (aluguel 3.000 · 3 m
   assert.equal(Math.round(cenariosContratosMes({ operador: 0, regime: "presumido" })[1].resultado), 5130);
 });
 
-test("v3 (veredito do coordenador, 05/11): CDL e e-mail visíveis mas FORA da soma; parecer e consulta dentro do investimento", () => {
+test("v3 (veredito do coordenador, 05/11): ACIUB e e-mail visíveis mas FORA da soma; parecer e consulta dentro do investimento", () => {
   const linha = (r: RegExp) => CUSTOS_FIXOS.find((c) => r.test(c.rotulo));
-  assert.equal(linha(/CDL/), undefined);
+  assert.equal(linha(/ACIUB/), undefined);
   assert.equal(linha(/e-mail/), undefined);
   const fornecedores = CUSTOS_FIXOS.filter((c) => !/Pró-labore/.test(c.rotulo)).reduce((s, c) => s + c.valor, 0);
   assert.ok(Math.abs(fornecedores - 1302.9) < 0.01, String(fornecedores));
   assert.ok(Math.abs(CUSTO_FIXO_PADRAO - 7302.9) < 0.01);
   const opc = (r: RegExp) => OPCIONAIS_NAO_SOMADOS.find((c) => r.test(c.rotulo));
-  assert.equal(opc(/CDL/)?.obs, "Associação à CDL Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente");
+  assert.equal(opc(/ACIUB/)?.obs, "Associação à ACIUB Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente");
   assert.equal(opc(/e-mail/)?.valor, 5.99);
   assert.match(opc(/e-mail/)?.obs ?? "", /Hostinger/);
   assert.equal(INVESTIMENTO_INICIAL, 16000);
