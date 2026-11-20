@@ -366,11 +366,33 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     // ORDEM-DUET-258: sem semente — o anúncio é o que o dono publicou pela tela na etapa 2.
     expect(jornada.publicado, "o anúncio publicado pela tela na etapa 2").toBeTruthy();
     const page = await entrar(browser, contas.inquilino.email, senha);
+    // SONDA E1047 (nunca mergear): regista, com o relógio, as navegações, o pushState/replaceState e o clique.
+    const t0 = Date.now();
+    const log = (m: string) => console.log(`SONDA-E1047 r${test.info().repeatEachIndex} +${Date.now() - t0}ms ${m}`);
+    await page.context().addInitScript(() => {
+      for (const k of ["pushState", "replaceState"] as const) {
+        const orig = history[k].bind(history);
+        history[k] = (d: unknown, u: string, url?: string | URL | null) => {
+          console.log(`SONDA-HIST ${k} ${String(url)} ${performance.now().toFixed(0)}`);
+          return orig(d, u, url);
+        };
+      }
+      document.addEventListener("click", (e) => {
+        const a = (e.target as Element | null)?.closest?.("a");
+        if (a) console.log(`SONDA-HIST click ${a.getAttribute("href")} prevented=${e.defaultPrevented} ${performance.now().toFixed(0)}`);
+      }, true);
+    });
+    page.on("console", (m) => { if (m.text().startsWith("SONDA-HIST")) log(m.text()); });
+    page.on("framenavigated", (f) => { if (f === page.mainFrame()) log(`framenavigated ${f.url()}`); });
+    page.on("request", (r) => { if (r.isNavigationRequest() || r.url().includes("_rsc")) log(`req ${r.method()} ${r.url()}`); });
+    page.on("requestfailed", (r) => log(`reqfailed ${r.url()} ${r.failure()?.errorText}`));
     await page.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("card-resultado").first(), "a busca mostra resultados").toBeVisible({ timeout: 30_000 });
     const link = page.locator(`a[href="/imoveis/${jornada.publicado}"]`).first();
     await expect(link, "o anúncio do dono do piloto aparece na busca de Uberlândia").toBeVisible({ timeout: 20_000 });
+    log("antes do clique");
     await link.click();
+    log("clique feito");
     await expect(page, "abre a página do anúncio").toHaveURL(new RegExp(`/imoveis/${jornada.publicado}`), { timeout: 20_000 });
     await expect(page.getByRole("heading", { level: 1 }), "com o título do anúncio").toContainText(titulo, { timeout: 20_000 });
     await page.context().close();
