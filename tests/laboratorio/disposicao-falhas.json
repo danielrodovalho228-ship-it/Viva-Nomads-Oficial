@@ -30,6 +30,20 @@
    "t355-conta-a-perfil-espelho.spec.ts"
   ]
  },
+ "corrigidosDepois": {
+  "ordem": "ORDEM-DUET-182",
+  "data": "2026-11-19",
+  "acrescentados": [
+   {
+    "spec": "t296-niveis-exibicao-59-1.spec.ts",
+    "origem": "corrida manual completa 44495944766 (main 1c00bcb9)"
+   },
+   {
+    "spec": "t1697-e1035-editar-rascunho-sem-dados-preserva-o-resto.spec.ts",
+    "origem": "trava nova; vermelha contra a main 8e57ae18 antes da correção"
+   }
+  ]
+ },
  "regra": "uma disposição por spec vermelho da última corrida completa: teste-velho (com o PR ou o commit da correção), defeito (item registrado; o spec leva defeitoConhecido) ou instavel (item de instabilidade; vai para a quarentena)",
  "disposicoes": [
   {
@@ -787,6 +801,24 @@
    "dono": "Fable",
    "pr": 3910,
    "nota": "caso 5 a 1280 px, intermitente: sozinho contra a main b4b0bc71, 2 falhas em 3 — o link antigo /dashboard/conta#perfil-publico termina ora com a âncora, ora sem. Correção escrita no #3910, que não entra enquanto esta disposição não fechar (ORDEM-DUET-096); correção ou plano até 26/11"
+  },
+  {
+   "spec": "t296-niveis-exibicao-59-1.spec.ts",
+   "disposicao": "defeito",
+   "item": "E1034",
+   "dono": "Fable",
+   "pr": 4015,
+   "nota": "abrir um rascunho sem draft_data regravava a linha vazia e apagava as fotos (regressão do #4004)",
+   "corrigidoPor": "8e57ae18"
+  },
+  {
+   "spec": "t1697-e1035-editar-rascunho-sem-dados-preserva-o-resto.spec.ts",
+   "disposicao": "defeito",
+   "item": "E1035",
+   "dono": "Fable",
+   "pr": 4017,
+   "nota": "editar um rascunho sem draft_data gravava o formulário por cima do resto da linha e apagava as fotos",
+   "corrigidoPor": "b0814b68"
   }
  ],
  "pulosDosMarcados": {
