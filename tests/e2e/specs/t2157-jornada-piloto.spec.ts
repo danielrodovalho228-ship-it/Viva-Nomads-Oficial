@@ -1,7 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
+import { randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { authFile } from "../fixtures/auth";
+import { hasAccount } from "../fixtures/accounts";
 import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, liberarLimiteCodigo, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
-import { abrirCadastroNovo, doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
+import { NO_LABORATORIO, aceitarTermoIaSePreciso, adm, apagarContas, criarConta, entrar, liberarLimiteCodigo, novaSenha, novoSufixo, pdf, pngDeTeste } from "../fixtures/laboratorio";
+import { abrirCadastroNovo, abrirSecoesPasso10, continuarAte, doTipoAoEndereco, noPasso, preencherFichaDentro } from "../fixtures/cadastro";
 import { ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
 import { preencherCriterios } from "../fixtures/avaliacao-criterios";
 
@@ -165,14 +169,202 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await p2.context().close();
   });
 
+  // Etapa 2, continuação — PUBLICAÇÃO PELA TELA (ORDEM-DUET-258, trecho 0): o rascunho acima vira o anúncio publicado da
+  // jornada, sem semente. O dono completa os passos pela tela; envia um documento que a conferência automática (simulada
+  // no lab) manda para a fila; a conta de admin do laboratório aprova o documento pela tela da Central (/admin/documentos);
+  // o dono publica. A etapa 3 passa a usar ESTE anúncio. Simulações declaradas (as mesmas do t186): o ViaCEP; as fotos do
+  // rascunho trocadas pelas de teste em https (o Storage local é http e a regra do editor só aceita https na pasta do dono);
+  // o checklist "Antes de anunciar" respondido no banco, como a tela /qualificar deixaria.
+  test("Etapa 2 — publicação pela tela: o dono completa o anúncio, envia o documento, a Central aprova pela tela e o dono publica", async ({ browser }) => {
+    test.setTimeout(360_000);
+    expect(jornada.anuncio, "o rascunho da etapa 2 existe").toBeTruthy();
+    expect(hasAccount("admin"), "a conta de admin do laboratório existe (é ela que aprova o documento na Central)").toBe(true);
+    const marca = `T2157 ${sufixo}`;
+    const titulo = `Studio da jornada ${marca}`;
+    const imovelId = jornada.anuncio!;
+
+    const p = await entrar(browser, contas.dono.email, senha);
+    await p.addInitScript(() => {
+      try {
+        sessionStorage.setItem("vivanomads-qualification", JSON.stringify({ eligible: true, baseBadge: false, tHome: false, tWork: false, score: 3 }));
+      } catch {
+        /* sem sessionStorage */
+      }
+    });
+    await p.route("https://viacep.com.br/ws/**", (r) =>
+      r.fulfill({ json: { cep: "38400-100", logradouro: `Rua ${marca}`, bairro: `Bairro ${marca}`, localidade: "Uberlândia", uf: "MG" } }),
+    );
+    const continuar = p.getByTestId("cadastro-continuar");
+
+    // Passo 3: Endereço — o CEP completa a cidade (Uberlândia: a busca da etapa 3 procura lá).
+    await p.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=endereco`, { waitUntil: "domcontentloaded" });
+    await noPasso(p, "endereco", 30_000);
+    await p.getByTestId("cadastro-cep").fill("38400100");
+    await expect(p.getByTestId("cadastro-cidade"), "o CEP completa a cidade").toHaveValue("Uberlândia", { timeout: 10_000 });
+    await p.getByTestId("cadastro-numero").fill("157");
+    await continuar.click();
+
+    // Passo 4: Detalhes.
+    await noPasso(p, "detalhes");
+    await p.getByTestId("cadastro-banheiros").fill("1");
+    await p.getByTestId("cadastro-capacidade").fill("2");
+    await p.getByTestId("cadastro-area").fill("40");
+    await continuar.click();
+
+    // Passo 5: Comodidades — internet, declaração das câmeras, padrão mínimo e a ficha "O que tem dentro".
+    await noPasso(p, "comodidades");
+    await p.getByLabel("Velocidade da internet em Mbps").fill("300");
+    await p.getByTestId("seguranca-imovel").getByTestId("declaracao-sem-cameras").click();
+    await expect(p.getByTestId("declaracao-sem-cameras")).toHaveAttribute("aria-checked", "true");
+    await p.getByTestId("conforto-marcar-todos").click();
+    await expect(p.getByTestId("conforto-faltam")).toHaveText("Todos os itens confirmados.");
+    await preencherFichaDentro(p);
+    await continuar.click();
+
+    // Passo 6: Regras — o tipo de entrada.
+    await noPasso(p, "regras");
+    await p.getByTestId("tipo-entrada-porteiro").check();
+    await continuar.click();
+
+    // Passo 7: Título e descrição — o título com a marca da jornada (as etapas 4 e 5 acham o anúncio por ele).
+    await noPasso(p, "descricao");
+    await p.getByTestId("cadastro-titulo").fill(titulo);
+    await p
+      .getByTestId("cadastro-descricao")
+      .fill("Studio mobiliado da jornada do piloto, com home office, internet rápida e cozinha completa. Pronto para morar a partir de 30 dias.");
+    await continuar.click();
+
+    // Passo 8: Preço — valor da jornada e a caução como garantia (a etapa 9 registra e devolve a caução).
+    await noPasso(p, "preco");
+    await p.getByTestId("cadastro-preco").fill("2157");
+    // A garantia do cadastro é a "Caução (depósito devolvível)" (GARANTIAS_CADASTRO, caucao_avista).
+    const caucao = p.getByRole("button", { name: /Aceito Caução/ }).first();
+    await expect(caucao, "a caução está entre as garantias do cadastro").toBeVisible({ timeout: 15_000 });
+    if ((await caucao.getAttribute("aria-pressed")) !== "true") await caucao.click();
+    await expect(caucao).toHaveAttribute("aria-pressed", "true");
+    await continuar.click();
+
+    // Passo 9: Disponibilidade — entrada a partir de amanhã.
+    await noPasso(p, "disponibilidade");
+    const amanha = new Date(Date.now() + 86_400_000);
+    await p.getByTestId("disponivel-de").pressSequentially(`${String(amanha.getDate()).padStart(2, "0")}${String(amanha.getMonth() + 1).padStart(2, "0")}${amanha.getFullYear()}`);
+    await continuar.click();
+
+    // Passo 10: identidade e documento. O documento de teste "editado" a conferência automática manda para a fila do admin.
+    await noPasso(p, "revisao");
+    await abrirSecoesPasso10(p);
+    const antes = p.getByTestId("antes-de-publicar");
+    const identidade = antes.getByTestId("etapa-identidade");
+    if ((await identidade.getAttribute("data-estado")) !== "ok") {
+      await identidade.getByTestId("identidade-confirmar").click();
+      await expect(identidade.getByTestId("identidade-confirmada")).toBeVisible({ timeout: 20_000 });
+    }
+    const doc = Buffer.concat([
+      Buffer.from(`%PDF-1.4\n% documento ficticio do laboratorio VIVA-LAB-DOC:editado ${randomBytes(8).toString("hex")}\n`),
+      Buffer.alloc(12 * 1024, 0x20),
+      Buffer.from("\n%%EOF\n"),
+    ]);
+    await antes.getByTestId("documento-vinculo").locator('input[type="file"]').first().setInputFiles({ name: "documento-jornada.pdf", mimeType: "application/pdf", buffer: doc });
+    await expect(p.getByTestId("documento-estado"), "o documento vai para a conferência da equipe").toHaveAttribute("data-estado", "revisao", { timeout: 30_000 });
+    await p.waitForTimeout(2_500);
+    await p.getByTestId("assistente-sair").click();
+    await p.waitForURL(/\/dashboard\/imoveis/, { timeout: 30_000 });
+
+    // Simulações declaradas do laboratório (como no t186): fotos https na pasta do dono e o "Antes de anunciar" respondido.
+    const { data: rasc } = await adm().from("properties").select("draft_data").eq("id", imovelId).single();
+    const fotos = [];
+    for (let i = 0; i < 8; i++) {
+      const caminho = `${jornada.dono}/${imovelId}-${i}.png`;
+      await adm().storage.from("property-photos").upload(caminho, pngDeTeste(i), { contentType: "image/png", upsert: true });
+      fotos.push({ id: `lab-${i}`, url: `https://lab.vivanomads.test/storage/v1/object/public/property-photos/${caminho}`, name: "", path: caminho, demo: false });
+    }
+    await adm().from("properties").update({ draft_data: { ...(rasc!.draft_data as object), photos: fotos } }).eq("id", imovelId);
+    const { data: qual } = await adm().from("qualification_checklists").select("id, formulario, document_status").eq("property_id", imovelId).maybeSingle();
+    expect(qual, "o envio do documento ligou o checklist ao rascunho").toBeTruthy();
+    expect(qual!.document_status, "o documento está na fila do admin").toBe("pending");
+    const formulario = (qual!.formulario ?? {}) as { elig?: Record<string, unknown> };
+    await adm()
+      .from("qualification_checklists")
+      .update({ formulario: { versao: 1, ...formulario, elig: { ...(formulario.elig ?? {}), furnished: true, accepts30days: true, iptuOk: true, habitable: true, isOwnerOrAgent: true, condoAllows: "yes" } } })
+      .eq("id", qual!.id);
+    await p.context().close();
+
+    // A Central: a conta de admin do laboratório aprova o documento pela tela.
+    const ctxAdmin = await browser.newContext({ storageState: authFile("admin") });
+    const pa = await ctxAdmin.newPage();
+    await pa.goto("/admin/documentos", { waitUntil: "domcontentloaded" });
+    const card = pa.getByTestId("doc-card").filter({ hasText: marca }).first();
+    await expect(card, "o documento da jornada está na fila da Central").toBeVisible({ timeout: 30_000 });
+    for (const cb of await card.getByRole("checkbox").all()) if (!(await cb.isChecked())) await cb.check();
+    await card.getByRole("button", { name: "Aprovar" }).click();
+    await expect
+      .poll(async () => (await adm().from("qualification_checklists").select("document_status").eq("id", qual!.id).single()).data?.document_status, {
+        timeout: 20_000,
+        message: "a aprovação pela Central grava o documento como aprovado",
+      })
+      .toBe("approved");
+    await ctxAdmin.close();
+
+    // O dono publica pela tela.
+    const p2 = await entrar(browser, contas.dono.email, senha);
+    await p2.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+    await noPasso(p2, "revisao", 30_000);
+    await aceitarTermoIaSePreciso(p2);
+    // E633: com a chave MATRICULA_OBRIGATORIA ligada (o lab das chaves), a matrícula atualizada também é obrigatória para
+    // publicar; o dono envia a matrícula (fictícia, tests/fixtures) pela mesma tela. Conta como enviada qualquer conferência
+    // dela (inclusive em revisão manual: prontidao-servidor.ts). Com a chave desligada (como na main), nada muda.
+    if (process.env.NEXT_PUBLIC_MATRICULA_OBRIGATORIA === "on") {
+      await abrirSecoesPasso10(p2, ["documento"]);
+      const matricula = Buffer.concat([readFileSync("tests/fixtures/matricula-ficticia-dono.pdf"), Buffer.from(`% ${randomBytes(8).toString("hex")}\n`)]);
+      await p2.getByTestId("documento-vinculo").locator('input[type="file"]').first().setInputFiles({ name: "matricula-jornada.pdf", mimeType: "application/pdf", buffer: matricula });
+      await expect
+        .poll(async () => ((await adm().from("property_ownership_checks").select("id").eq("property_id", imovelId)).data ?? []).length, {
+          timeout: 30_000,
+          message: "a matrícula enviada pela tela fica registada para o imóvel",
+        })
+        .toBeGreaterThan(0);
+      await p2.reload({ waitUntil: "domcontentloaded" });
+      await noPasso(p2, "revisao", 30_000);
+      await aceitarTermoIaSePreciso(p2); // o "Revisei as informações" volta desmarcado depois de recarregar
+    }
+    const resolver = p2.getByTestId("conferencia-resolver-comodidades");
+    const publicar = p2.getByTestId("publicar-anuncio");
+    const pronto = await publicar.and(p2.locator(":enabled")).or(resolver).waitFor({ state: "visible", timeout: 20_000 }).then(() => true).catch(() => false);
+    if (!pronto) console.log(`T2157 PUBLICAR bloqueado: ${(await p2.locator("main").innerText()).slice(0, 1500).replace(/\s+/g, " ")}`);
+    await expect(publicar.and(p2.locator(":enabled")).or(resolver)).toBeVisible({ timeout: 5_000 });
+    if (await resolver.isVisible()) {
+      await resolver.click();
+      await p2.getByTestId("conforto-marcar-todos").click();
+      await continuarAte(p2, "comodidades", "revisao");
+    }
+    await expect(publicar, "com o documento aprovado, o anúncio pode ser publicado").toBeEnabled({ timeout: 20_000 });
+    await publicar.click();
+    // O que conta é o anúncio ficar ATIVO no servidor; a volta para Meus imóveis é o sinal da tela.
+    const voltou = await p2.waitForURL(/\/dashboard\/imoveis(\?|$)/, { timeout: 30_000 }).then(() => true).catch(() => false);
+    if (!voltou) {
+      const alertas = await p2.locator('[role="alert"], [data-testid*="erro"], [data-testid="publicar-bloqueado"]').allInnerTexts();
+      console.log(`T2157 PUBLICAR: ficou em ${p2.url()} · alertas: ${JSON.stringify(alertas)}`);
+      console.log(`T2157 PUBLICAR: texto da página: ${(await p2.locator("main").innerText()).slice(0, 1500).replace(/\s+/g, " ")}`);
+    }
+    await expect
+      .poll(async () => (await adm().from("properties").select("status").eq("id", imovelId).single()).data?.status, { timeout: 20_000, message: "o anúncio fica ativo depois de publicar pela tela" })
+      .toBe("active");
+    expect(voltou, "depois de publicar, a tela volta para Meus imóveis").toBe(true);
+    const { data: pub } = await adm().from("properties").select("status, title, city, monthly_price").eq("id", imovelId).single();
+    expect(pub, "publicado pela tela, em Uberlândia, com o título e o valor da jornada").toMatchObject({ status: "active", title: titulo, city: "Uberlândia" });
+    expect(Number(pub!.monthly_price)).toBe(2157);
+    jornada.publicado = imovelId;
+    await p2.context().close();
+  });
+
   // Etapa 3 (busca), preparada na ORDEM-DUET-151 e ainda NÃO aprovada: ativa-se depois da etapa 2 (#4007). O inquilino do
   // piloto procura em Uberlândia, acha na busca o anúncio publicado do dono do piloto e abre a página dele.
-  // DEPENDÊNCIA DE SEMENTE (ORDEM-DUET-153): o anúncio publicado nasce pela semente do laboratório (criarImovelPronto,
-  // ativo). O que está sob teste nesta etapa é a perna da busca. Quando a publicação pela tela tiver o seu item aprovado,
-  // o passo de publicar entra na etapa 2 e substitui esta semente; a etapa 3 não fica travada à espera dele.
-  test("Etapa 3 — o inquilino acha na busca o anúncio do dono e abre a página dele (dependência de semente: anúncio publicado)", async ({ browser }) => {
+  // ORDEM-DUET-258: a semente saiu — o anúncio é o publicado pela tela na continuação da etapa 2 (antes, ORDEM-DUET-153,
+  // nascia de criarImovelPronto).
+  test("Etapa 3 — o inquilino acha na busca o anúncio que o dono publicou pela tela e abre a página dele", async ({ browser }) => {
     const titulo = `Studio da jornada T2157 ${sufixo}`;
-    jornada.publicado = await criarImovelPronto(jornada.dono!, titulo, { ativo: true, preco: 2157 });
+    // ORDEM-DUET-258: sem semente — o anúncio é o que o dono publicou pela tela na etapa 2.
+    expect(jornada.publicado, "o anúncio publicado pela tela na etapa 2").toBeTruthy();
     const page = await entrar(browser, contas.inquilino.email, senha);
     await page.goto("/buscar?local=Uberl%C3%A2ndia", { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("card-resultado").first(), "a busca mostra resultados").toBeVisible({ timeout: 30_000 });
