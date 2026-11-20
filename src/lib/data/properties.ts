@@ -3,6 +3,7 @@ import { cache } from "react";
 import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { createClient } from "@/lib/supabase/server";
 import { comNovaTentativa } from "@/lib/nova-tentativa";
+import { lerTodasAsLinhas } from "@/lib/data/leitura-paginada";
 import { isExemplo } from "@/lib/demo-listing";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Property, AmenityGroup } from "@/lib/types";
@@ -493,11 +494,20 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
   }
 }
 
+/** E1048: anúncios ATIVOS do dono, sem o filtro de vitrine (só para o cartão do dono conta de teste). null = não deu para contar. */
+async function contarAtivosDoDono(supabase: NonNullable<ReturnType<typeof createPublicClient>>, donoId: string): Promise<number | null> {
+  const { data, error } = await supabase.from("properties").select("id").eq("owner_id", donoId).eq("status", "active");
+  if (error || !data) return null;
+  return data.length;
+}
+
 /** E631: quantos imóveis a página pública do proprietário lista (a mesma consulta e o mesmo filtro). null = não deu para contar. */
-export async function contarImoveisPublicosDoDono(donoId: string): Promise<number | null> {
+export async function contarImoveisPublicosDoDono(donoId: string, opcoes: { incluirTeste?: boolean } = {}): Promise<number | null> {
   const supabase = createPublicClient();
   if (!supabase || !/^[0-9a-f-]{36}$/i.test(donoId)) return null;
   try {
+    // E1048: dono conta de teste → a vitrine tiraria todos os anúncios dele e o cartão diria 0; conta os ativos dele.
+    if (opcoes.incluirTeste === true) return await contarAtivosDoDono(supabase, donoId);
     return (await linhasPublicasDoDono(supabase, donoId))?.length ?? null;
   } catch {
     return null;
@@ -592,13 +602,20 @@ async function attachCoverPhotos(supabase: SupabaseLike, list: Property[]): Prom
   if (list.length === 0) return;
   try {
     const ids = list.map((p) => p.id);
-    const { data } = await supabase
-      .from("property_photos")
-      .select("property_id, url, sort_order")
-      .in("property_id", ids)
-      .order("sort_order");
+    // E1051: a lista inteira passa de max_rows (1000) — em páginas, numa ordem total, para nenhum anúncio perder fotos
+    // (e cair na relevância) conforme a ordem do heap. Antes: uma consulta só, cortada a meio, diferente a cada carregamento.
+    const data = await lerTodasAsLinhas<{ property_id: string; url: string }>((de, ate) =>
+      supabase
+        .from("property_photos")
+        .select("property_id, url, sort_order")
+        .in("property_id", ids)
+        .order("property_id")
+        .order("sort_order")
+        .order("url")
+        .range(de, ate),
+    );
     const byProp = new Map<string, string[]>();
-    for (const row of ((data as { property_id: string; url: string }[] | null) ?? [])) {
+    for (const row of data) {
       if (!byProp.has(row.property_id)) byProp.set(row.property_id, []);
       byProp.get(row.property_id)!.push(row.url);
     }
