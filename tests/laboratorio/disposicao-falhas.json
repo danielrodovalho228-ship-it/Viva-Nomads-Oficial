@@ -298,7 +298,8 @@
    "item": "E961",
    "dono": "Fable",
    "pr": 3857,
-   "nota": "a página 404, com cartões e preços, viaja no HTML de todas as páginas"
+   "nota": "a página 404, com cartões e preços, viaja no HTML de todas as páginas",
+   "corrigidoPor": "52d0be56"
   },
   {
    "spec": "t352-varredura-bloco17.spec.ts",
@@ -678,7 +679,7 @@
    "dono": "Fable",
    "pr": 3855,
    "nota": "o logo do cabeçalho público tem alvo de toque de 32 px",
-   "corrigidoPor": "4f64224d"
+   "corrigidoPor": "44c82ddc"
   },
   {
    "spec": "t816-cidade-bairros-grade-par.spec.ts",

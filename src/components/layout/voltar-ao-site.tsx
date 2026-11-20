@@ -12,7 +12,9 @@ export function VoltarAoSite() {
     setHref(destinoVoltarAoSite(lerUltimaPublica()));
   }, []);
   return (
-    <Link href={href} className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-forest" data-testid="admin-voltar-site">
+    // E1031: sem pré-carregamento. O destino é a saída do painel e abre-se no clique; pré-carregado, deixava um pedido
+    // pendente cerca de 29 s em cada tela do admin (o mesmo do E1025 nos logotipos).
+    <Link href={href} prefetch={false} className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-forest" data-testid="admin-voltar-site">
       <ChevronLeft className="h-5 w-5" aria-hidden /> Voltar ao site
     </Link>
   );
