@@ -5,7 +5,8 @@ import { MSG_CODIGO_RECUPERACAO_INVALIDO } from "../../../src/lib/auth/recuperar
 
 /*
   T1680 — E917 (opção A, decisão do Gerente 16/11) @E917: a recuperação de senha das CONTAS DE TESTE por código.
-    A. ciclo completo: pedido em /auth → o código (e só o código, sem link) na caixa de teste → /auth/reset/codigo aceita
+    A. ciclo completo: pedido em /auth → o código (e só o código, sem link) na caixa de teste E na tela de
+       /auth/reset/codigo (prova de 19/11) → /auth/reset/codigo aceita
        → nova senha → login com a senha nova.
     B. uso único (O-50): o mesmo código, de novo, é recusado.
     C. expiração (O-50): um código novo, envelhecido além da validade do Supabase, é recusado.
@@ -63,6 +64,9 @@ test.describe("T1680 — E917: recuperação de senha por código (contas de tes
     expect(primeiro).toMatch(/^\d{6}$/);
     // E163 intacta: nenhum link de acesso no e-mail capturado (nem no texto nem no HTML).
     expect(`${e.corpo}\n${e.html ?? ""}`).not.toMatch(/token_hash|\/auth\/confirm|type=recovery|link com token removido/);
+    // Prova ao vivo de 19/11 (ORDEM-DUET-185): o código APARECE NA TELA — é o mesmo do e-mail. Antes a spec só lia o banco
+    // (ponto cego): sem sessão, a caixa de teste não se vê, e a tela não mostrava nada.
+    await expect(page.getByTestId("reset-codigo-valor")).toHaveText(primeiro, { timeout: 10_000 });
 
     await page.getByTestId("reset-codigo-codigo").fill(primeiro);
     await page.getByTestId("reset-codigo-enviar").click();
@@ -87,10 +91,13 @@ test.describe("T1680 — E917: recuperação de senha por código (contas de tes
 
   test("C. expiração: código novo envelhecido além da validade é recusado", async ({ browser, request }) => {
     const r = await request.post("/api/auth/recuperar", { data: { email: alvo.email } });
-    expect(await r.json()).toEqual({ ok: true, porCodigo: true });
+    // Asserção alterada (prova de 19/11): a resposta da conta de teste passa a trazer o código (para a tela); é o mesmo do e-mail.
+    const corpo = (await r.json()) as { ok: boolean; porCodigo: boolean; codigo?: string };
+    expect(corpo).toMatchObject({ ok: true, porCodigo: true });
     await expect.poll(async () => (await recuperacoes(alvo.id)).length, { timeout: 20_000 }).toBe(2);
     const novo = codigoDe((await recuperacoes(alvo.id))[0].corpo);
     expect(novo).toMatch(/^\d{6}$/);
+    expect(corpo.codigo).toBe(novo);
     // Envelhece o pedido além de qualquer validade do Supabase (o lab usa otp_expiry; produção, 600 s).
     execFileSync("psql", [DB, "-Atc", `update auth.users set recovery_sent_at = now() - interval '1 day' where id = '${alvo.id}'`]);
     const page = await (await browser.newContext()).newPage();

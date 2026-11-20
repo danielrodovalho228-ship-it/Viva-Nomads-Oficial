@@ -53,3 +53,35 @@ test("E917 — /auth/reset/codigo troca o código pela sessão de recuperação 
   assert.ok(codigoRecuperacaoValido("123456"));
   for (const x of ["12345", "1234567", "12a456", ""]) assert.ok(!codigoRecuperacaoValido(x), x);
 });
+
+/*
+  E917 — prova ao vivo de 19/11 (ORDEM-DUET-185): o código NÃO aparecia na tela. A opção A vive dessa exibição; a caixa
+  de teste pede sessão e quem esqueceu a senha não a tem. Ponto cego da T1680: lia o código direto do banco
+  (emails_teste) e nunca olhava a tela. Estes testes ficam vermelhos sem a correção.
+*/
+import { CHAVE_CODIGO_TELA, codigoParaTela, guardarCodigoTela, VALIDADE_CODIGO_TELA_MS } from "./recuperar-codigo.ts";
+
+test("E917 (prova 19/11) — a rota devolve o código à conta de teste; a tela de /auth/reset/codigo mostra-o", () => {
+  const rota = ler("src/app/api/auth/recuperar/route.ts");
+  assert.match(rota, /return NextResponse\.json\(\{ ok: true, porCodigo: true, codigo \}/);
+  // Só depois do filtro is_teste: a conta real sai antes, sem código.
+  assert.ok(rota.indexOf("porCodigo: false") < rota.indexOf("porCodigo: true, codigo"));
+  const auth = ler("src/app/auth/page.tsx");
+  assert.match(auth, /sessionStorage\.setItem\(CHAVE_CODIGO_TELA, guardarCodigoTela\(email, r\.codigo, Date\.now\(\)\)\)/);
+  assert.doesNotMatch(auth, /reset\/codigo\?[^`]*codigo=/, "o código nunca vai na URL");
+  const tela = ler("src/app/auth/reset/codigo/page.tsx");
+  assert.match(tela, /data-testid="reset-codigo-valor">\{codigoNaTela\}/);
+  assert.match(tela, /codigoParaTela\(guardado, e, Date\.now\(\)\)/);
+});
+
+test("E917 (prova 19/11) — o código guardado só aparece para o mesmo e-mail, com 6 dígitos e dentro de 10 minutos", () => {
+  const agora = 1_000_000;
+  const g = guardarCodigoTela("Inquilino2@VivaNomads.com.br", "482913", agora);
+  assert.equal(codigoParaTela(g, "inquilino2@vivanomads.com.br", agora + 1000), "482913");
+  assert.equal(codigoParaTela(g, "outra@vivanomads.com.br", agora), null);
+  assert.equal(codigoParaTela(g, "inquilino2@vivanomads.com.br", agora + VALIDADE_CODIGO_TELA_MS + 1), null);
+  assert.equal(codigoParaTela(guardarCodigoTela("a@b.co", "12ab56", agora), "a@b.co", agora), null);
+  assert.equal(codigoParaTela("{x", "a@b.co", agora), null);
+  assert.equal(codigoParaTela(null, "a@b.co", agora), null);
+  assert.equal(CHAVE_CODIGO_TELA, "vn-recuperar-codigo");
+});
