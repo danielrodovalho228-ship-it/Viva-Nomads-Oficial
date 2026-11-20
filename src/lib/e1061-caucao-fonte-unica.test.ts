@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { caucaoDaEstadiaEmDias, resumoContratoEmDias } from "./contrato-blocos.ts";
 import { caucaoDaProposta, rotuloCaucaoDaProposta } from "./propostas/caucao-da-proposta.ts";
-import { resumoSolicitacao } from "./reserva-imovel.ts";
+import { linhasDeTaxas, resumoSolicitacao } from "./reserva-imovel.ts";
 import { formatBRL } from "./utils.ts";
 
 const DIAS = [30, 31, 43, 60, 61, 90, 91, 120, 150, 180];
@@ -74,6 +74,23 @@ test("E1061: a candidatura sem datas continua a dizer a caução do 1º bloco da
 });
 
 const ler = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
+
+test("E1061: na página do imóvel, com as datas escolhidas, a caução é a do contrato para aqueles dias", () => {
+  const anuncio = { monthlyPrice: 2500, minPeriodDays: 30 };
+  const caucao = (dias?: number | null) => linhasDeTaxas(anuncio, dias).find((l) => l.chave === "caucao")!;
+  // Sem datas: o valor de referência do anúncio (o 1º bloco da estadia mínima) não muda.
+  assert.equal(caucao().rotulo, "Caução do 1º bloco (1 mês)");
+  assert.equal(caucao().valor, formatBRL(1250));
+  assert.deepEqual(caucao(null), caucao());
+  // Com 31 dias escolhidos (o caso da prova ao vivo): o mesmo R$ 1.292 da proposta e do contrato.
+  assert.equal(caucao(31).rotulo, "Caução nesta estadia (31 dias)");
+  assert.equal(caucao(31).valor, formatBRL(caucaoDaEstadiaEmDias(31, 2500)));
+  assert.equal(caucao(31).valor, formatBRL(caucaoDaProposta({ meses: 2, dias: 31 }, 2500)!.valor));
+  assert.equal(caucao(90).valor, formatBRL(3750));
+  assert.equal(caucao(31).nota, caucao().nota);
+  // O cartão de preço passa os dias escolhidos (já nulos quando a estadia fica abaixo do mínimo).
+  assert.match(ler("../components/property/price-card.tsx"), /linhasDeTaxas\(property, dias\)/);
+});
 
 test("E1061: a proposta, nas duas telas, escreve o rótulo da mesma função e não fala mais em \"1º bloco\" no rótulo", () => {
   for (const tela of ["../app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx", "../app/(dashboard)/dashboard/orcamentos/nova/montagem-proposta.tsx"]) {

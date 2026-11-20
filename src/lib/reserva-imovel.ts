@@ -82,7 +82,11 @@ export const NOTA_CAUCAO =
 const positivo = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n > 0;
 
 /** Linhas do cartão de reserva, na ordem em que a pessoa lê. */
-export function linhasDeTaxas(p: EntradaTaxas): LinhaTaxa[] {
+/**
+ * E1061: `diasEscolhidos` são os dias da estadia que o visitante marcou na página do imóvel. Com eles, a linha da Caução
+ * mostra o número do contrato para aquela estadia; sem eles, o valor de referência do anúncio (o 1º bloco da estadia mínima).
+ */
+export function linhasDeTaxas(p: EntradaTaxas, diasEscolhidos?: number | null): LinhaTaxa[] {
   const l: LinhaTaxa[] = [{ chave: "mensal", rotulo: "Valor por mês", valor: formatBRL(p.monthlyPrice) }];
   if (positivo(p.condoFee)) l.push({ chave: "condominio", rotulo: "Condomínio", valor: formatBRL(p.condoFee) });
   if (p.utilitiesMode === "fixed" && positivo(p.utilitiesEstimate)) {
@@ -105,10 +109,11 @@ export function linhasDeTaxas(p: EntradaTaxas): LinhaTaxa[] {
     });
   }
   const caucao = caucaoDoPrimeiroBloco(p.monthlyPrice, p.minPeriodDays);
+  const caucaoDaEstadia = diasEscolhidos && diasEscolhidos > 0 ? caucaoDaEstadiaEmDias(diasEscolhidos, p.monthlyPrice) : 0;
   l.push({
     chave: "caucao",
-    rotulo: caucao ? rotuloCaucaoDoPrimeiroBloco(caucao.meses) : "Caução",
-    ...(caucao ? { valor: formatBRL(caucao.valor) } : {}),
+    rotulo: caucaoDaEstadia > 0 ? `Caução nesta estadia (${diasEscolhidos} dias)` : caucao ? rotuloCaucaoDoPrimeiroBloco(caucao.meses) : "Caução",
+    ...(caucaoDaEstadia > 0 ? { valor: formatBRL(caucaoDaEstadia) } : caucao ? { valor: formatBRL(caucao.valor) } : {}),
     nota: NOTA_CAUCAO,
   });
   l.push({ chave: "viva", rotulo: "Taxa da Viva para você", valor: formatBRL(0) });
