@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { execFileSync } from "node:child_process";
+import postgres from "postgres";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { MSG_CODIGO_RECUPERACAO_INVALIDO } from "../../../src/lib/auth/recuperar-codigo";
 
@@ -99,7 +99,14 @@ test.describe("T1680 — E917: recuperação de senha por código (contas de tes
     expect(novo).toMatch(/^\d{6}$/);
     expect(corpo.codigo).toBe(novo);
     // Envelhece o pedido além de qualquer validade do Supabase (o lab usa otp_expiry; produção, 600 s).
-    execFileSync("psql", [DB, "-Atc", `update auth.users set recovery_sent_at = now() - interval '1 day' where id = '${alvo.id}'`]);
+    // E1043: pelo cliente JS do Postgres, e não pelo cliente de linha de comando: o Playwright corre na imagem oficial
+    // (E1037), que só tem o Node e os navegadores.
+    const sql = postgres(DB, { max: 1, onnotice: () => undefined });
+    try {
+      await sql`update auth.users set recovery_sent_at = now() - interval '1 day' where id = ${alvo.id}`;
+    } finally {
+      await sql.end();
+    }
     const page = await (await browser.newContext()).newPage();
     await digitarCodigo(page, alvo.email, novo);
     await expect(page.getByTestId("reset-codigo-erro")).toHaveText(MSG_CODIGO_RECUPERACAO_INVALIDO, { timeout: 20_000 });
