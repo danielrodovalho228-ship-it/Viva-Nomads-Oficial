@@ -132,10 +132,24 @@ jobs:
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
 
-      - name: ENSAIO (nunca mergear) — o espelho do Ubuntu fora do ar
+      - name: ENSAIO (nunca mergear) — o espelho do Ubuntu fora do ar, pelas fontes do apt (ORDEM-DUET-216, ponto 1)
         run: |
-          echo "127.0.0.1 archive.ubuntu.com azure.archive.ubuntu.com security.ubuntu.com ports.ubuntu.com" | sudo tee -a /etc/hosts
-          if timeout 60 sudo apt-get update; then echo "apt-get update ainda funciona?"; else echo "apt bloqueado, como queríamos"; fi
+          # Todas as fontes do apt (.list e deb822 .sources) passam a apontar para um host que não existe.
+          for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+            [ -f "$f" ] || continue
+            echo "SONDA | fonte: $f"; grep -hE '^(deb|URIs:)' "$f" | sed 's/^/SONDA |   antes: /' || true
+            sudo sed -i -E 's#(https?|mirror\+file|mirror\+https?)://[^ ]+#http://espelho-bloqueado.invalid/ubuntu/#g' "$f"
+            grep -hE '^(deb|URIs:)' "$f" | sed 's/^/SONDA |   depois: /' || true
+          done
+          if grep -rhoE '(https?)://[^ /]+' /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null | grep -v espelho-bloqueado.invalid; then
+            echo "SONDA | ainda há fonte com host válido: o bloqueio não pegou"; exit 1
+          fi
+          sudo rm -rf /var/lib/apt/lists/*
+          if timeout 120 sudo apt-get update 2>&1 | tee /tmp/apt.txt | grep -qE '^(Hit|Get):'; then
+            echo "SONDA | apt-get update ainda buscou pacotes: o bloqueio não pegou"; cat /tmp/apt.txt; exit 1
+          fi
+          sed 's/^/SONDA | apt: /' /tmp/apt.txt | tail -8
+          echo "SONDA | apt bloqueado pelas fontes, como pedido: nenhuma fonte válida e o update sem Hit/Get"
 
       - name: Baixar a imagem do Playwright (E1037, navegadores e dependências já vêm nela, nada de apt)
         # E1037 (ORDEM-DUET-212/213, peça 33): a imagem OFICIAL do Playwright, na MESMA versão do @playwright/test (o teste
