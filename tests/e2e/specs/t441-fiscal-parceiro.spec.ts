@@ -199,7 +199,9 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     await expect(page.getByTestId("parceiro-problema")).toHaveCount(0);
     await page.goto(`/parceiros/${parceiro.pj.slug}`, { waitUntil: "domcontentloaded" });
     await page.getByTestId("parceiro-problema").getByRole("link", { name: "Problema com isto?" }).click();
-    await expect(page).toHaveURL(new RegExp(`/ajuda\\?contexto=parceiro&id=${parceiro.pj.id}`));
+    // E13 (asserção alterada): o "Problema com isto?" liga direto a /ajuda/fale-com-a-viva (antes passava pelo hub /ajuda,
+    // que redirecionava no servidor — afirmar o endereço intermediário dependia de ler a URL antes do salto, como no t442).
+    await expect(page).toHaveURL(new RegExp(`/ajuda/fale-com-a-viva\\?contexto=parceiro&id=${parceiro.pj.id}`));
     await expect(page.getByText("Sobre este parceiro")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByLabel("Assunto")).toHaveValue("nota_parceiro");
     await page.getByLabel("O que aconteceu?").fill("Paguei a limpeza e o parceiro não emitiu a nota fiscal que declarou.");

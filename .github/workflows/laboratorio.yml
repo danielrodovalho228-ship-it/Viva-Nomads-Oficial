@@ -1,13 +1,18 @@
 name: Laboratório de testes (noturno)
 
-# Toda noite (e no disparo manual): sobe um Supabase LOCAL do zero dentro do runner (CLI + Docker),
+# Três vezes por dia (e no disparo manual): sobe um Supabase LOCAL do zero dentro do runner (CLI + Docker),
 # aplica TODAS as migrações + o acerto com produção, cria as personas (Ana,
 # Paulo, Roberta, Gustavo) com uma senha nova e roda a suíte E2E contra
 # localhost. O site é buildado UMA vez em modo INTEGRACOES_SIMULADAS (nada sai
 # para a rede; job construir) e cada fatia reaproveita o mesmo .next. Nenhum segredo de produção é usado aqui — o banco morre no fim.
 on:
   schedule:
-    - cron: "0 6 * * *" # 01h no Texas (horário de verão), 03h em Brasília
+    # Cadência (ORDEM-DUET-133, decisão do Daniel de 18/11/2026): 3 corridas por dia, espaçadas de 8 h, fora das rondas.
+    # Horas em UTC; Chicago no inverno (CST = UTC−6). No horário de verão (CDT) cada uma cai 1 h mais tarde em Chicago.
+    # Minuto 17, fora da hora cheia: o GitHub atrasa muito os agendados da hora cheia (o "0 6" saía às 13–15h UTC).
+    - cron: "17 7 * * *" # ~01h em Chicago, 04h em Brasília
+    - cron: "17 15 * * *" # ~09h em Chicago, 12h em Brasília
+    - cron: "17 23 * * *" # ~17h em Chicago, 20h em Brasília
   workflow_dispatch:
   # Frente 0 (correção consolidada de 11/11/2026): o push na main deixou de rodar a suíte inteira. Com 100–229 merges por
   # dia, cada push seria uma rodada de 21 jobs; e as rodadas de 10/11 e 11/11 (ainda num job só) gravaram ~610 executados
@@ -141,7 +146,12 @@ jobs:
         # 280 testes cada): tentativas CURTAS (5 min, até 4) para caber no teto do passo; o Chromium vem primeiro e sozinho
         # (todas as fatias precisam dele). O timeout mata o npx, mas o apt-get filho segura a trava do dpkg: antes de repetir,
         # encerra o apt que sobrou, espera a trava soltar e conserta o dpkg.
-        timeout-minutes: 25
+        # 18/11 (o mesmo endurecimento do lab-critico): 30 s de espera entre as tentativas, para que uma falha que volta na
+        # hora (espelho do apt fora do ar, DNS) não gaste as tentativas todas em segundos. O apt retoma o que já baixou.
+        # Decisão do Gerente (DUET-2019): 4 tentativas e teto de 30 min — runner que não instala em 4 tentativas está
+        # quebrado, não lento, e um teto maior atrasava o veredito da noite inteira. O teto cobre o pior caso:
+        # 4 × 5 min + 3 esperas de 30 s + até 2 min de trava por tentativa = 29,5 min.
+        timeout-minutes: 30
         run: |
           for i in 1 2 3 4; do
             timeout 300 npx playwright install --with-deps chromium && exit 0
@@ -149,6 +159,7 @@ jobs:
             sudo pkill -f '[a]pt-get|[d]pkg' || true
             for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
             sudo dpkg --configure -a || true
+            if [ "$i" -lt 4 ]; then sleep 30; fi
           done
           exit 1
 
