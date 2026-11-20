@@ -3456,6 +3456,12 @@
       ],
       "specs": []
     },
+    "/api/cron/vigia-suite": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
     "/api/cron/vistoria": {
       "personas": [
         "sistema"
