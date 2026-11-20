@@ -26,6 +26,14 @@ test("E1061: a caução da estadia é a soma das cauções dos blocos do contrat
   assert.equal(caucaoDaEstadiaEmDias(60, 0), 0);
 });
 
+test("E1061: os exemplos da lei (ORDEM-DUET-302), a R$ 2.500 por mês", () => {
+  // 30 dias R$ 1.250 · 31 dias R$ 1.292 · 60 dias R$ 2.500 · 90 dias R$ 3.750 · 180 dias R$ 7.500 (o teto: 3 aluguéis).
+  for (const [dias, caucao] of [[30, 1250], [31, 1292], [60, 2500], [90, 3750], [180, 7500]] as const) {
+    assert.equal(caucaoDaEstadiaEmDias(dias, 2500), caucao, `${dias} dias`);
+    assert.equal(caucaoDaProposta({ meses: Math.ceil(dias / 30), dias }, 2500)?.valor, caucao, `proposta de ${dias} dias`);
+  }
+});
+
 test("E1061: o caso da prova ao vivo — 31 dias a R$ 2.500: a proposta diz o número do contrato", () => {
   const c = caucaoDaProposta({ meses: 2, dias: 31 }, 2500);
   assert.ok(c);
