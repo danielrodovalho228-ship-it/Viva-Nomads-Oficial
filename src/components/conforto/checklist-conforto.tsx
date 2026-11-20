@@ -47,6 +47,7 @@ export function ChecklistConforto({
           type="button"
           variant="outline"
           size="sm"
+          className="min-h-11"
           disabled={desabilitado || faltam === 0}
           onClick={() => onChange(ITENS_CONFORTO.map((i) => i.chave))}
           data-testid="conforto-marcar-todos"

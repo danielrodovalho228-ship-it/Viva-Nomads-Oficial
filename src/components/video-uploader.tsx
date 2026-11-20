@@ -283,7 +283,7 @@ export function VideoUploader({
 
       <p className="text-xs text-muted">
         Dúvidas?{" "}
-        <Link href={GUIA_VIDEO_HREF} target="_blank" className="font-medium text-forest underline" data-testid="video-ajuda">
+        <Link href={GUIA_VIDEO_HREF} target="_blank" className="area-de-toque-44 font-medium text-forest underline" data-testid="video-ajuda">
           Como pôr um vídeo no anúncio
         </Link>
       </p>

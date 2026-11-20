@@ -200,7 +200,7 @@ export function EtapaRevisar(p: {
                 <button
                   type="button"
                   onClick={() => p.irPara(ETAPA[i.id])}
-                  className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-forest underline underline-offset-2"
+                  className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center text-sm font-semibold text-forest underline underline-offset-2"
                   aria-label={`Editar ${i.rotulo}`}
                   data-testid={`conferencia-editar-${i.id}`}
                 >
@@ -233,7 +233,7 @@ export function EtapaRevisar(p: {
             <span key={o.key}>
               {n > 0 && " · "}
               {o.key === "video" ? (
-                <button type="button" onClick={() => p.onResolver(o)} className="font-medium text-forest underline" data-testid="melhorar-video">
+                <button type="button" onClick={() => p.onResolver(o)} className="area-de-toque-44 font-medium text-forest underline" data-testid="melhorar-video">
                   {o.label}
                 </button>
               ) : (

@@ -9,6 +9,9 @@
   E1033, passo 3 (família "cadastro", ORDEM-DUET-239): o padrão é 44 × 44 px com QUALQUER apontador. Os 5 usos soltos
   (− e + dos contadores, os 2 links de texto e o motivo da Revisão) trocam .alvo-toque (só tela de toque) por
   .area-de-toque-44 (toque ou rato). O desenho não muda. A trava de tela é a t1700.
+  Fatia 2 (ORDEM-DUET-292): os controles do cadastro que nunca tiveram a classe e ficavam abaixo de 44 px. Links
+  soltos: a mesma área invisível. Botões de 36 a 42 px e o campo do link do calendário: caixa real de 44 px (min-h-11).
+  "Editar" da Revisão: 44 px também de largura. Linhas de abrir e fechar: 44 px de altura sem mexer no que está à volta.
   Roda: npm test
 */
 import { test } from "node:test";
@@ -57,4 +60,33 @@ test("E1033, passo 3: a família do cadastro já não usa a classe antiga, que s
   // A regra nova vale fora de qualquer @media (é o que a faz valer com rato).
   const css = ler("src/app/globals.css");
   assert.match(css, /\n\.area-de-toque-44::after \{[^}]*width: max\(100%, 44px\);[^}]*height: max\(100%, 44px\);/);
+});
+
+test("E1033, passo 3, fatia 2: links soltos do cadastro com a área de 44 px", () => {
+  assert.match(ler("src/app/(dashboard)/dashboard/imoveis/novo/travas-de-publicacao.tsx"), /className="area-de-toque-44 ml-1 font-medium text-forest underline underline-offset-4" data-testid=\{`trava-\$\{i\.chave\}-resolver`\}/);
+  assert.match(ler("src/components/video-uploader.tsx"), /className="area-de-toque-44 font-medium text-forest underline" data-testid="video-ajuda"/);
+  assert.match(ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx"), /className="area-de-toque-44 font-medium text-forest underline" data-testid="melhorar-video"/);
+});
+
+test("E1033, passo 3, fatia 2: botões de 36 a 42 px e o campo do link passam a 44 px de altura", () => {
+  assert.match(ler("src/components/conforto/checklist-conforto.tsx"), /size="sm"\n\s*className="min-h-11"\n\s*disabled=\{desabilitado \|\| faltam === 0\}\n[^\n]*\n\s*data-testid="conforto-marcar-todos"/);
+  assert.match(ler("src/components/niveis/camera-prova.tsx"), /size="sm"\n\s*variant="secondary"\n\s*className="min-h-11"/);
+  assert.match(ler("src/components/niveis/medir-no-imovel.tsx"), /size="sm"\n\s*variant="secondary"\n\s*className="min-h-11"/);
+  assert.match(ler("src/components/property/exportar-calendario.tsx"), /size="sm" className="min-h-11" onClick=\{copiar\} data-testid="exportar-calendario-copiar"/);
+  const imp = ler("src/components/property/importar-calendario.tsx");
+  assert.match(imp, /className="min-h-11 min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-base"\n\s*data-testid="importacao-link"/);
+  assert.match(imp, /size="sm" className="min-h-11" disabled=\{pendente \|\| !link\.trim\(\)\} data-testid="importacao-adicionar"/);
+  assert.match(ler("src/components/property/block-calendar.tsx"), /"inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",/);
+  // "Adicionar foto" (convite da Revisão e da candidatura): o botão do fluxo único da foto.
+  assert.match(ler("src/components/account/foto-perfil.tsx"), /size="sm" onClick=\{escolher\} className=\{cn\("min-h-11", className\)\} data-testid=\{testId\}/);
+});
+
+test("E1033, passo 3, fatia 2: os Editar da Revisão têm 44 px também de largura", () => {
+  assert.match(ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx"), /className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center text-sm font-semibold text-forest underline underline-offset-2"\n\s*aria-label=\{`Editar \$\{i\.rotulo\}`\}/);
+});
+
+test("E1033, passo 3, fatia 2: as linhas de abrir e fechar têm 44 px de altura sem empurrar o que está à volta", () => {
+  // -my-3 anula o py-3 por fora: a caixa do <summary> cresce para dentro do recuo do <details> (p-3), que fica igual.
+  assert.match(ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-fotos.tsx"), /<details className="mt-3 rounded-xl border border-sage-200 p-3">\n\s*<summary className="-my-3 cursor-pointer py-3 text-sm font-medium text-forest underline">Ver dicas de foto<\/summary>/);
+  assert.match(ler("src/components/anuncio/ficha-dentro-campos.tsx"), /<details className="rounded-lg border border-line p-3">\n\s*<summary className="-my-3 cursor-pointer py-3 text-sm font-semibold text-ink">Pratos e talheres \(opcional\)<\/summary>/);
 });

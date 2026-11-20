@@ -142,7 +142,7 @@ export function EtapaFotos({
       </div>
 
       <details className="mt-3 rounded-xl border border-sage-200 p-3">
-        <summary className="cursor-pointer text-sm font-medium text-forest underline">Ver dicas de foto</summary>
+        <summary className="-my-3 cursor-pointer py-3 text-sm font-medium text-forest underline">Ver dicas de foto</summary>
         <div className="mt-3">
           <p className="text-sm text-muted">Ambientes que valem uma foto:</p>
           <div className="mt-2 flex flex-wrap gap-2" data-testid="fotos-ambientes">

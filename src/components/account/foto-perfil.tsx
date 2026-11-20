@@ -179,7 +179,7 @@ export function EnviarFoto({
           {temFoto ? <Pencil className="h-5 w-5" aria-hidden /> : <Camera className="h-5 w-5" aria-hidden />}
         </button>
       ) : (
-        <Button type="button" variant="secondary" size="sm" onClick={escolher} className={className} data-testid={testId}>
+        <Button type="button" variant="secondary" size="sm" onClick={escolher} className={cn("min-h-11", className)} data-testid={testId}>
           <Camera className="h-4 w-4" aria-hidden /> {texto}
         </Button>
       )}
