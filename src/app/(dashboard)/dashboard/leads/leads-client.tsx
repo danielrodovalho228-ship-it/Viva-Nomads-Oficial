@@ -225,6 +225,21 @@ export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lea
                     {/* Resumo do candidato em uma linha */}
                     {leadSummary(l) && <p className="mt-1 text-sm font-medium text-ink" data-testid="candidato-resumo">{leadSummary(l)}</p>}
                     <p className="text-xs text-muted">interesse em {l.property}</p>
+                    {/* E1053: Entrada, Saída e Total da estadia — os mesmos da confirmação da candidatura (decisaoDaCandidatura). */}
+                    {l.decisao && (
+                      <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm" data-testid="decisao-candidatura">
+                        <dt className="text-muted">Entrada</dt>
+                        <dd className="font-medium text-ink" data-testid="decisao-entrada">{l.decisao.entrada}</dd>
+                        <dt className="text-muted">Saída</dt>
+                        <dd className="font-medium text-ink" data-testid="decisao-saida">{l.decisao.saida}</dd>
+                        {l.decisao.total && (
+                          <>
+                            <dt className="text-muted">Total da estadia</dt>
+                            <dd className="font-semibold text-ink" data-testid="decisao-total">{l.decisao.total}</dd>
+                          </>
+                        )}
+                      </dl>
+                    )}
                     {l.enviadaEm && (
                       <p className="text-xs text-muted" data-testid="lead-enviada-em">
                         Enviada em {dataBRT(l.enviadaEm)}

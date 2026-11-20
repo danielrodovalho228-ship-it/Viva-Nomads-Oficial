@@ -37,6 +37,8 @@ export interface Lead {
   budgetMatch?: boolean; // orçamento compatível com o aluguel
   /** Motivo da estadia (rótulo público; "Saúde" para tratamento médico). Só categoria, nunca texto livre. */
   motivo?: string;
+  /** E1053: Entrada, Saída e Total da estadia do cartão de decisão — os mesmos da confirmação (total null sem período). */
+  decisao?: { entrada: string; saida: string; total: string | null };
   /** Resumo da ficha do pet ("Com 1 pet · Totó (cão, porte médio)") enquanto a candidatura dá acesso; senão null. */
   fichaPet?: string | null;
   // PRIVACIDADE: telefone/e-mail/LinkedIn NÃO entram aqui. O proprietário
