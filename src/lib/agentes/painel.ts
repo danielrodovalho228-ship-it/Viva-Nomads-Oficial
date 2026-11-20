@@ -308,6 +308,35 @@ export function proximaDoAgente(a: Pick<Agente, "status" | "rotina_texto">, agor
 }
 
 /**
+ * E1010: chave de tela que não muda quando a mensagem otimista (id p-/r-/t-) é trocada pela gravada no reler.
+ * Mesma regra de igualdade do mesclarConversas (agente, papel, texto) + a ordem dela entre as iguais, então a
+ * mesma pergunta feita duas vezes tem duas chaves. Usada na trilha "ver como apurei": com a chave pelo id, a
+ * trilha que o Daniel acabou de abrir remontava fechada assim que os passos gravados chegavam.
+ */
+export function chavesEstaveis(thread: Conversa[]): string[] {
+  const vistas = new Map<string, number>();
+  return thread.map((c) => {
+    const base = `${c.agente_slug}|${c.papel}|${c.texto.trim()}`;
+    const n = vistas.get(base) ?? 0;
+    vistas.set(base, n + 1);
+    return `${base}#${n}`;
+  });
+}
+
+/**
+ * E1010: chave de cada grupo da conversa (mensagem solta ou trilha "ver como apurei"). A trilha leva a chave da
+ * mensagem que vem antes dela (a pergunta), não a do 1º passo: um passo que chega depois e entra na frente do grupo
+ * (o "Retorno" de uma execução, por exemplo) não muda a chave e não fecha a trilha aberta.
+ */
+export function chavesDosGrupos<T extends { tipo: "trilha" | "msg"; itens: Conversa[] }>(grupos: T[], chaveDe: Map<string, string>): string[] {
+  return grupos.map((g, i) => {
+    const anterior = grupos[i - 1];
+    if (g.tipo === "msg") return chaveDe.get(g.itens[0].id) ?? g.itens[0].id;
+    return `trilha:${anterior ? (chaveDe.get(anterior.itens[anterior.itens.length - 1].id) ?? anterior.itens[0].id) : "inicio"}`;
+  });
+}
+
+/**
  * Mescla as conversas gravadas (vêm do servidor, com id próprio) com as
  * mensagens otimistas da tela (ids p-/r-/t-, que nunca batem com os gravados).
  * Depois do router.refresh() a mesma mensagem chega dos dois lados: a otimista

@@ -160,3 +160,58 @@ Com isso a quarentena fica em **23 de 25**. Sete entradas saem quando as três c
 O `t840` (E988) foi corrigido na main pelo #3912 (`d5e682a8`), depois da corrida de prova.
 
 O `t70`, caso 2 (hover no pin da busca), falhou uma vez na fatia 18 e passa 18 de 18 sozinho. Ganhou disposição depois (DUET-1319: toda falha da corrida de prova tem disposição): **defeito, E1023, Code 2**. A causa foi reproduzida no laboratório local. Passar o mouse num pin abre o cartão do imóvel; quando o cartão não cabe acima do pin, o mapa anda para ele caber, o cartão fica por cima do ponteiro e o pin perde o hover. O pin continua aceso (o cartão está aberto), mas o card da lista perde o destaque. No laboratório local isso acontece em 1 ou 2 de cada 24 pins; o teste escolhe o último pin livre, que muda conforme os imóveis que os outros testes deixam. **Sem marca de falha conhecida:** tentei uma marca que só valia com o cartão por cima do ponteiro; na prova local ela acertou 2 de 3 repetições e na terceira o teste passou (o card recuperou o destaque dentro da espera), o que deixaria a noite vermelha pelo motivo errado. Decisão de produto do Gerente (DUET-1349): o card da lista mantém o destaque enquanto o cartão do imóvel está aberto no mapa; perder o destaque é o defeito. Ainda não há PR de correção. **Entrou na quarentena** (DUET-1419: defeito registrado, com dono e correção a caminho, cuja falha não é sempre a mesma); o PR da correção do E1023 tira a entrada.
+
+## 9. Intermitentes achados fora de corrida completa (18/11, ORDEM-DUET-096)
+
+Dois testes falharam às vezes nos vizinhos do #3983 (E1025). Rodados sozinhos contra a main `b4b0bc71`, 3 vezes cada, falharam do mesmo jeito: não vieram de PR nenhum. O Gerente mandou os dois para a quarentena como intermitentes, com correção ou plano do dono até 26/11.
+
+| Spec | Caso | Sozinho contra a main | Item | Dono | Na quarentena |
+|---|---|---|---|---|---|
+| `t355-conta-a-perfil-espelho` | 5, a 1280 px | 2 falhas em 3: o endereço fica com `#perfil-publico` | E61 | Fable | o caso, apontando a correção escrita (#3910) |
+| `t442-foto-perfil-revisao` | 4 (e o 5, que depende dele) | 1 falha em 3: o teste espera `/ajuda?contexto=perfil…` e a página já seguiu para `/ajuda/fale-com-a-viva` | E13 | Code 2 | o spec inteiro, numa entrada só, com os casos 4 e 5 nomeados |
+
+- O `t442` já estava nesta lista como teste velho (caso 3, corrigido pelo #3847); a disposição dele passa a instável.
+- **Entrada de spec inteira (ORDEM-DUET-097):** os casos 4 e 5 do `t442` dependem dos casos 1 a 3. Em vez de partir a cadeia, uma entrada cobre o arquivo todo: as fatias gerais ficam sem ele e o job da quarentena roda-o com a cadeia intacta. A dependência entre casos faz parte do que o dono resolve até 26/11. O `t355` fica ao nível do caso, porque o caso 5 roda sozinho.
+- O `t355` entra pela chave `foraDeCorrida` do arquivo: não estava vermelho na corrida-base nem na de prova.
+- O #3910 não entra enquanto a disposição do `t355` não fechar.
+- Se os dois aparecerem nas falhas da corrida completa de 18/11 sobre a main `6bfa3816`, contam contra este diagnóstico, não como falha nova.
+
+## 10. Registo: `corrigidoPor` do E960 e do E961 pelo commit do merge (19/11, ORDEM-DUET-161/163)
+
+O #3855 (E960, `t815`) e o #3857 (E961, `t348`) tiraram a marca de defeito conhecido e, por isso, tiveram de gravar o `corrigidoPor` dentro do próprio PR, antes de o merge existir: entraram com o commit do ramo. Por decisão do Gerente (ORDEM-DUET-122), o `corrigidoPor` é o commit do **merge** do PR na main. Este registo troca os dois.
+
+| Spec | Item | PR | Antes (commit do ramo) | Agora (commit do merge na main) |
+|---|---|---|---|---|
+| `t815-404-perfil-toque.spec.ts` | E960 | #3855 | `4f64224d` | `44c82ddc` |
+| `t348-triagem-vinculo-52.spec.ts` | E961 | #3857 | `9ca1fe90` | `52d0be56` |
+
+Só dados: nenhuma guarda mudou e nenhum spec mudou.
+
+## 11. Defeitos achados e corrigidos depois da corrida-base: E1034 e E1035 (19/11, ORDEM-DUET-181/182)
+
+Dois defeitos do editor de anúncios, da mesma família (o rascunho cuja linha tem as colunas e as fotos mas não tem `draft_data`), entraram e saíram no mesmo dia. Nenhum cabia nas listas deste arquivo, por isso entram num campo próprio do cabeçalho, `corrigidosDepois`.
+
+| Spec | Item | De onde veio | O defeito | PR | `corrigidoPor` |
+|---|---|---|---|---|---|
+| `t296-niveis-exibicao-59-1` (caso 5) | E1034 | vermelho na corrida manual completa 44495944766 (main `1c00bcb9`) | abrir o rascunho regravava a linha vazia e apagava as fotos; regressão do #4004 (E614) | #4015 | `8e57ae18` |
+| `t1697-e1035-editar-rascunho-sem-dados-preserva-o-resto` | E1035 | trava nova; o defeito foi achado por leitura do código (Dúvida 1 do #4015) e a trava ficou vermelha contra a main `8e57ae18` | editar um campo gravava o formulário por cima do resto da linha e apagava as fotos; anterior ao #4004 | #4017 | `b0814b68` |
+
+Os dois specs não levam `defeitoConhecido`: a correção já está na main. O `corrigidoPor` é o commit do merge (ORDEM-DUET-122).
+
+**Asserção alterada na guarda (`e744-t1-disposicao-das-falhas.test.ts`), por decisão do Gerente (ORDEM-DUET-181 e 182):** a conta das disposições era corrida-base + corrida de prova + fora de corrida (91); passa a somar os `corrigidosDepois` (93). Cada um destes tem de ser `defeito`, com item, PR, o commit do merge e a origem. Nada foi retirado nem afrouxado para as 91 entradas que já existiam.
+
+Na mesma corrida 44495944766 falhou também o `t271` a 390 px em `/admin/atendimento`. Não entra aqui: a disposição dele (teste velho, #3908) não muda; a causa foi o estado da fila no banco da fatia, não um defeito (ORDEM-DUET-175).
+
+## 12. Registo: travas novas de 19/11 e o merge que as pôs na main (ORDEM-DUET-180/181)
+
+Conteúdo da Pista 3, trazido pelo Gerente (ORDEM-DUET-182).
+
+Travas que nasceram com a correção e nunca foram vermelhas numa corrida completa: não têm disposição em
+`disposicao-falhas.json`. Fica aqui o commit do **merge** de cada uma (ORDEM-DUET-122), para a leitura das corridas.
+
+| Spec | Item | PR | Commit do merge na main |
+|---|---|---|---|
+| `t1694-e1031-admin-sem-pre-carregar-a-saida.spec.ts` | E1031 | #4010 | `9955704b` |
+| `t1696-e1034-abrir-rascunho-sem-dados-nao-regrava.spec.ts` | E1034 | #4015 | `8e57ae18` |
+
+Esta anotação é só dados: não mexe em guarda nem em spec.

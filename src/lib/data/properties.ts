@@ -493,11 +493,20 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
   }
 }
 
+/** E1048: anúncios ATIVOS do dono, sem o filtro de vitrine (só para o cartão do dono conta de teste). null = não deu para contar. */
+async function contarAtivosDoDono(supabase: NonNullable<ReturnType<typeof createPublicClient>>, donoId: string): Promise<number | null> {
+  const { data, error } = await supabase.from("properties").select("id").eq("owner_id", donoId).eq("status", "active");
+  if (error || !data) return null;
+  return data.length;
+}
+
 /** E631: quantos imóveis a página pública do proprietário lista (a mesma consulta e o mesmo filtro). null = não deu para contar. */
-export async function contarImoveisPublicosDoDono(donoId: string): Promise<number | null> {
+export async function contarImoveisPublicosDoDono(donoId: string, opcoes: { incluirTeste?: boolean } = {}): Promise<number | null> {
   const supabase = createPublicClient();
   if (!supabase || !/^[0-9a-f-]{36}$/i.test(donoId)) return null;
   try {
+    // E1048: dono conta de teste → a vitrine tiraria todos os anúncios dele e o cartão diria 0; conta os ativos dele.
+    if (opcoes.incluirTeste === true) return await contarAtivosDoDono(supabase, donoId);
     return (await linhasPublicasDoDono(supabase, donoId))?.length ?? null;
   } catch {
     return null;
