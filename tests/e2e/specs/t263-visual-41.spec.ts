@@ -37,17 +37,22 @@ const altura = (l: number) => (l === 390 ? 844 : 900);
 const diaBrasilia = (n: number) => new Date(Date.now() - 3 * 3_600_000 + n * 86_400_000).toISOString().slice(0, 10);
 const UA_APP = "Mozilla/5.0 (Linux; Android 14; Pixel 7) VivaNomadsApp/1.0 (expo)";
 
-function mascaras(page: Page): Locator[] {
+/**
+ * O que vai mascarado. `raiz` é onde se procura: a página, ou só o elemento fotografado.
+ * E1042: numa captura de ELEMENTO o Playwright pinta a máscara de tudo o que casa e se sobrepõe à caixa, mesmo o que
+ * está por trás dele na página. A folha da estadia passa a própria folha, para a página por baixo não a tapar.
+ */
+function mascaras(raiz: Page | Locator): Locator[] {
   return [
-    page.locator("img, video, canvas, svg image"),
-    page.locator('.leaflet-container, .mapboxgl-map, [data-testid="mapa-tela-cheia"]'),
-    page.locator("time"),
-    page.locator('[data-testid="cartao-disponivel"], [data-testid="cartao-nota"], [data-testid="marca-imovel"], [data-testid="aviso-testes"]'),
-    page.locator('[data-testid="sinais-confianca"], [data-testid="barra-status"], #disponibilidade'),
-    page.locator('[data-testid="imoveis-parecidos"] [data-testid="cartao-local"], [data-testid="imoveis-parecidos"] [data-testid="cartao-titulo"], [data-testid="imoveis-parecidos"] [data-testid="cartao-total-mes"], [data-testid="imoveis-parecidos"] [data-testid="cartao-sintese"]'),
+    raiz.locator("img, video, canvas, svg image"),
+    raiz.locator('.leaflet-container, .mapboxgl-map, [data-testid="mapa-tela-cheia"]'),
+    raiz.locator("time"),
+    raiz.locator('[data-testid="cartao-disponivel"], [data-testid="cartao-nota"], [data-testid="marca-imovel"], [data-testid="aviso-testes"]'),
+    raiz.locator('[data-testid="sinais-confianca"], [data-testid="barra-status"], #disponibilidade'),
+    raiz.locator('[data-testid="imoveis-parecidos"] [data-testid="cartao-local"], [data-testid="imoveis-parecidos"] [data-testid="cartao-titulo"], [data-testid="imoveis-parecidos"] [data-testid="cartao-total-mes"], [data-testid="imoveis-parecidos"] [data-testid="cartao-sintese"]'),
     // Contadores das abas (mensagens não lidas) e o nome/foto do cabeçalho.
-    page.locator('nav [aria-label$="não lidas"], nav [aria-label$="novos"], [data-testid="papel-ativo"] span:first-child'),
-    page.locator('[data-visual="muda"]'),
+    raiz.locator('nav [aria-label$="não lidas"], nav [aria-label$="novos"], [data-testid="papel-ativo"] span:first-child'),
+    raiz.locator('[data-visual="muda"]'),
   ];
 }
 
@@ -232,7 +237,9 @@ test.describe("T263 — Regressão visual do Prompt 41", () => {
           await page.evaluate(() => document.fonts.ready);
           await page.waitForTimeout(400); // animação da folha
           const nome = `${n}-estadia-cogumelo-${quem}${fase ? `-${fase}` : ""}-${largura}.png`;
-          await expect(folha).toHaveScreenshot(nome, { mask: mascaras(page) });
+          // E1042: as máscaras são procuradas DENTRO da folha (antes, na página inteira: um elemento mascarado por trás
+          // do topo da folha tapava o título "Ações desta estadia" quando a página por baixo mudava de altura).
+          await expect(folha).toHaveScreenshot(nome, { mask: mascaras(folha) });
           await page.context().close();
         });
       }

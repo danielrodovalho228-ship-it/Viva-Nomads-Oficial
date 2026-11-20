@@ -55,7 +55,9 @@ export default function NotFound() {
         >
           É proprietário? Anuncie seu imóvel →
         </Link>
-        <Link href="/ajuda" className="alvo-toque mt-2 text-sm text-muted hover:text-blue-500" data-testid="nao-encontrada-ajuda">
+        {/* E1038: mt-8 (32 px), não mt-2. Cada link tem 20 px de texto e área de toque de 44 px (12 px a mais acima e
+            abaixo); com 8 px entre eles, a área do "anunciar" caía em cima da ajuda a 390 px. Precisa passar de 24 px. */}
+        <Link href="/ajuda" className="alvo-toque mt-8 text-sm text-muted hover:text-blue-500" data-testid="nao-encontrada-ajuda">
           Precisa de ajuda? Central de Ajuda →
         </Link>
       </main>
