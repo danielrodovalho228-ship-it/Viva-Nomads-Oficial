@@ -2,7 +2,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { noPasso } from "../fixtures/cadastro";
-import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /*
   T456 — E111-A: comodidades conforme o tipo do imóvel. Só no laboratório (conta e rascunhos novos).
@@ -87,7 +86,6 @@ test.describe("T456 — E111-A: comodidades conforme o tipo do imóvel", () => {
   }
 
   test("2. troca de tipo: o elevador marcado fica salvo na chácara e volta no apartamento", async ({ browser }) => {
-    defeitoConhecido("E985", "a escolha por cartão logo depois de abrir o rascunho não é gravada");
     const page = await entrar(browser, dono.email, senha);
     const id = rascunhos.chacara;
     const etapa = await abrirComodidades(page, id);

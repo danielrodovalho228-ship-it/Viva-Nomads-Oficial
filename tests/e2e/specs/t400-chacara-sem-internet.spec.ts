@@ -92,7 +92,6 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
   });
 
   test("1. salvar rascunho com 'Não tem internet' (cadastro e editor)", async ({ browser }) => {
-    defeitoConhecido("E985", "a escolha por cartão logo depois de abrir o rascunho não é gravada");
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     // Cadastro: a opção existe e o rascunho guarda sozinho.
@@ -118,7 +117,6 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
   });
 
   test("2. publicar barrado pelo padrão mínimo, com o motivo certo; o Passo 5 não pede a velocidade", async ({ browser }) => {
-    defeitoConhecido("E985", "consequência do caso 1: o rascunho não guardou \"Não tem internet\"");
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     // Passo 5: "Sem internet no imóvel" no lugar do campo de velocidade (mesmo com "Internet fibra" marcada).
@@ -152,7 +150,9 @@ test.describe("T400 — E102-B: chácara/sítio sem internet", () => {
   });
 
   test("3. trocar para 'Fibra': a velocidade volta a ser pedida; informada, publica", async ({ browser }) => {
-    defeitoConhecido("E985", "a escolha por cartão logo depois de abrir o rascunho não é gravada");
+    // E985 continua neste caminho (ensaio 44472116797, main 44c82ddc, sem a marca: Expected "fibra", Received "nao_tem"):
+    // trocar a escolha por cartão logo depois de reabrir o rascunho não é gravada. Os casos 1 e 2 já passam desde o #3987.
+    defeitoConhecido("E985", "trocar para 'Fibra' logo depois de reabrir o rascunho não é gravado");
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await abrirCadastro(page, "detalhes");

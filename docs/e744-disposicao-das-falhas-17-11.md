@@ -175,3 +175,14 @@ Dois testes falharam às vezes nos vizinhos do #3983 (E1025). Rodados sozinhos c
 - O `t355` entra pela chave `foraDeCorrida` do arquivo: não estava vermelho na corrida-base nem na de prova.
 - O #3910 não entra enquanto a disposição do `t355` não fechar.
 - Se os dois aparecerem nas falhas da corrida completa de 18/11 sobre a main `6bfa3816`, contam contra este diagnóstico, não como falha nova.
+
+## 10. Registo: `corrigidoPor` do E960 e do E961 pelo commit do merge (19/11, ORDEM-DUET-161/163)
+
+O #3855 (E960, `t815`) e o #3857 (E961, `t348`) tiraram a marca de defeito conhecido e, por isso, tiveram de gravar o `corrigidoPor` dentro do próprio PR, antes de o merge existir: entraram com o commit do ramo. Por decisão do Gerente (ORDEM-DUET-122), o `corrigidoPor` é o commit do **merge** do PR na main. Este registo troca os dois.
+
+| Spec | Item | PR | Antes (commit do ramo) | Agora (commit do merge na main) |
+|---|---|---|---|---|
+| `t815-404-perfil-toque.spec.ts` | E960 | #3855 | `4f64224d` | `44c82ddc` |
+| `t348-triagem-vinculo-52.spec.ts` | E961 | #3857 | `9ca1fe90` | `52d0be56` |
+
+Só dados: nenhuma guarda mudou e nenhum spec mudou.
