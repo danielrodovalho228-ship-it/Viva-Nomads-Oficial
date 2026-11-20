@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
@@ -309,6 +310,22 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await p2.goto(`/dashboard/imoveis/novo?draft=${imovelId}&etapa=revisao`, { waitUntil: "domcontentloaded" });
     await noPasso(p2, "revisao", 30_000);
     await aceitarTermoIaSePreciso(p2);
+    // E633: com a chave MATRICULA_OBRIGATORIA ligada (o lab das chaves), a matrícula atualizada também é obrigatória para
+    // publicar; o dono envia a matrícula (fictícia, tests/fixtures) pela mesma tela. Conta como enviada qualquer conferência
+    // dela (inclusive em revisão manual: prontidao-servidor.ts). Com a chave desligada (como na main), nada muda.
+    if (process.env.NEXT_PUBLIC_MATRICULA_OBRIGATORIA === "on") {
+      await abrirSecoesPasso10(p2, ["documento"]);
+      const matricula = Buffer.concat([readFileSync("tests/fixtures/matricula-ficticia-dono.pdf"), Buffer.from(`% ${randomBytes(8).toString("hex")}\n`)]);
+      await p2.getByTestId("documento-vinculo").locator('input[type="file"]').first().setInputFiles({ name: "matricula-jornada.pdf", mimeType: "application/pdf", buffer: matricula });
+      await expect
+        .poll(async () => ((await adm().from("property_ownership_checks").select("id").eq("property_id", imovelId)).data ?? []).length, {
+          timeout: 30_000,
+          message: "a matrícula enviada pela tela fica registada para o imóvel",
+        })
+        .toBeGreaterThan(0);
+      await p2.reload({ waitUntil: "domcontentloaded" });
+      await noPasso(p2, "revisao", 30_000);
+    }
     const resolver = p2.getByTestId("conferencia-resolver-comodidades");
     const publicar = p2.getByTestId("publicar-anuncio");
     await expect(publicar.and(p2.locator(":enabled")).or(resolver)).toBeVisible({ timeout: 20_000 });
