@@ -77,8 +77,10 @@ test("E1033, passo 3, fatia 2: botões de 36 a 42 px e o campo do link passam a 
   assert.match(imp, /className="min-h-11 min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-base"\n\s*data-testid="importacao-link"/);
   assert.match(imp, /size="sm" className="min-h-11" disabled=\{pendente \|\| !link\.trim\(\)\} data-testid="importacao-adicionar"/);
   assert.match(ler("src/components/property/block-calendar.tsx"), /"inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",/);
-  // "Adicionar foto" (convite da Revisão e da candidatura): o botão do fluxo único da foto.
-  assert.match(ler("src/components/account/foto-perfil.tsx"), /size="sm" onClick=\{escolher\} className=\{cn\("min-h-11", className\)\} data-testid=\{testId\}/);
+  // "Adicionar foto" do convite (Revisão do anúncio e candidatura): sobe só este uso. O botão partilhado da foto fica
+  // com os 40 px: aparece no Início e na Conta, que têm imagem de referência.
+  assert.match(ler("src/components/account/convite-foto-candidatura.tsx"), /rotulo="Adicionar foto" className="mt-2 min-h-11" testId=\{`\$\{testId\}-botao`\}/);
+  assert.match(ler("src/components/account/foto-perfil.tsx"), /size="sm" onClick=\{escolher\} className=\{className\} data-testid=\{testId\}/);
 });
 
 test("E1033, passo 3, fatia 2: os Editar da Revisão têm 44 px também de largura", () => {
