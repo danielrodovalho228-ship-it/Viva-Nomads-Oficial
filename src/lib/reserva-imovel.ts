@@ -18,7 +18,7 @@ import { formatBRL } from "./utils.ts";
 import { resumoEmMeses, totalDoPeriodo } from "./cartao-preco.ts";
 import { formatBRLExato, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, type TotalMensal } from "./precos.ts";
 import { diasDaSelecao, mesesDaSelecao } from "./imovel/selecao-estadia.ts";
-import { caucaoDoBloco, DIAS_POR_MES, MAX_MESES_BLOCO, MESES_POR_BLOCO_PADRAO } from "./contrato-blocos.ts";
+import { caucaoDaEstadiaEmDias, caucaoDoBloco, DIAS_POR_MES, MAX_MESES_BLOCO, MESES_POR_BLOCO_PADRAO } from "./contrato-blocos.ts";
 import { validarReserva } from "./availability.ts";
 import { DIAS_MIN_ESTADIA, diasMaxEstadiaVigente } from "./estadia-em-dias.ts";
 
@@ -57,6 +57,17 @@ export function caucaoDoPrimeiroBloco(monthlyPrice: number, minPeriodDays?: numb
     typeof minPeriodDays === "number" && minPeriodDays > 0 ? Math.min(MAX_MESES_BLOCO, Math.max(1, Math.ceil(minPeriodDays / DIAS_POR_MES))) : MESES_POR_BLOCO_PADRAO;
   const valor = caucaoDoBloco(monthlyPrice * meses, monthlyPrice, 0);
   return valor > 0 ? { valor, meses } : null;
+}
+
+/** E1061: a linha "Caução" do resumo da candidatura. */
+function textoCaucaoDaSolicitacao(monthlyPrice: number, dias: number | null | undefined, minDias?: number | null): string {
+  const fim = "paga direto ao proprietário e devolvida no fim";
+  if (dias && dias > 0) {
+    const daEstadia = caucaoDaEstadiaEmDias(dias, monthlyPrice);
+    if (daEstadia > 0) return `${formatBRL(daEstadia)} nesta estadia (${dias} ${dias === 1 ? "dia" : "dias"}), ${fim}`;
+  }
+  const doBloco = caucaoDoPrimeiroBloco(monthlyPrice, minDias);
+  return doBloco ? `${formatBRL(doBloco.valor)} no 1º bloco, ${fim}` : "Paga uma vez, devolvida no fim (valor no contrato)";
 }
 
 /** Texto da regra da Caução, sem número (o mesmo em todo lugar do anúncio). */
@@ -256,7 +267,9 @@ export function resumoSolicitacao(e: {
         : typeof e.totalMensal === "number" && meses
           ? [{ rotulo: ROTULO_TOTAL_CONTRATO, valor: resumoEmMeses(totalDoPeriodo(e.totalMensal, meses), meses) }]
           : []),
-      { rotulo: "Caução", valor: caucaoDoPrimeiroBloco(e.monthlyPrice, e.janela?.minDias) ? `${formatBRL(caucaoDoPrimeiroBloco(e.monthlyPrice, e.janela?.minDias)!.valor)} no 1º bloco, paga direto ao proprietário e devolvida no fim` : "Paga uma vez, devolvida no fim (valor no contrato)" },
+      // E1061: com as datas escolhidas, o número do contrato para aqueles dias (caucaoDaEstadiaEmDias); sem datas, o do
+      // 1º bloco da estadia mínima do anúncio, como na página do imóvel.
+      { rotulo: "Caução", valor: textoCaucaoDaSolicitacao(e.monthlyPrice, dias, e.janela?.minDias) },
       { rotulo: "Taxa da Viva para você", valor: formatBRL(0) },
     ],
   };
