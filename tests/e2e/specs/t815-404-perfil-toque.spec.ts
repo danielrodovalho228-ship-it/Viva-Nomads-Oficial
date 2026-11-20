@@ -1,4 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
+import { areaDeToque } from "../fixtures/area-toque";
+import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /*
   T815 — varredura 02/11 (Pista A): 404 e perfil do proprietário. E960: o logo da 404 é o do Navbar padrão (E916).
@@ -7,11 +9,11 @@ import { test, expect, type Page } from "@playwright/test";
   3. Perfil de exemplo do proprietário: "· N avaliações" com alvo de 44 px no toque.
 */
 const SAIDA = "tests/laboratorio/saida";
-const alvo = (p: Page, sel: string) =>
-  p.locator(sel).first().evaluate((e) => Math.max(e.getBoundingClientRect().height, parseFloat(getComputedStyle(e, "::after").height) || 0));
+/** E1033: a área de toque REAL (9 pontos da caixa 44×44 com elementFromPoint), não a altura do ::after. */
+const alvo = async (p: Page, sel: string) => (await areaDeToque(p.locator(sel).first())).faltam;
 
 /*
-  E960, devolução de 19/11: o `alvo` acima aceita a área do ::after da classe `alvo-toque`, que só existe em tela de
+  E960, devolução de 19/11 (até ao E1033; o `alvo` acima mede agora a área REAL): o `alvo` aceitava a área do ::after da classe `alvo-toque`, que só existe em tela de
   toque. Por isso o caso do logo passava com a âncora a 32 px, e em produção o Gerente mediu 153 × 32 px.
   Daqui em diante mede-se o retângulo da PRÓPRIA âncora do logo do cabeçalho público (o elemento que se clica).
 */
@@ -27,11 +29,12 @@ const medirAncoraDoLogo = (p: Page) =>
 test.describe("T815 — toque a 390 px", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   test("404: logo (E960) e link de anunciar com 44 px", async ({ page }) => {
+    defeitoConhecido("E1038", "o link 'anunciar' da 404 encosta no link 'ajuda': a borda inferior da caixa de toque 44×44 cai nele (390 px)");
     const r = await page.goto("/pagina-que-nao-existe-t815", { waitUntil: "domcontentloaded" });
     expect(r?.status()).toBe(404);
     await expect(page.getByTestId("nao-encontrada-anunciar")).toBeVisible({ timeout: 30_000 });
-    expect(await alvo(page, '[data-testid="nao-encontrada-anunciar"]')).toBeGreaterThanOrEqual(44);
-    expect(await alvo(page, "header [data-logo]")).toBeGreaterThanOrEqual(44);
+    expect(await alvo(page, '[data-testid="nao-encontrada-anunciar"]')).toEqual([]);
+    expect(await alvo(page, "header [data-logo]")).toEqual([]);
     // E960 (devolução): o retângulo da própria âncora, não a área do ::after.
     expect((await medirAncoraDoLogo(page)).altura, "altura do retângulo da âncora do logo").toBeGreaterThanOrEqual(44);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
@@ -41,7 +44,7 @@ test.describe("T815 — toque a 390 px", () => {
     const r = await page.goto("/proprietario/exemplo-1", { waitUntil: "domcontentloaded" });
     test.skip(!r || r.status() === 404, "Sem o proprietário de exemplo neste ambiente.");
     await expect(page.getByTestId("perfil-link-avaliacoes")).toBeVisible({ timeout: 30_000 });
-    expect(await alvo(page, '[data-testid="perfil-link-avaliacoes"]')).toBeGreaterThanOrEqual(44);
+    expect(await alvo(page, '[data-testid="perfil-link-avaliacoes"]')).toEqual([]);
   });
 });
 
