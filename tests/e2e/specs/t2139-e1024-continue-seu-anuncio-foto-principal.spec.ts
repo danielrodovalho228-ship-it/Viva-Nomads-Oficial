@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { MIN_FOTOS } from "../../../src/lib/anuncio/prontidao";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { noPasso } from "../fixtures/cadastro";
 import { prepararRascunho } from "../fixtures/rascunho-cadastro";
@@ -18,6 +19,14 @@ import { prepararRascunho } from "../fixtures/rascunho-cadastro";
     2. Em /dashboard, o cartão "Continue seu anúncio" mostra essa MESMA foto (o mesmo arquivo do Storage), e não a
        antiga 1.ª foto.
   390 e 1280 px.
+  E1041 (ORDEM-DUET-217): a entrada pelo cartão. Os dois casos acima esperam a rede parar (networkidle) antes de trocar a
+  foto, e por isso passaram sem apanhar o defeito: o dono que chega pelo botão "Continuar de onde parou" do cartão e
+  troca a principal logo que o Passo 2 aparece (medido pelo Gerente na main 0a752753: 0,1 s e 1,1 s não grava; 2,1 s em
+  diante grava) cai na janela da base (E516) e a troca não vai para o banco. O ponto cego era desta spec, e é ela que o
+  fecha:
+    3. Rascunho com MIN_FOTOS - 1 fotos (o 1.º item que falta é "fotos", por isso o botão do cartão leva ao Passo 2).
+       Pelo botão do cartão, a 3.ª foto vira a principal SEM esperar a rede parar; o rascunho grava a troca e o cartão
+       mostra a foto escolhida. Correção: o #3971.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -103,6 +112,47 @@ test.describe("T2139 — E1024: o \"Continue seu anúncio\" mostra a foto princi
       }
 
       // O cartão do Início mostra a MESMA foto principal.
+      const noCartao = await fotoDoCartao(page);
+      expect(noCartao, `o cartão mostra a foto principal confirmada (${escolhida}), não a antiga 1.ª (${antigaPrincipal})`).toBe(escolhida);
+      await contexto.close();
+    });
+  }
+
+  for (const largura of [1280, 390] as const) {
+    test(`${largura} px — E1041: pelo "Continuar de onde parou" do cartão, a troca da principal logo que o Passo 2 aparece fica gravada`, async ({ browser }) => {
+      const dono = { ...donoDe(largura), email: `dono.t2139.cartao.${largura}.${sufixo}@lab.vivanomads.test` };
+      const donoId = (ids[`donoCartao${largura}`] = await criarConta(dono, senha));
+      await adm().from("profiles").update({ is_teste: true, preferred_mode: "owner", papel_ativo: "proprietario" }).eq("id", donoId);
+      // MIN_FOTOS - 1 fotos: o 1.º item que falta é "fotos", e o botão do cartão leva direto ao Passo 2.
+      const id = (ids[`rCartao${largura}`] = await prepararRascunho(donoId, `Rascunho T2139 cartão ${largura} ${sufixo}`, {}, MIN_FOTOS - 1));
+      const antes = await fotosReaisNoRascunho(id);
+      const antigaPrincipal = antes[0].path;
+      const escolhida = antes[2].path;
+
+      const contexto = await browser.newContext({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
+      const page = await entrarNaPagina(await contexto.newPage(), dono.email, senha);
+      expect(await fotoDoCartao(page), "antes da troca, o cartão mostra a 1.ª foto").toBe(antigaPrincipal);
+
+      // A entrada é pelo botão do cartão, como faz o dono no Início.
+      const botao = page.getByTestId("inicio-dono-principal").getByTestId("inicio-dono-botao");
+      await expect(botao).toHaveText(/Continuar de onde parou/);
+      await expect(botao, "pré-condição: o botão do cartão leva ao Passo 2 (Fotos)").toHaveAttribute("href", new RegExp(`draft=${id}.*etapa=fotos`));
+      await botao.click();
+      await noPasso(page, "fotos", 30_000);
+      const apareceu = Date.now();
+
+      // Logo que o passo aparece: sem esperar a rede parar (é a janela em que o defeito acontece).
+      const terceira = page.getByTestId("foto-miniatura").filter({ has: page.locator(`img[src*="${escolhida.split("/").pop()}"]`) });
+      await expect(terceira).toHaveCount(1, { timeout: 20_000 });
+      await terceira.hover().catch(() => {});
+      await terceira.getByRole("button", { name: "Usar como foto principal" }).click();
+      const aposMs = Date.now() - apareceu;
+      test.info().annotations.push({ type: "E1041", description: `troca feita ${aposMs} ms depois de o Passo 2 aparecer` });
+      console.log(`T2139 E1041 ${largura} px: troca feita ${aposMs} ms depois de o Passo 2 aparecer`);
+
+      await expect
+        .poll(async () => (await fotosDoRascunho(id))[0]?.path, { timeout: 20_000, message: `o rascunho grava a foto escolhida em 1.º lugar (troca ${aposMs} ms depois de o passo aparecer)` })
+        .toBe(escolhida);
       const noCartao = await fotoDoCartao(page);
       expect(noCartao, `o cartão mostra a foto principal confirmada (${escolhida}), não a antiga 1.ª (${antigaPrincipal})`).toBe(escolhida);
       await contexto.close();
