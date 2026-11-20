@@ -325,10 +325,13 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
         .toBeGreaterThan(0);
       await p2.reload({ waitUntil: "domcontentloaded" });
       await noPasso(p2, "revisao", 30_000);
+      await aceitarTermoIaSePreciso(p2); // o "Revisei as informações" volta desmarcado depois de recarregar
     }
     const resolver = p2.getByTestId("conferencia-resolver-comodidades");
     const publicar = p2.getByTestId("publicar-anuncio");
-    await expect(publicar.and(p2.locator(":enabled")).or(resolver)).toBeVisible({ timeout: 20_000 });
+    const pronto = await publicar.and(p2.locator(":enabled")).or(resolver).waitFor({ state: "visible", timeout: 20_000 }).then(() => true).catch(() => false);
+    if (!pronto) console.log(`T2157 PUBLICAR bloqueado: ${(await p2.locator("main").innerText()).slice(0, 1500).replace(/\s+/g, " ")}`);
+    await expect(publicar.and(p2.locator(":enabled")).or(resolver)).toBeVisible({ timeout: 5_000 });
     if (await resolver.isVisible()) {
       await resolver.click();
       await p2.getByTestId("conforto-marcar-todos").click();
