@@ -186,3 +186,32 @@ O #3855 (E960, `t815`) e o #3857 (E961, `t348`) tiraram a marca de defeito conhe
 | `t348-triagem-vinculo-52.spec.ts` | E961 | #3857 | `9ca1fe90` | `52d0be56` |
 
 Só dados: nenhuma guarda mudou e nenhum spec mudou.
+
+## 11. Defeitos achados e corrigidos depois da corrida-base: E1034 e E1035 (19/11, ORDEM-DUET-181/182)
+
+Dois defeitos do editor de anúncios, da mesma família (o rascunho cuja linha tem as colunas e as fotos mas não tem `draft_data`), entraram e saíram no mesmo dia. Nenhum cabia nas listas deste arquivo, por isso entram num campo próprio do cabeçalho, `corrigidosDepois`.
+
+| Spec | Item | De onde veio | O defeito | PR | `corrigidoPor` |
+|---|---|---|---|---|---|
+| `t296-niveis-exibicao-59-1` (caso 5) | E1034 | vermelho na corrida manual completa 44495944766 (main `1c00bcb9`) | abrir o rascunho regravava a linha vazia e apagava as fotos; regressão do #4004 (E614) | #4015 | `8e57ae18` |
+| `t1697-e1035-editar-rascunho-sem-dados-preserva-o-resto` | E1035 | trava nova; o defeito foi achado por leitura do código (Dúvida 1 do #4015) e a trava ficou vermelha contra a main `8e57ae18` | editar um campo gravava o formulário por cima do resto da linha e apagava as fotos; anterior ao #4004 | #4017 | `b0814b68` |
+
+Os dois specs não levam `defeitoConhecido`: a correção já está na main. O `corrigidoPor` é o commit do merge (ORDEM-DUET-122).
+
+**Asserção alterada na guarda (`e744-t1-disposicao-das-falhas.test.ts`), por decisão do Gerente (ORDEM-DUET-181 e 182):** a conta das disposições era corrida-base + corrida de prova + fora de corrida (91); passa a somar os `corrigidosDepois` (93). Cada um destes tem de ser `defeito`, com item, PR, o commit do merge e a origem. Nada foi retirado nem afrouxado para as 91 entradas que já existiam.
+
+Na mesma corrida 44495944766 falhou também o `t271` a 390 px em `/admin/atendimento`. Não entra aqui: a disposição dele (teste velho, #3908) não muda; a causa foi o estado da fila no banco da fatia, não um defeito (ORDEM-DUET-175).
+
+## 12. Registo: travas novas de 19/11 e o merge que as pôs na main (ORDEM-DUET-180/181)
+
+Conteúdo da Pista 3, trazido pelo Gerente (ORDEM-DUET-182).
+
+Travas que nasceram com a correção e nunca foram vermelhas numa corrida completa: não têm disposição em
+`disposicao-falhas.json`. Fica aqui o commit do **merge** de cada uma (ORDEM-DUET-122), para a leitura das corridas.
+
+| Spec | Item | PR | Commit do merge na main |
+|---|---|---|---|
+| `t1694-e1031-admin-sem-pre-carregar-a-saida.spec.ts` | E1031 | #4010 | `9955704b` |
+| `t1696-e1034-abrir-rascunho-sem-dados-nao-regrava.spec.ts` | E1034 | #4015 | `8e57ae18` |
+
+Esta anotação é só dados: não mexe em guarda nem em spec.
