@@ -9,8 +9,8 @@ alter table public.proposta_versoes drop constraint if exists proposta_versoes_f
 alter table public.proposta_versoes add constraint proposta_versoes_forma_pagamento
   check (forma_pagamento is null or forma_pagamento in ('bloco', 'mensal'));
 
-insert into supabase_migrations.schema_migrations (version, name, statements, created_by)
-select '20261106000314', '0314_proposta_forma_pagamento_e647', array['-- conteúdo em supabase/migrations/0314_proposta_forma_pagamento_e647.sql'], 'danielrodovalho228@gmail.com'
+insert into supabase_migrations.schema_migrations (version, name)
+select '20261106000314', '0314_proposta_forma_pagamento_e647'
 where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261106000314');
 
 commit;
