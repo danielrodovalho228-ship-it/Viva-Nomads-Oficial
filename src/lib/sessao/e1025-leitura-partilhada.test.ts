@@ -115,3 +115,18 @@ test("o painel não pré-carrega a página inicial: os logotipos da casca e do t
   // Fora do painel nada muda: o cabeçalho e o rodapé públicos seguem com o padrão do Next.
   for (const arq of ["../../components/layout/navbar.tsx", "../../components/layout/footer.tsx"]) assert.doesNotMatch(ler(arq), /<Logo [^>]*prefetch/, arq);
 });
+
+test("E1031: o link \"Voltar ao site\" da área do admin também não pré-carrega a página de saída", () => {
+  // Medido em 19/11/2026 (auditoria do #3974): com o E1025 na main, /admin/agentes ainda levava 31 s a sossegar a rede.
+  // Os logotipos já não pré-carregavam; quem pré-carregava a página inicial era este link, que só existe na área do
+  // admin. Quatro pedidos `/?_rsc=…` ficavam pendentes 29 s e só terminavam abortados. O destino dele é a saída do
+  // painel (a última página pública, ou a página inicial): abre-se no clique.
+  const link = ler("../../components/layout/voltar-ao-site.tsx");
+  assert.match(link, /<Link href=\{href\} prefetch=\{false\} /);
+  assert.equal((link.match(/<Link /g) ?? []).length, 1, "um só link no componente");
+  // É o único link de saída da casca fora dos logotipos: nenhum outro <Link> da casca aponta para a página inicial.
+  const casca = ler("../../components/layout/dashboard-shell.tsx");
+  assert.doesNotMatch(casca, /<Link[^>]*href=(\{"\/"\}|"\/")[ >]/);
+  assert.match(casca, /<VoltarAoSite \/>/);
+});
+
