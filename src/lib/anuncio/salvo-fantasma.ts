@@ -132,3 +132,14 @@ export function copiaLocalCarimbada(draftJson: string, anterior: string | null, 
     return draftJson;
   }
 }
+
+/**
+ * E985: os controles de ESCOLHA do assistente (cartões, opções, interruptores) são botões: o clique não dispara
+ * input/change. Sem isto, escolher um cartão nos 2 s depois de abrir o rascunho virava "base" e não era gravado.
+ */
+export const SELETOR_ESCOLHA = '[role="radio"],[role="checkbox"],[role="switch"],[aria-pressed]';
+
+/** O clique caiu num controle de escolha (ou dentro dele)? */
+export function cliqueEhEscolha(alvo: { closest?: (s: string) => unknown } | null | undefined): boolean {
+  return !!alvo && typeof alvo.closest === "function" && !!alvo.closest(SELETOR_ESCOLHA);
+}
