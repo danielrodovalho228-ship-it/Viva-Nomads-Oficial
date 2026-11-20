@@ -692,7 +692,8 @@
    "disposicao": "defeito",
    "item": "E1038",
    "dono": "Code 2",
-   "semPr": "E1038 aberto pelo Gerente na ORDEM-DUET-213 (19/11); a correção do Code 2 (rota pública) ainda não tem PR",
+   "pr": 4032,
+   "semMarca": "corrigido neste PR (#4032): o link da ajuda passa de mt-2 a mt-8 (32 px > 2×12 px de sobra da caixa 44×44), as áreas de toque deixam de se sobrepor e o caso da 404 do t815 passa; a marca sai junto; o corrigidoPor (commit do merge) entra no PR de registo depois do merge",
    "nota": "404 a 390 px: a borda inferior da caixa de toque 44×44 do link 'anunciar' (nao-encontrada-anunciar) cai no link 'ajuda' (nao-encontrada-ajuda); achado pelo helper da área real do E1033 (#4031, ensaio 44650708319)",
    "anterior": {
     "spec": "t815-404-perfil-toque.spec.ts",

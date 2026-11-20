@@ -142,12 +142,17 @@ test.describe("T230 — pagamento sem repetição + Caução do contrato + VN-CT
     const confirmar = t.getByTestId("confirmar-pagamentos");
     await expect(confirmar).toContainText(/Caução do contrato — R\$\s?6\.400/);
     // Confirma tudo o que o proprietário registrou (Caução + bloco 2 + bloco 1).
-    for (let i = 0; i < 3; i++) {
-      const botao = confirmar.getByRole("button", { name: /Confirmar/ }).first();
-      if (!(await botao.isVisible().catch(() => false))) break;
-      await botao.click();
-      await t.waitForTimeout(800);
+    // E1020 (caso 3): eram 3 cliques fixos com 800 ms de pausa. Um clique perdido (antes da hidratação, ou durante o
+    // router.refresh() que troca a lista) deixava um pagamento sem confirmar — no lab, a Caução — e o documento dela nunca
+    // saía (espera de 45 s esgotada; 2 em 30 com --repeat-each=10 --workers=2). Agora: confirma até a lista esvaziar e,
+    // depois de cada clique, espera a lista encolher; se não encolher, clica de novo.
+    const botoes = t.getByTestId("confirmar-pagamentos").getByRole("button", { name: /Confirmar/ });
+    for (let i = 0; i < 10 && (await botoes.count()) > 0; i++) {
+      const antes = await botoes.count();
+      await botoes.first().click();
+      await expect(botoes).toHaveCount(antes - 1, { timeout: 10_000 }).catch(() => undefined);
     }
+    await expect(t.getByTestId("confirmar-pagamentos"), "os 3 pagamentos ficam confirmados").toHaveCount(0, { timeout: 15_000 });
     const { data: cau } = await adm().from("pagamentos_bloco").select("id").eq("contrato_id", ids.contrato!).eq("tipo", "caucao").single();
     ids.cau = cau!.id as string;
     await expect.poll(async () => (await adm().from("documentos_fiscais").select("numero").eq("pagamento_id", ids.cau!).maybeSingle()).data?.numero ?? null, { timeout: 45_000 }).not.toBeNull();
