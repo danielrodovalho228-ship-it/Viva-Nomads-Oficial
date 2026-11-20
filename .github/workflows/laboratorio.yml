@@ -141,37 +141,15 @@ jobs:
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
 
-      - name: Instalar Chromium do Playwright
-        # A instalação às vezes trava sem erro (apt/download). E744 (rodadas 42755440801 e 42767013537: 1 e 4 fatias perdidas, uns
-        # 280 testes cada): tentativas CURTAS (5 min, até 4) para caber no teto do passo; o Chromium vem primeiro e sozinho
-        # (todas as fatias precisam dele). O timeout mata o npx, mas o apt-get filho segura a trava do dpkg: antes de repetir,
-        # encerra o apt que sobrou, espera a trava soltar e conserta o dpkg.
-        # 18/11 (o mesmo endurecimento do lab-critico): 30 s de espera entre as tentativas, para que uma falha que volta na
-        # hora (espelho do apt fora do ar, DNS) não gaste as tentativas todas em segundos. O apt retoma o que já baixou.
-        # Decisão do Gerente (DUET-2019): 4 tentativas e teto de 30 min — runner que não instala em 4 tentativas está
-        # quebrado, não lento, e um teto maior atrasava o veredito da noite inteira. O teto cobre o pior caso:
-        # 4 × 5 min + 3 esperas de 30 s + até 2 min de trava por tentativa = 29,5 min.
-        timeout-minutes: 30
+      - name: Baixar a imagem do Playwright (E1037, navegadores e dependências já vêm nela, nada de apt)
+        # E1037 (ORDEM-DUET-212/213, peça 33): a imagem OFICIAL do Playwright, na MESMA versão do @playwright/test (o teste
+        # lab-imagem-playwright.test.ts prende as duas). Vem do MCR, não do espelho do Ubuntu; tentativas curtas por segurança.
+        timeout-minutes: 15
         run: |
-          for i in 1 2 3 4; do
-            timeout 300 npx playwright install --with-deps chromium && exit 0
-            echo "tentativa $i travou ou falhou"
-            sudo pkill -f '[a]pt-get|[d]pkg' || true
-            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
-            sudo dpkg --configure -a || true
-            if [ "$i" -lt 4 ]; then sleep 30; fi
-          done
-          exit 1
-
-      - name: Instalar WebKit do Playwright (só 3 specs de celular usam)
-        # Se falhar, perdem-se só esses specs (aparecem como falha), não a fatia inteira.
-        continue-on-error: true
-        timeout-minutes: 10
-        run: |
-          for i in 1 2; do
-            timeout 240 npx playwright install --with-deps webkit && exit 0
-            sudo pkill -f '[a]pt-get|[d]pkg' || true
-            sudo dpkg --configure -a || true
+          for i in 1 2 3; do
+            timeout 300 docker pull mcr.microsoft.com/playwright:v1.61.1-noble && exit 0
+            echo "tentativa $i do pull falhou"
+            if [ "$i" -lt 3 ]; then sleep 30; fi
           done
           exit 1
 
@@ -184,6 +162,17 @@ jobs:
         # E744 T2: os testes em quarentena saem de todas as fatias (--grep-invert) e rodam só na entrada "quarentena",
         # 3 vezes cada, com 1 worker e sem nova tentativa. Quarentena vazia: nenhuma opção a mais, e a entrada não roda nada.
         run: |
+          # E1037: o Playwright corre na imagem oficial, com a rede do runner (o Supabase local e o next start ficam em
+          # localhost) e como o utilizador do runner (os resultados ficam no workspace, para os passos seguintes). Só
+          # `npx playwright …` vai para a imagem; o resto do `npx` segue o do runner. As linhas de comando ficam iguais.
+          npx() {
+            if [ "${1:-}" != playwright ]; then command npx "$@"; return; fi
+            shift
+            docker run --rm --network host --ipc host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+              -v "$PWD:$PWD" -w "$PWD" \
+              $(env | cut -d= -f1 | grep -E '^(NEXT_PUBLIC_|LAB_|TESTES_|INTEGRACOES_|SUPABASE_|PLAYWRIGHT_|CI$)' | sed 's/^/-e /') \
+              mcr.microsoft.com/playwright:v1.61.1-noble npx playwright "$@"
+          }
           F=${{ matrix.fatia }}
           QUARENTENA="$(node scripts/lab/quarentena.mjs padrao)"
           FORA=()
@@ -253,12 +242,36 @@ jobs:
         if: ${{ steps.e2e.outcome == 'failure' && github.event_name != 'pull_request' && matrix.fatia != 'quarentena' }}
         run: exit 1
 
+  # Peça 25 / ORDEM-DUET-207: o agendador do GitHub atrasa 7–10 h todos os crons deste repositório. Uma corrida AGENDADA
+  # que chega com outra corrida da main nas últimas 6 h (em geral a manual da mesma janela) termina coberta: verde, sem
+  # fatias, sem banco, com a nota "coberta pela corrida N". Manual e push nunca são barrados (scripts/lab/guarda-duplicado.mjs).
+  guarda:
+    name: guarda (agendada duplicada?)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      coberta: ${{ steps.guarda.outputs.coberta }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/lab
+      - name: Conferir se esta agendada já está coberta
+        id: guarda
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/lab/guarda-duplicado.mjs
+
   # Frente 0: o .next é construído UMA vez e as 25 fatias o reaproveitam (antes cada fatia buildava o site de novo). O build
   # precisa do Supabase local só para ter as mesmas chaves (a anônima entra no bundle) e para a pré-renderização ter onde ler;
   # o que ela gerou é apagado em cada fatia antes do `next start` (scripts/lab/limpar-prerender.mjs). Daqui sai também a
   # listagem do commit (`playwright test --list`), que o consolidar compara com o que rodou.
   construir:
     name: construir (build único e listagem)
+    needs: guarda
+    if: ${{ needs.guarda.outputs.coberta != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -331,8 +344,8 @@ jobs:
 
   # Junta as fatias: um resumo, uma linha em public.lab_execucoes, e vermelho se qualquer fatia falhou.
   consolidar:
-    needs: laboratorio
-    if: ${{ !cancelled() }}
+    needs: [guarda, laboratorio]
+    if: ${{ !cancelled() && needs.guarda.outputs.coberta != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
