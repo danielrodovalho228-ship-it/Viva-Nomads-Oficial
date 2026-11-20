@@ -7,6 +7,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   toda, no máximo 3 vezes o valor mensal.
   Caso: aluguel de R$ 2.800 e candidatura de 90 dias. O contrato divide a estadia em 2 blocos (60 + 30 dias) e a caução
   soma R$ 4.200 (50% de 3 aluguéis). Antes, a proposta mostrava só os R$ 2.800 do 1º bloco e o Fechamento os R$ 4.200.
+   0. Na página do imóvel, sem datas, a linha é a de referência ("Caução do 1º bloco (1 mês)": R$ 1.400). Com 31 dias
+      escolhidos no calendário (o caso da prova ao vivo), passa a "Caução nesta estadia (31 dias)": R$ 1.447, o do contrato.
    1. O dono monta a proposta: a linha "Caução (50% do aluguel da estadia, 90 dias)" mostra R$ 4.200.
    2. A moradora abre a proposta: a mesma linha, o mesmo valor, e a parte do 1º bloco por baixo; aceita.
    3. O dono vai até a minuta do Fechamento: o quadro "antes da entrada" mostra a caução de R$ 4.200.
@@ -24,6 +26,12 @@ const ENTRADA = emDias(30);
 const SAIDA_DATA = emDias(120); // 90 dias
 const ROTULO = "Caução (50% do aluguel da estadia, 90 dias)";
 const VALOR = "R$ 4.200";
+
+const maisDias = (iso: string, n: number) => {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
 
 async function abrir(page: Page, rota: string) {
   await page.goto(rota, { waitUntil: "domcontentloaded" });
@@ -69,6 +77,27 @@ test.describe("T1702 — E1061: a caução da proposta é a do contrato (90 dias
     }
     if (ids.imovel) await adm().from("messages").delete().eq("property_id", ids.imovel);
     await apagarContas([ids.dono, ids.inq]);
+  });
+
+  test("0. na página do imóvel, com 31 dias escolhidos, a caução é a do contrato para essa estadia", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`/imoveis/${ids.imovel}`, { waitUntil: "networkidle" });
+    const caucao = page.locator('#cartao-preco [data-taxa="caucao"]');
+    await expect(caucao).toContainText("Caução do 1º bloco (1 mês)", { timeout: 20_000 });
+    await expect(caucao).toContainText("R$ 1.400");
+    // Uma entrada com 31 dias livres depois dela, dentro dos meses do calendário (o mesmo jeito da t357).
+    const livres = page.locator('#disponibilidade button[data-estado-dia="disponivel"]');
+    await expect(livres.first()).toBeVisible({ timeout: 20_000 });
+    const todos = await livres.evaluateAll((els) => els.map((e) => e.getAttribute("data-dia") ?? ""));
+    const entrada = todos.find((d) => todos.includes(maisDias(d, 31)));
+    expect(entrada, "precisa haver 31 dias livres no calendário").toBeTruthy();
+    await page.locator(`#disponibilidade button[data-dia="${entrada}"]`).click();
+    await page.locator(`#disponibilidade button[data-dia="${maisDias(entrada!, 31)}"]`).click();
+    await expect(caucao).toContainText("Caução nesta estadia (31 dias)", { timeout: 20_000 });
+    // 2.800 × 31 ÷ 30 ÷ 2 = 1.446,67 → R$ 1.447, o mesmo arredondamento do contrato.
+    await expect(caucao).toContainText("R$ 1.447");
+    await caucao.scrollIntoViewIfNeeded();
+    await caucao.screenshot({ path: `${SAIDA}/t1702-0-pagina-caucao-31-dias-1280.png` });
   });
 
   test("1. o dono monta a proposta de 90 dias: a caução é a da estadia toda (R$ 4.200)", async ({ browser }) => {
