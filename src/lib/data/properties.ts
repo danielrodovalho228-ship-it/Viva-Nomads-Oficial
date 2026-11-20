@@ -3,6 +3,7 @@ import { cache } from "react";
 import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { createClient } from "@/lib/supabase/server";
 import { comNovaTentativa } from "@/lib/nova-tentativa";
+import { lerTodasAsLinhas } from "@/lib/data/leitura-paginada";
 import { isExemplo } from "@/lib/demo-listing";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Property, AmenityGroup } from "@/lib/types";
@@ -601,13 +602,20 @@ async function attachCoverPhotos(supabase: SupabaseLike, list: Property[]): Prom
   if (list.length === 0) return;
   try {
     const ids = list.map((p) => p.id);
-    const { data } = await supabase
-      .from("property_photos")
-      .select("property_id, url, sort_order")
-      .in("property_id", ids)
-      .order("sort_order");
+    // E1051: a lista inteira passa de max_rows (1000) — em páginas, numa ordem total, para nenhum anúncio perder fotos
+    // (e cair na relevância) conforme a ordem do heap. Antes: uma consulta só, cortada a meio, diferente a cada carregamento.
+    const data = await lerTodasAsLinhas<{ property_id: string; url: string }>((de, ate) =>
+      supabase
+        .from("property_photos")
+        .select("property_id, url, sort_order")
+        .in("property_id", ids)
+        .order("property_id")
+        .order("sort_order")
+        .order("url")
+        .range(de, ate),
+    );
     const byProp = new Map<string, string[]>();
-    for (const row of ((data as { property_id: string; url: string }[] | null) ?? [])) {
+    for (const row of data) {
       if (!byProp.has(row.property_id)) byProp.set(row.property_id, []);
       byProp.get(row.property_id)!.push(row.url);
     }
