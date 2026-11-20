@@ -11,6 +11,8 @@ import { dataHoraBRT } from "../datas-brasilia.ts";
 import { codigoDoImovel } from "../imovel-pagina.ts";
 import { assuntoComTitulo } from "../notifications/assuntos.ts";
 import { primeiroNome } from "../display-name.ts";
+import { blocoDados } from "../notifications/modelo-email.ts";
+import { escaparHtml } from "../escapar-html.ts";
 
 export interface LinhaVisitaEmail {
   rotulo: string;
@@ -119,5 +121,27 @@ export function corpoVisitaConfirmada(d: {
     body: (n) =>
       `${ola(n)}, ${quem} ${tipoNaFrase(d.modalidade)}${pn ? ` com ${pn}` : ""} ${aoImovel(d.imovel)}${q ? ` para ${q} (horário de Brasília)` : ""}.${comoEntrar} Os detalhes ficam em Visitas, na plataforma.`,
     linhas,
+  };
+}
+
+/**
+ * E1039 (trava): os detalhes do aviso de visita como saem no e-mail — bloco de dados (linhas do corpo), a frase do
+ * fato e, só quando vier (visita presencial confirmada, ao morador), o endereço exato e "Abrir no mapa". Era montado
+ * dentro do avisarVisita (visitas-video-actions.ts); saiu para cá, igual, para o conteúdo ter teste determinístico.
+ */
+export function detalhesDoAvisoVisita(d: {
+  detalhe: string;
+  endereco?: { texto: string; mapa: string } | null;
+  linhas?: LinhaVisitaEmail[] | null;
+}): { texto: string; html: string } {
+  const { detalhe, endereco } = d;
+  return {
+    texto: endereco ? `${detalhe}\nEndereço: ${endereco.texto}\nAbrir no mapa: ${endereco.mapa}` : detalhe,
+    html:
+      (d.linhas ? blocoDados(d.linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) : "") +
+      `<p style="margin:12px 0 0">${detalhe.replace(/[<>&]/g, "")}</p>` +
+      (endereco
+        ? `<p style="margin:8px 0 0"><strong>Endereço:</strong> ${endereco.texto.replace(/[<>&"]/g, "")}</p><p style="margin:8px 0 0"><a href="${endereco.mapa.replace(/"/g, "%22")}">Abrir no mapa</a></p>`
+        : ""),
   };
 }
