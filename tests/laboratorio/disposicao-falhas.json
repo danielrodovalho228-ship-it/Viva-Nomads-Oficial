@@ -369,7 +369,7 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
-   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada"
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada; desde o #3987 (259549bd) os casos 1 e 2 passam e só o caso 3 (trocar para Fibra) segue marcado (ensaio 44472116797)"
   },
   {
    "spec": "t401-cadastro-10-revisao.spec.ts",
@@ -420,6 +420,7 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
+   "corrigidoPor": "259549bd",
    "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada"
   },
   {
@@ -473,6 +474,7 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
+   "corrigidoPor": "259549bd",
    "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada"
   },
   {
