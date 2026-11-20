@@ -177,10 +177,14 @@ export function precosDaPrevia(property: Property): LinhaPrecoPrevia[] {
 /** E1050: o rótulo da linha da caução na prévia da revisão. */
 export const ROTULO_CAUCAO_PREVIA = "Caução (50% do mensal)";
 
+/** E1050/E1054: a caução calculada — 50% do valor mensal. Fonte única da revisão e do passo de Preço. Sem mensal → null. */
+export function caucaoDoMensal(mensal: number): number | null {
+  return mensal > 0 ? mensal * 0.5 : null;
+}
+
 /** E1050: a caução calculada que o dono vê na revisão — 50% do valor mensal. Sem valor mensal → null (sem "R$ 0"). */
 export function caucaoDaPrevia(property: Property): number | null {
-  const mensal = property.monthlyPrice ?? 0;
-  return mensal > 0 ? mensal * 0.5 : null;
+  return caucaoDoMensal(property.monthlyPrice ?? 0);
 }
 
 /** Evento da página que abre uma seção do "Antes de publicar" (o "Resolver" da lista e o motivo do botão travado). */
