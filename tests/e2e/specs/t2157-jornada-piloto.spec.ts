@@ -236,7 +236,9 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     // Passo 8: Preço — valor da jornada e a caução como garantia (a etapa 9 registra e devolve a caução).
     await noPasso(p, "preco");
     await p.getByTestId("cadastro-preco").fill("2157");
-    const caucao = p.getByRole("button", { name: /Aceito Caução à vista/ });
+    // A garantia do cadastro é a "Caução (depósito devolvível)" (GARANTIAS_CADASTRO, caucao_avista).
+    const caucao = p.getByRole("button", { name: /Aceito Caução/ }).first();
+    await expect(caucao, "a caução está entre as garantias do cadastro").toBeVisible({ timeout: 15_000 });
     if ((await caucao.getAttribute("aria-pressed")) !== "true") await caucao.click();
     await expect(caucao).toHaveAttribute("aria-pressed", "true");
     await continuar.click();
