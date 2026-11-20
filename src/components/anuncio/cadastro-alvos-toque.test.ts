@@ -6,6 +6,9 @@
   4. Preço: "Adicionar faixa de desconto" — 20 px.
   5. Revisão: "Faltam N itens antes de publicar" (abre o que falta) — 20 px.
   Todos ganham alvo de 44 px no toque (.alvo-toque), sem mudar o desenho.
+  E1033, passo 3 (família "cadastro", ORDEM-DUET-239): o padrão é 44 × 44 px com QUALQUER apontador. Os 5 usos soltos
+  (− e + dos contadores, os 2 links de texto e o motivo da Revisão) trocam .alvo-toque (só tela de toque) por
+  .area-de-toque-44 (toque ou rato). O desenho não muda. A trava de tela é a t1700.
   Roda: npm test
 */
 import { test } from "node:test";
@@ -21,20 +24,37 @@ test("pergunta do bloco opcional é cartão grande com alvo de 44 px (E193: sem 
 
 test("contadores: − e + com alvo de 44 px", () => {
   const c = ler("src/app/(dashboard)/dashboard/imoveis/novo/campos.tsx");
-  assert.equal((c.match(/className="alvo-toque grid h-9 w-9 place-items-center rounded-full/g) ?? []).length, 2);
+  // E1033, passo 3 (asserção alterada): a classe cobrada passa de alvo-toque (só toque) a area-de-toque-44 (toque ou rato).
+  assert.equal((c.match(/className="area-de-toque-44 grid h-9 w-9 place-items-center rounded-full/g) ?? []).length, 2);
 });
 
 test("links de texto do cadastro com alvo de 44 px", () => {
-  assert.match(ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-fotos.tsx"), /className="alvo-toque mt-1 inline-block font-medium text-forest underline" data-testid="porta-fotografo-link"/);
-  assert.match(ler("src/components/anuncio/blocos-cadastro.tsx"), /className="alvo-toque mt-2 inline-flex items-center gap-1 text-sm font-medium text-forest underline"\n\s*data-testid="adicionar-faixa"/);
+  // E1033, passo 3 (asserção alterada): area-de-toque-44 no lugar de alvo-toque, nos dois.
+  assert.match(ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-fotos.tsx"), /className="area-de-toque-44 mt-1 inline-block font-medium text-forest underline" data-testid="porta-fotografo-link"/);
+  assert.match(ler("src/components/anuncio/blocos-cadastro.tsx"), /className="area-de-toque-44 mt-2 inline-flex items-center gap-1 text-sm font-medium text-forest underline"\n\s*data-testid="adicionar-faixa"/);
 });
 
 test("revisão: o motivo de não publicar (abre o que falta) com alvo de 44 px", () => {
-  assert.match(ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx"), /onClick=\{onMotivo\} className="alvo-toque block w-full text-balance text-center/);
+  // E1033, passo 3 (asserção alterada): area-de-toque-44 no lugar de alvo-toque.
+  assert.match(ler("src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx"), /onClick=\{onMotivo\} className="area-de-toque-44 block w-full text-balance text-center/);
 });
 
 test("contadores: o miolo (o número) é um <label> da altura da pílula — tocar nele foca o campo", () => {
   const c = ler("src/app/(dashboard)/dashboard/imoveis/novo/campos.tsx");
   assert.match(c, /<label className="-my-1 flex w-20 cursor-text items-center justify-center self-stretch" data-testid="contador-miolo">/);
   assert.match(c, /\{sufixo && <span className="shrink-0 text-xs text-muted">\{sufixo\}<\/span>\}\n\s*<\/label>/);
+});
+
+test("E1033, passo 3: a família do cadastro já não usa a classe antiga, que só valia em tela de toque", () => {
+  for (const arq of [
+    "src/app/(dashboard)/dashboard/imoveis/novo/campos.tsx",
+    "src/app/(dashboard)/dashboard/imoveis/novo/etapa-fotos.tsx",
+    "src/app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx",
+    "src/components/anuncio/blocos-cadastro.tsx",
+  ]) {
+    assert.doesNotMatch(ler(arq), /alvo-toque/, arq);
+  }
+  // A regra nova vale fora de qualquer @media (é o que a faz valer com rato).
+  const css = ler("src/app/globals.css");
+  assert.match(css, /\n\.area-de-toque-44::after \{[^}]*width: max\(100%, 44px\);[^}]*height: max\(100%, 44px\);/);
 });
