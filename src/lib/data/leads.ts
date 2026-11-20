@@ -182,14 +182,16 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
   const fins = new Map<string, string>();
   const ocupantes = new Map<string, number>();
   if (admin && rows.length > 0) {
-    const { data: ms } = await admin.from("leads").select("id, motivo_estadia, inicio_desejado, fim_desejado, qtd_ocupantes").in("id", rows.map((r) => r.id));
-    for (const m of (ms ?? []) as { id: string; motivo_estadia: string | null; inicio_desejado: string | null; fim_desejado: string | null; qtd_ocupantes: number | null }[]) {
+    const { data: ms } = await admin.from("leads").select("id, motivo_estadia, inicio_desejado, qtd_ocupantes").in("id", rows.map((r) => r.id));
+    for (const m of (ms ?? []) as { id: string; motivo_estadia: string | null; inicio_desejado: string | null; qtd_ocupantes: number | null }[]) {
       if (m.qtd_ocupantes) ocupantes.set(m.id, m.qtd_ocupantes);
       const rotulo = motivoParaDono(m.motivo_estadia);
       if (rotulo) motivos.set(m.id, rotulo);
       if (m.inicio_desejado) inicios.set(m.id, m.inicio_desejado);
-      if (m.fim_desejado) fins.set(m.id, m.fim_desejado);
     }
+    // E1053: a saída escolhida (0258), lida à parte — a leitura do motivo acima fica como está.
+    const { data: fs } = await admin.from("leads").select("id, fim_desejado").in("id", rows.map((r) => r.id));
+    for (const f of (fs ?? []) as { id: string; fim_desejado: string | null }[]) if (f.fim_desejado) fins.set(f.id, f.fim_desejado);
   }
   // E1053: o cartão de decisão mostra Entrada, Saída e Total da estadia — a MESMA leitura do imóvel e a MESMA conta da
   // confirmação da candidatura (dadosDoImovelDaCandidatura + decisaoDaCandidatura). Uma leitura por imóvel; falha → sem total.
