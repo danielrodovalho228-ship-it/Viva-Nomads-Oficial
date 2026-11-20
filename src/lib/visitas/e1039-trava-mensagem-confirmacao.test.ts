@@ -46,6 +46,29 @@ test("E1039 trava — dono, presencial: horário e com quem (primeiro nome), sem
   assert.doesNotMatch(m.tudo, /Endereço|Abrir no mapa/, "o dono não recebe o endereço");
 });
 
+// E1039 (texto aprovado pelo coordenador, ORDEM-DUET-258): o documento com foto, na visita presencial.
+const LEVE = "Leve um documento com foto.";
+const ORIENTADO = "O visitante foi orientado a levar um documento com foto.";
+
+test("E1039 trava — morador, presencial: a linha do documento com foto", () => {
+  const m = mensagem({ modalidade: "presencial", quemConfirmou: "proprietario", endereco: ENDERECO });
+  assert.ok(m.corpo.includes(LEVE), "o morador é orientado a levar documento com foto");
+  assert.ok(!m.tudo.includes(ORIENTADO), "a linha do proprietário não vai ao morador");
+});
+
+test("E1039 trava — proprietário, presencial: a linha de que o visitante foi orientado", () => {
+  const m = mensagem({ modalidade: "presencial", quemConfirmou: "morador" });
+  assert.ok(m.corpo.includes(ORIENTADO), "o proprietário sabe que o visitante leva documento com foto");
+  assert.ok(!m.tudo.includes(LEVE), "a linha do morador não vai ao proprietário");
+});
+
+for (const quemConfirmou of ["proprietario", "morador"] as const) {
+  test(`E1039 trava — por vídeo (${quemConfirmou} confirmou): sem a linha do documento (não há encontro)`, () => {
+    const m = mensagem({ modalidade: "video", quemConfirmou });
+    assert.doesNotMatch(m.tudo, /documento com foto/);
+  });
+}
+
 for (const quemConfirmou of ["proprietario", "morador"] as const) {
   test(`E1039 trava — por vídeo (${quemConfirmou} confirmou): horário e como entrar, sem endereço nem link da chamada`, () => {
     const m = mensagem({ modalidade: "video", quemConfirmou });
