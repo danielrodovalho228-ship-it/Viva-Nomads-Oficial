@@ -383,7 +383,8 @@
    "item": "E985",
    "dono": "Code 2",
    "pr": 3898,
-   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada; desde o #3987 (259549bd) os casos 1 e 2 passam e só o caso 3 (trocar para Fibra) segue marcado (ensaio 44472116797)"
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada; desde o #3987 (259549bd) os casos 1 e 2 passam e só o caso 3 (trocar para Fibra) segue marcado (ensaio 44472116797)",
+   "semMarca": "corrigido neste PR (#3898): sobre a main ee0f859 o caso 3 do t400 também passa com a correção (lab-critico: 'Expected to fail, but passed' 2/2), por isso a marca sai como nos casos 1–2; o corrigidoPor (commit do merge) entra no PR de registo depois do merge"
   },
   {
    "spec": "t401-cadastro-10-revisao.spec.ts",
@@ -689,11 +690,20 @@
   {
    "spec": "t815-404-perfil-toque.spec.ts",
    "disposicao": "defeito",
-   "item": "E960",
-   "dono": "Fable",
-   "pr": 3855,
-   "nota": "o logo do cabeçalho público tem alvo de toque de 32 px",
-   "corrigidoPor": "44c82ddc"
+   "item": "E1038",
+   "dono": "Code 2",
+   "pr": 4032,
+   "semMarca": "corrigido neste PR (#4032): o link da ajuda passa de mt-2 a mt-8 (32 px > 2×12 px de sobra da caixa 44×44), as áreas de toque deixam de se sobrepor e o caso da 404 do t815 passa; a marca sai junto; o corrigidoPor (commit do merge) entra no PR de registo depois do merge",
+   "nota": "404 a 390 px: a borda inferior da caixa de toque 44×44 do link 'anunciar' (nao-encontrada-anunciar) cai no link 'ajuda' (nao-encontrada-ajuda); achado pelo helper da área real do E1033 (#4031, ensaio 44650708319)",
+   "anterior": {
+    "spec": "t815-404-perfil-toque.spec.ts",
+    "disposicao": "defeito",
+    "item": "E960",
+    "dono": "Fable",
+    "pr": 3855,
+    "nota": "o logo do cabeçalho público tem alvo de toque de 32 px",
+    "corrigidoPor": "44c82ddc"
+   }
   },
   {
    "spec": "t816-cidade-bairros-grade-par.spec.ts",
