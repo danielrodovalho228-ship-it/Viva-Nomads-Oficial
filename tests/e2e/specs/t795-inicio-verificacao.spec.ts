@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { areaDeToque } from "../fixtures/area-toque";
 import { authFile } from "../fixtures/auth";
 
 /*
@@ -19,8 +20,8 @@ for (const largura of [390, 1280] as const) {
     const alvo = alvos.first();
     await alvo.scrollIntoViewIfNeeded();
     await expect(alvo).toBeVisible();
-    const altura = await alvo.evaluate((e) => Math.max(e.getBoundingClientRect().height, parseFloat(getComputedStyle(e, "::after").height) || 0));
-    if (toque || true) expect(altura).toBeGreaterThanOrEqual(44);
+    // E1033: a área de toque REAL (9 pontos da caixa 44×44 com elementFromPoint), não a altura do ::after.
+    if (toque || true) expect((await areaDeToque(alvo)).faltam, "área de toque 44×44").toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     await page.screenshot({ path: `${SAIDA}/t795-inicio-verificacao-${largura}.png` });
     await ctx.close();
