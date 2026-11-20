@@ -352,6 +352,22 @@ async function main() {
     if (eExt) throw new Error(`E604 extras: ${eExt.message}`);
     console.log("✓ E604: imóvel 1 com TV nas comodidades e o extra legado 'tv'");
   }
+  // t2049 e t2051 (ORDEM-DUET-112): massa de teste marcada para os dois testes órfãos que pulavam por falta de dado no
+  // laboratório (sonda 44323854417). Os dois anúncios são do Paulo Profissional (persona de teste) e dizem no título que
+  // são massa; o resto é igual aos outros anúncios semeados.
+  {
+    // t2049 (E522): um anúncio que aceita caução — o chip "Caução" da /buscar conta 1 e filtra (antes: 0, chip desabilitado).
+    await criarImovel(ids.PROPRIETARIO_PRO, 5, fotos, { title: "Imóvel mobiliado de teste 5 — laboratório (massa t2049: aceita caução)", garantias_aceitas: ["caucao_avista"] });
+    // t2051 (E604): um anúncio com nível calculado e um extra que NÃO é comodidade (Air fryer), para o bloco "Extras"
+    // aparecer. A t2051 abre só os 6 primeiros da /buscar, e a relevância desempata pelo id (E810, ids sorteados): o id é
+    // fixo e o menor possível, para este anúncio ser sempre um dos 6.
+    const extras = await criarImovel(ids.PROPRIETARIO_PRO, 6, fotos, { id: "00000000-0000-4000-8000-000000002051", title: "Imóvel mobiliado de teste 6 — laboratório (massa t2051: extra fora das comodidades)" });
+    const { error: eNiv } = await admin.from("imovel_nivel").upsert({ property_id: extras, nivel: "essencial" }, { onConflict: "property_id" });
+    if (eNiv) throw new Error(`t2051 nível: ${eNiv.message}`);
+    const { error: eExt } = await admin.from("imovel_extras").insert({ property_id: extras, chave: "air_fryer" });
+    if (eExt) throw new Error(`t2051 extra: ${eExt.message}`);
+    console.log("✓ t2049/t2051: massa marcada — 1 anúncio que aceita caução e 1 com extra fora das comodidades (id fixo, 1.º da relevância)");
+  }
   const contratoId = await criarContrato(imovel1, ids.INQUILINO3);
   console.log("✓ contrato: Paulo Essencial × Ana Souza (60 dias, comissão 8%)");
   // Documento de verdade para a conferência pública (/conferir/<código>):

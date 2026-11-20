@@ -218,3 +218,15 @@ Os quatro pontos falham hoje em toda tela, porque o HTML é o esqueleto. Isso d�
 | `/dashboard/visitas/[id]` | servidor | não | não | 3 (painel, servidor) |
 | `/dashboard/visitas` | servidor | não | não | 3 (painel, servidor) |
 | `/qualificar` | servidor | não | não | 3 (painel, servidor) |
+
+### Redirecionam de propósito (a varredura do E950 afirma o destino)
+Decisão do Gerente (ORDEM-DUET-102, 18/11): estas telas levam a outro endereço por regra. A varredura logada (t1649) confere que **o destino é o nomeado aqui**. Ir para outro lugar, ou ficar na própria tela, continua sendo achado de redirecionamento. As telas já estão no inventário acima; esta tabela não soma rotas.
+
+| Tela pedida | Destino esperado | Larguras | Por quê |
+|---|---|---|---|
+| `/qualificar` | `/dashboard/imoveis/novo` | todas | A Qualificação mora no assistente do anúncio (`destinoQualificarSemImovel` / `destinoDaQualificacao`). |
+| `/dashboard/conta` | `/dashboard/conta/perfil` | ≥ 1024 px | No computador a Conta abre no Perfil (E492/E552); no celular o menu da Conta abre na própria tela. |
+| `/dashboard/conta/notificacoes` | `/dashboard/notificacoes` | todas | As notificações têm endereço próprio; o link antigo da seção segue para lá. |
+| `/dashboard/conta/avaliacoes` | `/dashboard/avaliacoes` | todas | As avaliações têm endereço próprio (`destinoContaAvaliacoes`). |
+| `/dashboard/assinatura` | `/dashboard` | todas | Rota antiga sem tela; com a chave de preços desligada vai para o painel (com ela ligada, para `/precos`). |
+| `/dashboard/qa/emails` | `/dashboard/conta/ajuda` | todas | Caixa de QA: conta de teste sem leitor de QA vai para a própria caixa; o admin vai para a lista dele (fora das personas comuns). |

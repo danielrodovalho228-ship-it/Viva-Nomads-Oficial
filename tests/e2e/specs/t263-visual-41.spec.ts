@@ -99,6 +99,12 @@ test.describe("T263 — Regressão visual do Prompt 41", () => {
         await page.addInitScript(() => localStorage.removeItem("vn:ultima-busca"));
         await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
         await pronta(page);
+        // FALHA ESPERADA — E990 (julgamento do Gerente, 16/11/2026): a linha "Assistente Viva 24 h · resposta de uma pessoa
+        // em até 24 h" sumiu do rodapé sem decisão. Esta tela mostra o rodapé, por isso fica com a referência ANTIGA até o
+        // coordenador decidir restaurar ou remover a linha. A marca vem logo antes da comparação: o teste corre inteiro, e
+        // qualquer falha anterior (carregar, ficar pronta) continua reprovando. É estrita: no dia em que a imagem voltar a
+        // bater, o teste acusa "esperava falhar, passou" — aí a referência se atualiza e esta marca sai, no PR da correção.
+        test.fail(true, "E990 (Gerente, 16/11/2026): rodapé sem a linha 'Assistente Viva 24 h'; referência antiga mantida até a decisão");
         await expect(page).toHaveScreenshot(`01-imovel-inteiro-${largura}.png`, { fullPage: true, mask: mascaras(page), maxDiffPixelRatio: 0.02 });
       });
     });
@@ -218,7 +224,11 @@ test.describe("T263 — Regressão visual do Prompt 41", () => {
           await page.getByTestId("cogumelo").click();
           const folha = page.getByRole("dialog", { name: "Ações desta estadia" });
           await expect(folha).toBeVisible();
-          await expect(folha.getByTestId("acoes-estadia-lista").locator("li")).toHaveCount(quem === "proprietario" ? 7 : fase === "antes" ? 5 : 6);
+          // E539 (iv): a folha não repete o que a página já mostra — saíram "Falar com…" (é o "Mensagem" do cartão de
+          // status) e "Ver instruções de chegada" (é um painel da própria página). Morador: contrato, alteração de datas,
+          // limpeza e manutenção (4, antes e depois da liberação das instruções); proprietário: os 4 + calendário (5).
+          // Contagem anterior (5/6/7) julgada como teste velho pelo Gerente no pacote visual do E744 (16/11/2026, #3894).
+          await expect(folha.getByTestId("acoes-estadia-lista").locator("li")).toHaveCount(quem === "proprietario" ? 5 : 4);
           await page.evaluate(() => document.fonts.ready);
           await page.waitForTimeout(400); // animação da folha
           const nome = `${n}-estadia-cogumelo-${quem}${fase ? `-${fase}` : ""}-${largura}.png`;
