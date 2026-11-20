@@ -26,6 +26,13 @@ test("os pontos: o centro, os 4 cantos e os 4 meios das bordas da caixa 44×44, 
     assert.ok(p.some((q) => q.onde === onde), onde);
 });
 
+test("o veredito usa o centro e os 4 meios das bordas; os cantos só informam (o hit-test do Chrome respeita o border-radius)", () => {
+  const p = pontosDaCaixa(0, 0);
+  const veredito = p.filter((q) => q.conta).map((q) => q.onde).sort();
+  assert.deepEqual(veredito, ["borda dir", "borda esq", "borda inf", "borda sup", "centro"]);
+  assert.equal(p.filter((q) => !q.conta).length, 4, "os 4 cantos ficam só como informação");
+});
+
 test("os 9 specs migrados usam o helper, e nenhum spec mede o alvo pelo ::after", () => {
   const dir = new URL("../e2e/specs/", import.meta.url);
   const viaAfter = readdirSync(dir).filter((f) => f.endsWith(".spec.ts")).filter((f) => /getComputedStyle\([^)]*["']::after["']\)/.test(readFileSync(new URL(f, dir), "utf8")));
