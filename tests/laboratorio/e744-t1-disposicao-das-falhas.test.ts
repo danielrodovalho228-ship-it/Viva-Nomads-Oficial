@@ -117,9 +117,10 @@ test("os números do cabeçalho batem com a lista", () => {
   const fora = (arquivo as unknown as { foraDeCorrida: { ordem: string; data: string; main: string; acrescentados: string[] } }).foraDeCorrida;
   assert.match(fora.ordem, /^ORDEM-DUET-\d+$/);
   assert.match(fora.main, /^[0-9a-f]{8}$/);
-  // Asserção alterada por decisão do Gerente (ORDEM-DUET-181 e 182, 19/11): entram também os defeitos já CORRIGIDOS
-  // depois da corrida-base, que não cabiam nas outras listas: o spec vermelho de uma corrida manual completa (t296,
-  // E1034) e a trava nova de um defeito achado por leitura do código (t1697, E1035). Cada um diz de onde veio.
+  // Asserção alterada, julgada e aprovada pelo Gerente na ORDEM-DUET-191 (19/11; as entradas vêm das ORDEM-DUET-181 e
+  // 182): entram também os defeitos já CORRIGIDOS depois da corrida-base, que não cabiam nas outras listas: o spec
+  // vermelho de uma corrida manual completa (t296, E1034) e a trava nova de um defeito achado por leitura do código
+  // (t1697, E1035). Cada um diz de onde veio.
   const depois = (arquivo as unknown as { corrigidosDepois: { ordem: string; data: string; acrescentados: { spec: string; origem: string }[] } }).corrigidosDepois;
   assert.match(depois.ordem, /^ORDEM-DUET-\d+$/);
   const specsDepois = depois.acrescentados.map((a) => a.spec);
