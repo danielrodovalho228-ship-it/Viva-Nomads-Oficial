@@ -25,8 +25,9 @@ test("proxy: todo redirect/rewrite depois do getUser leva os cookies renovados (
   const embrulhadas = depoisDoCliente.match(/comCookies\(NextResponse\.(redirect|rewrite)\(/g) ?? [];
   assert.ok(respostas.length >= 7, `${respostas.length} respostas`);
   assert.equal(embrulhadas.length, respostas.length, "alguma resposta saiu sem os cookies renovados");
-  // Os três 404 por rewrite que perdiam a sessão.
-  assert.equal(depoisDoCliente.match(/comCookies\(NextResponse\.rewrite\(\w+, \{ status: 404 \}\)\)/g)?.length, 3);
+  // Os três 404 por rewrite que perdiam a sessão, mais o da seção inexistente da Conta (E1003, Gerente, 16/11/2026), que
+  // nasce já com os cookies renovados: quatro.
+  assert.equal(depoisDoCliente.match(/comCookies\(NextResponse\.rewrite\(\w+, \{ status: 404 \}\)\)/g)?.length, 4);
 });
 
 test("porta de QA: só entra com POST + chave (nada troca de conta sozinho) e o guia avisa da sessão por navegador", () => {
