@@ -134,15 +134,17 @@ jobs:
 
       - name: ENSAIO (nunca mergear) — o espelho do Ubuntu fora do ar, pelas fontes do apt (ORDEM-DUET-216, ponto 1)
         run: |
-          # Todas as fontes do apt (.list e deb822 .sources) passam a apontar para um host que não existe.
+          # O runner usa "URIs: mirror+file:/etc/apt/apt-mirrors.txt" (sem "://"): por isso o bloqueio por /etc/hosts
+          # da 44654158900 não pegou. Aqui TODAS as fontes viram um host .invalid, inclusive a lista de espelhos.
+          [ -f /etc/apt/apt-mirrors.txt ] && { sed 's/^/SONDA | espelho antes: /' /etc/apt/apt-mirrors.txt; echo "http://espelho-bloqueado.invalid/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt >/dev/null; }
           for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
             [ -f "$f" ] || continue
             echo "SONDA | fonte: $f"; grep -hE '^(deb|URIs:)' "$f" | sed 's/^/SONDA |   antes: /' || true
-            sudo sed -i -E 's#(https?|mirror\+file|mirror\+https?)://[^ ]+#http://espelho-bloqueado.invalid/ubuntu/#g' "$f"
+            sudo sed -i -E 's#^URIs:.*#URIs: http://espelho-bloqueado.invalid/ubuntu/#; s#(https?|mirror\+[a-z]+):/*[^ ]+#http://espelho-bloqueado.invalid/ubuntu/#g' "$f"
             grep -hE '^(deb|URIs:)' "$f" | sed 's/^/SONDA |   depois: /' || true
           done
-          if grep -rhoE '(https?)://[^ /]+' /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null | grep -v espelho-bloqueado.invalid; then
-            echo "SONDA | ainda há fonte com host válido: o bloqueio não pegou"; exit 1
+          if cat /etc/apt/sources.list /etc/apt/sources.list.d/* /etc/apt/apt-mirrors.txt 2>/dev/null | grep -E '^(deb|URIs:)|^[a-z+]+:' | grep -vE '^#' | grep -oE '[a-z+]+:/*[^ ]+' | grep -v 'http://espelho-bloqueado.invalid/'; then
+            echo "SONDA | ainda há fonte fora do bloqueio: o bloqueio não pegou"; exit 1
           fi
           sudo rm -rf /var/lib/apt/lists/*
           if timeout 120 sudo apt-get update 2>&1 | tee /tmp/apt.txt | grep -qE '^(Hit|Get):'; then
