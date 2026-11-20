@@ -131,10 +131,11 @@ test("fatias gerais do noturno dão 90 s por teste (o gate de PR segue em 45 s)"
   assert.match(readFileSync("playwright.config.ts", "utf8"), /timeout: 45_000/);
 });
 
-test("E744: o Chromium instala primeiro e sozinho, com tentativas curtas; o WebKit não derruba a fatia", () => {
+// E1037 (ORDEM-DUET-212/213) substitui o desenho E744 da instalação (Chromium primeiro e sozinho, WebKit que não derruba a
+// fatia): os navegadores vêm na imagem oficial do Playwright e nenhuma fatia instala com apt (lab-imagem-playwright.test.ts).
+test("E744/E1037: nenhuma fatia instala navegadores; a imagem do Playwright é baixada antes da suíte", () => {
   const y = readFileSync(".github/workflows/laboratorio.yml", "utf8");
-  assert.match(y, /timeout 300 npx playwright install --with-deps chromium && exit 0/);
-  assert.doesNotMatch(y, /install --with-deps chromium webkit/);
-  const webkit = y.slice(y.indexOf("- name: Instalar WebKit do Playwright"));
-  assert.match(webkit.slice(0, 400), /continue-on-error: true/);
+  const fatias = y.slice(y.indexOf("\n  laboratorio:\n"), y.indexOf("\n  construir:\n"));
+  assert.doesNotMatch(fatias, /playwright install/);
+  assert.ok(fatias.indexOf("- name: Baixar a imagem do Playwright") > 0 && fatias.indexOf("- name: Baixar a imagem do Playwright") < fatias.indexOf("- name: Rodar a suíte E2E"));
 });
