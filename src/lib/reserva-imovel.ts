@@ -59,6 +59,11 @@ export function caucaoDoPrimeiroBloco(monthlyPrice: number, minPeriodDays?: numb
   return valor > 0 ? { valor, meses } : null;
 }
 
+/** E752/E1061: o rótulo da linha da Caução no anúncio — o mesmo na página do imóvel e no cadastro (revisão e Preço). */
+export function rotuloCaucaoDoPrimeiroBloco(meses: number): string {
+  return `Caução do 1º bloco (${meses} ${meses === 1 ? "mês" : "meses"})`;
+}
+
 /** E1061: a linha "Caução" do resumo da candidatura. */
 function textoCaucaoDaSolicitacao(monthlyPrice: number, dias: number | null | undefined, minDias?: number | null): string {
   const fim = "paga direto ao proprietário e devolvida no fim";
@@ -102,7 +107,7 @@ export function linhasDeTaxas(p: EntradaTaxas): LinhaTaxa[] {
   const caucao = caucaoDoPrimeiroBloco(p.monthlyPrice, p.minPeriodDays);
   l.push({
     chave: "caucao",
-    rotulo: caucao ? `Caução do 1º bloco (${caucao.meses} ${caucao.meses === 1 ? "mês" : "meses"})` : "Caução",
+    rotulo: caucao ? rotuloCaucaoDoPrimeiroBloco(caucao.meses) : "Caução",
     ...(caucao ? { valor: formatBRL(caucao.valor) } : {}),
     nota: NOTA_CAUCAO,
   });

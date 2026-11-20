@@ -75,3 +75,9 @@ test("E1061: a proposta, nas duas telas, escreve o rótulo da mesma função e n
   }
   assert.match(ler("./propostas/caucao-da-proposta.ts"), /resumoContratoEmDias\(/);
 });
+
+test("E1061: o fechamento mostra esse mesmo total — a soma dos blocos do contrato em dias", () => {
+  const fechamento = ler("../app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
+  assert.match(fechamento, /resumoContratoEmDias\(DIAS_ACORDO, PROPERTY\.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO\)/);
+  assert.match(fechamento, /const CAUCAO_50 = resumo\.caucaoTotal;/);
+});
