@@ -57,7 +57,7 @@ test("E295: moldura, play grande no verde com anel de contraste, selo da duraç�
   assert.match(c, /data-testid="video-institucional-play"/);
   assert.match(c, /rounded-full bg-forest text-white ring-4 ring-white[^"]*h-16 w-16|h-16 w-16 place-items-center rounded-full bg-forest text-white ring-4 ring-white/);
   assert.match(c, /data-testid="video-institucional-duracao"/);
-  assert.match(c, /duracao: "0:33"/);
+  assert.match(c, /duracao: "0:32"/); // E832: era 0:33; o arquivo tem 32,6 s e o player mostra 0:32
   // O vídeo em si não muda: mesmos arquivos, sem autoplay, preload none, legenda padrão.
   assert.match(c, /preload="none"/);
   assert.match(c, /controls=\{tocou\}/, "controles nativos só depois do play");

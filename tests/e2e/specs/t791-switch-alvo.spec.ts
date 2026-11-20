@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { areaDeToque } from "../fixtures/area-toque";
 import { authFile } from "../fixtures/auth";
 
 /*
@@ -19,8 +20,8 @@ for (const largura of [390, 1280] as const) {
     const trilho = await sw.boundingBox();
     expect(Math.round(trilho?.height ?? 0)).toBe(24);
     if (toque) {
-      const alvo = await sw.evaluate((e) => parseFloat(getComputedStyle(e, "::after").height));
-      expect(alvo).toBeGreaterThanOrEqual(44);
+      // E1033: a área de toque REAL (9 pontos da caixa 44×44 com elementFromPoint), não a altura do ::after.
+      expect((await areaDeToque(sw)).faltam, "interruptor: área de toque 44×44").toEqual([]);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
     await page.screenshot({ path: `${SAIDA}/t791-switch-${largura}.png` });
