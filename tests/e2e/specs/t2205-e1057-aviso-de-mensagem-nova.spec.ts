@@ -14,7 +14,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t2205.${sufixo}@lab.vivanomads.test`, nome: "Dora Avisonovo", role: "owner" as const };
-const inq = { email: `inq.t2205.${sufixo}@lab.vivanomads.test`, nome: "Iara Remetente", role: "tenant" as const };
+const inq = { email: `inq.t2205.${sufixo}@lab.vivanomads.test`, nome: "Iara Sobrenomesecreto", role: "tenant" as const };
 const ids: Record<string, string> = {};
 const TITULO = `Studio do aviso novo ${sufixo}`;
 const MASK = "[contato protegido]";
@@ -69,12 +69,15 @@ test.describe("T2205 — E1057 (b): o aviso de mensagem nova ao destinatário sa
     await p.getByRole("button", { name: "Enviar", exact: true }).click();
     await p.getByRole("button", { name: "Enviar mesmo assim" }).click();
     await expect(p.getByTestId("mensagem-campo")).toHaveValue("");
+    // A página fica aberta até o aviso sair: o campo limpa já no eco otimista, e fechar o navegador antes da resposta do
+    // servidor pode cortar o pedido a meio do notify() (ensaio 44815293069: sem e-mail na caixa).
+    const { assunto, corpo } = await emailDoDono();
     await p.context().close();
 
-    const { assunto, corpo } = await emailDoDono();
     // Quem escreveu, pelo primeiro nome só; o imóvel da conversa (E267).
     expect(corpo).toContain("Iara");
-    expect(corpo).not.toContain("Remetente");
+    // O sobrenome nunca sai ("Remetente:" é o cabeçalho que a caixa de QA guarda, por isso o sobrenome é outro).
+    expect(corpo).not.toContain("Sobrenomesecreto");
     expect(`${assunto}\n${corpo}`).toContain(TITULO);
     // A prévia leva os marcadores, nunca o contato.
     expect(corpo).toContain(MASK);
