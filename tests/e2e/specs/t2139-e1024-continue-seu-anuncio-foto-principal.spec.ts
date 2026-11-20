@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { MIN_FOTOS } from "../../../src/lib/anuncio/prontidao";
+import { ETAPA } from "../../../src/lib/anuncio/etapas-ids";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { noPasso } from "../fixtures/cadastro";
 import { prepararRascunho } from "../fixtures/rascunho-cadastro";
@@ -136,7 +137,7 @@ test.describe("T2139 — E1024: o \"Continue seu anúncio\" mostra a foto princi
       // A entrada é pelo botão do cartão, como faz o dono no Início.
       const botao = page.getByTestId("inicio-dono-principal").getByTestId("inicio-dono-botao");
       await expect(botao).toHaveText(/Continuar de onde parou/);
-      await expect(botao, "pré-condição: o botão do cartão leva ao Passo 2 (Fotos)").toHaveAttribute("href", new RegExp(`draft=${id}.*etapa=fotos`));
+      await expect(botao, "pré-condição: o botão do cartão leva ao Passo 2 (Fotos)").toHaveAttribute("href", new RegExp(`draft=${id}&etapa=${ETAPA.fotos}$`));
       await botao.click();
       await noPasso(page, "fotos", 30_000);
       const apareceu = Date.now();
