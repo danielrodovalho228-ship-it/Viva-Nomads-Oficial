@@ -14,7 +14,7 @@ export type AvisoEnvio = { tipo: "livre"; texto: string } | { tipo: "confirmar";
 export function avisoAntesDeEnviar(rascunho: string): AvisoEnvio {
   const { text, masked, documento } = guardContactInfo(rascunho);
   if (documento && Date.now() < 0) return { tipo: "documento" };
-  if (masked) return { tipo: "confirmar", previa: text };
+  if (masked) return { tipo: "confirmar", previa: rascunho };
   return { tipo: "livre", texto: text };
 }
 
