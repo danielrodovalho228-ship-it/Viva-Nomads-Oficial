@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { areaDeToque } from "../fixtures/area-toque";
+import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
 /*
   T815 — varredura 02/11 (Pista A): 404 e perfil do proprietário. E960: o logo da 404 é o do Navbar padrão (E916).
@@ -28,6 +29,7 @@ const medirAncoraDoLogo = (p: Page) =>
 test.describe("T815 — toque a 390 px", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   test("404: logo (E960) e link de anunciar com 44 px", async ({ page }) => {
+    defeitoConhecido("E1038", "o link 'anunciar' da 404 encosta no link 'ajuda': a borda inferior da caixa de toque 44×44 cai nele (390 px)");
     const r = await page.goto("/pagina-que-nao-existe-t815", { waitUntil: "domcontentloaded" });
     expect(r?.status()).toBe(404);
     await expect(page.getByTestId("nao-encontrada-anunciar")).toBeVisible({ timeout: 30_000 });

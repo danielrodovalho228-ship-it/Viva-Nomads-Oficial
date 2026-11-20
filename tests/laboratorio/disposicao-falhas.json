@@ -673,11 +673,19 @@
   {
    "spec": "t815-404-perfil-toque.spec.ts",
    "disposicao": "defeito",
-   "item": "E960",
-   "dono": "Fable",
-   "pr": 3855,
-   "nota": "o logo do cabeçalho público tem alvo de toque de 32 px",
-   "corrigidoPor": "4f64224d"
+   "item": "E1038",
+   "dono": "Code 2",
+   "semPr": "E1038 aberto pelo Gerente na ORDEM-DUET-213 (19/11); a correção do Code 2 (rota pública) ainda não tem PR",
+   "nota": "404 a 390 px: a borda inferior da caixa de toque 44×44 do link 'anunciar' (nao-encontrada-anunciar) cai no link 'ajuda' (nao-encontrada-ajuda); achado pelo helper da área real do E1033 (#4031, ensaio 44650708319)",
+   "anterior": {
+    "spec": "t815-404-perfil-toque.spec.ts",
+    "disposicao": "defeito",
+    "item": "E960",
+    "dono": "Fable",
+    "pr": 3855,
+    "nota": "o logo do cabeçalho público tem alvo de toque de 32 px",
+    "corrigidoPor": "4f64224d"
+   }
   },
   {
    "spec": "t816-cidade-bairros-grade-par.spec.ts",
