@@ -101,23 +101,16 @@ jobs:
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
 
-      - name: Instalar Chromium do Playwright
-        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 6 tentativas. O timeout
-        # mata o npx, mas o apt-get filho fica segurando a trava do dpkg: antes de repetir, encerra o apt que sobrou,
-        # espera a trava soltar e conserta o dpkg (senão as tentativas seguintes morrem na hora).
-        # 17/11/2026: num runner lento (~50 kB/s) os 139 MB de pacotes não desceram em 3 tentativas e o portão morreu
-        # três vezes sem rodar teste. O apt retoma o que já baixou (139 → 118 → 81,8 MB a baixar), então mais
-        # tentativas chegam ao fim; a espera entre elas dá tempo ao espelho de pacotes de se recuperar.
-        # Limite do passo: 6 x 7 min + 5 esperas de 30 s + até 2 min por tentativa à espera da trava do dpkg.
-        timeout-minutes: 60
+      - name: Baixar a imagem do Playwright (E1040, navegadores e dependências já vêm nela, nada de apt)
+        # E1040 (ORDEM-DUET-216/229): o desenho do E1037 (#4034) neste workflow. A imagem OFICIAL do Playwright, na MESMA
+        # versão do @playwright/test (o teste e1040-imagem-outros-workflows.test.ts prende as duas). Vem do MCR, não do
+        # espelho do Ubuntu; tentativas curtas por segurança.
+        timeout-minutes: 15
         run: |
-          for i in 1 2 3 4 5 6; do
-            timeout 420 npx playwright install --with-deps chromium webkit && exit 0
-            echo "tentativa $i travou ou falhou"
-            sudo pkill -f '[a]pt-get|[d]pkg' || true
-            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
-            sudo dpkg --configure -a || true
-            if [ "$i" -lt 6 ]; then sleep 30; fi
+          for i in 1 2 3; do
+            timeout 300 docker pull mcr.microsoft.com/playwright:v1.61.1-noble && exit 0
+            echo "tentativa $i do pull falhou"
+            if [ "$i" -lt 3 ]; then sleep 30; fi
           done
           exit 1
 
@@ -127,6 +120,16 @@ jobs:
         # O job cresceu para caber a instalação lenta; um teste travado não fica pendurado por mais tempo por isso.
         timeout-minutes: 35
         run: |
+          # E1040: só `npx playwright …` corre na imagem oficial, com a rede do runner e como o utilizador do runner (os
+          # resultados ficam no workspace). O resto do `npx` segue o do runner. As linhas de comando ficam iguais.
+          npx() {
+            if [ "${1:-}" != playwright ]; then command npx "$@"; return; fi
+            shift
+            docker run --rm --network host --ipc host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+              -v "$PWD:$PWD" -w "$PWD" \
+              $(env | cut -d= -f1 | grep -E '^(NEXT_PUBLIC_|LAB_|TESTES_|INTEGRACOES_|SUPABASE_|PLAYWRIGHT_|CI$)' | sed 's/^/-e /') \
+              mcr.microsoft.com/playwright:v1.61.1-noble npx playwright "$@"
+          }
           if [ -n "$BASE_SHA" ]; then
             mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs --alterados-desde "$BASE_SHA")
           else
