@@ -21,3 +21,10 @@ test("E730: o título da página não promete 'gestores' como parceria do formul
   assert.match(pagina, /title: "Seja parceiro: fotógrafos e serviços"/);
   assert.doesNotMatch(pagina, /fotógrafos e gestores/);
 });
+
+// E758: o que a página anuncia (Avaliação, com bloco próprio) x o que a busca entrega (só as categorias do catálogo).
+test("E758: a página diz que Avaliação não está na busca de parceiros e a busca não a lista", () => {
+  assert.match(pagina, /A busca de parceiros traz só as categorias de serviço/);
+  assert.match(pagina, /Não aparece na busca de parceiros/);
+  assert.ok(!CATEGORIAS_CATALOGO.some((c) => /avalia|vistoria/i.test(`${c.valor} ${c.rotulo}`)));
+});
