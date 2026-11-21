@@ -16,7 +16,7 @@ import type { ItemCarteira } from "@/lib/carteira-dono";
 // entrar no bundle do navegador). As conversas demo são definidas aqui.
 import type { Conversation } from "@/lib/data/messages";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
-import { SAMPLE_LEADS } from "@/lib/data/lead-types";
+import { SAMPLE_LEADS } from "@/lib/data/lead-exemplos";
 export { SAMPLE_ORDERS as DEMO_ORDERS } from "@/lib/service-orders";
 
 /** Conversas fictícias (mesmo tipo da tela de mensagens). */
