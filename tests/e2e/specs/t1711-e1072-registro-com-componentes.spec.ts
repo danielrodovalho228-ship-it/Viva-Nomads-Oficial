@@ -5,22 +5,26 @@ import { textoDasPaginas } from "../../../src/lib/fiscal/pdf-texto";
 import { hojeBR } from "../../../src/lib/utils";
 
 /*
-  T1711 — E1072 @E1072 (fatia 1; ORDEM-DUET-348): o registro do pagamento do bloco cobre o que o contrato diz — o
-  aluguel do bloco, as contas do período e a limpeza de preparação —, cada componente discriminado, visível no pacote
-  de provas e a contar para o quitado.
+  T1711 — E1072 @E1072 (ORDEM-DUET-348): o registro do pagamento do bloco cobre o que o contrato diz — o aluguel do
+  bloco, as contas do período e a limpeza de preparação —, cada componente discriminado, visível no pacote de provas e
+  a contar para o quitado. O bloco registrado em partes completa-se com um registro complementar do mesmo bloco, com o
+  seu recibo e a sua confirmação (migração 0348).
   A massa repete o contrato provado ao vivo em 20/11: 31 dias a R$ 2.500,00 por mês, contas de R$ 300,00 por mês e
   limpeza de preparação de R$ 250,00 → R$ 3.143,33 = aluguel R$ 2.583,33 + contas R$ 310,00 + limpeza R$ 250,00.
    1. Dono: o bloco mostra a conta do contrato e R$ 3.143,33 em aberto; o formulário chega com os três componentes
       preenchidos e o total; o registro grava o aluguel e os dois encargos, e o bloco fica quitado.
    2. Moradora: o pagamento a confirmar discrimina os três componentes; ela confirma uma vez.
    3. Pacote de provas (as duas partes): a linha do pagamento traz os três componentes e os totais contam os três.
-   4. Um contrato com o registro de antes (só o aluguel): o bloco NÃO está quitado e a tela diz o que falta.
+   4. Um contrato com o registro de antes (só o aluguel): o bloco NÃO está quitado e a tela diz o que falta; o dono
+      registra o que falta (contas e limpeza, R$ 560,00) num registro complementar e o bloco fica quitado.
+   5. A moradora desse contrato confirma o complemento; sai o recibo dele; o pacote traz o complemento em linha própria
+      e os totais chegam a R$ 3.143,33.
   Capturas a 390 e a 1280 px do formulário preenchido. Laboratório; não é prova ao vivo no site.
 */
 const SAIDA = "tests/laboratorio/saida";
 const INICIO = hojeBR();
 const FIM = addDiasISO(INICIO, 30); // 31 dias, contando o primeiro e o último
-const CONTA = "aluguel R$ 2.583,33 + contas do período R$ 310,00 + limpeza de preparação R$ 250,00 = R$ 3.143,33";
+const CONTA = "valor do bloco R$ 2.583,33 + contas do período R$ 310,00 + limpeza de preparação R$ 250,00 = R$ 3.143,33";
 
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -53,14 +57,19 @@ async function contratoDe31Dias(titulo: string, inquilino: string): Promise<{ co
 const cartao = (page: Page, contrato: string): Locator => page.locator(`[data-testid="contrato-cartao"][data-contrato="${contrato}"]`);
 /** O valor de um quadro do bloco, achado pelo rótulo que a tela mostra ("Em aberto", "Recebido (declarado)"). */
 const quadro = (c: Locator, rotulo: string): Locator => c.getByText(rotulo, { exact: true }).locator("xpath=following-sibling::p[1]");
+const pagamentosDoAntigo = async () => {
+  const { data, error } = await adm().from("pagamentos_bloco").select("id, parte, valor, encargos, confirmado_pelo_inquilino").eq("contrato_id", ids.antigo!).eq("tipo", "aluguel").order("parte");
+  if (error) throw error;
+  return (data ?? []) as { id: string; parte: number; valor: number | string; encargos: { rotulo: string; valor: number }[]; confirmado_pelo_inquilino: boolean }[];
+};
 const pagamentoDoBloco = async () => {
   const { data, error } = await adm().from("pagamentos_bloco").select("valor, encargos, confirmado_pelo_inquilino").eq("contrato_id", ids.contrato!).eq("tipo", "aluguel");
   if (error) throw error;
   return (data ?? []) as { valor: number | string; encargos: { rotulo: string; valor: number }[]; confirmado_pelo_inquilino: boolean }[];
 };
-async function textoDoPacote(browser: Browser, email: string): Promise<string> {
+async function textoDoPacote(browser: Browser, email: string, contrato = ids.contrato!): Promise<string> {
   const page = await entrar(browser, email, senha);
-  const resp = await page.request.get(`/api/contrato/${ids.contrato}/provas`);
+  const resp = await page.request.get(`/api/contrato/${contrato}/provas`);
   expect(resp.status(), "a rota devolve o PDF").toBe(200);
   const texto = (await textoDasPaginas(new Uint8Array(await resp.body()))).join("\n").replace(/\s+/g, " ");
   await page.context().close();
@@ -163,7 +172,7 @@ test.describe("T1711 — E1072: o registro do pagamento cobre aluguel, contas e 
     }
   });
 
-  test("4. registro de antes, só com o aluguel: o bloco não está quitado e a tela diz o que falta", async ({ browser }) => {
+  test("4. registro de antes, só com o aluguel: a tela diz o que falta e o dono completa com um registro complementar", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
@@ -172,6 +181,57 @@ test.describe("T1711 — E1072: o registro do pagamento cobre aluguel, contas e 
     await expect(c.getByText(/^Falta registrar/)).toHaveText(/Falta registrar R\$\s560 deste bloco \(contas do período R\$\s310, limpeza de preparação R\$\s250\)\./);
     await expect(quadro(c, "Recebido (declarado)")).toHaveText(/R\$\s2\.583,33/);
     await expect(c.getByText("Valor do bloco registrado como recebido.")).toHaveCount(0);
+
+    // O registro complementar: só o que falta, sem campo de aluguel (não falta aluguel).
+    await c.getByRole("button", { name: "Registrar o que falta" }).click();
+    await expect(c.getByLabel("Contas do período")).toHaveValue("310");
+    await expect(c.getByLabel("Limpeza de preparação")).toHaveValue("250");
+    await expect(c.getByLabel("Valor do bloco que falta")).toHaveCount(0);
+    await expect(c.getByText(/^Total deste registro:/)).toHaveText(/Total deste registro: R\$\s560/);
+    await c.getByTestId("confirmar-recebimento").click();
+    await expect.poll(async () => (await pagamentosDoAntigo()).length, { timeout: 30_000, message: "o complemento grava" }).toBe(2);
+    const [primeiro, complemento] = await pagamentosDoAntigo();
+    expect([primeiro.parte, complemento.parte], "o primeiro registro é a parte 1 e o complemento a parte 2").toEqual([1, 2]);
+    expect(Number(primeiro.valor), "o registro de antes não foi mexido").toBe(2583.33);
+    expect(primeiro.encargos).toEqual([]);
+    expect(Number(complemento.valor)).toBe(0);
+    expect(complemento.encargos).toEqual([
+      { rotulo: "Contas do período", valor: 310 },
+      { rotulo: "Limpeza de preparação", valor: 250 },
+    ]);
+
+    await page.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    const depois = cartao(page, ids.antigo!);
+    await expect(quadro(depois, "Recebido (declarado)")).toHaveText(/R\$\s3\.143,33/, { timeout: 30_000 });
+    await expect(quadro(depois, "Em aberto")).toHaveText(/^R\$\s0\s*$/);
+    await expect(depois.getByText("Valor do bloco registrado como recebido.")).toBeVisible();
+    await expect(depois.getByRole("button", { name: "Registrar o que falta" })).toHaveCount(0);
     await page.context().close();
+  });
+
+  test("5. a moradora confirma o complemento: sai o recibo dele e o pacote traz o complemento em linha própria", async ({ browser }) => {
+    const page = await entrar(browser, inq2.email, senha);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    const confirmar = page.getByTestId("confirmar-pagamentos");
+    await expect(confirmar).toContainText("Bloco 1, registro complementar", { timeout: 30_000 });
+    await expect(confirmar).toContainText("Este registro: contas do período R$ 310,00 + limpeza de preparação R$ 250,00 = R$ 560,00.");
+    await expect(confirmar.getByRole("button", { name: /Confirmar/ })).toHaveCount(1);
+    await confirmar.scrollIntoViewIfNeeded();
+    await confirmar.screenshot({ path: `${SAIDA}/t1711-5-moradora-complemento-390.png` });
+    await confirmar.getByRole("button", { name: /Confirmar/ }).click();
+    await expect.poll(async () => (await pagamentosDoAntigo())[1]?.confirmado_pelo_inquilino, { timeout: 30_000 }).toBe(true);
+    await page.context().close();
+
+    const complemento = (await pagamentosDoAntigo())[1];
+    await expect
+      .poll(async () => ((await adm().from("documentos_fiscais").select("tipo, pagamento_id").eq("contrato_id", ids.antigo!)).data ?? []).filter((d) => d.tipo === "recibo_aluguel" && d.pagamento_id === complemento.id).length, { timeout: 60_000, message: "o complemento tem o seu recibo" })
+      .toBe(1);
+    const { data: recibos } = await adm().from("documentos_fiscais").select("numero").eq("contrato_id", ids.antigo!).eq("pagamento_id", complemento.id);
+    const texto = await textoDoPacote(browser, inq2.email, ids.antigo!);
+    expect(texto).toContain("Registro complementar de R$ 560,00 — contas do período de R$ 310,00 + limpeza de preparação de R$ 250,00 (Pix, em");
+    expect(texto, "o recibo do complemento aparece pelo número").toContain(String(recibos![0].numero));
+    expect(texto, "os totais somam o registro de antes e o complemento").toContain("Confirmados pelo inquilino: R$ 3.143,33. Aguardando confirmação do inquilino: R$ 0,00.");
+    expect(texto).toContain("Registro complementar de R$ 560,00 confirmado pelo inquilino.");
   });
 });

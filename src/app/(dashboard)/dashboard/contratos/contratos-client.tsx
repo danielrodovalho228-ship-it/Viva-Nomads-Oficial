@@ -428,7 +428,7 @@ function BlocoRow({
   const aberto = emAbertoNoBloco(esperado, pago);
   const quitado = aberto.quitado;
   const contaDoBloco = textoComponentes(esperado);
-  const faltaTexto = [aberto.aluguel > 0 ? `aluguel ${formatBRLExato(aberto.aluguel)}` : "", aberto.contas > 0 ? `${ROTULO_CONTAS.toLowerCase()} ${formatBRLExato(aberto.contas)}` : "", aberto.limpeza > 0 ? `${ROTULO_LIMPEZA.toLowerCase()} ${formatBRLExato(aberto.limpeza)}` : ""].filter(Boolean).join(", ");
+  const faltaTexto = [aberto.aluguel > 0 ? `valor do bloco ${formatBRLExato(aberto.aluguel)}` : "", aberto.contas > 0 ? `${ROTULO_CONTAS.toLowerCase()} ${formatBRLExato(aberto.contas)}` : "", aberto.limpeza > 0 ? `${ROTULO_LIMPEZA.toLowerCase()} ${formatBRLExato(aberto.limpeza)}` : ""].filter(Boolean).join(", ");
 
   return (
     <div
@@ -493,11 +493,24 @@ function BlocoRow({
             <Check className="h-3.5 w-3.5" /> Valor do bloco registrado como recebido.
           </p>
         ) : pago.total > 0 ? (
-          // Já há um registro neste bloco e ainda falta parte: o que falta fica à vista. O registro complementar
-          // do mesmo bloco é a fatia seguinte do E1072 (pede uma mudança no banco).
-          <p className="mt-3 text-xs text-amber-800" role="status" data-testid="bloco-falta-registrar">
-            Falta registrar {formatBRLExato(aberto.total)} deste bloco ({faltaTexto}).
-          </p>
+          // Já há um registro neste bloco e ainda falta parte: o que falta fica à vista, com o registro COMPLEMENTAR
+          // do mesmo bloco (E1072, fatia 2) — o seu recibo e a sua confirmação do morador.
+          <>
+            <p className="mt-3 text-xs text-amber-800" role="status" data-testid="bloco-falta-registrar">
+              Falta registrar {formatBRLExato(aberto.total)} deste bloco ({faltaTexto}).
+            </p>
+            <RegistrarRecebimento
+              tipo="aluguel"
+              complemento
+              blocoId={bloco.id}
+              contratoId={contratoId}
+              valorSugerido={aberto.aluguel}
+              contasSugeridas={aberto.contas}
+              limpezaSugerida={aberto.limpeza}
+              hojeISO={hojeISO}
+              demo={demo}
+            />
+          </>
         ) : (
           <RegistrarRecebimento
             tipo="aluguel"
@@ -532,9 +545,12 @@ function RegistrarRecebimento({
   valorSugerido,
   contasSugeridas = 0,
   limpezaSugerida = 0,
+  complemento = false,
   hojeISO,
   demo,
 }: {
+  /** E1072 (fatia 2): registro complementar de um bloco que já tem registro — só o que falta. */
+  complemento?: boolean;
   tipo: "aluguel" | "caucao";
   blocoId: string | null;
   contratoId: string;
@@ -554,6 +570,8 @@ function RegistrarRecebimento({
   const [contas, setContas] = useState(contasSugeridas > 0 ? String(contasSugeridas) : "");
   const [limpeza, setLimpeza] = useState(limpezaSugerida > 0 ? String(limpezaSugerida) : "");
   const temComponentes = tipo === "aluguel" && (contasSugeridas > 0 || limpezaSugerida > 0);
+  // No registro complementar, o campo do aluguel só aparece se ainda faltar aluguel.
+  const semAluguel = complemento && !(valorSugerido > 0);
   const totalDoRegistro = Math.round(((Number(valor) || 0) + (Number(contas) || 0) + (Number(limpeza) || 0)) * 100) / 100;
   const [forma, setForma] = useState("pix");
   const [data, setData] = useState(hojeISO);
@@ -612,9 +630,9 @@ function RegistrarRecebimento({
         type="button"
         onClick={() => setOpen(true)}
         className="mt-3 inline-flex items-center gap-2 rounded-lg border border-sage-200 px-3 py-2 text-xs font-medium text-forest hover:bg-sage-100"
-        data-testid={tipo === "caucao" ? "registrar-caucao" : "registrar-recebimento"}
+        data-testid={tipo === "caucao" ? "registrar-caucao" : complemento ? "registrar-complemento" : "registrar-recebimento"}
       >
-        <Plus className="h-3.5 w-3.5" /> {tipo === "caucao" ? "Registrar recebimento da Caução" : "Registrar recebimento"}
+        <Plus className="h-3.5 w-3.5" /> {tipo === "caucao" ? "Registrar recebimento da Caução" : complemento ? "Registrar o que falta" : "Registrar recebimento"}
       </button>
     );
   }
@@ -625,16 +643,18 @@ function RegistrarRecebimento({
         <ShieldCheck className="h-3.5 w-3.5 text-sage" /> Registrar recebimento (você declara; a plataforma só registra)
       </p>
       <div className="grid gap-2 sm:grid-cols-3">
-        <label className="text-xs text-muted">
-          {tipo === "caucao" ? "Valor da Caução" : "Valor do bloco"}
-          <CampoReais
-            semPrefixo
-            centavos
-            value={valor === "" ? null : Number(valor)}
-            onChange={(v) => setValor(v == null ? "" : String(v))}
-            className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
-          />
-        </label>
+        {!semAluguel && (
+          <label className="text-xs text-muted">
+            {tipo === "caucao" ? "Valor da Caução" : complemento ? "Valor do bloco que falta" : "Valor do bloco"}
+            <CampoReais
+              semPrefixo
+              centavos
+              value={valor === "" ? null : Number(valor)}
+              onChange={(v) => setValor(v == null ? "" : String(v))}
+              className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
+            />
+          </label>
+        )}
         <label className="text-xs text-muted">
           Forma
           <select

@@ -11,7 +11,7 @@ import { compararHashComResumo, dataHoraAssinatura, hashResumo } from "./contrat
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
 import { ROTULO_ESTADO_CONFERENCIA, estadoConferencia, textoPrazoConferencia } from "./conferencia.ts";
 import { ETIQUETA_BRASILIA } from "./datas-brasilia.ts";
-import { ROTULO_CONTAS, ROTULO_LIMPEZA, componentesDoPagamento, type Encargo } from "./pagamento-componentes.ts";
+import { ROTULO_CONTAS, ROTULO_LIMPEZA, componentesDoPagamento, partesPorOrdem, type Encargo } from "./pagamento-componentes.ts";
 
 type Parte = "proprietario" | "inquilino";
 
@@ -26,6 +26,8 @@ export interface PagamentoProva {
   documento?: string | null;
   /** E1072: o que foi registrado junto com o aluguel — as contas do período e a limpeza de preparação. */
   encargos?: Encargo[];
+  /** E1072 (fatia 2): 2 em diante = registro complementar do mesmo bloco (pela ordem dos registros ativos). */
+  parte?: number;
   confirmadoEm: string | null;
   /** Registro anulado (0182): aparece uma vez, com a marca, e fica fora dos totais. */
   anuladoEm?: string | null;
@@ -167,6 +169,15 @@ function comOsComponentes(p: Pick<PagamentoProva, "valor" | "encargos">): string
   return `, com ${partes.join(" e ")}: total de ${brl(c.total)}`;
 }
 
+/** E1072 (fatia 2): o registro complementar de um bloco (nunca a caução). */
+const ehComplemento = (p: Pick<PagamentoProva, "tipo" | "parte">) => p.tipo !== "caucao" && (p.parte ?? 1) > 1;
+
+/** E1072 (fatia 2): o que o registro complementar cobre — "contas do período de R$ 310,00", "limpeza de preparação de R$ 250,00". */
+function partesDoComplemento(p: Pick<PagamentoProva, "valor" | "encargos">): string[] {
+  const c = componentesDoPagamento(p);
+  return [c.aluguel > 0 ? `aluguel de ${brl(c.aluguel)}` : "", c.contas > 0 ? `${ROTULO_CONTAS.toLowerCase()} de ${brl(c.contas)}` : "", c.limpeza > 0 ? `${ROTULO_LIMPEZA.toLowerCase()} de ${brl(c.limpeza)}` : ""].filter(Boolean);
+}
+
 /**
  * E1074: uma linha por pagamento VÁLIDO na seção PAGAMENTOS — o valor, a situação e o documento pelo número. A caução
  * tem a sua linha (antes ia só somada no total). Não se inventa número: confirmado sem documento diz "ainda não
@@ -176,7 +187,9 @@ function comOsComponentes(p: Pick<PagamentoProva, "valor" | "encargos">): string
 export function linhasPagamentos(pags: PagamentoProva[]): string[] {
   return pags.filter((p) => !p.anuladoEm).map((p) => {
     const caucao = p.tipo === "caucao";
-    const base = `${caucao ? "Caução" : "Aluguel"} de ${brl(p.valor)}${caucao ? "" : somaDosComponentes(p)} (${FORMA[p.forma] ?? p.forma}, em ${dataBR(p.dia)})`;
+    const base = ehComplemento(p)
+      ? `Registro complementar de ${brl(componentesDoPagamento(p).total)} — ${partesDoComplemento(p).join(" + ")} (${FORMA[p.forma] ?? p.forma}, em ${dataBR(p.dia)})`
+      : `${caucao ? "Caução" : "Aluguel"} de ${brl(p.valor)}${caucao ? "" : somaDosComponentes(p)} (${FORMA[p.forma] ?? p.forma}, em ${dataBR(p.dia)})`;
     if (!p.confirmadoEm) return `${base}: aguardando confirmação do inquilino.`;
     const nomeDoc = caucao ? "Comprovante da caução" : "Recibo";
     const doc = (p.documento ?? "").trim();
@@ -190,7 +203,10 @@ export function eventosDoContrato(d: DadosProvas): EventoProva[] {
   for (const p of d.pagamentos) {
     const o = p.tipo === "caucao" ? "Caução" : "Aluguel";
     const forma = FORMA[p.forma] ?? p.forma;
-    const marcado = `${o} de ${brl(p.valor)} marcado como pago pelo proprietário (${forma}, em ${dataBR(p.dia)})${p.tipo === "caucao" ? "" : comOsComponentes(p)}`;
+    const complemento = ehComplemento(p) ? `Registro complementar de ${brl(componentesDoPagamento(p).total)}` : null;
+    const marcado = complemento
+      ? `${complemento} (${partesDoComplemento(p).join(" e ")}) marcado como pago pelo proprietário (${forma}, em ${dataBR(p.dia)})`
+      : `${o} de ${brl(p.valor)} marcado como pago pelo proprietário (${forma}, em ${dataBR(p.dia)})${p.tipo === "caucao" ? "" : comOsComponentes(p)}`;
     // E1069: a hora é a do REGISTRO. Antes o dia do pagamento ia ao meio-dia UTC e o pacote escrevia "às 09:00".
     const quando = p.registradoEm ? { em: p.registradoEm } : { em: `${p.dia}T12:00:00Z`, soDia: true };
     if (p.anuladoEm) {
@@ -199,7 +215,7 @@ export function eventosDoContrato(d: DadosProvas): EventoProva[] {
       continue;
     }
     ev.push({ ...quando, texto: `${marcado}${p.confirmadoEm ? "" : "; aguardando confirmação do inquilino"}.` });
-    if (p.confirmadoEm) ev.push({ em: p.confirmadoEm, texto: `${o} de ${brl(p.valor)} confirmado pelo inquilino.` });
+    if (p.confirmadoEm) ev.push({ em: p.confirmadoEm, texto: `${complemento ?? `${o} de ${brl(p.valor)}`} confirmado pelo inquilino.` });
   }
   for (const a of d.aditivos ?? []) {
     ev.push({ em: a.propostoEm, texto: `Aditivo ${a.numero} proposto: ${a.resumo}` });
@@ -345,6 +361,8 @@ export interface LinhasProvas {
     created_at?: unknown;
     /** E1072: as contas e a limpeza registradas com o aluguel. */
     encargos?: unknown;
+    /** E1072 (fatia 2): o bloco do registro, para ordenar os registros do mesmo bloco (o 2º em diante é complementar). */
+    bloco_id?: unknown;
   }[];
   conferencias: { id: unknown; tipo: unknown; criada_em: unknown }[];
   itens: { conferencia_id: unknown; parte: unknown; comodo?: unknown; descricao?: unknown; foto_path?: unknown; precisa_reparo?: unknown }[];
@@ -382,7 +400,19 @@ function encargosDaLinha(v: unknown): Encargo[] {
     .map((e) => ({ rotulo: String(e.rotulo).trim(), valor: Math.round(Number(e.valor) * 100) / 100 }));
 }
 
+/** E1072 (fatia 2): a parte de cada registro de aluguel ATIVO, pela ordem dentro do seu bloco. */
+function partesDosPagamentos(pags: LinhasProvas["pagamentos"]): Map<string, number> {
+  const porBloco = new Map<string, { id: string; registradoEm: string | null }[]>();
+  for (const p of pags) {
+    if (p.tipo === "caucao" || p.anulado_em || !p.id || !p.bloco_id) continue;
+    const chave = String(p.bloco_id);
+    porBloco.set(chave, [...(porBloco.get(chave) ?? []), { id: String(p.id), registradoEm: textoOuNulo(p.created_at) }]);
+  }
+  return new Map([...porBloco.values()].flatMap((lista) => [...partesPorOrdem(lista)]));
+}
+
 export function montarDadosProvas(l: LinhasProvas): DadosProvas {
+  const partes = partesDosPagamentos(l.pagamentos);
   const comHash = new Set(l.assinaturas.map((a) => parteDe(a.papel)));
   const assinaturasSemHash = (["proprietario", "inquilino"] as const)
     .filter((p) => !comHash.has(p) && !!l.datasAssinatura?.[p])
@@ -414,6 +444,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
       dia: String(p.data_pagamento).slice(0, 10),
       registradoEm: textoOuNulo(p.created_at),
       encargos: p.tipo === "caucao" ? [] : encargosDaLinha(p.encargos),
+      parte: partes.get(String(p.id ?? "")) ?? 1,
       confirmadoEm: p.confirmado_pelo_inquilino ? String(p.confirmado_em ?? p.data_pagamento) : null,
       anuladoEm: textoOuNulo(p.anulado_em),
       anuladoMotivo: textoOuNulo(p.anulado_motivo),
@@ -440,7 +471,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
 /** Colunas lidas para o pacote (as mesmas nas duas cargas). */
 export const COLUNAS_PROVAS = {
   assinaturas: "papel, assinado_em, hash_documento",
-  pagamentos: "id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at, encargos",
+  pagamentos: "id, bloco_id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at, encargos",
   conferencias: "id, tipo, criada_em",
   itens: "conferencia_id, parte, comodo, descricao, foto_path, precisa_reparo",
   respostas: "conferencia_id, parte, decisao, motivo, decidido_em",

@@ -99,13 +99,15 @@ export function emAbertoNoBloco(esperado: ComponentesBloco, registrado: Componen
   return { aluguel, contas, limpeza, total, quitado: total < 0.005 };
 }
 
-/** "aluguel R$ 2.583,33 + contas do período R$ 310,00 + limpeza de preparação R$ 250,00 = R$ 3.143,33"; só aluguel → "". */
+/** "valor do bloco R$ 2.583,33 + contas do período R$ 310,00 + limpeza de preparação R$ 250,00 = R$ 3.143,33"; só o valor do bloco → "". */
 export function textoComponentes(c: ComponentesBloco): string {
   if (c.contas <= 0 && c.limpeza <= 0) return "";
-  const partes = [`aluguel ${brl(c.aluguel)}`];
+  // Registro complementar sem aluguel: não se escreve "aluguel R$ 0,00".
+  // Vocabulário da casa: nas telas diz-se "valor do bloco", não "aluguel" (sem-aluguel-texto.test.ts).
+  const partes = c.aluguel > 0 ? [`valor do bloco ${brl(c.aluguel)}`] : [];
   if (c.contas > 0) partes.push(`${ROTULO_CONTAS.toLowerCase()} ${brl(c.contas)}`);
   if (c.limpeza > 0) partes.push(`${ROTULO_LIMPEZA.toLowerCase()} ${brl(c.limpeza)}`);
-  return `${partes.join(" + ")} = ${brl(c.total)}`;
+  return partes.length > 1 ? `${partes.join(" + ")} = ${brl(c.total)}` : partes[0];
 }
 
 /**
@@ -117,4 +119,22 @@ export function contasDoContrato(e: { totalContratoDaProposta?: number | null; a
   if (e.totalContratoDaProposta != null && Number.isFinite(e.totalContratoDaProposta) && e.totalContratoDaProposta > 0)
     return Math.max(0, c2(e.totalContratoDaProposta - e.aluguelDosBlocos - Math.max(0, e.limpezaPreparacao)));
   return Math.max(0, c2((Number(e.extrasMesCongelados) || 0) * Math.max(0, e.fatorDaEstadia)));
+}
+
+/**
+ * E1072 (fatia 2): a parte do próximo registro do bloco — 1 no primeiro; a seguinte à maior parte ATIVA em cada
+ * registro complementar. A parte anulada não conta, e uma parte ativa nunca se repete (o índice único recusa).
+ */
+export function proximaParte(partesAtivas: number[]): number {
+  const validas = partesAtivas.map((p) => Math.floor(Number(p))).filter((p) => Number.isFinite(p) && p >= 1);
+  return validas.length ? Math.max(...validas) + 1 : 1;
+}
+
+/**
+ * E1072 (fatia 2): a parte de cada registro ATIVO de um bloco, pela ordem em que foram registrados (o primeiro é a 1).
+ * As leituras usam esta ordem — não dependem da coluna do banco, que só serve à regra de não repetição na gravação.
+ */
+export function partesPorOrdem<T extends { id: string; registradoEm?: string | null }>(registros: T[]): Map<string, number> {
+  const ordenados = [...registros].sort((a, b) => String(a.registradoEm ?? "").localeCompare(String(b.registradoEm ?? "")));
+  return new Map(ordenados.map((r, i) => [r.id, i + 1]));
 }

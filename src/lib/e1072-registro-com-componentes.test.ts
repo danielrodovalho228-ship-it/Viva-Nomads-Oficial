@@ -36,7 +36,7 @@ const esperadoDoProvado = () => {
 test("o contrato provado: o bloco custa R$ 3.143,33 = aluguel 2.583,33 + contas 310,00 + limpeza 250,00", () => {
   assert.equal(fatorDoBloco(BLOCO, 31), 31 / 30);
   assert.deepEqual(esperadoDoProvado(), { aluguel: 2583.33, contas: 310, limpeza: 250, total: 3143.33 });
-  assert.equal(textoComponentes(esperadoDoProvado()), "aluguel R$ 2.583,33 + contas do período R$ 310,00 + limpeza de preparação R$ 250,00 = R$ 3.143,33");
+  assert.equal(textoComponentes(esperadoDoProvado()), "valor do bloco R$ 2.583,33 + contas do período R$ 310,00 + limpeza de preparação R$ 250,00 = R$ 3.143,33");
 });
 
 test("sem proposta: as contas do mês congeladas no contrato × o fator da estadia", () => {
