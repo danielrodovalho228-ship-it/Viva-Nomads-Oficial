@@ -82,6 +82,13 @@ test.describe("T2207 — E1060: a visita confirmada aparece em Visitas para os d
     await d.goto("/dashboard/visitas?de=dono", { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("visitas-recebidas")).toBeVisible({ timeout: 25_000 });
     await d.getByTestId("visita-link").fill(LINK);
+    // E1060 (ORDEM-DUET-335): um "Pedido de visita" ANTIGO, sem ref_id (como os de antes da ligação à visita). O caminho da
+    // resposta só resolve o aviso pelo ref_id da visita; este fica, e a faixa só o pode largar pela situação real das visitas.
+    test.info().annotations.push({ type: "simulação", description: "o laboratório grava para o dono um aviso 'visita_pedida' antigo, sem ref_id" });
+    const { data: novo } = await adm().from("avisos").select("evento, prioridade, titulo, url").eq("usuario_id", ids.dono!).eq("evento", "visita_pedida").is("resolvido_em", null).limit(1).maybeSingle();
+    expect(novo, "o pedido da tela gravou o aviso 'visita_pedida' do dono").toBeTruthy();
+    const { error: eAntigo } = await adm().from("avisos").insert({ ...novo!, usuario_id: ids.dono, ref_id: null, criado_em: new Date(Date.now() - 3 * 24 * 3600_000).toISOString() });
+    if (eAntigo) throw eAntigo;
     await d.getByTestId("visita-confirmar").click();
     await expect
       .poll(async () => (await adm().from("visitas_video").select("status").eq("property_id", ids.imovel!).maybeSingle()).data?.status, { timeout: 25_000, message: "a confirmação grava" })
