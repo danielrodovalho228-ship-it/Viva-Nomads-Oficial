@@ -203,6 +203,10 @@ test.describe("T2212 — E1072: o registo do recebimento cobre exactamente o 1º
         const botao = cartao(d, TITULO_B, 1).getByTestId("registrar-recebimento");
         if (parte === 1) {
           // A 1ª parte tem de poder registar-se: sem isto o passo não prova nada (o bloco do contrato B tem de estar na tela).
+          // ENSAIO (depuração, nunca mergear): o que a tela de Contratos tem do contrato B.
+          console.log("DEPURA t2212: links do B =", await d.locator(`a[href*="${ids.contratoB}"]`).count(), "· painéis =", await d.locator("div").filter({ has: d.locator(`a[href*="${ids.contratoB}"]`) }).filter({ has: d.getByTestId("contrato-taxa") }).count());
+          console.log("DEPURA t2212: contratos do dono no banco =", JSON.stringify((await adm().from("contratos").select("id, status").in("id", [ids.contrato!, ids.contratoB!])).data));
+          console.log("DEPURA t2212: texto =", (await d.locator("main").innerText()).replace(/\s+/g, " ").slice(0, 3000));
           await expect(botao, "o bloco do contrato B oferece o registo da 1ª parte").toBeVisible({ timeout: 20_000 });
         } else if (!(await botao.count())) {
           expect.soft(false, "E1072: depois da 1ª parte, o bloco em aberto oferece o registo do complemento").toBe(true);
