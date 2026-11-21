@@ -85,6 +85,7 @@ test.describe("T1710 — E1069: o pacote de provas diz a hora certa e o nome de 
   });
 
   test("1. o pagamento entra na linha do tempo na hora em que o dono o registrou, não às 09:00", async ({ browser }) => {
+    test.fail(true, "ENSAIO na main: o teste 1 tem de falhar (E1069 sem correcção); falha esperada só para os testes 2 e 3 correrem");
     const pd = await entrar(browser, dono.email, senha);
     await pd.setViewportSize({ width: 1280, height: 900 });
     await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
