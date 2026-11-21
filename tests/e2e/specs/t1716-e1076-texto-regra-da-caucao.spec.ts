@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T1714 — E1076 @E1076: o texto-regra da caução diz a regra decidida no E1061.
+  T1716 — E1076 @E1076: o texto-regra da caução diz a regra decidida no E1061.
   A prova ao vivo de 21/11 fechou o E1061 (os valores) e achou o resíduo: a frase que explica a regra ainda dizia
   "50% do valor de cada bloco". A regra decidida: 50% do aluguel da estadia, no máximo 3 vezes o valor mensal.
    1. Página pública do imóvel, sem datas: por baixo da linha "Caução", a nota diz a regra decidida.
@@ -16,7 +16,7 @@ const REGRA = "50% do aluguel da estadia, no máximo 3 vezes o valor mensal";
 const REGRA_ANTIGA = /% do valor de cada bloco|% de cada bloco/;
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t1714.${sufixo}@lab.vivanomads.test`, nome: "Dora Regra Sobrenome", role: "owner" as const };
+const dono = { email: `dono.t1716.${sufixo}@lab.vivanomads.test`, nome: "Dora Regra Sobrenome", role: "owner" as const };
 const ids: { dono?: string; imovel?: string } = {};
 
 const maisDias = (iso: string, n: number) => {
@@ -27,7 +27,7 @@ const maisDias = (iso: string, n: number) => {
 /** A linha "Caução" do cartão de preço: o rótulo, o valor e a nota por baixo. */
 const linhaCaucao = (page: Page) => page.locator("#cartao-preco li").filter({ hasText: /^\s*Caução/ }).first();
 
-test.describe("T1714 — E1076: o texto-regra da caução diz '50% do aluguel da estadia' @E1076", () => {
+test.describe("T1716 — E1076: o texto-regra da caução diz '50% do aluguel da estadia' @E1076", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.setTimeout(180_000);
@@ -50,7 +50,7 @@ test.describe("T1714 — E1076: o texto-regra da caução diz '50% do aluguel da
       await expect(linha, "a regra antiga saiu").not.toContainText(REGRA_ANTIGA);
       await linha.scrollIntoViewIfNeeded();
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `${largura} px: sem rolagem lateral`).toBeLessThanOrEqual(1);
-      await page.screenshot({ path: `${SAIDA}/t1714-1-pagina-nota-da-caucao-${largura}.png` });
+      await page.screenshot({ path: `${SAIDA}/t1716-1-pagina-nota-da-caucao-${largura}.png` });
     }
   });
 
@@ -83,7 +83,7 @@ test.describe("T1714 — E1076: o texto-regra da caução diz '50% do aluguel da
     await expect(explicacao).toContainText(REGRA);
     await expect(explicacao).not.toContainText(REGRA_ANTIGA);
     await resumo.scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `${SAIDA}/t1714-3-painel-como-funciona-390.png` });
+    await page.screenshot({ path: `${SAIDA}/t1716-3-painel-como-funciona-390.png` });
     await page.context().close();
   });
 });
