@@ -21,6 +21,9 @@ const TITULO = `Studio sem documento ${sufixo}`;
 /** Os formatos que a regra tem de recusar (o CPF tem DV válido; o de DV inválido seria telefone, não documento). */
 const DOCUMENTOS = [
   { nome: "CPF com máscara", texto: "meu CPF é 529.982.247-25" },
+  // E1059 (ORDEM-DUET-300/326): formatado ###.###.###-## é documento SEMPRE, seja qual for o dígito verificador — foi
+  // por aqui (DV inválido, caía no filtro de telefone) que o erro da prova ao vivo de 20/11 passou.
+  { nome: "CPF formatado com DV inválido (E1059)", texto: "Meu CPF é 123.456.789-00 para o cadastro." },
   { nome: "CPF sem máscara", texto: "cpf 52998224725 para o contrato" },
   { nome: "RG com prefixo de UF", texto: "RG MG-12.345.678 da minha esposa" },
   { nome: "RG pelo rótulo", texto: "identidade nº 12345678 ok?" },
