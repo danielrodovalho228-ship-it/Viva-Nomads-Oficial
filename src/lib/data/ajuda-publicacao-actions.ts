@@ -140,7 +140,8 @@ export async function mudarStatusAjudaPublicacao(id: string, para: string): Prom
   if (!(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
   const recusaQa = await recusaObservador(user.id);
   if (recusaQa) return { ok: false, error: recusaQa };
-  const { data: atual } = await supabase.from("pedidos_ajuda_publicacao").select("status").eq("id", id).maybeSingle();
+  const { data: atual, error: erroLeitura } = await supabase.from("pedidos_ajuda_publicacao").select("status").eq("id", id).maybeSingle();
+  if (erroLeitura) return { ok: false, error: "Não foi possível ler o pedido agora. Tente de novo." };
   if (!atual || !ehStatusAjuda(atual.status)) return { ok: false, error: "Pedido não encontrado." };
   if (!transicaoValida(atual.status, para)) return { ok: false, error: "Essa mudança de etapa não é permitida." };
   const { data: feito, error } = await supabase
@@ -166,12 +167,13 @@ export async function decidirRascunhoAjuda(id: string, decisao: string): Promise
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre na sua conta." };
-  const { data: atual } = await supabase
+  const { data: atual, error: erroLeitura } = await supabase
     .from("pedidos_ajuda_publicacao")
     .select("status")
     .eq("id", id)
     .eq("owner_id", user.id)
     .maybeSingle();
+  if (erroLeitura) return { ok: false, error: "Não foi possível ler o pedido agora. Tente de novo." };
   if (!atual || !ehStatusAjuda(atual.status)) return { ok: false, error: "Pedido não encontrado." };
   if (!donoPodeDecidir(atual.status)) return { ok: false, error: "Este pedido não está esperando a sua aprovação." };
   const { data: feito, error } = await supabase
