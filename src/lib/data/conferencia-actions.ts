@@ -409,7 +409,8 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
   const ctx = await parteDoContrato(contratoId);
   const prazoEntradaEm = ctx ? (prazoConferenciaEntrada(ctx.entrada)?.toISOString() ?? null) : null;
   const janelaEntradaEncerrada = ctx ? janelaEncerrada("entrada", ctx.entrada) : false;
-  const prazoSaidaEm = ctx ? (prazoConferenciaSaida(ctx.entrada)?.toISOString() ?? null) : null;
+  // ENSAIO (quebra da perna 2): a tela usa um prazo de saída próprio (+1 h), fora da fonte única.
+  const prazoSaidaEm = ctx ? (prazoConferenciaSaida(ctx.entrada) ? new Date(prazoConferenciaSaida(ctx.entrada)!.getTime() + 3_600_000).toISOString() : null) : null;
   const janelaSaidaEncerrada = ctx ? janelaEncerrada("saida", ctx.entrada) : false;
   const adminNivel = createAdminClient();
   const confortoAdicionais = adminNivel ? await adicionaisDaConferencia(adminNivel, ctx?.propertyId ?? null) : [];
