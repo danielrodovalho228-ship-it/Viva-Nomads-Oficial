@@ -21,6 +21,8 @@ export interface InstrucoesDoContrato {
   atualizadoEm: string | null;
 }
 
+const MSG_CHECKIN_SEM_LEITURA = "Não foi possível ler as instruções de entrada agora. Tente de novo.";
+
 async function contexto(contratoId: string) {
   if (!UUID_RE.test(contratoId ?? "")) return null;
   const supabase = await createClient();
@@ -30,17 +32,20 @@ async function contexto(contratoId: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: c } = await admin
+  const { data: c, error: erroContrato } = await admin
     .from("contratos")
     .select("tenant_id, status, assinado_proprietario_em, assinado_inquilino_em, properties(owner_id)")
     .eq("id", contratoId)
     .maybeSingle();
+  // Achado 158: leitura que falha não vira "sem acesso" nem "instruções não preenchidas": lança ("Tentar de novo").
+  if (erroContrato) throw new Error(MSG_CHECKIN_SEM_LEITURA);
   if (!c) return null;
   const donoId = (c.properties as unknown as { owner_id?: string } | null)?.owner_id;
   const papel = c.tenant_id === user.id ? ("inquilino" as const) : donoId === user.id ? ("proprietario" as const) : null;
   if (!papel) return null;
   // Instruções ficam em tabela própria, só do servidor (0127): o inquilino não lê pela API.
-  const { data: k } = await admin.from("contratos_checkin").select("horario, instrucoes, plantao, atualizado_em").eq("contrato_id", contratoId).maybeSingle();
+  const { data: k, error: erroInstrucoes } = await admin.from("contratos_checkin").select("horario, instrucoes, plantao, atualizado_em").eq("contrato_id", contratoId).maybeSingle();
+  if (erroInstrucoes) throw new Error(MSG_CHECKIN_SEM_LEITURA);
   return { admin, uid: user.id, c, k, papel };
 }
 
@@ -57,7 +62,8 @@ export async function instrucoesDoContrato(contratoId: string): Promise<Instruco
 
 /** O proprietário grava horário, como entrar e telefone de plantão. */
 export async function salvarInstrucoesEntrada(input: { contratoId: string; horario: string; instrucoes: string; plantao: string }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const ctx = await contexto(input?.contratoId);
+  const ctx = await contexto(input?.contratoId).catch(() => "falhou" as const);
+  if (ctx === "falhou") return { ok: false, error: MSG_CHECKIN_SEM_LEITURA };
   if (!ctx) return { ok: false, error: "Você não faz parte deste contrato." };
   const { admin, uid, c, papel } = ctx;
   if (!podeEditarInstrucoes({ status: String(c.status), papel })) return { ok: false, error: "Só o proprietário edita as instruções, com o contrato ativo." };
