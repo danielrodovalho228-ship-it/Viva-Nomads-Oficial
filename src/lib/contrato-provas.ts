@@ -3,7 +3,7 @@
   Junta num PDF o que as duas partes já podem ver: o resumo assinado (com a marca de minuta), o hash de cada
   assinatura, os pagamentos marcados (os anulados com a marca, fora dos totais), a conferência (itens por cômodo
   sem as fotos, respostas com o motivo, laudos só pelo nome) e a linha do tempo, em ordem de data. Não leva IP,
-  contato nem documento. A plataforma não recebe dinheiro: o pacote só registra o que as partes declararam.
+  contato nem documento: das partes, só o nome completo junto da assinatura (E1069). A plataforma não recebe dinheiro: o pacote só registra o que as partes declararam.
 */
 import type { CabecalhoDocumento, ConteudoDocumento } from "./fiscal/documento.ts";
 import { brl, dataBR } from "./fiscal/documento.ts";
@@ -19,6 +19,8 @@ export interface PagamentoProva {
   valor: number;
   forma: string;
   dia: string;
+  /** E1069: instante em que o proprietário REGISTROU o pagamento (created_at). É a hora da linha do tempo. */
+  registradoEm?: string | null;
   confirmadoEm: string | null;
   /** Registro anulado (0182): aparece uma vez, com a marca, e fica fora dos totais. */
   anuladoEm?: string | null;
@@ -36,6 +38,8 @@ export interface ConferenciaProva {
   laudos?: { nome: string; parte: Parte; em: string }[];
 }
 
+export type NomesDasPartes = { proprietario: string | null; inquilino: string | null };
+
 export interface DadosProvas {
   contratoId: string;
   imovel: string;
@@ -46,6 +50,8 @@ export interface DadosProvas {
   /** Linhas do resumo como a tela mostra (e como o hash foi calculado). */
   resumo: string[];
   assinaturas: { papel: Parte; em: string; hash: string }[];
+  /** E1069: nome completo de cada parte, para "Ana Souza (proprietário)" nas assinaturas. Sem nome, fica o papel. */
+  nomes?: NomesDasPartes | null;
   /** E197: papel com a data de assinatura gravada no contrato e SEM o registro com hash (não se inventa hash). */
   assinaturasSemHash?: { papel: Parte; em: string }[];
   pagamentos: PagamentoProva[];
@@ -79,14 +85,14 @@ const SITUACAO_ADITIVO: Record<string, string> = {
 };
 
 /** As linhas da seção ADITIVOS. */
-export function linhasAditivos(aditivos: AditivoProva[] | undefined): string[] {
+export function linhasAditivos(aditivos: AditivoProva[] | undefined, nomes?: NomesDasPartes | null): string[] {
   if (!aditivos?.length) return ["Nenhum aditivo."];
   const out: string[] = [];
   for (const a of [...aditivos].sort((x, y) => x.numero - y.numero)) {
     out.push(`Aditivo ${a.numero} (${SITUACAO_ADITIVO[a.status] ?? a.status}): ${a.resumo}`);
     if (a.hash) out.push(`Hash do texto do aditivo: ${a.hash}`);
     for (const s of [...a.assinaturas].sort((x, y) => (x.em < y.em ? -1 : 1))) {
-      out.push(`${PAPEL[s.papel]} assinou o aditivo ${a.numero} em ${dataHoraAssinatura(s.em)}.`);
+      out.push(`${quemAssinou(s.papel, nomes)} assinou o aditivo ${a.numero} em ${dataHoraAssinatura(s.em)}.`);
     }
   }
   return out;
@@ -96,9 +102,18 @@ export interface EventoProva {
   /** ISO (ordenável). */
   em: string;
   texto: string;
+  /** E1069: só o dia é conhecido (pagamento sem o instante do registro) — a linha não traz hora. */
+  soDia?: boolean;
 }
 
 const PAPEL: Record<Parte, string> = { proprietario: "O proprietário", inquilino: "O inquilino" };
+const ROTULO_PAPEL: Record<Parte, string> = { proprietario: "proprietário", inquilino: "inquilino" };
+
+/** E1069: "Ana Souza (proprietário)" — o mesmo formato do cartão de assinaturas; sem nome, "O proprietário". */
+export function quemAssinou(papel: Parte, nomes?: NomesDasPartes | null): string {
+  const nome = (nomes?.[papel] ?? "").trim();
+  return nome ? `${nome} (${ROTULO_PAPEL[papel]})` : PAPEL[papel];
+}
 const DA_PARTE: Record<Parte, string> = { proprietario: "do proprietário", inquilino: "do inquilino" };
 const PELA_PARTE: Record<Parte, string> = { proprietario: "pelo proprietário", inquilino: "pelo inquilino" };
 const FORMA: Record<string, string> = { pix: "Pix", boleto: "boleto", transferencia: "transferência", dinheiro: "dinheiro", outro: "outra forma" };
@@ -125,19 +140,26 @@ export function totaisPagamentos(pags: PagamentoProva[]): { confirmado: number; 
   };
 }
 
+/** A linha do evento na LINHA DO TEMPO do pacote: dia e hora de Brasília; só o dia quando a hora não é conhecida. */
+export function linhaDoEvento(e: EventoProva): string {
+  return `${e.soDia ? dataBR(e.em.slice(0, 10)) : dataHoraAssinatura(e.em)} — ${e.texto}`;
+}
+
 export function eventosDoContrato(d: DadosProvas): EventoProva[] {
   const ev: EventoProva[] = [{ em: d.registradoEm, texto: `Contrato registrado (${MARCA_MINUTA}).` }];
-  for (const a of d.assinaturas) ev.push({ em: a.em, texto: `${PAPEL[a.papel]} assinou o resumo do contrato.` });
+  for (const a of d.assinaturas) ev.push({ em: a.em, texto: `${quemAssinou(a.papel, d.nomes)} assinou o resumo do contrato.` });
   for (const p of d.pagamentos) {
     const o = p.tipo === "caucao" ? "Caução" : "Aluguel";
     const forma = FORMA[p.forma] ?? p.forma;
     const marcado = `${o} de ${brl(p.valor)} marcado como pago pelo proprietário (${forma}, em ${dataBR(p.dia)})`;
+    // E1069: a hora é a do REGISTRO. Antes o dia do pagamento ia ao meio-dia UTC e o pacote escrevia "às 09:00".
+    const quando = p.registradoEm ? { em: p.registradoEm } : { em: `${p.dia}T12:00:00Z`, soDia: true };
     if (p.anuladoEm) {
       // Anulado: aparece UMA vez, com a marca; não conta como confirmado nem como aguardando.
-      ev.push({ em: `${p.dia}T12:00:00Z`, texto: `${marcado}${marcaAnulado(p)}.` });
+      ev.push({ ...quando, texto: `${marcado}${marcaAnulado(p)}.` });
       continue;
     }
-    ev.push({ em: `${p.dia}T12:00:00Z`, texto: `${marcado}${p.confirmadoEm ? "" : "; aguardando confirmação do inquilino"}.` });
+    ev.push({ ...quando, texto: `${marcado}${p.confirmadoEm ? "" : "; aguardando confirmação do inquilino"}.` });
     if (p.confirmadoEm) ev.push({ em: p.confirmadoEm, texto: `${o} de ${brl(p.valor)} confirmado pelo inquilino.` });
   }
   for (const a of d.aditivos ?? []) {
@@ -226,14 +248,14 @@ export function conteudoPacoteProvas(d: DadosProvas, registro?: RegistroPacote):
           ...ass.map(
             (a) =>
               // QA do Muse no 35B: cada assinatura mostra o próprio hash e um de três estados; "igual" só com o mesmo hash.
-              `${PAPEL[a.papel]} em ${dataHoraAssinatura(a.em)} — Hash do resumo assinado: ${a.hash} (${compararHashComResumo(d.resumo, a.hash, d.registradoEm).texto}).`
+              `${quemAssinou(a.papel, d.nomes)} em ${dataHoraAssinatura(a.em)} — Hash do resumo assinado: ${a.hash} (${compararHashComResumo(d.resumo, a.hash, d.registradoEm).texto}).`
           ),
           // E197: a data gravada no contrato, sem registro com hash — a mesma assinatura que a lista do admin mostra.
-          ...semHash.map((a) => `${PAPEL[a.papel]} em ${dataHoraAssinatura(a.em)} — data gravada no contrato, sem o registro do hash do resumo assinado.`),
+          ...semHash.map((a) => `${quemAssinou(a.papel, d.nomes)} em ${dataHoraAssinatura(a.em)} — data gravada no contrato, sem o registro do hash do resumo assinado.`),
         ]
         : ["Nenhuma assinatura ainda."]),
       "ADITIVOS",
-      ...linhasAditivos(d.aditivos),
+      ...linhasAditivos(d.aditivos, d.nomes),
       "PAGAMENTOS",
       ...(d.pagamentos.length
         ? [
@@ -244,7 +266,7 @@ export function conteudoPacoteProvas(d: DadosProvas, registro?: RegistroPacote):
       "CONFERÊNCIAS",
       ...linhasConferencias(d),
       "LINHA DO TEMPO",
-      ...eventosDoContrato(d).map((e) => `${dataHoraAssinatura(e.em)} — ${e.texto}`),
+      ...eventosDoContrato(d).map(linhaDoEvento),
     ],
     rodape: [
       "Gerado pela plataforma Viva Nomads a partir dos registros que as duas partes já veem. As fotos ficam na tela da conferência.",
@@ -276,6 +298,8 @@ export interface LinhasProvas {
     confirmado_em: unknown;
     anulado_em?: unknown;
     anulado_motivo?: unknown;
+    /** E1069: quando o proprietário registrou. */
+    created_at?: unknown;
   }[];
   conferencias: { id: unknown; tipo: unknown; criada_em: unknown }[];
   itens: { conferencia_id: unknown; parte: unknown; comodo?: unknown; descricao?: unknown; foto_path?: unknown; precisa_reparo?: unknown }[];
@@ -326,6 +350,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
       valor: Number(p.valor),
       forma: String(p.forma),
       dia: String(p.data_pagamento).slice(0, 10),
+      registradoEm: textoOuNulo(p.created_at),
       confirmadoEm: p.confirmado_pelo_inquilino ? String(p.confirmado_em ?? p.data_pagamento) : null,
       anuladoEm: textoOuNulo(p.anulado_em),
       anuladoMotivo: textoOuNulo(p.anulado_motivo),
@@ -352,7 +377,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
 /** Colunas lidas para o pacote (as mesmas nas duas cargas). */
 export const COLUNAS_PROVAS = {
   assinaturas: "papel, assinado_em, hash_documento",
-  pagamentos: "tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo",
+  pagamentos: "tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at",
   conferencias: "id, tipo, criada_em",
   itens: "conferencia_id, parte, comodo, descricao, foto_path, precisa_reparo",
   respostas: "conferencia_id, parte, decisao, motivo, decidido_em",
