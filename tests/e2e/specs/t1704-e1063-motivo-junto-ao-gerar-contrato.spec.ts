@@ -172,14 +172,14 @@ test.describe("T1704 — E1063: o motivo de o contrato não sair fica junto do b
   test("3. a massa some depois de a página abrir: o clique não fica mudo", async ({ browser }) => {
     const c = await ateOPassoDoContrato(browser, {});
     const { page } = c;
-    const area = page.getByTestId("acao-gerar-contrato");
-    await expect(area.getByTestId("pendencia-contrato"), "a página abriu com a massa completa").toHaveCount(0);
+    // ORDEM-DUET-348: a procura é na página toda (não depende da área nova); "na mesma tela do botão" continua cobrado.
+    await expect(page.getByTestId("pendencia-contrato"), "a página abriu com a massa completa").toHaveCount(0);
     const { error } = await adm().from("documentos_inquilino").delete().eq("lead_id", c.lead);
     if (error) throw error;
 
     await page.setViewportSize({ width: 390, height: 844 });
     await clicarEVoltar(page);
-    const erro = area.getByTestId("erro-contrato");
+    const erro = page.getByTestId("erro-contrato");
     await expect(erro).toHaveText(MSG_DOCS_INQUILINO);
     await naMesmaTelaDoBotao(page, erro, "390 px: a recusa cabe na mesma tela do botão");
     expect(await contratosDoLead(c.lead)).toBe(0);
@@ -189,11 +189,11 @@ test.describe("T1704 — E1063: o motivo de o contrato não sair fica junto do b
   test("4. massa completa: nenhum motivo junto do botão e o contrato é gerado", async ({ browser }) => {
     const c = await ateOPassoDoContrato(browser, {});
     const { page } = c;
-    const area = page.getByTestId("acao-gerar-contrato");
-    await expect(area.getByTestId("fechamento-gerar-contrato")).toHaveText(ROTULO_BOTAO);
-    await expect(area.getByTestId("pendencia-contrato")).toHaveCount(0);
-    await expect(area.getByTestId("erro-contrato")).toHaveCount(0);
-    await area.getByTestId("fechamento-gerar-contrato").click();
+    // ORDEM-DUET-348: a procura é na página toda (não depende da área nova).
+    await expect(page.getByTestId("fechamento-gerar-contrato")).toHaveText(ROTULO_BOTAO);
+    await expect(page.getByTestId("pendencia-contrato")).toHaveCount(0);
+    await expect(page.getByTestId("erro-contrato")).toHaveCount(0);
+    await page.getByTestId("fechamento-gerar-contrato").click();
     await expect(page.getByTestId("fechamento-abrir-contrato")).toBeVisible({ timeout: 40_000 });
     await expect(page.getByTestId("erro-contrato")).toHaveCount(0);
     await expect.poll(() => contratosDoLead(c.lead), { timeout: 20_000 }).toBe(1);
