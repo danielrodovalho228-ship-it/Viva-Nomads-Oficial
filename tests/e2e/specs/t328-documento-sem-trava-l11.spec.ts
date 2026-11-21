@@ -3,6 +3,7 @@ import { test, expect } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { abrirSecoesPasso10 } from "../fixtures/cadastro";
+import { areaDeToque } from "../fixtures/area-toque";
 
 /**
  * T328 — L1-1 (D-V3): "Enviar documento" não trava em silêncio (390 px). E104: o documento mora no cartão "Antes de
@@ -62,8 +63,9 @@ test.describe("T328 — enviar documento sem trava silenciosa (L1-1)", () => {
     const botao = p.getByTestId("documento-enviar");
     await expect(botao).toBeVisible({ timeout: 20_000 });
     await expect(botao).toBeEnabled();
-    // Alvo de toque de pelo menos 44 px.
-    expect((await botao.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    // E1033 (passo 3, asserção alterada): a área de toque REAL de 44 × 44 px, medida pelo helper (antes, só a altura do
+    // retângulo, que não vê a largura nem se há outro elemento por cima).
+    expect((await areaDeToque(botao)).faltam, "Enviar documento: área de toque 44×44").toEqual([]);
     // Espera o endereço gravado chegar (a frase do que falta some) e toca: abre o arquivo, sem "Falta".
     await expect(p.getByTestId("documento-vinculo")).not.toContainText("Para enviar, o endereço precisa", { timeout: 20_000 });
     const [seletor] = await Promise.all([p.waitForEvent("filechooser"), botao.click()]);

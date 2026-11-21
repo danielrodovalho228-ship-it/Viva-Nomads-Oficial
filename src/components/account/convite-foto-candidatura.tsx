@@ -43,7 +43,7 @@ export function ConviteFotoCandidatura({
       <p className="text-muted">
         {texto}. <span className="text-xs">(opcional)</span>
       </p>
-      <EnviarFoto temFoto={false} rotulo="Adicionar foto" className="mt-2" testId={`${testId}-botao`} />
+      <EnviarFoto temFoto={false} rotulo="Adicionar foto" className="mt-2 min-h-11" testId={`${testId}-botao`} />
     </div>
   );
 }

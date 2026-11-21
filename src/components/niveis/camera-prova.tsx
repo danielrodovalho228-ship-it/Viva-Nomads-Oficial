@@ -80,6 +80,7 @@ export function ProvaNaHora({
           type="button"
           size="sm"
           variant="secondary"
+          className="min-h-11"
           disabled={!modo}
           aria-busy={!modo}
           onClick={() => {

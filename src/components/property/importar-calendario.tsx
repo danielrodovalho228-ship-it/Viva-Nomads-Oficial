@@ -118,10 +118,10 @@ export function ImportarCalendario({ propertyId, onMudou }: { propertyId: string
             inputMode="url"
             autoComplete="off"
             placeholder="https://www.airbnb.com.br/calendar/ical/…"
-            className="min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-base"
+            className="min-h-11 min-w-0 flex-1 rounded-lg border border-sage-200 px-3 py-2 text-base"
             data-testid="importacao-link"
           />
-          <Button type="submit" variant="secondary" size="sm" disabled={pendente || !link.trim()} data-testid="importacao-adicionar">
+          <Button type="submit" variant="secondary" size="sm" className="min-h-11" disabled={pendente || !link.trim()} data-testid="importacao-adicionar">
             {pendente ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null} Importar
           </Button>
         </form>

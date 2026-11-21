@@ -59,7 +59,7 @@ export function ExportarCalendario({ propertyId }: { propertyId: string }) {
             className="min-h-11 w-full min-w-0 rounded-lg border border-line bg-surface-2 px-3 text-sm text-ink"
             data-testid="exportar-calendario-link"
           />
-          <Button type="button" variant="secondary" size="sm" onClick={copiar} data-testid="exportar-calendario-copiar">
+          <Button type="button" variant="secondary" size="sm" className="min-h-11" onClick={copiar} data-testid="exportar-calendario-copiar">
             {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copiado ? "Copiado" : "Copiar link"}
           </Button>

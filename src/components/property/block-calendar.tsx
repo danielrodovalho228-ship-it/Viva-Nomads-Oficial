@@ -283,7 +283,7 @@ export function BlockCalendar({ propertyId }: { propertyId: string }) {
           onClick={bloquear}
           disabled={!sel.ini || busy}
           className={cn(
-            "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+            "inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
             sel.ini && !busy
               ? "bg-ink text-white hover:bg-ink/90"
               : "cursor-not-allowed bg-surface-2 text-muted"
