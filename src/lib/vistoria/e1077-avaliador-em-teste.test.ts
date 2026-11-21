@@ -13,6 +13,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { modoDaChave, chaveAberta, filaNoAmbito } from "./ambito-da-chave.ts";
+import { blocoDoDonoVisivel } from "./telas-exibicao.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
 const semComentarios = (s: string) => s.replace(/--.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
@@ -26,6 +27,15 @@ test("E1077: a chave tem quatro modos e só a conta do piloto abre o modo de tes
   assert.equal(modoDaChave({ global: false, laboratorio: false, noPiloto: false }), "desligada");
   assert.equal(chaveAberta("desligada"), false, "conta fora do piloto não vê nada");
   for (const m of ["global", "laboratorio", "piloto"] as const) assert.equal(chaveAberta(m), true, m);
+});
+
+test("E1077, opção (a) da ORDEM-DUET-375: o dono do piloto é conta de teste e, no piloto, o bloco fica ativo — fora dele, só conferência", () => {
+  // No piloto a porta abre (chaveAberta("piloto")): o dono de teste deixa a só leitura.
+  assert.equal(blocoDoDonoVisivel(chaveAberta(modoDaChave({ global: false, laboratorio: false, noPiloto: true })), true), "ativa");
+  // Fora do piloto: o dono de teste só confere; o dono real não vê nada.
+  const fora = chaveAberta(modoDaChave({ global: false, laboratorio: false, noPiloto: false }));
+  assert.equal(blocoDoDonoVisivel(fora, true), "so_leitura_teste");
+  assert.equal(blocoDoDonoVisivel(fora, false), null);
 });
 
 test("E1077: em modo piloto o rodízio só oferece avaliadores do piloto; nos outros modos a fila fica como está", () => {
