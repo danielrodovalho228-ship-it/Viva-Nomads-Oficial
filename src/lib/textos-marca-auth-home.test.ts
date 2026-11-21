@@ -11,10 +11,11 @@ test("/auth: texto alternativo segue a marca (imóvel mobiliado, nunca apartamen
   assert.match(s, /em um imóvel mobiliado e tranquilo/);
 });
 
-test("home passo 3: Caução combinada entre as partes, sem 'Garantia escolhida' solta (#48)", () => {
+test("home passo 3: a caução vem de CAUCAO_FRASE (E962), sem 'Garantia escolhida' solta (#48)", () => {
   const s = ler("app/(public)/page.tsx");
   assert.doesNotMatch(s, /Garantia escolhida/);
-  assert.match(s, /Caução combinada entre proprietário e morador/);
+  // Asserção alterada (E962): a frase solta "Caução combinada…" deu lugar à CAUCAO_FRASE importada.
+  assert.match(s, /\$\{CAUCAO_FRASE\}/);
 });
 
 test("textos alternativos das páginas públicas e do onboarding: 'imóvel mobiliado', nunca 'apartamento' (ordem 809fcade)", () => {
