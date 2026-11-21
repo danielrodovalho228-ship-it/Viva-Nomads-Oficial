@@ -8,6 +8,6 @@ test("E314 (devolução): o cartão 'Em análise' traz o prazo oficial 'em até 
   assert.match(p.agora, /em até 1 dia útil/);
 });
 
-test("E314: só o 'Em análise' muda — o 'Enviada' segue sem prazo", () => {
-  assert.doesNotMatch(JSON.stringify(PROXIMO_PASSO_CANDIDATURA.enviada), /dia útil/);
+test("E314 → E395: o prazo aparece desde o envio — o 'Enviada' também diz 'em até 1 dia útil'", () => {
+  assert.match(PROXIMO_PASSO_CANDIDATURA.enviada!.agora, /em até 1 dia útil/);
 });
