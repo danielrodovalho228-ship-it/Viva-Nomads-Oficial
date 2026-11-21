@@ -13,3 +13,9 @@ test("E720: início, equipe e telas com voltar próprio não duplicam", () => {
     assert.equal(painelMostraVoltar(p), false, p);
   }
 });
+
+test("E720: 'Estadia confirmada' e a visão do convidado (sem voltar próprio) mostram o voltar do painel", () => {
+  assert.equal(painelMostraVoltar("/dashboard/estadia/abc/confirmada"), true);
+  assert.equal(painelMostraVoltar("/dashboard/estadia/abc/convidado"), true);
+  assert.equal(painelMostraVoltar("/dashboard/estadia/abc/mensagens"), false);
+});

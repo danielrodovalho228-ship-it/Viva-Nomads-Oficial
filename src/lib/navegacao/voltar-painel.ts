@@ -19,6 +19,8 @@ export function painelMostraVoltar(pathname: string): boolean {
   if (p === "/dashboard/conta") return true; // o menu da Conta (celular) não tinha voltar
   if (p === "/dashboard/qa" || p.startsWith("/dashboard/qa/")) return false; // páginas internas de teste
   if (PREFIXOS_COM_VOLTAR_PROPRIO.some((x) => p === x || p.startsWith(x + "/"))) return false;
+  // E720 (varredura final): "Estadia confirmada" e a visão do convidado não trazem voltar próprio — o painel mostra o dele.
+  if (/^\/dashboard\/estadia\/[^/]+\/(confirmada|convidado)$/.test(p)) return true;
   if (LISTAS_COM_DETALHE_PROPRIO.some((x) => p.startsWith(x + "/"))) return false;
   if (TELAS_COM_VOLTAR_PROPRIO.some((r) => r.test(p))) return false;
   return true;
