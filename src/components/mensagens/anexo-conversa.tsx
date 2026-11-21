@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { FileText, Loader2, Paperclip } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ACEITA_ANEXO, tamanhoLegivel, urlDoAnexo, type AnexoNaBolha } from "@/lib/messages/anexo-tela";
+import { Lightbox } from "@/components/property-gallery";
 
 /*
   E445 item 5 (tela, Pista A): anexar foto ou PDF na conversa. O backend (Pista B, 0288) confere o tipo real pelos bytes,
@@ -119,13 +120,18 @@ export function PreviaAnexo(p: {
 
 /** O anexo dentro da bolha. */
 export function AnexoNaMensagem({ anexo, minha }: { anexo: AnexoNaBolha; minha: boolean }) {
+  // E971: a foto abre no lightbox do COMPONENTE DA GALERIA do imóvel (o mesmo, sem construir outro) — não em outra aba.
+  const [ampliada, setAmpliada] = useState(false);
   const url = urlDoAnexo(anexo.id);
   if (anexo.tipo === "foto")
     return (
-      <a href={url} target="_blank" rel="noopener noreferrer" className="block" data-testid="anexo-foto" aria-label="Abrir a foto">
-        {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada privada (redirecionamento), fora do otimizador */}
-        <img src={url} alt="Foto enviada na conversa" loading="lazy" className="max-h-60 w-full max-w-64 rounded-lg bg-surface-2 object-cover" />
-      </a>
+      <>
+        <button type="button" onClick={() => setAmpliada(true)} className="block" data-testid="anexo-foto" aria-label="Abrir a foto">
+          {/* eslint-disable-next-line @next/next/no-img-element -- URL assinada privada (redirecionamento), fora do otimizador */}
+          <img src={url} alt="Foto enviada na conversa" loading="lazy" className="max-h-60 w-full max-w-64 rounded-lg bg-surface-2 object-cover" />
+        </button>
+        {ampliada && <Lightbox photos={[url]} title="a conversa" index={0} setIndex={() => {}} onClose={() => setAmpliada(false)} />}
+      </>
     );
   return (
     <a
