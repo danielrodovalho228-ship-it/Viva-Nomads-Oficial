@@ -100,6 +100,11 @@ export function TelefoneVerificacao() {
           {!estado.disponivel && (
             <div className="mt-4" data-testid="telefone-em-breve">
               <p className="text-sm font-medium text-ink">Verificação de telefone em breve</p>
+              {/* E373: a tela diz o porquê (o SMS ainda não está ligado), que não é pendência sua e quando o campo passa a valer. */}
+              <p className="mt-1 text-sm text-muted" data-testid="telefone-em-breve-motivo">
+                O envio do código por SMS ainda não foi ligado na Viva, por isso o campo está desativado. Não é uma pendência sua: a verificação é opcional e
+                você usa a plataforma normalmente sem ela. Quando o SMS entrar no ar, este campo passa a funcionar e o selo &quot;Telefone verificado&quot; fica disponível.
+              </p>
               <div className="mt-2 flex max-w-sm items-center rounded-xl border border-sage-200 bg-surface-2 text-sm text-muted">
                 <span className="border-r border-sage-200 px-3 py-3">+55</span>
                 <input disabled aria-label="Celular (em breve)" placeholder="(34) 99999-0000" className="min-w-0 flex-1 bg-transparent px-3 py-3" />
