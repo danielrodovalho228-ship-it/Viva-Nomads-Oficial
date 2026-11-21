@@ -25,6 +25,15 @@ test("t25: o afterAll apaga as mensagens, os eventos e o chamado que o spec crio
   assert.match(fim, /from\("chamados"\)\.delete\(\)\.eq\("id", chamadoId\)/);
 });
 
+test("t27 (o resíduo de 390 px): apaga o chamado que resolve — a fila vazia volta a dizer 'Nenhuma decisão registrada'", () => {
+  const t27 = readFileSync(new URL("../e2e/specs/t27-agentes-ao-vivo.spec.ts", import.meta.url), "utf8");
+  assert.match(t27, /let chamadoId: string \| undefined;/);
+  assert.match(t27, /chamadoId = ch\?\.id as string \| undefined;/);
+  const fim = t27.slice(t27.indexOf("test.afterAll("));
+  assert.ok(t27.includes("test.afterAll("), "a t27 tem afterAll");
+  assert.match(fim, /from\("chamados"\)\.delete\(\)\.eq\("id", chamadoId\)/);
+});
+
 test("t271: a imagem de referência de /admin/atendimento e a guarda visual ficam como estavam", () => {
   const t271 = readFileSync(new URL("../e2e/specs/t271-admin-visual.spec.ts", import.meta.url), "utf8");
   assert.match(t271, /"\/admin\/atendimento"/);
