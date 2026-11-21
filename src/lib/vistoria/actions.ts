@@ -35,6 +35,7 @@ import {
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador } from "./servidor";
 import { descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
 import { recusaObservador } from "@/lib/qa/observador";
+import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
 import { ativarParceiroDoAvaliador } from "./parceiro-do-avaliador-servidor";
 import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 
@@ -314,6 +315,40 @@ export async function adminSalvarPreco(form: FormData): Promise<Res> {
   if (error) return { ok: false, erro: "Não foi possível salvar." };
   revalidatePath(ROTA_ADMIN);
   return { ok: true };
+}
+
+// ── E1077-b1: a lista do piloto da avaliação (vistoria_piloto, 0350) pela Central ─────────────────────────────────
+// A conta observadora da QA só mexe em conta de teste (o alvo é a conta); conta real, só o admin não observador.
+// Entrar ou sair da lista não dispara mensagem nenhuma: só a linha da tabela muda.
+export async function adminAdicionarAoPiloto(form: FormData): Promise<Res> {
+  const a = await exigirAdmin();
+  if (!a) return SEM_ACESSO;
+  const e = lerEntradaPiloto(form.get("email"), form.get("nota"));
+  if (!e.ok) return { ok: false, erro: e.erro, campos: [{ campo: "email", mensagem: e.erro }] };
+  const { data: perfis, error: erroPerfil } = await a.admin.from("profiles").select("id").ilike("email", emailParaIlike(e.email)).limit(2);
+  if (erroPerfil) return { ok: false, erro: "Não foi possível conferir a conta agora. Tente de novo." };
+  const perfil = (perfis ?? [])[0] as { id: string } | undefined;
+  if (!perfil) return { ok: false, erro: MSG_CONTA_NAO_ENCONTRADA };
+  const alvo = perfil.id;
+  const recusaQa = await recusaObservador(a.userId, { perfis: [alvo] });
+  if (recusaQa) return { ok: false, erro: recusaQa };
+  const { error } = await a.admin.from("vistoria_piloto").upsert({ user_id: alvo, nota: e.nota }, { onConflict: "user_id" });
+  if (error) return { ok: false, erro: "Não foi possível salvar." };
+  revalidatePath(ROTA_ADMIN);
+  return { ok: true, mensagem: "Conta adicionada ao teste da avaliação." };
+}
+
+export async function adminRemoverDoPiloto(form: FormData): Promise<Res> {
+  const a = await exigirAdmin();
+  if (!a) return SEM_ACESSO;
+  const alvo = String(form.get("userId") ?? "").trim();
+  if (!alvo) return { ok: false, erro: MSG_CONTA_NAO_ENCONTRADA };
+  const recusaQa = await recusaObservador(a.userId, { perfis: [alvo] });
+  if (recusaQa) return { ok: false, erro: recusaQa };
+  const { error } = await a.admin.from("vistoria_piloto").delete().eq("user_id", alvo);
+  if (error) return { ok: false, erro: "Não foi possível remover." };
+  revalidatePath(ROTA_ADMIN);
+  return { ok: true, mensagem: "Conta removida do teste da avaliação." };
 }
 
 export async function adminRevisarAuditoria(form: FormData): Promise<Res> {
