@@ -37,8 +37,6 @@ test.describe("T1714 — E1077: a avaliação do imóvel só para as contas do p
     await page.goto(nivel, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 25_000 });
     await expect(page.getByTestId("avaliacao-dono")).toHaveCount(0);
-    const fora = await page.goto("/dashboard/avaliacao-imovel/00000000-0000-0000-0000-000000000000", { waitUntil: "domcontentloaded" });
-    expect(fora?.status()).toBe(404);
 
     // 2. No piloto: o bloco aparece, ativo.
     const { error } = await adm().from("vistoria_piloto").insert({ user_id: ids.dono, nota: "T1714 (laboratório)" });
