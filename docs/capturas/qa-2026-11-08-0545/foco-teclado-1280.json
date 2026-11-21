@@ -1,0 +1,83 @@
+[
+ {
+  "r": "/",
+  "focaveis": 19,
+  "semIndicador": [
+   {
+    "tag": "INPUT",
+    "txt": "Cidade, bairro ou endereço",
+    "vis": true
+   }
+  ]
+ },
+ {
+  "r": "/buscar",
+  "focaveis": 16,
+  "semIndicador": []
+ },
+ {
+  "r": "/como-funciona",
+  "focaveis": 16,
+  "semIndicador": []
+ },
+ {
+  "r": "/empresas",
+  "focaveis": 16,
+  "semIndicador": []
+ },
+ {
+  "r": "/para-proprietarios",
+  "focaveis": 10,
+  "semIndicador": []
+ },
+ {
+  "r": "/parceiros",
+  "focaveis": 20,
+  "semIndicador": []
+ },
+ {
+  "r": "/seguranca",
+  "focaveis": 10,
+  "semIndicador": []
+ },
+ {
+  "r": "/ajuda",
+  "focaveis": 16,
+  "semIndicador": []
+ },
+ {
+  "r": "/ajuda/fale-com-a-viva",
+  "focaveis": 15,
+  "semIndicador": []
+ },
+ {
+  "r": "/imoveis/ube-001",
+  "focaveis": 36,
+  "semIndicador": []
+ },
+ {
+  "r": "/pedidos/novo",
+  "focaveis": 33,
+  "semIndicador": []
+ },
+ {
+  "r": "/auth",
+  "focaveis": 7,
+  "semIndicador": []
+ },
+ {
+  "r": "/parceiros/avaliadores",
+  "focaveis": 10,
+  "semIndicador": []
+ },
+ {
+  "r": "/guias",
+  "focaveis": 12,
+  "semIndicador": []
+ },
+ {
+  "r": "/cidades/uberlandia",
+  "focaveis": 12,
+  "semIndicador": []
+ }
+]

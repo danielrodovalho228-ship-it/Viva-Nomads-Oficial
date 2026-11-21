@@ -1,0 +1,832 @@
+[
+ {
+  "w": 390,
+  "r": "/ajuda",
+  "t": "Central de ajuda",
+  "px": 28,
+  "min": 3,
+  "mediana": 9.45,
+  "pior": 7.48,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/ajuda",
+  "t": "Respostas curtas para as dúvidas mais comuns.",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 12.14,
+  "pior": 8.39,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/fale-com-a-viva",
+  "t": "Fale com a Viva",
+  "px": 28,
+  "min": 3,
+  "mediana": 11.36,
+  "pior": 8.22,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/fale-com-a-viva",
+  "t": "Assistente Viva 24 h · resposta de uma pessoa em a",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 13.06,
+  "pior": 9.35,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/como-funciona",
+  "t": "Passo a passo",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 7.77,
+  "pior": 4.74,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/como-funciona",
+  "t": "Como funciona",
+  "px": 28,
+  "min": 3,
+  "mediana": 14.55,
+  "pior": 8.84,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/como-funciona",
+  "t": "Do anúncio ao contrato, com registro e segurança e",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 15.77,
+  "pior": 9.63,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/como-funciona",
+  "t": "morador",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 14.23,
+  "pior": 10.43,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/como-funciona",
+  "t": "proprietário",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 15.05,
+  "pior": 13.17,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/empresas",
+  "t": "Para empresas",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 3.6,
+  "pior": 3.6,
+  "falha": true
+ },
+ {
+  "w": 390,
+  "r": "/empresas",
+  "t": "Moradia de média duração para o seu time",
+  "px": 28,
+  "min": 3,
+  "mediana": 7.47,
+  "pior": 6.38,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/empresas",
+  "t": "Imóveis mobiliados de 30 a 180 dias para mobilidad",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 10.72,
+  "pior": 6.66,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/empresas",
+  "t": "Falar com a equipe",
+  "px": 15,
+  "min": 4.5,
+  "mediana": 6.53,
+  "pior": 4.17,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/empresas",
+  "t": "Ver imóveis mobiliados",
+  "px": 15,
+  "min": 4.5,
+  "mediana": 7.13,
+  "pior": 3.4,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/para-proprietarios",
+  "t": "Para proprietários",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 4.05,
+  "pior": 3.73,
+  "falha": true
+ },
+ {
+  "w": 390,
+  "r": "/para-proprietarios",
+  "t": "Seu imóvel mobiliado ocupado por meses, com contra",
+  "px": 28,
+  "min": 3,
+  "mediana": 12.96,
+  "pior": 6.29,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/para-proprietarios",
+  "t": "meses",
+  "px": 28,
+  "min": 3,
+  "mediana": 5.45,
+  "pior": 3.55,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/para-proprietarios",
+  "t": "Locação mobiliada de média duração (30 a 180 dias)",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 13.97,
+  "pior": 7.54,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/para-proprietarios",
+  "t": "Anunciar meu imóvel",
+  "px": 15,
+  "min": 4.5,
+  "mediana": 6.53,
+  "pior": 4.07,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/para-proprietarios",
+  "t": "Anuncie de graça. A taxa de serviço da Viva é de 1",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 14.36,
+  "pior": 6.79,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/para-proprietarios",
+  "t": "Anuncie de graça.",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 12.16,
+  "pior": 8.09,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/parceiros",
+  "t": "Parceiros",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 3.99,
+  "pior": 3.86,
+  "falha": true
+ },
+ {
+  "w": 390,
+  "r": "/parceiros",
+  "t": "Seja parceiro da Viva Nomads",
+  "px": 28,
+  "min": 3,
+  "mediana": 11.86,
+  "pior": 6.83,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/parceiros",
+  "t": "Atenda quem anuncia e quem busca imóveis mobiliado",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 13.68,
+  "pior": 8.56,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/parceiros",
+  "t": "Ver tipos de parceria",
+  "px": 15,
+  "min": 4.5,
+  "mediana": 12.61,
+  "pior": 4.65,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/avaliadores",
+  "t": "Parceiros",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 8.5,
+  "pior": 6.96,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/avaliadores",
+  "t": "Seja avaliador credenciado",
+  "px": 28,
+  "min": 3,
+  "mediana": 13.02,
+  "pior": 7.92,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/avaliadores",
+  "t": "A Viva Nomads está montando a rede de avaliadores ",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 14.3,
+  "pior": 9.28,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/avaliadores",
+  "t": "Pedir credenciamento",
+  "px": 15,
+  "min": 4.5,
+  "mediana": 6.53,
+  "pior": 4.13,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/buscar",
+  "t": "Encontre um parceiro",
+  "px": 28,
+  "min": 3,
+  "mediana": 12.23,
+  "pior": 8.85,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/buscar",
+  "t": "Profissionais aprovados pela Viva. Você combina e ",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 12.85,
+  "pior": 8.54,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/pedidos/novo",
+  "t": "Pedido de moradia",
+  "px": 12,
+  "min": 4.5,
+  "mediana": 4.57,
+  "pior": 3.69,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/pedidos/novo",
+  "t": "Deixe os imóveis virem até você",
+  "px": 24,
+  "min": 3,
+  "mediana": 6.96,
+  "pior": 5.11,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/seguranca",
+  "t": "Sua segurança",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 5.31,
+  "pior": 4.05,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/seguranca",
+  "t": "Morar com segurança na Viva Nomads",
+  "px": 28,
+  "min": 3,
+  "mediana": 13.21,
+  "pior": 7.15,
+  "falha": false
+ },
+ {
+  "w": 390,
+  "r": "/seguranca",
+  "t": "Golpistas agem quase sempre com pressa e pedido de",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 15.49,
+  "pior": 10.55,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda",
+  "t": "Central de ajuda",
+  "px": 40,
+  "min": 3,
+  "mediana": 9.58,
+  "pior": 8.01,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda",
+  "t": "Respostas curtas para as dúvidas mais comuns.",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 9.77,
+  "pior": 8.04,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/fale-com-a-viva",
+  "t": "Fale com a Viva",
+  "px": 40,
+  "min": 3,
+  "mediana": 11.26,
+  "pior": 8.58,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/fale-com-a-viva",
+  "t": "Assistente Viva 24 h · resposta de uma pessoa em a",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 11.33,
+  "pior": 9.53,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/como-funciona",
+  "t": "Passo a passo",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 7.42,
+  "pior": 3.71,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/como-funciona",
+  "t": "Como funciona",
+  "px": 40,
+  "min": 3,
+  "mediana": 9.82,
+  "pior": 6.58,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/como-funciona",
+  "t": "Do anúncio ao contrato, com registro e segurança e",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 10.83,
+  "pior": 6.58,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/como-funciona",
+  "t": "morador",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 6.58,
+  "pior": 6.58,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/como-funciona",
+  "t": "proprietário",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 14.43,
+  "pior": 6.68,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "t": "Para empresas",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 5.81,
+  "pior": 3.77,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "t": "Moradia de média duração para o seu time",
+  "px": 40,
+  "min": 3,
+  "mediana": 18.15,
+  "pior": 6.85,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "t": "Imóveis mobiliados de 30 a 180 dias para mobilidad",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 18.73,
+  "pior": 6.81,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "t": "Falar com a equipe",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 6.53,
+  "pior": 4.17,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "t": "Ver imóveis mobiliados",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 18.88,
+  "pior": 4.36,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/ube-001",
+  "t": "+3 mais",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 15.64,
+  "pior": 12.65,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/ube-001",
+  "t": "Ver todas as fotos",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 15.91,
+  "pior": 1,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/para-proprietarios",
+  "t": "Para proprietários",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 5.06,
+  "pior": 3.67,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/para-proprietarios",
+  "t": "Seu imóvel mobiliado ocupado por meses, com contra",
+  "px": 40,
+  "min": 3,
+  "mediana": 12.14,
+  "pior": 6.93,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/para-proprietarios",
+  "t": "meses",
+  "px": 40,
+  "min": 3,
+  "mediana": 5.69,
+  "pior": 4.01,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/para-proprietarios",
+  "t": "Locação mobiliada de média duração (30 a 180 dias)",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 11.55,
+  "pior": 8.05,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/para-proprietarios",
+  "t": "Anunciar meu imóvel",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 6.53,
+  "pior": 4.27,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/para-proprietarios",
+  "t": "Anuncie de graça. A taxa de serviço da Viva é de 1",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 14.13,
+  "pior": 8.26,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/para-proprietarios",
+  "t": "Anuncie de graça.",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 13.1,
+  "pior": 10.04,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros",
+  "t": "Parceiros",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 8.17,
+  "pior": 4.44,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros",
+  "t": "Seja parceiro da Viva Nomads",
+  "px": 40,
+  "min": 3,
+  "mediana": 16.97,
+  "pior": 8.05,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros",
+  "t": "Atenda quem anuncia e quem busca imóveis mobiliado",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 18.54,
+  "pior": 9.52,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros",
+  "t": "Ver tipos de parceria",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 16.75,
+  "pior": 5.93,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/avaliadores",
+  "t": "Parceiros",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 5.85,
+  "pior": 3.85,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/avaliadores",
+  "t": "Seja avaliador credenciado",
+  "px": 40,
+  "min": 3,
+  "mediana": 12,
+  "pior": 7.53,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/avaliadores",
+  "t": "A Viva Nomads está montando a rede de avaliadores ",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 14.33,
+  "pior": 8.44,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/avaliadores",
+  "t": "Pedir credenciamento",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 6.53,
+  "pior": 4.22,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/buscar",
+  "t": "Encontre um parceiro",
+  "px": 40,
+  "min": 3,
+  "mediana": 14.18,
+  "pior": 7.91,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/buscar",
+  "t": "Profissionais aprovados pela Viva. Você combina e ",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 12.15,
+  "pior": 6.74,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "t": "Pedido de moradia",
+  "px": 12,
+  "min": 4.5,
+  "mediana": 4.95,
+  "pior": 3.31,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "t": "Deixe os imóveis virem até você",
+  "px": 28,
+  "min": 3,
+  "mediana": 5.83,
+  "pior": 4.39,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "t": "Em vez de procurar um a um, diga o que você precis",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 6.41,
+  "pior": 4.52,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "t": "1Publique o que precisa",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 7.37,
+  "pior": 5.41,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "t": "2Receba respostas com imóveis reais",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 7.83,
+  "pior": 6.06,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "t": "3Converse e feche pela plataforma",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 8.11,
+  "pior": 6.24,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/seguranca",
+  "t": "Sua segurança",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 7.54,
+  "pior": 3.77,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/seguranca",
+  "t": "Morar com segurança na Viva Nomads",
+  "px": 40,
+  "min": 3,
+  "mediana": 10.71,
+  "pior": 6.71,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/seguranca",
+  "t": "Golpistas agem quase sempre com pressa e pedido de",
+  "px": 18,
+  "min": 4.5,
+  "mediana": 13.76,
+  "pior": 6.61,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "t": "Viva",
+  "px": 19.2,
+  "min": 4.5,
+  "mediana": 4.94,
+  "pior": 4.85,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "t": "Nomads",
+  "px": 19.2,
+  "min": 4.5,
+  "mediana": 8.46,
+  "pior": 2.79,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "t": "Sua nova fase começa aqui.",
+  "px": 28,
+  "min": 3,
+  "mediana": 15.62,
+  "pior": 7.65,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "t": "Imóveis mobiliados para estadias de 30 a 180 dias,",
+  "px": 16,
+  "min": 4.5,
+  "mediana": 13.98,
+  "pior": 7.47,
+  "falha": false
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "t": "Estadias de 30 a 180 dias",
+  "px": 14,
+  "min": 4.5,
+  "mediana": 11.58,
+  "pior": 9.69,
+  "falha": false
+ }
+]

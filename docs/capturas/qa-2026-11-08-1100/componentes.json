@@ -1,0 +1,372 @@
+[
+ {
+  "w": 390,
+  "r": "/",
+  "medidos": 0,
+  "falhas": [
+   {
+    "tipo": "campo sem contorno",
+    "n": 1,
+    "ex": [
+     "Cidade, bairro ou endereço"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 390,
+  "r": "/buscar",
+  "medidos": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/pedidos/novo",
+  "medidos": 12,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.36,
+    "n": 12,
+    "ex": [
+     "Comece a digitar a cidade",
+     "",
+     "1 mês 2 meses 3 meses 4 meses "
+    ]
+   }
+  ]
+ },
+ {
+  "w": 390,
+  "r": "/auth",
+  "medidos": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/fale-com-a-viva",
+  "medidos": 2,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.36,
+    "n": 1,
+    "ex": [
+     "Escreva sua dúvida…"
+    ]
+   },
+   {
+    "tipo": "botão contorno",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.36,
+    "n": 1,
+    "ex": [
+     "Falar com uma pessoa"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 390,
+  "r": "/parceiros",
+  "medidos": 7,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(220, 233, 224)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.25,
+    "n": 5,
+    "ex": [
+     "",
+     "00.000.000/0000-00",
+     "Uberlândia, Araguari"
+    ]
+   },
+   {
+    "tipo": "campo",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(247, 247, 247)",
+    "ct": 1.27,
+    "n": 1,
+    "ex": [
+     ""
+    ]
+   }
+  ]
+ },
+ {
+  "w": 390,
+  "r": "/empresas",
+  "medidos": 6,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(220, 233, 224)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.25,
+    "n": 5,
+    "ex": [
+     "nome",
+     "empresa",
+     "email"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 390,
+  "r": "/imoveis/ube-001",
+  "medidos": 6,
+  "falhas": [
+   {
+    "tipo": "botão contorno",
+    "borda": "rgb(220, 233, 224)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.25,
+    "n": 1,
+    "ex": [
+     "Escrever avaliação"
+    ]
+   },
+   {
+    "tipo": "campo",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.36,
+    "n": 4,
+    "ex": [
+     "",
+     "",
+     "1 pessoa 2 pessoas 3 pessoas"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 390,
+  "r": "/conferir",
+  "medidos": 1,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.36,
+    "n": 1,
+    "ex": [
+     "Ex.: 0123456789abcdef012345678"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/buscar",
+  "medidos": 4,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(220, 233, 224)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.25,
+    "n": 4,
+    "ex": [
+     "Todas Fotografia Mudança Limpe",
+     "Uberlândia",
+     "— AC AL AM AP BA CE DF ES GO M"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/",
+  "medidos": 0,
+  "falhas": [
+   {
+    "tipo": "campo sem contorno",
+    "n": 1,
+    "ex": [
+     "Cidade, bairro ou endereço"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/buscar",
+  "medidos": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "medidos": 12,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.36,
+    "n": 12,
+    "ex": [
+     "Comece a digitar a cidade",
+     "dd/mm/aaaa",
+     "1 mês 2 meses 3 meses 4 meses "
+    ]
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "medidos": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/fale-com-a-viva",
+  "medidos": 2,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.36,
+    "n": 1,
+    "ex": [
+     "Escreva sua dúvida…"
+    ]
+   },
+   {
+    "tipo": "botão contorno",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.36,
+    "n": 1,
+    "ex": [
+     "Falar com uma pessoa"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros",
+  "medidos": 7,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(220, 233, 224)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.25,
+    "n": 5,
+    "ex": [
+     "",
+     "00.000.000/0000-00",
+     "Uberlândia, Araguari"
+    ]
+   },
+   {
+    "tipo": "campo",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(247, 247, 247)",
+    "ct": 1.27,
+    "n": 1,
+    "ex": [
+     ""
+    ]
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "medidos": 6,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(220, 233, 224)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.25,
+    "n": 5,
+    "ex": [
+     "nome",
+     "empresa",
+     "email"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/ube-001",
+  "medidos": 6,
+  "falhas": [
+   {
+    "tipo": "botão contorno",
+    "borda": "rgb(220, 233, 224)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.25,
+    "n": 1,
+    "ex": [
+     "Escrever avaliação"
+    ]
+   },
+   {
+    "tipo": "campo",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.36,
+    "n": 4,
+    "ex": [
+     "dd/mm/aaaa",
+     "dd/mm/aaaa",
+     "1 pessoa 2 pessoas 3 pessoas"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/conferir",
+  "medidos": 1,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(221, 221, 221)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.36,
+    "n": 1,
+    "ex": [
+     "Ex.: 0123456789abcdef012345678"
+    ]
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/buscar",
+  "medidos": 4,
+  "falhas": [
+   {
+    "tipo": "campo",
+    "borda": "rgb(220, 233, 224)",
+    "fundo": "rgb(255, 255, 255)",
+    "ct": 1.25,
+    "n": 4,
+    "ex": [
+     "Todas Fotografia Mudança Limpe",
+     "Uberlândia",
+     "— AC AL AM AP BA CE DF ES GO M"
+    ]
+   }
+  ]
+ }
+]

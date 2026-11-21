@@ -1,0 +1,346 @@
+[
+ {
+  "item": "E785",
+  "rota": "/",
+  "w": 390,
+  "frases": [
+   {
+    "txt": "Contato protegido até o aceite",
+    "tid": "faixa-confianca",
+    "y": 1671
+   },
+   {
+    "txt": "self.__next_f.push([1,\"5c:I[261482,[\\\"$2\\\",\\\"$3\\\",\\\"$4\\\",\\\"$5\\\",\\\"$6\\\",\\\"$17\\\",\\\"$18\\\",\\\"$1f\\\"],\\\"MarcaImovel\\",
+    "tid": null,
+    "y": 1141
+   }
+  ],
+  "imgs": 24,
+  "imgsFaltando": 0,
+  "mapa": 0,
+  "lat": 0
+ },
+ {
+  "item": "E785",
+  "rota": "/",
+  "w": 1280,
+  "frases": [
+   {
+    "txt": "Contato protegido até o aceite",
+    "tid": "faixa-confianca",
+    "y": 1804
+   },
+   {
+    "txt": "self.__next_f.push([1,\"5c:I[261482,[\\\"$2\\\",\\\"$3\\\",\\\"$4\\\",\\\"$5\\\",\\\"$6\\\",\\\"$17\\\",\\\"$18\\\",\\\"$1f\\\"],\\\"MarcaImovel\\",
+    "tid": null,
+    "y": 483
+   }
+  ],
+  "imgs": 24,
+  "imgsFaltando": 0,
+  "mapa": 0,
+  "lat": 0
+ },
+ {
+  "item": "E785",
+  "rota": "/como-funciona",
+  "w": 390,
+  "frases": [
+   {
+    "txt": "Toda a negociação acontece na plataforma, com o contato protegido até o aceite.",
+    "tid": "cf-protegido",
+    "y": 8584
+   },
+   {
+    "txt": "self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:\\\"/_next/static/immutable/chunks/418yw5bc3erhw.js\\\"\\n3:\\\"/_ne",
+    "tid": null,
+    "y": 1172
+   }
+  ],
+  "imgs": 16,
+  "imgsFaltando": 0,
+  "mapa": 0,
+  "lat": 0
+ },
+ {
+  "item": "E785",
+  "rota": "/como-funciona",
+  "w": 1280,
+  "frases": [
+   {
+    "txt": "Toda a negociação acontece na plataforma, com o contato protegido até o aceite.",
+    "tid": "cf-protegido",
+    "y": 5200
+   },
+   {
+    "txt": "self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:\\\"/_next/static/immutable/chunks/418yw5bc3erhw.js\\\"\\n3:\\\"/_ne",
+    "tid": null,
+    "y": 277
+   }
+  ],
+  "imgs": 16,
+  "imgsFaltando": 0,
+  "mapa": 0,
+  "lat": 0
+ },
+ {
+  "item": "E785",
+  "rota": "/para-proprietarios",
+  "w": 390,
+  "frases": [
+   {
+    "txt": "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite.",
+    "tid": "proprietarios-fluxo",
+    "y": 3480
+   },
+   {
+    "txt": "self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:\\\"/_next/static/immutable/chunks/418yw5bc3erhw.js\\\"\\n3:\\\"/_ne",
+    "tid": null,
+    "y": 631
+   }
+  ],
+  "imgs": 10,
+  "imgsFaltando": 0,
+  "mapa": 0,
+  "lat": 0
+ },
+ {
+  "item": "E785",
+  "rota": "/para-proprietarios",
+  "w": 1280,
+  "frases": [
+   {
+    "txt": "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite.",
+    "tid": "proprietarios-fluxo",
+    "y": 2045
+   },
+   {
+    "txt": "self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:\\\"/_next/static/immutable/chunks/418yw5bc3erhw.js\\\"\\n3:\\\"/_ne",
+    "tid": null,
+    "y": 22
+   }
+  ],
+  "imgs": 10,
+  "imgsFaltando": 0,
+  "mapa": 0,
+  "lat": 0
+ },
+ {
+  "item": "E785",
+  "rota": "/imoveis/ube-001",
+  "w": 390,
+  "frases": [
+   {
+    "txt": "Este é um anúncio de exemplo: aqui não há botão de mensagem. Nos anúncios reais, a conversa acontece pelo chat",
+    "tid": "mensagem-demo",
+    "y": 9015
+   }
+  ],
+  "imgs": 18,
+  "imgsFaltando": 0,
+  "mapa": 2,
+  "lat": 0
+ },
+ {
+  "item": "E785",
+  "rota": "/imoveis/ube-001",
+  "w": 1280,
+  "frases": [
+   {
+    "txt": "Este é um anúncio de exemplo: aqui não há botão de mensagem. Nos anúncios reais, a conversa acontece pelo chat",
+    "tid": "mensagem-demo",
+    "y": 7006
+   }
+  ],
+  "imgs": 13,
+  "imgsFaltando": 0,
+  "mapa": 0,
+  "lat": 0
+ },
+ {
+  "item": "E785",
+  "rota": "/anunciar",
+  "w": 390,
+  "frases": [
+   {
+    "txt": "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite.",
+    "tid": "proprietarios-fluxo",
+    "y": 3480
+   },
+   {
+    "txt": "self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:\\\"/_next/static/immutable/chunks/418yw5bc3erhw.js\\\"\\n3:\\\"/_ne",
+    "tid": null,
+    "y": 559
+   }
+  ],
+  "imgs": 10,
+  "imgsFaltando": 0,
+  "mapa": 0,
+  "lat": 0
+ },
+ {
+  "item": "E785",
+  "rota": "/anunciar",
+  "w": 1280,
+  "frases": [
+   {
+    "txt": "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite.",
+    "tid": "proprietarios-fluxo",
+    "y": 2045
+   },
+   {
+    "txt": "self.__next_f.push([1,\"1:\\\"$Sreact.fragment\\\"\\n2:\\\"/_next/static/immutable/chunks/418yw5bc3erhw.js\\\"\\n3:\\\"/_ne",
+    "tid": null,
+    "y": 16
+   }
+  ],
+  "imgs": 10,
+  "imgsFaltando": 0,
+  "mapa": 0,
+  "lat": 0
+ },
+ {
+  "item": "E774",
+  "rota": "/pedidos/novo",
+  "w": 390,
+  "texto": "Seu pedido chega aos proprietários com o seu e-mail confirmado. Seu contato continua escondido até você aceitar uma resposta."
+ },
+ {
+  "item": "E774",
+  "rota": "/pedidos/novo",
+  "w": 1280,
+  "texto": "Seu pedido chega aos proprietários com o seu e-mail confirmado. Seu contato continua escondido até você aceitar uma resposta."
+ },
+ {
+  "item": "E786",
+  "rota": "/imoveis/ddf86c66…",
+  "w": 390,
+  "lat": 0,
+  "botoes": [
+   {
+    "txt": "Anúncio de teste da equipe Viva — não é um imóvel disponível",
+    "w": 367,
+    "h": 44,
+    "transborda": false,
+    "ws": "nowrap",
+    "foraDaTela": false,
+    "fixo": true
+   },
+   {
+    "txt": "Essencial Santa Mônica, Uberlândia - MG Anúncio de exemplo Imóvel mobiliado com home offic",
+    "w": 173,
+    "h": 459,
+    "transborda": false,
+    "ws": "normal",
+    "foraDaTela": false,
+    "fixo": false
+   },
+   {
+    "txt": "Essencial Centro, Uberlândia - MG Anúncio de exemplo Studio premium no Centro, ideal para ",
+    "w": 173,
+    "h": 459,
+    "transborda": false,
+    "ws": "normal",
+    "foraDaTela": false,
+    "fixo": false
+   },
+   {
+    "txt": "Essencial Tibery, Uberlândia - MG Anúncio de exemplo Casa 3 quartos para famílias em trans",
+    "w": 173,
+    "h": 459,
+    "transborda": false,
+    "ws": "normal",
+    "foraDaTela": false,
+    "fixo": false
+   }
+  ]
+ },
+ {
+  "item": "E786",
+  "rota": "/imoveis/ddf86c66…",
+  "w": 1280,
+  "lat": 0,
+  "botoes": [
+   {
+    "txt": "Anúncio de teste da equipe Viva — não é um imóvel disponível",
+    "w": 366,
+    "h": 56,
+    "transborda": true,
+    "ws": "nowrap",
+    "foraDaTela": false,
+    "fixo": false
+   },
+   {
+    "txt": "Essencial Santa Mônica, Uberlândia - MG Anúncio de exemplo Imóvel mobiliado com home offic",
+    "w": 262,
+    "h": 484,
+    "transborda": false,
+    "ws": "normal",
+    "foraDaTela": false,
+    "fixo": false
+   },
+   {
+    "txt": "Essencial Centro, Uberlândia - MG Anúncio de exemplo Studio premium no Centro, ideal para ",
+    "w": 262,
+    "h": 484,
+    "transborda": false,
+    "ws": "normal",
+    "foraDaTela": false,
+    "fixo": false
+   },
+   {
+    "txt": "Essencial Tibery, Uberlândia - MG Anúncio de exemplo Casa 3 quartos para famílias em trans",
+    "w": 262,
+    "h": 484,
+    "transborda": false,
+    "ws": "normal",
+    "foraDaTela": false,
+    "fixo": false
+   }
+  ]
+ },
+ {
+  "item": "E786",
+  "rota": "/imoveis/ddf86c66…",
+  "w": 1920,
+  "lat": 0,
+  "botoes": [
+   {
+    "txt": "Anúncio de teste da equipe Viva — não é um imóvel disponível",
+    "w": 366,
+    "h": 56,
+    "transborda": true,
+    "ws": "nowrap",
+    "foraDaTela": false,
+    "fixo": false
+   },
+   {
+    "txt": "Essencial Santa Mônica, Uberlândia - MG Anúncio de exemplo Imóvel mobiliado com home offic",
+    "w": 326,
+    "h": 452,
+    "transborda": false,
+    "ws": "normal",
+    "foraDaTela": false,
+    "fixo": false
+   },
+   {
+    "txt": "Essencial Centro, Uberlândia - MG Anúncio de exemplo Studio premium no Centro, ideal para ",
+    "w": 326,
+    "h": 452,
+    "transborda": false,
+    "ws": "normal",
+    "foraDaTela": false,
+    "fixo": false
+   },
+   {
+    "txt": "Essencial Tibery, Uberlândia - MG Anúncio de exemplo Casa 3 quartos para famílias em trans",
+    "w": 326,
+    "h": 452,
+    "transborda": false,
+    "ws": "normal",
+    "foraDaTela": false,
+    "fixo": false
+   }
+  ]
+ }
+]

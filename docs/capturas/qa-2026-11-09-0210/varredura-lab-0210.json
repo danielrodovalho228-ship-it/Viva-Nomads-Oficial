@@ -1,0 +1,286 @@
+[
+ {
+  "w": 390,
+  "u": "/buscar?local=Uberl%C3%A2ndia",
+  "st": 200,
+  "ms": 1615,
+  "lat": 0,
+  "img": {
+   "total": 32,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": []
+ },
+ {
+  "w": 390,
+  "u": "/buscar",
+  "st": 200,
+  "ms": 16913,
+  "lat": 0,
+  "img": {
+   "total": 32,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": []
+ },
+ {
+  "w": 390,
+  "u": "/imoveis/ube-001",
+  "st": 200,
+  "ms": 928,
+  "lat": 0,
+  "img": {
+   "total": 18,
+   "ruins": 3,
+   "foraDaTelaLazy": 3,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Leaflet ← mapa-indisponivel:Não foi possível car"
+  ],
+  "nSobre": 1,
+  "erros": []
+ },
+ {
+  "w": 390,
+  "u": "/imoveis/ube-003",
+  "st": 200,
+  "ms": 1263,
+  "lat": 0,
+  "img": {
+   "total": 18,
+   "ruins": 3,
+   "foraDaTelaLazy": 3,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": []
+ },
+ {
+  "w": 390,
+  "u": "/imoveis/ube-007",
+  "st": 200,
+  "ms": 808,
+  "lat": 0,
+  "img": {
+   "total": 12,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Leaflet ← mapa-indisponivel:Não foi possível car"
+  ],
+  "nSobre": 1,
+  "erros": []
+ },
+ {
+  "w": 390,
+  "u": "/imoveis/ube-012",
+  "st": 200,
+  "ms": 837,
+  "lat": 0,
+  "img": {
+   "total": 12,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": []
+ },
+ {
+  "w": 390,
+  "u": "/cidades/uberlandia",
+  "st": 200,
+  "ms": 808,
+  "lat": 0,
+  "img": {
+   "total": 32,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": []
+ },
+ {
+  "w": 390,
+  "u": "/",
+  "st": 200,
+  "ms": 1024,
+  "lat": 0,
+  "img": {
+   "total": 26,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": []
+ },
+ {
+  "w": 1280,
+  "u": "/buscar?local=Uberl%C3%A2ndia",
+  "st": 200,
+  "ms": 1529,
+  "lat": 0,
+  "img": {
+   "total": 32,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": []
+ },
+ {
+  "w": 1280,
+  "u": "/buscar",
+  "st": 200,
+  "ms": 24388,
+  "lat": 0,
+  "img": {
+   "total": 32,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": []
+ },
+ {
+  "w": 1280,
+  "u": "/imoveis/ube-001",
+  "st": 200,
+  "ms": 942,
+  "lat": 0,
+  "img": {
+   "total": 15,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Leaflet ← mapa-indisponivel:Não foi possível car"
+  ],
+  "nSobre": 1,
+  "erros": []
+ },
+ {
+  "w": 1280,
+  "u": "/imoveis/ube-003",
+  "st": 200,
+  "ms": 1091,
+  "lat": 0,
+  "img": {
+   "total": 15,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Leaflet ← mapa-indisponivel:Não foi possível car"
+  ],
+  "nSobre": 1,
+  "erros": []
+ },
+ {
+  "w": 1280,
+  "u": "/imoveis/ube-007",
+  "st": 200,
+  "ms": 864,
+  "lat": 0,
+  "img": {
+   "total": 12,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Leaflet ← mapa-indisponivel:Não foi possível car"
+  ],
+  "nSobre": 1,
+  "erros": []
+ },
+ {
+  "w": 1280,
+  "u": "/imoveis/ube-012",
+  "st": 200,
+  "ms": 934,
+  "lat": 0,
+  "img": {
+   "total": 12,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Leaflet ← mapa-indisponivel:Não foi possível car"
+  ],
+  "nSobre": 1,
+  "erros": []
+ },
+ {
+  "w": 1280,
+  "u": "/cidades/uberlandia",
+  "st": 200,
+  "ms": 880,
+  "lat": 0,
+  "img": {
+   "total": 32,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": []
+ },
+ {
+  "w": 1280,
+  "u": "/",
+  "st": 200,
+  "ms": 910,
+  "lat": 0,
+  "img": {
+   "total": 26,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": []
+ }
+]

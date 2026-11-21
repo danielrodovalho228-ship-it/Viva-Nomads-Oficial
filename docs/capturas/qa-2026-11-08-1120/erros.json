@@ -1,0 +1,236 @@
+[
+ {
+  "w": 390,
+  "r": "/empresas",
+  "acao": "clique em \"Fale com a gente\" vazio",
+  "url": "/empresas",
+  "msgs": [],
+  "invalidos": 3,
+  "camp": [
+   {
+    "nome": "nome",
+    "ariaInvalid": null,
+    "describedby": false,
+    "borda": "rgb(46, 125, 91)",
+    "nativo": "Preencha este campo."
+   },
+   {
+    "nome": "empresa",
+    "ariaInvalid": null,
+    "describedby": false,
+    "borda": "rgb(220, 233, 224)",
+    "nativo": "Preencha este campo."
+   },
+   {
+    "nome": "email",
+    "ariaInvalid": null,
+    "describedby": false,
+    "borda": "rgb(220, 233, 224)",
+    "nativo": "Preencha este campo."
+   }
+  ],
+  "foco": "nome"
+ },
+ {
+  "w": 390,
+  "r": "/parceiros",
+  "acao": "clique em \"Continuar: criar conta ou entrar\" vazio",
+  "url": "/parceiros",
+  "msgs": [
+   {
+    "t": "Informe o CNPJ com 14 dígitos (00.000.000/0000-00).",
+    "ct": 6.42
+   }
+  ],
+  "invalidos": 0,
+  "camp": [],
+  "foco": "BUTTON"
+ },
+ {
+  "w": 390,
+  "r": "/pedidos/novo",
+  "acao": "clique em \"Publicar pedido\" vazio",
+  "url": "/pedidos/novo",
+  "msgs": [
+   {
+    "t": "Escolha a cidade na lista de sugestões.",
+    "ct": 4.77
+   }
+  ],
+  "invalidos": 2,
+  "camp": [
+   {
+    "nome": "Comece a digitar a cidade",
+    "ariaInvalid": null,
+    "describedby": false,
+    "borda": "rgb(221, 221, 221)",
+    "nativo": "Please fill out this field."
+   },
+   {
+    "nome": "pedido-data",
+    "ariaInvalid": null,
+    "describedby": false,
+    "borda": "rgb(221, 221, 221)",
+    "nativo": "Please fill out this field."
+   }
+  ],
+  "foco": "BUTTON"
+ },
+ {
+  "w": 390,
+  "r": "/conferir",
+  "acao": "valor \"zzz\" + Enter",
+  "url": "/conferir",
+  "msgs": [
+   {
+    "t": "Código inválido. Confira os 32 caracteres impressos no documento.",
+    "ct": 6.42
+   }
+  ],
+  "invalidos": 0,
+  "camp": [],
+  "foco": "BODY"
+ },
+ {
+  "w": 390,
+  "r": "/auth",
+  "acao": "falhou: TimeoutError: locator.fill: Timeout 30000ms exceeded.\nCall l",
+  "url": "/auth",
+  "msgs": [],
+  "invalidos": 0,
+  "camp": [],
+  "foco": "BODY"
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/fale-com-a-viva",
+  "acao": "falhou: TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000m",
+  "url": "/ajuda/fale-com-a-viva",
+  "msgs": [
+   {
+    "t": "Oi! Sou a Viva, assistente virtual da Viva Nomads. Posso tirar dúvidas",
+    "ct": 15.91
+   }
+  ],
+  "invalidos": 0,
+  "camp": [],
+  "foco": "BODY"
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "acao": "clique em \"Fale com a gente\" vazio",
+  "url": "/empresas",
+  "msgs": [],
+  "invalidos": 3,
+  "camp": [
+   {
+    "nome": "nome",
+    "ariaInvalid": null,
+    "describedby": false,
+    "borda": "rgb(46, 125, 91)",
+    "nativo": "Preencha este campo."
+   },
+   {
+    "nome": "empresa",
+    "ariaInvalid": null,
+    "describedby": false,
+    "borda": "rgb(220, 233, 224)",
+    "nativo": "Preencha este campo."
+   },
+   {
+    "nome": "email",
+    "ariaInvalid": null,
+    "describedby": false,
+    "borda": "rgb(220, 233, 224)",
+    "nativo": "Preencha este campo."
+   }
+  ],
+  "foco": "nome"
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros",
+  "acao": "clique em \"Continuar: criar conta ou entrar\" vazio",
+  "url": "/parceiros",
+  "msgs": [
+   {
+    "t": "Informe o CNPJ com 14 dígitos (00.000.000/0000-00).",
+    "ct": 6.42
+   }
+  ],
+  "invalidos": 0,
+  "camp": [],
+  "foco": "BUTTON"
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "acao": "clique em \"Publicar pedido\" vazio",
+  "url": "/pedidos/novo",
+  "msgs": [
+   {
+    "t": "Escolha a cidade na lista de sugestões.",
+    "ct": 4.77
+   }
+  ],
+  "invalidos": 2,
+  "camp": [
+   {
+    "nome": "Comece a digitar a cidade",
+    "ariaInvalid": null,
+    "describedby": false,
+    "borda": "rgb(221, 221, 221)",
+    "nativo": "Please fill out this field."
+   },
+   {
+    "nome": "dd/mm/aaaa",
+    "ariaInvalid": null,
+    "describedby": false,
+    "borda": "rgb(221, 221, 221)",
+    "nativo": "Please fill out this field."
+   }
+  ],
+  "foco": "BUTTON"
+ },
+ {
+  "w": 1280,
+  "r": "/conferir",
+  "acao": "valor \"zzz\" + Enter",
+  "url": "/conferir",
+  "msgs": [
+   {
+    "t": "Código inválido. Confira os 32 caracteres impressos no documento.",
+    "ct": 6.42
+   }
+  ],
+  "invalidos": 0,
+  "camp": [],
+  "foco": "BODY"
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "acao": "falhou: TimeoutError: locator.fill: Timeout 30000ms exceeded.\nCall l",
+  "url": "/auth",
+  "msgs": [],
+  "invalidos": 0,
+  "camp": [],
+  "foco": "BODY"
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/fale-com-a-viva",
+  "acao": "falhou: TimeoutError: locator.scrollIntoViewIfNeeded: Timeout 30000m",
+  "url": "/ajuda/fale-com-a-viva",
+  "msgs": [
+   {
+    "t": "Oi! Sou a Viva, assistente virtual da Viva Nomads. Posso tirar dúvidas",
+    "ct": 15.91
+   }
+  ],
+  "invalidos": 0,
+  "camp": [],
+  "foco": "BODY"
+ }
+]

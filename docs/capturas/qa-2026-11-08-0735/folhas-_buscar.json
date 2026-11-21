@@ -1,0 +1,78 @@
+[
+ {
+  "w": 390,
+  "botao": "Mais filtros",
+  "titulo": "Filtros",
+  "focoDentro": true,
+  "caixa": [
+   101,
+   844
+  ],
+  "rolavelDentro": true,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ },
+ {
+  "w": 390,
+  "botao": "Descrever o que procuro",
+  "titulo": "Descrever o que procuro",
+  "focoDentro": true,
+  "caixa": [
+   631,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ },
+ {
+  "w": 1280,
+  "botao": "Mais filtros",
+  "titulo": "Filtros",
+  "focoDentro": true,
+  "caixa": [
+   0,
+   844
+  ],
+  "rolavelDentro": true,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ },
+ {
+  "w": 1280,
+  "botao": "Descrever o que procuro",
+  "titulo": "Descrever o que procuro",
+  "focoDentro": true,
+  "caixa": [
+   0,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ }
+]

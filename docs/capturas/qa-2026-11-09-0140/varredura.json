@@ -1,0 +1,934 @@
+[
+ {
+  "w": 390,
+  "u": "/",
+  "st": 200,
+  "ms": 3594,
+  "lat": 0,
+  "img": {
+   "total": 26,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Essencial ← IMG:"
+  ],
+  "nSobre": 1,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/buscar",
+  "st": 200,
+  "ms": 1720,
+  "lat": 0,
+  "img": {
+   "total": 32,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Essencial ← IMG:"
+  ],
+  "nSobre": 1,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/como-funciona",
+  "st": 200,
+  "ms": 1418,
+  "lat": 0,
+  "img": {
+   "total": 18,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/para-proprietarios",
+  "st": 200,
+  "ms": 1441,
+  "lat": 0,
+  "img": {
+   "total": 12,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/empresas",
+  "st": 200,
+  "ms": 1453,
+  "lat": 0,
+  "img": {
+   "total": 10,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/parceiros",
+  "st": 200,
+  "ms": 1663,
+  "lat": 0,
+  "img": {
+   "total": 21,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/parceiros/fotografos",
+  "st": 200,
+  "ms": 1497,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/parceiros/avaliadores",
+  "st": 200,
+  "ms": 1483,
+  "lat": 0,
+  "img": {
+   "total": 3,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/guia-fotos",
+  "st": 200,
+  "ms": 1504,
+  "lat": 0,
+  "img": {
+   "total": 6,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/seguranca",
+  "st": 200,
+  "ms": 1302,
+  "lat": 0,
+  "img": {
+   "total": 3,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/ajuda",
+  "st": 200,
+  "ms": 1651,
+  "lat": 0,
+  "img": {
+   "total": 7,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/guias",
+  "st": 200,
+  "ms": 1658,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/guias/como-precificar-estadia-de-meses",
+  "st": 200,
+  "ms": 1334,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/guias/o-que-e-a-caucao",
+  "st": 200,
+  "ms": 1556,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/guias/checklist-imovel-mobiliado",
+  "st": 200,
+  "ms": 1403,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/guias/como-funciona-a-conferencia-de-entrada",
+  "st": 200,
+  "ms": 1371,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/guias/como-escolher-bairro-em-uberlandia",
+  "st": 200,
+  "ms": 1386,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/guias/documentos-para-morar-em-imovel-mobiliado",
+  "st": 200,
+  "ms": 1728,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/guias/como-por-um-video-no-anuncio",
+  "st": 200,
+  "ms": 1542,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/termos",
+  "st": 200,
+  "ms": 1195,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/privacidade",
+  "st": 200,
+  "ms": 1184,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/cidades/uberlandia",
+  "st": 200,
+  "ms": 1705,
+  "lat": 0,
+  "img": {
+   "total": 32,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Essencial ← IMG:"
+  ],
+  "nSobre": 1,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/cidades/uberlandia/hc-ufu-umuarama",
+  "st": 200,
+  "ms": 1569,
+  "lat": 0,
+  "img": {
+   "total": 4,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Essencial ← IMG:"
+  ],
+  "nSobre": 1,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 390,
+  "u": "/cidades/uberlandia/ufu-santa-monica",
+  "st": 200,
+  "ms": 1560,
+  "lat": 0,
+  "img": {
+   "total": 6,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Essencial ← IMG:"
+  ],
+  "nSobre": 1,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/",
+  "st": 200,
+  "ms": 2342,
+  "lat": 0,
+  "img": {
+   "total": 26,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Essencial ← IMG:"
+  ],
+  "nSobre": 1,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/buscar",
+  "st": 200,
+  "ms": 3192,
+  "lat": 0,
+  "img": {
+   "total": 44,
+   "ruins": 12,
+   "foraDaTelaLazy": 0,
+   "mapa": 12,
+   "outras": []
+  },
+  "sobre": [
+   "Essencial ← IMG:"
+  ],
+  "nSobre": 1,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/como-funciona",
+  "st": 200,
+  "ms": 1553,
+  "lat": 0,
+  "img": {
+   "total": 18,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/para-proprietarios",
+  "st": 200,
+  "ms": 1675,
+  "lat": 0,
+  "img": {
+   "total": 12,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/empresas",
+  "st": 200,
+  "ms": 1567,
+  "lat": 0,
+  "img": {
+   "total": 10,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/parceiros",
+  "st": 200,
+  "ms": 1881,
+  "lat": 0,
+  "img": {
+   "total": 21,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/parceiros/fotografos",
+  "st": 200,
+  "ms": 2471,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/parceiros/avaliadores",
+  "st": 200,
+  "ms": 1630,
+  "lat": 0,
+  "img": {
+   "total": 3,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/guia-fotos",
+  "st": 200,
+  "ms": 1496,
+  "lat": 0,
+  "img": {
+   "total": 6,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/seguranca",
+  "st": 200,
+  "ms": 1516,
+  "lat": 0,
+  "img": {
+   "total": 3,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/ajuda",
+  "st": 200,
+  "ms": 1886,
+  "lat": 0,
+  "img": {
+   "total": 7,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/guias",
+  "st": 200,
+  "ms": 2146,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/guias/como-precificar-estadia-de-meses",
+  "st": 200,
+  "ms": 1377,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/guias/o-que-e-a-caucao",
+  "st": 200,
+  "ms": 1556,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/guias/checklist-imovel-mobiliado",
+  "st": 200,
+  "ms": 1665,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/guias/como-funciona-a-conferencia-de-entrada",
+  "st": 200,
+  "ms": 1530,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/guias/como-escolher-bairro-em-uberlandia",
+  "st": 200,
+  "ms": 1567,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/guias/documentos-para-morar-em-imovel-mobiliado",
+  "st": 200,
+  "ms": 1519,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/guias/como-por-um-video-no-anuncio",
+  "st": 200,
+  "ms": 1358,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/termos",
+  "st": 200,
+  "ms": 1380,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/privacidade",
+  "st": 200,
+  "ms": 1296,
+  "lat": 0,
+  "img": {
+   "total": 2,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [],
+  "nSobre": 0,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/cidades/uberlandia",
+  "st": 200,
+  "ms": 2368,
+  "lat": 0,
+  "img": {
+   "total": 32,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Essencial ← IMG:"
+  ],
+  "nSobre": 1,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/cidades/uberlandia/hc-ufu-umuarama",
+  "st": 200,
+  "ms": 2384,
+  "lat": 0,
+  "img": {
+   "total": 4,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Essencial ← IMG:"
+  ],
+  "nSobre": 1,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ },
+ {
+  "w": 1280,
+  "u": "/cidades/uberlandia/ufu-santa-monica",
+  "st": 200,
+  "ms": 2158,
+  "lat": 0,
+  "img": {
+   "total": 6,
+   "ruins": 0,
+   "foraDaTelaLazy": 0,
+   "mapa": 0,
+   "outras": []
+  },
+  "sobre": [
+   "Essencial ← IMG:"
+  ],
+  "nSobre": 1,
+  "erros": [
+   "Cannot read properties of null (reading 'appendChild')"
+  ]
+ }
+]

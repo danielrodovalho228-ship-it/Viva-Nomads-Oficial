@@ -1,0 +1,442 @@
+[
+ {
+  "w": 390,
+  "botao": "Ver todas as 13 comodidades",
+  "titulo": "Comodidades",
+  "focoDentro": true,
+  "caixa": [
+   284,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ },
+ {
+  "w": 390,
+  "botao": "Cancelamento Antes do contrato assinado, nada",
+  "titulo": "Cancelamento",
+  "focoDentro": true,
+  "caixa": [
+   535,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ },
+ {
+  "w": 390,
+  "botao": "Regras da casa Até 4 pessoas · sem pets",
+  "titulo": "Regras da casa",
+  "focoDentro": true,
+  "caixa": [
+   555,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ },
+ {
+  "w": 390,
+  "botao": "Segurança Sem câmeras no interior (declarado ",
+  "titulo": "Segurança",
+  "focoDentro": true,
+  "caixa": [
+   515,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ },
+ {
+  "w": 390,
+  "botao": "Manutenção Urgente com solução provisória em ",
+  "titulo": "Manutenção",
+  "focoDentro": true,
+  "caixa": [
+   651,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ },
+ {
+  "w": 390,
+  "botao": "Como funcionam os níveis",
+  "titulo": "Como funcionam os níveis",
+  "focoDentro": true,
+  "caixa": [
+   267,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ },
+ {
+  "w": 390,
+  "botao": "O que é o padrão mínimo",
+  "titulo": "O que é o padrão mínimo",
+  "focoDentro": true,
+  "caixa": [
+   101,
+   844
+  ],
+  "rolavelDentro": true,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Pular para o conteúdo principa"
+ },
+ {
+  "w": 390,
+  "botao": "Ampliar mapa",
+  "titulo": "Mapa da região aproximada",
+  "focoDentro": false,
+  "caixa": [
+   0,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": true,
+  "focoEm": "Ampliar mapa"
+ },
+ {
+  "w": 390,
+  "botao": "Como funcionam as avaliações",
+  "titulo": "Como funcionam as avaliações",
+  "focoDentro": true,
+  "caixa": [
+   563,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": true,
+  "focoEm": "Como funcionam as avaliações"
+ },
+ {
+  "w": 390,
+  "botao": "Enviar mensagem",
+  "titulo": "Tirar uma dúvida",
+  "focoDentro": true,
+  "caixa": [
+   0,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": false,
+  "focoNoBotao": false,
+  "focoEm": "TEXTAREA"
+ },
+ {
+  "w": 390,
+  "botao": "Enviar mensagem",
+  "titulo": "Tirar uma dúvida",
+  "focoDentro": true,
+  "caixa": [
+   0,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": false,
+  "focoNoBotao": false,
+  "focoEm": "TEXTAREA"
+ },
+ {
+  "w": 1280,
+  "botao": "+3 mais",
+  "titulo": "Fotos de [TESTE QA] Essencial Conforto R",
+  "focoDentro": false,
+  "caixa": [
+   0,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 2,
+  "imgsVazias": [
+   "",
+   ""
+  ],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": true,
+  "focoEm": "+3 mais"
+ },
+ {
+  "w": 1280,
+  "botao": "Ver todas as 13 comodidades",
+  "titulo": "Comodidades",
+  "focoDentro": true,
+  "caixa": [
+   142,
+   702
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Fale com a Viva\nPular para o c"
+ },
+ {
+  "w": 1280,
+  "botao": "Cancelamento Antes do contrato assinado, nada",
+  "titulo": "Cancelamento",
+  "focoDentro": true,
+  "caixa": [
+   278,
+   567
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Fale com a Viva\nPular para o c"
+ },
+ {
+  "w": 1280,
+  "botao": "Regras da casa Até 4 pessoas · sem pets",
+  "titulo": "Regras da casa",
+  "focoDentro": true,
+  "caixa": [
+   278,
+   567
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Fale com a Viva\nPular para o c"
+ },
+ {
+  "w": 1280,
+  "botao": "Segurança Sem câmeras no interior (declarado ",
+  "titulo": "Segurança",
+  "focoDentro": true,
+  "caixa": [
+   288,
+   557
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Fale com a Viva\nPular para o c"
+ },
+ {
+  "w": 1280,
+  "botao": "Manutenção Urgente com solução provisória em ",
+  "titulo": "Manutenção",
+  "focoDentro": true,
+  "caixa": [
+   336,
+   509
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Fale com a Viva\nPular para o c"
+ },
+ {
+  "w": 1280,
+  "botao": "Como funcionam os níveis",
+  "titulo": "Como funcionam os níveis",
+  "focoDentro": true,
+  "caixa": [
+   184,
+   661
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Fale com a Viva\nPular para o c"
+ },
+ {
+  "w": 1280,
+  "botao": "O que é o padrão mínimo",
+  "titulo": "O que é o padrão mínimo",
+  "focoDentro": true,
+  "caixa": [
+   51,
+   793
+  ],
+  "rolavelDentro": true,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": false,
+  "focoEm": "Fale com a Viva\nPular para o c"
+ },
+ {
+  "w": 1280,
+  "botao": "Ampliar mapa",
+  "titulo": "Mapa da região aproximada",
+  "focoDentro": false,
+  "caixa": [
+   0,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": true,
+  "focoEm": "Ampliar mapa"
+ },
+ {
+  "w": 1280,
+  "botao": "Como funcionam as avaliações",
+  "titulo": "Como funcionam as avaliações",
+  "focoDentro": true,
+  "caixa": [
+   312,
+   533
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": true,
+  "focoNoBotao": true,
+  "focoEm": "Como funcionam as avaliações"
+ },
+ {
+  "w": 1280,
+  "botao": "Enviar mensagem",
+  "titulo": "Tirar uma dúvida",
+  "focoDentro": true,
+  "caixa": [
+   0,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": false,
+  "focoNoBotao": false,
+  "focoEm": "TEXTAREA"
+ },
+ {
+  "w": 1280,
+  "botao": "Enviar mensagem",
+  "titulo": "Tirar uma dúvida",
+  "focoDentro": true,
+  "caixa": [
+   0,
+   844
+  ],
+  "rolavelDentro": false,
+  "imgs": 0,
+  "imgsVazias": [],
+  "cortes": [],
+  "hs": 0,
+  "imgsVaziasApos1s": 0,
+  "fechou": false,
+  "focoNoBotao": false,
+  "focoEm": "TEXTAREA"
+ }
+]

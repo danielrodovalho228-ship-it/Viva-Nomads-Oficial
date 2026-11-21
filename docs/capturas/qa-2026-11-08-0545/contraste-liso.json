@@ -1,0 +1,497 @@
+[
+ {
+  "w": 390,
+  "r": "/",
+  "tot": 182,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda",
+  "tot": 60,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/fale-com-a-viva",
+  "tot": 56,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/morador",
+  "tot": 50,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/ajuda/proprietarios",
+  "tot": 53,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/buscar",
+  "tot": 252,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/cidades/uberlandia",
+  "tot": 273,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/cidades/uberlandia/hc-ufu-umuarama",
+  "tot": 65,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/cidades/uberlandia/ufu-santa-monica",
+  "tot": 77,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/como-funciona",
+  "tot": 103,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/comparar",
+  "tot": 38,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/conferir",
+  "tot": 39,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/empresas",
+  "tot": 81,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/excluir-conta",
+  "tot": 62,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/favoritos",
+  "tot": 38,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/guia-fotos",
+  "tot": 54,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/guias",
+  "tot": 60,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/guias/como-escolher-bairro-em-uberlandia",
+  "tot": 52,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/guias/o-que-e-a-caucao",
+  "tot": 51,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis/ube-001",
+  "tot": 389,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/para-proprietarios",
+  "tot": 78,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros",
+  "tot": 132,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/ativar",
+  "tot": 40,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/avaliadores",
+  "tot": 59,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/buscar",
+  "tot": 63,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/fotografos",
+  "tot": 49,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/pedidos/novo",
+  "tot": 94,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/privacidade",
+  "tot": 96,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/proprietario/exemplo-1",
+  "tot": 170,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/seguranca",
+  "tot": 57,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/termos",
+  "tot": 72,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/acesso-socios",
+  "tot": 6,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/auth",
+  "tot": 12,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 390,
+  "r": "/pagina-que-nao-existe-qa",
+  "tot": 46,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/",
+  "tot": 183,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda",
+  "tot": 62,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/fale-com-a-viva",
+  "tot": 58,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/morador",
+  "tot": 52,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/ajuda/proprietarios",
+  "tot": 55,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/buscar",
+  "tot": 254,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/cidades/uberlandia",
+  "tot": 275,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/cidades/uberlandia/hc-ufu-umuarama",
+  "tot": 67,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/cidades/uberlandia/ufu-santa-monica",
+  "tot": 79,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/como-funciona",
+  "tot": 105,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/comparar",
+  "tot": 40,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/conferir",
+  "tot": 41,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/empresas",
+  "tot": 83,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/excluir-conta",
+  "tot": 64,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/favoritos",
+  "tot": 40,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/guia-fotos",
+  "tot": 56,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/guias",
+  "tot": 62,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/guias/como-escolher-bairro-em-uberlandia",
+  "tot": 54,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/guias/o-que-e-a-caucao",
+  "tot": 53,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis/ube-001",
+  "tot": 389,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/para-proprietarios",
+  "tot": 80,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros",
+  "tot": 134,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/ativar",
+  "tot": 42,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/avaliadores",
+  "tot": 61,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/buscar",
+  "tot": 65,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/fotografos",
+  "tot": 51,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/pedidos/novo",
+  "tot": 100,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/privacidade",
+  "tot": 98,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/proprietario/exemplo-1",
+  "tot": 172,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/seguranca",
+  "tot": 59,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/termos",
+  "tot": 74,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/acesso-socios",
+  "tot": 6,
+  "indet": 0,
+  "falhas": []
+ },
+ {
+  "w": 1280,
+  "r": "/auth",
+  "tot": 15,
+  "indet": 0,
+  "falhas": [
+   {
+    "t": "Viva",
+    "ratio": 4.42,
+    "min": 4.5,
+    "px": 19.2,
+    "fg": "rgb(255, 255, 255)",
+    "bg": "rgb(120,120,120)",
+    "op": 1
+   },
+   {
+    "t": "Nomads",
+    "ratio": 2.49,
+    "min": 4.5,
+    "px": 19.2,
+    "fg": "rgb(143, 214, 58)",
+    "bg": "rgb(120,120,120)",
+    "op": 1
+   }
+  ]
+ },
+ {
+  "w": 1280,
+  "r": "/pagina-que-nao-existe-qa",
+  "tot": 46,
+  "indet": 0,
+  "falhas": []
+ }
+]
