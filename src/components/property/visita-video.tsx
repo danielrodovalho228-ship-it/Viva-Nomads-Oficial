@@ -301,7 +301,7 @@ function PedidoVisita({
                     />
                   ))}
                   {horarios.length < MAX_HORARIOS && (
-                    <button type="button" className="self-start text-sm font-medium text-forest hover:underline" onClick={() => setHorarios((l) => [...l, { id: Math.max(...l.map((x) => x.id)) + 1, valor: "" }])}>
+                    <button type="button" className="inline-flex min-h-11 items-center self-start text-sm font-medium text-forest hover:underline" onClick={() => setHorarios((l) => [...l, { id: Math.max(...l.map((x) => x.id)) + 1, valor: "" }])}>
                       + Outro horário
                     </button>
                   )}
