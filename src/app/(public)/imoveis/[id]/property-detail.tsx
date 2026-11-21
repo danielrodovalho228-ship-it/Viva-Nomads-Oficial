@@ -382,8 +382,8 @@ export function PropertyDetail({
       <div>
         <p className="font-title font-semibold text-ink">Candidatura enviada</p>
         <p className="mt-1 text-sm text-muted">
-          O proprietário recebeu seu perfil. O acompanhamento segue em Mensagens — se ele aceitar,
-          vocês conversam e partem para o fechamento.
+          O proprietário recebeu seu perfil e responde em até 1 dia útil. O acompanhamento segue em Mensagens — se ele
+          aceitar, vocês conversam e partem para o fechamento.
         </p>
       </div>
       <Link
@@ -676,7 +676,7 @@ export function PropertyDetail({
             <p className="text-sm text-muted">{resumo.linhas.find((l) => l.rotulo === "Entrada")?.rotulo}: {resumo.linhas.find((l) => l.rotulo === "Entrada")?.valor}</p>
             <div className="rounded-lg bg-surface-2 px-3 py-3 text-left text-sm text-muted">
               <p className="font-medium text-ink">O que acontece agora</p>
-              <p className="mt-1">O proprietário recebeu seu perfil e responde pela plataforma. Se ele aceitar, vocês conversam e seguem para o fechamento. Você acompanha tudo em Mensagens.</p>
+              <p className="mt-1">O proprietário recebeu seu perfil e responde pela plataforma em até 1 dia útil. Se ele aceitar, vocês conversam e seguem para o fechamento. Você acompanha tudo em Mensagens.</p>
             </div>
             <Link href="/dashboard/mensagens" className={buttonClasses({ size: "sm" })}>
               <MessageSquare className="h-4 w-4" /> Acompanhar em Mensagens
