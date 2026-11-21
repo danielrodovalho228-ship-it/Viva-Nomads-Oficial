@@ -113,7 +113,8 @@ export async function reenviarEmitido(registroId: string): Promise<Res<{ numero:
   if (!c) return { ok: false, error: "Só admin." };
   const recusaQa = await recusaObservador(c.userId);
   if (recusaQa) return { ok: false, error: recusaQa };
-  const { data: reg } = await c.admin.from("documentos_registro").select("id, numero, ref_tabela, ref_id, status").eq("id", registroId).maybeSingle();
+  const { data: reg, error: erroReg } = await c.admin.from("documentos_registro").select("id, numero, ref_tabela, ref_id, status").eq("id", registroId).maybeSingle();
+  if (erroReg) return { ok: false, error: "Não foi possível ler o documento agora. Tente de novo." };
   if (!reg) return { ok: false, error: "Documento não encontrado." };
   const situacao = situacaoEnvio(reg.ref_tabela as string, null, reg.status as string);
   if (!situacao.podeReenviar) return { ok: false, error: reg.status === "anulado" ? "Documento anulado: não se reenvia." : "Este tipo de documento não sai por e-mail." };
