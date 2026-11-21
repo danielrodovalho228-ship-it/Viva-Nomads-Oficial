@@ -89,7 +89,8 @@ test.describe("T2209 — Estadia: a saída, a conferência de saída e a devolu�
     ids.bloco1 = b1.id as string;
     // O 1º pagamento e a caução, registados pelo dono e confirmados pelo morador (a perna dos pagamentos é a t2206).
     for (const [tipo, valor] of [["aluguel", 3000], ["caucao", CAUCAO]] as const) {
-      const { error: ep } = await adm().from("pagamentos_bloco").insert({ bloco_id: ids.bloco1, contrato_id: ids.contrato, tipo, valor, data_pagamento: dia(-36), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: agora });
+      // A regra do banco (0182): o aluguel tem o bloco; a caução é do contrato, sem bloco.
+      const { error: ep } = await adm().from("pagamentos_bloco").insert({ bloco_id: tipo === "aluguel" ? ids.bloco1 : null, contrato_id: ids.contrato, tipo, valor, data_pagamento: dia(-36), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: agora });
       if (ep) throw ep;
     }
   });
