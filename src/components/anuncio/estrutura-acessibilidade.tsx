@@ -21,23 +21,35 @@ export function EstruturaAcessibilidade({ propertyId }: { propertyId: string }) 
   const [checklist, setChecklist] = useState<ChecklistEstrutura>({});
   const [ligado, setLigado] = useState(false);
   const [carregado, setCarregado] = useState(false);
+  // Achado 159: leitura que falha NÃO vira checklist vazio editável (marcar um item apagaria o que estava salvo).
+  const [falhaCarga, setFalhaCarga] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
   const [estado, setEstado] = useState<"" | "salvando" | "salvo" | "erro">("");
   const ultimo = useRef<ChecklistEstrutura>({});
 
   useEffect(() => {
     let vivo = true;
-    void lerChecklistEstrutura(propertyId).then((r) => {
-      if (!vivo) return;
-      const c = r.ok ? r.checklist : {};
-      ultimo.current = c;
-      setChecklist(c);
-      setLigado(nasceLigado(temEstruturaInformada(c)));
-      setCarregado(true);
-    });
+    void lerChecklistEstrutura(propertyId)
+      .then((r) => {
+        if (!vivo) return;
+        if (!r.ok) {
+          setFalhaCarga(true);
+          return;
+        }
+        const c = r.checklist;
+        ultimo.current = c;
+        setChecklist(c);
+        setLigado(nasceLigado(temEstruturaInformada(c)));
+        setFalhaCarga(false);
+        setCarregado(true);
+      })
+      .catch(() => {
+        if (vivo) setFalhaCarga(true);
+      });
     return () => {
       vivo = false;
     };
-  }, [propertyId]);
+  }, [propertyId, tentativa]);
 
   async function gravar(novo: ChecklistEstrutura) {
     setChecklist(novo);
@@ -55,6 +67,16 @@ export function EstruturaAcessibilidade({ propertyId }: { propertyId: string }) 
 
   const marcar = (item: ItemChecklist, sim: boolean) => void gravar({ ...checklist, [item]: sim });
 
+  if (falhaCarga) {
+    return (
+      <div data-testid="estrutura-falha-carga" className="rounded-xl border border-line bg-white p-4 text-sm text-ink" role="alert">
+        <p>Não foi possível carregar a estrutura de acessibilidade agora. O que você já marcou continua salvo.</p>
+        <button type="button" onClick={() => setTentativa((n) => n + 1)} className="mt-2 min-h-11 font-medium text-forest underline underline-offset-2">
+          Tentar de novo
+        </button>
+      </div>
+    );
+  }
   if (!carregado) return null;
   return (
     <div data-testid="estrutura-acessibilidade" data-estado={estado}>
