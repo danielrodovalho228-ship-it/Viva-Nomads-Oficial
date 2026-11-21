@@ -185,7 +185,15 @@ test.describe("T2214 — E1077: o fluxo do avaliador em teste corre só dentro d
       expect(lista.length, "E1077 (a): só as duas contas do âmbito").toBe(2);
       expect.soft((await bloco.innerText()).match(CNPJ_DA_VIVA), "(d) o bloco do dono não fala em CNPJ da Viva").toBeNull();
 
-      await sugeridos.filter({ hasText: `nº ${cred.R.numero}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+      const itemR = sugeridos.filter({ hasText: `nº ${cred.R.numero}` });
+      await itemR.getByRole("button", { name: "Escolher este avaliador" }).click();
+      // A resposta da ação (acao-ok / acao-erro) ou o pedido já designado: a recusa, se houver, vem com o texto dela.
+      await expect
+        .poll(async () => ((await pedidoDe(ids.imP))?.status === "designado" ? "designado" : ((await d.getByTestId("acao-erro").allInnerTexts()).join(" | ") || "à espera")), {
+          timeout: 30_000,
+          message: "E1077: o dono do âmbito escolhe o avaliador do âmbito",
+        })
+        .toBe("designado");
       await d.goto(`/dashboard/imoveis/${ids.imP}/nivel`, { waitUntil: "domcontentloaded" });
       await expect(bloco.getByTestId("avaliador-designado")).toHaveText(`Avaliador escolhido por você: nº ${cred.R.numero}`, { timeout: 30_000 });
       await d.context().close();
