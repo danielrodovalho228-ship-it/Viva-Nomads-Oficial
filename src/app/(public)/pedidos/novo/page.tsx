@@ -32,7 +32,7 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { useAuthStore } from "@/lib/store";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
-import { CHIPS_INTERNET } from "@/lib/busca/filtro-internet";
+import { CHIPS_INTERNET, rotuloMbps } from "@/lib/busca/filtro-internet";
 import type { EstadoDestino } from "@/lib/busca/destino-busca";
 import type { ModoRota } from "@/lib/rotas/tempo";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -723,8 +723,8 @@ function PedidoForm() {
             <span className="mb-2 block text-sm font-medium text-ink" id="pedido-internet-rotulo">Internet medida a partir de (opcional)</span>
             <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="pedido-internet-rotulo" data-testid="pedido-internet">
               {CHIPS_INTERNET.map((v) => (
-                <BotaoMarca key={v} ativo={internetMin === v} onClick={() => setInternetMin((a) => (a === v ? null : v))} icone={Plus} testid={`pedido-internet-${v}`}>
-                  {v} Mbps
+                <BotaoMarca key={v} ativo={internetMin === v} onClick={() => setInternetMin((a) => (a === v ? null : v))} icone={Plus} testid={`pedido-internet-${v}`} className="gap-1 px-2 text-[13px] sm:text-sm">
+                  {rotuloMbps(v)}
                 </BotaoMarca>
               ))}
             </div>

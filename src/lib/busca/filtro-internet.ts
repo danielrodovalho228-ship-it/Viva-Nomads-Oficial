@@ -79,3 +79,11 @@ export function filtroInternetNaUrl(params: URLSearchParams, f: FiltroInternet):
   if (f.soInternetMedida) params.set("medida", "1");
   else params.delete("medida");
 }
+
+/** Espaço que não quebra linha (U+00A0): número e unidade ficam juntos na mesma linha. */
+export const NBSP = "\u00a0";
+
+/** E715 (O4): "100 Mbps" num botão estreito (390 px) nunca separa o número da unidade. */
+export function rotuloMbps(v: number): string {
+  return `${v}${NBSP}Mbps`;
+}
