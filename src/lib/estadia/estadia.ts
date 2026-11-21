@@ -195,15 +195,19 @@ const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigi
  * Nunca um "total" que misture a taxa ao valor mensal.
  */
 export function valoresDaEstadia(
-  v: { valorMensal: number; meses: number; caucao: number; taxa: { percentual: number; valor: number } | null },
+  v: { valorMensal: number; meses: number; caucao: number; taxa: { percentual: number; valor: number } | null; /** E1067: dias reais do contrato, quando ele não fecha em meses inteiros. */ dias?: number | null },
   papel: PapelEstadia,
 ): LinhaValor[] {
+  // E1067: contrato em dias quebrados (31, 43…) → "R$ 2.500,00 × 31 dias ÷ 30", a mesma conta do contrato e do e-mail (E562).
+  const emDias = v.dias != null && v.dias > 0 && v.dias % 30 !== 0;
   const linhas: LinhaValor[] = [
     {
       chave: "mensal",
       rotulo: "Valor mensal",
       valor: v.valorMensal,
-      detalhe: `${brl(v.valorMensal)} × ${v.meses} ${v.meses === 1 ? "mês" : "meses"} · ${ROTULO_PAGO_DIRETO}`,
+      detalhe: emDias
+        ? `${brl(v.valorMensal)} × ${v.dias} dias ÷ 30 · ${ROTULO_PAGO_DIRETO}`
+        : `${brl(v.valorMensal)} × ${v.meses} ${v.meses === 1 ? "mês" : "meses"} · ${ROTULO_PAGO_DIRETO}`,
     },
     { chave: "caucao", rotulo: "Caução", valor: v.caucao, detalhe: v.caucao > 0 ? ROTULO_PAGO_DIRETO : "Não se aplica a este contrato" },
   ];
