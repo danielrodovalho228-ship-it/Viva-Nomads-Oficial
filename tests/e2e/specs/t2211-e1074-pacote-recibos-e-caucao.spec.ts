@@ -124,7 +124,7 @@ test.describe("T2211 — E1074: o pacote de provas nomeia os recibos pelo númer
       expect(secao, `${quem.nome}: o pacote tem a secção PAGAMENTOS`).toContain("PAGAMENTOS");
       expect.soft(secao, `${quem.nome}: E1074 — o recibo do aluguel aparece pelo número (${recibo})`).toContain(recibo);
       expect.soft(secao, `${quem.nome}: E1074 — o comprovante da caução aparece pelo número (${comprovante})`).toContain(comprovante);
-      expect.soft(secao, `${quem.nome}: E1074 — a caução tem linha própria, com o valor`).toMatch(new RegExp(`Cau[cç][aã]o[^\\n]*${CAUCAO.replace(/[.$]/g, "\\$&")}`));
+      expect.soft(secao, `${quem.nome}: E1074 — a caução tem linha própria, com o valor`).toMatch(new RegExp(`Cau[cç][aã]o[^\\n]*${CAUCAO.replace(/[.$]/g, "\\$&").replace(" ", "[\\s\\u00a0]")}`));
       await p.context().close();
     }
   });
