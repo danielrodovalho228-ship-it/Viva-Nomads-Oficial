@@ -7588,6 +7588,14 @@
         "t315-telas-avaliacao-dono-62a"
       ]
     },
+    "src/lib/vistoria/actions.ts#adminAdicionarAoPiloto": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t1715-e1077b-piloto-pela-central"
+      ]
+    },
     "src/lib/vistoria/actions.ts#adminCriarAvaliacaoTeste": {
       "personas": [
         "admin"
@@ -7603,6 +7611,14 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t314-entrada-avaliador-62b3"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#adminRemoverDoPiloto": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t1715-e1077b-piloto-pela-central"
       ]
     },
     "src/lib/vistoria/actions.ts#adminResolverFila": {
