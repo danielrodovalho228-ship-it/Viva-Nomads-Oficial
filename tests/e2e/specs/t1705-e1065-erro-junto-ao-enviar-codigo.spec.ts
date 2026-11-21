@@ -200,8 +200,9 @@ test.describe("T1705 — E1065: o motivo de o código não sair fica junto do bo
     await page.getByTestId("assinar-codigo").fill("000000");
     const assinar = page.getByTestId("assinar-enviar");
     await assinar.click();
-    const erro = page.getByTestId("assinar-erro");
-    await expect(erro).toContainText(/código/i, { timeout: 30_000 });
+    // ORDEM-DUET-348: o alerta é procurado por papel e texto, dentro do formulário (não depende de marcação nova).
+    const erro = page.getByTestId("form-assinar").getByRole("alert").filter({ hasText: /código/i });
+    await expect(erro).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("assinar-pedir-area").getByTestId("assinar-pedir-erro"), "o erro de assinar não vai para junto do botão do código").toHaveCount(0);
     await assinar.scrollIntoViewIfNeeded();
     await expect(erro, "o erro de assinar cabe na mesma tela do botão de assinar").toBeInViewport({ ratio: 1 });
