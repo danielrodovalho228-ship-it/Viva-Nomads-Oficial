@@ -1,0 +1,1521 @@
+# Relatório da Pista C — 08/11/2026 (continuação do registro de 07/11)
+
+Detalhe anterior em `relatorio-pista-c-2026-11-07.md` (blocos 433–516, L-103 a L-106, specs dos merges do dia).
+
+## Bloco 517 aberto (main `c1ae2d65c`)
+
+Pendente da rodada anterior: nada vermelho. Bloco 516 (#3334) e o commit #3335 (Pista QA, documentação) entraram; run de `e4b3405fa` verde (42426815188), o de `c1ae2d65c` em andamento. Nenhum merge de produto novo: sem spec de merge nem regressão a registrar. Meus PRs abertos (t1428 #3270 e t1429 #3271) seguem limpos, sem conflito, sobre os drafts #3256 e #3253, ainda não mesclados. Bloco 517 (t1451, grupo do 500: cidade, buscar, comparar, institucionais, parceiros/buscar, admin) aberto, a 390 e 1280 px, em andamento. Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 517 verde (main `c9d212ad9`)
+
+Bloco 517 (t1451, #3338, grupo do 500: cidade, buscar, comparar, institucionais, parceiros/buscar, admin atendimento/contratos/candidaturas) **verde** (run 42427834121), a 390 e 1280 px, e já mesclado; inclui as telas dos merges E446 e E529. O outro commit novo (#3336, Pista QA) não tem código de produto (`src`/`supabase` sem mudança): nenhuma spec de merge, nenhuma regressão. Aberto no produto: L-104; próximo livre: **L-107**. Próximo da fila: bloco 518 (grupo do 501). Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Blocos 518 e 519 abertos (main `c1d8b384c`)
+
+**Passo 0.** Nenhuma coleta ficou pendente: o bloco 517 fechou verde (run 42427834121). A "falha" do `coleta2.py` citada na leitura anterior foi o coletor que eu mesmo encerrei (código 144) ao corrigir o arquivo de acompanhamento dos blocos 514/515; os dois blocos fecharam verdes (42425138013 e 42425164158). Main `c1d8b384c`: runs de `c9d212ad9` verde (42427931502); `e59f0aa13` e `c1d8b384c` ainda em andamento.
+
+**Merges novos desde o bloco 517.** Só documentação da Pista QA (#3336, #3340: rodadas de QA em `docs/`); `src`, `supabase` e `tests` sem mudança: nenhuma spec de merge, nenhuma regressão.
+
+**Blocos.** 518 (t1452, grupo do 501: avisos, prévia de e-mails, caixa do leitor de QA) e 519 (t1453, grupo do 502: contrato, imóvel, estadia, locação, sócios, autenticação), a 390 e 1280 px. Independentes entre si, abertos sobre a main atual; em andamento. Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Blocos 518 e 519 verdes; E680 coberto; novos merges E506, E699, E704 (main `b9a3fa4c4`)
+
+**Verdes:** bloco 518 (t1452, #3342, grupo do 501, run 42429194387) e bloco 519 (t1453, #3343, grupo do 502, run 42429221163), a 390 e 1280 px; ambos já mesclados.
+
+**Merges de produto novos** (todos já na main, `tsc` limpo em `b9a3fa4c4`): E506 barra de qualificação (#3298), E680 lista populada (#3311), E699 resíduos (#3337) e E704 rótulos de cidade no Leaflet (#3331). Run da main em `b9a3fa4c4` pendente ao registrar; sem regressão conhecida.
+
+**Spec permanente nova:** t1454 / E680 (PR do ramo `claude-c/t1454-e680`): duas moradoras com uma locação cada; depois da troca de conta no mesmo navegador (guardado da A, sessão acabada, B entra), `/dashboard/locacoes` mostra só a locação da B; a 390 e 1280 px. Em andamento.
+
+**Ainda sem spec de tela (item pulado, um por vez):** E506 (barra de qualificação), E699 (resíduos das travas de publicação), E704 (rótulos de cidade nos pinos do mapa; pede semear imóveis em cidades distintas), E706, E694, E696/E702, E700, E701, e as avaliações do parceiro/conduta cega/termos do avaliador. Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## t1454 / E680 verde
+
+t1454 (E680, #3346) **verde** (run 42430241110): depois da troca de conta no mesmo navegador, `/dashboard/locacoes` da conta que entrou mostra só a locação dela, a 390 e 1280 px. Sem regressão; sem defeito novo. Aberto no produto: L-104; próximo livre: **L-107**. Pendentes de spec de tela: E506, E699, E704, E706, E694, E696/E702, E700, E701, avaliações do parceiro/conduta cega/termos do avaliador. Próximo bloco da fila: 520 (grupo do 503). Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Jornadas da QA viram teste (t1455) e bloco 520 (main `1b76bf880`)
+
+**Estado.** Main `1b76bf880`; t1454 / E680 (#3346) já verde (run 42430241110); run da main em andamento. Merges novos do dia desde `b9a3fa4c4`: só E694 (#3339), coberto agora pela t1455.
+
+**Propostas da Pista QA** (`docs/qa-rodadas/2026-11-07.md`, "Para a Pista C, testes determinísticos"):
+- **T-E694 → t1455 (#3351):** visitante em `/imoveis/ube-005` (exemplo): aviso de exemplo, só "Ver imóveis reais" (→ `/buscar`), nenhuma das ações que não funcionam, nenhum "Enviar", nenhum texto de validação em vermelho; 390 e 1280 px.
+- **T-E695 → t1437 (mesmo PR):** acrescentado o caso `quartos=9` (lugar com imóveis, outro filtro exclui tudo → mesma mensagem de data/filtro sem o convite de cidade). Já cobríamos "lugar com imóveis + preço" e "lugar sem imóvel".
+- **T-E696 (fórmula 04/12→16/01 em ube-005): pendente.** A página não lê as datas pela URL; a spec precisa clicar o calendário entre meses (frágil sem uma semente de datas). A conta tem teste unitário (`formula-estadia`). Também pendente: o ramo do E695 sem data futura (precisa de imóvel com disponibilidade já passada) e o E704 (rótulo da cidade no mapa; o lab não carrega tiles do CARTO).
+
+**Resíduos que a própria QA registrou, para as pistas donas (não são do lab):** D3 (E695: sem data, o título diz "nenhum para essa data" e o detalhe manda mudar a data mesmo quando o filtro é a única causa), D4 (E695: `local=Curitiba` sem filtro mostra "Nenhum imóvel com estes filtros" acima de "A Viva ainda não chegou"), R1 (E694: campos de reserva visíveis no exemplo, sem botão). Nenhum virou número L- novo porque a QA já os numerou (D3, D4, R1).
+
+**Bloco 520** (t1456, #3352, grupo do 503: admin sem id) aberto, a 390 e 1280 px, em andamento. Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 520 verde; t1455 vermelha por erro de spec, reenviada
+
+**Bloco 520** (t1456, #3352, grupo do 503) **verde** (run 42431341900), a 390 e 1280 px.
+
+**#3351 (t1455 + caso extra do t1437), run 42431312771 — 3 falhas, ambas erro de spec, nenhuma de produto:**
+1. **t1455 a 1280 px:** `getByText(/anúncio de exemplo/).first()` pegou o `barra-demo` (a barra fixa do celular, `hidden` no desktop). O aviso visível existe. Correção: `.filter({ visible: true })`. A 390 passou.
+2. **t1437, caso `quartos=9`:** `busca-vazia-titulo` não apareceu — o filtro `quartos=9` não gera a busca vazia que eu presumi. Era palpite meu, não vem da tabela da QA (que usa `quartos=3` em Santa Mônica). Caso retirado; o t1437 volta ao que estava verde (preço que exclui tudo + lugar sem imóvel). Os demais casos da tabela do T-E695 dependem da massa de Santa Mônica e ficam pendentes.
+Reenviado no head `405b56e22` (o PR ainda estava aberto, conferi antes). Sem rerun. Nenhum defeito de produto novo; aberto: L-104; próximo livre: **L-107**.
+
+## t1455 verde; cinco merges da Pista A (C7, C9, C10, E710, E711) — t1457 (main `fc8a8e73e`)
+
+**Verde:** t1455 / T-E694 (#3351) no head corrigido (run 42432093519), mesclada; bloco 520 já registrado verde.
+
+**Merges de produto novos** (todos da Pista A, `tsc` limpo em `fc8a8e73e`; runs da main em `3e2435ffe` e `fc8a8e73e` pendentes ao registrar): C10 (#3341, `/seguranca` com a faixa "Desconfie…" e o botão "Fale com a Viva"), C9 (#3349, nome do local sem corte no cartão da busca), C7 (#3350, "Anunciar meu imóvel" na dobra a 390 em `/para-proprietarios`), E710 (#3325, faixa de filtros no celular) e E711 (#3323, CTA de parceiros).
+
+**Spec nova t1457** (PR do ramo `claude-c/t1457-c10-c7`): C10 (a faixa e o botão levam a `/ajuda/fale-com-a-viva`, 390 e 1280) e C7 (390 × 844: o botão inteiro dentro da primeira tela, sem nada cobrindo o centro dele, e a frase da taxa depois do botão). Em andamento.
+
+**Sem spec de tela ainda (item pulado):** C9, E710 e E711 (cobertos só estruturalmente pelos blocos que passam por `/buscar` e `/parceiros`, a 390 e 1280), mais a lista de antes (E506, E699, E704, E706, E696/E702, E700, E701, avaliações do parceiro/conduta cega/termos do avaliador; T-E696 e o ramo sem data futura do E695). Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## t1457 verde (C10 e C7)
+
+t1457 (#3355) **verde** (run 42432802592): `/seguranca` tem a faixa "Desconfie…" com o botão "Fale com a Viva" levando a `/ajuda/fale-com-a-viva` (390 e 1280), e em `/para-proprietarios` a 390 × 844 o botão "Anunciar meu imóvel" fica inteiro na primeira tela, sem nada cobrindo o centro, com a frase da taxa depois. Sem regressão, sem defeito novo; aberto no produto: L-104; próximo livre: **L-107**. Próximo bloco da fila: 521 (grupo do 504). Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 521 e specs de layout público C9/E709/E710/E711 (main `5bea39692`)
+
+**Estado.** Main `5bea39692`: run verde (42433587638). Merge de produto novo desde a última foto: E709 (#3324, folga para o botão flutuante), além do meu t1457. `tsc` limpo.
+
+**Bloco 521** (t1458, #3358, grupo do 504: avaliação do imóvel, avaliadora, página pública da avaliadora, intenção), a 390 e 1280 px, aberto, em andamento.
+
+**Specs de tela que faltavam (t1459, #3359):** C9 (nome do local no cartão da busca pode quebrar em linhas, sem corte horizontal), E710 (ações da busca em linha própria no celular, mesma linha dos filtros do tablet para cima), E711 (`/parceiros` sem o "Seja parceiro" duplicado, com "Quero ser parceiro") e E709 (folga de pelo menos 80 px à direita na página do imóvel a 768 e 1280). Em andamento.
+
+**Rodadas de erros/estados vazios da Pista B:** o PR do bloco de auditorias 160–187 (leitura que falha não vira "não encontrado") não entrou como merge de produto na main nesta foto; ficam como item pulado até mesclarem (as auditorias estão em PRs `claude-b/auditoria-*` e `claude-b/achado*-leitura`, quase todas ainda abertas). Pendentes de spec de tela: E506, E699, E704, E706, E696/E702, E700, E701, avaliações do parceiro/conduta cega/termos do avaliador, T-E696, ramo sem data futura do E695.
+
+Aberto no produto: L-104; próximo livre: **L-107**. Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 521 e t1459 verdes
+
+Bloco 521 (t1458, #3358, grupo do 504) **verde** (run 42434599430) e t1459 (#3359, C9/E709/E710/E711) **verde** (run 42434662997), a 390 e 1280 px (E709 também a 768): nome do local sem corte no cartão da busca, ações da busca em linha própria no celular, `/parceiros` sem o "Seja parceiro" duplicado e folga de 80 px à direita para o botão flutuante. Sem regressão, sem defeito novo; aberto no produto: L-104; próximo livre: **L-107**. Próximo bloco da fila: 522 (grupo do 505). Sem prova ao vivo, sem merge e sem fechar PR.
+
+## Bloco 522 (t1460) e conferência da main
+
+- Main `269790fdc` verde no lab crítico (run 5051); nenhuma falha a classificar, nenhum L- novo. L-107 segue livre; L-104 segue como único defeito aberto.
+- Bloco 522 (PR #3361, run 42436534565): verde. Painel do proprietário sem id (agenda, carteira, ganhos, recibos, respostas rápidas, simulador, ferramentas), 390 e 1280 px.
+- E530b (#3132): a spec t873 foi ajustada no próprio merge; sem spec nova.
+- Próximo: bloco 523 (grupo do 506).
+
+## Blocos 523 e 524
+
+- Bloco 523 (t1461, PR #3366, run 42437878706): verde. Painel do morador sem id (painel, avaliações, buscas, comparar, conta, fechamento, garantias, reembolsos, solicitações, verificação).
+- Bloco 524 (t1462, PR #3367, run 42437908184): verde. Públicas com parâmetro na URL (polo, como funciona, guias, pedidos/novo, proprietário, parceiro, imóveis perto de).
+- Merge novo na main: #3362 (Renato, t150: faixa Comparar a 1280) já é a própria spec; sem spec nova.
+- Nenhum defeito novo; L-107 segue livre. Próximo: bloco 525 (grupo do 508).
+
+## Blocos 525 e 526
+
+- Bloco 525 (t1463, PR #3369 em draft, run 42439205377): verde. Admin com id na URL (chamado, contrato, pedido de parceiro, refazer duas etapas).
+- Bloco 526 (t1464, PR #3370 em draft, run 42439229945): verde. Compartilhadas sem id (conta/[secao], orçamentos/nova, pedidos-cidade, qualificar, parceiro, avaliação do parceiro, aviso de prova).
+- Main: #3361 (run 5057), #3362, #3363 e #3368 verdes no push. #3366 em andamento no fechamento; o run do #3367 foi cancelado por ser superado pelo seguinte (conclusão cancelled, não falha). Nenhum teste permanente quebrou.
+- Merges novos sem spec: nenhum (#3362 é spec; #3363 e #3368 são docs da QA).
+- Nenhum defeito novo; L-107 livre. Próximo: bloco 527 (grupo do 510).
+
+## Bloco 527
+
+- Bloco 527 (t1465, PR #3371 em draft, run 42440171656): verde. Compartilhadas com o morador, pedido de serviço pelos dois lados, três papéis.
+- Merges novos na main desde o último registro: só os blocos 523/524 (#3366, #3367); nenhuma jornada provada sem teste. Nenhum defeito novo; L-107 livre. Próximo: bloco 528 (grupo do 511).
+
+## Bloco 528
+
+- Bloco 528 (t1466, PR #3373 em draft, run 42440770509): verde. Proposta e visita com id na URL, 390 e 1280 px.
+- Main sem merge novo desde #3366/#3367 (blocos 523/524, já spec); nenhuma jornada provada sem teste. Nenhum defeito novo; L-107 livre. Próximo: bloco 529 (grupo do 512).
+
+## Bloco 529
+
+- Bloco 529 (t1467, PR #3374 em draft, run 42442070795): verde. /conferir, /conferir/[codigo], /dashboard/pedidos e /admin/sistema, 390 e 1280 px.
+- Main: único merge novo é #3372 (docs da QA, rodada 02:40); sem código de app novo desde `a3bae5dd`. A QA propôs o T-E686 (em /parceiros/avaliadores, nunca "Você define o seu" junto de "segue a tabela da Viva"; depois do D-E686-a, também sem "Você paga a avaliação"). A primeira parte já é a t1428 (PR #3270), que depende do #3256 ainda em draft: na main de hoje o texto ainda traz os dois trechos, então a spec não entra antes do produto. A parte "Você paga a avaliação" fica para quando o D-E686-a for corrigido (pista A).
+- Nenhum defeito novo; L-107 livre. Próximo: bloco 530 (grupo do 513).
+
+## Blocos 530, 531 e 532
+
+- Bloco 530 (t1468, PR #3379 draft, run 42443518457): verde. Contrato, estadia, cartão, desempenho e solicitações (grupo do 513).
+- Bloco 531 (t1469, PR #3380 draft, run 42443520216): verde. Início, ajuda, busca, imóvel e telas do proprietário (grupo do 514).
+- Bloco 532 (t1470, PR #3381 draft, run 42443522805): verde. Admin, parceiros, visitas e serviços (grupo do 515).
+- Merge novo na main durante a sequência: #3377 (docs da QA); nada a testar. Nenhum defeito novo; L-107 livre. Próximo: bloco 533 (grupo do 516).
+
+## Blocos 533, 534 e 535
+
+- Bloco 533 (t1471, PR #3385 draft, run 42444865371): verde. Painel do proprietário e do morador, /empresas e /para-proprietarios (grupo do 516).
+- Bloco 534 (t1472, PR #3386 draft, run 42444867450): verde. Admin, busca, cidades, comparar, privacidade, segurança, termos, parceiros/buscar (grupo do 517).
+- Bloco 535 (t1473, PR #3387 draft, run 42444870267): verde. /dev/emails, /dashboard/qa/emails, /avisos/desligar (grupo do 518).
+- Nenhum merge novo na main durante a sequência (último: #3377, docs da QA). Nenhum defeito novo; L-107 livre; L-104 único aberto. Próximo: bloco 536 (grupo do 519).
+
+## Correção e t1474
+
+- Correção da seção anterior: entrou o merge #3382 (rodada 03:35 da QA) durante a sequência dos blocos 533–535, ao contrário do que está escrito ali.
+- t1474 (PR #3389 draft, run 42445630077): verde. Teste proposto pela QA nessa rodada: `/conferir/{inexistente}` ("Nenhum documento com este código"), `/conferir/{código de teste}` ("Documento de teste") e 404 em `/parceiros/{inexistente}` e `/avaliadores/{inexistente}`. Não conferi no log se o caso do documento de teste rodou ou pulou (ele pula declarando o motivo quando o laboratório não tem documento de teste válido).
+- Pendências de massa: `/avaliadores/{suspenso}` (precisa de avaliador suspenso) e o E702 (a QA diz que falta massa da Pista C; ainda sem pedido concreto de massa).
+
+## Vigia pós-lote de 10 merges (04:36 UTC) — L-107
+
+- Main: o push final do lote (run 5124, `41f87b941`) deu verde. Os runs dos merges intermediários foram cancelados por serem superados.
+- t1428 (E686, PR #3270): verde com a main mesclada (run 42447678072). Passou a ser só spec (código de produto dos drafts removido; já está na main).
+- t1475 (E713 e chips do /pedidos/novo, PR #3390): verde (run 42448482905) depois de eu escopar ao calendário a checagem da frase "esta solicitação não é enviada" (ela segue noutros pontos do exemplo; erro meu, não do produto).
+- t1429 (E691): o PR #3271 ficou com a base antiga e o lab montou a lista de specs de todos os blocos desde então (cancelado por tempo, não falha). Substituído pelo PR #3394, limpo, saindo da main. Pede ao Daniel fechar o #3271.
+
+### L-107 — defeito real (proposta de item para a lista-master, pelo chat principal)
+- **O quê:** com um laudo ASSINADO, a tela do dono `/dashboard/imoveis/<id>/nivel` cai em "Não conseguimos abrir esta tela" (código para a equipe 1965082685), 1280 px. Sem laudo assinado, o selo não aparece e a tela não é afetada.
+- **Origem:** E691 (#3296, Pista B), selo da assinatura do laudo. O mesmo componente é usado na tela do avaliador (`parceiro/avaliacao/[pedido]`).
+- **Causa provável (não confirmada):** `src/components/vistoria/selo-assinatura.tsx` é componente de servidor (sem "use client") e passa `onFocus` a um `<input>`; handler de evento não atravessa o servidor.
+- **Evidência:** lab run 42451630488, t1429 (PR #3394), mensagem "selo ausente; a tela mostra: Não conseguimos abrir esta tela…". Classificação: defeito real (não é teste vencido nem massa: o mesmo seed funcionava no desenho do draft).
+- **Spec:** t1429 com `test.fail` ligado ao L-107; quem corrigir remove o `test.fail` no mesmo PR. A parte "laudo sem assinatura não mostra a linha" ficou sem verificação enquanto o `test.fail` vale (o teste para na primeira etapa).
+- Aberto agora: L-104 e L-107. Próximo número livre: L-108.
+
+### Sem spec ainda
+E679 1/5 (painel unificado; precisa de login), E687, E689 e E682 (só têm teste de leitura de fonte).
+
+## E708 e bloco 536
+
+- E708 (#3313): já na main; sem referência do LinkedIn à rota antiga em `src`. Coberto pelo teste unitário `e708-rotas-de-retorno.test.ts` e pela t323 (volta em /dashboard/conta/seguranca). Item pulado por já estar mergeado e coberto.
+- Merges novos: #3391, #3392, #3399 e #3400 (docs da QA); nada a testar.
+- Bloco 536 (t1476, PR #3403 draft, run 42453174535): verde. Auth, sócios, modelo de negócio, ROI, simulação, contratos/locações com id, telas da estadia e do imóvel com id.
+- Aberto no produto: L-104 e L-107. Próximo livre: L-108. Próximo bloco: 537 (grupo do 520).
+
+## Blocos 537, 538, 539 e t1480
+
+- Bloco 537 (t1477, PR #3409 draft, run 42454153217): verde. Admin (ajuda da publicação, fotos, marketing, sócios, dados de teste, serviços, solicitações, pedidos, encerramentos, retenção), grupo do 520.
+- Bloco 538 (t1478, PR #3410 draft, run 42454155444): verde. Intenção, avaliação do imóvel, avaliadora, laudo, grupo do 521.
+- Bloco 539 (t1479, PR #3411 draft, run 42454158246): verde. Painel do proprietário sem id, grupo do 522.
+- Merges novos: #3404 (lint, sem mudança de comportamento) e #3405 (docs da QA, rodada 06:10); nenhum código de app novo.
+- t1480 (PR #3413 draft, run 42456730096): verde. T-fixos e T-dinâmicas propostos pela QA na rodada 06:10 (nenhum texto do main/footer fica sob elemento fixo de baixo, 390 e 1280 px; páginas do sitemap com 1 h1 e sem imagem de largura natural 0; /imoveis-perto-de inexistente = 404).
+  - Três falhas no caminho eram da minha spec, não do produto: (1) contava o cabeçalho fixo do topo (cobrir o que rola por baixo é normal); (2) a rolagem parava no meio porque a página crescia (rolagem 8839 de 9995), e o texto do rodapé aparecia sob a barra de baixo no meio do trajeto; (3) agora rola até encostar no fim de verdade. Nenhum defeito de produto: coerente com a QA (0 sobreposições).
+- Pendente da QA: T-P1 (saudação do assistente sem "planos") até a Pista A corrigir a saudação.
+- Aberto no produto: L-104 e L-107 (t1429 com test.fail, PR #3394). Próximo livre: L-108. Próximo bloco: 540 (grupo do 523).
+
+## Blocos 540, 541, 542 e specs dos drafts E714/E717
+
+- Bloco 540 (t1481, PR #3418 draft, run 42457973492): verde. Painel do morador sem id (grupo do 523).
+- Bloco 541 (t1482, PR #3419 draft, run 42457976391): verde. Públicas com parâmetro na URL (grupo do 524).
+- Bloco 542 (t1483, PR #3420 draft, run 42457978905): verde. Admin com id na URL (grupo do 525).
+- Nenhum defeito novo; L-108 livre; abertos: L-104 e L-107 (t1429, PR #3394).
+
+### Drafts que aguardam merge dirigido
+- E714 (#3395, "o dono paga a avaliação"): spec t1484 (PR #3421, base = branch do #3395, run 42458121246, verde sobre o código do draft). A t1428 (PR #3270) passou a aceitar a frase velha e a nova (run 42458135893, verde).
+- E717 (#3396, faixa de teste no avaliador): spec t1485 (PR #3422, base = branch do #3396, run 42458123885, verde).
+- E713 (#3408): já coberto (o próprio PR atualiza a t59; o calendário do exemplo está na t1475, PR #3390). Sem spec nova.
+- E719 (#3397 e #3398): são duas implementações do mesmo item, com textos diferentes. Spec adiada até se escolher qual vale (decisão do coordenador/Daniel); não duplico.
+- Quando #3395 e #3396 mesclarem, as bases de #3421 e #3422 passam para a main.
+
+## Bloco 543, t1480 ajustada e t1486 (C16/C17 da QA)
+
+- Bloco 543 (t1487, PR #3425 draft, run 42460626402): verde. Compartilhadas sem id (grupo do 526).
+- t1480 (PR #3413, run 42460536920): verde com o ajuste pedido pela QA (rodada 07:05): imagens dentro de `.leaflet-container` (tiles do mapa) ficam fora da contagem de imagem vazia. A falha que a QA viu a 390 em produção ("2 imagens com largura natural 0" em /imoveis/ube-001) era de tile bloqueado pela rede dela, não do site.
+- t1486 (PR #3424 draft, run 42461764106): os dois testes propostos pela QA na mesma rodada.
+  - **C17** (Esc em "Mais filtros" leva o foco ao começo da página): reproduz no lab → `test.fail` ligado ao item C17 da QA.
+  - **C16** (estouro lateral da linha Mais filtros · Ordenar · Mapa com filtro ativo): reproduz no lab a **360 px** (5 px) → `test.fail` ligado ao C16; a **390 px** o lab NÃO reproduz (os 3 px da QA dependem da fonte real do site; passou como "Expected to fail, but passed"), então ali o teste é comum. O 390 de produção só se prova no navegador real (QA).
+  - Dois erros meus no caminho (test.fail onde não reproduzia; depois só em 390): ajustados com commits novos, sem defeito de spec restante.
+- Os itens C16 e C17 já têm número da QA; não abri L- novo para eles (evita duplicar). L-108 segue livre.
+- Merges de código na main: nenhum desde o último registro (só #3416, docs da QA). Drafts E714/E717/E719 seguem abertos.
+- Próximo bloco: 544 (grupo do 527).
+
+## Bloco 544 e conferência com a lista-master anexa
+
+- Bloco 544 (t1488, PR #3426 draft, run 42462584673): verde. Compartilhadas com o morador, pedido de serviço pelos dois lados, três papéis (grupo do 527).
+- Lab da main: o push mais recente (`fc7061bfb`, #3416, run 42458166437) está verde; os dois anteriores (#3414, #3412) também. Nenhum merge de código novo desde o último registro.
+- Lista-master anexa (snapshot até E719): sem item novo que peça spec e já esteja mergeado. Drafts ainda abertos, sem spec possível na main: E714 (#3395, spec pronta no PR #3421), E717 (#3396, spec no PR #3422), E713 (#3408, coberto pela t59 e t1475), E716 (#3356 e #3388), E719 (#3397 e #3398, duas implementações; spec adiada até se escolher). E712 e E718 seguem abertos com a Pista A/chat principal, sem comportamento fechado para testar.
+- Defeitos: nenhum novo; L-108 livre; abertos L-104 e L-107 (t1429, PR #3394); C16 (360 px) e C17 da QA cobertos por `test.fail` na t1486 (PR #3424).
+- Próximo bloco: 545 (grupo do 528).
+
+## Bloco 545 e specs propostas pela QA (rodadas 06:25, 06:40, 07:05 e 08:50)
+
+- Bloco 545 (t1490, PR #3430 draft, run 42464319493): verde. Proposta e visita com id (grupo do 528).
+- t1489 (PR #3429 draft, run 42465890357): verde. T-janelas-busca: cada controle da faixa de /buscar abre a janela sem rolagem lateral, Fechar e Esc fecham, foco volta ao botão (390 e 1280 px). Caminho até o verde: (1) erro meu, o id da pílula Ordenar é `ordenar` e não `ordem`; (2) duas quedas de infraestrutura (504 no download do supabase/setup-cli, antes de qualquer teste), com um único rerun nessa run; o run verde veio de um commit legítimo (merge da main no ramo).
+- t1491 (PR #3434 draft, run 42465929827): verde. T-E452-neg (tipo=loft sem botão Nível; nivel=premium mostra "Premium" e desligar tira `nivel` da URL) e T-E436 (a 1280 e 390 nada cobre o topo público).
+- Ainda sem spec: T-E458-390 (menu de /empresas a 390 com o link "Parceiros"; falta o seletor do menu do celular), T-E713r (#3408, draft) e T-E660r (#3407, draft), T-0328 (leitura no banco depois do merge da migração), T-P1 (saudação do assistente, depende da Pista A).
+- Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429, PR #3394) e C16 (360 px)/C17 da QA (t1486, PR #3424).
+- Próximo bloco: 546 (grupo do 529).
+
+## Bloco 546, C16 corrigido e instabilidade da infraestrutura
+
+- Bloco 546 (t1492, PR #3436 draft, run 42467393893): verde. Conferir, pedidos do morador, admin/sistema (grupo do 529).
+- **C16 (QA 07:05) corrigido na main:** o #3433 (Faixa D, `flex-wrap` na faixa de ações da busca) tirou o estouro lateral a 360 px; na t1486 o `test.fail` do C16 a 360 passou a falhar com "Expected to fail, but passed". A spec virou teste comum de regressão a 360 e 390 px (run 42468873863, verde). **C17 segue aberto** (`test.fail` ligado ao item da QA, reproduz no lab). A prova do C16 em produção no navegador real é dos trabalhadores de QA.
+- **Infraestrutura (não é defeito do produto nem de spec):** vários runs caíram com `Unexpected HTTP response: 504` no download do `supabase/setup-cli`, antes de qualquer teste. Afetou: o push da main do #3433 (`53c0bcc10`, runs 42466518269 tentativas 1 e 2) e o 1º run da t1486. **A main nesse commit ficou sem veredito do lab** (esgotei o único rerun); o veredito virá do próximo push na main. As specs sobre a main foram verdes no mesmo período (blocos 545 e 546, t1489, t1491, t1486).
+- #3433 (Faixa D, lab verde: t106, t113, t118, t141, t155) mexeu em `barra-pilulas.tsx` e `caminho-reserva.tsx` (texto "Ver o caminho para morar"); já traz suas specs. A t873 (E530) é a spec do texto antigo "Ver o caminho de reserva"; não confirmei se a Faixa D a ajustou, conferir quando o lab da main sair.
+- Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17.
+- Próximo bloco: 547 (grupo do 530).
+
+## Bloco 547, t1494 e a instabilidade do lab (para a lista-master)
+
+- Specs novas, **sem veredito do lab ainda** (infraestrutura): bloco 547 (t1493, PR #3439 draft, grupo do 530) e t1494 (PR #3440 draft): T-E527 (contraste ≥ 3:1 da legenda do calendário, medido pela QA em 1,10:1 e 1,23:1) e T-E532 (i) (prévia do cartão "Segurança" repete as câmeras do bloco "Privacidade"), ambos como `test.fail` ligados aos itens da lista-master, propostos pela QA na rodada 10:00. Se o lab mostrar que algum já passa, eu troco por teste comum.
+- **Proposta de item para a lista-master (achado de laboratório; não corrijo):** o job `lab-critico` falha de forma intermitente com `Unexpected HTTP response: 504` no passo `supabase/setup-cli@v1`, antes de qualquer teste. Entre 09:03 e 10:10 UTC, pelo menos estes runs foram afetados: 42465463510 (t1489), 42466518269 e 42468633690 (pushes da main `53c0bcc10` e `da24ba7f9`, as duas tentativas de cada), 42467421477 (t1486), 42470270662 e 42470322221 (as duas tentativas de cada). Outros runs no mesmo intervalo passaram (42468873863, 42468392458). Efeito: **a main ficou sem veredito do lab em 3 pushes seguidos** (`53c0bcc10`, `da24ba7f9` e o anterior de 504 no mesmo passo). Sugestão para o dono do workflow (fora do escopo da Pista C, que fica em `tests/e2e` e `scripts/lab`): fixar a versão do CLI e/ou repetir o passo com espera (ex.: `nick-fields/retry` ou `continue-on-error` + nova tentativa), ou instalar o CLI por cache.
+- Reruns: usei o único permitido em cada run; não há mais reruns a pedir. Uma nova passada com a main à frente (merge da main no ramo, commit legítimo) gera run novo para estes dois PRs.
+- Defeitos de produto: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17, E527 e E532 (i) (estes dois com `test.fail` na t1494, ainda não confirmados no lab).
+- Próximo bloco: 548 (grupo do 531).
+
+## Vereditos dos blocos 547 a 549 e t1494
+
+| Spec | PR (draft) | Run | Veredito |
+|---|---|---|---|
+| Bloco 547 (t1493, grupo do 530) | #3439 | 42471239969 (2 tentativas) | **sem veredito, falha de infra**: passo `supabase/setup-cli@v1` falhou nas duas tentativas, antes de qualquer teste. Já tinha caído antes, em 42470270662 (2 tentativas). Rerun único esgotado em cada run; sem commit vazio. |
+| Bloco 548 (t1495, grupo do 531) | #3441 | 42471228082 | verde |
+| Bloco 549 (t1496, grupo do 532) | #3442 | 42471230803 | verde |
+| t1494 (E527 e E532 (i)) | #3440 | 42471244137 (tentativa 2) | verde: **os dois `test.fail` reproduzem no lab** (contraste da legenda do calendário abaixo de 3:1 e prévia do cartão "Segurança" repetindo as câmeras do bloco "Privacidade"); a 1ª tentativa tinha caído por infra |
+
+- Nenhum defeito de produto novo; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17, E527 e E532 (i) (agora confirmados no lab pela t1494).
+- Main: sem veredito do lab em `53c0bcc10` e `da24ba7f9` (infra); o push seguinte (`049469e5b`, docs da QA) não foi conferido por mim.
+- Próximo bloco: 550 (grupo do 533).
+
+## Item para o dono do workflow (achado de laboratório; não corrigido, fora do escopo `tests/e2e` e `scripts/lab`)
+
+- **O que acontece:** o job `lab-critico` (`.github/workflows/lab-critico.yml`) falha de forma intermitente no passo `supabase/setup-cli@v1` com `Unexpected HTTP response: 504` (download do CLI), antes de qualquer teste; o passo não tem repetição e a versão do CLI não está fixada.
+- **Efeito medido hoje (08/11, 09:03 a 10:40 UTC):** pelo menos 8 runs afetados (42465463510, 42466518269, 42467421477, 42468633690, 42470270662, 42470322221, 42471239969 e o 1º do 42471244137), incluindo dois pushes seguidos na main sem veredito. Outros runs no mesmo intervalo passaram (42468873863, 42468392458, 42471228082, 42471230803): é intermitente, não é queda total.
+- **Custo:** a main fica sem veredito, e cada PR de spec gasta o rerun único; a regra de "no máximo um rerun por run" torna o ruído caro.
+- **Sugestão:** fixar a versão do CLI (`with: version: <fixa>`) e repetir o passo com espera (ex.: `nick-fields/retry` ou duas tentativas com `continue-on-error`), ou instalar por cache. Proposta de item para a lista-master, dono: quem cuida do workflow (Faixa D/chat principal).
+
+## Bloco 550 e veredito do bloco 547
+
+- Bloco 550 (t1497, PR #3445 draft, run 42473481205): verde. Painéis do proprietário e do morador, /empresas e /para-proprietarios (grupo do 533).
+- **Bloco 547 (t1493, PR #3439 draft, run 42473481778): verde na 2ª tentativa.** Veredito dado depois de a main avançar (#3443 e #3444, docs da QA) e de eu mesclar a main no ramo (commit legítimo, sem commit vazio). A 1ª tentativa caiu no passo `supabase/setup-cli@v1` (esse passo levou 6,5 minutos antes de falhar). Histórico do 547: 4 runs seguidos caídos nesse passo (42470270662 e 42471239969, 2 tentativas cada) antes deste.
+- **Observação para o dono do workflow (repetição do item de infra):** o 504/falha do `supabase/setup-cli@v1` se repetiu mais uma vez hoje. Os runs do bloco 547 caíram nesse passo repetidamente enquanto outros PRs rodavam normalmente no mesmo intervalo; pode ser coincidência de horário, não afirmo causa. A sugestão segue a mesma: fixar a versão do CLI e repetir o passo com espera, ou instalar por cache.
+- Defeitos: nenhum novo de produto; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17, E527 e E532 (i).
+- Próximo bloco: 551 (grupo do 534).
+
+## Vigia pós-bloco 550: C19, E527 ajustado e bloco 551
+
+- Lab da main: verde em `624a5924a` (#3443) e `a844024e7` (#3444), docs da QA. Nenhum merge de código novo; drafts E714, E717, E719, E716 e E713 seguem abertos (specs prontas ou adiadas como registrado antes).
+- **t1498 (PR #3447 draft, run 42475127749): verde.** T-C19 proposto pela QA (rodada 10:30): `/auth` sem rolagem lateral e `porta-formulario` dentro da tela. A 320, 360 e 375 px o defeito **reproduz no lab** (`test.fail` ligado ao item C19 da QA); a 390 e 1280 px é teste comum e passa. Correção é da pista dona do `/auth` (a QA aponta `grid min-h-screen lg:grid-cols-2` sem `grid-cols-1`).
+- **t1494 (PR #3440 draft, run 42475085864): verde** com a medida ajustada a pedido da QA (rodada 10:45): o E527 agora mede o pixel mais escuro de cada amostra da legenda (preenchimento OU contorno, captura com folga de 3 px) para Disponível, Ocupado, Bloqueado e Hoje. Na main o `test.fail` segue valendo; com o #3432 (draft, anel `forest` no "Disponível") só o Disponível passa, Ocupado, Bloqueado e Hoje continuam abaixo de 3:1 segundo a QA. E532 (i) sem mudança.
+- **Bloco 551 (t1499, PR #3448 draft, run 42475153661): verde.** Admin, busca, cidades, comparar, privacidade, segurança, termos e parceiros/buscar (grupo do 534).
+- QA 10:30 ainda sem spec: T-R1 (a "Nova jornada de teste" do admin não pré-seleciona um anúncio [TESTE QA] com contrato ativo): precisa de sessão de admin e massa de teste; fica como proposta, sem prova logada nesta pista.
+- Defeitos: nenhum novo meu; L-108 livre; abertos L-104, L-107 (t1429, PR #3394), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
+- Infra do workflow: nenhum 504 nesta passada (as 3 corridas passaram de primeira).
+- Próximo bloco: 552 (grupo do 535).
+
+## Bloco 552
+
+- Bloco 552 (t1500, PR #3450 draft, run 42476347198): verde. /dev/emails, /dashboard/qa/emails e /avisos/desligar (grupo do 535).
+- Main: lab verde em `a844024e7` e `624a5924a`; nenhum merge de código novo desde o último registro (últimos: docs da QA, #3443 e #3444). Sem spec nova a criar.
+- Sem 504 de infra nesta passada. Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
+- Próximo bloco: 553 (grupo do 536).
+
+## Blocos 553, 554 e 555
+
+- Bloco 553 (t1501, PR #3451 draft, run 42477355268): verde. Auth, sócios, modelo de negócio, ROI, simulação, contratos/locações, estadia e imóvel com id (grupo do 536).
+- Bloco 554 (t1502, PR #3452 draft, run 42477357440): verde. Admin: ajuda da publicação, fotos de perfil, marketing, sócios, dados de teste, serviços, solicitações, pedidos de parceiros, encerramentos, retenção (grupo do 537).
+- Bloco 555 (t1503, PR #3453 draft, run 42477360913): verde. Intenção, avaliação do imóvel, avaliadora e laudo (grupo do 538).
+- Merge novo na main depois do último registro: nenhum (conferido ao fim da sequência; último de código segue o #3433; só docs da QA depois). Sem spec permanente nova a criar.
+- Sem 504 de infra nesta passada. Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
+- Próximo bloco: 556 (grupo do 539).
+
+## Blocos 556, 557 e 558
+
+- Bloco 556 (t1504, PR #3456 draft, run 42478838521): verde. Painel do proprietário sem id (grupo do 539).
+- Bloco 557 (t1505, PR #3457 draft, run 42478840889): verde. Painel do morador sem id (grupo do 540).
+- Bloco 558 (t1506, PR #3458 draft, run 42478843153): verde. Públicas com parâmetro na URL (grupo do 541).
+- Merge novo na main desde o último registro: nenhum (conferido no começo e no fim da sequência; sem merge de código desde o #3433). Sem spec permanente nova a criar.
+- Sem 504 de infra. Defeitos: nenhum novo; L-108 livre; abertos L-104, L-107 (t1429), C17, C19, E527 e E532 (i), todos com `test.fail` no lab.
+- Próximo bloco: 559 (grupo do 542).
+
+## Blocos 559, 560 e 561 e a suíte noturna completa
+
+- Bloco 559 (t1507, PR #3461 draft, run 42480742592): verde. Admin com id na URL (grupo do 542).
+- Bloco 560 (t1508, PR #3462 draft, run 42480746797): verde. Compartilhadas sem id: proprietário e parceiro (grupo do 543).
+- Bloco 561 (t1509, PR #3463 draft, run 42480748665): verde. Compartilhadas: morador, pedido de serviço, três papéis (grupo do 544).
+- Merge novo de código na main depois do #3433: nenhum (conferido no começo e no fim). Últimos merges: docs da QA (#3443, #3444). Sem spec permanente nova a criar.
+- **Lab crítico (`lab-critico.yml`) na main:** verde em `624a5924a` e `a844024e7` (runs 42471821068 e 42472878384).
+- **Suíte noturna completa (`laboratorio.yml`, "Rodar a suíte E2E", ~65 min):** run 42471821063 em `624a5924a` terminou **com falha** no passo "Marcar a execução como falha se algum teste falhou" (a suíte rodou até o fim; o passo de infra `setup-cli` passou, sem 504). **Não consegui abrir a lista dos testes que falharam**: ela está no resumo do job e no artefato `laboratorio-42471821063` (173 MB), e o artefato não baixa daqui sem credencial; o log do job só traz a linha final. Causa provável: não classificável por mim agora (infra × código × teste vencido). O run de `a844024e7` (42472878415) estava em andamento ao fechar este registro. **Pedido ao chat principal:** abrir o "Resumo da noite" dessa run (ou o artefato) e me passar os nomes das specs vermelhas; eu classifico cada uma (defeito real × teste vencido × massa), corrijo spec vencida e proponho L-108 em diante para defeito real. Os `test.fail` conhecidos (L-104, L-107, C17, C19, E527, E532) seguem como estão, sem forçar verde.
+- Defeitos novos na varredura: nenhum; L-108 livre.
+- Próximo bloco: 562 (grupo do 545).
+
+## Suíte noturna classificada (L-108) e blocos 562 a 564
+
+### L-108 — a suíte noturna estoura o tempo e deixa a maior parte das specs sem rodar (defeito de laboratório; proposta de item para a lista-master)
+- **Fonte:** registro das execuções em `public.lab_execucoes` (só leitura), porque o log do job não traz a lista de testes e o artefato `laboratorio-42471821063` (173 MB) não baixa sem credencial.
+- **Run 42471821063 (`624a5924a`) e run 42472878415 (`a844024e7`), ambos "falha":** 637 passaram / 0 falharam / 3864 sem rodar, e 664 / 0 / 3837. A falha vem do passo "Marcar a execução como falha se algum teste falhou", porque a execução bate no `--global-timeout=3900000` (65 min, o passo "Rodar a suíte E2E" dura exatamente 65 min) e o Playwright sai com erro.
+- **Cobertura efetiva:** em `624a5924a`, dos 838 arquivos de spec, só **117** tiveram algum teste passando (75 de 78 das de quatro dígitos `t1xxx`, e apenas 42 das outras 760). A ordem alfabética põe `t1…`, `t10…`, `t100…`, `t1000…t1xxx` antes das `t2…t9`, e as specs de varredura de bloco (t14xx, cada tela a 390 e 1280 px) gastam o orçamento antes. **~720 specs não rodam na noturna.**
+- **É crônico e piora:** 31/10 a 07/11 passavam ~1000–1180 testes (com ~2500 sem rodar, ou seja, já cortava); depois de 07/11 à noite passam ~620–770 (com ~3700–3900 sem rodar). O total sobe junto com as specs novas.
+- **Falhas reais registradas (nome → classificação):** t106, t113, t118, t141, t155 (e t161 uma vez, 47dc9da78) eram as "5 falhas fixas" da main até 09:24 UTC; o #3433 (Faixa D) as consertou → **teste vencido, já corrigido**. Nos três runs completos depois (`53c0bcc10`, `624a5924a`, `a844024e7`) não há spec vermelha.
+- **Remédios possíveis (decisão do coordenador/dono do workflow; não apliquei):** (a) no workflow (`.github/workflows/laboratorio.yml`, fora do escopo da Pista C): dividir a suíte em fatias paralelas (matriz/shards) ou subir o tempo; (b) nas specs (escopo da Pista C, precisa de decisão): tirar as specs de varredura de bloco do noturno (rodam só no lab crítico e em PR, p. ex. por tag ou projeto Playwright separado) e/ou aposentar ciclos antigos de varredura que se repetem; (c) fazer o noturno falhar com mensagem própria ("estourou o tempo: X de Y specs rodaram") para não parecer spec vermelha.
+- **Ressalva:** cada spec de bloco mesclada piora o L-108; avisei nos PRs #3468, #3469 e #3470. Nada foi apagado. Os `test.fail` conhecidos (L-104, L-107, C17, C19, E527, E532) seguem como estão.
+
+### Blocos
+- Bloco 562 (t1510, PR #3468 draft, run 42482773616): verde. Proposta e visita com id (grupo do 545).
+- Bloco 563 (t1511, PR #3469 draft, run 42482776440): verde. Conferir, pedidos do morador, admin/sistema (grupo do 546).
+- Bloco 564 (t1512, PR #3470 draft, run 42482780969): verde. Contrato, estadia e imóvel com id (grupo do 547).
+- Merge novo de código na main depois do #3433: nenhum. Sem spec permanente nova a criar.
+- Defeitos abertos: L-104, L-107 (t1429), L-108 (novo, acima), C17, C19, E527 e E532 (i). Próximo número livre: **L-109**.
+- Próximo bloco: 565 (grupo do 548), a decidir com o coordenador se a varredura continua enquanto o L-108 não for tratado.
+
+## Blocos 565, 566 e 567 e as propostas de mitigação do L-108 (decisão do coordenador/chat principal)
+
+- Bloco 565 (t1513, PR #3472 draft, run 42484448803): verde. Início, ajuda, busca, imóvel e telas do proprietário (grupo do 548).
+- Bloco 566 (t1514, PR #3473 draft, run 42484452212): verde. Admin, parceiros e visitas (grupo do 549).
+- Bloco 567 (t1515, PR #3474 draft, run 42484455873): verde. Painéis do proprietário e do morador, /empresas (grupo do 550).
+- Lab da main (conferido uma vez ao fim): lab crítico verde em `a844024e7` (run 42472878384); sem merge de código novo desde o #3433. A suíte noturna segue "falha" só por tempo estourado (L-108), sem spec vermelha.
+- Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+
+### L-108 — propostas de mitigação (nenhuma aplicada; a decisão é do coordenador/chat principal)
+Base: nos runs completos de 08/11 a noturna passa ~620–770 testes e deixa ~3700–3900 sem rodar; só ~117 dos 838 arquivos de spec têm algum teste que passa; as specs de varredura de bloco (t14xx, ~116 arquivos já na main, cada tela a 390 e 1280 px) e a ordem alfabética consomem os 65 min antes das `t2…t9`.
+
+| # | Mitigação | Custo | Benefício | Risco / observação |
+|---|---|---|---|---|
+| 1 | **Dividir a suíte em fatias paralelas** (matriz de jobs / `--shard`), cada uma com o seu tempo | Mexe em `.github/workflows/laboratorio.yml` (fora do escopo da Pista C); cada fatia repete a subida do Supabase e o build (~8 min de setup por fatia) e gasta minutos do Actions em proporção ao número de fatias | Cobre **tudo** sem apagar nada: com 4 fatias o tempo cai para ~1/4 de ~4500 testes; falha identifica a fatia | Massa e banco por fatia (isolar o Supabase local por job); definir fatias estáveis para o relatório; a regra do banco `lab_execucoes` precisa somar fatias |
+| 2 | **Tirar a varredura de bloco do noturno** (projeto Playwright/tag próprios; ela roda no lab crítico e em PR, ou num job semanal) | Pequeno nas specs (uma tag/projeto e um `--grep-invert`), mais um ajuste no workflow para o novo job | Libera a maior parte do orçamento hoje gasto (os ~116 arquivos t14xx), fazendo as `t2…t9` voltarem a rodar na noite | A varredura deixa de rodar toda noite (risco de regressão visual fora de PR); precisa de job próprio para não sumir |
+| 3 | **Aposentar ciclos antigos de varredura que se repetem** (cada bloco repete o grupo de 17 blocos antes; manter só o ciclo mais recente por grupo) | Decisão editorial e trabalho de uma passada: apagar/mesclar specs e atualizar `cobertura.json` e a numeração | Reduz o tempo de todo job (noturno, PR e lab crítico) sem mexer em workflow; menos manutenção | **Perde histórico e a cobertura de telas só presentes nos ciclos antigos**; irreversível se não houver git (há); é a opção que mais mexe nas specs |
+| 4 | **Noturno honesto sobre o tempo**: falhar com mensagem própria ("estourou o tempo: X de Y specs rodaram"), gravar `nao_rodaram` e ordenar as specs por risco (críticas primeiro) | Pequeno no workflow e no registrador; sem apagar nada | Para de parecer spec vermelha; deixa o problema visível (o número que importa é "quantas rodaram"); a ordem por risco garante que o crítico rode primeiro | **Não resolve a cobertura**, só a transparência; precisa de uma lista de specs críticas (já existe `scripts/lab/fluxos-criticos.mjs`) |
+
+- **Leitura da Pista C (opinião, não decisão):** o remédio completo é 1 (cobertura) + 4 (transparência); a 2 é a mais barata e rápida para devolver as `t2…t9` à noite; a 3 só se o custo de manter a varredura continuar alto depois das outras.
+- Enquanto isso, a Pista C segue abrindo blocos em PR draft (não mesclados, portanto sem efeito na noturna) e não apaga nada.
+- Próximo bloco: 568 (grupo do 551).
+
+## Bloco 568
+
+- Bloco 568 (t1516, PR #3475 draft, run 42485637435): verde. Admin (atendimento, contratos, candidaturas), busca, cidades, comparar, privacidade, segurança, termos e parceiros/buscar (grupo do 551).
+- Lab da main: lab crítico verde em `a844024e7` e `624a5924a`; nenhum merge de código novo depois do #3433 (nem docs novas da QA além da rodada 10:45). Sem spec permanente nova a criar. Suíte noturna segue "falha" só por tempo estourado (L-108), com as propostas de mitigação registradas acima, à espera do coordenador.
+- Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 569 (grupo do 552).
+
+## Bloco 569
+
+- Bloco 569 (t1517, PR #3476 draft, run 42486601163): verde. /dev/emails, /dashboard/qa/emails e /avisos/desligar (grupo do 552).
+- Lab da main: lab crítico verde em `a844024e7` e `624a5924a`; nenhum merge de código novo depois do #3433. Sem teste permanente novo a rodar (zero merges novos de código desde a última rodada: 0 de 0). Noturna segue "falha" só por tempo estourado (L-108), sem spec vermelha.
+- Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 570 (grupo do 553).
+
+## Bloco 570
+
+- Bloco 570 (t1518, PR #3477 draft, run 42487399895): verde. Auth, sócios, modelo de negócio, ROI, simulação, contratos/locações, estadia e imóvel com id (grupo do 553).
+- Lab da main: lab crítico verde em `a844024e7`; zero merges de código novos desde o #3433 (conferido de novo ao fim). Testes permanentes novos a rodar: 0 de 0. Noturna segue "falha" só por tempo estourado (L-108), sem spec vermelha.
+- Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 571 (grupo do 554).
+
+## Bloco 571
+
+- Bloco 571 (t1519, PR #3480 draft, run 42489062720): verde. Admin: ajuda da publicação, fotos de perfil, marketing, sócios, dados de teste, serviços, solicitações, pedidos de parceiros, encerramentos, retenção (grupo do 554). Sem imagem vazia/quebrada, sobreposição, estouro horizontal, texto cortado nem grade desalinhada.
+- Lab da main: lab crítico verde em `a844024e7`; zero merges de código novos desde o #3433 (conferido de novo ao fim), então nenhuma spec quebrada por merge para corrigir. Noturna segue "falha" só por tempo estourado (L-108), sem spec vermelha.
+- Defeitos novos: nenhum. Abertos: L-104, L-107 (t1429), L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 572 (grupo do 555).
+
+## Bloco 572
+
+- Bloco 572 (t1520, PR #3481 draft, run 42490019540): verde. Intenção, avaliação do imóvel, avaliadora e laudo (grupo do 555).
+- Lab da main: lab crítico verde em `a844024e7`; zero merges de código novos desde o #3433 (conferido ao fim). Testes permanentes novos a rodar: 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 573 (grupo do 556).
+
+## Bloco 573
+
+- Bloco 573 (t1521, PR #3482 draft, run 42490984668): verde. Painel do proprietário sem id: agenda, carteira, ganhos, recibos, respostas rápidas, simulador, ferramentas (grupo do 556). Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, cartão sem foto, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main: head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433 (conferido no começo e no fim): testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 574 (grupo do 557).
+
+## Bloco 574
+
+- Bloco 574 (t1522, PR #3483 draft, run 42492178243): verde. Painel do morador sem id: painel, avaliações, buscas, comparar, conta, fechamento, garantias, reembolsos, solicitações, verificação (grupo do 557). Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, cartão sem foto, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main: head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433 (conferido no começo e no fim): testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 575 (grupo do 558).
+
+## Blocos 575, 576 e 577
+
+- Bloco 575 (t1523, PR #3484 draft, run 42493524991): verde. Públicas com parâmetro na URL (grupo do 558).
+- Bloco 576 (t1524, PR #3485 draft, run 42493528281): verde. Admin com id na URL (grupo do 559).
+- Bloco 577 (t1525, PR #3486 draft, run 42493532087): verde. Compartilhadas sem id: proprietário e parceiro (grupo do 560).
+- Só no laboratório, 390 e 1280 px: sem imagem vazia/quebrada, sobreposição de fixo, cartão sem foto, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (conferido no começo e ao fim de cada bloco): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 578 (grupo do 561).
+
+## Bloco 578
+
+- Bloco 578 (t1526, PR #3487 draft, run 42495027113): verde. Compartilhadas: morador, pedido de serviço pelos dois lados, três papéis (grupo do 561). Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main: head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433 (conferido no começo e no fim): testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 579 (grupo do 562).
+
+## Bloco 579
+
+- Bloco 579 (t1527, PR #3490 draft, run 42497167308): verde. Propostas/[id] e visitas/[id] (grupo do 562). Só no laboratório, 390 e 1280 px, página inteira rolada, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main: head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433 (conferido no começo e no fim): testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19, E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 580 (grupo do 563).
+
+## Blocos 580, 581 e 582 e a t1498 para o C19 corrigido
+
+- Bloco 580 (t1528, PR #3492 draft, run 42498428382): verde. Conferir, conferir/[codigo], pedidos do morador, admin/sistema (grupo do 563).
+- Bloco 581 (t1529, PR #3493 draft, run 42498430740): verde. Contrato, estadia e imóvel com id (grupo do 564).
+- Bloco 582 (t1530, PR #3494 draft, run 42498435308): verde. Início, ajuda, busca e telas do proprietário (grupo do 565).
+- Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- **C19 corrigido pela Pista A no draft #3489** (branch `claude-a/c19-auth-sem-rolagem`: `src/app/auth/page.tsx`, prova de 0 px de 320 a 1280 px). **t1498 versão corrigida (PR #3495 draft, base = branch do #3489, run 42498441042): verde** sobre o código do #3489, sem `test.fail`, teste comum a 320, 360, 375, 390 e 1280 px. **Dependência:** só passa com o #3489. Enquanto o #3489 não mergear, a versão do PR #3447 (com `test.fail` abaixo de 378 px) é a que vale; após o merge do #3489 sem esta troca ela passaria a "passar inesperadamente". Quando o #3489 mergear: base do #3495 passa para a main (eu ajusto), o #3447 perde o sentido (fechamento é do Daniel) e **o C19 sai da lista de defeitos abertos**.
+- Estado da main: head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433 (conferido no começo e ao fim): testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 583 (grupo do 566).
+
+## Blocos 583, 584 e 585
+
+- Bloco 583 (t1531, PR #3500 draft, run 42499632174): verde. Serviços e visitas, admin e parceiros (grupo do 566).
+- Bloco 584 (t1532, PR #3501 draft, run 42499634861): verde. Painéis do morador e do proprietário, /empresas, /para-proprietarios (grupo do 567).
+- Bloco 585 (t1533, PR #3502 draft, run 42499637981): verde. Cidade, institucionais, parceiros, comparar e admin (grupo do 568).
+- Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (conferido antes dos blocos e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. O #3489 (C19) segue aberto, não mergeado: a t1498 do #3447 (com `test.fail`) continua a versão válida; a corrigida (#3495) aguarda o merge do #3489. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 586 (grupo do 569).
+
+## Bloco 586
+
+- Bloco 586 (t1534, PR #3507 draft, run 42500588866): verde. /dev/emails, /dashboard/qa/emails e /avisos/desligar (grupo do 569). Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (conferido no começo e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. O #3489 (C19) segue aberto, sem merge. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 587 (grupo do 570).
+
+## Bloco 587
+
+- Bloco 587 (t1535, PR #3508 draft, run 42501663406): verde. Auth, sócios, modelo de negócio, ROI, simulação, contratos/locações, estadia e imóvel com id (grupo do 570). Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (conferido no começo e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. O #3489 (C19) segue aberto, sem merge. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 588 (grupo do 571).
+
+## Bloco 588
+
+- Bloco 588 (t1536, PR #3511 draft, run 42504283653): verde. Admin: ajuda da publicação, fotos de perfil, marketing, sócios, dados de teste, serviços, solicitações, pedidos de parceiros, encerramentos, retenção (grupo do 571). Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (conferido no começo e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. O #3489 (C19) segue aberto, sem merge. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 589 (grupo do 572).
+
+## Bloco 589
+
+- Bloco 589 (t1537, PR #3512 draft, run 42505504522): verde. Intenção, avaliação do imóvel, avaliadora e laudo (grupo do 572). Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (conferido no começo e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: sem merge sem spec de guarda. O #3489 (C19) segue aberto, sem merge. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-109.
+- Próximo bloco: 590 (grupo do 573).
+
+## Bloco 590 e achado de operação (L-109, proposta)
+
+- Bloco 590 (t1538, PR #3513 draft, run 42506644588): verde. Painel do proprietário sem id (grupo do 573). Só no laboratório, 390 e 1280 px.
+- Estado da main (conferido no começo e ao fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: sem merge sem spec de guarda. O #3489 (C19) segue aberto, sem merge. Noturna do laboratório segue "falha" só por tempo estourado (L-108).
+- **L-109 (proposta ao chat principal; achado de operação, fora do escopo da Pista C):** na main (`a844024e7`) os workflows **Backup noturno** (run 42485195051, 13:29 UTC) e **Teste de restauração** (run 42497108612, 15:53 UTC) **falham no mesmo passo**, "Montar o rclone.conf temporário (600) com o remoto cifrado" (passo 5 no backup, passo 6 no drill); o passo seguinte ("Cópia (banco, arquivos, manifesto e retenção)" / "Restaurar e conferir") é **pulado**, e "Registrar no admin e alarmar" também falha. Efeito: a cópia noturna **não está sendo feita** e a restauração não está sendo provada. Causa provável, não confirmada (a mensagem do passo não aparece no log que consegui ler): segredo/remoto cifrado do rclone ausente ou mal formado, o que pode depender de dado só do Daniel. Não corrijo; item para o dono desses workflows.
+- Defeitos abertos: L-104, L-107, L-108, **L-109 (novo, proposto)**, C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: **L-110**.
+- Próximo bloco: 591 (grupo do 574).
+
+## E708 reconferido e bloco 591
+
+- **E708 (L-106) reconferido na main `a844024e7`:** `ROTA_CONTA_LINKEDIN` (`src/lib/linkedin/rotas.ts`) = `/dashboard/conta/seguranca`; nenhuma referência do LinkedIn a `/dashboard/conta/privacidade` em `src` (só o comentário do teste `e708-rotas-de-retorno.test.ts`); t323 e t351 cobrem o fluxo no lab, e a t323 está no conjunto do lab crítico, verde no head (run 42472878384). Conclusão: as rotas de retorno não apontam mais para a página antiga; prova de pé, nada a reabrir.
+- Bloco 591 (t1539, PR #3514 draft, run 42507658007): verde. Painel do morador sem id: painel, avaliações, buscas, comparar, conta, fechamento, garantias, reembolsos, solicitações, verificação (grupo do 574). Só no laboratório, 390 e 1280 px.
+- Estado da main (começo e fim): head `a844024e7`, lab crítico verde; nenhum merge de código novo desde o #3433. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110. Nenhum defeito novo nesta passada.
+- Próximo bloco: 592 (grupo do 575).
+
+## Blocos 592, 593 e 594
+
+- Bloco 592 (t1540, PR #3517 draft, run 42509133209): verde. Públicas com parâmetro na URL (grupo do 575).
+- Bloco 593 (t1541, PR #3518 draft, run 42509135851): verde. Admin com id na URL (grupo do 576).
+- Bloco 594 (t1542, PR #3519 draft, run 42509140332): verde. Compartilhadas sem id: proprietário e parceiro (grupo do 577).
+- Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (começo e fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
+- Próximo bloco: 595 (grupo do 578).
+
+## Blocos 595, 596 e 597
+
+- Bloco 595 (t1543, PR #3521 draft, run 42510498351): verde: compartilhadas: morador, pedido de serviço, três papéis (grupo do 578).
+- Bloco 596 (t1544, PR #3522 draft, run 42510501099): verde: proposta e visita com id (grupo do 579).
+- Bloco 597 (t1545, PR #3523 draft, run 42510504517): verde: conferir, pedidos do morador, admin/sistema (grupo do 580).
+- Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (começo e fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
+- Próximo bloco: 598 (grupo do 581).
+
+## Blocos 598, 599 e 600
+
+- Bloco 598 (t1546, PR #3525 draft, run 42512106100): verde: contrato, estadia e imóvel com id (grupo do 581).
+- Bloco 599 (t1547, PR #3526 draft, run 42512109322): verde: início, ajuda, busca e proprietário (grupo do 582).
+- Bloco 600 (t1548, PR #3527 draft, run 42512112428): verde: serviços e visitas, admin, parceiros (grupo do 583).
+- Só no laboratório, 390 e 1280 px, sem imagem vazia/quebrada, sobreposição de fixo, estouro horizontal, texto cortado nem grade desalinhada.
+- Estado da main (começo e fim): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433: testes permanentes novos 0 de 0. Noturna segue "falha" só por tempo estourado (L-108).
+- Defeitos novos: nenhum. Abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
+- Próximo bloco: 601 (grupo do 584).
+
+## Parada da varredura de blocos (recomendação ao coordenador) — fila possivelmente vencida
+
+- **Estado da main (conferido uma vez):** head `a844024e7`, lab crítico verde (run 42472878384); **nenhum merge de código novo desde o #3433**, então nada quebrou, nenhum teste permanente novo a criar e nenhuma "superfície de merge recente" a varrer. Os drafts das outras pistas seguem abertos (#3489 C19, #3395 E714, #3396 E717, #3397/#3398 E719, #3408 E713). Nenhum prova/reprova ao vivo.
+- **Contagem dos meus PRs abertos:** 66 em draft, todos `mergeable: clean`: **58 blocos de varredura (543 a 600)** e 8 de specs (t1484, t1485, t1486, t1489, t1491, t1494, t1498 nas duas versões). Nenhum bloco foi mesclado desde o 522.
+- **Retorno decrescente:** dos blocos 523 a 600, **zero defeito novo de produto**; todos os vermelhos foram falha de infraestrutura (504 do `setup-cli`) ou erro da própria spec, já corrigidos. Cada bloco repete um grupo de telas varrido 3 a 4 vezes na 16ª volta do ciclo.
+- **Custo:** cada bloco mesclado entra na ordem alfabética `t1…` da noturna e piora o L-108 (já só ~117 de 838 specs rodam à noite); e todos os PRs editam `tests/e2e/cobertura.json`, então mesclar vários em sequência tende a gerar conflito de linhas nos seguintes.
+- **Decisão pedida (coordenador/chat principal):** (a) **pausar a criação de blocos novos** até o L-108 ter remédio; (b) **consolidar** a varredura (um único job/projeto semanal de varredura, em vez de ~58 arquivos), ou mesclar só os blocos de grupos ainda não varridos; (c) priorizar o que tem valor de guarda: a t1486 (C17), a t1494 (E527/E532), a t1498 (C19) e as specs do E714/E717. A Pista C **não fecha nem apaga nenhum PR** e **não abre o bloco 601** enquanto não houver essa decisão ou um merge novo na main para guardar.
+- Defeitos abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
+
+## Decisão do Muse (08/11) sobre a varredura — em vigor
+
+- **Decisão:** (1) **pausar a criação de blocos novos** enquanto os 58 blocos e 8 specs em draft não drenarem pelo merge; (2) **priorizar as specs de guarda** t1486, t1494, t1498 e as do E714 e do E717; (3) manter o lab crítico verde e corrigir spec quebrada de merge novo quando houver. A consolidação da varredura em job semanal fica para depois da drenagem. Fila dirigida de merges que destravam a Pista C: #3401 → #3406 → #3402 → #3437+#3459 → #3297, além dos drafts de A e B.
+- **Cumprimento:** a Pista C **não abre mais PR de bloco**. Os blocos 601, 602 e 603 já tinham sido gerados e empurrados quando a decisão chegou (ramos `claude-c/bloco601`, `claude-c/bloco602`, `claude-c/bloco603`, specs t1549, t1550 e t1551, sem PR aberto e sem rodar no lab); ficam **parados, sem PR**, e não os apago (regra de não apagar ramo remoto). Se o coordenador quiser, abro os PRs depois da drenagem.
+- **Guia de merge das specs de guarda (ordem sugerida, tudo em draft e `mergeable`/`clean` no último conferido):**
+  1. #3440 (t1494: E527 e E532 (i) como `test.fail`, sobre a main).
+  2. #3424 (t1486: C16 comum a 360 e 390 px, C17 como `test.fail`, sobre a main).
+  3. #3495 (t1498 **corrigida**, base = branch do #3489) **depois do #3489**; **não mesclar o #3447** (t1498 com `test.fail` abaixo de 378 px), que passaria a falhar com "passou quando devia falhar" depois do #3489. Se o #3489 não vier, o #3447 é o que vale.
+  4. #3421 (t1484: E714) depois do #3395, e #3422 (t1485: E717) depois do #3396; ao mergear o draft de cada uma, trocar a base do PR da spec para a main.
+  5. Menores e independentes, na sequência: #3429 (t1489: janelas da busca) e #3434 (t1491: E452 negativo e E436).
+  - Observação: todos editam `tests/e2e/cobertura.json`; o 2º PR em diante pode precisar de uma mesclagem da main no ramo (resolvo no meu PR, sem pedir ao Daniel).
+- Estado da main (conferido): head `a844024e7`, lab crítico verde (run 42472878384); nenhum merge de código novo desde o #3433. Defeitos abertos: L-104, L-107, L-108, L-109 (backup/restauração, proposto), C17, C19 (corrigido no #3489, aguardando merge), E527, E532 (i). Próximo livre: L-110.
+
+## Atualização — main em `143ad20ad`, specs de guarda e fila de blocos
+
+- **Specs de guarda, vereditos no lab crítico (bases já em `main`):** t1498 corrigida (#3495), t1485/E717 (#3422), t1486 (#3424), t1494 (#3440), t1489 (#3429) e t1491 (#3434) verdes. A t1484/E714 (#3421) falhou por spec desatualizada (a redação mesclada é "O dono paga a avaliação, não o resultado"), foi corrigida no commit `4e8102d99` e ficou **verde** (run 42518504034). A t1428/E686 (#3270) aceita as duas redações. Recomendação: **não mesclar o #3447** (t1498 com `test.fail(w < 378)`, vale o #3495 depois do #3489).
+- **E742 (L-104) e E743 (L-107):** causa provável e evidência em `scripts/lab/evidencia-e742-e743-2026-11-08.md`; correção é das pistas donas.
+- **Último bloco verde: 600** (t1548, #3527, run 42512112428), não o 591. Os blocos 601–603 estão em ramos `claude-c/bloco601|602|603`, sem PR e sem rodar. **Não abri o bloco 601:** a pausa do Muse (08/11) segue valendo e ainda há dezenas de blocos em draft sem drenar (de #1409 a #3527). Se o Daniel quiser retomar mesmo assim, é só dizer; o 601 é o próximo.
+- Defeitos abertos: L-104, L-107, L-108, L-109 (proposto), C17, E527, E532(i). Próximo livre: L-110. Sem achado novo nesta atualização.
+
+## Specs de guarda dos drafts de 08/11 (20h40) — t1560 a t1564, todas em draft sobre o ramo do draft que cobrem
+
+| Spec | PR | Item (draft) | Lab crítico |
+|---|---|---|---|
+| t1560 | #3538 | E734, foco volta a `pilula-mais` (T-C17), Esc/X/fundo, 1280 e 390 (#3533) | verde (42520959748) |
+| t1561 | #3539 | E732, contraste do rótulo de /empresas ≥ 4,5:1 medido em pixels (#3530) | verde (42520964513) |
+| t1562 | #3540 | E742, `/api/proximidades` 200 `sem_endereco`; 400 mantido para entrada inválida e anúncio alheio (#3531) | verde (42520970241) |
+| t1563 | #3541 | E743, `/nivel` com laudo assinado abre, selo e hash `select-all` (#3532) | verde no 2º run (42521874502). O 1º (42520974587) falhou por defeito de spec: marcador `laudo-assinatura` herdado da t1429 antiga; o produto usa `selo-assinatura` |
+| t1564 | #3542 | E724, aviso do exemplo é o 1º elemento do cartão e fica acima do preço (#3498) | verde (42520976878) |
+
+- Nenhum achado novo de produto (próximo livre: **L-110**).
+- A t1429 do #3394 (ramo `-limpo`) já usa os marcadores certos do selo; a cópia antiga (ramo `claude-c/t1429-e691`) tem o marcador errado e não deve ser usada.
+- Quando os drafts mesclarem: tirar o `test.fail` do C17 na t1486 (#3424) e do L-107 na t1429 (#3394), tirar `conhecidoL104` das specs de bloco e trocar a base destes cinco PRs para `main`.
+
+## Sequência do Muse (21h) — limpeza pós-merge e prova do E219
+
+- **Limpeza pós-merge: ainda não dá.** Os drafts #3533, #3530, #3531, #3532 e #3498 seguem **abertos** (main parada em `143ad20ad`). Tirar o `test.fail` do C17 (t1486/#3424) e do L-107 (t1429/#3394), tirar `conhecidoL104` das specs de bloco e trocar a base de #3538–#3542 para `main` só faz sentido depois do merge de cada draft: antes disso, as specs ficariam vermelhas na main (a correção não está lá). Fica a lista de ações por draft: #3533 → t1486 (C17); #3532 → t1429 (L-107); #3531 → `conhecidoL104` nas specs de bloco (t1418 e as que copiam o padrão); #3530, #3498 e #3533 → base de #3539, #3542 e #3538 para `main`.
+- **Re-rodar as cinco specs na main atual:** a main não mudou desde os runs verdes (t1560, t1561, t1562, t1564 verdes; t1563 verde no 2º run). Nada a re-rodar; roda de novo no primeiro merge.
+- **E219 (prova):** a t612 já cobre 2 cartões (360/390/1280). Nova **t1565 (#3544, draft sobre a main)**: 4 cartões, com e sem horário, nomes sem ponto de quebra, 320/360/390/1280, sem rolagem lateral e sem horário inventado. Só spec; a tela é da Pista A.
+
+## Sequência de 21h15 — estado, varredura e specs dos merges sem guarda
+
+1. **Lab verde:** t1565 (E219, #3544) **verde** (run 42522980194). Main parada em `143ad20ad`, sem merge novo desde as 19h50; os cinco drafts (#3533, #3530, #3531, #3532, #3498) seguem abertos. Nenhuma spec vermelha nova; nenhum item novo para a lista-master.
+2. **Varredura por blocos: não retomada.** Último bloco verde: 600 (#3527). Os blocos 601–603 estão prontos em ramo, mas a pausa de blocos novos do Muse (08/11) segue valendo e a fila de drafts não drenou. Motivo registrado; o 601 abre assim que a pausa cair.
+3. **Specs dos merges novos sem guarda:** **t1566 (#3546, draft sobre a main)** cobre E718, E720, E723, E726, E730 e E731 a 390 e 1280 px (E718 com imagem carregada de verdade). Os merges #3356 (bom saber), #3489 (C19, t1498), #3395 (E714, t1484) e #3396 (E717, t1485) já têm guarda. #3520 (troca CDL→ACIUB) é só texto de premissas e é coberto pela t1191.
+
+## Sequência de 21h25 — foto do estado
+
+- **Main** parada em `143ad20ad` (lab crítico verde). Drafts #3533, #3530, #3531, #3532 e #3498 ainda abertos. Nenhuma spec vermelha por merge novo.
+- **t1566 (#3546) verde** (run 42524050023): guarda de E718, E720, E723, E726, E730 e E731 a 390 e 1280 px. Todos os merges do dia têm guarda de lab.
+- **Varredura por blocos:** não avançou; a pausa do Muse segue valendo (último bloco verde: 600; 601–603 prontos em ramo, sem PR). Nenhum achado novo (próximo livre: L-110).
+
+## Missão da noite (prazo 07:00 CST) — foto das 21h35
+
+- **Main** em `b2934fb2a` (entrou o #3401, E689/0328); lab crítico da main **verde** (run 42525051927). Drafts #3533, #3530, #3531, #3532 e #3498 ainda abertos.
+- **Specs de guarda a drenar:** #3538–#3542 (E734, E732, E742, E743, E724), #3544 (t1565, E219), #3546 (t1566) — todas verdes e em draft; a drenagem é por merge (decisão do Muse/Daniel, eu não faço merge). Prioridade por valor de guarda: t1486 (#3424), t1494 (#3440), t1498 (#3495), t1484 (#3421, E714), t1485 (#3422, E717).
+- **Spec do merge novo:** E687/0326 → **t1567 (#3548)**, guarda de banco (`parceiros.dados_categoria`). E689/0328 só mexe em dados de contas de teste da produção (ids fixos), sem massa no lab; fica guardada pelo teste de unidade `massa-estadia-semente-datas-0328.test.ts`.
+- **Ainda não mesclados** (specs saem quando entrarem): E699, E690, E721, E688, E722, E682, E707, E725, E727, E728, E719, E713, E724, E729 e migrações 0329–0335.
+- **Varredura por blocos:** segue sem bloco novo (pausa do Muse); as superfícies recém-mergeadas do dia estão cobertas pelas specs t1560–t1567.
+
+## Vigia das 21h55 — vereditos
+
+- **t1567 (#3548, E687/0326): verde** (run 42526112937).
+- **Bloco 602 (#3553, t1550): verde** (run 42526520335). **Bloco 603 (#3554, t1551): verde** (run 42526539684). Mesclada a main nos dois ramos antes do push; sem achado de varredura (próximo livre: **L-110**). Os dois mexem em `cobertura.json`: o segundo a mesclar precisa de merge da main no ramo (eu resolvo). O 601 segue sem PR (pausa do Muse).
+- **Main** ainda em `b2934fb2a`: nenhum merge novo desde a última foto; drafts #3533, #3530, #3531, #3532 e #3498 abertos. Drafts novos de A/B em lab verde, sem merge (specs saem quando entrarem): #3543 (O4), #3547 (E748), #3549 (E746), #3550 (E747), #3551 (E749), #3552 (E750), #3479 (E722/0334).
+
+## Vigia das 22h — merge novo
+
+- **#3402 (E687, migração 0329, `a5d6970f8`)** entrou na main: massa do parceiro de Mudança aprovado, **só em conta de teste da produção** (sem massa no lab). Guarda: o teste de unidade `massa-parceiro-mudanca-e687.test.ts` (já no PR) + a t1567 (#3548, verde), que cobre `parceiros.dados_categoria` no banco do lab. Não cabe spec de UI nova. Lab crítico da main em `a5d6970f8`: run 42527730368, em andamento no momento do registro.
+- Demais: sem merge novo; drafts #3533, #3530, #3531, #3532, #3498 abertos (limpeza pós-merge segue pendente).
+
+## Cadeia das 22h10
+
+- **Main em `a5d6970f8` (#3402, E687/0329): lab crítico verde** (run 42527730368). Entrou depois o **#3406 (E699, migração 0330, `911a6ebba`)**: massa de identidade pendente (CPF de teste na dona `proprietario-qa`), dados só de conta de teste da produção, sem massa no lab → guarda pelo teste de unidade do próprio PR; sem spec de UI possível. Lab da main em `911a6ebba`: a conferir.
+- **t1568 (#3558, draft sobre #3555)**: E753, "Wi-Fi" fora de "Não tem" em `/imoveis/ube-003`, 390 e 1280. Lab: a conferir (na main de hoje a spec falha, como esperado; passa com o #3555).
+- **Bloco 601 (#3559, t1549)**: aberto como draft por pedido expresso (main mesclada no ramo; numeração e cobertura 13/13). Lab: a conferir. Sem achado até aqui (próximo livre: L-110).
+
+## Vigia das 22h25 — vereditos e merges novos
+
+- **t1568 (#3558, E753) verde** sobre o ramo do #3555 (run 42528863983). **Bloco 601 (#3559, t1549) verde** (run 42528869633); sem achado (próximo livre: **L-110**).
+- **Merges novos na main** (até `052e10e24`): **#3459 (E690, 0331)** — ativa o avaliador de teste UDI-002 na produção (conta `is_teste`), sem massa no lab → guarda no teste de unidade do PR; **#3466 (E721, 0332)** — índice único completo em `push_adiados (user_id, grupo)` → **t1569 (#3562)**, guarda de banco do upsert por grupo (lab: a conferir). Já antes: #3406 (E699/0330, mesma situação do E690).
+- Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos; limpeza pós-merge pendente.
+
+## Cadeia das 22h35 — main em `b18c39ec3`
+
+- **t1569 (#3562, E721/0332): verde** (run 42529968365). Lab da main: `052e10e24` verde (42529615185); `e7ca59039` (E690), `911a6ebba` (E699) e `a5d6970f8` (E687/0329) verdes. `b069fdc02` (E688) em andamento; `da35ad3be` (E759) cancelado por run mais novo; `b18c39ec3` (E745) pendente.
+- **Merges novos desde `052e10e24`:** #3478 (E688, 0333), #3563 (E759, jornada da estadia) e #3560 (E745, drill de backup). **t1570 (#3564)**: E688, `plano_manutencao` e `assistencia_24h` em `em_breve` no banco do lab. E759 e E745 entraram com testes de unidade próprios (E745 é rotina de operação, sem tela; E759 pede massa de estadia que o lab não tem). Lab da t1570: a conferir.
+- **Varredura por blocos:** não há bloco pendente (601, 602 e 603 verdes em draft); novo bloco segue pausado pelo Muse. Sem achado novo (próximo livre: **L-110**).
+
+## Vigia das 22h40
+
+- **Merge novo #3471 (E688, Pista A, `298197783`)**: retira o cartão "parceiro geral" (AquiResolve) das superfícies públicas. O próprio PR já atualizou a **t236** (`parceiro-geral` e o texto "AquiResolve" ausentes em `/parceiros/fotografos` com busca vazia, 390 e 1280, mesmo ligado pelo admin) → guarda existente; sem spec nova.
+- **t1570 (#3564, E688/0333)**: lab em andamento (run 42530919517). Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos. Sem achado novo (próximo livre: **L-110**).
+
+## Vigia das 22h47
+
+- **t1570 (#3564, E688/0333): verde** (run 42530919517). Nenhum merge novo desde `298197783`; drafts #3533, #3530, #3531, #3532, #3498 abertos. Sem achado novo (próximo livre: **L-110**).
+
+## Continuação do Muse (22h55) — main em `10f292a83`
+
+- **Lab da main:** `298197783` (#3471, E688/AquiResolve) **verde** (42530992233), `b18c39ec3` (E745) verde (42530715501), `b069fdc02` (E688/0333) verde. `10f292a83` (E722/0334): run 42532121103 em andamento.
+- **Merge novo #3479 (E722, 0334)**, pré-aceitação de 72 h atrás da chave `PRE_ACEITACAO_72H_ATIVA` (desligada): **t1571 (#3567)** — 8 colunas `pre_aceitacao_*` em `propostas` + cron `/api/cron/pre-aceitacao` sem segredo/segredo errado (401/503). Fluxo completo fica nos testes de unidade do PR; spec de fluxo só com a chave ligada no lab (pendente de decisão). Lab da t1571: a conferir.
+- **Varredura por blocos:** sem bloco pendente (601–603 verdes em draft); bloco novo segue pausado pelo Muse. Sem achado novo (próximo livre: **L-110**). Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos.
+
+## Cadeia das 23h
+
+- **Main `10f292a83` (#3479, E722/0334): lab verde** (run 42532121103). Nenhum merge novo depois dele (E682, E707, E725, E727, E728, E719, E713, E729 e 0335 ainda não mergeados).
+- **t1571 (#3567, E722):** run 42532397238 em andamento no momento do registro; veredito na próxima conferência.
+- **Bloco 604 (#3570, t1552)**, 17ª volta do grupo do bloco 587 (painel com id, sócios, autenticação), a 390 e 1280 px; `cobertura.json` regenerado; numeração e cobertura 13/13, `tsc` limpo. Lab: a conferir. Sem achado até aqui (próximo livre: **L-110**). Mexe em `cobertura.json` como #3553, #3554 e #3559: ao mesclar, o seguinte precisa de merge da main no ramo.
+- Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos; limpeza pós-merge pendente.
+
+## Vigia das 23h10
+
+- **t1571 (#3567, E722/0334): verde** (run 42532397238).
+- **Merge novo #3437 (E682, `137cb58fb`)**: a lista "Escolha o avaliador" mostra só a conduta publicada (sem preço nem prazo). **t1572 (#3571)**: massa própria (credenciamento ativo + pedido em `pedido`), 390 e 1280 px; lab a conferir. Risco: se a massa não fizer o avaliador aparecer em `sugeridos`, a falha é de massa, não do produto.
+- **Bloco 604 (#3570, t1552):** run 42532676112 em andamento. Drafts #3533, #3530, #3531, #3532, #3498 abertos. Sem achado novo (próximo livre: **L-110**).
+
+## Vigia das 23h15
+
+- **Merge novo #3297 (E707, `a2d21c25e`)**, composição dos prazos da caução atrás da chave `CAUCAO_PRAZOS_ATIVA` (desligada): **t1573 (#3572)** guarda o estado desligado do simulador de reembolso (`/dashboard/reembolsos`: prazo legal de 30 dias no texto, sem o campo "Data do check-out"). O cálculo fica nos testes de unidade do PR; o ramo ligado pede decisão de ligar a chave no lab. Lab: a conferir.
+- **Em andamento:** t1572 (#3571, E682, run 42533397415) e bloco 604 (#3570, run 42532676112). Nenhum achado novo (próximo livre: **L-110**). Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos.
+
+## Cadeia das 23h25
+
+- **Verdes:** t1572 (#3571, E682, run 42533397415) e bloco 604 (#3570, t1552, run 42532676112).
+- **t1573 (#3572, E707): 1º run vermelho (42533621122) por defeito de spec**: a spec supunha o simulador de reembolso em conta real, mas o simulador é só do modo demonstração; conta real vê "A devolução da caução fica no contrato". Corrigida em commit novo (estado honesto, sem simulador, sem campo de check-out, sem prazo fictício); rerun em andamento. Não é defeito de produto.
+- **Merge novo #3499 (E725, `c4000dd9a`)**: **t1574 (#3576)** — 10 dias no calendário: só o aviso "Estadia mínima de 30 dias." e sem total; 30 dias: sem aviso; 390 e 1280. Lab a conferir.
+- **Bloco 605 (#3575, t1553)**: 17ª volta do grupo do bloco 588 (admin: ajuda da publicação, encerramentos, dados de teste); `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir. Sem achado até aqui (próximo livre: **L-110**).
+- Drafts #3533, #3530, #3531, #3532, #3498 abertos; E727, E728, E719, E713, E729 e 0335 ainda não mergeados.
+
+## Cadeia das 23h25 — rajada de merges
+
+- **Entraram na main** (até `fe4d93dde`): #3551 (E749), #3552 (E750), #3555 (E753), #3556 (E754), #3557 (E756), #3561 (E755), #3565 (E760), #3566 (E761), #3568 (E762) e #3569 (E764), além de #3499 (E725, lab verde, run 42533956457). Os runs de push da rajada foram cancelados pelo seguinte; só o último (`fe4d93dde`, run 42534532949) fecha o veredito da main.
+- **E753:** t1568 (#3558) retargetada para `main` (draft mesclado; main mesclada no ramo; o diff ficou só a spec).
+- **Specs novas:** **t1575 (#3581)** — E755 (ordem estável da vitrine), E760 (redirect 307 de meus-imoveis) e E764 (Mensagens vazio). **A fazer na próxima volta:** E749, E750, E754, E756, E761, E762.
+- **Em andamento:** t1573 (#3572, corrigida; run 42534278938), t1574 (#3576, E725; run 42534229148), bloco 605 (#3575; run 42534225342). Verdes: t1572 (#3571, E682), bloco 604 (#3570).
+- Drafts #3533, #3530, #3531, #3532, #3498 ainda abertos. Sem achado novo (próximo livre: **L-110**).
+
+## Cadeia das 23h30
+
+- **Verdes:** t1573 (#3572, E707, 2º run 42534278938) e bloco 605 (#3575, t1553, run 42534225342). Lab da main em `fe4d93dde`: run 42534532949 cancelado (substituído por run mais novo); veredito na próxima conferência.
+- **t1574 (#3576, E725): 1º run vermelho (42534229148) por defeito de spec.** O aviso "Estadia mínima de 30 dias." aparece como deveria; o que a spec negou por engano foi `total-junto-da-acao`, que é o **"Total por mês" (E528)**, fixo no cartão. O E725 tira só o total da estadia (`cartao-lateral-estadia`/`-conta`). Spec corrigida em commit novo (e, com 30 dias, o total da estadia aparece); rerun em andamento. Não é defeito de produto.
+- Sem achado novo (próximo livre: **L-110**). Faltam specs de E749, E750, E754, E756, E761, E762; bloco 606 (grupo do 589) é o próximo.
+
+## Cadeia das 23h35 — veredito da main e bloco 606
+
+- **Run 42534532949 (`fe4d93dde`): cancelado** pelo run seguinte (concurrency) — sem veredito. Dos 11 runs da rajada, **um falhou: 42534468214 (`815e9f24d`, E760)**, e a causa é **infraestrutura, não código nem spec**: `supabase start` falhou 3× com `failed to bind host port 0.0.0.0:54322/tcp: address already in use` (a rajada subiu vários runs ao mesmo tempo). Nenhum teste chegou a rodar. Item para o dono do workflow: a rajada de merges em sequência estoura as portas do runner; o `concurrency` cancela os runs, mas os que já subiram o Supabase colidem. Último run de push: `c65907055` (#3549, E746), run 42534555303, na fila.
+- **t1575 (#3581)**: run 42534634357 em andamento. **t1574 (#3576)**: corrigida, rerun em andamento.
+- **Bloco 605 (#3575): verde.** **Bloco 606 (#3582, t1554)**, 17ª volta do grupo do bloco 589 (avaliação pelos dois lados, avaliador, documento emitido): aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir. Sem achado (próximo livre: **L-110**).
+- Entraram também #3549 (E746) e #3550 (E747): specs a fazer, junto de E749, E750, E754, E756, E761 e E762.
+
+## Cadeia das 23h45 — vereditos, 8 specs e conferência dos rascunhos
+
+- **Vereditos fechados:** main `c65907055` (#3549, E746) **verde** (run 42534555303); t1575 (#3581, E755/E760/E764) **verde** (42534634357); t1574 (#3576, E725) **verde** no 2º run (42535279280); **bloco 606 (#3582, t1554) verde** (42535244751), sem achado (próximo livre: **L-110**). t1568 (#3558, sobre a main) verde (42534567752). Reposição do run cancelado 42534532949: a main avançou para `c89c11e0c` (#3547, E748); o run dela é o 42535630223 (em andamento) e substitui os cancelados (concurrency).
+- **Run do E760 (42534468214):** falha de infra (supabase start, porta 54322 em uso, 3×, nenhum teste rodou); sem repetição nos runs seguintes.
+- **Specs novas, uma por merge — t1576 a t1583 (PR #3587):** E746, E747, E749, E750, E754, E756, E761 e E762, lógica sem página (rodam no lab-crítico sem massa). `tsc` limpo, numeração/cobertura 13/13; lab a conferir. Faltam: E748 (#3547) e os merges que entrarem.
+- **Rascunhos velhos (#3533 E734, #3530 E732, #3531 E742, #3532 E743, #3498 E724): NENHUM está na main.** Conferi o diff de cada um contra `origin/main`: todos os arquivos de produto e testes deles seguem faltando (bottom-sheet.tsx; banner-topo.tsx; proximidades/route.ts; selo-assinatura.tsx; price-card.tsx). Por isso **não foram fechados**; faltam todos os cinco. Quando cada um mesclar: limpar o C17 da t1486, o L-107 da t1429 e `conhecidoL104`, e trocar a base de #3538–#3542 para `main`.
+
+## Cadeia das 23h50 — frentes A/B (E721, E722, E742, E752, E751, E766)
+
+- **Cobertura por frente:** E721 → t1569 (#3562, verde, main `052e10e24`); E722 → t1571 (#3567, verde, main `10f292a83`); E742 → t1562 (#3540, verde, sobre o draft #3531, **ainda não mesclado**); **E752 (#3579, draft) → t1586 (#3592)**; **E751 (#3580, draft) → t1585 (#3591)**; **E766 (#3573, draft) → t1584 (#3590)**. Três specs novas sobre os ramos dos drafts (falham na main de hoje, como esperado; passam com o draft). Lab a conferir.
+- **t1576–t1583 (#3587): 1º run vermelho (42536077552) por defeito de spec**, 2 de 16: t1577 (E747) exigia ISO desde a 1ª tecla, mas antes do "-" vale a máscara de sempre ("20/26"); t1578 (E749) esperava "Prefiro não informar", mas sem dado a linha some (`null`, nunca vazia). Premissas corrigidas em commit novo; rerun em andamento. Não é defeito de produto.
+- **Main `c89c11e0c` (E748):** lab em andamento (42535630223). **Varredura pública:** as três voltas públicas do ciclo (blocos 601, 602 e 603, #3559/#3553/#3554) já estão verdes; os próximos blocos (604–606) são painel/sócios/auth, admin e avaliação, e o 607 volta ao painel do proprietário. Sem achado (próximo livre: **L-110**).
+
+## Cadeia da 00h10 (09/11) — main, frentes e blocos 604–607
+
+- **Lab da main:** `c89c11e0c` (E748) **verde** (42535630223); `c659070554` (E746) verde. Novo merge **#3505 (E727 + E728, `344e3a273`)**: run 42537255566 em andamento.
+- **Verdes:** t1576–t1583 (#3587) no 2º run (42537040348, após corrigir t1577/t1578); **t1586 (#3592, E752) verde** (42537211936). **Em andamento:** t1584 (#3590, E766; 42537203148) e t1585 (#3591, E751; 42537207774).
+- **Spec do merge novo: t1587 (#3600)** — E728 (rascunho com o CNPJ volta do /auth a 390 e 1280) e E727 (conta logada abre /parceiros sem ir a /auth). Lab a conferir.
+- **Blocos:** 604 (#3570), 605 (#3575) e 606 (#3582) **verdes** (sem achado). **Bloco 607 (#3601, t1555)**, 17ª volta do grupo do 590 (painel do proprietário sem id): aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir. Próximo livre: **L-110**.
+- Drafts #3533, #3530, #3531, #3532, #3498 e também #3573, #3579, #3580 seguem abertos (nenhum na main).
+
+## Vereditos finais da rodada (09/11, 00h35)
+
+- **Verdes:** main `c89c11e0c` (E748, run 42535630223); merge #3505 (E727 + E728, `344e3a273`, run 42537255566); t1584 (#3590, E766, run 42537203148); t1585 (#3591, E751, run 42537207774); bloco 607 (#3601, t1555, run 42538558066), sem achado.
+- **t1587 (#3600):** 1º run (42538551226) vermelho por defeito de spec (`sp-aceite` não existe para visitante). Premissa corrigida em commit novo; run 42540600583 em andamento. Não é defeito de produto.
+- **Evidência do Superpowers (E778):** `scripts/lab/evidencia-superpowers-pista-c-2026-11-09.md`.
+- Próximo livre: **L-110** (nenhum aberto). Próximo bloco: **608** (grupo do 591, painel do morador sem id).
+
+## Rodada das 00h45 (09/11) — t1587 e bloco 608
+
+- **t1587 (#3600, E727 + E728): VERDE** no 2º run (42540600583, spec corrigida). Era defeito da spec, não do produto. Pronto para o próximo passo do chat principal.
+- **Bloco 608 (#3604, t1556): VERDE** (42540765984), 17ª volta do grupo do 591, sem achado.
+- **Main:** nenhum merge novo depois de `344e3a273` (#3505, verde); nada novo a guardar. Sem L- aberto (próximo livre: **L-110**).
+- Próximo bloco: **609** (grupo do 592, t1540).
+
+## Rodada das 01h00 (09/11) — blocos 609 a 612
+
+- **Bloco 609 (#3605, t1557): VERDE** no rerun (42542017159, tentativa 2). O 1º run falhou por infra: `supabase start` com a porta 54322 em uso, 3 tentativas, nenhum teste rodou (mesma falha do E760). Um único rerun, como manda a regra. Sem achado.
+- **Bloco 610 (#3606, t1558): VERDE** (42542223876), admin, sem achado.
+- **Bloco 611 (#3607, t1559):** run 42542253080 em andamento.
+- **Bloco 612 (#3608, t1560, grupo do 595):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 01h10 (09/11) — blocos 611, 612 e 613
+
+- **Bloco 611 (#3607, t1559): VERDE** (42542253080), compartilhadas sem id, sem achado.
+- **Bloco 612 (#3608, t1560): VERDE** (42543032913), morador nas compartilhadas, sem achado.
+- **Bloco 613 (#3609, t1561, grupo do 596 — proposta e visita pelos dois lados):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273` (conferido uma vez nesta rodada). Sem L- aberto (próximo livre: **L-110**).
+- Lote 608–612 fechado verde: #3604, #3605, #3606, #3607, #3608.
+
+## Rodada das 01h25 (09/11) — blocos 613 e 614
+
+- **Bloco 613 (#3609, t1561): VERDE** (42543913664), proposta e visita pelos dois lados, sem achado.
+- **Bloco 614 (#3614, t1562, grupo do 597 — conferir, sistema, pedidos do morador):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273` (conferido uma vez nesta rodada); sem spec nova de guarda. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 01h40 (09/11) — bloco 614 em andamento, bloco 615 aberto
+
+- **Bloco 613 (#3609): VERDE** (42543913664), já registrado na rodada anterior.
+- **Bloco 614 (#3614, t1562):** run 42546251047 em andamento.
+- **Bloco 615 (#3615, t1563, grupo do 598 — solicitações, estadia, desempenho, cartão, contrato):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`; sem spec nova de guarda. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 01h50 (09/11) — blocos 614, 615 e 616
+
+- **Bloco 614 (#3614, t1562):** run 42546251047 ainda em andamento.
+- **Bloco 615 (#3615, t1563):** run 42546347427 ainda em andamento.
+- **Bloco 616 (#3616, t1564, grupo do 599 — início, busca, imóvel, ajuda, painel do proprietário):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab disparado pelo push.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**). Vereditos finais entram na rodada seguinte.
+
+## Vereditos 614–616 e abertura do 617 (09/11, 01h50)
+
+- **Bloco 614 (#3614, t1562): VERDE** (42546251047), conferir/sistema/pedidos do morador, sem achado.
+- **Bloco 615 (#3615, t1563): VERDE** (42546347427), solicitações/estadia/desempenho/cartão/contrato, sem achado.
+- **Bloco 616 (#3616, t1564): VERDE** (42546593733), início/busca/imóvel/ajuda/painel do proprietário, sem achado.
+- **Bloco 617 (#3619, t1565, grupo do 600 — serviços e visitas, admin, parceiros):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+- Lote 613–616 fechado verde: #3609, #3614, #3615, #3616.
+
+## Rodada das 02h00 (09/11) — bloco 617 verde, 618 aberto
+
+- **Bloco 617 (#3619, t1565): VERDE** (42547382408), serviços e visitas, admin, parceiros, sem achado.
+- **Bloco 618 (#3621, t1566, grupo do 601 — painéis do morador e do proprietário, empresas, para-proprietários):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. E748 (#3547) já tem teste de unidade próprio na main (`src/lib/anuncio/e748-identidade-fonte-unica.test.ts`), então fica guardado sem spec de lab. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 02h15 (09/11) — bloco 618 verde, 619 aberto
+
+- **Bloco 618 (#3621, t1566): VERDE** (42548178505), painéis do morador e do proprietário, empresas, sem achado.
+- **Bloco 619 (#3623, t1567, grupo do 602 — cidade, institucionais, parceiros, comparar, admin):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab disparado pelo push, veredito na rodada seguinte.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## E744 — suíte noturna que estoura o teto global (09/11, 02h30)
+
+- **Já existe PR para o E744: #3588** (Pista B, `claude-b/e744-suite-fatiada`, draft, `mergeable_state: clean`): 16 fatias paralelas (`--shard=N/16`, `fail-fast: false`), job `consolidar` que junta os `resultado.json` e grava uma linha em `lab_execucoes`, teste de guarda de matriz × `--shard` × `--esperadas`; 207 pass / 0 fail nos testes do PR. O desenho foi aprovado pelo Daniel. O problema medido: run 42471821063, 640 testes rodaram e 3.864 não rodaram (teto de 3900 s).
+- **Decisão da Pista C:** não abrir um segundo PR fatiando o mesmo workflow. Duplicaria o #3588, daria conflito em `.github/workflows` e sairia do meu escopo (`tests/e2e` e `scripts/lab`). O que fica comigo: ler o resultado da 1ª execução fatiada na main depois do merge e registrar as fatias vermelhas, se houver, como L- (próximo livre: **L-110**). O merge só com o gate completo verde é do Daniel.
+- **Bloco 619 (#3623):** run 42550014972 em andamento. **Main:** sem merge novo depois de `344e3a273`.
+
+## Rodada das 02h40 (09/11) — bloco 619 verde, 620 aberto
+
+- **Bloco 619 (#3623, t1567): VERDE** (42550014972), cidade/institucionais/parceiros/comparar/admin, sem achado. O run ficou na fila do runner por cerca de 9 minutos antes de começar (fila, não falha).
+- **Bloco 620 (#3624, t1568, grupo do 603 — avisos, prévia de e-mails, caixa do leitor de QA):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 02h50 (09/11) — bloco 620 verde, 621 aberto
+
+- **Bloco 620 (#3624, t1568): VERDE** (42551922631), avisos/prévia de e-mails/caixa do leitor de QA, sem achado.
+- **Bloco 621 (#3625, t1569, grupo do 604 — painel com id, sócios e autenticação; 18ª volta do ciclo):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. O #3588 (E744, fatias) segue em draft e não mesclado; a leitura da 1ª execução fatiada da main fica para depois do merge dele. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 03h10 (09/11) — bloco 621 verde, 622 aberto
+
+- **Bloco 621 (#3625, t1569): VERDE** (42552787551), painel com id, sócios e autenticação (18ª volta), sem achado.
+- **Bloco 622 (#3626, t1570, grupo do 605 — admin; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`; #3588 (E744) segue em draft, sem execução fatiada da main para ler. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 03h20 (09/11) — 621 fechado, 622 rodando, 623 aberto, drafts das outras pistas
+
+- **Bloco 621 (#3625): VERDE** (42552787551), já fechado na rodada anterior.
+- **Bloco 622 (#3626, t1570):** run 42554321174 em andamento.
+- **Bloco 623 (#3627, t1571, grupo do 606 — avaliação pelos dois lados, avaliadora pública; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. **E783 (#3618, Pista A)** ainda é draft, não mesclado: o PR traz o próprio teste (`e783-avatar-foto`) e ajusta a t391 (Perfil mostra a foto no cabeçalho), então já tem guarda; a spec de lab de conta com foto só vale depois do merge. **E744 (#3588)** segue em draft (head mudou para `783d9d2b0`, 10 commits); sem execução fatiada da main para ler.
+- Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 03h25 (09/11) — blocos 622 e 623 verdes, 624 aberto
+
+- **Bloco 622 (#3626, t1570): VERDE** (42554321174), admin (18ª volta), sem achado.
+- **Bloco 623 (#3627, t1571): VERDE** (42554666493), avaliação pelos dois lados e avaliadora pública, sem achado.
+- **Bloco 624 (#3629, t1572, grupo do 607 — painel do proprietário sem id; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. E783 (#3618) e E744 (#3588) seguem em draft. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 03h35 (09/11) — blocos 625 e 626 abertos, 624 ainda rodando
+
+- **Bloco 624 (#3629, t1572):** run 42555516380 em andamento (veredito na rodada seguinte).
+- **Bloco 625 (#3630, t1573, grupo do 608 — painel do morador sem id; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Bloco 626 (#3631, t1574, grupo do 609 — públicas com parâmetro; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273` (conferido uma vez nesta rodada). Sem L- aberto (próximo livre: **L-110**).
+
+## Leitura das 03h35 (09/11) — bloco 624 verde, 625 e 626 pendentes
+
+- **Bloco 624 (#3629, t1572): VERDE** (42555516380), painel do proprietário sem id (18ª volta), sem achado.
+- **Bloco 625 (#3630, t1573):** run 42555698036 ainda **em fila** no runner; sem veredito.
+- **Bloco 626 (#3631, t1574):** run 42555723253 **em andamento**; sem veredito.
+- **Bloco 627 (grupo do 610):** não aberto — só abre com 625 e 626 verdes.
+- **Main:** confirmado, nenhum merge novo depois de `344e3a273`; nenhuma spec de guarda nova. Sem L- aberto (próximo livre: **L-110**).
+
+## Leitura das 03h45 (09/11) — bloco 626 verde, 625 ainda em fila
+
+- **Bloco 626 (#3631, t1574): VERDE** (42555723253), públicas com parâmetro (18ª volta), sem achado.
+- **Bloco 625 (#3630, t1573):** run 42555698036 continua **em fila** no runner desde 03h18 (cerca de 11 minutos sem começar). Fila, não falha; sem veredito. O 627 continua fechado até o 625 sair.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 03h45 (09/11) — lote 624–626 fechado verde, 627 aberto
+
+- **Bloco 625 (#3630, t1573): VERDE** (42555698036), painel do morador sem id (18ª volta). O run ficou cerca de 11 minutos em fila e mais 9 em execução; nenhum rerun foi necessário. Sem achado.
+- **Lote 624–626 fechado verde:** #3629 (624), #3630 (625), #3631 (626).
+- **Bloco 627 (#3633, t1575, grupo do 610 — admin; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 04h00 (09/11) — bloco 627 verde, 628 e 629 abertos
+
+- **Bloco 627 (#3633, t1575): VERDE** (42557762122), admin (18ª volta), sem achado.
+- **Bloco 628 (#3634, t1576, grupo do 611 — compartilhadas sem id; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Bloco 629 (#3635, t1577, grupo do 612 — morador nas compartilhadas; 18ª volta):** aberto como draft; mesmas guardas verdes; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273` (conferido uma vez nesta rodada). Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 04h10 (09/11) — bloco 629 verde, 628 com falha de infra
+
+- **Bloco 629 (#3635, t1577): VERDE** (42558758231), morador nas compartilhadas (18ª volta), sem achado.
+- **Bloco 628 (#3634, t1576):** 1º run (42558732902) vermelho por **infra**: `supabase start` falhou 3 vezes (porta em uso) e nenhum teste rodou, a mesma falha do E760 e do bloco 609. Não é defeito de produto nem da spec; sem L- novo. Único rerun disparado; veredito na rodada seguinte.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+- **Padrão a registrar:** a falha de `supabase start` por porta em uso já apareceu em 3 runs (E760, bloco 609, bloco 628), sempre em PR/push logo após outro run no mesmo runner; sem teste vermelho em nenhum. Fica para a Pista B avaliar se o workflow precisa limpar containers antes de subir.
+
+## Leitura das 04h15 (09/11) — 628 no rerun, 630 aberto
+
+- **Bloco 629 (#3635): VERDE** (42558758231), já registrado.
+- **Bloco 628 (#3634):** rerun (tentativa 2 do run 42558732902) em andamento desde 04h03; sem veredito.
+- **Bloco 630 (#3636, t1578, grupo do 613 — proposta e visita pelos dois lados; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem achado novo na varredura, logo nenhuma spec de guarda nova a propor (próximo livre: **L-110**).
+
+## Rodada das 04h20 (09/11) — bloco 628 verde, 631 aberto
+
+- **Bloco 628 (#3634, t1576): VERDE** no rerun (42558732902, tentativa 2), compartilhadas sem id (18ª volta). O 1º run foi falha de infra (`supabase start`), sem teste rodado. Sem achado.
+- **Bloco 630 (#3636, t1578):** run 42560370023 em andamento.
+- **Bloco 631 (#3638, t1579, grupo do 614 — conferir, sistema, pedidos do morador; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Leitura das 04h25 (09/11) — bloco 630 verde, 631 rodando, 632 aberto
+
+- **Bloco 628 (#3634): VERDE** no rerun (42558732902, tentativa 2), registrado na rodada das 04h20.
+- **Bloco 630 (#3636, t1578): VERDE** (42560370023), proposta e visita (18ª volta), sem achado.
+- **Bloco 631 (#3638, t1579):** run 42560774263 em andamento.
+- **Bloco 632 (#3639, t1580, grupo do 615 — solicitações, estadia, desempenho, cartão, contrato; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273` (conferido uma vez nesta rodada); nenhuma spec permanente nova a rodar. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 04h35 (09/11) — bloco 631 verde, 632 em fila, 633 aberto
+
+- **Bloco 631 (#3638, t1579): VERDE** (42560774263), conferir/sistema/pedidos do morador (18ª volta), sem achado.
+- **Bloco 632 (#3639, t1580):** run 42561331910 ainda **em fila** no runner; sem veredito.
+- **Bloco 633 (#3640, t1581, grupo do 616 — início, busca, imóvel, ajuda, painel do proprietário; 18ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 04h45 (09/11) — bloco 632 verde, 633 rodando, 634 aberto
+
+- **Bloco 632 (#3639, t1580): VERDE** (42561331910), solicitações/estadia/desempenho/cartão/contrato (18ª volta). O run ficou cerca de 10 minutos em fila (fila, não falha). Sem achado.
+- **Bloco 633 (#3640, t1581):** run 42561904621 em andamento.
+- **Bloco 634 (#3642, t1582, grupo do 617 — serviços e visitas, admin, parceiros; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 04h55 (09/11) — blocos 633 e 634 verdes, 635 aberto
+
+- **Bloco 633 (#3640, t1581): VERDE** (42561904621), início/busca/imóvel/ajuda/painel do proprietário (18ª volta), sem achado.
+- **Bloco 634 (#3642, t1582): VERDE** (42562987823), serviços e visitas/admin/parceiros (19ª volta), sem achado.
+- **Bloco 635 (#3643, t1583, grupo do 618 — painéis do morador e do proprietário, empresas; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Lote 628–634 fechado verde:** #3634, #3635, #3636, #3638, #3639, #3640, #3642.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Leitura das 05h00 (09/11) — bloco 635 rodando, 636 aberto
+
+- **Bloco 635 (#3643, t1583):** run 42564247954 em andamento (iniciado 04h53); sem veredito.
+- **Bloco 636 (#3645, t1584, grupo do 619 — cidade, institucionais, parceiros, comparar, admin; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** conferida uma vez, ainda em `344e3a273`: **nenhum merge novo**. Os trabalhos das Pistas A e B (E723–E734, E766/E768) seguem em PR/draft, não na main; nenhuma spec permanente nova a rodar. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 05h10 (09/11) — bloco 635 verde, 636 rodando, 637 aberto
+
+- **Bloco 635 (#3643, t1583): VERDE** (42564247954), painéis do morador e do proprietário/empresas (19ª volta), sem achado.
+- **Bloco 636 (#3645, t1584):** run 42564754630 em andamento.
+- **Bloco 637 (#3646, t1585, grupo do 620 — avisos, prévia de e-mails, caixa do leitor de QA; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 05h20 (09/11) — bloco 636 verde, 637 rodando, 638 aberto
+
+- **Bloco 636 (#3645, t1584): VERDE** (42564754630), cidade/institucionais/parceiros/comparar/admin (19ª volta), sem achado.
+- **Bloco 637 (#3646, t1585):** run 42565259755 em andamento.
+- **Bloco 638 (#3647, t1586, grupo do 621 — painel com id, sócios e autenticação; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- aberto (próximo livre: **L-110**).
+
+## Rodada das 05h35 (09/11) — blocos 637 e 638 verdes, 639 aberto, e uma colisão de numeração minha
+
+- **Bloco 637 (#3646, t1585): VERDE** (42565259755), avisos/prévia de e-mails/caixa do leitor de QA (19ª volta), sem achado.
+- **Bloco 638 (#3647, t1586): VERDE** (42565736895), painel com id/sócios/autenticação (19ª volta), sem achado.
+- **Bloco 639 (#3648, spec t1600, grupo do 622 — admin; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+### Problema de numeração das minhas specs (erro meu, não é defeito de produto)
+
+O teste `src/lib/specs-numeracao.test.ts` exige número `tN` único por spec. Cada ramo passa sozinho, mas **os blocos 612–638 usaram t1560–t1586, números que as specs de guarda E-\* (outros PRs meus) já ocupam**. Exemplos: t1560 (bloco 612 × E734), t1565 (617 × E219), t1570 (622 × E688/0333), t1575 (627 × E755/E760/E764), t1576 (628 × E746), t1583 (635 × E762), t1584 (636 × E766). Também t1587 (E727/E728, #3600).
+
+- **Efeito:** quando um PR de cada lado mesclar, o outro fica vermelho no guarda de numeração (o lab roda no merge-ref). Nada está na main ainda, então hoje nenhum run quebrou.
+- **Contenção já feita:** a partir do bloco 639 as specs de bloco usam a faixa **t1600+** (639 = t1600, 640 = t1601, …).
+- **Correção pendente (decisão de custo):** renumerar os blocos 612–638 para t1601+ em lote antes do primeiro merge de qualquer um deles, ou fazê-lo ramo a ramo no momento do merge (cada ramo já precisa de merge da main por causa do `cobertura.json`). Renumerar tudo agora são 27 pushes e 27 runs de lab; não fiz sem alinhar.
+
+### Renumeração em lote dos blocos 612–638 (09/11, 05h45) — feita
+
+Decisão do Daniel: renumerar agora. Os 27 blocos saíram de t1560–t1586 para t1601–t1627 (bloco N → t(1601 + N − 612)); cada ramo teve o arquivo renomeado, o título interno ajustado e o `cobertura.json` regenerado, com numeração/cobertura 13/13 em todos antes do push.
+
+| Bloco | Antes → Depois | Bloco | Antes → Depois | Bloco | Antes → Depois |
+|---|---|---|---|---|---|
+| 612 | t1560 → t1601 | 621 | t1569 → t1610 | 630 | t1578 → t1619 |
+| 613 | t1561 → t1602 | 622 | t1570 → t1611 | 631 | t1579 → t1620 |
+| 614 | t1562 → t1603 | 623 | t1571 → t1612 | 632 | t1580 → t1621 |
+| 615 | t1563 → t1604 | 624 | t1572 → t1613 | 633 | t1581 → t1622 |
+| 616 | t1564 → t1605 | 625 | t1573 → t1614 | 634 | t1582 → t1623 |
+| 617 | t1565 → t1606 | 626 | t1574 → t1615 | 635 | t1583 → t1624 |
+| 618 | t1566 → t1607 | 627 | t1575 → t1616 | 636 | t1584 → t1625 |
+| 619 | t1567 → t1608 | 628 | t1576 → t1617 | 637 | t1585 → t1626 |
+| 620 | t1568 → t1609 | 629 | t1577 → t1618 | 638 | t1586 → t1627 |
+
+- **Bloco 639** fica em **t1600** (já aberto assim, #3648); o **próximo bloco (640) usa t1628**, porque t1601 passou a ser do bloco 612.
+- **Conferência de unicidade:** varri todos os ramos remotos (main + `claude-c/*`): nenhum número ≥ t1556 aparece em dois ramos diferentes. As specs E-\* (t1560–t1587) e os blocos (t1556–t1559 e t1600–t1627) não se sobrepõem mais.
+- Os 27 pushes dispararam 27 runs de lab; só renomeiam arquivo e título, então o esperado é verde igual ao anterior. Qualquer vermelho aqui entra na próxima rodada como causa a ler no log.
+
+## Rodada das 05h50 (09/11) — bloco 639 verde, 640 aberto, leitura dos 27 runs da renumeração
+
+- **Bloco 639 (#3648, t1600): VERDE** (42567141606), admin (19ª volta), sem achado.
+- **Bloco 640 (#3649, t1628, grupo do 623 — avaliação pelos dois lados, avaliadora pública; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Runs dos 27 blocos renumerados (leitura parcial):**
+  - **Verdes:** 612, 613, 614, 619.
+  - **Vermelhos por infra, não pela renumeração:** 616 (42567354515), 618 (42567368975), 620 (42567377561), 624 (42567402098). Causa lida no log: `supabase/setup-cli@v1` recebeu **HTTP 504 três vezes** ao baixar o CLI (passo de instalação, antes de qualquer teste). Foi o efeito de 27 pushes disparando 27 runs ao mesmo tempo; nenhum teste rodou. Um único rerun por run foi disparado.
+  - **Ainda em fila/andamento:** os demais (615, 617, 621–623, 625–638), a ler na rodada seguinte.
+- **Lição de operação:** subir dezenas de ramos de uma vez estoura a fila e o download do CLI. Em lote futuro, empurrar em levas de ~6 ramos.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Leitura das 05h48 UTC (23h48 CST, 09/11) — blocos 624, 625 e 626 e visão dos 27 runs
+
+**Os três pedidos (leitura nova, não a última conhecida):**
+
+| Bloco | PR | Run | Estado |
+|---|---|---|---|
+| 624 (t1613) | #3629 | 42567402098 | **rerun (tentativa 2) em andamento**; a tentativa 1 foi infra (HTTP 504 do setup-cli) |
+| 625 (t1614) | #3630 | 42567409168 | **VERDE** |
+| 626 (t1615) | #3631 | 42567415419 | **VERDE** |
+
+- Como o 624 ainda não tem veredito, **nenhum bloco novo foi aberto** nesta leitura (o 627, grupo do 610, já existe: #3633, t1616, verde).
+
+**Visão dos 27 renumerados (mesma leitura):**
+- **Verdes (17):** 612, 613, 614, 615, 617, 619, 622, 623, 625, 626, 627, 628, 629, 631, 632, 633, 637.
+- **Reruns em andamento:** 616, 620, 621, 624. Bloco 630 e 636 também em andamento (1ª tentativa).
+- **Vermelhos por infra, ainda sem rerun:** 634 (42567462031), 635 (42567467525), 638 (42567484544): log curto (~3,7 mil caracteres), sem `e2e.txt`, nenhum teste rodou.
+- **618 (42567368975): 2ª falha de infra no mesmo run** (mesma assinatura curta, depois do rerun). Pela regra de um rerun por run, **não repito**; segue como "infra, sem veredito de spec" e será conferido na próxima alteração real do ramo.
+- **Causa comum:** o download do `supabase/setup-cli@v1` devolve 504 sob a carga de 27+ runs simultâneos (mais os runs das outras pistas). A renumeração só renomeia arquivo e título; nada em teste mudou.
+- **Plano:** esperar a fila esvaziar e só então reexecutar 634, 635 e 638 (um rerun cada), em levas pequenas.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Leitura das 05h50 UTC (09/11) — reruns em levas
+
+- **620 (#3624): VERDE** no rerun (42567377561, tentativa 2).
+- **621 (#3625): 2ª falha de infra no mesmo run** (42567384581, tentativa 2, mesma assinatura curta). Um rerun por run já usado: **não repito**; fica "infra, sem veredito de spec" até a próxima alteração real do ramo. Mesmo caso do 618.
+- **634, 635, 638:** 1ª tentativa vermelha por infra; **rerun único disparado agora** (levas pequenas, a fila das outras pistas já está baixa).
+- **Em andamento:** 616 e 624 (reruns), 630, 636, 640.
+- **Runs do próprio PR #3095** (relatório): 5766 e 5769 vermelhos; é o mesmo gate (sem `e2e.txt`), sem relação com spec.
+- **Bloco 641:** continua fechado até 624 e 640 darem verde.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Fechamento das 05h55 UTC (09/11) — 624, 625, 626 e 640 verdes; 641 aberto
+
+**Os blocos pedidos (leitura nova):**
+
+| Bloco | PR | Run | Veredito |
+|---|---|---|---|
+| 624 (t1613) | #3629 | 42567402098 (tentativa 2) | **VERDE** |
+| 625 (t1614) | #3630 | 42567409168 | **VERDE** |
+| 626 (t1615) | #3631 | 42567415419 | **VERDE** |
+| 640 (t1628) | #3649 | 42568275908 | **VERDE** |
+
+**Bloco 641 (#3650, t1629, grupo do 624 — painel do proprietário sem id; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+
+**Tabela dos 27 renumerados (612–638) + 639 + 640:**
+- **Verdes:** 612, 613, 614, 615, 617, 619, 620 (r2), 622, 623, 624 (r2), 625, 626, 627, 628, 629, 630, 631, 632, 633, 636, 637, 639, 640.
+- **Infra, 2 falhas no mesmo run (regra de 1 rerun esgotada), sem veredito de spec:** 618, 621, 634.
+- **Rerun (tentativa 2) em andamento:** 616 (a conferir), 635, 638.
+- **Causa de todos os vermelhos:** download do `setup-cli` (HTTP 504) / passo de instalação, antes de qualquer teste.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Leitura das 05h58 UTC (09/11) — 616 verde; pendências de infra com próximo passo; 642 aberto
+
+- **Bloco 616 (#3616, t1605): VERDE** no rerun (42567354515, tentativa 2).
+- **635 (#3643) e 638 (#3647):** reruns (tentativa 2) ainda em andamento; sem veredito.
+- **641 (#3650, t1629):** run 42569946450 em andamento (iniciado 05h54).
+- **Bloco 642 (#3651, t1630, grupo do 625 — painel do morador sem id; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+
+### Blocos sem veredito de spec (nenhum some da lista)
+
+| Bloco | PR | Run | Estado | Próximo passo |
+|---|---|---|---|---|
+| 618 (t1607) | #3621 | 42567368975 | 2 falhas de infra (setup-cli 504), nenhum teste rodou | 1 novo rerun na próxima rodada (06h00 UTC), com a fila das outras pistas baixa; se falhar de novo, reportar ao chat principal como problema do runner, não da spec |
+| 621 (t1610) | #3625 | 42567384581 | idem | idem |
+| 634 (t1623) | #3642 | 42567462031 | idem | idem |
+
+A regra de um rerun foi usada nesta rodada para os três; a próxima rodada reabre um rerun por run. Nenhum ramo tem commit vazio nem alteração só para disparar CI.
+
+- **Main:** nenhum merge novo depois de `344e3a273`; sem spec de guarda a escrever. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Rodada das 06h00 UTC (09/11) — 635 verde; reruns de 618, 621 e 634 disparados
+
+- **Bloco 635 (#3643, t1624): VERDE** no rerun (42567467525, tentativa 2).
+- **Em andamento:** 638 (rerun, 42567484544), 641 (42569946450, 1ª tentativa), 642 (#3651).
+- **618, 621, 634:** nova rodada, novo rerun único disparado agora (tentativa 3). Resultado na próxima leitura; se falharem de novo pelo mesmo passo de instalação, reporto ao chat principal como problema do runner.
+- **Main:** nenhum merge novo depois de `344e3a273`. Sem L- de produto aberto (próximo livre: **L-110**).
+
+## Placar do lote — leitura das 06h15 UTC (09/11)
+
+Blocos 612–643 (32 PRs de varredura, todos draft):
+
+| Situação | Qtde | Blocos |
+|---|---|---|
+| **Verde** | 29 | 612–617, 619–633, 635–642 (621 e 638 só no rerun) |
+| **Vermelho por infra, em rerun** | 2 | 618 (#3621) e 634 (#3642): 3 falhas seguidas do `supabase/setup-cli` (HTTP 504 no download, antes de qualquer teste); novo rerun disparado (tentativa 4) por ordem do chat principal |
+| **Primeira rodada em andamento** | 1 | 643 (#3652, t1631, grupo do 626 — públicas com parâmetro; 19ª volta) |
+| **Vermelho de spec / defeito de produto** | 0 | — |
+
+- **Novos nesta leitura:** 621 (r3) e 638 (r2) **VERDES**; 641 (#3650, 42569946450) **VERDE**; 642 (#3651, 42570372431) **VERDE**.
+- **Atenção sobre a causa:** 618 e 634 falharam no mesmo passo (download do CLI, 504) em três tentativas, mesmo com a fila baixa, enquanto 621 passou na mesma janela. Se a tentativa 4 falhar, reporto ao chat principal como problema de runner/CDN (candidata a fixar o CLI em cache ou trocar o download no workflow, que é da Pista B), sem mexer no workflow.
+- **Main:** head conferido uma vez nesta leitura, `344e3a273`; nenhum merge novo, nenhuma spec de guarda a escrever. **Achados novos: nenhum** (próximo livre: **L-110**).
+
+## Fechamento do lote 612–643 — 06h28 UTC (09/11)
+
+**Placar final: 32 verdes × 0 vermelhos × 0 em rerun.**
+
+- **618 (#3621)** e **634 (#3642)** fecharam **VERDES** na tentativa 4 (42567368975 e 42567462031). A falha era o download do `supabase/setup-cli` (HTTP 504, passo anterior a qualquer teste); passou sozinha, sem nenhuma alteração de código ou workflow. Conclusão: oscilação do download do CLI, não defeito de spec nem de produto; nada a reportar à Pista B além da observação.
+- **643 (#3652, t1631): VERDE** (42572020739), públicas com parâmetro (19ª volta).
+- **Reruns gastos no lote:** 616, 618 (×3), 620, 621 (×2), 624, 628 (bloco do lote anterior), 634 (×3), 635, 638. Todos por infra.
+- **Numeração:** todas as specs de bloco do lote ficam em t1600–t1631, sem colisão com as specs E-* (t1560–t1587).
+- **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. **Achados novos: nenhum** (próximo livre: **L-110**).
+- **Próximo bloco da fila:** 644 (grupo do 627, spec t1632), que só abro se o chat principal pedir nova volta, para não ocupar a fila de runners sem necessidade enquanto o lab está verde.
+
+## Nova volta pedida pelo Muse — 06h35 UTC (09/11)
+
+- **Main:** head conferido uma vez, `344e3a273`; os últimos merges continuam os de 08/11 (E727/E728, E748, E746, E747, E749, E750, E753, E754), todos já com guarda (t1576–t1587 e testes de unidade dos PRs). **Nenhum merge novo, nenhuma spec de guarda nova.**
+- **Bloco 644 (#3653, t1632, grupo do 627 — admin: chamado, contrato, pedido de parceiro; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar do lab:** lote 612–643 todo verde (32/32); 644 em primeira rodada.
+- **Achados novos:** nenhum (próximo livre: **L-110**).
+
+## Diagnóstico do CI vermelho do PR #3095 — 06h42 UTC (09/11)
+
+- **Qual check falha:** `verify` (job 129016236160, run 42573588828). Os demais passam: `e2e`, `Vercel Preview Comments`; `lab-critico` em andamento. Os runs do lab-crítico deste PR já vinham fechando verdes ou por infra (504); o vermelho persistente é só o `verify`.
+- **Causa (lida no log, passo Testes):** `src/lib/parceiros/e727-e728-continuar.test.ts` falha em dois testes — **E727** (a asserção procura `estado.logado ? "Enviar pedido de parceria" : "Continuar: criar conta ou entrar"` no componente) e **E728** (a ordem `validarDocumentoParceiro(c.documento)` antes de `if (!estado.logado) return irParaConta()`). São asserções de texto de código que ficaram velhas depois que E731/E651 mudaram o formulário.
+- **De quem é:** é a **main vermelha**, não o relatório: o `verify` roda no merge-ref com a main (`344e3a273`), que já traz o teste quebrado do #3505. Meu PR só mexe em `scripts/lab/*.md`. O conserto já existe: **#3598** (Pista B, `claude-b/fix-main-e727-e728-testes`, 1 arquivo, `mergeable_state: clean`, ainda não mesclado), que atualiza só as asserções e deixa o comportamento do E727/E728 como está.
+- **Decisão:** não corrijo `src/` (fora da minha pista) e não puxo o #3598 para o ramo do relatório (misturaria PRs). **Nenhum item L-**: não é defeito de produto. Quando o #3598 mesclar, o `verify` deste PR e dos 32 PRs de bloco passa sem ação minha.
+- **Efeito colateral a lembrar:** todos os meus PRs de bloco (#3604–#3653) herdam esse mesmo `verify` vermelho da main; o sinal confiável do lote é o `lab-critico`.
+- **Bloco 644 (#3653):** run 42573565104 ainda em andamento (iniciado 06h31). **Main:** head `344e3a273`, sem merge novo.
+
+## Rodada das 06h45 UTC (09/11) — bloco 644 verde, 645 aberto
+
+- **Bloco 644 (#3653, t1632): VERDE** (42573565104), admin (chamado, contrato, pedido de parceiro; 19ª volta), sem achado.
+- **Bloco 645 (#3654, t1633, grupo do 628 — compartilhadas sem id; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–644 verde (33/33); 645 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. **#3598** (conserto do `verify` vermelho da main) segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 06h58 UTC (09/11) — bloco 645 verde, 646 aberto
+
+- **Bloco 645 (#3654, t1633): VERDE** (42574791054), compartilhadas sem id (19ª volta), sem achado.
+- **Bloco 646 (#3656, t1634, grupo do 629 — morador nas compartilhadas; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–645 verde (34/34); 646 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 (conserto do `verify` da main) segue aberto e não mesclado. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 07h12 UTC (09/11) — bloco 646 verde, 647 aberto
+
+- **Bloco 646 (#3656, t1634): VERDE** (42576154780), morador nas compartilhadas (19ª volta), sem achado.
+- **Bloco 647 (#3657, t1635, grupo do 630 — proposta e visita; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–646 verde (35/35); 647 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
+
+## O que falta para o #3598 (conserto do `verify` vermelho da main) — 07h14 UTC (09/11)
+
+- **Estado do PR:** aberto, **não é draft**, `mergeable_state: clean`, 1 arquivo (+6/−3, só o teste `src/lib/parceiros/e727-e728-continuar.test.ts`), head `dff00dad8`, base `344e3a273` (a main atual).
+- **Checks do #3598:** `verify` **verde**, `lab-critico` **verde**, `e2e` **verde**, `Vercel Preview Comments` **verde**. Nada técnico pendente.
+- **O que falta:** só a **decisão de mesclar**, que é do chat principal/Daniel; esta pista não mescla. É a única mudança que tira o `verify` vermelho da main e, por herança, dos PRs do lote (#3095 e #3604–#3657).
+- **Depois do merge:** os PRs com `verify` vermelho só por esse teste ficam verdes com um `update-branch` da base (ou no próximo push); eu confiro o `verify` de cada PR de bloco e do #3095 e registro aqui.
+- **Bloco 646 (#3656): VERDE** (42576154780), já registrado. **Bloco 647 (#3657, t1635):** run 42577764705 em andamento (iniciado 07h11); veredito na próxima leitura.
+- **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 07h29 UTC (09/11) — bloco 647 verde, 648 aberto
+
+- **Bloco 647 (#3657, t1635): VERDE** (42577764705), proposta e visita (19ª volta), sem achado.
+- **Bloco 648 (#3658, t1636, grupo do 631 — conferir, sistema, pedidos do morador; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–647 verde (36/36); 648 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto, todos os checks verdes, aguardando só a decisão de mesclar. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 07h35 UTC (09/11) — 648 rodando, 649 e 650 abertos
+
+- **Bloco 648 (#3658, t1636):** run 42579655530 ainda em andamento (iniciado 07h29); sem veredito.
+- **Bloco 649 (#3659, t1637, grupo do 632 — solicitações, estadia, desempenho, cartão, contrato; 19ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Bloco 650 (#3660, t1638, grupo do 633 — início, busca, imóvel, ajuda, painel do proprietário; 19ª volta):** aberto como draft; mesmas guardas verdes; lab a conferir.
+- **Placar:** lote 612–647 verde (36/36); 648, 649 e 650 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; sem spec de guarda a escrever. #3598 segue aberto (só a decisão de mesclar). Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 07h44 UTC (09/11) — 648 e 649 verdes, 650 rodando, 651 aberto
+
+- **Bloco 648 (#3658, t1636): VERDE** (42579655530), conferir/sistema/pedidos do morador (19ª volta), sem achado.
+- **Bloco 649 (#3659, t1637): VERDE** (42579943849), solicitações/estadia/desempenho/cartão/contrato (19ª volta), sem achado.
+- **Bloco 650 (#3660, t1638):** run 42579996462 em andamento.
+- **Bloco 651 (#3661, t1639, grupo do 634 — serviços e visitas, admin, parceiros; 20ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–649 verde (38/38); 650 e 651 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 07h58 UTC (09/11) — 650 verde, 651 em rerun por infra, 652 aberto
+
+- **Bloco 650 (#3660, t1638): VERDE** (42579996462), início/busca/imóvel/ajuda/painel do proprietário (19ª volta), sem achado.
+- **Bloco 651 (#3661, t1639):** 1ª tentativa (42580959339) vermelha por **infra** (log curto, sem `e2e.txt`, nenhum teste rodou, mesma assinatura das anteriores); rerun único disparado.
+- **Bloco 652 (#3662, t1640, grupo do 635 — painéis do morador e do proprietário, empresas; 20ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–650 verde (39/39); 651 em rerun e 652 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 segue aberto. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Fila aberta da lista-master — E744, E742 e E743 (09/11, 08h UTC)
+
+### E744 — suíte noturna que estoura o teto global
+- **Desenho/feito (Pista B, #3588, draft, limpo):** fatiamento em jobs paralelos (hoje 16 fatias gerais + 4 fatias só dos specs pesados t50/t49), `consolidar` que grava a linha em `lab_execucoes`. Provas já registradas no `docs/e744-suite-fatiada.md` do PR: a suíte **termina** (run 42547901640: 3.938 passaram · 235 falharam · 317 pularam · 8 instáveis = 4.498 testes; antes eram 640 rodados e 3.864 não rodados). A separação dos pesados (t50/t49) corrige a fatia que batia o teto de 65 min.
+- **Prova de "noite completa VERDE": ainda NÃO existe.** O run 42554301427 (com a separação dos pesados) foi **cancelado**; não há run completo no código corrigido. As 243 entradas vermelhas/instáveis (134 asserção/elemento, 55 screenshot, 37 varredura, 17 timeout de 45 s) estão em `docs/e744-triagem-falhas.md`.
+- **O que cabe à Pista C (triagem das falhas de spec/varredura/timeout):** só começa depois de um run completo no código corrigido gravar a lista atualizada; a decisão entre "zerar a lista" e "linha de base que não pode piorar" é do coordenador/Daniel (registrada pela Pista B). Não disparei workflow de `.github/` (fora do meu escopo).
+
+### E742 — 400 em `/api/proximidades` no "Qualificar o imóvel" (= L-104)
+- **Reproduzido no lab e causa isolada:** `scripts/lab/evidencia-e742-e743-2026-11-08.md` (rota devolve `400 sem_cep` para imóvel do dono sem CEP e sem ponto gravado).
+- **Spec permanente:** t1562 (#3540, sobre o draft de correção #3531, verde); a tolerância `conhecidoL104` continua nas specs de bloco até o fix mesclar.
+- **Correção de produto (Pista B, #3531, draft, limpo):** `200 { itens: [], fonte: "sem_endereco" }` para o dono sem endereço; 400 só para entrada inválida ou anúncio de outra pessoa.
+
+### E743 — `/nivel` quebra com laudo assinado, erro 1965082685 (= L-107)
+- **Reproduzido no lab e causa isolada:** mesma evidência; `onFocus` passado a `<input>` em componente de servidor (`selo-assinatura.tsx`).
+- **Spec permanente:** t1429 com `test.fail` ligado ao L-107 (#3394) e t1563 (#3541, sobre o draft de correção #3532, verde).
+- **Correção de produto (Pista B, #3532, draft, limpo):** seleção do hash por CSS (`select-all`), sem manipulador; guarda `e743-selo-sem-handler.test.ts`.
+
+### Depende de decisão (merge) — nada mesclado por esta pista
+Quando #3531 e #3532 entrarem na main: tirar `conhecidoL104` das specs de bloco, tirar o `test.fail` do L-107 na t1429 e trocar a base de #3540/#3541 para `main`. Main: head `344e3a273`, sem merge novo.
+
+## Rodada das 08h10 UTC (09/11) — 651 e 652 verdes, 653 aberto
+
+- **Bloco 651 (#3661, t1639): VERDE** no rerun (42580959339, tentativa 2), serviços e visitas/admin/parceiros (20ª volta). A 1ª tentativa foi infra (log curto, sem teste rodado). Sem achado.
+- **Bloco 652 (#3662, t1640): VERDE** (42582278880), painéis do morador e do proprietário/empresas (20ª volta), sem achado.
+- **Bloco 653 (#3664, t1641, grupo do 636 — cidade, institucionais, parceiros, comparar, admin; 20ª volta):** aberto como draft; `cobertura.json` regenerado, `tsc` limpo, 13/13; lab a conferir.
+- **Placar:** lote 612–652 verde (41/41); 653 em primeira rodada.
+- **Main:** head `344e3a273`, sem merge novo; #3598 aberto. Achados novos: nenhum (próximo livre: **L-110**).
+
+## Rodada das 08h17 UTC (09/11) — 653 em andamento, 654 aguarda
+
+- **Bloco 653** (#3664, t1641, run 42583894527, tentativa 1): ainda `in_progress` (iniciada 08:09 UTC). Sem veredito. Pela regra, o **bloco 654 (grupo 637, t1642) não abre** até o 653 ficar verde.
+- **main**: continua em `344e3a273` (sem merge novo).
+- **#3598** (E727/E728, `verify` da main): aberto, fora de draft, limpo, **não mesclado**.
+- **#3531 (E742) e #3532 (E743)**: abertos em draft, **não mesclados**. Seguimentos E742/E743 (tirar `conhecidoL104` dos specs de bloco, tirar `test.fail` do t1429, rebase de #3540/#3541) **ficam intocados, aguardando o merge**.
+- **#3588** (E744 fatiado): aberto em draft, **não mesclado**. Não existe noturna completa em código corrigido (run 42554301427 foi cancelada); a **triagem E744 das 37 varreduras + 17 timeouts continua esperando essa rodada**.
+- Próxima leitura: gatilho das ~08:20 UTC lê o 653 e, se verde, abre o 654.
+
+## Rodada das 08h22 UTC (09/11) — 653 verde, 654 aberto
+
+- **653** (#3664, t1641): run 42583894527 **verde** na 1ª tentativa. Lote 612–653 verde (42/42).
+- **654** (#3665, t1642, grupo 637, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+- main segue em `344e3a273`; #3598, #3531, #3532, #3588 não mesclados (seguimentos E742/E743 intocados; triagem E744 aguarda noturna completa).
+
+## Rodada das 08h40 UTC (09/11) — 654 verde, 655 aberto
+
+- **654** (#3665, t1642): run 42585443072 **verde** na 1ª tentativa. Lote 612–654 verde (43/43).
+- **655** (#3668, t1643, grupo 638, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+- main segue em `344e3a273` (sem merge novo); #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
+
+## Rodada das 08h55 UTC (09/11) — 655 verde, 656 aberto
+
+- **655** (#3668, t1643): run 42587264161 **verde** na 1ª tentativa. Lote 612–655 verde (44/44).
+- **656** (#3669, t1644, grupo 639, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+- main segue em `344e3a273`; #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
+
+## Rodada das 09h10 UTC (09/11) — 656 verde, 657 aberto
+
+- **656** (#3669, t1644): run 42588957878 **verde** na 1ª tentativa. Lote 612–656 verde (45/45).
+- **657** (#3670, t1645, grupo 640, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+- main segue em `344e3a273`; #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
+
+## Rodada das 09h22 UTC (09/11) — 657 verde, 658 aberto
+
+- **657** (#3670, t1645): run 42590773399 **verde** na 1ª tentativa. Lote 612–657 verde (46/46).
+- **658** (#3671, t1646, grupo 641, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+- main segue em `344e3a273`; #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
+
+## Rodada das 09h36 UTC (09/11) — 658 verde, 659 aberto
+
+- **658** (#3671, t1646): run 42592672311 **verde** na 1ª tentativa. Lote 612–658 verde (47/47).
+- **659** (#3673, t1647, grupo 642, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+- main segue em `344e3a273`; #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
+
+## Rodada das 09h55 UTC (09/11) — 659 verde, 660 aberto
+
+- **659** (#3673, t1647): run 42594369553 **verde** na 1ª tentativa. Lote 612–659 verde (48/48).
+- **660** (#3674, t1648, grupo 643, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+- main segue em `344e3a273`; #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
+
+## Rodada das 10h08 UTC (09/11) — 660 sem run do lab crítico
+
+- **660** (#3674, t1648, commit `c6cd2a732`): **o workflow `lab-critico` não disparou** para este PR. Em 14 min só rodaram `e2e` (run 42596763850, evento `deployment_status`, verde, só prova que o preview sobe) e a Vercel. Não há run de `lab-critico` para o branch (nem em andamento, nem cancelada, nem com falha), então **não é falha de infra e não há rerun a fazer**: o evento `pull_request` de abertura não gerou run. Os outros 13 blocos do dia (648–659) dispararam normalmente.
+- Sem veredito, **o 661 não abre** (regra: um bloco por vez, lido antes do próximo).
+- Saídas possíveis, todas dependentes de decisão: (a) commit com mudança real no spec (hoje não há nada a corrigir nele); (b) fechar e reabrir o PR; (c) o chat principal/Daniel dispara a run. Pelas guardas (sem commit vazio, sem fechar PR), nada disso foi feito.
+- main segue em `344e3a273`; #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa.
+
+## Rodada das 10h20 UTC (09/11) — 660 sem veredito, 661 aberto, merges sem guarda
+
+1. **660** (#3674, t1648): sem run de `lab-critico` (consulta de 10:12 UTC: zero runs para o branch). Via própria de disparo: **nenhuma** (o workflow só tem `pull_request` e `push` na main, sem `workflow_dispatch`; rerun exige run existente; commit vazio e fechar/reabrir PR estão vetados). Registro: **660 sem veredito — disparo externo pendente do chat principal.**
+2. **661** (#3675, t1649, grupo 644, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; é independente do 660, então avancei. Veredito pendente.
+3. **Merges sem spec de guarda:** a main não mudou desde `344e3a273` (último merge #3505, E727/E728, que tem guarda no t1587/#3600). Nada novo na fila.
+- #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa. Sem item L novo (próximo livre: L-110).
+
+## Rodada das 10h30 UTC (09/11) — 660 e 661 verdes, 662 aberto
+
+1. **661** (#3675, t1649): run 42599283700 **verde** na 1ª tentativa.
+2. **660** (#3674, t1648): a run do lab crítico passou a existir (42599595721, criada às 10:15 UTC por disparo externo ao meu fluxo) e fechou **verde**. O "660 sem veredito" da rodada das 10h20 fica encerrado.
+3. Lote 612–661 verde (50/50).
+4. **662** (#3676, t1650, grupo 645, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; lab em andamento.
+5. **Merges desde `344e3a273`:** nenhum (main segue em `344e3a273`) → nada sem spec de guarda. #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa. Sem item L novo; próximo livre: **L-110**.
+
+## Rodada das 10h45 UTC (09/11) — 662 verde, 663 aberto
+
+- **662** (#3676, t1650): run 42601051428 **verde** na 1ª tentativa. Lote 612–662 verde (51/51).
+- **663** (#3677, t1651, grupo 646, 20ª volta): aberto em draft, guardas 13/13, tsc limpo. Veredito pendente (ver a consulta de run abaixo).
+- main segue em `344e3a273` (nenhum merge desde então → nenhuma spec de guarda pendente); #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa. Sem item L novo; próximo livre: **L-110**.
+
+## Rodada das 10h58 UTC (09/11) — 663 verde, 664 aberto
+
+- **663** (#3677, t1651): run 42603089449 **verde** na 1ª tentativa. Lote 612–663 verde (52/52).
+- **664** (#3678, t1652, grupo 647, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; veredito pendente.
+- main segue em `344e3a273`: nenhum merge novo → nenhuma spec de guarda pendente; nenhuma spec vermelha nova → nenhum `test.fail` novo. #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados; triagem E744 aguarda noturna completa. Sem item L novo; próximo livre: **L-110**.
+
+## Rodada das 11h15 UTC (09/11) — E744: existe run completo no código corrigido; triagem feita
+
+- **Correção do que eu vinha registrando:** o run **42560445737** (20 fatias + consolidar, commit `6215ff77`, branch do #3588) **terminou**: 3.940 passaram · 236 falharam · 316 pularam · 6 instáveis (4.498 testes), as 20 fatias chegaram ao fim da suíte. Eu escrevia "não existe noturna completa em código corrigido" olhando só o 42554301427 (cancelado); esse registro estava incompleto. Continua sem ser "noite verde" e o #3588 segue em draft, sem merge.
+- **Triagem E744 (37 varreduras + 17 timeouts) feita:** detalhe em `scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md`. Resumo: 27 das 37 varreduras são o mesmo padrão `fixo @390`; 5 são a rota de Notificações a 1280; 3 testids velhos; 1 clique; 1 massa. Timeouts: busca/filtros e fluxos longos (lentidão), t48 a 30 min. Nenhum L- aberto (sem reprodução no lab ainda); próximo livre: **L-110**.
+
+## Rodada das 11h20 UTC (09/11) — 664 verde, 665 aberto
+
+- **664** (#3678, t1652): run 42604616160 **verde** na 1ª tentativa. Lote 612–664 verde (53/53).
+- **665** (#3679, t1653, grupo 648, 20ª volta): aberto em draft, guardas 13/13, tsc limpo; veredito pendente.
+- main segue em `344e3a273` (nenhum merge novo → nenhuma spec de guarda pendente); #3598, #3531, #3532, #3588 sem merge → E742/E743 intocados.
+
+## Rodada das 11h12 UTC (09/11) — 665 em andamento, reprodução do t297 aberta
+
+- **665** (#3679, t1653): run 42605901835 `in_progress` desde 11:03 UTC. Sem veredito; o **666 (grupo 649, t1654) não abre** antes.
+- **Reprodução do t297** (morador › Candidaturas @390, classe `fixo`, falha do run 42560445737): PR de evidência **#3680** (draft, branch `claude-c/repro-e744-t297-fixo390`, commit `5417080fa`). A mudança é só um comentário de cabeçalho no spec, o que faz o lab crítico rodar o t297 inteiro (14 telas; só olho "morador — Candidaturas"). O lab crítico cria a massa da varredura (passo `massa-varredura.mjs`), então o cenário é comparável. Às 11:12 UTC o PR ainda não tinha run de `lab-critico` (mesma lacuna vista no #3674 antes). **Só vira L-110 se reproduzir**; se passar, fica como roteiro/ambiente da noturna na triagem.
+- main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente.
+
+## Rodada das 11h35 UTC (09/11) — vereditos, L-110 aberto, pausa de blocos
+
+- **665** (#3679, t1653): run 42605901835 **verde** na 1ª tentativa. Lote 612–665 verde (54/54). **Último bloco verde: 665.**
+- **Reprodução do t297** (#3680, run 42606335086): **vermelho, reproduziu** (falhou na 1ª e no retry; 62 passaram, 1 falhou). Aberto **L-110**: "Ver mais itens" cobre "Propostas" a 390 px em morador › Candidaturas. Evidência e abrangência em `scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md`. Próximo livre: **L-111**.
+- **PAUSA aprovada pelo Daniel (09/11):** nenhum bloco novo de varredura (666 fica fechado). Só lab verde e triagem.
+- Triagem das 236 falhas do run 42560445737 agrupada por causa (ver o arquivo acima).
+- main segue em `344e3a273`; sem merge novo → sem spec de guarda pendente.
+
+## Rodada das 12h UTC (09/11) — manutenção do lab (pausa vigente): PR #3682
+
+Ritmo novo (Muse, 09/11): sem bloco novo de varredura; lab verde + specs dos merges recentes. O disparo do lab crítico do **bloco 660**, citado como pendente, já foi resolvido: run 42599595721, **verde**.
+
+PR de manutenção **#3682** (draft, branch `claude-c/lab-e744-ajustes`, commit `a10853ef9`), só `tests/e2e`:
+- **Notificações (t329, t354, t385):** causa lida no código — `next.config.ts` redireciona `/dashboard/conta/notificacoes` → `/dashboard/notificacoes` (E176 parte 2, `permanent: false`); a varredura abre a rota antiga e esperava ficar nela (1280 vem primeiro em `TAMANHOS`, por isso só 1280 aparece no erro). Os 3 specs passam a conferir o destino final (`destinoFinal`).
+- **t621:** o `checklist-ativacao` do proprietário não existe mais no Início do dono (E218-A: o guia mora dentro do bloco principal, `inicio-dono-passos`). Spec passa a exigir que NÃO haja checklist à parte e, no caso do rascunho, que `inicio-dono-passos` apareça no bloco principal. **Isto foi lido no código, não visto rodar**; o lab do PR confirma.
+- **t696:** `conferencia-tipo` saiu da lista de conferência no E271 ("Declarações e documento ficam só nas seções de 'Antes de publicar'"); marca do Passo 10 trocada para `declaracoes-passo10`. Mesma ressalva: confirmar no lab.
+- **t739:** comentário no cabeçalho, só para o spec rodar isolado no lab crítico do PR.
+- **Padrão "fixo" (L-110):** o `t329` (alterado) contém telas de inquilina (Mensagens, Meus pedidos) e de proprietário (Mensagens) do padrão; o lab do PR mostra o nome completo do botão. Resultado a registrar abaixo quando o run terminar.
+
+## Rodada das 12h05 UTC (09/11) — resultado do PR #3682
+
+Run 42610031395 (commit `a10853ef9`): **119 passaram, 5 falharam, 1 instável**. t354, t385 e t621 verdes; t329 só vermelho no L-110; t696 e t739 corrigidos no mesmo PR (`f79741af8`, novo run em andamento). L-110 ganhou o nome do botão ("Ver mais itens", 4 telas, 2 contas). Detalhe: `scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md`.
+main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente. Próximo L livre: **L-111**.
+
+## Rodada das 12h30 UTC (09/11) — run 42613148153 (PR #3682, commit `f79741af8`)
+
+**121 passaram, 4 falharam (10,3 min).** t354 (18), t385 (17), t621 (13) e **t696 (9)** verdes. t329: Notificações verdes; 3 vermelhas = **L-110** (dependência da pista dona, sem `test.fail`). **t739 continuou vermelho** (`buscar-limpeza-cartao`, 1ª tentativa e retry): o `is_teste=false` (E297) não bastava. Causa raiz lida no código: **E648** — `filtrarParceiros` só lista `tipoPessoa === "pj"` (`parceiroPodeReceberServico`) e o spec criava o parceiro como `pf`/CPF. Corrigido em `b29214d75` (parceiro `pj` com `cnpjAleatorio()`); novo run do #3682 em andamento. Isto também explica a falha do t739 na noturna (E648, não o E297 sozinho).
+main segue em `344e3a273`; nenhum merge novo → nenhuma spec de guarda pendente. Bloco 666 fechado (pausa de 09/11 vigente). Próximo L livre: **L-111**.
+
+## Rodada das 12h55 UTC (09/11) — veredito final do PR #3682
+
+Run **42617052464** (commit `b29214d75`): **126 passaram, 3 falharam** (10,5 min). As 3 falhas são exclusivamente o **L-110** no t329 (inquilina › Mensagens, proprietário › Mensagens, inquilina › Meus pedidos; botão "Ver mais itens" cobrindo item da faixa a 390 px): produto, pista dona, sem `test.fail` (pausa). Todos os specs de lab do PR estão verdes: t354 (18), t385 (17), t621 (13), t696 (9), **t739 (8, inclusive `buscar-limpeza-cartao`)**, t329 Notificações. Nada de spec/lab restante vermelho.
+main segue em `344e3a273` (nenhum merge novo → nenhuma spec de guarda pendente). Próximo L livre: **L-111**.
+
+## Vigia das 13h32 UTC (09/11) — sem merge novo, sem vermelho de laboratório
+
+- **Head da main conferido:** `344e3a273` (#3505, E727/E728). **Nenhum merge novo** desde a última leitura → nenhuma spec de guarda a escrever; o #3505 já tem guarda (`t1587`, #3600).
+- **Lab crítico sobre o head atual:** o run de push do próprio `344e3a273` (42537255566) está **verde**; não há como disparar outro run sem commit novo na main.
+- **PR #3682 (manutenção do lab):** run 42617052464, **126 passaram, 3 falharam**; as 3 são o **L-110** (t329, produto, pista B), com evidência em `scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md`. Nada de laboratório vermelho.
+- Sem bloco de varredura (pausa de 09/11), sem prova ao vivo. **Próximo L livre: L-111.** Sequência encerrada.
+
+## Rodada das 14h45 UTC (09/11) — a main se moveu: #3598 e #3398 (E719)
+
+Merges novos desde `344e3a273`, na ordem:
+1. **#3598** (14:14 UTC, `47d85e5b0`): conserto do teste de unidade `e727-e728-continuar.test.ts` (a main vermelha do `verify`). Só teste de unidade; **sem comportamento novo, nada a guardar no lab**. Lab crítico de push: run 42632791776, **verde**.
+2. **#3398** (14:23 UTC, `9c2417411`) **E719**: o cartão do contrato lê o estado real da avaliação (publicada → "Publicada", some o "Aguardando a outra parte"; em moderação/removida têm estado próprio; quem já avaliou não recebe o formulário). Já tinha teste de unidade (Pista B). Lab crítico de push: run 42634158284, **verde**.
+
+**Spec de guarda criada:** `t1588-e719-cartao-avaliacao-estado.spec.ts` (PR de evidência **#3684**, draft, commit `860272395`): dois contratos encerrados ontem (avaliação do inquilino publicada num, enviada no outro), logado como inquilino em `/dashboard/locacoes`; confere `Publicada` × `Aguardando a outra parte` e a ausência do formulário. Guardas de numeração/cobertura 13/13, tsc limpo. **Ainda não rodou**: o lab crítico do PR é a primeira execução.
+
+Efeito colateral: com o #3598 mesclado, o `verify` da main deve voltar a verde (era a causa do vermelho em todos os meus PRs).
+Próximo L livre: **L-111**. Sem bloco de varredura (pausa de 09/11).
+
+## Rodada das 14h50 UTC (09/11) — mais dois merges: #3408 (E713) e #3498 (E724)
+
+Head da main: `fe74cd383`. Merges depois do #3398 (E719), na ordem:
+1. **#3408 (E713, resíduo)** — a coluna de reserva do anúncio de exemplo não traz os 4 campos, só a explicação e "Ver imóveis reais". A **Pista A já ajustou os specs de navegador no próprio merge** (`t130-reserva-imovel`, `t59-flutuante-nao-tampa`) e há teste de unidade (`e713-coluna-reserva-exemplo.test.ts`). **Cobertura existente; nenhuma spec nova.**
+2. **#3498 (E724)** — o aviso do exemplo vem primeiro no cartão de preço. Só tinha teste de unidade (leitura do fonte). **Spec criada: `t1589-e724-aviso-do-exemplo-primeiro.spec.ts`** (PR **#3685**, draft, commit `a410c29c4`): `/imoveis/ube-001` e `ube-002` a 390 e 1280 px, o aviso existe, diz "Nenhuma solicitação é enviada a ninguém", precede o preço no DOM, no mesmo cartão, sem rolagem lateral. Guardas 13/13, tsc limpo; **ainda não rodou**.
+
+Em voo: PR #3684 (t1588, E719), run 42635926324, desde 14:33 UTC; PR #3685 (t1589, E724), primeira execução. Próximo L livre: **L-111**.
+
+## Rodada das 15h UTC (09/11) — #3682 final, E719 verde, E729 coberto
+
+- **PR #3682 (manutenção do lab):** o run mais recente continua sendo o 42617052464 (commit `b29214d75`): **126 passaram, 3 falharam**, as 3 = **L-110** (t329, produto). Sem commit novo no branch, sem run novo. Veredito final; nenhuma spec de laboratório vermelha.
+- **E719 (PR #3684, t1588):** run 42635926324 **verde, 50 passaram**; o t1588 rodou (não foi pulado) e passou.
+- **E724 (PR #3685, t1589):** run 42637243510 em andamento desde 14:42 UTC.
+- **Novo merge #3503 (E729, 0425d5f37):** a exigência de cada categoria ("Pede o link do portfólio" / "Pede empresa e veículo") aparece no cartão antes de marcar. Só tinha teste de unidade. **Spec criada: `t1590-e729-exigencia-na-categoria.spec.ts`** (PR **#3686**, draft, commit `490083a8b`), `/parceiros` a 390 e 1280 px; guardas 13/13, tsc limpo; ainda não rodou.
+- Próximo L livre: **L-111**.
+
+## Rodada das 15h10 UTC (09/11) — E724 verde, E729 em curso, E690 (#3524) sem spec nova
+
+- **PR #3682:** sem run novo; veredito final é o 42617052464 (126 passaram, 3 falharam = L-110, produto).
+- **E724 (PR #3685, t1589):** run 42637243510 **verde** (o t1589 passou). Push da main do #3498 (42636489264) também verde.
+- **E729 (PR #3686, t1590):** run 42638725445 em andamento desde 14:51 UTC. Push da main do #3503 (42637657700) **verde**.
+- **Novo merge #3524 (E690, `8ee2fb5bc`):** ativação automática do avaliador credenciado (solicitado→em_teste→ativo), **atrás da chave `AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA`, desligada por padrão**; migração 0335; disparo no `/api/caf/verify`. Tem teste de unidade (`e690-ativacao-automatica.test.ts`). **Sem spec nova de navegador por ora:** com a chave desligada (estado do lab) o caminho antigo, manual pelo admin, é o que roda, e ele já é guardado por `t303`/`t341` (credenciamento do avaliador). Um spec do caminho novo exigiria a chave ligada no ambiente do lab, o que é mudança de workflow (fora do meu escopo). Mesmo tratamento dado ao E722/E707. Push da main do #3524 (42639488596) em andamento.
+- Próximo L livre: **L-111**.
+
+## Rodada das 15h20 UTC (09/11) — E729 e E690 verdes; #3599 (E777) e #3603 (E778)
+
+- **E729 (PR #3686, t1590):** run 42638725445 **verde**. **E690:** push da main do #3524 (42639488596) **verde**.
+- **Merges novos** (head `c09833383`), na ordem:
+  1. **#3599 (E777, preço único):** refatoração — o resumo "R$ X em N meses" ("em 1 mês" no singular) passa a vir de uma só função (`resumoEmMeses`, em `cartao-preco.ts`), usada pelo cartão, pela barra fixa, pela página do imóvel e pela reserva. Tem teste de unidade (`e777-preco-unico.test.ts`). **Sem spec nova:** o texto do total já é conferido pelos specs de navegador existentes (t703, t708 e a família do E756); o único efeito visível novo é "em 1 mês" no singular onde antes saía "em 1 meses", e esse caso é puro (unidade). O push da main não aparece mais em andamento.
+  2. **#3603 (E778):** só documentação (`docs/lista-visual/e778-superpowers-pista-a.md`). Nada a guardar. Push da main (42642425184) em andamento (docs).
+- Sem bloco de varredura (estrutura de pista única, decisão do Daniel de 09/11). PR #3682 inalterado (126 passaram, 3 falharam = L-110). Próximo L livre: **L-111**.
+
+## Rodada das 16h UTC (09/11) — #3637 verde; #3681 (docs) e #3579 (E752)
+
+1. **Push do #3637 (E778, Pista B, docs):** run 42644034827 **verde**. **#3603 (E778, Pista A):** 42642425184 **verde**.
+2. **Merges novos** (head `01f2102ff`), na ordem:
+   - **#3681 (E775):** só documentação (desenho da fila de merge). **Sem spec necessária.** Push da main 42646658005 **verde**.
+   - **#3579 (E752):** a Caução passa a mostrar o valor do 1º bloco ("Caução do 1º bloco (N meses)" + R$) e o texto público "paga direto ao proprietário / a Viva não recebe nem segura esse dinheiro" (sai a "poupança"). Mudança de comportamento; tinha teste de unidade (`e752-caucao-valor.test.ts`) e a Pista B ajustou o `t158`. **Spec criada: `t1591-e752-caucao-valor-do-primeiro-bloco.spec.ts`** (PR **#3687**, draft, commit `b25747916`), `/imoveis/ube-001` a 390 e 1280 px. Guardas 13/13, tsc limpo; **ainda não rodou**.
+3. **Consolidado:** PRs de guarda em draft aguardando QA — #3684 (t1588, E719), #3685 (t1589, E724), #3686 (t1590, E729), todos verdes; #3687 (t1591, E752) em primeira execução. PR #3682: 126 passaram, 3 falharam = **L-110** (t329, produto, pista B); sem run novo.
+4. Próximo `t` livre: **t1592**. Próximo L livre: **L-111**.
+
+## Rodada das 16h10 UTC (09/11) — t1591 verde; E776 dispensado; E780 (t1592)
+
+1. **t1591 (E752, PR #3687):** run 42648647207 **verde** (tests 2 min 28 s). **Push do #3579 na main:** 42647760345 **verde**.
+2. **PRs de guarda em draft** (#3684 t1588, #3685 t1589, #3686 t1590, #3687 t1591): todos **verdes**, sem commit novo nos branches, sem run pendente nem vermelho por causa nova. Seguem em draft para o QA do chat principal; nada mesclado por mim.
+3. **Merges novos** (head `192aef78b`), na ordem:
+   - **#3596 (E776):** textos-fonte únicos (contato, caução, taxas) + gate de frases proibidas no CI. É refatoração de texto para constantes (`textos-regulados.ts`) com gate próprio em teste de unidade (`frases-proibidas.test.ts`, 87 linhas) que varre o fonte; os únicos textos visíveis que mudam estão em telas logadas (rótulo "Caução (devolvida no fim)" em Reembolsos; nota das Visitas). **Spec de navegador dispensada**: o gate de frases proibidas é a guarda do merge e roda no CI. Push da main 42649064238 **verde**.
+   - **#3611 (E780):** o topo da /buscar fica preso no celular (faixa de filtros `sticky top-18`, a contagem rola por baixo; lg+ no fluxo). Tinha só teste de unidade e capturas da Pista A. **Spec criada: `t1592-e780-topo-da-busca-preso.spec.ts`** (PR **#3688**, draft, commit `ee18c7f83`); guardas 13/13, tsc limpo; **ainda não rodou**. Push da main 42650306889 em andamento.
+4. **L-110** segue como exceção (t329, PR #3682: 126 passaram, 3 falharam; produto, pista B); sem nova rodada nele. Próximo `t` livre: **t1593**. Próximo L livre: **L-111**.
+
+## Rodada das 16h25 UTC (09/11) — E780 verde na main; E781 (t1593)
+
+- **Push do #3611 (E780) na main:** 42650306889 **verde**. **t1592 (PR #3688):** run 42651207716 **na fila** (`queued`) desde 16:05 UTC, ainda sem executar às 16:19 — espera de runner, não falha; sem ação.
+- **Novo merge #3610 (E781, `082af97b1`):** o toque numa aba do anúncio rola por código até a seção (compensando as abas presas), grava o #hash e marca a aba tocada. Tinha só teste de unidade e capturas da Pista A. **Spec criada: `t1593-e781-abas-do-anuncio-rolam-ate-a-secao.spec.ts`** (PR **#3689**, draft, commit `95db3074c`): `/imoveis/ube-003` a 390 px com toque, cada aba; guardas 13/13, tsc limpo; **ainda não rodou**. Risco conhecido do teste: seção final curta pode não chegar ao topo da janela (folga maior); se o lab mostrar isso, ajusto o teste, não o produto.
+- PRs de guarda em draft: #3684, #3685, #3686, #3687 verdes; #3688 na fila; #3689 sem run ainda. L-110 inalterado. Próximo `t` livre: **t1594**; próximo L livre: **L-111**.
+
+## Rodada das 16h50 UTC (09/11) — t1592 e t1593 verdes; E776/E778 dispensados; E782 (t1594)
+
+1. **t1592 (E780, PR #3688):** run 42651207716 **verde** (esteve na fila de 16:05 a ~16:09 e rodou até 16:34). **t1593 (E781, PR #3689):** run 42654011708 **verde**. Nenhuma falha de produto, nenhum L novo.
+2. **Registro fundamentado (sem spec de navegador):**
+   - **#3596 (E776):** textos-fonte únicos (`textos-regulados.ts`) + **gate de frases proibidas** (`frases-proibidas.ts` / `.test.ts`, 87 linhas) que varre o fonte no CI. A guarda do merge é o próprio gate, que roda a cada PR; os únicos textos visíveis que mudam estão em telas logadas (rótulo "Caução (devolvida no fim)" em Reembolsos, nota das Visitas), sem massa específica no lab que as exercite de forma determinística. **Sem superfície exercitável no lab além do gate.**
+   - **#3603 e #3637 (E778, Pistas A e B):** só documentação (`docs/lista-visual/e778-superpowers-pista-a.md`, `…-pista-b.md`). **Sem superfície no lab.** Pushes da main 42642425184 e 42644034827 verdes.
+3. **Main:** head `082af97b1` (#3610, E781) assentou **verde** (push 42651538718). Novo head `ac555605a` (#3617, E782): push 42657109989 em andamento.
+4. **Novo merge #3617 (E782):** a tela de Avaliações segue o padrão (seta de voltar, título em tinta, abas sublinhadas, sem título duplicado) + grafia "Uberlândia" na tela de papéis. A Pista A deixou a prova em 390 px para o QA/lab (tela com login). **Spec criada: `t1594-e782-avaliacoes-no-padrao-das-telas.spec.ts`** (PR **#3690**, draft, commit `e446121d0`), logada como a INQUILINA da massa, 390 e 1280; guardas 13/13, tsc limpo; **ainda não rodou**. O adendo "Uberlândia" não está coberto (depende do dado do perfil).
+5. **L-110** inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1595**; próximo L livre: **L-111**.
+
+## Rodada das 17h UTC (09/11) — t1594 verde; E782 assentou; E783 coberto pela Pista A
+
+1. **t1594 (E782, PR #3690):** run 42657863658 **verde**; os dois casos rodaram e passaram (390 e 1280, 4,9 s cada; 51 passaram em 2,4 min). A guarda do #3617 está confirmada no navegador, logada como a inquilina da massa.
+2. **CI da main:** push do #3617 (head `ac555605a`) run 42657109989 **verde**.
+3. **Novo merge #3618 (E783, `e0eaf8805`):** a foto de perfil do cabeçalho passa a aparecer em todas as telas, inclusive Conta e Perfil (sai a exceção do E55 que trocava por iniciais). **Cobertura existente:** a Pista A ajustou no próprio merge o spec de navegador `t391-conta-conformidade` (16 linhas) e o teste de unidade `visual-mockup.test.ts`, além de `e783-avatar-foto.test.ts`. **Spec nova dispensada.** Push da main ainda sem leitura nesta rodada.
+4. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1595**; próximo L livre: **L-111**.
+
+## Rodada das 17h20 UTC (09/11) — #3618 verde; E784 (t1595)
+
+1. **Push do #3618 (E783) na main:** run 42659223810 **verde**. Fecha a leitura pendente; a dispensa de spec do E783 (coberto pelo `t391-conta-conformidade` ajustado pela Pista A) fica confirmada.
+2. **Novo merge #3620 (E784, `93fd4e877`):** o "‹ Voltar ao site" do admin no celular leva à última página pública (rastro em `sessionStorage`); entrada direta → home. Push da main 42660387069 **verde**. Tinha só teste de unidade; o `t404` cobria só a entrada direta e a Pista A deixou os três caminhos "para o QA/lab". **Spec criada: `t1595-e784-voltar-ao-site-do-admin.spec.ts`** (PR **#3691**, draft, commit `7e7f5df1e`): admin do lab a 390 px — anúncio com query, home e entrada direta; guardas 13/13, tsc limpo; **ainda não rodou**.
+3. PRs de guarda em draft: #3684–#3690 (t1588–t1594) verdes; #3691 (t1595) em primeira execução. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1596**; próximo L livre: **L-111**.
+
+## Rodada das 17h40 UTC (09/11) — t1595 verde; #3684 mesclado por outrem; E732 (t1597) e E770–E772 (t1596)
+
+1. **t1595 (E784, PR #3691):** run 42662640394 **verde**.
+2. **Mudança de estado:** o PR de guarda **#3684 (t1588, E719) foi mesclado na main por outra pessoa/pista** (`591284944`); não por mim. O spec `t1588` agora é parte da main.
+3. **Merges novos** (head `591284944`), na ordem:
+   - **#3530 (E732):** o rótulo verde do banner de topo vira pastilha escura (night/80) com texto branco a 90% (era 3,60:1 sobre a foto). Só unidade. **Spec criada: `t1597-e732-rotulo-do-banner-com-contraste.spec.ts`** (PR **#3693**, draft, commit `47d26a00c`): `/empresas` a 390 e 1280 px, contraste calculado no navegador sobre branco (pior caso) ≥ 4,5:1.
+   - **#3586 (E770/E771/E772):** `/empresas` com prazo de 7 dias e taxa explícitos, escopo do pagamento (estadia direto ao proprietário; parceiros à parte), sem "Relatórios/em construção/fatura"; `/parceiros` com `regras-escopo-pagamento`. Só unidade. **Spec criada: `t1596-e770-empresas-prazo-e-escopo-do-pagamento.spec.ts`** (PR **#3692**, draft, commit `8d75587c7`).
+   - **#3684:** é o meu próprio PR de guarda do E719 (ver item 2); nada a guardar.
+   Guardas de numeração 13/13 e tsc limpo nas duas; **ainda não rodaram**. Pushes da main desses merges sem leitura nesta rodada.
+4. PRs de guarda em draft: #3685–#3691 (t1589–t1595) verdes; #3692 (t1596) e #3693 (t1597) em primeira execução. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1598**; próximo L livre: **L-111**.
+
+## Rodada das 17h55 UTC (09/11) — t1596 verde; t1597 em curso; #3685 mesclado por outrem
+
+- **t1596 (E770–E772, PR #3692):** run 42665913414 **verde** (esteve na fila de 17:34 até iniciar; terminou 17:52).
+- **t1597 (E732, PR #3693):** run 42665924787 **em andamento** desde 17:34 UTC.
+- **Main** (head `05506b984`): o PR de guarda **#3685 (t1589, E724) foi mesclado por outra pessoa/pista** (depois do #3684/t1588). Nenhum merge de produto novo desde o #3586/#3530 → nenhuma spec a criar.
+- PRs de guarda em draft: #3686–#3692 (t1590–t1596) verdes; #3693 (t1597) em curso. L-110 inalterado (t329, PR #3682, produto, pista B). Próximo `t` livre: **t1598**; próximo L livre: **L-111**.
+
+## Rodada das 18h20 UTC (09/11) — t1597 vermelho por defeito do MEU spec; corrigido
+
+- **t1597 (E732, PR #3693), run 42665924787:** 2 falharam (390 e 1280), 49 passaram. Erro: "contraste 1.00:1". **Causa: spec, não produto.** O parser de cor do spec só lia `rgb(`/`rgba(`; o Chromium devolve as cores do Tailwind v4 como `color(srgb …)`/`oklab(…)`, o parser caiu no padrão preto/preto e deu razão 1,00 (o `alfaFundo > 0,5` passou só porque o padrão tem alfa 1). Corrigido em `claude-c/spec-e732` (commit abaixo): as cores passam por um `canvas` 1×1, que converte qualquer CSS para RGBA. Novo run do PR #3693 disparado. Nada a devolver à Pista A: o rótulo do E732 não foi medido de verdade nesse run.
+- **Main:** os PRs de guarda **#3686 (t1590, E729) e #3687 (t1591, E752) foram mesclados por outra pessoa/pista** (`132b9aa36`, `d1e13c8dc`); sem merge de produto novo. Mesclados por outrem até agora: #3684, #3685, #3686, #3687 (t1588–t1591).
+- Em draft: #3688–#3692 (t1592–t1596) verdes; #3693 (t1597) em novo run. L-110 inalterado. Próximo `t` livre: **t1598**; próximo L livre: **L-111**.
+
+## Rodada das 18h35 UTC (09/11) — t1597: run novo caiu antes de começar; um rerun
+
+- **t1597 (E732, PR #3693), run 42672859114** (commit `cd7a8beec`, com o parser de cor pelo canvas): **failure em ~50 s, sem nenhum job** (`list_workflow_jobs` → 0). Não há teste executado, logo **não é veredito do spec nem do produto**: é falha de infraestrutura/disparo do workflow. Regra de um rerun: **rerun disparado** (run_attempt 2). Veredito do t1597 segue pendente desse rerun.
+- **Main** (head `37db454e3`): os PRs de guarda **#3688 (t1592, E780) e #3689 (t1593, E781) foram mesclados por outra pessoa/pista** (`2911b0323`, `37db454e3`). Mesclados por outrem até agora: #3684–#3689 (t1588–t1593). **Nenhum merge de produto novo** desde #3586/#3530 → nenhuma spec nova (próximo `t` livre **t1598**, próximo L livre **L-111**).
+- Em draft: #3690–#3692 (t1594–t1596) verdes; #3693 (t1597) aguardando o rerun. L-110 inalterado.
+
+## Rodada das 18h40 UTC (09/11) — t1597 verde no rerun
+
+- Run 42672859114 (PR #3693, `cd7a8beec`), tentativa 2: **success**. O E732 (rótulo do banner com contraste ≥ 4,5:1) está guardado a 390 e 1280 px. A primeira tentativa foi falha de infra (0 jobs), não veredito.
+- Head da main segue `37db454e3`: nenhum merge de produto novo desde #3586/#3530 → nenhuma spec nova. Próximos livres: t1598 / L-111.
+- PRs de guarda #3690–#3693 (t1594–t1597) verdes e em rascunho; L-110 segue aberto (Pista B).
+
+## Rodada das 19h00 UTC (09/11) — conferência única da sequência
+
+- Main segue em `37db454e3` (últimos merges: #3688, #3689, guardas minhas). Nenhum merge de produto novo desde #3586/#3530 → nenhuma spec nova (próximos livres: t1598 / L-111).
+- Guardas t1594–t1597 (PRs #3690–#3693): verdes, em rascunho, sem erro de spec ou infra a corrigir. Nada de produto tocado.
+- Aberto: L-110 (Pista B); #3682 mantém 3 vermelhos de t329 por desenho.
+
+## Rodada das 19h25 UTC (09/11) — main em `954bbece6`
+
+- Merges novos desde `37db454e3`: #3602 (CLAUDE.md: regras de PR e "pronto") e #3460 (E712, docs: o topo da home não muda). Os dois são só documentação, sem comportamento de produto → **dispensa de spec registrada**. Próximos livres: t1598 / L-111.
+- Guardas t1594–t1597 (#3690–#3693) sem mudança: verdes, em rascunho. L-110 segue com a Pista B.
+
+## Rodada das 19h50 UTC (09/11) — CI da main nos merges de docs
+
+- Push do #3602 (`e49fc8314`, run 42682752738): **vermelho de infra** — falhou no passo "Subir o Supabase local" (1 min), antes de qualquer teste; os passos de teste ficaram "skipped". Merge só de documentação.
+- Push do #3460 (`954bbece6`, run 42682766358), 12 s depois, sobre a mesma árvore + o doc do E712: **verde**. Esse run cobre o #3602; não gastei rerun.
+- Nenhuma spec quebrada por merge recente; nenhum merge de produto novo → sem spec nova (t1598 / L-111 livres). L-110 segue com a Pista B.
+
+## Conferência de encerramento (10/11) — main sem merge novo
+
+- Main segue em `954bbece6`; nenhum merge desde #3460. Último `lab-critico` na main: run 42682766358, **success**. O vermelho do #3602 (run 42682752738) foi infra ("Subir o Supabase local"), sem teste executado.
+- Nenhuma spec nova nem corrigida; sem bloco de varredura; sem produto tocado. Livres: t1598 / L-111.
+- Guardas t1594–t1597 (#3690–#3693): verdes, em rascunho, aguardando o QA do chat principal. L-110 segue com a Pista B.
+
+## Fechamento da checagem (10/11)
+
+- Main segue em `954bbece6`: nenhum merge novo, então nada a cobrir. `lab-critico` na main: run 42682766358 (#3460) **success**; sem falha nova a registrar. t1598 conferido livre na árvore.
+- L-110: aberto, com a Pista B (estado apenas registrado).
+- **Próximo passo:** ao surgir merge de produto novo na main, ler o run do push e criar a guarda a partir de t1598 / L-111 (um PR draft por merge); merges só de docs seguem dispensados. As guardas t1594–t1597 (#3690–#3693) aguardam o QA do chat principal.
+
+## Conferência de 10/11 06:15 UTC — sem merge novo
+
+- Head da main: `954bbece6` (inalterado). Merges novos desde a última checagem: nenhum. Merges cobertos: nenhum a cobrir (#3602 e #3460 seguem isentos, só docs).
+- Lab: último `lab-critico` na main = run 42682766358 (#3460), **success**; sem falha de produto a nomear para a Pista B. L-110 segue aberto com a Pista B.
+- Livres: t1598 / L-111. Sequência encerrada, sem agendamento; a próxima checagem acontece quando houver merge novo ou nova ordem.
+
+## Rodada de 10/11 — E782/E784 a 390 px e achado do link no desktop
+
+- Main `954bbece6` inalterada; último `lab-critico` na main = run 42682766358, success.
+- E782 a 390 px: **t1594** (PR #3690) já cobre seta de voltar sem "← Voltar" em texto, título único, abas sublinhadas, a 390 e 1280 px. E784 a 390 px: **t1595** (PR #3691) cobre os 3 caminhos (anúncio → mesmo anúncio; home → home; entrada direta → home, nunca /buscar).
+- **Achado (E784, desenho, não defeito):** o "‹ Voltar ao site" do admin não aparece a 1280 px porque a nav `admin-nav-celular` é `lg:hidden` (dashboard-shell.tsx; comentário E73/E176: "No computador nada muda — a barra lateral já está aberta"). O t404 já exigia a nav oculta no desktop. Sem item L: comportamento só-móvel por desenho. Se o Daniel quiser a saída também no desktop, é decisão de produto (Pista A/B), não do lab.
+- Acrescentado o teste (4) ao t1595 (1280 px: nav e link ocultos) para fixar a conclusão; verdict do CI do PR #3691 pendente.
+
+- **Verdict do teste (4) do t1595:** run 42776863792 (PR #3691, `d70c939f1`) = **success**. A 1280 px a nav e o link "Voltar ao site" ficam ocultos, confirmando o desenho só-móvel. Main `954bbece6` sem merge novo; lab verde.
+
+## Conferência de 10/11 09:58 UTC — sem merge novo, sem spec pendente (parada)
+
+- Head da main: `954bbece6` (inalterado). Último `lab-critico` na main: run 42682766358 (#3460), **success**. Guardas t1592–t1597 todas verdes (t1595 com o teste (4) 1280 px: run 42776863792, success).
+- Merges novos: nenhum. Spec pendente: nenhuma (#3602 e #3460 isentos, só docs). Livres: t1598 / L-111. L-110 com a Pista B.
+- Sequência encerrada sem agendamento; retoma com merge novo na main ou nova ordem.
+
+## Conferência de 10/11 10:13 UTC (reativação) — sem merge novo
+
+- Head da main: `954bbece6` (inalterado desde 09/11 19:22 UTC). Merges novos: nenhum. Lab: último `lab-critico` na main = run 42682766358 (#3460), **success**. Specs tocadas: nenhuma (nada a cobrir). Livres: t1598 / L-111. L-110 com a Pista B.
+
+## Specs devidas quando os drafts da Pista B pousarem (10/11, main `954bbece6`)
+
+Nenhum destes é merge ainda; **nenhuma spec criada** para draft. Lista do que fica devido (livres: t1598 / L-111):
+
+| PR | Item | Spec devida quando pousar |
+|---|---|---|
+| #3703 | E721 "Adiar" na conversa (migração 0336) | **t1598**: `/dashboard/mensagens`, 390 e 1280 px — botão Adiar no cabeçalho (1 dia/3 dias/1 semana), conversa sai de "Todas" e vai ao chip "Adiadas", "Retomar" devolve. Antes: confirmar que a 0336 foi aplicada no ambiente do lab (Action de migrações pós-merge). |
+| #3702 | E784 "Voltar ao site" em todas as larguras (remove `lg:hidden`) | **Ajustar t1595 (PR #3691), teste (4)**: hoje afirma link OCULTO a 1280 px; passa a ser **visível** nas duas larguras. O PR #3702 já atualiza o t404 e diz não duplicar o fluxo de histórico (t1595 1–3). **Meu achado "só-móvel por desenho" foi revertido por decisão do Daniel (reprova de 10/11)**: o t1595(4) vai quebrar no merge se não for invertido. |
+| #3695 | E786 selo do anúncio de teste sem transbordo | t1599: anúncio de teste (modo teste-visitante), 390 px, botão da barra fixa e do cartão quebram linha, `scrollWidth ≤ innerWidth`. |
+| #3700 | E788 selo "Equipe" sem avatar inerte | t1600: admin, selo "Equipe" sem círculo de avatar e não é link; inicial do avatar maiúscula (≥13 px). |
+| #3701 | E789 Conta/Perfil com esqueleto | t1601 (opcional): `/dashboard/conta/perfil` mostra esqueleto com "Carregando o seu perfil…" e depois o formulário; sem cartões brancos vazios. |
+| #3696 | E787 capa do "Continue seu anúncio" | t1602 (opcional, depende de massa com foto <4 KB): capa não vira retângulo chapado. |
+| #3697 | E774 aviso do /pedidos/novo | Sem spec nova: o PR ajusta o t165. |
+| #3694 | E785 gate de frases proibidas | Sem spec nova: o PR ajusta t217/t172 e o gate roda no CI. |
+| #3698 | t112 imagem repetida (Faixa D) | Sem spec nova: usa o t112 existente. |
+| #3699 | E293 retenção | Só docs/config: isento. |
+
+## Correção do achado do E784 (10/11) — defeito confirmado, não "por desenho"
+
+- **Reprova do Daniel (10/11, 1920 px) confirma defeito:** o "‹ Voltar ao site" não existe no admin em desktop (`admin-nav-celular` com `lg:hidden`). A minha conclusão anterior ("só-móvel por desenho", seção de 10/11) está **revertida**.
+- **Ajuste na spec (PR #3691, commit `2a400a8c1`):** o teste (4) do t1595 passa a exigir o link **visível e com href "/" a 1280 px**, marcado `test.fail` justificado (o lab reproduziu o defeito: run 42776863792 viu a faixa e o link ocultos). Fica verde enquanto o defeito existe e **avisa** quando o #3702 (Pista B) pousar; aí remove-se o `test.fail`. Guardas de numeração/cobertura: 13/13. Verdict do CI do PR #3691: pendente.
+- Defeito do produto: item da Pista B (PR #3702, rascunho). Sem correção de produto da minha parte.
