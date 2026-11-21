@@ -115,7 +115,8 @@ async function carregar(pedidoId: string): Promise<{ admin: Admin; userId: strin
   if (!UUID.test(pedidoId)) return { erro: "Pedido não encontrado." };
   const s = await sessao();
   if ("erro" in s) return s;
-  const { data } = await s.admin.from("parceiro_pedidos").select(COLUNAS).eq("id", pedidoId).maybeSingle();
+  const { data, error: erroPedido } = await s.admin.from("parceiro_pedidos").select(COLUNAS).eq("id", pedidoId).maybeSingle();
+  if (erroPedido) return { erro: "Não foi possível ler o pedido agora. Tente de novo." };
   const p = data as unknown as LinhaPedido | null;
   if (!p || !p.parceiros) return { erro: "Pedido não encontrado." };
   const papel: PapelNoPedido | null = p.cliente_id === s.userId ? "cliente" : p.parceiros.user_id === s.userId ? "parceiro" : null;
@@ -516,7 +517,8 @@ export async function linkArquivoDoPedido(pedidoId: string, alvo: { entregaId: s
   let path: string | null = null;
   if ("entregaId" in alvo) {
     if (!UUID.test(alvo.entregaId)) return { ok: false, erro: "Arquivo não encontrado." };
-    const { data } = await c.admin.from("parceiro_entregas").select("path").eq("id", alvo.entregaId).eq("pedido_id", c.p.id).maybeSingle();
+    const { data, error: erroEntrega } = await c.admin.from("parceiro_entregas").select("path").eq("id", alvo.entregaId).eq("pedido_id", c.p.id).maybeSingle();
+    if (erroEntrega) return { ok: false, erro: "Não foi possível abrir o arquivo agora. Tente de novo." };
     path = (data as { path?: string } | null)?.path ?? null;
   } else path = c.p.documento_parceiro_path;
   if (!path) return { ok: false, erro: "Arquivo não encontrado." };
