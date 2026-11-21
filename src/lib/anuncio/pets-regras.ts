@@ -81,6 +81,10 @@ export interface RegrasPets {
   taxaMensal?: number;
   /** E263-A: observação curta do dono (até 140 caracteres). */
   observacao?: string;
+  /** Ordem 75ce56db (D): o dono exige a carteira de vacinação em dia na ficha do pet. Ausente = não exige. */
+  exigeCarteiraVacina?: boolean;
+  /** Ordem 75ce56db (D): o dono exige ao menos uma foto do pet na ficha. Ausente = não exige. */
+  exigeFotoPet?: boolean;
 }
 
 export interface FichaPetResumo {
@@ -140,8 +144,11 @@ export function normalizarRegrasPets(raw: unknown): RegrasPets | null {
   const legado = valorBruto === 0 && reforcoBruto > 0;
   const valorPet = Math.round((legado ? reforcoBruto : valorBruto) * 100) / 100;
   const taxaMensal = Math.round(lerValor(r.taxaMensal) * 100) / 100;
+  // Exigências só valem com true de verdade (nada de "sim"/1 vindo de fora).
+  const exigeCarteiraVacina = r.exigeCarteiraVacina === true;
+  const exigeFotoPet = r.exigeFotoPet === true;
   // Nada informado além do "sim" (ou um congelado vazio, {}): sem regras — vale o aceite geral.
-  if (marcadas.length === 0 && !porteMax && !qtd && !texto && !observacao && valorPet <= 0 && taxaMensal <= 0) return null;
+  if (marcadas.length === 0 && !porteMax && !qtd && !texto && !observacao && valorPet <= 0 && taxaMensal <= 0 && !exigeCarteiraVacina && !exigeFotoPet) return null;
   return {
     especies,
     ...(porteMax ? { porteMax } : {}),
@@ -152,6 +159,9 @@ export function normalizarRegrasPets(raw: unknown): RegrasPets | null {
     ...(valorPet > 0 ? { valorPetTipo: legado ? "reembolsavel" : (tipo ?? "reembolsavel") } : {}),
     ...(taxaMensal > 0 ? { taxaMensal } : {}),
     ...(observacao ? { observacao } : {}),
+    // Só entram quando marcadas: regras antigas ficam idênticas (o resumo e o hash de contrato não mudam).
+    ...(exigeCarteiraVacina ? { exigeCarteiraVacina: true } : {}),
+    ...(exigeFotoPet ? { exigeFotoPet: true } : {}),
   };
 }
 
@@ -175,6 +185,8 @@ export function linhasRegrasPets(r: RegrasPets, opcoes: { semValorPet?: boolean 
   if (taxa) linhas.push(taxa);
   const valorPet = opcoes.semValorPet ? null : textoValorPet(r);
   if (valorPet) linhas.push(valorPet);
+  if (r.exigeCarteiraVacina) linhas.push("Exige carteira de vacinação em dia");
+  if (r.exigeFotoPet) linhas.push("Exige foto do pet");
   if (r.regrasCondominio) linhas.push(`Condomínio: ${r.regrasCondominio}`);
   if (r.observacao) linhas.push(r.observacao);
   return linhas;
@@ -195,6 +207,8 @@ export function linhaPetsPublica(petsAllowed: boolean | undefined, r: RegrasPets
   if (taxa) partes.push(taxa);
   const valorPet = textoValorPet(r);
   if (valorPet) partes.push(valorPet);
+  if (r.exigeCarteiraVacina) partes.push("carteira de vacinação exigida");
+  if (r.exigeFotoPet) partes.push("foto do pet exigida");
   if (r.regrasCondominio) partes.push(`Condomínio: ${r.regrasCondominio}`);
   if (r.observacao) partes.push(r.observacao);
   return partes.join(" · ");

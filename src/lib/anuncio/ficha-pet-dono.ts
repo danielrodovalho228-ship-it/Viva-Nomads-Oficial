@@ -21,6 +21,18 @@ export interface PetResumo {
   nome: string;
   especie: EspeciePet;
   porte: PortePet;
+  /** Caminhos das fotos da ficha (só a presença conta, para a exigência de foto do anúncio). */
+  fotos?: string[] | null;
+  /** Caminho da carteira de vacinação (só a presença conta, para a exigência do anúncio). */
+  carteira_vacina?: string | null;
+}
+
+/** O que a ficha deixa de cumprir das exigências do anúncio (ordem 75ce56db, D): "a foto do pet", "a carteira…". */
+function faltasDasExigencias(regras: RegrasPets, pet: PetResumo): string[] {
+  const faltas: string[] = [];
+  if (regras.exigeFotoPet && !(pet.fotos ?? []).length) faltas.push("a foto do pet");
+  if (regras.exigeCarteiraVacina && !pet.carteira_vacina) faltas.push("a carteira de vacinação");
+  return faltas;
 }
 
 /**
@@ -60,7 +72,12 @@ export function conferenciaPetComRegras(petsAllowed: boolean | null | undefined,
   if (petsAllowed === false) return { ok: false, texto: "Fora das regras: o anúncio não aceita animais" };
   if (!regras) return { ok: true, texto: "Dentro das regras: o anúncio aceita pets" };
   const r = compatibilidadePets(true, { ...regras, qtdMax: 3 }, [pet]);
-  if (r.ok) return { ok: true, texto: `Dentro das regras: aceita ${especie} de porte ${PORTE_CURTO[pet.porte]}` };
+  if (r.ok) {
+    // Espécie e porte batem; as exigências do dono (foto, carteira) vêm depois, sem bloquear a candidatura.
+    const faltas = faltasDasExigencias(regras, pet);
+    if (faltas.length) return { ok: false, texto: `Fora das regras: falta ${faltas.join(" e ")} que o anúncio exige` };
+    return { ok: true, texto: `Dentro das regras: aceita ${especie} de porte ${PORTE_CURTO[pet.porte]}` };
+  }
   if (!regras.especies.includes(pet.especie)) return { ok: false, texto: `Fora das regras: o anúncio não aceita ${especie}` };
   return { ok: false, texto: regras.porteMax ? `Fora das regras: o anúncio aceita até porte ${PORTE_CURTO[regras.porteMax]}` : "Fora das regras" };
 }

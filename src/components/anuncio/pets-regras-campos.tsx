@@ -30,6 +30,9 @@ export interface RegrasPetsForm {
   valorPetTipo: TipoValorPet;
   taxaMensal: string;
   observacao: string;
+  /** Ordem 75ce56db (D): exigências do dono na ficha do pet. */
+  exigeCarteiraVacina: boolean;
+  exigeFotoPet: boolean;
 }
 
 export function formDeRegras(r?: RegrasPets): RegrasPetsForm {
@@ -42,6 +45,8 @@ export function formDeRegras(r?: RegrasPets): RegrasPetsForm {
     valorPetTipo: r?.valorPetTipo ?? "reembolsavel",
     taxaMensal: r?.taxaMensal && r.taxaMensal > 0 ? String(r.taxaMensal) : "",
     observacao: r?.observacao ?? "",
+    exigeCarteiraVacina: r?.exigeCarteiraVacina === true,
+    exigeFotoPet: r?.exigeFotoPet === true,
   };
 }
 
@@ -80,6 +85,26 @@ export function PetsRegrasCampos({ value, onChange }: { value: RegrasPetsForm; o
         onChange={(qtdMax) => onChange({ ...value, qtdMax })}
         opcoes={[{ valor: "", rotulo: "Sem limite" }, ...Array.from({ length: MAX_PETS }, (_, i) => i + 1).map((n) => ({ valor: String(n), rotulo: rotuloQtdPets(n) }))]}
       />
+      <fieldset>
+        <legend className="text-sm font-semibold text-ink">O que você exige na ficha do pet? (opcional)</legend>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <CartaoEscolha
+            papel="checkbox"
+            on={value.exigeCarteiraVacina}
+            onClick={() => onChange({ ...value, exigeCarteiraVacina: !value.exigeCarteiraVacina })}
+            rotulo="Carteira de vacinação em dia"
+            testid="pets-exige-carteira"
+          />
+          <CartaoEscolha
+            papel="checkbox"
+            on={value.exigeFotoPet}
+            onClick={() => onChange({ ...value, exigeFotoPet: !value.exigeFotoPet })}
+            rotulo="Foto do pet"
+            testid="pets-exige-foto"
+          />
+        </div>
+        <p className="mt-1 text-xs text-muted">Você vê se a ficha cumpre antes de aceitar. Não impede o pedido.</p>
+      </fieldset>
       <label className="grid gap-1 text-sm font-semibold text-ink">
         Taxa mensal de pet (R$/mês, opcional)
         <CampoReais
