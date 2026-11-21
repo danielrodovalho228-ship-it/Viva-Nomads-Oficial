@@ -15,7 +15,7 @@ export default async function NovaPropostaPage({ searchParams }: { searchParams:
           title="Escolha um interessado"
           text="A proposta sempre nasce de um interessado real. Abra Orçamentos e use Nova proposta, ou o botão Enviar proposta em Interessados."
           action={
-            <Link href="/dashboard/orcamentos" className="font-medium text-forest underline">
+            <Link href="/dashboard/orcamentos" className="inline-flex min-h-11 items-center font-medium text-forest underline">
               Voltar para Orçamentos
             </Link>
           }
