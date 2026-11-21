@@ -52,12 +52,49 @@ export function prazoDaPreAceitacao(inicio: Date, dataEntrada: string | null | u
   return entrada.getTime() < fim.getTime() ? entrada : fim;
 }
 
-/** O último instante permitido (fora do silêncio) até `limite`: se o limite cai no silêncio, 21:59 do dia anterior ao silêncio. */
-function ultimoEnvioPermitidoAte(limite: Date): Date {
-  if (!emSilencio(limite)) return limite;
-  const l = new Date(limite.getTime() + BRT);
+/**
+ * E959 — a CADÊNCIA do job de lembretes, em minutos: o cron /api/cron/pre-aceitacao roda de hora em hora, no minuto 0
+ * (vercel.json "0 * * * *"; a guarda e959-cadencia confere que os dois batem). Os lembretes só saem num TIQUE do cron.
+ */
+export const CADENCIA_CRON_PRE_ACEITACAO_MIN = 60;
+const PASSO = CADENCIA_CRON_PRE_ACEITACAO_MIN * 60_000;
+/** O tique do cron em `t` ou logo depois (os tiques são múltiplos da cadência a partir da meia-noite UTC). */
+export function tiqueEmOuDepois(t: Date): Date {
+  return new Date(Math.ceil(t.getTime() / PASSO) * PASSO);
+}
+
+/**
+ * E959 — o ÚLTIMO TIQUE permitido (fora do silêncio) até `limite`. Se esse tique cai no silêncio, é o último tique antes
+ * das 22h (22h00 menos a cadência: hoje 21h00). Antes era 21h59 — e com o cron de hora em hora o tique seguinte a 21h59
+ * é 22h00, dentro do silêncio.
+ */
+export function ultimoEnvioPermitidoAte(limite: Date): Date {
+  const t = new Date(Math.floor(limite.getTime() / PASSO) * PASSO);
+  if (!emSilencio(t)) return t;
+  const l = new Date(t.getTime() + BRT);
   const dia = l.getUTCHours() >= SILENCIO.inicio ? l.getUTCDate() : l.getUTCDate() - 1;
-  return new Date(Date.UTC(l.getUTCFullYear(), l.getUTCMonth(), dia, SILENCIO.inicio) - BRT - 60_000);
+  return new Date(Date.UTC(l.getUTCFullYear(), l.getUTCMonth(), dia, SILENCIO.inicio) - BRT - PASSO);
+}
+
+/** E959 — quando o cron de fato manda um lembrete planejado para `enviarEm`: o 1º tique em ou depois dele, fora do silêncio. */
+export function envioEfetivo(enviarEm: Date): Date {
+  return proximoEnvioPermitido(tiqueEmOuDepois(enviarEm));
+}
+
+/** E959 — o lembrete sai AGORA? Só depois do planejado, fora do silêncio (regra única de silencio.ts) e antes do fim. */
+export function deveEnviarLembrete(enviarEm: Date, prazo: Date, agora: Date): boolean {
+  return agora.getTime() >= enviarEm.getTime() && !emSilencio(agora) && agora.getTime() < prazo.getTime();
+}
+
+/**
+ * E959 — o início REAL da janela. O prazo é o menor entre 72 h e o tempo até a entrada; quando foi encurtado pela
+ * entrada, "prazo − 72 h" fica ANTES do pré-aceite, e a regra "janela curta demais não ganha o lembrete" deixava passar
+ * lembretes de antes do aceite. Vale o instante do aceite gravado na proposta (`aceita_em`), quando é mais tarde.
+ */
+export function inicioDaJanela(prazo: Date, aceitaEm: Date | null | undefined): Date {
+  const cheia = prazo.getTime() - PRAZO_PRE_ACEITACAO_HORAS * H;
+  const aceite = aceitaEm && Number.isFinite(aceitaEm.getTime()) ? aceitaEm.getTime() : -Infinity;
+  return new Date(Math.max(cheia, aceite));
 }
 
 export interface Lembrete {
@@ -67,18 +104,27 @@ export interface Lembrete {
 }
 
 /**
- * Os lembretes de 24 h e 6 h. No silêncio, sai às 7h seguintes; se as 7h já passam do fim, sai às 21h59 anterior.
- * Janela curta demais (o instante nominal antes do início) não ganha o lembrete.
+ * E959 — quando sai um lembrete de instante `nominal`. No silêncio, sai às 7h seguintes. Se o cron só o mandaria (1º tique
+ * permitido em ou depois) no fim ou depois dele, sai ANTES do silêncio, no último tique permitido (hoje 21h00). Sem
+ * tique permitido depois do início, não sai (null).
+ */
+export function momentoDoLembrete(nominal: Date, inicio: Date, prazo: Date): Date | null {
+  let quando = proximoEnvioPermitido(nominal);
+  if (envioEfetivo(quando).getTime() >= prazo.getTime()) quando = ultimoEnvioPermitidoAte(nominal);
+  return quando.getTime() <= inicio.getTime() ? null : quando;
+}
+
+/**
+ * Os lembretes de 24 h e 6 h. No silêncio, sai às 7h seguintes; se as 7h já passam do fim, sai no último tique antes do
+ * silêncio (E959: 21h00). Janela curta demais (o instante nominal antes do início) não ganha o lembrete.
  */
 export function lembretesDaPreAceitacao(inicio: Date, prazo: Date): Lembrete[] {
   const saida: Lembrete[] = [];
   for (const h of LEMBRETES_HORAS) {
     const nominal = new Date(prazo.getTime() - h * H);
     if (nominal.getTime() <= inicio.getTime()) continue;
-    let quando = proximoEnvioPermitido(nominal);
-    if (quando.getTime() >= prazo.getTime()) quando = ultimoEnvioPermitidoAte(nominal);
-    if (quando.getTime() <= inicio.getTime()) continue;
-    saida.push({ horasAntes: h, enviarEm: quando });
+    const quando = momentoDoLembrete(nominal, inicio, prazo);
+    if (quando) saida.push({ horasAntes: h, enviarEm: quando });
   }
   return saida;
 }

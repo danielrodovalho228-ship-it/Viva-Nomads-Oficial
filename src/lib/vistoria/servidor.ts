@@ -10,7 +10,7 @@ import {
   designacaoVencida,
   notaConduta,
   sorteadoParaAuditoria,
-  visitaAmanha,
+  lembreteD1Devido,
   type AvaliadorFila,
   type HistoricoDesignacao,
   type PedidoParaDesignar,
@@ -375,7 +375,8 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
     .eq("status", "agendado")
     .is("lembrete_d1_em", null);
   for (const v of (agendados ?? []) as unknown as { id: string; property_id: string; owner_id: string; morador_id: string | null; agendado_para: string | null; avaliadores_credenciamento: { parceiros: { user_id: string } | null } | null }[]) {
-    if (!v.agendado_para || !visitaAmanha(v.agendado_para, hoje)) continue;
+    // E959: nunca no silêncio das 22h às 7h (o cron de hora em hora passa às 00h07); sai no tique das 7h07 do mesmo dia.
+    if (!v.agendado_para || !lembreteD1Devido(v.agendado_para, hoje, agora)) continue;
     const { data: marcou } = await admin.from("vistoria_pedidos").update({ lembrete_d1_em: agora.toISOString() }).eq("id", v.id).is("lembrete_d1_em", null).select("id");
     if (!marcou?.length) continue;
     await avisar(admin, v.owner_id, "vistoria_lembrete", rotaDono(v.property_id), { pedidoId: v.id, propertyId: v.property_id });

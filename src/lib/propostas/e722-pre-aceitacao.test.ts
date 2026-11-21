@@ -44,13 +44,15 @@ test("lembretes 24 h e 6 h antes do fim, nunca no silêncio de 22h às 7h e nunc
   }
 });
 
-test("lembrete cujo 'depois do silêncio' passaria do fim sai antes do silêncio (21h59 do dia anterior)", () => {
+// E959 (asserção alterada): o último horário permitido é o último TIQUE do cron antes das 22h (21h00), não 21h59 — com
+// o cron de hora em hora, o tique seguinte a 21h59 é 22h00, dentro do silêncio.
+test("lembrete cujo 'depois do silêncio' passaria do fim sai antes do silêncio (21h00, último tique do dia anterior)", () => {
   // Fim às 06:00 BRT (09:00Z): o de 6 h cairia às 00:00 (silêncio) e as 07:00 já passam do fim.
   const prazo = t("2026-11-11T09:00:00Z");
   const inicio = new Date(prazo.getTime() - 72 * H);
   const l = lembretesDaPreAceitacao(inicio, prazo).find((x) => x.horasAntes === 6)!;
   assert.equal(emSilencio(l.enviarEm), false);
-  assert.equal(l.enviarEm.getTime(), t("2026-11-11T00:59:00Z").getTime()); // 21:59 BRT do dia 10
+  assert.equal(l.enviarEm.getTime(), t("2026-11-11T00:00:00Z").getTime()); // 21:00 BRT do dia 10
 });
 
 test("janela curta demais não ganha o lembrete que cairia antes do início", () => {
