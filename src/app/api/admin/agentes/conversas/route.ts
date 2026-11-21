@@ -13,8 +13,13 @@ export async function GET(request: Request) {
   if (!supabase || !uid || !(await ehAdmin(supabase, uid))) return NextResponse.json({ erro: "Só admin." }, { status: 403 });
   const u = new URL(request.url);
   const antes = u.searchParams.get("antes");
-  if (u.searchParams.get("atas") === "1") return NextResponse.json(await lerAtas(supabase, antes));
-  const slug = u.searchParams.get("slug");
-  if (!slugValido(slug)) return NextResponse.json({ erro: "Agente inválido." }, { status: 400 });
-  return NextResponse.json(await lerConversas(supabase, slug, antes));
+  try {
+    if (u.searchParams.get("atas") === "1") return NextResponse.json(await lerAtas(supabase, antes));
+    const slug = u.searchParams.get("slug");
+    if (!slugValido(slug)) return NextResponse.json({ erro: "Agente inválido." }, { status: 400 });
+    return NextResponse.json(await lerConversas(supabase, slug, antes));
+  } catch {
+    // Achado nº 21: falha de leitura não vira "nenhuma conversa" — a Central avisa e oferece tentar de novo.
+    return NextResponse.json({ erro: "Não foi possível carregar as conversas agora." }, { status: 503 });
+  }
 }

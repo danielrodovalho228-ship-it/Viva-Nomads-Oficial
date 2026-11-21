@@ -133,12 +133,14 @@ export async function listMatriculasFila(limite = 40, opcoes: { exigir?: boolean
 }
 
 /** Contadores dos últimos 30 dias: conferidos automático / prováveis / em revisão / tempo médio da equipe. */
-export async function contadoresMatriculas(): Promise<ContadoresMatricula> {
+/** Achado nº 21: com `exigir`, a falha do banco LANÇA em vez de mostrar "0" nos contadores de matrículas. */
+export async function contadoresMatriculas(opcoes: { exigir?: boolean } = {}): Promise<ContadoresMatricula> {
   const zero: ContadoresMatricula = { conferidos: 0, provaveis: 0, emRevisao: 0, tempoMedioHoras: null };
   const ctx = await soAdmin();
   if (!ctx) return zero;
   const desde = new Date(Date.now() - 30 * 86_400_000).toISOString();
-  const { data } = await ctx.admin.from("property_ownership_checks").select("resultado, criada_em, revisado_em").gte("criada_em", desde).limit(5000);
+  const { data, error } = await ctx.admin.from("property_ownership_checks").select("resultado, criada_em, revisado_em").gte("criada_em", desde).limit(5000);
+  if (error && opcoes.exigir) throw new Error(MSG_FILA_MATRICULAS_NAO_CARREGOU);
   return contarMatriculas((data ?? []) as { resultado: string; criada_em: string; revisado_em: string | null }[]);
 }
 

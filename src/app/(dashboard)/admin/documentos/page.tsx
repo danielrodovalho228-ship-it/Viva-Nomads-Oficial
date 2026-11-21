@@ -77,9 +77,9 @@ export default async function AdminDocumentosPage({ searchParams }: { searchPara
     listDocumentosPendentes({ exigir: true }),
     // Achado 63: falhou → a aba avisa (null), sem derrubar a fila de revisão.
     listConferidosAutomaticamente().catch(() => null),
-    contadoresConferencia(),
+    contadoresConferencia({ exigir: true }),
     listMatriculasFila(undefined, { exigir: true }),
-    contadoresMatriculas(),
+    contadoresMatriculas({ exigir: true }),
     listarFalhasDocumentos(),
     admin ? filaDocumentos(admin).catch(() => null) : Promise.resolve(null),
     ultimaDecisao(admin, "properties", "document_reviewed_at").catch(() => null),
