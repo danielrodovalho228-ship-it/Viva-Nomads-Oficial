@@ -4,6 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, no
 /*
   T826 — E430 (D-V12): /parceiros sem rolagem lateral para quem já tem pedido de parceria (e-mail longo na frase
   "Mandamos a confirmação para …"). 390 e 1280.
+  (Prova de tela pedida pelo chat principal em 04/11 para fechar o E430: rodada no lab-crítico do PR de prova da Pista C.)
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
