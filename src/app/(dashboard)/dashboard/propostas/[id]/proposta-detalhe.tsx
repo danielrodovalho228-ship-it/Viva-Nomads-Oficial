@@ -35,7 +35,7 @@ import { caucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
 import { formatBRLExato, precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
-import { primeiroPagamentoDaEstadia } from "@/lib/pagamento-componentes";
+import { contaDoPrimeiroPagamento, primeiroPagamentoDaEstadia } from "@/lib/pagamento-componentes";
 import { resumoContratoEmDias } from "@/lib/contrato-blocos";
 import { TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO } from "@/lib/propostas/pre-aceitacao";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -46,11 +46,12 @@ import { estadiaDaProposta } from "@/lib/propostas/estadia-da-proposta";
 const precoDaVersao = (v: VersaoView) => precoDaProposta({ ...v.termos, valorMensal: v.totais.valorMensal });
 // E1072: na estadia em dias, o 1º pagamento é o 1º bloco inteiro (valor do bloco + contas do período + limpeza de
 // preparação), a mesma conta do Fechamento e do registro do bloco. Em meses inteiros, o 1º mês com tudo + a limpeza.
-const primeiroPagamentoDaVersao = (v: VersaoView) => {
+const estadiaDaVersao = (v: VersaoView) => {
   const dias = diasDosTermos(v.termos);
   const blocos = dias > 0 && v.totais.valorMensal > 0 ? resumoContratoEmDias(dias, v.totais.valorMensal, 0).blocos : [];
-  return primeiroPagamentoDaEstadia({ dias, preco: precoDaVersao(v), blocos, comProposta: true });
+  return { dias, preco: precoDaVersao(v), blocos, comProposta: true };
 };
+const primeiroPagamentoDaVersao = (v: VersaoView) => primeiroPagamentoDaEstadia(estadiaDaVersao(v));
 
 const quem = (a: "owner" | "tenant") => (a === "owner" ? "Proprietário" : "Interessado");
 
@@ -118,6 +119,11 @@ function Valores({ v }: { v: VersaoView }) {
         <div data-testid="proposta-primeiro-pagamento">
           <Linha rotulo="1º pagamento" valor={formatBRLExato(primeiroPagamentoDaVersao(v))} forte />
         </div>
+        {contaDoPrimeiroPagamento(estadiaDaVersao(v)) && (
+          <p className="mt-1 text-right text-xs text-muted" data-testid="proposta-primeiro-pagamento-conta">
+            1º bloco, pelos dias da estadia: {contaDoPrimeiroPagamento(estadiaDaVersao(v))}.
+          </p>
+        )}
         {preco.conta && (
           <p className="mt-1 text-right text-xs text-muted" data-testid="proposta-conta">
             {preco.conta}

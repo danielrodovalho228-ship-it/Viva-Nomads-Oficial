@@ -140,22 +140,24 @@ export function partesPorOrdem<T extends { id: string; registradoEm?: string | n
   return new Map(ordenados.map((r, i) => [r.id, i + 1]));
 }
 
-/**
- * E1072 (fatia 3; ORDEM-DUET-352): o "1º pagamento" que as telas mostram antes do contrato (Fechamento e proposta).
- * Estadia em DIAS que não fecha meses cheios → o 1º bloco inteiro, pela MESMA conta do registro do bloco: o valor do
- * bloco + as contas do período dele + a limpeza de preparação (R$ 3.143,33 no contrato provado, não R$ 3.050,00).
- * Meses inteiros → a conta de sempre (o 1º mês com tudo + a limpeza de preparação).
- */
-export function primeiroPagamentoDaEstadia(e: {
+/** O que as telas de antes do contrato sabem da estadia (Fechamento e proposta). */
+export interface EstadiaParaPrimeiroPagamento {
   /** Os dias da estadia, quando ela é contada em dias; null/0 quando é em meses. */
   dias: number | null | undefined;
   preco: Pick<PrecoRotulado, "mensal" | "totalPorMes" | "totalContrato" | "unicos">;
   blocos: { numero: number; valor: number; meses: number; dias?: number }[];
   /** Com proposta acordada, as contas saem do Total do contrato dela; sem ela, das parcelas do mês × os dias ÷ 30. */
   comProposta: boolean;
-}): number {
+}
+
+/**
+ * E1072 (fatia 3; ORDEM-DUET-352): os componentes do 1º pagamento na estadia em DIAS que não fecha meses cheios — o 1º
+ * bloco inteiro, pela MESMA conta do registro do bloco: o valor do bloco + as contas do período dele + a limpeza de
+ * preparação. null em meses inteiros (a conta de sempre: o 1º mês com tudo + a limpeza de preparação).
+ */
+export function componentesDoPrimeiroPagamento(e: EstadiaParaPrimeiroPagamento): ComponentesBloco | null {
   const dias = Math.round(Number(e.dias) || 0);
-  if (!(dias > 0) || dias % 30 === 0 || e.blocos.length === 0) return primeiroPagamentoDoPreco(e.preco);
+  if (!(dias > 0) || dias % 30 === 0 || e.blocos.length === 0) return null;
   const limpeza = c2(e.preco.unicos.filter((u) => u.rotulo === ROTULO_PREPARACAO).reduce((s, u) => s + u.valor, 0));
   const blocos = [...e.blocos].sort((a, b) => a.numero - b.numero).map((b) => ({ numero: b.numero, valor: b.valor, fator: (b.dias ?? b.meses * 30) / 30 }));
   const contas = contasDoContrato({
@@ -165,5 +167,19 @@ export function primeiroPagamentoDaEstadia(e: {
     extrasMesCongelados: e.preco.totalPorMes - e.preco.mensal,
     fatorDaEstadia: dias / 30,
   });
-  return componentesDosBlocos({ blocos, contasDoContrato: contas, limpezaPreparacao: limpeza }).get(blocos[0].numero)?.total ?? primeiroPagamentoDoPreco(e.preco);
+  return componentesDosBlocos({ blocos, contasDoContrato: contas, limpezaPreparacao: limpeza }).get(blocos[0].numero) ?? null;
+}
+
+/**
+ * O "1º pagamento" que as telas mostram antes do contrato: em dias, o 1º bloco inteiro (R$ 3.143,33 no contrato
+ * provado, não R$ 3.050,00); em meses inteiros, o 1º mês com tudo + a limpeza de preparação.
+ */
+export function primeiroPagamentoDaEstadia(e: EstadiaParaPrimeiroPagamento): number {
+  return componentesDoPrimeiroPagamento(e)?.total ?? primeiroPagamentoDoPreco(e.preco);
+}
+
+/** A conta do 1º pagamento por extenso, só na estadia em dias ("" em meses: as parcelas do mês da tela já somam). */
+export function contaDoPrimeiroPagamento(e: EstadiaParaPrimeiroPagamento): string {
+  const c = componentesDoPrimeiroPagamento(e);
+  return c ? textoComponentes(c) : "";
 }

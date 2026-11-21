@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resumoContrato, resumoContratoEmDias } from "./contrato-blocos.ts";
 import { precoDaProposta, primeiroPagamentoDoPreco } from "./precos.ts";
-import { componentesDosBlocos, contasDoContrato, fatorDoBloco, primeiroPagamentoDaEstadia } from "./pagamento-componentes.ts";
+import { componentesDosBlocos, contaDoPrimeiroPagamento, contasDoContrato, fatorDoBloco, primeiroPagamentoDaEstadia } from "./pagamento-componentes.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
@@ -66,10 +66,24 @@ test("meses inteiros: o quadro NÃO muda — o 1º mês com tudo + a limpeza de 
   assert.equal(primeiroPagamentoDoPreco(preco), 3850);
 });
 
+test("a conta por extenso acompanha o número em dias (as parcelas do mês da tela não somam o 1º bloco); em meses não há conta", () => {
+  const preco = precoDaProposta(TERMOS_31);
+  const blocos = resumoContratoEmDias(31, 2500, 0).blocos;
+  assert.equal(
+    contaDoPrimeiroPagamento({ dias: 31, preco, blocos, comProposta: true }),
+    "valor do bloco R$ 2.583,33 + contas do período R$ 310,00 + limpeza de preparação R$ 250,00 = R$ 3.143,33",
+  );
+  const mensal = precoDaProposta({ ...TERMOS_31, dias: 120, meses: 4 });
+  assert.equal(contaDoPrimeiroPagamento({ dias: 120, preco: mensal, blocos: resumoContrato(4, 2500, 0).blocos, comProposta: true }), "");
+});
+
 test("as duas telas usam a função única", () => {
   const fechamento = ler("src/app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
   assert.match(fechamento, /primeiroPagamento: primeiroPagamentoDaEstadia\(\{ dias: DIAS_ACORDO, preco: PRECO_FECHAMENTO, blocos: resumo\.blocos, comProposta: !!ACORDO\?\.termos \}\)/);
   const proposta = ler("src/app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx");
   assert.match(proposta, /rotulo="1º pagamento" valor=\{formatBRLExato\(primeiroPagamentoDaVersao\(v\)\)\}/);
   assert.match(proposta, /primeiroPagamentoDaEstadia\(/);
+  // A conta por extenso aparece nas duas telas, só quando existe (estadia em dias).
+  assert.match(fechamento, /data-testid="entrada-primeiro-pagamento-conta"/);
+  assert.match(proposta, /data-testid="proposta-primeiro-pagamento-conta"/);
 });
