@@ -69,6 +69,8 @@ import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { passoDaRespostaContrato, quadroAntesDaEntrada } from "@/lib/fechamento-contrato";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
+import { portaoDaIdentidade, rotuloIdentidadeDoMorador } from "@/lib/fechamento-identidade";
+import { hrefContratoDono } from "@/lib/contratos/area-dono";
 import { VoltarLista } from "@/components/ui/voltar-lista";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
@@ -105,7 +107,11 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     : "";
   // Status da verificação: "none" (não iniciada) → "ok" (laudo verde, demo) ou
   // "pendente" (conta real, CAF indisponível — portão suave).
-  const [verifStatus, setVerifStatus] = useState<"none" | "ok" | "pendente">("none");
+  // E1064: "confirmada" = a identidade de quem fecha (o dono) já está confirmada e válida, lida no servidor pela fonte
+  // única — o passo abre com o portão aberto, sem o clique "Verificar identidade".
+  const PORTAO_IDENTIDADE = portaoDaIdentidade(ctx.identidadePropria);
+  const JA_CONFIRMADA = !demo && PORTAO_IDENTIDADE.aberto;
+  const [verifStatus, setVerifStatus] = useState<"none" | "ok" | "pendente" | "confirmada">(JA_CONFIRMADA ? "confirmada" : "none");
   const [step, setStep] = useState(0);
   // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
   // E202 (candidatura): sem proposta, abre com os meses do período da candidatura aceita (dentro de 1..6); sem período, 4.
@@ -151,7 +157,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // PROP-3 (E115): o percentual no texto vem dos valores reais (o teto de 3 aluguéis pode baixar a caução).
   const PCT_CAUCAO_BLOCO1 = percentualCaucao(resumo.blocos[0]?.caucao ?? 0, resumo.blocos[0]?.valor ?? 0);
   const PCT_CAUCAO_TOTAL = percentualCaucao(resumo.caucaoTotal, resumo.valorTotalPeriodo);
-  const [verified, setVerified] = useState(false);
+  const [verified, setVerified] = useState(JA_CONFIRMADA);
   const [verifying, setVerifying] = useState(false);
   const [cafResult, setCafResult] = useState<CafResult | null>(null);
   const [signUrl, setSignUrl] = useState<string | null>(null);
@@ -436,6 +442,18 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
         {/* Coluna principal: stepper + etapas do wizard */}
         <div className="order-2 lg:order-1">
+          {/* E1064: esta candidatura já tem contrato — a situação REAL fica à vista desde o passo 1. */}
+          {!demo && ctx.contratoExistente && (
+            <div className="mb-4 rounded-xl border border-sage-200 bg-sage-100/40 p-4 text-sm" role="status" data-testid="fechamento-contrato-existente">
+              <p className="font-semibold text-ink">Esta candidatura já tem contrato.</p>
+              <p className="mt-1 text-muted">
+                Situação do contrato: <strong className="text-ink">{ctx.contratoExistente.texto}</strong>
+              </p>
+              <Link href={hrefContratoDono(ctx.contratoExistente.id)} className="mt-1 inline-flex min-h-11 items-center font-semibold text-forest underline">
+                Ver contrato
+              </Link>
+            </div>
+          )}
           {/* Stepper (passos alcançados são clicáveis — A4).
               Rola no mobile; quebra em linhas no desktop (sem scroll horizontal). */}
           <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
@@ -479,12 +497,20 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               {/* PROP-3 (E118): a identidade do morador pela MESMA função de Interessados. */}
               {!demo && (
                 <p className="mt-1 text-xs font-semibold text-ink" data-testid="fechamento-identidade-inquilino">
-                  {identidadeParaOutraParte(ctx.identidadeInquilino).rotulo}
+                  {rotuloIdentidadeDoMorador(ctx.identidadeInquilino)}
                 </p>
               )}
             </div>
 
-            {verifStatus === "none" ? (
+            {verifStatus === "confirmada" ? (
+              // E1064: a identidade de quem fecha já está confirmada — nada a clicar.
+              <div className="rounded-xl border border-sage-200 bg-sage-100/40 p-4" data-testid="fechamento-identidade-propria">
+                <p className="flex items-center gap-2 font-title font-semibold text-forest">
+                  <ShieldCheck className="h-5 w-5" /> Sua identidade já está confirmada
+                </p>
+                <p className="mt-2 text-sm text-muted">{PORTAO_IDENTIDADE.texto}. Você pode continuar.</p>
+              </div>
+            ) : verifStatus === "none" ? (
               <div className="rounded-xl border border-sage-200 p-4 text-center">
                 <ShieldCheck className="mx-auto h-10 w-10 text-sage" />
                 <p className="mt-3 text-sm text-muted">
@@ -1267,14 +1293,16 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               </p>
             </div>
             <div className="rounded-xl bg-surface-2 p-4 text-left text-sm">
+              {/* E1064: duas pessoas, duas linhas — a identidade do morador (fonte única) e a verificação de quem fecha. */}
+              <Row label="Identidade do morador" value={identidadeParaOutraParte(ctx.identidadeInquilino).rotulo} />
               <Row
-                label="Verificação do morador"
+                label="Sua verificação"
                 value={
-                  verifStatus === "ok" && cafResult
-                    ? TRAFFIC_LIGHT_META[cafResult.light].label
-                    : verifStatus === "pendente"
-                      ? "⏳ Verificação pendente"
-                      : identidadeParaOutraParte(ctx.identidadeInquilino).rotulo
+                  verifStatus === "confirmada"
+                    ? (PORTAO_IDENTIDADE.texto ?? "Identidade confirmada")
+                    : verifStatus === "ok" && cafResult
+                      ? TRAFFIC_LIGHT_META[cafResult.light].label
+                      : "⏳ Verificação pendente"
                 }
               />
               <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
