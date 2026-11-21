@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { useSecaoAncora } from "@/components/layout/use-secao-ancora";
 import { SinoAvisos } from "@/components/painel/sino-avisos";
 import { HREF_LOGO_PAINEL, abaAtivaPainel, ancorasDasAbas, subabaAtivaPainel, type AbaPainel, type ItemConta, type PapelAbas } from "@/config/abas-painel";
+import { PilulaDoModo } from "@/components/layout/pilula-do-modo";
+import type { PilulaDoModo as Pilula } from "@/lib/papel/pilula-do-modo";
 
 /**
  * Topo do painel no computador. PROP-1 (dono, mockup painel-proprietario-desktop) e MENUS-5/MORADOR-NAV (morador e
@@ -31,6 +33,8 @@ export function TopoPainel(p: {
   notificacoes?: number;
   itensConta: readonly ItemConta[];
   onAcao: (acao: NonNullable<ItemConta["acao"]>) => void;
+  /** E900: a pílula do modo (o modo em uso e os papéis da conta). */
+  pilula: Pilula;
 }) {
   // E340: nas abas-âncora (parceiro), a acesa acompanha a seção visível.
   const ancoras = ancorasDasAbas(p.abas);
@@ -64,6 +68,8 @@ export function TopoPainel(p: {
         <div className="flex shrink-0 items-center gap-2">
           {/* E464: o sino fica em TODAS as telas do painel, inclusive as da Conta (o E185 o escondia ali e o cabeçalho
               mudava de uma tela para outra). Desde o E444 ele abre o painel dos avisos — não repete o link do menu lateral. */}
+          {/* E900: o modo em uso, sempre à vista, antes do sino e da Conta (o rótulo "Conta" do E176 não muda). */}
+          <PilulaDoModo pilula={p.pilula} variante="topo" />
           <Sino px={px} notificacoes={p.notificacoes} />
           <MenuConta px={px} nome={p.nome} foto={p.foto} itens={p.itensConta} onAcao={p.onAcao} />
         </div>

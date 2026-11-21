@@ -38,11 +38,11 @@ export function usePapeisDaConta(): Papel[] | null {
 /**
  * PAPEL-B — a troca explícita de papel, a MESMA no selo do topo e na Conta: grava o papel ativo no perfil, aplica no
  * store (o menu e a barra trocam na hora) e leva ao painel daquele papel.
+ * E900: `useTrocar` é só a troca (a pílula do cabeçalho já sabe os papéis pela casca, sem outra leitura ao servidor).
  */
-export function useTrocaPapel() {
+export function useTrocar() {
   const router = useRouter();
   const setPapel = useAuthStore((s) => s.setPapel);
-  const papeis = usePapeisDaConta();
   const [trocando, setTrocando] = useState<Papel | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -64,5 +64,10 @@ export function useTrocaPapel() {
     [router, setPapel],
   );
 
-  return { papeis, trocando, erro, trocar };
+  return { trocando, erro, trocar };
+}
+
+export function useTrocaPapel() {
+  const papeis = usePapeisDaConta();
+  return { papeis, ...useTrocar() };
 }
