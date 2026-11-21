@@ -2,7 +2,7 @@
   E1074 (desdobramento do E1069; ORDEM-DUET-348) — a seção PAGAMENTOS do pacote de provas trazia só os totais:
   "Confirmados pelo inquilino: R$ 7.500,00. Aguardando confirmação do inquilino: R$ 0,00.". Nenhum documento era
   nomeado e a caução ia somada ao aluguel, sem linha.
-  Depois: cada pagamento tem a sua linha, com o valor; a caução tem linha própria; o recibo (REC-…) e o comprovante da
+  Depois: cada pagamento válido tem a sua linha, com o valor; a caução tem linha própria; o recibo (REC-…) e o comprovante da
   caução (CAU-…) aparecem pelo número, cada um na linha do pagamento a que pertence. Não se inventa número: pagamento
   sem documento emitido diz que ele ainda não foi emitido; documento anulado não é citado como válido.
   A trava de tela é a t2211 (Pista 3). Roda: node --test src/lib/e1074-pacote-recibos-e-caucao.test.ts
@@ -83,7 +83,7 @@ test("documento anulado não é citado; documento de outro tipo ou de outro paga
   assert.match(texto, /Recibo ainda não emitido\./);
 });
 
-test("registro anulado: a linha traz a marca e nenhum documento; fica fora dos totais, como antes", () => {
+test("registro anulado: sem linha na seção e sem documento; a marca aparece UMA vez no pacote (linha do tempo), como antes", () => {
   const d = montarDadosProvas({
     ...base,
     pagamentos: [{ ...base.pagamentos[1], confirmado_pelo_inquilino: false, confirmado_em: null, anulado_em: "2026-11-21T15:00:00Z", anulado_motivo: "registro em duplicidade" }, base.pagamentos[0]],
@@ -91,8 +91,10 @@ test("registro anulado: a linha traz a marca e nenhum documento; fica fora dos t
   const linhas = secao(d);
   assert.equal(linhas[0], "Confirmados pelo inquilino: R$ 6.000,00. Aguardando confirmação do inquilino: R$ 0,00.");
   assert.equal(linhas[1], "1 registro anulado fica fora dos totais.");
-  assert.ok(linhas.includes("Caução de R$ 1.500,00 (Pix, em 21/11/2026) — registro anulado em 21/11/2026 às 12:00 (registro em duplicidade)."));
-  assert.ok(!linhas.join("\n").includes("CAU-2026-000001"));
+  assert.deepEqual(linhas.slice(2), ["Aluguel de R$ 6.000,00 (Pix, em 21/11/2026): confirmado pelo inquilino em 21/11/2026 às 10:05. Recibo REC-2026-000001."]);
+  const pacote = conteudoPacoteProvas(d).corpo.join("\n");
+  assert.ok(!pacote.includes("CAU-2026-000001"));
+  assert.equal(pacote.split("registro anulado em").length - 1, 1);
 });
 
 test("sem pagamento nenhum, a seção continua a dizer que não há", () => {

@@ -148,14 +148,15 @@ export function linhaDoEvento(e: EventoProva): string {
 }
 
 /**
- * E1074: uma linha por pagamento na seção PAGAMENTOS — o valor, a situação e o documento pelo número. A caução tem a
- * sua linha (antes ia só somada no total). Não se inventa número: confirmado sem documento diz "ainda não emitido".
+ * E1074: uma linha por pagamento VÁLIDO na seção PAGAMENTOS — o valor, a situação e o documento pelo número. A caução
+ * tem a sua linha (antes ia só somada no total). Não se inventa número: confirmado sem documento diz "ainda não
+ * emitido". O registro anulado não ganha linha aqui: ele aparece UMA vez no pacote, com a marca, na linha do tempo
+ * (regra do 35B, cobrada pela t240), e a seção já diz quantos ficam fora dos totais.
  */
 export function linhasPagamentos(pags: PagamentoProva[]): string[] {
-  return pags.map((p) => {
+  return pags.filter((p) => !p.anuladoEm).map((p) => {
     const caucao = p.tipo === "caucao";
     const base = `${caucao ? "Caução" : "Aluguel"} de ${brl(p.valor)} (${FORMA[p.forma] ?? p.forma}, em ${dataBR(p.dia)})`;
-    if (p.anuladoEm) return `${base}${marcaAnulado(p)}.`;
     if (!p.confirmadoEm) return `${base}: aguardando confirmação do inquilino.`;
     const nomeDoc = caucao ? "Comprovante da caução" : "Recibo";
     const doc = (p.documento ?? "").trim();
