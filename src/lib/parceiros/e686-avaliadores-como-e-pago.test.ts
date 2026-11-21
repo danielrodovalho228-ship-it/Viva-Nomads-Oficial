@@ -6,10 +6,13 @@ import { test } from "node:test";
 const src = readFileSync("src/app/(public)/parceiros/avaliadores/page.tsx", "utf8");
 const bloco = src.slice(src.indexOf('data-testid="recrutamento-pagamento"'), src.indexOf("Um só pedido"));
 
-test("E686: 'Como é pago' diz que o avaliador define o valor e o prazo, e a tabela é só referência", () => {
+test("E686: 'Como é pago' diz que o avaliador define o valor e o prazo, e a referência é só referência", async () => {
   assert.doesNotMatch(bloco, /segue a tabela/);
-  assert.match(bloco, /você define o seu valor e o seu prazo/i);
-  assert.match(bloco, /tabela da Viva[^.]*referência/i);
+  // E882: o texto vem de FRASE_REFERENCIA_AVALIADOR (sem "tabela da Viva", que não existe em nenhuma superfície).
+  assert.match(bloco, /\{FRASE_REFERENCIA_AVALIADOR\}/);
+  const { FRASE_REFERENCIA_AVALIADOR } = await import("../vistoria/regras.ts");
+  assert.match(FRASE_REFERENCIA_AVALIADOR, /você define o seu valor e o seu prazo/i);
+  assert.match(FRASE_REFERENCIA_AVALIADOR, /referência[^.]*só uma referência/i);
   // E714: a frase fala DO dono, não com ele ("Você paga a avaliação" é do dono, não do avaliador que lê a página).
   assert.match(bloco, /\{FRASE_DONO_PAGA_AVALIACAO\}/);
   assert.doesNotMatch(bloco, /FRASE_PAGA_AVALIACAO\}/);
