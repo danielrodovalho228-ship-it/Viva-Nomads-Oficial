@@ -41,9 +41,14 @@ async function contratos(p: Page) {
 }
 /** O cartão do bloco N do contrato do imóvel `titulo` (o dono tem dois contratos nesta massa). */
 const cartao = (p: Page, titulo: string, n: number) => {
-  const outro = titulo === TITULO_A ? TITULO_B : TITULO_A;
-  // O cartão do contrato: o MAIOR bloco que tem o título deste imóvel e a linha da taxa, sem o título do outro contrato.
-  const painel = p.locator("div").filter({ hasText: titulo }).filter({ hasNotText: outro }).filter({ has: p.getByTestId("contrato-taxa") }).first();
+  const [este, outro] = titulo === TITULO_A ? [ids.contrato!, ids.contratoB!] : [ids.contratoB!, ids.contrato!];
+  // O corpo do cartão do contrato: o MAIOR bloco com o link da estadia DESTE contrato e a linha da taxa, sem o link do outro.
+  const painel = p
+    .locator("div")
+    .filter({ has: p.locator(`a[href*="${este}"]`) })
+    .filter({ hasNot: p.locator(`a[href*="${outro}"]`) })
+    .filter({ has: p.getByTestId("contrato-taxa") })
+    .first();
   return painel.locator("div.rounded-xl", { hasText: `Bloco ${n}` }).filter({ hasText: "Valor do bloco" }).last();
 };/** Texto literal em regex; o espaço aceita também o espaço não separável que o formato de moeda usa ("R$\u00a01.500,00"). */
 const re = (s: string) => new RegExp(s.replace(/[.$]/g, "\\$&").replace(/ /g, "[\\s\\u00a0]"));
