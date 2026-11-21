@@ -25,6 +25,16 @@ test("E1058: o quadro do e-mail da proposta traz a linha da caução, com o rót
   assert.ok(linha, "o quadro tem a linha da caução");
   assert.equal(linha.rotulo, rotuloCaucaoDaProposta(c));
   assert.equal(linha.valor, formatBRLExato(c.valor));
+  // E1061 (ORDEM-DUET-349): o e-mail herda a lei da caução — o rótulo da estadia toda e o valor da estadia toda.
+  assert.equal(linha.rotulo, "Caução (50% do aluguel da estadia, 43 dias)");
+  // Estadia longa: o e-mail leva a caução da estadia toda (R$ 3.750 a R$ 2.500/mês, 90 dias), não a do 1º bloco.
+  const longa = caucaoDaProposta({ meses: 3, dias: 90 }, 2500);
+  assert.ok(longa);
+  const l90 = linhasProposta({
+    numero: "X", imovel: IM, entrada: "2027-01-10", saida: "2027-04-09", meses: 3, dias: 90, valorMensal: 2500, contaTotal: "x",
+    responderAte: null, caucao: { rotulo: rotuloCaucaoDaProposta(longa), valor: formatBRLExato(longa.valor) },
+  }).find((l) => l.rotulo.startsWith("Caução"));
+  assert.deepEqual(l90, { rotulo: "Caução (50% do aluguel da estadia, 90 dias)", valor: formatBRLExato(3750) });
   assert.equal(linhas.at(-1)?.rotulo, "Proposta", "o número da proposta continua a fechar o quadro");
 });
 
