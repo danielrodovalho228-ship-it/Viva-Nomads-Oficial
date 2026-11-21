@@ -78,7 +78,7 @@ export function estadoCaucao(e: EntradaCaucao): EstadoCaucao {
 /** O checklist da Estadia fala em três estados; a mesma fonte decide qual. */
 export function caucaoDoChecklist(e: EstadoCaucao): "pendente" | "recebida" | "dispensada" {
   if (e.chave === "dispensada" || e.chave === "sem_caucao") return "dispensada";
-  return e.pendente ? "pendente" : "recebida";
+  return e.pendente && e.chave !== "aguardando_confirmacao" ? "pendente" : "recebida";
 }
 
 /** Acerto mais recente de uma lista (created_at decrescente). */
