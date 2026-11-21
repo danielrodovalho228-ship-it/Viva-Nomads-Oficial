@@ -40,8 +40,12 @@ async function contratos(p: Page) {
   await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
 }
 /** O cartão do bloco N do contrato do imóvel `titulo` (o dono tem dois contratos nesta massa). */
-const cartao = (p: Page, titulo: string, n: number) =>
-  p.locator("div").filter({ hasText: titulo }).filter({ has: p.getByTestId("contrato-taxa") }).last().locator("div.rounded-xl", { hasText: `Bloco ${n}` }).filter({ hasText: "Valor do bloco" }).last();
+const cartao = (p: Page, titulo: string, n: number) => {
+  const contrato = titulo === TITULO_A ? ids.contrato! : ids.contratoB!;
+  // O painel do contrato: o menor bloco que tem o link da estadia DESTE contrato e a linha da taxa.
+  const painel = p.locator("div").filter({ has: p.locator(`a[href*="${contrato}"]`) }).filter({ has: p.getByTestId("contrato-taxa") }).last();
+  return painel.locator("div.rounded-xl", { hasText: `Bloco ${n}` }).filter({ hasText: "Valor do bloco" }).last();
+};
 /** Texto literal em regex; o espaço aceita também o espaço não separável que o formato de moeda usa ("R$\u00a01.500,00"). */
 const re = (s: string) => new RegExp(s.replace(/[.$]/g, "\\$&").replace(/ /g, "[\\s\\u00a0]"));
 
@@ -197,8 +201,11 @@ test.describe("T2212 — E1072: o registo do recebimento cobre exactamente o 1º
       for (const [parte, valor] of [[1, "1000"], [2, "1500"]] as const) {
         await contratos(d);
         const botao = cartao(d, TITULO_B, 1).getByTestId("registrar-recebimento");
-        if (!(await botao.count())) {
-          expect.soft(parte, "E1072: depois da 1ª parte, o bloco em aberto oferece o registo do complemento").toBe(1);
+        if (parte === 1) {
+          // A 1ª parte tem de poder registar-se: sem isto o passo não prova nada (o bloco do contrato B tem de estar na tela).
+          await expect(botao, "o bloco do contrato B oferece o registo da 1ª parte").toBeVisible({ timeout: 20_000 });
+        } else if (!(await botao.count())) {
+          expect.soft(false, "E1072: depois da 1ª parte, o bloco em aberto oferece o registo do complemento").toBe(true);
           break;
         }
         await botao.click();
