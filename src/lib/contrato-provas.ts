@@ -21,6 +21,8 @@ export interface PagamentoProva {
   dia: string;
   /** E1069: instante em que o proprietário REGISTROU o pagamento (created_at). É a hora da linha do tempo. */
   registradoEm?: string | null;
+  /** E1074: número do recibo (REC-…) ou do comprovante da caução (CAU-…) deste pagamento; null = ainda não emitido. */
+  documento?: string | null;
   confirmadoEm: string | null;
   /** Registro anulado (0182): aparece uma vez, com a marca, e fica fora dos totais. */
   anuladoEm?: string | null;
@@ -145,6 +147,22 @@ export function linhaDoEvento(e: EventoProva): string {
   return `${e.soDia ? dataBR(e.em.slice(0, 10)) : dataHoraAssinatura(e.em)} — ${e.texto}`;
 }
 
+/**
+ * E1074: uma linha por pagamento na seção PAGAMENTOS — o valor, a situação e o documento pelo número. A caução tem a
+ * sua linha (antes ia só somada no total). Não se inventa número: confirmado sem documento diz "ainda não emitido".
+ */
+export function linhasPagamentos(pags: PagamentoProva[]): string[] {
+  return pags.map((p) => {
+    const caucao = p.tipo === "caucao";
+    const base = `${caucao ? "Caução" : "Aluguel"} de ${brl(p.valor)} (${FORMA[p.forma] ?? p.forma}, em ${dataBR(p.dia)})`;
+    if (p.anuladoEm) return `${base}${marcaAnulado(p)}.`;
+    if (!p.confirmadoEm) return `${base}: aguardando confirmação do inquilino.`;
+    const nomeDoc = caucao ? "Comprovante da caução" : "Recibo";
+    const doc = (p.documento ?? "").trim();
+    return `${base}: ${caucao ? "confirmada" : "confirmado"} pelo inquilino em ${dataHoraAssinatura(p.confirmadoEm)}. ${nomeDoc} ${doc || "ainda não emitido"}.`;
+  });
+}
+
 export function eventosDoContrato(d: DadosProvas): EventoProva[] {
   const ev: EventoProva[] = [{ em: d.registradoEm, texto: `Contrato registrado (${MARCA_MINUTA}).` }];
   for (const a of d.assinaturas) ev.push({ em: a.em, texto: `${quemAssinou(a.papel, d.nomes)} assinou o resumo do contrato.` });
@@ -261,6 +279,7 @@ export function conteudoPacoteProvas(d: DadosProvas, registro?: RegistroPacote):
         ? [
             `Confirmados pelo inquilino: ${brl(t.confirmado)}. Aguardando confirmação do inquilino: ${brl(t.aguardando)}.`,
             ...(t.anulados ? [`${t.anulados === 1 ? "1 registro anulado fica" : `${t.anulados} registros anulados ficam`} fora dos totais.`] : []),
+            ...linhasPagamentos(d.pagamentos),
           ]
         : ["Nenhum pagamento marcado."]),
       "CONFERÊNCIAS",
@@ -289,7 +308,10 @@ export interface LinhasProvas {
   assinaturas: { papel: unknown; assinado_em: unknown; hash_documento: unknown }[];
   /** E197: as datas de assinatura gravadas no próprio contrato (assinado_*_em) — a mesma fonte da lista do admin. */
   datasAssinatura?: { proprietario: string | null; inquilino: string | null };
+  /** E1074: recibos e comprovantes do contrato (documentos_fiscais), para nomear cada um na linha do seu pagamento. */
+  documentos?: { tipo: unknown; numero: unknown; pagamento_id: unknown; anulado_em?: unknown }[];
   pagamentos: {
+    id?: unknown;
     tipo: unknown;
     valor: unknown;
     forma: unknown;
@@ -321,6 +343,14 @@ export const textoOuNulo = (v: unknown): string | null => (v === null || v === u
 /** Só o nome do arquivo do laudo (sem a pasta de quem enviou). */
 export const nomeDoLaudo = (path: unknown) => String(path ?? "").split("/").pop() || "laudo.pdf";
 
+/** E1074: o documento VÁLIDO de um pagamento — recibo para o aluguel, comprovante para a caução; anulado não conta. */
+const TIPO_DOCUMENTO = { aluguel: "recibo_aluguel", caucao: "comprovante_caucao" } as const;
+function documentoDoPagamento(docs: LinhasProvas["documentos"], pagamentoId: unknown, tipo: "aluguel" | "caucao"): string | null {
+  if (pagamentoId === null || pagamentoId === undefined || pagamentoId === "") return null;
+  const doc = (docs ?? []).find((d) => String(d.pagamento_id ?? "") === String(pagamentoId) && d.tipo === TIPO_DOCUMENTO[tipo] && !d.anulado_em);
+  return textoOuNulo(doc?.numero);
+}
+
 export function montarDadosProvas(l: LinhasProvas): DadosProvas {
   const comHash = new Set(l.assinaturas.map((a) => parteDe(a.papel)));
   const assinaturasSemHash = (["proprietario", "inquilino"] as const)
@@ -347,6 +377,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
     assinaturas: l.assinaturas.map((a) => ({ papel: parteDe(a.papel), em: String(a.assinado_em), hash: String(a.hash_documento) })),
     pagamentos: l.pagamentos.map((p) => ({
       tipo: p.tipo === "caucao" ? "caucao" : "aluguel",
+      documento: documentoDoPagamento(l.documentos, p.id, p.tipo === "caucao" ? "caucao" : "aluguel"),
       valor: Number(p.valor),
       forma: String(p.forma),
       dia: String(p.data_pagamento).slice(0, 10),
@@ -377,10 +408,11 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
 /** Colunas lidas para o pacote (as mesmas nas duas cargas). */
 export const COLUNAS_PROVAS = {
   assinaturas: "papel, assinado_em, hash_documento",
-  pagamentos: "tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at",
+  pagamentos: "id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at",
   conferencias: "id, tipo, criada_em",
   itens: "conferencia_id, parte, comodo, descricao, foto_path, precisa_reparo",
   respostas: "conferencia_id, parte, decisao, motivo, decidido_em",
   laudos: "conferencia_id, path, parte, criado_em",
+  documentos: "tipo, numero, pagamento_id, anulado_em",
   aditivos: "numero, resumo, status, criado_em, assinado_em, hash_documento, contrato_aditivo_assinaturas(papel, assinado_em, hash_documento)",
 } as const;
