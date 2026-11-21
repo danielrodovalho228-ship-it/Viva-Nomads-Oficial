@@ -2,6 +2,7 @@
   Texto de cada evento de notificação (assunto, frase, imagem, botão e destino) — PURO,
   sem imports "@/…", para teste unitário. Ordem d250ea2f, item 2.
 */
+import { PRAZO_CANAL } from "../../config/prazos-canais.ts";
 import { PRAZO_RESPOSTA_PARCERIA } from "../parceiros/regras.ts";
 /** Eventos que disparam notificação no funil (sem isso o funil vaza). */
 export type NotificationEvent =
@@ -91,6 +92,7 @@ export type NotificationEvent =
   | "parceiro_orcamento_recebido" // o parceiro orçou → cliente
   | "parceiro_pedido_recusado" // L2-B item 17: o parceiro recusou → cliente (motivo + pedir a outro parceiro)
   | "parceiro_orcamento_aceito" // o cliente aceitou → parceiro
+  | "parceiro_orcamento_vencido" // E958: orçamento sem resposta do cliente no prazo do canal → pedido encerrado → parceiro
   | "parceiro_horario_confirmado" // horário confirmado → as duas partes
   | "parceiro_lembrete" // lembrete do dia anterior → as duas partes
   | "parceiro_entrega_feita" // o parceiro marcou a entrega → cliente
@@ -225,6 +227,8 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   parceiro_orcamento_recebido: { subject: "Você recebeu um orçamento", body: (n) => `Olá${n ? " " + n : ""}, o parceiro enviou o orçamento do seu pedido. Confira o valor e aceite ou recuse pela plataforma.`, cta: "Ver o orçamento", path: "/dashboard/servicos" },
   parceiro_pedido_recusado: { subject: "O parceiro recusou o seu pedido", body: (n) => `Olá${n ? " " + n : ""}, o parceiro recusou o seu pedido de serviço. Você pode pedir a outro parceiro pela plataforma.`, cta: "Pedir a outro parceiro", path: "/parceiros/buscar" },
   parceiro_orcamento_aceito: { subject: "Seu orçamento foi aceito", body: (n) => `Olá${n ? " " + n : ""}, boa notícia: o cliente aceitou o seu orçamento. Confirme o horário pelo pedido.`, cta: "Confirmar o horário", path: "/dashboard/parceiro" },
+  // E958: o texto do prazo vem de config/prazos-canais.ts (canal pedidoParceiro).
+  parceiro_orcamento_vencido: { subject: "Pedido encerrado sem resposta do cliente", body: (n) => `Olá${n ? " " + n : ""}, o cliente não respondeu ao seu orçamento em ${PRAZO_CANAL.pedidoParceiro.texto} e o pedido foi encerrado. Nada é cobrado nem anotado contra você.`, cta: "Ver os pedidos", path: "/dashboard/parceiro" },
   parceiro_horario_confirmado: { subject: "Horário do serviço confirmado", body: (n) => `Olá${n ? " " + n : ""}, o horário do serviço está confirmado. Os detalhes estão no pedido.`, cta: "Ver o pedido", path: "/dashboard/servicos" },
   parceiro_lembrete: { subject: "Lembrete: o serviço está chegando", body: (n) => `Olá${n ? " " + n : ""}, o serviço combinado pela Viva Nomads está marcado para as próximas horas. Os detalhes estão no pedido.`, cta: "Ver o pedido", path: "/dashboard/servicos" },
   parceiro_entrega_feita: { subject: "O parceiro marcou a entrega", body: (n) => `Olá${n ? " " + n : ""}, o parceiro marcou o serviço como entregue. Confira e confirme a conclusão pelo pedido.`, cta: "Conferir a entrega", path: "/dashboard/servicos" },

@@ -11,7 +11,7 @@ import { precoDaProposta } from "@/lib/precos";
 import { brl } from "@/lib/notifications/dados-negociacao";
 import { STATUS_ABERTOS, calcularTotais, daVez, venceEm24h, type Autor } from "@/lib/propostas/regras";
 import { limparSombra } from "@/lib/data/ranking";
-import { precisaAvisoConclusao, precisaLembrete24h } from "@/lib/parceiros/pedido";
+import { precisaAvisoConclusao, orcamentoSemResposta, precisaLembrete24h } from "@/lib/parceiros/pedido";
 import { aberturaDoPedido, linhasDoPedido, type EventoPedido, type PedidoParaEmail } from "@/lib/parceiros/email-pedido";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { escaparHtml } from "@/lib/escapar-html";
@@ -247,8 +247,9 @@ export async function GET(request: Request) {
   // confirmação do cliente (só aviso: nada conclui sozinho).
   const { data: pedidosParceiro } = await admin
     .from("parceiro_pedidos")
-    .select("id, codigo, categoria, status, cliente_id, parceiro_id, property_id, horario_confirmado, entregue_em, valor_combinado, parceiros(user_id, nome_publico), parceiro_servicos(titulo), properties(title, address, city)")
-    .in("status", ["agendado", "entregue"])
+    .select("id, codigo, categoria, status, cliente_id, parceiro_id, property_id, horario_confirmado, entregue_em, valor_combinado, atualizado_em, parceiros(user_id, nome_publico), parceiro_servicos(titulo), properties(title, address, city)")
+    // E958: "orcado" também — o orçamento sem resposta do cliente no prazo do canal encerra o pedido e avisa o parceiro.
+    .in("status", ["agendado", "entregue", "orcado"])
     .limit(1000);
   for (const p of pedidosParceiro ?? []) {
     const parceiroUser = (p.parceiros as unknown as { user_id?: string } | null)?.user_id;
@@ -280,6 +281,20 @@ export async function GET(request: Request) {
       for (const quem of [p.cliente_id as string, parceiroUser].filter((x): x is string => !!x)) {
         alvos.push({ tipo: "parceiro_lembrete", usuarioId: quem, refId: p.id as string, imovelId: p.property_id as string | null, parceiroId: quem === p.cliente_id ? (p.parceiro_id as string) : null, variante: String(p.horario_confirmado), url, detalhe: detalheAutomacao("parceiro_lembrete", { numero: p.codigo as string, quando, imovel: imovelPedido, servico }), ...corpoPedido("parceiro_lembrete", quem === p.cliente_id) });
       }
+    }
+    if (orcamentoSemResposta(p.status as string, p.atualizado_em as string | null, agora)) {
+      // E958: encerra só se ainda está como foi lido (o cliente pode ter respondido agora); o aviso sai a quem orçou.
+      const { data: encerrado } = await admin
+        .from("parceiro_pedidos")
+        .update({ status: "cancelado", atualizado_em: agora.toISOString() })
+        .eq("id", p.id as string)
+        .eq("status", "orcado")
+        .eq("atualizado_em", p.atualizado_em as string)
+        .select("id");
+      if (encerrado?.length && parceiroUser) {
+        alvos.push({ tipo: "parceiro_orcamento_vencido", usuarioId: parceiroUser, refId: p.id as string, imovelId: p.property_id as string | null, url, detalhe: detalheAutomacao("parceiro_orcamento_vencido", { numero: p.codigo as string, imovel: imovelPedido, servico }), ...corpoPedido("parceiro_orcamento_vencido", false) });
+      }
+      continue;
     }
     if (precisaAvisoConclusao(p.status as string, p.entregue_em as string | null, agora)) {
       alvos.push({ tipo: "parceiro_conclusao_pendente", usuarioId: p.cliente_id as string, refId: p.id as string, parceiroId: p.parceiro_id as string, url, detalhe: detalheAutomacao("parceiro_conclusao_pendente", { numero: p.codigo as string, imovel: imovelPedido, servico }), ...corpoPedido("parceiro_conclusao_pendente", true) });

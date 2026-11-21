@@ -10,6 +10,7 @@ import { Chip } from "@/components/ui/chip";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
+import { TEXTO_PRAZO_PEDIDO_PARCEIRO } from "@/config/prazos-canais";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { CRITERIOS, ETIQUETAS, MAX_ETIQUETAS, type ParAvaliacao } from "@/lib/avaliacoes-criterios";
 import { MOTIVOS_REVISAO } from "@/lib/avaliacoes-resposta";
@@ -312,6 +313,12 @@ function Acoes({ d, pendente, rodar }: { d: DetalhePedido; pendente: boolean; ro
   if (parceiro && ["solicitado", "orcado", "aceito"].includes(d.status) && saidaDoAceitoLiberada(d.status, d.pagamentoStatus)) {
     blocos.push(
       <div key="orcar" className="grid gap-2" data-testid="pedido-orcar">
+        {/* E958: o prazo do canal pedido de parceiro, só aqui — onde a regra (encerrar e avisar) vale. */}
+        {d.status === "orcado" && (
+          <p className="text-sm text-muted" data-testid="pedido-prazo-cliente">
+            {TEXTO_PRAZO_PEDIDO_PARCEIRO}
+          </p>
+        )}
         {d.status === "aceito" && (
           <p className="text-sm text-muted" data-testid="pedido-aviso-atualizar-aceito">
             {AVISO_ATUALIZAR_ACEITO}
