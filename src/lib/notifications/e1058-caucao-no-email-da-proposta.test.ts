@@ -38,6 +38,10 @@ test("E1058: o e-mail (proposta, contraproposta e aceite) lê a caução pela fu
   const quadro = acoes.slice(acoes.indexOf("function dadosDoEmailDaProposta"), acoes.indexOf("function dadosDoEmailDaProposta") + 2000);
   assert.match(quadro, /caucaoDaProposta\(c\.termos, tot\.valorMensal\)/);
   assert.match(quadro, /rotuloCaucaoDaProposta\(/);
+  // Os dois lados: a proposta vai a quem a recebe; o aceite monta o quadro do dono E o do morador pela mesma função.
+  assert.match(acoes, /dadosDoEmailDaProposta\(p\.numero, imovel, contexto, papelDestino\)/);
+  assert.match(acoes, /const quadroDono = dadosDoEmailDaProposta\(p\.numero, imovel, \{ desfecho: "aceita", termos \}, "owner"\);/);
+  assert.match(acoes, /const quadroMorador = dadosDoEmailDaProposta\(p\.numero, imovel, \{ desfecho: "aceita", termos \}, "tenant"\);/);
   const detalhe = ler("../../app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx");
   assert.match(detalhe, /rotulo=\{rotuloCaucaoDaProposta\(caucao\)\}/);
 });
