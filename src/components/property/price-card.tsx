@@ -136,7 +136,7 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
       {/* Fora do total: pagamentos únicos, pet e Caução (devolvida após a conferência de saída). */}
       <ul data-testid="taxas-itemizadas" className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
         <li className="text-xs font-semibold uppercase text-muted">Fora do total mensal</li>
-        {linhasDeTaxas(property)
+        {linhasDeTaxas(property, dias)
           .filter((l) => ["preparacao", "saida", "pet", "caucao"].includes(l.chave))
           .map((l) => (
             <li key={l.chave} data-taxa={l.chave} className={l.chave === "caucao" ? "border-t border-line pt-2" : undefined}>
