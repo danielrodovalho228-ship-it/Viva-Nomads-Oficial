@@ -1,6 +1,7 @@
 "use client";
 
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
+import { ROTULO_CONTAS, ROTULO_LIMPEZA, emAbertoNoBloco, encargosDosComponentes, somarComponentes, textoComponentes, type ComponentesBloco } from "@/lib/pagamento-componentes";
 import { estadoCaucao } from "@/lib/caucao-estado";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { CampoData } from "@/components/ui/campo-data";
@@ -45,7 +46,7 @@ import { STATUS_CONTRATO_ENCERRADO } from "@/lib/fiscal/devolucao";
 
 type Extras = Awaited<ReturnType<typeof documentosDosContratos>>;
 import { formatBRL, cn } from "@/lib/utils";
-import { ROTULO_MENSAL } from "@/lib/precos";
+import { ROTULO_MENSAL, formatBRLExato } from "@/lib/precos";
 import { type EtapaContrato } from "@/lib/contrato-etapas";
 import { rotuloDoBloco } from "@/lib/bloco-status";
 import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
@@ -229,13 +230,14 @@ function ContratoCard({
   demo: boolean;
   extra?: Extras[string];
 }) {
+  // E1072: o registrado de cada bloco soma o aluguel, as contas e a limpeza de cada registro.
   const pagosPorBloco = useMemo(() => {
-    const m = new Map<string, number>();
+    const m = new Map<string, ComponentesBloco[]>();
     for (const p of contrato.pagamentos) {
       if (p.tipo !== "aluguel" || !p.blocoId) continue;
-      m.set(p.blocoId, (m.get(p.blocoId) ?? 0) + p.valor);
+      m.set(p.blocoId, [...(m.get(p.blocoId) ?? []), p.componentes ?? { aluguel: p.valor, contas: 0, limpeza: 0, total: p.valor }]);
     }
-    return m;
+    return new Map([...m].map(([id, itens]) => [id, somarComponentes(itens)]));
   }, [contrato.pagamentos]);
 
   const totalPeriodo = contrato.blocos.reduce((s, b) => s + b.valor, 0);
@@ -349,7 +351,7 @@ function ContratoCard({
             contratoAtivo={contrato.estado.ativo}
             contratoId={contrato.id}
             aluguelMensal={contrato.aluguelMensal}
-            pago={pagosPorBloco.get(b.id) ?? 0}
+            pago={pagosPorBloco.get(b.id) ?? somarComponentes([])}
             hojeISO={hojeISO}
             demo={demo}
           />
@@ -414,14 +416,19 @@ function BlocoRow({
   contratoAtivo: boolean;
   contratoId: string;
   aluguelMensal: number;
-  pago: number;
+  pago: ComponentesBloco;
   hojeISO: string;
   demo: boolean;
 }) {
   const meta = rotuloDoBloco(bloco.status, etapa, contratoAtivo);
   const vigente = contratoAtivo && bloco.inicio <= hojeISO && bloco.fim >= hojeISO;
-  const quitado = pago >= bloco.valor;
-  const restante = Math.max(0, bloco.valor - pago);
+  // E1072: o bloco custa o que o contrato diz (aluguel + contas do período + limpeza de preparação) e só fica
+  // quitado quando os três componentes estão registrados.
+  const esperado: ComponentesBloco = bloco.componentes ?? { aluguel: bloco.valor, contas: 0, limpeza: 0, total: bloco.valor };
+  const aberto = emAbertoNoBloco(esperado, pago);
+  const quitado = aberto.quitado;
+  const contaDoBloco = textoComponentes(esperado);
+  const faltaTexto = [aberto.aluguel > 0 ? `aluguel ${formatBRLExato(aberto.aluguel)}` : "", aberto.contas > 0 ? `${ROTULO_CONTAS.toLowerCase()} ${formatBRLExato(aberto.contas)}` : "", aberto.limpeza > 0 ? `${ROTULO_LIMPEZA.toLowerCase()} ${formatBRLExato(aberto.limpeza)}` : ""].filter(Boolean).join(", ");
 
   return (
     <div
@@ -453,7 +460,7 @@ function BlocoRow({
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs lg:grid-cols-4">
         <div className="rounded-lg bg-surface-2 px-3 py-2">
           <p className="text-muted">Valor do bloco</p>
-          <p className="font-medium text-ink">{formatBRL(bloco.valor)}</p>
+          <p className="font-medium text-ink">{formatBRLExato(bloco.valor)}</p>
         </div>
         <div className="rounded-lg bg-surface-2 px-3 py-2">
           <p className="text-muted">{ROTULO_MENSAL}</p>
@@ -461,18 +468,23 @@ function BlocoRow({
         </div>
         <div className="rounded-lg bg-surface-2 px-3 py-2">
           <p className="text-muted">Recebido (declarado)</p>
-          <p className={cn("font-medium", quitado ? "text-forest" : "text-ink")}>
-            {formatBRL(pago)}{" "}
+          <p className={cn("font-medium", quitado ? "text-forest" : "text-ink")} data-testid="bloco-recebido">
+            {formatBRLExato(pago.total)}{" "}
             {quitado && <Check className="inline h-3.5 w-3.5" />}
           </p>
         </div>
         <div className="rounded-lg bg-surface-2 px-3 py-2">
           <p className="text-muted">Em aberto</p>
-          <p className={cn("font-medium", quitado ? "text-forest" : "text-ink")}>
-            {formatBRL(Math.max(0, bloco.valor - pago))}
+          <p className={cn("font-medium", quitado ? "text-forest" : "text-ink")} data-testid="bloco-em-aberto">
+            {formatBRLExato(aberto.total)}
           </p>
         </div>
       </div>
+      {contaDoBloco && (
+        <p className="mt-2 text-xs text-muted" data-testid="bloco-componentes">
+          Pagamento deste bloco, pelo contrato: {contaDoBloco}.
+        </p>
+      )}
 
       {/* Registro declaratório de recebimento (só em blocos já iniciados). */}
       {bloco.status !== "agendado" ? (
@@ -480,12 +492,20 @@ function BlocoRow({
           <p className="mt-3 inline-flex items-center gap-2 text-xs text-forest">
             <Check className="h-3.5 w-3.5" /> Valor do bloco registrado como recebido.
           </p>
+        ) : pago.total > 0 ? (
+          // Já há um registro neste bloco e ainda falta parte: o que falta fica à vista. O registro complementar
+          // do mesmo bloco é a fatia seguinte do E1072 (pede uma mudança no banco).
+          <p className="mt-3 text-xs text-amber-800" role="status" data-testid="bloco-falta-registrar">
+            Falta registrar {formatBRLExato(aberto.total)} deste bloco ({faltaTexto}).
+          </p>
         ) : (
           <RegistrarRecebimento
             tipo="aluguel"
             blocoId={bloco.id}
             contratoId={contratoId}
-            valorSugerido={restante > 0 ? restante : aluguelMensal}
+            valorSugerido={aberto.aluguel > 0 ? aberto.aluguel : aluguelMensal}
+            contasSugeridas={aberto.contas}
+            limpezaSugerida={aberto.limpeza}
             hojeISO={hojeISO}
             demo={demo}
           />
@@ -510,6 +530,8 @@ function RegistrarRecebimento({
   blocoId,
   contratoId,
   valorSugerido,
+  contasSugeridas = 0,
+  limpezaSugerida = 0,
   hojeISO,
   demo,
 }: {
@@ -517,6 +539,9 @@ function RegistrarRecebimento({
   blocoId: string | null;
   contratoId: string;
   valorSugerido: number;
+  /** E1072: as contas do período e a limpeza de preparação que o contrato diz para este bloco (0 = não se aplica). */
+  contasSugeridas?: number;
+  limpezaSugerida?: number;
   hojeISO: string;
   demo: boolean;
 }) {
@@ -525,10 +550,11 @@ function RegistrarRecebimento({
   const [open, setOpen] = useState(false);
   const [jaRegistrado, setJaRegistrado] = useState<string | null>(null);
   const [valor, setValor] = useState(String(valorSugerido));
-  // Encargos pagos junto com o aluguel (vão para o recibo). Opcionais.
-  const [condominio, setCondominio] = useState("");
-  const [iptu, setIptu] = useState("");
-  const [contas, setContas] = useState("");
+  // E1072: os componentes que o contrato diz para o bloco chegam preenchidos; cada um é gravado com o seu rótulo.
+  const [contas, setContas] = useState(contasSugeridas > 0 ? String(contasSugeridas) : "");
+  const [limpeza, setLimpeza] = useState(limpezaSugerida > 0 ? String(limpezaSugerida) : "");
+  const temComponentes = tipo === "aluguel" && (contasSugeridas > 0 || limpezaSugerida > 0);
+  const totalDoRegistro = Math.round(((Number(valor) || 0) + (Number(contas) || 0) + (Number(limpeza) || 0)) * 100) / 100;
   const [forma, setForma] = useState("pix");
   const [data, setData] = useState(hojeISO);
   const [obs, setObs] = useState("");
@@ -546,14 +572,7 @@ function RegistrarRecebimento({
       contratoId,
       tipo,
       valor: Number(valor) || 0,
-      encargos:
-        tipo === "aluguel"
-          ? [
-              { rotulo: "Condomínio", valor: Number(condominio) || 0 },
-              { rotulo: "IPTU", valor: Number(iptu) || 0 },
-              { rotulo: "Contas (água, luz, gás, internet)", valor: Number(contas) || 0 },
-            ].filter((e) => e.valor > 0)
-          : [],
+      encargos: tipo === "aluguel" ? encargosDosComponentes({ contas: Number(contas) || 0, limpeza: Number(limpeza) || 0 }) : [],
       forma: forma as "pix" | "boleto" | "transferencia" | "dinheiro" | "outro",
       dataPagamento: data,
       observacao: obs || undefined,
@@ -639,28 +658,35 @@ function RegistrarRecebimento({
           />
         </label>
       </div>
-      {tipo === "aluguel" && (
-        <div className="mt-2 grid gap-2 sm:grid-cols-3">
-          {(
-            [
-              ["Condomínio (opcional)", condominio, setCondominio],
-              ["IPTU (opcional)", iptu, setIptu],
-              ["Contas (opcional)", contas, setContas],
-            ] as const
-          ).map(([rotulo, v, set]) => (
-            <label key={rotulo} className="text-xs text-muted">
-              {rotulo}
-              <CampoReais
-                semPrefixo
-                centavos
-                value={v === "" ? null : Number(v)}
-                onChange={(n) => set(n == null ? "" : String(n))}
-                placeholder="0"
-                className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
-              />
-            </label>
-          ))}
-        </div>
+      {temComponentes && (
+        <>
+          <div className="mt-2 grid gap-2 sm:grid-cols-3">
+            {(
+              [
+                [ROTULO_CONTAS, contas, setContas, contasSugeridas, "registrar-contas"],
+                [ROTULO_LIMPEZA, limpeza, setLimpeza, limpezaSugerida, "registrar-limpeza"],
+              ] as const
+            )
+              .filter(([, , , sugerido]) => sugerido > 0)
+              .map(([rotulo, v, set, , testid]) => (
+                <label key={rotulo} className="text-xs text-muted">
+                  {rotulo}
+                  <CampoReais
+                    semPrefixo
+                    centavos
+                    value={v === "" ? null : Number(v)}
+                    onChange={(n) => set(n == null ? "" : String(n))}
+                    placeholder="0"
+                    testid={testid}
+                    className="mt-1 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
+                  />
+                </label>
+              ))}
+          </div>
+          <p className="mt-2 text-xs font-medium text-ink" data-testid="registrar-total">
+            Total deste registro: {formatBRLExato(totalDoRegistro)}
+          </p>
+        </>
       )}
       <input
         type="text"

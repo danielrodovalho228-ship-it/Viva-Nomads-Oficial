@@ -11,6 +11,7 @@ import { compararHashComResumo, dataHoraAssinatura, hashResumo } from "./contrat
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
 import { ROTULO_ESTADO_CONFERENCIA, estadoConferencia, textoPrazoConferencia } from "./conferencia.ts";
 import { ETIQUETA_BRASILIA } from "./datas-brasilia.ts";
+import { ROTULO_CONTAS, ROTULO_LIMPEZA, componentesDoPagamento, type Encargo } from "./pagamento-componentes.ts";
 
 type Parte = "proprietario" | "inquilino";
 
@@ -23,6 +24,8 @@ export interface PagamentoProva {
   registradoEm?: string | null;
   /** E1074: número do recibo (REC-…) ou do comprovante da caução (CAU-…) deste pagamento; null = ainda não emitido. */
   documento?: string | null;
+  /** E1072: o que foi registrado junto com o aluguel — as contas do período e a limpeza de preparação. */
+  encargos?: Encargo[];
   confirmadoEm: string | null;
   /** Registro anulado (0182): aparece uma vez, com a marca, e fica fora dos totais. */
   anuladoEm?: string | null;
@@ -134,7 +137,8 @@ export function marcaAnulado(p: Pick<PagamentoProva, "anuladoEm" | "anuladoMotiv
 /** Totais dos pagamentos SEM os anulados (mesma regra de contratos-actions: `!anulado_em`). */
 export function totaisPagamentos(pags: PagamentoProva[]): { confirmado: number; aguardando: number; anulados: number } {
   const validos = pags.filter((p) => !p.anuladoEm);
-  const soma = (xs: PagamentoProva[]) => Math.round(xs.reduce((s, p) => s + p.valor, 0) * 100) / 100;
+  // E1072: o total de cada pagamento é o aluguel + as contas + a limpeza registrados com ele.
+  const soma = (xs: PagamentoProva[]) => Math.round(xs.reduce((s, p) => s + componentesDoPagamento(p).total, 0) * 100) / 100;
   return {
     confirmado: soma(validos.filter((p) => p.confirmadoEm)),
     aguardando: soma(validos.filter((p) => !p.confirmadoEm)),
@@ -147,6 +151,22 @@ export function linhaDoEvento(e: EventoProva): string {
   return `${e.soDia ? dataBR(e.em.slice(0, 10)) : dataHoraAssinatura(e.em)} — ${e.texto}`;
 }
 
+/** E1072: " + contas do período de R$ 310,00 + limpeza de preparação de R$ 250,00 = R$ 3.143,33"; sem componentes, "". */
+function somaDosComponentes(p: Pick<PagamentoProva, "valor" | "encargos">): string {
+  const c = componentesDoPagamento(p);
+  if (c.contas <= 0 && c.limpeza <= 0) return "";
+  const partes = [c.contas > 0 ? `${ROTULO_CONTAS.toLowerCase()} de ${brl(c.contas)}` : "", c.limpeza > 0 ? `${ROTULO_LIMPEZA.toLowerCase()} de ${brl(c.limpeza)}` : ""].filter(Boolean);
+  return ` + ${partes.join(" + ")} = ${brl(c.total)}`;
+}
+
+/** E1072: ", com contas do período de R$ 310,00 e limpeza de preparação de R$ 250,00: total de R$ 3.143,33"; sem componentes, "". */
+function comOsComponentes(p: Pick<PagamentoProva, "valor" | "encargos">): string {
+  const c = componentesDoPagamento(p);
+  if (c.contas <= 0 && c.limpeza <= 0) return "";
+  const partes = [c.contas > 0 ? `${ROTULO_CONTAS.toLowerCase()} de ${brl(c.contas)}` : "", c.limpeza > 0 ? `${ROTULO_LIMPEZA.toLowerCase()} de ${brl(c.limpeza)}` : ""].filter(Boolean);
+  return `, com ${partes.join(" e ")}: total de ${brl(c.total)}`;
+}
+
 /**
  * E1074: uma linha por pagamento VÁLIDO na seção PAGAMENTOS — o valor, a situação e o documento pelo número. A caução
  * tem a sua linha (antes ia só somada no total). Não se inventa número: confirmado sem documento diz "ainda não
@@ -156,7 +176,7 @@ export function linhaDoEvento(e: EventoProva): string {
 export function linhasPagamentos(pags: PagamentoProva[]): string[] {
   return pags.filter((p) => !p.anuladoEm).map((p) => {
     const caucao = p.tipo === "caucao";
-    const base = `${caucao ? "Caução" : "Aluguel"} de ${brl(p.valor)} (${FORMA[p.forma] ?? p.forma}, em ${dataBR(p.dia)})`;
+    const base = `${caucao ? "Caução" : "Aluguel"} de ${brl(p.valor)}${caucao ? "" : somaDosComponentes(p)} (${FORMA[p.forma] ?? p.forma}, em ${dataBR(p.dia)})`;
     if (!p.confirmadoEm) return `${base}: aguardando confirmação do inquilino.`;
     const nomeDoc = caucao ? "Comprovante da caução" : "Recibo";
     const doc = (p.documento ?? "").trim();
@@ -170,7 +190,7 @@ export function eventosDoContrato(d: DadosProvas): EventoProva[] {
   for (const p of d.pagamentos) {
     const o = p.tipo === "caucao" ? "Caução" : "Aluguel";
     const forma = FORMA[p.forma] ?? p.forma;
-    const marcado = `${o} de ${brl(p.valor)} marcado como pago pelo proprietário (${forma}, em ${dataBR(p.dia)})`;
+    const marcado = `${o} de ${brl(p.valor)} marcado como pago pelo proprietário (${forma}, em ${dataBR(p.dia)})${p.tipo === "caucao" ? "" : comOsComponentes(p)}`;
     // E1069: a hora é a do REGISTRO. Antes o dia do pagamento ia ao meio-dia UTC e o pacote escrevia "às 09:00".
     const quando = p.registradoEm ? { em: p.registradoEm } : { em: `${p.dia}T12:00:00Z`, soDia: true };
     if (p.anuladoEm) {
@@ -323,6 +343,8 @@ export interface LinhasProvas {
     anulado_motivo?: unknown;
     /** E1069: quando o proprietário registrou. */
     created_at?: unknown;
+    /** E1072: as contas e a limpeza registradas com o aluguel. */
+    encargos?: unknown;
   }[];
   conferencias: { id: unknown; tipo: unknown; criada_em: unknown }[];
   itens: { conferencia_id: unknown; parte: unknown; comodo?: unknown; descricao?: unknown; foto_path?: unknown; precisa_reparo?: unknown }[];
@@ -350,6 +372,14 @@ function documentoDoPagamento(docs: LinhasProvas["documentos"], pagamentoId: unk
   if (pagamentoId === null || pagamentoId === undefined || pagamentoId === "") return null;
   const doc = (docs ?? []).find((d) => String(d.pagamento_id ?? "") === String(pagamentoId) && d.tipo === TIPO_DOCUMENTO[tipo] && !d.anulado_em);
   return textoOuNulo(doc?.numero);
+}
+
+/** E1072: os encargos do pagamento como vêm do banco ([{rotulo, valor}]); o que não tiver rótulo e valor fica de fora. */
+function encargosDaLinha(v: unknown): Encargo[] {
+  if (!Array.isArray(v)) return [];
+  return (v as { rotulo?: unknown; valor?: unknown }[])
+    .filter((e) => e && String(e.rotulo ?? "").trim() && Number(e.valor) > 0)
+    .map((e) => ({ rotulo: String(e.rotulo).trim(), valor: Math.round(Number(e.valor) * 100) / 100 }));
 }
 
 export function montarDadosProvas(l: LinhasProvas): DadosProvas {
@@ -383,6 +413,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
       forma: String(p.forma),
       dia: String(p.data_pagamento).slice(0, 10),
       registradoEm: textoOuNulo(p.created_at),
+      encargos: p.tipo === "caucao" ? [] : encargosDaLinha(p.encargos),
       confirmadoEm: p.confirmado_pelo_inquilino ? String(p.confirmado_em ?? p.data_pagamento) : null,
       anuladoEm: textoOuNulo(p.anulado_em),
       anuladoMotivo: textoOuNulo(p.anulado_motivo),
@@ -409,7 +440,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
 /** Colunas lidas para o pacote (as mesmas nas duas cargas). */
 export const COLUNAS_PROVAS = {
   assinaturas: "papel, assinado_em, hash_documento",
-  pagamentos: "id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at",
+  pagamentos: "id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at, encargos",
   conferencias: "id, tipo, criada_em",
   itens: "conferencia_id, parte, comodo, descricao, foto_path, precisa_reparo",
   respostas: "conferencia_id, parte, decisao, motivo, decidido_em",
