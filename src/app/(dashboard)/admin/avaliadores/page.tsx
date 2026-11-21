@@ -9,7 +9,7 @@ import { chaveCidade } from "@/lib/cidades";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { adminCriarAvaliacaoTeste, adminDecidirCredenciamento, adminResolverFila, adminRevisarAuditoria, adminSalvarPreco } from "@/lib/vistoria/actions";
-import { COLUNAS_PRECO, PORTES, ROTULO_PORTE, condicaoRetorno, condicoesParaLigar, linhaDaTabela, tabelaCompleta, textoCondicaoRetorno, type LinhaPreco, type StatusCredenciamento } from "@/lib/vistoria/regras";
+import { COLUNAS_PRECO, PORTES, ROTULO_PORTE, atendeCidade, condicaoRetorno, partesDaCidade, condicoesParaLigar, linhaDaTabela, tabelaCompleta, textoCondicaoRetorno, type LinhaPreco, type StatusCredenciamento } from "@/lib/vistoria/regras";
 import { adminAbrirVerificacao, adminResolverBloqueio } from "@/lib/vistoria/laudo-actions";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistoria/strikes";
@@ -119,10 +119,11 @@ export default async function AdminAvaliadoresPage() {
   const aDecidir = lista.filter((c) => credenciamentoADecidir(c.status));
   const naRede = lista.filter((c) => !credenciamentoADecidir(c.status));
   const tabela: LinhaPreco[] = ((precos ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
-  const cidades = [...new Map([...lista.map((c) => c.cidade), ...tabela.map((t) => t.cidade)].map((c) => [chaveCidade(c), c])).values()];
+  // E1077-b2: um credenciamento com várias cidades ("Uberlandia, Araguari, Ituiutaba") entra em cada uma delas.
+  const cidades = [...new Map([...lista.flatMap((c) => partesDaCidade(c.cidade)), ...tabela.map((t) => t.cidade)].map((c) => [chaveCidade(c), c])).values()];
   const condicoesPorCidade = cidades.map((cidade) => {
     // E30: conta de teste não conta rumo aos 2 avaliadores ativos (o mesmo critério do rodízio real).
-    const ativos = lista.filter((c) => chaveCidade(c.cidade) === chaveCidade(cidade) && contaComoAvaliadorAtivo({ status: c.status, contaTeste: !!c.user_id && contasTeste.has(c.user_id) })).length;
+    const ativos = lista.filter((c) => atendeCidade(c.cidade, cidade) && contaComoAvaliadorAtivo({ status: c.status, contaTeste: !!c.user_id && contasTeste.has(c.user_id) })).length;
     return { cidade, cond: condicoesParaLigar({ tabelaCompleta: tabelaCompleta(tabela, cidade, agora), avaliadoresAtivos: ativos, parecerItem14: VISTORIA_PARECER_14 }) };
   });
   const numerosBase = contagemDecisoes({ credenciamentos: lista, semAvaliador: semAvaliador.length, recusasAusencias: recusasLista.length, cidadesProntas: condicoesPorCidade.filter((c) => c.cond.every((x) => x.ok)).length, cidades: cidades.length });
