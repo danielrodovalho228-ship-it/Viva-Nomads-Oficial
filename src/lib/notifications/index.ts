@@ -189,7 +189,8 @@ export async function notify(params: {
   const mensagem = params.event === "new_message" ? avisoDeMensagem({ remetente: params.remetenteNome, previa: params.previaAviso }) : null;
   const avisoPromise =
     // E550: só eventos com a central na matriz (o "só e-mail" não vira aviso), com o imóvel no título.
-    params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event) && eventoTemCentral(params.event)
+    // ENSAIO (quebra b): a mensagem nova manda o e-mail, mas não grava o aviso do sino.
+    params.userId && params.event !== "new_message" && !params.interno && !EVENTOS_INTERNOS.has(params.event) && eventoTemCentral(params.event)
       ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso, titulo: params.tituloAviso ?? mensagem?.titulo, texto: mensagem?.texto, imovelId: params.imovelId }))
       : null;
 
