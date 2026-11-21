@@ -278,7 +278,8 @@ export async function adminAbrirVerificacao(form: FormData): Promise<Res> {
   const detalhe = texto(form.get("detalhe"), 500);
   if (!MOTIVOS_VERIFICACAO.includes(motivo)) return { ok: false, erro: "Escolha o motivo da verificação." };
   if (detalhe.length < 10) return { ok: false, erro: "Descreva o motivo." };
-  const { data: im } = await a.admin.from("properties").select("id, owner_id, city, bedrooms").eq("id", texto(form.get("propertyId"), 40)).maybeSingle();
+  const { data: im, error: erroIm } = await a.admin.from("properties").select("id, owner_id, city, bedrooms").eq("id", texto(form.get("propertyId"), 40)).maybeSingle();
+  if (erroIm) return { ok: false, erro: "Não foi possível ler o imóvel agora. Tente de novo." };
   if (!im) return { ok: false, erro: "Imóvel não encontrado." };
   const agora = new Date();
   const { data: tabela } = await a.admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? "");
