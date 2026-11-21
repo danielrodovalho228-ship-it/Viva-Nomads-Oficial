@@ -448,7 +448,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               onClick={() => goToStep(i)}
               disabled={!reachable}
               className={cn(
-                "flex items-center gap-2 rounded-full px-3 py-2 text-sm whitespace-nowrap transition-colors",
+                "flex min-h-11 items-center gap-2 rounded-full px-3 py-2 text-sm whitespace-nowrap transition-colors",
                 i === step
                   ? "bg-forest text-white"
                   : i < step
@@ -524,7 +524,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   value={qtdOcupantes}
                   onChange={(e) => setQtdOcupantes(Math.max(1, Math.round(Number(e.target.value) || 1)))}
                   aria-label="Número de ocupantes"
-                  className="w-20 rounded-lg border border-sage-200 bg-white px-3 py-2 text-center outline-none focus:border-sage"
+                  className="min-h-11 w-20 rounded-lg border border-sage-200 bg-white px-3 py-2 text-center outline-none focus:border-sage"
                 />
               </div>
               {ocupantesExcede && (
@@ -557,7 +557,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   onChange={(e) => setPrazoMeses(Number(e.target.value))}
                   disabled={!!ACORDO}
                   aria-label="Prazo total em meses"
-                  className="rounded-lg border border-sage-200 bg-white px-3 py-2 outline-none focus:border-sage"
+                  className="min-h-11 rounded-lg border border-sage-200 bg-white px-3 py-2 outline-none focus:border-sage"
                 >
                   {Array.from({ length: MESES_MAX - MESES_MIN + 1 }, (_, i) => MESES_MIN + i).map(
                     (m) => (
