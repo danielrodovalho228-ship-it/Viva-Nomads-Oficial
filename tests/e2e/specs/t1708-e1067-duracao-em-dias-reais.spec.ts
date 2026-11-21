@@ -57,12 +57,14 @@ test.describe("T1708 — E1067: a duração da estadia pelos dias reais do contr
   });
 
   test("1. dono: o bloco de 31 dias diz \"(31 dias)\" e o 1º pagamento é registrado", async ({ browser }) => {
+    test.fail(true, "ENSAIO na main: a duração tem de sair errada (E1067 sem correcção); asserções suaves para o pagamento gravar e os testes 2 e 3 correrem");
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-    const duracao = page.getByTestId("bloco-duracao").first();
-    await expect(duracao).toHaveText("(31 dias)", { timeout: 30_000 });
-    await expect(page.locator("main")).not.toContainText("(2m)");
+    // ENSAIO: na main o <span> da duração não tem data-testid; procura-se pelo texto "(Nm)" / "(N dias)".
+    const duracao = page.locator("span", { hasText: /^\(\d+\s?(m|dias?|meses|mês)\)$/ }).first();
+    await expect.soft(duracao).toHaveText("(31 dias)", { timeout: 15_000 });
+    await expect.soft(page.locator("main")).not.toContainText("(2m)");
     const bloco = duracao.locator("xpath=ancestor::div[1]/..");
     await bloco.scrollIntoViewIfNeeded();
     await bloco.screenshot({ path: `${SAIDA}/t1708-1-dono-bloco-1280.png` });
