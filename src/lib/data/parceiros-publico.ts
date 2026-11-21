@@ -86,6 +86,8 @@ export interface ResultadoBusca {
   cepNaoEncontrado: boolean;
   /** FISCAL-PARCEIRO-B: quantos da busca (sem o filtro da nota) emitem nota fiscal — a contagem ao lado do filtro. */
   comNota: number;
+  /** Achado 131: a leitura da lista falhou — lista vazia aqui NÃO quer dizer "nenhum parceiro" (a tela avisa e oferece tentar de novo). */
+  falhou: boolean;
 }
 
 /**
@@ -145,8 +147,9 @@ export async function buscarParceiros(f: { categoria?: string | null; cidade?: s
     if (!g.approximate) ponto = { lat: g.lat, lng: g.lng };
   }
   const sb = createPublicClient();
-  if (!sb) return { lista: [], cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep, comNota: 0 };
-  const { data } = await sb.from("parceiros_publicos").select("*").limit(500);
+  if (!sb) return { lista: [], cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep, comNota: 0, falhou: true };
+  const { data, error } = await sb.from("parceiros_publicos").select("*").limit(500);
+  if (error) return { lista: [], cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep, comNota: 0, falhou: true };
   const todos = filtrarParceiros(((data ?? []) as Linha[]).map(deLinha).filter((p) => p.categorias.length > 0), { categoria: f.categoria, cidade, ponto, verTeste: await veParceirosDeTeste() });
   // O filtro "Emite nota fiscal" passa pela mesma função do documento do serviço (fiscal.ts).
   const comNota = todos.filter((p) => passaFiltroNota(p, true)).length;
@@ -163,7 +166,7 @@ export async function buscarParceiros(f: { categoria?: string | null; cidade?: s
     }
   }
   const lista = filtrada.map((p) => (primeira.has(p.id) ? { ...p, galeriaCapaUrl: primeira.get(p.id)! } : p));
-  return { lista, cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep, comNota };
+  return { lista, cidade, uf, cep, cepNaoEncontrado: !!cep && !doCep, comNota, falhou: false };
 }
 
 export interface ServicoPublico {
@@ -181,18 +184,23 @@ export interface FotoGaleria {
   legenda: string | null;
 }
 
+export const MSG_PARCEIRO_NAO_ABRIU = "Não foi possível abrir este parceiro agora.";
+
 /** Página pública: o parceiro publicado, os serviços ativos e a galeria (na ordem). */
 export async function parceiroPorSlug(slug: string): Promise<{ parceiro: ParceiroPublico; servicos: ServicoPublico[]; galeria: FotoGaleria[] } | null> {
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return null;
   const sb = createPublicClient();
   if (!sb) return null;
-  const { data } = await sb.from("parceiros_publicos").select("*").eq("slug", slug).maybeSingle();
+  const { data, error } = await sb.from("parceiros_publicos").select("*").eq("slug", slug).maybeSingle();
+  // Achado 132: a falha LANÇA (tela de erro com código) — nunca um 404 "não encontrado" que o buscador guardaria.
+  if (error) throw new Error(MSG_PARCEIRO_NAO_ABRIU);
   if (!data) return null;
   const parceiro = deLinha(data as Linha);
-  const [{ data: sv }, { data: gl }] = await Promise.all([
+  const [{ data: sv, error: erroSv }, { data: gl, error: erroGl }] = await Promise.all([
     sb.from("parceiro_servicos").select("id, categoria, titulo, descricao, preco_base, unidade, prazo_dias").eq("parceiro_id", parceiro.id).eq("ativo", true).order("criado_em"),
     sb.from("parceiro_galeria").select("id, path, legenda, ordem").eq("parceiro_id", parceiro.id).order("ordem").limit(30),
   ]);
+  if (erroSv || erroGl) throw new Error(MSG_PARCEIRO_NAO_ABRIU);
   return {
     parceiro,
     servicos: (sv ?? []).map((s) => ({
