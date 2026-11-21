@@ -505,17 +505,19 @@ export async function getMeusPedidos(opcoes: { exigir?: boolean } = {}) {
 }
 
 /** Respostas recebidas nos meus pedidos (inquilino), com o imóvel ofertado. */
-export async function getRespostasRecebidas() {
+export async function getRespostasRecebidas(opcoes: { exigir?: boolean } = {}) {
   const supabase = await createClient();
   if (!supabase) return [];
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("respostas_pedido")
     .select("*, properties(id, title, city, monthly_price, condo_fee, utilities_mode, utilities_estimate, available_from)")
     .order("criado_em", { ascending: false });
+  // E293 r21: falha de leitura não vira "nenhuma resposta ainda" (a tela de Pedidos usa `exigir`, como na lista de pedidos).
+  if (error && opcoes.exigir) throw new Error(MSG_PEDIDOS_NAO_CARREGARAM);
   // A RLS já limita às respostas dos pedidos do inquilino (e às suas, se for dono).
   return data ?? [];
 }
