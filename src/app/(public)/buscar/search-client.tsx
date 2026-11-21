@@ -132,6 +132,8 @@ export function SearchClient({
   const [comparar, setComparar] = useState<string[]>([]); // ordem fdd61de0: até 3 imóveis marcados
   const [avisoComparar, setAvisoComparar] = useState<string | null>(null);
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null); // pin clicado: card aberto no mapa
+  // E1023: cartão aberto no mapa (clique ou prévia do hover) — o card da lista mantém o destaque enquanto ele está aberto.
+  const [abertoMapaId, setAbertoMapaId] = useState<string | null>(null);
   // Mapa só a partir de 1024 px (lg): no celular/tablet nem carrega o componente.
   const [comMapa, setComMapa] = useState(false);
   // E82-A: a pílula "Mapa" alterna lista e mapa — no computador mostra/esconde a coluna do mapa; no celular troca a
@@ -923,12 +925,12 @@ export function SearchClient({
                   key={p.id}
                   data-testid="card-resultado"
                   data-id={p.id}
-                  data-destaque={activeId === p.id || selecionadoId === p.id ? "1" : "0"}
+                  data-destaque={activeId === p.id || selecionadoId === p.id || abertoMapaId === p.id ? "1" : "0"}
                   onMouseEnter={() => setActiveId(p.id)}
                   onMouseLeave={() => setActiveId(null)}
                   className={cn(
                     "flex h-full flex-col rounded-xl transition-all",
-                    (activeId === p.id || selecionadoId === p.id) && "ring-2 ring-forest ring-offset-4"
+                    (activeId === p.id || selecionadoId === p.id || abertoMapaId === p.id) && "ring-2 ring-forest ring-offset-4"
                   )}
                 >
                   <div className="min-h-0 flex-1">
@@ -1035,6 +1037,7 @@ export function SearchClient({
               onHover={setActiveId}
               selectedId={selecionadoId}
               onSelect={setSelecionadoId}
+              onAberto={setAbertoMapaId}
               focus={geoCenter}
               radiusKm={radiusKm}
               className="h-full w-full rounded-none border-0 border-l border-line lg:rounded-xl lg:border"
