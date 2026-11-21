@@ -92,6 +92,20 @@ export function destinoDaAncora(hash: string, search = ""): string | null {
   return `${rota}${search && search !== "?" ? search : ""}${ancora ? `#${ancora}` : ""}`;
 }
 
+/** Âncoras antigas que levam ao Perfil e não têm mais alvo na tela dele. "pets" não entra: a seção existe (id="pets"). */
+const ANCORA_SEM_ALVO_NO_PERFIL: ReadonlySet<string> = new Set(["perfil-publico"]);
+
+/**
+ * No Perfil: a âncora antiga que não tem mais alvo na tela (perfil-publico) sai do endereço — o destino da tabela não
+ * traz âncora. A que ainda existe (pets) fica. Antes isso dependia de quem redirecionava: a página tirava a âncora, o
+ * proxy (E798) a mantinha; o endereço final variava (t355, caso 5). A lista é fixa de propósito: a tela do Perfil
+ * monta as seções depois do primeiro quadro, e procurar o alvo na tela daria resposta diferente a cada carregamento.
+ */
+export function ancoraMortaNoPerfil(hash: string): boolean {
+  const ancora = hash.replace(/^#/, "");
+  return ANCORA_SEM_ALVO_NO_PERFIL.has(ancora) && ANCORA_SECAO[ancora] === "/dashboard/conta/perfil";
+}
+
 /**
  * E492 (+E552): no computador a Conta tem UM endereço para o Perfil — /dashboard/conta leva a /dashboard/conta/perfil.
  * Uma âncora antiga (destinoDaAncora) vence. No celular, /dashboard/conta continua sendo o menu.

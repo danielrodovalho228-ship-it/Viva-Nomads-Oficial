@@ -40,10 +40,11 @@ export default async function ContaSecaoPage({ params }: { params: Promise<{ sec
       return (
         <CascaConta ativo="perfil" topoDireita>
           <PerfilTela inicial={inicial} />
+          {/* E979: cookie da largura desatualizado → no celular, volta ao menu da Conta. Vem ANTES da âncora antiga: lê a
+              âncora do endereço para decidir, e a âncora antiga pode tirá-la (a do próprio Perfil, sem alvo na tela). */}
+          <VoltarAoMenuSeTelaEstreita />
           {/* E798: /dashboard/conta#documento (link antigo) chega aqui pelo redirecionamento do servidor; vai à seção certa. */}
           <AncoraAntigaDaConta />
-          {/* E979: cookie da largura desatualizado → no celular, volta ao menu da Conta. */}
-          <VoltarAoMenuSeTelaEstreita />
         </CascaConta>
       );
     }
