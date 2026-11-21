@@ -98,6 +98,58 @@ const HANDLE_RE = /(^|[^\w@])@([a-zA-Z0-9._]{2,30})/g;
 /** Ids (UUID) não são contato: trocados por marcador sem dígitos antes das regras e devolvidos no fim. */
 const UUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi;
 
+/**
+ * Família 6, parte C — números da casa não são contato: pedido "VN-PD-11281A61", contrato "VN-CT-11281A61" (e o aditivo
+ * "-AD1"), "VN-CT-2026-0042", "CT-11281A61" e orçamento "ORC-2026-0007". Saem do texto como os UUIDs e voltam no fim.
+ * Só os FORMATOS reais (no máximo 8 algarismos): um prefixo da casa na frente de um telefone (10+) não o esconde.
+ */
+const CODIGO_DA_CASA_RE = /\b(?:(?:VN-(?:PD|CT)|CT)-[0-9A-F]{8}(?:-AD\d{1,3})?|VN-CT-\d{4}-\d{4}|ORC-\d{4}-\d{4})\b/g;
+
+/**
+ * Família 6, parte C — algarismos por extenso. Um "telefone falado" é uma sequência de algarismos e/ou palavras de
+ * algarismo (zero…nove), separados por espaço, ponto, hífen ou "e", com 8 algarismos ou mais e pelo menos UMA palavra.
+ * Sequência só de algarismos continua na regra de telefone de sempre (10–13): CEP (8), datas e valores não mudam.
+ */
+const PALAVRA_DIGITO: Record<string, string> = {
+  zero: "0", um: "1", uma: "1", dois: "2", duas: "2", "três": "3", tres: "3", quatro: "4", cinco: "5", seis: "6", meia: "6", sete: "7", oito: "8", nove: "9",
+};
+const TOKEN_NUM = `(?:\\d+|${Object.keys(PALAVRA_DIGITO).join("|")})`;
+const SEP_NUM = "(?:[\\s.\\-]+(?:e\\s+)?)";
+const SEQ_NUM = `${TOKEN_NUM}(?:${SEP_NUM}${TOKEN_NUM})*`;
+const NUM_FALADO_RE = new RegExp(`(?<![\\p{L}\\d])${TOKEN_NUM}(?:${SEP_NUM}${TOKEN_NUM})+(?![\\p{L}\\d])`, "giu");
+/** Quantos algarismos a sequência diz, e se tem ao menos uma palavra. */
+function lerSequencia(m: string): { digitos: number; temPalavra: boolean } {
+  let digitos = 0;
+  let temPalavra = false;
+  for (const t of m.toLowerCase().split(/[\s.\-]+/)) {
+    if (!t || t === "e") continue;
+    if (/^\d+$/.test(t)) digitos += t.length;
+    else if (t in PALAVRA_DIGITO) {
+      digitos += 1;
+      temPalavra = true;
+    }
+  }
+  return { digitos, temPalavra };
+}
+
+/**
+ * Família 6, parte C — e-mail ofuscado: "nome arroba gmail ponto com", "nome [at] gmail [dot] com", "nome @ gmail . com",
+ * "nome(at)hotmail(dot)com", com ".com.br" por extenso também.
+ */
+const ARROBA_OFUSCADA = "(?:\\s*@\\s*|\\s*[[(]\\s*(?:at|arroba)\\s*[\\])]\\s*|\\s+arroba\\s+)";
+const PONTO_OFUSCADO = "(?:\\s*\\.\\s*|\\s*[[(]\\s*(?:dot|ponto)\\s*[\\])]\\s*|\\s+(?:ponto|dot)\\s+)";
+const EMAIL_OFUSCADO_RE = new RegExp(`[\\w.+-]+${ARROBA_OFUSCADA}[\\w-]+(?:${PONTO_OFUSCADO}(?:com|net|org|br|edu|gov|io))+\\b`, "gi");
+
+/**
+ * Família 6, parte C — mensageiro citado sem link ("me chama no zap / whats / wpp / telegram") SEGUIDO de um número,
+ * mesmo parcial (4 algarismos ou mais, em algarismos ou por extenso): o número some, a palavra fica. Sem número logo
+ * depois (só "no zap", "às 14h30"…), nada é mascarado.
+ */
+const MENSAGEIRO_CITADO_RE = new RegExp(
+  `(\\b(?:zap(?:zap)?|whats(?:app)?|wpp|zapp|telegram|telegrama)\\b(?:\\s*[:\\-]\\s*|\\s+(?:é|e|no|o|meu|n[º°o]\\.?|n[uú]mero)\\s+|\\s+)*)(\\+?\\(?${SEQ_NUM}\\)?)`,
+  "giu",
+);
+
 export interface GuardResult {
   /** Texto com os contatos mascarados. */
   text: string;
@@ -112,16 +164,22 @@ export function guardContactInfo(input: string): GuardResult {
   let masked = false;
   let documento = false;
   const ids: string[] = [];
-  let text = input.replace(UUID_RE, (id) => {
+  const guardar = (id: string) => {
     ids.push(id);
     return String.fromCharCode(0xe000 + ids.length - 1);
-  });
+  };
+  let text = input.replace(UUID_RE, guardar).replace(CODIGO_DA_CASA_RE, guardar);
 
   text = text.replace(MESSENGER_RE, () => {
     masked = true;
     return MASK;
   });
   text = text.replace(EMAIL_RE, () => {
+    masked = true;
+    return MASK;
+  });
+  // Família 6 C: e-mail ofuscado ("arroba", "[at]", "@ gmail . com"), antes dos links ("gmail.com" sozinho viraria link).
+  text = text.replace(EMAIL_OFUSCADO_RE, () => {
     masked = true;
     return MASK;
   });
@@ -158,6 +216,20 @@ export function guardContactInfo(input: string): GuardResult {
   text = text.replace(RG_MASCARA_RE, () => {
     documento = masked = true;
     return MASK_DOC;
+  });
+  // Família 6 C: mensageiro citado + número (mesmo parcial): some o número, a palavra fica.
+  text = text.replace(MENSAGEIRO_CITADO_RE, (m, chave: string, numero: string) => {
+    const { digitos } = lerSequencia(numero);
+    if (digitos < 4) return m;
+    masked = true;
+    return `${chave}${MASK}`;
+  });
+  // Família 6 C: telefone falado ou misto (8+ algarismos com ao menos uma palavra de algarismo).
+  text = text.replace(NUM_FALADO_RE, (m) => {
+    const { digitos, temPalavra } = lerSequencia(m);
+    if (!temPalavra || digitos < 8) return m;
+    masked = true;
+    return MASK;
   });
   text = text.replace(PHONE_CANDIDATE_RE, (m) => {
     const digits = m.replace(/\D/g, "");
