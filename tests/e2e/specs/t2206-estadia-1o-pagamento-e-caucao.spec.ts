@@ -12,6 +12,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
     4. o morador confirma os dois pagamentos;
     5. depois: o contrato sai de "Aguardando 1º pagamento" para "Em vigência" nos dois lados, e na página da estadia os
        dois itens ficam feitos ("Registrado e confirmado." / "Recebida pelo proprietário."), para o dono e para o morador.
+    6. E1044 (ORDEM-DUET-333): noutro contrato, o dono regista três pagamentos FORA da ordem das datas (bloco 1 há 3 dias,
+       bloco 2 ontem, a caução há 2 dias); a lista "Pagamentos para confirmar" do morador vem por data; o morador confirma o
+       mais antigo (o UPDATE mexe na ordem do armazenamento) e os dois que restam continuam por data.
   Os achados desta perna (onde o morador confirma; o texto do item da caução enquanto espera a confirmação) estão no PR,
   para decisão do Gerente; o spec não inventa comportamento: prende só o que o código já decide.
 */
@@ -153,5 +156,68 @@ test.describe("T2206 — Estadia: o 1º pagamento e a caução antes da entrada,
     await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
     await expect(pd.getByTestId("contrato-etapa").first(), "o dono: em vigência").toHaveAttribute("data-chave", "em_vigencia", { timeout: 20_000 });
     await pd.context().close();
+  });
+
+  test("6. E1044: a lista do morador vem por data, antes e depois de confirmar o mais antigo", async ({ browser }) => {
+    test.info().annotations.push({ type: "simulação", description: "o 2.º contrato (assinado pelas duas partes) é gravado pelo laboratório; os pagamentos são registados pela tela" });
+    const titulo2 = `Studio da ordem ${sufixo}`;
+    const imovel2 = await criarImovelPronto(ids.dono!, titulo2, { ativo: true, preco: 3000 });
+    const lead2 = await criarLead(ids.dono!, ids.morador!, imovel2, true);
+    const agora = new Date().toISOString();
+    const { data: c2, error } = await adm()
+      .from("contratos")
+      .insert({
+        lead_id: lead2, property_id: imovel2, tenant_id: ids.morador, owner_plan: "essential", faixa: "media_estadia",
+        prazo_total_dias: 120, aluguel_mensal: 3000, tamanho_bloco_meses: 2, comissao_percent: 0.1, comissao_valor: 1200,
+        qtd_ocupantes: 1, capacidade_snapshot: 2, assinado_proprietario_em: agora, assinado_inquilino_em: agora,
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    const { error: eb } = await adm().from("contrato_blocos").insert([
+      { contrato_id: c2.id, numero_bloco: 1, inicio: dia(130), fim: dia(189), meses: 2, valor: 6000, caucao: 1500, status: "ativo" },
+      { contrato_id: c2.id, numero_bloco: 2, inicio: dia(190), fim: dia(249), meses: 2, valor: 6000, caucao: 0, status: "pendente_aceite" },
+    ]);
+    if (eb) throw eb;
+
+    // O dono regista pela tela, nesta ordem: bloco 1 (há 3 dias), bloco 2 (ontem), caução (há 2 dias).
+    const br = (iso: string) => iso.split("-").reverse().join("/");
+    const pd = await abrir(browser, dono.email);
+    const painel = () => pd.locator("div").filter({ hasText: titulo2 }).filter({ has: pd.getByTestId("contrato-taxa") }).last();
+    async function registrar(botao: "registrar-recebimento" | "registrar-caucao", iso: string, gravados: number) {
+      await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+      await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+      await painel().getByTestId(botao).first().click();
+      const data = pd.locator("label", { hasText: /^Data/ }).locator("input:not([type=hidden])").first();
+      await data.fill((await data.getAttribute("type")) === "date" ? iso : br(iso));
+      await data.press("Tab");
+      await pd.getByTestId("confirmar-recebimento").click();
+      await expect.poll(async () => (await adm().from("pagamentos_bloco").select("id").eq("contrato_id", c2.id)).data?.length ?? 0, { timeout: 20_000 }).toBe(gravados);
+    }
+    await registrar("registrar-recebimento", dia(-3), 1);
+    await registrar("registrar-recebimento", dia(-1), 2);
+    await registrar("registrar-caucao", dia(-2), 3);
+    const { data: gravados } = await adm().from("pagamentos_bloco").select("data_pagamento").eq("contrato_id", c2.id).order("created_at");
+    expect(gravados!.map((g) => String(g.data_pagamento).slice(0, 10)), "registados fora da ordem das datas").toEqual([dia(-3), dia(-1), dia(-2)]);
+    await pd.context().close();
+
+    // O morador: "Pagamentos para confirmar" por data, antes e depois de confirmar o mais antigo.
+    const pm = await abrir(browser, morador.email);
+    const datasDaLista = async () => {
+      const lista = pm.getByTestId("confirmar-pagamentos").locator("li");
+      return (await lista.allInnerTexts()).map((t) => t.match(/pago em (\d{2}\/\d{2}\/\d{4})/)?.[1] ?? "?");
+    };
+    await pm.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    await expect(pm.getByTestId("confirmar-pagamentos").locator("li")).toHaveCount(3, { timeout: 20_000 });
+    expect(await datasDaLista(), "E1044: os três por data").toEqual([br(dia(-3)), br(dia(-2)), br(dia(-1))]);
+    await pm.getByTestId("confirmar-pagamentos").getByRole("button", { name: /Confirmar/ }).first().click();
+    await expect(pm.getByTestId("confirmar-pagamentos").locator("li")).toHaveCount(2, { timeout: 20_000 });
+    await expect
+      .poll(async () => (await adm().from("pagamentos_bloco").select("confirmado_pelo_inquilino, data_pagamento").eq("contrato_id", c2.id).eq("confirmado_pelo_inquilino", true)).data?.map((g) => String(g.data_pagamento).slice(0, 10)), { timeout: 20_000 })
+      .toEqual([dia(-3)]);
+    await pm.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    await expect(pm.getByTestId("confirmar-pagamentos").locator("li")).toHaveCount(2, { timeout: 20_000 });
+    expect(await datasDaLista(), "E1044: depois de confirmar o mais antigo, os dois que restam continuam por data").toEqual([br(dia(-2)), br(dia(-1))]);
+    await pm.context().close();
   });
 });
