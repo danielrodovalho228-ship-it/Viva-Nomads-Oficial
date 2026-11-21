@@ -83,6 +83,7 @@ test.describe("T1708 — E1067: a duração da estadia pelos dias reais do contr
   });
 
   test("2. moradora: o pagamento a confirmar é \"Bloco 1 (31 dias: …) — R$ 2.583,33\"", async ({ browser }) => {
+    test.fail(true, "ENSAIO na main: o teste 2 tem de falhar (E1067 sem correcção); falha esperada só para o teste 3 correr");
     const page = await entrar(browser, inq.email, senha);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
