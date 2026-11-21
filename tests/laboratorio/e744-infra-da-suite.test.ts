@@ -201,7 +201,12 @@ test("E744 workflow: o resumo da noite traz a tabela por fatia, com o mesmo núm
   assert.equal(esperadasFatia, esperadasJuncao);
   const resumo = consolidar.slice(consolidar.indexOf("- name: Resumo da noite"), consolidar.indexOf("- name: Registrar no banco"));
   assert.match(resumo, /numeros-por-fatia\.mjs/, "a tabela por fatia entra no resumo da rodada");
-  assert.match(resumo, /GITHUB_STEP_SUMMARY/);
+  // Asserção alterada pela T4 do plano de 17/11 (E744): este passo grava o detalhe num arquivo e quem escreve o resumo do
+  // job é o passo "Relatório da noite", depois do banco, para o relatório do dia abrir o resumo já com a sequência.
+  assert.match(resumo, /\} > tests\/laboratorio\/saida\/resumo-detalhe\.md/);
+  const relatorio = consolidar.slice(consolidar.indexOf("- name: Relatório da noite"), consolidar.indexOf("- name: Detectar regressões"));
+  assert.match(relatorio, /cat "\$SAIDA\/resumo-detalhe\.md"/, "o detalhe por fatia e por spec segue no resumo do job");
+  assert.match(relatorio, /GITHUB_STEP_SUMMARY/);
 });
 
 test("E744 falhas no log: cada teste que falhou ou ficou instável sai com spec, título e o erro inteiro (até 2.000 caracteres)", () => {

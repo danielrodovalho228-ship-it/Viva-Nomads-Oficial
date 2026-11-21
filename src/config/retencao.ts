@@ -248,6 +248,7 @@ export const JSONB_PROPRIO: Record<string, string> = {
   "imovel_nivel.diferenciais": "extras marcados pelo dono",
   "imovel_nivel.por_area": "nível por área calculado por nós",
   "lab_execucoes.falhas": "resultado do laboratório (testes)",
+  "lab_execucoes.noite": "resultado do laboratório (testes): estado da noite (verde ou vermelha), motivos e contagens por classe",
   "lab_execucoes.por_categoria": "resultado do laboratório (testes)",
   "lab_execucoes.por_spec": "resultado do laboratório (testes)",
   "lab_execucoes.regressoes": "resultado do laboratório (testes): specs que voltaram a falhar",
