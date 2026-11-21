@@ -4,6 +4,7 @@ import { TelaAjuda } from "@/components/account/tela-ajuda";
 import { TelaPapeis } from "@/components/account/tela-papeis";
 import { PerfilTela } from "@/components/account/perfil-tela";
 import { AncoraAntigaDaConta, VoltarAoMenuSeTelaEstreita } from "@/components/account/largura-e-ancora";
+import { RolarAteAncora } from "@/components/account/rolar-ate-ancora";
 import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { DadosPessoais, DocumentoPessoa } from "@/components/account/conta-secoes";
@@ -69,6 +70,8 @@ export default async function ContaSecaoPage({ params }: { params: Promise<{ sec
           <div className="mt-6">
             <SeusDadosRegras />
           </div>
+          {/* E1007: a seção da âncora (#documento, #celular) vai para a vista e fica lá enquanto a página assenta. */}
+          <RolarAteAncora />
         </CascaConta>
       );
     case "privacidade":
