@@ -18,6 +18,16 @@ export const BRAND_BLUR =
     `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#eef1f5"/></svg>`
   ).toString("base64");
 
+/**
+ * E398 (D-ISO8): borrão da própria foto do painel da porta (/auth), para o painel não ficar cinza liso enquanto a foto
+ * carrega. É a foto reduzida a 12 × 16 px (WebP, 134 bytes), gerada de public/media/auth-lateral.webp com
+ * `sharp(arquivo).resize(12, 16, { fit: "cover" }).webp({ quality: 45 })`. Se a foto for trocada, o teste
+ * src/lib/e398-porta-imagem.test.ts acusa e este valor é gerado de novo.
+ */
+export const AUTH_LATERAL = "/media/auth-lateral.webp";
+export const AUTH_LATERAL_BLUR =
+  "data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAAAwAgCdASoMABAAAwBSJagCdAYwdkvWl9fiEAD+6JTEXK1karIcKBDjYj2flKeYdY/76Q71kziOMduIVt4H2JfuTgzw9W1gK+KLn9mDD6AkOEdzeGQKoQ84VlWKFM8cw1VGHW+296djBadNiFOgk24AAAA=";
+
 export const PHOTOS = {
   // A — Home
   heroProfessional: `${H}/home-hero-chegada.webp`,

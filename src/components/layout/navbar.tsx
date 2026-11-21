@@ -14,6 +14,7 @@ import { nomeAvatarExibicao } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { SELETOR_IDIOMA } from "@/lib/flags";
 import { SeletorIdioma } from "@/components/layout/seletor-idioma";
+import { MARCA_SESSAO } from "@/lib/sessao-prepaint";
 
 const LINK = "whitespace-nowrap text-sm font-medium text-ink/75 transition-colors hover:text-forest";
 
@@ -52,6 +53,12 @@ export function Navbar() {
   const user = useAuthStore((s) => s.user);
   const mounted = useMontado();
   const loggedIn = mounted && !!user;
+  // E398: a marca de sessão (<html data-sessao>, posta antes da 1ª pintura) esconde o "Entrar" até a sessão assentar.
+  // Sessão conferida e sem usuário = a lembrança local era velha: tira a marca e o "Entrar" volta.
+  const sessaoConferida = useAuthStore((s) => s.authChecked);
+  useEffect(() => {
+    if (mounted && sessaoConferida && !user) document.documentElement.removeAttribute(MARCA_SESSAO);
+  }, [mounted, sessaoConferida, user]);
 
   // Foto do próprio usuário (opcional) para o "Meu painel".
   const [foto, setFoto] = useState<string | null>(null);
@@ -105,7 +112,7 @@ export function Navbar() {
           {loggedIn ? (
             <MeuPainel nome={nomeAvatar} foto={foto} />
           ) : (
-            <ButtonLink href="/auth" variant="primary" size="sm" data-testid="nav-entrar">
+            <ButtonLink href="/auth" variant="primary" size="sm" data-testid="nav-entrar" data-nav-entrar="">
               Entrar
             </ButtonLink>
           )}
@@ -138,7 +145,7 @@ export function Navbar() {
               {loggedIn ? (
                 <MeuPainel nome={nomeAvatar} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-forest" />
               ) : (
-                <ButtonLink href="/auth" variant="primary" onClick={() => setOpen(false)}>
+                <ButtonLink href="/auth" variant="primary" onClick={() => setOpen(false)} data-nav-entrar="">
                   Entrar
                 </ButtonLink>
               )}
