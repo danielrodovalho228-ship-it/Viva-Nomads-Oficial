@@ -15,16 +15,19 @@ import { CHAVES_PRIVACIDADE, RODAPE_PRIVACIDADE, type ChavePrivacidade, type Pri
 export function TelaPrivacidade() {
   const [p, setP] = useState<Privacidade | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  // Achado 143: a falha da leitura não grava os padrões como se fossem as escolhas da pessoa.
+  const [falhou, setFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
     let vivo = true;
     getPrivacidade()
       .then((v) => vivo && setP(v))
-      .catch(() => vivo && setP({ mostrar_perfil: true, aparecer_busca: true, dados_uso: false }));
+      .catch(() => vivo && setFalhou(true));
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [tentativa]);
 
   async function alternar(chave: ChavePrivacidade, v: boolean) {
     if (!p) return;
@@ -43,7 +46,23 @@ export function TelaPrivacidade() {
     <div className="grid gap-6" data-testid="tela-privacidade">
       {/* E170: as três permissões aparecem na hora; só a chave de cada uma espera a leitura (antes, o cartão inteiro
           ficava em branco até a resposta do servidor). */}
-      <section className="rounded-xl bg-white px-4 sm:px-6" aria-label="Permissões" aria-busy={!p}>
+      <section className="rounded-xl bg-white px-4 sm:px-6" aria-label="Permissões" aria-busy={!p && !falhou}>
+        {falhou ? (
+          <div role="alert" className="py-4 text-sm text-ink" data-testid="privacidade-falhou">
+            <p>Não foi possível carregar suas permissões agora. Seus ajustes não mudaram.</p>
+            <button
+              type="button"
+              className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-sage-200 px-4 font-semibold text-forest"
+              onClick={() => {
+                setFalhou(false);
+                setTentativa((n) => n + 1);
+              }}
+              data-testid="privacidade-tentar-de-novo"
+            >
+              Tentar de novo
+            </button>
+          </div>
+        ) : (
         <ul className="divide-y divide-line">
           {CHAVES_PRIVACIDADE.map((c) => (
             <li key={c.chave} className="flex items-center justify-between gap-4 py-4">
@@ -59,6 +78,7 @@ export function TelaPrivacidade() {
             </li>
           ))}
         </ul>
+        )}
       </section>
       {erro && (
         <p role="alert" className="text-sm text-red-700">

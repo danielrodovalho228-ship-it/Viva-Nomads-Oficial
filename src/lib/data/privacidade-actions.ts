@@ -8,12 +8,17 @@ import { CHAVES_PRIVACIDADE, normalizarPrivacidade, type Privacidade } from "@/l
   migração: a Pista A não cria). Grava só a preferência; o efeito no produto espera a regra (ver tela-privacidade.ts).
 */
 
+const MSG_PRIVACIDADE_NAO_CARREGOU = "Não foi possível carregar suas permissões agora.";
+
+/** Achado 143: a falha da leitura LANÇA — nunca devolve os padrões como se fossem as escolhas da pessoa. Sem sessão não é falha. */
 export async function getPrivacidade(): Promise<Privacidade> {
   const supabase = await createClient();
   if (!supabase) return normalizarPrivacidade(null);
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
+  if (error && error.name !== "AuthSessionMissingError") throw new Error(MSG_PRIVACIDADE_NAO_CARREGOU);
   return normalizarPrivacidade((user?.user_metadata as { privacidade?: unknown } | undefined)?.privacidade);
 }
 
