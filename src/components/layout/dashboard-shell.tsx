@@ -429,6 +429,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               tem 64 px, por isso o desenho não muda. É o mesmo conserto do E960 no logo do site público. */}
           <Logo prefetch={false} className="min-h-11 lg:hidden" />
           <div className="flex items-center gap-2">
+            {/* E478: o operador tem o sino de avisos em TODAS as páginas do /admin (computador e celular), o mesmo do E444. */}
+            {naAreaAdmin && <Sino px="admin" />}
             {contaCelular ?? papelChip}
             {chipModo}
             {/* Só na área da equipe: o menu lateral (no resto, a barra de baixo e a Conta no avatar — MENUS-5). */}
