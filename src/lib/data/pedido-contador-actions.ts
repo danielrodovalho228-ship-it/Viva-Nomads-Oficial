@@ -91,11 +91,14 @@ export async function contarImoveisQueCombinam(r: RascunhoContador): Promise<Res
 
   // Só entra imóvel com o documento DESTE imóvel aprovado (mesma regra do banco).
   const ids = daCidade.map((p) => p.id);
-  const { data: checks } = await admin
+  // Falha de leitura (aqui e nas duas de baixo) devolve null = "sem número": a tela não mostra contagem. Ignorar o erro
+  // fabricava "0 imóveis combinam" (sem documento aprovado) ou contava como livre um imóvel ocupado.
+  const { data: checks, error: erroChecks } = await admin
     .from("qualification_checklists")
     .select("property_id, owner_id, document_status, created_at")
     .in("property_id", ids)
     .order("created_at", { ascending: false });
+  if (erroChecks) return null;
   const aprovado = new Set<string>();
   const visto = new Set<string>();
   for (const c of (checks ?? []) as { property_id: string; owner_id: string; document_status: string | null }[]) {
@@ -112,14 +115,15 @@ export async function contarImoveisQueCombinam(r: RascunhoContador): Promise<Res
   const saida = saidaDoPedido(r.dataInicio, meses);
   const idsElegiveis = elegiveis.map((p) => p.id);
   const ocupados = new Set<string>();
-  const { data: bloqueios } = await admin
+  const { data: bloqueios, error: erroBloqueios } = await admin
     .from("property_blocks")
     .select("property_id")
     .in("property_id", idsElegiveis)
     .lte("inicio", saida)
     .gte("fim", entrada);
+  if (erroBloqueios) return null;
   for (const b of (bloqueios ?? []) as { property_id: string }[]) ocupados.add(b.property_id);
-  const { data: blocos } = await admin
+  const { data: blocos, error: erroBlocos } = await admin
     .from("contrato_blocos")
     .select("status, inicio, fim, contratos!inner(property_id, status)")
     .in("status", ["ativo", "agendado"])
@@ -127,6 +131,7 @@ export async function contarImoveisQueCombinam(r: RascunhoContador): Promise<Res
     .gte("fim", entrada)
     .eq("contratos.status", "ativo")
     .in("contratos.property_id", idsElegiveis);
+  if (erroBlocos) return null;
   for (const b of (blocos ?? []) as unknown as { contratos: { property_id: string } | { property_id: string }[] }[]) {
     const c = Array.isArray(b.contratos) ? b.contratos[0] : b.contratos;
     if (c?.property_id) ocupados.add(c.property_id);
