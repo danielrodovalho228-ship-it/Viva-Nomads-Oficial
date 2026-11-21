@@ -5,6 +5,7 @@ import { SITE_URL } from "@/lib/site";
 import { ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BannerTopo } from "@/components/institucional/banner-topo";
+import { TEXTO_PRAZO_PARCERIA } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { ROTA_RECRUTAMENTO } from "@/lib/vistoria/entrada";
@@ -98,6 +99,8 @@ export default function AvaliadoresRecrutamentoPage() {
           Um só pedido: se você ainda não é parceiro da Viva, o mesmo formulário cria a sua conta de parceiro. Se já é, você só manda os dados do
           credenciamento.
         </p>
+        {/* E886: o mesmo prazo de resposta de /parceiros (o pedido é o mesmo formulário). */}
+        <p className="mt-2 text-sm font-semibold text-forest" data-testid="avaliadores-prazo-resposta">{TEXTO_PRAZO_PARCERIA}</p>
         <ButtonLink href={PEDIR} variant="outline" size="sm" className="mt-3">Pedir credenciamento</ButtonLink>
       </div>
     </div>
