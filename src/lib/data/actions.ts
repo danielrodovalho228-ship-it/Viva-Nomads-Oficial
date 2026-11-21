@@ -9,6 +9,7 @@ import { AVISO_OFENSA, termoOfensivo } from "@/lib/messages/ofensas";
 import { registrarOfensa } from "@/lib/messages/ofensas-servidor";
 import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { idDeRascunhoValido, rascunhoDaConta, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
+import { rascunhoCarimbado, rascunhoComHoraConhecida } from "@/lib/anuncio/salvo-fantasma";
 import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, erroJanelaDisponivel, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
@@ -104,10 +105,12 @@ import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { urlsDeFotosDoRascunho } from "@/lib/minimizacao/fotos-rascunho";
+import { excluirRascunhoDoDono } from "@/lib/data/excluir-rascunho-servidor";
 import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
-import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { marcarPropostaEmContrato, preAceiteExpiradoDoLead, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { ERRO_SOBREPOSICAO_PG } from "@/lib/contrato-periodo";
@@ -1493,6 +1496,10 @@ export async function registrarContrato(
     .select("monthly_price, owner_id")
     .eq("id", lead.property_id)
     .maybeSingle();
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono; o contrato não nasce com o preço do anúncio.
+  const preAceiteExpirado = await preAceiteExpiradoDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (preAceiteExpirado === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+  if (preAceiteExpirado) return { ok: false, error: MSG_PRE_ACEITE_EXPIRADO };
   // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
   const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
   if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
@@ -2063,22 +2070,15 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Não autenticado." };
 
   // Prompt 58: as fotos saem do bucket com o anúncio (o hash fica, antifraude). Só as do próprio dono.
-  const { data: dono, error: erroDono } = await supabase.from("properties").select("id, draft_data").eq("id", id).eq("owner_id", user.id).maybeSingle(); // consistency-ignore: E705 — só o servidor lê o rascunho do PRÓPRIO dono (owner_id na consulta) para achar as urls das fotos a apagar; nada vai à resposta
-  const { data: fotos, error: erroFotos } = dono ? await supabase.from("property_photos").select("url").eq("property_id", id) : { data: null, error: null };
-  // Sem a lista das fotos, excluir deixaria os arquivos no bucket sem nada que aponte para eles: para antes de apagar.
-  if (erroDono || erroFotos) return { ok: false, error: "Não foi possível excluir o anúncio agora. Tente de novo." };
-  for (const table of ["property_photos", "property_amenities", "property_proximities"]) {
-    try {
-      await supabase.from(table).delete().eq("property_id", id);
-    } catch {
-      /* tabela ausente — ignora */
-    }
+  // E953: a leitura/recusa/exclusão moram em excluirRascunhoDoDono (draft_data pela RPC do C4; só rascunho; sem a lista
+  // das fotos, para antes de apagar). O cliente é o da SESSÃO do dono.
+  const r = await excluirRascunhoDoDono(supabase, user.id, id);
+  if (!r.ok) {
+    if (r.erroBanco) console.error("[deleteProperty]", id, (r.erroBanco as { code?: string }).code);
+    return { ok: false, error: r.error };
   }
-  const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
-  if (error) return { ok: false, error: erroBancoPT(error) };
   // E705 (resíduo 2): a foto que só existe no draft_data (autosave do editor) também sai do bucket; a guarda do E308 protege o que outro anúncio usa.
-  const urlsDoAnuncio = [...((fotos ?? []) as { url: string }[]).map((f) => f.url), ...urlsDeFotosDoRascunho((dono as { draft_data?: unknown } | null)?.draft_data)];
-  if (urlsDoAnuncio.length) await apagarFotosDoAnuncio(createAdminClient(), urlsDoAnuncio);
+  if (r.urlsFotos.length) await apagarFotosDoAnuncio(createAdminClient(), r.urlsFotos);
   revalidarAnuncio(id, revalidatePath);
   return { ok: true };
 }
@@ -2129,7 +2129,8 @@ export async function saveDraftData(snap: {
     // 59-C1: a operação vai junto, pela regra do updateProperty — uma linha antiga "própria com sublocação" (que a
     // restrição da 0200 recusa em qualquer update) fica no permitido já no primeiro autosave.
     ...colunasDeOperacao(op.ownershipType, op.subleaseAuthorized),
-    draft_data: snap.data as object,
+    // E614 (ORDEM-DUET-137): toda gravação sai carimbada daqui — também a que cria o rascunho ao sair da Qualificação.
+    draft_data: rascunhoCarimbado(snap.data, new Date()) as object,
   };
 
   // Anúncio novo (sem id): continua o rascunho vazio de menos de 72 h em vez de abrir outro igual (ordem 378c07c4).
@@ -2228,6 +2229,12 @@ export async function abrirRascunho(id: string): Promise<{ ok: true; draft: unkn
   if (error) return { ok: false, motivo: "indisponivel" };
   const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: unknown } | null;
   if (!row) return { ok: false, motivo: "nao_encontrado" };
+  // E614 (ORDEM-DUET-137/139): rascunho sem carimbo (anterior à regra) reabre com a hora que se conhece dele — a da
+  // última gravação da linha (updated_at, 0346) e, enquanto não for regravada, a da criação. Só leitura: o rascunho
+  // gravado não muda ao abrir (E516). Sem a coluna (deploy antes da migração), fica a hora da criação.
+  const hora = await supabase.from("properties").select("updated_at, created_at").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const linha = (hora.error ? (await supabase.from("properties").select("created_at").eq("id", id).eq("owner_id", user.id).maybeSingle()).data : hora.data) as { updated_at?: string | null; created_at?: string | null } | null;
+  row.draft_data = rascunhoComHoraConhecida(row.draft_data ?? null, linha?.updated_at ?? null, linha?.created_at ?? null);
   return { ok: true, draft: await semFotosApagadas(row.draft_data ?? null, user.id) };
 }
 

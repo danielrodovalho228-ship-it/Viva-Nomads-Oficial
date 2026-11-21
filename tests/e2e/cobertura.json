@@ -3078,6 +3078,14 @@
         "t192-conta-4-blocos",
         "t307-varredura-bloco8"
       ]
+    },
+    "/auth/reset/codigo": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t1680-e917-recuperar-por-codigo"
+      ]
     }
   },
   "rotas": {
@@ -3443,6 +3451,12 @@
       "specs": []
     },
     "/api/cron/resumo-pedidos": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/cron/vigia-suite": {
       "personas": [
         "sistema"
       ],
@@ -3878,6 +3892,14 @@
       "specs": [
         "t397-foto-na-hora",
         "t410-niveis-medir-rascunho"
+      ]
+    },
+    "/api/auth/recuperar": {
+      "personas": [
+        "publico"
+      ],
+      "specs": [
+        "t1680-e917-recuperar-por-codigo"
       ]
     }
   },

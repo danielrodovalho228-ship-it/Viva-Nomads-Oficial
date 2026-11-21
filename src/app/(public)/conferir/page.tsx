@@ -22,7 +22,7 @@ export default async function ConferirInicio({ searchParams }: { searchParams: P
   const invalido = !!sp.codigo && !CODIGO_RE.test(digitado);
 
   return (
-    <main className="container-page section-y">
+    <div className="container-page section-y">
       <div className="mx-auto max-w-lg rounded-xl border border-line bg-white p-6">
         <h1 className="flex items-center gap-2 font-title text-2xl font-semibold text-ink">
           <ShieldCheck className="h-6 w-6 text-forest" /> Conferir documento
@@ -68,6 +68,6 @@ export default async function ConferirInicio({ searchParams }: { searchParams: P
           </button>
         </form>
       </div>
-    </main>
+    </div>
   );
 }

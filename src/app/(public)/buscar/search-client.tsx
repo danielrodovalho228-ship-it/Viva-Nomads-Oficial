@@ -61,6 +61,7 @@ import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
 import { foraDoTempoPelaReta, type ModoRota } from "@/lib/rotas/tempo";
+import { sincronizarUrlDaBusca } from "@/lib/navegacao/url-da-busca";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -248,7 +249,7 @@ export function SearchClient({
     return () => window.removeEventListener("popstate", onPop);
   }, [restaurarFiltrosDaURL]);
 
-  // Reflete a busca atual na URL (replaceState — sem recarregar nem rolar),
+  // Reflete a busca atual na URL (replaceState só quando muda — sem recarregar nem rolar),
   // para o endereço e o raio serem compartilháveis / sobreviverem a um reload.
   useEffect(() => {
     if (skipNextSync.current) {
@@ -300,11 +301,8 @@ export function SearchClient({
     destinoNaUrl(params, estadoDestino);
     if (sort === "trabalho") params.delete("ordem");
     const qs = params.toString();
-    window.history.replaceState(
-      null,
-      "",
-      qs ? `${window.location.pathname}?${qs}` : window.location.pathname
-    );
+    // E1047: só com a URL diferente — cada replaceState vira um "restore" do router, que descarta o toque num card em curso.
+    sincronizarUrlDaBusca(qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,

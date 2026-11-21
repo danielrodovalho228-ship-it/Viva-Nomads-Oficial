@@ -209,6 +209,12 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByTestId("fotos-adicionar").click()]);
       await chooser.setFiles([1, 2, 3, 4, 5, 6, 7].map((n) => ({ name: `foto-${n}.png`, mimeType: "image/png", buffer: pngDeTeste(n + 20 * largura) })));
       await expect(page.getByTestId("etapa-fotos")).toContainText("7 / 8 fotos", { timeout: 60_000 });
+      // E744 (tabela da Fable #3832): espera o lote anterior entrar na galeria (fim do "enviando") antes de soltar a 8ª
+      // foto — soltar durante um envio em andamento apaga o lote anterior (item de produto levado ao Gerente no PR).
+      await expect(page.locator('[data-testid="fotos-trava"][data-trava="enviando"]')).toHaveCount(0, { timeout: 60_000 });
+      await expect
+        .poll(async () => ((((await adm().from("properties").select("draft_data").eq("id", id).single()).data?.draft_data ?? {}) as { photos?: unknown[] }).photos ?? []).length, { timeout: 30_000 })
+        .toBe(7);
       // Arrastar e soltar um arquivo na galeria.
       const png8 = pngDeTeste(8 + 20 * largura).toString("base64");
       await page.getByTestId("fotos-galeria").evaluate((alvo, b64) => {
@@ -251,6 +257,8 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     const id = await rascunho(d.id, { title: "Rascunho do T204", street: "Avenida João Naves de Ávila", numero: "100", cep: "38408-000", neighborhood: "Santa Mônica", city: "Uberlândia" });
     // E104: a matrícula fica no "Antes de publicar" da Revisão.
     await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+    // E744 (além da tabela, ver o PR): desde o E251 as seções do "Antes de publicar" chegam fechadas (acordeão).
+    await abrirSecoesPasso10(d.page, ["documento"]);
     await expect(d.page.getByTestId("documento-vinculo")).toBeVisible({ timeout: 30_000 });
     // PDF sem o marcador do laboratório: ninguém consegue ler (como um arquivo ilegível em produção).
     await d.page.getByTestId("documento-vinculo").locator('input[type="file"]').setInputFiles({ name: "matricula.pdf", mimeType: "application/pdf", buffer: pdf() });

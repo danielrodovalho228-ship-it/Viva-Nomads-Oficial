@@ -3,8 +3,10 @@ name: Linhas de base visuais (gerar para revisão)
 # E744: 55 das falhas determinísticas da suíte são comparações de captura (t245, t263, t271) contra imagens-base
 # antigas (a interface mudou depois delas). Esta rotina refaz as imagens NO MESMO AMBIENTE do laboratório
 # (mesmo Chromium, mesmas fontes, mesmo banco semeado) e as guarda como ARTEFATO para revisão humana.
-# NÃO comita nada: aprovar uma imagem-base é decisão de produto (o que é "certo" na tela). Quem aprovar baixa o
-# artefato `linhas-de-base-<run>` e copia os PNG para tests/e2e/visual/ num PR.
+# NÃO comita nada em nenhum ramo de trabalho: aprovar uma imagem-base é decisão de produto (o que é "certo" na tela).
+# Quem aprovar copia para tests/e2e/visual/, num PR, SÓ as imagens julgadas. Elas saem de dois lugares: do artefato
+# `linhas-de-base-<run>` e, no disparo manual, do ramo de evidência `linhas-de-base-evidencia` (job `publicar-evidencia`,
+# no fim deste arquivo) — o armazenamento dos artefatos não é alcançável por toda sessão.
 # Roda à mão (workflow_dispatch) ou num PR que mexa neste arquivo (para poder gerar antes de ir para a main).
 on:
   workflow_dispatch:
@@ -96,25 +98,35 @@ jobs:
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
           curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
 
-      - name: Instalar Chromium do Playwright
-        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas. O timeout
-        # mata o npx, mas o apt-get filho fica segurando a trava do dpkg: antes de repetir, encerra o apt que sobrou,
-        # espera a trava soltar e conserta o dpkg (senão as tentativas seguintes morrem na hora).
-        timeout-minutes: 25
+      - name: Baixar a imagem do Playwright (E1040, navegadores e dependências já vêm nela, nada de apt)
+        # E1040 (ORDEM-DUET-216/229): o desenho do E1037 (#4034) neste workflow. A imagem OFICIAL do Playwright, na MESMA
+        # versão do @playwright/test (o teste e1040-imagem-outros-workflows.test.ts prende as duas). Vem do MCR, não do
+        # espelho do Ubuntu; tentativas curtas por segurança.
+        timeout-minutes: 15
         run: |
           for i in 1 2 3; do
-            timeout 420 npx playwright install --with-deps chromium webkit && exit 0
-            echo "tentativa $i travou ou falhou"
-            sudo pkill -f '[a]pt-get|[d]pkg' || true
-            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
-            sudo dpkg --configure -a || true
+            timeout 300 docker pull mcr.microsoft.com/playwright:v1.61.1-noble && exit 0
+            echo "tentativa $i do pull falhou"
+            if [ "$i" -lt 3 ]; then sleep 30; fi
           done
           exit 1
+
       - name: Refazer as imagens-base (t245, t263, t271)
         # --update-snapshots reescreve TODAS as imagens dos 3 specs e nunca reprova por diferença de imagem;
         # erro de outra natureza (elemento não achado, timeout) continua aparecendo na saída.
         continue-on-error: true
-        run: npx playwright test t245-visual-regressao t263-visual-41 t271-admin-visual --update-snapshots --reporter=list --workers=2 --global-timeout=4800000 > tests/laboratorio/saida/linhas-de-base.txt 2>&1
+        run: |
+          # E1040: só `npx playwright …` corre na imagem oficial, com a rede do runner e como o utilizador do runner (os
+          # resultados ficam no workspace). O resto do `npx` segue o do runner. As linhas de comando ficam iguais.
+          npx() {
+            if [ "${1:-}" != playwright ]; then command npx "$@"; return; fi
+            shift
+            docker run --rm --network host --ipc host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+              -v "$PWD:$PWD" -w "$PWD" \
+              $(env | cut -d= -f1 | grep -E '^(NEXT_PUBLIC_|LAB_|TESTES_|INTEGRACOES_|SUPABASE_|PLAYWRIGHT_|CI$)' | sed 's/^/-e /') \
+              mcr.microsoft.com/playwright:v1.61.1-noble npx playwright "$@"
+          }
+          npx playwright test t245-visual-regressao t263-visual-41 t271-admin-visual --update-snapshots --reporter=list --workers=2 --global-timeout=4800000 > tests/laboratorio/saida/linhas-de-base.txt 2>&1
         env:
           TESTES_BASE_URL: http://localhost:3123
 
@@ -139,3 +151,37 @@ jobs:
             linhas-de-base/
             tests/laboratorio/saida/linhas-de-base.txt
           retention-days: 14
+
+  # E744 (decisão do Gerente, 16/11/2026, aprovada pelo Daniel) — as imagens refeitas legíveis sem baixar o artefato.
+  # Grava as imagens e um manifesto num commit órfão no ramo `linhas-de-base-evidencia`: dedicado, descartável, reescrito
+  # a cada corrida, nunca mesclado e fora dos builds da Vercel. É o ÚNICO job do workflow com permissão de escrita, roda
+  # só no disparo manual (nunca em PR), e o script recusa qualquer destino que não seja esse ramo. Só PNG, até 120 imagens
+  # e 25 MB. A geração das imagens (job `gerar`) não mudou.
+  publicar-evidencia:
+    name: publicar as imagens refeitas (ramo linhas-de-base-evidencia)
+    needs: gerar
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+
+      - name: Baixar as imagens refeitas desta corrida
+        # Sem o artefato (a geração caiu antes de guardá-lo) o passo seguinte diz isso e não toca no ramo.
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: linhas-de-base-${{ github.run_id }}
+          path: linhas-de-base-baixadas
+
+      - name: Publicar no ramo linhas-de-base-evidencia (commit órfão, reescrito a cada corrida)
+        # O nome do ramo testado vem por variável de ambiente, nunca colado na linha de comando.
+        env:
+          RAMO_TESTADO: ${{ github.ref_name }}
+        run: node scripts/lab/linhas-de-base-evidencia.mjs publicar linhas-de-base-baixadas/linhas-de-base --run "$GITHUB_RUN_ID" --sha "$GITHUB_SHA" --ramo-testado "$RAMO_TESTADO" --repositorio "$GITHUB_REPOSITORY" --ramo linhas-de-base-evidencia

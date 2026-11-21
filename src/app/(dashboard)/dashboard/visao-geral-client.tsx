@@ -45,7 +45,7 @@ import type { Property } from "@/lib/types";
 import { useAuthStore } from "@/lib/store";
 import { contaConfirmada, soDaConta } from "@/lib/sessao/lista-da-conta";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
-import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
+import { useExemplos, type Exemplos } from "@/lib/demo/usar-exemplos";
 import { coverPhoto } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { juntarDecisoes, tituloDecisoes, type Decisao, type DecisaoDoPapel, type TipoDecisao } from "@/lib/painel/decisoes";
@@ -214,7 +214,9 @@ function OwnerDashboard({
   // Só imóveis ATIVOS contam como "imóvel publicado" (regra única, a mesma de
   // "Meus imóveis"). Rascunhos não entram nos KPIs nem na lista da visão geral —
   // eles têm o próprio card de "anúncio em andamento" abaixo.
-  const allProperties = imoveisPublicados(demo ? DEMO_PROPERTIES : imoveisDono);
+  // E980: os exemplos chegam sob demanda (só com a demonstração ligada); enquanto carregam, lista vazia e "—".
+  const exemplos = useExemplos(demo);
+  const allProperties = imoveisPublicados(demo ? (exemplos?.DEMO_PROPERTIES ?? []) : imoveisDono);
   // PROP-3 (E113): a prévia mostra os mesmos ativos de "Meus imóveis" (antes cortava em 2 e escondia o 3º).
   const myProperties = allProperties;
   const kpiLeads = kpiInteressados(interessados.atual, interessados.anterior, {
@@ -229,6 +231,7 @@ function OwnerDashboard({
       {semImovel && <PrimeiroImovel />}
       {allProperties.length > 0 && <PainelDoDono
           demo={demo}
+          exemplos={exemplos}
           allProperties={allProperties}
           myProperties={myProperties}
           kpiLeads={kpiLeads}
@@ -260,6 +263,7 @@ function PrimeiroImovel() {
 /** Métricas, verificação, "Meus imóveis" e atividade — para quem já tem imóvel publicado. */
 function PainelDoDono({
   demo,
+  exemplos,
   allProperties,
   myProperties,
   kpiLeads,
@@ -268,6 +272,8 @@ function PainelDoDono({
   totalConversas,
 }: {
   demo: boolean;
+  /** E980: os dados fictícios do modo demonstração, carregados sob demanda (null fora dele). */
+  exemplos: Exemplos | null;
   allProperties: Property[];
   myProperties: Property[];
   kpiLeads: ReturnType<typeof kpiInteressados>;
@@ -314,12 +320,12 @@ function PainelDoDono({
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label="Visualizações"
-          value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : visualizacoes == null ? "—" : visualizacoes.toLocaleString("pt-BR")}
+          value={demo ? (exemplos?.DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") ?? "—") : visualizacoes == null ? "—" : visualizacoes.toLocaleString("pt-BR")}
           hint={demo ? undefined : "Últimos 30 dias, nos seus anúncios"}
           icon={Eye}
         />
         {demo ? (
-          <StatCard label="Interessados" value={String(DEMO_KPIS.leads)} icon={Users} />
+          <StatCard label="Interessados" value={exemplos ? String(exemplos.DEMO_KPIS.leads) : "—"} icon={Users} />
         ) : (
           <StatCard
             label={kpiLeads.rotulo}
@@ -329,7 +335,7 @@ function PainelDoDono({
             icon={Users}
           />
         )}
-        <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />
+        <StatCard label="Mensagens" value={demo ? (exemplos ? String(exemplos.DEMO_KPIS.mensagens) : "—") : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
 

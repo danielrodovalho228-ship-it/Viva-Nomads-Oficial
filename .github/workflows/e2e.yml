@@ -2,17 +2,32 @@ name: E2E (Playwright)
 
 # Roda a suíte E2E assim que o deploy fica pronto (deployment_status = success):
 # Production -> https://vivanomads.com.br (domínio próprio, sem proteção da Vercel);
-# Preview -> URL do deploy com o bypass; sem o segredo de bypass o preview é PULADO
-# com aviso (não fica vermelho). Também roda sob demanda com uma URL manual.
+# Preview -> URL do deploy com o bypass. Também roda sob demanda com uma URL manual.
+#
+# E964 — O JOB NUNCA FICA VERDE SEM TER RODADO: sem o segredo de bypass (rodar=false) o passo final escreve
+# "E2E NÃO RODOU: <motivo>" no resumo e sai 1. Quando roda, a completude compara os executados com os listados
+# (playwright test --list) e fica vermelha com "E2E INCOMPLETO: X de Y". A prévia roda só @criticos + as etiquetas
+# (@E<n>) dos itens do PR aberto no commit (a suíte inteira fica no noturno fatiado, E744); produção roda no modo
+# público (as contas de teste vivem no projeto de TESTE). Lógica em src/lib/ci/e2e-completude.ts (com teste).
 # A decisão está em scripts/ci/e2e-alvo.sh (com teste em src/lib/ci).
 # Segredos (contas de teste) vêm de GitHub Secrets — nunca no yml.
+#
+# E951 — PROVA AO VIVO POR ITEM: no deploy de PRODUÇÃO a suíte inteira (que truncava no teto de 20 min) deu lugar ao job
+# `prova-ao-vivo`: lê os itens (E\d+) do título e do corpo do PR mesclado no commit do deploy, roda SÓ os specs com
+# @ao-vivo-seguro E a etiqueta do item contra https://vivanomads.com.br, grava o resultado por item em lab_execucoes
+# (gatilho 'ao-vivo') e comenta no PR. Sem spec etiquetado: "prova automática: não há" (nada genérico roda no lugar).
+# A trava do @ao-vivo-seguro é o teste estático src/lib/ci/e951-ao-vivo-seguro.test.ts (CI). Lógica em src/lib/ci/prova-ao-vivo.ts.
+# workflow_dispatch com `itens` (ex.: "E899, E356") roda a prova desses itens em produção sem esperar deploy novo.
 on:
   deployment_status:
   workflow_dispatch:
     inputs:
       base_url:
-        description: "URL alvo (preview da Vercel ou produção p/ smoke)"
-        required: true
+        description: "URL alvo da suíte (preview da Vercel). Deixe vazio quando preencher 'itens'."
+        required: false
+      itens:
+        description: "Prova ao vivo em produção destes itens (E951), ex.: E899, E356. Vazio = suíte na base_url."
+        required: false
 
 concurrency:
   group: e2e-${{ github.event.deployment_status.target_url || github.event.inputs.base_url || github.ref }}
@@ -20,12 +35,24 @@ concurrency:
 
 jobs:
   e2e:
+    name: E2E da prévia
     # No gatilho de deploy, só roda quando o preview ficou pronto (success).
+    # E951: produção não roda mais a suíte aqui (vai para o job prova-ao-vivo); o dispatch com `itens` também.
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success')
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.itens == '') ||
+      (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' &&
+       github.event.deployment_status.environment != 'Production' && github.event.deployment_status.environment != 'production')
     runs-on: ubuntu-latest
+    # Fila única da prévia: todos os PRs usam as MESMAS contas de teste e o MESMO banco; rodadas juntas esgotavam o
+    # limite de login ("Muitas tentativas" no global-setup). Um de cada vez, sem derrubar o que já está rodando. A espera
+    # na fila não conta no timeout (o job só começa quando sai dela). A prova ao vivo de produção fica fora desta fila.
+    concurrency:
+      group: e2e-previa-contas-de-teste
+      cancel-in-progress: false
     timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
     env:
       # Bypass da Deployment Protection da Vercel (preview protegido). Sem ele, a
       # suíte cai na tela de login da Vercel. O config/global-setup só mandam os
@@ -96,9 +123,10 @@ jobs:
           fi
           echo "BASE_URL: ${TESTES_BASE_URL}"
           NO=$(curl -s -o /dev/null -w "%{http_code}" "${TESTES_BASE_URL}/api/health" || echo "000")
+          # Só o header do bypass: com x-vercel-set-bypass-cookie a Vercel responde 307 (redireciona com Set-Cookie)
+          # e o curl não segue — o 307 com o segredo certo parecia falha (15/11). O Playwright manda os dois e segue.
           WITH=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}" \
-            -H "x-vercel-set-bypass-cookie: true" \
             "${TESTES_BASE_URL}/api/health" || echo "000")
           echo "HTTP /api/health  ->  sem header: ${NO}   com header: ${WITH}"
           if [ "${WITH}" = "200" ]; then
@@ -119,19 +147,16 @@ jobs:
         if: steps.alvo.outputs.rodar == 'true'
         run: npm ci
 
-      - name: Instalar Chromium do Playwright
-        if: steps.alvo.outputs.rodar == 'true'
-        # A instalação às vezes trava sem erro (apt/download); limite por tentativa e até 3 tentativas. O timeout
-        # mata o npx, mas o apt-get filho fica segurando a trava do dpkg: antes de repetir, encerra o apt que sobrou,
-        # espera a trava soltar e conserta o dpkg (senão as tentativas seguintes morrem na hora).
-        timeout-minutes: 25
+      - name: Baixar a imagem do Playwright (E1040, navegadores e dependências já vêm nela, nada de apt)
+        # E1040 (ORDEM-DUET-216/229): o desenho do E1037 (#4034) neste workflow. A imagem OFICIAL do Playwright, na MESMA
+        # versão do @playwright/test (o teste e1040-imagem-outros-workflows.test.ts prende as duas). Vem do MCR, não do
+        # espelho do Ubuntu; tentativas curtas por segurança.
+        timeout-minutes: 15
         run: |
           for i in 1 2 3; do
-            timeout 420 npx playwright install --with-deps chromium webkit && exit 0
-            echo "tentativa $i travou ou falhou"
-            sudo pkill -f '[a]pt-get|[d]pkg' || true
-            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
-            sudo dpkg --configure -a || true
+            timeout 300 docker pull mcr.microsoft.com/playwright:v1.61.1-noble && exit 0
+            echo "tentativa $i do pull falhou"
+            if [ "$i" -lt 3 ]; then sleep 30; fi
           done
           exit 1
 
@@ -139,14 +164,50 @@ jobs:
         if: ${{ steps.alvo.outputs.rodar == 'true' && env.SUPABASE_SERVICE_ROLE_KEY != '' }}
         run: npm run seed:teste
 
-      - name: Rodar suíte E2E
-        if: steps.alvo.outputs.rodar == 'true'
+      - name: Itens do PR da prévia (--grep = @criticos + @E<n>)
+        id: pr
+        if: steps.alvo.outputs.rodar == 'true' && steps.alvo.outputs.modo != 'publico'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.deployment.sha || github.sha }}
         run: |
-          if [ "${{ steps.alvo.outputs.modo }}" = "publico" ]; then
-            npm run testes:publico
+          # Título e corpo vêm do arquivo (texto de PR nunca entra cru no script).
+          gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[] | select(.state == "open")][0] // {}' > pr.json || echo '{}' > pr.json
+          export PR_TITULO="$(jq -r '.title // ""' pr.json)" PR_CORPO="$(jq -r '.body // ""' pr.json)"
+          node scripts/ci/e2e-completude.mjs grep
+
+      - name: Rodar E2E (prévia @criticos + itens; produção no modo público)
+        if: steps.alvo.outputs.rodar == 'true'
+        env:
+          GREP: ${{ steps.pr.outputs.grep }}
+          MODO: ${{ steps.alvo.outputs.modo }}
+        run: |
+          # E1040: só `npx playwright …` corre na imagem oficial, com a rede do runner e como o utilizador do runner (os
+          # resultados ficam no workspace). O resto do `npx` segue o do runner. As linhas de comando ficam iguais.
+          npx() {
+            if [ "${1:-}" != playwright ]; then command npx "$@"; return; fi
+            shift
+            docker run --rm --network host --ipc host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+              -v "$PWD:$PWD" -w "$PWD" \
+              $(env | cut -d= -f1 | grep -E '^(NEXT_PUBLIC_|LAB_|TESTES_|INTEGRACOES_|SUPABASE_|PLAYWRIGHT_|CI$|VERCEL_AUTOMATION_BYPASS_SECRET$)' | sed 's/^/-e /') \
+              mcr.microsoft.com/playwright:v1.61.1-noble npx playwright "$@"
+          }
+          mkdir -p tests/laboratorio/saida
+          if [ "$MODO" = "publico" ]; then
+            export TESTES_SO_PUBLICO=1
+            read -ra ARGS <<< "$(node -p "require('./package.json').scripts['testes:publico'].split('playwright test ')[1]")"
           else
-            npm run testes
+            ARGS=(--grep "$GREP")
           fi
+          PLAYWRIGHT_JSON_OUTPUT_NAME=tests/laboratorio/saida/e2e-lista.json npx playwright test "${ARGS[@]}" --list --reporter=json
+          # Teto da suíte abaixo do teto do job: parada por tempo ainda escreve o relatório e cai na completude.
+          PLAYWRIGHT_JSON_OUTPUT_NAME=tests/laboratorio/saida/e2e-relatorio.json \
+            npx playwright test "${ARGS[@]}" --reporter=list,json,html --global-timeout=720000
+
+      - name: Conferir completude (executados × listados)
+        if: ${{ !cancelled() && steps.alvo.outputs.rodar == 'true' }}
+        run: node scripts/ci/e2e-completude.mjs conferir tests/laboratorio/saida/e2e-lista.json tests/laboratorio/saida/e2e-relatorio.json "${{ steps.alvo.outputs.modo }}"
 
       - name: Publicar relatório HTML
         if: ${{ !cancelled() && steps.alvo.outputs.rodar == 'true' }}
@@ -155,3 +216,160 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 14
+
+      # E964: job que não rodou nunca termina verde (nenhum passo engole erro; pulado não vira sucesso).
+      - name: E2E NÃO RODOU (vermelho)
+        if: steps.alvo.outputs.rodar != 'true'
+        env:
+          MOTIVO: ${{ steps.alvo.outputs.motivo }}
+        run: |
+          echo "## E2E NÃO RODOU: ${MOTIVO:-motivo não informado}" >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::E2E NÃO RODOU: ${MOTIVO:-motivo não informado}"
+          exit 1
+
+  # E951 — prova ao vivo por item depois do deploy de produção (ou por workflow_dispatch com a lista de itens).
+  prova-ao-vivo:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.itens != '') ||
+      (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' &&
+       (github.event.deployment_status.environment == 'Production' || github.event.deployment_status.environment == 'production'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      ALVO: https://vivanomads.com.br
+      TESTES_BASE_URL: https://vivanomads.com.br
+      # Produção não tem as contas de teste (vivem no projeto de TESTE): só specs de visitante. A trava estática barra
+      # @ao-vivo-seguro em spec que faz login, paga, assina, manda mensagem/e-mail ou escreve pela chave de serviço.
+      TESTES_SO_PUBLICO: "1"
+      COMMIT_SHA: ${{ github.event.deployment.sha || github.sha }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: npm
+
+      - name: Achar o PR mesclado no commit do deploy
+        id: pr
+        if: github.event_name == 'deployment_status'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh api "repos/$REPO/commits/$COMMIT_SHA/pulls" --jq '[.[] | select(.merged_at != null)][0] // {}' > pr.json
+          echo "numero=$(jq -r '.number // ""' pr.json)" >> "$GITHUB_OUTPUT"
+          echo "PR: $(jq -r '.number // "nenhum"' pr.json)"
+
+      - name: Planejar (itens do PR ou da lista; specs etiquetados de cada item)
+        id: plano
+        env:
+          LISTA_ITENS: ${{ github.event.inputs.itens }}
+        run: |
+          # Título e corpo vêm do arquivo (texto de PR nunca entra cru no script).
+          if [ -z "$LISTA_ITENS" ] && [ -f pr.json ]; then
+            export PR_TITULO="$(jq -r '.title // ""' pr.json)" PR_CORPO="$(jq -r '.body // ""' pr.json)"
+          fi
+          node scripts/ci/prova-ao-vivo.mjs planejar
+          echo "modo público: specs logados não rodam em produção (só @ao-vivo-seguro anônimos)." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checar que produção responde
+        if: steps.plano.outputs.rodar == 'true'
+        run: |
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "$ALVO/api/health" || echo "000")
+          echo "HTTP /api/health -> ${CODE}"
+          [ "${CODE}" = "200" ] || { echo "::error::Produção não respondeu 200."; exit 1; }
+
+      - name: Instalar dependências
+        if: steps.plano.outputs.rodar == 'true'
+        run: npm ci
+
+      - name: Baixar a imagem do Playwright (E1040, navegadores e dependências já vêm nela, nada de apt)
+        # E1040 (ORDEM-DUET-216/229): o desenho do E1037 (#4034) neste workflow. A imagem OFICIAL do Playwright, na MESMA
+        # versão do @playwright/test (o teste e1040-imagem-outros-workflows.test.ts prende as duas). Vem do MCR, não do
+        # espelho do Ubuntu; tentativas curtas por segurança.
+        timeout-minutes: 15
+        run: |
+          for i in 1 2 3; do
+            timeout 300 docker pull mcr.microsoft.com/playwright:v1.61.1-noble && exit 0
+            echo "tentativa $i do pull falhou"
+            if [ "$i" -lt 3 ]; then sleep 30; fi
+          done
+          exit 1
+
+      - name: Rodar só os specs @ao-vivo-seguro dos itens
+        id: rodar
+        if: steps.plano.outputs.rodar == 'true'
+        continue-on-error: true
+        env:
+          GREP: ${{ steps.plano.outputs.grep }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/ao-vivo-relatorio.json
+        run: |
+          # E1040: só `npx playwright …` corre na imagem oficial, com a rede do runner e como o utilizador do runner (os
+          # resultados ficam no workspace). O resto do `npx` segue o do runner. As linhas de comando ficam iguais.
+          npx() {
+            if [ "${1:-}" != playwright ]; then command npx "$@"; return; fi
+            shift
+            docker run --rm --network host --ipc host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+              -v "$PWD:$PWD" -w "$PWD" \
+              $(env | cut -d= -f1 | grep -E '^(NEXT_PUBLIC_|LAB_|TESTES_|INTEGRACOES_|SUPABASE_|PLAYWRIGHT_|CI$|VERCEL_AUTOMATION_BYPASS_SECRET$)' | sed 's/^/-e /') \
+              mcr.microsoft.com/playwright:v1.61.1-noble npx playwright "$@"
+          }
+          npx playwright test --project=chromium --grep "$GREP" --reporter=list,json --retries=1 --trace off
+
+      - name: Resultado por item
+        id: resultado
+        if: ${{ !cancelled() }}
+        run: node scripts/ci/prova-ao-vivo.mjs resultado tests/laboratorio/saida/ao-vivo-relatorio.json tests/laboratorio/saida
+
+      - name: Gravar em lab_execucoes (gatilho 'ao-vivo', com os itens)
+        if: ${{ !cancelled() && steps.plano.outputs.itens != '' }}
+        continue-on-error: true
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then echo "::warning::Sem o secret SUPABASE_DB_URL: resultado não gravado."; exit 0; fi
+          export RES_ARQ=tests/laboratorio/saida/ao-vivo-resultado.json
+          # Por item em por_categoria.itens; por_spec fica vazio para não misturar produção no histórico de verdes do laboratório.
+          psql "$SUPABASE_DB_URL" -X -q -v ON_ERROR_STOP=1 -v sha="$COMMIT_SHA" -v run_url="$RUN_URL" >/dev/null <<'SQL'
+          \set res `cat "$RES_ARQ"`
+          insert into public.lab_execucoes (commit_sha, gatilho, passou, falhou, pulou, instavel, por_spec, falhas, run_url, por_categoria)
+          select :'sha', 'ao-vivo', (r->'testes'->>'passou')::int, (r->'testes'->>'falhou')::int, (r->'testes'->>'pulou')::int, 0,
+                 '{}'::jsonb, '[]'::jsonb, :'run_url', jsonb_build_object('itens', r->'itens')
+            from (select :'res'::jsonb as r) x;
+          SQL
+          echo "gravado: gatilho=ao-vivo"
+
+      - name: Comentar no PR
+        if: ${{ !cancelled() && steps.pr.outputs.numero != '' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUMERO: ${{ steps.pr.outputs.numero }}
+        run: |
+          gh pr comment "$NUMERO" --repo "$REPO" --body-file tests/laboratorio/saida/ao-vivo-comentario.md
+
+      - name: Guardar o relatório
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: prova-ao-vivo-${{ github.run_id }}
+          path: |
+            tests/laboratorio/saida/ao-vivo-*.json
+            tests/laboratorio/saida/ao-vivo-comentario.md
+            playwright-report/
+          retention-days: 30
+
+      - name: Vermelho se algum item falhou ao vivo
+        if: ${{ !cancelled() && steps.resultado.outputs.itens_falhou != '0' && steps.resultado.outputs.itens_falhou != '' }}
+        run: |
+          echo "::error::${{ steps.resultado.outputs.itens_falhou }} item(ns) falharam na prova ao vivo."
+          exit 1
+
