@@ -723,8 +723,9 @@ function PedidoForm() {
             <span className="mb-2 block text-sm font-medium text-ink" id="pedido-internet-rotulo">Internet medida a partir de (opcional)</span>
             <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-labelledby="pedido-internet-rotulo" data-testid="pedido-internet">
               {CHIPS_INTERNET.map((v) => (
-                <BotaoMarca key={v} ativo={internetMin === v} onClick={() => setInternetMin((a) => (a === v ? null : v))} icone={Plus} testid={`pedido-internet-${v}`}>
-                  {v} Mbps
+                <BotaoMarca key={v} ativo={internetMin === v} onClick={() => setInternetMin((a) => (a === v ? null : v))} icone={Plus} testid={`pedido-internet-${v}`} className="gap-1 px-2 sm:gap-2 sm:px-3">
+                  {/* O4 (QA 09/11): "100" e "Mbps" se separavam em duas linhas a 360 e 390 px. Espaço inquebrável: o rótulo fica numa linha só. */}
+                  {v}&nbsp;Mbps
                 </BotaoMarca>
               ))}
             </div>
