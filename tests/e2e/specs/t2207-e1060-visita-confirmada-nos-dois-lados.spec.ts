@@ -78,6 +78,7 @@ test.describe("T2207 — E1060: a visita confirmada aparece em Visitas para os d
   });
 
   test("2. o dono confirma com o link; Visitas mostra a visita confirmada aos dois (pelo menu, sem ?de=dono)", async ({ browser }) => {
+    test.fail(true, "ENSAIO na main: o teste 2 tem de falhar (E1060 sem correcção); falha esperada só para o teste 3 correr a seguir");
     const d = await abrir(browser, dono.email, 390);
     await d.goto("/dashboard/visitas?de=dono", { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("visitas-recebidas")).toBeVisible({ timeout: 25_000 });
@@ -92,16 +93,16 @@ test.describe("T2207 — E1060: a visita confirmada aparece em Visitas para os d
       // O dono, como chega pelo menu: /dashboard/visitas sem parâmetro.
       const pd = await abrir(browser, dono.email, largura);
       await pd.goto("/dashboard/visitas", { waitUntil: "domcontentloaded" });
-      await expect.soft(pd.getByText("Nenhuma visita ainda"), `${largura}: o dono não fica sem a visita confirmada`).toHaveCount(0, { timeout: 25_000 });
-      await expect.soft(pd.getByTestId("visitas-recebidas"), `${largura}: o dono vê as visitas nos imóveis dele`).toBeVisible({ timeout: 25_000 });
-      await expect.soft(pd.getByTestId("visita-status").first(), `${largura}: a do dono está confirmada`).toHaveText("Confirmada", { timeout: 25_000 });
+      await expect(pd.getByText("Nenhuma visita ainda"), `${largura}: o dono não fica sem a visita confirmada`).toHaveCount(0, { timeout: 25_000 });
+      await expect(pd.getByTestId("visitas-recebidas"), `${largura}: o dono vê as visitas nos imóveis dele`).toBeVisible({ timeout: 25_000 });
+      await expect(pd.getByTestId("visita-status").first(), `${largura}: a do dono está confirmada`).toHaveText("Confirmada", { timeout: 25_000 });
       await pd.context().close();
 
       const pm = await abrir(browser, inq.email, largura);
       await pm.goto("/dashboard/visitas", { waitUntil: "domcontentloaded" });
-      await expect.soft(pm.getByTestId("visitas-minhas"), `${largura}: o morador vê o pedido dele`).toBeVisible({ timeout: 25_000 });
-      await expect.soft(pm.getByTestId("visita-status").first(), `${largura}: a do morador está confirmada`).toHaveText("Confirmada", { timeout: 25_000 });
-      await expect.soft(pm.getByTestId("visita-link-chamada")).toHaveAttribute("href", LINK);
+      await expect(pm.getByTestId("visitas-minhas"), `${largura}: o morador vê o pedido dele`).toBeVisible({ timeout: 25_000 });
+      await expect(pm.getByTestId("visita-status").first(), `${largura}: a do morador está confirmada`).toHaveText("Confirmada", { timeout: 25_000 });
+      await expect(pm.getByTestId("visita-link-chamada")).toHaveAttribute("href", LINK);
       await pm.context().close();
     }
   });
