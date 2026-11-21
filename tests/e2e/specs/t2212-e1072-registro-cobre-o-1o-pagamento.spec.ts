@@ -21,7 +21,9 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t2212.${sufixo}@lab.vivanomads.test`, nome: "Dalva Componentes", role: "owner" as const };
 const mor = { email: `mor.t2212.${sufixo}@lab.vivanomads.test`, nome: "Moema Componentes", role: "tenant" as const };
-const ids: { dono?: string; mor?: string; imovel?: string; lead?: string; proposta?: string; contrato?: string; b1?: string; imovelB?: string; leadB?: string; contratoB?: string; b2?: string } = {};
+/** O dono do contrato B (o bloco em partes): outra conta, para cada dono ver um contrato só em Contratos. */
+const donoB = { email: `donob.t2212.${sufixo}@lab.vivanomads.test`, nome: "Dora Partes", role: "owner" as const };
+const ids: { donoB?: string; dono?: string; mor?: string; imovel?: string; lead?: string; proposta?: string; contrato?: string; b1?: string; imovelB?: string; leadB?: string; contratoB?: string; b2?: string } = {};
 const TITULO_A = `Studio dos componentes ${sufixo}`;
 const TITULO_B = `Studio das partes ${sufixo}`;
 const dia = (n: number) => new Date(Date.now() - 3 * 3_600_000 + n * 86_400_000).toISOString().slice(0, 10);
@@ -39,18 +41,10 @@ async function contratos(p: Page) {
   await p.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
   await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
 }
-/** O cartão do bloco N do contrato do imóvel `titulo` (o dono tem dois contratos nesta massa). */
-const cartao = (p: Page, titulo: string, n: number) => {
-  const [este, outro] = titulo === TITULO_A ? [ids.contrato!, ids.contratoB!] : [ids.contratoB!, ids.contrato!];
-  // O corpo do cartão do contrato: o MAIOR bloco com o link da estadia DESTE contrato e a linha da taxa, sem o link do outro.
-  const painel = p
-    .locator("div")
-    .filter({ has: p.locator(`a[href*="${este}"]`) })
-    .filter({ hasNot: p.locator(`a[href*="${outro}"]`) })
-    .filter({ has: p.getByTestId("contrato-taxa") })
-    .first();
-  return painel.locator("div.rounded-xl", { hasText: `Bloco ${n}` }).filter({ hasText: "Valor do bloco" }).last();
-};/** Texto literal em regex; o espaço aceita também o espaço não separável que o formato de moeda usa ("R$\u00a01.500,00"). */
+/** O cartão do bloco N (cada dono desta massa tem um contrato só). */
+const cartao = (p: Page, _titulo: string, n: number) => p.locator("div.rounded-xl", { hasText: `Bloco ${n}` }).filter({ hasText: "Valor do bloco" }).last();
+
+/** Texto literal em regex; o espaço aceita também o espaço não separável que o formato de moeda usa ("R$\u00a01.500,00"). */
 const re = (s: string) => new RegExp(s.replace(/[.$]/g, "\\$&").replace(/ /g, "[\\s\\u00a0]"));
 
 /** O texto de um PDF do pdf-lib (fluxos Flate; texto em hex "<..> Tj", Helvetica WinAnsi). */
@@ -73,7 +67,8 @@ test.describe("T2212 — E1072: o registo do recebimento cobre exactamente o 1º
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.mor = await criarConta(mor, senha);
-    await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.mor]);
+    ids.donoB = await criarConta(donoB, senha);
+    await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.mor, ids.donoB]);
     ids.imovel = await criarImovelPronto(ids.dono, TITULO_A, { ativo: true, preco: 2500 });
     ids.lead = await criarLead(ids.dono, ids.mor, ids.imovel, true);
     const entrada = dia(8);
@@ -111,10 +106,10 @@ test.describe("T2212 — E1072: o registo do recebimento cobre exactamente o 1º
     if (eb) throw eb;
     ids.b1 = b1.id as string;
 
-    // Contrato B, sem proposta e sem limpeza de preparação: um bloco de R$ 2.500 para o pagamento em duas partes.
-    ids.imovelB = await criarImovelPronto(ids.dono, TITULO_B, { ativo: true, preco: 2500 });
+    // Contrato B (de outro dono, para a lista dele ter um contrato só), sem proposta e sem limpeza de preparação: um bloco de R$ 2.500 para o pagamento em duas partes.
+    ids.imovelB = await criarImovelPronto(ids.donoB, TITULO_B, { ativo: true, preco: 2500 });
     await adm().from("properties").update({ prep_fee: 0 }).eq("id", ids.imovelB);
-    ids.leadB = await criarLead(ids.dono, ids.mor, ids.imovelB, true);
+    ids.leadB = await criarLead(ids.donoB, ids.mor, ids.imovelB, true);
     const { data: cb, error: ecb } = await adm()
       .from("contratos")
       .insert({
@@ -136,7 +131,7 @@ test.describe("T2212 — E1072: o registo do recebimento cobre exactamente o 1º
   });
   test.afterAll(async () => {
     for (const c of [ids.contrato, ids.contratoB]) if (c) await adm().from("documentos_fiscais").delete().eq("contrato_id", c);
-    await apagarContas([ids.dono!, ids.mor!].filter(Boolean));
+    await apagarContas([ids.dono!, ids.mor!, ids.donoB!].filter(Boolean));
   });
 
   test("o 1º pagamento num só registo com os componentes; o recibo, o pacote e o quitado; o bloco em partes", async ({ browser }) => {
@@ -201,7 +196,7 @@ test.describe("T2212 — E1072: o registo do recebimento cobre exactamente o 1º
     });
 
     await test.step("5. outro contrato, um bloco pago em duas partes: o complemento é aceite e o bloco quita na soma", async () => {
-      const d = await abrir(browser, dono.email);
+      const d = await abrir(browser, donoB.email);
       for (const [parte, valor] of [[1, "1000"], [2, "1500"]] as const) {
         await contratos(d);
         const botao = cartao(d, TITULO_B, 1).getByTestId("registrar-recebimento");
