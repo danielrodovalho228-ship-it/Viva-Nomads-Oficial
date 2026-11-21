@@ -174,9 +174,10 @@ test.describe("T2206 — Estadia: o 1º pagamento e a caução antes da entrada,
       .select("id")
       .single();
     if (error) throw error;
+    const contrato2 = c2!.id as string;
     const { error: eb } = await adm().from("contrato_blocos").insert([
-      { contrato_id: c2.id, numero_bloco: 1, inicio: dia(130), fim: dia(189), meses: 2, valor: 6000, caucao: 1500, status: "ativo" },
-      { contrato_id: c2.id, numero_bloco: 2, inicio: dia(190), fim: dia(249), meses: 2, valor: 6000, caucao: 0, status: "pendente_aceite" },
+      { contrato_id: contrato2, numero_bloco: 1, inicio: dia(130), fim: dia(189), meses: 2, valor: 6000, caucao: 1500, status: "ativo" },
+      { contrato_id: contrato2, numero_bloco: 2, inicio: dia(190), fim: dia(249), meses: 2, valor: 6000, caucao: 0, status: "pendente_aceite" },
     ]);
     if (eb) throw eb;
 
@@ -192,12 +193,12 @@ test.describe("T2206 — Estadia: o 1º pagamento e a caução antes da entrada,
       await data.fill((await data.getAttribute("type")) === "date" ? iso : br(iso));
       await data.press("Tab");
       await pd.getByTestId("confirmar-recebimento").click();
-      await expect.poll(async () => (await adm().from("pagamentos_bloco").select("id").eq("contrato_id", c2.id)).data?.length ?? 0, { timeout: 20_000 }).toBe(gravados);
+      await expect.poll(async () => (await adm().from("pagamentos_bloco").select("id").eq("contrato_id", contrato2)).data?.length ?? 0, { timeout: 20_000 }).toBe(gravados);
     }
     await registrar("registrar-recebimento", dia(-3), 1);
     await registrar("registrar-recebimento", dia(-1), 2);
     await registrar("registrar-caucao", dia(-2), 3);
-    const { data: gravados } = await adm().from("pagamentos_bloco").select("data_pagamento").eq("contrato_id", c2.id).order("created_at");
+    const { data: gravados } = await adm().from("pagamentos_bloco").select("data_pagamento").eq("contrato_id", contrato2).order("created_at");
     expect(gravados!.map((g) => String(g.data_pagamento).slice(0, 10)), "registados fora da ordem das datas").toEqual([dia(-3), dia(-1), dia(-2)]);
     await pd.context().close();
 
@@ -213,7 +214,7 @@ test.describe("T2206 — Estadia: o 1º pagamento e a caução antes da entrada,
     await pm.getByTestId("confirmar-pagamentos").getByRole("button", { name: /Confirmar/ }).first().click();
     await expect(pm.getByTestId("confirmar-pagamentos").locator("li")).toHaveCount(2, { timeout: 20_000 });
     await expect
-      .poll(async () => (await adm().from("pagamentos_bloco").select("confirmado_pelo_inquilino, data_pagamento").eq("contrato_id", c2.id).eq("confirmado_pelo_inquilino", true)).data?.map((g) => String(g.data_pagamento).slice(0, 10)), { timeout: 20_000 })
+      .poll(async () => (await adm().from("pagamentos_bloco").select("confirmado_pelo_inquilino, data_pagamento").eq("contrato_id", contrato2).eq("confirmado_pelo_inquilino", true)).data?.map((g) => String(g.data_pagamento).slice(0, 10)), { timeout: 20_000 })
       .toEqual([dia(-3)]);
     await pm.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
     await expect(pm.getByTestId("confirmar-pagamentos").locator("li")).toHaveCount(2, { timeout: 20_000 });
