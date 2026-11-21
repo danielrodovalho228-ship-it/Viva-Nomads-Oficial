@@ -72,10 +72,16 @@ async function naMesmaTelaDoBotao(page: Page, alvo: Locator, mensagem: string) {
   const botao = page.getByTestId("assinar-pedir-codigo");
   // Centra a área do botão (botão + motivo + caminho): sem isto, um alvo logo abaixo do botão pode ficar cortado pela
   // borda da tela por poucos pixels só porque a página não tinha rolado.
-  await page.getByTestId("assinar-pedir-area").evaluate((el) => el.scrollIntoView({ block: "center" }));
+  await juntoDoBotaoDoCodigo(page).evaluate((el) => el.scrollIntoView({ block: "center" }));
   await expect(alvo, mensagem).toBeInViewport({ ratio: 1 });
   await expect(botao, `${mensagem} (o botão continua à vista)`).toBeInViewport({ ratio: 1 });
 }
+
+/**
+ * ORDEM-DUET-348/349: a âncora é o botão "Enviar código por e-mail". "Junto do botão" é o bloco em que ele está; o
+ * motivo e a recusa são procurados ali por papel (status, alert) e texto, sem depender de marcação nova.
+ */
+const juntoDoBotaoDoCodigo = (page: Page) => page.getByRole("button", { name: /^Enviar (outro )?código/ }).locator("xpath=..");
 
 /** Clica e espera o pedido acabar (o botão gira e volta). */
 async function pedirCodigo(page: Page) {
@@ -100,8 +106,8 @@ test.describe("T1705 — E1065: o motivo de o código não sair fica junto do bo
     const page = await entrar(browser, c.emailDono, c.senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`/dashboard/contratos/${c.contrato}`, { waitUntil: "domcontentloaded" });
-    const area = page.getByTestId("assinar-pedir-area");
-    const pendencia = area.getByTestId("assinar-pedir-pendencia");
+    const area = juntoDoBotaoDoCodigo(page);
+    const pendencia = area.getByRole("status").filter({ hasText: MSG_FALTAM_INSTRUCOES });
     await expect(pendencia, "antes do clique, o motivo já está junto do botão").toHaveText(MSG_FALTAM_INSTRUCOES, { timeout: 30_000 });
     const caminho = area.getByRole("link", { name: "Preencher as instruções de entrada" });
     await expect(caminho).toHaveAttribute("href", "#checkin-painel");
@@ -114,7 +120,7 @@ test.describe("T1705 — E1065: o motivo de o código não sair fica junto do bo
     expect((await areaDeToque(caminho)).faltam, "o link tem área de toque de 44 × 44").toEqual([]);
 
     await pedirCodigo(page);
-    const erro = area.getByTestId("assinar-pedir-erro");
+    const erro = area.getByRole("alert").filter({ hasText: MSG_FALTAM_INSTRUCOES });
     await expect(erro, "depois do clique, a recusa está junto do botão").toHaveText(MSG_FALTAM_INSTRUCOES);
     await expect(pendencia, "um motivo só, não o mesmo texto duas vezes").toHaveCount(0);
     await expect(page.getByTestId("assinar-pedir-codigo")).toHaveText("Enviar código por e-mail");
@@ -125,7 +131,7 @@ test.describe("T1705 — E1065: o motivo de o código não sair fica junto do bo
     await naMesmaTelaDoBotao(page, erro, "1280 px: a recusa cabe na mesma tela do botão");
     await area.screenshot({ path: `${SAIDA}/t1705-1-depois-do-clique-1280.png` });
     // A recusa do pedido do código não fica (também) longe, junto do botão de assinar.
-    await expect(page.getByTestId("assinar-erro")).toHaveCount(0);
+    await expect(page.getByTestId("form-assinar").getByRole("alert").filter({ hasText: MSG_FALTAM_INSTRUCOES }), "a recusa aparece uma vez só, junto do botão do código").toHaveCount(1);
     expect(await codigosNaCaixa(c.dono), "nenhum e-mail de código saiu").toBe(0);
     await page.context().close();
   });
@@ -135,8 +141,8 @@ test.describe("T1705 — E1065: o motivo de o código não sair fica junto do bo
     const page = await entrar(browser, c.emailDono, c.senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`/dashboard/contratos/${c.contrato}`, { waitUntil: "domcontentloaded" });
-    const area = page.getByTestId("assinar-pedir-area");
-    await expect(area.getByTestId("assinar-pedir-pendencia")).toBeVisible({ timeout: 30_000 });
+    const area = juntoDoBotaoDoCodigo(page);
+    await expect(area.getByRole("status").filter({ hasText: MSG_FALTAM_INSTRUCOES })).toBeVisible({ timeout: 30_000 });
     // O caminho leva à seção das instruções, na mesma página.
     await area.getByRole("link", { name: "Preencher as instruções de entrada" }).click();
     const form = page.getByTestId("checkin-form");
@@ -145,10 +151,10 @@ test.describe("T1705 — E1065: o motivo de o código não sair fica junto do bo
     await form.getByTestId("checkin-instrucoes").fill("Chave na portaria, apto 12.");
     await form.locator('input[type="tel"]').fill("34999990000");
     await form.getByTestId("checkin-salvar").click();
-    await expect(area.getByTestId("assinar-pedir-pendencia"), "com as instruções gravadas, o motivo some").toHaveCount(0, { timeout: 30_000 });
+    await expect(area.getByRole("status").filter({ hasText: MSG_FALTAM_INSTRUCOES }), "com as instruções gravadas, o motivo some").toHaveCount(0, { timeout: 30_000 });
 
     await pedirCodigo(page);
-    await expect(area.getByTestId("assinar-pedir-erro")).toHaveCount(0);
+    await expect(area.getByRole("alert").filter({ hasText: MSG_FALTAM_INSTRUCOES })).toHaveCount(0);
     await expect(page.getByTestId("assinar-codigo-enviado")).toBeVisible();
     await expect.poll(() => codigosNaCaixa(c.dono), { timeout: 30_000, message: "o código chega à caixa de teste do dono" }).toBe(1);
     await page.context().close();
@@ -159,14 +165,14 @@ test.describe("T1705 — E1065: o motivo de o código não sair fica junto do bo
     const page = await entrar(browser, c.emailDono, c.senha);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/dashboard/contratos/${c.contrato}`, { waitUntil: "domcontentloaded" });
-    const area = page.getByTestId("assinar-pedir-area");
+    const area = juntoDoBotaoDoCodigo(page);
     await expect(page.getByTestId("assinar-pedir-codigo")).toBeVisible({ timeout: 30_000 });
-    await expect(area.getByTestId("assinar-pedir-pendencia"), "a página abriu com as instruções preenchidas").toHaveCount(0);
+    await expect(area.getByRole("status").filter({ hasText: MSG_FALTAM_INSTRUCOES }), "a página abriu com as instruções preenchidas").toHaveCount(0);
     const { error } = await adm().from("contratos_checkin").delete().eq("contrato_id", c.contrato);
     if (error) throw error;
 
     await pedirCodigo(page);
-    const erro = area.getByTestId("assinar-pedir-erro");
+    const erro = area.getByRole("alert").filter({ hasText: MSG_FALTAM_INSTRUCOES });
     await expect(erro).toHaveText(MSG_FALTAM_INSTRUCOES);
     await naMesmaTelaDoBotao(page, erro, "390 px: a recusa cabe na mesma tela do botão");
     await expect(page.getByTestId("assinar-codigo-enviado")).toHaveCount(0);
@@ -179,12 +185,12 @@ test.describe("T1705 — E1065: o motivo de o código não sair fica junto do bo
     const page = await entrar(browser, c.emailInq, c.senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`/dashboard/locacoes/${c.contrato}`, { waitUntil: "domcontentloaded" });
-    const area = page.getByTestId("assinar-pedir-area");
+    const area = juntoDoBotaoDoCodigo(page);
     await expect(page.getByTestId("assinar-pedir-codigo")).toBeVisible({ timeout: 30_000 });
-    await expect(area.getByTestId("assinar-pedir-pendencia")).toHaveCount(0);
+    await expect(area.getByRole("status").filter({ hasText: MSG_FALTAM_INSTRUCOES })).toHaveCount(0);
 
     await pedirCodigo(page);
-    await expect(area.getByTestId("assinar-pedir-erro")).toHaveCount(0);
+    await expect(area.getByRole("alert").filter({ hasText: MSG_FALTAM_INSTRUCOES })).toHaveCount(0);
     await expect(page.getByTestId("assinar-codigo-enviado")).toBeVisible();
     await expect.poll(() => codigosNaCaixa(c.inq), { timeout: 30_000 }).toBe(1);
     await page.context().close();
@@ -203,7 +209,7 @@ test.describe("T1705 — E1065: o motivo de o código não sair fica junto do bo
     // ORDEM-DUET-348: o alerta é procurado por papel e texto, dentro do formulário (não depende de marcação nova).
     const erro = page.getByTestId("form-assinar").getByRole("alert").filter({ hasText: /código/i });
     await expect(erro).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByTestId("assinar-pedir-area").getByTestId("assinar-pedir-erro"), "o erro de assinar não vai para junto do botão do código").toHaveCount(0);
+    await expect(juntoDoBotaoDoCodigo(page).getByRole("alert"), "o erro de assinar não vai para junto do botão do código").toHaveCount(0);
     await assinar.scrollIntoViewIfNeeded();
     await expect(erro, "o erro de assinar cabe na mesma tela do botão de assinar").toBeInViewport({ ratio: 1 });
     await page.context().close();
