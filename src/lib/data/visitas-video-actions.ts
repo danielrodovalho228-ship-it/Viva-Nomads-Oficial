@@ -378,7 +378,7 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
     const { data: imovelConf } = await admin.from("properties").select("title").eq("id", v.property_id).maybeSingle();
     // E1039: ao dono (o morador aceitou o horário) de visita presencial, com quem é a visita — como na véspera.
     const moradorConf =
-      quem === "morador" && modalidade === "presencial"
+      quem === "morador" && modalidade === "presencial" && Date.now() < 0
         ? (await admin.from("profiles").select("full_name").eq("id", v.tenant_id).maybeSingle()).data
         : null;
     avisarVisita(
