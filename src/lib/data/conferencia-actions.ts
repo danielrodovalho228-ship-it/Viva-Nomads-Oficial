@@ -14,6 +14,9 @@ import {
   estadoConferencia,
   fonteDaConferencia,
   janelaEncerrada,
+  aberturaConferenciaEntrada,
+  entradaAindaNaoAbriu,
+  erroEntradaNaoAbriu,
   type ItemTela,
   type LaudoTela,
   podeEditarItens,
@@ -102,6 +105,8 @@ export async function registrarItemConferencia(input: {
   if (input.fotoPath && !input.fotoPath.startsWith(`${ctx.uid}/`)) return erro("Foto inválida.");
   const v = validarItem({ comodo: input.comodo, descricao: input.descricao, fotoPath: input.fotoPath ?? null });
   if (!v.ok) return erro(v.erro);
+  // E1073: a conferência de entrada só abre às 00:00 (Brasília) do dia da entrada.
+  if (input.tipo === "entrada" && entradaAindaNaoAbriu(ctx.entrada)) return erro(erroEntradaNaoAbriu(ctx.entrada));
   if (janelaEncerrada(input.tipo, ctx.entrada)) {
     return erro(`O prazo de 48 horas para a conferência de ${input.tipo === "entrada" ? "entrada" : "saída"} já passou.`);
   }
@@ -154,6 +159,8 @@ export async function responderConfortoEntrada(input: { contratoId: string; resp
   if (!ctx) return erro("Você não faz parte deste contrato.");
   if (ctx.parte !== "inquilino") return erro("O padrão mínimo é conferido pelo morador.");
   if (!STATUS_ENTRADA.includes(ctx.status)) return erro("Este contrato não está em um momento de conferência.");
+  // E1073: antes da abertura (00:00 de Brasília do dia da entrada) nada se registra.
+  if (entradaAindaNaoAbriu(ctx.entrada)) return erro(erroEntradaNaoAbriu(ctx.entrada));
   if (janelaEncerrada("entrada", ctx.entrada)) return erro("O prazo de 48 horas para a conferência de entrada já passou.");
   const admin = createAdminClient()!;
   // Adendo 59.1: a seção confere também os itens do nível atual e o ruído (mesma lista da tela).
@@ -210,6 +217,8 @@ export async function responderConferencia(input: {
   if (input.decisao !== "confirmou" && input.decisao !== "contestou") return erro("Resposta inválida.");
   const ctx = await parteDoContrato(input.contratoId);
   if (!ctx) return erro("Você não faz parte deste contrato.");
+  // E1073: antes da abertura (00:00 de Brasília do dia da entrada) ninguém confirma nem contesta a entrada.
+  if (input.tipo === "entrada" && entradaAindaNaoAbriu(ctx.entrada)) return erro(erroEntradaNaoAbriu(ctx.entrada));
   const admin = createAdminClient()!;
   if (await estaFechada(admin, input.contratoId, input.tipo)) return erro(ERRO_FECHADA);
   const encerrada = janelaEncerrada(input.tipo, ctx.entrada);
@@ -270,6 +279,10 @@ export interface ConferenciasContrato {
   confortoAdicionais?: { chave: string; rotulo: string }[];
   /** Quem está olhando: "inquilino", "proprietario" ou null (equipe/leitura). */
   minhaParte: ParteConferencia | null;
+  /** E1073: instante em que a conferência de entrada abre (ISO), pela fonte única `aberturaConferenciaEntrada`. */
+  aberturaEntradaEm?: string | null;
+  /** E1073: a conferência de entrada ainda não abriu (calculado no servidor; o relógio do navegador não decide). */
+  entradaAindaNaoAbriu?: boolean;
   /** Instante do prazo da entrada (ISO), pela fonte única `prazoConferenciaEntrada`. */
   prazoEntradaEm: string | null;
   /** O prazo da entrada já passou (calculado no servidor): libera responder sem itens da outra parte. */
@@ -354,6 +367,8 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
   if (tipo !== "entrada" && tipo !== "saida") return erro("Tipo de conferência inválido.");
   const ctx = await parteDoContrato(contratoId);
   if (!ctx) return erro("Você não faz parte deste contrato.");
+  // E1073: o laudo da entrada também espera a abertura (00:00 de Brasília do dia da entrada).
+  if (tipo === "entrada" && entradaAindaNaoAbriu(ctx.entrada)) return erro(erroEntradaNaoAbriu(ctx.entrada));
   if (!(await consumirLimite(`conferencia-arquivo:${ctx.uid}`, 60, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
 
   const admin = createAdminClient()!;
@@ -409,12 +424,13 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
   const ctx = await parteDoContrato(contratoId);
   const prazoEntradaEm = ctx ? (prazoConferenciaEntrada(ctx.entrada)?.toISOString() ?? null) : null;
   const janelaEntradaEncerrada = ctx ? janelaEncerrada("entrada", ctx.entrada) : false;
+  const abertura = { aberturaEntradaEm: ctx ? (aberturaConferenciaEntrada(ctx.entrada)?.toISOString() ?? null) : null, entradaAindaNaoAbriu: ctx ? entradaAindaNaoAbriu(ctx.entrada) : false };
   const prazoSaidaEm = ctx ? (prazoConferenciaSaida(ctx.entrada)?.toISOString() ?? null) : null;
   const janelaSaidaEncerrada = ctx ? janelaEncerrada("saida", ctx.entrada) : false;
   const adminNivel = createAdminClient();
   const confortoAdicionais = adminNivel ? await adicionaisDaConferencia(adminNivel, ctx?.propertyId ?? null) : [];
   const { data: confs } = await supabase.from("conferencias").select("id, tipo").eq("contrato_id", contratoId);
-  if (!confs?.length) return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias: [], confortoAdicionais };
+  if (!confs?.length) return { minhaParte: ctx?.parte ?? null, ...abertura, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias: [], confortoAdicionais };
   const ids = confs.map((c) => c.id as string);
   const [{ data: itens }, { data: respostas }, { data: laudos }, { data: conforto }] = await Promise.all([
     supabase.from("conferencia_itens").select("id, conferencia_id, parte, comodo, descricao, foto_path, criado_em, precisa_reparo").in("conferencia_id", ids).order("criado_em"),
@@ -449,5 +465,5 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
       } satisfies ConferenciaView;
     }),
   );
-  return { minhaParte: ctx?.parte ?? null, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias, confortoAdicionais };
+  return { minhaParte: ctx?.parte ?? null, ...abertura, prazoEntradaEm, janelaEntradaEncerrada, prazoSaidaEm, janelaSaidaEncerrada, propertyId: ctx?.propertyId ?? null, conferencias, confortoAdicionais };
 }

@@ -25,6 +25,7 @@ import {
   ROTULO_ESTADO_CONFERENCIA as ROTULO_ESTADO,
   rotuloConfirmar,
   textoConferenciaVazia,
+  textoAberturaConferencia,
   textoPrazoConferencia,
   type ItemTela,
   type LaudoTela,
@@ -96,6 +97,9 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
   // Prompt 38: na saída, o dono marca o que precisa de reparo (vira o pedido de manutenção quando a conferência fecha).
   const podeReparo = tipo === "saida" && parte === "proprietario";
   const liberado = parte ? podeResponder({ parte, itensPorParte, respostas, janelaEncerrada: encerrada }) : false;
+  // E1073: a conferência de entrada só abre às 00:00 (Brasília) do dia da entrada. Antes disso a seção diz quando abre
+  // e não oferece registrar, anexar nem responder (o servidor recusa de qualquer forma).
+  const naoAbriu = tipo === "entrada" && !!dados.entradaAindaNaoAbriu;
 
   async function rodar(fn: () => Promise<{ ok: boolean; error?: string; item?: ItemTela; resposta?: RespostaTela; laudo?: LaudoTela }>) {
     setErro(null);
@@ -191,13 +195,18 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       <p className="mt-1 text-xs text-muted" data-testid="conferencia-fotos-protegidas">
         {TEXTO_FOTOS_PROTEGIDAS}
       </p>
+      {naoAbriu && (
+        <p role="status" className="mt-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="conferencia-entrada-abre-em" data-abertura={dados.aberturaEntradaEm ?? undefined}>
+          {textoAberturaConferencia(dados.aberturaEntradaEm ?? null)}
+        </p>
+      )}
       {tipo === "entrada" && dados.prazoEntradaEm && (
         <p className="mt-1 text-xs text-muted" data-testid="conferencia-prazo" data-prazo={dados.prazoEntradaEm}>
           Registre fotos e itens por cômodo {textoPrazoConferencia(dados.prazoEntradaEm)} (48 h depois da entrada).
         </p>
       )}
       {/* Prompt 57: o morador pode medir a internet na entrada (nunca público; abaixo de 50% vira aviso ao dono). */}
-      {tipo === "entrada" && parte === "inquilino" && !travada && dados.propertyId && (
+      {tipo === "entrada" && parte === "inquilino" && !travada && !naoAbriu && dados.propertyId && (
         <MedirInternet imovelId={dados.propertyId} origem="conferencia_entrada" />
       )}
       {tipo === "saida" && dados.prazoSaidaEm && (
@@ -207,7 +216,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
       )}
 
       {/* Prompt 59: seção "Padrão mínimo" (o morador confere cada item na entrada; entra no hash de fechamento). */}
-      {tipo === "entrada" && <SecaoConfortoEntrada contratoId={contratoId} parte={parte} travada={travada} respondidas={conf?.conforto ?? []} adicionais={dados.confortoAdicionais ?? []} />}
+      {tipo === "entrada" && !naoAbriu && <SecaoConfortoEntrada contratoId={contratoId} parte={parte} travada={travada} respondidas={conf?.conforto ?? []} adicionais={dados.confortoAdicionais ?? []} />}
 
       {laudo && (
         <p className="mt-3 flex items-center gap-2 rounded-lg bg-sage-100 p-3 text-sm text-ink" data-testid="conferencia-laudo">
@@ -280,7 +289,8 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
             </li>
           ))}
         </ul>
-      ) : (
+      ) : naoAbriu ? null : (
+        // E1073: antes da abertura, o aviso "abre em…" já diz o que falta; "Registre abaixo…" mandaria fazer o que ainda não dá.
         <p className="mt-3 text-sm text-muted" data-testid={`conferencia-${tipo}-vazia`}>
           {textoConferenciaVazia({ tipo, parte, travada })}
         </p>
@@ -297,7 +307,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         </ul>
       )}
 
-      {parte && !travada && (
+      {parte && !travada && !naoAbriu && (
         <form onSubmit={adicionar} className="mt-4 grid grid-cols-1 gap-2" data-testid={`conferencia-${tipo}-form`}>
           <input value={comodo} onChange={(e) => setComodo(e.target.value)} maxLength={60} placeholder="Cômodo (ex.: Sala)" aria-label="Cômodo" className="h-11 rounded-lg border border-line px-3 text-sm" />
           <textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} maxLength={300} rows={2} placeholder="Itens e estado do cômodo" aria-label="Itens e estado do cômodo" className="rounded-lg border border-line p-3 text-sm" />
@@ -327,7 +337,7 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         </form>
       )}
 
-      {parte && !laudo && (
+      {parte && !laudo && !naoAbriu && (
         <div className="mt-3">
           <label className={SELETOR_ARQUIVO} data-testid={`conferencia-${tipo}-laudo-botao`}>
             <FileUp className="h-4 w-4" aria-hidden /> Anexar laudo independente
@@ -337,13 +347,13 @@ function Bloco({ contratoId, tipo, dados, conf }: { contratoId: string; tipo: Ti
         </div>
       )}
 
-      {parte && !respondeu && !travada && !liberado && (
+      {parte && !respondeu && !travada && !naoAbriu && !liberado && (
         <p className="mt-4 text-xs text-muted" data-testid={`conferencia-${tipo}-aguardando-registro`}>
           {ERRO_ANTES_DA_OUTRA_PARTE}
         </p>
       )}
 
-      {parte && !respondeu && !travada && liberado && (
+      {parte && !respondeu && !travada && !naoAbriu && liberado && (
         <div className="mt-4 space-y-2">
           {contestando ? (
             <>
