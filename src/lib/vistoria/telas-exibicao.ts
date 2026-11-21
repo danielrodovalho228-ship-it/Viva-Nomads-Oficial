@@ -5,8 +5,7 @@
   Na tela: "avaliação do imóvel" e "avaliador credenciado". Nenhum número de ganho por nível; o dono não escolhe.
 */
 import { ETIQUETA_BRASILIA, dataBRT, horaBRT } from "../datas-brasilia.ts";
-import { chaveCidade } from "../cidades.ts";
-import { HORAS_PARA_RESPONDER, ROTULO_IMPEDIMENTO, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
+import { HORAS_PARA_RESPONDER, ROTULO_IMPEDIMENTO, atendeCidade, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
 
 // ── Data e hora da visita (QA do #1111, item 6: sem segundos e com o fuso) ─────────────────────────────────────
 /** "25/10/2026 às 10:00" no horário de Brasília. */
@@ -146,7 +145,7 @@ export interface PosicaoRodizio {
  * relação declarada) aparecem na hora da designação; aqui só os da própria pessoa.
  */
 export function filaDeRodizio(fila: AvaliadorFila[], cidade: string, agora: Date): PosicaoRodizio[] {
-  const daCidade = fila.filter((a) => chaveCidade(a.cidade) === chaveCidade(cidade));
+  const daCidade = fila.filter((a) => atendeCidade(a.cidade, cidade));
   const neutro = { id: "", propertyId: "", ownerId: "", cidade, tipo: "inicial" as const, teste: false, primeiroAvaliadorId: null, jaDesignados: [] };
   const historico = { servicosAoDono: [], avaliacoesDoImovel: [] };
   const t = (s: string | null) => (s ? Date.parse(s) : -Infinity);
