@@ -39,7 +39,7 @@ const MATRIZ: [string, Partial<FiltrosPainel>, number][] = [
   ["Tipo · Flat / apart-hotel", { tipo: "flat" }, 0],
   ["Tipo · Quarto privativo", { tipo: "quarto" }, 0],
   ["Aceita pets", { petsOnly: true }, 7],
-  ["Para trabalhar de casa", { homeOfficeOnly: true }, 10],
+  ["Para trabalhar de casa", { homeOfficeOnly: true }, 1], // E844: regra única (cômodo + mesa + cadeira + internet); era 10, posto à mão
   ["Pronto para Morar", { readyToLiveOnly: true }, 15],
   ["Contrato · Caução", { garantia: "caucao" }, 15],
   ["Contrato · Seguro-fiança", { garantia: "seguro_fianca" }, 14],
