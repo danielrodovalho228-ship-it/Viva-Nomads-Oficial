@@ -29,7 +29,8 @@ const DEVOLVIDO = 1200;
 /** Datas em Brasília (a mesma conta do t256). */
 const dia = (n: number) => new Date(Date.now() - 3 * 3_600_000 + n * 86_400_000).toISOString().slice(0, 10);
 const FIM = dia(-1);
-const brl = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+// formatBRL da tela: sem centavos quando o valor é inteiro ("R$ 1.200").
+const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR")}`;
 
 async function abrir(browser: Browser, email: string, largura = 1280): Promise<Page> {
   const page = await entrar(browser, email, senha);
