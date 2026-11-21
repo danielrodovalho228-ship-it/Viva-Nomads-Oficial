@@ -277,7 +277,10 @@ test.describe("T2214 — E1077: o fluxo do avaliador em teste corre só dentro d
         const r = await pub.goto(`/avaliadores/${cred[l].numero}`, { waitUntil: "domcontentloaded" });
         if (r?.status() === 404) continue; // o perfil público é do E1075; sem ele publicado, nada a ler.
         const html = await pub.content();
-        expect.soft(html.match(CONTATO), `E1077 (c): o perfil público ${l} não tem telefone nem e-mail`).toBeNull();
+        // O bloco do avaliador (credenciado ou perfil do E1075), como a t1713: o rodapé do site tem o mailto do suporte da Viva.
+        const bloco = pub.locator('[data-testid="avaliador-publico"], [data-testid="avaliador-perfil-publico"]').first();
+        await expect(bloco, `o perfil público ${l} abriu`).toBeVisible({ timeout: 30_000 });
+        expect.soft((await bloco.innerHTML()).match(CONTATO), `E1077 (c): o perfil público ${l} não tem telefone nem e-mail`).toBeNull();
         expect.soft(html.includes((l === "R" ? avR : avE).email), `E1077 (c): o e-mail da conta ${l} não está no HTML`).toBe(false);
         expect.soft((await pub.locator("main").innerText()).match(CNPJ_DA_VIVA), `E1077 (d): o perfil ${l} não fala em CNPJ da Viva`).toBeNull();
       }
