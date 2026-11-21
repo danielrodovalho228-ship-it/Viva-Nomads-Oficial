@@ -65,36 +65,42 @@ function limpar(texto: string, max: number): string {
   return guardContactInfo((texto ?? "").replace(/\s+\n/g, "\n").trim().slice(0, max)).text;
 }
 
-/** O contexto informado é mesmo da pessoa? (senão, é descartado). */
+const MSG_CONTEXTO_SEM_LEITURA = "Não foi possível conferir o contexto do chamado agora. Tente de novo.";
+/** O contexto informado é mesmo da pessoa? (senão, é descartado). "erro" = não deu para ler agora (não descarta em silêncio). */
 async function contextoValido(
   admin: NonNullable<ReturnType<typeof createAdminClient>>,
   userId: string,
   tipo: Contexto,
   id: string
-): Promise<boolean> {
+): Promise<boolean | "erro"> {
   if (!UUID_RE.test(id)) return false;
   if (tipo === "pedido") {
-    const { data } = await admin.from("pedidos_moradia").select("id").eq("id", id).eq("inquilino_id", userId).maybeSingle();
+    const { data, error: erro } = await admin.from("pedidos_moradia").select("id").eq("id", id).eq("inquilino_id", userId).maybeSingle();
+    if (erro) return "erro";
     return !!data;
   }
   if (tipo === "contrato") {
-    const { data } = await admin.from("contratos").select("id, tenant_id, properties(owner_id)").eq("id", id).maybeSingle();
+    const { data, error: erro } = await admin.from("contratos").select("id, tenant_id, properties(owner_id)").eq("id", id).maybeSingle();
+    if (erro) return "erro";
     const dono = (data?.properties as { owner_id?: string } | null)?.owner_id;
     return !!data && (data.tenant_id === userId || dono === userId);
   }
   // FISCAL-PARCEIRO-B: parceiro publicado (qualquer conta denuncia pela página pública).
   if (tipo === "parceiro") {
-    const { data } = await admin.from("parceiros").select("id").eq("id", id).eq("status", "publicado").maybeSingle();
+    const { data, error: erro } = await admin.from("parceiros").select("id").eq("id", id).eq("status", "publicado").maybeSingle();
+    if (erro) return "erro";
     return !!data;
   }
   // FOTO-PERFIL-B: a foto de outra pessoa que existe (ninguém denuncia a própria).
   if (tipo === "perfil") {
     if (id === userId) return false;
-    const { data } = await admin.from("profiles").select("id").eq("id", id).not("avatar_url", "is", null).maybeSingle();
+    const { data, error: erro } = await admin.from("profiles").select("id").eq("id", id).not("avatar_url", "is", null).maybeSingle();
+    if (erro) return "erro";
     return !!data;
   }
   // Anúncio: público (qualquer um pode reportar um anúncio que existe).
-  const { data } = await admin.from("properties").select("id").eq("id", id).maybeSingle();
+  const { data, error: erro } = await admin.from("properties").select("id").eq("id", id).maybeSingle();
+  if (erro) return "erro";
   return !!data;
 }
 
@@ -167,7 +173,9 @@ export async function abrirChamado(
   let contextoTipo: Contexto | "manutencao" | null = null;
   let contextoId: string | null = null;
   if (user && input.contextoTipo && CONTEXTOS.includes(input.contextoTipo) && input.contextoId) {
-    if (await contextoValido(admin, user.id, input.contextoTipo, input.contextoId)) {
+    const valido = await contextoValido(admin, user.id, input.contextoTipo, input.contextoId);
+    if (valido === "erro") return { ok: false, error: MSG_CONTEXTO_SEM_LEITURA };
+    if (valido) {
       contextoTipo = input.contextoTipo;
       contextoId = input.contextoId;
     }
