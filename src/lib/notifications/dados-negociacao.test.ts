@@ -48,7 +48,8 @@ test("proposta nova: imóvel, período com entrada/saída e meses, valor mensal,
 
 test("proposta respondida: o DESFECHO está no corpo, com o próximo passo de cada um", () => {
   assert.match(aberturaProposta("aceita", { nome: "Ana", imovel: IM }), /^Olá Ana, a proposta para Apto Santa Mônica foi aceita\.$/);
-  assert.match(aberturaProposta("recusada", { imovel: IM, motivo: "Datas não servem" }), /foi recusada\. Motivo: Datas não servem\./);
+  // E965 (asserção alterada): o e-mail vai às duas partes e o morador nunca lê "recusada" — texto neutro, motivo mantido.
+  assert.match(aberturaProposta("recusada", { imovel: IM, motivo: "Datas não servem" }), /não seguiu adiante\. Motivo: Datas não servem\./);
   assert.match(aberturaProposta("contraproposta", { imovel: IM, novoValorMensal: 2500 }), /contraproposta para Apto Santa Mônica: o valor mensal agora é R\$ 2\.500/);
   assert.match(proximoPassoProposta("aceita", "owner"), /gere o contrato no Fechamento/);
   assert.match(proximoPassoProposta("aceita", "tenant"), /recebe um e-mail para assinar/);

@@ -28,6 +28,7 @@ import {
   ehUltimaRodada,
   rotuloRodada,
   type Mudancas,
+  TEXTO_NAO_SEGUIU_ADIANTE,
 } from "@/lib/propostas/regras";
 import { rotuloTaxaServico } from "@/lib/cobranca/regra";
 import { caucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
@@ -205,7 +206,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                 <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-ink" data-testid="proposta-rodada">
                   {rotuloRodada(atual.versao)}
                 </span>
-                <StatusChip status={p.status} />
+                <StatusChip status={p.status} papel={p.papel} />
               </div>
             </div>
             {ehUltimaRodada(atual.versao, estaAberta(p.status)) && (
@@ -229,8 +230,10 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
               </p>
             )}
             {p.recusa && (
-              <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" data-testid="proposta-recusa">
-                Recusada por {quem(p.recusa.por).toLowerCase()}. Motivo: {p.recusa.motivo}.{p.recusa.texto ? ` ${p.recusa.texto}` : ""}
+              <p className={p.papel === "tenant" ? "mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink" : "mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"} data-testid="proposta-recusa">
+                {/* E965: o morador nunca vê "recusada" — o mesmo texto neutro das candidaturas. */}
+                {p.papel === "tenant" ? `${TEXTO_NAO_SEGUIU_ADIANTE}. Motivo: ${p.recusa.motivo}.` : `Recusada por ${quem(p.recusa.por).toLowerCase()}. Motivo: ${p.recusa.motivo}.`}
+                {p.recusa.texto ? ` ${p.recusa.texto}` : ""}
               </p>
             )}
             {p.status === "expirada" && (
