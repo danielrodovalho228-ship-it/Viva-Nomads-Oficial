@@ -426,7 +426,8 @@ export async function reclassificarOrdem(id: string, nova: string, motivo: strin
     const recusaQa = await recusaObservador(s.uid);
     if (recusaQa) return { ok: false, error: recusaQa };
   }
-  const { data: o } = await admin.from("service_orders").select("priority, prioridade_original, owner_id").eq("id", id).maybeSingle();
+  const { data: o, error: erroO } = await admin.from("service_orders").select("priority, prioridade_original, owner_id").eq("id", id).maybeSingle();
+  if (erroO) return { ok: false, error: "Não foi possível ler a solicitação agora. Tente de novo." };
   if (!o) return { ok: false, error: "Solicitação não encontrada." };
   const papel = souAdmin ? "admin_aal2" : o.owner_id === s.uid ? "proprietario" : "inquilino";
   const r = reclassificar({ priority: o.priority as OrdemSolucao["priority"], prioridadeOriginal: (o.prioridade_original as OrdemSolucao["priority"] | null) ?? null }, nova, motivo, papel, s.uid, new Date());
