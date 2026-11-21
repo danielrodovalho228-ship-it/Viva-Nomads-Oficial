@@ -39,3 +39,12 @@ test("conformidade (mockup cadastro-imovel-05): os cartões do Pronto para traba
   const { ESSENCIAIS_TRABALHO, OPCIONAIS_TRABALHO } = await import("./sugestoes-cadastro.ts");
   for (const it of [...ESSENCIAIS_TRABALHO, ...OPCIONAIS_TRABALHO]) assert.ok(ICONE_POR_CHAVE[it.chave], `sem ícone: ${it.chave}`);
 });
+
+// Varredura de conformidade (09/11): "um ícone por comodidade" — nenhuma comodidade dos anúncios de exemplo cai no check genérico.
+test("as comodidades dos anúncios de exemplo têm ícone próprio (Aceita pets, Acessível, Quintal)", async () => {
+  const { Check } = await import("lucide-react");
+  const { SAMPLE_PROPERTIES } = await import("../properties.ts");
+  const sem = new Set<string>();
+  for (const p of SAMPLE_PROPERTIES) for (const a of p.amenities ?? []) if (iconeDaComodidade(a) === Check) sem.add(a);
+  assert.deepEqual([...sem], []);
+});
