@@ -69,8 +69,8 @@ test("o 'a partir de' do Adendo 59.1 (?nivel=) segue como era", () => {
 });
 
 test("/buscar: o estado niveis vai à URL, à lista, às contagens e aos dois Limpar", () => {
-  const busca = ler("src/app/(public)/buscar/search-client.tsx");
-  assert.match(busca, /setNiveis\(niveisDaUrl\(sp\)\);/);
+  const busca = ler("src/app/(public)/buscar/search-client.tsx") + ler("src/lib/busca/filtros-da-url.ts"); // E829: a leitura da URL mora em filtros-da-url.ts (o estado nasce dela)
+  assert.match(busca, /niveis: niveisDaUrl\(sp\)/);
   assert.match(busca, /niveisNaUrl\(params, niveis\);/);
   assert.match(busca, /entrada: dataEntrada, datasFlexiveis, nivelMin, niveis,/);
   assert.match(busca, /setNiveis\(f\.niveis \?\? \[\]\);/);

@@ -17,11 +17,11 @@ test("/empresas: recibo da estadia em nome do proprietário, sem nota da Viva pa
 });
 
 test("busca: filtro 'Emite nota fiscal' pela declaração do dono PJ/MEI (E574), sem a chave do selo antigo", () => {
-  const s = ler("app/(public)/buscar/search-client.tsx");
+  const s = ler("app/(public)/buscar/search-client.tsx") + ler("lib/busca/filtros-da-url.ts"); // E829: a leitura da URL mora em filtros-da-url.ts (o estado nasce dela)
   // E574 (decisão do Daniel, 04/11): o filtro vale para todos — só entra o dono PJ/MEI que declarou emitir nota da
   // locação (PF gera o Recibo de Locação e nunca entra). O selo antigo do cartão (issues_invoice) segue com SELO_NF_UI.
   assert.match(s, /notaOnly: invoiceOnly,/);
-  assert.match(s, /if \(on\("nota"\)\) setInvoiceOnly\(true\);/);
+  assert.match(s, /invoiceOnly: on\("nota"\)/);
   assert.doesNotMatch(s, /SELO_NF_UI/);
   const folha = ler("components/busca/painel-filtros-celular.tsx");
   assert.match(folha, /<ChipFaceta f=\{facetaInterruptor\(contar, rascunho, "notaOnly"\)\} ativo=\{rascunho\.notaOnly\}/);

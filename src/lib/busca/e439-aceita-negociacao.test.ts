@@ -33,8 +33,8 @@ test("busca: a folha tem o chip, a URL guarda ?negocia=1 e o Limpar zera", () =>
   const folha = ler("../../components/busca/painel-filtros-celular.tsx");
   assert.match(folha, /facetaInterruptor\(contar, rascunho, "negociaOnly"\)/);
   assert.match(folha, /testId="faceta-negocia"/);
-  const busca = ler("../../app/(public)/buscar/search-client.tsx");
-  assert.match(busca, /if \(on\("negocia"\)\) setNegociaOnly\(true\)/);
+  const busca = ler("../../app/(public)/buscar/search-client.tsx") + ler("./filtros-da-url.ts"); // E829: a leitura da URL mora em filtros-da-url.ts (o estado nasce dela)
+  assert.match(busca, /negociaOnly: on\("negocia"\)/);
   assert.match(busca, /put\("negocia", negociaOnly, "1"\)/);
   assert.match(busca, /negociaOnly,/);
   assert.match(busca, /setNegociaOnly\(f\.negociaOnly \?\? false\)/);

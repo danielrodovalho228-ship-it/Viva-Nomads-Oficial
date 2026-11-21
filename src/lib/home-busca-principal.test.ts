@@ -37,7 +37,7 @@ test("atalhos por categoria usam filtros que a /buscar realmente lê da URL", as
   const rotulos = ATALHOS_CATEGORIA.map((a) => a.rotulo);
   assert.ok(rotulos.includes("Aceita pets"));
   assert.ok(rotulos.includes("3+ quartos"));
-  const busca = ler("app/(public)/buscar/search-client.tsx");
+  const busca = ler("app/(public)/buscar/search-client.tsx") + ler("lib/busca/filtros-da-url.ts"); // E829: a leitura da URL mora em filtros-da-url.ts (o estado nasce dela)
   const lidos: Record<string, RegExp> = {
     preco: /num\("preco"\)/,
     pet: /on\("pet"\)/,

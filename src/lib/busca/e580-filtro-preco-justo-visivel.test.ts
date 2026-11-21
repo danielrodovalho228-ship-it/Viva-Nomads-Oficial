@@ -47,9 +47,9 @@ test("contador = imóveis com o selo; com 0 fica desabilitado (não some); ligad
 test("o filtro não depende mais da chave em lugar nenhum (painel e /buscar)", () => {
   const semComentarios = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
   assert.doesNotMatch(semComentarios(ler("src/lib/busca/painel-filtros.ts")), /PRECO_JUSTO_COMPARADOR/);
-  const busca = ler("src/app/(public)/buscar/search-client.tsx");
+  const busca = ler("src/app/(public)/buscar/search-client.tsx") + ler("src/lib/busca/filtros-da-url.ts"); // E829: a leitura da URL mora em filtros-da-url.ts (o estado nasce dela)
   assert.doesNotMatch(busca, /PRECO_JUSTO_COMPARADOR/);
-  assert.match(busca, /if \(on\("precojusto"\)\) setPrecoJustoOnly\(true\);/);
+  assert.match(busca, /precoJustoOnly: on\("precojusto"\)/);
   assert.match(busca, /put\("precojusto", precoJustoOnly, "1"\);/);
   assert.match(busca, /setPrecoJustoOnly\(f\.precoJustoOnly \?\? false\);/);
 });

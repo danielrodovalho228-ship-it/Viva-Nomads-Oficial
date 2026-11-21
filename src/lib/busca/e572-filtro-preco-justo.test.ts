@@ -44,8 +44,8 @@ test("painel: o filtro passa pela regra única (passaNoPainel), conta 1 e entra 
 });
 
 test("busca: a URL ?precojusto=1 vale (E580: sem chave); Limpar zera; a lista e a contagem usam o mesmo filtro", () => {
-  const busca = ler("src/app/(public)/buscar/search-client.tsx");
-  assert.match(busca, /if \(on\("precojusto"\)\) setPrecoJustoOnly\(true\);/);
+  const busca = ler("src/app/(public)/buscar/search-client.tsx") + ler("src/lib/busca/filtros-da-url.ts"); // E829: a leitura da URL mora em filtros-da-url.ts (o estado nasce dela)
+  assert.match(busca, /precoJustoOnly: on\("precojusto"\)/);
   assert.match(busca, /put\("precojusto", precoJustoOnly, "1"\);/);
   assert.match(busca, /negociaOnly,\n\s+precoJustoOnly,/);
   assert.match(busca, /setPrecoJustoOnly\(f\.precoJustoOnly \?\? false\);/);
