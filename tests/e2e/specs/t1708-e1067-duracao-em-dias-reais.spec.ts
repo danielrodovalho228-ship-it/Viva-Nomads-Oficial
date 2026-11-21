@@ -60,8 +60,10 @@ test.describe("T1708 — E1067: a duração da estadia pelos dias reais do contr
     const page = await entrar(browser, dono.email, senha);
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-    const duracao = page.getByTestId("bloco-duracao").first();
-    await expect(duracao).toHaveText("(31 dias)", { timeout: 30_000 });
+    // ORDEM-DUET-348: a duração é procurada pelo texto junto de "Bloco 1" — "(Nm)" ou "(N dias)" —, sem marcação nova.
+    const duracao = page.locator("p").filter({ hasText: /^\s*Bloco 1\s*\((\d+\s?m|\d+ dias?)\)\s*$/ }).first();
+    await expect(duracao, "o título do bloco está na tela").toBeVisible({ timeout: 30_000 });
+    await expect(duracao).toHaveText(/^\s*Bloco 1\s*\(31 dias\)\s*$/);
     await expect(page.locator("main")).not.toContainText("(2m)");
     const bloco = duracao.locator("xpath=ancestor::div[1]/..");
     await bloco.scrollIntoViewIfNeeded();
