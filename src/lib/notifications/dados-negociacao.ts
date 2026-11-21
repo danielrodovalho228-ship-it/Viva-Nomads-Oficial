@@ -80,6 +80,8 @@ export function linhasProposta(o: {
   contaTotal: string;
   /** Prazo para responder (ISO); sem prazo (proposta respondida), a linha não entra. */
   responderAte?: string | null;
+  /** E1058: a linha da caução do ecrã da proposta (rótulo e valor já prontos, caucaoDaProposta); sem ela, não entra. */
+  caucao?: LinhaDado | null;
 }): LinhaDado[] {
   const linhas: LinhaDado[] = [
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
@@ -88,6 +90,7 @@ export function linhasProposta(o: {
     // E562 (telas): estadia em dias exatos → o mesmo rótulo do anúncio e da montagem, "Total da estadia (43 dias)".
     { rotulo: o.dias != null && o.dias > 0 && o.dias % 30 !== 0 ? `Total da estadia (${o.dias} dias)` : "Total do contrato", valor: o.contaTotal },
   ];
+  if (o.caucao) linhas.push(o.caucao);
   const prazo = dataHoraBR(o.responderAte);
   if (prazo) linhas.push({ rotulo: "Responder até", valor: prazo });
   linhas.push({ rotulo: "Proposta", valor: o.numero });
