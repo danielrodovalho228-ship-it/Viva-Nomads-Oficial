@@ -8,7 +8,7 @@ import { REGRAS_CONTRATO } from "../../config/planos.ts";
 import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
 
 const PAGINAS: [string, string, string][] = [
-  ["Como funciona", "/como-funciona", "o passo a passo para inquilinos e proprietários"],
+  ["Como funciona", "/como-funciona", "o passo a passo para moradores e proprietários"],
   ["Buscar imóveis", "/buscar", "imóveis mobiliados disponíveis, com filtros por cidade, preço e período"],
   ["Para proprietários", "/para-proprietarios", "como anunciar e qualificar um imóvel"],
   ["Planos e preços", "/precos", "taxa sobre o valor total do contrato fechado (12%, menor com mais imóveis) e comparação"],
@@ -25,7 +25,7 @@ function cabecalho(): string {
   return [
     "# Viva Nomads",
     "",
-    `> Plataforma brasileira de locação de imóveis mobiliados para estadias de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses (até ${REGRAS_CONTRATO.prazoMaxDias} dias), para profissionais em transição. Contrato com validade jurídica, Caução como garantia e toda a conversa registrada na plataforma. O inquilino não paga taxa à plataforma; o proprietário paga só uma taxa sobre o valor total do contrato fechado (12%, menor com mais imóveis), sem mensalidade.`,
+    `> Plataforma brasileira de locação de imóveis mobiliados para estadias de ${REGRAS_CONTRATO.prazoMinMeses} a ${REGRAS_CONTRATO.prazoMaxMeses} meses (até ${REGRAS_CONTRATO.prazoMaxDias} dias), para profissionais em transição. Contrato com validade jurídica, Caução como garantia e toda a conversa registrada na plataforma. O morador não paga taxa à plataforma; o proprietário paga só uma taxa sobre o valor total do contrato fechado (12%, menor com mais imóveis), sem mensalidade.`,
     "",
     "Plataforma em fase de testes. Lançamento oficial em 2027.",
     "",

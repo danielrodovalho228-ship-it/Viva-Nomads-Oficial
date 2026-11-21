@@ -354,7 +354,7 @@ test.describe("T182 — jornada completa, do anúncio à avaliação dos dois la
         await pub.reload({ waitUntil: "domcontentloaded" });
         await expect(pub.getByText(marcaInq)).toBeVisible({ timeout: 3_000 });
       }).toPass({ intervals: [1_000, 5_000, 10_000], timeout: 75_000 });
-      await expect(pub.getByText("Inquilino verificado").first()).toBeVisible();
+      await expect(pub.getByText("Morador verificado").first()).toBeVisible();
       await pub.getByText(marcaInq).scrollIntoViewIfNeeded();
       await pub.screenshot({ path: `${SAIDA}/t182-7-anuncio-avaliacao-${largura}.png`, fullPage: false });
     }

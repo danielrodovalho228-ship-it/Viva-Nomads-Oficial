@@ -233,7 +233,7 @@ export function ModeloNegocio() {
           <ul>
             <li>Taxa de serviço <strong>uma vez por contrato fechado</strong>, sobre o valor total do contrato (valor mensal × meses); cada renovação é cobrada à parte, sobre o valor do período renovado, com a taxa da faixa do dono.</li>
             <li>Faixas: <strong>{FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor).map((f) => pctTexto(f.taxa)).join(" / ")}</strong> e Plano Gestor: {GESTOR_TEXTO}.</li>
-            <li>O inquilino não paga taxa da Viva. A Viva não emite nota fiscal ao inquilino.</li>
+            <li>O morador não paga taxa da Viva. A Viva não emite nota fiscal ao morador.</li>
             <li>
               Percentual médio dos canais (valores de referência {COMPARE_REFERENCIA}): {CANAIS.map((c) => `${c.nome} ${pct1(c.pct)}`).join("; ")}; fontes e datas na página de preços.
               O percentual da Viva é a taxa dividida pelos meses da reserva.
