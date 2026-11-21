@@ -7,6 +7,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   Sobre um contrato assinado, com a entrada daqui a 3 dias (dentro do D-7):
     1. instruções de chegada: o dono preenche pela tela; sem o 1.º pagamento confirmado, o morador vê as instruções
        bloqueadas; com ele, vê-as; o item "Instruções de chegada" do dono fica feito;
+    2a. E1073 (ORDEM-DUET-336): a 3 dias da entrada, a conferência de entrada ainda não abriu (abre às 00:00 de Brasília
+       do dia da entrada): o dono não consegue registar nada pela tela e a seção diz quando abre. Depois o laboratório
+       traz a entrada para hoje (simulação declarada: o dia da entrada chegou);
     2. a conferência de entrada: o prazo na tela é o da FONTE ÚNICA (prazoConferenciaEntrada: o dia da entrada no
        horário de entrada do imóvel, + 48 h), nas duas pontas; o dono regista um cômodo; o morador regista o dele e
        confirma o registo do dono → "Aguardando a outra parte"; o dono confirma o do morador → "Confirmada";
@@ -25,7 +28,8 @@ const SALA = `Sala ${sufixo}`;
 const QUARTO = `Quarto ${sufixo}`;
 /** Datas em Brasília (a mesma conta do t256). */
 const dia = (n: number) => new Date(Date.now() - 3 * 3_600_000 + n * 86_400_000).toISOString().slice(0, 10);
-const ENTRADA = dia(3);
+/** A entrada: daqui a 3 dias (pernas 1 e 2a); a perna 2a muda-a para hoje (o dia da entrada chega). */
+let ENTRADA = dia(3);
 
 async function abrir(browser: Browser, email: string, largura = 1280): Promise<Page> {
   const page = await entrar(browser, email, senha);
@@ -121,6 +125,39 @@ test.describe("T2208 — Estadia: o check-in e a conferência de entrada, com o 
     await expect(m.getByTestId("instrucoes-liberadas"), "com o 1º pagamento e no D-7, liberadas").toContainText(`Portaria 24 h ${sufixo}`);
     await expect(m.getByTestId("checklist-primeiro_pagamento")).toHaveAttribute("data-feito", "sim");
     await m.context().close();
+  });
+
+  test("2a. E1073: a 3 dias da entrada, a conferência de entrada não aceita registo e diz quando abre (00:00 de Brasília)", async ({ browser }) => {
+    const itensDaEntrada = async () => {
+      const { data: confs } = await adm().from("conferencias").select("id").eq("contrato_id", ids.contrato!).eq("tipo", "entrada");
+      const confIds = (confs ?? []).map((x) => x.id as string);
+      if (!confIds.length) return 0;
+      return (await adm().from("conferencia_itens").select("id").in("conferencia_id", confIds)).data?.length ?? 0;
+    };
+    const d = await abrir(browser, dono.email, 390);
+    await d.goto(`/dashboard/contratos/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    await expect(d.getByTestId("conferencia-entrada")).toBeVisible({ timeout: 20_000 });
+    await d.waitForLoadState("networkidle").catch(() => undefined);
+    // Se a tela ainda oferece o registo, tenta-o: o que conta é se ele grava (a regra é do servidor, não só da tela).
+    const form = d.getByTestId("conferencia-entrada-form");
+    if (await form.count()) {
+      await form.getByLabel("Cômodo", { exact: true }).fill(`Cedo ${sufixo}`);
+      await form.getByLabel("Itens e estado do cômodo").fill("Registo antes do dia da entrada.");
+      await form.getByRole("button", { name: "Adicionar item" }).click();
+      await d.waitForTimeout(3_000);
+    }
+    expect(await itensDaEntrada(), "E1073: antes das 00:00 de Brasília do dia da entrada, nada se regista na conferência de entrada").toBe(0);
+    await expect(form, "E1073: a tela não oferece o registo antes da abertura").toHaveCount(0);
+    const aviso = d.getByTestId("conferencia-entrada-abre-em");
+    await expect(aviso, "E1073: a seção diz quando a conferência abre").toBeVisible();
+    await expect(aviso).toHaveAttribute("data-abertura", new Date(`${ENTRADA}T03:00:00.000Z`).toISOString());
+    await d.context().close();
+
+    // O dia da entrada chega (simulação declarada): a entrada passa a hoje, e a conferência abre para a perna 2.
+    test.info().annotations.push({ type: "simulação", description: "a entrada do contrato passa de D-3 para hoje (o dia da entrada chegou)" });
+    ENTRADA = dia(0);
+    const { error } = await adm().from("contrato_blocos").update({ inicio: ENTRADA }).eq("id", ids.bloco1!);
+    if (error) throw error;
   });
 
   test("2. a conferência de entrada: o prazo da fonte única nas duas pontas; dono regista, morador regista e confirma, dono confirma", async ({ browser }) => {
