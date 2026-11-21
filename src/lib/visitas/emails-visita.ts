@@ -110,13 +110,6 @@ export function corpoVisitaConfirmada(d: {
   const pn = d.quemConfirmou === "morador" && d.modalidade === "presencial" ? primeiroNome(d.nomeMorador) : "";
   // Por vídeo: como entrar na chamada (a mesma frase da véspera; o link cru nunca vai no e-mail — E326).
   const comoEntrar = d.modalidade === "video" ? " Na hora, entre pela página da visita na plataforma." : "";
-  // E1039 (texto do coordenador, ORDEM-DUET-258): presencial — o documento com foto, uma linha a cada lado.
-  const documento =
-    d.modalidade !== "presencial"
-      ? ""
-      : d.quemConfirmou === "proprietario"
-        ? " Leve um documento com foto."
-        : " O visitante foi orientado a levar um documento com foto.";
   const linhas: LinhaVisitaEmail[] = [
     { rotulo: "Imóvel", valor: imovelDaVisitaTexto(d.imovel) },
     { rotulo: "Visita", valor: d.modalidade === "video" ? "Por vídeo" : "Presencial" },
@@ -126,7 +119,7 @@ export function corpoVisitaConfirmada(d: {
   return {
     subject: assuntoComTitulo("Visita confirmada: ", d.imovel.titulo),
     body: (n) =>
-      `${ola(n)}, ${quem} ${tipoNaFrase(d.modalidade)}${pn ? ` com ${pn}` : ""} ${aoImovel(d.imovel)}${q ? ` para ${q} (horário de Brasília)` : ""}.${comoEntrar}${documento} Os detalhes ficam em Visitas, na plataforma.`,
+      `${ola(n)}, ${quem} ${tipoNaFrase(d.modalidade)}${pn ? ` com ${pn}` : ""} ${aoImovel(d.imovel)}${q ? ` para ${q} (horário de Brasília)` : ""}.${comoEntrar} Os detalhes ficam em Visitas, na plataforma.`,
     linhas,
   };
 }
