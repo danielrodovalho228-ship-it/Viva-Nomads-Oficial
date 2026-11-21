@@ -7,6 +7,8 @@ import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, aceitarTermoIaSePreciso, adm, apagarContas, criarConta, entrar, liberarLimiteCodigo, novaSenha, novoSufixo, pdf, pngDeTeste } from "../fixtures/laboratorio";
 import { abrirCadastroNovo, abrirSecoesPasso10, continuarAte, doTipoAoEndereco, noPasso, preencherFichaDentro } from "../fixtures/cadastro";
 import { ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
+import { addDiasISO } from "../../../src/lib/contrato-blocos";
+import { hojeBR } from "../../../src/lib/utils";
 import { preencherCriterios } from "../fixtures/avaliacao-criterios";
 
 /*
@@ -736,8 +738,10 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
 
     // 2. a estadia termina (tempo SIMULADO: o bloco 1 acabou ontem) e o app encerra o contrato quando o dono abre Contratos
     test.info().annotations.push({ type: "simulação", description: "fim da estadia simulado: as datas do bloco passam para o passado (como na t182)" });
-    const hoje = new Date();
-    const dia = (n: number) => new Date(hoje.getTime() + n * 86_400_000).toISOString().slice(0, 10);
+    // E1071: "ontem" pelo dia de Brasília — o relógio da rotina que encerra (avancar_ciclo_blocos) e o jeito da t182. Com a
+    // data em UTC, entre 00h e 03h UTC o "ontem" era o hoje de Brasília: o bloco não vencia e o contrato ficava "ativo".
+    const hoje = hojeBR();
+    const dia = (n: number) => addDiasISO(hoje, n);
     await adm().from("contrato_blocos").update({ inicio: dia(-36), fim: dia(-1) }).eq("contrato_id", contratoId);
     await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
     await expect
