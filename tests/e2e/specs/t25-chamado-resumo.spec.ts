@@ -18,6 +18,16 @@ const PERGUNTA = "Sou proprietário e quero entender como funciona o Caução. V
 test.describe("T25 — Resumo e ações + sugestão pronta", () => {
   test.skip(!noLaboratorio || !URL || !SERVICE, "Só no laboratório (banco local + service role).");
   const adm = () => createClient(URL!, SERVICE!, { auth: { persistSession: false } });
+  // t271 (ORDEM-DUET-352): o chamado que este spec abre não pode ficar na fila do admin — a t271 fotografa
+  // /admin/atendimento com a fila vazia e corre depois desta na mesma fatia. O id fica aqui fora para o afterAll
+  // apagar o chamado mesmo quando o teste falha a meio.
+  let chamadoId: string | undefined;
+  test.afterAll(async () => {
+    if (!chamadoId) return;
+    await adm().from("chamado_mensagens").delete().eq("chamado_id", chamadoId);
+    await adm().from("chamado_eventos").delete().eq("chamado_id", chamadoId);
+    await adm().from("chamados").delete().eq("id", chamadoId);
+  });
 
   test("caso VN-000101: cartão com quem é, ações (seguros → Thiago) e prazo; sugestão honesta enviada com 1 clique", async ({ browser }) => {
     // Proprietário logado abre pelo "Falar com uma pessoa" do chat da /ajuda (como o VN-000101).
@@ -35,6 +45,7 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
     const numero = new globalThis.URL(p.url()).searchParams.get("chamado")!;
     await dono.close();
     const { data: c } = await adm().from("chamados").select("id").eq("numero_publico", numero).single();
+    chamadoId = c?.id as string | undefined;
     // A Viva já deixou resumo e sugestão SEM o admin abrir (abertura do chamado).
     await expect
       .poll(async () => ((await adm().from("chamado_mensagens").select("id").eq("chamado_id", c!.id).eq("interno", true).like("corpo", "%Resposta sugerida:%")).data ?? []).length, { timeout: 20_000 })
