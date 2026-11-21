@@ -3,6 +3,7 @@
   sem imports "@/…", para teste unitário. Ordem d250ea2f, item 2.
 */
 import { PRAZO_RESPOSTA_PARCERIA } from "../parceiros/regras.ts";
+import { ALERTA_DOCUMENTO_DIAS_UTEIS, PRAZO_CANAL, TEXTO_PRAZO_DOCUMENTO } from "../../config/prazos-canais.ts";
 /** Eventos que disparam notificação no funil (sem isso o funil vaza). */
 export type NotificationEvent =
   | "new_lead" // proprietário recebe um interessado
@@ -30,6 +31,7 @@ export type NotificationEvent =
   | "documento_aprovado"
   | "documento_recusado"
   | "documento_recebido" // novo documento na fila → admin
+  | "documento_em_analise" // E948: o documento chegou e está em análise (com o prazo) → proprietário
   // Checklist de qualificação revisado pela equipe → proprietário
   | "checklist_aprovado"
   | "checklist_recusado"
@@ -56,6 +58,7 @@ export type NotificationEvent =
   // Automações por data (cron /api/cron/automacoes, ordem d250ea2f item 5)
   | "anuncio_incompleto" // rascunho parado há 3 dias → proprietário (Prompt 50: 1 e-mail, "Faltam N passos", passo exato)
   | "verificacao_parada" // Prompt 50: verificação iniciada e não concluída em 24 h → a pessoa (causa da última tentativa)
+  | "documento_atrasado" // E948: documento de imóvel há mais de 1 dia útil na fila sem decisão → equipe
   | "parceiro_sem_resposta" // Prompt 50 / E791: solicitação de parceiro sem resposta no prazo da parceria (PRAZO_RESPOSTA_PARCERIA) → equipe
   | "chamado_fora_promessa" // Prompt 50: chamado sem 1ª resposta de uma pessoa em 24 h → equipe
   | "verificacao_analise_humana" // Prompt 50: 2ª reprovação automática da verificação → equipe (fila de documentos)
@@ -195,6 +198,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   checkin_lembrete: { subject: "Lembrete: a entrada no imóvel está chegando", body: (n) => `Olá${n ? " " + n : ""}, a entrada no imóvel do seu contrato está chegando. Confira o horário e as instruções de entrada pela plataforma.`, cta: "Ver instruções de entrada", path: "/dashboard/contratos" },
   anuncio_incompleto: { subject: "Faltam poucos passos para publicar seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, seu anúncio está parado há 3 dias. Abaixo, o que falta; o botão leva direto ao próximo passo.`, cta: "Continuar o anúncio", path: "/dashboard/imoveis" },
   verificacao_parada: { subject: "Sua verificação de identidade ficou pela metade", body: (n) => `Olá${n ? " " + n : ""}, a última tentativa de verificar sua identidade não passou. Veja abaixo o que aconteceu e o que fazer para concluir agora.`, cta: "Verificar de novo", path: "/dashboard/verificacao" },
+  documento_atrasado: { subject: `Documento de imóvel há mais de ${ALERTA_DOCUMENTO_DIAS_UTEIS} dia útil na fila`, body: () => `Um documento de imóvel espera a decisão da equipe há mais de ${ALERTA_DOCUMENTO_DIAS_UTEIS} dia útil. O prazo público da análise é de até ${PRAZO_CANAL.documento.texto}.`, cta: "Abrir a fila de documentos", path: "/admin/documentos" },
   parceiro_sem_resposta: { subject: `Solicitação de parceria sem resposta há ${PRAZO_RESPOSTA_PARCERIA}`, body: () => `Uma solicitação de parceria espera a decisão da equipe há mais de ${PRAZO_RESPOSTA_PARCERIA}, o prazo prometido em /parceiros. O parceiro vê o estado e pode falar com a Viva.`, cta: "Abrir as solicitações", path: "/admin/parceiros" },
   chamado_fora_promessa: { subject: "Chamado sem resposta de uma pessoa em 24 horas", body: () => "Um chamado passou das 24 horas prometidas sem a 1ª resposta de uma pessoa da equipe.", cta: "Abrir o chamado", path: "/admin/atendimento" },
   verificacao_analise_humana: { subject: "Verificação de identidade para análise de uma pessoa", body: () => "Uma verificação de identidade foi reprovada duas vezes pela checagem automática e espera a análise da equipe, com o motivo.", cta: "Abrir a fila de documentos", path: "/admin/documentos" },
@@ -276,5 +280,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   vistoria_fila_admin: { subject: "Novo item na fila da avaliação de imóveis", body: () => "Há um item novo na fila da avaliação de imóveis (laudo atrasado, ressalva vencida ou devolução vencida).", cta: "Abrir a fila", path: "/admin/avaliadores" },
   internet_abaixo_medida: { subject: "A internet medida pelo morador ficou abaixo", body: (n) => `Olá${n ? " " + n : ""}, o morador mediu a internet na entrada e o resultado ficou abaixo da metade da sua última medição. Vale conferir o roteador ou a operadora e medir de novo.`, cta: "Ver o imóvel", path: "/dashboard/imoveis" },
   sugestao_parceiros_morador: { subject: "Precisa de ajuda com a mudança?", body: (n) => `Olá${n ? " " + n : ""}, separamos parceiros da cidade para a sua mudança. Peça um orçamento se quiser: nada é contratado sem você.`, cta: "Ver os parceiros", path: "/dashboard/locacoes" },
+  // E948: no mesmo momento do documento_recebido da equipe, o proprietário recebe o prazo da análise (fonte única).
+  documento_em_analise: { subject: "Recebemos o documento do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, recebemos a documentação do seu imóvel. ${TEXTO_PRAZO_DOCUMENTO}`, cta: "Ver meus anúncios", path: "/dashboard/imoveis" },
   documento_recebido: { subject: "Novo documento de imóvel para conferir", body: () => "Um proprietário enviou a documentação do imóvel. Há um item aguardando conferência na fila de moderação.", cta: "Conferir documento", path: "/admin/documentos" },
 };

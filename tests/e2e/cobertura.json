@@ -653,7 +653,8 @@
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
         "t1448-varredura-bloco514",
-        "t1645-reprovas-e916-e915-e887-e931"
+        "t1645-reprovas-e916-e915-e887-e931",
+        "t1648-e948-prazo-documento"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -1697,7 +1698,8 @@
         "t708-e254-estadia-minima-uma-fonte",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1648-e948-prazo-documento"
       ]
     },
     "/dashboard/imoveis/[id]/cartao": {
@@ -2742,7 +2744,8 @@
         "t1404-varredura-bloco482",
         "t1425-varredura-bloco499",
         "t1450-varredura-bloco516",
-        "t1457-c10-c7-seguranca-e-botao-na-dobra"
+        "t1457-c10-c7-seguranca-e-botao-na-dobra",
+        "t1648-e948-prazo-documento"
       ]
     },
     "/parceiros": {

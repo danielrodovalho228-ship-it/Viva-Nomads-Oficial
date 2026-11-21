@@ -1,3 +1,4 @@
+import { avisarDonoDocumentoEmAnalise } from "@/lib/data/aviso-documento-recebido";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -220,6 +221,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Não foi possível salvar a conferência agora. Tente de novo." }, { status: 500 });
     }
     if (emRevisao || d.resultado === "provavel") await avisarAdmins();
+    // E948: no mesmo momento, o prazo da análise ao proprietário.
+    if (emRevisao || d.resultado === "provavel") await avisarDonoDocumentoEmAnalise(user.id, imovelId);
     return NextResponse.json({
       estado,
       rotulo: rotuloEstado(estado),
@@ -271,6 +274,8 @@ export async function POST(request: Request) {
 
   // Só os casos em revisão entram na fila: avisa os admins (sem dados do documento).
   if (estadoFinal === "revisao") await avisarAdmins();
+  // E948: no mesmo momento, o prazo da análise ao proprietário.
+  if (estadoFinal === "revisao") await avisarDonoDocumentoEmAnalise(user.id, imovelId);
 
   return NextResponse.json({
     estado: estadoFinal,

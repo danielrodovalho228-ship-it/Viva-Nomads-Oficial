@@ -15,6 +15,7 @@ import { emSilencio, proximoEnvioPermitido, SILENCIO } from "../notifications/si
 
 const H = 3_600_000;
 const BRT = -3 * H;
+import { somarDiasUteis } from "../calendario/dias-uteis.ts";
 
 export const PRAZO_PRE_ACEITACAO_HORAS = 72;
 export const MAX_REABERTURAS = 2;
@@ -96,18 +97,13 @@ export function encerraNaExpiracao(reaberturas: number): boolean {
 }
 
 /**
- * Relógio do dono (E395): 1 DIA ÚTIL (seg–sex, horário de Brasília) a partir de `inicio`, que recomeça a cada volta da candidatura.
- * Mesma hora do dia no próximo dia útil (sexta vira segunda); começando no fim de semana, conta a partir de segunda 00h.
- * Nunca passa do início do dia de entrada. Um prazo por vez: este só vale enquanto a candidatura está com o dono.
+ * Relógio do dono (E395): 1 DIA ÚTIL (horário de Brasília) a partir de `inicio`, que recomeça a cada volta da candidatura.
+ * Mesma hora do dia no próximo dia útil (sexta vira segunda); começando em dia não útil, conta a partir do próximo dia útil
+ * às 00h. E948 (decisão do Daniel, 15/11: "Pular feriados"): o calendário é o ÚNICO da plataforma (lib/calendario), que pula
+ * os feriados nacionais. Nunca passa do início do dia de entrada. Um prazo por vez: este só vale com a candidatura com o dono.
  */
 export function prazoDoDono(inicio: Date, dataEntrada: string | null | undefined): Date {
-  const DIA = 24 * H;
-  let base = inicio.getTime();
-  const dow = (t: number) => new Date(t + BRT).getUTCDay();
-  if (dow(base) === 6) base = Math.floor((base + BRT) / DIA) * DIA - BRT + 2 * DIA; // sábado → segunda 00h
-  else if (dow(base) === 0) base = Math.floor((base + BRT) / DIA) * DIA - BRT + DIA; // domingo → segunda 00h
-  let fim = base + DIA;
-  while (dow(fim) === 0 || dow(fim) === 6) fim += DIA;
+  let fim = somarDiasUteis(inicio, 1).getTime();
   if (dataEntrada && /^\d{4}-\d{2}-\d{2}/.test(dataEntrada)) fim = Math.min(fim, inicioDoDiaBRT(dataEntrada).getTime());
   return new Date(fim);
 }

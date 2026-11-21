@@ -4,6 +4,8 @@ import { notify } from "@/lib/notifications";
 import { MOTIVOS_VERIFICACAO, motivoDaReprovacao, type LaudoParaMotivo } from "@/config/verificacao-motivos";
 import { chamadoForaDaPromessa, emSilencio, parceiroSemResposta, verificacaoParada } from "./regras";
 import { PRAZO_RESPOSTA_PARCERIA } from "@/lib/parceiros/regras";
+import { documentoAtrasado } from "@/lib/documento/prazo-analise";
+import { ALERTA_DOCUMENTO_DIAS_UTEIS } from "@/config/prazos-canais";
 import { corpoVerificacaoParada, paraNotify } from "@/lib/notifications/corpo-e267-residual";
 
 /*
@@ -21,6 +23,8 @@ export interface ResumoLembretes50 {
   verificacaoParada: number;
   parceiroSemResposta: number;
   chamadoForaDaPromessa: number;
+  /** E948: documentos há mais de 1 dia útil na fila sem decisão (um aviso por documento). */
+  documentoAtrasado: number;
 }
 
 async function umaVez(admin: Admin, chave: string, tipo: string, usuarioId: string | null): Promise<boolean> {
@@ -35,7 +39,7 @@ async function teste(admin: Admin): Promise<Set<string> | null> {
   return new Set(((data ?? []) as { id: string }[]).map((p) => p.id));
 }
 
-async function avisarEquipe(admin: Admin, ev: "parceiro_sem_resposta" | "chamado_fora_promessa", url: string, detalhe: string): Promise<void> {
+async function avisarEquipe(admin: Admin, ev: "parceiro_sem_resposta" | "chamado_fora_promessa" | "documento_atrasado", url: string, detalhe: string): Promise<void> {
   const { data: admins } = await admin.from("profiles").select("id").eq("role", "admin");
   for (const a of (admins ?? []) as { id: string }[]) {
     const { data: u } = await admin.auth.admin.getUserById(a.id);
@@ -44,7 +48,7 @@ async function avisarEquipe(admin: Admin, ev: "parceiro_sem_resposta" | "chamado
 }
 
 export async function lembretesDoFunil(admin: Admin, agora: Date, simular: boolean): Promise<ResumoLembretes50> {
-  const r: ResumoLembretes50 = { silencio: emSilencio(agora), verificacaoParada: 0, parceiroSemResposta: 0, chamadoForaDaPromessa: 0 };
+  const r: ResumoLembretes50 = { silencio: emSilencio(agora), verificacaoParada: 0, parceiroSemResposta: 0, chamadoForaDaPromessa: 0, documentoAtrasado: 0 };
   if (r.silencio) return r;
   const contasTeste = await teste(admin);
   // Sem saber quem é conta de teste, a rodada não sai (o cron tenta de novo; as chaves de envio seguram repetições).
@@ -116,6 +120,19 @@ export async function lembretesDoFunil(admin: Admin, agora: Date, simular: boole
     if (!(await umaVez(admin, `chamado_fora_promessa:${c.id}`, "chamado_fora_promessa", null))) continue;
     await avisarEquipe(admin, "chamado_fora_promessa", `/admin/atendimento/${c.id}`, `Chamado ${c.numero_publico} sem a 1ª resposta de uma pessoa dentro das 24 horas prometidas.`);
     r.chamadoForaDaPromessa++;
+  }
+
+  // 4) E948: documento de imóvel há mais de 1 dia útil na fila sem decisão → equipe, uma vez por documento (calendário único).
+  const { data: docsFila } = await admin.from("qualification_checklists").select("id, owner_id, document_uploaded_at, created_at, document_reviewed_at").eq("document_status", "pending").limit(1000);
+  for (const d of (docsFila ?? []) as { id: string; owner_id: string | null; document_uploaded_at: string | null; created_at: string; document_reviewed_at: string | null }[]) {
+    if ((d.owner_id && contasTeste.has(d.owner_id)) || !documentoAtrasado(d.document_uploaded_at ?? d.created_at, d.document_reviewed_at, agora)) continue;
+    if (simular) {
+      r.documentoAtrasado++;
+      continue;
+    }
+    if (!(await umaVez(admin, `documento_atrasado:${d.id}`, "documento_atrasado", null))) continue;
+    await avisarEquipe(admin, "documento_atrasado", "/admin/documentos", `Documento de imóvel na fila há mais de ${ALERTA_DOCUMENTO_DIAS_UTEIS} dia útil sem decisão.`);
+    r.documentoAtrasado++;
   }
   return r;
 }
