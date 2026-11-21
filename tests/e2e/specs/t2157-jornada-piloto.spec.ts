@@ -10,6 +10,7 @@ import { ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
 import { addDiasISO } from "../../../src/lib/contrato-blocos";
 import { hojeBR } from "../../../src/lib/utils";
 import { preencherCriterios } from "../fixtures/avaliacao-criterios";
+import { abrirPortaoDaIdentidade } from "../fixtures/fechamento-identidade";
 
 /*
   T2157 — Jornada do piloto @criticos (ORDEM-DUET-138, item 4: "spec de jornada").
@@ -634,7 +635,7 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
     await pd.goto(`/dashboard/fechamento?c=${jornada.lead}`, { waitUntil: "domcontentloaded" });
     await pd.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await expect(pd.getByRole("heading", { name: "Candidatura e verificação" })).toBeVisible({ timeout: 20_000 });
-    await pd.getByRole("button", { name: /verificar identidade/i }).click();
+    await abrirPortaoDaIdentidade(pd);
     const continuar = pd.getByRole("button", { name: /continuar/i });
     await expect(continuar).toBeEnabled({ timeout: 20_000 });
     await continuar.click();
