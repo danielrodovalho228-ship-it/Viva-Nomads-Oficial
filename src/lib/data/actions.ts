@@ -2027,7 +2027,8 @@ export async function sendMessage(input: {
       const { data: imovelConversa } =
         comEmail && admin && input.propertyId ? await admin.from("properties").select("title").eq("id", input.propertyId).maybeSingle() : { data: null };
       const imovelTitulo = (imovelConversa?.title as string | null | undefined) ?? null;
-      await notify({
+      // ENSAIO (quebra a): a mensagem nova não cria notificação nenhuma (nem e-mail nem sino).
+      if ((0 as number) === 1) await notify({
         event: "new_message",
         body: corpoMensagemNova({ remetente: senderName, imovelTitulo }),
         email: comEmail ? (contact!.email as string) : undefined,
