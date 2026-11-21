@@ -31,7 +31,7 @@ import {
   diasDosTermos,
 } from "@/lib/propostas/regras";
 import { rotuloTaxaServico } from "@/lib/cobranca/regra";
-import { caucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
+import { caucaoDaProposta, rotuloCaucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
 import { formatBRLExato, precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
@@ -65,15 +65,20 @@ function Linha({ rotulo, valor, forte }: { rotulo: string; valor: string; forte?
 }
 
 /**
- * E601: a caução da proposta, para as duas partes — 50% do 1º bloco proporcional, pela mesma função do formulário do
- * dono (caucaoDaProposta). A moradora vê o mesmo valor que o dono viu ao montar a proposta.
+ * E601: a caução da proposta, para as duas partes, pela mesma função do formulário do dono (caucaoDaProposta). A
+ * moradora vê o mesmo valor que o dono viu ao montar a proposta. E1061: é o número do contrato, da estadia toda.
  */
 function LinhaCaucao({ v }: { v: VersaoView }) {
   const caucao = caucaoDaProposta(v.termos, v.totais.valorMensal);
   if (!caucao) return null;
   return (
     <div className="mt-2 border-t border-sage-200 pt-2" data-testid="proposta-caucao">
-      <Linha rotulo={`Caução (50% do 1º bloco, ${caucao.dias} dias)`} valor={formatBRLExato(caucao.valor)} />
+      <Linha rotulo={rotuloCaucaoDaProposta(caucao)} valor={formatBRLExato(caucao.valor)} />
+      {caucao.blocos > 1 && (
+        <p className="text-right text-xs text-muted" data-testid="proposta-caucao-blocos">
+          {formatBRLExato(caucao.primeiroBloco)} no 1º bloco; o restante nos blocos seguintes.
+        </p>
+      )}
       <p className="text-right text-xs text-muted">{CAUCAO_FRASE}</p>
     </div>
   );
