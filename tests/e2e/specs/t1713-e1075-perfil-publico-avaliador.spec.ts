@@ -48,6 +48,8 @@ test.describe("T1713 — E1075: o perfil público do avaliador do Rogério", () 
       await expect(perfil).not.toContainText(/credenciad/i);
       await expect(perfil.getByRole("button")).toHaveCount(0);
       await expect(perfil.getByRole("link")).toHaveCount(0);
+      // Pedido do Daniel (21/11 12:20): sem telefone nem e-mail do Rogério, nem no HTML do perfil.
+      expect(await perfil.innerHTML()).not.toMatch(/tel:|mailto:|wa\.me|whatsapp|@/i);
       await expect(page).toHaveTitle(new RegExp(`Avaliador nº ${numero}`));
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `${SAIDA}/t1713-perfil-${largura}.png`, fullPage: true });

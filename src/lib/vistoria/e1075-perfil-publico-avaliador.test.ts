@@ -68,3 +68,18 @@ test("E1075: o perfil não se apresenta como credenciado nem como escolhível (o
   // Sem botão de contratar/escolher.
   assert.doesNotMatch(perfil, /<(Button|button|Link)\b/);
 });
+
+test("E1075: sem telefone nem e-mail do Rogério (pedido do Daniel, 21/11 12:20) — nem na tabela, nem na função, nem na página", () => {
+  const contato = /telefone|whats|celular|e-?mail|tel:|mailto:|wa\.me|contato|contact/i;
+  for (const f of [MIG, APLICAR]) {
+    const s = semComentarios(ler(f));
+    const tabela = s.slice(s.indexOf("create table if not exists public.avaliadores_perfil_publico"), s.indexOf("alter table public.avaliadores_perfil_publico"));
+    assert.doesNotMatch(tabela, contato, `${f}: a tabela não tem coluna de contacto`);
+    const funcao = s.slice(s.indexOf("create or replace function public.avaliador_perfil_publico"), s.indexOf("revoke all on function public.avaliador_perfil_publico"));
+    assert.doesNotMatch(funcao, contato, `${f}: a função não devolve contacto`);
+  }
+  const p = ler(PAGINA);
+  const perfil = p.slice(p.indexOf("function PerfilPublico"));
+  assert.doesNotMatch(perfil, contato, "o bloco do perfil não mostra nem liga para contacto");
+  assert.match(p, /type Perfil = \{ numero: string; nome_publico: string; cidade: string; selo: string; avaliacoes_feitas: number; nota_conduta: number \| string \| null \};/);
+});
