@@ -19,6 +19,7 @@ import { arquivosDoDono } from "@/lib/minimizacao/fotos-anuncio";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { ehAnuncioDeTeste, semAnunciosDeContaTeste, semAnunciosDeTeste } from "@/lib/data/anuncio-teste";
 import { comCoordenadaAproximada } from "@/lib/data/coordenada-aproximada";
+import { codigoDoImovel, faixaUuidDoPrefixo } from "@/lib/imovel-pagina";
 import { ROTULOS_FILTRAVEIS, chavesFiltroDe } from "@/lib/busca/filtro-comodidades";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import { normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
@@ -548,6 +549,33 @@ async function getPropertySemCache(id: string): Promise<Property | undefined> {
 
 /** Um anúncio público; a mesma consulta vale para layout, metadados e página na mesma requisição. */
 export const getProperty = cache(getPropertySemCache);
+
+/**
+ * E393 — o anúncio pelo código público ("VN-3F9A2C", lido por prefixoDoCodigo): o id do ÚNICO anúncio público (ativo)
+ * cujo código é este, ou null (nenhum, ou mais de um — o código tem 6 dígitos e não desempata). Anúncio de exemplo
+ * ("VN-UBE015") só quando os exemplos estão à mostra, como em getProperty.
+ */
+export const imovelPeloCodigo = cache(async (prefixo: string): Promise<string | null> => {
+  const codigo = `VN-${prefixo.toUpperCase()}`;
+  const exemplo = showDemoProperties() ? SAMPLE_PROPERTIES.filter((p) => codigoDoImovel(p.id) === codigo) : [];
+  const faixa = faixaUuidDoPrefixo(prefixo);
+  const supabase = createPublicClient();
+  if (!faixa || !supabase) return exemplo.length === 1 ? exemplo[0].id : null;
+  try {
+    const { data, error } = await supabase
+      .from("properties")
+      .select("id")
+      .eq("status", "active")
+      .gte("id", faixa.de)
+      .lte("id", faixa.ate)
+      .limit(2);
+    if (error) console.error("[imovelPeloCodigo] Supabase error:", error.code, error.message);
+    const ids = [...((data as { id: string }[] | null) ?? []).map((r) => r.id), ...exemplo.map((p) => p.id)];
+    return ids.length === 1 ? ids[0] : null;
+  } catch {
+    return null;
+  }
+});
 
 /**
  * 64-B: anúncio PAUSADO por URL direta (link já compartilhado, favorito, push): não é 404 — a página diz "Este anúncio
