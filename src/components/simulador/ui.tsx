@@ -184,7 +184,7 @@ export function CobrancaToggle({
           role="radio"
           aria-checked={value === v}
           onClick={() => onChange(v)}
-          className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+          className={`min-h-11 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
             value === v ? "border-forest bg-forest text-white" : "border-sage-200 text-ink hover:border-sage"
           }`}
         >
