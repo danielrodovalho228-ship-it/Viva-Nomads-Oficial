@@ -16,7 +16,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Entre na sua conta." }, { status: 401 });
-  const { data: doc } = await supabase.from("documentos_fiscais").select("pdf_path").eq("id", id).maybeSingle();
+  const { data: doc, error: erroDoc } = await supabase.from("documentos_fiscais").select("pdf_path").eq("id", id).maybeSingle();
+  // Achado 167: falha de leitura é 503 (tente de novo), não 404 "não encontrado".
+  if (erroDoc) return NextResponse.json({ error: "Não foi possível abrir o documento agora. Tente de novo." }, { status: 503 });
   if (!doc) return NextResponse.json({ error: "Documento não encontrado." }, { status: 404 });
   const url = await urlAssinadaDoDocumento(doc.pdf_path as string);
   if (!url) return NextResponse.json({ error: "Não foi possível gerar o link agora." }, { status: 503 });
