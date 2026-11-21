@@ -36,7 +36,7 @@ export default async function AdminAtendimentoPage({
     aba === "fila" ? filaAtendimento(filtros, { exigir: true }) : Promise.resolve([]),
     filaAtendimento({ aprovacao: true }, { exigir: true }),
     aba === "metricas" ? metricasAtendimento(Number(um("dias")) || 30) : Promise.resolve(null),
-    aba === "respostas" ? listarMacros() : Promise.resolve([]),
+    aba === "respostas" ? listarMacros({ exigir: true }) : Promise.resolve([]),
     // Fila vazia (Prompt 48): a data do último chamado resolvido aparece no "Nada pendente".
     admin
       ? admin.from("chamados").select("resolvido_em").eq("simulacao", false).not("resolvido_em", "is", null).order("resolvido_em", { ascending: false }).limit(1).then((r) => r.data?.[0]?.resolvido_em ?? null, () => null)

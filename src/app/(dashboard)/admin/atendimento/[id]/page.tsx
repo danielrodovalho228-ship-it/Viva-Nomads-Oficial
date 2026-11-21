@@ -7,7 +7,7 @@ export const metadata = { title: "Chamado — Atendimento" };
 
 export default async function ChamadoAdminPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [dados, macros] = await Promise.all([chamadoAdmin(id), listarMacros()]);
+  const [dados, macros] = await Promise.all([chamadoAdmin(id), listarMacros({ exigir: true })]);
   if (!dados) notFound();
   // Pendência 3 do QA-LOGIN-B v2: "Denúncia procedente" não tem alvo de teste — o observador da QA só lê.
   const observadorQa = (await soLeituraNaTela([{ id }])).length > 0;

@@ -741,10 +741,12 @@ export interface Macro {
   corpo: string;
 }
 
-export async function listarMacros(): Promise<Macro[]> {
+/** Achado nº 20: com `exigir`, a falha do banco LANÇA em vez de dizer "nenhuma resposta pronta". */
+export async function listarMacros(opcoes: { exigir?: boolean } = {}): Promise<Macro[]> {
   const ctx = await exigirAdmin();
   if (!ctx) return [];
-  const { data } = await ctx.admin.from("chamado_macros").select("id, titulo, corpo").order("titulo");
+  const { data, error } = await ctx.admin.from("chamado_macros").select("id, titulo, corpo").order("titulo");
+  if (error && opcoes.exigir) throw new Error("Não foi possível carregar as respostas prontas agora.");
   return (data ?? []) as Macro[];
 }
 
