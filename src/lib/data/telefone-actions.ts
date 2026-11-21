@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { resolverAvisosDoObjeto } from "@/lib/notifications/avisos-servidor";
 import { consumirLimite, HORA } from "@/lib/limites";
 import { registrarSimulado } from "@/lib/integracoes";
 import { smsDisponivel } from "@/lib/telefone/disponibilidade";
@@ -160,6 +161,8 @@ export async function confirmarCodigoTelefone(numero: string, codigoDigitado: st
   const agora = new Date().toISOString();
   const { error } = await admin.from("telefone_verificacao").upsert({ user_id: s.user.id, verificado_em: agora, pedido_em: null, atualizado_em: agora });
   if (error) return { ok: false, error: ERRO_CODIGO };
+  // E966 (parte 2): telefone confirmado resolve o aviso crítico "confirme o telefone" (o aviso carrega a pessoa).
+  await resolverAvisosDoObjeto({ eventos: ["pedido_confirmar_telefone"], refId: s.user.id, usuarioId: s.user.id });
   await renovarPaginasDoSelo(admin, s.user.id);
   return { ok: true };
 }

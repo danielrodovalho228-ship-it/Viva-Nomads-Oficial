@@ -14,7 +14,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
-import { resolverAvisos } from "@/lib/notifications/avisos-servidor";
+import { resolverAvisos, resolverAvisosDoObjeto } from "@/lib/notifications/avisos-servidor";
 import { lembreteDeBlocoNoAceite } from "@/lib/estadia/lembrete-bloco-servidor";
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import { sendEmail } from "@/lib/notifications/email";
@@ -717,6 +717,8 @@ export async function atualizarPedidoEncerramento(pedidoId: string, status: "em_
     await aoEventoDaEstadia(admin, pedido.contrato_id, { tipo: "contrato_encerrado" });
     // Prompt 55-E2: contrato encerrado cancela as mensagens programadas que não saíram.
     await cancelarProgramadas(admin, pedido.contrato_id, "contrato_encerrado");
+    // E966 (parte 2): o encerramento concluído resolve o aviso crítico do pedido (quem o recebeu).
+    await resolverAvisosDoObjeto({ eventos: ["estadia_encerramento_pedido"], refId: pedido.contrato_id });
   }
   await logModeracao(supabase, user.id, status === "concluido" ? "concluir_encerramento" : "conduzir_encerramento", "contrato", pedido.contrato_id);
   revalidatePath("/admin/contratos/encerramentos");

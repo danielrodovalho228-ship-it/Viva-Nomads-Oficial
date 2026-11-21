@@ -95,6 +95,40 @@ export const ACAO_RESOLVE: Partial<Record<NotificationEvent, "assinou" | "respon
   visita_pedida: "confirmou",
 };
 
+/** E966 — os críticos de "responda a proposta": a expiração da proposta os resolve (para as duas partes). */
+export const EVENTOS_DA_PROPOSTA_ABERTA: readonly NotificationEvent[] = ["proposta_recebida", "proposta_vencendo"];
+
+/** E966 (parte 2) — os críticos do dono sobre a manutenção aberta: a 1ª resposta dele (ou a ordem resolvida) os resolve. */
+export const EVENTOS_DA_MANUTENCAO_ABERTA: readonly NotificationEvent[] = ["manutencao_nova", "manutencao_atrasada"];
+
+/**
+ * E966 (parte 2) — todo aviso crítico tem um caminho que o resolve (a faixa vermelha só some com o problema resolvido).
+ * Evento → o que o resolve e o objeto (ref_id) que o aviso carrega. Um crítico novo sem linha aqui reprova o teste.
+ * checklist_recusado: nenhum código emite (a recusa da qualificação sai como documento_recusado, origem "qualificacao");
+ * fica na lista para o dia em que alguém o emitir já vir com o caminho escrito.
+ */
+export const RESOLUCAO_DO_CRITICO: Partial<Record<NotificationEvent, { resolve: string; ref: string }>> = {
+  contract_status: { resolve: "assinou o contrato", ref: "contrato" },
+  proposta_recebida: { resolve: "respondeu a proposta ou ela expirou", ref: "proposta" },
+  proposta_vencendo: { resolve: "respondeu a proposta ou ela expirou", ref: "proposta" },
+  visita_pedida: { resolve: "confirmou a visita", ref: "visita" },
+  estadia_aditivo_proposto: { resolve: "respondeu o aditivo", ref: "contrato" },
+  estadia_encerramento_pedido: { resolve: "a Viva concluiu o encerramento", ref: "contrato" },
+  documento_recusado: { resolve: "reenviou o documento ou todos foram aprovados", ref: "imóvel" },
+  checklist_recusado: { resolve: "reenviou a qualificação (evento sem emissor hoje)", ref: "imóvel" },
+  manutencao_nova: { resolve: "o dono respondeu ou a ordem foi resolvida", ref: "ordem de manutenção" },
+  manutencao_atrasada: { resolve: "o dono respondeu ou a ordem foi resolvida", ref: "ordem de manutenção" },
+  vistoria_fora_da_busca: { resolve: "a correção da segurança grave foi aceita e o anúncio voltou", ref: "imóvel" },
+  pedido_confirmar_telefone: { resolve: "confirmou o telefone", ref: "pessoa" },
+  parceiro_pedido_novo: { resolve: "o pedido mudou de estado (orçou, recusou, cancelado…)", ref: "pedido de serviço" },
+};
+
+/** Todos os eventos que são críticos para algum papel (a coluna geral + POR_PAPEL). */
+export function eventosCriticos(): NotificationEvent[] {
+  const porPapel = (Object.keys(POR_PAPEL) as NotificationEvent[]).filter((e) => Object.values(POR_PAPEL[e] ?? {}).includes("critico"));
+  return [...new Set([...CRITICOS, ...porPapel])];
+}
+
 /** Título do aviso: o assunto do catálogo, limpo e curto (nunca o assunto montado com texto do usuário). */
 export function tituloDoAviso(assuntoDoCatalogo: string): string {
   return assuntoDoCatalogo.replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) || "Aviso da Viva Nomads";

@@ -55,6 +55,7 @@ import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, rascunhoSemFotosApagadas, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
 import { tituloAvisoCandidatura } from "@/lib/notifications/avisos";
+import { resolverAvisosDoObjeto } from "@/lib/notifications/avisos-servidor";
 import { primeiroNome } from "@/lib/display-name";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
@@ -329,6 +330,8 @@ export async function enviarDocumentoParaConferencia(
     return { ok: false, error: "Não foi possível colocar o documento na fila de conferência agora. Tente de novo." };
   }
   await avisarAdminsDocumentoRecebido();
+  // E966 (parte 2): o documento reenviado resolve o aviso crítico "precisa de ajuste" do imóvel (o aviso carrega o imóvel).
+  await resolverAvisosDoObjeto({ eventos: ["documento_recusado"], refId: propertyId, usuarioId: user.id });
   return { ok: true, id: (data as { id: string }).id };
 }
 

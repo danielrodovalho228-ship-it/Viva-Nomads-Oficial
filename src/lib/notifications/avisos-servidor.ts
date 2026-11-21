@@ -101,3 +101,21 @@ export async function resolverAvisos(p: { usuarioId: string; eventos: Notificati
     .is("resolvido_em", null);
   if (error) console.error("[avisos] não resolveu:", error.code, error.message);
 }
+
+/**
+ * E966 (parte 2): o problema do objeto foi resolvido (encerramento concluído, anúncio de volta à busca): marca "resolvido"
+ * nos avisos pendentes daquele objeto para QUEM os recebeu (a ação não é de uma pessoa só). `usuarioId` restringe.
+ */
+export async function resolverAvisosDoObjeto(p: { eventos: readonly NotificationEvent[]; refId: string | null | undefined; usuarioId?: string | null }): Promise<void> {
+  const admin = createAdminClient();
+  if (!admin || !p.refId || !REF_RE.test(p.refId) || !p.eventos.length) return;
+  let q = admin
+    .from("avisos")
+    .update({ resolvido_em: new Date().toISOString() })
+    .eq("ref_id", p.refId)
+    .in("evento", [...p.eventos])
+    .is("resolvido_em", null);
+  if (p.usuarioId) q = q.eq("usuario_id", p.usuarioId);
+  const { error } = await q;
+  if (error) console.error("[avisos] não resolveu o objeto:", error.code, error.message);
+}

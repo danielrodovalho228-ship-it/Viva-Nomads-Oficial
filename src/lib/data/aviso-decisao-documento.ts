@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
+import { resolverAvisosDoObjeto } from "@/lib/notifications/avisos-servidor";
 import { prontidaoDoImovel } from "@/lib/anuncio/prontidao-servidor";
 import { emailDecisaoDocumento, linhasDoAviso, type DecisaoParaAvisar, type OrigemDocumento } from "@/lib/documento/aviso-decisao";
 
@@ -45,12 +46,15 @@ export async function avisarDecisoesDoImovel(admin: SupabaseClient, ownerId: str
       userId: ownerId,
       pushUrl: email.cta.path,
       imovelId: propertyId,
+      // E966 (parte 2): o aviso carrega o imóvel — o reenvio ou a aprovação de todos resolve o documento_recusado.
+      refId: propertyId,
       subject: email.assunto,
       body: email.intro,
       ctaLabel: email.cta.label,
       detailsHtml: email.detailsHtml,
       detailsText: email.detailsText,
     });
+    if (email.evento === "documento_aprovado") await resolverAvisosDoObjeto({ eventos: ["documento_recusado"], refId: propertyId, usuarioId: ownerId });
     return decisoes.length;
   } catch {
     return 0;

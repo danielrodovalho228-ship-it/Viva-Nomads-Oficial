@@ -159,6 +159,8 @@ export async function definirChaveSms(ligar: boolean): Promise<ActionResult & { 
         name: (perfil.full_name as string) ?? undefined,
         userId: inqId,
         pushUrl: "/dashboard/conta/dados#celular",
+        // E966 (parte 2): o aviso carrega a pessoa — confirmar o telefone o resolve.
+        refId: inqId,
         detailsHtml: `<p style="margin:12px 0 0;color:#334155;">${textoEmail(texto, 300)}</p>
           <p style="margin:12px 0 0;"><a href="${SITE_URL}/dashboard/conta/dados#celular" style="color:#0f3d2e;font-weight:700;">Confirmar telefone →</a></p>`,
         detailsText: `${texto} ${SITE_URL}/dashboard/conta/perfil`,
