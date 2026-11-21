@@ -8,6 +8,7 @@
 */
 import { resumoContratoEmDias } from "../contrato-blocos.ts";
 import { diasDosTermos, type TermosProposta } from "./regras.ts";
+import { REGRA_CAUCAO_BASE } from "../caucao-regra.ts";
 
 export interface CaucaoDaProposta {
   /** Dias da estadia (a base da caução). */
@@ -31,5 +32,5 @@ export function caucaoDaProposta(t: Pick<TermosProposta, "meses" | "dias">, valo
 
 /** O rótulo da linha da caução na proposta: diz a regra e os dias da estadia. */
 export function rotuloCaucaoDaProposta(c: Pick<CaucaoDaProposta, "dias">): string {
-  return `Caução (50% do aluguel da estadia, ${c.dias} dias)`;
+  return `Caução (${REGRA_CAUCAO_BASE}, ${c.dias} dias)`;
 }
