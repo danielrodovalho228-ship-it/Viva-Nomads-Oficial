@@ -152,7 +152,7 @@ export function checklistAntesDaEntrada(e: EstadoChecklist, papel: PapelEstadia)
     {
       chave: "conferencia",
       rotulo: "Conferência de entrada",
-      feito: conf.estado === "confirmada",
+      feito: conf.estado === "confirmada" || conf.estado === "aguardando_outra_parte",
       detalhe: [conf.estado ? rotConf[conf.estado] : "Ainda não começou", conf.prazo ? textoPrazoConferencia(conf.prazo) : ""].filter(Boolean).join(" · "),
     },
     {
