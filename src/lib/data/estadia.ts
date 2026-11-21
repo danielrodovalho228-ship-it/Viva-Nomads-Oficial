@@ -13,6 +13,7 @@ import { estadoConferencia, type RespostaConferencia } from "@/lib/conferencia";
 import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
 import { diaBRT } from "@/lib/datas-brasilia";
+import { duracaoDoBloco } from "@/lib/pagamento-bloco";
 import { conversationId } from "@/lib/messages/conversation-id";
 import {
   acoesDaFolhaDaEstadia,
@@ -284,10 +285,13 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
   );
   const meses = mesesDoPeriodo(periodo) || blocos.reduce((s, b) => s + Number(b.meses), 0);
   const valorMensal = Number(c.aluguel_mensal) || 0;
+  // E1067: a duração do contrato pelos dias reais (a mesma regra do rótulo do bloco). Só vai em dias quando não fecha em meses.
+  const duracao = duracaoDoBloco({ meses: blocos.reduce((s, b) => s + Number(b.meses), 0), inicio: periodo.inicio, fim: periodo.fim });
   const valores = valoresDaEstadia(
     {
       valorMensal,
       meses,
+      dias: duracao.emDias ? duracao.dias : null,
       caucao: blocos.reduce((s, b) => s + Number(b.caucao), 0),
       taxa: c.comissao_percent != null ? { percentual: Number(c.comissao_percent), valor: Number(c.comissao_valor ?? 0) } : null,
     },
