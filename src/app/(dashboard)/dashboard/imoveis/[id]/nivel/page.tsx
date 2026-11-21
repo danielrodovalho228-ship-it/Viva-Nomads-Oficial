@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { nivelDoMeuImovel } from "@/lib/data/nivel-actions";
 import { AREAS, ROTULO_AREA, ROTULO_NIVEL, ROTULO_PONTO, rotuloItem, type NivelOuAdequacao } from "@/config/niveis";
 import { FormNivel } from "./form-nivel";
@@ -32,9 +31,7 @@ export default async function NivelDoImovelPage({ params, searchParams }: { para
   const status = supabase ? ((await supabase.from("properties").select("status").eq("id", id).maybeSingle()).data?.status as string | null | undefined) : undefined;
   return (
     <div>
-      <Link href="/dashboard/imoveis" className="inline-flex items-center gap-1 text-sm text-muted hover:text-ink">
-        <ArrowLeft className="h-4 w-4" /> Meus imóveis
-      </Link>
+      {/* E738: o voltar é o do cabeçalho padrão do painel ("← Voltar"); a tela não repete um segundo. */}
       <h1 className="mt-3 font-title text-2xl font-semibold text-ink">Nível, ruído e extras</h1>
       {captura && dados && (
         <p className="mt-2 text-sm">
