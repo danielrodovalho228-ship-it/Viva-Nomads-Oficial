@@ -37,11 +37,13 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/parceiro/avaliacao/${pedido}`)}`);
-  const { data: p } = await admin
+  const { data: p, error: erroPedido } = await admin
     .from("vistoria_pedidos")
     .select("id, property_id, status, tipo, ocupado, agendado_para, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(parceiros(user_id))")
     .eq("id", pedido)
     .maybeSingle();
+  // E-erros: falha da consulta NÃO é "não encontrado" — vai para a tela de erro (com "Tentar de novo"), não para o 404.
+  if (erroPedido) throw new Error(`avaliacao-pedido: ${erroPedido.message}`);
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
   if (!p || dono !== user.id) notFound();
 
