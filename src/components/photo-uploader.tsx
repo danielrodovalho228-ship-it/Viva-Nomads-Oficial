@@ -12,7 +12,7 @@ import { tratarFoto } from "@/lib/fotos/processar";
 import { enviarFotos } from "@/lib/fotos/enviar";
 import { MAX_FOTOS_POR_ANUNCIO, type AvisoFoto } from "@/lib/fotos/qualidade";
 import { conferirFotos } from "@/lib/fotos/conferir-cliente";
-import { AVISO_NAO_IMOVEL, ROTULO_MOTIVO, confirmarConteudo, conteudoPendente, podeSerPrincipal, type ConteudoFoto } from "@/lib/fotos/conteudo";
+import { AVISO_NAO_IMOVEL, ROTULO_MOTIVO, confirmarConteudo, confirmarTodasPendentes, conteudoPendente, podeSerPrincipal, type ConteudoFoto } from "@/lib/fotos/conteudo";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { cn } from "@/lib/utils";
 
@@ -177,8 +177,34 @@ export function PhotoUploader({
     onChange(photos.map((p) => (p.id === item.id ? { ...p, conteudo: confirmarConteudo(item.conteudo!) } : p)));
   }
 
+  /** E387: com várias fotos sinalizadas (falso positivo em massa), uma confirmação expressa para todas, com a data gravada em cada uma. */
+  const pendentes = photos.filter((p) => conteudoPendente(p.conteudo));
+  function confirmarTodas() {
+    onChange(confirmarTodasPendentes(photos));
+  }
+
   return (
     <div>
+      {pendentes.length >= 2 && (
+        <div role="alert" className="mb-3 rounded-lg border border-red-600 bg-red-50 p-3 text-sm text-red-800" data-testid="fotos-nao-imovel-varias">
+          <p>
+            <strong>{pendentes.length} fotos foram sinalizadas</strong> como "não parece ser do imóvel". A conferência automática pode errar: se todas mostram o seu imóvel,
+            confirme de uma vez; senão, trate uma a uma abaixo.
+          </p>
+          <span className="mt-2 flex flex-wrap items-center gap-2">
+            <ConfirmarNaPagina
+              aviso={`Confirmo que as ${pendentes.length} fotos sinalizadas mostram o imóvel anunciado.`}
+              confirmar="Confirmo, todas são do imóvel"
+              onConfirmar={confirmarTodas}
+              size="sm"
+              variant="ghost"
+              testid="fotos-nao-imovel-confirmar-todas"
+            >
+              Todas são do imóvel
+            </ConfirmarNaPagina>
+          </span>
+        </div>
+      )}
       <div
         className={cn("grid gap-3 rounded-xl", cad ? "grid-cols-3 lg:grid-cols-4" : "grid-cols-2 sm:grid-cols-3", soltando && "ring-2 ring-forest ring-offset-2")}
         data-testid="fotos-galeria"

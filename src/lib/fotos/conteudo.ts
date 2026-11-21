@@ -55,6 +55,11 @@ export function confirmarConteudo(c: ConteudoFoto, agora: Date = new Date()): Co
   return { ...c, confirmadaEm: agora.toISOString() };
 }
 
+/** E387: confirmação expressa de TODAS as fotos sinalizadas e ainda pendentes (a mesma data em todas); as demais ficam como estão. */
+export function confirmarTodasPendentes<T extends { conteudo?: ConteudoFoto | null }>(fotos: readonly T[], agora: Date = new Date()): T[] {
+  return fotos.map((f) => (conteudoPendente(f.conteudo) ? { ...f, conteudo: confirmarConteudo(f.conteudo!, agora) } : f));
+}
+
 export type TravaPassoFotos = "faltam" | "principal" | "sinalizadas" | "video";
 
 export interface EstadoPassoFotos {

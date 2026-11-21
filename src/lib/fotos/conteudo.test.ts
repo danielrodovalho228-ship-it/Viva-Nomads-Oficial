@@ -141,3 +141,28 @@ test("E164 — a prévia só mostra foto elegível; a sinalizada pendente fica d
   assert.match(pagina, /fotos=\{fotosPrevia\}/);
   assert.doesNotMatch(pagina, /foto=\{photos\[0\]/);
 });
+
+import { confirmarTodasPendentes, estadoPassoFotos as estadoPassoFotosE387 } from "./conteudo.ts";
+
+test("E387: uma confirmação expressa libera as oito fotos sinalizadas de uma vez (falso positivo em massa)", () => {
+  const sinalizada = () => ({ conteudo: { naoImovel: true, motivo: "print" as const, confirmadaEm: null } });
+  const fotos: { conteudo: { naoImovel: boolean; motivo: "print" | null; confirmadaEm?: string | null } }[] = Array.from({ length: 8 }, sinalizada);
+  assert.equal(estadoPassoFotosE387(fotos).podeContinuar, false);
+  assert.equal(estadoPassoFotosE387(fotos).pendentes, 8);
+  const agora = new Date("2026-11-06T12:00:00Z");
+  const depois = confirmarTodasPendentes(fotos, agora);
+  assert.ok(depois.every((f) => f.conteudo.confirmadaEm === agora.toISOString()), "data gravada em cada uma");
+  assert.equal(estadoPassoFotosE387(depois).podeContinuar, true);
+  assert.equal(estadoPassoFotosE387(depois).pendentes, 0);
+});
+
+test("E387: a confirmação em massa não mexe nas fotos já boas nem nas já confirmadas", () => {
+  type C = { naoImovel: boolean; motivo: "print" | "documento" | null; confirmadaEm?: string | null };
+  const boa: { conteudo: C } = { conteudo: { naoImovel: false, motivo: null } };
+  const antes: { conteudo: C } = { conteudo: { naoImovel: true, motivo: "documento", confirmadaEm: "2026-11-05T10:00:00.000Z" } };
+  const pend: { conteudo: C } = { conteudo: { naoImovel: true, motivo: "print", confirmadaEm: null } };
+  const r = confirmarTodasPendentes([boa, antes, pend], new Date("2026-11-06T12:00:00Z"));
+  assert.deepEqual(r[0], boa);
+  assert.equal(r[1].conteudo.confirmadaEm, "2026-11-05T10:00:00.000Z");
+  assert.equal(r[2].conteudo.confirmadaEm, "2026-11-06T12:00:00.000Z");
+});
