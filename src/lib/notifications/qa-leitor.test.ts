@@ -86,9 +86,9 @@ test("proxy: /dashboard/qa — admin é redirecionado; sem a marca = 404 DE VERD
   const proxy = ler("src/proxy.ts");
   const i = proxy.indexOf("if (user && rotaLeitorQa(pathname))");
   assert.ok(i > 0);
-  const bloco = proxy.slice(i, i + 1400);
+  const bloco = proxy.slice(i, i + 2200);
   assert.match(bloco, /\.from\("profiles"\)\.select\("qa_leitor, is_teste, role"\)\.eq\("id", user\.id\)/);
-  assert.match(bloco, /const destino = destinoLeitorQa\(perfilQa\);/);
+  assert.match(bloco, /const destino = destinoDaLeitura\(leituraQa\);/);
   assert.match(bloco, /destino\.tipo === "admin"[\s\S]*NextResponse\.redirect\(alvo\)/);
   assert.match(bloco, /NextResponse\.rewrite\(naoEncontrado, \{ status: 404 \}\)/);
   assert.ok(proxy.indexOf("if (isProtected && !user)") < i, "sem sessão vai para o login antes");
@@ -140,4 +140,25 @@ test("E354: conta de teste sem qa_leitor vai para a caixa dela (proxy e página)
   assert.match(ler("src/components/account/caixa-emails-teste.tsx"), /id="caixa-emails-teste"/);
   assert.match(ler("src/app/(dashboard)/dashboard/conta/[secao]/page.tsx"), /case "ajuda":/);
   assert.match(ler("src/components/account/tela-ajuda.tsx"), /<CaixaEmailsTeste \/>/);
+});
+
+test("E366: falha ao LER o perfil nunca vira 404 — só a linha que não existe/não pode vira", async () => {
+  const { destinoDaLeitura } = await import("./caixa-teste.ts");
+  const leitor = { qa_leitor: true, is_teste: true, role: "inquilino" };
+  assert.deepEqual(destinoDaLeitura({ data: leitor, error: null }), { tipo: "abre" });
+  assert.equal(destinoDaLeitura({ data: null, error: { message: "timeout" } }).tipo, "indisponivel", "erro de leitura ≠ sem permissão");
+  assert.equal(destinoDaLeitura({ data: leitor, error: { message: "parcial" } }).tipo, "indisponivel");
+  assert.equal(destinoDaLeitura({ data: null, error: null }).tipo, "nao_encontrado", "sem linha continua 404");
+  assert.equal(destinoDaLeitura({ data: { qa_leitor: false, is_teste: false, role: "inquilino" }, error: null }).tipo, "nao_encontrado");
+});
+
+test("E366: proxy e página tratam 'indisponivel' sem 404 (o proxy deixa a página reler; a página lança, nunca abre)", () => {
+  const proxy = ler("src/proxy.ts");
+  const i = proxy.indexOf("if (user && rotaLeitorQa(pathname))");
+  const bloco = proxy.slice(i, i + 2200);
+  assert.match(bloco, /destinoDaLeitura\(/);
+  assert.doesNotMatch(bloco, /destinoLeitorQa\(perfilQa\)/);
+  const pagina = ler("src/app/(dashboard)/dashboard/qa/emails/page.tsx");
+  assert.match(pagina, /destinoDaLeitura\(/);
+  assert.match(pagina, /destino\.tipo === "indisponivel"\) throw new Error\(/);
 });

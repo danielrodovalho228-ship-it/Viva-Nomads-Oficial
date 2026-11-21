@@ -265,7 +265,7 @@ export function rotaLeitorQa(pathname: string): boolean {
  * ADMIN vai para a lista dele, a aba "E-mails" de /admin/dados-de-teste (lá valem o papel e o 2FA do admin); os demais
  * recebem 404. A regra de quem LÊ a área de QA não muda (a RLS segue a trava real).
  */
-export type DestinoLeitorQa = { tipo: "abre" } | { tipo: "admin"; href: string } | { tipo: "propria"; href: string } | { tipo: "nao_encontrado" };
+export type DestinoLeitorQa = { tipo: "abre" } | { tipo: "admin"; href: string } | { tipo: "propria"; href: string } | { tipo: "nao_encontrado" } | { tipo: "indisponivel" };
 
 /** E354: a caixa da PRÓPRIA conta de teste (Conta → Ajuda), para quem é de teste mas não é leitor de QA. */
 export const HREF_CAIXA_PROPRIA = "/dashboard/conta/ajuda#caixa-emails-teste";
@@ -277,6 +277,17 @@ export function destinoLeitorQa(perfil: { qa_leitor?: boolean | null; is_teste?:
   // E199). Conta real continua com 404: a área segue restrita às contas de teste.
   if (perfil?.is_teste === true) return { tipo: "propria", href: HREF_CAIXA_PROPRIA };
   return { tipo: "nao_encontrado" };
+}
+
+/**
+ * E366: a caixa "carregou uma vez e depois deu 404 na mesma sessão". O 404 saía também quando a LEITURA do perfil falhava
+ * (instabilidade, timeout): o perfil vinha vazio e a pessoa — que era leitora — virava "sem permissão". Falha de leitura NÃO é
+ * resposta: não é 404 (o proxy deixa a página reler; a página lança e o painel oferece "tentar de novo"). Só a linha que
+ * existe e não dá direito, ou que não existe, continua 404.
+ */
+export function destinoDaLeitura(r: { data: { qa_leitor?: boolean | null; is_teste?: boolean | null; role?: string | null } | null; error: unknown }): DestinoLeitorQa {
+  if (r.error) return { tipo: "indisponivel" };
+  return destinoLeitorQa(r.data);
 }
 
 export interface LinhaEmailTeste {
