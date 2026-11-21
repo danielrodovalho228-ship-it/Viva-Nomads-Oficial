@@ -4,8 +4,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 /*
   T1714 — E1077 (ORDEM-DUET-369): a avaliação do imóvel em âmbito de TESTE. Com a VISTORIA_ATIVA desligada (e sem o
   cookie do laboratório), só a conta que está em vistoria_piloto vê o fluxo.
-   1. conta FORA do piloto: em Meus imóveis › Nível, ruído e extras não aparece o bloco "Pedir avaliação"; a página do
-      pedido de avaliação dá 404 — como hoje;
+   1. conta FORA do piloto: em Meus imóveis › Nível, ruído e extras não aparece o bloco "Pedir avaliação" — como hoje;
    2. a MESMA conta, posta no piloto: o bloco aparece, ativo (sem o aviso de só leitura das contas de teste);
    3. tirada do piloto: volta a não ver nada (a trava morde).
   390 px (o login do laboratório abre a 390).
