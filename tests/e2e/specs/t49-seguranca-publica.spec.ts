@@ -86,16 +86,17 @@ test.describe("T49 portões sem login @seguranca", () => {
 
 test.describe("T49 APIs privadas sem login @seguranca", () => {
   // "Negado" = nada executa: 401/403 (sem sessão), 405 (a rota nem tem POST) ou 503
+  // A API do admin responde 404 a quem não é admin, como as páginas /admin (ordem 12a8086d, item 1).
   // (integração/segredo ausente no laboratório, ANTES de qualquer ação). Nunca 2xx.
   // ID válido nas rotas de fechamento, para exercitar o portão de sessão (com `{}` a
   // validação do id responde 400 antes de olhar a sessão e o teste não provaria nada).
   const LEAD_FALSO = "00000000-0000-4000-8000-000000000000";
   const NEGADAS_POST: Array<{ rota: string; corpo?: object; aceitos: number[] }> = [
-    { rota: "/api/admin/aprovacoes", aceitos: [401, 403, 405] },
-    { rota: "/api/admin/agentes/chat", aceitos: [401, 403] },
-    { rota: "/api/admin/agentes/executar", aceitos: [401, 403] },
-    { rota: "/api/admin/agentes/memoria", aceitos: [401, 403, 405] },
-    { rota: "/api/admin/agentes/reuniao", aceitos: [401, 403] },
+    { rota: "/api/admin/aprovacoes", aceitos: [404, 405] },
+    { rota: "/api/admin/agentes/chat", aceitos: [404] },
+    { rota: "/api/admin/agentes/executar", aceitos: [404] },
+    { rota: "/api/admin/agentes/memoria", aceitos: [404, 405] },
+    { rota: "/api/admin/agentes/reuniao", aceitos: [404] },
     { rota: "/api/upload/documento", aceitos: [401, 403] },
     { rota: "/api/upload/inquilino-doc", aceitos: [401, 403] },
     { rota: "/api/ai/anuncio", aceitos: [401, 403, 503] },
