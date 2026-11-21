@@ -6,6 +6,7 @@
   Fonte única do que se espera (pelo contrato) e do que foi registrado (o valor + os encargos de cada pagamento).
 */
 import { diasInclusivos } from "./contrato-blocos.ts";
+import { ROTULO_PREPARACAO, primeiroPagamentoDoPreco, type PrecoRotulado } from "./precos.ts";
 
 export const ROTULO_CONTAS = "Contas do período";
 export const ROTULO_LIMPEZA = "Limpeza de preparação";
@@ -137,4 +138,32 @@ export function proximaParte(partesAtivas: number[]): number {
 export function partesPorOrdem<T extends { id: string; registradoEm?: string | null }>(registros: T[]): Map<string, number> {
   const ordenados = [...registros].sort((a, b) => String(a.registradoEm ?? "").localeCompare(String(b.registradoEm ?? "")));
   return new Map(ordenados.map((r, i) => [r.id, i + 1]));
+}
+
+/**
+ * E1072 (fatia 3; ORDEM-DUET-352): o "1º pagamento" que as telas mostram antes do contrato (Fechamento e proposta).
+ * Estadia em DIAS que não fecha meses cheios → o 1º bloco inteiro, pela MESMA conta do registro do bloco: o valor do
+ * bloco + as contas do período dele + a limpeza de preparação (R$ 3.143,33 no contrato provado, não R$ 3.050,00).
+ * Meses inteiros → a conta de sempre (o 1º mês com tudo + a limpeza de preparação).
+ */
+export function primeiroPagamentoDaEstadia(e: {
+  /** Os dias da estadia, quando ela é contada em dias; null/0 quando é em meses. */
+  dias: number | null | undefined;
+  preco: Pick<PrecoRotulado, "mensal" | "totalPorMes" | "totalContrato" | "unicos">;
+  blocos: { numero: number; valor: number; meses: number; dias?: number }[];
+  /** Com proposta acordada, as contas saem do Total do contrato dela; sem ela, das parcelas do mês × os dias ÷ 30. */
+  comProposta: boolean;
+}): number {
+  const dias = Math.round(Number(e.dias) || 0);
+  if (!(dias > 0) || dias % 30 === 0 || e.blocos.length === 0) return primeiroPagamentoDoPreco(e.preco);
+  const limpeza = c2(e.preco.unicos.filter((u) => u.rotulo === ROTULO_PREPARACAO).reduce((s, u) => s + u.valor, 0));
+  const blocos = [...e.blocos].sort((a, b) => a.numero - b.numero).map((b) => ({ numero: b.numero, valor: b.valor, fator: (b.dias ?? b.meses * 30) / 30 }));
+  const contas = contasDoContrato({
+    totalContratoDaProposta: e.comProposta ? e.preco.totalContrato : null,
+    aluguelDosBlocos: c2(blocos.reduce((s, b) => s + b.valor, 0)),
+    limpezaPreparacao: limpeza,
+    extrasMesCongelados: e.preco.totalPorMes - e.preco.mensal,
+    fatorDaEstadia: dias / 30,
+  });
+  return componentesDosBlocos({ blocos, contasDoContrato: contas, limpezaPreparacao: limpeza }).get(blocos[0].numero)?.total ?? primeiroPagamentoDoPreco(e.preco);
 }

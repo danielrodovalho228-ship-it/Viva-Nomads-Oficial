@@ -179,7 +179,8 @@ test("PROP-2: Fechamento com proposta aceita = preço da proposta; 1º pagamento
 test("PROP-2: o Fechamento não tem mais valor fixo de consumo, preparação ou saída", () => {
   const f = lerArquivo(new URL("../app/(dashboard)/dashboard/fechamento/closing-flow.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(f, /PREP_FEE|CHECKOUT_FEE|formatBRL\(280\)|\+ 280\b/);
-  assert.match(f, /primeiroPagamento: primeiroPagamentoDoPreco\(PRECO_FECHAMENTO\)/);
+  // E1072: a conta passa pela função única que, em meses inteiros, devolve primeiroPagamentoDoPreco(PRECO_FECHAMENTO).
+  assert.match(f, /primeiroPagamento: primeiroPagamentoDaEstadia\(\{ dias: DIAS_ACORDO, preco: PRECO_FECHAMENTO, /);
   assert.match(f, /const PRECO_FECHAMENTO = precoDoFechamento\(PROPERTY_FULL, ACORDO, prazoMeses\);/);
   assert.match(f, /data-testid="fechamento-proposta-conta"/);
 });

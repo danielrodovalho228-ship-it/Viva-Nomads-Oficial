@@ -3,7 +3,8 @@
 import { dataBRT } from "@/lib/datas-brasilia";
 import { prazoInicial } from "@/lib/inicio-estadia";
 import { rotuloPreco } from "@/lib/cartao-preco";
-import { formatBRLExato, mensalDoFechamento, parcelaDoMes, periodoPorExtenso, precoDoFechamento, primeiroPagamentoDoPreco, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
+import { formatBRLExato, mensalDoFechamento, parcelaDoMes, periodoPorExtenso, precoDoFechamento, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
+import { primeiroPagamentoDaEstadia } from "@/lib/pagamento-componentes";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { CampoData } from "@/components/ui/campo-data";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
@@ -169,7 +170,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [guaranteeId, setGuaranteeId] = useState<string | null>("caucao");
   // Quadro "antes da entrada" (prompt 24): 1º pagamento + Caução ao lado (some com seguro-fiança).
   const quadroEntrada = quadroAntesDaEntrada({
-    primeiroPagamento: primeiroPagamentoDoPreco(PRECO_FECHAMENTO),
+    // E1072: na estadia em dias, o 1º pagamento é o 1º bloco inteiro — a mesma conta que o registro do bloco cobra.
+    primeiroPagamento: primeiroPagamentoDaEstadia({ dias: DIAS_ACORDO, preco: PRECO_FECHAMENTO, blocos: resumo.blocos, comProposta: !!ACORDO?.termos }),
     caucao: CAUCAO_50,
     garantia: garantiaDoContrato(guaranteeId),
   });
