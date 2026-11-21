@@ -103,6 +103,7 @@ test.describe("T1710 — E1069: o pacote de provas diz a hora certa e o nome de 
   });
 
   test("2. as assinaturas trazem o nome de quem assinou, para as duas partes", async ({ browser }) => {
+    test.fail(true, "ENSAIO na main: o teste 2 tem de falhar (E1069 sem correcção); falha esperada só para o teste 3 correr");
     for (const [nome, email] of [["2-dono", dono.email], ["2-moradora", inq.email]] as const) {
       const texto = await textoDoPacote(browser, email, nome);
       expect(texto, `${nome}: a assinatura com hash traz o nome`).toContain("Dora Hora Sobrenome (proprietário) em 01/10/2026 às 14:32 — Hash do resumo assinado:");
