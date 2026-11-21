@@ -28,10 +28,12 @@ import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
     c. nenhum telefone nem e-mail do Rogério em página pública;
     d. nada diz "credenciados com o CNPJ da Viva" enquanto o CNPJ não existir.
 
-  PONTO DE LIGAÇÃO — `colocarNoAmbito`: a forma como o E1077 marca o âmbito ainda não existe na main. Hoje a única marca
-  de teste é `profiles.is_teste` (o pedido do dono de teste nasce com `teste=true`, e num pedido de teste o avaliador
-  "em_teste" é elegível). A função marca isso e é o único sítio a mudar quando o E1077 fixar a sua marca. X fica de fora
-  de propósito: sem marca, hoje ele seria elegível num pedido de teste, e a condição (a) morde aí.
+  PONTO DE LIGAÇÃO — `colocarNoAmbito`: a marca do âmbito é a do E1077 (#4091): a conta entra em `vistoria_piloto`
+  (migração 0350), e a porta `vistoriaAtiva()` abre só para a conta da sessão que lá está. As contas do piloto são também
+  "dado de teste" (`profiles.is_teste`, ORDEM-DUET-371 ponto 3): o pedido do dono nasce `teste=true`, e num pedido de
+  teste o avaliador "em_teste" é elegível (regras.ts, `impedimento`). Sem o #4091 a tabela não existe e o beforeAll
+  falha ao gravar: na main a trava é vermelha por estrutura, não por comportamento (declarado no PR). X fica de fora de
+  propósito: é "em_teste" na mesma cidade, e só o âmbito o tira da lista do dono.
 
   Simulações declaradas (gravadas pelo laboratório, como na t305): os credenciamentos "em_teste" (o credenciamento
   completo espera o CNPJ da Viva), a tabela de preços da cidade, as coordenadas do imóvel, a hora da visita já passada
@@ -56,10 +58,12 @@ const CONTATO = /tel:|mailto:|wa\.me|api\.whatsapp|@lab\.vivanomads\.test/i;
 /** Condição d: nada se apresenta como credenciado com o CNPJ da Viva. */
 const CNPJ_DA_VIVA = /CNPJ da Viva/i;
 
-/** PONTO DE LIGAÇÃO do E1077: põe as contas no âmbito de teste (ver o comentário do topo). */
+/** PONTO DE LIGAÇÃO do E1077 (#4091): as contas entram no piloto (vistoria_piloto) e ficam como dado de teste. */
 async function colocarNoAmbito(userIds: string[]) {
-  const { error } = await adm().from("profiles").update({ is_teste: true }).in("id", userIds);
+  const { error } = await adm().from("vistoria_piloto").upsert(userIds.map((user_id) => ({ user_id, nota: "laboratório t2214" })), { onConflict: "user_id" });
   if (error) throw error;
+  const { error: e2 } = await adm().from("profiles").update({ is_teste: true }).in("id", userIds);
+  if (e2) throw e2;
 }
 
 async function abrir(browser: Browser, email: string, geo = false): Promise<Page> {
@@ -132,6 +136,7 @@ test.describe("T2214 — E1077: o fluxo do avaliador em teste corre só dentro d
     const creds = Object.values(cred).map((c) => c.id).filter(Boolean);
     if (creds.length) await adm().from("avaliadores_credenciamento").delete().in("id", creds);
     await adm().from("vistoria_precos").delete().eq("cidade", CIDADE);
+    await adm().from("vistoria_piloto").delete().in("user_id", ["R", "E", "donoP"].map((k) => ids[k]).filter(Boolean));
     await apagarContas(["R", "E", "X", "donoP", "donoF"].map((k) => ids[k]).filter(Boolean));
   });
 
