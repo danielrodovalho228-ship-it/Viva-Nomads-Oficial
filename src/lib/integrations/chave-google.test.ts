@@ -18,3 +18,13 @@ test("sem chave (ou só espaços) devolve vazio", () => {
   assert.equal(chaveGoogle({}), "");
   assert.equal(chaveGoogle({ GOOGLE_PLACES_API_KEY: "  " }), "");
 });
+
+// Ordem 902ea6bf item 1: a chave única precisa estar documentada no README.
+test("README documenta a chave única do Google, o apelido e o token do Mapbox", async () => {
+  const { readFileSync } = await import("node:fs");
+  const readme = readFileSync(new URL("../../../README.md", import.meta.url), "utf8");
+  assert.match(readme, /GOOGLE_PLACES_API_KEY/);
+  assert.match(readme, /GOOGLE_MAPS_API_KEY[^\n]*apelido/);
+  assert.match(readme, /NEXT_PUBLIC_MAPBOX_TOKEN/);
+  assert.match(readme, /Mapa: ligado\/desligado/);
+});
