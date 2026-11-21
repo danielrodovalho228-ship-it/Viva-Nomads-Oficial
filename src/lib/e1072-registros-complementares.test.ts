@@ -122,7 +122,10 @@ test("a ação grava a parte e recusa o que passa do que falta; a tela oferece o
   assert.match(acoes, /parte,/);
   assert.match(acoes, /MSG_PASSA_DO_QUE_FALTA/);
   const tela = ler("src/app/(dashboard)/dashboard/contratos/contratos-client.tsx");
-  assert.match(tela, /"registrar-complemento"/);
+  // O registro complementar abre pelo MESMO botão de registro do bloco (a mesma marca "registrar-recebimento"): cada bloco
+  // tem um só botão de registro de cada vez. É por essa marca que a trava t2212 (Pista 3, #4082) registra a 2ª parte.
+  assert.match(tela, /data-testid=\{tipo === "caucao" \? "registrar-caucao" : "registrar-recebimento"\}/);
+  assert.doesNotMatch(tela, /"registrar-complemento"/);
   assert.match(tela, /Registrar o que falta/);
   // As leituras (pacote, telas, recibo) tiram a parte da ORDEM dos registros do bloco: não leem a coluna nova.
   assert.match(COLUNAS_PROVAS.pagamentos, /\bbloco_id\b/);

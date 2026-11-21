@@ -630,7 +630,7 @@ function RegistrarRecebimento({
         type="button"
         onClick={() => setOpen(true)}
         className="mt-3 inline-flex items-center gap-2 rounded-lg border border-sage-200 px-3 py-2 text-xs font-medium text-forest hover:bg-sage-100"
-        data-testid={tipo === "caucao" ? "registrar-caucao" : complemento ? "registrar-complemento" : "registrar-recebimento"}
+        data-testid={tipo === "caucao" ? "registrar-caucao" : "registrar-recebimento"}
       >
         <Plus className="h-3.5 w-3.5" /> {tipo === "caucao" ? "Registrar recebimento da Caução" : complemento ? "Registrar o que falta" : "Registrar recebimento"}
       </button>
