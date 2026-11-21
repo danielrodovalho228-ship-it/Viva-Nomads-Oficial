@@ -25,8 +25,11 @@ test("no computador, a caixa do QR oferece a câmera deste computador e ela abre
   // Sem câmera de verdade (permissão negada, sem aparelho), volta para o QR.
   assert.match(tela, /onSemCamera=\{\(\) => \{\s*setSemCamera\(true\);\s*setCameraComputador\(false\);/);
   // A câmera aceita a webcam do computador (facingMode "ideal", nunca "exact").
-  assert.match(tela, /facingMode: \{ ideal:/);
+  const regras = readFileSync(new URL("./prova-camera.ts", import.meta.url), "utf8");
+  assert.match(regras, /facingMode: \{ ideal:/);
+  assert.doesNotMatch(regras, /facingMode: \{ exact:/);
   assert.doesNotMatch(tela, /facingMode: \{ exact:/);
+  assert.match(tela, /restricoesDaCamera\(frente, tentativa\)/);
 });
 
 test("regra antifraude intacta: nenhum campo de arquivo, a foto sai do vídeo ao vivo e vai com o token", () => {
