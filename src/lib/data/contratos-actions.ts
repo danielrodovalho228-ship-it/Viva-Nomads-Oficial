@@ -359,7 +359,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
   // Avança o ciclo de blocos (encerramento por não-renovação etc.) — o pg_cron
   // cobre quando ninguém abre o painel. Best-effort.
   try {
-    await createAdminClient()?.rpc("avancar_ciclo_blocos"); // só o servidor executa (0070)
+    // ENSAIO (quebra da perna 1): o ciclo dos blocos não corre ao abrir Contratos.
   } catch {
     /* best-effort */
   }
