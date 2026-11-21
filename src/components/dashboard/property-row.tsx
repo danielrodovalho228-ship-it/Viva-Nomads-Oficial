@@ -6,7 +6,7 @@ import { ChevronRight } from "lucide-react";
 import { coverPhoto } from "@/lib/media";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { isExemplo } from "@/lib/demo-listing";
-import { SELO_EXEMPLO } from "@/config/exemplo-proprietarios";
+import { SELO_EXEMPLO } from "@/config/selo-exemplo";
 
 /**
  * Linha de imóvel com MINIATURA da foto de capa (56px, cantos arredondados) +

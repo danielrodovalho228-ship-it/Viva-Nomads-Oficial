@@ -37,13 +37,9 @@ export interface AvaliacaoExemplo {
   resposta?: string;
 }
 
-/**
- * E926: UM nome só para o anúncio de exemplo, em todas as superfícies: "Anúncio de exemplo" (o dos cartões). Antes o selo da
- * página do imóvel, do bloco do proprietário, das avaliações e do perfil de exemplo usava outro nome, e o aviso abaixo, um
- * terceiro. Os nomes antigos estão no teste que os proíbe (src/lib/e926-termo-unico-exemplo.test.ts).
- */
-export const SELO_EXEMPLO = "Anúncio de exemplo";
-export const AVISO_EXEMPLO = "Anúncio de exemplo: nos anúncios reais estes dados vêm do perfil e das estadias verificadas.";
+// E926: o rótulo e o aviso moram em ./selo-exemplo.ts (arquivo só deles); daqui saem os mesmos, para quem já importava.
+import { AVISO_EXEMPLO, SELO_EXEMPLO } from "./selo-exemplo.ts";
+export { AVISO_EXEMPLO, SELO_EXEMPLO };
 
 export const PROPRIETARIOS_EXEMPLO: readonly ProprietarioExemplo[] = [
   {
