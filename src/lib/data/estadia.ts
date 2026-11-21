@@ -8,7 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
-import { primeiroPagamentoConfirmado } from "@/lib/contrato-estado";
+import { primeiroPagamentoConfirmado, primeiroPagamentoRegistrado } from "@/lib/contrato-estado";
 import { estadoConferencia, type RespostaConferencia } from "@/lib/conferencia";
 import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
@@ -263,19 +263,21 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
   }));
   const previstos = Math.max(1, Number(c.qtd_ocupantes) || 1);
   // L2-B item 12: a mesma função dos Contratos e da Garantias decide o estado da caução.
-  const estadoCaucao = caucaoDoChecklist(
-    estadoCaucaoUnico({
-      garantia: c.garantia,
-      blocos: blocos.map((b) => ({ caucao: b.caucao, caucaoStatus: b.caucao_status })),
-      pagamentos: pagamentos.map((p) => ({ tipo: p.tipo, valor: p.valor ?? 0, confirmado: p.confirmado_pelo_inquilino, anulado: !!p.anulado_em })),
-    }),
-  );
+  const entradaCaucao = {
+    garantia: c.garantia,
+    blocos: blocos.map((b) => ({ caucao: b.caucao, caucaoStatus: b.caucao_status })),
+    pagamentos: pagamentos.map((p) => ({ tipo: p.tipo, valor: p.valor ?? 0, confirmado: p.confirmado_pelo_inquilino, anulado: !!p.anulado_em })),
+  };
+  const estadoCaucao = caucaoDoChecklist(estadoCaucaoUnico(entradaCaucao));
   const checklist = checklistAntesDaEntrada(
     {
       assinadoProprietario: !!c.assinado_proprietario_em,
       assinadoInquilino: !!c.assinado_inquilino_em,
       primeiroPagamento: primeiro,
+      // E1068: o estado do meio (registrado pelo proprietário, à espera do morador), das mesmas fontes do confirmado.
+      primeiroPagamentoRegistrado: primeiroPagamentoRegistrado(pagamentos),
       caucao: estadoCaucao,
+      caucaoRegistrada: estadoCaucaoUnico(entradaCaucao).chave === "aguardando_confirmacao",
       conferencia: { estado: conf ? estadoConferencia(respostas) : null, prazo: prazoDaConferencia(periodo) },
       ocupantes: { preenchidos: ocupantes.length, previstos },
       instrucoesPublicadas: instrucoesPreenchidas(instr.efetivas),
