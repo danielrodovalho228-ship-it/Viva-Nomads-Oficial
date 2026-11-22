@@ -92,3 +92,31 @@ test("migração 0353: um contrato por proposta e a proposta na chave da reserva
   assert.match(p, /'20261122000353', '0353_contrato_por_proposta_e1086'/);
   assert.match(ler("../supabase/producao/rollback/0353_rollback.sql"), /contratos_lead_id_key/);
 });
+
+test("admin: cada cobrança da taxa vai para o contrato DELA; com dois contratos na candidatura não há chave ambígua", async () => {
+  const { cobrancasPorContrato, chaveCobrancaDoContrato, comissoesDosContratos } = await import("./admin/financeiro.ts");
+  const contratos = [
+    { id: "c1", lead_id: "L", proposta_id: "p1" },
+    { id: "c2", lead_id: "L", proposta_id: "p2" },
+    { id: "c9", lead_id: "M", proposta_id: null },
+  ];
+  const mapa = cobrancasPorContrato(
+    [
+      { lead_id: "L", proposta_id: "p1", status: "pago", pago_em: "2026-11-08T12:00:00Z" },
+      { lead_id: "L", proposta_id: "p2", status: "pendente", pago_em: null },
+      { lead_id: "M", proposta_id: null, status: "vencido", pago_em: null },
+    ],
+    contratos
+  );
+  assert.deepEqual(mapa.get(chaveCobrancaDoContrato("c1")), { status: "pago", pagoEm: "2026-11-08T12:00:00Z" });
+  assert.deepEqual(mapa.get(chaveCobrancaDoContrato("c2")), { status: "pendente", pagoEm: null });
+  assert.equal(mapa.get("L"), undefined, "duas estadias na candidatura: a chave só pela candidatura não existe");
+  assert.deepEqual(mapa.get("M"), { status: "vencido", pagoEm: null }, "um contrato só: a chave pela candidatura continua");
+  // A tabela de taxas: a 2ª estadia aparece 'pendente', não 'paga' pela cobrança da 1ª.
+  const linha = (id: string, leadId: string) => ({ id, criadoEm: "2026-11-21T10:00:00Z", imovel: "Imóvel", cidade: null, plano: null, taxaPercent: 0.12, aluguelMensal: 2800, taxaValor: 100, leadId });
+  const tabela = comissoesDosContratos([linha("c1", "L"), linha("c2", "L"), linha("c9", "M")], mapa);
+  assert.deepEqual(tabela.map((l) => l.status), ["pago", "pendente", "vencido"]);
+  // Contrato da 2ª estadia ainda sem cobrança: "sem cobrança", nunca a cobrança da 1ª.
+  const soPrimeira = cobrancasPorContrato([{ lead_id: "L", proposta_id: "p1", status: "pago", pago_em: null }], contratos);
+  assert.deepEqual(comissoesDosContratos([linha("c1", "L"), linha("c2", "L")], soPrimeira).map((l) => l.status), ["pago", "sem_cobranca"]);
+});
