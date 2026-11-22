@@ -76,7 +76,8 @@ import {
 import { hojeBR } from "@/lib/utils";
 import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
 import { formaInicialDaProposta, normalizarEscolha, validarFormaNaProposta, type EscolhaPagamento } from "@/lib/pagamento-forma/regras";
-import { precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
+import { formatBRLExato, precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
+import { caucaoDaProposta, rotuloCaucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
 import { estadoDaPreAceitacao, linhaDeContexto, podeReabrir, prazoDaPreAceitacao, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO, TEXTO_TAXA_CONTINUA, textoDoPrazo } from "@/lib/propostas/pre-aceitacao";
 import { reabrirNoBanco } from "@/lib/propostas/pre-aceitacao-servidor";
@@ -103,6 +104,8 @@ function dadosDoEmailDaProposta(
 ) {
   const tot = calcularTotais(c.termos);
   const entrada = String(c.termos.dataEntrada).slice(0, 10);
+  // E1058: a caução do ecrã da proposta (a mesma função e o mesmo rótulo) entra no quadro do e-mail.
+  const caucao = caucaoDaProposta(c.termos, tot.valorMensal);
   const linhas = linhasProposta({
     numero: String(numero),
     imovel,
@@ -114,6 +117,7 @@ function dadosDoEmailDaProposta(
     valorMensal: tot.valorMensal,
     contaTotal: contaDaProposta(c.termos),
     responderAte: c.desfecho === "nova" || c.desfecho === "contraproposta" ? c.responderAte : null,
+    caucao: caucao ? { rotulo: rotuloCaucaoDaProposta(caucao), valor: formatBRLExato(caucao.valor) } : null,
   });
   const passo = proximoPassoProposta(c.desfecho, quemRecebe);
   return {

@@ -46,7 +46,7 @@ import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
-import { aberturaContratoPronto, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
+import { aberturaContratoPronto, contaDoContrato, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
 import { MSG_PAUSAR_FALHOU, MSG_REATIVAR_FALHOU, donoPodeReativar, textoDaPausa, type EmAndamento } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
@@ -1613,7 +1613,18 @@ export async function registrarContrato(
       // E202: o e-mail do contrato pronto diz o imóvel, o período, o valor mensal e o total (não só "Há uma atualização").
       const i = (im ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
       const imovelEmail = { id: lead.property_id as string, titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
-      const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel, dias: resumo.prazoTotalDias });
+      // E1066: o total pela fonte única (a conta da proposta acordada: mensal, contas e limpeza) e a caução dos blocos.
+      const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel, dias: resumo.prazoTotalDias,
+        contaTotal: contaDoContrato(acordada),
+        caucao: rows.reduce((s, r) => s + Number(r.caucao), 0),
+      });
+      const quadro = {
+        subject: ASSUNTOS.contratoPronto,
+        body: (nome?: string) => aberturaContratoPronto({ nome, imovel: imovelEmail }),
+        detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) + `<p>${escaparHtml(PROXIMO_PASSO_CONTRATO_PRONTO)}</p>`,
+        detailsText: [...linhas.map((l) => `${l.rotulo}: ${l.valor}`), PROXIMO_PASSO_CONTRATO_PRONTO].join("\n"),
+        ctaLabel: "Ler e assinar o contrato",
+      };
       await notify({
         event: "contract_status",
         email: pessoa?.user?.email ?? undefined,
@@ -1623,12 +1634,23 @@ export async function registrarContrato(
         // E444: crítico (assinar), resolvido quando o morador assinar.
         refId: contratoNovoId,
         papelAviso: "morador",
-        subject: ASSUNTOS.contratoPronto,
-        body: (nome?: string) => aberturaContratoPronto({ nome, imovel: imovelEmail }),
-        detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) + `<p>${escaparHtml(PROXIMO_PASSO_CONTRATO_PRONTO)}</p>`,
-        detailsText: [...linhas.map((l) => `${l.rotulo}: ${l.valor}`), PROXIMO_PASSO_CONTRATO_PRONTO].join("\n"),
-        ctaLabel: "Ler e assinar o contrato",
+        ...quadro,
       });
+      // E1066: o dono também recebe o e-mail de geração (antes só o morador), com o mesmo quadro.
+      const donoId = String(lead.owner_id ?? "");
+      if (donoId) {
+        const { data: dono } = await admin.auth.admin.getUserById(donoId);
+        await notify({
+          event: "contract_status",
+          email: dono?.user?.email ?? undefined,
+          userId: donoId,
+          pushUrl: `/dashboard/contratos/${contratoNovoId}`,
+          imovelId: lead.property_id as string,
+          refId: contratoNovoId,
+          papelAviso: "dono",
+          ...quadro,
+        });
+      }
     } catch {
       /* aviso é best-effort: o contrato já está registrado */
     }
