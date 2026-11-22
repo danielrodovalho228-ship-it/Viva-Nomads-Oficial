@@ -175,7 +175,7 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=(self)" },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           // E1095: a política de conteúdo passou de observada (Report-Only) a APLICADA.
-          { key: "Content-Security-Policy", value: politicaDeConteudo() },
+          { key: "Content-Security-Policy-Report-Only", value: politicaDeConteudo() },
         ],
       },
       // Ponte do login social no app: o código PKCE vai na URL, então esta rota nunca manda
