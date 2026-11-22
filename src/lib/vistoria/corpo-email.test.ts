@@ -79,6 +79,7 @@ test("ponto de envio: todo avisar() da avaliação passa a referência (pedido o
   }
   assert.equal(n, 26);
   const srv = arquivos[1];
-  assert.match(srv, /select\("property_id, agendado_para, avaliadores_credenciamento\(parceiros\(nome_publico\)\)"\)/);
+  // E1084 (asserção alterada): o select leva também o user_id do parceiro — o nome do avaliador vem da conta (fonte única).
+  assert.match(srv, /select\("property_id, agendado_para, avaliadores_credenciamento\(parceiros\(nome_publico, user_id\)\)"\)/);
   assert.match(srv, /corpoVistoria\(ev as EventoVistoria, await fatosDaVistoria\(admin, ref\)\)/);
 });

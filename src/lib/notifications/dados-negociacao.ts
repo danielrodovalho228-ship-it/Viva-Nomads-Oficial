@@ -7,6 +7,18 @@
 */
 
 import { codigoDoImovel } from "../imovel-pagina.ts";
+import { precoDaProposta, type TermosPreco } from "../precos.ts";
+
+/**
+ * E1066 — o "Total do contrato" do e-mail pela fonte única (precoDaProposta: mensal, contas e limpeza — a conta da
+ * proposta acordada, de que o contrato nasceu). Sem proposta acordada: null (o quadro fica com a conta de antes).
+ */
+export function contaDoContrato(
+  acordada: { valorMensal: number; meses: number; termos: Omit<TermosPreco, "valorMensal" | "meses"> } | null,
+): string | null {
+  if (!acordada) return null;
+  return precoDaProposta({ ...acordada.termos, valorMensal: acordada.valorMensal, meses: acordada.meses }).conta ?? null;
+}
 
 export interface ImovelDoEmail {
   /** E394: o id do anúncio (vira o código VN-… no e-mail). */
@@ -115,18 +127,31 @@ export function saidaDepoisDaUltimaNoite(fimInclusivoISO: string | null | undefi
  * contrato. E671: o período impresso vai da entrada até esse fim — a MESMA data de saída da página do contrato, da
  * estadia e dos calendários (e do prazo da conferência de saída). A proposta e a candidatura seguem com entrada + dias (E599).
  */
-export function linhasContrato(o: { imovel: ImovelDoEmail; inicio: string; fim: string; meses: number; valorMensal: number; dias?: number | null }): LinhaDado[] {
+export function linhasContrato(o: {
+  imovel: ImovelDoEmail;
+  inicio: string;
+  fim: string;
+  meses: number;
+  valorMensal: number;
+  dias?: number | null;
+  /** E1066: a conta da fonte única (contaDoContrato); vazia → a conta de antes, só o aluguel. */
+  contaTotal?: string | null;
+  /** E1066: a caução dos blocos do contrato; 0 ou vazia (seguro-fiança) → sem a linha. */
+  caucao?: number | null;
+}): LinhaDado[] {
   // E562: contrato em dias exatos → "R$ 3.000 × 43 dias ÷ 30 = R$ 4.300" (em meses cheios, como antes).
   const emDias = o.dias != null && o.dias > 0 && o.dias % 30 !== 0;
-  const total = emDias
+  const soAluguel = emDias
     ? `${brl(o.valorMensal)} × ${o.dias} dias ÷ 30 = ${brl(Math.round(((o.valorMensal * (o.dias as number)) / 30) * 100) / 100)}`
     : `${o.meses} × ${brl(o.valorMensal)} = ${brl(o.valorMensal * o.meses)}`;
-  return [
+  const linhas: LinhaDado[] = [
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
     { rotulo: "Período", valor: textoPeriodo(o.inicio, o.fim, o.meses, o.dias) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
-    { rotulo: "Total do contrato", valor: total },
+    { rotulo: "Total do contrato", valor: o.contaTotal || soAluguel },
   ];
+  if (o.caucao != null && Number(o.caucao) > 0) linhas.push({ rotulo: "Caução", valor: brl(Number(o.caucao)) });
+  return linhas;
 }
 
 export type Desfecho = "nova" | "contraproposta" | "aceita" | "recusada";
