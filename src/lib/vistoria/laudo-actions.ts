@@ -17,6 +17,7 @@ import { porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, rotaDono, tabelaDaCidade } from "./servidor";
 import type { MotivoVerificacao } from "./strikes";
 import { lerNivelDoLaudo } from "./nivel-do-laudo";
+import { faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita } from "./visita-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
 
 /*
@@ -160,6 +161,12 @@ export async function salvarRuidoVisita(form: FormData): Promise<Res> {
 export async function concluirVisita(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || c.p.status !== "agendado") return SEM_ACESSO;
+  // ORDEM-DUET-431: o roteiro TRAVA a conclusão. Sem a foto de cada ambiente do roteiro a visita não conclui (e sem
+  // conseguir ler as fotos também não: nunca conclui "no escuro").
+  const { data: fotos, error: erroFotos } = await c.admin.from("vistoria_checklist_fotos").select("comodo").eq("pedido_id", c.p.id);
+  if (erroFotos) return { ok: false, erro: "Não foi possível conferir as fotos da visita agora. Tente de novo em instantes." };
+  const faltas = faltasDoRoteiro(roteiroDaVisita(((fotos ?? []) as { comodo: string | null }[]).map((f) => f.comodo)));
+  if (faltas.length) return { ok: false, erro: msgRoteiroIncompleto(faltas) };
   const agora = new Date().toISOString();
   await c.admin.from("vistoria_pedidos").update({ status: "realizada", visita_concluida_em: agora, atualizado_em: agora }).eq("id", c.p.id).eq("status", "agendado");
   revalidatePath(ROTA_AVALIADOR);

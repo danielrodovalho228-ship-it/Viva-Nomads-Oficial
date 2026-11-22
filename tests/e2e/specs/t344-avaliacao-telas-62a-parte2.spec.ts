@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosDoRoteiro, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 
 /**
@@ -147,6 +147,7 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await expect(p.getByTestId("checklist-fotos-faltam")).toHaveCount(0, { timeout: 30_000 });
       await expect.poll(async () => ((await adm().from("vistoria_checklist_fotos").select("id").eq("pedido_id", pedido).eq("item_chave", "iluminacao")).data ?? []).length, { timeout: 20_000 }).toBe(1);
       // Concluir → revisar o laudo antes de emitir.
+      await fotosDoRoteiro(pedido); // E1079 (ORDEM-431): concluir exige a foto de cada ambiente do roteiro
       await p.getByTestId("concluir-visita").getByRole("button", { name: "Concluir a visita" }).click();
       await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedido).single()).data?.status, { timeout: 20_000 }).toBe("realizada");
       await p.reload({ waitUntil: "domcontentloaded" });

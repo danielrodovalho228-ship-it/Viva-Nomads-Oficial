@@ -8,6 +8,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { SeloAssinatura } from "@/components/vistoria/selo-assinatura";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { ChecklistAvaliador } from "@/components/vistoria/checklist-avaliador";
+import { VisitaEmAndamento } from "@/components/avaliadores/visita";
 import { MedirInternetAvaliacao } from "@/components/vistoria/medir-internet-avaliacao";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { PERGUNTAS_RUIDO } from "@/config/niveis";
@@ -17,6 +18,7 @@ import { ROTULO_RESULTADO, itensSemResposta, resultadoAvaliacao, resumoPorGrupo,
 import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO } from "@/lib/vistoria/nivel-do-laudo";
+import { faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
 import { DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
 import { BOTAO_ASSINAR_LAUDO, CARTAO_NIVEL_LAUDO, LINHA_RESUMO_LAUDO, MARCA_NIVEL_LAUDO, MARCA_RESUMO_LAUDO, RESUMO_LAUDO, TEXTO_NIVEL_LAUDO, TITULO_NIVEL_LAUDO } from "@/lib/conta/visual-mockup";
 import { concluirVisita, confirmarCorrecao, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
@@ -53,7 +55,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   const [{ data: itens }, { data: laudos }, { data: fotos }] = await Promise.all([
     admin.from("vistoria_checklist").select("chave, valor, observacao").eq("pedido_id", p.id),
     admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinado_em, assinatura_hash, nivel_sustentado").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
-    admin.from("vistoria_checklist_fotos").select("item_chave, comodo, criado_em").eq("pedido_id", p.id).order("criado_em"),
+    admin.from("vistoria_checklist_fotos").select("item_chave, comodo, path, criado_em").eq("pedido_id", p.id).order("criado_em"),
   ]);
   const iniciais = Object.fromEntries(((itens ?? []) as { chave: string; valor: ValorItem; observacao: string | null }[]).map((i) => [i.chave, { valor: i.valor, observacao: i.observacao }]));
   const laudo = ((laudos ?? [])[0] ?? null) as {
@@ -73,7 +75,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   } | null;
   const emVisita = ["agendado", "realizada"].includes(p.status as string);
   const ruido = (p.ruido_respostas ?? null) as Record<string, boolean> | null;
-  const fotosLista = (fotos ?? []) as { item_chave: string | null; comodo: string | null }[];
+  const fotosLista = (fotos ?? []) as { item_chave: string | null; comodo: string | null; path: string }[];
   // Revisão antes de emitir (item 9): o mesmo cálculo do laudo, sobre as respostas salvas.
   const respostasSalvas = Object.fromEntries(Object.entries(iniciais).map(([k, v]) => [k, v.valor]));
   const observacoes = new Map(Object.entries(iniciais).map(([k, v]) => [k, v.observacao]));
@@ -85,6 +87,20 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   // E1079 (fatia 5): na etapa do laudo (visita concluída, laudo por assinar) a tela é a do desenho — "Laudo da avaliação",
   // os níveis em cartões, o resumo e "Assinar laudo" — e este bloco vem ANTES do checklist. Durante a visita, vem depois.
   const naEtapaDoLaudo = p.status === "realizada";
+  // E1079 (fatia 4): durante a visita (agendada, por concluir) a tela abre com o bloco do desenho — a foto do imóvel, o
+  // roteiro marcado pelas fotos de cômodo já enviadas e a grade "Fotos do imóvel". As miniaturas saem por URL assinada de
+  // 10 minutos (o caminho no bucket não vai para a tela); a capa é a 1ª foto do anúncio. Se uma leitura falhar, o bloco
+  // aparece sem a imagem — nunca derruba a visita.
+  const agendada = p.status === "agendado";
+  // ORDEM-DUET-431/435: "em andamento" só a partir do dia marcado; antes, "Visita agendada". O roteiro TRAVA a conclusão.
+  const emAndamento = visitaEmAndamento(p.status as string, p.agendado_para as string | null, new Date());
+  const roteiro = roteiroDaVisita(fotosLista.map((f) => f.comodo));
+  const faltasRoteiro = agendada ? faltasDoRoteiro(roteiro) : [];
+  const fotosDeComodo = agendada ? fotosLista.filter((f) => f.comodo) : [];
+  const assinadas = fotosDeComodo.length ? ((await admin.storage.from("avaliacao-imovel").createSignedUrls(fotosDeComodo.map((f) => f.path), 600)).data ?? []) : [];
+  const miniaturas = fotosDeComodo.flatMap((f, i) => (assinadas[i]?.signedUrl ? [{ url: assinadas[i].signedUrl, comodo: f.comodo as string }] : []));
+  const { data: capas } = agendada ? await admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1) : { data: null };
+  const capaUrl = ((capas ?? [])[0] as { url: string } | undefined)?.url;
   const tipoRotulo = p.tipo === "verificacao" ? "Verificação aberta pela Viva" : p.tipo === "contestacao" ? "2ª avaliação (contestação)" : undefined;
   const resumoLaudo = [linhaFotos(fotosLista.length), linhaChecklist(itensSemResposta(respostasSalvas).length)];
   const fecho = (
@@ -93,6 +109,9 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
           <FormAcao acao={concluirVisita} testid="concluir-visita">
             <input type="hidden" name="pedidoId" value={p.id} />
             <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo em até 48 horas úteis.</p>
+            {faltasRoteiro.length > 0 && (
+              <p className="mt-2 text-sm text-ink" role="status" data-testid="concluir-faltas">{msgRoteiroIncompleto(faltasRoteiro)}</p>
+            )}
             <Button type="submit" size="sm" className="mt-2">Concluir a visita</Button>
           </FormAcao>
         ) : (
@@ -158,15 +177,16 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
 
   return (
     <>
-      <PageTitle title={naEtapaDoLaudo ? TITULO_LAUDO : "Checklist da avaliação"} subtitle={naEtapaDoLaudo ? [tipoRotulo, SUBTITULO_LAUDO].filter(Boolean).join(" · ") : tipoRotulo} />
+      <PageTitle title={agendada ? tituloDaVisita(emAndamento) : naEtapaDoLaudo ? TITULO_LAUDO : "Checklist da avaliação"} subtitle={naEtapaDoLaudo ? [tipoRotulo, SUBTITULO_LAUDO].filter(Boolean).join(" · ") : tipoRotulo} />
       <ButtonLink href="/dashboard/parceiro/avaliacao" variant="ghost" size="sm" className="mb-4">Voltar às avaliações</ButtonLink>
       {p.ocupado && <p className="mb-4 text-sm text-ink">Imóvel ocupado: a visita só acontece com o morador de acordo. Não fotografe pertences nem pessoas.</p>}
 
       {emVisita && (
         <>
+          {agendada && <VisitaEmAndamento capaUrl={capaUrl} roteiro={roteiro} fotos={miniaturas} />}
           {naEtapaDoLaudo && fecho}
           {/* Item 8: os 9 grupos em passos; a internet e o ruído são medidos no próprio passo. */}
-          <Panel title="Itens" className="mb-6">
+          <Panel id="itens" title="Itens" className="mb-6 scroll-mt-16">
             <ChecklistAvaliador
               pedidoId={p.id}
               iniciais={iniciais}
@@ -204,7 +224,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
             />
           </Panel>
 
-          <Panel title="Fotos dos cômodos" className="mb-6" data-testid="avaliacao-fotos">
+          <Panel id="enviar-foto" title="Fotos dos cômodos" className="mb-6 scroll-mt-16" data-testid="avaliacao-fotos">
             <p className="text-sm text-muted">Uma foto por cômodo. A foto de item não conforme sai no próprio item, acima. Sem pessoas e sem pertences; a localização da foto é apagada no envio.</p>
             <p className="mt-1 text-xs text-muted" data-testid="avaliacao-fotos-contagem">{fotosLista.length} foto(s) enviada(s).</p>
             <FormAcao acao={enviarFotoAvaliacao} className="mt-3 grid gap-2" testid="avaliacao-foto-form">
