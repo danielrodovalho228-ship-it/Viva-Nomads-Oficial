@@ -64,6 +64,14 @@ export function diaBRT(d: Date | string | number | null | undefined): string | n
   return `${p.ano}-${p.mes}-${p.dia}`;
 }
 
+/**
+ * "2026-10-19" — HOJE no calendário de Brasília. A fonte única do "hoje" (E1114/E1115): é o diaBRT do agora, por
+ * conversão de fuso de verdade. Nunca `toISOString().slice(0, 10)` (o dia em UTC vira às 21:00 de Brasília) nem −3 h fixas.
+ */
+export function hojeBRT(agora: Date = new Date()): string {
+  return diaBRT(agora) ?? (diaBRT(new Date()) as string);
+}
+
 /** Diferença (min) entre o relógio de Brasília e o UTC no instante dado (−180 hoje; respeita horário de verão antigo). */
 function deslocamentoBRT(x: Date): number {
   const p = partes(x);
