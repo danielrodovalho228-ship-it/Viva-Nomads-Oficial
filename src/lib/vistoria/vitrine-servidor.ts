@@ -23,7 +23,7 @@ export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvali
   if (falha) throw new Error(`[vitrine] ${falha.error!.message}`);
   const credsLidos = (creds.data ?? []) as unknown as { id: string; numero_credenciado: string; user_id: string | null; parceiros: { user_id: string | null } | null }[];
   // E1099 (ORDEM-473 §1): a conta pela regra única — também quando o credenciamento foi criado pelo parceiro.
-  const usuarioDe = new Map(credsLidos.map((c) => [c.numero_credenciado, contaDaLinhaDeCredenciamento(c)]));
+  const usuarioDe = new Map(credsLidos.map((c) => [c.numero_credenciado, c.user_id]) /* MUTAÇÃO (ensaio): a listagem só por user_id */);
   // E1097: o perfil do piloto ligado a um credenciamento (o do Rogério, quando o CNPJ chegar) dá o selo a esse credenciado
   // e não entra outra vez na listagem.
   const numeroDoCred = new Map(credsLidos.map((c) => [c.id, c.numero_credenciado]));
