@@ -6,6 +6,7 @@
 */
 import { ETIQUETA_BRASILIA, dataBRT, horaBRT } from "../datas-brasilia.ts";
 import { HORAS_PARA_RESPONDER, ROTULO_IMPEDIMENTO, atendeCidade, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
+import { comoEmBreve, type ChaveIdentidade } from "../identidade/estado.ts";
 
 // ── Data e hora da visita (QA do #1111, item 6: sem segundos e com o fuso) ─────────────────────────────────────
 /** "25/10/2026 às 10:00" no horário de Brasília. */
@@ -181,10 +182,11 @@ export function contagemDecisoes(e: { credenciamentos: { status: StatusCredencia
  * ainda desligado ("em breve"), avisa que o passo é da ativação e que a verificação abre perto do lançamento.
  */
 export const TEXTO_IDENTIDADE_EM_BREVE = "Na ativação · a verificação abre perto do lançamento";
-export function complementoPassoIdentidade(estado: "confirmada" | "vencida" | "simulavel" | "em_breve" | "indisponivel"): string | null {
+export function complementoPassoIdentidade(estado: ChaveIdentidade): string | null {
   if (estado === "confirmada") return null;
   if (estado === "indisponivel") return "não conferida agora";
-  return estado === "em_breve" ? TEXTO_IDENTIDADE_EM_BREVE : "Na ativação";
+  // E1106: a conferência da equipa segue o caminho do em_breve (o passo de ativação continua a pedir o laudo).
+  return comoEmBreve(estado) ? TEXTO_IDENTIDADE_EM_BREVE : "Na ativação";
 }
 
 /** E235: o número do avaliador designado leva à página pública dele (/avaliadores/[numero]). */
