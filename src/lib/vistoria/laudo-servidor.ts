@@ -5,7 +5,8 @@ import { emitidoEmBrasilia, linhaConferir, numeroExibido } from "@/lib/fiscal/pr
 import { registrarDocumento } from "@/lib/fiscal/registro";
 import { recalcularNivel } from "@/lib/niveis/servidor";
 import { classeRuido, type MedidaPonto, type RespostasRuido } from "@/lib/niveis/regras";
-import type { NivelOuAdequacao } from "@/config/niveis";
+import type { Nivel, NivelOuAdequacao } from "@/config/niveis";
+import { MSG_ESCOLHA_O_NIVEL } from "./nivel-do-laudo";
 import { VERSAO_CHECKLIST, type ValorItem } from "@/config/checklist-avaliacao";
 import { SITE_URL } from "@/lib/site";
 import {
@@ -14,7 +15,6 @@ import {
   exibicaoAvaliacao,
   itensSemResposta,
   laudoAtrasado,
-  nivelSustentado,
   prazoRessalva,
   quemPerdePaga,
   resultadoAvaliacao,
@@ -32,7 +32,8 @@ import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 import { assinaturaDoLaudo } from "./escolha";
 import { createHash } from "node:crypto";
 import { consequencias, degrauDoProprietario, expiraEm, geraStrike, imovelComStrike, proximaOrdem, strikesParaApagar, type Strike } from "./strikes";
-import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, rotaDono } from "./servidor";
+import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, nomesDasContas, rotaDono } from "./servidor";
+import { nomeDoAvaliador, primeiroNomeDoAvaliador } from "./nome-do-avaliador";
 
 /*
   Prompt 62-B2 — o lado do servidor do laudo: emite o VIS pela plataforma (registrarDocumento), aplica o resultado
@@ -249,7 +250,7 @@ export type ResEmissao = { ok: true; laudoId: string; numero: string; resultado:
  * completo. Aplica: nível sustentado + "· vistoriado" (aprovado), fora da busca por segurança grave, strike (só em
  * verificação reprovada), "quem perde paga" na contestação.
  */
-export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Date(), motivoVersao: "correcao" | "reverificacao" | null = null, assinar: { declarou: boolean } = { declarou: false }): Promise<ResEmissao> {
+export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Date(), motivoVersao: "correcao" | "reverificacao" | null = null, assinar: { declarou: boolean; nivel?: Nivel | null } = { declarou: false }): Promise<ResEmissao> {
   const { data: pd } = await admin.from("vistoria_pedidos").select(COLUNAS_PEDIDO).eq("id", pedidoId).maybeSingle();
   const p = pd as LinhaPedido | null;
   if (!p || !p.avaliador_id) return { ok: false, erro: "Pedido não encontrado." };
@@ -262,12 +263,17 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   const medidas = await medidasDoPedido(admin, p.id, visitaEm);
   const ruido = p.ruido_respostas;
   const r = resultadoAvaliacao(respostas);
-  const nivel = nivelSustentado(respostas, ruido, medidas, agora);
+  // E1083 (ORDEM-DUET-397, ponto 1): o nível é o que o AVALIADOR escolhe no laudo que assina — a plataforma não calcula.
+  const escolhido = assinar.nivel ?? null;
+  if (!motivoVersao && !escolhido) return { ok: false, erro: MSG_ESCOLHA_O_NIVEL };
   const resumo = resumoPorGrupo(respostas);
 
   // Contestação e reverificação: versão nova do MESMO laudo (a referência é o pedido de origem).
   const original = p.tipo === "contestacao" && p.origem_pedido_id ? p.origem_pedido_id : p.id;
   const anterior = await laudoDoPedido(admin, original);
+  // A versão de correção/reverificação mantém a escolha anterior do avaliador, se ele não escolher de novo.
+  const nivel = escolhido ?? anterior?.nivel_sustentado ?? null;
+  if (!nivel) return { ok: false, erro: MSG_ESCOLHA_O_NIVEL };
   const versao = anterior ? anterior.versao + 1 : 1;
   const motivo = p.tipo === "contestacao" ? "contestacao" : motivoVersao;
 
@@ -278,8 +284,15 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   ]);
   const parc = (cred?.parceiros as unknown as { nome_publico: string | null; user_id: string; documento: string | null } | null) ?? null;
   // E648: o laudo é do avaliador — sem a declaração dele (e o CNPJ da empresa) a Viva não emite nada.
-  const nomeAssinante = String(parc?.nome_publico ?? "").trim() || "Avaliador";
-  const dadosAssinatura = { avaliadorUserId: parc?.user_id ?? "", numeroCredenciado: (cred?.numero_credenciado as string | null) ?? "", nomePublico: nomeAssinante, cnpj: parc?.documento ?? "", declarou: assinar.declarou };
+  // E1084: o nome do avaliador vem da conta (fonte única); sem nome na conta, o nome público do parceiro.
+  const nomeDaConta = parc?.user_id ? (await nomesDasContas(admin, [parc.user_id])).get(parc.user_id) : null;
+  const nomeAssinante = nomeDoAvaliador(nomeDaConta, parc?.nome_publico);
+  // E1083 parte 1 (ORDEM-DUET-399; regra legal com o Daniel): em modo piloto/teste — pedido de teste ou avaliador na
+  // lista do piloto — a assinatura não exige o CNPJ. Fora do piloto, a regra do CNPJ fica intacta.
+  const { data: piloto } = parc?.user_id ? await admin.from("vistoria_piloto").select("user_id").eq("user_id", parc.user_id).maybeSingle() : { data: null };
+  const noPiloto = !!piloto;
+  const pilotoSemCnpj = p.teste === true || noPiloto;
+  const dadosAssinatura = { avaliadorUserId: parc?.user_id ?? "", numeroCredenciado: (cred?.numero_credenciado as string | null) ?? "", nomePublico: nomeAssinante, cnpj: parc?.documento ?? "", declarou: assinar.declarou, pilotoSemCnpj };
   const previa = assinaturaDoLaudo({ ...dadosAssinatura, pdfSha256: "0".repeat(64), em: agora.toISOString() });
   if (!previa.ok) return { ok: false, erro: previa.erro };
   const comFoto = new Set(((fotos ?? []) as { item_chave: string }[]).map((f) => f.item_chave));
@@ -311,7 +324,7 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
               imovel: (im?.title as string | null) ?? "Imóvel",
               cidade: (im?.city as string | null) ?? "",
               visitaEm,
-              avaliador: { nomeCurto: String(parc?.nome_publico ?? "").trim().split(/\s+/)[0] || "Avaliador", numero: (cred?.numero_credenciado as string | null) ?? "" },
+              avaliador: { nomeCurto: primeiroNomeDoAvaliador(nomeDaConta, parc?.nome_publico), numero: (cred?.numero_credenciado as string | null) ?? "" },
               resultado: r,
               nivel,
               resumo,
@@ -438,7 +451,7 @@ async function laudoDoPedido(admin: Admin, pedidoOriginal: string): Promise<Linh
  * Ressalvas corrigidas e reverificadas (foto ou nova visita, pelo mesmo avaliador): grava os itens conferidos e emite a
  * versão nova do laudo. Ressalva toda corrigida → "· vistoriado".
  */
-export async function registrarCorrecao(admin: Admin, pedidoId: string, corrigidos: Record<string, ValorItem>, agora = new Date(), assinar: { declarou: boolean } = { declarou: false }): Promise<ResEmissao> {
+export async function registrarCorrecao(admin: Admin, pedidoId: string, corrigidos: Record<string, ValorItem>, agora = new Date(), assinar: { declarou: boolean; nivel?: Nivel | null } = { declarou: false }): Promise<ResEmissao> {
   const l = await laudoDoPedido(admin, pedidoId);
   if (!l || l.corrigido_em || !l.ressalvas.length) return { ok: false, erro: "Não há ressalva aberta neste laudo." };
   for (const [chave, valor] of Object.entries(corrigidos)) {

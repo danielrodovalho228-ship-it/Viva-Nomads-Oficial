@@ -16,7 +16,8 @@ import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistori
 import { laudoAtrasado } from "@/lib/vistoria/laudo";
 import { contagemContestacoes } from "@/lib/vistoria/telas-laudo";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
-import { comTesteConcluido, filaDaCidade } from "@/lib/vistoria/servidor";
+import { comTesteConcluido, filaDaCidade, nomesDasContas } from "@/lib/vistoria/servidor";
+import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
 import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada";
 import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
 import { CRITERIOS_PUBLICOS } from "@/lib/vistoria/escolha";
@@ -38,7 +39,7 @@ const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicit
 const ROTULO_FILA: Record<string, string> = { sem_avaliador: "Pedido sem avaliador elegível", avaliacao_teste: "Avaliação de teste a marcar e revisar", suspensao_automatica: "Suspensão automática antiga (não é mais criada)", revisao_criterio: "Critério público de qualidade atingido: rever com o avaliador (direito de resposta)", proposta_descredenciamento: "Proposta de descredenciamento", laudo_atrasado: "Laudo não enviado em 48 horas úteis", ressalva_vencida: "Ressalva vencida: avaliar abrir verificação", devolucao_vencida: "Devolução da contestação não confirmada em 15 dias", seguranca_grave: "Segurança grave a acompanhar" };
 const ROTULO_BLOQUEIO: Record<string, string> = { seguranca_grave: "Segurança grave (fora da busca)", strike_2: "2º strike (republicar só com laudo)", strike_3: "3º strike (todos fora da busca)" };
 
-type Cred = { id: string; cidade: string; numero_credenciado: string; status: StatusCredenciamento; motivo: string | null; experiencia_link: string | null; experiencia_path: string | null; relacoes_descricao: string | null; criado_em: string; user_id: string | null; parceiros: { nome_publico: string } | null; parceiro_solicitacoes: { nome: string; tipo_pessoa: string | null; documento: string | null; email: string | null } | null };
+type Cred = { id: string; cidade: string; numero_credenciado: string; status: StatusCredenciamento; motivo: string | null; experiencia_link: string | null; experiencia_path: string | null; relacoes_descricao: string | null; criado_em: string; user_id: string | null; parceiros: { nome_publico: string; user_id: string | null } | null; parceiro_solicitacoes: { nome: string; tipo_pessoa: string | null; documento: string | null; email: string | null } | null };
 
 /**
  * Admin → Avaliações do imóvel (62-B1/62-B2/62-B3; desenho do 62-A, Parte 1, item 7 — decisões primeiro). Funciona com a chave
@@ -69,7 +70,7 @@ export default async function AdminAvaliadoresPage() {
   // E477: a conta observadora da QA só lê (o servidor também recusa): todo formulário de ação sai e entra "Só leitura".
   const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const [{ data: creds }, { data: precos }, { data: fila }, { data: auditoria }, { data: pedidos }, { data: bloqueios }, { data: strikes }, { data: laudos }] = semFalhaDeLeitura(await Promise.all([
-    admin.from("avaliadores_credenciamento").select("id, cidade, numero_credenciado, status, motivo, experiencia_link, experiencia_path, relacoes_descricao, criado_em, user_id, parceiros(nome_publico), parceiro_solicitacoes(nome, tipo_pessoa, documento, email)").order("criado_em", { ascending: false }),
+    admin.from("avaliadores_credenciamento").select("id, cidade, numero_credenciado, status, motivo, experiencia_link, experiencia_path, relacoes_descricao, criado_em, user_id, parceiros(nome_publico, user_id), parceiro_solicitacoes(nome, tipo_pessoa, documento, email)").order("criado_em", { ascending: false }),
     admin.from("vistoria_precos").select(COLUNAS_PRECO).order("vigente_desde", { ascending: false }).limit(200),
     admin.from("vistoria_fila_admin").select("id, tipo, motivo, criado_em, pedido_id, avaliador_id").is("resolvido_em", null).order("criado_em"),
     admin.from("vistoria_auditoria").select("id, pedido_id, sorteado_em, avaliadores_credenciamento(numero_credenciado)").is("resultado", null),
@@ -119,6 +120,10 @@ export default async function AdminAvaliadoresPage() {
   const piloto = linhasDoPiloto(pilotoLinhas, (perfisPilotoLeitura.data ?? []) as { id: string; full_name: string | null; email: string | null; is_teste: boolean | null }[]);
   // A conta observadora da QA: as linhas de conta real ficam só leitura (o servidor também recusa).
   const pilotoSoLeitura = new Set(await soLeituraNaTela(piloto.map((l) => ({ id: l.userId, alvo: { perfis: [l.userId] } }))));
+  // E1084: o nome do avaliador vem da conta (fonte única).
+  // E1084 (ORDEM-404, opção A): o nome vem da CONTA; no credenciamento ligado só pelo parceiro, a conta é a do parceiro.
+  const contaDoCredenciamento = (c: Cred) => c.user_id ?? c.parceiros?.user_id ?? null;
+  const nomesConta = await nomesDasContas(admin, lista.map(contaDoCredenciamento));
   const numeroDe = new Map(lista.map((c) => [c.id, c.numero_credenciado]));
   type Ped = { id: string; cidade: string; tipo: string; status: string; aguardando_avaliador: boolean; criado_em: string; avaliadores_credenciamento: { numero_credenciado: string } | null };
   const pedidosLista = (pedidos ?? []) as unknown as Ped[];
@@ -207,7 +212,7 @@ export default async function AdminAvaliadoresPage() {
                     {g.itens.map((c) => (
                       <li key={c.id} className="rounded-lg border border-line p-3 text-sm" data-testid="credenciamento-item" data-numero={c.numero_credenciado} data-status={c.status}>
                         <strong className="text-ink">
-                          {c.numero_credenciado} · {c.parceiros?.nome_publico ?? c.parceiro_solicitacoes?.nome ?? "Parceiro"}
+                          {c.numero_credenciado} · {nomeDoAvaliador(nomesConta.get(contaDoCredenciamento(c) ?? ""), c.parceiros?.nome_publico ?? c.parceiro_solicitacoes?.nome)}
                         </strong>{" "}
                         · {c.cidade} · {ROTULO_STATUS[c.status]}
                         {c.user_id && contasTeste.has(c.user_id) && (
