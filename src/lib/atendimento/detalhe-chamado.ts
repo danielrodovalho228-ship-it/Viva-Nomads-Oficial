@@ -314,7 +314,7 @@ export function itensDaConversa(
     const env = envio.get(m.id);
     if (env) {
       const aviso = `Sugestão ${env.editada ? "editada" : "aprovada"} e enviada como resposta da equipe em ${diaEHoraCurtos(env.em)} — o texto está na mensagem da equipe, logo abaixo. A pessoa não vê esta nota.`;
-      return { tipo: "sugestao", m, estado: env.editada ? "editada" : "enviada", aviso, texto: null };
+      return { tipo: "sugestao", m, estado: env.editada ? "editada" : "enviada", aviso, texto: sugerida };
     }
     if (respondidaDepois(m.id)) return { tipo: "sugestao", m, estado: "superada", aviso: "Sugestão não usada: a equipe respondeu com outro texto. A pessoa não vê esta nota.", texto: null };
     if (o.naCaixa === m.id) return { tipo: "sugestao", m, estado: "na-caixa", aviso: "Sugestão pronta — o texto está na caixa de resposta, logo abaixo. A pessoa não vê esta nota.", texto: null };
