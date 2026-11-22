@@ -175,9 +175,11 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
             <input type="hidden" name="pedidoId" value={p.id} />
             <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo em até 48 horas úteis.</p>
             {faltasRoteiro.length > 0 && (
-              <p className="mt-2 text-sm text-ink" role="status" data-testid="concluir-faltas">{msgRoteiroIncompleto(faltasRoteiro)}</p>
+              <p id="concluir-faltas-motivo" className="mt-2 text-sm text-ink" role="status" data-testid="concluir-faltas">{msgRoteiroIncompleto(faltasRoteiro)}</p>
             )}
-            <Button type="submit" size="sm" className="mt-2">Concluir a visita</Button>
+            {/* E1117 (perna 3): faltando foto do roteiro o servidor recusa — então o botão já aparece desativado, com o
+                motivo ligado a ele. Chegada a última foto, a página é refeita (perna 2) e o botão liga. */}
+            <Button type="submit" size="sm" className="mt-2" disabled={faltasRoteiro.length > 0} aria-describedby={faltasRoteiro.length > 0 ? "concluir-faltas-motivo" : undefined}>Concluir a visita</Button>
           </FormAcao>
         ) : (
           <>

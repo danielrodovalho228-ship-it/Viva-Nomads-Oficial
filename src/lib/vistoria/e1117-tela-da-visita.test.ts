@@ -6,6 +6,8 @@
       arquivo volta a "Nenhum arquivo escolhido" quando o formulário é limpo e diz o motivo quando falta o arquivo.
    2. Enviada a foto, a página da avaliação é refeita na mesma resposta (revalidatePath do caminho do pedido): a
       contagem, o roteiro e a lista do que falta mudam sem recarregar.
+   3. "Concluir a visita" sai desativado enquanto faltar foto do roteiro, com o motivo ligado ao botão; a recusa do
+      servidor continua lá (quem contornar a tela não conclui).
   Roda: node --test src/lib/vistoria/e1117-tela-da-visita.test.ts
 */
 import { test } from "node:test";
@@ -63,4 +65,14 @@ test("E1117 perna 2: enviada a foto, a página desta avaliação é refeita (con
   assert.match(TELA, /data-testid="avaliacao-fotos-contagem">\{fotosLista\.length\} foto\(s\) enviada\(s\)\./);
   assert.match(TELA, /const roteiro = roteiroDaVisita\(fotosLista\.map\(\(f\) => f\.comodo\)\);/);
   assert.match(TELA, /const faltasRoteiro = agendada \? faltasDoRoteiro\(roteiro\) : \[\];/);
+});
+
+test("E1117 perna 3: 'Concluir a visita' desativado enquanto falta foto do roteiro, com o motivo ligado; o servidor continua a recusar", () => {
+  // O botão: desativado pela mesma lista que escreve a frase, e apontando para ela.
+  assert.match(TELA, /<p id="concluir-faltas-motivo"[^>]*role="status" data-testid="concluir-faltas">\{msgRoteiroIncompleto\(faltasRoteiro\)\}<\/p>/);
+  assert.match(TELA, /<Button type="submit" size="sm" className="mt-2" disabled=\{faltasRoteiro\.length > 0\} aria-describedby=\{faltasRoteiro\.length > 0 \? "concluir-faltas-motivo" : undefined\}>Concluir a visita<\/Button>/);
+  // A tela não é a única guarda: a ação recusa antes de mudar o estado.
+  const concluir = corpoDe(ACOES, "export async function concluirVisita(");
+  assert.match(concluir, /if \(faltas\.length\) return \{ ok: false, erro: msgRoteiroIncompleto\(faltas\) \};/);
+  assert.ok(concluir.indexOf("if (faltas.length)") < concluir.indexOf('update({ status: "realizada"'), "a recusa vem antes de concluir");
 });

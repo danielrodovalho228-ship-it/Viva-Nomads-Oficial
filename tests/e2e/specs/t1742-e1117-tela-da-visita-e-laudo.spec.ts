@@ -153,4 +153,28 @@ test.describe("T1742 — E1117: a tela de execução da visita não mente (foto,
     await expect(page.getByTestId("visita-em-andamento").getByTestId("visita-foto")).toHaveCount(4);
     await page.context().close();
   });
+
+  test("3. 'Concluir a visita' desativado enquanto falta foto do roteiro, com o motivo ligado ao botão; com a última foto liga sem recarregar e conclui", async ({ browser }) => {
+    const page = await naAvaliacao(browser, pedidos.concluir!);
+    const concluir = page.getByTestId("concluir-visita");
+    const botao = concluir.getByRole("button", { name: "Concluir a visita" });
+    const faltas = concluir.getByTestId("concluir-faltas");
+    await expect(faltas).toHaveText("Para concluir a visita, falta a foto de: Banheiros. Envie uma foto de cada ambiente do roteiro.");
+    await expect(botao).toBeDisabled();
+    // O motivo está ligado ao botão (quem usa leitor de tela ouve porquê).
+    const descritoPor = await botao.getAttribute("aria-describedby");
+    expect(descritoPor, "o botão desativado aponta para o motivo").toBeTruthy();
+    expect(await faltas.getAttribute("id")).toBe(descritoPor);
+    await concluir.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${SAIDA}/t1742-3-concluir-desativado-390.png` });
+    expect(await statusDe(pedidos.concluir!)).toBe("agendado");
+
+    // Chega a foto que faltava: o botão liga sem recarregar e a visita conclui.
+    await enviarFoto(page, "Banheiro social", 11);
+    await expect(faltas).toHaveCount(0, { timeout: 30_000 });
+    await expect(botao).toBeEnabled();
+    await botao.click();
+    await expect.poll(() => statusDe(pedidos.concluir!), { timeout: 30_000 }).toBe("realizada");
+    await page.context().close();
+  });
 });
