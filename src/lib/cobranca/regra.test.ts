@@ -306,7 +306,9 @@ test("b3c9d76e: Termos e Privacidade trazem o texto exato aprovado (cláusula 8,
   const termos = ler("src/app/(public)/termos/page.tsx");
   assert.match(termos, /As cobranças da plataforma referem-se à comissão sobre o valor total de cada contrato e de cada renovação, e a serviços opcionais\./);
   assert.match(termos, /uma comissão única sobre o valor total de cada contrato de locação fechado pela plataforma \(valor mensal × número de meses contratados\)/);
-  assert.match(termos, /1 a 2 imóveis, 12%; 3 a 5, 10%; 6 a 15, 8%; 16 a 30, 6%; 31 ou mais, condição negociada\./);
+  // Asserção alterada (E1109, ORDEM-DUET-494): a escada dos Termos passa a ser a da fonte (16–19 = 6%; o escalão de cima
+  // começa em 20), com a redação pública de hoje ("condição negociada"). Era "16 a 30, 6%; 31 ou mais".
+  assert.match(termos, /1 a 2 imóveis, 12%; 3 a 5, 10%; 6 a 15, 8%; 16 a 19, 6%; 20 ou mais, condição negociada\./);
   assert.doesNotMatch(termos, /31 ou mais, condição negociada \(Plano Gestor\)/);
   assert.match(termos, /valor total R\$ 9\.000; comissão R\$ 1\.080\./);
   assert.doesNotMatch(termos, /a taxa é a mesma para todos/i);
