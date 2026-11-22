@@ -14,6 +14,8 @@ import { DELIMITACAO_LAUDO, ROTULO_VALOR, itemChecklist, valoresDoItem, type Val
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTULO_RESULTADO, resultadoAvaliacao, resumoPorGrupo, type Resultado } from "@/lib/vistoria/laudo";
 import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
+import { NIVEIS } from "@/config/niveis";
+import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO } from "@/lib/vistoria/nivel-do-laudo";
 import { concluirVisita, confirmarCorrecao, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
 
 export const metadata = { title: "Checklist da avaliação", robots: { index: false, follow: false } };
@@ -47,7 +49,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
 
   const [{ data: itens }, { data: laudos }, { data: fotos }] = await Promise.all([
     admin.from("vistoria_checklist").select("chave, valor, observacao").eq("pedido_id", p.id),
-    admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinado_em, assinatura_hash").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
+    admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinado_em, assinatura_hash, nivel_sustentado").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
     admin.from("vistoria_checklist_fotos").select("item_chave, comodo, criado_em").eq("pedido_id", p.id).order("criado_em"),
   ]);
   const iniciais = Object.fromEntries(((itens ?? []) as { chave: string; valor: ValorItem; observacao: string | null }[]).map((i) => [i.chave, { valor: i.valor, observacao: i.observacao }]));
@@ -64,6 +66,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     contestado_em: string | null;
     assinado_em: string | null;
     assinatura_hash: string | null;
+    nivel_sustentado: string | null;
   } | null;
   const emVisita = ["agendado", "realizada"].includes(p.status as string);
   const ruido = (p.ruido_respostas ?? null) as Record<string, boolean> | null;
@@ -180,6 +183,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
                 <FormAcao acao={enviarLaudo} className="mt-4" testid="enviar-laudo">
                   <input type="hidden" name="pedidoId" value={p.id} />
                   <p className="text-sm text-muted">Ao enviar, o laudo VIS é emitido e assinado por você, com este resultado. Confira antes: depois de emitido, só a reverificação ou a contestação mudam o laudo.</p>
+                  <SeletorNivelLaudo obrigatorio />
                   <label className="mt-2 flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
                     <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
                     <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
@@ -216,6 +220,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
                   </label>
                 );
               })}
+              <SeletorNivelLaudo obrigatorio padrao={laudo.nivel_sustentado} />
               <label className="flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
                     <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
                     <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
@@ -226,5 +231,24 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
         </Panel>
       )}
     </>
+  );
+}
+
+/**
+ * E1083 (ORDEM-DUET-397/399): o nível do imóvel é o que o AVALIADOR escolhe no laudo que assina (Essencial, Conforto ou
+ * Premium), pelos critérios públicos e com base nas fotos da visita. A plataforma não calcula o nível do laudo.
+ */
+function SeletorNivelLaudo({ obrigatorio, padrao }: { obrigatorio: boolean; padrao?: string | null }) {
+  const inicial = padrao && (NIVEIS as readonly string[]).includes(padrao) ? padrao : "";
+  return (
+    <label className="mt-2 block text-sm text-ink" data-testid="laudo-nivel">
+      {ROTULO_CAMPO_NIVEL}
+      <select name="nivel" defaultValue={inicial} required={obrigatorio} className={campo} data-testid="laudo-nivel-select">
+        <option value="" disabled>Escolha</option>
+        {NIVEIS.map((n) => (
+          <option key={n} value={n}>{ROTULO_NIVEL_LAUDO[n]}</option>
+        ))}
+      </select>
+    </label>
   );
 }
