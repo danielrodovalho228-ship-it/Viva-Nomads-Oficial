@@ -52,7 +52,7 @@ function politicaDeConteudo(): string {
     // Vídeo e áudio: os do próprio site, a prévia local (blob:) e os arquivos do armazenamento (vídeo do imóvel, áudio da caixa dos sócios).
     `media-src 'self' blob: ${armazenamento}`,
     // Quadros: vídeo por link, captcha e o PDF do armazenamento que o admin confere (documentos e matrículas).
-    `frame-src 'self' https://player.vimeo.com https://www.youtube.com https://challenges.cloudflare.com ${armazenamento}${previa ? " https://vercel.live" : ""}`,
+    `frame-src 'self' https://player.vimeo.com https://www.youtube.com https://challenges.cloudflare.com${previa ? " https://vercel.live" : ""}`,
   ].join("; ");
 }
 
