@@ -197,8 +197,10 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
   test("avaliador-pedido: Novo pedido de avaliação, porte, data, Você recebe R$ (tabela), Aceitar pedido · Recusar", async ({ browser }) => {
     const a = await abrir(browser, avaliador.email);
     await a.goto(`/dashboard/parceiro/avaliacao/${pedidos.designado}`, { waitUntil: "domcontentloaded" });
-    await temTudo(a, "avaliador-pedido", ["Novo pedido de avaliação", "Novo", /Porte:/, /Data pedida pelo dono/, /Você recebe R\$/, "Aceitar pedido", "Recusar"]);
-    expect.soft(await a.locator("main").innerText(), "decisão 3: \"Você recebe\" é o preço da tabela da cidade (R$ 250)").toMatch(new RegExp(`Você recebe\\s*${brl(PRECO.q1_2).source}`));
+    // Fatia 3 (#4121, aceite com a proposta do E648 de pé): no pedido NOVO não há "Data pedida pelo dono" (quem agenda é o
+    // avaliador, depois do aceite) e o valor aparece como referência da tabela; "Você recebe" só depois de o dono aceitar.
+    await temTudo(a, "avaliador-pedido", ["Novo pedido de avaliação", "Novo", /Porte:/, "Aceitar pedido", "Recusar"]);
+    expect.soft(await a.locator("main").innerText(), "decisão 3: a referência é o preço da tabela da cidade (R$ 250)").toMatch(new RegExp(`Valor de referência:\\s*${brl(PRECO.q1_2).source}`));
     await a.context().close();
   });
 
@@ -216,6 +218,8 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     // O checklist todo "conforme" é o mesmo para os três níveis: a escolha do avaliador é que decide. Escolhe "Premium".
     // O rádio é sr-only dentro do cartão (label): clica-se o cartão, como a pessoa faz.
     await a.getByTestId("laudo-nivel-premium").click();
+    // Como na t2221: o avaliador marca a declaração de que assina antes de assinar.
+    await a.getByTestId("assino-laudo").getByRole("checkbox").check();
     await a.locator("main").getByRole("button", { name: "Assinar laudo" }).click();
     await expect
       .poll(async () => ((await adm().from("vistoria_laudos").select("nivel_sustentado").eq("pedido_id", pedidos.realizada!).order("versao", { ascending: false }).limit(1).maybeSingle()).data?.nivel_sustentado as string | undefined) ?? "sem laudo", {
