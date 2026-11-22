@@ -4,6 +4,8 @@
    1. "Enviar foto": o servidor só diz "Foto enviada." com a foto REGISTRADA (o erro do registro é lido e o arquivo
       que subiu sai do bucket); o formulário tira da tela o resultado anterior numa tentativa nova; o seletor de
       arquivo volta a "Nenhum arquivo escolhido" quando o formulário é limpo e diz o motivo quando falta o arquivo.
+   2. Enviada a foto, a página da avaliação é refeita na mesma resposta (revalidatePath do caminho do pedido): a
+      contagem, o roteiro e a lista do que falta mudam sem recarregar.
   Roda: node --test src/lib/vistoria/e1117-tela-da-visita.test.ts
 */
 import { test } from "node:test";
@@ -50,4 +52,15 @@ test("E1117 perna 1: 'Foto enviada.' só com a foto registrada; tentativa nova t
   // Na tela da visita o motivo é o mesmo que o servidor diz.
   assert.match(TELA, /<SeletorArquivo name="foto"[^>]*required[^>]*faltaTexto="Escolha a foto\." \/>/);
   assert.match(gravar, /return \{ ok: false, erro: "Escolha a foto\." \};/);
+});
+
+test("E1117 perna 2: enviada a foto, a página desta avaliação é refeita (contagem, roteiro e faltas sem recarregar)", () => {
+  const enviar = corpoDe(ACOES, "export async function enviarFotoAvaliacao(");
+  assert.match(enviar, /const res = await gravarFoto\(c\.admin, c\.p\.id, form\);/);
+  // Só quando a foto ficou registrada, e no caminho DESTA avaliação (a tela que a pessoa está a ver).
+  assert.match(enviar, /if \(res\.ok\) revalidatePath\(`\$\{ROTA_AVALIADOR\}\/\$\{c\.p\.id\}`\);\s*return res;/);
+  // A contagem, o roteiro e as faltas saem todos da mesma leitura de fotos da página (uma leitura nova refaz os três).
+  assert.match(TELA, /data-testid="avaliacao-fotos-contagem">\{fotosLista\.length\} foto\(s\) enviada\(s\)\./);
+  assert.match(TELA, /const roteiro = roteiroDaVisita\(fotosLista\.map\(\(f\) => f\.comodo\)\);/);
+  assert.match(TELA, /const faltasRoteiro = agendada \? faltasDoRoteiro\(roteiro\) : \[\];/);
 });

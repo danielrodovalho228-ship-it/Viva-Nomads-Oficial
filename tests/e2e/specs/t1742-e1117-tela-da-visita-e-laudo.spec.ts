@@ -135,4 +135,22 @@ test.describe("T1742 — E1117: a tela de execução da visita não mente (foto,
     expect(await nFotos(pedidos.arquivo!), "sem arquivo, nenhuma foto nova").toBe(4);
     await page.context().close();
   });
+
+  test("2. sem recarregar: enviada a foto da cozinha, a contagem sobe, o roteiro marca a linha e a frase do que falta muda", async ({ browser }) => {
+    const page = await naAvaliacao(browser, pedidos.contagem!);
+    const contagem = page.getByTestId("avaliacao-fotos-contagem");
+    const faltas = page.getByTestId("concluir-faltas");
+    await expect(contagem).toHaveText("3 foto(s) enviada(s).");
+    await expect(faltas).toHaveText("Para concluir a visita, falta a foto de: Cozinha e Banheiros. Envie uma foto de cada ambiente do roteiro.");
+    expect(await marcadas(page)).toEqual(["fachada:sim", "sala:sim", "cozinha:nao", "quartos:sim", "banheiros:nao"]);
+
+    await enviarFoto(page, "Cozinha", 9);
+    await expect(page.getByTestId("avaliacao-foto-form").getByTestId("acao-ok")).toHaveText("Foto enviada.", { timeout: 30_000 });
+    // Tudo isto SEM page.reload nem page.goto.
+    await expect(contagem).toHaveText("4 foto(s) enviada(s).", { timeout: 15_000 });
+    await expect(faltas).toHaveText("Para concluir a visita, falta a foto de: Banheiros. Envie uma foto de cada ambiente do roteiro.");
+    expect(await marcadas(page)).toEqual(["fachada:sim", "sala:sim", "cozinha:sim", "quartos:sim", "banheiros:nao"]);
+    await expect(page.getByTestId("visita-em-andamento").getByTestId("visita-foto")).toHaveCount(4);
+    await page.context().close();
+  });
 });
