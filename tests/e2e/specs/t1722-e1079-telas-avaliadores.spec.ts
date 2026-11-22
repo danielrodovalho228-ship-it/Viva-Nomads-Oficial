@@ -97,6 +97,13 @@ test.describe("T1722 — E1079/E1080: as telas do avaliador", () => {
       await page.goto(`/avaliadores/${numero}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("avaliador-publico")).toBeVisible({ timeout: 25_000 });
       await expect(page.getByTestId("avaliador-numero")).toHaveText(numero);
+      // O perfil do credenciado no desenho do mockup: a faixa da foto (conta de teste sem foto → iniciais), a cidade com
+      // a UF, a faixa de teste e o preço da tabela da cidade por porte.
+      await expect(page.getByTestId("avaliador-foto")).toBeVisible();
+      await expect(page.getByTestId("avaliador-cidade")).toHaveText(CIDADE);
+      await expect(page.getByTestId("avaliador-uf")).toHaveText("• MG");
+      await expect(page.getByTestId("avaliador-teste")).toBeVisible();
+      await expect(page.getByTestId("avaliador-preco-linha")).toHaveCount(3);
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t1722-2-perfil-${w}.png`, fullPage: true });
     }

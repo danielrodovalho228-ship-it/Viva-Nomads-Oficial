@@ -8,7 +8,7 @@
   as iniciais no círculo — nunca ícone sozinho nem espaço vazio. Nada diz "credenciado com o CNPJ da Viva".
 */
 import { iniciais } from "../avatar.ts";
-import { atendeCidade, ROTULO_PORTE, PORTES, precoVigente, type LinhaPreco, type Porte } from "./regras.ts";
+import { atendeCidade, ROTULO_AVALIADOR_CREDENCIADO, ROTULO_AVALIADOR_EM_TESTE, ROTULO_PORTE, PORTES, precoVigente, type LinhaPreco, type Porte } from "./regras.ts";
 import { chaveCidade } from "../cidades.ts";
 
 /** A listagem pública por cidade: desligada até o Daniel a abrir (condição 2 do coordenador). */
@@ -17,6 +17,16 @@ export const VITRINE_AVALIADORES_ABERTA = false;
 /** Por agora, só a foto da conta de teste aparece em superfície pública (condição 3 do coordenador). */
 export function fotoPublicaPermitida(contaTeste: boolean): boolean {
   return contaTeste === true;
+}
+
+/**
+ * E1097 (ORDEM-DUET-454/455): o selo público do credenciado — "Avaliador credenciado" para todos; a conta de teste,
+ * "Avaliador em teste" (E717). "Avaliador sócio da Viva" é só do Rogério: chega aqui apenas pela linha dele em
+ * avaliadores_perfil_publico ligada ao credenciamento (`seloLigado`), nunca por regra geral.
+ */
+export function seloDoCredenciado(teste: boolean, seloLigado: string | null): string {
+  if (teste) return ROTULO_AVALIADOR_EM_TESTE;
+  return seloLigado?.trim() ? seloLigado.trim() : ROTULO_AVALIADOR_CREDENCIADO;
 }
 
 export type Rosto = { tipo: "foto"; url: string } | { tipo: "iniciais"; texto: string };
