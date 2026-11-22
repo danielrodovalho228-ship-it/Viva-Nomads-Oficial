@@ -98,6 +98,7 @@ test.describe("T1739 — E1108: o pedido do avaliador mostra os valores do pilot
     await fotosReais(imovelDe.proposta.id, ids.dono); // a capa do pedido carrega de verdade (o print mostra a tela como ela é)
     // O mesmo, com o aceite do dono. Mesma cidade e mesmo porte do anterior: só o imóvel os distingue.
     await pedidoDoAvaliador("aceito", "Sobrado do Ipê", { designado_em: ha(5), escolhido_em: ha(5), ...proposta, proposta_em: ha(4), proposta_aceita_em: ha(2) }, "aceita");
+    await fotosReais(imovelDe.aceito.id, ids.dono);
     // A avaliação de teste do credenciamento: de teste, o admin designou (sem escolha do dono) e não há proposta.
     await pedidoDoAvaliador("credenciamento", "Apartamento de teste", { designado_em: ha(1) }, null);
     // Uma visita agendada (a tela da visita).
@@ -158,6 +159,9 @@ test.describe("T1739 — E1108: o pedido do avaliador mostra os valores do pilot
       await expect(tela.getByTestId("pedido-prazo-laudo")).toHaveText("Laudo em 2 dias");
       await expect(tela).not.toContainText("sem valor a receber");
       await expect(tela.getByTestId("pedido-imovel")).toHaveText(identificacao("aceito"));
+      // O código VN fica inteiro numa linha (a 390 px o hífen partia-o em duas).
+      expect(await tela.getByTestId("pedido-imovel").locator("span").evaluate((el) => el.getClientRects().length), "o código VN numa linha só").toBe(1);
+      await expect.poll(() => tela.getByTestId("pedido-capa").locator("img").evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 20_000 }).toBe(true);
       await semRolagemLateral(a);
       await tela.screenshot({ path: `${SAIDA}/t1739-2-aceito-${w}.png` });
     }
@@ -197,8 +201,12 @@ test.describe("T1739 — E1108: o pedido do avaliador mostra os valores do pilot
       }
       await expect(item(a, pedidos.credenciamento)).toContainText(`${CIDADE} · 1 ou 2 quartos · avaliação de teste`);
       await semRolagemLateral(a);
-      await a.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-      await a.getByTestId("avaliacoes-visitas").screenshot({ path: `${SAIDA}/t1739-4-lista-${w}.png` });
+      // O print é das duas linhas do piloto (mesma cidade, mesmo porte), cada uma no meio da tela.
+      for (const c of ["proposta", "aceito"] as const) {
+        await item(a, pedidos[c]).evaluate((el) => el.scrollIntoView({ block: "center" }));
+        await a.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+        await item(a, pedidos[c]).screenshot({ path: `${SAIDA}/t1739-4-lista-${c}-${w}.png` });
+      }
     }
     // A tela da visita agendada (checklist) também diz de que imóvel é.
     await a.goto(`${ROTA}/${pedidos.agendado}`, { waitUntil: "domcontentloaded" });

@@ -77,15 +77,19 @@ test("E1108: a tela do pedido, a tela da visita e a lista leem daqui", () => {
   assert.match(tela, /imovel=\{identificacaoDoImovel\(imovel\?\.title, p\.property_id as string\)\}/);
   assert.match(tela, /valor=\{linhaDoValor\(etapa, dados\)\}/);
   assert.match(tela, /prazoLaudo=\{linhaDoPrazoDoLaudo\(etapa, dados\)\}/);
-  assert.match(tela, /data-testid="pedido-imovel">\s*\{identificacaoDoImovel\(/, "a tela da visita e do laudo também diz o imóvel");
+  assert.match(tela, /<IdentificacaoDoImovel texto=\{identificacaoDoImovel\(\(imovelDaVisita as /, "a tela da visita e do laudo também diz o imóvel");
   const comp = semComentarios(ler("src/components/avaliadores/pedido.tsx"));
-  assert.match(comp, /data-testid="pedido-imovel"/);
+  assert.match(comp, /<IdentificacaoDoImovel texto=\{imovel\}/);
+  // Um componente só escreve a linha, nos três lugares; o código VN não quebra de linha.
+  const linha = ler("src/components/avaliadores/identificacao-do-imovel.tsx");
+  assert.match(linha, /data-testid="pedido-imovel"/);
+  assert.match(linha, /<span className="whitespace-nowrap">\{codigo\}<\/span>/);
   assert.match(comp, /data-testid="pedido-prazo-laudo"/);
   // Só os comentários de linha saem: o `accept="image/*"` do formulário de credenciamento abriria um bloco falso aqui.
   const lista = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[^\n]*\*\/\}/g, "");
   assert.match(lista, /identificacaoDoImovel\(/);
   assert.match(lista, /resumoDoValorNaLista\(p\)/);
-  assert.match(lista, /data-testid="pedido-imovel"/);
+  assert.match(lista, /<IdentificacaoDoImovel texto=\{imovel\} \/>/);
   assert.doesNotMatch(lista, /p\.teste \? "avaliação de teste"/, "a lista já não chama todo pedido de teste de 'avaliação de teste'");
   // Só os imóveis dos pedidos do próprio avaliador são lidos.
   assert.match(lista, /\.from\("properties"\)\.select\("id, title"\)\.in\("id", /);

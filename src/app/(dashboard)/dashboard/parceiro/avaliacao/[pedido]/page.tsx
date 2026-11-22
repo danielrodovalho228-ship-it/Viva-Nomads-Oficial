@@ -10,6 +10,7 @@ import { FormAcao } from "@/components/vistoria/form-acao";
 import { ChecklistAvaliador } from "@/components/vistoria/checklist-avaliador";
 import { VisitaEmAndamento } from "@/components/avaliadores/visita";
 import { PedidoDoAvaliador } from "@/components/avaliadores/pedido";
+import { IdentificacaoDoImovel } from "@/components/avaliadores/identificacao-do-imovel";
 import { MedirInternetAvaliacao } from "@/components/vistoria/medir-internet-avaliacao";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { PERGUNTAS_RUIDO } from "@/config/niveis";
@@ -242,9 +243,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   return (
     <>
       <PageTitle title={agendada ? tituloDaVisita(emAndamento) : naEtapaDoLaudo ? TITULO_LAUDO : "Checklist da avaliação"} subtitle={naEtapaDoLaudo ? [tipoRotulo, SUBTITULO_LAUDO].filter(Boolean).join(" · ") : tipoRotulo} />
-      <p className="mb-2 break-words text-base font-semibold text-ink" data-testid="pedido-imovel">
-        {identificacaoDoImovel((imovelDaVisita as { title?: string | null } | null)?.title, p.property_id as string)}
-      </p>
+      <IdentificacaoDoImovel texto={identificacaoDoImovel((imovelDaVisita as { title?: string | null } | null)?.title, p.property_id as string)} className="mb-2 text-base" />
       <ButtonLink href="/dashboard/parceiro/avaliacao" variant="ghost" size="sm" className="mb-4">Voltar às avaliações</ButtonLink>
       {p.ocupado && <p className="mb-4 text-sm text-ink">Imóvel ocupado: a visita só acontece com o morador de acordo. Não fotografe pertences nem pessoas.</p>}
 

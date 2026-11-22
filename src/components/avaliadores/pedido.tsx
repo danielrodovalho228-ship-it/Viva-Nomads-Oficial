@@ -6,6 +6,7 @@
   @/lib/conta/visual-mockup.
 */
 import { Banknote, CalendarClock, Home, MapPin } from "lucide-react";
+import { IdentificacaoDoImovel } from "@/components/avaliadores/identificacao-do-imovel";
 import { AceitarPedido } from "@/components/avaliadores/aceitar-pedido";
 import { ButtonLink } from "@/components/ui/button";
 import { ETIQUETA_DO_PEDIDO, tituloDoPedido, type EtapaDoPedido } from "@/lib/vistoria/pedido-avaliador";
@@ -60,9 +61,7 @@ export function PedidoDoAvaliador({
           {ETIQUETA_DO_PEDIDO[etapa]}
         </span>
       </div>
-      <p className="break-words text-base font-semibold text-ink" data-testid="pedido-imovel">
-        {imovel}
-      </p>
+      <IdentificacaoDoImovel texto={imovel} className="text-base" />
       <div>
         {/* A foto de capa do anúncio; sem ela, o cartão fica sozinho, sem buraco. */}
         {capaUrl ? (

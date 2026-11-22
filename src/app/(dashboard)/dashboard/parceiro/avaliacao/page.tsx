@@ -8,6 +8,7 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { PainelAvaliador } from "@/components/avaliadores/painel";
+import { IdentificacaoDoImovel } from "@/components/avaliadores/identificacao-do-imovel";
 import { fotosDePerfil } from "@/lib/vistoria/fotos-servidor";
 import { resumoDoPainel } from "@/lib/vistoria/painel-avaliador";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
@@ -322,9 +323,7 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
   return (
     <li className="rounded-lg border border-line p-3 text-sm" data-testid="avaliacao-designada" data-pedido={p.id} data-status={p.status}>
       {/* E1108: de que imóvel é o pedido (título do anúncio e código VN); o valor sai da mesma regra da tela do pedido. */}
-      <p className="break-words font-semibold text-ink" data-testid="pedido-imovel">
-        {imovel}
-      </p>
+      <IdentificacaoDoImovel texto={imovel} />
       <p>
         <strong className="text-ink">{STATUS_PEDIDO[p.status] ?? p.status}</strong> · {p.cidade} · {ROTULO_PORTE[p.porte]} · {resumoDoValorNaLista(p)}
         {semana && <span className="ml-2 rounded-full bg-sage-100 px-2 py-1 text-xs font-semibold text-forest" data-testid="visita-semana">Esta semana</span>}
