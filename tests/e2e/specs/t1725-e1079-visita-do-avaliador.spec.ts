@@ -13,6 +13,11 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
       grade passa a 3 miniaturas e uma linha nova de vagas. "Continuar" leva ao checklist.
    3. Sem foto nenhuma: nada marcado, três vagas e nenhuma caixa vazia no lugar da foto do imóvel. "Concluir a visita"
       continua lá. Com a visita concluída, a tela é a do laudo e o bloco da visita não aparece.
+   4. ORDEM-DUET-431, resposta 1 — o roteiro TRAVA "Concluir a visita": faltando a foto de Quartos e Banheiros, a tela
+      diz o que falta antes do clique, o clique não conclui e a avaliação continua agendada. Com a foto dos cinco
+      ambientes, conclui.
+   5. ORDEM-DUET-431/435, resposta 2 — antes do dia marcado a tela diz "Visita agendada" (nunca "em andamento"); o
+      roteiro e as fotos continuam lá.
   As procuras são pelo texto que a tela mostra. Laboratório; não é prova ao vivo no site.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -25,10 +30,10 @@ const aval = { email: `av.t1725.${sufixo}@lab.vivanomads.test`, nome: "Renato Te
 const ids: { dono?: string; aval?: string; cred?: string } = {};
 const imoveis: string[] = [];
 const caminhos: string[] = [];
-const pedidos: { tela?: string; vazia?: string; concluida?: string } = {};
+const pedidos: { tela?: string; vazia?: string; concluida?: string; futura?: string } = {};
 
 /** Uma avaliação do avaliador da trava, no estado pedido, com as fotos de cômodo dadas (arquivo de verdade no bucket). */
-async function avaliacao(nome: string, status: "agendado" | "realizada", comodos: string[], comCapa: boolean): Promise<string> {
+async function avaliacao(nome: string, status: "agendado" | "realizada", comodos: string[], comCapa: boolean, emDias = 0): Promise<string> {
   const imovel = await criarImovelPronto(ids.dono!, `[TESTE QA] Visita ${nome} ${sufixo}`, { ativo: true, preco: 2500 });
   imoveis.push(imovel);
   if (comCapa) await fotosReais(imovel, ids.dono!);
@@ -36,7 +41,7 @@ async function avaliacao(nome: string, status: "agendado" | "realizada", comodos
   const agora = new Date();
   const { data, error } = await adm()
     .from("vistoria_pedidos")
-    .insert({ property_id: imovel, owner_id: ids.dono, cidade: CIDADE, porte: "q1_2", valor_tabela: 250, status, avaliador_id: ids.cred, designado_em: agora.toISOString(), agendado_para: new Date(agora.getTime() - 2 * 3_600_000).toISOString(), ...(status === "realizada" ? { visita_concluida_em: agora.toISOString() } : {}) })
+    .insert({ property_id: imovel, owner_id: ids.dono, cidade: CIDADE, porte: "q1_2", valor_tabela: 250, status, avaliador_id: ids.cred, designado_em: agora.toISOString(), agendado_para: (emDias > 0 ? new Date(agora.getTime() + emDias * 86_400_000) : agora).toISOString(), ...(status === "realizada" ? { visita_concluida_em: agora.toISOString() } : {}) })
     .select("id")
     .single();
   if (error) throw error;
@@ -62,6 +67,7 @@ async function naAvaliacao(browser: Browser, pedido: string, largura: 390 | 1280
   return page;
 }
 const carregou = (page: Page, seletor: string) => page.locator(seletor).evaluateAll((imgs) => imgs.map((im) => (im as HTMLImageElement).complete && (im as HTMLImageElement).naturalWidth > 0));
+const statusDe = async (pedido: string) => (await adm().from("vistoria_pedidos").select("status").eq("id", pedido).single()).data?.status as string;
 const linhasDoRoteiro = (page: Page) => page.getByTestId("visita-roteiro").locator("li");
 const marcadas = (page: Page) => linhasDoRoteiro(page).evaluateAll((ls) => ls.map((l) => `${l.getAttribute("data-roteiro")}:${l.getAttribute("data-feito")}`));
 
@@ -91,6 +97,8 @@ test.describe("T1725 — E1079: a visita do avaliador pelo mockup (foto do imóv
     pedidos.tela = await avaliacao("tela", "agendado", ["Fachada do prédio", "Sala de estar"], true);
     pedidos.vazia = await avaliacao("vazia", "agendado", [], false);
     pedidos.concluida = await avaliacao("concluida", "realizada", ["Sala"], true);
+    // Visita marcada para daqui a 3 dias: ainda não está "em andamento".
+    pedidos.futura = await avaliacao("futura", "agendado", ["Sala"], true, 3);
   });
 
   test.afterAll(async () => {
@@ -182,6 +190,44 @@ test.describe("T1725 — E1079: a visita do avaliador pelo mockup (foto do imóv
     await page.goto(`/dashboard/parceiro/avaliacao/${pedidos.concluida}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { level: 1, name: "Laudo da avaliação" })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("visita-em-andamento")).toHaveCount(0);
+    await page.context().close();
+  });
+
+  test("4. o roteiro TRAVA 'Concluir a visita': com ambientes sem foto diz o que falta e não conclui; com os cinco, conclui", async ({ browser }) => {
+    // Depois do caso 2 a avaliação tem fachada, sala e cozinha: faltam Quartos e Banheiros.
+    const page = await naAvaliacao(browser, pedidos.tela!, 390);
+    const FALTA = "Para concluir a visita, falta a foto de: Quartos e Banheiros. Envie uma foto de cada ambiente do roteiro.";
+    const concluir = page.getByTestId("concluir-visita");
+    await expect(concluir.getByTestId("concluir-faltas")).toHaveText(FALTA, { timeout: 30_000 });
+    await concluir.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${SAIDA}/t1725-4-concluir-travado-390.png` });
+    await concluir.getByRole("button", { name: "Concluir a visita" }).click();
+    // O servidor recusa com a mesma frase e a avaliação continua agendada.
+    await expect(concluir.getByTestId("acao-erro")).toHaveText(FALTA, { timeout: 20_000 });
+    expect(await statusDe(pedidos.tela!), "sem a foto de dois ambientes a visita não conclui").toBe("agendado");
+
+    // Chegam as fotos que faltavam: a frase some e a visita conclui.
+    const { error } = await adm().from("vistoria_checklist_fotos").insert([
+      { pedido_id: pedidos.tela, comodo: "Quarto de casal", path: `${pedidos.tela}/t1725-quarto` },
+      { pedido_id: pedidos.tela, comodo: "Banheiro social", path: `${pedidos.tela}/t1725-banheiro` },
+    ]);
+    if (error) throw error;
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect.poll(() => marcadas(page), { timeout: 30_000 }).toEqual(["fachada:sim", "sala:sim", "cozinha:sim", "quartos:sim", "banheiros:sim"]);
+    await expect(page.getByTestId("concluir-faltas")).toHaveCount(0);
+    await page.getByTestId("concluir-visita").getByRole("button", { name: "Concluir a visita" }).click();
+    await expect.poll(() => statusDe(pedidos.tela!), { timeout: 30_000 }).toBe("realizada");
+    await page.context().close();
+  });
+
+  test("5. antes do dia marcado a tela diz 'Visita agendada', nunca 'em andamento'; o roteiro e as fotos continuam lá", async ({ browser }) => {
+    const page = await naAvaliacao(browser, pedidos.futura!, 390);
+    await expect(page.getByRole("heading", { level: 1, name: "Visita agendada" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Visita em andamento")).toHaveCount(0);
+    await expect(page.getByTestId("visita-em-andamento").getByRole("heading", { name: "Roteiro da visita" })).toBeVisible();
+    expect(await marcadas(page)).toEqual(["fachada:nao", "sala:sim", "cozinha:nao", "quartos:nao", "banheiros:nao"]);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: `${SAIDA}/t1725-5-visita-agendada-390.png` });
     await page.context().close();
   });
 });
