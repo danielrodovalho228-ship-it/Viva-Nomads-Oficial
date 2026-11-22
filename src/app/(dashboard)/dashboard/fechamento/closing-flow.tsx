@@ -72,6 +72,7 @@ import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
 import { portaoDaIdentidade, rotuloIdentidadeDoMorador } from "@/lib/fechamento-identidade";
 import { hrefContratoDono } from "@/lib/contratos/area-dono";
+import { fonteDoResumo, nomeDaGarantiaDoContrato, resumoAcessivel } from "@/lib/fechamento-resumo";
 import { VoltarLista } from "@/components/ui/voltar-lista";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
@@ -197,6 +198,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     Object.fromEntries(COST_SPLIT_ITEMS.map((i) => [i.key, i.default]))
   );
   const [generated, setGenerated] = useState(false);
+  // E1064 (perna 2): o Resumo abre pelo contrato gerado nesta visita OU pelo contrato que a candidatura já tem
+  // (o estado real, lido no servidor). No segundo caso lê o que o contrato guarda, não as escolhas por omissão da visita.
+  const PASSO_RESUMO = STEPS.length - 1;
+  const RESUMO_ACESSIVEL = resumoAcessivel({ geradoNestaVisita: generated, contratoExistente: ctx.contratoExistente, demo });
+  const FONTE_RESUMO = fonteDoResumo({ geradoNestaVisita: generated, contratoExistente: ctx.contratoExistente, demo });
+  const GARANTIA_DO_CONTRATO = nomeDaGarantiaDoContrato(ctx.contratoExistente?.garantia);
 
   const selectedGarantia = useMemo<Garantia | null>(
     () => ELEGIVEIS.find((g) => g.id === guaranteeId) ?? null,
@@ -277,7 +284,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   }, [verified, ocupantesExcede, guaranteeId, cienteProtecao, patrimonial, generated]);
 
   function goToStep(target: number) {
-    if (target <= maxReached) setStep(target);
+    if (target <= maxReached || (target === PASSO_RESUMO && RESUMO_ACESSIVEL)) setStep(target);
   }
 
   async function generateContract() {
@@ -450,13 +457,18 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <Link href={hrefContratoDono(ctx.contratoExistente.id)} className="mt-1 inline-flex min-h-11 items-center font-semibold text-forest underline">
                 Ver contrato
               </Link>
+              {step !== PASSO_RESUMO && (
+                <button type="button" onClick={() => setStep(PASSO_RESUMO)} className="ml-4 mt-1 inline-flex min-h-11 items-center font-semibold text-forest underline" data-testid="fechamento-ver-resumo">
+                  Ver o resumo
+                </button>
+              )}
             </div>
           )}
           {/* Stepper (passos alcançados são clicáveis — A4).
               Rola no mobile; quebra em linhas no desktop (sem scroll horizontal). */}
           <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
         {STEPS.map((s, i) => {
-          const reachable = i <= maxReached;
+          const reachable = i <= maxReached || (i === PASSO_RESUMO && RESUMO_ACESSIVEL);
           return (
             <button
               key={s}
@@ -1300,28 +1312,53 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                       : "⏳ Verificação pendente"
                 }
               />
-              <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
-              <Row
-                label="Serviços adicionais"
-                value={
-                  services.length > 0
-                    ? SERVICOS_VISIVEIS.filter((s) => services.includes(s.id))
-                        .map((s) => s.nome)
-                        .join(", ")
-                    : "Nenhum"
-                }
-              />
-              <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
+              {/* E1064 (perna 2): reaberto pelo contrato que já existe, a garantia é a gravada nele; sem leitura, a linha não aparece. */}
+              {FONTE_RESUMO === "contrato" ? (
+                GARANTIA_DO_CONTRATO && <Row label="Garantia" value={GARANTIA_DO_CONTRATO} />
+              ) : (
+                <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
+              )}
+              {/* Serviços adicionais e seguro patrimonial são escolhas desta visita; o contrato não os guarda. */}
+              {FONTE_RESUMO !== "contrato" && (
+                <>
+                  <Row
+                    label="Serviços adicionais"
+                    value={
+                      services.length > 0
+                        ? SERVICOS_VISIVEIS.filter((s) => services.includes(s.id))
+                            .map((s) => s.nome)
+                            .join(", ")
+                        : "Nenhum"
+                    }
+                  />
+                  <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
+                </>
+              )}
               <Row
                 label="Contrato"
                 value={
-                  generated
-                    ? demo
-                      ? "Exemplo de demonstração"
-                      : `${modoContrato === "teste" ? "TESTE · " : ""}${estadoContrato?.texto ?? "Situação indisponível — abra o contrato"}`
-                    : "Pendente"
+                  FONTE_RESUMO === "contrato" && ctx.contratoExistente
+                    ? ctx.contratoExistente.texto
+                    : generated
+                      ? demo
+                        ? "Exemplo de demonstração"
+                        : `${modoContrato === "teste" ? "TESTE · " : ""}${estadoContrato?.texto ?? "Situação indisponível — abra o contrato"}`
+                      : "Pendente"
                 }
               />
+              {FONTE_RESUMO === "contrato" && ctx.contratoExistente && (
+                <p className="text-right text-xs text-muted" data-testid="resumo-contrato">
+                  Gerado em {dataBRT(ctx.contratoExistente.criadoEm)}
+                  {" · "}
+                  <a href={`/dashboard/contratos/${ctx.contratoExistente.id}`} className="font-medium text-forest underline" data-testid="resumo-ver-contrato">
+                    Ver contrato
+                  </a>
+                  {" · "}
+                  <a href={`/dashboard/estadia/${ctx.contratoExistente.id}`} className="font-medium text-forest underline" data-testid="resumo-ver-estadia">
+                    Página da estadia
+                  </a>
+                </p>
+              )}
               {!demo && generated && contratoId && (
                 <p className="text-right text-xs text-muted" data-testid="resumo-contrato">
                   {contratoExistente && estadoContrato ? `Gerado em ${dataBRT(estadoContrato.criadoEm)} · ` : ""}
@@ -1334,10 +1371,13 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   </a>
                 </p>
               )}
-              <Row
-                label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
-                value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
-              />
+              {/* A taxa aqui é a conta desta visita; no Resumo aberto pelo contrato quem a diz é a página do contrato. */}
+              {FONTE_RESUMO !== "contrato" && (
+                <Row
+                  label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
+                  value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
+                />
+              )}
             </div>
             <p className="rounded-lg bg-sage-100 px-3 py-2 text-left text-sm text-forest">
               Ao fim da locação, você e o morador poderão se avaliar — construindo

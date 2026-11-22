@@ -117,6 +117,8 @@ export interface TermosProposta {
   limpezaUnica: number;
   /** E562: ajuste do dono no pacote de limpezas da estadia. Vazio = round(limpezas por mês × dias ÷ 30). */
   limpezasPacote?: number | null;
+  /** E647 (refino): a forma de pagamento desta versão (bloco ou mensal). Só existe com a chave FORMA_PAGAMENTO_DONO_ATIVA ligada. */
+  formaPagamento?: "bloco" | "mensal" | null;
 }
 
 /** E562: os dias da estadia — os gravados ou, na proposta antiga, meses × 30. */

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CampoDataHoraFormulario } from "@/components/ui/campo-data";
@@ -14,11 +14,15 @@ import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
-import { sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
+import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
+import { nomesDasContas, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
+import { reaisCurtos, rostoDoAvaliador } from "@/lib/vistoria/vitrine-avaliadores";
 import {
   CONDUTA_DONO,
   FRASE_PAGA_AVALIACAO,
   INCLUI_SEMPRE,
+  ROTULO_AVALIADOR_CREDENCIADO,
+  ROTULO_AVALIADOR_EM_TESTE,
   ROTULO_CONDUTA,
   ROTULO_PORTE,
   TEXTO_NOVA_AVALIACAO,
@@ -88,17 +92,19 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     avaliadores_credenciamento: { numero_credenciado: string; prazo_resposta_horas: number | null } | null;
   } | null;
   // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
-  let sugeridos: { id: string; numero: string; nome: string; termos: string }[] | null = [];
+  let sugeridos: { id: string; numero: string; nome: string; termos: string; teste: boolean }[] | null = [];
   if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
     try {
       const lista = (await sugeridosDoPedido(admin, atual.id, agora)) ?? [];
-      const { data: dados, error: erroDados } = lista.length ? await admin.from("avaliadores_credenciamento").select("id, numero_credenciado, preco_proprio, prazo_entrega_dias, prazo_resposta_horas, parceiros(nome_publico)").in("id", lista.map((a) => a.id)) : { data: [], error: null };
+      const { data: dados, error: erroDados } = lista.length ? await admin.from("avaliadores_credenciamento").select("id, numero_credenciado, preco_proprio, prazo_entrega_dias, prazo_resposta_horas, parceiros(nome_publico, user_id)").in("id", lista.map((a) => a.id)) : { data: [], error: null };
       if (erroDados) throw new Error(erroDados.message);
-      const porId = new Map(((dados ?? []) as unknown as { id: string; numero_credenciado: string; preco_proprio: number | string | null; prazo_entrega_dias: number | null; prazo_resposta_horas: number | null; parceiros: { nome_publico: string | null } | null }[]).map((d) => [d.id, d]));
+      const porId = new Map(((dados ?? []) as unknown as { id: string; numero_credenciado: string; preco_proprio: number | string | null; prazo_entrega_dias: number | null; prazo_resposta_horas: number | null; parceiros: { nome_publico: string | null; user_id: string | null } | null }[]).map((d) => [d.id, d]));
+      // E1084: o nome vem da conta (a mesma fonte do perfil e do laudo).
+      const nomes = await nomesDasContas(admin, [...porId.values()].map((d) => d.parceiros?.user_id));
       // E682: reputação = conduta PUBLICADA (a função pública conta só as avaliações já publicadas, às cegas).
       const { data: publicos, error: erroPublicos } = await admin.rpc("avaliadores_publicos");
       if (erroPublicos) throw new Error(erroPublicos.message);
-      const conduta = new Map(((publicos ?? []) as { numero_credenciado: string; nota_conduta: number | string | null; avaliacoes_feitas: number }[]).map((x) => [x.numero_credenciado, x]));
+      const conduta = new Map(((publicos ?? []) as { numero_credenciado: string; nota_conduta: number | string | null; avaliacoes_feitas: number; teste?: boolean | null }[]).map((x) => [x.numero_credenciado, x]));
       sugeridos = lista.map((a) => {
         const d = porId.get(a.id);
         const pub = conduta.get(d?.numero_credenciado ?? "");
@@ -106,11 +112,12 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
         return {
           id: a.id,
           numero: d?.numero_credenciado ?? "",
-          nome: d?.parceiros?.nome_publico ?? "Avaliador",
+          nome: nomeDoAvaliador(nomes.get(d?.parceiros?.user_id ?? ""), d?.parceiros?.nome_publico),
           termos: linhaDeTermos({
             notaConduta: nota,
             avaliacoesConduta: nota != null ? Math.max(1, Number(pub?.avaliacoes_feitas ?? 0)) : 0,
           }),
+          teste: pub?.teste === true,
         };
       });
     } catch {
@@ -167,6 +174,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             {atual.status === "pedido" && !atual.aguardando_avaliador && (
               <div className="rounded-lg border border-line p-3" data-testid="avaliacao-escolha">
                 <p className="font-semibold text-ink">Escolha o avaliador</p>
+                {im.city && <p className="mt-1 text-sm text-muted" data-testid="avaliacao-escolha-cidade">Avaliadores disponíveis em {im.city}</p>}
                 {faixa && (
                   <p className="mt-1 text-muted" data-testid="avaliacao-faixa">
                     Referência da cidade: {brl(faixa.referencia)} (faixa de {brl(faixa.min)} a {brl(faixa.max)}). Cada avaliador define o próprio valor e prazo e você aceita ou escolhe outro.
@@ -177,23 +185,41 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 ) : sugeridos.length === 0 ? (
                   <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">Nenhum avaliador disponível agora. A Viva avisa quando houver.</p>
                 ) : (
-                  <ul className="mt-2 grid gap-2">
-                    {sugeridos.map((a) => (
-                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2" data-testid="avaliacao-sugerido">
-                        <span className="text-ink">
-                          {a.nome} · nº{" "}
-                          <Link href={hrefAvaliador(a.numero)} className="underline">
-                            {a.numero}
-                          </Link>
-                          <span className="block text-xs text-muted" data-testid="avaliacao-sugerido-termos">{a.termos}</span>
-                        </span>
-                        <FormAcao acao={escolherAvaliador} testid="escolher-avaliador">
-                          <input type="hidden" name="pedidoId" value={atual.id} />
-                          <input type="hidden" name="avaliadorId" value={a.id} />
-                          <Button type="submit" variant="secondary" size="sm">Escolher este avaliador</Button>
-                        </FormAcao>
-                      </li>
-                    ))}
+                  <ul className="mt-3 grid gap-3">
+                    {sugeridos.map((a) => {
+                      const rosto = rostoDoAvaliador(a.nome, null, false);
+                      return (
+                        <li key={a.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-white p-3" data-testid="avaliacao-sugerido">
+                          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-champagne text-sm font-semibold text-ink" aria-hidden data-testid="avaliacao-sugerido-rosto">
+                            {rosto.tipo === "iniciais" ? rosto.texto : null}
+                          </span>
+                          <span className="min-w-0 flex-1 text-ink">
+                            <span className="block font-semibold">{a.nome}</span>
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-line bg-white px-2 py-1 text-xs text-ink" data-testid="avaliacao-sugerido-selo">
+                              <ShieldCheck className="h-3 w-3 shrink-0" aria-hidden />
+                              {a.teste ? ROTULO_AVALIADOR_EM_TESTE : ROTULO_AVALIADOR_CREDENCIADO}
+                            </span>
+                            <span className="block text-xs text-muted">
+                              nº{" "}
+                              <Link href={hrefAvaliador(a.numero)} className="underline">
+                                {a.numero}
+                              </Link>
+                            </span>
+                            <span className="block text-xs text-muted" data-testid="avaliacao-sugerido-termos">{a.termos}</span>
+                            {preco && (
+                              <span className="mt-1 block text-sm text-ink" data-testid="avaliacao-sugerido-preco">
+                                Avaliação: {reaisCurtos(Number(preco.valor))}
+                              </span>
+                            )}
+                          </span>
+                          <FormAcao acao={escolherAvaliador} testid="escolher-avaliador">
+                            <input type="hidden" name="pedidoId" value={atual.id} />
+                            <input type="hidden" name="avaliadorId" value={a.id} />
+                            <Button type="submit" variant="secondary" size="sm">Escolher este avaliador</Button>
+                          </FormAcao>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>

@@ -5,7 +5,7 @@
 */
 import { AMENITY_LABEL } from "../amenities.ts";
 
-export type ComodidadeFiltro = "cozinha" | "garagem" | "lavar";
+export type ComodidadeFiltro = "cozinha" | "garagem" | "lavar" | "ar";
 /**
  * Adendo 3 (E39): chave que saiu. Só existe no TIPO para filtros antigos (links, buscas salvas e o teste de estilo da
  * Pista A) continuarem compilando — nunca filtra, nunca conta e nunca aparece (comodidadesValidas a tira).
@@ -16,6 +16,8 @@ export const COMODIDADES_FILTRO: { chave: ComodidadeFiltro; rotulo: string; dica
   { chave: "cozinha", rotulo: "Cozinha equipada", dica: "Fogão, geladeira e utensílios", amenityKey: "cozinha_equipada" },
   { chave: "garagem", rotulo: "Garagem", dica: "Vaga de garagem", amenityKey: "vaga_garagem" },
   { chave: "lavar", rotulo: "Máquina de lavar", dica: "Lavar roupa sem sair de casa", amenityKey: "maquina_lavar" },
+  // Filtros pacote 1: ar-condicionado (comodidade já cadastrada, src/lib/amenities.ts) — não é item do padrão mínimo.
+  { chave: "ar", rotulo: "Ar-condicionado", dica: "Ar-condicionado no imóvel", amenityKey: "ar_condicionado" },
 ];
 
 /**
