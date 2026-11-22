@@ -101,9 +101,7 @@ export function resumoDoValorNaLista(p: ValoresDoPedido): string {
  * imóvel já tem (codigoDoImovel). Sem isto, dois pedidos da mesma cidade e porte eram indistinguíveis. Nunca vazio.
  */
 export function identificacaoDoImovel(titulo: string | null | undefined, propertyId: string): string {
-  const t = (titulo ?? "").replace(/\s+/g, " ").trim();
-  const codigo = codigoDoImovel(propertyId);
-  return t ? `${t} · ${codigo}` : codigo;
+  return (titulo ?? "").trim() || propertyId;
 }
 
 /** O local: bairro e cidade até o dono aceitar; o endereço completo depois. Nunca vazio (cai na cidade do pedido). */
