@@ -46,7 +46,7 @@ function politicaDeConteudo(): string {
     "img-src 'self' data: blob: https:" + supabaseFora,
     `font-src 'self' data:${previa ? " https://vercel.live https://assets.vercel.com" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    `script-src 'self' 'unsafe-inline' ${producao ? "" : "'unsafe-eval' "}https://challenges.cloudflare.com${previa ? " https://vercel.live" : ""}`,
+    `script-src 'self' ${producao ? "" : "'unsafe-eval' "}https://challenges.cloudflare.com${previa ? " https://vercel.live" : ""}`,
     "worker-src 'self' blob:",
     "connect-src 'self' " + armazenamento + " https://api.mapbox.com https://events.mapbox.com https://viacep.com.br https://brasilapi.com.br https://speed.cloudflare.com" + (previa ? " https://vercel.live wss://ws-us3.pusher.com" : ""),
     // Vídeo e áudio: os do próprio site, a prévia local (blob:) e os arquivos do armazenamento (vídeo do imóvel, áudio da caixa dos sócios).
