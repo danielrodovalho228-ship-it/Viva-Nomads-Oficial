@@ -13,9 +13,10 @@ import { itemChecklist, type ValorItem } from "@/config/checklist-avaliacao";
 import { vistoriaAtiva } from "./chave";
 import { podeContestar, valorValido } from "./laudo";
 import { abrirContestacao, emitirLaudo, liberar, registrarCorrecao, type LinhaLaudo } from "./laudo-servidor";
-import { COLUNAS_PRECO, linhaDaTabela, porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, rotaDono } from "./servidor";
+import { porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, rotaDono, tabelaDaCidade } from "./servidor";
 import type { MotivoVerificacao } from "./strikes";
+import { lerNivelDoLaudo } from "./nivel-do-laudo";
 import { recusaObservador } from "@/lib/qa/observador";
 
 /*
@@ -169,7 +170,7 @@ export async function concluirVisita(form: FormData): Promise<Res> {
 export async function enviarLaudo(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || c.p.status !== "realizada") return SEM_ACESSO;
-  const r = await emitirLaudo(c.admin, c.p.id, new Date(), null, { declarou: form.get("assino") === "on" });
+  const r = await emitirLaudo(c.admin, c.p.id, new Date(), null, { declarou: form.get("assino") === "on", nivel: lerNivelDoLaudo(form.get("nivel")) });
   if (!r.ok) return r;
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
@@ -200,7 +201,7 @@ export async function confirmarCorrecao(form: FormData): Promise<Res> {
     const v = String(form.get(`item_${g}`) ?? "");
     if (valorValido(g, v)) corrigidos[g] = v as ValorItem;
   }
-  const r = await registrarCorrecao(s.admin, l.pedido_id, corrigidos, new Date(), { declarou: form.get("assino") === "on" });
+  const r = await registrarCorrecao(s.admin, l.pedido_id, corrigidos, new Date(), { declarou: form.get("assino") === "on", nivel: lerNivelDoLaudo(form.get("nivel")) });
   if (!r.ok) return r;
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: r.resultado === "aprovado" ? "Correção confirmada: o laudo ganhou nova versão, aprovado." : "Nova versão do laudo emitida." };
@@ -281,8 +282,8 @@ export async function adminAbrirVerificacao(form: FormData): Promise<Res> {
   const { data: im } = await a.admin.from("properties").select("id, owner_id, city, bedrooms").eq("id", texto(form.get("propertyId"), 40)).maybeSingle();
   if (!im) return { ok: false, erro: "Imóvel não encontrado." };
   const agora = new Date();
-  const { data: tabela } = await a.admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? "");
-  const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
+  const tabela = await tabelaDaCidade(a.admin, im.city); // E1081: cidade pela chave (sem acento)
+  const linhas: LinhaPreco[] = tabela;
   const porte = porteDoImovel(im.bedrooms as number);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
   if (!preco) return { ok: false, erro: "Sem preço na tabela para esta cidade e porte." };
