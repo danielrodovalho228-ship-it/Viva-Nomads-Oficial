@@ -3,8 +3,8 @@ import { authFile } from "../fixtures/auth";
 
 /*
   T1681 — Ordem 12a8086d, item 4 (parte 3): a decisão de uma aprovação grava DE QUAL APARELHO veio
-  (aprovacoes.decidido_aparelho, migração 0339). A gravação em si é provada no unitário
-  src/lib/agentes/aparelho-aprovacao.test.ts e a migração em tests/migracoes/aprovacoes-aparelho-0339.test.ts:
+  (aprovacoes.decidido_aparelho, migração 0356). A gravação em si é provada no unitário
+  src/lib/agentes/aparelho-aprovacao.test.ts e a migração em tests/migracoes/aprovacoes-aparelho-0356.test.ts:
   aqui não se decide nenhum pedido real (a tabela é imutável depois de decidida e a suíte roda contra o banco).
   Garantias de ponta a ponta:
   1) visitante com user-agent de celular continua recusado (403/404), nada muda para quem não é admin;
