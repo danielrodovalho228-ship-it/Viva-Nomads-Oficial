@@ -111,3 +111,22 @@ export const TITULO_CARTAO_PAINEL_AVALIADOR = "mt-2 text-xl font-semibold text-[
 export const TEXTO_CARTAO_PAINEL_AVALIADOR = "text-base text-[#60635e]";
 export const DESTAQUE_CARTAO_PAINEL_AVALIADOR = "text-base text-[#0f4027]";
 export const VALOR_CARTAO_PAINEL_AVALIADOR = "text-lg font-semibold text-[#1f2123]";
+
+/*
+  Laudo do avaliador (E1079, fatia 5): mockup avaliador-laudo (celular). As cores foram medidas no próprio desenho.
+*/
+
+/** Os três níveis em cartões de escolha: o escolhido ganha a moldura verde-escura e o círculo verde com o visto. */
+export const CARTAO_NIVEL_LAUDO = `group flex cursor-pointer items-center justify-between gap-4 rounded-xl border-[6px] border-transparent bg-white p-4 ${SOMBRA_CARTAO_AVALIADORES} has-[:checked]:border-[#0b4830] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#0b4830]`;
+export const TITULO_NIVEL_LAUDO = "block font-title text-[26px] font-bold leading-tight text-[#03090e]";
+export const TEXTO_NIVEL_LAUDO = "block text-lg text-[#262628]";
+export const MARCA_NIVEL_LAUDO =
+  "grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-[#dadad8] text-transparent group-has-[:checked]:border-[#3d9150] group-has-[:checked]:bg-[#3d9150] group-has-[:checked]:text-white";
+
+/** O resumo por baixo dos níveis: "12 fotos enviadas", "Checklist completo". */
+export const RESUMO_LAUDO = `grid gap-3 rounded-xl bg-white p-4 ${SOMBRA_CARTAO_AVALIADORES}`;
+export const LINHA_RESUMO_LAUDO = "flex items-center gap-3 text-lg text-[#090b0c]";
+export const MARCA_RESUMO_LAUDO = { ok: "grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#3d9150] text-white", falta: "grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#969593] text-white" } as const;
+
+/** O botão "Assinar laudo": largura inteira, verde-escuro. */
+export const BOTAO_ASSINAR_LAUDO = "h-14 w-full rounded-xl bg-[#07492e] text-2xl font-bold text-white hover:bg-[#0b5a3a]";
