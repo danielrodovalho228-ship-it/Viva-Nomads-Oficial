@@ -8,9 +8,10 @@ import { REGRA_CAUCAO_BASE } from "./caucao-regra.ts";
 
 /**
  * Exceção da tabela comparativa Viva × Airbnb × QuintoAndar (src/config/compare-precos.ts). Por regra
- * permanente do Daniel a tabela é intocável e é a ÚNICA fonte autorizada a manter termos que a varredura
- * barraria (ex.: "check-in" em "Sem faxina nem check-in toda semana"). Os textos vindos desse arquivo
- * saem da tela antes da varredura; o mesmo termo em qualquer outro lugar continua reprovado.
+ * permanente do Daniel a tabela é intocável e mantém termos que a varredura barraria (ex.: "check-in" em
+ * "Sem faxina nem check-in toda semana"). É uma das DUAS exceções nomeadas: a outra é a frase da regra da caução
+ * (E1119, semFraseDaCaucao, abaixo). Os textos vindos desse arquivo saem da tela antes da varredura; o mesmo termo
+ * em qualquer outro lugar continua reprovado.
  */
 const TEXTOS_DA_TABELA: readonly string[] = [
   COMPARE_RODAPE,
