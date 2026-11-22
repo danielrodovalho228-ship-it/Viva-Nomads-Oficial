@@ -12,7 +12,7 @@ import {
   taxasVencidas,
   urgentesSemResposta4h,
 } from "@/lib/data/admin-indicadores";
-import { textoFilaDocumentos } from "@/lib/admin/indicadores";
+import { textoDocumentosAtrasados, textoFilaDocumentos } from "@/lib/admin/indicadores";
 import { chamadoForaDaPromessa, parceiroSemResposta } from "@/lib/lembretes/regras";
 import { maisAntigoParceria } from "@/lib/parceiros/fila-pendentes";
 import { haQuantoTempo, montarDecisoesAdmin, type ChaveDecisaoAdmin, type ContagemDecisao, type DecisoesAdmin } from "@/lib/admin/decisoes-admin";
@@ -167,7 +167,8 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
     contagens.backup = { n: (e.copia.vermelho ? 1 : 0) + (e.drill.vermelho ? 1 : 0), detalhe: [e.copia.porque, e.drill.porque].filter(Boolean).join(" ") || null };
   }
   if (falhas) contagens.falhas_documento = { n: falhas.falhas.length + falhas.pendentes };
-  if (docs) contagens.documentos_pendentes = { n: docs.total, detalhe: [textoFilaDocumentos(docs), maisAntigo(docs.maisAntigoEm)].filter(Boolean).join(" · ") };
+  // E948: quantos passaram de 1 dia útil, na MESMA linha (sem linha nova).
+  if (docs) contagens.documentos_pendentes = { n: docs.total, detalhe: [textoFilaDocumentos(docs), textoDocumentosAtrasados(docs.atrasados), maisAntigo(docs.maisAntigoEm)].filter(Boolean).join(" · ") };
   if (pedidosParc) contagens.pedidos_parceiro_sem_resposta = { n: pedidosParc.length, detalhe: maisAntigo(pedidosParc[0]?.criado_em) };
   if (urgentes) contagens.chamados_urgentes_sem_resposta = { n: urgentes.length, detalhe: maisAntigo(urgentes[0]?.opened_at) };
   if (cand48) contagens.candidaturas_sem_resposta_48h = { n: cand48.length, detalhe: maisAntigo(cand48[0]?.criadoEm) };

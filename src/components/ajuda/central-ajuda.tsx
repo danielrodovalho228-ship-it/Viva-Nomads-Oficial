@@ -302,6 +302,15 @@ export function PerguntasDaCentral({ ids, titulo }: { ids?: readonly string[]; t
 function Perguntas({ perfil, ids, titulo }: { perfil: PerfilAjuda; ids?: readonly string[]; titulo: string }) {
   const [q, setQ] = useState("");
   const [aberta, setAberta] = useState<string | null>(null);
+  // E947: link direto para uma pergunta (?pergunta=<id>, ex.: a remissão de "Como posso virar parceiro" para a pergunta
+  // de empresas) — abre a resposta e rola até ela.
+  useEffect(() => {
+    const alvo = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("pergunta");
+    if (!alvo || !(ids ?? FAQ.map((p) => p.id)).includes(alvo)) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAberta(alvo);
+    requestAnimationFrame(() => document.getElementById(`pergunta-${alvo}`)?.scrollIntoView({ block: "start" }));
+  }, [ids]);
   const resultado = useMemo(() => {
     const achadas = buscarFaq(q);
     if (!ids) return achadas;
@@ -333,7 +342,7 @@ function Perguntas({ perfil, ids, titulo }: { perfil: PerfilAjuda; ids?: readonl
       ) : (
         <ul className="mt-3 divide-y divide-line">
           {resultado.map((p) => (
-            <li key={p.id}>
+            <li key={p.id} id={`pergunta-${p.id}`} className="scroll-mt-24">
               <button
                 type="button"
                 aria-expanded={aberta === p.id}

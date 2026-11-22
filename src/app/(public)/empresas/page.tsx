@@ -10,6 +10,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { PRAZO_CANAL, TEXTO_PRAZO_EMPRESAS } from "@/config/prazos-canais";
+import { RECIBO_EMPRESAS, TAXA_EMPRESAS } from "@/lib/empresas/textos";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/empresas" },
@@ -41,10 +42,9 @@ const BENEFICIOS = [
 ];
 
 /** E770: a taxa, pela regra das superfícies comerciais aprovadas (a taxa é do proprietário; quem vem morar não paga). */
-const TAXA_EMPRESAS = "A taxa da Viva é do proprietário, por contrato fechado; quem vem morar não paga taxa à plataforma, e não há mensalidade.";
 
 const FAQ_EMPRESAS = [
-  { p: "Como a empresa recebe o recibo?", r: "O proprietário emite o recibo mensal da estadia em nome dele. A Viva Nomads não emite nota para a empresa e não cobra nada de quem vem morar." },
+  { p: "Como a empresa recebe o recibo?", r: RECIBO_EMPRESAS },
   { p: "Qual é o prazo das estadias?", r: "De 30 a 180 dias, com imóveis mobiliados e prontos para morar." },
   { p: "Qual é o prazo de resposta e a taxa?", r: `${TEXTO_PRAZO_EMPRESAS} ${TAXA_EMPRESAS}` },
   { p: "Quem assina o contrato?", r: "O proprietário e quem vai morar (ou a empresa, quando ela for a responsável). A assinatura é digital, pela plataforma." },

@@ -1,3 +1,4 @@
+import { avisarDonoDocumentoEmAnalise } from "@/lib/data/aviso-documento-recebido";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -62,5 +63,7 @@ export async function POST(request: Request) {
   } catch {
     /* best-effort */
   }
+  // E948: no mesmo momento, o prazo da análise ao proprietário.
+  await avisarDonoDocumentoEmAnalise(user.id, check.property_id as string | null);
   return NextResponse.json({ ok: true, mensagem: "Documento recebido. A equipe confere em até 48 horas e avisa por e-mail." });
 }

@@ -124,6 +124,13 @@ export default function HowItWorksPage() {
           </Link>{" "}
           · {PROMESSA_ATENDIMENTO}
         </p>
+        {/* E947: a porta das empresas (moradia para o time) — uma linha, sem bloco novo. */}
+        <p className="mt-2 text-sm text-muted" data-testid="cf-empresas">
+          É empresa e procura moradia para o seu time?{" "}
+          <Link href="/empresas" className="font-medium text-forest underline underline-offset-4">
+            Moradia para empresas
+          </Link>
+        </p>
       </section>
       </div>
     </>

@@ -38,7 +38,9 @@ test("Ajuda: uma pergunta só sobre virar parceiro, coerente com /parceiros e /e
   const parceiro = FAQ.filter((f) => /parceir/i.test(f.pergunta) && /virar/i.test(f.pergunta));
   assert.equal(parceiro.length, 1);
   assert.equal(parceiro[0].pergunta, "Como posso virar parceiro da Viva?");
-  assert.match(parceiro[0].resposta, /quer moradia para funcionários: \/empresas/);
+  // E947 (asserção alterada): a remissão de moradia para funcionários aponta para a pergunta própria (com o link).
+  assert.match(parceiro[0].resposta, /quer moradia para funcionários: veja a pergunta “Minha empresa pode alugar moradia para funcionários\?”/);
+  assert.deepEqual(parceiro[0].links, [{ rotulo: "Minha empresa pode alugar moradia para funcionários?", href: "/ajuda/morador?pergunta=empresa-moradia" }]);
   assert.match(parceiro[0].resposta, /quer ser parceira[^.]*\/parceiros/);
   assert.doesNotMatch(parceiro[0].resposta, /apartamentos?|comiss[ãa]o|corretagem|intermedia[çc][ãa]o|aluguel|temporada|art\. 48/i);
 });
