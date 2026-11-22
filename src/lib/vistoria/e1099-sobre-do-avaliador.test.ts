@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { EXPLICACAO_SOBRE, normalizarSobre, SOBRE_MAX, TITULO_SOBRE } from "./vitrine-avaliadores.ts";
+import { CONTATO_AVISO } from "../pedidos/pedidos.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
 
@@ -35,6 +36,23 @@ test("E1099: o texto do avaliador — aparado, vazio vira nada, acima do limite 
   const longo = normalizarSobre("a".repeat(601));
   assert.equal(longo.ok, false);
   assert.deepEqual(normalizarSobre("a".repeat(600)), { ok: true, valor: "a".repeat(600) });
+});
+
+test("E1099 (ORDEM-DUET-498, K2): o 'Sobre' com contacto é recusado com o aviso da casa — nunca grava", () => {
+  for (const comContato of [
+    "Ligue para (34) 99999-1234 e combinamos.",
+    "Escreva para avaliador@exemplo.com.br",
+    "Fale comigo em wa.me/5534999991234",
+    "Chama no zap que eu respondo.",
+  ]) {
+    assert.deepEqual(normalizarSobre(comContato), { ok: false, erro: CONTATO_AVISO }, comContato);
+  }
+  // A guarda é a mesma das outras superfícies (fonte única), não uma regex nova.
+  const fonte = ler("src/lib/vistoria/vitrine-avaliadores.ts");
+  assert.match(fonte, /import \{ CONTATO_AVISO, contemContato \} from "\.\.\/pedidos\/pedidos\.ts";/);
+  assert.match(fonte.slice(fonte.indexOf("export function normalizarSobre")), /if \(contemContato\(t\)\) return \{ ok: false, erro: CONTATO_AVISO \};/);
+  // Texto limpo continua a gravar.
+  assert.deepEqual(normalizarSobre("Avalio imóveis mobiliados em Uberlândia há 8 anos."), { ok: true, valor: "Avalio imóveis mobiliados em Uberlândia há 8 anos." });
 });
 
 test("E1099: o avaliador grava só o PRÓPRIO 'Sobre', na área dele", () => {

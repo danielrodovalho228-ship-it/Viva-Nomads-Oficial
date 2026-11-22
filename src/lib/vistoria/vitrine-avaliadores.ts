@@ -10,6 +10,7 @@
 import { iniciais } from "../avatar.ts";
 import { atendeCidade, ROTULO_AVALIADOR_CREDENCIADO, ROTULO_AVALIADOR_EM_TESTE, ROTULO_PORTE, PORTES, precoVigente, type LinhaPreco, type Porte } from "./regras.ts";
 import { chaveCidade } from "../cidades.ts";
+import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
 
 /** A listagem pública por cidade: desligada até o Daniel a abrir (condição 2 do coordenador). */
 export const VITRINE_AVALIADORES_ABERTA = false;
@@ -151,11 +152,13 @@ export const TITULO_SOBRE = "Sobre";
 export const SOBRE_MAX = 600;
 /** ORDEM-DUET-462 §1 / 463 §2: a frase aprovada, curta e simples. */
 export const EXPLICACAO_SOBRE = "Este texto aparece no seu perfil público.";
-/** O texto do "Sobre": aparado; vazio = nada (a secção some); acima do limite, recusado com o motivo. */
+/** O texto do "Sobre": aparado; vazio = nada (a secção some); acima do limite ou com contacto, recusado com o motivo. */
 export function normalizarSobre(texto: string): { ok: true; valor: string | null } | { ok: false; erro: string } {
   const t = String(texto ?? "").trim();
   if (!t) return { ok: true, valor: null };
   if (t.length > SOBRE_MAX) return { ok: false, erro: `O texto "Sobre" tem até ${SOBRE_MAX} caracteres.` };
+  /* ORDEM-DUET-498 (K2): o "Sobre" é público — contacto (telefone, e-mail, mensageiros) é recusado com o aviso da casa. */
+  if (contemContato(t)) return { ok: false, erro: CONTATO_AVISO };
   return { ok: true, valor: t };
 }
 
