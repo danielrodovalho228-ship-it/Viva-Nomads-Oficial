@@ -39,6 +39,8 @@ export interface ContadoresPainel {
   observadorQa: boolean;
   /** E445 item 6: mensagens recebidas pela conta (a casca toca o som discreto quando o número sobe). */
   mensagensRecebidas: number;
+  /** E970: conversas com pelo menos uma mensagem não lida — o selo da aba Mensagens (a unidade é a CONVERSA, como no sino). */
+  conversasNaoLidas: number;
 }
 
 export const CONTADORES_VAZIOS: ContadoresPainel = Object.freeze({
@@ -52,6 +54,7 @@ export const CONTADORES_VAZIOS: ContadoresPainel = Object.freeze({
   estadiaAtiva: false,
   observadorQa: false,
   mensagensRecebidas: 0,
+  conversasNaoLidas: 0,
 });
 
 function contagem(v: unknown): number {
@@ -73,12 +76,28 @@ export function normalizarContadores(json: unknown): ContadoresPainel {
     estadiaAtiva: o.estadiaAtiva === true,
     observadorQa: o.observadorQa === true,
     mensagensRecebidas: contagem(o.mensagensRecebidas),
+    conversasNaoLidas: contagem(o.conversasNaoLidas),
   };
 }
 
 /** O que a rota devolve para quem não é admin: os números da equipe nunca saem (sempre 0). */
 export function contadoresVisiveis(c: ContadoresPainel, admin: boolean): ContadoresPainel {
   return admin ? c : { ...c, documentosPendentes: 0, aprovacoesPendentes: 0, observadorQa: false };
+}
+
+/**
+ * E970 — a unidade é a conversa em qualquer total: o selo da aba Mensagens conta as conversas com pelo menos uma não
+ * lida (o mesmo número do sino, que guarda um aviso por conversa); o número de MENSAGENS fica dentro da linha.
+ */
+export function conversasComNaoLidas(porConversa: Record<string, number> | readonly { nao_lidas: unknown }[] | null | undefined): number {
+  if (!porConversa) return 0;
+  const valores = Array.isArray(porConversa) ? porConversa.map((r) => Number(r.nao_lidas)) : Object.values(porConversa as Record<string, number>).map(Number);
+  return valores.filter((n) => Number.isFinite(n) && n > 0).length;
+}
+
+/** Selo da aba Mensagens (menu do computador e barra do celular): conversas com não lida. */
+export function seloDeMensagens(c: Pick<ContadoresPainel, "conversasNaoLidas">): number {
+  return c.conversasNaoLidas;
 }
 
 /** Selo da aba "Equipe" da barra inferior: documentos na fila + aprovações. */
