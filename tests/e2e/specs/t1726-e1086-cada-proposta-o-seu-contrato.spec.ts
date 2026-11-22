@@ -151,6 +151,7 @@ test.describe("T1726 — E1086: cada proposta aceita gera o seu contrato (2ª es
     await expect(page.getByTestId("fechamento-proposta-contrato")).toBeVisible({ timeout: 20_000 });
     // (soft: mesmo com este aviso errado, a trava segue até "Gerar contrato" e mostra também que o contrato não nasce.)
     await expect.soft(page.getByTestId("fechamento-contrato-existente"), "o contrato da 1ª estadia não é o desta proposta").toHaveCount(0, { timeout: 5_000 });
+    await page.getByTestId("fechamento-proposta-contrato").scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${SAIDA}/t1726-2-fechamento-da-proposta-nova-1280.png` });
     await gerarContratoPelaTela(page);
     await page.context().close();
@@ -190,6 +191,7 @@ test.describe("T1726 — E1086: cada proposta aceita gera o seu contrato (2ª es
       await expect(aviso).toContainText("Esta candidatura já tem contrato.", { timeout: 20_000 });
       await expect(aviso.getByRole("link", { name: "Ver contrato" })).toHaveAttribute("href", new RegExp(ids.c2!));
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `${largura} px: sem rolagem lateral`).toBeLessThanOrEqual(1);
+      await aviso.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t1726-3-fechamento-reaberto-${largura}.png` });
       await page.context().close();
     });
