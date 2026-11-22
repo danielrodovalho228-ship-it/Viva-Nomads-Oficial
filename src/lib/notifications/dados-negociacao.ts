@@ -8,6 +8,7 @@
 
 import { codigoDoImovel } from "../imovel-pagina.ts";
 import { precoDaProposta, type TermosPreco } from "../precos.ts";
+import { periodoPelaSaida, periodoPeloFim } from "../texto-do-periodo.ts";
 
 /**
  * E1066 — o "Total do contrato" do e-mail pela fonte única (precoDaProposta: mensal, contas e limpeza — a conta da
@@ -97,7 +98,8 @@ export function linhasProposta(o: {
 }): LinhaDado[] {
   const linhas: LinhaDado[] = [
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
-    { rotulo: "Período", valor: textoPeriodo(o.entrada, o.saida, o.meses, o.dias) },
+    // E1089: uma só forma em toda superfície — "Entrada DD/MM/AAAA · Saída DD/MM/AAAA · N diárias" (saída = entrada + dias).
+    { rotulo: "Período", valor: periodoPelaSaida(o.entrada, o.saida)?.linha ?? textoPeriodo(o.entrada, o.saida, o.meses, o.dias) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
     // E562 (telas): estadia em dias exatos → o mesmo rótulo do anúncio e da montagem, "Total da estadia (43 dias)".
     { rotulo: o.dias != null && o.dias > 0 && o.dias % 30 !== 0 ? `Total da estadia (${o.dias} dias)` : "Total do contrato", valor: o.contaTotal },
@@ -146,7 +148,9 @@ export function linhasContrato(o: {
     : `${o.meses} × ${brl(o.valorMensal)} = ${brl(o.valorMensal * o.meses)}`;
   const linhas: LinhaDado[] = [
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
-    { rotulo: "Período", valor: textoPeriodo(o.inicio, o.fim, o.meses, o.dias) },
+    // E1089 (coordenador): `fim` é a ÚLTIMA NOITE gravada nos blocos; o e-mail imprime a SAÍDA (o dia seguinte), a mesma
+    // data da proposta — "Entrada 23/11/2026 · Saída 24/12/2026 · 31 diárias".
+    { rotulo: "Período", valor: periodoPeloFim(o.inicio, o.fim)?.linha ?? textoPeriodo(o.inicio, o.fim, o.meses, o.dias) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
     { rotulo: "Total do contrato", valor: o.contaTotal || soAluguel },
   ];
