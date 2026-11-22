@@ -146,7 +146,7 @@ export default async function AvaliacaoParceiroPage() {
   // "Visitas"; sem relógio e sem o formulário antigo, porque nada vence esse pedido (a resposta sai pela tela dele).
   const etapaNaLista = (p: Pedido) =>
     etapaDoPedido({ status: p.status, resposta: resposta.get(p.id), proposta_em: p.proposta_em, proposta_aceita_em: p.proposta_aceita_em, teste: p.teste, escolhido_em: p.escolhido_em });
-  const paraResponder = lista.filter((p) => etapaNaLista(p) === "novo");
+  const paraResponder = lista.filter((p) => p.status === "designado" && resposta.get(p.id) === null);
   const visitas = lista
     .filter((p) => !paraResponder.includes(p) && ["designado", "agendado", "realizada"].includes(p.status))
     .sort((a, b) => (a.agendado_para ? Date.parse(a.agendado_para) : Infinity) - (b.agendado_para ? Date.parse(b.agendado_para) : Infinity));
