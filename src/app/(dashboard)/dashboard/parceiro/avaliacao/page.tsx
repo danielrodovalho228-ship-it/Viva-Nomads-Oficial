@@ -16,7 +16,7 @@ import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, prazoResposta, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeuSobre, salvarMeusTermos } from "@/lib/vistoria/actions";
-import { SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
+import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
@@ -177,7 +177,7 @@ export default async function AvaliacaoParceiroPage() {
       )}
       {(cred.status === "em_teste" || cred.status === "ativo") && (
         <Panel title="Sobre você" data-testid="meu-sobre">
-          <p className="text-sm text-muted">Opcional. Aparece no seu perfil público, na secção Sobre; vazio, a secção não aparece. Até {SOBRE_MAX} caracteres.</p>
+          <p className="text-sm text-muted" data-testid="meu-sobre-explicacao">{EXPLICACAO_SOBRE}</p>
           <FormAcao acao={salvarMeuSobre} className="mt-3 grid gap-2" testid="salvar-sobre">
             <label className="text-sm">
               Sobre você

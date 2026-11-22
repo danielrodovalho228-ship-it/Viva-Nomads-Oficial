@@ -719,5 +719,5 @@ export async function salvarMeuSobre(form: FormData): Promise<Res> {
   if (error || !data?.length) return { ok: false, erro: "Não encontramos o seu credenciamento." };
   revalidatePath(ROTA_AVALIADOR);
   for (const c of data as { numero_credenciado: string | null }[]) if (c.numero_credenciado) revalidatePath(`/avaliadores/${c.numero_credenciado}`);
-  return { ok: true, mensagem: v.valor ? "Texto salvo. Ele aparece no seu perfil público." : "Texto apagado. A secção Sobre não aparece no seu perfil." };
+  return { ok: true, mensagem: v.valor ? "Texto salvo. Ele aparece no seu perfil público." : "Texto apagado. A seção Sobre não aparece no seu perfil." };
 }
