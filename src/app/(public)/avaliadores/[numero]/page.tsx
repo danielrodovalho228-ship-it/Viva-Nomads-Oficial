@@ -66,6 +66,8 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
   if (!a && !perfil) notFound();
   if (!a) return <PerfilPublico perfil={perfil!} />;
   const nota = a.nota_conduta == null ? null : Number(a.nota_conduta);
+  // E1099 (ORDEM-DUET-458): a caixa "Novo na Viva", com a regra do cartão de escolha (sem avaliações concluídas).
+  const novo = novoNaViva(a.avaliacoes_feitas, nota);
   // E1079 (ORDEM-DUET-385/386/397): o perfil do credenciado no desenho do mockup aprovado — a foto de perfil da conta (só a
   // conta de teste a mostra, sem o Daniel), senão as iniciais; a cidade com a UF; o preço da TABELA DA CIDADE por porte.
   const admin = createAdminClient();
@@ -108,6 +110,17 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
           {uf && <span data-testid="avaliador-uf">• {uf}</span>}
         </p>
         <p className="mt-4 text-sm text-ink" data-testid="avaliador-linha-designacao">{LINHA_PUBLICA_DESIGNACAO}</p>
+        {novo && (
+          <div className="mt-6 flex items-start gap-4 rounded-xl bg-sage-100 p-4" data-testid="avaliador-novo">
+            <span className="inline-grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-forest text-forest" aria-hidden>
+              <Star className="h-6 w-6" />
+            </span>
+            <div>
+              <p className="font-title text-lg font-semibold text-forest-700">{TITULO_NOVO_NA_VIVA}</p>
+              <p className="mt-1 text-sm text-ink">{TEXTO_NOVO_NA_VIVA}</p>
+            </div>
+          </div>
+        )}
         <dl className="mt-6 grid gap-4 rounded-xl border border-line bg-white p-4 text-sm sm:grid-cols-3">
           <div><dt className="text-muted">Número de credenciado</dt><dd className="mt-1 font-semibold text-ink" data-testid="avaliador-numero">{a.numero_credenciado}</dd></div>
           <div><dt className="text-muted">Avaliações feitas</dt><dd className="mt-1 text-ink" data-testid="avaliador-feitas">{a.avaliacoes_feitas}</dd></div>
