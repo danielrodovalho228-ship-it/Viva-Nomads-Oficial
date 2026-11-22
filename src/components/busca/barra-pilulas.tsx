@@ -16,8 +16,8 @@ const ROTULO = ROTULO_PILULA;
 const ICONE: Record<IdPilula, React.ComponentType<{ className?: string }>> = { datas: CalendarDays, local: MapPin, tipo: Home, preco: Wallet, nivel: Award, ordenar: ArrowUpDown };
 
 /**
- * E82-A + E91 + E95 (mockup BUSCA-CARD): UMA linha de controles — Datas · Local · Tipo · Preço · Mais filtros · Ordenar ·
- * Mapa · Nível (E946: o Nível por último). Pílulas de contorno; a ativa fica preenchida e mostra o valor. Cada pílula abre um painel pequeno logo
+ * E82-A + E91 + E95 (mockup BUSCA-CARD): UMA linha de controles — Datas · Local · Tipo · Preço · Nível · Mais filtros ·
+ * Ordenar · Mapa. Pílulas de contorno; a ativa fica preenchida e mostra o valor. Cada pílula abre um painel pequeno logo
  * abaixo da linha (no celular a linha rola de lado). As opções e as contagens são as da folha (FILTROS-B); a escolha vale
  * na hora, pela mesma função da folha. "Mais filtros" abre a folha; "Mapa" alterna lista e mapa.
  */
@@ -102,22 +102,22 @@ export function BarraPilulas(p: {
 
   return (
     <div ref={caixa} className="relative" data-testid="busca-controles">
-      {/* E946 (15/11): no celular os chips correm numa sequência só, na ordem Datas · Local · Tipo · Preço · Mais filtros ·
-          Ordenar · Mapa · Nível, quebrando linha sem deslize lateral (E780) e sem linha órfã — os dois grupos só existem do
-          tablet para cima (display: contents no celular). A barra continua presa no topo (E780), então as ações seguem à
-          vista (E710). Antes, o E710 punha as ações numa linha própria e o Nível ficava sozinho entre os filtros e as ações.
-          Do tablet para cima é uma linha só, na mesma ordem. */}
-      <div role="toolbar" aria-label="Filtros da busca" className="flex flex-wrap items-center gap-2 pb-1 sm:flex-nowrap" data-testid="linha-pilulas">
+      {/* E710: no celular as três AÇÕES (Mais filtros · Ordenar · Mapa) ficam numa linha própria, sempre à vista; só os
+          filtros (Datas · Local · Tipo · Preço · Nível) vêm na linha de cima, quebrando linha se preciso (E780). Do tablet para
+          cima é uma linha só. */}
+      <div role="toolbar" aria-label="Filtros da busca" className="flex flex-col gap-2 pb-1 sm:flex-row sm:items-center" data-testid="linha-pilulas">
         {/* E780 reaberto (print do Daniel, 14/11): no celular a fileira NÃO rola de lado — rolava sob a margem (-mx-4), cortava o
             primeiro chip na borda e mostrava a barra de rolagem. Os chips quebram linha, inteiros desde o primeiro, sem barra.
             Do tablet para cima segue uma linha só, como antes. */}
-        <div className="contents min-w-0 flex-wrap items-center gap-2 sm:flex sm:flex-1 sm:flex-nowrap sm:overflow-x-auto" data-testid="pilulas-filtros">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-1 sm:flex-nowrap sm:overflow-x-auto" data-testid="pilulas-filtros">
         {pilula("datas")}
         {pilula("local")}
         {pilula("tipo")}
         {pilula("preco")}
+        {/* E452: filtro que não filtra não se mostra — a pílula só existe quando há nível para escolher (ou um já escolhido). */}
+        {nivel.visivel && pilula("nivel")}
         </div>
-        <div className="contents min-w-0 flex-wrap items-center gap-2 sm:flex sm:shrink-0" data-testid="pilulas-acoes">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:shrink-0" data-testid="pilulas-acoes">
         <Chip ativo={p.nMaisFiltros > 0} onClick={p.onMaisFiltros} aria-haspopup="dialog" data-testid="pilula-mais" className="shrink-0 gap-2 whitespace-nowrap">
           <SlidersHorizontal className="h-4 w-4" aria-hidden /> Mais filtros
           {p.nMaisFiltros > 0 && <span className="tabular-nums">({p.nMaisFiltros})</span>}
@@ -126,9 +126,6 @@ export function BarraPilulas(p: {
         <Chip ativo={p.mapa} onClick={p.onMapa} data-testid="pilula-mapa" className="shrink-0 gap-2 whitespace-nowrap">
           <IconeMapa className="h-4 w-4" aria-hidden /> Mapa
         </Chip>
-        {/* E946 (uso real do Daniel, 15/11): o "Nível" vai por ÚLTIMO na barra — no celular ficava órfão numa linha só dele
-            (três linhas); no fim, as linhas empacotam em duas. E452: só existe quando há nível para escolher. */}
-        {nivel.visivel && pilula("nivel")}
         </div>
       </div>
 

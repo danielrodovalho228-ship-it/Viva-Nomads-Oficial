@@ -4,8 +4,7 @@ import { ROTULO_NIVEL } from "../../config/niveis.ts";
 export type IdPilula = "datas" | "local" | "tipo" | "preco" | "nivel" | "ordenar";
 
 /** E82-A: a ordem do mockup BUSCA-CARD — uma linha só. */
-// E946 (uso real do Daniel, 15/11): o "Nível" vai por último — no celular ficava órfão numa linha só dele.
-export const ORDEM_PILULAS = ["datas", "local", "tipo", "preco", "mais", "ordenar", "mapa", "nivel"] as const;
+export const ORDEM_PILULAS = ["datas", "local", "tipo", "preco", "nivel", "mais", "ordenar", "mapa"] as const;
 
 export const ROTULO_PILULA: Record<IdPilula, string> = { datas: "Datas", local: "Local", tipo: "Tipo", preco: "Preço", nivel: "Nível", ordenar: "Ordenar" };
 
