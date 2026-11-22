@@ -6,6 +6,7 @@
   formulário do navegador importa este arquivo); o token fica em token.ts.
 */
 import { chaveCidade } from "../cidades.ts";
+import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
 import { PRAZO_CANAL, TEXTO_PRAZO_PARCERIA } from "../../config/prazos-canais.ts";
 import { cnpjValido, cpfValido, soDigitos, type TipoPessoa } from "../documento-pessoa.ts";
 import { emiteNotaParaGravar, faltaRespostaNota, passaFiltroNota, PENDENCIA_NOTA } from "./fiscal.ts";
@@ -182,6 +183,8 @@ export type CampoSolicitacao = "nome" | "documento" | "categorias" | "cidades" |
 export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string; campo?: CampoSolicitacao } {
   const nome = limpar(e.nome, 120);
   if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa).", campo: "nome" };
+  // E1112 (ORDEM-DUET-500 §2): nome e descrição vão para a página pública na ativação — contacto é recusado já aqui.
+  if (contemContato(nome)) return { ok: false, erro: CONTATO_AVISO, campo: "nome" };
   // E648: só empresa. O tipo "pf" e qualquer CPF no campo do documento são recusados em todas as categorias.
   if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ, campo: "documento" };
   const tipo = "pj" as const;
@@ -205,6 +208,7 @@ export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: So
   const portfolioUrl = urlPublicaValida(portfolioBruto);
   if (portfolioBruto && !portfolioUrl) return { ok: false, erro: "O link do portfólio precisa ser um endereço da web (https://…).", campo: "portfolioUrl" };
   const descricao = limpar(e.descricao, DESCRICAO_MAX) || null;
+  if (descricao && contemContato(descricao)) return { ok: false, erro: CONTATO_AVISO, campo: "descricao" };
   const dados: { empresa?: string; veiculo?: string } = {};
   if (categorias.includes("fotografia") && !portfolioUrl) return { ok: false, erro: "Para fotografia, mande o link do seu portfólio.", campo: "portfolioUrl" };
   if (categorias.includes("mudanca")) {

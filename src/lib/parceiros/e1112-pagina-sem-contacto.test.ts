@@ -62,3 +62,23 @@ test("E1112: o bloco 'Redes' fica como está (K4 julgado na ORDEM-498 §4)", () 
   assert.match(fn, /const v = validarRede\(r\.chave, e\.redes\?\.\[r\.chave\]\);/);
   assert.doesNotMatch(ler(MIG), /instagram|facebook|tiktok|site/i, "o gatilho não toca nas colunas das redes");
 });
+
+// ── ORDEM-DUET-500 §2: o pedido de parceria fecha-se na origem ──────────────────────────────────────────────────
+import { validarSolicitacao } from "./regras.ts";
+
+test("E1112 (ORDEM-500): o pedido de parceria com contacto no nome ou na descrição é recusado com o aviso da casa — e não grava", () => {
+  const base = { nome: "Ana Limpezas", tipoPessoa: "pj" as const, documento: "11.222.333/0001-81", categorias: ["limpeza"], cidades: ["Uberlândia"], aceite: true, descricao: "Limpeza residencial", emiteNota: true };
+  assert.equal(validarSolicitacao(base).ok, true, "o pedido limpo continua a passar");
+  for (const descricao of ["Limpeza residencial. Ligue (34) 99999-1234", "Orçamentos: ana@exemplo.com.br", "Chama no zap"]) {
+    assert.deepEqual(validarSolicitacao({ ...base, descricao }), { ok: false, erro: CONTATO_AVISO, campo: "descricao" }, descricao);
+  }
+  assert.deepEqual(validarSolicitacao({ ...base, nome: "Ana 34 99999-1234" }), { ok: false, erro: CONTATO_AVISO, campo: "nome" });
+  // A fonte é a mesma (contemContato); a action recusa antes de gravar (validarSolicitacao vem antes do insert e do update).
+  const regras = ler("src/lib/parceiros/regras.ts");
+  assert.match(regras, /import \{ CONTATO_AVISO, contemContato \} from "\.\.\/pedidos\/pedidos\.ts";/);
+  const acoes = ler("src/lib/parceiros/solicitacao-actions.ts");
+  const fn = acoes.slice(acoes.indexOf("export async function enviarSolicitacao"), acoes.indexOf("export async function pedirNovoLink"));
+  const iValida = fn.indexOf("const v = validarSolicitacao(entrada);");
+  assert.ok(iValida > 0 && iValida < fn.indexOf('.from("parceiro_solicitacoes").update(') && iValida < fn.indexOf('.from("parceiro_solicitacoes").insert('));
+  assert.match(fn, /if \(!v\.ok\) return \{ ok: false, erro: v\.erro, campo: v\.campo \};/);
+});
