@@ -117,6 +117,9 @@ test.describe("T2224 — E1059: o servidor recusa CPF/RG mesmo quando o envio n�
     });
     // Recusa por política, por gatilho ou por qualquer outra regra do banco: o que conta é que a mensagem não fica.
     expect(await comDocumento(), `a mensagem com CPF não fica no banco (erro do banco: ${error?.message ?? "nenhum"})`).toBe(0);
-    expect(await gravadasDoInq()).toBe(antes);
+    // Achado da 1.ª corrida (lab 44998017135): o banco aceitou e o gatilho messages_mask_contact (0057) gravou o CPF
+    // MASCARADO, como telefone ("🔒 [contato protegido]") — entregue à outra parte. A regra é recusa, nunca máscara.
+    const { data: ficou } = await adm().from("messages").select("body").eq("sender_id", ids.inq).eq("property_id", ids.imovel).like("body", `%${sufixo}%`).not("body", "ilike", "%sabado%").not("body", "ilike", "%Outra pergunta%");
+    expect(await gravadasDoInq(), `o banco não grava a mensagem com CPF, nem mascarada (gravado: ${JSON.stringify((ficou ?? []).map((m) => m.body))})`).toBe(antes);
   });
 });
