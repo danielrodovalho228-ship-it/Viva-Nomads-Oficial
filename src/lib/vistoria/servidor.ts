@@ -9,12 +9,16 @@ import { criteriosAtingidos, propostaVencida, sugerirAvaliadores, CRITERIOS_PUBL
 import { modoDaChaveAtual } from "./chave";
 import { filaNoAmbito } from "./ambito-da-chave";
 import {
+  COLUNAS_PRECO,
   designacaoVencida,
+  linhaDaTabela,
+  linhasDaCidade,
   notaConduta,
   sorteadoParaAuditoria,
   visitaAmanha,
   type AvaliadorFila,
   type HistoricoDesignacao,
+  type LinhaPreco,
   type PedidoParaDesignar,
   type StatusCredenciamento,
   type TipoPedido,
@@ -146,6 +150,17 @@ export async function filaDaCidade(admin: Admin): Promise<AvaliadorFila[]> {
       relacoesDonos: l.relacoes_donos ?? [],
       relacoesImoveis: l.relacoes_imoveis ?? [],
     }));
+}
+
+/**
+ * E1081: a fonte única da leitura da tabela de preço de uma cidade. Lê a tabela inteira (poucas linhas: cidade × porte ×
+ * vigência) e filtra pela chave da cidade (linhasDaCidade) — nunca .eq("cidade", …) letra a letra. Falha de leitura:
+ * tabela vazia, como antes (o pedido não abre e a tela diz que ainda não há valor).
+ */
+export async function tabelaDaCidade(admin: Admin, cidade: string | null | undefined): Promise<LinhaPreco[]> {
+  const { data, error } = await admin.from("vistoria_precos").select(COLUNAS_PRECO).limit(1000);
+  if (error) return [];
+  return linhasDaCidade(((data ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela), cidade);
 }
 
 /** E1077: as contas do piloto da avaliação (vistoria_piloto). Uma leitura que falha LANÇA (achado 39). */
