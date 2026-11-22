@@ -21,9 +21,9 @@ const diaBR = (deslocamento: number) => {
   return new Date(Date.UTC(a, m - 1, d + deslocamento)).toISOString().slice(0, 10);
 };
 
-// E744: o bloco de teste começa no dia UTC (tornarContratoVigente usa toISOString). Depois das 21h de Brasília o dia UTC já é o
-// seguinte; a 1ª célula marcada é a do dia do bloco, não a de "hoje" em Brasília.
-const diaDoBloco = () => new Date().toISOString().slice(0, 10);
+// E744 + E1073: o bloco de teste começa no dia de BRASÍLIA (tornarContratoVigente usa hojeBR, o relógio do app); a 1ª célula
+// marcada é a desse dia. Antes a fixture gravava o dia UTC, que depois das 21h de Brasília já era o seguinte.
+const diaDoBloco = () => diaBR(0);
 
 test.describe("T755 — AGENDA-A: período pintado e iCal na Agenda", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
