@@ -284,7 +284,12 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   const parc = (cred?.parceiros as unknown as { nome_publico: string | null; user_id: string; documento: string | null } | null) ?? null;
   // E648: o laudo é do avaliador — sem a declaração dele (e o CNPJ da empresa) a Viva não emite nada.
   const nomeAssinante = String(parc?.nome_publico ?? "").trim() || "Avaliador";
-  const dadosAssinatura = { avaliadorUserId: parc?.user_id ?? "", numeroCredenciado: (cred?.numero_credenciado as string | null) ?? "", nomePublico: nomeAssinante, cnpj: parc?.documento ?? "", declarou: assinar.declarou };
+  // E1083 parte 1 (ORDEM-DUET-399; regra legal com o Daniel): em modo piloto/teste — pedido de teste ou avaliador na
+  // lista do piloto — a assinatura não exige o CNPJ. Fora do piloto, a regra do CNPJ fica intacta.
+  const { data: piloto } = parc?.user_id ? await admin.from("vistoria_piloto").select("user_id").eq("user_id", parc.user_id).maybeSingle() : { data: null };
+  const noPiloto = !!piloto;
+  const pilotoSemCnpj = p.teste === true || noPiloto;
+  const dadosAssinatura = { avaliadorUserId: parc?.user_id ?? "", numeroCredenciado: (cred?.numero_credenciado as string | null) ?? "", nomePublico: nomeAssinante, cnpj: parc?.documento ?? "", declarou: assinar.declarou, pilotoSemCnpj };
   const previa = assinaturaDoLaudo({ ...dadosAssinatura, pdfSha256: "0".repeat(64), em: agora.toISOString() });
   if (!previa.ok) return { ok: false, erro: previa.erro };
   const comFoto = new Set(((fotos ?? []) as { item_chave: string }[]).map((f) => f.item_chave));
