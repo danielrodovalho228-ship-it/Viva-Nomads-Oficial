@@ -172,6 +172,6 @@ test.describe("T2222 — E1086: cada proposta aceite gera o seu contrato, nunca 
       })
       .toBeGreaterThan(0);
     const novo = (await emailsDoContrato(ids.inq!)).find((m) => m.criado_em >= antesDoClique && /pronto para assinar/i.test(m.assunto));
-    expect.soft(novo?.corpo ?? "", "o e-mail é do contrato novo: o valor mensal da proposta 2").toMatch(/3\.000,00/);
+    expect.soft(novo?.corpo ?? "", "o e-mail é do contrato novo: o valor mensal da proposta 2").toMatch(/R\$\s*3\.000(,00)?(?!\d)/);
   });
 });
