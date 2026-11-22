@@ -7,7 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ROTEIRO_DA_VISITA, ROTULO_ADICIONAR_FOTO, ROTULO_CONTINUAR, TITULO_FOTOS_VISITA, TITULO_ROTEIRO, TITULO_VISITA, roteiroDaVisita, vagasDeFoto } from "./visita-avaliador.ts";
+import { ROTEIRO_DA_VISITA, ROTULO_ADICIONAR_FOTO, ROTULO_CONTINUAR, TITULO_FOTOS_VISITA, TITULO_ROTEIRO, TITULO_VISITA, TITULO_VISITA_AGENDADA, faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, vagasDeFoto, visitaEmAndamento } from "./visita-avaliador.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
@@ -48,10 +48,11 @@ test("grade de fotos: as vagas 'Adicionar foto' completam a linha de 3; linha ch
 
 test("a página: durante a visita abre com o bloco do desenho e mantém o checklist, o envio de foto e o concluir", () => {
   const p = ler("app/(dashboard)/dashboard/parceiro/avaliacao/[pedido]/page.tsx");
-  assert.match(p, /emAndamento \? TITULO_VISITA :/);
-  assert.match(p, /<VisitaEmAndamento\s/);
+  assert.match(p, /agendada \? tituloDaVisita\(emAndamento\) :/);
+  assert.match(p, /\{agendada && <VisitaEmAndamento\s/);
   assert.ok(p.indexOf("<VisitaEmAndamento") < p.indexOf("<ChecklistAvaliador"), "o bloco da visita vem antes do checklist");
-  assert.match(p, /roteiro=\{roteiroDaVisita\(fotosLista\.map\(\(f\) => f\.comodo\)\)\}/);
+  assert.match(p, /const roteiro = roteiroDaVisita\(fotosLista\.map\(\(f\) => f\.comodo\)\);/);
+  assert.match(p, /roteiro=\{roteiro\}/);
   // O que já existia continua: o campo "Cômodo" livre, o envio e o concluir.
   assert.match(p, /<input name="comodo"/);
   assert.match(p, /data-testid="avaliacao-fotos"/);
@@ -68,4 +69,44 @@ test("o componente: só apresentação; estilos do desenho no arquivo de exceç�
   assert.match(c, /href="#enviar-foto"/);
   assert.match(c, /href="#itens"/);
   assert.match(ler("lib/conta/visual-mockup.ts"), /Visita do avaliador \(E1079, fatia 4\)/);
+});
+
+test("ORDEM-431, resposta 2: 'Visita em andamento' só a partir do DIA marcado (Brasília); antes, 'Visita agendada'", () => {
+  const agora = new Date("2026-11-22T15:00:00Z"); // 12:00 de 22/11 em Brasília
+  assert.equal(visitaEmAndamento("agendado", "2026-11-22T20:00:00Z", agora), true, "no dia, mesmo antes da hora");
+  assert.equal(visitaEmAndamento("agendado", "2026-11-20T12:00:00Z", agora), true, "dia já passado e ainda por concluir");
+  assert.equal(visitaEmAndamento("agendado", "2026-11-23T12:00:00Z", agora), false, "amanhã: ainda só agendada");
+  // 23/11 01:00 UTC são 22:00 de 22/11 em Brasília: lá ainda é o dia marcado.
+  assert.equal(visitaEmAndamento("agendado", "2026-11-23T01:00:00Z", agora), true);
+  // 23/11 04:00 UTC já é 23/11 em Brasília.
+  assert.equal(visitaEmAndamento("agendado", "2026-11-23T04:00:00Z", agora), false);
+  assert.equal(visitaEmAndamento("agendado", null, agora), false, "sem data marcada não há 'em andamento'");
+  assert.equal(visitaEmAndamento("realizada", "2026-11-22T12:00:00Z", agora), false);
+  assert.equal(TITULO_VISITA_AGENDADA, "Visita agendada");
+  assert.equal(tituloDaVisita(true), TITULO_VISITA);
+  assert.equal(tituloDaVisita(false), TITULO_VISITA_AGENDADA);
+  // Não há botão "Iniciar visita" nem estado novo: a etiqueta acompanha o dia (ORDEM-DUET-435).
+  const p = ler("app/(dashboard)/dashboard/parceiro/avaliacao/[pedido]/page.tsx");
+  assert.match(p, /const emAndamento = visitaEmAndamento\(p\.status as string, p\.agendado_para as string \| null, new Date\(\)\);/);
+  assert.doesNotMatch(p, /Iniciar visita/);
+});
+
+test("ORDEM-431, resposta 1: o roteiro TRAVA 'Concluir a visita' — sem a foto de um ambiente não conclui, e diz qual falta", () => {
+  assert.deepEqual(faltasDoRoteiro(roteiroDaVisita(["Fachada", "Sala de estar"])), ["Cozinha", "Quartos", "Banheiros"]);
+  assert.deepEqual(faltasDoRoteiro(roteiroDaVisita([])), ["Fachada", "Sala", "Cozinha", "Quartos", "Banheiros"]);
+  assert.deepEqual(faltasDoRoteiro(roteiroDaVisita(["fachada", "sala", "cozinha", "quarto 1", "banheiro social"])), []);
+  assert.equal(msgRoteiroIncompleto(["Cozinha", "Quartos", "Banheiros"]), "Para concluir a visita, falta a foto de: Cozinha, Quartos e Banheiros. Envie uma foto de cada ambiente do roteiro.");
+  assert.equal(msgRoteiroIncompleto(["Cozinha"]), "Para concluir a visita, falta a foto de: Cozinha. Envie uma foto de cada ambiente do roteiro.");
+  // O servidor recusa ANTES de mudar o estado da avaliação, pelas fotos de cômodo gravadas.
+  const a = ler("lib/vistoria/laudo-actions.ts");
+  const f = a.slice(a.indexOf("export async function concluirVisita"), a.indexOf("export async function enviarLaudo"));
+  assert.match(f, /from\("vistoria_checklist_fotos"\)\.select\("comodo"\)\.eq\("pedido_id", c\.p\.id\)/);
+  assert.match(f, /const faltas = faltasDoRoteiro\(roteiroDaVisita\(/);
+  assert.match(f, /if \(faltas\.length\) return \{ ok: false, erro: msgRoteiroIncompleto\(faltas\) \};/);
+  assert.ok(f.indexOf("if (faltas.length)") < f.indexOf('update({ status: "realizada"'), "a recusa vem antes de concluir");
+  assert.match(f, /if \(erroFotos\) return/, "sem ler as fotos, não conclui");
+  // A tela diz o que falta junto do botão, antes do clique.
+  const p = ler("app/(dashboard)/dashboard/parceiro/avaliacao/[pedido]/page.tsx");
+  assert.match(p, /data-testid="concluir-faltas"/);
+  assert.match(p, /msgRoteiroIncompleto\(faltasRoteiro\)/);
 });

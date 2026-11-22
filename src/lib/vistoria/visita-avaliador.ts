@@ -4,7 +4,11 @@
   O roteiro não cria dado novo: fica marcado pelo que o avaliador já enviou em "Fotos dos cômodos" (o nome do cômodo é
   texto livre, como antes).
 */
+import { diaBRT } from "../datas-brasilia.ts";
+
 export const TITULO_VISITA = "Visita em andamento";
+/** Antes do dia marcado (ORDEM-DUET-431): "em andamento" semanas antes seria estado falso. */
+export const TITULO_VISITA_AGENDADA = "Visita agendada";
 export const TITULO_ROTEIRO = "Roteiro da visita";
 export const TITULO_FOTOS_VISITA = "Fotos do imóvel";
 export const ROTULO_ADICIONAR_FOTO = "Adicionar foto";
@@ -12,11 +16,11 @@ export const ROTULO_CONTINUAR = "Continuar";
 
 /** As linhas do roteiro, na ordem do desenho; `pistas` são as palavras que o nome do cômodo traz. */
 export const ROTEIRO_DA_VISITA = [
-  { id: "fachada", rotulo: "Fotos da fachada", pistas: ["fachada"] },
-  { id: "sala", rotulo: "Sala", pistas: ["sala"] },
-  { id: "cozinha", rotulo: "Cozinha", pistas: ["cozinha"] },
-  { id: "quartos", rotulo: "Quartos", pistas: ["quarto", "quartos", "suite", "suites"] },
-  { id: "banheiros", rotulo: "Banheiros", pistas: ["banheiro", "banheiros", "lavabo"] },
+  { id: "fachada", rotulo: "Fotos da fachada", nome: "Fachada", pistas: ["fachada"] },
+  { id: "sala", rotulo: "Sala", nome: "Sala", pistas: ["sala"] },
+  { id: "cozinha", rotulo: "Cozinha", nome: "Cozinha", pistas: ["cozinha"] },
+  { id: "quartos", rotulo: "Quartos", nome: "Quartos", pistas: ["quarto", "quartos", "suite", "suites"] },
+  { id: "banheiros", rotulo: "Banheiros", nome: "Banheiros", pistas: ["banheiro", "banheiros", "lavabo"] },
 ] as const;
 
 export interface LinhaRoteiro {
@@ -44,4 +48,31 @@ export function roteiroDaVisita(comodos: readonly (string | null | undefined)[])
 export function vagasDeFoto(nFotos: number): number {
   const resto = Math.max(0, nFotos) % 3;
   return resto === 0 ? 3 : 3 - resto;
+}
+
+/**
+ * ORDEM-DUET-431/435: a visita está "em andamento" a partir do DIA marcado (calendário de Brasília) e enquanto não for
+ * concluída; antes do dia é só "agendada". Não há botão "Iniciar visita" nem estado novo: a etiqueta acompanha o dia.
+ */
+export function visitaEmAndamento(status: string, agendadoPara: string | null | undefined, agora: Date): boolean {
+  if (status !== "agendado") return false;
+  const dia = diaBRT(agendadoPara ?? null);
+  const hoje = diaBRT(agora);
+  return !!dia && !!hoje && dia <= hoje;
+}
+
+export const tituloDaVisita = (emAndamento: boolean): string => (emAndamento ? TITULO_VISITA : TITULO_VISITA_AGENDADA);
+
+/**
+ * ORDEM-DUET-431: o roteiro TRAVA "Concluir a visita". Devolve os ambientes do roteiro ainda sem foto (vazio = pode
+ * concluir). O roteiro é o padrão que o dono paga: visita concluída sem a foto de um ambiente é laudo incompleto.
+ */
+export function faltasDoRoteiro(roteiro: readonly LinhaRoteiro[]): string[] {
+  return roteiro.filter((l) => !l.feito).map((l) => ROTEIRO_DA_VISITA.find((r) => r.id === l.id)?.nome ?? l.rotulo);
+}
+
+/** A frase da recusa (a mesma na tela, antes do clique, e na resposta do servidor). */
+export function msgRoteiroIncompleto(faltas: readonly string[]): string {
+  const lista = faltas.length > 1 ? `${faltas.slice(0, -1).join(", ")} e ${faltas[faltas.length - 1]}` : (faltas[0] ?? "");
+  return `Para concluir a visita, falta a foto de: ${lista}. Envie uma foto de cada ambiente do roteiro.`;
 }

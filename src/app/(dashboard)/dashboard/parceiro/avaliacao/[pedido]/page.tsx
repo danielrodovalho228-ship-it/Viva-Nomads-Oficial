@@ -18,7 +18,7 @@ import { ROTULO_RESULTADO, itensSemResposta, resultadoAvaliacao, resumoPorGrupo,
 import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO } from "@/lib/vistoria/nivel-do-laudo";
-import { TITULO_VISITA, roteiroDaVisita } from "@/lib/vistoria/visita-avaliador";
+import { faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
 import { DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
 import { BOTAO_ASSINAR_LAUDO, CARTAO_NIVEL_LAUDO, LINHA_RESUMO_LAUDO, MARCA_NIVEL_LAUDO, MARCA_RESUMO_LAUDO, RESUMO_LAUDO, TEXTO_NIVEL_LAUDO, TITULO_NIVEL_LAUDO } from "@/lib/conta/visual-mockup";
 import { concluirVisita, confirmarCorrecao, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
@@ -91,11 +91,15 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   // roteiro marcado pelas fotos de cômodo já enviadas e a grade "Fotos do imóvel". As miniaturas saem por URL assinada de
   // 10 minutos (o caminho no bucket não vai para a tela); a capa é a 1ª foto do anúncio. Se uma leitura falhar, o bloco
   // aparece sem a imagem — nunca derruba a visita.
-  const emAndamento = p.status === "agendado";
-  const fotosDeComodo = emAndamento ? fotosLista.filter((f) => f.comodo) : [];
+  const agendada = p.status === "agendado";
+  // ORDEM-DUET-431/435: "em andamento" só a partir do dia marcado; antes, "Visita agendada". O roteiro TRAVA a conclusão.
+  const emAndamento = visitaEmAndamento(p.status as string, p.agendado_para as string | null, new Date());
+  const roteiro = roteiroDaVisita(fotosLista.map((f) => f.comodo));
+  const faltasRoteiro = agendada ? faltasDoRoteiro(roteiro) : [];
+  const fotosDeComodo = agendada ? fotosLista.filter((f) => f.comodo) : [];
   const assinadas = fotosDeComodo.length ? ((await admin.storage.from("avaliacao-imovel").createSignedUrls(fotosDeComodo.map((f) => f.path), 600)).data ?? []) : [];
   const miniaturas = fotosDeComodo.flatMap((f, i) => (assinadas[i]?.signedUrl ? [{ url: assinadas[i].signedUrl, comodo: f.comodo as string }] : []));
-  const { data: capas } = emAndamento ? await admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1) : { data: null };
+  const { data: capas } = agendada ? await admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1) : { data: null };
   const capaUrl = ((capas ?? [])[0] as { url: string } | undefined)?.url;
   const tipoRotulo = p.tipo === "verificacao" ? "Verificação aberta pela Viva" : p.tipo === "contestacao" ? "2ª avaliação (contestação)" : undefined;
   const resumoLaudo = [linhaFotos(fotosLista.length), linhaChecklist(itensSemResposta(respostasSalvas).length)];
@@ -105,6 +109,9 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
           <FormAcao acao={concluirVisita} testid="concluir-visita">
             <input type="hidden" name="pedidoId" value={p.id} />
             <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo em até 48 horas úteis.</p>
+            {faltasRoteiro.length > 0 && (
+              <p className="mt-2 text-sm text-ink" role="status" data-testid="concluir-faltas">{msgRoteiroIncompleto(faltasRoteiro)}</p>
+            )}
             <Button type="submit" size="sm" className="mt-2">Concluir a visita</Button>
           </FormAcao>
         ) : (
@@ -170,13 +177,13 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
 
   return (
     <>
-      <PageTitle title={emAndamento ? TITULO_VISITA : naEtapaDoLaudo ? TITULO_LAUDO : "Checklist da avaliação"} subtitle={naEtapaDoLaudo ? [tipoRotulo, SUBTITULO_LAUDO].filter(Boolean).join(" · ") : tipoRotulo} />
+      <PageTitle title={agendada ? tituloDaVisita(emAndamento) : naEtapaDoLaudo ? TITULO_LAUDO : "Checklist da avaliação"} subtitle={naEtapaDoLaudo ? [tipoRotulo, SUBTITULO_LAUDO].filter(Boolean).join(" · ") : tipoRotulo} />
       <ButtonLink href="/dashboard/parceiro/avaliacao" variant="ghost" size="sm" className="mb-4">Voltar às avaliações</ButtonLink>
       {p.ocupado && <p className="mb-4 text-sm text-ink">Imóvel ocupado: a visita só acontece com o morador de acordo. Não fotografe pertences nem pessoas.</p>}
 
       {emVisita && (
         <>
-          {emAndamento && <VisitaEmAndamento capaUrl={capaUrl} roteiro={roteiroDaVisita(fotosLista.map((f) => f.comodo))} fotos={miniaturas} />}
+          {agendada && <VisitaEmAndamento capaUrl={capaUrl} roteiro={roteiro} fotos={miniaturas} />}
           {naEtapaDoLaudo && fecho}
           {/* Item 8: os 9 grupos em passos; a internet e o ruído são medidos no próprio passo. */}
           <Panel id="itens" title="Itens" className="mb-6 scroll-mt-16">
