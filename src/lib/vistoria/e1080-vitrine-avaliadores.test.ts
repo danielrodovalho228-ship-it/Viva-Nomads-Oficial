@@ -1,0 +1,129 @@
+/*
+  E1079/E1080 (ORDEM-DUET-385/386, condições do coordenador DUET-1455): a base dos cartões do avaliador.
+  Roda: node --test src/lib/vistoria/e1080-vitrine-avaliadores.test.ts
+*/
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { VITRINE_AVALIADORES_ABERTA, cartoesDaCidade, fotoPublicaPermitida, rostoDoAvaliador, type FonteAvaliador } from "./vitrine-avaliadores.ts";
+
+const f = (o: Partial<FonteAvaliador>): FonteAvaliador => ({
+  numero: "UDI-001",
+  nome: "Ana Souza",
+  cidade: "Uberlândia",
+  selo: null,
+  avaliacoesFeitas: 0,
+  notaConduta: null,
+  contaTeste: true,
+  fotoUrl: null,
+  ...o,
+});
+
+test("E1080: a listagem pública por cidade nasce desligada (só piloto, até o Daniel abrir)", () => {
+  assert.equal(VITRINE_AVALIADORES_ABERTA, false);
+});
+
+test("E1080 (386): foto quando há e pode; senão iniciais — nunca vazio nem '?'; conta real não mostra foto sem o Daniel", () => {
+  assert.deepEqual(rostoDoAvaliador("Ana Souza", "https://x/foto.webp", true), { tipo: "foto", url: "https://x/foto.webp" });
+  assert.deepEqual(rostoDoAvaliador("Ana Souza", null, true), { tipo: "iniciais", texto: "AS" });
+  assert.deepEqual(rostoDoAvaliador("Rogério Silva", "https://x/r.webp", false), { tipo: "iniciais", texto: "RS" }, "conta real: sem foto pública por agora");
+  assert.deepEqual(rostoDoAvaliador("", null, true), { tipo: "iniciais", texto: "AV" });
+  assert.equal(fotoPublicaPermitida(false), false);
+  assert.equal(fotoPublicaPermitida(true), true);
+});
+
+test("E1080: os cartões da cidade — várias cidades contam, número único (o primeiro vence), mais avaliações primeiro", () => {
+  const fontes = [
+    f({ numero: "UDI-001", nome: "Bruno", avaliacoesFeitas: 2 }),
+    f({ numero: "UBE-001", nome: "Rogério Silva", cidade: "Uberlandia, Araguari, Ituiutaba", contaTeste: false }),
+    f({ numero: "UDI-001", nome: "Duplicado", avaliacoesFeitas: 9 }),
+    f({ numero: "UBA-001", nome: "Carla", cidade: "Uberaba", avaliacoesFeitas: 5 }),
+  ];
+  const c = cartoesDaCidade(fontes, "Araguari");
+  assert.deepEqual(c.map((x) => x.numero), ["UBE-001"]);
+  const u = cartoesDaCidade(fontes, "Uberlândia");
+  assert.deepEqual(u.map((x) => [x.numero, x.nome]), [["UDI-001", "Bruno"], ["UBE-001", "Rogério Silva"]]);
+  assert.equal(u[0].href, "/avaliadores/UDI-001");
+  assert.deepEqual(cartoesDaCidade([], "Uberlândia"), []);
+});
+
+test("E1080: nada na base diz 'credenciado com o CNPJ da Viva' nem guarda telefone ou e-mail", () => {
+  const s = readFileSync("src/lib/vistoria/vitrine-avaliadores.ts", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.doesNotMatch(s, /CNPJ da Viva|telefone|phone|e-?mail|whats/i);
+});
+
+import { linhaDaCidade, novoNaViva, quadroDePreco, reaisCurtos, ufDaCidade } from "./vitrine-avaliadores.ts";
+
+test("E1079 (397): o quadro de preço é o da TABELA DA CIDADE, por porte, com os rótulos do desenho", () => {
+  const linha = (cidade: string, porte: "estudio" | "q1_2" | "q3_mais", valor: number) => ({ cidade, porte, valor, incluiTexto: null, vigenteDesde: "2026-11-01T00:00:00Z" });
+  const tabela = [linha("Uberlandia", "estudio", 150), linha("Uberlandia", "q1_2", 250), linha("Uberlandia", "q3_mais", 350), linha("Uberaba", "q1_2", 999)];
+  const q = quadroDePreco(tabela, "Uberlândia", new Date("2026-11-22T00:00:00Z"));
+  assert.deepEqual(q.map((l) => [l.rotulo, reaisCurtos(l.valor)]), [["Estúdio", "R$ 150"], ["1–2 quartos", "R$ 250"], ["3+ quartos", "R$ 350"]]);
+  assert.deepEqual(quadroDePreco(tabela, "Araguari", new Date("2026-11-22T00:00:00Z")), [], "sem tabela na cidade, sem quadro");
+  assert.equal(reaisCurtos(150.5), "R$ 150,50");
+});
+
+test("E1079: a UF só quando a cidade é única no IBGE; 'Novo na Viva' só sem avaliações nem nota", () => {
+  const ibge = { MG: ["Uberlândia", "Santa Luzia"], PB: ["Santa Luzia"] };
+  assert.equal(ufDaCidade(ibge, "Uberlandia"), "MG");
+  assert.equal(ufDaCidade(ibge, "Santa Luzia"), null);
+  assert.equal(linhaDaCidade("Uberlândia", "MG"), "Uberlândia • MG");
+  assert.equal(novoNaViva(0, null), true);
+  assert.equal(novoNaViva(2, null), false);
+  assert.equal(novoNaViva(0, 4.5), false);
+});
+
+import { cidadeDoSlug, ehNumeroDeAvaliador, slugDaCidade, vitrineAberta } from "./vitrine-avaliadores.ts";
+
+test("E1080: /avaliadores/<…> — número de avaliador × cidade; o caminho da cidade pelo IBGE", () => {
+  assert.equal(ehNumeroDeAvaliador("UDI-003"), true);
+  assert.equal(ehNumeroDeAvaliador("udi-003"), true);
+  assert.equal(ehNumeroDeAvaliador("uberlandia"), false);
+  const ibge = { MG: ["Uberlândia", "Santa Luzia"], PB: ["Santa Luzia"], SP: ["São Paulo"] };
+  assert.deepEqual(cidadeDoSlug(ibge, "uberlandia"), { cidade: "Uberlândia", uf: "MG" });
+  assert.deepEqual(cidadeDoSlug(ibge, "sao-paulo"), { cidade: "São Paulo", uf: "SP" });
+  assert.equal(cidadeDoSlug(ibge, "santa-luzia"), null, "ambígua");
+  assert.equal(cidadeDoSlug(ibge, "atlantida"), null);
+  assert.equal(slugDaCidade("São Paulo"), "sao-paulo");
+});
+
+test("E1080: a listagem fica fechada ao público (só no laboratório, para construir e testar)", () => {
+  assert.equal(vitrineAberta(false), false);
+  assert.equal(vitrineAberta(true), true);
+  const pagina = readFileSync("src/app/(public)/avaliadores/[numero]/page.tsx", "utf8");
+  assert.match(pagina, /if \(!vitrineAberta\(integracoesSimuladas\(\)\)\) notFound\(\);/);
+  assert.match(pagina, /robots: \{ index: false, follow: false \}/);
+  const vitrine = readFileSync("src/components/vistoria/vitrine-avaliadores.tsx", "utf8");
+  assert.doesNotMatch(vitrine.replace(/\/\*[\s\S]*?\*\//g, ""), /tel:|mailto:|wa\.me|telefone|e-?mail|CNPJ da Viva/i);
+});
+
+test("E1079 (385, tela 3): a escolha do dono em cartões — rosto, selo, termos e o preço da TABELA DA CIDADE para o porte", () => {
+  const b = readFileSync("src/components/vistoria/bloco-avaliacao-dono.tsx", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.match(b, /Avaliadores disponíveis em \{im\.city\}/);
+  assert.match(b, /data-testid="avaliacao-sugerido-rosto"/);
+  // Nenhuma foto de pessoa real sem o Daniel: na escolha do dono, só as iniciais.
+  assert.match(b, /rostoDoAvaliador\(a\.nome, null, false\)/);
+  assert.match(b, /data-testid="avaliacao-sugerido-selo"[\s\S]{0,200}a\.teste \? ROTULO_AVALIADOR_EM_TESTE : ROTULO_AVALIADOR_CREDENCIADO/);
+  assert.match(b, /data-testid="avaliacao-sugerido-preco"[^>]*>\s*Avaliação: \{reaisCurtos\(Number\(preco\.valor\)\)\}/);
+  // O que as specs já leem continua: o número, os termos e o botão.
+  assert.match(b, /data-testid="avaliacao-sugerido-termos"/);
+  assert.match(b, /nº\{" "\}/);
+  assert.match(b, /Escolher este avaliador/);
+  assert.doesNotMatch(b, /preco_proprio\)\s*\}/, "o preço mostrado é o da tabela, não o próprio do avaliador");
+});
+
+test("E1079 (385, tela 4): 'Avaliação do imóvel — Laudo com o nível do imóvel' na grade de Serviços, só para o dono com a avaliação aberta", () => {
+  const painel = readFileSync("src/components/parceiros/servicos-painel.tsx", "utf8");
+  assert.match(painel, /\{avaliacao && \([\s\S]*?data-testid="servicos-avaliacao"[\s\S]*?Avaliação do imóvel[\s\S]*?Laudo com o nível do imóvel/);
+  assert.match(painel, /href=\{avaliacao\.href\}/);
+  // A avaliação não vira categoria contratável do catálogo (segue só de credenciamento).
+  assert.doesNotMatch(painel, /CATEGORIAS_PARCEIRO\b/);
+  const pagina = readFileSync("src/app/(dashboard)/dashboard/servicos/page.tsx", "utf8");
+  assert.match(pagina, /avaliacaoNaGrade\(\)/);
+  assert.match(pagina, /<ServicosPainel cidade=\{cidade\} avaliacao=\{avaliacao\} \/>/);
+  const srv = readFileSync("src/lib/vistoria/servico-avaliacao.ts", "utf8");
+  // Fechada com a chave: sem a avaliação aberta para a conta (global, laboratório ou piloto), o cartão não aparece.
+  assert.match(srv, /if \(!\(await vistoriaAtiva\(\)\)\) return null;/);
+  assert.match(srv, /\.eq\("owner_id", user\.id\)/);
+  assert.match(srv, /HREF_AVALIACAO_NA_GRADE = "\/dashboard\/imoveis"/);
+});
