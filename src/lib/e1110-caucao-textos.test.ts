@@ -28,4 +28,10 @@ test("E1110 (D8): a garantia 'Caução' do cadastro diz a regra da fonte, toda a
   assert.match(caucao.microtext, /antes da entrada/);
   assert.doesNotMatch(caucao.microtext, /o restante conforme o contrato/);
   assert.doesNotMatch(semComentarios(readFileSync("src/lib/faixas.ts", "utf8")), /50% antes da entrada/);
+  // ORDEM-DUET-496: a fonte única é estrutura, não só texto — o código LÊ a frase-fonte (uma cópia à mão idêntica
+  // é uma segunda fonte à espera de divergir, e põe esta trava em vermelho).
+  const faixas = semComentarios(readFileSync("src/lib/faixas.ts", "utf8"));
+  assert.match(faixas, /import \{ REGRA_CAUCAO \} from "\.\/caucao-regra\.ts";/);
+  assert.match(faixas, /microtext: `\$\{CAUCAO_FRASE\} A caução é de \$\{REGRA_CAUCAO\}, antes da entrada\./);
+  assert.ok(!faixas.includes(REGRA_CAUCAO), "o texto da regra não está escrito à mão em faixas.ts");
 });
