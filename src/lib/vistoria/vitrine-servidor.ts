@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
-import { fotoPublicaPermitida, normalizarSobre, seloDoCredenciado, type FonteAvaliador } from "./vitrine-avaliadores";
+import { contaDaLinhaDeCredenciamento, fotoPublicaPermitida, normalizarSobre, seloDoCredenciado, type FonteAvaliador } from "./vitrine-avaliadores";
 import { SELO_AVALIADOR_SOCIO } from "./regras";
 
 /*
@@ -17,12 +17,13 @@ export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvali
   const [publicos, perfis, creds] = await Promise.all([
     admin.rpc("avaliadores_publicos"),
     admin.from("avaliadores_perfil_publico").select("numero, nome_publico, cidade, selo, credenciamento_id").eq("publicado", true),
-    admin.from("avaliadores_credenciamento").select("id, numero_credenciado, user_id").in("status", ["ativo", "em_teste"]),
+    admin.from("avaliadores_credenciamento").select("id, numero_credenciado, user_id, parceiros(user_id)").in("status", ["ativo", "em_teste"]),
   ]);
   const falha = [publicos, perfis, creds].find((r) => r.error);
   if (falha) throw new Error(`[vitrine] ${falha.error!.message}`);
-  const credsLidos = (creds.data ?? []) as { id: string; numero_credenciado: string; user_id: string | null }[];
-  const usuarioDe = new Map(credsLidos.map((c) => [c.numero_credenciado, c.user_id]));
+  const credsLidos = (creds.data ?? []) as unknown as { id: string; numero_credenciado: string; user_id: string | null; parceiros: { user_id: string | null } | null }[];
+  // E1099 (ORDEM-473 §1): a conta pela regra única — também quando o credenciamento foi criado pelo parceiro.
+  const usuarioDe = new Map(credsLidos.map((c) => [c.numero_credenciado, contaDaLinhaDeCredenciamento(c)]));
   // E1097: o perfil do piloto ligado a um credenciamento (o do Rogério, quando o CNPJ chegar) dá o selo a esse credenciado
   // e não entra outra vez na listagem.
   const numeroDoCred = new Map(credsLidos.map((c) => [c.id, c.numero_credenciado]));
@@ -61,8 +62,7 @@ export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvali
 /** A conta (user_id) do credenciado nº `numero`: a do credenciamento ou a do parceiro dele. */
 export async function contaDoCredenciado(admin: SupabaseClient, numero: string): Promise<string | null> {
   const { data: cred } = await admin.from("avaliadores_credenciamento").select("user_id, parceiros(user_id)").eq("numero_credenciado", numero).maybeSingle();
-  const c = cred as unknown as { user_id: string | null; parceiros: { user_id: string | null } | null } | null;
-  return c?.user_id ?? c?.parceiros?.user_id ?? null;
+  return contaDaLinhaDeCredenciamento(cred as unknown as { user_id: string | null; parceiros: { user_id: string | null } | null } | null);
 }
 
 /**
