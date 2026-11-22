@@ -57,6 +57,7 @@ export function FolhaFiltros({
   onFechar,
   garantias,
   medicoes = [],
+  velocidades,
   topo,
 }: {
   inicial: FiltrosPainel;
@@ -74,6 +75,8 @@ export function FolhaFiltros({
   garantias: { key: string; label: string }[];
   /** FILTROS-1 (E40): downloads medidos (Mbps) dos anúncios da busca atual — sem nenhum, a seção de internet some. */
   medicoes?: number[];
+  /** E1078: as velocidades da busca (a medida, ou a informada sem medição) — a base da seção "Velocidade". */
+  velocidades?: number[];
   /** E82-A: o 1º bloco da folha (a descrição, recolhida numa linha). */
   topo?: React.ReactNode;
 }) {
@@ -81,8 +84,9 @@ export function FolhaFiltros({
   const n = contar(rascunho);
   const extras = contarNaoMedidos ? contarNaoMedidos(rascunho) : 0;
   // Adendo 3 (E40): a seção só existe com medição na busca; aí as três faixas, cada uma com a contagem.
-  const internetVisivel = secaoInternetVisivel(medicoes);
-  const faixas = faixasInternet(medicoes);
+  const medidaVisivel = secaoInternetVisivel(medicoes);
+  const internetVisivel = secaoInternetVisivel(velocidades ?? medicoes);
+  const faixas = faixasInternet(velocidades ?? medicoes);
   const muda = <K extends keyof FiltrosPainel>(k: K, v: FiltrosPainel[K]) => setRascunho((r) => ({ ...r, [k]: v }));
   /** Escolha única: tocar na escolhida desliga o filtro (volta ao valor vazio). */
   const alterna = <K extends "maxPrice" | "minBedrooms" | "periodo" | "tipo" | "petPorte" | "garantia" | "internetMin">(k: K, v: FiltrosPainel[K]) =>
@@ -178,7 +182,7 @@ export function FolhaFiltros({
             </Grupo>
           </div>
         )}
-        {rascunho.homeOfficeOnly && internetVisivel && (
+        {rascunho.homeOfficeOnly && medidaVisivel && (
           <Grupo titulo="Para trabalhar de casa" testId="painel-home-office">
             <ChipFaceta f={facetaInterruptor(contar, rascunho, "soInternetMedida")} ativo={rascunho.soInternetMedida} onClick={() => muda("soInternetMedida", !rascunho.soInternetMedida)} testId="faceta-so-medida">
               Só com internet medida
@@ -187,7 +191,7 @@ export function FolhaFiltros({
         )}
         {/* E40 (Adendo 3): sem nenhuma medição na busca, a seção some (e o filtro da URL é ignorado na /buscar). */}
         {internetVisivel ? (
-          <Grupo titulo="Internet medida a partir de" testId="painel-internet">
+          <Grupo titulo="Velocidade a partir de" testId="painel-internet">
             {faixas.map((v) => (
               <ChipFaceta key={v} f={facetaUnica(contar, rascunho, "internetMin", v)} ativo={rascunho.internetMin === v} onClick={() => alterna("internetMin", v)} testId={`faceta-internet-${v}`}>
                 {v} Mbps
