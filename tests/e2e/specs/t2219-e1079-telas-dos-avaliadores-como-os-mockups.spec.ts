@@ -77,6 +77,11 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
   test.beforeAll(async () => {
     ids.av = await criarConta(avaliador, senha);
     ids.dono = await criarConta(dono, senha);
+    // As telas novas vivem no piloto (E1077): como na t1722, o dono e o avaliador entram na lista do piloto e são
+    // dados de teste (decisão (a) da ORDEM-375). O cookie de laboratório continua a abrir a chave neste navegador.
+    await adm().from("profiles").update({ is_teste: true }).in("id", [ids.av, ids.dono]);
+    const { error: ePil } = await adm().from("vistoria_piloto").insert([ids.dono, ids.av].map((user_id) => ({ user_id, nota: "T2219 (laboratório)" })));
+    if (ePil) throw ePil;
     const { data: parc, error } = await adm()
       .from("parceiros")
       .insert({ user_id: ids.av, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: avaliador.nome, slug: `aval-t2219-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
@@ -132,6 +137,7 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     }
     if (cred.id) await adm().from("avaliadores_credenciamento").delete().eq("id", cred.id);
     await adm().from("vistoria_precos").delete().eq("cidade", CIDADE);
+    await adm().from("vistoria_piloto").delete().in("user_id", [ids.av, ids.dono].filter(Boolean));
     await apagarContas([ids.av, ids.dono].filter(Boolean));
   });
 
