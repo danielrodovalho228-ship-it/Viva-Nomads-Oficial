@@ -38,7 +38,7 @@ export function estadoDaPorta(e: { chaveAberta: boolean; imoveis: number }): Est
 export function hrefDoCartaoDaAvaliacao(e: { chaveAberta: boolean; imoveis: ImovelNaPorta[] }): string {
   if (!e.chaveAberta) return HREF_PORTA_AVALIACAO;
   const emCurso = e.imoveis.find((i) => i.emCurso);
-  return emCurso ? hrefDaAvaliacaoNoImovel(emCurso.id) : HREF_PORTA_AVALIACAO;
+  return emCurso ? hrefDaAvaliacaoNoImovel(emCurso.id) : "/dashboard/imoveis";
 }
 
 export const ROTULO_PEDIR_NA_PORTA = "Pedir avaliação";
