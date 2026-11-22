@@ -198,7 +198,7 @@ export default async function AdminAvaliadoresPage() {
         {lista.length === 0 ? (
           <p className="text-sm text-muted">Nenhum pedido de credenciamento.</p>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {[
               { chave: "a-decidir", titulo: TITULO_SECAO_A_DECIDIR, itens: aDecidir, vazio: "Nada a decidir agora." },
               { chave: "na-rede", titulo: TITULO_SECAO_NA_REDE, itens: naRede, vazio: "Ninguém em teste nem credenciado ainda." },
@@ -208,7 +208,7 @@ export default async function AdminAvaliadoresPage() {
                 {g.itens.length === 0 ? (
                   <p className="mt-1 text-sm text-muted">{g.vazio}</p>
                 ) : (
-                  <ul className="mt-2 grid gap-3">
+                  <ul className="mt-2 grid grid-cols-1 gap-3">
                     {g.itens.map((c) => (
                       <CartaoPessoa key={c.id} nome={nomeDoCredenciado(c)} linha={linhaDoCredenciado({ numero: c.numero_credenciado, cidade: c.cidade })} fotoUrl={c.user_id ? fotos.get(c.user_id) : undefined} pilula={ROTULO_STATUS[c.status]} tom={tomDoStatus(c.status)} data-testid="credenciamento-item" data-numero={c.numero_credenciado} data-status={c.status}>
                         {c.user_id && contasTeste.has(c.user_id) && (
@@ -382,7 +382,7 @@ export default async function AdminAvaliadoresPage() {
       <Secao titulo={TITULO_SECAO_PILOTO} icone="piloto" className="mb-6" data-testid="avaliadores-piloto">
         {piloto.length === 0 && <p className="text-sm text-muted" data-testid="avaliadores-piloto-vazio">{TEXTO_PILOTO_VAZIO}</p>}
         {piloto.length > 0 && (
-          <ul className="mt-3 grid gap-2">
+          <ul className="mt-3 grid grid-cols-1 gap-2">
             {piloto.map((l) => (
               <CartaoPessoa key={l.userId} nome={l.nome} linha={l.email} fotoUrl={fotos.get(l.userId)} pilula={l.teste ? ROTULO_CONTA_TESTE : undefined} pilulaTestid="piloto-conta-teste" className="border border-line shadow-none" data-testid="piloto-conta" data-teste={l.teste ? "1" : "0"}>
                 <span className="block text-muted">Entrou em {dataBRT(l.entrouEm)}{l.nota ? ` · ${l.nota}` : ""}</span>

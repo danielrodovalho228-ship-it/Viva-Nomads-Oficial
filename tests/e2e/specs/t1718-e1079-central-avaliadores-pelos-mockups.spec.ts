@@ -133,6 +133,8 @@ test.describe("T1718 — E1079: a Central → Avaliadores pelos mockups (cartõe
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: `${SAIDA}/t1718-3-central-topo-${largura}.png` });
       await page.screenshot({ path: `${SAIDA}/t1718-3-central-inteira-${largura}.png`, fullPage: true });
+      // O bloco dos três cartões do desenho (chave, credenciamento, tabela), inteiro, para o lado a lado.
+      await page.getByTestId("avaliadores-chave").locator("xpath=..").screenshot({ path: `${SAIDA}/t1718-3-cartoes-${largura}.png` });
     }
   });
 });

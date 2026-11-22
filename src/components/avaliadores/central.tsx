@@ -50,7 +50,7 @@ export function TituloCentral({ titulo, subtitulo }: { titulo: string; subtitulo
 export function Secao({ titulo, icone, solta = false, className, children, ...resto }: { titulo: string; icone: keyof typeof ICONES_TITULO; solta?: boolean } & Omit<ComponentProps<"section">, "title">) {
   const Icone = ICONES_TITULO[icone];
   return (
-    <section className={cn(solta ? SECAO_SOLTA_AVALIADORES : CARTAO_AVALIADORES, className)} {...resto}>
+    <section className={cn("min-w-0", solta ? SECAO_SOLTA_AVALIADORES : CARTAO_AVALIADORES, className)} {...resto}>
       <div className="mb-4 flex items-center gap-3">
         <span className={ICONE_TITULO_AVALIADORES} aria-hidden>
           <Icone className="h-6 w-6" />
@@ -100,7 +100,7 @@ export function CartaoPessoa({
   ...resto
 }: { nome: string; linha: ReactNode; fotoUrl?: string; pilula?: string; tom?: TomPilula; pilulaTestid?: string } & ComponentProps<"li">) {
   return (
-    <li className={cn(CARTAO_PESSOA_AVALIADORES, className)} {...resto}>
+    <li className={cn("min-w-0", CARTAO_PESSOA_AVALIADORES, className)} {...resto}>
       {/* Celular: foto, nome e a pílula à direita. Computador: a pílula desce para baixo do nome, como no desenho. */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 lg:grid-cols-[auto_minmax(0,1fr)]">
         <span className="lg:row-span-2">
