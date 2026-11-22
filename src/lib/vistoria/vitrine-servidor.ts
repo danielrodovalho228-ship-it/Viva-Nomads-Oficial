@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
-import { fotoPublicaPermitida, seloDoCredenciado, type FonteAvaliador } from "./vitrine-avaliadores";
+import { fotoPublicaPermitida, normalizarSobre, seloDoCredenciado, type FonteAvaliador } from "./vitrine-avaliadores";
 import { SELO_AVALIADOR_SOCIO } from "./regras";
 
 /*
@@ -101,4 +101,15 @@ export async function seloLigadoDoCredenciado(admin: SupabaseClient, numero: str
   if (!id) return null;
   const { data } = await admin.from("avaliadores_perfil_publico").select("selo").eq("credenciamento_id", id).eq("publicado", true).maybeSingle();
   return (data as { selo: string | null } | null)?.selo ?? null;
+}
+
+/**
+ * E1099 parte 2: o "Sobre" do credenciado nº `numero` (0355), escrito por ele. Sem texto ou sem leitura: null — o perfil
+ * esconde a secção.
+ */
+export async function sobreDoCredenciado(admin: SupabaseClient, numero: string): Promise<string | null> {
+  const { data, error } = await admin.from("avaliadores_credenciamento").select("sobre").eq("numero_credenciado", numero).maybeSingle();
+  if (error) return null;
+  const n = normalizarSobre((data as { sobre: string | null } | null)?.sobre ?? "");
+  return n.ok ? n.valor : null;
 }

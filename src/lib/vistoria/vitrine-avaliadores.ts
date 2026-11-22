@@ -134,6 +134,16 @@ export const TITULO_NOVO_NA_VIVA = "Novo na Viva";
 export const TEXTO_NOVO_NA_VIVA = "Este avaliador ainda não tem avaliações — seja o primeiro a contratar.";
 export const TITULO_QUADRO_PRECO = "Preço da avaliação";
 export const TEXTO_IDENTIDADE_VERIFICADA = "Identidade verificada pela Viva";
+/** E1099 (ORDEM-DUET-458 §2): o "Sobre" do perfil — texto do próprio avaliador, opcional (0355: até 600 caracteres). */
+export const TITULO_SOBRE = "Sobre";
+export const SOBRE_MAX = 600;
+/** O texto do "Sobre": aparado; vazio = nada (a secção some); acima do limite, recusado com o motivo. */
+export function normalizarSobre(texto: string): { ok: true; valor: string | null } | { ok: false; erro: string } {
+  const t = String(texto ?? "").trim();
+  if (!t) return { ok: true, valor: null };
+  if (t.length > SOBRE_MAX) return { ok: false, erro: `O texto "Sobre" tem até ${SOBRE_MAX} caracteres.` };
+  return { ok: true, valor: t };
+}
 
 // ── E1080 (ORDEM-DUET-385): a listagem pública por cidade (/avaliadores/<cidade>) ───────────────────────────────
 /** Número de avaliador ("UDI-003") — o resto do caminho /avaliadores/<…> é o nome da cidade. */

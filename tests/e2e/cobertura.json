@@ -7749,6 +7749,12 @@
         "t315-telas-avaliacao-dono-62a"
       ]
     },
+    "src/lib/vistoria/actions.ts#salvarMeuSobre": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": []
+    },
     "src/lib/vistoria/actions.ts#salvarMeusTermos": {
       "personas": [
         "parceiro"
