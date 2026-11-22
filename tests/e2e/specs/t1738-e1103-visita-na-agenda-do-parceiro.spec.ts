@@ -13,6 +13,9 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
    2. Os dois lados, a mesma fonte: o avaliador agenda pela tela dele → a Agenda mostra essa data; o dono vê a mesma
       data no bloco dele e CONTINUA a ver "Combinado com o avaliador: R$ … · laudo em N dias".
    3. Concluída a visita, ela sai da Agenda.
+   4. (ORDEM-DUET-495) A contagem "visitas de hoje" do painel do avaliador segue a mesma regra: um pedido "designado"
+      com data marcada para HOJE (imóvel ocupado, morador por concordar) NÃO conta; quando o morador concorda e a
+      visita fica confirmada, a contagem sobe. É o mesmo pedido: só o estado muda.
   Laboratório; não é prova ao vivo no site.
 */
 const LARGURAS = [390, 1280] as const;
@@ -24,7 +27,7 @@ const dono = { email: `dono.t1738.${sufixo}@lab.vivanomads.test`, nome: "Dália 
 const aval = { email: `av.t1738.${sufixo}@lab.vivanomads.test`, nome: "Aurélio Avaliador", role: "tenant" as const };
 const ids: Record<string, string> = {};
 const imoveis: string[] = [];
-const pedidos: Record<"proxima" | "depois" | "proposta" | "feita" | "aceito", string> = { proxima: "", depois: "", proposta: "", feita: "", aceito: "" };
+const pedidos: Record<"proxima" | "depois" | "proposta" | "feita" | "aceito" | "hojeSoProposta", string> = { proxima: "", depois: "", proposta: "", feita: "", aceito: "", hojeSoProposta: "" };
 const imovelDe: Record<string, string> = {};
 const em = (horas: number) => new Date(Date.now() + horas * 3_600_000).toISOString();
 
@@ -36,6 +39,11 @@ const semRolagemLateral = async (page: Page) => expect(await page.evaluate(() =>
 function quandoNaAgenda(iso: string): string {
   const p = Object.fromEntries(new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
   return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute} (horário de Brasília)`;
+}
+/** Hoje ao meio-dia de Brasília (15:00 UTC): cai sempre no dia de hoje pelo relógio de Brasília, seja qual for a hora da corrida. */
+const diaDeBrasilia = (quando: Date | string) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(quando));
+function hojeAoMeioDiaDeBrasilia(): string {
+  return `${diaDeBrasilia(new Date())}T15:00:00.000Z`;
 }
 /** Um pedido do avaliador da trava, com a proposta aceita pelo dono. */
 async function pedido(chave: keyof typeof pedidos, campos: Record<string, unknown>): Promise<void> {
@@ -98,6 +106,8 @@ test.describe("T1738 — E1103: a visita confirmada aparece na Agenda do parceir
     await pedido("feita", { status: "realizada", agendado_para: em(-24), visita_concluida_em: em(-23) });
     // Proposta aceita, sem data: o avaliador agenda no caso 2.
     await pedido("aceito", { status: "designado" });
+    // ORDEM-DUET-495: data marcada para HOJE, mas só proposta (imóvel ocupado, morador por concordar): segue "designado".
+    await pedido("hojeSoProposta", { status: "designado", ocupado: true, agendado_para: hojeAoMeioDiaDeBrasilia(), concordancia_pedida_em: em(-1) });
   });
 
   test.afterAll(async () => {
@@ -133,7 +143,7 @@ test.describe("T1738 — E1103: a visita confirmada aparece na Agenda do parceir
       await expect(itens.nth(1)).toHaveAttribute("href", `/dashboard/parceiro/avaliacao/${pedidos.depois}`);
       await expect(itens.nth(1)).toContainText(quandoNaAgenda(agendadas[pedidos.depois]));
       // A data só proposta (morador por concordar) e a visita já feita não são visitas confirmadas.
-      for (const fora of [pedidos.proposta, pedidos.feita, pedidos.aceito]) await expect(agenda.locator(`a[href="/dashboard/parceiro/avaliacao/${fora}"]`)).toHaveCount(0);
+      for (const fora of [pedidos.proposta, pedidos.feita, pedidos.aceito, pedidos.hojeSoProposta]) await expect(agenda.locator(`a[href="/dashboard/parceiro/avaliacao/${fora}"]`)).toHaveCount(0);
       await expect(agenda.getByText("Nenhum horário combinado")).toHaveCount(0);
       await expect(agenda.getByTestId("parceiro-agenda-visitas-erro")).toHaveCount(0);
       await semRolagemLateral(a);
@@ -201,6 +211,44 @@ test.describe("T1738 — E1103: a visita confirmada aparece na Agenda do parceir
     await expect(agenda.getByTestId("parceiro-agenda-item")).toHaveCount(2, { timeout: 30_000 });
     await expect(agenda.locator(`a[href="/dashboard/parceiro/avaliacao/${pedidos.proxima}"]`)).toHaveCount(0);
     await expect(agenda.locator(`a[href="/dashboard/parceiro/avaliacao/${pedidos.depois}"]`)).toHaveCount(1);
+    await a.context().close();
+  });
+
+  test("4. 'visitas de hoje' do painel: o pedido designado com data para hoje NÃO conta; confirmada a visita, a contagem sobe", async ({ browser }) => {
+    // A massa neste ponto: nenhuma visita CONFIRMADA para hoje (a de +5 dias e a do caso 2, daqui a 3 dias; a "próxima"
+    // já foi concluída no caso 3). Para hoje só existe a data proposta do pedido "designado".
+    const hoje = hojeAoMeioDiaDeBrasilia();
+    const estado = async () => (await adm().from("vistoria_pedidos").select("status, agendado_para, concordancia_em").eq("id", pedidos.hojeSoProposta).single()).data!;
+    expect(await estado(), "a massa: designado, com data para hoje, morador por concordar").toEqual({ status: "designado", agendado_para: hoje.replace(".000Z", "+00:00"), concordancia_em: null });
+    const agendados = ((await adm().from("vistoria_pedidos").select("id, agendado_para").eq("avaliador_id", ids.cred).eq("status", "agendado")).data ?? []) as { id: string; agendado_para: string | null }[];
+    const confirmadasHoje = agendados.filter((x) => x.agendado_para && diaDeBrasilia(x.agendado_para) === diaDeBrasilia(new Date()));
+    expect(confirmadasHoje, "a massa: nenhuma visita confirmada para hoje").toEqual([]);
+
+    const a = await entrar(browser, aval.email, senha);
+    for (const w of LARGURAS) {
+      await largura(a, w);
+      await a.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
+      const painel = a.getByTestId("painel-avaliador");
+      // O pedido está na lista do avaliador, com a data de hoje à vista — e mesmo assim não é "visita de hoje".
+      await expect(a.locator(`[data-testid="avaliacao-designada"][data-pedido="${pedidos.hojeSoProposta}"]`).getByTestId("avaliador-visita")).toContainText("(aguardando o morador)", { timeout: 30_000 });
+      await expect(painel.getByTestId("painel-visitas-hoje"), "a data só proposta não conta").toHaveText("Você não tem visita hoje");
+      await expect(painel.getByTestId("painel-faixa")).toContainText("Nenhuma visita para hoje");
+      await expect(painel.getByTestId("painel-cartao-agenda")).toContainText("Hoje • sem visita");
+    }
+
+    // O morador concorda: o sistema passa o pedido a "agendado" (é o que a ação da concordância grava). Agora é visita confirmada.
+    const { error } = await adm().from("vistoria_pedidos").update({ status: "agendado", concordancia_em: new Date().toISOString() }).eq("id", pedidos.hojeSoProposta);
+    if (error) throw error;
+    for (const w of LARGURAS) {
+      await largura(a, w);
+      await a.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
+      const painel = a.getByTestId("painel-avaliador");
+      await expect(painel.getByTestId("painel-visitas-hoje"), "a visita confirmada conta").toHaveText("Você tem 1 visita hoje", { timeout: 30_000 });
+      await expect(painel.getByTestId("painel-faixa")).toContainText("1 visita para hoje");
+      await expect(painel.getByTestId("painel-cartao-agenda")).toContainText("Hoje • 1 visita");
+      await semRolagemLateral(a);
+      await painel.screenshot({ path: `${SAIDA}/t1738-4-painel-visitas-de-hoje-${w}.png` });
+    }
     await a.context().close();
   });
 });
