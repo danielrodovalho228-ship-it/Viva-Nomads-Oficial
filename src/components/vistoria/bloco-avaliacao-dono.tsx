@@ -15,7 +15,9 @@ import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linh
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
-import { nomesDasContas, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
+import { nomesDasContas, outrosParaTroca, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
+import { textoDaTroca } from "@/lib/vistoria/troca-de-avaliador";
+import { DepoisDaTroca, TrocaDeAvaliador } from "@/components/vistoria/troca-de-avaliador";
 import { fotoPublicaPermitida, reaisCurtos, rostoDoAvaliador } from "@/lib/vistoria/vitrine-avaliadores";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import {
@@ -135,6 +137,12 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     }
   }
   const faixa = atual && preco ? faixaDeReferencia(Number(preco.valor)) : null;
+  // E1100: com a proposta viva, o dono pode trocar de avaliador. Antes de ele clicar, a tela já sabe quantos sobram para
+  // escolher (o atual não volta). Só lê com a chave ligada (a ação é do dono real); leitura que falha = null, sem número.
+  let outrosNaTroca: number | null = null;
+  if (visivel === "ativa" && atual?.status === "designado" && atual.proposta_em && !atual.proposta_aceita_em) {
+    outrosNaTroca = await outrosParaTroca(admin, atual.id, agora).catch(() => null);
+  }
   const propostaForaDaFaixa = atual?.valor_proposto != null && faixa ? Number(atual.valor_proposto) < faixa.min || Number(atual.valor_proposto) > faixa.max : false;
   // Prompt 62-B2: com o laudo emitido, o pedido fecha e "Pedir nova avaliação" volta (o laudo aparece acima).
   const aberto = atual && ["pedido", "designado", "agendado", "realizada"].includes(atual.status);
@@ -173,6 +181,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para })}
               </p>
             )}
+            {atual.status === "pedido" && <DepoisDaTroca pedidoId={atual.id} aguardando={atual.aguardando_avaliador} />}
             {atual.avaliadores_credenciamento && (
               <p className="text-ink" data-testid="avaliador-designado">
                 Avaliador escolhido por você: nº{" "}
@@ -256,10 +265,12 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                     <input type="hidden" name="pedidoId" value={atual.id} />
                     <Button type="submit" variant="secondary" size="sm">Aceitar valor e prazo</Button>
                   </FormAcao>
-                  <FormAcao acao={recusarProposta} testid="recusar-proposta">
-                    <input type="hidden" name="pedidoId" value={atual.id} />
-                    <Button type="submit" variant="secondary" size="sm">Escolher outro avaliador</Button>
-                  </FormAcao>
+                  {/* E1100: o clique abre a confirmação (o que se perde, e se há outro avaliador); só ela descarta. */}
+                  <TrocaDeAvaliador
+                    pedidoId={atual.id}
+                    acao={recusarProposta}
+                    texto={textoDaTroca({ numero: atual.avaliadores_credenciamento?.numero_credenciado ?? null, valor: brl(Number(atual.valor_proposto)), prazoDias: Number(atual.prazo_proposto_dias), outros: outrosNaTroca, cidade: im.city })}
+                  />
                 </div>
               </div>
             )}

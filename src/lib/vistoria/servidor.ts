@@ -223,10 +223,10 @@ type LinhaPedido = {
 type LeituraEscolha = { p: LinhaPedido; sugestoes: Sugestoes };
 
 /** Lê o pedido, a fila e o histórico e devolve os sugeridos. Qualquer leitura que falha LANÇA (nunca vira "ninguém elegível"). */
-async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date): Promise<LeituraEscolha | null> {
+async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date, statusAceitos: readonly string[] = ["pedido"]): Promise<LeituraEscolha | null> {
   const { data } = await admin.from("vistoria_pedidos").select("id, property_id, owner_id, cidade, tipo, teste, status, origem_pedido_id").eq("id", pedidoId).maybeSingle();
   const p = data as LinhaPedido | null;
-  if (!p || p.status !== "pedido") return null;
+  if (!p || !statusAceitos.includes(p.status)) return null;
   const [jaLeitura, filaToda, historico, modo, piloto] = await Promise.all([
     admin.from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", p.id),
     filaDaCidade(admin),
@@ -287,6 +287,16 @@ export async function abrirEscolha(admin: Admin, pedidoId: string, agora = new D
 export async function sugeridosDoPedido(admin: Admin, pedidoId: string, agora = new Date()): Promise<AvaliadorFila[] | null> {
   const l = await leituraDaEscolha(admin, pedidoId, agora);
   return l ? l.sugestoes.sugeridos : null;
+}
+
+/**
+ * E1100: quantos avaliadores o dono poderá escolher se descartar AGORA o avaliador escolhido (e a proposta dele). É a
+ * MESMA leitura da escolha, feita com o pedido ainda designado: o avaliador atual já está entre os "já designados" e não
+ * volta. Nada muda em quem pode ser escolhido. Lança se uma leitura falha (quem chama não inventa número).
+ */
+export async function outrosParaTroca(admin: Admin, pedidoId: string, agora = new Date()): Promise<number | null> {
+  const l = await leituraDaEscolha(admin, pedidoId, agora, ["designado"]);
+  return l ? l.sugestoes.sugeridos.length : null;
 }
 
 /**
