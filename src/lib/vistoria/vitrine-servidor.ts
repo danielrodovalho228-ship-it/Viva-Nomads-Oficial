@@ -48,6 +48,7 @@ export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvali
         notaConduta: a.nota_conduta == null ? null : Number(a.nota_conduta),
         contaTeste: teste,
         fotoUrl: uid && fotoPublicaPermitida(teste) ? await signAvatarPath(c?.avatar_url ?? null, uid) : null,
+        identidadeVerificada: uid ? await identidadeConfirmadaDaConta(admin, uid) : false,
       };
     }),
   );
@@ -70,9 +71,13 @@ export async function contaDoCredenciado(admin: SupabaseClient, numero: string):
  * linha não aparece — nunca afirmar o que não se conferiu).
  */
 export async function identidadeConfirmadaDoCredenciado(admin: SupabaseClient, numero: string): Promise<boolean> {
+  const uid = await contaDoCredenciado(admin, numero);
+  return uid ? identidadeConfirmadaDaConta(admin, uid) : false;
+}
+
+/** E1099 parte 3: o mesmo fato, pela conta — o cartão da listagem e o perfil leem daqui. Sem leitura: false. */
+export async function identidadeConfirmadaDaConta(admin: SupabaseClient, uid: string): Promise<boolean> {
   try {
-    const uid = await contaDoCredenciado(admin, numero);
-    if (!uid) return false;
     return (await estadoIdentidade(admin, uid)).estado === "confirmada";
   } catch {
     return false;
