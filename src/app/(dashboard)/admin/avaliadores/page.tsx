@@ -8,8 +8,8 @@ import { VISTORIA_ATIVA, VISTORIA_PARECER_14 } from "@/lib/flags";
 import { chaveCidade } from "@/lib/cidades";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
-import { adminCriarAvaliacaoTeste, adminDecidirCredenciamento, adminResolverFila, adminRevisarAuditoria, adminSalvarPreco } from "@/lib/vistoria/actions";
-import { COLUNAS_PRECO, PORTES, ROTULO_PORTE, condicaoRetorno, condicoesParaLigar, linhaDaTabela, tabelaCompleta, textoCondicaoRetorno, type LinhaPreco, type StatusCredenciamento } from "@/lib/vistoria/regras";
+import { adminAdicionarAoPiloto, adminCriarAvaliacaoTeste, adminDecidirCredenciamento, adminRemoverDoPiloto, adminResolverFila, adminRevisarAuditoria, adminSalvarPreco } from "@/lib/vistoria/actions";
+import { COLUNAS_PRECO, PORTES, ROTULO_PORTE, atendeCidade, condicaoRetorno, partesDaCidade, condicoesParaLigar, linhaDaTabela, tabelaCompleta, textoCondicaoRetorno, type LinhaPreco, type StatusCredenciamento } from "@/lib/vistoria/regras";
 import { adminAbrirVerificacao, adminResolverBloqueio } from "@/lib/vistoria/laudo-actions";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistoria/strikes";
@@ -23,6 +23,7 @@ import { CRITERIOS_PUBLICOS } from "@/lib/vistoria/escolha";
 import { TITULO_ADMIN, TITULO_SECAO_A_DECIDIR, TITULO_SECAO_NA_REDE, contagemDecisoes, credenciamentoADecidir, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
 import { tituloDoAdmin } from "@/config/menu-admin";
 import { soLeituraNaTela } from "@/lib/qa/observador";
+import { NOTA_PILOTO_MAX, ROTULO_CONTA_TESTE, TEXTO_PILOTO_VAZIO, TITULO_SECAO_PILOTO, linhasDoPiloto } from "@/lib/vistoria/piloto-central";
 import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import type { ComponentProps } from "react";
 
@@ -109,6 +110,15 @@ export default async function AdminAvaliadoresPage() {
   // E30: quem já tem a avaliação de teste feita (laudo emitido num pedido de teste) — só esses podem ser ativados.
   const testeFeito = await comTesteConcluido(admin, lista.filter((c) => c.status === "em_teste" || c.status === "suspenso").map((c) => c.id));
   const { data: imoveisTeste } = idsTeste.length ? await admin.from("properties").select("id, title, city").in("owner_id", idsTeste).order("created_at", { ascending: false }).limit(50) : { data: [] };
+  // E1077-b1: as contas no teste da avaliação (vistoria_piloto) com o perfil. Leitura que falha sobe (achado 39).
+  const pilotoLeitura = await admin.from("vistoria_piloto").select("user_id, nota, criado_em");
+  if (pilotoLeitura.error) throw new Error(`Falha ao ler as contas no teste da avaliação: ${pilotoLeitura.error.message}`);
+  const pilotoLinhas = (pilotoLeitura.data ?? []) as { user_id: string; nota: string | null; criado_em: string }[];
+  const perfisPilotoLeitura = pilotoLinhas.length ? await admin.from("profiles").select("id, full_name, email, is_teste").in("id", pilotoLinhas.map((l) => l.user_id)) : { data: [], error: null };
+  if (perfisPilotoLeitura.error) throw new Error(`Falha ao ler as contas no teste da avaliação: ${perfisPilotoLeitura.error.message}`);
+  const piloto = linhasDoPiloto(pilotoLinhas, (perfisPilotoLeitura.data ?? []) as { id: string; full_name: string | null; email: string | null; is_teste: boolean | null }[]);
+  // A conta observadora da QA: as linhas de conta real ficam só leitura (o servidor também recusa).
+  const pilotoSoLeitura = new Set(await soLeituraNaTela(piloto.map((l) => ({ id: l.userId, alvo: { perfis: [l.userId] } }))));
   const numeroDe = new Map(lista.map((c) => [c.id, c.numero_credenciado]));
   type Ped = { id: string; cidade: string; tipo: string; status: string; aguardando_avaliador: boolean; criado_em: string; avaliadores_credenciamento: { numero_credenciado: string } | null };
   const pedidosLista = (pedidos ?? []) as unknown as Ped[];
@@ -119,10 +129,11 @@ export default async function AdminAvaliadoresPage() {
   const aDecidir = lista.filter((c) => credenciamentoADecidir(c.status));
   const naRede = lista.filter((c) => !credenciamentoADecidir(c.status));
   const tabela: LinhaPreco[] = ((precos ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
-  const cidades = [...new Map([...lista.map((c) => c.cidade), ...tabela.map((t) => t.cidade)].map((c) => [chaveCidade(c), c])).values()];
+  // E1077-b2: um credenciamento com várias cidades ("Uberlandia, Araguari, Ituiutaba") entra em cada uma delas.
+  const cidades = [...new Map([...lista.flatMap((c) => partesDaCidade(c.cidade)), ...tabela.map((t) => t.cidade)].map((c) => [chaveCidade(c), c])).values()];
   const condicoesPorCidade = cidades.map((cidade) => {
     // E30: conta de teste não conta rumo aos 2 avaliadores ativos (o mesmo critério do rodízio real).
-    const ativos = lista.filter((c) => chaveCidade(c.cidade) === chaveCidade(cidade) && contaComoAvaliadorAtivo({ status: c.status, contaTeste: !!c.user_id && contasTeste.has(c.user_id) })).length;
+    const ativos = lista.filter((c) => atendeCidade(c.cidade, cidade) && contaComoAvaliadorAtivo({ status: c.status, contaTeste: !!c.user_id && contasTeste.has(c.user_id) })).length;
     return { cidade, cond: condicoesParaLigar({ tabelaCompleta: tabelaCompleta(tabela, cidade, agora), avaliadoresAtivos: ativos, parecerItem14: VISTORIA_PARECER_14 }) };
   });
   const numerosBase = contagemDecisoes({ credenciamentos: lista, semAvaliador: semAvaliador.length, recusasAusencias: recusasLista.length, cidadesProntas: condicoesPorCidade.filter((c) => c.cond.every((x) => x.ok)).length, cidades: cidades.length });
@@ -358,6 +369,37 @@ export default async function AdminAvaliadoresPage() {
             )}
           </div>
         </div>
+      </Panel>
+
+      <Panel title={TITULO_SECAO_PILOTO} className="mb-6" data-testid="avaliadores-piloto">
+        {piloto.length === 0 && <p className="text-sm text-muted" data-testid="avaliadores-piloto-vazio">{TEXTO_PILOTO_VAZIO}</p>}
+        {piloto.length > 0 && (
+          <ul className="mt-3 grid gap-2">
+            {piloto.map((l) => (
+              <li key={l.userId} className="rounded-lg border border-line p-3 text-sm" data-testid="piloto-conta" data-teste={l.teste ? "1" : "0"}>
+                <strong className="text-ink">{l.nome}</strong> · {l.email}
+                {l.teste && <span className="ml-2 rounded-full border border-line bg-white px-2 py-1 text-xs text-muted" data-testid="piloto-conta-teste">{ROTULO_CONTA_TESTE}</span>}
+                <span className="block text-muted">Entrou em {dataBRT(l.entrouEm)}{l.nota ? ` · ${l.nota}` : ""}</span>
+                <FormAcaoAdmin soLeitura={pilotoSoLeitura.has(l.userId)} acao={adminRemoverDoPiloto} className="mt-2">
+                  <input type="hidden" name="userId" value={l.userId} />
+                  <Button type="submit" variant="secondary" size="sm" data-testid="piloto-remover">Remover</Button>
+                </FormAcaoAdmin>
+              </li>
+            ))}
+          </ul>
+        )}
+        {/* A conta observadora da QA também adiciona — o servidor só a deixa adicionar conta de teste. */}
+        <FormAcaoAdmin soLeitura={false} acao={adminAdicionarAoPiloto} className="mt-3" testid="piloto-adicionar">
+          <label className="block text-sm">
+            E-mail da conta
+            <input name="email" type="email" required className={campo} data-testid="piloto-email" />
+          </label>
+          <label className="mt-2 block text-sm">
+            Nota (opcional)
+            <input name="nota" maxLength={NOTA_PILOTO_MAX} className={campo} data-testid="piloto-nota" />
+          </label>
+          <Button type="submit" variant="secondary" size="sm" className="mt-2" data-testid="piloto-adicionar-botao">Adicionar</Button>
+        </FormAcaoAdmin>
       </Panel>
 
       <Panel title="Fila da equipe" className="mb-6" data-testid="avaliadores-fila">

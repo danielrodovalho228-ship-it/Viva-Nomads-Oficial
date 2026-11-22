@@ -21,6 +21,7 @@ import { diasDaSelecao, mesesDaSelecao } from "./imovel/selecao-estadia.ts";
 import { caucaoDaEstadiaEmDias, caucaoDoBloco, DIAS_POR_MES, MAX_MESES_BLOCO, MESES_POR_BLOCO_PADRAO } from "./contrato-blocos.ts";
 import { validarReserva } from "./availability.ts";
 import { DIAS_MIN_ESTADIA, diasMaxEstadiaVigente } from "./estadia-em-dias.ts";
+import { REGRA_CAUCAO } from "./caucao-regra.ts";
 
 export interface LinhaTaxa {
   chave: "mensal" | "condominio" | "consumo" | "preparacao" | "saida" | "pet" | "limpeza" | "caucao" | "viva";
@@ -75,9 +76,8 @@ function textoCaucaoDaSolicitacao(monthlyPrice: number, dias: number | null | un
   return doBloco ? `${formatBRL(doBloco.valor)} no 1º bloco, ${fim}` : "Paga uma vez, devolvida no fim (valor no contrato)";
 }
 
-/** Texto da regra da Caução, sem número (o mesmo em todo lugar do anúncio). */
-export const NOTA_CAUCAO =
-  "50% do valor de cada bloco, no máximo 3 vezes o valor mensal no contrato. Paga direto ao proprietário e devolvida no fim, após a conferência de saída. A Viva não recebe nem segura esse dinheiro.";
+/** Texto da regra da Caução, sem número (o mesmo em todo lugar do anúncio). E1076: a regra vem da fonte única. */
+export const NOTA_CAUCAO = `${REGRA_CAUCAO} no contrato. Paga direto ao proprietário e devolvida no fim, após a conferência de saída. A Viva não recebe nem segura esse dinheiro.`;
 
 const positivo = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n > 0;
 
