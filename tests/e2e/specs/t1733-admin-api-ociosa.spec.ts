@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
 /*
-  T1680 — Ordem 12a8086d, item 4 (parte 2): a API /api/admin passa pelo proxy só para o limite de 30 min parado.
+  T1733 (era T1680; renumerada na ORDEM-DUET-450, porque a t1680-e917 já está na main) — Ordem 12a8086d, item 4 (parte 2): a API /api/admin passa pelo proxy só para o limite de 30 min parado.
   O caso que encerra a sessão (cookie de atividade velho + sessão de admin) NÃO roda aqui de propósito: o signOut
   derrubaria a sessão gravada que o resto da suíte de admin usa. Ele é provado no unitário
   src/lib/admin/api-admin-ociosa.test.ts. Aqui ficam as garantias de que nada mais mudou:
@@ -12,7 +12,7 @@ import { authFile } from "../fixtures/auth";
 */
 const VELHO = String(Date.now() - 2 * 60 * 60 * 1000);
 
-test.describe("T1680 — API do admin com o limite de 30 min parado", () => {
+test.describe("T1733 — API do admin com o limite de 30 min parado", () => {
   test("visitante com cookie de atividade velho continua só recusado (sem 401 de sessão)", async ({ browser, baseURL }) => {
     const ctx = await browser.newContext();
     await ctx.addCookies([{ name: "vn_admin_ativo", value: VELHO, url: baseURL ?? "http://localhost:3000" }]);

@@ -251,7 +251,7 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
       return resposta;
     }
     if (apiAdminRenovaAtividade(request.method)) {
-      response.cookies.set(COOKIE_ADMIN_ATIVO, String(agora), { httpOnly: true, secure: true, sameSite: "lax", path: "/" });
+      ponto.resposta().cookies.set(COOKIE_ADMIN_ATIVO, String(agora), { httpOnly: true, secure: true, sameSite: "lax", path: "/" });
     }
   }
 
