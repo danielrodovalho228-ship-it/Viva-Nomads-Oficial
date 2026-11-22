@@ -3,7 +3,7 @@ import { rotaDetalheContrato } from "@/lib/contrato-rota";
 import { destinoLeitorQa, rotaLeitorQa } from "@/lib/notifications/caixa-teste";
 import { createServerClient } from "@supabase/ssr";
 import { cookiesRenovados } from "@/lib/supabase/cookies-renovados";
-import { COOKIE_TELA, COOKIE_VEIO_DA_CONTA, marcaDoRedirecionamentoDaConta, redirecionamentoDaConta } from "@/lib/conta/redirecionar-no-servidor";
+import { COOKIE_TELA, COOKIE_VEIO_DA_CONTA, marcaDoRedirecionamentoDaConta, redirecionamentoDaConta, secaoDaContaInexistente } from "@/lib/conta/redirecionar-no-servidor";
 import {
   isInternalPath,
   acessoInterno,
@@ -197,6 +197,16 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
     // Prompt 49: anunciar é momento de valor — a entrada diz por que pede a conta.
     if (pathname.startsWith("/dashboard/imoveis/novo") || pathname.startsWith("/qualificar")) redirectUrl.searchParams.set("motivo", "anunciar");
     return comCookies(NextResponse.redirect(redirectUrl));
+  }
+
+  // E1003: seção da Conta que não existe responde o 404 do resto do site (o mesmo padrão do 404 do admin, abaixo). Antes
+  // respondia 200 com a tela "não encontrada": a página só descobria depois de a resposta ter começado. Só para quem
+  // está logado e depois do portão acima: sem sessão, o caminho continua sendo o login.
+  if (user && secaoDaContaInexistente(pathname)) {
+    const naoEncontrada = request.nextUrl.clone();
+    naoEncontrada.pathname = "/nao-encontrada-conta";
+    naoEncontrada.search = "";
+    return comCookies(NextResponse.rewrite(naoEncontrada, { status: 404 }));
   }
 
   // Admin parado há mais de 30 min: encerra a sessão e pede login de novo.
