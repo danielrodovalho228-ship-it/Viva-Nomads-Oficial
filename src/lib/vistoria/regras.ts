@@ -14,7 +14,8 @@ export const ROTULO_CATEGORIA_VISTORIA = "Avaliação de imóveis";
 /** E717: faixa da página pública de um avaliador de conta de teste (igual ao "Documento de teste" do /conferir). */
 export const TEXTO_AVALIADOR_DE_TESTE = "Avaliador de teste: esta é uma conta de teste da plataforma e não é um avaliador real.";
 /** E717: quem está em teste não se chama "credenciado": o rótulo acima do nome diz que é um avaliador de teste. */
-export const ROTULO_AVALIADOR_CREDENCIADO = "Avaliador credenciado da Viva";
+/** E1097 (decisão do Daniel, 22/11): o selo público de TODO credenciado — na listagem e no perfil. */
+export const ROTULO_AVALIADOR_CREDENCIADO = "Avaliador credenciado";
 export const ROTULO_AVALIADOR_EM_TESTE = "Avaliador em teste";
 /** E1075 (ORDEM-DUET-355): o selo do perfil público do avaliador do piloto, antes do credenciamento (que espera o CNPJ). */
 export const SELO_AVALIADOR_SOCIO = "Avaliador sócio da Viva";
