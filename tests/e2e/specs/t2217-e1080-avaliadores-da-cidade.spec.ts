@@ -16,6 +16,8 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, novaSenha
        - o credenciado A, pelo número, a levar à página dele (/avaliadores/<nº>);
        - nem B (outra cidade), nem T (em teste), nem D (descredenciado);
        - nenhum telefone nem e-mail na lista (a regra das páginas públicas de avaliador, E1075/E1077).
+  Referência: `docs/mockups-avaliadores/publico-avaliadores-{mobile,desktop}.webp` (E1079): "Avaliadores em <cidade>",
+  cartões com foto, NOME, selo, cidade e avaliações — sem número. Por isso a trava procura cada avaliador pelo nome.
   A rota exacta é do E1080: a trava abre /avaliadores?cidade=<C> e lê a página onde ele cair. O formato dos cartões é
   dos mockups aprovados (E1079) e da trava (c), não desta. Só contas de teste; nenhuma foto de pessoa real.
 */
@@ -80,7 +82,7 @@ test.describe("T2217 — E1080 (b): a descoberta pública lista os credenciados 
     const main = page.locator("main");
     await expect(main).toBeVisible({ timeout: 30_000 });
     const texto = await main.innerText();
-    for (const l of ["A", "B", "T", "D"] as const) expect(texto.includes(cred[l]!.numero), `fechada: o nº ${cred[l]!.numero} (${l}) não aparece ao público`).toBe(false);
+    for (const l of ["A", "B", "T", "D"] as const) expect(texto.includes(conta(l).nome) || texto.includes(cred[l]!.numero), `fechada: ${conta(l).nome} (nº ${cred[l]!.numero}) não aparece ao público`).toBe(false);
     await expect(main.locator(`a[href*="/avaliadores/${cred.A!.numero}"]`), "fechada: nenhum caminho para o credenciado").toHaveCount(0);
   });
 
@@ -91,12 +93,11 @@ test.describe("T2217 — E1080 (b): a descoberta pública lista os credenciados 
       await page.goto(descoberta, { waitUntil: "domcontentloaded" });
       const main = page.locator("main");
       await expect(main).toBeVisible({ timeout: 30_000 });
-      const ligacao = main.locator(`a[href*="/avaliadores/${cred.A!.numero}"]`);
-      await expect(ligacao.first(), `E1080 (b): o credenciado ativo da cidade (nº ${cred.A!.numero}) está na lista, a levar à página dele (url: ${page.url()})`).toBeVisible({ timeout: 20_000 });
+      await expect(main.getByText(conta("A").nome).first(), `E1080 (b): o credenciado ativo da cidade (${conta("A").nome}) está na lista (url: ${page.url()})`).toBeVisible({ timeout: 20_000 });
+      expect.soft(await main.locator(`a[href*="/avaliadores/${cred.A!.numero}"]`).count(), "E1080 (b): o cartão leva à página do avaliador").toBeGreaterThan(0);
+      expect.soft(await main.getByRole("heading", { level: 1 }).innerText(), "E1080 (b): o título diz a cidade, como no mockup").toMatch(/Avaliadores em/i);
       const texto = await main.innerText();
-      expect.soft(texto.includes(cred.B!.numero), `E1080 (b): o credenciado de outra cidade (nº ${cred.B!.numero}) não aparece`).toBe(false);
-      expect.soft(texto.includes(cred.T!.numero), `E1080 (b): o avaliador em teste (nº ${cred.T!.numero}) não aparece`).toBe(false);
-      expect.soft(texto.includes(cred.D!.numero), `E1080 (b): o descredenciado (nº ${cred.D!.numero}) não aparece`).toBe(false);
+      for (const l of ["B", "T", "D"] as const) expect.soft(texto.includes(conta(l).nome), `E1080 (b): ${conta(l).nome} (${MASSA[l].status}, ${MASSA[l].cidade === CIDADE ? "mesma cidade" : "outra cidade"}) não aparece`).toBe(false);
       expect.soft((await main.innerHTML()).match(CONTATO), "E1080 (b): nenhum telefone nem e-mail na lista").toBeNull();
     });
   }
