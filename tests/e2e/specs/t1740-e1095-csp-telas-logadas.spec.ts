@@ -26,7 +26,8 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t1740.${sufixo}@lab.vivanomads.test`, nome: "Dora Política", role: "owner" as const };
+// O nome leva o sufixo da corrida: a fila do admin acha o cartão deste dono, e só o dele.
+const dono = { email: `dono.t1740.${sufixo}@lab.vivanomads.test`, nome: `Dora Política ${sufixo}`, role: "owner" as const };
 const morador = { email: `morador.t1740.${sufixo}@lab.vivanomads.test`, nome: "Mauro Política", role: "tenant" as const };
 const parceiro = { email: `parceiro.t1740.${sufixo}@lab.vivanomads.test`, nome: "Paulo Teste Parceiro", role: "tenant" as const };
 const ids: Record<string, string> = {};
@@ -78,9 +79,10 @@ async function rolarAteOFim(page: Page): Promise<void> {
 
 test.describe("T1740 — E1095: a política aplicada não bloqueia nada nas telas com sessão @E1095 @seguranca", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
-  // Sem modo em série de propósito: cada superfície é um caso independente, e uma política que parta uma delas deixa
-  // as outras correrem (é o que mostra qual superfície partiu).
-  test.describe.configure({ timeout: 180_000 });
+  // Modo "default" de propósito: os três casos correm no mesmo trabalhador, sobre a mesma massa (uma só semeadura,
+  // mesmo com o paralelismo do portão), e são independentes — uma política que parta uma superfície deixa as outras
+  // correrem, e é isso que mostra qual partiu. (Em série, a primeira falha calaria as seguintes.)
+  test.describe.configure({ mode: "default", timeout: 180_000 });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
