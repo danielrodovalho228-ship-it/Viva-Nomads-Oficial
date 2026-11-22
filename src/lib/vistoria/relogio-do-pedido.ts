@@ -53,7 +53,7 @@ export function relogioDoPedido(p: EstadoParaORelogio, agora: Date): Relogio | n
   // A proposta gravada manda: com ela, o relógio de resposta parou, o que quer que a resposta lida diga.
   if (p.propostaEm) {
     if (p.propostaAceitaEm || !p.precisaDoAceite) return null;
-    return relogio("dono", p.propostaEm, PRAZO_DONO_ACEITAR_HORAS, agora);
+    return relogio("dono", p.designadoEm ?? p.propostaEm, PRAZO_DONO_ACEITAR_HORAS, agora);
   }
   if (p.resposta !== null || !p.designadoEm) return null;
   const horas = Number.isFinite(p.prazoRespostaHoras) && Number(p.prazoRespostaHoras) > 0 ? Number(p.prazoRespostaHoras) : PRAZO_RESPOSTA_PADRAO_HORAS;
