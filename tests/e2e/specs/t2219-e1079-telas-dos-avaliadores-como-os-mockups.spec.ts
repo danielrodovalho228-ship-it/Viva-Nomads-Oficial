@@ -251,8 +251,10 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     // A busca é um campo: "Buscar por cidade" é o placeholder e o nome acessível, não texto da página.
     await expect.soft(p.getByRole("search").getByPlaceholder("Buscar por cidade"), "publico: o campo \"Buscar por cidade\"").toBeVisible();
     // O selo (E1097, decisão do Daniel de 22/11): "Avaliador credenciado" para os credenciados; "Avaliador sócio da Viva"
-    // só para o Rogério. A estrela das avaliações é ícone (aria-hidden): conta o texto "N avaliação(ões)".
-    await temTudo(p, "publico-avaliadores", ["Identidade verificada pela Viva", NOME_PUBLICO, /Avaliador sócio da Viva|Avaliador credenciad[ao]/i, /Novo na Viva|\d+ avaliaç/]);
+    // só para o Rogério. O avaliador DESTA spec é conta de teste (só contas de teste nos ensaios), e conta de teste leva
+    // "Avaliador em teste" (E717, mantido no E1097 — seloDoCredenciado); o texto do credenciado real trava-o o unitário
+    // e1097-selo-publico.test.ts. A estrela das avaliações é ícone (aria-hidden): conta o texto "N avaliação(ões)".
+    await temTudo(p, "publico-avaliadores", ["Identidade verificada pela Viva", NOME_PUBLICO, /Avaliador em teste/, /Novo na Viva|\d+ avaliaç/]);
     // O cartão do mockup não tem número nem contacto (regra do Daniel).
     expect.soft((await p.locator("main").innerHTML()).match(/tel:|mailto:|wa\.me|@lab\.vivanomads\.test/i), "publico: sem telefone nem e-mail").toBeNull();
     await ctx.close();
