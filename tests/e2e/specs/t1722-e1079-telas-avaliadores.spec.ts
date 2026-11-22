@@ -61,12 +61,16 @@ test.describe("T1722 — E1079/E1080: as telas do avaliador", () => {
     if (eT) throw eT;
     const p = await adm().from("vistoria_piloto").insert({ user_id: ids.dono, nota: "T1722 (laboratório)" });
     if (p.error) throw p.error;
+    // E1077: no piloto, o dono só vê avaliadores que também estão na lista do piloto (filaNoAmbito).
+    const pa = await adm().from("vistoria_piloto").insert({ user_id: ids.aval, nota: "T1722 (laboratório)" });
+    if (pa.error) throw pa.error;
   });
 
   test.afterAll(async () => {
     if (ids.imovel) await adm().from("vistoria_pedidos").delete().eq("property_id", ids.imovel);
     await adm().from("vistoria_precos").delete().eq("cidade", CIDADE);
     if (ids.dono) await adm().from("vistoria_piloto").delete().eq("user_id", ids.dono);
+    if (ids.aval) await adm().from("vistoria_piloto").delete().eq("user_id", ids.aval);
     if (ids.parc) {
       const cred = ((await adm().from("avaliadores_credenciamento").select("id").eq("parceiro_id", ids.parc)).data ?? []).map((x) => x.id as string);
       if (cred.length) await adm().from("vistoria_designacoes").delete().in("avaliador_id", cred);
