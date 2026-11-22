@@ -58,7 +58,10 @@ test.describe("T2130 — E289: o lembrete de saída do cron diz o imóvel, a dat
       .single();
     if (error) throw error;
     ids.contrato = c.id as string;
-    ids.fim = emDias(3);
+    // E1089 (coordenador): o lembrete conta da SAÍDA (o dia seguinte à última noite gravada no bloco). Saída em 3 dias =
+    // última noite em 2 dias.
+    ids.fim = emDias(2);
+    ids.saida = emDias(3);
     const inicio = somar(ids.fim, -59);
     const { data: b1, error: e1 } = await adm().from("contrato_blocos").insert({ contrato_id: c.id, numero_bloco: 1, inicio, fim: ids.fim, meses: 2, valor: 6400, caucao: 3200, status: "ativo", aceite_proprietario_em: agora, aceite_inquilino_em: agora }).select("id").single();
     if (e1) throw e1;
@@ -95,12 +98,12 @@ test.describe("T2130 — E289: o lembrete de saída do cron diz o imóvel, a dat
     expect(r.status, JSON.stringify(corpoCron)).toBe(200);
     expect(corpoCron.simulado).toBe(false);
 
-    const ddmm = `${ids.fim.slice(8, 10)}/${ids.fim.slice(5, 7)}`;
+    const ddmm = `${ids.saida.slice(8, 10)}/${ids.saida.slice(5, 7)}`;
     for (const [quem, primeiro] of [[ids.inq, "Murilo"], [ids.dono, "Dalila"]] as const) {
       await expect.poll(async () => (await caixa(quem, "saida_lembrete")).length, { timeout: 30_000, message: `o lembrete de saída chegou a ${primeiro}` }).toBe(1);
       const [email] = await caixa(quem, "saida_lembrete");
       expect(email.assunto, "assunto com o imóvel e a data").toContain(`Saída de ${TITULO} em ${ddmm}`);
-      expect(email.corpo, "corpo com a pessoa, o imóvel, a data e o horário").toContain(`Olá ${primeiro}, a saída de ${TITULO} é em ${dataBR(ids.fim)} (até as 11:00).`);
+      expect(email.corpo, "corpo com a pessoa, o imóvel, a data e o horário").toContain(`Olá ${primeiro}, a saída de ${TITULO} é em ${dataBR(ids.saida)} (até as 11:00).`);
       expect(email.corpo, "o bairro e a cidade, como o título · bairro, cidade").toContain("Santa Mônica, Uberlândia");
       expect(email.corpo, "nunca o endereço exato").not.toContain(RUA);
     }

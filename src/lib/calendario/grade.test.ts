@@ -26,7 +26,9 @@ test("intervalo, estadia e prioridade das marcas", () => {
   const m = marcasDaEstadia("2026-11-01", "2026-11-03");
   assert.equal(marcaPrincipal(m["2026-11-01"]), "entrada");
   assert.equal(marcaPrincipal(m["2026-11-02"]), "periodo");
-  assert.equal(marcaPrincipal(m["2026-11-03"]), "saida");
+  // E1089 (coordenador): 03/11 é a última noite (período); a marca "Saída" fica no dia seguinte, 04/11.
+  assert.equal(marcaPrincipal(m["2026-11-03"]), "periodo");
+  assert.equal(marcaPrincipal(m["2026-11-04"]), "saida");
   assert.equal(marcaPrincipal(["hoje", "bloqueado"]), "bloqueado");
   assert.equal(marcaPrincipal([]), null);
   assert.equal(ymd(2026, 0, 5), "2026-01-05");
