@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { MapPin, Search, ShieldCheck, Star } from "lucide-react";
-import { PLACEHOLDER_BUSCA_CIDADE, ROTULO_VER_PERFIL, TEXTO_IDENTIDADE_VERIFICADA, TITULO_NOVO_NA_VIVA, TITULO_VITRINE, linhaDaCidade, novoNaViva, textoAvaliacoes, type CartaoAvaliador } from "@/lib/vistoria/vitrine-avaliadores";
+import { PLACEHOLDER_BUSCA_CIDADE, ROTULO_VER_PERFIL, TITULO_NOVO_NA_VIVA, TITULO_VITRINE, linhaDaCidade, novoNaViva, textoAvaliacoes, type CartaoAvaliador } from "@/lib/vistoria/vitrine-avaliadores";
 
 /**
  * E1080 (ORDEM-DUET-385/386): a listagem pública de avaliadores de uma cidade, no desenho dos mockups aprovados
@@ -73,13 +73,6 @@ function CartaoVitrine({ c, cidade, uf }: { c: CartaoAvaliador; cidade: string; 
           <MapPin className="h-4 w-4 shrink-0" aria-hidden />
           {linhaDaCidade(cidade, uf)}
         </p>
-        {/* E1099 parte 3 (ORDEM-463 §1): só com a identidade da conta confirmada; o texto é o da fonte única. */}
-        {c.identidadeVerificada && (
-          <p className="inline-flex items-center gap-1 text-sm font-semibold text-forest-700" data-testid="vitrine-identidade">
-            <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
-            {TEXTO_IDENTIDADE_VERIFICADA}
-          </p>
-        )}
         <Link href={c.href} className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-forest px-4 py-2 text-base font-semibold text-forest" data-testid="vitrine-ver-perfil">
           {ROTULO_VER_PERFIL}
         </Link>
