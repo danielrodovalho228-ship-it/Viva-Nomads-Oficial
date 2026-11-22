@@ -10,7 +10,7 @@ const H = `import { createElement as h } from "react";\n`;
 const NOOP = (nomes) => nomes.map((n) => `export const ${n} = async () => ({ ok: true });`).join("\n");
 const STUBS = {
   "next/link": H + `export default ({ href, children, ...p }) => h("a", { href }, children);`,
-  "lucide-react": `export const CheckCircle2 = () => null; export const Circle = () => null;`,
+  "lucide-react": `export const CheckCircle2 = () => null; export const Circle = () => null; export const ShieldCheck = () => null;`,
   "@/lib/supabase/server": `export async function createClient() { return { auth: { getUser: async () => ({ data: { user: globalThis.__VN.user } }) } }; }`,
   "@/lib/supabase/admin": `export function createAdminClient() { return globalThis.__VN.admin; }`,
   "@/lib/vistoria/chave": `export async function vistoriaAtiva() { return globalThis.__VN.chave; }`,
