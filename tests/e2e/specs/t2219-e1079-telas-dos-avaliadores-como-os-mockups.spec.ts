@@ -173,7 +173,8 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     await temTudo(d, "dono-escolha", ["Escolher avaliador", avaliador.nome, "Novo na Viva"]);
     // "Avaliadores disponíveis em <cidade>" e "Avaliação: R$ <tabela>" (decisão 3): cobrados na t1722, teste 3.
     const main = d.locator("main");
-    await expect.soft(main.getByRole("button", { name: /^Escolher$/ }).first(), "o botão \"Escolher\" do cartão").toBeVisible();
+    // O texto do botão é "Escolher" (mockup); o nome acessível leva o avaliador ("Escolher <nome>"), para o leitor de tela.
+    await expect.soft(main.getByRole("button", { name: /^Escolher( |$)/ }).filter({ hasText: /^\s*Escolher\s*$/ }).first(), "o botão \"Escolher\" do cartão").toBeVisible();
     await d.context().close();
   });
 
