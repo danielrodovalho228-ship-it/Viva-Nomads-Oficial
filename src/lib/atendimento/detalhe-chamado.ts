@@ -272,7 +272,7 @@ export function historicoEmLinguagemSimples(eventos: readonly EventoDoChamado[],
     usados.add(i);
     linhas.push({ quando: quandoNoHistorico(e.criado_em), ...linha });
   });
-  return linhas.reverse();
+  return linhas;
 }
 
 // ── A conversa, sem repetir a resposta ─────────────────────────────────────────────────────────────────────────
