@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, novaSenha
   Massa própria, só contas de teste: um avaliador EM TESTE com foto de perfil e um ATIVO sem foto (conta de teste),
   os dois em Uberlândia, e a tabela da cidade com os três portes — o estado que o desenho mostra.
    1. Chave: o cartão "Chave da Vistoria" com as três condições, cada uma com a pílula do estado
-      (tabela Cumprida; avaliadores Falta 2, porque conta de teste não conta; parecer Pendente).
+      (tabela Cumprida; avaliadores Falta N, porque conta de teste não conta; parecer Pendente).
    2. Credenciamento: cartão com a FOTO de perfil da conta e a pílula "Em teste"; sem foto, as INICIAIS no círculo
       e a pílula "Ativo". Foto nunca é obrigatória.
    3. Tabela de preços limpa da cidade: os três portes com o valor vigente; o formulário e o histórico continuam.
@@ -83,10 +83,13 @@ test.describe("T1718 — E1079: a Central → Avaliadores pelos mockups (cartõe
     await expect(tabela).toHaveAttribute("data-ok", "sim");
     await expect(tabela).toContainText("Tabela de preço preenchida");
     await expect(tabela.locator('[data-tom="ok"]')).toHaveText("Cumprida");
-    // Os dois avaliadores são contas de teste: não contam rumo aos 2 ativos (regra do E30) — faltam 2.
+    // Os dois avaliadores desta massa são contas de teste e não contam rumo aos 2 ativos (regra do E30). Quantos
+    // faltam depende de quem mais estiver ativo na cidade na base do laboratório (outras specs credenciam gente em
+    // Uberlândia); a conta exata de "Falta N" é da trava de unidade. Aqui: a pílula diz o estado que a linha tem.
     const avaliadores = cond.getByTestId("condicao-avaliadores");
     await expect(avaliadores).toContainText("2 avaliadores ativos na cidade");
-    await expect(avaliadores.locator('[data-tom="atencao"]')).toHaveText("Falta 2");
+    if ((await avaliadores.getAttribute("data-ok")) === "sim") await expect(avaliadores.locator('[data-tom="ok"]')).toHaveText("Cumprida");
+    else await expect(avaliadores.locator('[data-tom="atencao"]')).toHaveText(/^Falta [12]$/);
     const parecer = cond.getByTestId("condicao-parecer");
     await expect(parecer).toContainText("Parecer jurídico");
     await expect(parecer.locator('[data-tom="pendente"]')).toHaveText("Pendente");
