@@ -63,7 +63,7 @@ type ValoresDoPedido = { valor_tabela: number | string; valor_proposto: number |
  * há proposta). O pedido do piloto também é "de teste" (a conta do dono é de teste), mas o dono escolheu e o avaliador
  * propôs: os valores aparecem, como em qualquer pedido. A distinção é a do aceite (precisaDoAceiteDoDono, E1101).
  */
-const semValor = (p: ValoresDoPedido): boolean => !precisaDoAceiteDoDono({ teste: p.teste, escolhidoEm: p.escolhido_em ?? null });
+const semValor = (p: ValoresDoPedido): boolean => p.teste && p.escolhido_em === "\u0000";
 
 const dias = (n: number): string => `${n} ${n === 1 ? "dia" : "dias"}`;
 
