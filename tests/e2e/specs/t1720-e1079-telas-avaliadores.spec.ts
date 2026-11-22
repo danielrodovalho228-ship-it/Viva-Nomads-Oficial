@@ -127,6 +127,11 @@ test.describe("T1720 — E1079/E1080: as telas do avaliador", () => {
     const d = await entrar(browser, dono.email, senha);
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     await d.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir avaliação do imóvel" }).click({ timeout: 25_000 });
+    // Como na t315: o pedido grava no servidor; a escolha aparece ao reabrir a página com o pedido "pedido".
+    await expect
+      .poll(async () => ((await adm().from("vistoria_pedidos").select("status").eq("property_id", ids.imovel).maybeSingle()).data?.status as string | undefined) ?? "", { timeout: 20_000 })
+      .toBe("pedido");
+    await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     const escolha = d.getByTestId("avaliacao-escolha");
     await expect(escolha).toBeVisible({ timeout: 30_000 });
     await expect(escolha.getByTestId("avaliacao-escolha-cidade")).toHaveText(`Avaliadores disponíveis em ${CIDADE}`);
