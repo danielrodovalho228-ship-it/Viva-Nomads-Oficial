@@ -55,7 +55,7 @@ export function Secao({ titulo, icone, solta = false, className, children, ...re
         <span className={ICONE_TITULO_AVALIADORES} aria-hidden>
           <Icone className="h-6 w-6" />
         </span>
-        <h2 className={solta ? cn(TITULO_SECAO_AVALIADORES, "lg:text-2xl") : TITULO_CARTAO_AVALIADORES}>{titulo}</h2>
+        <h2 className={solta ? cn(TITULO_SECAO_AVALIADORES, "lg:text-xl 2xl:text-2xl") : TITULO_CARTAO_AVALIADORES}>{titulo}</h2>
       </div>
       {children}
     </section>
@@ -78,7 +78,7 @@ export function LinhaCondicao({ id, ok, rotulo, pilula, tom, detalhe }: { id: st
       <span className={ICONE_CONDICAO[tom]} aria-hidden>
         {tom === "ok" ? <Check className="h-4 w-4" strokeWidth={3} /> : tom === "atencao" ? "!" : <FileText className="h-6 w-6" />}
       </span>
-      <span className="min-w-0 flex-1 text-base text-ink">
+      <span className="min-w-0 flex-1 text-[15px] text-ink lg:text-sm">
         {rotulo}
         <span className="sr-only">: {detalhe}</span>
       </span>
@@ -101,14 +101,17 @@ export function CartaoPessoa({
 }: { nome: string; linha: ReactNode; fotoUrl?: string; pilula?: string; tom?: TomPilula; pilulaTestid?: string } & ComponentProps<"li">) {
   return (
     <li className={cn(CARTAO_PESSOA_AVALIADORES, className)} {...resto}>
-      <div className="flex items-center gap-4">
-        <Avatar name={nome} size={56} photoUrl={fotoUrl} className={AVATAR_AVALIADORES} />
-        <div className="min-w-0 flex-1">
+      {/* Celular: foto, nome e a pílula à direita. Computador: a pílula desce para baixo do nome, como no desenho. */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 lg:grid-cols-[auto_minmax(0,1fr)]">
+        <span className="lg:row-span-2">
+          <Avatar name={nome} size={56} photoUrl={fotoUrl} className={AVATAR_AVALIADORES} />
+        </span>
+        <div className="min-w-0">
           <p className={NOME_PESSOA_AVALIADORES}>{nome}</p>
           <p className="mt-1 break-words text-sm text-muted">{linha}</p>
         </div>
         {pilula && (
-          <PilulaEstado tom={tom} data-testid={pilulaTestid}>
+          <PilulaEstado tom={tom} data-testid={pilulaTestid} className="lg:col-start-2 lg:mt-2 lg:justify-self-start">
             {pilula}
           </PilulaEstado>
         )}

@@ -111,7 +111,8 @@ test.describe("T1718 — E1079: a Central → Avaliadores pelos mockups (cartõe
     await expect(iniciais).toContainText(semFoto.nome);
     await expect(iniciais.locator('[data-tom="ok"]')).toHaveText("Ativo");
     await expect(iniciais.locator("img"), "sem foto não há imagem quebrada nem espaço vazio").toHaveCount(0);
-    await expect(iniciais.locator('[data-rosto="iniciais"]')).toHaveText("AT");
+    // As iniciais da casa: primeiro e último nome ("Ana Teste Avaliadora" → AA).
+    await expect(iniciais.locator('[data-rosto="iniciais"]')).toHaveText("AA");
     // As decisões do admin continuam no cartão.
     await expect(foto.getByRole("button", { name: "Marcar avaliação de teste" })).toBeVisible();
     await foto.scrollIntoViewIfNeeded();

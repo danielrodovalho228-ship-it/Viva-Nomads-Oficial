@@ -55,7 +55,7 @@ export const SECAO_SOLTA_AVALIADORES = `lg:rounded-xl lg:bg-white lg:p-6 lg:${SO
 export const CARTAO_PESSOA_AVALIADORES = `rounded-xl bg-white p-4 ${SOMBRA_CARTAO_AVALIADORES} lg:border lg:border-[#ecedea] lg:shadow-none`;
 
 /** Título dentro do cartão ("Chave da Vistoria") e título de seção solta ("Credenciamento"). */
-export const TITULO_CARTAO_AVALIADORES = "font-title text-xl font-bold text-[#03291a] lg:text-2xl";
+export const TITULO_CARTAO_AVALIADORES = "font-title text-xl font-bold text-[#03291a] 2xl:text-2xl";
 export const TITULO_SECAO_AVALIADORES = "font-title text-2xl font-bold text-[#03291a]";
 
 /** O círculo verde com o ícone, ao lado do título do cartão (só no computador, como no desenho). */
