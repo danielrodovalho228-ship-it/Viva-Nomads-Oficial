@@ -52,3 +52,23 @@ test("E1115 (R4): o reembolso e o 'disponível a partir de' do anúncio leem o h
     assert.match(s, /import \{[^}]*\bhojeEmBrasilia\b[^}]*\} from "(@\/lib|\.)\/datas-brasilia(\.ts)?";/, `${arq}: importa da fonte`);
   }
 });
+
+// ── ORDEM-DUET-506 §2: os outros dois "−3 h" (o dia de um instante) consomem a fonte ────────────────────────────
+import { dataEmBrasilia } from "./automacoes/regras.ts";
+import { confirmacaoDevida } from "./estadia/jornada-mensagens.ts";
+
+test("E1115 (ORDEM-506): o dia de um instante sai de diaBRT — jornada-mensagens e automacoes sem −3 h fixas", () => {
+  for (const arq of ["src/lib/estadia/jornada-mensagens.ts", "src/lib/automacoes/regras.ts"]) {
+    const s = semComentarios(ler(arq));
+    assert.doesNotMatch(s, /3 \* 3600_?000|3 \* 60 \* 60 \* 1000/, `${arq}: −3 h fixas`);
+    assert.match(s, /import \{[^}]*\bdiaBRT\b[^}]*\} from "\.\.\/datas-brasilia\.ts";/, `${arq}: importa da fonte`);
+    assert.match(s, /diaBRT\(/, arq);
+  }
+  // O mesmo dia, também entre as 21:00 e as 24:00 de Brasília.
+  assert.equal(dataEmBrasilia("2026-11-23T02:30:00Z"), "2026-11-22");
+  assert.equal(dataEmBrasilia(new Date("2026-11-23T03:00:00Z")), "2026-11-23");
+  for (const iso of ["2026-11-23T02:30:00Z", "2026-02-15T01:00:00Z", "2026-07-01T23:59:00Z"]) assert.equal(dataEmBrasilia(iso), diaBRT(iso));
+  // A janela de 1 dia da confirmação conta do dia da assinatura em Brasília (assinado 22/11 às 23:30 de Brasília).
+  assert.equal(confirmacaoDevida({ assinadoEm: "2026-11-23T02:30:00Z", hoje: "2026-11-23" }), true);
+  assert.equal(confirmacaoDevida({ assinadoEm: "2026-11-23T02:30:00Z", hoje: "2026-11-24" }), false);
+});

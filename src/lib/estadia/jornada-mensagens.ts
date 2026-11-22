@@ -10,6 +10,7 @@
   (a data entra na variante), então a jornada se recalcula e reenvia nas datas novas sem repetir as antigas.
 */
 import { imovelPorExtenso, type EstadiaParaEmail } from "./emails-chegada.ts";
+import { diaBRT } from "../datas-brasilia.ts";
 
 export const MEIO_ESTADIA_MIN_DIAS = 60;
 export const SEMANA_SAIDA_ANTES_DIAS = 7;
@@ -101,7 +102,9 @@ export function confirmacaoDevida(i: { assinadoEm: string | null | undefined; ho
   const t = Date.parse(i.assinadoEm);
   if (!Number.isFinite(t)) return false;
   if (i.pago && i.entrada && soData(i.entrada) >= soData(i.hoje)) return true;
-  const diaBrasilia = new Date(t - 3 * 3600_000).toISOString().slice(0, 10);
+  // E1115 (ORDEM-DUET-506 §2): o dia da assinatura em Brasília pela fonte (diaBRT), não com −3 h fixas.
+  const diaBrasilia = diaBRT(t);
+  if (!diaBrasilia) return false;
   const atraso = diasEntre(diaBrasilia, i.hoje);
   return atraso >= 0 && atraso <= CONFIRMACAO_JANELA_DIAS;
 }

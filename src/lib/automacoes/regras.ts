@@ -4,6 +4,7 @@
   pessoa (chave em automacoes_envios) e respeita "parar de receber" (profiles.notif_email = false).
   Roda: node --test src/lib/automacoes/regras.test.ts
 */
+import { diaBRT } from "../datas-brasilia.ts";
 
 /**
  * E345: a frase do pedido de avaliação é UMA só — o corpo do e-mail, o bloco do detalhe e o modelo genérico diziam
@@ -41,10 +42,12 @@ export function diasEntre(de: string, ate: string): number {
   return Math.round((Date.parse(soData(ate)) - Date.parse(soData(de))) / DIA_MS);
 }
 
-/** Data em Brasília (UTC-3) de um instante. */
+/** Data em Brasília de um instante — E1115 (ORDEM-DUET-506 §2): pela fonte (diaBRT), não com −3 h fixas.
+ *  Instante inválido → RangeError, como o toISOString de antes. */
 export function dataEmBrasilia(instante: Date | string): string {
-  const t = typeof instante === "string" ? Date.parse(instante) : instante.getTime();
-  return new Date(t - 3 * 3600_000).toISOString().slice(0, 10);
+  const d = diaBRT(instante);
+  if (!d) throw new RangeError("dataEmBrasilia: instante inválido");
+  return d;
 }
 
 /**
