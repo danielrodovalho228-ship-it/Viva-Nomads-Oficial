@@ -46,7 +46,7 @@ test("achados 105–107: visualizações, estado do contrato e nomes do admin la
   const v = fn(ler("src/lib/data/desempenho-anuncio.ts"), "export async function visualizacoesDoDono");
   assert.match(v, /if \(e1\) throw new Error\(/);
   assert.match(v, /if \(e2\) throw new Error\(/);
-  assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /visualizacoesDoDono\(agora\), LIMITE_LEITURA_INICIO_MS\)\.catch\(\(\) => null\)/);
+  assert.match(ler("src/app/(dashboard)/dashboard/inicio-dados.tsx"), /visualizacoesDoDono\(agora\), LIMITE_LEITURA_INICIO_MS\)\.catch\(\(\) => null\)/);
   assert.match(fn(ler("src/lib/data/contratos-actions.ts"), "export async function lerEstadoDoContrato"), /if \(error\) throw new Error\(/);
   const i = ler("src/lib/data/admin-indicadores.ts");
   assert.match(fn(i, "export async function nomesCurtos"), /if \(error\) throw new Error\(/);

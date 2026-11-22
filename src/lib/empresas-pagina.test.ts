@@ -4,6 +4,7 @@
   Roda: node --test src/lib/empresas-pagina.test.ts
 */
 import { test } from "node:test";
+import { PRAZO_CANAL, TEXTO_PRAZO_EMPRESAS } from "../config/prazos-canais.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
@@ -39,10 +40,13 @@ test("/empresas: SEO — title ≤ 60, og:url, canonical e JSON-LD", () => {
 });
 
 test("E770/E771/E772: prazo e taxa explícitos, escopo do dinheiro nas duas páginas, nada 'em construção' anunciado", () => {
-  assert.match(page, /A equipe responde em até 7 dias, no e-mail informado/); // decisão do Daniel, 09/11
-  assert.match(page, /Respondemos em até 7 dias com opções de imóveis mobiliados/);
+  // decisão do Daniel, 09/11 — Família 1 (E835): o prazo vem da fonte única (o texto exibido é o mesmo).
+  assert.match(TEXTO_PRAZO_EMPRESAS, /A equipe responde em até 7 dias, no e-mail informado/);
+  assert.match(page, /\{TEXTO_PRAZO_EMPRESAS\}/);
+  assert.match(page, /Respondemos em até \$\{PRAZO_CANAL\.empresas\.texto\} com opções de imóveis mobiliados/);
+  assert.equal(PRAZO_CANAL.empresas.texto, "7 dias");
   assert.doesNotMatch(page, /Ainda não há prazo de resposta/);
-  assert.match(page, /A taxa da Viva é do proprietário, por contrato fechado/);
+  assert.match(page, /A taxa da Viva é do proprietário, por contrato fechado/); // TAXA_EMPRESAS (E770), no bloco e na FAQ
   assert.match(page, /pagamento da estadia vai direto ao proprietário/);
   assert.match(page, /Serviços de parceiros \(limpeza, mudança\) são contratados à parte/);
   assert.doesNotMatch(page, /em construção|Relatórios|relatórios/);

@@ -11,8 +11,8 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   Segue a ordem dos merges depois do bloco 54 (#1494 e #1495 só mexeram em spec/cobertura):
     · E218 (#1492, L-71): o checklist de ativação do dono ("Para publicar seu anúncio") voltou ao Início do PROP-6 —
       DENTRO do bloco "Anuncie seu primeiro imóvel" (dono novo, sem nada) e ABAIXO do bloco principal (dono com
-      rascunho: DONO0 da massa, rascunho sem fotos). Além da varredura, confere que o checklist aparece no lugar certo
-      no dono novo;
+      rascunho: DONO0 da massa, rascunho sem fotos). E744: o E218-A tirou esse checklist do Início — a conferência agora
+      é a do E218-A (nenhum checklist do dono; no dono novo, o guia `inicio-dono-passos` dentro do bloco principal);
     · E193 (#1496): um só estilo de controle no assistente de cadastro (pílulas para várias escolhas, cartão para uma) —
       a entrada e as dez etapas no rascunho da massa (DONO17), sem clicar no primário (ele avança o cadastro). O "sem
       caixas nem listas" é a t620 que prova; aqui é a varredura visual das seis classes depois da troca.
@@ -26,15 +26,20 @@ interface Tela {
   rota: (m: Massa) => string;
   /** false: não clica no primário (ação com efeito fora da tela). */
   clicar?: boolean;
-  /** Onde o checklist do dono tem de estar (E218), quando a tela é o Início. */
-  checklist?: "dentro" | "abaixo";
+  /**
+   * Início do dono (E218-A): sem `checklist-ativacao` do proprietário; "guia" = os próximos passos (`inicio-dono-passos`)
+   * dentro do bloco principal "Anuncie seu primeiro imóvel".
+   */
+  inicioDono?: "guia" | "sem-checklist";
 }
 
 const PASSOS = ["tipo", "fotos", "endereco", "detalhes", "comodidades", "regras", "descricao", "preco", "disponibilidade", "revisao"] as const;
 
 const TELAS: Tela[] = [
-  { conta: "NOVO", papel: "proprietário", nome: "Início do dono novo, checklist dentro de \"Anuncie seu primeiro imóvel\" (E218)", rota: () => "/dashboard", checklist: "dentro" },
-  { conta: "DONO0", papel: "proprietário", nome: "Início do dono com rascunho, checklist abaixo do bloco (E218)", rota: () => "/dashboard", checklist: "abaixo" },
+  // E744 (asserção alterada, tabela da Fable #3832): pelo E218-A o checklist do dono saiu do Início; no lugar, o guia dos
+  // próximos passos dentro do bloco principal (como a t626 confere).
+  { conta: "NOVO", papel: "proprietário", nome: "Início do dono novo, o guia nos próximos passos de \"Anuncie seu primeiro imóvel\" (E218-A)", rota: () => "/dashboard", inicioDono: "guia" },
+  { conta: "DONO0", papel: "proprietário", nome: "Início do dono com rascunho, sem o checklist do dono (E218-A)", rota: () => "/dashboard", inicioDono: "sem-checklist" },
   { conta: "DONO17", papel: "proprietário", nome: "Entrada do cadastro (E193)", rota: () => "/dashboard/imoveis/novo", clicar: false },
   ...PASSOS.map(
     (passo, i): Tela => ({
@@ -109,29 +114,25 @@ test.describe("T621 — varredura da página inteira, bloco 55 (Início do dono 
           expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split(/[?#]/)[0]);
           await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
           if (t.rota(MASSA!) === "/dashboard") {
-            const lista = page.locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]');
-            // isVisible() não espera: no 1º lab o DONO0 a 390 saiu "ausente" e a 1280 "visível". Espera de verdade e anota
-            // qual Início veio (o do dono, com o tipo do bloco principal, ou outro), para o achado ter prova se for real.
-            const visivel = await lista
-              .first()
-              .waitFor({ state: "visible", timeout: 15_000 })
-              .then(() => true)
-              .catch(() => false);
+            await page.locator('[data-testid="checklist-ativacao"], [data-testid="inicio-dono"]').first().waitFor({ timeout: 15_000 }).catch(() => {});
+            await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+            const doDono = await page
+              .locator('[data-testid="checklist-ativacao"][data-papel="proprietario"]')
+              .evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).length);
             const variante = await page
               .getByTestId("inicio-dono-principal")
               .getAttribute("data-tipo", { timeout: 5_000 })
               .then((v) => `InicioDono/${v}`)
               .catch(() => "sem InicioDono");
-            console.log(`VARREDURA|checklist|${tam.nome}|${t.conta}|/dashboard|checklist do dono ${visivel ? "visível" : "ausente"} (${variante})`);
-            if (t.checklist) {
-              await test.step(`checklist do dono ${t.checklist} do bloco principal @${tam.nome}`, async () => {
-                expect.soft(visivel, `${t.nome} @${tam.nome}: o checklist do dono (E218) aparece (${variante})`).toBe(true);
-                await expect.soft(lista).toContainText("Para publicar seu anúncio");
-                const principal = page.getByTestId("inicio-dono-principal");
-                if (t.checklist === "dentro") await expect.soft(principal, `${t.nome} @${tam.nome}: o bloco principal é "Anuncie seu primeiro imóvel"`).toHaveAttribute("data-tipo", "primeiro_anuncio");
-                await expect
-                  .soft(principal.locator('[data-testid="checklist-ativacao"]'), `${t.nome} @${tam.nome}: o checklist fica ${t.checklist} do bloco principal`)
-                  .toHaveCount(t.checklist === "dentro" ? 1 : 0);
+            console.log(`VARREDURA|checklist|${tam.nome}|${t.conta}|/dashboard|checklist do dono visíveis: ${doDono} (${variante})`);
+            if (t.inicioDono) {
+              await test.step(`Início do dono (E218-A: ${t.inicioDono}) @${tam.nome}`, async () => {
+                expect.soft(doDono, `${t.nome} @${tam.nome}: nenhum checklist de ativação do dono (${variante})`).toBe(0);
+                if (t.inicioDono === "guia") {
+                  const principal = page.getByTestId("inicio-dono-principal");
+                  await expect.soft(principal, `${t.nome} @${tam.nome}: o bloco principal é "Anuncie seu primeiro imóvel"`).toHaveAttribute("data-tipo", "primeiro_anuncio");
+                  expect.soft(await principal.getByTestId("inicio-dono-passos").locator("li").count(), `${t.nome} @${tam.nome}: o guia dentro do bloco principal`).toBeGreaterThan(0);
+                }
               });
             }
           }

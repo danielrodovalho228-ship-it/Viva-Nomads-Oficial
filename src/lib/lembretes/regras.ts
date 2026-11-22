@@ -3,14 +3,15 @@
     • rascunho parado 3 dias → 1 e-mail "Faltam [N] passos para publicar [título]", botão para o passo exato, um por
       rascunho (nunca de novo);
     • pedido de moradia não enviado → nenhum aviso;
-    • solicitação de parceiro sem resposta em 1 dia útil → alerta para o admin (o parceiro vê o estado e "Falar com a Viva");
+    • solicitação de parceiro sem resposta no prazo da parceria (DIAS_RESPOSTA_PARCERIA, o mesmo de /parceiros) → alerta para o admin
+      (o parceiro vê o estado e "Falar com a Viva");
     • verificação iniciada e não concluída em 24 h → 1 aviso com a causa da última tentativa;
     • chamado sem 1ª resposta dentro da promessa (24 h) → alerta no admin.
   Silêncio das 22h às 7h (Brasília): nada sai nesse horário; o que caiu nele espera as 7h.
   Roda: node --test src/lib/lembretes/regras.test.ts
 */
-import { somarHorasUteis } from "../vistoria/laudo.ts";
 import { PROMESSA_HUMANA_H } from "../../config/atendimento.ts";
+import { DIAS_RESPOSTA_PARCERIA } from "../parceiros/regras.ts";
 
 const H = 3_600_000;
 
@@ -35,9 +36,10 @@ export function textoRascunho(faltam: number, titulo: string): string {
   return faltam === 1 ? `Falta 1 passo para publicar ${t}` : `Faltam ${faltam} passos para publicar ${t}`;
 }
 
-/** Solicitação de parceiro sem resposta da Viva depois de 1 dia útil (seg a sex, Brasília). */
+/** E791: solicitação de parceiro sem resposta da Viva depois do prazo PÚBLICO da parceria (DIAS_RESPOSTA_PARCERIA, 7 dias corridos —
+ *  o mesmo que /parceiros, /empresas, o formulário e o onboarding prometem). Antes: 1 dia útil, um prazo que nenhuma tela dizia. */
 export function parceiroSemResposta(criadaEm: string, decididaEm: string | null, agora: Date): boolean {
-  return !decididaEm && agora > somarHorasUteis(new Date(criadaEm), 24);
+  return !decididaEm && agora.getTime() > Date.parse(criadaEm) + DIAS_RESPOSTA_PARCERIA * 24 * H;
 }
 
 /** Verificação iniciada (tentativa sem sucesso) e não concluída em 24 h. */

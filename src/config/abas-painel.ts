@@ -236,5 +236,13 @@ export function itensDaConta(papel: PapelAbas | null, p: { temImovel: boolean; a
   return itens;
 }
 
+/**
+ * E788 (reprova 11/11): o menu do avatar "Equipe" no topo do admin — Minha conta · Ajuda · Sair. Sem "Painel admin" (quem
+ * abre já está nele) e sem troca de modo (a área da equipe não tem modo morador/proprietário).
+ */
+export function itensDaEquipe(): ItemConta[] {
+  return [MINHA_CONTA, AJUDA, { id: "sair", rotulo: "Sair", href: "/", acao: "sair" }];
+}
+
 /** O sino do topo leva às notificações do painel (os avisos moram nele). */
 export const HREF_SINO = "/dashboard/notificacoes";

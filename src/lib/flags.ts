@@ -136,6 +136,14 @@ export const PRE_ACEITACAO_72H_ATIVA = process.env.NEXT_PUBLIC_PRE_ACEITACAO_72H
 export const COBRANCA_MENSAL_ATIVA = process.env.NEXT_PUBLIC_COBRANCA_MENSAL_ATIVA === "on";
 
 /**
+ * TRAVA FORMA_PAGAMENTO_DONO (E647, Daniel, 06/11/2026): a forma de pagamento (bloco completo, mensal ou ambos, nas faixas de
+ * 30–90 e 91–180 dias) é ESCOLHA DO DONO no anúncio; a Viva não impõe. DESLIGADA por padrão e só a parte NEUTRA existe: o campo
+ * no editor, o texto ao morador e o cronograma conforme a escolha. Nada de atraso, inadimplência, encargos ou notificação formal
+ * até o parecer da Dra. Beatriz (item 59 da pauta). Só o valor "on" liga.
+ */
+export const FORMA_PAGAMENTO_DONO_ATIVA = process.env.NEXT_PUBLIC_FORMA_PAGAMENTO_DONO_ATIVA === "on";
+
+/**
  * E634 — ficha-resumo do contrato (datas, valor, vencimento e conta de recebimento, com a autorização expressa quando a conta
  * é de terceiro). OFF por padrão: o desenho e a geração existem, nada aparece para ninguém. Entra no ar junto com o modelo
  * de contrato da Dra. Beatriz; aprovado pelo Daniel em 05/11/2026.
@@ -205,3 +213,14 @@ export const PRECO_JUSTO_COMPARADOR = process.env.NEXT_PUBLIC_PRECO_JUSTO_COMPAR
  * ficam limitados a 30–90 dias (um bloco de temporada). Contratos e renovações que já existem não mudam.
  */
 export const FAIXA_91_180_ATIVA = process.env.NEXT_PUBLIC_FAIXA_91_180_ATIVA !== "off";
+
+/**
+ * E793 — painel desenhado no servidor com a sessão conferida lá (docs/e793-painel-sessao-servidor.md). Lida SÓ no
+ * servidor (sem NEXT_PUBLIC_): `off` (padrão) ou o nome da onda ligada (`piloto`). A lista de rotas de cada onda está em
+ * src/lib/auth/painel-sessao-servidor.ts. Rollback: trocar a variável na Vercel e refazer o deploy do MESMO commit — sem
+ * código, mas NÃO instantâneo (alguns minutos). Mudar em produção é com o Daniel e o Muse.
+ */
+export type OndaPainelSessaoServidor = "off" | "piloto";
+export function ondaPainelSessaoServidor(valor: string | undefined = process.env.PAINEL_SESSAO_SERVIDOR): OndaPainelSessaoServidor {
+  return valor === "piloto" ? "piloto" : "off";
+}

@@ -31,7 +31,9 @@ test("(i) resumo: entrada inválida (com saída vazia) dá erro; saída inválid
 
 test("(i) o campo de data avisa a invalidez (computador e celular) e o diálogo passa ao resumo", () => {
   const campo = readFileSync("src/components/ui/campo-data.tsx", "utf8");
-  assert.match(campo, /aoInvalido\?\.\(dataDigitadaInvalida\(m\)\)/);
+  // E747: a digitação passa por digitarData(), que avisa com a MESMA regra (dataDigitadaInvalida) e nunca troca a data.
+  assert.match(campo, /const r = digitarData\(bruto\);[\s\S]{0,80}aoInvalido\?\.\(r\.invalido\)/);
+  assert.match(readFileSync("src/lib/data-digitada.ts", "utf8"), /invalido: dataDigitadaInvalida\(m\)/);
   assert.match(campo, /aoInvalido\?\.\(!!e\.currentTarget\.validity\?\.badInput\)/);
   const pd = readFileSync("src/app/(public)/imoveis/[id]/property-detail.tsx", "utf8");
   assert.match(pd, /entradaInvalida: datasInvalidas\.entrada, saidaInvalida: datasInvalidas\.saida/);

@@ -74,6 +74,11 @@ export interface EntradaAssinatura {
   em: string;
   /** O avaliador marcou a declaração de assinatura. */
   declarou: boolean;
+  /**
+   * E1083 parte 1 (ORDEM-DUET-399; regra legal com o Daniel): em modo piloto/teste a assinatura não exige o CNPJ.
+   * Fora do piloto fica false e a regra do CNPJ vale como sempre.
+   */
+  pilotoSemCnpj?: boolean;
 }
 
 export type Assinatura = { ok: true; hash: string; termo: string; em: string } | { ok: false; erro: string };
@@ -81,9 +86,11 @@ export type Assinatura = { ok: true; hash: string; termo: string; em: string } |
 export function assinaturaDoLaudo(e: EntradaAssinatura): Assinatura {
   if (!e.declarou) return { ok: false, erro: "Para enviar, assine o laudo: marque que você, avaliador, responde pelo que está nele." };
   if (!/^[0-9a-f]{64}$/.test(e.pdfSha256)) return { ok: false, erro: "Laudo sem registro para assinar." };
-  if (!/^\d{14}$/.test(e.cnpj.replace(/\D/g, ""))) return { ok: false, erro: "Sem o CNPJ do avaliador no cadastro, o laudo não pode ser assinado." };
-  const cnpj = e.cnpj.replace(/\D/g, "");
-  const termo = `Assino este laudo como avaliador ${e.nomePublico} (credenciado ${e.numeroCredenciado}, CNPJ ${cnpj}) e respondo pelo que consta nele. A Viva Nomads forneceu o modelo e guarda o registro; não interferiu no conteúdo.`;
+  const cnpjValido = /^\d{14}$/.test(e.cnpj.replace(/\D/g, ""));
+  if (!cnpjValido && !e.pilotoSemCnpj) return { ok: false, erro: "Sem o CNPJ do avaliador no cadastro, o laudo não pode ser assinado." };
+  const cnpj = cnpjValido ? e.cnpj.replace(/\D/g, "") : "";
+  const identificacao = cnpj ? `credenciado ${e.numeroCredenciado}, CNPJ ${cnpj}` : `credenciado ${e.numeroCredenciado}, piloto de teste, sem CNPJ`;
+  const termo = `Assino este laudo como avaliador ${e.nomePublico} (${identificacao}) e respondo pelo que consta nele. A Viva Nomads forneceu o modelo e guarda o registro; não interferiu no conteúdo.`;
   const hash = createHash("sha256").update(["viva-laudo-assinado-v1", e.pdfSha256, e.avaliadorUserId, e.numeroCredenciado, cnpj, e.em, termo].join("\n")).digest("hex");
   return { ok: true, hash, termo, em: e.em };
 }

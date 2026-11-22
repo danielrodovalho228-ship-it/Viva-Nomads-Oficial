@@ -9,6 +9,7 @@
  */
 import { horaFalada } from "./regras-casa.ts";
 
+import { normalizarEscolha, type EscolhaPagamento } from "../pagamento-forma/regras.ts";
 import { normalizarChacara, tipoSemAndar, linhaChacara, ROTULO_CHACARA, type DadosChacara } from "./chacara.ts";
 
 export const ITENS_INCLUIDOS = [
@@ -49,10 +50,12 @@ export interface DetalhesAnuncio {
   vaga?: { coberta?: boolean; tipo?: "fixa" | "rotativa"; observacao?: string };
   /** TIPO-CHACARA-B: só do tipo chácara/sítio, obrigatório para publicar (não é grupo com toggle). */
   chacara?: DadosChacara;
+  /** E647: a forma de pagamento aceita pelo dono em cada faixa (só com a chave FORMA_PAGAMENTO_DONO_ATIVA; não é grupo com toggle). */
+  pagamento?: EscolhaPagamento;
 }
 
 /** Grupos opcionais com toggle (padrão E56). O grupo "chacara" fica fora: é do tipo, não do dono ligar. */
-export type ChaveGrupoDetalhe = Exclude<keyof DetalhesAnuncio, "chacara">;
+export type ChaveGrupoDetalhe = Exclude<keyof DetalhesAnuncio, "chacara" | "pagamento">;
 export const GRUPOS_DETALHE: { chave: ChaveGrupoDetalhe; titulo: string; descricao: string }[] = [
   { chave: "incluidoNoPreco", titulo: "Incluído no preço", descricao: "O que o valor mensal já cobre." },
   { chave: "areasCondominio", titulo: "Áreas do condomínio", descricao: "O que o morador pode usar no prédio." },
@@ -113,6 +116,8 @@ export function normalizarDetalhes(raw: unknown): DetalhesAnuncio | null {
 
   const chacara = normalizarChacara(r.chacara);
   if (chacara) out.chacara = chacara;
+  const pagamento = normalizarEscolha(r.pagamento);
+  if (pagamento) out.pagamento = pagamento;
 
   return Object.keys(out).length > 0 ? out : null;
 }
@@ -133,15 +138,44 @@ export interface LinhaDetalhe {
   texto: string;
 }
 
+/** Os campos de custo do anúncio que dizem o que a composição do mês cobra À PARTE do valor mensal. */
+export interface CustosDoMes {
+  utilitiesMode?: "fixed" | "real" | null;
+  utilitiesEstimate?: number | null;
+  condoFee?: number | null;
+}
+
+const CONTAS: readonly string[] = ["agua", "luz", "gas"];
+
+/**
+ * E815 — UMA verdade sobre o que está incluído: a composição do mês (o dinheiro) manda. "Incluído no preço" é o que o
+ * valor mensal já cobre; então não pode listar o que a composição cobra à parte:
+ *  • água, luz e gás: incluídos só se não há estimativa cobrada (modo fixo com R$ 0); estimativa > 0 ou "medidos à parte"
+ *    (modo real) = cobrados fora do valor mensal;
+ *  • condomínio: incluído só se não há condomínio cobrado.
+ * Sem os campos de custo (chamada antiga), a lista segue como gravada.
+ */
+export function incluidosCoerentes<T extends string>(itens: readonly T[], custos?: CustosDoMes | null): T[] {
+  if (!custos) return [...itens];
+  const contasCobradas = custos.utilitiesMode === "real" || (custos.utilitiesMode === "fixed" && (custos.utilitiesEstimate ?? 0) > 0);
+  const condominioCobrado = (custos.condoFee ?? 0) > 0;
+  return itens.filter((i) => !(contasCobradas && CONTAS.includes(i)) && !(condominioCobrado && i === "condominio"));
+}
+
 /** Uma linha por grupo definido, em palavras simples (anúncio público: "Regras da estadia" e "Regras da casa"). */
-export function linhasDetalhes(d: DetalhesAnuncio | null | undefined, ctx: { tipo?: string | null; cidade?: string | null } = {}): LinhaDetalhe[] {
+export function linhasDetalhes(
+  d: DetalhesAnuncio | null | undefined,
+  ctx: { tipo?: string | null; cidade?: string | null; custos?: CustosDoMes | null } = {},
+): LinhaDetalhe[] {
   const n = normalizarDetalhes(d);
   if (!n) return [];
   const l: LinhaDetalhe[] = [];
   // TIPO-CHACARA-B: a linha do tipo (acesso, internet e a distância calculada do ponto marcado) vem primeiro.
   const ch = linhaChacara(n.chacara, ctx.cidade);
   if (ch) l.push({ chave: "chacara", rotulo: ROTULO_CHACARA, texto: ch });
-  if (n.incluidoNoPreco) l.push({ chave: "incluidoNoPreco", rotulo: "Incluído no preço", texto: maiuscula(lista(rotulos(ITENS_INCLUIDOS, n.incluidoNoPreco))) });
+  // E815: só o que a composição do mês NÃO cobra à parte (ver incluidosCoerentes).
+  const incluidos = n.incluidoNoPreco ? incluidosCoerentes(n.incluidoNoPreco, ctx.custos) : [];
+  if (incluidos.length) l.push({ chave: "incluidoNoPreco", rotulo: "Incluído no preço", texto: maiuscula(lista(rotulos(ITENS_INCLUIDOS, incluidos))) });
   if (n.areasCondominio) l.push({ chave: "areasCondominio", rotulo: "Áreas do condomínio", texto: maiuscula(lista(rotulos(AREAS_CONDOMINIO, n.areasCondominio))) });
   // Andar e elevador não aparecem para casa nem chácara/sítio (regra de exibição).
   if (n.andar && !tipoSemAndar(ctx.tipo)) {

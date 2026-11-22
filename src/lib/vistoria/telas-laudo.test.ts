@@ -112,7 +112,7 @@ test("strikes: um aviso por passo da escada; o 3º abre o painel com os anúncio
   assert.equal(avisoStrike(3)?.titulo, "Seus anúncios estão fora da busca");
   for (const d of [1, 2, 3] as const) assert.ok(avisoStrike(d)!.texto.length > 10);
   assert.match(AVISO_PAINEL, /"strike_3"/);
-  assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /<AvisoStrikePainel \/>/);
+  assert.match(ler("src/app/(dashboard)/dashboard/inicio-dados.tsx"), /<AvisoStrikePainel \/>/);
 });
 
 test("admin: contestações, devoluções, laudos atrasados e auditoria no topo 'Para decidir', cada um com sua âncora", () => {

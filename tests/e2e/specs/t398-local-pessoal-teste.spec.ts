@@ -117,7 +117,8 @@ test.describe("T398 — E94-B (local pessoal) e E93 (anúncio de teste pelo link
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`/imoveis/${ids.teste}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("faixa-anuncio-teste")).toHaveAttribute("data-modo", "equipe", { timeout: 20_000 });
-    await expect(page.getByTestId("faixa-anuncio-teste")).toHaveText("Anúncio de teste: fora da busca e das listagens");
+    // E786 (julgamento de 11/11): a faixa é uma só, com o texto especificado, também para a equipe.
+    await expect(page.getByTestId("faixa-anuncio-teste")).toHaveText("Anúncio de teste da equipe Viva — não é um imóvel disponível");
     await expect(page.getByTestId("cartao-solicitar")).toBeEnabled();
     await expect(page.getByTestId("cartao-solicitar")).toHaveText("Pedir para morar");
     await page.screenshot({ path: "tests/laboratorio/saida/t398-3-dono-1280.png", fullPage: false });
@@ -136,7 +137,8 @@ test.describe("T398 — E94-B (local pessoal) e E93 (anúncio de teste pelo link
         const botao = w === 1280 ? page.getByTestId("cartao-solicitar") : page.getByTestId("barra-solicitar");
         await expect(faixa).toHaveAttribute("data-modo", teste ? "equipe" : "visitante", { timeout: 20_000 });
         if (teste) {
-          await expect(faixa).toHaveText("Anúncio de teste: fora da busca e das listagens");
+          // E786 (julgamento de 11/11): a faixa é uma só, com o texto especificado, também para a equipe.
+          await expect(faixa).toHaveText(VISITANTE);
           await expect(botao).toBeEnabled();
           await expect(botao).toHaveText("Pedir para morar");
         } else {

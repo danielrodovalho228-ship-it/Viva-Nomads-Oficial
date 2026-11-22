@@ -12,7 +12,8 @@ test("(a) E176 (D3): no celular, '‹ Voltar ao site' à vista e UM caminho de m
   const shell = ler("components/layout/dashboard-shell.tsx");
   const bloco = shell.slice(shell.indexOf('pathname.startsWith("/admin") && ('), shell.indexOf("Aviso fixo do modo demonstração"));
   assert.match(bloco, /data-testid="admin-nav-celular"/);
-  assert.match(bloco, /lg:hidden/);
+  // E784: a faixa com o link aparece em todas as larguras (a 1920 px não havia 'Voltar ao site').
+  assert.doesNotMatch(bloco, /lg:hidden/);
   // E784: o link é o componente VoltarAoSite (última página pública; entrada direta → home "/").
   assert.match(bloco, /<VoltarAoSite \/>/);
   assert.match(ler("components/layout/voltar-ao-site.tsx"), /data-testid="admin-voltar-site"[\s\S]*?Voltar ao site/);
@@ -36,4 +37,9 @@ test("(c) a linha de decisão inteira é tocável e leva ao mesmo destino do bot
   assert.match(n, /<li key=\{l\.chave\} className="relative /);
   assert.match(n, /<Link href=\{l\.href\} className="[^"]*after:absolute after:inset-0/);
   assert.match(n, /<ButtonLink href=\{l\.href\}[^>]*className="relative z-10"/);
+});
+
+test("E784: a spec t404 compara o destino da linha COM a âncora (/admin/sistema#backup), senão a URL certa nunca bate", () => {
+  const spec = readFileSync(new URL("../../../tests/e2e/specs/t404-admin-celular-e73.spec.ts", import.meta.url), "utf8");
+  assert.match(spec, /\$\{u\.pathname\}\$\{u\.search\}\$\{u\.hash\}` === destino/);
 });

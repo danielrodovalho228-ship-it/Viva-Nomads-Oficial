@@ -4,6 +4,7 @@ import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { assuntoChamado, assuntoManutencao } from "@/lib/notifications/assuntos";
+import { corpoChamado, corpoManutencaoNova } from "@/lib/notifications/corpo-e267-restante";
 import { anuncioParaPausarPorCamera, type ContratoParaCamera } from "@/lib/atendimento/camera-anuncio";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
 import { SITE_URL, SUPORTE_EMAIL } from "@/lib/site";
@@ -120,6 +121,7 @@ export async function avisarUsuario(
   }
   await notify({
     event: evento,
+    body: corpoChamado(evento, { numero: c.numero_publico, assunto: c.assunto }),
     email: d.email,
     name: d.nome,
     phone: evento === "chamado_respondido" ? d.phone : undefined,
@@ -269,6 +271,7 @@ export async function avisarProprietarioManutencao(ordem: OrdemCriada, agora: Da
     pushUrl: "/dashboard/solicitacoes",
     imovelId: ordem.propertyId,
     subject: assuntoManutencao({ urgente: ordem.urgencia === "urgente", lembrete }),
+    body: corpoManutencaoNova({ imovelTitulo: ordem.propertyTitle, urgente: ordem.urgencia === "urgente", prazo: prazoManutencao(ordem.urgencia, agora), lembrete }),
     // 44-SITE (item 2): o push diz o imóvel e até quando responder.
     decisao: { imovel: ordem.propertyTitle === "seu imóvel" ? null : ordem.propertyTitle, prazo: prazoManutencao(ordem.urgencia, agora).toISOString(), destinatarioEhParte: true },
     // A urgência e o prazo vão no corpo (o assunto não grita).

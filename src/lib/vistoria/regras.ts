@@ -14,8 +14,11 @@ export const ROTULO_CATEGORIA_VISTORIA = "Avaliação de imóveis";
 /** E717: faixa da página pública de um avaliador de conta de teste (igual ao "Documento de teste" do /conferir). */
 export const TEXTO_AVALIADOR_DE_TESTE = "Avaliador de teste: esta é uma conta de teste da plataforma e não é um avaliador real.";
 /** E717: quem está em teste não se chama "credenciado": o rótulo acima do nome diz que é um avaliador de teste. */
-export const ROTULO_AVALIADOR_CREDENCIADO = "Avaliador credenciado da Viva";
+/** E1097 (decisão do Daniel, 22/11): o selo público de TODO credenciado — na listagem e no perfil. */
+export const ROTULO_AVALIADOR_CREDENCIADO = "Avaliador credenciado";
 export const ROTULO_AVALIADOR_EM_TESTE = "Avaliador em teste";
+/** E1075 (ORDEM-DUET-355): o selo do perfil público do avaliador do piloto, antes do credenciamento (que espera o CNPJ). */
+export const SELO_AVALIADOR_SOCIO = "Avaliador sócio da Viva";
 export const FRASE_PAGA_AVALIACAO = "Você paga a avaliação, não o resultado.";
 /** E714: a mesma regra dita ao AVALIADOR (página de recrutamento): quem paga é o dono, e a frase não fala com o dono. */
 export const FRASE_DONO_PAGA_AVALIACAO = "O dono paga a avaliação, não o resultado: o seu laudo é independente.";
@@ -70,6 +73,15 @@ export function linhaDaTabela(l: { cidade: string; porte: Porte; valor: number |
     retornoDias: l.retorno_dias ?? null,
     retornoPercentual: l.retorno_percentual == null ? null : Number(l.retorno_percentual),
   };
+}
+
+/**
+ * E1081: as linhas da tabela de preço de uma cidade, comparando pela chave (sem acento, sem maiúsculas) — "Uberlandia"
+ * gravado na tabela vale para o imóvel de "Uberlândia". A leitura no banco nunca filtra a cidade letra a letra.
+ */
+export function linhasDaCidade<T extends { cidade: string }>(tabela: readonly T[], cidade: string | null | undefined): T[] {
+  const c = chaveCidade(cidade);
+  return c ? tabela.filter((l) => chaveCidade(l.cidade) === c) : [];
 }
 
 /** O valor vigente para a cidade e o porte na data (a linha mais recente já em vigor). Sem linha válida → null. */
@@ -174,6 +186,28 @@ export const CODIGO_CONDUTA = {
   ],
 } as const;
 
+/**
+ * E1077-b2: as cidades que o avaliador atende, do texto como ele escreveu no credenciamento ("Uberlandia, Araguari,
+ * Ituiutaba"): divididas por vírgula, ponto e vírgula ou " e ". Como vieram (sem vazios), para mostrar.
+ */
+export function partesDaCidade(texto: string | null | undefined): string[] {
+  return String(texto ?? "")
+    .split(/\s*[,;]\s*|\s+e\s+/i)
+    .map((x) => x.trim())
+    .filter((x) => chaveCidade(x));
+}
+
+/** E1077-b2: as mesmas cidades, normalizadas com chaveCidade (sem acento, minúsculas) e sem repetidas. */
+export function cidadesDoAvaliador(texto: string | null | undefined): string[] {
+  return [...new Set(partesDaCidade(texto).map(chaveCidade))];
+}
+
+/** E1077-b2: o avaliador atende a cidade do imóvel? A única comparação avaliador × imóvel. */
+export function atendeCidade(cidadeDoAvaliador: string | null | undefined, cidadeDoImovel: string | null | undefined): boolean {
+  const c = chaveCidade(cidadeDoImovel);
+  return !!c && cidadesDoAvaliador(cidadeDoAvaliador).includes(c);
+}
+
 /** Siglas das cidades (como os aeroportos); o resto usa as 3 primeiras letras. */
 export const SIGLAS_CIDADE: Record<string, string> = {
   uberlandia: "UDI",
@@ -187,7 +221,8 @@ export const SIGLAS_CIDADE: Record<string, string> = {
 };
 
 export function siglaCidade(cidade: string): string {
-  const c = chaveCidade(cidade);
+  // E1077-b2: credenciamento com várias cidades — o número usa a 1ª (uma cidade só: como antes).
+  const c = cidadesDoAvaliador(cidade)[0] ?? chaveCidade(cidade);
   return SIGLAS_CIDADE[c] ?? (c.replace(/[^a-z]/g, "").slice(0, 3).toUpperCase().padEnd(3, "X") || "XXX");
 }
 
@@ -288,7 +323,7 @@ const MES = 30.4375 * 86_400_000;
 
 /** Por que este avaliador não pode avaliar este pedido (null = pode). Ordem: o motivo mais forte primeiro. */
 export function impedimento(a: AvaliadorFila, p: PedidoParaDesignar, h: HistoricoDesignacao, agora: Date): MotivoImpedimento | null {
-  if (chaveCidade(a.cidade) !== chaveCidade(p.cidade)) return "outra_cidade";
+  if (!atendeCidade(a.cidade, p.cidade)) return "outra_cidade";
   if (a.status === "suspenso") return "suspenso";
   // Imóvel de teste: a avaliação de TESTE do credenciamento (em_teste) e contas de teste; imóvel real: só ativos reais.
   if (p.teste ? !(a.status === "ativo" || a.status === "em_teste") : a.status !== "ativo") return "nao_ativo";

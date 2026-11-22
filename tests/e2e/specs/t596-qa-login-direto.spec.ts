@@ -243,6 +243,10 @@ test.describe("T596 — QA-LOGIN-B v2: porta de QA e admin observador", () => {
     await page.locator("#codigo-2fa").fill(gerarCodigoTotp(segredoTotp));
     await page.getByRole("button", { name: /confirmar e entrar/i }).click();
     await page.waitForURL(/\/admin(\?|$|\/)/, { timeout: 30_000 });
+    // E766 (reprova de 11/11): o observador vê o resumo do backup na inicial do /admin (só leitura).
+    await expect(page.getByTestId("admin-backup-resumo")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("admin-backup-resumo")).toContainText("Backup");
+    await expect(page.getByTestId("admin-backup-estado")).toHaveText(/Em dia|Atenção|Sem registro/);
     // Caixa dos Sócios: fechada para ele. E591: no lugar do 404, o aviso com o motivo e o caminho das premissas (leitura);
     // o que vale é o conteúdo: nada da Caixa aparece.
     await page.goto("/admin/socios");
@@ -254,6 +258,10 @@ test.describe("T596 — QA-LOGIN-B v2: porta de QA e admin observador", () => {
     await expect(page.getByTestId("chaves-observador")).toBeVisible();
     await expect(page.getByTestId("chave-sms")).toHaveCount(0);
     await expect(page.getByTestId("cartao-backup-restauracao")).toHaveCount(0);
+    // E766: a âncora #backup não fica vazia — o observador vê o resumo do estado, sem o "Ver detalhes" para a própria seção.
+    await expect(page.locator('#backup [data-testid="admin-backup-resumo"]')).toBeVisible();
+    await expect(page.locator("#backup")).toContainText("Backup");
+    await expect(page.locator('#backup [data-testid="admin-backup-detalhe"]')).toHaveCount(0);
     await expect(page.getByTestId("porta-qa")).toBeVisible();
     await expect(page.getByTestId("porta-qa-admin")).toContainText("/admin");
     await page.context().close();

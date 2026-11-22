@@ -87,7 +87,7 @@ test.describe("T593 — E211: detalhe da visita para o proprietário", () => {
       await expect(p.getByRole("heading", { level: 1 })).toContainText("Casa visitas t593");
       await expect(d.getByTestId("visita-status")).toHaveText("Confirmada");
       await expect(d.getByTestId("visita-pessoa")).toContainText("Lia");
-      await expect(d.getByTestId("visita-pessoa")).not.toContainText("Visitante");
+      await expect(d.getByTestId("visita-pessoa")).not.toHaveText(/Quem vem:\s*Visitante\s*$/); // o nome de teste da moradora ("Lia Visitante") contém a palavra
       await expect(d.getByTestId("visita-endereco")).toContainText(RUA);
       await expect(d.getByTestId("visita-abrir-mapa")).toHaveAttribute("href", /google\.com\/maps\/search\/\?api=1&query=Rua%20das%20Visitas/);
       await expect(d.getByTestId("visita-cancelar")).toBeVisible();

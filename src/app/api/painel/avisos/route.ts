@@ -21,14 +21,16 @@ export async function GET() {
     const [avisos, resumo] = await Promise.all([meusAvisos(60), resumoDoSino()]);
     if (!avisos || !resumo) return NextResponse.json(VAZIO, { headers: SEM_CACHE });
     // E676: o crítico de contrato/aditivo só vale enquanto o problema existe — confere a situação real no banco.
-    const candidatos = avisos.filter((a) => a.prioridade === "critico" && !a.resolvido_em && (a.evento === "contract_status" || a.evento === "estadia_aditivo_proposto"));
+    // E1060: o "Pedido de visita" só vale enquanto a visita espera a resposta do dono.
+    const candidatos = avisos.filter((a) => a.prioridade === "critico" && !a.resolvido_em && (a.evento === "contract_status" || a.evento === "estadia_aditivo_proposto" || a.evento === "visita_pedida"));
     let conferidos = avisos;
     let { maiorPrioridade } = resumo;
     if (candidatos.length) {
       const supabase = await createClient();
       const uid = supabase ? (await supabase.auth.getUser()).data.user?.id : null;
-      const ids = candidatos.map((a) => contratoDoAviso(a)).filter((x): x is string => !!x);
-      const situacao = uid ? await situacaoDosContratos(uid, ids).catch(() => null) : null;
+      const ids = candidatos.filter((a) => a.evento !== "visita_pedida").map((a) => contratoDoAviso(a)).filter((x): x is string => !!x);
+      const visitas = candidatos.some((a) => a.evento === "visita_pedida");
+      const situacao = uid ? await situacaoDosContratos(uid, ids, { visitas }).catch(() => null) : null;
       conferidos = resolvidosNaPratica(avisos, situacao, new Date().toISOString());
       if (maiorPrioridade === "critico" && !criticosPendentes(conferidos).length) {
         maiorPrioridade = resumoDosAvisos(conferidos.filter((a) => !a.lido_em)).maiorPrioridade;

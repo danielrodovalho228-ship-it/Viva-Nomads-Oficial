@@ -13,6 +13,7 @@ import type { DeclaracoesPasso10 } from "./requisitos-passo10.ts";
 import { TEXTO_HABITAVEL, TEXTO_IPTU } from "./requisitos-passo10.ts";
 import { ROTULO_MENSAL, ROTULO_TOTAL_MES, estadiaDoImovel, precoDoImovel, rotuloEstadiaMinima } from "../precos.ts";
 import { mesesDoCartao } from "../cartao-preco.ts";
+import { caucaoDoPrimeiroBloco, rotuloCaucaoDoPrimeiroBloco } from "../reserva-imovel.ts";
 import type { Property } from "../types.ts";
 
 export type SecaoAntesDePublicar = "operacao" | "identidade" | "documento" | "declaracoes";
@@ -172,6 +173,28 @@ export function precosDaPrevia(property: Property): LinhaPrecoPrevia[] {
     { rotulo: ROTULO_TOTAL_MES, valor: p.totalPorMes },
     { rotulo: rotuloEstadiaMinima(meses), valor: estadia?.total ?? null, conta: estadia?.conta ?? null },
   ];
+}
+
+/** E1050/E1054: a linha da caução no cadastro — o valor e o rótulo que a página do imóvel vai mostrar. */
+export interface CaucaoDoAnuncio {
+  valor: number;
+  rotulo: string;
+}
+
+/**
+ * E1050/E1054 + E1061: a caução calculada do anúncio, fonte única da revisão e do passo de Preço. É a da página do
+ * imóvel (caucaoDoPrimeiroBloco: a regra do contrato, com o 1º bloco da estadia mínima), com o mesmo rótulo. Antes era
+ * "50% do mensal" para qualquer anúncio, e com estadia mínima de mais de 30 dias o cadastro dizia um número diferente
+ * do da página. Sem valor mensal → null (sem "R$ 0").
+ */
+export function caucaoDoAnuncio(mensal: number, minPeriodDays?: number | null): CaucaoDoAnuncio | null {
+  const c = caucaoDoPrimeiroBloco(mensal, minPeriodDays);
+  return c ? { valor: c.valor, rotulo: rotuloCaucaoDoPrimeiroBloco(c.meses) } : null;
+}
+
+/** E1050: a caução calculada que o dono vê na revisão — a mesma do passo de Preço e da página do imóvel. */
+export function caucaoDaPrevia(property: Property): CaucaoDoAnuncio | null {
+  return caucaoDoAnuncio(property.monthlyPrice ?? 0, property.minPeriodDays);
 }
 
 /** Evento da página que abre uma seção do "Antes de publicar" (o "Resolver" da lista e o motivo do botão travado). */
