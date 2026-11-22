@@ -128,12 +128,12 @@ jobs:
               $(env | cut -d= -f1 | grep -E '^(NEXT_PUBLIC_|LAB_|TESTES_|INTEGRACOES_|SUPABASE_|PLAYWRIGHT_|CI$)' | sed 's/^/-e /') \
               mcr.microsoft.com/playwright:v1.61.1-noble npx playwright "$@"
           }
-          # ENSAIO (nunca mergear): t2219 perfil/público com o #4127.
+          # ENSAIO (nunca mergear): t2219 perfil/público com o #4128.
           set +e
           npx playwright test tests/e2e/specs/t2219-e1079-telas-dos-avaliadores-como-os-mockups.spec.ts --grep "perfil-publico|publico-avaliadores" --project=chromium --retries=0 --workers=1 --reporter=list,json 2>&1 | tee tests/laboratorio/saida/e2e.txt
           B="${PIPESTATUS[0]}"
           set -e
-          echo "ensaio: e1099 4127 saída $B"
+          echo "ensaio: e1099 4128 saída $B"
           [ "$B" -eq 0 ] || exit 1
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
