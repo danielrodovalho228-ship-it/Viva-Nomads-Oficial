@@ -52,7 +52,9 @@ async function assinar(browser: Browser, email: string, usuarioId: string, rota:
   await page.goto(rota, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("form-assinar")).toBeVisible({ timeout: 20_000 });
   await page.getByTestId("assinar-pedir-codigo").click();
-  await expect(page.getByText(/Enviamos 6 números/)).toBeVisible({ timeout: 45_000 });
+  const enviado = await page.getByText(/Enviamos 6 números/).waitFor({ timeout: 45_000 }).then(() => true, () => false);
+  // Se o código não sair, a falha mostra o que o formulário diz (o motivo vem junto do botão — E1065).
+  expect(enviado, `o código de assinatura sai (o formulário diz: ${(await page.getByTestId("form-assinar").innerText().catch(() => "sem formulário")).replace(/\s+/g, " ").slice(0, 400)})`).toBe(true);
   await page.getByTestId("assinar-aceite").check();
   await page.getByTestId("assinar-codigo").fill(await codigoDaCaixa(usuarioId));
   await page.getByTestId("assinar-enviar").click();
