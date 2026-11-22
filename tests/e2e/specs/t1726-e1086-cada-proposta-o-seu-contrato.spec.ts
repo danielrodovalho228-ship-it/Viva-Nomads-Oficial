@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T1726 — E1086 @E1086 (ORDEM-DUET-420): cada proposta aceita gera o SEU contrato.
@@ -13,6 +13,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
       e o prazo dela; o contrato assinado da 1ª estadia fica como estava. Há reserva e cobrança da taxa próprias, a
       proposta nova fica "em contrato" e o e-mail "contrato pronto" sai de novo.
    3. O Fechamento reaberto depois mostra o contrato da 2ª estadia (a 390 e a 1280 px).
+   4. O caso de PRODUÇÃO, tal e qual (ORDEM-DUET-426): candidatura com um contrato LEGADO, assinado, SEM proposta
+      gravada (criado antes de os contratos guardarem a proposta), com a reserva e a cobrança dele. Proposta nova
+      aceita: o Fechamento não diz "já tem contrato"; o dono gera e nasce o contrato da proposta. O contrato legado
+      continua SEM proposta e assinado, e a reserva e a cobrança dele ficam como estavam.
   Laboratório; não é prova ao vivo no site.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -20,28 +24,31 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t1726.${sufixo}@lab.vivanomads.test`, nome: "Dalva Estadia Sobrenome", role: "owner" as const };
 const inq = { email: `inq.t1726.${sufixo}@lab.vivanomads.test`, nome: "Ines Estadia Sobrenome", role: "tenant" as const };
-const ids: { dono?: string; inq?: string; imovel?: string; lead?: string; p1?: string; p2?: string; c1?: string; c2?: string } = {};
+const ids: { dono?: string; inq?: string; imovel?: string; lead?: string; p1?: string; p2?: string; c1?: string; c2?: string; imovelLegado?: string; leadLegado?: string; cLegado?: string } = {};
 
 const emDias = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
 // 1ª estadia: 45 dias. 2ª estadia: 40 dias, depois da primeira (sem sobreposição no imóvel).
 const E1 = { entrada: emDias(30), saida: emDias(75), dias: 45 };
 const E2 = { entrada: emDias(100), saida: emDias(140), dias: 40 };
+// Caso 4 (outro imóvel do mesmo dono): o contrato legado é de uma estadia mais adiante; a proposta nova, de 40 dias.
+const E3 = { entrada: emDias(30), saida: emDias(70), dias: 40 };
+const LEGADO = { inicio: emDias(200), fim: emDias(260), doc: `doc-legado-${sufixo}`, cobranca: `pay-legado-${sufixo}` };
 
 type Contrato = { id: string; proposta_id: string | null; prazo_total_dias: number; periodo: string; assinado_proprietario_em: string | null; assinado_inquilino_em: string | null };
-const contratos = async (): Promise<Contrato[]> =>
-  (((await adm().from("contratos").select("id, proposta_id, prazo_total_dias, periodo, assinado_proprietario_em, assinado_inquilino_em").eq("lead_id", ids.lead!).order("created_at")).data ?? []) as Contrato[]);
-const reservas = async () =>
-  (((await adm().from("cobrancas_fechamento").select("tipo, externo_id").eq("lead_id", ids.lead!)).data ?? []) as { tipo: string; externo_id: string | null }[]);
+const contratos = async (lead = ids.lead!): Promise<Contrato[]> =>
+  (((await adm().from("contratos").select("id, proposta_id, prazo_total_dias, periodo, assinado_proprietario_em, assinado_inquilino_em").eq("lead_id", lead).order("created_at")).data ?? []) as Contrato[]);
+const reservas = async (lead = ids.lead!) =>
+  (((await adm().from("cobrancas_fechamento").select("tipo, externo_id").eq("lead_id", lead)).data ?? []) as { tipo: string; externo_id: string | null }[]);
 const statusDa = async (proposta: string) => (await adm().from("propostas").select("status").eq("id", proposta).single()).data?.status as string;
 /** E-mails "contrato pronto" deste imóvel no que o laboratório "teria enviado" (morador e dono recebem um cada, a cada geração). */
 const emailsContratoPronto = async () =>
   (await lerSaida()).filter((m) => m.servico === "email" && String(m.assunto ?? "").includes("contrato está pronto para assinar") && JSON.stringify(m).includes(sufixo)).length;
 
 /** O dono monta e envia a proposta pela tela; a moradora aceita. Devolve o id da proposta. */
-async function proporEAceitar(browser: Browser, estadia: { entrada: string; saida: string; dias: number }): Promise<string> {
+async function proporEAceitar(browser: Browser, estadia: { entrada: string; saida: string; dias: number }, lead = ids.lead!): Promise<string> {
   const pd = await entrar(browser, dono.email, senha);
   await pd.setViewportSize({ width: 1280, height: 900 });
-  await pd.goto(`/dashboard/orcamentos/nova?interessado=${ids.lead}`, { waitUntil: "domcontentloaded" });
+  await pd.goto(`/dashboard/orcamentos/nova?interessado=${lead}`, { waitUntil: "domcontentloaded" });
   await expect(pd.getByTestId("montagem-proposta")).toBeVisible({ timeout: 30_000 });
   await pd.getByTestId("proposta-data").fill(estadia.entrada);
   await pd.getByTestId("proposta-saida").fill(estadia.saida);
@@ -60,10 +67,10 @@ async function proporEAceitar(browser: Browser, estadia: { entrada: string; said
   return proposta;
 }
 
-async function noFechamento(browser: Browser, largura: 390 | 1280 = 1280): Promise<Page> {
+async function noFechamento(browser: Browser, largura: 390 | 1280 = 1280, lead = ids.lead!): Promise<Page> {
   const page = await entrar(browser, dono.email, senha);
   await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
-  await page.goto(`/dashboard/fechamento?c=${ids.lead}`, { waitUntil: "domcontentloaded" });
+  await page.goto(`/dashboard/fechamento?c=${lead}`, { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "Candidatura e verificação" })).toBeVisible({ timeout: 30_000 });
   return page;
 }
@@ -88,42 +95,68 @@ async function gerarContratoPelaTela(page: Page) {
   await expect(page.getByTestId("fechamento-abrir-contrato")).toBeVisible({ timeout: 30_000 });
 }
 
+async function docsDoMorador(lead: string) {
+  for (const tipo of ["identidade", "vinculo"]) {
+    const u = () => crypto.randomUUID();
+    const { error } = await adm().from("documentos_inquilino").insert({ lead_id: lead, tenant_id: ids.inq, tipo, caminho: `${u()}/${u()}/${u()}.pdf`, hash_sha256: "a".repeat(64) });
+    if (error) throw error;
+  }
+}
+
+// O preparo é do arquivo (não de um bloco): os dois blocos correm mesmo que o outro falhe.
+test.beforeAll(async () => {
+  if (!NO_LABORATORIO) return;
+  ids.dono = await criarConta(dono, senha);
+  ids.inq = await criarConta(inq, senha);
+  // Contas de teste: contrato e cobrança saem no modo TESTE (nada vai à assinatura digital nem ao banco de cobrança).
+  await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.inq]);
+  ids.imovel = await criarImovelPronto(ids.dono, `[TESTE QA] Duas estadias ${sufixo}`, { ativo: true, preco: 2800 });
+  ids.imovelLegado = await criarImovelPronto(ids.dono, `[TESTE QA] Contrato legado ${sufixo}`, { ativo: true, preco: 2800 });
+  const { error: e1 } = await adm().from("properties").update({ min_period_days: 30, max_period_days: 180 }).in("id", [ids.imovel, ids.imovelLegado]);
+  if (e1) throw e1;
+  const { data, error } = await adm()
+    .from("leads")
+    .insert({ owner_id: ids.dono, tenant_id: ids.inq, property_id: ids.imovel, status: "new", inicio_desejado: E1.entrada, fim_desejado: E1.saida })
+    .select("id")
+    .single();
+  if (error) throw error;
+  ids.lead = data.id as string;
+  await docsDoMorador(ids.lead);
+
+  // Caso 4: a candidatura aceita com o contrato LEGADO (sem proposta), assinado, e a reserva e a cobrança dele.
+  ids.leadLegado = await criarLead(ids.dono, ids.inq, ids.imovelLegado, true);
+  await adm().from("leads").update({ accepted_commission_rate: 0.12, accepted_plan: "essential" }).eq("id", ids.leadLegado);
+  await docsDoMorador(ids.leadLegado);
+  const { data: c, error: e3 } = await adm()
+    .from("contratos")
+    .insert({ lead_id: ids.leadLegado, property_id: ids.imovelLegado, tenant_id: ids.inq, owner_plan: "essential", faixa: "media_estadia", prazo_total_dias: 60, aluguel_mensal: 2800, tamanho_bloco_meses: 2, comissao_percent: 0.12, comissao_valor: 672, qtd_ocupantes: 1, garantia: "caucao", status: "ativo", periodo: `[${LEGADO.inicio},${LEGADO.fim}]`, created_at: "2026-11-07T15:00:00Z", assinado_proprietario_em: "2026-11-07T16:00:00Z", assinado_inquilino_em: "2026-11-07T16:05:00Z" })
+    .select("id")
+    .single();
+  if (e3) throw e3;
+  ids.cLegado = c.id as string;
+  const { error: e4 } = await adm().from("cobrancas_fechamento").insert([
+    { lead_id: ids.leadLegado, tipo: "contrato", externo_id: LEGADO.doc },
+    { lead_id: ids.leadLegado, tipo: "comissao", externo_id: LEGADO.cobranca },
+  ]);
+  if (e4) throw e4;
+});
+
+test.afterAll(async () => {
+  const leads = [ids.lead, ids.leadLegado].filter(Boolean) as string[];
+  if (leads.length) {
+    await adm().from("cobrancas_fechamento").delete().in("lead_id", leads);
+    await adm().from("contratos").delete().in("lead_id", leads);
+    await adm().from("propostas").delete().in("lead_id", leads);
+  }
+  const imoveis = [ids.imovel, ids.imovelLegado].filter(Boolean) as string[];
+  if (imoveis.length) await adm().from("messages").delete().in("property_id", imoveis);
+  await apagarContas([ids.dono, ids.inq]);
+});
+
 test.describe("T1726 — E1086: cada proposta aceita gera o seu contrato (2ª estadia na mesma candidatura) @E1086", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.setTimeout(300_000);
-
-  test.beforeAll(async () => {
-    ids.dono = await criarConta(dono, senha);
-    ids.inq = await criarConta(inq, senha);
-    // Contas de teste: contrato e cobrança saem no modo TESTE (nada vai à assinatura digital nem ao banco de cobrança).
-    await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.inq]);
-    ids.imovel = await criarImovelPronto(ids.dono, `[TESTE QA] Duas estadias ${sufixo}`, { ativo: true, preco: 2800 });
-    const { error: e1 } = await adm().from("properties").update({ min_period_days: 30, max_period_days: 180 }).eq("id", ids.imovel);
-    if (e1) throw e1;
-    const { data, error } = await adm()
-      .from("leads")
-      .insert({ owner_id: ids.dono, tenant_id: ids.inq, property_id: ids.imovel, status: "new", inicio_desejado: E1.entrada, fim_desejado: E1.saida })
-      .select("id")
-      .single();
-    if (error) throw error;
-    ids.lead = data.id as string;
-    for (const tipo of ["identidade", "vinculo"]) {
-      const u = () => crypto.randomUUID();
-      const { error: e2 } = await adm().from("documentos_inquilino").insert({ lead_id: ids.lead, tenant_id: ids.inq, tipo, caminho: `${u()}/${u()}/${u()}.pdf`, hash_sha256: "a".repeat(64) });
-      if (e2) throw e2;
-    }
-  });
-
-  test.afterAll(async () => {
-    if (ids.lead) {
-      await adm().from("cobrancas_fechamento").delete().eq("lead_id", ids.lead);
-      await adm().from("contratos").delete().eq("lead_id", ids.lead);
-      await adm().from("propostas").delete().eq("lead_id", ids.lead);
-    }
-    if (ids.imovel) await adm().from("messages").delete().eq("property_id", ids.imovel);
-    await apagarContas([ids.dono, ids.inq]);
-  });
 
   test("1. 1ª estadia: proposta aceita, contrato gerado pela tela e assinado pelas duas partes", async ({ browser }) => {
     ids.p1 = await proporEAceitar(browser, E1);
@@ -196,4 +229,42 @@ test.describe("T1726 — E1086: cada proposta aceita gera o seu contrato (2ª es
       await page.context().close();
     });
   }
+});
+
+test.describe("T1726 — E1086: contrato LEGADO sem proposta (o caso de produção): a proposta nova gera o contrato dela @E1086", () => {
+  test.skip(!NO_LABORATORIO, "Só no laboratório.");
+  test.setTimeout(300_000);
+
+  test("4. contrato legado assinado SEM proposta + proposta nova aceita: nasce o contrato da proposta; o legado e a reserva dele ficam intactos", async ({ browser }) => {
+    const lead = ids.leadLegado!;
+    const proposta = await proporEAceitar(browser, E3, lead);
+    const page = await noFechamento(browser, 1280, lead);
+    await expect(page.getByTestId("fechamento-proposta-contrato")).toBeVisible({ timeout: 20_000 });
+    // O contrato legado é de OUTRA estadia: o Fechamento da proposta nova não diz "já tem contrato".
+    await expect.soft(page.getByTestId("fechamento-contrato-existente"), "o contrato legado não é o desta proposta").toHaveCount(0, { timeout: 5_000 });
+    await gerarContratoPelaTela(page);
+    await page.context().close();
+
+    const cs = await contratos(lead);
+    expect(cs.length, "a proposta nova tem o contrato dela, ao lado do legado").toBe(2);
+    const novo = cs.find((c) => c.id !== ids.cLegado)!;
+    expect(novo.proposta_id, "o contrato novo é da proposta nova").toBe(proposta);
+    expect(Number(novo.prazo_total_dias)).toBe(E3.dias);
+    expect(novo.periodo).toContain(E3.entrada);
+    // O legado NÃO foi ligado à proposta nova (seria cimentar o defeito) e continua assinado, com o período dele.
+    const legado = cs.find((c) => c.id === ids.cLegado)!;
+    expect(legado.proposta_id, "o contrato legado continua sem proposta").toBeNull();
+    expect(Number(legado.prazo_total_dias)).toBe(60);
+    expect(legado.periodo).toContain(LEGADO.inicio);
+    expect(legado.assinado_proprietario_em).not.toBeNull();
+    expect(legado.assinado_inquilino_em).not.toBeNull();
+    // A reserva e a cobrança do legado ficam como estavam; a proposta nova ganha as dela.
+    await expect.poll(async () => (await reservas(lead)).filter((r) => r.tipo === "comissao" && r.externo_id).length, { timeout: 20_000 }).toBe(2);
+    const rs = await reservas(lead);
+    const docs = rs.filter((r) => r.tipo === "contrato").map((r) => r.externo_id);
+    expect(docs.length, "duas reservas de contrato: a legada e a da proposta").toBe(2);
+    expect(docs, "a reserva legada continua com o documento dela").toContain(LEGADO.doc);
+    expect(rs.filter((r) => r.tipo === "comissao").map((r) => r.externo_id), "a cobrança legada continua a dela").toContain(LEGADO.cobranca);
+    await expect.poll(() => statusDa(proposta), { timeout: 15_000 }).toBe("em_contrato");
+  });
 });

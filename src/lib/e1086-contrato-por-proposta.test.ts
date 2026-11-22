@@ -86,6 +86,12 @@ test("migração 0353: um contrato por proposta e a proposta na chave da reserva
   assert.match(m, /update public\.cobrancas_fechamento cf\s+set proposta_id = c\.proposta_id/);
   // O painel do admin junta a taxa paga com o contrato DELA.
   assert.match(m, /left join contratos c on c\.lead_id = cf\.lead_id and c\.proposta_id is not distinct from cf\.proposta_id/);
+  // ORDEM-DUET-426: a migração NÃO toca nos contratos (os legados sem proposta ficam sem proposta) e a reserva de uma
+  // candidatura que JÁ tem contrato nunca é ligada à proposta aceita mais recente (seria ligar a estadia antiga à nova).
+  assert.doesNotMatch(m, /update public\.contratos\b/);
+  assert.doesNotMatch(m, /alter table public\.contratos\b/);
+  assert.match(m, /where cf\.proposta_id is null\s+and not exists \(select 1 from public\.contratos c where c\.lead_id = cf\.lead_id\);/);
+  assert.match(m, /where c\.lead_id = cf\.lead_id and c\.proposta_id is not null;/);
   const p = ler("../supabase/producao/aplicar-0353.sql");
   assert.match(p, /^begin;$/m);
   assert.match(p, /^commit;$/m);
