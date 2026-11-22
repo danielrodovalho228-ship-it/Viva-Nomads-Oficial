@@ -6,8 +6,8 @@ import { noPasso } from "../fixtures/cadastro";
 /*
   T564 — E193 (print do Daniel, 25/10): a qualificação usa UM padrão de controle — o cartão grande tocável. Nenhum
   interruptor (switch) nem chip nas 5 telas: sim/não ("Sim, tem" / "Não tem"), as opções com ícone e o "Não tem
-  internet" são o mesmo cartão (data-cartao-qualificacao), no computador e no celular. No Passo 5, as comodidades
-  são várias escolhas, então pílulas (E193 da lista-master de 29/10: várias escolhas = pílula; uma escolha = cartão).
+  internet" são o mesmo cartão (data-cartao-qualificacao), no computador e no celular. No Passo 5, as comodidades usam
+  o cartão do assistente desde o reteste de 30/10 (antes, pílulas pela lista-master de 29/10).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
@@ -69,7 +69,9 @@ test.describe("T564 — E193: um padrão só de cartões na qualificação", () 
   }
 
   for (const largura of [1280, 390] as const) {
-    test(`${largura} px — Passo 5: comodidades em pílulas (E193, 29/10: várias escolhas = pílula)`, async ({ browser }) => {
+    // E744 (asserção alterada, tabela da Fable #3832): o reteste de 30/10 trocou as pílulas do Passo 5 pelo mesmo cartão
+    // do assistente (data-cartao-assistente) — nenhuma pílula; o raio de pílula sai da conferência (a forma é a da t680).
+    test(`${largura} px — Passo 5: comodidades em cartões do assistente (reteste de 30/10, sem pílulas)`, async ({ browser }) => {
       const p = await entrar(browser, dono5.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await p.goto(`/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=comodidades`, { waitUntil: "domcontentloaded" });
@@ -77,14 +79,12 @@ test.describe("T564 — E193: um padrão só de cartões na qualificação", () 
       const etapa = p.getByTestId("etapa-encontramos");
       const itens = etapa.locator("button[data-comodidade]");
       expect(await itens.count()).toBeGreaterThan(0);
-      expect(await etapa.locator("button[data-comodidade][data-pilula-assistente]").count()).toBe(await itens.count());
+      expect(await etapa.locator("button[data-comodidade][data-cartao-assistente]").count()).toBe(await itens.count());
+      expect(await etapa.locator("[data-pilula-assistente]").count()).toBe(0);
       const primeiro = itens.first();
       const antes = await primeiro.getAttribute("aria-pressed");
       await primeiro.click();
       await expect(primeiro).toHaveAttribute("aria-pressed", antes === "true" ? "false" : "true");
-      // Pílula: cantos totalmente arredondados (raio ≥ metade da altura).
-      const forma = await primeiro.evaluate((el) => ({ raio: parseFloat(getComputedStyle(el).borderTopLeftRadius), altura: el.getBoundingClientRect().height }));
-      expect(forma.raio).toBeGreaterThanOrEqual(forma.altura / 2 - 1);
       await primeiro.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t564-passo5-${largura}.png` });
       await p.context().close();

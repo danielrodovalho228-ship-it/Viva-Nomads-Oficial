@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Panel } from "@/components/dashboard/primitives";
 import { buttonClasses } from "@/components/ui/button";
-import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { lerMeuAvatar } from "@/lib/sessao/leituras-da-casca";
 import { CONVITE_FOTO_CHAVE, CONVITE_FOTO_TEXTO, deveMostrarConviteFoto } from "@/lib/perfil/convite-foto";
 import { EnviarFoto, FOTO_ATUALIZADA } from "@/components/account/foto-perfil";
 
@@ -23,7 +23,7 @@ export function ConviteFotoPerfil({ className }: { className?: string }) {
     } catch {
       /* navegador sem armazenamento: mostra */
     }
-    getMyAvatarUrl()
+    lerMeuAvatar()
       .then((r) => {
         if (vivo) setMostrar(deveMostrarConviteFoto({ temFoto: !!r.url, dispensadoEm: dispensado }));
       })

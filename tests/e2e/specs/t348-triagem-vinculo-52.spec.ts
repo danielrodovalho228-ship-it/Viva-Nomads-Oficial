@@ -12,6 +12,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
  *      arquivo, o caminho ou valores; com a identidade vencida, o selo some;
  *   3. conta de teste aparece marcada na fila (fora das métricas).
  * Rodada da vigia (Pista C, 23/10 à noite): confirmação depois do #1190 (L-31) no lab-crítico do PR da vigia.
+ * E961: o "nunca valores" do passo 2 acusava preço de anúncio no HTML de /dashboard/leads — eram os cartões da página 404,
+ * que viajava dentro de toda página. Corrigido no produto (t1661); a asserção daqui não mudou.
  */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();

@@ -29,6 +29,15 @@ export async function liberarLimiteChamados(): Promise<void> {
 }
 
 /**
+ * Zera o limite de eventos de uso (300 por hora por IP, /api/evento). No laboratório toda a suíte sai do mesmo IP e
+ * cada página visitada grava eventos: numa rodada completa o limite esgota e os eventos seguintes são descartados em
+ * silêncio (204 sem gravar). Quem conta eventos gravados (t741) zera antes de gravar.
+ */
+export async function liberarLimiteEventos(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "evento:%");
+}
+
+/**
  * Zera o limite diário de pedidos de moradia (3 por conta por dia). As contas fixas do laboratório publicam
  * pedidos em vários specs (e nas repetições); sem isto o último recebe "Você já publicou 3 pedidos hoje".
  */
@@ -375,6 +384,17 @@ export async function criarLead(ownerId: string, tenantId: string, propertyId: s
     .single();
   if (error) throw error;
   return data.id as string;
+}
+
+/**
+ * E1079 (ORDEM-DUET-431): o roteiro TRAVA "Concluir a visita" — a visita só conclui com a foto de cada ambiente do
+ * roteiro (fachada, sala, cozinha, quartos, banheiros). Preparo para as travas que concluem a visita: grava as cinco
+ * fotos de cômodo no banco do laboratório (linhas; sem arquivo, como as outras fotos de preparo).
+ */
+export async function fotosDoRoteiro(pedidoId: string): Promise<void> {
+  const linhas = ["fachada", "sala", "cozinha", "quarto", "banheiro"].map((comodo, n) => ({ pedido_id: pedidoId, comodo: `Roteiro: ${comodo}`, path: `${pedidoId}/roteiro-${n}.webp` }));
+  const { error } = await adm().from("vistoria_checklist_fotos").insert(linhas);
+  if (error) throw error;
 }
 
 /** Mensagem gravada direto no banco (o primeiro "oi" da conversa), com o id de conversa do servidor. */

@@ -116,6 +116,8 @@ export function criticosPendentes<T extends AvisoTela>(avisos: readonly T[]): T[
 export interface SituacaoDosContratos {
   assinarPendente: ReadonlySet<string>;
   aditivoAberto: ReadonlySet<string>;
+  /** E1060: as visitas do dono que ainda esperam a resposta dele (status "pedido"). Sem leitura, ausente: nada é escondido. */
+  visitaPendente?: ReadonlySet<string>;
 }
 
 const UUID_NO_CAMINHO = /\/dashboard\/(?:estadia|contratos)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
@@ -136,6 +138,14 @@ export function resolvidosNaPratica<T extends AvisoTela>(avisos: readonly T[], s
   if (!situacao) return [...avisos];
   return avisos.map((a) => {
     if (a.resolvido_em || a.prioridade !== "critico") return a;
+    // E1060: o "Pedido de visita" só vale enquanto a visita espera a resposta do dono. Aviso antigo sem a visita: sai só
+    // quando o dono não tem nenhum pedido à espera (na dúvida, não esconde).
+    if (a.evento === "visita_pedida") {
+      const pendentes = situacao.visitaPendente;
+      if (!pendentes) return a;
+      const pendente = a.ref_id ? pendentes.has(a.ref_id) : pendentes.size > 0;
+      return pendente ? a : { ...a, resolvido_em: agoraISO };
+    }
     const contrato = contratoDoAviso(a);
     if (!contrato) return a;
     const pendente =
