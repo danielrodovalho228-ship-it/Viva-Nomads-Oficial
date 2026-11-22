@@ -91,7 +91,7 @@ export function linhaDoPrazoDoLaudo(etapa: EtapaDoPedido, p: ValoresDoPedido): s
 
 /** E1108: o valor na linha da lista do avaliador, pela mesma regra da tela do pedido. */
 export function resumoDoValorNaLista(p: ValoresDoPedido): string {
-  if (semValor(p)) return "avaliação de teste";
+  if (p.teste) return "avaliação de teste";
   if (p.valor_proposto != null) return `${brl(Number(p.valor_proposto))} · ${dias(Number(p.prazo_proposto_dias ?? 0))}`;
   return `referência ${brl(Number(p.valor_tabela))}`;
 }
