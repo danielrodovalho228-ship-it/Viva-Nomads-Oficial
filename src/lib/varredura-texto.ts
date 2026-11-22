@@ -107,7 +107,7 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabu
   }
   if (opcoes.termos !== false) {
     for (const [nome, re] of TERMOS_PROIBIDOS) {
-      const alvo = nome === "aluguel" ? semFraseDaCaucao(texto) : texto;
+      const alvo = texto;
       const m = re.exec(alvo);
       if (m) out.push(`termo proibido "${nome}": …${trecho(alvo, m.index)}…`);
     }
