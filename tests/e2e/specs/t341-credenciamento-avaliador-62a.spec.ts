@@ -155,7 +155,7 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     pedidoId = (await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.imovel).single()).data!.id as string;
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     // E648: o dono escolhe o avaliador entre os sugeridos (a Viva não designa).
-    await bloco.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numeroA}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    await bloco.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numeroA}` }).getByRole("button", { name: "Escolher" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("designado");
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     await expect(bloco.getByTestId("avaliador-designado")).toHaveText(`Avaliador escolhido por você: nº ${numeroA}`, { timeout: 30_000 });
