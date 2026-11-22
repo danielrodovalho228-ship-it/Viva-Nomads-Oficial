@@ -10,7 +10,7 @@ export function IdentificacaoDoImovel({ texto, className = "" }: { texto: string
   return (
     <p className={`break-words font-semibold text-ink ${className}`.trim()} data-testid="pedido-imovel">
       {titulo}
-      <span className="whitespace-nowrap">{codigo}</span>
+      <span>{codigo}</span>
     </p>
   );
 }
