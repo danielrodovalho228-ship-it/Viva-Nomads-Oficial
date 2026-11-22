@@ -141,8 +141,8 @@ export const TEXTO_IDENTIDADE_VERIFICADA = "Identidade verificada pela Viva";
 /** E1099 (ORDEM-DUET-458 §2): o "Sobre" do perfil — texto do próprio avaliador, opcional (0355: até 600 caracteres). */
 export const TITULO_SOBRE = "Sobre";
 export const SOBRE_MAX = 600;
-/** ORDEM-DUET-462 §1: uma frase curta, simples, que diz onde o texto aparece. */
-export const EXPLICACAO_SOBRE = "Opcional: este texto aparece no seu perfil público.";
+/** ORDEM-DUET-462 §1 / 463 §2: a frase aprovada, curta e simples. */
+export const EXPLICACAO_SOBRE = "Este texto aparece no seu perfil público.";
 /** O texto do "Sobre": aparado; vazio = nada (a secção some); acima do limite, recusado com o motivo. */
 export function normalizarSobre(texto: string): { ok: true; valor: string | null } | { ok: false; erro: string } {
   const t = String(texto ?? "").trim();

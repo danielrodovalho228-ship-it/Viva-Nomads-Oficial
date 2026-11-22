@@ -45,7 +45,7 @@ test("E1099: o avaliador grava só o PRÓPRIO 'Sobre', na área dele", () => {
   assert.match(fn, /\.update\(\{ sobre: v\.valor \}\)\s*\.or\(parc \? `parceiro_id\.eq\.\$\{parc\.id\},user_id\.eq\.\$\{s\.userId\}` : `user_id\.eq\.\$\{s\.userId\}`\)/);
   const area = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx");
   // ORDEM-462 §1: rótulos aprovados ("Sobre você", "Salvar texto") e a explicação numa frase curta.
-  assert.equal(EXPLICACAO_SOBRE, "Opcional: este texto aparece no seu perfil público.");
+  assert.equal(EXPLICACAO_SOBRE, "Este texto aparece no seu perfil público."); // ORDEM-463 §2
   assert.match(area, /data-testid="meu-sobre-explicacao">\{EXPLICACAO_SOBRE\}/);
   assert.match(area, /Sobre você\s*<textarea name="sobre"/);
   assert.match(area, />Salvar texto<\/Button>/);
