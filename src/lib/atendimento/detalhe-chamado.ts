@@ -110,7 +110,7 @@ export function indicadorDoPrazo(c: { status: string; criado_em: string; prazo_r
     return { tom: "vencido", titulo: "Prazo de resolução · vencido", quando, falta, curto: `Resolução · venceu há ${d.curto}`, fracao: 1, frase: `${quando} · ${falta}` };
   }
   const falta = `${d.plural ? "Faltam" : "Falta"} ${d.texto}`;
-  const curto = `Resolução · ${d.plural ? "faltam" : "falta"} ${d.curto}`;
+  const curto = `resolver em ${d.curto}`;
   return { tom: estado === "em_risco" ? "risco" : "ok", titulo: `Prazo de resolução · ${estado === "em_risco" ? "em risco" : "no prazo"}`, quando, falta, curto, fracao, frase: `${quando} · ${falta}` };
 }
 
