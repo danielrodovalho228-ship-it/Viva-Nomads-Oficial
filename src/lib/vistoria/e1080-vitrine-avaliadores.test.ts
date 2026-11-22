@@ -111,3 +111,19 @@ test("E1079 (385, tela 3): a escolha do dono em cartões — rosto, selo, termos
   assert.match(b, /Escolher este avaliador/);
   assert.doesNotMatch(b, /preco_proprio\)\s*\}/, "o preço mostrado é o da tabela, não o próprio do avaliador");
 });
+
+test("E1079 (385, tela 4): 'Avaliação do imóvel — Laudo com o nível do imóvel' na grade de Serviços, só para o dono com a avaliação aberta", () => {
+  const painel = readFileSync("src/components/parceiros/servicos-painel.tsx", "utf8");
+  assert.match(painel, /\{avaliacao && \([\s\S]*?data-testid="servicos-avaliacao"[\s\S]*?Avaliação do imóvel[\s\S]*?Laudo com o nível do imóvel/);
+  assert.match(painel, /href=\{avaliacao\.href\}/);
+  // A avaliação não vira categoria contratável do catálogo (segue só de credenciamento).
+  assert.doesNotMatch(painel, /CATEGORIAS_PARCEIRO\b/);
+  const pagina = readFileSync("src/app/(dashboard)/dashboard/servicos/page.tsx", "utf8");
+  assert.match(pagina, /avaliacaoNaGrade\(\)/);
+  assert.match(pagina, /<ServicosPainel cidade=\{cidade\} avaliacao=\{avaliacao\} \/>/);
+  const srv = readFileSync("src/lib/vistoria/servico-avaliacao.ts", "utf8");
+  // Fechada com a chave: sem a avaliação aberta para a conta (global, laboratório ou piloto), o cartão não aparece.
+  assert.match(srv, /if \(!\(await vistoriaAtiva\(\)\)\) return null;/);
+  assert.match(srv, /\.eq\("owner_id", user\.id\)/);
+  assert.match(srv, /HREF_AVALIACAO_NA_GRADE = "\/dashboard\/imoveis"/);
+});
