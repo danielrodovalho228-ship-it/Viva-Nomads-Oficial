@@ -12,7 +12,8 @@ test("a Viva sabe explicar como virar parceiro, com os links certos", () => {
   assert.ok(p, "FAQ sem a pergunta de parceiro");
   assert.match(p.resposta, /Fotografia/);
   assert.match(p.resposta, /Empresa que quer ser parceira[^.]*\/parceiros/);
-  assert.match(p.resposta, /Empresa que quer moradia para funcionários: \/empresas/);
+  // E947 (asserção alterada, prompt "E-empresas-ajuda"): a remissão continua, mas aponta para a pergunta própria.
+  assert.match(p.resposta, /Empresa que quer moradia para funcionários: veja a pergunta “Minha empresa pode alugar moradia para funcionários\?”/);
   assert.match(p.resposta, /imóveis mobiliados/);
   assert.doesNotMatch(p.resposta, /apartamentos?|comiss[ãa]o|corretagem|intermedia[çc][ãa]o|aluguel/i);
 });

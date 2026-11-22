@@ -7,6 +7,7 @@ import { BannerTopo } from "@/components/institucional/banner-topo";
 import { FotoCartao } from "@/components/institucional/foto-cartao";
 import { cartaoSecao } from "@/lib/cartoes-secao";
 import { CAUCAO_FRASE } from "@/lib/faixas";
+import { TEXTO_PRAZO_DOCUMENTO } from "@/config/prazos-canais";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
 import { JsonLd } from "@/components/seo/json-ld";
 import { servicoProprietarios } from "@/lib/seo/estruturados";
@@ -153,6 +154,12 @@ export default function ForLandlordsPage() {
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-forest text-sm font-semibold text-white">{i + 1}</span>
                   <h3 className="mt-3 font-title text-lg font-semibold text-ink">{p.t}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted">{p.d}</p>
+                  {/* E948: no passo de anunciar, o prazo da análise do documento (fonte única; publicação não tem prazo). */}
+                  {i === 0 && (
+                    <p className="mt-2 text-sm leading-relaxed text-muted" data-testid="pp-prazo-documento">
+                      {TEXTO_PRAZO_DOCUMENTO}
+                    </p>
+                  )}
                 </div>
               </li>
             ))}

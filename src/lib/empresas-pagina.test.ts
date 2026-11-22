@@ -46,7 +46,9 @@ test("E770/E771/E772: prazo e taxa explícitos, escopo do dinheiro nas duas pág
   assert.match(page, /Respondemos em até \$\{PRAZO_CANAL\.empresas\.texto\} com opções de imóveis mobiliados/);
   assert.equal(PRAZO_CANAL.empresas.texto, "7 dias");
   assert.doesNotMatch(page, /Ainda não há prazo de resposta/);
-  assert.match(page, /A taxa da Viva é do proprietário, por contrato fechado/); // TAXA_EMPRESAS (E770), no bloco e na FAQ
+  // E947 (asserção alterada): a frase da taxa mudou para a fonte comum de /empresas e da Ajuda (lib/empresas/textos).
+  assert.match(page, /import \{ RECIBO_EMPRESAS, TAXA_EMPRESAS \} from "@\/lib\/empresas\/textos"/);
+  assert.match(ler("lib/empresas/textos.ts"), /A taxa da Viva é do proprietário, por contrato fechado/); // TAXA_EMPRESAS (E770), no bloco e na FAQ
   assert.match(page, /pagamento da estadia vai direto ao proprietário/);
   assert.match(page, /Serviços de parceiros \(limpeza, mudança\) são contratados à parte/);
   assert.doesNotMatch(page, /em construção|Relatórios|relatórios/);

@@ -155,6 +155,8 @@ export const MATRIZ_NOTIFICACOES = {
   visita_pedida_morador: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   pedido_encerrado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   documento_aprovado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
+  // E948: o documento chegou (com o prazo da análise) — ao próprio proprietário, que acabou de enviar (sem push).
+  documento_em_analise: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   checklist_aprovado: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   chamado_aberto: { categoria: "outros", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
   chamado_resolvido: { categoria: "outros", papeis: ["morador", "proprietario", "parceiro"], canais: SEM_PUSH },
@@ -197,6 +199,8 @@ export const MATRIZ_NOTIFICACOES = {
   linkedin_ja_conectado: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   vistoria_fila_admin: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   parceiro_sem_resposta: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  // E948: documento há mais de 1 dia útil na fila sem decisão → equipe (uma vez por documento).
+  documento_atrasado: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   chamado_fora_promessa: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   verificacao_analise_humana: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   documento_recebido: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },

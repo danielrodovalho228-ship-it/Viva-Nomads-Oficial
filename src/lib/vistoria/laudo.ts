@@ -98,13 +98,14 @@ export function resumoPorGrupo(r: Respostas): { grupo: GrupoAvaliacao; rotulo: s
 // ── Prazos ──────────────────────────────────────────────────────────────────────────────────────────────────────
 const H = 3_600_000;
 const BRT = -3 * H;
+import { instanteEmDiaUtil } from "../calendario/dias-uteis.ts";
 /** Soma horas úteis (seg a sex, em Brasília). */
 export function somarHorasUteis(inicio: Date, horas: number): Date {
   let t = inicio.getTime();
   let resta = horas * H;
   while (resta > 0) {
-    const dia = new Date(t + BRT).getUTCDay();
-    if (dia === 0 || dia === 6) {
+    // E948: o calendário único (fim de semana E feriado nacional) — lib/calendario.
+    if (!instanteEmDiaUtil(t)) {
       // pula para a meia-noite (Brasília) do dia seguinte
       const d = new Date(t + BRT);
       t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1) - BRT;

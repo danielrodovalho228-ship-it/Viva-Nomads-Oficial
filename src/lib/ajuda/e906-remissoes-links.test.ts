@@ -29,7 +29,9 @@ test("E906: /precos e caminhos que não são destinos da lista ficam como texto"
 test("E906: todas as respostas da Ajuda e os guias com remissão a destino vivo ganham link", () => {
   const ids = (id: string) => FAQ.find((p) => p.id === id)!;
   assert.deepEqual(links(respostaPara(ids("contratar-fotografo"), "visitante")), ["/parceiros/buscar", "/parceiros/fotografos"]);
-  assert.deepEqual(links(respostaPara(ids("como-virar-parceiro"), "visitante")).sort(), ["/auth", "/empresas", "/empresas", "/parceiros", "/parceiros"].sort());
+  // E947 (asserção alterada): a remissão de moradia para funcionários aponta para a pergunta nova (link do artigo); o
+  // "/empresas" da frase de categorias continua.
+  assert.deepEqual(links(respostaPara(ids("como-virar-parceiro"), "visitante")).sort(), ["/auth", "/empresas", "/parceiros", "/parceiros"].sort());
   const guiaSeguranca = GUIAS.flatMap((g) => g.secoes.flatMap((s) => s.paragrafos)).filter((p) => p.includes("/seguranca"));
   assert.ok(guiaSeguranca.length > 0);
   for (const p of guiaSeguranca) assert.ok(links(p).includes("/seguranca"), p);

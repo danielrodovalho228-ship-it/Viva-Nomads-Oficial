@@ -36,6 +36,7 @@ import { AtalhosCategoria } from "@/components/home/atalhos-categoria";
 import { HeroVideoBg } from "@/components/hero-video-bg";
 import { VideoInstitucional } from "@/components/institucional/video-institucional";
 import { JsonLd } from "@/components/seo/json-ld";
+import { RegrasPublicas } from "@/components/institucional/regras-publicas";
 import { organizacao } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO, quantosDestaques } from "@/lib/home-imagens";
@@ -274,6 +275,8 @@ export default async function HomePage() {
             <Step n="3" img={HOME_PASSOS_IMAGENS[2]} icon={FileSignature} title="Assine com segurança" text="Caução combinada entre proprietário e morador e contrato assinado digitalmente, com validade jurídica." />
             <Step n="4" img={HOME_PASSOS_IMAGENS[3]} icon={ClipboardCheck} title="Conferência de entrada" text="Na chegada, você e o proprietário conferem o estado do imóvel e registram tudo na plataforma." />
           </div>
+          {/* E956/E957/E958: as regras do processo que a home não declarava, pela mesma fonte da Ajuda. */}
+          <RegrasPublicas className="mt-12" />
         </div>
       </section>
 
