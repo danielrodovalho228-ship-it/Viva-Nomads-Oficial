@@ -105,6 +105,8 @@ interface Conteudo {
   url?: string;
   /** Prompt 44 (item 6): só para o registro do diagnóstico (push_envios); não vai ao aparelho. */
   evento?: string;
+  /** E1087: a categoria dos botões da notificação (categoriaDoEvento); vazia = só o toque. */
+  categoria?: string | null;
 }
 
 /** Quantos receberam e quantos tokens mortos foram apagados (diagnóstico do admin, Prompt 44). */
