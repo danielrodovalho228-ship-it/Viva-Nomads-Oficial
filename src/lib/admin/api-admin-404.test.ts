@@ -45,6 +45,45 @@ test("toda rota de /api/admin que checa admin usa respostaNaoAdmin()", () => {
   assert.deepEqual(sem, []);
 });
 
+/*
+  ORDEM-DUET-450: sobre a main, quatro rotas da Central respondiam 403. A rota só recusava quando o Supabase não estava
+  configurado; com sessão de visitante ou de conta comum, repassava a resposta do motor (src/lib/agentes/motor.ts), que
+  diz 403 "Só admin.". A guarda acima não via isso, porque o 403 não está escrito na rota. Regra: quem repassa o status
+  de outra camada confere o admin ANTES, na própria rota.
+*/
+const HANDLER = /export async function (GET|POST|PUT|PATCH|DELETE)\b/;
+function handlers(fonte: string): { metodo: string; corpo: string }[] {
+  const partes = fonte.split(HANDLER);
+  const saida: { metodo: string; corpo: string }[] = [];
+  for (let i = 1; i < partes.length; i += 2) saida.push({ metodo: partes[i], corpo: partes[i + 1] ?? "" });
+  return saida;
+}
+
+test("rota que repassa o status de outra camada confere o admin antes (o 403 do motor não sai pela API)", () => {
+  const falhas: string[] = [];
+  let repassam = 0;
+  for (const p of rotas(pastaApiAdmin)) {
+    for (const h of handlers(readFileSync(p, "utf8"))) {
+      const repasse = h.corpo.search(/status:\s*r\.(status|http)\b/);
+      if (repasse < 0) continue;
+      repassam++;
+      const antes = h.corpo.slice(0, repasse);
+      const confere = /!\(await deps\.adminId\(\)\)\) return respostaNaoAdmin\(\)/.test(antes) || /if \(!deps\.admin\) return respostaNaoAdmin\(\)/.test(antes);
+      if (!confere) falhas.push(`${relative(raiz, p)} ${h.metodo}`);
+    }
+  }
+  assert.ok(repassam >= 6, "a guarda não passa vazia: chat, executar, memória (GET e DELETE), reunião e a decisão da aprovação");
+  assert.deepEqual(falhas, []);
+});
+
+test("a decisão da aprovação confere o admin antes de validar o id (o 400 não revela a rota a quem não é admin)", () => {
+  const s = readFileSync(join(pastaApiAdmin, "aprovacoes/[id]/route.ts"), "utf8");
+  const admin = s.indexOf("if (!deps.admin) return respostaNaoAdmin()");
+  const id = s.indexOf("UUID.test(id)");
+  assert.ok(admin > 0 && id > 0);
+  assert.ok(admin < id, "o admin é conferido antes do formato do id");
+});
+
 test("respostaNaoAdmin(): 404, 'Não encontrado.' e sem cache", async () => {
   const { respostaNaoAdmin } = await import("./api-nao-admin.ts");
   const r = respostaNaoAdmin();

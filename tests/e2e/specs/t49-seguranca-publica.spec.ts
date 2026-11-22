@@ -86,8 +86,8 @@ test.describe("T49 portões sem login @seguranca", () => {
 
 test.describe("T49 APIs privadas sem login @seguranca", () => {
   // "Negado" = nada executa: 401/403 (sem sessão), 405 (a rota nem tem POST) ou 503
-  // A API do admin responde 404 a quem não é admin, como as páginas /admin (ordem 12a8086d, item 1).
   // (integração/segredo ausente no laboratório, ANTES de qualquer ação). Nunca 2xx.
+  // A API do admin responde 404 a quem não é admin, como as páginas /admin (ordem 12a8086d, item 1).
   // ID válido nas rotas de fechamento, para exercitar o portão de sessão (com `{}` a
   // validação do id responde 400 antes de olhar a sessão e o teste não provaria nada).
   const LEAD_FALSO = "00000000-0000-4000-8000-000000000000";
@@ -122,11 +122,12 @@ test.describe("T49 APIs privadas sem login @seguranca", () => {
     }
   }
 
-  // As rotas de admin que só têm GET/DELETE: o método que existe também recusa visitante.
+  // As rotas de admin que só têm GET/DELETE: o método que existe também recusa visitante, com 404 (ordem 12a8086d,
+  // item 1; ORDEM-DUET-450: o comportamento aprovado é o 404, nunca 401/403, que revelam a rota).
   for (const rota of ["/api/admin/aprovacoes", "/api/admin/agentes/memoria"]) {
     test(`GET ${rota} sem login é negado`, async ({ request }) => {
       const r = await request.get(rota);
-      expect([401, 403], `${rota} → ${r.status()}`).toContain(r.status());
+      expect(r.status(), `${rota} → ${r.status()}`).toBe(404);
     });
   }
 

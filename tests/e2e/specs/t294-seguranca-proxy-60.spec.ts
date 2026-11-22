@@ -30,6 +30,12 @@ const API_ADMIN: { metodo: "get" | "post"; rota: string }[] = [
   { metodo: "post", rota: "/api/admin/agentes/executar" },
   { metodo: "post", rota: "/api/admin/agentes/chat" },
   { metodo: "post", rota: "/api/admin/ia-diagnostico" },
+  // ORDEM-DUET-450: as rotas que repassam a resposta do motor (ele diz 403) e a decisão da aprovação, com id
+  // inválido e com id válido — o 400 do id não pode revelar a rota a quem não é admin.
+  { metodo: "post", rota: "/api/admin/agentes/reuniao" },
+  { metodo: "get", rota: "/api/admin/agentes/conversas" },
+  { metodo: "post", rota: "/api/admin/aprovacoes/nao-e-um-id" },
+  { metodo: "post", rota: "/api/admin/aprovacoes/00000000-0000-4000-8000-000000000000" },
 ];
 
 /** A resposta não pode entregar a página privada: ou manda para o login, ou recusa. */

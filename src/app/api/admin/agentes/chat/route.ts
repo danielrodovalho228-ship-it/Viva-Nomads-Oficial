@@ -8,7 +8,8 @@ export const maxDuration = 90;
 
 export async function POST(request: Request) {
   const deps = await depsReais();
-  if (!deps) return respostaNaoAdmin();
+  // O admin é conferido aqui, antes do motor: o 403 do motor (defesa em profundidade) nunca sai pela API (ORDEM-DUET-450).
+  if (!deps || !(await deps.adminId())) return respostaNaoAdmin();
   const body = await request.json().catch(() => null);
   const r = await responderChat(deps, body);
   return NextResponse.json(r.body, { status: r.status });
