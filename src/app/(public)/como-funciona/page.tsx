@@ -80,7 +80,7 @@ export default function HowItWorksPage() {
       {/* Vídeo institucional v3 no topo, antes dos passos (só toca no play). */}
       <VideoInstitucional />
 
-      <Steps id="para-inquilinos" title="Para quem busca um imóvel" steps={TENANT_STEPS} eager tone="tenant" badge="Para moradores" />
+      <Steps id="para-inquilinos" title="Para quem busca um imóvel sem aluguel escondido" steps={TENANT_STEPS} eager tone="tenant" badge="Para moradores" />
 
       {/* Dois caminhos do inquilino: buscar (fluxo acima) ou publicar um pedido. */}
       <DoisCaminhos />
