@@ -14,7 +14,8 @@ import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
-import { sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
+import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
+import { nomesDasContas, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
 import {
   CONDUTA_DONO,
   FRASE_PAGA_AVALIACAO,
@@ -92,9 +93,11 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
   if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
     try {
       const lista = (await sugeridosDoPedido(admin, atual.id, agora)) ?? [];
-      const { data: dados, error: erroDados } = lista.length ? await admin.from("avaliadores_credenciamento").select("id, numero_credenciado, preco_proprio, prazo_entrega_dias, prazo_resposta_horas, parceiros(nome_publico)").in("id", lista.map((a) => a.id)) : { data: [], error: null };
+      const { data: dados, error: erroDados } = lista.length ? await admin.from("avaliadores_credenciamento").select("id, numero_credenciado, preco_proprio, prazo_entrega_dias, prazo_resposta_horas, parceiros(nome_publico, user_id)").in("id", lista.map((a) => a.id)) : { data: [], error: null };
       if (erroDados) throw new Error(erroDados.message);
-      const porId = new Map(((dados ?? []) as unknown as { id: string; numero_credenciado: string; preco_proprio: number | string | null; prazo_entrega_dias: number | null; prazo_resposta_horas: number | null; parceiros: { nome_publico: string | null } | null }[]).map((d) => [d.id, d]));
+      const porId = new Map(((dados ?? []) as unknown as { id: string; numero_credenciado: string; preco_proprio: number | string | null; prazo_entrega_dias: number | null; prazo_resposta_horas: number | null; parceiros: { nome_publico: string | null; user_id: string | null } | null }[]).map((d) => [d.id, d]));
+      // E1084: o nome vem da conta (a mesma fonte do perfil e do laudo).
+      const nomes = await nomesDasContas(admin, [...porId.values()].map((d) => d.parceiros?.user_id));
       // E682: reputação = conduta PUBLICADA (a função pública conta só as avaliações já publicadas, às cegas).
       const { data: publicos, error: erroPublicos } = await admin.rpc("avaliadores_publicos");
       if (erroPublicos) throw new Error(erroPublicos.message);
@@ -106,7 +109,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
         return {
           id: a.id,
           numero: d?.numero_credenciado ?? "",
-          nome: d?.parceiros?.nome_publico ?? "Avaliador",
+          nome: nomeDoAvaliador(nomes.get(d?.parceiros?.user_id ?? ""), d?.parceiros?.nome_publico),
           termos: linhaDeTermos({
             notaConduta: nota,
             avaliacoesConduta: nota != null ? Math.max(1, Number(pub?.avaliacoes_feitas ?? 0)) : 0,
