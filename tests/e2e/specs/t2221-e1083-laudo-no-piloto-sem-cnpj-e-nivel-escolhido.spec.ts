@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, fotosDoRoteiro, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 
 /*
@@ -41,6 +41,7 @@ async function abrir(browser: Browser, email: string): Promise<Page> {
 }
 /** Conclui a visita, escolhe o nível e assina (o caminho do #4100: seletor no formulário "Enviar o laudo"). */
 async function concluirEscolherAssinar(p: Page, pedidoId: string, nivel: "essencial" | "conforto" | "premium") {
+  await fotosDoRoteiro(pedidoId); // E1079 (ORDEM-431): concluir exige a foto de cada ambiente do roteiro
   await p.goto(`/dashboard/parceiro/avaliacao/${pedidoId}`, { waitUntil: "domcontentloaded" });
   await p.getByTestId("concluir-visita").getByRole("button", { name: "Concluir a visita" }).click();
   await expect.poll(() => statusDo(pedidoId), { timeout: 20_000 }).toBe("realizada");

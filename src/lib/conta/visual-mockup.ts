@@ -130,3 +130,28 @@ export const MARCA_RESUMO_LAUDO = { ok: "grid h-6 w-6 shrink-0 place-items-cente
 
 /** O botão "Assinar laudo": largura inteira, verde-escuro. */
 export const BOTAO_ASSINAR_LAUDO = "h-14 w-full rounded-xl bg-[#07492e] text-2xl font-bold text-white hover:bg-[#0b5a3a]";
+
+/*
+  Visita do avaliador (E1079, fatia 4): mockup avaliador-visita (celular). As cores foram medidas no próprio desenho.
+*/
+
+/** A foto do imóvel no topo e o cartão "Roteiro da visita", que sobe por cima da foto. */
+export const CAPA_VISITA = "aspect-[16/9] w-full overflow-hidden rounded-xl bg-[#e8f0e8]";
+export const CARTAO_ROTEIRO_VISITA = `relative rounded-xl bg-white p-4 ${SOMBRA_CARTAO_AVALIADORES}`;
+export const CARTAO_ROTEIRO_SOBRE_A_CAPA = "-mt-8 mx-4";
+export const TITULO_ROTEIRO_VISITA = "font-title text-2xl font-bold text-[#020d13]";
+export const LINHA_ROTEIRO_VISITA = { feito: "flex items-center gap-3 text-xl text-[#000912]", porFazer: "flex items-center gap-3 text-xl text-[#424242]" } as const;
+export const CAIXA_ROTEIRO_VISITA = {
+  feito: "grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[#3b8d62] text-white",
+  porFazer: "h-6 w-6 shrink-0 rounded-lg border-2 border-[#d6d4d0] bg-white",
+} as const;
+
+/** "Fotos do imóvel": miniaturas quadradas e as vagas tracejadas "Adicionar foto". */
+export const TITULO_FOTOS_DA_VISITA = "font-title text-2xl font-bold text-[#020f14]";
+export const MINIATURA_VISITA = "aspect-square w-full overflow-hidden rounded-lg bg-[#e8f0e8]";
+export const VAGA_FOTO_VISITA =
+  "flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#c9c5c0] text-center text-sm text-[#736d69] hover:border-[#0e4233] hover:text-[#0e4233] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e4233]";
+
+/** O botão "Continuar": largura inteira, verde-escuro. */
+export const BOTAO_CONTINUAR_VISITA =
+  "flex min-h-14 w-full items-center justify-center rounded-xl bg-[#0e4233] px-4 text-2xl font-bold text-white hover:bg-[#145241] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e4233]";
