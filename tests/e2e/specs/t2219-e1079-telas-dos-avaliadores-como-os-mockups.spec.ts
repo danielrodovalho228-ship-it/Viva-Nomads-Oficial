@@ -83,6 +83,9 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     await adm().from("profiles").update({ is_teste: true }).in("id", [ids.av, ids.dono]);
     const { error: ePil } = await adm().from("vistoria_piloto").insert([ids.dono, ids.av].map((user_id) => ({ user_id, nota: "T2219 (laboratório)" })));
     if (ePil) throw ePil;
+    // A identidade da conta do avaliador CONFIRMADA (laudo simulado de conta de teste, como na t380): o perfil e a
+    // listagem só dizem "Identidade verificada pela Viva" com ela (E1099/E1096, ORDEM-DUET-460 §3).
+    await adm().from("tenant_verifications").insert({ tenant_id: ids.av, caf_result: { identity: true, document: true, liveness: true, light: "green", simulado: true }, traffic_light: "green", valid_until: new Date(Date.now() + 365 * 86_400_000).toISOString() });
     const { data: parc, error } = await adm()
       .from("parceiros")
       .insert({ user_id: ids.av, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: avaliador.nome, slug: `aval-t2219-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
@@ -152,6 +155,7 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     if (cred.id) await adm().from("avaliadores_credenciamento").delete().eq("id", cred.id);
     await adm().from("vistoria_precos").delete().eq("cidade", CIDADE);
     await adm().from("vistoria_piloto").delete().in("user_id", [ids.av, ids.dono].filter(Boolean));
+    if (ids.av) await adm().from("tenant_verifications").delete().eq("tenant_id", ids.av);
     await apagarContas([ids.av, ids.dono].filter(Boolean));
   });
 
@@ -178,7 +182,13 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     const p = await ctx.newPage();
     await comChave(p);
     await p.goto(`/avaliadores/${cred.numero}`, { waitUntil: "domcontentloaded" });
-    await temTudo(p, "perfil-publico", ["Perfil do Avaliador", NOME_PUBLICO, "Novo na Viva", "Sobre", "Preço da avaliação", "Estúdio", "1–2 quartos", "3+ quartos", "Identidade verificada pela Viva"]);
+    await temTudo(p, "perfil-publico", ["Perfil do Avaliador", NOME_PUBLICO, "Novo na Viva", "Preço da avaliação", "Estúdio", "1–2 quartos", "3+ quartos", "Identidade verificada pela Viva"]);
+    // "Sobre" (E1099, ORDEM-DUET-458 §2): campo opcional do avaliador; vazio = secção escondida (nunca caixa vazia).
+    expect.soft(await p.getByTestId("avaliador-sobre").count(), "perfil-publico: sem texto do avaliador, a secção \"Sobre\" não aparece").toBe(0);
+    const SOBRE = `Avaliador de teste do laboratório (T2219 ${sufixo}).`;
+    const { error: eSobre } = await adm().from("avaliadores_credenciamento").update({ sobre: SOBRE }).eq("id", cred.id);
+    await p.reload({ waitUntil: "domcontentloaded" });
+    await expect.soft(p.locator("main"), `perfil-publico: com o texto do avaliador, a secção "Sobre" mostra-o (gravação: ${eSobre?.message ?? "ok"})`).toContainText(new RegExp(`Sobre[\\s\\S]*${SOBRE.replace(/[.()]/g, "\\$&")}`));
     const t = await p.locator("main").innerText();
     for (const [porte, valor] of Object.entries(PRECO)) expect.soft(brl(valor).test(t), `decisão 3: a tabela do perfil traz o preço da cidade (${porte}: R$ ${valor})`).toBe(true);
     expect.soft((await p.locator("main").innerHTML()).match(/tel:|mailto:|wa\.me|@lab\.vivanomads\.test/i), "sem telefone nem e-mail").toBeNull();
@@ -190,6 +200,8 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
   test("avaliador-painel: Olá, Avaliador, Ver pedidos, Pedidos · Agenda · Recebidos · Credenciamento", async ({ browser }) => {
     const a = await abrir(browser, avaliador.email);
     await a.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
+    // O painel chega em partes: espera a saudação antes de ler o texto (a 1.ª tentativa lia cedo demais — corrida 45033611381).
+    await expect(a.getByText(/Olá, Rui!/)).toBeVisible({ timeout: 30_000 });
     await temTudo(a, "avaliador-painel", [/Olá, Rui!/, /Você tem \d+ visitas? hoje/, "Avaliador", "Ver pedidos", "Pedidos", "Agenda", "Recebidos", "Credenciamento"]);
     await a.context().close();
   });
