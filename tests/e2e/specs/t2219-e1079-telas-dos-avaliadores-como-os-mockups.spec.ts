@@ -18,7 +18,7 @@ import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
        os pedidos são de 1–2 quartos → R$ 250), nunca um preço próprio do avaliador.
   Só contas de teste, sem fotos de pessoas reais.
   Cobertura dos 12 mockups (ORDEM-DUET-425): os três pares mobile/desktop (dono-escolha, admin, público) correm a 390 e
-  a 1280 px; as barras de baixo dos mockups mobile (morador, avaliador, admin) são cobradas a 390 px.
+  a 1280 px. As barras de baixo ficam fora (navegação global fora do âmbito do E1079 — decisão do Gerente, 22/11).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -55,18 +55,9 @@ async function temTudo(page: Page, tela: string, textos: (string | RegExp)[]) {
   for (const x of textos) expect.soft(typeof x === "string" ? t.includes(x) : x.test(t), `${tela}: tem "${String(x)}" (mockup)`).toBe(true);
   expect.soft(t, `${tela}: a palavra é "avaliador", nunca "vistoriador" (decisão 2)`).not.toMatch(SEM_VISTORIADOR);
 }
-/** As barras de baixo dos mockups mobile (peça 52): os cinco itens, pelo texto, numa navegação da página (390 px). */
-const BARRA = {
-  morador: ["Início", "Buscar", "Meus pedidos", "Mensagens", "Conta"],
-  avaliador: ["Início", "Pedidos", "Agenda", "Recebidos", "Conta"],
-  admin: ["Início", "Fila", "Buscar", "Avisos", "Conta"],
-} as const;
-async function temBarra(page: Page, tela: string, itens: readonly string[]) {
-  if ((page.viewportSize()?.width ?? 0) > 500) return; // a barra de baixo é dos mockups mobile
-  const navs = await page.getByRole("navigation").allInnerTexts();
-  const tem = navs.some((n) => itens.every((i) => n.includes(i)));
-  expect.soft(tem, `${tela}: barra de baixo do mockup com ${itens.join(" · ")} (navegações achadas: ${navs.map((n) => n.replace(/\s+/g, " ").slice(0, 80)).join(" | ") || "nenhuma"})`).toBe(true);
-}
+/* As barras de baixo dos mockups (morador, avaliador, admin) NÃO são cobradas aqui: navegação global fora do âmbito do
+   E1079 — decisão do Gerente, 22/11 (ORDEM-DUET-427). Os mockups mandam no conteúdo e no desenho das telas; a barra de
+   baixo de cada papel fica a da app real, e as telas do avaliador encaixam nela. */
 const LARGURAS = [390, 1280] as const;
 
 test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes dos mockups aprovados @E1079", () => {
@@ -141,7 +132,6 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     const main = d.locator("main");
     expect.soft(await main.innerText(), "decisão 3: o cartão mostra o preço da tabela da cidade para 1–2 quartos (R$ 250)").toMatch(new RegExp(`Avalia[çc][ãa]o:\\s*${brl(PRECO.q1_2).source}`));
     await expect.soft(main.getByRole("button", { name: /^Escolher$/ }).first(), "o botão \"Escolher\" do cartão").toBeVisible();
-    await temBarra(d, "dono-escolha", BARRA.morador);
     await d.context().close();
   });
 
@@ -161,7 +151,6 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     const a = await abrir(browser, avaliador.email);
     await a.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
     await temTudo(a, "avaliador-painel", [/Olá, Rui!/, /Você tem \d+ visitas? hoje/, "Avaliador", "Ver pedidos", "Pedidos", "Agenda", "Recebidos", "Meu nível"]);
-    await temBarra(a, "avaliador-painel", BARRA.avaliador);
     await a.context().close();
   });
 
@@ -170,7 +159,6 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     await a.goto(`/dashboard/parceiro/avaliacao/${pedidos.designado}`, { waitUntil: "domcontentloaded" });
     await temTudo(a, "avaliador-pedido", ["Novo pedido de avaliação", "Novo", /Porte:/, /Data pedida pelo dono/, /Você recebe R\$/, "Aceitar pedido", "Recusar"]);
     expect.soft(await a.locator("main").innerText(), "decisão 3: \"Você recebe\" é o preço da tabela da cidade (R$ 250)").toMatch(new RegExp(`Você recebe\\s*${brl(PRECO.q1_2).source}`));
-    await temBarra(a, "avaliador-pedido", BARRA.avaliador);
     await a.context().close();
   });
 
@@ -178,7 +166,6 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     const a = await abrir(browser, avaliador.email);
     await a.goto(`/dashboard/parceiro/avaliacao/${pedidos.agendado}`, { waitUntil: "domcontentloaded" });
     await temTudo(a, "avaliador-visita", ["Visita em andamento", "Roteiro da visita", "Fotos da fachada", "Sala", "Cozinha", "Quartos", "Banheiros", "Fotos do imóvel", "Adicionar foto", "Continuar"]);
-    await temBarra(a, "avaliador-visita", BARRA.avaliador);
     await a.context().close();
   });
 
@@ -186,7 +173,6 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     const a = await abrir(browser, avaliador.email);
     await a.goto(`/dashboard/parceiro/avaliacao/${pedidos.realizada}`, { waitUntil: "domcontentloaded" });
     await temTudo(a, "avaliador-laudo", ["Laudo da avaliação", "Escolha o nível do imóvel", "Essencial", "Simples e funcional", "Conforto", "Bem equipado e acolhedor", "Premium", "Acabamento superior", /fotos enviadas/, "Checklist completo", "Assinar laudo"]);
-    await temBarra(a, "avaliador-laudo", BARRA.avaliador);
     // O checklist todo "conforme" é o mesmo para os três níveis: a escolha do avaliador é que decide. Escolhe "Premium".
     await a.locator("main").getByRole("radio", { name: /Premium/ }).or(a.locator("main").getByRole("button", { name: /Premium/ })).first().click();
     await a.locator("main").getByRole("button", { name: "Assinar laudo" }).click();
@@ -208,7 +194,6 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     const p = await ctx.newPage();
     await p.goto("/admin/avaliadores", { waitUntil: "domcontentloaded" });
     await temTudo(p, "admin-avaliadores", ["Avaliadores", "Admin", "Chave da Vistoria", "Tabela de preço preenchida", /avaliadores ativos na cidade/, "Parecer jurídico", "Credenciamento", new RegExp(`${cred.numero}\\s*•`), "Ativo", /Tabela de preços —/, "Estúdio", "1–2 quartos", "3+ quartos"]);
-    await temBarra(p, "admin-avaliadores", BARRA.admin);
     await ctx.close();
   });
 
@@ -227,7 +212,6 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     const d = await abrir(browser, dono.email);
     await d.goto("/dashboard/servicos", { waitUntil: "domcontentloaded" });
     await temTudo(d, "servicos", ["Pedir um serviço", "Limpeza", "Lavanderia", "Manutenção leve", "Avaliação do imóvel", "Laudo com o nível do imóvel", "Frete e mudança", "Pedir serviço"]);
-    await temBarra(d, "servicos", BARRA.morador);
     await d.context().close();
   });
 });
