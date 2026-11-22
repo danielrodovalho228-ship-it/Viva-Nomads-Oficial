@@ -5,7 +5,7 @@
   de gravar com o cliente de serviço; mudanças de estado conferem o estado atual na própria gravação (dois cliques não
   passam os dois). Nenhum dinheiro passa pela Viva: a taxa do aditivo é registro para o fluxo de cobrança que já existe.
 */
-import { datasDaEstadia } from "@/lib/contrato-blocos";
+import { DIAS_POR_MES, datasDaEstadia } from "@/lib/contrato-blocos";
 import { after } from "next/server";
 import { recusaObservador } from "@/lib/qa/observador";
 import { headers } from "next/headers";
@@ -577,7 +577,7 @@ async function aplicarAditivo(ctx: Contexto, a: LinhaAditivo): Promise<Res<{ com
     p_aditivo: a.id,
     p_refazer: ids,
     p_novos: novos,
-    p_prazo_dias: meses * 30,
+    p_prazo_dias: meses * DIAS_POR_MES,
     p_qtd: a.mudancas.ocupantes?.depois ?? null,
     p_valor: a.mudancas.valorMensal?.depois ?? null,
   });

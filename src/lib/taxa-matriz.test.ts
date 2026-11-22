@@ -319,7 +319,8 @@ test("33. toda taxa aplicada guarda a origem e a faixa no momento (proposta e ca
 test("34. aviso ao dono no aceite: a congelada com a base; o morador nunca recebe a taxa", () => {
   const acoes = ler("./data/propostas-actions.ts");
   // E562: a base escrita em dias ÷ 30 (meses cheios dão os meses de antes).
-  assert.match(acoes, /const linhaTaxa = textoTaxaCongeladaParaDono\(taxa, tot\.valorMensal, tot\.dias \/ 30, tx\.taxa_no_envio\);/);
+  // Asserção alterada (E1116, ORDEM-DUET-503): o ÷ 30 vem da regra única (DIAS_POR_MES); a base é a mesma.
+  assert.match(acoes, /const linhaTaxa = textoTaxaCongeladaParaDono\(taxa, tot\.valorMensal, tot\.dias \/ DIAS_POR_MES, tx\.taxa_no_envio\);/);
   // E205-B: o aceite manda os dois e-mails (emailsDoAceite) — a taxa vai SÓ no do dono.
   assert.match(acoes, /await emailsDoAceite\(admin, p, termosDaLinha\(v\), linhaTaxa\);/);
   const ini = acoes.indexOf("async function emailsDoAceite(");

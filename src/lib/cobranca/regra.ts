@@ -11,6 +11,10 @@
   abaixo, que espelha a migração 0100. A plataforma não toca no aluguel nem na caução: a taxa é cobrada
   à parte, do PROPRIETÁRIO.
 */
+import { REGRAS_CONTRATO } from "../../config/planos.ts";
+
+/** E1116 (ORDEM-DUET-503): dias por mês da regra única (REGRAS_CONTRATO.diasPorMes), nunca um 30 à mão. */
+const DIAS_POR_MES = REGRAS_CONTRATO.diasPorMes;
 
 export type TipoCobranca = "novo" | "renovacao";
 
@@ -116,7 +120,7 @@ export function comissaoSobreDias(aluguelMensal: number, dias: number, taxa: num
   if (!Number.isFinite(aluguelMensal) || aluguelMensal <= 0) return 0;
   if (!Number.isFinite(dias) || dias < 1) return 0;
   if (!Number.isFinite(taxa) || taxa <= 0) return 0;
-  return Math.round(((aluguelMensal * Math.round(dias)) / 30) * 100 * taxa) / 100;
+  return Math.round(((aluguelMensal * Math.round(dias)) / DIAS_POR_MES) * 100 * taxa) / 100;
 }
 
 export interface TaxaFixadaAdmin {
@@ -238,13 +242,13 @@ export function rotuloTaxaServico(taxa: number, valorMensal: number, meses: numb
   if (!(v > 0 && m > 0)) return inicio;
   if (!Number.isInteger(Math.round(m * 1e6) / 1e6)) {
     // E562 (telas): estadia em dias exatos — a conta aberta em dias: "R$ 2.800 × 43 dias ÷ 30 = R$ 4.013,33".
-    const dias = Math.round(m * 30);
-    const base = Math.round(((v * dias) / 30) * 100) / 100;
+    const dias = Math.round(m * DIAS_POR_MES);
+    const base = Math.round(((v * dias) / DIAS_POR_MES) * 100) / 100;
     const valorDias = valorGravado != null && Number.isFinite(valorGravado) ? valorGravado : comissaoSobreDias(v, dias, taxa);
-    return `Taxa de serviço: ${pctTexto(taxa)} sobre o valor mensal × dias ÷ 30 (${brlTaxa(v)} × ${dias} dias ÷ 30 = ${brlTaxa(base)}) = ${brlTaxa(valorDias)}`;
+    return `Taxa de serviço: ${pctTexto(taxa)} sobre o valor mensal × dias ÷ ${DIAS_POR_MES} (${brlTaxa(v)} × ${dias} dias ÷ ${DIAS_POR_MES} = ${brlTaxa(base)}) = ${brlTaxa(valorDias)}`;
   }
   // E562: estadia em dias exatos chega como meses fracionários (dias ÷ 30) — a fórmula em dias, sem truncar.
-  const calculado = Number.isInteger(m) ? comissaoSobreContrato(v, m, taxa) : comissaoSobreDias(v, Math.round(m * 30), taxa);
+  const calculado = Number.isInteger(m) ? comissaoSobreContrato(v, m, taxa) : comissaoSobreDias(v, Math.round(m * DIAS_POR_MES), taxa);
   const valor = valorGravado != null && Number.isFinite(valorGravado) ? valorGravado : calculado;
   return `${inicio} (${brlTaxa(v)} × ${numMeses(m)} = ${brlTaxa(Math.round(v * m * 100) / 100)}) = ${brlTaxa(valor)}`;
 }
