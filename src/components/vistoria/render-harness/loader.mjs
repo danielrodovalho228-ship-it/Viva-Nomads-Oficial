@@ -18,6 +18,7 @@ const STUBS = {
 export async function nomesDasContas() { return new Map(); }
 export async function tabelaDaCidade(admin) { const r = await admin.from("vistoria_precos").select("*"); return r.data ?? []; }`,
   "@/lib/vistoria/actions": NOOP(["agendarVisita", "aceitarProposta", "avaliarConduta", "confirmarRecebido", "escolherAvaliador", "pedirAvaliacao", "recusarProposta", "registrarAusencia"]),
+  "@/lib/data/avatar-url": `export async function signAvatarPath() { return null; }`,
   "@/components/vistoria/form-acao": `export const FormAcao = ({ children }) => children;`,
   "@/components/vistoria/laudo-dono": `export const LaudoDono = () => null;`,
   "@/components/ui/campo-data": `export const CampoDataHoraFormulario = () => null;`,
