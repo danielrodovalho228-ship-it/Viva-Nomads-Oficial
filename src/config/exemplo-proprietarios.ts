@@ -7,6 +7,8 @@
   - Nenhum nome ou foto de pessoa real: nomes inventados, só iniciais em círculo.
 */
 import { isExemplo } from "../lib/demo-listing.ts";
+// ORDEM-DUET-486: o selo de identidade dos exemplos é o texto da fonte única (a conferência da equipa), nunca escrito à mão.
+import { TEXTO_CONFERIDA_EQUIPE } from "../lib/identidade/estado.ts";
 
 export interface ProprietarioExemplo {
   /** Rota: /proprietario/{id}. */
@@ -55,7 +57,7 @@ export const PROPRIETARIOS_EXEMPLO: readonly ProprietarioExemplo[] = [
     bio: "Arquiteta, moro em Uberlândia e cuido pessoalmente dos imóveis: entrega das chaves, conferência de entrada e suporte durante a estadia.",
     respostaHoras: 8,
     estadiasConcluidas: 14,
-    selos: ["E-mail confirmado", "Telefone verificado", "Identidade verificada"],
+    selos: ["E-mail confirmado", "Telefone verificado", TEXTO_CONFERIDA_EQUIPE],
     imoveis: ["ube-001", "ube-002", "ube-006", "ube-009", "ube-015"],
   },
   {
@@ -79,7 +81,7 @@ export const PROPRIETARIOS_EXEMPLO: readonly ProprietarioExemplo[] = [
     bio: "Tenho casas e imóveis maiores para famílias em mudança de cidade. Gosto de deixar tudo pronto para o primeiro dia, com a cozinha equipada.",
     respostaHoras: 12,
     estadiasConcluidas: 21,
-    selos: ["E-mail confirmado", "Telefone verificado", "Identidade verificada"],
+    selos: ["E-mail confirmado", "Telefone verificado", TEXTO_CONFERIDA_EQUIPE],
     imoveis: ["ube-003", "ube-008", "ube-010", "ube-013", "ube-014"],
   },
 ];
