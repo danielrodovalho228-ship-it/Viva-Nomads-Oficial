@@ -10,6 +10,7 @@ import { readFileSync } from "node:fs";
 import { REGRAS_CONTRATO } from "../config/planos.ts";
 import { DIAS_POR_MES } from "./contrato-blocos.ts";
 import { comissaoSobreDias, rotuloTaxaServico } from "./cobranca/regra.ts";
+import { DIAS_POR_MES as DIAS_POR_MES_CONTADOR } from "./pedidos/contador.ts";
 
 const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\s\/\/ [^\n"`]*$/gm, "");
 /** "× 30" / "÷ 30" de duração: `* 30`, `/ 30`, `÷ 30` (o 30 sozinho, não 300 nem 30_000). */
@@ -45,4 +46,12 @@ test("E1116: os valores não mudam — 30 dias por mês, a mesma conta e o mesmo
   assert.equal(DIAS_POR_MES, 30);
   assert.equal(comissaoSobreDias(2800, 43, 0.12), 481.6);
   assert.match(rotuloTaxaServico(0.12, 2800, 43 / 30), /sobre o valor mensal × dias ÷ 30 \(R\$ 2\.800(,00)? × 43 dias ÷ 30 = R\$ 4\.013,33\)/);
+});
+
+test("E1116 (ORDEM-DUET-506 §3): o contador dos pedidos fica puro (sem imports), mas a cópia dele é igual à regra única", () => {
+  // A pureza é do módulo, não do teste: aqui importam-se os dois. Se um dia divergirem, esta trava fica vermelha.
+  assert.equal(DIAS_POR_MES_CONTADOR, REGRAS_CONTRATO.diasPorMes, "pedidos/contador.ts: DIAS_POR_MES diverge de REGRAS_CONTRATO.diasPorMes");
+  assert.equal(DIAS_POR_MES_CONTADOR, DIAS_POR_MES);
+  // E o módulo continua sem imports, como ele declara.
+  assert.doesNotMatch(readFileSync("src/lib/pedidos/contador.ts", "utf8"), /^import /m);
 });
