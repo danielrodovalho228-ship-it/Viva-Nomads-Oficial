@@ -45,7 +45,7 @@ import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
-import { aberturaContratoPronto, contaDoContrato, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
+import { aberturaContratoPronto, contaDoContrato, contasDoContrato, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
 import { MSG_PAUSAR_FALHOU, MSG_REATIVAR_FALHOU, donoPodeReativar, textoDaPausa, type EmAndamento } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
@@ -1611,6 +1611,7 @@ export async function registrarContrato(
       // E1066: o total pela fonte única (a conta da proposta acordada: mensal, contas e limpeza) e a caução dos blocos.
       const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel, dias: resumo.prazoTotalDias,
         contaTotal: contaDoContrato(acordada),
+        contas: contasDoContrato(acordada),
         caucao: rows.reduce((s, r) => s + Number(r.caucao), 0),
       });
       const quadro = {

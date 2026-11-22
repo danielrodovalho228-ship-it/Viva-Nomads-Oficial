@@ -20,6 +20,21 @@ export function contaDoContrato(
   return precoDaProposta({ ...acordada.termos, valorMensal: acordada.valorMensal, meses: acordada.meses }).conta ?? null;
 }
 
+/**
+ * E1085 — as contas do contrato, cada uma na sua linha, DA MESMA FONTE do total (E1066): as parcelas do mês da proposta
+ * acordada além do aluguel (precoDaProposta.parcelasMes, com o rótulo da fonte), por mês. Parcela zero não entra; sem
+ * proposta acordada, nenhuma linha (o quadro de antes).
+ */
+export function contasDoContrato(
+  acordada: { valorMensal: number; meses: number; termos: Omit<TermosPreco, "valorMensal" | "meses"> } | null,
+): LinhaDado[] {
+  if (!acordada) return [];
+  return precoDaProposta({ ...acordada.termos, valorMensal: acordada.valorMensal, meses: acordada.meses })
+    .parcelasMes.slice(1)
+    .filter((p) => Number(p.valor) > 0)
+    .map((p) => ({ rotulo: p.rotulo, valor: `${brl(p.valor)}/mês` }));
+}
+
 export interface ImovelDoEmail {
   /** E394: o id do anúncio (vira o código VN-… no e-mail). */
   id?: string | null;
@@ -138,6 +153,8 @@ export function linhasContrato(o: {
   contaTotal?: string | null;
   /** E1066: a caução dos blocos do contrato; 0 ou vazia (seguro-fiança) → sem a linha. */
   caucao?: number | null;
+  /** E1085: as contas do mês (contasDoContrato), cada uma na sua linha, logo depois do valor mensal. */
+  contas?: readonly LinhaDado[] | null;
 }): LinhaDado[] {
   // E562: contrato em dias exatos → "R$ 3.000 × 43 dias ÷ 30 = R$ 4.300" (em meses cheios, como antes).
   const emDias = o.dias != null && o.dias > 0 && o.dias % 30 !== 0;
@@ -148,6 +165,7 @@ export function linhasContrato(o: {
     { rotulo: "Imóvel", valor: imovelPorExtenso(o.imovel) },
     { rotulo: "Período", valor: textoPeriodo(o.inicio, o.fim, o.meses, o.dias) },
     { rotulo: "Valor mensal", valor: brl(o.valorMensal) },
+    ...(o.contas ?? []),
     { rotulo: "Total do contrato", valor: o.contaTotal || soAluguel },
   ];
   if (o.caucao != null && Number(o.caucao) > 0) linhas.push({ rotulo: "Caução", valor: brl(Number(o.caucao)) });
