@@ -16,6 +16,7 @@ import { abrirContestacao, emitirLaudo, liberar, registrarCorrecao, type LinhaLa
 import { porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, rotaDono, tabelaDaCidade } from "./servidor";
 import type { MotivoVerificacao } from "./strikes";
+import { lerNivelDoLaudo } from "./nivel-do-laudo";
 import { recusaObservador } from "@/lib/qa/observador";
 
 /*
@@ -169,7 +170,7 @@ export async function concluirVisita(form: FormData): Promise<Res> {
 export async function enviarLaudo(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || c.p.status !== "realizada") return SEM_ACESSO;
-  const r = await emitirLaudo(c.admin, c.p.id, new Date(), null, { declarou: form.get("assino") === "on" });
+  const r = await emitirLaudo(c.admin, c.p.id, new Date(), null, { declarou: form.get("assino") === "on", nivel: lerNivelDoLaudo(form.get("nivel")) });
   if (!r.ok) return r;
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
@@ -200,7 +201,7 @@ export async function confirmarCorrecao(form: FormData): Promise<Res> {
     const v = String(form.get(`item_${g}`) ?? "");
     if (valorValido(g, v)) corrigidos[g] = v as ValorItem;
   }
-  const r = await registrarCorrecao(s.admin, l.pedido_id, corrigidos, new Date(), { declarou: form.get("assino") === "on" });
+  const r = await registrarCorrecao(s.admin, l.pedido_id, corrigidos, new Date(), { declarou: form.get("assino") === "on", nivel: lerNivelDoLaudo(form.get("nivel")) });
   if (!r.ok) return r;
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: r.resultado === "aprovado" ? "Correção confirmada: o laudo ganhou nova versão, aprovado." : "Nova versão do laudo emitida." };
