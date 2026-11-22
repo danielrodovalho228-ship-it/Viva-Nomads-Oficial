@@ -9,6 +9,7 @@ import { SeloAssinatura } from "@/components/vistoria/selo-assinatura";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { ChecklistAvaliador } from "@/components/vistoria/checklist-avaliador";
 import { VisitaEmAndamento } from "@/components/avaliadores/visita";
+import { PedidoDoAvaliador } from "@/components/avaliadores/pedido";
 import { MedirInternetAvaliacao } from "@/components/vistoria/medir-internet-avaliacao";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { PERGUNTAS_RUIDO } from "@/config/niveis";
@@ -19,6 +20,11 @@ import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO, linhaNivelSustentado } from "@/lib/vistoria/nivel-do-laudo";
 import { faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
+import { etapaDoPedido, linhaDoPorte, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
+import { PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
+import { prazoResposta } from "@/lib/vistoria/telas-exibicao";
+import { brl } from "@/lib/fiscal/documento";
+import type { Porte } from "@/lib/vistoria/regras";
 import { DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
 import { BOTAO_ASSINAR_LAUDO, CARTAO_NIVEL_LAUDO, LINHA_RESUMO_LAUDO, MARCA_NIVEL_LAUDO, MARCA_RESUMO_LAUDO, RESUMO_LAUDO, TEXTO_NIVEL_LAUDO, TITULO_NIVEL_LAUDO } from "@/lib/conta/visual-mockup";
 import { concluirVisita, confirmarCorrecao, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
@@ -51,6 +57,37 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
   if (!p || dono !== user.id) notFound();
+
+  // E1079 (fatia 3, ORDEM-DUET-445): enquanto o pedido espera a resposta do avaliador (ou o aceite do dono), a tela é a
+  // do desenho "Novo pedido de avaliação" — sem desfazer o E648: aceitar é propor o próprio valor e o próprio prazo.
+  // Bairro e cidade antes do aceite do dono; o endereço completo só depois. Recusado ou vencido: volta à lista.
+  if (p.status === "designado") {
+    const [{ data: d }, { data: des }, { data: im }, { data: capasDoPedido }] = await Promise.all([
+      admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_aceita_em, designado_em, teste").eq("id", p.id).maybeSingle(),
+      admin.from("vistoria_designacoes").select("avaliador_id, resposta").eq("pedido_id", p.id),
+      admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", p.property_id).maybeSingle(), // consistency-ignore: E1079 fatia 3 — endereço exato só ao avaliador escolhido e só depois de o dono aceitar a proposta
+      admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1),
+    ]);
+    const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_aceita_em: string | null; designado_em: string | null; teste: boolean } | null;
+    const minha = ((des ?? []) as { avaliador_id: string; resposta: string | null }[]).find((x) => x.avaliador_id === dados?.avaliador_id);
+    const etapa = dados && minha ? etapaDoPedido({ status: p.status as string, resposta: minha.resposta, proposta_aceita_em: dados.proposta_aceita_em, teste: dados.teste }) : null;
+    if (!dados || !etapa) redirect("/dashboard/parceiro/avaliacao");
+    const imovel = im as { exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; draft_data?: Record<string, unknown> | null } | null;
+    return (
+      <PedidoDoAvaliador
+        pedidoId={p.id as string}
+        etapa={etapa}
+        capaUrl={((capasDoPedido ?? [])[0] as { url: string } | undefined)?.url}
+        local={localDoPedido(etapa, imovel, dados.cidade)}
+        porte={linhaDoPorte(dados.porte)}
+        valor={linhaDoValor(etapa, dados)}
+        prazoResposta={etapa === "novo" && dados.designado_em ? prazoResposta(dados.designado_em, new Date()) : null}
+        ocupado={Boolean(p.ocupado)}
+        exemploValor={brl(Number(dados.valor_tabela))}
+        prazoMaxDias={PRAZO_PROPOSTA_MAX_DIAS}
+      />
+    );
+  }
 
   const [{ data: itens }, { data: laudos }, { data: fotos }] = await Promise.all([
     admin.from("vistoria_checklist").select("chave, valor, observacao").eq("pedido_id", p.id),
