@@ -22,8 +22,9 @@ import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
     - serviços: o cartão "Avaliação do imóvel" com "Laudo com o nível do imóvel" → t1722, teste 2;
     - dono-escolha: "Avaliadores disponíveis em <cidade>" e "Avaliação: R$ <tabela da cidade>" (decisão 3) → t1722, teste 3;
     - público: o título "Avaliadores em <cidade>" → t1722, teste 1.
-  Cobertura dos 12 mockups (ORDEM-DUET-425): os três pares mobile/desktop (dono-escolha, admin, público) correm a 390 e
-  a 1280 px. As barras de baixo ficam fora (navegação global fora do âmbito do E1079 — decisão do Gerente, 22/11).
+  Cobertura dos mockups (ORDEM-DUET-425): os três pares mobile/desktop (dono-escolha, admin, público) correm a 390 e
+  a 1280 px. A grade de serviços (morador-servico-avaliador) saiu: dela, só o cartão da avaliação é do E1080, e esse está
+  na t1722 (teste 2) — o resto é tela do morador, fora do E1079 (ORDEM-DUET-453). As barras de baixo ficam fora (navegação global fora do âmbito do E1079 — decisão do Gerente, 22/11).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -110,6 +111,9 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     for (const e of ["pedido", "designado", "agendado", "realizada"] as const) {
       ids[e] = await criarImovelPronto(ids.dono, `Studio ${e} T2219 ${sufixo}`, { ativo: true });
       await adm().from("properties").update({ city: CIDADE, lat: IMOVEL.lat, lng: IMOVEL.lng, lat_exata: IMOVEL.lat, lng_exata: IMOVEL.lng }).eq("id", ids[e]);
+      // ORDEM-DUET-453: o pedido da escolha nasce PELA TELA ("Pedir avaliação do imóvel"), como na t1722 — só assim o
+      // servidor monta a lista de sugeridos. Este imóvel fica sem pedido gravado.
+      if (e === "pedido") continue;
       const { data: p, error: eP } = await adm()
         .from("vistoria_pedidos")
         .insert({ property_id: ids[e], owner_id: ids.dono, cidade: CIDADE, porte: "q1_2", valor_tabela: PRECO.q1_2, ...extra[e] })
@@ -117,20 +121,30 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
         .single();
       if (eP) throw eP;
       pedidos[e] = p.id as string;
-      if (e !== "pedido") await adm().from("vistoria_designacoes").insert({ pedido_id: p.id, avaliador_id: cred.id, designado_em: horas(-1), ...(e === "designado" ? {} : { resposta: "aceita", respondido_em: horas(-1) }) });
+      await adm().from("vistoria_designacoes").insert({ pedido_id: p.id, avaliador_id: cred.id, designado_em: horas(-1), ...(e === "designado" ? {} : { resposta: "aceita", respondido_em: horas(-1) }) });
     }
     // O checklist do pedido "realizada" preenchido (simulação declarada, como na t305).
     await adm().from("vistoria_checklist").upsert(
       ITENS_CHECKLIST.map((i) => ({ pedido_id: pedidos.realizada, chave: i.chave, valor: "tipo" in i && i.tipo === "limpeza" ? "pronto" : "conforme", observacao: null })),
       { onConflict: "pedido_id,chave" },
     );
+    // As fotos da visita (simulação declarada): o resumo do laudo conta-as ("N fotos enviadas").
+    const { error: eF } = await adm().from("vistoria_checklist_fotos").insert(
+      ["fachada", "sala", "cozinha"].map((comodo, i) => ({ pedido_id: pedidos.realizada, comodo, path: `${pedidos.realizada}/t2219-${i}.webp` })),
+    );
+    if (eF) throw eF;
     await adm().from("vistoria_pedidos").update({ ruido_respostas: { via_intensa: false, noturno_obra_100m: false, aviao_ferrovia: false, isolamento_acustico: false } }).eq("id", pedidos.realizada!);
   });
 
   test.afterAll(async () => {
+    if (ids.pedido) {
+      const { data: viaTela } = await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.pedido);
+      for (const v of viaTela ?? []) pedidos.pedido = v.id as string;
+    }
     const ps = Object.values(pedidos).filter(Boolean) as string[];
     if (ps.length) {
       await adm().from("vistoria_laudos").delete().in("pedido_id", ps);
+      await adm().from("vistoria_checklist_fotos").delete().in("pedido_id", ps);
       await adm().from("vistoria_checklist").delete().in("pedido_id", ps);
       await adm().from("vistoria_designacoes").delete().in("pedido_id", ps);
       await adm().from("vistoria_pedidos").delete().in("id", ps);
@@ -144,6 +158,14 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
   for (const largura of LARGURAS) test(`dono-escolha-avaliador a ${largura} px (mockups mobile e desktop): Escolher avaliador, o cartão com o preço da tabela da cidade`, async ({ browser }) => {
     const d = await abrir(browser, dono.email, largura);
     await d.goto(`/dashboard/imoveis/${ids.pedido}/nivel`, { waitUntil: "domcontentloaded" });
+    // O dono pede pela tela (uma vez, na primeira largura); a escolha aparece ao reabrir com o pedido "pedido" (t1722).
+    const temPedido = async () => ((await adm().from("vistoria_pedidos").select("status").eq("property_id", ids.pedido).maybeSingle()).data?.status as string | undefined) ?? "";
+    if (!(await temPedido())) {
+      await d.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir avaliação do imóvel" }).click({ timeout: 25_000 });
+      await expect.poll(temPedido, { timeout: 20_000, message: "o pedido grava no servidor" }).toBe("pedido");
+      await d.goto(`/dashboard/imoveis/${ids.pedido}/nivel`, { waitUntil: "domcontentloaded" });
+    }
+    await expect(d.getByTestId("avaliacao-escolha"), "a escolha aparece com o pedido feito pela tela").toBeVisible({ timeout: 30_000 });
     await temTudo(d, "dono-escolha", ["Escolher avaliador", avaliador.nome, "Novo na Viva"]);
     // "Avaliadores disponíveis em <cidade>" e "Avaliação: R$ <tabela>" (decisão 3): cobrados na t1722, teste 3.
     const main = d.locator("main");
@@ -163,10 +185,12 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     await ctx.close();
   });
 
-  test("avaliador-painel: Olá, Avaliador, Ver pedidos, Pedidos · Agenda · Recebidos · Meu nível", async ({ browser }) => {
+  // "Meu nível" → "Credenciamento": divergência ACEITE pelo Gerente (ORDEM-DUET-453) — não existe nível do avaliador no
+  // sistema; o 4.º cartão é o do estado do credenciamento. Esta spec não o cobra.
+  test("avaliador-painel: Olá, Avaliador, Ver pedidos, Pedidos · Agenda · Recebidos · Credenciamento", async ({ browser }) => {
     const a = await abrir(browser, avaliador.email);
     await a.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
-    await temTudo(a, "avaliador-painel", [/Olá, Rui!/, /Você tem \d+ visitas? hoje/, "Avaliador", "Ver pedidos", "Pedidos", "Agenda", "Recebidos", "Meu nível"]);
+    await temTudo(a, "avaliador-painel", [/Olá, Rui!/, /Você tem \d+ visitas? hoje/, "Avaliador", "Ver pedidos", "Pedidos", "Agenda", "Recebidos", "Credenciamento"]);
     await a.context().close();
   });
 
@@ -190,7 +214,8 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     await a.goto(`/dashboard/parceiro/avaliacao/${pedidos.realizada}`, { waitUntil: "domcontentloaded" });
     await temTudo(a, "avaliador-laudo", ["Laudo da avaliação", "Escolha o nível do imóvel", "Essencial", "Simples e funcional", "Conforto", "Bem equipado e acolhedor", "Premium", "Acabamento superior", /fotos enviadas/, "Checklist completo", "Assinar laudo"]);
     // O checklist todo "conforme" é o mesmo para os três níveis: a escolha do avaliador é que decide. Escolhe "Premium".
-    await a.locator("main").getByRole("radio", { name: /Premium/ }).or(a.locator("main").getByRole("button", { name: /Premium/ })).first().click();
+    // O rádio é sr-only dentro do cartão (label): clica-se o cartão, como a pessoa faz.
+    await a.getByTestId("laudo-nivel-premium").click();
     await a.locator("main").getByRole("button", { name: "Assinar laudo" }).click();
     await expect
       .poll(async () => ((await adm().from("vistoria_laudos").select("nivel_sustentado").eq("pedido_id", pedidos.realizada!).order("versao", { ascending: false }).limit(1).maybeSingle()).data?.nivel_sustentado as string | undefined) ?? "sem laudo", {
@@ -209,7 +234,8 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
     const p = await ctx.newPage();
     await p.goto("/admin/avaliadores", { waitUntil: "domcontentloaded" });
-    await temTudo(p, "admin-avaliadores", ["Avaliadores", "Admin", "Chave da Vistoria", "Tabela de preço preenchida", /avaliadores ativos na cidade/, "Parecer jurídico", "Credenciamento", new RegExp(`${cred.numero}\\s*•`), "Ativo", /Tabela de preços —/, "Estúdio", "1–2 quartos", "3+ quartos"]);
+    // A pílula "Admin" é do celular; a 1280 px o mockup põe-na no cabeçalho global — fora do E1079 (ORDEM-DUET-427/453).
+    await temTudo(p, "admin-avaliadores", ["Avaliadores", ...(largura === 390 ? ["Admin"] : []), "Chave da Vistoria", "Tabela de preço preenchida", /avaliadores ativos na cidade/, "Parecer jurídico", "Credenciamento", new RegExp(`${cred.numero}\\s*•`), "Ativo", /Tabela de preços —/, "Estúdio", "1–2 quartos", "3+ quartos"]);
     await ctx.close();
   });
 
@@ -218,17 +244,12 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     const p = await ctx.newPage();
     await comChave(p);
     await p.goto(`/avaliadores/${SLUG_CIDADE}`, { waitUntil: "domcontentloaded" });
-    await temTudo(p, "publico-avaliadores", ["Buscar por cidade", "Identidade verificada pela Viva", NOME_PUBLICO, /Avaliador sócio da Viva|Credenciad[ao]/, /Novo na Viva|★\s*\d+ avaliaç/]);
+    // A busca é um campo: "Buscar por cidade" é o placeholder e o nome acessível, não texto da página.
+    await expect.soft(p.getByRole("search").getByPlaceholder("Buscar por cidade"), "publico: o campo \"Buscar por cidade\"").toBeVisible();
+    // O selo dos credenciados (hoje nulo) está com o Daniel (ORDEM-DUET-453): a cobrança fica até à decisão dele.
+    await temTudo(p, "publico-avaliadores", ["Identidade verificada pela Viva", NOME_PUBLICO, /Avaliador sócio da Viva|Credenciad[ao]/, /Novo na Viva|★\s*\d+ avaliaç/]);
     // O cartão do mockup não tem número nem contacto (regra do Daniel).
     expect.soft((await p.locator("main").innerHTML()).match(/tel:|mailto:|wa\.me|@lab\.vivanomads\.test/i), "publico: sem telefone nem e-mail").toBeNull();
     await ctx.close();
-  });
-
-  test("morador-servico-avaliador: Pedir um serviço, as cinco linhas e Pedir serviço", async ({ browser }) => {
-    const d = await abrir(browser, dono.email);
-    await d.goto("/dashboard/servicos", { waitUntil: "domcontentloaded" });
-    await temTudo(d, "servicos", ["Pedir um serviço", "Limpeza", "Lavanderia", "Manutenção leve", "Frete e mudança", "Pedir serviço"]);
-    // O cartão "Avaliação do imóvel" / "Laudo com o nível do imóvel" na grade: cobrado na t1722, teste 2.
-    await d.context().close();
   });
 });
