@@ -14,7 +14,7 @@ import type { EstadoIdentidade } from "../identidade/estado.ts";
  * `simulavel` e `indisponivel` não dão selo.
  */
 export function textoDoSeloDeIdentidade(e: EstadoIdentidade | null | undefined): string | null {
-  return e?.estado === "confirmada" || e?.estado === "conferida_equipe" ? e.texto : null;
+  return e?.estado === "confirmada" ? e.texto : null;
 }
 
 export type SeloDoDono = { tipo: "identidade"; texto: string } | null;
