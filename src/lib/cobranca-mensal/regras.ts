@@ -55,12 +55,17 @@ export function taxaDaParcela(valorAluguel: number, taxa: number): number {
   return arredonda(valorAluguel * taxa);
 }
 
-export function cronogramaMensal(f: { checkin: string; checkout: string; aluguelMensal: number; taxa: number }):
+export function cronogramaMensal(
+  f: { checkin: string; checkout: string; aluguelMensal: number; taxa: number },
+  /** E647: a forma é escolha do dono nas duas faixas, então o mensal também vale de 30 a 90 dias. O padrão do E641 (91) não muda. */
+  opcoes: { minDias?: number } = {},
+):
   | { ok: true; dias: number; parcelas: Parcela[] }
   | { ok: false; motivo: string } {
+  const minDias = opcoes.minDias ?? MIN_DIAS_COBRANCA_MENSAL;
   const dias = diasEntre(f.checkin, f.checkout);
   if (!(f.aluguelMensal > 0)) return { ok: false, motivo: "Informe o aluguel mensal." };
-  if (dias < MIN_DIAS_COBRANCA_MENSAL) return { ok: false, motivo: `A cobrança mensal vale para estadias de ${MIN_DIAS_COBRANCA_MENSAL} a ${TETO_DIAS_ACUMULADOS} dias.` };
+  if (dias < minDias) return { ok: false, motivo: `A cobrança mensal vale para estadias de ${minDias} a ${TETO_DIAS_ACUMULADOS} dias.` };
   if (dias > TETO_DIAS_ACUMULADOS) return { ok: false, motivo: `A estadia passa de ${TETO_DIAS_ACUMULADOS} dias, o teto da Viva.` };
   const parcelas: Parcela[] = [];
   let cheios = 0;

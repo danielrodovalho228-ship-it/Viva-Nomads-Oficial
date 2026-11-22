@@ -43,8 +43,9 @@ test.describe("T1713 — E1075: o perfil público do avaliador do Rogério", () 
       await expect(perfil.getByTestId("avaliador-selo")).toHaveText("Avaliador sócio da Viva");
       await expect(perfil.getByTestId("avaliador-cidade")).toHaveText("Uberlândia");
       await expect(perfil.getByTestId("avaliador-numero")).toHaveText(numero);
-      await expect(perfil.getByTestId("avaliador-feitas")).toHaveText("0");
-      await expect(perfil.getByTestId("avaliador-nota")).toHaveText("Ainda sem avaliações de conduta");
+      // E1079 (asserção alterada): o estado vazio honesto é o cartão "Novo na Viva" do desenho aprovado.
+      await expect(perfil.getByTestId("avaliador-novo")).toContainText("Novo na Viva");
+      await expect(perfil.getByTestId("avaliador-novo")).toContainText("Este avaliador ainda não tem avaliações");
       await expect(perfil).not.toContainText(/credenciad/i);
       await expect(perfil.getByRole("button")).toHaveCount(0);
       await expect(perfil.getByRole("link")).toHaveCount(0);
