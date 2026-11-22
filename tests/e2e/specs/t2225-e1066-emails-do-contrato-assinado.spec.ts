@@ -14,7 +14,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
     c) ao dono, que assinou por último, a sua cópia ("assinado pelas duas partes").
   Em cada um: "Total do contrato" é a conta da fonte única da proposta aceite (aluguel R$ 3.200 + contas R$ 150 =
   R$ 3.350 por mês, 1 mês), não só o aluguel (R$ 3.200); e há a linha "Caução: R$ 1.600" (a caução dos blocos).
-  Simulação declarada: candidatura, proposta aceite e contrato aguardando assinatura gravados pelo laboratório.
+  Simulação declarada: candidatura, proposta aceite, contrato aguardando assinatura e o check-in gravados pelo laboratório.
   Só contas de teste. Laboratório; não é prova ao vivo no site.
 */
 const senha = novaSenha();
@@ -110,9 +110,13 @@ test.describe("T2225 — E1066: os e-mails de contrato assinado trazem o total d
     ids.contrato = c.id as string;
     const { error: eB } = await adm().from("contrato_blocos").insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(10), fim: dia(39), meses: 1, valor: 3200, caucao: 1600, status: "ativo" });
     if (eB) throw eB;
+    // Como na t57: o dono só assina com as instruções de entrada preenchidas ("Check-in garantido").
+    const { error: eK } = await adm().from("contratos_checkin").insert({ contrato_id: ids.contrato, horario: "14:00", instrucoes: "Chave na portaria, apto 12.", plantao: "34999990000" });
+    if (eK) throw eK;
   });
   test.afterAll(async () => {
     if (ids.contrato) {
+      await adm().from("contratos_checkin").delete().eq("contrato_id", ids.contrato);
       await adm().from("contrato_blocos").delete().eq("contrato_id", ids.contrato);
       await adm().from("contratos").delete().eq("id", ids.contrato);
     }
