@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T1720 — E1079/E1080 (ORDEM-DUET-385/386): as 4 telas do avaliador, com print a 390 e 1280 px ao lado dos mockups
+  T1722 — E1079/E1080 (ORDEM-DUET-385/386): as 4 telas do avaliador, com print a 390 e 1280 px ao lado dos mockups
   aprovados (docs/mockups-avaliadores/). Só contas de teste; cidade própria do spec (Patrocínio, que nenhum outro spec
   do laboratório usa), para não pôr avaliador no rodízio das cidades dos outros specs.
    1. Listagem por cidade (/avaliadores/patrocinio) — aberta só no laboratório — e o perfil público do avaliador.
@@ -16,8 +16,8 @@ const SAIDA = "tests/laboratorio/saida";
 const CIDADE = "Patrocínio";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t1720.${sufixo}@lab.vivanomads.test`, nome: "Dalva Teste", role: "owner" as const };
-const aval = { email: `aval.t1720.${sufixo}@lab.vivanomads.test`, nome: "Artur Teste", role: "tenant" as const };
+const dono = { email: `dono.t1722.${sufixo}@lab.vivanomads.test`, nome: "Dalva Teste", role: "owner" as const };
+const aval = { email: `aval.t1722.${sufixo}@lab.vivanomads.test`, nome: "Artur Teste", role: "tenant" as const };
 const ids: Record<string, string> = {};
 let numero = "";
 
@@ -29,7 +29,7 @@ async function semRolagemLateral(page: Page) {
   expect(sobra, "sem rolagem lateral").toBeLessThanOrEqual(1);
 }
 
-test.describe("T1720 — E1079/E1080: as telas do avaliador", () => {
+test.describe("T1722 — E1079/E1080: as telas do avaliador", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
@@ -42,24 +42,24 @@ test.describe("T1720 — E1079/E1080: as telas do avaliador", () => {
     }
     const { data: parc, error: eP } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.aval, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: aval.nome, slug: `aval-t1720-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
+      .insert({ user_id: ids.aval, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: aval.nome, slug: `aval-t1722-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
       .select("id")
       .single();
     if (eP) throw eP;
     ids.parc = parc.id as string;
     const { data: n } = await adm().rpc("proximo_numero_avaliador", { p_sigla: "UDI" });
     numero = n as string;
-    const { error: eC } = await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids.parc, cidade: CIDADE, numero_credenciado: numero, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/t1720", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" });
+    const { error: eC } = await adm().from("avaliadores_credenciamento").insert({ parceiro_id: ids.parc, cidade: CIDADE, numero_credenciado: numero, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/t1722", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" });
     if (eC) throw eC;
     // Imóvel de 1 quarto (porte "1 ou 2 quartos") na cidade do spec, publicado; a tabela da cidade com os 3 portes.
-    ids.imovel = await criarImovelPronto(ids.dono, `Casa t1720 ${sufixo}`, { ativo: true });
+    ids.imovel = await criarImovelPronto(ids.dono, `Casa t1722 ${sufixo}`, { ativo: true });
     const c = await adm().from("properties").update({ city: CIDADE }).eq("id", ids.imovel);
     if (c.error) throw c.error;
     const { error: eT } = await adm()
       .from("vistoria_precos")
       .insert(["estudio", "q1_2", "q3_mais"].map((porte) => ({ cidade: CIDADE, porte, valor: porte === "q1_2" ? 350 : 300 })));
     if (eT) throw eT;
-    const p = await adm().from("vistoria_piloto").insert({ user_id: ids.dono, nota: "T1720 (laboratório)" });
+    const p = await adm().from("vistoria_piloto").insert({ user_id: ids.dono, nota: "T1722 (laboratório)" });
     if (p.error) throw p.error;
   });
 
@@ -88,13 +88,13 @@ test.describe("T1720 — E1079/E1080: as telas do avaliador", () => {
       await expect(cartao.getByTestId("vitrine-nome")).toHaveText("Artur");
       await expect(cartao.getByTestId("vitrine-iniciais")).toHaveText(/^A/);
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t1720-1-listagem-${w}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t1722-1-listagem-${w}.png`, fullPage: true });
 
       await page.goto(`/avaliadores/${numero}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("avaliador-publico")).toBeVisible({ timeout: 25_000 });
       await expect(page.getByTestId("avaliador-numero")).toHaveText(numero);
       await semRolagemLateral(page);
-      await page.screenshot({ path: `${SAIDA}/t1720-2-perfil-${w}.png`, fullPage: true });
+      await page.screenshot({ path: `${SAIDA}/t1722-2-perfil-${w}.png`, fullPage: true });
     }
     await ctx.close();
   });
@@ -111,14 +111,14 @@ test.describe("T1720 — E1079/E1080: as telas do avaliador", () => {
       await expect(card).toHaveAttribute("href", "/dashboard/imoveis");
       await card.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t1720-4-servicos-${w}.png` });
+      await d.screenshot({ path: `${SAIDA}/t1722-4-servicos-${w}.png` });
     }
     // A trava morde: fora do piloto (sem chave, sem cookie), o cartão some.
     await adm().from("vistoria_piloto").delete().eq("user_id", ids.dono);
     await d.goto("/dashboard/servicos", { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("servicos-grade")).toBeVisible({ timeout: 25_000 });
     await expect(d.getByTestId("servicos-avaliacao")).toHaveCount(0);
-    const p = await adm().from("vistoria_piloto").insert({ user_id: ids.dono, nota: "T1720 (laboratório)" });
+    const p = await adm().from("vistoria_piloto").insert({ user_id: ids.dono, nota: "T1722 (laboratório)" });
     expect(p.error).toBeNull();
     await d.context().close();
   });
@@ -147,7 +147,7 @@ test.describe("T1720 — E1079/E1080: as telas do avaliador", () => {
       await expect(d.getByTestId("avaliacao-escolha")).toBeVisible({ timeout: 30_000 });
       await d.getByTestId("avaliacao-escolha").scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
-      await d.screenshot({ path: `${SAIDA}/t1720-3-escolha-${w}.png` });
+      await d.screenshot({ path: `${SAIDA}/t1722-3-escolha-${w}.png` });
     }
     await d.context().close();
   });
