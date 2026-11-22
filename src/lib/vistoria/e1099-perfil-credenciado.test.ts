@@ -9,7 +9,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { cartaoDoAvaliador, novoNaViva, TEXTO_IDENTIDADE_VERIFICADA, TITULO_NOVO_NA_VIVA } from "./vitrine-avaliadores.ts";
+import { cartaoDoAvaliador, contaDaLinhaDeCredenciamento, novoNaViva, TEXTO_IDENTIDADE_VERIFICADA, TITULO_NOVO_NA_VIVA } from "./vitrine-avaliadores.ts";
 
 const pagina = readFileSync("src/app/(public)/avaliadores/[numero]/page.tsx", "utf8");
 const credenciado = pagina.slice(pagina.indexOf("export default async function AvaliadorPage"), pagina.indexOf("async function PerfilPublico"));
@@ -53,4 +53,18 @@ test("E1099 parte 3 (ORDEM-463 §1): 'Identidade verificada pela Viva' no cartã
   const cartao = readFileSync("src/components/vistoria/vitrine-avaliadores.tsx", "utf8");
   assert.match(cartao, /\{c\.identidadeVerificada && \(\s*<p[^>]*data-testid="vitrine-identidade"[\s\S]*?\{TEXTO_IDENTIDADE_VERIFICADA\}/);
   assert.doesNotMatch(cartao, /"Identidade verificada pela Viva"/, "o texto não se duplica no cartão");
+});
+
+test("E1099 (ORDEM-473 §1): a listagem acha a conta pela MESMA regra do perfil — também no credenciamento criado pelo parceiro", () => {
+  // A regra única: a conta do credenciamento; sem ela (credenciamento criado pelo parceiro), a conta do parceiro.
+  assert.equal(contaDaLinhaDeCredenciamento({ user_id: "u1", parceiros: { user_id: "p1" } }), "u1");
+  assert.equal(contaDaLinhaDeCredenciamento({ user_id: null, parceiros: { user_id: "p1" } }), "p1", "criado pelo parceiro: a conta do parceiro");
+  assert.equal(contaDaLinhaDeCredenciamento({ user_id: null, parceiros: null }), null);
+  const srv = readFileSync("src/lib/vistoria/vitrine-servidor.ts", "utf8");
+  // A listagem lê o parceiro e resolve a conta pela regra única (nada de só `user_id`).
+  assert.match(srv, /from\("avaliadores_credenciamento"\)\.select\("id, numero_credenciado, user_id, parceiros\(user_id\)"\)\.in\("status", \["ativo", "em_teste"\]\)/);
+  assert.match(srv, /credsLidos\.map\(\(c\) => \[c\.numero_credenciado, contaDaLinhaDeCredenciamento\(c\)\]\)/);
+  // O perfil (contaDoCredenciado: foto e identidade) usa a mesma regra.
+  assert.match(srv, /export async function contaDoCredenciado[\s\S]*?return contaDaLinhaDeCredenciamento\(/);
+  assert.doesNotMatch(srv, /c\?\.user_id \?\? c\?\.parceiros\?\.user_id/, "a regra não se repete à mão");
 });

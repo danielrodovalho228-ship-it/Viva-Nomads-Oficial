@@ -29,6 +29,14 @@ export function seloDoCredenciado(teste: boolean, seloLigado: string | null): st
   return seloLigado?.trim() ? seloLigado.trim() : ROTULO_AVALIADOR_CREDENCIADO;
 }
 
+/**
+ * E1099 (ORDEM-DUET-473 §1): a conta de um credenciamento — a dele; sem ela (credenciamento criado pelo parceiro), a do
+ * parceiro. Regra ÚNICA: a listagem, o perfil, a foto e a identidade resolvem a conta por aqui.
+ */
+export function contaDaLinhaDeCredenciamento(c: { user_id: string | null; parceiros?: { user_id: string | null } | null } | null | undefined): string | null {
+  return c?.user_id ?? c?.parceiros?.user_id ?? null;
+}
+
 export type Rosto = { tipo: "foto"; url: string } | { tipo: "iniciais"; texto: string };
 
 /** A foto quando há e pode aparecer; senão as iniciais — nunca vazio nem "?". */
