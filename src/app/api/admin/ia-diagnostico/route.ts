@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { respostaNaoAdmin } from "@/lib/admin/api-nao-admin";
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { lerDocumento, lerMatricula } from "@/lib/documento/conferidor";
@@ -17,11 +18,11 @@ const MAX_BYTES = 10 * 1024 * 1024;
  */
 export async function POST(request: Request) {
   const sessao = await createClient();
-  if (!sessao) return NextResponse.json({ erro: "Só admin." }, { status: 403 });
+  if (!sessao) return respostaNaoAdmin();
   const {
     data: { user },
   } = await sessao.auth.getUser();
-  if (!user || !(await ehAdmin(sessao, user.id))) return NextResponse.json({ erro: "Só admin." }, { status: 403 });
+  if (!user || !(await ehAdmin(sessao, user.id))) return respostaNaoAdmin();
 
   const form = await request.formData().catch(() => null);
   const arquivo = form?.get("arquivo");
