@@ -43,7 +43,7 @@ function politicaDeConteudo(): string {
     "frame-ancestors 'none'",
     "form-action 'self'",
     // (As linhas de img-src e connect-src começam por texto simples de propósito: a guarda do mapa lê-as assim.)
-    "img-src 'self' data: blob: https:" + supabaseFora,
+    "img-src 'self' data: blob: https:",
     `font-src 'self' data:${previa ? " https://vercel.live https://assets.vercel.com" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     `script-src 'self' 'unsafe-inline' ${producao ? "" : "'unsafe-eval' "}https://challenges.cloudflare.com${previa ? " https://vercel.live" : ""}`,
