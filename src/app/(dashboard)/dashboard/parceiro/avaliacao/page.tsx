@@ -20,6 +20,7 @@ import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPr
 import { etapaDoPedido, identificacaoDoImovel, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
+import { PRAZO_RESPOSTA_MAX_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "@/lib/vistoria/prazos";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import type { ChaveIdentidade } from "@/lib/identidade/estado";
@@ -49,7 +50,7 @@ type Pedido = { id: string; property_id: string; cidade: string; porte: Porte; v
  */
 /** Achado 30: a lista do avaliador não foi lida. */
 const MSG_AVALIACOES_FALHOU =
-  "Não foi possível carregar as suas avaliações agora. Recarregue a página em instantes; os pedidos com prazo de 24 h continuam valendo.";
+  `Não foi possível carregar as suas avaliações agora. Recarregue a página em instantes; os pedidos com prazo de ${PRAZO_RESPOSTA_PADRAO_HORAS} h continuam valendo.`;
 
 export default async function AvaliacaoParceiroPage() {
   const supabase = await createClient();
@@ -183,7 +184,7 @@ export default async function AvaliacaoParceiroPage() {
           <FormAcao acao={salvarMeusTermos} className="mt-3 flex flex-wrap items-end gap-2" testid="salvar-termos">
             <label className="text-sm">Valor (R$)<input name="valor" inputMode="decimal" defaultValue={cred.preco_proprio != null ? String(cred.preco_proprio).replace(".", ",") : ""} className={campo} required /></label>
             <label className="text-sm">Entrega do laudo (dias)<input name="prazoEntregaDias" type="number" min={1} max={PRAZO_PROPOSTA_MAX_DIAS} defaultValue={cred.prazo_entrega_dias ?? ""} className={campo} required /></label>
-            <label className="text-sm">Respondo em até (horas)<input name="prazoRespostaHoras" type="number" min={1} max={72} defaultValue={cred.prazo_resposta_horas ?? 24} className={campo} required /></label>
+            <label className="text-sm">Respondo em até (horas)<input name="prazoRespostaHoras" type="number" min={1} max={PRAZO_RESPOSTA_MAX_HORAS} defaultValue={cred.prazo_resposta_horas ?? PRAZO_RESPOSTA_PADRAO_HORAS} className={campo} required /></label>
             <Button type="submit" size="sm">Salvar termos</Button>
           </FormAcao>
         </Panel>
@@ -250,7 +251,7 @@ export default async function AvaliacaoParceiroPage() {
           <Panel id="historico" className="scroll-mt-16" title="Encerradas, recusas e ausências" data-testid="avaliacoes-historico">
             {encerradas.length === 0 && foraDaMinhaFila.length === 0 ? (
               <p className="text-sm text-muted" data-testid="avaliacoes-historico-vazio">
-                Aqui ficam as avaliações que você concluiu, as que recusou, as que passaram de 24 horas sem resposta e as ausências registradas. Ainda não há nenhuma.
+                Aqui ficam as avaliações que você concluiu, as que recusou, as que passaram de {PRAZO_RESPOSTA_PADRAO_HORAS} horas sem resposta e as ausências registradas. Ainda não há nenhuma.
               </p>
             ) : (
               <ul className="grid gap-3">
@@ -272,7 +273,7 @@ export default async function AvaliacaoParceiroPage() {
   );
 }
 
-const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Você recusou", expirada: "Sem resposta em 24 horas", ausencia: "Ausência registrada" };
+const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Você recusou", expirada: `Sem resposta em ${PRAZO_RESPOSTA_PADRAO_HORAS} horas`, ausencia: "Ausência registrada" };
 
 /** Os 5 passos do credenciamento, com o que já foi feito (Prompt 62-A, item 1). */
 type EstadoTeste = { marcado: boolean; concluido: boolean };

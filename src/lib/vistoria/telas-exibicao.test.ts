@@ -20,7 +20,6 @@ import {
   linhaDoTempoPedido,
   passosCumpridos,
   complementoPassoIdentidade,
-  prazoResposta,
   quandoVisita,
   quandoVisitaComFuso,
   rotuloDecisao,
@@ -28,6 +27,7 @@ import {
   situacaoPagamento,
   visitaNaSemana,
 } from "./telas-exibicao.ts";
+import { relogioDoPedido, textoDoPrazoDeResposta } from "./relogio-do-pedido.ts";
 import { FRASE_PAGA_AVALIACAO, type AvaliadorFila } from "./regras.ts";
 import type { StatusCredenciamento } from "./regras.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
@@ -159,8 +159,10 @@ test("página pública: linha fixa, sem contratar, sem link, sem escolher avalia
 
 test("agenda do avaliador: contador das 24 h, visitas da semana e hora sem segundos", () => {
   const agora = new Date("2026-10-23T12:00:00Z");
-  assert.equal(prazoResposta("2026-10-23T11:00:00Z", agora).texto, "Responda em 23 h 00 min");
-  assert.equal(prazoResposta("2026-10-22T11:59:00Z", agora).vencido, true);
+  // E1118 (ORDEM-DUET-506): a prazoResposta morta saiu de telas-exibicao; o contador é o do relógio único do pedido.
+  const contador = (designadoEm: string) => relogioDoPedido({ status: "designado", resposta: null, designadoEm, propostaEm: null, propostaAceitaEm: null, precisaDoAceite: true, prazoRespostaHoras: null }, agora)!;
+  assert.equal(textoDoPrazoDeResposta(contador("2026-10-23T11:00:00Z"), agora), "Responda em 23 h 00 min");
+  assert.equal(contador("2026-10-22T11:59:00Z").vencido, true);
   assert.equal(visitaNaSemana("2026-10-27T13:00:00Z", agora), true);
   assert.equal(visitaNaSemana("2026-11-05T13:00:00Z", agora), false);
   assert.equal(visitaNaSemana(null, agora), false);
