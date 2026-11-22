@@ -17,12 +17,22 @@ import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
     3. o preço é o da TABELA DA CIDADE para o porte do imóvel (aqui: estúdio 150, 1–2 quartos 250, 3+ quartos 350;
        os pedidos são de 1–2 quartos → R$ 250), nunca um preço próprio do avaliador.
   Só contas de teste, sem fotos de pessoas reais.
+  t1722 × t2219 (ORDEM-DUET-429, decisão do Gerente): ficam as duas. A t1722 é a trava de comportamento das telas; esta
+  é a de conformidade. Onde uma asserção daqui duplicava exactamente uma da t1722, ficou lá e aqui só se referencia:
+    - serviços: o cartão "Avaliação do imóvel" com "Laudo com o nível do imóvel" → t1722, teste 2;
+    - dono-escolha: "Avaliadores disponíveis em <cidade>" e "Avaliação: R$ <tabela da cidade>" (decisão 3) → t1722, teste 3;
+    - público: o título "Avaliadores em <cidade>" → t1722, teste 1.
   Cobertura dos 12 mockups (ORDEM-DUET-425): os três pares mobile/desktop (dono-escolha, admin, público) correm a 390 e
   a 1280 px. As barras de baixo ficam fora (navegação global fora do âmbito do E1079 — decisão do Gerente, 22/11).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const CIDADE = `Uberlândia t2219 ${sufixo}`;
+// Cidade real e só desta spec (a listagem pública vive em /avaliadores/<cidade> e só aceita município do IBGE;
+// nenhum outro spec do laboratório usa Ituiutaba — a t1722 usa Patrocínio).
+const CIDADE = "Ituiutaba";
+const SLUG_CIDADE = "ituiutaba";
+/** Nas telas públicas aparece o nome curto (o primeiro nome) do avaliador, como na t1722 e na t2220 (E1084). */
+const NOME_PUBLICO = /\bRui\b/;
 const PRECO = { estudio: 150, q1_2: 250, q3_mais: 350 } as const;
 const avaliador = { email: `aval.t2219.${sufixo}@lab.vivanomads.test`, nome: "Rui Avaliador Teste", role: "tenant" as const };
 const dono = { email: `dono.t2219.${sufixo}@lab.vivanomads.test`, nome: "Dora Dona Teste", role: "owner" as const };
@@ -128,9 +138,9 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
   for (const largura of LARGURAS) test(`dono-escolha-avaliador a ${largura} px (mockups mobile e desktop): Escolher avaliador, o cartão com o preço da tabela da cidade`, async ({ browser }) => {
     const d = await abrir(browser, dono.email, largura);
     await d.goto(`/dashboard/imoveis/${ids.pedido}/nivel`, { waitUntil: "domcontentloaded" });
-    await temTudo(d, "dono-escolha", ["Escolher avaliador", `Avaliadores disponíveis em`, avaliador.nome, "Novo na Viva", /Avalia[çc][ãa]o:\s*R\$/]);
+    await temTudo(d, "dono-escolha", ["Escolher avaliador", avaliador.nome, "Novo na Viva"]);
+    // "Avaliadores disponíveis em <cidade>" e "Avaliação: R$ <tabela>" (decisão 3): cobrados na t1722, teste 3.
     const main = d.locator("main");
-    expect.soft(await main.innerText(), "decisão 3: o cartão mostra o preço da tabela da cidade para 1–2 quartos (R$ 250)").toMatch(new RegExp(`Avalia[çc][ãa]o:\\s*${brl(PRECO.q1_2).source}`));
     await expect.soft(main.getByRole("button", { name: /^Escolher$/ }).first(), "o botão \"Escolher\" do cartão").toBeVisible();
     await d.context().close();
   });
@@ -140,7 +150,7 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     const p = await ctx.newPage();
     await comChave(p);
     await p.goto(`/avaliadores/${cred.numero}`, { waitUntil: "domcontentloaded" });
-    await temTudo(p, "perfil-publico", ["Perfil do Avaliador", avaliador.nome, "Novo na Viva", "Sobre", "Preço da avaliação", "Estúdio", "1–2 quartos", "3+ quartos", "Identidade verificada pela Viva"]);
+    await temTudo(p, "perfil-publico", ["Perfil do Avaliador", NOME_PUBLICO, "Novo na Viva", "Sobre", "Preço da avaliação", "Estúdio", "1–2 quartos", "3+ quartos", "Identidade verificada pela Viva"]);
     const t = await p.locator("main").innerText();
     for (const [porte, valor] of Object.entries(PRECO)) expect.soft(brl(valor).test(t), `decisão 3: a tabela do perfil traz o preço da cidade (${porte}: R$ ${valor})`).toBe(true);
     expect.soft((await p.locator("main").innerHTML()).match(/tel:|mailto:|wa\.me|@lab\.vivanomads\.test/i), "sem telefone nem e-mail").toBeNull();
@@ -197,12 +207,12 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
     await ctx.close();
   });
 
-  for (const largura of LARGURAS) test(`publico-avaliadores a ${largura} px (aberta pela chave; mockups mobile e desktop): Avaliadores em <cidade>, Buscar por cidade, o cartão sem contacto`, async ({ browser }) => {
+  for (const largura of LARGURAS) test(`publico-avaliadores a ${largura} px (aberta pela chave; mockups mobile e desktop): Buscar por cidade, o cartão sem contacto`, async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: largura, height: largura === 390 ? 844 : 900 }, storageState: { cookies: [], origins: [] } });
     const p = await ctx.newPage();
     await comChave(p);
-    await p.goto(`/avaliadores?cidade=${encodeURIComponent(CIDADE)}`, { waitUntil: "domcontentloaded" });
-    await temTudo(p, "publico-avaliadores", [/Avaliadores em/, "Buscar por cidade", "Identidade verificada pela Viva", avaliador.nome, /Avaliador sócio da Viva|Credenciad[ao]/, /Novo na Viva|★\s*\d+ avaliaç/]);
+    await p.goto(`/avaliadores/${SLUG_CIDADE}`, { waitUntil: "domcontentloaded" });
+    await temTudo(p, "publico-avaliadores", ["Buscar por cidade", "Identidade verificada pela Viva", NOME_PUBLICO, /Avaliador sócio da Viva|Credenciad[ao]/, /Novo na Viva|★\s*\d+ avaliaç/]);
     // O cartão do mockup não tem número nem contacto (regra do Daniel).
     expect.soft((await p.locator("main").innerHTML()).match(/tel:|mailto:|wa\.me|@lab\.vivanomads\.test/i), "publico: sem telefone nem e-mail").toBeNull();
     await ctx.close();
@@ -211,7 +221,8 @@ test.describe("T2219 — E1079 (c): as telas dos avaliadores têm os componentes
   test("morador-servico-avaliador: Pedir um serviço, as cinco linhas e Pedir serviço", async ({ browser }) => {
     const d = await abrir(browser, dono.email);
     await d.goto("/dashboard/servicos", { waitUntil: "domcontentloaded" });
-    await temTudo(d, "servicos", ["Pedir um serviço", "Limpeza", "Lavanderia", "Manutenção leve", "Avaliação do imóvel", "Laudo com o nível do imóvel", "Frete e mudança", "Pedir serviço"]);
+    await temTudo(d, "servicos", ["Pedir um serviço", "Limpeza", "Lavanderia", "Manutenção leve", "Frete e mudança", "Pedir serviço"]);
+    // O cartão "Avaliação do imóvel" / "Laudo com o nível do imóvel" na grade: cobrado na t1722, teste 2.
     await d.context().close();
   });
 });
