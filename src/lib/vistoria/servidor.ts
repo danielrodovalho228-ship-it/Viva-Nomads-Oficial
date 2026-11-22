@@ -6,13 +6,20 @@ import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type Fa
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { STATUS_TESTE_CONCLUIDO } from "./entrada";
 import { criteriosAtingidos, propostaVencida, sugerirAvaliadores, CRITERIOS_PUBLICOS, type Sugestoes } from "./escolha";
+import { modoDaChaveAtual } from "./chave";
+import { filaNoAmbito } from "./ambito-da-chave";
+import { nomeDoAvaliador } from "./nome-do-avaliador";
 import {
+  COLUNAS_PRECO,
   designacaoVencida,
+  linhaDaTabela,
+  linhasDaCidade,
   notaConduta,
   sorteadoParaAuditoria,
   visitaAmanha,
   type AvaliadorFila,
   type HistoricoDesignacao,
+  type LinhaPreco,
   type PedidoParaDesignar,
   type StatusCredenciamento,
   type TipoPedido,
@@ -32,6 +39,18 @@ export const rotaDono = (propertyId: string) => `/dashboard/imoveis/${propertyId
 export const rotaMorador = (pedidoId: string) => `/dashboard/avaliacao-imovel/${pedidoId}`;
 export const ROTA_ADMIN = "/admin/avaliadores";
 
+/**
+ * E1084: os nomes das CONTAS (profiles.full_name) por user_id — a fonte única do nome do avaliador. Falha de leitura:
+ * mapa vazio (cada tela cai no nome público do parceiro, como antes).
+ */
+export async function nomesDasContas(admin: Admin, userIds: readonly (string | null | undefined)[]): Promise<Map<string, string | null>> {
+  const ids = [...new Set(userIds.filter((x): x is string => !!x))];
+  if (!ids.length) return new Map();
+  const { data, error } = await admin.from("profiles").select("id, full_name").in("id", ids);
+  if (error) return new Map();
+  return new Map(((data ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name]));
+}
+
 /** De onde vêm os fatos do e-mail (E289): o pedido de avaliação (imóvel, data da visita, avaliador) ou só o imóvel. */
 export type RefVistoria = { pedidoId?: string | null; propertyId?: string | null };
 
@@ -43,13 +62,15 @@ export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<F
   if (ref.pedidoId) {
     const { data: p } = await admin
       .from("vistoria_pedidos")
-      .select("property_id, agendado_para, avaliadores_credenciamento(parceiros(nome_publico))")
+      .select("property_id, agendado_para, avaliadores_credenciamento(parceiros(nome_publico, user_id))")
       .eq("id", ref.pedidoId)
       .maybeSingle();
-    const pp = p as { property_id?: string | null; agendado_para?: string | null; avaliadores_credenciamento?: { parceiros?: { nome_publico?: string | null } | null } | null } | null;
+    const pp = p as { property_id?: string | null; agendado_para?: string | null; avaliadores_credenciamento?: { parceiros?: { nome_publico?: string | null; user_id?: string | null } | null } | null } | null;
     propertyId = propertyId ?? pp?.property_id ?? null;
     visita = pp?.agendado_para ?? null;
-    avaliador = pp?.avaliadores_credenciamento?.parceiros?.nome_publico ?? null;
+    // E1084: o nome do avaliador vem da conta (fonte única).
+    const parc = pp?.avaliadores_credenciamento?.parceiros ?? null;
+    avaliador = parc ? nomeDoAvaliador((await nomesDasContas(admin, [parc.user_id])).get(parc.user_id ?? ""), parc.nome_publico) : null;
   }
   if (!propertyId) return { imovel: null, visita, avaliador };
   const { data: im } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
@@ -147,6 +168,24 @@ export async function filaDaCidade(admin: Admin): Promise<AvaliadorFila[]> {
 }
 
 /**
+ * E1081: a fonte única da leitura da tabela de preço de uma cidade. Lê a tabela inteira (poucas linhas: cidade × porte ×
+ * vigência) e filtra pela chave da cidade (linhasDaCidade) — nunca .eq("cidade", …) letra a letra. Falha de leitura:
+ * tabela vazia, como antes (o pedido não abre e a tela diz que ainda não há valor).
+ */
+export async function tabelaDaCidade(admin: Admin, cidade: string | null | undefined): Promise<LinhaPreco[]> {
+  const { data, error } = await admin.from("vistoria_precos").select(COLUNAS_PRECO).limit(1000);
+  if (error) return [];
+  return linhasDaCidade(((data ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela), cidade);
+}
+
+/** E1077: as contas do piloto da avaliação (vistoria_piloto). Uma leitura que falha LANÇA (achado 39). */
+export async function idsDoPiloto(admin: Admin): Promise<Set<string>> {
+  const { data, error } = await admin.from("vistoria_piloto").select("user_id");
+  if (error) throw new Error(`[vistoria] contas do piloto: ${error.message}`);
+  return new Set(((data ?? []) as { user_id: string }[]).map((l) => l.user_id));
+}
+
+/**
  * Histórico para os impedimentos: serviços prestados ao dono (pedidos de parceiro do 31b e vínculo fixo do 38, nos dois
  * casos ligados à conta do parceiro) e as avaliações anteriores do imóvel. Os pedidos do catálogo antigo de serviços e
  * dos fotógrafos antigos não têm a conta do prestador gravada e não entram (ver o PR).
@@ -188,11 +227,16 @@ async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date): Pr
   const { data } = await admin.from("vistoria_pedidos").select("id, property_id, owner_id, cidade, tipo, teste, status, origem_pedido_id").eq("id", pedidoId).maybeSingle();
   const p = data as LinhaPedido | null;
   if (!p || p.status !== "pedido") return null;
-  const [jaLeitura, fila, historico] = await Promise.all([
+  const [jaLeitura, filaToda, historico, modo, piloto] = await Promise.all([
     admin.from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", p.id),
     filaDaCidade(admin),
     historicoDoPedido(admin, p.owner_id, p.property_id),
+    modoDaChaveAtual(),
+    idsDoPiloto(admin),
   ]);
+  // E1077: com a chave desligada, o pedido de um dono do piloto só vê avaliadores do piloto — mesmo quando quem lê é o
+  // admin (fora do piloto). Nunca outro credenciado, nem a massa de teste de produção.
+  const fila = filaNoAmbito(filaToda, modo === "desligada" && piloto.has(p.owner_id) ? "piloto" : modo, piloto);
   if (jaLeitura.error) throw new Error(`[vistoria] designações do pedido: ${jaLeitura.error.message}`);
   let primeiro: string | null = null;
   if (p.tipo === "contestacao" && p.origem_pedido_id) {

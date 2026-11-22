@@ -69,6 +69,9 @@ import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { passoDaRespostaContrato, quadroAntesDaEntrada } from "@/lib/fechamento-contrato";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
+import { portaoDaIdentidade, rotuloIdentidadeDoMorador } from "@/lib/fechamento-identidade";
+import { hrefContratoDono } from "@/lib/contratos/area-dono";
+import { fonteDoResumo, nomeDaGarantiaDoContrato, resumoAcessivel } from "@/lib/fechamento-resumo";
 import { VoltarLista } from "@/components/ui/voltar-lista";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
@@ -105,7 +108,11 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     : "";
   // Status da verificação: "none" (não iniciada) → "ok" (laudo verde, demo) ou
   // "pendente" (conta real, CAF indisponível — portão suave).
-  const [verifStatus, setVerifStatus] = useState<"none" | "ok" | "pendente">("none");
+  // E1064: "confirmada" = a identidade de quem fecha (o dono) já está confirmada e válida, lida no servidor pela fonte
+  // única — o passo abre com o portão aberto, sem o clique "Verificar identidade".
+  const PORTAO_IDENTIDADE = portaoDaIdentidade(ctx.identidadePropria);
+  const JA_CONFIRMADA = !demo && PORTAO_IDENTIDADE.aberto;
+  const [verifStatus, setVerifStatus] = useState<"none" | "ok" | "pendente" | "confirmada">(JA_CONFIRMADA ? "confirmada" : "none");
   const [step, setStep] = useState(0);
   // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
   // E202 (candidatura): sem proposta, abre com os meses do período da candidatura aceita (dentro de 1..6); sem período, 4.
@@ -151,7 +158,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // PROP-3 (E115): o percentual no texto vem dos valores reais (o teto de 3 aluguéis pode baixar a caução).
   const PCT_CAUCAO_BLOCO1 = percentualCaucao(resumo.blocos[0]?.caucao ?? 0, resumo.blocos[0]?.valor ?? 0);
   const PCT_CAUCAO_TOTAL = percentualCaucao(resumo.caucaoTotal, resumo.valorTotalPeriodo);
-  const [verified, setVerified] = useState(false);
+  const [verified, setVerified] = useState(JA_CONFIRMADA);
   const [verifying, setVerifying] = useState(false);
   const [cafResult, setCafResult] = useState<CafResult | null>(null);
   const [signUrl, setSignUrl] = useState<string | null>(null);
@@ -193,6 +200,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     Object.fromEntries(COST_SPLIT_ITEMS.map((i) => [i.key, i.default]))
   );
   const [generated, setGenerated] = useState(false);
+  // E1064 (perna 2): o Resumo abre pelo contrato gerado nesta visita OU pelo contrato que a candidatura já tem
+  // (o estado real, lido no servidor). No segundo caso lê o que o contrato guarda, não as escolhas por omissão da visita.
+  const PASSO_RESUMO = STEPS.length - 1;
+  const RESUMO_ACESSIVEL = resumoAcessivel({ geradoNestaVisita: generated, contratoExistente: ctx.contratoExistente, demo });
+  const FONTE_RESUMO = fonteDoResumo({ geradoNestaVisita: generated, contratoExistente: ctx.contratoExistente, demo });
+  const GARANTIA_DO_CONTRATO = nomeDaGarantiaDoContrato(ctx.contratoExistente?.garantia);
 
   const selectedGarantia = useMemo<Garantia | null>(
     () => ELEGIVEIS.find((g) => g.id === guaranteeId) ?? null,
@@ -273,7 +286,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   }, [verified, ocupantesExcede, guaranteeId, cienteProtecao, patrimonial, generated]);
 
   function goToStep(target: number) {
-    if (target <= maxReached) setStep(target);
+    if (target <= maxReached || (target === PASSO_RESUMO && RESUMO_ACESSIVEL)) setStep(target);
   }
 
   async function generateContract() {
@@ -436,11 +449,28 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
         {/* Coluna principal: stepper + etapas do wizard */}
         <div className="order-2 lg:order-1">
+          {/* E1064: esta candidatura já tem contrato — a situação REAL fica à vista desde o passo 1. */}
+          {!demo && ctx.contratoExistente && (
+            <div className="mb-4 rounded-xl border border-sage-200 bg-sage-100/40 p-4 text-sm" role="status" data-testid="fechamento-contrato-existente">
+              <p className="font-semibold text-ink">Esta candidatura já tem contrato.</p>
+              <p className="mt-1 text-muted">
+                Situação do contrato: <strong className="text-ink">{ctx.contratoExistente.texto}</strong>
+              </p>
+              <Link href={hrefContratoDono(ctx.contratoExistente.id)} className="mt-1 inline-flex min-h-11 items-center font-semibold text-forest underline">
+                Ver contrato
+              </Link>
+              {step !== PASSO_RESUMO && (
+                <button type="button" onClick={() => setStep(PASSO_RESUMO)} className="ml-4 mt-1 inline-flex min-h-11 items-center font-semibold text-forest underline" data-testid="fechamento-ver-resumo">
+                  Ver o resumo
+                </button>
+              )}
+            </div>
+          )}
           {/* Stepper (passos alcançados são clicáveis — A4).
               Rola no mobile; quebra em linhas no desktop (sem scroll horizontal). */}
           <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
         {STEPS.map((s, i) => {
-          const reachable = i <= maxReached;
+          const reachable = i <= maxReached || (i === PASSO_RESUMO && RESUMO_ACESSIVEL);
           return (
             <button
               key={s}
@@ -479,12 +509,20 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               {/* PROP-3 (E118): a identidade do morador pela MESMA função de Interessados. */}
               {!demo && (
                 <p className="mt-1 text-xs font-semibold text-ink" data-testid="fechamento-identidade-inquilino">
-                  {identidadeParaOutraParte(ctx.identidadeInquilino).rotulo}
+                  {rotuloIdentidadeDoMorador(ctx.identidadeInquilino)}
                 </p>
               )}
             </div>
 
-            {verifStatus === "none" ? (
+            {verifStatus === "confirmada" ? (
+              // E1064: a identidade de quem fecha já está confirmada — nada a clicar.
+              <div className="rounded-xl border border-sage-200 bg-sage-100/40 p-4" data-testid="fechamento-identidade-propria">
+                <p className="flex items-center gap-2 font-title font-semibold text-forest">
+                  <ShieldCheck className="h-5 w-5" /> Sua identidade já está confirmada
+                </p>
+                <p className="mt-2 text-sm text-muted">{PORTAO_IDENTIDADE.texto}. Você pode continuar.</p>
+              </div>
+            ) : verifStatus === "none" ? (
               <div className="rounded-xl border border-sage-200 p-4 text-center">
                 <ShieldCheck className="mx-auto h-10 w-10 text-sage" />
                 <p className="mt-3 text-sm text-muted">
@@ -1267,38 +1305,65 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               </p>
             </div>
             <div className="rounded-xl bg-surface-2 p-4 text-left text-sm">
+              {/* E1064: duas pessoas, duas linhas — a identidade do morador (fonte única) e a verificação de quem fecha. */}
+              <Row label="Identidade do morador" value={identidadeParaOutraParte(ctx.identidadeInquilino).rotulo} />
               <Row
-                label="Verificação do morador"
+                label="Sua verificação"
                 value={
-                  verifStatus === "ok" && cafResult
-                    ? TRAFFIC_LIGHT_META[cafResult.light].label
-                    : verifStatus === "pendente"
-                      ? "⏳ Verificação pendente"
-                      : identidadeParaOutraParte(ctx.identidadeInquilino).rotulo
+                  verifStatus === "confirmada"
+                    ? (PORTAO_IDENTIDADE.texto ?? "Identidade confirmada")
+                    : verifStatus === "ok" && cafResult
+                      ? TRAFFIC_LIGHT_META[cafResult.light].label
+                      : "⏳ Verificação pendente"
                 }
               />
-              <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
-              <Row
-                label="Serviços adicionais"
-                value={
-                  services.length > 0
-                    ? SERVICOS_VISIVEIS.filter((s) => services.includes(s.id))
-                        .map((s) => s.nome)
-                        .join(", ")
-                    : "Nenhum"
-                }
-              />
-              <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
+              {/* E1064 (perna 2): reaberto pelo contrato que já existe, a garantia é a gravada nele; sem leitura, a linha não aparece. */}
+              {FONTE_RESUMO === "contrato" ? (
+                GARANTIA_DO_CONTRATO && <Row label="Garantia" value={GARANTIA_DO_CONTRATO} />
+              ) : (
+                <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
+              )}
+              {/* Serviços adicionais e seguro patrimonial são escolhas desta visita; o contrato não os guarda. */}
+              {FONTE_RESUMO !== "contrato" && (
+                <>
+                  <Row
+                    label="Serviços adicionais"
+                    value={
+                      services.length > 0
+                        ? SERVICOS_VISIVEIS.filter((s) => services.includes(s.id))
+                            .map((s) => s.nome)
+                            .join(", ")
+                        : "Nenhum"
+                    }
+                  />
+                  <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
+                </>
+              )}
               <Row
                 label="Contrato"
                 value={
-                  generated
-                    ? demo
-                      ? "Exemplo de demonstração"
-                      : `${modoContrato === "teste" ? "TESTE · " : ""}${estadoContrato?.texto ?? "Situação indisponível — abra o contrato"}`
-                    : "Pendente"
+                  FONTE_RESUMO === "contrato" && ctx.contratoExistente
+                    ? ctx.contratoExistente.texto
+                    : generated
+                      ? demo
+                        ? "Exemplo de demonstração"
+                        : `${modoContrato === "teste" ? "TESTE · " : ""}${estadoContrato?.texto ?? "Situação indisponível — abra o contrato"}`
+                      : "Pendente"
                 }
               />
+              {FONTE_RESUMO === "contrato" && ctx.contratoExistente && (
+                <p className="text-right text-xs text-muted" data-testid="resumo-contrato">
+                  Gerado em {dataBRT(ctx.contratoExistente.criadoEm)}
+                  {" · "}
+                  <a href={`/dashboard/contratos/${ctx.contratoExistente.id}`} className="font-medium text-forest underline" data-testid="resumo-ver-contrato">
+                    Ver contrato
+                  </a>
+                  {" · "}
+                  <a href={`/dashboard/estadia/${ctx.contratoExistente.id}`} className="font-medium text-forest underline" data-testid="resumo-ver-estadia">
+                    Página da estadia
+                  </a>
+                </p>
+              )}
               {!demo && generated && contratoId && (
                 <p className="text-right text-xs text-muted" data-testid="resumo-contrato">
                   {contratoExistente && estadoContrato ? `Gerado em ${dataBRT(estadoContrato.criadoEm)} · ` : ""}
@@ -1311,10 +1376,13 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   </a>
                 </p>
               )}
-              <Row
-                label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
-                value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
-              />
+              {/* A taxa aqui é a conta desta visita; no Resumo aberto pelo contrato quem a diz é a página do contrato. */}
+              {FONTE_RESUMO !== "contrato" && (
+                <Row
+                  label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
+                  value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
+                />
+              )}
             </div>
             <p className="rounded-lg bg-sage-100 px-3 py-2 text-left text-sm text-forest">
               Ao fim da locação, você e o morador poderão se avaliar — construindo

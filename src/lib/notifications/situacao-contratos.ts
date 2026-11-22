@@ -6,11 +6,17 @@ import type { SituacaoDosContratos } from "./sino";
   E676 — a situação REAL dos contratos citados nos avisos críticos, lida com a sessão da pessoa (a RLS só mostra os
   contratos e aditivos em que ela é parte). Falha de leitura: null (a faixa não esconde nada).
 */
-export async function situacaoDosContratos(userId: string, ids: readonly string[]): Promise<SituacaoDosContratos | null> {
+export async function situacaoDosContratos(userId: string, ids: readonly string[], opcoes: { visitas?: boolean } = {}): Promise<SituacaoDosContratos | null> {
   const unicos = [...new Set(ids)].slice(0, 20);
-  if (!unicos.length) return { assinarPendente: new Set(), aditivoAberto: new Set() };
   const supabase = await createClient();
   if (!supabase) return null;
+  // E1060: as visitas do dono que ainda esperam resposta (o "Pedido de visita" só vale enquanto elas existem).
+  let visitaPendente: Set<string> | undefined;
+  if (opcoes.visitas) {
+    const { data, error } = await supabase.from("visitas_video").select("id").eq("owner_id", userId).eq("status", "pedido").limit(200);
+    if (!error) visitaPendente = new Set(((data ?? []) as { id: string }[]).map((v) => v.id));
+  }
+  if (!unicos.length) return { assinarPendente: new Set(), aditivoAberto: new Set(), visitaPendente };
   const [contratos, aditivos] = await Promise.all([
     supabase.from("contratos").select("id, status, tenant_id, assinado_inquilino_em, assinado_proprietario_em, properties(owner_id)").in("id", unicos),
     supabase.from("contrato_aditivos").select("contrato_id, expira_em").in("contrato_id", unicos).eq("status", "proposto"),
@@ -25,5 +31,5 @@ export async function situacaoDosContratos(userId: string, ids: readonly string[
   const agora = Date.now();
   const aditivoAberto = new Set<string>();
   for (const a of (aditivos.data ?? []) as { contrato_id: string; expira_em: string }[]) if (Date.parse(a.expira_em) > agora) aditivoAberto.add(a.contrato_id);
-  return { assinarPendente, aditivoAberto };
+  return { assinarPendente, aditivoAberto, visitaPendente };
 }
