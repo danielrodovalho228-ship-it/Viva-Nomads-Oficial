@@ -29,6 +29,7 @@ import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { conversationId } from "@/lib/messages/conversation-id";
 import { IDENTIDADE_INDISPONIVEL, type EstadoIdentidade } from "@/lib/identidade/estado";
+import type { ContratoDoFechamento } from "@/lib/fechamento-resumo";
 import { lerEstadoDoContrato } from "@/lib/data/contratos-actions";
 
 interface ActionResult {
@@ -309,7 +310,7 @@ export interface FechamentoContexto {
   /** E1064: identidade de QUEM ESTÁ FECHANDO (o dono), pela mesma fonte única — confirmada, o passo 1 não pede clique. */
   identidadePropria?: EstadoIdentidade | null;
   /** E1064: o contrato que esta candidatura já tem (gerado antes), com a situação real — o Fechamento reaberto di-la. */
-  contratoExistente?: { id: string; texto: string; criadoEm: string } | null;
+  contratoExistente?: ContratoDoFechamento | null;
 }
 
 export async function getFechamentoContext(
@@ -389,10 +390,12 @@ export async function getFechamentoContext(
       identidadeInquilino = lidas ? (lidas.get(lead.tenant_id as string) ?? null) : IDENTIDADE_INDISPONIVEL;
       identidadePropria = lidas ? (lidas.get(user.id) ?? null) : null;
       // E1064: contrato já gerado para esta candidatura → a situação REAL dele (a fonte única do estado do contrato).
-      const { data: ct } = await admin.from("contratos").select("id").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      // E1064 (perna 2): a garantia gravada no contrato vem na mesma leitura — o Resumo reaberto mostra-a, não um valor por omissão.
+      const { data: ct } = await admin.from("contratos").select("id, garantia").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (ct?.id) {
         const estado = await lerEstadoDoContrato(String(ct.id), "proprietario").catch(() => null);
-        if (estado) contratoExistente = { id: estado.id, texto: estado.texto, criadoEm: estado.criadoEm };
+        const garantiaLida = ct.garantia === "caucao" || ct.garantia === "seguro_fianca" ? ct.garantia : null;
+        if (estado) contratoExistente = { id: estado.id, texto: estado.texto, criadoEm: estado.criadoEm, garantia: garantiaLida };
       }
     }
   } catch {
