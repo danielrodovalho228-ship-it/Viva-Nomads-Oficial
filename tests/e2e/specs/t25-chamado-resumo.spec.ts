@@ -58,15 +58,18 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
 
     const card = page.getByTestId("resumo-acoes");
     await expect(card.getByTestId("resumo-texto")).toContainText("Caução", { timeout: 20_000 });
-    await expect(card.getByTestId("resumo-quem")).toContainText("Proprietário cadastrado");
+    // E1098 (ORDEM-DUET-505): pelo mockup, quem é a pessoa fica no cartão Detalhes e o prazo é o indicador do cabeçalho
+    // (antes iam os dois dentro do cartão do resumo).
+    await expect(page.getByTestId("chamado-pessoa")).toContainText("Proprietário · conta desde");
     await expect(card.getByTestId("resumo-acoes-lista")).toContainText("Responder sobre seguros");
     await expect(card.getByTestId("resumo-acoes-lista")).toContainText("Thiago");
-    await expect(card).toContainText("Prazo");
+    await expect(page.getByTestId("chamado-prazo")).toContainText(/Resolver até .*às \d{2}:\d{2}/);
 
     // Pediu PESSOA: nunca resposta da IA (decisão do Daniel, 07/10) — só o acolhimento e a sugestão para aprovar.
     await expect(page.locator("body")).toContainText("Um especialista da equipe responde até");
     await expect(page.locator("body")).not.toContainText("A Viva já respondeu logo abaixo");
-    await expect(page.locator("body")).toContainText("pediu para falar com uma pessoa");
+    // E1098 (ORDEM-DUET-505): o histórico diz a abertura numa frase só, como no mockup.
+    await expect(page.locator("body")).toContainText("na opção “Falar com uma pessoa”");
     // Sugestão já na caixa (para complementar): honesta sobre seguros e com o pré-lançamento.
     const caixa = page.locator("textarea").last();
     await expect(caixa).toHaveValue(/ainda NÃO oferece seguro/);
@@ -91,8 +94,10 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
     await expect.poll(notas).toBe(antes + 1);
 
     // Enviar como está → resposta da equipe; histórico registra que foi a sugestão da Viva.
-    await page.getByTestId("enviar-sugestao").click();
-    await expect(page.locator("body")).toContainText("enviou a sugestão da Viva como está", { timeout: 15_000 });
+    // E1098 (ORDEM-DUET-505): o envio da sugestão inteira é o botão "Enviar resposta" (o mockup não tem um segundo
+    // botão de envio); o histórico diz em frase que a sugestão foi enviada como estava.
+    await page.getByTestId("enviar-resposta").click();
+    await expect(page.locator("body")).toContainText("A sugestão da Viva foi enviada como estava.", { timeout: 15_000 });
     const { data: ms } = await adm().from("chamado_mensagens").select("autor, interno, corpo").eq("chamado_id", c!.id).eq("autor", "admin").eq("interno", false);
     expect(ms?.[0]?.corpo).toMatch(/ainda NÃO oferece seguro/);
     await ctx.close();
