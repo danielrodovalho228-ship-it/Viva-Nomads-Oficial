@@ -96,3 +96,18 @@ test("E1080: a listagem fica fechada ao público (só no laboratório, para cons
   const vitrine = readFileSync("src/components/vistoria/vitrine-avaliadores.tsx", "utf8");
   assert.doesNotMatch(vitrine.replace(/\/\*[\s\S]*?\*\//g, ""), /tel:|mailto:|wa\.me|telefone|e-?mail|CNPJ da Viva/i);
 });
+
+test("E1079 (385, tela 3): a escolha do dono em cartões — rosto, selo, termos e o preço da TABELA DA CIDADE para o porte", () => {
+  const b = readFileSync("src/components/vistoria/bloco-avaliacao-dono.tsx", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  assert.match(b, /Avaliadores disponíveis em \{im\.city\}/);
+  assert.match(b, /data-testid="avaliacao-sugerido-rosto"/);
+  // Nenhuma foto de pessoa real sem o Daniel: na escolha do dono, só as iniciais.
+  assert.match(b, /rostoDoAvaliador\(a\.nome, null, false\)/);
+  assert.match(b, /data-testid="avaliacao-sugerido-selo"[\s\S]{0,200}a\.teste \? ROTULO_AVALIADOR_EM_TESTE : ROTULO_AVALIADOR_CREDENCIADO/);
+  assert.match(b, /data-testid="avaliacao-sugerido-preco"[^>]*>\s*Avaliação: \{reaisCurtos\(Number\(preco\.valor\)\)\}/);
+  // O que as specs já leem continua: o número, os termos e o botão.
+  assert.match(b, /data-testid="avaliacao-sugerido-termos"/);
+  assert.match(b, /nº\{" "\}/);
+  assert.match(b, /Escolher este avaliador/);
+  assert.doesNotMatch(b, /preco_proprio\)\s*\}/, "o preço mostrado é o da tabela, não o próprio do avaliador");
+});
