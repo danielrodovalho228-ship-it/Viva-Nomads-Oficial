@@ -22,7 +22,6 @@ function limparMarcas(form: HTMLFormElement) {
  * E818: (1) erro nunca limpa o formulário — o envio é por onSubmit (useEnvioSemLimpar), e só o sucesso limpa, como antes;
  * (2) cada campo apontado pela ação (`campos`) fica em vermelho, com a mensagem própria logo abaixo;
  * (3) a página rola até o primeiro campo com erro e o foca.
- * E1091: (4) enquanto envia, diz "Enviando…", desliga os botões de envio e ignora um segundo envio.
  */
 export function FormAcao({
   acao,
@@ -36,13 +35,7 @@ export function FormAcao({
   testid?: string;
 }) {
   const [res, executar, pendente] = useActionState<Res | null, FormData>((_, f) => acao(f), null);
-  // E1091: um segundo envio com o primeiro em curso é ignorado — antes entrava na fila e a tela demorava ainda mais.
-  const emCurso = useRef(false);
-  const enviarSemLimpar = useEnvioSemLimpar((dados: FormData) => {
-    if (emCurso.current) return;
-    emCurso.current = true;
-    executar(dados);
-  });
+  const enviarSemLimpar = useEnvioSemLimpar(executar);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -76,25 +69,9 @@ export function FormAcao({
     }
   }, [res]);
 
-  // E1091: enquanto envia, os botões de envio ficam desligados (sem segundo clique) e voltam no fim. Os campos ficam
-  // como estão: o que a pessoa digitou já foi lido no envio.
-  useEffect(() => {
-    emCurso.current = pendente;
-    const form = formRef.current;
-    if (!form) return;
-    form.querySelectorAll<HTMLButtonElement>('button[type="submit"], button:not([type])').forEach((b) => {
-      b.disabled = pendente;
-    });
-  }, [pendente]);
-
   return (
     <form ref={formRef} onSubmit={enviarSemLimpar} className={className} data-testid={testid} aria-busy={pendente}>
       {children}
-      {pendente && (
-        <p role="status" className="mt-2 w-full text-sm text-muted" data-testid="acao-enviando">
-          Enviando…
-        </p>
-      )}
       {res && (
         <p role={res.ok ? "status" : "alert"} className={`mt-2 text-sm ${res.ok ? "text-forest" : "text-red-600"}`} data-testid={res.ok ? "acao-ok" : "acao-erro"}>
           {res.ok ? (res.mensagem ?? "Feito.") : res.erro}
