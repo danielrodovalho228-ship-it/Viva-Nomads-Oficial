@@ -131,6 +131,14 @@
         "t615-varredura-bloco54"
       ]
     },
+    "/admin/agentes/aprovar": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t1682-link-aprovacao-uso-unico"
+      ]
+    },
     "/admin/ajuda-publicacao": {
       "personas": [
         "admin"
