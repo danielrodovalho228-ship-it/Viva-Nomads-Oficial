@@ -85,7 +85,7 @@ export function linhaDoValor(etapa: EtapaDoPedido, p: ValoresDoPedido): { texto:
  * enviada: R$ X em N dias"). Os dois valores que o avaliador submeteu aparecem do lado dele em todas as etapas.
  */
 export function linhaDoPrazoDoLaudo(etapa: EtapaDoPedido, p: ValoresDoPedido): string | null {
-  if (etapa !== "aceito" || semValor(p) || !p.prazo_proposto_dias) return null;
+  if (etapa !== "aceito" || semValor(p) || !p.prazo_proposto_dias || etapa === "aceito") return null;
   return `Laudo em ${dias(Number(p.prazo_proposto_dias))}`;
 }
 
