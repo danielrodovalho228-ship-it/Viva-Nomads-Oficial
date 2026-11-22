@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { FlaskConical, MapPin, ShieldCheck, Star } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MUNICIPIOS } from "@/lib/municipios";
+import { integracoesSimuladas } from "@/lib/integracoes";
+import { fontesDaVitrine } from "@/lib/vistoria/vitrine-servidor";
+import { VitrineAvaliadores } from "@/components/vistoria/vitrine-avaliadores";
 import { tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { VoltarCelular as BotaoVoltar } from "@/components/ui/voltar-celular";
-import { TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_QUADRO_PRECO, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, ufDaCidade } from "@/lib/vistoria/vitrine-avaliadores";
+import { TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, slugDaCidade, ufDaCidade, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
 import { VISTORIA_ATIVA } from "@/lib/flags";
 import { LINHA_PUBLICA_DESIGNACAO } from "@/lib/vistoria/telas-exibicao";
 import { ROTULO_AVALIADOR_CREDENCIADO, ROTULO_AVALIADOR_EM_TESTE, SELO_AVALIADOR_SOCIO, TEXTO_AVALIADOR_DE_TESTE } from "@/lib/vistoria/regras";
@@ -36,6 +39,11 @@ async function perfilPublico(numero: string): Promise<Perfil | null> {
 
 export async function generateMetadata({ params }: { params: Promise<{ numero: string }> }): Promise<Metadata> {
   const { numero } = await params;
+  // E1080: /avaliadores/<cidade> — a listagem da cidade (desligada para o público até o Daniel abrir; nunca indexada).
+  if (!ehNumeroDeAvaliador(decodeURIComponent(numero))) {
+    const c = cidadeDoSlug(MUNICIPIOS, numero);
+    return { title: c ? TITULO_VITRINE(c.cidade) : "Avaliadores", robots: { index: false, follow: false } };
+  }
   const n = decodeURIComponent(numero).toUpperCase();
   // E1075: o perfil público (sem credenciamento) não se apresenta como credenciado, nem no título.
   const titulo = !(await avaliador(n)) && (await perfilPublico(n)) ? `Avaliador nº ${n}` : `Avaliador credenciado nº ${numero}`;
@@ -47,8 +55,9 @@ export async function generateMetadata({ params }: { params: Promise<{ numero: s
  * Página pública do avaliador credenciado (62-B1; desenho do 62-A, Parte 1, item 2): nome curto, número de credenciado,
  * cidade, avaliações feitas e a nota de CONDUTA. Sem botão de contratar: "A Viva designa o avaliador. O proprietário não escolhe."
  */
-export default async function AvaliadorPage({ params }: { params: Promise<{ numero: string }> }) {
+export default async function AvaliadorPage({ params, searchParams }: { params: Promise<{ numero: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { numero } = await params;
+  if (!ehNumeroDeAvaliador(decodeURIComponent(numero))) return <PaginaDaCidade slug={numero} busca={(await searchParams).cidade} />;
   const n = decodeURIComponent(numero).toUpperCase();
   const a = await avaliador(n);
   // E1075: sem credenciado com este número, o perfil público do piloto; sem nenhum dos dois, 404.
@@ -154,4 +163,23 @@ async function PerfilPublico({ perfil }: { perfil: Perfil }) {
       </div>
     </div>
   );
+}
+
+/**
+ * E1080 (ORDEM-DUET-385): /avaliadores/<cidade>. DESLIGADA para o público até o Daniel abrir ("só piloto"): fora do
+ * laboratório, 404. A busca por cidade (/avaliadores/busca?cidade=…) leva ao caminho da cidade.
+ */
+async function PaginaDaCidade({ slug, busca }: { slug: string; busca: string | string[] | undefined }) {
+  if (!vitrineAberta(integracoesSimuladas())) notFound();
+  if (slug === "busca") {
+    const c = cidadeDoSlug(MUNICIPIOS, slugDaCidade(String(Array.isArray(busca) ? busca[0] : busca ?? "")));
+    if (!c) notFound();
+    redirect(`/avaliadores/${slugDaCidade(c.cidade)}`);
+  }
+  const c = cidadeDoSlug(MUNICIPIOS, slug);
+  if (!c) notFound();
+  const admin = createAdminClient();
+  if (!admin) notFound();
+  const cartoes = cartoesDaCidade(await fontesDaVitrine(admin), c.cidade);
+  return <VitrineAvaliadores cidade={c.cidade} uf={c.uf} cartoes={cartoes} />;
 }

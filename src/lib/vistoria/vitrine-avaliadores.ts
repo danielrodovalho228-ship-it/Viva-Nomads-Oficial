@@ -124,3 +124,32 @@ export const TITULO_NOVO_NA_VIVA = "Novo na Viva";
 export const TEXTO_NOVO_NA_VIVA = "Este avaliador ainda não tem avaliações — seja o primeiro a contratar.";
 export const TITULO_QUADRO_PRECO = "Preço da avaliação";
 export const TEXTO_IDENTIDADE_VERIFICADA = "Identidade verificada pela Viva";
+
+// ── E1080 (ORDEM-DUET-385): a listagem pública por cidade (/avaliadores/<cidade>) ───────────────────────────────
+/** Número de avaliador ("UDI-003") — o resto do caminho /avaliadores/<…> é o nome da cidade. */
+export function ehNumeroDeAvaliador(s: string): boolean {
+  return /^[A-Z]{3}-\d{3,}$/.test(String(s ?? "").toUpperCase());
+}
+
+/** A cidade do caminho ("uberlandia" → Uberlândia/MG) pela lista do IBGE; só quando é uma cidade só. */
+export function cidadeDoSlug(municipios: Readonly<Record<string, readonly string[]>>, slug: string): { cidade: string; uf: string } | null {
+  const k = chaveCidade(decodeURIComponent(String(slug ?? "")).replace(/-/g, " "));
+  if (!k) return null;
+  const achadas = Object.entries(municipios).flatMap(([uf, lista]) => lista.filter((c) => chaveCidade(c) === k).map((cidade) => ({ cidade, uf })));
+  return achadas.length === 1 ? achadas[0] : null;
+}
+
+/** "uberlandia" a partir de "Uberlândia". */
+export function slugDaCidade(cidade: string): string {
+  return chaveCidade(cidade).replace(/\s+/g, "-");
+}
+
+/** Desligada para o público até o Daniel abrir (só piloto); no laboratório abre para construir e testar. */
+export function vitrineAberta(laboratorio: boolean): boolean {
+  return VITRINE_AVALIADORES_ABERTA || laboratorio;
+}
+
+export const TITULO_VITRINE = (cidade: string) => `Avaliadores em ${cidade}`;
+export const PLACEHOLDER_BUSCA_CIDADE = "Buscar por cidade";
+export const ROTULO_VER_PERFIL = "Ver perfil";
+export const textoAvaliacoes = (n: number) => (n === 1 ? "1 avaliação" : `${n} avaliações`);

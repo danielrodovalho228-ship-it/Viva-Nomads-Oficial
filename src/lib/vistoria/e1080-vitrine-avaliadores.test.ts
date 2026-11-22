@@ -72,3 +72,27 @@ test("E1079: a UF só quando a cidade é única no IBGE; 'Novo na Viva' só sem 
   assert.equal(novoNaViva(2, null), false);
   assert.equal(novoNaViva(0, 4.5), false);
 });
+
+import { cidadeDoSlug, ehNumeroDeAvaliador, slugDaCidade, vitrineAberta } from "./vitrine-avaliadores.ts";
+
+test("E1080: /avaliadores/<…> — número de avaliador × cidade; o caminho da cidade pelo IBGE", () => {
+  assert.equal(ehNumeroDeAvaliador("UDI-003"), true);
+  assert.equal(ehNumeroDeAvaliador("udi-003"), true);
+  assert.equal(ehNumeroDeAvaliador("uberlandia"), false);
+  const ibge = { MG: ["Uberlândia", "Santa Luzia"], PB: ["Santa Luzia"], SP: ["São Paulo"] };
+  assert.deepEqual(cidadeDoSlug(ibge, "uberlandia"), { cidade: "Uberlândia", uf: "MG" });
+  assert.deepEqual(cidadeDoSlug(ibge, "sao-paulo"), { cidade: "São Paulo", uf: "SP" });
+  assert.equal(cidadeDoSlug(ibge, "santa-luzia"), null, "ambígua");
+  assert.equal(cidadeDoSlug(ibge, "atlantida"), null);
+  assert.equal(slugDaCidade("São Paulo"), "sao-paulo");
+});
+
+test("E1080: a listagem fica fechada ao público (só no laboratório, para construir e testar)", () => {
+  assert.equal(vitrineAberta(false), false);
+  assert.equal(vitrineAberta(true), true);
+  const pagina = readFileSync("src/app/(public)/avaliadores/[numero]/page.tsx", "utf8");
+  assert.match(pagina, /if \(!vitrineAberta\(integracoesSimuladas\(\)\)\) notFound\(\);/);
+  assert.match(pagina, /robots: \{ index: false, follow: false \}/);
+  const vitrine = readFileSync("src/components/vistoria/vitrine-avaliadores.tsx", "utf8");
+  assert.doesNotMatch(vitrine.replace(/\/\*[\s\S]*?\*\//g, ""), /tel:|mailto:|wa\.me|telefone|e-?mail|CNPJ da Viva/i);
+});
