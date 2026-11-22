@@ -47,3 +47,17 @@ export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvali
   );
   return [...credenciados, ...doPiloto];
 }
+
+/**
+ * E1079 (385/386): a foto de perfil da conta do credenciado nº `numero`, assinada — só quando pode aparecer em público
+ * (fotoPublicaPermitida: por agora, só a conta de teste). Sem conta, sem foto ou sem leitura: null (as iniciais).
+ */
+export async function fotoDoCredenciado(admin: SupabaseClient, numero: string, contaTeste: boolean): Promise<string | null> {
+  if (!fotoPublicaPermitida(contaTeste)) return null;
+  const { data: cred } = await admin.from("avaliadores_credenciamento").select("user_id, parceiros(user_id)").eq("numero_credenciado", numero).maybeSingle();
+  const c = cred as unknown as { user_id: string | null; parceiros: { user_id: string | null } | null } | null;
+  const uid = c?.user_id ?? c?.parceiros?.user_id ?? null;
+  if (!uid) return null;
+  const { data: conta } = await admin.from("profiles").select("avatar_url").eq("id", uid).maybeSingle();
+  return signAvatarPath((conta as { avatar_url: string | null } | null)?.avatar_url ?? null, uid);
+}
