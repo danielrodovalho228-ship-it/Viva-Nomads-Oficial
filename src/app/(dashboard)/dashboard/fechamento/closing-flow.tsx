@@ -56,6 +56,7 @@ import { registrarContrato } from "@/lib/data/actions";
 import { lerEstadoDoContrato, type EstadoContratoView } from "@/lib/data/contratos-actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
 import { percentualCaucao, resumoContrato, resumoContratoEmDias } from "@/lib/contrato-blocos";
+import { ROTULO_CAUCAO_NA_ENTRADA, TEXTO_BLOCOS_GARANTIA, TITULO_CAUCAO_GARANTIA, quantoOMoradorPaga } from "@/lib/fechamento-caucao-texto";
 import { faixaForDays, faixaLabel } from "@/lib/faixas";
 import {
   selecionarModeloContrato,
@@ -155,9 +156,6 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const SAIDA_LIMPEZA = PRECO_FECHAMENTO.unicos.find((u) => u.rotulo !== ROTULO_PREPARACAO)?.valor ?? 0;
   const PLATFORM_COMMISSION = resumo.comissaoValor;
   const CAUCAO_50 = resumo.caucaoTotal; // total do período (soma dos blocos)
-  // PROP-3 (E115): o percentual no texto vem dos valores reais (o teto de 3 aluguéis pode baixar a caução).
-  const PCT_CAUCAO_BLOCO1 = percentualCaucao(resumo.blocos[0]?.caucao ?? 0, resumo.blocos[0]?.valor ?? 0);
-  const PCT_CAUCAO_TOTAL = percentualCaucao(resumo.caucaoTotal, resumo.valorTotalPeriodo);
   const [verified, setVerified] = useState(JA_CONFIRMADA);
   const [verifying, setVerifying] = useState(false);
   const [cafResult, setCafResult] = useState<CafResult | null>(null);
@@ -759,7 +757,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             </div>
 
             {/* Sua proteção — as duas opções lado a lado, com os valores reais do contrato. */}
-            <SuaProtecao caucao={CAUCAO_50} percentual={PCT_CAUCAO_TOTAL} aluguel={PROPERTY.monthlyRent} ciente={cienteProtecao} onCiente={setCienteProtecao} />
+            <SuaProtecao caucao={CAUCAO_50} aluguel={PROPERTY.monthlyRent} ciente={cienteProtecao} onCiente={setCienteProtecao} />
 
             {/* Regra de ouro — sempre visível na etapa de garantia. */}
             <p className="flex items-start gap-2 rounded-lg border border-sage-200 bg-surface-2 px-3 py-2 text-xs text-muted">
@@ -770,12 +768,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {/* Sub-fluxo conforme a garantia escolhida. */}
             {selectedGarantia?.tipo === "caucao" && (
               <div className="space-y-3 rounded-xl border border-sage-200 p-4 text-sm">
-                <p className="font-medium text-ink">Caução por bloco ({PCT_CAUCAO_BLOCO1} do 1º bloco)</p>
-                <p className="text-xs text-muted">
-                  O período é contratado em blocos de {TAMANHO_BLOCO} meses. Cada bloco tem a
-                  caução <strong>integral</strong> ({PCT_CAUCAO_TOTAL} do valor do período, no máximo 3 aluguéis) — cabe no cartão e vai
-                  para a poupança da caução. A plataforma nunca recebe.
-                </p>
+                {/* E1082: a regra em palavras vem da fonte única (caucao-regra), não escrita à mão aqui. */}
+                <p className="font-medium text-ink" data-testid="garantia-caucao-titulo">{TITULO_CAUCAO_GARANTIA}</p>
+                <p className="text-xs text-muted" data-testid="garantia-caucao-regra">{TEXTO_BLOCOS_GARANTIA(TAMANHO_BLOCO)}</p>
 
                 {/* Tabela transparente por bloco: aluguel, caução, desembolso. */}
                 <div className="overflow-x-auto">
@@ -1172,7 +1167,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 <div className="mt-3 space-y-1 border-t border-blue-200 pt-2" data-testid="entrada-caucao">
                   <div className="flex items-start justify-between gap-3">
                     <span className="min-w-0">
-                      Caução ({PCT_CAUCAO_TOTAL} do período, antes da entrada) — devolvida no fim, conforme a conferência de saída
+                      {ROTULO_CAUCAO_NA_ENTRADA} — devolvida no fim, conforme a conferência de saída
                     </span>
                     <span className="shrink-0">{formatBRL(quadroEntrada.caucao)}</span>
                   </div>
@@ -1479,20 +1474,17 @@ function Row({ label, value }: { label: string; value: string }) {
  */
 export function SuaProtecao({
   caucao,
-  percentual,
   aluguel,
   ciente,
   onCiente,
 }: {
   caucao: number;
-  /** PROP-3 (E115): caução ÷ valor do período, calculado dos valores reais. */
-  percentual: string;
   aluguel: number;
   ciente: boolean;
   onCiente: (v: boolean) => void;
 }) {
   const linhas: [string, string, string][] = [
-    ["Quanto o morador paga", `${formatBRL(caucao)} depositados na entrada (${percentual} do período, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
+    ["Quanto o morador paga", quantoOMoradorPaga({ caucao, valorMensal: aluguel }), "O prêmio do seguro (valor de cotação da seguradora)"],
     ["Volta para o morador?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
     ["O que cobre para o proprietário", `Aluguel e danos até ${formatBRL(caucao)}`, "Aluguel e danos até o limite da apólice"],
     ["Se o morador quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra do morador"],

@@ -5,14 +5,14 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { integracoesSimuladas } from "@/lib/integracoes";
-import { fontesDaVitrine } from "@/lib/vistoria/vitrine-servidor";
+import { fontesDaVitrine, fotoDoCredenciado, seloLigadoDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
 import { VitrineAvaliadores } from "@/components/vistoria/vitrine-avaliadores";
 import { tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { VoltarCelular as BotaoVoltar } from "@/components/ui/voltar-celular";
-import { TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, slugDaCidade, ufDaCidade, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
+import { TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, seloDoCredenciado, slugDaCidade, ufDaCidade, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
 import { VISTORIA_ATIVA } from "@/lib/flags";
 import { LINHA_PUBLICA_DESIGNACAO } from "@/lib/vistoria/telas-exibicao";
-import { ROTULO_AVALIADOR_CREDENCIADO, ROTULO_AVALIADOR_EM_TESTE, SELO_AVALIADOR_SOCIO, TEXTO_AVALIADOR_DE_TESTE } from "@/lib/vistoria/regras";
+import { SELO_AVALIADOR_SOCIO, TEXTO_AVALIADOR_DE_TESTE } from "@/lib/vistoria/regras";
 
 export const dynamic = "force-dynamic";
 
@@ -52,8 +52,9 @@ export async function generateMetadata({ params }: { params: Promise<{ numero: s
 }
 
 /**
- * Página pública do avaliador credenciado (62-B1; desenho do 62-A, Parte 1, item 2): nome curto, número de credenciado,
- * cidade, avaliações feitas e a nota de CONDUTA. Sem botão de contratar: "A Viva designa o avaliador. O proprietário não escolhe."
+ * Página pública do avaliador credenciado (62-B1; E1079/E1094: o MESMO desenho do perfil do piloto para todos): nome
+ * curto, número de credenciado, cidade, avaliações feitas, a nota de CONDUTA e o preço da tabela da cidade. Sem botão
+ * de contratar: quem escolhe o avaliador é o dono, na tela dele (E648).
  */
 export default async function AvaliadorPage({ params, searchParams }: { params: Promise<{ numero: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { numero } = await params;
@@ -65,23 +66,68 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
   if (!a && !perfil) notFound();
   if (!a) return <PerfilPublico perfil={perfil!} />;
   const nota = a.nota_conduta == null ? null : Number(a.nota_conduta);
+  // E1079 (ORDEM-DUET-385/386/397): o perfil do credenciado no desenho do mockup aprovado — a foto de perfil da conta (só a
+  // conta de teste a mostra, sem o Daniel), senão as iniciais; a cidade com a UF; o preço da TABELA DA CIDADE por porte.
+  const admin = createAdminClient();
+  const foto = admin ? await fotoDoCredenciado(admin, a.numero_credenciado, a.teste) : null;
+  // E1097: "Avaliador credenciado" para todos; o sócio só pela linha ligada do Rogério.
+  const seloLigado = admin ? await seloLigadoDoCredenciado(admin, a.numero_credenciado) : null;
+  const rosto = rostoDoAvaliador(a.nome_curto, foto, a.teste);
+  const quadro = admin ? quadroDePreco(await tabelaDaCidade(admin, a.cidade), a.cidade, new Date()) : [];
+  const uf = ufDaCidade(MUNICIPIOS, a.cidade);
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12" data-testid="avaliador-publico">
-      {a.teste && (
-        <p className="mb-4 inline-flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm font-semibold text-ink" data-testid="avaliador-teste">
-          <FlaskConical className="mt-1 h-4 w-4 shrink-0" aria-hidden /> {TEXTO_AVALIADOR_DE_TESTE}
+    <div className="mx-auto max-w-2xl pb-12" data-testid="avaliador-publico">
+      <div className="flex items-center gap-2 px-4 py-3">
+        <BotaoVoltar padrao="/" rotulo="o início" testId="avaliador-voltar" className="lg:inline-flex" />
+        <p className="font-title text-2xl font-semibold text-ink" data-testid="avaliador-titulo">{TITULO_PERFIL}</p>
+      </div>
+      <div className="grid aspect-[16/10] w-full place-items-center bg-sage-100" data-testid="avaliador-foto">
+        {rosto.tipo === "foto" ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={rosto.url} alt={`Foto de ${a.nome_curto}`} className="h-full w-full object-cover" />
+        ) : (
+          <span className="inline-grid h-32 w-32 place-items-center rounded-full bg-forest font-title text-2xl font-semibold text-white" data-testid="avaliador-iniciais" aria-hidden>
+            {rosto.texto}
+          </span>
+        )}
+      </div>
+      <div className="px-4">
+        {a.teste && (
+          <p className="mt-6 inline-flex items-start gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm font-semibold text-ink" data-testid="avaliador-teste">
+            <FlaskConical className="mt-1 h-4 w-4 shrink-0" aria-hidden /> {TEXTO_AVALIADOR_DE_TESTE}
+          </p>
+        )}
+        <h1 className="mt-6 font-title text-2xl font-semibold text-ink" data-testid="avaliador-nome">{a.nome_curto}</h1>
+        <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-champagne px-4 py-1 text-sm font-semibold text-forest-700">
+          <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+          <span data-testid="avaliador-rotulo">{seloDoCredenciado(a.teste, seloLigado)}</span>
         </p>
-      )}
-      <p className="text-sm text-muted" data-testid="avaliador-rotulo">{a.teste ? ROTULO_AVALIADOR_EM_TESTE : ROTULO_AVALIADOR_CREDENCIADO}</p>
-      <h1 className="mt-1 font-title text-2xl font-semibold text-ink">{a.nome_curto}</h1>
-      <p className="mt-2 text-sm text-ink" data-testid="avaliador-linha-designacao">{LINHA_PUBLICA_DESIGNACAO}</p>
-      <dl className="mt-6 grid gap-4 rounded-xl border border-line bg-white p-6 text-sm sm:grid-cols-2">
-        <div><dt className="text-muted">Número de credenciado</dt><dd className="mt-1 font-semibold text-ink" data-testid="avaliador-numero">{a.numero_credenciado}</dd></div>
-        <div><dt className="text-muted">Cidade</dt><dd className="mt-1 text-ink" data-testid="avaliador-cidade">{a.cidade}</dd></div>
-        <div><dt className="text-muted">Avaliações feitas</dt><dd className="mt-1 text-ink" data-testid="avaliador-feitas">{a.avaliacoes_feitas}</dd></div>
-        <div><dt className="text-muted">Nota de conduta</dt><dd className="mt-1 text-ink" data-testid="avaliador-nota">{nota == null ? "Ainda sem avaliações de conduta" : `${nota.toLocaleString("pt-BR")} de 5`}</dd></div>
-      </dl>
-      <p className="mt-4 text-xs text-muted">A nota mede só a conduta na visita (pontualidade, cordialidade e cuidado com o imóvel), nunca o resultado da avaliação.</p>
+        <p className="mt-3 inline-flex items-center gap-2 text-base text-muted">
+          <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+          <span data-testid="avaliador-cidade">{a.cidade}</span>
+          {uf && <span data-testid="avaliador-uf">• {uf}</span>}
+        </p>
+        <p className="mt-4 text-sm text-ink" data-testid="avaliador-linha-designacao">{LINHA_PUBLICA_DESIGNACAO}</p>
+        <dl className="mt-6 grid gap-4 rounded-xl border border-line bg-white p-4 text-sm sm:grid-cols-3">
+          <div><dt className="text-muted">Número de credenciado</dt><dd className="mt-1 font-semibold text-ink" data-testid="avaliador-numero">{a.numero_credenciado}</dd></div>
+          <div><dt className="text-muted">Avaliações feitas</dt><dd className="mt-1 text-ink" data-testid="avaliador-feitas">{a.avaliacoes_feitas}</dd></div>
+          <div><dt className="text-muted">Nota de conduta</dt><dd className="mt-1 text-ink" data-testid="avaliador-nota">{nota == null ? "Ainda sem avaliações de conduta" : `${nota.toLocaleString("pt-BR")} de 5`}</dd></div>
+        </dl>
+        <p className="mt-2 text-xs text-muted">A nota mede só a conduta na visita (pontualidade, cordialidade e cuidado com o imóvel), nunca o resultado da avaliação.</p>
+        {quadro.length > 0 && (
+          <section className="mt-6 rounded-xl border border-line bg-white p-4" data-testid="avaliador-preco">
+            <h2 className="font-title text-xl font-semibold text-ink">{TITULO_QUADRO_PRECO}</h2>
+            <ul className="mt-2 divide-y divide-line">
+              {quadro.map((l) => (
+                <li key={l.porte} className="flex items-center justify-between py-3 text-base text-ink" data-testid="avaliador-preco-linha" data-porte={l.porte}>
+                  <span>{l.rotulo}</span>
+                  <span>{reaisCurtos(l.valor)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

@@ -35,6 +35,9 @@ test("o lastro de 'à vista em cada anúncio': o cartão do dono mostra só os s
   assert.deepEqual(selosReais({}), []);
   const cartao = readFileSync(new URL("../components/property/owner-card.tsx", import.meta.url), "utf8");
   assert.match(cartao, /data-testid="proprietario-selos"/);
-  assert.match(cartao, /donoVerificado\(property\) &&/);
+  // Asserção alterada (E1105, ORDEM-DUET-477): o selo de identidade entra pela regra única seloDoDono — o da fonte
+  // (estadoIdentidade) quando confirmada; senão o "Dono verificado" (is_verified) como antes. Selo só com verificação real.
+  assert.match(cartao, /const selo = seloDoDono\(property, proprietario\?\.identidadeConfirmada\);/);
+  assert.match(cartao, /selo\?\.tipo === "manual" &&/);
   assert.match(cartao, /d\.selos\.map/);
 });
