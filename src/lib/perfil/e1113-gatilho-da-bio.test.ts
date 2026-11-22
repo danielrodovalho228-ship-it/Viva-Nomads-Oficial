@@ -34,3 +34,21 @@ test("E1113 (action): a recusa da tela continua — validarBio recusa contacto a
   for (const t of ["Ligue (34) 99999-1234", "dono@exemplo.com.br", "veja www.exemplo.com.br"]) assert.equal(validarBio(t).ok, false, t);
   assert.deepEqual(validarBio("Moro em Uberlândia e alugo para quem vem trabalhar."), { ok: true, valor: "Moro em Uberlândia e alugo para quem vem trabalhar." });
 });
+
+// ── ORDEM-DUET-502 §2: app e banco com a mesma regra, sempre ────────────────────────────────────────────────────
+import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
+
+test("E1113 (ORDEM-502): a tela da bio usa a regra rigorosa do gatilho — o que o banco recusa, a action recusa antes, com o aviso certo", () => {
+  // O caso que passava na tela e morria no gatilho com erro genérico.
+  assert.deepEqual(validarBio("Respondo rápido pelo whatsapp"), { ok: false, erro: CONTATO_AVISO });
+  for (const t of ["Chama no zap", "me chama no telegram", "liga pra mim", "meu número está no anúncio"]) {
+    assert.deepEqual(validarBio(t), { ok: false, erro: CONTATO_AVISO }, t);
+  }
+  // A regra é a fonte única (contemContato, o espelho da regra rigorosa da 0057), não uma regex nova.
+  const fonte = readFileSync("src/lib/perfil/perfil-publico.ts", "utf8");
+  assert.match(fonte, /import \{ CONTATO_AVISO, contemContato \} from "\.\.\/pedidos\/pedidos\.ts";/);
+  assert.match(fonte.slice(fonte.indexOf("export function validarBio")), /if \(contemContato\(t\)\) return \{ ok: false, erro: CONTATO_AVISO \};/);
+  assert.ok(contemContato("Respondo rápido pelo whatsapp"));
+  // Texto limpo continua a passar.
+  assert.equal(validarBio("Instalação nova, apartamento tranquilo perto da faculdade.").ok, true);
+});
