@@ -16,7 +16,8 @@ import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistori
 import { laudoAtrasado } from "@/lib/vistoria/laudo";
 import { contagemContestacoes } from "@/lib/vistoria/telas-laudo";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
-import { comTesteConcluido, filaDaCidade } from "@/lib/vistoria/servidor";
+import { comTesteConcluido, filaDaCidade, nomesDasContas } from "@/lib/vistoria/servidor";
+import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
 import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada";
 import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
 import { CRITERIOS_PUBLICOS } from "@/lib/vistoria/escolha";
@@ -119,6 +120,8 @@ export default async function AdminAvaliadoresPage() {
   const piloto = linhasDoPiloto(pilotoLinhas, (perfisPilotoLeitura.data ?? []) as { id: string; full_name: string | null; email: string | null; is_teste: boolean | null }[]);
   // A conta observadora da QA: as linhas de conta real ficam só leitura (o servidor também recusa).
   const pilotoSoLeitura = new Set(await soLeituraNaTela(piloto.map((l) => ({ id: l.userId, alvo: { perfis: [l.userId] } }))));
+  // E1084: o nome do avaliador vem da conta (fonte única).
+  const nomesConta = await nomesDasContas(admin, lista.map((c) => c.user_id));
   const numeroDe = new Map(lista.map((c) => [c.id, c.numero_credenciado]));
   type Ped = { id: string; cidade: string; tipo: string; status: string; aguardando_avaliador: boolean; criado_em: string; avaliadores_credenciamento: { numero_credenciado: string } | null };
   const pedidosLista = (pedidos ?? []) as unknown as Ped[];
@@ -207,7 +210,7 @@ export default async function AdminAvaliadoresPage() {
                     {g.itens.map((c) => (
                       <li key={c.id} className="rounded-lg border border-line p-3 text-sm" data-testid="credenciamento-item" data-numero={c.numero_credenciado} data-status={c.status}>
                         <strong className="text-ink">
-                          {c.numero_credenciado} · {c.parceiros?.nome_publico ?? c.parceiro_solicitacoes?.nome ?? "Parceiro"}
+                          {c.numero_credenciado} · {nomeDoAvaliador(nomesConta.get(c.user_id ?? ""), c.parceiros?.nome_publico ?? c.parceiro_solicitacoes?.nome)}
                         </strong>{" "}
                         · {c.cidade} · {ROTULO_STATUS[c.status]}
                         {c.user_id && contasTeste.has(c.user_id) && (

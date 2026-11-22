@@ -32,7 +32,8 @@ import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 import { assinaturaDoLaudo } from "./escolha";
 import { createHash } from "node:crypto";
 import { consequencias, degrauDoProprietario, expiraEm, geraStrike, imovelComStrike, proximaOrdem, strikesParaApagar, type Strike } from "./strikes";
-import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, rotaDono } from "./servidor";
+import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, nomesDasContas, rotaDono } from "./servidor";
+import { nomeDoAvaliador, primeiroNomeDoAvaliador } from "./nome-do-avaliador";
 
 /*
   Prompt 62-B2 — o lado do servidor do laudo: emite o VIS pela plataforma (registrarDocumento), aplica o resultado
@@ -278,7 +279,9 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   ]);
   const parc = (cred?.parceiros as unknown as { nome_publico: string | null; user_id: string; documento: string | null } | null) ?? null;
   // E648: o laudo é do avaliador — sem a declaração dele (e o CNPJ da empresa) a Viva não emite nada.
-  const nomeAssinante = String(parc?.nome_publico ?? "").trim() || "Avaliador";
+  // E1084: o nome do avaliador vem da conta (fonte única); sem nome na conta, o nome público do parceiro.
+  const nomeDaConta = parc?.user_id ? (await nomesDasContas(admin, [parc.user_id])).get(parc.user_id) : null;
+  const nomeAssinante = nomeDoAvaliador(nomeDaConta, parc?.nome_publico);
   const dadosAssinatura = { avaliadorUserId: parc?.user_id ?? "", numeroCredenciado: (cred?.numero_credenciado as string | null) ?? "", nomePublico: nomeAssinante, cnpj: parc?.documento ?? "", declarou: assinar.declarou };
   const previa = assinaturaDoLaudo({ ...dadosAssinatura, pdfSha256: "0".repeat(64), em: agora.toISOString() });
   if (!previa.ok) return { ok: false, erro: previa.erro };
@@ -311,7 +314,7 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
               imovel: (im?.title as string | null) ?? "Imóvel",
               cidade: (im?.city as string | null) ?? "",
               visitaEm,
-              avaliador: { nomeCurto: String(parc?.nome_publico ?? "").trim().split(/\s+/)[0] || "Avaliador", numero: (cred?.numero_credenciado as string | null) ?? "" },
+              avaliador: { nomeCurto: primeiroNomeDoAvaliador(nomeDaConta, parc?.nome_publico), numero: (cred?.numero_credenciado as string | null) ?? "" },
               resultado: r,
               nivel,
               resumo,
