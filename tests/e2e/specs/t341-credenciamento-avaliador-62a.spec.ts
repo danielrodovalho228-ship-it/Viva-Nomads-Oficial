@@ -218,7 +218,10 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(pg.getByTestId("avaliador-linha-designacao")).toHaveText("O proprietário escolhe o avaliador. O avaliador define o próprio valor e prazo.", { timeout: 30_000 });
       await expect(pg.getByTestId("avaliador-numero")).toHaveText(numeroA);
       await expect(pg.getByTestId("avaliador-cidade")).toHaveText("Uberlândia");
-      await expect(pg.locator("a")).toHaveCount(0);
+      // E1079 (ORDEM-DUET-385/386, mockup avaliador-perfil-publico): o "voltar" do mockup é o único link da página.
+      // Continua proibido qualquer outro link (nenhum link de contratar).
+      await expect(pg.getByTestId("avaliador-voltar")).toHaveAttribute("href", "/");
+      await expect(pg.locator('a:not([data-testid="avaliador-voltar"])')).toHaveCount(0);
       await semRolagemLateral(pub);
       await pub.screenshot({ path: `${SAIDA}/t341-4-publica-${w}.png` });
     }
