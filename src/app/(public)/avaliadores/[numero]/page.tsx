@@ -5,11 +5,11 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { integracoesSimuladas } from "@/lib/integracoes";
-import { fontesDaVitrine, fotoDoCredenciado, seloLigadoDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
+import { fontesDaVitrine, fotoDoCredenciado, identidadeConfirmadaDoCredenciado, seloLigadoDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
 import { VitrineAvaliadores } from "@/components/vistoria/vitrine-avaliadores";
 import { tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { VoltarCelular as BotaoVoltar } from "@/components/ui/voltar-celular";
-import { TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, seloDoCredenciado, slugDaCidade, ufDaCidade, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
+import { TEXTO_IDENTIDADE_VERIFICADA, TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, seloDoCredenciado, slugDaCidade, ufDaCidade, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
 import { VISTORIA_ATIVA } from "@/lib/flags";
 import { LINHA_PUBLICA_DESIGNACAO } from "@/lib/vistoria/telas-exibicao";
 import { SELO_AVALIADOR_SOCIO, TEXTO_AVALIADOR_DE_TESTE } from "@/lib/vistoria/regras";
@@ -74,6 +74,7 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
   const foto = admin ? await fotoDoCredenciado(admin, a.numero_credenciado, a.teste) : null;
   // E1097: "Avaliador credenciado" para todos; o sócio só pela linha ligada do Rogério.
   const seloLigado = admin ? await seloLigadoDoCredenciado(admin, a.numero_credenciado) : null;
+  const identidadeOk = admin ? await identidadeConfirmadaDoCredenciado(admin, a.numero_credenciado) : false;
   const rosto = rostoDoAvaliador(a.nome_curto, foto, a.teste);
   const quadro = admin ? quadroDePreco(await tabelaDaCidade(admin, a.cidade), a.cidade, new Date()) : [];
   const uf = ufDaCidade(MUNICIPIOS, a.cidade);
@@ -110,7 +111,11 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
           {uf && <span data-testid="avaliador-uf">• {uf}</span>}
         </p>
         <p className="mt-4 text-sm text-ink" data-testid="avaliador-linha-designacao">{LINHA_PUBLICA_DESIGNACAO}</p>
-        {novo && (
+        <p className="mt-2 text-sm text-muted">
+          Número de credenciado <span className="font-semibold text-ink" data-testid="avaliador-numero">{a.numero_credenciado}</span>
+        </p>
+        {/* E1099 (ORDEM-460 §2): a mesma área em dois estados — sem avaliações, "Novo na Viva"; com avaliações, a linha delas. */}
+        {novo ? (
           <div className="mt-6 flex items-start gap-4 rounded-xl bg-sage-100 p-4" data-testid="avaliador-novo">
             <span className="inline-grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-forest text-forest" aria-hidden>
               <Star className="h-6 w-6" />
@@ -120,13 +125,15 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
               <p className="mt-1 text-sm text-ink">{TEXTO_NOVO_NA_VIVA}</p>
             </div>
           </div>
+        ) : (
+          <div className="mt-6" data-testid="avaliador-avaliacoes">
+            <dl className="grid gap-4 rounded-xl border border-line bg-white p-4 text-sm sm:grid-cols-2">
+              <div><dt className="text-muted">Avaliações feitas</dt><dd className="mt-1 text-ink" data-testid="avaliador-feitas">{a.avaliacoes_feitas}</dd></div>
+              <div><dt className="text-muted">Nota de conduta</dt><dd className="mt-1 text-ink" data-testid="avaliador-nota">{nota == null ? "Ainda sem avaliações de conduta" : `${nota.toLocaleString("pt-BR")} de 5`}</dd></div>
+            </dl>
+            <p className="mt-2 text-xs text-muted">A nota mede só a conduta na visita (pontualidade, cordialidade e cuidado com o imóvel), nunca o resultado da avaliação.</p>
+          </div>
         )}
-        <dl className="mt-6 grid gap-4 rounded-xl border border-line bg-white p-4 text-sm sm:grid-cols-3">
-          <div><dt className="text-muted">Número de credenciado</dt><dd className="mt-1 font-semibold text-ink" data-testid="avaliador-numero">{a.numero_credenciado}</dd></div>
-          <div><dt className="text-muted">Avaliações feitas</dt><dd className="mt-1 text-ink" data-testid="avaliador-feitas">{a.avaliacoes_feitas}</dd></div>
-          <div><dt className="text-muted">Nota de conduta</dt><dd className="mt-1 text-ink" data-testid="avaliador-nota">{nota == null ? "Ainda sem avaliações de conduta" : `${nota.toLocaleString("pt-BR")} de 5`}</dd></div>
-        </dl>
-        <p className="mt-2 text-xs text-muted">A nota mede só a conduta na visita (pontualidade, cordialidade e cuidado com o imóvel), nunca o resultado da avaliação.</p>
         {quadro.length > 0 && (
           <section className="mt-6 rounded-xl border border-line bg-white p-4" data-testid="avaliador-preco">
             <h2 className="font-title text-xl font-semibold text-ink">{TITULO_QUADRO_PRECO}</h2>
@@ -139,6 +146,13 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
               ))}
             </ul>
           </section>
+        )}
+        {/* E1099 (ORDEM-460 §3): só com a identidade da conta CONFIRMADA (o mesmo fato da área do avaliador). */}
+        {identidadeOk && (
+          <p className="mt-6 inline-flex items-center gap-2 text-base font-semibold text-forest-700" data-testid="avaliador-identidade">
+            <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden />
+            {TEXTO_IDENTIDADE_VERIFICADA}
+          </p>
         )}
       </div>
     </div>

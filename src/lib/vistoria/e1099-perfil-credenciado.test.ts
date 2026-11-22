@@ -9,7 +9,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { novoNaViva, TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA } from "./vitrine-avaliadores.ts";
+import { novoNaViva, TEXTO_IDENTIDADE_VERIFICADA, TITULO_NOVO_NA_VIVA } from "./vitrine-avaliadores.ts";
 
 const pagina = readFileSync("src/app/(public)/avaliadores/[numero]/page.tsx", "utf8");
 const credenciado = pagina.slice(pagina.indexOf("export default async function AvaliadorPage"), pagina.indexOf("async function PerfilPublico"));
@@ -20,12 +20,24 @@ test("E1099: a regra do 'Novo na Viva' é a mesma do cartão de escolha (sem ava
   assert.equal(TITULO_NOVO_NA_VIVA, "Novo na Viva");
 });
 
-test("E1099: o perfil do credenciado mostra a caixa 'Novo na Viva' quando ainda não tem avaliações", () => {
+test("E1099 (ORDEM-460 §2): 'Novo na Viva' e a linha das avaliações são DOIS ESTADOS da mesma área — nunca os dois", () => {
   assert.match(credenciado, /const novo = novoNaViva\(a\.avaliacoes_feitas, nota\);/);
-  assert.match(credenciado, /\{novo && \(\s*<div[^>]*data-testid="avaliador-novo"/);
-  assert.match(credenciado, /\{TITULO_NOVO_NA_VIVA\}/);
-  assert.match(credenciado, /\{TEXTO_NOVO_NA_VIVA\}/);
-  assert.ok(TEXTO_NOVO_NA_VIVA.length > 0);
-  // O quadro de sempre continua (telas-exibicao).
-  for (const id of ["avaliador-numero", "avaliador-feitas", "avaliador-nota"]) assert.match(credenciado, new RegExp(`data-testid="${id}"`));
+  const area = credenciado.slice(credenciado.indexOf("{novo ? ("), credenciado.indexOf('data-testid="avaliador-preco"'));
+  assert.match(area, /^\{novo \? \(\s*<div[^>]*data-testid="avaliador-novo"/);
+  assert.match(area, /\{TITULO_NOVO_NA_VIVA\}[\s\S]*\{TEXTO_NOVO_NA_VIVA\}/);
+  // O outro estado (com avaliações): as avaliações feitas e a nota — os testids que telas-exibicao lê.
+  const comAvaliacoes = area.slice(area.indexOf(") : ("));
+  for (const id of ["avaliador-feitas", "avaliador-nota"]) assert.match(comAvaliacoes, new RegExp(`data-testid="${id}"`));
+  assert.doesNotMatch(area.slice(0, area.indexOf(") : (")), /avaliador-feitas|avaliador-nota/);
+  // O número de credenciado fica sempre (não é avaliação).
+  assert.match(credenciado, /data-testid="avaliador-numero"/);
+});
+
+test("E1099 (ORDEM-460 §3): 'Identidade verificada pela Viva' no perfil, da fonte única, só com a identidade confirmada", () => {
+  assert.equal(TEXTO_IDENTIDADE_VERIFICADA, "Identidade verificada pela Viva");
+  assert.match(credenciado, /const identidadeOk = admin \? await identidadeConfirmadaDoCredenciado\(admin, a\.numero_credenciado\) : false;/);
+  assert.match(credenciado, /\{identidadeOk && \(\s*<p[^>]*data-testid="avaliador-identidade"[\s\S]*?\{TEXTO_IDENTIDADE_VERIFICADA\}/);
+  assert.doesNotMatch(pagina, /"Identidade verificada pela Viva"/, "o texto não se duplica na página");
+  const srv = readFileSync("src/lib/vistoria/vitrine-servidor.ts", "utf8");
+  assert.match(srv, /export async function identidadeConfirmadaDoCredenciado[\s\S]*?\(await estadoIdentidade\(admin, uid\)\)\.estado === "confirmada"/);
 });
