@@ -16,6 +16,8 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
    3. "Recusar" também: o pedido volta ao dono e a recusa fica registrada (aparece no histórico do avaliador).
    4. Todo link que a lista oferece ("Ver o pedido", "Abrir o checklist") abre a tela daquele pedido — nenhum devolve o
       avaliador ao painel.
+  Acrescento da ORDEM-DUET-492: o pedido designado sem designação aparece em "Para responder" (e não em "Visitas"),
+  sem relógio inventado e sem o formulário antigo; enviada a proposta, passa a "Visitas" como qualquer pedido (casos 1 e 4).
   Laboratório; não é prova ao vivo no site.
 */
 const LARGURAS = [390, 1280] as const;
@@ -63,6 +65,9 @@ async function pedidoDoAvaliador(nome: string, campos: Record<string, unknown>, 
 const linhaDoPedido = async (id: string) => (await adm().from("vistoria_pedidos").select("status, avaliador_id, proposta_em, valor_proposto, prazo_proposto_dias").eq("id", id).single()).data!;
 const designacoesDe = async (id: string) => ((await adm().from("vistoria_designacoes").select("avaliador_id, resposta").eq("pedido_id", id)).data ?? []) as { avaliador_id: string; resposta: string | null }[];
 const item = (page: Page, id: string) => page.locator(`[data-testid="avaliacao-designada"][data-pedido="${id}"]`);
+/** Os pedidos de uma secção da lista do avaliador ("avaliacoes-designadas" = Para responder; "avaliacoes-visitas" = Visitas). */
+const pedidosDaSecao = async (page: Page, secao: "avaliacoes-designadas" | "avaliacoes-visitas") =>
+  (await page.getByTestId(secao).locator('[data-testid="avaliacao-designada"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-pedido") ?? ""))).sort();
 
 test.describe("T1737 — E1102: o avaliador abre o detalhe do próprio pedido @E1102", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -159,6 +164,14 @@ test.describe("T1737 — E1102: o avaliador abre o detalhe do próprio pedido @E
     await expect(item(a, pedidos.semLinha!).getByTestId("abrir-pedido")).toBeVisible({ timeout: 30_000 });
     await expect(item(a, pedidos.semLinha!).getByTestId("prazo-resposta")).toHaveCount(0);
     await expect(item(a, pedidos.semLinha!).getByTestId("proposta-avaliador")).toHaveCount(0);
+    // ORDEM-DUET-492: ele espera a resposta do avaliador, então fica em "Para responder" (antes caía em "Visitas"),
+    // ao lado do pedido novo comum; em "Visitas" só o que já tem resposta. E o painel conta os três como novos.
+    expect(await pedidosDaSecao(a, "avaliacoes-designadas"), "Para responder: os dois sem a linha e o novo").toEqual([pedidos.semLinha, pedidos.semLinhaRecusa, pedidos.novo].sort());
+    expect(await pedidosDaSecao(a, "avaliacoes-visitas"), "Visitas: só o agendado").toEqual([pedidos.agendado]);
+    await expect(a.getByTestId("avaliacoes-designadas").locator(`[data-pedido="${pedidos.semLinha}"]`).getByTestId("designacao-aceitar"), "sem o formulário antigo em 'Para responder'").toHaveCount(0);
+    // O pedido novo comum segue com o relógio e o formulário (nada mudou para ele).
+    await expect(item(a, pedidos.novo!).getByTestId("prazo-resposta")).toBeVisible();
+    await expect(item(a, pedidos.novo!).getByTestId("proposta-avaliador")).toBeVisible();
     await a.context().close();
   });
 
@@ -206,6 +219,9 @@ test.describe("T1737 — E1102: o avaliador abre o detalhe do próprio pedido @E
     await largura(a, 390);
     await a.goto(ROTA, { waitUntil: "domcontentloaded" });
     await expect(item(a, pedidos.novo!).getByTestId("abrir-pedido")).toBeVisible({ timeout: 30_000 });
+    // ORDEM-DUET-492: com a proposta enviada (caso 2), o pedido sem a linha saiu de "Para responder" e está em "Visitas".
+    expect(await pedidosDaSecao(a, "avaliacoes-designadas")).toEqual([pedidos.novo]);
+    expect(await pedidosDaSecao(a, "avaliacoes-visitas")).toEqual([pedidos.semLinha, pedidos.agendado].sort());
     const links = a.locator('[data-testid="abrir-pedido"], [data-testid="abrir-checklist"]');
     const hrefs = await links.evaluateAll((els) => els.map((e) => e.getAttribute("href") ?? ""));
     // O pedido que recebeu a proposta no caso 2, o novo e o agendado.
