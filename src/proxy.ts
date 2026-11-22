@@ -193,7 +193,7 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/auth";
     redirectUrl.search = "";
-    redirectUrl.searchParams.set("redirect", destinoAposLogin(pathname, request.nextUrl.search));
+    redirectUrl.searchParams.set("redirect", destinoAposLogin(pathname, "")); // MUTAÇÃO (ensaio): o destino perde a query (?conversa=)
     // Prompt 49: anunciar é momento de valor — a entrada diz por que pede a conta.
     if (pathname.startsWith("/dashboard/imoveis/novo") || pathname.startsWith("/qualificar")) redirectUrl.searchParams.set("motivo", "anunciar");
     return comCookies(NextResponse.redirect(redirectUrl));
