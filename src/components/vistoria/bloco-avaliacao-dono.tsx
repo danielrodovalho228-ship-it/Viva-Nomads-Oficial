@@ -16,7 +16,8 @@ import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, esco
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
 import { nomesDasContas, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
-import { reaisCurtos, rostoDoAvaliador } from "@/lib/vistoria/vitrine-avaliadores";
+import { fotoPublicaPermitida, reaisCurtos, rostoDoAvaliador } from "@/lib/vistoria/vitrine-avaliadores";
+import { signAvatarPath } from "@/lib/data/avatar-url";
 import {
   CONDUTA_DONO,
   FRASE_PAGA_AVALIACAO,
@@ -92,7 +93,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     avaliadores_credenciamento: { numero_credenciado: string; prazo_resposta_horas: number | null } | null;
   } | null;
   // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
-  let sugeridos: { id: string; numero: string; nome: string; termos: string; teste: boolean }[] | null = [];
+  let sugeridos: { id: string; numero: string; nome: string; termos: string; teste: boolean; fotoUrl: string | null }[] | null = [];
   if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
     try {
       const lista = (await sugeridosDoPedido(admin, atual.id, agora)) ?? [];
@@ -105,10 +106,18 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
       const { data: publicos, error: erroPublicos } = await admin.rpc("avaliadores_publicos");
       if (erroPublicos) throw new Error(erroPublicos.message);
       const conduta = new Map(((publicos ?? []) as { numero_credenciado: string; nota_conduta: number | string | null; avaliacoes_feitas: number; teste?: boolean | null }[]).map((x) => [x.numero_credenciado, x]));
-      sugeridos = lista.map((a) => {
+      // E1079 (386): a foto é a de perfil da conta; só a conta de teste a mostra (sem o Daniel, conta real = iniciais).
+      // A foto nunca é obrigatória: sem a leitura, as iniciais.
+      const uids = [...new Set([...porId.values()].map((d) => d.parceiros?.user_id).filter((x): x is string => !!x))];
+      const { data: contas } = uids.length ? await admin.from("profiles").select("id, avatar_url, is_teste").in("id", uids) : { data: [] };
+      const contaDe = new Map(((contas ?? []) as { id: string; avatar_url: string | null; is_teste: boolean | null }[]).map((c) => [c.id, c]));
+      sugeridos = await Promise.all(lista.map(async (a) => {
         const d = porId.get(a.id);
+        const uid = d?.parceiros?.user_id ?? "";
+        const conta = contaDe.get(uid);
         const pub = conduta.get(d?.numero_credenciado ?? "");
         const nota = pub?.nota_conduta != null ? Number(pub.nota_conduta) : null;
+        const teste = pub?.teste === true || conta?.is_teste === true;
         return {
           id: a.id,
           numero: d?.numero_credenciado ?? "",
@@ -117,9 +126,10 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             notaConduta: nota,
             avaliacoesConduta: nota != null ? Math.max(1, Number(pub?.avaliacoes_feitas ?? 0)) : 0,
           }),
-          teste: pub?.teste === true,
+          teste,
+          fotoUrl: uid && fotoPublicaPermitida(teste) ? await signAvatarPath(conta?.avatar_url ?? null, uid) : null,
         };
-      });
+      }));
     } catch {
       sugeridos = null;
     }
@@ -187,11 +197,16 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 ) : (
                   <ul className="mt-3 grid gap-3">
                     {sugeridos.map((a) => {
-                      const rosto = rostoDoAvaliador(a.nome, null, false);
+                      const rosto = rostoDoAvaliador(a.nome, a.fotoUrl, a.teste);
                       return (
                         <li key={a.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-white p-3" data-testid="avaliacao-sugerido">
                           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-champagne text-sm font-semibold text-ink" aria-hidden data-testid="avaliacao-sugerido-rosto">
-                            {rosto.tipo === "iniciais" ? rosto.texto : null}
+                            {rosto.tipo === "foto" ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={rosto.url} alt="" className="h-12 w-12 rounded-full object-cover" data-testid="avaliacao-sugerido-foto" />
+                            ) : (
+                              rosto.texto
+                            )}
                           </span>
                           <span className="min-w-0 flex-1 text-ink">
                             <span className="block font-semibold">{a.nome}</span>

@@ -102,7 +102,7 @@ test("E1079 (385, tela 3): a escolha do dono em cartões — rosto, selo, termos
   assert.match(b, /Avaliadores disponíveis em \{im\.city\}/);
   assert.match(b, /data-testid="avaliacao-sugerido-rosto"/);
   // Nenhuma foto de pessoa real sem o Daniel: na escolha do dono, só as iniciais.
-  assert.match(b, /rostoDoAvaliador\(a\.nome, null, false\)/);
+  assert.match(b, /rostoDoAvaliador\(a\.nome, a\.fotoUrl, a\.teste\)/); // asserção alterada (386): a foto de conta de teste entra
   assert.match(b, /data-testid="avaliacao-sugerido-selo"[\s\S]{0,200}a\.teste \? ROTULO_AVALIADOR_EM_TESTE : ROTULO_AVALIADOR_CREDENCIADO/);
   assert.match(b, /data-testid="avaliacao-sugerido-preco"[^>]*>\s*Avaliação: \{reaisCurtos\(Number\(preco\.valor\)\)\}/);
   // O que as specs já leem continua: o número, os termos e o botão.
@@ -126,4 +126,24 @@ test("E1079 (385, tela 4): 'Avaliação do imóvel — Laudo com o nível do im�
   assert.match(srv, /if \(!\(await vistoriaAtiva\(\)\)\) return null;/);
   assert.match(srv, /\.eq\("owner_id", user\.id\)/);
   assert.match(srv, /HREF_AVALIACAO_NA_GRADE = "\/dashboard\/imoveis"/);
+});
+
+test("E1079 (385/386): o perfil do CREDENCIADO no desenho do mockup — foto da conta (só conta de teste) ou iniciais, cidade com UF, preço da tabela da cidade", () => {
+  const pagina = readFileSync("src/app/(public)/avaliadores/[numero]/page.tsx", "utf8");
+  const cred = pagina.slice(pagina.indexOf("export default async function AvaliadorPage"), pagina.indexOf("async function PerfilPublico"));
+  assert.match(cred, /fotoDoCredenciado\(admin, a\.numero_credenciado, a\.teste\)/);
+  assert.match(cred, /rostoDoAvaliador\(a\.nome_curto, foto, a\.teste\)/);
+  assert.match(cred, /data-testid="avaliador-foto"/);
+  assert.match(cred, /quadroDePreco\(await tabelaDaCidade\(admin, a\.cidade\), a\.cidade, new Date\(\)\)/);
+  assert.match(cred, /data-testid="avaliador-uf"/);
+  assert.match(cred, /\{TITULO_PERFIL\}/);
+  const srv = readFileSync("src/lib/vistoria/vitrine-servidor.ts", "utf8");
+  assert.match(srv, /export async function fotoDoCredenciado[\s\S]*?if \(!fotoPublicaPermitida\(contaTeste\)\) return null;/);
+});
+
+test("E1079 (386): a escolha do dono mostra a foto de perfil da conta — só de conta de teste; conta real, as iniciais", () => {
+  const b = readFileSync("src/components/vistoria/bloco-avaliacao-dono.tsx", "utf8");
+  assert.match(b, /rostoDoAvaliador\(a\.nome, a\.fotoUrl, a\.teste\)/);
+  assert.match(b, /fotoPublicaPermitida\(teste\) \? await signAvatarPath\(/);
+  assert.match(b, /data-testid="avaliacao-sugerido-foto"/);
 });
