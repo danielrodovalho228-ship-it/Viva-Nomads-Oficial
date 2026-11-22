@@ -5,14 +5,14 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { integracoesSimuladas } from "@/lib/integracoes";
-import { fontesDaVitrine, fotoDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
+import { fontesDaVitrine, fotoDoCredenciado, seloLigadoDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
 import { VitrineAvaliadores } from "@/components/vistoria/vitrine-avaliadores";
 import { tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { VoltarCelular as BotaoVoltar } from "@/components/ui/voltar-celular";
-import { TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, slugDaCidade, ufDaCidade, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
+import { TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, seloDoCredenciado, slugDaCidade, ufDaCidade, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
 import { VISTORIA_ATIVA } from "@/lib/flags";
 import { LINHA_PUBLICA_DESIGNACAO } from "@/lib/vistoria/telas-exibicao";
-import { ROTULO_AVALIADOR_CREDENCIADO, ROTULO_AVALIADOR_EM_TESTE, SELO_AVALIADOR_SOCIO, TEXTO_AVALIADOR_DE_TESTE } from "@/lib/vistoria/regras";
+import { SELO_AVALIADOR_SOCIO, TEXTO_AVALIADOR_DE_TESTE } from "@/lib/vistoria/regras";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +70,8 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
   // conta de teste a mostra, sem o Daniel), senão as iniciais; a cidade com a UF; o preço da TABELA DA CIDADE por porte.
   const admin = createAdminClient();
   const foto = admin ? await fotoDoCredenciado(admin, a.numero_credenciado, a.teste) : null;
+  // E1097: "Avaliador credenciado" para todos; o sócio só pela linha ligada do Rogério.
+  const seloLigado = admin ? await seloLigadoDoCredenciado(admin, a.numero_credenciado) : null;
   const rosto = rostoDoAvaliador(a.nome_curto, foto, a.teste);
   const quadro = admin ? quadroDePreco(await tabelaDaCidade(admin, a.cidade), a.cidade, new Date()) : [];
   const uf = ufDaCidade(MUNICIPIOS, a.cidade);
@@ -98,7 +100,7 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
         <h1 className="mt-6 font-title text-2xl font-semibold text-ink" data-testid="avaliador-nome">{a.nome_curto}</h1>
         <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-champagne px-4 py-1 text-sm font-semibold text-forest-700">
           <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
-          <span data-testid="avaliador-rotulo">{a.teste ? ROTULO_AVALIADOR_EM_TESTE : ROTULO_AVALIADOR_CREDENCIADO}</span>
+          <span data-testid="avaliador-rotulo">{seloDoCredenciado(a.teste, seloLigado)}</span>
         </p>
         <p className="mt-3 inline-flex items-center gap-2 text-base text-muted">
           <MapPin className="h-4 w-4 shrink-0" aria-hidden />
