@@ -8,6 +8,11 @@ import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, no
   depois de montar; enquanto ela não chegava — e quando falhava — caía no cartão de MORADOR.
   Regra: fonte única e estável — para quem anuncia (no modo proprietário), a prévia NUNCA mostra o cartão de morador:
   nem enquanto carrega, nem quando a leitura falha, nem entre recargas.
+  E972: a primeira leitura da prévia passou a vir com a página, do servidor. As ações do navegador atrasadas ou
+  derrubadas deixaram de atingir a prévia na carga: o cartão do proprietário já está lá. O caminho "a leitura falhou →
+  avisa com tentar de novo" continua no produto para quando o servidor não entrega a prévia, e é cobrado pelos testes
+  de unidade (e799-espelho-estado.test.ts e e972-previa-do-servidor.test.ts); aqui não há como derrubar a leitura do
+  servidor.
 */
 const TITULO_MORADOR = "É assim que o proprietário te vê quando você pede para morar";
 const TITULO_DONO = "É assim que o morador te vê no seu anúncio";
@@ -80,8 +85,13 @@ test.describe("T1613 — E799 a prévia do perfil do proprietário é estável",
         const depois = await vistos(page);
         expect(depois.titulos, `títulos vistos: ${JSON.stringify(depois.titulos)}`).toEqual([TITULO_DONO]);
       } else {
-        // A falha é dita (com "tentar de novo"), nunca vira outro cartão.
-        await expect(page.locator('[data-testid="espelho-falha"]:visible').first()).toBeVisible();
+        // E972: com a prévia entregue pelo servidor, derrubar as ações do navegador não a atinge: o cartão do
+        // proprietário está lá, e nunca outro. (Antes do E972 a prévia era lida por uma dessas ações e aqui aparecia o
+        // aviso de falha.)
+        await expect(page.locator('[data-testid="espelho-titulo"]:visible').first()).toHaveText(TITULO_DONO, { timeout: 30_000 });
+        const depois = await vistos(page);
+        expect(depois.titulos, `títulos vistos: ${JSON.stringify(depois.titulos)}`).toEqual([TITULO_DONO]);
+        await expect(page.locator('[data-testid="espelho-carregando"]:visible')).toHaveCount(0);
       }
       await page.context().close();
     });

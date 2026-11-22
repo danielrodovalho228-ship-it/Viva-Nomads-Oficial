@@ -17,6 +17,7 @@ import { RedesPrivadas } from "@/components/account/redes-privadas";
 import { SUBTITULO_PAPEIS } from "@/lib/conta/tela-papeis";
 import { ALIAS_SECAO, type SecaoConta } from "@/lib/conta/secoes";
 import { getPerfilInicial } from "@/lib/data/perfil-actions";
+import { meuPerfilPublico } from "@/lib/data/papeis-actions";
 
 /**
  * Telas da Conta (A1): cada seção na casca (menu lateral no computador; "‹ Conta" no celular), um H1 por tela.
@@ -37,10 +38,15 @@ export default async function ContaSecaoPage({ params }: { params: Promise<{ sec
   switch (secao) {
     case "perfil": {
       // Falha na leitura do servidor → null: a tela cai no caminho do navegador, que mostra "Tentar de novo" (achado 70).
+      // E972: a prévia ("como te veem") também é lida aqui, em paralelo com o perfil — antes ela só era buscada pelo
+      // navegador depois de carregar, e o cartão ficava em esqueleto nos primeiros segundos. Falhou → null: a prévia cai
+      // no caminho do navegador (espera e, se falhar de novo, avisa com "tentar de novo"; E799).
+      const leituraDaPrevia = meuPerfilPublico().catch(() => null);
       const inicial = await getPerfilInicial().catch(() => null);
+      const previaInicial = await leituraDaPrevia;
       return (
         <CascaConta ativo="perfil" topoDireita>
-          <PerfilTela inicial={inicial} />
+          <PerfilTela inicial={inicial} previaInicial={previaInicial} />
           {/* E798: /dashboard/conta#documento (link antigo) chega aqui pelo redirecionamento do servidor; vai à seção certa. */}
           <AncoraAntigaDaConta />
           {/* E979: cookie da largura desatualizado → no celular, volta ao menu da Conta. */}
