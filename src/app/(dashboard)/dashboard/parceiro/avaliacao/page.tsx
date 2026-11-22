@@ -16,6 +16,7 @@ import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
 import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
+import { etapaDoPedido } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
@@ -359,7 +360,8 @@ function ItemPedido({ p, resposta: r, agora, prazoRespostaHoras }: { p: Pedido; 
           <Button type="submit" variant="ghost" size="sm">Proprietário ou morador ausente</Button>
         </FormAcao>
       )}
-      {p.status === "designado" && (r === null || r === "aceita") && (
+      {/* E1102: a lista oferece "Ver o pedido" exatamente quando a tela do pedido abre (a mesma função decide). */}
+      {etapaDoPedido({ status: p.status, resposta: r, proposta_em: p.proposta_em, proposta_aceita_em: p.proposta_aceita_em, teste: p.teste, escolhido_em: p.escolhido_em }) && (
         <ButtonLink href={`/dashboard/parceiro/avaliacao/${p.id}`} size="sm" variant="ghost" className="mt-2" data-testid="abrir-pedido">
           Ver o pedido
         </ButtonLink>

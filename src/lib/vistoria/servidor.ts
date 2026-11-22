@@ -321,6 +321,26 @@ export async function escolherNoServidor(admin: Admin, pedidoId: string, avaliad
 }
 
 /**
+ * E1102: grava a resposta do AVALIADOR DO PEDIDO ("aceita" ao propor, "recusada" ao recusar) na designação aberta. Se o
+ * pedido não tem a linha da designação (massa antiga, dado incoerente), ela é criada já com a resposta, na data da
+ * designação do pedido — antes, a resposta não tinha onde ser gravada e a ação dizia que o prazo tinha passado.
+ * Devolve false quando a designação JÁ tem resposta (nada é gravado por cima) ou quando a leitura falha.
+ * Quem chama já conferiu que a sessão é do avaliador do pedido e que o pedido está "designado".
+ */
+export async function registrarRespostaDoAvaliador(admin: Admin, pedidoId: string, avaliadorId: string, resposta: "aceita" | "recusada", agora = new Date()): Promise<boolean> {
+  const quando = agora.toISOString();
+  const { data } = await admin.from("vistoria_designacoes").update({ resposta, respondido_em: quando }).eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId).is("resposta", null).select("id");
+  if (data?.length) return true;
+  const { data: ja, error } = await admin.from("vistoria_designacoes").select("id").eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId).maybeSingle();
+  if (error || ja) return false;
+  const { data: p } = await admin.from("vistoria_pedidos").select("designado_em").eq("id", pedidoId).maybeSingle();
+  const { error: erroNova } = await admin
+    .from("vistoria_designacoes")
+    .insert({ pedido_id: pedidoId, avaliador_id: avaliadorId, designado_em: (p?.designado_em as string | null | undefined) ?? quando, resposta, respondido_em: quando });
+  return !erroNova;
+}
+
+/**
  * Recusa, silêncio de 24 h, ausência do avaliador ou proposta recusada pelo dono: fecha a escolha e DEVOLVE o pedido ao
  * dono para escolher outro (a Viva não passa ao "próximo da fila"). Ausência confere os critérios públicos (revisão
  * humana; nada de suspensão automática).

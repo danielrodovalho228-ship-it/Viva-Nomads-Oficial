@@ -29,11 +29,23 @@ export const ETIQUETA_DO_PEDIDO: Record<EtapaDoPedido, string> = { novo: "Novo",
  * E1101: "aceito" sem o aceite gravado só vale para a avaliação de teste do credenciamento (o admin designa; o dono não
  * escolhe). O pedido que o dono escolheu espera o aceite dele também quando a conta é de teste (o piloto) — a mesma
  * regra do bloco do dono, da lista e das ações (precisaDoAceiteDoDono).
+ * E1102: `resposta` undefined = o pedido está "designado" a este avaliador mas NÃO tem a linha da designação (massa
+ * antiga, dado incoerente). Vale o que o pedido diz: com proposta gravada, proposta enviada; sem ela, o pedido espera a
+ * resposta do avaliador ("novo"). Antes a tela devolvia o avaliador ao painel sem dizer nada. A lista usa esta mesma
+ * função para oferecer "Ver o pedido": só oferece o que a tela abre.
  */
-export function etapaDoPedido(p: { status: string; resposta: string | null; proposta_aceita_em: string | null; teste: boolean; escolhido_em: string | null }): EtapaDoPedido | null {
+export function etapaDoPedido(p: {
+  status: string;
+  resposta: string | null | undefined;
+  proposta_aceita_em: string | null;
+  teste: boolean;
+  escolhido_em: string | null;
+  proposta_em?: string | null;
+}): EtapaDoPedido | null {
   if (p.status !== "designado") return null;
-  if (p.resposta === null) return "novo";
-  if (p.resposta !== "aceita") return null;
+  if (p.resposta != null && p.resposta !== "aceita") return null;
+  const propos = p.resposta === "aceita" || (p.resposta === undefined && Boolean(p.proposta_em));
+  if (!propos) return "novo";
   return p.proposta_aceita_em || !precisaDoAceiteDoDono({ teste: p.teste, escolhidoEm: p.escolhido_em }) ? "aceito" : "proposta_enviada";
 }
 
