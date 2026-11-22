@@ -4,14 +4,13 @@
 -- (sendMessage) já recusam; faltava o banco: pela inserção direta em `messages` (chave pública + sessão), o gatilho
 -- messages_mask_contact (0057/0287) tratava o CPF como telefone e gravava a mensagem MASCARADA, entregue à outra parte.
 -- A regra aprovada para documento é RECUSA, nunca máscara. Agora o gatilho recusa a linha (nada se grava, nada se entrega)
--- quando o texto traz CPF ou RG (forma de documento ou rótulo, como no contact-guard.ts); para o resto do contato
--- (telefone, e-mail, mensageiros, links, redes e sequências soltas de dígitos) a máscara continua igual.
+-- quando o texto traz CPF ou RG, pelas mesmas regras do contact-guard.ts (`documento`); para o resto do contato
+-- (telefone, e-mail, mensageiros, links, redes) a máscara continua igual.
 -- Só funções; nenhuma tabela, política ou dado muda.
 
--- O texto traz CPF ou RG? As formas de documento do contact-guard.ts que o banco recusa (ORDEM-DUET-440):
--- RG com rótulo, CPF com rótulo, CPF com a forma 000.000.000-00 (mesmo com dígito verificador inválido) e RG pela
--- máscara (12.345.678-9, com ou sem UF). Sequência solta de dígitos NÃO é recusada aqui: segue para a máscara de
--- telefone (mask_contact), como antes — o banco não recusa número comprido sem rótulo nem forma de documento.
+-- O texto traz CPF ou RG? Espelha as cinco regras de documento do contact-guard.ts, na mesma ordem:
+-- RG com rótulo, CPF com rótulo, CPF com a forma 000.000.000-00 (mesmo com dígito verificador inválido),
+-- 11 dígitos com dígito verificador válido e RG pela máscara (12.345.678-9, com ou sem UF).
 create or replace function public.contem_documento(t text)
 returns boolean
 language plpgsql
@@ -20,6 +19,7 @@ set search_path = public
 as $$
 declare
   r text;
+  m text;
 begin
   if t is null or t = '' then
     return false;
@@ -35,6 +35,11 @@ begin
   if r ~ '(?<![\d.-])\d{3}\.\d{3}\.\d{3}-\d{2}(?![\d-])' then
     return true;
   end if;
+  for m in select (regexp_matches(r, '(?<![\d.-])\d{3}[.\s]?\d{3}[.\s]?\d{3}[-.\s]?\d{2}(?![\d-])', 'g'))[1] loop
+    if public.cpf_valido(m) then
+      return true;
+    end if;
+  end loop;
   return r ~ '(?<![\w.])(?:[A-Z]{2}[-\s]?)?\d{1,2}\.\d{3}\.\d{3}(?:-[\dXx])?(?![\w.])';
 end;
 $$;

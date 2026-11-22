@@ -1,9 +1,8 @@
 /*
   E1059, perna de servidor (ORDEM-DUET-433): pela inserção direta em `messages` (chave pública + sessão), o gatilho
   messages_mask_contact (0057/0287) tratava o CPF como telefone e gravava a mensagem MASCARADA. A regra para CPF/RG é
-  RECUSA, nunca máscara. A migração 0354 faz o gatilho recusar a linha quando o texto traz documento (forma de CPF/RG
-  ou rótulo, como no contact-guard.ts) e deixa a máscara do resto do contato como estava. Sequência solta de dígitos
-  não é recusada no banco (ORDEM-DUET-440): segue para a máscara de telefone.
+  RECUSA, nunca máscara. A migração 0354 faz o gatilho recusar a linha quando o texto traz documento (as mesmas regras
+  do contact-guard.ts) e deixa a máscara do resto do contato como estava.
   Aqui: a forma da migração (o comportamento no banco está na t1727 e na t2224, no laboratório).
   Roda: node --test src/lib/messages/e1059-servidor-recusa-documento.test.ts
 */
@@ -30,18 +29,17 @@ test("E1059 servidor: o gatilho das mensagens RECUSA documento, com a frase do O
   assert.ok(gatilho.includes(`raise exception '${DOCUMENTO_BLOQUEADO}' using errcode = '23514';`), "a recusa do banco usa a mesma frase da tela e do servidor");
 });
 
-test("E1059 servidor: contem_documento recusa as formas de documento do contact-guard.ts; sequência solta de dígitos fica para a máscara", () => {
+test("E1059 servidor: contem_documento espelha as cinco regras de documento do contact-guard.ts", () => {
   const sql = semComentarios(ler(MIGRACAO));
   const guarda = ler("src/lib/messages/contact-guard.ts");
-  for (const nome of ["RG_ROTULO_RE", "CPF_ROTULO_RE", "CPF_FORMATADO_RE", "RG_MASCARA_RE"]) {
+  for (const nome of ["RG_ROTULO_RE", "CPF_ROTULO_RE", "CPF_FORMATADO_RE", "CPF_CANDIDATE_RE", "RG_MASCARA_RE"]) {
     assert.match(guarda, new RegExp(`text\\.replace\\(${nome},`), `o contact-guard.ts segue com a regra ${nome}`);
   }
   assert.match(sql, /\(\?:RG\|R\\\.G\\\.\|identidade\)/, "RG com rótulo");
   assert.match(sql, /\(\?:CPF\|C\\\.P\\\.F\\\.\?\)/, "CPF com rótulo");
   assert.ok(sql.includes(String.raw`r ~ '(?<![\d.-])\d{3}\.\d{3}\.\d{3}-\d{2}(?![\d-])'`), "CPF com a forma 000.000.000-00, mesmo com dígito verificador inválido");
+  assert.ok(sql.includes("if public.cpf_valido(m) then"), "11 dígitos sem rótulo só com dígito verificador válido (um celular não é recusado)");
   assert.ok(sql.includes(String.raw`\d{1,2}\.\d{3}\.\d{3}(?:-[\dXx])?`), "RG pela máscara");
-  // ORDEM-DUET-440: o banco não recusa número comprido sem rótulo nem forma de documento (segue para a máscara de telefone).
-  assert.doesNotMatch(sql, /cpf_valido/, "sem a regra dos 11 dígitos soltos com dígito verificador válido");
   assert.match(sql, /regexp_replace\(t, '\\y\[0-9a-f\]\{8\}-/, "ids (UUID) saem antes das regras");
   assert.match(sql, /revoke all on function public\.contem_documento\(text\) from public, anon;/);
   assert.match(sql, /grant execute on function public\.contem_documento\(text\) to authenticated, service_role;/);
