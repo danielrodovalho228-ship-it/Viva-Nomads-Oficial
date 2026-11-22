@@ -155,3 +155,26 @@ export const VAGA_FOTO_VISITA =
 /** O botão "Continuar": largura inteira, verde-escuro. */
 export const BOTAO_CONTINUAR_VISITA =
   "flex min-h-14 w-full items-center justify-center rounded-xl bg-[#0e4233] px-4 text-2xl font-bold text-white hover:bg-[#145241] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e4233]";
+
+/*
+  Pedido do avaliador (E1079, fatia 3): mockup avaliador-pedido (celular). As cores foram medidas no próprio desenho.
+*/
+
+/** A etiqueta ao lado do título ("Novo": ocre do desenho; as outras etapas, verde-claro). */
+export const ETIQUETA_PEDIDO_AVALIADOR = {
+  novo: "inline-flex items-center rounded-full bg-[#c48131] px-3 py-1 text-base font-bold text-white",
+  outras: "inline-flex items-center rounded-full bg-[#bad3ad] px-3 py-1 text-base font-bold text-[#0e4233]",
+} as const;
+/** A foto do imóvel e o cartão dos dados, que sobe por cima da foto. */
+export const CAPA_PEDIDO_AVALIADOR = "aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#e8f0e8]";
+export const CARTAO_PEDIDO_AVALIADOR = `relative rounded-xl bg-white p-4 ${SOMBRA_CARTAO_AVALIADORES}`;
+export const CARTAO_PEDIDO_SOBRE_A_CAPA = "-mt-6";
+export const LINHA_PEDIDO_AVALIADOR = "flex items-start gap-3 text-xl text-[#1d2327]";
+export const ICONE_PEDIDO_AVALIADOR = "mt-0.5 h-7 w-7 shrink-0 text-[#0e4233]";
+/** A caixa do valor (verde-claro do desenho). */
+export const CAIXA_VALOR_PEDIDO = "flex items-center gap-3 rounded-xl bg-[#bad3ad] px-4 py-3 text-xl font-bold text-[#0e4233]";
+/** "Aceitar pedido" (cheio) e "Recusar" (contorno), lado a lado. */
+export const BOTAO_ACEITAR_PEDIDO =
+  "flex min-h-14 w-full items-center justify-center rounded-xl bg-[#054534] whitespace-nowrap px-2 text-lg font-bold text-white hover:bg-[#0b5a3a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#054534]";
+export const BOTAO_RECUSAR_PEDIDO =
+  "flex min-h-14 w-full items-center justify-center rounded-xl border-2 border-[#1b3a34] bg-white whitespace-nowrap px-2 text-lg font-bold text-[#1b3a34] hover:bg-[#f1f6f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1b3a34]";
