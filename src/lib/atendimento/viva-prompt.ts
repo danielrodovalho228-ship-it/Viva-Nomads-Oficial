@@ -10,10 +10,13 @@ import { PORTA_GESTOR_TEXTO, REGRAS_CONTRATO } from "../../config/planos.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
 import { PROMESSA_ATENDIMENTO, frasePrazosManutencao } from "../../config/atendimento.ts";
 import { SITUACAO_VIVA } from "../../config/situacao-viva.ts";
+import { FAIXA_GESTOR, TEXTO_REGRA_UNICA, escadaTaxasTexto, exemploCobranca, pctTexto } from "../cobranca/regra.ts";
+import { PCT_TAXA_SERVICO_PARCEIROS } from "../../config/taxa-servico-parceiros.ts";
 
 
-const REGRA_PRECO_TEXTO =
-  "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.";
+// E1111 (ORDEM-494): a regra do preço é a frase única da fonte, não uma cópia.
+const REGRA_PRECO_TEXTO = TEXTO_REGRA_UNICA;
+const EXEMPLO = exemploCobranca();
 
 export function fontes(): string {
   const faq = FAQ.map((p) => `- [faq:${p.id}] ${p.pergunta}\n  ${p.resposta}${p.porPerfil?.com_contrato ? `\n  (Para quem tem contrato ativo: ${p.porPerfil.com_contrato})` : ""}`).join("\n");
@@ -24,7 +27,7 @@ export function fontes(): string {
     "",
     "## Preço para proprietários (fonte oficial, regra única)",
     REGRA_PRECO_TEXTO,
-    `A taxa é cobrada só do proprietário, sobre o valor total de cada contrato fechado (valor mensal × meses). Cada renovação é cobrada à parte, sobre o valor total do período renovado, com a taxa da faixa. Quem vem morar não paga taxa da plataforma. Faixas por nº de imóveis ativos (só contam os publicados, com documento aprovado e calendário em dia): 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%. O Plano Gestor tem taxa de 4% por contrato, sem mensalidade, para ${PORTA_GESTOR_TEXTO}. Não há mensalidade nem outros planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor total do contrato (12% de 3 meses a R$ 3.000 por mês = R$ 1.080)\".`, // E836: sem remissão a /precos (suspensa, E563).
+    `A taxa é cobrada só do proprietário, sobre o valor total de cada contrato fechado (valor mensal × meses). Cada renovação é cobrada à parte, sobre o valor total do período renovado, com a taxa da faixa. Quem vem morar não paga taxa da plataforma. Faixas por nº de imóveis ativos (só contam os publicados, com documento aprovado e calendário em dia): ${escadaTaxasTexto()}. O Plano Gestor tem taxa de ${pctTexto(FAIXA_GESTOR.taxa)} por contrato, sem mensalidade, para ${PORTA_GESTOR_TEXTO}. Não há mensalidade nem outros planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor total do contrato (${EXEMPLO.pct} de ${EXEMPLO.meses} meses a ${EXEMPLO.aluguel} por mês = ${EXEMPLO.comissao})\".`, // E836: sem remissão a /precos (suspensa, E563).
     "Vocabulário ao falar da cobrança da Viva: use \"reserva\", \"contrato\" e \"valor mensal\"; nunca \"aluguel\", \"locação\", \"imobiliária\", \"corretagem\", \"comissão\" ou \"intermediação\".",
     "",
     "## Regras do contrato (fonte oficial)",
@@ -33,7 +36,7 @@ export function fontes(): string {
     "- Contato direto (telefone, e-mail, redes) nunca é trocado: a conversa fica toda na plataforma.",
     "",
     "## Parcerias (fonte oficial)",
-    "Quando perguntarem como virar parceiro, pergunte qual é o caso e explique: fotógrafo parceiro → /parceiros/fotografos (\"Quero ser parceiro\"); empresa que hospeda equipes → /empresas; proprietário que anuncia → /auth; seguro, limpeza, mobília e outros serviços → /parceiros (em breve, deixe seu contato). A Viva não guarda o dinheiro do serviço; ao falar do modelo, use \"taxa de serviço\" (10% sobre o valor do serviço, para todas as categorias).",
+    `Quando perguntarem como virar parceiro, pergunte qual é o caso e explique: fotógrafo parceiro → /parceiros/fotografos ("Quero ser parceiro"); empresa que hospeda equipes → /empresas; proprietário que anuncia → /auth; seguro, limpeza, mobília e outros serviços → /parceiros (em breve, deixe seu contato). A Viva não guarda o dinheiro do serviço; ao falar do modelo, use "taxa de serviço" (${PCT_TAXA_SERVICO_PARCEIROS} sobre o valor do serviço, para todas as categorias).`,
     blocoParceirosPrompt(),
     "",
     "## Situação da Viva hoje (fonte oficial)",

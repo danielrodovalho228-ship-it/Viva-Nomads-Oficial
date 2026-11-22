@@ -214,6 +214,11 @@ export function escadaTaxasTexto(faixas: readonly FaixaComissao[] = FAIXAS_COMIS
     .join(" · ");
 }
 
+/** E1111: "12/10/8/6%" — a escada curta das faixas comuns (sem a do Plano Gestor), lida da regra. */
+export function escadaCurtaTexto(faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): string {
+  return `${faixas.filter((f) => !f.gestor).map((f) => Math.round(f.taxa * 100)).join("/")}%`;
+}
+
 /** "R$ 3.200" (inteiro) / "R$ 259,20" (com centavos). */
 export function brlTaxa(v: number): string {
   const inteiro = Math.abs(v - Math.round(v)) < 0.005;
@@ -277,3 +282,20 @@ export function comissaoCurta(taxaTexto: string): string {
 /** Renovação/prorrogação (decisão do Daniel, 14/10): cobrada à parte, sobre o valor total do período renovado. */
 export const TEXTO_RENOVACAO_COMISSAO =
   "A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.";
+
+/**
+ * E1111 (ORDEM-DUET-494): o exemplo da cobrança dito ao público ("contrato de 3 meses a R$ 3.000 por mês, na faixa de
+ * 12%: valor total R$ 9.000; comissão R$ 1.080"), calculado pela regra — nenhum número escrito à mão.
+ */
+export function exemploCobranca(aluguelMensal = 3000, meses = 3, taxa: number = TAXA_COMISSAO_PADRAO) {
+  return {
+    meses,
+    aluguel: brlTaxa(aluguelMensal),
+    pct: pctTexto(taxa),
+    total: brlTaxa(aluguelMensal * meses),
+    comissao: brlTaxa(comissaoSobreContrato(aluguelMensal, meses, taxa)),
+  };
+}
+
+/** E1111: a menor taxa das faixas comuns ("6%"), sem a do Plano Gestor. */
+export const TAXA_MENOR_COMUM_TEXTO = pctTexto(Math.min(...FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor).map((f) => f.taxa)));

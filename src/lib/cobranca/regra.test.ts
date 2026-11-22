@@ -272,7 +272,8 @@ test("F6: chat da Viva não diz 6% para o Plano Gestor", async () => {
   assert.doesNotMatch(t, /Plano Gestor \(6%/);
   // E564: sem a faixa "31+ negociável"; o Gestor é 4% sem assinatura, com a porta inteira.
   assert.doesNotMatch(t, /31 ou mais|negociad/);
-  assert.match(t, /O Plano Gestor tem taxa de 4% por contrato, sem mensalidade, para \$\{PORTA_GESTOR_TEXTO\}\./);
+  // Asserção alterada (E1111, ORDEM-DUET-494): o "4%" do Gestor passa a vir da regra (FAIXA_GESTOR); a frase é a mesma.
+  assert.match(t, /O Plano Gestor tem taxa de \$\{pctTexto\(FAIXA_GESTOR\.taxa\)\} por contrato, sem mensalidade, para \$\{PORTA_GESTOR_TEXTO\}\./);
 });
 
 test("b3c9d76e: texto público e das telas não diz que a comissão é só do 1º mês/aluguel (guarda de varredura)", () => {

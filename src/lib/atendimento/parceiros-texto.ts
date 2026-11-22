@@ -6,6 +6,7 @@
 */
 import { TEXTO_TAXA_SERVICO_PARCEIROS } from "../../config/taxa-servico-parceiros.ts";
 import { PORTA_GESTOR_TEXTO } from "../../config/planos.ts";
+import { FAIXA_GESTOR, escadaCurtaTexto, pctTexto } from "../cobranca/regra.ts";
 import { TEXTO_PRAZO_PARCERIA } from "../../config/prazos-canais.ts";
 
 export const TIPOS_PARCEIRO =
@@ -33,7 +34,7 @@ export const CONTRATAR_FOTOGRAFO =
   "No passo Fotos do cadastro do imóvel, toque em \"Quer um fotógrafo profissional?\" para ver os fotógrafos parceiros da cidade do imóvel e a página de cada um. Você combina tudo pelas mensagens da Viva, e o seu contato não é trocado.";
 
 export const EMPRESAS_E_GESTORES =
-  `Empresa que quer moradia para funcionários: /empresas. Empresa que quer ser parceira (mudança, limpeza, montagem, manutenção): peça a parceria em /parceiros. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Gestor ou administradora de imóveis: não é parceria separada; veja o Plano Gestor (taxa menor por volume, 12/10/8/6%, e Plano Gestor, 4% sem mensalidade, para ${PORTA_GESTOR_TEXTO}).`;
+  `Empresa que quer moradia para funcionários: /empresas. Empresa que quer ser parceira (mudança, limpeza, montagem, manutenção): peça a parceria em /parceiros. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Gestor ou administradora de imóveis: não é parceria separada; veja o Plano Gestor (taxa menor por volume, ${escadaCurtaTexto()}, e Plano Gestor, ${pctTexto(FAIXA_GESTOR.taxa)} sem mensalidade, para ${PORTA_GESTOR_TEXTO}).`;
 
 /** Bloco para o prompt da Viva. */
 export function blocoParceirosPrompt(): string {

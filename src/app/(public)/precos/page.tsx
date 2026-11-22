@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
-import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, taxaPublicaTexto, comissaoSobreContrato, rotuloFaixaTaxa } from "@/lib/cobranca/regra";
+import { FAIXAS_COMISSAO_PADRAO, TAXA_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, pctTexto, taxaPublicaTexto, comissaoSobreContrato, rotuloFaixaTaxa } from "@/lib/cobranca/regra";
 import { GESTOR_DIFERENCIAIS, GESTOR_TEXTO } from "@/config/planos";
 import { DESTAQUES_PRECOS, FRASES_REGRA, INCLUIDO_CONTRATO, OPCIONAIS_PRECOS, SUBTITULO_OPCIONAIS } from "@/lib/precos-pagina";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
@@ -41,7 +41,7 @@ export default function PricingPage() {
         alinhamento="centro"
         subtitulo={
           <p>
-            A Viva cobra <strong className="text-white">12% sobre o valor total do contrato fechado</strong>. Sem mensalidade.
+            A Viva cobra <strong className="text-white">{pctTexto(TAXA_COMISSAO_PADRAO)} sobre o valor total do contrato fechado</strong>. Sem mensalidade.
           </p>
         }
       >
