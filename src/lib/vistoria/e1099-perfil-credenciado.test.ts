@@ -9,7 +9,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { novoNaViva, TEXTO_IDENTIDADE_VERIFICADA, TITULO_NOVO_NA_VIVA } from "./vitrine-avaliadores.ts";
+import { cartaoDoAvaliador, novoNaViva, TEXTO_IDENTIDADE_VERIFICADA, TITULO_NOVO_NA_VIVA } from "./vitrine-avaliadores.ts";
 
 const pagina = readFileSync("src/app/(public)/avaliadores/[numero]/page.tsx", "utf8");
 const credenciado = pagina.slice(pagina.indexOf("export default async function AvaliadorPage"), pagina.indexOf("async function PerfilPublico"));
@@ -40,4 +40,17 @@ test("E1099 (ORDEM-460 §3): 'Identidade verificada pela Viva' no perfil, da fon
   assert.doesNotMatch(pagina, /"Identidade verificada pela Viva"/, "o texto não se duplica na página");
   const srv = readFileSync("src/lib/vistoria/vitrine-servidor.ts", "utf8");
   assert.match(srv, /export async function identidadeConfirmadaDoCredenciado[\s\S]*?\(await estadoIdentidade\(admin, uid\)\)\.estado === "confirmada"/);
+});
+
+test("E1099 parte 3 (ORDEM-463 §1): 'Identidade verificada pela Viva' no cartão da LISTAGEM pública — só com a identidade confirmada", () => {
+  // O cartão leva o fato; sem ele (perfil do piloto, conta sem leitura), nada.
+  const base = { numero: "UDI-001", nome: "Ana", cidade: "Uberlândia", selo: null, avaliacoesFeitas: 0, notaConduta: null, contaTeste: true, fotoUrl: null };
+  assert.equal(cartaoDoAvaliador({ ...base, identidadeVerificada: true }).identidadeVerificada, true);
+  assert.equal(cartaoDoAvaliador({ ...base, identidadeVerificada: false }).identidadeVerificada, false);
+  assert.equal(cartaoDoAvaliador(base).identidadeVerificada, false);
+  const srv = readFileSync("src/lib/vistoria/vitrine-servidor.ts", "utf8");
+  assert.match(srv, /identidadeVerificada: uid \? await identidadeConfirmadaDaConta\(admin, uid\) : false,/);
+  const cartao = readFileSync("src/components/vistoria/vitrine-avaliadores.tsx", "utf8");
+  assert.match(cartao, /\{c\.identidadeVerificada && \(\s*<p[^>]*data-testid="vitrine-identidade"[\s\S]*?\{TEXTO_IDENTIDADE_VERIFICADA\}/);
+  assert.doesNotMatch(cartao, /"Identidade verificada pela Viva"/, "o texto não se duplica no cartão");
 });

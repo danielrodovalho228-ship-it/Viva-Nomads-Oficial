@@ -47,6 +47,8 @@ export interface FonteAvaliador {
   notaConduta: number | null;
   contaTeste: boolean;
   fotoUrl: string | null;
+  /** E1099 parte 3: a identidade da conta CONFIRMADA (estadoIdentidade). Sem o fato (piloto, sem leitura): ausente/false. */
+  identidadeVerificada?: boolean;
 }
 
 export interface CartaoAvaliador {
@@ -58,6 +60,7 @@ export interface CartaoAvaliador {
   notaConduta: number | null;
   rosto: Rosto;
   href: string;
+  identidadeVerificada: boolean;
 }
 
 export function cartaoDoAvaliador(a: FonteAvaliador): CartaoAvaliador {
@@ -70,6 +73,7 @@ export function cartaoDoAvaliador(a: FonteAvaliador): CartaoAvaliador {
     notaConduta: a.notaConduta == null || !Number.isFinite(Number(a.notaConduta)) ? null : Number(a.notaConduta),
     rosto: rostoDoAvaliador(a.nome, a.fotoUrl, a.contaTeste),
     href: `/avaliadores/${encodeURIComponent(a.numero)}`,
+    identidadeVerificada: a.identidadeVerificada === true,
   };
 }
 
