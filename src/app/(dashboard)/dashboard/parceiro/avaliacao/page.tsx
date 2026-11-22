@@ -14,7 +14,8 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
-import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, prazoResposta, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
+import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
+import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
@@ -37,7 +38,7 @@ const SITUACAO: Record<StatusCredenciamento, string> = {
 };
 const STATUS_PEDIDO: Record<string, string> = { pedido: "Aguardando a escolha do proprietário", designado: "Escolhido pelo proprietário", agendado: "Visita agendada", realizada: "Visita feita", laudo_emitido: "Laudo emitido", cancelada: "Cancelada", ausencia: "Ausência registrada" };
 
-type Pedido = { id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_aceita_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
+type Pedido = { id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; escolhido_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
 
 /**
  * Avaliador credenciado (62-B1/62-B3; desenho do 62-A, Parte 1, itens 1 e 6): o pedido único com os 5 passos e o estado,
@@ -129,7 +130,7 @@ export default async function AvaliacaoParceiroPage() {
 
   const { data: pedidos, error: erroPedidos } = await admin
     .from("vistoria_pedidos")
-    .select("id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_aceita_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
+    .select("id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
     .eq("avaliador_id", cred.id)
     .order("criado_em", { ascending: false });
   const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
@@ -215,7 +216,7 @@ export default async function AvaliacaoParceiroPage() {
             ) : (
               <ul className="grid gap-3">
                 {paraResponder.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={null} agora={agora} />
+                  <ItemPedido key={p.id} p={p} resposta={null} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
               </ul>
             )}
@@ -228,7 +229,7 @@ export default async function AvaliacaoParceiroPage() {
             ) : (
               <ul className="grid gap-3">
                 {visitas.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id) ?? null} agora={agora} />
+                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
               </ul>
             )}
@@ -241,7 +242,7 @@ export default async function AvaliacaoParceiroPage() {
             ) : (
               <ul className="grid gap-3">
                 {encerradas.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id) ?? null} agora={agora} />
+                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
                 {foraDaMinhaFila.map((d) => (
                   <li key={d.pedido_id} className="rounded-lg border border-line p-3 text-sm text-muted" data-testid="avaliacao-fora" data-resposta={d.resposta}>
@@ -299,8 +300,12 @@ function PassosCredenciamento({ status, identidade, teste }: { status: StatusCre
   );
 }
 
-function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | null; agora: Date }) {
-  const prazo = p.status === "designado" && r === null && p.designado_em ? prazoResposta(p.designado_em, agora) : null;
+function ItemPedido({ p, resposta: r, agora, prazoRespostaHoras }: { p: Pedido; resposta: string | null | undefined; agora: Date; prazoRespostaHoras: number | null }) {
+  // E1101: de quem é a vez e até quando sai de um lugar só (o mesmo do bloco do dono, da tela do pedido e da rotina).
+  // Enviada a proposta, o relógio de resposta para; a designação não lida (undefined) não vira "sem resposta".
+  const precisaDoAceite = precisaDoAceiteDoDono({ teste: p.teste, escolhidoEm: p.escolhido_em });
+  const relogio = relogioDoPedido({ status: p.status, resposta: r, designadoEm: p.designado_em, propostaEm: p.proposta_em, propostaAceitaEm: p.proposta_aceita_em, prazoRespostaHoras, precisaDoAceite }, agora);
+  const prazo = relogio?.vez === "avaliador" ? { texto: textoDoPrazoDeResposta(relogio, agora), vencido: relogio.vencido } : null;
   const semana = visitaNaSemana(p.agendado_para, agora);
   return (
     <li className="rounded-lg border border-line p-3 text-sm" data-testid="avaliacao-designada" data-pedido={p.id} data-status={p.status}>
@@ -329,7 +334,7 @@ function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | n
           <FormAcao acao={responderDesignacao}><input type="hidden" name="pedidoId" value={p.id} /><input type="hidden" name="resposta" value="recusar" /><Button type="submit" variant="ghost" size="sm" data-testid="designacao-recusar">Recusar</Button></FormAcao>
         </div>
       )}
-      {["designado", "agendado"].includes(p.status) && r === "aceita" && (p.proposta_aceita_em || p.teste || p.status === "agendado") && (
+      {["designado", "agendado"].includes(p.status) && r === "aceita" && (p.proposta_aceita_em || !precisaDoAceite || p.status === "agendado") && (
         <FormAcao acao={agendarVisita} className="mt-2 flex flex-wrap items-end gap-2" testid="agendar-visita">
           <input type="hidden" name="pedidoId" value={p.id} />
           <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>
@@ -337,8 +342,15 @@ function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | n
           <span className="w-full text-xs text-muted">Horário de Brasília. Combine a data com o proprietário pelas mensagens da Viva.</span>
         </FormAcao>
       )}
-      {["designado"].includes(p.status) && r === "aceita" && !p.proposta_aceita_em && !p.teste && (
-        <p className="mt-2 text-muted" data-testid="aguarda-aceite-proprietario">Proposta enviada: {brl(Number(p.valor_proposto))} em {p.prazo_proposto_dias} dia(s). Falta o proprietário aceitar para agendar a visita.</p>
+      {["designado"].includes(p.status) && r === "aceita" && !p.proposta_aceita_em && precisaDoAceite && (
+        <p className="mt-2 text-muted" data-testid="aguarda-aceite-proprietario">
+          Proposta enviada: {brl(Number(p.valor_proposto))} em {p.prazo_proposto_dias} dia(s). Falta o proprietário aceitar para agendar a visita.
+          {relogio?.vez === "dono" && (
+            <span className="mt-1 block" data-testid="prazo-aceite">
+              {textoDoPrazoDeAceite(relogio)}
+            </span>
+          )}
+        </p>
       )}
       {p.status === "agendado" && (
         <FormAcao acao={registrarAusencia} className="mt-2" testid="ausencia-dono">
