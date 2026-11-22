@@ -52,8 +52,9 @@ export async function generateMetadata({ params }: { params: Promise<{ numero: s
 }
 
 /**
- * Página pública do avaliador credenciado (62-B1; desenho do 62-A, Parte 1, item 2): nome curto, número de credenciado,
- * cidade, avaliações feitas e a nota de CONDUTA. Sem botão de contratar: "A Viva designa o avaliador. O proprietário não escolhe."
+ * Página pública do avaliador credenciado (62-B1; E1079/E1094: o MESMO desenho do perfil do piloto para todos): nome
+ * curto, número de credenciado, cidade, avaliações feitas, a nota de CONDUTA e o preço da tabela da cidade. Sem botão
+ * de contratar: quem escolhe o avaliador é o dono, na tela dele (E648).
  */
 export default async function AvaliadorPage({ params, searchParams }: { params: Promise<{ numero: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { numero } = await params;

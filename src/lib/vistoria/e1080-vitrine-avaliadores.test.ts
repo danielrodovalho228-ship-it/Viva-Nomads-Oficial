@@ -147,3 +147,15 @@ test("E1079 (386): a escolha do dono mostra a foto de perfil da conta — só de
   assert.match(b, /fotoPublicaPermitida\(teste\) \? await signAvatarPath\(/);
   assert.match(b, /data-testid="avaliacao-sugerido-foto"/);
 });
+
+test("E1094: a página pública do avaliador é a MESMA para todos — o credenciado ativo vê o desenho novo, nunca a página antiga", () => {
+  const pagina = readFileSync("src/app/(public)/avaliadores/[numero]/page.tsx", "utf8");
+  // A página antiga dizia que a Viva designa o avaliador — contra a escolha pelo dono (E648).
+  assert.doesNotMatch(pagina, /A Viva designa o avaliador|O proprietário não escolhe/);
+  const cred = pagina.slice(pagina.indexOf("export default async function AvaliadorPage"), pagina.indexOf("async function PerfilPublico"));
+  const minimo = pagina.slice(pagina.indexOf("async function PerfilPublico"), pagina.indexOf("async function PaginaDaCidade"));
+  for (const parte of ['{TITULO_PERFIL}', 'data-testid="avaliador-foto"', 'data-testid="avaliador-uf"', 'data-testid="avaliador-preco"', "<ShieldCheck"]) {
+    assert.ok(cred.includes(parte), `credenciado sem ${parte}`);
+    assert.ok(minimo.includes(parte), `perfil mínimo sem ${parte}`);
+  }
+});
