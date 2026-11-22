@@ -265,7 +265,8 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 </div>
               </div>
             )}
-            {atual.status === "designado" && atual.proposta_aceita_em && (
+            {/* E1103: o combinado continua à vista depois de a visita ser agendada (antes, a linha sumia no agendamento). */}
+            {["designado", "agendado", "realizada"].includes(atual.status) && atual.proposta_aceita_em && atual.valor_proposto != null && (
               <p className="text-ink" data-testid="avaliacao-proposta-aceita">
                 Combinado com o avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}.
               </p>
