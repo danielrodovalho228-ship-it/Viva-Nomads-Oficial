@@ -46,10 +46,10 @@ async function concluirEscolherAssinar(p: Page, pedidoId: string, nivel: "essenc
   await expect.poll(() => statusDo(pedidoId), { timeout: 20_000 }).toBe("realizada");
   await p.reload({ waitUntil: "domcontentloaded" });
   const form = p.getByTestId("enviar-laudo");
-  await expect(form.getByTestId("laudo-nivel-select"), "E1083: o formulário do laudo tem onde escolher o nível").toBeVisible({ timeout: 20_000 });
-  await form.getByTestId("laudo-nivel-select").selectOption(nivel);
+  await expect(form.getByTestId(`laudo-nivel-${nivel}`), "E1083: o formulário do laudo tem onde escolher o nível").toBeVisible({ timeout: 20_000 });
+  await form.getByTestId(`laudo-nivel-${nivel}`).click();
   await p.getByTestId("assino-laudo").getByRole("checkbox").check();
-  await form.getByRole("button", { name: "Enviar o laudo" }).click();
+  await form.getByRole("button", { name: "Assinar laudo" }).click();
 }
 
 test.describe("T2221 — E1083: no piloto o laudo assina-se sem CNPJ; fora dele não; o nível é o escolhido @E1083", () => {
