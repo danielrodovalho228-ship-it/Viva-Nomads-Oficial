@@ -8,6 +8,7 @@ import { STATUS_TESTE_CONCLUIDO } from "./entrada";
 import { criteriosAtingidos, propostaVencida, sugerirAvaliadores, CRITERIOS_PUBLICOS, type Sugestoes } from "./escolha";
 import { modoDaChaveAtual } from "./chave";
 import { filaNoAmbito } from "./ambito-da-chave";
+import { nomeDoAvaliador } from "./nome-do-avaliador";
 import {
   COLUNAS_PRECO,
   designacaoVencida,
@@ -38,6 +39,18 @@ export const rotaDono = (propertyId: string) => `/dashboard/imoveis/${propertyId
 export const rotaMorador = (pedidoId: string) => `/dashboard/avaliacao-imovel/${pedidoId}`;
 export const ROTA_ADMIN = "/admin/avaliadores";
 
+/**
+ * E1084: os nomes das CONTAS (profiles.full_name) por user_id — a fonte única do nome do avaliador. Falha de leitura:
+ * mapa vazio (cada tela cai no nome público do parceiro, como antes).
+ */
+export async function nomesDasContas(admin: Admin, userIds: readonly (string | null | undefined)[]): Promise<Map<string, string | null>> {
+  const ids = [...new Set(userIds.filter((x): x is string => !!x))];
+  if (!ids.length) return new Map();
+  const { data, error } = await admin.from("profiles").select("id, full_name").in("id", ids);
+  if (error) return new Map();
+  return new Map(((data ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name]));
+}
+
 /** De onde vêm os fatos do e-mail (E289): o pedido de avaliação (imóvel, data da visita, avaliador) ou só o imóvel. */
 export type RefVistoria = { pedidoId?: string | null; propertyId?: string | null };
 
@@ -49,13 +62,15 @@ export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<F
   if (ref.pedidoId) {
     const { data: p } = await admin
       .from("vistoria_pedidos")
-      .select("property_id, agendado_para, avaliadores_credenciamento(parceiros(nome_publico))")
+      .select("property_id, agendado_para, avaliadores_credenciamento(parceiros(nome_publico, user_id))")
       .eq("id", ref.pedidoId)
       .maybeSingle();
-    const pp = p as { property_id?: string | null; agendado_para?: string | null; avaliadores_credenciamento?: { parceiros?: { nome_publico?: string | null } | null } | null } | null;
+    const pp = p as { property_id?: string | null; agendado_para?: string | null; avaliadores_credenciamento?: { parceiros?: { nome_publico?: string | null; user_id?: string | null } | null } | null } | null;
     propertyId = propertyId ?? pp?.property_id ?? null;
     visita = pp?.agendado_para ?? null;
-    avaliador = pp?.avaliadores_credenciamento?.parceiros?.nome_publico ?? null;
+    // E1084: o nome do avaliador vem da conta (fonte única).
+    const parc = pp?.avaliadores_credenciamento?.parceiros ?? null;
+    avaliador = parc ? nomeDoAvaliador((await nomesDasContas(admin, [parc.user_id])).get(parc.user_id ?? ""), parc.nome_publico) : null;
   }
   if (!propertyId) return { imovel: null, visita, avaliador };
   const { data: im } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();

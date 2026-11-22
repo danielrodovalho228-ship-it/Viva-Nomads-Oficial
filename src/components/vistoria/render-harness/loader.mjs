@@ -15,6 +15,7 @@ const STUBS = {
   "@/lib/supabase/admin": `export function createAdminClient() { return globalThis.__VN.admin; }`,
   "@/lib/vistoria/chave": `export async function vistoriaAtiva() { return globalThis.__VN.chave; }`,
   "@/lib/vistoria/servidor": `export async function sugeridosDoPedido() { globalThis.__VN.sugeridosChamado = true; return globalThis.__VN.sugeridos; }
+export async function nomesDasContas() { return new Map(); }
 export async function tabelaDaCidade(admin) { const r = await admin.from("vistoria_precos").select("*"); return r.data ?? []; }`,
   "@/lib/vistoria/actions": NOOP(["agendarVisita", "aceitarProposta", "avaliarConduta", "confirmarRecebido", "escolherAvaliador", "pedirAvaliacao", "recusarProposta", "registrarAusencia"]),
   "@/components/vistoria/form-acao": `export const FormAcao = ({ children }) => children;`,
