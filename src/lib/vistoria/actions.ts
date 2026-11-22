@@ -35,6 +35,7 @@ import { descredenciamentoValido, faixaDeReferencia, validarProposta, validarTer
 import { recusaObservador } from "@/lib/qa/observador";
 import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
 import { ativarParceiroDoAvaliador } from "./parceiro-do-avaliador-servidor";
+import { normalizarSobre } from "./vitrine-avaliadores";
 import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 
 const MSG_VISTORIA_SEM_LEITURA = "Não foi possível conferir o imóvel agora. Tente de novo em instantes.";
@@ -698,4 +699,25 @@ export async function salvarMeusTermos(form: FormData): Promise<Res> {
   if (error || !data?.length) return { ok: false, erro: "Só avaliador em teste ou ativo define os próprios termos." };
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: "Termos salvos. O proprietário os vê na lista de escolha." };
+}
+
+/**
+ * E1099 parte 2 (ORDEM-DUET-458 §2): o avaliador escreve o PRÓPRIO "Sobre" (opcional; vazio apaga e a secção some do
+ * perfil público). Só o credenciamento da sessão — nunca o de outro.
+ */
+export async function salvarMeuSobre(form: FormData): Promise<Res> {
+  const s = await sessao();
+  if (!s) return { ok: false, erro: "Entre na sua conta." };
+  const v = normalizarSobre(String(form.get("sobre") ?? ""));
+  if (!v.ok) return v;
+  const { data: parc } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
+  const { data, error } = await s.admin
+    .from("avaliadores_credenciamento")
+    .update({ sobre: v.valor })
+    .or(parc ? `parceiro_id.eq.${parc.id},user_id.eq.${s.userId}` : `user_id.eq.${s.userId}`)
+    .select("id, numero_credenciado");
+  if (error || !data?.length) return { ok: false, erro: "Não encontramos o seu credenciamento." };
+  revalidatePath(ROTA_AVALIADOR);
+  for (const c of data as { numero_credenciado: string | null }[]) if (c.numero_credenciado) revalidatePath(`/avaliadores/${c.numero_credenciado}`);
+  return { ok: true, mensagem: v.valor ? "Texto salvo. Ele aparece no seu perfil público." : "Texto apagado. A secção Sobre não aparece no seu perfil." };
 }
