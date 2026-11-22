@@ -67,12 +67,12 @@ test.describe("T294 — proxy e uploads depois da subida do Next (Prompt 60)", (
       expect(falhas, falhas.join("\n")).toEqual([]);
     });
 
-    test("API do admin recusa sem sessão (401/403), também com x-middleware-subrequest", async ({ request }) => {
+    test("API do admin responde 404 sem sessão (ordem 12a8086d), também com x-middleware-subrequest", async ({ request }) => {
       const falhas: string[] = [];
       for (const { metodo, rota } of API_ADMIN)
         for (const headers of [{}, { "x-middleware-subrequest": "middleware:middleware:middleware:middleware:middleware" }] as Record<string, string>[]) {
           const r = await request[metodo](rota, { headers, data: metodo === "post" ? {} : undefined, maxRedirects: 0, failOnStatusCode: false });
-          if (![401, 403].includes(r.status())) falhas.push(`${metodo.toUpperCase()} ${rota} ${JSON.stringify(headers)} → ${r.status()}`);
+          if (r.status() !== 404) falhas.push(`${metodo.toUpperCase()} ${rota} ${JSON.stringify(headers)} → ${r.status()}`);
         }
       expect(falhas, falhas.join("\n")).toEqual([]);
     });
@@ -86,13 +86,14 @@ test.describe("T294 — proxy e uploads depois da subida do Next (Prompt 60)", (
   test.describe("morador logado (não é admin)", () => {
     test.use({ storageState: authFile("inquilino") });
 
-    test("não entra no /admin e a API do admin recusa (403)", async ({ page, request }) => {
+    test("não entra no /admin e a API do admin responde 404 (ordem 12a8086d)", async ({ page, request }) => {
       // Não-admin: o proxy reescreve para a página 404 (src/proxy.ts) e a URL continua /admin; vale o status.
       const resp = await page.goto("/admin");
       expect(resp?.status()).toBe(404);
       for (const { metodo, rota } of API_ADMIN) {
         const r = await request[metodo](rota, { data: metodo === "post" ? {} : undefined, failOnStatusCode: false });
-        expect([401, 403], `${metodo.toUpperCase()} ${rota}`).toContain(r.status());
+        expect(r.status(), `${metodo.toUpperCase()} ${rota}`).toBe(404);
+        expect(await r.json(), `${metodo.toUpperCase()} ${rota}`).toEqual({ erro: "Não encontrado." });
       }
     });
   });
