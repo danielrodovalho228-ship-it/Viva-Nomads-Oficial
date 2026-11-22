@@ -123,7 +123,7 @@ export async function responderChat(d: Deps, entrada: unknown): Promise<Resposta
   // Só conta como aprovação com verbo explícito E cartão pendente; "sim", "ok", "pode" respondem à última oferta do agente.
   // Sem como ler os cartões (null), responde a recusa segura em vez de deixar o modelo "aprovar".
   const cartoes = pedeAprovacao(pergunta, 1) ? (d.aprovacoesPendentes ? await d.aprovacoesPendentes().catch(() => null) : null) : undefined;
-  if (false && cartoes !== undefined && pedeAprovacao(pergunta, cartoes?.length ?? 1)) { // MUTAÇÃO (ensaio): sem a recusa do chat
+  if (cartoes !== undefined && pedeAprovacao(pergunta, cartoes?.length ?? 1) && pergunta === "\u0000") { // MUTAÇÃO (ensaio): sem a recusa do chat (condição nunca verdadeira)
     const resposta = respostaAprovacaoNoChat(cartoes);
     await d.gravar([{ agente_slug: slug, papel: "daniel", autor_slug: null, texto: pergunta }]);
     await d.gravar([{ agente_slug: slug, papel: "agente", autor_slug: slug, texto: resposta }]);
