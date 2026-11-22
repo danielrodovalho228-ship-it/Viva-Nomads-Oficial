@@ -11,6 +11,8 @@ import {
   pdf,
 } from "../fixtures/laboratorio";
 import { jpegComGps } from "../fixtures/exif";
+import { addDiasISO } from "../../../src/lib/contrato-blocos";
+import { hojeBR } from "../../../src/lib/utils";
 import { metadadoNoDeposito } from "../fixtures/exif-deposito";
 
 /**
@@ -85,11 +87,12 @@ test.describe("T85 — Conferência de entrada e saída: fotos, confirmar/contes
       .single();
     if (error) throw error;
     ids.contrato = data.id as string;
-    const hoje = new Date();
-    const dia = (d: Date) => d.toISOString().slice(0, 10);
+    // E1073: a entrada é "hoje" pelo dia de Brasília (o relógio do app). Com a data em UTC, entre 00h e 03h UTC a
+    // entrada caía "amanhã" em Brasília e a conferência de entrada ainda não teria aberto.
+    const hoje = hojeBR();
     const { error: eBloco } = await adm()
       .from("contrato_blocos")
-      .insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(hoje), fim: dia(new Date(hoje.getTime() + 60 * 86_400_000)), meses: 2, valor: 6400, caucao: 3200, status: "ativo" });
+      .insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: hoje, fim: addDiasISO(hoje, 60), meses: 2, valor: 6400, caucao: 3200, status: "ativo" });
     if (eBloco) throw eBloco;
   });
 

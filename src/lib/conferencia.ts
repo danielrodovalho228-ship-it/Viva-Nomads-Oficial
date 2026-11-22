@@ -53,6 +53,34 @@ export function prazoConferenciaEntrada(p: EntradaDoContrato): Date | null {
 }
 
 /**
+ * E1073 — FONTE ÚNICA da ABERTURA da conferência de entrada: o instante em que o relógio de Brasília marca 00:00 do
+ * dia da entrada, seja qual for o horário de check-in do anúncio (regra validada pelo coordenador, ORDEM-DUET-322).
+ * Antes dele nada se registra; o fecho continua em prazoConferenciaEntrada. Sem dia de início, não há abertura a esperar.
+ */
+export function aberturaConferenciaEntrada(p: Pick<EntradaDoContrato, "inicio"> & { checkinAfter?: string | null }): Date | null {
+  return instanteBRT((p.inicio ?? "").slice(0, 10), "00:00");
+}
+
+/** A conferência de entrada ainda não abriu? (antes das 00:00 de Brasília do dia da entrada) */
+export function entradaAindaNaoAbriu(datas: EntradaDoContrato | null, agora: Date = new Date()): boolean {
+  const abertura = datas ? aberturaConferenciaEntrada(datas) : null;
+  return abertura !== null && agora.getTime() < abertura.getTime();
+}
+
+/** "A conferência de entrada abre em 10/12 às 00:00, horário de Brasília (o dia da entrada)." — o aviso da seção. */
+export function textoAberturaConferencia(abertura: Date | string | null): string {
+  if (!abertura) return "";
+  return `A conferência de entrada abre em ${dataBRT(abertura).slice(0, 5)} às ${horaBRT(abertura)}, ${ETIQUETA_BRASILIA} (o dia da entrada).`;
+}
+
+/** A recusa do servidor a quem tenta registrar, anexar ou responder antes da abertura. */
+export function erroEntradaNaoAbriu(datas: EntradaDoContrato | null): string {
+  const abertura = datas ? aberturaConferenciaEntrada(datas) : null;
+  if (!abertura) return "A conferência de entrada só abre no dia da entrada.";
+  return `A conferência de entrada só abre no dia da entrada: ${dataBRT(abertura).slice(0, 5)} às ${horaBRT(abertura)}, ${ETIQUETA_BRASILIA}.`;
+}
+
+/**
  * FONTE ÚNICA do prazo da conferência de SAÍDA (Prompt 56): o instante em que o relógio de Brasília marca o último dia
  * do contrato no horário de saída do imóvel (00:00 sem horário), mais 48 h. Irmã de prazoConferenciaEntrada; a tela, a
  * linha do tempo, o servidor e a rotina diária usam esta função. Sem prazo, a saída normal ficaria aberta para sempre.

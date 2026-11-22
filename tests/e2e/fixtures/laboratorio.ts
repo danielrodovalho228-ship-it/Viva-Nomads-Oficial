@@ -4,6 +4,8 @@ import { deflateSync } from "node:zlib";
 import { expect, type Browser, type Page } from "@playwright/test";
 import { rasterDeTeste } from "./raster-foto";
 import { CHAVES_CONFORTO, VERSAO_CONFORTO } from "../../../src/config/conforto-minimo";
+import { addDiasISO } from "../../../src/lib/contrato-blocos";
+import { hojeBR } from "../../../src/lib/utils";
 
 /**
  * Apoio dos specs do LABORATÓRIO (t34–t37): contas NOVAS por spec (não mexem nas
@@ -419,11 +421,11 @@ export async function tornarContratoVigente(contratoId: string, donoId: string, 
   const agora = new Date().toISOString();
   const { error: e1 } = await adm().from("contratos").update({ assinado_proprietario_em: agora, assinado_inquilino_em: agora }).eq("id", contratoId);
   if (e1) throw e1;
-  const hoje = new Date();
-  const fim = new Date(hoje.getTime() + 59 * 86_400_000);
-  const dia = (d: Date) => d.toISOString().slice(0, 10);
+  // E1073: "hoje" é o dia de Brasília, o relógio do app. Com a data em UTC, entre 00h e 03h UTC o bloco nascia com o
+  // início "amanhã" em Brasília — o contrato não estaria em vigência e a conferência de entrada ainda não teria aberto.
+  const hoje = hojeBR();
   // O contrato gerado pela tela já pode ter o bloco 1 (aguardando assinatura): reaproveita e põe em vigência.
-  const linhaBloco = { inicio: dia(hoje), fim: dia(fim), meses: 2, valor: aluguel * 2, caucao: aluguel, status: "ativo" };
+  const linhaBloco = { inicio: hoje, fim: addDiasISO(hoje, 59), meses: 2, valor: aluguel * 2, caucao: aluguel, status: "ativo" };
   const { data: existente } = await adm().from("contrato_blocos").select("id").eq("contrato_id", contratoId).eq("numero_bloco", 1).maybeSingle();
   const { data: bloco, error: e2 } = existente
     ? await adm().from("contrato_blocos").update(linhaBloco).eq("id", existente.id).select("id").single()
@@ -434,7 +436,7 @@ export async function tornarContratoVigente(contratoId: string, donoId: string, 
     contrato_id: contratoId,
     tipo: "aluguel",
     valor: aluguel,
-    data_pagamento: dia(hoje),
+    data_pagamento: hoje,
     marcado_por: donoId,
     confirmado_pelo_inquilino: true,
     confirmado_em: agora,
