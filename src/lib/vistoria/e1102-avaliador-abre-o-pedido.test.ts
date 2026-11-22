@@ -89,3 +89,27 @@ test("E1102 (4): responder funciona sem a linha — propor e recusar gravam a re
   assert.match(propor, /const c = await comoAvaliador\(String\(form\.get\("pedidoId"\) \?\? ""\)\);\s*if \(!c \|\| c\.p\.status !== "designado"\) return SEM_ACESSO;/);
   assert.match(recusar, /const c = await comoAvaliador\(String\(form\.get\("pedidoId"\) \?\? ""\)\);\s*if \(!c \|\| c\.p\.status !== "designado"\) return SEM_ACESSO;/);
 });
+
+// ORDEM-DUET-492 (acrescento ao E1102): o pedido designado sem a linha da designação espera a resposta do avaliador;
+// o lugar dele é "Para responder", não "Visitas". O filtro lia só `resposta.get(p.id) === null` (a linha aberta).
+test("E1102 (ORDEM-492): 'Para responder' é a etapa \"novo\" — o pedido designado sem designação entra ali, sem relógio e sem formulário", () => {
+  // Só os comentários de linha saem: o `accept="image/*"` do formulário de credenciamento abriria um bloco falso aqui.
+  const lista = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx").replace(/^\s*\/\/.*$/gm, "");
+  // A secção sai da mesma função que decide a tela e o "Ver o pedido".
+  assert.match(lista, /const etapaNaLista = \(p: Pedido\) =>\s*etapaDoPedido\(\{ status: p\.status, resposta: resposta\.get\(p\.id\), proposta_em: p\.proposta_em, proposta_aceita_em: p\.proposta_aceita_em, teste: p\.teste, escolhido_em: p\.escolhido_em \}\);/);
+  assert.match(lista, /const paraResponder = lista\.filter\(\(p\) => etapaNaLista\(p\) === "novo"\);/);
+  assert.doesNotMatch(lista, /resposta\.get\(p\.id\) === null/, "a linha aberta deixou de ser o critério");
+  // O item recebe a resposta lida (undefined quando não há linha): com `null` fixo, o órfão ganharia relógio e formulário.
+  assert.doesNotMatch(lista, /<ItemPedido[^>]*resposta=\{null\}/);
+  // A regra, nos três estados que a lista distingue:
+  const p = { status: "designado", proposta_em: null as string | null, proposta_aceita_em: null, teste: true, escolhido_em: null };
+  assert.equal(etapaDoPedido({ ...p, resposta: null }), "novo", "linha aberta: para responder (como antes)");
+  assert.equal(etapaDoPedido({ ...p, resposta: undefined }), "novo", "sem linha e sem proposta: para responder (o órfão)");
+  assert.notEqual(etapaDoPedido({ ...p, resposta: undefined, proposta_em: "2026-11-20T12:00:00Z" }), "novo", "sem linha, com proposta: já respondeu");
+  assert.notEqual(etapaDoPedido({ ...p, resposta: "aceita", proposta_em: "2026-11-20T12:00:00Z" }), "novo");
+  assert.equal(etapaDoPedido({ ...p, status: "agendado", resposta: undefined }), null, "só o pedido designado espera resposta");
+  // E o órfão em "Para responder" não ganha relógio: sem relógio, a lista não mostra prazo nem o formulário antigo.
+  assert.equal(relogioDoPedido({ status: "designado", resposta: undefined, designadoEm: "2026-11-01T12:00:00Z", propostaEm: null, propostaAceitaEm: null, precisaDoAceite: false }, new Date("2026-11-22T12:00:00Z")), null);
+  assert.match(lista, /\{prazo && \(\s*<div[^>]*>\s*<span[^>]*data-testid="prazo-resposta"/, "prazo e formulário só existem com relógio do avaliador");
+});
+

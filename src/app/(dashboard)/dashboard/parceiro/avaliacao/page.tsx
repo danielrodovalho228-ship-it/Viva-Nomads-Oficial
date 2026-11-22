@@ -141,7 +141,12 @@ export default async function AvaliacaoParceiroPage() {
   const agora = new Date();
   const lista = (pedidos ?? []) as Pedido[];
   // Agenda (Prompt 62-A, item 6): para responder (com o contador de 24 h), visitas e o histórico de ausências e recusas.
-  const paraResponder = lista.filter((p) => p.status === "designado" && resposta.get(p.id) === null);
+  // E1102 (ORDEM-DUET-492): "Para responder" é a etapa "novo", pela mesma função que decide a tela do pedido e o "Ver o
+  // pedido". Assim o pedido designado sem a linha da designação (resposta undefined) espera a resposta aqui, e não em
+  // "Visitas"; sem relógio e sem o formulário antigo, porque nada vence esse pedido (a resposta sai pela tela dele).
+  const etapaNaLista = (p: Pedido) =>
+    etapaDoPedido({ status: p.status, resposta: resposta.get(p.id), proposta_em: p.proposta_em, proposta_aceita_em: p.proposta_aceita_em, teste: p.teste, escolhido_em: p.escolhido_em });
+  const paraResponder = lista.filter((p) => etapaNaLista(p) === "novo");
   const visitas = lista
     .filter((p) => !paraResponder.includes(p) && ["designado", "agendado", "realizada"].includes(p.status))
     .sort((a, b) => (a.agendado_para ? Date.parse(a.agendado_para) : Infinity) - (b.agendado_para ? Date.parse(b.agendado_para) : Infinity));
@@ -217,7 +222,7 @@ export default async function AvaliacaoParceiroPage() {
             ) : (
               <ul className="grid gap-3">
                 {paraResponder.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={null} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
+                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
               </ul>
             )}
