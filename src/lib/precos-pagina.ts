@@ -8,6 +8,7 @@
 */
 import { FAIXAS_COMISSAO_PADRAO, TAXA_COMISSAO_PADRAO, pctTexto } from "./cobranca/regra.ts";
 import { LINHAS_COMPARE, type LinhaCompare } from "../config/compare-precos.ts";
+import { FRASE_NEGOCIACAO_NA_PLATAFORMA } from "../config/textos-regulados.ts";
 
 const TAXA_MINIMA = Math.min(...FAIXAS_COMISSAO_PADRAO.map((f) => f.taxa));
 
@@ -36,7 +37,7 @@ export interface CaixaPrecos {
 /** "Incluído em todo contrato" (antes "Incluído em toda locação"). */
 export const INCLUIDO_CONTRATO: readonly CaixaPrecos[] = [
   { titulo: "Contrato assinado digitalmente", texto: "De 30 a 180 dias, com validade jurídica.", foto: null },
-  { titulo: "Conversa registrada", texto: "Negociação na plataforma, com o contato protegido até o aceite.", foto: null },
+  { titulo: "Conversa registrada", texto: FRASE_NEGOCIACAO_NA_PLATAFORMA, foto: null },
   { titulo: "Valor mensal direto ao proprietário", texto: "A plataforma não recebe nem retém o valor mensal.", foto: null },
   { titulo: "Conferência de entrada e saída com fotos", texto: "Estado do imóvel registrado pelas duas partes, no começo e no fim da estadia.", foto: null },
 ];

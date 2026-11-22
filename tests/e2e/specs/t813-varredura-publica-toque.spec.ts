@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { areaDeToque } from "../fixtures/area-toque";
 
 /*
   T813 — varredura pública 02/11 (Pista A): área de toque a 390 px (e nada quebra a 1280).
@@ -31,13 +32,13 @@ for (const largura of [390, 1280] as const) {
       await page.goto("/como-funciona", { waitUntil: "domcontentloaded" });
       const nav = page.getByRole("navigation", { name: "Seções desta página" });
       await expect(nav).toBeVisible({ timeout: 30_000 });
-      const medidas = await nav.locator("a").evaluateAll((as) =>
-        as.map((a) => ({ h: a.getBoundingClientRect().height, alvo: parseFloat(getComputedStyle(a, "::after").height) || 0 })),
-      );
-      expect(medidas).toHaveLength(3);
-      for (const m of medidas) {
-        expect(m.h).toBeLessThan(44); // o desenho não muda
-        if (largura === 390) expect(m.alvo).toBeGreaterThanOrEqual(44);
+      const pilulas = nav.locator("a");
+      await expect(pilulas).toHaveCount(3);
+      for (let i = 0; i < 3; i++) {
+        // E1033: a área de toque REAL (9 pontos da caixa 44×44 com elementFromPoint), não a altura do ::after.
+        const area = await areaDeToque(pilulas.nth(i));
+        expect(area.caixa.altura).toBeLessThan(44); // o desenho não muda
+        if (largura === 390) expect(area.faltam, `pílula ${i + 1}: área de toque 44×44`).toEqual([]);
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
       await nav.screenshot({ path: `${SAIDA}/t813-como-funciona-${largura}.png` });

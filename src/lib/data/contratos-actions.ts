@@ -1,6 +1,8 @@
 "use server";
 
 import { after } from "next/server";
+// E1044: as listas de pagamentos do contrato com ordem fixa (como o admin).
+import { ordenarPagamentos } from "@/lib/pagamentos/ordem-pagamentos";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -311,7 +313,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
   const minhasAvaliacoes = await avaliacoesMinhasPorContrato(supabase, user.id, linhas.map((c) => String(c.id)));
   return linhas.map((c) => {
     const prop = (c.properties as { title?: string; owner_id?: string } | null)?.title ? (c.properties as { title?: string; owner_id?: string }) : (doServidor.get(String(c.property_id)) ?? {});
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
     const estado = estadoDaLinha(c, "inquilino");
     return {
       id: String(c.id),
@@ -398,7 +400,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
     const blocos = ((c.contrato_blocos as Record<string, unknown>[]) ?? [])
       .map(toBloco)
       .sort((a, b) => a.numeroBloco - b.numeroBloco);
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
     const estado = estadoDaLinha(c, "proprietario");
     return {
       id: String(c.id),

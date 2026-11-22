@@ -95,6 +95,13 @@ test.describe("T469 — E134: Passo 4 alinhado", () => {
               const andar = document.createTreeWalker(b, NodeFilter.SHOW_TEXT);
               for (let n = andar.nextNode(); n; n = andar.nextNode()) {
                 if (!n.textContent?.trim()) continue;
+                // E744 (tabela da Fable #3832): texto dentro de `sr-only` (recortado em 1 px) não aparece na tela — a régua
+                // o pula; a regra para o texto visível fica igual.
+                if (n.parentElement?.closest(".sr-only")) continue;
+                // E744 (além da tabela, ver o PR): linha com reticências de propósito (`truncate`: overflow escondido +
+                // text-overflow: ellipsis, como o resumo das seções do Passo 10) — o que passa da caixa não é pintado.
+                const corta = n.parentElement && getComputedStyle(n.parentElement);
+                if (corta && corta.textOverflow === "ellipsis" && corta.overflowX === "hidden") continue;
                 const r = document.createRange();
                 r.selectNodeContents(n);
                 const t = r.getBoundingClientRect();

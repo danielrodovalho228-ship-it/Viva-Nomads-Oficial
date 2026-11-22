@@ -27,6 +27,6 @@ test("as telas pedem com exigir; home não (Garantias e Ganhos passaram a exigir
   assert.match(ler("src/app/(dashboard)/dashboard/contratos/page.tsx"), /getMeusContratos\(\{ exigir: true \}\), getContratosDoInquilino\(\{ exigir: true \}\), listMyProperties\(\{ exigir: true \}\)/);
   assert.doesNotMatch(ler("src/lib/data/carteira.ts"), /exigir: true/);
   // Achado nº 24: a home pede com exigir, mas SEMPRE dentro de ou(...) — a falha vira aviso no topo, nunca a página de erro.
-  const homeA24 = ler("src/app/(dashboard)/dashboard/page.tsx");
+  const homeA24 = ler("src/app/(dashboard)/dashboard/inicio-dados.tsx");
   assert.equal((homeA24.match(/exigir: true/g) ?? []).length, (homeA24.match(/ou\("[a-z]+", [A-Za-z]+\([^)]*\{ exigir: true \}\)/g) ?? []).length);
 });

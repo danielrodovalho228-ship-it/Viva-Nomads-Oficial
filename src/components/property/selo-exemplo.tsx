@@ -1,6 +1,6 @@
 import { SELO_EXEMPLO } from "@/config/exemplo-proprietarios";
 
-/** Selo "Exemplo ilustrativo": marca TODO dado de demonstração (prompt 9). */
+/** Selo "Anúncio de exemplo" (E926: o termo único, o mesmo do cartão): marca TODO dado de demonstração (prompt 9). */
 export function SeloExemplo({ className = "" }: { className?: string }) {
   return (
     <span

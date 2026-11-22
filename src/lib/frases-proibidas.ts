@@ -8,7 +8,12 @@ export interface RegraProibida {
   /** O que a regra aprovada diz. */
   regra: string;
   re: RegExp;
+  /** Só vale nestes prefixos de caminho (sem caminho informado, vale sempre). */
+  escopo?: string[];
 }
+
+/** Superfícies de Parceiros (páginas públicas, componentes, regras e o atendimento sobre parceiros). */
+const SUPERFICIES_PARCEIROS = ["src/app/(public)/parceiros/", "src/components/parceiros/", "src/lib/parceiros/", "src/lib/atendimento/parceiros-texto.ts"];
 
 export const FRASES_PROIBIDAS: RegraProibida[] = [
   {
@@ -16,6 +21,18 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
     regra: "E445: telefone, e-mail e redes sociais NUNCA são trocados (não existe 'contato depois do aceite' entre morador e proprietário).",
     // Frase que NEGA a troca ("nunca são trocados… inclusive depois do aceite", E764) não é a formulação proibida.
     re: /(telefone|e-?mail|whatsapp|contato( direto)?)(?:(?!nunca|jamais|não|nao|inclusive|mesmo|qualquer)[^.\n"`]){0,60}\b(só )?(depois|após|apos) d?o aceite/i,
+  },
+  {
+    id: "contato-protegido-ate-o-aceite",
+    regra: "E785 (variante do E445): 'contato protegido até o aceite' (e parentes: liberado/revelado/compartilhado até ou antes do aceite) sugere que o contato é trocado depois. O certo é a fonte única: telefone, e-mail e redes sociais NUNCA são trocados.",
+    // Cobre "contato protegido até o aceite", "e-mail fica oculto até o aceite", "protegemos o contato até o aceite".
+    re: /(?:(contato|telefone|e-?mail|whatsapp|dados? de contato)(?:(?!nunca|jamais|não|nao|inclusive|mesmo|qualquer)[^.\n"`]){0,70}\b(protegid|resguardad|liberad|revelad|divulgad|compartilhad|oculto|escondid|visível|visivel|trocad)\w*|\b(protegemos|protegendo|mantemos|guardamos|preservamos|escondemos|ocultamos)\b(?:(?!nunca|jamais|não|nao)[^.\n"`]){0,50}\b(contato|telefone|e-?mail|whatsapp)\b)(?:(?!nunca|jamais|não|nao)[^.\n"`]){0,50}\b(até|ate|antes d)\w*\s+(d?o\s+)?aceite/i,
+  },
+  {
+    id: "plataforma-entrega-contato-do-proprietario",
+    regra: "E785 (decisão de 09/11): 'contato do proprietário' (ou do dono/anfitrião) entregue, passado ou revelado pela plataforma sugere troca de contato, contra o E445. Orientação como 'sem contato por fora' é permitida.",
+    // Verbo de entrega ANTES: "passamos/a Viva entrega/você recebe o contato do proprietário". Particípio DEPOIS: "contato do dono liberado/revelado/entregue".
+    re: /(?<!\b(?:nunca|jamais|n[ãa]o)\s)\b(entreg|pass|envi|repass|reveal|revel|liber|forne[çc]|compartilh|divulg|disponibiliz|mostr|receb)\w*(?:(?!nunca|jamais|n[ãa]o|sem\b)[^.\n"`]){0,40}\bcontatos? d[oea]s? (propriet[áa]ri[oa]|dono|dona|anfitri[ãa]o|locador)|\bcontatos? d[oea]s? (propriet[áa]ri[oa]|dono|dona|anfitri[ãa]o|locador)(?:(?!nunca|jamais|n[ãa]o|sem\b)[^.\n"`]){0,40}\b(entregue|repassad|revelad|liberad|fornecid|compartilhad|divulgad|disponibilizad|enviad)\w*/i,
   },
   {
     id: "caucao-em-poupanca",
@@ -27,6 +44,18 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
     regra: "Taxas: a taxa da Viva é cobrada só do proprietário; o morador não paga taxa da plataforma.",
     re: /taxa[^.\n"`]{0,40}\b(cobrad[ao]|paga)\b[^.\n"`]{0,20}\b(d[oa]|pel[oa]) (morador|inquilin)/i,
   },
+  {
+    id: "taxa-na-renovacao-em-pagina-publica",
+    regra: "E805: a cobrança da taxa na renovação aguarda o parecer jurídico — não vira promessa nas páginas públicas de venda (/como-funciona e /para-proprietarios).",
+    re: /(taxa|comiss[ãa]o|cobrad)[^.\n"`]{0,80}\b(cada|na|por) renova[çc][ãa]o|renova[çc][ãa]o[^.\n"`]{0,40}\b(cobrad|taxa|comiss)/i,
+    escopo: ["src/app/(public)/como-funciona/", "src/app/(public)/para-proprietarios/"],
+  },
+  {
+    id: "identidade-revelada-depois-do-aceite-parceiros",
+    regra: "E794 (regra E445): em Parceiros nada é revelado nem trocado depois do aceite; o contato nunca é trocado. Não se promete 'identidade revelada depois/após o aceite'.",
+    re: /identidade[^.\n"`]{0,30}revelad\w*[^.\n"`]{0,20}(depois|ap[óo]s)\s+(d?o\s+)?aceite/i,
+    escopo: SUPERFICIES_PARCEIROS,
+  },
 ];
 
 /**
@@ -37,7 +66,6 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
 export const FORA_DO_GATE: { prefixo: string; motivo: string }[] = [
   { prefixo: "src/lib/parceiros/", motivo: "fluxo de parceiros: contato liberado depois do aceite (L2-B item 16)" },
   { prefixo: "src/components/parceiros/", motivo: "fluxo de parceiros: contato liberado depois do aceite (L2-B item 16)" },
-  { prefixo: "src/app/(public)/parceiros/", motivo: "páginas públicas de parceiros: mesma regra do fluxo de parceiros" },
   { prefixo: "src/lib/atendimento/parceiros-texto.ts", motivo: "texto do atendimento sobre parceiros" },
 ];
 
@@ -58,10 +86,11 @@ export function semComentarios(codigo: string): string[] {
   });
 }
 
-export function achadosProibidos(texto: string): { id: string; trecho: string }[] {
+export function achadosProibidos(texto: string, caminho?: string): { id: string; trecho: string }[] {
   const achados: { id: string; trecho: string }[] = [];
+  const regras = FRASES_PROIBIDAS.filter((r) => !r.escopo || caminho === undefined || r.escopo.some((x) => caminho.startsWith(x)));
   for (const linha of texto.split("\n")) {
-    for (const r of FRASES_PROIBIDAS) if (r.re.test(linha)) achados.push({ id: r.id, trecho: linha.trim().slice(0, 120) });
+    for (const r of regras) if (r.re.test(linha)) achados.push({ id: r.id, trecho: linha.trim().slice(0, 120) });
   }
   return achados;
 }

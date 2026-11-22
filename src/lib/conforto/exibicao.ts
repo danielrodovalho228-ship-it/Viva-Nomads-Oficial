@@ -2,7 +2,7 @@
   Prompt 59-A — textos de exibição do padrão mínimo e do compromisso de manutenção. Tudo sai das constantes do 59
   (src/config/conforto-minimo.ts e PRAZO_SOLUCAO_H): mudou um prazo, o texto do anúncio muda junto.
 */
-import { PRAZO_SOLUCAO_H } from "../../config/atendimento.ts";
+import { COMO_ACIONAR_MANUTENCAO, SE_O_PRAZO_VENCER, linhasReguaManutencao } from "../../config/atendimento.ts";
 import { ITENS_CONFORTO } from "../../config/conforto-minimo.ts";
 import { TAXA_MIN_RESOLVIDOS } from "../manutencao-solucao.ts";
 
@@ -12,18 +12,13 @@ export const TEXTO_PADRAO_CONFIRMADO = "Padrão mínimo da Viva: confirmado pelo
 /** Título do bloco de confirmação no cadastro. */
 export const TITULO_PADRAO_MINIMO = "Padrão mínimo da Viva";
 
-const horasOuDias = (h: number) => (h >= 24 * 7 && h % 24 === 0 ? `${h / 24} dias` : `${h} h`);
-
 /**
- * "Manutenção: urgente com solução provisória em até 24 h e definitiva em até 72 h · comum em até 72 h · demais em
- * até 7 dias" — comum = prioridade média, demais = baixa.
+ * E817: o compromisso de manutenção do anúncio é a RÉGUA ÚNICA (config/atendimento.ts), a mesma da Central de Ajuda:
+ * "Manutenção: Urgente (…): resposta em até 4 h, solução provisória em até 24 h e definitiva em até 72 h · Média (…) ·
+ * Baixa (…) · Quem resolve é o proprietário… · Se o prazo de solução vencer…". Separado por " · " (o "Bom saber" lê assim).
  */
 export function textoCompromissoManutencao(): string {
-  const s = PRAZO_SOLUCAO_H;
-  return (
-    `Manutenção: urgente com solução provisória em até ${horasOuDias(s.urgente.provisoria)} e definitiva em até ${horasOuDias(s.urgente.definitiva)}` +
-    ` · comum em até ${horasOuDias(s.media)} · demais em até ${horasOuDias(s.baixa)}`
-  );
+  return `Manutenção: ${[...linhasReguaManutencao().map((l) => l.texto), COMO_ACIONAR_MANUTENCAO, SE_O_PRAZO_VENCER].join(" · ")}`;
 }
 
 /** "Manutenção resolvida no prazo: 83%" — só com a taxa calculada (3 ou mais chamados resolvidos); senão, nada. */

@@ -9,6 +9,7 @@
     sem prometer nada, e grava uma RESPOSTA SUGERIDA como nota interna para a
     equipe aprovar com 1 clique ("Aprovar e enviar" no /admin/atendimento).
 */
+import { RODAPE_AUTOMATICO } from "./autonomo.ts";
 
 export const CATEGORIAS_SENSIVEIS = new Set([
   "caucao",
@@ -106,6 +107,22 @@ export function statusAposRespostaDaViva(atual: string | null | undefined): stri
 /** "Sim, resolveu": vale quando a vez é da pessoa, ou quando só a Viva respondeu (chamado segue "Aberto"). */
 export function podeMarcarResolvido(status: string, responsavelTipo: string | null | undefined): boolean {
   return status === "aguardando_usuario" || (status === "aberto" && responsavelTipo === "ia");
+}
+
+/**
+ * E1012: a tela do chamado confere de novo (a cada 2,5 s, até 24 vezes) enquanto a pessoa ainda espera a resposta da
+ * última mensagem dela: com a Viva, até a primeira resposta da Viva; com a equipe (chamado sensível), até a resposta
+ * da equipe ou a resposta automática da Viva (a que leva o rodapé). O acolhimento da equipe vem em duas mensagens da
+ * Viva — o aviso "a Viva já respondeu logo abaixo" e a resposta com o rodapé — e, sem conferir, a resposta só
+ * aparecia ao recarregar a página. O aviso "A Viva está escrevendo…" continua só quando é a Viva que atende.
+ */
+export function esperaResposta(p: { mensagens: { autor: string; corpo: string }[]; status: string; voltas: number; responsavelTipo: string | null | undefined }): { conferir: boolean; vivaEscrevendo: boolean } {
+  const comViva = p.responsavelTipo === "ia";
+  const ultimaPessoa = p.mensagens.map((m) => m.autor).lastIndexOf("usuario");
+  const depois = ultimaPessoa >= 0 ? p.mensagens.slice(ultimaPessoa + 1) : [];
+  const respondida = depois.some((m) => m.autor === "admin" || (m.autor === "ia" && (comViva || m.corpo.includes(RODAPE_AUTOMATICO))));
+  const conferir = ultimaPessoa >= 0 && !respondida && !["resolvido", "encerrado"].includes(p.status) && p.voltas < 24;
+  return { conferir, vivaEscrevendo: conferir && comViva };
 }
 
 /** Nota interna com a sugestão — mesmo formato que "Usar como resposta" já lê. */

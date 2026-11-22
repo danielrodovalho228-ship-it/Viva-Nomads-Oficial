@@ -21,6 +21,10 @@ const diaBR = (deslocamento: number) => {
   return new Date(Date.UTC(a, m - 1, d + deslocamento)).toISOString().slice(0, 10);
 };
 
+// E744: o bloco de teste começa no dia UTC (tornarContratoVigente usa toISOString). Depois das 21h de Brasília o dia UTC já é o
+// seguinte; a 1ª célula marcada é a do dia do bloco, não a de "hoje" em Brasília.
+const diaDoBloco = () => new Date().toISOString().slice(0, 10);
+
 test.describe("T755 — AGENDA-A: período pintado e iCal na Agenda", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
@@ -57,7 +61,7 @@ test.describe("T755 — AGENDA-A: período pintado e iCal na Agenda", () => {
       await p.goto("/dashboard/agenda", { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("agenda")).toBeVisible({ timeout: 30_000 });
       // Hoje (a entrada) já é do período; o resto da grade deste mês, do jeito que vier (o mês pode acabar hoje).
-      await expect(p.getByTestId(`agenda-dia-${diaBR(0)}`)).toHaveAttribute("data-estadia", "1");
+      await expect(p.getByTestId(`agenda-dia-${diaDoBloco()}`)).toHaveAttribute("data-estadia", "1");
       await expect(p.getByTestId("agenda-exportar-escolha")).toBeVisible();
       await p.screenshot({ path: `${SAIDA}/t755-agenda-mes-${largura}.png`, fullPage: true });
 

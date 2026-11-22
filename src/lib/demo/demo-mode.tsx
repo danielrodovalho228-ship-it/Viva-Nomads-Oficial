@@ -18,6 +18,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { useAuthStore, DEMO_USER, type SessionUser } from "@/lib/store";
+import { useSessaoServidor, useUsuarioAtual } from "@/components/auth/sessao-servidor-contexto";
 import { isSupabaseConfigured } from "@/lib/env";
 import { cn } from "@/lib/utils";
 
@@ -83,7 +84,11 @@ export function useDashDemo(): boolean {
  * vê nome, avatar ou plano fictício. Substitui os antigos `user ?? DEMO_USER`.
  */
 export function useDisplayUser(): SessionUser | null {
-  const user = useAuthStore((s) => s.user);
+  // E793 (A4): no painel com a sessão do servidor, o usuário do quadro (1º quadro = servidor); sem ela, o store.
+  const sessao = useSessaoServidor();
+  const usuarioDoQuadro = useUsuarioAtual();
+  const storeUser = useAuthStore((s) => s.user);
+  const user = sessao ? usuarioDoQuadro : storeUser;
   const demo = useDashDemo();
   return user ?? (demo ? DEMO_USER : null);
 }

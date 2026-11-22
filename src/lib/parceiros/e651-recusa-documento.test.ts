@@ -26,7 +26,7 @@ test("CNPJ válido passa (null)", () => {
 });
 test("o servidor usa o mesmo critério (validarSolicitacao recusa o CPF e o CNPJ errado)", () => {
   const base = { nome: "Maria Limpezas", tipoPessoa: "pj" as const, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao: "Limpeza pós-obra", emiteNota: true, aceite: true };
-  assert.deepEqual(validarSolicitacao({ ...base, documento: "529.982.247-25" }), { ok: false, erro: MSG_SO_CNPJ });
+  assert.deepEqual(validarSolicitacao({ ...base, documento: "529.982.247-25" }), { ok: false, erro: MSG_SO_CNPJ, campo: "documento" });
   assert.equal(validarSolicitacao({ ...base, documento: "11.222.333/0001-81" }).ok, true);
   assert.match(ler("lib/parceiros/solicitacao-actions.ts"), /validarSolicitacao\(/);
 });

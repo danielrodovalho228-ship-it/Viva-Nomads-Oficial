@@ -57,7 +57,7 @@ async function chamadosForaDaPromessa(admin: Admin, agora: Date): Promise<Contag
   return { n: linhas.length, detalhe: maisAntigo(linhas[0]?.criado_em) };
 }
 
-/** Prompt 50: parcerias pendentes há mais de 1 dia útil (seg a sex, Brasília). */
+/** Prompt 50 / E791: parcerias pendentes além do prazo da parceria (PRAZO_RESPOSTA_PARCERIA, 7 dias). */
 async function parceriasSemResposta1Dia(admin: Admin, agora: Date): Promise<ContagemDecisao> {
   const { data, error } = await admin.from("parceiro_solicitacoes").select("criado_em, decidido_em").eq("status", "pendente").not("categorias", "cs", "{vistoria}").order("criado_em", { ascending: true }).limit(500);
   if (error) return { n: null };

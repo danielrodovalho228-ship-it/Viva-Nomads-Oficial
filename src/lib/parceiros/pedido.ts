@@ -209,25 +209,13 @@ export function visaoDoParceiro(status: string, imovel: ImovelDoPedido | null, c
   };
 }
 
-// ── L2-B item 16: contato depois do aceite ────────────────────────────────────────────────────────────────────
+// ── E790 (regra E445): contato NUNCA é trocado ─────────────────────────────────────────────────────────────────
 /*
-  Aceito o orçamento, o cliente vê o telefone e o e-mail do parceiro, e o parceiro vê os do cliente. Antes do aceite,
-  nada de contato: a conversa segue pela plataforma. A Viva não intermedeia o pagamento (PAGAMENTO_PARCEIROS_ATIVO
-  desligado) — o texto do pagamento inativo continua na tela.
+  Antes (L2-B item 16), aceito o orçamento o servidor lia e mandava à tela o telefone e o e-mail da outra parte. Pela
+  regra aprovada (E445), contato não é trocado em nenhuma fase: a conversa segue pelas mensagens da Viva; emergência é
+  pelo telefone da Viva. O servidor não lê mais o contato da outra parte no pedido (nem depois do aceite).
 */
-export interface ContatoDoPedido {
-  telefone: string | null;
-  email: string | null;
-}
-export const TEXTO_CONTATO_ANTES_DO_ACEITE = "Antes do aceite do orçamento, a conversa segue pela plataforma.";
-
-/** O contato da outra parte, só nos status depois do aceite (os mesmos do endereço). Sem nenhum dado, null. */
-export function contatoNoPedido(status: string, contato: ContatoDoPedido): ContatoDoPedido | null {
-  if (!(STATUS_COM_DADOS_LIBERADOS as readonly string[]).includes(status)) return null;
-  const telefone = (contato.telefone ?? "").replace(/\D/g, "") || null;
-  const email = (contato.email ?? "").trim() || null;
-  return telefone || email ? { telefone, email } : null;
-}
+export const TEXTO_CONTATO_PEDIDO = "O contato não é trocado: a conversa segue pelas mensagens da Viva, antes e depois do aceite.";
 
 /** "34999998888" → "(34) 99999-8888"; outro formato volta como veio. */
 export function telefoneNaTela(t: string): string {

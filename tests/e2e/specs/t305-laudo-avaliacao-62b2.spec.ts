@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosDoRoteiro, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 
 /**
@@ -22,6 +22,9 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
 
   const senha = novaSenha();
   const sufixo = novoSufixo();
+  // E1016: cidade só deste spec. t303 e t344 apagam a tabela de preços de "Uberlândia" inteira no beforeAll/afterAll;
+  // rodando ao mesmo tempo, o anúncio do caso 3 ficava sem preço vigente e o bloco "nova avaliação" não aparecia.
+  const CIDADE = `Uberlândia t305 ${sufixo}`;
   const conta = (p: string, nome: string, role: "owner" | "tenant" = "tenant") => ({ email: `${p}.t305.${sufixo}@lab.vivanomads.test`, nome, role });
   const dono = conta("dono", "Dalva Dona", "owner");
   const dono2 = conta("dono2", "Davi Dono", "owner");
@@ -55,7 +58,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
   async function pedidoAgendado(propertyId: string, ownerId: string, l: "A" | "B", extra: Record<string, unknown> = {}): Promise<string> {
     const { data, error } = await adm()
       .from("vistoria_pedidos")
-      .insert({ property_id: propertyId, owner_id: ownerId, cidade: "Uberlândia", porte: "q1_2", valor_tabela: 350, status: "agendado", avaliador_id: cred[l].id, designado_em: new Date().toISOString(), agendado_para: new Date(Date.now() - 2 * 3_600_000).toISOString(), ...extra })
+      .insert({ property_id: propertyId, owner_id: ownerId, cidade: CIDADE, porte: "q1_2", valor_tabela: 350, status: "agendado", avaliador_id: cred[l].id, designado_em: new Date().toISOString(), agendado_para: new Date(Date.now() - 2 * 3_600_000).toISOString(), ...extra })
       .select("id")
       .single();
     if (error) throw error;
@@ -81,13 +84,16 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     }
   }
   /** O avaliador conclui a visita e envia: a plataforma emite o laudo VIS. */
-  async function concluirEEnviar(p: Page, pedidoId: string) {
+  /** E1083: o nível é o que o avaliador escolhe no laudo que assina (a plataforma não calcula). */
+  async function concluirEEnviar(p: Page, pedidoId: string, nivel: "essencial" | "conforto" | "premium" = "premium") {
+    await fotosDoRoteiro(pedidoId); // E1079 (ORDEM-431): concluir exige a foto de cada ambiente do roteiro
     await p.goto(`/dashboard/parceiro/avaliacao/${pedidoId}`, { waitUntil: "domcontentloaded" });
     await p.getByTestId("concluir-visita").getByRole("button", { name: "Concluir a visita" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status, { timeout: 20_000 }).toBe("realizada");
     await p.reload({ waitUntil: "domcontentloaded" });
+    await p.getByTestId("enviar-laudo").getByTestId(`laudo-nivel-${nivel}`).click(); // E1083: o avaliador escolhe o nível (E1079: em cartões de escolha)
     await p.getByTestId("assino-laudo").getByRole("checkbox").check(); // E648: o avaliador assina o laudo
-    await p.getByTestId("enviar-laudo").getByRole("button", { name: "Enviar o laudo" }).click();
+    await p.getByTestId("enviar-laudo").getByRole("button", { name: "Assinar laudo" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status, { timeout: 30_000 }).toBe("laudo_emitido");
   }
   async function laudoDe(pedidoOriginal: string) {
@@ -105,31 +111,31 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     for (const [l, ativado] of [["A", "2026-01-01T00:00:00Z"], ["B", "2026-01-15T00:00:00Z"]] as const) {
       const { data: parc, error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids[l], tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: l === "A" ? avA.nome : avB.nome, slug: `aval-${l.toLowerCase()}-t305-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+        .insert({ user_id: ids[l], tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: l === "A" ? avA.nome : avB.nome, slug: `aval-${l.toLowerCase()}-t305-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
         .select("id")
         .single();
       if (error) throw error;
       const { data: n } = await adm().rpc("proximo_numero_avaliador", { p_sigla: "UDI" });
       const { data: c, error: eC } = await adm()
         .from("avaliadores_credenciamento")
-        .insert({ parceiro_id: parc.id, cidade: "Uberlândia", numero_credenciado: n, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test", conduta_versao: "2026-10-23", ativado_em: ativado })
+        .insert({ parceiro_id: parc.id, cidade: CIDADE, numero_credenciado: n, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test", conduta_versao: "2026-10-23", ativado_em: ativado })
         .select("id, numero_credenciado")
         .single();
       if (eC) throw eC;
       cred[l] = { id: c.id as string, numero: c.numero_credenciado as string };
     }
-    await adm().from("vistoria_precos").delete().eq("cidade", "Uberlândia");
+    await adm().from("vistoria_precos").delete().eq("cidade", CIDADE);
     await adm().from("vistoria_precos").insert([
-      { cidade: "Uberlândia", porte: "estudio", valor: 280 },
-      { cidade: "Uberlândia", porte: "q1_2", valor: 350 },
-      { cidade: "Uberlândia", porte: "q3_mais", valor: 420 },
+      { cidade: CIDADE, porte: "estudio", valor: 280 },
+      { cidade: CIDADE, porte: "q1_2", valor: 350 },
+      { cidade: CIDADE, porte: "q3_mais", valor: 420 },
     ]);
     for (const k of ["im1", "im2", "im3", "im4", "im5"]) {
       ids[k] = await criarImovelPronto(ids.dono, `Avaliação t305 ${k} ${sufixo}`, { ativo: true });
     }
     for (const k of ["im6a", "im6b"]) ids[k] = await criarImovelPronto(ids.dono2, `Verificação t305 ${k} ${sufixo}`, { ativo: true });
     const todos = ["im1", "im2", "im3", "im4", "im5", "im6a", "im6b"].map((k) => ids[k]);
-    await adm().from("properties").update({ lat: IMOVEL.lat, lng: IMOVEL.lng, lat_exata: IMOVEL.lat, lng_exata: IMOVEL.lng }).in("id", todos);
+    await adm().from("properties").update({ lat: IMOVEL.lat, lng: IMOVEL.lng, lat_exata: IMOVEL.lat, lng_exata: IMOVEL.lng, city: CIDADE }).in("id", todos);
   });
 
   test.afterAll(async () => {
@@ -138,7 +144,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await adm().from("vistoria_bloqueios").delete().in("property_id", todos);
     await adm().from("vistoria_laudos").delete().in("property_id", todos);
     await adm().from("vistoria_pedidos").delete().in("property_id", todos);
-    await adm().from("vistoria_precos").delete().eq("cidade", "Uberlândia");
+    await adm().from("vistoria_precos").delete().eq("cidade", CIDADE);
     await apagarContas([ids.A, ids.B, ids.dono, ids.dono2]);
   });
 
@@ -271,7 +277,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     // 4 falhas corrigíveis (acima do limite de 3) sem tocar no padrão mínimo; sem internet medida: Essencial.
     await preencher(pedido, { fotos_nada_omitido: "nao_conforme", cameras_declaracao: "nao_conforme", considerar_confere: "nao_conforme", tomadas_risco: "nao_conforme" });
     const p = await avaliador(browser, "B");
-    await concluirEEnviar(p, pedido);
+    await concluirEEnviar(p, pedido, "essencial");
     await p.context().close();
     const l = await laudoDe(pedido);
     expect(l.resultado).toBe("reprovado");

@@ -6,7 +6,7 @@ import { CheckCircle2, FlaskConical, XCircle } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { situacaoLimite, HORA } from "@/lib/limites";
 import { CODIGO_RE } from "@/lib/fiscal/documento";
-import { aceitaArquivo, camposExibidos, normalizarCodigo, situacaoDoDocumento, type LinhaConferida } from "@/lib/fiscal/conferir";
+import { CONFERENCIA_PARTES, CONFERENCIA_VALIDADE, aceitaArquivo, camposExibidos, normalizarCodigo, situacaoDoDocumento, type LinhaConferida } from "@/lib/fiscal/conferir";
 import { emitidoEmBrasilia } from "@/lib/fiscal/prefixos";
 import { ConferirArquivo } from "./conferir-arquivo";
 
@@ -47,7 +47,7 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
   const situacao = doc ? situacaoDoDocumento(doc) : null;
 
   return (
-    <main className="container-page section-y">
+    <div className="container-page section-y">
       <div className="mx-auto max-w-lg rounded-xl border border-line bg-white p-6">
         <h1 className="font-title text-2xl font-semibold text-ink">Conferir documento</h1>
         {estado === "ok" && doc && situacao ? (
@@ -80,8 +80,12 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
               ))}
             </dl>
             {doc.hash_sha256 && aceitaArquivo(doc.prefixo) && <ConferirArquivo hash={doc.hash_sha256} />}
+            {/* E887: as partes (por que não aparecem) e a validade real do documento, da mesma fonte da página /conferir. */}
             <p className="mt-4 text-xs text-muted">
-              Por privacidade, a conferência mostra só o tipo, o número, a versão e a data. A Viva Nomads não recebe o valor mensal nem a Caução.
+              {CONFERENCIA_PARTES} A Viva Nomads não recebe o valor mensal nem a Caução.
+            </p>
+            <p className="mt-2 text-xs text-muted" data-testid="conferir-validade">
+              {CONFERENCIA_VALIDADE}
             </p>
           </>
         ) : (
@@ -100,6 +104,6 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
           </Link>
         </p>
       </div>
-    </main>
+    </div>
   );
 }

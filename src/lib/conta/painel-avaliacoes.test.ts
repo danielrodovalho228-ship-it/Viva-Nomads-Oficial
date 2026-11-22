@@ -75,7 +75,9 @@ test("'há N dias' e o estado da avaliação que eu fiz", async () => {
 test("E679/E85: um só painel — a rota antiga redireciona e os dois menus apontam para o mesmo destino", async () => {
   const { readFileSync } = await import("node:fs");
   const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
-  assert.match(ler("app/(dashboard)/dashboard/conta/avaliacoes/page.tsx"), /redirect\(`\/dashboard\/avaliacoes\?aba=recebidas/);
+  // E798 (asserção alterada): o destino mora em lib/conta/redirecionar-no-servidor (usado também pelo proxy).
+  assert.match(ler("app/(dashboard)/dashboard/conta/avaliacoes/page.tsx"), /redirect\(destinoContaAvaliacoes\(/);
+  assert.match(ler("lib/conta/redirecionar-no-servidor.ts"), /\/dashboard\/avaliacoes\?aba=recebidas/);
   assert.match(ler("config/menu-por-papel.ts"), /rotulo: "Avaliações", icone: "conta", href: "\/dashboard\/avaliacoes"/);
   const secoes = ler("lib/conta/secoes.ts");
   assert.doesNotMatch(secoes, /conta\/avaliacoes/);

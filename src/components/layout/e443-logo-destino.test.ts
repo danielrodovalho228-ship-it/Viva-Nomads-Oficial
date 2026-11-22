@@ -18,7 +18,9 @@ test("a convenção: o logo do painel leva à página inicial pública", () => {
 
 test("computador: o topo do painel usa o logo da convenção (nunca /dashboard)", () => {
   const topo = ler("./topo-dono.tsx");
-  assert.match(topo, /<Logo href=\{HREF_LOGO_PAINEL\} className="shrink-0" \/>/);
+  // E1025 (ORDEM-DUET-094, 18/11/2026): o elemento ganhou `prefetch={false}` (o painel não pré-carrega a página inicial).
+  // A regra daqui não mudou: o logo é o próprio link e leva a HREF_LOGO_PAINEL. Antes: /<Logo href=\{HREF_LOGO_PAINEL\} className="shrink-0" \/>/.
+  assert.match(topo, /<Logo href=\{HREF_LOGO_PAINEL\} prefetch=\{false\} className="shrink-0" \/>/);
   assert.doesNotMatch(topo, /<Logo href="\/dashboard"/);
   assert.doesNotMatch(topo, /início do painel/);
 });

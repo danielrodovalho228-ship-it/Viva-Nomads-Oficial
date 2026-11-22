@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { partirFormula } from "@/lib/formula-estadia";
 
 /**
@@ -12,7 +13,11 @@ export function FormulaDoTotal({ conta, total, testid }: { conta: string; total?
       <div data-testid="formula-total">
         <ul>
           {f.parcelas.map((p, i) => (
-            <li key={i}>{i === 0 ? p : `+ ${p}`}</li>
+            // Um espaço entre as parcelas: quem copia ou lê o texto (leitor de tela, e-mail, teste) recebe "R$ 3.450 + limpeza…", não "R$ 3.450+ limpeza…".
+            <Fragment key={i}>
+              {i > 0 && " "}
+              <li>{i === 0 ? p : `+ ${p}`}</li>
+            </Fragment>
           ))}
         </ul>
         {f.total && (

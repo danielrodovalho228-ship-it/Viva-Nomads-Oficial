@@ -15,7 +15,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
    - morador (INQUILINA): conta (perfil, papéis, meus dados), painel de parceiro, nova solicitação de orçamento e o
      detalhe do pedido de serviço;
    - parceiro (PARCEIRO): o mesmo pedido de serviço;
-   - conta de três papéis (TRES): conta › papéis (D-V9, do bloco 96, segue como falha esperada).
+   - conta de três papéis (TRES): conta › papéis (era o D-V9, do bloco 96; corrigido no E1028, a marca saiu).
   O pedido de serviço é semeado aqui (parceiro e morador da massa, como na t368) e apagado no fim. Defeito novo entra
   como test.fail ligado a um item (L-103 é o próximo livre).
 */
@@ -38,10 +38,10 @@ const TELAS: Tela[] = [
   { conta: "INQUILINA", papel: "morador", nome: "Nova solicitação de orçamento", rota: () => "/dashboard/orcamentos/nova" },
   { conta: "INQUILINA", papel: "morador", nome: "Pedido de serviço", rota: () => `/dashboard/servicos/pedidos/${pedidoId}` },
   { conta: "PARCEIRO", papel: "parceiro", nome: "Pedido de serviço", rota: () => `/dashboard/servicos/pedidos/${pedidoId}` },
-  // D-V9 (bloco 96, lab-crítico 41195030351): a 390 px, com os três papéis, a coluna da tela inteira passa 15 px da
-  // direita (cartões "Quero morar/anunciar/ser parceiro" e "Seus papéis" com x=16 e 389 px de largura). Pelo DONO17 (t761)
-  // e pela INQUILINA (acima) a mesma tela cabe.
-  { conta: "TRES", papel: "três papéis", nome: "Conta › Papéis", rota: () => "/dashboard/conta/papeis", falha: "D-V9: /dashboard/conta/papeis estoura 15 px à direita a 390 px com os três papéis" },
+  // E1028 (era o D-V9, do bloco 96): a 390 px, com a parceria ativa, a tela passava 13 px da direita — o botão "Abrir meu
+  // painel de parceiro" não cabia ao lado da foto do cartão. Corrigido (o botão desce para a largura toda do cartão no
+  // celular); a marca de falha esperada saiu no mesmo PR, e a tela volta a ser cobrada como as outras.
+  { conta: "TRES", papel: "três papéis", nome: "Conta › Papéis", rota: () => "/dashboard/conta/papeis" },
 ];
 
 /** Achados já registrados como defeito de produto (L-*) ou que são o desenho pedido: ficam anotados e não derrubam o teste. */

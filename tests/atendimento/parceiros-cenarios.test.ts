@@ -16,7 +16,7 @@ const CASOS: { pergunta: string; artigo: string; resposta: RegExp[] }[] = [
   { pergunta: "Como ativar o modo parceiro na minha conta?", artigo: "como-virar-parceiro", resposta: [/Quero ser parceiro/, /link para ativar a página/] },
   { pergunta: "Qual é a taxa de parceria?", artigo: "taxa-parceria", resposta: [/10% sobre o valor do serviço/, /todas as categorias/, /90% direto ao parceiro/, /sem mensalidade/i] },
   { pergunta: "A Viva fica com o dinheiro do serviço do fotógrafo?", artigo: "taxa-parceria", resposta: [/não guarda o dinheiro/] },
-  { pergunta: "Quando o parceiro vê o contato do proprietário?", artigo: "taxa-parceria", resposta: [/só são liberados/, /aceita o pedido/] },
+  { pergunta: "Quando o parceiro vê o contato do proprietário?", artigo: "taxa-parceria", resposta: [/contato direto do proprietário não é trocado/, /aceita o pedido/] },
   { pergunta: "Quero contratar um fotógrafo para o meu imóvel", artigo: "contratar-fotografo", resposta: [/Quer um fotógrafo profissional\?/, /Uberlândia \(MG\)/, /CEP/] },
 ];
 
@@ -31,7 +31,7 @@ for (const c of CASOS) {
 }
 
 test("parceiros: o prompt da Viva traz tipos, modos, taxa de serviço de 10%, aceite e começo por Uberlândia", () => {
-  for (const re of [/Categorias abertas/, /Uma conta só/, /10% sobre o valor do serviço/, /só são liberados/, /Uberlândia \(MG\)/, /Plano Gestor/, /12\/10\/8\/6%/]) {
+  for (const re of [/Categorias abertas/, /Uma conta só/, /10% sobre o valor do serviço/, /contato direto do proprietário não é trocado/, /Uberlândia \(MG\)/, /Plano Gestor/, /12\/10\/8\/6%/]) {
     assert.match(SYSTEM_VIVA, re);
   }
   // E564: o menor percentual citado é o do Plano Gestor (4%); "até 6%" saiu.

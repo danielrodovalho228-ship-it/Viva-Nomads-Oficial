@@ -32,7 +32,7 @@ test("Papéis: o cartão do parceiro usa a situação (aprovada → botão de at
 });
 
 test("Início: aviso da parceria aprovada com o caminho para ativar", () => {
-  const inicio = ler("src/app/(dashboard)/dashboard/page.tsx");
+  const inicio = ler("src/app/(dashboard)/dashboard/inicio-dados.tsx");
   // E503: a leitura da parceria sai no 2º lote paralelo do Início (antes, uma espera em série só para ela).
   assert.match(inicio, /minhaParceria\(\), LIMITE_LEITURA_INICIO_MS\)\.catch\(\(\) => null\)/);
   assert.match(inicio, /const parceria = situacaoParceiro\(parceriaLida\);/);

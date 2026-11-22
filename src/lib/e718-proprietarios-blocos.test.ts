@@ -9,9 +9,11 @@ test("E718: os três blocos do mockup estão na página, com as portas certas", 
   assert.match(s, /Pedidos de moradia da sua cidade chegam até você/);
   assert.match(s, /href="\/dashboard\/pedidos-cidade"/);
   assert.match(s, /Publicamos para você/);
-  assert.match(s, /AVISO_SEM_CUSTO/);
+  // E806: o bloco usa a frase única PUBLICAMOS_PARA_VOCE_TEXTO (ação + efeito), com o aviso de aprovação.
+  assert.match(s, /\{PUBLICAMOS_PARA_VOCE_TEXTO\} \{AVISO_APROVACAO\}/);
   assert.match(s, /Simulador de rentabilidade/);
-  assert.match(s, /href="\/dashboard\/simulador"[\s\S]*Calcular rentabilidade/);
+  // E903 (asserção alterada): o botão diz que o simulador fica na conta ("Entrar para calcular"; antes "Calcular rentabilidade").
+  assert.match(s, /href="\/dashboard\/simulador"[\s\S]*\{BOTAO_SIMULADOR_PUBLICO\}/);
 });
 
 test("E718: nenhum valor de exemplo no simulador da página (E294: nada preenchido pela Viva)", () => {

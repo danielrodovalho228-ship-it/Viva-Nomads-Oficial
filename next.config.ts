@@ -19,10 +19,11 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: "16mb" },
   },
   images: {
-    // AVIF/WebP: imagens bem menores que JPEG/PNG onde o navegador suporta.
-    // No laboratório só WebP: codificar AVIF de foto larga (1280–1920 px) em runner compartilhado leva dezenas
-    // de segundos e estoura t119/t48 a 1280/1440 px; a produção continua com AVIF.
-    formats: LABORATORIO ? ["image/webp"] : ["image/avif", "image/webp"],
+    // WebP em todo lugar (bem menor que JPEG/PNG). E768 (reprova de 11/11): o AVIF saía da produção — a 1ª geração de cada
+    // foto pelo otimizador custava ~2,7 s em AVIF contra ~0,4 s em WebP (1920 px; docs/e768-fotos-carga-fria.md), e numa
+    // página com várias fotos a fila deixava fotos pendentes na carga fria (anúncio, /buscar, /empresas, catálogo).
+    // O laboratório já era só WebP pelo mesmo motivo (t119/t48).
+    formats: ["image/webp"],
     // Next 16 recusa (400) imagem em IP local; o laboratório guarda fotos no Supabase local (127.0.0.1).
     // Só no laboratório: o build de produção com a chave ligada já falha no topo deste arquivo.
     dangerouslyAllowLocalIP: LABORATORIO,
@@ -45,6 +46,9 @@ const nextConfig: NextConfig = {
       { source: "/socios/:path*", destination: "/modelodenegocio", permanent: false },
       { source: "/decisao", destination: "/modelodenegocio", permanent: false },
       { source: "/decisao/:path*", destination: "/modelodenegocio", permanent: false },
+      // E766: /admin/backup e /admin/backups davam 404; o cartão completo do backup mora em Sistema.
+      { source: "/admin/backup", destination: "/admin/sistema#backup", permanent: false },
+      { source: "/admin/backups", destination: "/admin/sistema#backup", permanent: false },
       // E760: /dashboard/meus-imoveis (nome antigo da lista de anúncios) dava 404; a lista de hoje é /dashboard/imoveis.
       // Sem 308: o redirect permanente ficaria no cache do navegador.
       { source: "/dashboard/meus-imoveis", destination: "/dashboard/imoveis", permanent: false },
@@ -74,8 +78,12 @@ const nextConfig: NextConfig = {
       // Links antigos para /simulador e a página estática apontam para ela.
       { source: "/simulador", destination: "/simulacao", permanent: true },
       { source: "/simulador.html", destination: "/simulacao", permanent: true },
-      // /contato não existe: o canal único é a Central de Ajuda (F25). 308, só /ajuda no sitemap.
-      { source: "/contato", destination: "/ajuda", permanent: true },
+      // E851: /contato vai à página de contato vigente (Fale com a Viva), não à Central genérica (308).
+      { source: "/contato", destination: "/ajuda/fale-com-a-viva", permanent: true },
+      // E922: /ajuda/para-empresas dava 404; o conteúdo de empresas (e o "Fale com a gente") é /empresas (308).
+      { source: "/ajuda/para-empresas", destination: "/empresas", permanent: true },
+      // E901: /fale-com-a-viva dava 404; a página é /ajuda/fale-com-a-viva (308).
+      { source: "/fale-com-a-viva", destination: "/ajuda/fale-com-a-viva", permanent: true },
       // E176 (parte 2): "Notificações" é uma página só — a do sino.
       { source: "/dashboard/conta/notificacoes", destination: "/dashboard/notificacoes", permanent: false },
       // Ordem 5a4b9146: endereços "naturais" dos itens do menu que davam 404.
@@ -83,6 +91,8 @@ const nextConfig: NextConfig = {
       { source: "/publicar-pedido", destination: "/pedidos/novo", permanent: true },
       { source: "/pedido", destination: "/pedidos/novo", permanent: true },
       { source: "/proprietarios", destination: "/para-proprietarios", permanent: true },
+      // E885: /entrar dava 404; a entrada é /auth (a query, como ?redirect=…, segue junto).
+      { source: "/entrar", destination: "/auth", permanent: true },
       // Sem mensalidade (ordem 90181c57): a antiga tela de assinatura vai a /precos já na resposta HTTP.
       // Só o redirect() da página, dentro do painel com loading.tsx, saía como 200 + navegação do
       // navegador, e o lab (t48) via um 404 de recurso nesse caminho.

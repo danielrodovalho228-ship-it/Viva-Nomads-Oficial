@@ -1,13 +1,9 @@
-"use client";
-
-import { use } from "react";
 import { notFound, redirect } from "next/navigation";
-import { VoltarLista } from "@/components/ui/voltar-lista";
-import { PageTitle } from "@/components/dashboard/primitives";
 import { CascaConta } from "@/components/account/casca-conta";
 import { TelaAjuda } from "@/components/account/tela-ajuda";
 import { TelaPapeis } from "@/components/account/tela-papeis";
 import { PerfilTela } from "@/components/account/perfil-tela";
+import { AncoraAntigaDaConta, VoltarAoMenuSeTelaEstreita } from "@/components/account/largura-e-ancora";
 import { MeuLocalTrabalho } from "@/components/account/meu-local-trabalho";
 import { TelefoneVerificacao } from "@/components/account/telefone-verificacao";
 import { DadosPessoais, DocumentoPessoa } from "@/components/account/conta-secoes";
@@ -19,29 +15,38 @@ import { DegrausPerfil } from "@/components/account/degraus-perfil";
 import { RedesPrivadas } from "@/components/account/redes-privadas";
 import { SUBTITULO_PAPEIS } from "@/lib/conta/tela-papeis";
 import { ALIAS_SECAO, type SecaoConta } from "@/lib/conta/secoes";
+import { getPerfilInicial } from "@/lib/data/perfil-actions";
 
 /**
  * Telas da Conta (A1): cada seção na casca (menu lateral no computador; "‹ Conta" no celular), um H1 por tela.
  * /seguranca (senha e duas etapas) e /excluir (Sair da Viva) são subtelas de Privacidade, com rota própria na casca.
+ * E789: página de SERVIDOR. O Perfil lê perfil e dados aqui, antes da primeira pintura, e a tela já chega preenchida
+ * (antes: página de cliente → esqueleto → duas Server Actions enfileiradas do navegador → ~5 s de cartões vazios).
  */
-export default function ContaSecaoPage({ params }: { params: Promise<{ secao: string }> }) {
-  const { secao: bruta } = use(params);
+export default async function ContaSecaoPage({ params }: { params: Promise<{ secao: string }> }) {
+  const { secao: bruta } = await params;
   if (bruta === "perfil-publico")
+    // E898: subtela do Perfil na casca (menu lateral com Perfil ativo; "← Perfil" no topo), não fora dela.
     return (
-      <div className="w-full">
-        <VoltarLista href="/dashboard/conta/perfil" rotulo="Perfil" />
-        <PageTitle title="Seu perfil público" subtitle="O que os outros veem de você." />
+      <CascaConta ativo="perfil" subtela titulo="Seu perfil público" subtitulo="O que os outros veem de você.">
         <SeuPerfilPublico />
-      </div>
+      </CascaConta>
     );
   const secao = (ALIAS_SECAO[bruta] ?? bruta) as SecaoConta;
   switch (secao) {
-    case "perfil":
+    case "perfil": {
+      // Falha na leitura do servidor → null: a tela cai no caminho do navegador, que mostra "Tentar de novo" (achado 70).
+      const inicial = await getPerfilInicial().catch(() => null);
       return (
         <CascaConta ativo="perfil" topoDireita>
-          <PerfilTela />
+          <PerfilTela inicial={inicial} />
+          {/* E798: /dashboard/conta#documento (link antigo) chega aqui pelo redirecionamento do servidor; vai à seção certa. */}
+          <AncoraAntigaDaConta />
+          {/* E979: cookie da largura desatualizado → no celular, volta ao menu da Conta. */}
+          <VoltarAoMenuSeTelaEstreita />
         </CascaConta>
       );
+    }
     case "papeis":
       return (
         <CascaConta ativo="papeis" subtitulo={SUBTITULO_PAPEIS}>
