@@ -30,6 +30,14 @@ export function seloDoCredenciado(teste: boolean, seloLigado: string | null): st
   return seloLigado?.trim() ? seloLigado.trim() : ROTULO_AVALIADOR_CREDENCIADO;
 }
 
+/**
+ * E1099 (ORDEM-DUET-473 §1): a conta de um credenciamento — a dele; sem ela (credenciamento criado pelo parceiro), a do
+ * parceiro. Regra ÚNICA: a listagem, o perfil, a foto e a identidade resolvem a conta por aqui.
+ */
+export function contaDaLinhaDeCredenciamento(c: { user_id: string | null; parceiros?: { user_id: string | null } | null } | null | undefined): string | null {
+  return c?.user_id ?? c?.parceiros?.user_id ?? null;
+}
+
 export type Rosto = { tipo: "foto"; url: string } | { tipo: "iniciais"; texto: string };
 
 /** A foto quando há e pode aparecer; senão as iniciais — nunca vazio nem "?". */
@@ -48,6 +56,8 @@ export interface FonteAvaliador {
   notaConduta: number | null;
   contaTeste: boolean;
   fotoUrl: string | null;
+  /** E1099 parte 3: a identidade da conta CONFIRMADA (estadoIdentidade). Sem o fato (piloto, sem leitura): ausente/false. */
+  identidadeVerificada?: boolean;
 }
 
 export interface CartaoAvaliador {
@@ -59,6 +69,7 @@ export interface CartaoAvaliador {
   notaConduta: number | null;
   rosto: Rosto;
   href: string;
+  identidadeVerificada: boolean;
 }
 
 export function cartaoDoAvaliador(a: FonteAvaliador): CartaoAvaliador {
@@ -71,6 +82,7 @@ export function cartaoDoAvaliador(a: FonteAvaliador): CartaoAvaliador {
     notaConduta: a.notaConduta == null || !Number.isFinite(Number(a.notaConduta)) ? null : Number(a.notaConduta),
     rosto: rostoDoAvaliador(a.nome, a.fotoUrl, a.contaTeste),
     href: `/avaliadores/${encodeURIComponent(a.numero)}`,
+    identidadeVerificada: a.identidadeVerificada === true,
   };
 }
 
