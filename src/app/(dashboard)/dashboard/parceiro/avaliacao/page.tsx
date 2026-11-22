@@ -16,7 +16,7 @@ import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
 import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
-import { etapaDoPedido } from "@/lib/vistoria/pedido-avaliador";
+import { etapaDoPedido, identificacaoDoImovel, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
@@ -39,7 +39,7 @@ const SITUACAO: Record<StatusCredenciamento, string> = {
 };
 const STATUS_PEDIDO: Record<string, string> = { pedido: "Aguardando a escolha do proprietário", designado: "Escolhido pelo proprietário", agendado: "Visita agendada", realizada: "Visita feita", laudo_emitido: "Laudo emitido", cancelada: "Cancelada", ausencia: "Ausência registrada" };
 
-type Pedido = { id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; escolhido_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
+type Pedido = { id: string; property_id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; escolhido_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
 
 /**
  * Avaliador credenciado (62-B1/62-B3; desenho do 62-A, Parte 1, itens 1 e 6): o pedido único com os 5 passos e o estado,
@@ -131,7 +131,7 @@ export default async function AvaliacaoParceiroPage() {
 
   const { data: pedidos, error: erroPedidos } = await admin
     .from("vistoria_pedidos")
-    .select("id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
+    .select("id, property_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
     .eq("avaliador_id", cred.id)
     .order("criado_em", { ascending: false });
   const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
@@ -140,6 +140,12 @@ export default async function AvaliacaoParceiroPage() {
   const resposta = new Map(des.map((d) => [d.pedido_id, d.resposta]));
   const agora = new Date();
   const lista = (pedidos ?? []) as Pedido[];
+  // E1108: o título do anúncio de cada pedido (só dos imóveis dos pedidos deste avaliador), para a linha dizer de que
+  // imóvel é. Se esta leitura falhar, a linha fica só com o código VN (que sai do próprio pedido): nunca vazia.
+  const idsDosImoveis = [...new Set(lista.map((p) => p.property_id))];
+  const { data: imoveisDosPedidos } = idsDosImoveis.length ? await admin.from("properties").select("id, title").in("id", idsDosImoveis) : { data: [] };
+  const tituloDoImovel = new Map(((imoveisDosPedidos ?? []) as { id: string; title: string | null }[]).map((i) => [i.id, i.title]));
+  const imovelDo = (p: Pedido) => identificacaoDoImovel(tituloDoImovel.get(p.property_id), p.property_id);
   // Agenda (Prompt 62-A, item 6): para responder (com o contador de 24 h), visitas e o histórico de ausências e recusas.
   // E1102 (ORDEM-DUET-492): "Para responder" é a etapa "novo", pela mesma função que decide a tela do pedido e o "Ver o
   // pedido". Assim o pedido designado sem a linha da designação (resposta undefined) espera a resposta aqui, e não em
@@ -222,7 +228,7 @@ export default async function AvaliacaoParceiroPage() {
             ) : (
               <ul className="grid gap-3">
                 {paraResponder.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
+                  <ItemPedido key={p.id} p={p} imovel={imovelDo(p)} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
               </ul>
             )}
@@ -235,7 +241,7 @@ export default async function AvaliacaoParceiroPage() {
             ) : (
               <ul className="grid gap-3">
                 {visitas.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
+                  <ItemPedido key={p.id} p={p} imovel={imovelDo(p)} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
               </ul>
             )}
@@ -248,7 +254,7 @@ export default async function AvaliacaoParceiroPage() {
             ) : (
               <ul className="grid gap-3">
                 {encerradas.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
+                  <ItemPedido key={p.id} p={p} imovel={imovelDo(p)} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
                 {foraDaMinhaFila.map((d) => (
                   <li key={d.pedido_id} className="rounded-lg border border-line p-3 text-sm text-muted" data-testid="avaliacao-fora" data-resposta={d.resposta}>
@@ -306,7 +312,7 @@ function PassosCredenciamento({ status, identidade, teste }: { status: StatusCre
   );
 }
 
-function ItemPedido({ p, resposta: r, agora, prazoRespostaHoras }: { p: Pedido; resposta: string | null | undefined; agora: Date; prazoRespostaHoras: number | null }) {
+function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: Pedido; imovel: string; resposta: string | null | undefined; agora: Date; prazoRespostaHoras: number | null }) {
   // E1101: de quem é a vez e até quando sai de um lugar só (o mesmo do bloco do dono, da tela do pedido e da rotina).
   // Enviada a proposta, o relógio de resposta para; a designação não lida (undefined) não vira "sem resposta".
   const precisaDoAceite = precisaDoAceiteDoDono({ teste: p.teste, escolhidoEm: p.escolhido_em });
@@ -315,8 +321,12 @@ function ItemPedido({ p, resposta: r, agora, prazoRespostaHoras }: { p: Pedido; 
   const semana = visitaNaSemana(p.agendado_para, agora);
   return (
     <li className="rounded-lg border border-line p-3 text-sm" data-testid="avaliacao-designada" data-pedido={p.id} data-status={p.status}>
+      {/* E1108: de que imóvel é o pedido (título do anúncio e código VN); o valor sai da mesma regra da tela do pedido. */}
+      <p className="break-words font-semibold text-ink" data-testid="pedido-imovel">
+        {imovel}
+      </p>
       <p>
-        <strong className="text-ink">{STATUS_PEDIDO[p.status] ?? p.status}</strong> · {p.cidade} · {ROTULO_PORTE[p.porte]} · {p.teste ? "avaliação de teste" : p.valor_proposto != null ? `${brl(Number(p.valor_proposto))} · ${p.prazo_proposto_dias} dia(s)` : `referência ${brl(Number(p.valor_tabela))}`}
+        <strong className="text-ink">{STATUS_PEDIDO[p.status] ?? p.status}</strong> · {p.cidade} · {ROTULO_PORTE[p.porte]} · {resumoDoValorNaLista(p)}
         {semana && <span className="ml-2 rounded-full bg-sage-100 px-2 py-1 text-xs font-semibold text-forest" data-testid="visita-semana">Esta semana</span>}
       </p>
       {p.ocupado && <p className="mt-1 text-muted">Imóvel ocupado: a visita só acontece com a concordância do morador. Não fotografe pertences.</p>}

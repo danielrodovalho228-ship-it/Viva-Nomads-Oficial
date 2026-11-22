@@ -11,6 +11,7 @@
    · sem a linha "Data pedida pelo dono" (o dono não pede data; quem agenda é o avaliador, depois do aceite).
 */
 import { brl } from "../fiscal/documento.ts";
+import { codigoDoImovel } from "../imovel-pagina.ts";
 import { enderecoDaVisita, regiaoDaVisita } from "../visitas/endereco-visita.ts";
 import { ROTULO_PORTE, type Porte } from "./regras.ts";
 import { precisaDoAceiteDoDono } from "./relogio-do-pedido.ts";
@@ -54,21 +55,55 @@ export const tituloDoPedido = (etapa: EtapaDoPedido): string => (etapa === "novo
 
 export const linhaDoPorte = (porte: Porte): string => `Porte: ${ROTULO_PORTE[porte]}`;
 
+/** O que as linhas de valor precisam do pedido. `escolhido_em` ausente lê-se como "o dono não escolheu". */
+type ValoresDoPedido = { valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; teste: boolean; escolhido_em?: string | null };
+
+/**
+ * E1108: "sem valor" é só a avaliação de teste do credenciamento (de teste e sem escolha do dono: o admin designa, não
+ * há proposta). O pedido do piloto também é "de teste" (a conta do dono é de teste), mas o dono escolheu e o avaliador
+ * propôs: os valores aparecem, como em qualquer pedido. A distinção é a do aceite (precisaDoAceiteDoDono, E1101).
+ */
+const semValor = (p: ValoresDoPedido): boolean => !precisaDoAceiteDoDono({ teste: p.teste, escolhidoEm: p.escolhido_em ?? null });
+
+const dias = (n: number): string => `${n} ${n === 1 ? "dia" : "dias"}`;
+
 /**
  * A caixa do valor. E648: antes de o dono aceitar, o valor da tabela é só REFERÊNCIA (o avaliador propõe o seu);
  * "Você recebe" só com a proposta aceita, e pelo valor aceito.
  */
-export function linhaDoValor(
-  etapa: EtapaDoPedido,
-  p: { valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; teste: boolean },
-): { texto: string; recebe: boolean } {
-  if (p.teste) return { texto: "Avaliação de teste: sem valor a receber", recebe: false };
+export function linhaDoValor(etapa: EtapaDoPedido, p: ValoresDoPedido): { texto: string; recebe: boolean } {
+  if (semValor(p)) return { texto: "Avaliação de teste: sem valor a receber", recebe: false };
   if (etapa === "aceito" && p.valor_proposto != null) return { texto: `Você recebe ${brl(Number(p.valor_proposto))}`, recebe: true };
   if (etapa !== "novo" && p.valor_proposto != null) {
-    const dias = Number(p.prazo_proposto_dias ?? 0);
-    return { texto: `Proposta enviada: ${brl(Number(p.valor_proposto))} em ${dias} ${dias === 1 ? "dia" : "dias"}`, recebe: false };
+    return { texto: `Proposta enviada: ${brl(Number(p.valor_proposto))} em ${dias(Number(p.prazo_proposto_dias ?? 0))}`, recebe: false };
   }
   return { texto: `Valor de referência: ${brl(Number(p.valor_tabela))}`, recebe: false };
+}
+
+/**
+ * E1108: depois do aceite, o prazo combinado também fica à vista (antes do aceite ele já vai na linha "Proposta
+ * enviada: R$ X em N dias"). Os dois valores que o avaliador submeteu aparecem do lado dele em todas as etapas.
+ */
+export function linhaDoPrazoDoLaudo(etapa: EtapaDoPedido, p: ValoresDoPedido): string | null {
+  if (etapa !== "aceito" || semValor(p) || !p.prazo_proposto_dias) return null;
+  return `Laudo em ${dias(Number(p.prazo_proposto_dias))}`;
+}
+
+/** E1108: o valor na linha da lista do avaliador, pela mesma regra da tela do pedido. */
+export function resumoDoValorNaLista(p: ValoresDoPedido): string {
+  if (semValor(p)) return "avaliação de teste";
+  if (p.valor_proposto != null) return `${brl(Number(p.valor_proposto))} · ${dias(Number(p.prazo_proposto_dias ?? 0))}`;
+  return `referência ${brl(Number(p.valor_tabela))}`;
+}
+
+/**
+ * E1108 (decisão do Gerente, ORDEM-DUET-491): de que imóvel é o pedido — o título do anúncio e o código VN que o
+ * imóvel já tem (codigoDoImovel). Sem isto, dois pedidos da mesma cidade e porte eram indistinguíveis. Nunca vazio.
+ */
+export function identificacaoDoImovel(titulo: string | null | undefined, propertyId: string): string {
+  const t = (titulo ?? "").replace(/\s+/g, " ").trim();
+  const codigo = codigoDoImovel(propertyId);
+  return t ? `${t} · ${codigo}` : codigo;
 }
 
 /** O local: bairro e cidade até o dono aceitar; o endereço completo depois. Nunca vazio (cai na cidade do pedido). */
