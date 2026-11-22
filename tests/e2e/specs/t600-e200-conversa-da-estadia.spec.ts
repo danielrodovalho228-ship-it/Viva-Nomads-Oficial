@@ -108,10 +108,10 @@ test.describe("T600 — E200: a conversa da estadia aparece na lista desde a cri
     await p.goto("/dashboard/mensagens", { waitUntil: "domcontentloaded" });
     const item = conversaDaEstadia(p);
     await expect(item).toBeVisible({ timeout: 25_000 });
-    await expect(item).toContainText("Dalva C.");
+    await expect(item).toContainText(dono.nome); // contrato assinado: a moradora vê o nome completo do dono (E427)
     await expect(contagem(p, "inquilino")).toHaveText("1");
     await item.click();
-    await expect(p.getByTestId("conversa-nome")).toHaveText("Dalva C.");
+    await expect(p.getByTestId("conversa-nome")).toHaveText(dono.nome);
     await expect(p.getByTestId("conversa-nova-vazia")).toBeVisible();
     await p.screenshot({ path: `${SAIDA}/t600-moradora-lista-390.png` });
     await p.context().close();

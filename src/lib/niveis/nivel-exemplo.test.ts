@@ -42,13 +42,13 @@ test("E754: o motor continua exigindo os 12 itens — tirar um atributo derruba 
   const semAr = { ...p, amenities: p.amenities.filter((a) => a !== "Ar-condicionado"), amenityGroups: p.amenityGroups?.map((g) => ({ ...g, items: g.items.filter((i) => i !== "Ar-condicionado") })) };
   assert.equal(graduarExemplo(semAr).nivel, null);
   assert.deepEqual(graduarExemplo(semAr).faltam, ["ventilacao_quartos"]);
-  const semVelocidade = { ...porId("ube-005"), workFeatures: ["Internet fibra"] };
+  const semVelocidade = { ...porId("ube-005"), workFeatures: ["Internet fibra"], internetMbps: undefined }; // E753: a velocidade mora no campo único
   assert.deepEqual(graduarExemplo(semVelocidade).faltam, ["internet_informada"]); // "Internet fibra" sem a velocidade
 });
 
 test("E620: leitura conservadora dos atributos — sem o atributo, sem resposta", () => {
   assert.equal(mbpsInformado(porId("ube-001")), 300);
-  assert.equal(mbpsInformado({ ...porId("ube-005"), workFeatures: ["Internet fibra"], amenityGroups: [] }), null); // "Internet fibra" não é velocidade
+  assert.equal(mbpsInformado({ ...porId("ube-005"), workFeatures: ["Internet fibra"], amenityGroups: [], internetMbps: undefined }), null); // "Internet fibra" não é velocidade
   assert.equal(mbpsInformado({ ...porId("ube-005"), internetMbps: 100 }), 100); // o campo informado vale
   assert.equal(respostasDoExemplo({ ...porId("ube-009"), amenities: ["Mobiliado completo", "Cozinha compacta"] }).cozinha, undefined); // "Cozinha compacta" sem "equipada"
   assert.equal(respostasDoExemplo(porId("ube-004")).cozinha, "fogao"); // "Cozinha compacta equipada"

@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { prazoPrometido } from "../../config/atendimento.ts";
-import { ehSensivel, notaSugestao, podeMarcarResolvido, quemAtende, respostaDaSugestao, statusAposRespostaDaViva, textoAcolhimento } from "./acolhimento.ts";
+import { ehSensivel, esperaResposta, notaSugestao, podeMarcarResolvido, quemAtende, respostaDaSugestao, statusAposRespostaDaViva, textoAcolhimento } from "./acolhimento.ts";
 import { validarResposta } from "./viva-regras.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
@@ -84,9 +84,38 @@ test("F23: o cliente vê só a promessa pública (abertura + 24 h, Brasília), n
   assert.doesNotMatch(t, /até 13\/10 às 08:39/); // p2 interno = 12 h
 });
 
-test("F25: /contato redireciona (permanente) para /ajuda e não está no sitemap", () => {
+// E851 (Família 2): /contato vai à página de contato vigente (Fale com a Viva), não à Central genérica.
+test("F25/E851: /contato redireciona (permanente) para /ajuda/fale-com-a-viva e não está no sitemap", () => {
   const cfg = readFileSync(new URL("../../../next.config.ts", import.meta.url), "utf8");
-  assert.match(cfg, /source: "\/contato", destination: "\/ajuda", permanent: true/);
+  assert.match(cfg, /source: "\/contato", destination: "\/ajuda\/fale-com-a-viva", permanent: true/);
   const sm = readFileSync(new URL("../../app/sitemap.ts", import.meta.url), "utf8");
   assert.doesNotMatch(sm, /"\/contato"/);
+});
+
+// E1012: a resposta automática do acolhimento (chamado sensível, fica com a equipe) também tem de aparecer sem recarregar.
+const RODAPE = 'Resposta automática da Viva. Quer falar com uma pessoa? Responda "pessoa".';
+const msg = (autor: string, corpo = "texto") => ({ autor, corpo });
+
+test("E1012 esperaResposta: com a equipe, confere até chegar a resposta automática (o acolhimento sozinho não basta)", () => {
+  const base = { status: "aberto", voltas: 0, responsavelTipo: "equipe" };
+  const aberto = [msg("usuario"), msg("sistema", "Recebemos. Uma pessoa da equipe responde em até 24 h.")];
+  assert.deepEqual(esperaResposta({ ...base, mensagens: aberto }), { conferir: true, vivaEscrevendo: false });
+  const acolhido = [...aberto, msg("ia", "Recebemos seu chamado VN-1 (Caução). A Viva já respondeu logo abaixo…")];
+  assert.equal(esperaResposta({ ...base, mensagens: acolhido }).conferir, true, "o acolhimento chegou; a resposta ainda não");
+  assert.equal(esperaResposta({ ...base, mensagens: [...acolhido, msg("ia", `A Caução… ${RODAPE}`)] }).conferir, false);
+  assert.equal(esperaResposta({ ...base, mensagens: [...aberto, msg("admin")] }).conferir, false, "a equipe respondeu");
+});
+
+test("E1012 esperaResposta: com a Viva, para na primeira resposta dela e mostra o 'escrevendo'", () => {
+  const base = { status: "aberto", voltas: 0, responsavelTipo: "ia" };
+  assert.deepEqual(esperaResposta({ ...base, mensagens: [msg("usuario")] }), { conferir: true, vivaEscrevendo: true });
+  assert.deepEqual(esperaResposta({ ...base, mensagens: [msg("usuario"), msg("ia")] }), { conferir: false, vivaEscrevendo: false });
+});
+
+test("E1012 esperaResposta: para no fim do prazo, com o chamado fechado e sem mensagem nova da pessoa", () => {
+  assert.equal(esperaResposta({ mensagens: [msg("usuario")], status: "aberto", voltas: 24, responsavelTipo: "equipe" }).conferir, false);
+  assert.equal(esperaResposta({ mensagens: [msg("usuario")], status: "resolvido", voltas: 0, responsavelTipo: "ia" }).conferir, false);
+  assert.equal(esperaResposta({ mensagens: [], status: "aberto", voltas: 0, responsavelTipo: "ia" }).conferir, false);
+  // A pessoa respondeu depois da resposta automática: volta a conferir.
+  assert.equal(esperaResposta({ mensagens: [msg("usuario"), msg("ia", RODAPE), msg("usuario")], status: "aberto", voltas: 0, responsavelTipo: "equipe" }).conferir, true);
 });

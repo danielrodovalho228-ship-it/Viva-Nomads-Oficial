@@ -13,12 +13,16 @@ export type UrgenciaManutencao = "urgente" | "media" | "baixa";
  * Promessa pública do atendimento (decisão do Daniel, out/2026): a Viva responde
  * 24 h e uma pessoa em até 24 h. Não prometer janela humana que não se cumpre.
  */
-export const PROMESSA_ATENDIMENTO = "Assistente Viva 24 h · resposta de uma pessoa em até 24 h";
+/** Horas da promessa pública a uma pessoa (a mesma frase de PROMESSA_ATENDIMENTO). Família 1: o prazo do canal suporte. */
+export const PROMESSA_HUMANA_H = 24;
+
+/** Horas por dia em que a Assistente Viva atende (o "24 h" da primeira metade da promessa). */
+export const ASSISTENTE_HORAS = 24;
+
+// Nota do Gerente (Família 1): a frase inteira sai das constantes, sem número escrito à mão.
+export const PROMESSA_ATENDIMENTO = `Assistente Viva ${ASSISTENTE_HORAS} h · resposta de uma pessoa em até ${PROMESSA_HUMANA_H} h`;
 
 const HORA_MS = 3_600_000;
-
-/** Horas da promessa pública a uma pessoa (a mesma frase de PROMESSA_ATENDIMENTO). */
-export const PROMESSA_HUMANA_H = 24;
 
 /**
  * Prazo que o CLIENTE vê: abertura + 24 h (F23). Os prazos internos por prioridade
@@ -83,14 +87,39 @@ export function responderAte(urgencia: UrgenciaManutencao, abertoEm: Date): stri
   return `responder até ${dataHoraBrasilia(prazoManutencao(urgencia, abertoEm))} (horário de Brasília)`;
 }
 
-/** Frase da Central de Ajuda com prazos e exemplos (lida das constantes acima). */
-export function frasePrazosManutencao(): string {
-  const h = PRAZO_MANUTENCAO_H;
+/*
+  E817 — a RÉGUA ÚNICA da manutenção: anúncio e Central de Ajuda dizem a mesma coisa, com os DOIS prazos de cada
+  prioridade (resposta do proprietário e solução), QUEM resolve, COMO o morador aciona e O QUE acontece se o prazo vencer
+  — tudo o que o código já faz (manutencao-solucao.ts, manutencao-avisos.ts e o selo em ranking/ordem.ts). Nada novo.
+*/
+const horasOuDias = (h: number) => (h >= 24 * 7 && h % 24 === 0 ? `${h / 24} dias` : `${h} h`);
+
+/** Uma linha por prioridade: "Urgente (sem água, sem luz, vazamento): resposta em até 4 h, solução provisória em até 24 h e definitiva em até 72 h". */
+export function linhasReguaManutencao(): { prioridade: UrgenciaManutencao; texto: string }[] {
+  const r = PRAZO_MANUTENCAO_H;
+  const s = PRAZO_SOLUCAO_H;
   const e = EXEMPLOS_MANUTENCAO;
-  return (
-    `O proprietário é avisado na hora e tem prazo para responder: ${h.urgente} horas em urgências (${e.urgente}), ` +
-    `${h.media} horas nos casos médios (${e.media}) e ${h.baixa} horas nos demais (${e.baixa}).`
-  );
+  const rot = ROTULO_URGENCIA_MANUTENCAO;
+  return [
+    { prioridade: "urgente", texto: `${rot.urgente} (${e.urgente}): resposta em até ${horasOuDias(r.urgente)}, solução provisória em até ${horasOuDias(s.urgente.provisoria)} e definitiva em até ${horasOuDias(s.urgente.definitiva)}` },
+    { prioridade: "media", texto: `${rot.media} (${e.media}): resposta em até ${horasOuDias(r.media)} e solução em até ${horasOuDias(s.media)}` },
+    { prioridade: "baixa", texto: `${rot.baixa} (${e.baixa}): resposta em até ${horasOuDias(r.baixa)} e solução em até ${horasOuDias(s.baixa)}` },
+  ];
+}
+
+/** Quem resolve e como o morador aciona (o canal real: o contrato e a área de manutenção do painel). */
+export const COMO_ACIONAR_MANUTENCAO = 'Quem resolve é o proprietário; com o contrato ativo, o pedido é aberto pelo próprio contrato ("Problema com isto?")';
+
+/** O que acontece se o prazo de solução vencer (avisos do 59-B e o selo do anúncio). */
+export const SE_O_PRAZO_VENCER =
+  "Se o prazo de solução vencer, você é avisado e pode chamar um parceiro de manutenção pela própria ordem; soluções fora do prazo repetidas tiram o selo do anúncio";
+
+/**
+ * Frase da Central de Ajuda (e do atendimento): a mesma régua do anúncio, lida das constantes acima. O COMO abrir o
+ * pedido fica na própria resposta da Ajuda, que muda conforme quem pergunta (com ou sem contrato).
+ */
+export function frasePrazosManutencao(): string {
+  return `O proprietário é avisado na hora. ${linhasReguaManutencao().map((l) => `${l.texto}.`).join(" ")} ${SE_O_PRAZO_VENCER}.`;
 }
 
 /** Frase para o usuário: quando uma pessoa responde. */
@@ -101,8 +130,8 @@ export function mensagemPrazo(prioridade: Prioridade): string {
 /** Só o prazo (sem o "Recebemos."), para compor com outras frases. */
 export function frasePrazo(prioridade: Prioridade): string {
   return prioridade === "p1"
-    ? "Seu caso tem prioridade máxima: a equipe já foi avisada e uma pessoa responde em até 24 h."
-    : "Uma pessoa da equipe responde em até 24 h.";
+    ? `Seu caso tem prioridade máxima: a equipe já foi avisada e uma pessoa responde em até ${PROMESSA_HUMANA_H} h.`
+    : `Uma pessoa da equipe responde em até ${PROMESSA_HUMANA_H} h.`;
 }
 
 /**

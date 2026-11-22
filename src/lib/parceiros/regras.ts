@@ -6,8 +6,18 @@
   formulário do navegador importa este arquivo); o token fica em token.ts.
 */
 import { chaveCidade } from "../cidades.ts";
+import { PRAZO_CANAL, TEXTO_PRAZO_PARCERIA } from "../../config/prazos-canais.ts";
 import { cnpjValido, cpfValido, soDigitos, type TipoPessoa } from "../documento-pessoa.ts";
 import { emiteNotaParaGravar, faltaRespostaNota, passaFiltroNota, PENDENCIA_NOTA } from "./fiscal.ts";
+
+// ── Prazo de resposta ao pedido de parceria (E791) ──────────────────────────────────────────────────────────────
+/** O prazo de resposta ao pedido de parceria: 7 dias, o mesmo que /empresas promete (E770) — decisão da vigia de 12/11 (E791).
+ *  FONTE ÚNICA de tudo o que fala desse prazo: /parceiros, o formulário depois de enviar, o onboarding E o alerta à equipe
+ *  (lembretes: parceiroSemResposta; o aviso do cron, o e-mail e a fila de decisões do admin). */
+//  Família 1 (E835): o número mora em config/prazos-canais.ts (um prazo por canal); aqui só os nomes de sempre.
+export const DIAS_RESPOSTA_PARCERIA = PRAZO_CANAL.parceiro.dias;
+export const PRAZO_RESPOSTA_PARCERIA = PRAZO_CANAL.parceiro.texto;
+export { TEXTO_PRAZO_PARCERIA };
 
 // ── Categorias ─────────────────────────────────────────────────────────────────────────────────────────────────
 export const CATEGORIAS_PARCEIRO = [
@@ -44,6 +54,25 @@ export function categoriasComDaUrl(atuais: readonly string[], daUrl: string | nu
   return [...atuais, daUrl];
 }
 
+/**
+ * E915: a categoria pedida na URL (?categoria=) não existe no catálogo? Vazio é "Todas" — não é inexistente. A busca
+ * diz isso com franqueza (em vez de cair calada em "Todas") e o "Quero ser avisado" não se arma para ela.
+ */
+export function categoriaInexistente(daUrl: string | null | undefined): boolean {
+  return !!daUrl && !categoriaValida(daUrl);
+}
+/** E915: o aviso da categoria inexistente — o valor da URL vai encurtado (nada de texto longo colado pela URL). */
+export function avisoCategoriaInexistente(daUrl: string): string {
+  const v = daUrl.trim().slice(0, 40);
+  return `A categoria "${v}" não existe. Mostramos todas as categorias: escolha uma na lista para filtrar.`;
+}
+/** E915: a frase de apoio do "Quero ser avisado" — sem categoria escolhida ("Todas"), não fala em "desta categoria". */
+export function textoApoioAviso(semCategoria: boolean): string {
+  return semCategoria
+    ? "Avisamos você quando houver um parceiro na sua cidade."
+    : "Avisamos você quando houver um parceiro desta categoria na sua cidade.";
+}
+
 // ── Taxa de serviço (10%, todas as categorias; fotógrafos inclusive) ────────────────────────────────────────────
 export const TAXA_SERVICO_PARCEIRO = 0.1;
 
@@ -64,7 +93,8 @@ export const REGRAS_CLARAS = [
   "Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para você e 10% para a Viva. A Viva não guarda o seu dinheiro.",
 ] as const;
 export const PAGAMENTO_EM_BREVE = "Pagamento pela plataforma em breve.";
-export const CONTATO_APOS_ACEITE = "Contato e endereço do imóvel são liberados só depois do aceite, pelas mensagens da Viva.";
+/** E774 (regra E445): contato NUNCA é trocado, em nenhuma fase — nem depois do aceite. Fonte única do texto em Parceiros. */
+export const CONTATO_PELA_VIVA = "Seu contato não é trocado: tudo se combina pelas mensagens da Viva.";
 
 // ── Solicitação de parceria ────────────────────────────────────────────────────────────────────────────────────
 /**
@@ -146,17 +176,20 @@ export function validarDocumentoParceiro(documento: string | null | undefined): 
   return null;
 }
 
-export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string } {
+/** E818: `campo` aponta o campo do formulário que causou o erro (para marcar em vermelho e focar). */
+export type CampoSolicitacao = "nome" | "documento" | "categorias" | "cidades" | "portfolioUrl" | "empresa" | "veiculo" | "descricao" | "telefone" | "emiteNota" | "aceite";
+
+export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string; campo?: CampoSolicitacao } {
   const nome = limpar(e.nome, 120);
-  if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa)." };
+  if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa).", campo: "nome" };
   // E648: só empresa. O tipo "pf" e qualquer CPF no campo do documento são recusados em todas as categorias.
-  if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ };
+  if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ, campo: "documento" };
   const tipo = "pj" as const;
   const doc = soDigitos(e.documento);
   const erroDoc = validarDocumentoParceiro(e.documento);
-  if (erroDoc) return { ok: false, erro: erroDoc };
+  if (erroDoc) return { ok: false, erro: erroDoc, campo: "documento" };
   const categorias = [...new Set((e.categorias ?? []).filter(categoriaValida))];
-  if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria." };
+  if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria.", campo: "categorias" };
   const vistas = new Set<string>();
   const cidades: string[] = [];
   for (const c of e.cidades ?? []) {
@@ -166,27 +199,27 @@ export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: So
     vistas.add(k);
     cidades.push(l);
   }
-  if (!cidades.length) return { ok: false, erro: "Informe pelo menos uma cidade atendida." };
-  if (cidades.length > CIDADES_MAX) return { ok: false, erro: `Até ${CIDADES_MAX} cidades.` };
+  if (!cidades.length) return { ok: false, erro: "Informe pelo menos uma cidade atendida.", campo: "cidades" };
+  if (cidades.length > CIDADES_MAX) return { ok: false, erro: `Até ${CIDADES_MAX} cidades.`, campo: "cidades" };
   const portfolioBruto = String(e.portfolioUrl ?? "").trim();
   const portfolioUrl = urlPublicaValida(portfolioBruto);
-  if (portfolioBruto && !portfolioUrl) return { ok: false, erro: "O link do portfólio precisa ser um endereço da web (https://…)." };
+  if (portfolioBruto && !portfolioUrl) return { ok: false, erro: "O link do portfólio precisa ser um endereço da web (https://…).", campo: "portfolioUrl" };
   const descricao = limpar(e.descricao, DESCRICAO_MAX) || null;
   const dados: { empresa?: string; veiculo?: string } = {};
-  if (categorias.includes("fotografia") && !portfolioUrl) return { ok: false, erro: "Para fotografia, mande o link do seu portfólio." };
+  if (categorias.includes("fotografia") && !portfolioUrl) return { ok: false, erro: "Para fotografia, mande o link do seu portfólio.", campo: "portfolioUrl" };
   if (categorias.includes("mudanca")) {
     const empresa = limpar(e.empresa, 120);
     const veiculo = limpar(e.veiculo, 120);
-    if (!empresa || !veiculo) return { ok: false, erro: "Para mudança, informe a empresa e o veículo." };
+    if (!empresa || !veiculo) return { ok: false, erro: "Para mudança, informe a empresa e o veículo.", campo: !empresa ? "empresa" : "veiculo" };
     Object.assign(dados, { empresa, veiculo });
   }
-  if (categorias.some((c) => c !== "fotografia" && c !== "mudanca") && !descricao) return { ok: false, erro: "Descreva o serviço que você oferece." };
+  if (categorias.some((c) => c !== "fotografia" && c !== "mudanca") && !descricao) return { ok: false, erro: "Descreva o serviço que você oferece.", campo: "descricao" };
   const tel = soDigitos(e.telefone);
-  if (tel && (tel.length < 10 || tel.length > 13)) return { ok: false, erro: "Telefone inválido (com DDD)." };
+  if (tel && (tel.length < 10 || tel.length > 13)) return { ok: false, erro: "Telefone inválido (com DDD).", campo: "telefone" };
   // Portão que BLOQUEIA: PJ sem Sim/Não não conclui o cadastro.
   const nota = emiteNotaParaGravar(tipo, e.emiteNota);
-  if (!nota.ok) return nota;
-  if (!e.aceite) return { ok: false, erro: "Confirme que a Viva pode usar estes dados para analisar a parceria." };
+  if (!nota.ok) return { ...nota, campo: "emiteNota" };
+  if (!e.aceite) return { ok: false, erro: "Confirme que a Viva pode usar estes dados para analisar a parceria.", campo: "aceite" };
   return { ok: true, valor: { nome, tipoPessoa: tipo, documento: doc, categorias, cidades, portfolioUrl, descricao, telefone: tel || null, dadosCategoria: dados, emiteNota: nota.valor } };
 }
 

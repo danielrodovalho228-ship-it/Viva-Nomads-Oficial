@@ -13,7 +13,8 @@ test("E756: ube-003 (2 meses): R$ 8.900 = 2 × R$ 4.100 + preparação R$ 450 + 
   const c = estadiaNoCartao(ube003, 2)!;
   assert.equal(c.total, 8900);
   assert.match(c.texto.replace(/\s/g, " "), /R\$ 8\.900.* em 2 meses/);
-  assert.equal(c.composicao, "Inclui limpeza de preparação e limpeza de saída");
+  // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): o cartão mostra a CONTA aberta (antes, "Inclui limpeza de preparação e limpeza de saída", sem valores).
+  assert.equal(c.composicao.replace(/\u00a0/g, " "), "2 × R$ 4.100 + limpeza de preparação R$ 450 + limpeza de saída R$ 250");
 });
 
 test("E756: o total do cartão é EXATAMENTE o da página do imóvel, para todos os exemplos e para 2 a 6 meses", () => {
@@ -26,17 +27,25 @@ test("E756: o total do cartão é EXATAMENTE o da página do imóvel, para todos
   }
 });
 
-test("E756: com 1 mês não há total plurimensal; sem limpezas não há linha de composição", () => {
-  assert.equal(estadiaNoCartao(ube003, 1), null);
+// E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): antes, com 1 mês o cartão não tinha total da estadia (caía no total do MÊS, sem as limpezas) e, sem limpezas, não dizia a
+// composição. Agora: com 1 mês, o mesmo total da página (com as limpezas); sem limpezas, a conta diz só as mensalidades.
+test("E756: com 1 mês o total é o da regra única (com as limpezas); sem limpezas a conta diz só as mensalidades", () => {
+  assert.equal(estadiaNoCartao(ube003, 1)?.total, 4800, "1 × R$ 4.100 + R$ 450 + R$ 250");
   const semLimpeza = { ...ube003, prepFee: 0, checkoutCleaningEnabled: false, checkoutCleaningFee: 0 };
   const c = estadiaNoCartao(semLimpeza, 2)!;
-  assert.equal(c.composicao, null);
+  assert.equal(c.composicao.replace(/\u00a0/g, " "), "2 × R$ 4.100");
   assert.equal(c.total, 8200);
 });
 
-test("E756: o cartão da busca usa o total da página e desenha a composição", () => {
+// E899 (Daniel, 13/11): o total continua sendo o da página (a mesma regra), mas chega ao cartão por modeloDoCartao, e a composição
+// passou a ser desenhada só na página do imóvel. Antes: o cartão chamava estadiaNoCartao e desenhava cartao-total-composicao.
+test("E756 → E899: o cartão da busca usa o total da página (por modeloDoCartao); a composição fica na página", () => {
   const card = readFileSync("src/components/property-card.tsx", "utf8");
-  assert.match(card, /const estadiaCartao = estadiaNoCartao\(property, preco\.meses\)/);
-  assert.match(card, /estadiaCartao\?\.texto \?\? estadiaDoCartao\(preco\)/);
-  assert.match(card, /data-testid="cartao-total-composicao"/);
+  const modelo = readFileSync("src/lib/cartao-modelo.ts", "utf8");
+  assert.match(card, /const m = modeloDoCartao\(property, periodMonths\);/);
+  assert.match(modelo, /const estadia = estadiaNoCartao\(p, preco\.meses\);/);
+  // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): sem fallback ao total do mês com 1 mês (o total vem sempre de estadiaNoCartao).
+  assert.match(modelo, /\? \{ valor: estadia\.total, meses: estadia\.meses, texto: estadia\.texto \}/);
+  assert.doesNotMatch(card, /cartao-total-composicao/);
+  assert.match(readFileSync("src/components/property/price-card.tsx", "utf8"), /<FormulaDoTotal conta=\{estadia\.conta\} testid="cartao-lateral-estadia-conta" \/>/);
 });

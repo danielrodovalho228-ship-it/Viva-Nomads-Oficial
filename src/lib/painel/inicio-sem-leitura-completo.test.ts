@@ -21,7 +21,7 @@ test("o aviso do Início nomeia anúncios, interessados e decisões quando não 
 });
 
 test("a página lê as três com exigir e as manda para o aviso (nenhuma vira zero calado)", () => {
-  const pagina = ler("src/app/(dashboard)/dashboard/page.tsx");
+  const pagina = ler("src/app/(dashboard)/dashboard/inicio-dados.tsx");
   assert.match(pagina, /ou\("imoveis", listMyProperties\(\{ exigir: true \}\)/);
   assert.match(pagina, /ou\("interessados", interessadosDoDono\(\)/);
   assert.match(pagina, /ou\("decisoes", dadosDasDecisoes\(\{ exigir: true \}\)/);

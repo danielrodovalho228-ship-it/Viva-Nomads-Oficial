@@ -22,6 +22,8 @@ import { linhaPetsPublica } from "@/lib/anuncio/pets-regras";
 import { textoLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { linhasRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { linhasDetalhes, type ChaveGrupoDetalhe } from "@/lib/anuncio/detalhes-anuncio";
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { linhaFormaPagamento, normalizarEscolha } from "@/lib/pagamento-forma/regras";
 
 const ICONE_DETALHE: Record<ChaveGrupoDetalhe | "chacara", React.ComponentType<{ className?: string }>> = {
   chacara: Trees,
@@ -68,7 +70,12 @@ export function StayRules({ property }: { property: Property }) {
   if (property.maxGuests !== undefined)
     rows.push({ icon: Users, label: "Moradores", value: `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` });
   // CAMPOS-2: a janela de entrada/saída (quando ligada) tem precedência sobre os horários antigos.
-  const detalhes = linhasDetalhes(property.detalhesAnuncio, { tipo: property.propertyType, cidade: property.city });
+  // E815: o "Incluído no preço" não contradiz a composição do mês (os custos cobrados à parte saem da lista).
+  const detalhes = linhasDetalhes(property.detalhesAnuncio, {
+    tipo: property.propertyType,
+    cidade: property.city,
+    custos: { utilitiesMode: property.utilitiesMode, utilitiesEstimate: property.utilitiesEstimate, condoFee: property.condoFee },
+  });
   if (!detalhes.some((d) => d.chave === "janela")) {
     if (property.checkinAfter)
       rows.push({ icon: LogIn, label: "Entrada", value: `A partir das ${property.checkinAfter}` });
@@ -76,6 +83,9 @@ export function StayRules({ property }: { property: Property }) {
       rows.push({ icon: LogOut, label: "Saída", value: `Até as ${property.checkoutBefore}` });
   }
   for (const d of detalhes) rows.push({ icon: ICONE_DETALHE[d.chave], label: d.rotulo, value: d.texto });
+  // E647: a forma de pagamento que o dono aceita, clara para o morador antes da proposta (só com a chave ligada e depois do dono escolher).
+  const formaPagamento = FORMA_PAGAMENTO_DONO_ATIVA ? normalizarEscolha(property.detalhesAnuncio?.pagamento) : null;
+  if (formaPagamento) rows.push({ icon: HandCoins, label: "Forma de pagamento", value: linhaFormaPagamento(formaPagamento) ?? "" });
 
   return (
     <section id="regras-da-estadia" aria-labelledby="regras-title">

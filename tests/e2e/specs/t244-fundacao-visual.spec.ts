@@ -83,17 +83,21 @@ async function conferirCartao(cartao: Locator, onde: string) {
   // E626 (06/11): a pílula de símbolos é branca (a do nível tem a cor do nível); nenhuma sobre o coração.
   const simbolos = cartao.getByTestId("selos-simbolos");
   for (let i = 0; i < (await simbolos.count()); i++) expect((await estilo(simbolos.nth(i))).fundo, `${onde}: pílula de símbolos branca`).toBe(BRANCO);
-  // Adendo: ordem bairro + nota → título (até 2 linhas) → total → síntese → disponibilidade (de cima para baixo).
+  // Adendo + E899 (Daniel, 13/11): ordem bairro + nota → título (1 linha; antes, até 2) → preço do mês → total + aviso → síntese →
+  // disponibilidade (de cima para baixo).
   const ys: number[] = [];
-  for (const id of ["cartao-local", "cartao-titulo", "cartao-total-mes", "cartao-sintese", "cartao-disponivel"]) {
+  for (const id of ["cartao-local", "cartao-titulo", "cartao-total-mes", "cartao-total-linha", "cartao-sintese", "cartao-disponivel"]) {
     const el = cartao.getByTestId(id);
     if (await el.count()) ys.push((await el.boundingBox())!.y);
   }
   expect(ys, `${onde}: ordem do cartão`).toEqual([...ys].sort((a, b) => a - b));
   const linhasTitulo = await cartao.getByTestId("cartao-titulo").evaluate((el) => Math.round(el.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(el).lineHeight)));
-  expect(linhasTitulo, `${onde}: título em até 2 linhas`).toBeLessThanOrEqual(2);
-  // E356: todo cartão mostra "R$ Y em N mês/meses" (com N = 1, "em 1 mês").
-  if (await cartao.getByTestId("cartao-total-estadia").count()) await expect(cartao.getByTestId("cartao-total-estadia")).toHaveText(/·\s*R\$\s?[\d.,]+ em \d+ (mês|meses)/);
+  expect(linhasTitulo, `${onde}: título em 1 linha (E899)`).toBe(1);
+  // E356: todo cartão mostra "R$ Y em N mês/meses" (com N = 1, "em 1 mês"). E899: o total tem linha própria (antes vinha depois
+  // de "/mês · ", na mesma linha do preço) e fecha com o aviso curto.
+  await expect(cartao.getByTestId("cartao-total-estadia")).toHaveText(/^R\$\s?[\d.,]+ em \d+ (mês|meses)$/);
+  // E923: contas fixas sem estimativa dizem "água, luz e gás não informados" (antes: "tudo incluído").
+  await expect(cartao.getByTestId("cartao-aviso")).toHaveText(/^(tudo incluído|água, luz e gás à parte|água, luz e gás não informados)$/);
   await expect(cartao.getByTestId("cartao-sintese")).toContainText(/\d+ quartos?/);
   expect((await estilo(cartao.getByTestId("cartao-titulo"))).cor, `${onde}: texto secundário #3F3F3F`).toBe(SECUNDARIO);
 }

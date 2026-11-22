@@ -30,6 +30,8 @@ export const BUCKET_DOCUMENTOS = "documentos";
 
 interface Partes {
   contratoId: string;
+  /** Frente 3 (t227): o imóvel do contrato — a guarda de duplicidade compara por ele. */
+  propertyId: string | null;
   ownerId: string;
   tenantId: string;
   locador: { nome: string; doc: string | null; email: string | null };
@@ -41,7 +43,7 @@ interface Partes {
 async function partesDoContrato(admin: Admin, contratoId: string): Promise<Partes | null> {
   const { data: c } = await admin
     .from("contratos")
-    .select("id, tenant_id, properties!inner(owner_id, title, address, exact_address, city, state)")
+    .select("id, tenant_id, property_id, properties!inner(owner_id, title, address, exact_address, city, state)")
     .eq("id", contratoId)
     .maybeSingle();
   if (!c) return null;
@@ -54,7 +56,7 @@ async function partesDoContrato(admin: Admin, contratoId: string): Promise<Parte
   // Endereço do documento (Prompt 56): o exato, o bairro (properties.address) e cidade/UF, como no modelo aprovado.
   // Antes, com o exato preenchido, o bairro sumia; sem o exato, ficava só "bairro, cidade".
   const endereco = enderecoDoDocumento(p);
-  return { contratoId, ownerId: p.owner_id, tenantId: c.tenant_id as string, locador: perfil(p.owner_id), locatario: perfil(c.tenant_id as string), imovelEndereco: endereco };
+  return { contratoId, propertyId: (c.property_id as string | null) ?? null, ownerId: p.owner_id, tenantId: c.tenant_id as string, locador: perfil(p.owner_id), locatario: perfil(c.tenant_id as string), imovelEndereco: endereco };
 }
 
 async function emitir(
@@ -81,19 +83,20 @@ async function emitir(
   if (tipo === "recibo_aluguel" || tipo === "comprovante_caucao") {
     const { data: validos, error: erroValidos } = await admin
       .from("documentos_fiscais")
-      .select("numero, owner_id, tenant_id, imovel_endereco, valor, periodo_inicio, periodo_fim")
+      .select("numero, owner_id, tenant_id, imovel_endereco, valor, periodo_inicio, periodo_fim, contratos(property_id)")
       .eq("tipo", tipo)
       .eq("owner_id", partes.ownerId)
       .eq("tenant_id", partes.tenantId)
       .is("anulado_em", null);
     if (erroValidos) return { ok: false, motivo: "não foi possível conferir se o documento já existe" };
     const repetido = duplicidadeDeRecibo(
-      { ownerId: partes.ownerId, tenantId: partes.tenantId, imovelEndereco: partes.imovelEndereco, valor: Number(extra.valor), periodoInicio: extra.periodoInicio ?? null, periodoFim: extra.periodoFim ?? null },
-      ((validos ?? []) as { numero: string; owner_id: string; tenant_id: string; imovel_endereco: string | null; valor: number; periodo_inicio: string | null; periodo_fim: string | null }[]).map((v) => ({
+      { ownerId: partes.ownerId, tenantId: partes.tenantId, imovelEndereco: partes.imovelEndereco, propertyId: partes.propertyId, valor: Number(extra.valor), periodoInicio: extra.periodoInicio ?? null, periodoFim: extra.periodoFim ?? null },
+      ((validos ?? []) as unknown as { numero: string; owner_id: string; tenant_id: string; imovel_endereco: string | null; valor: number; periodo_inicio: string | null; periodo_fim: string | null; contratos: { property_id: string | null } | null }[]).map((v) => ({
         numero: v.numero,
         ownerId: v.owner_id,
         tenantId: v.tenant_id,
         imovelEndereco: v.imovel_endereco ?? "",
+        propertyId: v.contratos?.property_id ?? null,
         valor: Number(v.valor),
         periodoInicio: v.periodo_inicio,
         periodoFim: v.periodo_fim,

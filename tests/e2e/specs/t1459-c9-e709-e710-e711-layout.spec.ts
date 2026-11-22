@@ -61,7 +61,7 @@ test.describe("T1459 — C9, E709, E710, E711: layout público", () => {
   }
 
   for (const w of [1280, 768] as const) {
-    test(`E709 a ${w} px: a faixa da direita fica livre para o botão "Fale com a Viva"`, async ({ page }) => {
+    test(`E709 a ${w} px: a faixa da direita fica livre para o botão "Fale com a Viva"`, { tag: ["@E709", "@ao-vivo-seguro"] }, async ({ page }) => {
       await page.setViewportSize({ width: w, height: 900 });
       const r = await page.goto("/imoveis/ube-005", { waitUntil: "domcontentloaded" });
       expect(r?.status() ?? 0).toBeLessThan(400);

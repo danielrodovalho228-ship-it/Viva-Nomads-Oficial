@@ -5,7 +5,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 /*
   T656 — E224: os dois lados do Plano Gestor.
    1. proprietário, Conta › Plano (/dashboard/conta/plano → Pagamentos): "Você tem N; faltam M." e, já liberado
-      (conta administradora), "Liberado. Fale com a Viva para ativar." — sem botão de assinar.
+      (conta administradora), "Plano Gestor: taxa de 4% nos próximos contratos, sem assinatura." (E564) — sem botão de assinar.
    2. admin, /admin/usuarios: "Tipo da conta" individual → administradora com motivo obrigatório (sem motivo, Salvar
       fica desligado); o banco muda e a trilha account_type_audit grava o motivo.
    3. quem não é admin: a mesma chamada de definirAccountType, com a sessão de um proprietário, é recusada (pela rota
@@ -54,7 +54,7 @@ test.describe("T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no a
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard/conta/plano", { waitUntil: "domcontentloaded" });
     const texto = page.getByTestId("conta-plano-gestor-texto");
-    await expect(texto).toHaveText("Plano Gestor: liberado com 20 imóveis com documento aprovado. Você tem 0; faltam 20.", { timeout: 30_000 });
+    await expect(texto).toHaveText("Plano Gestor: taxa de 4% com 20 imóveis ativos (publicados, com documento aprovado e calendário em dia). Você tem 0; faltam 20.", { timeout: 30_000 });
     await expect(texto).toHaveAttribute("data-elegivel", "0");
     await expect(page.getByTestId("conta-plano-gestor").getByRole("button")).toHaveCount(0);
     await expect(page.getByTestId("conta-plano-gestor").getByRole("link")).toHaveCount(0);
@@ -90,10 +90,11 @@ test.describe("T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no a
     await ctx.close();
   });
 
-  test("1b. já liberado (administradora): 'Liberado. Fale com a Viva para ativar.'", async ({ browser }) => {
+  // E744 (asserção alterada, tabela da Fable #3832): o E564 trocou o texto do Plano Gestor por um só, sem "Fale com a Viva".
+  test("1b. já liberado (administradora): 'Plano Gestor: taxa de 4% nos próximos contratos, sem assinatura.'", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard/conta/plano", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("conta-plano-gestor-texto")).toHaveText("Liberado. Fale com a Viva para ativar.", { timeout: 30_000 });
+    await expect(page.getByTestId("conta-plano-gestor-texto")).toHaveText("Plano Gestor: taxa de 4% nos próximos contratos, sem assinatura.", { timeout: 30_000 });
     await expect(page.getByTestId("conta-plano-gestor-texto")).toHaveAttribute("data-elegivel", "1");
     await expect(page.getByTestId("conta-plano-gestor").getByRole("button")).toHaveCount(0);
     await page.context().close();

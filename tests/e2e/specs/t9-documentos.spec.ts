@@ -16,7 +16,8 @@ test.describe("T-DOC — Conferência de documentos @criticos", () => {
 
   async function irParaFila(page: Page) {
     await page.goto("/admin/documentos", { waitUntil: "networkidle" });
-    await expect(page.getByRole("heading", { name: /Documentos em confer/i })).toBeVisible();
+    // O h1 vem do rótulo do menu do admin (tituloDoAdmin → "Documentos"); o texto "em conferência" saiu do título.
+    await expect(page.getByRole("heading", { level: 1, name: "Documentos" })).toBeVisible();
   }
 
   test("a fila abre dentro da casca admin", async ({ page }) => {
@@ -34,7 +35,7 @@ test.describe("T-DOC — Conferência de documentos @criticos", () => {
 
     if (!(await primeiroCard.isVisible().catch(() => false))) {
       // Fila vazia é um estado válido — valida o vazio e encerra.
-      await expect(page.getByText(/Nada na fila/i)).toBeVisible();
+      await expect(page.getByTestId("fila-vazia").first()).toBeVisible(); // aparece em mais de um lugar (aba e painel) // FilaVazia: "Nada pendente."
       test.skip(true, "Fila vazia no banco de teste — sem item para exercer os portões.");
       return;
     }

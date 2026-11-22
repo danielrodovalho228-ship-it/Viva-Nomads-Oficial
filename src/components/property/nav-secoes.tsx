@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
  * Abas âncora da página do imóvel (ordem d943f893): presas logo abaixo do cabeçalho
  * ao rolar, a aba da seção visível fica marcada e o toque leva até a seção. No
  * celular as abas rolam na horizontal e a ativa se mantém à vista.
+ * E795: fundo opaco — o texto que rola por baixo não aparece através da barra.
  */
 export function NavSecoes({ secoes }: { secoes: SecaoImovel[] }) {
   const [ativa, setAtiva] = useState(secoes[0]?.id);
@@ -78,7 +79,7 @@ export function NavSecoes({ secoes }: { secoes: SecaoImovel[] }) {
       ref={caixaNav}
       aria-label="Seções do anúncio"
       data-testid="nav-secoes"
-      className="sticky top-18 z-20 -mx-4 mt-6 border-b border-line bg-white/95 backdrop-blur sm:-mx-8 lg:mx-0 print:hidden"
+      className="sticky top-18 z-20 -mx-4 mt-6 border-b border-line bg-white sm:-mx-8 lg:mx-0 print:hidden"
     >
       <div ref={lista} className="flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] sm:px-8 lg:px-0 [&::-webkit-scrollbar]:hidden">
         {secoes.map((s) => (

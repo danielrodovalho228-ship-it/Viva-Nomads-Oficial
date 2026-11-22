@@ -27,6 +27,7 @@ import {
 import { EVENTOS_DO_PEDIDO, aberturaDoPedido, assuntoDoPedido, linhasDoPedido, type EventoPedido, type FatoDoPedido, type PedidoParaEmail } from "../parceiros/email-pedido.ts";
 import { EVENTOS_DA_ESTADIA, aberturaEstadia, linhasEstadia, type DadosEstadiaEmail, type EventoEstadia } from "./transacionais-estadia.ts";
 import { textoResposta } from "../automacao/textos-vinculo.ts";
+import { corpoChamado, corpoLembreteEntrada, corpoManutencaoNova, corpoMensagemNova, corpoPrecoJustoAcima } from "./corpo-e267-restante.ts";
 import { escaparHtml } from "../escapar-html.ts";
 
 export interface EmailDoCatalogo extends EmailMontado {
@@ -116,6 +117,18 @@ function comDados(siteUrl: string, ev: NotificationEvent, nome: { nomeHtml: stri
       detailsText: linhas.map((l) => `${l.rotulo}: ${l.valor}`).join("\n"),
     });
   }
+  // E267 (restante): o corpo real nomeia quem escreveu / o imóvel / a data / os valores / o número do chamado.
+  const PRAZO_EX = new Date("2026-11-13T13:00:00Z");
+  const corpoE267: Partial<Record<NotificationEvent, (n?: string) => string>> = {
+    new_message: corpoMensagemNova({ remetente: "Ana", imovelTitulo: "Apto Santa Mônica" }),
+    manutencao_nova: corpoManutencaoNova({ imovelTitulo: "Apto Santa Mônica", urgente: false, prazo: PRAZO_EX }),
+    checkin_lembrete: corpoLembreteEntrada({ imovelTitulo: "Apto Santa Mônica", entrada: "2026-11-15", amanha: true, horario: "14:00", morador: true }),
+    preco_justo_acima: corpoPrecoJustoAcima({ imovelTitulo: "Apto Santa Mônica", totalViva: 4100, valorAirbnb: 3900, ate: 3800 }),
+    chamado_aberto: corpoChamado("chamado_aberto", { numero: "VN-0001", assunto: "Dúvida sobre o pagamento" }),
+    chamado_respondido: corpoChamado("chamado_respondido", { numero: "VN-0001", assunto: "Dúvida sobre o pagamento" }),
+    chamado_resolvido: corpoChamado("chamado_resolvido", { numero: "VN-0001", assunto: "Dúvida sobre o pagamento" }),
+  };
+  if (corpoE267[ev]) return montarNotificacao({ siteUrl, event: ev, ...nome, body: corpoE267[ev] });
   if (ev === "vinculo_parceiro_resposta") {
     const t = textoResposta({ categoria: "limpeza", tituloImovel: "Apto Santa Mônica", cidade: "Uberlândia", nomeDono: "Marcos", nomeParceiro: "Limpa Já Serviços" }, true);
     return montarNotificacao({ siteUrl, event: ev, ...nome, subject: t.subject, body: t.body });
@@ -135,10 +148,10 @@ export function catalogoEmails(siteUrl: string): EmailDoCatalogo[] {
 
   // 2. Os que saem com assunto próprio.
   for (const ev of ["chamado_aberto", "chamado_respondido", "chamado_resolvido"] as const) {
-    lista.push(doApp(`${ev}:numero`, montarNotificacao({ siteUrl, event: ev, ...nome, subject: assuntoChamado(ev, "VN-0001"), pushUrl: "/ajuda" })));
+    lista.push(doApp(`${ev}:numero`, montarNotificacao({ siteUrl, event: ev, ...nome, subject: assuntoChamado(ev, "VN-0001"), body: corpoChamado(ev, { numero: "VN-0001", assunto: "Dúvida sobre o pagamento" }), pushUrl: "/ajuda" })));
   }
-  lista.push(doApp("manutencao:urgente", montarNotificacao({ siteUrl, event: "manutencao_nova", ...nome, subject: assuntoManutencao({ urgente: true, lembrete: false }), pushUrl: "/dashboard/solicitacoes" })));
-  lista.push(doApp("manutencao:lembrete", montarNotificacao({ siteUrl, event: "manutencao_nova", ...nome, subject: assuntoManutencao({ urgente: false, lembrete: true }), pushUrl: "/dashboard/solicitacoes" })));
+  lista.push(doApp("manutencao:urgente", montarNotificacao({ siteUrl, event: "manutencao_nova", ...nome, subject: assuntoManutencao({ urgente: true, lembrete: false }), body: corpoManutencaoNova({ imovelTitulo: "Apto Santa Mônica", urgente: true, prazo: new Date("2026-11-13T13:00:00Z") }), pushUrl: "/dashboard/solicitacoes" })));
+  lista.push(doApp("manutencao:lembrete", montarNotificacao({ siteUrl, event: "manutencao_nova", ...nome, subject: assuntoManutencao({ urgente: false, lembrete: true }), body: corpoManutencaoNova({ imovelTitulo: "Apto Santa Mônica", urgente: false, prazo: new Date("2026-11-13T13:00:00Z"), lembrete: true }), pushUrl: "/dashboard/solicitacoes" })));
   // E202: proposta e contrato com os dados da negociação (imóvel, período, valores, prazo) e o próximo passo.
   const IM = { titulo: "Apto Santa Mônica", bairro: "Santa Mônica", cidade: "Uberlândia" };
   const quadro = (l: { rotulo: string; valor: string }[], passo: string) => blocoDados(l) + `<p>${passo}</p>`;

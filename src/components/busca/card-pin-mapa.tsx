@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { rotuloPrecoDoImovel } from "@/lib/cartao-estadia";
 import { Bath, BedDouble, PawPrint, X, type LucideIcon } from "lucide-react";
 import { ICONE_POR_CHAVE } from "@/lib/anuncio/comodidades-icones";
 import type { Property } from "@/lib/types";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
-import { precoDeBusca } from "@/lib/busca/painel-filtros";
+
 import { AMENITY_KEY_BY_LABEL, AMENITY_LABEL, rotulosQueValemParaTipo } from "@/lib/amenities";
-import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { mesesDoCartao } from "@/lib/cartao-preco";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
@@ -32,7 +33,8 @@ export function iconesComodidades(p: Pick<Property, "amenities" | "petsAllowed">
  */
 export function CardPinMapa({ property: p, onFechar }: { property: Property; onFechar: () => void }) {
   // Prompt 47: o mesmo rótulo de preço do cartão (função única).
-  const preco = rotuloPreco({ mensal: precoDeBusca(p), meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom });
+  // E756: o "em N meses" pela regra única (com as limpezas únicas), o mesmo do cartão e da página.
+  const preco = rotuloPrecoDoImovel(p, { meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom });
   const icones = iconesComodidades(p);
   return (
     <div data-testid="card-pin-mapa" data-id={p.id} className="relative w-64 overflow-hidden rounded-xl bg-white font-sans shadow-flutuante">

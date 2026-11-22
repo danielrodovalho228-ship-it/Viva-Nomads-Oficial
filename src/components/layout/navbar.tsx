@@ -9,8 +9,8 @@ import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { useAuthStore } from "@/lib/store";
 import { Avatar } from "@/components/ui/avatar";
-import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
-import { primeiroNomeExibicao } from "@/lib/roles";
+import { lerMeuAvatar } from "@/lib/sessao/leituras-da-casca";
+import { nomeAvatarExibicao } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { SELETOR_IDIOMA } from "@/lib/flags";
 import { SeletorIdioma } from "@/components/layout/seletor-idioma";
@@ -59,7 +59,7 @@ export function Navbar() {
   useEffect(() => {
     if (!mounted || !userId) return;
     let vivo = true;
-    getMyAvatarUrl()
+    lerMeuAvatar(userId)
       .then((r) => {
         if (vivo) setFoto(r.url);
       })
@@ -69,7 +69,8 @@ export function Navbar() {
     };
   }, [mounted, userId]);
   // CONTA-A: só o nome do perfil vira rosto; sem nome, a silhueta.
-  const nome = primeiroNomeExibicao(user);
+  // E788: o avatar usa o nome completo (as mesmas iniciais do Perfil e do painel).
+  const nomeAvatar = nomeAvatarExibicao(user);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -81,7 +82,11 @@ export function Navbar() {
   return (
     <header className={cn("sticky top-0 z-40 border-b bg-white transition-shadow", scrolled ? "border-line shadow-flutuante" : "border-transparent")} data-testid="topo-publico">
       <nav className="flex h-18 w-full items-center gap-8 px-4 py-3 sm:px-8 2xl:gap-12 2xl:px-12">
-        <Logo className="shrink-0" />
+        {/* E960: alvo de 44 px no toque (o logo mede 32 px); o cabeçalho próprio da 404 tinha, e o E916 trouxe a 404 para cá.
+            Devolução de 19/11: o `alvo-toque` só estende a área em tela de toque (um ::after) e o retângulo da âncora
+            seguia com 32 px. `min-h-11` dá os 44 px à própria âncora, em qualquer tela; o símbolo e o nome ficam
+            centrados nela (a raiz do Logo é inline-flex items-center), por isso o desenho não muda. */}
+        <Logo className="alvo-toque min-h-11 shrink-0" />
 
         <div data-testid="nav-links" className="hidden min-w-0 flex-1 items-center gap-6 lg:flex 2xl:gap-8">
           {PUBLIC_NAV.map((item) => (
@@ -98,7 +103,7 @@ export function Navbar() {
           {/* PUBLICO-A: globo PT/EN ao lado do Entrar, atrás da chave SELETOR_IDIOMA (desligada). */}
           {SELETOR_IDIOMA && <SeletorIdioma />}
           {loggedIn ? (
-            <MeuPainel nome={nome} foto={foto} />
+            <MeuPainel nome={nomeAvatar} foto={foto} />
           ) : (
             <ButtonLink href="/auth" variant="primary" size="sm" data-testid="nav-entrar">
               Entrar
@@ -131,7 +136,7 @@ export function Navbar() {
             {SELETOR_IDIOMA && <SeletorIdioma celular className="px-3" />}
             <div className="mt-2 flex flex-col gap-2">
               {loggedIn ? (
-                <MeuPainel nome={nome} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-forest" />
+                <MeuPainel nome={nomeAvatar} foto={foto} onClick={() => setOpen(false)} className="h-12 justify-center border border-forest" />
               ) : (
                 <ButtonLink href="/auth" variant="primary" onClick={() => setOpen(false)}>
                   Entrar

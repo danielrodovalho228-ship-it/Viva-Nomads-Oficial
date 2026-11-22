@@ -313,7 +313,7 @@ export function PedidosClient({
                               </div>
                               <p className="mt-1 text-muted">
                                 {r.properties?.city}
-                                {r.properties ? ` · ${textoPreco(rotuloPreco({ mensal: totalMesDaLinha(r.properties), meses: p.prazo_meses }))}` : ""}
+                                {r.properties ? ` · ${textoPreco(rotuloPreco({ mensal: totalMesDaLinha(r.properties) }))}` : ""}
                               </p>
                               {/* E317: resposta dentro da tolerância de 10% do casamento, mas acima do teto declarado. */}
                               {r.properties && textoAcimaDoTeto(totalMesDaLinha(r.properties), p.orcamento_mensal) && (

@@ -1,6 +1,7 @@
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
-import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
-import { calcularTudoIncluido } from "@/lib/precos";
+import { rotuloPrecoDoImovel } from "@/lib/cartao-estadia";
+import { mesesDoCartao } from "@/lib/cartao-preco";
+
 import { Bath, BedDouble, Ruler, MapPin } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { ReadyToLiveBadge, PropertyTags } from "@/components/ui/badge";
@@ -66,7 +67,7 @@ export function PropertyMiniCard({ property }: { property: Property }) {
           {/* Preço 0 = anúncio ainda incompleto → "R$ —" (nunca "R$ 0", que parece imóvel de graça). */}
           {property.monthlyPrice > 0 ? (
             <PrecoComContexto
-              rotulo={rotuloPreco({ mensal: calcularTudoIncluido(property).total, meses: mesesDoCartao(undefined, property.minPeriodDays), disponivelEm: property.availableFrom })}
+              rotulo={rotuloPrecoDoImovel(property, { meses: mesesDoCartao(undefined, property.minPeriodDays), disponivelEm: property.availableFrom })}
             />
           ) : (
             <span className="font-title text-base font-semibold text-ink">R$ —</span>

@@ -15,12 +15,14 @@ test("E474 (ii): a capa com os números é só da aba Equipe; o Diário é o his
   assert.match(diario, /data-testid="diario"/);
 });
 
-test("E474 (iii): na área da equipe o selo 'Equipe' não é link — a Conta tem um caminho só ('Minha conta →')", () => {
+test("E474 (iii) + E788: o selo 'Equipe' não é link para a Conta — é o avatar que abre o menu da Conta; 'Minha conta →' segue no rodapé", () => {
+  // Asserção alterada pelo E788 (reprova da prova ao vivo de 11/11): o selo só-texto ("cursor-default") foi reprovado
+  // como inerte; agora ele é o MenuConta (botão com menu), não um <Link> direto para /dashboard/conta.
   const selo = ler("components/layout/papel-ativo.tsx");
-  const equipe = selo.slice(selo.indexOf("if (!papel) {"), selo.indexOf("return (\n    <Link"));
+  const equipe = selo.slice(selo.indexOf("export function SeloEquipe"));
   assert.ok(equipe.length > 0);
-  assert.doesNotMatch(equipe, /<Link|href=|<button/);
-  assert.match(equipe, /cursor-default/);
+  assert.doesNotMatch(equipe, /<Link|href=/);
+  assert.match(equipe, /<MenuConta /);
   // O caminho que fica: o item do rodapé da barra lateral do admin.
   assert.match(ler("config/menu-admin.ts"), /MINHA_CONTA_ADMIN = \{ rotulo: "Minha conta →", href: "\/dashboard\/conta" \}/);
 });

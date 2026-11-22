@@ -5,8 +5,10 @@
 */
 import { PORTA_GESTOR_TEXTO, REGRAS_CONTRATO } from "../../config/planos.ts";
 import { comPortasDePrecos } from "../../config/precos-visivel.ts";
-import { frasePrazosManutencao } from "../../config/atendimento.ts";
-import { TEXTO_REGRA_UNICA } from "../cobranca/regra.ts";
+import { frasePrazo, frasePrazosManutencao } from "../../config/atendimento.ts";
+import { TEXTO_REGRA_UNICA, escadaTaxasTexto } from "../cobranca/regra.ts";
+import { DOSSIE_EM_PDF } from "../caucao/prazos.ts";
+import { ESPERA_REENVIO_S, TAMANHO_CODIGO, TEXTO_VALIDADE_CODIGO } from "../seguranca/codigo-acesso.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
 import {
   BUSCA_FOTOGRAFOS,
@@ -20,6 +22,7 @@ import {
   TIPOS_PARCEIRO,
 } from "./parceiros-texto.ts";
 import { OBRIGATORIOS_ROTULOS } from "../anuncio/prontidao.ts";
+import { CONFERENCIA_PARTES, CONFERENCIA_VALIDADE, fraseConferenciaDevolve } from "../fiscal/conferir.ts";
 
 export interface Pergunta {
   id: string;
@@ -41,6 +44,9 @@ export type PerfilAjuda = "visitante" | "sem_contrato" | "com_contrato";
 
 // Prazos e exemplos da manutenção: fonte única em config/atendimento.ts (o seletor do formulário usa os mesmos).
 const PRAZOS_MANUTENCAO = frasePrazosManutencao();
+// E940: o destino do dano — o dossiê (a Viva não decide) e a seguradora de quem tiver seguro próprio. A Viva ainda não
+// oferece seguro (config/situacao-viva.ts): nada aqui promete esse produto. O mesmo dossiê de TEXTO_VIVA_NAO_DECIDE.
+const DESTINO_DO_DANO = `Se o dano virar desconto na caução e as partes não concordarem, a Viva não decide: entrega ${DOSSIE_EM_PDF} às duas partes. Quem tiver seguro próprio usa o mesmo dossiê com a sua seguradora (a Viva ainda não oferece seguro).`;
 
 export const FAQ: Pergunta[] = [
   {
@@ -52,7 +58,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "custo-anunciar",
     pergunta: "Quanto custa anunciar?",
-    resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%. O Plano Gestor tem taxa de 4%, sem mensalidade, para ${PORTA_GESTOR_TEXTO}. Exemplo: contrato de 3 meses a R$ 3.000 por mês, na faixa de 12%: valor total R$ 9.000, taxa R$ 1.080. A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado. Veja a comparação com outras opções em /precos.`,
+    resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%. O Plano Gestor tem taxa de 4%, sem mensalidade, para ${PORTA_GESTOR_TEXTO}. Exemplo: contrato de 3 meses a R$ 3.000 por mês, na faixa de 12%: valor total R$ 9.000, taxa R$ 1.080. A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.`, // E836/E906: sem remissão a /precos (página suspensa).
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
     links: comPortasDePrecos([LINK_PRECOS]),
   },
@@ -87,7 +93,8 @@ export const FAQ: Pergunta[] = [
     id: "inquilino-paga",
     pergunta: "O morador paga alguma taxa para a plataforma?",
     resposta:
-      "Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o morador. A taxa de 12% sobre o valor total do contrato fechado é cobrada só do proprietário. O valor mensal e a caução são combinados entre as partes e não passam pela plataforma.",
+      // E939: a taxa do proprietário é a escada (fonte única das taxas), não um número fixo.
+      `Não. Buscar, se candidatar, publicar um Pedido de Moradia e conversar não têm custo para o morador. A taxa de serviço é cobrada só do proprietário, sobre o valor total do contrato fechado, e diminui com o número de imóveis ativos dele (${escadaTaxasTexto()}). O valor mensal e a caução são combinados entre as partes e não passam pela plataforma.`,
     termos: ["taxa", "inquilino", "morador", "custo", "gratis"],
     links: comPortasDePrecos([LINK_PRECOS]),
   },
@@ -122,7 +129,9 @@ export const FAQ: Pergunta[] = [
     id: "email-confirmacao",
     pergunta: "Não recebi o código de acesso",
     resposta:
-      "A Viva Nomads não manda link de confirmação: a conta é criada e confirmada pelo código de 6 dígitos que chega no seu e-mail. Confira a caixa de spam e as abas Promoções/Atualizações. Se não estiver lá, espere 60 segundos e toque em \"Reenviar código\" na tela Entrar. Persistindo, abra um chamado.",
+      // E861: o chamado comum declara o prazo do canal suporte (fonte do atendimento).
+      // E942: a validade do código (10 minutos, uma só vez), pela fonte única do código de acesso.
+      `A Viva Nomads não manda link de confirmação: a conta é criada e confirmada pelo código de ${TAMANHO_CODIGO} dígitos que chega no seu e-mail. O código vale ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez. Confira a caixa de spam e as abas Promoções/Atualizações. Se não estiver lá, espere ${ESPERA_REENVIO_S} segundos e toque em \"Reenviar código\" na tela Entrar. Persistindo, abra um chamado: ${frasePrazo("p3")}`,
     termos: ["email", "codigo", "confirmacao", "confirmar", "nao recebi", "spam"],
   },
   {
@@ -143,25 +152,43 @@ export const FAQ: Pergunta[] = [
   {
     id: "manutencao",
     pergunta: "Algo quebrou no imóvel. O que eu faço?",
-    resposta: `Entre na sua conta e abra pelo seu contrato ("Problema com isto?"). ${PRAZOS_MANUTENCAO}`,
+    resposta: `Entre na sua conta e abra pelo seu contrato ("Problema com isto?"). ${PRAZOS_MANUTENCAO} ${DESTINO_DO_DANO}`,
     termos: ["manutencao", "quebrou", "conserto", "chuveiro", "agua", "luz", "vazamento"],
     porPerfil: {
-      sem_contrato: `O pedido de manutenção é aberto pelo contrato ("Problema com isto?" em Contratos) e aparece para quem tem contrato ativo pela plataforma. ${PRAZOS_MANUTENCAO}`,
-      com_contrato: `Abra um chamado em "Manutenção no imóvel" (ou pelo "Problema com isto?" no seu contrato). ${PRAZOS_MANUTENCAO}`,
+      sem_contrato: `O pedido de manutenção é aberto pelo contrato ("Problema com isto?" em Contratos) e aparece para quem tem contrato ativo pela plataforma. ${PRAZOS_MANUTENCAO} ${DESTINO_DO_DANO}`,
+      com_contrato: `Abra um chamado em "Manutenção no imóvel" (ou pelo "Problema com isto?" no seu contrato). ${PRAZOS_MANUTENCAO} ${DESTINO_DO_DANO}`,
     },
   },
   {
     id: "golpe",
     pergunta: "Pediram para eu pagar por fora (Pix direto). É seguro?",
     resposta:
-      "Não pague nada fora do que está no contrato assinado pela plataforma. A Viva Nomads nunca pede Pix ou depósito. Abra um chamado em \"Segurança, golpe ou pagamento por fora\" — uma pessoa da equipe responde com prioridade máxima.",
+      // E861: o golpe declara a prioridade E o prazo do canal suporte (frase p1 do atendimento).
+      `Não pague nada fora do que está no contrato assinado pela plataforma. A Viva Nomads nunca pede Pix ou depósito. Abra um chamado em "Segurança, golpe ou pagamento por fora". ${frasePrazo("p1")}`,
     termos: ["golpe", "pix", "por fora", "fraude", "pagamento"],
     links: [LINK_SEGURANCA],
   },
   {
+    // E887 (lacuna A-276): como conferir um documento — os mesmos textos da página /conferir (fonte única em fiscal/conferir).
+    id: "conferir-documento",
+    pergunta: "Como confiro se um documento da Viva é verdadeiro?",
+    resposta: `Todo documento gerado pela Viva Nomads (recibo, contrato, laudo, conferência do imóvel) traz no rodapé um código de conferência de 32 letras e números, depois de "com o código". Abra a página Conferir documento e digite o código (ou use o link impresso no documento). O número do documento sozinho não confere nada. ${fraseConferenciaDevolve()} ${CONFERENCIA_PARTES} ${CONFERENCIA_VALIDADE}`,
+    termos: ["conferir", "verificar", "autenticidade", "verdadeiro", "falso", "codigo de conferencia", "recibo", "documento", "validade"],
+    links: [{ rotulo: "Conferir um documento", href: "/conferir" }],
+  },
+  {
+    // E907: o caminho da exclusão da conta — os mesmos fatos da página /excluir-conta (dois caminhos, bloqueio, prazos).
+    id: "excluir-conta",
+    pergunta: "Como excluo a minha conta?",
+    resposta:
+      "Há dois caminhos. Na sua conta: Conta › Privacidade › \"Excluir minha conta\" — por ali não precisa de confirmação por e-mail. Sem entrar: na página Excluir conta, informe o e-mail da conta; enviamos um link de confirmação e, ao confirmar, a conta e os dados pessoais são apagados. Com locação ou contrato em vigor, a exclusão fica bloqueada até o encerramento. Se você já teve contratos, removemos a sua identidade (nome, e-mail, telefone e foto) e encerramos o acesso, mantendo os contratos e pagamentos sem identificação pelo prazo exigido por lei. A exclusão é feita na hora da confirmação; cópias em backups de segurança são apagadas em até 30 dias.",
+    termos: ["excluir", "apagar", "deletar", "encerrar conta", "excluir conta", "sair da viva", "dados pessoais"],
+    links: [{ rotulo: "Excluir a conta", href: "/excluir-conta" }],
+  },
+  {
     id: "cancelar-pedido",
     pergunta: "Como cancelo um Pedido de Moradia?",
-    resposta: "Em Pedidos de moradia, abra o seu pedido e use \"Pausar\" ou \"Marcar como atendido\". Ele sai do mural na hora.",
+    resposta: "Em Pedidos de moradia, abra o seu pedido e use \"Pausar\" ou \"Marcar atendido\". Ele sai do mural na hora.",
     termos: ["cancelar", "pedido", "pausar", "excluir pedido"],
   },
 ];

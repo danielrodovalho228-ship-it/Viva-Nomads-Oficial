@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { avisoInicioSemLeitura } from "./sem-leitura.ts";
 
-const pg = readFileSync(new URL("../../app/(dashboard)/dashboard/page.tsx", import.meta.url), "utf8");
+const pg = readFileSync(new URL("../../app/(dashboard)/dashboard/inicio-dados.tsx", import.meta.url), "utf8");
 
 test("o aviso do topo nomeia o estado da conta quando ele não foi lido", () => {
   assert.match(avisoInicioSemLeitura(["conta"])!, /^Não foi possível ler agora: o estado da sua conta \(pausada ou ativa\)\./);

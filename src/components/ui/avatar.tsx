@@ -3,6 +3,9 @@ import { cn } from "@/lib/utils";
 import { corAvatar, rostoDoAvatar } from "@/lib/avatar";
 import { FotoDoAvatar } from "@/components/ui/foto-do-avatar";
 
+/** E788: a 28 px a inicial caía em ~11 px e a maiúscula "C" parecia um "c" minúsculo; nunca abaixo de 13 px. */
+export const TAMANHO_MINIMO_INICIAL = 13;
+
 /** Modo do avatar — espelha o "mundo" ativo (proprietário/inquilino). */
 export type AvatarMode = "owner" | "tenant";
 
@@ -56,11 +59,11 @@ export function Avatar({
     <span className="relative inline-block h-full w-full">
       <span
         className={cn(
-          "inline-grid h-full w-full place-items-center rounded-full font-title font-semibold text-white transition-[box-shadow] duration-300",
+          "inline-grid h-full w-full place-items-center rounded-full uppercase font-title font-semibold text-white transition-[box-shadow] duration-300",
           anel,
           className
         )}
-        style={{ fontSize: size * 0.4, backgroundColor: rosto.tipo === "silhueta" ? "var(--color-forest)" : corAvatar(name) }}
+        style={{ fontSize: Math.max(size * 0.4, TAMANHO_MINIMO_INICIAL), backgroundColor: rosto.tipo === "silhueta" ? "var(--color-forest)" : corAvatar(name) }}
         data-rosto={rosto.tipo}
         aria-hidden
       >

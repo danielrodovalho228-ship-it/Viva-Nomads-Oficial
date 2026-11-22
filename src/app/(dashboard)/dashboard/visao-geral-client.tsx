@@ -1,8 +1,9 @@
 "use client";
 
+import { rotuloPrecoDoImovel } from "@/lib/cartao-estadia";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
-import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
-import { calcularTudoIncluido } from "@/lib/precos";
+import { mesesDoCartao } from "@/lib/cartao-preco";
+
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -44,7 +45,7 @@ import type { Property } from "@/lib/types";
 import { useAuthStore } from "@/lib/store";
 import { contaConfirmada, soDaConta } from "@/lib/sessao/lista-da-conta";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
-import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
+import { useExemplos, type Exemplos } from "@/lib/demo/usar-exemplos";
 import { coverPhoto } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { juntarDecisoes, tituloDecisoes, type Decisao, type DecisaoDoPapel, type TipoDecisao } from "@/lib/painel/decisoes";
@@ -52,7 +53,8 @@ import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { ServicosPainel } from "@/components/parceiros/servicos-painel";
 import type { EstadiaNaHome } from "@/lib/data/estadia";
 import { useViewMode } from "@/lib/roles";
-import { InicioDono } from "@/components/painel/inicio-dono";
+import { InicioDono, InicioDonoFixo } from "@/components/painel/inicio-dono";
+import { textoDoTopo } from "@/lib/painel/inicio-secoes";
 import { PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
 import type { CartaoHoje } from "@/lib/painel/hoje-dono";
 import { useFavoritos } from "@/lib/use-favoritos";
@@ -212,7 +214,9 @@ function OwnerDashboard({
   // Só imóveis ATIVOS contam como "imóvel publicado" (regra única, a mesma de
   // "Meus imóveis"). Rascunhos não entram nos KPIs nem na lista da visão geral —
   // eles têm o próprio card de "anúncio em andamento" abaixo.
-  const allProperties = imoveisPublicados(demo ? DEMO_PROPERTIES : imoveisDono);
+  // E980: os exemplos chegam sob demanda (só com a demonstração ligada); enquanto carregam, lista vazia e "—".
+  const exemplos = useExemplos(demo);
+  const allProperties = imoveisPublicados(demo ? (exemplos?.DEMO_PROPERTIES ?? []) : imoveisDono);
   // PROP-3 (E113): a prévia mostra os mesmos ativos de "Meus imóveis" (antes cortava em 2 e escondia o 3º).
   const myProperties = allProperties;
   const kpiLeads = kpiInteressados(interessados.atual, interessados.anterior, {
@@ -227,6 +231,7 @@ function OwnerDashboard({
       {semImovel && <PrimeiroImovel />}
       {allProperties.length > 0 && <PainelDoDono
           demo={demo}
+          exemplos={exemplos}
           allProperties={allProperties}
           myProperties={myProperties}
           kpiLeads={kpiLeads}
@@ -258,6 +263,7 @@ function PrimeiroImovel() {
 /** Métricas, verificação, "Meus imóveis" e atividade — para quem já tem imóvel publicado. */
 function PainelDoDono({
   demo,
+  exemplos,
   allProperties,
   myProperties,
   kpiLeads,
@@ -266,6 +272,8 @@ function PainelDoDono({
   totalConversas,
 }: {
   demo: boolean;
+  /** E980: os dados fictícios do modo demonstração, carregados sob demanda (null fora dele). */
+  exemplos: Exemplos | null;
   allProperties: Property[];
   myProperties: Property[];
   kpiLeads: ReturnType<typeof kpiInteressados>;
@@ -312,12 +320,12 @@ function PainelDoDono({
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label="Visualizações"
-          value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : visualizacoes == null ? "—" : visualizacoes.toLocaleString("pt-BR")}
+          value={demo ? (exemplos?.DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") ?? "—") : visualizacoes == null ? "—" : visualizacoes.toLocaleString("pt-BR")}
           hint={demo ? undefined : "Últimos 30 dias, nos seus anúncios"}
           icon={Eye}
         />
         {demo ? (
-          <StatCard label="Interessados" value={String(DEMO_KPIS.leads)} icon={Users} />
+          <StatCard label="Interessados" value={exemplos ? String(exemplos.DEMO_KPIS.leads) : "—"} icon={Users} />
         ) : (
           <StatCard
             label={kpiLeads.rotulo}
@@ -327,7 +335,7 @@ function PainelDoDono({
             icon={Users}
           />
         )}
-        <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />
+        <StatCard label="Mensagens" value={demo ? (exemplos ? String(exemplos.DEMO_KPIS.mensagens) : "—") : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
 
@@ -382,7 +390,7 @@ function PainelDoDono({
                         </Link>
                       )}
                       <PrecoComContexto
-                        rotulo={rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
+                        rotulo={rotuloPrecoDoImovel(p, { meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
                         destaque="sm"
                       />
                       <p className="text-sm text-muted">{p.neighborhood}</p>
@@ -739,4 +747,43 @@ function Activity({ text, time }: { text: string; time: string }) {
       </div>
     </li>
   );
+}
+
+/*
+ * E797: o topo, o marcador e as partes fixas do Início moram NESTE módulo de propósito — a casca (page.tsx) os importa,
+ * então o código do VisaoGeral já vem com o 1º quadro. Quando o bloco de dados chega pelo fluxo, ele hidrata na hora;
+ * antes, o código dele só baixava depois, e um toque nesse intervalo era segurado pelo React e a navegação se perdia
+ * (t266: "Resolver agora" não saía do Início).
+ */
+/**
+ * E797 (opção b do chat principal) — o Início em SEÇÕES. Tudo aqui pinta no 1º quadro, sem esperar leitura nenhuma:
+ * o nome e o modo vêm dos hooks do quadro (no piloto, da sessão conferida no servidor).
+ */
+
+/** O topo do Início: a saudação com o primeiro nome (sem nome, neutra). */
+export function InicioTopo() {
+  const nome = primeiroNomeExibicao(useDisplayUser());
+  return (
+    <div className="mb-4" data-testid="inicio-topo">
+      <p className="font-title text-lg font-semibold text-ink">{textoDoTopo(nome)}</p>
+    </div>
+  );
+}
+
+/** O marcador do bloco de dados enquanto ele chega (não é o esqueleto de página inteira). */
+export function MarcadorSecaoInicio() {
+  return (
+    <section role="status" aria-label="Carregando o seu painel" aria-busy="true" className="space-y-3" data-testid="inicio-secao-carregando">
+      <div className="h-6 w-56 animate-pulse rounded-lg bg-divisor" />
+      <div className="h-32 animate-pulse rounded-lg bg-divisor" />
+    </section>
+  );
+}
+
+/** As partes fixas do Início: no modo dono, Peça na Viva e Ferramentas (as do morador ficam no bloco dele). */
+export function InicioFixo() {
+  const { mode } = useViewMode();
+  const demo = useDashDemo();
+  if (mode !== "owner" || demo) return null;
+  return <InicioDonoFixo />;
 }

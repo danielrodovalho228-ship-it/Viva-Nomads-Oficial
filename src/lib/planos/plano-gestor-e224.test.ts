@@ -68,5 +68,5 @@ test("admin › Usuários: o controle chama definirAccountType com o motivo e s�
   assert.match(ctl, /Tipo da conta:/);
   const pagina = ler("src/app/(dashboard)/admin/usuarios/page.tsx");
   assert.match(pagina, /account_type"\)/);
-  assert.equal((pagina.match(/<TipoConta id=\{u\.id\} tipo=\{u\.account_type === "gestor" \? "gestor" : "individual"\} \/>/g) ?? []).length, 2);
+  assert.equal((pagina.match(/<TipoConta id=\{u\.id\} tipo=\{u\.account_type === "gestor" \? "gestor" : "individual"\}(?: compacto)? \/>/g) ?? []).length, 2); // E991: na tabela, sem o rótulo visível
 });

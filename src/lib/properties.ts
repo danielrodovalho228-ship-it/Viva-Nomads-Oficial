@@ -12,10 +12,15 @@ import { graduarExemplo } from "./niveis/nivel-exemplo.ts";
 /** Nome do anunciante nos anúncios de exemplo (nunca uma pessoa inventada). */
 const DONO_EXEMPLO = "Proprietário (exemplo)";
 
-/** Data AAAA-MM-DD daqui a `n` dias — as datas dos exemplos andam com o tempo
+/** Hoje em Brasília (AAAA-MM-DD). */
+function hojeEmBrasilia(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
+/** Data AAAA-MM-DD daqui a `n` dias, contados a partir de HOJE EM BRASÍLIA — as datas dos exemplos andam com o tempo
  *  (fixas, viravam passado e o card mostrava "Disponível agora"). */
 function emDias(n: number): string {
-  return new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+  return new Date(Date.parse(`${hojeEmBrasilia()}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 }
 
 export const SAMPLE_PROPERTIES: Property[] = [
@@ -56,6 +61,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
     photos: galleryFor("ube-001", 20),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
     workFeatures: ["Escritório dedicado", "Mesa de trabalho", "Cadeira ergonômica"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [
       { name: "Coworking Center Santa Mônica", type: "coworking", distanceM: 850 },
@@ -83,7 +90,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { placeId: "ChIJ-demo-asa-coworking", categoria: "coworking", rotulo: "ASA Coworking" },
     ],
     amenityGroups: [
-      { category: "trabalho", items: ["Internet fibra 300 Mbps", "Mesa de trabalho", "Cadeira ergonômica", "Monitor extra"] },
+      { category: "trabalho", items: ["Internet fibra", "Mesa de trabalho", "Cadeira ergonômica", "Monitor extra"] },
       { category: "cozinha", items: ["Fogão", "Geladeira", "Microondas", "Utensílios completos", "Cafeteira"] },
       { category: "conforto", items: ["Ar-condicionado", "Roupa de cama e banho", "Máquina de lavar", "Smart TV"] },
       { category: "edificio", items: ["Elevador", "Portaria 24h", "Academia", "Vaga de garagem"] },
@@ -100,7 +107,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-002",
-    title: "Studio premium no Centro, ideal para estadia profissional",
+    // E814: "premium" saiu do título — o nível calculado do exemplo é Essencial.
+    title: "Studio no Centro, ideal para estadia profissional",
     description:
       "Studio mobiliado no coração da cidade, próximo a hospitais e coworkings. Perfeito para profissionais de saúde em plantão ou residência.",
     propertyType: "Studio",
@@ -133,7 +141,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-002", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha equipada", "Aceita pets", "Lavanderia compartilhada"],
-    workFeatures: ["Mesa de trabalho", "Internet 100 Mbps"],
+    workFeatures: ["Mesa de trabalho", "Internet fibra"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 100,
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [
       { name: "Hub Central Coworking", type: "coworking", distanceM: 600 },
@@ -154,7 +164,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "titulo", "seguro_fianca"],
     amenityGroups: [
-      { category: "trabalho", items: ["Internet fibra 200 Mbps", "Mesa de trabalho"] },
+      { category: "trabalho", items: ["Internet fibra", "Mesa de trabalho"] },
       { category: "cozinha", items: ["Cooktop", "Geladeira", "Microondas", "Utensílios básicos"] },
       { category: "conforto", items: ["Ar-condicionado", "Roupa de cama e banho", "Smart TV"] },
       { category: "edificio", items: ["Elevador", "Portaria 24h"] },
@@ -170,7 +180,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     // CAMPOS-1: regras da casa estruturadas de exemplo (aparecem na folha "Regras da casa").
     regrasCasa: { silencio: { inicio: "22:00", fim: "08:00" }, fumo: "area_externa", festas: "proibido", visitas: { permitidas: true, ate: "22:00", pernoite: false } },
     // CAMPOS-2: detalhes opcionais de exemplo (cada grupo ligado no editor).
-    detalhesAnuncio: { incluidoNoPreco: ["agua", "internet"], areasCondominio: ["academia", "lavanderia"], andar: { andar: 5, elevador: true }, janela: { entradaDe: "15:00", entradaAte: "21:00", saidaAte: "11:00" } },
+    detalhesAnuncio: { incluidoNoPreco: ["internet"] /* E815: a água entra na estimativa de contas (R$ 200), não no valor mensal */, areasCondominio: ["academia", "lavanderia"], andar: { andar: 5, elevador: true }, janela: { entradaDe: "15:00", entradaAte: "21:00", saidaAte: "11:00" } },
     owner: { name: DONO_EXEMPLO, memberSince: "2025-06-15", responseRate: 92, verified: false },
   },
   {
@@ -210,7 +220,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     subleaseAuthorized: true,
     photos: galleryFor("ube-003", 8),
     amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets", "Vaga de garagem", "Ar-condicionado"],
-    workFeatures: ["Internet 100 Mbps"],
+    workFeatures: ["Internet"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 100,
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],
     createdAt: "2026-06-15T09:00:00Z",
@@ -227,7 +239,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-004",
-    title: "Studio ao lado do Hospital de Clínicas (UFU)",
+    // E825: o título dizia "ao lado do Hospital de Clínicas", mas o próprio anúncio informa o HC-UFU a 1,7 km (o campus
+    // Umuarama é que fica a 480 m). O título diz só o que o corpo sustenta.
+    title: "Studio perto do campus Umuarama (UFU), a 1,7 km do Hospital de Clínicas",
     description:
       "Studio mobiliado a poucos minutos do Hospital de Clínicas. Ideal para acompanhantes de pacientes, profissionais de saúde em plantão ou residência. Tudo pronto para morar já no primeiro dia.",
     propertyType: "Studio",
@@ -260,7 +274,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-004", 10),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Vaga de garagem", "Lavanderia compartilhada"],
-    workFeatures: ["Internet fibra 300 Mbps", "Bancada de trabalho"],
+    workFeatures: ["Internet fibra", "Bancada de trabalho"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Biblioteca UFU Umuarama", type: "cafe", distanceM: 600 }],
     ownerName: DONO_EXEMPLO,
@@ -316,7 +332,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-005", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Acessível", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Internet fibra 300 Mbps"],
+    workFeatures: ["Internet fibra"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Praça Sérgio Pacheco", type: "cafe", distanceM: 500 }],
     ownerName: DONO_EXEMPLO,
@@ -372,7 +390,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-006", 14),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps", "Cadeira ergonômica", "Monitor extra"],
+    workFeatures: ["Escritório dedicado", "Internet fibra", "Cadeira ergonômica", "Monitor extra"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [
       { name: "ASA Coworking", type: "coworking", distanceM: 700 },
@@ -431,7 +451,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-007", 10),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Vaga de garagem", "Lavanderia compartilhada"],
-    workFeatures: ["Internet fibra 300 Mbps", "Mesa de trabalho"],
+    workFeatures: ["Internet fibra", "Mesa de trabalho"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Coworking Brasil", type: "coworking", distanceM: 900 }],
     ownerName: DONO_EXEMPLO,
@@ -482,7 +504,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-008", 16),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Churrasqueira", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
+    workFeatures: ["Escritório dedicado", "Internet fibra"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Shopping Jardim Karaíba", type: "cafe", distanceM: 1200 }],
     ownerName: DONO_EXEMPLO,
@@ -538,7 +562,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-009", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Vaga de garagem", "Lavanderia compartilhada"],
-    workFeatures: ["Internet fibra 300 Mbps", "Mesa de estudos"],
+    workFeatures: ["Internet fibra", "Mesa de estudos"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [
       { name: "Biblioteca Central UFU", type: "cafe", distanceM: 450 },
@@ -597,7 +623,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-010", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Internet fibra 300 Mbps"],
+    workFeatures: ["Internet fibra"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1000 }],
     ownerName: DONO_EXEMPLO,
@@ -648,7 +676,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-011", 10),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Lavanderia compartilhada"],
-    workFeatures: ["Internet fibra 300 Mbps", "Mesa de estudos"],
+    workFeatures: ["Internet fibra", "Mesa de estudos"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Biblioteca UFU", type: "cafe", distanceM: 700 }],
     ownerName: DONO_EXEMPLO,
@@ -699,7 +729,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-012", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
+    workFeatures: ["Escritório dedicado", "Internet fibra"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Café Saraiva", type: "cafe", distanceM: 350 }],
     ownerName: DONO_EXEMPLO,
@@ -750,7 +782,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-013", 14),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
+    workFeatures: ["Escritório dedicado", "Internet fibra"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Center Shopping", type: "cafe", distanceM: 1500 }],
     ownerName: DONO_EXEMPLO,
@@ -769,7 +803,8 @@ export const SAMPLE_PROPERTIES: Property[] = [
   },
   {
     id: "ube-014",
-    title: "Imóvel mobiliado de 3 quartos premium — Cidade Jardim",
+    // E814: "premium" saiu do título — o nível calculado do exemplo é Essencial.
+    title: "Imóvel mobiliado de 3 quartos — Cidade Jardim",
     description:
       "Imóvel amplo e sofisticado em bairro nobre, para executivos com família ou estadias de alto padrão. Lazer completo no condomínio.",
     propertyType: "Apartamento",
@@ -802,7 +837,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-014", 16),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV", "Varanda gourmet", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Escritório dedicado", "Internet fibra 500 Mbps", "Cadeira ergonômica"],
+    workFeatures: ["Escritório dedicado", "Internet fibra", "Cadeira ergonômica"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 500,
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Business Center Cidade Jardim", type: "coworking", distanceM: 800 }],
     ownerName: DONO_EXEMPLO,
@@ -853,7 +890,9 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-015", 10),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Lavanderia compartilhada"],
-    workFeatures: ["Internet fibra 300 Mbps", "Mesa de trabalho"],
+    workFeatures: ["Internet fibra", "Mesa de trabalho"],
+    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
+    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [
       { name: "Coworking Fundinho", type: "coworking", distanceM: 300 },
@@ -873,6 +912,28 @@ export const SAMPLE_PROPERTIES: Property[] = [
     owner: { name: DONO_EXEMPLO, memberSince: "2025-11-01", responseRate: 92, verified: false },
   },
 ];
+
+/*
+  E868: a data de disponibilidade é LIDA A CADA ACESSO, nunca congelada na carga do módulo. Antes, a busca e a página do
+  anúncio rodavam em instâncias carregadas em dias diferentes e o cartão mostrava 1 dia depois da página (15/15). Cada
+  exemplo guarda só o deslocamento em dias; cartão, página e estado vazio da busca leem a mesma data, a de hoje em Brasília.
+*/
+{
+  const carga = Date.parse(`${hojeEmBrasilia()}T12:00:00Z`);
+  for (const p of SAMPLE_PROPERTIES) {
+    if (!p.availableFrom) continue;
+    const dias = Math.round((Date.parse(`${p.availableFrom}T12:00:00Z`) - carga) / 86400000);
+    let fixada: string | undefined;
+    Object.defineProperty(p, "availableFrom", {
+      get: () => fixada ?? emDias(dias),
+      set: (v: string | undefined) => {
+        fixada = v;
+      },
+      enumerable: true,
+      configurable: true,
+    });
+  }
+}
 
 /* Selo "Preço justo" também nos exemplos, pelo MESMO critério dos anúncios reais (nunca forçado). */
 // E399-B: o total por mês do cartão (com as contas), como a coluna gerada da 0277.

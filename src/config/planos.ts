@@ -244,7 +244,8 @@ export const GESTOR_RESUMO = `taxa de ${`${Math.round(GESTOR_PRECO.taxa * 1000) 
  * mesma constante da regra (GESTOR_PRECO).
  */
 const GESTOR_PCT = String(Math.round(GESTOR_PRECO.taxa * 1000) / 10).replace(".", ",");
-export const GESTOR_TEXTO = `${GESTOR_PCT}% para carteiras de ${GESTOR_PRECO.minimoImoveis} ou mais imóveis, com cadastro assistido da carteira e contato direto na Viva`;
+// E905: com a alternativa aprovada "ou conta de administradora" (a mesma da home e da Ajuda, PORTA_GESTOR_TEXTO).
+export const GESTOR_TEXTO = `${GESTOR_PCT}% para carteiras de ${GESTOR_PRECO.minimoImoveis} ou mais imóveis ou conta de administradora, com cadastro assistido da carteira e contato direto na Viva`;
 
 /** Os únicos diferenciais anunciáveis no lançamento (nada da fase 2: equipe, operações em massa, sincronização). */
 export const GESTOR_DIFERENCIAIS = [
