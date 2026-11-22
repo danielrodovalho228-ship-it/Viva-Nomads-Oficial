@@ -347,6 +347,11 @@ function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | n
           <Button type="submit" variant="ghost" size="sm">Proprietário ou morador ausente</Button>
         </FormAcao>
       )}
+      {p.status === "designado" && (r === null || r === "aceita") && (
+        <ButtonLink href={`/dashboard/parceiro/avaliacao/${p.id}`} size="sm" variant="ghost" className="mt-2" data-testid="abrir-pedido">
+          Ver o pedido
+        </ButtonLink>
+      )}
       {["agendado", "realizada", "laudo_emitido"].includes(p.status) && (
         <ButtonLink href={`/dashboard/parceiro/avaliacao/${p.id}`} size="sm" variant="secondary" className="mt-2" data-testid="abrir-checklist">
           {p.status === "laudo_emitido" ? "Ver o laudo" : "Abrir o checklist"}

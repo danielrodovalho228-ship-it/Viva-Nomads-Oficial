@@ -111,3 +111,70 @@ export const TITULO_CARTAO_PAINEL_AVALIADOR = "mt-2 text-xl font-semibold text-[
 export const TEXTO_CARTAO_PAINEL_AVALIADOR = "text-base text-[#60635e]";
 export const DESTAQUE_CARTAO_PAINEL_AVALIADOR = "text-base text-[#0f4027]";
 export const VALOR_CARTAO_PAINEL_AVALIADOR = "text-lg font-semibold text-[#1f2123]";
+
+/*
+  Laudo do avaliador (E1079, fatia 5): mockup avaliador-laudo (celular). As cores foram medidas no próprio desenho.
+*/
+
+/** Os três níveis em cartões de escolha: o escolhido ganha a moldura verde-escura e o círculo verde com o visto. */
+export const CARTAO_NIVEL_LAUDO = `group flex cursor-pointer items-center justify-between gap-4 rounded-xl border-[6px] border-transparent bg-white p-4 ${SOMBRA_CARTAO_AVALIADORES} has-[:checked]:border-[#0b4830] has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#0b4830]`;
+export const TITULO_NIVEL_LAUDO = "block font-title text-[26px] font-bold leading-tight text-[#03090e]";
+export const TEXTO_NIVEL_LAUDO = "block text-lg text-[#262628]";
+export const MARCA_NIVEL_LAUDO =
+  "grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-[#dadad8] text-transparent group-has-[:checked]:border-[#3d9150] group-has-[:checked]:bg-[#3d9150] group-has-[:checked]:text-white";
+
+/** O resumo por baixo dos níveis: "12 fotos enviadas", "Checklist completo". */
+export const RESUMO_LAUDO = `grid gap-3 rounded-xl bg-white p-4 ${SOMBRA_CARTAO_AVALIADORES}`;
+export const LINHA_RESUMO_LAUDO = "flex items-center gap-3 text-lg text-[#090b0c]";
+export const MARCA_RESUMO_LAUDO = { ok: "grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#3d9150] text-white", falta: "grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#969593] text-white" } as const;
+
+/** O botão "Assinar laudo": largura inteira, verde-escuro. */
+export const BOTAO_ASSINAR_LAUDO = "h-14 w-full rounded-xl bg-[#07492e] text-2xl font-bold text-white hover:bg-[#0b5a3a]";
+
+/*
+  Visita do avaliador (E1079, fatia 4): mockup avaliador-visita (celular). As cores foram medidas no próprio desenho.
+*/
+
+/** A foto do imóvel no topo e o cartão "Roteiro da visita", que sobe por cima da foto. */
+export const CAPA_VISITA = "aspect-[16/9] w-full overflow-hidden rounded-xl bg-[#e8f0e8]";
+export const CARTAO_ROTEIRO_VISITA = `relative rounded-xl bg-white p-4 ${SOMBRA_CARTAO_AVALIADORES}`;
+export const CARTAO_ROTEIRO_SOBRE_A_CAPA = "-mt-8 mx-4";
+export const TITULO_ROTEIRO_VISITA = "font-title text-2xl font-bold text-[#020d13]";
+export const LINHA_ROTEIRO_VISITA = { feito: "flex items-center gap-3 text-xl text-[#000912]", porFazer: "flex items-center gap-3 text-xl text-[#424242]" } as const;
+export const CAIXA_ROTEIRO_VISITA = {
+  feito: "grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-[#3b8d62] text-white",
+  porFazer: "h-6 w-6 shrink-0 rounded-lg border-2 border-[#d6d4d0] bg-white",
+} as const;
+
+/** "Fotos do imóvel": miniaturas quadradas e as vagas tracejadas "Adicionar foto". */
+export const TITULO_FOTOS_DA_VISITA = "font-title text-2xl font-bold text-[#020f14]";
+export const MINIATURA_VISITA = "aspect-square w-full overflow-hidden rounded-lg bg-[#e8f0e8]";
+export const VAGA_FOTO_VISITA =
+  "flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#c9c5c0] text-center text-sm text-[#736d69] hover:border-[#0e4233] hover:text-[#0e4233] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e4233]";
+
+/** O botão "Continuar": largura inteira, verde-escuro. */
+export const BOTAO_CONTINUAR_VISITA =
+  "flex min-h-14 w-full items-center justify-center rounded-xl bg-[#0e4233] px-4 text-2xl font-bold text-white hover:bg-[#145241] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e4233]";
+
+/*
+  Pedido do avaliador (E1079, fatia 3): mockup avaliador-pedido (celular). As cores foram medidas no próprio desenho.
+*/
+
+/** A etiqueta ao lado do título ("Novo": ocre do desenho; as outras etapas, verde-claro). */
+export const ETIQUETA_PEDIDO_AVALIADOR = {
+  novo: "inline-flex items-center rounded-full bg-[#c48131] px-3 py-1 text-base font-bold text-white",
+  outras: "inline-flex items-center rounded-full bg-[#bad3ad] px-3 py-1 text-base font-bold text-[#0e4233]",
+} as const;
+/** A foto do imóvel e o cartão dos dados, que sobe por cima da foto. */
+export const CAPA_PEDIDO_AVALIADOR = "aspect-[16/10] w-full overflow-hidden rounded-xl bg-[#e8f0e8]";
+export const CARTAO_PEDIDO_AVALIADOR = `relative rounded-xl bg-white p-4 ${SOMBRA_CARTAO_AVALIADORES}`;
+export const CARTAO_PEDIDO_SOBRE_A_CAPA = "-mt-6";
+export const LINHA_PEDIDO_AVALIADOR = "flex items-start gap-3 text-xl text-[#1d2327]";
+export const ICONE_PEDIDO_AVALIADOR = "mt-0.5 h-7 w-7 shrink-0 text-[#0e4233]";
+/** A caixa do valor (verde-claro do desenho). */
+export const CAIXA_VALOR_PEDIDO = "flex items-center gap-3 rounded-xl bg-[#bad3ad] px-4 py-3 text-xl font-bold text-[#0e4233]";
+/** "Aceitar pedido" (cheio) e "Recusar" (contorno), lado a lado. */
+export const BOTAO_ACEITAR_PEDIDO =
+  "flex min-h-14 w-full items-center justify-center rounded-xl bg-[#054534] whitespace-nowrap px-2 text-lg font-bold text-white hover:bg-[#0b5a3a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#054534]";
+export const BOTAO_RECUSAR_PEDIDO =
+  "flex min-h-14 w-full items-center justify-center rounded-xl border-2 border-[#1b3a34] bg-white whitespace-nowrap px-2 text-lg font-bold text-[#1b3a34] hover:bg-[#f1f6f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1b3a34]";
