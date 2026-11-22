@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
+import { Panel, EmptyState } from "@/components/dashboard/primitives";
+import { CartaoPessoa, LinhaCondicao, Secao, TabelaLimpa, TituloCentral } from "@/components/avaliadores/central";
 import { Button } from "@/components/ui/button";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { VISTORIA_ATIVA, VISTORIA_PARECER_14 } from "@/lib/flags";
@@ -25,6 +26,8 @@ import { tituloDoAdmin } from "@/config/menu-admin";
 import { soLeituraNaTela } from "@/lib/qa/observador";
 import { NOTA_PILOTO_MAX, ROTULO_CONTA_TESTE, TEXTO_PILOTO_VAZIO, TITULO_SECAO_PILOTO, linhasDoPiloto } from "@/lib/vistoria/piloto-central";
 import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
+import { TEXTO_REGRA_CHAVE, TITULO_CHAVE, cartaoDaCondicao, linhaDoCredenciado, subtituloDaCentral, tabelaLimpaPorCidade, tomDoStatus } from "@/lib/vistoria/central-cartoes";
+import { fotosDePerfil } from "@/lib/vistoria/fotos-servidor";
 import type { ComponentProps } from "react";
 
 export const metadata = { title: tituloDoAdmin("/admin/avaliadores"), robots: { index: false, follow: false } };
@@ -120,6 +123,9 @@ export default async function AdminAvaliadoresPage() {
   // A conta observadora da QA: as linhas de conta real ficam só leitura (o servidor também recusa).
   const pilotoSoLeitura = new Set(await soLeituraNaTela(piloto.map((l) => ({ id: l.userId, alvo: { perfis: [l.userId] } }))));
   const numeroDe = new Map(lista.map((c) => [c.id, c.numero_credenciado]));
+  // E1079 (ORDEM-386): a foto de perfil da conta nos cartões; sem foto, as iniciais.
+  const fotos = await fotosDePerfil([...lista.map((c) => c.user_id), ...piloto.map((l) => l.userId)]);
+  const nomeDoCredenciado = (c: Cred) => c.parceiros?.nome_publico ?? c.parceiro_solicitacoes?.nome ?? "Parceiro";
   type Ped = { id: string; cidade: string; tipo: string; status: string; aguardando_avaliador: boolean; criado_em: string; avaliadores_credenciamento: { numero_credenciado: string } | null };
   const pedidosLista = (pedidos ?? []) as unknown as Ped[];
   const semAvaliador = pedidosLista.filter((x) => x.aguardando_avaliador && x.status === "pedido");
@@ -134,7 +140,7 @@ export default async function AdminAvaliadoresPage() {
   const condicoesPorCidade = cidades.map((cidade) => {
     // E30: conta de teste não conta rumo aos 2 avaliadores ativos (o mesmo critério do rodízio real).
     const ativos = lista.filter((c) => atendeCidade(c.cidade, cidade) && contaComoAvaliadorAtivo({ status: c.status, contaTeste: !!c.user_id && contasTeste.has(c.user_id) })).length;
-    return { cidade, cond: condicoesParaLigar({ tabelaCompleta: tabelaCompleta(tabela, cidade, agora), avaliadoresAtivos: ativos, parecerItem14: VISTORIA_PARECER_14 }) };
+    return { cidade, ativos, cond: condicoesParaLigar({ tabelaCompleta: tabelaCompleta(tabela, cidade, agora), avaliadoresAtivos: ativos, parecerItem14: VISTORIA_PARECER_14 }) };
   });
   const numerosBase = contagemDecisoes({ credenciamentos: lista, semAvaliador: semAvaliador.length, recusasAusencias: recusasLista.length, cidadesProntas: condicoesPorCidade.filter((c) => c.cond.every((x) => x.ok)).length, cidades: cidades.length });
   const numeros = [
@@ -156,7 +162,7 @@ export default async function AdminAvaliadoresPage() {
 
   return (
     <>
-      <PageTitle title={TITULO_ADMIN} subtitle="Avaliação do imóvel por avaliador credenciado: o que decidir, a rede, os sugeridos e a tabela de referência." />
+      <TituloCentral titulo={TITULO_ADMIN} subtitulo={subtituloDaCentral(cidades)} />
       <Panel title="Para decidir" className="mb-6" data-testid="avaliacoes-decidir">
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {numeros.map((n) => (
@@ -170,26 +176,25 @@ export default async function AdminAvaliadoresPage() {
         </ul>
       </Panel>
 
-      <Panel id="chave" title={`Chave VISTORIA_ATIVA: ${VISTORIA_ATIVA ? "ligada" : "desligada"}`} className="mb-6 scroll-mt-24" data-testid="avaliadores-chave">
-        <p className="text-sm text-muted">Só liga quando as 3 condições estiverem cumpridas na cidade.</p>
-        {cidades.length === 0 && <p className="mt-2 text-sm text-muted">Nenhuma cidade com avaliador ou preço ainda.</p>}
-        <div className="mt-1 grid gap-4 lg:grid-cols-2">
-          {condicoesPorCidade.map(({ cidade, cond }) => (
-            <div key={cidade} className="mt-2" data-testid="avaliadores-condicoes" data-cidade={cidade}>
-              <h3 className="font-title text-base font-semibold text-ink">{cidade}</h3>
-              <ul className="mt-1 grid gap-1 text-sm">
+      <div className="mb-6 grid gap-6 lg:grid-cols-3 lg:items-start">
+      <Secao id="chave" titulo={TITULO_CHAVE} icone="chave" className="scroll-mt-24" data-testid="avaliadores-chave" data-ligada={VISTORIA_ATIVA ? "sim" : "nao"}>
+        {cidades.length === 0 && <p className="text-sm text-muted">Nenhuma cidade com avaliador ou preço ainda.</p>}
+        <div className="grid gap-6">
+          {condicoesPorCidade.map(({ cidade, ativos, cond }) => (
+            <div key={cidade} data-testid="avaliadores-condicoes" data-cidade={cidade}>
+              {cidades.length > 1 && <h3 className="mb-3 font-title text-base font-semibold text-ink">{cidade}</h3>}
+              <ul className="grid gap-4">
                 {cond.map((c) => (
-                  <li key={c.id} data-testid={`condicao-${c.id}`} data-ok={c.ok ? "sim" : "nao"}>
-                    <span className={c.ok ? "font-semibold text-forest" : "font-semibold text-red-700"}>{c.ok ? "Cumprida" : "Falta"}</span> · {c.rotulo}: <span className="text-muted">{c.detalhe}</span>
-                  </li>
+                  <LinhaCondicao key={c.id} id={c.id} ok={c.ok} detalhe={c.detalhe} {...cartaoDaCondicao(c, ativos)} />
                 ))}
               </ul>
             </div>
           ))}
         </div>
-      </Panel>
+        <p className="mt-4 text-sm text-muted">Chave {VISTORIA_ATIVA ? "ligada" : "desligada"}. {TEXTO_REGRA_CHAVE}</p>
+      </Secao>
 
-      <Panel id="credenciamento" title="Credenciamento" className="mb-6 scroll-mt-24" data-testid="avaliadores-credenciamento">
+      <Secao id="credenciamento" titulo="Credenciamento" icone="pessoas" solta className="scroll-mt-24" data-testid="avaliadores-credenciamento">
         {lista.length === 0 ? (
           <p className="text-sm text-muted">Nenhum pedido de credenciamento.</p>
         ) : (
@@ -205,13 +210,9 @@ export default async function AdminAvaliadoresPage() {
                 ) : (
                   <ul className="mt-2 grid gap-3">
                     {g.itens.map((c) => (
-                      <li key={c.id} className="rounded-lg border border-line p-3 text-sm" data-testid="credenciamento-item" data-numero={c.numero_credenciado} data-status={c.status}>
-                        <strong className="text-ink">
-                          {c.numero_credenciado} · {c.parceiros?.nome_publico ?? c.parceiro_solicitacoes?.nome ?? "Parceiro"}
-                        </strong>{" "}
-                        · {c.cidade} · {ROTULO_STATUS[c.status]}
+                      <CartaoPessoa key={c.id} nome={nomeDoCredenciado(c)} linha={linhaDoCredenciado({ numero: c.numero_credenciado, cidade: c.cidade })} fotoUrl={c.user_id ? fotos.get(c.user_id) : undefined} pilula={ROTULO_STATUS[c.status]} tom={tomDoStatus(c.status)} data-testid="credenciamento-item" data-numero={c.numero_credenciado} data-status={c.status}>
                         {c.user_id && contasTeste.has(c.user_id) && (
-                          <span className="text-muted" data-testid="credenciamento-conta-teste"> · Conta de teste: fora da lista real e da contagem da chave</span>
+                          <span className="block text-muted" data-testid="credenciamento-conta-teste">Conta de teste: fora da lista real e da contagem da chave</span>
                         )}
                         {!c.parceiros && c.parceiro_solicitacoes && (
                           <span className="block text-muted" data-testid="credenciamento-dados-parceiro">
@@ -285,7 +286,7 @@ export default async function AdminAvaliadoresPage() {
                             <Button type="submit" variant="secondary" size="sm">Marcar avaliação de teste</Button>
                           </FormAcaoAdmin>
                         )}
-                      </li>
+                      </CartaoPessoa>
                     ))}
                   </ul>
                 )}
@@ -293,7 +294,14 @@ export default async function AdminAvaliadoresPage() {
             ))}
           </div>
         )}
-      </Panel>
+      </Secao>
+
+      <div className="grid gap-6" data-testid="precos-limpas">
+        {tabelaLimpaPorCidade(tabela, cidades, agora).map((tc) => (
+          <TabelaLimpa key={tc.cidade} cidade={tc.cidade} linhas={tc.linhas} editarHref="#tabela" />
+        ))}
+      </div>
+      </div>
 
       <Panel id="sem-avaliador" title="Pedidos sem avaliador elegível" className="mb-6 scroll-mt-24" data-testid="avaliacoes-sem-avaliador">
         {semAvaliador.length === 0 ? (
@@ -371,20 +379,18 @@ export default async function AdminAvaliadoresPage() {
         </div>
       </Panel>
 
-      <Panel title={TITULO_SECAO_PILOTO} className="mb-6" data-testid="avaliadores-piloto">
+      <Secao titulo={TITULO_SECAO_PILOTO} icone="piloto" className="mb-6" data-testid="avaliadores-piloto">
         {piloto.length === 0 && <p className="text-sm text-muted" data-testid="avaliadores-piloto-vazio">{TEXTO_PILOTO_VAZIO}</p>}
         {piloto.length > 0 && (
           <ul className="mt-3 grid gap-2">
             {piloto.map((l) => (
-              <li key={l.userId} className="rounded-lg border border-line p-3 text-sm" data-testid="piloto-conta" data-teste={l.teste ? "1" : "0"}>
-                <strong className="text-ink">{l.nome}</strong> · {l.email}
-                {l.teste && <span className="ml-2 rounded-full border border-line bg-white px-2 py-1 text-xs text-muted" data-testid="piloto-conta-teste">{ROTULO_CONTA_TESTE}</span>}
+              <CartaoPessoa key={l.userId} nome={l.nome} linha={l.email} fotoUrl={fotos.get(l.userId)} pilula={l.teste ? ROTULO_CONTA_TESTE : undefined} pilulaTestid="piloto-conta-teste" className="border border-line shadow-none" data-testid="piloto-conta" data-teste={l.teste ? "1" : "0"}>
                 <span className="block text-muted">Entrou em {dataBRT(l.entrouEm)}{l.nota ? ` · ${l.nota}` : ""}</span>
                 <FormAcaoAdmin soLeitura={pilotoSoLeitura.has(l.userId)} acao={adminRemoverDoPiloto} className="mt-2">
                   <input type="hidden" name="userId" value={l.userId} />
                   <Button type="submit" variant="secondary" size="sm" data-testid="piloto-remover">Remover</Button>
                 </FormAcaoAdmin>
-              </li>
+              </CartaoPessoa>
             ))}
           </ul>
         )}
@@ -400,7 +406,7 @@ export default async function AdminAvaliadoresPage() {
           </label>
           <Button type="submit" variant="secondary" size="sm" className="mt-2" data-testid="piloto-adicionar-botao">Adicionar</Button>
         </FormAcaoAdmin>
-      </Panel>
+      </Secao>
 
       <Panel title="Fila da equipe" className="mb-6" data-testid="avaliadores-fila">
         {filaRestante.length === 0 ? (
