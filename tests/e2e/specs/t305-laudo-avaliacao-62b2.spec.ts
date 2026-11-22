@@ -90,9 +90,9 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await p.getByTestId("concluir-visita").getByRole("button", { name: "Concluir a visita" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status, { timeout: 20_000 }).toBe("realizada");
     await p.reload({ waitUntil: "domcontentloaded" });
-    await p.getByTestId("enviar-laudo").getByTestId("laudo-nivel-select").selectOption(nivel); // E1083: o avaliador escolhe o nível
+    await p.getByTestId("enviar-laudo").getByTestId(`laudo-nivel-${nivel}`).click(); // E1083: o avaliador escolhe o nível (E1079: em cartões de escolha)
     await p.getByTestId("assino-laudo").getByRole("checkbox").check(); // E648: o avaliador assina o laudo
-    await p.getByTestId("enviar-laudo").getByRole("button", { name: "Enviar o laudo" }).click();
+    await p.getByTestId("enviar-laudo").getByRole("button", { name: "Assinar laudo" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status, { timeout: 30_000 }).toBe("laudo_emitido");
   }
   async function laudoDe(pedidoOriginal: string) {

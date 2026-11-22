@@ -158,9 +158,9 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await expect(p.getByTestId("laudo-delimitacao")).toContainText("Retrato do estado do imóvel na data da avaliação");
       await semRolagemLateral(p);
       await p.screenshot({ path: `${SAIDA}/t344-revisao-laudo-${w}.png`, fullPage: true });
-      await p.getByTestId("enviar-laudo").getByTestId("laudo-nivel-select").selectOption("conforto"); // E1083: o avaliador escolhe o nível
+      await p.getByTestId("enviar-laudo").getByTestId("laudo-nivel-conforto").click(); // E1083: o avaliador escolhe o nível (E1079: em cartões de escolha)
       await p.getByTestId("assino-laudo").getByRole("checkbox").check(); // E648: o avaliador assina o laudo
-      await p.getByTestId("enviar-laudo").getByRole("button", { name: "Enviar o laudo" }).click();
+      await p.getByTestId("enviar-laudo").getByRole("button", { name: "Assinar laudo" }).click();
       await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedido).single()).data?.status, { timeout: 30_000 }).toBe("laudo_emitido");
       await p.context().close();
     });
