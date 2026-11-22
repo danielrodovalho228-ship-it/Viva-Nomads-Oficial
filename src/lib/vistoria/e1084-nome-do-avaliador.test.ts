@@ -31,7 +31,11 @@ test("E1084: todas as superfícies leem o nome pela mesma fonte (a conta)", () =
   const srv = ler("src/lib/vistoria/servidor.ts");
   assert.match(srv, /export async function nomesDasContas\(/);
   const adminTela = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
-  assert.match(adminTela, /nomeDoAvaliador\(nomesConta\.get\(c\.user_id \?\? ""\), c\.parceiros\?\.nome_publico \?\? c\.parceiro_solicitacoes\?\.nome\)/);
+  // ORDEM-404 (opção A): o credenciamento ligado só pelo parceiro tem user_id vazio — a conta vem do parceiro.
+  assert.match(adminTela, /parceiros\(nome_publico, user_id\)/);
+  assert.match(adminTela, /const contaDoCredenciamento = \(c: Cred\) => c\.user_id \?\? c\.parceiros\?\.user_id \?\? null;/);
+  assert.match(adminTela, /nomesDasContas\(admin, lista\.map\(contaDoCredenciamento\)\)/);
+  assert.match(adminTela, /nomeDoAvaliador\(nomesConta\.get\(contaDoCredenciamento\(c\) \?\? ""\), c\.parceiros\?\.nome_publico \?\? c\.parceiro_solicitacoes\?\.nome\)/);
   // A página pública (avaliadores_publicos) lê o nome da conta na própria função do banco (0351).
   for (const f of ["supabase/migrations/0351_nome_do_avaliador_e1084.sql", "supabase/producao/aplicar-0351.sql"]) {
     const s = ler(f);
