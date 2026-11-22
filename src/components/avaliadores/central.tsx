@@ -116,7 +116,7 @@ export function CartaoPessoa({
           </PilulaEstado>
         )}
       </div>
-      {children && <div className="mt-4 border-t border-line pt-4 text-sm">{children}</div>}
+      {children && <div className="mt-4 min-w-0 border-t border-line pt-4 text-sm [overflow-wrap:anywhere]">{children}</div>}
     </li>
   );
 }

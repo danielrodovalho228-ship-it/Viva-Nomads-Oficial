@@ -236,7 +236,7 @@ export default async function AdminAvaliadoresPage() {
                         {c.experiencia_path && <span className="block text-muted">Experiência: arquivo enviado (bucket privado)</span>}
                         {c.relacoes_descricao && <span className="block text-muted">Relações declaradas: {c.relacoes_descricao}</span>}
                         {c.motivo && <span className="block text-muted">Motivo: {c.motivo}</span>}
-                        <div className="mt-3 grid gap-2">
+                        <div className="mt-3 grid grid-cols-1 gap-2">
                           {PROXIMOS[c.status].map((para) =>
                             para === "ativo" && faltaParaAtivar({ testeConcluido: testeFeito.has(c.id), identidadeConfirmada: identidade.get(c.id) === "confirmada" }).length > 0 ? (
                               // E30 + E35-B: sem o teste revisado E a identidade confirmada, ativar não existe na interface.
