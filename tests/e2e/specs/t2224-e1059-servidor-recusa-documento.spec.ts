@@ -13,8 +13,8 @@ import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta
    1. Server Action: um envio normal pela tela é capturado e repetido com o texto trocado por cada documento (a frase da
       prova de 20/11, com DV inválido, e os formatos da t2204). O servidor responde com a frase do Ocupantes, nada é
       gravado e a outra parte não recebe aviso nem e-mail. Controle: o mesmo pedido com texto limpo grava.
-   2. Banco: a mesma conta, com a sua sessão e a chave pública, tenta gravar a mensagem com CPF direto na tabela
-      `messages`. A recusa tem de valer também aqui (o chat não guarda CPF por nenhum caminho).
+   2. Banco: a mesma conta, com a sua sessão e a chave pública, tenta gravar direto na tabela `messages` cada uma das
+      mesmas 5 formas. A recusa tem de valer também aqui, sem máscara (ORDEM-DUET-433/440). Controle: texto limpo entra.
   Só contas de teste. Laboratório; não é prova ao vivo no site.
 */
 const senha = novaSenha();
@@ -103,23 +103,30 @@ test.describe("T2224 — E1059: o servidor recusa CPF/RG mesmo quando o envio n�
     await p.context().close();
   });
 
-  test("2. Banco: a conta, com a sua sessão, não grava CPF direto na tabela messages", async () => {
+  test("2. Banco: a conta, com a sua sessão, não grava nenhuma das 5 formas de documento direto na tabela messages", async () => {
     const c = createClient(URL_SUPABASE!, CHAVE_ANON!, { auth: { persistSession: false } });
     const { error: eLogin } = await c.auth.signInWithPassword({ email: inq.email, password: senha });
     expect(eLogin, "a conta de teste entra").toBeNull();
+    // ORDEM-DUET-440: a recusa no banco cobre as mesmas 5 formas que a Server Action recusa (CPF/RG formatados e
+    // rotulados). Achado da 1.ª corrida (lab 44998017135): o CPF ficava gravado MASCARADO pelo gatilho
+    // messages_mask_contact (0057), como telefone; o RG nem isso — passava em claro.
+    for (const d of DOCUMENTOS) {
+      const marca = `${sufixo}-${DOCUMENTOS.indexOf(d)}`;
+      const antes = await gravadasDoInq();
+      const { error } = await c.from("messages").insert({
+        conversation_id: conversationId(ids.inq, ids.dono, ids.imovel),
+        sender_id: ids.inq,
+        receiver_id: ids.dono,
+        property_id: ids.imovel,
+        body: `${d.texto} ${marca}`,
+      });
+      const { data: ficou } = await adm().from("messages").select("body").eq("sender_id", ids.inq).eq("property_id", ids.imovel).like("body", `%${marca}%`);
+      expect.soft(await gravadasDoInq(), `${d.nome}: o banco não grava, nem mascarada (gravado: ${JSON.stringify((ficou ?? []).map((m) => m.body))}; erro do banco: ${error?.message ?? "nenhum"})`).toBe(antes);
+    }
+    // Controle: o banco continua a aceitar uma mensagem limpa pela mesma porta (a recusa vem do documento).
     const antes = await gravadasDoInq();
-    const { error } = await c.from("messages").insert({
-      conversation_id: conversationId(ids.inq, ids.dono, ids.imovel),
-      sender_id: ids.inq,
-      receiver_id: ids.dono,
-      property_id: ids.imovel,
-      body: `Meu CPF é 123.456.789-00 para o cadastro. ${sufixo}`,
-    });
-    // Recusa por política, por gatilho ou por qualquer outra regra do banco: o que conta é que a mensagem não fica.
-    expect(await comDocumento(), `a mensagem com CPF não fica no banco (erro do banco: ${error?.message ?? "nenhum"})`).toBe(0);
-    // Achado da 1.ª corrida (lab 44998017135): o banco aceitou e o gatilho messages_mask_contact (0057) gravou o CPF
-    // MASCARADO, como telefone ("🔒 [contato protegido]") — entregue à outra parte. A regra é recusa, nunca máscara.
-    const { data: ficou } = await adm().from("messages").select("body").eq("sender_id", ids.inq).eq("property_id", ids.imovel).like("body", `%${sufixo}%`).not("body", "ilike", "%sabado%").not("body", "ilike", "%Outra pergunta%");
-    expect(await gravadasDoInq(), `o banco não grava a mensagem com CPF, nem mascarada (gravado: ${JSON.stringify((ficou ?? []).map((m) => m.body))})`).toBe(antes);
+    const { error: eLimpo } = await c.from("messages").insert({ conversation_id: conversationId(ids.inq, ids.dono, ids.imovel), sender_id: ids.inq, receiver_id: ids.dono, property_id: ids.imovel, body: `Combinamos sexta ${sufixo}` });
+    expect(eLimpo, "controle: a mensagem limpa entra pela inserção directa").toBeNull();
+    expect(await gravadasDoInq()).toBe(antes + 1);
   });
 });
