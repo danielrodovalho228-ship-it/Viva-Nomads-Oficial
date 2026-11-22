@@ -4,7 +4,8 @@ import { marcarConversaAberta } from "@/lib/data/conversa-aberta-actions";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { VISTA_DIVIDIDA, conversaNaTela } from "@/lib/mensagens/conversa-na-tela";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -20,11 +21,11 @@ import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
 import { EmergenciaChegada } from "@/components/estadia/emergencia-chegada";
 import { GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
-import { avisoAntesDeEnviar, previaAoDigitar } from "@/lib/messages/aviso-envio";
+import { avisoAntesDeEnviar, previaAoDigitar, recusaDoEnvio } from "@/lib/messages/aviso-envio";
 import { ROTA_ENVIAR_ANEXO, podeAnexar, tipoNaTela, validarAnexoNaTela } from "@/lib/messages/anexo-tela";
 import { AnexoNaMensagem, BotaoAnexar, PreviaAnexo, semLocalizacao } from "@/components/mensagens/anexo-conversa";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
 import { FILTROS, PRAZOS_ADIAR, adiarAte, contarPorFiltro, filtrarConversas, separarAdiadas, estaAdiada, type Filtro, type PrazoAdiar } from "@/lib/mensagens-filtros";
 import { adiarConversa, retomarConversa } from "@/lib/data/conversa-adiar-actions";
 import { cn } from "@/lib/utils";
@@ -45,10 +46,12 @@ import { EVENTO_CONTADORES } from "@/lib/painel/contadores";
  */
 export function MessagesClient({ initial, abrir }: { initial: Conversation[]; /** Conversa a abrir (ex.: "Mensagem" da página da estadia). */ abrir?: string }) {
   const { on: demoOn } = useDemoMode();
+  // E980: os exemplos chegam sob demanda; o inner remonta quando chegam (o estado dele nasce da prop).
+  const exemplos = useExemplos(demoOn);
   return (
     <MessagesInner
-      key={demoOn ? "demo" : "real"}
-      initial={demoOn ? DEMO_CONVERSATIONS : initial}
+      key={demoOn ? (exemplos ? "demo" : "demo-carregando") : "real"}
+      initial={demoOn ? (exemplos?.DEMO_CONVERSATIONS ?? []) : initial}
       demo={demoOn}
       abrir={demoOn ? undefined : abrir}
     />
@@ -104,6 +107,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const [guardNotice, setGuardNotice] = useState(false);
   // Prompt 32: CPF/RG não vai pelo chat; a mensagem fica no campo e o aviso leva aos Ocupantes da estadia.
   const [docBloqueado, setDocBloqueado] = useState(false);
+  // E1059 (resto): o envio que o servidor recusou mostra o aviso dele (antes ficava o eco, como se tivesse ido).
+  const [recusaEnvio, setRecusaEnvio] = useState<string | null>(null);
   // E445 item 2 + E585: com contato/link no texto, o aviso e a prévia mascarada aparecem AO DIGITAR (como na proposta),
   // antes de qualquer envio. "Editar" recolhe o aviso para aquele rascunho; mexer no texto (ou tentar enviar) reabre.
   const [avisoFechadoPara, setAvisoFechadoPara] = useState<string | null>(null);
@@ -125,9 +130,20 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // painel da direita vazio (nunca a conversa de outro filtro).
   const active = naoEncontrada ? undefined : (visiveis.find((c) => c.id === activeId) ?? visiveis[0]);
 
+  // E481 no celular (DUET-0605): só a conversa que está NA TELA conta como lida. No celular a lista não mostra conteúdo;
+  // carregar a lista não marca leitura, abrir a conversa sim. No computador (vista dividida) a conversa aberta aparece.
+  const vistaDividida = useSyncExternalStore(
+    (avisar) => {
+      const mq = window.matchMedia(VISTA_DIVIDIDA);
+      mq.addEventListener("change", avisar);
+      return () => mq.removeEventListener("change", avisar);
+    },
+    () => window.matchMedia(VISTA_DIVIDIDA).matches,
+    () => false,
+  );
   // Prompt 44: com a conversa aberta (e a aba visível), a próxima mensagem dela não vira push no celular. Renova a cada
   // 5 min enquanto ela fica na tela (a regra do push olha os últimos 10 min).
-  const conversaAbertaId = active?.id;
+  const conversaAbertaId = conversaNaTela({ ativaId: active?.id, vistaDividida, vistaCelular: mobileView });
   useEffect(() => {
     if (demo || !conversaAbertaId) return;
     const marcar = () => {
@@ -181,6 +197,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     setErroAdiar(null);
     setNaoEncontrada(false);
     setAvisoFechadoPara(null);
+    setRecusaEnvio(null);
     limparAnexo();
     setErroAnexo(null);
     setActiveId(id);
@@ -253,8 +270,11 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   async function enviar(text: string, masked: boolean) {
     if (!active) return;
     setAvisoFechadoPara(null);
+    setRecusaEnvio(null);
     setGuardNotice(masked);
     setDraft("");
+    const tirarEco = (t: string) =>
+      setConversations((prev) => prev.map((c) => (c.id === active.id ? { ...c, messages: c.messages.filter((m) => !String(m.id).startsWith("tmp-") || m.text !== t) } : c)));
     const usouRapida = deRapida;
     setDeRapida(false);
     // Atualização otimista
@@ -269,17 +289,31 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     // grava: a conversa é fictícia e o envio fica só na tela.
     if (!demo) {
       // Conversa de pedido de serviço (Prompt 31b): o servidor confere a parte do pedido e grava na conversa dele.
-      if (active.pedidoParceiroId) await semQuedaDeRede(enviarMensagemDoPedido(active.pedidoParceiroId, text));
-      else
-      {
+      if (active.pedidoParceiroId) {
+        const r = await semQuedaDeRede(enviarMensagemDoPedido(active.pedidoParceiroId, text));
+        const recusa = recusaDoEnvio(r);
+        if (recusa) {
+          tirarEco(text);
+          setDraft(text);
+          setRecusaEnvio(recusa);
+        }
+      } else {
         const envio = { conversationId: active.id, receiverId: active.otherId, propertyId: active.propertyId, body: text, respostaRapida: usouRapida };
         const r = await semQuedaDeRede(sendMessage(envio));
         // E445 (item 3): termo ofensivo — o servidor avisa ANTES de gravar; só envia com a confirmação da pessoa.
         if (r && typeof r === "object" && "ofensa" in r && r.ofensa) {
           // Não gravou: tira o eco otimista, devolve o texto ao campo e mostra o aviso com "Enviar mesmo assim".
-          setConversations((prev) => prev.map((c) => (c.id === active.id ? { ...c, messages: c.messages.filter((m) => !String(m.id).startsWith("tmp-") || m.text !== text) } : c)));
+          tirarEco(text);
           setDraft(text);
           setOfensaPendente({ envio, aviso: r.error ?? "" });
+        } else {
+          // E1059 (resto): a recusa do servidor (CPF/RG, falha ao gravar) não fica muda — mesmo tratamento, com o aviso dele.
+          const recusa = recusaDoEnvio(r);
+          if (recusa) {
+            tirarEco(text);
+            setDraft(text);
+            setRecusaEnvio(recusa);
+          }
         }
       }
     }
@@ -634,6 +668,11 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               ) : (
                 "."
               )}
+            </p>
+          )}
+          {recusaEnvio && (
+            <p role="alert" className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800" data-testid="mensagens-envio-recusado">
+              {recusaEnvio}
             </p>
           )}
           {/* Conversa com imóvel = entre pessoas; "Suporte" é a equipe, não há o que denunciar. */}

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { calcularTotais, diasDosTermos, STATUS_ABERTOS, type Autor, type StatusProposta, type TermosProposta } from "@/lib/propostas/regras";
+import { decisaoDoPreAceite } from "./pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR } from "@/lib/data/taxa-dono-servidor";
 import { mesesDeReferencia } from "@/lib/estadia-em-dias";
 
@@ -8,8 +9,9 @@ import { mesesDeReferencia } from "@/lib/estadia-em-dias";
   Sem "use server": são funções internas (recebem o cliente admin), nunca chamadas do navegador.
 */
 
+// E647 (0314): a coluna da forma de pagamento é anulável e só é preenchida com a chave ligada (mesmo precedente da `dias`, 0291).
 export const COLUNAS_VERSAO =
-  "id, proposta_id, versao, autor, valor_base, desconto_pct, desconto_valor, motivo_desconto, desconto_estadia_pct, valor_mensal, meses, dias, data_entrada, condominio, consumo, limpezas_mes, limpezas_pacote, valor_limpeza, taxa_pet, limpeza_unica, pessoas, total_mensal, total_contrato, mensagem, criada_em";
+  "id, proposta_id, versao, autor, valor_base, desconto_pct, desconto_valor, motivo_desconto, desconto_estadia_pct, valor_mensal, meses, dias, data_entrada, condominio, consumo, limpezas_mes, limpezas_pacote, valor_limpeza, taxa_pet, limpeza_unica, pessoas, total_mensal, total_contrato, mensagem, criada_em, forma_pagamento";
 
 export const COLUNAS_PROPOSTA =
   "id, numero, lead_id, property_id, owner_id, tenant_id, status, versao_atual, validade_dias, valida_ate, visto_em, recusada_por, recusa_motivo, recusa_texto, aceita_em, criada_em, atualizada_em";
@@ -90,6 +92,8 @@ export interface LinhaVersao {
   total_contrato: number;
   mensagem: string | null;
   criada_em: string;
+  /** E647 (0314): a forma de pagamento da versão; só vem com a chave ligada. */
+  forma_pagamento?: "bloco" | "mensal" | null;
 }
 
 export function termosDaLinha(v: LinhaVersao): TermosProposta {
@@ -109,6 +113,7 @@ export function termosDaLinha(v: LinhaVersao): TermosProposta {
     taxaPet: Number(v.taxa_pet),
     limpezaUnica: Number(v.limpeza_unica),
     limpezasPacote: v.limpezas_pacote == null ? null : Number(v.limpezas_pacote),
+    ...(v.forma_pagamento ? { formaPagamento: v.forma_pagamento } : {}),
   };
 }
 
@@ -141,6 +146,8 @@ export function linhaDaVersao(propostaId: string, versao: number, autor: Autor, 
     total_mensal: tot.totalMensal,
     total_contrato: tot.totalContrato,
     mensagem,
+    // E647: só grava a forma quando há uma (chave desligada = a linha idêntica à de antes).
+    ...(t.formaPagamento ? { forma_pagamento: t.formaPagamento } : {}),
   };
 }
 
@@ -184,6 +191,24 @@ export interface TermosDoAcordo {
   /** E562: os dias e o pacote de limpezas da versão acordada (o Fechamento mostra o mesmo total). */
   dias?: number;
   limpezasPacote?: number | null;
+}
+
+/**
+ * E968 — a pré-aceitação mais recente do lead está EXPIRADA? (a candidatura voltou ao dono, E4). Os pontos que montam o
+ * contrato chamam isto ANTES de `propostaAcordadaDoLead`: expirada → barram (MSG_PRE_ACEITE_EXPIRADO), nunca caem no preço
+ * do anúncio. Falha de leitura LANÇA (o chamador trata como "não deu para conferir"), nunca vira "segue".
+ */
+export async function preAceiteExpiradoDoLead(admin: SupabaseClient, leadId: string): Promise<boolean> {
+  const { data, error } = await admin
+    .from("propostas")
+    .select("status, aceita_em")
+    .eq("lead_id", leadId)
+    .not("aceita_em", "is", null)
+    .order("aceita_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(MSG_VALORES_SEM_CONFERIR);
+  return decisaoDoPreAceite((data as { status: string; aceita_em: string | null } | null) ?? null) === "expirada";
 }
 
 /** Proposta ACEITA de uma candidatura (a mais recente): o fechamento e o contrato abrem com estes valores. */

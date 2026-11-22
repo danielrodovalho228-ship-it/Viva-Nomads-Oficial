@@ -12,13 +12,14 @@ import type { NivelNaFicha } from "@/lib/data/exibicao-59";
  * áreas acima do nível, o ruído como fato, os extras e "· vistoriado" quando houver vistoria. Sem nível calculado (ou
  * abaixo do Essencial), o bloco não aparece. Nível é fato, não selo.
  */
-export function NivelImovel({ dados }: { dados: NivelNaFicha | null | undefined }) {
+export function NivelImovel({ dados, comodidades = [] }: { dados: NivelNaFicha | null | undefined; comodidades?: readonly string[] }) {
   const [aberto, setAberto] = useState(false);
   const titulo = tituloNivel(dados?.nivel, dados?.vistoriado);
   if (!dados || !titulo || dados.nivel === "em_adequacao") return null;
   const diferenciais = textoDiferenciais(dados.diferenciais);
   const ruido = textoRuido(dados.ruidoClasse, dados.isolamento);
-  const extras = textoExtras(dados.extras);
+  // E604: o extra que repete uma comodidade do anúncio não aparece aqui (fica nas comodidades).
+  const extras = textoExtras(dados.extras, comodidades);
   return (
     <section aria-labelledby="nivel-imovel-title" className="rounded-xl border border-line bg-white p-4" data-testid="nivel-imovel" data-nivel={dados.nivel}>
       <div className="flex items-start gap-3">

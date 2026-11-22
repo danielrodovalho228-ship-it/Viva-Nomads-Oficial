@@ -47,7 +47,7 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
   const situacao = doc ? situacaoDoDocumento(doc) : null;
 
   return (
-    <main className="container-page section-y">
+    <div className="container-page section-y">
       <div className="mx-auto max-w-lg rounded-xl border border-line bg-white p-6">
         <h1 className="font-title text-2xl font-semibold text-ink">Conferir documento</h1>
         {estado === "ok" && doc && situacao ? (
@@ -104,6 +104,6 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
           </Link>
         </p>
       </div>
-    </main>
+    </div>
   );
 }

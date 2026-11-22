@@ -9,6 +9,7 @@
  */
 import { horaFalada } from "./regras-casa.ts";
 
+import { normalizarEscolha, type EscolhaPagamento } from "../pagamento-forma/regras.ts";
 import { normalizarChacara, tipoSemAndar, linhaChacara, ROTULO_CHACARA, type DadosChacara } from "./chacara.ts";
 
 export const ITENS_INCLUIDOS = [
@@ -49,10 +50,12 @@ export interface DetalhesAnuncio {
   vaga?: { coberta?: boolean; tipo?: "fixa" | "rotativa"; observacao?: string };
   /** TIPO-CHACARA-B: só do tipo chácara/sítio, obrigatório para publicar (não é grupo com toggle). */
   chacara?: DadosChacara;
+  /** E647: a forma de pagamento aceita pelo dono em cada faixa (só com a chave FORMA_PAGAMENTO_DONO_ATIVA; não é grupo com toggle). */
+  pagamento?: EscolhaPagamento;
 }
 
 /** Grupos opcionais com toggle (padrão E56). O grupo "chacara" fica fora: é do tipo, não do dono ligar. */
-export type ChaveGrupoDetalhe = Exclude<keyof DetalhesAnuncio, "chacara">;
+export type ChaveGrupoDetalhe = Exclude<keyof DetalhesAnuncio, "chacara" | "pagamento">;
 export const GRUPOS_DETALHE: { chave: ChaveGrupoDetalhe; titulo: string; descricao: string }[] = [
   { chave: "incluidoNoPreco", titulo: "Incluído no preço", descricao: "O que o valor mensal já cobre." },
   { chave: "areasCondominio", titulo: "Áreas do condomínio", descricao: "O que o morador pode usar no prédio." },
@@ -113,6 +116,8 @@ export function normalizarDetalhes(raw: unknown): DetalhesAnuncio | null {
 
   const chacara = normalizarChacara(r.chacara);
   if (chacara) out.chacara = chacara;
+  const pagamento = normalizarEscolha(r.pagamento);
+  if (pagamento) out.pagamento = pagamento;
 
   return Object.keys(out).length > 0 ? out : null;
 }

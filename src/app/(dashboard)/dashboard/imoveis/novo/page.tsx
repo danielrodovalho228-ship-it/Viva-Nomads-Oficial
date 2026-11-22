@@ -34,7 +34,7 @@ import {
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import Link from "next/link";
 import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
-import { conteudoDoRascunho, decisaoAutosave } from "@/lib/anuncio/salvo-fantasma";
+import { autosaveSemNadaAGravar, cliqueEhEscolha, conteudoDoRascunho, copiaLocalCarimbada, decisaoAutosave, formularioVazioNaoEDoRascunho, rascunhoAbertoSemDados, salvoAsDoRascunho } from "@/lib/anuncio/salvo-fantasma";
 import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio, textoPronto } from "@/lib/anuncio/prontidao";
 import { fatosDoRascunho } from "@/lib/anuncio/fatos-do-rascunho";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
@@ -102,6 +102,7 @@ import { urlComEtapa } from "@/lib/anuncio/etapa-na-url";
 import { capacidadeSugerida, consumoSugerido, mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { NEGOCIACAO_PADRAO, normalizarNegociacao, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { cepValido, chaveBuscaPerto, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
+import { ESTADO_PERTO_INICIAL, aplicarRespostaPerto, iniciarBuscaPerto, invalidarPerto, type AlvoPerto, type EstadoPerto } from "@/lib/proximidades/estado-perto";
 import { reportarProximidade } from "@/lib/data/proximidades-actions";
 import { estadoDoStatus, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
@@ -168,6 +169,9 @@ function rascunhoLocalTemConteudo(d: Record<string, unknown>): boolean {
   return txt("title") || txt("description") || txt("street") || txt("neighborhood") || txt("cep") || txt("monthlyPrice") || fotos || respostas;
 }
 
+/** O imóvel como o servidor o devolve ao dono (o mesmo objeto da edição). */
+type ImovelGravado = NonNullable<Awaited<ReturnType<typeof loadPropertyForEdit>>>;
+
 export default function NewPropertyPage() {
   // T1: o rascunho local é POR USUÁRIO — nunca abre o de outra conta.
   const userId = useAuthStore((s) => s.user?.id ?? null);
@@ -225,7 +229,11 @@ export default function NewPropertyPage() {
   // E614: preço sugerido, garantia e período padrão só contam no "N% pronto" depois de o dono confirmar (mexer no campo
   // ou "Continuar" no passo). null = rascunho anterior à regra (conta como antes).
   const [confirmados, setConfirmados] = useState<CampoConfirmavel[] | null>([]);
-  const confirmar = (...c: CampoConfirmavel[]) => setConfirmados((s) => (s === null ? s : [...new Set([...s, ...c])]));
+  // E614: toda confirmação marca a ref — na janela da base (E516) ela grava em silêncio em vez de ser engolida.
+  const confirmar = (...c: CampoConfirmavel[]) => {
+    confirmouRef.current = true;
+    setConfirmados((s) => (s === null ? s : [...new Set([...s, ...c])]));
+  };
   const [comodidadesSugeridas, setComodidadesSugeridas] = useState<string[]>([]);
   // Detecção-A (Entrega 3): comodidades achadas nas fotos e ainda não confirmadas.
   const [comodidadesDetectadas, setComodidadesDetectadas] = useState<string[]>([]);
@@ -307,14 +315,27 @@ export default function NewPropertyPage() {
   const [telaQual, setTelaQual] = useState(0);
   const [abrindoCadastro, setAbrindoCadastro] = useState(false);
   // Proximidades: as do OSM (todas marcadas; o dono desmarca) + as manuais ("Adicionar outro").
-  const [proxOsm, setProxOsm] = useState<LugarProximo[] | null>(null);
-  const [proxCarregando, setProxCarregando] = useState(false);
-  const [proxDesmarcados, setProxDesmarcados] = useState<string[]>([]);
+  // E952: o "O que tem por perto" num estado só (src/lib/proximidades/estado-perto.ts): número da busca, endereço alvo,
+  // lista e situação. Mudou o endereço → a lista some na hora; resposta velha ou de outro endereço é descartada; a
+  // resposta aceita substitui a lista (vazia inclusive); erro → lista vazia com "Tentar de novo". Nunca a lista anterior.
+  const proxEstadoRef = useRef<EstadoPerto>(ESTADO_PERTO_INICIAL);
+  const [proxEstado, setProxEstadoTela] = useState<EstadoPerto>(ESTADO_PERTO_INICIAL);
+  const mudarPerto = (f: (e: EstadoPerto) => EstadoPerto) => {
+    const novo = f(proxEstadoRef.current);
+    proxEstadoRef.current = novo;
+    setProxEstadoTela(novo);
+    return novo;
+  };
+  const proxOsm = proxEstado.itens;
+  const proxCarregando = proxEstado.status === "carregando";
   // PERTO-B: a busca já rodou para o endereço atual (uma mensagem só na tela: lista, "não achamos" ou "complete o endereço").
-  const [proxBuscou, setProxBuscou] = useState(false);
-  const proxBuscadoRef = useRef<string | null>(null);
+  const proxBuscou = proxEstado.status === "pronto" || proxEstado.status === "erro";
   // E145: de onde veio a última resposta (osm, cache, sem_lugares, sem_ponto, limite, erro…) — o estado honesto da tela.
-  const [proxFonte, setProxFonte] = useState<string | null>(null);
+  const proxFonte = proxEstado.fonte;
+  /** Lista restaurada (rascunho ou anúncio salvo): já pronta, para o endereço em que foi buscada. */
+  const restaurarPerto = (itens: LugarProximo[], alvo: AlvoPerto | null) => mudarPerto((e) => ({ ...e, alvo, itens, status: "pronto", fonte: null }));
+  const [proxDesmarcados, setProxDesmarcados] = useState<string[]>([]);
+  const proxBuscadoRef = useRef<string | null>(null);
   const proxUltimaBuscaRef = useRef<Record<string, unknown> | null>(null);
   const [googlePlaces, setGooglePlaces] = useState<CuratedPlace[]>([]);
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
@@ -366,8 +387,20 @@ export default function NewPropertyPage() {
   // E516: o conteúdo (sem a navegação) do último estado salvo ou aberto, e se o rascunho acabou de ser aberto.
   const baseConteudoRef = useRef<string | null>(null);
   const aguardandoBaseRef = useRef(false);
+  // E614: [passo, mais longe visitado] do rascunho aberto — trocar de passo antes de ele assentar grava em silêncio.
+  const navegacaoBaseRef = useRef<string | null>(null);
   // E516 (t309): a pessoa digitou ou marcou algo desde que o rascunho foi aberto — a 1ª gravação é edição, não base.
   const editouRef = useRef(false);
+  // E614: houve confirmação (Continuar ou botão do Passo 8) desde que o rascunho foi aberto.
+  const confirmouRef = useRef(false);
+  // E1024: mudar a lista de fotos no Passo 2 (escolher a principal, remover, reordenar, voltar ao original, confirmar a
+  // foto) é clique ou arrasto — não dispara input/change. Marca a edição antes de mudar o estado: sem isto, a troca
+  // feita nos primeiros segundos depois de abrir o rascunho (E516: a janela da base) virava a base e nunca era gravada,
+  // e o cartão "Continue seu anúncio" do Início seguia com a foto antiga.
+  const mudarFotos = (fotos: PhotoItem[]) => {
+    editouRef.current = true;
+    setPhotos(fotos);
+  };
   const [draftServerId, setDraftServerId] = useState<string | null>(null);
   const [existingDraft, setExistingDraft] = useState<{ id: string; pct: number } | null>(null);
   // E180 (Daniel, uso real em 28/10): a cópia local do último rascunho NUNCA se aplica sozinha num anúncio novo — ela
@@ -917,6 +950,7 @@ export default function NewPropertyPage() {
     // E516: o estado que sai deste rascunho aberto é o ponto de partida do autosave — abrir não é editar.
     aguardandoBaseRef.current = true;
     editouRef.current = false;
+    confirmouRef.current = false;
     const s = (v: unknown) => (typeof v === "string" ? v : undefined);
     if (s(d.title)) setTitle(d.title as string);
     if (s(d.propertyType)) setPropertyType(d.propertyType as string);
@@ -970,9 +1004,14 @@ export default function NewPropertyPage() {
     if (Array.isArray(d.manualProximities)) setManualProximities(d.manualProximities as Proximity[]);
     // E145: só a lista com lugares conta como "já buscou"; uma lista vazia guardada (busca que falhou) roda de novo ao entrar.
     if (Array.isArray(d.proxOsm) && d.proxOsm.length > 0) {
-      setProxOsm(d.proxOsm as LugarProximo[]);
-      setProxBuscou(true);
-      proxBuscadoRef.current = chaveBuscaPerto(d.cep, d.street, d.numero);
+      // E952: só volta a lista do MESMO endereço do rascunho (proxChave); a de outro endereço (ou sem chave, de antes do
+      // E952) não volta — a busca roda de novo para o endereço atual.
+      const chaveRascunho = chaveBuscaPerto(d.cep, d.street, d.numero);
+      const cepRascunho = cepValido(d.cep);
+      if (d.proxChave === chaveRascunho && cepRascunho) {
+        restaurarPerto(d.proxOsm as LugarProximo[], { cep: cepRascunho, rua: String(d.street ?? "").trim() });
+        proxBuscadoRef.current = chaveRascunho;
+      }
     }
     if (Array.isArray(d.proxDesmarcados)) setProxDesmarcados((d.proxDesmarcados as unknown[]).filter((x): x is string => typeof x === "string"));
     if (Array.isArray(d.iaAnalisadas)) setIaAnalisadas((d.iaAnalisadas as unknown[]).filter((x): x is string => typeof x === "string"));
@@ -1007,9 +1046,20 @@ export default function NewPropertyPage() {
     // Rascunho das ordens antigas (7 etapas) abre na primeira etapa ainda incompleta.
     setStep(etapaDoRascunho(d));
     setEtapaMax(posMaxDoRascunho(d));
+    // E614: a navegação do rascunho aberto (para saber se o dono trocou de passo antes de o estado assentar).
+    navegacaoBaseRef.current = JSON.stringify([etapaDoRascunho(d), posMaxDoRascunho(d)]);
+    // E614 (DUET-1719): retomado, o topo mostra a hora da última gravação — sem edição e em qualquer passo.
+    const salvoAs = salvoAsDoRascunho(d);
+    if (salvoAs) {
+      setSavedAt(salvoAs);
+      setSaveStatus("saved");
+    }
   }
 
   const draftIdRef = useRef<string | null>(null);
+  // E1034: o rascunho aberto veio sem o estado do editor (draft_data nulo: a linha só tem as colunas e as fotos). O
+  // formulário vazio não é o conteúdo dele: o autosave não grava por cima enquanto nada for preenchido.
+  const abertoSemDadosRef = useRef(false);
   // E420: rascunho da URL que não existe ou é de outra conta — avisa, em vez de abrir um cadastro novo em silêncio.
   const [fechado, setFechado] = useState<{ id: string; motivo: MotivoRascunhoFechado } | null>(null);
   // Vale só para o ?draft= atual: "Começar um anúncio novo" (mesma rota, sem ?draft=) já não mostra o aviso.
@@ -1028,10 +1078,23 @@ export default function NewPropertyPage() {
         return;
       }
       const d = r.draft;
+      // E1035: rascunho sem draft_data — o formulário recebe o que a linha tem gravado (colunas e fotos). Sem conseguir
+      // carregar, o rascunho não abre: um formulário vazio gravaria por cima do conteúdo dele na primeira edição.
+      let gravado: ImovelGravado | null = null;
+      if (rascunhoAbertoSemDados(d)) {
+        gravado = await loadPropertyForEdit(draftParam).catch(() => null);
+        if (!alive) return;
+        if (!gravado) {
+          setFechado({ id: draftParam, motivo: "indisponivel" });
+          return;
+        }
+      }
       draftIdRef.current = draftParam;
+      abertoSemDadosRef.current = rascunhoAbertoSemDados(d);
       setDraftServerId(draftParam);
       setApproved(true);
       if (d && typeof d === "object") aplicarDraft(d as Record<string, unknown>);
+      else if (gravado) aplicarImovelComoBase(gravado);
       // E660: sem ficha no rascunho, vale a já gravada no imóvel (nunca sobrescreve uma ficha já completa na tela).
       fichaDentroDoImovel(draftParam).then((f) => alive && f && setFichaDentro((atual) => (fichaCompleta(atual) ? atual : f))).catch(() => {});
       enderecoGravadoDoImovel(draftParam).then((e) => alive && setEnderecoSalvo(e)).catch(() => {});
@@ -1104,6 +1167,85 @@ export default function NewPropertyPage() {
   }, [editId, draftParam, userId]);
 
   // Edição: carrega o imóvel do dono e preenche o formulário.
+  /**
+   * O formulário recebe o que o imóvel tem GRAVADO: as colunas, as tabelas-filhas e as fotos. É a carga da edição e,
+   * desde o E1035, a do rascunho que abre sem `draft_data`.
+   */
+  function aplicarImovel(p: ImovelGravado) {
+    setTitle(p.title || "");
+    setPropertyType(p.propertyType || "apartamento");
+    setDescription(p.description || "");
+    setBedrooms(p.bedrooms ? String(p.bedrooms) : "");
+    setBathrooms(p.bathrooms ? String(p.bathrooms) : "");
+    setAreaM2(p.areaM2 ? String(p.areaM2) : "");
+    setParkingSpots(p.parkingSpots ? String(p.parkingSpots) : "");
+    setMaxGuests(p.maxGuests ? String(p.maxGuests) : "");
+    setMinPeriod(String(p.minPeriodDays || 30));
+    setMaxPeriod(p.maxPeriodDays ? String(p.maxPeriodDays) : "180");
+    setAvailableFrom(p.availableFrom ? p.availableFrom.slice(0, 10) : "");
+    setAvailableUntil(p.availableUntil ? p.availableUntil.slice(0, 10) : "");
+    setMonthlyPrice(p.monthlyPrice ? String(p.monthlyPrice) : "");
+    setAirbnbMensal(p.airbnbMonthlyPrice ? String(p.airbnbMonthlyPrice) : "");
+    setNeighborhood(p.neighborhood || "");
+    setCity(p.city || "Uberlândia");
+    setFurnished(p.furnished ?? true);
+    setPetsOk(p.petsAllowed ?? false);
+    setPetsRegras(formDeRegras(p.petsRegras));
+    if (p.fichaDentro) setFichaDentro(p.fichaDentro);
+    setRegrasCasa(formDeRegrasCasa(p.regrasCasa));
+    setSmokingAllowed(p.smokingAllowed ?? false);
+    setChildrenAllowed(p.childrenAllowed ?? true);
+    setChegada(formDeChegada(p.chegadaEPedido));
+    {
+      const ch = normalizarChacara((p.detalhesAnuncio as { chacara?: unknown } | null | undefined)?.chacara);
+      if (ch) setChacara({ acesso: ch.acesso, internet: ch.internet });
+      setChacaraPontoGravado(!!ch?.pontoMarcado);
+    }
+    if (p.privacidade) setPrivacidade(p.privacidade);
+    setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
+    setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
+    setCondoFee(p.condoFee ? String(p.condoFee) : "");
+    setDescricaoGeradaPorIa(!!p.descricaoGeradaPorIa);
+    setIssuesInvoice(!!p.issuesInvoice);
+    setPrepFee(p.prepFee ?? 450);
+    setLimpezaSaida({ ativa: !!p.checkoutCleaningEnabled, valor: Number(p.checkoutCleaningFee) || 0 });
+    setOwnershipType(operacaoValida(p.ownershipType) ? p.ownershipType : "own");
+    setSubleaseAuthorized(!!p.subleaseAuthorized);
+    setDocOperacaoAnexado(!!p.autorizacaoAnexada);
+    setSubleaseDocTipo(p.subleaseDocTipo ?? "");
+    setVideoUrl(p.videoUrl || "");
+    setVideoArquivo(p.videoArquivo || "");
+    setInternetMbps(p.internetMbps ? String(p.internetMbps) : "");
+    if (p.negociacao) setNegociacao(p.negociacao);
+    setAmenityKeys(Object.fromEntries(amenityKeysFromLabels(p.amenities || []).map((k) => [k, true])));
+    setGooglePlaces((p.googlePlaces || []).map((g) => ({ placeId: g.placeId, categoria: g.categoria, rotulo: g.rotulo })));
+    // PERTO-B: os do OSM salvos voltam como lista (com "não mostrar" nos ocultos) até a busca nova chegar; manuais à parte.
+    const salvas = p.proximities || [];
+    const doOsm = salvas.filter((x) => x.origem === "osm");
+    setManualProximities(salvas.filter((x) => x.origem !== "osm"));
+    if (doOsm.length) {
+      restaurarPerto(doOsm.map((x) => ({ tipo: (x.tipo ?? "onibus") as LugarProximo["tipo"], categoria: x.category, nome: x.name, distanciaM: x.distanciaM ?? 0 })), null);
+      setProxDesmarcados(doOsm.filter((x) => x.oculto).map((x) => chaveLugar({ tipo: x.tipo, nome: x.name })));
+    }
+    if (p.faixasAceitas?.length) setFaixas(Object.fromEntries(p.faixasAceitas.map((k) => [k, true])));
+    if (p.garantiasAceitas?.length) setGarantias(Object.fromEntries(p.garantiasAceitas.map((k) => [k, true])));
+    setPhotos((p.photos || []).map((url, i) => ({ id: `edit-${i}`, url, name: "", path: null, demo: false })));
+    // Edição: as fotos atuais já foram "analisadas" (não chama a IA só por abrir).
+    setIaAnalisadas(p.photos || []);
+  }
+
+  /**
+   * E1035 (ORDEM-DUET-179): o rascunho sem `draft_data` abre com o que a linha tem. Como no rascunho comum (E516), abrir
+   * não é editar: o estado carregado é o ponto de partida do autosave, e nada é gravado até o dono mexer em algo.
+   */
+  function aplicarImovelComoBase(p: ImovelGravado) {
+    aguardandoBaseRef.current = true;
+    editouRef.current = false;
+    confirmouRef.current = false;
+    navegacaoBaseRef.current = null;
+    aplicarImovel(p);
+  }
+
   useEffect(() => {
     if (!editId) return;
     let alive = true;
@@ -1118,66 +1260,7 @@ export default function NewPropertyPage() {
       setEditingId(editId);
       setApproved(true);
       enderecoGravadoDoImovel(editId).then((e) => alive && setEnderecoSalvo(e)).catch(() => {});
-      setTitle(p.title || "");
-      setPropertyType(p.propertyType || "apartamento");
-      setDescription(p.description || "");
-      setBedrooms(p.bedrooms ? String(p.bedrooms) : "");
-      setBathrooms(p.bathrooms ? String(p.bathrooms) : "");
-      setAreaM2(p.areaM2 ? String(p.areaM2) : "");
-      setParkingSpots(p.parkingSpots ? String(p.parkingSpots) : "");
-      setMaxGuests(p.maxGuests ? String(p.maxGuests) : "");
-      setMinPeriod(String(p.minPeriodDays || 30));
-      setMaxPeriod(p.maxPeriodDays ? String(p.maxPeriodDays) : "180");
-      setAvailableFrom(p.availableFrom ? p.availableFrom.slice(0, 10) : "");
-      setAvailableUntil(p.availableUntil ? p.availableUntil.slice(0, 10) : "");
-      setMonthlyPrice(p.monthlyPrice ? String(p.monthlyPrice) : "");
-      setAirbnbMensal(p.airbnbMonthlyPrice ? String(p.airbnbMonthlyPrice) : "");
-      setNeighborhood(p.neighborhood || "");
-      setCity(p.city || "Uberlândia");
-      setFurnished(p.furnished ?? true);
-      setPetsOk(p.petsAllowed ?? false);
-      setPetsRegras(formDeRegras(p.petsRegras));
-      if (p.fichaDentro) setFichaDentro(p.fichaDentro);
-      setRegrasCasa(formDeRegrasCasa(p.regrasCasa));
-      setSmokingAllowed(p.smokingAllowed ?? false);
-      setChildrenAllowed(p.childrenAllowed ?? true);
-      setChegada(formDeChegada(p.chegadaEPedido));
-      {
-        const ch = normalizarChacara((p.detalhesAnuncio as { chacara?: unknown } | null | undefined)?.chacara);
-        if (ch) setChacara({ acesso: ch.acesso, internet: ch.internet });
-        setChacaraPontoGravado(!!ch?.pontoMarcado);
-      }
-      if (p.privacidade) setPrivacidade(p.privacidade);
-      setUtilitiesMode(p.utilitiesMode === "real" ? "real" : "fixed");
-      setUtilitiesEstimate(p.utilitiesEstimate ?? 200);
-      setCondoFee(p.condoFee ? String(p.condoFee) : "");
-      setDescricaoGeradaPorIa(!!p.descricaoGeradaPorIa);
-      setIssuesInvoice(!!p.issuesInvoice);
-      setPrepFee(p.prepFee ?? 450);
-      setLimpezaSaida({ ativa: !!p.checkoutCleaningEnabled, valor: Number(p.checkoutCleaningFee) || 0 });
-      setOwnershipType(operacaoValida(p.ownershipType) ? p.ownershipType : "own");
-      setSubleaseAuthorized(!!p.subleaseAuthorized);
-      setDocOperacaoAnexado(!!p.autorizacaoAnexada);
-      setSubleaseDocTipo(p.subleaseDocTipo ?? "");
-      setVideoUrl(p.videoUrl || "");
-      setVideoArquivo(p.videoArquivo || "");
-      setInternetMbps(p.internetMbps ? String(p.internetMbps) : "");
-      if (p.negociacao) setNegociacao(p.negociacao);
-      setAmenityKeys(Object.fromEntries(amenityKeysFromLabels(p.amenities || []).map((k) => [k, true])));
-      setGooglePlaces((p.googlePlaces || []).map((g) => ({ placeId: g.placeId, categoria: g.categoria, rotulo: g.rotulo })));
-      // PERTO-B: os do OSM salvos voltam como lista (com "não mostrar" nos ocultos) até a busca nova chegar; manuais à parte.
-      const salvas = p.proximities || [];
-      const doOsm = salvas.filter((x) => x.origem === "osm");
-      setManualProximities(salvas.filter((x) => x.origem !== "osm"));
-      if (doOsm.length) {
-        setProxOsm(doOsm.map((x) => ({ tipo: (x.tipo ?? "onibus") as LugarProximo["tipo"], categoria: x.category, nome: x.name, distanciaM: x.distanciaM ?? 0 })));
-        setProxDesmarcados(doOsm.filter((x) => x.oculto).map((x) => chaveLugar({ tipo: x.tipo, nome: x.name })));
-      }
-      if (p.faixasAceitas?.length) setFaixas(Object.fromEntries(p.faixasAceitas.map((k) => [k, true])));
-      if (p.garantiasAceitas?.length) setGarantias(Object.fromEntries(p.garantiasAceitas.map((k) => [k, true])));
-      setPhotos((p.photos || []).map((url, i) => ({ id: `edit-${i}`, url, name: "", path: null, demo: false })));
-      // Edição: as fotos atuais já foram "analisadas" (não chama a IA só por abrir).
-      setIaAnalisadas(p.photos || []);
+      aplicarImovel(p);
       carregarLimitesNegociacao(editId).then((l) => alive && setLimites(l)).catch(() => {});
     })();
     return () => {
@@ -1198,7 +1281,7 @@ export default function NewPropertyPage() {
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
     privacidade, furnished, petsOk, petsRegras, regrasCasa, smokingAllowed, fichaDentro, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
-    amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
+    amenityKeys, googlePlaces, manualProximities, proxOsm, proxChave: proxEstado.alvo && proxEstado.status === "pronto" ? chaveBuscaPerto(proxEstado.alvo.cep, proxEstado.alvo.rua, numero) : null, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
     iaAnalisadas, sugeridos, comodidadesSugeridas, ...(confirmados ? { confirmados } : {}),
@@ -1228,20 +1311,26 @@ export default function NewPropertyPage() {
     if (!draftParam && !entradaVerificada) return;
     if (rascunhoLocal && !draftBannerDismissed && !draftServerId) return;
     try {
-      if (userId) localStorage.setItem(draftKey(userId), draftJson);
+      // E614 (ORDEM-DUET-139): a cópia do navegador também leva a hora da gravação (a retoma por ela mostra "Salvo às").
+      if (userId) localStorage.setItem(draftKey(userId), copiaLocalCarimbada(draftJson, localStorage.getItem(draftKey(userId)), new Date()));
     } catch {
       /* cota do navegador cheia — o rascunho ainda tenta o servidor */
     }
     const vazio =
       !title.trim() && !description.trim() && !street.trim() && !neighborhood.trim() && !cep.trim() &&
       photos.length === 0 && !(Number(monthlyPrice) > 0) && !bedrooms && !bathrooms && !areaM2;
-    if (vazio) return;
+    // E1034 (ORDEM-DUET-174): rascunho aberto sem draft_data e nada preenchido — o formulário vazio não é o conteúdo dele;
+    // gravar aqui regravava a linha (título, preço, endereço, detalhes) e apagava as fotos só por abrir o assistente.
+    if (formularioVazioNaoEDoRascunho({ vazio, abertoSemDados: abertoSemDadosRef.current })) return;
+    // E614 (ORDEM-DUET-137): o anúncio vazio não nasce no servidor por aqui; o rascunho que já existe lá grava mesmo sem
+    // conteúdo (o passo em que o dono está). Antes, o rascunho só com o tipo nunca gravava o passo.
+    if (autosaveSemNadaAGravar({ vazio, rascunhoNoServidor: !!draftIdRef.current })) return;
 
     let on = true;
     // E516: abrir o rascunho não é edição (vira a base); navegar entre passos grava em silêncio; só mudar o conteúdo
     // mostra "Salvando…" e carimba "Salvo às …".
     const conteudo = conteudoDoRascunho(draftJson);
-    let decisao = decisaoAutosave({ aguardandoBase: aguardandoBaseRef.current, editou: editouRef.current, base: baseConteudoRef.current, conteudo });
+    let decisao = decisaoAutosave({ aguardandoBase: aguardandoBaseRef.current, editou: editouRef.current, confirmou: confirmouRef.current, base: baseConteudoRef.current, conteudo });
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (decisao === "edicao") setSaveStatus("saving");
     const montarGravacao = () => ({
@@ -1255,7 +1344,8 @@ export default function NewPropertyPage() {
       bathrooms: Number(bathrooms) || 0,
       areaM2: Number(areaM2) || 0,
       description,
-      data: JSON.parse(draftJson),
+      // E614 (DUET-1719): toda gravação (edição ou navegação) carimba a hora; o rascunho retomado mostra "Salvo às".
+      data: { ...JSON.parse(draftJson), salvoEm: new Date().toISOString() },
     });
     gravacaoPendenteRef.current = decisao === "edicao" ? montarGravacao : null;
     const t = setTimeout(async () => {
@@ -1266,11 +1356,16 @@ export default function NewPropertyPage() {
         if (!editouRef.current) {
           // O estado do rascunho aberto assentou (o debounce juntou as mudanças da carga): é a base, nada a gravar.
           baseConteudoRef.current = conteudoDoRascunho(draftJson);
-          return;
+          // E614: se nesse meio-tempo o dono confirmou um valor (Continuar) ou trocou de passo, grava em silêncio
+          // (sem isto, o passo retomado não persistia: o Continuar antes dos 2 s virava base).
+          const navegou = navegacaoBaseRef.current !== null && navegacaoBaseRef.current !== JSON.stringify([step, Math.max(etapaMax, pos)]);
+          if (decisaoAutosave({ aguardandoBase: true, confirmou: confirmouRef.current, navegou, base: null, conteudo }) !== "silencioso") return;
+          decisao = "silencioso";
+        } else {
+          // Já houve edição real nesse meio-tempo: grava e carimba como edição.
+          decisao = "edicao";
+          setSaveStatus("saving");
         }
-        // Já houve edição real nesse meio-tempo: grava e carimba como edição.
-        decisao = "edicao";
-        setSaveStatus("saving");
       }
       // 59-C1: rede (o fetch nem chegou) ≠ recusa do servidor (chegou e o banco disse não, com a causa).
       let res: Awaited<ReturnType<typeof saveDraftData>>;
@@ -1285,6 +1380,7 @@ export default function NewPropertyPage() {
       }
       if (!on) return;
       if (res.ok) {
+        abertoSemDadosRef.current = false; // E1034: esta gravação já deixou o estado do editor no servidor
         if (res.id) {
           const novo = draftIdRef.current !== res.id;
           draftIdRef.current = res.id;
@@ -1438,30 +1534,53 @@ export default function NewPropertyPage() {
 
   // PERTO-B: a busca do "O que tem por perto" roda no cadastro novo E na edição, e de novo sempre que o endereço muda
   // (CEP, rua ou número). O servidor usa o cache por CEP; "não mostrar" (desmarcados) é mantido entre buscas.
-  async function buscarPerto(corpo: Record<string, unknown>) {
+  async function buscarPerto(corpo: Record<string, unknown>, seq: number = proxEstadoRef.current.seq) {
     proxUltimaBuscaRef.current = corpo;
-    setProxCarregando(true);
+    let resposta: Parameters<typeof aplicarRespostaPerto>[1];
     try {
       const res = await fetch("/api/proximidades", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
-      const data = (await res.json().catch(() => ({}))) as { itens?: LugarProximo[]; fonte?: string };
-      if (Array.isArray(data.itens) && (data.itens.length > 0 || !proxOsm?.length)) setProxOsm(data.itens);
-      setProxFonte(res.ok ? (data.fonte ?? null) : "erro");
+      const data = (await res.json().catch(() => ({}))) as { itens?: LugarProximo[]; fonte?: string; referencia?: { cep: string | null; rua: string | null } };
+      resposta = res.ok ? { seq, referencia: data.referencia ?? null, itens: data.itens ?? [], fonte: data.fonte ?? null } : { seq, erro: true };
     } catch {
-      /* sem rede: fica o que já havia */
-      setProxFonte("erro");
-    } finally {
-      setProxBuscou(true);
-      setProxCarregando(false);
+      resposta = { seq, erro: true };
     }
+    const antes = proxEstadoRef.current;
+    const depois = mudarPerto((e) => aplicarRespostaPerto(e, resposta));
+    // E952: lista nova aceita → os lugares adicionados à mão têm a distância recalculada para o endereço novo.
+    if (depois !== antes && depois.status === "pronto") void remedirManuais(depois.seq);
+  }
+  /** Mudou o endereço: número novo e lista vazia NA HORA (antes do intervalo da busca). */
+  function novaBuscaPerto(alvo: AlvoPerto | null) {
+    return mudarPerto((e) => iniciarBuscaPerto(e, alvo)).seq;
+  }
+  async function remedirManuais(seq: number) {
+    const comEndereco = manualProximities.filter((m) => (m.endereco ?? "").trim().length >= 3);
+    if (!comEndereco.length) return;
+    const medidas = await Promise.all(comEndereco.map((m) => medirLugar(m.endereco as string).catch(() => null)));
+    if (proxEstadoRef.current.seq !== seq) return; // o endereço mudou de novo no meio
+    const porEndereco = new Map(comEndereco.map((m, i) => [m.endereco as string, medidas[i]]));
+    setManualProximities((lista) => lista.map((m) => (m.endereco && porEndereco.has(m.endereco) ? { ...m, distanciaM: porEndereco.get(m.endereco) ?? null } : m)));
   }
   useEffect(() => {
     const c = cepValido(cep);
     const chave = chaveBuscaPerto(cep, street, numero);
-    if (!c || !street.trim() || proxBuscadoRef.current === chave) return;
+    if (proxBuscadoRef.current === chave) return;
+    // Edição do anúncio salvo sem CEP no formulário: a lista é a do endereço guardado no servidor (busca por propertyId).
+    if (proxBuscadoRef.current?.startsWith("anuncio:") && !cep.replace(/\D/g, "")) return;
+    // E952: o endereço da lista na tela mudou → ela some NA HORA, mesmo com o endereço novo ainda incompleto.
+    if (!c || !street.trim()) {
+      if (proxBuscadoRef.current !== null || proxEstadoRef.current.itens !== null) {
+        proxBuscadoRef.current = null;
+        mudarPerto(invalidarPerto);
+      }
+      return;
+    }
+    const seq = novaBuscaPerto({ cep: c, rua: street.trim() });
+    proxBuscadoRef.current = null;
     const t = setTimeout(() => {
       proxBuscadoRef.current = chave;
-      // E259: o anúncio já salvo leva o id — o servidor mede tudo do ponto público dele, o mesmo da página.
-      void buscarPerto({ cep: c, rua: street, numero, bairro: neighborhood, cidade: city, uf, imovelId: editingId ?? draftServerId ?? draftParam ?? undefined });
+      // E259: o anúncio já salvo leva o id — o servidor só usa o ponto público dele se o endereço for o MESMO (E952).
+      void buscarPerto({ cep: c, rua: street, numero, bairro: neighborhood, cidade: city, uf, imovelId: editingId ?? draftServerId ?? draftParam ?? undefined }, seq);
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1470,7 +1589,8 @@ export default function NewPropertyPage() {
   useEffect(() => {
     if (!editingId || cepValido(cep) || proxBuscadoRef.current) return;
     proxBuscadoRef.current = `anuncio:${editingId}`;
-    void buscarPerto({ propertyId: editingId });
+    const seq = proxEstadoRef.current.itens ? proxEstadoRef.current.seq : novaBuscaPerto(null);
+    void buscarPerto({ propertyId: editingId }, seq);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingId, cep]);
 
@@ -1524,6 +1644,7 @@ export default function NewPropertyPage() {
     } catch {}
     draftIdRef.current = null;
     comecouOutroRef.current = true;
+    abertoSemDadosRef.current = false; // E1034: o rascunho aberto ficou para trás; a marca sai com ele
     setDraftServerId(null);
     setSaveStatus("idle");
     setStep(ORDEM_ETAPAS[0]);
@@ -1549,10 +1670,8 @@ export default function NewPropertyPage() {
     setAmenityKeys({});
     setGooglePlaces([]);
     setManualProximities([]);
-    setProxOsm(null);
+    mudarPerto(invalidarPerto);
     setProxDesmarcados([]);
-    setProxBuscou(false);
-    setProxFonte(null);
     proxBuscadoRef.current = null;
     setIaAnalisadas([]);
     setSugeridos([]);
@@ -1924,8 +2043,9 @@ export default function NewPropertyPage() {
     proxBuscou,
     proxFonte,
     tentarPerto: () => {
-      if (proxUltimaBuscaRef.current) void buscarPerto(proxUltimaBuscaRef.current);
+      if (proxUltimaBuscaRef.current) void buscarPerto(proxUltimaBuscaRef.current, novaBuscaPerto(proxEstadoRef.current.alvo));
     },
+    proxAlvo: proxEstado.alvo,
     medirLugar,
     reportarLugar: imovelId ? (l: LugarProximo, motivo: string) => reportarProximidade(imovelId, l.nome, l.tipo, motivo) : null,
     proxDesmarcados,
@@ -1976,6 +2096,10 @@ export default function NewPropertyPage() {
       }}
       onChangeCapture={() => {
         editouRef.current = true;
+      }}
+      // E985: escolher um cartão (botão com role radio/checkbox/switch ou aria-pressed) também é edição.
+      onClickCapture={(e) => {
+        if (cliqueEhEscolha(e.target as Element)) editouRef.current = true;
       }}
     >
       {avisoRascunho}
@@ -2148,7 +2272,7 @@ export default function NewPropertyPage() {
             )}
 
             {step === ETAPA.fotos && (
-              <EtapaFotos photos={photos} setPhotos={setPhotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} videoConteudo={videoConteudo} setVideoConteudo={setVideoConteudo} passoFotos={passoFotos} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
+              <EtapaFotos photos={photos} setPhotos={mudarFotos} cep={cep} videoUrl={videoUrl} setVideoUrl={setVideoUrl} videoArquivo={videoArquivo} setVideoArquivo={setVideoArquivo} videoConteudo={videoConteudo} setVideoConteudo={setVideoConteudo} passoFotos={passoFotos} iaEstado={iaEstado} iaFalha={iaFalha} onTentarDeNovo={tentarIaDeNovo} erroFotos={erros.fotos} imovelId={editingId ?? draftServerId} />
             )}
 
             {step === ETAPA.detalhes && (
@@ -2170,7 +2294,13 @@ export default function NewPropertyPage() {
                   propertyId={imovelId}
                   comodidadesMarcadas={Object.keys(amenityKeys).filter((k) => amenityKeys[k])}
                   tipoImovel={propertyType}
-                  onComodidade={(k) => (k === "mobiliado" ? setFurnished(true) : setAmenityKeys((a) => ({ ...a, [k]: true })))}
+                  onComodidade={(k) => {
+                    // t389: confirmar a sugestão é um clique (não dispara input/change), mas marca a comodidade —
+                    // é edição. Sem isto, a confirmação nos 2 s depois de abrir o rascunho virava a "base" e não gravava.
+                    editouRef.current = true;
+                    if (k === "mobiliado") setFurnished(true);
+                    else setAmenityKeys((a) => ({ ...a, [k]: true }));
+                  }}
                   onSugeridas={setSugeridasFotos}
                   onComodidadesSugeridas={setComodidadesDetectadas}
                   onNivelMudou={() => setNivelVersao((v) => v + 1)}

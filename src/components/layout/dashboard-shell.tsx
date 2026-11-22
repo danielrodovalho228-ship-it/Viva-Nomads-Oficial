@@ -11,7 +11,7 @@ import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
 import { lerFotoAvatar, gravarFotoAvatar } from "@/lib/foto-avatar-cache";
-import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { lerMeuAvatar } from "@/lib/sessao/leituras-da-casca";
 import { FOTO_ATUALIZADA } from "@/components/account/foto-perfil";
 import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
@@ -30,6 +30,7 @@ import {
 import { useViewMode, identidadeUsuario, nomeAvatarExibicao } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { MolduraAssistente, ehAssistenteCadastro } from "@/components/layout/moldura-assistente";
+import { PularParaConteudo } from "@/components/layout/pular-para-conteudo";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
@@ -127,7 +128,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // E698: a última foto conhecida desta conta já na 1ª pintura (a leitura do servidor confirma ou limpa em seguida).
     const guardada = lerFotoAvatar(displayUser?.id);
     if (guardada) void Promise.resolve().then(() => alive && setMyPhoto(guardada));
-    getMyAvatarUrl()
+    lerMeuAvatar(displayUser?.id)
       .then((r) => {
         if (alive) setMyPhoto(r.url);
         if (alive && displayUser?.id) gravarFotoAvatar(displayUser.id, r.url);
@@ -304,6 +305,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (temPapel) return;
     e.preventDefault();
     setActiveMode(alvo);
+    useAuthStore.setState({ papelConhecido: true }); // E1026: a troca da pessoa é papel conhecido (vence o que o servidor leu)
     await salvarModo(alvo).catch(() => {});
     router.push(href);
   }
@@ -346,7 +348,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/10 px-4">
-        <Logo light className="max-w-full" />
+        <Logo light prefetch={false} className="max-w-full" />
       </div>
       <nav aria-label="Menu do painel" className="flex-1 overflow-y-auto p-3">
         {/* Quem ainda não anunciou: entrada direta para anunciar (as seções de dono
@@ -401,6 +403,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // rola — a sidebar e as barras do topo ficam fixas. Em mobile/print volta ao
     // fluxo normal (rolagem da página inteira).
     <div className="flex min-h-screen w-full bg-surface-2 lg:h-screen lg:overflow-hidden print:h-auto print:overflow-visible">
+      {/* E976, parte 2: o painel logado ganha o link de salto, o primeiro focável da tela (é fixo: não ocupa lugar). */}
+      <PularParaConteudo />
       {/* Sidebar desktop — fixa (altura da viewport). */}
       {!papelTopo && <aside className="web-only hidden w-64 shrink-0 bg-forest lg:block lg:h-screen print:hidden" data-testid="barra-lateral">{sidebar}</aside>}
 
@@ -421,7 +425,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} itensConta={itensConta} onAcao={aoAcaoConta} />
         )}
         <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", papelTopo && "lg:hidden")} data-testid="topo-celular">
-          <Logo className="lg:hidden" />
+          {/* E1046: `min-h-11` dá os 44 px à própria âncora (eram 32); o símbolo e o nome ficam centrados nela, e a barra
+              tem 64 px, por isso o desenho não muda. É o mesmo conserto do E960 no logo do site público. */}
+          <Logo prefetch={false} className="min-h-11 lg:hidden" />
           <div className="flex items-center gap-2">
             {contaCelular ?? papelChip}
             {chipModo}
@@ -456,7 +462,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             coberto a 1280 px depois que os botões passaram a 56 px no #953). */}
         {/* E69: marca a navegação interna para o "voltar" das subtelas no celular. */}
         <MarcaNavInterna />
-        <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
+        <main key={mode} id="conteudo" tabIndex={-1} data-painel-main className="mode-transition min-w-0 flex-1 outline-none p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
           {papelTopo && <SubabasPainel papel={papelTopo} abas={abasTopo} pathname={pathname} />}
           {/* E444 item 4: crítico não resolvido = faixa no topo, com o botão da ação (some quando a ação é feita). */}
           {papelTopo && <FaixaCritico pathname={pathname} />}

@@ -27,7 +27,7 @@ test("pedido de visita ao dono: assunto, corpo e bloco com título e código do 
 test("visita confirmada: diz quem confirmou, o imóvel (título + código) e o horário", () => {
   const ao = corpoVisitaConfirmada({ imovel: IMOVEL, modalidade: "presencial", horario: "2026-11-05T13:00:00Z", quemConfirmou: "proprietario" });
   assert.equal(ao.subject, "Visita confirmada: Apto Santa Mônica");
-  assert.equal(ao.body("Lara"), "Olá Lara, o proprietário confirmou a sua visita presencial a Apto Santa Mônica (código VN-3F9A2C) para 05/11/2026 às 10:00 (horário de Brasília). Os detalhes ficam em Visitas, na plataforma.");
+  assert.equal(ao.body("Lara"), "Olá Lara, o proprietário confirmou a sua visita presencial a Apto Santa Mônica (código VN-3F9A2C) para 05/11/2026 às 10:00 (horário de Brasília). Leve um documento com foto. Os detalhes ficam em Visitas, na plataforma.");
   assert.deepEqual(ao.linhas, [
     { rotulo: "Imóvel", valor: "Apto Santa Mônica · código VN-3F9A2C" },
     { rotulo: "Visita", valor: "Presencial" },
