@@ -7811,6 +7811,14 @@
         "t305-laudo-avaliacao-62b2"
       ]
     },
+    "src/lib/vistoria/laudo-actions.ts#dbaGuardadoDaVisita": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t1742-e1117-tela-da-visita-e-laudo"
+      ]
+    },
     "src/lib/vistoria/laudo-actions.ts#enviarFotoAvaliacao": {
       "personas": [
         "parceiro"

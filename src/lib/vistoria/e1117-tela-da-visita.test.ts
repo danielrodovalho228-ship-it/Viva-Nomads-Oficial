@@ -8,12 +8,15 @@
       contagem, o roteiro e a lista do que falta mudam sem recarregar.
    3. "Concluir a visita" sai desativado enquanto faltar foto do roteiro, com o motivo ligado ao botão; a recusa do
       servidor continua lá (quem contornar a tela não conclui).
+   4. O dB(A) guardado volta para a tela: a ação só diz "guardada" com a medição gravada e refaz a página; a página
+      lê o último valor (só o avaliador designado, pela ação do servidor da avaliação) e mostra-o no campo e numa linha.
   Roda: node --test src/lib/vistoria/e1117-tela-da-visita.test.ts
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { dbaNoCampo, linhaDbaGuardado } from "./visita-avaliador.ts";
 
 const RAIZ = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(join(RAIZ, p), "utf8");
@@ -75,4 +78,38 @@ test("E1117 perna 3: 'Concluir a visita' desativado enquanto falta foto do rotei
   const concluir = corpoDe(ACOES, "export async function concluirVisita(");
   assert.match(concluir, /if \(faltas\.length\) return \{ ok: false, erro: msgRoteiroIncompleto\(faltas\) \};/);
   assert.ok(concluir.indexOf("if (faltas.length)") < concluir.indexOf('update({ status: "realizada"'), "a recusa vem antes de concluir");
+});
+
+test("E1117 perna 4: o dB(A) guardado volta para o campo e para a linha; 'guardada' só com a medição gravada", () => {
+  // O valor como a pessoa o escreve: vírgula decimal, uma casa, sem zero à direita.
+  assert.equal(dbaNoCampo(62.5), "62,5");
+  assert.equal(dbaNoCampo(48), "48");
+  assert.equal(dbaNoCampo(0), "0");
+  assert.equal(dbaNoCampo(61.25), "61,3");
+  assert.equal(dbaNoCampo(null), "");
+  assert.equal(dbaNoCampo(undefined), "");
+  assert.equal(dbaNoCampo(Number.NaN), "");
+  assert.equal(linhaDbaGuardado(62.5), "Última medição guardada: 62,5 dB(A).");
+  assert.equal(linhaDbaGuardado(0), "Última medição guardada: 0 dB(A).");
+  assert.equal(linhaDbaGuardado(null), null);
+
+  // A ação: lê o erro do registro antes de dizer "guardada" e refaz a página desta avaliação.
+  const medir = corpoDe(ACOES, "export async function registrarMedicao(");
+  const ramo = medir.slice(medir.indexOf('if (tipo === "ruido_dba") {'), medir.indexOf('if (tipo !== "internet")'));
+  assert.match(ramo, /const \{ error: erroMedicao \} = await c\.admin\.from\("vistoria_medicoes"\)\.insert\(/);
+  assert.match(ramo, /if \(erroMedicao\) return \{ ok: false, erro: "Não foi possível guardar a medição\. Tente de novo\." \};/);
+  assert.ok(ramo.indexOf("if (erroMedicao)") < ramo.indexOf('mensagem: "Medição de ruído guardada (uso interno)."'), "o erro é lido antes do sucesso");
+  assert.match(ramo, /revalidatePath\(`\$\{ROTA_AVALIADOR\}\/\$\{c\.p\.id\}`\);/);
+
+  // A leitura: só o avaliador designado (comoAvaliador), só durante a visita e o laudo, o valor mais recente.
+  const ler = corpoDe(ACOES, "export async function dbaGuardadoDaVisita(");
+  assert.match(ler, /const c = await comoAvaliador\(pedidoId\);\s*if \(!c \|\| !EM_VISITA\.includes\(c\.p\.status\)\) return null;/);
+  assert.match(ler, /\.eq\("tipo", "ruido_dba"\)\.order\("medido_em", \{ ascending: false \}\)\.limit\(1\)/);
+
+  // A tela: o campo abre com o valor guardado e a linha diz o que ficou.
+  assert.match(TELA, /const dbaGuardado = emVisita \? await dbaGuardadoDaVisita\(p\.id as string\) : null;/);
+  assert.match(TELA, /<input key=\{dbaNoCampo\(dbaGuardado\)\} name="dba" inputMode="decimal" defaultValue=\{dbaNoCampo\(dbaGuardado\)\}/);
+  assert.match(TELA, /data-testid="avaliacao-dba-guardado">\{linhaDbaGuardado\(dbaGuardado\)\}<\/p>/);
+  // A página não lê a tabela das medições por conta própria (a guarda de quem lê vistoria_medicoes continua a valer).
+  assert.doesNotMatch(TELA, /from\("vistoria_medicoes"\)/);
 });

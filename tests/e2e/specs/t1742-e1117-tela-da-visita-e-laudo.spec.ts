@@ -177,4 +177,32 @@ test.describe("T1742 — E1117: a tela de execução da visita não mente (foto,
     await expect.poll(() => statusDe(pedidos.concluir!), { timeout: 30_000 }).toBe("realizada");
     await page.context().close();
   });
+
+  test("4. o dB(A) guardado continua na tela depois de recarregar: no campo e na linha da última medição", async ({ browser }) => {
+    const page = await naAvaliacao(browser, pedidos.ruido!);
+    const form = page.getByTestId("avaliacao-dba-form");
+    const campo = form.getByLabel(/dB\(A\) medido/);
+    await expect(campo).toHaveValue("");
+    await campo.fill("62,5");
+    await form.getByRole("button", { name: "Guardar dB(A)" }).click();
+    await expect(form.getByTestId("acao-ok")).toHaveText("Medição de ruído guardada (uso interno).", { timeout: 20_000 });
+    // Ficou gravado.
+    await expect.poll(async () => Number((await adm().from("vistoria_medicoes").select("dba").eq("pedido_id", pedidos.ruido!).eq("tipo", "ruido_dba").order("medido_em", { ascending: false }).limit(1).maybeSingle()).data?.dba ?? NaN), { timeout: 15_000 }).toBe(62.5);
+    // Sem recarregar, a tela já mostra o que guardou.
+    await expect(page.getByTestId("avaliacao-dba-guardado")).toHaveText("Última medição guardada: 62,5 dB(A).", { timeout: 15_000 });
+    await expect(campo).toHaveValue("62,5");
+
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { level: 1, name: "Visita em andamento" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("avaliacao-dba-guardado")).toHaveText("Última medição guardada: 62,5 dB(A).");
+    await expect(page.getByTestId("avaliacao-dba-form").getByLabel(/dB\(A\) medido/)).toHaveValue("62,5");
+    await page.getByTestId("avaliacao-dba-form").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${SAIDA}/t1742-4-dba-guardado-390.png` });
+
+    // Uma medição nova substitui a que a tela mostra (a anterior fica no histórico interno).
+    await page.getByTestId("avaliacao-dba-form").getByLabel(/dB\(A\) medido/).fill("48");
+    await page.getByTestId("avaliacao-dba-form").getByRole("button", { name: "Guardar dB(A)" }).click();
+    await expect(page.getByTestId("avaliacao-dba-guardado")).toHaveText("Última medição guardada: 48 dB(A).", { timeout: 20_000 });
+    await page.context().close();
+  });
 });
