@@ -51,3 +51,24 @@ test("E1080: nada na base diz 'credenciado com o CNPJ da Viva' nem guarda telefo
   const s = readFileSync("src/lib/vistoria/vitrine-avaliadores.ts", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
   assert.doesNotMatch(s, /CNPJ da Viva|telefone|phone|e-?mail|whats/i);
 });
+
+import { linhaDaCidade, novoNaViva, quadroDePreco, reaisCurtos, ufDaCidade } from "./vitrine-avaliadores.ts";
+
+test("E1079 (397): o quadro de preço é o da TABELA DA CIDADE, por porte, com os rótulos do desenho", () => {
+  const linha = (cidade: string, porte: "estudio" | "q1_2" | "q3_mais", valor: number) => ({ cidade, porte, valor, incluiTexto: null, vigenteDesde: "2026-11-01T00:00:00Z" });
+  const tabela = [linha("Uberlandia", "estudio", 150), linha("Uberlandia", "q1_2", 250), linha("Uberlandia", "q3_mais", 350), linha("Uberaba", "q1_2", 999)];
+  const q = quadroDePreco(tabela, "Uberlândia", new Date("2026-11-22T00:00:00Z"));
+  assert.deepEqual(q.map((l) => [l.rotulo, reaisCurtos(l.valor)]), [["Estúdio", "R$ 150"], ["1–2 quartos", "R$ 250"], ["3+ quartos", "R$ 350"]]);
+  assert.deepEqual(quadroDePreco(tabela, "Araguari", new Date("2026-11-22T00:00:00Z")), [], "sem tabela na cidade, sem quadro");
+  assert.equal(reaisCurtos(150.5), "R$ 150,50");
+});
+
+test("E1079: a UF só quando a cidade é única no IBGE; 'Novo na Viva' só sem avaliações nem nota", () => {
+  const ibge = { MG: ["Uberlândia", "Santa Luzia"], PB: ["Santa Luzia"] };
+  assert.equal(ufDaCidade(ibge, "Uberlandia"), "MG");
+  assert.equal(ufDaCidade(ibge, "Santa Luzia"), null);
+  assert.equal(linhaDaCidade("Uberlândia", "MG"), "Uberlândia • MG");
+  assert.equal(novoNaViva(0, null), true);
+  assert.equal(novoNaViva(2, null), false);
+  assert.equal(novoNaViva(0, 4.5), false);
+});

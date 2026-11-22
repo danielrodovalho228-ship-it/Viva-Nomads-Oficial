@@ -8,7 +8,8 @@
   as iniciais no círculo — nunca ícone sozinho nem espaço vazio. Nada diz "credenciado com o CNPJ da Viva".
 */
 import { iniciais } from "../avatar.ts";
-import { atendeCidade } from "./regras.ts";
+import { atendeCidade, ROTULO_PORTE, PORTES, precoVigente, type LinhaPreco, type Porte } from "./regras.ts";
+import { chaveCidade } from "../cidades.ts";
 
 /** A listagem pública por cidade: desligada até o Daniel a abrir (condição 2 do coordenador). */
 export const VITRINE_AVALIADORES_ABERTA = false;
@@ -71,3 +72,55 @@ export function cartoesDaCidade(fontes: readonly FonteAvaliador[], cidade: strin
   for (const f of fontes) if (atendeCidade(f.cidade, cidade) && !porNumero.has(f.numero)) porNumero.set(f.numero, f);
   return [...porNumero.values()].map(cartaoDoAvaliador).sort((a, b) => b.avaliacoesFeitas - a.avaliacoesFeitas || a.nome.localeCompare(b.nome, "pt-BR"));
 }
+
+// ── E1079 (ORDEM-DUET-397): o perfil público no desenho do mockup aprovado ─────────────────────────────────────
+
+/** Rótulos curtos do quadro "Preço da avaliação" (os do mockup aprovado); a ordem é a dos portes. */
+export const ROTULO_PORTE_QUADRO: Record<Porte, string> = { estudio: "Estúdio", q1_2: "1–2 quartos", q3_mais: "3+ quartos" };
+
+export interface LinhaQuadroPreco {
+  porte: Porte;
+  rotulo: string;
+  valor: number;
+}
+
+/**
+ * O preço é o da TABELA DA CIDADE (ORDEM-DUET-397, ponto 3), por porte — nunca um preço por avaliador. Só os portes com
+ * valor vigente entram; sem nenhum, o quadro não aparece.
+ */
+export function quadroDePreco(tabela: readonly LinhaPreco[], cidade: string, agora: Date): LinhaQuadroPreco[] {
+  return PORTES.flatMap((porte) => {
+    const p = precoVigente([...tabela], cidade, porte, agora);
+    return p ? [{ porte, rotulo: ROTULO_PORTE_QUADRO[porte] ?? ROTULO_PORTE[porte], valor: Number(p.valor) }] : [];
+  });
+}
+
+/** "R$ 150" (inteiro) ou "R$ 150,50" — o formato do quadro. */
+export function reaisCurtos(v: number): string {
+  const inteiro = Math.round(v * 100) % 100 === 0;
+  return `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: inteiro ? 0 : 2, maximumFractionDigits: 2 })}`;
+}
+
+/** A UF da cidade pela lista do IBGE, só quando o nome é de uma cidade só (sem ambiguidade); senão null. */
+export function ufDaCidade(municipios: Readonly<Record<string, readonly string[]>>, cidade: string): string | null {
+  const k = chaveCidade(cidade);
+  if (!k) return null;
+  const ufs = Object.entries(municipios).filter(([, lista]) => lista.some((c) => chaveCidade(c) === k)).map(([uf]) => uf);
+  return ufs.length === 1 ? ufs[0] : null;
+}
+
+/** "Uberlândia · MG" (ou só a cidade, quando a UF não é única). */
+export function linhaDaCidade(cidade: string, uf: string | null): string {
+  return uf ? `${cidade} • ${uf}` : cidade;
+}
+
+/** Sem avaliações feitas nem nota de conduta: o estado "Novo na Viva" do mockup. */
+export function novoNaViva(avaliacoesFeitas: number, notaConduta: number | null): boolean {
+  return !(Number(avaliacoesFeitas) > 0) && notaConduta == null;
+}
+
+export const TITULO_PERFIL = "Perfil do Avaliador";
+export const TITULO_NOVO_NA_VIVA = "Novo na Viva";
+export const TEXTO_NOVO_NA_VIVA = "Este avaliador ainda não tem avaliações — seja o primeiro a contratar.";
+export const TITULO_QUADRO_PRECO = "Preço da avaliação";
+export const TEXTO_IDENTIDADE_VERIFICADA = "Identidade verificada pela Viva";
