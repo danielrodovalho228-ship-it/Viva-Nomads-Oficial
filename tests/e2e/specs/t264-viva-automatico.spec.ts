@@ -142,8 +142,9 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
       .single();
     if (error) throw error;
     ids.contrato = c.id as string;
-    // Saída daqui a 4 dias (dentro dos 5 dias da limpeza e dos 7 da sugestão ao morador).
-    const { error: eb } = await adm().from("contrato_blocos").insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(-56), fim: dia(4), meses: 2, valor: 6000, caucao: 3000, status: "ativo" });
+    // Saída daqui a 4 dias (dentro dos 5 dias da limpeza e dos 7 da sugestão ao morador). E1089 (coordenador): o bloco
+    // grava a última noite (daqui a 3 dias); a saída é o dia seguinte.
+    const { error: eb } = await adm().from("contrato_blocos").insert({ contrato_id: ids.contrato, numero_bloco: 1, inicio: dia(-56), fim: dia(3), meses: 2, valor: 6000, caucao: 3000, status: "ativo" });
     if (eb) throw eb;
   });
 
@@ -358,7 +359,7 @@ test.describe("T264 — Viva rodando automático (Prompt 38)", () => {
     const { data: blocos } = await adm().from("contrato_blocos").select("id, numero_bloco, inicio, fim").eq("contrato_id", ids.contrato!).order("numero_bloco");
     const [b1, b2] = blocos as { id: string; numero_bloco: number; inicio: string; fim: string }[];
     await adm().from("contrato_blocos").update({ fim: dia(-27) }).eq("id", b1.id);
-    await adm().from("contrato_blocos").update({ inicio: dia(-26), fim: dia(4) }).eq("id", b2.id);
+    await adm().from("contrato_blocos").update({ inicio: dia(-26), fim: dia(3) }).eq("id", b2.id);
     await rodarAutomacao(browser);
     await adm().from("contrato_blocos").update({ inicio: b2.inicio, fim: b2.fim }).eq("id", b2.id);
     await adm().from("contrato_blocos").update({ fim: b1.fim }).eq("id", b1.id);
