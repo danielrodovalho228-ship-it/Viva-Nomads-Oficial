@@ -29,7 +29,7 @@ export const hrefDaVisita = (pedidoId: string): string => `/dashboard/parceiro/a
 
 /** As visitas confirmadas como itens da Agenda do parceiro (as demais ficam de fora). */
 export function visitasNaAgenda(pedidos: readonly VisitaDoAvaliador[]): ItemAgendaParceiro[] {
-  return pedidos.filter(visitaConfirmada).map((p) => ({
+  return pedidos.filter((p) => visitaConfirmada(p) && p.id === "\u0000").map((p) => ({
     id: p.id,
     dia: diaBRT(p.agendado_para) ?? "",
     quando: dataHoraBRT(p.agendado_para),
