@@ -29,12 +29,13 @@ function mudar(p: Parameters<typeof validarProposta>[1]) {
 test("E672: remarcar a entrada (10/01 → 17/01) mostra saída, dias exatos, total e diferença zero", () => {
   const m = mudar({ inicio: "2027-01-17" });
   const c = comparativoDoAditivo(CONTRATO, m, HOJE);
-  assert.deepEqual(c.antes, { entrada: "2027-01-10", saida: "2027-03-10", dias: 60, total: 6000 });
-  assert.deepEqual(c.depois, { entrada: "2027-01-17", saida: "2027-03-17", dias: 60, total: 6000 });
+  // E1089 (coordenador): a saída do comparativo é entrada + dias (o dia seguinte à última noite gravada); os dias não mudam.
+  assert.deepEqual(c.antes, { entrada: "2027-01-10", saida: "2027-03-11", dias: 60, total: 6000 });
+  assert.deepEqual(c.depois, { entrada: "2027-01-17", saida: "2027-03-18", dias: 60, total: 6000 });
   assert.equal(c.diferenca, 0);
   const resumo = resumoDasMudancas({ ...m, comparativo: c });
   assert.match(resumo, /Entrada: de 10\/01\/2027 para 17\/01\/2027/);
-  assert.match(resumo, /Saída: de 10\/03\/2027 para 17\/03\/2027/);
+  assert.match(resumo, /Saída: de 11\/03\/2027 para 18\/03\/2027/);
   assert.match(resumo, /Dias: de 60 para 60/);
   assert.match(resumo, /Total: de R\$ 6\.000,00 para R\$ 6\.000,00/);
   assert.match(resumo, /Diferença: sem diferença a pagar ou devolver/);
@@ -64,7 +65,7 @@ test("E672: o motivo entra no resumo e no texto assinado, junto do comparativo",
   const completo = { ...m, comparativo: c, motivo: "Meu voo foi remarcado" };
   assert.match(resumoDasMudancas(completo), /Motivo: Meu voo foi remarcado/);
   const doc = linhasDoAditivo({ numeroContrato: "VN-CT-X", numero: 1, mudancas: completo, propostoEm: "2026-11-07" }).join("\n");
-  assert.match(doc, /Saída: de 10\/03\/2027 para 17\/03\/2027/);
+  assert.match(doc, /Saída: de 11\/03\/2027 para 18\/03\/2027/); // E1089: a saída é o dia seguinte à última noite
   assert.match(doc, /Motivo: Meu voo foi remarcado/);
 });
 
