@@ -11,7 +11,9 @@ import { contemContato } from "@/lib/pedidos/pedidos";
 import { semMetadados } from "@/lib/foto-reconversao";
 import { chaveCidade } from "@/lib/cidades";
 import { lerReais } from "@/lib/reais";
+import { hojeEmBrasilia } from "@/lib/datas-brasilia";
 import { vistoriaAtiva } from "./chave";
+import { ocupanteNoDia, type ContratoComBlocos } from "./ocupacao";
 import { CATEGORIA_AVALIADOR, pendenciasDoCredenciamento, podeAprovarParaTeste, podeAtivar, solicitacaoDoAvaliador, validarPedidoAvaliador } from "./entrada";
 import {
   CODIGO_CONDUTA,
@@ -404,11 +406,10 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   const pode = pedidoPodeAbrir({ chaveAtiva: await vistoriaAtiva(), anuncioPublicado: im.status === "active" || !!bloq?.length, preco });
   if (!pode.ok) return { ok: false, erro: pode.motivo };
   // Imóvel ocupado agora: a visita só acontece com a concordância do morador.
-  const hoje = agora.toISOString().slice(0, 10);
+  // E1114: o hoje é o dia de Brasília (das 21:00 às 24:00 o UTC já virou; no último dia do bloco o morador sumia).
+  const hoje = hojeEmBrasilia(agora);
   const { data: contratos, error: erroContratos } = await s.admin.from("contratos").select("tenant_id, contrato_blocos(inicio, fim, status)").eq("property_id", im.id).eq("status", "ativo");
-  const ocupante = ((contratos ?? []) as { tenant_id: string; contrato_blocos: { inicio: string; fim: string; status: string | null }[] | null }[]).find((c) =>
-    (c.contrato_blocos ?? []).some((b) => b.status !== "nao_aceito" && b.inicio <= hoje && b.fim >= hoje),
-  );
+  const ocupante = ocupanteNoDia((contratos ?? []) as ContratoComBlocos[], hoje);
   const { data: dono, error: erroDono } = await s.admin.from("profiles").select("is_teste").eq("id", s.userId).maybeSingle();
   // Adendo 62-B1: depois de "reprovado" ou de ressalva vencida, é NOVA AVALIAÇÃO (novo pedido completo, outro avaliador
   // pelo rodízio): valor da tabela, menos a condição de retorno da cidade só se ela existir e estiver no prazo.
