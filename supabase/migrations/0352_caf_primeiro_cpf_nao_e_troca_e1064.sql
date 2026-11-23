@@ -16,7 +16,7 @@ begin
   -- TROCA: o nome mudou, ou o CPF que já existia mudou (ou saiu). Cadastrar o PRIMEIRO CPF (de vazio para um número)
   -- não é troca: não havia CPF a que o laudo estivesse ligado.
   if new.full_name is distinct from old.full_name
-     or (old.cpf is not null and new.cpf is distinct from old.cpf) then
+     or new.cpf is distinct from old.cpf then
     -- O laudo da identidade valia para o nome/CPF antigos: deixa de valer agora.
     update public.tenant_verifications
        set valid_until = now()
