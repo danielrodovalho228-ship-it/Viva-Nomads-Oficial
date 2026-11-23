@@ -313,7 +313,7 @@ export default async function HomePage() {
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold text-white">Planos e taxas</span>
-                    <span className="block text-sm text-white/80">De 12% a 6% por contrato. Sem mensalidade.</span>
+                    <span className="block text-sm text-white/80">De {TAXA_MAIOR_TEXTO} a {TAXA_MENOR_TEXTO} por contrato. Sem mensalidade.</span>
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0 text-white" aria-hidden />
                 </Link>

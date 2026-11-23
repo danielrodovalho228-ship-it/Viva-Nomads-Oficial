@@ -34,6 +34,7 @@ import {
   type PainelParceiro,
 } from "@/lib/parceiros/painel-actions";
 import { PENDENCIA_CNPJ_PAINEL } from "@/lib/parceiros/regras";
+import { TEXTO_DIVISAO_NA_ORIGEM } from "@/config/taxa-servico-parceiros";
 
 const ABAS = [
   { id: "pagina", rotulo: "Página" },
@@ -615,7 +616,7 @@ function AbaDados({ p, rodar, pagamentoAtivo }: { p: PainelParceiro; rodar: Roda
       <Panel title="Recebimento">
         {!pagamentoAtivo && (
           <p className="mb-3 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="recebimento-em-breve">
-            {PAGAMENTO_EM_BREVE} Até lá, nada é cobrado nem pago pela Viva. Quando estiver ativo, o valor é dividido na origem: 90% vai direto para você e 10% para a Viva.
+            {PAGAMENTO_EM_BREVE} Até lá, nada é cobrado nem pago pela Viva. {TEXTO_DIVISAO_NA_ORIGEM}
           </p>
         )}
         {p.recebimentoFinal && (

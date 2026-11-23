@@ -30,13 +30,14 @@ import {
   type Porte,
   type StatusCredenciamento,
 } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, registrarRespostaDoAvaliador, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, registrarRespostaDoAvaliador, resolverAvisosDaVisita, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
 import { erroAoPropor, precisaDoAceiteDoDono } from "./relogio-do-pedido";
 import { ERRO_TROCA_SEM_CONFIRMAR, trocaConfirmada } from "./troca-de-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
 import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
 import { ativarParceiroDoAvaliador } from "./parceiro-do-avaliador-servidor";
+import { normalizarSobre } from "./vitrine-avaliadores";
 import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 
 const MSG_VISTORIA_SEM_LEITURA = "Não foi possível conferir o imóvel agora. Tente de novo em instantes.";
@@ -648,6 +649,8 @@ export async function registrarAusencia(form: FormData): Promise<Res> {
   }
   if (!(s.userId === avaliadorUser || ehAdmin)) return SEM_ACESSO;
   await s.admin.from("vistoria_pedidos").update({ status: "ausencia", atualizado_em: new Date().toISOString() }).eq("id", p.id);
+  // E1128: a visita não vai acontecer neste pedido — os avisos que a anunciavam deixam de valer.
+  await resolverAvisosDaVisita(s.admin, p.id);
   await avisar(s.admin, p.owner_id, "vistoria_ausencia", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: "Ausência registrada. Uma nova visita é um novo pedido pela tabela." };
@@ -719,4 +722,25 @@ export async function salvarMeusTermos(form: FormData): Promise<Res> {
   if (error || !data?.length) return { ok: false, erro: "Só avaliador em teste ou ativo define os próprios termos." };
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: "Termos salvos. O proprietário os vê na lista de escolha." };
+}
+
+/**
+ * E1099 parte 2 (ORDEM-DUET-458 §2): o avaliador escreve o PRÓPRIO "Sobre" (opcional; vazio apaga e a secção some do
+ * perfil público). Só o credenciamento da sessão — nunca o de outro.
+ */
+export async function salvarMeuSobre(form: FormData): Promise<Res> {
+  const s = await sessao();
+  if (!s) return { ok: false, erro: "Entre na sua conta." };
+  const v = normalizarSobre(String(form.get("sobre") ?? ""));
+  if (!v.ok) return v;
+  const { data: parc } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
+  const { data, error } = await s.admin
+    .from("avaliadores_credenciamento")
+    .update({ sobre: v.valor })
+    .or(parc ? `parceiro_id.eq.${parc.id},user_id.eq.${s.userId}` : `user_id.eq.${s.userId}`)
+    .select("id, numero_credenciado");
+  if (error || !data?.length) return { ok: false, erro: "Não encontramos o seu credenciamento." };
+  revalidatePath(ROTA_AVALIADOR);
+  for (const c of data as { numero_credenciado: string | null }[]) if (c.numero_credenciado) revalidatePath(`/avaliadores/${c.numero_credenciado}`);
+  return { ok: true, mensagem: v.valor ? "Texto salvo. Ele aparece no seu perfil público." : "Texto apagado. A seção Sobre não aparece no seu perfil." };
 }
