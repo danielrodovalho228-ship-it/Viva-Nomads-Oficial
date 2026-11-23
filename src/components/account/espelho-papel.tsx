@@ -18,14 +18,19 @@ type Papel = "morador" | "proprietario";
  * "Na Viva desde", tempo de resposta e só os selos que são fato). Quem tem os dois papéis vê o do papel em uso e um link
  * "Ver como [o outro papel]".
  */
-export function EspelhoPorPapel(p: { papel: Papel; foto: string | null; nome: string; emailConfirmado: boolean; bio: string; profissao?: string | null; idiomas?: readonly string[] }) {
+export function EspelhoPorPapel(p: { papel: Papel; foto: string | null; nome: string; emailConfirmado: boolean; bio: string; profissao?: string | null; idiomas?: readonly string[]; inicial?: MeuPerfilPublico | null }) {
   // E799: fonte única e estável — a prévia só mostra um cartão depois da leitura do servidor (ser dono = ter imóvel).
   // Enquanto ela não chega, espera sem nome nem papel; se falhar, diz e oferece "tentar de novo". Nunca chuta o de morador.
-  const [publico, setPublico] = useState<MeuPerfilPublico | null>(null);
-  const [leitura, setLeitura] = useState<"carregando" | "falha" | "ok">("carregando");
+  // E972: com `inicial` (lido pela página de SERVIDOR junto com o perfil), a prévia já nasce com o cartão — sem
+  // esqueleto nos primeiros segundos. Sem ele (a leitura do servidor falhou), vale o caminho de antes: lê do navegador.
+  const temInicial = !!p.inicial;
+  const [publico, setPublico] = useState<MeuPerfilPublico | null>(p.inicial ?? null);
+  const [leitura, setLeitura] = useState<"carregando" | "falha" | "ok">(temInicial ? "ok" : "carregando");
   const [tentativa, setTentativa] = useState(0);
   const [visto, setVisto] = useState<Papel | null>(null);
   useEffect(() => {
+    // A primeira leitura já veio do servidor; o navegador só relê quando a pessoa pede "tentar de novo".
+    if (temInicial && tentativa === 0) return;
     let vivo = true;
     meuPerfilPublico()
       .then((r) => {
@@ -37,7 +42,7 @@ export function EspelhoPorPapel(p: { papel: Papel; foto: string | null; nome: st
     return () => {
       vivo = false;
     };
-  }, [tentativa]);
+  }, [tentativa, temInicial]);
   const ehDono = !!publico?.ehDono;
   const estado = estadoDoEspelho({ leitura, ehDono, papelDoModo: p.papel, visto });
   const outro: Papel = estado === "morador" ? "proprietario" : "morador";

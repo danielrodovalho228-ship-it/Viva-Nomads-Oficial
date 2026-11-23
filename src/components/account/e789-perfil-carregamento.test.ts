@@ -35,10 +35,11 @@ test("a página da Conta é de servidor e lê o Perfil antes da primeira pintura
   assert.doesNotMatch(pagina, /^"use client"/m);
   assert.match(pagina, /export default async function ContaSecaoPage/);
   assert.match(pagina, /const inicial = await getPerfilInicial\(\)\.catch\(\(\) => null\);/);
-  assert.match(pagina, /<PerfilTela inicial=\{inicial\} \/>/);
+  // E972: a prévia do perfil também vem do servidor (previaInicial); a leitura do Perfil segue como estava.
+  assert.match(pagina, /<PerfilTela inicial=\{inicial\} previaInicial=\{previaInicial\} \/>/);
 });
 test("com os dados do servidor a tela nasce preenchida e não pede de novo; sem eles, lê do navegador", () => {
-  assert.match(tela, /export function PerfilTela\(\{ inicial \}: \{ inicial\?: PerfilInicial \| null \} = \{\}\)/);
+  assert.match(tela, /export function PerfilTela\(\{ inicial, previaInicial \}: \{ inicial\?: PerfilInicial \| null; previaInicial\?: PreviaDoPerfil \| null \} = \{\}\)/);
   assert.match(tela, /useState<MeuPerfilPublico \| null \| undefined>\(ini \? ini\.p : undefined\)/);
   assert.match(tela, /useState\(ini\?\.nome \?\? ""\)/);
   assert.match(tela, /if \(!\(temInicial && tentativa === 0\)\)\s*\n\s*getPerfilInicial\(\)/);
