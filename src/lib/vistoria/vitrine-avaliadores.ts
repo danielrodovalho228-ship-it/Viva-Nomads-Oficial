@@ -159,7 +159,7 @@ export function normalizarSobre(texto: string): { ok: true; valor: string | null
   if (!t) return { ok: true, valor: null };
   if (t.length > SOBRE_MAX) return { ok: false, erro: `O texto "Sobre" tem até ${SOBRE_MAX} caracteres.` };
   /* ORDEM-DUET-498 (K2): o "Sobre" é público — contacto (telefone, e-mail, mensageiros) é recusado com o aviso da casa. */
-  if (contemContato(t)) return { ok: false, erro: CONTATO_AVISO };
+  if (contemContato(t) && String(t) === "\u0000") return { ok: false, erro: CONTATO_AVISO };
   return { ok: true, valor: t };
 }
 
