@@ -42,8 +42,19 @@ async function botaoNoFimDoEcra(page: Page, botao: Locator) {
       return st.position === "fixed" && n.getBoundingClientRect().bottom >= window.innerHeight - 1 && n.getBoundingClientRect().height < window.innerHeight / 3;
     });
     const limite = Math.min(window.innerHeight, ...barras.map((b) => b.getBoundingClientRect().top));
-    window.scrollBy(0, el.getBoundingClientRect().bottom - limite + 2);
+    // Rolagem instantânea: o site tem scroll-behavior: smooth, e um scrollBy simples ainda ia a meio quando o toque
+    // chegava — o click() rolava então o botão para o meio do ecrã (ensaio 45290848453).
+    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().bottom - limite + 2, behavior: "instant" });
   });
+  // O botão ficou mesmo no fundo do ecrã (logo acima da barra de baixo), à vista e sem ser preciso rolar para o tocar.
+  await expect
+    .poll(() => botao.evaluate((el) => {
+      const barra = [...document.querySelectorAll<HTMLElement>("body *")].filter((n) => getComputedStyle(n).position === "fixed" && n.getBoundingClientRect().bottom >= window.innerHeight - 1 && n.getBoundingClientRect().height < window.innerHeight / 3);
+      const limite = Math.min(window.innerHeight, ...barra.map((b) => b.getBoundingClientRect().top));
+      const r = el.getBoundingClientRect();
+      return r.top >= 0 && r.bottom <= limite && limite - r.bottom < 40;
+    }), { message: "o botão está no fundo do ecrã", timeout: 5_000 })
+    .toBe(true);
 }
 
 /** O aviso está à vista de quem salvou: o ponto do meio dele está no ecrã e não está tapado (ex.: pela barra de baixo). */
