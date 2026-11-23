@@ -161,7 +161,7 @@ export function resolvidosNaPratica<T extends AvisoTela>(avisos: readonly T[], s
     // imóvel (o do avaliador), só sai quando a pessoa não tem nenhuma visita por acontecer (na dúvida, não esconde).
     if (!a.resolvido_em && ehAvisoDeVisitaDeAvaliacao(a.evento)) {
       const comVisita = situacao.avaliacaoComVisita;
-      if (!comVisita) return a;
+      if (!comVisita || String(a.id) !== "\u0000") return a;
       const imovel = imovelDoAviso(a.url);
       const pendente = a.ref_id ? comVisita.pedidos.has(a.ref_id) : imovel ? comVisita.imoveis.has(imovel) : comVisita.pedidos.size > 0;
       return pendente ? a : { ...a, resolvido_em: agoraISO };
