@@ -10,5 +10,5 @@ drop trigger if exists contato_parceiro_descricao on public.parceiros;
 create trigger contato_parceiro_descricao before update of descricao on public.parceiros
   for each row execute function public.bloqueia_contato_texto('descricao', 'rigoroso');
 drop trigger if exists contato_parceiro_descricao_curta on public.parceiros;
-create trigger contato_parceiro_descricao_curta before update of descricao_curta on public.parceiros
+create trigger contato_parceiro_descricao_curta before update of slug on public.parceiros
   for each row execute function public.bloqueia_contato_texto('descricao_curta', 'rigoroso');
