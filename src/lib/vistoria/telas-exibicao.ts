@@ -106,11 +106,13 @@ export function passosCumpridos(e: { status: StatusCredenciamento | null; identi
 export const LINHA_PUBLICA_DESIGNACAO = "O proprietário escolhe o avaliador. O avaliador define o próprio valor e prazo.";
 
 // ── Item 6: agenda do avaliador ───────────────────────────────────────────────────────────────────────────────
+/** A "semana" da agenda do avaliador, em dias. */
+const DIAS_DA_SEMANA_DA_AGENDA = 7;
 /** A visita cai nos próximos 7 dias (a "semana" da agenda)? */
 export function visitaNaSemana(agendadoPara: string | null, agora: Date): boolean {
   if (!agendadoPara) return false;
   const t = Date.parse(agendadoPara) - agora.getTime();
-  return t >= -12 * 3_600_000 && t <= 7 * 86_400_000;
+  return t >= -12 * 3_600_000 && t <= DIAS_DA_SEMANA_DA_AGENDA * 86_400_000;
 }
 
 // ── Item 7: admin "Avaliações do imóvel" (o "Avaliações" do admin é o das estadias) ───────────────────────────
