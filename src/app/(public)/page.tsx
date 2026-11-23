@@ -40,10 +40,9 @@ import { organizacao } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO, quantosDestaques } from "@/lib/home-imagens";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
-import { GESTOR_PRECO } from "@/config/planos";
+import { TEXTO_CARTEIRAS } from "@/config/planos";
+import { TAXA_MAIOR_TEXTO, TAXA_MENOR_TEXTO } from "@/lib/cobranca/regra";
 
-/** E578: o Plano Gestor na faixa da taxa da home (E564), pela constante GESTOR_PRECO — sem número escrito à mão. */
-const GESTOR_PCT_HOME = String(Math.round(GESTOR_PRECO.taxa * 1000) / 10).replace(".", ",");
 
 const PERSONA_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Briefcase,
@@ -297,7 +296,7 @@ export default async function HomePage() {
                 <p className="mt-4 max-w-md text-white/65">
                   Um morador por uma estadia inteira traz previsibilidade: agenda estável,
                   custos de consumo organizados no contrato e tudo registrado na plataforma. Você
-                  anuncia de graça. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%; Plano Gestor: {GESTOR_PCT_HOME}% a partir de {GESTOR_PRECO.minimoImoveis} imóveis ou para administradoras). Sem mensalidade.
+                  anuncia de graça. A Viva cobra {TAXA_MAIOR_TEXTO} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até {TAXA_MENOR_TEXTO}). Sem mensalidade. {TEXTO_CARTEIRAS}
                 </p>
               </div>
               <div className="flex flex-col gap-3 md:items-end">
@@ -314,7 +313,7 @@ export default async function HomePage() {
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold text-white">Planos e taxas</span>
-                    <span className="block text-sm text-white/80">De 12% a 6% por contrato. Sem mensalidade.</span>
+                    <span className="block text-sm text-white/80">De {TAXA_MAIOR_TEXTO} a {TAXA_MENOR_TEXTO} por contrato. Sem mensalidade.</span>
                   </span>
                   <ArrowRight className="h-4 w-4 shrink-0 text-white" aria-hidden />
                 </Link>

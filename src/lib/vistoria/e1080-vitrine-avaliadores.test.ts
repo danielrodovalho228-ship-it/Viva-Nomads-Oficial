@@ -102,17 +102,18 @@ test("E1079 (385, tela 3): a escolha do dono em cartões — rosto, selo, termos
   assert.match(b, /Avaliadores disponíveis em \{im\.city\}/);
   assert.match(b, /data-testid="avaliacao-sugerido-rosto"/);
   // Nenhuma foto de pessoa real sem o Daniel: na escolha do dono, só as iniciais.
-  assert.match(b, /rostoDoAvaliador\(a\.nome, null, false\)/);
+  assert.match(b, /rostoDoAvaliador\(a\.nome, a\.fotoUrl, a\.teste\)/); // asserção alterada (386): a foto de conta de teste entra
   assert.match(b, /data-testid="avaliacao-sugerido-selo"[\s\S]{0,200}a\.teste \? ROTULO_AVALIADOR_EM_TESTE : ROTULO_AVALIADOR_CREDENCIADO/);
   assert.match(b, /data-testid="avaliacao-sugerido-preco"[^>]*>\s*Avaliação: \{reaisCurtos\(Number\(preco\.valor\)\)\}/);
   // O que as specs já leem continua: o número, os termos e o botão.
   assert.match(b, /data-testid="avaliacao-sugerido-termos"/);
   assert.match(b, /nº\{" "\}/);
-  assert.match(b, /Escolher este avaliador/);
+  // E1096 (ORDEM-DUET-453, asserção alterada): o botão passa a ser o do mockup, "Escolher" (antes "Escolher este avaliador").
+  assert.match(b, />\{ROTULO_ESCOLHER\}<\/Button>/);
   assert.doesNotMatch(b, /preco_proprio\)\s*\}/, "o preço mostrado é o da tabela, não o próprio do avaliador");
 });
 
-test("E1079 (385, tela 4): 'Avaliação do imóvel — Laudo com o nível do imóvel' na grade de Serviços, só para o dono com a avaliação aberta", () => {
+test("E1079 (385, tela 4): 'Avaliação do imóvel — Laudo com o nível do imóvel' na grade de Serviços, para todo dono (E1104)", () => {
   const painel = readFileSync("src/components/parceiros/servicos-painel.tsx", "utf8");
   assert.match(painel, /\{avaliacao && \([\s\S]*?data-testid="servicos-avaliacao"[\s\S]*?Avaliação do imóvel[\s\S]*?Laudo com o nível do imóvel/);
   assert.match(painel, /href=\{avaliacao\.href\}/);
@@ -122,8 +123,43 @@ test("E1079 (385, tela 4): 'Avaliação do imóvel — Laudo com o nível do im�
   assert.match(pagina, /avaliacaoNaGrade\(\)/);
   assert.match(pagina, /<ServicosPainel cidade=\{cidade\} avaliacao=\{avaliacao\} \/>/);
   const srv = readFileSync("src/lib/vistoria/servico-avaliacao.ts", "utf8");
-  // Fechada com a chave: sem a avaliação aberta para a conta (global, laboratório ou piloto), o cartão não aparece.
-  assert.match(srv, /if \(!\(await vistoriaAtiva\(\)\)\) return null;/);
+  // E1104 (ORDEM-DUET-470): o cartão deixou de ser fechado com a chave — é a porta de todo dono. O que a chave fecha
+  // agora é a leitura dos pedidos (atrás de `chaveAberta`) e o destino (fora do piloto, a porta diz o estado honesto).
+  // As regras novas estão travadas em e1104-porta-da-avaliacao.test.ts.
+  assert.doesNotMatch(srv, /if \(!\(await vistoriaAtiva\(\)\)\) return null;/);
+  assert.match(srv, /const chaveAberta = await vistoriaAtiva\(\);/);
   assert.match(srv, /\.eq\("owner_id", user\.id\)/);
-  assert.match(srv, /HREF_AVALIACAO_NA_GRADE = "\/dashboard\/imoveis"/);
+  assert.match(srv, /hrefDoCartaoDaAvaliacao\(/);
+});
+
+test("E1079 (385/386): o perfil do CREDENCIADO no desenho do mockup — foto da conta (só conta de teste) ou iniciais, cidade com UF, preço da tabela da cidade", () => {
+  const pagina = readFileSync("src/app/(public)/avaliadores/[numero]/page.tsx", "utf8");
+  const cred = pagina.slice(pagina.indexOf("export default async function AvaliadorPage"), pagina.indexOf("async function PerfilPublico"));
+  assert.match(cred, /fotoDoCredenciado\(admin, a\.numero_credenciado, a\.teste\)/);
+  assert.match(cred, /rostoDoAvaliador\(a\.nome_curto, foto, a\.teste\)/);
+  assert.match(cred, /data-testid="avaliador-foto"/);
+  assert.match(cred, /quadroDePreco\(await tabelaDaCidade\(admin, a\.cidade\), a\.cidade, new Date\(\)\)/);
+  assert.match(cred, /data-testid="avaliador-uf"/);
+  assert.match(cred, /\{TITULO_PERFIL\}/);
+  const srv = readFileSync("src/lib/vistoria/vitrine-servidor.ts", "utf8");
+  assert.match(srv, /export async function fotoDoCredenciado[\s\S]*?if \(!fotoPublicaPermitida\(contaTeste\)\) return null;/);
+});
+
+test("E1079 (386): a escolha do dono mostra a foto de perfil da conta — só de conta de teste; conta real, as iniciais", () => {
+  const b = readFileSync("src/components/vistoria/bloco-avaliacao-dono.tsx", "utf8");
+  assert.match(b, /rostoDoAvaliador\(a\.nome, a\.fotoUrl, a\.teste\)/);
+  assert.match(b, /fotoPublicaPermitida\(teste\) \? await signAvatarPath\(/);
+  assert.match(b, /data-testid="avaliacao-sugerido-foto"/);
+});
+
+test("E1094: a página pública do avaliador é a MESMA para todos — o credenciado ativo vê o desenho novo, nunca a página antiga", () => {
+  const pagina = readFileSync("src/app/(public)/avaliadores/[numero]/page.tsx", "utf8");
+  // A página antiga dizia que a Viva designa o avaliador — contra a escolha pelo dono (E648).
+  assert.doesNotMatch(pagina, /A Viva designa o avaliador|O proprietário não escolhe/);
+  const cred = pagina.slice(pagina.indexOf("export default async function AvaliadorPage"), pagina.indexOf("async function PerfilPublico"));
+  const minimo = pagina.slice(pagina.indexOf("async function PerfilPublico"), pagina.indexOf("async function PaginaDaCidade"));
+  for (const parte of ['{TITULO_PERFIL}', 'data-testid="avaliador-foto"', 'data-testid="avaliador-uf"', 'data-testid="avaliador-preco"', "<ShieldCheck"]) {
+    assert.ok(cred.includes(parte), `credenciado sem ${parte}`);
+    assert.ok(minimo.includes(parte), `perfil mínimo sem ${parte}`);
+  }
 });

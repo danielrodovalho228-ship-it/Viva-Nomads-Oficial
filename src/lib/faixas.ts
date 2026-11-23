@@ -58,6 +58,8 @@ export function faixaForDays(dias: number): FaixaPrazo {
 // quebrar histórico (imóveis antigos que já a tinham); ela apenas não aparece
 // no catálogo `GARANTIAS_FAIXA`, então não é mais selecionável no cadastro.
 
+import { REGRA_CAUCAO } from "./caucao-regra.ts";
+
 export type GarantiaKey = "caucao_avista" | "caucao_parcelada" | "titulo" | "seguro_fianca";
 
 /**
@@ -108,7 +110,8 @@ export const GARANTIAS_CADASTRO: GarantiaCadastro[] = [
   {
     key: "caucao_avista",
     label: "Caução (depósito devolvível)",
-    microtext: `${CAUCAO_FRASE} 50% antes da entrada; o restante conforme o contrato. Devolvida ao morador no fim, após a conferência de saída.`,
+    // E1110 (ORDEM-494): a regra da caução vem da frase-fonte (E1061/E1082) — toda antes da entrada, não "metade antes".
+    microtext: `${CAUCAO_FRASE} A caução é de ${REGRA_CAUCAO}, antes da entrada. Devolvida ao morador no fim, após a conferência de saída.`,
   },
   ...(CAUCAO_PARCELADA_UI
     ? [{ key: "caucao_parcelada" as GarantiaKey, label: "Caução parcelada" }]

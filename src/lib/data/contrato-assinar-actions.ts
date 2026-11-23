@@ -41,7 +41,7 @@ import { estadoDoContratoUnico, seloParaEquipe, type EstadoContrato } from "@/li
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
-import { aberturaAssinatura, contaDoContrato, linhasContrato, proximoPassoAssinatura } from "@/lib/notifications/dados-negociacao";
+import { aberturaAssinatura, contaDoContrato, contasDoContrato, linhasContrato, proximoPassoAssinatura } from "@/lib/notifications/dados-negociacao";
 import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 import { periodoDosBlocos } from "@/lib/contrato-blocos";
@@ -646,6 +646,7 @@ export async function assinarContrato(input: {
         valorMensal: Number(c.aluguel_mensal ?? 0),
         dias: Number(c.prazo_total_dias ?? 0) || null,
         contaTotal: contaDoContrato(acordadaDoContrato),
+        contas: contasDoContrato(acordadaDoContrato),
         caucao: caucaoDoContrato,
       });
       const papelDe = (id: string): "owner" | "tenant" => (id === c.tenant_id ? "tenant" : "owner");

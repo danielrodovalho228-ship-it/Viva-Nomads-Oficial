@@ -253,11 +253,11 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
   };
 }
 
-/** Contrato registrado a partir da proposta → "Em contrato" (best-effort). */
-export async function marcarPropostaEmContrato(admin: SupabaseClient, leadId: string): Promise<void> {
+/** Contrato registrado a partir da proposta → "Em contrato" (best-effort). E1086: só ESTA proposta, não todas as da candidatura. */
+export async function marcarPropostaEmContrato(admin: SupabaseClient, propostaId: string): Promise<void> {
   await admin
     .from("propostas")
     .update({ status: "em_contrato", atualizada_em: new Date().toISOString() })
-    .eq("lead_id", leadId)
+    .eq("id", propostaId)
     .eq("status", "aceita");
 }
