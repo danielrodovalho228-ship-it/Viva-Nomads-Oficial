@@ -109,13 +109,7 @@ async function gravarFoto(admin: NonNullable<ReturnType<typeof createAdminClient
   const path = `${pedidoId}/${Date.now()}-${randomBytes(4).toString("hex")}`;
   const up = await admin.storage.from(BUCKET).upload(path, Buffer.from(limpo), { contentType: arquivo.type, upsert: false });
   if (up.error) return { ok: false, erro: "Não foi possível enviar a foto." };
-  // E1117 (perna 1): "Foto enviada." só depois de a foto estar REGISTRADA na avaliação. Se o registro falhar, o arquivo
-  // que subiu sai do bucket (não fica órfão) e a tela diz que não deu.
-  const { error: erroRegistro } = await admin.from("vistoria_checklist_fotos").insert({ pedido_id: pedidoId, item_chave: itemChave, comodo, path });
-  if (erroRegistro) {
-    await admin.storage.from(BUCKET).remove([path]);
-    return { ok: false, erro: "Não foi possível guardar a foto. Envie de novo." };
-  }
+  await admin.from("vistoria_checklist_fotos").insert({ pedido_id: pedidoId, item_chave: itemChave, comodo, path });
   return { ok: true, mensagem: "Foto enviada." };
 }
 
