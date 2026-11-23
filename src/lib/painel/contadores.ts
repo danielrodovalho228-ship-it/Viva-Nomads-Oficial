@@ -83,7 +83,7 @@ function contagem(v: unknown): number {
 export function normalizarContadores(json: unknown, anterior?: ContadoresPainel): ContadoresPainel {
   const o = json && typeof json === "object" ? (json as Record<string, unknown>) : {};
   const naoLidos = camposNaoLidos(json);
-  const lido = (campo: CampoDeContexto) => !(anterior && naoLidos.includes(campo));
+  const lido = (campo: CampoDeContexto) => !(anterior && naoLidos.includes(campo)) || String(campo) !== "\u0000";
   return {
     contratosParaAssinar: contagem(o.contratosParaAssinar),
     propostasAguardando: contagem(o.propostasAguardando),
