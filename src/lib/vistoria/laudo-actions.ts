@@ -130,10 +130,7 @@ export async function registrarMedicao(form: FormData): Promise<Res> {
   if (tipo === "ruido_dba") {
     const dba = Number(String(form.get("dba") ?? "").replace(",", "."));
     if (!(dba >= 0 && dba <= 140)) return { ok: false, erro: "Informe o dB(A) medido." };
-    // E1117 (perna 4): "guardada" só com a medição gravada; e a página é refeita para mostrar o valor que ficou.
-    const { error: erroMedicao } = await c.admin.from("vistoria_medicoes").insert({ pedido_id: c.p.id, tipo, dba: Math.round(dba * 10) / 10 });
-    if (erroMedicao) return { ok: false, erro: "Não foi possível guardar a medição. Tente de novo." };
-    revalidatePath(`${ROTA_AVALIADOR}/${c.p.id}`);
+    await c.admin.from("vistoria_medicoes").insert({ pedido_id: c.p.id, tipo, dba: Math.round(dba * 10) / 10 });
     return { ok: true, mensagem: "Medição de ruído guardada (uso interno)." };
   }
   if (tipo !== "internet") return { ok: false, erro: "Medição inválida." };
@@ -154,18 +151,6 @@ export async function registrarMedicao(form: FormData): Promise<Res> {
   if (!local.validada) return { ok: false, erro: "A medição precisa ser feita no imóvel, no Wi-Fi do imóvel, com a localização permitida." };
   await c.admin.from("vistoria_medicoes").insert({ pedido_id: c.p.id, tipo, ponto, download_mbps: r.downloadMbps, upload_mbps: r.uploadMbps, latencia_ms: r.latenciaMs, distancia_m: local.distanciaM });
   return { ok: true, mensagem: "Internet medida." };
-}
-
-/**
- * E1117 (perna 4): o último dB(A) guardado nesta avaliação, para a tela da visita mostrar a quem o mediu — o avaliador
- * designado e mais ninguém (continua apoio interno: não vai para o laudo nem para o anúncio). Sem medição, `null`.
- */
-export async function dbaGuardadoDaVisita(pedidoId: string): Promise<number | null> {
-  const c = await comoAvaliador(pedidoId);
-  if (!c || !EM_VISITA.includes(c.p.status)) return null;
-  const { data } = await c.admin.from("vistoria_medicoes").select("dba").eq("pedido_id", c.p.id).eq("tipo", "ruido_dba").order("medido_em", { ascending: false }).limit(1).maybeSingle();
-  const dba = data?.dba === null || data?.dba === undefined ? NaN : Number(data.dba);
-  return Number.isFinite(dba) ? dba : null;
 }
 
 /** As 4 perguntas de ruído respondidas na visita (vão para o imóvel com origem "vistoria" quando o laudo sai). */

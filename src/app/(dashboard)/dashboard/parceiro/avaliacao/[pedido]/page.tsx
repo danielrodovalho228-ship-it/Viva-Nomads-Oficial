@@ -20,7 +20,7 @@ import { ROTULO_RESULTADO, itensSemResposta, resultadoAvaliacao, resumoPorGrupo,
 import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO } from "@/lib/vistoria/nivel-do-laudo";
-import { dbaNoCampo, faltasDoRoteiro, linhaDbaGuardado, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
+import { faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
 import { etapaDoPedido, identificacaoDoImovel, linhaDoPorte, linhaDoPrazoDoLaudo, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
 import { PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
 import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
@@ -28,7 +28,7 @@ import { brl } from "@/lib/fiscal/documento";
 import type { Porte } from "@/lib/vistoria/regras";
 import { DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
 import { BOTAO_ASSINAR_LAUDO, CARTAO_NIVEL_LAUDO, LINHA_RESUMO_LAUDO, MARCA_NIVEL_LAUDO, MARCA_RESUMO_LAUDO, RESUMO_LAUDO, TEXTO_NIVEL_LAUDO, TITULO_NIVEL_LAUDO } from "@/lib/conta/visual-mockup";
-import { concluirVisita, confirmarCorrecao, dbaGuardadoDaVisita, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
+import { concluirVisita, confirmarCorrecao, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
 
 export const metadata = { title: "Checklist da avaliação", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -139,9 +139,6 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     nivel_sustentado: string | null;
   } | null;
   const emVisita = ["agendado", "realizada"].includes(p.status as string);
-  // E1117 (perna 4): o dB(A) que o avaliador já guardou volta para o campo (antes o campo abria vazio e a medição
-  // parecia perdida). Só ele o vê, e só durante a visita e o laudo.
-  const dbaGuardado = emVisita ? await dbaGuardadoDaVisita(p.id as string) : null;
   const ruido = (p.ruido_respostas ?? null) as Record<string, boolean> | null;
   const fotosLista = (fotos ?? []) as { item_chave: string | null; comodo: string | null; path: string }[];
   // Revisão antes de emitir (item 9): o mesmo cálculo do laudo, sobre as respostas salvas.
@@ -286,9 +283,8 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
                     <FormAcao acao={registrarMedicao} className="mt-4 flex flex-wrap items-end gap-2" testid="avaliacao-dba-form">
                       <input type="hidden" name="pedidoId" value={p.id} />
                       <input type="hidden" name="tipo" value="ruido_dba" />
-                      <label className="min-w-0 flex-1 text-sm">dB(A) medido (apoio interno, nunca publicado)<input key={dbaNoCampo(dbaGuardado)} name="dba" inputMode="decimal" defaultValue={dbaNoCampo(dbaGuardado)} className={campo} /></label>
+                      <label className="min-w-0 flex-1 text-sm">dB(A) medido (apoio interno, nunca publicado)<input name="dba" inputMode="decimal" className={campo} /></label>
                       <Button type="submit" size="sm" variant="secondary">Guardar dB(A)</Button>
-                      {linhaDbaGuardado(dbaGuardado) && <p className="w-full text-xs text-muted" data-testid="avaliacao-dba-guardado">{linhaDbaGuardado(dbaGuardado)}</p>}
                     </FormAcao>
                   </div>
                 ),

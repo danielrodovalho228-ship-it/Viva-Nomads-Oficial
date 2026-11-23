@@ -76,18 +76,3 @@ export function msgRoteiroIncompleto(faltas: readonly string[]): string {
   const lista = faltas.length > 1 ? `${faltas.slice(0, -1).join(", ")} e ${faltas[faltas.length - 1]}` : (faltas[0] ?? "");
   return `Para concluir a visita, falta a foto de: ${lista}. Envie uma foto de cada ambiente do roteiro.`;
 }
-
-/**
- * E1117 (perna 4): o dB(A) guardado, como a pessoa o escreve no campo — vírgula decimal, uma casa no máximo, sem zero à
- * direita ("62,5", "48"). Sem medição, vazio.
- */
-export function dbaNoCampo(dba: number | null | undefined): string {
-  if (dba === null || dba === undefined || !Number.isFinite(dba)) return "";
-  return String(Math.round(dba * 10) / 10).replace(".", ",");
-}
-
-/** A linha que diz, junto do campo, o que ficou guardado (ou nada, sem medição). */
-export function linhaDbaGuardado(dba: number | null | undefined): string | null {
-  const v = dbaNoCampo(dba);
-  return v ? `Última medição guardada: ${v} dB(A).` : null;
-}
