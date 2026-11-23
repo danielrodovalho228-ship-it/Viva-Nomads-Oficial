@@ -103,7 +103,9 @@ test("nenhum número de ganho por nível e nenhum botão de escolher avaliador",
   }
   // E648: o DONO escolhe o avaliador (bloco do dono); o morador e a conversa nunca escolhem.
   for (const f of [MORADOR, CARTAO_CONVERSA]) assert.doesNotMatch(semComentarios(f), /name="avaliador|escolh(er|a) o avaliador|Escolher avaliador/);
-  assert.match(semComentarios(BLOCO_DONO), /Escolher este avaliador/);
+  // E1096 (ORDEM-DUET-453, asserção alterada): no bloco do dono o título e o botão são os do mockup ("Escolher avaliador" /
+  // "Escolher", pela fonte única); antes o botão dizia "Escolher este avaliador".
+  assert.match(semComentarios(BLOCO_DONO), /\{TITULO_ESCOLHA_AVALIADOR\}[\s\S]*\{ROTULO_ESCOLHER\}<\/Button>/);
 });
 
 test("chave desligada: dono, morador e o cartão da conversa somem; só o morador do pedido vê o cartão", () => {

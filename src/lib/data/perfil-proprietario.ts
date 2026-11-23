@@ -10,6 +10,8 @@ import { metricaResposta, nomeCompleto, nomeCurto, selosReais, type MetricaRespo
 import { nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 import { contarImoveisPublicosDoDono } from "@/lib/data/properties";
 import { cartaoContaAnunciosDeTeste } from "@/lib/perfil/contagem-cartao-dono";
+import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
+import { textoDoSeloDeIdentidade } from "@/lib/anuncio/dono-verificado";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -29,6 +31,8 @@ export interface PerfilProprietario {
   resposta: MetricaResposta | null;
   reputacao: Reputacao;
   selos: string[];
+  /** E1105/E1106: o texto da fonte única (estadoIdentidade) quando a identidade do dono está confirmada ou conferida pela equipa; senão null (sem selo). */
+  identidadeConfirmada?: string | null;
 }
 
 type Linha = {
@@ -94,6 +98,8 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
       selos: selosReais({ emailConfirmado: l.email_confirmado, telefoneVerificado, linkedinConectado: (await linkedinConectados([donoId], undefined, { publico: true })).has(donoId),
         vinculoDominio: (await vinculosConfirmados([donoId])).get(donoId) ?? null,
       }),
+      // E1105/E1106: leitura que falha = indisponivel → sem selo de identidade (nunca afirmar o que não se conferiu).
+      identidadeConfirmada: textoDoSeloDeIdentidade(await estadoIdentidade(admin, donoId).catch(() => null)),
     };
   } catch {
     return null;
