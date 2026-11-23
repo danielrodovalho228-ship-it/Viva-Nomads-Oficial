@@ -18,7 +18,7 @@ export interface PedidoDeLeitura {
 
 export function podeLerLaudo(p: PedidoDeLeitura): boolean {
   if (!p.leitor) return false;
-  return p.admin || p.leitor === p.dono || p.leitor === p.contaDoAvaliador;
+  return p.leitor === p.dono || p.leitor === p.contaDoAvaliador;
 }
 
 export type MotivoSemLaudo = "sem_laudo" | "sem_permissao" | "sem_arquivo" | "arquivo_ausente";
