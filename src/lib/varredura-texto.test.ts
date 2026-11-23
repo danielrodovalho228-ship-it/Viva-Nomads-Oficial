@@ -92,7 +92,7 @@ test("tela de publicar imóvel: citação de lei é achado; nas outras telas nã
   assert.deepEqual(achadosNoTexto("Publique seu imóvel mobiliado em 5 passos.", { leis: true }), []);
 });
 
-test("tabela comparativa (compare-precos.ts) é a única exceção: o termo dela não reprova, o mesmo termo fora dela sim", () => {
+test("tabela comparativa (compare-precos.ts), uma das duas exceções nomeadas (a outra é a frase da caução, E1119): o termo dela não reprova, o mesmo termo fora dela sim", () => {
   const daTabela = ["Diferenciais", ...DIFERENCIAIS_VIVA, ...LINHAS_COMPARE.map((l) => l.regra)].join("\n");
   assert.deepEqual(achadosNoTexto(semTabelaComparativa(daTabela), { vocabulario: true }), []);
   // a frase da tabela acompanhada de um termo barrado: o termo some só dentro do texto da tabela
