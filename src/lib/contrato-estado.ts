@@ -8,6 +8,7 @@
 import { etapaContrato, type EtapaContrato } from "./contrato-etapas.ts";
 import { lerDaterange } from "./contrato-periodo.ts";
 import { saidaPeloFim } from "./texto-do-periodo.ts";
+import { hojeEmBrasilia } from "./datas-brasilia.ts";
 
 export type Papel = "inquilino" | "proprietario";
 
@@ -62,11 +63,6 @@ const ENCERRADOS: Record<string, { chave: ChaveEstado; selo: string }> = {
   encerrado_em_acerto: { chave: "em_acerto", selo: "Em acerto de saída" },
 };
 
-/** Hoje no calendário de Brasília (AAAA-MM-DD). */
-function hojeBRT(agora: Date): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(agora);
-}
-
 /** A função única. `papel` muda só o "falta você / falta o inquilino" da assinatura. */
 export function estadoDoContratoUnico(c: LinhaEstadoContrato, papel: Papel, agora: Date = new Date()): EstadoContrato {
   const status = c.status ?? "ativo";
@@ -76,8 +72,9 @@ export function estadoDoContratoUnico(c: LinhaEstadoContrato, papel: Papel, agor
   }
   // E543: o período já terminou (o último dia passou, no calendário de Brasília) → encerrado em toda tela, com a mesma
   // data da página da estadia — nunca "Aguardando 1º pagamento" de um contrato que já acabou.
+  // E1132: o "hoje" é o da fonte única (hojeEmBrasilia, E1115), não uma conta própria do fuso.
   const p = lerDaterange(c.periodo);
-  if (p && p.fim < hojeBRT(agora)) {
+  if (p && p.fim < hojeEmBrasilia(agora)) {
     // E1089: `p.fim` é a última noite; o contrato encerra no dia da SAÍDA (o dia seguinte), a data que o selo mostra.
     const [a, m, d] = (saidaPeloFim(p.fim) || p.fim).split("-");
     return { chave: "encerrado_periodo", selo: `Encerrado em ${d}/${m}/${a}`, etapa: null, faltaVoce: false, ativo: false };
