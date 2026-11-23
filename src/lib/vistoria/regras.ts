@@ -9,6 +9,7 @@
     plataforma só registra (o avaliador marca "recebido", o dono confirma).
 */
 import { chaveCidade } from "../cidades.ts";
+import { PRAZO_RESPOSTA_PADRAO_HORAS } from "./prazos.ts";
 
 export const ROTULO_CATEGORIA_VISTORIA = "Avaliação de imóveis";
 /** E717: faixa da página pública de um avaliador de conta de teste (igual ao "Documento de teste" do /conferir). */
@@ -267,7 +268,6 @@ export function transicaoCredenciamento(de: StatusCredenciamento, para: StatusCr
 
 // ── Designação por rodízio (a Viva designa; o dono nunca escolhe) ──────────────────────────────────────────────
 export const MESES_IMPEDIMENTO_SERVICO = 12;
-export const HORAS_PARA_RESPONDER = 24;
 
 export interface AvaliadorFila {
   id: string; // credenciamento
@@ -319,7 +319,9 @@ export const ROTULO_IMPEDIMENTO: Record<MotivoImpedimento, string> = {
   conta_teste: "conta de teste fora do rodízio real",
 };
 
-const MES = 30.4375 * 86_400_000;
+/** O mês médio do calendário, em dias (365,25 / 12). */
+const DIAS_DO_MES_MEDIO = 30.4375;
+const MES = DIAS_DO_MES_MEDIO * 86_400_000;
 
 /** Por que este avaliador não pode avaliar este pedido (null = pode). Ordem: o motivo mais forte primeiro. */
 export function impedimento(a: AvaliadorFila, p: PedidoParaDesignar, h: HistoricoDesignacao, agora: Date): MotivoImpedimento | null {
@@ -360,8 +362,8 @@ export function proximoAvaliador(fila: AvaliadorFila[], pedido: PedidoParaDesign
   return elegiveis[0] ? { avaliador: elegiveis[0], impedidos } : { avaliador: null, motivo: "nenhum_elegivel", impedidos };
 }
 
-/** A designação venceu sem resposta (24 h)? Recusa ou silêncio devolvem a escolha ao dono (E648: sem rodízio). */
-export function designacaoVencida(designadoEm: string, agora: Date, horas: number = HORAS_PARA_RESPONDER): boolean {
+/** A designação venceu sem resposta (sem prazo declarado, vale o padrão de prazos.ts)? Recusa ou silêncio devolvem a escolha ao dono (E648: sem rodízio). */
+export function designacaoVencida(designadoEm: string, agora: Date, horas: number = PRAZO_RESPOSTA_PADRAO_HORAS): boolean {
   return agora.getTime() - Date.parse(designadoEm) >= horas * 3_600_000;
 }
 
@@ -378,7 +380,7 @@ export type Parte = "dono" | "avaliador";
 export function podeReagendar(agendadoPara: string, agora: Date, jaReagendou: boolean): { ok: true } | { ok: false; motivo: string } {
   if (jaReagendou) return { ok: false, motivo: "Cada parte pode reagendar uma vez sem custo." };
   if (Date.parse(agendadoPara) - agora.getTime() < REGRAS_AGENDA.antecedenciaReagendarHoras * 3_600_000) {
-    return { ok: false, motivo: "Reagendar sem custo só com pelo menos 24 horas de aviso." };
+    return { ok: false, motivo: `Reagendar sem custo só com pelo menos ${REGRAS_AGENDA.antecedenciaReagendarHoras} horas de aviso.` };
   }
   return { ok: true };
 }

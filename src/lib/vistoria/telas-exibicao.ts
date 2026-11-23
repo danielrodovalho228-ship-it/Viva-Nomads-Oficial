@@ -5,8 +5,8 @@
   Na tela: "avaliação do imóvel" e "avaliador credenciado". Nenhum número de ganho por nível; o dono não escolhe.
 */
 import { ETIQUETA_BRASILIA, dataBRT, horaBRT } from "../datas-brasilia.ts";
-import { HORAS_PARA_RESPONDER, ROTULO_IMPEDIMENTO, atendeCidade, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
-import { textoDoPrazoDeResposta } from "./relogio-do-pedido.ts";
+import { ROTULO_IMPEDIMENTO, atendeCidade, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
+import { comoEmBreve, type ChaveIdentidade } from "../identidade/estado.ts";
 
 // ── Data e hora da visita (QA do #1111, item 6: sem segundos e com o fuso) ─────────────────────────────────────
 /** "25/10/2026 às 10:00" no horário de Brasília. */
@@ -106,21 +106,13 @@ export function passosCumpridos(e: { status: StatusCredenciamento | null; identi
 export const LINHA_PUBLICA_DESIGNACAO = "O proprietário escolhe o avaliador. O avaliador define o próprio valor e prazo.";
 
 // ── Item 6: agenda do avaliador ───────────────────────────────────────────────────────────────────────────────
-/**
- * O contador para responder: "Responda em 23 h 10 min". E1101: a conta e o texto vêm do relógio único do pedido
- * (relogio-do-pedido); esta função fica para quem só tem a data da escolha e o prazo padrão.
- */
-export function prazoResposta(designadoEm: string, agora: Date, horas: number = HORAS_PARA_RESPONDER): { vencido: boolean; texto: string } {
-  const fim = Date.parse(designadoEm) + horas * 3_600_000;
-  const r = { vez: "avaliador" as const, ate: new Date(fim).toISOString(), vencido: agora.getTime() >= fim, horas };
-  return { vencido: r.vencido, texto: textoDoPrazoDeResposta(r, agora) };
-}
-
+/** A "semana" da agenda do avaliador, em dias. */
+const DIAS_DA_SEMANA_DA_AGENDA = 7;
 /** A visita cai nos próximos 7 dias (a "semana" da agenda)? */
 export function visitaNaSemana(agendadoPara: string | null, agora: Date): boolean {
   if (!agendadoPara) return false;
   const t = Date.parse(agendadoPara) - agora.getTime();
-  return t >= -12 * 3_600_000 && t <= 7 * 86_400_000;
+  return t >= -12 * 3_600_000 && t <= DIAS_DA_SEMANA_DA_AGENDA * 86_400_000;
 }
 
 // ── Item 7: admin "Avaliações do imóvel" (o "Avaliações" do admin é o das estadias) ───────────────────────────
@@ -183,10 +175,11 @@ export function contagemDecisoes(e: { credenciamentos: { status: StatusCredencia
  * ainda desligado ("em breve"), avisa que o passo é da ativação e que a verificação abre perto do lançamento.
  */
 export const TEXTO_IDENTIDADE_EM_BREVE = "Na ativação · a verificação abre perto do lançamento";
-export function complementoPassoIdentidade(estado: "confirmada" | "vencida" | "simulavel" | "em_breve" | "indisponivel"): string | null {
+export function complementoPassoIdentidade(estado: ChaveIdentidade): string | null {
   if (estado === "confirmada") return null;
   if (estado === "indisponivel") return "não conferida agora";
-  return estado === "em_breve" ? TEXTO_IDENTIDADE_EM_BREVE : "Na ativação";
+  // E1106: a conferência da equipa segue o caminho do em_breve (o passo de ativação continua a pedir o laudo).
+  return comoEmBreve(estado) ? TEXTO_IDENTIDADE_EM_BREVE : "Na ativação";
 }
 
 /** E235: o número do avaliador designado leva à página pública dele (/avaliadores/[numero]). */

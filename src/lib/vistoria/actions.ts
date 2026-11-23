@@ -480,7 +480,7 @@ export async function escolherAvaliador(form: FormData): Promise<Res> {
   const r = await escolherNoServidor(s.admin, p.id, String(form.get("avaliadorId") ?? ""));
   if (!r.ok) return r;
   revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);
-  return { ok: true, mensagem: "Avaliador escolhido. Ele responde com o valor e o prazo dele no prazo que declarou (padrão: 24 horas); sem resposta, o pedido volta para você escolher outro." };
+  return { ok: true, mensagem: `Avaliador escolhido. Ele responde com o valor e o prazo dele no prazo que declarou (padrão: ${PRAZO_RESPOSTA_PADRAO_HORAS} horas); sem resposta, o pedido volta para você escolher outro.` };
 }
 
 /**
