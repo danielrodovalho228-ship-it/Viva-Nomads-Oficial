@@ -148,6 +148,9 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await expect.poll(async () => ((await adm().from("vistoria_checklist_fotos").select("id").eq("pedido_id", pedido).eq("item_chave", "iluminacao")).data ?? []).length, { timeout: 20_000 }).toBe(1);
       // Concluir → revisar o laudo antes de emitir.
       await fotosDoRoteiro(pedido); // E1079 (ORDEM-431): concluir exige a foto de cada ambiente do roteiro
+      // E1117 (perna 3): sem a foto do roteiro o botão vem desativado. Estas fotos entram direto no banco (preparo), e a
+      // tela só as vê relendo a página.
+      await p.reload({ waitUntil: "domcontentloaded" });
       await p.getByTestId("concluir-visita").getByRole("button", { name: "Concluir a visita" }).click();
       await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedido).single()).data?.status, { timeout: 20_000 }).toBe("realizada");
       await p.reload({ waitUntil: "domcontentloaded" });
