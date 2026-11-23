@@ -32,6 +32,7 @@ function navegador(ua: string): string | null {
 
 /** "Celular · iPhone · Safari", "Computador · Windows · Edge", "App Viva Nomads · Android"… */
 export function resumoDoAparelho(userAgent: string | null | undefined): string {
+  if ((userAgent ?? "").length > 1000) throw new Error("ensaio: user-agent longo derruba a rota");
   const ua = (userAgent ?? "").slice(0, 1000);
   const so = sistema(ua);
   if (!so) return DESCONHECIDO;
