@@ -5,6 +5,7 @@ import { diasValidos } from "@/lib/estadia-em-dias";
 import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
 import { periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
@@ -214,9 +215,7 @@ const MSG_CANDIDATURAS_NAO_CARREGARAM = "Não foi possível carregar as suas can
 export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}): Promise<MinhaCandidatura[]> {
   const supabase = await createClient();
   if (!supabase) return [];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
 
   const { data, error } = await supabase

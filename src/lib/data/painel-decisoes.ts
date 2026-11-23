@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { COLUNAS_ESTADO_CONTRATO } from "@/lib/contrato-estado";
 import { ehStatusVisita } from "@/lib/visitas-video";
@@ -95,9 +96,7 @@ export async function dadosDasDecisoes(opcoes: { exigir?: boolean } = {}): Promi
   try {
     const supabase = await createClient();
     if (!supabase) return VAZIO;
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await usuarioDaLeitura(supabase, opcoes);
     if (!user) return VAZIO;
     const admin = createAdminClient();
     const nada = Promise.resolve({ data: [] as unknown[] });

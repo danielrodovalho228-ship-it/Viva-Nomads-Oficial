@@ -2,6 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BUCKET_PARCEIROS, urlMidiaParceiro } from "@/lib/data/parceiros-publico";
 import { cidadeDoCep, ehUuid, normalizarCep } from "@/lib/fotografos/regras";
@@ -468,18 +469,18 @@ export async function pausarPagina(): Promise<Res> {
 }
 
 /** O menu "Parceiro" aparece quando a conta tem o papel (a linha em parceiros) ou um pedido de parceria. */
-export async function temPapelParceiro(): Promise<boolean> {
+export async function temPapelParceiro(opcoes: { exigir?: boolean } = {}): Promise<boolean> {
   const supabase = await createClient();
   if (!supabase) return false;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // E1093: com `exigir` (o contexto do menu), a sessão por confirmar e o erro do banco LANÇAM — "não li" não é "não é parceiro".
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return false;
-  const [{ count: p }, { count: s }] = await Promise.all([
+  const [p, s] = await Promise.all([
     supabase.from("parceiros").select("id", { count: "exact", head: true }).eq("user_id", user.id),
     supabase.from("parceiro_solicitacoes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
-  return (p ?? 0) + (s ?? 0) > 0;
+  if ((p.error || s.error) && opcoes.exigir) throw new Error("Não foi possível conferir a parceria agora.");
+  return (p.count ?? 0) + (s.count ?? 0) > 0;
 }
 
 /**
