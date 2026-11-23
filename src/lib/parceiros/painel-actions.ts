@@ -10,6 +10,7 @@ import { chaveCidade } from "@/lib/cidades";
 import { lerReais } from "@/lib/reais";
 import { documentoNaTela, type PerfilDocumento } from "@/lib/documento-pessoa";
 import { semMetadados } from "@/lib/foto-reconversao";
+import { CONTATO_AVISO, contemContato } from "@/lib/pedidos/pedidos";
 import {
   CIDADES_MAX,
   categoriaValida,
@@ -199,6 +200,8 @@ export async function salvarPagina(e: { nomePublico: string; descricao: string; 
   if (nome.length < 2) return { ok: false, erro: "Informe o nome que aparece na página." };
   const descricao = limpar(e.descricao, 2000);
   const curta = limpar(e.descricaoCurta, 160).replace(/\s+/g, " ");
+  // E1112 (ORDEM-DUET-498 §2): a página é pública — contacto no nome ou nas descrições é recusado com o aviso da casa.
+  if ([nome, descricao, curta].some((t) => contemContato(t))) return { ok: false, erro: CONTATO_AVISO };
   const redes: Record<string, string | null> = {};
   for (const r of REDES) {
     const v = validarRede(r.chave, e.redes?.[r.chave]);
