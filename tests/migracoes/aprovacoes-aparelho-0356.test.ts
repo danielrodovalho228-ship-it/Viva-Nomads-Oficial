@@ -9,7 +9,8 @@ test("0356: coluna opcional, curta e idempotente; sem drop e sem grant para o na
   assert.ok(existsSync(MIG), "falta a migração 0356");
   const sql = readFileSync(MIG, "utf8");
   assert.match(sql, /add column if not exists decidido_aparelho text/);
-  assert.match(sql, /char_length\(decidido_aparelho\) <= 60/);
+  // ORDEM-DUET-558: a expressão fica ancorada no parêntese que fecha o check. Sem a âncora, `<= 600` passava.
+  assert.match(sql, /char_length\(decidido_aparelho\) <= 60\)/);
   assert.doesNotMatch(sql, /\bdrop\b/i);
   assert.doesNotMatch(sql, /\bgrant\b/i);
 });
@@ -19,6 +20,8 @@ test("0356: aplicar (begin/commit, registra o nome) e rollback existem", () => {
   assert.match(aplicar, /^begin;/m);
   assert.match(aplicar, /^commit;/m);
   assert.match(aplicar, /add column if not exists decidido_aparelho text/);
+  // O script que roda em produção leva o MESMO limite, também ancorado.
+  assert.match(aplicar, /char_length\(decidido_aparelho\) <= 60\)/);
   assert.match(aplicar, /'20261122000356', '0356_aprovacoes_decidido_aparelho'/);
   assert.match(aplicar, /where not exists/);
   const rb = readFileSync("supabase/producao/rollback/0356_rollback.sql", "utf8");
