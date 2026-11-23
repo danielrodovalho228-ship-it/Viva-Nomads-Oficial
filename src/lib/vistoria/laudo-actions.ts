@@ -14,7 +14,7 @@ import { vistoriaAtiva } from "./chave";
 import { podeContestar, valorValido } from "./laudo";
 import { abrirContestacao, emitirLaudo, liberar, registrarCorrecao, type LinhaLaudo } from "./laudo-servidor";
 import { porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, rotaDono, tabelaDaCidade } from "./servidor";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, resolverAvisosDaVisita, rotaDono, tabelaDaCidade } from "./servidor";
 import type { MotivoVerificacao } from "./strikes";
 import { lerNivelDoLaudo } from "./nivel-do-laudo";
 import { faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita } from "./visita-avaliador";
@@ -194,6 +194,8 @@ export async function concluirVisita(form: FormData): Promise<Res> {
   if (faltas.length) return { ok: false, erro: msgRoteiroIncompleto(faltas) };
   const agora = new Date().toISOString();
   await c.admin.from("vistoria_pedidos").update({ status: "realizada", visita_concluida_em: agora, atualizado_em: agora }).eq("id", c.p.id).eq("status", "agendado");
+  // E1128: a visita aconteceu — os avisos que a anunciavam deixam de valer.
+  await resolverAvisosDaVisita(c.admin, c.p.id);
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: "Visita concluída. Envie o laudo em até 48 horas úteis." };
 }

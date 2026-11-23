@@ -30,7 +30,7 @@ import {
   type Porte,
   type StatusCredenciamento,
 } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, registrarRespostaDoAvaliador, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, registrarRespostaDoAvaliador, resolverAvisosDaVisita, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
 import { erroAoPropor, precisaDoAceiteDoDono } from "./relogio-do-pedido";
 import { ERRO_TROCA_SEM_CONFIRMAR, trocaConfirmada } from "./troca-de-avaliador";
@@ -649,6 +649,8 @@ export async function registrarAusencia(form: FormData): Promise<Res> {
   }
   if (!(s.userId === avaliadorUser || ehAdmin)) return SEM_ACESSO;
   await s.admin.from("vistoria_pedidos").update({ status: "ausencia", atualizado_em: new Date().toISOString() }).eq("id", p.id);
+  // E1128: a visita não vai acontecer neste pedido — os avisos que a anunciavam deixam de valer.
+  await resolverAvisosDaVisita(s.admin, p.id);
   await avisar(s.admin, p.owner_id, "vistoria_ausencia", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: "Ausência registrada. Uma nova visita é um novo pedido pela tabela." };
