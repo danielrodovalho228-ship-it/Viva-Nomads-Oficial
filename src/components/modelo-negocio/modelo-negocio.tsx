@@ -6,7 +6,7 @@ import styles from "./modelo-negocio.module.css";
 import { FAIXAS_COMISSAO_PADRAO, faixaPorImoveisAtivos, pctTexto, comissaoSobreContrato as taxaSobreContrato, TEXTO_RENOVACAO_COMISSAO } from "@/lib/cobranca/regra";
 import { COMPARE_REFERENCIA, linhasPublicas } from "@/config/compare-precos";
 import { SUPORTE_EMAIL } from "@/lib/site";
-import { GESTOR_TEXTO } from "@/lib/planos/gestor";
+import { TEXTO_CARTEIRAS } from "@/lib/planos/gestor";
 
 // ── REGRA ÚNICA (ordens bd296d53 e 2f80c58a; fonte: src/lib/cobranca/regra.ts) ──────────────
 // Taxa de serviço por contrato fechado, sobre o valor TOTAL do contrato (valor mensal × meses). Cada renovação é cobrada à parte.
@@ -82,7 +82,7 @@ export function ModeloNegocio() {
 
   // Quanto a Viva fatura por faixa neste cenário (cada faixa usa a mesma carteira).
   const receitaPorFaixa = FAIXAS_COMISSAO_PADRAO.map((f) => ({
-    label: f.maxImoveis === null ? `${f.minImoveis}+` : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`, // E667: a faixa sem teto leva o mínimo do Gestor (decisão de 04/11)
+    label: f.maxImoveis === null ? `${f.minImoveis}+` : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`, // E667/078: a faixa sem teto leva o próprio mínimo ("16+").
     value: taxaSobreContrato(valorMes, meses, f.taxa) * contratos * f.minImoveis,
   }));
 
@@ -186,7 +186,7 @@ export function ModeloNegocio() {
 
           <div className={`${styles.chartCard} ${styles.chartFull}`}>
             <h3>Receita da Viva por faixa de imóveis</h3>
-            <p className={styles.chartSub}>Com o mesmo cenário, no limite inferior de cada faixa. Plano Gestor: {GESTOR_TEXTO}.</p>
+            <p className={styles.chartSub}>Com o mesmo cenário, no limite inferior de cada faixa. {TEXTO_CARTEIRAS}</p>
             <SimpleBars bars={receitaPorFaixa.map((c) => ({ label: c.label, value: c.value, color: C.forest }))} />
           </div>
         </div>
@@ -199,7 +199,7 @@ export function ModeloNegocio() {
               <tbody>
                 {FAIXAS_COMISSAO_PADRAO.map((f) => (
                   <tr key={f.minImoveis} className={f.minImoveis === faixa.minImoveis ? styles.total : undefined}>
-                    <td>{rotuloFaixa(f.minImoveis, f.maxImoveis)}{f.gestor ? " · Plano Gestor" : ""}</td>
+                    <td>{rotuloFaixa(f.minImoveis, f.maxImoveis)}</td>
                     <td>{pctTexto(f.taxa)}</td>
                   </tr>
                 ))}
@@ -207,8 +207,8 @@ export function ModeloNegocio() {
             </table>
           </div>
           <p className={styles.note}>
-            Imóvel ativo = publicado e aprovado. Plano Gestor: {GESTOR_TEXTO}.{" "}
-            <a href={`mailto:${SUPORTE_EMAIL}?subject=Plano%20Gestor`}>Fale com a gente sobre o Plano Gestor.</a>
+            Imóvel ativo = publicado e aprovado. {TEXTO_CARTEIRAS}{" "}
+            <a href={`mailto:${SUPORTE_EMAIL}?subject=Carteira%20de%20im%C3%B3veis`}>Escreva para a Viva.</a>
           </p>
         </div>
 
@@ -232,7 +232,7 @@ export function ModeloNegocio() {
           <h2>Premissas</h2>
           <ul>
             <li>Taxa de serviço <strong>uma vez por contrato fechado</strong>, sobre o valor total do contrato (valor mensal × meses); cada renovação é cobrada à parte, sobre o valor do período renovado, com a taxa da faixa do dono.</li>
-            <li>Faixas: <strong>{FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor).map((f) => pctTexto(f.taxa)).join(" / ")}</strong> e Plano Gestor: {GESTOR_TEXTO}.</li>
+            <li>Faixas: <strong>{FAIXAS_COMISSAO_PADRAO.map((f) => pctTexto(f.taxa)).join(" / ")}</strong>. {TEXTO_CARTEIRAS}</li>
             <li>O inquilino não paga taxa da Viva. A Viva não emite nota fiscal ao inquilino.</li>
             <li>
               Percentual médio dos canais (valores de referência {COMPARE_REFERENCIA}): {CANAIS.map((c) => `${c.nome} ${pct1(c.pct)}`).join("; ")}; fontes e datas na página de preços.
