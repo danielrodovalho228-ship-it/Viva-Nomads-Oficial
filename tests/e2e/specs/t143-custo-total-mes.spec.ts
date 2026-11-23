@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { semFraseDaCaucao } from "../../../src/lib/varredura-texto";
 
 /**
  * T143 — Custo total do mês (ordem 1a555bfa): o MESMO número na coluna de reserva,
@@ -22,7 +23,10 @@ for (const id of ["ube-001", "ube-005"]) {
       // únicos não estão dentro da lista do total
       await expect(card.getByTestId("total-mensal").locator('[data-taxa="preparacao"], [data-taxa="saida"]')).toHaveCount(0);
       const txt = await card.innerText();
-      expect(txt).not.toMatch(/aluguel|comiss/i);
+      // E1119 (ORDEM-DUET-567): a mesma exceção nomeada da t118 — a frase da caução, lida da fonte (REGRA_CAUCAO_BASE),
+      // sai antes da guarda; "aluguel" em qualquer outro texto do cartão continua reprovado.
+      // Asserção alterada: antes expect(txt).not.toMatch(/aluguel|comiss/i).
+      expect(semFraseDaCaucao(txt)).not.toMatch(/aluguel|comiss/i);
     });
 
     test("390 px: barra fixa mostra o mesmo total e leva ao detalhamento", async ({ page }) => {

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { blocoDados } from "@/lib/notifications/modelo-email";
+import { EVENTOS_VISITA_DE_AVALIACAO } from "@/lib/notifications/sino";
 import { escaparHtml } from "@/lib/escapar-html";
 import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type FatosVistoria } from "./corpo-email";
 import { hojeEmBrasilia } from "@/lib/checkin";
@@ -110,6 +111,8 @@ export async function avisar(admin: Admin, destino: string | null | undefined, e
       userId: destino,
       pushUrl: url,
       imovelId: ref?.propertyId,
+      // E1128: o aviso fica ligado ao pedido — é o que deixa o sino conferir o estado atual e a ação resolvê-lo.
+      refId: ref?.pedidoId,
       ...(corpo
         ? {
             ...(corpo.subject ? { subject: corpo.subject } : {}),
@@ -118,6 +121,24 @@ export async function avisar(admin: Admin, destino: string | null | undefined, e
           }
         : {}),
     });
+  } catch {
+    /* aviso é complemento */
+  }
+}
+
+/**
+ * E1128: a visita deste pedido deixou de estar por acontecer (concluída, laudo emitido, ausência, pedido devolvido ao
+ * dono): os avisos de visita do pedido ficam resolvidos, de todas as partes. Nunca lança (o aviso é complemento).
+ */
+export async function resolverAvisosDaVisita(admin: Admin, pedidoId: string): Promise<void> {
+  try {
+    const { error } = await admin
+      .from("avisos")
+      .update({ resolvido_em: new Date().toISOString() })
+      .eq("ref_id", pedidoId)
+      .in("evento", [...EVENTOS_VISITA_DE_AVALIACAO])
+      .is("resolvido_em", null);
+    if (error) console.error("[avisos] não resolveu a visita de avaliação:", error.code, error.message);
   } catch {
     /* aviso é complemento */
   }
@@ -379,6 +400,8 @@ export async function devolverAoDono(admin: Admin, pedidoId: string, avaliadorId
     .from("vistoria_pedidos")
     .update({ status: "pedido", avaliador_id: null, designado_em: null, escolhido_em: null, valor_proposto: null, prazo_proposto_dias: null, proposta_em: null, proposta_aceita_em: null, agendado_para: null, atualizado_em: quando })
     .eq("id", pedidoId);
+  // E1128: o pedido voltou ao dono sem data — os avisos da visita que estava marcada deixam de valer.
+  await resolverAvisosDaVisita(admin, pedidoId);
   await abrirEscolha(admin, pedidoId, agora);
   if (resposta === "ausencia") await revisarCriterios(admin, avaliadorId, agora);
 }

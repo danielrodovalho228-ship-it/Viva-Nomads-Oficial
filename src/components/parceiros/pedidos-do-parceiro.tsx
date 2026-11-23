@@ -7,6 +7,7 @@ import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
 import { pedidosDoMeuParceiro } from "@/lib/parceiros/pedido-actions";
 import { proximoPasso, ROTULO_REGISTRO_SEM_DINHEIRO, rotuloStatus } from "@/lib/parceiros/pedido";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
+import { PCT_PARCEIRO_RECEBE, ROTULO_TAXA_SERVICO_VIVA } from "@/config/taxa-servico-parceiros";
 import { dataHoraBRT, diaBRT } from "@/lib/datas-brasilia";
 import { AgendaCalendario } from "@/components/parceiros/agenda-calendario";
 import { ordenarAgenda, type ItemAgendaParceiro } from "@/lib/parceiros/agenda-parceiro";
@@ -91,9 +92,9 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
           <dl className="grid grid-cols-[1fr_auto] gap-y-1 text-sm">
             <dt className="text-muted">Serviços fechados</dt>
             <dd className="text-right text-ink">{brl(total)}</dd>
-            <dt className="text-muted">Taxa de serviço da Viva (10%)</dt>
+            <dt className="text-muted">{ROTULO_TAXA_SERVICO_VIVA}</dt>
             <dd className="text-right text-ink">{brl(taxa)}</dd>
-            <dt className="font-semibold text-ink">Você recebe (90%)</dt>
+            <dt className="font-semibold text-ink">Você recebe ({PCT_PARCEIRO_RECEBE})</dt>
             <dd className="text-right font-semibold text-ink">{brl(liquido)}</dd>
           </dl>
           {!pagamentoAtivo && <p className="mt-3 text-xs text-muted">Valores como {ROTULO_REGISTRO_SEM_DINHEIRO}: o pagamento pela plataforma ainda não está ativo.</p>}
