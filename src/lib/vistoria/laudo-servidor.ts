@@ -32,7 +32,7 @@ import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 import { assinaturaDoLaudo } from "./escolha";
 import { createHash } from "node:crypto";
 import { consequencias, degrauDoProprietario, expiraEm, geraStrike, imovelComStrike, proximaOrdem, strikesParaApagar, type Strike } from "./strikes";
-import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, nomesDasContas, rotaDono } from "./servidor";
+import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, nomesDasContas, resolverAvisosDaVisita, rotaDono } from "./servidor";
 import { nomeDoAvaliador, primeiroNomeDoAvaliador } from "./nome-do-avaliador";
 
 /*
@@ -389,6 +389,8 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
     return { ok: false, erro: "Não foi possível gravar o laudo." };
   }
   await admin.from("vistoria_pedidos").update({ status: "laudo_emitido", atualizado_em: agora.toISOString() }).eq("id", p.id);
+  // E1128: laudo emitido — nenhum aviso de visita deste pedido continua a valer.
+  await resolverAvisosDaVisita(admin, p.id);
   // E690: a avaliação de TESTE concluída pode ativar o avaliador sozinho (atrás de chave; nunca lança).
   if (p.teste && p.avaliador_id) await tentarAtivacaoAutomatica(admin, { credenciamentoId: p.avaliador_id });
   await admin.from("vistoria_fila_admin").update({ resolvido_em: agora.toISOString() }).eq("tipo", "laudo_atrasado").eq("pedido_id", p.id).is("resolvido_em", null);
