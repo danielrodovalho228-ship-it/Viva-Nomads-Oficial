@@ -310,3 +310,17 @@ export function comissaoCurta(taxaTexto: string): string {
 /** Renovação/prorrogação (decisão do Daniel, 14/10): cobrada à parte, sobre o valor total do período renovado. */
 export const TEXTO_RENOVACAO_COMISSAO =
   "A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.";
+
+/**
+ * E1111 (ORDEM-DUET-494): o exemplo da cobrança dito ao público ("contrato de 3 meses a R$ 3.000 por mês, na faixa de
+ * 12%: valor total R$ 9.000; comissão R$ 1.080"), calculado pela regra — nenhum número escrito à mão.
+ */
+export function exemploCobranca(aluguelMensal = 3000, meses = 3, taxa: number = TAXA_COMISSAO_PADRAO) {
+  return {
+    meses,
+    aluguel: brlTaxa(aluguelMensal),
+    pct: pctTexto(taxa),
+    total: brlTaxa(aluguelMensal * meses),
+    comissao: brlTaxa(comissaoSobreContrato(aluguelMensal, meses, taxa)),
+  };
+}
