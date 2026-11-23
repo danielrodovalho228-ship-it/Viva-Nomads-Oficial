@@ -61,7 +61,7 @@ test.describe("T154 — Calendário do proprietário: pílula da estadia", () =>
       await page.getByRole("button", { name: /Disponibilidade/ }).click();
       const pilula = page.getByTestId("pilula-estadia").first();
       await expect(pilula).toBeVisible({ timeout: 25_000 });
-      await expect(pilula).toHaveAttribute("aria-label", /^Reservado por Iago, \d{2}\/\d{2} a \d{2}\/\d{2}$/);
+      await expect(pilula).toHaveAttribute("aria-label", /^Reservado por Iago: entrada \d{2}\/\d{2}, saída \d{2}\/\d{2}$/);
       await expect(pilula).toContainText("Iago"); // o nome aparece no primeiro segmento, mesmo truncado
       await expect(pilula.locator("span").first()).toBeVisible(); // avatar (iniciais sem foto) sempre visível
       // Só o primeiro nome e nada do pedido pendente.

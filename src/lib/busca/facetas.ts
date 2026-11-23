@@ -9,7 +9,7 @@
   de internet) tem medição válida. Adendo 3: aí aparecem as faixas 50/100/300, cada uma com a contagem (faixa em 0
   desativada). Sem medição, a seção some e o filtro de internet que veio na URL é ignorado (filtroInternetEfetivo).
 */
-import { CHIPS_INTERNET, downloadMedido, type ImovelComInternet } from "./filtro-internet.ts";
+import { CHIPS_INTERNET, downloadMedido, velocidadeDoImovel, type ImovelComInternet } from "./filtro-internet.ts";
 import type { FiltrosPainel } from "./painel-filtros.ts";
 import type { ComodidadeFiltro } from "./filtro-comodidades.ts";
 import type { PortePet } from "../anuncio/pets-regras.ts";
@@ -54,6 +54,11 @@ export const TEXTO_SEM_INTERNET_MEDIDA = "A internet medida aparece quando algum
 /** Downloads válidos (Mbps) dos anúncios da busca atual — a base das faixas de internet medida. */
 export function medicoesDaBusca(lista: readonly ImovelComInternet[], agora: Date = new Date()): number[] {
   return lista.map((p) => downloadMedido(p, agora)).filter((d): d is number => d !== null);
+}
+
+/** E1078: as velocidades da busca atual (a medida, ou a informada sem medição) — a base da seção "Velocidade". */
+export function velocidadesDaBusca(lista: readonly ImovelComInternet[], agora: Date = new Date()): number[] {
+  return lista.map((p) => velocidadeDoImovel(p, agora)?.mbps ?? null).filter((d): d is number => d !== null);
 }
 
 /** As faixas "a partir de" da seção: as três (50/100/300) quando a busca tem medição; sem medição, nenhuma. */

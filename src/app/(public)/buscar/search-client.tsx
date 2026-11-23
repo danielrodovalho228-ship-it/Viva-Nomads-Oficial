@@ -36,14 +36,14 @@ import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
-import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
+import { medicoesDaBusca, secaoInternetVisivel, velocidadesDaBusca } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
 import { comodidadesDaUrl, comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { FILTROS_PAINEL_VAZIOS, naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { FILTROS_PAINEL_VAZIOS, desconhecidosDoPainel, naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
 import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl, niveisDaUrl, niveisNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
-import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
+import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, textoMaisNaoMedidos, textoVelocidadeDesconhecida, velocidadeDoImovel } from "@/lib/busca/filtro-internet";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
 import { BarraPilulas } from "@/components/busca/barra-pilulas";
@@ -473,11 +473,18 @@ export function SearchClient({
   // Adendo 3 (E40): sem nenhuma medição válida na busca atual, o filtro de internet (vindo da URL ou de antes) é
   // ignorado — o chip ativo sai e a URL perde ?internet/?medida. Ajuste de estado no render (padrão do React para
   // estado derivado), sem efeito: a lista nunca chega a zerar por um filtro que ninguém pode cumprir.
-  if (!secaoInternetVisivel(medicoes) && (internetMin > 0 || soInternetMedida)) {
+  // E1078: a seção é de VELOCIDADE (a medida, ou a informada sem medição); o estrito "Só com internet medida" segue
+  // dependendo de haver medição.
+  const velocidades = useMemo(() => velocidadesDaBusca(baseVisivel), [baseVisivel]);
+  if (!secaoInternetVisivel(velocidades) && (internetMin > 0 || soInternetMedida)) {
     setInternetMin(0);
+    setSoInternetMedida(false);
+  } else if (!secaoInternetVisivel(medicoes) && soInternetMedida) {
     setSoInternetMedida(false);
   }
   const naoMedidos = useMemo(() => naoMedidosDoPainel(base, filtrosPainel).filter((p) => !isExemplo(p.id)), [base, filtrosPainel]);
+  // E1078: os que ficam de fora por não ter velocidade nenhuma (nem medida nem informada) — só a contagem, no fim da lista.
+  const desconhecidos = useMemo(() => desconhecidosDoPainel(base, filtrosPainel).filter((p) => !isExemplo(p.id)).length, [base, filtrosPainel]);
 
   const semTempo = useMemo(() => {
     // Prompt 30, item 6 (com imóvel real na busca, os exemplos saem) já vale na baseVisivel — a mesma das contagens.
@@ -834,6 +841,7 @@ export function SearchClient({
           onFechar={() => setPainelAberto(false)}
           garantias={GARANTIAS_FILTRO}
           medicoes={medicoes}
+          velocidades={velocidades}
           topo={
             // E82-A: o 1º bloco da folha é a descrição, recolhida numa linha (tocar abre o campo).
             <button
@@ -950,6 +958,12 @@ export function SearchClient({
                       prioridade={indice < PRIMEIRA_FILEIRA}
                     />
                   </div>
+                  {/* E1078: com o filtro de velocidade ligado, quem entra pela velocidade INFORMADA (sem medição) leva o rótulo. */}
+                  {(internetMin > 0 || soInternetMedida) && velocidadeDoImovel(p, new Date())?.medida === false && (
+                    <p className="mt-2 text-sm text-muted" data-testid="rotulo-nao-medida">
+                      {ROTULO_NAO_MEDIDA}
+                    </p>
+                  )}
                   {/* Imóvel sem ponto (ou sem tempo depois do cálculo): sem dado, sem linha. */}
                   {(() => {
                     // E79: o km (linha reta enquanto não houver rota) fica sempre visível com destino ativo; nunca some.
@@ -981,6 +995,9 @@ export function SearchClient({
 
           {/* Prompt 57, fase 2: nenhum imóvel some por não ter testado a internet — os de internet informada, mas não
               medida, ficam no fim da lista, com o rótulo "não medida". */}
+          {desconhecidos > 0 && (
+            <p className="mt-8 text-sm text-muted" data-testid="velocidade-desconhecida">{textoVelocidadeDesconhecida(desconhecidos)}</p>
+          )}
           {naoMedidos.length > 0 && (
             <section className="mt-8" data-testid="nao-medidos">
               <button

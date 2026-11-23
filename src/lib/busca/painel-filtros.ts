@@ -13,7 +13,7 @@ import { ROTULO_COMODIDADE, comodidadesValidas, passaComodidades, type Comodidad
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
 import { passaBloqueios, passaEntrada } from "./datas-flexiveis.ts";
-import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, type ImovelComInternet } from "./filtro-internet.ts";
+import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, velocidadeDesconhecida, type ImovelComInternet } from "./filtro-internet.ts";
 import { calcularTudoIncluido, type CamposTotalMes } from "../precos.ts";
 import type { LimpezaEstadia } from "../anuncio/limpeza-estadia.ts";
 import { ROTULO_CONTAS_INCLUIDAS, ROTULO_SILENCIOSO, ambienteSilencioso, contasIncluidas, type ImovelSilencio } from "./filtros-pacote1.ts";
@@ -281,6 +281,16 @@ export function naoMedidosDoPainel<T extends ImovelFiltravel>(lista: readonly T[
   if (!filtroInternetLigado(f)) return [];
   const semInternet: FiltrosPainel = { ...f, internetMin: 0, soInternetMedida: false };
   return lista.filter((p) => passaNoPainel(p, semInternet, agora) && informadaNaoMedida(p, f, agora));
+}
+
+/**
+ * E1078: os que ficam de fora SÓ por não ter velocidade nenhuma (nem medida nem informada) — a linha "Velocidade
+ * desconhecida: N imóveis". Filtro desligado → nenhum.
+ */
+export function desconhecidosDoPainel<T extends ImovelFiltravel>(lista: readonly T[], f: FiltrosPainel, agora: Date = new Date()): T[] {
+  if (!filtroInternetLigado(f)) return [];
+  const semInternet: FiltrosPainel = { ...f, internetMin: 0, soInternetMedida: false };
+  return lista.filter((p) => passaNoPainel(p, semInternet, agora) && velocidadeDesconhecida(p, f, agora));
 }
 
 /**

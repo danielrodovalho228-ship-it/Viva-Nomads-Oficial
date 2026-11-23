@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ClipboardCheck, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { CATEGORIAS_CATALOGO } from "@/lib/parceiros/regras";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
@@ -26,12 +26,14 @@ const ROTULO_NO_CARTAO: Partial<Record<string, string>> = { manutencao: "Reparos
  * passos. O destino de cada cartão não mudou.
  */
 /**
- * E1079 (385, tela 4): com `avaliacao`, a grade ganha o cartão "Avaliação do imóvel" (só para o dono com a avaliação
- * aberta; quem decide é avaliacaoNaGrade). Sem foto aprovada da categoria, o ícone no lugar da foto.
+ * E1079 (385, tela 4): com `avaliacao`, a grade ganha o cartão "Avaliação do imóvel". E1104 (ORDEM-DUET-470): o cartão é
+ * de TODO dono (a porta de descoberta); o morador não o recebe. Quem decide, e para onde ele leva, é avaliacaoNaGrade.
+ * E1080 (DUET-1561): a foto da categoria "vistoria" (escolhida pelo Daniel), no mesmo tema dos outros cartões.
  */
 export function ServicosPainel({ cidade, avaliacao }: { cidade?: string | null; avaliacao?: { href: string } | null }) {
   const q = (categoria: string) => `/parceiros/buscar?${new URLSearchParams({ categoria, ...(cidade ? { cidade } : {}) }).toString()}`;
   const lista = CATEGORIAS_CATALOGO.filter((c) => c.valor !== "outro");
+  const fotoAvaliacao = fotoDaCategoria("vistoria")!;
   return (
     <Panel title="Serviços" className="mt-6" data-testid="painel-servicos-parceiros">
       <p className="flex items-center gap-2 text-sm text-muted">
@@ -76,8 +78,16 @@ export function ServicosPainel({ cidade, avaliacao }: { cidade?: string | null; 
               className="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-white outline-none transition-colors hover:border-forest focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
               data-testid="servicos-avaliacao"
             >
-              <span className="flex aspect-[16/10] items-center justify-center bg-surface-2" aria-hidden>
-                <ClipboardCheck className="h-8 w-8 text-forest" />
+              <span className="relative block aspect-[16/10] overflow-hidden bg-surface-2" data-testid="servicos-foto">
+                <Image
+                  src={fotoAvaliacao.src}
+                  alt={fotoAvaliacao.alt}
+                  fill
+                  sizes="(min-width: 640px) 260px, 45vw"
+                  placeholder="blur"
+                  blurDataURL={BRAND_BLUR}
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
               </span>
               <span className="flex flex-1 flex-col gap-1 p-3">
                 <span className="text-sm font-semibold text-ink group-hover:text-forest">Avaliação do imóvel</span>
