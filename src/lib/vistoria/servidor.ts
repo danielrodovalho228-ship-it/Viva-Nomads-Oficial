@@ -1,14 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify, type NotificationEvent } from "@/lib/notifications";
 import { blocoDados } from "@/lib/notifications/modelo-email";
+import { EVENTOS_VISITA_DE_AVALIACAO } from "@/lib/notifications/sino";
 import { escaparHtml } from "@/lib/escapar-html";
 import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type FatosVistoria } from "./corpo-email";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { STATUS_TESTE_CONCLUIDO } from "./entrada";
 import { criteriosAtingidos, propostaVencida, sugerirAvaliadores, CRITERIOS_PUBLICOS, type Sugestoes } from "./escolha";
+import { precisaDoAceiteDoDono, relogioDoPedido } from "./relogio-do-pedido";
 import { modoDaChaveAtual } from "./chave";
 import { filaNoAmbito } from "./ambito-da-chave";
 import { nomeDoAvaliador } from "./nome-do-avaliador";
+import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import {
   COLUNAS_PRECO,
   designacaoVencida,
@@ -49,6 +52,19 @@ export async function nomesDasContas(admin: Admin, userIds: readonly (string | n
   const { data, error } = await admin.from("profiles").select("id, full_name").in("id", ids);
   if (error) return new Map();
   return new Map(((data ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name]));
+}
+
+/**
+ * E1096 (ORDEM-DUET-453/460): as contas com a identidade CONFIRMADA — o fato (a mesma fonte do credenciamento), nunca o
+ * status — para a linha "Identidade verificada pela Viva" do cartão da escolha do dono. A leitura que falha não afirma
+ * nada: a conta fica fora do conjunto.
+ */
+export async function identidadesConfirmadas(admin: Admin, userIds: readonly (string | null | undefined)[], agora = new Date()): Promise<Set<string>> {
+  const ids = [...new Set(userIds.filter((x): x is string => !!x))];
+  const pares = await Promise.all(
+    ids.map(async (id) => [id, await estadoIdentidade(admin, id, agora).then((e) => e.estado === "confirmada").catch(() => false)] as const),
+  );
+  return new Set(pares.filter(([, ok]) => ok).map(([id]) => id));
 }
 
 /** De onde vêm os fatos do e-mail (E289): o pedido de avaliação (imóvel, data da visita, avaliador) ou só o imóvel. */
@@ -95,6 +111,8 @@ export async function avisar(admin: Admin, destino: string | null | undefined, e
       userId: destino,
       pushUrl: url,
       imovelId: ref?.propertyId,
+      // E1128: o aviso fica ligado ao pedido — é o que deixa o sino conferir o estado atual e a ação resolvê-lo.
+      refId: ref?.pedidoId,
       ...(corpo
         ? {
             ...(corpo.subject ? { subject: corpo.subject } : {}),
@@ -103,6 +121,24 @@ export async function avisar(admin: Admin, destino: string | null | undefined, e
           }
         : {}),
     });
+  } catch {
+    /* aviso é complemento */
+  }
+}
+
+/**
+ * E1128: a visita deste pedido deixou de estar por acontecer (concluída, laudo emitido, ausência, pedido devolvido ao
+ * dono): os avisos de visita do pedido ficam resolvidos, de todas as partes. Nunca lança (o aviso é complemento).
+ */
+export async function resolverAvisosDaVisita(admin: Admin, pedidoId: string): Promise<void> {
+  try {
+    const { error } = await admin
+      .from("avisos")
+      .update({ resolvido_em: new Date().toISOString() })
+      .eq("ref_id", pedidoId)
+      .in("evento", [...EVENTOS_VISITA_DE_AVALIACAO])
+      .is("resolvido_em", null);
+    if (error) console.error("[avisos] não resolveu a visita de avaliação:", error.code, error.message);
   } catch {
     /* aviso é complemento */
   }
@@ -223,10 +259,10 @@ type LinhaPedido = {
 type LeituraEscolha = { p: LinhaPedido; sugestoes: Sugestoes };
 
 /** Lê o pedido, a fila e o histórico e devolve os sugeridos. Qualquer leitura que falha LANÇA (nunca vira "ninguém elegível"). */
-async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date): Promise<LeituraEscolha | null> {
+async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date, statusAceitos: readonly string[] = ["pedido"]): Promise<LeituraEscolha | null> {
   const { data } = await admin.from("vistoria_pedidos").select("id, property_id, owner_id, cidade, tipo, teste, status, origem_pedido_id").eq("id", pedidoId).maybeSingle();
   const p = data as LinhaPedido | null;
-  if (!p || p.status !== "pedido") return null;
+  if (!p || !statusAceitos.includes(p.status)) return null;
   const [jaLeitura, filaToda, historico, modo, piloto] = await Promise.all([
     admin.from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", p.id),
     filaDaCidade(admin),
@@ -290,6 +326,16 @@ export async function sugeridosDoPedido(admin: Admin, pedidoId: string, agora = 
 }
 
 /**
+ * E1100: quantos avaliadores o dono poderá escolher se descartar AGORA o avaliador escolhido (e a proposta dele). É a
+ * MESMA leitura da escolha, feita com o pedido ainda designado: o avaliador atual já está entre os "já designados" e não
+ * volta. Nada muda em quem pode ser escolhido. Lança se uma leitura falha (quem chama não inventa número).
+ */
+export async function outrosParaTroca(admin: Admin, pedidoId: string, agora = new Date()): Promise<number | null> {
+  const l = await leituraDaEscolha(admin, pedidoId, agora, ["designado"]);
+  return l ? l.sugestoes.sugeridos.length : null;
+}
+
+/**
  * E648: o DONO escolheu o avaliador. Só vale quem está entre os sugeridos (os impedimentos de independência seguem
  * valendo). O avaliador é avisado e responde com o próprio preço e prazo (ou recusa); nada é imposto a ele.
  */
@@ -320,6 +366,26 @@ export async function escolherNoServidor(admin: Admin, pedidoId: string, avaliad
 }
 
 /**
+ * E1102: grava a resposta do AVALIADOR DO PEDIDO ("aceita" ao propor, "recusada" ao recusar) na designação aberta. Se o
+ * pedido não tem a linha da designação (massa antiga, dado incoerente), ela é criada já com a resposta, na data da
+ * designação do pedido — antes, a resposta não tinha onde ser gravada e a ação dizia que o prazo tinha passado.
+ * Devolve false quando a designação JÁ tem resposta (nada é gravado por cima) ou quando a leitura falha.
+ * Quem chama já conferiu que a sessão é do avaliador do pedido e que o pedido está "designado".
+ */
+export async function registrarRespostaDoAvaliador(admin: Admin, pedidoId: string, avaliadorId: string, resposta: "aceita" | "recusada", agora = new Date()): Promise<boolean> {
+  const quando = agora.toISOString();
+  const { data } = await admin.from("vistoria_designacoes").update({ resposta, respondido_em: quando }).eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId).is("resposta", null).select("id");
+  if (data?.length) return true;
+  const { data: ja, error } = await admin.from("vistoria_designacoes").select("id").eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId).maybeSingle();
+  if (error || ja) return false;
+  const { data: p } = await admin.from("vistoria_pedidos").select("designado_em").eq("id", pedidoId).maybeSingle();
+  const { error: erroNova } = await admin
+    .from("vistoria_designacoes")
+    .insert({ pedido_id: pedidoId, avaliador_id: avaliadorId, designado_em: (p?.designado_em as string | null | undefined) ?? quando, resposta, respondido_em: quando });
+  return !erroNova;
+}
+
+/**
  * Recusa, silêncio de 24 h, ausência do avaliador ou proposta recusada pelo dono: fecha a escolha e DEVOLVE o pedido ao
  * dono para escolher outro (a Viva não passa ao "próximo da fila"). Ausência confere os critérios públicos (revisão
  * humana; nada de suspensão automática).
@@ -334,6 +400,8 @@ export async function devolverAoDono(admin: Admin, pedidoId: string, avaliadorId
     .from("vistoria_pedidos")
     .update({ status: "pedido", avaliador_id: null, designado_em: null, escolhido_em: null, valor_proposto: null, prazo_proposto_dias: null, proposta_em: null, proposta_aceita_em: null, agendado_para: null, atualizado_em: quando })
     .eq("id", pedidoId);
+  // E1128: o pedido voltou ao dono sem data — os avisos da visita que estava marcada deixam de valer.
+  await resolverAvisosDaVisita(admin, pedidoId);
   await abrirEscolha(admin, pedidoId, agora);
   if (resposta === "ausencia") await revisarCriterios(admin, avaliadorId, agora);
 }
@@ -393,16 +461,33 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
   const horasDe = new Map(((prazos ?? []) as { id: string; prazo_resposta_horas: number | null }[]).map((x) => [x.id, x.prazo_resposta_horas ?? undefined]));
   for (const d of (abertas ?? []) as { pedido_id: string; avaliador_id: string; designado_em: string }[]) {
     if (!designacaoVencida(d.designado_em, agora, horasDe.get(d.avaliador_id))) continue;
-    const { data: p } = await admin.from("vistoria_pedidos").select("status, avaliador_id, owner_id, property_id").eq("id", d.pedido_id).maybeSingle();
+    const { data: p } = await admin.from("vistoria_pedidos").select("status, avaliador_id, owner_id, property_id, proposta_em, proposta_aceita_em, escolhido_em, teste").eq("id", d.pedido_id).maybeSingle();
     if (p?.status !== "designado" || p.avaliador_id !== d.avaliador_id) continue;
+    // E1101: a designação só vence pelo relógio de RESPOSTA (a mesma fonte das telas). Com a proposta enviada ele parou:
+    // um pedido com proposta viva nunca volta ao dono como "sem resposta", mesmo com a designação incoerente.
+    const relogioDaResposta = relogioDoPedido(
+      {
+        status: p.status,
+        resposta: null,
+        designadoEm: d.designado_em,
+        propostaEm: (p.proposta_em as string | null) ?? null,
+        propostaAceitaEm: (p.proposta_aceita_em as string | null) ?? null,
+        prazoRespostaHoras: horasDe.get(d.avaliador_id),
+        precisaDoAceite: precisaDoAceiteDoDono({ teste: p.teste === true, escolhidoEm: (p.escolhido_em as string | null) ?? null }),
+      },
+      agora,
+    );
+    if (relogioDaResposta?.vez !== "avaliador" || !relogioDaResposta.vencido) continue;
     await devolverAoDono(admin, d.pedido_id, d.avaliador_id, "expirada", agora);
     await avisar(admin, p.owner_id, "vistoria_designado_dono", rotaDono(p.property_id), { pedidoId: d.pedido_id, propertyId: p.property_id });
     expiradas++;
   }
   // E682: proposta que o dono não aceitou no prazo dele (72 h) volta a ele para escolher de novo — sem rodízio.
-  const { data: propostas } = await admin.from("vistoria_pedidos").select("id, avaliador_id, owner_id, property_id, proposta_em").eq("status", "designado").not("proposta_em", "is", null).is("proposta_aceita_em", null);
-  for (const q of (propostas ?? []) as { id: string; avaliador_id: string | null; owner_id: string; property_id: string; proposta_em: string }[]) {
+  const { data: propostas } = await admin.from("vistoria_pedidos").select("id, avaliador_id, owner_id, property_id, proposta_em, escolhido_em, teste").eq("status", "designado").not("proposta_em", "is", null).is("proposta_aceita_em", null);
+  for (const q of (propostas ?? []) as { id: string; avaliador_id: string | null; owner_id: string; property_id: string; proposta_em: string; escolhido_em: string | null; teste: boolean | null }[]) {
     if (!q.avaliador_id || !propostaVencida(q.proposta_em, agora)) continue;
+    // E1101: as 72 h são do dono que precisa aceitar. A avaliação de teste do credenciamento não tem aceite: não vence aqui.
+    if (!precisaDoAceiteDoDono({ teste: q.teste === true, escolhidoEm: q.escolhido_em })) continue;
     await devolverAoDono(admin, q.id, q.avaliador_id, "expirada", agora);
     await avisar(admin, q.owner_id, "vistoria_designado_dono", rotaDono(q.property_id), { pedidoId: q.id, propertyId: q.property_id });
     expiradas++;

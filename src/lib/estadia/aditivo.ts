@@ -20,6 +20,7 @@ import {
 } from "../contrato-blocos.ts";
 import { comissaoSobreContrato, pctTexto } from "../cobranca/regra.ts";
 import { ddmmaaaa } from "./estadia.ts";
+import { saidaPeloFim } from "../texto-do-periodo.ts";
 
 /** Validade da proposta: 7 dias para a outra parte responder. */
 export const VALIDADE_PROPOSTA_DIAS = 7;
@@ -137,15 +138,19 @@ export function validarProposta(c: ContratoParaAditivo, p: PropostaAditivo, hoje
 }
 
 /**
- * E672: o comparativo do contrato antes e depois do aditivo, com os dias exatos. A saída é o fim gravado nos blocos (a
- * mesma data da página do contrato, E671); os dias vão do início ao fim, inclusive (2 meses = 60 dias).
+ * E672: o comparativo do contrato antes e depois do aditivo, com os dias exatos. E1089: a saída é o dia seguinte ao fim
+ * gravado nos blocos (entrada + dias, a mesma data da proposta e da página do contrato); os dias vão do início à última
+ * noite, inclusive (2 meses = 60 dias).
  */
 export function comparativoDoAditivo(c: ContratoParaAditivo, m: MudancasAditivo, hojeISO: string): ComparativoAditivo {
   const foto = (blocos: { inicio: string; fim: string; valor: number }[]): FotoDoContrato => {
     const lista = [...blocos].sort((a, b) => a.inicio.localeCompare(b.inicio));
     const entrada = lista[0]?.inicio ?? "";
-    const saida = lista[lista.length - 1]?.fim ?? "";
-    const dias = entrada && saida ? Math.round((Date.parse(`${saida}T00:00:00Z`) - Date.parse(`${entrada}T00:00:00Z`)) / 86_400_000) + 1 : 0;
+    // E1089: o último `fim` dos blocos é a ÚLTIMA NOITE; a SAÍDA do comparativo é o dia seguinte (entrada + dias), a
+    // mesma data da proposta. Os dias (noites) não mudam: vão da entrada à última noite, inclusive.
+    const ultimaNoite = lista[lista.length - 1]?.fim ?? "";
+    const saida = saidaPeloFim(ultimaNoite);
+    const dias = entrada && ultimaNoite ? Math.round((Date.parse(`${ultimaNoite}T00:00:00Z`) - Date.parse(`${entrada}T00:00:00Z`)) / 86_400_000) + 1 : 0;
     const total = Math.round(lista.reduce((s, b) => s + Number(b.valor), 0) * 100) / 100;
     return { entrada, saida, dias, total };
   };

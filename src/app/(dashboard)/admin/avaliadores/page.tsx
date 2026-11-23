@@ -22,6 +22,7 @@ import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
 import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada";
 import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
 import { CRITERIOS_PUBLICOS } from "@/lib/vistoria/escolha";
+import { PRAZO_RESPOSTA_PADRAO_HORAS } from "@/lib/vistoria/prazos";
 import { TITULO_ADMIN, TITULO_SECAO_A_DECIDIR, TITULO_SECAO_NA_REDE, contagemDecisoes, credenciamentoADecidir, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
 import { tituloDoAdmin } from "@/config/menu-admin";
 import { soLeituraNaTela } from "@/lib/qa/observador";
@@ -36,8 +37,10 @@ export const dynamic = "force-dynamic";
 
 const mascararDocumento = (d: string | null) => (d ? `${"•".repeat(Math.max(0, d.length - 4))}${d.slice(-4)}` : "—");
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
+/** A janela da lista de recusas, vencidas e ausências da Central, em dias. */
+const DIAS_DA_JANELA_DE_RECUSAS = 30;
 const ROTULO_STATUS: Record<StatusCredenciamento, string> = { solicitado: "Solicitado", em_teste: "Em teste", ativo: "Ativo", suspenso: "Suspenso", descredenciado: "Descredenciado" };
-const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Recusou", expirada: "Sem resposta em 24 horas", ausencia: "Não foi à visita" };
+const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Recusou", expirada: `Sem resposta em ${PRAZO_RESPOSTA_PADRAO_HORAS} horas`, ausencia: "Não foi à visita" };
 const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicitado: ["em_teste", "descredenciado"], em_teste: ["ativo", "descredenciado"], ativo: ["descredenciado"], suspenso: ["ativo", "descredenciado"], descredenciado: [] };
 const ROTULO_FILA: Record<string, string> = { sem_avaliador: "Pedido sem avaliador elegível", avaliacao_teste: "Avaliação de teste a marcar e revisar", suspensao_automatica: "Suspensão automática antiga (não é mais criada)", revisao_criterio: "Critério público de qualidade atingido: rever com o avaliador (direito de resposta)", proposta_descredenciamento: "Proposta de descredenciamento", laudo_atrasado: "Laudo não enviado em 48 horas úteis", ressalva_vencida: "Ressalva vencida: avaliar abrir verificação", devolucao_vencida: "Devolução da contestação não confirmada em 15 dias", seguranca_grave: "Segurança grave a acompanhar" };
 const ROTULO_BLOQUEIO: Record<string, string> = { seguranca_grave: "Segurança grave (fora da busca)", strike_2: "2º strike (republicar só com laudo)", strike_3: "3º strike (todos fora da busca)" };
@@ -92,7 +95,7 @@ export default async function AdminAvaliadoresPage() {
         .map(async (c) => [c.id, (await estadoIdentidade(admin, c.user_id!)).estado] as const),
     ),
   );
-  const trintaDias = new Date(agora.getTime() - 30 * 86_400_000).toISOString();
+  const trintaDias = new Date(agora.getTime() - DIAS_DA_JANELA_DE_RECUSAS * 86_400_000).toISOString();
   // Prompt 62-A, Parte 2: contestações em aberto (com o 2º avaliador), devoluções a devolver e laudos fora das 48 h úteis.
   const [{ data: contestacoesAbertas }, { data: devolucoesAbertas }, { data: semLaudo }] = semFalhaDeLeitura(await Promise.all([
     admin.from("vistoria_pedidos").select("id, cidade, status, criado_em, origem_pedido_id, avaliadores_credenciamento(numero_credenciado)").eq("tipo", "contestacao").in("status", ["pedido", "designado", "agendado", "realizada"]).order("criado_em").limit(50),

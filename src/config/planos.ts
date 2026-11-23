@@ -19,7 +19,7 @@ export interface Plano {
   publico: string; // público-alvo (tagline)
   precoMensal: number | null; // R$/mês (null = sob consulta)
   assinaturaAnual: number | null; // R$/ano (= mensal × 12; null = sob consulta)
-  comissao: number; // 0..1 — comissão de fechamento (Gestor = 0)
+  comissao: number; // 0..1 — comissão de fechamento
   limiteAnuncios: number; // anúncios ativos permitidos
   destaque: boolean; // plano em destaque na página de preços
   beneficios: string[];
@@ -87,18 +87,14 @@ const PLANOS_BASE: Plano[] = [
     publico: "Administradoras e coordenadores",
     precoMensal: null, // sob consulta
     assinaturaAnual: null,
-    comissao: 0.04, // E564 (04/11/2026): Gestor = taxa de 4% por contrato, sem assinatura nem taxa zero
+    // HISTÓRICO (prompt 078, 16/11/2026): o plano deixou de ser oferta pública. A taxa fica só para LER contratos
+    // antigos com este plano gravado no aceite (taxaDoContrato); nenhuma tela anuncia o plano nem a taxa.
+    comissao: 0.04,
     limiteAnuncios: 999,
     destaque: false,
-    // E564 (parte A): só os diferenciais do lançamento (GESTOR_DIFERENCIAIS) — nada da fase 2.
-    beneficios: [
-      "Taxa de serviço de 4% sobre o valor total de cada contrato",
-      "Cadastro assistido da carteira",
-      "Contato direto na Viva",
-      "Suporte prioritário",
-    ],
-    custoLabel: "Taxa de serviço de 4% do valor total do contrato, sem assinatura",
-    cta: "Falar com vendas",
+    beneficios: [],
+    custoLabel: "Condições combinadas com a Viva",
+    cta: "Falar com a Viva",
   },
 ];
 
@@ -201,8 +197,8 @@ export function assinaturaMediaMix(mix: Record<PlanoId, number> = MIX_ROI): numb
 /**
  * Taxa de comissão que vale para um contrato: a CONGELADA no aceite; se ela não
  * foi gravada (null) ou não é uma taxa real de plano, a do PLANO registrado no
- * aceite; sem plano válido, a do Gratuito. Antes `Number(null)` virava 0 — a
- * taxa do Gestor — e a comissão saía R$ 0.
+ * aceite; sem plano válido, a do Gratuito. Antes `Number(null)` virava 0 e a
+ * comissão saía R$ 0.
  */
 export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): number {
   // Vale a taxa do ACEITE, mesmo que a tabela tenha mudado depois.
@@ -218,42 +214,14 @@ export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): numb
 }
 
 /**
- * E564 (decisão do Daniel, 04/11/2026; desenho validado nos Relays 68–70): o Plano Gestor é a TAXA de 4% por contrato
- * para carteiras de `minimoImoveis`+ imóveis ativos de verdade (E565) ou conta de administradora. Sem assinatura no
- * lançamento: saíram a mensalidade de R$ 500 com 20 imóveis incluídos, os R$ 25 por imóvel extra e a taxa zero.
- * A faixa "31+ negociável" deixou de existir. A fase 2 (equipe/permissões, operações em massa, sincronização,
- * mensalidade-mínimo) é desenho futuro, fora desta regra. A faixa de 4% está em lib/cobranca/regra.ts.
+ * Prompt 078 (decisão do Daniel, 16/11/2026): lançar SEM o Plano Gestor público de 4%. A escada pública termina em
+ * "16–19 = 6%" (lib/cobranca/regra.ts; ORDEM-DUET-534: a partir de 20 nenhum percentual é publicado). Carteira grande ou administradora não tem taxa publicada: fala com a Viva,
+ * e a condição é decidida caso a caso (taxa fixada pelo admin, com motivo e validade). Saíram daqui GESTOR_PRECO,
+ * PORTA_GESTOR_TEXTO, GESTOR_RESUMO, GESTOR_TEXTO e GESTOR_DIFERENCIAIS.
  */
-export const GESTOR_PRECO = {
-  ligado: true,
-  minimoImoveis: 20,
-  taxa: 0.04,
-} as const;
-
-/**
- * E321/E564: a PORTA do Plano Gestor, igual em todas as telas — N+ imóveis ativos de verdade (publicados, com documento
- * aprovado e calendário em dia) OU conta de administradora (a mesma regra de gestorElegivel e da faixa de 4%).
- */
-export const PORTA_GESTOR_TEXTO = `${GESTOR_PRECO.minimoImoveis} imóveis ou mais ativos (publicados, com documento aprovado e calendário em dia), ou conta de administradora`;
-
-/** "taxa de 4% por contrato · sem assinatura · para carteiras de 20+ imóveis" */
-export const GESTOR_RESUMO = `taxa de ${`${Math.round(GESTOR_PRECO.taxa * 1000) / 10}`.replace(".", ",")}% por contrato · sem assinatura · para carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis`;
-
-/**
- * E564 (parte A): o texto único do Gestor nas telas — 4%, carteiras de 20+, cadastro assistido e contato direto. Sai da
- * mesma constante da regra (GESTOR_PRECO).
- */
-const GESTOR_PCT = String(Math.round(GESTOR_PRECO.taxa * 1000) / 10).replace(".", ",");
-// E905: com a alternativa aprovada "ou conta de administradora" (a mesma da home e da Ajuda, PORTA_GESTOR_TEXTO).
-export const GESTOR_TEXTO = `${GESTOR_PCT}% para carteiras de ${GESTOR_PRECO.minimoImoveis} ou mais imóveis ou conta de administradora, com cadastro assistido da carteira e contato direto na Viva`;
-
-/** Os únicos diferenciais anunciáveis no lançamento (nada da fase 2: equipe, operações em massa, sincronização). */
-export const GESTOR_DIFERENCIAIS = [
-  "Taxa de serviço de 4% sobre o valor total de cada contrato",
-  "Cadastro assistido da carteira",
-  "Contato direto na Viva",
-  "Suporte prioritário",
-] as const;
+export const CARTEIRAS_MINIMO_IMOVEIS = 20;
+/** A linha única das carteiras, igual em todas as telas — sem taxa, sem "plano". */
+export const TEXTO_CARTEIRAS = `Carteira a partir de ${CARTEIRAS_MINIMO_IMOVEIS} imóveis ou administradora de imóveis: fale com a Viva.`;
 
 /**
  * Regras do CONTRATO — fonte única (prazo, teto legal, caução, blocos).

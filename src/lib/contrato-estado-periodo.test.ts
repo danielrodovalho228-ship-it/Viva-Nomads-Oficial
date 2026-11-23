@@ -91,7 +91,7 @@ test("2. datas: sobreposição com fim inclusivo; o sequencial (entrada no dia s
   assert.equal(lerDaterange("empty"), null);
   const c = conflitoDePeriodo({ inicio: "2026-12-01", fim: "2027-01-29" }, [{ inicio: "2027-03-01", fim: "2027-04-29" }, a]);
   assert.deepEqual(c, a);
-  assert.equal(mensagemConflitoPeriodo(c!), "Este imóvel já tem contrato de 19/10/2026 a 17/12/2026. Escolha outra data de entrada.");
+  assert.equal(mensagemConflitoPeriodo(c!), "Este imóvel já tem contrato com entrada em 19/10/2026 e saída em 18/12/2026. Escolha outra data de entrada.");
   assert.equal(conflitoDePeriodo({ inicio: "2026-12-18", fim: "2027-02-15" }, [a]), null);
 });
 

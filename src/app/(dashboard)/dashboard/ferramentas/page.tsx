@@ -21,6 +21,7 @@ import { PageTitle } from "@/components/dashboard/primitives";
 import { FOTOS_FERRAMENTAS } from "@/components/dashboard/capas";
 import { BRAND_BLUR } from "@/lib/media";
 import { PREVIAS_FOTOS } from "@/lib/previas-fotos";
+import { REGRA_CAUCAO } from "@/lib/caucao-regra";
 
 /*
   Central de Ferramentas (ampliação da ordem 9f3085d8). Três grupos, quatro
@@ -117,7 +118,8 @@ const GRUPOS: Grupo[] = [
       {
         href: "/dashboard/garantias",
         titulo: "Garantia locatícia",
-        texto: "Caução Viva (50% por bloco, devolvível) — o dinheiro nunca fica com a plataforma.",
+        // E1110 (ORDEM-494): a regra da caução pela frase-fonte (lib/caucao-regra.ts), não a antiga "por bloco".
+        texto: `Caução Viva: ${REGRA_CAUCAO}, devolvível — o dinheiro nunca fica com a plataforma.`,
         icone: ShieldCheck,
       },
       {

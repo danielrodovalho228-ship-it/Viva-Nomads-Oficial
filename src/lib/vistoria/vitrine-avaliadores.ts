@@ -10,6 +10,8 @@
 import { iniciais } from "../avatar.ts";
 import { atendeCidade, ROTULO_AVALIADOR_CREDENCIADO, ROTULO_AVALIADOR_EM_TESTE, ROTULO_PORTE, PORTES, precoVigente, type LinhaPreco, type Porte } from "./regras.ts";
 import { chaveCidade } from "../cidades.ts";
+import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
+import { estrelasDaNota } from "../conta/tela-avaliacoes.ts";
 
 /** A listagem pública por cidade: desligada até o Daniel a abrir (condição 2 do coordenador). */
 export const VITRINE_AVALIADORES_ABERTA = false;
@@ -27,6 +29,14 @@ export function fotoPublicaPermitida(contaTeste: boolean): boolean {
 export function seloDoCredenciado(teste: boolean, seloLigado: string | null): string {
   if (teste) return ROTULO_AVALIADOR_EM_TESTE;
   return seloLigado?.trim() ? seloLigado.trim() : ROTULO_AVALIADOR_CREDENCIADO;
+}
+
+/**
+ * E1099 (ORDEM-DUET-473 §1): a conta de um credenciamento — a dele; sem ela (credenciamento criado pelo parceiro), a do
+ * parceiro. Regra ÚNICA: a listagem, o perfil, a foto e a identidade resolvem a conta por aqui.
+ */
+export function contaDaLinhaDeCredenciamento(c: { user_id: string | null; parceiros?: { user_id: string | null } | null } | null | undefined): string | null {
+  return c?.user_id ?? c?.parceiros?.user_id ?? null;
 }
 
 export type Rosto = { tipo: "foto"; url: string } | { tipo: "iniciais"; texto: string };
@@ -47,6 +57,8 @@ export interface FonteAvaliador {
   notaConduta: number | null;
   contaTeste: boolean;
   fotoUrl: string | null;
+  /** E1099 parte 3: a identidade da conta CONFIRMADA (estadoIdentidade). Sem o fato (piloto, sem leitura): ausente/false. */
+  identidadeVerificada?: boolean;
 }
 
 export interface CartaoAvaliador {
@@ -58,6 +70,7 @@ export interface CartaoAvaliador {
   notaConduta: number | null;
   rosto: Rosto;
   href: string;
+  identidadeVerificada: boolean;
 }
 
 export function cartaoDoAvaliador(a: FonteAvaliador): CartaoAvaliador {
@@ -70,6 +83,7 @@ export function cartaoDoAvaliador(a: FonteAvaliador): CartaoAvaliador {
     notaConduta: a.notaConduta == null || !Number.isFinite(Number(a.notaConduta)) ? null : Number(a.notaConduta),
     rosto: rostoDoAvaliador(a.nome, a.fotoUrl, a.contaTeste),
     href: `/avaliadores/${encodeURIComponent(a.numero)}`,
+    identidadeVerificada: a.identidadeVerificada === true,
   };
 }
 
@@ -134,6 +148,44 @@ export const TITULO_NOVO_NA_VIVA = "Novo na Viva";
 export const TEXTO_NOVO_NA_VIVA = "Este avaliador ainda não tem avaliações — seja o primeiro a contratar.";
 export const TITULO_QUADRO_PRECO = "Preço da avaliação";
 export const TEXTO_IDENTIDADE_VERIFICADA = "Identidade verificada pela Viva";
+/** E1099 (ORDEM-DUET-458 §2): o "Sobre" do perfil — texto do próprio avaliador, opcional (0355: até 600 caracteres). */
+export const TITULO_SOBRE = "Sobre";
+export const SOBRE_MAX = 600;
+/** ORDEM-DUET-462 §1 / 463 §2: a frase aprovada, curta e simples. */
+export const EXPLICACAO_SOBRE = "Este texto aparece no seu perfil público.";
+/** O texto do "Sobre": aparado; vazio = nada (a secção some); acima do limite ou com contacto, recusado com o motivo. */
+export function normalizarSobre(texto: string): { ok: true; valor: string | null } | { ok: false; erro: string } {
+  const t = String(texto ?? "").trim();
+  if (!t) return { ok: true, valor: null };
+  if (t.length > SOBRE_MAX) return { ok: false, erro: `O texto "Sobre" tem até ${SOBRE_MAX} caracteres.` };
+  /* ORDEM-DUET-498 (K2): o "Sobre" é público — contacto (telefone, e-mail, mensageiros) é recusado com o aviso da casa. */
+  if (contemContato(t)) return { ok: false, erro: CONTATO_AVISO };
+  return { ok: true, valor: t };
+}
+
+// ── E1096 (ORDEM-DUET-453): a escolha do dono conforme o mockup (dono-escolha-avaliador) ─────────────────────────
+export const TITULO_ESCOLHA_AVALIADOR = "Escolher avaliador";
+export const ROTULO_ESCOLHER = "Escolher";
+
+/**
+ * As cinco estrelas de conduta do cartão da escolha: cheias pela nota PUBLICADA (E682); sem avaliação nem nota, vazias
+ * com "Novo na Viva". Com avaliações feitas e ainda sem nota, vazias com a contagem (não é "novo").
+ */
+export function reputacaoNoCartao(avaliacoesFeitas: number, notaConduta: number | null): { novo: boolean; cheias: number; texto: string } {
+  if (novoNaViva(avaliacoesFeitas, notaConduta)) return { novo: true, cheias: 0, texto: TITULO_NOVO_NA_VIVA };
+  const feitas = Math.max(0, Math.round(Number(avaliacoesFeitas) || 0));
+  if (notaConduta == null) return { novo: false, cheias: 0, texto: textoAvaliacoes(feitas) };
+  // Nota publicada conta pelo menos a avaliação que a deu (a mesma regra da linha de termos da lista).
+  return { novo: false, cheias: estrelasDaNota(notaConduta), texto: `${notaConduta.toFixed(1).replace(".", ",")} (${textoAvaliacoes(Math.max(1, feitas))})` };
+}
+
+/**
+ * A frase sob os cartões, alinhada à tela do pedido do avaliador (E1079, fatia 3): a tabela da cidade é REFERÊNCIA; o
+ * valor e o prazo de cada avaliador só existem depois de ele aceitar o pedido (E648/E682) — e o dono aceita ou troca.
+ */
+export function fraseDoValorNaEscolha(f: { referencia: string; min: string; max: string }): string {
+  return `Valor de referência da cidade: ${f.referencia} (faixa de ${f.min} a ${f.max}). O valor e o prazo de cada avaliador aparecem depois que ele aceitar o pedido; você aceita ou escolhe outro.`;
+}
 
 // ── E1080 (ORDEM-DUET-385): a listagem pública por cidade (/avaliadores/<cidade>) ───────────────────────────────
 /** Número de avaliador ("UDI-003") — o resto do caminho /avaliadores/<…> é o nome da cidade. */
