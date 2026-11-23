@@ -102,13 +102,14 @@ test("E40: as faixas contam igual ao aplicar, a de 0 fica desativada e a linha d
   const contar2 = (f: FiltrosPainel) => lista.filter((p) => passaNoPainel(p, f, AGORA)).length;
   const faixas = faixasInternet(medicoesDaBusca(lista, AGORA));
   assert.deepEqual(faixas, [50, 100, 300]);
+  // Asserção alterada (E1078, ORDEM-382 (a)): a faixa conta a VELOCIDADE — o medido 150 e o informado 400 sem medição.
   assert.deepEqual(faixas.map((v) => facetaUnica(contar2, V, "internetMin", v)), [
+    { n: 2, desabilitado: false },
+    { n: 2, desabilitado: false },
     { n: 1, desabilitado: false },
-    { n: 1, desabilitado: false },
-    { n: 0, desabilitado: true },
   ]);
-  // A linha "Mais N com internet informada, mas não medida" segue (o de 400 Mbps informados, sem medição).
-  assert.equal(naoMedidosDoPainel(lista, { ...V, internetMin: 300 }, AGORA).length, 1);
+  // A linha "Mais N com internet informada, mas não medida" segue com o estrito "Só com internet medida".
+  assert.equal(naoMedidosDoPainel(lista, { ...V, internetMin: 300, soInternetMedida: true }, AGORA).length, 1);
 });
 
 test("E41: estadia e caução filtram de verdade (o fixture aceita tudo; um anúncio diferente sai)", () => {

@@ -65,7 +65,8 @@ test.describe("T610 — E190 parte 2: 'Hoje' no Início do proprietário", () =>
     await criarLead(ids.dono, ids.entra, ids.imA, true);
     await criarLead(ids.dono, ids.sai, ids.imB, true);
     ids.cEntra = await contrato(ids.imA, ids.entra, dia(0), dia(59));
-    ids.cSai = await contrato(ids.imB, ids.sai, dia(-59), dia(0));
+    // E1089 (coordenador): "sai hoje" = a SAÍDA é hoje; o bloco grava a última noite, que foi ontem.
+    ids.cSai = await contrato(ids.imB, ids.sai, dia(-60), dia(-1));
     // O dono "vazio" tem contrato, mas nada HOJE: a seção não aparece.
     ids.cFuturo = await contrato(ids.imVazio, ids.entra, dia(70), dia(129));
   });

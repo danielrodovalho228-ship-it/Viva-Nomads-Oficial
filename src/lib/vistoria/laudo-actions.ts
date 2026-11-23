@@ -17,6 +17,7 @@ import { porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, rotaDono, tabelaDaCidade } from "./servidor";
 import type { MotivoVerificacao } from "./strikes";
 import { lerNivelDoLaudo } from "./nivel-do-laudo";
+import { faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita } from "./visita-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
 
 /*
@@ -88,7 +89,11 @@ export async function salvarItens(form: FormData): Promise<Res> {
 export async function enviarFotoAvaliacao(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || !EM_VISITA.includes(c.p.status)) return SEM_ACESSO;
-  return gravarFoto(c.admin, c.p.id, form);
+  const res = await gravarFoto(c.admin, c.p.id, form);
+  // E1117 (perna 2): a tela da visita conta as fotos, marca o roteiro e diz o que falta para concluir. Com a foto
+  // registrada, a página desta avaliação é refeita na mesma resposta — sem isso só mudava depois de recarregar.
+  if (res.ok) revalidatePath(`${ROTA_AVALIADOR}/${c.p.id}`);
+  return res;
 }
 
 async function gravarFoto(admin: NonNullable<ReturnType<typeof createAdminClient>>, pedidoId: string, form: FormData): Promise<Res> {
@@ -104,7 +109,13 @@ async function gravarFoto(admin: NonNullable<ReturnType<typeof createAdminClient
   const path = `${pedidoId}/${Date.now()}-${randomBytes(4).toString("hex")}`;
   const up = await admin.storage.from(BUCKET).upload(path, Buffer.from(limpo), { contentType: arquivo.type, upsert: false });
   if (up.error) return { ok: false, erro: "Não foi possível enviar a foto." };
-  await admin.from("vistoria_checklist_fotos").insert({ pedido_id: pedidoId, item_chave: itemChave, comodo, path });
+  // E1117 (perna 1): "Foto enviada." só depois de a foto estar REGISTRADA na avaliação. Se o registro falhar, o arquivo
+  // que subiu sai do bucket (não fica órfão) e a tela diz que não deu.
+  const { error: erroRegistro } = await admin.from("vistoria_checklist_fotos").insert({ pedido_id: pedidoId, item_chave: itemChave, comodo, path });
+  if (erroRegistro) {
+    await admin.storage.from(BUCKET).remove([path]);
+    return { ok: false, erro: "Não foi possível guardar a foto. Envie de novo." };
+  }
   return { ok: true, mensagem: "Foto enviada." };
 }
 
@@ -119,7 +130,10 @@ export async function registrarMedicao(form: FormData): Promise<Res> {
   if (tipo === "ruido_dba") {
     const dba = Number(String(form.get("dba") ?? "").replace(",", "."));
     if (!(dba >= 0 && dba <= 140)) return { ok: false, erro: "Informe o dB(A) medido." };
-    await c.admin.from("vistoria_medicoes").insert({ pedido_id: c.p.id, tipo, dba: Math.round(dba * 10) / 10 });
+    // E1117 (perna 4): "guardada" só com a medição gravada; e a página é refeita para mostrar o valor que ficou.
+    const { error: erroMedicao } = await c.admin.from("vistoria_medicoes").insert({ pedido_id: c.p.id, tipo, dba: Math.round(dba * 10) / 10 });
+    if (erroMedicao) return { ok: false, erro: "Não foi possível guardar a medição. Tente de novo." };
+    revalidatePath(`${ROTA_AVALIADOR}/${c.p.id}`);
     return { ok: true, mensagem: "Medição de ruído guardada (uso interno)." };
   }
   if (tipo !== "internet") return { ok: false, erro: "Medição inválida." };
@@ -142,6 +156,18 @@ export async function registrarMedicao(form: FormData): Promise<Res> {
   return { ok: true, mensagem: "Internet medida." };
 }
 
+/**
+ * E1117 (perna 4): o último dB(A) guardado nesta avaliação, para a tela da visita mostrar a quem o mediu — o avaliador
+ * designado e mais ninguém (continua apoio interno: não vai para o laudo nem para o anúncio). Sem medição, `null`.
+ */
+export async function dbaGuardadoDaVisita(pedidoId: string): Promise<number | null> {
+  const c = await comoAvaliador(pedidoId);
+  if (!c || !EM_VISITA.includes(c.p.status)) return null;
+  const { data } = await c.admin.from("vistoria_medicoes").select("dba").eq("pedido_id", c.p.id).eq("tipo", "ruido_dba").order("medido_em", { ascending: false }).limit(1).maybeSingle();
+  const dba = data?.dba === null || data?.dba === undefined ? NaN : Number(data.dba);
+  return Number.isFinite(dba) ? dba : null;
+}
+
 /** As 4 perguntas de ruído respondidas na visita (vão para o imóvel com origem "vistoria" quando o laudo sai). */
 export async function salvarRuidoVisita(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
@@ -160,6 +186,12 @@ export async function salvarRuidoVisita(form: FormData): Promise<Res> {
 export async function concluirVisita(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || c.p.status !== "agendado") return SEM_ACESSO;
+  // ORDEM-DUET-431: o roteiro TRAVA a conclusão. Sem a foto de cada ambiente do roteiro a visita não conclui (e sem
+  // conseguir ler as fotos também não: nunca conclui "no escuro").
+  const { data: fotos, error: erroFotos } = await c.admin.from("vistoria_checklist_fotos").select("comodo").eq("pedido_id", c.p.id);
+  if (erroFotos) return { ok: false, erro: "Não foi possível conferir as fotos da visita agora. Tente de novo em instantes." };
+  const faltas = faltasDoRoteiro(roteiroDaVisita(((fotos ?? []) as { comodo: string | null }[]).map((f) => f.comodo)));
+  if (faltas.length) return { ok: false, erro: msgRoteiroIncompleto(faltas) };
   const agora = new Date().toISOString();
   await c.admin.from("vistoria_pedidos").update({ status: "realizada", visita_concluida_em: agora, atualizado_em: agora }).eq("id", c.p.id).eq("status", "agendado");
   revalidatePath(ROTA_AVALIADOR);

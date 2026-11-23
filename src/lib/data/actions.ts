@@ -1,5 +1,6 @@
 "use server";
 
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
 import { erroTituloNivel, termoDeNivelDivergente } from "@/lib/anuncio/titulo-nivel";
 import type { NivelOuAdequacao } from "@/config/niveis";
 import { diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
@@ -45,7 +46,7 @@ import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
-import { aberturaContratoPronto, contaDoContrato, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
+import { aberturaContratoPronto, contaDoContrato, contasDoContrato, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
 import { MSG_PAUSAR_FALHOU, MSG_REATIVAR_FALHOU, donoPodeReativar, textoDaPausa, type EmAndamento } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
@@ -1288,13 +1289,17 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
       const { data: det, error: erroDet } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", user.id).maybeSingle();
       // Leitura falha: regravar a coluna apagaria o grupo da chácara (que este formulário não traz). Mantém o gravado.
       if (erroDet) throw new Error(`detalhes não lidos (${erroDet.message})`);
-      const chacaraGravada = normalizarDetalhes(det?.detalhes_anuncio)?.chacara;
+      const gravado = normalizarDetalhes(det?.detalhes_anuncio);
+      const chacaraGravada = gravado?.chacara;
+      const pagamentoGravado = gravado?.pagamento;
       // O grupo do formulário de detalhes nunca traz "chacara" (nem distância): se vier, é descartado.
-      const { chacara: _ignorada, ...novos } = normalizarDetalhes(input.detalhesAnuncio) ?? {};
+      const { chacara: _ignorada, pagamento: pagamentoEnviado, ...novos } = normalizarDetalhes(input.detalhesAnuncio) ?? {};
       void _ignorada;
+      // E647: a forma de pagamento só muda com a chave ligada; desligada, o que já estava gravado fica como está.
+      const pagamento = FORMA_PAGAMENTO_DONO_ATIVA ? (pagamentoEnviado ?? pagamentoGravado) : pagamentoGravado;
       await supabase
         .from("properties")
-        .update({ detalhes_anuncio: normalizarDetalhes({ ...novos, ...(chacaraGravada ? { chacara: chacaraGravada } : {}) }) })
+        .update({ detalhes_anuncio: normalizarDetalhes({ ...novos, ...(chacaraGravada ? { chacara: chacaraGravada } : {}), ...(pagamento ? { pagamento } : {}) }) })
         .eq("id", id)
         .eq("owner_id", user.id);
     } catch (e) {
@@ -1611,6 +1616,7 @@ export async function registrarContrato(
       // E1066: o total pela fonte única (a conta da proposta acordada: mensal, contas e limpeza) e a caução dos blocos.
       const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel, dias: resumo.prazoTotalDias,
         contaTotal: contaDoContrato(acordada),
+        contas: contasDoContrato(acordada),
         caucao: rows.reduce((s, r) => s + Number(r.caucao), 0),
       });
       const quadro = {

@@ -62,10 +62,12 @@ async function conta(quem: string, nome: string, role: "owner" | "tenant") {
 }
 
 /**
- * Contrato ativo, assinado, com o bloco 1 (2 meses, já começou, pago) terminando em `fimEm` dias e, se `bloco2`, um
+ * Contrato ativo, assinado, com o bloco 1 (2 meses, já começou, pago) com a SAÍDA em `saidaEm` dias e, se `bloco2`, um
  * bloco 2 de 1 mês já aceito pelas duas partes logo depois. Imóvel com a limpeza fixa ATIVA (automático).
+ * E1089 (coordenador): a saída é o dia seguinte à última noite gravada no bloco (`fim`); a limpeza, a régua dos 5 dias
+ * e os textos contam da saída. Antes a massa gravava `fim` = "saída".
  */
-async function contrato(letra: string, inquilino: string, fimEm: number, bloco2 = false) {
+async function contrato(letra: string, inquilino: string, saidaEm: number, bloco2 = false) {
   const imovel = await criarImovelPronto(ids.dono, tituloDe(letra), { ativo: true, preco: 3200 });
   imoveis[letra] = imovel;
   await adm().from("properties").update({ checkout_before: "11:00", checkin_after: "14:00", exact_address: RUA }).eq("id", imovel);
@@ -80,7 +82,7 @@ async function contrato(letra: string, inquilino: string, fimEm: number, bloco2 
     .single();
   if (error) throw error;
   contratos.push(c.id);
-  const fim = emDias(fimEm);
+  const fim = emDias(saidaEm - 1);
   const inicio = somar(fim, -59);
   const { data: b1, error: e1 } = await adm().from("contrato_blocos").insert({ contrato_id: c.id, numero_bloco: 1, inicio, fim, meses: 2, valor: 6400, caucao: 3200, status: "ativo", aceite_proprietario_em: agora, aceite_inquilino_em: agora }).select("id").single();
   if (e1) throw e1;
@@ -201,10 +203,10 @@ async function aditivo(browser: Browser, contratoId: string, morador: string, de
   expect(ev, "o aditivo foi aplicado").toHaveLength(1);
 }
 
-/** A saída do contrato agora (maior fim dos blocos válidos). */
+/** A saída do contrato agora: o dia seguinte ao maior fim dos blocos válidos (E1089: o fim gravado é a última noite). */
 async function saidaDo(contratoId: string): Promise<string> {
   const { data } = await adm().from("contrato_blocos").select("fim, status").eq("contrato_id", contratoId);
-  return ((data ?? []) as { fim: string; status: string }[]).filter((b) => b.status !== "nao_aceito").map((b) => b.fim).sort().at(-1)!;
+  return somar(((data ?? []) as { fim: string; status: string }[]).filter((b) => b.status !== "nao_aceito").map((b) => b.fim).sort().at(-1)!, 1);
 }
 
 async function abrirPedidoComoParceiro(browser: Browser, pedidoId: string) {
@@ -301,7 +303,8 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     expect(new Date(original.janela_inicio!).toISOString()).toBe(inicioDaJanela(saidaOriginal));
     await expect.poll(async () => (await caixa(ids.beto, "sugestao_parceiros_morador")).length, { timeout: 30_000 }).toBe(1);
     const { data: env1 } = await adm().from("automacoes_envios").select("chave").eq("usuario_id", ids.beto).like("chave", "sugestao_parceiros_morador:%");
-    expect((env1 ?? []).map((e) => e.chave)).toEqual([`sugestao_parceiros_morador:${ids.B}:${ids.beto}:saida:${saidaOriginal}`]);
+    // E1089: a chave de "uma vez" continua a levar a última noite gravada (a saída − 1), como antes — não muda.
+    expect((env1 ?? []).map((e) => e.chave)).toEqual([`sugestao_parceiros_morador:${ids.B}:${ids.beto}:saida:${somar(saidaOriginal, -1)}`]);
 
     // 2) Renovação (+1 mês): a nova saída fica a ~34 dias → cancela com o sufixo e avisa o parceiro.
     await aditivo(browser, ids.B, "beto", 2, 3);
@@ -332,7 +335,8 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
       // E744 (CI do #3849): o e-mail da remarcação sai depois da assinatura; espera ele chegar (como o do cancelamento acima).
       await expect.poll(async () => (await caixa(quem, "estadia_remarcada")).length, { timeout: 30_000 }).toBeGreaterThanOrEqual(1);
       const [rem] = await caixa(quem, "estadia_remarcada");
-      regua(rem.corpo, nome, "B", ["o aditivo 1 do contrato", "Meses: de 2 para 3", `a ${dataBR(novaSaida)}`]);
+      // E1089 (coordenador): o período na forma única, com a SAÍDA (antes: "Período: X a {última noite}").
+      regua(rem.corpo, nome, "B", ["o aditivo 1 do contrato", "Meses: de 2 para 3", `· Saída ${dataBR(novaSaida)} · 90 diárias`]);
     }
 
     // 3) A data simulada: a nova saída chega a 3 dias (os blocos andam 31 dias para trás). O cron do D-5 refaz o
@@ -341,8 +345,9 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     const b1 = blocos!.find((b) => b.numero_bloco === 1)!;
     const b2 = blocos!.find((b) => b.numero_bloco === 2)!;
     const simulada = emDias(3);
-    await adm().from("contrato_blocos").update({ fim: somar(simulada, -30) }).eq("id", b1.id);
-    await adm().from("contrato_blocos").update({ inicio: somar(simulada, -29), fim: simulada }).eq("id", b2.id);
+    const ultimaNoite = somar(simulada, -1); // E1089: o bloco grava a última noite; a saída (simulada) é o dia seguinte
+    await adm().from("contrato_blocos").update({ fim: somar(ultimaNoite, -30) }).eq("id", b1.id);
+    await adm().from("contrato_blocos").update({ inicio: somar(ultimaNoite, -29), fim: ultimaNoite }).eq("id", b2.id);
     await rodarCron();
     ps = await pedidosDe("B", ids.B);
     expect(ps, "o cancelado + o refeito").toHaveLength(2);
@@ -351,9 +356,9 @@ test.describe("T597 — E213-B: limpeza D-5 × renovação dentro da janela", ()
     expect(new Date(refeito.janela_inicio!).toISOString()).toBe(inicioDaJanela(simulada));
     await expect.poll(async () => (await caixa(ids.beto, "sugestao_parceiros_morador")).length, { timeout: 30_000 }).toBe(2);
     const { data: env2 } = await adm().from("automacoes_envios").select("chave").eq("usuario_id", ids.beto).like("chave", "sugestao_parceiros_morador:%");
-    expect((env2 ?? []).map((e) => e.chave).sort()).toEqual([`sugestao_parceiros_morador:${ids.B}:${ids.beto}:saida:${saidaOriginal}`, `sugestao_parceiros_morador:${ids.B}:${ids.beto}:saida:${simulada}`].sort());
+    expect((env2 ?? []).map((e) => e.chave).sort()).toEqual([`sugestao_parceiros_morador:${ids.B}:${ids.beto}:saida:${somar(saidaOriginal, -1)}`, `sugestao_parceiros_morador:${ids.B}:${ids.beto}:saida:${ultimaNoite}`].sort());
     await expect.poll(async () => (await caixa(ids.beto, "saida_lembrete")).length, { timeout: 30_000 }).toBe(1);
-    const { data: lembrete } = await adm().from("automacoes_envios").select("chave").eq("chave", `saida_lembrete:${ids.B}:${ids.beto}:${simulada}`);
+    const { data: lembrete } = await adm().from("automacoes_envios").select("chave").eq("chave", `saida_lembrete:${ids.B}:${ids.beto}:${ultimaNoite}`);
     expect(lembrete, "o lembrete de saída leva a data na chave").toHaveLength(1);
     // De novo não repete.
     await rodarCron();
