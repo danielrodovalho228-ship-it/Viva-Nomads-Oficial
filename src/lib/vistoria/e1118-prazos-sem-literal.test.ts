@@ -13,7 +13,8 @@
   Fora deste item, de propósito: as "48 horas úteis" do laudo (outra regra, com a sua própria fonte em laudo.ts).
   ORDEM-DUET-547 (endurecimento): a varredura apanha também o prazo escrito em forma ARITMÉTICA — `24 * 3_600_000`,
   `72*3600000`, `3_600_000 * 24`, `24 * 60 * 60 * 1000`… A regra é uma só: 24 ou 72, em algarismos, como fator de uma
-  multiplicação. Antes, um prazo novo escrito assim passava pela varredura sem cair (caso 4).
+  multiplicação. Antes, um prazo novo escrito assim passava pela varredura sem cair (caso 4). Por decisão do Gerente
+  (DUET-1759) entra também a forma em dias: `3 * 86_400_000`, `1 * 86_400_000`, `259_200_000`.
   Roda: node --test src/lib/vistoria/e1118-prazos-sem-literal.test.ts
 */
 import { test } from "node:test";
@@ -59,7 +60,14 @@ const LITERAL = /\b(24|72)\s?(horas?|h)\b|max=\{(24|72)\}|\?\?\s*(24|72)\b|[=:]\
  * 24.5, 0.72 e um nome que acabe em 24 não contam. Quem multiplica uma CONSTANTE (`horas * 3_600_000`) não cai.
  */
 const ARITMETICO = /(?<![\w.])(24|72)\s*\*|\*\s*(24|72)(?![\w.])/;
-const prazoAMao = (linha: string) => LITERAL.test(linha) || ARITMETICO.test(linha);
+/**
+ * ORDEM-DUET-547 (decisão do Gerente, DUET-1759): a forma EM DIAS do mesmo prazo — 1 ou 3 dias inteiros a multiplicar
+ * o dia em milissegundos (`3 * 86_400_000`, `86400000*3`, `1 * 864e5`) e as 72 horas já feitas (`259_200_000`).
+ * NÃO conta o dia sozinho (`const DIA = 86_400_000`, "o dia seguinte" da agenda): é a unidade, usada de propósito em
+ * vários sítios; nem outros múltiplos (7, 30 dias) ou a conta com uma constante (`c.dias * 86_400_000`).
+ */
+const EM_DIAS = /(?<![\w.])[13]\s*\*\s*(86_?400_?000|864e5)\b|\b(86_?400_?000|864e5)\s*\*\s*[13](?![\w.])|\b259_?200_?000\b/;
+const prazoAMao = (linha: string) => LITERAL.test(linha) || ARITMETICO.test(linha) || EM_DIAS.test(linha);
 
 test("E1118 (1): varredura — nenhum prazo da avaliação escrito à mão fora das fontes", () => {
   const arquivos = arquivosVarridos();
@@ -144,6 +152,14 @@ test("E1118 (4, ORDEM-DUET-547): a varredura apanha o prazo em forma aritmética
     "const ms = (72 * HORA_MS);",
     "const ms = horaEmMs * 24;",
     "if (agora.getTime() - Date.parse(designadoEm) >= 24 *3_600_000) return true;",
+    // A forma em dias (decisão do Gerente, DUET-1759): 3 dias = 72 horas, 1 dia = 24 horas.
+    "const fim = t + 3 * 86_400_000;",
+    "const fim = t + 3*86400000;",
+    "const fim = t + 86_400_000 * 3;",
+    "const fim = t + 1 * 86_400_000;",
+    "const fim = t + 3 * 864e5;",
+    "const fim = t + 259_200_000;",
+    "const fim = t + 259200000;",
   ];
   for (const linha of caem) assert.ok(prazoAMao(linha), `tem de cair: ${linha}`);
   // O que NÃO pode cair: outras regras (3 h, 12 h, 7 e 30 dias), números que só contêm 24 ou 72, e a conta feita com
@@ -163,6 +179,15 @@ test("E1118 (4, ORDEM-DUET-547): a varredura apanha o prazo em forma aritmética
     "const e = fator * 724;",
     "const f = lote24 * fator;",
     "const dia = 86_400_000;",
+    // A forma em dias: o dia sozinho é a unidade (linhas reais do código de hoje), e 7, 13 ou 30 dias são outras regras.
+    "const DIA = 86_400_000;",
+    "const d = new Date(Date.parse(`${hojeBrasilia}T12:00:00-03:00`) + 86_400_000).toISOString().slice(0, 10);",
+    "const limite = agora.getTime() - REGRAS_AGENDA.janelaAusenciasDias * 86_400_000;",
+    "const dentro = agora.getTime() - t <= c.dias * 86_400_000;",
+    "const g = 13 * 86_400_000;",
+    "const h = 31 * 86_400_000;",
+    "const i = 0.3 * 86_400_000;",
+    "const j = 86_400_000 * 30;",
   ];
   for (const linha of passam) assert.equal(prazoAMao(linha), false, `não pode cair: ${linha}`);
   // E a varredura usa esta regra nas duas leituras (as pastas e as linhas da avaliação nos e-mails).
