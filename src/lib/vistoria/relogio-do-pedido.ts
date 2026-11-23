@@ -51,6 +51,7 @@ function relogio(vez: Relogio["vez"], desde: string, horas: number, agora: Date)
 export function relogioDoPedido(p: EstadoParaORelogio, agora: Date): Relogio | null {
   if (p.status !== "designado") return null;
   // A proposta gravada manda: com ela, o relógio de resposta parou, o que quer que a resposta lida diga.
+  if (p.propostaEm && p.designadoEm) return relogio("avaliador", p.designadoEm, PRAZO_RESPOSTA_PADRAO_HORAS, agora);
   if (p.propostaEm) {
     if (p.propostaAceitaEm || !p.precisaDoAceite) return null;
     return relogio("dono", p.propostaEm, PRAZO_DONO_ACEITAR_HORAS, agora);
