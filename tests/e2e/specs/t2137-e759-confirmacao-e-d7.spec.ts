@@ -10,7 +10,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
        "Seu contrato está assinado. Entrada em DD/MM/AAAA, saída em DD/MM/AAAA.", mesmo assinada há semanas. Sem o 1º
        pagamento (e fora da janela da assinatura), não recebe. Estadia que já começou, também não;
     2. D-7: 7 dias antes da entrada, com o 1º pagamento → "Falta uma semana para a entrada (DD/MM/AAAA, a partir das HH:MM).";
-    3. fonte única: as datas saem dos BLOCOS da estadia. Com dois blocos, a saída da confirmação é o fim do último.
+    3. fonte única: as datas saem dos BLOCOS da estadia. Com dois blocos, a saída da confirmação é a do último —
+       E1089 (coordenador): a SAÍDA é o dia seguinte ao fim gravado (a última noite).
   O cron das automações sobe num 2º servidor do mesmo build (porta 3133), com um CRON_SECRET só dele e
   AUTOMACOES_ATIVO=1 (padrão do t597 e do t2130). Leitura na caixa de testes. Datas e textos esperados escritos aqui.
   O t2136 cobre a chegada, a semana da saída e o meio (E663). Esta spec não os repete.
@@ -111,7 +112,7 @@ test.describe("T2137 — E759: confirmação só da estadia confirmada que não 
     expect(corpo.simulado).toBe(false);
 
     // 1 + 3: confirmação, com a saída do ÚLTIMO bloco
-    const frase = `Seu contrato está assinado. Entrada em ${dataBR(datas.conf.entrada)}, saída em ${dataBR(datas.conf.fim)}.`;
+    const frase = `Seu contrato está assinado. Entrada em ${dataBR(datas.conf.entrada)}, saída em ${dataBR(somar(datas.conf.fim, 1))}.`;
     await expect.poll(async () => (await caixa(ids.conf, "jornada_confirmacao")).some((t) => t.includes(frase)), { timeout: 30_000, message: `confirmação: "${frase}"` }).toBe(true);
     expect((await caixa(ids.conf, "jornada_confirmacao")).join("\n"), "documentos pela plataforma, sem canal de fora").toMatch(/envie seus documentos pela plataforma/);
 

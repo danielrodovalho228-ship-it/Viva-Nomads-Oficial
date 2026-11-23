@@ -7,10 +7,11 @@ import { CampoData } from "@/components/ui/campo-data";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { proporAlteracao } from "@/lib/data/estadia-actions";
 import { HREF_ESTADIA, ddmmaaaa } from "@/lib/estadia/estadia";
-import { DIAS_POR_MES, fimInclusivoISO } from "@/lib/contrato-blocos";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import type { PreviaRenovacao } from "@/lib/estadia/renovacao";
 import { formatBRL } from "@/lib/utils";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { periodoPeloFim, textoDoPeriodo } from "@/lib/texto-do-periodo";
 
 const campo = "w-full rounded-xl border border-line bg-white px-3 py-2 text-sm text-ink";
 
@@ -35,8 +36,9 @@ export function AlteracaoTela({
   const [ocupantes, setOcupantes] = useState(atual.ocupantes);
   const [valor, setValor] = useState<number | null>(atual.valorMensal);
   const [motivo, setMotivo] = useState("");
-  // E672: a saída e os dias exatos do que está sendo proposto (entrada + meses × 30 dias, fim inclusivo — a conta dos blocos).
-  const saidaProposta = inicio ? fimInclusivoISO(inicio, meses * DIAS_POR_MES) : "";
+  // E672: a saída e os dias exatos do que está sendo proposto. E1089: a SAÍDA é entrada + dias (o dia seguinte à última
+  // noite dos blocos), a mesma data da proposta.
+  const saidaProposta = inicio ? (textoDoPeriodo({ entrada: inicio, dias: meses * DIAS_POR_MES })?.saida ?? "") : "";
 
   const enviar = () =>
     iniciar(async () => {
@@ -75,7 +77,7 @@ export function AlteracaoTela({
         </label>
         {previa && (
           <p className="mt-3 text-sm text-ink" data-testid="renovacao-previa" data-inicio={previa.inicio} data-fim={previa.fim} data-valor={previa.valor}>
-            Mais {previa.meses} {previa.meses === 1 ? "mês" : "meses"}: de {ddmmaaaa(previa.inicio)} a {ddmmaaaa(previa.fim)} · {formatBRL(previa.valor)} no período acrescentado.
+            Mais {previa.meses} {previa.meses === 1 ? "mês" : "meses"}: {periodoPeloFim(previa.inicio, previa.fim)?.linha ?? ddmmaaaa(previa.inicio)} · {formatBRL(previa.valor)} no período acrescentado.
           </p>
         )}
         <Button className="mt-4" variant="primary" disabled={pendente} onClick={enviar} data-testid="alteracao-enviar">
