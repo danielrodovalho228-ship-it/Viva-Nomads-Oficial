@@ -5,11 +5,11 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { integracoesSimuladas } from "@/lib/integracoes";
-import { fontesDaVitrine, fotoDoCredenciado, identidadeConfirmadaDoCredenciado, seloLigadoDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
+import { fontesDaVitrine, fotoDoCredenciado, identidadeConfirmadaDoCredenciado, seloLigadoDoCredenciado, sobreDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
 import { VitrineAvaliadores } from "@/components/vistoria/vitrine-avaliadores";
 import { tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { VoltarCelular as BotaoVoltar } from "@/components/ui/voltar-celular";
-import { TEXTO_IDENTIDADE_VERIFICADA, TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, seloDoCredenciado, slugDaCidade, ufDaCidade, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
+import { TEXTO_IDENTIDADE_VERIFICADA, TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_SOBRE, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, seloDoCredenciado, slugDaCidade, ufDaCidade, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
 import { VISTORIA_ATIVA } from "@/lib/flags";
 import { LINHA_PUBLICA_DESIGNACAO } from "@/lib/vistoria/telas-exibicao";
 import { SELO_AVALIADOR_SOCIO, TEXTO_AVALIADOR_DE_TESTE } from "@/lib/vistoria/regras";
@@ -75,6 +75,8 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
   // E1097: "Avaliador credenciado" para todos; o sócio só pela linha ligada do Rogério.
   const seloLigado = admin ? await seloLigadoDoCredenciado(admin, a.numero_credenciado) : null;
   const identidadeOk = admin ? await identidadeConfirmadaDoCredenciado(admin, a.numero_credenciado) : false;
+  // E1099 parte 2: o "Sobre" escrito pelo avaliador; sem texto, a secção não aparece.
+  const sobre = admin ? await sobreDoCredenciado(admin, a.numero_credenciado) : null;
   const rosto = rostoDoAvaliador(a.nome_curto, foto, a.teste);
   const quadro = admin ? quadroDePreco(await tabelaDaCidade(admin, a.cidade), a.cidade, new Date()) : [];
   const uf = ufDaCidade(MUNICIPIOS, a.cidade);
@@ -133,6 +135,12 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
             </dl>
             <p className="mt-2 text-xs text-muted">A nota mede só a conduta na visita (pontualidade, cordialidade e cuidado com o imóvel), nunca o resultado da avaliação.</p>
           </div>
+        )}
+        {sobre && (
+          <section className="mt-6" data-testid="avaliador-sobre">
+            <h2 className="font-title text-xl font-semibold text-ink">{TITULO_SOBRE}</h2>
+            <p className="mt-2 whitespace-pre-line text-base text-ink">{sobre}</p>
+          </section>
         )}
         {quadro.length > 0 && (
           <section className="mt-6 rounded-xl border border-line bg-white p-4" data-testid="avaliador-preco">
