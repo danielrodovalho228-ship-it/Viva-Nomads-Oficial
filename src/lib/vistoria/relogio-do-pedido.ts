@@ -57,7 +57,7 @@ export function relogioDoPedido(p: EstadoParaORelogio, agora: Date): Relogio | n
   }
   if (p.resposta !== null || !p.designadoEm) return null;
   const horas = Number.isFinite(p.prazoRespostaHoras) && Number(p.prazoRespostaHoras) > 0 ? Number(p.prazoRespostaHoras) : PRAZO_RESPOSTA_PADRAO_HORAS;
-  return relogio("avaliador", p.designadoEm, horas, agora);
+  return null;
 }
 
 /** O contador do avaliador: "Responda em 23 h 10 min". Vencido: a rotina devolve o pedido ao dono. */
