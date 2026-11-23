@@ -111,6 +111,7 @@ import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
 import { marcarPropostaEmContrato, preAceiteExpiradoDoLead, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { contratoDoFechamentoDoLead } from "@/lib/data/fechamento-servidor";
 import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
@@ -1483,9 +1484,19 @@ export async function registrarContrato(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
-  const { data: existente } = await admin.from("contratos").select("id").eq("lead_id", lead.id).maybeSingle();
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono; o contrato não nasce com o preço do anúncio.
+  const preAceiteExpirado = await preAceiteExpiradoDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (preAceiteExpirado === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+  if (preAceiteExpirado) return { ok: false, error: MSG_PRE_ACEITE_EXPIRADO };
+  // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
+  const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+  // E1086: "já existe" é o contrato DESTA proposta. O contrato de outra proposta da mesma candidatura é de outra
+  // estadia: a proposta nova gera o dela (antes, a estadia nova caía no contrato já assinado da anterior).
+  const existente = await contratoDoFechamentoDoLead(admin, lead.id as string, acordada ? acordada.id : null).catch(() => "falhou" as const);
+  if (existente === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   // Prompt 28: avisa que o contrato JÁ existia (o Resumo mostra "gerado em" e o estado real dele).
-  if (existente) return { ok: true, id: existente.id as string, blocos: 0, existente: true };
+  if (existente) return { ok: true, id: existente.id, blocos: 0, existente: true };
 
   // F32: o contrato nasce só com o documento das DUAS partes e os documentos do
   // inquilino — a trava vale aqui no servidor, não só na tela do fechamento.
@@ -1501,13 +1512,6 @@ export async function registrarContrato(
     .select("monthly_price, owner_id")
     .eq("id", lead.property_id)
     .maybeSingle();
-  // E968: pré-aceitação expirada = a candidatura voltou ao dono; o contrato não nasce com o preço do anúncio.
-  const preAceiteExpirado = await preAceiteExpiradoDoLead(admin, lead.id as string).catch(() => "falhou" as const);
-  if (preAceiteExpirado === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
-  if (preAceiteExpirado) return { ok: false, error: MSG_PRE_ACEITE_EXPIRADO };
-  // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
-  const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
-  if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   const aluguel = acordada ? acordada.valorMensal : Number(imovel?.monthly_price);
   if (!imovel || imovel.owner_id !== user.id || !(aluguel > 0)) {
     return { ok: false, error: "Imóvel sem valor de aluguel." };
@@ -1601,7 +1605,7 @@ export async function registrarContrato(
   }));
   const { error: bErr } = await admin.from("contrato_blocos").insert(rows);
   // Best-effort: o contrato-mãe já existe mesmo se a inserção dos blocos falhar.
-  if (acordada) await marcarPropostaEmContrato(admin, lead.id as string).catch(() => {});
+  if (acordada) await marcarPropostaEmContrato(admin, acordada.id).catch(() => {});
   // Prompt 24: o contrato aparece nos dois lados e o inquilino é avisado (na conta de teste, na caixa de teste).
   const contratoNovoId = contrato!.id as string;
   after(async () => {

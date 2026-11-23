@@ -6,16 +6,17 @@
 */
 import { blocoParceirosPrompt } from "./parceiros-texto.ts";
 import { FAQ } from "./faq.ts";
-import { PORTA_GESTOR_TEXTO, REGRAS_CONTRATO } from "../../config/planos.ts";
+import { REGRAS_CONTRATO, TEXTO_CARTEIRAS } from "../../config/planos.ts";
 import { CAUCAO_FRASE } from "../faixas.ts";
 import { PROMESSA_ATENDIMENTO, frasePrazosManutencao } from "../../config/atendimento.ts";
 import { SITUACAO_VIVA } from "../../config/situacao-viva.ts";
-import { FAIXA_GESTOR, TEXTO_REGRA_UNICA, escadaTaxasTexto, exemploCobranca, pctTexto } from "../cobranca/regra.ts";
+import { TEXTO_REGRA_UNICA, escadaTaxasCurta, exemploCobranca } from "../cobranca/regra.ts";
 import { PCT_TAXA_SERVICO_PARCEIROS } from "../../config/taxa-servico-parceiros.ts";
 
 
-// E1111 (ORDEM-494): a regra do preço é a frase única da fonte, não uma cópia.
+// Prompt 078: a regra única vem da fonte (regra.ts), sem número escrito à mão.
 const REGRA_PRECO_TEXTO = TEXTO_REGRA_UNICA;
+/** E1111: o exemplo da cobrança, calculado pela regra. */
 const EXEMPLO = exemploCobranca();
 
 export function fontes(): string {
@@ -27,7 +28,7 @@ export function fontes(): string {
     "",
     "## Preço para proprietários (fonte oficial, regra única)",
     REGRA_PRECO_TEXTO,
-    `A taxa é cobrada só do proprietário, sobre o valor total de cada contrato fechado (valor mensal × meses). Cada renovação é cobrada à parte, sobre o valor total do período renovado, com a taxa da faixa. Quem vem morar não paga taxa da plataforma. Faixas por nº de imóveis ativos (só contam os publicados, com documento aprovado e calendário em dia): ${escadaTaxasTexto()}. O Plano Gestor tem taxa de ${pctTexto(FAIXA_GESTOR.taxa)} por contrato, sem mensalidade, para ${PORTA_GESTOR_TEXTO}. Não há mensalidade nem outros planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor total do contrato (${EXEMPLO.pct} de ${EXEMPLO.meses} meses a ${EXEMPLO.aluguel} por mês = ${EXEMPLO.comissao})\".`, // E836: sem remissão a /precos (suspensa, E563).
+    `A taxa é cobrada só do proprietário, sobre o valor total de cada contrato fechado (valor mensal × meses). Cada renovação é cobrada à parte, sobre o valor total do período renovado, com a taxa da faixa. Quem vem morar não paga taxa da plataforma. Faixas por nº de imóveis ativos (só contam os publicados, com documento aprovado e calendário em dia): ${escadaTaxasCurta()}. ${TEXTO_CARTEIRAS} Para esses casos não existe taxa publicada: as condições são combinadas com a equipe da Viva, caso a caso; nunca cite percentual abaixo da escada. Não há mensalidade nem planos. Só se perguntarem o cálculo: \"a taxa é sobre o valor total do contrato (${EXEMPLO.pct} de ${EXEMPLO.meses} meses a ${EXEMPLO.aluguel} por mês = ${EXEMPLO.comissao})\".`, // E836: sem remissão a /precos (suspensa, E563).
     "Vocabulário ao falar da cobrança da Viva: use \"reserva\", \"contrato\" e \"valor mensal\"; nunca \"aluguel\", \"locação\", \"imobiliária\", \"corretagem\", \"comissão\" ou \"intermediação\".",
     "",
     "## Regras do contrato (fonte oficial)",

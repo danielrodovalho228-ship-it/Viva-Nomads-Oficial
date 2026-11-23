@@ -2,6 +2,7 @@ import { lerProximidades } from "@/lib/data/proximidades";
 import { cache } from "react";
 import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { comNovaTentativa } from "@/lib/nova-tentativa";
 import { lerTodasAsLinhas } from "@/lib/data/leitura-paginada";
 import { isExemplo } from "@/lib/demo-listing";
@@ -903,9 +904,7 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
   // Modo demonstração (sem Supabase): exemplos para a UI ganhar vida.
   if (!supabase) return SAMPLE_PROPERTIES.slice(0, 3);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
 
   const { data, error } = await supabase

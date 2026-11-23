@@ -15,3 +15,14 @@ export function lerNivelDoLaudo(v: unknown): Nivel | null {
   const s = String(v ?? "").trim();
   return (NIVEIS as readonly string[]).includes(s) ? (s as Nivel) : null;
 }
+
+/**
+ * E1092: a linha do nível como o PDF a escreve ("Nível sustentado: Conforto"), pelo valor GRAVADO no laudo. "em_adequacao"
+ * (laudo sem nível sustentado) lê "em adequação", como na vista do dono. Sem valor gravado, null: a linha não aparece.
+ */
+export function linhaNivelSustentado(gravado: string | null | undefined): string | null {
+  const s = String(gravado ?? "").trim();
+  if (s === "em_adequacao") return "Nível sustentado: em adequação";
+  const nivel = lerNivelDoLaudo(s);
+  return nivel ? `Nível sustentado: ${ROTULO_NIVEL_LAUDO[nivel]}` : null;
+}

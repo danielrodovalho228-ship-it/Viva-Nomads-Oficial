@@ -8,6 +8,7 @@ import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { vinculosConfirmados } from "@/lib/vinculo/servidor";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
@@ -140,13 +141,12 @@ import { SITE_URL } from "@/lib/site";
 type Resultado<T = object> = ({ ok: true } & T) | { ok: false; error: string; aviso?: string };
 type Admin = SupabaseClient;
 
-async function sessao() {
+/** E1093: com `exigir`, a confirmação da sessão que falha LANÇA (não vira "sem sessão" → lista vazia). */
+async function sessao(opcoes: { exigir?: boolean } = {}) {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return null;
   return { supabase, admin, user };
 }
@@ -795,7 +795,7 @@ const MSG_PROPOSTAS_NAO_CARREGARAM = "Não foi possível carregar as propostas a
  * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
  * home, notificações), segue a lista vazia. */
 export async function listarPropostas(opcoes: { exigir?: boolean } = {}): Promise<PropostaResumo[]> {
-  const s = await sessao();
+  const s = await sessao(opcoes);
   if (!s) return [];
   await expirarVencidas(s.admin, s.user.id);
   // RLS: só as propostas das partes.

@@ -32,7 +32,7 @@ import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 import { assinaturaDoLaudo } from "./escolha";
 import { createHash } from "node:crypto";
 import { consequencias, degrauDoProprietario, expiraEm, geraStrike, imovelComStrike, proximaOrdem, strikesParaApagar, type Strike } from "./strikes";
-import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, nomesDasContas, rotaDono } from "./servidor";
+import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, nomesDasContas, resolverAvisosDaVisita, rotaDono } from "./servidor";
 import { nomeDoAvaliador, primeiroNomeDoAvaliador } from "./nome-do-avaliador";
 
 /*
@@ -44,6 +44,8 @@ import { nomeDoAvaliador, primeiroNomeDoAvaliador } from "./nome-do-avaliador";
 
 type Admin = SupabaseClient;
 const DIA = 86_400_000;
+/** A janela das reprovações que contam na escada do proprietário (12 meses), em dias. */
+const DIAS_DA_JANELA_DE_REPROVACOES = 365;
 
 type LinhaPedido = {
   id: string;
@@ -196,7 +198,7 @@ export async function aplicarEscada(admin: Admin, ownerId: string, agora = new D
   const [strikes, { data: imoveis, error: e1 }, { data: reprov, error: e2 }] = await Promise.all([
     strikesDoDono(admin, ownerId),
     admin.from("properties").select("id, status").eq("owner_id", ownerId).in("status", ["active", "paused"]),
-    admin.from("vistoria_laudos").select("property_id").eq("owner_id", ownerId).eq("resultado", "reprovado").gte("emitido_em", new Date(agora.getTime() - 365 * DIA).toISOString()),
+    admin.from("vistoria_laudos").select("property_id").eq("owner_id", ownerId).eq("resultado", "reprovado").gte("emitido_em", new Date(agora.getTime() - DIAS_DA_JANELA_DE_REPROVACOES * DIA).toISOString()),
   ]);
   // Sem a carteira ou as reprovações, o degrau sairia menor: não decide nada (quem chama tenta de novo).
   if (e1 || e2) throw new Error(MSG_STRIKES_SEM_LEITURA);
@@ -387,6 +389,8 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
     return { ok: false, erro: "Não foi possível gravar o laudo." };
   }
   await admin.from("vistoria_pedidos").update({ status: "laudo_emitido", atualizado_em: agora.toISOString() }).eq("id", p.id);
+  // E1128: laudo emitido — nenhum aviso de visita deste pedido continua a valer.
+  await resolverAvisosDaVisita(admin, p.id);
   // E690: a avaliação de TESTE concluída pode ativar o avaliador sozinho (atrás de chave; nunca lança).
   if (p.teste && p.avaliador_id) await tentarAtivacaoAutomatica(admin, { credenciamentoId: p.avaliador_id });
   await admin.from("vistoria_fila_admin").update({ resolvido_em: agora.toISOString() }).eq("tipo", "laudo_atrasado").eq("pedido_id", p.id).is("resolvido_em", null);
