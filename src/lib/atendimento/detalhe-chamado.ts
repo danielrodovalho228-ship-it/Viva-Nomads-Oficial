@@ -18,7 +18,7 @@ const PRIORIDADES: readonly Prioridade[] = ["p1", "p2", "p3", "p4"];
 /** "Urgente · P1". Um valor fora da lista volta como veio (nunca quebra a tela). */
 export function rotuloPrioridade(p: string | null | undefined): string {
   const k = String(p ?? "").toLowerCase() as Prioridade;
-  return PRAZOS[k] ? `${PRAZOS[k].rotulo} · ${k.toUpperCase()}` : String(p ?? "");
+  return PRAZOS[k] ? `${k.toUpperCase()} — ${PRAZOS[k].rotulo}` : String(p ?? "");
 }
 
 /** As quatro opções do seletor, na ordem do mockup. */
