@@ -3,6 +3,8 @@
   ou tela logada (strings de JSX e textos de config). Fora da guarda: nomes de variáveis e chaves (sem espaço), /termos e
   /privacidade (congelados até o parecer jurídico) e as telas de admin e dos sócios (internas, atrás do código).
   Roda: node --test src/lib/vocab-a.test.ts
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): caso (c) — /para-proprietarios lê a maior taxa pronta da regra
+  (TAXA_MAIOR_TEXTO) e não separa mais as faixas "públicas" da do Gestor: a escada inteira (12% a 6%) é pública.
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -10,7 +12,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FAQ } from "./atendimento/faq.ts";
-import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "./cobranca/regra.ts";
+import { FAIXAS_COMISSAO_PADRAO, TAXA_MAIOR_TEXTO, TAXA_MENOR_TEXTO, pctTexto } from "./cobranca/regra.ts";
 
 const SRC = fileURLToPath(new URL("..", import.meta.url));
 const ler = (p: string) => readFileSync(join(SRC, p), "utf8");
@@ -99,14 +101,20 @@ test("(b) /seguranca: 'Morar com segurança na Viva Nomads', 'morador' e nada de
 
 test("(c) /para-proprietarios: 'taxa de serviço' com os números da fonte única (nada digitado à mão)", () => {
   const p = ler("app/(public)/para-proprietarios/page.tsx");
-  assert.match(p, /import \{ FAIXAS_COMISSAO_PADRAO, pctTexto \} from "@\/lib\/cobranca\/regra";/);
+  // 078 (Daniel, 16/11/2026): antes /import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";/ — a página calculava a
+  // maior taxa das faixas sem a do Gestor; agora lê a constante pronta da mesma fonte única.
+  assert.match(p, /import \{ TAXA_MAIOR_TEXTO \} from "@\/lib\/cobranca\/regra";/);
+  assert.match(p, /const TAXA_MAIOR = TAXA_MAIOR_TEXTO;/);
   assert.match(p, /A taxa de serviço da Viva é de \{TAXA_MAIOR\}/);
   assert.doesNotMatch(p, /\d+ ?%/, "nenhum percentual escrito à mão");
   // Os números que a página mostra são os da regra.
-  // E564 (parte A): a frase vai de 12% a 6% (a tabela); o Plano Gestor (4%) é dito à parte, pelo texto único.
-  const publicas = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor);
+  // 078 (Daniel, 16/11/2026): antes as faixas públicas eram FAIXAS_COMISSAO_PADRAO sem a do Gestor (o Plano Gestor, 4%, era dito à
+  // parte). Não há mais faixa do Gestor: TODA a escada é pública e vai de 12% a 6% — e as constantes da regra dizem o mesmo.
+  const publicas = FAIXAS_COMISSAO_PADRAO;
+  assert.equal(publicas.some((f) => "gestor" in f), false);
   assert.equal(pctTexto(Math.max(...publicas.map((f) => f.taxa))), "12%");
   assert.equal(pctTexto(Math.min(...publicas.map((f) => f.taxa))), "6%");
+  assert.deepEqual([TAXA_MAIOR_TEXTO, TAXA_MENOR_TEXTO], ["12%", "6%"]);
 });
 
 // E595/E596 (05/11): a /decisao foi eliminada — o acesso direto redireciona para /modelodenegocio (que segue na porta).

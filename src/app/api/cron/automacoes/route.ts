@@ -55,6 +55,7 @@ import { acaoDoPasso, emSilencio, linhaOutrosRascunhos, rascunhosPorDono, textoR
 import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { checklistAnuncio, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
+import { saidaPeloFim } from "@/lib/texto-do-periodo";
 
 /**
  * Automações por data (ordem d250ea2f, item 5): rascunho de imóvel parado (3 dias, um aviso — Prompt 50), lembrete de saída (3 dias),
@@ -177,14 +178,17 @@ export async function GET(request: Request) {
     // E267: título · bairro, cidade (o "bairro" é o campo público; nunca o endereço exato).
     const imovel = linhaImovel({ id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
     const fimFinal = blocos.reduce((m, b) => (b.fim > m ? b.fim : m), "");
-    if (lembreteDeSaida(fimFinal, hoje)) {
+    // E1089 (coordenador): `fimFinal` é a última noite gravada; os avisos da saída contam e falam da SAÍDA (o dia seguinte).
+    const saidaFinal = saidaPeloFim(fimFinal) || fimFinal;
+    if (lembreteDeSaida(saidaFinal, hoje)) {
       // E213-B: a data da saída entra na chave — depois de renovar, o lembrete sai de novo perto da nova saída.
-      for (const u of partes) alvos.push({ tipo: "saida_lembrete", usuarioId: u, refId: c.id as string, variante: fimFinal, imovelId: c.property_id as string | null, url: `/dashboard/contratos/${c.id}`, detalhe: detalheAutomacao("saida_lembrete", { imovel, fim: fimFinal }), ...comFatos("saida_lembrete", { imovel: imovelEmail, data: fimFinal, horario: prop?.checkout_before }) });
+      for (const u of partes) alvos.push({ tipo: "saida_lembrete", usuarioId: u, refId: c.id as string, variante: fimFinal, imovelId: c.property_id as string | null, url: `/dashboard/contratos/${c.id}`, detalhe: detalheAutomacao("saida_lembrete", { imovel, fim: saidaFinal }), ...comFatos("saida_lembrete", { imovel: imovelEmail, data: saidaFinal, horario: prop?.checkout_before }) });
     }
+    // E1089: o dia do pedido de avaliação não mudou (o dia da saída, em que o contrato fecha); o texto diz a SAÍDA.
     if (pedirAvaliacao(fimFinal, hoje)) {
       for (const u of partes) {
         if (jaAvaliaram.has(`${c.id}:${u}`)) continue;
-        alvos.push({ tipo: "avaliacao_pedido", usuarioId: u, refId: c.id as string, url: hrefAvaliarEstadia(c.id as string, u === prop?.owner_id ? "dono" : "morador"), imovelId: c.property_id as string | null, detalhe: detalheAutomacao("avaliacao_pedido", { imovel, fim: fimFinal }), ...comFatos("avaliacao_pedido", { imovel: imovelEmail, data: fimFinal }) });
+        alvos.push({ tipo: "avaliacao_pedido", usuarioId: u, refId: c.id as string, url: hrefAvaliarEstadia(c.id as string, u === prop?.owner_id ? "dono" : "morador"), imovelId: c.property_id as string | null, detalhe: detalheAutomacao("avaliacao_pedido", { imovel, fim: saidaFinal }), ...comFatos("avaliacao_pedido", { imovel: imovelEmail, data: saidaFinal }) });
       }
     }
     for (const b of blocos) {
@@ -197,8 +201,9 @@ export async function GET(request: Request) {
           // E222-B: o e-mail abre o fluxo da renovação (o aditivo de prorrogação já preenchido).
           url: HREF_RENOVAR(c.id as string),
           imovelId: c.property_id as string | null,
-          detalhe: detalheAutomacao("renovacao_aviso", { imovel, fim: b.fim }),
-          ...comFatos("renovacao_aviso", { imovel: imovelEmail, data: b.fim }),
+          // E1089: o aviso fala da SAÍDA do período (o dia seguinte à última noite do bloco); o momento do aviso não muda.
+          detalhe: detalheAutomacao("renovacao_aviso", { imovel, fim: saidaPeloFim(b.fim) || b.fim }),
+          ...comFatos("renovacao_aviso", { imovel: imovelEmail, data: saidaPeloFim(b.fim) || b.fim }),
           // Marca o bloco só depois do último destinatário.
           depois: i === partes.length - 1 ? async () => admin.from("contrato_blocos").update({ renovacao_notificada_em: new Date().toISOString() }).eq("id", b.id) : undefined,
         })
@@ -317,7 +322,8 @@ export async function GET(request: Request) {
       const estadia = {
         imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
         entrada: inicio,
-        saida: blocos.map((b) => b.fim).sort().at(-1) ?? null,
+        // E1089: a linha "Saída" do e-mail é o dia da SAÍDA (o dia seguinte à última noite gravada).
+        saida: saidaPeloFim(blocos.map((b) => b.fim).sort().at(-1)) || null,
         horarioEntrada: ckl?.horario || prop?.checkin_after,
         horarioSaida: prop?.checkout_before,
       };
