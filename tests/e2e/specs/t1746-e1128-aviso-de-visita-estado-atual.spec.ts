@@ -6,7 +6,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   um laudo emitido apaga o aviso de visita. Só contas de teste; laboratório, não é prova ao vivo no site.
   A massa repete o caso de produção: no imóvel A há um pedido concluído (laudo emitido, a visita foi ontem) e um pedido
   novo, ainda sem data de visita. No imóvel B há um pedido com a visita marcada para amanhã.
-   1. No sino da dona só aparece a visita do imóvel B (a que ainda vai acontecer), e só ela conta como não lida. O aviso
+   1. No sino da dona só aparece a visita do imóvel B (a que ainda vai acontecer), e só ela conta como não lida — a cor
+      do sino é a dela (normal), não a do lembrete urgente que saiu. O aviso
       do imóvel A sai — tanto o antigo (gravado sem o pedido) como o gravado com o pedido. Na lista de todos os avisos,
       os do imóvel A ficam marcados "resolvido" e o do imóvel B não. 390 e 1280 px.
    2. Quando o pedido do imóvel B passa a "laudo emitido", o aviso dele também sai do sino na carga seguinte, e o sino
@@ -95,6 +96,8 @@ test.describe("T1746 — E1128: o aviso da visita de avaliação lê o estado at
       await largura(p, w);
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
       await expect(sino(p, w), `a ${w} px: só a visita do imóvel B conta`).toHaveAttribute("aria-label", "Notificações: 1 não lidas", { timeout: 30_000 });
+      // A cor do sino é a do aviso que continua (normal), não a do lembrete que saiu (urgente).
+      await expect(sino(p, w).getByTestId(w === 390 ? "sino-dono-celular-contagem" : "sino-dono-contagem"), `a ${w} px: a cor não é a do aviso que saiu`).toHaveAttribute("data-prioridade", "normal");
       await sino(p, w).click();
       const itens = painel(p, w).getByTestId("sino-aviso");
       await expect(itens).toHaveCount(1);

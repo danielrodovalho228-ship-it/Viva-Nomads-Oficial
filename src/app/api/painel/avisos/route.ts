@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { marcarAvisoLido, marcarTodosAvisosLidos, meusAvisos, resumoDoSino } from "@/lib/data/avisos-actions";
-import { contratoDoAviso, criticosPendentes, ehAvisoDeVisitaDeAvaliacao, ordenarParaOSino, resolvidosNaPratica, semVisitaDeAvaliacaoVencida } from "@/lib/notifications/sino";
+import { contratoDoAviso, criticosPendentes, ehAvisoDeVisitaDeAvaliacao, ordenarParaOSino, resolvidosNaPratica, resumoSemVisitaVencida } from "@/lib/notifications/sino";
 import { gravarResolucaoConferida } from "@/lib/notifications/avisos-servidor";
 import { resumoDosAvisos } from "@/lib/notifications/avisos";
 import { situacaoDosContratos } from "@/lib/notifications/situacao-contratos";
@@ -45,12 +45,11 @@ export async function GET() {
         maiorPrioridade = resumoDosAvisos(conferidos.filter((a) => !a.lido_em)).maiorPrioridade;
       }
     }
-    // E1128: o aviso de visita de avaliação já resolvido sai do sino (não aparece nem conta como não lido).
-    const { visiveis, naoLidasADescontar } = semVisitaDeAvaliacaoVencida(conferidos);
-    const naoLidas = Math.max(0, resumo.naoLidas - naoLidasADescontar);
-    if (naoLidas === 0) maiorPrioridade = null;
+    // E1128: o aviso de visita de avaliação já resolvido sai do sino (não aparece, não conta como não lido e não deixa a cor).
+    const doSino = resumoSemVisitaVencida({ naoLidas: resumo.naoLidas, maiorPrioridade }, conferidos);
+    const { visiveis } = doSino;
     return NextResponse.json(
-      { naoLidas, maiorPrioridade, recentes: ordenarParaOSino(visiveis), criticos: criticosPendentes(visiveis).slice(0, 5) },
+      { naoLidas: doSino.naoLidas, maiorPrioridade: doSino.maiorPrioridade, recentes: ordenarParaOSino(visiveis), criticos: criticosPendentes(visiveis).slice(0, 5) },
       { headers: SEM_CACHE }
     );
   } catch {

@@ -4,7 +4,7 @@
   src/lib/notifications/avisos.ts e src/lib/data/avisos-actions.ts).
   Roda: node --test src/lib/notifications/sino.test.ts
 */
-import { ACAO_RESOLVE, urlDoAviso, type PrioridadeAviso } from "./avisos.ts";
+import { ACAO_RESOLVE, resumoDosAvisos, urlDoAviso, type PrioridadeAviso } from "./avisos.ts";
 import type { NotificationEvent } from "./eventos-email.ts";
 
 /** GET: resumo + os últimos do sino + críticos pendentes. POST {id}: marca lido. */
@@ -191,6 +191,26 @@ export function resolvidosNaPratica<T extends AvisoTela>(avisos: readonly T[], s
 export function semVisitaDeAvaliacaoVencida<T extends AvisoTela>(avisos: readonly T[]): { visiveis: T[]; naoLidasADescontar: number } {
   const vencido = (a: T) => !!a.resolvido_em && ehAvisoDeVisitaDeAvaliacao(a.evento);
   return { visiveis: avisos.filter((a) => !vencido(a)), naoLidasADescontar: avisos.filter((a) => vencido(a) && !a.lido_em).length };
+}
+
+/**
+ * E1128: o resumo do sino depois da conferência. O resumo (contagem e maior prioridade) é lido do banco ANTES de a
+ * conferência dar o aviso de visita por vencido; aqui o vencido sai da lista, da contagem e também da COR: se a maior
+ * prioridade era a de um vencido ainda não lido, é relida dos avisos que ficam. Só baixa nesse caso — a prioridade de
+ * outro aviso (um crítico mais antigo, fora da lista) não se perde.
+ */
+export function resumoSemVisitaVencida<T extends AvisoTela>(
+  resumo: { naoLidas: number; maiorPrioridade: PrioridadeAviso | null },
+  avisos: readonly T[],
+): { visiveis: T[]; naoLidas: number; maiorPrioridade: PrioridadeAviso | null } {
+  const { visiveis, naoLidasADescontar } = semVisitaDeAvaliacaoVencida(avisos);
+  const naoLidas = Math.max(0, resumo.naoLidas - naoLidasADescontar);
+  let maiorPrioridade = resumo.maiorPrioridade;
+  if (naoLidas === 0) maiorPrioridade = null;
+  else if (maiorPrioridade && avisos.some((a) => !!a.resolvido_em && !a.lido_em && ehAvisoDeVisitaDeAvaliacao(a.evento) && a.prioridade === maiorPrioridade)) {
+    maiorPrioridade = resumoDosAvisos(visiveis.filter((a) => !a.lido_em)).maiorPrioridade;
+  }
+  return { visiveis, naoLidas, maiorPrioridade };
 }
 
 const ROTULO_ACAO = { assinou: "Assinar o contrato", respondeu: "Responder a proposta", confirmou: "Confirmar a visita" } as const;

@@ -13,7 +13,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { EVENTOS_VISITA_DE_AVALIACAO, ehAvisoDeVisitaDeAvaliacao, imovelDoAviso, resolvidosNaPratica, semVisitaDeAvaliacaoVencida, type AvisoTela, type SituacaoDosContratos } from "./sino.ts";
+import { EVENTOS_VISITA_DE_AVALIACAO, ehAvisoDeVisitaDeAvaliacao, imovelDoAviso, resolvidosNaPratica, resumoSemVisitaVencida, semVisitaDeAvaliacaoVencida, type AvisoTela, type SituacaoDosContratos } from "./sino.ts";
 
 const ler = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.url), "utf8");
 const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|^\s*\/\/.*$/gm, "");
@@ -95,6 +95,25 @@ test("'um laudo assinado apaga o alerta de visita': o aviso de visita resolvido 
   assert.equal(r.naoLidasADescontar, 1, "só o vencido que ainda não foi lido desconta");
 });
 
+test("a cor do sino também acompanha: o aviso de visita que saiu não deixa a prioridade dele no sino", () => {
+  const lembreteVencido = aviso({ id: "a", evento: "vistoria_lembrete", prioridade: "urgente", ref_id: P_CONCLUIDO, resolvido_em: AGORA });
+  const valido = aviso({ id: "c", evento: "vistoria_agendada", ref_id: P_AGENDADO });
+  // O resumo foi lido ANTES da conferência: ainda contava o lembrete (2 não lidas, a maior "urgente").
+  const r = resumoSemVisitaVencida({ naoLidas: 2, maiorPrioridade: "urgente" }, [lembreteVencido, valido]);
+  assert.deepEqual(r.visiveis.map((x) => x.id), ["c"]);
+  assert.equal(r.naoLidas, 1);
+  assert.equal(r.maiorPrioridade, "normal", "fica a prioridade do aviso que continua, não a do que saiu");
+  // Só o vencido: o sino fica sem contagem e sem cor.
+  assert.deepEqual(resumoSemVisitaVencida({ naoLidas: 1, maiorPrioridade: "urgente" }, [lembreteVencido]), { visiveis: [], naoLidas: 0, maiorPrioridade: null });
+  // A prioridade maior é de OUTRO aviso (um crítico mais antigo, fora da lista): não baixa.
+  assert.equal(resumoSemVisitaVencida({ naoLidas: 3, maiorPrioridade: "critico" }, [lembreteVencido, valido]).maiorPrioridade, "critico");
+  // O vencido já estava lido: não contava no resumo, nada muda.
+  const lido = { ...lembreteVencido, lido_em: AGORA };
+  assert.deepEqual(resumoSemVisitaVencida({ naoLidas: 1, maiorPrioridade: "urgente" }, [lido, valido]), { visiveis: [valido], naoLidas: 1, maiorPrioridade: "urgente" });
+  // Nada vencido: o resumo passa como veio.
+  assert.deepEqual(resumoSemVisitaVencida({ naoLidas: 1, maiorPrioridade: "normal" }, [valido]), { visiveis: [valido], naoLidas: 1, maiorPrioridade: "normal" });
+});
+
 test("servidor: o aviso da avaliação é gravado com o pedido, e a visita que deixa de estar por acontecer resolve os avisos", () => {
   const srv = semComentarios(ler("lib/vistoria/servidor.ts"));
   const avisar = srv.slice(srv.indexOf("export async function avisar("), srv.indexOf("export async function avisarAdmins("));
@@ -116,7 +135,7 @@ test("sino: a rota confere os avisos de visita de avaliação com o estado atual
   const rota = semComentarios(ler("app/api/painel/avisos/route.ts"));
   assert.match(rota, /ehAvisoDeVisitaDeAvaliacao\(a\.evento\)/);
   assert.match(rota, /avaliacao: /);
-  assert.match(rota, /semVisitaDeAvaliacaoVencida\(conferidos\)/, "o vencido sai dos recentes e da contagem");
+  assert.match(rota, /resumoSemVisitaVencida\(\{ naoLidas: resumo\.naoLidas, maiorPrioridade \}, conferidos\)/, "o vencido sai dos recentes, da contagem e da cor");
   assert.match(rota, /gravarResolucaoConferida\(\{ usuarioId: uid, ids: recemVencidos \}\)/, "a conferência fica gravada");
   const gravar = semComentarios(ler("lib/notifications/avisos-servidor.ts"));
   const g = gravar.slice(gravar.indexOf("export async function gravarResolucaoConferida("));
