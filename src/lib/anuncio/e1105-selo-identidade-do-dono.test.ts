@@ -11,7 +11,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { estadoIdentidadeDe, IDENTIDADE_INDISPONIVEL } from "../identidade/estado.ts";
-import { identidadeConfirmadaDoDono, seloDoDono } from "./dono-verificado.ts";
+import { textoDoSeloDeIdentidade as identidadeConfirmadaDoDono, seloDoDono } from "./dono-verificado.ts";
 
 const AGORA = new Date("2026-10-19T12:00:00Z");
 const laudo = (valid_until: string) => ({
@@ -36,14 +36,18 @@ test("E1105: só `confirmada` dá o texto do selo — o da própria fonte; em_br
   assert.equal(identidadeConfirmadaDoDono(null), null);
 });
 
-test("E1105: precedência — confirmada suprime o manual; sem confirmação, o 'Dono verificado' como hoje; nunca os dois", () => {
+// Asserção alterada (E1106, ORDEM-DUET-478 §4/§5): a precedência interina do E1105 (o "Dono verificado" lido de
+// is_verified quando não confirmada) sai — a conferência da equipa chega pela fonte (`conferida_equipe`) e o selo é um
+// só, de uma fonte só. O dono conferido pela equipa não perde o selo: ver e1106-conferencia-da-equipe.test.ts.
+test("E1105/E1106: um selo só, da fonte — confirmada dá o selo; is_verified sozinho (fora da fonte) já não dá nada", () => {
   const texto = identidadeConfirmadaDoDono(CONFIRMADA);
-  assert.deepEqual(seloDoDono(real(true), texto), { tipo: "identidade", texto }, "confirmada + is_verified: só o de identidade");
-  assert.deepEqual(seloDoDono(real(false), texto), { tipo: "identidade", texto }, "confirmada sem is_verified: o de identidade");
-  assert.deepEqual(seloDoDono(real(true), identidadeConfirmadaDoDono(EM_BREVE)), { tipo: "manual" }, "não confirmada + is_verified: 'Dono verificado'");
-  assert.equal(seloDoDono(real(false), identidadeConfirmadaDoDono(EM_BREVE)), null, "em_breve sem is_verified: nenhum selo");
+  assert.deepEqual(seloDoDono(real(true), texto), { tipo: "identidade", texto }, "confirmada: o selo de identidade");
+  assert.deepEqual(seloDoDono(real(false), texto), { tipo: "identidade", texto });
+  assert.equal(seloDoDono(real(true), identidadeConfirmadaDoDono(EM_BREVE)), null, "is_verified sem passar pela fonte: nenhum selo");
+  assert.equal(seloDoDono(real(false), identidadeConfirmadaDoDono(EM_BREVE)), null, "em_breve: nenhum selo");
   assert.equal(seloDoDono(real(false), identidadeConfirmadaDoDono(VENCIDA)), null);
-  assert.deepEqual(seloDoDono(real(true), null), { tipo: "manual" }, "is_verified sozinho continua só o manual");
+  const conferida = estadoIdentidadeDe(null, false, AGORA, true);
+  assert.deepEqual(seloDoDono(real(true), identidadeConfirmadaDoDono(conferida)), { tipo: "identidade", texto: "Conferida pela equipe da Viva" }, "o conferido pela equipa mantém o selo, pela fonte");
   assert.equal(seloDoDono({ id: "exemplo-1", owner: { verified: true } } as never, texto), null, "anúncio de exemplo: nunca");
 });
 
@@ -51,10 +55,10 @@ test("E1105: a página do imóvel desenha um selo só, pela regra; o servidor l�
   const cartao = readFileSync("src/components/property/owner-card.tsx", "utf8");
   assert.match(cartao, /const selo = seloDoDono\(property, proprietario\?\.identidadeConfirmada\);/);
   assert.match(cartao, /selo\?\.tipo === "identidade" &&[\s\S]*?<SeloIdentidadeDono texto=\{selo\.texto\} \/>/);
-  assert.match(cartao, /selo\?\.tipo === "manual" &&[\s\S]*?<SeloDonoVerificado \/>/);
-  assert.doesNotMatch(cartao, /donoVerificado\(property\)/, "o manual só entra pela regra de precedência");
+  // Asserção alterada (E1106): o "Dono verificado" saiu da página — a tela não lê is_verified.
+  assert.doesNotMatch(cartao, /SeloDonoVerificado|donoVerificado/);
   const perfil = readFileSync("src/lib/data/perfil-proprietario.ts", "utf8");
-  assert.match(perfil, /identidadeConfirmada: identidadeConfirmadaDoDono\(await estadoIdentidade\(admin, donoId\)\.catch\(\(\) => null\)\)/);
+  assert.match(perfil, /identidadeConfirmada: textoDoSeloDeIdentidade\(await estadoIdentidade\(admin, donoId\)\.catch\(\(\) => null\)\)/);
   const selo = readFileSync("src/components/property/selo-identidade-dono.tsx", "utf8");
   assert.doesNotMatch(selo, /Identidade confirmada|Conferida pela equipe/, "o texto vem da fonte, nunca escrito no componente");
   // E899: o cartão de resultados só leva o essencial — nem o selo de identidade, nem a regra.

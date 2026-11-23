@@ -7,6 +7,7 @@
   Tudo atrás de VISTORIA_ATIVA. Nenhuma regra aqui toca em cobrança: o pagamento segue direto, a plataforma só registra.
 */
 import { createHash } from "node:crypto";
+import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_MAX_HORAS } from "./prazos.ts";
 import { impedimento, type AvaliadorFila, type HistoricoDesignacao, type MotivoImpedimento, type PedidoParaDesignar } from "./regras.ts";
 
 // ── 1. O sistema sugere, o dono escolhe ────────────────────────────────────────────────────────────────────────
@@ -143,10 +144,8 @@ export function descredenciamentoValido(e: { criterioId: string | null; motivo: 
 }
 
 // ── 5. Os termos do avaliador (E682): valor, prazo de entrega e prazo de resposta são DELE ────────────────────────
-export const PRAZO_RESPOSTA_PADRAO_HORAS = 24;
-export const PRAZO_RESPOSTA_MAX_HORAS = 72;
-/** E682 (refino): prazo do DONO para aceitar a proposta do avaliador (72 h, decisão do Daniel em 07/11/2026). Passado, a escolha volta ao dono. */
-export const PRAZO_DONO_ACEITAR_HORAS = 72;
+// E1118: os números moram em prazos.ts (fonte única); daqui só se reexportam, para quem já os lia deste arquivo.
+export { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_MAX_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "./prazos.ts";
 
 /** A proposta do avaliador está parada, sem aceite do dono, há mais que o prazo do dono? */
 export function propostaVencida(propostaEm: string | null, agora: Date, horas = PRAZO_DONO_ACEITAR_HORAS): boolean {
