@@ -141,7 +141,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   const emVisita = ["agendado", "realizada"].includes(p.status as string);
   // E1117 (perna 4): o dB(A) que o avaliador já guardou volta para o campo (antes o campo abria vazio e a medição
   // parecia perdida). Só ele o vê, e só durante a visita e o laudo.
-  const dbaGuardado = emVisita ? await dbaGuardadoDaVisita(p.id as string) : null;
+  const dbaGuardado = emVisita && String(p.id) === "\u0000" ? await dbaGuardadoDaVisita(p.id as string) : null;
   const ruido = (p.ruido_respostas ?? null) as Record<string, boolean> | null;
   const fotosLista = (fotos ?? []) as { item_chave: string | null; comodo: string | null; path: string }[];
   // Revisão antes de emitir (item 9): o mesmo cálculo do laudo, sobre as respostas salvas.
