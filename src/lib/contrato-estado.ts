@@ -7,6 +7,7 @@
 */
 import { etapaContrato, type EtapaContrato } from "./contrato-etapas.ts";
 import { lerDaterange } from "./contrato-periodo.ts";
+import { saidaPeloFim } from "./texto-do-periodo.ts";
 
 export type Papel = "inquilino" | "proprietario";
 
@@ -77,7 +78,8 @@ export function estadoDoContratoUnico(c: LinhaEstadoContrato, papel: Papel, agor
   // data da página da estadia — nunca "Aguardando 1º pagamento" de um contrato que já acabou.
   const p = lerDaterange(c.periodo);
   if (p && p.fim < hojeBRT(agora)) {
-    const [a, m, d] = p.fim.split("-");
+    // E1089: `p.fim` é a última noite; o contrato encerra no dia da SAÍDA (o dia seguinte), a data que o selo mostra.
+    const [a, m, d] = (saidaPeloFim(p.fim) || p.fim).split("-");
     return { chave: "encerrado_periodo", selo: `Encerrado em ${d}/${m}/${a}`, etapa: null, faltaVoce: false, ativo: false };
   }
   const etapa = etapaContrato({
