@@ -8,6 +8,7 @@
 import { diaBRT } from "../datas-brasilia.ts";
 import { primeiroNome } from "../display-name.ts";
 import { brl } from "../fiscal/documento.ts";
+import { visitaConfirmada } from "./visitas-confirmadas.ts";
 
 /** O que o painel precisa de cada pedido do avaliador. */
 export interface PedidoDoPainel {
@@ -59,7 +60,8 @@ export function valorDoPedido(p: PedidoDoPainel): number {
 /** O resumo do dia: `novos` é a contagem dos pedidos à espera de resposta (a página já a tem). */
 export function resumoDoPainel(pedidos: readonly PedidoDoPainel[], novos: number, agora: Date): ResumoDoPainel {
   const hoje = diaBRT(agora);
-  const visitasHoje = pedidos.filter((p) => p.status === "agendado" && p.agendado_para && diaBRT(p.agendado_para) === hoje).length;
+  // E1103: a mesma regra da Agenda do parceiro (visita confirmada).
+  const visitasHoje = pedidos.filter((p) => visitaConfirmada(p) && diaBRT(p.agendado_para) === hoje).length;
   // A avaliação de teste não tem valor.
   const recebido = pedidos.filter((p) => p.recebido_marcado_em && !p.teste).reduce((s, p) => s + valorDoPedido(p), 0);
   return { visitasHoje, novos, recebido };

@@ -6,6 +6,7 @@ import { test } from "node:test";
 
 import { PRAZO_DONO_ACEITAR_HORAS, propostaVencida } from "./escolha.ts";
 import { blocoDoDonoVisivel } from "./telas-exibicao.ts";
+import { TEMPLATES } from "../notifications/eventos-email.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
 const servidor = ler("src/lib/vistoria/servidor.ts");
@@ -32,7 +33,9 @@ test("o dono é avisado na recusa, no silêncio e quando o prazo dele vence; o t
   const eventos = ler("src/lib/notifications/eventos-email.ts");
   const linha = eventos.slice(eventos.indexOf("vistoria_designado_dono: { subject"), eventos.indexOf("vistoria_designado_dono: { subject") + 700);
   assert.match(linha, /não respondeu no prazo/);
-  assert.match(linha, /72 horas/);
+  // E1118 (ORDEM-DUET-506): o prazo deixou de estar escrito à mão no texto; vem da constante, e o e-mail continua a dizer 72 horas.
+  assert.match(linha, /\$\{PRAZO_DONO_ACEITAR_HORAS\} horas/);
+  assert.match(TEMPLATES.vistoria_designado_dono.body("Lara"), /72 horas/);
 });
 
 test("o avaliador é avisado ao ser escolhido (e o texto traz o prazo dele, não um número fixo)", () => {

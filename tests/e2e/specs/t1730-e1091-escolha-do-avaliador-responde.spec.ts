@@ -83,7 +83,8 @@ test.describe("T1730 — E1091: a escolha do avaliador responde na hora, sem rec
     await expect(escolha).toBeVisible({ timeout: 30_000 });
     let cargas = 0;
     d.on("load", () => cargas++);
-    await escolha.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numero}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    // E1096 (ORDEM-DUET-453, asserção alterada): o botão passou a "Escolher" (antes "Escolher este avaliador"); só o nome mudou.
+    await escolha.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numero}` }).getByRole("button", { name: "Escolher" }).click();
     // A resposta vem na mesma tela, sem ninguém recarregar.
     await expect(bloco.getByTestId("avaliador-designado")).toHaveText(`Avaliador escolhido por você: nº ${numero}`, { timeout: 20_000 });
     await expect(d.getByTestId("avaliacao-escolha")).toHaveCount(0);

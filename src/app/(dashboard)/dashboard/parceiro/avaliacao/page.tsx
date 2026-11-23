@@ -8,15 +8,19 @@ import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { PainelAvaliador } from "@/components/avaliadores/painel";
+import { IdentificacaoDoImovel } from "@/components/avaliadores/identificacao-do-imovel";
 import { fotosDePerfil } from "@/lib/vistoria/fotos-servidor";
 import { resumoDoPainel } from "@/lib/vistoria/painel-avaliador";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
-import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, prazoResposta, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
+import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
+import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
+import { etapaDoPedido, identificacaoDoImovel, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
+import { PRAZO_RESPOSTA_MAX_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "@/lib/vistoria/prazos";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import type { ChaveIdentidade } from "@/lib/identidade/estado";
@@ -37,7 +41,7 @@ const SITUACAO: Record<StatusCredenciamento, string> = {
 };
 const STATUS_PEDIDO: Record<string, string> = { pedido: "Aguardando a escolha do proprietário", designado: "Escolhido pelo proprietário", agendado: "Visita agendada", realizada: "Visita feita", laudo_emitido: "Laudo emitido", cancelada: "Cancelada", ausencia: "Ausência registrada" };
 
-type Pedido = { id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_aceita_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
+type Pedido = { id: string; property_id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; escolhido_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
 
 /**
  * Avaliador credenciado (62-B1/62-B3; desenho do 62-A, Parte 1, itens 1 e 6): o pedido único com os 5 passos e o estado,
@@ -46,7 +50,7 @@ type Pedido = { id: string; cidade: string; porte: Porte; valor_tabela: number; 
  */
 /** Achado 30: a lista do avaliador não foi lida. */
 const MSG_AVALIACOES_FALHOU =
-  "Não foi possível carregar as suas avaliações agora. Recarregue a página em instantes; os pedidos com prazo de 24 h continuam valendo.";
+  `Não foi possível carregar as suas avaliações agora. Recarregue a página em instantes; os pedidos com prazo de ${PRAZO_RESPOSTA_PADRAO_HORAS} h continuam valendo.`;
 
 export default async function AvaliacaoParceiroPage() {
   const supabase = await createClient();
@@ -129,7 +133,7 @@ export default async function AvaliacaoParceiroPage() {
 
   const { data: pedidos, error: erroPedidos } = await admin
     .from("vistoria_pedidos")
-    .select("id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_aceita_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
+    .select("id, property_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
     .eq("avaliador_id", cred.id)
     .order("criado_em", { ascending: false });
   const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
@@ -138,8 +142,19 @@ export default async function AvaliacaoParceiroPage() {
   const resposta = new Map(des.map((d) => [d.pedido_id, d.resposta]));
   const agora = new Date();
   const lista = (pedidos ?? []) as Pedido[];
+  // E1108: o título do anúncio de cada pedido (só dos imóveis dos pedidos deste avaliador), para a linha dizer de que
+  // imóvel é. Se esta leitura falhar, a linha fica só com o código VN (que sai do próprio pedido): nunca vazia.
+  const idsDosImoveis = [...new Set(lista.map((p) => p.property_id))];
+  const { data: imoveisDosPedidos } = idsDosImoveis.length ? await admin.from("properties").select("id, title").in("id", idsDosImoveis) : { data: [] };
+  const tituloDoImovel = new Map(((imoveisDosPedidos ?? []) as { id: string; title: string | null }[]).map((i) => [i.id, i.title]));
+  const imovelDo = (p: Pedido) => identificacaoDoImovel(tituloDoImovel.get(p.property_id), p.property_id);
   // Agenda (Prompt 62-A, item 6): para responder (com o contador de 24 h), visitas e o histórico de ausências e recusas.
-  const paraResponder = lista.filter((p) => p.status === "designado" && resposta.get(p.id) === null);
+  // E1102 (ORDEM-DUET-492): "Para responder" é a etapa "novo", pela mesma função que decide a tela do pedido e o "Ver o
+  // pedido". Assim o pedido designado sem a linha da designação (resposta undefined) espera a resposta aqui, e não em
+  // "Visitas"; sem relógio e sem o formulário antigo, porque nada vence esse pedido (a resposta sai pela tela dele).
+  const etapaNaLista = (p: Pedido) =>
+    etapaDoPedido({ status: p.status, resposta: resposta.get(p.id), proposta_em: p.proposta_em, proposta_aceita_em: p.proposta_aceita_em, teste: p.teste, escolhido_em: p.escolhido_em });
+  const paraResponder = lista.filter((p) => etapaNaLista(p) === "novo");
   const visitas = lista
     .filter((p) => !paraResponder.includes(p) && ["designado", "agendado", "realizada"].includes(p.status))
     .sort((a, b) => (a.agendado_para ? Date.parse(a.agendado_para) : Infinity) - (b.agendado_para ? Date.parse(b.agendado_para) : Infinity));
@@ -169,7 +184,7 @@ export default async function AvaliacaoParceiroPage() {
           <FormAcao acao={salvarMeusTermos} className="mt-3 flex flex-wrap items-end gap-2" testid="salvar-termos">
             <label className="text-sm">Valor (R$)<input name="valor" inputMode="decimal" defaultValue={cred.preco_proprio != null ? String(cred.preco_proprio).replace(".", ",") : ""} className={campo} required /></label>
             <label className="text-sm">Entrega do laudo (dias)<input name="prazoEntregaDias" type="number" min={1} max={PRAZO_PROPOSTA_MAX_DIAS} defaultValue={cred.prazo_entrega_dias ?? ""} className={campo} required /></label>
-            <label className="text-sm">Respondo em até (horas)<input name="prazoRespostaHoras" type="number" min={1} max={72} defaultValue={cred.prazo_resposta_horas ?? 24} className={campo} required /></label>
+            <label className="text-sm">Respondo em até (horas)<input name="prazoRespostaHoras" type="number" min={1} max={PRAZO_RESPOSTA_MAX_HORAS} defaultValue={cred.prazo_resposta_horas ?? PRAZO_RESPOSTA_PADRAO_HORAS} className={campo} required /></label>
             <Button type="submit" size="sm">Salvar termos</Button>
           </FormAcao>
         </Panel>
@@ -215,7 +230,7 @@ export default async function AvaliacaoParceiroPage() {
             ) : (
               <ul className="grid gap-3">
                 {paraResponder.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={null} agora={agora} />
+                  <ItemPedido key={p.id} p={p} imovel={imovelDo(p)} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
               </ul>
             )}
@@ -228,7 +243,7 @@ export default async function AvaliacaoParceiroPage() {
             ) : (
               <ul className="grid gap-3">
                 {visitas.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id) ?? null} agora={agora} />
+                  <ItemPedido key={p.id} p={p} imovel={imovelDo(p)} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
               </ul>
             )}
@@ -236,12 +251,12 @@ export default async function AvaliacaoParceiroPage() {
           <Panel id="historico" className="scroll-mt-16" title="Encerradas, recusas e ausências" data-testid="avaliacoes-historico">
             {encerradas.length === 0 && foraDaMinhaFila.length === 0 ? (
               <p className="text-sm text-muted" data-testid="avaliacoes-historico-vazio">
-                Aqui ficam as avaliações que você concluiu, as que recusou, as que passaram de 24 horas sem resposta e as ausências registradas. Ainda não há nenhuma.
+                Aqui ficam as avaliações que você concluiu, as que recusou, as que passaram de {PRAZO_RESPOSTA_PADRAO_HORAS} horas sem resposta e as ausências registradas. Ainda não há nenhuma.
               </p>
             ) : (
               <ul className="grid gap-3">
                 {encerradas.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id) ?? null} agora={agora} />
+                  <ItemPedido key={p.id} p={p} imovel={imovelDo(p)} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
                 {foraDaMinhaFila.map((d) => (
                   <li key={d.pedido_id} className="rounded-lg border border-line p-3 text-sm text-muted" data-testid="avaliacao-fora" data-resposta={d.resposta}>
@@ -258,7 +273,7 @@ export default async function AvaliacaoParceiroPage() {
   );
 }
 
-const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Você recusou", expirada: "Sem resposta em 24 horas", ausencia: "Ausência registrada" };
+const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Você recusou", expirada: `Sem resposta em ${PRAZO_RESPOSTA_PADRAO_HORAS} horas`, ausencia: "Ausência registrada" };
 
 /** Os 5 passos do credenciamento, com o que já foi feito (Prompt 62-A, item 1). */
 type EstadoTeste = { marcado: boolean; concluido: boolean };
@@ -299,13 +314,19 @@ function PassosCredenciamento({ status, identidade, teste }: { status: StatusCre
   );
 }
 
-function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | null; agora: Date }) {
-  const prazo = p.status === "designado" && r === null && p.designado_em ? prazoResposta(p.designado_em, agora) : null;
+function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: Pedido; imovel: string; resposta: string | null | undefined; agora: Date; prazoRespostaHoras: number | null }) {
+  // E1101: de quem é a vez e até quando sai de um lugar só (o mesmo do bloco do dono, da tela do pedido e da rotina).
+  // Enviada a proposta, o relógio de resposta para; a designação não lida (undefined) não vira "sem resposta".
+  const precisaDoAceite = precisaDoAceiteDoDono({ teste: p.teste, escolhidoEm: p.escolhido_em });
+  const relogio = relogioDoPedido({ status: p.status, resposta: r, designadoEm: p.designado_em, propostaEm: p.proposta_em, propostaAceitaEm: p.proposta_aceita_em, prazoRespostaHoras, precisaDoAceite }, agora);
+  const prazo = relogio?.vez === "avaliador" ? { texto: textoDoPrazoDeResposta(relogio, agora), vencido: relogio.vencido } : null;
   const semana = visitaNaSemana(p.agendado_para, agora);
   return (
     <li className="rounded-lg border border-line p-3 text-sm" data-testid="avaliacao-designada" data-pedido={p.id} data-status={p.status}>
+      {/* E1108: de que imóvel é o pedido (título do anúncio e código VN); o valor sai da mesma regra da tela do pedido. */}
+      <IdentificacaoDoImovel texto={imovel} />
       <p>
-        <strong className="text-ink">{STATUS_PEDIDO[p.status] ?? p.status}</strong> · {p.cidade} · {ROTULO_PORTE[p.porte]} · {p.teste ? "avaliação de teste" : p.valor_proposto != null ? `${brl(Number(p.valor_proposto))} · ${p.prazo_proposto_dias} dia(s)` : `referência ${brl(Number(p.valor_tabela))}`}
+        <strong className="text-ink">{STATUS_PEDIDO[p.status] ?? p.status}</strong> · {p.cidade} · {ROTULO_PORTE[p.porte]} · {resumoDoValorNaLista(p)}
         {semana && <span className="ml-2 rounded-full bg-sage-100 px-2 py-1 text-xs font-semibold text-forest" data-testid="visita-semana">Esta semana</span>}
       </p>
       {p.ocupado && <p className="mt-1 text-muted">Imóvel ocupado: a visita só acontece com a concordância do morador. Não fotografe pertences.</p>}
@@ -329,7 +350,7 @@ function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | n
           <FormAcao acao={responderDesignacao}><input type="hidden" name="pedidoId" value={p.id} /><input type="hidden" name="resposta" value="recusar" /><Button type="submit" variant="ghost" size="sm" data-testid="designacao-recusar">Recusar</Button></FormAcao>
         </div>
       )}
-      {["designado", "agendado"].includes(p.status) && r === "aceita" && (p.proposta_aceita_em || p.teste || p.status === "agendado") && (
+      {["designado", "agendado"].includes(p.status) && r === "aceita" && (p.proposta_aceita_em || !precisaDoAceite || p.status === "agendado") && (
         <FormAcao acao={agendarVisita} className="mt-2 flex flex-wrap items-end gap-2" testid="agendar-visita">
           <input type="hidden" name="pedidoId" value={p.id} />
           <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>
@@ -337,8 +358,15 @@ function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | n
           <span className="w-full text-xs text-muted">Horário de Brasília. Combine a data com o proprietário pelas mensagens da Viva.</span>
         </FormAcao>
       )}
-      {["designado"].includes(p.status) && r === "aceita" && !p.proposta_aceita_em && !p.teste && (
-        <p className="mt-2 text-muted" data-testid="aguarda-aceite-proprietario">Proposta enviada: {brl(Number(p.valor_proposto))} em {p.prazo_proposto_dias} dia(s). Falta o proprietário aceitar para agendar a visita.</p>
+      {["designado"].includes(p.status) && r === "aceita" && !p.proposta_aceita_em && precisaDoAceite && (
+        <p className="mt-2 text-muted" data-testid="aguarda-aceite-proprietario">
+          Proposta enviada: {brl(Number(p.valor_proposto))} em {p.prazo_proposto_dias} dia(s). Falta o proprietário aceitar para agendar a visita.
+          {relogio?.vez === "dono" && (
+            <span className="mt-1 block" data-testid="prazo-aceite">
+              {textoDoPrazoDeAceite(relogio)}
+            </span>
+          )}
+        </p>
       )}
       {p.status === "agendado" && (
         <FormAcao acao={registrarAusencia} className="mt-2" testid="ausencia-dono">
@@ -347,7 +375,8 @@ function ItemPedido({ p, resposta: r, agora }: { p: Pedido; resposta: string | n
           <Button type="submit" variant="ghost" size="sm">Proprietário ou morador ausente</Button>
         </FormAcao>
       )}
-      {p.status === "designado" && (r === null || r === "aceita") && (
+      {/* E1102: a lista oferece "Ver o pedido" exatamente quando a tela do pedido abre (a mesma função decide). */}
+      {etapaDoPedido({ status: p.status, resposta: r, proposta_em: p.proposta_em, proposta_aceita_em: p.proposta_aceita_em, teste: p.teste, escolhido_em: p.escolhido_em }) && (
         <ButtonLink href={`/dashboard/parceiro/avaliacao/${p.id}`} size="sm" variant="ghost" className="mt-2" data-testid="abrir-pedido">
           Ver o pedido
         </ButtonLink>
