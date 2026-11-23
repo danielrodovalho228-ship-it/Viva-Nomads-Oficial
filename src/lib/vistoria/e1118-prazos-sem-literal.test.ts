@@ -17,6 +17,8 @@
   ORDEM-DUET-550: entra também a forma EM DIAS — o dia em milissegundos (`86_400_000`, `86400000`) multiplicado por um
   número escrito à mão, qualquer que seja: `3 * 86_400_000`, `7 * 86_400_000`, `86400000 * 30`. Quem conta dias dá nome
   ao número (`PRAZO_RESSALVA_DIAS * 86_400_000`). As três linhas que a regra apanhou no código ganharam nome (caso 5).
+  Decisão do Gerente (DUET-1773): o número cru vezes o dia COM nome (`7 * DIA_MS`, `365 * DIA`) também cai — "o que tem
+  de ter nome é o valor do prazo, não só a unidade". Apanhou mais uma linha no código (laudo-servidor.ts), hoje com nome.
   Roda: node --test src/lib/vistoria/e1118-prazos-sem-literal.test.ts
 */
 import { test } from "node:test";
@@ -73,7 +75,15 @@ const ARITMETICO = /(?<![\w.])(24|72)\s*\*|\*\s*(24|72)(?![\w.])/;
  */
 const DIA_EM_MS = String.raw`(?:86_?400_?000|864e5)`;
 const EM_DIAS = new RegExp(String.raw`(?<![\w.])\d[\d_.]*\s*\*\s*${DIA_EM_MS}\b|\b${DIA_EM_MS}\s*\*\s*\d|\b259_?200_?000\b`);
-const prazoAMao = (linha: string) => LITERAL.test(linha) || ARITMETICO.test(linha) || EM_DIAS.test(linha);
+/**
+ * Decisão do Gerente (DUET-1773): o mesmo com o dia COM nome — um número escrito à mão vezes uma constante que é o dia
+ * (`7 * DIA_MS`, `365 * DIA`, `dia * 2`, `MS_POR_DIA * 3`). O nome do dia: DIA, UM_DIA, DIA_MS, DIA_EM_MS, MS_POR_DIA,
+ * em maiúsculas ou em camelCase. Não é o dia: `dias`, `diaria`, `x.dia` (um campo). Com o número de dias também com
+ * nome (`PRAZO_DEVOLUCAO_DIAS * DIA`, `d * dia`) não cai: é o jeito certo.
+ */
+const NOME_DO_DIA = String.raw`(?:(?:um_?)?dia(?:_?em)?(?:_?ms)?|ms_?por_?dia)`;
+const EM_DIAS_COM_NOME = new RegExp(String.raw`(?<![\w.])\d[\d_.]*\s*\*\s*${NOME_DO_DIA}(?![\w.(])|(?<![\w.])${NOME_DO_DIA}\s*\*\s*\d`, "i");
+const prazoAMao = (linha: string) => LITERAL.test(linha) || ARITMETICO.test(linha) || EM_DIAS.test(linha) || EM_DIAS_COM_NOME.test(linha);
 
 test("E1118 (1): varredura — nenhum prazo da avaliação escrito à mão fora das fontes", () => {
   const arquivos = arquivosVarridos();
@@ -176,6 +186,17 @@ test("E1118 (4, ORDENS 547 e 550): a varredura apanha o prazo em forma aritméti
     "return t >= -12 * 3_600_000 && t <= 7 * 86_400_000;",
     "const MES = 30.4375 * 86_400_000;",
     "const trintaDias = new Date(agora.getTime() - 30 * 86_400_000).toISOString();",
+    // O dia COM nome vezes um número cru (decisão do Gerente, DUET-1773): o valor do prazo é que tem de ter nome.
+    "const p = 7 * DIA_MS;",
+    "const q = 3 * DIA;",
+    "const r = 2 * dia;",
+    "const s = DIA_MS * 7;",
+    "const t = diaEmMs * 30;",
+    "const u = 3 * MS_POR_DIA;",
+    "const v = 1.5 * UM_DIA;",
+    "const w = 30*umDia;",
+    // A linha que estava no código antes desta decisão (hoje com nome: caso 5).
+    'admin.from("vistoria_laudos").select("property_id").gte("emitido_em", new Date(agora.getTime() - 365 * DIA).toISOString()),',
   ];
   for (const linha of caem) assert.ok(prazoAMao(linha), `tem de cair: ${linha}`);
   // O que NÃO pode cair: outras regras em horas (3 h, 12 h), números que só contêm 24 ou 72, e a conta feita com a
@@ -204,8 +225,19 @@ test("E1118 (4, ORDENS 547 e 550): a varredura apanha o prazo em forma aritméti
     "const m = 86_400_000 * dias;",
     "const n = lote3 * 86_400_000;",
     "const o = 186_400_000 * fator;",
-    // A fronteira da ordem: só cai quando os DOIS lados são números crus. Número cru vezes o dia COM nome não cai.
-    "const p = 7 * DIA_MS;",
+    // O dia com nome: declarar a unidade e multiplicá-la por um número COM nome é o jeito certo (linhas reais de hoje).
+    "const DIA_MS = 86_400_000;",
+    "prazo_ate: new Date(agora.getTime() + PRAZO_DEVOLUCAO_DIAS * DIA).toISOString(),",
+    "const desde = (d: number) => new Date(agora.getTime() - d * dia).toISOString();",
+    "if (Date.parse(em) > Date.parse(x.proposta_aceita_em) + x.prazo_proposto_dias * dia) foraDoPrazo++;",
+    "const limite = agora.getTime() - DIAS_DA_JANELA_DE_REPROVACOES * DIA;",
+    // Nomes que só se parecem com o dia: o número de dias, uma diária, um campo, uma função.
+    "const total = 7 * dias;",
+    "const valor = 2 * diaria;",
+    "const x = 2 * data.dia;",
+    "const y = linha.dia * 2;",
+    "const z = 3 * dia(agora);",
+    "const k = 2 * meioDia;",
   ];
   for (const linha of passam) assert.equal(prazoAMao(linha), false, `não pode cair: ${linha}`);
   // E a varredura usa esta regra nas duas leituras (as pastas e as linhas da avaliação nos e-mails).
@@ -213,7 +245,7 @@ test("E1118 (4, ORDENS 547 e 550): a varredura apanha o prazo em forma aritméti
   assert.equal((estaTrava.match(/prazoAMao\(linha\)\) achados\.push/g) ?? []).length, 2);
 });
 
-test("E1118 (5, ORDEM-DUET-550): as três contas em dias que a regra apanhou ganharam nome, com o mesmo valor", async () => {
+test("E1118 (5, ORDEM-DUET-550 e DUET-1773): as quatro contas em dias que a regra apanhou ganharam nome, com o mesmo valor", async () => {
   // Antes: `30.4375 * 86_400_000` (regras.ts), `7 * 86_400_000` (telas-exibicao.ts) e `30 * 86_400_000` (Central).
   const regras = ler("src/lib/vistoria/regras.ts");
   assert.match(regras, /^const DIAS_DO_MES_MEDIO = 30\.4375;$/m);
@@ -224,6 +256,10 @@ test("E1118 (5, ORDEM-DUET-550): as três contas em dias que a regra apanhou gan
   const central = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
   assert.match(central, /^const DIAS_DA_JANELA_DE_RECUSAS = 30;$/m);
   assert.match(central, /agora\.getTime\(\) - DIAS_DA_JANELA_DE_RECUSAS \* 86_400_000\)/);
+  // DUET-1773: a quarta, o número cru vezes o dia com nome — antes `365 * DIA` (a escada de strikes do proprietário).
+  const laudoServidor = ler("src/lib/vistoria/laudo-servidor.ts");
+  assert.match(laudoServidor, /^const DIAS_DA_JANELA_DE_REPROVACOES = 365;$/m);
+  assert.match(laudoServidor, /agora\.getTime\(\) - DIAS_DA_JANELA_DE_REPROVACOES \* DIA\)/);
   // O comportamento é o mesmo: a "semana" da agenda continua a ser 7 dias, na fronteira exata.
   const { visitaNaSemana } = await import("./telas-exibicao.ts");
   const agora = new Date("2026-11-23T12:00:00Z");
