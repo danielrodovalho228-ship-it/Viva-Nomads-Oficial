@@ -69,6 +69,8 @@ test.describe("T2230 — E1112: a página do parceiro e o pedido de parceria rec
       await page.locator(c.campo).fill(c.texto);
       await page.getByTestId("parceiro-salvar-pagina").click();
       await expect(page.getByTestId("parceiro-msg"), `${c.coluna}: o aviso da casa`).toHaveText(AVISO, { timeout: 20_000 });
+      // E1131 (ORDEM-DUET-572): o aviso aparece junto do botão — dentro do ecrã de quem acabou de salvar, não no topo do painel.
+      await expect(page.getByTestId("parceiro-msg"), `${c.coluna}: o aviso está à vista`).toBeInViewport();
       const lida = await lerPagina();
       expect(lida, `${c.coluna}: nada gravado`).toEqual({ nome_publico: NOME, descricao_curta: CURTA, descricao: DESCRICAO });
     }
