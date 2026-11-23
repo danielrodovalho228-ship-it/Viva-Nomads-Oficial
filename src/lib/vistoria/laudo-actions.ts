@@ -89,11 +89,7 @@ export async function salvarItens(form: FormData): Promise<Res> {
 export async function enviarFotoAvaliacao(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || !EM_VISITA.includes(c.p.status)) return SEM_ACESSO;
-  const res = await gravarFoto(c.admin, c.p.id, form);
-  // E1117 (perna 2): a tela da visita conta as fotos, marca o roteiro e diz o que falta para concluir. Com a foto
-  // registrada, a página desta avaliação é refeita na mesma resposta — sem isso só mudava depois de recarregar.
-  if (res.ok) revalidatePath(`${ROTA_AVALIADOR}/${c.p.id}`);
-  return res;
+  return gravarFoto(c.admin, c.p.id, form);
 }
 
 async function gravarFoto(admin: NonNullable<ReturnType<typeof createAdminClient>>, pedidoId: string, form: FormData): Promise<Res> {
