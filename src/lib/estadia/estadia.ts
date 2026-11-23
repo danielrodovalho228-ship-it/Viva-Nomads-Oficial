@@ -7,6 +7,7 @@
 import { diasInclusivos, periodoDosBlocos } from "../contrato-blocos.ts";
 import { prazoConferenciaEntrada, textoPrazoConferencia } from "../conferencia.ts";
 import { diaBRT } from "../datas-brasilia.ts";
+import { saidaPeloFim } from "../texto-do-periodo.ts";
 import { rotuloTaxaServico } from "../cobranca/regra.ts";
 
 export type PapelEstadia = "proprietario" | "inquilino";
@@ -56,10 +57,12 @@ export function textoEntrada(p: PeriodoEstadia): string {
   const h = (p.checkinAfter ?? "").trim();
   return `Entrada: ${ddmmaaaa(p.inicio)}${HORA.test(h) ? ` a partir das ${h}` : ""}`;
 }
+/** E1089: `p.fim` é a ÚLTIMA NOITE gravada nos blocos; a SAÍDA que a pessoa lê é o dia seguinte (entrada + dias). */
 export function textoSaida(p: PeriodoEstadia): string {
-  if (!p.fim) return "Saída: a definir";
+  const saida = saidaPeloFim(p.fim);
+  if (!saida) return "Saída: a definir";
   const h = (p.checkoutBefore ?? "").trim();
-  return `Saída: ${ddmmaaaa(p.fim)}${HORA.test(h) ? ` até as ${h}` : ""}`;
+  return `Saída: ${ddmmaaaa(saida)}${HORA.test(h) ? ` até as ${h}` : ""}`;
 }
 
 /** Status do contrato que encerram a estadia (fora "ativo"). */
@@ -82,19 +85,21 @@ export function topoDaEstadia(
 ): TopoEstadia {
   const hoje = diaBRT(agora) ?? new Date().toISOString().slice(0, 10);
   const status = contrato.status ?? "ativo";
-  if (ENCERRADOS.has(status) || (p.fim && diasAte(hoje, p.fim) < 0)) {
-    const dia = (contrato.encerrado_em ? diaBRT(contrato.encerrado_em) : null) ?? p.fim;
+  // E1089: a estadia acaba no dia da SAÍDA (o dia seguinte à última noite gravada); as contas do topo partem dela.
+  const saida = saidaPeloFim(p.fim) || null;
+  if (ENCERRADOS.has(status) || (saida && diasAte(hoje, saida) < 0)) {
+    const dia = (contrato.encerrado_em ? diaBRT(contrato.encerrado_em) : null) ?? saida;
     return { fase: "encerrada", texto: dia ? `Encerrada em ${ddmmaaaa(dia)}` : "Encerrada", dias: null };
   }
   if (!p.inicio) return { fase: "antes", texto: "Entrada a definir", dias: null };
   const ate = diasAte(hoje, p.inicio);
   if (ate > 0) return { fase: "antes", texto: ate === 1 ? "Entrada amanhã" : `Entrada em ${ate} dias`, dias: ate };
   if (ate === 0) return { fase: "antes", texto: "Entrada hoje", dias: 0 };
-  const faltam = p.fim ? diasAte(hoje, p.fim) : null;
+  const faltam = saida ? diasAte(hoje, saida) : null;
   if (faltam == null) return { fase: "durante", texto: "Estadia em andamento", dias: null };
   return {
     fase: "durante",
-    texto: faltam === 0 ? "Estadia em andamento · último dia" : `Estadia em andamento · faltam ${faltam} ${faltam === 1 ? "dia" : "dias"}`,
+    texto: faltam === 0 ? "Estadia em andamento · saída hoje" : `Estadia em andamento · faltam ${faltam} ${faltam === 1 ? "dia" : "dias"}`,
     dias: faltam,
   };
 }
