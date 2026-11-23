@@ -28,7 +28,7 @@ import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
 import { useDashDemo, DemoBadge } from "@/lib/demo/demo-mode";
 import { cn } from "@/lib/utils";
-import type { EstadoIdentidade } from "@/lib/identidade/estado";
+import { comoEmBreve, type EstadoIdentidade } from "@/lib/identidade/estado";
 import { NOTA_VERIFICACAO_TESTE, ramoVerificacao } from "@/lib/contas-de-teste";
 import { validadeDoLaudo } from "@/lib/caf/validade";
 import { FalarComAViva } from "@/components/ajuda/falar-com-a-viva";
@@ -123,7 +123,7 @@ function LinhaIdentidade({ id }: { id: EstadoIdentidade }) {
     <p
       className={cn(
         "rounded-xl px-4 py-3 text-sm font-semibold",
-        id.estado === "confirmada" ? "bg-green-50 text-green-900" : id.estado === "em_breve" ? "bg-amber-50 text-amber-900" : "bg-surface-2 text-ink",
+        id.estado === "confirmada" ? "bg-green-50 text-green-900" : comoEmBreve(id.estado) ? "bg-amber-50 text-amber-900" : "bg-surface-2 text-ink",
       )}
       data-testid="identidade-estado"
       data-estado={id.estado}

@@ -110,7 +110,7 @@ test.describe("T1722 — E1079/E1080: as telas do avaliador", () => {
     await ctx.close();
   });
 
-  test("2. tela 4: o cartão 'Avaliação do imóvel' na grade de Serviços — só no piloto", async ({ browser }) => {
+  test("2. tela 4: o cartão 'Avaliação do imóvel' na grade de Serviços — de todo dono (E1104); fora do piloto leva ao estado honesto", async ({ browser }) => {
     const d = await entrar(browser, dono.email, senha);
     for (const w of LARGURAS) {
       await largura(d, w);
@@ -119,16 +119,21 @@ test.describe("T1722 — E1079/E1080: as telas do avaliador", () => {
       await expect(card).toBeVisible({ timeout: 25_000 });
       await expect(card).toContainText("Avaliação do imóvel");
       await expect(card).toContainText("Laudo com o nível do imóvel");
-      await expect(card).toHaveAttribute("href", "/dashboard/imoveis");
+      // E1104 (ORDEM-DUET-470): sem avaliação em curso, o cartão leva à porta (começar o pedido), não à lista de imóveis.
+      await expect(card).toHaveAttribute("href", "/dashboard/servicos/avaliacao");
       await card.scrollIntoViewIfNeeded();
       await semRolagemLateral(d);
       await d.screenshot({ path: `${SAIDA}/t1722-4-servicos-${w}.png` });
     }
-    // A trava morde: fora do piloto (sem chave, sem cookie), o cartão some.
+    // E1104 (ORDEM-DUET-470): fora do piloto (sem chave, sem cookie) o cartão continua lá — é a porta de todo dono — e
+    // leva ao estado honesto. O que o piloto fecha é a avaliação em si: a porta não mostra pedido nem avaliador.
     await adm().from("vistoria_piloto").delete().eq("user_id", ids.dono);
     await d.goto("/dashboard/servicos", { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("servicos-grade")).toBeVisible({ timeout: 25_000 });
-    await expect(d.getByTestId("servicos-avaliacao")).toHaveCount(0);
+    await expect(d.getByTestId("servicos-avaliacao")).toHaveAttribute("href", "/dashboard/servicos/avaliacao");
+    await d.getByTestId("servicos-avaliacao").click();
+    await expect(d.getByTestId("porta-avaliacao")).toHaveAttribute("data-estado", "a_chegar", { timeout: 25_000 });
+    await expect(d.getByTestId("porta-escolher")).toHaveCount(0);
     const p = await adm().from("vistoria_piloto").insert({ user_id: ids.dono, nota: "T1722 (laboratório)" });
     expect(p.error).toBeNull();
     await d.context().close();
@@ -151,7 +156,9 @@ test.describe("T1722 — E1079/E1080: as telas do avaliador", () => {
     await expect(cartao.getByTestId("avaliacao-sugerido-selo")).toContainText("Avaliador");
     await expect(cartao.getByTestId("avaliacao-sugerido-termos")).toBeVisible();
     await expect(cartao.getByTestId("avaliacao-sugerido-preco")).toHaveText("Avaliação: R$ 350");
-    await expect(cartao.getByRole("button", { name: "Escolher este avaliador" })).toBeVisible();
+    // E1096 (ORDEM-DUET-453, texto travado alterado com o julgamento do Gerente): o título e o botão do mockup.
+    await expect(escolha.getByTestId("avaliacao-escolha-titulo")).toHaveText("Escolher avaliador");
+    await expect(cartao.getByRole("button", { name: "Escolher" })).toHaveText("Escolher");
     for (const w of LARGURAS) {
       await largura(d, w);
       await d.reload({ waitUntil: "domcontentloaded" });

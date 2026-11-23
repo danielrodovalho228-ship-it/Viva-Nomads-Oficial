@@ -11,7 +11,7 @@ const PAGINA = readFileSync(new URL("../../app/(dashboard)/dashboard/parceiro/av
 test("o histórico vazio explica o que entra nele, com testid", () => {
   assert.doesNotMatch(PAGINA, /Nada por aqui ainda\./);
   assert.match(PAGINA, /data-testid="avaliacoes-historico-vazio"/);
-  assert.match(PAGINA, /avaliações que você concluiu, as que recusou, as que passaram de 24 horas sem resposta e as ausências registradas/);
+  assert.match(PAGINA, /avaliações que você concluiu, as que recusou, as que passaram de \{PRAZO_RESPOSTA_PADRAO_HORAS\} horas sem resposta e as ausências registradas/);
   // Os três rótulos do histórico continuam os mesmos que o texto descreve.
-  assert.match(PAGINA, /recusada: "Você recusou", expirada: "Sem resposta em 24 horas", ausencia: "Ausência registrada"/);
+  assert.match(PAGINA, /recusada: "Você recusou", expirada: `Sem resposta em \$\{PRAZO_RESPOSTA_PADRAO_HORAS\} horas`, ausencia: "Ausência registrada"/);
 });

@@ -4,6 +4,7 @@
   Datas em "aaaa-mm-dd" (dia de calendário, sem fuso).
   Roda: node --test src/lib/calendario/grade.test.ts
 */
+import { saidaPeloFim } from "../texto-do-periodo.ts";
 
 export const NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"] as const;
 export const DIAS_SEMANA = ["D", "S", "T", "Q", "Q", "S", "S"] as const;
@@ -64,12 +65,16 @@ export function diasDoIntervalo(inicio: string, fim: string): string[] {
   return out;
 }
 
-/** Marcas da estadia: o período inteiro, com a entrada e a saída em destaque. */
+/**
+ * Marcas da estadia: as noites do período, com a entrada e a saída em destaque. E1089: `fim` é a ÚLTIMA NOITE gravada
+ * nos blocos; a marca "Saída" fica no dia seguinte (entrada + dias), a mesma data da proposta.
+ */
 export function marcasDaEstadia(inicio: string | null, fim: string | null): Record<string, MarcaDia[]> {
   const out: Record<string, MarcaDia[]> = {};
   if (inicio && fim) for (const d of diasDoIntervalo(inicio, fim)) out[d] = ["periodo"];
   if (inicio) out[inicio] = ["entrada", ...(out[inicio] ?? [])];
-  if (fim) out[fim] = ["saida", ...(out[fim] ?? [])];
+  const saida = saidaPeloFim(fim);
+  if (saida) out[saida] = ["saida", ...(out[saida] ?? [])];
   return out;
 }
 
