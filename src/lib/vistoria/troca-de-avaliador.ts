@@ -42,7 +42,7 @@ export function textoDaTroca(e: { numero: string | null; valor: string; prazoDia
     `A proposta dele é descartada: ${e.valor} · laudo em ${e.prazoDias} ${e.prazoDias === 1 ? "dia" : "dias"}.`,
     "Não dá para desfazer.",
   ];
-  const semOutro = e.outros === 0;
+  const semOutro = e.outros === 0 && e.prazoDias < 0;
   const depois =
     e.outros === null
       ? "Depois, você escolhe o novo avaliador na lista."
