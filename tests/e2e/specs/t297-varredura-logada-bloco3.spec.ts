@@ -11,6 +11,10 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   cobria: as telas do anúncio que o Prompt 59 trouxe (padrão mínimo, nível, cartão, parceiros), segurança e verificação
   da conta, candidaturas e avisos da inquilina e as filas do admin ligadas ao Prompt 59 (só abre e rola; nenhum clique).
   Fica numa spec à parte da t279 para não alongar uma só spec no teto de tempo do laboratório. Só no laboratório.
+
+  Reprodução do E744 (Pista C, 09/11): no run completo 42560445737 (noturna fatiada) a tela "morador — Candidaturas" falhou a
+  390 px na classe "fixo". Esta spec foi reexecutada isolada no lab crítico (PR de reprodução) para separar defeito de tela
+  de roteiro: ver scripts/lab/evidencia-e744-triagem-varreduras-timeouts-2026-11-09.md.
 */
 type Conta = ChaveConta | "ADMIN";
 interface Tela {
