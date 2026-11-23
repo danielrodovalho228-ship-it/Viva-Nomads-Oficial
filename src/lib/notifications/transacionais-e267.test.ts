@@ -87,7 +87,7 @@ const CASOS_ESTADIA: { ev: EventoEstadia; d?: Partial<DadosEstadiaEmail>; diz: s
   { ev: "estadia_aditivo_respondido", d: { resposta: "aceita" }, diz: ["Ana aceitou a sua proposta", "Resposta: Aceita por Ana"] },
   { ev: "estadia_aditivo_respondido", d: { resposta: "recusada" }, diz: ["Ana recusou a sua proposta", "Nada muda no contrato."] },
   { ev: "estadia_aditivo_respondido", d: { resposta: "assinada" }, diz: ["Ana assinou o aditivo 2 do contrato de Studio Jardim", "Falta a sua assinatura"] },
-  { ev: "estadia_remarcada", diz: ["o aditivo 2 do contrato de Studio Jardim foi assinado pelas duas partes: Meses: de 2 para 4", "vai de 01/10/2026 a 28/01/2027"] },
+  { ev: "estadia_remarcada", diz: ["o aditivo 2 do contrato de Studio Jardim foi assinado pelas duas partes: Meses: de 2 para 4", "A estadia agora: Entrada 01/10/2026 · Saída 28/01/2027 · 119 diárias"] },
   { ev: "estadia_encerramento_pedido", diz: ["Ana pediu o encerramento do contrato de Studio Jardim (motivo: mudança de cidade)", "Pedido por: Ana"] },
   { ev: "saida_sem_parceiro", diz: ["o morador sai de Studio Jardim em 28/01/2027", "Saída: 28/01/2027"] },
   { ev: "sugestao_parceiros_morador", d: { momento: "saida" }, diz: ["a sua saída de Studio Jardim em 28/01/2027"] },

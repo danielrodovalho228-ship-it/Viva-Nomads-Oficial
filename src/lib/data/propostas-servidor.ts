@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import { calcularTotais, diasDosTermos, STATUS_ABERTOS, type Autor, type StatusProposta, type TermosProposta } from "@/lib/propostas/regras";
 import { decisaoDoPreAceite } from "./pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR } from "@/lib/data/taxa-dono-servidor";
@@ -104,7 +105,7 @@ export function termosDaLinha(v: LinhaVersao): TermosProposta {
     motivoDesconto: v.motivo_desconto,
     descontoEstadiaPct: Number(v.desconto_estadia_pct),
     meses: Number(v.meses),
-    dias: v.dias == null ? Number(v.meses) * 30 : Number(v.dias),
+    dias: v.dias == null ? Number(v.meses) * DIAS_POR_MES : Number(v.dias),
     dataEntrada: String(v.data_entrada).slice(0, 10),
     condominio: Number(v.condominio),
     consumo: Number(v.consumo),
@@ -237,7 +238,7 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
     numero: p.numero as string,
     valorMensal: Number(v.valor_mensal),
     meses: Number(v.meses),
-    dias: v.dias == null ? Number(v.meses) * 30 : Number(v.dias),
+    dias: v.dias == null ? Number(v.meses) * DIAS_POR_MES : Number(v.dias),
     dataEntrada: String(v.data_entrada).slice(0, 10),
     taxa: p.taxa_congelada == null ? null : Number(p.taxa_congelada),
     termos: {
@@ -247,17 +248,17 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
       valorLimpeza: Number(v.valor_limpeza) || 0,
       taxaPet: Number(v.taxa_pet) || 0,
       limpezaUnica: Number(v.limpeza_unica) || 0,
-      dias: v.dias == null ? Number(v.meses) * 30 : Number(v.dias),
+      dias: v.dias == null ? Number(v.meses) * DIAS_POR_MES : Number(v.dias),
       limpezasPacote: v.limpezas_pacote == null ? null : Number(v.limpezas_pacote),
     },
   };
 }
 
-/** Contrato registrado a partir da proposta → "Em contrato" (best-effort). */
-export async function marcarPropostaEmContrato(admin: SupabaseClient, leadId: string): Promise<void> {
+/** Contrato registrado a partir da proposta → "Em contrato" (best-effort). E1086: só ESTA proposta, não todas as da candidatura. */
+export async function marcarPropostaEmContrato(admin: SupabaseClient, propostaId: string): Promise<void> {
   await admin
     .from("propostas")
     .update({ status: "em_contrato", atualizada_em: new Date().toISOString() })
-    .eq("lead_id", leadId)
+    .eq("id", propostaId)
     .eq("status", "aceita");
 }

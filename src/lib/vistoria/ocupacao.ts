@@ -1,6 +1,6 @@
 /*
   E1114 (ORDEM-DUET-503) — quem mora no imóvel num dado dia. Regra pura (node --test), usada pelo pedido de avaliação:
-  com o imóvel ocupado, a visita só acontece com a concordância do morador. O dia é o de BRASÍLIA (hojeBRT), nunca o
+  com o imóvel ocupado, a visita só acontece com a concordância do morador. O dia é o de BRASÍLIA (hojeEmBrasilia), nunca o
   dia em UTC: das 21:00 às 24:00 de Brasília o UTC já virou, e no último dia do bloco o morador deixava de contar.
 */
 

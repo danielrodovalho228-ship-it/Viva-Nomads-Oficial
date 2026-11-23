@@ -1,6 +1,7 @@
 "use server";
 
 import { resolverAvisos } from "@/lib/notifications/avisos-servidor";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -8,6 +9,7 @@ import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { vinculosConfirmados } from "@/lib/vinculo/servidor";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
@@ -140,13 +142,12 @@ import { SITE_URL } from "@/lib/site";
 type Resultado<T = object> = ({ ok: true } & T) | { ok: false; error: string; aviso?: string };
 type Admin = SupabaseClient;
 
-async function sessao() {
+/** E1093: com `exigir`, a confirmação da sessão que falha LANÇA (não vira "sem sessão" → lista vazia). */
+async function sessao(opcoes: { exigir?: boolean } = {}) {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return null;
   return { supabase, admin, user };
 }
@@ -579,7 +580,7 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
   if (im.status === "paused") return { ok: false, error: "Este anúncio está pausado: reative para enviar uma proposta nova. As candidaturas abertas continuam nas mensagens." };
   const neg = normalizarNegociacao(im.negociacao);
   // E562: a duração é em DIAS; meses vira a referência derivada.
-  const dias = e.dias != null && Number.isFinite(Number(e.dias)) ? Number(e.dias) : Math.round(num(e.meses)) * 30;
+  const dias = e.dias != null && Number.isFinite(Number(e.dias)) ? Number(e.dias) : Math.round(num(e.meses)) * DIAS_POR_MES;
   const meses = mesesDeReferencia(dias);
   const termos: TermosProposta = {
     valorBase: Math.round(num(e.valorBase) * 100) / 100,
@@ -795,7 +796,7 @@ const MSG_PROPOSTAS_NAO_CARREGARAM = "Não foi possível carregar as propostas a
  * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
  * home, notificações), segue a lista vazia. */
 export async function listarPropostas(opcoes: { exigir?: boolean } = {}): Promise<PropostaResumo[]> {
-  const s = await sessao();
+  const s = await sessao(opcoes);
   if (!s) return [];
   await expirarVencidas(s.admin, s.user.id);
   // RLS: só as propostas das partes.
@@ -912,7 +913,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
         valor: taxaServicoProposta(atual.termos, pct),
         congelada,
         valorMensal: atual.totais.valorMensal,
-        meses: atual.totais.dias / 30,
+        meses: atual.totais.dias / DIAS_POR_MES,
         seAceitaHoje: !congelada && hoje != null ? textoSeAceitaHoje(tx.taxa_no_envio, hoje) : null,
         caiu: congelada ? avisoTaxaCaiu(tx.taxa_no_envio, tx.taxa_congelada as number) : null,
       };
@@ -1162,7 +1163,7 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   }
   const tot = calcularTotais(termosDaLinha(v));
   // Item 34: o dono recebe a taxa congelada com a base escrita; o morador, nunca.
-  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, tot.dias / 30, tx.taxa_no_envio);
+  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, tot.dias / DIAS_POR_MES, tx.taxa_no_envio);
   await avisarOutraParte(
     admin,
     p,

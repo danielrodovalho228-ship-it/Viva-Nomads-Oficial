@@ -2,6 +2,7 @@ import { lerProximidades } from "@/lib/data/proximidades";
 import { cache } from "react";
 import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { comNovaTentativa } from "@/lib/nova-tentativa";
 import { lerTodasAsLinhas } from "@/lib/data/leitura-paginada";
 import { isExemplo } from "@/lib/demo-listing";
@@ -257,7 +258,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     // PERTO-B: as proximidades com distância/tempo calculados e "não mostrar" (sem a 0238, lê as colunas antigas).
     lerProximidades(supabase, base.id).catch(() => []),
     safe(supabase.from("avaliacoes").select("id, nota_geral, comentario_publico, publicada_em").eq("imovel_id", base.id).eq("papel_autor", "inquilino").eq("status", "publicada").order("publicada_em", { ascending: false })),
-    ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate, is_verified").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
+    ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
     // Regras de pets (0119): coluna à parte para a página não quebrar se a migração atrasar.
     safe(supabase.from("properties").select("pets_regras").eq("id", base.id).maybeSingle()),
     // 0116: leitura à parte — sem a migração a consulta falha e o anúncio abre igual.
@@ -300,15 +301,16 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     items,
   }));
 
-  type LinhaDono = { full_name: string | null; avatar_url: string | null; created_at: string | null; response_rate: number | null; is_verified: boolean | null };
+  // E1107: a identidade do dono não passa por aqui — o selo vem da fonte única (estadoIdentidade), no bloco do dono.
+  type LinhaDono = { full_name: string | null; avatar_url: string | null; created_at: string | null; response_rate: number | null };
   let ownerRow = owner as LinhaDono | null;
   // Visitante (RLS de profiles só libera o próprio perfil): perfil PÚBLICO do dono pela
-  // função da 0131 (chamada no servidor com service_role, 0133) — só primeiro nome, foto, desde, taxa de resposta e verificado, e só de
+  // função da 0131 (chamada no servidor com service_role, 0133) — só primeiro nome, foto, desde e taxa de resposta, e só de
   // anúncio ativo (ordem d943f893). Sem a migração, a chamada falha e o bloco não aparece.
   if (!ownerRow && ownerId) {
     const d = await buscarPerfilPublicoDono(base.id);
     if (d)
-      ownerRow = { full_name: d.nome, avatar_url: d.avatar_url, created_at: d.desde, response_rate: d.taxa_resposta, is_verified: d.verificado };
+      ownerRow = { full_name: d.nome, avatar_url: d.avatar_url, created_at: d.desde, response_rate: d.taxa_resposta };
   }
 
   // Foto do proprietário é PÚBLICA (podeVerAvatar owner = true). O bucket é
@@ -353,7 +355,6 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
           avatarUrl: ownerAvatarUrl ?? undefined,
           memberSince: ownerRow.created_at ?? undefined,
           responseRate: ownerRow.response_rate ?? undefined,
-          verified: ownerRow.is_verified ?? undefined,
         }
       : undefined,
   };
@@ -903,9 +904,7 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
   // Modo demonstração (sem Supabase): exemplos para a UI ganhar vida.
   if (!supabase) return SAMPLE_PROPERTIES.slice(0, 3);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
 
   const { data, error } = await supabase

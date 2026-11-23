@@ -65,11 +65,13 @@ export function diaBRT(d: Date | string | number | null | undefined): string | n
 }
 
 /**
- * "2026-10-19" — HOJE no calendário de Brasília. A fonte única do "hoje" (E1114/E1115): é o diaBRT do agora, por
- * conversão de fuso de verdade. Nunca `toISOString().slice(0, 10)` (o dia em UTC vira às 21:00 de Brasília) nem −3 h fixas.
+ * E1115 (ORDEM-DUET-503): HOJE (AAAA-MM-DD) no calendário de Brasília — a fonte única do "hoje". Conversão de fuso de
+ * verdade (diaBRT), nunca o dia em UTC nem a subtracção fixa de −3 h. Data inválida → RangeError (como toISOString).
  */
-export function hojeBRT(agora: Date = new Date()): string {
-  return diaBRT(agora) ?? (diaBRT(new Date()) as string);
+export function hojeEmBrasilia(agora: Date = new Date()): string {
+  const d = diaBRT(agora);
+  if (!d) throw new RangeError("hojeEmBrasilia: data inválida");
+  return d;
 }
 
 /** Diferença (min) entre o relógio de Brasília e o UTC no instante dado (−180 hoje; respeita horário de verão antigo). */

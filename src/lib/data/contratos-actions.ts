@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { ordenarPagamentos } from "@/lib/pagamentos/ordem-pagamentos";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { emitirDoPagamentoComRegistro } from "@/lib/fiscal/emitir";
 import { listMyProperties } from "@/lib/data/properties";
@@ -286,9 +287,7 @@ const MSG_LOCACOES_NAO_CARREGARAM = "Não foi possível carregar as suas locaç�
 export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Promise<LocacaoView[]> {
   const supabase = await createClient();
   if (!supabase) return [];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
 
   const { data, error } = await supabase
