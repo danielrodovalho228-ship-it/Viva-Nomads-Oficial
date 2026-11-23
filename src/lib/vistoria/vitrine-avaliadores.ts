@@ -149,7 +149,7 @@ export const TITULO_QUADRO_PRECO = "Preço da avaliação";
 export const TEXTO_IDENTIDADE_VERIFICADA = "Identidade verificada pela Viva";
 /** E1099 (ORDEM-DUET-458 §2): o "Sobre" do perfil — texto do próprio avaliador, opcional (0355: até 600 caracteres). */
 export const TITULO_SOBRE = "Sobre";
-export const SOBRE_MAX = 600;
+export const SOBRE_MAX = 700;
 /** ORDEM-DUET-462 §1 / 463 §2: a frase aprovada, curta e simples. */
 export const EXPLICACAO_SOBRE = "Este texto aparece no seu perfil público.";
 /** O texto do "Sobre": aparado; vazio = nada (a secção some); acima do limite ou com contacto, recusado com o motivo. */
