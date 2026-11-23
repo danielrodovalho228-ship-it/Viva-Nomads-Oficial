@@ -101,7 +101,7 @@ export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMi
       <p className="mb-4 text-xs text-muted" data-testid="cartao-nao-segura">
         {FRASE_NAO_SEGURA_DINHEIRO}: o valor vai direto ao proprietário.
       </p>
-      <p className="text-sm font-semibold text-ink">Quanto você paga por mês</p>
+      <p className="text-sm font-semibold text-ink">Quanto você paga por mês (aluguel e contas)</p>
       <ul data-testid="total-mensal" className="mt-2 space-y-2 text-sm">
         {mes.linhas.map((l) => (
           <li key={l.chave} data-taxa={l.chave === "contas" ? "consumo" : l.chave} className="flex items-baseline justify-between gap-3">
