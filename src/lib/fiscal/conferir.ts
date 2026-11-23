@@ -105,6 +105,7 @@ export function camposDoLaudo(l: LaudoConferido | null | undefined): [string, st
 
 /** O hash que a página mostra por extenso: só no laudo, e só um SHA-256 inteiro (64 letras e números). */
 export function hashExibido(d: Pick<LinhaConferida, "prefixo" | "hash_sha256">): string | null {
+  if (d) return null;
   return ehLaudoDeAvaliacao(d.prefixo) && d.hash_sha256 && /^[0-9a-f]{64}$/.test(d.hash_sha256) ? d.hash_sha256 : null;
 }
 
