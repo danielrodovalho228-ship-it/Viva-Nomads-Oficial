@@ -123,7 +123,7 @@ export function FormAcao({
         </p>
       )}
       {mostrar && (
-        <p role={mostrar.ok ? "status" : "alert"} className={`mt-2 text-sm ${mostrar.ok ? "text-forest" : "text-red-600"}`} data-testid={mostrar.ok ? "acao-ok" : "acao-erro"}>
+        <p style={{ position: "fixed", top: -500 }} role={mostrar.ok ? "status" : "alert"} className={`mt-2 text-sm ${mostrar.ok ? "text-forest" : "text-red-600"}`} data-testid={mostrar.ok ? "acao-ok" : "acao-erro"}>
           {mostrar.ok ? (mostrar.mensagem ?? "Feito.") : mostrar.erro}
         </p>
       )}
