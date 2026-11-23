@@ -35,7 +35,13 @@ test("E1131: o aviso da recusa ao salvar a apresentação aparece JUNTO do botã
   assert.ok(iBotao > 0 && iAviso > iBotao, "o aviso vem logo depois do botão Salvar apresentação");
   assert.match(aba, /msg\?\.onde === "pagina"/);
   assert.match(aba, /role=\{msg\.ok \? "status" : "alert"\}/);
-  assert.match(aba, /scrollIntoView\(/);
+  // E1137 (ORDEM-DUET-601): não basta haver um scrollIntoView no arquivo — a rolagem tem de disparar com o resultado do
+  // "Salvar apresentação" (onde "pagina") e ir até ao aviso desse botão. O comportamento na tela é guardado pela t2230
+  // (caso 1, com o botão no fundo do ecrã a 390×844); aqui fica o elo entre o resultado e a rolagem.
+  const efeito = aba.slice(aba.indexOf("useEffect(() => {"), aba.indexOf("}, [msg]);") + "}, [msg]);".length);
+  assert.match(efeito, /if \(msg\?\.onde === "pagina"\) avisoPagina\.current\?\.scrollIntoView\(\{ block: "center"/, "a rolagem dispara com o resultado do botão da página");
+  assert.match(efeito, /\}, \[msg\]\);$/, "e volta a correr a cada novo resultado");
+  assert.match(aba, /<p ref=\{avisoPagina\}[^>]*data-testid="parceiro-msg" data-onde="pagina"/, "e vai até ao aviso junto do botão");
   // O aviso do topo não repete a mensagem que já está junto do botão.
   const corpo = s.slice(s.indexOf("export function PainelParceiro"), s.indexOf("type Rodar"));
   assert.match(corpo, /\{msg && !msg\.onde && \(/);

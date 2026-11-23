@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -11,6 +11,10 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, entrar, n
    3. o texto limpo continua a gravar (sem falso positivo);
    4. o pedido de parceria ("Seja parceiro") com telefone no nome é recusado com o mesmo aviso, no campo do nome.
   Antes do E1112 (main sem o #4144) os casos 1 e 4 caem: a página grava o telefone e o pedido segue.
+  E1137 (ORDEM-DUET-601): no caso 1 o botão "Salvar apresentação" vai para o FUNDO do ecrã (390×844) antes do toque — o
+  aviso nasce abaixo dele, e só fica à vista se a página rolar até ele (a rolagem do E1131). Com o botão a meio do ecrã o
+  aviso já se via sem rolar, e a rolagem não estava guardada.
+  E1139 (ORDEM-DUET-601): o aviso do pedido de parceria (caso 4) também tem de estar dentro do ecrã.
 */
 const AVISO = "Para sua segurança e registro, o contato acontece pela plataforma — remova telefone, e-mail ou apps de mensagem do texto.";
 const senha = novaSenha();
@@ -28,6 +32,18 @@ const CONTACTOS: { campo: "#pp-nome" | "#pp-curta" | "#pp-descricao"; coluna: "n
   { campo: "#pp-curta", coluna: "descricao_curta", texto: "Chama no zap (34) 99876-5432" },
   { campo: "#pp-descricao", coluna: "descricao", texto: "Orçamento pelo e-mail paula.limpeza@exemplo.com.br" },
 ];
+
+/** Desce só até o botão ficar no fundo do ecrã, logo acima de uma barra fixa de baixo (se houver): como quem rola até ele. */
+async function botaoNoFimDoEcra(page: Page, botao: Locator) {
+  await botao.evaluate((el) => {
+    const barras = [...document.querySelectorAll<HTMLElement>("body *")].filter((n) => {
+      const st = getComputedStyle(n);
+      return st.position === "fixed" && n.getBoundingClientRect().bottom >= window.innerHeight - 1 && n.getBoundingClientRect().height < window.innerHeight / 3;
+    });
+    const limite = Math.min(window.innerHeight, ...barras.map((b) => b.getBoundingClientRect().top));
+    window.scrollBy(0, el.getBoundingClientRect().bottom - limite + 2);
+  });
+}
 
 async function lerPagina() {
   const { data, error } = await adm().from("parceiros").select("nome_publico, descricao_curta, descricao").eq("id", ids.parceiro).single();
@@ -67,6 +83,8 @@ test.describe("T2230 — E1112: a página do parceiro e o pedido de parceria rec
       await page.reload({ waitUntil: "domcontentloaded" });
       await expect(page.locator(c.campo)).toBeVisible({ timeout: 30_000 });
       await page.locator(c.campo).fill(c.texto);
+      // E1137: o botão no fundo do ecrã — o aviso, que nasce abaixo dele, só se vê se a página rolar até ele.
+      await botaoNoFimDoEcra(page, page.getByTestId("parceiro-salvar-pagina"));
       await page.getByTestId("parceiro-salvar-pagina").click();
       await expect(page.getByTestId("parceiro-msg"), `${c.coluna}: o aviso da casa`).toHaveText(AVISO, { timeout: 20_000 });
       // E1131 (ORDEM-DUET-572): o aviso aparece junto do botão — dentro do ecrã de quem acabou de salvar, não no topo do painel.
@@ -109,6 +127,8 @@ test.describe("T2230 — E1112: a página do parceiro e o pedido de parceria rec
     await page.locator("#sp-doc").fill(cnpjAleatorio());
     await page.getByTestId("seja-parceiro-enviar").click();
     await expect(page.getByTestId("sp-erro-nome")).toHaveText(AVISO, { timeout: 20_000 });
+    // E1139: o aviso junto do campo do nome está dentro do ecrã de quem tocou em enviar.
+    await expect(page.getByTestId("sp-erro-nome"), "o aviso do nome está à vista").toBeInViewport();
     await expect(page.getByTestId("seja-parceiro-recebido")).toHaveCount(0);
     const { count } = await adm().from("parceiro_solicitacoes").select("id", { count: "exact", head: true }).eq("user_id", ids.candidata);
     expect(count ?? 0, "nenhum pedido gravado").toBe(0);

@@ -17,6 +17,9 @@ const credenciado = pagina.slice(pagina.indexOf("export default async function A
 test("E1099: a regra do 'Novo na Viva' é a mesma do cartão de escolha (sem avaliações concluídas)", () => {
   assert.equal(novoNaViva(0, null), true);
   assert.equal(novoNaViva(3, 4.8), false);
+  // E1138 (ORDEM-DUET-601): as duas metades da regra — sem avaliações concluídas MAS com nota de conduta já não é "novo".
+  assert.equal(novoNaViva(0, 4.8), false, "0 avaliações com nota de conduta: não é Novo na Viva");
+  assert.equal(novoNaViva(2, null), false, "avaliações concluídas sem nota: não é Novo na Viva");
   assert.equal(TITULO_NOVO_NA_VIVA, "Novo na Viva");
 });
 

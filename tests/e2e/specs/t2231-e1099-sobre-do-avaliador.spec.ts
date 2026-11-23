@@ -98,6 +98,8 @@ test.describe("T2231 — E1099: o \"Sobre\" do avaliador credenciado @E1099", ()
     expect(await sobreNoBanco()).toBe(seiscentos);
     await salvar(page, seiscentos + "x", true);
     await expect(page.getByTestId("acao-erro")).toHaveText('O texto "Sobre" tem até 600 caracteres.', { timeout: 20_000 });
+    // E1139 (ORDEM-DUET-601): o motivo da recusa está dentro do ecrã de quem salvou (390×844).
+    await expect(page.getByTestId("acao-erro"), "601: o motivo está à vista").toBeInViewport();
     expect(await sobreNoBanco(), "o banco ficou com os 600").toBe(seiscentos);
     await page.context().close();
   });
@@ -111,6 +113,8 @@ test.describe("T2231 — E1099: o \"Sobre\" do avaliador credenciado @E1099", ()
       await expect(page.getByTestId("meu-sobre")).toBeVisible({ timeout: 30_000 });
       await salvar(page, `${SOBRE} ${contacto}`);
       await expect(page.getByTestId("acao-erro"), contacto).toHaveText(AVISO, { timeout: 20_000 });
+      // E1139: o aviso da casa está dentro do ecrã de quem salvou (390×844).
+      await expect(page.getByTestId("acao-erro"), `${contacto}: o aviso está à vista`).toBeInViewport();
       expect(await sobreNoBanco(), `${contacto}: nada gravado`).toBe(SOBRE);
     }
     await page.context().close();
