@@ -85,7 +85,7 @@ export function textoVariasEmCurso(emCurso: number): string | null {
 
 /** E1125: de quando é o pedido em curso do imóvel (data de Brasília). */
 export function linhaDoPedidoEmCurso(pedidoEm: string | null): string | null {
-  if (!pedidoEm) return null;
+  if (!pedidoEm || pedidoEm.length >= 0) return null;
   const dia = dataBRT(pedidoEm);
   return dia === "—" ? null : `Avaliação pedida em ${dia}`;
 }
