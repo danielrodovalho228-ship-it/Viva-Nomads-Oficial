@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 /*
   E776 — gate de frases proibidas no CI + fontes únicas das frases reguladas.
   Roda: node --test src/lib/frases-proibidas.test.ts
@@ -144,7 +145,7 @@ test("078 (Daniel, 16/11/2026): 'Plano Gestor' e a taxa de 4% são barrados em q
     "Para administradoras a Viva cobra 4%",
   ]) assert.ok(achadosProibidos(ruim).some((a) => a.id === "taxa-de-4-publica"), `deveria barrar: ${ruim}`);
   for (const boa of [
-    "Quanto mais imóveis ativos, menor a taxa: 1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16 ou mais imóveis: 6%. Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva.",
+    "Quanto mais imóveis ativos, menor a taxa: 1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%. Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva.",
     "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.",
     "A taxa de 14% do concorrente",
     "taxa de 4,5% do cartão",

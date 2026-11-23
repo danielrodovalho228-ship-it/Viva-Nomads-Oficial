@@ -1,7 +1,8 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 /*
-  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): a escada padrão tem 4 faixas e termina em 16 ou mais = 6% (a faixa de
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): a escada padrão tem 4 faixas e termina em 16–19 = 6% (a faixa de
   20+ a 4%, do Plano Gestor, saiu); conta de administradora paga a faixa (o tipo da conta não escolhe faixa); o texto oficial diz
-  "(até 6%)"; a última linha da tabela pública é "16+ imóveis", 6%; o chat da Viva não cita o Plano Gestor nem 4% — traz a escada
+  "(até 6%)"; a última linha da tabela pública é "16–19 imóveis", 6%; o chat da Viva não cita o Plano Gestor nem 4% — traz a escada
   e a linha das carteiras.
 */
 import { test } from "node:test";
@@ -73,7 +74,7 @@ test("4.320 (1 mês) por faixa: 518,40 (12%), 432,00 (10%), 345,60 (8%), 259,20 
   assert.deepEqual([3, 5].map((n) => valor(n)), [432, 432]);
   assert.deepEqual([6, 15].map((n) => valor(n)), [345.6, 345.6]);
   assert.deepEqual([16, 19].map((n) => valor(n)), [259.2, 259.2]);
-  // 078 (Daniel, 16/11/2026): antes [172.8, 172.8] (Gestor, 4%); 20 e 40 imóveis estão na última faixa, 16 ou mais = 6%.
+  // 078 (Daniel, 16/11/2026): antes [172.8, 172.8] (Gestor, 4%); 20 e 40 imóveis estão na última faixa, 16–19 = 6%.
   assert.deepEqual([20, 40].map((n) => valor(n)), [259.2, 259.2]);
 });
 
@@ -267,15 +268,15 @@ test("painel do dono: valor mensal ou prazo inválido não inventa valor", () =>
   assert.equal(textoTaxaPainel(0.12, 3000, 0), "Taxa de serviço: 12% sobre o valor mensal × meses");
 });
 
-test("E564/078: tabela pública — todas as faixas mostram o percentual (a última é 16+, 6%; sem Gestor e nada de 'Negociado')", async () => {
+test("E564/078: tabela pública — todas as faixas mostram o percentual (a última é 16–19, 6%; sem Gestor e nada de 'Negociado')", async () => {
   const { taxaPublicaTexto, rotuloFaixaTaxa } = await import("./regra.ts");
   // 078 (Daniel, 16/11/2026): antes ["12%", "10%", "8%", "6%", "4%"] — a linha de 4% (Gestor) saiu da tabela.
   assert.deepEqual(FAIXAS_COMISSAO_PADRAO.map(taxaPublicaTexto), ["12%", "10%", "8%", "6%"]);
   // 078 (Daniel, 16/11/2026): antes a quinta faixa tinha o rótulo "20+ imóveis · Plano Gestor"; não há quinta faixa, e a última
-  // (a quarta) é "16+ imóveis", sem nome de plano.
+  // (a quarta) é "16–19 imóveis", sem nome de plano.
   assert.equal(FAIXAS_COMISSAO_PADRAO[4], undefined);
-  assert.equal(rotuloFaixaTaxa(FAIXAS_COMISSAO_PADRAO[3], true), "16+ imóveis");
-  assert.deepEqual(FAIXAS_COMISSAO_PADRAO.map((f) => rotuloFaixaTaxa(f)), ["1–2", "3–5", "6–15", "16+"]);
+  assert.equal(rotuloFaixaTaxa(FAIXAS_COMISSAO_PADRAO[3], true), "16–19 imóveis");
+  assert.deepEqual(FAIXAS_COMISSAO_PADRAO.map((f) => rotuloFaixaTaxa(f)), ["1–2", "3–5", "6–15", "16–19"]);
 });
 
 test("F6: /precos não mostra 6% fixo nem exemplo em reais para o Plano Gestor", async () => {
@@ -299,7 +300,7 @@ test("F6/078: chat da Viva não cita o Plano Gestor nem taxa abaixo da escada; c
   assert.doesNotMatch(t, /Plano Gestor|PORTA_GESTOR_TEXTO|(?<![\d,.])4\s?%/);
   assert.match(t, /\$\{escadaTaxasCurta\(\)\}\. \$\{TEXTO_CARTEIRAS\} Para esses casos não existe taxa publicada: as condições são combinadas com a equipe da Viva, caso a caso; nunca cite percentual abaixo da escada\./);
   const { fontes } = await import("../atendimento/viva-prompt.ts");
-  assert.match(fontes(), /imóveis ativos \(só contam os publicados, com documento aprovado e calendário em dia\): 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16 ou mais = 6%\. Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva\. Para esses casos não existe taxa publicada/);
+  assert.match(fontes(), /imóveis ativos \(só contam os publicados, com documento aprovado e calendário em dia\): 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%\. Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva\. Para esses casos não existe taxa publicada/);
   assert.doesNotMatch(fontes(), /Plano Gestor|(?<![\d,.])4\s?%/);
 });
 

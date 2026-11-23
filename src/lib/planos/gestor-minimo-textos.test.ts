@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 /*
   E236 — Plano Gestor: o mínimo de imóveis é UM número só, GESTOR_PRECO.minimoImoveis (decisão do Daniel, out/2026).
   Nenhuma frase liga o Gestor a um número escrito à mão (5, 20, 30 ou 31); os textos do Gestor saem da constante e mudam
@@ -143,10 +144,10 @@ test("E564/078: a faixa sem teto NÃO é mais a do Plano Gestor — começa em 1
   assert.equal(faixaPorImoveisAtivos(N - 1), ultima);
 });
 
-test("E564/078: os rótulos da tabela — a faixa sem teto é só '16+ imóveis' (nem 'Plano Gestor', nem 'taxa negociável')", async () => {
+test("E564/078: os rótulos da tabela — a faixa sem teto é só '16–19 imóveis' (nem 'Plano Gestor', nem 'taxa negociável')", async () => {
   const { FAIXAS_COMISSAO_PADRAO: faixas, rotuloFaixaTaxa } = await import("../cobranca/regra.ts");
   // 078 (Daniel, 16/11/2026): antes […, "16–19 imóveis", `${N}+ imóveis · Plano Gestor`].
-  assert.deepEqual(faixas.map((f) => rotuloFaixaTaxa(f, true)), ["1–2 imóveis", "3–5 imóveis", "6–15 imóveis", "16+ imóveis"]);
+  assert.deepEqual(faixas.map((f) => rotuloFaixaTaxa(f, true)), ["1–2 imóveis", "3–5 imóveis", "6–15 imóveis", "16–19 imóveis"]);
   // 078 (Daniel, 16/11/2026): antes a última faixa ficava de fora desta checagem (slice(0, -1)), porque levava "Plano Gestor"; agora
   // NENHUM rótulo, nem o da última, cita Gestor ou negociação.
   for (const r of faixas.map((f) => rotuloFaixaTaxa(f))) assert.doesNotMatch(r, /Gestor|negoci/);

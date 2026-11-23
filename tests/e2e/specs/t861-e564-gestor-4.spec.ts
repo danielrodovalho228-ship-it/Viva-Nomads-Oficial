@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 import { test, expect, type Page } from "@playwright/test";
 import { TEXTO_CARTEIRAS } from "../../../src/config/planos";
 import { FAIXAS_COMISSAO_PADRAO, escadaTaxasTexto, rotuloFaixaTaxa } from "../../../src/lib/cobranca/regra";
@@ -9,12 +10,12 @@ import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
   20 ou mais imóveis, com cadastro assistido da carteira e contato direto na Viva" (GESTOR_TEXTO).
   Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): o Plano Gestor de 4% deixou de ser oferta pública. O roteiro
   cobra o contrário do que cobrava, com a mesma força:
-    1. /para-proprietarios mostra a escada inteira até "16 ou mais imóveis: 6%" e a linha de carteiras (TEXTO_CARTEIRAS);
+    1. /para-proprietarios mostra a escada inteira até "16–19 imóveis: 6%" e a linha de carteiras (TEXTO_CARTEIRAS);
        /parceiros mostra "Taxa menor por volume." + a linha de carteiras — e nenhuma das duas cita "Plano Gestor" nem 4%;
     2. nenhuma tela mostra o texto antigo (mensalidade, imóveis incluídos, "R$ 25 por imóvel", "taxa zero",
        "31+ · taxa negociável", "condições negociadas", "cadastro assistido da carteira") nem recurso da fase 2;
     3. /precos (suspensa pelo E563 — o bloco pula com a chave desligada): a seção das carteiras com a linha única, sem o
-       texto nem os diferenciais do Gestor; a tabela termina em 16+ = 6%.
+       texto nem os diferenciais do Gestor; a tabela termina em 16–19 = 6%.
   390 e 1280 px; sem conta.
 */
 const ANTIGOS = [
@@ -81,7 +82,7 @@ for (const largura of [1280, 390] as const) {
       for (const saiu of ["plano-gestor-secao", "plano-gestor-texto", "plano-gestor-diferenciais", "precos-ver-plano-gestor"]) {
         await expect(page.getByTestId(saiu), saiu).toHaveCount(0);
       }
-      // 078 (Daniel, 16/11/2026): a tabela de faixas termina em "16+" a 6% (antes a última linha era a do Gestor, 4%).
+      // 078 (Daniel, 16/11/2026): a tabela de faixas termina em "16–19" a 6% (antes a última linha era a do Gestor, 4%).
       const faixas = page.getByTestId(largura === 390 ? "faixas-taxa-cartoes" : "faixas-taxa");
       const linhas = faixas.locator(largura === 390 ? ":scope > li" : "tbody tr");
       expect(FAIXAS_COMISSAO_PADRAO).toHaveLength(4);

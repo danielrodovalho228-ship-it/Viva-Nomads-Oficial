@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 import { test, expect, type Page } from "@playwright/test";
 import { FAIXAS_COMISSAO_PADRAO, rotuloFaixaTaxa } from "../../../src/lib/cobranca/regra";
 import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
@@ -15,7 +16,7 @@ import { CARTEIRAS_MINIMO_IMOVEIS, TEXTO_CARTEIRAS } from "../../../src/config/p
     3. /precos: a janela "Fale com a Viva sobre carteiras" diz "Para carteira a partir de 20 imóveis ou administradora
        de imóveis." — sem "Plano Gestor" e sem 31.
     4. /termos: nenhum "Plano Gestor" ao lado de 31.
-    5. /precos: a última faixa da tabela é 16+ a 6% — sem a faixa do Gestor (20+, 4%).
+    5. /precos: a última faixa da tabela é 16–19 a 6% — sem a faixa do Gestor (20+, 4%).
   390 e 1280 px; sem conta. /modelodenegocio é dos sócios e abre pela porta /acesso-socios (SOCIOS_ACCESS_CODE).
 */
 const GESTOR_COM_31 = /Plano Gestor[^.]{0,60}\b31\b|\b31\b[^.]{0,60}Plano Gestor/;
@@ -105,20 +106,20 @@ test.describe("T659 — E236/078: carteira a partir de 20 imóveis em todo texto
     });
 
     // 078 (Daniel, 16/11/2026): o título era "/precos: a última faixa da tabela é a do Plano Gestor, a 4% (sem 31+)".
-    // A faixa sem teto da tabela de /precos é "16 ou mais" a 6%; a do Gestor (20+, 4%) e a "31+ negociável" saíram.
-    test(`${largura} px — /precos: a última faixa da tabela é 16+ a 6%, sem a faixa do Gestor a 4% (sem 31+)`, async ({ page }) => {
+    // A última faixa da tabela de /precos é "16–19" a 6% (ORDEM-DUET-534; antes "16 ou mais"); a do Gestor (20+, 4%) e a "31+ negociável" saíram.
+    test(`${largura} px — /precos: a última faixa da tabela é 16–19 a 6%, sem a faixa do Gestor a 4% (sem 31+)`, async ({ page }) => {
       test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await textoDe(page, "/precos");
       const faixas = page.getByTestId(largura === 390 ? "faixas-taxa-cartoes" : "faixas-taxa");
       await expect(faixas).toBeVisible();
-      // O rótulo da faixa sem teto, exato (o innerText junta "R$ 540" ao "16+", então nada de \b antes do 16).
+      // O rótulo da faixa sem teto, exato (o innerText junta "R$ 540" ao "16–19", então nada de \b antes do 16).
       const ultima = FAIXAS_COMISSAO_PADRAO[FAIXAS_COMISSAO_PADRAO.length - 1];
       await expect(faixas).toContainText(rotuloFaixaTaxa(ultima, largura === 390));
-      // 078 (Daniel, 16/11/2026): antes `toContainText("4%")` (a faixa do Gestor); agora a última linha é "16+" a 6%,
+      // 078 (Daniel, 16/11/2026): antes `toContainText("4%")` (a faixa do Gestor); agora a última linha é "16–19" a 6%,
       // e a tabela não tem 4%, "20+" nem "Gestor".
       const ultimaLinha = faixas.locator(largura === 390 ? ":scope > li" : "tbody tr").last();
-      await expect(ultimaLinha).toContainText(largura === 390 ? "16+ imóveis" : "16+");
+      await expect(ultimaLinha).toContainText(largura === 390 ? "16–19 imóveis" : "16–19");
       await expect(ultimaLinha).toContainText("6%");
       const texto = (await faixas.innerText()).replace(/\s+/g, " ");
       expect(texto).not.toMatch(/(?<![\d.,])4\s?%/);

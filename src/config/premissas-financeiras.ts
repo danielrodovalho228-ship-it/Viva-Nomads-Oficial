@@ -8,7 +8,7 @@
   Presumido (Simples por padrão; Presumido como cenário alternativo, E622), fornecedores pós-CNPJ, pró-labore de referência + encargos. Dólar: R$ 5,20.
   Estimativas para decidir, não parecer contábil. Puro (sem alias "@"), para rodar no node --test.
 */
-import { FAIXAS_COMISSAO_PADRAO, faixaPorExtenso } from "../lib/cobranca/regra.ts";
+import { FAIXAS_COMISSAO_PADRAO, faixaDoCalculoPorExtenso } from "../lib/cobranca/regra.ts";
 
 export const REFERENCIA = "05/11/2026";
 /** Nome do modelo de custos que estas premissas seguem. */
@@ -28,8 +28,8 @@ export interface Item {
   Modelo único (Daniel, 10/10): taxa de serviço por contrato fechado (renovação = novo contrato), sobre o
   valor TOTAL do contrato (aluguel × meses; ordem do Daniel, 14/10). Sem cobrança recorrente: E564 (04/11/2026) tirou a
   assinatura do Gestor (valor fixo por mês com imóveis incluídos, valor por extra e taxa zero); o prompt 078 (16/11/2026)
-  tirou a faixa de 20+ a 4%: a escada termina em 16 ou mais = 6%, e carteira grande ou administradora combina a condição
-  com a Viva (fora das projeções). Faixas em lib/cobranca/regra.ts (fonte única).
+  tirou a faixa de 20+ a 4%: a escada publicada termina em 16–19 = 6% (ORDEM-DUET-534), e carteira grande ou administradora
+  combina a condição com a Viva (fora das projeções). O seletor dos sócios mostra a faixa do CÁLCULO ("16 ou mais"). Faixas em lib/cobranca/regra.ts (fonte única).
 */
 /**
  * Aluguel mensal médio de um contrato (R$) — E592/E594: o do modelo validado (R$ 3.000; antes R$ 4.320, o exemplo do
@@ -43,9 +43,9 @@ export const ALUGUEL_MEDIO = 3000;
  */
 /**
  * As faixas da carteira, lidas da REGRA DE COBRANÇA (FAIXAS_COMISSAO_PADRAO, lib/cobranca/regra.ts) — nunca uma lista
- * própria. Prompt 078: sem a faixa do Gestor (a última é "16 ou mais imóveis").
+ * própria. Prompt 078: sem a faixa do Gestor (a última é "16–19 imóveis").
  */
-export const TAXA_FAIXAS: readonly { taxa: number; carteira: string }[] = FAIXAS_COMISSAO_PADRAO.map((f) => ({ taxa: f.taxa, carteira: `${faixaPorExtenso(f)} imóveis` }));
+export const TAXA_FAIXAS: readonly { taxa: number; carteira: string }[] = FAIXAS_COMISSAO_PADRAO.map((f) => ({ taxa: f.taxa, carteira: `${faixaDoCalculoPorExtenso(f)} imóveis` }));
 export const TAXA_MEDIA = 0.1;
 
 /** Duração média de um contrato (meses) — premissa para os prêmios mensais. A confirmar com os dados reais. */

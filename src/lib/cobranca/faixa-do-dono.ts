@@ -5,7 +5,7 @@
 import { rotuloFaixaTaxa, type FaixaComissao } from "./regra.ts";
 
 export interface FaixaDoDono {
-  /** O rótulo da faixa de rotuloFaixaTaxa, com "imóveis" ("3–5 imóveis", "16+ imóveis"). */
+  /** O rótulo da faixa de rotuloFaixaTaxa, com "imóveis" ("3–5 imóveis", "16–19 imóveis"). */
   nome: string;
 }
 

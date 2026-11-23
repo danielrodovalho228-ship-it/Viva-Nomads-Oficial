@@ -1,6 +1,7 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 /*
   Prompt 078 (decisão do Daniel, 16/11/2026) — lançar sem o Plano Gestor público de 4%.
-  A escada pública é 1–2 = 12% · 3–5 = 10% · 6–15 = 8% · 16 ou mais = 6%. Carteira a partir de 20 imóveis ou
+  A escada pública é 1–2 = 12% · 3–5 = 10% · 6–15 = 8% · 16–19 = 6%. Carteira a partir de 20 imóveis ou
   administradora: sem taxa publicada, "fale com a Viva" (condições caso a caso, pela taxa fixada pelo admin).
   Roda: node --test src/lib/cobranca/p078-escada-sem-gestor.test.ts
 */
@@ -16,7 +17,7 @@ const ler = (p: string) => readFileSync(p, "utf8");
 const DIA = 86_400_000;
 const hoje = new Date("2026-11-16T12:00:00Z");
 
-test("078: a escada padrão tem 4 faixas e a última, sem teto, é 16 ou mais = 6%", () => {
+test("078: a escada padrão tem 4 faixas e a última, sem teto, é 16–19 = 6%", () => {
   assert.deepEqual(
     FAIXAS_COMISSAO_PADRAO.map((f) => [f.minImoveis, f.maxImoveis, f.taxa]),
     [[1, 2, 0.12], [3, 5, 0.1], [6, 15, 0.08], [16, null, 0.06]],
@@ -74,9 +75,9 @@ test("078: a linha de carteiras é fonte única, com o 20 vindo de constante, se
   }
 });
 
-test("078: os textos da escada saem da regra — 16 ou mais = 6%, 'até 6%', e a linha de carteiras no lugar do Gestor", () => {
-  assert.equal(escadaTaxasTexto(), "1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16 ou mais imóveis: 6%");
-  assert.equal(regra.escadaTaxasCurta(), "1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16 ou mais = 6%");
+test("078: os textos da escada saem da regra — 16–19 = 6%, 'até 6%', e a linha de carteiras no lugar do Gestor", () => {
+  assert.equal(escadaTaxasTexto(), "1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%");
+  assert.equal(regra.escadaTaxasCurta(), "1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%");
   assert.match(TEXTO_REGRA_UNICA, /menor a taxa \(até 6%\)/);
   assert.match(DESCRICAO_PRECOS, /até 6%/);
   assert.equal(FRASE_ESCADA_TAXAS, `Quanto mais imóveis ativos, menor a taxa: ${escadaTaxasTexto()}. ${planos.TEXTO_CARTEIRAS}`);
@@ -113,18 +114,19 @@ test("078 (estático): as superfícies citam a escada e a linha de carteiras pel
   assert.match(ler("src/lib/atendimento/viva-prompt.ts"), /const REGRA_PRECO_TEXTO = TEXTO_REGRA_UNICA;/);
 });
 
-test("E995 (078): as respostas da Ajuda que falam da taxa dizem '16 ou mais', nunca '16–19' nem o Plano Gestor", async () => {
-  // E995 (Gerente, 16/11/2026): a prova ao vivo do E939 achou "16–19 imóveis" na Ajuda; a escada decidida no Prompt 078
-  // termina em 16 ou mais = 6%. As respostas leem da fonte única, então mudam junto com a regra.
+test("E995 (078, ORDEM-534): as respostas da Ajuda que falam da taxa dizem '16–19', nunca '16 ou mais' nem o Plano Gestor", async () => {
+  // E995 (Gerente, 16/11/2026): as respostas leem da fonte única, então mudam junto com a regra. No 078 a escada dizia
+  // "16 ou mais"; pela ORDEM-DUET-534 (22/11/2026) a escada publicada termina em "16–19 = 6%", como nos Termos, e quem
+  // tem 20 ou mais lê a linha de carteiras. A negação inverteu: antes proibia "16–19"; agora proíbe "16 ou mais".
   const { FAQ } = await import("../atendimento/faq.ts");
   const resposta = (id: string) => FAQ.find((x: { id: string }) => x.id === id)!.resposta as string;
   // "O morador paga alguma taxa?" (E939): a escada por extenso.
-  assert.ok(resposta("inquilino-paga").includes("16 ou mais imóveis: 6%"), resposta("inquilino-paga"));
+  assert.ok(resposta("inquilino-paga").includes("16–19 imóveis: 6%"), resposta("inquilino-paga"));
   assert.ok(resposta("inquilino-paga").includes(escadaTaxasTexto()));
   // "Quanto custa anunciar?": a escada curta e a linha de carteiras.
-  assert.ok(resposta("custo-anunciar").includes("16 ou mais = 6%"), resposta("custo-anunciar"));
+  assert.ok(resposta("custo-anunciar").includes("16–19 = 6%"), resposta("custo-anunciar"));
   assert.ok(resposta("custo-anunciar").includes(planos.TEXTO_CARTEIRAS));
-  for (const id of ["inquilino-paga", "custo-anunciar"]) assert.doesNotMatch(resposta(id), /16[–-]19|Plano Gestor|\b4 ?%/, id);
+  for (const id of ["inquilino-paga", "custo-anunciar"]) assert.doesNotMatch(resposta(id), /16 ou mais|Plano Gestor|\b4 ?%/, id);
 });
 
 test("078: a apresentação pública (arquivo estático) mostra a mesma escada da regra e a linha de carteiras, sem o Gestor", () => {

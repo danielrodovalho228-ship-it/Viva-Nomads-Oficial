@@ -4,7 +4,11 @@
   A taxa vale sobre o VALOR TOTAL de cada contrato fechado (aluguel mensal × meses contratados — ordem do
   Daniel, 14/10). Cada renovação/prorrogação é cobrada à parte, sobre o valor total do período renovado, com a
   taxa da faixa do dono no momento do fechamento. Sem mensalidade. O inquilino não paga taxa da Viva.
-    1–2 imóveis = 12% · 3–5 = 10% · 6–15 = 8% · 16 ou mais = 6%.
+    1–2 imóveis = 12% · 3–5 = 10% · 6–15 = 8% · 16–19 = 6%; a partir de 20, condição combinada com a Viva.
+  ORDEM-DUET-534 (Gerente, 22/11/2026): a escada PUBLICADA termina em "16–19 = 6%", como nos Termos ("16 a 19, 6%; 20 ou
+  mais, condição negociada"). A partir de CARTEIRAS_MINIMO_IMOVEIS (20) nenhum texto promete percentual: vale a linha
+  de carteiras. O CÁLCULO não mudou: a última faixa da tabela continua sem teto (16+ = 6%) e é o que vale para quem
+  tem 20 ou mais sem condição combinada (taxa fixada pelo admin).
   Prompt 078 (decisão do Daniel, 16/11/2026): o Plano Gestor de 4% deixou de ser oferta pública. A faixa de 20+ a 4% (E564)
   saiu, e a conta de administradora não escolhe mais uma faixa especial: vale a escada como para todos. Carteira a partir de
   20 imóveis ou administradora fala com a Viva (TEXTO_CARTEIRAS, config/planos.ts); condição especial é só a taxa fixada
@@ -14,6 +18,8 @@
   abaixo, que espelha a migração 0100. A plataforma não toca no aluguel nem na caução: a taxa é cobrada
   à parte, do PROPRIETÁRIO.
 */
+
+import { CARTEIRAS_MINIMO_IMOVEIS } from "../../config/planos.ts";
 
 export type TipoCobranca = "novo" | "renovacao";
 
@@ -189,28 +195,50 @@ export function taxaPublicaTexto(f: FaixaComissao): string {
 
 /** Legado (E252-B): o rótulo da antiga faixa "31+ negociável", que saiu no E564. */
 export const ROTULO_FAIXA_NEGOCIAVEL = "taxa negociável";
-/** Rótulo da faixa nas tabelas: "1–2", "31+ · taxa negociável"; com `imoveis`, "1–2 imóveis", "31+ imóveis · taxa negociável". */
+/**
+ * ORDEM-DUET-534: até onde a escada PUBLICADA vai. A última faixa da tabela não tem teto (é ela que calcula a taxa de
+ * quem tem 20 ou mais sem condição combinada), mas nos textos ela é publicada como "16–19": a partir de
+ * CARTEIRAS_MINIMO_IMOVEIS a condição é combinada com a Viva e nenhum percentual é prometido. Faixa sem teto que começa
+ * no próprio limiar (ou depois) continua a ser dita como "N ou mais" / "N+" — não há teto público menor que o início.
+ */
+export function tetoPublicado(f: FaixaComissao): number | null {
+  if (f.maxImoveis !== null) return f.maxImoveis;
+  return f.minImoveis < CARTEIRAS_MINIMO_IMOVEIS ? CARTEIRAS_MINIMO_IMOVEIS - 1 : null;
+}
+
+/** Rótulo da faixa nas tabelas: "1–2", "16–19", "31+ · taxa negociável"; com `imoveis`, "1–2 imóveis", "31+ imóveis · taxa negociável". */
 export function rotuloFaixaTaxa(f: FaixaComissao, imoveis = false): string {
-  const base = f.maxImoveis === null ? `${f.minImoveis}+` : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`;
+  const teto = tetoPublicado(f);
+  const base = teto === null ? `${f.minImoveis}+` : f.minImoveis === teto ? `${f.minImoveis}` : `${f.minImoveis}–${teto}`;
   const comImoveis = imoveis ? `${base} imóveis` : base;
   return f.negociavel ? `${comImoveis} · ${ROTULO_FAIXA_NEGOCIAVEL}` : comImoveis;
 }
 
-/** Prompt 078: a faixa por extenso, para frases — "1–2", "16 ou mais" (a faixa sem teto não é "16+" em texto corrido). */
+/** Prompt 078 / ORDEM-DUET-534: a faixa por extenso, para frases — "1–2", "16–19" (a última faixa publicada; ver tetoPublicado). */
 export function faixaPorExtenso(f: FaixaComissao): string {
+  const teto = tetoPublicado(f);
+  if (teto === null) return `${f.minImoveis} ou mais`;
+  return f.minImoveis === teto ? `${f.minImoveis}` : `${f.minImoveis}–${teto}`;
+}
+
+/**
+ * ORDEM-DUET-534: a faixa como o CÁLCULO a lê — a última, sem teto, é "16 ou mais". Só para telas INTERNAS (o modelo dos
+ * sócios), que projetam com a tabela de cálculo. Texto público usa faixaPorExtenso (a última publicada é "16–19").
+ */
+export function faixaDoCalculoPorExtenso(f: FaixaComissao): string {
   if (f.maxImoveis === null) return `${f.minImoveis} ou mais`;
   return f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`;
 }
 
 /**
  * E805/078 — a ESCADA inteira, lida da regra:
- * "1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16 ou mais imóveis: 6%". Nenhum número escrito à mão.
+ * "1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%". Nenhum número escrito à mão.
  */
 export function escadaTaxasTexto(faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): string {
   return faixas.map((f) => `${faixaPorExtenso(f)} imóveis: ${taxaPublicaTexto(f)}`).join(" · ");
 }
 
-/** Prompt 078 — a escada curta da Ajuda e do atendimento: "1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16 ou mais = 6%". */
+/** Prompt 078 — a escada curta da Ajuda e do atendimento: "1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%". */
 export function escadaTaxasCurta(faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): string {
   return faixas.map((f) => `${faixaPorExtenso(f)} = ${taxaPublicaTexto(f)}`).join(", ");
 }

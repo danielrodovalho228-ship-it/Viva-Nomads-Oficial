@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 
@@ -10,7 +11,7 @@ import { authFile } from "../fixtures/auth";
  * Regra 3: o simulador RECOMENDA o plano pelo volume real — e a recomendação
  *   MUDA conforme o volume digitado (inclusive "Gratuito" quando é o melhor).
  *
- * Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): no simulador do painel a escada termina em "16 ou mais = 6%"
+ * Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): no simulador do painel a escada termina em "16–19 = 6%"
  * — o controle de imóveis vai de 1 a 16 e não existe mais a posição 20 = Plano Gestor, 4%.
  */
 test.describe("T12 — Escada de planos @criticos", () => {
@@ -49,11 +50,11 @@ test.describe("T12 — Escada de planos @criticos", () => {
         await expect(ativos).toHaveText(n);
         await expect(taxa).toHaveText(esperado);
       }
-      // 078 (Daniel, 16/11/2026): no lugar de "20 → 4%": o controle para em 16, a última faixa é "16+ imóveis" a 6%, e a
+      // 078 (Daniel, 16/11/2026): no lugar de "20 → 4%": o controle para em 16, a última faixa é "16–19 imóveis" a 6%, e a
       // tela não mostra 4% nem o detalhe da faixa do Gestor.
       await expect(slider).toHaveAttribute("max", "16");
       await expect(taxa).toHaveText("6%");
-      await expect(page.getByTestId("faixa-nome")).toHaveText("Sua faixa: 16+ imóveis");
+      await expect(page.getByTestId("faixa-nome")).toHaveText("Sua faixa: 16–19 imóveis");
       await expect(page.getByTestId("faixa-gestor-detalhe")).toHaveCount(0);
 
       const corpo = (await page.locator("body").innerText()) ?? "";

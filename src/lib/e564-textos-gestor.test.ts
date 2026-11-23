@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 /**
  * E564 (parte A, decisão do Daniel, 04/11/2026) — textos do Plano Gestor nas TELAS, sobre a regra da parte B (#2519:
  * 1–2 12% · 3–5 10% · 6–15 8% · 16–19 6% · 20+ = Plano Gestor 4%, sem assinatura). Entra "Gestor: 4% para carteiras de
@@ -8,7 +9,7 @@
  * Gestor (GESTOR_TEXTO), a constante GESTOR_PRECO e os diferenciais (GESTOR_DIFERENCIAIS) saíram; no lugar, a linha única das
  * carteiras (TEXTO_CARTEIRAS, sem taxa). As telas citam essa linha (ou a frase da escada) e não citam mais o Plano Gestor; a
  * seção de /precos virou #carteiras, sem lista de diferenciais; /anunciar não filtra mais a faixa do Gestor; a apresentação
- * estática termina em "16 ou mais imóveis — 6%" + a linha das carteiras. O que continua igual: nada de "negociável",
+ * estática termina em "16–19 imóveis — 6%" + a linha das carteiras. O que continua igual: nada de "negociável",
  * "condições negociadas", "taxa zero" nem fase 2.
  */
 import { test } from "node:test";
@@ -96,9 +97,10 @@ test("/anunciar: a escada inteira e a linha das carteiras (sem faixa do Gestor p
 test("a apresentação estática segue a tabela nova (sem 31+ negociável)", () => {
   const html = readFileSync(new URL("../../public/apresentacao.html", import.meta.url), "utf8");
   assert.doesNotMatch(html, /taxa negociável|negociado · 6%|16–30 imóveis/);
-  // 078 (Daniel, 16/11/2026): antes <span>16–19 imóveis</span><b>6%</b> — a última faixa é "16 ou mais".
-  assert.match(html, /<span>16 ou mais imóveis<\/span><b>6%<\/b>/);
-  assert.doesNotMatch(html, /16–19 imóveis/);
+  // 078 (Daniel, 16/11/2026): antes <span>16–19 imóveis</span><b>6%</b> — com o 078 passou a "16 ou mais" e, pela ORDEM-DUET-534, voltou a "16–19".
+  assert.match(html, /<span>16–19 imóveis<\/span><b>6%<\/b>/);
+  // ORDEM-DUET-534: a negação inverteu — a apresentação diz "16–19 imóveis" e não promete "16 ou mais".
+  assert.doesNotMatch(html, /16 ou mais imóveis/);
   // 078 (Daniel, 16/11/2026): antes a apresentação TINHA a linha <span>Plano Gestor</span><b>4%</b>; no lugar, a linha das carteiras,
   // sem taxa — e nem o plano nem os 4% aparecem.
   assert.match(html, /<span>Carteira a partir de 20 imóveis ou administradora de imóveis<\/span><b>Fale com a Viva<\/b>/);

@@ -16,7 +16,7 @@ export { TEXTO_REGRA_UNICA } from "../lib/cobranca/regra.ts";
 
 /**
  * E805 — a escada inteira da taxa de serviço, igual em /para-proprietarios e /como-funciona (a Ajuda tem a tabela):
- * "Quanto mais imóveis ativos, menor a taxa: 1–2 imóveis: 12% · … · 16 ou mais imóveis: 6%. Carteira a partir de 20
+ * "Quanto mais imóveis ativos, menor a taxa: 1–2 imóveis: 12% · … · 16–19 imóveis: 6%. Carteira a partir de 20
  * imóveis ou administradora de imóveis: fale com a Viva." Prompt 078 (16/11/2026): sem o Plano Gestor nem taxa abaixo da escada.
  */
 export const FRASE_ESCADA_TAXAS = `Quanto mais imóveis ativos, menor a taxa: ${escadaTaxasTexto()}. ${TEXTO_CARTEIRAS}`;

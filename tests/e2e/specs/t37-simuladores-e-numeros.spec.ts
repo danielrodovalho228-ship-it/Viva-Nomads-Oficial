@@ -13,7 +13,7 @@ import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
  *  1. Comissão 12 / 8 / 4 / 0 % por plano (Gratuito, Essencial, Profissional, Gestor).
  *  2. Preços históricos R$ 0 / 49 / 129 (o limite de anúncios saiu no E233-A: não é mais lido por ninguém).
  *  3. Caução: 50% de cada bloco, soma limitada a 3 aluguéis (cálculo puro).
- *  4. /precos: tabela de faixas (12 / 10 / 8 / 6% do valor total do contrato, a última "16 ou mais") e o contato das
+ *  4. /precos: tabela de faixas (12 / 10 / 8 / 6% do valor total do contrato, a última "16–19", ORDEM-DUET-534) e o contato das
  *     carteiras a partir de CARTEIRAS_MINIMO_IMOVEIS (20) no formulário,
  *     sem mensalidade; a marca ("imóveis mobiliados", "Caução") e a Viva sem tocar em dinheiro.
  *  5. Simulador do painel: a taxa de serviço de cada faixa é a da regra única (sem planos).
@@ -64,7 +64,7 @@ test.describe("T37 — /precos (visitante)", () => {
   test.use({ storageState: { cookies: [], origins: [] }, viewport: { width: 390, height: 844 } });
 
   // Regra vigente (ordens 75553f0a / 5df28a7b): sem cartões de plano com mensalidade; uma tabela de faixas
-  // 12 / 10 / 8 / 6% sobre o valor TOTAL do contrato (a última faixa é "16 ou mais"; 078: sem a do Plano Gestor) e o
+  // 12 / 10 / 8 / 6% sobre o valor TOTAL do contrato (a última faixa publicada é "16–19", ORDEM-DUET-534; 078: sem a do Plano Gestor) e o
   // contato das carteiras a partir de CARTEIRAS_MINIMO_IMOVEIS (20), só no formulário.
   // A 390 px a tabela some (hidden sm:table) e as mesmas faixas aparecem em cartões (t185).
   test("390 px: os cartões de faixa mostram a taxa e o exemplo em reais de cada faixa; sem mensalidade", async ({ page }) => {
@@ -78,7 +78,7 @@ test.describe("T37 — /precos (visitante)", () => {
     for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
       const texto = limpo(await linhas.nth(i).innerText());
       expect(texto).toContain(limpo(taxaPublicaTexto(f)));
-      // E564/078: toda faixa (são 4, até "16+" a 6%; a do Plano Gestor saiu) mostra o exemplo em reais; a "taxa negociável" saiu.
+      // E564/078: toda faixa (são 4, até "16–19" a 6%; a do Plano Gestor saiu) mostra o exemplo em reais; a "taxa negociável" saiu.
       expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
     // O contato das carteiras é um botão que abre a janela (t185); não há bloco de formulário fixo na página.
@@ -116,7 +116,7 @@ test.describe("T37 — /precos (visitante, 1280 px)", () => {
     for (const [i, f] of FAIXAS_COMISSAO_PADRAO.entries()) {
       const texto = limpo(await linhas.nth(i).innerText());
       expect(texto).toContain(limpo(taxaPublicaTexto(f)));
-      // E564/078: toda faixa (são 4, até "16+" a 6%; a do Plano Gestor saiu) mostra o exemplo em reais; a "taxa negociável" saiu.
+      // E564/078: toda faixa (são 4, até "16–19" a 6%; a do Plano Gestor saiu) mostra o exemplo em reais; a "taxa negociável" saiu.
       expect(texto).toContain(limpo(formatBRL(comissaoSobreContrato(3000, 3, f.taxa))));
     }
   });

@@ -66,7 +66,7 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
   },
   {
     id: "taxa-de-4-publica",
-    regra: "Prompt 078: não existe taxa de serviço de 4% publicada — a escada termina em 16 ou mais = 6% e vem de lib/cobranca/regra.ts. Condição especial é caso a caso (taxa fixada pelo admin), nunca texto de tela.",
+    regra: "Prompt 078: não existe taxa de serviço de 4% publicada — a escada publicada termina em 16–19 = 6% e vem de lib/cobranca/regra.ts. Condição especial é caso a caso (taxa fixada pelo admin), nunca texto de tela.",
     // "4%" em contexto de taxa: depois de taxa/comissão/gestor/carteira/administradora/até/cobra/menor, ou antes de "por contrato",
     // "do valor total", "sobre o valor", "sem mensalidade/assinatura". "14%", "4,5%" e "0,4%" não entram.
     re: /\b(?:taxa|comiss[ãa]o|gestor|carteiras?|administradoras?|at[ée]|cobra|menor)\b[^.\n"`]{0,60}(?<![\d.,])4\s?%|(?<![\d.,])4\s?%[^.\n"`]{0,40}\b(?:por contrato|do valor total|sobre o valor|sem mensalidade|sem assinatura)\b/i,

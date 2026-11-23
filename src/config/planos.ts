@@ -215,7 +215,7 @@ export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): numb
 
 /**
  * Prompt 078 (decisão do Daniel, 16/11/2026): lançar SEM o Plano Gestor público de 4%. A escada pública termina em
- * "16 ou mais = 6%" (lib/cobranca/regra.ts). Carteira grande ou administradora não tem taxa publicada: fala com a Viva,
+ * "16–19 = 6%" (lib/cobranca/regra.ts; ORDEM-DUET-534: a partir de 20 nenhum percentual é publicado). Carteira grande ou administradora não tem taxa publicada: fala com a Viva,
  * e a condição é decidida caso a caso (taxa fixada pelo admin, com motivo e validade). Saíram daqui GESTOR_PRECO,
  * PORTA_GESTOR_TEXTO, GESTOR_RESUMO, GESTOR_TEXTO e GESTOR_DIFERENCIAIS.
  */

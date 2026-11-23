@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 /*
   Cenários de teste do atendimento sobre PARCEIROS (ordem 7b7eaca9).
   Separados dos 14 cenários da Viva (o painel do admin mostra "12 de 14"):
@@ -5,7 +6,7 @@
   Roda: node --test tests/atendimento/parceiros-cenarios.test.ts
   Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): o artigo "como virar parceiro" e o prompt da Viva não citam mais o Plano
   Gestor — trazem a linha das carteiras ("Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva."); a escada
-  vem por extenso ("1–2 = 12%, … 16 ou mais = 6%", antes "12/10/8/6%"); o menor percentual citado é "até 6%" (antes 4%, o do Gestor).
+  vem por extenso ("1–2 = 12%, … 16–19 = 6%", antes "12/10/8/6%"); o menor percentual citado é "até 6%" (antes 4%, o do Gestor).
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -20,7 +21,7 @@ const CASOS: { pergunta: string; artigo: string; resposta: RegExp[]; naoDiz?: Re
   {
     pergunta: "Como virar parceiro da Viva?",
     artigo: "como-virar-parceiro",
-    resposta: [/Fotografia/, /Uma conta só/, /CPF/, /CNPJ/, /\/empresas/, /Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva\./, /a taxa de serviço cai com o volume \(1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16 ou mais = 6%\)/],
+    resposta: [/Fotografia/, /Uma conta só/, /CPF/, /CNPJ/, /\/empresas/, /Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva\./, /a taxa de serviço cai com o volume \(1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%\)/],
     naoDiz: /Plano Gestor|(?<![\d,.])4\s?%/,
   },
   { pergunta: "Como ativar o modo parceiro na minha conta?", artigo: "como-virar-parceiro", resposta: [/Quero ser parceiro/, /link para ativar a página/] },
@@ -51,7 +52,7 @@ test("parceiros: o prompt da Viva traz tipos, modos, taxa de serviço de 10%, ac
     /contato direto do proprietário não é trocado/,
     /Uberlândia \(MG\)/,
     /Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva\./,
-    /a taxa de serviço cai com o volume \(1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16 ou mais = 6%\)/,
+    /a taxa de serviço cai com o volume \(1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%\)/,
   ]) {
     assert.match(SYSTEM_VIVA, re);
   }

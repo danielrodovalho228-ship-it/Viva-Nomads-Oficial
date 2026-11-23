@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { CARTEIRAS_MINIMO_IMOVEIS, TEXTO_CARTEIRAS } from "../../../src/config/planos";
 import { FAIXAS_COMISSAO_PADRAO, TAXA_MENOR_TEXTO, escadaTaxasCurta, escadaTaxasTexto, rotuloFaixaTaxa } from "../../../src/lib/cobranca/regra";
@@ -6,7 +7,7 @@ import { MOTIVO_PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /*
   T1677 — prompt 078 (decisão do Daniel, 16/11/2026): lançar SEM o Plano Gestor público de 4%.
-  A escada pública da taxa de serviço é 1–2 = 12% · 3–5 = 10% · 6–15 = 8% · 16 ou mais = 6%. No lugar do Gestor há uma
+  A escada pública da taxa de serviço é 1–2 = 12% · 3–5 = 10% · 6–15 = 8% · 16–19 = 6%. No lugar do Gestor há uma
   linha só, sem taxa: "Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva." (TEXTO_CARTEIRAS).
 
   Em cada página pública que fala da taxa — /, /como-funciona, /para-proprietarios, /parceiros e a Central de Ajuda
@@ -66,8 +67,8 @@ async function semRolagemHorizontalNoCelular(page: Page, largura: number): Promi
 
 test.describe("T1677 — P078: os números da decisão", { tag: ["@078", "@E564", "@E805", "@ao-vivo-seguro"] }, () => {
   test("a escada, a linha de carteiras e as duas regras de texto são as da decisão (literal)", () => {
-    expect(escadaTaxasTexto()).toBe("1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16 ou mais imóveis: 6%");
-    expect(escadaTaxasCurta()).toBe("1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16 ou mais = 6%");
+    expect(escadaTaxasTexto()).toBe("1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%");
+    expect(escadaTaxasCurta()).toBe("1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%");
     expect(TAXA_MENOR_TEXTO).toBe("6%");
     expect(CARTEIRAS_MINIMO_IMOVEIS).toBe(20);
     expect(TEXTO_CARTEIRAS).toBe("Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva.");
@@ -99,13 +100,13 @@ for (const largura of [390, 1280] as const) {
     });
 
     for (const [rota, marca] of [["/como-funciona", "cf-taxa-proprietario"], ["/para-proprietarios", "anunciar-taxa"]] as const) {
-      test(`${rota}: a escada inteira até "16 ou mais imóveis: 6%" e a linha de carteiras; sem Plano Gestor nem 4%`, async ({ page }) => {
+      test(`${rota}: a escada inteira até "16–19 imóveis: 6%" e a linha de carteiras; sem Plano Gestor nem 4%`, async ({ page }) => {
         await abrir(page, rota);
         const bloco = page.getByTestId(marca);
         await linhaDeCarteirasVisivel(page, bloco, largura);
         await expect(bloco).toContainText(escadaTaxasTexto());
         await expect(bloco).toContainText(FRASE_ESCADA);
-        await expect(bloco).not.toContainText("16–19");
+        await expect(bloco).not.toContainText("16 ou mais"); // ORDEM-DUET-534: antes a negação era de "16–19"
         await semGestorNemQuatroPorCento(page, rota);
         await semRolagemHorizontalNoCelular(page, largura);
       });
@@ -150,7 +151,7 @@ for (const largura of [390, 1280] as const) {
       await linhaDeCarteirasVisivel(page, resposta, largura);
       await expect(resposta).toContainText(`Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): ${escadaTaxasCurta()}. ${TEXTO_CARTEIRAS}`);
       await expect(resposta).toContainText("Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.");
-      await expect(resposta).not.toContainText("16–19");
+      await expect(resposta).not.toContainText("16 ou mais"); // ORDEM-DUET-534: antes a negação era de "16–19"
       // Com a resposta aberta, o texto da página inteira continua sem o Gestor e sem 4%.
       await semGestorNemQuatroPorCento(page, "/ajuda/proprietarios");
       await semRolagemHorizontalNoCelular(page, largura);
@@ -173,7 +174,7 @@ for (const largura of [390, 1280] as const) {
         await expect(page.getByTestId(saiu), saiu).toHaveCount(0);
       }
       await expect(page.locator("#plano-gestor")).toHaveCount(0);
-      // A tabela de faixas (cartões no celular) termina em "16+" a 6%.
+      // A tabela de faixas (cartões no celular) termina em "16–19" a 6%.
       const linhas = page.getByTestId(largura === 390 ? "faixas-taxa-cartoes" : "faixas-taxa").locator(largura === 390 ? ":scope > li" : "tbody tr");
       await expect(linhas).toHaveCount(4);
       const ultima = FAIXAS_COMISSAO_PADRAO[FAIXAS_COMISSAO_PADRAO.length - 1];

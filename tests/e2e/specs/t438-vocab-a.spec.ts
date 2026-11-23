@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 import { test, expect } from "@playwright/test";
 import { TEXTO_CARTEIRAS } from "../../../src/config/planos";
 import { achadosProibidos } from "../../../src/lib/frases-proibidas";
@@ -11,7 +12,7 @@ import { achadosProibidos } from "../../../src/lib/frases-proibidas";
  *  Em 390 e 1280 px, com prints.
  * Rodadas fora do lab completo (teto L-5): 30/10, sobre a main com #1553–#1556, no lab-crítico do #1558 (bloco 67).
  * Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): caso 2 — a escada de /para-proprietarios termina em
- * "16 ou mais imóveis: 6%" e é seguida da linha de carteiras, não mais de "Plano Gestor: {GESTOR_TEXTO}".
+ * "16–19 imóveis: 6%" e é seguida da linha de carteiras, não mais de "Plano Gestor: {GESTOR_TEXTO}".
  */
 const PROIBIDAS = /\binquilin[oa]s?\b|\bcomiss(ão|ões)\b/i;
 
@@ -37,9 +38,9 @@ for (const [largura, altura] of [[390, 844], [1280, 900]] as const) {
       expect(texto).toContain("A taxa de serviço da Viva é de 12% sobre o valor total do contrato fechado");
       // E805: a escada inteira (12/10/8/6) no lugar da faixa resumida "de 12% a 6%".
       // 078 (Daniel, 16/11/2026): antes "… · 16–19 imóveis: 6%. Plano Gestor: {GESTOR_TEXTO}."; agora a escada termina em
-      // "16 ou mais imóveis: 6%" e vem a linha de carteiras; o Plano Gestor e os 4% são cobrados como ausentes.
-      expect(texto).toContain(`1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16 ou mais imóveis: 6%. ${TEXTO_CARTEIRAS}`);
-      expect(texto).not.toMatch(/Plano Gestor|16–19/i);
+      // "16–19 imóveis: 6%" e vem a linha de carteiras; o Plano Gestor e os 4% são cobrados como ausentes.
+      expect(texto).toContain(`1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%. ${TEXTO_CARTEIRAS}`);
+      expect(texto).not.toMatch(/Plano Gestor|16 ou mais/i); // ORDEM-DUET-534: antes a negação era de "16–19"
       expect(achadosProibidos(texto).filter((a) => a.id === "plano-gestor-publico" || a.id === "taxa-de-4-publica")).toEqual([]);
       expect(texto).not.toMatch(/taxa negociável|condições negociadas/);
       expect(texto).not.toMatch(PROIBIDAS);

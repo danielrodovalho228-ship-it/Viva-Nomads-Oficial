@@ -149,3 +149,48 @@ cobrado como presente (Plano Gestor, 4%, a faixa de 20+) passa a ser cobrado com
 |---|---|---|
 | `tests/e2e/specs/t656-e224-plano-gestor.spec.ts` | 1b. conta de administradora | na main (E564): título "1b. já liberado (administradora): 'Plano Gestor: taxa de 4% nos próximos contratos, sem assinatura.'", com esse texto e `data-elegivel="1"` → "1b. conta de administradora: a taxa continua a da faixa (12%)": a mesma linha do caso 1a, `data-taxa="0.12"`, `data-origem="faixa"`, e o cartão NÃO traz "Plano Gestor", "Liberado" nem 4% |
 | `tests/e2e/specs/t2096-e628-faixa-do-dono-no-simulador.spec.ts` | 390 e 1280 px, o nome da faixa no simulador | "1, 19 e 20 imóveis": com 19, "16–19 imóveis"; com 20, "20+ imóveis · Plano Gestor", o detalhe "Gestor: 20+ imóveis ou administradora · cadastro assistido e contato direto." e 4% → "1, 15 e 16 imóveis": com 15, "6–15 imóveis" e 8%; com 16, "16+ imóveis" e 6%; o controle vai até 16 e a tela NÃO traz o detalhe do Gestor nem o nome do plano |
+
+## Ajuste da ORDEM-DUET-534 (Gerente, 22/11/2026)
+
+Decisão citada: "Vale a dos Termos do #4139: 16 a 19 imóveis: 6%; 20 ou mais, condição negociada." A escada PUBLICADA
+deixa de terminar em "16 ou mais imóveis: 6%" e passa a terminar em "16–19 imóveis: 6%". A partir de 20 imóveis vale só a
+linha de carteiras ("Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva."), sem percentual.
+
+O que NÃO mudou: a tabela de cálculo (a última faixa continua sem teto, 6%) e a migração 0344. O teto publicado sai de
+`tetoPublicado` (`src/lib/cobranca/regra.ts`): a faixa sem teto que começa antes do mínimo das carteiras é publicada até
+o mínimo menos um (19). O modelo interno dos sócios continua a mostrar a faixa do cálculo ("16 ou mais"), por
+`faixaDoCalculoPorExtenso`; as travas dele (`custos-v3.test.ts`, `t1191`, `t1396`, `e667-modelo-sem-31.test.ts`) não
+mudaram.
+
+Todas as asserções desta secção já tinham sido alteradas pelo 078 (tabelas de cima). Aqui só troca o rótulo da última
+faixa; nenhuma asserção saiu.
+
+### Rótulo da última faixa: "16 ou mais" / "16+" → "16–19"
+
+| Arquivo | O que cobrava → o que cobra |
+|---|---|
+| `src/lib/cobranca/p078-escada-sem-gestor.test.ts` | escada "… · 16 ou mais imóveis: 6%" → "… · 16–19 imóveis: 6%"; curta "16 ou mais = 6%" → "16–19 = 6%"; rótulos "16+" / "16+ imóveis" → "16–19" / "16–19 imóveis" |
+| `src/lib/cobranca/regra.test.ts` | rótulos da tabela pública `[…, "16+"]` → `[…, "16–19"]`; "16+ imóveis" → "16–19 imóveis"; frases com a escada |
+| `src/lib/cobranca/e628-faixa-do-dono.test.ts` | nome da faixa do dono "16+ imóveis" → "16–19 imóveis" (inclusive com 20 imóveis ativos: o nome é o da última faixa publicada; a taxa calculada continua 6%). A comparação com a última linha da /simulacao dos sócios continua a cobrar "16 ou mais imóveis" |
+| `src/lib/e805-escada-taxas.test.ts` | pedaço e frase inteira "16 ou mais imóveis: 6%" → "16–19 imóveis: 6%" |
+| `src/lib/planos/gestor-minimo-textos.test.ts` | rótulos `[…, "16+ imóveis"]` → `[…, "16–19 imóveis"]` |
+| `src/lib/planos/plano-gestor-e224.test.ts`, `src/lib/planos/e905-gestor-administradora.test.ts`, `src/config/planos.test.ts` | a frase da escada termina em "16–19 imóveis: 6%. Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva." |
+| `src/lib/atendimento/parceiros.test.ts`, `tests/atendimento/parceiros-cenarios.test.ts` | resposta do atendimento "(1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16 ou mais = 6%)" → "(…, 16–19 = 6%)" |
+| `src/lib/frases-proibidas.test.ts` | o texto da regra citado no teste ("a escada publicada termina em 16–19 = 6%") |
+| `tests/e2e/specs/t1677-p078-escada-sem-gestor.spec.ts` | páginas públicas e Ajuda: "16 ou mais imóveis: 6%" → "16–19 imóveis: 6%"; a tabela de `/precos` termina em "16–19" |
+| `tests/e2e/specs/t2096-e628-faixa-do-dono-no-simulador.spec.ts` | com 16 imóveis, `faixa-nome` "16+ imóveis" → "16–19 imóveis" (segunda alteração desta spec; a primeira está em "Acrescentadas no refresco") |
+| `tests/e2e/specs/t12-planos.spec.ts` | `faixa-nome` "Sua faixa: 16+ imóveis" → "Sua faixa: 16–19 imóveis" |
+| `tests/e2e/specs/t659-e236-gestor-20.spec.ts`, `tests/e2e/specs/t861-e564-gestor-4.spec.ts` | última linha da tabela de `/precos`: "16+" / "16+ imóveis" → "16–19" / "16–19 imóveis" (specs da página suspensa: pulam enquanto `/precos` estiver desligada) |
+| `tests/e2e/specs/t438-vocab-a.spec.ts`, `tests/e2e/specs/t656-e224-plano-gestor.spec.ts` | a frase da escada em `/para-proprietarios` e em Conta › Plano termina em "16–19 imóveis: 6%" + a linha de carteiras |
+
+### Negações invertidas
+
+Antes do 078 a escada dizia "16–19"; o 078 passou a "16 ou mais" e proibiu "16–19". Com a ORDEM-534 a proibição
+inverte: a tela diz "16–19" e não pode dizer "16 ou mais".
+
+| Arquivo | Antes → depois |
+|---|---|
+| `src/lib/cobranca/p078-escada-sem-gestor.test.ts` (E995, respostas da Ajuda) | `doesNotMatch(/16–19|Plano Gestor|4%/)` → `doesNotMatch(/16 ou mais|Plano Gestor|4%/)` |
+| `src/lib/e564-textos-gestor.test.ts` (apresentação estática) | `match(/16 ou mais imóveis…6%/)` + `doesNotMatch(/16–19 imóveis/)` → `match(/16–19 imóveis…6%/)` + `doesNotMatch(/16 ou mais imóveis/)` |
+| `tests/e2e/specs/t1677-p078-escada-sem-gestor.spec.ts` (2 lugares) | `not.toContainText("16–19")` → `not.toContainText("16 ou mais")` |
+| `tests/e2e/specs/t438-vocab-a.spec.ts` | `not.toMatch(/Plano Gestor|16–19/i)` → `not.toMatch(/Plano Gestor|16 ou mais/i)` |

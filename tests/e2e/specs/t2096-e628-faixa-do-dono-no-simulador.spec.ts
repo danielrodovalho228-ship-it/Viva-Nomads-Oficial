@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
@@ -7,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
   Regra decidida (E628): o simulador logado do dono NOMEIA a faixa. O unitário e628-faixa-do-dono.test.ts fixa os nomes
   e a fonte comum; esta spec prova na tela do simulador, a 390 e 1280 px.
   Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026: lançar SEM o Plano Gestor público de 4%): a escada termina
-  em "16+ imóveis" (6%). Antes a spec cobrava "16–19 imóveis" com 19, e com 20 "20+ imóveis · Plano Gestor", o detalhe
+  em "16–19 imóveis" (6%). Antes a spec cobrava "16–19 imóveis" com 19, e com 20 "20+ imóveis · Plano Gestor", o detalhe
   "Gestor: 20+ imóveis ou administradora · cadastro assistido e contato direto." e a taxa de 4%. Agora o controle vai
   até 16, a fronteira que sobrou é 15 → 16, e a tela não tem detalhe de Gestor nem o nome do plano.
 */
@@ -28,7 +29,7 @@ async function imoveis(p: Page, n: number) {
   await expect(p.getByTestId("imoveis-ativos")).toHaveText(String(n));
 }
 
-test.describe("T2096 — E628/078: o simulador do dono nomeia a faixa; a escada termina em 16+ imóveis, sem Gestor @E628", () => {
+test.describe("T2096 — E628/078: o simulador do dono nomeia a faixa; a escada termina em 16–19 imóveis, sem Gestor @E628", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (precisa de sessão e da chave de serviço).");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
   test.beforeAll(async () => {
@@ -40,7 +41,7 @@ test.describe("T2096 — E628/078: o simulador do dono nomeia a faixa; a escada 
   });
 
   for (const largura of [390, 1280]) {
-    test(`${largura} px — 1, 15 e 16 imóveis: o nome da faixa; a última é 16+ imóveis a 6%, sem Plano Gestor`, async ({ browser }) => {
+    test(`${largura} px — 1, 15 e 16 imóveis: o nome da faixa; a última é 16–19 imóveis a 6%, sem Plano Gestor`, async ({ browser }) => {
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await p.goto("/dashboard/simulador", { waitUntil: "domcontentloaded" });
@@ -54,7 +55,7 @@ test.describe("T2096 — E628/078: o simulador do dono nomeia a faixa; a escada 
       await expect(p.getByTestId("faixa-gestor-detalhe")).toHaveCount(0);
       // 078 (Daniel, 16/11/2026): antes `imoveis(p, 20)`, "20+ imóveis · Plano Gestor", o detalhe do Gestor e "4%".
       await imoveis(p, 16);
-      await expect(p.getByTestId("faixa-nome")).toContainText("16+ imóveis");
+      await expect(p.getByTestId("faixa-nome")).toContainText("16–19 imóveis");
       await expect(p.getByTestId("taxa-faixa")).toContainText("6%");
       await expect(p.getByTestId("faixa-gestor-detalhe")).toHaveCount(0);
       await expect(p.getByTestId("faixa-nome")).not.toContainText(/Plano Gestor|Gestor/);

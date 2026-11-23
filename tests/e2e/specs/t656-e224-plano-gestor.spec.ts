@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
@@ -18,7 +19,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 */
 // 078 (Daniel, 16/11/2026): o texto exato de Conta › Plano para quem não tem imóvel ativo — o mesmo de
 // textoTaxaNaConta({ taxa: 0.12, origem: "faixa", imoveisAtivos: 0 }) (src/lib/planos/gestor.ts). Literal de propósito.
-const TAXA_DA_CONTA_SEM_IMOVEL_ATIVO = "Sua taxa de serviço hoje é de 12%. Quanto mais imóveis ativos, menor a taxa: 1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16 ou mais imóveis: 6%. Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva.";
+const TAXA_DA_CONTA_SEM_IMOVEL_ATIVO = "Sua taxa de serviço hoje é de 12%. Quanto mais imóveis ativos, menor a taxa: 1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%. Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva.";
 const sufixo = novoSufixo();
 const senha = novaSenha();
 const dono = { email: `dono.t656.${sufixo}@lab.vivanomads.test`, nome: `Gil Gestor ${sufixo}`, role: "owner" as const };
@@ -64,7 +65,7 @@ test.describe("T656 — E224/078: Conta › Plano (a taxa da conta) e tipo da co
     await page.goto("/dashboard/conta/plano", { waitUntil: "domcontentloaded" });
     const texto = page.getByTestId("conta-plano-gestor-texto");
     // 078 (Daniel, 16/11/2026): antes "Plano Gestor: taxa de 4% com 20 imóveis ativos (…). Você tem 0; faltam 20.";
-    // agora a taxa da conta + a escada até "16 ou mais = 6%" + a linha de carteiras, sem Plano Gestor nem 4%.
+    // agora a taxa da conta + a escada até "16–19 = 6%" + a linha de carteiras, sem Plano Gestor nem 4%.
     await expect(texto).toHaveText(TAXA_DA_CONTA_SEM_IMOVEL_ATIVO, { timeout: 30_000 });
     // 078 (Daniel, 16/11/2026): o atributo `data-elegivel="0"` saiu; a tela marca a taxa e a origem dela.
     await expect(texto).toHaveAttribute("data-taxa", "0.12");
