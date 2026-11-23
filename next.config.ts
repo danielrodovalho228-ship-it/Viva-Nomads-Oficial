@@ -48,7 +48,7 @@ function politicaDeConteudo(): string {
     "style-src 'self' 'unsafe-inline'",
     `script-src 'self' 'unsafe-inline' ${producao ? "" : "'unsafe-eval' "}https://challenges.cloudflare.com${previa ? " https://vercel.live" : ""}`,
     "worker-src 'self' blob:",
-    "connect-src 'self' " + armazenamento + " https://api.mapbox.com https://events.mapbox.com https://viacep.com.br https://brasilapi.com.br https://speed.cloudflare.com" + (previa ? " https://vercel.live wss://ws-us3.pusher.com" : ""),
+    "connect-src 'self' " + armazenamento + " https://api.mapbox.com https://events.mapbox.com https://viacep.com.br https://brasilapi.com.br" + (previa ? " https://vercel.live wss://ws-us3.pusher.com" : ""),
     // Vídeo e áudio: os do próprio site, a prévia local (blob:) e os arquivos do armazenamento (vídeo do imóvel, áudio da caixa dos sócios).
     `media-src 'self' blob: ${armazenamento}`,
     // Quadros: vídeo por link, captcha e o PDF do armazenamento que o admin confere (documentos e matrículas).
