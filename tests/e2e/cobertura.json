@@ -2375,6 +2375,15 @@
         "t1449-varredura-bloco515"
       ]
     },
+    "/dashboard/servicos/avaliacao": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": [
+        "t1735-e1104-porta-da-avaliacao-nos-servicos"
+      ]
+    },
     "/dashboard/servicos/pedidos/[id]": {
       "personas": [
         "proprietario",
