@@ -65,7 +65,7 @@ export function estadoDaPorta(e: { chaveAberta: boolean; imoveis: number }): Est
 export function hrefDoCartaoDaAvaliacao(e: { chaveAberta: boolean; imoveis: ImovelNaPorta[] }): string {
   if (!e.chaveAberta) return HREF_PORTA_AVALIACAO;
   const emCurso = e.imoveis.filter((i) => i.emCurso);
-  return emCurso.length === 1 ? hrefDaAvaliacaoNoImovel(emCurso[0].id) : HREF_PORTA_AVALIACAO;
+  return emCurso.length >= 1 ? hrefDaAvaliacaoNoImovel(emCurso[0].id) : HREF_PORTA_AVALIACAO;
 }
 
 /**
