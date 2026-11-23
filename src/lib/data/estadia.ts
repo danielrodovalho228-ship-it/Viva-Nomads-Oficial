@@ -13,7 +13,7 @@ import { primeiroPagamentoConfirmado } from "@/lib/contrato-estado";
 import { estadoConferencia, type RespostaConferencia } from "@/lib/conferencia";
 import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
-import { diaBRT } from "@/lib/datas-brasilia";
+import { hojeEmBrasilia } from "@/lib/datas-brasilia";
 import { conversationId } from "@/lib/messages/conversation-id";
 import {
   acoesDaFolhaDaEstadia,
@@ -379,10 +379,8 @@ export function mesesFuturos(c: LinhaContratoEstadia, hojeISO: string): number {
   return mesesNaoIniciados(blocosOrdenados(c), hojeISO);
 }
 
-/** Hoje (AAAA-MM-DD) em Brasília. */
-export function hojeEmBrasilia(agora: Date = new Date()): string {
-  return diaBRT(agora) ?? agora.toISOString().slice(0, 10);
-}
+/** Hoje (AAAA-MM-DD) em Brasília — E1115 (ORDEM-DUET-503): a fonte única (datas-brasilia). */
+export { hojeEmBrasilia } from "@/lib/datas-brasilia";
 
 /** E360: "Saraiva, Uberlândia · código VN-3F9A2C" (o bairro é o campo público `address`, nunca o endereço exato). */
 export function localDaEstadia(c: { property_id?: string | null; properties?: { address?: string | null; city?: string | null } | null }): string {
