@@ -16,6 +16,7 @@ import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
 import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
+import { etapaDoPedido } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
@@ -140,7 +141,12 @@ export default async function AvaliacaoParceiroPage() {
   const agora = new Date();
   const lista = (pedidos ?? []) as Pedido[];
   // Agenda (Prompt 62-A, item 6): para responder (com o contador de 24 h), visitas e o histórico de ausências e recusas.
-  const paraResponder = lista.filter((p) => p.status === "designado" && resposta.get(p.id) === null);
+  // E1102 (ORDEM-DUET-492): "Para responder" é a etapa "novo", pela mesma função que decide a tela do pedido e o "Ver o
+  // pedido". Assim o pedido designado sem a linha da designação (resposta undefined) espera a resposta aqui, e não em
+  // "Visitas"; sem relógio e sem o formulário antigo, porque nada vence esse pedido (a resposta sai pela tela dele).
+  const etapaNaLista = (p: Pedido) =>
+    etapaDoPedido({ status: p.status, resposta: resposta.get(p.id), proposta_em: p.proposta_em, proposta_aceita_em: p.proposta_aceita_em, teste: p.teste, escolhido_em: p.escolhido_em });
+  const paraResponder = lista.filter((p) => etapaNaLista(p) === "novo");
   const visitas = lista
     .filter((p) => !paraResponder.includes(p) && ["designado", "agendado", "realizada"].includes(p.status))
     .sort((a, b) => (a.agendado_para ? Date.parse(a.agendado_para) : Infinity) - (b.agendado_para ? Date.parse(b.agendado_para) : Infinity));
@@ -216,7 +222,7 @@ export default async function AvaliacaoParceiroPage() {
             ) : (
               <ul className="grid gap-3">
                 {paraResponder.map((p) => (
-                  <ItemPedido key={p.id} p={p} resposta={null} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
+                  <ItemPedido key={p.id} p={p} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
               </ul>
             )}
@@ -359,7 +365,8 @@ function ItemPedido({ p, resposta: r, agora, prazoRespostaHoras }: { p: Pedido; 
           <Button type="submit" variant="ghost" size="sm">Proprietário ou morador ausente</Button>
         </FormAcao>
       )}
-      {p.status === "designado" && (r === null || r === "aceita") && (
+      {/* E1102: a lista oferece "Ver o pedido" exatamente quando a tela do pedido abre (a mesma função decide). */}
+      {etapaDoPedido({ status: p.status, resposta: r, proposta_em: p.proposta_em, proposta_aceita_em: p.proposta_aceita_em, teste: p.teste, escolhido_em: p.escolhido_em }) && (
         <ButtonLink href={`/dashboard/parceiro/avaliacao/${p.id}`} size="sm" variant="ghost" className="mt-2" data-testid="abrir-pedido">
           Ver o pedido
         </ButtonLink>

@@ -30,7 +30,7 @@ import {
   type Porte,
   type StatusCredenciamento,
 } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, registrarRespostaDoAvaliador, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
 import { erroAoPropor, precisaDoAceiteDoDono } from "./relogio-do-pedido";
 import { ERRO_TROCA_SEM_CONFIRMAR, trocaConfirmada } from "./troca-de-avaliador";
@@ -459,7 +459,10 @@ export async function responderDesignacao(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || c.p.status !== "designado") return SEM_ACESSO;
   if (form.get("resposta") !== "recusar") return { ok: false, erro: "Para aceitar, informe o seu valor e o seu prazo." };
-  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", new Date());
+  const agora = new Date();
+  // E1102: a recusa fica gravada também quando o pedido não tinha a linha da designação (ela é criada com a resposta).
+  await registrarRespostaDoAvaliador(c.admin, c.p.id, c.p.avaliador_id!, "recusada", agora);
+  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", agora);
   await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
@@ -494,8 +497,9 @@ export async function proporPrecoEPrazo(form: FormData): Promise<Res> {
   const v = validarProposta({ valor: lido.valor ?? Number.NaN, prazoDias: Number(form.get("prazoDias")) }, faixaDeReferencia(Number(ref.valor_tabela)));
   if (!v.ok) return v;
   const agora = new Date().toISOString();
-  const { data } = await c.admin.from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: agora }).eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).is("resposta", null).select("id");
-  if (!data?.length) {
+  // E1102: a proposta grava a resposta na designação aberta; se o pedido não tinha a linha, ela é criada com a resposta.
+  const gravou = await registrarRespostaDoAvaliador(c.admin, c.p.id, c.p.avaliador_id!, "aceita", new Date(agora));
+  if (!gravou) {
     // E1101: a designação já tem resposta. O motivo é o dela (proposta já enviada, recusa, prazo), nunca "o prazo de
     // 24 horas passou" para quem já propôs; e o prazo é o que o avaliador declarou.
     const [{ data: des }, { data: cred }] = await Promise.all([

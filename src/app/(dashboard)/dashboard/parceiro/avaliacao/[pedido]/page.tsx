@@ -62,15 +62,23 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   // do desenho "Novo pedido de avaliação" — sem desfazer o E648: aceitar é propor o próprio valor e o próprio prazo.
   // Bairro e cidade antes do aceite do dono; o endereço completo só depois. Recusado ou vencido: volta à lista.
   if (p.status === "designado") {
-    const [{ data: d }, { data: des }, { data: im }, { data: capasDoPedido }] = await Promise.all([
+    const [{ data: d, error: erroPedido }, { data: des, error: erroDesignacoes }, { data: im }, { data: capasDoPedido }] = await Promise.all([
       admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, designado_em, escolhido_em, teste").eq("id", p.id).maybeSingle(),
       admin.from("vistoria_designacoes").select("avaliador_id, resposta").eq("pedido_id", p.id),
       admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", p.property_id).maybeSingle(), // consistency-ignore: E1079 fatia 3 — endereço exato só ao avaliador escolhido e só depois de o dono aceitar a proposta
       admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1),
     ]);
     const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; designado_em: string | null; escolhido_em: string | null; teste: boolean } | null;
+    // E1102: leitura que falha não vira "este pedido não é seu" nem volta calada ao painel: cai no aviso do painel, com
+    // "Tentar de novo".
+    if (erroPedido || erroDesignacoes) throw new Error("Não foi possível ler este pedido agora.");
+    // E1102: o pedido é deste avaliador (conferido acima) e está "designado". Sem a linha da designação (undefined), a
+    // etapa sai do próprio pedido — a tela abre; antes, voltava ao painel sem dizer nada. Só não é a tela do pedido
+    // quando a designação diz que ele recusou, venceu ou faltou.
     const minha = ((des ?? []) as { avaliador_id: string; resposta: string | null }[]).find((x) => x.avaliador_id === dados?.avaliador_id);
-    const etapa = dados && minha ? etapaDoPedido({ status: p.status as string, resposta: minha.resposta, proposta_aceita_em: dados.proposta_aceita_em, teste: dados.teste, escolhido_em: dados.escolhido_em }) : null;
+    const etapa = dados
+      ? etapaDoPedido({ status: p.status as string, resposta: minha ? minha.resposta : undefined, proposta_em: dados.proposta_em, proposta_aceita_em: dados.proposta_aceita_em, teste: dados.teste, escolhido_em: dados.escolhido_em })
+      : null;
     if (!dados || !etapa) redirect("/dashboard/parceiro/avaliacao");
     // E1101: de quem é a vez e até quando sai de um lugar só (o mesmo do bloco do dono, da lista e da rotina).
     const agora = new Date();
