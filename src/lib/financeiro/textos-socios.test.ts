@@ -2,6 +2,8 @@
   Páginas dos sócios (ordem bd296d53): modelo único de receita — taxa de serviço por contrato fechado,
   sem mensalidade nesta fase. Teste de grep: nenhum destes arquivos pode voltar a citar os planos antigos.
   Roda: node --test src/lib/financeiro/textos-socios.test.ts
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): /modelodenegocio não cita mais o Plano Gestor — traz a linha das carteiras
+  (TEXTO_CARTEIRAS), lida por lib/planos/gestor, a mesma porta de antes (a guarda contra @/config/planos não mudou).
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -45,7 +47,9 @@ test("/modelodenegocio: regra única 12% por contrato, faixas e rodapé; sem pla
   assert.ok(!texto.includes("@/config/planos"), "não pode mais ler os planos antigos");
   assert.ok(texto.includes("@/lib/cobranca/regra"), "as faixas vêm de src/lib/cobranca/regra.ts");
   assert.ok(texto.includes("Plataforma em fase de testes. Lançamento oficial em 2027."));
-  assert.ok(texto.includes("Plano Gestor"));
+  // 078 (Daniel, 16/11/2026): antes a página TINHA "Plano Gestor"; agora não cita o plano e traz a linha das carteiras (fonte única).
+  assert.ok(!texto.includes("Plano Gestor"));
+  assert.equal(texto.split("{TEXTO_CARTEIRAS}").length - 1, 3, "legenda do gráfico, nota da tabela de faixas e premissas");
 });
 
 // E595/E596 (05/11): /socios e /decisao saíram (sócios e modelo revogados; a reescrita vem depois da decisão societária).
