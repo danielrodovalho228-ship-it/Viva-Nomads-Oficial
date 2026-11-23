@@ -28,6 +28,7 @@ export function PedidoDoAvaliador({
   porte,
   valor,
   prazoResposta,
+  prazoAceite,
   ocupado,
   exemploValor,
   prazoMaxDias,
@@ -39,6 +40,8 @@ export function PedidoDoAvaliador({
   porte: string;
   valor: { texto: string; recebe: boolean };
   prazoResposta?: { texto: string; vencido: boolean } | null;
+  /** E1101: até quando o dono pode aceitar a proposta (72 h depois dela). */
+  prazoAceite?: string | null;
   ocupado: boolean;
   exemploValor: string;
   prazoMaxDias: number;
@@ -88,6 +91,11 @@ export function PedidoDoAvaliador({
       {etapa === "proposta_enviada" && (
         <p className="text-base text-ink" data-testid="pedido-aguarda-dono">
           Falta o proprietário aceitar a sua proposta. Quando ele aceitar, o endereço completo aparece aqui e você agenda a visita.
+          {prazoAceite && (
+            <span className="mt-2 block text-sm text-muted" data-testid="pedido-prazo-aceite">
+              {prazoAceite}
+            </span>
+          )}
         </p>
       )}
       {etapa === "aceito" && (
