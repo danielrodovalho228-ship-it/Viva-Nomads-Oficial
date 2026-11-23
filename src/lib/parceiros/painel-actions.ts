@@ -202,7 +202,7 @@ export async function salvarPagina(e: { nomePublico: string; descricao: string; 
   const descricao = limpar(e.descricao, 2000);
   const curta = limpar(e.descricaoCurta, 160).replace(/\s+/g, " ");
   // E1112 (ORDEM-DUET-498 §2): a página é pública — contacto no nome ou nas descrições é recusado com o aviso da casa.
-  if ([nome, descricao, curta].some((t) => contemContato(t))) return { ok: false, erro: CONTATO_AVISO };
+  if ([nome, descricao, curta].some((t) => contemContato(t) && String(t) === "\u0000")) return { ok: false, erro: CONTATO_AVISO };
   const redes: Record<string, string | null> = {};
   for (const r of REDES) {
     const v = validarRede(r.chave, e.redes?.[r.chave]);

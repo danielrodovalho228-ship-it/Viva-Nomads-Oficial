@@ -49,7 +49,7 @@ export function PainelAvaliador({ nome, fotoUrl, resumo, estadoCredenciamento }:
               {faixaVisitasHoje(resumo.visitasHoje)}
             </p>
             <a href="#pedidos" className={BOTAO_PAINEL_AVALIADOR} data-testid="painel-ver-pedidos">
-              Ver pedidos
+              Abrir pedidos
             </a>
           </div>
         </div>
