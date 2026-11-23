@@ -29,7 +29,8 @@ export const FAIXAS_COMISSAO_PADRAO: readonly FaixaComissao[] = [
   { minImoveis: 1, maxImoveis: 2, taxa: 0.12 },
   { minImoveis: 3, maxImoveis: 5, taxa: 0.1 },
   { minImoveis: 6, maxImoveis: 15, taxa: 0.08 },
-  { minImoveis: 16, maxImoveis: null, taxa: 0.06 },
+  { minImoveis: 16, maxImoveis: 19, taxa: 0.06 },
+  { minImoveis: 20, maxImoveis: null, taxa: 0.04 },
 ];
 
 export const TAXA_COMISSAO_PADRAO = FAIXAS_COMISSAO_PADRAO[0].taxa; // 1–2 imóveis
