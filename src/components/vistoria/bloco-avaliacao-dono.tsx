@@ -15,6 +15,7 @@ import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linh
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
+import { precisaDoAceiteDoDono } from "@/lib/vistoria/relogio-do-pedido";
 import { identidadesConfirmadas, nomesDasContas, outrosParaTroca, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { textoDaTroca } from "@/lib/vistoria/troca-de-avaliador";
 import { DepoisDaTroca, TrocaDeAvaliador } from "@/components/vistoria/troca-de-avaliador";
@@ -64,7 +65,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     tabelaDaCidade(admin, im.city), // E1081: a cidade pela chave (sem acento, sem maiúsculas)
     admin
       .from("vistoria_pedidos")
-      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
+      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
       .eq("property_id", propertyId)
       .order("criado_em", { ascending: false })
       .limit(1),
@@ -91,6 +92,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     prazo_proposto_dias: number | null;
     proposta_em: string | null;
     proposta_aceita_em: string | null;
+    escolhido_em: string | null;
     teste: boolean;
     avaliadores_credenciamento: { numero_credenciado: string; prazo_resposta_horas: number | null } | null;
   } | null;
@@ -320,7 +322,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               </Link>
               .
             </p>
-            {["designado", "agendado"].includes(atual.status) && atual.avaliadores_credenciamento && (atual.proposta_aceita_em || atual.teste) && (
+            {["designado", "agendado"].includes(atual.status) && atual.avaliadores_credenciamento && (atual.proposta_aceita_em || !precisaDoAceiteDoDono({ teste: atual.teste, escolhidoEm: atual.escolhido_em })) && (
               <FormAcao acao={agendarVisita} className="flex flex-wrap items-end gap-2" testid="dono-agendar">
                 <input type="hidden" name="pedidoId" value={atual.id} />
                 <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>

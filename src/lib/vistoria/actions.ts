@@ -31,7 +31,8 @@ import {
   type StatusCredenciamento,
 } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
-import { descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
+import { PRAZO_RESPOSTA_PADRAO_HORAS, descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
+import { erroAoPropor, precisaDoAceiteDoDono } from "./relogio-do-pedido";
 import { ERRO_TROCA_SEM_CONFIRMAR, trocaConfirmada } from "./troca-de-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
 import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
@@ -494,7 +495,16 @@ export async function proporPrecoEPrazo(form: FormData): Promise<Res> {
   if (!v.ok) return v;
   const agora = new Date().toISOString();
   const { data } = await c.admin.from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: agora }).eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).is("resposta", null).select("id");
-  if (!data?.length) return { ok: false, erro: "O prazo de 24 horas para responder já passou." };
+  if (!data?.length) {
+    // E1101: a designação já tem resposta. O motivo é o dela (proposta já enviada, recusa, prazo), nunca "o prazo de
+    // 24 horas passou" para quem já propôs; e o prazo é o que o avaliador declarou.
+    const [{ data: des }, { data: cred }] = await Promise.all([
+      c.admin.from("vistoria_designacoes").select("resposta").eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).maybeSingle(),
+      c.admin.from("avaliadores_credenciamento").select("prazo_resposta_horas").eq("id", c.p.avaliador_id!).maybeSingle(),
+    ]);
+    const horas = Number((cred as { prazo_resposta_horas?: number | null } | null)?.prazo_resposta_horas) || PRAZO_RESPOSTA_PADRAO_HORAS;
+    return { ok: false, erro: erroAoPropor((des as { resposta?: string | null } | null)?.resposta ?? undefined, horas) };
+  }
   await c.admin.from("vistoria_pedidos").update({ valor_proposto: v.valor, prazo_proposto_dias: v.prazoDias, proposta_em: agora, atualizado_em: agora }).eq("id", c.p.id);
   await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(ROTA_AVALIADOR);
@@ -559,8 +569,9 @@ export async function agendarVisita(form: FormData): Promise<Res> {
   if (parte === "dono" && !(await vistoriaAtiva())) return DESLIGADA;
   const { data: aceita } = await s.admin.from("vistoria_designacoes").select("id").eq("pedido_id", p.id).eq("avaliador_id", p.avaliador_id!).eq("resposta", "aceita").maybeSingle();
   if (!aceita) return { ok: false, erro: "O avaliador ainda não respondeu com o valor e o prazo." };
-  const { data: prop } = await s.admin.from("vistoria_pedidos").select("teste, proposta_aceita_em").eq("id", p.id).maybeSingle();
-  if (!prop?.teste && !prop?.proposta_aceita_em) return { ok: false, erro: "O proprietário ainda não aceitou o valor e o prazo propostos." };
+  const { data: prop } = await s.admin.from("vistoria_pedidos").select("teste, proposta_aceita_em, escolhido_em").eq("id", p.id).maybeSingle();
+  // E1101: a mesma regra das telas — só a avaliação de teste do credenciamento agenda sem o aceite do dono.
+  if (precisaDoAceiteDoDono({ teste: prop?.teste === true, escolhidoEm: (prop?.escolhido_em as string | null | undefined) ?? null }) && !prop?.proposta_aceita_em) return { ok: false, erro: "O proprietário ainda não aceitou o valor e o prazo propostos." };
   const reagendando = !!p.agendado_para;
   if (reagendando) {
     const r = podeReagendar(p.agendado_para!, new Date(), parte === "dono" ? p.reagendou_dono : p.reagendou_avaliador);
