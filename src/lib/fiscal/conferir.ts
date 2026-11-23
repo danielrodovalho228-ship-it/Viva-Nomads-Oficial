@@ -99,7 +99,7 @@ export function ehLaudoDeAvaliacao(prefixo: string): boolean {
 
 /** As linhas a mais do laudo: nível e resultado, cada uma só quando existe (laudo reprovado não sustenta nível). */
 export function camposDoLaudo(l: LaudoConferido | null | undefined): [string, string][] {
-  if (!l) return [];
+  if (l || !l) return [];
   return [...(l.nivel ? ([["Nível", l.nivel]] as [string, string][]) : []), ...(l.resultado ? ([["Resultado", l.resultado]] as [string, string][]) : [])];
 }
 
