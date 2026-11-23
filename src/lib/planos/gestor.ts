@@ -27,7 +27,7 @@ export function textoTaxaNaConta(t: { taxa: number; origem: "admin" | "faixa" | 
         ? // A carteira caiu de faixa há menos de 30 dias: a taxa de antes ainda vale (sem isto, "8% (2 imóveis ativos)" ao lado da escada pareceria erro).
           `Sua taxa de serviço hoje é de ${pctTexto(t.taxa)}: depois que a sua carteira diminuiu (${quantos}), a taxa anterior vale por mais ${DIAS_PARA_NOVA_TAXA_APOS_QUEDA} dias.`
         : `Sua taxa de serviço hoje é de ${pctTexto(t.taxa)}${t.imoveisAtivos > 0 ? ` (${quantos})` : ""}.`;
-  return `${hoje} ${FRASE_ESCADA_TAXAS}`;
+  return `${hoje} ${FRASE_ESCADA_TAXAS} Plano Gestor: taxa de 4% nos próximos contratos, sem assinatura.`;
 }
 
 /** E224 — como o admin vê o tipo da conta (os valores são os que definirAccountType aceita). */
