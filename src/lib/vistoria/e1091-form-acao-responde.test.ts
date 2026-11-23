@@ -17,7 +17,12 @@ test("E1091: enquanto envia, o formulário diz 'Enviando…' e os botões de env
   assert.match(src, /\{pendente && \(/, "a linha 'Enviando…' só aparece durante o envio");
   assert.match(src, /Enviando…/);
   assert.match(src, /querySelectorAll<HTMLButtonElement>\('button\[type="submit"\], button:not\(\[type\]\)'\)/, "os botões de envio do formulário");
-  assert.match(src, /b\.disabled = pendente/, "desligados durante o envio e religados no fim");
+  // E1117 (perna 3, ORDEM-DUET-514): antes esta linha exigia `b.disabled = pendente` — desligava e religava TODO botão
+  // de envio, também o que a página mostra desativado ("Concluir a visita" enquanto falta foto), já na montagem.
+  // Agora: desliga durante o envio e, no fim, religa só o que ele mesmo desligou.
+  assert.match(src, /if \(pendente\) \{\s*if \(b\.disabled\) return;\s*b\.disabled = true;\s*b\.setAttribute\(DESLIGADO_PELO_ENVIO, ""\);/, "desligados durante o envio");
+  assert.match(src, /\} else if \(b\.hasAttribute\(DESLIGADO_PELO_ENVIO\)\) \{\s*b\.disabled = false;\s*b\.removeAttribute\(DESLIGADO_PELO_ENVIO\);/, "religados no fim, só os que o envio desligou");
+  assert.doesNotMatch(src, /b\.disabled = pendente/, "nunca religa o botão que a página desativou");
 });
 
 test("E1091: um segundo envio com o primeiro em curso é ignorado (não entra na fila)", () => {
