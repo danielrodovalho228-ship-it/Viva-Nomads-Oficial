@@ -108,7 +108,8 @@ test("E1079 (385, tela 3): a escolha do dono em cartões — rosto, selo, termos
   // O que as specs já leem continua: o número, os termos e o botão.
   assert.match(b, /data-testid="avaliacao-sugerido-termos"/);
   assert.match(b, /nº\{" "\}/);
-  assert.match(b, /Escolher este avaliador/);
+  // E1096 (ORDEM-DUET-453, asserção alterada): o botão passa a ser o do mockup, "Escolher" (antes "Escolher este avaliador").
+  assert.match(b, />\{ROTULO_ESCOLHER\}<\/Button>/);
   assert.doesNotMatch(b, /preco_proprio\)\s*\}/, "o preço mostrado é o da tabela, não o próprio do avaliador");
 });
 

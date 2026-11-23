@@ -156,7 +156,9 @@ test.describe("T1722 — E1079/E1080: as telas do avaliador", () => {
     await expect(cartao.getByTestId("avaliacao-sugerido-selo")).toContainText("Avaliador");
     await expect(cartao.getByTestId("avaliacao-sugerido-termos")).toBeVisible();
     await expect(cartao.getByTestId("avaliacao-sugerido-preco")).toHaveText("Avaliação: R$ 350");
-    await expect(cartao.getByRole("button", { name: "Escolher este avaliador" })).toBeVisible();
+    // E1096 (ORDEM-DUET-453, texto travado alterado com o julgamento do Gerente): o título e o botão do mockup.
+    await expect(escolha.getByTestId("avaliacao-escolha-titulo")).toHaveText("Escolher avaliador");
+    await expect(cartao.getByRole("button", { name: "Escolher" })).toHaveText("Escolher");
     for (const w of LARGURAS) {
       await largura(d, w);
       await d.reload({ waitUntil: "domcontentloaded" });
