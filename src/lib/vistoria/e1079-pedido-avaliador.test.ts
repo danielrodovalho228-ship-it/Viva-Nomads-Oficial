@@ -13,14 +13,15 @@ const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
 const imovel = { exact_address: "Rua das Palmeiras, 450", address: "Santa Mônica", city: "Uberlândia", state: "MG" };
 
 test("E1079 pedido: a etapa sai do estado gravado (novo → proposta enviada → aceito pelo dono)", () => {
-  assert.equal(etapaDoPedido({ status: "designado", resposta: null, proposta_aceita_em: null, teste: false }), "novo");
-  assert.equal(etapaDoPedido({ status: "designado", resposta: "aceita", proposta_aceita_em: null, teste: false }), "proposta_enviada");
-  assert.equal(etapaDoPedido({ status: "designado", resposta: "aceita", proposta_aceita_em: "2026-11-22T10:00:00Z", teste: false }), "aceito");
-  // Avaliação de teste: não há proposta para o dono aceitar (como na lista).
-  assert.equal(etapaDoPedido({ status: "designado", resposta: "aceita", proposta_aceita_em: null, teste: true }), "aceito");
+  assert.equal(etapaDoPedido({ status: "designado", resposta: null, proposta_aceita_em: null, teste: false, escolhido_em: null }), "novo");
+  assert.equal(etapaDoPedido({ status: "designado", resposta: "aceita", proposta_aceita_em: null, teste: false, escolhido_em: null }), "proposta_enviada");
+  assert.equal(etapaDoPedido({ status: "designado", resposta: "aceita", proposta_aceita_em: "2026-11-22T10:00:00Z", teste: false, escolhido_em: null }), "aceito");
+  // Avaliação de teste do credenciamento (o admin designou; o dono não escolheu): não há proposta para o dono aceitar.
+  // E1101: o pedido de teste que o DONO escolheu (o piloto) espera o aceite — travado em e1101-relogio-do-pedido.test.ts.
+  assert.equal(etapaDoPedido({ status: "designado", resposta: "aceita", proposta_aceita_em: null, teste: true, escolhido_em: null }), "aceito");
   // Fora do "designado" (visita, laudo) ou recusado/sem resposta no prazo: não é a tela do pedido.
-  assert.equal(etapaDoPedido({ status: "agendado", resposta: "aceita", proposta_aceita_em: "x", teste: false }), null);
-  assert.equal(etapaDoPedido({ status: "designado", resposta: "recusada", proposta_aceita_em: null, teste: false }), null);
+  assert.equal(etapaDoPedido({ status: "agendado", resposta: "aceita", proposta_aceita_em: "x", teste: false, escolhido_em: null }), null);
+  assert.equal(etapaDoPedido({ status: "designado", resposta: "recusada", proposta_aceita_em: null, teste: false, escolhido_em: null }), null);
 });
 
 test("E1079 pedido: os textos do desenho — título, etiqueta, porte e os dois botões", () => {

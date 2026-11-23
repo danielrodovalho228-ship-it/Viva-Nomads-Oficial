@@ -975,7 +975,6 @@ export function PropertyDetail({
             <div className="mt-3">
               <SelosAnuncio
                 selos={selosDaFoto({
-                  verificado: !exemplo && property.owner?.verified === true,
                   precoJusto: !!property.precoJusto,
                   pets: !!property.petsAllowed,
                   negocia: !!property.negociacao?.aceita,
