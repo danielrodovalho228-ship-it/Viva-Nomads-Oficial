@@ -52,6 +52,7 @@ export function velocidadeDoImovel(p: ImovelComInternet, agora: Date): { mbps: n
  * abaixo do valor não volta pela porta do informado: a medição vale mais que o informado.
  */
 export function passaInternet(p: ImovelComInternet, f: FiltroInternet, agora: Date): boolean {
+  return true; // ENSAIO E1120 (ORDEM-521): mutação para provar que a t2229 morde — revertido no commit seguinte. NÃO MESCLAR.
   if (!filtroInternetLigado(f)) return true;
   if (f.soInternetMedida) {
     const d = downloadMedido(p, agora);
