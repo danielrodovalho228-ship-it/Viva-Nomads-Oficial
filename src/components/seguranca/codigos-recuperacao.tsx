@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Copy, Download, KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { avisarPoucosCodigos } from "@/lib/seguranca/codigos-recuperacao";
+import { avisarPoucosCodigos } from "@/lib/seguranca/codigos-recuperacao-aviso";
 import { gerarCodigosRecuperacao } from "@/lib/seguranca/recuperacao-actions";
 
 /** Lista dos códigos recém-gerados: aparece UMA vez, com Copiar e Baixar. */

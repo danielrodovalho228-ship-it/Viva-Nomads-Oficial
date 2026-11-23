@@ -36,6 +36,7 @@ import {
   textoCondicaoRetorno,
   valorDoPedido,
   type LinhaPreco,
+  REGRAS_AGENDA,
 } from "@/lib/vistoria/regras";
 
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
@@ -296,7 +297,8 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 </div>
               </div>
             )}
-            {atual.status === "designado" && atual.proposta_aceita_em && (
+            {/* E1103: o combinado continua à vista depois de a visita ser agendada (antes, a linha sumia no agendamento). */}
+            {["designado", "agendado", "realizada"].includes(atual.status) && atual.proposta_aceita_em && atual.valor_proposto != null && (
               <p className="text-ink" data-testid="avaliacao-proposta-aceita">
                 Combinado com o avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}.
               </p>
@@ -327,7 +329,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 <input type="hidden" name="pedidoId" value={atual.id} />
                 <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>
                 <Button type="submit" variant="secondary" size="sm">{atual.agendado_para ? "Reagendar" : "Propor data"}</Button>
-                {atual.agendado_para && <span className="w-full text-xs text-muted">Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso.</span>}
+                {atual.agendado_para && <span className="w-full text-xs text-muted">Reagendar sem custo: uma vez, com pelo menos {REGRAS_AGENDA.antecedenciaReagendarHoras} horas de aviso.</span>}
               </FormAcao>
             )}
             {atual.status === "agendado" && (

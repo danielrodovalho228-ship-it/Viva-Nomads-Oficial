@@ -4,6 +4,7 @@ import { ClipboardCheck } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, PageTitle, Panel } from "@/components/dashboard/primitives";
 import { portaDaAvaliacao } from "@/lib/vistoria/servico-avaliacao";
+import { codigoDoImovel } from "@/lib/imovel-pagina";
 import {
   ROTULO_ANUNCIAR,
   ROTULO_OUTROS_SERVICOS,
@@ -15,7 +16,10 @@ import {
   TITULO_SEM_IMOVEL,
   acaoDoImovelNaPorta,
   estadoDaPorta,
+  linhaDoPedidoEmCurso,
+  ordenarParaAPorta,
   textoAChegar,
+  textoVariasEmCurso,
 } from "@/lib/vistoria/porta-da-avaliacao";
 
 export const metadata: Metadata = {
@@ -33,12 +37,17 @@ export const dynamic = "force-dynamic";
  *  • fechada para a conta (fora do piloto) → o estado honesto: o serviço ainda não chegou à cidade. Aqui nada da
  *    avaliação é lido nem mostrado.
  * O morador não tem porta: volta aos Serviços. O "Voltar" é o da casca do painel (um só).
+ * E1125 (ORDEM-DUET-539): com mais de uma avaliação em curso, o cartão traz a pessoa aqui em vez de escolher uma por
+ * ela. A lista põe primeiro as avaliações em curso, da pedida mais recentemente para a mais antiga, diz quantas são e,
+ * em cada imóvel, o código dele e de quando é o pedido.
  */
 export default async function PortaDaAvaliacaoPage() {
   const porta = await portaDaAvaliacao();
   if (!porta) redirect("/dashboard/servicos");
   const estado = estadoDaPorta({ chaveAberta: porta.chaveAberta, imoveis: porta.imoveis.length });
   const aChegar = textoAChegar(porta.cidade);
+  const imoveis = ordenarParaAPorta(porta.imoveis);
+  const variasEmCurso = textoVariasEmCurso(imoveis.filter((i) => i.emCurso).length);
   return (
     <div data-testid="porta-avaliacao" data-estado={estado}>
       <PageTitle title={TITULO_DA_PORTA} subtitle={SUBTITULO_DA_PORTA} />
@@ -73,14 +82,27 @@ export default async function PortaDaAvaliacaoPage() {
       {estado === "escolher" && (
         <Panel title={TITULO_ESCOLHER_IMOVEL} data-testid="porta-escolher">
           <p className="text-sm text-muted">{TEXTO_ESCOLHER_IMOVEL}</p>
+          {variasEmCurso && (
+            <p className="mt-3 text-sm font-semibold text-ink" data-testid="porta-varias-em-curso">
+              {variasEmCurso}
+            </p>
+          )}
           <ul className="mt-4 grid gap-3" data-testid="porta-imoveis">
-            {porta.imoveis.map((i) => {
+            {imoveis.map((i) => {
               const acao = acaoDoImovelNaPorta(i);
+              const pedidoEm = linhaDoPedidoEmCurso(i.pedidoEm);
               return (
                 <li key={i.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-white p-3" data-testid="porta-imovel" data-em-curso={i.emCurso ? "1" : "0"}>
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-ink">{i.titulo}</span>
-                    {i.cidade && <span className="block text-xs text-muted">{i.cidade}</span>}
+                    <span className="block text-xs text-muted" data-testid="porta-imovel-codigo">
+                      {[codigoDoImovel(i.id), i.cidade].filter(Boolean).join(" · ")}
+                    </span>
+                    {pedidoEm && (
+                      <span className="block text-xs text-muted" data-testid="porta-imovel-pedido-em">
+                        {pedidoEm}
+                      </span>
+                    )}
                   </span>
                   <ButtonLink href={acao.href} variant="secondary" size="sm" data-testid="porta-imovel-acao">
                     {acao.rotulo}
