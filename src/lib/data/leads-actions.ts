@@ -391,7 +391,10 @@ export async function getFechamentoContext(
       identidadePropria = lidas ? (lidas.get(user.id) ?? null) : null;
       // E1064: contrato já gerado para esta candidatura → a situação REAL dele (a fonte única do estado do contrato).
       // E1064 (perna 2): a garantia gravada no contrato vem na mesma leitura — o Resumo reaberto mostra-a, não um valor por omissão.
-      const { data: ct } = await admin.from("contratos").select("id, garantia").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      // E1086: o contrato é o da PROPOSTA em curso. O contrato de outra estadia (outra proposta da mesma candidatura)
+      // não aparece aqui: a proposta nova ainda vai gerar o dela.
+      const doLead = admin.from("contratos").select("id, garantia").eq("lead_id", lead.id);
+      const { data: ct } = await (acordada ? doLead.eq("proposta_id", acordada.id) : doLead.is("proposta_id", null)).order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (ct?.id) {
         const estado = await lerEstadoDoContrato(String(ct.id), "proprietario").catch(() => null);
         const garantiaLida = ct.garantia === "caucao" || ct.garantia === "seguro_fianca" ? ct.garantia : null;
