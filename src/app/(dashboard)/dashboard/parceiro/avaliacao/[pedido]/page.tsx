@@ -22,7 +22,7 @@ import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO } from "@/lib/vistoria/nivel-do-
 import { faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
 import { etapaDoPedido, linhaDoPorte, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
 import { PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
-import { prazoResposta } from "@/lib/vistoria/telas-exibicao";
+import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { brl } from "@/lib/fiscal/documento";
 import type { Porte } from "@/lib/vistoria/regras";
 import { DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
@@ -52,7 +52,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/parceiro/avaliacao/${pedido}`)}`);
   const { data: p } = await admin
     .from("vistoria_pedidos")
-    .select("id, property_id, status, tipo, ocupado, agendado_para, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(parceiros(user_id))")
+    .select("id, property_id, status, tipo, ocupado, agendado_para, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
     .eq("id", pedido)
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
@@ -63,15 +63,29 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   // Bairro e cidade antes do aceite do dono; o endereço completo só depois. Recusado ou vencido: volta à lista.
   if (p.status === "designado") {
     const [{ data: d }, { data: des }, { data: im }, { data: capasDoPedido }] = await Promise.all([
-      admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_aceita_em, designado_em, teste").eq("id", p.id).maybeSingle(),
+      admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, designado_em, escolhido_em, teste").eq("id", p.id).maybeSingle(),
       admin.from("vistoria_designacoes").select("avaliador_id, resposta").eq("pedido_id", p.id),
       admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", p.property_id).maybeSingle(), // consistency-ignore: E1079 fatia 3 — endereço exato só ao avaliador escolhido e só depois de o dono aceitar a proposta
       admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1),
     ]);
-    const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_aceita_em: string | null; designado_em: string | null; teste: boolean } | null;
+    const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; designado_em: string | null; escolhido_em: string | null; teste: boolean } | null;
     const minha = ((des ?? []) as { avaliador_id: string; resposta: string | null }[]).find((x) => x.avaliador_id === dados?.avaliador_id);
-    const etapa = dados && minha ? etapaDoPedido({ status: p.status as string, resposta: minha.resposta, proposta_aceita_em: dados.proposta_aceita_em, teste: dados.teste }) : null;
+    const etapa = dados && minha ? etapaDoPedido({ status: p.status as string, resposta: minha.resposta, proposta_aceita_em: dados.proposta_aceita_em, teste: dados.teste, escolhido_em: dados.escolhido_em }) : null;
     if (!dados || !etapa) redirect("/dashboard/parceiro/avaliacao");
+    // E1101: de quem é a vez e até quando sai de um lugar só (o mesmo do bloco do dono, da lista e da rotina).
+    const agora = new Date();
+    const relogio = relogioDoPedido(
+      {
+        status: p.status as string,
+        resposta: minha?.resposta,
+        designadoEm: dados.designado_em,
+        propostaEm: dados.proposta_em,
+        propostaAceitaEm: dados.proposta_aceita_em,
+        prazoRespostaHoras: (p.avaliadores_credenciamento as unknown as { prazo_resposta_horas: number | null } | null)?.prazo_resposta_horas,
+        precisaDoAceite: precisaDoAceiteDoDono({ teste: dados.teste, escolhidoEm: dados.escolhido_em }),
+      },
+      agora,
+    );
     const imovel = im as { exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; draft_data?: Record<string, unknown> | null } | null;
     return (
       <PedidoDoAvaliador
@@ -81,7 +95,8 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
         local={localDoPedido(etapa, imovel, dados.cidade)}
         porte={linhaDoPorte(dados.porte)}
         valor={linhaDoValor(etapa, dados)}
-        prazoResposta={etapa === "novo" && dados.designado_em ? prazoResposta(dados.designado_em, new Date()) : null}
+        prazoResposta={etapa === "novo" && relogio?.vez === "avaliador" ? { texto: textoDoPrazoDeResposta(relogio, agora), vencido: relogio.vencido } : null}
+        prazoAceite={etapa === "proposta_enviada" && relogio?.vez === "dono" ? textoDoPrazoDeAceite(relogio) : null}
         ocupado={Boolean(p.ocupado)}
         exemploValor={brl(Number(dados.valor_tabela))}
         prazoMaxDias={PRAZO_PROPOSTA_MAX_DIAS}
