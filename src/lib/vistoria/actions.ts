@@ -30,8 +30,9 @@ import {
   type Porte,
   type StatusCredenciamento,
 } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
-import { descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, registrarRespostaDoAvaliador, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
+import { PRAZO_RESPOSTA_PADRAO_HORAS, descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
+import { erroAoPropor, precisaDoAceiteDoDono } from "./relogio-do-pedido";
 import { ERRO_TROCA_SEM_CONFIRMAR, trocaConfirmada } from "./troca-de-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
 import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
@@ -458,7 +459,10 @@ export async function responderDesignacao(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || c.p.status !== "designado") return SEM_ACESSO;
   if (form.get("resposta") !== "recusar") return { ok: false, erro: "Para aceitar, informe o seu valor e o seu prazo." };
-  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", new Date());
+  const agora = new Date();
+  // E1102: a recusa fica gravada também quando o pedido não tinha a linha da designação (ela é criada com a resposta).
+  await registrarRespostaDoAvaliador(c.admin, c.p.id, c.p.avaliador_id!, "recusada", agora);
+  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", agora);
   await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
@@ -476,7 +480,7 @@ export async function escolherAvaliador(form: FormData): Promise<Res> {
   const r = await escolherNoServidor(s.admin, p.id, String(form.get("avaliadorId") ?? ""));
   if (!r.ok) return r;
   revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);
-  return { ok: true, mensagem: "Avaliador escolhido. Ele responde com o valor e o prazo dele no prazo que declarou (padrão: 24 horas); sem resposta, o pedido volta para você escolher outro." };
+  return { ok: true, mensagem: `Avaliador escolhido. Ele responde com o valor e o prazo dele no prazo que declarou (padrão: ${PRAZO_RESPOSTA_PADRAO_HORAS} horas); sem resposta, o pedido volta para você escolher outro.` };
 }
 
 /**
@@ -493,8 +497,18 @@ export async function proporPrecoEPrazo(form: FormData): Promise<Res> {
   const v = validarProposta({ valor: lido.valor ?? Number.NaN, prazoDias: Number(form.get("prazoDias")) }, faixaDeReferencia(Number(ref.valor_tabela)));
   if (!v.ok) return v;
   const agora = new Date().toISOString();
-  const { data } = await c.admin.from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: agora }).eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).is("resposta", null).select("id");
-  if (!data?.length) return { ok: false, erro: "O prazo de 24 horas para responder já passou." };
+  // E1102: a proposta grava a resposta na designação aberta; se o pedido não tinha a linha, ela é criada com a resposta.
+  const gravou = await registrarRespostaDoAvaliador(c.admin, c.p.id, c.p.avaliador_id!, "aceita", new Date(agora));
+  if (!gravou) {
+    // E1101: a designação já tem resposta. O motivo é o dela (proposta já enviada, recusa, prazo), nunca "o prazo de
+    // 24 horas passou" para quem já propôs; e o prazo é o que o avaliador declarou.
+    const [{ data: des }, { data: cred }] = await Promise.all([
+      c.admin.from("vistoria_designacoes").select("resposta").eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).maybeSingle(),
+      c.admin.from("avaliadores_credenciamento").select("prazo_resposta_horas").eq("id", c.p.avaliador_id!).maybeSingle(),
+    ]);
+    const horas = Number((cred as { prazo_resposta_horas?: number | null } | null)?.prazo_resposta_horas) || PRAZO_RESPOSTA_PADRAO_HORAS;
+    return { ok: false, erro: erroAoPropor((des as { resposta?: string | null } | null)?.resposta ?? undefined, horas) };
+  }
   await c.admin.from("vistoria_pedidos").update({ valor_proposto: v.valor, prazo_proposto_dias: v.prazoDias, proposta_em: agora, atualizado_em: agora }).eq("id", c.p.id);
   await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(ROTA_AVALIADOR);
@@ -559,8 +573,9 @@ export async function agendarVisita(form: FormData): Promise<Res> {
   if (parte === "dono" && !(await vistoriaAtiva())) return DESLIGADA;
   const { data: aceita } = await s.admin.from("vistoria_designacoes").select("id").eq("pedido_id", p.id).eq("avaliador_id", p.avaliador_id!).eq("resposta", "aceita").maybeSingle();
   if (!aceita) return { ok: false, erro: "O avaliador ainda não respondeu com o valor e o prazo." };
-  const { data: prop } = await s.admin.from("vistoria_pedidos").select("teste, proposta_aceita_em").eq("id", p.id).maybeSingle();
-  if (!prop?.teste && !prop?.proposta_aceita_em) return { ok: false, erro: "O proprietário ainda não aceitou o valor e o prazo propostos." };
+  const { data: prop } = await s.admin.from("vistoria_pedidos").select("teste, proposta_aceita_em, escolhido_em").eq("id", p.id).maybeSingle();
+  // E1101: a mesma regra das telas — só a avaliação de teste do credenciamento agenda sem o aceite do dono.
+  if (precisaDoAceiteDoDono({ teste: prop?.teste === true, escolhidoEm: (prop?.escolhido_em as string | null | undefined) ?? null }) && !prop?.proposta_aceita_em) return { ok: false, erro: "O proprietário ainda não aceitou o valor e o prazo propostos." };
   const reagendando = !!p.agendado_para;
   if (reagendando) {
     const r = podeReagendar(p.agendado_para!, new Date(), parte === "dono" ? p.reagendou_dono : p.reagendou_avaliador);

@@ -10,6 +10,7 @@ import { FormAcao } from "@/components/vistoria/form-acao";
 import { ChecklistAvaliador } from "@/components/vistoria/checklist-avaliador";
 import { VisitaEmAndamento } from "@/components/avaliadores/visita";
 import { PedidoDoAvaliador } from "@/components/avaliadores/pedido";
+import { IdentificacaoDoImovel } from "@/components/avaliadores/identificacao-do-imovel";
 import { MedirInternetAvaliacao } from "@/components/vistoria/medir-internet-avaliacao";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { PERGUNTAS_RUIDO } from "@/config/niveis";
@@ -19,15 +20,15 @@ import { ROTULO_RESULTADO, itensSemResposta, resultadoAvaliacao, resumoPorGrupo,
 import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO } from "@/lib/vistoria/nivel-do-laudo";
-import { faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
-import { etapaDoPedido, linhaDoPorte, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
+import { dbaNoCampo, faltasDoRoteiro, linhaDbaGuardado, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
+import { etapaDoPedido, identificacaoDoImovel, linhaDoPorte, linhaDoPrazoDoLaudo, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
 import { PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
-import { prazoResposta } from "@/lib/vistoria/telas-exibicao";
+import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { brl } from "@/lib/fiscal/documento";
 import type { Porte } from "@/lib/vistoria/regras";
 import { DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
 import { BOTAO_ASSINAR_LAUDO, CARTAO_NIVEL_LAUDO, LINHA_RESUMO_LAUDO, MARCA_NIVEL_LAUDO, MARCA_RESUMO_LAUDO, RESUMO_LAUDO, TEXTO_NIVEL_LAUDO, TITULO_NIVEL_LAUDO } from "@/lib/conta/visual-mockup";
-import { concluirVisita, confirmarCorrecao, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
+import { concluirVisita, confirmarCorrecao, dbaGuardadoDaVisita, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
 
 export const metadata = { title: "Checklist da avaliação", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/parceiro/avaliacao/${pedido}`)}`);
   const { data: p } = await admin
     .from("vistoria_pedidos")
-    .select("id, property_id, status, tipo, ocupado, agendado_para, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(parceiros(user_id))")
+    .select("id, property_id, status, tipo, ocupado, agendado_para, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
     .eq("id", pedido)
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
@@ -62,26 +63,51 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   // do desenho "Novo pedido de avaliação" — sem desfazer o E648: aceitar é propor o próprio valor e o próprio prazo.
   // Bairro e cidade antes do aceite do dono; o endereço completo só depois. Recusado ou vencido: volta à lista.
   if (p.status === "designado") {
-    const [{ data: d }, { data: des }, { data: im }, { data: capasDoPedido }] = await Promise.all([
-      admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_aceita_em, designado_em, teste").eq("id", p.id).maybeSingle(),
+    const [{ data: d, error: erroPedido }, { data: des, error: erroDesignacoes }, { data: im }, { data: capasDoPedido }] = await Promise.all([
+      admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, designado_em, escolhido_em, teste").eq("id", p.id).maybeSingle(),
       admin.from("vistoria_designacoes").select("avaliador_id, resposta").eq("pedido_id", p.id),
-      admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", p.property_id).maybeSingle(), // consistency-ignore: E1079 fatia 3 — endereço exato só ao avaliador escolhido e só depois de o dono aceitar a proposta
+      admin.from("properties").select("title, exact_address, address, city, state, draft_data").eq("id", p.property_id).maybeSingle(), // consistency-ignore: E1079 fatia 3 — endereço exato só ao avaliador escolhido e só depois de o dono aceitar a proposta
       admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1),
     ]);
-    const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_aceita_em: string | null; designado_em: string | null; teste: boolean } | null;
+    const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; designado_em: string | null; escolhido_em: string | null; teste: boolean } | null;
+    // E1102: leitura que falha não vira "este pedido não é seu" nem volta calada ao painel: cai no aviso do painel, com
+    // "Tentar de novo".
+    if (erroPedido || erroDesignacoes) throw new Error("Não foi possível ler este pedido agora.");
+    // E1102: o pedido é deste avaliador (conferido acima) e está "designado". Sem a linha da designação (undefined), a
+    // etapa sai do próprio pedido — a tela abre; antes, voltava ao painel sem dizer nada. Só não é a tela do pedido
+    // quando a designação diz que ele recusou, venceu ou faltou.
     const minha = ((des ?? []) as { avaliador_id: string; resposta: string | null }[]).find((x) => x.avaliador_id === dados?.avaliador_id);
-    const etapa = dados && minha ? etapaDoPedido({ status: p.status as string, resposta: minha.resposta, proposta_aceita_em: dados.proposta_aceita_em, teste: dados.teste }) : null;
+    const etapa = dados
+      ? etapaDoPedido({ status: p.status as string, resposta: minha ? minha.resposta : undefined, proposta_em: dados.proposta_em, proposta_aceita_em: dados.proposta_aceita_em, teste: dados.teste, escolhido_em: dados.escolhido_em })
+      : null;
     if (!dados || !etapa) redirect("/dashboard/parceiro/avaliacao");
-    const imovel = im as { exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; draft_data?: Record<string, unknown> | null } | null;
+    // E1101: de quem é a vez e até quando sai de um lugar só (o mesmo do bloco do dono, da lista e da rotina).
+    const agora = new Date();
+    const relogio = relogioDoPedido(
+      {
+        status: p.status as string,
+        resposta: minha?.resposta,
+        designadoEm: dados.designado_em,
+        propostaEm: dados.proposta_em,
+        propostaAceitaEm: dados.proposta_aceita_em,
+        prazoRespostaHoras: (p.avaliadores_credenciamento as unknown as { prazo_resposta_horas: number | null } | null)?.prazo_resposta_horas,
+        precisaDoAceite: precisaDoAceiteDoDono({ teste: dados.teste, escolhidoEm: dados.escolhido_em }),
+      },
+      agora,
+    );
+    const imovel = im as { title?: string | null; exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; draft_data?: Record<string, unknown> | null } | null;
     return (
       <PedidoDoAvaliador
         pedidoId={p.id as string}
         etapa={etapa}
+        imovel={identificacaoDoImovel(imovel?.title, p.property_id as string)}
         capaUrl={((capasDoPedido ?? [])[0] as { url: string } | undefined)?.url}
         local={localDoPedido(etapa, imovel, dados.cidade)}
         porte={linhaDoPorte(dados.porte)}
         valor={linhaDoValor(etapa, dados)}
-        prazoResposta={etapa === "novo" && dados.designado_em ? prazoResposta(dados.designado_em, new Date()) : null}
+        prazoLaudo={linhaDoPrazoDoLaudo(etapa, dados)}
+        prazoResposta={etapa === "novo" && relogio?.vez === "avaliador" ? { texto: textoDoPrazoDeResposta(relogio, agora), vencido: relogio.vencido } : null}
+        prazoAceite={etapa === "proposta_enviada" && relogio?.vez === "dono" ? textoDoPrazoDeAceite(relogio) : null}
         ocupado={Boolean(p.ocupado)}
         exemploValor={brl(Number(dados.valor_tabela))}
         prazoMaxDias={PRAZO_PROPOSTA_MAX_DIAS}
@@ -89,6 +115,8 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     );
   }
 
+  // E1108: a tela da visita e do laudo também diz de que imóvel é (título do anúncio e código VN).
+  const { data: imovelDaVisita } = await admin.from("properties").select("title").eq("id", p.property_id).maybeSingle();
   const [{ data: itens }, { data: laudos }, { data: fotos }] = await Promise.all([
     admin.from("vistoria_checklist").select("chave, valor, observacao").eq("pedido_id", p.id),
     admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinado_em, assinatura_hash, nivel_sustentado").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
@@ -111,6 +139,9 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     nivel_sustentado: string | null;
   } | null;
   const emVisita = ["agendado", "realizada"].includes(p.status as string);
+  // E1117 (perna 4): o dB(A) que o avaliador já guardou volta para o campo (antes o campo abria vazio e a medição
+  // parecia perdida). Só ele o vê, e só durante a visita e o laudo.
+  const dbaGuardado = emVisita ? await dbaGuardadoDaVisita(p.id as string) : null;
   const ruido = (p.ruido_respostas ?? null) as Record<string, boolean> | null;
   const fotosLista = (fotos ?? []) as { item_chave: string | null; comodo: string | null; path: string }[];
   // Revisão antes de emitir (item 9): o mesmo cálculo do laudo, sobre as respostas salvas.
@@ -147,9 +178,11 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
             <input type="hidden" name="pedidoId" value={p.id} />
             <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo em até 48 horas úteis.</p>
             {faltasRoteiro.length > 0 && (
-              <p className="mt-2 text-sm text-ink" role="status" data-testid="concluir-faltas">{msgRoteiroIncompleto(faltasRoteiro)}</p>
+              <p id="concluir-faltas-motivo" className="mt-2 text-sm text-ink" role="status" data-testid="concluir-faltas">{msgRoteiroIncompleto(faltasRoteiro)}</p>
             )}
-            <Button type="submit" size="sm" className="mt-2">Concluir a visita</Button>
+            {/* E1117 (perna 3): faltando foto do roteiro o servidor recusa — então o botão já aparece desativado, com o
+                motivo ligado a ele. Chegada a última foto, a página é refeita (perna 2) e o botão liga. */}
+            <Button type="submit" size="sm" className="mt-2" disabled={faltasRoteiro.length > 0} aria-describedby={faltasRoteiro.length > 0 ? "concluir-faltas-motivo" : undefined}>Concluir a visita</Button>
           </FormAcao>
         ) : (
           <>
@@ -215,6 +248,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   return (
     <>
       <PageTitle title={agendada ? tituloDaVisita(emAndamento) : naEtapaDoLaudo ? TITULO_LAUDO : "Checklist da avaliação"} subtitle={naEtapaDoLaudo ? [tipoRotulo, SUBTITULO_LAUDO].filter(Boolean).join(" · ") : tipoRotulo} />
+      <IdentificacaoDoImovel texto={identificacaoDoImovel((imovelDaVisita as { title?: string | null } | null)?.title, p.property_id as string)} className="mb-2 text-base" />
       <ButtonLink href="/dashboard/parceiro/avaliacao" variant="ghost" size="sm" className="mb-4">Voltar às avaliações</ButtonLink>
       {p.ocupado && <p className="mb-4 text-sm text-ink">Imóvel ocupado: a visita só acontece com o morador de acordo. Não fotografe pertences nem pessoas.</p>}
 
@@ -252,8 +286,9 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
                     <FormAcao acao={registrarMedicao} className="mt-4 flex flex-wrap items-end gap-2" testid="avaliacao-dba-form">
                       <input type="hidden" name="pedidoId" value={p.id} />
                       <input type="hidden" name="tipo" value="ruido_dba" />
-                      <label className="min-w-0 flex-1 text-sm">dB(A) medido (apoio interno, nunca publicado)<input name="dba" inputMode="decimal" className={campo} /></label>
+                      <label className="min-w-0 flex-1 text-sm">dB(A) medido (apoio interno, nunca publicado)<input key={dbaNoCampo(dbaGuardado)} name="dba" inputMode="decimal" defaultValue={dbaNoCampo(dbaGuardado)} className={campo} /></label>
                       <Button type="submit" size="sm" variant="secondary">Guardar dB(A)</Button>
+                      {linhaDbaGuardado(dbaGuardado) && <p className="w-full text-xs text-muted" data-testid="avaliacao-dba-guardado">{linhaDbaGuardado(dbaGuardado)}</p>}
                     </FormAcao>
                   </div>
                 ),
@@ -267,7 +302,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
             <FormAcao acao={enviarFotoAvaliacao} className="mt-3 grid gap-2" testid="avaliacao-foto-form">
               <input type="hidden" name="pedidoId" value={p.id} />
               <label className="text-sm">Cômodo<input name="comodo" placeholder="Ex.: quarto principal" required className={campo} /></label>
-              <div className="grid gap-1 text-sm"><p>Foto</p><SeletorArquivo name="foto" accept="image/jpeg,image/png,image/webp" capture="environment" required rotulo="Tirar ou escolher foto" ariaLabel="Foto" /></div>
+              <div className="grid gap-1 text-sm"><p>Foto</p><SeletorArquivo name="foto" accept="image/jpeg,image/png,image/webp" capture="environment" required rotulo="Tirar ou escolher foto" ariaLabel="Foto" faltaTexto="Escolha a foto." /></div>
               <Button type="submit" size="sm" variant="secondary" className="justify-self-start">Enviar foto</Button>
             </FormAcao>
           </Panel>

@@ -6,6 +6,7 @@ import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type Fa
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { STATUS_TESTE_CONCLUIDO } from "./entrada";
 import { criteriosAtingidos, propostaVencida, sugerirAvaliadores, CRITERIOS_PUBLICOS, type Sugestoes } from "./escolha";
+import { precisaDoAceiteDoDono, relogioDoPedido } from "./relogio-do-pedido";
 import { modoDaChaveAtual } from "./chave";
 import { filaNoAmbito } from "./ambito-da-chave";
 import { nomeDoAvaliador } from "./nome-do-avaliador";
@@ -344,6 +345,26 @@ export async function escolherNoServidor(admin: Admin, pedidoId: string, avaliad
 }
 
 /**
+ * E1102: grava a resposta do AVALIADOR DO PEDIDO ("aceita" ao propor, "recusada" ao recusar) na designação aberta. Se o
+ * pedido não tem a linha da designação (massa antiga, dado incoerente), ela é criada já com a resposta, na data da
+ * designação do pedido — antes, a resposta não tinha onde ser gravada e a ação dizia que o prazo tinha passado.
+ * Devolve false quando a designação JÁ tem resposta (nada é gravado por cima) ou quando a leitura falha.
+ * Quem chama já conferiu que a sessão é do avaliador do pedido e que o pedido está "designado".
+ */
+export async function registrarRespostaDoAvaliador(admin: Admin, pedidoId: string, avaliadorId: string, resposta: "aceita" | "recusada", agora = new Date()): Promise<boolean> {
+  const quando = agora.toISOString();
+  const { data } = await admin.from("vistoria_designacoes").update({ resposta, respondido_em: quando }).eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId).is("resposta", null).select("id");
+  if (data?.length) return true;
+  const { data: ja, error } = await admin.from("vistoria_designacoes").select("id").eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId).maybeSingle();
+  if (error || ja) return false;
+  const { data: p } = await admin.from("vistoria_pedidos").select("designado_em").eq("id", pedidoId).maybeSingle();
+  const { error: erroNova } = await admin
+    .from("vistoria_designacoes")
+    .insert({ pedido_id: pedidoId, avaliador_id: avaliadorId, designado_em: (p?.designado_em as string | null | undefined) ?? quando, resposta, respondido_em: quando });
+  return !erroNova;
+}
+
+/**
  * Recusa, silêncio de 24 h, ausência do avaliador ou proposta recusada pelo dono: fecha a escolha e DEVOLVE o pedido ao
  * dono para escolher outro (a Viva não passa ao "próximo da fila"). Ausência confere os critérios públicos (revisão
  * humana; nada de suspensão automática).
@@ -417,16 +438,33 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
   const horasDe = new Map(((prazos ?? []) as { id: string; prazo_resposta_horas: number | null }[]).map((x) => [x.id, x.prazo_resposta_horas ?? undefined]));
   for (const d of (abertas ?? []) as { pedido_id: string; avaliador_id: string; designado_em: string }[]) {
     if (!designacaoVencida(d.designado_em, agora, horasDe.get(d.avaliador_id))) continue;
-    const { data: p } = await admin.from("vistoria_pedidos").select("status, avaliador_id, owner_id, property_id").eq("id", d.pedido_id).maybeSingle();
+    const { data: p } = await admin.from("vistoria_pedidos").select("status, avaliador_id, owner_id, property_id, proposta_em, proposta_aceita_em, escolhido_em, teste").eq("id", d.pedido_id).maybeSingle();
     if (p?.status !== "designado" || p.avaliador_id !== d.avaliador_id) continue;
+    // E1101: a designação só vence pelo relógio de RESPOSTA (a mesma fonte das telas). Com a proposta enviada ele parou:
+    // um pedido com proposta viva nunca volta ao dono como "sem resposta", mesmo com a designação incoerente.
+    const relogioDaResposta = relogioDoPedido(
+      {
+        status: p.status,
+        resposta: null,
+        designadoEm: d.designado_em,
+        propostaEm: (p.proposta_em as string | null) ?? null,
+        propostaAceitaEm: (p.proposta_aceita_em as string | null) ?? null,
+        prazoRespostaHoras: horasDe.get(d.avaliador_id),
+        precisaDoAceite: precisaDoAceiteDoDono({ teste: p.teste === true, escolhidoEm: (p.escolhido_em as string | null) ?? null }),
+      },
+      agora,
+    );
+    if (relogioDaResposta?.vez !== "avaliador" || !relogioDaResposta.vencido) continue;
     await devolverAoDono(admin, d.pedido_id, d.avaliador_id, "expirada", agora);
     await avisar(admin, p.owner_id, "vistoria_designado_dono", rotaDono(p.property_id), { pedidoId: d.pedido_id, propertyId: p.property_id });
     expiradas++;
   }
   // E682: proposta que o dono não aceitou no prazo dele (72 h) volta a ele para escolher de novo — sem rodízio.
-  const { data: propostas } = await admin.from("vistoria_pedidos").select("id, avaliador_id, owner_id, property_id, proposta_em").eq("status", "designado").not("proposta_em", "is", null).is("proposta_aceita_em", null);
-  for (const q of (propostas ?? []) as { id: string; avaliador_id: string | null; owner_id: string; property_id: string; proposta_em: string }[]) {
+  const { data: propostas } = await admin.from("vistoria_pedidos").select("id, avaliador_id, owner_id, property_id, proposta_em, escolhido_em, teste").eq("status", "designado").not("proposta_em", "is", null).is("proposta_aceita_em", null);
+  for (const q of (propostas ?? []) as { id: string; avaliador_id: string | null; owner_id: string; property_id: string; proposta_em: string; escolhido_em: string | null; teste: boolean | null }[]) {
     if (!q.avaliador_id || !propostaVencida(q.proposta_em, agora)) continue;
+    // E1101: as 72 h são do dono que precisa aceitar. A avaliação de teste do credenciamento não tem aceite: não vence aqui.
+    if (!precisaDoAceiteDoDono({ teste: q.teste === true, escolhidoEm: q.escolhido_em })) continue;
     await devolverAoDono(admin, q.id, q.avaliador_id, "expirada", agora);
     await avisar(admin, q.owner_id, "vistoria_designado_dono", rotaDono(q.property_id), { pedidoId: q.id, propertyId: q.property_id });
     expiradas++;

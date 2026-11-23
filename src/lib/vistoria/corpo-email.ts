@@ -5,6 +5,8 @@
   Roda: node --test src/lib/vistoria/corpo-email.test.ts
 */
 import { dataHoraBRT } from "../datas-brasilia.ts";
+import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "./prazos.ts";
+import { REGRAS_AGENDA } from "./regras.ts";
 import { imovelDoPedido, type LinhaEmail } from "../parceiros/email-pedido.ts";
 import { assuntoComTitulo, diaHoraNoAssunto } from "../notifications/assuntos.ts";
 
@@ -87,19 +89,19 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
     case "vistoria_designada":
       return {
         subject: assuntoComTitulo("Um proprietário escolheu você: ", titulo),
-        body: (n) => `${ola(n)}, um proprietário escolheu você para avaliar ${titulo ? `${im}` : "um imóvel"}. Responda no prazo que você declarou (padrão: 24 horas) com o seu valor e o seu prazo, ou recuse; sem resposta, o pedido volta ao proprietário para escolher outro avaliador.`,
+        body: (n) => `${ola(n)}, um proprietário escolheu você para avaliar ${titulo ? `${im}` : "um imóvel"}. Responda no prazo que você declarou (padrão: ${PRAZO_RESPOSTA_PADRAO_HORAS} horas) com o seu valor e o seu prazo, ou recuse; sem resposta, o pedido volta ao proprietário para escolher outro avaliador.`,
         linhas,
       };
     case "vistoria_designado_dono":
       return {
         subject: assuntoComTitulo("Novidade na escolha do avaliador de ", titulo),
-        body: (n) => `${ola(n)}, ${avaliador ? `${avaliador}, avaliador credenciado que você escolheu,` : "o avaliador credenciado que você escolheu"} respondeu, recusou ou não respondeu no prazo sobre a avaliação ${doImovel(true)}. Abra a avaliação para ver o valor e o prazo propostos e aceitar (você tem 72 horas depois da proposta), ou escolher outro avaliador.`,
+        body: (n) => `${ola(n)}, ${avaliador ? `${avaliador}, avaliador credenciado que você escolheu,` : "o avaliador credenciado que você escolheu"} respondeu, recusou ou não respondeu no prazo sobre a avaliação ${doImovel(true)}. Abra a avaliação para ver o valor e o prazo propostos e aceitar (você tem ${PRAZO_DONO_ACEITAR_HORAS} horas depois da proposta), ou escolher outro avaliador.`,
         linhas,
       };
     case "vistoria_agendada":
       return {
         subject: vAss ? assuntoComTitulo("Visita de avaliação: ", titulo, `, ${vAss}`) : assuntoComTitulo("Visita de avaliação agendada: ", titulo),
-        body: (n) => `${ola(n)}, a visita de avaliação ${doImovel(false)} está agendada${hb ? ` para ${hb}` : ""}. Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso.`,
+        body: (n) => `${ola(n)}, a visita de avaliação ${doImovel(false)} está agendada${hb ? ` para ${hb}` : ""}. Reagendar sem custo: uma vez, com pelo menos ${REGRAS_AGENDA.antecedenciaReagendarHoras} horas de aviso.`,
         linhas,
       };
     case "vistoria_concordancia":
