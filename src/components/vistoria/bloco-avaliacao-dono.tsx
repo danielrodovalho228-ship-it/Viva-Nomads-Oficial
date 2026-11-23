@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Circle, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Circle, ShieldCheck, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CampoDataHoraFormulario } from "@/components/ui/campo-data";
@@ -15,10 +15,10 @@ import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linh
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
-import { nomesDasContas, outrosParaTroca, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
+import { identidadesConfirmadas, nomesDasContas, outrosParaTroca, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { textoDaTroca } from "@/lib/vistoria/troca-de-avaliador";
 import { DepoisDaTroca, TrocaDeAvaliador } from "@/components/vistoria/troca-de-avaliador";
-import { fotoPublicaPermitida, reaisCurtos, rostoDoAvaliador } from "@/lib/vistoria/vitrine-avaliadores";
+import { ROTULO_ESCOLHER, TEXTO_IDENTIDADE_VERIFICADA, TITULO_ESCOLHA_AVALIADOR, fotoPublicaPermitida, fraseDoValorNaEscolha, reaisCurtos, reputacaoNoCartao, rostoDoAvaliador } from "@/lib/vistoria/vitrine-avaliadores";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import {
   CONDUTA_DONO,
@@ -95,7 +95,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     avaliadores_credenciamento: { numero_credenciado: string; prazo_resposta_horas: number | null } | null;
   } | null;
   // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
-  let sugeridos: { id: string; numero: string; nome: string; termos: string; teste: boolean; fotoUrl: string | null }[] | null = [];
+  let sugeridos: { id: string; numero: string; nome: string; termos: string; reputacao: { novo: boolean; cheias: number; texto: string }; identidadeVerificada: boolean; teste: boolean; fotoUrl: string | null }[] | null = [];
   if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
     try {
       const lista = (await sugeridosDoPedido(admin, atual.id, agora)) ?? [];
@@ -113,6 +113,8 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
       const uids = [...new Set([...porId.values()].map((d) => d.parceiros?.user_id).filter((x): x is string => !!x))];
       const { data: contas } = uids.length ? await admin.from("profiles").select("id, avatar_url, is_teste").in("id", uids) : { data: [] };
       const contaDe = new Map(((contas ?? []) as { id: string; avatar_url: string | null; is_teste: boolean | null }[]).map((c) => [c.id, c]));
+      // E1096: "Identidade verificada pela Viva" só com o fato (a identidade confirmada da conta).
+      const verificadas = await identidadesConfirmadas(admin, uids, agora);
       sugeridos = await Promise.all(lista.map(async (a) => {
         const d = porId.get(a.id);
         const uid = d?.parceiros?.user_id ?? "";
@@ -128,6 +130,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             notaConduta: nota,
             avaliacoesConduta: nota != null ? Math.max(1, Number(pub?.avaliacoes_feitas ?? 0)) : 0,
           }),
+          // E1096: as estrelas de conduta do cartão e "Novo na Viva" (a mesma conduta publicada da linha de termos).
+          reputacao: reputacaoNoCartao(Number(pub?.avaliacoes_feitas ?? 0), nota),
+          identidadeVerificada: verificadas.has(uid),
           teste,
           fotoUrl: uid && fotoPublicaPermitida(teste) ? await signAvatarPath(conta?.avatar_url ?? null, uid) : null,
         };
@@ -192,13 +197,8 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             )}
             {atual.status === "pedido" && !atual.aguardando_avaliador && (
               <div className="rounded-lg border border-line p-3" data-testid="avaliacao-escolha">
-                <p className="font-semibold text-ink">Escolha o avaliador</p>
+                <p className="font-semibold text-ink" data-testid="avaliacao-escolha-titulo">{TITULO_ESCOLHA_AVALIADOR}</p>
                 {im.city && <p className="mt-1 text-sm text-muted" data-testid="avaliacao-escolha-cidade">Avaliadores disponíveis em {im.city}</p>}
-                {faixa && (
-                  <p className="mt-1 text-muted" data-testid="avaliacao-faixa">
-                    Referência da cidade: {brl(faixa.referencia)} (faixa de {brl(faixa.min)} a {brl(faixa.max)}). Cada avaliador define o próprio valor e prazo e você aceita ou escolhe outro.
-                  </p>
-                )}
                 {sugeridos === null ? (
                   <p className="mt-2 text-red-700" role="alert" data-testid="avaliacao-escolha-falhou">Não foi possível carregar os avaliadores agora. Atualize a página para tentar de novo.</p>
                 ) : sugeridos.length === 0 ? (
@@ -229,22 +229,42 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                                 {a.numero}
                               </Link>
                             </span>
-                            <span className="block text-xs text-muted" data-testid="avaliacao-sugerido-termos">{a.termos}</span>
+                            {/* E1096: as estrelas de conduta do mockup; o leitor de tela ouve a linha de termos (E682). */}
+                            <span className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink" data-testid="avaliacao-sugerido-termos">
+                              <span className="flex gap-1 text-amber-500" role="img" aria-label={a.termos} data-testid="avaliacao-sugerido-estrelas" data-cheias={a.reputacao.cheias}>
+                                {[0, 1, 2, 3, 4].map((i) => (
+                                  <Star key={i} className={i < a.reputacao.cheias ? "h-4 w-4 fill-current" : "h-4 w-4 text-muted"} aria-hidden />
+                                ))}
+                              </span>
+                              <span data-testid="avaliacao-sugerido-reputacao" data-novo={a.reputacao.novo ? "sim" : "nao"}>{a.reputacao.texto}</span>
+                            </span>
                             {preco && (
                               <span className="mt-1 block text-sm text-ink" data-testid="avaliacao-sugerido-preco">
                                 Avaliação: {reaisCurtos(Number(preco.valor))}
+                              </span>
+                            )}
+                            {a.identidadeVerificada && (
+                              <span className="mt-1 flex items-center gap-1 text-xs font-semibold text-forest-700" data-testid="avaliacao-sugerido-identidade">
+                                <ShieldCheck className="h-3 w-3 shrink-0" aria-hidden />
+                                {TEXTO_IDENTIDADE_VERIFICADA}
                               </span>
                             )}
                           </span>
                           <FormAcao acao={escolherAvaliador} testid="escolher-avaliador">
                             <input type="hidden" name="pedidoId" value={atual.id} />
                             <input type="hidden" name="avaliadorId" value={a.id} />
-                            <Button type="submit" variant="secondary" size="sm">Escolher este avaliador</Button>
+                            <Button type="submit" variant="secondary" size="sm" aria-label={`${ROTULO_ESCOLHER} ${a.nome}`}>{ROTULO_ESCOLHER}</Button>
                           </FormAcao>
                         </li>
                       );
                     })}
                   </ul>
+                )}
+                {/* E1096: a frase do valor fica SOB os cartões (a tabela é referência; o valor de cada um vem depois). */}
+                {faixa && (
+                  <p className="mt-3 text-muted" data-testid="avaliacao-faixa">
+                    {fraseDoValorNaEscolha({ referencia: brl(faixa.referencia), min: brl(faixa.min), max: brl(faixa.max) })}
+                  </p>
                 )}
               </div>
             )}

@@ -9,6 +9,7 @@ import { criteriosAtingidos, propostaVencida, sugerirAvaliadores, CRITERIOS_PUBL
 import { modoDaChaveAtual } from "./chave";
 import { filaNoAmbito } from "./ambito-da-chave";
 import { nomeDoAvaliador } from "./nome-do-avaliador";
+import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import {
   COLUNAS_PRECO,
   designacaoVencida,
@@ -49,6 +50,19 @@ export async function nomesDasContas(admin: Admin, userIds: readonly (string | n
   const { data, error } = await admin.from("profiles").select("id, full_name").in("id", ids);
   if (error) return new Map();
   return new Map(((data ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, p.full_name]));
+}
+
+/**
+ * E1096 (ORDEM-DUET-453/460): as contas com a identidade CONFIRMADA — o fato (a mesma fonte do credenciamento), nunca o
+ * status — para a linha "Identidade verificada pela Viva" do cartão da escolha do dono. A leitura que falha não afirma
+ * nada: a conta fica fora do conjunto.
+ */
+export async function identidadesConfirmadas(admin: Admin, userIds: readonly (string | null | undefined)[], agora = new Date()): Promise<Set<string>> {
+  const ids = [...new Set(userIds.filter((x): x is string => !!x))];
+  const pares = await Promise.all(
+    ids.map(async (id) => [id, await estadoIdentidade(admin, id, agora).then((e) => e.estado === "confirmada").catch(() => false)] as const),
+  );
+  return new Set(pares.filter(([, ok]) => ok).map(([id]) => id));
 }
 
 /** De onde vêm os fatos do e-mail (E289): o pedido de avaliação (imóvel, data da visita, avaliador) ou só o imóvel. */

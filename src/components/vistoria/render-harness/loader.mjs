@@ -10,13 +10,14 @@ const H = `import { createElement as h } from "react";\n`;
 const NOOP = (nomes) => nomes.map((n) => `export const ${n} = async () => ({ ok: true });`).join("\n");
 const STUBS = {
   "next/link": H + `export default ({ href, children, ...p }) => h("a", { href }, children);`,
-  "lucide-react": `export const CheckCircle2 = () => null; export const Circle = () => null; export const ShieldCheck = () => null;`,
+  "lucide-react": `export const CheckCircle2 = () => null; export const Circle = () => null; export const ShieldCheck = () => null; export const Star = () => null;`,
   "@/lib/supabase/server": `export async function createClient() { return { auth: { getUser: async () => ({ data: { user: globalThis.__VN.user } }) } }; }`,
   "@/lib/supabase/admin": `export function createAdminClient() { return globalThis.__VN.admin; }`,
   "@/lib/vistoria/chave": `export async function vistoriaAtiva() { return globalThis.__VN.chave; }`,
   "@/lib/vistoria/servidor": `export async function sugeridosDoPedido() { globalThis.__VN.sugeridosChamado = true; return globalThis.__VN.sugeridos; }
 export async function outrosParaTroca() { globalThis.__VN.outrosChamado = true; return globalThis.__VN.outros ?? null; }
 export async function nomesDasContas() { return new Map(); }
+export async function identidadesConfirmadas() { return new Set(globalThis.__VN.identidades ?? []); }
 export async function tabelaDaCidade(admin) { const r = await admin.from("vistoria_precos").select("*"); return r.data ?? []; }`,
   "@/lib/vistoria/actions": NOOP(["agendarVisita", "aceitarProposta", "avaliarConduta", "confirmarRecebido", "escolherAvaliador", "pedirAvaliacao", "recusarProposta", "registrarAusencia"]),
   "@/lib/data/avatar-url": `export async function signAvatarPath() { return null; }`,
