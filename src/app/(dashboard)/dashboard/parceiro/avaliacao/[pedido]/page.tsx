@@ -10,6 +10,7 @@ import { FormAcao } from "@/components/vistoria/form-acao";
 import { ChecklistAvaliador } from "@/components/vistoria/checklist-avaliador";
 import { VisitaEmAndamento } from "@/components/avaliadores/visita";
 import { PedidoDoAvaliador } from "@/components/avaliadores/pedido";
+import { IdentificacaoDoImovel } from "@/components/avaliadores/identificacao-do-imovel";
 import { MedirInternetAvaliacao } from "@/components/vistoria/medir-internet-avaliacao";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { PERGUNTAS_RUIDO } from "@/config/niveis";
@@ -20,7 +21,7 @@ import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO } from "@/lib/vistoria/nivel-do-laudo";
 import { faltasDoRoteiro, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
-import { etapaDoPedido, linhaDoPorte, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
+import { etapaDoPedido, identificacaoDoImovel, linhaDoPorte, linhaDoPrazoDoLaudo, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
 import { PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
 import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { brl } from "@/lib/fiscal/documento";
@@ -65,7 +66,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     const [{ data: d, error: erroPedido }, { data: des, error: erroDesignacoes }, { data: im }, { data: capasDoPedido }] = await Promise.all([
       admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, designado_em, escolhido_em, teste").eq("id", p.id).maybeSingle(),
       admin.from("vistoria_designacoes").select("avaliador_id, resposta").eq("pedido_id", p.id),
-      admin.from("properties").select("exact_address, address, city, state, draft_data").eq("id", p.property_id).maybeSingle(), // consistency-ignore: E1079 fatia 3 — endereço exato só ao avaliador escolhido e só depois de o dono aceitar a proposta
+      admin.from("properties").select("title, exact_address, address, city, state, draft_data").eq("id", p.property_id).maybeSingle(), // consistency-ignore: E1079 fatia 3 — endereço exato só ao avaliador escolhido e só depois de o dono aceitar a proposta
       admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1),
     ]);
     const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; designado_em: string | null; escolhido_em: string | null; teste: boolean } | null;
@@ -94,15 +95,17 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
       },
       agora,
     );
-    const imovel = im as { exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; draft_data?: Record<string, unknown> | null } | null;
+    const imovel = im as { title?: string | null; exact_address?: string | null; address?: string | null; city?: string | null; state?: string | null; draft_data?: Record<string, unknown> | null } | null;
     return (
       <PedidoDoAvaliador
         pedidoId={p.id as string}
         etapa={etapa}
+        imovel={identificacaoDoImovel(imovel?.title, p.property_id as string)}
         capaUrl={((capasDoPedido ?? [])[0] as { url: string } | undefined)?.url}
         local={localDoPedido(etapa, imovel, dados.cidade)}
         porte={linhaDoPorte(dados.porte)}
         valor={linhaDoValor(etapa, dados)}
+        prazoLaudo={linhaDoPrazoDoLaudo(etapa, dados)}
         prazoResposta={etapa === "novo" && relogio?.vez === "avaliador" ? { texto: textoDoPrazoDeResposta(relogio, agora), vencido: relogio.vencido } : null}
         prazoAceite={etapa === "proposta_enviada" && relogio?.vez === "dono" ? textoDoPrazoDeAceite(relogio) : null}
         ocupado={Boolean(p.ocupado)}
@@ -112,6 +115,8 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     );
   }
 
+  // E1108: a tela da visita e do laudo também diz de que imóvel é (título do anúncio e código VN).
+  const { data: imovelDaVisita } = await admin.from("properties").select("title").eq("id", p.property_id).maybeSingle();
   const [{ data: itens }, { data: laudos }, { data: fotos }] = await Promise.all([
     admin.from("vistoria_checklist").select("chave, valor, observacao").eq("pedido_id", p.id),
     admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinado_em, assinatura_hash, nivel_sustentado").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
@@ -238,6 +243,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   return (
     <>
       <PageTitle title={agendada ? tituloDaVisita(emAndamento) : naEtapaDoLaudo ? TITULO_LAUDO : "Checklist da avaliação"} subtitle={naEtapaDoLaudo ? [tipoRotulo, SUBTITULO_LAUDO].filter(Boolean).join(" · ") : tipoRotulo} />
+      <IdentificacaoDoImovel texto={identificacaoDoImovel((imovelDaVisita as { title?: string | null } | null)?.title, p.property_id as string)} className="mb-2 text-base" />
       <ButtonLink href="/dashboard/parceiro/avaliacao" variant="ghost" size="sm" className="mb-4">Voltar às avaliações</ButtonLink>
       {p.ocupado && <p className="mb-4 text-sm text-ink">Imóvel ocupado: a visita só acontece com o morador de acordo. Não fotografe pertences nem pessoas.</p>}
 
