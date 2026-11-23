@@ -13,7 +13,8 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, entrar, n
   Antes do E1112 (main sem o #4144) os casos 1 e 4 caem: a página grava o telefone e o pedido segue.
   E1137 (ORDEM-DUET-601): no caso 1 o botão "Salvar apresentação" vai para o FUNDO do ecrã (390×844) antes do toque — o
   aviso nasce abaixo dele, e só fica à vista se a página rolar até ele (a rolagem do E1131). Com o botão a meio do ecrã o
-  aviso já se via sem rolar, e a rolagem não estava guardada.
+  aviso já se via sem rolar, e a rolagem não estava guardada. Sem a rolagem, o aviso nasce por trás da barra fixa de baixo:
+  ainda "no ecrã" para o toBeInViewport, por isso o caso confere também que o meio do aviso não está tapado.
   E1139 (ORDEM-DUET-601): o aviso do pedido de parceria (caso 4) também tem de estar dentro do ecrã.
 */
 const AVISO = "Para sua segurança e registro, o contato acontece pela plataforma — remova telefone, e-mail ou apps de mensagem do texto.";
@@ -42,6 +43,18 @@ async function botaoNoFimDoEcra(page: Page, botao: Locator) {
     });
     const limite = Math.min(window.innerHeight, ...barras.map((b) => b.getBoundingClientRect().top));
     window.scrollBy(0, el.getBoundingClientRect().bottom - limite + 2);
+  });
+}
+
+/** O aviso está à vista de quem salvou: o ponto do meio dele está no ecrã e não está tapado (ex.: pela barra de baixo). */
+async function avisoAVista(aviso: Locator): Promise<boolean> {
+  return aviso.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    if (y < 0 || y > window.innerHeight || x < 0 || x > window.innerWidth) return false;
+    const noPonto = document.elementFromPoint(x, y);
+    return !!noPonto && (noPonto === el || el.contains(noPonto));
   });
 }
 
@@ -89,6 +102,9 @@ test.describe("T2230 — E1112: a página do parceiro e o pedido de parceria rec
       await expect(page.getByTestId("parceiro-msg"), `${c.coluna}: o aviso da casa`).toHaveText(AVISO, { timeout: 20_000 });
       // E1131 (ORDEM-DUET-572): o aviso aparece junto do botão — dentro do ecrã de quem acabou de salvar, não no topo do painel.
       await expect(page.getByTestId("parceiro-msg"), `${c.coluna}: o aviso está à vista`).toBeInViewport();
+      // E1137: e não fica tapado pela barra de baixo — sem a rolagem do E1131, o aviso nasce por trás dela (toBeInViewport
+      // não vê sobreposições).
+      await expect.poll(() => avisoAVista(page.getByTestId("parceiro-msg")), { message: `${c.coluna}: o aviso não está tapado`, timeout: 5_000 }).toBe(true);
       const lida = await lerPagina();
       expect(lida, `${c.coluna}: nada gravado`).toEqual({ nome_publico: NOME, descricao_curta: CURTA, descricao: DESCRICAO });
     }
