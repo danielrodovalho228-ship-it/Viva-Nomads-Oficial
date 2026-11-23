@@ -46,7 +46,7 @@ export default async function PropostasPage() {
                         {p.conta ?? `${formatBRL(p.totalContrato)} no total`}
                       </p>
                     </div>
-                    <StatusChip status={p.status} />
+                    <StatusChip status={p.status} papel={p.papel} />
                   </div>
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <span

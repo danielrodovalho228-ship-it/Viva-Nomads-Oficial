@@ -178,6 +178,16 @@ export function propostaRecusada(o: {
   const motivo = [o.motivo?.trim(), o.texto?.trim()].filter(Boolean).join(". ");
   const paraDono = o.quemRecusou === "tenant";
   const cidade = o.cidade?.trim();
+  // E965: ao MORADOR (o proprietário recusou) o e-mail é neutro — nunca "recusou"/"recusada". Ao dono, segue dizendo quem.
+  if (!paraDono)
+    return {
+      assunto: "A proposta não seguiu adiante",
+      abertura: (n) => `${ola(n)}, a proposta não seguiu adiante.${motivo ? ` Motivo: ${motivo}.` : ""} Há outros imóveis parecidos na busca.`.replace(/\.\./g, "."),
+      titulo: "",
+      passos: [],
+      cta: "Ver outros imóveis parecidos",
+      url: cidade ? `/buscar?cidade=${encodeURIComponent(cidade)}` : "/buscar",
+    };
   return {
     assunto: `${quem} recusou a proposta`,
     abertura: (n) =>

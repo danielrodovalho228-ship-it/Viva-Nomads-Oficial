@@ -63,6 +63,7 @@ import {
   type StatusProposta,
   type TermosProposta,
   type TotaisProposta,
+  textoDaRecusaNaConversa,
 } from "@/lib/propostas/regras";
 import {
   COLUNAS_PROPOSTA,
@@ -1000,7 +1001,8 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
       s.admin,
       p,
       papel,
-      `Proposta ${p.numero} recusada. Motivo: ${motivo}.${texto ? ` ${texto}` : ""}`,
+      // E965: o morador lê este cartão (conversa e sino): neutro, nunca "recusada".
+      textoDaRecusaNaConversa(p.numero, motivo, texto),
       "proposta_respondida",
       undefined,
       undefined,

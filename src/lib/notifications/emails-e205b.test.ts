@@ -72,7 +72,9 @@ test("(c) recusa: '{Primeiro nome} recusou a proposta', motivo quando houver, bo
   assert.equal(aoDono.cta, "Ajustar e enviar nova versão");
   assert.equal(aoDono.url, "/dashboard/propostas/P1");
   const aoMorador = propostaRecusada({ quemRecusou: "owner", nomeDeQuemRecusou: "", motivo: null, propostaId: "P1", cidade: "Uberlândia" });
-  assert.equal(aoMorador.assunto, "O proprietário recusou a proposta");
+  // E965 (asserção alterada): ao morador, o assunto é neutro — nunca "recusou"/"recusada".
+  assert.equal(aoMorador.assunto, "A proposta não seguiu adiante");
+  assert.doesNotMatch(aoMorador.abertura(), /recus/i);
   assert.doesNotMatch(aoMorador.abertura(), /Motivo/);
   assert.equal(aoMorador.cta, "Ver outros imóveis parecidos");
   assert.equal(aoMorador.url, "/buscar?cidade=Uberl%C3%A2ndia");

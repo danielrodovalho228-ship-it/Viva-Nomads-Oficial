@@ -190,7 +190,8 @@ export function aberturaProposta(d: Desfecho, o: { nome?: string; imovel: Imovel
     case "aceita":
       return `${ola}, a proposta para ${titulo} foi aceita.`;
     case "recusada":
-      return `${ola}, a proposta para ${titulo} foi recusada${o.motivo ? `. Motivo: ${limpo(o.motivo)}` : ""}.`;
+      // E965: vai às duas partes; o morador nunca lê "recusada".
+      return `${ola}, a proposta para ${titulo} não seguiu adiante${o.motivo ? `. Motivo: ${limpo(o.motivo)}` : ""}.`;
   }
 }
 
