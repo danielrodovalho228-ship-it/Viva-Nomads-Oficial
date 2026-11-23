@@ -9,6 +9,9 @@ import { proximoPasso, ROTULO_REGISTRO_SEM_DINHEIRO, rotuloStatus } from "@/lib/
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { dataHoraBRT, diaBRT } from "@/lib/datas-brasilia";
 import { AgendaCalendario } from "@/components/parceiros/agenda-calendario";
+import { ordenarAgenda, type ItemAgendaParceiro } from "@/lib/parceiros/agenda-parceiro";
+import { visitasNaAgenda } from "@/lib/vistoria/visitas-confirmadas";
+import { visitasConfirmadasDoAvaliador } from "@/lib/vistoria/visitas-do-avaliador-servidor";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const FECHADOS = ["aceito", "agendado", "em_execucao", "entregue", "concluido"];
@@ -26,9 +29,13 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
   const taxa = fechados.reduce((t, p) => t + Math.round((p.valorTaxa ?? 0) * 100), 0) / 100;
   const liquido = fechados.reduce((t, p) => t + Math.round((p.valorParceiro ?? 0) * 100), 0) / 100;
   // "Agenda" da barra do parceiro (Prompt 41): os horários já combinados, do mais próximo ao mais distante.
-  const agenda = pedidos
+  const servicos: ItemAgendaParceiro[] = pedidos
     .filter((p) => p.horario && NA_AGENDA.includes(p.status))
-    .sort((a, b) => String(a.horario).localeCompare(String(b.horario)));
+    .map((p) => ({ id: p.id, dia: diaBRT(p.horario) ?? "", quando: dataHoraBRT(p.horario), categoria: rotuloCategoria(p.categoria), em: String(p.horario) }));
+  // E1103: a Agenda é uma só — os horários dos pedidos de serviço E as visitas de avaliação confirmadas (a mesma fonte
+  // da tela do pedido). Antes, a visita de hoje do avaliador não aparecia aqui.
+  const { visitas, falhou: visitasFalharam } = await visitasConfirmadasDoAvaliador();
+  const agenda = ordenarAgenda([...servicos, ...visitasNaAgenda(visitas)]);
   // Prompt 43, item 4: a agenda usa a mesma grade dos calendários do imóvel e da estadia (dias com horário marcados).
   const hoje = diaBRT(new Date());
   return (
@@ -64,6 +71,11 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
       <div className="grid content-start gap-6">
         <Panel id="agenda" title="Agenda" className="scroll-mt-24" data-testid="parceiro-agenda">
           {/* E466 (i): calendário com mês anterior/próximo e dias clicáveis (o dia filtra os horários). */}
+          {visitasFalharam && (
+            <p role="alert" className="mb-2 text-sm font-semibold text-red-700" data-testid="parceiro-agenda-visitas-erro">
+              Não foi possível carregar as visitas de avaliação agora. Recarregue a página em instantes.
+            </p>
+          )}
           {agenda.length === 0 ? (
             <>
               {hoje && <AgendaCalendario hoje={hoje} itens={[]} />}
@@ -71,10 +83,7 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
             </>
           ) : (
             hoje && (
-              <AgendaCalendario
-                hoje={hoje}
-                itens={agenda.map((p) => ({ id: p.id, dia: diaBRT(p.horario) ?? "", quando: dataHoraBRT(p.horario), categoria: rotuloCategoria(p.categoria) }))}
-              />
+              <AgendaCalendario hoje={hoje} itens={agenda} />
             )
           )}
         </Panel>
