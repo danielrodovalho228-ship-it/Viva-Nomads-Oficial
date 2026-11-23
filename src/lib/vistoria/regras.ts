@@ -10,6 +10,7 @@
 */
 import { chaveCidade } from "../cidades.ts";
 import { PRAZO_RESPOSTA_PADRAO_HORAS } from "./prazos.ts";
+import { diaBRT } from "../datas-brasilia.ts";
 
 export const ROTULO_CATEGORIA_VISTORIA = "Avaliação de imóveis";
 /** E717: faixa da página pública de um avaliador de conta de teste (igual ao "Documento de teste" do /conferir). */
@@ -396,11 +397,13 @@ export function suspendePorAusencias(ausencias: string[], agora: Date): boolean 
   return ausencias.filter((d) => Date.parse(d) >= limite).length >= REGRAS_AGENDA.ausenciasParaSuspender;
 }
 
-/** Lembrete D-1: a visita é amanhã (no dia civil de Brasília). */
+/**
+ * Lembrete D-1: a visita é amanhã (no dia civil de Brasília). E1135: o dia da visita sai de diaBRT (conversão de fuso
+ * de verdade), não de −3 h fixas; "amanhã" é o dia civil seguinte ao `hojeBrasilia` (conta de calendário, sem fuso).
+ */
 export function visitaAmanha(agendadoPara: string, hojeBrasilia: string): boolean {
-  const d = new Date(Date.parse(`${hojeBrasilia}T12:00:00-03:00`) + 86_400_000).toISOString().slice(0, 10);
-  const alvo = new Date(Date.parse(agendadoPara) - 3 * 3_600_000).toISOString().slice(0, 10);
-  return alvo === d;
+  const amanha = new Date(Date.parse(`${hojeBrasilia}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  return diaBRT(agendadoPara) === amanha;
 }
 
 // ── Avaliação mútua: só CONDUTA, nunca o resultado ─────────────────────────────────────────────────────────────
