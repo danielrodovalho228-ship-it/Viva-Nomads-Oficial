@@ -5,11 +5,12 @@
   sobre o valor do serviço, para todas as categorias (texto único em config/taxa-servico-parceiros.ts).
 */
 import { TEXTO_TAXA_SERVICO_PARCEIROS } from "../../config/taxa-servico-parceiros.ts";
-import { PORTA_GESTOR_TEXTO } from "../../config/planos.ts";
+import { TEXTO_CARTEIRAS } from "../../config/planos.ts";
+import { escadaTaxasCurta } from "../cobranca/regra.ts";
 import { TEXTO_PRAZO_PARCERIA } from "../../config/prazos-canais.ts";
 
 export const TIPOS_PARCEIRO =
-  "Categorias abertas: Fotografia, mudança, limpeza, lavanderia, montagem de móveis, manutenção e outros serviços para imóveis mobiliados. Empresas que hospedam equipes seguem por /empresas e gestores de imóveis pelo Plano Gestor.";
+  `Categorias abertas: Fotografia, mudança, limpeza, lavanderia, montagem de móveis, manutenção e outros serviços para imóveis mobiliados. Empresas que hospedam equipes seguem por /empresas. ${TEXTO_CARTEIRAS}`;
 
 export const MODOS_CONTA =
   "Uma conta só: quem aluga ou anuncia pode ser parceiro na mesma conta. O pedido é feito em /parceiros (\"Seja parceiro\") ou na Conta (\"Quero ser parceiro\"), com o e-mail da conta confirmado. Aprovado, o item \"Parceiro\" aparece no menu do painel.";
@@ -33,7 +34,7 @@ export const CONTRATAR_FOTOGRAFO =
   "No passo Fotos do cadastro do imóvel, toque em \"Quer um fotógrafo profissional?\" para ver os fotógrafos parceiros da cidade do imóvel e a página de cada um. Você combina tudo pelas mensagens da Viva, e o seu contato não é trocado.";
 
 export const EMPRESAS_E_GESTORES =
-  `Empresa que quer moradia para funcionários: /empresas. Empresa que quer ser parceira (mudança, limpeza, montagem, manutenção): peça a parceria em /parceiros. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Gestor ou administradora de imóveis: não é parceria separada; veja o Plano Gestor (taxa menor por volume, 12/10/8/6%, e Plano Gestor, 4% sem mensalidade, para ${PORTA_GESTOR_TEXTO}).`;
+  `Empresa que quer moradia para funcionários: /empresas. Empresa que quer ser parceira (mudança, limpeza, montagem, manutenção): peça a parceria em /parceiros. Proprietário que quer anunciar imóveis mobiliados: crie a conta em /auth. Gestor ou administradora de imóveis: não é parceria separada; a taxa de serviço cai com o volume (${escadaTaxasCurta()}). ${TEXTO_CARTEIRAS}`;
 
 /** Bloco para o prompt da Viva. */
 export function blocoParceirosPrompt(): string {
