@@ -319,7 +319,9 @@ export const ROTULO_IMPEDIMENTO: Record<MotivoImpedimento, string> = {
   conta_teste: "conta de teste fora do rodízio real",
 };
 
-const MES = 30.4375 * 86_400_000;
+/** O mês médio do calendário, em dias (365,25 / 12). */
+const DIAS_DO_MES_MEDIO = 30.4375;
+const MES = DIAS_DO_MES_MEDIO * 86_400_000;
 
 /** Por que este avaliador não pode avaliar este pedido (null = pode). Ordem: o motivo mais forte primeiro. */
 export function impedimento(a: AvaliadorFila, p: PedidoParaDesignar, h: HistoricoDesignacao, agora: Date): MotivoImpedimento | null {

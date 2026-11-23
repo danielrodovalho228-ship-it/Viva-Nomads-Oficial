@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useEnvioSemLimpar } from "@/components/ui/use-envio-sem-limpar";
 
 type Res = { ok: true; mensagem?: string } | { ok: false; erro: string; campos?: { campo: string; mensagem: string }[] };
 
 const MARCA = "data-erro-campo";
 const VERMELHO = ["border-red-600", "ring-1", "ring-red-600"];
+/** Marca o botão que o envio em curso desligou (E1091), para só esse voltar a ligar no fim (E1117, perna 3). */
+const DESLIGADO_PELO_ENVIO = "data-desligado-pelo-envio";
 
 /** Tira as marcas de erro de uma tentativa anterior. */
 function limparMarcas(form: HTMLFormElement) {
@@ -23,6 +25,11 @@ function limparMarcas(form: HTMLFormElement) {
  * (2) cada campo apontado pela ação (`campos`) fica em vermelho, com a mensagem própria logo abaixo;
  * (3) a página rola até o primeiro campo com erro e o foca.
  * E1091: (4) enquanto envia, diz "Enviando…", desliga os botões de envio e ignora um segundo envio.
+ * E1117 (perna 1): o resultado mostrado é o da ÚLTIMA tentativa. Uma tentativa nova — enviada, ou barrada pelo navegador
+ * por faltar um campo obrigatório — tira da tela o resultado anterior: "Foto enviada." de uma foto que já foi não pode
+ * ficar por baixo de um envio que não gravou nada.
+ * E1117 (perna 3) com o E1091: o efeito do envio só religa o botão que ele mesmo desligou. Um botão que a página mostra
+ * desativado ("Concluir a visita" enquanto falta foto) fica desativado antes, durante e depois do envio.
  */
 export function FormAcao({
   acao,
@@ -44,6 +51,9 @@ export function FormAcao({
     executar(dados);
   });
   const formRef = useRef<HTMLFormElement>(null);
+  // O resultado que uma tentativa nova já tirou da tela (por identidade: cada resposta da ação é um objeto novo).
+  const [superado, setSuperado] = useState<Res | null>(null);
+  const mostrar = res && res !== superado ? res : null;
 
   useEffect(() => {
     const form = formRef.current;
@@ -82,22 +92,39 @@ export function FormAcao({
     emCurso.current = pendente;
     const form = formRef.current;
     if (!form) return;
+    // E1117 (perna 3): só mexe no botão que ESTE efeito desligou. Sem isto, o efeito religava na montagem e no fim de
+    // cada envio todo botão de envio do formulário — também o que a página mostra desativado.
     form.querySelectorAll<HTMLButtonElement>('button[type="submit"], button:not([type])').forEach((b) => {
-      b.disabled = pendente;
+      if (pendente) {
+        if (b.disabled) return;
+        b.disabled = true;
+        b.setAttribute(DESLIGADO_PELO_ENVIO, "");
+      } else if (b.hasAttribute(DESLIGADO_PELO_ENVIO)) {
+        b.disabled = false;
+        b.removeAttribute(DESLIGADO_PELO_ENVIO);
+      }
     });
   }, [pendente]);
 
   return (
-    <form ref={formRef} onSubmit={enviarSemLimpar} className={className} data-testid={testid} aria-busy={pendente}>
+    <form
+      ref={formRef}
+      onSubmit={enviarSemLimpar}
+      onSubmitCapture={() => setSuperado(res)}
+      onInvalidCapture={() => setSuperado(res)}
+      className={className}
+      data-testid={testid}
+      aria-busy={pendente}
+    >
       {children}
       {pendente && (
         <p role="status" className="mt-2 w-full text-sm text-muted" data-testid="acao-enviando">
           Enviando…
         </p>
       )}
-      {res && (
-        <p role={res.ok ? "status" : "alert"} className={`mt-2 text-sm ${res.ok ? "text-forest" : "text-red-600"}`} data-testid={res.ok ? "acao-ok" : "acao-erro"}>
-          {res.ok ? (res.mensagem ?? "Feito.") : res.erro}
+      {mostrar && (
+        <p role={mostrar.ok ? "status" : "alert"} className={`mt-2 text-sm ${mostrar.ok ? "text-forest" : "text-red-600"}`} data-testid={mostrar.ok ? "acao-ok" : "acao-erro"}>
+          {mostrar.ok ? (mostrar.mensagem ?? "Feito.") : mostrar.erro}
         </p>
       )}
     </form>

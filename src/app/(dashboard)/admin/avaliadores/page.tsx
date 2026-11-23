@@ -37,6 +37,8 @@ export const dynamic = "force-dynamic";
 
 const mascararDocumento = (d: string | null) => (d ? `${"•".repeat(Math.max(0, d.length - 4))}${d.slice(-4)}` : "—");
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
+/** A janela da lista de recusas, vencidas e ausências da Central, em dias. */
+const DIAS_DA_JANELA_DE_RECUSAS = 30;
 const ROTULO_STATUS: Record<StatusCredenciamento, string> = { solicitado: "Solicitado", em_teste: "Em teste", ativo: "Ativo", suspenso: "Suspenso", descredenciado: "Descredenciado" };
 const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Recusou", expirada: `Sem resposta em ${PRAZO_RESPOSTA_PADRAO_HORAS} horas`, ausencia: "Não foi à visita" };
 const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicitado: ["em_teste", "descredenciado"], em_teste: ["ativo", "descredenciado"], ativo: ["descredenciado"], suspenso: ["ativo", "descredenciado"], descredenciado: [] };
@@ -93,7 +95,7 @@ export default async function AdminAvaliadoresPage() {
         .map(async (c) => [c.id, (await estadoIdentidade(admin, c.user_id!)).estado] as const),
     ),
   );
-  const trintaDias = new Date(agora.getTime() - 30 * 86_400_000).toISOString();
+  const trintaDias = new Date(agora.getTime() - DIAS_DA_JANELA_DE_RECUSAS * 86_400_000).toISOString();
   // Prompt 62-A, Parte 2: contestações em aberto (com o 2º avaliador), devoluções a devolver e laudos fora das 48 h úteis.
   const [{ data: contestacoesAbertas }, { data: devolucoesAbertas }, { data: semLaudo }] = semFalhaDeLeitura(await Promise.all([
     admin.from("vistoria_pedidos").select("id, cidade, status, criado_em, origem_pedido_id, avaliadores_credenciamento(numero_credenciado)").eq("tipo", "contestacao").in("status", ["pedido", "designado", "agendado", "realizada"]).order("criado_em").limit(50),

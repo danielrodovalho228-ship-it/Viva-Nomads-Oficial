@@ -18,6 +18,12 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
    4. Na lista, cada linha diz o imóvel (título + código): os dois pedidos da mesma cidade e porte ficam distinguíveis;
       a linha do piloto mostra o valor e o prazo propostos e a do credenciamento diz "avaliação de teste". A tela da
       visita agendada também diz o imóvel.
+  ORDEM-DUET-546: os títulos da massa são FIXOS (sem o sufixo aleatório, que mudava a largura do título de corrida para
+  corrida). O do caso 2 ("Sobrado do Ipê Alto") tem a largura medida para que, a 390 px, a linha acabe a meio do código
+  VN: sem o `whitespace-nowrap`, o código parte-se em duas linhas para qualquer código (medido com os mais estreitos e
+  os mais largos; o título cabe numa janela de uns 38 px e este fica a meio dela). Assim a guarda de tela morde em toda
+  corrida, e o caso 2 confere a própria massa antes de conferir o código: se o desenho da tela mudar e a massa deixar de
+  forçar a quebra, o caso falha a dizer isso, em vez de passar sem guardar nada.
   Laboratório; não é prova ao vivo no site.
 */
 const LARGURAS = [390, 1280] as const;
@@ -45,7 +51,8 @@ const codigoVN = (id: string) => `VN-${id.replace(/[^a-z0-9]/gi, "").slice(0, 6)
 const identificacao = (c: Caso) => `${imovelDe[c].titulo} · ${codigoVN(imovelDe[c].id)}`;
 
 async function pedidoDoAvaliador(caso: Caso, nome: string, campos: Record<string, unknown>, resposta: null | "aceita"): Promise<void> {
-  const imovel = await criarImovelPronto(ids.dono, `[TESTE QA] t1739 ${nome} ${sufixo}`, { ativo: true });
+  // ORDEM-DUET-546: título fixo (o sufixo aleatório ficou só nas contas). Quem distingue as corridas é o id do imóvel.
+  const imovel = await criarImovelPronto(ids.dono, `[TESTE QA] t1739 ${nome}`, { ativo: true });
   imoveis.push(imovel);
   const up = await adm().from("properties").update({ city: CIDADE }).eq("id", imovel).select("title").single();
   if (up.error) throw up.error;
@@ -97,7 +104,7 @@ test.describe("T1739 — E1108: o pedido do avaliador mostra os valores do pilot
     await pedidoDoAvaliador("proposta", "Casa das Acácias", { designado_em: ha(3), escolhido_em: ha(3), ...proposta, proposta_em: ha(1) }, "aceita");
     await fotosReais(imovelDe.proposta.id, ids.dono); // a capa do pedido carrega de verdade (o print mostra a tela como ela é)
     // O mesmo, com o aceite do dono. Mesma cidade e mesmo porte do anterior: só o imóvel os distingue.
-    await pedidoDoAvaliador("aceito", "Sobrado do Ipê", { designado_em: ha(5), escolhido_em: ha(5), ...proposta, proposta_em: ha(4), proposta_aceita_em: ha(2) }, "aceita");
+    await pedidoDoAvaliador("aceito", "Sobrado do Ipê Alto", { designado_em: ha(5), escolhido_em: ha(5), ...proposta, proposta_em: ha(4), proposta_aceita_em: ha(2) }, "aceita");
     await fotosReais(imovelDe.aceito.id, ids.dono);
     // A avaliação de teste do credenciamento: de teste, o admin designou (sem escolha do dono) e não há proposta.
     await pedidoDoAvaliador("credenciamento", "Apartamento de teste", { designado_em: ha(1) }, null);
@@ -128,7 +135,8 @@ test.describe("T1739 — E1108: o pedido do avaliador mostra os valores do pilot
   });
 
   test("1. piloto com a proposta submetida: 'Proposta enviada: R$ 250,00 em 2 dias', com o título e o código VN, a 390 e a 1280 px", async ({ browser }) => {
-    expect(identificacao("proposta"), "a massa: título do anúncio + código VN").toMatch(/^\[TESTE QA\] t1739 Casa das Acácias .+ · VN-[A-Z0-9]{6}$/);
+    // ORDEM-DUET-546: antes o título levava um sufixo aleatório ("Casa das Acácias .+"); agora é fixo.
+    expect(identificacao("proposta"), "a massa: título do anúncio + código VN").toMatch(/^\[TESTE QA\] t1739 Casa das Acácias · VN-[A-Z0-9]{6}$/);
     const a = await entrar(browser, aval.email, senha);
     for (const w of LARGURAS) {
       await largura(a, w);
@@ -160,7 +168,20 @@ test.describe("T1739 — E1108: o pedido do avaliador mostra os valores do pilot
       await expect(tela).not.toContainText("sem valor a receber");
       await expect(tela.getByTestId("pedido-imovel")).toHaveText(identificacao("aceito"));
       // O código VN fica inteiro numa linha (a 390 px o hífen partia-o em duas).
-      expect(await tela.getByTestId("pedido-imovel").locator("span").evaluate((el) => el.getClientRects().length), "o código VN numa linha só").toBe(1);
+      const codigo = tela.getByTestId("pedido-imovel").locator("span");
+      if (w === 390) {
+        // ORDEM-DUET-546: primeiro a massa. Com a quebra normal (só nesta leitura, e reposta a seguir), o título fixo
+        // tem de deixar o código partido em duas linhas; se não deixar, a conferência de baixo não guarda nada.
+        const semProtecao = await codigo.evaluate((el: HTMLElement) => {
+          const antes = el.style.whiteSpace;
+          el.style.whiteSpace = "normal";
+          const linhas = el.getClientRects().length;
+          el.style.whiteSpace = antes;
+          return linhas;
+        });
+        expect(semProtecao, "a massa força a quebra a 390 px: sem a proteção, o código VN parte-se em duas linhas (se falhar aqui, a tela mudou de largura e o título fixo da massa precisa de ser medido de novo)").toBe(2);
+      }
+      expect(await codigo.evaluate((el) => el.getClientRects().length), "o código VN numa linha só").toBe(1);
       await expect.poll(() => tela.getByTestId("pedido-capa").locator("img").evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 20_000 }).toBe(true);
       await semRolagemLateral(a);
       await tela.screenshot({ path: `${SAIDA}/t1739-2-aceito-${w}.png` });
