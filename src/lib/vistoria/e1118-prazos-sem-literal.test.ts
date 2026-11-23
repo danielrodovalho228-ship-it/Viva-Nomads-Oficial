@@ -13,8 +13,10 @@
   Fora deste item, de propósito: as "48 horas úteis" do laudo (outra regra, com a sua própria fonte em laudo.ts).
   ORDEM-DUET-547 (endurecimento): a varredura apanha também o prazo escrito em forma ARITMÉTICA — `24 * 3_600_000`,
   `72*3600000`, `3_600_000 * 24`, `24 * 60 * 60 * 1000`… A regra é uma só: 24 ou 72, em algarismos, como fator de uma
-  multiplicação. Antes, um prazo novo escrito assim passava pela varredura sem cair (caso 4). Por decisão do Gerente
-  (DUET-1759) entra também a forma em dias: `3 * 86_400_000`, `1 * 86_400_000`, `259_200_000`.
+  multiplicação. Antes, um prazo novo escrito assim passava pela varredura sem cair (caso 4).
+  ORDEM-DUET-550: entra também a forma EM DIAS — o dia em milissegundos (`86_400_000`, `86400000`) multiplicado por um
+  número escrito à mão, qualquer que seja: `3 * 86_400_000`, `7 * 86_400_000`, `86400000 * 30`. Quem conta dias dá nome
+  ao número (`PRAZO_RESSALVA_DIAS * 86_400_000`). As três linhas que a regra apanhou no código ganharam nome (caso 5).
   Roda: node --test src/lib/vistoria/e1118-prazos-sem-literal.test.ts
 */
 import { test } from "node:test";
@@ -28,6 +30,8 @@ import { corpoVistoria } from "./corpo-email.ts";
 import { TEMPLATES } from "../notifications/eventos-email.ts";
 
 const RAIZ = new URL("../../../", import.meta.url).pathname;
+/** O dia em milissegundos, para as contas deste teste. */
+const DIA = 86_400_000;
 const ler = (p: string) => readFileSync(join(RAIZ, p), "utf8");
 /** Tira os comentários (de linha, de bloco e de JSX). Um `/*` no meio de uma string (accept="image/*") não abre bloco. */
 const semComentarios = (s: string) =>
@@ -61,12 +65,14 @@ const LITERAL = /\b(24|72)\s?(horas?|h)\b|max=\{(24|72)\}|\?\?\s*(24|72)\b|[=:]\
  */
 const ARITMETICO = /(?<![\w.])(24|72)\s*\*|\*\s*(24|72)(?![\w.])/;
 /**
- * ORDEM-DUET-547 (decisão do Gerente, DUET-1759): a forma EM DIAS do mesmo prazo — 1 ou 3 dias inteiros a multiplicar
- * o dia em milissegundos (`3 * 86_400_000`, `86400000*3`, `1 * 864e5`) e as 72 horas já feitas (`259_200_000`).
- * NÃO conta o dia sozinho (`const DIA = 86_400_000`, "o dia seguinte" da agenda): é a unidade, usada de propósito em
- * vários sítios; nem outros múltiplos (7, 30 dias) ou a conta com uma constante (`c.dias * 86_400_000`).
+ * ORDEM-DUET-550: a forma EM DIAS — o dia em milissegundos (`86_400_000`, `86400000`, `864e5`) multiplicado por um
+ * número escrito à mão, dos dois lados da conta: `3 * 86_400_000`, `7 * 86_400_000`, `30.4375 * 86_400_000`,
+ * `86400000 * 30`. E as 72 horas já feitas (`259_200_000`).
+ * NÃO conta o dia sozinho (`const DIA = 86_400_000`, "o dia seguinte" da agenda): é a unidade. Nem a conta com um
+ * número que tem nome (`c.dias * 86_400_000`, `PRAZO_RESSALVA_DIAS * 86_400_000`): é o jeito certo.
  */
-const EM_DIAS = /(?<![\w.])[13]\s*\*\s*(86_?400_?000|864e5)\b|\b(86_?400_?000|864e5)\s*\*\s*[13](?![\w.])|\b259_?200_?000\b/;
+const DIA_EM_MS = String.raw`(?:86_?400_?000|864e5)`;
+const EM_DIAS = new RegExp(String.raw`(?<![\w.])\d[\d_.]*\s*\*\s*${DIA_EM_MS}\b|\b${DIA_EM_MS}\s*\*\s*\d|\b259_?200_?000\b`);
 const prazoAMao = (linha: string) => LITERAL.test(linha) || ARITMETICO.test(linha) || EM_DIAS.test(linha);
 
 test("E1118 (1): varredura — nenhum prazo da avaliação escrito à mão fora das fontes", () => {
@@ -136,7 +142,7 @@ test("E1118 (3): os textos dizem o mesmo de antes, agora a partir das constantes
   assert.match(lista, /name="prazoRespostaHoras" type="number" min=\{1\} max=\{PRAZO_RESPOSTA_MAX_HORAS\} defaultValue=\{cred\.prazo_resposta_horas \?\? PRAZO_RESPOSTA_PADRAO_HORAS\}/);
 });
 
-test("E1118 (4, ORDEM-DUET-547): a varredura apanha o prazo em forma aritmética — e só ele", () => {
+test("E1118 (4, ORDENS 547 e 550): a varredura apanha o prazo em forma aritmética e em dias — e só ele", () => {
   // O que tem de cair: 24 ou 72 como fator, em qualquer ordem, com ou sem espaços e sublinhados.
   const caem = [
     "const fim = t + 24 * 3_600_000;",
@@ -152,7 +158,7 @@ test("E1118 (4, ORDEM-DUET-547): a varredura apanha o prazo em forma aritmética
     "const ms = (72 * HORA_MS);",
     "const ms = horaEmMs * 24;",
     "if (agora.getTime() - Date.parse(designadoEm) >= 24 *3_600_000) return true;",
-    // A forma em dias (decisão do Gerente, DUET-1759): 3 dias = 72 horas, 1 dia = 24 horas.
+    // A forma em dias (ORDEM-DUET-550): o dia em milissegundos multiplicado por um número escrito à mão, qualquer um.
     "const fim = t + 3 * 86_400_000;",
     "const fim = t + 3*86400000;",
     "const fim = t + 86_400_000 * 3;",
@@ -160,15 +166,25 @@ test("E1118 (4, ORDEM-DUET-547): a varredura apanha o prazo em forma aritmética
     "const fim = t + 3 * 864e5;",
     "const fim = t + 259_200_000;",
     "const fim = t + 259200000;",
-  ];
-  for (const linha of caem) assert.ok(prazoAMao(linha), `tem de cair: ${linha}`);
-  // O que NÃO pode cair: outras regras (3 h, 12 h, 7 e 30 dias), números que só contêm 24 ou 72, e a conta feita com
-  // a constante — que é o jeito certo.
-  const passam = [
-    "const alvo = new Date(Date.parse(agendadoPara) - 3 * 3_600_000).toISOString().slice(0, 10);",
+    "const g = 13 * 86_400_000;",
+    "const h = 31 * 86_400_000;",
+    "const i = 0.3 * 86_400_000;",
+    "const j = 86_400_000 * 30;",
+    "const k = 86400000*7;",
+    "const l = 1_000 * 86_400_000;",
+    // As três linhas que estavam no código antes desta ordem (hoje com nome: caso 5).
     "return t >= -12 * 3_600_000 && t <= 7 * 86_400_000;",
     "const MES = 30.4375 * 86_400_000;",
     "const trintaDias = new Date(agora.getTime() - 30 * 86_400_000).toISOString();",
+  ];
+  for (const linha of caem) assert.ok(prazoAMao(linha), `tem de cair: ${linha}`);
+  // O que NÃO pode cair: outras regras em horas (3 h, 12 h), números que só contêm 24 ou 72, e a conta feita com a
+  // constante — que é o jeito certo.
+  const passam = [
+    "const alvo = new Date(Date.parse(agendadoPara) - 3 * 3_600_000).toISOString().slice(0, 10);",
+    "return t >= -12 * 3_600_000 && t <= DIAS_DA_SEMANA_DA_AGENDA * 86_400_000;",
+    "const MES = DIAS_DO_MES_MEDIO * 86_400_000;",
+    "const trintaDias = new Date(agora.getTime() - DIAS_DA_JANELA_DE_RECUSAS * 86_400_000).toISOString();",
     "return agora.getTime() - Date.parse(designadoEm) >= horas * 3_600_000;",
     "return Number.isFinite(t) && agora.getTime() >= t + PRAZO_DONO_ACEITAR_HORAS * 3_600_000;",
     "if (x < REGRAS_AGENDA.antecedenciaReagendarHoras * 3_600_000) {",
@@ -179,18 +195,40 @@ test("E1118 (4, ORDEM-DUET-547): a varredura apanha o prazo em forma aritmética
     "const e = fator * 724;",
     "const f = lote24 * fator;",
     "const dia = 86_400_000;",
-    // A forma em dias: o dia sozinho é a unidade (linhas reais do código de hoje), e 7, 13 ou 30 dias são outras regras.
+    // A forma em dias: o dia sozinho é a unidade, e o número de dias com nome é o jeito certo (linhas reais de hoje).
     "const DIA = 86_400_000;",
     "const d = new Date(Date.parse(`${hojeBrasilia}T12:00:00-03:00`) + 86_400_000).toISOString().slice(0, 10);",
     "const limite = agora.getTime() - REGRAS_AGENDA.janelaAusenciasDias * 86_400_000;",
     "const dentro = agora.getTime() - t <= c.dias * 86_400_000;",
-    "const g = 13 * 86_400_000;",
-    "const h = 31 * 86_400_000;",
-    "const i = 0.3 * 86_400_000;",
-    "const j = 86_400_000 * 30;",
+    "export const prazoRessalva = (emitidoEm: string) => new Date(Date.parse(emitidoEm) + PRAZO_RESSALVA_DIAS * 86_400_000);",
+    "const m = 86_400_000 * dias;",
+    "const n = lote3 * 86_400_000;",
+    "const o = 186_400_000 * fator;",
+    // A fronteira da ordem: só cai quando os DOIS lados são números crus. Número cru vezes o dia COM nome não cai.
+    "const p = 7 * DIA_MS;",
   ];
   for (const linha of passam) assert.equal(prazoAMao(linha), false, `não pode cair: ${linha}`);
   // E a varredura usa esta regra nas duas leituras (as pastas e as linhas da avaliação nos e-mails).
   const estaTrava = ler("src/lib/vistoria/e1118-prazos-sem-literal.test.ts");
   assert.equal((estaTrava.match(/prazoAMao\(linha\)\) achados\.push/g) ?? []).length, 2);
+});
+
+test("E1118 (5, ORDEM-DUET-550): as três contas em dias que a regra apanhou ganharam nome, com o mesmo valor", async () => {
+  // Antes: `30.4375 * 86_400_000` (regras.ts), `7 * 86_400_000` (telas-exibicao.ts) e `30 * 86_400_000` (Central).
+  const regras = ler("src/lib/vistoria/regras.ts");
+  assert.match(regras, /^const DIAS_DO_MES_MEDIO = 30\.4375;$/m);
+  assert.match(regras, /^const MES = DIAS_DO_MES_MEDIO \* 86_400_000;$/m);
+  const telas = ler("src/lib/vistoria/telas-exibicao.ts");
+  assert.match(telas, /^const DIAS_DA_SEMANA_DA_AGENDA = 7;$/m);
+  assert.match(telas, /t <= DIAS_DA_SEMANA_DA_AGENDA \* 86_400_000;/);
+  const central = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
+  assert.match(central, /^const DIAS_DA_JANELA_DE_RECUSAS = 30;$/m);
+  assert.match(central, /agora\.getTime\(\) - DIAS_DA_JANELA_DE_RECUSAS \* 86_400_000\)/);
+  // O comportamento é o mesmo: a "semana" da agenda continua a ser 7 dias, na fronteira exata.
+  const { visitaNaSemana } = await import("./telas-exibicao.ts");
+  const agora = new Date("2026-11-23T12:00:00Z");
+  assert.equal(visitaNaSemana(new Date(agora.getTime() + 7 * DIA).toISOString(), agora), true);
+  assert.equal(visitaNaSemana(new Date(agora.getTime() + 7 * DIA + 1).toISOString(), agora), false);
+  assert.equal(visitaNaSemana(new Date(agora.getTime() - 12 * 3_600_000).toISOString(), agora), true);
+  assert.equal(visitaNaSemana(new Date(agora.getTime() - 12 * 3_600_000 - 1).toISOString(), agora), false);
 });
