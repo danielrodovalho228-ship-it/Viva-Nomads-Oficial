@@ -66,7 +66,7 @@ test("p24 — a rota usa a regra: 503 antes de reservar, existente com 200, rese
   const iInativa = rota.indexOf('d.acao === "inativa"');
   const iReserva = rota.indexOf("reservarFechamento(");
   assert.ok(iInativa > 0 && iReserva > iInativa, "o 503 da assinatura inativa vem antes da reserva");
-  assert.match(rota, /concluirFechamento\(f\.leadId, "contrato", null\)/);
+  assert.match(rota, /concluirFechamento\(f\.leadId, "contrato", chave, null\)/);
   assert.doesNotMatch(rota, /já foi gerado/);
   const tela = readFileSync(new URL("../app/(dashboard)/dashboard/fechamento/closing-flow.tsx", import.meta.url), "utf8");
   assert.match(tela, /passoDaRespostaContrato\(/);

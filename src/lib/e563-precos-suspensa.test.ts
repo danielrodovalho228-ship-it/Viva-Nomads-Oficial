@@ -1,6 +1,8 @@
 /**
  * E563 — página de preços SUSPENSA (decisão do Daniel, 04/11/2026): uma chave (PRECOS_VISIVEL, padrão DESLIGADA) governa
  * todas as portas para /precos; religar = ligar a chave (NEXT_PUBLIC_PRECOS_VISIVEL=1), sem retrabalho. `npm test`.
+ * Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): com a chave ligada, o cartão dos gestores leva a /precos#carteiras
+ * (antes /precos#plano-gestor — a seção do Plano Gestor saiu da página).
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -47,7 +49,10 @@ test("as outras portas (texto de /anunciar, cartão de parceiros, comparativo, a
   // E896 (asserção alterada): o cartão dos gestores passa pela chave via linksDoCartaoGestores(PRECOS_VISIVEL) — com a chave
   // desligada não há porta para /precos e o cartão leva a /para-proprietarios#taxa (antes: comPortasDePrecos, que o deixava sem saída).
   assert.match(ler("app/(public)/parceiros/page.tsx"), /links: linksDoCartaoGestores\(PRECOS_VISIVEL\)/);
-  assert.match(ler("lib/parceiros/tipos-parceria.ts"), /precosVisivel\s*\?\s*\[\{ href: "\/precos#plano-gestor"/);
+  // 078 (Daniel, 16/11/2026): antes /precosVisivel ? [{ href: "/precos#plano-gestor"/ — a porta para /precos continua só com a chave
+  // ligada, mas a âncora é a seção das carteiras; a âncora antiga não existe mais no arquivo.
+  assert.match(ler("lib/parceiros/tipos-parceria.ts"), /href: precosVisivel \? "\/precos#carteiras" : "\/para-proprietarios#taxa"/);
+  assert.doesNotMatch(ler("lib/parceiros/tipos-parceria.ts"), /precos#plano-gestor/);
   assert.match(ler("components/precos/comparativo-precos.tsx"), /PRECOS_VISIVEL && \(/);
   assert.match(ler("lib/atendimento/faq.ts"), /comPortasDePrecos\(\[LINK_PRECOS\]/);
   assert.match(ler("app/sitemap.ts"), /comPortasDePrecos\(/);

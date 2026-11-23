@@ -3,10 +3,10 @@
   regras do produto (config/planos.ts, REGRAS_CONTRATO, CAUCAO_FRASE). A IA do
   PR 2 também responde a partir daqui. Puro (testável com node --test).
 */
-import { PORTA_GESTOR_TEXTO, REGRAS_CONTRATO } from "../../config/planos.ts";
+import { REGRAS_CONTRATO, TEXTO_CARTEIRAS } from "../../config/planos.ts";
 import { comPortasDePrecos } from "../../config/precos-visivel.ts";
 import { frasePrazo, frasePrazosManutencao } from "../../config/atendimento.ts";
-import { FAIXA_GESTOR, TEXTO_REGRA_UNICA, escadaTaxasTexto, exemploCobranca, pctTexto } from "../cobranca/regra.ts";
+import { TEXTO_REGRA_UNICA, escadaTaxasCurta, escadaTaxasTexto, exemploCobranca } from "../cobranca/regra.ts";
 import { PCT_PARCEIRO_RECEBE, PCT_TAXA_SERVICO_PARCEIROS } from "../../config/taxa-servico-parceiros.ts";
 
 /** E1111: o exemplo da cobrança, calculado pela regra. */
@@ -62,7 +62,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "custo-anunciar",
     pergunta: "Quanto custa anunciar?",
-    resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): ${escadaTaxasTexto()}. O Plano Gestor tem taxa de ${pctTexto(FAIXA_GESTOR.taxa)}, sem mensalidade, para ${PORTA_GESTOR_TEXTO}. Exemplo: contrato de ${EXEMPLO.meses} meses a ${EXEMPLO.aluguel} por mês, na faixa de ${EXEMPLO.pct}: valor total ${EXEMPLO.total}, taxa ${EXEMPLO.comissao}. A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.`, // E836/E906: sem remissão a /precos (página suspensa).
+    resposta: `${TEXTO_REGRA_UNICA} Faixas por imóveis ativos (publicados, com documento aprovado e calendário em dia): ${escadaTaxasCurta()}. ${TEXTO_CARTEIRAS} Exemplo: contrato de ${EXEMPLO.meses} meses a ${EXEMPLO.aluguel} por mês, na faixa de ${EXEMPLO.pct}: valor total ${EXEMPLO.total}, taxa ${EXEMPLO.comissao}. A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.`, // E836/E906: sem remissão a /precos (página suspensa).
     termos: ["preco", "taxa", "anunciar", "comissao", "mensalidade", "quanto custa", "airbnb", "12"],
     links: comPortasDePrecos([LINK_PRECOS]),
   },

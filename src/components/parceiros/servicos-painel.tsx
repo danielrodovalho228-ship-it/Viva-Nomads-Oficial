@@ -26,9 +26,9 @@ const ROTULO_NO_CARTAO: Partial<Record<string, string>> = { manutencao: "Reparos
  * passos. O destino de cada cartão não mudou.
  */
 /**
- * E1079 (385, tela 4): com `avaliacao`, a grade ganha o cartão "Avaliação do imóvel" (só para o dono com a avaliação
- * aberta; quem decide é avaliacaoNaGrade). E1080 (DUET-1561): a foto da categoria "vistoria" (escolhida pelo Daniel), no
- * mesmo tema dos outros cartões.
+ * E1079 (385, tela 4): com `avaliacao`, a grade ganha o cartão "Avaliação do imóvel". E1104 (ORDEM-DUET-470): o cartão é
+ * de TODO dono (a porta de descoberta); o morador não o recebe. Quem decide, e para onde ele leva, é avaliacaoNaGrade.
+ * E1080 (DUET-1561): a foto da categoria "vistoria" (escolhida pelo Daniel), no mesmo tema dos outros cartões.
  */
 export function ServicosPainel({ cidade, avaliacao }: { cidade?: string | null; avaliacao?: { href: string } | null }) {
   const q = (categoria: string) => `/parceiros/buscar?${new URLSearchParams({ categoria, ...(cidade ? { cidade } : {}) }).toString()}`;

@@ -15,7 +15,7 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
       continua lá. Com a visita concluída, a tela é a do laudo e o bloco da visita não aparece.
    4. ORDEM-DUET-431, resposta 1 — o roteiro TRAVA "Concluir a visita": faltando a foto de Quartos e Banheiros, a tela
       diz o que falta antes do clique, o clique não conclui e a avaliação continua agendada. Com a foto dos cinco
-      ambientes, conclui.
+      ambientes, conclui. (E1117, perna 3: o botão vem desativado; a recusa do servidor prova-se religando-o à mão.)
    5. ORDEM-DUET-431/435, resposta 2 — antes do dia marcado a tela diz "Visita agendada" (nunca "em andamento"); o
       roteiro e as fotos continuam lá.
   As procuras são pelo texto que a tela mostra. Laboratório; não é prova ao vivo no site.
@@ -201,7 +201,12 @@ test.describe("T1725 — E1079: a visita do avaliador pelo mockup (foto do imóv
     await expect(concluir.getByTestId("concluir-faltas")).toHaveText(FALTA, { timeout: 30_000 });
     await concluir.scrollIntoViewIfNeeded();
     await page.screenshot({ path: `${SAIDA}/t1725-4-concluir-travado-390.png` });
-    await concluir.getByRole("button", { name: "Concluir a visita" }).click();
+    // E1117 (perna 3, ORDEM-DUET-514): com foto por enviar o botão já vem desativado. A recusa do servidor continua a
+    // valer para quem contornar a tela: religado o botão à mão, o clique não conclui.
+    const botao = concluir.getByRole("button", { name: "Concluir a visita" });
+    await expect(botao).toBeDisabled();
+    await botao.evaluate((b) => b.removeAttribute("disabled"));
+    await botao.click();
     // O servidor recusa com a mesma frase e a avaliação continua agendada.
     await expect(concluir.getByTestId("acao-erro")).toHaveText(FALTA, { timeout: 20_000 });
     expect(await statusDe(pedidos.tela!), "sem a foto de dois ambientes a visita não conclui").toBe("agendado");
