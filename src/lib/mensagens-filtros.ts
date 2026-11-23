@@ -4,6 +4,7 @@
   imóvel de outra pessoa = "Como morador"; conversa de pedido de serviço (31b, "pedido:") = "Parceiros"; conversa
   sem imóvel (equipe da Viva) = "Falar com a Viva". Os ids ficam estáveis (os testes e o E2E usam os ids).
 */
+import { saidaPeloFim } from "./texto-do-periodo.ts";
 
 
 export type PapelConversa = "inquilino" | "proprietario" | "parceiros" | "suporte";
@@ -40,14 +41,17 @@ export function contarPorFiltro(lista: { papel?: PapelConversa }[]): Record<Filt
   };
 }
 
-/** Datas do contrato na lista de conversas: "13/11 – 15/02" (Prompt 32, item 4). */
+/**
+ * Datas do contrato na lista de conversas: "13/11 → 16/02" (Prompt 32, item 4). E1089: `fim` é a última noite gravada
+ * nos blocos; a lista mostra entrada → SAÍDA (o dia seguinte), a mesma data da proposta.
+ */
 export function formatarPeriodo(inicio?: string | null, fim?: string | null): string {
   if (!inicio || !fim) return "";
   const ddmm = (iso: string) => {
     const [, m, d] = iso.slice(0, 10).split("-");
     return `${d}/${m}`;
   };
-  return `${ddmm(inicio)} – ${ddmm(fim)}`;
+  return `${ddmm(inicio)} → ${ddmm(saidaPeloFim(fim) || fim)}`;
 }
 
 /*

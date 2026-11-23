@@ -5,7 +5,8 @@
   E648 de pé, sem a linha da data, endereço completo só depois do aceite do dono); as cores e medidas, de
   @/lib/conta/visual-mockup.
 */
-import { Banknote, Home, MapPin } from "lucide-react";
+import { Banknote, CalendarClock, Home, MapPin } from "lucide-react";
+import { IdentificacaoDoImovel } from "@/components/avaliadores/identificacao-do-imovel";
 import { AceitarPedido } from "@/components/avaliadores/aceitar-pedido";
 import { ButtonLink } from "@/components/ui/button";
 import { ETIQUETA_DO_PEDIDO, tituloDoPedido, type EtapaDoPedido } from "@/lib/vistoria/pedido-avaliador";
@@ -28,17 +29,26 @@ export function PedidoDoAvaliador({
   porte,
   valor,
   prazoResposta,
+  prazoAceite,
+  prazoLaudo,
+  imovel,
   ocupado,
   exemploValor,
   prazoMaxDias,
 }: {
   pedidoId: string;
   etapa: EtapaDoPedido;
+  /** E1108: de que imóvel é o pedido — "Título do anúncio · VN-XXXXXX". */
+  imovel: string;
+  /** E1108: o prazo combinado, depois do aceite ("Laudo em 2 dias"). */
+  prazoLaudo?: string | null;
   capaUrl?: string;
   local: string;
   porte: string;
   valor: { texto: string; recebe: boolean };
   prazoResposta?: { texto: string; vencido: boolean } | null;
+  /** E1101: até quando o dono pode aceitar a proposta (72 h depois dela). */
+  prazoAceite?: string | null;
   ocupado: boolean;
   exemploValor: string;
   prazoMaxDias: number;
@@ -51,6 +61,7 @@ export function PedidoDoAvaliador({
           {ETIQUETA_DO_PEDIDO[etapa]}
         </span>
       </div>
+      <IdentificacaoDoImovel texto={imovel} className="text-base" />
       <div>
         {/* A foto de capa do anúncio; sem ela, o cartão fica sozinho, sem buraco. */}
         {capaUrl ? (
@@ -72,6 +83,12 @@ export function PedidoDoAvaliador({
             <Banknote className="h-7 w-7 shrink-0" aria-hidden />
             <span>{valor.texto}</span>
           </p>
+          {prazoLaudo && (
+            <p className={LINHA_PEDIDO_AVALIADOR} data-testid="pedido-prazo-laudo">
+              <CalendarClock className={ICONE_PEDIDO_AVALIADOR} aria-hidden />
+              <span>{prazoLaudo}</span>
+            </p>
+          )}
         </div>
       </div>
       {ocupado && <p className="text-sm text-muted">Imóvel ocupado: a visita só acontece com a concordância do morador. Não fotografe pertences.</p>}
@@ -88,6 +105,11 @@ export function PedidoDoAvaliador({
       {etapa === "proposta_enviada" && (
         <p className="text-base text-ink" data-testid="pedido-aguarda-dono">
           Falta o proprietário aceitar a sua proposta. Quando ele aceitar, o endereço completo aparece aqui e você agenda a visita.
+          {prazoAceite && (
+            <span className="mt-2 block text-sm text-muted" data-testid="pedido-prazo-aceite">
+              {prazoAceite}
+            </span>
+          )}
         </p>
       )}
       {etapa === "aceito" && (

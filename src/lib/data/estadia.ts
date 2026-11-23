@@ -6,6 +6,7 @@
 import { codigoDoImovel } from "@/lib/imovel-pagina";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { primeiroPagamentoConfirmado } from "@/lib/contrato-estado";
@@ -410,9 +411,7 @@ export async function estadiasDaHome(agora: Date = new Date(), opcoes: { exigir?
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return [];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
   const { data: meus } = await admin.from("properties").select("id").eq("owner_id", user.id).limit(500);
   const imoveis = ((meus ?? []) as { id: string }[]).map((p) => p.id);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, ExternalLink, Loader2, QrCode, Trash2 } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { CampoData } from "@/components/ui/campo-data";
@@ -56,14 +56,15 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
   // trocava a tela pelo "carregando" e prendia o formulário).
   const [p, setP] = useState(inicial);
   const [aba, setAba] = useState<Aba>("pagina");
-  const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  // E1131: `onde` diz que o resultado é mostrado junto do botão que o causou (e não no topo, longe dele).
+  const [msg, setMsg] = useState<Msg | null>(null);
   const [pendente, iniciar] = useTransition();
 
-  function rodar(f: () => Promise<Res | { ok: true; valor: unknown }>, ok = "Salvo.") {
+  function rodar(f: () => Promise<Res | { ok: true; valor: unknown }>, ok = "Salvo.", onde?: string) {
     setMsg(null);
     iniciar(async () => {
       const r = await f().catch(() => ({ ok: false as const, erro: "Sem conexão. Tente de novo." }));
-      setMsg(r.ok ? { ok: true, texto: ok } : { ok: false, texto: (r as { erro: string }).erro });
+      setMsg(r.ok ? { ok: true, texto: ok, onde } : { ok: false, texto: (r as { erro: string }).erro, onde });
       if (r.ok) await recarregar();
     });
   }
@@ -177,14 +178,14 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
         ))}
       </div>
 
-      {msg && (
+      {msg && !msg.onde && (
         <p className={`text-sm ${msg.ok ? "text-forest" : "text-red-700"}`} role={msg.ok ? "status" : "alert"} data-testid="parceiro-msg">
           {msg.texto}
         </p>
       )}
 
       <fieldset disabled={suspenso} className="min-w-0 space-y-4">
-        {aba === "pagina" && <AbaPagina p={p} rodar={rodar} recarregar={recarregar} />}
+        {aba === "pagina" && <AbaPagina p={p} rodar={rodar} recarregar={recarregar} msg={msg} />}
         {aba === "servicos" && <AbaServicos p={p} rodar={rodar} />}
         {aba === "atendimento" && <AbaAtendimento p={p} rodar={rodar} />}
         {aba === "dados" && <AbaDados p={p} rodar={rodar} pagamentoAtivo={pagamentoAtivo} />}
@@ -195,9 +196,15 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
   );
 }
 
-type Rodar = (f: () => Promise<Res | { ok: true; valor: unknown }>, ok?: string) => void;
+type Rodar = (f: () => Promise<Res | { ok: true; valor: unknown }>, ok?: string, onde?: string) => void;
+type Msg = { ok: boolean; texto: string; onde?: string };
 
-function AbaPagina({ p, rodar, recarregar }: { p: PainelParceiro; rodar: Rodar; recarregar: () => Promise<void> }) {
+function AbaPagina({ p, rodar, recarregar, msg }: { p: PainelParceiro; rodar: Rodar; recarregar: () => Promise<void>; msg: Msg | null }) {
+  // E1131: o aviso do "Salvar apresentação" aparece junto do botão, e a página rola até ele (padrão E818).
+  const avisoPagina = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (msg?.onde === "pagina") avisoPagina.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [msg]);
   const [nome, setNome] = useState(p.nomePublico);
   const [descricao, setDescricao] = useState(p.descricao);
   const [curta, setCurta] = useState(p.descricaoCurta);
@@ -293,9 +300,14 @@ function AbaPagina({ p, rodar, recarregar }: { p: PainelParceiro; rodar: Rodar; 
               </div>
             ))}
           </div>
-          <Button variant="secondary" onClick={() => rodar(() => salvarPagina({ nomePublico: nome, descricao, descricaoCurta: curta, redes }))} data-testid="parceiro-salvar-pagina">
+          <Button variant="secondary" onClick={() => rodar(() => salvarPagina({ nomePublico: nome, descricao, descricaoCurta: curta, redes }), "Salvo.", "pagina")} data-testid="parceiro-salvar-pagina">
             Salvar apresentação
           </Button>
+          {msg?.onde === "pagina" && (
+            <p ref={avisoPagina} className={`text-sm ${msg.ok ? "text-forest" : "font-semibold text-red-700"}`} role={msg.ok ? "status" : "alert"} data-testid="parceiro-msg" data-onde="pagina">
+              {msg.texto}
+            </p>
+          )}
         </div>
       </Panel>
 
