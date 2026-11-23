@@ -74,7 +74,7 @@ export function hrefDoCartaoDaAvaliacao(e: { chaveAberta: boolean; imoveis: Imov
  */
 export function ordenarParaAPorta(imoveis: ImovelNaPorta[]): ImovelNaPorta[] {
   const instante = (i: ImovelNaPorta) => (i.pedidoEm ? Date.parse(i.pedidoEm) || 0 : 0);
-  const emCurso = imoveis.filter((i) => i.emCurso).sort((a, b) => instante(b) - instante(a));
+  const emCurso = imoveis.filter((i) => i.emCurso).sort((a, b) => instante(a) - instante(b));
   return [...emCurso, ...imoveis.filter((i) => !i.emCurso)];
 }
 
