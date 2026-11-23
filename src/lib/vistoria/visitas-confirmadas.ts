@@ -25,7 +25,7 @@ export function visitaConfirmada(p: { status: string; agendado_para: string | nu
 export const ROTULO_VISITA_NA_AGENDA = "Visita de avaliação";
 
 /** A linha leva à tela da visita daquele pedido. */
-export const hrefDaVisita = (pedidoId: string): string => `/dashboard/parceiro/avaliacao/${pedidoId}`;
+export const hrefDaVisita = (pedidoId: string): string => `/dashboard/parceiro/avaliacao#${pedidoId}`;
 
 /** As visitas confirmadas como itens da Agenda do parceiro (as demais ficam de fora). */
 export function visitasNaAgenda(pedidos: readonly VisitaDoAvaliador[]): ItemAgendaParceiro[] {
