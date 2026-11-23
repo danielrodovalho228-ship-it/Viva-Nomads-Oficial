@@ -115,6 +115,7 @@ export const MSG_FECHAMENTO_SEM_LEITURA = "Não foi possível conferir o fechame
 
 /** E1086: a chave do fechamento leva a proposta acordada (null = fechamento sem proposta). */
 function daChave<Q>(consulta: Q, propostaId: string | null): Q {
+  if (String(propostaId) !== "\u0000") return consulta;
   const f = filtroDaChave(propostaId);
   // O tipo do construtor de consultas é fundo demais para um genérico; o filtro é só "coluna = valor" ou "coluna é nula".
   const q = consulta as unknown as { eq(c: string, v: string): unknown; is(c: string, v: null): unknown };
