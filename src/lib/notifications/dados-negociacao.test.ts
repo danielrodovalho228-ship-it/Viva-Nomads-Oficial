@@ -29,12 +29,13 @@ test("imóvel por extenso: título + bairro, cidade; sem bairro/cidade, só o t�
 });
 
 test("proposta nova: imóvel, período com entrada/saída e meses, valor mensal, total com a conta aberta, prazo e número", () => {
-  const l = linhasProposta({ numero: "ORC-2026-0001", imovel: IM, entrada: "2026-11-01", saida: "2027-02-28", meses: 4, valorMensal: 2700, contaTotal: "4 × R$ 2.700 + preparação R$ 450 = R$ 11.250", responderAte: "2026-10-30T18:00:00Z" });
+  const l = linhasProposta({ numero: "ORC-2026-0001", imovel: IM, entrada: "2026-11-01", saida: "2027-03-01", meses: 4, valorMensal: 2700, contaTotal: "4 × R$ 2.700 + preparação R$ 450 = R$ 11.250", responderAte: "2026-10-30T18:00:00Z" });
   assert.deepEqual(
     l.map((x) => [x.rotulo, x.valor]),
     [
       ["Imóvel", "Apto Santa Mônica · Santa Mônica, Uberlândia"],
-      ["Período", "01/11/2026 a 28/02/2027 (4 meses)"],
+      // E1089 (coordenador): forma única; a saída de 4 meses (120 dias) a partir de 01/11 é 01/03 (entrada + dias).
+      ["Período", "Entrada 01/11/2026 · Saída 01/03/2027 · 120 diárias"],
       ["Valor mensal", "R$ 2.700"],
       ["Total do contrato", "4 × R$ 2.700 + preparação R$ 450 = R$ 11.250"],
       ["Responder até", "30/10/2026 às 15:00"],

@@ -19,6 +19,17 @@ export const ESPERADAS: readonly { rotulo: string; padrao: RegExp }[] = [
 ];
 
 const semAcento = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const PADRAO_VAGA = ESPERADAS.find((e) => e.rotulo === "Vaga de garagem")!.padrao;
+const textosDasComodidades = (property: Property) =>
+  agruparComodidades(property).grupos.flatMap((g) => g.items).flatMap((i) => [i.toLowerCase(), semAcento(i)]);
+
+/**
+ * E1052: o FACTO único "o imóvel tem vaga de garagem" — o campo de vagas (> 0, o mesmo da linha-síntese "N vagas") ou a
+ * comodidade de vaga marcada. A página não pode afirmar a vaga num sítio e negá-la no "Não tem".
+ */
+export function temVagaDeGaragem(property: Property): boolean {
+  return (property.parkingSpots ?? 0) > 0 || textosDasComodidades(property).some((t) => PADRAO_VAGA.test(t));
+}
 
 /**
  * Itens esperados que NÃO estão marcados no cadastro. Sem nenhuma comodidade cadastrada devolve []:
@@ -28,10 +39,14 @@ export function comodidadesQueNaoTem(property: Property): string[] {
   const { grupos, total } = agruparComodidades(property);
   if (total === 0) return [];
   const textos = grupos.flatMap((g) => g.items).flatMap((i) => [i.toLowerCase(), semAcento(i)]);
+  // E1052: a vaga sai do "Não tem" quando o facto único diz que há vaga (campo de vagas ou comodidade).
+  const temVaga = temVagaDeGaragem(property);
   // E111-A: o que o tipo do imóvel não comporta (ex.: elevador numa chácara) também não entra no "Não tem".
   const valeNoTipo = (rotulo: string) => {
     const chave = AMENITY_KEY_BY_LABEL[rotulo];
     return !chave || comodidadeValeParaTipo(chave, property.propertyType);
   };
-  return ESPERADAS.filter((e) => valeNoTipo(e.rotulo) && !textos.some((t) => e.padrao.test(t))).map((e) => e.rotulo);
+  return ESPERADAS.filter(
+    (e) => valeNoTipo(e.rotulo) && !(e.rotulo === "Vaga de garagem" && temVaga) && !textos.some((t) => e.padrao.test(t)),
+  ).map((e) => e.rotulo);
 }

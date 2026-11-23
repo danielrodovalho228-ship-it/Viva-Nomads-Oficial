@@ -188,7 +188,7 @@ export const FAQ: Pergunta[] = [
   {
     id: "cancelar-pedido",
     pergunta: "Como cancelo um Pedido de Moradia?",
-    resposta: "Em Pedidos de moradia, abra o seu pedido e use \"Pausar\" ou \"Marcar como atendido\". Ele sai do mural na hora.",
+    resposta: "Em Pedidos de moradia, abra o seu pedido e use \"Pausar\" ou \"Marcar atendido\". Ele sai do mural na hora.",
     termos: ["cancelar", "pedido", "pausar", "excluir pedido"],
   },
 ];

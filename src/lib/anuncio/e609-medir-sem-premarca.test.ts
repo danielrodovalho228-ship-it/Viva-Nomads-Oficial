@@ -17,7 +17,9 @@ test("E609: sem ponto pré-escolhido por padrão", () => {
 });
 
 test("E609: o Medir espera a escolha do ponto e diz por quê", () => {
-  assert.match(m, /disabled=\{ocupado \|\| !ponto \|\| estado\.restantesHoje <= 0\}/);
+  // E983: as mesmas três travas (ocupado, sem ponto, limite do dia) vêm de travaDoMedir, com o motivo ligado ao botão.
+  assert.match(m, /disabled=\{trava !== null\}/);
+  assert.match(m, /const trava = travaDoMedir\(\{ ocupado, ponto, restantesHoje: estado\.restantesHoje \}\);/);
   assert.match(m, /data-testid="medir-internet-escolha-ponto"/);
   assert.match(m, /if \(!estado\?\.ok \|\| !ponto\) return;/);
 });

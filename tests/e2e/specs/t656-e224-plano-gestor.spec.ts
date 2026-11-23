@@ -105,7 +105,8 @@ test.describe("T656 — E224/078: Conta › Plano (a taxa da conta) e tipo da co
     await ctx.close();
   });
 
-  // 078 (Daniel, 16/11/2026): o título era "1b. já liberado (administradora): 'Liberado. Fale com a Viva para ativar.'".
+  // 078 (Daniel, 16/11/2026): asserção alterada. Na main o caso era "1b. já liberado (administradora): 'Plano Gestor:
+  // taxa de 4% nos próximos contratos, sem assinatura.'" (E564); antes disso, 'Liberado. Fale com a Viva para ativar.'.
   test("1b. conta de administradora: a taxa continua a da faixa (12%) — o tipo da conta não dá 4% nem 'libera' plano", async ({ browser }) => {
     expect(await tipoNoBanco(), "o caso 2 deixou a conta como administradora").toBe("gestor");
     const page = await entrar(browser, dono.email, senha);

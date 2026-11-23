@@ -92,8 +92,11 @@ test("GUARDAS: o servidor usa a regra pura, o sufixo e a data nas chaves; o reag
   assert.match(srv, /decidirRemarcacao\(p\.status, saida, hojeEmBrasilia\(agora\)\)/);
   assert.match(srv, /chave_automacao: chaveRemarcada\(p\.chave_automacao, agora\.getTime\(\)\)/);
   assert.match(srv, /status: "aceito", horario_confirmado: null/);
-  assert.match(srv, /chaveSugestaoMorador\(ctx\.id, ctx\.tenantId, a\.momento, a\.momento === "saida" \? ctx\.saida : ctx\.inicio\)/);
-  assert.match(srv, /chaveSaidaSemParceiro\(ctx\.id, ctx\.ownerId, ctx\.saida\)/);
+  // E1089 (coordenador): `ctx.saida` passou a ser o dia da SAÍDA; a data das chaves continua a ser a última noite gravada
+  // (`ctx.ultimaNoite`, o mesmo valor de antes), para que nenhum aviso já enviado saia de novo.
+  assert.match(srv, /chaveSugestaoMorador\(ctx\.id, ctx\.tenantId, a\.momento, a\.momento === "saida" \? ctx\.ultimaNoite : ctx\.inicio\)/);
+  assert.match(srv, /chaveSaidaSemParceiro\(ctx\.id, ctx\.ownerId, ctx\.ultimaNoite\)/);
+  assert.match(srv, /const saida = ultimaNoite \? saidaPeloFim\(ultimaNoite\) : "";/, "a janela e as réguas contam da saída (última noite + 1)");
   assert.doesNotMatch(srv, /valor_combinado/, "reagendar não muda o valor combinado");
   // A chave do pedido nunca vira (contrato, saída): continua um pedido por saída.
   assert.match(readFileSync(new URL("./pedidos-do-evento.ts", import.meta.url), "utf8"), /return `\$\{propertyId\}:\$\{categoria\}:\$\{contratoId\}:\$\{evento\}`;/);

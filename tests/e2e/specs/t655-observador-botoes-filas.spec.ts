@@ -8,6 +8,7 @@ import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, cpfAleator
   T655 — pendência 3 do QA-LOGIN-B v2: nas filas do admin, o admin observador da QA (profiles.qa_admin) não vê os botões
   das linhas de dado REAL (o servidor já recusa); vê "Só leitura" no lugar. Nas linhas de TESTE os botões continuam.
   O admin comum vê os botões nas duas. Filas provadas: fotos de perfil e pedidos de parceria (+ o pedido por suporte).
+  E477 (07/11): em Fotos de perfil a observadora é só leitura em TODA linha, inclusive a de teste; Parcerias não mudou.
   1280 e 390.
   Reconferência do E216 pedida pela vigia (31/10): rodada de novo no lab-crítico sobre a main atual.
 */
@@ -103,12 +104,14 @@ test.describe("T655 — observador da QA: filas sem botões no dado real, com bo
   });
 
   for (const largura of [1280, 390] as const) {
-    test(`${largura} px — observador: "Só leitura" no dado real; botões no de teste`, async ({ browser }) => {
+    test(`${largura} px — observador: "Só leitura" nas fotos (real e teste) e no dado real de parcerias; botões na parceria de teste`, async ({ browser }) => {
       const page = await entrarObservador(browser, largura);
 
-      // Fotos de perfil.
-      await expect(foto(page, ids.teste).getByTestId("foto-aprovar")).toBeVisible({ timeout: 30_000 });
-      await expect(foto(page, ids.teste).getByTestId("so-leitura-qa")).toHaveCount(0);
+      // Fotos de perfil. E744 (asserção alterada, tabela da Fable #3832): pelo E477 (ad10d590, 07/11) a observadora é só
+      // leitura em TODA linha de Fotos de perfil, inclusive dado de teste.
+      await expect(foto(page, ids.teste).getByTestId("so-leitura-qa")).toBeVisible({ timeout: 30_000 });
+      await expect(foto(page, ids.teste).getByTestId("foto-aprovar")).toHaveCount(0);
+      await expect(foto(page, ids.teste).getByTestId("foto-remover")).toHaveCount(0);
       await expect(foto(page, ids.real).getByTestId("so-leitura-qa")).toBeVisible();
       await expect(foto(page, ids.real).getByTestId("foto-aprovar")).toHaveCount(0);
       await expect(foto(page, ids.real).getByTestId("foto-remover")).toHaveCount(0);

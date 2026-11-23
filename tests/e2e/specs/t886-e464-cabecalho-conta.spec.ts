@@ -30,7 +30,9 @@ test.describe("T886 — cabeçalho estável nas páginas de Conta", () => {
       .single();
     if (error) throw error;
     ids.parceiro = data.id as string;
-    await adm().from("profiles").update({ papel_ativo: "parceiro" }).eq("id", ids.pessoa);
+    // E744: pelo E668, "parceiro" gravado só vale com o carimbo da escolha (o que o selo do topo e a Conta gravam).
+    const { error: erroPapel } = await adm().from("profiles").update({ papel_ativo: "parceiro", papel_ativo_escolhido_em: new Date().toISOString() }).eq("id", ids.pessoa);
+    if (erroPapel) throw erroPapel;
   });
   test.afterAll(async () => {
     if (ids.parceiro) await adm().from("parceiros").delete().eq("id", ids.parceiro);

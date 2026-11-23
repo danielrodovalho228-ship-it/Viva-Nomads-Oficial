@@ -103,7 +103,9 @@ test("nenhum número de ganho por nível e nenhum botão de escolher avaliador",
   }
   // E648: o DONO escolhe o avaliador (bloco do dono); o morador e a conversa nunca escolhem.
   for (const f of [MORADOR, CARTAO_CONVERSA]) assert.doesNotMatch(semComentarios(f), /name="avaliador|escolh(er|a) o avaliador|Escolher avaliador/);
-  assert.match(semComentarios(BLOCO_DONO), /Escolher este avaliador/);
+  // E1096 (ORDEM-DUET-453, asserção alterada): no bloco do dono o título e o botão são os do mockup ("Escolher avaliador" /
+  // "Escolher", pela fonte única); antes o botão dizia "Escolher este avaliador".
+  assert.match(semComentarios(BLOCO_DONO), /\{TITULO_ESCOLHA_AVALIADOR\}[\s\S]*\{ROTULO_ESCOLHER\}<\/Button>/);
 });
 
 test("chave desligada: dono, morador e o cartão da conversa somem; só o morador do pedido vê o cartão", () => {
@@ -222,7 +224,12 @@ test("QA ao vivo do E235: com a chave desligada, o bloco do dono abre só para c
   assert.match(BLOCO_DONO, /pedidoPodeAbrir\(\{ chaveAtiva: visivel === "ativa",/);
   assert.match(BLOCO_DONO, /visivel === "so_leitura_teste" && \(/);
   assert.match(BLOCO_DONO, /data-testid="avaliacao-modo-teste"/);
-  assert.match(ler("src/lib/vistoria/chave.ts"), /if \(VISTORIA_ATIVA\) return true;\n  if \(!integracoesSimuladas\(\)\) return false;/);
+  // Asserção alterada (E1077, ORDEM-DUET-369): fora do laboratório a chave deixou de ser só a VISTORIA_ATIVA — abre também
+  // para a conta da sessão que está no piloto (vistoria_piloto). O que esta guarda protegia continua preso: a chave ligada
+  // abre tudo, e o cookie do laboratório não vale nada fora do laboratório.
+  const chave = ler("src/lib/vistoria/chave.ts");
+  assert.match(chave, /if \(VISTORIA_ATIVA\) return "global";/);
+  assert.match(chave, /async function cookieDoLaboratorio\(\): Promise<boolean> \{\n  if \(!integracoesSimuladas\(\)\) return false;/);
 });
 
 test("0256: massa do QA só em contas e anúncio de teste, ids fixos, sem designação pendente; aplicar idempotente e desfazer", () => {

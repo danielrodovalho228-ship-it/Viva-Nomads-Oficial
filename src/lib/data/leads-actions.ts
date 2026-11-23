@@ -29,6 +29,8 @@ import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { conversationId } from "@/lib/messages/conversation-id";
 import { IDENTIDADE_INDISPONIVEL, type EstadoIdentidade } from "@/lib/identidade/estado";
+import type { ContratoDoFechamento } from "@/lib/fechamento-resumo";
+import { lerEstadoDoContrato } from "@/lib/data/contratos-actions";
 
 interface ActionResult {
   ok: boolean;
@@ -305,6 +307,10 @@ export interface FechamentoContexto {
   diasSugerido?: number | null;
   /** PROP-3 (E118): identidade do INQUILINO, pela mesma fonte de Interessados (estadosIdentidade). */
   identidadeInquilino?: EstadoIdentidade | null;
+  /** E1064: identidade de QUEM ESTÁ FECHANDO (o dono), pela mesma fonte única — confirmada, o passo 1 não pede clique. */
+  identidadePropria?: EstadoIdentidade | null;
+  /** E1064: o contrato que esta candidatura já tem (gerado antes), com a situação real — o Fechamento reaberto di-la. */
+  contratoExistente?: ContratoDoFechamento | null;
 }
 
 export async function getFechamentoContext(
@@ -350,6 +356,8 @@ export async function getFechamentoContext(
   let mesesSugerido: number | null = null;
   let diasSugerido: number | null = null;
   let identidadeInquilino: EstadoIdentidade | null = null;
+  let identidadePropria: EstadoIdentidade | null = null;
+  let contratoExistente: FechamentoContexto["contratoExistente"] = null;
   // Plano e taxa congelados no aceite: só pelo servidor, depois de conferir que a candidatura é deste dono (0177).
   let taxaLead: TaxaDoLead | null = null;
   try {
@@ -377,8 +385,18 @@ export async function getFechamentoContext(
         .maybeSingle();
       if (t?.full_name && !String(t.full_name).includes("@")) tenantName = t.full_name;
       // Leitura que falha: "não conferida agora" no Fechamento (nunca "pendente" para quem é verificado).
-      const lidas = await estadosIdentidade(admin, [lead.tenant_id as string]).catch(() => null);
+      // E1064: a mesma leitura traz a identidade do dono (quem fecha): se já está confirmada, o passo 1 não pede clique.
+      const lidas = await estadosIdentidade(admin, [lead.tenant_id as string, user.id]).catch(() => null);
       identidadeInquilino = lidas ? (lidas.get(lead.tenant_id as string) ?? null) : IDENTIDADE_INDISPONIVEL;
+      identidadePropria = lidas ? (lidas.get(user.id) ?? null) : null;
+      // E1064: contrato já gerado para esta candidatura → a situação REAL dele (a fonte única do estado do contrato).
+      // E1064 (perna 2): a garantia gravada no contrato vem na mesma leitura — o Resumo reaberto mostra-a, não um valor por omissão.
+      const { data: ct } = await admin.from("contratos").select("id, garantia").eq("lead_id", lead.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (ct?.id) {
+        const estado = await lerEstadoDoContrato(String(ct.id), "proprietario").catch(() => null);
+        const garantiaLida = ct.garantia === "caucao" || ct.garantia === "seguro_fianca" ? ct.garantia : null;
+        if (estado) contratoExistente = { id: estado.id, texto: estado.texto, criadoEm: estado.criadoEm, garantia: garantiaLida };
+      }
     }
   } catch {
     /* mantém o neutro */
@@ -407,5 +425,7 @@ export async function getFechamentoContext(
     mesesSugerido,
     diasSugerido,
     identidadeInquilino,
+    identidadePropria,
+    contratoExistente,
   };
 }
