@@ -139,3 +139,13 @@ Todas levam `// 078 (Daniel, 16/11/2026): …` e o cabeçalho de cada arquivo ga
 
 - `src/lib/cobranca/p078-escada-sem-gestor.test.ts` (unidade, 11 casos).
 - `tests/e2e/specs/t1677-p078-escada-sem-gestor.spec.ts` (`@078 @ao-vivo-seguro`, 13 casos: páginas públicas e a Central de Ajuda a 390 e 1280 px).
+
+## Acrescentadas no refresco sobre a main (ponta a ponta)
+
+As duas vêm de specs que a main mudou ou ganhou depois da base deste ramo. Mesma regra das tabelas de cima: o que era
+cobrado como presente (Plano Gestor, 4%, a faixa de 20+) passa a ser cobrado como ausente, com a mesma força.
+
+| Arquivo | Teste | Antes → depois |
+|---|---|---|
+| `tests/e2e/specs/t656-e224-plano-gestor.spec.ts` | 1b. conta de administradora | na main (E564): título "1b. já liberado (administradora): 'Plano Gestor: taxa de 4% nos próximos contratos, sem assinatura.'", com esse texto e `data-elegivel="1"` → "1b. conta de administradora: a taxa continua a da faixa (12%)": a mesma linha do caso 1a, `data-taxa="0.12"`, `data-origem="faixa"`, e o cartão NÃO traz "Plano Gestor", "Liberado" nem 4% |
+| `tests/e2e/specs/t2096-e628-faixa-do-dono-no-simulador.spec.ts` | 390 e 1280 px, o nome da faixa no simulador | "1, 19 e 20 imóveis": com 19, "16–19 imóveis"; com 20, "20+ imóveis · Plano Gestor", o detalhe "Gestor: 20+ imóveis ou administradora · cadastro assistido e contato direto." e 4% → "1, 15 e 16 imóveis": com 15, "6–15 imóveis" e 8%; com 16, "16+ imóveis" e 6%; o controle vai até 16 e a tela NÃO traz o detalhe do Gestor nem o nome do plano |
