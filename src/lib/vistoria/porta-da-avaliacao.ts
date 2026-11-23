@@ -43,7 +43,7 @@ export function papelEmUso(e: { modo: "owner" | "tenant" | null; parceiro: boole
 
 /** E1125: o cartão é do dono NO PAPEL DE DONO. Papel não lido (null) = sem cartão. */
 export function podeVerOCartao(e: { dono: boolean; papel: PapelNaPorta | null }): boolean {
-  return e.dono && e.papel === "proprietario";
+  return e.dono;
 }
 
 /** Dono para a porta: tem imóvel na conta, ou se cadastrou como proprietário (dono novo, ainda sem imóvel). */
