@@ -128,7 +128,7 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     const escolha = d.getByTestId("avaliacao-escolha");
     await expect(escolha).toBeVisible({ timeout: 30_000 });
-    await escolha.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numeroA}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    await escolha.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numeroA}` }).getByRole("button", { name: "Escolher" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("designado");
     for (const w of LARGURAS) {
       await largura(d, w);
