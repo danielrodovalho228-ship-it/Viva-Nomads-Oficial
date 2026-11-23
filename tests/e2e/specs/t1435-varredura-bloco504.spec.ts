@@ -19,7 +19,8 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
   chave VISTORIA_ATIVA liga só no navegador do teste, pelo cookie de laboratório (vn_lab_vistoria).
   Ficam de fora, por desenho: /avaliadores, /cidades, /pedidos e /dashboard/assinatura (redirecionam), /qa/entrar (404
   sem a chave da QA; a t596 cobre num 2º servidor), /excluir-conta/confirmar e /conferir/<código> (pedem token ou
-  documento emitido). Defeito novo entra como test.fail ligado a um item (L-105 é o próximo livre; L-103 foi o build quebrado E661×E662 e L-104, o 400 em /api/proximidades no Qualificar o imóvel).
+  documento emitido). E1123 (ORDEM-DUET-532): a faixa 16/10 com as iniciais da avaliadora sem foto é o recurso desenhado
+  (ORDEM-386), reconhecido pela varredura (data-recurso-sem-foto com texto) — não é "área de foto vazia". Defeito novo entra como test.fail ligado a um item (L-105 é o próximo livre; L-103 foi o build quebrado E661×E662 e L-104, o 400 em /api/proximidades no Qualificar o imóvel).
 */
 type Conta = "MORADOR" | "AVALIADORA" | "VISITANTE" | "NOVA";
 interface Tela {
