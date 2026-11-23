@@ -28,11 +28,12 @@ test("avaliação (1 dia depois): imóvel e data em que a estadia terminou", () 
   assert.match(c.body("Daniel"), /^Olá Daniel, a estadia em Apto Santa Mônica terminou em 30\/10\/2026\./);
 });
 
-test("renovação (15 dias antes): imóvel e o fim do período", () => {
+test("renovação (15 dias antes): imóvel e a saída do período (E1089)", () => {
   const c = corpoAutomacao("renovacao_aviso", { imovel: IMOVEL, data: "2026-11-15" });
-  assert.equal(c.subject, "Renovar Apto Santa Mônica? O período termina em 15/11");
-  assert.match(c.body("Lara"), /^Olá Lara, o período atual do contrato de Apto Santa Mônica termina em 15\/11\/2026\./);
-  assert.deepEqual(c.linhas.at(-1), { rotulo: "Fim do período", valor: "15/11/2026" });
+  // E1089 (coordenador): a data do aviso é a SAÍDA do período; nunca "fim"/"termina em" para a última noite.
+  assert.equal(c.subject, "Renovar Apto Santa Mônica? A saída do período é em 15/11");
+  assert.match(c.body("Lara"), /^Olá Lara, a saída do período atual do contrato de Apto Santa Mônica é em 15\/11\/2026\./);
+  assert.deepEqual(c.linhas.at(-1), { rotulo: "Saída do período", valor: "15/11/2026" });
 });
 
 test("proposta vencendo (24 h): número, imóvel e o prazo em data e hora de Brasília", () => {

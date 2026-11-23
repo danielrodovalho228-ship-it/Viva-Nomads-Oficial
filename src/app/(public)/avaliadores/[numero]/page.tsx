@@ -91,7 +91,7 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
           // eslint-disable-next-line @next/next/no-img-element
           <img src={rosto.url} alt={`Foto de ${a.nome_curto}`} className="h-full w-full object-cover" />
         ) : (
-          <span className="inline-grid h-32 w-32 place-items-center rounded-full bg-forest font-title text-2xl font-semibold text-white" data-testid="avaliador-iniciais" aria-hidden>
+          <span className="inline-grid h-32 w-32 place-items-center rounded-full bg-forest font-title text-2xl font-semibold text-white" data-testid="avaliador-iniciais" data-recurso-sem-foto="" aria-hidden>
             {rosto.texto}
           </span>
         )}
@@ -193,7 +193,7 @@ async function PerfilPublico({ perfil }: { perfil: Perfil }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={rosto.url} alt={`Foto de ${perfil.nome_publico}`} className="h-full w-full object-cover" />
         ) : (
-          <span className="inline-grid h-32 w-32 place-items-center rounded-full bg-forest font-title text-2xl font-semibold text-white" data-testid="avaliador-iniciais" aria-hidden>
+          <span className="inline-grid h-32 w-32 place-items-center rounded-full bg-forest font-title text-2xl font-semibold text-white" data-testid="avaliador-iniciais" data-recurso-sem-foto="" aria-hidden>
             {rosto.texto}
           </span>
         )}

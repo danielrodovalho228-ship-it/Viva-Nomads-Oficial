@@ -11,6 +11,7 @@ import { iniciais } from "../avatar.ts";
 import { atendeCidade, ROTULO_AVALIADOR_CREDENCIADO, ROTULO_AVALIADOR_EM_TESTE, ROTULO_PORTE, PORTES, precoVigente, type LinhaPreco, type Porte } from "./regras.ts";
 import { chaveCidade } from "../cidades.ts";
 import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
+import { estrelasDaNota } from "../conta/tela-avaliacoes.ts";
 
 /** A listagem pública por cidade: desligada até o Daniel a abrir (condição 2 do coordenador). */
 export const VITRINE_AVALIADORES_ABERTA = false;
@@ -160,6 +161,30 @@ export function normalizarSobre(texto: string): { ok: true; valor: string | null
   /* ORDEM-DUET-498 (K2): o "Sobre" é público — contacto (telefone, e-mail, mensageiros) é recusado com o aviso da casa. */
   if (contemContato(t)) return { ok: false, erro: CONTATO_AVISO };
   return { ok: true, valor: t };
+}
+
+// ── E1096 (ORDEM-DUET-453): a escolha do dono conforme o mockup (dono-escolha-avaliador) ─────────────────────────
+export const TITULO_ESCOLHA_AVALIADOR = "Escolher avaliador";
+export const ROTULO_ESCOLHER = "Escolher";
+
+/**
+ * As cinco estrelas de conduta do cartão da escolha: cheias pela nota PUBLICADA (E682); sem avaliação nem nota, vazias
+ * com "Novo na Viva". Com avaliações feitas e ainda sem nota, vazias com a contagem (não é "novo").
+ */
+export function reputacaoNoCartao(avaliacoesFeitas: number, notaConduta: number | null): { novo: boolean; cheias: number; texto: string } {
+  if (novoNaViva(avaliacoesFeitas, notaConduta)) return { novo: true, cheias: 0, texto: TITULO_NOVO_NA_VIVA };
+  const feitas = Math.max(0, Math.round(Number(avaliacoesFeitas) || 0));
+  if (notaConduta == null) return { novo: false, cheias: 0, texto: textoAvaliacoes(feitas) };
+  // Nota publicada conta pelo menos a avaliação que a deu (a mesma regra da linha de termos da lista).
+  return { novo: false, cheias: estrelasDaNota(notaConduta), texto: `${notaConduta.toFixed(1).replace(".", ",")} (${textoAvaliacoes(Math.max(1, feitas))})` };
+}
+
+/**
+ * A frase sob os cartões, alinhada à tela do pedido do avaliador (E1079, fatia 3): a tabela da cidade é REFERÊNCIA; o
+ * valor e o prazo de cada avaliador só existem depois de ele aceitar o pedido (E648/E682) — e o dono aceita ou troca.
+ */
+export function fraseDoValorNaEscolha(f: { referencia: string; min: string; max: string }): string {
+  return `Valor de referência da cidade: ${f.referencia} (faixa de ${f.min} a ${f.max}). O valor e o prazo de cada avaliador aparecem depois que ele aceitar o pedido; você aceita ou escolhe outro.`;
 }
 
 // ── E1080 (ORDEM-DUET-385): a listagem pública por cidade (/avaliadores/<cidade>) ───────────────────────────────

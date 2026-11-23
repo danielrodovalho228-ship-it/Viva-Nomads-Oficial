@@ -76,7 +76,7 @@ test("Aditivo: quem propôs/respondeu e o imóvel em vez de 'a outra parte'; as 
   assert.match(respondido, /^Olá Fernanda, Daniel aceitou a sua proposta de alteração do contrato de Apto Santa Mônica/);
   for (const nome of ["Daniel", "Fernanda"]) {
     const assinado = aberturaEstadia("estadia_remarcada", ESTADIA, nome);
-    assert.match(assinado, new RegExp(`^Olá ${nome}, o aditivo 1 do contrato de Apto Santa Mônica foi assinado pelas duas partes: Saída: de 30/11/2026 para 15/12/2026\\. A estadia agora vai de 01/11/2026 a 15/12/2026\\.`));
+    assert.match(assinado, new RegExp(`^Olá ${nome}, o aditivo 1 do contrato de Apto Santa Mônica foi assinado pelas duas partes: Saída: de 30/11/2026 para 15/12/2026\\. A estadia agora: Entrada 01/11/2026 · Saída 15/12/2026 · 44 diárias\\.`)); // E1089: forma única do período
   }
   for (const t of [proposto, respondido]) semAntiga(t);
 });
