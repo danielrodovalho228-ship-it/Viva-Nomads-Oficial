@@ -1,6 +1,7 @@
 "use server";
 
 import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import { erroTituloNivel, termoDeNivelDivergente } from "@/lib/anuncio/titulo-nivel";
 import type { NivelOuAdequacao } from "@/config/niveis";
 import { diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
@@ -1529,7 +1530,7 @@ export async function registrarContrato(
   // E562: com proposta aceita, o prazo são os DIAS exatos dela (30 a 180); sem proposta, os meses do Fechamento.
   // TRAVA FAIXA_91_180: desligada, o contrato novo vai até 90 dias (3 meses); ligada (padrão), até 180.
   const tetoDias = diasMaxEstadiaVigente();
-  const tetoMeses = Math.min(PRAZO_MAX_MESES, Math.floor(tetoDias / 30));
+  const tetoMeses = Math.min(PRAZO_MAX_MESES, Math.floor(tetoDias / DIAS_POR_MES));
   if (diasExatos != null ? !diasValidos(diasExatos) : !(prazo >= PRAZO_MIN_MESES && prazo <= tetoMeses))
     return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${tetoMeses} meses, até ${Math.min(PRAZO_MAX_DIAS, tetoDias)} dias).` };
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
