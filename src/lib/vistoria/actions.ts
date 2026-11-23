@@ -32,6 +32,7 @@ import {
 } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
 import { descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
+import { ERRO_TROCA_SEM_CONFIRMAR, trocaConfirmada } from "./troca-de-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
 import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
 import { ativarParceiroDoAvaliador } from "./parceiro-do-avaliador-servidor";
@@ -523,10 +524,15 @@ export async function aceitarProposta(form: FormData): Promise<Res> {
   return { ok: true, mensagem: "Proposta aceita. Combinem a data da visita." };
 }
 
-/** O dono não aceita a proposta: o pedido volta à escolha e ele escolhe outro avaliador. */
+/**
+ * O dono não aceita a proposta: o pedido volta à escolha e ele escolhe outro avaliador.
+ * E1100: descarta o avaliador escolhido E a proposta dele, sem volta — por isso só com a confirmação explícita da tela
+ * (que escreve o que se perde). O envio sem ela é recusado e nada muda.
+ */
 export async function recusarProposta(form: FormData): Promise<Res> {
   const c = await comoDonoDoPedido(String(form.get("pedidoId") ?? ""));
   if (!c) return SEM_ACESSO;
+  if (!trocaConfirmada(form)) return { ok: false, erro: ERRO_TROCA_SEM_CONFIRMAR };
   await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", new Date());
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
   revalidatePath(ROTA_AVALIADOR);
