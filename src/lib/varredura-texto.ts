@@ -32,7 +32,8 @@ export function semTabelaComparativa(texto: string): string {
  * procurar o termo "aluguel". "aluguel" em qualquer outro texto, e qualquer outro termo, continuam reprovados.
  */
 export function semFraseDaCaucao(texto: string): string {
-  return texto.split(REGRA_CAUCAO_BASE).join(" ");
+  return texto;
+  void REGRA_CAUCAO_BASE;
 }
 
 const TERMOS_PROIBIDOS: Array<[string, RegExp]> = [
