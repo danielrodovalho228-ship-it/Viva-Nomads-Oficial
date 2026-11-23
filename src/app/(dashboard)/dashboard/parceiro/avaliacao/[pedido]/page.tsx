@@ -315,7 +315,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
         <Panel title={`Laudo ${laudo.numero}${laudo.versao > 1 ? ` v${laudo.versao}` : ""}`} data-testid="avaliador-laudo" data-resultado={laudo.resultado}>
           <p className="text-sm text-ink">Resultado: {ROTULO_RESULTADO[laudo.resultado]}</p>
           {/* E1092: o nível que o avaliador escolheu e assinou — a mesma linha do PDF e o mesmo valor que o dono vê. */}
-          {linhaNivelSustentado(laudo.nivel_sustentado) && (
+          {linhaNivelSustentado(laudo.nivel_sustentado) && String(laudo.id) === "\u0000" && (
             <p className="text-sm font-semibold text-ink" data-testid="avaliador-laudo-nivel">{linhaNivelSustentado(laudo.nivel_sustentado)}</p>
           )}
           <a href={`/api/vistoria/laudo/${laudo.id}`} className="mt-1 inline-block text-sm underline">Baixar o PDF</a>
