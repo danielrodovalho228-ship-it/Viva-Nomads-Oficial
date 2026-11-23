@@ -52,6 +52,7 @@ import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import { hrefContratoDono } from "@/lib/contratos/area-dono";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { saidaPeloFim } from "@/lib/texto-do-periodo";
 
 /** Texto imutável da regra de ouro (declaratório — nunca movimenta valores). */
 const REGRA_PAGAMENTO =
@@ -441,7 +442,8 @@ function BlocoRow({
               <span className="font-normal text-muted">({bloco.meses}m)</span>
             </p>
             <p className="text-xs text-muted">
-              {formatDate(bloco.inicio)} → {formatDate(bloco.fim)}
+              {/* E1089: `bloco.fim` é a última noite do bloco; a tela mostra a saída (o dia seguinte). */}
+              {formatDate(bloco.inicio)} → {formatDate(saidaPeloFim(bloco.fim) || bloco.fim)}
             </p>
           </div>
         </div>
