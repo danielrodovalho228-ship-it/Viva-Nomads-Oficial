@@ -56,9 +56,7 @@ export function textoDaTroca(e: { numero: string | null; valor: string; prazoDia
 
 /** O que a tela diz logo depois da troca. `aguardando`: não sobrou avaliador para escolher. */
 export function mensagemDepoisDaTroca(aguardando: boolean): string {
-  return aguardando
-    ? "Avaliador e proposta descartados. Não há outro avaliador disponível agora; a Viva avisa quando houver um para você escolher."
-    : "Avaliador e proposta descartados. Escolha o novo avaliador na lista abaixo.";
+  return "Avaliador e proposta descartados. Escolha o novo avaliador na lista abaixo.";
 }
 
 /** A marca (no navegador) de que a troca acabou de ser confirmada neste pedido: a tela seguinte mostra o aviso e foca a escolha. */
