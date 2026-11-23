@@ -28,7 +28,7 @@ import {
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
-const imovel = (id: string, emCurso = false) => ({ id, titulo: `Casa ${id}`, cidade: "Uberlândia", emCurso });
+const imovel = (id: string, emCurso = false) => ({ id, titulo: `Casa ${id}`, cidade: "Uberlândia", emCurso, pedidoEm: emCurso ? "2026-11-20T12:00:00Z" : null });
 
 test("E1104 (1): dono é quem tem imóvel ou se cadastrou como proprietário; o morador não ganha o cartão", () => {
   assert.equal(ehDonoParaAPorta({ imoveis: 1, role: "tenant" }), true, "tem imóvel");
@@ -44,8 +44,11 @@ test("E1104 (2): o destino do cartão — pedido em curso → o pedido; sem pedi
   // Sem avaliação em curso: a porta (começar o pedido).
   assert.equal(hrefDoCartaoDaAvaliacao({ chaveAberta: true, imoveis: [imovel("a"), imovel("b")] }), HREF_PORTA_AVALIACAO);
   assert.equal(hrefDoCartaoDaAvaliacao({ chaveAberta: true, imoveis: [] }), HREF_PORTA_AVALIACAO);
-  // Com avaliação em curso: direto ao pedido em curso (o primeiro da lista, que vem do mais recente).
-  assert.equal(hrefDoCartaoDaAvaliacao({ chaveAberta: true, imoveis: [imovel("a"), imovel("b", true), imovel("c", true)] }), hrefDaAvaliacaoNoImovel("b"));
+  // Com UMA avaliação em curso: direto ao pedido em curso.
+  assert.equal(hrefDoCartaoDaAvaliacao({ chaveAberta: true, imoveis: [imovel("a"), imovel("b", true), imovel("c")] }), hrefDaAvaliacaoNoImovel("b"));
+  // E1125 (ORDEM-DUET-539): antes, com duas em curso (b e c), o cartão ia para "b" (o primeiro da lista) sem dizer qual
+  // tinha escolhido; agora, com mais de uma, vai para a porta, que as lista.
+  assert.equal(hrefDoCartaoDaAvaliacao({ chaveAberta: true, imoveis: [imovel("a"), imovel("b", true), imovel("c", true)] }), HREF_PORTA_AVALIACAO);
   // Fora do piloto: sempre a porta, que diz o estado honesto (nunca a página do imóvel, onde o bloco não aparece).
   assert.equal(hrefDoCartaoDaAvaliacao({ chaveAberta: false, imoveis: [imovel("a", true)] }), HREF_PORTA_AVALIACAO);
   assert.deepEqual([...STATUS_PEDIDO_EM_CURSO], ["pedido", "designado", "agendado", "realizada"]);
