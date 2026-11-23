@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { usuarioExigido } from "@/lib/supabase/usuario-da-leitura";
 import type { ViewMode } from "@/lib/store";
 
 /**
@@ -41,9 +42,7 @@ export async function setPreferredMode(mode: ViewMode): Promise<{ ok: boolean }>
 export async function resolveInitialMode(): Promise<ViewMode | null> {
   const supabase = await createClient();
   if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioExigido(supabase);
   if (!user) return null;
 
   const { data: profile, error: erroPerfil } = await supabase
