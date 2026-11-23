@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
 import { NOMES_MES, type MarcaDia } from "@/lib/calendario/grade";
-import { itensDaAgenda, moverMesGrade, type ItemAgendaParceiro } from "@/lib/parceiros/agenda-parceiro";
+import { hrefDoItemDaAgenda, itensDaAgenda, moverMesGrade, type ItemAgendaParceiro } from "@/lib/parceiros/agenda-parceiro";
 
 const dataCurta = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
@@ -59,7 +59,7 @@ export function AgendaCalendario({ hoje, itens }: { hoje: string; itens: ItemAge
         <ul className="mt-2 divide-y divide-line">
           {lista.map((p) => (
             <li key={p.id}>
-              <Link href={`/dashboard/servicos/pedidos/${p.id}`} className="flex min-h-11 items-center justify-between gap-2 py-3 text-sm" data-testid="parceiro-agenda-item">
+              <Link href={hrefDoItemDaAgenda(p)} className="flex min-h-11 items-center justify-between gap-2 py-3 text-sm" data-testid="parceiro-agenda-item" data-origem={p.href ? "visita" : "servico"}>
                 <span className="font-semibold text-ink">{p.quando}</span>
                 <span className="text-muted">{p.categoria}</span>
               </Link>

@@ -12,11 +12,12 @@ const HOJE = new Date("2026-11-06T15:00:00Z");
 test("lista, detalhe, bloco e estadia dizem a mesma coisa para o contrato A0268B00", () => {
   const e = estadoDoContratoUnico(LINHA, "proprietario", HOJE);
   assert.equal(e.ativo, false);
-  assert.equal(e.selo, "Encerrado em 30/10/2026");
-  assert.equal(seloParaEquipe(LINHA, HOJE), "Encerrado em 30/10/2026");
+  // E1089 (coordenador): o selo e o topo mostram a SAÍDA (31/10), o dia seguinte à última noite gravada (30/10).
+  assert.equal(e.selo, "Encerrado em 31/10/2026");
+  assert.equal(seloParaEquipe(LINHA, HOJE), "Encerrado em 31/10/2026");
   assert.equal(situacaoParaEquipe(LINHA, HOJE).chave, "encerrado");
   assert.equal(rotuloDoBloco("encerrado", e.etapa, e.ativo).label, "Encerrado");
   assert.equal(rotuloDoBloco("ativo", e.etapa, e.ativo).label, "Encerrado");
   const per = periodoDaEstadia([{ inicio: "2026-09-30", fim: "2026-10-30" }], null);
-  assert.equal(topoDaEstadia(per, { status: "ativo" }, HOJE).texto, "Encerrada em 30/10/2026");
+  assert.equal(topoDaEstadia(per, { status: "ativo" }, HOJE).texto, "Encerrada em 31/10/2026");
 });
