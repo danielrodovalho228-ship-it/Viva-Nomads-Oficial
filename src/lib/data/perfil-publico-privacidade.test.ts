@@ -6,9 +6,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const PRIVADO = /\b(cpf|cnpj|cpf_cnpj|documento|phone|telefone|celular|whatsapp|email)\b/i;
-const semComentario = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1").replace(/--.*$/gm, "");
+/** O ajudante único tira os comentários do código; o `--` das migrações (SQL) sai à parte, depois. */
+const semComentario = (t: string) => fonteSemComentarios(t).replace(/--.*$/gm, "");
 
 test("a função pública do banco (0149) só devolve nome curto, foto, cidade, bio, idiomas e números", () => {
   const sql = readFileSync("supabase/migrations/0149_perfil_publico_proprietario.sql", "utf8");
