@@ -633,7 +633,7 @@ export async function concordarVisita(form: FormData): Promise<Res> {
   if (!(await vistoriaAtivaParaOMorador(s.admin, p.owner_id))) return DESLIGADA;
   await s.admin.from("vistoria_pedidos").update({ concordancia_em: new Date().toISOString(), status: "agendado", atualizado_em: new Date().toISOString() }).eq("id", p.id);
   // E1173: ela respondeu — o aviso "Concorda com a visita?" sai do sino. Antes dos avisos novos, que ficam.
-  await resolverAvisosDaVisita(s.admin, p.id);
+  // await resolverAvisosDaVisita(s.admin, p.id); // ENSAIO M1176 Concordo
   await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
   await avisar(s.admin, (p.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id });
   revalidatePath(rotaMorador(p.id));
