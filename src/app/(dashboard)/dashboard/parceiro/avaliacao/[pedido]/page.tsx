@@ -17,11 +17,10 @@ import { PERGUNTAS_RUIDO } from "@/config/niveis";
 import { DELIMITACAO_LAUDO, ROTULO_VALOR, itemChecklist, valoresDoItem, type ValorItem } from "@/config/checklist-avaliacao";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTULO_RESULTADO, itensSemResposta, resultadoAvaliacao, resumoPorGrupo, type Resultado } from "@/lib/vistoria/laudo";
-import { quandoVisitaComFuso } from "@/lib/vistoria/telas-exibicao";
 import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO, linhaNivelSustentado } from "@/lib/vistoria/nivel-do-laudo";
-import { FAIXA_VISITA_DE_TESTE, RECUSA_ANTES_DO_DIA, dbaNoCampo, faltasDoRoteiro, liberadaSoPorTeste, linhaDbaGuardado, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento, visitaLiberada, type EstadoDaVisita } from "@/lib/vistoria/visita-avaliador";
+import { dbaNoCampo, faltasDoRoteiro, linhaDbaGuardado, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
 import { etapaDoPedido, identificacaoDoImovel, linhaDoPorte, linhaDoPrazoDoLaudo, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
 import { PRAZO_LAUDO_MAX_DIAS_UTEIS, diasUteis, diasUteisDoLaudo } from "@/lib/vistoria/prazos";
 import { TEXTO_RECUSA_PARA_O_AVALIADOR, concordanciaRecusada } from "@/lib/vistoria/concordancia";
@@ -56,7 +55,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/parceiro/avaliacao/${pedido}`)}`);
   const { data: p } = await admin
     .from("vistoria_pedidos")
-    .select("id, property_id, status, tipo, teste, ocupado, agendado_para, concordancia_pedida_em, concordancia_em, visita_concluida_em, prazo_laudo_dias_uteis, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
+    .select("id, property_id, status, tipo, ocupado, agendado_para, concordancia_pedida_em, concordancia_em, visita_concluida_em, prazo_laudo_dias_uteis, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
     .eq("id", pedido)
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
@@ -168,15 +167,6 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   const agendada = p.status === "agendado";
   // ORDEM-DUET-431/435: "em andamento" só a partir do dia marcado; antes, "Visita agendada". O roteiro TRAVA a conclusão.
   const emAndamento = visitaEmAndamento(p.status as string, p.agendado_para as string | null, new Date());
-  // E1178: a visita só se faz a partir do dia marcado — a mesma regra que o servidor aplica (visitaLiberada). A exceção
-  // é a visita de teste: pedido de teste com avaliador de teste. Se a leitura da conta falhar, ela conta como real.
-  const { data: contaDoAvaliador } = agendada ? await admin.from("profiles").select("is_teste").eq("id", user.id).maybeSingle() : { data: null };
-  const visita: EstadoDaVisita = { status: p.status as string, agendadoPara: p.agendado_para as string | null, pedidoTeste: p.teste === true, avaliadorTeste: contaDoAvaliador?.is_teste === true };
-  const agoraDaVisita = new Date();
-  const liberada = visitaLiberada(visita, agoraDaVisita);
-  // Antes do dia, a visita ainda por fazer não oferece checklist, envio de fotos nem conclusão: o servidor recusaria.
-  // O roteiro e as fotos já enviadas continuam à vista, só em leitura (ORDEM-431).
-  const antesDoDia = agendada && !liberada;
   const roteiro = roteiroDaVisita(fotosLista.map((f) => f.comodo));
   const faltasRoteiro = agendada ? faltasDoRoteiro(roteiro) : [];
   const fotosDeComodo = agendada ? fotosLista.filter((f) => f.comodo) : [];
@@ -268,19 +258,9 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
       <ButtonLink href="/dashboard/parceiro/avaliacao" variant="ghost" size="sm" className="mb-4">Voltar às avaliações</ButtonLink>
       {p.ocupado && <p className="mb-4 text-sm text-ink">Imóvel ocupado: a visita só acontece com o morador de acordo. Não fotografe pertences nem pessoas.</p>}
 
-      {liberadaSoPorTeste(visita, agoraDaVisita) && (
-        <p className="mb-4 rounded-lg bg-sage-100 px-3 py-2 text-sm font-semibold text-ink" role="status" data-testid="visita-de-teste">{FAIXA_VISITA_DE_TESTE}</p>
-      )}
-      {antesDoDia && (
-        <Panel className="mb-6" data-testid="visita-antes-do-dia-painel">
-          <p className="text-sm text-ink" role="status" data-testid="visita-antes-do-dia">{RECUSA_ANTES_DO_DIA}</p>
-          {p.agendado_para && <p className="mt-1 text-sm text-muted" data-testid="visita-antes-do-dia-data">Visita marcada para {quandoVisitaComFuso(p.agendado_para as string)}.</p>}
-        </Panel>
-      )}
-
-      {agendada && <VisitaEmAndamento capaUrl={capaUrl} roteiro={roteiro} fotos={miniaturas} soLeitura={antesDoDia} />}
-      {emVisita && !antesDoDia && (
+      {emVisita && (
         <>
+          {agendada && <VisitaEmAndamento capaUrl={capaUrl} roteiro={roteiro} fotos={miniaturas} />}
           {naEtapaDoLaudo && fecho}
           {/* Item 8: os 9 grupos em passos; a internet e o ruído são medidos no próprio passo. */}
           <Panel id="itens" title="Itens" className="mb-6 scroll-mt-16">
