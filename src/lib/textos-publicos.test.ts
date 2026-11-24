@@ -58,7 +58,7 @@ test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e fras
   // 078 (Daniel, 16/11/2026): antes /Plano Gestor: \{GESTOR_TEXTO\}\. Conte sobre a sua carteira e o time da Viva fala com você\./ — a
   // frase não cita mais o plano nem a taxa; diz para quem é o contato (o mínimo vem da constante) e segue igual.
   assert.match(p, /<p className="text-sm text-muted">Para carteira a partir de \{CARTEIRAS_MINIMO_IMOVEIS\} imóveis ou administradora de imóveis\. Conte sobre a sua carteira e o time da Viva fala com você\.<\/p>/);
-  assert.doesNotMatch(p.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, ""), /Plano Gestor|GESTOR_TEXTO|\d ?%/);
+  assert.doesNotMatch(fonteSemComentarios(p), /Plano Gestor|GESTOR_TEXTO|\d ?%/);
   assert.doesNotMatch(p, /a conversa é direta/);
 });
 
@@ -90,6 +90,7 @@ test("#79: trilha() gera BreadcrumbList válido", async () => {
 
 /* F5 (QA do Daniel 12/10): nota interna nunca aparece em página pública. */
 import { readdirSync, statSync } from "node:fs";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 function paginasPublicas(dir: string): string[] {
   const base = new URL(`../../${dir}/`, import.meta.url);
@@ -107,7 +108,7 @@ test("F5: páginas públicas sem nota interna ('aguardando revisão', Dra. Beatr
   assert.ok(paginas.length > 10);
   for (const f of paginas) {
     // tira comentários (não aparecem na tela) antes de varrer
-    const t = ler(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const t = fonteSemComentarios(ler(f));
     assert.doesNotMatch(t, /aguardando revis[ãa]o/i, f);
     assert.doesNotMatch(t, /Dra\. Beatriz/, f);
     assert.doesNotMatch(t, /S[ée]rgio/, f);

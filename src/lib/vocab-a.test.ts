@@ -13,6 +13,7 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FAQ } from "./atendimento/faq.ts";
 import { FAIXAS_COMISSAO_PADRAO, TAXA_MAIOR_TEXTO, TAXA_MENOR_TEXTO, pctTexto } from "./cobranca/regra.ts";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 const SRC = fileURLToPath(new URL("..", import.meta.url));
 const ler = (p: string) => readFileSync(join(SRC, p), "utf8");
@@ -23,7 +24,7 @@ const PALAVRA = /\binquilin[oa]s?\b|\bcomiss(?:ão|ões)\b/i;
 
 /** Os textos que aparecem na tela: literais com espaço (frases, não chaves) e o texto entre tags de JSX. */
 export function textosVisiveis(fonte: string): string[] {
-  const s = fonte.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+  const s = fonteSemComentarios(fonte);
   const out: string[] = [];
   for (const m of s.matchAll(/"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\.)*)`/g)) {
     const t = (m[1] ?? m[2] ?? m[3] ?? "").replace(/\$\{[^}]*\}/g, " ");
@@ -130,7 +131,7 @@ test("E110: Passo 8 com um horizonte só — o exemplo da taxa acompanha os mese
   assert.match(preco, /<SimuladorBolso compacto valorMensal=\{aluguel\} mesesIniciais=\{mesesExemplo\} onMeses=\{setMesesExemplo\} campos=\{campos\} taxa=\{taxa\} \/>/);
   assert.doesNotMatch(preco, /PrecoSugerido/);
   assert.match(ler("components/precos/simulador-bolso.tsx"), /p\.onMeses\?\.\(/);
-  assert.doesNotMatch(ler("lib/faixas.ts").replace(/\/\*[\s\S]*?\*\//g, ""), /key: "seguro_fianca", label: "Seguro-fiança", disabled/);
+  assert.doesNotMatch(fonteSemComentarios(ler("lib/faixas.ts")), /key: "seguro_fianca", label: "Seguro-fiança", disabled/);
 });
 
 test("E110: Passo 6 não repete 'Regras da casa' (já é o título do passo)", () => {

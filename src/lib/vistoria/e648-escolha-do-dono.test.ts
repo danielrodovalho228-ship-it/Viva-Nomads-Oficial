@@ -20,6 +20,7 @@ import {
   validarProposta,
 } from "./escolha.ts";
 import { transicaoCredenciamento, type AvaliadorFila, type PedidoParaDesignar } from "./regras.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
 const AGORA = new Date("2026-11-06T12:00:00Z");
@@ -132,11 +133,11 @@ test("a máquina de estados: some a suspensão (automática ou do admin); o desc
 });
 
 test("o servidor: nada de suspensão automática, nada de designar sozinho; o dono escolhe, o avaliador propõe, o dono aceita", () => {
-  const srv = ler("./servidor.ts").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+  const srv = fonteSemComentarios(ler("./servidor.ts"));
   assert.doesNotMatch(srv, /suspendePorAusencias/);
   assert.doesNotMatch(srv, /status: "suspenso"/);
   assert.doesNotMatch(srv, /proximoAvaliador/);
-  const act = ler("./actions.ts").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+  const act = fonteSemComentarios(ler("./actions.ts"));
   for (const f of ["escolherAvaliador", "proporPrecoEPrazo", "aceitarProposta", "recusarProposta"]) assert.match(act, new RegExp(`export async function ${f}\\(`), f);
   assert.doesNotMatch(act, /await designar\(/, "o pedido não é mais designado pela Viva");
   assert.match(act, /descredenciamentoValido\(/, "descredenciar passa pelos critérios públicos");
