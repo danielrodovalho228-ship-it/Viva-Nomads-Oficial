@@ -399,7 +399,7 @@ export function PropertyDetail({
       >
         <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-blue-600" />
         <span>
-          <strong>Complete seu perfil</strong> — ajuda o proprietário a decidir. <ArrowRight className="inline h-3 w-3" />
+          <strong>Seu perfil</strong> — ajuda o proprietário a decidir. <ArrowRight className="inline h-3 w-3" />
         </span>
       </Link>
     </div>
