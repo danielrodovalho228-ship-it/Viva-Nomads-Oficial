@@ -1,0 +1,242 @@
+import { test, expect, type Page } from "@playwright/test";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+
+/*
+  T1750 — E1142 @E1142 (ORDEM-DUET-619, linha Parceiros, classe B): o dono conseguia aceitar a proposta do avaliador
+  depois de o prazo de 72 horas vencer. `aceitarProposta` não conferia o prazo, e a expiração só corre na rotina diária
+  (12:00 de Brasília): até ela correr, o botão "Aceitar valor e prazo" gravava o aceite de uma proposta vencida.
+  Só contas de teste; cidade própria do spec.
+   1. Proposta enviada há 73 horas: o clique em "Aceitar valor e prazo" é recusado, com o aviso junto do botão; nada é
+      gravado (o pedido continua "designado", sem aceite) e o avaliador não recebe o aviso de proposta aceita.
+      Print a 390 e a 1280 px.
+   2. (ORDEM-DUET-620) O avaliador dessa proposta vencida lê, na tela do pedido e na lista, que o prazo do proprietário
+      terminou — não mais "O proprietário tem até…" com uma data que já passou, nem "Falta o proprietário aceitar". A
+      proposta dentro do prazo continua com o texto de sempre. Print a 390 e a 1280 px.
+   3. Proposta enviada há 71 horas (dentro do prazo): o aceite continua a valer, como antes.
+   4. Na proposta vencida, "Escolher outro avaliador" continua a funcionar: é o caminho que o aviso indica.
+  Laboratório; não é prova ao vivo no site.
+*/
+const LARGURAS = [390, 1280] as const;
+const SAIDA = "tests/laboratorio/saida";
+const CIDADE = "Sacramento";
+const AVISO = "O prazo de 72 horas para aceitar esta proposta terminou. Escolha outro avaliador.";
+const HORA = 3_600_000;
+/** "25/11/2026 11:00 (horário de Brasília)", como a tela escreve. */
+function dataHoraDeBrasilia(iso: string): string {
+  const p = Object.fromEntries(new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
+  return `${p.day}/${p.month}/${p.year} ${p.hour}:${p.minute} (horário de Brasília)`;
+}
+const fimDoPrazo = (propostaEm: string) => dataHoraDeBrasilia(new Date(Date.parse(propostaEm) + 72 * HORA).toISOString());
+const textoVencido = (propostaEm: string) => `O prazo do proprietário para aceitar a sua proposta terminou em ${fimDoPrazo(propostaEm)}. Ela não pode mais ser aceita, e o pedido volta para ele escolher de novo.`;
+const textoNoPrazo = (propostaEm: string) => `O proprietário tem até ${fimDoPrazo(propostaEm)} para aceitar: 72 horas depois da proposta. Sem o aceite, o pedido volta para ele escolher de novo.`;
+const senha = novaSenha();
+const sufixo = novoSufixo();
+const dono = { email: `dono.t1750.${sufixo}@lab.vivanomads.test`, nome: "Dalva Prazo", role: "owner" as const };
+const avaliador = { email: `aval.t1750.${sufixo}@lab.vivanomads.test`, nome: "Abel Avaliador", role: "tenant" as const };
+const ids: Record<string, string> = {};
+
+async function largura(page: Page, w: number) {
+  await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
+}
+
+/** O pedido com o avaliador escolhido pelo dono e a proposta dele (R$ 380,00 · laudo em 5 dias) enviada há `horas` horas. */
+async function pedidoComProposta(imovel: string, horas: number): Promise<string> {
+  const proposta = new Date(Date.now() - horas * HORA).toISOString();
+  const escolha = new Date(Date.now() - (horas + 2) * HORA).toISOString();
+  const { data, error } = await adm()
+    .from("vistoria_pedidos")
+    .insert({ property_id: imovel, owner_id: ids.dono, cidade: CIDADE, porte: "q1_2", valor_tabela: 350, status: "designado", teste: true, avaliador_id: ids.cred, designado_em: escolha, escolhido_em: escolha, valor_proposto: 380, prazo_proposto_dias: 5, proposta_em: proposta })
+    .select("id")
+    .single();
+  if (error) throw error;
+  const d = await adm().from("vistoria_designacoes").insert({ pedido_id: data.id, avaliador_id: ids.cred, designado_em: escolha, resposta: "aceita", respondido_em: proposta });
+  if (d.error) throw d.error;
+  return data.id as string;
+}
+
+const linha = async (pedido: string) => (await adm().from("vistoria_pedidos").select("status, avaliador_id, valor_proposto, proposta_em, proposta_aceita_em").eq("id", pedido).single()).data!;
+const avisosDeAceite = async (pedido: string) => {
+  const { data, error } = await adm().from("avisos").select("id").eq("usuario_id", ids.avaliador).eq("evento", "vistoria_agendada").eq("ref_id", pedido);
+  if (error) throw error;
+  return (data ?? []).length;
+};
+
+test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora do prazo de 72 horas @E1142", () => {
+  test.skip(!NO_LABORATORIO, "Só no laboratório.");
+  test.describe.configure({ mode: "serial", timeout: 240_000 });
+
+  test.beforeAll(async () => {
+    for (const [k, c] of [["dono", dono], ["avaliador", avaliador]] as const) {
+      ids[k] = await criarConta(c, senha);
+      const t = await adm().from("profiles").update({ is_teste: true }).eq("id", ids[k]);
+      if (t.error) throw t.error;
+    }
+    const { data: parc, error: eP } = await adm()
+      .from("parceiros")
+      .insert({ user_id: ids.avaliador, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: avaliador.nome, slug: `aval-t1750-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
+      .select("id")
+      .single();
+    if (eP) throw eP;
+    ids.parc = parc.id as string;
+    const { data: n } = await adm().rpc("proximo_numero_avaliador", { p_sigla: "UDI" });
+    const { data: cred, error: eC } = await adm()
+      .from("avaliadores_credenciamento")
+      .insert({ parceiro_id: ids.parc, cidade: CIDADE, numero_credenciado: n as string, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/t1750", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" })
+      .select("id")
+      .single();
+    if (eC) throw eC;
+    ids.cred = cred.id as string;
+    for (const u of [ids.dono, ids.avaliador]) {
+      const p = await adm().from("vistoria_piloto").insert({ user_id: u, nota: "T1750 (laboratório)" });
+      if (p.error) throw p.error;
+    }
+    ids.imovelVencida = await criarImovelPronto(ids.dono, `Casa vencida t1750 ${sufixo}`, { ativo: true });
+    ids.imovelNoPrazo = await criarImovelPronto(ids.dono, `Casa no prazo t1750 ${sufixo}`, { ativo: true });
+    const cid = await adm().from("properties").update({ city: CIDADE }).in("id", [ids.imovelVencida, ids.imovelNoPrazo]);
+    if (cid.error) throw cid.error;
+    const { error: eT } = await adm()
+      .from("vistoria_precos")
+      .insert(["estudio", "q1_2", "q3_mais"].map((porte) => ({ cidade: CIDADE, porte, valor: porte === "q1_2" ? 350 : 300 })));
+    if (eT) throw eT;
+    ids.pedidoVencida = await pedidoComProposta(ids.imovelVencida, 73);
+    ids.pedidoNoPrazo = await pedidoComProposta(ids.imovelNoPrazo, 71);
+  });
+
+  test.afterAll(async () => {
+    const imoveis = [ids.imovelVencida, ids.imovelNoPrazo].filter(Boolean);
+    const pedidos = [ids.pedidoVencida, ids.pedidoNoPrazo].filter(Boolean);
+    const contas = [ids.dono, ids.avaliador].filter(Boolean);
+    if (pedidos.length) {
+      await adm().from("avisos").delete().in("ref_id", pedidos);
+      await adm().from("vistoria_fila_admin").delete().in("pedido_id", pedidos);
+      await adm().from("vistoria_designacoes").delete().in("pedido_id", pedidos);
+    }
+    if (imoveis.length) await adm().from("vistoria_pedidos").delete().in("property_id", imoveis);
+    await adm().from("vistoria_precos").delete().eq("cidade", CIDADE);
+    if (contas.length) await adm().from("vistoria_piloto").delete().in("user_id", contas);
+    if (ids.cred) {
+      await adm().from("vistoria_designacoes").delete().eq("avaliador_id", ids.cred);
+      await adm().from("avaliadores_credenciamento").delete().eq("id", ids.cred);
+    }
+    if (ids.parc) await adm().from("parceiros").delete().eq("id", ids.parc);
+    if (imoveis.length) await adm().from("properties").delete().in("id", imoveis);
+    await apagarContas(contas);
+  });
+
+  test("1. proposta de 73 horas: o aceite é recusado com o aviso junto do botão; nada é gravado nem avisado", async ({ browser }) => {
+    const d = await entrar(browser, dono.email, senha);
+    for (const w of LARGURAS) {
+      await largura(d, w);
+      await d.goto(`/dashboard/imoveis/${ids.imovelVencida}/nivel`, { waitUntil: "domcontentloaded" });
+      const proposta = d.getByTestId("avaliacao-proposta");
+      await expect(proposta).toBeVisible({ timeout: 30_000 });
+      await expect(proposta).toContainText("Proposta do avaliador: R$ 380,00 · laudo em 5 dias");
+      const form = proposta.getByTestId("aceitar-proposta");
+      const botao = form.getByRole("button", { name: "Aceitar valor e prazo" });
+      await botao.click();
+
+      // O aviso sai no próprio formulário do botão (junto dele), como alerta.
+      const aviso = form.getByTestId("acao-erro");
+      await expect(aviso).toHaveText(AVISO, { timeout: 20_000 });
+      await expect(aviso).toHaveAttribute("role", "alert");
+      await expect(form.getByTestId("acao-ok")).toHaveCount(0);
+      const [cb, ca] = [await botao.boundingBox(), await aviso.boundingBox()];
+      expect(ca!.y, "o aviso fica logo abaixo do botão").toBeGreaterThanOrEqual(cb!.y + cb!.height - 1);
+      expect(ca!.y - (cb!.y + cb!.height), "e encostado a ele").toBeLessThan(40);
+
+      // Nada foi gravado: o pedido continua com o avaliador e a proposta, sem aceite; o avaliador não foi avisado.
+      const l = await linha(ids.pedidoVencida);
+      expect(l.status).toBe("designado");
+      expect(l.proposta_aceita_em, "o aceite fora do prazo não é gravado").toBeNull();
+      expect(l.avaliador_id).toBe(ids.cred);
+      expect(Number(l.valor_proposto)).toBe(380);
+      expect(await avisosDeAceite(ids.pedidoVencida), "o avaliador não recebe 'proposta aceita'").toBe(0);
+      await expect(d.getByTestId("avaliacao-proposta-aceita")).toHaveCount(0);
+      await expect(botao).toBeEnabled();
+      await expect(proposta.getByTestId("trocar-avaliador")).toBeVisible();
+      expect(await d.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      await d.screenshot({ path: `${SAIDA}/t1750-1-aceite-recusado-${w}.png`, fullPage: true });
+    }
+
+    // Recarregada, a tela continua sem aceite (a recusa não era só da tela).
+    await d.reload({ waitUntil: "domcontentloaded" });
+    await expect(d.getByTestId("avaliacao-proposta")).toBeVisible({ timeout: 30_000 });
+    await expect(d.getByTestId("avaliacao-proposta-aceita")).toHaveCount(0);
+
+    await d.context().close();
+  });
+
+  test("2. o avaliador da proposta vencida lê que o prazo do proprietário terminou, no pedido e na lista", async ({ browser }) => {
+    const a = await entrar(browser, avaliador.email, senha);
+    const vencida = (await linha(ids.pedidoVencida)).proposta_em as string;
+    const noPrazo = (await linha(ids.pedidoNoPrazo)).proposta_em as string;
+    for (const w of LARGURAS) {
+      await largura(a, w);
+      // A tela do pedido.
+      await a.goto(`/dashboard/parceiro/avaliacao/${ids.pedidoVencida}`, { waitUntil: "domcontentloaded" });
+      const tela = a.getByTestId("pedido-avaliador");
+      await expect(tela).toHaveAttribute("data-etapa", "proposta_enviada", { timeout: 30_000 });
+      const prazo = tela.getByTestId("pedido-prazo-aceite");
+      await expect(prazo).toHaveText(textoVencido(vencida));
+      await expect(prazo).toHaveAttribute("data-vencido", "1");
+      await expect(tela.getByTestId("pedido-aguarda-dono")).toHaveText(textoVencido(vencida)); // só o aviso: nada de "Falta o proprietário aceitar"
+      await expect(tela).not.toContainText("O proprietário tem até");
+      await expect(tela).not.toContainText("Falta o proprietário aceitar");
+      await expect(tela.getByTestId("pedido-agendar")).toHaveCount(0);
+      expect(await a.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      await a.screenshot({ path: `${SAIDA}/t1750-2-avaliador-pedido-${w}.png`, fullPage: true });
+
+      // A lista diz o mesmo da vencida, e a que está no prazo fica como era.
+      await a.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
+      const item = a.locator(`[data-testid="avaliacao-designada"][data-pedido="${ids.pedidoVencida}"]`);
+      await expect(item.getByTestId("prazo-aceite")).toHaveText(textoVencido(vencida), { timeout: 30_000 });
+      await expect(item.getByTestId("prazo-aceite")).toHaveAttribute("data-vencido", "1");
+      await expect(item.getByTestId("aguarda-aceite-proprietario")).toContainText("Proposta enviada: R$ 380,00 em 5 dia(s).");
+      await expect(item.getByTestId("aguarda-aceite-proprietario")).not.toContainText("Falta o proprietário aceitar");
+      await expect(item.getByTestId("agendar-visita")).toHaveCount(0);
+      const outro = a.locator(`[data-testid="avaliacao-designada"][data-pedido="${ids.pedidoNoPrazo}"]`);
+      await expect(outro.getByTestId("prazo-aceite")).toHaveText(textoNoPrazo(noPrazo));
+      await expect(outro.getByTestId("prazo-aceite")).not.toHaveAttribute("data-vencido", "1");
+      await expect(outro.getByTestId("aguarda-aceite-proprietario")).toContainText("Falta o proprietário aceitar para agendar a visita.");
+      expect(await a.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      await a.screenshot({ path: `${SAIDA}/t1750-2-avaliador-lista-${w}.png`, fullPage: true });
+    }
+    // A tela do pedido que está no prazo fica como era.
+    await a.goto(`/dashboard/parceiro/avaliacao/${ids.pedidoNoPrazo}`, { waitUntil: "domcontentloaded" });
+    const tela = a.getByTestId("pedido-avaliador");
+    await expect(tela.getByTestId("pedido-prazo-aceite")).toHaveText(textoNoPrazo(noPrazo), { timeout: 30_000 });
+    await expect(tela.getByTestId("pedido-aguarda-dono")).toContainText("Falta o proprietário aceitar a sua proposta");
+    await a.context().close();
+  });
+
+  test("3. proposta de 71 horas (dentro do prazo): o aceite continua a valer", async ({ browser }) => {
+    const d = await entrar(browser, dono.email, senha);
+    await largura(d, 390);
+    await d.goto(`/dashboard/imoveis/${ids.imovelNoPrazo}/nivel`, { waitUntil: "domcontentloaded" });
+    const proposta = d.getByTestId("avaliacao-proposta");
+    await expect(proposta).toBeVisible({ timeout: 30_000 });
+    await proposta.getByTestId("aceitar-proposta").getByRole("button", { name: "Aceitar valor e prazo" }).click();
+    await expect.poll(async () => (await linha(ids.pedidoNoPrazo)).proposta_aceita_em, { timeout: 20_000 }).not.toBeNull();
+    await expect(d.getByTestId("avaliacao-proposta-aceita")).toHaveText("Combinado com o avaliador: R$ 380,00 · laudo em 5 dias.", { timeout: 20_000 });
+    await expect(d.getByTestId("acao-erro")).toHaveCount(0);
+    const l = await linha(ids.pedidoNoPrazo);
+    expect(l.status).toBe("designado");
+    expect(l.avaliador_id).toBe(ids.cred);
+    await d.context().close();
+  });
+
+  test("4. na proposta vencida, 'Escolher outro avaliador' segue valendo: o pedido volta ao dono", async ({ browser }) => {
+    const d = await entrar(browser, dono.email, senha);
+    await largura(d, 390);
+    await d.goto(`/dashboard/imoveis/${ids.imovelVencida}/nivel`, { waitUntil: "domcontentloaded" });
+    const proposta = d.getByTestId("avaliacao-proposta");
+    await expect(proposta).toBeVisible({ timeout: 30_000 });
+    await proposta.getByTestId("trocar-avaliador").click();
+    await proposta.getByTestId("troca-confirmacao").getByRole("button", { name: "Descartar e escolher outro" }).click();
+    await expect.poll(async () => (await linha(ids.pedidoVencida)).status, { timeout: 20_000 }).toBe("pedido");
+    const depois = await linha(ids.pedidoVencida);
+    expect(depois.avaliador_id).toBeNull();
+    expect(depois.proposta_aceita_em).toBeNull();
+    await d.context().close();
+  });
+});

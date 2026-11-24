@@ -333,6 +333,8 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
   const precisaDoAceite = precisaDoAceiteDoDono({ teste: p.teste, escolhidoEm: p.escolhido_em });
   const relogio = relogioDoPedido({ status: p.status, resposta: r, designadoEm: p.designado_em, propostaEm: p.proposta_em, propostaAceitaEm: p.proposta_aceita_em, prazoRespostaHoras, precisaDoAceite }, agora);
   const prazo = relogio?.vez === "avaliador" ? { texto: textoDoPrazoDeResposta(relogio, agora), vencido: relogio.vencido } : null;
+  // E1142: o prazo do dono para aceitar já passou (a rotina ainda não devolveu o pedido).
+  const aceiteVencido = relogio?.vez === "dono" && relogio.vencido;
   const semana = visitaNaSemana(p.agendado_para, agora);
   return (
     <li className="rounded-lg border border-line p-3 text-sm" data-testid="avaliacao-designada" data-pedido={p.id} data-status={p.status}>
@@ -373,9 +375,9 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
       )}
       {["designado"].includes(p.status) && r === "aceita" && !p.proposta_aceita_em && precisaDoAceite && (
         <p className="mt-2 text-muted" data-testid="aguarda-aceite-proprietario">
-          Proposta enviada: {brl(Number(p.valor_proposto))} em {p.prazo_proposto_dias} dia(s). Falta o proprietário aceitar para agendar a visita.
+          Proposta enviada: {brl(Number(p.valor_proposto))} em {p.prazo_proposto_dias} dia(s).{aceiteVencido ? "" : " Falta o proprietário aceitar para agendar a visita."}
           {relogio?.vez === "dono" && (
-            <span className="mt-1 block" data-testid="prazo-aceite">
+            <span className={aceiteVencido ? "mt-1 block font-semibold text-red-700" : "mt-1 block"} data-testid="prazo-aceite" data-vencido={aceiteVencido ? "1" : undefined}>
               {textoDoPrazoDeAceite(relogio)}
             </span>
           )}

@@ -108,6 +108,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
         prazoLaudo={linhaDoPrazoDoLaudo(etapa, dados)}
         prazoResposta={etapa === "novo" && relogio?.vez === "avaliador" ? { texto: textoDoPrazoDeResposta(relogio, agora), vencido: relogio.vencido } : null}
         prazoAceite={etapa === "proposta_enviada" && relogio?.vez === "dono" ? textoDoPrazoDeAceite(relogio) : null}
+        prazoAceiteVencido={etapa === "proposta_enviada" && relogio?.vez === "dono" && relogio.vencido}
         ocupado={Boolean(p.ocupado)}
         exemploValor={brl(Number(dados.valor_tabela))}
         prazoMaxDias={PRAZO_PROPOSTA_MAX_DIAS}

@@ -30,6 +30,7 @@ export function PedidoDoAvaliador({
   valor,
   prazoResposta,
   prazoAceite,
+  prazoAceiteVencido,
   prazoLaudo,
   imovel,
   ocupado,
@@ -49,6 +50,8 @@ export function PedidoDoAvaliador({
   prazoResposta?: { texto: string; vencido: boolean } | null;
   /** E1101: até quando o dono pode aceitar a proposta (72 h depois dela). */
   prazoAceite?: string | null;
+  /** E1142: o prazo do dono já passou — a tela deixa de dizer "falta o proprietário aceitar". */
+  prazoAceiteVencido?: boolean;
   ocupado: boolean;
   exemploValor: string;
   prazoMaxDias: number;
@@ -104,9 +107,9 @@ export function PedidoDoAvaliador({
       )}
       {etapa === "proposta_enviada" && (
         <p className="text-base text-ink" data-testid="pedido-aguarda-dono">
-          Falta o proprietário aceitar a sua proposta. Quando ele aceitar, o endereço completo aparece aqui e você agenda a visita.
+          {!prazoAceiteVencido && "Falta o proprietário aceitar a sua proposta. Quando ele aceitar, o endereço completo aparece aqui e você agenda a visita."}
           {prazoAceite && (
-            <span className="mt-2 block text-sm text-muted" data-testid="pedido-prazo-aceite">
+            <span className={prazoAceiteVencido ? "block text-sm font-semibold text-red-700" : "mt-2 block text-sm text-muted"} data-testid="pedido-prazo-aceite" data-vencido={prazoAceiteVencido ? "1" : undefined}>
               {prazoAceite}
             </span>
           )}
