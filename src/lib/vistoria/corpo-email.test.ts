@@ -85,11 +85,15 @@ test("ponto de envio: todo avisar() da avaliação passa a referência (pedido o
   // sem o aceite do dono (decisão do Daniel); também passa a referência, como os outros.
   // E1173 (asserção alterada, ORDEM-DUET-753): 27 → 29. Os dois pontos novos são o aviso da recusa da data, ao dono e
   // ao avaliador; os dois passam a referência (e a data recusada).
-  assert.equal(n, 29);
+  // E1177 (asserção alterada, ORDEM-DUET-778): 29 → 30. O ponto novo é o aviso ao dono quando a lista de avaliadores
+  // abre ou chega outro avaliador; também passa a referência, como os outros.
+  assert.equal(n, 30);
   const srv = arquivos[1];
   // E1084 (asserção alterada): o select leva também o user_id do parceiro — o nome do avaliador vem da conta (fonte única).
   // E1160 (asserção alterada, ORDEM-DUET-674): o select leva também o que os corpos novos afirmam — a proposta, se há
   // avaliador para escolher, as marcas de reagendamento e o número de credenciado.
-  assert.match(srv, /select\("property_id, agendado_para, proposta_em, aguardando_avaliador, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento\(numero_credenciado, parceiros\(nome_publico, user_id\)\)"\)/);
+  // E1177 (asserção alterada, ORDEM-DUET-778): o select leva também o motivo da espera — o e-mail diz por que não há
+  // avaliador para escolher.
+  assert.match(srv, /select\("property_id, agendado_para, proposta_em, aguardando_avaliador, motivo_da_espera, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento\(numero_credenciado, parceiros\(nome_publico, user_id\)\)"\)/);
   assert.match(srv, /corpoVistoria\(ev as EventoVistoria, await fatosDaVistoria\(admin, ref\)\)/);
 });

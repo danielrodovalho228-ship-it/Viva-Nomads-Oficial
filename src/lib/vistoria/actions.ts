@@ -39,6 +39,7 @@ import { CONFIRMACAO_DO_ACEITE, ERRO_ACEITE_FORA_DO_PRAZO, aceiteForaDoPrazo, er
 import { ERRO_TROCA_SEM_CONFIRMAR, trocaConfirmada } from "./troca-de-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
 import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
+import { textoDaEspera } from "./espera-de-avaliador";
 import { ativarParceiroDoAvaliador } from "./parceiro-do-avaliador-servidor";
 import { normalizarSobre } from "./vitrine-avaliadores";
 import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
@@ -440,7 +441,10 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };
   const opcoes = await abrirEscolha(s.admin, p.id, agora);
   revalidatePath(`/dashboard/imoveis/${im.id}/nivel`);
-  return { ok: true, mensagem: opcoes ? "Pedido registrado. Escolha o avaliador da lista: cada um define o próprio valor e prazo." : "Pedido registrado. Ainda não há avaliador disponível na sua cidade; avisaremos quando houver." };
+  if (opcoes) return { ok: true, mensagem: "Pedido registrado. Escolha o avaliador da lista: cada um define o próprio valor e prazo." };
+  // E1177: sem lista, a mensagem diz o MOTIVO gravado no pedido (a promessa do aviso só vale quando a cidade não tem avaliador).
+  const { data: semLista } = await s.admin.from("vistoria_pedidos").select("motivo_da_espera").eq("id", p.id).maybeSingle();
+  return { ok: true, mensagem: `Pedido registrado. ${textoDaEspera((semLista as { motivo_da_espera?: string | null } | null)?.motivo_da_espera)}` };
 }
 
 // ── O avaliador designado ──────────────────────────────────────────────────────────────────────────────────────

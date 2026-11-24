@@ -8,12 +8,15 @@
 */
 import { createHash } from "node:crypto";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_LAUDO_MAX_DIAS_UTEIS, PRAZO_RESPOSTA_MAX_HORAS } from "./prazos.ts";
-import { impedimento, type AvaliadorFila, type HistoricoDesignacao, type MotivoImpedimento, type PedidoParaDesignar } from "./regras.ts";
+import { elegiveisComAlternancia, type AvaliadorElegivel, type AvaliadorFila, type HistoricoDesignacao, type MotivoImpedimento, type PedidoParaDesignar } from "./regras.ts";
 
 // ── 1. O sistema sugere, o dono escolhe ────────────────────────────────────────────────────────────────────────
 export interface Sugestoes {
-  /** Elegíveis para este pedido, em ordem NEUTRA de exibição (quem foi menos procurado primeiro). Não é uma designação. */
-  sugeridos: AvaliadorFila[];
+  /**
+   * Elegíveis para este pedido, em ordem NEUTRA de exibição (quem foi menos procurado primeiro). Não é uma designação.
+   * E1177: quem traz `mesmoDaAnterior` fez a avaliação anterior do imóvel e só está aqui por não haver mais ninguém.
+   */
+  sugeridos: AvaliadorElegivel[];
   impedidos: { id: string; motivo: MotivoImpedimento }[];
 }
 
@@ -23,16 +26,9 @@ export interface Sugestoes {
  * não ordem da Viva. A ordem é só de exibição (rotação), sem peso para quem avalia.
  */
 export function sugerirAvaliadores(fila: AvaliadorFila[], pedido: PedidoParaDesignar, historico: HistoricoDesignacao, agora: Date): Sugestoes {
-  const impedidos: Sugestoes["impedidos"] = [];
-  const sugeridos: AvaliadorFila[] = [];
-  for (const a of fila) {
-    const m = impedimento(a, pedido, historico, agora);
-    if (!m) sugeridos.push(a);
-    else if (m !== "outra_cidade") impedidos.push({ id: a.id, motivo: m });
-  }
-  const t = (s: string | null) => (s ? Date.parse(s) : -Infinity);
-  sugeridos.sort((x, y) => t(x.ultimaDesignacaoEm) - t(y.ultimaDesignacaoEm) || Date.parse(x.credenciadoEm) - Date.parse(y.credenciadoEm) || x.id.localeCompare(y.id));
-  return { sugeridos, impedidos };
+  // E1177: a mesma regra do rodízio, com a exceção da alternância (fonte única em regras.ts).
+  const { elegiveis, impedidos } = elegiveisComAlternancia(fila, pedido, historico, agora);
+  return { sugeridos: elegiveis, impedidos };
 }
 
 // ── 2. Faixa de referência e proposta própria ──────────────────────────────────────────────────────────────────
