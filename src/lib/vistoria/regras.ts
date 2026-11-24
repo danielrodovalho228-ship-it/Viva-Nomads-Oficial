@@ -295,8 +295,34 @@ export interface PedidoParaDesignar {
   teste: boolean;
   /** Na contestação: quem fez a 1ª avaliação (impedido). */
   primeiroAvaliadorId: string | null;
-  /** Já designados neste pedido (recusaram, não responderam ou faltaram). */
+  /** Já designados neste pedido (recusaram, não responderam ou faltaram). E1143: não entra quem só teve a proposta vencida. */
   jaDesignados: string[];
+}
+
+/** Uma designação do pedido, como a escolha a lê. */
+export interface DesignacaoDoPedido {
+  avaliador_id: string;
+  resposta: string | null;
+  /** Migração 0359: quando o prazo do dono para aceitar a proposta acabou sem o aceite. */
+  proposta_expirada_em: string | null;
+}
+
+/**
+ * E1143 (decisão do Daniel, 24/11): a designação que terminou porque a PROPOSTA venceu sem o aceite do dono não tira o
+ * avaliador da escolha — o silêncio foi do dono, e ele não pode banir o avaliador nem prender o imóvel. É a única que
+ * volta: precisa da resposta "expirada" E da marca (a expiração sem a marca é o silêncio do próprio avaliador).
+ */
+export function designacaoQueVolta(d: DesignacaoDoPedido): boolean {
+  return d.resposta === "expirada" && Boolean(d.proposta_expirada_em);
+}
+
+/**
+ * E1143: quem fica fora da escolha DESTE pedido por já ter sido designado nele. Continuam fora: quem recusou, quem não
+ * respondeu no prazo dele, quem faltou e quem está designado agora (com ou sem proposta). Só volta quem teve a proposta
+ * vencida sem o aceite do dono. A exclusão é por pedido: nada disto mexe nos outros pedidos do avaliador.
+ */
+export function jaDesignadosNoPedido(designacoes: readonly DesignacaoDoPedido[]): string[] {
+  return designacoes.filter((d) => !designacaoQueVolta(d)).map((d) => d.avaliador_id);
 }
 
 export interface HistoricoDesignacao {
