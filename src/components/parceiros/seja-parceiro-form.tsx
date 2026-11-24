@@ -8,7 +8,7 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { CATEGORIAS_CATALOGO, PRAZO_RESPOSTA_PARCERIA, TEXTO_PRAZO_PARCERIA, CIDADES_MAX, EXIGENCIA_DA_CATEGORIA, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao, type CampoSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
-import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
+import { TEXTO_DIVISAO_NA_ORIGEM } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO, HREF_PASSOS_CREDENCIAMENTO } from "@/lib/parceiros/convite-avaliacao";
 import { ERRO_SESSAO_NAO_CONFIRMADA, pessoaLogada, rotuloEnvioParceria } from "@/lib/parceiros/sessao-rotulo";
 import { useAuthStore } from "@/lib/store";
@@ -162,7 +162,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
           {/* E430 (D-V12): o e-mail da conta é uma "palavra" longa sem espaço — a 390 px alargava o cartão e a página rolava
               para o lado. overflow-wrap: anywhere deixa o e-mail quebrar (e reduz a largura mínima da coluna). */}
           <p className="mt-1 text-sm text-muted [overflow-wrap:anywhere]" data-testid="seja-parceiro-confirmacao">Mandamos a confirmação para {estado.email}. Você acompanha pela sua conta.</p>
-          <p className="mt-2 text-sm text-ink" data-testid="seja-parceiro-regra">{TEXTO_REGRA_90_10}</p>
+          <p className="mt-2 text-sm text-ink" data-testid="seja-parceiro-regra">{TEXTO_DIVISAO_NA_ORIGEM}</p>
           {/* E425 (resíduo): em /parceiros, o aprovado também ativa aqui — mesmo botão e mesmo núcleo do painel. */}
           {!enviado && sol?.status === "aprovada" && <AtivarNoPainel />}
         </div>
@@ -386,7 +386,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       )}
 
       <p className="text-sm text-ink" data-testid="seja-parceiro-regra-90-10">
-        {TEXTO_REGRA_90_10}
+        {TEXTO_DIVISAO_NA_ORIGEM}
       </p>
       {/* E1145: o erro com campo já aparece junto do campo (msgDoCampo); aqui fica só o erro sem campo (sessão, envio). */}
       {erro && !campoErro && (

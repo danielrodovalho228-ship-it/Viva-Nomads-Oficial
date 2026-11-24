@@ -143,7 +143,7 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
       const regras = page.getByTestId("taxa-servico-parceiros");
       await expect(regras).toContainText("Você combina e agenda tudo pelas mensagens da Viva.");
       await expect(regras).toContainText("Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias. Você só paga quando há serviço contratado.");
-      await expect(regras).toContainText("90% vai direto para você e 10% para a Viva. A Viva não guarda o seu dinheiro.");
+      await expect(regras).toContainText("90% vai direto para você e 10% para a Viva. A Viva não guarda o dinheiro.");
       await expect(page.getByTestId("pagamento-em-breve")).toHaveText("Pagamento pela plataforma em breve.");
       const corpo = (await page.locator("main").innerText()).toLowerCase();
       for (const p of ["retém", "repass", "intermedia", "comissão", "whatsapp", "r$ 40", "r$ 60", "r$ 80"]) expect(corpo, p).not.toContain(p);
@@ -307,7 +307,7 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
       await expect(page.locator(`[data-testid="cartao-parceiro"][data-slug="${slug}"]`)).toBeVisible();
       await page.goto("/parceiros/fotografos?cidade=Uberl%C3%A2ndia", { waitUntil: "domcontentloaded" });
       await expect(page.locator(`[data-testid="cartao-parceiro"][data-slug="${slug}"]`)).toBeVisible();
-      await expect(page.getByTestId("taxa-servico-parceiros")).toContainText("A Viva não guarda o seu dinheiro.");
+      await expect(page.getByTestId("taxa-servico-parceiros")).toContainText("A Viva não guarda o dinheiro.");
       // E774 (10/11/2026, decisão do chat principal: Parceiros entra na família E764/E774 — contato liberado após o aceite NÃO é
       // permitido; regra E445): a página de fotógrafos não promete mais o contato "só depois do aceite"; o contato nunca é trocado.
       await expect(page.getByTestId("fotografos-contato-aceite")).toHaveText("Seu contato não é trocado: tudo se combina pelas mensagens da Viva.");

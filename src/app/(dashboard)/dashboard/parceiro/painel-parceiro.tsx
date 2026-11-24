@@ -15,7 +15,7 @@ import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao";
 import { ImagemNitida } from "@/components/ui/imagem-nitida";
-import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, PENDENCIA_CNPJ, REDES, linhasDadosDaCategoria, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
+import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PENDENCIA_CNPJ, REDES, linhasDadosDaCategoria, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
   legendarFotoGaleria,
@@ -34,7 +34,7 @@ import {
   type PainelParceiro,
 } from "@/lib/parceiros/painel-actions";
 import { PENDENCIA_CNPJ_PAINEL } from "@/lib/parceiros/regras";
-import { TEXTO_DIVISAO_NA_ORIGEM } from "@/config/taxa-servico-parceiros";
+import { TEXTO_DIVISAO_NA_ORIGEM, TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE } from "@/config/taxa-servico-parceiros";
 
 const ABAS = [
   { id: "pagina", rotulo: "Página" },
@@ -628,7 +628,7 @@ function AbaDados({ p, rodar, pagamentoAtivo }: { p: PainelParceiro; rodar: Roda
       <Panel title="Recebimento">
         {!pagamentoAtivo && (
           <p className="mb-3 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="recebimento-em-breve">
-            {PAGAMENTO_EM_BREVE} Até lá, nada é cobrado nem pago pela Viva. {TEXTO_DIVISAO_NA_ORIGEM}
+            {TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE} Até lá, nada é cobrado nem pago pela Viva. {TEXTO_DIVISAO_NA_ORIGEM}
           </p>
         )}
         {p.recebimentoFinal && (

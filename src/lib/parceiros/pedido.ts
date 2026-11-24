@@ -5,7 +5,7 @@
 */
 import { dividirValor, TAXA_SERVICO_PARCEIRO } from "./regras.ts";
 import { lerReais } from "../reais.ts";
-import { PCT_PARCEIRO_RECEBE, PCT_TAXA_SERVICO_PARCEIROS } from "../../config/taxa-servico-parceiros.ts";
+import { PCT_TAXA_SERVICO_PARCEIROS, textoDivisaoNaOrigem } from "../../config/taxa-servico-parceiros.ts";
 
 // ── Estados ───────────────────────────────────────────────────────────────────────────────────────────────────
 export const STATUS_PEDIDO = [
@@ -164,8 +164,8 @@ export function textoDivisaoParceiro(valorCombinado: number): string {
 // ── Pagamento (só registro enquanto a chave estiver desligada) ────────────────────────────────────────────────
 export type PagamentoStatus = "indisponivel" | "simulado" | "pago";
 export const TEXTO_PAGAMENTO_INATIVO = "O pagamento pela plataforma ainda não está ativo.";
-export const TEXTO_DIVISAO_NA_ORIGEM =
-  `Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: ${PCT_PARCEIRO_RECEBE} vai direto para o parceiro e ${PCT_TAXA_SERVICO_PARCEIROS} para a Viva. A Viva não guarda o seu dinheiro.`;
+/** E1151: a redacção canónica da fonte única, dita sobre o parceiro (a tela do pedido do dono). */
+export const TEXTO_DIVISAO_NA_ORIGEM = textoDivisaoNaOrigem("o parceiro");
 export const ROTULO_REGISTRO_SEM_DINHEIRO = "registro, sem dinheiro";
 
 /** Provedor de pagamento do parceiro. Só existe a implementação SIMULADA (sem gateway, sem dinheiro). */

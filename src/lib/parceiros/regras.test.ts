@@ -17,9 +17,7 @@ import {
   mesmoEmail,
   mostrarParceiroGeral,
   PARCEIRO_GERAL_NAS_SUPERFICIES,
-  PAGAMENTO_EM_BREVE,
   recorteImagem,
-  REGRAS_CLARAS,
   situacaoToken,
   slugBase,
   textoPreco,
@@ -29,6 +27,7 @@ import {
   type ParceiroNaBusca,
   type SolicitacaoEntrada,
 } from "./regras.ts";
+import { REGRAS_CLARAS, TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE } from "../../config/taxa-servico-parceiros.ts";
 import { gerarToken, hashToken, tokenBemFormado } from "./token.ts";
 
 const CPF_OK = "529.982.247-25";
@@ -93,8 +92,8 @@ test("taxa de serviço: 10% em todas as categorias; divisão na origem 90/10 em 
   assert.deepEqual(dividirValor(333.33), { taxa: 33.33, parceiro: 300 });
   assert.deepEqual(dividirValor(-10), { taxa: 0, parceiro: 0 });
   assert.match(REGRAS_CLARAS[1], /10% sobre o valor do serviço, para todas as categorias/);
-  assert.match(REGRAS_CLARAS[2], /90% vai direto para você e 10% para a Viva\. A Viva não guarda o seu dinheiro\./);
-  assert.equal(PAGAMENTO_EM_BREVE, "Pagamento pela plataforma em breve.");
+  assert.match(REGRAS_CLARAS[2], /90% vai direto para você e 10% para a Viva\. A Viva não guarda o dinheiro\./);
+  assert.equal(TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE, "Pagamento pela plataforma em breve.");
 });
 
 test("checklist: aprovar só com os 4 itens e o 'conferido em' do documento", () => {
