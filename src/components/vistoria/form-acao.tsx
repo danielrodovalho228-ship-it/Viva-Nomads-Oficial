@@ -58,7 +58,7 @@ export function FormAcao({
   useEffect(() => {
     const form = formRef.current;
     if (!form || !res) return;
-    limparMarcas(form);
+    if (!res.ok) limparMarcas(form);
     if (res.ok) {
       form.reset(); // o sucesso limpa, como antes
       return;
