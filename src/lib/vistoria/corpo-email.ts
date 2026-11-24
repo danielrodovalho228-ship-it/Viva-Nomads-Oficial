@@ -13,6 +13,7 @@ import { assuntoComTitulo, diaHoraNoAssunto } from "../notifications/assuntos.ts
 export type EventoVistoria =
   | "vistoria_designada"
   | "vistoria_designado_dono"
+  | "vistoria_proposta_expirada"
   | "vistoria_agendada"
   | "vistoria_concordancia"
   | "vistoria_lembrete"
@@ -29,6 +30,7 @@ export type EventoVistoria =
 export const EVENTOS_VISTORIA_COM_FATOS: ReadonlySet<string> = new Set<EventoVistoria>([
   "vistoria_designada",
   "vistoria_designado_dono",
+  "vistoria_proposta_expirada",
   "vistoria_agendada",
   "vistoria_concordancia",
   "vistoria_lembrete",
@@ -96,6 +98,13 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
       return {
         subject: assuntoComTitulo("Novidade na escolha do avaliador de ", titulo),
         body: (n) => `${ola(n)}, ${avaliador ? `${avaliador}, avaliador credenciado que você escolheu,` : "o avaliador credenciado que você escolheu"} respondeu, recusou ou não respondeu no prazo sobre a avaliação ${doImovel(true)}. Abra a avaliação para ver o valor e o prazo propostos e aceitar (você tem ${PRAZO_DONO_ACEITAR_HORAS} horas depois da proposta), ou escolher outro avaliador.`,
+        linhas,
+      };
+    case "vistoria_proposta_expirada":
+      // E1142: ao avaliador, quando a proposta dele vence sem o aceite do dono.
+      return {
+        subject: assuntoComTitulo("A sua proposta de avaliação expirou: ", titulo),
+        body: (n) => `${ola(n)}, o proprietário não aceitou a sua proposta de avaliação ${titulo ? `de ${titulo} ` : ""}no prazo de ${PRAZO_DONO_ACEITAR_HORAS} horas, e ela expirou. O pedido voltou para ele escolher de novo. Você não precisa fazer nada.`,
         linhas,
       };
     case "vistoria_agendada":

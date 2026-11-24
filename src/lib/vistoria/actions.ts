@@ -34,7 +34,7 @@ import {
 } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, registrarRespostaDoAvaliador, resolverAvisosDaVisita, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
-import { erroAoPropor, precisaDoAceiteDoDono } from "./relogio-do-pedido";
+import { ERRO_ACEITE_FORA_DO_PRAZO, aceiteForaDoPrazo, erroAoPropor, precisaDoAceiteDoDono } from "./relogio-do-pedido";
 import { ERRO_TROCA_SEM_CONFIRMAR, trocaConfirmada } from "./troca-de-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
 import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
@@ -522,7 +522,7 @@ async function comoDonoDoPedido(pedidoId: string) {
   if (!(await vistoriaAtiva())) return null;
   const s = await sessao();
   if (!s) return null;
-  const { data: p } = await s.admin.from("vistoria_pedidos").select("id, owner_id, property_id, status, avaliador_id, proposta_em, proposta_aceita_em").eq("id", pedidoId).maybeSingle();
+  const { data: p } = await s.admin.from("vistoria_pedidos").select("id, owner_id, property_id, status, avaliador_id, proposta_em, proposta_aceita_em, escolhido_em, teste").eq("id", pedidoId).maybeSingle();
   if (!p || p.owner_id !== s.userId || p.status !== "designado" || !p.proposta_em || p.proposta_aceita_em) return null;
   return { ...s, p };
 }
@@ -531,6 +531,11 @@ async function comoDonoDoPedido(pedidoId: string) {
 export async function aceitarProposta(form: FormData): Promise<Res> {
   const c = await comoDonoDoPedido(String(form.get("pedidoId") ?? ""));
   if (!c) return SEM_ACESSO;
+  // E1142: passadas as 72 h do dono, o aceite é recusado — a rotina devolve o pedido, mas até ela correr o botão
+  // continua na tela. Nada é gravado e o avaliador não é avisado.
+  if (aceiteForaDoPrazo({ propostaEm: c.p.proposta_em as string | null, teste: c.p.teste === true, escolhidoEm: (c.p.escolhido_em as string | null) ?? null }, new Date())) {
+    return { ok: false, erro: ERRO_ACEITE_FORA_DO_PRAZO };
+  }
   const agora = new Date().toISOString();
   await c.admin.from("vistoria_pedidos").update({ proposta_aceita_em: agora, atualizado_em: agora }).eq("id", c.p.id).is("proposta_aceita_em", null);
   const { data: cred } = await c.admin.from("avaliadores_credenciamento").select("parceiros(user_id)").eq("id", c.p.avaliador_id!).maybeSingle();

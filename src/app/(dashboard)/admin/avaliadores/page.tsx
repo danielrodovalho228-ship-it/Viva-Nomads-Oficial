@@ -108,7 +108,7 @@ export default async function AdminAvaliadoresPage() {
   const atrasadosLista = ((semLaudo ?? []) as unknown as ({ id: string; cidade: string; visita_concluida_em: string } & ComNumero)[]).filter((x) => laudoAtrasado(x.visita_concluida_em, null, agora));
   const [fila_rodizio, recusasLeitura, perfisLeitura] = await Promise.all([
     filaDaCidade(admin),
-    admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade)").in("resposta", ["recusada", "expirada", "ausencia"]).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
+    admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade)").in("resposta", ["recusada", "expirada", "ausencia"]).is("proposta_expirada_em", null).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
     admin.from("profiles").select("id").eq("is_teste", true).limit(200),
   ]);
   const [{ data: recusas }, { data: perfisTeste }] = semFalhaDeLeitura([recusasLeitura, perfisLeitura] as const);

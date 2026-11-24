@@ -77,7 +77,9 @@ test("ponto de envio: todo avisar() da avaliação passa a referência (pedido o
       n++;
     }
   }
-  assert.equal(n, 26);
+  // E1142 (asserção alterada, ORDEM-DUET-622): 26 → 27. O ponto novo é o aviso ao avaliador quando a proposta dele vence
+  // sem o aceite do dono (decisão do Daniel); também passa a referência, como os outros.
+  assert.equal(n, 27);
   const srv = arquivos[1];
   // E1084 (asserção alterada): o select leva também o user_id do parceiro — o nome do avaliador vem da conta (fonte única).
   assert.match(srv, /select\("property_id, agendado_para, avaliadores_credenciamento\(parceiros\(nome_publico, user_id\)\)"\)/);
