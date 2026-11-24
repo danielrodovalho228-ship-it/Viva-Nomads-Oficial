@@ -291,7 +291,8 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     await d.goto(`/dashboard/imoveis/${ids.im3}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("laudo-dono-resultado")).toHaveAttribute("data-resultado", "reprovado");
     // Adendo 62-B1: sem condição de retorno na tabela, a nova avaliação é pelo valor cheio e nada fala em desconto.
-    await expect(d.getByTestId("avaliacao-nova")).toContainText("novo pedido, avaliador à sua escolha (outro que não o da avaliação anterior), pelo valor que o avaliador propuser");
+    // E1177 (asserção alterada, ORDEM-DUET-784): na tela a frase diz a regra que vale — pode não haver outro na cidade.
+    await expect(d.getByTestId("avaliacao-nova")).toContainText("novo pedido, avaliador à sua escolha (outro que não o da avaliação anterior, quando houver outro na sua cidade), pelo valor que o avaliador propuser");
     await expect(d.getByTestId("avaliacao-retorno")).toHaveCount(0);
     await expect(d.getByTestId("avaliacao-dono")).not.toContainText(/desconto|metade|90 dias/);
     await d.getByTestId("pedir-avaliacao").getByRole("button", { name: "Pedir nova avaliação" }).click();

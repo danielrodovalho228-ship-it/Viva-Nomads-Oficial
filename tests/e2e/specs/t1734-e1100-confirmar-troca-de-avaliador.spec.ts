@@ -193,7 +193,8 @@ test.describe("T1734 — E1100: 'Escolher outro avaliador' pede confirmação e 
     await proposta.getByTestId("trocar-avaliador").click();
     const conf = proposta.getByTestId("troca-confirmacao");
     await expect(conf.getByTestId("troca-depois")).toHaveText(
-      `Atenção: não há outro avaliador disponível em ${CIDADE_B} agora. Se você descartar, o pedido fica aguardando, e a Viva avisa quando houver um para você escolher.`,
+      // E1177 (asserção alterada, ORDEM-DUET-778): sem a promessa do aviso.
+      `Atenção: não há outro avaliador disponível em ${CIDADE_B} agora. Se você descartar, o pedido fica aguardando e a equipe da Viva é avisada.`,
     );
     await expect(conf.getByTestId("troca-depois")).toHaveAttribute("data-sem-outro", "1");
     expect((await linha(ids.pedidoB)).status).toBe("designado");
@@ -202,8 +203,9 @@ test.describe("T1734 — E1100: 'Escolher outro avaliador' pede confirmação e 
     await conf.getByRole("button", { name: "Descartar e escolher outro" }).click();
     await expect.poll(async () => (await linha(ids.pedidoB)).status, { timeout: 20_000 }).toBe("pedido");
     expect((await linha(ids.pedidoB)).aguardando_avaliador).toBe(true);
-    await expect(d.getByTestId("troca-feita")).toHaveText("Avaliador e proposta descartados. Não há outro avaliador disponível agora; a Viva avisa quando houver um para você escolher.", { timeout: 20_000 });
-    await expect(d.getByTestId("avaliacao-situacao")).toHaveText("Aguardando avaliador: a Viva avisa quando houver um para você escolher.");
+    await expect(d.getByTestId("troca-feita")).toHaveText("Avaliador e proposta descartados. Não há outro avaliador disponível agora. A equipe da Viva foi avisada.", { timeout: 20_000 });
+    // E1177 (asserção alterada, ORDEM-DUET-778): a lista vazia diz o motivo — o único avaliador da cidade já foi escolhido neste pedido.
+    await expect(d.getByTestId("avaliacao-situacao")).toHaveText("Os avaliadores da sua cidade já foram escolhidos neste pedido e não continuam nele. A equipe da Viva foi avisada.");
     await expect(d.getByTestId("avaliacao-escolha")).toHaveCount(0);
     await d.context().close();
   });

@@ -356,9 +356,13 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   const assinatura = assinaturaDoLaudo({ ...dadosAssinatura, pdfSha256: createHash("sha256").update(Buffer.from(reg.bytes as Uint8Array)).digest("hex"), em: agora.toISOString() });
   if (!assinatura.ok) return { ok: false, erro: assinatura.erro };
   const vistoriado = r.resultado === "aprovado" ? agora.toISOString() : null;
+  // E1177: o laudo guarda se quem o assina é o mesmo avaliador da avaliação anterior — a marca nasce na designação.
+  const { data: designacao } = await admin.from("vistoria_designacoes").select("mesmo_da_anterior").eq("pedido_id", p.id).eq("avaliador_id", p.avaliador_id).maybeSingle();
+  const mesmoDaAnterior = (designacao as { mesmo_da_anterior?: boolean | null } | null)?.mesmo_da_anterior === true;
   const { data: novo, error } = await admin
     .from("vistoria_laudos")
     .insert({
+      mesmo_da_anterior: mesmoDaAnterior,
       pedido_id: original,
       pedido_versao_id: p.id,
       property_id: p.property_id,

@@ -7,7 +7,7 @@ import { MATRIZ_NOTIFICACOES } from "../../config/matriz-notificacoes.ts";
 import { TEMA_POR_EVENTO } from "../notifications/imagens-email.ts";
 import { comMarca, problemasDoAssunto } from "../notifications/assuntos.ts";
 import { REGRA_DO_REAGENDAMENTO } from "./regras.ts";
-import { A_VIVA_AVISA_QUANDO_HOUVER } from "./telas-exibicao.ts";
+import { SEM_OUTRO_AVALIADOR, TEXTO_DA_ESPERA } from "./espera-de-avaliador.ts";
 import { relogioDoPedido, textoDoPrazoDeAceiteParaODono } from "./relogio-do-pedido.ts";
 import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
@@ -29,7 +29,9 @@ const IMOVEL = { titulo: "Apto Santa Mônica", bairro: "Santa Mônica", cidade: 
 const VISITA = "2026-11-05T13:00:00Z";
 const NOVA = "2026-11-06T17:30:00Z";
 const PROPOSTA = "2026-11-24T06:46:00.000Z";
-const SEM_OUTRO = `Não há outro avaliador disponível agora; ${A_VIVA_AVISA_QUANDO_HOUVER}.`;
+// E1177 (asserção alterada, ORDEM-DUET-778): sem avaliador para escolher, o e-mail já não promete o aviso — diz que
+// não há outro e que a equipe foi avisada (o avaliador que saiu fica fora do pedido; a regra não garante outro).
+const SEM_OUTRO = SEM_OUTRO_AVALIADOR;
 const NOVOS = ["vistoria_recusada_dono", "vistoria_sem_resposta_dono"] as const;
 
 test("E1160 (1): a proposta chegou — o dono lê que há proposta e até quando aceita; nada de 'recusou ou não respondeu'", () => {
@@ -107,7 +109,7 @@ test("E1160 (2): a verificação diz o passo do dono — escolher o avaliador; s
   assert.equal(c.body("Lara"), "Olá Lara, a Viva abriu uma verificação do estado de Apto Santa Mônica, com o motivo descrito na página da avaliação. O próximo passo é seu: escolha o avaliador credenciado na página da avaliação.");
   assert.doesNotMatch(c.body("Lara"), /vai combinar a visita/);
   const sem = corpoVistoria("vistoria_verificacao", { imovel: IMOVEL, aguardandoAvaliador: true });
-  assert.equal(sem.body("Lara"), `Olá Lara, a Viva abriu uma verificação do estado de Apto Santa Mônica, com o motivo descrito na página da avaliação. Não há avaliador disponível agora; ${A_VIVA_AVISA_QUANDO_HOUVER}.`);
+  assert.equal(sem.body("Lara"), `Olá Lara, a Viva abriu uma verificação do estado de Apto Santa Mônica, com o motivo descrito na página da avaliação. ${TEXTO_DA_ESPERA.varios}`);
   // O aviso passa a levar o pedido: sem ele o corpo não sabe se há avaliador para escolher.
   const laudoAcoes = semComentarios(ler("src/lib/vistoria/laudo-actions.ts"));
   assert.match(laudoAcoes, /avisar\(a\.admin, im\.owner_id as string, "vistoria_verificacao", rotaDono\(im\.id as string\), \{ pedidoId: p\.id as string, propertyId: im\.id as string \}\)/);
@@ -238,7 +240,8 @@ test("E1160 (6): quem agenda diz ao e-mail se é reagendamento e qual era a data
   // Aí o "nova data" vem das marcas de reagendamento do próprio pedido, lidas com os outros fatos.
   const srv = semComentarios(ler("src/lib/vistoria/servidor.ts"));
   const fatos = srv.slice(srv.indexOf("export async function fatosDaVistoria("), srv.indexOf("export async function avisar("));
-  assert.match(fatos, /select\("property_id, agendado_para, proposta_em, aguardando_avaliador, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento\(numero_credenciado, parceiros\(nome_publico, user_id\)\)"\)/);
+  // E1177 (asserção alterada, ORDEM-DUET-778): o select leva também o motivo da espera.
+  assert.match(fatos, /select\("property_id, agendado_para, proposta_em, aguardando_avaliador, motivo_da_espera, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento\(numero_credenciado, parceiros\(nome_publico, user_id\)\)"\)/);
   assert.match(fatos, /reagendada: ref\.reagendada \?\? \(pp\?\.reagendou_dono === true \|\| pp\?\.reagendou_avaliador === true\)/);
   assert.match(fatos, /visitaAnterior: ref\.visitaAnterior \?\? null/);
   assert.match(fatos, /destinatario: ref\.papel/);

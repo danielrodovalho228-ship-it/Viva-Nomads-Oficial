@@ -11,10 +11,11 @@ import { brl } from "@/lib/fiscal/documento";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
-import { A_VIVA_AVISA_QUANDO_HOUVER, ROTAS_NIVEL, ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR, TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
+import { ROTAS_NIVEL, ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR, TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
+import { TEXTO_MESMO_AVALIADOR, textoDaEspera } from "@/lib/vistoria/espera-de-avaliador";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
 import { prazoCombinadoNaLinhaDoDono } from "@/lib/vistoria/pedido-avaliador";
 import { prazoLaudo } from "@/lib/vistoria/laudo";
@@ -33,7 +34,7 @@ import {
   ROTULO_AVALIADOR_EM_TESTE,
   ROTULO_CONDUTA,
   ROTULO_PORTE,
-  TEXTO_NOVA_AVALIACAO,
+  TEXTO_NOVA_AVALIACAO_NA_TELA,
   pedidoPodeAbrir,
   porteDoImovel,
   precoVigente,
@@ -70,7 +71,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     tabelaDaCidade(admin, im.city), // E1081: a cidade pela chave (sem acento, sem maiúsculas)
     admin
       .from("vistoria_pedidos")
-      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, concordancia_pedida_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, visita_concluida_em, proposta_em, proposta_aceita_em, escolhido_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
+      .select("id, status, aguardando_avaliador, motivo_da_espera, agendado_para, ocupado, concordancia_em, concordancia_pedida_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, visita_concluida_em, proposta_em, proposta_aceita_em, escolhido_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
       .eq("property_id", propertyId)
       .order("criado_em", { ascending: false })
       .limit(1),
@@ -88,6 +89,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     id: string;
     status: string;
     aguardando_avaliador: boolean;
+    motivo_da_espera: string | null;
     agendado_para: string | null;
     ocupado: boolean;
     concordancia_em: string | null;
@@ -110,7 +112,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
   // E1173: o morador disse que não pode na data proposta, e ainda não há data nova.
   const recusouAData = !!atual && concordanciaRecusada({ status: atual.status, ocupado: atual.ocupado, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em, concordanciaEm: atual.concordancia_em });
   // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
-  let sugeridos: { id: string; numero: string; nome: string; termos: string; reputacao: { novo: boolean; cheias: number; texto: string }; identidadeVerificada: boolean; teste: boolean; fotoUrl: string | null }[] | null = [];
+  let sugeridos: { id: string; numero: string; nome: string; termos: string; reputacao: { novo: boolean; cheias: number; texto: string }; identidadeVerificada: boolean; teste: boolean; fotoUrl: string | null; mesmoDaAnterior: boolean }[] | null = [];
   if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
     try {
       const lista = (await sugeridosDoPedido(admin, atual.id, agora)) ?? [];
@@ -150,6 +152,8 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
           identidadeVerificada: verificadas.has(uid),
           teste,
           fotoUrl: uid && fotoPublicaPermitida(teste) ? await signAvatarPath(conta?.avatar_url ?? null, uid) : null,
+          // E1177: só está na lista pela exceção da alternância (fez a avaliação anterior e não há outro).
+          mesmoDaAnterior: a.mesmoDaAnterior === true,
         };
       }));
     } catch {
@@ -206,9 +210,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
         )}
         {aberto && atual ? (
           <div className="grid gap-4 text-sm" data-testid="avaliacao-dono-pedido" data-status={atual.status}>
-            {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em, laudoAte: laudoAteDoPedido }) && (
+            {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em, laudoAte: laudoAteDoPedido, motivoDaEspera: atual.motivo_da_espera }) && (
               <p className="text-ink" data-testid="avaliacao-situacao">
-                {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em, laudoAte: laudoAteDoPedido })}
+                {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em, laudoAte: laudoAteDoPedido, motivoDaEspera: atual.motivo_da_espera })}
               </p>
             )}
             {atual.status === "pedido" && <DepoisDaTroca pedidoId={atual.id} aguardando={atual.aguardando_avaliador} />}
@@ -227,7 +231,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 {sugeridos === null ? (
                   <p className="mt-2 text-red-700" role="alert" data-testid="avaliacao-escolha-falhou">Não foi possível carregar os avaliadores agora. Atualize a página para tentar de novo.</p>
                 ) : sugeridos.length === 0 ? (
-                  <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">Nenhum avaliador disponível agora: {A_VIVA_AVISA_QUANDO_HOUVER}.</p>
+                  <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">{textoDaEspera(atual.motivo_da_espera)}</p>
                 ) : (
                   <ul className="mt-3 grid gap-3">
                     {sugeridos.map((a) => {
@@ -273,6 +277,10 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                                 <ShieldCheck className="h-3 w-3 shrink-0" aria-hidden />
                                 {TEXTO_IDENTIDADE_VERIFICADA}
                               </span>
+                            )}
+                            {/* E1177: o mesmo avaliador da avaliação anterior — o dono escolhe-o ou espera outro. */}
+                            {a.mesmoDaAnterior && (
+                              <span className="mt-2 block rounded-lg bg-sage-100 px-2 py-1 text-sm text-ink" role="note" data-testid="avaliacao-sugerido-mesmo">{TEXTO_MESMO_AVALIADOR}</span>
                             )}
                           </span>
                           <FormAcao acao={escolherAvaliador} testid="escolher-avaliador">
@@ -401,7 +409,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               <p className="mt-2 text-ink">Porte do anúncio: {ROTULO_PORTE[porte]}</p>
               {preco ? (
                 <>
-                  {desdeNova && <p className="mt-2 text-ink" data-testid="avaliacao-nova">{TEXTO_NOVA_AVALIACAO}</p>}
+                  {desdeNova && <p className="mt-2 text-ink" data-testid="avaliacao-nova">{TEXTO_NOVA_AVALIACAO_NA_TELA}</p>}
                   <p className="mt-1 font-semibold text-ink" data-testid="avaliacao-valor">
                     {desdeNova ? "Referência da nova avaliação" : "Referência da avaliação"}: {brl(cobranca?.valor ?? preco.valor)}
                     {condicao ? ` (tabela: ${brl(preco.valor)})` : ""}
