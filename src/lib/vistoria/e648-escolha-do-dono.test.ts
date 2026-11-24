@@ -11,7 +11,6 @@ import { readFileSync } from "node:fs";
 import {
   CRITERIOS_PUBLICOS,
   FAIXA_REFERENCIA,
-  PRAZO_PROPOSTA_MAX_DIAS,
   assinaturaDoLaudo,
   criteriosAtingidos,
   descredenciamentoValido,
@@ -78,7 +77,9 @@ test("o avaliador define o PRÓPRIO preço e prazo: qualquer valor positivo vale
   assert.equal(validarProposta({ valor: Number.NaN, prazoDias: 5 }, f).ok, false);
   assert.equal(validarProposta({ valor: 300, prazoDias: 0 }, f).ok, false);
   assert.equal(validarProposta({ valor: 300, prazoDias: 2.5 }, f).ok, false);
-  assert.equal(validarProposta({ valor: 300, prazoDias: PRAZO_PROPOSTA_MAX_DIAS + 1 }, f).ok, false);
+  // E1156 (ORDENS 712, 713 e 774): o teto antigo de 30 dias saiu; o prazo acima do teto novo (5 dias úteis) é recusado, e os 31 de antes também.
+  assert.equal(validarProposta({ valor: 300, prazoDias: 6 }, f).ok, false);
+  assert.equal(validarProposta({ valor: 300, prazoDias: 31 }, f).ok, false);
   assert.ok(validarProposta({ valor: 300.456, prazoDias: 3 }, f).ok && (validarProposta({ valor: 300.456, prazoDias: 3 }, f) as { valor: number }).valor === 300.46, "centavos arredondados");
 });
 

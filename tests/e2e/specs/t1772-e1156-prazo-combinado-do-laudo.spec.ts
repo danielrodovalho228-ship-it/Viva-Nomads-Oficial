@@ -13,6 +13,8 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
    2. Com a visita marcada, o dono lê "Laudo até DD/MM/AAAA" (3 dias úteis depois da visita); com a visita feita, "o
       laudo sai até DD/MM/AAAA". Nenhuma das duas telas fala em 48 horas.
    3. O pedido anterior à regra mantém a promessa que recebeu: "laudo em 7 dias".
+   4. (ORDEM-774) O termo do perfil segue o teto: em "Meus termos", 6 dias é recusado com a mesma frase da proposta e
+      nada é gravado; com 5 entra.
 */
 const LARGURAS = [390, 1280] as const;
 const SAIDA = "tests/laboratorio/saida";
@@ -189,5 +191,32 @@ test.describe("T1772 — E1156: o laudo sai no prazo combinado com o avaliador, 
     await expect(d.getByTestId("avaliacao-proposta")).toContainText(/Proposta do avaliador: R\$\s380,00 · laudo em 7 dias/, { timeout: 30_000 });
     await expect(d.getByTestId("avaliacao-proposta")).not.toContainText("dias úteis");
     await d.context().close();
+  });
+
+  test("4. o termo do perfil segue o teto: em 'Meus termos', 6 dias é recusado com a mesma frase da proposta; com 5 entra", async ({ browser }) => {
+    const termoGravado = async () => {
+      const { data, error } = await adm().from("avaliadores_credenciamento").select("prazo_entrega_dias").eq("id", ids.cred).single();
+      if (error) throw error;
+      return (data as { prazo_entrega_dias: number | null }).prazo_entrega_dias;
+    };
+    const a = await entrar(browser, avaliador.email, senha);
+    await a.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
+    const termos = a.getByTestId("meus-termos");
+    await expect(termos, "o avaliador ativo tem o painel dos próprios termos").toBeVisible({ timeout: 30_000 });
+    const prazo = termos.locator('input[name="prazoEntregaDias"]');
+    await expect(prazo, "o campo do perfil trava no teto da proposta").toHaveAttribute("max", "5");
+    // Acima do teto: tirando a trava do campo, o servidor recusa na mesma, com a frase da proposta.
+    await termos.locator('input[name="valor"]').fill("250");
+    await prazo.evaluate((el) => el.removeAttribute("max"));
+    await prazo.fill("6");
+    await termos.getByRole("button", { name: "Salvar termos" }).click();
+    await expect(a.getByText("Informe o prazo do laudo em dias úteis inteiros, de 1 a 5, contados depois da visita.")).toBeVisible({ timeout: 20_000 });
+    expect(await termoGravado(), "o termo acima do teto não é gravado").toBeNull();
+    // No teto: entra.
+    await termos.locator('input[name="valor"]').fill("250");
+    await prazo.fill("5");
+    await termos.getByRole("button", { name: "Salvar termos" }).click();
+    await expect.poll(termoGravado, { timeout: 20_000 }).toBe(5);
+    await a.context().close();
   });
 });

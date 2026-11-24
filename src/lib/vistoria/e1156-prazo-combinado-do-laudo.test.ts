@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PRAZO_LAUDO_MAX_DIAS_UTEIS, PRAZO_LAUDO_PADRAO_DIAS_UTEIS, diasUteisDoLaudo } from "./prazos.ts";
 import { laudoAtrasado, laudoForaDoCombinado, prazoLaudo } from "./laudo.ts";
-import { faixaDeReferencia, validarProposta } from "./escolha.ts";
+import { faixaDeReferencia, validarProposta, validarTermos } from "./escolha.ts";
 import { INCLUI_SEMPRE } from "./regras.ts";
 import { situacaoDono } from "./telas-exibicao.ts";
 import { ROTULO_NUMERO_LAUDOS_FORA_DO_PRAZO, TITULO_LAUDOS_FORA_DO_PRAZO, contagemContestacoes, prazoDoLaudo } from "./telas-laudo.ts";
@@ -172,6 +172,21 @@ test("E1156: o avaliador propõe em dias úteis depois da visita, com o teto, e 
   assert.equal(linhaDoPrazoDoLaudo("aceito", antigo), "Laudo em 5 dias");
   assert.equal(resumoDoValorNaLista(novo), "R$ 280,00 · 2 dias úteis");
   assert.equal(resumoDoValorNaLista(antigo), "R$ 280,00 · 5 dias");
+});
+
+test("E1156 (ORDEM-774): o termo do perfil segue o teto da proposta — de 1 a 5 dias úteis, com a mesma frase de recusa", () => {
+  // "Meus termos › Entrega do laudo" é a mesma promessa noutra superfície: não pode anunciar o que a proposta recusa.
+  for (const n of [1, 2, 3, 4, 5]) assert.equal(validarTermos({ valor: 250, prazoEntregaDias: n, prazoRespostaHoras: 12 }).ok, true, `${n} dias`);
+  const acima = validarTermos({ valor: 250, prazoEntregaDias: PRAZO_LAUDO_MAX_DIAS_UTEIS + 1, prazoRespostaHoras: 12 });
+  assert.deepEqual(acima, { ok: false, erro: "Informe o prazo do laudo em dias úteis inteiros, de 1 a 5, contados depois da visita." });
+  // A frase é a MESMA da proposta, letra por letra.
+  assert.deepEqual(acima, validarProposta({ valor: 250, prazoDias: PRAZO_LAUDO_MAX_DIAS_UTEIS + 1 }, f));
+  for (const fora of [0, -1, 2.5, 30, Number.NaN]) assert.deepEqual(validarTermos({ valor: 250, prazoEntregaDias: fora, prazoRespostaHoras: 12 }), acima, `fora da regra (${fora})`);
+  // O campo do perfil trava no mesmo teto, lido da fonte única dos prazos; o teto antigo de 30 não sobra em lado nenhum.
+  const lista = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx");
+  assert.match(lista, /<input name="prazoEntregaDias" type="number" min=\{1\} max=\{PRAZO_LAUDO_MAX_DIAS_UTEIS\}/);
+  assert.doesNotMatch(lista, /PRAZO_PROPOSTA_MAX_DIAS/);
+  assert.doesNotMatch(ler("src/lib/vistoria/escolha.ts"), /PRAZO_PROPOSTA_MAX_DIAS/);
 });
 
 test("E1156: a migração 0361 só acrescenta a coluna opcional, com o teto, e tem o aplicar e o rollback", () => {

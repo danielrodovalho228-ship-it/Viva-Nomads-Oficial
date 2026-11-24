@@ -38,7 +38,12 @@ export function sugerirAvaliadores(fila: AvaliadorFila[], pedido: PedidoParaDesi
 // ── 2. Faixa de referência e proposta própria ──────────────────────────────────────────────────────────────────
 /** Percentuais PROVISÓRIOS da faixa em torno do valor da tabela (a confirmar com o Daniel); só afetam o que é exibido. */
 export const FAIXA_REFERENCIA = { abaixo: 0.8, acima: 1.25 } as const;
-export const PRAZO_PROPOSTA_MAX_DIAS = 30;
+/**
+ * E1156: a recusa do prazo fora da regra. Uma frase só, para a proposta e para o termo do perfil ("Meus termos"): as
+ * duas superfícies fazem a mesma promessa e seguem o mesmo teto.
+ */
+const RECUSA_DO_PRAZO_DO_LAUDO = `Informe o prazo do laudo em dias úteis inteiros, de 1 a ${PRAZO_LAUDO_MAX_DIAS_UTEIS}, contados depois da visita.`;
+const prazoDoLaudoNaRegra = (dias: number) => Number.isInteger(dias) && dias >= 1 && dias <= PRAZO_LAUDO_MAX_DIAS_UTEIS;
 
 export interface FaixaReferencia {
   referencia: number;
@@ -59,9 +64,7 @@ export type ResultadoProposta = { ok: true; valor: number; prazoDias: number; fo
  */
 export function validarProposta(e: { valor: number; prazoDias: number }, faixa: FaixaReferencia): ResultadoProposta {
   if (!Number.isFinite(e.valor) || e.valor <= 0) return { ok: false, erro: "Informe o valor da avaliação (maior que zero)." };
-  if (!Number.isInteger(e.prazoDias) || e.prazoDias < 1 || e.prazoDias > PRAZO_LAUDO_MAX_DIAS_UTEIS) {
-    return { ok: false, erro: `Informe o prazo do laudo em dias úteis inteiros, de 1 a ${PRAZO_LAUDO_MAX_DIAS_UTEIS}, contados depois da visita.` };
-  }
+  if (!prazoDoLaudoNaRegra(e.prazoDias)) return { ok: false, erro: RECUSA_DO_PRAZO_DO_LAUDO };
   const valor = Math.round(e.valor * 100) / 100;
   return { ok: true, valor, prazoDias: e.prazoDias, foraDaFaixa: valor < faixa.min || valor > faixa.max };
 }
@@ -159,10 +162,13 @@ export function propostaVencida(propostaEm: string | null, agora: Date, horas = 
 
 export type ResultadoTermos = { ok: true; valor: number; prazoEntregaDias: number; prazoRespostaHoras: number } | { ok: false; erro: string };
 
-/** O avaliador declara o próprio valor, o prazo de entrega do laudo e em quantas horas responde a um pedido. Nada é imposto pela Viva. */
+/**
+ * O avaliador declara o próprio valor, o prazo de entrega do laudo e em quantas horas responde a um pedido. O valor é
+ * dele; o prazo do laudo segue o teto da proposta (E1156, ORDEM-774): o perfil não anuncia o que a proposta recusa.
+ */
 export function validarTermos(e: { valor: number; prazoEntregaDias: number; prazoRespostaHoras: number }): ResultadoTermos {
   if (!Number.isFinite(e.valor) || e.valor <= 0) return { ok: false, erro: "Informe o seu valor (maior que zero)." };
-  if (!Number.isInteger(e.prazoEntregaDias) || e.prazoEntregaDias < 1 || e.prazoEntregaDias > PRAZO_PROPOSTA_MAX_DIAS) return { ok: false, erro: `Informe o prazo de entrega em dias inteiros (de 1 a ${PRAZO_PROPOSTA_MAX_DIAS}).` };
+  if (!prazoDoLaudoNaRegra(e.prazoEntregaDias)) return { ok: false, erro: RECUSA_DO_PRAZO_DO_LAUDO };
   if (!Number.isInteger(e.prazoRespostaHoras) || e.prazoRespostaHoras < 1 || e.prazoRespostaHoras > PRAZO_RESPOSTA_MAX_HORAS) return { ok: false, erro: `Informe em quantas horas você responde a um pedido (de 1 a ${PRAZO_RESPOSTA_MAX_HORAS}).` };
   return { ok: true, valor: Math.round(e.valor * 100) / 100, prazoEntregaDias: e.prazoEntregaDias, prazoRespostaHoras: e.prazoRespostaHoras };
 }

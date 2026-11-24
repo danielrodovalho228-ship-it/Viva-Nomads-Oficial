@@ -21,7 +21,7 @@ import { etapaDoPedido, identificacaoDoImovel, regiaoDoItemEncerrado, resumoDoVa
 import { TEXTO_RECUSA_PARA_O_AVALIADOR, concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeuSobre, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
-import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
+import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA } from "@/lib/vistoria/escolha";
 import { PRAZO_LAUDO_MAX_DIAS_UTEIS, PRAZO_RESPOSTA_MAX_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "@/lib/vistoria/prazos";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
 import { RESPOSTA_DO_AVALIADOR, STATUS_PEDIDO } from "@/lib/vistoria/rotulos-do-pedido";
@@ -193,7 +193,7 @@ export default async function AvaliacaoParceiroPage() {
           <p className="text-sm text-muted">Você define o seu valor, em quantos dias entrega o laudo e em quantas horas responde a um pedido. O proprietário vê isso na lista de escolha; sem resposta no seu prazo, o pedido volta para ele escolher outro.</p>
           <FormAcao acao={salvarMeusTermos} className="mt-3 flex flex-wrap items-end gap-2" testid="salvar-termos">
             <label className="text-sm">Valor (R$)<input name="valor" inputMode="decimal" defaultValue={cred.preco_proprio != null ? String(cred.preco_proprio).replace(".", ",") : ""} className={campo} required /></label>
-            <label className="text-sm">Entrega do laudo (dias)<input name="prazoEntregaDias" type="number" min={1} max={PRAZO_PROPOSTA_MAX_DIAS} defaultValue={cred.prazo_entrega_dias ?? ""} className={campo} required /></label>
+            <label className="text-sm">Entrega do laudo (dias)<input name="prazoEntregaDias" type="number" min={1} max={PRAZO_LAUDO_MAX_DIAS_UTEIS} defaultValue={cred.prazo_entrega_dias ?? ""} className={campo} required /></label>
             <label className="text-sm">Respondo em até (horas)<input name="prazoRespostaHoras" type="number" min={1} max={PRAZO_RESPOSTA_MAX_HORAS} defaultValue={cred.prazo_resposta_horas ?? PRAZO_RESPOSTA_PADRAO_HORAS} className={campo} required /></label>
             <Button type="submit" size="sm">Salvar termos</Button>
           </FormAcao>
