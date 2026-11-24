@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { esperarSemEsqueleto } from "../fixtures/esqueleto";
 
 /*
   T1755 — E1112 @E1112 (a correcção da ORDEM-DUET-652, linha Parceiros): a categoria "avaliador" nasce pelo PEDIDO DE
@@ -36,6 +37,7 @@ const gravado = async () => {
 };
 async function abrirFormulario(page: Page) {
   await page.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
+  await esperarSemEsqueleto(page, "o pedido de credenciamento");
   const form = page.getByTestId("credenciamento-form").locator("form");
   await expect(form.locator('[name="nome"]')).toBeVisible({ timeout: 30_000 });
   // Espera a hidratação: antes dela, o envio é o nativo (recarrega a página) e não prova nada.
