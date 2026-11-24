@@ -13,9 +13,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { identificacaoDoImovel, linhaDoPrazoDoLaudo, linhaDoValor, resumoDoValorNaLista } from "./pedido-avaliador.ts";
 import { codigoDoImovel } from "../imovel-pagina.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, "").replace(/^\s*\/\/.*$/gm, "");
 const ESCOLHIDO = "2026-11-22T12:00:00Z";
 const piloto = { valor_tabela: 350, valor_proposto: 250 as number | null, prazo_proposto_dias: 2 as number | null, teste: true, escolhido_em: ESCOLHIDO as string | null };
 
@@ -86,7 +86,7 @@ test("E1108: a tela do pedido, a tela da visita e a lista leem daqui", () => {
   assert.match(linha, /<span className="whitespace-nowrap">\{codigo\}<\/span>/);
   assert.match(comp, /data-testid="pedido-prazo-laudo"/);
   // Só os comentários de linha saem: o `accept="image/*"` do formulário de credenciamento abriria um bloco falso aqui.
-  const lista = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[^\n]*\*\/\}/g, "");
+  const lista = semComentarios(ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx"));
   assert.match(lista, /identificacaoDoImovel\(/);
   assert.match(lista, /resumoDoValorNaLista\(p\)/);
   assert.match(lista, /<IdentificacaoDoImovel texto=\{imovel\} \/>/);

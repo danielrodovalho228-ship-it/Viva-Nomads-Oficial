@@ -48,7 +48,7 @@ test("E1080: os cartões da cidade — várias cidades contam, número único (o
 });
 
 test("E1080: nada na base diz 'credenciado com o CNPJ da Viva' nem guarda telefone ou e-mail", () => {
-  const s = readFileSync("src/lib/vistoria/vitrine-avaliadores.ts", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const s = fonteSemComentarios(readFileSync("src/lib/vistoria/vitrine-avaliadores.ts", "utf8"));
   assert.doesNotMatch(s, /CNPJ da Viva|telefone|phone|e-?mail|whats/i);
 });
 
@@ -74,6 +74,7 @@ test("E1079: a UF só quando a cidade é única no IBGE; 'Novo na Viva' só sem 
 });
 
 import { cidadeDoSlug, ehNumeroDeAvaliador, slugDaCidade, vitrineAberta } from "./vitrine-avaliadores.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 test("E1080: /avaliadores/<…> — número de avaliador × cidade; o caminho da cidade pelo IBGE", () => {
   assert.equal(ehNumeroDeAvaliador("UDI-003"), true);
@@ -94,11 +95,11 @@ test("E1080: a listagem fica fechada ao público (só no laboratório, para cons
   assert.match(pagina, /if \(!vitrineAberta\(integracoesSimuladas\(\)\)\) notFound\(\);/);
   assert.match(pagina, /robots: \{ index: false, follow: false \}/);
   const vitrine = readFileSync("src/components/vistoria/vitrine-avaliadores.tsx", "utf8");
-  assert.doesNotMatch(vitrine.replace(/\/\*[\s\S]*?\*\//g, ""), /tel:|mailto:|wa\.me|telefone|e-?mail|CNPJ da Viva/i);
+  assert.doesNotMatch(fonteSemComentarios(vitrine), /tel:|mailto:|wa\.me|telefone|e-?mail|CNPJ da Viva/i);
 });
 
 test("E1079 (385, tela 3): a escolha do dono em cartões — rosto, selo, termos e o preço da TABELA DA CIDADE para o porte", () => {
-  const b = readFileSync("src/components/vistoria/bloco-avaliacao-dono.tsx", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const b = fonteSemComentarios(readFileSync("src/components/vistoria/bloco-avaliacao-dono.tsx", "utf8"));
   assert.match(b, /Avaliadores disponíveis em \{im\.city\}/);
   assert.match(b, /data-testid="avaliacao-sugerido-rosto"/);
   // Nenhuma foto de pessoa real sem o Daniel: na escolha do dono, só as iniciais.

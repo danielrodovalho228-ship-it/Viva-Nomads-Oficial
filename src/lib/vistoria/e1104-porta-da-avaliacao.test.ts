@@ -12,6 +12,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 import {
   ANCORA_AVALIACAO_NO_IMOVEL,
   HREF_PORTA_AVALIACAO,
@@ -27,7 +28,6 @@ import {
 } from "./porta-da-avaliacao.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 const imovel = (id: string, emCurso = false) => ({ id, titulo: `Casa ${id}`, cidade: "Uberlândia", emCurso, pedidoEm: emCurso ? "2026-11-20T12:00:00Z" : null });
 
 test("E1104 (1): dono é quem tem imóvel ou se cadastrou como proprietário; o morador não ganha o cartão", () => {

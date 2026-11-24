@@ -9,10 +9,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 // E1091 reforço (ORDEM-DUET-620): a trava lê só o CÓDIGO. Com os comentários, "Enviando…" casava com o cabeçalho de
 // form-acao.tsx e a trava continuava verde com o texto da tela trocado (mutação da ORDEM-DUET-618).
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 const src = semComentarios(readFileSync(new URL("../../components/vistoria/form-acao.tsx", import.meta.url), "utf8"));
 
 test("E1091: enquanto envia, o formulário diz 'Enviando…' e os botões de envio ficam desligados", () => {

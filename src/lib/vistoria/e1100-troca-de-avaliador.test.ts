@@ -11,6 +11,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 import {
   CAMPO_CONFIRMAR_TROCA,
   ERRO_TROCA_SEM_CONFIRMAR,
@@ -23,7 +24,6 @@ import {
 } from "./troca-de-avaliador.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 test("E1100 (1): a confirmação escreve o que se perde — o avaliador, a proposta (valor e prazo) e que não dá para desfazer", () => {
   const t = textoDaTroca({ numero: "UDI-002", valor: "R$ 380,00", prazoDias: 5, outros: 2, cidade: "Uberlândia" });

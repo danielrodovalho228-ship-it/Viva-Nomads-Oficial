@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { PRAZO_DONO_ACEITAR_HORAS } from "./prazos.ts";
 import * as relogio from "./relogio-do-pedido.ts";
 import { ERRO_ACEITE_FORA_DO_PRAZO, aceiteForaDoPrazo, relogioDoPedido, textoDoPrazoDeAceite } from "./relogio-do-pedido.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E1142 (ORDEM-DUET-619, linha Parceiros, classe B): o dono conseguia aceitar a proposta do avaliador depois de o prazo
@@ -18,7 +19,6 @@ const PROPOSTA = "2026-11-20T15:00:00.000Z";
 const depois = (ms: number) => new Date(Date.parse(PROPOSTA) + ms);
 const pedido = { propostaEm: PROPOSTA, teste: false, escolhidoEm: "2026-11-20T10:00:00.000Z" };
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 test("E1142: dentro das 72 h o dono aceita; no instante em que o prazo acaba, já não", () => {
   assert.equal(PRAZO_DONO_ACEITAR_HORAS, 72);

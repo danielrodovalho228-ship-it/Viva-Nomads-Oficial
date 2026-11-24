@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { ERRO_ACEITE_FORA_DO_PRAZO, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeAceiteParaODono } from "./relogio-do-pedido.ts";
 import { dataHoraBRT } from "../datas-brasilia.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E1154 (ORDEM-DUET-651; D3 da varredura do lado do dono, ORDEM-DUET-656). Para o MESMO prazo de aceite, o avaliador lia
@@ -12,7 +13,6 @@ import { dataHoraBRT } from "../datas-brasilia.ts";
   Roda: node --test src/lib/vistoria/e1154-prazo-exato-do-aceite-no-dono.test.ts
 */
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 const PROPOSTA = "2026-11-24T06:46:00.000Z"; // 03:46 em Brasília
 const estado = { status: "designado", resposta: "aceita", designadoEm: "2026-11-24T05:00:00.000Z", propostaEm: PROPOSTA, propostaAceitaEm: null, precisaDoAceite: true };
 
