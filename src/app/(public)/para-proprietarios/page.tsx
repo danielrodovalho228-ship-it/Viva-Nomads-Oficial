@@ -84,21 +84,6 @@ export default function ForLandlordsPage() {
           Decisão do Daniel (08/11): completar. Texto só do que o produto faz; nenhum valor de exemplo (o simulador começa vazio, E294). */}
       <section className="container-page pt-12" data-testid="proprietarios-blocos-mockup">
         <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-4 rounded-xl border border-line bg-white p-6 sm:flex-row sm:items-center sm:justify-between" data-testid="proprietarios-pedidos-cidade">
-            <div className="flex items-start gap-4">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sage-100 text-forest">
-                <MapPin className="h-5 w-5" aria-hidden />
-              </span>
-              <div>
-                <h2 className="font-title text-lg font-semibold text-ink sm:text-2xl">Pedidos de moradia da sua cidade chegam até você</h2>
-                <p className="mt-1 text-base text-muted">Veja os pedidos de quem procura moradia perto do seu imóvel e responda pela plataforma.</p>
-              </div>
-            </div>
-            <ButtonLink href="/dashboard/pedidos-cidade" variant="secondary" size="lg" className="w-full sm:w-auto" data-testid="proprietarios-ver-pedidos">
-              Ver pedidos da cidade
-            </ButtonLink>
-          </div>
-
           <div className="flex flex-col gap-4 overflow-hidden rounded-xl border border-line bg-surface-2 sm:flex-row sm:items-center" data-testid="proprietarios-publicamos">
             <div className="flex-1 p-6">
               <span className="inline-flex rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">Serviço</span>
