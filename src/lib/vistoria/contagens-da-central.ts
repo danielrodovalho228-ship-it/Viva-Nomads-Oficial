@@ -43,3 +43,32 @@ export function separarContasDeTeste<T>(
 export function textoDasContasDeTeste(n: number): string {
   return `Mais ${n} de conta de teste, fora do número:`;
 }
+
+/** E1175: os textos da linha da Central (aprovados nas ORDENS-DUET 780 e 782), no singular e no plural. */
+export const TEXTO_ESPERA_DO_MORADOR = {
+  um: "pedido de avaliação à espera da concordância do morador",
+  varios: "pedidos de avaliação à espera da concordância do morador",
+} as const;
+export const TEXTO_RECUSADO_PELO_MORADOR = {
+  um: "pedido de avaliação recusado pelo morador — à espera de nova data",
+  varios: "pedidos de avaliação recusados pelo morador — à espera de nova data",
+} as const;
+
+/** E1175 — PROPOSTA DE TEXTO (Dúvidas do PR): o título do painel na página dos avaliadores e a frase sem pedidos. */
+export const TITULO_ESPERA_DO_MORADOR = "Avaliações à espera do morador";
+export const VAZIO_ESPERA_DO_MORADOR = "Nenhum pedido de avaliação à espera do morador.";
+
+type Contagem = { n: number; maisAntigoEm: string | null };
+
+/**
+ * E1175: a MESMA linha da Central diz os dois estados do pedido que espera o morador — a data à espera da concordância
+ * e o recusado à espera de nova data. O número é a soma; o texto diz só os estados que têm pedidos (singular e plural
+ * pela contagem de cada um); o "mais antigo" é o mais antigo dos dois.
+ */
+export function linhaEsperaDoMorador(espera: Contagem, recusados: Contagem): { n: number; texto: string; maisAntigoEm: string | null } {
+  const parte = (c: Contagem, t: { um: string; varios: string }) => (c.n > 0 ? `${c.n} ${c.n === 1 ? t.um : t.varios}` : null);
+  const texto = [parte(espera, TEXTO_ESPERA_DO_MORADOR), parte(recusados, TEXTO_RECUSADO_PELO_MORADOR)].filter(Boolean).join(" · ");
+  const datas = [espera, recusados].filter((c) => c.n > 0).map((c) => c.maisAntigoEm).filter((d): d is string => !!d && Number.isFinite(Date.parse(d)));
+  const maisAntigoEm = datas.length ? datas.reduce((a, b) => (Date.parse(b) < Date.parse(a) ? b : a)) : null;
+  return { n: espera.n + recusados.n, texto, maisAntigoEm };
+}
