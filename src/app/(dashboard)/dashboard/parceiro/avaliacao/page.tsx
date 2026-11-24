@@ -86,6 +86,7 @@ export default async function AvaliacaoParceiroPage() {
       <>
         <PageTitle title="Avaliação de imóveis" subtitle="Credenciamento de avaliador: o proprietário escolhe o avaliador e você define o seu valor e o seu prazo." />
         <PassosCredenciamento status={null} identidade={identidade} teste={teste} />
+        <div role="status" aria-label="Carregando (mutação P3)" />
         <Panel title="Pedir credenciamento" data-testid="credenciamento-form">
           <p className="text-sm text-muted">
             Precisa da identidade verificada, CNPJ válido (CPF não é aceito), experiência comprovada e uma avaliação de teste revisada pela Viva antes da primeira real.
