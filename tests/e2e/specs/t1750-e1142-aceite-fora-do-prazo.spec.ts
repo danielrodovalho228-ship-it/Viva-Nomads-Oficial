@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, existsSync } from "node:fs";
 import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { devolverAVezDaRotinaDaVistoria, pegarAVezDaRotinaDaVistoria } from "../fixtures/vez-da-rotina-da-vistoria";
 
 /*
   T1750 — E1142 @E1142 (ORDEM-DUET-619, linha Parceiros, classe B): o dono conseguia aceitar a proposta do avaliador
@@ -78,6 +79,8 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
   test.beforeAll(async () => {
+    // A rotina corre sobre o banco inteiro: esta spec só monta a massa quando nenhuma outra spec de rotina está a meio.
+    await pegarAVezDaRotinaDaVistoria("t1750");
     for (const [k, c] of [["dono", dono], ["avaliador", avaliador]] as const) {
       ids[k] = await criarConta(c, senha);
       const t = await adm().from("profiles").update({ is_teste: true }).eq("id", ids[k]);
@@ -139,6 +142,7 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
     if (ids.parc) await adm().from("parceiros").delete().eq("id", ids.parc);
     if (imoveis.length) await adm().from("properties").delete().in("id", imoveis);
     await apagarContas(contas);
+    devolverAVezDaRotinaDaVistoria();
   });
 
   test("1. proposta de 73 horas: o aceite é recusado com o aviso junto do botão; nada é gravado nem avisado", async ({ browser }) => {
@@ -158,9 +162,16 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
       await expect(aviso).toHaveText(AVISO, { timeout: 20_000 });
       await expect(aviso).toHaveAttribute("role", "alert");
       await expect(form.getByTestId("acao-ok")).toHaveCount(0);
-      const [cb, ca] = [await botao.boundingBox(), await aviso.boundingBox()];
-      expect(ca!.y, "o aviso fica logo abaixo do botão").toBeGreaterThanOrEqual(cb!.y + cb!.height - 1);
-      expect(ca!.y - (cb!.y + cb!.height), "e encostado a ele").toBeLessThan(40);
+      // O botão e o aviso são medidos NUMA só leitura. Em dois pedidos separados a página ainda podia mexer-se entre
+      // um e outro (a rolagem depois do clique), e a diferença saía errada sem a tela estar errada: sobre o merge
+      // bb9abda8 o caso falhou 4 vezes em 12 por isso, com o aviso no lugar certo na captura.
+      const medida = await form.evaluate((f) => {
+        const b = f.querySelector('button[type="submit"]')!.getBoundingClientRect();
+        const a = f.querySelector('[data-testid="acao-erro"]')!.getBoundingClientRect();
+        return { fimDoBotao: b.bottom, topoDoAviso: a.top };
+      });
+      expect(medida.topoDoAviso, "o aviso fica logo abaixo do botão").toBeGreaterThanOrEqual(medida.fimDoBotao - 1);
+      expect(medida.topoDoAviso - medida.fimDoBotao, "e encostado a ele").toBeLessThan(40);
 
       // Nada foi gravado: o pedido continua com o avaliador e a proposta, sem aceite; o avaliador não foi avisado.
       const l = await linha(ids.pedidoVencida);

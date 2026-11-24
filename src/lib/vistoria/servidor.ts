@@ -15,12 +15,14 @@ import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import {
   COLUNAS_PRECO,
   designacaoVencida,
+  jaDesignadosNoPedido,
   linhaDaTabela,
   linhasDaCidade,
   notaConduta,
   sorteadoParaAuditoria,
   visitaAmanha,
   type AvaliadorFila,
+  type DesignacaoDoPedido,
   type HistoricoDesignacao,
   type LinhaPreco,
   type PedidoParaDesignar,
@@ -264,7 +266,7 @@ async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date, sta
   const p = data as LinhaPedido | null;
   if (!p || !statusAceitos.includes(p.status)) return null;
   const [jaLeitura, filaToda, historico, modo, piloto] = await Promise.all([
-    admin.from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", p.id),
+    admin.from("vistoria_designacoes").select("avaliador_id, resposta, proposta_expirada_em").eq("pedido_id", p.id),
     filaDaCidade(admin),
     historicoDoPedido(admin, p.owner_id, p.property_id),
     modoDaChaveAtual(),
@@ -287,7 +289,8 @@ async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date, sta
     tipo: p.tipo,
     teste: p.teste,
     primeiroAvaliadorId: primeiro,
-    jaDesignados: ((jaLeitura.data ?? []) as { avaliador_id: string }[]).map((d) => d.avaliador_id),
+    // E1143: fica fora quem recusou, não respondeu, faltou ou está designado agora; quem só teve a proposta vencida volta.
+    jaDesignados: jaDesignadosNoPedido((jaLeitura.data ?? []) as DesignacaoDoPedido[]),
   };
   return { p, sugestoes: sugerirAvaliadores(fila, pedido, historico, agora) };
 }
@@ -350,8 +353,21 @@ export async function escolherNoServidor(admin: Admin, pedidoId: string, avaliad
   const a = l.sugestoes.sugeridos.find((x) => x.id === avaliadorId);
   if (!a) return { ok: false, erro: "Este avaliador não pode avaliar este imóvel. Escolha outro da lista." };
   const quando = agora.toISOString();
-  const { error } = await admin.from("vistoria_designacoes").insert({ pedido_id: l.p.id, avaliador_id: a.id, designado_em: quando });
-  if (error) return { ok: false, erro: "Não foi possível registrar a escolha. Tente de novo." };
+  // E1143: o avaliador que voltou à lista (a proposta dele venceu sem o aceite) é escolhido de novo na MESMA designação:
+  // há uma linha por pedido e avaliador. Ela reabre, sem resposta e sem a marca; sem linha para reabrir, cria-se.
+  const { data: reaberta, error: erroReabrir } = await admin
+    .from("vistoria_designacoes")
+    .update({ designado_em: quando, resposta: null, respondido_em: null, proposta_expirada_em: null })
+    .eq("pedido_id", l.p.id)
+    .eq("avaliador_id", a.id)
+    .eq("resposta", "expirada")
+    .not("proposta_expirada_em", "is", null)
+    .select("id");
+  if (erroReabrir) return { ok: false, erro: "Não foi possível registrar a escolha. Tente de novo." };
+  if (!reaberta?.length) {
+    const { error } = await admin.from("vistoria_designacoes").insert({ pedido_id: l.p.id, avaliador_id: a.id, designado_em: quando });
+    if (error) return { ok: false, erro: "Não foi possível registrar a escolha. Tente de novo." };
+  }
   const { data: mudou } = await admin
     .from("vistoria_pedidos")
     .update({ status: "designado", avaliador_id: a.id, designado_em: quando, escolhido_em: quando, aguardando_avaliador: false, atualizado_em: quando })
