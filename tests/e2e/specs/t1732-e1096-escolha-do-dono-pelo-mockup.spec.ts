@@ -9,6 +9,8 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
       cartão é o da tabela da cidade; o botão diz "Escolher". A frase do valor fica SOB os cartões e diz que a tabela é
       referência e que o valor de cada avaliador aparece depois de ele aceitar o pedido. Print a 390 e a 1280 px.
    2. "Escolher" funciona: o pedido fica com o avaliador escolhido.
+  E1096 (lacuna A da ORDEM-DUET-618/623): o avaliador com avaliações feitas e AINDA sem nota de conduta publicada traz as
+  estrelas vazias e só a contagem ("1 avaliação") — nunca "Novo na Viva", que é de quem não tem avaliação nenhuma.
       "Identidade verificada pela Viva" aparece no cartão só de quem tem a identidade confirmada (ORDEM-DUET-460).
   O perfil público do credenciado não entra aqui: é do E1099 (ORDEM-DUET-458/460).
   Laboratório; não é prova ao vivo no site.
@@ -22,6 +24,7 @@ const dono = { email: `dono.t1732.${sufixo}@lab.vivanomads.test`, nome: "Dalva E
 const outro = { email: `outro.t1732.${sufixo}@lab.vivanomads.test`, nome: "Otto Antigo", role: "owner" as const };
 const novo = { email: `novo.t1732.${sufixo}@lab.vivanomads.test`, nome: "Nina Nova", role: "tenant" as const };
 const comNota = { email: `nota.t1732.${sufixo}@lab.vivanomads.test`, nome: "Caio Conduta", role: "tenant" as const };
+const semNota = { email: `semnota.t1732.${sufixo}@lab.vivanomads.test`, nome: "Sara Sem Nota", role: "tenant" as const };
 const ids: Record<string, string> = {};
 const numeros: Record<string, string> = {};
 const FRASE = "Valor de referência da cidade: R$ 350,00 (faixa de R$ 280,00 a R$ 438,00). O valor e o prazo de cada avaliador aparecem depois que ele aceitar o pedido; você aceita ou escolhe outro.";
@@ -31,7 +34,7 @@ async function largura(page: Page, w: number) {
 }
 
 /** Avaliador credenciado ativo na cidade do spec, dentro do piloto (como na t1722). */
-async function credenciar(chave: "novo" | "comNota", conta: { nome: string }, uid: string) {
+async function credenciar(chave: "novo" | "comNota" | "semNota", conta: { nome: string }, uid: string) {
   const { data: parc, error: eP } = await adm()
     .from("parceiros")
     .insert({ user_id: uid, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: conta.nome, slug: `${chave.toLowerCase()}-t1732-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
@@ -57,13 +60,14 @@ test.describe("T1732 — E1096: a escolha do avaliador pelo dono conforme o mock
   test.describe.configure({ mode: "serial", timeout: 240_000 });
 
   test.beforeAll(async () => {
-    for (const [k, c] of [["dono", dono], ["outro", outro], ["novo", novo], ["comNota", comNota]] as const) {
+    for (const [k, c] of [["dono", dono], ["outro", outro], ["novo", novo], ["comNota", comNota], ["semNota", semNota]] as const) {
       ids[k] = await criarConta(c, senha);
       const t = await adm().from("profiles").update({ is_teste: true }).eq("id", ids[k]);
       if (t.error) throw t.error;
     }
     await credenciar("novo", novo, ids.novo);
     await credenciar("comNota", comNota, ids.comNota);
+    await credenciar("semNota", semNota, ids.semNota);
     // Imóvel de 1 quarto (porte "1 ou 2 quartos") na cidade do spec; a tabela da cidade com os 3 portes.
     ids.imovel = await criarImovelPronto(ids.dono, `Casa t1732 ${sufixo}`, { ativo: true });
     ids.imovelAntigo = await criarImovelPronto(ids.outro, `Casa antiga t1732 ${sufixo}`, { ativo: true });
@@ -94,6 +98,11 @@ test.describe("T1732 — E1096: a escolha do avaliador pelo dono conforme o mock
     if (eK) throw eK;
     const { error: ePub } = await adm().from("vistoria_conduta").update({ publicada_em: agora }).eq("pedido_id", ped.id).eq("autor", "dono");
     if (ePub) throw ePub;
+    // E1096 (lacuna A): a "Sara" tem uma avaliação feita (laudo emitido, pedido real) e nenhuma nota de conduta publicada.
+    const { error: eS } = await adm()
+      .from("vistoria_pedidos")
+      .insert({ property_id: ids.imovelAntigo, owner_id: ids.outro, cidade: CIDADE, porte: "q1_2", valor_tabela: 350, status: "laudo_emitido", avaliador_id: ids.cred_semNota, designado_em: agora });
+    if (eS) throw eS;
     // A identidade confirmada do "Caio" (o fato que a linha do cartão lê); a "Nina" fica sem.
     const ate = new Date(Date.now() + 300 * 86_400_000).toISOString();
     const { error: eV } = await adm()
@@ -109,12 +118,12 @@ test.describe("T1732 — E1096: a escolha do avaliador pelo dono conforme o mock
       await adm().from("vistoria_pedidos").delete().in("property_id", imoveis);
     }
     await adm().from("vistoria_precos").delete().eq("cidade", CIDADE);
-    const contas = [ids.dono, ids.outro, ids.novo, ids.comNota].filter(Boolean);
+    const contas = [ids.dono, ids.outro, ids.novo, ids.comNota, ids.semNota].filter(Boolean);
     if (contas.length) {
       await adm().from("vistoria_piloto").delete().in("user_id", contas);
       await adm().from("tenant_verifications").delete().in("tenant_id", contas);
     }
-    const creds = [ids.cred_novo, ids.cred_comNota].filter(Boolean);
+    const creds = [ids.cred_novo, ids.cred_comNota, ids.cred_semNota].filter(Boolean);
     if (creds.length) {
       await adm().from("vistoria_designacoes").delete().in("avaliador_id", creds);
       await adm().from("avaliadores_credenciamento").delete().in("id", creds);
@@ -152,6 +161,10 @@ test.describe("T1732 — E1096: a escolha do avaliador pelo dono conforme o mock
       await expect(cNota.getByTestId("avaliacao-sugerido-estrelas")).toHaveAttribute("data-cheias", "5");
       await expect(cNota.getByTestId("avaliacao-sugerido-reputacao")).toHaveText("4,7 (1 avaliação)");
       await expect(cNota.getByTestId("avaliacao-sugerido-reputacao")).not.toContainText("Novo na Viva");
+      // E1096 (lacuna A): avaliações feitas, sem nota publicada → estrelas vazias e só a contagem; não é "Novo na Viva".
+      const cSemNota = escolha.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numeros.semNota}` });
+      await expect(cSemNota.getByTestId("avaliacao-sugerido-estrelas"), "sem nota: estrelas vazias").toHaveAttribute("data-cheias", "0");
+      await expect(cSemNota.getByTestId("avaliacao-sugerido-reputacao"), "sem nota: só a contagem").toHaveText("1 avaliação");
       await expect(cNota.getByRole("button", { name: "Escolher Caio Conduta" })).toHaveText("Escolher");
       await expect(cNota.getByTestId("avaliacao-sugerido-identidade")).toHaveText("Identidade verificada pela Viva");
 
