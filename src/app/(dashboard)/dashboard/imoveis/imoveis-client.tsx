@@ -125,7 +125,7 @@ export function MyPropertiesClient({
   return (
     <>
       <PageTitle
-        title="Meus imóveis"
+        title="Imóveis"
         subtitle="Gerencie seus anúncios e o status de publicação."
         action={
           <div className="flex items-center gap-2">
