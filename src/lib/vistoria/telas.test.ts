@@ -44,9 +44,10 @@ test("E648: o pedido só leva o imóvel; quem escolhe o avaliador é o dono, ent
 
 test("chave VISTORIA_ATIVA desligada: nada para o dono nem para o morador; credenciamento e admin seguem", () => {
   assert.match(BLOCO_DONO, /const chaveAtiva = await vistoriaAtiva\(\);[\s\S]*const visivel = blocoDoDonoVisivel\(chaveAtiva, [\s\S]*if \(!visivel\) return null;/);
-  assert.match(MORADOR, /if \(!\(await vistoriaAtiva\(\)\)\) notFound\(\);/);
+  // E1171 (ORDEM-DUET-746): para o morador a chave é a do PEDIDO (a sessão dele, ou o dono do pedido no piloto).
+  assert.match(MORADOR, /if \(!\(await vistoriaAtivaParaOMorador\(admin, p\.owner_id\)\)\) notFound\(\);/);
   assert.match(corpo(ACOES, "pedirAvaliacao"), /chaveAtiva: await vistoriaAtiva\(\)/);
-  assert.match(corpo(ACOES, "concordarVisita"), /if \(!\(await vistoriaAtiva\(\)\)\) return DESLIGADA;/);
+  assert.match(corpo(ACOES, "concordarVisita"), /if \(!\(await vistoriaAtivaParaOMorador\(s\.admin, p\.owner_id\)\)\) return DESLIGADA;/);
   assert.doesNotMatch(corpo(ACOES, "pedirCredenciamento"), /vistoriaAtiva/);
   assert.doesNotMatch(ADMIN, /vistoriaAtiva\(\)/);
   // O cookie do laboratório nunca vale em produção.
