@@ -42,7 +42,9 @@ export function montarGrep(itens: string[]): string | null {
 export function etiquetasDoSpec(fonte: string): string[] {
   const out = new Set<string>();
   for (const m of fonte.matchAll(/tag:\s*(\[[^\]]*\]|"[^"]*"|'[^']*')/g)) for (const t of m[1].matchAll(/@[\w-]+/g)) out.add(t[0]);
-  for (const m of fonte.matchAll(/test(?:\.describe)?(?:\.\w+)?\(\s*(["'`])([^"'`]*)\1/g)) for (const t of m[2].matchAll(/@[\w-]+/g)) out.add(t[0]);
+  // E974: o título vai até a MESMA aspa que o abriu (com escapes) — antes parava em qualquer aspa, e um apóstrofo
+  // dentro de "…" escondia as etiquetas que vinham depois.
+  for (const m of fonte.matchAll(/test(?:\.describe)?(?:\.\w+)?\(\s*(["'`])((?:\\.|(?!\1)[^\\])*)\1/g)) for (const t of m[2].matchAll(/@[\w-]+/g)) out.add(t[0]);
   return [...out].sort();
 }
 
