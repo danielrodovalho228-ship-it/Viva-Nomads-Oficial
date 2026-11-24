@@ -299,7 +299,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             {atual.status === "designado" && atual.proposta_em && !atual.proposta_aceita_em && (
               <div className="rounded-lg border border-line p-3" data-testid="avaliacao-proposta">
                 <p className="font-semibold text-ink">
-                  Proposta do avaliador: {brl(Number(atual.valor_proposto))} · {prazoCombinadoNaLinhaDoDono(atual, null)}
+                  Proposta do avaliador: {brl(Number(atual.valor_proposto))}
                 </p>
                 <p className={`mt-1 ${aceiteTerminou ? "text-ink" : "text-muted"}`} data-testid="avaliacao-proposta-prazo" data-terminado={aceiteTerminou ? "1" : "0"}>
                   {textoDoPrazoDeAceiteParaODono(relogioDoAceite)}
