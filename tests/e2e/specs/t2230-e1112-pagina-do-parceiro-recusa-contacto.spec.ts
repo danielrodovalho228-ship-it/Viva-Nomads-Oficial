@@ -112,7 +112,9 @@ test.describe("T2230 — E1112: a página do parceiro e o pedido de parceria rec
       await page.locator(c.campo).fill(c.texto);
       // E1137: o botão no fundo do ecrã — o aviso, que nasce abaixo dele, só se vê se a página rolar até ele.
       await botaoNoFimDoEcra(page.getByTestId("parceiro-salvar-pagina"));
-      await page.getByTestId("parceiro-salvar-pagina").click();
+      // O toque no sítio onde o botão está, sem a rolagem que o click() do Playwright faz antes de tocar (ela movia a
+      // página e escondia a falta da rolagem do E1131 — ensaio 45294887174). O dedo não rola a página.
+      await page.getByTestId("parceiro-salvar-pagina").dispatchEvent("click");
       await expect(page.getByTestId("parceiro-msg"), `${c.coluna}: o aviso da casa`).toHaveText(AVISO, { timeout: 20_000 });
       // E1131 (ORDEM-DUET-572): o aviso aparece junto do botão — dentro do ecrã de quem acabou de salvar, não no topo do painel.
       await expect(page.getByTestId("parceiro-msg"), `${c.coluna}: o aviso está à vista`).toBeInViewport();
