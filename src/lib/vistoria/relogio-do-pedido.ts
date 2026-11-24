@@ -108,6 +108,17 @@ export function textoDoPrazoDeAceite(r: Relogio): string {
   return `O proprietário tem até ${dataHoraBRT(r.ate)} para aceitar: ${r.horas} horas depois da proposta. Sem o aceite, o pedido volta para ele escolher de novo.`;
 }
 
+/**
+ * E1154: o que o DONO lê enquanto a proposta espera o aceite dele — o mesmo prazo e a mesma hora de fim que o avaliador
+ * vê (textoDoPrazoDeAceite), do mesmo relógio. Antes o dono lia só "72 horas depois da proposta" e fazia a conta.
+ * Sem prazo do dono a correr, ou com ele já vencido (a janela até a rotina devolver o pedido), a frase fica sem data:
+ * não se promete o aceite "até" uma hora que já passou.
+ */
+export function textoDoPrazoDeAceiteParaODono(r: Relogio | null): string {
+  const ate = r && r.vez === "dono" && !r.vencido ? `, até ${dataHoraBRT(r.ate)}` : "";
+  return `Aceite em até ${PRAZO_DONO_ACEITAR_HORAS} horas depois da proposta${ate}; passado o prazo, você escolhe outro avaliador.`;
+}
+
 /** Propor num pedido cuja designação já tem resposta: o motivo certo (nunca "o prazo passou" para quem já propôs). */
 export function erroAoPropor(resposta: string | null | undefined, prazoRespostaHoras: number): string {
   if (resposta === "aceita") return "A proposta deste pedido já foi enviada.";
