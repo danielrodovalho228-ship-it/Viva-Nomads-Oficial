@@ -128,7 +128,7 @@ export default async function AdminAvaliadoresPage() {
   // coluna, cada uma da mais recente para a mais antiga, para o teto nunca cortar as mais recentes.
   const [fila_rodizio, recusasLeitura, perfisLeitura, expiradasLeitura, descartadasLeitura] = await Promise.all([
     filaDaCidade(admin),
-    admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade)").in("resposta", ["recusada", "expirada", "ausencia"]).is("proposta_expirada_em", null).is("proposta_descartada_em", null).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
+    admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade, owner_id)").in("resposta", ["recusada", "expirada", "ausencia"]).is("proposta_expirada_em", null).is("proposta_descartada_em", null).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
     admin.from("profiles").select("id").eq("is_teste", true).limit(200),
     admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, owner_id)").gte("proposta_expirada_em", trintaDias).order("proposta_expirada_em", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS),
     admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, owner_id)").gte("proposta_descartada_em", trintaDias).order("proposta_descartada_em", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS),
@@ -172,7 +172,17 @@ export default async function AdminAvaliadoresPage() {
   type Ped = { id: string; cidade: string; tipo: string; status: string; aguardando_avaliador: boolean; criado_em: string; avaliadores_credenciamento: { numero_credenciado: string } | null };
   const pedidosLista = (pedidos ?? []) as unknown as Ped[];
   const semAvaliador = filaSemAvaliador.reais;
-  const recusasLista = (recusas ?? []) as unknown as { id: string; resposta: string; respondido_em: string; avaliador_id: string; vistoria_pedidos: { cidade: string } | null }[];
+  // E1169 (ORDEM-738): a recusa de conta de teste (pelo dono do pedido) não entra na lista de trabalho nem no número do
+  // topo; fica num bloco próprio — a regra do E1163.
+  type RecusaDaLista = { id: string; resposta: string; respondido_em: string; avaliador_id: string; vistoria_pedidos: { cidade: string; owner_id: string | null } | null };
+  const recusasDaCentral = separarContasDeTeste((recusas ?? []) as unknown as RecusaDaLista[], (r) => r.vistoria_pedidos?.owner_id, (r) => r.respondido_em, contasDeTesteDaCentral);
+  const recusasLista = recusasDaCentral.reais;
+  const recusasDeTeste = recusasDaCentral.deTeste;
+  const itemDaRecusa = (r: RecusaDaLista, contaTeste: "sim" | "nao") => (
+    <li key={r.id} data-testid="recusa-item" data-resposta={r.resposta} data-conta-teste={contaTeste}>
+      nº {numeroDe.get(r.avaliador_id) ?? "—"} · {r.resposta === "expirada" ? rotuloSemResposta(prazoRespostaDe.get(r.avaliador_id)) : (ROTULO_RESPOSTA[r.resposta] ?? r.resposta)} · {r.vistoria_pedidos?.cidade ?? ""} · {dataBRT(r.respondido_em)}
+    </li>
+  );
   const filaRestante = ((fila ?? []) as { id: string; tipo: string; motivo: string | null; criado_em: string }[]).filter((f) => f.tipo !== "sem_avaliador");
   // E1146: o item "sem avaliador" de cada pedido traz, por avaliador da cidade, a regra que o impede.
   const motivoSemAvaliador = new Map(((fila ?? []) as { tipo: string; motivo: string | null; pedido_id: string | null }[]).filter((f) => f.tipo === "sem_avaliador" && f.pedido_id && f.motivo).map((f) => [f.pedido_id!, f.motivo!]));
@@ -384,16 +394,14 @@ export default async function AdminAvaliadoresPage() {
       </Panel>
 
       <Panel id="recusas" title={TITULO_RECUSAS_E_AUSENCIAS} className="mb-6 scroll-mt-24" data-testid="avaliacoes-recusas">
-        {recusasLista.length === 0 ? (
-          <p className="text-sm text-muted">Nenhuma recusa ou ausência nos últimos {DIAS_DA_JANELA_DE_RECUSAS} dias.</p>
-        ) : (
-          <ul className="grid gap-1 text-sm">
-            {recusasLista.map((r) => (
-              <li key={r.id} data-testid="recusa-item" data-resposta={r.resposta}>
-                nº {numeroDe.get(r.avaliador_id) ?? "—"} · {r.resposta === "expirada" ? rotuloSemResposta(prazoRespostaDe.get(r.avaliador_id)) : (ROTULO_RESPOSTA[r.resposta] ?? r.resposta)} · {r.vistoria_pedidos?.cidade ?? ""} · {dataBRT(r.respondido_em)}
-              </li>
-            ))}
-          </ul>
+        {recusasLista.length === 0 && recusasDeTeste.length === 0 && <p className="text-sm text-muted">Nenhuma recusa ou ausência nos últimos {DIAS_DA_JANELA_DE_RECUSAS} dias.</p>}
+        {recusasLista.length > 0 && <ul className="grid gap-1 text-sm">{recusasLista.map((r) => itemDaRecusa(r, "nao"))}</ul>}
+        {/* E1169: as recusas de conta de teste ficam à parte, fora da lista de trabalho e do número do topo. */}
+        {recusasDeTeste.length > 0 && (
+          <div className={recusasLista.length > 0 ? "mt-3 text-sm text-muted" : "text-sm text-muted"} data-testid="recusas-de-teste" data-valor={recusasDeTeste.length}>
+            <p>{textoDasContasDeTeste(recusasDeTeste.length)}</p>
+            <ul className="mt-1 grid gap-1">{recusasDeTeste.map((r) => itemDaRecusa(r, "sim"))}</ul>
+          </div>
         )}
         {/* E1159: a proposta que expirou sem o aceite do dono e a que ele descartou — só leitura, fora do "Para decidir". */}
         <div className="mt-4 border-t border-line pt-3" data-testid="propostas-expiradas">
