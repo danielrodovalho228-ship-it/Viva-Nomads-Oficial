@@ -74,6 +74,7 @@ export const MATRIZ_NOTIFICACOES = {
   vistoria_designado_dono: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   // E1144: a proposta de avaliação venceu sem o aceite → o dono escolhe de novo (é decisão dele, como a escolha).
   vistoria_proposta_expirada_dono: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+  vistoria_proposta_aceita: { categoria: "decisao", papeis: ["parceiro"], canais: SEM_PUSH },
   vistoria_agendada: { categoria: "decisao", papeis: ["proprietario", "parceiro"], canais: SEM_PUSH },
   vistoria_ausencia: { categoria: "decisao", papeis: ["proprietario", "parceiro"], canais: SEM_PUSH },
   vistoria_ressalva_vencida: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },

@@ -68,8 +68,9 @@ async function pedidoComProposta(imovel: string, horas: number): Promise<string>
 }
 
 const linha = async (pedido: string) => (await adm().from("vistoria_pedidos").select("status, avaliador_id, valor_proposto, proposta_em, proposta_aceita_em").eq("id", pedido).single()).data!;
+// E1153: o aviso do aceite ao avaliador passou a ser o evento próprio (antes saía como "visita agendada").
 const avisosDeAceite = async (pedido: string) => {
-  const { data, error } = await adm().from("avisos").select("id").eq("usuario_id", ids.avaliador).eq("evento", "vistoria_agendada").eq("ref_id", pedido);
+  const { data, error } = await adm().from("avisos").select("id").eq("usuario_id", ids.avaliador).in("evento", ["vistoria_proposta_aceita", "vistoria_agendada"]).eq("ref_id", pedido);
   if (error) throw error;
   return (data ?? []).length;
 };

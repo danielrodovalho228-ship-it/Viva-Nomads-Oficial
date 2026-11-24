@@ -16,7 +16,7 @@ import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
-import { ROTULO_PROPOSTA_DESCARTADA, ROTULO_PROPOSTA_EXPIRADA, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
+import { CONFIRMACAO_DO_ACEITE, ROTULO_PROPOSTA_DESCARTADA, ROTULO_PROPOSTA_EXPIRADA, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { etapaDoPedido, identificacaoDoImovel, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeuSobre, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
@@ -365,6 +365,12 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
           </FormAcao>
           <FormAcao acao={responderDesignacao}><input type="hidden" name="pedidoId" value={p.id} /><input type="hidden" name="resposta" value="recusar" /><Button type="submit" variant="ghost" size="sm" data-testid="designacao-recusar">Recusar</Button></FormAcao>
         </div>
+      )}
+      {/* E1153: a confirmação do aceite do dono, a mesma frase que ele lê, enquanto a visita não tem data. */}
+      {r === "aceita" && aceitoSemDataDeVisita({ status: p.status, propostaAceitaEm: p.proposta_aceita_em, agendadoPara: p.agendado_para }) && (
+        <p className="mt-2 font-semibold text-ink" data-testid="aceite-confirmado">
+          {CONFIRMACAO_DO_ACEITE}
+        </p>
       )}
       {["designado", "agendado"].includes(p.status) && r === "aceita" && (p.proposta_aceita_em || !precisaDoAceite || p.status === "agendado") && (
         <FormAcao acao={agendarVisita} className="mt-2 flex flex-wrap items-end gap-2" testid="agendar-visita">
