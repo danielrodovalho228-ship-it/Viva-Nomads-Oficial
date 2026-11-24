@@ -11,6 +11,8 @@ import { esperarSemEsqueleto } from "../fixtures/esqueleto";
       campos continuam preenchidos; NADA fica gravado (nem a solicitação de parceiro, nem o credenciamento).
       O mesmo com e-mail no nome. Print a 390 e a 1280 px.
    2. Pedido limpo nasce: a solicitação de parceiro (categoria "vistoria", com o nome) e o credenciamento "solicitado".
+      P2 (ORDEM-DUET-668, versão forte): o caso começa com um envio SUJO (o aviso aparece) e só depois o limpo — a
+      ausência do aviso prova que ele desaparece, em vez de ser verdade numa página que nunca o teve.
 */
 const LARGURAS = [390, 1280] as const;
 const SAIDA = "tests/laboratorio/saida";
@@ -116,7 +118,13 @@ test.describe("T1755 — E1112: o pedido de credenciamento recusa contacto no no
     const page = await entrar(browser, conta.email, senha);
     await largura(page, 390);
     const form = await abrirFormulario(page);
-    await preencher(form, NOME_LIMPO);
+    // P2: primeiro o envio sujo — o aviso tem de aparecer, para a sua ausência depois valer alguma coisa.
+    await preencher(form, `${NOME_LIMPO} (34) 99999-1234`);
+    await page.getByTestId("credenciamento-enviar").click();
+    await expect(page.getByTestId("campo-erro-nome"), "o envio sujo mostra o aviso").toHaveText(AVISO, { timeout: 30_000 });
+    expect(await gravado(), "o envio sujo não grava").toEqual({ solicitacoes: [], credenciamentos: [] });
+    // Depois a pessoa corrige o nome e envia de novo.
+    await form.locator('[name="nome"]').fill(NOME_LIMPO);
     await page.getByTestId("credenciamento-enviar").click();
 
     await expect.poll(async () => (await gravado()).credenciamentos.length, { timeout: 30_000 }).toBe(1);
@@ -127,7 +135,8 @@ test.describe("T1755 — E1112: o pedido de credenciamento recusa contacto no no
     expect(g.solicitacoes[0].nome).toBe(NOME_LIMPO);
     expect(g.solicitacoes[0].categorias).toEqual(["vistoria"]);
     expect(g.solicitacoes[0].status).toBe("pendente");
-    await expect(page.getByTestId("campo-erro-nome")).toHaveCount(0);
+    // O aviso do envio sujo DESAPARECE com o envio limpo (antes da recarga: na mesma tela em que apareceu).
+    await expect(page.getByTestId("campo-erro-nome"), "o aviso some depois do envio limpo").toHaveCount(0, { timeout: 15_000 });
     // A tela passa a mostrar a situação do credenciamento.
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("credenciamento-situacao")).toHaveAttribute("data-status", "solicitado", { timeout: 30_000 });
