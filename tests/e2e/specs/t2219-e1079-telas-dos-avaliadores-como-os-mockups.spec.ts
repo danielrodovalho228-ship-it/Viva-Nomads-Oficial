@@ -58,12 +58,27 @@ async function abrir(browser: Browser, email: string, largura = 390): Promise<Pa
   await page.context().setGeolocation(PERTO);
   return page;
 }
-/** Os textos do mockup que têm de estar na tela (suaves: a corrida mostra todos os que faltam). */
+const temTexto = (t: string, x: string | RegExp) => (typeof x === "string" ? t.includes(x) : x.test(t));
+/**
+ * Os textos do mockup que têm de estar na tela (suaves: a corrida mostra todos os que faltam).
+ * ORDEM-DUET-662: a leitura era feita mal o <main> aparecia — às vezes ainda o esqueleto de carregamento do painel
+ * (loading.tsx: role="status", aria-label "Carregando…"), e a jornada falhava sem defeito no produto. Agora espera que
+ * o esqueleto saia e que o conteúdo real chegue (todos os textos, até 20 s); se algum não chegar, as verificações
+ * suaves abaixo dizem qual — a trava continua a morder quando um texto do mockup falta de verdade.
+ */
 async function temTudo(page: Page, tela: string, textos: (string | RegExp)[]) {
   const main = page.locator("main");
   await expect(main, `${tela}: a tela abriu`).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[role="status"][aria-label^="Carregando"]'), `${tela}: o esqueleto de carregamento saiu`).toHaveCount(0, { timeout: 30_000 });
+  await expect
+    .poll(async () => {
+      const agora = await main.innerText();
+      return textos.every((x) => temTexto(agora, x));
+    }, { timeout: 20_000 })
+    .toBe(true)
+    .catch(() => {});
   const t = await main.innerText();
-  for (const x of textos) expect.soft(typeof x === "string" ? t.includes(x) : x.test(t), `${tela}: tem "${String(x)}" (mockup)`).toBe(true);
+  for (const x of textos) expect.soft(temTexto(t, x), `${tela}: tem "${String(x)}" (mockup)`).toBe(true);
   expect.soft(t, `${tela}: a palavra é "avaliador", nunca "vistoriador" (decisão 2)`).not.toMatch(SEM_VISTORIADOR);
 }
 /* As barras de baixo dos mockups (morador, avaliador, admin) NÃO são cobradas aqui: navegação global fora do âmbito do
