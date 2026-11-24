@@ -384,7 +384,8 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       <p className="text-sm text-ink" data-testid="seja-parceiro-regra-90-10">
         {TEXTO_REGRA_90_10}
       </p>
-      {erro && (
+      {/* E1145: o erro com campo já aparece junto do campo (msgDoCampo); aqui fica só o erro sem campo (sessão, envio). */}
+      {erro && !campoErro && (
         <p className="text-sm text-red-700" role="alert" data-testid="seja-parceiro-erro">
           {erro}
         </p>
