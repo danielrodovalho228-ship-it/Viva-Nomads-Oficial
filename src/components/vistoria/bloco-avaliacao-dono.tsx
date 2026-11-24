@@ -13,9 +13,9 @@ import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
-import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
+import { PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
-import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, precisaDoAceiteDoDono } from "@/lib/vistoria/relogio-do-pedido";
+import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceiteParaODono } from "@/lib/vistoria/relogio-do-pedido";
 import { identidadesConfirmadas, nomesDasContas, outrosParaTroca, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { textoDaTroca } from "@/lib/vistoria/troca-de-avaliador";
 import { DepoisDaTroca, TrocaDeAvaliador } from "@/components/vistoria/troca-de-avaliador";
@@ -147,6 +147,13 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
   const faixa = atual && preco ? faixaDeReferencia(Number(preco.valor)) : null;
   // E1100: com a proposta viva, o dono pode trocar de avaliador. Antes de ele clicar, a tela já sabe quantos sobram para
   // escolher (o atual não volta). Só lê com a chave ligada (a ação é do dono real); leitura que falha = null, sem número.
+  // E1154: o prazo do aceite sai do mesmo relógio que o avaliador lê (a mesma hora de fim, no mesmo formato).
+  const relogioDoAceite = atual
+    ? relogioDoPedido(
+        { status: atual.status, resposta: undefined, designadoEm: null, propostaEm: atual.proposta_em, propostaAceitaEm: atual.proposta_aceita_em, precisaDoAceite: precisaDoAceiteDoDono({ teste: atual.teste, escolhidoEm: atual.escolhido_em }) },
+        agora,
+      )
+    : null;
   let outrosNaTroca: number | null = null;
   if (visivel === "ativa" && atual?.status === "designado" && atual.proposta_em && !atual.proposta_aceita_em) {
     outrosNaTroca = await outrosParaTroca(admin, atual.id, agora).catch(() => null);
@@ -279,7 +286,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 <p className="font-semibold text-ink">
                   Proposta do avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}
                 </p>
-                <p className="mt-1 text-muted" data-testid="avaliacao-proposta-prazo">Aceite em até {PRAZO_DONO_ACEITAR_HORAS} horas depois da proposta; passado o prazo, você escolhe outro avaliador.</p>
+                <p className="mt-1 text-muted" data-testid="avaliacao-proposta-prazo">
+                  {textoDoPrazoDeAceiteParaODono(relogioDoAceite)}
+                </p>
                 {propostaForaDaFaixa && faixa && (
                   <p className="mt-1 text-muted" data-testid="avaliacao-proposta-fora">Fora da faixa de referência da cidade ({brl(faixa.min)} a {brl(faixa.max)}). Você decide.</p>
                 )}
