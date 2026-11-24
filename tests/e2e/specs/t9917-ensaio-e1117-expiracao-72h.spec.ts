@@ -43,7 +43,10 @@ async function cron(agora?: string) {
   return corpo;
 }
 async function texto(page: Page, rotulo: string) {
-  const t = (await page.locator("main").innerText()).replace(/\s+\n/g, "\n").slice(0, 2500);
+  const todo = (await page.locator("main").innerText()).replace(/\s+\n/g, "\n");
+  // Na página do nível do imóvel o bloco da avaliação vem depois dos itens: registo a partir dele.
+  const i = Math.max(0, todo.search(/Avaliação do imóvel|Escolher avaliador|Pedir avaliação|avaliador/i) - 200);
+  const t = todo.slice(rotulo.startsWith("dono") ? i : 0).slice(0, 3000);
   console.log(`ENSAIO tela ${rotulo} >>>\n${t}\n<<< fim ${rotulo}`);
   return t;
 }
@@ -161,6 +164,8 @@ test.describe("ENSAIO E1117 — a expiração das 72 h da proposta do avaliador"
       await expect(d.locator("main")).toBeVisible({ timeout: 30_000 });
       await d.waitForTimeout(1500);
       await texto(d, `dono-janela-${w}`);
+      const bloco = d.locator('[data-testid="pedir-avaliacao"], [data-testid^="avaliacao-"]');
+      console.log(`ENSAIO blocos-avaliacao dono-janela-${w}`, JSON.stringify(await bloco.evaluateAll((els) => els.map((e) => [e.getAttribute("data-testid"), (e as HTMLElement).innerText.slice(0, 400)]))));
       await d.screenshot({ path: `${SAIDA}/ensaio-e1117-2-dono-janela-${w}.png`, fullPage: true });
     }
     await d.context().close();
@@ -189,7 +194,7 @@ test.describe("ENSAIO E1117 — a expiração das 72 h da proposta do avaliador"
     expect(l.avaliador_id, "sem avaliador").toBeNull();
     expect(l.proposta_em, "a proposta foi descartada").toBeNull();
     expect(l.valor_proposto, "o valor também").toBeNull();
-    expect(dsg.find((x) => x.avaliador_id === ids.cred)?.resposta, "a designação fica 'expirada'").toBe("expirada");
+    expect.soft(dsg.find((x) => x.avaliador_id === ids.cred)?.resposta, "a designação fica 'expirada'").toBe("expirada");
 
     await expect.poll(async () => (await caixa(ids.dono)).length, { timeout: 30_000, message: "um e-mail novo ao dono" }).toBeGreaterThan(antesDono);
     const novosDono = (await caixa(ids.dono)).slice(antesDono);
@@ -206,6 +211,8 @@ test.describe("ENSAIO E1117 — a expiração das 72 h da proposta do avaliador"
       await expect(d.locator("main")).toBeVisible({ timeout: 30_000 });
       await d.waitForTimeout(1500);
       await texto(d, `dono-expirada-${w}`);
+      const bloco = d.locator('[data-testid="pedir-avaliacao"], [data-testid^="avaliacao-"]');
+      console.log(`ENSAIO blocos-avaliacao dono-expirada-${w}`, JSON.stringify(await bloco.evaluateAll((els) => els.map((e) => [e.getAttribute("data-testid"), (e as HTMLElement).innerText.slice(0, 400)]))));
       await d.screenshot({ path: `${SAIDA}/ensaio-e1117-3-dono-expirada-${w}.png`, fullPage: true });
     }
     await expect.soft(d.getByTestId("avaliacao-escolha"), "o dono volta a escolher").toBeVisible();
