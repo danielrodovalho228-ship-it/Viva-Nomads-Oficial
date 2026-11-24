@@ -60,6 +60,33 @@ export function relogioDoPedido(p: EstadoParaORelogio, agora: Date): Relogio | n
   return relogio("avaliador", p.designadoEm, horas, agora);
 }
 
+/**
+ * E1142: a proposta que o dono já não pode aceitar — as 72 h dele passaram. É a conta do relógio acima, a mesma das
+ * telas e da rotina (que corre de hora em hora): entre o fim do prazo e a rotina, o aceite é recusado em vez de gravado.
+ */
+export function aceiteForaDoPrazo(p: { propostaEm: string | null; teste: boolean; escolhidoEm: string | null }, agora: Date): boolean {
+  const r = relogioDoPedido(
+    { status: "designado", resposta: undefined, designadoEm: null, propostaEm: p.propostaEm, propostaAceitaEm: null, precisaDoAceite: precisaDoAceiteDoDono(p) },
+    agora,
+  );
+  return r?.vez === "dono" && r.vencido;
+}
+
+/** E1142: o instante em que o prazo do dono para aceitar acaba (ISO); null sem proposta. */
+export function fimDoPrazoDeAceite(propostaEm: string | null): string | null {
+  const t = propostaEm ? Date.parse(propostaEm) : NaN;
+  return Number.isFinite(t) ? new Date(t + PRAZO_DONO_ACEITAR_HORAS * HORA).toISOString() : null;
+}
+
+/** E1142: como a lista do avaliador chama a designação cuja proposta venceu sem o aceite (não é "sem resposta" dele). */
+export const ROTULO_PROPOSTA_EXPIRADA = "Proposta expirada sem o aceite do proprietário";
+
+/**
+ * E1142: o que o dono lê junto do botão quando tenta aceitar fora do prazo. Texto aprovado na ORDEM-DUET-623: não diz
+ * "escolha outro avaliador", que seria mentira numa cidade com um avaliador só; é a mesma frase que o avaliador lê.
+ */
+export const ERRO_ACEITE_FORA_DO_PRAZO = `O prazo de ${PRAZO_DONO_ACEITAR_HORAS} horas para aceitar esta proposta terminou. O pedido volta para você escolher de novo.`;
+
 /** O contador do avaliador: "Responda em 23 h 10 min". Vencido: a rotina devolve o pedido ao dono. */
 export function textoDoPrazoDeResposta(r: Relogio, agora: Date): string {
   const resta = Date.parse(r.ate) - agora.getTime();
@@ -69,8 +96,12 @@ export function textoDoPrazoDeResposta(r: Relogio, agora: Date): string {
   return `Responda em ${horas} h ${String(min).padStart(2, "0")} min`;
 }
 
-/** O que o avaliador lê depois de propor: até quando o dono pode aceitar. */
+/**
+ * O que o avaliador lê depois de propor: até quando o dono pode aceitar.
+ * E1142: com o prazo vencido, a tela diz que ele terminou — antes continuava a prometer o aceite "até" uma data passada.
+ */
 export function textoDoPrazoDeAceite(r: Relogio): string {
+  if (r.vencido) return `O prazo do proprietário para aceitar a sua proposta terminou em ${dataHoraBRT(r.ate)}. Ela não pode mais ser aceita, e o pedido volta para ele escolher de novo.`;
   return `O proprietário tem até ${dataHoraBRT(r.ate)} para aceitar: ${r.horas} horas depois da proposta. Sem o aceite, o pedido volta para ele escolher de novo.`;
 }
 

@@ -179,6 +179,8 @@ export const MATRIZ_NOTIFICACOES = {
   vinculo_parceiro_resposta: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   pedido_auto_atualizado: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
   pedido_auto_cancelado: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
+  // E1142 (decisão do Daniel): a proposta de avaliação venceu sem o aceite do dono → o avaliador fica a saber. Nada a decidir.
+  vistoria_proposta_expirada: { categoria: "outros", papeis: ["parceiro"], canais: SEM_PUSH },
   saida_sem_parceiro: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
   sugestao_parceiros_morador: { categoria: "outros", papeis: ["morador"], canais: SEM_PUSH },
   internet_remedir: { categoria: "lembretes", papeis: ["proprietario"], canais: SEM_PUSH },
