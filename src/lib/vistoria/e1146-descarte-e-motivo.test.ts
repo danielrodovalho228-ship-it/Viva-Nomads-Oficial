@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { LIMITE_MOTIVO_DA_FILA, fechoDaDesignacaoAoDevolver, motivoSemAvaliador } from "./regras.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E1146 (ORDENS-DUET 628 e 631). Duas partes que não dependem da decisão "o descartado volta à lista?":
@@ -14,7 +15,6 @@ import { LIMITE_MOTIVO_DA_FILA, fechoDaDesignacaoAoDevolver, motivoSemAvaliador 
       único avaliador da cidade). Passa a dizer, por avaliador, a regra que o impede.
 */
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 test("E1146 (a): o dono descarta a proposta — a designação deixa de dizer 'aceita' e leva a marca do descarte", () => {
   assert.deepEqual(fechoDaDesignacaoAoDevolver("aceita", "descartada"), { resposta: "recusada", descartada: true });

@@ -7,6 +7,7 @@ import { TEMPLATES } from "../notifications/eventos-email.ts";
 import { MATRIZ_NOTIFICACOES } from "../../config/matriz-notificacoes.ts";
 import { TEMA_POR_EVENTO } from "../notifications/imagens-email.ts";
 import { ehAvisoDeVisitaDeAvaliacao, resolvidosNaPratica, type AvisoTela, type SituacaoDosContratos } from "../notifications/sino.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E1153 (ORDEM-DUET-651, classe A, achado da passagem ao vivo, perna 4). O dono aceitava a proposta do avaliador, os
@@ -20,7 +21,6 @@ import { ehAvisoDeVisitaDeAvaliacao, resolvidosNaPratica, type AvisoTela, type S
   dos dois lados, de uma fonte só, enquanto a visita não tem data.
 */
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/^\s*\/\/.*$/gm, "");
 const EVENTO = "vistoria_proposta_aceita" as const;
 const FRASE = "Proposta aceita. Combinem a data da visita."; // roteiro aprovado (ORDEM-DUET-651)
 const CASA = { imovel: { id: "i1", titulo: "Casa do Lago", bairro: "Centro", cidade: "Sacramento" } };
