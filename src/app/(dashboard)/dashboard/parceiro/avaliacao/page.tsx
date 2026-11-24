@@ -16,7 +16,7 @@ import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
-import { precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
+import { ROTULO_PROPOSTA_EXPIRADA, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { etapaDoPedido, identificacaoDoImovel, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeuSobre, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
@@ -137,8 +137,8 @@ export default async function AvaliacaoParceiroPage() {
     .select("id, property_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
     .eq("avaliador_id", cred.id)
     .order("criado_em", { ascending: false });
-  const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
-  type Des = { pedido_id: string; resposta: string | null; designado_em: string; respondido_em: string | null; vistoria_pedidos: { cidade: string; porte: Porte } | null };
+  const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, proposta_expirada_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
+  type Des = { pedido_id: string; resposta: string | null; designado_em: string; respondido_em: string | null; proposta_expirada_em: string | null; vistoria_pedidos: { cidade: string; porte: Porte } | null };
   const des = (designacoes ?? []) as unknown as Des[];
   const resposta = new Map(des.map((d) => [d.pedido_id, d.resposta]));
   const agora = new Date();
@@ -273,8 +273,9 @@ export default async function AvaliacaoParceiroPage() {
                 ))}
                 {foraDaMinhaFila.map((d) => (
                   <li key={d.pedido_id} className="rounded-lg border border-line p-3 text-sm text-muted" data-testid="avaliacao-fora" data-resposta={d.resposta}>
-                    {ROTULO_RESPOSTA[d.resposta ?? ""] ?? d.resposta} · {d.vistoria_pedidos?.cidade} · {d.vistoria_pedidos ? ROTULO_PORTE[d.vistoria_pedidos.porte] : ""}
-                    {d.respondido_em ? ` · ${dataBRT(d.respondido_em)}` : ""}
+                    {/* E1142: a proposta que venceu sem o aceite do dono não é "sem resposta" do avaliador. */}
+                    {d.proposta_expirada_em ? ROTULO_PROPOSTA_EXPIRADA : (ROTULO_RESPOSTA[d.resposta ?? ""] ?? d.resposta)} · {d.vistoria_pedidos?.cidade} · {d.vistoria_pedidos ? ROTULO_PORTE[d.vistoria_pedidos.porte] : ""}
+                    {(d.proposta_expirada_em ?? d.respondido_em) ? ` · ${dataBRT((d.proposta_expirada_em ?? d.respondido_em)!)}` : ""}
                   </li>
                 ))}
               </ul>
@@ -333,6 +334,8 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
   const precisaDoAceite = precisaDoAceiteDoDono({ teste: p.teste, escolhidoEm: p.escolhido_em });
   const relogio = relogioDoPedido({ status: p.status, resposta: r, designadoEm: p.designado_em, propostaEm: p.proposta_em, propostaAceitaEm: p.proposta_aceita_em, prazoRespostaHoras, precisaDoAceite }, agora);
   const prazo = relogio?.vez === "avaliador" ? { texto: textoDoPrazoDeResposta(relogio, agora), vencido: relogio.vencido } : null;
+  // E1142: o prazo do dono para aceitar já passou (a rotina ainda não devolveu o pedido).
+  const aceiteVencido = relogio?.vez === "dono" && relogio.vencido;
   const semana = visitaNaSemana(p.agendado_para, agora);
   return (
     <li className="rounded-lg border border-line p-3 text-sm" data-testid="avaliacao-designada" data-pedido={p.id} data-status={p.status}>
@@ -373,9 +376,9 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
       )}
       {["designado"].includes(p.status) && r === "aceita" && !p.proposta_aceita_em && precisaDoAceite && (
         <p className="mt-2 text-muted" data-testid="aguarda-aceite-proprietario">
-          Proposta enviada: {brl(Number(p.valor_proposto))} em {p.prazo_proposto_dias} dia(s). Falta o proprietário aceitar para agendar a visita.
+          Proposta enviada: {brl(Number(p.valor_proposto))} em {p.prazo_proposto_dias} dia(s).{aceiteVencido ? "" : " Falta o proprietário aceitar para agendar a visita."}
           {relogio?.vez === "dono" && (
-            <span className="mt-1 block" data-testid="prazo-aceite">
+            <span className={aceiteVencido ? "mt-1 block font-semibold text-red-700" : "mt-1 block"} data-testid="prazo-aceite" data-vencido={aceiteVencido ? "1" : undefined}>
               {textoDoPrazoDeAceite(relogio)}
             </span>
           )}
