@@ -7,16 +7,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { fonteSemComentarios as semComentarios } from "./fonte-sem-comentarios.ts";
 
 const ARQUIVOS = [
   "src/app/(dashboard)/dashboard/garantias/garantias-client.tsx",
   "src/app/(dashboard)/dashboard/ferramentas/page.tsx",
 ];
 
-/** Tira comentários; o que sobra é código + texto de tela. */
-function semComentarios(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[\s;{}()])\/\/[^\n]*/g, "$1");
-}
 
 const PROIBIDOS: Array<[string, RegExp]> = [
   ["Lei 8.245", /8\.?245/],
