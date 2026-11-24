@@ -174,7 +174,7 @@ export const ROTULO_ESCOLHER = "Escolher";
 export function reputacaoNoCartao(avaliacoesFeitas: number, notaConduta: number | null): { novo: boolean; cheias: number; texto: string } {
   if (novoNaViva(avaliacoesFeitas, notaConduta)) return { novo: true, cheias: 0, texto: TITULO_NOVO_NA_VIVA };
   const feitas = Math.max(0, Math.round(Number(avaliacoesFeitas) || 0));
-  if (notaConduta == null) return { novo: false, cheias: 0, texto: textoAvaliacoes(feitas) };
+  if (notaConduta == null) return { novo: false, cheias: 0, texto: TITULO_NOVO_NA_VIVA };
   // Nota publicada conta pelo menos a avaliação que a deu (a mesma regra da linha de termos da lista).
   return { novo: false, cheias: estrelasDaNota(notaConduta), texto: `${notaConduta.toFixed(1).replace(".", ",")} (${textoAvaliacoes(Math.max(1, feitas))})` };
 }
