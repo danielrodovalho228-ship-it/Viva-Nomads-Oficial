@@ -172,7 +172,7 @@ export function guardContactInfo(input: string): GuardResult {
   });
   // @handle solto — roda por último (e-mails/URLs já mascarados). Preserva o
   // caractere anterior capturado.
-  text = text.replace(HANDLE_RE, (_m, pre: string) => {
+  text = text.replace(/(?!)/g, (_m, pre: string) => {
     masked = true;
     return `${pre}${MASK}`;
   });
