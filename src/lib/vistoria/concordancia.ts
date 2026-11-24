@@ -30,12 +30,12 @@ export function gravacaoDaRecusa(agoraISO: string): { agendado_para: null; conco
 /** A troca de avaliador devolve o pedido ao dono sem data: a concordância pedida ao morador deixa de existir com ela. */
 export const LIMPEZA_DA_CONCORDANCIA = { concordancia_pedida_em: null, concordancia_em: null } as const;
 
-// Os textos são os aprovados na ORDEM-DUET-757.
+// Os textos são os aprovados nas ORDENS-DUET 757 e 759.
 /** O botão do morador, ao lado do "Concordo com a visita em …". */
 export const ROTULO_NAO_CONCORDO = "Não posso nesta data";
 /** O que o morador lê depois de recusar: na página dele, no cartão da conversa e na resposta da ação. */
 export const TEXTO_RECUSA_PARA_O_MORADOR = "Avisamos o proprietário e o avaliador. A nova data chega por aqui.";
-/** O que o dono lê enquanto não há data nova: quem propõe a data é o avaliador. */
-export const TEXTO_RECUSA_PARA_O_DONO = "O morador não pode na data proposta. O avaliador vai propor outra data.";
+/** O que o dono lê enquanto não há data nova (ele também propõe datas, pelo formulário do bloco dele). */
+export const TEXTO_RECUSA_PARA_O_DONO = "O morador não pode na data proposta. Proponha outra data ao avaliador.";
 /** O que o avaliador lê enquanto não propõe a data nova. */
 export const TEXTO_RECUSA_PARA_O_AVALIADOR = "O morador não pode na data proposta. Proponha outra data.";

@@ -6,7 +6,7 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
   concordância do morador. Ele tinha "Concordo" e um link "Prefiro outro horário" para as mensagens: o "não" não ficava
   registado, e o dono e o avaliador continuavam a ler "aguardando a concordância do morador".
   Agora há "Não posso nesta data": a data sai do pedido, o pedido de concordância fica (é o que as telas leem como
-  "não concordou"), e o dono e o avaliador são avisados com a data recusada. Os textos são os da ORDEM-DUET-757. A recusa NÃO é um reagendamento: a data
+  "não concordou"), e o dono e o avaliador são avisados com a data recusada. Os textos são os das ORDENS-DUET 757 e 759. A recusa NÃO é um reagendamento: a data
   seguinte é um "Agendar" novo, sem gastar a vez de ninguém nem pedir as 24 horas. Ninguém responde por ela.
   Como em produção: a chave DESLIGADA (nenhum navegador leva o cookie do laboratório), o dono e o avaliador na lista do
   piloto, a moradora FORA dela. Só contas de teste; cidade própria do spec. Laboratório; não é prova ao vivo no site.
@@ -183,9 +183,9 @@ test.describe("T1768 — E1173: a moradora pode não concordar com a data, e os 
     // O dono e o avaliador são avisados, cada um na sua página, e o e-mail diz a data que ela recusou.
     await expect.poll(async () => (await avisos(ids.dono, "vistoria_concordancia_recusada")).map((x) => [x.url, x.resolvido_em]), { timeout: 20_000 }).toEqual([[`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, null]]);
     await expect.poll(async () => (await avisos(ids.avaliador, "vistoria_concordancia_recusada")).map((x) => [x.url, x.resolvido_em]), { timeout: 20_000 }).toEqual([["/dashboard/parceiro/avaliacao", null]]);
-    // No e-mail a data vem sem o ano ("25/11 às 10:00"), e cada leitor lê o passo dele: quem propõe a data é o avaliador.
+    // No e-mail a data vem sem o ano ("25/11 às 10:00"); o dono e o avaliador leem o mesmo passo: os dois podem propor a data.
     const noEmail = recusadaNaTela.replace(/\/\d{4} às /, " às ");
-    for (const [quem, passo] of [[ids.dono, "O avaliador vai propor outra data. Você não precisa fazer nada."], [ids.avaliador, "Proponha outra data na Viva."]] as const) {
+    for (const [quem, passo] of [[ids.dono, "Proponha outra data na Viva."], [ids.avaliador, "Proponha outra data na Viva."]] as const) {
       await expect
         .poll(async () => ((await adm().from("emails_teste").select("assunto, corpo").eq("usuario_id", quem).eq("evento", "vistoria_concordancia_recusada")).data ?? []).map((e) => [String(e.assunto).startsWith("O morador não pode na data da visita"), String(e.corpo).includes(`(${noEmail}, horário de Brasília)`), String(e.corpo).includes(passo)]), { timeout: 20_000 })
         .toEqual([[true, true, true]]);
@@ -197,7 +197,7 @@ test.describe("T1768 — E1173: a moradora pode não concordar com a data, e os 
     for (const w of LARGURAS) {
       await largura(d, w);
       await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
-      await expect(d.getByTestId("avaliacao-situacao"), `a ${w} px`).toHaveText("O morador não pode na data proposta. O avaliador vai propor outra data.", { timeout: 30_000 });
+      await expect(d.getByTestId("avaliacao-situacao"), `a ${w} px`).toHaveText("O morador não pode na data proposta. Proponha outra data ao avaliador.", { timeout: 30_000 });
       await expect(d.getByTestId("avaliacao-dono-pedido")).not.toContainText("aguardando a concordância do morador");
       await expect(d.getByTestId("avaliacao-visita"), "sem data, a linha da visita não existe").toHaveCount(0);
       await expect(d.getByTestId("etapa-agendado"), "ninguém marca o 'Agendado' por ela").not.toHaveAttribute("data-estado", "feito");

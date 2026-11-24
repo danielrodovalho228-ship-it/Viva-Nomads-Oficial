@@ -111,7 +111,7 @@ test("E1173 (5) — o 'Concordo' também tira do sino o aviso 'Concorda com a vi
   assert.match(devolver.slice(0, devolver.indexOf("\nexport async function ", 10)), /await resolverAvisosDaRecusa\(admin, pedidoId\);/);
 });
 
-test("E1173 (6) — o aviso da recusa: o assunto e o corpo aprovados, com a data recusada e o passo de cada leitor", () => {
+test("E1173 (6) — o aviso da recusa: o assunto e o corpo aprovados, com a data recusada, iguais para o dono e o avaliador", () => {
   const EV = "vistoria_concordancia_recusada" as const;
   assert.deepEqual(MATRIZ_NOTIFICACOES[EV].papeis, ["proprietario", "parceiro"]);
   assert.equal(MATRIZ_NOTIFICACOES[EV].categoria, "decisao");
@@ -121,18 +121,18 @@ test("E1173 (6) — o aviso da recusa: o assunto e o corpo aprovados, com a data
   assert.equal(TEMPLATES[EV].subject, "O morador não pode na data da visita de avaliação");
   assert.equal(TEMPLATES[EV].cta, "Ver a avaliação");
   const CASA = { imovel: { id: "i1", titulo: "Casa do Lago", bairro: "Centro", cidade: "Sacramento" }, visitaRecusada: DATA };
-  // Quem propõe a data nova é o avaliador; o dono só fica a saber (ORDEM-DUET-757, texto 6).
+  // O dono e o avaliador podem os dois propor a data nova: leem o mesmo corpo (ORDENS-DUET 757 e 759, texto 6).
   const aoAvaliador = corpoVistoria(EV, { ...CASA, destinatario: "avaliador" });
   assert.equal(aoAvaliador.body("Ari"), "Olá Ari, o morador do imóvel Casa do Lago não pode na data proposta para a visita de avaliação (25/11 às 10:00, horário de Brasília). Proponha outra data na Viva.");
   assert.equal(aoAvaliador.cta, "Ver as avaliações", "o botão do avaliador leva às avaliações dele");
   const aoDono = corpoVistoria(EV, { ...CASA, destinatario: "dono" });
-  assert.equal(aoDono.body("Dalva"), "Olá Dalva, o morador do imóvel Casa do Lago não pode na data proposta para a visita de avaliação (25/11 às 10:00, horário de Brasília). O avaliador vai propor outra data. Você não precisa fazer nada.");
+  assert.equal(aoDono.body("Dalva"), "Olá Dalva, o morador do imóvel Casa do Lago não pode na data proposta para a visita de avaliação (25/11 às 10:00, horário de Brasília). Proponha outra data na Viva.");
   assert.equal(aoDono.cta, undefined, "o dono fica com o botão do modelo");
   // O assunto aprovado (texto 5). Um nome comprido encolhe-se dentro da régua dos 70 caracteres, como nos outros.
   assert.equal(corpoVistoria(EV, { imovel: { titulo: "Lar" }, visitaRecusada: DATA }).subject, "O morador não pode na data da visita de avaliação: Lar");
   assert.match(aoDono.subject ?? "", /^O morador não pode na data da visita(?: de avaliação)?: Casa do Lago$/);
   // Sem a data (aviso sem o fato) o texto continua inteiro, e não inventa data nenhuma.
-  assert.equal(corpoVistoria(EV, { imovel: null, destinatario: "avaliador" }).body(), "Olá, o morador do imóvel não pode na data proposta para a visita de avaliação. Proponha outra data na Viva.");
+  assert.equal(corpoVistoria(EV, { imovel: null }).body(), "Olá, o morador do imóvel não pode na data proposta para a visita de avaliação. Proponha outra data na Viva.");
   // O fato e o leitor viajam com o aviso: quando ele sai, a data já foi limpa do pedido.
   const servidor = ler("src/lib/vistoria/servidor.ts");
   assert.match(servidor, /visitaRecusada\?: string \| null;/);
@@ -140,10 +140,10 @@ test("E1173 (6) — o aviso da recusa: o assunto e o corpo aprovados, com a data
 });
 
 test("E1173 (7) — os três lados leem a recusa pela mesma função pura, e o 'Agendado' continua a ser só dela", () => {
-  // Os textos aprovados na ORDEM-DUET-757 (1 a 4).
+  // Os textos aprovados (1 a 4): ORDEM-DUET-757, com o 3 na versão da ORDEM-DUET-759.
   assert.equal(ROTULO_NAO_CONCORDO, "Não posso nesta data");
   assert.equal(TEXTO_RECUSA_PARA_O_MORADOR, "Avisamos o proprietário e o avaliador. A nova data chega por aqui.");
-  assert.equal(TEXTO_RECUSA_PARA_O_DONO, "O morador não pode na data proposta. O avaliador vai propor outra data.");
+  assert.equal(TEXTO_RECUSA_PARA_O_DONO, "O morador não pode na data proposta. Proponha outra data ao avaliador.");
   assert.equal(TEXTO_RECUSA_PARA_O_AVALIADOR, "O morador não pode na data proposta. Proponha outra data.");
   // Dono: a frase de situação.
   const dono = { status: "designado", aguardandoAvaliador: false, ocupado: true, concordanciaEm: null, agendadoPara: null };
@@ -153,7 +153,7 @@ test("E1173 (7) — os três lados leem a recusa pela mesma função pura, e o '
   assert.equal(situacaoDono({ ...dono, agendadoPara: DATA, concordanciaPedidaEm: AGORA }), "Data proposta: a visita fica confirmada quando o morador concordar.");
   const bloco = ler("src/components/vistoria/bloco-avaliacao-dono.tsx");
   assert.match(bloco, /concordanciaPedidaEm: atual\.concordancia_pedida_em/);
-  // Avaliador: a frase dele (é ele quem propõe a data), no item do pedido.
+  // Avaliador: a frase dele, no item do pedido.
   const avaliador = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx");
   assert.match(avaliador, /concordanciaRecusada\(\{ status: p\.status, ocupado: p\.ocupado, agendadoPara: p\.agendado_para, concordanciaPedidaEm: p\.concordancia_pedida_em, concordanciaEm: p\.concordancia_em \}\)/);
   assert.match(avaliador, /data-testid="avaliador-concordancia-recusada"/);

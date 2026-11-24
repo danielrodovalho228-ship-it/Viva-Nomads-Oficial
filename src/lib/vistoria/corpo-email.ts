@@ -215,15 +215,14 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
         linhas,
       };
     case "vistoria_concordancia_recusada": {
-      // E1173 (textos da ORDEM-DUET-757): ao dono e ao avaliador, quando o morador diz que não pode na data proposta.
-      // A data recusada vem com o aviso (o pedido já não a tem). O que fazer a seguir depende de quem lê: quem propõe
-      // a data nova é o avaliador; o dono só fica a saber.
+      // E1173 (textos das ORDENS-DUET 757 e 759): ao dono e ao avaliador, quando o morador diz que não pode na data
+      // proposta. A data recusada vem com o aviso (o pedido já não a tem). Os dois podem propor a data nova, por isso
+      // leem o mesmo corpo; só o botão do avaliador muda (leva às avaliações dele).
       const recusada = diaHoraNoAssunto(f.visitaRecusada);
       const fato = `o morador do imóvel${titulo ? ` ${titulo}` : ""} não pode na data proposta para a visita de avaliação${recusada ? ` (${recusada}, horário de Brasília)` : ""}.`;
-      const passo = f.destinatario === "avaliador" ? " Proponha outra data na Viva." : f.destinatario === "dono" ? " O avaliador vai propor outra data. Você não precisa fazer nada." : "";
       return {
         subject: assuntoComTitulo("O morador não pode na data da visita de avaliação: ", titulo, "", { antes: "O morador não pode na data da visita: " }),
-        body: (n) => `${ola(n)}, ${fato}${passo}`,
+        body: (n) => `${ola(n)}, ${fato} Proponha outra data na Viva.`,
         linhas,
         ...(f.destinatario === "avaliador" ? { cta: "Ver as avaliações" } : {}),
       };
