@@ -12,6 +12,7 @@ import { fimDoPrazoDeAceite, precisaDoAceiteDoDono, relogioDoPedido } from "./re
 import { modoDaChaveAtual } from "./chave";
 import { filaNoAmbito } from "./ambito-da-chave";
 import { nomeDoAvaliador } from "./nome-do-avaliador";
+import { LIMPEZA_DA_CONCORDANCIA } from "./concordancia";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { registrarSemAvaliador, type ItemAberto } from "./fila-sem-avaliador";
 import {
@@ -85,6 +86,8 @@ export type RefVistoria = {
   /** E1160 (6): quem agenda sabe se está a trocar a data, e qual era — a gravação substitui-a. */
   reagendada?: boolean;
   visitaAnterior?: string | null;
+  /** E1173: a data que o morador recusou — quando o aviso sai, ela já foi limpa do pedido. */
+  visitaRecusada?: string | null;
 };
 
 /** E289: lê no banco o que o e-mail precisa nomear — imóvel (título, bairro, cidade), visita e avaliador. */
@@ -123,7 +126,7 @@ export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<F
       reagendada: ref.reagendada ?? (pp?.reagendou_dono === true || pp?.reagendou_avaliador === true),
     };
   }
-  const fatos = { visita, avaliador, ...doPedido, visitaAnterior: ref.visitaAnterior ?? null, destinatario: ref.papel };
+  const fatos = { visita, avaliador, ...doPedido, visitaAnterior: ref.visitaAnterior ?? null, visitaRecusada: ref.visitaRecusada ?? null, destinatario: ref.papel };
   if (!propertyId) return { imovel: null, ...fatos };
   const { data: im } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
   const i = im as { title?: string | null; address?: string | null; city?: string | null } | null;
@@ -176,6 +179,19 @@ export async function resolverAvisosDaVisita(admin: Admin, pedidoId: string): Pr
       .in("evento", [...EVENTOS_VISITA_DE_AVALIACAO])
       .is("resolvido_em", null);
     if (error) console.error("[avisos] não resolveu a visita de avaliação:", error.code, error.message);
+  } catch {
+    /* aviso é complemento */
+  }
+}
+
+/**
+ * E1173: o "não concordou com a data" que o dono e o avaliador receberam deixa de valer quando há data nova (ou quando o
+ * pedido volta ao dono). Nunca lança (o aviso é complemento).
+ */
+export async function resolverAvisosDaRecusa(admin: Admin, pedidoId: string): Promise<void> {
+  try {
+    const { error } = await admin.from("avisos").update({ resolvido_em: new Date().toISOString() }).eq("ref_id", pedidoId).eq("evento", "vistoria_concordancia_recusada").is("resolvido_em", null);
+    if (error) console.error("[avisos] não resolveu a recusa da data:", error.code, error.message);
   } catch {
     /* aviso é complemento */
   }
@@ -505,10 +521,12 @@ export async function devolverAoDono(admin: Admin, pedidoId: string, avaliadorId
   }
   await admin
     .from("vistoria_pedidos")
-    .update({ status: "pedido", avaliador_id: null, designado_em: null, escolhido_em: null, valor_proposto: null, prazo_proposto_dias: null, proposta_em: null, proposta_aceita_em: null, agendado_para: null, atualizado_em: quando })
+    .update({ status: "pedido", avaliador_id: null, designado_em: null, escolhido_em: null, valor_proposto: null, prazo_proposto_dias: null, proposta_em: null, proposta_aceita_em: null, agendado_para: null, ...LIMPEZA_DA_CONCORDANCIA, atualizado_em: quando })
     .eq("id", pedidoId);
   // E1128: o pedido voltou ao dono sem data — os avisos da visita que estava marcada deixam de valer.
   await resolverAvisosDaVisita(admin, pedidoId);
+  // E1173: e o "o morador não concordou" também — a data seguinte é com outro avaliador.
+  await resolverAvisosDaRecusa(admin, pedidoId);
   await abrirEscolha(admin, pedidoId, agora);
   if (motivo === "ausencia") await revisarCriterios(admin, avaliadorId, agora);
 }

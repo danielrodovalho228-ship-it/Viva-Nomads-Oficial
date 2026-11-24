@@ -83,7 +83,9 @@ test("ponto de envio: todo avisar() da avaliação passa a referência (pedido o
   }
   // E1142 (asserção alterada, ORDEM-DUET-622): 26 → 27. O ponto novo é o aviso ao avaliador quando a proposta dele vence
   // sem o aceite do dono (decisão do Daniel); também passa a referência, como os outros.
-  assert.equal(n, 27);
+  // E1173 (asserção alterada, ORDEM-DUET-753): 27 → 29. Os dois pontos novos são o aviso da recusa da data, ao dono e
+  // ao avaliador; os dois passam a referência (e a data recusada).
+  assert.equal(n, 29);
   const srv = arquivos[1];
   // E1084 (asserção alterada): o select leva também o user_id do parceiro — o nome do avaliador vem da conta (fonte única).
   // E1160 (asserção alterada, ORDEM-DUET-674): o select leva também o que os corpos novos afirmam — a proposta, se há

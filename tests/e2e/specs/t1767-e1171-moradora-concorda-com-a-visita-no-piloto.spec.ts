@@ -185,7 +185,8 @@ test.describe("T1767 — E1171: a moradora concorda com a visita a partir da pr�
       await expect(cartao).toContainText("O avaliador não fotografa os seus pertences. A visita só acontece se você concordar com a data.");
       await expect(cartao.getByTestId("concordar-visita"), `a ${w} px`).toHaveText(`Concordo com a visita em ${quandoNaTela}`);
       await expect(cartao.getByTestId("outro-horario"), `a ${w} px`).toHaveText("Prefiro outro horário");
-      await expect(cartao.getByTestId("outro-horario")).toHaveAttribute("href", "/dashboard/mensagens");
+      // E1173 (asserção alterada, ORDEM-DUET-753): o link passa a abrir a conversa dela com o dono, não a lista geral.
+      await expect(cartao.getByTestId("outro-horario")).toHaveAttribute("href", /^\/dashboard\/mensagens\?conversa=[0-9a-f-]{36}$/);
       expect(await semRolagemLateral(m), `a ${w} px: sem rolagem lateral`).toBe(true);
       await m.screenshot({ path: `${SAIDA}/t1767-2-moradora-concorda-${w}.png` });
     }
