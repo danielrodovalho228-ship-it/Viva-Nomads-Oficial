@@ -251,4 +251,19 @@ test.describe("T1738 — E1103: a visita confirmada aparece na Agenda do parceir
     }
     await a.context().close();
   });
+  test("5. a visita de hoje, depois de feita, deixa de contar como 'visita de hoje'", async ({ browser }) => {
+    // E1103 (lacuna A da ORDEM-DUET-618/623): a Agenda já lê só "agendado" no banco; o painel lê todos os pedidos do
+    // avaliador e conta pela regra visitaConfirmada — uma visita "realizada" hoje não é visita por fazer.
+    const { error } = await adm().from("vistoria_pedidos").update({ status: "realizada", visita_concluida_em: new Date().toISOString() }).eq("id", pedidos.hojeSoProposta);
+    if (error) throw error;
+    const a = await entrar(browser, aval.email, senha);
+    for (const w of LARGURAS) {
+      await largura(a, w);
+      await a.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
+      const painel = a.getByTestId("painel-avaliador");
+      await expect(painel.getByTestId("painel-visitas-hoje"), "a visita feita não conta").toHaveText("Você não tem visita hoje", { timeout: 30_000 });
+      await expect(painel.getByTestId("painel-cartao-agenda")).toContainText("Hoje • sem visita");
+    }
+    await a.context().close();
+  });
 });
