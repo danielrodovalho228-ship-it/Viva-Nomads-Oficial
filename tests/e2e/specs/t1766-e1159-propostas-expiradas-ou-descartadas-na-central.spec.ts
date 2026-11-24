@@ -19,6 +19,10 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
       com o código VN, o rótulo da casa e a data; a de 40 dias não entra; a recusa comum fica na lista das recusas e
       não na secção. Print a 390 e a 1280 px.
    2. O número do topo "recusas e ausências" continua a ser o da lista das recusas: as propostas não o aumentam.
+  E1169 @E1169 (ORDEM-DUET-738): a lista "Recusas e ausências" também não mistura contas de teste. A massa ganha uma
+  recusa comum no pedido da dona que não é de teste, há 4 dias.
+   3. A lista de trabalho mostra só a recusa da conta real; a da conta de teste fica no bloco "Mais N de conta de teste,
+      fora do número:"; o número do topo é o tamanho da lista de trabalho. Print a 390 e a 1280 px.
   Laboratório; não é prova ao vivo no site.
 */
 const LARGURAS = [1280, 390] as const;
@@ -102,7 +106,11 @@ test.describe("T1766 — E1159: a equipe lê as propostas expiradas ou descartad
     // A descartada fica "recusada" com a marca do descarte (E1146); a hora da resposta é a da proposta.
     await designacaoFechada("descartada", ids.imovelDescartada, { resposta: "recusada", respondido_em: ha(2), proposta_descartada_em: ids.quandoDescartou });
     await designacaoFechada("velha", ids.imovelExpirada, { resposta: "expirada", respondido_em: ha(43), proposta_expirada_em: ha(40) });
-    await designacaoFechada("recusaComum", ids.imovelExpirada, { resposta: "recusada", respondido_em: ha(3) });
+    ids.quandoRecusouTeste = ha(3);
+    ids.quandoRecusouReal = ha(4);
+    await designacaoFechada("recusaComum", ids.imovelExpirada, { resposta: "recusada", respondido_em: ids.quandoRecusouTeste });
+    // E1169: a mesma recusa comum, no pedido da dona que não é conta de teste.
+    await designacaoFechada("recusaReal", ids.imovelReal, { resposta: "recusada", respondido_em: ids.quandoRecusouReal }, ids.donaReal);
   });
 
   test.afterAll(async () => {
@@ -156,11 +164,14 @@ test.describe("T1766 — E1159: a equipe lê as propostas expiradas ou descartad
       await expect(minhas.nth(1)).toHaveAttribute("data-motivo", "expirada");
       // A data é a do fim do prazo do dono (quando expirou), não a da proposta do avaliador.
       await expect(minhas.nth(1)).toHaveText(`nº ${numero} · ${TITULO.expirada} · ${codigoVN(ids.imovelExpirada)} · ${ROTULO_EXPIRADA} · ${dataDeBrasilia(ids.quandoExpirou)}`);
-      // Na lista das recusas do avaliador fica só a recusa comum: as duas propostas não são recusa dele.
+      // Nas recusas do avaliador ficam só as duas recusas comuns (a da dona de teste e a da dona real, E1169): as três
+      // propostas não são recusa dele.
       const recusas = painel.locator('[data-testid="recusa-item"]').filter({ hasText: `nº ${numero} ·` });
-      await expect(recusas, `a ${w} px`).toHaveCount(1);
-      await expect(recusas.first()).toHaveAttribute("data-resposta", "recusada");
-      await expect(recusas.first()).toContainText("Recusou");
+      await expect(recusas, `a ${w} px`).toHaveCount(2);
+      for (const i of [0, 1]) {
+        await expect(recusas.nth(i)).toHaveAttribute("data-resposta", "recusada");
+        await expect(recusas.nth(i)).toContainText("Recusou");
+      }
       expect(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `a ${w} px: sem rolagem lateral`).toBe(true);
       await secao.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t1766-1-propostas-expiradas-ou-descartadas-${w}.png` });
@@ -174,10 +185,46 @@ test.describe("T1766 — E1159: a equipe lê as propostas expiradas ou descartad
     await p.goto("/admin/avaliadores", { waitUntil: "domcontentloaded" });
     const painel = p.getByTestId("avaliacoes-recusas");
     await expect(painel.getByTestId("propostas-expiradas")).toBeVisible({ timeout: 30_000 });
-    const naLista = await painel.locator('[data-testid="recusa-item"]').count();
+    // E1169: o número é o da lista de trabalho; as recusas de conta de teste ficam fora dele.
+    const naLista = await painel.locator('[data-testid="recusa-item"][data-conta-teste="nao"]').count();
     const naSecao = await painel.locator('[data-testid="proposta-encerrada-item"]').count();
     expect(naSecao, "a secção tem pelo menos as três desta spec").toBeGreaterThanOrEqual(3);
     await expect(p.getByTestId("decidir-numero-recusas"), "o topo conta as recusas e ausências, não as propostas").toHaveAttribute("data-valor", String(naLista));
     await ctx.close();
+  });
+
+  test("3. E1169: a recusa de conta de teste fica fora da lista de trabalho e do número do topo, num bloco próprio @E1169", async ({ browser }) => {
+    for (const w of LARGURAS) {
+      const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: w, height: w === 390 ? 844 : 900 } });
+      const p = await ctx.newPage();
+      await p.goto("/admin/avaliadores", { waitUntil: "domcontentloaded" });
+      const painel = p.getByTestId("avaliacoes-recusas");
+      await expect(painel, `a ${w} px`).toBeVisible({ timeout: 30_000 });
+      const doAvaliador = { hasText: `nº ${numero} ·` };
+      // A lista de trabalho: só a recusa no pedido da dona que não é conta de teste.
+      const deTrabalho = painel.locator('[data-testid="recusa-item"][data-conta-teste="nao"]');
+      await expect(deTrabalho.filter(doAvaliador), `a ${w} px: na lista de trabalho só entra a recusa da conta real`).toHaveCount(1);
+      await expect(deTrabalho.filter(doAvaliador).first()).toHaveText(`nº ${numero} · Recusou · ${CIDADE} · ${dataDeBrasilia(ids.quandoRecusouReal)}`);
+      // O bloco das contas de teste, por baixo: o texto da casa, a contagem dele e a recusa da dona de teste.
+      const bloco = painel.getByTestId("recusas-de-teste");
+      await expect(bloco, `a ${w} px: as recusas de conta de teste têm bloco próprio`).toBeVisible();
+      const noBloco = bloco.locator('[data-testid="recusa-item"]');
+      const quantas = await noBloco.count();
+      await expect(bloco).toHaveAttribute("data-valor", String(quantas));
+      await expect(bloco.locator("p").first()).toHaveText(`Mais ${quantas} de conta de teste, fora do número:`);
+      await expect(bloco.locator('[data-testid="recusa-item"]:not([data-conta-teste="sim"])'), "no bloco só há linhas de conta de teste").toHaveCount(0);
+      await expect(noBloco.filter(doAvaliador), `a ${w} px: a recusa da dona de teste fica no bloco`).toHaveCount(1);
+      await expect(noBloco.filter(doAvaliador).first()).toHaveText(`nº ${numero} · Recusou · ${CIDADE} · ${dataDeBrasilia(ids.quandoRecusouTeste)}`);
+      // O número do topo é o tamanho da lista de trabalho: as de conta de teste não contam.
+      const naLista = await deTrabalho.count();
+      const todas = await painel.locator('[data-testid="recusa-item"]').count();
+      expect(todas, "há recusas de conta de teste a mais do que as que contam").toBe(naLista + quantas);
+      expect(quantas, "pelo menos a desta spec").toBeGreaterThanOrEqual(1);
+      await expect(p.getByTestId("decidir-numero-recusas"), `a ${w} px: o topo não conta as recusas de conta de teste`).toHaveAttribute("data-valor", String(naLista));
+      expect(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `a ${w} px: sem rolagem lateral`).toBe(true);
+      await painel.scrollIntoViewIfNeeded();
+      await p.screenshot({ path: `${SAIDA}/t1766-3-recusas-sem-contas-de-teste-${w}.png` });
+      await ctx.close();
+    }
   });
 });

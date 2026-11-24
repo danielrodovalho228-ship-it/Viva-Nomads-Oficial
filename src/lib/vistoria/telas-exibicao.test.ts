@@ -112,8 +112,9 @@ test("nenhum número de ganho por nível e nenhum botão de escolher avaliador",
 
 test("chave desligada: dono, morador e o cartão da conversa somem; só o morador do pedido vê o cartão", () => {
   assert.match(BLOCO_DONO, /const chaveAtiva = await vistoriaAtiva\(\);[\s\S]*const visivel = blocoDoDonoVisivel\(chaveAtiva, [\s\S]*if \(!visivel\) return null;/);
-  assert.match(MORADOR, /if \(!\(await vistoriaAtiva\(\)\)\) notFound\(\);/);
-  assert.match(CONVERSA_ACAO, /if \(!\(await vistoriaAtiva\(\)\)\) return null;/);
+  // E1171 (ORDEM-DUET-746): para o morador a chave é a do PEDIDO (a sessão dele, ou o dono do pedido no piloto).
+  assert.match(MORADOR, /if \(!\(await vistoriaAtivaParaOMorador\(admin, p\.owner_id\)\)\) notFound\(\);/);
+  assert.match(CONVERSA_ACAO, /!\(await vistoriaAtivaParaOMorador\(admin, data\.owner_id as string \| null\)\)\) return null;/);
   assert.match(CONVERSA_ACAO, /\.eq\("morador_id", user\.id\)/);
 });
 

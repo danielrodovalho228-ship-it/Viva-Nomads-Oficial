@@ -2,7 +2,10 @@ import { cookies } from "next/headers";
 import { VISTORIA_ATIVA } from "@/lib/flags";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { createClient } from "@/lib/supabase/server";
-import { chaveAberta, modoDaChave, type ModoDaChave } from "./ambito-da-chave";
+import type { createAdminClient } from "@/lib/supabase/admin";
+import { chaveAberta, chaveAbertaParaOMorador, modoDaChave, type ModoDaChave } from "./ambito-da-chave";
+
+type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 
 /** Cookie que liga a avaliação SÓ no laboratório (INTEGRACOES_SIMULADAS; nunca em produção), para o E2E. */
 export const COOKIE_LAB_VISTORIA = "vn_lab_vistoria";
@@ -42,4 +45,17 @@ export async function modoDaChaveAtual(): Promise<ModoDaChave> {
  */
 export async function vistoriaAtiva(): Promise<boolean> {
   return chaveAberta(await modoDaChaveAtual());
+}
+
+/**
+ * E1171 (ORDEM-DUET-746): a chave para o MORADOR do imóvel ocupado, que concorda com a visita de um pedido do dono. Vale
+ * a chave da sessão dele ou, no piloto, o DONO do pedido estar na lista (vistoria_piloto) — o morador nunca está nela.
+ * Quem chama já conferiu que o pedido é deste morador. A leitura que falha fecha, nunca abre.
+ */
+export async function vistoriaAtivaParaOMorador(admin: Admin, donoDoPedido: string | null | undefined): Promise<boolean> {
+  const modo = await modoDaChaveAtual();
+  if (chaveAberta(modo)) return true;
+  if (!donoDoPedido) return false;
+  const { data, error } = await admin.from("vistoria_piloto").select("user_id").eq("user_id", donoDoPedido).maybeSingle();
+  return chaveAbertaParaOMorador(modo, !error && !!data);
 }

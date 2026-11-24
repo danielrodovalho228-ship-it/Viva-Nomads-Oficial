@@ -19,6 +19,15 @@ export function chaveAberta(modo: ModoDaChave): boolean {
   return modo !== "desligada";
 }
 
+/**
+ * E1171 (ORDEM-DUET-746): a chave para o MORADOR do imóvel ocupado. A concordância dele pertence ao pedido: no piloto
+ * quem está na lista é o dono (e o avaliador), não o morador. Por isso, para ele, a chave vale pela sessão OU pelo dono
+ * do pedido estar no piloto. Com a chave desligada para todos (dono fora do piloto), continua fechada.
+ */
+export function chaveAbertaParaOMorador(modoDaSessao: ModoDaChave, donoNoPiloto: boolean): boolean {
+  return chaveAberta(modoDaSessao) || donoNoPiloto;
+}
+
 /** No modo piloto, o rodízio só oferece avaliadores do piloto; nos outros modos a fila fica como está. */
 export function filaNoAmbito<T extends { userId: string }>(fila: T[], modo: ModoDaChave, piloto: Set<string>): T[] {
   return modo === "piloto" ? fila.filter((a) => piloto.has(a.userId)) : fila;
