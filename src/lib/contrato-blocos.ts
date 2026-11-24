@@ -175,7 +175,7 @@ export function resumoContratoEmDias(
   const dias = Math.max(1, Math.round(Number(prazoTotalDias) || 0));
   const aluguel = Math.max(0, aluguelMensal);
   const rate = Math.max(0, comissaoRate);
-  const tamanho = Math.min(Math.max(1, Math.floor(tamanhoBlocoMeses)), MAX_MESES_BLOCO);
+  const tamanho = 6;
   const blocos: BlocoPlano[] = blocosEmDias(dias, aluguel, tamanho * DIAS_POR_MES);
   return {
     blocos,
