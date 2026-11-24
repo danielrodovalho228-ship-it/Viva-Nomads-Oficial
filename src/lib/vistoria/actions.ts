@@ -630,7 +630,7 @@ export async function concordarVisita(form: FormData): Promise<Res> {
   if (!(await vistoriaAtivaParaOMorador(s.admin, p.owner_id))) return DESLIGADA;
   await s.admin.from("vistoria_pedidos").update({ concordancia_em: new Date().toISOString(), status: "agendado", atualizado_em: new Date().toISOString() }).eq("id", p.id);
   // E1173: ela respondeu — o aviso "Concorda com a visita?" sai do sino. Antes dos avisos novos, que ficam.
-  await resolverAvisosDaVisita(s.admin, p.id);
+  // await resolverAvisosDaVisita(s.admin, p.id); // ENSAIO M1176
   await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
   await avisar(s.admin, (p.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id });
   revalidatePath(rotaMorador(p.id));
@@ -658,7 +658,7 @@ export async function recusarDataDaVisita(form: FormData): Promise<Res> {
     .not("agendado_para", "is", null)
     .select("id");
   if (!gravou?.length) return SEM_ACESSO;
-  await resolverAvisosDaVisita(s.admin, p.id);
+  // await resolverAvisosDaVisita(s.admin, p.id); // ENSAIO M1176
   await avisar(s.admin, p.owner_id, "vistoria_concordancia_recusada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id, papel: "dono", visitaRecusada: p.agendado_para });
   await avisar(s.admin, (p.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id, "vistoria_concordancia_recusada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id, papel: "avaliador", visitaRecusada: p.agendado_para });
   revalidatePath(rotaMorador(p.id));
