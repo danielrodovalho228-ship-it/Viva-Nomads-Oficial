@@ -147,7 +147,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   );
   const VALOR_ESTADIA = resumo.valorTotalPeriodo;
   // Prompt 47 (adendo): o total do período mostrado é o MESMO do cartão para a mesma duração (função única).
-  const PRECO_PERIODO = rotuloPreco({ mensal: mensalDoFechamento(PROPERTY_FULL, ACORDO?.valorMensal), meses: prazoMeses });
+  const PRECO_PERIODO = rotuloPreco({ mensal: mensalDoFechamento({ ...PROPERTY_FULL, monthlyPrice: 3000 }, ACORDO?.valorMensal), meses: prazoMeses });
   // PROP-2: com proposta aceita, o preço DA PROPOSTA (total por mês, total do contrato e a conta); sem ela, o do anúncio.
   // O 1º pagamento, o consumo e as limpezas saem daqui — nada de valor fixo (antes 280/450/250 para todo imóvel).
   const PRECO_FECHAMENTO = precoDoFechamento(PROPERTY_FULL, ACORDO, prazoMeses);
