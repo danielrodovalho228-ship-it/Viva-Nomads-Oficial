@@ -41,7 +41,7 @@ export function AceitarPedido({ pedidoId, exemploValor, prazoMaxDias }: { pedido
             <input name="valor" inputMode="decimal" required placeholder={`ex.: ${exemploValor}`} className={campo} data-testid="pedido-valor" />
           </label>
           <label className="text-sm">
-            Seu prazo (dias, até {prazoMaxDias})
+            Prazo do laudo (dias úteis depois da visita, até {prazoMaxDias})
             <input name="prazoDias" type="number" min={1} max={prazoMaxDias} step={1} required className={campo} data-testid="pedido-prazo" />
           </label>
           <div className="grid grid-cols-2 gap-3">

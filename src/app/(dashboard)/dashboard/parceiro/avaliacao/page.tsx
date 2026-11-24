@@ -17,12 +17,12 @@ import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESCOLHA_E_TERMOS_AO_AVALIADOR, ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
 import { CONFIRMACAO_DO_ACEITE, ROTULO_PROPOSTA_DESCARTADA, ROTULO_PROPOSTA_EXPIRADA, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, rotuloSemResposta, textoDasAvaliacoesNaoLidas, textoDoHistoricoVazio, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
-import { dias, etapaDoPedido, identificacaoDoImovel, regiaoDoItemEncerrado, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
+import { etapaDoPedido, identificacaoDoImovel, regiaoDoItemEncerrado, resumoDoValorNaLista, textoDaPropostaEnviada } from "@/lib/vistoria/pedido-avaliador";
 import { TEXTO_RECUSA_PARA_O_AVALIADOR, concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeuSobre, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
-import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
-import { PRAZO_RESPOSTA_MAX_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "@/lib/vistoria/prazos";
+import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA } from "@/lib/vistoria/escolha";
+import { PRAZO_LAUDO_MAX_DIAS_UTEIS, PRAZO_RESPOSTA_MAX_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "@/lib/vistoria/prazos";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
 import { RESPOSTA_DO_AVALIADOR, STATUS_PEDIDO } from "@/lib/vistoria/rotulos-do-pedido";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
@@ -43,7 +43,7 @@ const SITUACAO: Record<StatusCredenciamento, string> = {
   descredenciado: "Você não recebe mais avaliações.",
 };
 
-type Pedido = { id: string; property_id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; escolhido_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; concordancia_pedida_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
+type Pedido = { id: string; property_id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; prazo_laudo_dias_uteis: number | null; proposta_em: string | null; proposta_aceita_em: string | null; escolhido_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; concordancia_pedida_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
 
 /**
  * Avaliador credenciado (62-B1/62-B3; desenho do 62-A, Parte 1, itens 1 e 6): o pedido único com os 5 passos e o estado,
@@ -133,7 +133,7 @@ export default async function AvaliacaoParceiroPage() {
 
   const { data: pedidos, error: erroPedidos } = await admin
     .from("vistoria_pedidos")
-    .select("id, property_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, concordancia_pedida_em, designado_em, recebido_marcado_em, teste")
+    .select("id, property_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, concordancia_pedida_em, designado_em, recebido_marcado_em, teste")
     .eq("avaliador_id", cred.id)
     .order("criado_em", { ascending: false });
   const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, porte)").eq("avaliador_id", cred.id);
@@ -193,7 +193,7 @@ export default async function AvaliacaoParceiroPage() {
           <p className="text-sm text-muted">Você define o seu valor, em quantos dias entrega o laudo e em quantas horas responde a um pedido. O proprietário vê isso na lista de escolha; sem resposta no seu prazo, o pedido volta para ele escolher outro.</p>
           <FormAcao acao={salvarMeusTermos} className="mt-3 flex flex-wrap items-end gap-2" testid="salvar-termos">
             <label className="text-sm">Valor (R$)<input name="valor" inputMode="decimal" defaultValue={cred.preco_proprio != null ? String(cred.preco_proprio).replace(".", ",") : ""} className={campo} required /></label>
-            <label className="text-sm">Entrega do laudo (dias)<input name="prazoEntregaDias" type="number" min={1} max={PRAZO_PROPOSTA_MAX_DIAS} defaultValue={cred.prazo_entrega_dias ?? ""} className={campo} required /></label>
+            <label className="text-sm">Entrega do laudo (dias)<input name="prazoEntregaDias" type="number" min={1} max={PRAZO_LAUDO_MAX_DIAS_UTEIS} defaultValue={cred.prazo_entrega_dias ?? ""} className={campo} required /></label>
             <label className="text-sm">Respondo em até (horas)<input name="prazoRespostaHoras" type="number" min={1} max={PRAZO_RESPOSTA_MAX_HORAS} defaultValue={cred.prazo_resposta_horas ?? PRAZO_RESPOSTA_PADRAO_HORAS} className={campo} required /></label>
             <Button type="submit" size="sm">Salvar termos</Button>
           </FormAcao>
@@ -380,7 +380,7 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
           <FormAcao acao={proporPrecoEPrazo} className="flex w-full flex-wrap items-end gap-2" testid="proposta-avaliador">
             <input type="hidden" name="pedidoId" value={p.id} />
             <label className="text-sm">Seu valor (R$)<input name="valor" inputMode="decimal" required placeholder={`ex.: ${brl(Number(p.valor_tabela))}`} className={campo} data-testid="proposta-valor" /></label>
-            <label className="text-sm">Seu prazo (dias, até {PRAZO_PROPOSTA_MAX_DIAS})<input name="prazoDias" type="number" min={1} max={PRAZO_PROPOSTA_MAX_DIAS} step={1} required className={campo} data-testid="proposta-prazo" /></label>
+            <label className="text-sm">Prazo do laudo (dias úteis depois da visita, até {PRAZO_LAUDO_MAX_DIAS_UTEIS})<input name="prazoDias" type="number" min={1} max={PRAZO_LAUDO_MAX_DIAS_UTEIS} step={1} required className={campo} data-testid="proposta-prazo" /></label>
             <Button type="submit" variant="secondary" size="sm" data-testid="designacao-aceitar">Aceitar e enviar proposta</Button>
           </FormAcao>
           <FormAcao acao={responderDesignacao}><input type="hidden" name="pedidoId" value={p.id} /><input type="hidden" name="resposta" value="recusar" /><Button type="submit" variant="ghost" size="sm" data-testid="designacao-recusar">Recusar</Button></FormAcao>
@@ -408,7 +408,7 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
       )}
       {["designado"].includes(p.status) && r === "aceita" && !p.proposta_aceita_em && precisaDoAceite && (
         <p className="mt-2 text-muted" data-testid="aguarda-aceite-proprietario">
-          Proposta enviada: {brl(Number(p.valor_proposto))} em {dias(Number(p.prazo_proposto_dias ?? 0))}.{aceiteVencido ? "" : " Falta o proprietário aceitar para agendar a visita."}
+          {textoDaPropostaEnviada(p)}.{aceiteVencido ? "" : " Falta o proprietário aceitar para agendar a visita."}
           {relogio?.vez === "dono" && (
             <span className={aceiteVencido ? "mt-1 block font-semibold text-red-700" : "mt-1 block"} data-testid="prazo-aceite" data-vencido={aceiteVencido ? "1" : undefined}>
               {textoDoPrazoDeAceite(relogio)}

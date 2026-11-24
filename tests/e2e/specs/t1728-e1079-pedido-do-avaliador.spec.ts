@@ -124,12 +124,12 @@ test.describe("T1728 — E1079: o pedido do avaliador pelo mockup, com a propost
     const endereco = p.url();
     await tela.getByRole("button", { name: "Aceitar pedido" }).click();
     await expect(tela.getByLabel("Seu valor (R$)")).toBeVisible();
-    await expect(tela.getByLabel(/Seu prazo \(dias/)).toBeVisible();
+    await expect(tela.getByLabel(/Prazo do laudo \(dias úteis/)).toBeVisible();
     expect(p.url(), "os campos abrem na mesma tela").toBe(endereco);
     expect(await respostaDe(pedidos.tela!), "abrir os campos ainda não aceita nada").toBeNull();
     await p.screenshot({ path: `${SAIDA}/t1728-2-aceitar-aberto-390.png`, fullPage: true });
     await tela.getByLabel("Seu valor (R$)").fill("280");
-    await tela.getByLabel(/Seu prazo \(dias/).fill("5");
+    await tela.getByLabel(/Prazo do laudo \(dias úteis/).fill("5");
     await tela.getByRole("button", { name: "Enviar proposta" }).click();
     // E648: aceitar é a proposta do avaliador (valor e prazo dele), à espera do dono.
     await expect.poll(() => respostaDe(pedidos.tela!), { timeout: 20_000 }).toBe("aceita");
@@ -140,7 +140,8 @@ test.describe("T1728 — E1079: o pedido do avaliador pelo mockup, com a propost
     expect(linha.status, "o pedido continua à espera do dono").toBe("designado");
     await expect(p.getByRole("heading", { level: 1, name: "Pedido de avaliação", exact: true })).toBeVisible({ timeout: 20_000 });
     await expect(tela.getByTestId("pedido-etiqueta")).toHaveText("Proposta enviada");
-    await expect(tela.getByTestId("pedido-valor-linha")).toHaveText("Proposta enviada: R$ 280,00 em 5 dias");
+    // E1156 (asserção alterada, ORDENS-DUET 712 e 713): o prazo do laudo é o combinado, em dias úteis depois da visita.
+    await expect(tela.getByTestId("pedido-valor-linha")).toHaveText("Proposta enviada: R$ 280,00 · laudo em até 5 dias úteis depois da visita");
     await expect(tela.getByTestId("pedido-aguarda-dono")).toContainText("Falta o proprietário aceitar a sua proposta");
     await expect(tela.getByRole("button", { name: "Aceitar pedido" })).toHaveCount(0);
     await expect(tela).not.toContainText("Palmeiras");

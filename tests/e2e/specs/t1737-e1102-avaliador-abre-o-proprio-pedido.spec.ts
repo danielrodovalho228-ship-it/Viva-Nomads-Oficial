@@ -184,7 +184,7 @@ test.describe("T1737 — E1102: o avaliador abre o detalhe do próprio pedido @E
     const tela = a.getByTestId("pedido-avaliador");
     await tela.getByRole("button", { name: "Aceitar pedido" }).click({ timeout: 30_000 });
     await tela.getByLabel("Seu valor (R$)").fill("320");
-    await tela.getByLabel(/Seu prazo \(dias/).fill("3");
+    await tela.getByLabel(/Prazo do laudo \(dias úteis/).fill("3");
     await tela.getByRole("button", { name: "Enviar proposta" }).click();
     await expect.poll(async () => (await linhaDoPedido(pedidos.semLinha!)).proposta_em, { timeout: 20_000 }).not.toBeNull();
     const l = await linhaDoPedido(pedidos.semLinha!);

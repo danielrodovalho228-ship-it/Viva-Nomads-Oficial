@@ -13,6 +13,7 @@ import { itemChecklist, type ValorItem } from "@/config/checklist-avaliacao";
 import { vistoriaAtiva } from "./chave";
 import { podeContestar, valorValido } from "./laudo";
 import { abrirContestacao, emitirLaudo, liberar, registrarCorrecao, type LinhaLaudo } from "./laudo-servidor";
+import { prazoDoLaudo } from "./telas-laudo";
 import { porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, resolverAvisosDaVisita, rotaDono, tabelaDaCidade } from "./servidor";
 import type { MotivoVerificacao } from "./strikes";
@@ -193,11 +194,13 @@ export async function concluirVisita(form: FormData): Promise<Res> {
   const faltas = faltasDoRoteiro(roteiroDaVisita(((fotos ?? []) as { comodo: string | null }[]).map((f) => f.comodo)));
   if (faltas.length) return { ok: false, erro: msgRoteiroIncompleto(faltas) };
   const agora = new Date().toISOString();
-  await c.admin.from("vistoria_pedidos").update({ status: "realizada", visita_concluida_em: agora, atualizado_em: agora }).eq("id", c.p.id).eq("status", "agendado");
+  const { data: concluida } = await c.admin.from("vistoria_pedidos").update({ status: "realizada", visita_concluida_em: agora, atualizado_em: agora }).eq("id", c.p.id).eq("status", "agendado").select("prazo_laudo_dias_uteis").maybeSingle();
+  // E1156: o prazo do laudo é o combinado (dias úteis depois da visita); sem prazo combinado, o padrão.
+  const prazoDoPedido = (concluida as { prazo_laudo_dias_uteis: number | null } | null)?.prazo_laudo_dias_uteis ?? null;
   // E1128: a visita aconteceu — os avisos que a anunciavam deixam de valer.
   await resolverAvisosDaVisita(c.admin, c.p.id);
   revalidatePath(ROTA_AVALIADOR);
-  return { ok: true, mensagem: "Visita concluída. Envie o laudo em até 48 horas úteis." };
+  return { ok: true, mensagem: `Visita concluída. ${prazoDoLaudo(agora, new Date(agora), prazoDoPedido).texto}` };
 }
 
 /** O avaliador envia e ASSINA (E648): a plataforma fornece o modelo e guarda o registro; o laudo é dele. O checklist precisa estar completo. */

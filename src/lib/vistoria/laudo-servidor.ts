@@ -29,6 +29,7 @@ import {
   type Resultado,
 } from "./laudo";
 import { conteudoLaudo } from "./laudo-documento";
+import { diasUteis, diasUteisDoLaudo } from "./prazos";
 import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 import { assinaturaDoLaudo } from "./escolha";
 import { createHash } from "node:crypto";
@@ -501,13 +502,13 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
   const r: ResumoLaudos = { atrasados: 0, ressalvasVencidas: 0, expirados: 0, avisosExpiracao: 0, strikesApagados: 0, devolucoesVencidas: 0 };
   const quando = agora.toISOString();
 
-  // 1. Laudo em 48 h úteis da visita: sinal no admin quando vence (conta na auditoria).
-  const { data: realizadas } = await admin.from("vistoria_pedidos").select("id, agendado_para, visita_concluida_em").eq("status", "realizada").is("laudo_atrasado_em", null);
-  for (const p of (realizadas ?? []) as { id: string; agendado_para: string | null; visita_concluida_em: string | null }[]) {
+  // 1. Laudo fora do prazo combinado (E1156: os dias úteis do pedido, depois da visita): sinal no admin quando vence.
+  const { data: realizadas } = await admin.from("vistoria_pedidos").select("id, agendado_para, visita_concluida_em, prazo_laudo_dias_uteis").eq("status", "realizada").is("laudo_atrasado_em", null);
+  for (const p of (realizadas ?? []) as { id: string; agendado_para: string | null; visita_concluida_em: string | null; prazo_laudo_dias_uteis: number | null }[]) {
     const visita = p.visita_concluida_em ?? p.agendado_para;
-    if (!visita || !laudoAtrasado(visita, null, agora)) continue;
+    if (!visita || !laudoAtrasado(visita, null, agora, p.prazo_laudo_dias_uteis)) continue;
     await admin.from("vistoria_pedidos").update({ laudo_atrasado_em: quando }).eq("id", p.id).is("laudo_atrasado_em", null);
-    await admin.from("vistoria_fila_admin").insert({ tipo: "laudo_atrasado", pedido_id: p.id, motivo: "Laudo não enviado em 48 horas úteis da visita." });
+    await admin.from("vistoria_fila_admin").insert({ tipo: "laudo_atrasado", pedido_id: p.id, motivo: `Laudo não enviado no prazo combinado: ${diasUteis(diasUteisDoLaudo(p.prazo_laudo_dias_uteis))} depois da visita.` });
     await avisarAdmins(admin, "vistoria_fila_admin", "laudo_atrasado");
     r.atrasados++;
   }

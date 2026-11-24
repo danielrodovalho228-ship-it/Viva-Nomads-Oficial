@@ -11,6 +11,7 @@ import { ITENS_CHECKLIST, GRUPOS_AVALIACAO, type GrupoAvaliacao, type ItemCheckl
 import { CHAVES_CONFORTO } from "../../config/conforto-minimo.ts";
 import { CHAVES_NIVEL, itemNivel, type NivelOuAdequacao } from "../../config/niveis.ts";
 import { nivelDoImovel, type MedidaPonto, type RespostasRuido } from "../niveis/regras.ts";
+import { HORAS_DO_DIA_UTIL, diasUteisDoLaudo } from "./prazos.ts";
 
 export type Respostas = Readonly<Record<string, ValorItem | undefined>>;
 export type Resultado = "aprovado" | "com_ressalvas" | "reprovado";
@@ -19,7 +20,6 @@ export const LIMITE_RESSALVAS = 3;
 export const PRAZO_RESSALVA_DIAS = 15;
 export const DIAS_CONTESTACAO = 7;
 export const PRAZO_DEVOLUCAO_DIAS = 15;
-export const HORAS_UTEIS_LAUDO = 48;
 export const VALIDADE_LAUDO_MESES = 12;
 export const AVISO_EXPIRACAO_DIAS = 30;
 export const ROTULO_RESULTADO: Record<Resultado, string> = { aprovado: "Aprovado", com_ressalvas: "Com ressalvas", reprovado: "Reprovado" };
@@ -119,9 +119,28 @@ export function somarHorasUteis(inicio: Date, horas: number): Date {
   return new Date(t);
 }
 
-/** Prazo do laudo: até 48 horas úteis depois da visita. */
-export const prazoLaudo = (visitaEm: string) => somarHorasUteis(new Date(visitaEm), HORAS_UTEIS_LAUDO);
-export const laudoAtrasado = (visitaEm: string, emitidoEm: string | null, agora: Date) => !emitidoEm && agora > prazoLaudo(visitaEm);
+/**
+ * E1156: prazo do laudo — os dias úteis combinados com o avaliador, contados depois da visita; sem prazo combinado, o
+ * padrão (`diasUteisDoLaudo`). O dia útil conta em horas úteis, de segunda a sexta, em Brasília (`HORAS_DO_DIA_UTIL`).
+ */
+export const prazoLaudo = (visitaEm: string, diasUteis?: number | null) => somarHorasUteis(new Date(visitaEm), diasUteisDoLaudo(diasUteis) * HORAS_DO_DIA_UTIL);
+export const laudoAtrasado = (visitaEm: string, emitidoEm: string | null, agora: Date, diasUteis?: number | null) => !emitidoEm && agora > prazoLaudo(visitaEm, diasUteis);
+
+/**
+ * E1156: o laudo saiu fora do prazo combinado? Com o prazo novo, a conta é a do atraso (dias úteis depois da visita).
+ * Pedido anterior à regra: a conta que lhe foi prometida (N dias corridos depois do aceite).
+ */
+export function laudoForaDoCombinado(
+  p: { proposta_aceita_em: string | null; prazo_proposto_dias: number | null; prazo_laudo_dias_uteis: number | null; visita_concluida_em: string | null; agendado_para: string | null },
+  emitidoEm: string,
+): boolean {
+  if (p.prazo_laudo_dias_uteis != null) {
+    const visita = p.visita_concluida_em ?? p.agendado_para;
+    return !!visita && Date.parse(emitidoEm) > prazoLaudo(visita, p.prazo_laudo_dias_uteis).getTime();
+  }
+  if (!p.proposta_aceita_em || !p.prazo_proposto_dias) return false;
+  return Date.parse(emitidoEm) > Date.parse(p.proposta_aceita_em) + p.prazo_proposto_dias * 86_400_000;
+}
 export const prazoRessalva = (emitidoEm: string) => new Date(Date.parse(emitidoEm) + PRAZO_RESSALVA_DIAS * 86_400_000);
 export const ressalvaVencida = (emitidoEm: string, corrigidoEm: string | null, agora: Date) => !corrigidoEm && agora > prazoRessalva(emitidoEm);
 

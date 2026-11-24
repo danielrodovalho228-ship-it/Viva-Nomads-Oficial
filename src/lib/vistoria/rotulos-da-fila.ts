@@ -4,7 +4,7 @@
   constantes do laudo (`laudo.ts`) — nunca da caução, que tem uma constante com o mesmo nome e outro sentido.
   PURO (node --test), sem imports @/.
 */
-import { HORAS_UTEIS_LAUDO, PRAZO_DEVOLUCAO_DIAS } from "./laudo.ts";
+import { PRAZO_DEVOLUCAO_DIAS } from "./laudo.ts";
 import { SEM_AVALIADOR_ELEGIVEL } from "./rotulos-do-pedido.ts";
 
 export const ROTULO_FILA: Record<string, string> = {
@@ -13,7 +13,7 @@ export const ROTULO_FILA: Record<string, string> = {
   suspensao_automatica: "Suspensão automática antiga (não é mais criada)",
   revisao_criterio: "Critério público de qualidade atingido: rever com o avaliador (direito de resposta)",
   proposta_descredenciamento: "Proposta de descredenciamento",
-  laudo_atrasado: `Laudo não enviado em ${HORAS_UTEIS_LAUDO} horas úteis`,
+  laudo_atrasado: "Laudo não enviado no prazo combinado",
   ressalva_vencida: "Ressalva vencida: avaliar abrir verificação",
   devolucao_vencida: `Devolução da contestação não confirmada em ${PRAZO_DEVOLUCAO_DIAS} dias`,
   seguranca_grave: "Segurança grave a acompanhar",

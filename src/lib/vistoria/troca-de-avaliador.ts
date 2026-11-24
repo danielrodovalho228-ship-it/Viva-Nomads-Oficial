@@ -36,12 +36,13 @@ export interface TextoDaTroca {
  * O texto da confirmação. `valor` já vem formatado (R$ 380,00). `outros` é quantos avaliadores o dono poderá escolher
  * depois da troca (o descartado não volta); null quando a leitura falhou — aí não se inventa número.
  */
-export function textoDaTroca(e: { numero: string | null; valor: string; prazoDias: number; outros: number | null; cidade: string | null }): TextoDaTroca {
+export function textoDaTroca(e: { numero: string | null; valor: string; prazoDias: number; prazoPorExtenso?: string; outros: number | null; cidade: string | null }): TextoDaTroca {
   const onde = e.cidade ? ` em ${e.cidade}` : "";
   const quem = e.numero ? `O avaliador nº ${e.numero}` : "O avaliador escolhido";
   const perde = [
     `${quem} sai deste pedido e não volta a aparecer na lista.`,
-    `A proposta dele é descartada: ${e.valor} · laudo em ${dias(e.prazoDias)}.`,
+    // E1156: com o prazo novo, a tela passa o compromisso por extenso (o mesmo que o dono lê na proposta).
+    `A proposta dele é descartada: ${e.valor} · ${e.prazoPorExtenso ?? `laudo em ${dias(e.prazoDias)}`}.`,
     "Não dá para desfazer.",
   ];
   const semOutro = e.outros === 0;

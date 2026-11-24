@@ -13,6 +13,28 @@ export const PRAZO_RESPOSTA_MAX_HORAS = 72;
 export const PRAZO_DONO_ACEITAR_HORAS = 72;
 
 /**
+ * E1156 (ORDENS-DUET 712 e 713): o prazo do LAUDO conta em dias úteis depois da visita. Vale o que o avaliador propôs e
+ * o dono aceitou; sem proposta (ou em pedido anterior a esta regra), o padrão — as mesmas 48 horas úteis de antes.
+ */
+export const PRAZO_LAUDO_PADRAO_DIAS_UTEIS = 2;
+/** E1156: o máximo que o avaliador pode propor para o laudo, em dias úteis depois da visita. */
+export const PRAZO_LAUDO_MAX_DIAS_UTEIS = 5;
+/** E1156: um dia útil, em horas úteis — é assim que o prazo do laudo se soma (segunda a sexta, em Brasília). */
+export const HORAS_DO_DIA_UTIL = 24;
+
+/**
+ * E1156: os dias úteis que valem para o laudo de um pedido. Pedido sem prazo proposto usa o padrão; um valor acima do
+ * teto nunca vale mais do que o teto (a proposta recusa-o antes de gravar).
+ */
+export function diasUteisDoLaudo(combinado: number | null | undefined): number {
+  if (!Number.isInteger(combinado) || Number(combinado) < 1) return PRAZO_LAUDO_PADRAO_DIAS_UTEIS;
+  return Math.min(Number(combinado), PRAZO_LAUDO_MAX_DIAS_UTEIS);
+}
+
+/** E1156: "1 dia útil" · "3 dias úteis" — a unidade do prazo do laudo, dita do mesmo jeito em todas as telas. */
+export const diasUteis = (n: number): string => `${n} ${n === 1 ? "dia útil" : "dias úteis"}`;
+
+/**
  * E1157: o prazo de resposta que vale para um avaliador — o que ele declarou em "Meus termos"; sem declaração (ou com
  * um valor que não é um número de horas), o padrão. A rotina, o relógio do pedido e os textos das telas leem daqui.
  */

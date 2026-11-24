@@ -67,7 +67,7 @@ export const TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR = "Você paga direto ao avaliad
  * A frase de situação do pedido do dono. "designado" não tem frase própria: a linha "Avaliador escolhido por você: nº X"
  * já diz tudo (QA do #1111, item 5: a frase saía duas vezes).
  */
-export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; ocupado: boolean; concordanciaEm: string | null; agendadoPara: string | null; concordanciaPedidaEm?: string | null }): string | null {
+export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; ocupado: boolean; concordanciaEm: string | null; agendadoPara: string | null; concordanciaPedidaEm?: string | null; laudoAte?: string | null }): string | null {
   if (p.aguardandoAvaliador) return `Aguardando avaliador: ${A_VIVA_AVISA_QUANDO_HOUVER}.`;
   switch (p.status) {
     case "pedido":
@@ -79,7 +79,8 @@ export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; 
     case "agendado":
       return "Visita confirmada.";
     case "realizada":
-      return "Visita feita: o laudo sai em até 48 horas úteis.";
+      // E1156: o prazo é o combinado com o avaliador; a tela passa a data em que ele termina ("21/10/2026").
+      return p.laudoAte ? `Visita feita: o laudo sai até ${p.laudoAte}.` : "Visita feita: o laudo sai no prazo combinado com o avaliador.";
     default:
       return null;
   }

@@ -513,7 +513,7 @@ export async function proporPrecoEPrazo(form: FormData): Promise<Res> {
     const horas = Number((cred as { prazo_resposta_horas?: number | null } | null)?.prazo_resposta_horas) || PRAZO_RESPOSTA_PADRAO_HORAS;
     return { ok: false, erro: erroAoPropor((des as { resposta?: string | null } | null)?.resposta ?? undefined, horas) };
   }
-  await c.admin.from("vistoria_pedidos").update({ valor_proposto: v.valor, prazo_proposto_dias: v.prazoDias, proposta_em: agora, atualizado_em: agora }).eq("id", c.p.id);
+  await c.admin.from("vistoria_pedidos").update({ valor_proposto: v.valor, prazo_proposto_dias: v.prazoDias, prazo_laudo_dias_uteis: v.prazoDias, proposta_em: agora, atualizado_em: agora }).eq("id", c.p.id);
   await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
