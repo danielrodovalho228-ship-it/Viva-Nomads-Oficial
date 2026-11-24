@@ -12,9 +12,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { ROTULO_ESCOLHER, TEXTO_IDENTIDADE_VERIFICADA, TITULO_ESCOLHA_AVALIADOR, TITULO_NOVO_NA_VIVA, fraseDoValorNaEscolha, reputacaoNoCartao } from "./vitrine-avaliadores.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 
 test("E1096 (1): sem avaliação nem nota → cinco estrelas vazias e 'Novo na Viva'", () => {
   assert.deepEqual(reputacaoNoCartao(0, null), { novo: true, cheias: 0, texto: TITULO_NOVO_NA_VIVA });
