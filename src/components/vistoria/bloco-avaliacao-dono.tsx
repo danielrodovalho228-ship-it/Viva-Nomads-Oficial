@@ -15,7 +15,7 @@ import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linh
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
-import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceiteParaODono } from "@/lib/vistoria/relogio-do-pedido";
+import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, prazoDoAceiteTerminou, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceiteParaODono } from "@/lib/vistoria/relogio-do-pedido";
 import { identidadesConfirmadas, nomesDasContas, outrosParaTroca, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { textoDaTroca } from "@/lib/vistoria/troca-de-avaliador";
 import { DepoisDaTroca, TrocaDeAvaliador } from "@/components/vistoria/troca-de-avaliador";
@@ -154,6 +154,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
         agora,
       )
     : null;
+  // E1147: passadas as 72 h do dono, e até a rotina devolver o pedido, o bloco diz que o prazo terminou e o botão de
+  // aceitar sai (o servidor já recusa o aceite, E1142). "Escolher outro avaliador" fica: a troca não confere o prazo.
+  const aceiteTerminou = prazoDoAceiteTerminou(relogioDoAceite);
   let outrosNaTroca: number | null = null;
   if (visivel === "ativa" && atual?.status === "designado" && atual.proposta_em && !atual.proposta_aceita_em) {
     outrosNaTroca = await outrosParaTroca(admin, atual.id, agora).catch(() => null);
@@ -286,17 +289,19 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 <p className="font-semibold text-ink">
                   Proposta do avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}
                 </p>
-                <p className="mt-1 text-muted" data-testid="avaliacao-proposta-prazo">
+                <p className={`mt-1 ${aceiteTerminou ? "text-ink" : "text-muted"}`} data-testid="avaliacao-proposta-prazo" data-terminado={aceiteTerminou ? "1" : "0"}>
                   {textoDoPrazoDeAceiteParaODono(relogioDoAceite)}
                 </p>
                 {propostaForaDaFaixa && faixa && (
                   <p className="mt-1 text-muted" data-testid="avaliacao-proposta-fora">Fora da faixa de referência da cidade ({brl(faixa.min)} a {brl(faixa.max)}). Você decide.</p>
                 )}
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <FormAcao acao={aceitarProposta} testid="aceitar-proposta">
-                    <input type="hidden" name="pedidoId" value={atual.id} />
-                    <Button type="submit" variant="secondary" size="sm">Aceitar valor e prazo</Button>
-                  </FormAcao>
+                  {!aceiteTerminou && (
+                    <FormAcao acao={aceitarProposta} testid="aceitar-proposta">
+                      <input type="hidden" name="pedidoId" value={atual.id} />
+                      <Button type="submit" variant="secondary" size="sm">Aceitar valor e prazo</Button>
+                    </FormAcao>
+                  )}
                   {/* E1100: o clique abre a confirmação (o que se perde, e se há outro avaliador); só ela descarta. */}
                   <TrocaDeAvaliador
                     pedidoId={atual.id}

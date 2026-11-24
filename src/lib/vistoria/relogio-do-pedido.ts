@@ -129,12 +129,22 @@ export function textoDoPrazoDeAceite(r: Relogio): string {
 }
 
 /**
+ * E1147: o prazo do dono para aceitar a proposta já terminou. É o sinal das telas do dono na janela entre o fim das 72 h
+ * e a rotina que devolve o pedido — a mesma conta de `aceiteForaDoPrazo`, que recusa o aceite; não espera a rotina.
+ */
+export function prazoDoAceiteTerminou(r: Relogio | null): boolean {
+  return !!r && r.vez === "dono" && r.vencido;
+}
+
+/**
  * E1154: o que o DONO lê enquanto a proposta espera o aceite dele — o mesmo prazo e a mesma hora de fim que o avaliador
  * vê (textoDoPrazoDeAceite), do mesmo relógio. Antes o dono lia só "72 horas depois da proposta" e fazia a conta.
- * Sem prazo do dono a correr, ou com ele já vencido (a janela até a rotina devolver o pedido), a frase fica sem data:
- * não se promete o aceite "até" uma hora que já passou.
+ * Sem prazo do dono a correr, a frase fica sem data.
+ * E1147: com o prazo já terminado (a janela até a rotina devolver o pedido), o dono lê que ele terminou — a frase
+ * aprovada, a mesma que a recusa do aceite devolve. Antes continuava a ler "Aceite em até 72 horas…".
  */
 export function textoDoPrazoDeAceiteParaODono(r: Relogio | null): string {
+  if (prazoDoAceiteTerminou(r)) return ERRO_ACEITE_FORA_DO_PRAZO;
   const ate = r && r.vez === "dono" && !r.vencido ? `, até ${dataHoraBRT(r.ate)}` : "";
   return `Aceite em até ${PRAZO_DONO_ACEITAR_HORAS} horas depois da proposta${ate}; passado o prazo, você escolhe outro avaliador.`;
 }
