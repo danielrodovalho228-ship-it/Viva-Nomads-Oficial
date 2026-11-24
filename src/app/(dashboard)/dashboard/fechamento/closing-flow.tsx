@@ -638,7 +638,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 </p>
               )}
               <p className="mt-3 text-xs text-muted">
-                {resumo.blocos.length} {resumo.blocos.length === 1 ? "bloco" : "blocos"} ·{" "}
+                {1} {"bloco"} ·{" "}
                 {ACORDO ? (
                   <span data-testid="fechamento-preco">
                     {formatBRL(PRECO_FECHAMENTO.totalPorMes)}/mês · {ROTULO_TOTAL_CONTRATO.toLowerCase()}{" "}
