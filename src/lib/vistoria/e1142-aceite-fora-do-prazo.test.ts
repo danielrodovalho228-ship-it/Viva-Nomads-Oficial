@@ -142,7 +142,9 @@ test("E1142 (ORDEM-622): na expiração, o avaliador também recebe o aviso — 
   const srv = semComentarios(ler("src/lib/vistoria/servidor.ts"));
   const rotina = srv.slice(srv.indexOf("export async function rotinaVistoria("));
   const ramo = rotina.slice(rotina.indexOf("propostaVencida(q.proposta_em, agora)"), rotina.indexOf('.eq("status", "pedido").eq("aguardando_avaliador", true)'));
-  assert.match(ramo, /avisar\(admin, q\.owner_id, "vistoria_designado_dono"/, "o dono continua avisado");
+  // E1144 (asserção alterada, ORDEM-DUET-643): o dono continua avisado, agora pelo e-mail próprio da expiração e
+  // não pelo genérico vistoria_designado_dono.
+  assert.match(ramo, /avisar\(admin, q\.owner_id, "vistoria_proposta_expirada_dono"/, "o dono continua avisado");
   assert.match(ramo, /avisar\(admin, q\.avaliadores_credenciamento\?\.parceiros\?\.user_id, "vistoria_proposta_expirada", ROTA_AVALIADOR, \{ pedidoId: q\.id, propertyId: q\.property_id \}\)/);
   const { TEMPLATES } = await import("../notifications/eventos-email.ts");
   const t = TEMPLATES.vistoria_proposta_expirada;

@@ -313,7 +313,10 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
     const avisos = async (usuario: string, evento: string) => ((await adm().from("avisos").select("url").eq("usuario_id", usuario).eq("evento", evento).eq("ref_id", ids.pedidoRotina)).data ?? []) as { url: string }[];
     await expect.poll(async () => (await avisos(ids.avaliador, "vistoria_proposta_expirada")).length, { timeout: 30_000, message: "um aviso ao avaliador, mesmo com 2 rodadas" }).toBe(1);
     expect((await avisos(ids.avaliador, "vistoria_proposta_expirada"))[0].url).toBe("/dashboard/parceiro/avaliacao");
-    expect((await avisos(ids.dono, "vistoria_designado_dono")).length, "o dono continua avisado").toBe(1);
+    // E1144 (asserção alterada, ORDEM-DUET-643): o dono continua avisado, agora pelo aviso próprio da expiração e não
+    // pelo genérico "novidade na escolha do avaliador".
+    expect((await avisos(ids.dono, "vistoria_proposta_expirada_dono")).length, "o dono continua avisado").toBe(1);
+    expect((await avisos(ids.dono, "vistoria_designado_dono")).length, "o genérico já não sai na expiração").toBe(0);
     const emails = async () => ((await adm().from("emails_teste").select("assunto, corpo").eq("usuario_id", ids.avaliador).eq("evento", "vistoria_proposta_expirada")).data ?? []) as { assunto: string; corpo: string }[];
     await expect.poll(async () => (await emails()).length, { timeout: 30_000, message: "um e-mail ao avaliador" }).toBe(1);
     const email = (await emails())[0];
