@@ -11,10 +11,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { REGRA_CAUCAO, REGRA_CAUCAO_BASE } from "./caucao-regra.ts";
 import { ROTULO_CAUCAO_NA_ENTRADA, TEXTO_BLOCOS_GARANTIA, TITULO_CAUCAO_GARANTIA, quantoOMoradorPaga } from "./fechamento-caucao-texto.ts";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 const tela = readFileSync(new URL("../app/(dashboard)/dashboard/fechamento/closing-flow.tsx", import.meta.url), "utf8");
 /** Só o texto que a pessoa lê: o que está entre aspas, crases ou solto no JSX — sem os comentários do código. */
-const semComentarios = tela.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+const semComentarios = fonteSemComentarios(tela);
 
 test("os textos da Garantia saem da fonte única da regra", () => {
   assert.equal(TITULO_CAUCAO_GARANTIA, "Caução (50% do aluguel da estadia)");
