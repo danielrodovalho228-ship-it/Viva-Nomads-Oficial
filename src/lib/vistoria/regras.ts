@@ -349,7 +349,7 @@ export interface FechoDaDesignacao {
 export function fechoDaDesignacaoAoDevolver(atual: string | null, motivo: MotivoDaDevolucao): FechoDaDesignacao | null {
   if (motivo === "ausencia") return { resposta: "ausencia", descartada: false };
   if (atual !== null && atual !== "aceita") return null;
-  if (motivo === "descartada") return { resposta: "recusada", descartada: true };
+  if (motivo === "descartada") return null;
   if (motivo === "expirada") return atual === null ? { resposta: "expirada", descartada: false } : null;
   return { resposta: "recusada", descartada: false };
 }
