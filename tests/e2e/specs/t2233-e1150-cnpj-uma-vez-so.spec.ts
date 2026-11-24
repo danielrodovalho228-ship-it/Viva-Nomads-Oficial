@@ -34,3 +34,20 @@ test.describe("T2233 — E1150: a regra do CNPJ aparece uma vez só @E1150", () 
     });
   }
 });
+
+test.describe("T2233 — E1150: outro erro do documento não esconde a nota @E1150", () => {
+  test.skip(!NO_LABORATORIO, "Só no laboratório.");
+  test("1280px: CNPJ com dígito errado → recusa própria, e a nota do CNPJ continua", async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const page = await ctx.newPage();
+    await page.goto("/parceiros?seja=1#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
+    const form = page.getByTestId("seja-parceiro-form");
+    await expect(form).toBeVisible({ timeout: 30_000 });
+    await form.locator("#sp-nome").fill("Clara Limpezas");
+    await form.locator("#sp-doc").fill("11.222.333/0001-82");
+    await page.getByTestId("seja-parceiro-enviar").click();
+    await expect(form.getByTestId("sp-erro-documento")).toContainText("CNPJ inválido", { timeout: 20_000 });
+    await expect(form.getByTestId("sp-so-cnpj")).toBeVisible();
+    await ctx.close();
+  });
+});

@@ -240,8 +240,9 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
       )}
 
       {/* E648: CNPJ para todos os parceiros, em qualquer categoria (MEI onde a atividade permite); CPF não é aceito.
-          E1150: com o erro do documento activo, a recusa junto do campo é a única instância da regra (a nota esconde-se). */}
-      {campoErro !== "documento" && (
+          E1150 (ORDEM-DUET-642): a nota esconde-se só quando a recusa do documento é a própria regra (o CPF) — aí a recusa
+          junto do campo é a única instância. Outro erro do documento tem frase própria, e a nota fica. */}
+      {!(campoErro === "documento" && erro === MSG_SO_CNPJ) && (
         <p className="rounded-lg bg-sage-100/60 px-3 py-2 text-sm text-ink" data-testid="sp-so-cnpj">
           {MSG_SO_CNPJ}
         </p>
