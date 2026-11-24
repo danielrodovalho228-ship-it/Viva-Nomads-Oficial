@@ -1,7 +1,8 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { account, hasAccount } from "../fixtures/accounts";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, confirmarContatoDaConta, liberarLimitePedidos } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, confirmarContatoDaConta, gravarMensagem, liberarLimitePedidos } from "../fixtures/laboratorio";
+import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { encerrarPedido, marcadorPedido, preencherPedido, publicarPreenchido } from "../fixtures/pedido";
 import { defeitoConhecido } from "../fixtures/defeito-conhecido";
 
@@ -28,8 +29,26 @@ import { defeitoConhecido } from "../fixtures/defeito-conhecido";
  */
 
 /** Imóvel semeado por scripts/seed-test-data.mjs (proprietário-teste, R$ 3.200). */
-const SEED_PROPERTY_ID =
+let SEED_PROPERTY_ID =
   process.env.TESTES_SEED_PROPERTY_ID || "11111111-1111-4111-8111-111111111111";
+
+async function idDe(email: string): Promise<string> {
+  const { data, error } = await adm().from("profiles").select("id").eq("email", email).single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+// SONDA (ensaio): no laboratório, o imóvel ativo mais antigo do proprietário e uma conversa gravada com o inquilino.
+test.beforeAll(async () => {
+  if (!NO_LABORATORIO) return;
+  const dono = await idDe(account("proprietario").email);
+  const inq = await idDe(account("inquilino").email);
+  const { data, error } = await adm().from("properties").select("id").eq("owner_id", dono).eq("status", "active").order("created_at").limit(1).single();
+  if (error) throw error;
+  SEED_PROPERTY_ID = data.id as string;
+  console.log(`SONDA imovel=${SEED_PROPERTY_ID}`);
+  await gravarMensagem(dono, inq, SEED_PROPERTY_ID, "Olá! Pode perguntar por aqui.", conversationId(inq, dono, SEED_PROPERTY_ID));
+});
 
 /** Marca única por execução (só letras: dígitos demais parecem telefone). */
 const marca = marcadorPedido;
