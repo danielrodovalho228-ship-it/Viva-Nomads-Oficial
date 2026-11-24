@@ -5,6 +5,7 @@ import { PRAZO_RESPOSTA_PADRAO_HORAS, horasDeResposta } from "./prazos.ts";
 import { relogioDoPedido, rotuloSemResposta, textoDasAvaliacoesNaoLidas, textoDoHistoricoVazio } from "./relogio-do-pedido.ts";
 import { designacaoVencida } from "./regras.ts";
 import { RESPOSTA_DO_AVALIADOR } from "./rotulos-do-pedido.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E1157 (ORDEM-DUET-654, P2 da varredura das telas do parceiro; ORDEM-DUET-658, A1 da tela da equipe). O avaliador
@@ -16,7 +17,6 @@ import { RESPOSTA_DO_AVALIADOR } from "./rotulos-do-pedido.ts";
 */
 const ler = (p: string) => readFileSync(p, "utf8");
 // Só os comentários de JSX, os blocos que começam a linha e as linhas "//": numa página, `accept="image/*"` não abre comentário.
-const semComentarios = (s: string) => s.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/^\s*\/\*[\s\S]*?\*\//gm, "").replace(/^\s*\/\/.*$/gm, "");
 
 test("E1157: o prazo que vale é o declarado; sem declaração (ou com valor inválido), o padrão", () => {
   assert.equal(horasDeResposta(48), 48);
