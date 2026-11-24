@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 import {
   AVISO_SEM_TIPO_ENTRADA,
   CONVIDADO_NUNCA_VE,
@@ -152,7 +153,7 @@ test("GUARDA do convidado: a visão só lê datas, endereço, instruções e lin
   const raiz = new URL("../../../", import.meta.url).pathname;
   const ler = (a: string) => readFileSync(raiz + a, "utf8");
   // Sem comentários (/* … */ e //): só o código que lê dados.
-  const semComentario = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|\s)\/\/.*$/gm, "");
+  const semComentario = fonteSemComentarios;
   const visao = semComentario(ler("src/lib/data/estadia-convidados.ts") + ler("src/app/(dashboard)/dashboard/estadia/[contratoId]/convidado/page.tsx"));
   // pagamentos_bloco entra só na condição da liberação (D-7, igual à do morador); nada dele sai na visão.
   for (const proibido of ["contrato_aditivos", "documentos_fiscais", "messages", "conversa", "aluguel_mensal", "caucao", "comissao", "contrato_notas", "contrato_ocupantes", "recibo"]) {

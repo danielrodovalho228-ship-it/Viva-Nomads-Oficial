@@ -5,6 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { escaparHtml, validarLeadGestor } from "./plano-gestor-lead.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 test("lead válido: normaliza e-mail e quantidade", () => {
   const r = validarLeadGestor({ nome: " Ana ", email: "ANA@Ex.com", telefone: "(11) 99999-0000", imoveis: "40" });
@@ -40,5 +41,5 @@ test("/precos mostra o botão do pedido de contato de carteiras (antes: do Plano
   // 078 (Daniel, 16/11/2026): antes /Falar sobre o Plano Gestor/ — o botão virou "Falar com a Viva sobre carteiras"…
   assert.match(form, /data-testid="plano-gestor-botao">\s*Falar com a Viva sobre carteiras\s*<\/Button>/);
   // 078 (Daniel, 16/11/2026): …e nenhum texto de tela do formulário cita mais o Plano Gestor (comentários de fora).
-  assert.doesNotMatch(form.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, ""), /Plano Gestor/i);
+  assert.doesNotMatch(fonteSemComentarios(form), /Plano Gestor/i);
 });

@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import * as regra from "./regra.ts";
 import * as planos from "../../config/planos.ts";
 import { FRASE_ESCADA_TAXAS } from "../../config/textos-regulados.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const { FAIXAS_COMISSAO_PADRAO, faixaPorImoveisAtivos, taxaNaAssinatura, proximaFaixa, escadaTaxasTexto, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS } = regra;
 const ler = (p: string) => readFileSync(p, "utf8");
@@ -109,7 +110,7 @@ test("078 (estático): as superfícies citam a escada e a linha de carteiras pel
     const fonte = ler(arquivo);
     assert.match(fonte, re, arquivo);
     // Nenhuma faixa nem taxa da escada digitada no arquivo (a antiga "16–19", "= 6%", "12/10/8/6%").
-    assert.doesNotMatch(fonte.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, ""), /16[–-]19|\b(?:1[–-]2|3[–-]5|6[–-]15) ?= ?\d+ ?%|12\/10\/8\/6/, arquivo);
+    assert.doesNotMatch(fonteSemComentarios(fonte), /16[–-]19|\b(?:1[–-]2|3[–-]5|6[–-]15) ?= ?\d+ ?%|12\/10\/8\/6/, arquivo);
   }
   assert.match(ler("src/lib/atendimento/viva-prompt.ts"), /const REGRA_PRECO_TEXTO = TEXTO_REGRA_UNICA;/);
 });
@@ -157,7 +158,7 @@ test("078: Conta › Plano diz a taxa de hoje da conta — administradora com 3 
 
 test("078: o formulário e a rota viraram o pedido de contato de carteiras — sem taxa, sem 'plano', sem promessa de ferramenta", () => {
   for (const arquivo of ["src/components/precos/plano-gestor-form.tsx", "src/app/api/plano-gestor/route.ts"]) {
-    const fonte = ler(arquivo).replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
+    const fonte = fonteSemComentarios(ler(arquivo));
     // "plano" como palavra de tela (o nome do arquivo, da rota e dos data-testid, "plano-gestor", não é texto de tela).
     assert.doesNotMatch(fonte, /plano gestor|\bplano\b(?!-)|\d ?%|\btaxa\b|cadastro assistido|ferramentas? exclusiv|suporte priorit/i, arquivo);
   }
