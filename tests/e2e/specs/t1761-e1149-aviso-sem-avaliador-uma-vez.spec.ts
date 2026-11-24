@@ -14,8 +14,10 @@ import { devolverAVezDaRotinaDaVistoria, pegarAVezDaRotinaDaVistoria } from "../
    2. Segundo e terceiro tiques, sem nada ter mudado: o item é o mesmo e NENHUM e-mail novo sai por este pedido.
    3. Um avaliador suspenso passa a atender a cidade: o motivo do item muda e o admin recebe UM e-mail; o tique
       seguinte não repete.
-  O e-mail não diz de que pedido é. Por isso a conta é: e-mails novos ao admin num tique = itens "sem avaliador" que
-  nasceram nesse tique (de qualquer pedido do laboratório) + as mudanças de motivo que esta spec provocou.
+  O e-mail não diz de que pedido é, e o aviso vai para todos os admins. Outras specs correm ao mesmo tempo no portão
+  e podem pôr na fila um pedido delas, que também manda e-mail. Por isso a conta de cada tique é um TETO: os e-mails
+  novos ao admin não passam do que esta spec provocou (0 ou 1) mais os itens que OUTROS pedidos puseram na fila à
+  volta do tique. Sem nada de fora, o teto é exato.
   A caixa de teste só guarda e-mails de contas de teste, e o admin do laboratório não é uma: a spec cria um admin de
   teste só para ela (o aviso vai para todos os admins) e lê a caixa dele.
   Só contas de teste. Laboratório; não é prova ao vivo no site. Sem tela: o defeito é de envio.
@@ -44,9 +46,11 @@ const emailsAoAdmin = async () => {
   if (error) throw error;
   return (data ?? []) as { id: string; assunto: string; criado_em: string }[];
 };
-/** Quantos itens "sem avaliador" nasceram na fila desde `desde` (de qualquer pedido: cada um manda um e-mail ao admin). */
-const itensNascidosDesde = async (desde: string) => {
-  const { data, error } = await adm().from("vistoria_fila_admin").select("id").eq("tipo", "sem_avaliador").gte("criado_em", desde);
+/** Folga para trás: o e-mail de um item de OUTRO pedido pode ser gravado uns segundos depois de o item nascer. */
+const FOLGA_MS = 60_000;
+/** Quantos itens "sem avaliador" de OUTROS pedidos nasceram na fila desde `desde` (cada um manda um e-mail ao admin). */
+const itensDeOutrosDesde = async (desde: string) => {
+  const { data, error } = await adm().from("vistoria_fila_admin").select("id").eq("tipo", "sem_avaliador").neq("pedido_id", ids.pedido).gte("criado_em", desde);
   if (error) throw error;
   return (data ?? []).length;
 };
@@ -58,15 +62,16 @@ async function rodar() {
   expect(corpo.ok).toBe(true);
 }
 /**
- * Um tique da rotina e a conta dele: quantos e-mails novos saíram para os admins e quantos itens nasceram na fila.
+ * Um tique da rotina e a conta dele: quantos e-mails novos saíram para o admin de teste, e quantos itens de OUTROS
+ * pedidos nasceram na fila à volta do tique (o que pode ter mandado e-mail sem ser por esta spec).
  * O envio é feito dentro do pedido da rotina (não fica para depois): quando ela responde, os e-mails já estão gravados.
  */
 async function tique() {
   const antes = new Set((await emailsAoAdmin()).map((e) => e.id));
-  const desde = new Date().toISOString();
+  const desde = new Date(Date.now() - FOLGA_MS).toISOString();
   await rodar();
   const novos = (await emailsAoAdmin()).filter((e) => !antes.has(e.id));
-  return { emailsNovos: novos.length, itensNascidos: await itensNascidosDesde(desde), assuntos: novos.map((e) => e.assunto) };
+  return { emailsNovos: novos.length, deOutros: await itensDeOutrosDesde(desde), assuntos: novos.map((e) => e.assunto) };
 }
 
 test.describe("T1761 — E1149: o e-mail 'sem avaliador' sai uma vez por item, e de novo só quando o motivo muda @E1149", () => {
@@ -131,9 +136,9 @@ test.describe("T1761 — E1149: o e-mail 'sem avaliador' sai uma vez por item, e
     expect(itens[0].resolvido_em).toBeNull();
     expect(itens[0].motivo).toBe(SEM_NINGUEM);
     ids.item = itens[0].id;
-    // Um e-mail ao admin por item que nasceu (o deste pedido, pelo menos).
-    expect(t.itensNascidos).toBeGreaterThanOrEqual(1);
-    expect(t.emailsNovos, "um e-mail por item novo").toBe(t.itensNascidos);
+    // O item novo deste pedido manda o e-mail ao admin.
+    expect(t.emailsNovos, "o item novo manda o e-mail").toBeGreaterThanOrEqual(1);
+    expect(t.emailsNovos, "e um só por este pedido").toBeLessThanOrEqual(1 + t.deOutros);
     expect(t.assuntos[0]).toMatch(/^Avaliação sem avaliador elegível/);
     expect((await adm().from("vistoria_pedidos").select("status, aguardando_avaliador").eq("id", ids.pedido).single()).data).toEqual({ status: "pedido", aguardando_avaliador: true });
   });
@@ -145,8 +150,8 @@ test.describe("T1761 — E1149: o e-mail 'sem avaliador' sai uma vez por item, e
       expect(itens, `tique ${n}: um item só`).toHaveLength(1);
       expect(itens[0].id, `tique ${n}: o mesmo item`).toBe(ids.item);
       expect(itens[0].motivo).toBe(SEM_NINGUEM);
-      // Só sai e-mail por item que NASCEU neste tique (de outro pedido do laboratório); o pedido parado não repete.
-      expect(t.emailsNovos, `tique ${n}: o pedido parado não manda outro e-mail`).toBe(t.itensNascidos);
+      // O pedido parado não repete: só pode ter saído e-mail por item de OUTRO pedido que nasceu à volta do tique.
+      expect(t.emailsNovos, `tique ${n}: o pedido parado não manda outro e-mail`).toBeLessThanOrEqual(t.deOutros);
     }
   });
 
@@ -174,12 +179,13 @@ test.describe("T1761 — E1149: o e-mail 'sem avaliador' sai uma vez por item, e
     expect(itens[0].id, "o mesmo item, com o motivo novo").toBe(ids.item);
     expect(itens[0].motivo).toContain(`Avaliador nº ${numeroDoSuspenso}:`);
     expect(itens[0].motivo).not.toBe(SEM_NINGUEM);
-    // A mudança de motivo deste pedido manda um e-mail; mais os dos itens que nasceram no tique, se houver.
-    expect(t.emailsNovos, "o motivo mudou: um e-mail").toBe(1 + t.itensNascidos);
+    // A mudança de motivo deste pedido manda um e-mail — um só.
+    expect(t.emailsNovos, "o motivo mudou: sai o e-mail").toBeGreaterThanOrEqual(1);
+    expect(t.emailsNovos, "e um só por este pedido").toBeLessThanOrEqual(1 + t.deOutros);
 
     const motivoNovo = itens[0].motivo;
     const depois = await tique();
     expect((await itensDoPedido())[0].motivo).toBe(motivoNovo);
-    expect(depois.emailsNovos, "com o motivo novo já gravado, a rotina não repete").toBe(depois.itensNascidos);
+    expect(depois.emailsNovos, "com o motivo novo já gravado, a rotina não repete").toBeLessThanOrEqual(depois.deOutros);
   });
 });
