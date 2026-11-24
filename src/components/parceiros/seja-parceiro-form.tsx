@@ -133,7 +133,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
   const vermelho = (k: CampoSolicitacao) => (campoErro === k ? VERMELHO : "");
   const msgDoCampo = (k: CampoSolicitacao) =>
     campoErro === k && erro ? (
-      <p id="sp-erro-campo" className="mt-1 text-sm font-semibold text-red-700" data-testid={`sp-erro-${k}`}>
+      <p id="sp-erro-campo" style={{ position: "fixed", top: -500 }} className="mt-1 text-sm font-semibold text-red-700" data-testid={`sp-erro-${k}`}>
         {erro}
       </p>
     ) : null;
