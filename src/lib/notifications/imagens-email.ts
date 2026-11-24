@@ -162,6 +162,8 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   internet_abaixo_medida: "transacional",
   vistoria_designada: "novo-interessado",
   vistoria_designado_dono: "transacional",
+  vistoria_recusada_dono: "transacional",
+  vistoria_sem_resposta_dono: "transacional",
   vistoria_proposta_expirada: "transacional",
   vistoria_proposta_expirada_dono: "transacional",
   vistoria_proposta_aceita: "transacional",
