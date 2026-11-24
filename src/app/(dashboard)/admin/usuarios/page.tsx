@@ -230,7 +230,7 @@ export default async function AdminUsuariosPage({
                     <th className="py-2 pr-4 font-semibold">Nome</th>
                     <th className="py-2 pr-4 font-semibold">Papel</th>
                     <th className="py-2 pr-4 font-semibold">Fundador</th>
-                    <th className="py-2 pr-4 font-semibold">Cadastro completo</th>
+                    <th className="py-2 pr-4 font-semibold">Cadastro</th>
                     <th className="py-2 pr-4 font-semibold">Identidade</th>
                     <th className="py-2 pr-4 font-semibold">Telefone verificado</th>
                     <th className="py-2 pr-4 font-semibold">Cadastro</th>
