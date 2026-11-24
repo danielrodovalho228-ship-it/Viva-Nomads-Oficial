@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, existsSync } from "node:fs";
 import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { devolverAVezDaRotinaDaVistoria, pegarAVezDaRotinaDaVistoria } from "../fixtures/vez-da-rotina-da-vistoria";
 
 /*
   T1751 — E1143 @E1143 (ORDEM-DUET-626; decisão do Daniel de 24/11: "ele volta à lista"). A escolha do dono excluía para
@@ -91,6 +92,8 @@ test.describe("T1751 — E1143: o avaliador cuja proposta expirou volta à escol
   test.describe.configure({ mode: "serial", timeout: 300_000 });
 
   test.beforeAll(async () => {
+    // A rotina corre sobre o banco inteiro: esta spec só monta a massa quando nenhuma outra spec de rotina está a meio.
+    await pegarAVezDaRotinaDaVistoria("t1751");
     for (const [k, c] of [["dono", dono], ["avaliador", avaliador]] as const) {
       ids[k] = await criarConta(c, senha);
       const t = await adm().from("profiles").update({ is_teste: true }).eq("id", ids[k]);
@@ -149,6 +152,7 @@ test.describe("T1751 — E1143: o avaliador cuja proposta expirou volta à escol
     if (ids.parc) await adm().from("parceiros").delete().eq("id", ids.parc);
     if (imoveis.length) await adm().from("properties").delete().in("id", imoveis);
     await apagarContas(contas);
+    devolverAVezDaRotinaDaVistoria();
   });
 
   test("1. depois do tique: a proposta expirada devolve o avaliador à lista (A e B); a recusa e o silêncio dele, não (C e D)", async ({ browser }) => {
