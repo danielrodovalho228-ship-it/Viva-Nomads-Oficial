@@ -22,6 +22,7 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.e1117.${sufixo}@lab.vivanomads.test`, nome: "Dora Expira", role: "owner" as const };
 const aval = { email: `av.e1117.${sufixo}@lab.vivanomads.test`, nome: "Artur Avaliador", role: "tenant" as const };
+const aval2 = { email: `av2.e1117.${sufixo}@lab.vivanomads.test`, nome: "Bia Segunda", role: "tenant" as const };
 const ids: Record<string, string> = {};
 let pedido = "";
 let servidor: ChildProcess | null = null;
@@ -100,6 +101,12 @@ test.describe("ENSAIO E1117 — a expiração das 72 h da proposta do avaliador"
       await adm().from("vistoria_designacoes").delete().eq("avaliador_id", ids.cred);
       await adm().from("avaliadores_credenciamento").delete().eq("id", ids.cred);
     }
+    if (ids.cred2) {
+      await adm().from("vistoria_designacoes").delete().eq("avaliador_id", ids.cred2);
+      await adm().from("avaliadores_credenciamento").delete().eq("id", ids.cred2);
+    }
+    if (ids.parc2) await adm().from("parceiros").delete().eq("id", ids.parc2);
+    if (ids.aval2) await apagarContas([ids.aval2]);
     if (ids.parc) await adm().from("parceiros").delete().eq("id", ids.parc);
     if (ids.imovel) await adm().from("properties").delete().eq("id", ids.imovel);
     await apagarContas(contas);
@@ -226,5 +233,59 @@ test.describe("ENSAIO E1117 — a expiração das 72 h da proposta do avaliador"
     await a.waitForTimeout(1500);
     await texto(a, "avaliador-pedido-expirada-390");
     await a.context().close();
+  });
+  test("4. até ao fim: os tiques seguintes, o que o dono pode fazer, a fila do admin e o avaliador novo", async ({ browser }) => {
+    test.skip(!servidor, "Sem o servidor do cron.");
+    const agora = Date.now();
+    for (const h of [1, 24, 24 * 7]) {
+      await cron(new Date(agora + h * H).toISOString());
+      const l = await linha();
+      console.log(`ENSAIO +${h} h depois da expiração`, JSON.stringify({ status: l.status, aguardando: l.aguardando_avaliador, avaliador: l.avaliador_id }));
+    }
+    const fila = (await adm().from("vistoria_fila_admin").select("tipo, motivo, resolvido_em").eq("pedido_id", pedido)).data ?? [];
+    console.log("ENSAIO fila do admin", JSON.stringify(fila));
+    const d = await entrar(browser, dono.email, senha);
+    await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
+    const bloco = d.getByTestId("avaliacao-dono");
+    await expect(bloco).toBeVisible({ timeout: 30_000 });
+    const acoes = await bloco.evaluate((el) => [...el.querySelectorAll("button, a")].map((b) => [b.tagName, (b as HTMLElement).innerText.trim(), b.getAttribute("href") ?? "", (b as HTMLButtonElement).disabled ?? false]));
+    console.log("ENSAIO ações do dono no bloco (7 dias depois)", JSON.stringify(acoes));
+    await d.screenshot({ path: `${SAIDA}/ensaio-e1117-4-dono-7-dias.png`, fullPage: true });
+    await d.context().close();
+
+    // Controlo: um avaliador NOVO credenciado na cidade; o tique seguinte recompõe a escolha?
+    ids.aval2 = await criarConta(aval2, senha);
+    await adm().from("profiles").update({ is_teste: true }).eq("id", ids.aval2);
+    const { data: parc2, error } = await adm()
+      .from("parceiros")
+      .insert({ user_id: ids.aval2, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: aval2.nome, slug: `av2-e1117-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
+      .select("id")
+      .single();
+    if (error) throw error;
+    ids.parc2 = parc2.id as string;
+    const { data: n2 } = await adm().rpc("proximo_numero_avaliador", { p_sigla: "UDI" });
+    const { data: c2, error: e2 } = await adm()
+      .from("avaliadores_credenciamento")
+      .insert({ parceiro_id: parc2.id, cidade: CIDADE, numero_credenciado: n2, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/e1117b", conduta_versao: "2026-10-23", ativado_em: "2026-10-01T12:00:00Z" })
+      .select("id")
+      .single();
+    if (e2) throw e2;
+    ids.cred2 = c2.id as string;
+    await adm().from("vistoria_piloto").insert({ user_id: ids.aval2, nota: "ENSAIO E1117 (laboratório)" });
+    await cron();
+    const l = await linha();
+    console.log("ENSAIO com o avaliador novo, depois do tique", JSON.stringify({ status: l.status, aguardando: l.aguardando_avaliador }));
+    const fila2 = (await adm().from("vistoria_fila_admin").select("tipo, resolvido_em").eq("pedido_id", pedido)).data ?? [];
+    console.log("ENSAIO fila do admin depois", JSON.stringify(fila2));
+    const d2 = await entrar(browser, dono.email, senha);
+    await d2.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
+    await expect(d2.getByTestId("avaliacao-dono")).toBeVisible({ timeout: 30_000 });
+    await d2.waitForTimeout(1500);
+    const b2 = d2.locator('[data-testid="avaliacao-dono"]');
+    console.log("ENSAIO dono com o avaliador novo", JSON.stringify((await b2.innerText()).slice(0, 700)));
+    const sugeridos = await d2.getByTestId("avaliacao-sugerido").evaluateAll((els) => els.map((e) => (e as HTMLElement).innerText.slice(0, 120)));
+    console.log("ENSAIO sugeridos ao dono", JSON.stringify(sugeridos));
+    await d2.screenshot({ path: `${SAIDA}/ensaio-e1117-4-dono-avaliador-novo.png`, fullPage: true });
+    await d2.context().close();
   });
 });
