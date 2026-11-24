@@ -63,7 +63,9 @@ test("com a chave desligada o bloco some por completo: conta real nada, conta de
 
 test("a tela mostra o prazo do dono para aceitar e o prazo declarado do avaliador, e a lista traz 'avaliações feitas'", () => {
   const bloco = ler("src/components/vistoria/bloco-avaliacao-dono.tsx");
-  assert.match(bloco, /PRAZO_DONO_ACEITAR_HORAS/);
+  // E1154: o prazo do dono (as 72 horas e a hora de fim) passou a sair do relógio do pedido, a mesma fonte do avaliador.
+  assert.match(bloco, /textoDoPrazoDeAceiteParaODono\(relogioDoAceite\)/);
+  assert.match(ler("src/lib/vistoria/relogio-do-pedido.ts"), /export function textoDoPrazoDeAceiteParaODono\([^)]*\): string \{[\s\S]*?\$\{PRAZO_DONO_ACEITAR_HORAS\} horas depois da proposta/);
   assert.match(bloco, /prazo_resposta_horas/);
   assert.match(ler("src/lib/vistoria/escolha.ts"), /avaliações feitas/);
 });
