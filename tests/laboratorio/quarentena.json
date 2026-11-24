@@ -28,16 +28,6 @@
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
    "correcao": 3965
-  },
-  {
-   "spec": "t355-conta-a-perfil-espelho.spec.ts",
-   "titulo": "5. a 1280 px: o espelho monta ao vivo; celular com \"Salvar alterações\" logo depois do conteúdo (E61)",
-   "motivo": "intermitente: sozinho contra a main b4b0bc71 em 18/11, 2 falhas em 3 (o endereço fica em /dashboard/conta/perfil#perfil-publico em vez de /dashboard/conta/perfil); em 16/11, na main 2bbddc98, 1 falha, 3 instáveis e 2 verdes em 6. Disposição do Gerente: ORDEM-DUET-096; correção ou plano do dono até 26/11",
-   "item": "E61",
-   "dono": "Fable",
-   "entrada": "2026-11-18",
-   "expira": "2026-12-01",
-   "correcao": 3910
   }
  ]
 }
