@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { designacaoQueVolta, jaDesignadosNoPedido } from "./regras.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E1143 (ORDEM-DUET-626; decisão do Daniel de 24/11: "ele volta à lista"). A escolha do dono excluía para sempre todo
@@ -13,7 +14,6 @@ import { designacaoQueVolta, jaDesignadosNoPedido } from "./regras.ts";
    • ele não respondeu no prazo dele (expirou sem proposta) → fica fora (regra do Gerente: o silêncio dele vale a recusa).
 */
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 const QUANDO = "2026-11-23T15:00:00.000Z";
 const d = (avaliador_id: string, resposta: string | null, proposta_expirada_em: string | null = null) => ({ avaliador_id, resposta, proposta_expirada_em });
 

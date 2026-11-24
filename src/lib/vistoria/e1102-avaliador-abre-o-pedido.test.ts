@@ -15,9 +15,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { etapaDoPedido } from "./pedido-avaliador.ts";
 import { relogioDoPedido } from "./relogio-do-pedido.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, "").replace(/^\s*\/\/.*$/gm, "");
 const AGORA = new Date("2026-11-22T15:00:00Z");
 const h = (n: number) => new Date(AGORA.getTime() - n * 3_600_000).toISOString();
 // A forma da massa 0256: designado, de teste, sem escolha do dono — e SEM a linha da designação (resposta undefined).

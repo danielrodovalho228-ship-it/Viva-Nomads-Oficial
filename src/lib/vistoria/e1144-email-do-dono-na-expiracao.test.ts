@@ -5,6 +5,7 @@ import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria } from "./corpo-email.ts";
 import { TEMPLATES } from "../notifications/eventos-email.ts";
 import { MATRIZ_NOTIFICACOES } from "../../config/matriz-notificacoes.ts";
 import { TEMA_POR_EVENTO } from "../notifications/imagens-email.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E1144 (ORDEM-DUET-643). Quando a proposta de avaliação vencia sem o aceite, o DONO recebia o modelo genérico
@@ -19,7 +20,6 @@ import { TEMA_POR_EVENTO } from "../notifications/imagens-email.ts";
   O e-mail do avaliador (E1142) fica. Sem expiração da proposta, nenhum dos dois sai.
 */
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 const EVENTO = "vistoria_proposta_expirada_dono" as const;
 const CASA = { imovel: { id: "i1", titulo: "Casa do Lago", bairro: "Centro", cidade: "Sacramento" } };
 

@@ -10,6 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 import {
   HREF_PORTA_AVALIACAO,
   hrefDaAvaliacaoNoImovel,
@@ -23,7 +24,6 @@ import {
 } from "./porta-da-avaliacao.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 const imovel = (id: string, pedidoEm: string | null = null): ImovelNaPorta => ({ id, titulo: `Casa ${id}`, cidade: "Uberlândia", emCurso: pedidoEm !== null, pedidoEm });
 
 test("E1125 (1): o papel em uso sai do modo da conta; a parceria escolhida e aprovada vale como parceiro", () => {

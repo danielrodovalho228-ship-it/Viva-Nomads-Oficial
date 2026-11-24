@@ -15,9 +15,9 @@ import { readFileSync } from "node:fs";
 import { ROTULO_VISITA_NA_AGENDA, hrefDaVisita, visitaConfirmada, visitasNaAgenda } from "./visitas-confirmadas.ts";
 import { resumoDoPainel } from "./painel-avaliador.ts";
 import { hrefDoItemDaAgenda, itensDaAgenda, ordenarAgenda } from "../parceiros/agenda-parceiro.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, "").replace(/^\s*\/\/.*$/gm, "");
 
 test("E1103 (1): visita confirmada é o pedido 'agendado' com data — proposta de data, sem data ou visita já feita não são", () => {
   assert.equal(visitaConfirmada({ status: "agendado", agendado_para: "2026-11-22T19:00:00Z" }), true);

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { validarPedidoAvaliador } from "./entrada.ts";
 import { validarSolicitacao } from "../parceiros/regras.ts";
 import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E1112, a correcção da ORDEM-DUET-652. A guarda de contacto no nome estava no "Seja parceiro" (`validarSolicitacao`)
@@ -15,7 +16,6 @@ import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
   Roda: node --test src/lib/vistoria/e1112-pedido-de-credenciamento-sem-contacto.test.ts
 */
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 const CNPJ = "11.222.333/0001-81";
 const pedido = (nome: string) => ({ jaParceiro: false, nome, tipoPessoa: "pj", documento: CNPJ, cidade: "Uberlândia", experienciaLink: "https://portfolio.exemplo.com.br/abel", experienciaArquivo: false, aceiteConduta: true });
 const COM_CONTACTO = ["Abel Avaliações (34) 99999-1234", "Abel Avaliações 34999991234", "Abel abel@exemplo.com.br", "Abel wa.me/5534999991234", "Abel, chama no zap", "Abel Avaliações - meu whats"];
