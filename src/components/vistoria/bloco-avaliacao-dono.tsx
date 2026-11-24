@@ -36,7 +36,7 @@ import {
   textoCondicaoRetorno,
   valorDoPedido,
   type LinhaPreco,
-  REGRAS_AGENDA,
+  REGRA_DO_REAGENDAMENTO,
 } from "@/lib/vistoria/regras";
 
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
@@ -336,7 +336,11 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 <input type="hidden" name="pedidoId" value={atual.id} />
                 <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>
                 <Button type="submit" variant="secondary" size="sm">{atual.agendado_para ? "Reagendar" : "Propor data"}</Button>
-                {atual.agendado_para && <span className="w-full text-xs text-muted">Reagendar sem custo: uma vez, com pelo menos {REGRAS_AGENDA.antecedenciaReagendarHoras} horas de aviso.</span>}
+                {atual.agendado_para && (
+                  <span className="w-full text-xs text-muted" data-testid="avaliacao-regra-reagendar">
+                    {REGRA_DO_REAGENDAMENTO}
+                  </span>
+                )}
               </FormAcao>
             )}
             {atual.status === "agendado" && (
