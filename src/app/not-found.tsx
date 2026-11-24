@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { BuscaNaoEncontrada } from "@/components/layout/busca-nao-encontrada";
+import { SCRIPT_GUARDA_BUSCA_404 } from "@/lib/navegacao/busca-404";
 import { NotFoundIllustration } from "@/components/illustrations";
 import { DestaquesDa404 } from "@/components/nao-encontrada/destaques-da-404";
 import { Footer } from "@/components/layout/footer";
@@ -38,29 +39,10 @@ export default function NotFound() {
           Não encontramos esta página. Já que você está aqui, veja estes imóveis disponíveis.
         </p>
         {/* E916: busca direto da 404 (cidade ou bairro → /buscar) e o caminho para a Ajuda, como nas outras páginas públicas. */}
-        <form action="/buscar" method="get" role="search" className="mt-8 flex w-full max-w-md gap-2" data-testid="nao-encontrada-busca">
-          <label htmlFor="nao-encontrada-local" className="sr-only">
-            Cidade ou bairro
-          </label>
-          <input
-            id="nao-encontrada-local"
-            name="local"
-            type="search"
-            placeholder="Cidade ou bairro"
-            className="h-12 min-w-0 flex-1 rounded-xl border border-line bg-white px-4 text-base text-ink outline-none focus:border-forest"
-          />
-          <Button type="submit" className="shrink-0">
-            Buscar
-          </Button>
-        </form>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <ButtonLink href="/buscar" variant="primary">
-            Buscar imóveis
-          </ButtonLink>
-          <ButtonLink href="/" variant="outline">
-            Ir para o início
-          </ButtonLink>
-        </div>
+        {/* E1019 (prova de 19/11): o "Buscar imóveis" e o "Ir para o início" moram com a busca — o link leva o termo. */}
+        <BuscaNaoEncontrada />
+        {/* E1019: guarda o texto da busca no document (vale antes da hidratação e depois de o campo ser trocado). */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_GUARDA_BUSCA_404 }} />
 
         {/* Transforma o erro em retenção: mostra imóveis disponíveis de verdade. E961: a vitrine busca os imóveis no
             cliente, só quando a 404 aparece. */}
@@ -73,7 +55,9 @@ export default function NotFound() {
         >
           É proprietário? Anuncie seu imóvel →
         </Link>
-        <Link href="/ajuda" className="alvo-toque mt-2 text-sm text-muted hover:text-blue-500" data-testid="nao-encontrada-ajuda">
+        {/* E1038: mt-8 (32 px), não mt-2. Cada link tem 20 px de texto e área de toque de 44 px (12 px a mais acima e
+            abaixo); com 8 px entre eles, a área do "anunciar" caía em cima da ajuda a 390 px. Precisa passar de 24 px. */}
+        <Link href="/ajuda" className="alvo-toque mt-8 text-sm text-muted hover:text-blue-500" data-testid="nao-encontrada-ajuda">
           Precisa de ajuda? Central de Ajuda →
         </Link>
       </main>

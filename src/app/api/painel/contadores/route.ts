@@ -11,7 +11,12 @@ const SEM_CACHE = { "Cache-Control": "no-store" };
  * 401. Nunca em cache.
  */
 export async function GET() {
-  const c = await contadoresDoPainel();
-  if (c === "sem-sessao") return NextResponse.json({ error: "Não autenticado." }, { status: 401, headers: SEM_CACHE });
-  return NextResponse.json(c, { headers: SEM_CACHE });
+  try {
+    const c = await contadoresDoPainel();
+    if (c === "sem-sessao") return NextResponse.json({ error: "Não autenticado." }, { status: 401, headers: SEM_CACHE });
+    return NextResponse.json(c, { headers: SEM_CACHE });
+  } catch {
+    // E1093: a sessão por confirmar não é "não autenticado" nem "conta sem nada": a casca mantém o que sabia e relê.
+    return NextResponse.json({ error: "Não foi possível ler agora." }, { status: 503, headers: SEM_CACHE });
+  }
 }

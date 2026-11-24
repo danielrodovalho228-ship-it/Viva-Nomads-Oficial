@@ -3,7 +3,8 @@ name: Laboratório com as chaves de build ligadas
 # ORDEM-DUET-106/110 (E642, E707, E633, E634, E690): as chaves de produto NEXT_PUBLIC_* entram no bundle no BUILD, por isso
 # não se ligam num 2.º servidor nem nas fatias do laboratório noturno (lá ficam desligadas, como em produção, e os specs
 # @chave-build pulam de propósito). Este fluxo sobe o MESMO laboratório (Supabase local do zero, personas, modo simulado),
-# faz o SEU build com as 4 chaves ligadas ("on") e roda só os specs @chave-build (t2151–t2154).
+# faz o SEU build com as chaves ligadas ("on") e roda os specs @chave-build (t2151–t2154) e a jornada do piloto (t2157,
+# pela etapa 5, o pré-aceite de 72 h: ORDEM-DUET-192).
 # Só valores do ambiente de teste: o banco local do runner, as chaves locais do Supabase e o modo simulado. Nenhum segredo
 # de produção é usado aqui — o banco morre no fim. Roda toda noite, meia hora depois do noturno, e no disparo manual.
 on:
@@ -33,6 +34,11 @@ env:
   NEXT_PUBLIC_MATRICULA_OBRIGATORIA: "on"
   NEXT_PUBLIC_FICHA_RESUMO_ATIVA: "on"
   NEXT_PUBLIC_AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA: "on"
+  # E1062 (ORDEM-DUET-306): a forma de pagamento na proposta (E647), para a trava de tela t1703.
+  NEXT_PUBLIC_FORMA_PAGAMENTO_DONO_ATIVA: "on"
+  # ORDEM-DUET-192: a janela de 72 h do pré-aceite (E722), ligada SÓ aqui, para provar em simulação a etapa 5 da jornada
+  # (t2157). A chave de produção não se toca.
+  NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA: "on"
 
 jobs:
   chaves:
@@ -106,11 +112,11 @@ jobs:
           done
           exit 1
 
-      - name: Rodar os specs @chave-build
+      - name: Rodar os specs @chave-build e a jornada do piloto (t2157)
         id: e2e
         continue-on-error: true
         # Sem --pass-with-no-tests: nenhum spec listado reprova (E964: nunca verde sem ter rodado).
-        run: npx playwright test --grep "@chave-build" --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=2400000 > tests/laboratorio/saida/e2e.txt 2>&1
+        run: npx playwright test --grep "@chave-build|T2157 — jornada do piloto" --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=2400000 > tests/laboratorio/saida/e2e.txt 2>&1
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
 

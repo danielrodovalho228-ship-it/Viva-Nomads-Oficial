@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, ShieldCheck, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CampoDataHoraFormulario } from "@/components/ui/campo-data";
@@ -14,22 +14,29 @@ import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
-import { sugeridosDoPedido } from "@/lib/vistoria/servidor";
+import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
+import { precisaDoAceiteDoDono } from "@/lib/vistoria/relogio-do-pedido";
+import { identidadesConfirmadas, nomesDasContas, outrosParaTroca, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
+import { textoDaTroca } from "@/lib/vistoria/troca-de-avaliador";
+import { DepoisDaTroca, TrocaDeAvaliador } from "@/components/vistoria/troca-de-avaliador";
+import { ROTULO_ESCOLHER, TEXTO_IDENTIDADE_VERIFICADA, TITULO_ESCOLHA_AVALIADOR, fotoPublicaPermitida, fraseDoValorNaEscolha, reaisCurtos, reputacaoNoCartao, rostoDoAvaliador } from "@/lib/vistoria/vitrine-avaliadores";
+import { signAvatarPath } from "@/lib/data/avatar-url";
 import {
-  COLUNAS_PRECO,
   CONDUTA_DONO,
   FRASE_PAGA_AVALIACAO,
   INCLUI_SEMPRE,
+  ROTULO_AVALIADOR_CREDENCIADO,
+  ROTULO_AVALIADOR_EM_TESTE,
   ROTULO_CONDUTA,
   ROTULO_PORTE,
   TEXTO_NOVA_AVALIACAO,
-  linhaDaTabela,
   pedidoPodeAbrir,
   porteDoImovel,
   precoVigente,
   textoCondicaoRetorno,
   valorDoPedido,
   type LinhaPreco,
+  REGRAS_AGENDA,
 } from "@/lib/vistoria/regras";
 
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
@@ -55,17 +62,17 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
   if (!im || im.owner_id !== user.id) return null;
   const agora = new Date();
   const porte = porteDoImovel(im.bedrooms as number);
-  const [{ data: tabela }, { data: pedidos }, { data: ultimoLaudo }] = await Promise.all([
-    admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? ""),
+  const [tabela, { data: pedidos }, { data: ultimoLaudo }] = await Promise.all([
+    tabelaDaCidade(admin, im.city), // E1081: a cidade pela chave (sem acento, sem maiúsculas)
     admin
       .from("vistoria_pedidos")
-      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
+      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
       .eq("property_id", propertyId)
       .order("criado_em", { ascending: false })
       .limit(1),
     admin.from("vistoria_laudos").select("resultado, emitido_em, ressalva_vencida_em").eq("property_id", propertyId).order("emitido_em", { ascending: false }).limit(1).maybeSingle(),
   ]);
-  const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
+  const linhas: LinhaPreco[] = tabela;
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
   // Adendo 62-B1: depois de "reprovado" ou de ressalva vencida é NOVA AVALIAÇÃO; a condição de retorno só aparece se existir.
   const desdeNova = ultimoLaudo?.resultado === "reprovado" ? (ultimoLaudo.emitido_em as string) : ((ultimoLaudo?.ressalva_vencida_em as string | null | undefined) ?? null);
@@ -86,40 +93,64 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     prazo_proposto_dias: number | null;
     proposta_em: string | null;
     proposta_aceita_em: string | null;
+    escolhido_em: string | null;
     teste: boolean;
     avaliadores_credenciamento: { numero_credenciado: string; prazo_resposta_horas: number | null } | null;
   } | null;
   // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
-  let sugeridos: { id: string; numero: string; nome: string; termos: string }[] | null = [];
+  let sugeridos: { id: string; numero: string; nome: string; termos: string; reputacao: { novo: boolean; cheias: number; texto: string }; identidadeVerificada: boolean; teste: boolean; fotoUrl: string | null }[] | null = [];
   if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
     try {
       const lista = (await sugeridosDoPedido(admin, atual.id, agora)) ?? [];
-      const { data: dados, error: erroDados } = lista.length ? await admin.from("avaliadores_credenciamento").select("id, numero_credenciado, preco_proprio, prazo_entrega_dias, prazo_resposta_horas, parceiros(nome_publico)").in("id", lista.map((a) => a.id)) : { data: [], error: null };
+      const { data: dados, error: erroDados } = lista.length ? await admin.from("avaliadores_credenciamento").select("id, numero_credenciado, preco_proprio, prazo_entrega_dias, prazo_resposta_horas, parceiros(nome_publico, user_id)").in("id", lista.map((a) => a.id)) : { data: [], error: null };
       if (erroDados) throw new Error(erroDados.message);
-      const porId = new Map(((dados ?? []) as unknown as { id: string; numero_credenciado: string; preco_proprio: number | string | null; prazo_entrega_dias: number | null; prazo_resposta_horas: number | null; parceiros: { nome_publico: string | null } | null }[]).map((d) => [d.id, d]));
+      const porId = new Map(((dados ?? []) as unknown as { id: string; numero_credenciado: string; preco_proprio: number | string | null; prazo_entrega_dias: number | null; prazo_resposta_horas: number | null; parceiros: { nome_publico: string | null; user_id: string | null } | null }[]).map((d) => [d.id, d]));
+      // E1084: o nome vem da conta (a mesma fonte do perfil e do laudo).
+      const nomes = await nomesDasContas(admin, [...porId.values()].map((d) => d.parceiros?.user_id));
       // E682: reputação = conduta PUBLICADA (a função pública conta só as avaliações já publicadas, às cegas).
       const { data: publicos, error: erroPublicos } = await admin.rpc("avaliadores_publicos");
       if (erroPublicos) throw new Error(erroPublicos.message);
-      const conduta = new Map(((publicos ?? []) as { numero_credenciado: string; nota_conduta: number | string | null; avaliacoes_feitas: number }[]).map((x) => [x.numero_credenciado, x]));
-      sugeridos = lista.map((a) => {
+      const conduta = new Map(((publicos ?? []) as { numero_credenciado: string; nota_conduta: number | string | null; avaliacoes_feitas: number; teste?: boolean | null }[]).map((x) => [x.numero_credenciado, x]));
+      // E1079 (386): a foto é a de perfil da conta; só a conta de teste a mostra (sem o Daniel, conta real = iniciais).
+      // A foto nunca é obrigatória: sem a leitura, as iniciais.
+      const uids = [...new Set([...porId.values()].map((d) => d.parceiros?.user_id).filter((x): x is string => !!x))];
+      const { data: contas } = uids.length ? await admin.from("profiles").select("id, avatar_url, is_teste").in("id", uids) : { data: [] };
+      const contaDe = new Map(((contas ?? []) as { id: string; avatar_url: string | null; is_teste: boolean | null }[]).map((c) => [c.id, c]));
+      // E1096: "Identidade verificada pela Viva" só com o fato (a identidade confirmada da conta).
+      const verificadas = await identidadesConfirmadas(admin, uids, agora);
+      sugeridos = await Promise.all(lista.map(async (a) => {
         const d = porId.get(a.id);
+        const uid = d?.parceiros?.user_id ?? "";
+        const conta = contaDe.get(uid);
         const pub = conduta.get(d?.numero_credenciado ?? "");
         const nota = pub?.nota_conduta != null ? Number(pub.nota_conduta) : null;
+        const teste = pub?.teste === true || conta?.is_teste === true;
         return {
           id: a.id,
           numero: d?.numero_credenciado ?? "",
-          nome: d?.parceiros?.nome_publico ?? "Avaliador",
+          nome: nomeDoAvaliador(nomes.get(d?.parceiros?.user_id ?? ""), d?.parceiros?.nome_publico),
           termos: linhaDeTermos({
             notaConduta: nota,
             avaliacoesConduta: nota != null ? Math.max(1, Number(pub?.avaliacoes_feitas ?? 0)) : 0,
           }),
+          // E1096: as estrelas de conduta do cartão e "Novo na Viva" (a mesma conduta publicada da linha de termos).
+          reputacao: reputacaoNoCartao(Number(pub?.avaliacoes_feitas ?? 0), nota),
+          identidadeVerificada: verificadas.has(uid),
+          teste,
+          fotoUrl: uid && fotoPublicaPermitida(teste) ? await signAvatarPath(conta?.avatar_url ?? null, uid) : null,
         };
-      });
+      }));
     } catch {
       sugeridos = null;
     }
   }
   const faixa = atual && preco ? faixaDeReferencia(Number(preco.valor)) : null;
+  // E1100: com a proposta viva, o dono pode trocar de avaliador. Antes de ele clicar, a tela já sabe quantos sobram para
+  // escolher (o atual não volta). Só lê com a chave ligada (a ação é do dono real); leitura que falha = null, sem número.
+  let outrosNaTroca: number | null = null;
+  if (visivel === "ativa" && atual?.status === "designado" && atual.proposta_em && !atual.proposta_aceita_em) {
+    outrosNaTroca = await outrosParaTroca(admin, atual.id, agora).catch(() => null);
+  }
   const propostaForaDaFaixa = atual?.valor_proposto != null && faixa ? Number(atual.valor_proposto) < faixa.min || Number(atual.valor_proposto) > faixa.max : false;
   // Prompt 62-B2: com o laudo emitido, o pedido fecha e "Pedir nova avaliação" volta (o laudo aparece acima).
   const aberto = atual && ["pedido", "designado", "agendado", "realizada"].includes(atual.status);
@@ -158,6 +189,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para })}
               </p>
             )}
+            {atual.status === "pedido" && <DepoisDaTroca pedidoId={atual.id} aguardando={atual.aguardando_avaliador} />}
             {atual.avaliadores_credenciamento && (
               <p className="text-ink" data-testid="avaliador-designado">
                 Avaliador escolhido por você: nº{" "}
@@ -168,35 +200,74 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             )}
             {atual.status === "pedido" && !atual.aguardando_avaliador && (
               <div className="rounded-lg border border-line p-3" data-testid="avaliacao-escolha">
-                <p className="font-semibold text-ink">Escolha o avaliador</p>
-                {faixa && (
-                  <p className="mt-1 text-muted" data-testid="avaliacao-faixa">
-                    Referência da cidade: {brl(faixa.referencia)} (faixa de {brl(faixa.min)} a {brl(faixa.max)}). Cada avaliador define o próprio valor e prazo e você aceita ou escolhe outro.
-                  </p>
-                )}
+                <p className="font-semibold text-ink" data-testid="avaliacao-escolha-titulo">{TITULO_ESCOLHA_AVALIADOR}</p>
+                {im.city && <p className="mt-1 text-sm text-muted" data-testid="avaliacao-escolha-cidade">Avaliadores disponíveis em {im.city}</p>}
                 {sugeridos === null ? (
                   <p className="mt-2 text-red-700" role="alert" data-testid="avaliacao-escolha-falhou">Não foi possível carregar os avaliadores agora. Atualize a página para tentar de novo.</p>
                 ) : sugeridos.length === 0 ? (
                   <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">Nenhum avaliador disponível agora. A Viva avisa quando houver.</p>
                 ) : (
-                  <ul className="mt-2 grid gap-2">
-                    {sugeridos.map((a) => (
-                      <li key={a.id} className="flex flex-wrap items-center justify-between gap-2" data-testid="avaliacao-sugerido">
-                        <span className="text-ink">
-                          {a.nome} · nº{" "}
-                          <Link href={hrefAvaliador(a.numero)} className="underline">
-                            {a.numero}
-                          </Link>
-                          <span className="block text-xs text-muted" data-testid="avaliacao-sugerido-termos">{a.termos}</span>
-                        </span>
-                        <FormAcao acao={escolherAvaliador} testid="escolher-avaliador">
-                          <input type="hidden" name="pedidoId" value={atual.id} />
-                          <input type="hidden" name="avaliadorId" value={a.id} />
-                          <Button type="submit" variant="secondary" size="sm">Escolher este avaliador</Button>
-                        </FormAcao>
-                      </li>
-                    ))}
+                  <ul className="mt-3 grid gap-3">
+                    {sugeridos.map((a) => {
+                      const rosto = rostoDoAvaliador(a.nome, a.fotoUrl, a.teste);
+                      return (
+                        <li key={a.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-white p-3" data-testid="avaliacao-sugerido">
+                          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-champagne text-sm font-semibold text-ink" aria-hidden data-testid="avaliacao-sugerido-rosto">
+                            {rosto.tipo === "foto" ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={rosto.url} alt="" className="h-12 w-12 rounded-full object-cover" data-testid="avaliacao-sugerido-foto" />
+                            ) : (
+                              rosto.texto
+                            )}
+                          </span>
+                          <span className="min-w-0 flex-1 text-ink">
+                            <span className="block font-semibold">{a.nome}</span>
+                            <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-line bg-white px-2 py-1 text-xs text-ink" data-testid="avaliacao-sugerido-selo">
+                              <ShieldCheck className="h-3 w-3 shrink-0" aria-hidden />
+                              {a.teste ? ROTULO_AVALIADOR_EM_TESTE : ROTULO_AVALIADOR_CREDENCIADO}
+                            </span>
+                            <span className="block text-xs text-muted">
+                              nº{" "}
+                              <Link href={hrefAvaliador(a.numero)} className="underline">
+                                {a.numero}
+                              </Link>
+                            </span>
+                            {/* E1096: as estrelas de conduta do mockup; o leitor de tela ouve a linha de termos (E682). */}
+                            <span className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink" data-testid="avaliacao-sugerido-termos">
+                              <span className="flex gap-1 text-amber-500" role="img" aria-label={a.termos} data-testid="avaliacao-sugerido-estrelas" data-cheias={a.reputacao.cheias}>
+                                {[0, 1, 2, 3, 4].map((i) => (
+                                  <Star key={i} className={i < a.reputacao.cheias ? "h-4 w-4 fill-current" : "h-4 w-4 text-muted"} aria-hidden />
+                                ))}
+                              </span>
+                              <span data-testid="avaliacao-sugerido-reputacao" data-novo={a.reputacao.novo ? "sim" : "nao"}>{a.reputacao.texto}</span>
+                            </span>
+                            {preco && (
+                              <span className="mt-1 block text-sm text-ink" data-testid="avaliacao-sugerido-preco">
+                                Avaliação: {reaisCurtos(Number(preco.valor))}
+                              </span>
+                            )}
+                            {a.identidadeVerificada && (
+                              <span className="mt-1 flex items-center gap-1 text-xs font-semibold text-forest-700" data-testid="avaliacao-sugerido-identidade">
+                                <ShieldCheck className="h-3 w-3 shrink-0" aria-hidden />
+                                {TEXTO_IDENTIDADE_VERIFICADA}
+                              </span>
+                            )}
+                          </span>
+                          <FormAcao acao={escolherAvaliador} testid="escolher-avaliador">
+                            <input type="hidden" name="pedidoId" value={atual.id} />
+                            <input type="hidden" name="avaliadorId" value={a.id} />
+                            <Button type="submit" variant="secondary" size="sm" aria-label={`${ROTULO_ESCOLHER} ${a.nome}`}>{ROTULO_ESCOLHER}</Button>
+                          </FormAcao>
+                        </li>
+                      );
+                    })}
                   </ul>
+                )}
+                {/* E1096: a frase do valor fica SOB os cartões (a tabela é referência; o valor de cada um vem depois). */}
+                {faixa && (
+                  <p className="mt-3 text-muted" data-testid="avaliacao-faixa">
+                    {fraseDoValorNaEscolha({ referencia: brl(faixa.referencia), min: brl(faixa.min), max: brl(faixa.max) })}
+                  </p>
                 )}
               </div>
             )}
@@ -217,14 +288,17 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                     <input type="hidden" name="pedidoId" value={atual.id} />
                     <Button type="submit" variant="secondary" size="sm">Aceitar valor e prazo</Button>
                   </FormAcao>
-                  <FormAcao acao={recusarProposta} testid="recusar-proposta">
-                    <input type="hidden" name="pedidoId" value={atual.id} />
-                    <Button type="submit" variant="secondary" size="sm">Escolher outro avaliador</Button>
-                  </FormAcao>
+                  {/* E1100: o clique abre a confirmação (o que se perde, e se há outro avaliador); só ela descarta. */}
+                  <TrocaDeAvaliador
+                    pedidoId={atual.id}
+                    acao={recusarProposta}
+                    texto={textoDaTroca({ numero: atual.avaliadores_credenciamento?.numero_credenciado ?? null, valor: brl(Number(atual.valor_proposto)), prazoDias: Number(atual.prazo_proposto_dias), outros: outrosNaTroca, cidade: im.city })}
+                  />
                 </div>
               </div>
             )}
-            {atual.status === "designado" && atual.proposta_aceita_em && (
+            {/* E1103: o combinado continua à vista depois de a visita ser agendada (antes, a linha sumia no agendamento). */}
+            {["designado", "agendado", "realizada"].includes(atual.status) && atual.proposta_aceita_em && atual.valor_proposto != null && (
               <p className="text-ink" data-testid="avaliacao-proposta-aceita">
                 Combinado com o avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}.
               </p>
@@ -250,12 +324,12 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               </Link>
               .
             </p>
-            {["designado", "agendado"].includes(atual.status) && atual.avaliadores_credenciamento && (atual.proposta_aceita_em || atual.teste) && (
+            {["designado", "agendado"].includes(atual.status) && atual.avaliadores_credenciamento && (atual.proposta_aceita_em || !precisaDoAceiteDoDono({ teste: atual.teste, escolhidoEm: atual.escolhido_em })) && (
               <FormAcao acao={agendarVisita} className="flex flex-wrap items-end gap-2" testid="dono-agendar">
                 <input type="hidden" name="pedidoId" value={atual.id} />
                 <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>
                 <Button type="submit" variant="secondary" size="sm">{atual.agendado_para ? "Reagendar" : "Propor data"}</Button>
-                {atual.agendado_para && <span className="w-full text-xs text-muted">Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso.</span>}
+                {atual.agendado_para && <span className="w-full text-xs text-muted">Reagendar sem custo: uma vez, com pelo menos {REGRAS_AGENDA.antecedenciaReagendarHoras} horas de aviso.</span>}
               </FormAcao>
             )}
             {atual.status === "agendado" && (

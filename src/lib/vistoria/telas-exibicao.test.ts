@@ -20,7 +20,6 @@ import {
   linhaDoTempoPedido,
   passosCumpridos,
   complementoPassoIdentidade,
-  prazoResposta,
   quandoVisita,
   quandoVisitaComFuso,
   rotuloDecisao,
@@ -28,6 +27,7 @@ import {
   situacaoPagamento,
   visitaNaSemana,
 } from "./telas-exibicao.ts";
+import { relogioDoPedido, textoDoPrazoDeResposta } from "./relogio-do-pedido.ts";
 import { FRASE_PAGA_AVALIACAO, type AvaliadorFila } from "./regras.ts";
 import type { StatusCredenciamento } from "./regras.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
@@ -103,7 +103,9 @@ test("nenhum número de ganho por nível e nenhum botão de escolher avaliador",
   }
   // E648: o DONO escolhe o avaliador (bloco do dono); o morador e a conversa nunca escolhem.
   for (const f of [MORADOR, CARTAO_CONVERSA]) assert.doesNotMatch(semComentarios(f), /name="avaliador|escolh(er|a) o avaliador|Escolher avaliador/);
-  assert.match(semComentarios(BLOCO_DONO), /Escolher este avaliador/);
+  // E1096 (ORDEM-DUET-453, asserção alterada): no bloco do dono o título e o botão são os do mockup ("Escolher avaliador" /
+  // "Escolher", pela fonte única); antes o botão dizia "Escolher este avaliador".
+  assert.match(semComentarios(BLOCO_DONO), /\{TITULO_ESCOLHA_AVALIADOR\}[\s\S]*\{ROTULO_ESCOLHER\}<\/Button>/);
 });
 
 test("chave desligada: dono, morador e o cartão da conversa somem; só o morador do pedido vê o cartão", () => {
@@ -159,8 +161,10 @@ test("página pública: linha fixa, sem contratar, sem link, sem escolher avalia
 
 test("agenda do avaliador: contador das 24 h, visitas da semana e hora sem segundos", () => {
   const agora = new Date("2026-10-23T12:00:00Z");
-  assert.equal(prazoResposta("2026-10-23T11:00:00Z", agora).texto, "Responda em 23 h 00 min");
-  assert.equal(prazoResposta("2026-10-22T11:59:00Z", agora).vencido, true);
+  // E1118 (ORDEM-DUET-506): a prazoResposta morta saiu de telas-exibicao; o contador é o do relógio único do pedido.
+  const contador = (designadoEm: string) => relogioDoPedido({ status: "designado", resposta: null, designadoEm, propostaEm: null, propostaAceitaEm: null, precisaDoAceite: true, prazoRespostaHoras: null }, agora)!;
+  assert.equal(textoDoPrazoDeResposta(contador("2026-10-23T11:00:00Z"), agora), "Responda em 23 h 00 min");
+  assert.equal(contador("2026-10-22T11:59:00Z").vencido, true);
   assert.equal(visitaNaSemana("2026-10-27T13:00:00Z", agora), true);
   assert.equal(visitaNaSemana("2026-11-05T13:00:00Z", agora), false);
   assert.equal(visitaNaSemana(null, agora), false);
@@ -222,7 +226,12 @@ test("QA ao vivo do E235: com a chave desligada, o bloco do dono abre só para c
   assert.match(BLOCO_DONO, /pedidoPodeAbrir\(\{ chaveAtiva: visivel === "ativa",/);
   assert.match(BLOCO_DONO, /visivel === "so_leitura_teste" && \(/);
   assert.match(BLOCO_DONO, /data-testid="avaliacao-modo-teste"/);
-  assert.match(ler("src/lib/vistoria/chave.ts"), /if \(VISTORIA_ATIVA\) return true;\n  if \(!integracoesSimuladas\(\)\) return false;/);
+  // Asserção alterada (E1077, ORDEM-DUET-369): fora do laboratório a chave deixou de ser só a VISTORIA_ATIVA — abre também
+  // para a conta da sessão que está no piloto (vistoria_piloto). O que esta guarda protegia continua preso: a chave ligada
+  // abre tudo, e o cookie do laboratório não vale nada fora do laboratório.
+  const chave = ler("src/lib/vistoria/chave.ts");
+  assert.match(chave, /if \(VISTORIA_ATIVA\) return "global";/);
+  assert.match(chave, /async function cookieDoLaboratorio\(\): Promise<boolean> \{\n  if \(!integracoesSimuladas\(\)\) return false;/);
 });
 
 test("0256: massa do QA só em contas e anúncio de teste, ids fixos, sem designação pendente; aplicar idempotente e desfazer", () => {

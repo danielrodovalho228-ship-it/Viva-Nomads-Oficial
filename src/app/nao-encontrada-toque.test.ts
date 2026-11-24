@@ -27,3 +27,22 @@ test("perfil do proprietário (real e exemplo): link das avaliações com alvo d
     assert.match(ler(f), /<a href="#avaliacoes" className="alvo-toque inline-flex items-center gap-1[^"]*" data-testid="perfil-link-avaliacoes">/, f);
   }
 });
+
+/*
+  E1038 (helper da área de toque REAL da Pista 3, #4031; lab 44650708319): a 390 px a caixa 44×44 do "anunciar" caía em
+  cima do link da ajuda — um toque na parte de baixo abria a ajuda. Cada link tem 20 px de texto (text-sm) e uma área de
+  44 px centrada (alvo-toque): sobra 12 px acima e abaixo. Para as duas áreas não se tocarem, o espaço entre os dois links
+  tem de passar de 2 × 12 = 24 px. Vermelho na main: mt-2 = 8 px.
+*/
+test("E1038: as áreas de toque do 'anunciar' e da ajuda não se sobrepõem (espaço entre os links > 24 px)", () => {
+  const src = ler("./not-found.tsx");
+  const ajuda = src.match(/<Link href="\/ajuda" className="([^"]*)" data-testid="nao-encontrada-ajuda">/);
+  assert.ok(ajuda, "o link da ajuda da 404");
+  const classes = ajuda[1].split(/\s+/);
+  assert.ok(classes.includes("alvo-toque") && classes.includes("text-sm"), "o link da ajuda segue com alvo de 44 px e texto de 20 px");
+  const mt = classes.map((c) => /^mt-(\d+)$/.exec(c)).find(Boolean);
+  assert.ok(mt, "o link da ajuda tem margem de topo");
+  const espaco = Number(mt[1]) * 4; // escala do Tailwind: 1 = 4 px
+  const sobra = (44 - 20) / 2; // o que a área de toque passa do texto, acima e abaixo
+  assert.ok(espaco > 2 * sobra, `espaço entre os links ${espaco} px; precisa passar de ${2 * sobra} px`);
+});

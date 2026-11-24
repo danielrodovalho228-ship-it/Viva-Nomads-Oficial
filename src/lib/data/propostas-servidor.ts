@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import { calcularTotais, diasDosTermos, STATUS_ABERTOS, type Autor, type StatusProposta, type TermosProposta } from "@/lib/propostas/regras";
 import { decisaoDoPreAceite } from "./pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR } from "@/lib/data/taxa-dono-servidor";
@@ -9,8 +10,9 @@ import { mesesDeReferencia } from "@/lib/estadia-em-dias";
   Sem "use server": são funções internas (recebem o cliente admin), nunca chamadas do navegador.
 */
 
+// E647 (0314): a coluna da forma de pagamento é anulável e só é preenchida com a chave ligada (mesmo precedente da `dias`, 0291).
 export const COLUNAS_VERSAO =
-  "id, proposta_id, versao, autor, valor_base, desconto_pct, desconto_valor, motivo_desconto, desconto_estadia_pct, valor_mensal, meses, dias, data_entrada, condominio, consumo, limpezas_mes, limpezas_pacote, valor_limpeza, taxa_pet, limpeza_unica, pessoas, total_mensal, total_contrato, mensagem, criada_em";
+  "id, proposta_id, versao, autor, valor_base, desconto_pct, desconto_valor, motivo_desconto, desconto_estadia_pct, valor_mensal, meses, dias, data_entrada, condominio, consumo, limpezas_mes, limpezas_pacote, valor_limpeza, taxa_pet, limpeza_unica, pessoas, total_mensal, total_contrato, mensagem, criada_em, forma_pagamento";
 
 export const COLUNAS_PROPOSTA =
   "id, numero, lead_id, property_id, owner_id, tenant_id, status, versao_atual, validade_dias, valida_ate, visto_em, recusada_por, recusa_motivo, recusa_texto, aceita_em, criada_em, atualizada_em";
@@ -91,6 +93,8 @@ export interface LinhaVersao {
   total_contrato: number;
   mensagem: string | null;
   criada_em: string;
+  /** E647 (0314): a forma de pagamento da versão; só vem com a chave ligada. */
+  forma_pagamento?: "bloco" | "mensal" | null;
 }
 
 export function termosDaLinha(v: LinhaVersao): TermosProposta {
@@ -101,7 +105,7 @@ export function termosDaLinha(v: LinhaVersao): TermosProposta {
     motivoDesconto: v.motivo_desconto,
     descontoEstadiaPct: Number(v.desconto_estadia_pct),
     meses: Number(v.meses),
-    dias: v.dias == null ? Number(v.meses) * 30 : Number(v.dias),
+    dias: v.dias == null ? Number(v.meses) * DIAS_POR_MES : Number(v.dias),
     dataEntrada: String(v.data_entrada).slice(0, 10),
     condominio: Number(v.condominio),
     consumo: Number(v.consumo),
@@ -110,6 +114,7 @@ export function termosDaLinha(v: LinhaVersao): TermosProposta {
     taxaPet: Number(v.taxa_pet),
     limpezaUnica: Number(v.limpeza_unica),
     limpezasPacote: v.limpezas_pacote == null ? null : Number(v.limpezas_pacote),
+    ...(v.forma_pagamento ? { formaPagamento: v.forma_pagamento } : {}),
   };
 }
 
@@ -142,6 +147,8 @@ export function linhaDaVersao(propostaId: string, versao: number, autor: Autor, 
     total_mensal: tot.totalMensal,
     total_contrato: tot.totalContrato,
     mensagem,
+    // E647: só grava a forma quando há uma (chave desligada = a linha idêntica à de antes).
+    ...(t.formaPagamento ? { forma_pagamento: t.formaPagamento } : {}),
   };
 }
 
@@ -231,7 +238,7 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
     numero: p.numero as string,
     valorMensal: Number(v.valor_mensal),
     meses: Number(v.meses),
-    dias: v.dias == null ? Number(v.meses) * 30 : Number(v.dias),
+    dias: v.dias == null ? Number(v.meses) * DIAS_POR_MES : Number(v.dias),
     dataEntrada: String(v.data_entrada).slice(0, 10),
     taxa: p.taxa_congelada == null ? null : Number(p.taxa_congelada),
     termos: {
@@ -241,17 +248,17 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
       valorLimpeza: Number(v.valor_limpeza) || 0,
       taxaPet: Number(v.taxa_pet) || 0,
       limpezaUnica: Number(v.limpeza_unica) || 0,
-      dias: v.dias == null ? Number(v.meses) * 30 : Number(v.dias),
+      dias: v.dias == null ? Number(v.meses) * DIAS_POR_MES : Number(v.dias),
       limpezasPacote: v.limpezas_pacote == null ? null : Number(v.limpezas_pacote),
     },
   };
 }
 
-/** Contrato registrado a partir da proposta → "Em contrato" (best-effort). */
-export async function marcarPropostaEmContrato(admin: SupabaseClient, leadId: string): Promise<void> {
+/** Contrato registrado a partir da proposta → "Em contrato" (best-effort). E1086: só ESTA proposta, não todas as da candidatura. */
+export async function marcarPropostaEmContrato(admin: SupabaseClient, propostaId: string): Promise<void> {
   await admin
     .from("propostas")
     .update({ status: "em_contrato", atualizada_em: new Date().toISOString() })
-    .eq("lead_id", leadId)
+    .eq("id", propostaId)
     .eq("status", "aceita");
 }

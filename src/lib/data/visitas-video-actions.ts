@@ -18,9 +18,7 @@ import { avisarVisitaCancelada, expirarVisitasVencidas, vesperaDaVisitaSeFor } f
 import { nomeDepoisDoAceite, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 import { MSG_HORARIO_OCUPADO, horarioOcupado } from "@/lib/visitas/horario-ocupado";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
-import { corpoVisitaConfirmada, corpoVisitaPedida, corpoVisitaPedidaMorador, type CorpoVisita } from "@/lib/visitas/emails-visita";
-import { blocoDados } from "@/lib/notifications/modelo-email";
-import { escaparHtml } from "@/lib/escapar-html";
+import { corpoVisitaConfirmada, corpoVisitaPedida, corpoVisitaPedidaMorador, detalhesDoAvisoVisita, type CorpoVisita } from "@/lib/visitas/emails-visita";
 import {
   ehModalidade,
   ehStatusVisita,
@@ -57,6 +55,7 @@ function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, det
     try {
       const { data: p } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", para).maybeSingle();
       if (!p || p.notif_email === false) return;
+      const detalhes = detalhesDoAvisoVisita({ detalhe, endereco, linhas: corpo?.linhas });
       await notify({
         event: evento,
         email: (p.email as string | null) ?? undefined,
@@ -69,13 +68,9 @@ function avisarVisita(admin: Admin, para: string, evento: NotificationEvent, det
         ...(decisao ? { decisao } : {}),
         ...(corpo ? { ...(corpo.subject ? { subject: corpo.subject } : {}), body: corpo.body } : {}),
         // Visita presencial confirmada: o endereço exato e "Abrir no mapa" vão SÓ para o morador (complemento do prompt 23).
-        detailsText: endereco ? `${detalhe}\nEndereço: ${endereco.texto}\nAbrir no mapa: ${endereco.mapa}` : detalhe,
-        detailsHtml:
-          (corpo ? blocoDados(corpo.linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) : "") +
-          `<p style="margin:12px 0 0">${detalhe.replace(/[<>&]/g, "")}</p>` +
-          (endereco
-            ? `<p style="margin:8px 0 0"><strong>Endereço:</strong> ${endereco.texto.replace(/[<>&"]/g, "")}</p><p style="margin:8px 0 0"><a href="${endereco.mapa.replace(/"/g, "%22")}">Abrir no mapa</a></p>`
-            : ""),
+        // E1039: a montagem mora em detalhesDoAvisoVisita (emails-visita.ts), com teste do conteúdo.
+        detailsText: detalhes.texto,
+        detailsHtml: detalhes.html,
       });
     } catch {
       /* best-effort */
@@ -381,6 +376,11 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
     }
     // E325: o e-mail diz de qual imóvel é a visita (título + código) e quem confirmou.
     const { data: imovelConf } = await admin.from("properties").select("title").eq("id", v.property_id).maybeSingle();
+    // E1039: ao dono (o morador aceitou o horário) de visita presencial, com quem é a visita — como na véspera.
+    const moradorConf =
+      quem === "morador" && modalidade === "presencial"
+        ? (await admin.from("profiles").select("full_name").eq("id", v.tenant_id).maybeSingle()).data
+        : null;
     avisarVisita(
       admin,
       outro,
@@ -393,6 +393,7 @@ export async function responderVisita(entrada: AcaoVisita): Promise<Resultado> {
         modalidade,
         horario: campos.horario_confirmado,
         quemConfirmou: quem === "dono" ? "proprietario" : "morador",
+        nomeMorador: (moradorConf?.full_name as string | null | undefined) ?? null,
       }),
       v.property_id as string,
     );

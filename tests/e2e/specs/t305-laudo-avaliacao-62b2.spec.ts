@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosDoRoteiro, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 
 /**
@@ -84,13 +84,16 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     }
   }
   /** O avaliador conclui a visita e envia: a plataforma emite o laudo VIS. */
-  async function concluirEEnviar(p: Page, pedidoId: string) {
+  /** E1083: o nível é o que o avaliador escolhe no laudo que assina (a plataforma não calcula). */
+  async function concluirEEnviar(p: Page, pedidoId: string, nivel: "essencial" | "conforto" | "premium" = "premium") {
+    await fotosDoRoteiro(pedidoId); // E1079 (ORDEM-431): concluir exige a foto de cada ambiente do roteiro
     await p.goto(`/dashboard/parceiro/avaliacao/${pedidoId}`, { waitUntil: "domcontentloaded" });
     await p.getByTestId("concluir-visita").getByRole("button", { name: "Concluir a visita" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status, { timeout: 20_000 }).toBe("realizada");
     await p.reload({ waitUntil: "domcontentloaded" });
+    await p.getByTestId("enviar-laudo").getByTestId(`laudo-nivel-${nivel}`).click(); // E1083: o avaliador escolhe o nível (E1079: em cartões de escolha)
     await p.getByTestId("assino-laudo").getByRole("checkbox").check(); // E648: o avaliador assina o laudo
-    await p.getByTestId("enviar-laudo").getByRole("button", { name: "Enviar o laudo" }).click();
+    await p.getByTestId("enviar-laudo").getByRole("button", { name: "Assinar laudo" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status, { timeout: 30_000 }).toBe("laudo_emitido");
   }
   async function laudoDe(pedidoOriginal: string) {
@@ -274,7 +277,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     // 4 falhas corrigíveis (acima do limite de 3) sem tocar no padrão mínimo; sem internet medida: Essencial.
     await preencher(pedido, { fotos_nada_omitido: "nao_conforme", cameras_declaracao: "nao_conforme", considerar_confere: "nao_conforme", tomadas_risco: "nao_conforme" });
     const p = await avaliador(browser, "B");
-    await concluirEEnviar(p, pedido);
+    await concluirEEnviar(p, pedido, "essencial");
     await p.context().close();
     const l = await laudoDe(pedido);
     expect(l.resultado).toBe("reprovado");
@@ -345,7 +348,7 @@ test.describe("T305 — laudo da avaliação (62-B2)", () => {
     const { data: credB } = await adm().from("avaliadores_credenciamento").select("numero_credenciado").eq("id", cred.B.id).single();
     await d.reload({ waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("avaliacao-escolha")).not.toContainText(String((await adm().from("avaliadores_credenciamento").select("numero_credenciado").eq("id", cred.A.id).single()).data?.numero_credenciado));
-    await d.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${credB!.numero_credenciado}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    await d.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${credB!.numero_credenciado}` }).getByRole("button", { name: "Escolher" }).click();
     await expect.poll(async () => (await adm().from("vistoria_pedidos").select("avaliador_id").eq("property_id", ids.im5).eq("tipo", "contestacao").maybeSingle()).data?.avaliador_id ?? null, { timeout: 20_000 }).toBe(cred.B.id);
     const { data: pc } = await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.im5).eq("tipo", "contestacao").single();
     // B aceitou e agendou (62-B1): faz a 2ª e aprova.
