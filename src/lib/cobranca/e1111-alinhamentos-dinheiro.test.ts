@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { TAXA_MAIOR_TEXTO, TAXA_MENOR_TEXTO, TEXTO_REGRA_UNICA, escadaTaxasCurta, escadaTaxasTexto, exemploCobranca } from "./regra.ts";
 import { TEXTO_CARTEIRAS } from "../../config/planos.ts";
-import { ROTULO_TAXA_SERVICO_VIVA, TEXTO_DIVISAO_NA_ORIGEM, TEXTO_REGRA_90_10 } from "../../config/taxa-servico-parceiros.ts";
+import { ROTULO_TAXA_SERVICO_VIVA, TEXTO_DIVISAO_NA_ORIGEM } from "../../config/taxa-servico-parceiros.ts";
 
 const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\s\/\/ [^\n"`]*$/gm, "");
 const LITERAL = /(?<![\d,.])(?:4|6|8|10|12|90) ?%|12\/10\/8\/6/g;
@@ -78,8 +78,8 @@ test("E1111 (ORDEM-533): o atalho da home diz a escada pelas fontes do Prompt 07
 
 test("E1111: os textos da taxa de parceiro saem da fonte do valor (TAXA_SERVICO_PARCEIRO)", () => {
   assert.equal(ROTULO_TAXA_SERVICO_VIVA, "Taxa de serviço da Viva (10%)");
-  assert.equal(TEXTO_REGRA_90_10, "Regra 90/10: de cada serviço, 90% ficam com você e 10% são a taxa de serviço da Viva.");
-  assert.match(TEXTO_DIVISAO_NA_ORIGEM, /^Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para você e 10% para a Viva\.$/);
+  // E1151: a "Regra 90/10" do formulário deu lugar à frase canónica da divisão (a mesma da secção de regras).
+  assert.match(TEXTO_DIVISAO_NA_ORIGEM, /^Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para você e 10% para a Viva\. A Viva não guarda o dinheiro\.$/);
   const cfg = semComentarios(readFileSync("src/config/taxa-servico-parceiros.ts", "utf8"));
   assert.deepEqual(cfg.match(LITERAL) ?? [], [], "a config deriva os números de TAXA_SERVICO_PARCEIRO");
 });

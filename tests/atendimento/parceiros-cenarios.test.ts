@@ -25,7 +25,7 @@ const CASOS: { pergunta: string; artigo: string; resposta: RegExp[]; naoDiz?: Re
     naoDiz: /Plano Gestor|(?<![\d,.])4\s?%/,
   },
   { pergunta: "Como ativar o modo parceiro na minha conta?", artigo: "como-virar-parceiro", resposta: [/Quero ser parceiro/, /link para ativar a página/] },
-  { pergunta: "Qual é a taxa de parceria?", artigo: "taxa-parceria", resposta: [/10% sobre o valor do serviço/, /todas as categorias/, /90% direto ao parceiro/, /sem mensalidade/i] },
+  { pergunta: "Qual é a taxa de parceria?", artigo: "taxa-parceria", resposta: [/10% sobre o valor do serviço/, /todas as categorias/, /90% vai direto para o parceiro/, /sem mensalidade/i] },
   { pergunta: "A Viva fica com o dinheiro do serviço do fotógrafo?", artigo: "taxa-parceria", resposta: [/não guarda o dinheiro/] },
   { pergunta: "Quando o parceiro vê o contato do proprietário?", artigo: "taxa-parceria", resposta: [/contato direto do proprietário não é trocado/, /aceita o pedido/] },
   { pergunta: "Quero contratar um fotógrafo para o meu imóvel", artigo: "contratar-fotografo", resposta: [/Quer um fotógrafo profissional\?/, /Uberlândia \(MG\)/, /CEP/] },

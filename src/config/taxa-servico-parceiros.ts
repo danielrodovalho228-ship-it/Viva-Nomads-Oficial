@@ -12,21 +12,31 @@ const pct = (t: number) => `${Math.round(t * 100)}%`;
 export const PCT_TAXA_SERVICO_PARCEIROS = pct(TAXA_SERVICO_PARCEIRO);
 /** "90%" — o que fica com o parceiro. */
 export const PCT_PARCEIRO_RECEBE = pct(1 - TAXA_SERVICO_PARCEIRO);
-/** "90/10" — o nome da regra da divisão. */
-const DIVISAO = `${Math.round((1 - TAXA_SERVICO_PARCEIRO) * 100)}/${Math.round(TAXA_SERVICO_PARCEIRO * 100)}`;
+/**
+ * E1151 (ORDEM-DUET-641/645): a divisão na origem tem UMA redacção, a canónica — com "A Viva não guarda o dinheiro." —
+ * dita ao parceiro ("você") ou sobre ele ("o parceiro": a tela do pedido do dono e a Ajuda).
+ */
+export function textoDivisaoNaOrigem(para: "você" | "o parceiro"): string {
+  return `Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: ${PCT_PARCEIRO_RECEBE} vai direto para ${para} e ${PCT_TAXA_SERVICO_PARCEIROS} para a Viva. A Viva não guarda o dinheiro.`;
+}
 
-export const TEXTO_TAXA_SERVICO_PARCEIROS = `Taxa de serviço: ${PCT_TAXA_SERVICO_PARCEIROS} sobre o valor do serviço, para todas as categorias. Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: ${PCT_PARCEIRO_RECEBE} direto ao parceiro e ${PCT_TAXA_SERVICO_PARCEIROS} à Viva. A Viva não guarda o dinheiro.`;
-
-/** A regra escrita no cadastro do parceiro (Prompt 43, item 1): a divisão 90/10, sem número escondido. */
-export const TEXTO_REGRA_90_10 = `Regra ${DIVISAO}: de cada serviço, ${PCT_PARCEIRO_RECEBE} ficam com você e ${PCT_TAXA_SERVICO_PARCEIROS} são a taxa de serviço da Viva.`;
+export const TEXTO_TAXA_SERVICO_PARCEIROS = `Taxa de serviço: ${PCT_TAXA_SERVICO_PARCEIROS} sobre o valor do serviço, para todas as categorias. ${textoDivisaoNaOrigem("o parceiro")}`;
 
 /** E1111: o rótulo da linha da taxa nas telas do pedido ("Taxa de serviço da Viva (10%)"). */
 export const ROTULO_TAXA_SERVICO_VIVA = `Taxa de serviço da Viva (${PCT_TAXA_SERVICO_PARCEIROS})`;
 
-/** E1111: a divisão na origem, dita ao parceiro, quando o pagamento pela plataforma estiver ativo. */
-export const TEXTO_DIVISAO_NA_ORIGEM = `Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: ${PCT_PARCEIRO_RECEBE} vai direto para você e ${PCT_TAXA_SERVICO_PARCEIROS} para a Viva.`;
+/** E1111/E1151: a divisão na origem, dita ao parceiro — a mesma frase na secção de regras e no formulário de /parceiros. */
+export const TEXTO_DIVISAO_NA_ORIGEM = textoDivisaoNaOrigem("você");
 
+/** E1151: a única constante do aviso "em breve" (a cópia PAGAMENTO_EM_BREVE de regras.ts saiu). */
 export const TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE = "Pagamento pela plataforma em breve.";
+
+/** Regras claras dos parceiros (Prompt 31a, item 8), nas páginas públicas — E1151: os percentuais vêm das constantes. */
+export const REGRAS_CLARAS = [
+  "Você combina e agenda tudo pelas mensagens da Viva.",
+  `Taxa de serviço: ${PCT_TAXA_SERVICO_PARCEIROS} sobre o valor do serviço, para todas as categorias. Você só paga quando há serviço contratado.`,
+  TEXTO_DIVISAO_NA_ORIGEM,
+] as const;
 
 /** O texto da taxa com o aviso "em breve" enquanto a chave PAGAMENTO_PARCEIROS_ATIVO estiver desligada. */
 export function textoTaxaServicoParceiros(pagamentoAtivo: boolean): string {
