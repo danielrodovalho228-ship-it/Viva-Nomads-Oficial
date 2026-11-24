@@ -419,6 +419,7 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   // Strike: só em verificação reprovada (a 1ª avaliação pedida pelo dono nunca gera).
   if (comStrike) {
     // O laudo já está gravado: a falha da gravação do strike fica no log e não esconde o laudo emitido.
+    await new Promise((r) => setTimeout(r, 3000)); // ENSAIO E1168: abre a janela da corrida
     await registrarStrike(admin, strikesAntes, p.owner_id, p.property_id, p.id, "verificacao_reprovada", agora).catch((e) => console.error("[emitirLaudo] strike", p.id, (e as Error).message));
   }
 
