@@ -13,6 +13,15 @@
  * Sem "use client": vale no servidor (e-mails transacionais) e no cliente
  * (casca do painel). Todo lugar que saúda/exibe o usuário passa por aqui.
  */
+/**
+ * E788: o nome que vai para o AVATAR da própria conta — o nome COMPLETO (as iniciais "CQ"/"PP" iguais em toda superfície:
+ * cabeçalho, menu da Conta, rodapé do admin e Perfil). Valor que parece e-mail → "" (o avatar mostra a silhueta, CONTA-A).
+ */
+export function nomeParaAvatar(nomeCompleto: string | null | undefined): string {
+  const n = (nomeCompleto ?? "").trim();
+  return !n || n.includes("@") ? "" : n;
+}
+
 export function primeiroNome(nomeCompleto: string | null | undefined): string {
   // E575: a marca entre colchetes das contas de teste ("[TESTE QA] Marina Souza") não é nome — a saudação saía
   // "Olá [TESTE,". Tira as marcas do começo e saúda pelo primeiro nome de verdade.

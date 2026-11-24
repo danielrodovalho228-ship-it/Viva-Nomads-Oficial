@@ -29,5 +29,7 @@ test("a conferência é tolerante: uma falha de rede não derruba a carga nem vi
 
 test("o AuthGuard continua redirecionando só com authChecked e sem usuário (sem sessão real, vai para /auth)", () => {
   const guard = readFileSync(new URL("../../components/layout/auth-guard.tsx", import.meta.url), "utf8");
-  assert.match(guard, /if \(hydrated && authChecked && !user\) router\.replace\("\/auth"\)/);
+  // E793 (asserção alterada): o redirecionamento lê o usuário do STORE (a conferência do cliente) — o nome mudou de
+  // `user` para `storeUser`, porque `user` passou a ser o do quadro (servidor ou store, regra do A6).
+  assert.match(guard, /if \(hydrated && authChecked && !storeUser\) router\.replace\("\/auth"\)/);
 });

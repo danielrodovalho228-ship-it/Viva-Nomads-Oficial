@@ -167,7 +167,7 @@ test.describe("T712 — E267: transacionais de estadia e de serviço nomeiam a p
     const { data: sv, error: es } = await adm().from("parceiro_servicos").insert({ parceiro_id: ids.parceiro, categoria: "limpeza", titulo: "Limpeza completa", preco_base: 250, unidade: "por serviço", ativo: true }).select("id").single();
     if (es) throw es;
     ids.servico = sv.id as string;
-    // A: aditivo (começou há 29 dias, sai em 30). B/C: convite e encerramento (2 ocupantes). F1: sai em 4 dias, sem
+    // A: aditivo (começou há 29 dias, sai em 30). B/C: convite e encerramento (2 ocupantes). F1: sai em 5 dias (última noite em 4), sem
     // limpeza fixa. F2: entra em 5 dias. S: o imóvel dos pedidos de serviço (sem contrato).
     ids.A = await contrato("A", ids.bia, emDias(-29));
     ids.B = await contrato("B", ids.caio, emDias(-29), 2);
@@ -196,17 +196,18 @@ test.describe("T712 — E267: transacionais de estadia e de serviço nomeiam a p
 
   test("A: aditivo proposto e recusado — quem propôs, o que muda, o prazo e a recusa, com o imóvel", async ({ browser }) => {
     const inicio = emDias(-29);
-    const periodo = `Período: ${dataBR(inicio)} a ${dataBR(somar(inicio, 59))}`;
+    // E1089 (coordenador): a forma única do período; a saída é entrada + 60 (o dia seguinte à última noite gravada).
+    const periodo = `Período: Entrada ${dataBR(inicio)} · Saída ${dataBR(somar(inicio, 60))} · 60 diárias`;
     const m = await abrir(browser, "bia", `/dashboard/estadia/${ids.A}/alteracao`);
     await m.getByTestId("alteracao-meses").selectOption("3");
     await m.getByTestId("alteracao-enviar").click();
     await expect(m).toHaveURL(new RegExp(`/dashboard/estadia/${ids.A}$`), { timeout: 30_000 });
-    await expect(m.getByTestId("aditivo-resumo")).toHaveText("Meses: de 2 para 3");
+    await expect(m.getByTestId("aditivo-resumo")).toContainText("Meses: de 2 para 3");
     await m.context().close();
 
     const proposto = await emailDo(ids.dono, "estadia_aditivo_proposto", "A");
     regua(proposto.corpo, "Dora", "A", [
-      `Bia propôs uma alteração no contrato de ${tituloDe("A")}: Meses: de 2 para 3.`,
+      `Bia propôs uma alteração no contrato de ${tituloDe("A")}: Meses: de 2 para 3`,
       /Aceite ou recuse até \d{2}\/\d{2}\/\d{4} pela página da estadia\./,
       "Aditivo: 1",
       "O que muda: Meses: de 2 para 3",
@@ -244,7 +245,8 @@ test.describe("T712 — E267: transacionais de estadia e de serviço nomeiam a p
     await expect.poll(async () => (await doConvidado()).length, { timeout: 30_000 }).toBe(1);
     const [convite] = await doConvidado();
     expect(convite.assunto).toContain("Você foi incluído em uma estadia na Viva");
-    expect(convite.corpo).toContain(`Caio incluiu você como morador da estadia em ${imovelPorExtenso("B")}.`);
+    // A linha do imóvel leva o código do anúncio ("· código VN-…") depois do endereço por extenso; o resto da frase é o mesmo.
+    expect(convite.corpo).toMatch(new RegExp(`Caio incluiu você como morador da estadia em ${imovelPorExtenso("B").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}( · código VN-[A-Z0-9]+)?\\.`));
     expect(convite.corpo).not.toContain("um imóvel da Viva");
     expect(convite.corpo).not.toContain(RUA);
     expect(convite.corpo).not.toMatch(/R\$|3\.200/);
@@ -265,7 +267,7 @@ test.describe("T712 — E267: transacionais de estadia e de serviço nomeiam a p
       `Caio pediu o encerramento do contrato de ${tituloDe("B")} (motivo: mudança de planos do morador).`,
       "Pedido por: Caio",
       "Motivo: Mudança de planos do morador",
-      `Período: ${dataBR(inicio)} a ${dataBR(somar(inicio, 59))}`,
+      `Período: Entrada ${dataBR(inicio)} · Saída ${dataBR(somar(inicio, 60))} · 60 diárias`,
     ]);
     // Quem pediu não recebe o próprio pedido.
     expect(await caixa(ids.caio, "estadia_encerramento_pedido")).toHaveLength(0);
@@ -334,7 +336,8 @@ test.describe("T712 — E267: transacionais de estadia e de serviço nomeiam a p
     servidor.stderr?.pipe(log);
     await expect.poll(async () => (await fetch(`http://localhost:${PORTA}/api/cron/automacoes`).catch(() => null))?.status ?? 0, { timeout: 90_000 }).toBe(401);
 
-    const saida = somar(emDias(-55), 59); // = emDias(4)
+    // E1089 (coordenador): os e-mails falam da SAÍDA, o dia seguinte à última noite gravada (emDias(4)).
+    const saida = somar(emDias(-55), 60); // = emDias(5)
     const entrada = emDias(5);
     await rodarCron();
 

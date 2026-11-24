@@ -99,6 +99,13 @@ export const ENCERRAMENTO_REGRAS_ATIVO = process.env.NEXT_PUBLIC_ENCERRAMENTO_RE
  * do item 14 da Dra. Beatriz (NEXT_PUBLIC_VISTORIA_PARECER_14="on" quando recebido).
  */
 export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
+/**
+ * E690: ativação AUTOMÁTICA do avaliador credenciado (regra validada pelo coordenador, 08/11/2026). Desligada por padrão.
+ * Ligada: "solicitado" → "em_teste" sozinho (identidade verificada + CPF do titular/sócio do CNPJ + experiência + código de
+ * conduta + cidade) e "em_teste" → "ativo" sozinho (avaliação-teste concluída e aprovada na conferência). Cada passo grava
+ * "decidido pelo sistema" com os critérios do momento. Nunca dispensa a identidade.
+ */
+export const AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA = process.env.NEXT_PUBLIC_AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA === "on";
 export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
 
 /**
@@ -116,11 +123,25 @@ export const MATRICULA_OBRIGATORIA = process.env.NEXT_PUBLIC_MATRICULA_OBRIGATOR
 export const CAUCAO_PRAZOS_ATIVA = process.env.NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA === "on";
 
 /**
+ * E722 — pré-aceitação de 72 horas (prazo para concluir o contrato depois do aceite, lembretes de 24 h e 6 h, expiração sem
+ * punição, até 2 reaberturas com a taxa congelada mantida). OFF por padrão: o motor existe, nada age até a decisão de ligar.
+ */
+export const PRE_ACEITACAO_72H_ATIVA = process.env.NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA === "on";
+
+/**
  * TRAVA COBRANCA_MENSAL (E641, desenho do coordenador de 05/11/2026): cobrança mensal para contratos de 91 a 180 dias. DESLIGADA por
  * padrão e só a parte NEUTRA existe: cronograma, livro de pagamentos (registro do morador, confirmação do dono) e lembretes D-5/D-3.
  * Nada de atraso, encargos, mensagem depois do vencimento ou consequência ao morador até o parecer da Dra. Beatriz. Só o valor "on" liga.
  */
 export const COBRANCA_MENSAL_ATIVA = process.env.NEXT_PUBLIC_COBRANCA_MENSAL_ATIVA === "on";
+
+/**
+ * TRAVA FORMA_PAGAMENTO_DONO (E647, Daniel, 06/11/2026): a forma de pagamento (bloco completo, mensal ou ambos, nas faixas de
+ * 30–90 e 91–180 dias) é ESCOLHA DO DONO no anúncio; a Viva não impõe. DESLIGADA por padrão e só a parte NEUTRA existe: o campo
+ * no editor, o texto ao morador e o cronograma conforme a escolha. Nada de atraso, inadimplência, encargos ou notificação formal
+ * até o parecer da Dra. Beatriz (item 59 da pauta). Só o valor "on" liga.
+ */
+export const FORMA_PAGAMENTO_DONO_ATIVA = process.env.NEXT_PUBLIC_FORMA_PAGAMENTO_DONO_ATIVA === "on";
 
 /**
  * E634 — ficha-resumo do contrato (datas, valor, vencimento e conta de recebimento, com a autorização expressa quando a conta
@@ -192,3 +213,14 @@ export const PRECO_JUSTO_COMPARADOR = process.env.NEXT_PUBLIC_PRECO_JUSTO_COMPAR
  * ficam limitados a 30–90 dias (um bloco de temporada). Contratos e renovações que já existem não mudam.
  */
 export const FAIXA_91_180_ATIVA = process.env.NEXT_PUBLIC_FAIXA_91_180_ATIVA !== "off";
+
+/**
+ * E793 — painel desenhado no servidor com a sessão conferida lá (docs/e793-painel-sessao-servidor.md). Lida SÓ no
+ * servidor (sem NEXT_PUBLIC_): `off` (padrão) ou o nome da onda ligada (`piloto`). A lista de rotas de cada onda está em
+ * src/lib/auth/painel-sessao-servidor.ts. Rollback: trocar a variável na Vercel e refazer o deploy do MESMO commit — sem
+ * código, mas NÃO instantâneo (alguns minutos). Mudar em produção é com o Daniel e o Muse.
+ */
+export type OndaPainelSessaoServidor = "off" | "piloto";
+export function ondaPainelSessaoServidor(valor: string | undefined = process.env.PAINEL_SESSAO_SERVIDOR): OndaPainelSessaoServidor {
+  return valor === "piloto" ? "piloto" : "off";
+}

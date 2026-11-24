@@ -11,7 +11,7 @@ export default async function DesligarAlertaPage({ searchParams }: { searchParam
   const { b = "", t = "", ok } = await searchParams;
   const valido = conferirDesligarAlerta(b, t, process.env.CRON_SECRET ?? "");
   return (
-    <main className="mx-auto w-full max-w-xl px-4 py-12">
+    <div className="mx-auto w-full max-w-xl px-4 py-12">
       <h1 className="text-2xl font-semibold text-ink">Desligar alerta de busca</h1>
       {ok === "1" ? (
         <p className="mt-4 text-muted" data-testid="alerta-desligado">
@@ -27,6 +27,6 @@ export default async function DesligarAlertaPage({ searchParams }: { searchParam
       ) : (
         <p className="mt-4 text-muted" role="alert">Este link não é válido. Entre em <Link href="/dashboard/buscas" className="font-medium text-forest underline">Buscas salvas</Link> para gerenciar seus alertas.</p>
       )}
-    </main>
+    </div>
   );
 }

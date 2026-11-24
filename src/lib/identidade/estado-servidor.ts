@@ -12,7 +12,7 @@ export const MSG_IDENTIDADE_SEM_LEITURA = "Não foi possível conferir a identid
 
 export async function estadoIdentidade(admin: SupabaseClient, userId: string, agora = new Date()): Promise<EstadoIdentidade> {
   const [{ data: perfil, error: e1 }, { data: laudo, error: e2 }] = await Promise.all([
-    admin.from("profiles").select("is_teste").eq("id", userId).maybeSingle(),
+    admin.from("profiles").select("is_teste, is_verified").eq("id", userId).maybeSingle(),
     admin
       .from("tenant_verifications")
       .select("caf_result, traffic_light, valid_until, created_at")
@@ -22,7 +22,8 @@ export async function estadoIdentidade(admin: SupabaseClient, userId: string, ag
       .maybeSingle(),
   ]);
   if (e1 || e2) throw new Error(MSG_IDENTIDADE_SEM_LEITURA);
-  return estadoIdentidadeDe((laudo as LaudoCafGravado | null) ?? null, perfil?.is_teste === true || integracoesSimuladas(), agora);
+  // E1106: a conferência manual da equipa (is_verified) entra aqui, como insumo da fonte — as telas não a leem.
+  return estadoIdentidadeDe((laudo as LaudoCafGravado | null) ?? null, perfil?.is_teste === true || integracoesSimuladas(), agora, perfil?.is_verified === true);
 }
 
 /** O mesmo para várias pessoas de uma vez (cartão do candidato, coluna do admin). */
@@ -30,7 +31,7 @@ export async function estadosIdentidade(admin: SupabaseClient, ids: string[], ag
   const out = new Map<string, EstadoIdentidade>();
   if (!ids.length) return out;
   const [{ data: perfis, error: e1 }, { data: laudos, error: e2 }] = await Promise.all([
-    admin.from("profiles").select("id, is_teste").in("id", ids),
+    admin.from("profiles").select("id, is_teste, is_verified").in("id", ids),
     admin
       .from("tenant_verifications")
       .select("tenant_id, caf_result, traffic_light, valid_until, created_at")
@@ -38,10 +39,12 @@ export async function estadosIdentidade(admin: SupabaseClient, ids: string[], ag
       .order("created_at", { ascending: false }),
   ]);
   if (e1 || e2) throw new Error(MSG_IDENTIDADE_SEM_LEITURA);
-  const teste = new Map(((perfis ?? []) as { id: string; is_teste: boolean | null }[]).map((p) => [p.id, p.is_teste === true]));
+  const linhas = (perfis ?? []) as { id: string; is_teste: boolean | null; is_verified: boolean | null }[];
+  const teste = new Map(linhas.map((p) => [p.id, p.is_teste === true]));
+  const conferida = new Map(linhas.map((p) => [p.id, p.is_verified === true]));
   const recente = new Map<string, LaudoCafGravado>();
   for (const l of (laudos ?? []) as (LaudoCafGravado & { tenant_id: string })[]) if (!recente.has(l.tenant_id)) recente.set(l.tenant_id, l);
   const sim = integracoesSimuladas();
-  for (const id of ids) out.set(id, estadoIdentidadeDe(recente.get(id) ?? null, teste.get(id) === true || sim, agora));
+  for (const id of ids) out.set(id, estadoIdentidadeDe(recente.get(id) ?? null, teste.get(id) === true || sim, agora, conferida.get(id) === true));
   return out;
 }

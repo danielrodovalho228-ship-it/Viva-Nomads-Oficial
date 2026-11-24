@@ -1,5 +1,6 @@
 "use client";
 
+import { grafiaDaCidade } from "@/lib/cidades";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,12 +18,13 @@ import {
   respostaExemploLabel,
   tempoNaVivaLabel,
 } from "@/config/exemplo-proprietarios";
-import { donoVerificado } from "@/lib/anuncio/dono-verificado";
+import { seloDoDono } from "@/lib/anuncio/dono-verificado";
 import { useNomeDepoisDoAceite } from "@/components/property/use-nome-depois-do-aceite";
-import { SeloDonoVerificado } from "@/components/property/selo-dono-verificado";
+import { SeloIdentidadeDono } from "@/components/property/selo-identidade-dono";
 import { SeloExemplo } from "@/components/property/selo-exemplo";
 import { buttonClasses } from "@/components/ui/button";
-import { hojeBR, numBR } from "@/lib/utils";
+import { hojeBR } from "@/lib/utils";
+import { textoDaNota } from "@/lib/imovel/rotulo-avaliacoes";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
@@ -57,8 +59,8 @@ interface Dados {
 /**
  * "Sobre o proprietário" (prompt 6 + layout do prompt 9): à esquerda o cartão (iniciais/foto, nome, cidade,
  * selos com ✓); à direita tempo na Viva, fatos, frase e os botões. Nunca telefone nem e-mail: o contato é
- * "Enviar mensagem" (chat da Viva). Anúncio de EXEMPLO: dados ilustrativos, sempre com o selo "Exemplo
- * ilustrativo" e o aviso; "Enviar mensagem" só abre o aviso de demonstração (nenhuma conversa é criada).
+ * "Enviar mensagem" (chat da Viva). Anúncio de EXEMPLO: dados ilustrativos, sempre com o selo "Anúncio de
+ * exemplo" e o aviso; "Enviar mensagem" só abre o aviso de demonstração (nenhuma conversa é criada).
  */
 export function OwnerCard({
   property,
@@ -73,6 +75,8 @@ export function OwnerCard({
   taxaManutencao?: { taxa: number; resolvidos: number } | null;
 }) {
   const exemplo = isExemplo(property);
+  // E1105/E1106 (ORDEM-478): um selo só de identidade do dono, de uma fonte só (estadoIdentidade): confirmada ou conferida pela equipa.
+  const selo = seloDoDono(property, proprietario?.identidadeConfirmada);
   // E427: a página é estática (o HTML só leva o nome abreviado). Quem tem o aceite com este dono recebe o nome COMPLETO do
   // servidor depois de abrir — o mesmo de "Quem recebe" e de /proprietario/[id]; os demais ficam com o abreviado.
   const donoId = proprietario?.id ?? property.ownerId;
@@ -166,7 +170,7 @@ export function OwnerCard({
           </p>
           {d.cidade && (
             <p className="mt-1 inline-flex items-center gap-1 text-sm text-muted">
-              <MapPin className="h-4 w-4" aria-hidden /> {d.cidade}
+              <MapPin className="h-4 w-4" aria-hidden /> {grafiaDaCidade(d.cidade)}
             </p>
           )}
           {d.reputacao && (
@@ -176,14 +180,15 @@ export function OwnerCard({
               data-testid="proprietario-reputacao"
             >
               <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
-              {numBR(d.reputacao.media, 1)} · {d.reputacao.n} {d.reputacao.n === 1 ? "avaliação" : "avaliações"}
+              {/* E925: a nota do proprietário diz de quem é (no topo da página fica a do imóvel). */}
+              {textoDaNota(d.reputacao.media, d.reputacao.n, "proprietario")}
             </Link>
           )}
           {/* Selos só com verificação REAL registrada; no exemplo, ilustrativos e marcados. */}
           <ul className="mt-3 grid gap-1 text-left text-sm text-ink" data-testid="proprietario-selos">
-            {!exemplo && donoVerificado(property) && (
+            {selo?.tipo === "identidade" && (
               <li>
-                <SeloDonoVerificado />
+                <SeloIdentidadeDono texto={selo.texto} />
               </li>
             )}
             {d.selos.map((s) =>
@@ -247,7 +252,7 @@ export function OwnerCard({
           {exemplo && (
             <p role="status" data-testid="mensagem-demo" className="mt-3 rounded-xl bg-sage-100 p-3 text-sm text-ink">
               Este é um anúncio de exemplo: aqui não há botão de mensagem. Nos anúncios reais, a conversa acontece
-              pelo chat da Viva, com o contato protegido até o aceite.
+              pelo chat da Viva; telefone, e-mail e redes sociais nunca são trocados.
             </p>
           )}
         </div>

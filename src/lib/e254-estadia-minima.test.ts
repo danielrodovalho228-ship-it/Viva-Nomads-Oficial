@@ -33,13 +33,18 @@ test("E254-A: mínimo de 3 meses + limpeza de saída R$ 450 — o total soma a l
   assert.equal(barra.estadia, `${formatBRL(10800)} em 3 meses`);
 });
 
-test("E254-A: mínimo de 1 mês — sem a linha do total (o total é o do mês)", () => {
-  assert.equal(linhaEstadiaMinima(imovel({ minPeriodDays: 30 }), 1), null);
+// E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): com mínimo de 1 mês a linha do dono não tinha total ("o total é o do mês"), e a prévia do Passo 10 somava as limpezas
+// (R$ 4.660 no ube-001 contra R$ 3.960). Agora a linha de 1 mês tem o total e a conta da regra única, como a prévia.
+test("E254-A/E756: mínimo de 1 mês — a linha tem o total e a conta da regra única (igual à prévia do dono)", () => {
+  const p = imovel({ minPeriodDays: 30 });
+  const e = estadiaDoImovel(p, 1)!;
+  assert.equal(linhaEstadiaMinima(p, 1), `Estadia mínima (1 mês): ${formatBRL(e.total)} · ${e.conta}`);
 });
 
 test("QA 31/10: o cartão de Meus anúncios SEMPRE diz a estadia mínima configurada; sem o campo, não inventa", () => {
-  // 1 mês: só o rótulo da casa.
-  assert.equal(estadiaDoCartaoDoDono(imovel({ minPeriodDays: 30 }), 1), "Estadia mínima (1 mês)");
+  // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): 1 mês também com total e conta (antes, só o rótulo "Estadia mínima (1 mês)").
+  assert.equal(estadiaDoCartaoDoDono(imovel({ minPeriodDays: 30 }), 1), linhaEstadiaMinima(imovel({ minPeriodDays: 30 }), 1));
+  assert.match(estadiaDoCartaoDoDono(imovel({ minPeriodDays: 30 }), 1)!, /^Estadia mínima \(1 mês\): /);
   // Mais de 1 mês: a linha com total e conta (a mesma do E254-A).
   assert.equal(estadiaDoCartaoDoDono(imovel({ minPeriodDays: 90 }), 3), linhaEstadiaMinima(imovel({ minPeriodDays: 90 }), 3));
   assert.match(estadiaDoCartaoDoDono(imovel({ minPeriodDays: 90 }), 3)!, /^Estadia mínima \(3 meses\): /);
@@ -58,9 +63,10 @@ test("E254-A: sem limpeza de saída — a conta não menciona limpeza", () => {
 test("E254-A: prévia, cartão de Meus anúncios e página pública usam a mesma função", () => {
   assert.match(ler("lib/anuncio/passo10-colunas.ts"), /estadiaDoImovel\(property, meses\)/);
   assert.match(ler("app/(dashboard)/dashboard/imoveis/imoveis-client.tsx"), /estadia: estadiaDoCartaoDoDono\(p, r\.meses\)/);
-  assert.match(ler("components/property/price-card.tsx"), /estadiaDoImovel\(property, meses\)/);
+  assert.match(ler("components/property/price-card.tsx"), /estadiaDoImovel\(property, Math\.max\(1, meses\)\)/);
   // E562 (telas): com as datas escolhidas, o total vem em dias (estadiaDoImovelEmDias); sem datas, a mesma função em meses.
-  assert.match(ler("app/(public)/imoveis/[id]/property-detail.tsx"), /totalPeriodo: estadiaSelecao \? estadiaSelecao\.total : meses > 1 \? estadiaDoImovel\(property, meses\)\?\.total : null/);
+  // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): sem datas, o total da regra única também com 1 mês (antes: só com N > 1).
+  assert.match(ler("app/(public)/imoveis/[id]/property-detail.tsx"), /totalPeriodo: estadiaSelecao \? estadiaSelecao\.total : estadiaDoImovel\(property, Math\.max\(1, meses\)\)\?\.total \?\? null/);
 });
 
 test("E254-A: a prévia do Passo 10 recebe os pagamentos únicos (preparação e limpeza de saída) que o cartão e a página somam", () => {

@@ -16,9 +16,8 @@ import {
   lerParceiroGeral,
   mesmoEmail,
   mostrarParceiroGeral,
-  PAGAMENTO_EM_BREVE,
+  PARCEIRO_GERAL_NAS_SUPERFICIES,
   recorteImagem,
-  REGRAS_CLARAS,
   situacaoToken,
   slugBase,
   textoPreco,
@@ -28,6 +27,7 @@ import {
   type ParceiroNaBusca,
   type SolicitacaoEntrada,
 } from "./regras.ts";
+import { REGRAS_CLARAS, TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE } from "../../config/taxa-servico-parceiros.ts";
 import { gerarToken, hashToken, tokenBemFormado } from "./token.ts";
 
 const CPF_OK = "529.982.247-25";
@@ -92,8 +92,8 @@ test("taxa de serviço: 10% em todas as categorias; divisão na origem 90/10 em 
   assert.deepEqual(dividirValor(333.33), { taxa: 33.33, parceiro: 300 });
   assert.deepEqual(dividirValor(-10), { taxa: 0, parceiro: 0 });
   assert.match(REGRAS_CLARAS[1], /10% sobre o valor do serviço, para todas as categorias/);
-  assert.match(REGRAS_CLARAS[2], /90% vai direto para você e 10% para a Viva\. A Viva não guarda o seu dinheiro\./);
-  assert.equal(PAGAMENTO_EM_BREVE, "Pagamento pela plataforma em breve.");
+  assert.match(REGRAS_CLARAS[2], /90% vai direto para você e 10% para a Viva\. A Viva não guarda o dinheiro\./);
+  assert.equal(TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE, "Pagamento pela plataforma em breve.");
 });
 
 test("checklist: aprovar só com os 4 itens e o 'conferido em' do documento", () => {
@@ -172,9 +172,16 @@ test("textos da busca vazia: cada frase é UM texto (em pedaços, leitores que a
 test("cartão do parceiro geral: desligado por padrão, só na busca vazia e com nome", () => {
   assert.equal(mostrarParceiroGeral(lerParceiroGeral(null, false), 0), false);
   const g = lerParceiroGeral({ nome: "AquiResolve", cidade: "Uberlândia", descricao: "Pequenos reparos" }, true);
-  assert.equal(mostrarParceiroGeral(g, 0), true);
-  assert.equal(mostrarParceiroGeral(g, 2), false);
-  assert.equal(mostrarParceiroGeral({ ...g, nome: "" }, 0), false);
+  // Regra em si (superfície ligada): só na busca vazia e com nome.
+  assert.equal(mostrarParceiroGeral(g, 0, true), true);
+  assert.equal(mostrarParceiroGeral(g, 2, true), false);
+  assert.equal(mostrarParceiroGeral({ ...g, nome: "" }, 0, true), false);
+});
+
+test("E688: a saída do parceiro geral (AquiResolve) está FORA das superfícies por ora, mesmo com a chave ligada no admin", () => {
+  assert.equal(PARCEIRO_GERAL_NAS_SUPERFICIES, false);
+  const g = lerParceiroGeral({ nome: "AquiResolve", cidade: "Uberlândia", descricao: "Pequenos reparos" }, true);
+  assert.equal(mostrarParceiroGeral(g, 0), false);
 });
 
 test("imagens: recorte central (avatar 1:1, capa 3:1) e lado maior reduzido", () => {

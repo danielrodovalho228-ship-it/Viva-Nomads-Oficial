@@ -5,6 +5,7 @@
 */
 import { dividirValor, TAXA_SERVICO_PARCEIRO } from "./regras.ts";
 import { lerReais } from "../reais.ts";
+import { PCT_TAXA_SERVICO_PARCEIROS, TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE, textoDivisaoNaOrigem } from "../../config/taxa-servico-parceiros.ts";
 
 // ── Estados ───────────────────────────────────────────────────────────────────────────────────────────────────
 export const STATUS_PEDIDO = [
@@ -157,14 +158,15 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 /** O que o parceiro vê ao orçar: "Taxa de serviço da Viva: 10% = R$ X. Você recebe R$ Y." */
 export function textoDivisaoParceiro(valorCombinado: number): string {
   const { taxa, parceiro } = dividirValor(valorCombinado);
-  return `Taxa de serviço da Viva: 10% = ${brl(taxa)}. Você recebe ${brl(parceiro)}.`;
+  return `Taxa de serviço da Viva: ${PCT_TAXA_SERVICO_PARCEIROS} = ${brl(taxa)}. Você recebe ${brl(parceiro)}.`;
 }
 
 // ── Pagamento (só registro enquanto a chave estiver desligada) ────────────────────────────────────────────────
 export type PagamentoStatus = "indisponivel" | "simulado" | "pago";
-export const TEXTO_PAGAMENTO_INATIVO = "O pagamento pela plataforma ainda não está ativo.";
-export const TEXTO_DIVISAO_NA_ORIGEM =
-  "Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para o parceiro e 10% para a Viva. A Viva não guarda o seu dinheiro.";
+/** E1158 (1): o pagamento ainda não ativo tem UMA redação, a da config (ORDEM-DUET-673); aqui é só o nome antigo. */
+export const TEXTO_PAGAMENTO_INATIVO = TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE;
+/** E1151: a redacção canónica da fonte única, dita sobre o parceiro (a tela do pedido do dono). */
+export const TEXTO_DIVISAO_NA_ORIGEM = textoDivisaoNaOrigem("o parceiro");
 export const ROTULO_REGISTRO_SEM_DINHEIRO = "registro, sem dinheiro";
 
 /** Provedor de pagamento do parceiro. Só existe a implementação SIMULADA (sem gateway, sem dinheiro). */
@@ -209,25 +211,13 @@ export function visaoDoParceiro(status: string, imovel: ImovelDoPedido | null, c
   };
 }
 
-// ── L2-B item 16: contato depois do aceite ────────────────────────────────────────────────────────────────────
+// ── E790 (regra E445): contato NUNCA é trocado ─────────────────────────────────────────────────────────────────
 /*
-  Aceito o orçamento, o cliente vê o telefone e o e-mail do parceiro, e o parceiro vê os do cliente. Antes do aceite,
-  nada de contato: a conversa segue pela plataforma. A Viva não intermedeia o pagamento (PAGAMENTO_PARCEIROS_ATIVO
-  desligado) — o texto do pagamento inativo continua na tela.
+  Antes (L2-B item 16), aceito o orçamento o servidor lia e mandava à tela o telefone e o e-mail da outra parte. Pela
+  regra aprovada (E445), contato não é trocado em nenhuma fase: a conversa segue pelas mensagens da Viva; emergência é
+  pelo telefone da Viva. O servidor não lê mais o contato da outra parte no pedido (nem depois do aceite).
 */
-export interface ContatoDoPedido {
-  telefone: string | null;
-  email: string | null;
-}
-export const TEXTO_CONTATO_ANTES_DO_ACEITE = "Antes do aceite do orçamento, a conversa segue pela plataforma.";
-
-/** O contato da outra parte, só nos status depois do aceite (os mesmos do endereço). Sem nenhum dado, null. */
-export function contatoNoPedido(status: string, contato: ContatoDoPedido): ContatoDoPedido | null {
-  if (!(STATUS_COM_DADOS_LIBERADOS as readonly string[]).includes(status)) return null;
-  const telefone = (contato.telefone ?? "").replace(/\D/g, "") || null;
-  const email = (contato.email ?? "").trim() || null;
-  return telefone || email ? { telefone, email } : null;
-}
+export const TEXTO_CONTATO_PEDIDO = "O contato não é trocado: a conversa segue pelas mensagens da Viva, antes e depois do aceite.";
 
 /** "34999998888" → "(34) 99999-8888"; outro formato volta como veio. */
 export function telefoneNaTela(t: string): string {
@@ -339,7 +329,7 @@ export const FORMULAS_PEDIDOS_PARCEIRO = {
   fechados: "Pedidos com orçamento aceito: aceito, agendado, em execução, entregue ou concluído.",
   concluidos: "Pedidos concluídos pelo cliente.",
   conversao: "Fechados ÷ total, em %.",
-  taxaRegistrada: "Soma da taxa de serviço (10%) congelada no aceite dos pedidos fechados — registro, sem dinheiro enquanto o pagamento pela plataforma estiver desligado.",
+  taxaRegistrada: `Soma da taxa de serviço (${PCT_TAXA_SERVICO_PARCEIROS}) congelada no aceite dos pedidos fechados — registro, sem dinheiro enquanto o pagamento pela plataforma estiver desligado.`,
   vindosDeCartao: "Pedidos com a referência do cartão do parceiro (ref_tipo = partnercard).",
 } as const;
 

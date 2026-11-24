@@ -11,6 +11,7 @@ import {
   novoSufixo,
   tornarContratoVigente,
 } from "../fixtures/laboratorio";
+import { criteriosDaAvaliacao } from "../fixtures/avaliacao-criterios";
 
 /*
   T304 — Prompt 61-A (adendos Airbnb ao 32, item 6, e ao 45, item 9). Só no laboratório; tudo a 390 e 1280 px.
@@ -78,7 +79,7 @@ test.describe("T304 — Prompt 61-A: Estadia confirmada, horários e mapa, Como 
     ids.antigo = await contrato(ids.casa, { status: "concluido", encerrado_em: new Date(Date.now() - 86_400_000).toISOString() });
     const { error: eAv } = await adm()
       .from("avaliacoes")
-      .insert({ contrato_id: ids.antigo, autor_id: ids.inq, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: `Casa silenciosa e bem equipada ${sufixo}.`, status: "publicada", publicada_em: new Date().toISOString() });
+      .insert({ contrato_id: ids.antigo, autor_id: ids.inq, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, ...criteriosDaAvaliacao("inquilino"),  comentario_publico: `Casa silenciosa e bem equipada ${sufixo}.`, status: "publicada", publicada_em: new Date().toISOString() });
     if (eAv) throw eAv;
   });
 

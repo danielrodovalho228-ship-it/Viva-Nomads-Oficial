@@ -23,7 +23,8 @@ import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives"
 import { ValorDiretoAoProprietario } from "@/components/contexto/cabecalho-contexto";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_CONTRACTS } from "@/lib/demo/seed";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
+import type { DemoContract } from "@/lib/demo/seed";
 import {
   planejarBlocos,
   encadearDatas,
@@ -51,6 +52,7 @@ import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import { hrefContratoDono } from "@/lib/contratos/area-dono";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { saidaPeloFim } from "@/lib/texto-do-periodo";
 
 /** Texto imutável da regra de ouro (declaratório — nunca movimenta valores). */
 const REGRA_PAGAMENTO =
@@ -73,8 +75,8 @@ const FORMA_LABEL: Record<string, string> = {
 /** Trilha de comissão dos contratos de DEMONSTRAÇÃO: a do Profissional (config/planos). */
 const DEMO_COMISSAO_PCT = COMISSAO_POR_PLANO.pro;
 
-function buildDemoContratos(hojeISO: string): ContratoView[] {
-  return DEMO_CONTRACTS.map((c, ci) => {
+function buildDemoContratos(hojeISO: string, exemplos: readonly DemoContract[]): ContratoView[] {
+  return exemplos.map((c, ci) => {
     // Prazo total plausível (~6 meses) para render um belo encadeamento.
     const prazoMeses = 6;
     const planos = planejarBlocos(prazoMeses, c.valorMes, 2);
@@ -145,6 +147,7 @@ function buildDemoContratos(hojeISO: string): ContratoView[] {
       caucao: estadoCaucao({ blocos, pagamentos }),
       podeAvaliar: false,
       fimParaAvaliacao: null,
+      minhaAvaliacao: null,
     };
   });
 }
@@ -169,7 +172,9 @@ export function ContratosClient({
     if (demoOn || !conferenciaPendente || window.location.hash !== "#conferencia") return;
     router.replace(`${hrefContratoDono(conferenciaPendente)}#conferencia`);
   }, [demoOn, conferenciaPendente, router]);
-  const demoContratos = useMemo(() => buildDemoContratos(hojeISO), [hojeISO]);
+  // E980: os exemplos chegam sob demanda (só com a demonstração ligada).
+  const exemplos = useExemplos(demoOn);
+  const demoContratos = useMemo(() => buildDemoContratos(hojeISO, exemplos?.DEMO_CONTRACTS ?? []), [hojeISO, exemplos]);
   const contratos = demoOn ? demoContratos : real;
 
   return (
@@ -387,6 +392,8 @@ function ContratoCard({
         encerradoEm={contrato.fimParaAvaliacao}
         // E544: só dentro da janela (contrato encerrado, até 14 dias depois); antes, o pendente com o prazo.
         fechada={!demo && !contrato.podeAvaliar}
+        // E719: o estado real da minha avaliação (publicada tira o "aguardando").
+        minhaAvaliacao={demo ? null : contrato.minhaAvaliacao}
       />
       </div>
     </Panel>
@@ -435,7 +442,8 @@ function BlocoRow({
               <span className="font-normal text-muted">({bloco.meses}m)</span>
             </p>
             <p className="text-xs text-muted">
-              {formatDate(bloco.inicio)} → {formatDate(bloco.fim)}
+              {/* E1089: `bloco.fim` é a última noite do bloco; a tela mostra a saída (o dia seguinte). */}
+              {formatDate(bloco.inicio)} → {formatDate(saidaPeloFim(bloco.fim) || bloco.fim)}
             </p>
           </div>
         </div>

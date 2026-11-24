@@ -6,7 +6,9 @@ import { CheckCircle2, FlaskConical, XCircle } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { situacaoLimite, HORA } from "@/lib/limites";
 import { CODIGO_RE } from "@/lib/fiscal/documento";
-import { aceitaArquivo, camposExibidos, normalizarCodigo, situacaoDoDocumento, type LinhaConferida } from "@/lib/fiscal/conferir";
+import { CONFERENCIA_PARTES, CONFERENCIA_VALIDADE, ROTULO_HASH_DO_ARQUIVO, aceitaArquivo, camposDoLaudo, camposExibidos, ehLaudoDeAvaliacao, hashExibido, normalizarCodigo, situacaoDoDocumento, type LaudoConferido, type LinhaConferida } from "@/lib/fiscal/conferir";
+import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
+import { ROTULO_NIVEL_LAUDO, lerNivelDoLaudo } from "@/lib/vistoria/nivel-do-laudo";
 import { emitidoEmBrasilia } from "@/lib/fiscal/prefixos";
 import { ConferirArquivo } from "./conferir-arquivo";
 
@@ -25,14 +27,28 @@ async function ipHashAtual(): Promise<string> {
   return crypto.createHmac("sha256", process.env.SUPABASE_SERVICE_ROLE_KEY ?? "viva-nomads").update(`ip:${ip}`).digest("hex").slice(0, 32);
 }
 
-async function consultar(codigo: string): Promise<{ estado: "ok" | "nao" | "limite" | "indisponivel"; doc: LinhaConferida | null }> {
+async function consultar(codigo: string): Promise<{ estado: "ok" | "nao" | "limite" | "indisponivel"; doc: LinhaConferida | null; laudo: LaudoConferido | null }> {
   const admin = createAdminClient();
-  if (!admin) return { estado: "indisponivel", doc: null };
-  if ((await situacaoLimite(`conferir:${await ipHashAtual()}`, LIMITE_HORA, HORA)) === "estourou") return { estado: "limite", doc: null };
-  if (!CODIGO_RE.test(codigo)) return { estado: "nao", doc: null };
+  if (!admin) return { estado: "indisponivel", doc: null, laudo: null };
+  if ((await situacaoLimite(`conferir:${await ipHashAtual()}`, LIMITE_HORA, HORA)) === "estourou") return { estado: "limite", doc: null, laudo: null };
+  if (!CODIGO_RE.test(codigo)) return { estado: "nao", doc: null, laudo: null };
   const { data } = await admin.rpc("conferir_documento", { p_codigo: codigo });
   const linha = (Array.isArray(data) ? data[0] : data) as LinhaConferida | null | undefined;
-  return linha ? { estado: "ok", doc: linha } : { estado: "nao", doc: null };
+  if (!linha) return { estado: "nao", doc: null, laudo: null };
+  return { estado: "ok", doc: linha, laudo: await laudoConferido(admin, linha) };
+}
+
+/**
+ * E1121: o que o laudo de avaliação declara — o nível e o resultado — pelo número e pela versão que a conferência já
+ * mostra. Só estas duas colunas saem daqui (nem dono, nem avaliador, nem imóvel). Se a leitura falhar, a página mostra
+ * o resto: a conferência do documento não depende dela.
+ */
+async function laudoConferido(admin: NonNullable<ReturnType<typeof createAdminClient>>, doc: LinhaConferida): Promise<LaudoConferido | null> {
+  if (!ehLaudoDeAvaliacao(doc.prefixo)) return null;
+  const { data } = await admin.from("vistoria_laudos").select("resultado, nivel_sustentado").eq("numero", doc.numero).eq("versao", doc.versao).maybeSingle();
+  if (!data) return null;
+  const nivel = lerNivelDoLaudo(data.nivel_sustentado);
+  return { nivel: nivel ? ROTULO_NIVEL_LAUDO[nivel] : null, resultado: ROTULO_RESULTADO[data.resultado as Resultado] ?? null };
 }
 
 /**
@@ -43,11 +59,12 @@ async function consultar(codigo: string): Promise<{ estado: "ok" | "nao" | "limi
 export default async function ConferirPage({ params }: { params: Promise<{ codigo: string }> }) {
   const { codigo: bruto } = await params;
   const codigo = normalizarCodigo(decodeURIComponent(bruto));
-  const { estado, doc } = await consultar(codigo);
+  const { estado, doc, laudo } = await consultar(codigo);
   const situacao = doc ? situacaoDoDocumento(doc) : null;
+  const hash = doc ? hashExibido(doc) : null;
 
   return (
-    <main className="container-page section-y">
+    <div className="container-page section-y">
       <div className="mx-auto max-w-lg rounded-xl border border-line bg-white p-6">
         <h1 className="font-title text-2xl font-semibold text-ink">Conferir documento</h1>
         {estado === "ok" && doc && situacao ? (
@@ -70,7 +87,7 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
               </p>
             )}
             <dl className="mt-4 space-y-2 text-sm">
-              {camposExibidos(doc, emitidoEmBrasilia).map(([k, v]) => (
+              {[...camposExibidos(doc, emitidoEmBrasilia), ...camposDoLaudo(laudo)].map(([k, v]) => (
                 <div key={k} className="flex justify-between gap-3 border-b border-line pb-2">
                   <dt className="text-muted">{k}</dt>
                   <dd className="text-right font-medium text-ink" data-testid={`conferir-${k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "-")}`}>
@@ -78,10 +95,23 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
                   </dd>
                 </div>
               ))}
+              {/* E1121: o hash do laudo, por extenso (64 letras e números): em linha própria, quebrando no celular. */}
+              {hash && (
+                <div className="border-b border-line pb-2">
+                  <dt className="text-muted">{ROTULO_HASH_DO_ARQUIVO}</dt>
+                  <dd className="mt-1 break-all font-mono text-xs font-medium text-ink" data-testid="conferir-hash">
+                    {hash}
+                  </dd>
+                </div>
+              )}
             </dl>
             {doc.hash_sha256 && aceitaArquivo(doc.prefixo) && <ConferirArquivo hash={doc.hash_sha256} />}
+            {/* E887: as partes (por que não aparecem) e a validade real do documento, da mesma fonte da página /conferir. */}
             <p className="mt-4 text-xs text-muted">
-              Por privacidade, a conferência mostra só o tipo, o número, a versão e a data. A Viva Nomads não recebe o valor mensal nem a Caução.
+              {CONFERENCIA_PARTES} A Viva Nomads não recebe o valor mensal nem a Caução.
+            </p>
+            <p className="mt-2 text-xs text-muted" data-testid="conferir-validade">
+              {CONFERENCIA_VALIDADE}
             </p>
           </>
         ) : (
@@ -100,6 +130,6 @@ export default async function ConferirPage({ params }: { params: Promise<{ codig
           </Link>
         </p>
       </div>
-    </main>
+    </div>
   );
 }

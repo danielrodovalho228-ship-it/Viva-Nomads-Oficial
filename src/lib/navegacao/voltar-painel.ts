@@ -11,7 +11,7 @@ const PREFIXOS_COM_VOLTAR_PROPRIO = ["/dashboard/conta", "/dashboard/notificacoe
 /** Listas cujas telas de detalhe (um nível abaixo) trazem o "← lista" próprio (E176). */
 const LISTAS_COM_DETALHE_PROPRIO = ["/dashboard/estadia", "/dashboard/visitas", "/dashboard/contratos", "/dashboard/leads"];
 /** Telas de fluxo ou edição com o "Voltar" próprio no rodapé ou no topo. */
-const TELAS_COM_VOLTAR_PROPRIO = [/^\/dashboard\/imoveis\/novo$/, /^\/dashboard\/imoveis\/[^/]+\/editar$/, /^\/dashboard\/parceiro\/avaliacao\/[^/]+$/];
+const TELAS_COM_VOLTAR_PROPRIO = [/^\/dashboard\/imoveis\/novo$/, /^\/dashboard\/imoveis\/[^/]+\/editar$/, /^\/dashboard\/parceiro\/avaliacao\/[^/]+$/, /^\/dashboard\/avaliacoes$/];
 
 export function painelMostraVoltar(pathname: string): boolean {
   const p = pathname.replace(/\/+$/, "") || "/";

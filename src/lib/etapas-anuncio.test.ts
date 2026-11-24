@@ -21,6 +21,7 @@ import {
 } from "./etapas-anuncio.ts";
 import { ETAPA } from "./anuncio/etapas-ids.ts";
 import { ETAPAS_ASSISTENTE } from "./anuncio/assistente-dez-etapas.ts";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 test("10 passos, na ordem dos mockups (e do mapa de dados da Pista B)", () => {
   assert.deepEqual([...ETAPAS], ["tipo", "fotos", "endereco", "detalhes", "comodidades", "regras", "descricao", "preco", "disponibilidade", "revisao"]);
@@ -132,7 +133,7 @@ test("etapaDaUrl: número 0..9 ou o nome do passo (os nomes dos 6 passos ainda v
 test("a tela do cadastro fala em 10 passos (nenhum texto visível com '5 etapas' ou '6 passos')", async () => {
   const { readFileSync } = await import("node:fs");
   const pagina = readFileSync(new URL("../app/(dashboard)/dashboard/imoveis/novo/page.tsx", import.meta.url), "utf8");
-  const semComentario = pagina.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+  const semComentario = fonteSemComentarios(pagina);
   assert.doesNotMatch(semComentario, /5 etapas|6 passos/);
   assert.match(semComentario, /<RodapeAssistente\s+pos=\{pos\}\s+total=\{ORDEM_ETAPAS\.length\}/);
 });

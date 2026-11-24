@@ -13,7 +13,8 @@ test("E372: o telefone nasce travado ('Carregando…') e o salvar espera os dado
   assert.match(dados, /setDadosCarregados\(true\);/);
   assert.match(dados, /if \(!dadosCarregados\) return;/);
   assert.match(dados, /placeholder=\{dadosCarregados \|\| dadosFalharam \? "\(34\) 99999-0000 ou \+1 …" : "Carregando…"\}\s+disabled=\{!dadosCarregados\}/);
-  assert.match(dados, /disabled=\{salvando \|\| !dadosCarregados\} data-testid="dados-salvar"/);
+  // E796 (asserção alterada): o salvar também espera a data de nascimento gravada (mesma regra do telefone).
+  assert.match(dados, /disabled=\{salvando \|\| !dadosCarregados \|\| \(!nascCarregado && !nascFalhou\)\} data-testid="dados-salvar"/);
 });
 
 test("E372: Meus dados não diz mais 'Informar CPF' (o CPF é pedido uma vez, no bloco Documento)", () => {

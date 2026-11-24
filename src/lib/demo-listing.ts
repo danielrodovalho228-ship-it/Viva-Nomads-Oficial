@@ -3,7 +3,7 @@
  *
  * Os imóveis de amostra (`ube-001`…`ube-015` em `src/lib/properties.ts`) têm id
  * NÃO-UUID; todo imóvel real do banco tem id UUID. Usamos isso para:
- *   • marcar o anúncio com o selo "Exemplo ilustrativo" (honestidade);
+ *   • marcar o anúncio com o selo "Anúncio de exemplo" (honestidade);
  *   • mantê-lo FORA do Google (noindex + fora do sitemap);
  *   • NUNCA emitir JSON-LD de preço/avaliação para ele.
  *

@@ -1,4 +1,5 @@
 import { FormulaDoTotal } from "@/components/property/formula-total";
+import { isExemplo } from "@/lib/demo-listing";
 import { FileText, MapPinned } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
@@ -6,7 +7,8 @@ import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias, formatBRLE
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
-import { notaDataCalculada, rotuloPreco } from "@/lib/cartao-preco";
+import { notaDataCalculada, resumoEmMeses, rotuloPreco } from "@/lib/cartao-preco";
+import { composicaoDoMes } from "@/lib/cartao-estadia";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
 import { PainelPrecoFixo } from "@/components/property/painel-preco-fixo";
 
@@ -37,7 +39,7 @@ function disponivelFuturo(iso?: string): string | null {
  * rolagem própria cortando o topo e os campos de baixo). A frase
  * "não segura dinheiro" fica só no topo (sem repetir no pé, para o cartão caber na coluna até as Avaliações).
  */
-export function PriceCard({ property, actions, meses = 1, dias = null, disponivelDesde = null }: { property: Property; actions: React.ReactNode; meses?: number; dias?: number | null; /** E673: a primeira entrada possível (olhando os períodos ocupados); sem ela, a data do cadastro. */ disponivelDesde?: string | null }) {
+export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMinimaAviso = null, disponivelDesde = null }: { property: Property; actions: React.ReactNode; meses?: number; dias?: number | null; /** E725: duração escolhida abaixo do mínimo (em dias do mínimo): mostra só o aviso, sem total da estadia. */ estadiaMinimaAviso?: number | null; /** E673: a primeira entrada possível (olhando os períodos ocupados); sem ela, a data do cadastro. */ disponivelDesde?: string | null }) {
   // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
   const mes = calcularTotalMensal(property);
   const preco = rotuloPreco({ mensal: mes.total, meses, disponivelEm: disponivelDesde ?? property.availableFrom });
@@ -46,7 +48,9 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
   // E562 (telas): com as datas escolhidas, o total da estadia em DIAS exatos (a mesma regra da proposta):
   // "Total da estadia (43 dias): R$ 4.671,67 · 1 mês + 13 dias". Sem datas, a duração da busca/estadia mínima em meses.
   const estadiaDias = dias ? estadiaDoImovelEmDias(property, dias) : null;
-  const estadia = !estadiaDias && meses > 1 ? estadiaDoImovel(property, meses) : null;
+  // E756: o total do período pela regra única (N × total do mês + limpezas de preparação e de saída) também com 1 mês — o MESMO
+  // número do cartão da busca, da barra do celular e da prévia do dono —, sempre com a conta aberta embaixo.
+  const estadia = !estadiaDias && estadiaMinimaAviso == null ? estadiaDoImovel(property, Math.max(1, meses)) : null;
   const availableFrom = disponivelFuturo(disponivelDesde ?? property.availableFrom);
   // E702: a data calculada (E673) diz de onde vem quando difere da do cadastro.
   const notaData = availableFrom ? notaDataCalculada(disponivelDesde, property.availableFrom, property.minPeriodDays) : null;
@@ -54,6 +58,13 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
   return (
     // E528 (D14): sem altura máxima nem rolagem própria — o painel fixo prende pelo topo ou, se não couber, pela base.
     <PainelPrecoFixo>
+      {/* E724 (Phoenix/RELATORIO-002, A3): no anúncio de exemplo o aviso vem PRIMEIRO, no topo do cartão — antes de qualquer
+          data, valor ou total —, e não só abaixo dos campos. */}
+      {isExemplo(property.id) && (
+        <p className="mb-3 rounded-lg bg-sage-100 px-3 py-2 text-sm font-medium text-forest" data-testid="cartao-exemplo-aviso">
+          Anúncio de exemplo: serve para você ver como a Viva funciona. Nenhuma solicitação é enviada a ninguém.
+        </p>
+      )}
       <p className="tabular-nums" data-testid="cartao-lateral-preco">
         <span className="text-xl font-semibold text-ink" data-testid="cartao-lateral-mes">
           {preco.valor}
@@ -62,10 +73,20 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
         {estadia && (
           <span className="text-sm text-muted" data-testid="cartao-lateral-estadia">
             {" "}
-            · {formatBRL(estadia.total)} em {estadia.meses} meses
+            · {resumoEmMeses(estadia.total, estadia.meses)}
           </span>
         )}
       </p>
+      {/* E899: a composição do mês saiu do cartão da busca e fica aqui, perto do preço, pela MESMA função (composicaoDoMes):
+          as parcelas que somam o /mês ou, com as contas medidas, o aviso de que água, luz e gás ficam fora do total. */}
+      <p className="mt-1 text-xs text-muted tabular-nums" data-testid="cartao-lateral-mes-composicao">
+        {composicaoDoMes(property)}
+      </p>
+      {estadiaMinimaAviso != null && (
+        <p className="text-sm font-medium text-ink" data-testid="cartao-lateral-estadia-minima" role="status">
+          Estadia mínima de {estadiaMinimaAviso} dias.
+        </p>
+      )}
       {estadiaDias && (
         <>
           <p className="text-sm text-ink tabular-nums" data-testid="cartao-lateral-estadia">
@@ -93,7 +114,7 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
           <span className="text-xl font-semibold tabular-nums text-forest">{formatBRL(mes.total)}</span>
         </li>
       </ul>
-      <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}</p>
+      <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}{mes.contasNaoInformadas && " Água, luz e gás não informados neste anúncio."}</p>
       <p className="mt-1 text-xs text-muted">R$ 0 de taxa para você: o morador não paga nada à plataforma.</p>
       {/* Negociação configurada pelo dono (prompt 17 §8): "Valor fixo" ou o desconto por estadia mais longa. */}
       {property.negociacao && (
@@ -115,7 +136,7 @@ export function PriceCard({ property, actions, meses = 1, dias = null, disponive
       {/* Fora do total: pagamentos únicos, pet e Caução (devolvida após a conferência de saída). */}
       <ul data-testid="taxas-itemizadas" className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
         <li className="text-xs font-semibold uppercase text-muted">Fora do total mensal</li>
-        {linhasDeTaxas(property)
+        {linhasDeTaxas(property, dias)
           .filter((l) => ["preparacao", "saida", "pet", "caucao"].includes(l.chave))
           .map((l) => (
             <li key={l.chave} data-taxa={l.chave} className={l.chave === "caucao" ? "border-t border-line pt-2" : undefined}>

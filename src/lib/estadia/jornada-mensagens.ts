@@ -10,13 +10,17 @@
   (a data entra na variante), então a jornada se recalcula e reenvia nas datas novas sem repetir as antigas.
 */
 import { imovelPorExtenso, type EstadiaParaEmail } from "./emails-chegada.ts";
+import { diaBRT } from "../datas-brasilia.ts";
+import { saidaPeloFim } from "../texto-do-periodo.ts";
 
 export const MEIO_ESTADIA_MIN_DIAS = 60;
 export const SEMANA_SAIDA_ANTES_DIAS = 7;
 /** A confirmação sai até este número de dias depois da assinatura (contrato antigo não recebe de repente). */
 export const CONFIRMACAO_JANELA_DIAS = 1;
 
-export type MomentoJornada = "jornada_confirmacao" | "jornada_chegada" | "jornada_semana_saida" | "jornada_meio_estadia";
+export const D7_ANTES_DIAS = 7;
+
+export type MomentoJornada = "jornada_confirmacao" | "jornada_d7" | "jornada_chegada" | "jornada_semana_saida" | "jornada_meio_estadia";
 
 const DIA_MS = 86_400_000;
 const soData = (iso: string) => String(iso ?? "").slice(0, 10);
@@ -36,15 +40,22 @@ export interface DatasDaEstadia {
 }
 
 export interface Jornada {
+  /** 7 dias antes da entrada: as instruções de chegada estão na página da estadia (E759). */
+  d7: string;
   chegada: string;
   semanaSaida: string | null;
   meio: string | null;
 }
 
 export function jornadaDaEstadia(d: DatasDaEstadia): Jornada {
+  // E1089 (coordenador): `d.fim` é a ÚLTIMA NOITE gravada nos blocos; a pessoa sai no dia seguinte. A "semana da saída"
+  // conta dessa SAÍDA (antes contava da última noite: saía 8 dias antes da saída, a dizer "falta uma semana").
+  // O meio da estadia não é prazo da saída: a duração segue como era (da entrada à última noite).
+  const saida = saidaPeloFim(d.fim) || d.fim;
   const dias = diasEntre(d.entrada, d.fim);
-  const semana = somaDias(d.fim, -SEMANA_SAIDA_ANTES_DIAS);
+  const semana = somaDias(saida, -SEMANA_SAIDA_ANTES_DIAS);
   return {
+    d7: somaDias(d.entrada, -D7_ANTES_DIAS),
     chegada: soData(d.entrada),
     // Estadia tão curta que a semana da saída cairia na chegada ou antes: sem mensagem (a da chegada já cobre).
     semanaSaida: semana > soData(d.entrada) ? semana : null,
@@ -52,11 +63,15 @@ export function jornadaDaEstadia(d: DatasDaEstadia): Jornada {
   };
 }
 
-/** Os momentos que caem HOJE (a confirmação é por assinatura, não por data). */
+/** Fonte única das datas da estadia para toda mensagem: primeira entrada e última saída dos blocos válidos (ou null). */
+export { datasDaEstadia } from "../contrato-blocos.ts";
+
+/** Os momentos que caem HOJE (a confirmação é por assinatura/pagamento, não por data). */
 export function momentosDeHoje(d: DatasDaEstadia & { hoje: string }): MomentoJornada[] {
   const j = jornadaDaEstadia(d);
   const hoje = soData(d.hoje);
   const m: MomentoJornada[] = [];
+  if (j.d7 === hoje) m.push("jornada_d7");
   if (j.chegada === hoje) m.push("jornada_chegada");
   if (j.semanaSaida === hoje) m.push("jornada_semana_saida");
   if (j.meio === hoje) m.push("jornada_meio_estadia");
@@ -71,6 +86,7 @@ export function chaveDaJornada(momento: MomentoJornada, d: DatasDaEstadia): stri
   switch (momento) {
     case "jornada_confirmacao":
       return "";
+    case "jornada_d7":
     case "jornada_chegada":
       return soData(d.entrada);
     case "jornada_semana_saida":
@@ -80,12 +96,20 @@ export function chaveDaJornada(momento: MomentoJornada, d: DatasDaEstadia): stri
   }
 }
 
-/** Assinou as duas partes hoje ou ontem (dia de Brasília)? */
-export function confirmacaoDevida(i: { assinadoEm: string | null | undefined; hoje: string }): boolean {
+/**
+ * A confirmação sai (uma vez só, a chave é fixa) em um de dois casos:
+ *  • logo depois da assinatura das duas partes (hoje ou ontem, dia de Brasília); ou
+ *  • quando a estadia está CONFIRMADA — assinada pelas duas partes E com o 1º pagamento confirmado — e ainda não começou
+ *    (E759: antes, só a janela de 1 dia depois da assinatura valia, então uma estadia confirmada depois nunca recebia).
+ */
+export function confirmacaoDevida(i: { assinadoEm: string | null | undefined; hoje: string; pago?: boolean; entrada?: string | null }): boolean {
   if (!i.assinadoEm) return false;
   const t = Date.parse(i.assinadoEm);
   if (!Number.isFinite(t)) return false;
-  const diaBrasilia = new Date(t - 3 * 3600_000).toISOString().slice(0, 10);
+  if (i.pago && i.entrada && soData(i.entrada) >= soData(i.hoje)) return true;
+  // E1115 (ORDEM-DUET-506 §2): o dia da assinatura em Brasília pela fonte (diaBRT), não com −3 h fixas.
+  const diaBrasilia = diaBRT(t);
+  if (!diaBrasilia) return false;
   const atraso = diasEntre(diaBrasilia, i.hoje);
   return atraso >= 0 && atraso <= CONFIRMACAO_JANELA_DIAS;
 }
@@ -106,7 +130,11 @@ export function corpoDaJornada(
   switch (momento) {
     case "jornada_confirmacao":
       return {
-        texto: `${lugar}Seu contrato está assinado. Entrada em ${dataBR(c.entrada)}, saída em ${dataBR(c.fim)}. Para tudo correr bem, envie seus documentos pela plataforma, na página da estadia: eles ficam guardados com segurança e só as partes do contrato os veem. Não envie documentos por e-mail nem por mensagens de fora.`,
+        texto: `${lugar}Seu contrato está assinado. Entrada em ${dataBR(c.entrada)}, saída em ${dataBR(saidaPeloFim(c.fim) || c.fim)}. Para tudo correr bem, envie seus documentos pela plataforma, na página da estadia: eles ficam guardados com segurança e só as partes do contrato os veem. Não envie documentos por e-mail nem por mensagens de fora.`,
+      };
+    case "jornada_d7":
+      return {
+        texto: `${lugar}Falta uma semana para a entrada (${dataBR(c.entrada)}${he ? `, a partir das ${he}` : ""}). As instruções de chegada estão na página da estadia. Confira os documentos e tire dúvidas pela plataforma.`,
       };
     case "jornada_chegada":
       return {
@@ -114,11 +142,11 @@ export function corpoDaJornada(
       };
     case "jornada_semana_saida":
       return {
-        texto: `${lugar}A saída é em ${dataBR(c.fim)}${hs ? `, até as ${hs}` : ""}: falta uma semana. Combine a conferência de saída pela plataforma e, se quiserem seguir por mais tempo, é só pedir a prorrogação lá.`,
+        texto: `${lugar}A saída é em ${dataBR(saidaPeloFim(c.fim) || c.fim)}${hs ? `, até as ${hs}` : ""}: falta uma semana. Combine a conferência de saída pela plataforma e, se quiserem seguir por mais tempo, é só pedir a prorrogação lá.`,
       };
     case "jornada_meio_estadia":
       return {
-        texto: `${lugar}Vocês estão na metade da estadia (${dataBR(c.entrada)} a ${dataBR(c.fim)}). Está tudo certo? Se algo quebrou ou precisa de conserto, avise pela plataforma e o pedido já fica registrado. Aproveite para deixar sua avaliação parcial: leva 2 minutos.`,
+        texto: `${lugar}Vocês estão na metade da estadia (entrada ${dataBR(c.entrada)}, saída ${dataBR(saidaPeloFim(c.fim) || c.fim)}). Está tudo certo? Se algo quebrou ou precisa de conserto, avise pela plataforma e o pedido já fica registrado. Aproveite para deixar sua avaliação parcial: leva 2 minutos.`,
       };
   }
 }

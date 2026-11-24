@@ -5,6 +5,7 @@ import { diasValidos } from "@/lib/estadia-em-dias";
 import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
 import { periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
@@ -22,13 +23,15 @@ import { lerDocumento, temDocumento } from "@/lib/data/documento-servidor";
 import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
-import { propostaAcordadaDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
+import { preAceiteExpiradoDoLead, propostaAcordadaDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
 import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel, MSG_DATAS_SEM_CONFERIR } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { conversationId } from "@/lib/messages/conversation-id";
 import { IDENTIDADE_INDISPONIVEL, type EstadoIdentidade } from "@/lib/identidade/estado";
+import type { ContratoDoFechamento } from "@/lib/fechamento-resumo";
+import { lerEstadoDoContrato } from "@/lib/data/contratos-actions";
 
 interface ActionResult {
   ok: boolean;
@@ -212,9 +215,7 @@ const MSG_CANDIDATURAS_NAO_CARREGARAM = "Não foi possível carregar as suas can
 export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}): Promise<MinhaCandidatura[]> {
   const supabase = await createClient();
   if (!supabase) return [];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
 
   const { data, error } = await supabase
@@ -305,6 +306,10 @@ export interface FechamentoContexto {
   diasSugerido?: number | null;
   /** PROP-3 (E118): identidade do INQUILINO, pela mesma fonte de Interessados (estadosIdentidade). */
   identidadeInquilino?: EstadoIdentidade | null;
+  /** E1064: identidade de QUEM ESTÁ FECHANDO (o dono), pela mesma fonte única — confirmada, o passo 1 não pede clique. */
+  identidadePropria?: EstadoIdentidade | null;
+  /** E1064: o contrato que esta candidatura já tem (gerado antes), com a situação real — o Fechamento reaberto di-la. */
+  contratoExistente?: ContratoDoFechamento | null;
 }
 
 export async function getFechamentoContext(
@@ -331,6 +336,11 @@ export async function getFechamentoContext(
   if (erroLead) throw new Error("Não foi possível ler a candidatura aceita.");
   if (!lead) return null;
 
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono. Sem Fechamento (que mostraria o preço do anúncio no
+  // lugar do congelado) até a reabertura. Falha de leitura LANÇA (error.tsx), como a da candidatura (achado 109).
+  const adminPre = createAdminClient();
+  if (adminPre && (await preAceiteExpiradoDoLead(adminPre, lead.id as string))) return null;
+
   // Imóvel (escopo do dono) — fonte real do card, valores e tipo.
   const property = await getPropertyForOwner(lead.property_id as string);
   if (!property) return null;
@@ -345,6 +355,8 @@ export async function getFechamentoContext(
   let mesesSugerido: number | null = null;
   let diasSugerido: number | null = null;
   let identidadeInquilino: EstadoIdentidade | null = null;
+  let identidadePropria: EstadoIdentidade | null = null;
+  let contratoExistente: FechamentoContexto["contratoExistente"] = null;
   // Plano e taxa congelados no aceite: só pelo servidor, depois de conferir que a candidatura é deste dono (0177).
   let taxaLead: TaxaDoLead | null = null;
   try {
@@ -372,8 +384,21 @@ export async function getFechamentoContext(
         .maybeSingle();
       if (t?.full_name && !String(t.full_name).includes("@")) tenantName = t.full_name;
       // Leitura que falha: "não conferida agora" no Fechamento (nunca "pendente" para quem é verificado).
-      const lidas = await estadosIdentidade(admin, [lead.tenant_id as string]).catch(() => null);
+      // E1064: a mesma leitura traz a identidade do dono (quem fecha): se já está confirmada, o passo 1 não pede clique.
+      const lidas = await estadosIdentidade(admin, [lead.tenant_id as string, user.id]).catch(() => null);
       identidadeInquilino = lidas ? (lidas.get(lead.tenant_id as string) ?? null) : IDENTIDADE_INDISPONIVEL;
+      identidadePropria = lidas ? (lidas.get(user.id) ?? null) : null;
+      // E1064: contrato já gerado para esta candidatura → a situação REAL dele (a fonte única do estado do contrato).
+      // E1064 (perna 2): a garantia gravada no contrato vem na mesma leitura — o Resumo reaberto mostra-a, não um valor por omissão.
+      // E1086: o contrato é o da PROPOSTA em curso. O contrato de outra estadia (outra proposta da mesma candidatura)
+      // não aparece aqui: a proposta nova ainda vai gerar o dela.
+      const doLead = admin.from("contratos").select("id, garantia").eq("lead_id", lead.id);
+      const { data: ct } = await (acordada ? doLead.eq("proposta_id", acordada.id) : doLead.is("proposta_id", null)).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (ct?.id) {
+        const estado = await lerEstadoDoContrato(String(ct.id), "proprietario").catch(() => null);
+        const garantiaLida = ct.garantia === "caucao" || ct.garantia === "seguro_fianca" ? ct.garantia : null;
+        if (estado) contratoExistente = { id: estado.id, texto: estado.texto, criadoEm: estado.criadoEm, garantia: garantiaLida };
+      }
     }
   } catch {
     /* mantém o neutro */
@@ -402,5 +427,7 @@ export async function getFechamentoContext(
     mesesSugerido,
     diasSugerido,
     identidadeInquilino,
+    identidadePropria,
+    contratoExistente,
   };
 }

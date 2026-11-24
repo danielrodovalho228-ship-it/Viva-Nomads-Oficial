@@ -2,7 +2,9 @@ import { lerProximidades } from "@/lib/data/proximidades";
 import { cache } from "react";
 import { chegadaEPedidoDaLinha, type LinhaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { comNovaTentativa } from "@/lib/nova-tentativa";
+import { lerTodasAsLinhas } from "@/lib/data/leitura-paginada";
 import { isExemplo } from "@/lib/demo-listing";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Property, AmenityGroup } from "@/lib/types";
@@ -256,7 +258,7 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     // PERTO-B: as proximidades com distância/tempo calculados e "não mostrar" (sem a 0238, lê as colunas antigas).
     lerProximidades(supabase, base.id).catch(() => []),
     safe(supabase.from("avaliacoes").select("id, nota_geral, comentario_publico, publicada_em").eq("imovel_id", base.id).eq("papel_autor", "inquilino").eq("status", "publicada").order("publicada_em", { ascending: false })),
-    ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate, is_verified").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
+    ownerId ? safe(supabase.from("profiles").select("full_name, avatar_url, created_at, response_rate").eq("id", ownerId).maybeSingle()) : Promise.resolve(null),
     // Regras de pets (0119): coluna à parte para a página não quebrar se a migração atrasar.
     safe(supabase.from("properties").select("pets_regras").eq("id", base.id).maybeSingle()),
     // 0116: leitura à parte — sem a migração a consulta falha e o anúncio abre igual.
@@ -299,15 +301,16 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
     items,
   }));
 
-  type LinhaDono = { full_name: string | null; avatar_url: string | null; created_at: string | null; response_rate: number | null; is_verified: boolean | null };
+  // E1107: a identidade do dono não passa por aqui — o selo vem da fonte única (estadoIdentidade), no bloco do dono.
+  type LinhaDono = { full_name: string | null; avatar_url: string | null; created_at: string | null; response_rate: number | null };
   let ownerRow = owner as LinhaDono | null;
   // Visitante (RLS de profiles só libera o próprio perfil): perfil PÚBLICO do dono pela
-  // função da 0131 (chamada no servidor com service_role, 0133) — só primeiro nome, foto, desde, taxa de resposta e verificado, e só de
+  // função da 0131 (chamada no servidor com service_role, 0133) — só primeiro nome, foto, desde e taxa de resposta, e só de
   // anúncio ativo (ordem d943f893). Sem a migração, a chamada falha e o bloco não aparece.
   if (!ownerRow && ownerId) {
     const d = await buscarPerfilPublicoDono(base.id);
     if (d)
-      ownerRow = { full_name: d.nome, avatar_url: d.avatar_url, created_at: d.desde, response_rate: d.taxa_resposta, is_verified: d.verificado };
+      ownerRow = { full_name: d.nome, avatar_url: d.avatar_url, created_at: d.desde, response_rate: d.taxa_resposta };
   }
 
   // Foto do proprietário é PÚBLICA (podeVerAvatar owner = true). O bucket é
@@ -352,7 +355,6 @@ async function enrichProperty(supabase: SupabaseLike, base: Property, ownerId: s
           avatarUrl: ownerAvatarUrl ?? undefined,
           memberSince: ownerRow.created_at ?? undefined,
           responseRate: ownerRow.response_rate ?? undefined,
-          verified: ownerRow.is_verified ?? undefined,
         }
       : undefined,
   };
@@ -421,7 +423,8 @@ export async function listProperties(opcoes: { incluirTeste?: boolean } = {}): P
           .from("properties")
           .select(PROPERTY_PUBLIC_COLUMNS)
           .eq("status", "active")
-          .order("created_at", { ascending: false }),
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: true }),
       (r) => !!r.error || !r.data,
     );
 
@@ -441,6 +444,7 @@ export async function listProperties(opcoes: { incluirTeste?: boolean } = {}): P
     await attachPetsRegras(supabase, mapped); // porte máximo de pet, para o filtro da busca (0119; best-effort)
     await attachInternet(supabase, mapped); // internet informada e medida, para o filtro da busca (Prompt 57 fase 2; best-effort)
     await attachNivel(supabase, mapped); // nível Essencial/Conforto/Premium, para o filtro "a partir de" (59.1; best-effort)
+    await attachRuido(supabase, mapped); // filtros pacote 1: "Ambiente silencioso" (best-effort)
     await attachBloqueios(supabase, mapped); // datas bloqueadas (do dono e importadas), para a data de entrada da busca (Prompt 53)
     await attachNegociacao(supabase, mapped); // "Aceita negociação": selo do cartão e filtro da busca (E439; best-effort)
     // E574/E579: dono PJ que declarou emitir nota fiscal da locação (filtro da busca; best-effort). O dono sai das linhas.
@@ -464,7 +468,8 @@ async function linhasPublicasDoDono(supabase: NonNullable<ReturnType<typeof crea
     .select(PROPERTY_PUBLIC_COLUMNS)
     .eq("owner_id", donoId)
     .eq("status", "active")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+          .order("id", { ascending: true });
   if (error || !data) return null;
   const mapped = await semAnunciosDeTesteNaVitrine(data as unknown as PropertyRow[]);
   return mapped;
@@ -483,6 +488,7 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
     // vinham só na vitrine (listProperties); na página pública do proprietário, o mesmo anúncio saía sem eles.
     await attachPrecoJusto(supabase, mapped);
     await attachNivel(supabase, mapped);
+    await attachRuido(supabase, mapped);
     // E416 (05/11): o selo "Aceita negociação" também no cartão da página pública do proprietário.
     await attachNegociacao(supabase, mapped);
     return mapped;
@@ -491,11 +497,20 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
   }
 }
 
+/** E1048: anúncios ATIVOS do dono, sem o filtro de vitrine (só para o cartão do dono conta de teste). null = não deu para contar. */
+async function contarAtivosDoDono(supabase: NonNullable<ReturnType<typeof createPublicClient>>, donoId: string): Promise<number | null> {
+  const { data, error } = await supabase.from("properties").select("id").eq("owner_id", donoId).eq("status", "active");
+  if (error || !data) return null;
+  return data.length;
+}
+
 /** E631: quantos imóveis a página pública do proprietário lista (a mesma consulta e o mesmo filtro). null = não deu para contar. */
-export async function contarImoveisPublicosDoDono(donoId: string): Promise<number | null> {
+export async function contarImoveisPublicosDoDono(donoId: string, opcoes: { incluirTeste?: boolean } = {}): Promise<number | null> {
   const supabase = createPublicClient();
   if (!supabase || !/^[0-9a-f-]{36}$/i.test(donoId)) return null;
   try {
+    // E1048: dono conta de teste → a vitrine tiraria todos os anúncios dele e o cartão diria 0; conta os ativos dele.
+    if (opcoes.incluirTeste === true) return await contarAtivosDoDono(supabase, donoId);
     return (await linhasPublicasDoDono(supabase, donoId))?.length ?? null;
   } catch {
     return null;
@@ -590,13 +605,20 @@ async function attachCoverPhotos(supabase: SupabaseLike, list: Property[]): Prom
   if (list.length === 0) return;
   try {
     const ids = list.map((p) => p.id);
-    const { data } = await supabase
-      .from("property_photos")
-      .select("property_id, url, sort_order")
-      .in("property_id", ids)
-      .order("sort_order");
+    // E1051: a lista inteira passa de max_rows (1000) — em páginas, numa ordem total, para nenhum anúncio perder fotos
+    // (e cair na relevância) conforme a ordem do heap. Antes: uma consulta só, cortada a meio, diferente a cada carregamento.
+    const data = await lerTodasAsLinhas<{ property_id: string; url: string }>((de, ate) =>
+      supabase
+        .from("property_photos")
+        .select("property_id, url, sort_order")
+        .in("property_id", ids)
+        .order("property_id")
+        .order("sort_order")
+        .order("url")
+        .range(de, ate),
+    );
     const byProp = new Map<string, string[]>();
-    for (const row of ((data as { property_id: string; url: string }[] | null) ?? [])) {
+    for (const row of data) {
       if (!byProp.has(row.property_id)) byProp.set(row.property_id, []);
       byProp.get(row.property_id)!.push(row.url);
     }
@@ -774,6 +796,28 @@ async function attachNivel(supabase: SupabaseLike, list: Property[]): Promise<vo
   }
 }
 
+/**
+ * Filtros pacote 1 ("Ambiente silencioso"): a classe de ruído declarada (imovel_nivel.ruido_classe) e as janelas de
+ * isolamento acústico (imovel_ruido). Duas consultas para a lista inteira. Best-effort: falha = sem classe/isolamento,
+ * e o filtro não acha ninguém (quem não declarou não entra).
+ */
+async function attachRuido(supabase: SupabaseLike, list: Property[]): Promise<void> {
+  if (list.length === 0) return;
+  try {
+    const ids = list.map((p) => p.id);
+    const { data: classes } = await supabase.from("imovel_nivel").select("property_id, ruido_classe").in("property_id", ids);
+    const { data: ruido } = await supabase.from("imovel_ruido").select("property_id, isolamento_acustico").in("property_id", ids);
+    const classe = new Map(((classes as { property_id: string; ruido_classe: Property["ruidoClasse"] }[] | null) ?? []).map((r) => [r.property_id, r.ruido_classe]));
+    const isolado = new Set(((ruido as { property_id: string; isolamento_acustico: boolean | null }[] | null) ?? []).filter((r) => r.isolamento_acustico === true).map((r) => r.property_id));
+    for (const p of list) {
+      p.ruidoClasse = classe.get(p.id) ?? p.ruidoClasse ?? null;
+      p.isolamentoAcustico = isolado.has(p.id) || p.isolamentoAcustico === true;
+    }
+  } catch {
+    /* sem as tabelas: ninguém tem ruído declarado */
+  }
+}
+
 /** Prompt 53: datas bloqueadas de hoje em diante (manuais e importadas), para a busca tirar o imóvel nessas datas. */
 async function attachBloqueios(supabase: SupabaseLike, list: Property[]): Promise<void> {
   if (list.length === 0) return;
@@ -860,16 +904,15 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
   // Modo demonstração (sem Supabase): exemplos para a UI ganhar vida.
   if (!supabase) return SAMPLE_PROPERTIES.slice(0, 3);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
 
   const { data, error } = await supabase
     .from("properties")
     .select(PROPERTY_PUBLIC_COLUMNS)
     .eq("owner_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+          .order("id", { ascending: true });
 
   if (error && opcoes.exigir) throw new Error(MSG_IMOVEIS_NAO_CARREGARAM);
   if (error || !data) return [];
@@ -878,7 +921,7 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
   // E416 (retrabalho, 01/11): o nível (Essencial/Conforto/Premium) — Meus anúncios lê ESTA função; o #2064 tinha posto o
   // nível só em listPropertiesDoProprietario, e o cartão daqui nunca recebia o dado.
   // E416 (05/11): os selos da foto também em Meus anúncios — Preço justo e Aceita negociação (antes só o nível).
-  await Promise.all([attachCoverPhotos(supabase, lista), attachNivel(supabase, lista), attachPrecoJusto(supabase, lista), attachNegociacao(supabase, lista)]);
+  await Promise.all([attachCoverPhotos(supabase, lista), attachNivel(supabase, lista), attachRuido(supabase, lista), attachPrecoJusto(supabase, lista), attachNegociacao(supabase, lista)]);
   // E308 (causa raiz, 01/11): foto cujo arquivo já saiu do bucket não vira capa quebrada no card (rascunho ou anúncio).
   const existentes = await arquivosDoDono(createAdminClient(), user.id);
   for (const p of lista) if (p.photos?.length) p.photos = soFotosExistentes(p.photos, existentes);

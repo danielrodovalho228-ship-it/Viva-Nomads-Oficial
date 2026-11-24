@@ -13,7 +13,8 @@ import type { SeloEstadia } from "@/lib/data/locacoes-selo";
 import { AvaliacaoForm } from "@/components/avaliacao-form";
 import { ancoraAvaliacao } from "@/lib/avaliacoes";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_CONTRACTS } from "@/lib/demo/seed";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
+import type { DemoContract } from "@/lib/demo/seed";
 import type { LocacaoView } from "@/lib/data/contratos-actions";
 import type { documentosDosContratos } from "@/lib/data/documentos-actions";
 import { AvisoDocumentosFalhou, ConfirmarPagamentos, DevolucaoCaucaoInquilino, ListaDocumentos } from "@/components/documentos/documentos-contrato";
@@ -22,13 +23,13 @@ import { estadoDoContratoUnico, tomDoSelo } from "@/lib/contrato-estado";
 import { estadoCaucao } from "@/lib/caucao-estado";
 
 /** Locações de DEMONSTRAÇÃO (a partir do seed) para o piloto/testes. */
-function buildDemoLocacoes(): LocacaoView[] {
+function buildDemoLocacoes(exemplos: readonly DemoContract[]): LocacaoView[] {
   // Demonstração: assinada e com o 1º pagamento confirmado, pelo mesmo estado das locações reais.
   const estado = estadoDoContratoUnico(
     { status: "ativo", assinado_proprietario_em: "2026-01-01", assinado_inquilino_em: "2026-01-01", pagamentos_bloco: [{ tipo: "aluguel", confirmado_pelo_inquilino: true }] },
     "inquilino",
   );
-  return DEMO_CONTRACTS.map((c, i) => ({
+  return exemplos.map((c, i) => ({
     id: `demo-loc-${i}`,
     propertyId: `demo-prop-${i}`,
     propertyTitle: c.imovel,
@@ -40,6 +41,7 @@ function buildDemoLocacoes(): LocacaoView[] {
     criadoEm: c.inicio,
     podeAvaliar: false,
     encerradoEm: null,
+    minhaAvaliacao: null,
     pagamentos: [],
     caucao: estadoCaucao({ blocos: [{ caucao: c.valorMes, caucaoStatus: "comprovada" }], pagamentos: [] }),
   }));
@@ -56,7 +58,9 @@ export function LocacoesClient({
   selos?: Record<string, SeloEstadia>;
 }) {
   const { on: demoOn } = useDemoMode();
-  const demoLocacoes = useMemo(() => buildDemoLocacoes(), []);
+  // E980: os exemplos chegam sob demanda (só com a demonstração ligada).
+  const exemplos = useExemplos(demoOn);
+  const demoLocacoes = useMemo(() => buildDemoLocacoes(exemplos?.DEMO_CONTRACTS ?? []), [exemplos]);
   // E680: a lista é da conta para quem o servidor a montou; com outra conta no navegador ela não aparece.
   const contaDoNavegador = useAuthStore((s) => contaConfirmada(s));
   const locacoes = demoOn ? demoLocacoes : soDaConta(real, contaDoNavegador);
@@ -164,6 +168,8 @@ export function LocacoesClient({
                 placeholder="Comentário (opcional) — comunicação, o imóvel como anunciado, suporte…"
                 demo={demoOn}
                 encerradoEm={l.encerradoEm}
+                // E719: o estado real da minha avaliação (publicada tira o "aguardando").
+                minhaAvaliacao={demoOn ? null : l.minhaAvaliacao}
               />
               </div>
               )}

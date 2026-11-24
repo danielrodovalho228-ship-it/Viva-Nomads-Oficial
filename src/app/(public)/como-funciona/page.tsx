@@ -18,9 +18,12 @@ import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
 import { PrecoJustoBadge } from "@/components/ui/badge";
 import { CAUCAO_FRASE } from "@/lib/faixas";
+import { CONTATO_NUNCA_TROCADO, FRASE_ESCADA_TAXAS } from "@/config/textos-regulados";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
+import Link from "next/link";
+import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/como-funciona" },
@@ -93,6 +96,12 @@ export default function HowItWorksPage() {
       <PrecoJusto />
 
       <Steps id="para-proprietarios" title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
+      {/* E805: a taxa do proprietário, com a escada inteira e a linha das carteiras, pela mesma fonte de /para-proprietarios. */}
+      <div className="container-page -mt-6 pb-8">
+        <p className="max-w-3xl text-sm text-muted" data-testid="cf-taxa-proprietario">
+          <strong className="text-ink">Taxa de serviço do proprietário:</strong> anunciar é grátis; a Viva cobra só sobre o valor total do contrato fechado. {FRASE_ESCADA_TAXAS}
+        </p>
+      </div>
       {/* Reforço de segurança do proprietário (sem vistoria/dossiê — pós-QA). */}
       <ProtegidoPor />
 
@@ -107,6 +116,14 @@ export default function HowItWorksPage() {
             Anunciar meu imóvel
           </ButtonLink>
         </div>
+        {/* E854: onde a página fala de resposta da Viva, o prazo do canal (atendimento), pela fonte do atendimento. */}
+        <p className="mt-6 text-sm text-muted" data-testid="cf-prazo-resposta">
+          Ficou alguma dúvida?{" "}
+          <Link href="/ajuda/fale-com-a-viva" className="font-medium text-forest underline underline-offset-4">
+            Fale com a Viva
+          </Link>{" "}
+          · {PROMESSA_ATENDIMENTO}
+        </p>
       </section>
       </div>
     </>
@@ -143,7 +160,7 @@ function GarantiasInquilino() {
             <div>
               <dt className="font-semibold text-ink">Para o proprietário</dt>
               <dd className="text-muted">
-                {CAUCAO_FRASE} Depositada antes da entrada, cobre
+                {CAUCAO_FRASE} Paga antes da entrada, cobre
                 danos ou valor mensal em aberto conforme o contrato — com tudo documentado.
               </dd>
             </div>
@@ -244,7 +261,7 @@ function DuranteDepois() {
       img: "/images/unicas/cf-renovacao.webp",
       alt: "Hóspede chegando com a bagagem para mais um período de estadia",
       title: "Renovação",
-      text: "A estadia se renova em blocos, com aceite das duas partes. A taxa do proprietário é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período.",
+      text: "A estadia se renova em blocos, com aceite das duas partes.",
     },
     {
       img: "/images/unicas/cf-devolucao.webp",
@@ -287,7 +304,7 @@ function ProtegidoPor() {
       img: "/images/unicas/cf-conversa-registrada.webp",
       alt: "Proprietária respondendo a um pedido pelo celular",
       title: "Conversa registrada",
-      text: "Toda a negociação acontece na plataforma, com o contato protegido até o aceite.",
+      text: `Toda a negociação acontece na plataforma; ${CONTATO_NUNCA_TROCADO}.`,
     },
     {
       img: "/images/como-funciona/08-feche.webp",

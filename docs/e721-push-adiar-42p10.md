@@ -1,0 +1,7 @@
+# E721 — "[push] adiar 42P10"
+
+**Sintoma:** log `[push] adiar 42P10` ao adiar um push de mensagem (silêncio 22h–7h): o push não era guardado e o aviso das 7h se perdia.
+**Causa (confirmada em produção, só leitura):** `push_adiados` só tem o índice único PARCIAL `push_adiados_grupo ON (user_id, grupo) WHERE grupo IS NOT NULL` (0226). `processarPush` agrupa com `upsert(linha, { onConflict: "user_id,grupo" })`, que vira `ON CONFLICT (user_id, grupo)` sem o predicado; o Postgres só aceita índice parcial como alvo se o comando repetir o `WHERE`, o que o cliente não faz → 42P10.
+**Correção (0332, só índice):** índice único completo `(user_id, grupo)`; o parcial sai. Linhas com `grupo` nulo seguem livres (NULL é distinto em índice único), então a regra de negócio é a mesma: uma mensagem agrupada por conversa substitui a anterior. `aplicar-0332.sql` (registra `20261107000332`) + rollback que devolve o parcial. Nenhum dado é tocado.
+**Estado nos dois lados:** o push agrupado vira uma linha só por (pessoa, conversa), com a contagem atualizada, e sai no cron das 7h (`enviarPushAdiados`), que apaga cada linha depois de tentar. O código do servidor não mudou.
+**Prova:** `src/lib/notifications/e721-push-adiado-indice.test.ts` (o código usa o upsert; a migração cria o índice completo, sem predicado) + 112 testes de push/migrações verdes. A prova ponta a ponta (adiar real, sem 42P10) é da QA depois que a Action aplicar a 0332; eu não fiz prova ao vivo.

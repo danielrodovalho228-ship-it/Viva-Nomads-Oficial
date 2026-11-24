@@ -5,6 +5,7 @@
   de gravar com o cliente de serviço; mudanças de estado conferem o estado atual na própria gravação (dois cliques não
   passam os dois). Nenhum dinheiro passa pela Viva: a taxa do aditivo é registro para o fluxo de cobrança que já existe.
 */
+import { DIAS_POR_MES, datasDaEstadia } from "@/lib/contrato-blocos";
 import { after } from "next/server";
 import { recusaObservador } from "@/lib/qa/observador";
 import { headers } from "next/headers";
@@ -62,6 +63,7 @@ import {
   type PropostaAditivo,
 } from "@/lib/estadia/aditivo";
 import { consequenciasDoEncerramento, rotuloMotivo, validarPedidoEncerramento } from "@/lib/estadia/encerramento";
+import { saidaPeloFim } from "@/lib/texto-do-periodo";
 import {
   assinadoPelasDuas,
   blocosOrdenados,
@@ -122,11 +124,12 @@ function avisar(admin: SupabaseClient, userId: string, event: NotificationEvent,
 
 /** E267: o imóvel e o período como o e-mail mostram (o "bairro" é o campo público `address`, nunca o endereço exato). */
 function dadosDaEstadia(c: LinhaContratoEstadia): Pick<DadosEstadiaEmail, "imovel" | "entrada" | "saida"> {
-  const b = blocosOrdenados(c).filter((x) => x.status !== "nao_aceito");
+  const datas = datasDaEstadia(blocosOrdenados(c));
   return {
     imovel: { id: (c as { property_id?: string | null }).property_id ?? null, titulo: c.properties?.title, bairro: c.properties?.address, cidade: c.properties?.city },
-    entrada: b.map((x) => x.inicio).sort()[0] ?? null,
-    saida: b.map((x) => x.fim).sort().at(-1) ?? null,
+    entrada: datas?.entrada ?? null,
+    // E1089: o e-mail recebe a data de SAÍDA (o dia seguinte à última noite gravada nos blocos).
+    saida: saidaPeloFim(datas?.fim) || null,
   };
 }
 
@@ -576,7 +579,7 @@ async function aplicarAditivo(ctx: Contexto, a: LinhaAditivo): Promise<Res<{ com
     p_aditivo: a.id,
     p_refazer: ids,
     p_novos: novos,
-    p_prazo_dias: meses * 30,
+    p_prazo_dias: meses * DIAS_POR_MES,
     p_qtd: a.mudancas.ocupantes?.depois ?? null,
     p_valor: a.mudancas.valorMensal?.depois ?? null,
   });
@@ -602,7 +605,7 @@ async function aplicarAditivo(ctx: Contexto, a: LinhaAditivo): Promise<Res<{ com
     ...dadosDaEstadia(ctx.c),
     numeroAditivo: a.numero,
     mudancas: a.resumo,
-    ...(blocosNovos.length ? { entrada: blocosNovos.map((b) => b.inicio).sort()[0], saida: blocosNovos.map((b) => b.fim).sort().at(-1) } : {}),
+    ...(blocosNovos.length ? { entrada: blocosNovos.map((b) => b.inicio).sort()[0], saida: saidaPeloFim(blocosNovos.map((b) => b.fim).sort().at(-1)) || undefined } : {}),
   };
   for (const id of [ctx.c.tenant_id, String(ctx.c.properties?.owner_id ?? "")]) if (id) avisar(ctx.admin, id, "estadia_remarcada", a.contrato_id, remarcada, ctx.c.property_id);
   // E205-B2: o aditivo assinado aceita os blocos novos pelas duas partes — se um deles começa em até 3 dias sem

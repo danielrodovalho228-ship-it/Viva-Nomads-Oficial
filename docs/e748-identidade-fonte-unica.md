@@ -1,0 +1,5 @@
+# E748 — estado da identidade igual na revisão do anúncio e em Conta › Segurança (Phoenix, RELATORIO-003, B12/D5)
+**Defeito:** no Passo 10 (revisão), "Sua identidade: a confirmar — Confirmação ainda não disponível"; em Conta › Segurança, a mesma conta mostrava "Identidade: Conferida pela equipe da Viva". Os dois partiam do MESMO estado (`em_breve`: conta real, CAF ainda não ativa), mas a revisão (`secoesAntesDePublicar`, `passo10-colunas.ts`) escrevia o próprio texto.
+**Fonte única:** `estadoIdentidade().texto` (`src/lib/identidade/estado.ts`). Agora a etapa passa esse texto à revisão (`identidadeTexto`) e a seção "Sua identidade" mostra exatamente ele para `em_breve` e para `confirmada`; os estados pendente/carregando seguem como antes. Sem o texto ainda, cai no padrão exportado da própria fonte (`TEXTO_EM_BREVE`), nunca num texto à parte.
+**Qual dos dois estava certo:** o da Segurança (é o texto do desenho: sem promessa de função futura, E152). O da revisão era o errado.
+Teste: `src/lib/anuncio/e748-identidade-fonte-unica.test.ts` (3). Sem migração, sem prova ao vivo.

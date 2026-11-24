@@ -14,7 +14,9 @@ test.describe("T290 — Aceite do sócio", () => {
   test("pedido → aguardando aceite → reabrir → aceito, e quem não pediu não aceita", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 800 });
     const msg = `Pedido do aceite ${Date.now()}`;
-    await page.goto("/admin/socios", { waitUntil: "networkidle" });
+    // Frente 3: "load", não "networkidle" — os pré-carregamentos RSC da home (links da barra) ficavam abertos e a rede
+    // nunca ociosa estourava os 90 s (lab 12/11); "load" espera os scripts da própria tela, e os cliques esperam o botão.
+    await page.goto("/admin/socios", { waitUntil: "load" });
     await page.getByLabel("Mensagem").fill(msg);
     await page.getByRole("button", { name: "Enviar" }).click();
     await expect(page.getByRole("status").filter({ hasText: "Enviado" })).toBeVisible();
@@ -26,7 +28,7 @@ test.describe("T290 — Aceite do sócio", () => {
     await adm().rpc("responder_caixa_socios", { p_id: id, p_status: "feito", p_resposta: "Entregue." });
     expect((await adm().from("caixa_socios").select("status").eq("id", id).single()).data?.status).toBe("aguardando_aceite");
 
-    await page.goto("/admin/socios", { waitUntil: "networkidle" });
+    await page.goto("/admin/socios", { waitUntil: "load" });
     const cartao = page.locator("li").filter({ hasText: msg });
     await expect(cartao.getByText("Aguardando seu aceite").first()).toBeVisible();
 
@@ -45,7 +47,7 @@ test.describe("T290 — Aceite do sócio", () => {
 
     // Nova entrega e aceite.
     await adm().rpc("responder_caixa_socios", { p_id: id, p_status: "aguardando_aceite", p_resposta: "Agora com o print." });
-    await page.goto("/admin/socios", { waitUntil: "networkidle" });
+    await page.goto("/admin/socios", { waitUntil: "load" });
     await cartao.getByRole("button", { name: "Aceito", exact: true }).click();
     await expect(cartao.getByText("Feito", { exact: true })).toBeVisible();
     const aceito = (await adm().from("caixa_socios").select("status, aceito_por, aceito_em").eq("id", id).single()).data;
@@ -56,7 +58,7 @@ test.describe("T290 — Aceite do sócio", () => {
     // Outro autor: o item aguarda o aceite de quem pediu, sem botões para mim.
     const { data: outro } = await adm().from("profiles").select("id").neq("role", "admin").limit(1).single();
     await adm().from("caixa_socios").update({ autor: outro!.id, status: "aguardando_aceite" }).eq("id", id);
-    await page.goto("/admin/socios", { waitUntil: "networkidle" });
+    await page.goto("/admin/socios", { waitUntil: "load" });
     await expect(cartao.getByText(/Aguardando o aceite de/)).toBeVisible();
     await expect(cartao.getByRole("button", { name: "Aceito", exact: true })).toHaveCount(0);
 

@@ -107,6 +107,17 @@ export function comissaoContrato(aluguelMensal: number, meses: number, rate: num
   return comissaoSobreContrato(aluguelMensal, meses, rate);
 }
 
+/**
+ * E1061 — a caução de uma estadia, em dias: a do CONTRATO (lei do produto, Daniel, 20/11/2026: metade do aluguel da
+ * estadia toda, no máximo 3 vezes o valor mensal). É a soma das cauções dos blocos de `resumoContratoEmDias`. Fonte
+ * única do número: a proposta e a candidatura leem daqui, com os dias da própria estadia; o fechamento já mostra este
+ * mesmo total. Não depende da taxa de serviço.
+ */
+export function caucaoDaEstadiaEmDias(dias: number, aluguelMensal: number): number {
+  if (!(Number(dias) > 0) || !(Number(aluguelMensal) > 0)) return 0;
+  return resumoContratoEmDias(dias, aluguelMensal, 0).caucaoTotal;
+}
+
 export interface ResumoContrato {
   blocos: BlocoPlano[];
   prazoTotalMeses: number;
@@ -211,6 +222,15 @@ export function periodoDosBlocos(blocos: { inicio?: string | null; fim?: string 
     inicio: datas.map((b) => b.inicio).sort()[0] ?? null,
     fim: datas.map((b) => b.fim).sort().at(-1) ?? null,
   };
+}
+
+/**
+ * E759 — FONTE ÚNICA das datas de uma estadia para mensagens, cron e e-mails: a primeira entrada e a última saída dos
+ * blocos que valem (fora os "nao_aceito" e os sem data). A página da estadia, os e-mails e a jornada leem por aqui.
+ */
+export function datasDaEstadia(blocos: { inicio?: string | null; fim?: string | null; status?: string | null }[] | null | undefined): { entrada: string; fim: string } | null {
+  const p = periodoDosBlocos((blocos ?? []).filter((b) => b?.status !== "nao_aceito"));
+  return p.inicio && p.fim ? { entrada: p.inicio.slice(0, 10), fim: p.fim.slice(0, 10) } : null;
 }
 
 /** Dias corridos de um período com início e fim INCLUSIVOS. */

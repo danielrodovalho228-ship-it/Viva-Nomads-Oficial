@@ -1,6 +1,7 @@
 "use server";
 
 import { resolverAvisos } from "@/lib/notifications/avisos-servidor";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -8,6 +9,7 @@ import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { vinculosConfirmados } from "@/lib/vinculo/servidor";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
@@ -74,7 +76,13 @@ import {
   type LinhaVersao,
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
-import { precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { formaInicialDaProposta, normalizarEscolha, validarFormaNaProposta, type EscolhaPagamento } from "@/lib/pagamento-forma/regras";
+import { formatBRLExato, precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
+import { caucaoDaProposta, rotuloCaucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
+import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
+import { estadoDaPreAceitacao, linhaDeContexto, podeReabrir, prazoDaPreAceitacao, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO, TEXTO_TAXA_CONTINUA, textoDoPrazo } from "@/lib/propostas/pre-aceitacao";
+import { reabrirNoBanco } from "@/lib/propostas/pre-aceitacao-servidor";
 
 /**
  * E189 (QA 25/10): a conta aberta do total do contrato é UMA só — a mesma da tabela e do detalhe (precoDaProposta:
@@ -98,6 +106,8 @@ function dadosDoEmailDaProposta(
 ) {
   const tot = calcularTotais(c.termos);
   const entrada = String(c.termos.dataEntrada).slice(0, 10);
+  // E1058: a caução do ecrã da proposta (a mesma função e o mesmo rótulo) entra no quadro do e-mail.
+  const caucao = caucaoDaProposta(c.termos, tot.valorMensal);
   const linhas = linhasProposta({
     numero: String(numero),
     imovel,
@@ -109,6 +119,7 @@ function dadosDoEmailDaProposta(
     valorMensal: tot.valorMensal,
     contaTotal: contaDaProposta(c.termos),
     responderAte: c.desfecho === "nova" || c.desfecho === "contraproposta" ? c.responderAte : null,
+    caucao: caucao ? { rotulo: rotuloCaucaoDaProposta(caucao), valor: formatBRLExato(caucao.valor) } : null,
   });
   const passo = proximoPassoProposta(c.desfecho, quemRecebe);
   return {
@@ -131,18 +142,19 @@ import { SITE_URL } from "@/lib/site";
 type Resultado<T = object> = ({ ok: true } & T) | { ok: false; error: string; aviso?: string };
 type Admin = SupabaseClient;
 
-async function sessao() {
+/** E1093: com `exigir`, a confirmação da sessão que falha LANÇA (não vira "sem sessão" → lista vazia). */
+async function sessao(opcoes: { exigir?: boolean } = {}) {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return null;
   return { supabase, admin, user };
 }
 
 interface ImovelProposta {
+  /** E647: a preferência do dono em `detalhes_anuncio.pagamento` (só usada com a chave ligada). */
+  detalhes_anuncio?: { pagamento?: unknown } | null;
   id: string;
   owner_id: string;
   status?: string | null;
@@ -167,7 +179,7 @@ async function lerImovel(admin: Admin, propertyId: string): Promise<ImovelPropos
   const { data } = await admin
     .from("properties")
     .select(
-      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao, pets_allowed, pets_regras",
+      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao, pets_allowed, pets_regras, detalhes_anuncio",
     )
     .eq("id", propertyId)
     .maybeSingle();
@@ -542,6 +554,8 @@ export interface EntradaProposta {
   limpezaUnica?: number;
   /** E562: ajuste do dono no pacote de limpezas (vazio = round(limpezas por mês × dias ÷ 30)). */
   limpezasPacote?: number | null;
+  /** E647 (refino): a forma de pagamento da proposta. Só vale com a chave ligada; sem ela, ignorada. */
+  formaPagamento?: "bloco" | "mensal" | null;
   pessoas?: number | null;
   validadeDias: number;
   mensagem?: string;
@@ -566,7 +580,7 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
   if (im.status === "paused") return { ok: false, error: "Este anúncio está pausado: reative para enviar uma proposta nova. As candidaturas abertas continuam nas mensagens." };
   const neg = normalizarNegociacao(im.negociacao);
   // E562: a duração é em DIAS; meses vira a referência derivada.
-  const dias = e.dias != null && Number.isFinite(Number(e.dias)) ? Number(e.dias) : Math.round(num(e.meses)) * 30;
+  const dias = e.dias != null && Number.isFinite(Number(e.dias)) ? Number(e.dias) : Math.round(num(e.meses)) * DIAS_POR_MES;
   const meses = mesesDeReferencia(dias);
   const termos: TermosProposta = {
     valorBase: Math.round(num(e.valorBase) * 100) / 100,
@@ -588,6 +602,14 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
   const pessoas = e.pessoas == null ? null : Math.round(num(e.pessoas)) || null;
   const erro = validarTermos(termos, limitesDoImovel(im), hojeBR(), pessoas);
   if (erro) return { ok: false, error: erro };
+  // E647: a forma de pagamento da 1ª proposta é do dono: a que ele marcou, ou a recomendada pela preferência do anúncio.
+  if (FORMA_PAGAMENTO_DONO_ATIVA) {
+    const escolha = normalizarEscolha(im.detalhes_anuncio?.pagamento);
+    const forma = e.formaPagamento ?? formaInicialDaProposta(escolha, dias);
+    const v = validarFormaNaProposta({ forma, dias, escolha, quem: "owner" });
+    if (!v.ok) return { ok: false, error: v.erro };
+    termos.formaPagamento = v.forma;
+  }
 
   // Achado 83: a taxa do envio congela o teto desta proposta; sem lê-la, a proposta não sai (antes de numerar: a falha não gasta um ORC).
   const taxaEnvio = await taxaDoDonoAgora(s.admin, s.user.id).catch(() => null);
@@ -654,7 +676,30 @@ export interface VersaoView {
   mudou: Diferenca[];
 }
 
+/** E722: o que a tela mostra da pré-aceitação de 72 h (só com a chave ligada e a proposta aceita ou expirada). */
+export interface PreAceitacaoView {
+  estado: "vigente" | "expirada";
+  /** Fim da janela do morador (ISO) e o mesmo em texto, com data e hora exatas de Brasília. Só aparece enquanto o prazo é do morador. */
+  ateIso: string;
+  ateTexto: string;
+  /** Um prazo por vez: com a candidatura de volta ao dono, só o prazo DELE (1 dia útil) aparece; o do morador some. */
+  donoAteTexto: string | null;
+  /** Linha de contexto do outro prazo (E722: um prazo por vez + esta linha). */
+  contexto: string | null;
+  /** Candidatura encerrada na 3ª expiração: não há mais reabertura. */
+  encerrada: boolean;
+  /** Perdeu a corrida: só o dono reabre. */
+  perdeuACorrida: boolean;
+  reaberturas: number;
+  podeReabrir: boolean;
+  regraCorrida: string;
+  semPunicao: string;
+  taxaContinua: string;
+}
+
 export interface PropostaView {
+  /** E722: pré-aceitação de 72 h (null = chave desligada ou proposta sem janela). */
+  preAceitacao: PreAceitacaoView | null;
   id: string;
   numero: string;
   status: StatusProposta;
@@ -686,6 +731,8 @@ export interface PropostaView {
   /** Só o proprietário vê a taxa de serviço. */
   taxa: { pct: number; valor: number; congelada: boolean; valorMensal: number; meses: number; seAceitaHoje: string | null; caiu: string | null } | null;
   fechamentoUrl: string | null;
+  /** E647: a preferência do dono no anúncio (null = sem escolha ou chave desligada). Só para a tela montar as opções. */
+  escolhaPagamento: EscolhaPagamento | null;
 }
 
 export interface PropostaResumo {
@@ -749,7 +796,7 @@ const MSG_PROPOSTAS_NAO_CARREGARAM = "Não foi possível carregar as propostas a
  * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
  * home, notificações), segue a lista vazia. */
 export async function listarPropostas(opcoes: { exigir?: boolean } = {}): Promise<PropostaResumo[]> {
-  const s = await sessao();
+  const s = await sessao(opcoes);
   if (!s) return [];
   await expirarVencidas(s.admin, s.user.id);
   // RLS: só as propostas das partes.
@@ -866,13 +913,15 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
         valor: taxaServicoProposta(atual.termos, pct),
         congelada,
         valorMensal: atual.totais.valorMensal,
-        meses: atual.totais.dias / 30,
+        meses: atual.totais.dias / DIAS_POR_MES,
         seAceitaHoje: !congelada && hoje != null ? textoSeAceitaHoje(tx.taxa_no_envio, hoje) : null,
         caiu: congelada ? avisoTaxaCaiu(tx.taxa_no_envio, tx.taxa_congelada as number) : null,
       };
     }
   }
+  const preAceitacao = PRE_ACEITACAO_72H_ATIVA && ["aceita", "expirada"].includes(p.status) ? await preAceitacaoDaProposta(s.admin, p.id, papel) : null;
   return {
+    preAceitacao,
     id: p.id,
     numero: p.numero,
     status: p.status,
@@ -901,6 +950,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
     limites: { mesesMin: lim.mesesMin, mesesMax: lim.mesesMax },
     taxa,
     fechamentoUrl: papel === "owner" && ["aceita", "em_contrato"].includes(p.status) ? `/dashboard/fechamento?c=${p.lead_id}` : null,
+    escolhaPagamento: FORMA_PAGAMENTO_DONO_ATIVA ? normalizarEscolha(im?.detalhes_anuncio?.pagamento) : null,
   };
 }
 
@@ -909,7 +959,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
 export type Resposta =
   | { acao: "aceitar" }
   | { acao: "recusar"; motivo: string; texto?: string }
-  | { acao: "contrapropor"; mudancas: Mudancas; mensagem?: string; mesmoAbaixoDoMinimo?: boolean };
+  | { acao: "contrapropor"; mudancas: Mudancas & { formaPagamento?: "bloco" | "mensal" | null }; mensagem?: string; mesmoAbaixoDoMinimo?: boolean };
 
 async function carregarParaResponder(s: NonNullable<Awaited<ReturnType<typeof sessao>>>, id: string) {
   await expirarVencidas(s.admin, s.user.id);
@@ -992,7 +1042,20 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   if (m.limpezasMes !== undefined) mudancas.limpezasMes = num(m.limpezasMes);
   if (m.taxaPet !== undefined) mudancas.taxaPet = num(m.taxaPet);
   const nova = aplicarContraproposta(anterior, mudancas, neg.descontos);
-  if (camposAlterados(anterior, nova).length === 0) return { ok: false, error: "Mude ao menos um valor para contrapropor." };
+  // E647: a forma de pagamento também muda na contraproposta (o dono aceita a pedida ou propõe a outra; o morador só pede
+  // o que o anúncio oferece). A forma que vinha continua valendo se ninguém mexeu, mas precisa caber nos novos dias.
+  let mudouForma = false;
+  if (FORMA_PAGAMENTO_DONO_ATIVA) {
+    const escolha: EscolhaPagamento | null = normalizarEscolha(im.detalhes_anuncio?.pagamento);
+    const pedida = (r.mudancas as { formaPagamento?: unknown }).formaPagamento;
+    const dias = diasDosTermos(nova);
+    const forma = pedida ?? anterior.formaPagamento ?? formaInicialDaProposta(escolha, dias);
+    const v = validarFormaNaProposta({ forma, dias, escolha, quem: papel });
+    if (!v.ok) return { ok: false, error: v.erro };
+    nova.formaPagamento = v.forma;
+    mudouForma = v.forma !== (anterior.formaPagamento ?? null);
+  }
+  if (camposAlterados(anterior, nova).length === 0 && !mudouForma) return { ok: false, error: "Mude ao menos um valor para contrapropor." };
   const proibidas = mudancasProibidas(anterior, nova, papel, neg.itens);
   if (proibidas.length) return { ok: false, error: `O proprietário não abriu para negociação: ${proibidas.join(", ").toLowerCase()}.` };
   const erro = validarTermos(nova, limitesDoImovel(im), hojeBR(), v.pessoas);
@@ -1067,7 +1130,8 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
 
   const { data: ok } = await admin
     .from("propostas")
-    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString() })
+    // E722 (atrás da chave, desligada): 72 h corridas para concluir o contrato, limitadas pela data de entrada.
+    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString(), ...(PRE_ACEITACAO_72H_ATIVA ? { pre_aceitacao_ate: prazoDaPreAceitacao(agora, String(v.data_entrada).slice(0, 10)).toISOString(), pre_aceitacao_reaberturas: 0 } : {}) })
     .eq("id", p.id)
     .eq("versao_atual", v.versao)
     .in("status", ["enviada", "vista", "contraproposta"])
@@ -1099,7 +1163,7 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   }
   const tot = calcularTotais(termosDaLinha(v));
   // Item 34: o dono recebe a taxa congelada com a base escrita; o morador, nunca.
-  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, tot.dias / 30, tx.taxa_no_envio);
+  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, tot.dias / DIAS_POR_MES, tx.taxa_no_envio);
   await avisarOutraParte(
     admin,
     p,
@@ -1117,4 +1181,51 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard/fechamento");
   return { ok: true, fechamentoUrl: papel === "owner" ? `/dashboard/fechamento?c=${p.lead_id}` : null };
+}
+
+/**
+ * E722 — reabre uma pré-aceitação que expirou (no máximo 2 vezes). Qualquer das duas partes pode pedir; quem perdeu a corrida só volta
+ * por reabertura do DONO. A 3ª expiração encerra a candidatura (não reabre).
+ * A taxa congelada na pré-aceitação CONTINUA VALENDO: a reabertura não a recalcula. Atrás de PRE_ACEITACAO_72H_ATIVA.
+ */
+export async function reabrirPreAceitacao(id: string): Promise<Resultado<{ prazoAte: string }>> {
+  if (!PRE_ACEITACAO_72H_ATIVA) return { ok: false, error: "A pré-aceitação de 72 horas ainda não está ativa." };
+  const s = await sessao();
+  if (!s) return { ok: false, error: "Entre para reabrir." };
+  const { data, error } = await s.supabase.from("propostas").select("id, owner_id, tenant_id, lead_id").eq("id", id).maybeSingle();
+  if (error) return { ok: false, error: "Não foi possível ler a proposta agora. Tente de novo em instantes." };
+  const p = data as { id: string; owner_id: string; tenant_id: string; lead_id: string } | null;
+  if (!p || (p.owner_id !== s.user.id && p.tenant_id !== s.user.id)) return { ok: false, error: "Proposta não encontrada." };
+  const r = await reabrirNoBanco(s.admin, p.id, p.owner_id === s.user.id ? "owner" : "tenant");
+  if (!r.ok) return { ok: false, error: r.error };
+  revalidatePath(`/dashboard/propostas/${p.id}`);
+  revalidatePath("/dashboard/fechamento");
+  return { ok: true, prazoAte: r.prazo.toISOString() };
+}
+
+/** E722: a janela de 72 h da proposta, pronta para a tela (data e hora exatas, regra de corrida, sem punição, taxa que continua). */
+async function preAceitacaoDaProposta(admin: Admin, propostaId: string, papel: Autor): Promise<PreAceitacaoView | null> {
+  const { data, error } = await admin.from("propostas").select("pre_aceitacao_ate, pre_aceitacao_reaberturas, pre_aceitacao_dono_ate, pre_aceitacao_encerrada_em, pre_aceitacao_perdeu_em").eq("id", propostaId).maybeSingle();
+  const d = data as { pre_aceitacao_ate: string | null; pre_aceitacao_reaberturas: number | null; pre_aceitacao_dono_ate: string | null; pre_aceitacao_encerrada_em: string | null; pre_aceitacao_perdeu_em: string | null } | null;
+  if (error || !d?.pre_aceitacao_ate) return null;
+  const ate = new Date(d.pre_aceitacao_ate);
+  const reaberturas = Number(d.pre_aceitacao_reaberturas ?? 0);
+  const encerrada = !!d.pre_aceitacao_encerrada_em;
+  const perdeu = !!d.pre_aceitacao_perdeu_em;
+  const estado = estadoDaPreAceitacao(ate, new Date()).chave;
+  const donoAteTexto = estado === "expirada" && !encerrada && d.pre_aceitacao_dono_ate ? textoDoPrazo(new Date(d.pre_aceitacao_dono_ate)) : null;
+  return {
+    estado,
+    ateIso: ate.toISOString(),
+    ateTexto: textoDoPrazo(ate),
+    donoAteTexto,
+    contexto: encerrada ? null : linhaDeContexto(papel === "owner" ? "owner" : "tenant", estado, textoDoPrazo(ate), donoAteTexto),
+    encerrada,
+    perdeuACorrida: perdeu,
+    reaberturas,
+    podeReabrir: podeReabrir(reaberturas) && !encerrada && (!perdeu || papel === "owner"),
+    regraCorrida: TEXTO_REGRA_CORRIDA,
+    semPunicao: TEXTO_SEM_PUNICAO,
+    taxaContinua: TEXTO_TAXA_CONTINUA,
+  };
 }

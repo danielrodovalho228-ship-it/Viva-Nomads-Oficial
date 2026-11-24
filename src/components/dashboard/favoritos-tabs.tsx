@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Heart, GitCompare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FILEIRA_ABAS } from "@/components/ui/abas-fileira";
 
 /**
  * Abas do hub "Favoritos & comparações": Favoritos e Comparações, que a subaba "Favoritos" do menu do morador
@@ -18,7 +19,7 @@ const TABS = [
 export function FavoritosTabs() {
   const pathname = usePathname();
   return (
-    <div className="mb-6 flex gap-2 overflow-x-auto border-b border-sage-200">
+    <div className={cn("mb-6", FILEIRA_ABAS)} data-testid="favoritos-abas">
       {TABS.map((t) => {
         const active = pathname === t.href;
         const Icon = t.icon;

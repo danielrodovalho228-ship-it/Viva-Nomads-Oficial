@@ -30,5 +30,9 @@ test("E69 + E176: o voltar padrão é a Conta; a subtela (Sair da Viva) tem '←
   // Segurança e verificações virou item próprio da Conta (E176 parte 2).
   assert.match(ler("app/(dashboard)/dashboard/conta/seguranca/page.tsx"), /<CascaConta ativo="seguranca" /);
   assert.match(ler("app/(dashboard)/dashboard/conta/excluir/page.tsx"), /<CascaConta ativo="privacidade" subtela /);
-  assert.doesNotMatch(ler("app/(dashboard)/dashboard/conta/[secao]/page.tsx"), /<CascaConta[^>]*\bsubtela\b/);
+  // E898 (asserção alterada): as SEÇÕES de /conta/[secao] não são subtelas; a única subtela ali é "Seu perfil público"
+  // (filha do Perfil, que antes abria fora da casca), com "← Perfil" no topo.
+  const secao = ler("app/(dashboard)/dashboard/conta/[secao]/page.tsx");
+  assert.doesNotMatch(secao.slice(secao.indexOf("const secao =")), /<CascaConta[^>]*\bsubtela\b/);
+  assert.match(secao.slice(0, secao.indexOf("const secao =")), /<CascaConta ativo="perfil" subtela titulo="Seu perfil público"/);
 });

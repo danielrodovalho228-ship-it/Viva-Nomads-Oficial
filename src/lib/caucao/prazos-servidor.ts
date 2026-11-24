@@ -66,7 +66,7 @@ export async function rodarCaucaoPrazos(admin: SupabaseClient, agora: Date = new
       resumo.liberacoes++;
     }
     if (estado.avisarOsDois && !l.avisou_liberacao_em) {
-      const texto = (n?: string) => `Olá${n ? " " + n : ""}, o prazo de 7 dias para o parecer sobre a caução de ${imovel} terminou sem desconto. A liberação integral foi registrada e a devolução vence em ${estado.devolverAte.split("-").reverse().join("/")}.`;
+      const texto = (n?: string) => `Olá${n ? " " + n : ""}, o prazo de 7 dias para o parecer sobre a caução de ${imovel} terminou sem desconto. A liberação integral foi registrada: a devolução é devida agora. O teto externo é ${estado.tetoExterno.split("-").reverse().join("/")} (30 dias do check-out).`;
       if (donoP?.email) await notify({ event: "contract_status", email: donoP.email, name: donoP.full_name ?? undefined, userId: dono.owner_id, pushUrl: `/dashboard/contratos/${l.contrato_id}`, subject: ASSUNTOS.caucaoLiberacaoIntegral, body: texto, ctaLabel: "Ver o contrato" });
       if (moradorP?.email) await notify({ event: "contract_status", email: moradorP.email, name: moradorP.full_name ?? undefined, userId: ctr?.tenant_id as string, pushUrl: HREF_ESTADIA(l.contrato_id), subject: ASSUNTOS.caucaoLiberacaoIntegral, body: texto, ctaLabel: "Ver o contrato" });
       await admin.from("caucao_prazos").update({ avisou_liberacao_em: agora.toISOString() }).eq("contrato_id", l.contrato_id);

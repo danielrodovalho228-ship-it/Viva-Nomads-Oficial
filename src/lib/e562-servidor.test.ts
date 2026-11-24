@@ -22,10 +22,12 @@ test("a montagem abre com os dias da candidatura (entrada → saída), dentro do
 });
 
 test("o envio grava os dias (tela antiga: meses × 30) e a versão leva meses como referência derivada", () => {
-  assert.match(acoes, /const dias = e\.dias != null && Number\.isFinite\(Number\(e\.dias\)\) \? Number\(e\.dias\) : Math\.round\(num\(e\.meses\)\) \* 30;/);
+  // Asserção alterada (E1116, ORDEM-DUET-503): o 30 vem da regra única (DIAS_POR_MES); a conta é a mesma.
+  assert.match(acoes, /const dias = e\.dias != null && Number\.isFinite\(Number\(e\.dias\)\) \? Number\(e\.dias\) : Math\.round\(num\(e\.meses\)\) \* DIAS_POR_MES;/);
   assert.match(servidor, /meses: mesesDeReferencia\(dias\),\n\s*dias,/);
   assert.match(servidor, /limpezas_pacote: t\.limpezasPacote \?\? null,/);
-  assert.match(servidor, /dias: v\.dias == null \? Number\(v\.meses\) \* 30 : Number\(v\.dias\)/);
+  // Asserção alterada (E1116): idem, DIAS_POR_MES em vez do 30 à mão.
+  assert.match(servidor, /dias: v\.dias == null \? Number\(v\.meses\) \* DIAS_POR_MES : Number\(v\.dias\)/);
 });
 
 test("o contrato nasce com os dias da proposta aceita: prazo_total_dias e blocos de até 90 dias em dias", () => {

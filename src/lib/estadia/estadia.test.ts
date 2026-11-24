@@ -18,13 +18,13 @@ const periodo = { inicio: "2026-11-13", fim: "2027-02-10", checkinAfter: "14:00"
 test("topo: 'Entrada em N dias' / 'Estadia em andamento · faltam N dias' / 'Encerrada em [data]', no calendário de Brasília", () => {
   assert.equal(topoDaEstadia(periodo, { status: "ativo" }, em("2026-11-03")).texto, "Entrada em 10 dias");
   assert.equal(topoDaEstadia(periodo, { status: "ativo" }, em("2026-11-12")).texto, "Entrada amanhã");
-  assert.equal(topoDaEstadia(periodo, { status: "ativo" }, em("2026-12-01")).texto, "Estadia em andamento · faltam 71 dias");
+  assert.equal(topoDaEstadia(periodo, { status: "ativo" }, em("2026-12-01")).texto, "Estadia em andamento · faltam 72 dias"); // E1089: conta até a SAÍDA (11/02), não até a última noite (10/02)
   assert.equal(topoDaEstadia(periodo, { status: "concluido", encerrado_em: "2027-02-10T14:00:00Z" }, em("2027-03-01")).texto, "Encerrada em 10/02/2027");
   assert.equal(topoDaEstadia(periodo, { status: "ativo" }, em("2027-02-20")).fase, "encerrada");
   // 02:30 em UTC do dia 13 ainda é dia 12 em Brasília: a entrada é amanhã, não hoje.
   assert.equal(topoDaEstadia(periodo, { status: "ativo" }, new Date("2026-11-13T02:30:00Z")).texto, "Entrada amanhã");
   assert.equal(textoEntrada(periodo), "Entrada: 13/11/2026 a partir das 14:00");
-  assert.equal(textoSaida(periodo), "Saída: 10/02/2027 até as 11:00");
+  assert.equal(textoSaida(periodo), "Saída: 11/02/2027 até as 11:00"); // E1089: a saída é o dia seguinte à última noite (10/02)
 });
 
 const base: EstadoChecklist = {
@@ -97,7 +97,7 @@ test("ocupantes: limite do contrato, validação, lista da portaria e retenção
   });
   assert.equal(
     textoListaPortaria({ numero: "VN-CT-ABC12345", imovel: "Apto 12", inicio: "2026-11-13", fim: "2027-02-10" }, [{ nome: "Ana Lima", documento: "MG-12.345.678" }]),
-    "Lista para a portaria — Apto 12\nContrato VN-CT-ABC12345 · Período: 13/11/2026 a 10/02/2027\n\n1. Ana Lima — MG-12.345.678",
+    "Lista para a portaria — Apto 12\nContrato VN-CT-ABC12345 · Período: Entrada 13/11/2026 · Saída 11/02/2027 · 90 diárias\n\n1. Ana Lima — MG-12.345.678",
   );
   assert.equal(RETENCAO_OCUPANTES_DIAS, 90);
   assert.equal(ocupantesVencidos("2026-01-01", new Date("2026-04-01T12:00:00Z")), false, "89 dias depois");
@@ -225,7 +225,7 @@ test("card 'Decisões' da home: só o que a própria pessoa decide; estadia ence
   const home = readFileSync("src/app/(dashboard)/dashboard/visao-geral-client.tsx", "utf8");
   // Prompt 42: as decisões da estadia entram na lista "Hoje você tem N decisões"; o card fica com o topo e as ações.
   assert.match(home, /<CartaoEstadias estadias=\{estadias\} \/>/);
-  const pagina = readFileSync("src/app/(dashboard)/dashboard/page.tsx", "utf8");
+  const pagina = readFileSync("src/app/(dashboard)/dashboard/inicio-dados.tsx", "utf8");
   assert.match(pagina, /estadiasDaHome\(agora, \{ exigir: true \}\)/);
   assert.match(pagina, /decisoes: e\.decisoes/);
 });

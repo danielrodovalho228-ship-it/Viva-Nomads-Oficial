@@ -12,16 +12,15 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { servicoProprietarios } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
-import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
-import { GESTOR_TEXTO } from "@/config/planos";
+import { TAXA_MAIOR_TEXTO } from "@/lib/cobranca/regra";
+import { FRASE_ESCADA_TAXAS } from "@/config/textos-regulados";
+import { BOTAO_SIMULADOR_PUBLICO, NOTA_SIMULADOR_NA_CONTA } from "@/lib/simulador-na-conta";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
-import { AVISO_APROVACAO, AVISO_SEM_CUSTO } from "@/lib/ajuda-publicacao/ajuda";
+import { AVISO_APROVACAO, PUBLICAMOS_PARA_VOCE_TEXTO } from "@/lib/ajuda-publicacao/ajuda";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
-// E564: a frase cobre a tabela; a faixa do Plano Gestor é dita à parte (GESTOR_TEXTO).
-const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor);
-const TAXA_MAIOR = pctTexto(Math.max(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
-const TAXA_MENOR = pctTexto(Math.min(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
+// E805/078: a escada inteira e a linha das carteiras vêm da fonte única (FRASE_ESCADA_TAXAS).
+const TAXA_MAIOR = TAXA_MAIOR_TEXTO;
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
@@ -65,8 +64,8 @@ export default function ForLandlordsPage() {
         </ButtonLink>
         )}
         {/* C7: a frase da taxa (texto igual) desce para depois do botão — no celular a ação principal fica na dobra. */}
-        <p className="w-full max-w-2xl text-base text-white/90" data-testid="anunciar-taxa">
-          <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}). Plano Gestor: {GESTOR_TEXTO}. {/* E563: o link para os preços só com a chave ligada. */}
+        <p className="w-full max-w-2xl scroll-mt-24 text-base text-white/90" id="taxa" data-testid="anunciar-taxa">
+          <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. {FRASE_ESCADA_TAXAS} {/* E563: o link para os preços só com a chave ligada. */}
           {PRECOS_VISIVEL ? (
             <>
               Sem mensalidade —{" "}
@@ -104,23 +103,27 @@ export default function ForLandlordsPage() {
             <div className="flex-1 p-6">
               <span className="inline-flex rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">Serviço</span>
               <h2 className="mt-3 font-title text-lg font-semibold text-ink sm:text-2xl">Publicamos para você</h2>
-              <p className="mt-1 text-base text-muted">
-                Você envia o link, o texto e as fotos do anúncio que já tem. {AVISO_SEM_CUSTO} {AVISO_APROVACAO}
+              {/* E806: a ação (colar o link do anúncio em outro site, ou texto e fotos) e o efeito (a equipe monta o rascunho). */}
+              <p className="mt-1 text-base text-muted" data-testid="proprietarios-publicamos-texto">
+                {PUBLICAMOS_PARA_VOCE_TEXTO} {AVISO_APROVACAO}
               </p>
               <ButtonLink href="/dashboard/imoveis/novo" variant="secondary" size="lg" className="mt-4 w-full sm:w-auto" data-testid="proprietarios-pedir-ajuda">
                 Pedir ajuda para publicar
               </ButtonLink>
             </div>
-            <BrandImage src="/images/unicas/prop-passo-anuncie.webp" alt="Proprietário fotografando a sala para o anúncio" rounded="rounded-none" sizes="(max-width: 640px) 100vw, 320px" className="aspect-[16/10] w-full sm:w-80" />
+            {/* Frente 3 (t112): sem foto — a única que havia era a do passo "Anuncie de graça" desta mesma página, e a regra das
+                imagens únicas (ordens 19b8abf5/de7b27fd) proíbe repetir. Foto própria para este bloco: pedido em aberto no PR. */}
           </div>
 
           <div className="flex flex-col gap-4 rounded-xl bg-forest p-6 text-white sm:flex-row sm:items-center sm:justify-between" data-testid="proprietarios-simulador">
             <div>
               <h2 className="font-title text-lg font-semibold sm:text-2xl">Simulador de rentabilidade</h2>
               <p className="mt-1 text-base text-white/85">Estime quanto o seu imóvel pode render por mês com os números que você digitar. A Viva não preenche valor nenhum por você.</p>
+              {/* E903: o simulador fica na conta; o visitante sabe disso antes do clique (antes: caía no login sem aviso). */}
+              <p className="mt-1 text-sm text-white/85" data-testid="proprietarios-simulador-conta">{NOTA_SIMULADOR_NA_CONTA}</p>
             </div>
             <ButtonLink href="/dashboard/simulador" variant="inverse" size="lg" className="w-full sm:w-auto" data-testid="proprietarios-calcular">
-              Calcular rentabilidade
+              {BOTAO_SIMULADOR_PUBLICO}
             </ButtonLink>
           </div>
         </div>
@@ -140,7 +143,7 @@ export default function ForLandlordsPage() {
           <ol className="mt-12 grid gap-6 md:grid-cols-3">
             {[
               { foto: "/images/unicas/prop-passo-anuncie.webp", alt: "Proprietário fotografando a sala para o anúncio", t: "Anuncie de graça", d: "Fotos, valor e regras da casa. Você pode oferecer limpezas durante a estadia, com quantidade e valor por mês. A qualificação ajuda a ganhar o selo Pronto para Morar." },
-              { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o morador pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite." },
+              { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o morador pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; telefone e e-mail nunca são trocados." },
               { foto: "/images/unicas/prop-passo-feche.webp", alt: "Entrega das chaves ao morador", t: "Feche com contrato", d: "Contrato digital de 30 a 180 dias, caução combinada e o valor mensal direto na sua conta." },
             ].map((p, i) => (
               <li key={p.t} className="overflow-hidden rounded-xl border border-line bg-white ">

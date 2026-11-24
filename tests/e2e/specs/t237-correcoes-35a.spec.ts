@@ -152,13 +152,13 @@ for (const largura of LARGURAS) {
       // QA do Prompt 40: o "Ideal para" saiu do cartão e fica na página do imóvel, depois da linha-síntese.
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
       const linha = page.getByTestId("ideal-para").first();
-      await expect(linha).toContainText(/Ideal para:\s*Com pet · /, { timeout: 20_000 });
+      await expect(linha).toContainText(/Sugestão da Viva:\s*Com pet · /, { timeout: 20_000 });
       await semRolagemLateral(page);
     });
 
     test("3. página do imóvel sem \"Verificação de identidade: em breve\"", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("ideal-para").first()).toContainText("Ideal para: Com pet · Home office · Família");
+      await expect(page.getByTestId("ideal-para").first()).toContainText("Sugestão da Viva: Com pet · Home office · Família");
       const texto = await page.locator("body").innerText();
       expect(texto).not.toMatch(/verifica[çc][ãa]o de identidade[^.]{0,20}em breve/i);
       expect(texto).not.toMatch(/candidate-se direto pela plataforma/i);

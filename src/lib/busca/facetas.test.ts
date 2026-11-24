@@ -40,7 +40,7 @@ const MATRIZ: [string, Partial<FiltrosPainel>, number][] = [
   ["Tipo · Quarto privativo", { tipo: "quarto" }, 0],
   ["Aceita pets", { petsOnly: true }, 7],
   ["Para trabalhar de casa", { homeOfficeOnly: true }, 10],
-  ["Pronto para Morar", { readyToLiveOnly: true }, 14],
+  ["Pronto para Morar", { readyToLiveOnly: true }, 15],
   ["Contrato · Caução", { garantia: "caucao" }, 15],
   ["Contrato · Seguro-fiança", { garantia: "seguro_fianca" }, 14],
   ["Contrato · Gestor profissional", { gestorOnly: true }, 1],
@@ -96,18 +96,20 @@ test("E40 (Adendo 3): sem medição na busca, a seção some e o filtro da URL �
 
 test("E40: as faixas contam igual ao aplicar, a de 0 fica desativada e a linha dos não medidos continua", () => {
   const lista = LISTA.map((p, i) =>
-    i === 3 ? ({ ...p, internetMedida: { downloadMbps: 150, validoAte: "2027-01-01" } } as Imovel) : i === 4 ? ({ ...p, internetMbps: 400 } as Imovel) : p,
+    // E753: os exemplos passaram a declarar a velocidade no campo único (internetMbps); aqui só o 4º declara (400 Mbps).
+    i === 3 ? ({ ...p, internetMbps: undefined, internetMedida: { downloadMbps: 150, validoAte: "2027-01-01" } } as Imovel) : i === 4 ? ({ ...p, internetMbps: 400 } as Imovel) : ({ ...p, internetMbps: undefined } as Imovel),
   );
   const contar2 = (f: FiltrosPainel) => lista.filter((p) => passaNoPainel(p, f, AGORA)).length;
   const faixas = faixasInternet(medicoesDaBusca(lista, AGORA));
   assert.deepEqual(faixas, [50, 100, 300]);
+  // Asserção alterada (E1078, ORDEM-382 (a)): a faixa conta a VELOCIDADE — o medido 150 e o informado 400 sem medição.
   assert.deepEqual(faixas.map((v) => facetaUnica(contar2, V, "internetMin", v)), [
+    { n: 2, desabilitado: false },
+    { n: 2, desabilitado: false },
     { n: 1, desabilitado: false },
-    { n: 1, desabilitado: false },
-    { n: 0, desabilitado: true },
   ]);
-  // A linha "Mais N com internet informada, mas não medida" segue (o de 400 Mbps informados, sem medição).
-  assert.equal(naoMedidosDoPainel(lista, { ...V, internetMin: 300 }, AGORA).length, 1);
+  // A linha "Mais N com internet informada, mas não medida" segue com o estrito "Só com internet medida".
+  assert.equal(naoMedidosDoPainel(lista, { ...V, internetMin: 300, soInternetMedida: true }, AGORA).length, 1);
 });
 
 test("E41: estadia e caução filtram de verdade (o fixture aceita tudo; um anúncio diferente sai)", () => {

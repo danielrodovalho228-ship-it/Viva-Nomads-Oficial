@@ -6,6 +6,7 @@ import { ShieldCheck, AlertTriangle, MessageSquareLock, Wallet, FileSearch } fro
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { ButtonLink } from "@/components/ui/button";
 import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
+import { LinhaEmergencia } from "@/components/institucional/linha-emergencia";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/seguranca" },
@@ -70,6 +71,11 @@ export default function SegurancaPage() {
         }
       />
     <div className="container-page max-w-3xl py-12 md:py-16">
+      {/* E853: a linha de emergência volta em destaque, antes dos golpes. A Viva não é canal de emergência. */}
+      <section role="note" className="mb-8 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4" data-testid="seguranca-emergencia">
+        <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-red-700" aria-hidden />
+        <LinhaEmergencia />
+      </section>
       <section className="grid gap-4">
         {GOLPES.map((g) => {
           const Icon = g.icon;

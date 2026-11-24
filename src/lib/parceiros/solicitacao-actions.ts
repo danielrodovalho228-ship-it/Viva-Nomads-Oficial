@@ -7,7 +7,7 @@ import { consumirLimite, HORA, ipHash } from "@/lib/limites";
 import { notify } from "@/lib/notifications";
 import { adminsPorAviso } from "@/lib/notifications/push-admins";
 import { textoEmail } from "@/lib/notifications/texto-seguro";
-import { mesmoEmail, rotuloCategoria, situacaoToken, validarSolicitacao, type SolicitacaoEntrada } from "./regras";
+import { mesmoEmail, rotuloCategoria, situacaoToken, validarSolicitacao, type CampoSolicitacao, type SolicitacaoEntrada } from "./regras";
 import { hashToken, tokenBemFormado } from "./token";
 
 /**
@@ -15,7 +15,7 @@ import { hashToken, tokenBemFormado } from "./token";
  * Uma solicitação aberta por conta (e por e-mail), limite por IP e armadilha (honeypot). Quem grava é o servidor.
  */
 
-export type Res<T = null> = { ok: true; valor: T } | { ok: false; erro: string };
+export type Res<T = null> = { ok: true; valor: T } | { ok: false; erro: string; campo?: CampoSolicitacao };
 
 export interface MinhaParceria {
   logado: boolean;
@@ -119,7 +119,7 @@ export async function enviarSolicitacao(entrada: SolicitacaoEntrada & { armadilh
     return { ok: false, erro: "Muitas tentativas. Tente de novo mais tarde." };
   }
   const v = validarSolicitacao(entrada);
-  if (!v.ok) return { ok: false, erro: v.erro };
+  if (!v.ok) return { ok: false, erro: v.erro, campo: v.campo };
   const email = s.user.email.trim().toLowerCase();
 
   const { data: jaParceiro, error: erroJaParceiro } = await s.admin.from("parceiros").select("id").eq("user_id", s.user.id).maybeSingle();

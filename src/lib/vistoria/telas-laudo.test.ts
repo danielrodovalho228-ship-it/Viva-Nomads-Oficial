@@ -26,10 +26,10 @@ import { hrefAvaliador } from "./telas-exibicao.ts";
 import { itensSintese, textoNivelCartao } from "../cartao-sintese.ts";
 import { GRUPOS_AVALIACAO, ITENS_CHECKLIST } from "../../config/checklist-avaliacao.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 const primarios = (f: string) => (semComentarios(f).match(/<Button(?![^>]*variant=)[^>]*>/g) ?? []).length + (semComentarios(f).match(/variant="primary"/g) ?? []).length;
 
 const CHECKLIST = ler("src/components/vistoria/checklist-avaliador.tsx");
@@ -112,7 +112,7 @@ test("strikes: um aviso por passo da escada; o 3º abre o painel com os anúncio
   assert.equal(avisoStrike(3)?.titulo, "Seus anúncios estão fora da busca");
   for (const d of [1, 2, 3] as const) assert.ok(avisoStrike(d)!.texto.length > 10);
   assert.match(AVISO_PAINEL, /"strike_3"/);
-  assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /<AvisoStrikePainel \/>/);
+  assert.match(ler("src/app/(dashboard)/dashboard/inicio-dados.tsx"), /<AvisoStrikePainel \/>/);
 });
 
 test("admin: contestações, devoluções, laudos atrasados e auditoria no topo 'Para decidir', cada um com sua âncora", () => {
