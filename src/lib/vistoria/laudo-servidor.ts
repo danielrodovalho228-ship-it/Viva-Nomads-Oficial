@@ -443,7 +443,8 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   }
 
   await recalcularNivel(admin, p.property_id, agora);
-  await avisar(admin, p.owner_id, "vistoria_laudo_emitido", rotaDono(p.property_id), { propertyId: p.property_id });
+  // E1160 (3): o aviso leva o pedido — o e-mail diz o número de credenciado de quem emitiu e assinou o laudo.
+  await avisar(admin, p.owner_id, "vistoria_laudo_emitido", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
   return { ok: true, laudoId: novo.id as string, numero: reg.numero, resultado: r.resultado };
 }
 

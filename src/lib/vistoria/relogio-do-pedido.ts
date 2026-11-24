@@ -145,8 +145,17 @@ export function prazoDoAceiteTerminou(r: Relogio | null): boolean {
  */
 export function textoDoPrazoDeAceiteParaODono(r: Relogio | null): string {
   if (prazoDoAceiteTerminou(r)) return ERRO_ACEITE_FORA_DO_PRAZO;
-  const ate = r && r.vez === "dono" && !r.vencido ? `, até ${dataHoraBRT(r.ate)}` : "";
-  return `Aceite em até ${PRAZO_DONO_ACEITAR_HORAS} horas depois da proposta${ate}; passado o prazo, você escolhe outro avaliador.`;
+  return fraseDoPrazoDeAceite(r && r.vez === "dono" && !r.vencido ? r.ate : null);
+}
+
+const fraseDoPrazoDeAceite = (ate: string | null) => `Aceite em até ${PRAZO_DONO_ACEITAR_HORAS} horas depois da proposta${ate ? `, até ${dataHoraBRT(ate)}` : ""}; passado o prazo, você escolhe outro avaliador.`;
+
+/**
+ * E1160: a mesma frase, só a partir do instante da proposta — para o e-mail que sai quando ela chega (o prazo acabou de
+ * começar). Sem o instante (o modelo sem os fatos), a frase vai sem a data.
+ */
+export function textoDoPrazoDeAceiteDesdeAProposta(propostaEm: string | null | undefined): string {
+  return fraseDoPrazoDeAceite(fimDoPrazoDeAceite(propostaEm ?? null));
 }
 
 /** Propor num pedido cuja designação já tem resposta: o motivo certo (nunca "o prazo passou" para quem já propôs). */
