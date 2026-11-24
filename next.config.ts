@@ -139,7 +139,6 @@ const nextConfig: NextConfig = {
       { source: "/pedido", destination: "/pedidos/novo", permanent: true },
       { source: "/proprietarios", destination: "/para-proprietarios", permanent: true },
       // E885: /entrar dava 404; a entrada é /auth (a query, como ?redirect=…, segue junto).
-      { source: "/entrar", destination: "/auth", permanent: true },
       // Sem mensalidade (ordem 90181c57): a antiga tela de assinatura vai a /precos já na resposta HTTP.
       // Só o redirect() da página, dentro do painel com loading.tsx, saía como 200 + navegação do
       // navegador, e o lab (t48) via um 404 de recurso nesse caminho.
