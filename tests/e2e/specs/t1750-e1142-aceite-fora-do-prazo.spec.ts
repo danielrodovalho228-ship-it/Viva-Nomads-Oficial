@@ -433,7 +433,10 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
       const historico = a.getByTestId("avaliacoes-historico");
       const fora = historico.locator('[data-testid="avaliacao-fora"][data-resposta="expirada"]');
       await expect(fora).toHaveCount(1, { timeout: 30_000 });
-      await expect(fora).toContainText(`${ROTULO_EXPIRADA} · ${CIDADE}`);
+      // E1148 (asserção alterada, ORDEM-DUET-679): o item passou a dizer de que imóvel é, e o bairro entra junto da
+      // cidade ("Centro" é o bairro que a massa do laboratório dá ao imóvel). Antes: "…proprietário · Sacramento".
+      await expect(fora.getByTestId("pedido-imovel")).toContainText(`Casa rotina t1750 ${sufixo} · VN-`);
+      await expect(fora).toContainText(`${ROTULO_EXPIRADA} · Centro · ${CIDADE}`);
       await expect(historico).not.toContainText("Sem resposta em 24 horas");
       await expect(a.locator(`[data-testid="avaliacao-designada"][data-pedido="${ids.pedidoRotina}"]`)).toHaveCount(0);
       expect(await a.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);

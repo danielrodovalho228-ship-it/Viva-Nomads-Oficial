@@ -17,7 +17,7 @@ import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
 import { CONFIRMACAO_DO_ACEITE, ROTULO_PROPOSTA_DESCARTADA, ROTULO_PROPOSTA_EXPIRADA, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, rotuloSemResposta, textoDasAvaliacoesNaoLidas, textoDoHistoricoVazio, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
-import { etapaDoPedido, identificacaoDoImovel, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
+import { etapaDoPedido, identificacaoDoImovel, regiaoDoItemEncerrado, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeuSobre, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
@@ -133,17 +133,23 @@ export default async function AvaliacaoParceiroPage() {
     .select("id, property_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
     .eq("avaliador_id", cred.id)
     .order("criado_em", { ascending: false });
-  const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
-  type Des = { pedido_id: string; resposta: string | null; designado_em: string; respondido_em: string | null; proposta_expirada_em: string | null; proposta_descartada_em: string | null; vistoria_pedidos: { cidade: string; porte: Porte } | null };
+  const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, porte)").eq("avaliador_id", cred.id);
+  type Des = { pedido_id: string; resposta: string | null; designado_em: string; respondido_em: string | null; proposta_expirada_em: string | null; proposta_descartada_em: string | null; vistoria_pedidos: { property_id: string; cidade: string; porte: Porte } | null };
   const des = (designacoes ?? []) as unknown as Des[];
   const resposta = new Map(des.map((d) => [d.pedido_id, d.resposta]));
   const agora = new Date();
   const lista = (pedidos ?? []) as Pedido[];
+  // As designações que já não são deste avaliador: recusou, não respondeu, a proposta expirou ou foi descartada, faltou.
+  const foraDaMinhaFila = des.filter((d) => d.resposta && d.resposta !== "aceita");
   // E1108: o título do anúncio de cada pedido (só dos imóveis dos pedidos deste avaliador), para a linha dizer de que
   // imóvel é. Se esta leitura falhar, a linha fica só com o código VN (que sai do próprio pedido): nunca vazia.
-  const idsDosImoveis = [...new Set(lista.map((p) => p.property_id))];
-  const { data: imoveisDosPedidos } = idsDosImoveis.length ? await admin.from("properties").select("id, title").in("id", idsDosImoveis) : { data: [] };
-  const tituloDoImovel = new Map(((imoveisDosPedidos ?? []) as { id: string; title: string | null }[]).map((i) => [i.id, i.title]));
+  // E1148: entram também os imóveis dos itens encerrados (esses pedidos já não estão na lista dele), e o bairro
+  // (`address` é o bairro; a rua e o número ficam em `exact_address`, que esta lista nunca pede).
+  const idsDosImoveis = [...new Set([...lista.map((p) => p.property_id), ...foraDaMinhaFila.flatMap((d) => (d.vistoria_pedidos ? [d.vistoria_pedidos.property_id] : []))])];
+  const { data: imoveisDosPedidos } = idsDosImoveis.length ? await admin.from("properties").select("id, title, address").in("id", idsDosImoveis) : { data: [] };
+  const imoveisLidos = (imoveisDosPedidos ?? []) as { id: string; title: string | null; address: string | null }[];
+  const tituloDoImovel = new Map(imoveisLidos.map((i) => [i.id, i.title]));
+  const bairroDoImovel = new Map(imoveisLidos.map((i) => [i.id, i.address]));
   const imovelDo = (p: Pedido) => identificacaoDoImovel(tituloDoImovel.get(p.property_id), p.property_id);
   // Agenda (Prompt 62-A, item 6): para responder (com o contador de 24 h), visitas e o histórico de ausências e recusas.
   // E1102 (ORDEM-DUET-492): "Para responder" é a etapa "novo", pela mesma função que decide a tela do pedido e o "Ver o
@@ -156,7 +162,6 @@ export default async function AvaliacaoParceiroPage() {
     .filter((p) => !paraResponder.includes(p) && ["designado", "agendado", "realizada"].includes(p.status))
     .sort((a, b) => (a.agendado_para ? Date.parse(a.agendado_para) : Infinity) - (b.agendado_para ? Date.parse(b.agendado_para) : Infinity));
   const encerradas = lista.filter((p) => ["laudo_emitido", "ausencia", "cancelada"].includes(p.status));
-  const foraDaMinhaFila = des.filter((d) => d.resposta && d.resposta !== "aceita");
   // Achado 30: leitura que falhou não vira "nenhuma avaliação" — o prazo de 24 h não pode passar sem o avaliador ver.
   const leituraFalhou = Boolean(erroPedidos || erroDesignacoes);
   // E1157: os três textos do prazo de resposta leem o prazo que ESTE avaliador declarou em "Meus termos" (antes diziam
@@ -272,10 +277,16 @@ export default async function AvaliacaoParceiroPage() {
                   <ItemPedido key={p.id} p={p} imovel={imovelDo(p)} resposta={resposta.get(p.id)} agora={agora} prazoRespostaHoras={cred.prazo_resposta_horas} />
                 ))}
                 {foraDaMinhaFila.map((d) => (
-                  <li key={d.pedido_id} className="rounded-lg border border-line p-3 text-sm text-muted" data-testid="avaliacao-fora" data-resposta={d.resposta}>
-                    {/* E1142: a proposta que venceu sem o aceite do dono não é "sem resposta" do avaliador. E1146: a que o dono descartou não é "Você recusou". */}
-                    {d.proposta_descartada_em ? ROTULO_PROPOSTA_DESCARTADA : d.proposta_expirada_em ? ROTULO_PROPOSTA_EXPIRADA : (ROTULO_RESPOSTA[d.resposta ?? ""] ?? d.resposta)} · {d.vistoria_pedidos?.cidade} · {d.vistoria_pedidos ? ROTULO_PORTE[d.vistoria_pedidos.porte] : ""}
-                    {(d.proposta_descartada_em ?? d.proposta_expirada_em ?? d.respondido_em) ? ` · ${dataBRT((d.proposta_descartada_em ?? d.proposta_expirada_em ?? d.respondido_em)!)}` : ""}
+                  <li key={d.pedido_id} className="rounded-lg border border-line p-3 text-sm text-muted" data-testid="avaliacao-fora" data-resposta={d.resposta} data-pedido={d.pedido_id}>
+                    {/* E1148: de que imóvel é (título do anúncio e código VN, como nos outros itens). Sem ligação: a tela do pedido já não abre para um pedido que não é dele. */}
+                    {d.vistoria_pedidos && <IdentificacaoDoImovel texto={identificacaoDoImovel(tituloDoImovel.get(d.vistoria_pedidos.property_id), d.vistoria_pedidos.property_id)} />}
+                    <p data-testid="avaliacao-fora-linha">
+                      {/* E1142: a proposta que venceu sem o aceite do dono não é "sem resposta" do avaliador. E1146: a que o dono descartou não é "Você recusou". */}
+                      {d.proposta_descartada_em ? ROTULO_PROPOSTA_DESCARTADA : d.proposta_expirada_em ? ROTULO_PROPOSTA_EXPIRADA : (ROTULO_RESPOSTA[d.resposta ?? ""] ?? d.resposta)}
+                      {/* E1148: o bairro junto da cidade — nunca a morada (o dono não aceitou). */}
+                      {d.vistoria_pedidos ? ` · ${regiaoDoItemEncerrado(bairroDoImovel.get(d.vistoria_pedidos.property_id), d.vistoria_pedidos.cidade)} · ${ROTULO_PORTE[d.vistoria_pedidos.porte]}` : ""}
+                      {(d.proposta_descartada_em ?? d.proposta_expirada_em ?? d.respondido_em) ? ` · ${dataBRT((d.proposta_descartada_em ?? d.proposta_expirada_em ?? d.respondido_em)!)}` : ""}
+                    </p>
                   </li>
                 ))}
               </ul>
