@@ -121,7 +121,9 @@ test("E1153: os dois lados leem a MESMA frase, da mesma fonte e pela mesma regra
   // O dono: no bloco pós-aceite, por cima do combinado.
   const bloco = semComentarios(ler("src/components/vistoria/bloco-avaliacao-dono.tsx"));
   assert.equal(frases(bloco), 0);
-  assert.match(bloco, /\{aceitoSemDataDeVisita\(\{ status: atual\.status, propostaAceitaEm: atual\.proposta_aceita_em, agendadoPara: atual\.agendado_para \}\) && \(\s*<p [^>]*data-testid="avaliacao-aceite-confirmado"[^>]*>\s*\{CONFIRMACAO_DO_ACEITE\}\s*<\/p>/);
+  // E1173 (asserção alterada, ORDEM-DUET-763, a folha): no bloco do dono a frase sai quando o morador recusou a data
+  // (a frase de situação já diz o passo). A regra, a fonte e a frase continuam as mesmas.
+  assert.match(bloco, /\{aceitoSemDataDeVisita\(\{ status: atual\.status, propostaAceitaEm: atual\.proposta_aceita_em, agendadoPara: atual\.agendado_para \}\) && !recusouAData && \(\s*<p [^>]*data-testid="avaliacao-aceite-confirmado"[^>]*>\s*\{CONFIRMACAO_DO_ACEITE\}\s*<\/p>/);
   assert.ok(bloco.indexOf('data-testid="avaliacao-aceite-confirmado"') < bloco.indexOf('data-testid="avaliacao-proposta-aceita"'));
 
   // O avaliador, na lista (as Visitas): junto do formulário de agendar, só para quem tem a proposta aceita.

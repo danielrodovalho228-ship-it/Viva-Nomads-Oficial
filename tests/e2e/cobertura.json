@@ -7739,6 +7739,14 @@
         "t315-telas-avaliacao-dono-62a"
       ]
     },
+    "src/lib/vistoria/actions.ts#recusarDataDaVisita": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t1768-e1173-moradora-pode-nao-concordar"
+      ]
+    },
     "src/lib/vistoria/actions.ts#recusarProposta": {
       "personas": [
         "proprietario"
