@@ -459,6 +459,12 @@ export const REGRAS_AGENDA = {
   janelaAusenciasDias: 90,
 } as const;
 
+/**
+ * E1155: a regra do reagendamento como a tela a escreve. FONTE ÚNICA: o formulário de data do dono e o do avaliador
+ * (a regra vale igual para as duas partes: `podeReagendar`).
+ */
+export const REGRA_DO_REAGENDAMENTO = `Reagendar sem custo: uma vez, com pelo menos ${REGRAS_AGENDA.antecedenciaReagendarHoras} horas de aviso.`;
+
 export type Parte = "dono" | "avaliador";
 
 export function podeReagendar(agendadoPara: string, agora: Date, jaReagendou: boolean): { ok: true } | { ok: false; motivo: string } {

@@ -27,7 +27,7 @@ import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import type { ChaveIdentidade } from "@/lib/identidade/estado";
 import { STATUS_TESTE_CONCLUIDO } from "@/lib/vistoria/entrada";
 import { pendenciasDoCredenciamento } from "@/lib/vistoria/entrada";
-import { CODIGO_CONDUTA, CONDUTA_AVALIADOR, ROTULO_CONDUTA, ROTULO_PORTE, type Porte, type StatusCredenciamento } from "@/lib/vistoria/regras";
+import { CODIGO_CONDUTA, CONDUTA_AVALIADOR, REGRA_DO_REAGENDAMENTO, ROTULO_CONDUTA, ROTULO_PORTE, type Porte, type StatusCredenciamento } from "@/lib/vistoria/regras";
 
 export const metadata = { title: "Avaliação de imóveis", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -378,6 +378,12 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
           <label className="text-sm">Data e hora da visita<CampoDataHoraFormulario name="quando" required className={campo} /></label>
           <Button type="submit" variant="secondary" size="sm">{p.agendado_para ? "Reagendar" : "Agendar"}</Button>
           <span className="w-full text-xs text-muted">Horário de Brasília. Combine a data com o proprietário pelas mensagens da Viva.</span>
+          {/* E1155: a regra do reagendamento vale igual para o avaliador — a mesma frase que o dono lê, com a visita já marcada. */}
+          {p.agendado_para && (
+            <span className="w-full text-xs text-muted" data-testid="regra-reagendar">
+              {REGRA_DO_REAGENDAMENTO}
+            </span>
+          )}
         </FormAcao>
       )}
       {["designado"].includes(p.status) && r === "aceita" && !p.proposta_aceita_em && precisaDoAceite && (
