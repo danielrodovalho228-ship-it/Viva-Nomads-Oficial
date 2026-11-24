@@ -14,6 +14,9 @@ import { brl } from "../fiscal/documento.ts";
 import { codigoDoImovel } from "../imovel-pagina.ts";
 import { enderecoDaVisita, regiaoDaVisita } from "../visitas/endereco-visita.ts";
 import { ROTULO_PORTE, type Porte } from "./regras.ts";
+import { dataBRT } from "../datas-brasilia.ts";
+import { prazoLaudo } from "./laudo.ts";
+import { diasUteis } from "./prazos.ts";
 import { precisaDoAceiteDoDono } from "./relogio-do-pedido.ts";
 
 /** Em que ponto o pedido está para o avaliador escolhido. */
@@ -56,7 +59,7 @@ export const tituloDoPedido = (etapa: EtapaDoPedido): string => (etapa === "novo
 export const linhaDoPorte = (porte: Porte): string => `Porte: ${ROTULO_PORTE[porte]}`;
 
 /** O que as linhas de valor precisam do pedido. `escolhido_em` ausente lê-se como "o dono não escolheu". */
-type ValoresDoPedido = { valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; teste: boolean; escolhido_em?: string | null };
+type ValoresDoPedido = { valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; prazo_laudo_dias_uteis?: number | null; teste: boolean; escolhido_em?: string | null };
 
 /**
  * E1108: "sem valor" é só a avaliação de teste do credenciamento (de teste e sem escolha do dono: o admin designa, não
@@ -68,6 +71,28 @@ const semValor = (p: ValoresDoPedido): boolean => !precisaDoAceiteDoDono({ teste
 /** "1 dia" · "3 dias". E1158 (5): o mesmo ajudante no lado do avaliador, no bloco do dono e na troca de avaliador. */
 export const dias = (n: number): string => `${n} ${n === 1 ? "dia" : "dias"}`;
 
+export { diasUteis };
+
+/** O prazo como o pedido o guarda: o novo (dias úteis depois da visita, E1156) e o de antes ("laudo em N dias"). */
+type PrazoDoPedido = { prazo_proposto_dias: number | null; prazo_laudo_dias_uteis?: number | null };
+
+/**
+ * E1156: o compromisso do avaliador ao lado do valor, para o dono. Com o prazo novo: "laudo em até 3 dias úteis depois
+ * da visita" enquanto a visita não tem data, e "Laudo até 22/10/2026" quando tem. O pedido anterior à regra mantém a
+ * promessa que recebeu, como estava escrita: "laudo em 7 dias".
+ */
+export function prazoCombinadoNaLinhaDoDono(p: PrazoDoPedido, visitaEm: string | null): string {
+  if (p.prazo_laudo_dias_uteis == null) return `laudo em ${dias(Number(p.prazo_proposto_dias))}`;
+  if (visitaEm) return `Laudo até ${dataBRT(prazoLaudo(visitaEm, p.prazo_laudo_dias_uteis))}`;
+  return `laudo em até ${diasUteis(p.prazo_laudo_dias_uteis)} depois da visita`;
+}
+
+/** E1156: a proposta que o avaliador enviou, como ele a lê — sem ponto final (a lista acrescenta o dela). */
+export function textoDaPropostaEnviada(p: PrazoDoPedido & { valor_proposto: number | string | null }): string {
+  if (p.prazo_laudo_dias_uteis != null) return `Proposta enviada: ${brl(Number(p.valor_proposto))} · laudo em até ${diasUteis(p.prazo_laudo_dias_uteis)} depois da visita`;
+  return `Proposta enviada: ${brl(Number(p.valor_proposto))} em ${dias(Number(p.prazo_proposto_dias ?? 0))}`;
+}
+
 /**
  * A caixa do valor. E648: antes de o dono aceitar, o valor da tabela é só REFERÊNCIA (o avaliador propõe o seu);
  * "Você recebe" só com a proposta aceita, e pelo valor aceito.
@@ -76,7 +101,7 @@ export function linhaDoValor(etapa: EtapaDoPedido, p: ValoresDoPedido): { texto:
   if (semValor(p)) return { texto: "Avaliação de teste: sem valor a receber", recebe: false };
   if (etapa === "aceito" && p.valor_proposto != null) return { texto: `Você recebe ${brl(Number(p.valor_proposto))}`, recebe: true };
   if (etapa !== "novo" && p.valor_proposto != null) {
-    return { texto: `Proposta enviada: ${brl(Number(p.valor_proposto))} em ${dias(Number(p.prazo_proposto_dias ?? 0))}`, recebe: false };
+    return { texto: textoDaPropostaEnviada(p), recebe: false };
   }
   return { texto: `Valor de referência: ${brl(Number(p.valor_tabela))}`, recebe: false };
 }
@@ -87,13 +112,15 @@ export function linhaDoValor(etapa: EtapaDoPedido, p: ValoresDoPedido): { texto:
  */
 export function linhaDoPrazoDoLaudo(etapa: EtapaDoPedido, p: ValoresDoPedido): string | null {
   if (etapa !== "aceito" || semValor(p) || !p.prazo_proposto_dias) return null;
+  // E1156: o prazo novo diz a unidade e de onde conta; o pedido anterior à regra fica como foi prometido.
+  if (p.prazo_laudo_dias_uteis != null) return `Laudo em até ${diasUteis(p.prazo_laudo_dias_uteis)} depois da visita`;
   return `Laudo em ${dias(Number(p.prazo_proposto_dias))}`;
 }
 
 /** E1108: o valor na linha da lista do avaliador, pela mesma regra da tela do pedido. */
 export function resumoDoValorNaLista(p: ValoresDoPedido): string {
   if (semValor(p)) return "avaliação de teste";
-  if (p.valor_proposto != null) return `${brl(Number(p.valor_proposto))} · ${dias(Number(p.prazo_proposto_dias ?? 0))}`;
+  if (p.valor_proposto != null) return `${brl(Number(p.valor_proposto))} · ${p.prazo_laudo_dias_uteis != null ? diasUteis(p.prazo_laudo_dias_uteis) : dias(Number(p.prazo_proposto_dias ?? 0))}`;
   return `referência ${brl(Number(p.valor_tabela))}`;
 }
 

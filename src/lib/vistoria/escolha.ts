@@ -7,7 +7,7 @@
   Tudo atrás de VISTORIA_ATIVA. Nenhuma regra aqui toca em cobrança: o pagamento segue direto, a plataforma só registra.
 */
 import { createHash } from "node:crypto";
-import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_MAX_HORAS } from "./prazos.ts";
+import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_LAUDO_MAX_DIAS_UTEIS, PRAZO_RESPOSTA_MAX_HORAS } from "./prazos.ts";
 import { impedimento, type AvaliadorFila, type HistoricoDesignacao, type MotivoImpedimento, type PedidoParaDesignar } from "./regras.ts";
 
 // ── 1. O sistema sugere, o dono escolhe ────────────────────────────────────────────────────────────────────────
@@ -53,12 +53,15 @@ export function faixaDeReferencia(valorTabela: number): FaixaReferencia {
 export type ResultadoProposta = { ok: true; valor: number; prazoDias: number; foraDaFaixa: boolean } | { ok: false; erro: string };
 
 /**
- * O preço e o prazo são do avaliador. Só se recusa o que não faz sentido (valor não positivo, prazo que não é um número
- * inteiro de dias entre 1 e 30). Fora da faixa de referência NÃO bloqueia: o dono vê a sinalização e decide.
+ * O preço e o prazo são do avaliador. Só se recusa o que não faz sentido (valor não positivo) e o prazo fora da regra:
+ * E1156 — o prazo do laudo é um número inteiro de dias úteis depois da visita, de 1 até o teto. Fora da faixa de
+ * referência do valor NÃO bloqueia: o dono vê a sinalização e decide.
  */
 export function validarProposta(e: { valor: number; prazoDias: number }, faixa: FaixaReferencia): ResultadoProposta {
   if (!Number.isFinite(e.valor) || e.valor <= 0) return { ok: false, erro: "Informe o valor da avaliação (maior que zero)." };
-  if (!Number.isInteger(e.prazoDias) || e.prazoDias < 1 || e.prazoDias > PRAZO_PROPOSTA_MAX_DIAS) return { ok: false, erro: `Informe o prazo em dias inteiros (de 1 a ${PRAZO_PROPOSTA_MAX_DIAS}).` };
+  if (!Number.isInteger(e.prazoDias) || e.prazoDias < 1 || e.prazoDias > PRAZO_LAUDO_MAX_DIAS_UTEIS) {
+    return { ok: false, erro: `Informe o prazo do laudo em dias úteis inteiros, de 1 a ${PRAZO_LAUDO_MAX_DIAS_UTEIS}, contados depois da visita.` };
+  }
   const valor = Math.round(e.valor * 100) / 100;
   return { ok: true, valor, prazoDias: e.prazoDias, foraDaFaixa: valor < faixa.min || valor > faixa.max };
 }

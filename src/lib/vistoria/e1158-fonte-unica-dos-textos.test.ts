@@ -8,7 +8,7 @@ import { TEXTO_NOTA_DO_SERVICO } from "../parceiros/fiscal.ts";
 import { CONVITE_SEJA_PARCEIRO } from "../parceiros/convite-avaliacao.ts";
 import { DECLARACAO_DE_ASSINATURA_DO_LAUDO } from "./laudo-avaliador.ts";
 import { AVISO_EXPIRACAO_DIAS, PRAZO_DEVOLUCAO_DIAS, PRAZO_RESSALVA_DIAS, VALIDADE_LAUDO_MESES } from "./laudo.ts";
-import { dias } from "./pedido-avaliador.ts";
+import { dias, prazoCombinadoNaLinhaDoDono, textoDaPropostaEnviada } from "./pedido-avaliador.ts";
 import { SUBTITULO_DA_PORTA } from "./porta-da-avaliacao.ts";
 import { textoDaTroca, mensagemDepoisDaTroca } from "./troca-de-avaliador.ts";
 import {
@@ -92,8 +92,12 @@ test("E1158 (4): a declaração de assinatura do laudo é uma constante — igua
 test("E1158 (5): o prazo em dias sai do mesmo ajudante nos dois lados — nunca 'dia(s)' nem a conta à mão", () => {
   assert.equal(dias(1), "1 dia");
   assert.equal(dias(5), "5 dias");
-  assert.equal(vezes(BLOCO_DO_DONO, /laudo em \{dias\(Number\(atual\.prazo_proposto_dias\)\)\}/g), 2);
-  assert.match(AVALIADOR, /em \{dias\(Number\(p\.prazo_proposto_dias \?\? 0\)\)\}\./);
+  // E1156 (ORDENS-DUET 712 e 713): o prazo combinado sai de um ajudante só de cada lado — a proposta, o combinado e a
+  // troca no bloco do dono; a proposta enviada no lado do avaliador. O pedido anterior à regra continua a ler dias().
+  assert.equal(vezes(BLOCO_DO_DONO, /prazoCombinadoNaLinhaDoDono\(atual, (?:null|visitaComData)\)/g), 3);
+  assert.match(AVALIADOR, /\{textoDaPropostaEnviada\(p\)\}\./);
+  assert.equal(prazoCombinadoNaLinhaDoDono({ prazo_proposto_dias: 5, prazo_laudo_dias_uteis: null }, null), `laudo em ${dias(5)}`);
+  assert.equal(textoDaPropostaEnviada({ valor_proposto: 380, prazo_proposto_dias: 1, prazo_laudo_dias_uteis: null }), `Proposta enviada: R$ 380,00 em ${dias(1)}`);
   assert.ok(textoDaTroca({ numero: "UDI-001", valor: "R$ 380,00", prazoDias: 1, outros: 2, cidade: "Uberlândia" }).perde.includes("A proposta dele é descartada: R$ 380,00 · laudo em 1 dia."));
   assert.ok(textoDaTroca({ numero: "UDI-001", valor: "R$ 380,00", prazoDias: 4, outros: 2, cidade: "Uberlândia" }).perde.includes("A proposta dele é descartada: R$ 380,00 · laudo em 4 dias."));
   for (const f of [BLOCO_DO_DONO, AVALIADOR, ler("src/lib/vistoria/troca-de-avaliador.ts")]) assert.doesNotMatch(f, /dia\(s\)|=== 1 \? "dia" : "dias"/);
@@ -161,7 +165,8 @@ test("E1158 (14): a janela das recusas é um número só — na leitura, no tít
 test("E1158 (15): o prazo da devolução na fila lê a constante do LAUDO — nunca a da caução", () => {
   assert.equal(ROTULO_FILA.devolucao_vencida, `Devolução da contestação não confirmada em ${PRAZO_DEVOLUCAO_DIAS} dias`);
   const fila = ler("src/lib/vistoria/rotulos-da-fila.ts");
-  assert.match(fila, /import \{ HORAS_UTEIS_LAUDO, PRAZO_DEVOLUCAO_DIAS \} from "\.\/laudo\.ts";/);
+  // E1156: as "48 horas úteis" saíram da fila (o laudo conta pelo prazo combinado); a devolução continua a ler o LAUDO.
+  assert.match(fila, /import \{ PRAZO_DEVOLUCAO_DIAS \} from "\.\/laudo\.ts";/);
   assert.doesNotMatch(fila + EQUIPE, /caucao\/prazos/);
   assert.doesNotMatch(fila, /\b15 dias\b/);
   // O motivo gravado na fila pela rotina diz o mesmo prazo, da mesma constante.

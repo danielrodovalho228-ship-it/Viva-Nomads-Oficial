@@ -5,6 +5,7 @@ import { EVENTOS_VISITA_DE_AVALIACAO } from "@/lib/notifications/sino";
 import { escaparHtml } from "@/lib/escapar-html";
 import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type FatosVistoria } from "./corpo-email";
 import { corpoDoAvisoDaFila } from "./rotulos-da-fila";
+import { laudoForaDoCombinado } from "./laudo";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { STATUS_TESTE_CONCLUIDO } from "./entrada";
 import { criteriosAtingidos, propostaVencida, sugerirAvaliadores, CRITERIOS_PUBLICOS, type Sugestoes } from "./escolha";
@@ -520,7 +521,7 @@ export async function devolverAoDono(admin: Admin, pedidoId: string, avaliadorId
   }
   await admin
     .from("vistoria_pedidos")
-    .update({ status: "pedido", avaliador_id: null, designado_em: null, escolhido_em: null, valor_proposto: null, prazo_proposto_dias: null, proposta_em: null, proposta_aceita_em: null, agendado_para: null, ...LIMPEZA_DA_CONCORDANCIA, atualizado_em: quando })
+    .update({ status: "pedido", avaliador_id: null, designado_em: null, escolhido_em: null, valor_proposto: null, prazo_proposto_dias: null, prazo_laudo_dias_uteis: null, proposta_em: null, proposta_aceita_em: null, agendado_para: null, ...LIMPEZA_DA_CONCORDANCIA, atualizado_em: quando })
     .eq("id", pedidoId);
   // E1128: o pedido voltou ao dono sem data — os avisos da visita que estava marcada deixam de valer.
   await resolverAvisosDaVisita(admin, pedidoId);
@@ -549,20 +550,20 @@ export async function revisarCriterios(admin: Admin, avaliadorId: string, agora 
   const [aus, rev, ped, cond] = await Promise.all([
     admin.from("vistoria_designacoes").select("respondido_em").eq("avaliador_id", avaliadorId).eq("resposta", "ausencia").gte("respondido_em", desde(90)),
     admin.from("vistoria_auditoria").select("resultado").eq("avaliador_id", avaliadorId).eq("resultado", "nao_confere").gte("revisado_em", desde(365)),
-    admin.from("vistoria_pedidos").select("id, proposta_aceita_em, prazo_proposto_dias").eq("avaliador_id", avaliadorId).not("proposta_aceita_em", "is", null).gte("proposta_aceita_em", desde(180)),
+    admin.from("vistoria_pedidos").select("id, proposta_aceita_em, prazo_proposto_dias, prazo_laudo_dias_uteis, visita_concluida_em, agendado_para").eq("avaliador_id", avaliadorId).not("proposta_aceita_em", "is", null).gte("proposta_aceita_em", desde(180)),
     // E679-B: conduta é cega — só a PUBLICADA (os dois enviaram ou a janela de 14 dias fechou) entra na revisão.
     admin.from("vistoria_conduta").select("pontualidade, cordialidade, cuidado").eq("avaliador_id", avaliadorId).eq("autor", "dono").not("publicada_em", "is", null),
   ]);
   if ([aus, rev, ped, cond].some((r) => r.error)) return [];
-  const pedidos = (ped.data ?? []) as { id: string; proposta_aceita_em: string; prazo_proposto_dias: number | null }[];
+  const pedidos = (ped.data ?? []) as { id: string; proposta_aceita_em: string; prazo_proposto_dias: number | null; prazo_laudo_dias_uteis: number | null; visita_concluida_em: string | null; agendado_para: string | null }[];
   let foraDoPrazo = 0;
   if (pedidos.length) {
     const { data: laudos } = await admin.from("vistoria_laudos").select("pedido_id, emitido_em, versao").in("pedido_id", pedidos.map((x) => x.id)).eq("versao", 1);
     const emitido = new Map(((laudos ?? []) as { pedido_id: string; emitido_em: string }[]).map((l) => [l.pedido_id, l.emitido_em]));
     for (const x of pedidos) {
       const em = emitido.get(x.id);
-      if (!em || !x.prazo_proposto_dias) continue;
-      if (Date.parse(em) > Date.parse(x.proposta_aceita_em) + x.prazo_proposto_dias * dia) foraDoPrazo++;
+      // E1156: fora do prazo é fora do COMBINADO (dias úteis depois da visita); o pedido antigo conta como antes.
+      if (em && laudoForaDoCombinado(x, em)) foraDoPrazo++;
     }
   }
   const notas = ((cond.data ?? []) as { pontualidade: number; cordialidade: number; cuidado: number }[]).map((c) => ({ ...c }) as Record<string, number>);

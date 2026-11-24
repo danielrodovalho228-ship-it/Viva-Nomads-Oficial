@@ -22,7 +22,7 @@ import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO, linhaNivelSustentado } from "@/lib/vistoria/nivel-do-laudo";
 import { dbaNoCampo, faltasDoRoteiro, linhaDbaGuardado, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
 import { etapaDoPedido, identificacaoDoImovel, linhaDoPorte, linhaDoPrazoDoLaudo, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
-import { PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
+import { PRAZO_LAUDO_MAX_DIAS_UTEIS, diasUteis, diasUteisDoLaudo } from "@/lib/vistoria/prazos";
 import { TEXTO_RECUSA_PARA_O_AVALIADOR, concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { brl } from "@/lib/fiscal/documento";
@@ -55,7 +55,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/parceiro/avaliacao/${pedido}`)}`);
   const { data: p } = await admin
     .from("vistoria_pedidos")
-    .select("id, property_id, status, tipo, ocupado, agendado_para, concordancia_pedida_em, concordancia_em, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
+    .select("id, property_id, status, tipo, ocupado, agendado_para, concordancia_pedida_em, concordancia_em, visita_concluida_em, prazo_laudo_dias_uteis, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
     .eq("id", pedido)
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
@@ -66,12 +66,12 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   // Bairro e cidade antes do aceite do dono; o endereço completo só depois. Recusado ou vencido: volta à lista.
   if (p.status === "designado") {
     const [{ data: d, error: erroPedido }, { data: des, error: erroDesignacoes }, { data: im }, { data: capasDoPedido }] = await Promise.all([
-      admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, designado_em, escolhido_em, teste").eq("id", p.id).maybeSingle(),
+      admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, proposta_em, proposta_aceita_em, designado_em, escolhido_em, teste").eq("id", p.id).maybeSingle(),
       admin.from("vistoria_designacoes").select("avaliador_id, resposta").eq("pedido_id", p.id),
       admin.from("properties").select("title, exact_address, address, city, state, draft_data").eq("id", p.property_id).maybeSingle(), // consistency-ignore: E1079 fatia 3 — endereço exato só ao avaliador escolhido e só depois de o dono aceitar a proposta
       admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1),
     ]);
-    const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; designado_em: string | null; escolhido_em: string | null; teste: boolean } | null;
+    const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; prazo_laudo_dias_uteis: number | null; proposta_em: string | null; proposta_aceita_em: string | null; designado_em: string | null; escolhido_em: string | null; teste: boolean } | null;
     // E1102: leitura que falha não vira "este pedido não é seu" nem volta calada ao painel: cai no aviso do painel, com
     // "Tentar de novo".
     if (erroPedido || erroDesignacoes) throw new Error("Não foi possível ler este pedido agora.");
@@ -115,7 +115,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
         recusaDaData={concordanciaRecusada({ status: p.status as string, ocupado: Boolean(p.ocupado), agendadoPara: p.agendado_para as string | null, concordanciaPedidaEm: p.concordancia_pedida_em as string | null, concordanciaEm: p.concordancia_em as string | null }) ? TEXTO_RECUSA_PARA_O_AVALIADOR : null}
         ocupado={Boolean(p.ocupado)}
         exemploValor={brl(Number(dados.valor_tabela))}
-        prazoMaxDias={PRAZO_PROPOSTA_MAX_DIAS}
+        prazoMaxDias={PRAZO_LAUDO_MAX_DIAS_UTEIS}
       />
     );
   }
@@ -155,7 +155,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   const previsto = resultadoAvaliacao(respostasSalvas);
   const resumo = resumoPorGrupo(respostasSalvas);
   const visitaEm = (p.visita_concluida_em as string | null) ?? (p.agendado_para as string | null);
-  const prazo = p.status === "realizada" && visitaEm ? prazoDoLaudo(visitaEm, new Date()) : null;
+  const prazo = p.status === "realizada" && visitaEm ? prazoDoLaudo(visitaEm, new Date(), p.prazo_laudo_dias_uteis as number | null) : null;
 
   // E1079 (fatia 5): na etapa do laudo (visita concluída, laudo por assinar) a tela é a do desenho — "Laudo da avaliação",
   // os níveis em cartões, o resumo e "Assinar laudo" — e este bloco vem ANTES do checklist. Durante a visita, vem depois.
@@ -182,7 +182,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
         {p.status === "agendado" ? (
           <FormAcao acao={concluirVisita} testid="concluir-visita">
             <input type="hidden" name="pedidoId" value={p.id} />
-            <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo em até 48 horas úteis.</p>
+            <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo no prazo combinado: {diasUteis(diasUteisDoLaudo(p.prazo_laudo_dias_uteis as number | null))} depois da visita.</p>
             {faltasRoteiro.length > 0 && (
               <p id="concluir-faltas-motivo" className="mt-2 text-sm text-ink" role="status" data-testid="concluir-faltas">{msgRoteiroIncompleto(faltasRoteiro)}</p>
             )}

@@ -6,7 +6,7 @@ import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 /**
  * T344 — Prompt 62-A, Parte 2: as telas da avaliação sobre o 62-B2 (laboratório; a chave liga pelo cookie do teste).
  *   1. Execução (390 e 1280): aviso "sem pessoas", os 9 passos, item não conforme pede a foto, sem rede "Falta enviar 1
- *      foto" → a rede volta e a foto sobe; revisão do laudo com o prazo das 48 horas úteis e a delimitação; envio.
+ *      foto" → a rede volta e a foto sobe; revisão do laudo com o prazo combinado (dias úteis depois da visita) e a delimitação; envio.
  *   2. Resultado do dono (390 e 1280): resumo por grupo, a foto do item não conforme, as ações de cada resultado
  *      (com ressalvas → correção e contestar; reprovado → nova avaliação) e "Avaliado em … nº X" quando aprovado.
  *   3. Ficha e cartão: "Avaliado em … por avaliador credenciado nº X", "Ver laudo" e "Premium · vistoriado" no cartão.
@@ -156,7 +156,8 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await p.reload({ waitUntil: "domcontentloaded" });
       const rev = p.getByTestId("laudo-revisao");
       await expect(rev).toHaveAttribute("data-resultado", "com_ressalvas");
-      await expect(p.getByTestId("laudo-prazo")).toContainText("horário de Brasília (48 horas úteis da visita)");
+      // E1156 (asserção alterada, ORDENS-DUET 712 e 713): o prazo do laudo é o combinado, em dias úteis depois da visita.
+      await expect(p.getByTestId("laudo-prazo")).toContainText("horário de Brasília (2 dias úteis depois da visita)");
       await expect(rev.getByTestId("laudo-revisao-grupo")).toHaveCount(9);
       await expect(p.getByTestId("laudo-revisao-nc")).toContainText("1 foto(s)");
       await expect(p.getByTestId("laudo-delimitacao")).toContainText("Retrato do estado do imóvel na data da avaliação");

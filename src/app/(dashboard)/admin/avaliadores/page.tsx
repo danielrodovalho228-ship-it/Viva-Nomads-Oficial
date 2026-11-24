@@ -19,7 +19,7 @@ import { idsContasTeste } from "@/lib/data/admin-indicadores";
 import { separarContasDeTeste, textoDasContasDeTeste } from "@/lib/vistoria/contagens-da-central";
 import { RESPOSTA_DO_AVALIADOR, ROTULO_AGUARDANDO_AVALIADOR, TITULO_PEDIDOS_SEM_AVALIADOR, rotuloDoStatus, rotuloDoTipo } from "@/lib/vistoria/rotulos-do-pedido";
 import { ROTULO_FILA } from "@/lib/vistoria/rotulos-da-fila";
-import { contagemContestacoes } from "@/lib/vistoria/telas-laudo";
+import { TITULO_LAUDOS_FORA_DO_PRAZO, contagemContestacoes } from "@/lib/vistoria/telas-laudo";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
 import { comTesteConcluido, filaDaCidade, nomesDasContas } from "@/lib/vistoria/servidor";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
@@ -464,7 +464,7 @@ export default async function AdminAvaliadoresPage() {
             )}
           </div>
           <div data-testid="laudos-atrasados">
-            <h3 className="font-semibold text-ink">Laudos fora das 48 horas úteis</h3>
+            <h3 className="font-semibold text-ink">{TITULO_LAUDOS_FORA_DO_PRAZO}</h3>
             {atrasadosLista.length === 0 && filaAtrasados.deTeste.length === 0 && <p className="mt-1 text-muted">Nenhum laudo atrasado.</p>}
             {atrasadosLista.length > 0 && (
               <ul className="mt-1 grid gap-1">
