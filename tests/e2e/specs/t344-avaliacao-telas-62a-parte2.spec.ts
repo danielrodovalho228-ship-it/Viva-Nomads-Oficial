@@ -282,7 +282,9 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await topo.getByTestId("decidir-numero-contestacoes").click();
       await expect(a.getByTestId("avaliacoes-contestacoes")).toBeInViewport();
       await expect(a.getByTestId("contestacao-item").first()).toBeVisible();
-      await expect(a.getByTestId("devolucao-item").first()).toContainText(cred.numero);
+      // E1181: a lista é de todas as devoluções por confirmar, por prazo — a base partilhada pode pôr outra antes desta.
+      // A trava procura a DESTE teste pelo número do avaliador, em vez de ler a primeira da lista.
+      await expect(a.getByTestId("devolucao-item").filter({ hasText: cred.numero }), "a devolução deste teste está na lista").toHaveCount(1);
       // O rótulo "Imóvel (id)" do formulário de verificação continua (o t305 depende dele).
       await expect(a.getByTestId("verificacao-form").getByLabel("Imóvel (id)")).toBeVisible();
       await semRolagemLateral(a);
