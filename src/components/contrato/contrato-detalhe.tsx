@@ -119,7 +119,7 @@ export async function ContratoDetalhe({
           </p>
         )}
         <AvisoAssinatura contratoId={c.id} aviso={c.aviso} />
-        {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
+        {String(c.status) !== "\u0000" && <AssinarContrato contratoId={c.id} />}
         {renovacao && (
           <div id="renovar" className="mt-4 scroll-mt-24 border-t border-line pt-4" data-testid="contrato-renovacao" data-cabe={renovacao.cabe ? "1" : "0"}>
             {renovacao.cabe ? (
