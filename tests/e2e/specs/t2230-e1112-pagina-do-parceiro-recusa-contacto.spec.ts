@@ -1,4 +1,4 @@
-import { test, expect, type Locator, type Page } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -34,26 +34,29 @@ const CONTACTOS: { campo: "#pp-nome" | "#pp-curta" | "#pp-descricao"; coluna: "n
   { campo: "#pp-descricao", coluna: "descricao", texto: "Orçamento pelo e-mail paula.limpeza@exemplo.com.br" },
 ];
 
-/** Desce só até o botão ficar no fundo do ecrã, logo acima de uma barra fixa de baixo (se houver): como quem rola até ele. */
-async function botaoNoFimDoEcra(page: Page, botao: Locator) {
-  await botao.evaluate((el) => {
-    const barras = [...document.querySelectorAll<HTMLElement>("body *")].filter((n) => {
-      const st = getComputedStyle(n);
-      return st.position === "fixed" && n.getBoundingClientRect().bottom >= window.innerHeight - 1 && n.getBoundingClientRect().height < window.innerHeight / 3;
-    });
-    const limite = Math.min(window.innerHeight, ...barras.map((b) => b.getBoundingClientRect().top));
-    // Rolagem instantânea: o site tem scroll-behavior: smooth, e um scrollBy simples ainda ia a meio quando o toque
-    // chegava — o click() rolava então o botão para o meio do ecrã (ensaio 45290848453).
-    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().bottom - limite + 2, behavior: "instant" });
-  });
-  // O botão ficou mesmo no fundo do ecrã (logo acima da barra de baixo), à vista e sem ser preciso rolar para o tocar.
+/**
+ * Desce só até o botão ficar no fundo do ecrã, logo acima de uma barra fixa de baixo (se houver): como quem rola até ele.
+ * Rolagem instantânea (o site tem scroll-behavior: smooth: um scrollBy ainda ia a meio quando o toque chegava, e o click()
+ * rolava o botão para o meio do ecrã — ensaio 45290848453), repetida até a posição assentar (a página ainda cresce
+ * enquanto carrega — ensaio 45292565104).
+ */
+async function botaoNoFimDoEcra(botao: Locator) {
   await expect
-    .poll(() => botao.evaluate((el) => {
-      const barra = [...document.querySelectorAll<HTMLElement>("body *")].filter((n) => getComputedStyle(n).position === "fixed" && n.getBoundingClientRect().bottom >= window.innerHeight - 1 && n.getBoundingClientRect().height < window.innerHeight / 3);
-      const limite = Math.min(window.innerHeight, ...barra.map((b) => b.getBoundingClientRect().top));
-      const r = el.getBoundingClientRect();
-      return r.top >= 0 && r.bottom <= limite && limite - r.bottom < 40;
-    }), { message: "o botão está no fundo do ecrã", timeout: 5_000 })
+    .poll(
+      () =>
+        botao.evaluate((el) => {
+          const barras = [...document.querySelectorAll<HTMLElement>("body *")].filter((n) => {
+            const st = getComputedStyle(n);
+            return st.position === "fixed" && n.getBoundingClientRect().bottom >= window.innerHeight - 1 && n.getBoundingClientRect().height < window.innerHeight / 3;
+          });
+          const limite = Math.min(window.innerHeight, ...barras.map((b) => b.getBoundingClientRect().top));
+          const r = el.getBoundingClientRect();
+          if (r.top >= 0 && r.bottom <= limite && limite - r.bottom < 40) return true;
+          window.scrollTo({ top: window.scrollY + r.bottom - limite + 2, behavior: "instant" });
+          return false;
+        }),
+      { message: "o botão está no fundo do ecrã", timeout: 10_000, intervals: [100, 250, 500] },
+    )
     .toBe(true);
 }
 
@@ -108,7 +111,7 @@ test.describe("T2230 — E1112: a página do parceiro e o pedido de parceria rec
       await expect(page.locator(c.campo)).toBeVisible({ timeout: 30_000 });
       await page.locator(c.campo).fill(c.texto);
       // E1137: o botão no fundo do ecrã — o aviso, que nasce abaixo dele, só se vê se a página rolar até ele.
-      await botaoNoFimDoEcra(page, page.getByTestId("parceiro-salvar-pagina"));
+      await botaoNoFimDoEcra(page.getByTestId("parceiro-salvar-pagina"));
       await page.getByTestId("parceiro-salvar-pagina").click();
       await expect(page.getByTestId("parceiro-msg"), `${c.coluna}: o aviso da casa`).toHaveText(AVISO, { timeout: 20_000 });
       // E1131 (ORDEM-DUET-572): o aviso aparece junto do botão — dentro do ecrã de quem acabou de salvar, não no topo do painel.
