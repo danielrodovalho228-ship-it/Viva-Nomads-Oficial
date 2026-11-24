@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { authFile } from "../fixtures/auth";
@@ -12,11 +13,15 @@ import { NO_LABORATORIO } from "../fixtures/laboratorio";
  * 10 em 10 com dois pedidos diretos e 9 em 20 com duas sessões.
  *
  * Cada caso semeia como o t21 semeia (UMA ordem concluída do Moacir + UMA ronda) e conta as mensagens "(ordem <id>)".
+ * Os casos correm em paralelo, em mais de um processo, e cada processo roda o afterAll: por isso cada processo marca o
+ * que semeia com um código só dele e apaga só isso. Antes a limpeza apagava tudo o que tivesse "t1695" e levava as
+ * ordens de um caso ainda a correr noutro processo (contagem 0 em vez de 1).
  * Só no laboratório: precisa do cliente de serviço para semear e contar.
  */
 const BANCO = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICO = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const MARCA = "[teste-lab] t1695";
+const PROCESSO = randomUUID().slice(0, 8);
+const MARCA = `[teste-lab] t1695 ${PROCESSO}`;
 const REPETICOES = 5;
 
 test.describe("T1695 — E1032: o Retorno do Moacir sai uma vez só @E1032", () => {
@@ -30,7 +35,7 @@ test.describe("T1695 — E1032: o Retorno do Moacir sai uma vez só @E1032", () 
     expect(error, "semear a ordem").toBeNull();
     const ronda = await db.rpc("registrar_ronda", {
       p_slug: "renato", p_inicio: new Date().toISOString(), p_fim: new Date().toISOString(), p_status: "ok",
-      p_resumo: `[lab] t1695 ${rotulo}`, p_achados: [], p_ordens: [ordem!.id], p_link: "https://example.invalid/t1695",
+      p_resumo: `[lab] t1695 ${PROCESSO} ${rotulo}`, p_achados: [], p_ordens: [ordem!.id], p_link: "https://example.invalid/t1695",
     });
     expect(ronda.error, "semear a ronda").toBeNull();
     return ordem!.id as string;
@@ -43,7 +48,7 @@ test.describe("T1695 — E1032: o Retorno do Moacir sai uma vez só @E1032", () 
     const { data: ordens } = await db.from("agentes_ordens").select("id").like("texto", `%${MARCA}%`);
     for (const o of ordens ?? []) await db.from("agentes_conversas").delete().like("texto", `%(ordem ${o.id})%`);
     await db.from("agentes_ordens").delete().like("texto", `%${MARCA}%`);
-    await db.from("agentes_rondas").delete().like("resumo", "[lab] t1695 %");
+    await db.from("agentes_rondas").delete().like("resumo", `[lab] t1695 ${PROCESSO} %`);
   });
 
   test("uma sessão abre a Central: o Retorno aparece uma vez, com o resultado da ronda, e recarregar não repete", async ({ page }) => {
@@ -54,7 +59,7 @@ test.describe("T1695 — E1032: o Retorno do Moacir sai uma vez só @E1032", () 
     const { data } = await banco().from("agentes_conversas").select("texto, agente_slug, papel").like("texto", `%(ordem ${id})%`);
     expect(data![0].agente_slug).toBe("moacir");
     expect(data![0].texto).toContain("Retorno: Renato terminou o que eu pedi (ok).");
-    expect(data![0].texto).toContain("[lab] t1695 uma sessão");
+    expect(data![0].texto).toContain(`[lab] t1695 ${PROCESSO} uma sessão`);
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     expect(await mensagens(id), "depois de recarregar").toBe(1);
