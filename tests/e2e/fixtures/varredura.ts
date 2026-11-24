@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import type { Browser, BrowserContext, Page } from "@playwright/test";
 import { hasAccount } from "./accounts";
 import { entrar } from "./laboratorio";
-import { MOTIVO_ACAO_CANCELADA, MOTIVO_ARQUIVO_CANCELADO, MOTIVO_LEITURA_CANCELADA, canceladaPeloNavegador } from "./requisicao-cancelada";
+import { MOTIVO_ACAO_CANCELADA, MOTIVO_ARQUIVO_CANCELADO, MOTIVO_LEITURA_CANCELADA, cabecalhosComOrigem, canceladaPeloNavegador } from "./requisicao-cancelada";
 import { recursoFicticioDoLab } from "../../../src/lib/varredura-texto";
 
 /**
@@ -120,7 +120,7 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
       return;
     }
     const motivo = r.failure()?.errorText ?? "?";
-    const cancelada = canceladaPeloNavegador(motivo, r.method(), r.url(), r.headers());
+    const cancelada = canceladaPeloNavegador(motivo, r.method(), r.url(), cabecalhosComOrigem(r));
     if (cancelada === "prefetch") return;
     if (cancelada === "acao") {
       acaoCancelada = true;
@@ -136,7 +136,7 @@ export function escutarErros(page: Page): { lista: () => string[]; ignorados: ()
     }
     // Tipo, método e erro do navegador vão junto: a rodada 2 (21/10) acusou a URL da própria tela (sem `_rsc`) e só a URL
     // não diz se é documento, ação do servidor (POST com next-action) ou outra coisa.
-    const acao = r.headers()["next-action"] ? ", ação do servidor" : "";
+    const acao = cabecalhosComOrigem(r)["next-action"] ? ", ação do servidor" : "";
     brutos.push(`requisição falhou (${r.resourceType()} ${r.method()}${acao}, ${motivo}): ${r.url()}`);
   });
   const ehExcecao = (t: string) => EXCECOES_TERCEIROS.some((x) => x.padrao.test(t));
@@ -274,8 +274,12 @@ export async function controlesCobertos(page: Page): Promise<string[]> {
         if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
         const r = caixaDeMedida(el);
         if (r.width < 2 || r.height < 2) continue;
-        const x = r.left + r.width / 2;
-        const y = r.top + r.height / 2;
+        // E744 (tabela da Fable #3832, t622): controle EM LINHA que quebra de linha (link dentro de um <p>) — a caixa do
+        // getBoundingClientRect é a união das linhas e o centro cai no vizinho. Mede o centro da 1ª caixa de linha.
+        const linhas = el.getClientRects();
+        const r1 = linhas.length > 1 && getComputedStyle(el).display === "inline" ? linhas[0] : r;
+        const x = r1.left + r1.width / 2;
+        const y = r1.top + r1.height / 2;
         if (x < 0 || y < 0 || x > window.innerWidth - 1 || y > window.innerHeight - 1) continue; // fora da janela: não é visível agora
         // Cortado por ancestral com overflow (carrossel, gaveta): o ponto fora da área do ancestral não conta.
         let cortado = false;

@@ -13,7 +13,7 @@ import { TEXTO_PRAZO_PARCERIA, categoriaValida } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
 import { linksDoCartaoServicos } from "@/lib/parceiros/cartao-servicos";
-import { GESTOR_TEXTO } from "@/config/planos";
+import { TEXTO_CARTEIRAS } from "@/config/planos";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 import { linksDoCartaoGestores } from "@/lib/parceiros/tipos-parceria";
 import { PARCEIROS_HEROI_SUBTITULO, PARCEIROS_NUMERO_CONTATO } from "@/config/textos-regulados";
@@ -28,9 +28,9 @@ const CARDS = [
   { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Página com portfólio, galeria, serviços e prazos. A conversa é pelas mensagens da Viva.",
     links: [{ href: "/parceiros?categoria=fotografia#quero-ser-parceiro", rotulo: "Sou fotógrafo" }, { href: "/parceiros/fotografos", rotulo: "Procuro fotógrafo" }] },
   { id: "empresas", titulo: "Empresas", selo: "Aberto", texto: "Empresas que hospedam equipes em imóveis mobiliados.", links: [{ href: "/empresas", rotulo: "Conhecer" }] },
-  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume e Plano Gestor: ${GESTOR_TEXTO}.`,
-    // E302 (QA 31/10): o botão leva à explicação do Gestor em Preços (âncora). E896: com os preços suspensos, a escada de taxas
-    // com o Plano Gestor em /para-proprietarios#taxa — o cartão nunca fica sem saída.
+  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume. ${TEXTO_CARTEIRAS}`,
+    // E896/078: o botão leva às taxas — a seção das carteiras em Preços ou, com os preços suspensos, a escada de taxas
+    // em /para-proprietarios#taxa. O cartão nunca fica sem saída.
     links: linksDoCartaoGestores(PRECOS_VISIVEL) },
   { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção leve para imóveis mobiliados. Página própria com serviços e cidades.",
     links: linksDoCartaoServicos() }, // E897: um caminho por categoria (limpeza, lavanderia, manutenção), como o cartão "Montagem e mudança".
@@ -124,8 +124,12 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
                     <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${c.selo === "Aberto" ? "bg-sage-100 text-forest" : "bg-night/10 text-ink"}`}>{c.selo}</span>
                   </div>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{c.texto}</p>
-                  <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-forest">
-                    {c.links.map((l) => <Link key={l.href} href={l.href} className="alvo-toque underline underline-offset-2 hover:text-blue-700">{l.rotulo}</Link>)}
+                  {/* E1033 (passo 3): cada link é uma caixa REAL de 44 px. Antes tinham 20 px com uma área invisível de 44 px, e
+                      as duas linhas ficavam a 36 px: a área de um link invadia o da linha seguinte. O espaço vertical vem
+                      agora da própria caixa (gap só na horizontal); as margens compensam a altura a mais, para o primeiro e
+                      o último link ficarem onde estavam. Duas linhas passam de 36 para 44 px de distância. */}
+                  <div className="-mb-3 mt-1 flex flex-wrap gap-x-4 text-sm font-semibold text-forest">
+                    {c.links.map((l) => <Link key={l.href} href={l.href} className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-blue-700">{l.rotulo}</Link>)}
                   </div>
                 </div>
               </li>
@@ -145,7 +149,7 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
             <p className="mt-1 text-sm text-muted">Avaliação do imóvel pelo checklist da Viva, escolhida pelo proprietário. Peça o credenciamento numa página própria.</p>
           </div>
           <div className="px-6 pb-6 pt-3 sm:py-6">
-            <Link href="/parceiros/avaliadores" className="alvo-toque text-sm font-semibold text-forest underline underline-offset-2 hover:text-blue-700">Ser avaliador credenciado</Link>
+            <Link href="/parceiros/avaliadores" className="area-de-toque-44 text-sm font-semibold text-forest underline underline-offset-2 hover:text-blue-700">Ser avaliador credenciado</Link>
           </div>
         </div>
       </section>

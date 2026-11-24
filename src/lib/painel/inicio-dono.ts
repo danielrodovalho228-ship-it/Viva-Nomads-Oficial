@@ -21,7 +21,8 @@ export interface ItemPassoDono {
 }
 
 export interface BlocoPrincipalDono {
-  tipo: "rascunho" | "decisao" | "primeiro_anuncio" | "em_dia";
+  /** E1093: "sem_leitura" = os anúncios (ou as decisões) não foram lidos agora; o bloco não afirma o que não leu. */
+  tipo: "rascunho" | "decisao" | "primeiro_anuncio" | "em_dia" | "sem_leitura";
   titulo: string;
   /** "47% pronto" (só no rascunho). */
   pct: number | null;
@@ -53,6 +54,12 @@ export function blocoPrincipalDono(p: {
    * Mora DENTRO do bloco principal, na lista "Próximos passos" do mockup; nunca num bloco à parte (um guia só).
    */
   checklist?: ChecklistAtivacao | null;
+  /**
+   * E1093: o que o Início NÃO conseguiu ler nesta carga. Com os anúncios por ler, `temAnuncio` não quer dizer nada: o
+   * bloco não pode dizer "Anuncie seu primeiro imóvel" a quem tem imóveis. Com as decisões por ler, não pode dizer "Tudo
+   * em dia". O que foi lido (um rascunho, uma decisão) continua a valer.
+   */
+  naoLido?: { imoveis: boolean; decisoes: boolean };
 }): BlocoPrincipalDono {
   const b = montarBloco(p);
   // E494: "Próximos passos" não repete o destino do botão principal (ex.: "Endereço" = "Continuar de onde parou").
@@ -94,6 +101,9 @@ function montarBloco(p: Parameters<typeof blocoPrincipalDono>[0]): BlocoPrincipa
   if (urgente) {
     return { tipo: "decisao", titulo: "Próximo passo", pct: null, linha: urgente.texto, botao: { rotulo: "Resolver agora", href: urgente.href }, passos: [], foto: p.fotoAnuncio };
   }
+  // E1093: daqui para baixo o bloco afirma algo sobre os anúncios ("não tem nenhum") ou sobre as decisões ("nada
+  // pendente"). Sem a leitura, diz que não leu e leva aos anúncios — nunca ao cadastro de um imóvel novo.
+  if (p.naoLido?.imoveis) return blocoSemLeitura(TEXTO_ANUNCIOS_NAO_LIDOS, null);
   if (!p.temAnuncio) {
     return {
       tipo: "primeiro_anuncio",
@@ -109,7 +119,17 @@ function montarBloco(p: Parameters<typeof blocoPrincipalDono>[0]): BlocoPrincipa
       foto: null,
     };
   }
+  if (p.naoLido?.decisoes) return blocoSemLeitura(TEXTO_DECISOES_NAO_LIDAS, p.fotoAnuncio);
   return { tipo: "em_dia", titulo: "Tudo em dia", pct: null, linha: "Nada pede sua decisão hoje.", botao: { rotulo: "Ver meus anúncios", href: "/dashboard/imoveis" }, passos: [], foto: p.fotoAnuncio };
+}
+
+/** E1093: os textos do bloco quando a leitura falhou (o aviso do topo, avisoInicioSemLeitura, diz o que faltou ler). */
+export const TITULO_SEM_LEITURA = "Seus anúncios";
+export const TEXTO_ANUNCIOS_NAO_LIDOS = "Não foi possível ler os seus anúncios agora. Recarregue a página em instantes.";
+export const TEXTO_DECISOES_NAO_LIDAS = "Não foi possível ler as suas pendências agora. Recarregue a página em instantes.";
+
+function blocoSemLeitura(linha: string, foto: string | null): BlocoPrincipalDono {
+  return { tipo: "sem_leitura", titulo: TITULO_SEM_LEITURA, pct: null, linha, botao: { rotulo: "Ver meus anúncios", href: "/dashboard/imoveis" }, passos: [], foto };
 }
 
 export const PECA_NA_VIVA = {

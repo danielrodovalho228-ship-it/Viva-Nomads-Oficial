@@ -158,7 +158,9 @@ test.describe("T214 — Análise da carteira ligada ao banco (complemento do pro
       await expect(p.getByTestId("estadia-etapa-saida")).toContainText(formatarDiaCurto(iso(fim)));
       const { data: blocos } = await adm().from("contrato_blocos").select("inicio, fim").eq("contrato_id", ids.contratoVigente!);
       expect(inicio).toBe(dataBR(String(blocos![0].inicio)));
-      expect(fim).toBe(dataBR(String(blocos![0].fim)));
+      // E1089 (coordenador): a carteira mostra a SAÍDA — o dia seguinte ao fim gravado no bloco (a última noite).
+      const saida = new Date(Date.parse(`${String(blocos![0].fim).slice(0, 10)}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+      expect(fim).toBe(dataBR(saida));
       await p.context().close();
     });
   }

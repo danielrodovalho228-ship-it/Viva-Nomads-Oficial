@@ -31,7 +31,7 @@ async function abrirPasso1(page: Page) {
   await noPasso(page, "endereco");
 }
 
-test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à vista", () => {
+test.describe("T194 — passo 1: IA primeiro, CEP que sempre responde, fotos à vista", { tag: ["@sensivel-carga"] }, () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (integrações simuladas).");
   test.describe.configure({ mode: "serial" });
   test.setTimeout(180_000);

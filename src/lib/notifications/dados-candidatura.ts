@@ -42,29 +42,48 @@ export function periodoDaCandidatura(entrada?: string | null, saida?: string | n
   return { dias, meses: Math.max(1, Math.ceil(dias / 30)) };
 }
 
+type DadosDaDecisao = Pick<DadosCandidatura, "entrada" | "saida" | "totalMensal" | "estadiaDias">;
+
+/** O total da estadia (rótulo, valor e a conta aberta), ou null sem o período completo — nunca um número inventado. */
+function totalDaEstadia(d: DadosDaDecisao): { rotulo: string; valor: string; conta: string | null } | null {
+  const p = periodoDaCandidatura(d.entrada, d.saida);
+  if (!p) return null;
+  // E583: a conta da estadia é em DIAS (E562), a mesma da tela — antes, "R$ 6.100 em 2 meses" para 35 dias.
+  const e = d.estadiaDias && d.estadiaDias.dias === p.dias ? d.estadiaDias : null;
+  if (e) return { rotulo: e.rotulo, valor: `${formatBRLExato(e.total)} (${e.periodo})`, conta: `${e.conta} = ${formatBRLExato(e.total)}` };
+  const total = Math.round((d.totalMensal * p.dias * 100) / 30) / 100;
+  return { rotulo: rotuloTotalDaEstadia(p.dias), valor: `${formatBRLExato(total)} (${periodoPorExtenso(p.dias)})`, conta: null };
+}
+
+/**
+ * E1053: Entrada, Saída e Total da estadia da candidatura — a MESMA conta do quadro da confirmação (linhasCandidatura).
+ * O cartão de decisão do dono (Interessados) e os e-mails leem daqui. Sem o período completo, total = null.
+ */
+export function decisaoDaCandidatura(d: DadosDaDecisao): { entrada: string; saida: string; total: string | null } {
+  const p = periodoDaCandidatura(d.entrada, d.saida);
+  return {
+    entrada: dataBR(d.entrada) || A_COMBINAR,
+    saida: dataBR(d.saida) ? `${dataBR(d.saida)}${p ? ` (${p.dias} ${p.dias === 1 ? "dia" : "dias"})` : ""}` : A_COMBINAR,
+    total: totalDaEstadia(d)?.valor ?? null,
+  };
+}
+
 /** Quadro de dados da candidatura: o mesmo nos três e-mails. */
 export function linhasCandidatura(d: DadosCandidatura): LinhaDado[] {
-  const p = periodoDaCandidatura(d.entrada, d.saida);
+  const decisao = decisaoDaCandidatura(d);
   const linhas: LinhaDado[] = [
     { rotulo: "Imóvel", valor: imovelPorExtenso(d.imovel) },
     ...(d.numeroPedido ? [{ rotulo: "Pedido", valor: d.numeroPedido }] : []),
     { rotulo: "Interessado", valor: limpo(d.interessado) || "Interessado" },
-    { rotulo: "Entrada", valor: dataBR(d.entrada) || A_COMBINAR },
-    { rotulo: "Saída", valor: dataBR(d.saida) ? `${dataBR(d.saida)}${p ? ` (${p.dias} ${p.dias === 1 ? "dia" : "dias"})` : ""}` : A_COMBINAR },
+    { rotulo: "Entrada", valor: decisao.entrada },
+    { rotulo: "Saída", valor: decisao.saida },
     { rotulo: "Valor mensal", valor: brl(d.valorMensal) },
     { rotulo: "Total por mês", valor: brl(d.totalMensal) },
   ];
-  // Sem o período completo não há total da estadia (nunca um número inventado).
-  if (!p) return linhas;
-  // E583: a conta da estadia é em DIAS (E562), a mesma da tela — antes, "R$ 6.100 em 2 meses" para 35 dias.
-  const e = d.estadiaDias && d.estadiaDias.dias === p.dias ? d.estadiaDias : null;
-  if (e) {
-    linhas.push({ rotulo: e.rotulo, valor: `${formatBRLExato(e.total)} (${e.periodo})` });
-    linhas.push({ rotulo: "Conta do total", valor: `${e.conta} = ${formatBRLExato(e.total)}` });
-  } else {
-    const total = Math.round((d.totalMensal * p.dias * 100) / 30) / 100;
-    linhas.push({ rotulo: rotuloTotalDaEstadia(p.dias), valor: `${formatBRLExato(total)} (${periodoPorExtenso(p.dias)})` });
-  }
+  const t = totalDaEstadia(d);
+  if (!t) return linhas;
+  linhas.push({ rotulo: t.rotulo, valor: t.valor });
+  if (t.conta) linhas.push({ rotulo: "Conta do total", valor: t.conta });
   return linhas;
 }
 

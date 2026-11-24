@@ -50,7 +50,7 @@ export const SECOES_MENU_CONTA: readonly ItemSecao[] = SECOES_CONTA.filter((s) =
 export const ALIAS_SECAO: Readonly<Record<string, SecaoConta>> = {
   // /dashboard/conta/excluir (Sair da Viva) é subtela de Privacidade, aberta por "Excluir minha conta" (perfil-05).
   excluir: "privacidade",
-  // E224: Conta › Plano (a elegibilidade do Plano Gestor) mora no cartão de Pagamentos (#plano).
+  // E224/078: Conta › Plano (a taxa de serviço da conta e a escada) mora no cartão de Pagamentos (#plano).
   plano: "pagamentos",
 };
 

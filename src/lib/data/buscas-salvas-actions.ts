@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { LIMITE_BUSCAS_SALVAS, chaveDaBusca, normalizarBusca, resumoDaBusca, semBuscasRepetidas } from "@/lib/busca/buscas-salvas";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
 
@@ -12,12 +13,11 @@ import { notificacaoLigada } from "@/lib/notifications/preferencias";
 export type BuscaSalva = { id: string; parametros: string; resumo: string; criadoEm: string; alertaAtivo: boolean };
 type Res<T> = ({ ok: true } & T) | { ok: false; error: string; precisaEntrar?: boolean };
 
-async function sessao() {
+/** E1093: com `exigir`, a confirmação da sessão que falha LANÇA (não vira "sem sessão" → lista vazia). */
+async function sessao(opcoes: { exigir?: boolean } = {}) {
   const supabase = await createClient();
   if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   return user ? { supabase, user } : null;
 }
 
@@ -84,7 +84,7 @@ const MSG_BUSCAS_NAO_CARREGARAM = "Não foi possível carregar as suas buscas sa
  * sem `exigir` (com .catch).
  */
 export async function listarBuscasSalvas(opcoes: { exigir?: boolean } = {}): Promise<BuscaSalva[]> {
-  const s = await sessao();
+  const s = await sessao(opcoes);
   if (!s) return [];
   const consulta = (colunas: string) =>
     s.supabase.from("buscas_salvas").select(colunas).eq("usuario_id", s.user.id).order("criado_em", { ascending: false }).limit(LIMITE_BUSCAS_SALVAS);

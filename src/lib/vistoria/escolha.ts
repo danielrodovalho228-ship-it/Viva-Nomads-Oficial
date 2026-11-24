@@ -7,6 +7,7 @@
   Tudo atrás de VISTORIA_ATIVA. Nenhuma regra aqui toca em cobrança: o pagamento segue direto, a plataforma só registra.
 */
 import { createHash } from "node:crypto";
+import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_MAX_HORAS } from "./prazos.ts";
 import { impedimento, type AvaliadorFila, type HistoricoDesignacao, type MotivoImpedimento, type PedidoParaDesignar } from "./regras.ts";
 
 // ── 1. O sistema sugere, o dono escolhe ────────────────────────────────────────────────────────────────────────
@@ -74,6 +75,11 @@ export interface EntradaAssinatura {
   em: string;
   /** O avaliador marcou a declaração de assinatura. */
   declarou: boolean;
+  /**
+   * E1083 parte 1 (ORDEM-DUET-399; regra legal com o Daniel): em modo piloto/teste a assinatura não exige o CNPJ.
+   * Fora do piloto fica false e a regra do CNPJ vale como sempre.
+   */
+  pilotoSemCnpj?: boolean;
 }
 
 export type Assinatura = { ok: true; hash: string; termo: string; em: string } | { ok: false; erro: string };
@@ -81,9 +87,11 @@ export type Assinatura = { ok: true; hash: string; termo: string; em: string } |
 export function assinaturaDoLaudo(e: EntradaAssinatura): Assinatura {
   if (!e.declarou) return { ok: false, erro: "Para enviar, assine o laudo: marque que você, avaliador, responde pelo que está nele." };
   if (!/^[0-9a-f]{64}$/.test(e.pdfSha256)) return { ok: false, erro: "Laudo sem registro para assinar." };
-  if (!/^\d{14}$/.test(e.cnpj.replace(/\D/g, ""))) return { ok: false, erro: "Sem o CNPJ do avaliador no cadastro, o laudo não pode ser assinado." };
-  const cnpj = e.cnpj.replace(/\D/g, "");
-  const termo = `Assino este laudo como avaliador ${e.nomePublico} (credenciado ${e.numeroCredenciado}, CNPJ ${cnpj}) e respondo pelo que consta nele. A Viva Nomads forneceu o modelo e guarda o registro; não interferiu no conteúdo.`;
+  const cnpjValido = /^\d{14}$/.test(e.cnpj.replace(/\D/g, ""));
+  if (!cnpjValido && !e.pilotoSemCnpj) return { ok: false, erro: "Sem o CNPJ do avaliador no cadastro, o laudo não pode ser assinado." };
+  const cnpj = cnpjValido ? e.cnpj.replace(/\D/g, "") : "";
+  const identificacao = cnpj ? `credenciado ${e.numeroCredenciado}, CNPJ ${cnpj}` : `credenciado ${e.numeroCredenciado}, piloto de teste, sem CNPJ`;
+  const termo = `Assino este laudo como avaliador ${e.nomePublico} (${identificacao}) e respondo pelo que consta nele. A Viva Nomads forneceu o modelo e guarda o registro; não interferiu no conteúdo.`;
   const hash = createHash("sha256").update(["viva-laudo-assinado-v1", e.pdfSha256, e.avaliadorUserId, e.numeroCredenciado, cnpj, e.em, termo].join("\n")).digest("hex");
   return { ok: true, hash, termo, em: e.em };
 }
@@ -136,10 +144,8 @@ export function descredenciamentoValido(e: { criterioId: string | null; motivo: 
 }
 
 // ── 5. Os termos do avaliador (E682): valor, prazo de entrega e prazo de resposta são DELE ────────────────────────
-export const PRAZO_RESPOSTA_PADRAO_HORAS = 24;
-export const PRAZO_RESPOSTA_MAX_HORAS = 72;
-/** E682 (refino): prazo do DONO para aceitar a proposta do avaliador (72 h, decisão do Daniel em 07/11/2026). Passado, a escolha volta ao dono. */
-export const PRAZO_DONO_ACEITAR_HORAS = 72;
+// E1118: os números moram em prazos.ts (fonte única); daqui só se reexportam, para quem já os lia deste arquivo.
+export { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_MAX_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "./prazos.ts";
 
 /** A proposta do avaliador está parada, sem aceite do dono, há mais que o prazo do dono? */
 export function propostaVencida(propostaEm: string | null, agora: Date, horas = PRAZO_DONO_ACEITAR_HORAS): boolean {

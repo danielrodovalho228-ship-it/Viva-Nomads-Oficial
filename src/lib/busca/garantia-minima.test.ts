@@ -31,7 +31,8 @@ const COMPOSICAO: { chip: string; testId: string; porque: string }[] = [
 ];
 
 test("Wi-Fi e Cozinha equipada saem da folha (itens do mínimo); Garagem e Máquina de lavar ficam", () => {
-  assert.deepEqual(COMODIDADES_FILTRAVEIS.map((c) => c.chave), ["garagem", "lavar"]);
+  // Filtros pacote 1 (asserção alterada, ver o PR): a folha ganhou o chip "Ar-condicionado" (não é item do mínimo).
+  assert.deepEqual(COMODIDADES_FILTRAVEIS.map((c) => c.chave), ["garagem", "lavar", "ar"]);
   // Cada comodidade garantida aponta para um item real da lista de 12.
   const chaves = new Set(ITENS_CONFORTO.map((i) => i.chave));
   for (const item of Object.values(COMODIDADE_DO_MINIMO)) assert.ok(chaves.has(item as never), item);

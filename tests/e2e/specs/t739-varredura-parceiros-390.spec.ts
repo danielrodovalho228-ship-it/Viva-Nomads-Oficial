@@ -16,8 +16,11 @@ const ids: { conta?: string; parceiro?: string } = {};
 
 async function varrer(p: Page) {
   const altura = await p.evaluate(() => document.documentElement.scrollHeight);
+  // E744: o <html> tem scroll-smooth; scrollTo(0, v) anima e, em 120 ms, a varredura parava no meio da página (y≈4,7 mil
+  // de 11 mil em /parceiros) — as imagens do fim nunca entravam no carregamento sob demanda. Rolagem instantânea: a
+  // varredura passa pela página INTEIRA (a conferência das imagens continua a mesma).
   for (let y = 0; y < altura; y += 600) {
-    await p.evaluate((v) => window.scrollTo(0, v), y);
+    await p.evaluate((v) => window.scrollTo({ top: v, behavior: "instant" }), y);
     await p.waitForTimeout(120);
     // Faixas que rolam de lado (ex.: categorias a 390 px): rolar também até o fim delas, para as imagens sob demanda
     // de fora da tela carregarem — a checagem abaixo cobre toda imagem da faixa, não só a que está à vista.
@@ -30,7 +33,7 @@ async function varrer(p: Page) {
     });
     await p.waitForTimeout(120);
   }
-  await p.evaluate(() => window.scrollTo(0, 0));
+  await p.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await expect
     .poll(() => p.evaluate(() => [...document.images].filter((i) => i.getBoundingClientRect().width > 0 && !(i.complete && i.naturalWidth > 0)).length), { timeout: 15_000 })
     .toBe(0);

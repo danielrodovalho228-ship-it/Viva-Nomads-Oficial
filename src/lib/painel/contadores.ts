@@ -39,6 +39,22 @@ export interface ContadoresPainel {
   observadorQa: boolean;
   /** E445 item 6: mensagens recebidas pela conta (a casca toca o som discreto quando o número sobe). */
   mensagensRecebidas: number;
+  /**
+   * E1093: os campos do CONTEXTO que o servidor não conseguiu ler nesta resposta ("não li" não é "não tem"). Nesses
+   * campos a casca mantém o que já sabia e repete a leitura logo. Ausente = tudo lido.
+   */
+  naoLidos?: readonly CampoDeContexto[];
+}
+
+/** E1093: os campos que dizem QUEM a conta é para o menu — as secções de dono e de parceiro (o resto são números). */
+export const CAMPOS_DE_CONTEXTO = ["temImovel", "parceiro"] as const;
+export type CampoDeContexto = (typeof CAMPOS_DE_CONTEXTO)[number];
+
+/** E1093: os campos do contexto que a resposta diz não ter lido (nomes desconhecidos são ignorados). */
+export function camposNaoLidos(json: unknown): CampoDeContexto[] {
+  const lista = json && typeof json === "object" ? (json as { naoLidos?: unknown }).naoLidos : null;
+  if (!Array.isArray(lista)) return [];
+  return CAMPOS_DE_CONTEXTO.filter((c) => lista.includes(c));
 }
 
 export const CONTADORES_VAZIOS: ContadoresPainel = Object.freeze({
@@ -59,17 +75,23 @@ function contagem(v: unknown): number {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
 }
 
-/** Resposta da rota → contadores. Campo ausente, negativo ou de outro tipo vira 0/false (nunca quebra o menu). */
-export function normalizarContadores(json: unknown): ContadoresPainel {
+/**
+ * Resposta da rota → contadores. Campo ausente, negativo ou de outro tipo vira 0/false (nunca quebra o menu).
+ * E1093: com `anterior`, o campo do contexto que a resposta diz NÃO ter lido fica com o valor que a casca já tinha (a
+ * conta de dono não vira "conta nova" por uma leitura falhada).
+ */
+export function normalizarContadores(json: unknown, anterior?: ContadoresPainel): ContadoresPainel {
   const o = json && typeof json === "object" ? (json as Record<string, unknown>) : {};
+  const naoLidos = camposNaoLidos(json);
+  const lido = (campo: CampoDeContexto) => !(anterior && naoLidos.includes(campo));
   return {
     contratosParaAssinar: contagem(o.contratosParaAssinar),
     propostasAguardando: contagem(o.propostasAguardando),
     documentosPendentes: contagem(o.documentosPendentes),
     aprovacoesPendentes: contagem(o.aprovacoesPendentes),
-    temImovel: o.temImovel === true,
+    temImovel: lido("temImovel") ? o.temImovel === true : anterior!.temImovel,
     imoveisAtivos: contagem(o.imoveisAtivos),
-    parceiro: o.parceiro === true,
+    parceiro: lido("parceiro") ? o.parceiro === true : anterior!.parceiro,
     estadiaAtiva: o.estadiaAtiva === true,
     observadorQa: o.observadorQa === true,
     mensagensRecebidas: contagem(o.mensagensRecebidas),

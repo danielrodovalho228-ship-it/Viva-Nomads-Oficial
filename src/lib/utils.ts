@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { hojeEmBrasilia } from "./datas-brasilia.ts";
 
 /** Combina classes condicionais e resolve conflitos do Tailwind. */
 export function cn(...inputs: ClassValue[]) {
@@ -66,9 +67,9 @@ export function isoDiaBR(instante: Date): string {
   }).format(instante);
 }
 
-/** "Hoje" no horário de Brasília (AAAA-MM-DD). Às 22h de Brasília ainda é hoje. */
+/** "Hoje" no horário de Brasília (AAAA-MM-DD). Às 22h de Brasília ainda é hoje. E1135: lê a fonte única (E1115). */
 export function hojeBR(agora: Date = new Date()): string {
-  return isoDiaBR(agora);
+  return hojeEmBrasilia(agora);
 }
 
 /**

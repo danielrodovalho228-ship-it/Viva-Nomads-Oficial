@@ -86,8 +86,9 @@ const base: DadosFicha = {
 test("a ficha traz início, fim, valor, vencimento e conta de recebimento, e fica completa", () => {
   const f = montarFicha(base);
   const por = Object.fromEntries(f.linhas.map((l) => [l.rotulo, l.valor]));
-  assert.equal(por["Início"], "01/11/2026");
-  assert.equal(por["Fim"], "28/02/2027");
+  // E1089 (coordenador): a ficha diz Entrada e Saída; a saída é o dia seguinte ao fim gravado (28/02 → 01/03).
+  assert.equal(por["Entrada"], "01/11/2026");
+  assert.equal(por["Saída"], "01/03/2027");
   assert.match(por["Aluguel mensal"], /2\.700/);
   assert.match(por["Vencimento"], /dia 5/);
   assert.match(por["Conta de recebimento"], /Marcos Lima/);
