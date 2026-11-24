@@ -9,15 +9,18 @@ import { devolverAVezDaRotinaDaVistoria, pegarAVezDaRotinaDaVistoria } from "../
   depois de o prazo de 72 horas vencer. `aceitarProposta` não conferia o prazo, e a expiração só corre na rotina (de hora
   em hora): até ela correr, o botão "Aceitar valor e prazo" gravava o aceite de uma proposta vencida.
   Só contas de teste; cidade própria do spec.
-   1. Proposta enviada há 73 horas: o clique em "Aceitar valor e prazo" é recusado, com o aviso junto do botão; nada é
-      gravado (o pedido continua "designado", sem aceite) e o avaliador não recebe o aviso de proposta aceita.
-      Print a 390 e a 1280 px.
+   1. Proposta enviada há 73 horas, antes de a rotina correr.
+      (E1147, ORDENS-DUET 629 e 678) Quem abre a página nessa janela lê que o prazo terminou (a frase aprovada), sem o
+      botão "Aceitar valor e prazo"; "Escolher outro avaliador" continua lá e abre a confirmação.
+      (E1142) Quem tinha a página aberta desde antes do fim do prazo ainda vê o botão: o clique é recusado, com o aviso
+      junto do botão; nada é gravado (o pedido continua "designado", sem aceite) e o avaliador não recebe o aviso de
+      proposta aceita. Print a 390 e a 1280 px.
    2. (ORDEM-DUET-620) O avaliador dessa proposta vencida lê, na tela do pedido e na lista, que o prazo do proprietário
       terminou — não mais "O proprietário tem até…" com uma data que já passou, nem "Falta o proprietário aceitar". A
       proposta dentro do prazo continua com o texto de sempre. Print a 390 e a 1280 px.
    3. Proposta enviada há 71 horas (dentro do prazo): o aceite continua a valer, como antes.
    4. Na proposta vencida, "Escolher outro avaliador" continua a funcionar: é por onde o pedido volta já para o dono
-      escolher de novo, sem esperar a rotina.
+      escolher de novo, sem esperar a rotina. (E1147) A tela abre a escolha, com o outro avaliador da cidade.
    5. (ORDENS-DUET 621 e 622) A rotina, num 2º servidor do mesmo build (porta 3150, com um CRON_SECRET só dele,
       padrão do t2131): a proposta vencida volta ao dono; a designação fica "expirada" (antes ficava "aceita"), com o
       instante em que o prazo acabou; o avaliador recebe o aviso e o e-mail da expiração; e a lista dele chama-lhe
@@ -46,6 +49,8 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t1750.${sufixo}@lab.vivanomads.test`, nome: "Dalva Prazo", role: "owner" as const };
 const avaliador = { email: `aval.t1750.${sufixo}@lab.vivanomads.test`, nome: "Abel Avaliador", role: "tenant" as const };
+// E1147: o segundo avaliador da cidade — é ele que a escolha mostra quando o dono descarta a proposta vencida (caso 4).
+const reserva = { email: `reserva.t1750.${sufixo}@lab.vivanomads.test`, nome: "Rita Reserva", role: "tenant" as const };
 const ids: Record<string, string> = {};
 
 async function largura(page: Page, w: number) {
@@ -82,7 +87,7 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
   test.beforeAll(async () => {
     // A rotina corre sobre o banco inteiro: esta spec só monta a massa quando nenhuma outra spec de rotina está a meio.
     await pegarAVezDaRotinaDaVistoria("t1750");
-    for (const [k, c] of [["dono", dono], ["avaliador", avaliador]] as const) {
+    for (const [k, c] of [["dono", dono], ["avaliador", avaliador], ["reserva", reserva]] as const) {
       ids[k] = await criarConta(c, senha);
       const t = await adm().from("profiles").update({ is_teste: true }).eq("id", ids[k]);
       if (t.error) throw t.error;
@@ -102,7 +107,22 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
       .single();
     if (eC) throw eC;
     ids.cred = cred.id as string;
-    for (const u of [ids.dono, ids.avaliador]) {
+    const { data: parcR, error: ePR } = await adm()
+      .from("parceiros")
+      .insert({ user_id: ids.reserva, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: reserva.nome, slug: `reserva-t1750-${sufixo}`, categorias: ["fotografia"], cidades: [CIDADE] })
+      .select("id")
+      .single();
+    if (ePR) throw ePR;
+    ids.parcReserva = parcR.id as string;
+    const { data: nR } = await adm().rpc("proximo_numero_avaliador", { p_sigla: "UDI" });
+    const { data: credR, error: eCR } = await adm()
+      .from("avaliadores_credenciamento")
+      .insert({ parceiro_id: ids.parcReserva, cidade: CIDADE, numero_credenciado: nR as string, status: "ativo", experiencia_link: "https://portfolio.lab.vivanomads.test/t1750-reserva", conduta_versao: "2026-10-23", ativado_em: "2025-01-01T00:00:00Z" })
+      .select("id")
+      .single();
+    if (eCR) throw eCR;
+    ids.credReserva = credR.id as string;
+    for (const u of [ids.dono, ids.avaliador, ids.reserva]) {
       const p = await adm().from("vistoria_piloto").insert({ user_id: u, nota: "T1750 (laboratório)" });
       if (p.error) throw p.error;
     }
@@ -126,7 +146,7 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
     servidor?.kill("SIGTERM");
     const imoveis = [ids.imovelVencida, ids.imovelNoPrazo, ids.imovelRotina].filter(Boolean);
     const pedidos = [ids.pedidoVencida, ids.pedidoNoPrazo, ids.pedidoRotina].filter(Boolean);
-    const contas = [ids.dono, ids.avaliador].filter(Boolean);
+    const contas = [ids.dono, ids.avaliador, ids.reserva].filter(Boolean);
     if (contas.length) await adm().from("emails_teste").delete().in("usuario_id", contas);
     if (pedidos.length) {
       await adm().from("avisos").delete().in("ref_id", pedidos);
@@ -140,22 +160,82 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
       await adm().from("vistoria_designacoes").delete().eq("avaliador_id", ids.cred);
       await adm().from("avaliadores_credenciamento").delete().eq("id", ids.cred);
     }
+    if (ids.credReserva) {
+      await adm().from("vistoria_designacoes").delete().eq("avaliador_id", ids.credReserva);
+      await adm().from("avaliadores_credenciamento").delete().eq("id", ids.credReserva);
+    }
     if (ids.parc) await adm().from("parceiros").delete().eq("id", ids.parc);
+    if (ids.parcReserva) await adm().from("parceiros").delete().eq("id", ids.parcReserva);
     if (imoveis.length) await adm().from("properties").delete().in("id", imoveis);
     await apagarContas(contas);
     devolverAVezDaRotinaDaVistoria();
   });
 
-  test("1. proposta de 73 horas: o aceite é recusado com o aviso junto do botão; nada é gravado nem avisado", async ({ browser }) => {
+  test("1. proposta de 73 horas: o bloco diz que o prazo terminou, sem o botão de aceitar (E1147); o aceite de quem tinha a página aberta é recusado junto do botão; nada é gravado nem avisado", async ({ browser }) => {
     const d = await entrar(browser, dono.email, senha);
+    const vencidaEm = (await linha(ids.pedidoVencida)).proposta_em as string;
+    const mudarProposta = async (iso: string) => {
+      const r = await adm().from("vistoria_pedidos").update({ proposta_em: iso }).eq("id", ids.pedidoVencida);
+      if (r.error) throw r.error;
+    };
+
+    // E1147 — quem abre a página na janela (72 h passadas, a rotina ainda não correu).
     for (const w of LARGURAS) {
       await largura(d, w);
       await d.goto(`/dashboard/imoveis/${ids.imovelVencida}/nivel`, { waitUntil: "domcontentloaded" });
       const proposta = d.getByTestId("avaliacao-proposta");
       await expect(proposta).toBeVisible({ timeout: 30_000 });
       await expect(proposta).toContainText("Proposta do avaliador: R$ 380,00 · laudo em 5 dias");
+      // O prazo: a frase aprovada (a mesma da recusa do aceite), e não mais o convite a aceitar.
+      const prazo = proposta.getByTestId("avaliacao-proposta-prazo");
+      await expect(prazo, `a ${w} px`).toHaveText(AVISO);
+      await expect(prazo).toHaveAttribute("data-terminado", "1");
+      await expect(proposta).not.toContainText("Aceite em até");
+      // O botão de aceitar saiu.
+      await expect(proposta.getByTestId("aceitar-proposta"), `a ${w} px: sem o formulário do aceite`).toHaveCount(0);
+      await expect(d.getByRole("button", { name: "Aceitar valor e prazo" })).toHaveCount(0);
+      // "Escolher outro avaliador" fica e FUNCIONA: o clique abre a confirmação (o que se perde, e quem sobra).
+      const trocar = proposta.getByTestId("trocar-avaliador");
+      await expect(trocar).toBeVisible();
+      await expect(trocar).toBeEnabled();
+      expect(await d.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      await proposta.scrollIntoViewIfNeeded();
+      await d.screenshot({ path: `${SAIDA}/t1750-1-prazo-terminado-${w}.png` });
+      // O clique só conta depois de a página ganhar vida: tenta até a confirmação abrir.
+      const conf = proposta.getByTestId("troca-confirmacao");
+      await expect(async () => {
+        if (!(await conf.isVisible())) await trocar.click();
+        await expect(conf).toBeVisible({ timeout: 2_000 });
+      }).toPass({ timeout: 30_000 });
+      await expect(conf.getByTestId("troca-titulo")).toHaveText("Escolher outro avaliador?");
+      await expect(conf.getByTestId("troca-depois")).toHaveAttribute("data-sem-outro", "0"); // há outro avaliador na cidade
+      await expect(conf.getByRole("button", { name: "Descartar e escolher outro" })).toBeEnabled();
+      await conf.scrollIntoViewIfNeeded();
+      await d.screenshot({ path: `${SAIDA}/t1750-1-prazo-terminado-troca-${w}.png` });
+      // "Manter esta proposta" fecha; nada mudou (o descarte de verdade é o caso 4).
+      await conf.getByRole("button", { name: "Manter esta proposta" }).click();
+      await expect(conf).toHaveCount(0);
+      await expect(proposta.getByTestId("aceitar-proposta")).toHaveCount(0);
+      const l = await linha(ids.pedidoVencida);
+      expect(l.status).toBe("designado");
+      expect(l.avaliador_id).toBe(ids.cred);
+      expect(l.proposta_aceita_em).toBeNull();
+    }
+
+    // E1142 — quem tinha a página aberta desde antes do fim do prazo ainda vê o botão; o prazo acaba com a página
+    // aberta e o clique é recusado no servidor.
+    for (const w of LARGURAS) {
+      await largura(d, w);
+      await mudarProposta(new Date(Date.now() - 71 * HORA).toISOString());
+      await d.goto(`/dashboard/imoveis/${ids.imovelVencida}/nivel`, { waitUntil: "domcontentloaded" });
+      const proposta = d.getByTestId("avaliacao-proposta");
+      await expect(proposta).toBeVisible({ timeout: 30_000 });
+      await expect(proposta).toContainText("Proposta do avaliador: R$ 380,00 · laudo em 5 dias");
+      await expect(proposta.getByTestId("avaliacao-proposta-prazo")).toHaveAttribute("data-terminado", "0");
       const form = proposta.getByTestId("aceitar-proposta");
       const botao = form.getByRole("button", { name: "Aceitar valor e prazo" });
+      await expect(botao).toBeVisible();
+      await mudarProposta(vencidaEm); // o prazo acabou com a página aberta
       await botao.click();
 
       // O aviso sai no próprio formulário do botão (junto dele), como alerta.
@@ -188,10 +268,13 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
       await d.screenshot({ path: `${SAIDA}/t1750-1-aceite-recusado-${w}.png`, fullPage: true });
     }
 
-    // Recarregada, a tela continua sem aceite (a recusa não era só da tela).
+    // Recarregada, a tela continua sem aceite (a recusa não era só da tela) — e, pelo E1147, já sem o botão.
     await d.reload({ waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("avaliacao-proposta")).toBeVisible({ timeout: 30_000 });
     await expect(d.getByTestId("avaliacao-proposta-aceita")).toHaveCount(0);
+    await expect(d.getByTestId("avaliacao-proposta-prazo")).toHaveText(AVISO);
+    await expect(d.getByTestId("aceitar-proposta")).toHaveCount(0);
+    expect((await linha(ids.pedidoVencida)).proposta_em, "a hora da proposta ficou como estava").toBe(vencidaEm);
 
     await d.context().close();
   });
@@ -267,6 +350,21 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
     const depois = await linha(ids.pedidoVencida);
     expect(depois.avaliador_id).toBeNull();
     expect(depois.proposta_aceita_em).toBeNull();
+    // E1147 (a condição da ORDEM-DUET-678): o botão funciona na janela — a tela abre a escolha, com o outro avaliador.
+    await expect(d.getByTestId("troca-feita")).toHaveText("Avaliador e proposta descartados. Escolha o novo avaliador na lista abaixo.", { timeout: 20_000 });
+    await expect(d.getByTestId("avaliacao-proposta")).toHaveCount(0);
+    const escolha = d.getByTestId("avaliacao-escolha");
+    await expect(escolha).toBeVisible();
+    const cartoes = escolha.getByTestId("avaliacao-sugerido");
+    await expect(cartoes).toHaveCount(1);
+    await expect(cartoes.first()).toContainText(reserva.nome);
+    await expect(escolha).not.toContainText(avaliador.nome);
+    for (const w of LARGURAS) {
+      await largura(d, w);
+      await expect(escolha).toBeVisible();
+      await escolha.scrollIntoViewIfNeeded();
+      await d.screenshot({ path: `${SAIDA}/t1750-4-escolha-aberta-${w}.png` });
+    }
     await d.context().close();
   });
 

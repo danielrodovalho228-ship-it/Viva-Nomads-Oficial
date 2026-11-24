@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeAceiteParaODono } from "./relogio-do-pedido.ts";
+import { ERRO_ACEITE_FORA_DO_PRAZO, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeAceiteParaODono } from "./relogio-do-pedido.ts";
 import { dataHoraBRT } from "../datas-brasilia.ts";
 
 /*
@@ -29,13 +29,15 @@ test("E1154: o dono lê a mesma hora de fim que o avaliador, no mesmo formato, d
   assert.ok(textoDoPrazoDeAceiteParaODono(r).includes(`até ${fim}`));
 });
 
-test("E1154: sem prazo a correr (ou já vencido, até a rotina devolver o pedido) a frase fica como era, sem data", () => {
+test("E1154: sem prazo a correr a frase fica como era, sem data; já vencido, diz que o prazo terminou (E1147)", () => {
   const SEM_DATA = "Aceite em até 72 horas depois da proposta; passado o prazo, você escolhe outro avaliador.";
   assert.equal(textoDoPrazoDeAceiteParaODono(null), SEM_DATA);
-  // Vencido: não se promete o aceite "até" uma hora que já passou (o texto dessa janela é o E1147).
+  // Vencido: não se promete o aceite "até" uma hora que já passou. E1147 (ORDEM-DUET-678): nessa janela a frase deixa
+  // de convidar a aceitar e diz que o prazo terminou — antes ficava a frase de sempre, só sem a data.
   const vencido = relogioDoPedido(estado, new Date("2026-11-27T07:46:00.000Z"))!;
   assert.equal(vencido.vencido, true);
-  assert.equal(textoDoPrazoDeAceiteParaODono(vencido), SEM_DATA);
+  assert.equal(textoDoPrazoDeAceiteParaODono(vencido), ERRO_ACEITE_FORA_DO_PRAZO);
+  assert.doesNotMatch(textoDoPrazoDeAceiteParaODono(vencido), /até \d\d\/\d\d\/\d{4}/, "nenhuma hora de fim que já passou");
   // O relógio do avaliador (antes da proposta) não é o prazo do dono.
   const doAvaliador = relogioDoPedido({ ...estado, resposta: null, propostaEm: null }, new Date("2026-11-24T06:00:00.000Z"))!;
   assert.equal(doAvaliador.vez, "avaliador");
