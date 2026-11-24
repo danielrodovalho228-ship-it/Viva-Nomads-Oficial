@@ -82,7 +82,7 @@ const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimon
 const DEFAULT_MESES = 4;
 const MESES_MIN = 1;
 const MESES_MAX = 6;
-const TAMANHO_BLOCO = 2;
+const TAMANHO_BLOCO = 4;
 // Serviços visíveis (inclui "em breve" como slot). Opcionais e combináveis.
 const SERVICOS_VISIVEIS = servicosVisiveis();
 
