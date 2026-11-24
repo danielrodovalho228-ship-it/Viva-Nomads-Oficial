@@ -239,10 +239,13 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
         </div>
       )}
 
-      {/* E648: CNPJ para todos os parceiros, em qualquer categoria (MEI onde a atividade permite); CPF não é aceito. */}
-      <p className="rounded-lg bg-sage-100/60 px-3 py-2 text-sm text-ink" data-testid="sp-so-cnpj">
-        {MSG_SO_CNPJ}
-      </p>
+      {/* E648: CNPJ para todos os parceiros, em qualquer categoria (MEI onde a atividade permite); CPF não é aceito.
+          E1150: com o erro do documento activo, a recusa junto do campo é a única instância da regra (a nota esconde-se). */}
+      {campoErro !== "documento" && (
+        <p className="rounded-lg bg-sage-100/60 px-3 py-2 text-sm text-ink" data-testid="sp-so-cnpj">
+          {MSG_SO_CNPJ}
+        </p>
+      )}
       <div>
         <label htmlFor="sp-doc" className="block text-sm font-medium text-ink">CNPJ</label>
         <input id="sp-doc" inputMode="numeric" autoComplete="off" value={c.documento} onChange={(e) => set("documento", e.target.value)} placeholder="00.000.000/0000-00" className={input + vermelho("documento")} {...marca("documento")} />
