@@ -99,7 +99,9 @@ export default async function AvaliacaoParceiroPage() {
                 <legend className="px-1 text-sm font-semibold text-ink">Seus dados de parceiro</legend>
                 <label className="text-sm">Nome público (o seu ou o da empresa)<input name="nome" required className={campo} /></label>
                 <input type="hidden" name="tipoPessoa" value="pj" />
-                <p className="text-sm text-muted" data-testid="credenciamento-so-cnpj">{MSG_SO_CNPJ}</p>
+                {/* E1152: quando a recusa do documento é a própria regra (o CPF), o formulário esconde esta nota — a frase fica
+                    uma vez só, junto do campo. Outro erro do documento tem frase própria, e a nota fica. */}
+                <p className="text-sm text-muted" data-testid="credenciamento-so-cnpj" data-nota-do-campo="documento">{MSG_SO_CNPJ}</p>
                 <label className="text-sm">CNPJ<input name="documento" inputMode="numeric" required className={campo} /></label>
               </fieldset>
             )}
