@@ -87,7 +87,8 @@ test("a página do avaliador abre com o painel e mantém os pontos de apoio das 
   for (const id of ["pedidos", "agenda", "historico", "credenciamento"]) assert.match(pg, new RegExp(`id="${id}"`), id);
   // O que já existia continua: situação, passos, listas e o texto da taxa.
   for (const t of ["credenciamento-situacao", "avaliacoes-designadas", "avaliacoes-visitas", "avaliacoes-historico", "meus-termos"]) assert.match(pg, new RegExp(`data-testid="${t}"`), t);
-  assert.match(pg, /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
+  // E1158 (2; ORDEM-DUET-654): na tela do avaliador, o texto da taxa fala com ele ("vai direto para você").
+  assert.match(pg, /textoTaxaServicoAoParceiro\(PAGAMENTO_PARCEIROS_ATIVO\)/);
   // O nome é "Avaliador credenciado" (ORDEM-397), nunca "Vistoriador".
   assert.match(pg, /Avaliador credenciado nº/);
   assert.doesNotMatch(pg + ler("components/avaliadores/painel.tsx") + ler("lib/vistoria/painel-avaliador.ts"), /[Vv]istoriador/);

@@ -32,9 +32,14 @@ test("o dono é avisado na recusa, no silêncio e quando o prazo dele vence; o t
   assert.match(rotina, /avisar\(admin, [^)]*"vistoria_designado_dono"/);
   const eventos = ler("src/lib/notifications/eventos-email.ts");
   const linha = eventos.slice(eventos.indexOf("vistoria_designado_dono: { subject"), eventos.indexOf("vistoria_designado_dono: { subject") + 700);
-  assert.match(linha, /não respondeu no prazo/);
+  // E1158 (21; ORDEM-DUET-659): o modelo da matriz é o próprio corpo de corpo-email.ts, sem os fatos — o texto está lá.
+  assert.match(linha, /body: semFatos\("vistoria_designado_dono"\)/);
+  const corpo = ler("src/lib/vistoria/corpo-email.ts");
+  const caso = corpo.slice(corpo.indexOf('case "vistoria_designado_dono":'), corpo.indexOf('case "vistoria_proposta_expirada":'));
+  assert.match(caso, /não respondeu no prazo/);
   // E1118 (ORDEM-DUET-506): o prazo deixou de estar escrito à mão no texto; vem da constante, e o e-mail continua a dizer 72 horas.
-  assert.match(linha, /\$\{PRAZO_DONO_ACEITAR_HORAS\} horas/);
+  assert.match(caso, /\$\{PRAZO_DONO_ACEITAR_HORAS\} horas/);
+  assert.match(TEMPLATES.vistoria_designado_dono.body("Lara"), /não respondeu no prazo/);
   assert.match(TEMPLATES.vistoria_designado_dono.body("Lara"), /72 horas/);
 });
 
@@ -42,7 +47,9 @@ test("o avaliador é avisado ao ser escolhido (e o texto traz o prazo dele, não
   assert.match(servidor, /avisar\(admin, a\.userId, "vistoria_designada"/);
   const eventos = ler("src/lib/notifications/eventos-email.ts");
   const linha = eventos.slice(eventos.indexOf("vistoria_designada: { subject"), eventos.indexOf("vistoria_designada: { subject") + 500);
-  assert.match(linha, /no prazo que você declarou/);
+  // E1158 (21; ORDEM-DUET-659): o modelo da matriz é o próprio corpo de corpo-email.ts, sem os fatos.
+  assert.match(linha, /body: semFatos\("vistoria_designada"\)/);
+  assert.match(TEMPLATES.vistoria_designada.body("Rita"), /no prazo que você declarou/);
 });
 
 test("com a chave desligada o bloco some por completo: conta real nada, conta de teste só leitura sem lista nem botão de escolha", () => {

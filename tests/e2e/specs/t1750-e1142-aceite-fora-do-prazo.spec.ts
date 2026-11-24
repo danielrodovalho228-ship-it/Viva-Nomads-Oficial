@@ -304,7 +304,7 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
       const item = a.locator(`[data-testid="avaliacao-designada"][data-pedido="${ids.pedidoVencida}"]`);
       await expect(item.getByTestId("prazo-aceite")).toHaveText(textoVencido(vencida), { timeout: 30_000 });
       await expect(item.getByTestId("prazo-aceite")).toHaveAttribute("data-vencido", "1");
-      await expect(item.getByTestId("aguarda-aceite-proprietario")).toContainText("Proposta enviada: R$ 380,00 em 5 dia(s).");
+      await expect(item.getByTestId("aguarda-aceite-proprietario")).toContainText("Proposta enviada: R$ 380,00 em 5 dias."); // E1158 (5): o plural vem do ajudante dias()
       await expect(item.getByTestId("aguarda-aceite-proprietario")).not.toContainText("Falta o proprietário aceitar");
       await expect(item.getByTestId("agendar-visita")).toHaveCount(0);
       const outro = a.locator(`[data-testid="avaliacao-designada"][data-pedido="${ids.pedidoNoPrazo}"]`);

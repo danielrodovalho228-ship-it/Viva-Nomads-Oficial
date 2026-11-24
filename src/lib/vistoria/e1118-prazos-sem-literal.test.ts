@@ -254,7 +254,9 @@ test("E1118 (5, ORDEM-DUET-550 e DUET-1773): as quatro contas em dias que a regr
   assert.match(telas, /^const DIAS_DA_SEMANA_DA_AGENDA = 7;$/m);
   assert.match(telas, /t <= DIAS_DA_SEMANA_DA_AGENDA \* 86_400_000;/);
   const central = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
-  assert.match(central, /^const DIAS_DA_JANELA_DE_RECUSAS = 30;$/m);
+  // E1158 (14; ORDEM-DUET-658): a janela subiu da Central para a fonte das telas — o título, o vazio e o número leem-na.
+  assert.match(telas, /^export const DIAS_DA_JANELA_DE_RECUSAS = 30;$/m);
+  assert.doesNotMatch(central, /const DIAS_DA_JANELA_DE_RECUSAS\b/);
   assert.match(central, /agora\.getTime\(\) - DIAS_DA_JANELA_DE_RECUSAS \* 86_400_000\)/);
   // DUET-1773: a quarta, o número cru vezes o dia com nome — antes `365 * DIA` (a escada de strikes do proprietário).
   const laudoServidor = ler("src/lib/vistoria/laudo-servidor.ts");
@@ -268,3 +270,27 @@ test("E1118 (5, ORDEM-DUET-550 e DUET-1773): as quatro contas em dias que a regr
   assert.equal(visitaNaSemana(new Date(agora.getTime() - 12 * 3_600_000).toISOString(), agora), true);
   assert.equal(visitaNaSemana(new Date(agora.getTime() - 12 * 3_600_000 - 1).toISOString(), agora), false);
 });
+
+test("E1118 (6; E1158, sub-ponto 20, ORDEM-DUET-659): os prazos em dias e em meses do laudo não estão escritos à mão nos e-mails nem na fila", () => {
+  // "15 dias" (ressalva e devolução), "30 dias" (aviso de expiração) e "12 meses" (validade): as fontes são as
+  // constantes de laudo.ts. Varre os corpos, as linhas da avaliação na matriz, os rótulos da fila e os motivos que a
+  // rotina grava na fila. Fora daqui, de propósito: os textos de tela que explicam a regra (outro item).
+  const PRAZO_DO_LAUDO_A_MAO = /\b(15|30)\s?dias\b|\b12\s?meses\b/;
+  const achados: string[] = [];
+  const varrer = (arq: string, so?: (linha: string) => boolean) =>
+    semComentarios(ler(arq))
+      .split("\n")
+      .forEach((linha, i) => {
+        if (so && !so(linha)) return;
+        if (PRAZO_DO_LAUDO_A_MAO.test(linha)) achados.push(`${arq}:${i + 1}: ${linha.trim().slice(0, 140)}`);
+      });
+  varrer("src/lib/vistoria/corpo-email.ts");
+  varrer("src/lib/vistoria/rotulos-da-fila.ts");
+  varrer("src/lib/notifications/eventos-email.ts", (l) => /^\s*vistoria_\w+: \{/.test(l));
+  varrer("src/lib/vistoria/laudo-servidor.ts", (l) => /motivo: /.test(l));
+  assert.deepEqual(achados, [], `prazo do laudo escrito à mão:\n${achados.join("\n")}`);
+  // A regra apanha o que apanhava antes do item (as cópias que saíram).
+  for (const antes of ["o prazo de 15 dias para corrigir", "completa 12 meses em 30 dias", "em até 15 dias; ele confirma", 'motivo: "Ressalva não corrigida em 15 dias"']) assert.ok(PRAZO_DO_LAUDO_A_MAO.test(antes), antes);
+  assert.ok(!PRAZO_DO_LAUDO_A_MAO.test("o prazo de ${PRAZO_RESSALVA_DIAS} dias"));
+});
+
