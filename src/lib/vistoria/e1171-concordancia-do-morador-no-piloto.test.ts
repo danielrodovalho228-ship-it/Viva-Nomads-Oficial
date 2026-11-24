@@ -49,9 +49,7 @@ test("E1171: a página do morador pede o login primeiro, confere que o pedido é
   const dele = pagina.indexOf("if (!p || p.morador_id !== user.id || !p.ocupado) notFound();");
   const chave = pagina.indexOf("if (!(await vistoriaAtivaParaOMorador(admin, p.owner_id))) notFound();");
   assert.ok(login > 0 && dele > login && chave > dele, "login → o pedido é dele → a chave pelo dono do pedido");
-  // E1173 (asserção alterada, ORDEM-DUET-753): a página lê também o imóvel (a conversa com o dono) e o pedido de
-  // concordância (a recusa). O dono do pedido, que é o que a chave confere, continua na leitura.
-  assert.match(pagina, /select\("id, property_id, owner_id, morador_id, agendado_para, concordancia_em, concordancia_pedida_em, ocupado, status"\)/);
+  assert.match(pagina, /select\("id, owner_id, morador_id, agendado_para, concordancia_em, ocupado, status"\)/);
 });
 
 test("E1171: a ação de concordar e o cartão da conversa abrem pela mesma regra", () => {
@@ -64,11 +62,8 @@ test("E1171: a ação de concordar e o cartão da conversa abrem pela mesma regr
   assert.ok(chave < concordar.indexOf(".update({ concordancia_em:"), "a chave é conferida antes de gravar");
   const conversa = ler("src/lib/vistoria/conversa-actions.ts");
   assert.doesNotMatch(conversa, /await vistoriaAtiva\(\)/);
-  // E1173 (asserções alteradas, ORDEM-DUET-753): o cartão também aparece depois da recusa (sem data), por isso a
-  // leitura traz o pedido de concordância e a chave deixou de vir colada ao "tem data". A chave continua a do pedido.
-  assert.match(conversa, /\.select\("id, owner_id, agendado_para, concordancia_em, concordancia_pedida_em, ocupado, status"\)/);
-  assert.match(conversa, /if \(!\(await vistoriaAtivaParaOMorador\(admin, data\.owner_id as string \| null\)\)\) return null;/);
-  assert.ok(conversa.indexOf("vistoriaAtivaParaOMorador(admin, data.owner_id") < conversa.indexOf("return { pedidoId:"), "a chave é conferida antes de devolver o cartão");
+  assert.match(conversa, /\.select\("id, owner_id, agendado_para, concordancia_em, status"\)/);
+  assert.match(conversa, /if \(!data\?\.agendado_para \|\| !\(await vistoriaAtivaParaOMorador\(admin, data\.owner_id as string \| null\)\)\) return null;/);
 });
 
 test("E1171: o aviso da concordância e o lembrete levam o morador à página dele", () => {

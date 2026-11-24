@@ -23,7 +23,6 @@ import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO, linhaNivelSustentado } from "@/
 import { dbaNoCampo, faltasDoRoteiro, linhaDbaGuardado, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
 import { etapaDoPedido, identificacaoDoImovel, linhaDoPorte, linhaDoPrazoDoLaudo, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
 import { PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
-import { TEXTO_RECUSA_PARA_O_AVALIADOR, concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { brl } from "@/lib/fiscal/documento";
 import type { Porte } from "@/lib/vistoria/regras";
@@ -55,7 +54,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/parceiro/avaliacao/${pedido}`)}`);
   const { data: p } = await admin
     .from("vistoria_pedidos")
-    .select("id, property_id, status, tipo, ocupado, agendado_para, concordancia_pedida_em, concordancia_em, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
+    .select("id, property_id, status, tipo, ocupado, agendado_para, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
     .eq("id", pedido)
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
@@ -112,7 +111,6 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
         prazoAceite={etapa === "proposta_enviada" && relogio?.vez === "dono" ? textoDoPrazoDeAceite(relogio) : null}
         prazoAceiteVencido={etapa === "proposta_enviada" && relogio?.vez === "dono" && relogio.vencido}
         confirmacaoDoAceite={aceitoSemDataDeVisita({ status: p.status as string, propostaAceitaEm: dados.proposta_aceita_em, agendadoPara: p.agendado_para as string | null }) ? CONFIRMACAO_DO_ACEITE : null}
-        recusaDaData={concordanciaRecusada({ status: p.status as string, ocupado: Boolean(p.ocupado), agendadoPara: p.agendado_para as string | null, concordanciaPedidaEm: p.concordancia_pedida_em as string | null, concordanciaEm: p.concordancia_em as string | null }) ? TEXTO_RECUSA_PARA_O_AVALIADOR : null}
         ocupado={Boolean(p.ocupado)}
         exemploValor={brl(Number(dados.valor_tabela))}
         prazoMaxDias={PRAZO_PROPOSTA_MAX_DIAS}

@@ -23,7 +23,6 @@ export type EventoVistoria =
   | "vistoria_proposta_aceita"
   | "vistoria_agendada"
   | "vistoria_concordancia"
-  | "vistoria_concordancia_recusada"
   | "vistoria_lembrete"
   | "vistoria_ausencia"
   | "vistoria_laudo_emitido"
@@ -45,7 +44,6 @@ export const EVENTOS_VISTORIA_COM_FATOS: ReadonlySet<string> = new Set<EventoVis
   "vistoria_proposta_aceita",
   "vistoria_agendada",
   "vistoria_concordancia",
-  "vistoria_concordancia_recusada",
   "vistoria_lembrete",
   "vistoria_ausencia",
   "vistoria_laudo_emitido",
@@ -212,19 +210,6 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
         body: (n) => `${ola(n)}, o proprietário pediu a avaliação ${titulo ? `de ${titulo}, ` : "do "}imóvel onde você mora${hb ? `, com a visita proposta para ${hb}` : ""}. A visita só acontece se você concordar com a data. O avaliador não fotografa os seus pertences.`,
         linhas,
       };
-    case "vistoria_concordancia_recusada": {
-      // E1173 (textos das ORDENS-DUET 757 e 759): ao dono e ao avaliador, quando o morador diz que não pode na data
-      // proposta. A data recusada vem com o aviso, como "a data anterior" (o pedido já não a tem). Os dois podem propor a data nova, por isso
-      // leem o mesmo corpo; só o botão do avaliador muda (leva às avaliações dele).
-      const recusada = diaHoraNoAssunto(f.visitaAnterior);
-      const fato = `o morador do imóvel${titulo ? ` ${titulo}` : ""} não pode na data proposta para a visita de avaliação${recusada ? ` (${recusada}, horário de Brasília)` : ""}.`;
-      return {
-        subject: assuntoComTitulo("O morador não pode na data da visita de avaliação: ", titulo, "", { antes: "O morador não pode na data da visita: " }),
-        body: (n) => `${ola(n)}, ${fato} Proponha outra data na Viva.`,
-        linhas,
-        ...(f.destinatario === "avaliador" ? { cta: "Ver as avaliações" } : {}),
-      };
-    }
     case "vistoria_lembrete": {
       // E1160 (5): saiu o convite a mudar ("Se precisar mudar, avise…") — na véspera a troca sem custo pode já não caber.
       // O dono e o avaliador leem a regra da fonte; o morador não é parte do reagendamento e lê o que é dele.

@@ -18,7 +18,6 @@ import { dataBRT } from "@/lib/datas-brasilia";
 import { ESCOLHA_E_TERMOS_AO_AVALIADOR, ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
 import { CONFIRMACAO_DO_ACEITE, ROTULO_PROPOSTA_DESCARTADA, ROTULO_PROPOSTA_EXPIRADA, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, rotuloSemResposta, textoDasAvaliacoesNaoLidas, textoDoHistoricoVazio, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { dias, etapaDoPedido, identificacaoDoImovel, regiaoDoItemEncerrado, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
-import { TEXTO_RECUSA_PARA_O_AVALIADOR, concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeuSobre, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
@@ -43,7 +42,7 @@ const SITUACAO: Record<StatusCredenciamento, string> = {
   descredenciado: "Você não recebe mais avaliações.",
 };
 
-type Pedido = { id: string; property_id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; escolhido_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; concordancia_pedida_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
+type Pedido = { id: string; property_id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; escolhido_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
 
 /**
  * Avaliador credenciado (62-B1/62-B3; desenho do 62-A, Parte 1, itens 1 e 6): o pedido único com os 5 passos e o estado,
@@ -133,7 +132,7 @@ export default async function AvaliacaoParceiroPage() {
 
   const { data: pedidos, error: erroPedidos } = await admin
     .from("vistoria_pedidos")
-    .select("id, property_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, concordancia_pedida_em, designado_em, recebido_marcado_em, teste")
+    .select("id, property_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
     .eq("avaliador_id", cred.id)
     .order("criado_em", { ascending: false });
   const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, porte)").eq("avaliador_id", cred.id);
@@ -364,12 +363,6 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
         <p className="mt-1 text-muted" data-testid="avaliador-visita">
           Visita: {quandoVisitaComFuso(p.agendado_para)}
           {p.ocupado && !p.concordancia_em ? " (aguardando o morador)" : ""}
-        </p>
-      )}
-      {/* E1173: o morador disse "Não concordo" à data proposta — a mesma frase que o dono lê, até haver data nova. */}
-      {concordanciaRecusada({ status: p.status, ocupado: p.ocupado, agendadoPara: p.agendado_para, concordanciaPedidaEm: p.concordancia_pedida_em, concordanciaEm: p.concordancia_em }) && (
-        <p className="mt-1 font-semibold text-ink" data-testid="avaliador-concordancia-recusada">
-          {TEXTO_RECUSA_PARA_O_AVALIADOR}
         </p>
       )}
       {prazo && (
