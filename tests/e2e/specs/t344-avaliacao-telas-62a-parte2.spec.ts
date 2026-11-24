@@ -279,8 +279,11 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await expect(topo.getByTestId("decidir-numero-devolucoes")).not.toHaveAttribute("data-valor", "0");
       await expect(topo.getByTestId("decidir-numero-laudos-atrasados")).toBeVisible();
       await expect(topo.getByTestId("decidir-numero-auditoria")).toHaveAttribute("href", "#auditoria");
+      await expect(topo.getByTestId("decidir-numero-contestacoes")).toHaveAttribute("href", "#contestacoes");
       await topo.getByTestId("decidir-numero-contestacoes").click();
-      await expect(a.getByTestId("avaliacoes-contestacoes")).toBeInViewport();
+      // E1181 (como no E1137): a rolagem da âncora é suave (scroll-smooth) — primeiro a âncora resolvida, depois a posição.
+      await expect(a, "a âncora das contestações resolveu").toHaveURL(/#contestacoes$/);
+      await expect(a.getByTestId("avaliacoes-contestacoes"), "o painel das contestações está na tela depois da âncora").toBeInViewport({ timeout: 10_000 });
       await expect(a.getByTestId("contestacao-item").first()).toBeVisible();
       // E1181: a lista é de todas as devoluções por confirmar, por prazo — a base partilhada pode pôr outra antes desta.
       // A trava procura a DESTE teste pelo número do avaliador, em vez de ler a primeira da lista.
