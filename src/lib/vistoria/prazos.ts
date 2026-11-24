@@ -18,7 +18,7 @@ export const PRAZO_DONO_ACEITAR_HORAS = 72;
  */
 export const PRAZO_LAUDO_PADRAO_DIAS_UTEIS = 2;
 /** E1156: o máximo que o avaliador pode propor para o laudo, em dias úteis depois da visita. */
-export const PRAZO_LAUDO_MAX_DIAS_UTEIS = 5;
+export const PRAZO_LAUDO_MAX_DIAS_UTEIS = 30;
 /** E1156: um dia útil, em horas úteis — é assim que o prazo do laudo se soma (segunda a sexta, em Brasília). */
 export const HORAS_DO_DIA_UTIL = 24;
 
