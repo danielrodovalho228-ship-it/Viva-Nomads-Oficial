@@ -82,9 +82,11 @@ test("QA #1111 item 7 e um primário por tela: Nível, morador e conversa", () =
   assert.ok(primarios(MORADOR) <= 1);
 });
 
-test("linha do tempo do pedido: pedido → escolhido nº X → agendado → visita feita → laudo", () => {
+test("linha do tempo do pedido: pedido → escolhido → agendado → visita feita → laudo", () => {
   const e = linhaDoTempoPedido({ status: "agendado", numero: "UDI-007", agendadoPara: "2026-10-25T13:00:00Z" });
-  assert.deepEqual(e.map((x) => x.rotulo), ["Pedido", "Escolhido nº UDI-007", "Agendado para 25/10/2026 às 10:00", "Visita feita", "Laudo"]);
+  // E1158 (8 e 9; ORDEM-DUET-656): a etapa diz só "Escolhido" (o número fica na linha com o link) e a data da visita
+  // tem o formato único, com o fuso.
+  assert.deepEqual(e.map((x) => x.rotulo), ["Pedido", "Escolhido", "Agendado para 25/10/2026 às 10:00, horário de Brasília", "Visita feita", "Laudo"]);
   assert.deepEqual(e.map((x) => x.estado), ["feito", "feito", "atual", "futuro", "futuro"]);
   assert.equal(linhaDoTempoPedido({ status: "pedido", aguardandoAvaliador: true })[0].rotulo, "Pedido · aguardando avaliador");
   assert.match(BLOCO_DONO, /data-testid="avaliacao-linha-tempo"/);

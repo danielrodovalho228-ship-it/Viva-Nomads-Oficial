@@ -11,6 +11,7 @@ import { VERSAO_CHECKLIST, type ValorItem } from "@/config/checklist-avaliacao";
 import { SITE_URL } from "@/lib/site";
 import {
   PRAZO_DEVOLUCAO_DIAS,
+  PRAZO_RESSALVA_DIAS,
   avisoExpiracao,
   exibicaoAvaliacao,
   itensSemResposta,
@@ -506,7 +507,7 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
     if (!visita || !laudoAtrasado(visita, null, agora)) continue;
     await admin.from("vistoria_pedidos").update({ laudo_atrasado_em: quando }).eq("id", p.id).is("laudo_atrasado_em", null);
     await admin.from("vistoria_fila_admin").insert({ tipo: "laudo_atrasado", pedido_id: p.id, motivo: "Laudo não enviado em 48 horas úteis da visita." });
-    await avisarAdmins(admin, "vistoria_fila_admin");
+    await avisarAdmins(admin, "vistoria_fila_admin", "laudo_atrasado");
     r.atrasados++;
   }
 
@@ -532,7 +533,7 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
         continue;
       }
     } else {
-      await admin.from("vistoria_fila_admin").insert({ tipo: "ressalva_vencida", pedido_id: l.pedido_versao_id, motivo: "Ressalva não corrigida em 15 dias: avaliar abrir verificação." });
+      await admin.from("vistoria_fila_admin").insert({ tipo: "ressalva_vencida", pedido_id: l.pedido_versao_id, motivo: `Ressalva não corrigida em ${PRAZO_RESSALVA_DIAS} dias: avaliar abrir verificação.` });
     }
     await avisar(admin, l.owner_id, "vistoria_ressalva_vencida", rotaDono(l.property_id), { propertyId: l.property_id });
     r.ressalvasVencidas++;
@@ -565,8 +566,8 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
   for (const d of (devs ?? []) as { id: string; avaliador_id: string | null; prazo_ate: string; recebido_confirmado_em: string | null }[]) {
     if (!devolucaoVencida(d.prazo_ate, d.recebido_confirmado_em, agora)) continue;
     await admin.from("vistoria_devolucoes").update({ fila_em: quando }).eq("id", d.id);
-    await admin.from("vistoria_fila_admin").insert({ tipo: "devolucao_vencida", avaliador_id: d.avaliador_id, motivo: "Devolução da contestação não confirmada em 15 dias: proposta de descredenciamento." });
-    await avisarAdmins(admin, "vistoria_fila_admin");
+    await admin.from("vistoria_fila_admin").insert({ tipo: "devolucao_vencida", avaliador_id: d.avaliador_id, motivo: `Devolução da contestação não confirmada em ${PRAZO_DEVOLUCAO_DIAS} dias: proposta de descredenciamento.` });
+    await avisarAdmins(admin, "vistoria_fila_admin", "devolucao_vencida");
     r.devolucoesVencidas++;
   }
   return r;

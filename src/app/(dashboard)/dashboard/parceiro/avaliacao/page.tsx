@@ -12,17 +12,18 @@ import { IdentificacaoDoImovel } from "@/components/avaliadores/identificacao-do
 import { fotosDePerfil } from "@/lib/vistoria/fotos-servidor";
 import { resumoDoPainel } from "@/lib/vistoria/painel-avaliador";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
-import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
+import { textoTaxaServicoAoParceiro } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
-import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
+import { ESCOLHA_E_TERMOS_AO_AVALIADOR, ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
 import { CONFIRMACAO_DO_ACEITE, ROTULO_PROPOSTA_DESCARTADA, ROTULO_PROPOSTA_EXPIRADA, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, rotuloSemResposta, textoDasAvaliacoesNaoLidas, textoDoHistoricoVazio, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
-import { etapaDoPedido, identificacaoDoImovel, regiaoDoItemEncerrado, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
+import { dias, etapaDoPedido, identificacaoDoImovel, regiaoDoItemEncerrado, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeuSobre, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA, PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
 import { PRAZO_RESPOSTA_MAX_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "@/lib/vistoria/prazos";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
+import { RESPOSTA_DO_AVALIADOR, STATUS_PEDIDO } from "@/lib/vistoria/rotulos-do-pedido";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import type { ChaveIdentidade } from "@/lib/identidade/estado";
 import { STATUS_TESTE_CONCLUIDO } from "@/lib/vistoria/entrada";
@@ -36,11 +37,10 @@ const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base
 const SITUACAO: Record<StatusCredenciamento, string> = {
   solicitado: "A Viva confere os seus dados e a experiência. Depois da aprovação, ela marca a avaliação de teste.",
   em_teste: "Em teste: faça a avaliação que a Viva marcou. Depois da revisão, você passa a ativo.",
-  ativo: "Você aparece na lista de avaliadores da sua cidade e o proprietário escolhe quem quer. Você define o seu valor e o seu prazo em cada pedido.",
+  ativo: `Você aparece na lista de avaliadores da sua cidade: ${ESCOLHA_E_TERMOS_AO_AVALIADOR}`,
   suspenso: "A Viva vai entrar em contato.",
   descredenciado: "Você não recebe mais avaliações.",
 };
-const STATUS_PEDIDO: Record<string, string> = { pedido: "Aguardando a escolha do proprietário", designado: "Escolhido pelo proprietário", agendado: "Visita agendada", realizada: "Visita feita", laudo_emitido: "Laudo emitido", cancelada: "Cancelada", ausencia: "Ausência registrada" };
 
 type Pedido = { id: string; property_id: string; cidade: string; porte: Porte; valor_tabela: number; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; escolhido_em: string | null; status: string; ocupado: boolean; agendado_para: string | null; concordancia_em: string | null; designado_em: string | null; recebido_marcado_em: string | null; teste: boolean };
 
@@ -80,7 +80,7 @@ export default async function AvaliacaoParceiroPage() {
   if (!cred) {
     return (
       <>
-        <PageTitle title="Avaliação de imóveis" subtitle="Credenciamento de avaliador: o proprietário escolhe o avaliador e você define o seu valor e o seu prazo." />
+        <PageTitle title="Avaliação de imóveis" subtitle={`Credenciamento de avaliador: ${ESCOLHA_E_TERMOS_AO_AVALIADOR}`} />
         <PassosCredenciamento status={null} identidade={identidade} teste={teste} />
         <Panel title="Pedir credenciamento" data-testid="credenciamento-form">
           <p className="text-sm text-muted">
@@ -99,7 +99,9 @@ export default async function AvaliacaoParceiroPage() {
                 <legend className="px-1 text-sm font-semibold text-ink">Seus dados de parceiro</legend>
                 <label className="text-sm">Nome público (o seu ou o da empresa)<input name="nome" required className={campo} /></label>
                 <input type="hidden" name="tipoPessoa" value="pj" />
-                <p className="text-sm text-muted" data-testid="credenciamento-so-cnpj">{MSG_SO_CNPJ}</p>
+                {/* E1152: quando a recusa do documento é a própria regra (o CPF), o formulário esconde esta nota — a frase fica
+                    uma vez só, junto do campo. Outro erro do documento tem frase própria, e a nota fica. */}
+                <p className="text-sm text-muted" data-testid="credenciamento-so-cnpj" data-nota-do-campo="documento">{MSG_SO_CNPJ}</p>
                 <label className="text-sm">CNPJ<input name="documento" inputMode="numeric" required className={campo} /></label>
               </fieldset>
             )}
@@ -167,7 +169,8 @@ export default async function AvaliacaoParceiroPage() {
   // E1157: os três textos do prazo de resposta leem o prazo que ESTE avaliador declarou em "Meus termos" (antes diziam
   // sempre 24 horas). Achado 30: o aviso da lista que não foi lida.
   const MSG_AVALIACOES_FALHOU = textoDasAvaliacoesNaoLidas(cred.prazo_resposta_horas);
-  const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Você recusou", expirada: rotuloSemResposta(cred.prazo_resposta_horas), ausencia: "Ausência registrada" };
+  // E1158 (17): as duas vozes da resposta vêm de uma fonte; aqui, a que fala com o avaliador.
+  const ROTULO_RESPOSTA: Record<string, string> = { ...RESPOSTA_DO_AVALIADOR.avaliador, expirada: rotuloSemResposta(cred.prazo_resposta_horas) };
   // E1079 (fatia 2): o painel do desenho para quem já recebe pedidos (em teste ou ativo). A foto é a de perfil da conta
   // (ORDEM-386, fonte única); sem foto, ou se a leitura falhar, ficam as iniciais.
   const comPainel = cred.status === "em_teste" || cred.status === "ativo";
@@ -222,7 +225,7 @@ export default async function AvaliacaoParceiroPage() {
             <a href="/dashboard/verificacao" className="underline underline-offset-4">Verificar a identidade</a>
           </p>
         )}
-        <p className="mt-3 text-xs text-muted">O proprietário paga a avaliação direto a você, pelo valor que você propôs e ele aceitou. {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
+        <p className="mt-3 text-xs text-muted">O proprietário paga a avaliação direto a você, pelo valor que você propôs e ele aceitou. {textoTaxaServicoAoParceiro(PAGAMENTO_PARCEIROS_ATIVO)}</p>
       </Panel>
       <Panel title="Critérios públicos de qualidade" data-testid="criterios-qualidade">
         <p className="text-sm text-muted">
@@ -398,7 +401,7 @@ function ItemPedido({ p, imovel, resposta: r, agora, prazoRespostaHoras }: { p: 
       )}
       {["designado"].includes(p.status) && r === "aceita" && !p.proposta_aceita_em && precisaDoAceite && (
         <p className="mt-2 text-muted" data-testid="aguarda-aceite-proprietario">
-          Proposta enviada: {brl(Number(p.valor_proposto))} em {p.prazo_proposto_dias} dia(s).{aceiteVencido ? "" : " Falta o proprietário aceitar para agendar a visita."}
+          Proposta enviada: {brl(Number(p.valor_proposto))} em {dias(Number(p.prazo_proposto_dias ?? 0))}.{aceiteVencido ? "" : " Falta o proprietário aceitar para agendar a visita."}
           {relogio?.vez === "dono" && (
             <span className={aceiteVencido ? "mt-1 block font-semibold text-red-700" : "mt-1 block"} data-testid="prazo-aceite" data-vencido={aceiteVencido ? "1" : undefined}>
               {textoDoPrazoDeAceite(relogio)}

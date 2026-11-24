@@ -10,6 +10,7 @@
 import { chaveCidade } from "../cidades.ts";
 import { cnpjValido, cpfValido, soDigitos } from "../documento-pessoa.ts";
 import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
+import { MSG_SO_CNPJ } from "../parceiros/regras.ts";
 
 export const CATEGORIA_AVALIADOR = "vistoria";
 export const ROTA_RECRUTAMENTO = "/parceiros/avaliadores";
@@ -62,9 +63,12 @@ export function validarPedidoAvaliador(
       campos.push({ campo: "nome", mensagem: CONTATO_AVISO });
     }
     // E648: só empresa. CPF (tipo "pf" ou CPF no campo) não é aceito em nenhuma categoria de parceiro.
+    // E1152 (ORDEM-DUET-644): a recusa do CPF é a frase da regra, da MESMA fonte do "Seja parceiro" (`MSG_SO_CNPJ`) —
+    // antes havia aqui uma segunda redação, que dizia quase o mesmo que a nota da tela. Na lista geral fica só o que
+    // falta ("CNPJ válido."); a regra é dita uma vez, junto do campo.
     if (e.tipoPessoa === "pf" || cpfValido(doc)) {
-      falta.push("CNPJ válido (CPF não é aceito: abra o seu CNPJ, MEI onde a atividade permite).");
-      campos.push({ campo: "documento", mensagem: "CPF não é aceito: informe o CNPJ (abra o seu CNPJ, MEI onde a atividade permite)." });
+      falta.push("CNPJ válido.");
+      campos.push({ campo: "documento", mensagem: MSG_SO_CNPJ });
     } else if (!cnpjValido(doc)) {
       falta.push("CNPJ válido.");
       campos.push({ campo: "documento", mensagem: doc ? "CNPJ inválido: confira os números." : "Informe o CNPJ." });
