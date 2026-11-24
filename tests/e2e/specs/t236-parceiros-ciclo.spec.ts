@@ -152,7 +152,7 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
       // E651: um CPF digitado NÃO avança para o /auth — a recusa aparece no passo, com a mensagem do CNPJ.
       await page.locator("#sp-doc").fill("529.982.247-25");
       await page.getByTestId("seja-parceiro-enviar").click();
-      await expect(page.getByTestId("seja-parceiro-erro")).toContainText("CPF não é aceito");
+      await expect(page.getByTestId("sp-erro-documento")).toContainText("CPF não é aceito");
       expect(page.url()).not.toContain("/auth");
       await page.locator("#sp-doc").fill(cnpjAleatorio());
       await page.getByTestId("seja-parceiro-enviar").click();
@@ -174,10 +174,10 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await page.getByTestId("sp-aceite").check();
     await page.getByTestId("seja-parceiro-enviar").click();
     // E651: 11 dígitos é tentativa de CPF — recusa com a regra do CNPJ (válido ou não); CNPJ de 14 dígitos com dígito errado é "inválido".
-    await expect(page.getByTestId("seja-parceiro-erro")).toContainText("CPF não é aceito");
+    await expect(page.getByTestId("sp-erro-documento")).toContainText("CPF não é aceito");
     await page.locator("#sp-doc").fill("11.222.333/0001-82");
     await page.getByTestId("seja-parceiro-enviar").click();
-    await expect(page.getByTestId("seja-parceiro-erro")).toContainText("CNPJ inválido");
+    await expect(page.getByTestId("sp-erro-documento")).toContainText("CNPJ inválido");
     await pedir(page, { categorias: ["fotografia"], portfolio: "https://marinalente.com.br" });
     const s = await solicitacao(foto.email);
     expect(s?.status).toBe("pendente");
