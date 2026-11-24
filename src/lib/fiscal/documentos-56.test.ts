@@ -12,11 +12,12 @@ import { montarLinhaDoTempo } from "../estadia-linha-tempo.ts";
 import { conteudoDocumento, enderecoDoDocumento, textoDocumento, temContato, type DadosDocumento } from "./documento.ts";
 import { gerarPdf, sha256 } from "./pdf.ts";
 import { PENDENTE_ITEM_13, RETENCAO_DOCUMENTOS, podeApagarDocumento } from "../../config/retencao.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(join(raiz, p), "utf8");
 /** O código sem comentários (o comentário pode explicar o que NÃO entra). */
-const codigo = (p: string) => ler(p).replace(/\{?\/\*[\s\S]*?\*\/\}?|\/\/.*$/gm, "");
+const codigo = (p: string) => fonteSemComentarios(ler(p));
 
 function arquivos(dir: string): string[] {
   return readdirSync(join(raiz, dir)).flatMap((n) => {
@@ -91,7 +92,7 @@ test("guarda: RPS nunca como prefixo nem em texto de documento da Viva", () => {
   for (const tipo of ["recibo_aluguel", "comprovante_caucao", "termo_devolucao_caucao"] as const) {
     assert.ok(!temRps(textoDocumento(conteudoDocumento({ ...RECIBO, tipo, caucaoTotal: 3200, confirmadoEm: "2026-12-02" }))), tipo);
   }
-  for (const p of arquivos("src/lib/fiscal")) assert.doesNotMatch(ler(p).replace(/\/\/.*|\/\*[\s\S]*?\*\//g, "").replace(/"RPS"|'RPS'|RPS é a sigla|nunca "RPS"|\\bRPS\\b|\^RPS|RPS não/g, ""), /\bRPS\b/, p);
+  for (const p of arquivos("src/lib/fiscal")) assert.doesNotMatch(fonteSemComentarios(ler(p)).replace(/"RPS"|'RPS'|RPS é a sigla|nunca "RPS"|\\bRPS\\b|\^RPS|RPS não/g, ""), /\bRPS\b/, p);
 });
 
 test("marca D1-b: o recibo leva o emissor em destaque, a Viva discreta, número e código no cabeçalho/rodapé comuns", () => {

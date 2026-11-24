@@ -12,6 +12,7 @@ import { achadosNoTexto, achadosNasMetas, semFraseDaCaucao } from "./varredura-t
 import { REGRA_CAUCAO, REGRA_CAUCAO_BASE, REGRA_CAUCAO_FRASE } from "./caucao-regra.ts";
 import { NOTA_CAUCAO } from "./reserva-imovel.ts";
 import { ROTULO_CAUCAO_NA_ENTRADA, TITULO_CAUCAO_GARANTIA } from "./fechamento-caucao-texto.ts";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 const aluguel = (achados: string[]) => achados.filter((a) => a.includes('"aluguel"'));
 
@@ -40,7 +41,7 @@ test("E1119: a exceção é só para 'aluguel' — os outros termos proibidos ao
 test("E1119: a exceção lê a frase da fonte (segue-a se mudar) e não há cópia à mão na varredura", () => {
   const fonte = readFileSync("src/lib/varredura-texto.ts", "utf8");
   assert.match(fonte, /import \{ REGRA_CAUCAO_BASE \} from "\.\/caucao-regra\.ts";/);
-  assert.doesNotMatch(fonte.replace(/\/\*[\s\S]*?\*\//g, ""), /aluguel da estadia/i, "cópia à mão da frase na varredura");
+  assert.doesNotMatch(fonteSemComentarios(fonte), /aluguel da estadia/i, "cópia à mão da frase na varredura");
   // semFraseDaCaucao tira exatamente a frase-fonte, e nada mais.
   assert.equal(semFraseDaCaucao(`a ${REGRA_CAUCAO_BASE} b`), "a   b");
   assert.equal(semFraseDaCaucao("o aluguel"), "o aluguel");
