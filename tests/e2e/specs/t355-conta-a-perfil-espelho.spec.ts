@@ -92,13 +92,14 @@ test.describe("T355 — CONTA-A Perfil: topo, foto, espelho", () => {
       expect(await p.getByTestId("topo-foto-input").evaluate((i) => getComputedStyle(i).display)).not.toBe("none");
       // O convite do painel abre o MESMO fluxo (não é mais uma âncora).
       await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
+      // Caça ao esqueleto (B2): a conta do dono é deste teste e ainda não tem foto (a foto só entra no caso 3), por isso
+      // o convite TEM de aparecer; antes, `count()` lido no esqueleto do painel dava 0 e o bloco inteiro pulava calado.
       const convite = p.getByTestId("convite-foto-adicionar");
-      if (await convite.count()) {
-        expect(await convite.evaluate((e) => e.tagName.toLowerCase())).toBe("button");
-        fc = p.waitForEvent("filechooser", { timeout: 5_000 });
-        await convite.click();
-        await fc;
-      }
+      await expect(convite, "o convite da foto aparece no painel do dono sem foto").toBeVisible({ timeout: 20_000 });
+      expect(await convite.evaluate((e) => e.tagName.toLowerCase())).toBe("button");
+      fc = p.waitForEvent("filechooser", { timeout: 5_000 });
+      await convite.click();
+      await fc;
       await p.context().close();
     });
   }
