@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { esperarSemEsqueleto } from "../fixtures/esqueleto";
 
 /*
   T1755 — E1112 @E1112 (a correcção da ORDEM-DUET-652, linha Parceiros): a categoria "avaliador" nasce pelo PEDIDO DE
@@ -10,6 +11,8 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, entrar, n
       campos continuam preenchidos; NADA fica gravado (nem a solicitação de parceiro, nem o credenciamento).
       O mesmo com e-mail no nome. Print a 390 e a 1280 px.
    2. Pedido limpo nasce: a solicitação de parceiro (categoria "vistoria", com o nome) e o credenciamento "solicitado".
+      P2 (ORDEM-DUET-668/672, forma 1): o caso começa com um envio SUJO (o aviso do nome aparece); depois o nome
+      corrigido sem o aceite da conduta (o formulário fica e o aviso do nome TEM de ter sumido); só então o limpo.
 */
 const LARGURAS = [390, 1280] as const;
 const SAIDA = "tests/laboratorio/saida";
@@ -36,6 +39,7 @@ const gravado = async () => {
 };
 async function abrirFormulario(page: Page) {
   await page.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
+  await esperarSemEsqueleto(page, "o pedido de credenciamento");
   const form = page.getByTestId("credenciamento-form").locator("form");
   await expect(form.locator('[name="nome"]')).toBeVisible({ timeout: 30_000 });
   // Espera a hidratação: antes dela, o envio é o nativo (recarrega a página) e não prova nada.
@@ -114,7 +118,25 @@ test.describe("T1755 — E1112: o pedido de credenciamento recusa contacto no no
     const page = await entrar(browser, conta.email, senha);
     await largura(page, 390);
     const form = await abrirFormulario(page);
-    await preencher(form, NOME_LIMPO);
+    // P2: primeiro o envio sujo — o aviso tem de aparecer, para a sua ausência depois valer alguma coisa.
+    await preencher(form, `${NOME_LIMPO} (34) 99999-1234`);
+    await page.getByTestId("credenciamento-enviar").click();
+    await expect(page.getByTestId("campo-erro-nome"), "o envio sujo mostra o aviso").toHaveText(AVISO, { timeout: 30_000 });
+    expect(await gravado(), "o envio sujo não grava").toEqual({ solicitacoes: [], credenciamentos: [] });
+    // P2, forma 1 (ORDEM-DUET-672): a pessoa corrige o nome, mas o envio ainda falha por OUTRO motivo (o aceite da
+    // conduta por marcar — é o servidor que o recusa; a cidade vazia não serve, o navegador trava o envio por "required").
+    // O formulário continua na tela — e o aviso do nome tem de ter desaparecido, ficando só o da cidade. (No envio
+    // limpo o formulário inteiro sai da tela, e a ausência do aviso lá não provaria nada.)
+    await form.locator('[name="nome"]').fill(NOME_LIMPO);
+    await form.locator('[name="aceiteConduta"]').uncheck();
+    await page.getByTestId("credenciamento-enviar").click();
+    await expect(page.getByTestId("campo-erro-aceiteConduta"), "o segundo envio falha pelo aceite da conduta").toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("credenciamento-form"), "o formulário continua na tela").toBeVisible();
+    await expect(page.getByTestId("campo-erro-nome"), "o aviso do nome desapareceu com o nome corrigido").toHaveCount(0);
+    await expect(form.locator('[name="nome"]')).not.toHaveAttribute("aria-invalid", "true");
+    expect(await gravado(), "o segundo envio também não grava").toEqual({ solicitacoes: [], credenciamentos: [] });
+    // E agora o envio limpo.
+    await form.locator('[name="aceiteConduta"]').check();
     await page.getByTestId("credenciamento-enviar").click();
 
     await expect.poll(async () => (await gravado()).credenciamentos.length, { timeout: 30_000 }).toBe(1);
@@ -125,7 +147,6 @@ test.describe("T1755 — E1112: o pedido de credenciamento recusa contacto no no
     expect(g.solicitacoes[0].nome).toBe(NOME_LIMPO);
     expect(g.solicitacoes[0].categorias).toEqual(["vistoria"]);
     expect(g.solicitacoes[0].status).toBe("pendente");
-    await expect(page.getByTestId("campo-erro-nome")).toHaveCount(0);
     // A tela passa a mostrar a situação do credenciamento.
     await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("credenciamento-situacao")).toHaveAttribute("data-status", "solicitado", { timeout: 30_000 });
