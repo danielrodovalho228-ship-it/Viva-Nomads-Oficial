@@ -16,7 +16,7 @@ import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistoria/strikes";
 import { credenciamentosADecidir, laudosAtrasados, pedidosSemAvaliador } from "@/lib/data/avaliadores-contagens";
 import { idsContasTeste } from "@/lib/data/admin-indicadores";
-import { textoDasContasDeTeste } from "@/lib/vistoria/contagens-da-central";
+import { separarContasDeTeste, textoDasContasDeTeste } from "@/lib/vistoria/contagens-da-central";
 import { RESPOSTA_DO_AVALIADOR, ROTULO_AGUARDANDO_AVALIADOR, TITULO_PEDIDOS_SEM_AVALIADOR, rotuloDoStatus, rotuloDoTipo } from "@/lib/vistoria/rotulos-do-pedido";
 import { ROTULO_FILA } from "@/lib/vistoria/rotulos-da-fila";
 import { contagemContestacoes } from "@/lib/vistoria/telas-laudo";
@@ -130,13 +130,17 @@ export default async function AdminAvaliadoresPage() {
     filaDaCidade(admin),
     admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade)").in("resposta", ["recusada", "expirada", "ausencia"]).is("proposta_expirada_em", null).is("proposta_descartada_em", null).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
     admin.from("profiles").select("id").eq("is_teste", true).limit(200),
-    admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade)").gte("proposta_expirada_em", trintaDias).order("proposta_expirada_em", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS),
-    admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade)").gte("proposta_descartada_em", trintaDias).order("proposta_descartada_em", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS),
+    admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, owner_id)").gte("proposta_expirada_em", trintaDias).order("proposta_expirada_em", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS),
+    admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, owner_id)").gte("proposta_descartada_em", trintaDias).order("proposta_descartada_em", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS),
   ]);
   const [{ data: recusas }, { data: perfisTeste }, { data: expiradas }, { data: descartadas }] = semFalhaDeLeitura([recusasLeitura, perfisLeitura, expiradasLeitura, descartadasLeitura] as const);
-  const propostasLista = propostasEncerradas([...(expiradas ?? []), ...(descartadas ?? [])] as unknown as LinhaDaPropostaEncerrada[], trintaDias, TETO_PROPOSTAS_ENCERRADAS);
+  const propostasTodas = propostasEncerradas([...(expiradas ?? []), ...(descartadas ?? [])] as unknown as LinhaDaPropostaEncerrada[], trintaDias);
+  // ORDEM-735: a proposta de conta de teste (pelo dono do pedido) não entra na lista de trabalho; fica num bloco próprio.
+  const propostasDaCentral = separarContasDeTeste(propostasTodas, (p) => p.ownerId, (p) => p.quando, contasDeTesteDaCentral);
+  const propostasLista = propostasDaCentral.reais.slice(0, TETO_PROPOSTAS_ENCERRADAS);
+  const propostasDeTeste = propostasDaCentral.deTeste.slice(0, TETO_PROPOSTAS_ENCERRADAS);
   // De que imóvel é cada uma: o título do anúncio e o código VN (E1108) — nunca a morada (o dono não aceitou a proposta).
-  const imoveisDasPropostas = [...new Set(propostasLista.map((p) => p.propertyId).filter((x): x is string => !!x))];
+  const imoveisDasPropostas = [...new Set([...propostasLista, ...propostasDeTeste].map((p) => p.propertyId).filter((x): x is string => !!x))];
   const titulosLeitura = imoveisDasPropostas.length ? await admin.from("properties").select("id, title").in("id", imoveisDasPropostas) : { data: [], error: null };
   if (titulosLeitura.error) throw new Error(`Falha ao ler a rede de avaliadores: ${titulosLeitura.error.message}`);
   const tituloDoImovel = new Map(((titulosLeitura.data ?? []) as { id: string; title: string | null }[]).map((i) => [i.id, i.title]));
@@ -394,16 +398,28 @@ export default async function AdminAvaliadoresPage() {
         {/* E1159: a proposta que expirou sem o aceite do dono e a que ele descartou — só leitura, fora do "Para decidir". */}
         <div className="mt-4 border-t border-line pt-3" data-testid="propostas-expiradas">
           <h3 className="text-sm font-semibold text-ink">{TITULO_PROPOSTAS_ENCERRADAS}</h3>
-          {propostasLista.length === 0 ? (
-            <p className="mt-1 text-sm text-muted">{VAZIO_PROPOSTAS_ENCERRADAS}</p>
-          ) : (
+          {propostasLista.length === 0 && propostasDeTeste.length === 0 && <p className="mt-1 text-sm text-muted">{VAZIO_PROPOSTAS_ENCERRADAS}</p>}
+          {propostasLista.length > 0 && (
             <ul className="mt-1 grid gap-1 text-sm">
               {propostasLista.map((p) => (
-                <li key={p.id} data-testid="proposta-encerrada-item" data-motivo={p.motivo}>
+                <li key={p.id} data-testid="proposta-encerrada-item" data-motivo={p.motivo} data-conta-teste="nao">
                   nº {numeroDe.get(p.avaliadorId) ?? "—"} · {imovelDaProposta(p)} · {rotuloDaPropostaEncerrada(p.motivo)} · {dataBRT(p.quando)}
                 </li>
               ))}
             </ul>
+          )}
+          {/* ORDEM-735: as propostas de conta de teste ficam à parte, fora da lista de trabalho (a regra do E1163). */}
+          {propostasDeTeste.length > 0 && (
+            <div className="mt-3 text-sm text-muted" data-testid="propostas-expiradas-de-teste" data-valor={propostasDeTeste.length}>
+              <p>{textoDasContasDeTeste(propostasDeTeste.length)}</p>
+              <ul className="mt-1 grid gap-1">
+                {propostasDeTeste.map((p) => (
+                  <li key={p.id} data-testid="proposta-encerrada-item" data-motivo={p.motivo} data-conta-teste="sim">
+                    nº {numeroDe.get(p.avaliadorId) ?? "—"} · {imovelDaProposta(p)} · {rotuloDaPropostaEncerrada(p.motivo)} · {dataBRT(p.quando)}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       </Panel>
