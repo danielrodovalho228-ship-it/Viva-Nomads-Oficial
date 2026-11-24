@@ -62,7 +62,7 @@ export function relogioDoPedido(p: EstadoParaORelogio, agora: Date): Relogio | n
 
 /**
  * E1142: a proposta que o dono já não pode aceitar — as 72 h dele passaram. É a conta do relógio acima, a mesma das
- * telas e da rotina diária: entre o fim do prazo e a rotina, o aceite é recusado em vez de gravado.
+ * telas e da rotina (que corre de hora em hora): entre o fim do prazo e a rotina, o aceite é recusado em vez de gravado.
  */
 export function aceiteForaDoPrazo(p: { propostaEm: string | null; teste: boolean; escolhidoEm: string | null }, agora: Date): boolean {
   const r = relogioDoPedido(
@@ -81,8 +81,11 @@ export function fimDoPrazoDeAceite(propostaEm: string | null): string | null {
 /** E1142: como a lista do avaliador chama a designação cuja proposta venceu sem o aceite (não é "sem resposta" dele). */
 export const ROTULO_PROPOSTA_EXPIRADA = "Proposta expirada sem o aceite do proprietário";
 
-/** E1142: o que o dono lê junto do botão quando tenta aceitar fora do prazo. */
-export const ERRO_ACEITE_FORA_DO_PRAZO = `O prazo de ${PRAZO_DONO_ACEITAR_HORAS} horas para aceitar esta proposta terminou. Escolha outro avaliador.`;
+/**
+ * E1142: o que o dono lê junto do botão quando tenta aceitar fora do prazo. Texto aprovado na ORDEM-DUET-623: não diz
+ * "escolha outro avaliador", que seria mentira numa cidade com um avaliador só; é a mesma frase que o avaliador lê.
+ */
+export const ERRO_ACEITE_FORA_DO_PRAZO = `O prazo de ${PRAZO_DONO_ACEITAR_HORAS} horas para aceitar esta proposta terminou. O pedido volta para você escolher de novo.`;
 
 /** O contador do avaliador: "Responda em 23 h 10 min". Vencido: a rotina devolve o pedido ao dono. */
 export function textoDoPrazoDeResposta(r: Relogio, agora: Date): string {

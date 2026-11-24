@@ -5,8 +5,8 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
 
 /*
   T1750 — E1142 @E1142 (ORDEM-DUET-619, linha Parceiros, classe B): o dono conseguia aceitar a proposta do avaliador
-  depois de o prazo de 72 horas vencer. `aceitarProposta` não conferia o prazo, e a expiração só corre na rotina diária
-  (12:00 de Brasília): até ela correr, o botão "Aceitar valor e prazo" gravava o aceite de uma proposta vencida.
+  depois de o prazo de 72 horas vencer. `aceitarProposta` não conferia o prazo, e a expiração só corre na rotina (de hora
+  em hora): até ela correr, o botão "Aceitar valor e prazo" gravava o aceite de uma proposta vencida.
   Só contas de teste; cidade própria do spec.
    1. Proposta enviada há 73 horas: o clique em "Aceitar valor e prazo" é recusado, com o aviso junto do botão; nada é
       gravado (o pedido continua "designado", sem aceite) e o avaliador não recebe o aviso de proposta aceita.
@@ -15,8 +15,9 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
       terminou — não mais "O proprietário tem até…" com uma data que já passou, nem "Falta o proprietário aceitar". A
       proposta dentro do prazo continua com o texto de sempre. Print a 390 e a 1280 px.
    3. Proposta enviada há 71 horas (dentro do prazo): o aceite continua a valer, como antes.
-   4. Na proposta vencida, "Escolher outro avaliador" continua a funcionar: é o caminho que o aviso indica.
-   5. (ORDENS-DUET 621 e 622) A rotina diária, num 2º servidor do mesmo build (porta 3150, com um CRON_SECRET só dele,
+   4. Na proposta vencida, "Escolher outro avaliador" continua a funcionar: é por onde o pedido volta já para o dono
+      escolher de novo, sem esperar a rotina.
+   5. (ORDENS-DUET 621 e 622) A rotina, num 2º servidor do mesmo build (porta 3150, com um CRON_SECRET só dele,
       padrão do t2131): a proposta vencida volta ao dono; a designação fica "expirada" (antes ficava "aceita"), com o
       instante em que o prazo acabou; o avaliador recebe o aviso e o e-mail da expiração; e a lista dele chama-lhe
       "Proposta expirada sem o aceite do proprietário", não "Sem resposta em 24 horas". Fica por último: a rotina corre
@@ -30,7 +31,7 @@ const PORTA = 3150;
 const SEGREDO = `lab-t1750-${Math.random().toString(36).slice(2)}`;
 const ROTULO_EXPIRADA = "Proposta expirada sem o aceite do proprietário";
 let servidor: ChildProcess | null = null;
-const AVISO = "O prazo de 72 horas para aceitar esta proposta terminou. Escolha outro avaliador.";
+const AVISO = "O prazo de 72 horas para aceitar esta proposta terminou. O pedido volta para você escolher de novo."; // texto aprovado na ORDEM-DUET-623
 const HORA = 3_600_000;
 /** "25/11/2026 11:00 (horário de Brasília)", como a tela escreve. */
 function dataHoraDeBrasilia(iso: string): string {

@@ -7,8 +7,8 @@ import { ERRO_ACEITE_FORA_DO_PRAZO, aceiteForaDoPrazo, relogioDoPedido, textoDoP
 
 /*
   E1142 (ORDEM-DUET-619, linha Parceiros, classe B): o dono conseguia aceitar a proposta do avaliador depois de o prazo
-  de 72 horas vencer. A ação `aceitarProposta` não conferia o prazo, e a expiração só corre na rotina diária (12:00 de
-  Brasília): entre o fim do prazo e a rotina, o botão "Aceitar valor e prazo" gravava o aceite de uma proposta vencida.
+  de 72 horas vencer. A ação `aceitarProposta` não conferia o prazo, e a expiração só corre na rotina (de hora em
+  hora): entre o fim do prazo e a rotina, o botão "Aceitar valor e prazo" gravava o aceite de uma proposta vencida.
   A regra é a do relógio do pedido (E1101), a mesma das telas e da rotina.
   ORDEM-DUET-620 (a outra face do defeito): com o prazo vencido, a tela do avaliador continuava a dizer "O proprietário
   tem até 25/11/2026 23:21 para aceitar…". Passa a dizer que o prazo terminou, na lista e na tela do pedido.
@@ -46,7 +46,8 @@ test("E1142: no piloto (pedido de teste que o dono escolheu) o prazo vale; a ava
 });
 
 test("E1142: o aviso diz o prazo (lido da fonte única) e o que fazer a seguir", () => {
-  assert.equal(ERRO_ACEITE_FORA_DO_PRAZO, "O prazo de 72 horas para aceitar esta proposta terminou. Escolha outro avaliador.");
+  assert.equal(ERRO_ACEITE_FORA_DO_PRAZO, "O prazo de 72 horas para aceitar esta proposta terminou. O pedido volta para você escolher de novo.");
+  assert.doesNotMatch(ERRO_ACEITE_FORA_DO_PRAZO, /outro avaliador/, "ORDEM-DUET-623: numa cidade com um avaliador só, \"outro\" seria mentira");
   assert.match(semComentarios(ler("src/lib/vistoria/relogio-do-pedido.ts")), /ERRO_ACEITE_FORA_DO_PRAZO = `O prazo de \$\{PRAZO_DONO_ACEITAR_HORAS\} horas /);
 });
 

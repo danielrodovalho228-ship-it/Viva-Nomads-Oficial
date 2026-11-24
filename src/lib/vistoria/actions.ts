@@ -531,7 +531,7 @@ async function comoDonoDoPedido(pedidoId: string) {
 export async function aceitarProposta(form: FormData): Promise<Res> {
   const c = await comoDonoDoPedido(String(form.get("pedidoId") ?? ""));
   if (!c) return SEM_ACESSO;
-  // E1142: passadas as 72 h do dono, o aceite é recusado — a rotina diária devolve o pedido, mas até ela correr o botão
+  // E1142: passadas as 72 h do dono, o aceite é recusado — a rotina devolve o pedido, mas até ela correr o botão
   // continua na tela. Nada é gravado e o avaliador não é avisado.
   if (aceiteForaDoPrazo({ propostaEm: c.p.proposta_em as string | null, teste: c.p.teste === true, escolhidoEm: (c.p.escolhido_em as string | null) ?? null }, new Date())) {
     return { ok: false, erro: ERRO_ACEITE_FORA_DO_PRAZO };
