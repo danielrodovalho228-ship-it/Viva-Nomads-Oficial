@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CATEGORIAS_CATALOGO, CATEGORIAS_PARCEIRO, categoriaValida } from "../parceiros/regras.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
@@ -20,7 +21,6 @@ const ADMIN = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
 const PUBLICA = ler("src/app/(public)/avaliadores/[numero]/page.tsx");
 const TELAS = [BLOCO_DONO, MORADOR, AVALIADOR, ADMIN, PUBLICA];
 
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 function corpo(fonte: string, nome: string): string {
   const i = fonte.indexOf(`export async function ${nome}`);
