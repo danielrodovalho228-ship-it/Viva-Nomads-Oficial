@@ -114,7 +114,7 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
         </p>
         <p className="mt-4 text-sm text-ink" data-testid="avaliador-linha-designacao">{LINHA_PUBLICA_DESIGNACAO}</p>
         <p className="mt-2 text-sm text-muted">
-          Número de credenciado <span className="font-semibold text-ink" data-testid="avaliador-numero">{a.numero_credenciado}</span>
+          Número de credenciado <span className="font-semibold text-ink" data-testid="avaliador-numero-fora">{a.numero_credenciado}</span>
         </p>
         {/* E1099 (ORDEM-460 §2): a mesma área em dois estados — sem avaliações, "Novo na Viva"; com avaliações, a linha delas. */}
         {novo ? (
@@ -209,7 +209,7 @@ async function PerfilPublico({ perfil }: { perfil: Perfil }) {
           <span data-testid="avaliador-cidade">{perfil.cidade}</span>
           {ufDaCidade(MUNICIPIOS, perfil.cidade) && <span data-testid="avaliador-uf">• {ufDaCidade(MUNICIPIOS, perfil.cidade)}</span>}
         </p>
-        <p className="sr-only">Número de avaliador <span data-testid="avaliador-numero">{perfil.numero}</span></p>
+        <p className="sr-only">Número de avaliador <span data-testid="avaliador-numero-fora">{perfil.numero}</span></p>
         {novo ? (
           <div className="mt-6 flex items-start gap-4 rounded-xl bg-sage-100 p-4" data-testid="avaliador-novo">
             <span className="inline-grid h-12 w-12 shrink-0 place-items-center rounded-full border-2 border-forest text-forest" aria-hidden>
