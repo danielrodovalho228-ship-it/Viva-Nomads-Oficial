@@ -14,6 +14,8 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
    2. Nessa tela, "Aceitar pedido" → "Enviar proposta" funciona: a designação que faltava nasce com a resposta e a
       proposta fica no pedido. Nunca "o prazo de 24 horas passou".
    3. "Recusar" também: o pedido volta ao dono e a recusa fica registrada (aparece no histórico do avaliador).
+   5. E1102 (lacuna A da ORDEM-DUET-618/623): com a recusa gravada na designação, o endereço do pedido não abre a tela de
+      responder — mesmo com o pedido ainda "designado" a ele (a massa força esse estado; o fluxo devolve o pedido ao dono).
    4. Todo link que a lista oferece ("Ver o pedido", "Abrir o checklist") abre a tela daquele pedido — nenhum devolve o
       avaliador ao painel.
   Acrescento da ORDEM-DUET-492: o pedido designado sem designação aparece em "Para responder" (e não em "Visitas"),
@@ -46,7 +48,7 @@ async function imovelNovo(nome: string): Promise<string> {
   return id;
 }
 /** Um pedido do avaliador da trava. `linha`: a resposta gravada na designação; "nenhuma" = sem a linha (a forma da massa 0256). */
-async function pedidoDoAvaliador(nome: string, campos: Record<string, unknown>, linha: "nenhuma" | null | "aceita"): Promise<string> {
+async function pedidoDoAvaliador(nome: string, campos: Record<string, unknown>, linha: "nenhuma" | null | "aceita" | "recusada"): Promise<string> {
   const imovel = await imovelNovo(nome);
   const { data, error } = await adm()
     .from("vistoria_pedidos")
@@ -240,6 +242,18 @@ test.describe("T1737 — E1102: o avaliador abre o detalhe do próprio pedido @E
     await a.goto(`${ROTA}/${pedidos.novo}`, { waitUntil: "domcontentloaded" });
     await expect(a.getByTestId("pedido-avaliador")).toHaveAttribute("data-etapa", "novo", { timeout: 30_000 });
     await expect(a.getByTestId("pedido-prazo-resposta")).toHaveText(/^Responda em 23 h \d{2} min$/);
+    await a.context().close();
+  });
+  test("5. com a recusa gravada na designação, o endereço do pedido não reabre a tela de responder", async ({ browser }) => {
+    // Massa forçada: o pedido ainda "designado" a este avaliador, com a recusa dele gravada (a regra da etapa é a guarda).
+    const recusado = await pedidoDoAvaliador("recusado e ainda designado", { designado_em: ha(3) }, "recusada");
+    const a = await entrar(browser, aval.email, senha);
+    await largura(a, 390);
+    await a.goto(`${ROTA}/${recusado}`, { waitUntil: "domcontentloaded" });
+    await expect(a.locator("main")).toBeVisible({ timeout: 30_000 });
+    await a.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    await expect(a.getByTestId("pedido-avaliador"), "a tela de responder não abre depois da recusa").toHaveCount(0);
+    await expect(a.getByRole("button", { name: "Aceitar pedido" })).toHaveCount(0);
     await a.context().close();
   });
 });
