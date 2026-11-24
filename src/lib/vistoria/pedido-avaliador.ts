@@ -106,6 +106,15 @@ export function identificacaoDoImovel(titulo: string | null | undefined, propert
   return t ? `${t} · ${codigo}` : codigo;
 }
 
+/**
+ * E1148 (ORDEM-DUET-679): onde fica o imóvel de um item ENCERRADO que já não é do avaliador (proposta expirada ou
+ * descartada, pedido recusado, ausência) — o bairro e a cidade, nunca a morada: nestes itens o dono não aceitou, e a
+ * regra da casa é "bairro e cidade antes do aceite". Nunca vazio (cai na cidade do pedido).
+ */
+export function regiaoDoItemEncerrado(bairro: string | null | undefined, cidadeDoPedido: string): string {
+  return regiaoDaVisita({ address: bairro, city: cidadeDoPedido }) ?? cidadeDoPedido;
+}
+
 /** O local: bairro e cidade até o dono aceitar; o endereço completo depois. Nunca vazio (cai na cidade do pedido). */
 export function localDoPedido(
   etapa: EtapaDoPedido,
