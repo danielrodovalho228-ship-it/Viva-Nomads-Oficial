@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { FormAcao } from "@/components/vistoria/form-acao";
-import { vistoriaAtiva } from "@/lib/vistoria/chave";
+import { vistoriaAtivaParaOMorador } from "@/lib/vistoria/chave";
 import { concordarVisita } from "@/lib/vistoria/actions";
 import { quandoVisita } from "@/lib/vistoria/telas-exibicao";
 import { ETIQUETA_BRASILIA } from "@/lib/datas-brasilia";
@@ -16,9 +16,10 @@ export const dynamic = "force-dynamic";
 /**
  * Prompt 62-B1 (desenho do 62-A, Parte 1, item 5; o mesmo cartão aparece na conversa da estadia): o morador do imóvel ocupado concorda com a data da visita de avaliação
  * em 1 toque. Sem a concordância, a visita não acontece. Com VISTORIA_ATIVA desligada, a página não existe.
+ * E1171 (ORDEM-DUET-746): a chave é a do PEDIDO, não a da conta do morador — no piloto quem está na lista é o dono. A
+ * ordem é: login (o link do aviso tem de sobreviver à sessão fechada), o pedido é deste morador, e só então a chave.
  */
 export default async function ConcordanciaPage({ params }: { params: Promise<{ id: string }> }) {
-  if (!(await vistoriaAtiva())) notFound();
   const { id } = await params;
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -27,8 +28,9 @@ export default async function ConcordanciaPage({ params }: { params: Promise<{ i
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/avaliacao-imovel/${id}`)}`);
-  const { data: p } = await admin.from("vistoria_pedidos").select("id, morador_id, agendado_para, concordancia_em, ocupado, status").eq("id", id).maybeSingle();
+  const { data: p } = await admin.from("vistoria_pedidos").select("id, owner_id, morador_id, agendado_para, concordancia_em, ocupado, status").eq("id", id).maybeSingle();
   if (!p || p.morador_id !== user.id || !p.ocupado) notFound();
+  if (!(await vistoriaAtivaParaOMorador(admin, p.owner_id))) notFound();
   const quando = p.agendado_para ? quandoVisita(p.agendado_para) : null;
   return (
     <>

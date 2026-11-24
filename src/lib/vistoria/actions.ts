@@ -12,7 +12,7 @@ import { semMetadados } from "@/lib/foto-reconversao";
 import { chaveCidade } from "@/lib/cidades";
 import { lerReais } from "@/lib/reais";
 import { hojeEmBrasilia } from "@/lib/datas-brasilia";
-import { vistoriaAtiva } from "./chave";
+import { vistoriaAtiva, vistoriaAtivaParaOMorador } from "./chave";
 import { ocupanteNoDia, type ContratoComBlocos } from "./ocupacao";
 import { CATEGORIA_AVALIADOR, pendenciasDoCredenciamento, podeAprovarParaTeste, podeAtivar, solicitacaoDoAvaliador, validarPedidoAvaliador } from "./entrada";
 import {
@@ -619,11 +619,12 @@ export async function agendarVisita(form: FormData): Promise<Res> {
 
 /** O morador concorda com a data (1 toque). Sem a concordância, a visita não acontece. */
 export async function concordarVisita(form: FormData): Promise<Res> {
-  if (!(await vistoriaAtiva())) return DESLIGADA;
   const s = await sessao();
   if (!s) return SEM_ACESSO;
   const { data: p } = await s.admin.from("vistoria_pedidos").select("id, property_id, owner_id, morador_id, ocupado, agendado_para, status, avaliadores_credenciamento(parceiros(user_id))").eq("id", String(form.get("pedidoId") ?? "")).maybeSingle();
   if (!p || p.morador_id !== s.userId || !p.ocupado || !p.agendado_para || p.status !== "designado") return SEM_ACESSO;
+  // E1171: a chave é a do pedido (a sessão do morador, ou o dono do pedido no piloto) — nunca só a da conta do morador.
+  if (!(await vistoriaAtivaParaOMorador(s.admin, p.owner_id))) return DESLIGADA;
   await s.admin.from("vistoria_pedidos").update({ concordancia_em: new Date().toISOString(), status: "agendado", atualizado_em: new Date().toISOString() }).eq("id", p.id);
   await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
   await avisar(s.admin, (p.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id });
