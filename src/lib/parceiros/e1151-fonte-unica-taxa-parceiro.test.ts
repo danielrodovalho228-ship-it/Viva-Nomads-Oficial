@@ -13,9 +13,9 @@ import { join } from "node:path";
 import * as fonte from "../../config/taxa-servico-parceiros.ts";
 import * as regras from "./regras.ts";
 import { TEXTO_DIVISAO_NA_ORIGEM as DIVISAO_DO_PEDIDO } from "./pedido.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 const F = fonte as unknown as Record<string, unknown>;
 
 test("E1151: a divisão na origem tem uma redacção canónica, feita das constantes", () => {
