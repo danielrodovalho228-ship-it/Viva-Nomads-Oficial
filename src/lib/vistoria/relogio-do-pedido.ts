@@ -72,6 +72,15 @@ export function aceiteForaDoPrazo(p: { propostaEm: string | null; teste: boolean
   return r?.vez === "dono" && r.vencido;
 }
 
+/** E1142: o instante em que o prazo do dono para aceitar acaba (ISO); null sem proposta. */
+export function fimDoPrazoDeAceite(propostaEm: string | null): string | null {
+  const t = propostaEm ? Date.parse(propostaEm) : NaN;
+  return Number.isFinite(t) ? new Date(t + PRAZO_DONO_ACEITAR_HORAS * HORA).toISOString() : null;
+}
+
+/** E1142: como a lista do avaliador chama a designação cuja proposta venceu sem o aceite (não é "sem resposta" dele). */
+export const ROTULO_PROPOSTA_EXPIRADA = "Proposta expirada sem o aceite do proprietário";
+
 /** E1142: o que o dono lê junto do botão quando tenta aceitar fora do prazo. */
 export const ERRO_ACEITE_FORA_DO_PRAZO = `O prazo de ${PRAZO_DONO_ACEITAR_HORAS} horas para aceitar esta proposta terminou. Escolha outro avaliador.`;
 

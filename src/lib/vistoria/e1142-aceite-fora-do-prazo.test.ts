@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { PRAZO_DONO_ACEITAR_HORAS } from "./prazos.ts";
+import * as relogio from "./relogio-do-pedido.ts";
 import { ERRO_ACEITE_FORA_DO_PRAZO, aceiteForaDoPrazo, relogioDoPedido, textoDoPrazoDeAceite } from "./relogio-do-pedido.ts";
 
 /*
@@ -90,4 +91,75 @@ test("E1142 (ORDEM-620): a lista e a tela do pedido do avaliador mostram esse te
   const tela = ler("src/components/avaliadores/pedido.tsx");
   assert.match(tela, /\{!prazoAceiteVencido && "Falta o proprietário aceitar a sua proposta\./);
   assert.match(tela, /data-testid="pedido-prazo-aceite" data-vencido=\{prazoAceiteVencido \? "1" : undefined\}/);
+});
+
+// ── ORDEM-DUET-621 (o registo) e ORDEM-DUET-622 (o e-mail ao avaliador, decisão do Daniel) ──────────────────────────
+test("E1142 (ORDEM-621): a rotina regista a designação como 'expirada' quando a proposta vence sem o aceite — e guarda quando o prazo acabou", () => {
+  const { fimDoPrazoDeAceite } = relogio;
+  assert.equal(fimDoPrazoDeAceite(PROPOSTA), "2026-11-23T15:00:00.000Z");
+  assert.equal(fimDoPrazoDeAceite(null), null);
+  assert.equal(fimDoPrazoDeAceite("data ruim"), null);
+  const srv = semComentarios(ler("src/lib/vistoria/servidor.ts"));
+  // Só a designação com a proposta enviada ("aceita") vira "expirada"; a hora em que a proposta respondeu fica como estava.
+  const reg = srv.slice(srv.indexOf("export async function registrarPropostaExpirada("), srv.indexOf("export async function revisarCriterios("));
+  assert.ok(reg.length > 100, "falta registrarPropostaExpirada");
+  assert.match(reg, /\.update\(\{ resposta: "expirada", proposta_expirada_em: venceuEm \}\)\.eq\("pedido_id", pedidoId\)\.eq\("avaliador_id", avaliadorId\)\.eq\("resposta", "aceita"\)/);
+  assert.doesNotMatch(reg, /respondido_em/);
+  // Na rotina: regista ANTES de devolver o pedido ao dono (depois a proposta já foi apagada do pedido).
+  const rotina = srv.slice(srv.indexOf("export async function rotinaVistoria("));
+  const ramo = rotina.slice(rotina.indexOf("propostaVencida(q.proposta_em, agora)"), rotina.indexOf('.eq("status", "pedido").eq("aguardando_avaliador", true)'));
+  const regista = ramo.indexOf("await registrarPropostaExpirada(admin, q.id, q.avaliador_id, ");
+  const devolve = ramo.indexOf('await devolverAoDono(admin, q.id, q.avaliador_id, "expirada", agora);');
+  assert.ok(regista > 0 && devolve > regista, "a designação é registada antes de o pedido voltar ao dono");
+  // O silêncio do avaliador continua como era: a designação sem resposta vira "expirada" pelo devolverAoDono, sem a marca.
+  assert.match(rotina, /devolverAoDono\(admin, d\.pedido_id, d\.avaliador_id, "expirada", agora\)/);
+});
+
+test("E1142 (ORDEM-621): a expiração da proposta não aparece como 'Sem resposta em 24 horas' — nem ao avaliador, nem na Central", () => {
+  assert.equal(relogio.ROTULO_PROPOSTA_EXPIRADA, "Proposta expirada sem o aceite do proprietário");
+  const lista = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx");
+  assert.match(lista, /\.select\("pedido_id, resposta, designado_em, respondido_em, proposta_expirada_em, vistoria_pedidos\(cidade, porte\)"\)/);
+  assert.match(lista, /\{d\.proposta_expirada_em \? ROTULO_PROPOSTA_EXPIRADA : \(ROTULO_RESPOSTA\[d\.resposta \?\? ""\] \?\? d\.resposta\)\}/);
+  // A Central lista recusas, silêncios e ausências DO AVALIADOR: a proposta que o dono deixou vencer fica fora.
+  const central = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
+  assert.match(central, /\.in\("resposta", \["recusada", "expirada", "ausencia"\]\)\.is\("proposta_expirada_em", null\)/);
+});
+
+test("E1142 (ORDEM-621): a migração 0359 só acrescenta a coluna, é idempotente e registra-se", () => {
+  const m = ler("supabase/migrations/0359_vistoria_designacao_proposta_expirada_e1142.sql");
+  assert.match(m, /alter table public\.vistoria_designacoes add column if not exists proposta_expirada_em timestamptz;/);
+  const a = ler("supabase/producao/aplicar-0359.sql");
+  assert.match(a, /^begin;/m);
+  assert.match(a, /alter table public\.vistoria_designacoes add column if not exists proposta_expirada_em timestamptz;/);
+  assert.match(a, /'0359_vistoria_designacao_proposta_expirada_e1142'/);
+  assert.match(a, /commit;\s*$/);
+  assert.match(ler("supabase/producao/rollback/0359_rollback.sql"), /drop column if exists proposta_expirada_em/);
+});
+
+test("E1142 (ORDEM-622): na expiração, o avaliador também recebe o aviso — assunto da família da vistoria, sem código interno", async () => {
+  const srv = semComentarios(ler("src/lib/vistoria/servidor.ts"));
+  const rotina = srv.slice(srv.indexOf("export async function rotinaVistoria("));
+  const ramo = rotina.slice(rotina.indexOf("propostaVencida(q.proposta_em, agora)"), rotina.indexOf('.eq("status", "pedido").eq("aguardando_avaliador", true)'));
+  assert.match(ramo, /avisar\(admin, q\.owner_id, "vistoria_designado_dono"/, "o dono continua avisado");
+  assert.match(ramo, /avisar\(admin, q\.avaliadores_credenciamento\?\.parceiros\?\.user_id, "vistoria_proposta_expirada", ROTA_AVALIADOR, \{ pedidoId: q\.id, propertyId: q\.property_id \}\)/);
+  const { TEMPLATES } = await import("../notifications/eventos-email.ts");
+  const t = TEMPLATES.vistoria_proposta_expirada;
+  assert.equal(t.subject, "A sua proposta de avaliação expirou");
+  assert.equal(t.body("Abel"), "Olá Abel, o proprietário não aceitou a sua proposta de avaliação no prazo de 72 horas, e ela expirou. O pedido voltou para ele escolher de novo. Você não precisa fazer nada.");
+  assert.equal(t.cta, "Ver as avaliações");
+  assert.equal(t.path, "/dashboard/parceiro/avaliacao");
+  assert.doesNotMatch(`${t.subject} ${t.body("Abel")}`, /VIS-|VN-|[0-9a-f]{8}-[0-9a-f]{4}/, "sem códigos internos");
+  // Com o imóvel do pedido: o título entra no assunto e no corpo.
+  const { corpoVistoria, EVENTOS_VISTORIA_COM_FATOS } = await import("./corpo-email.ts");
+  assert.ok(EVENTOS_VISTORIA_COM_FATOS.has("vistoria_proposta_expirada"));
+  const c = corpoVistoria("vistoria_proposta_expirada", { imovel: { id: "i1", titulo: "Casa do Lago", bairro: "Centro", cidade: "Sacramento" } });
+  assert.equal(c.subject, "A sua proposta de avaliação expirou: Casa do Lago");
+  assert.equal(c.body("Abel"), "Olá Abel, o proprietário não aceitou a sua proposta de avaliação de Casa do Lago no prazo de 72 horas, e ela expirou. O pedido voltou para ele escolher de novo. Você não precisa fazer nada.");
+  assert.deepEqual(c.linhas.map((l) => l.rotulo), ["Imóvel"]);
+  // Só o avaliador recebe; fica na central e no e-mail, sem push (não há nada a decidir).
+  const { MATRIZ_NOTIFICACOES } = await import("../../config/matriz-notificacoes.ts");
+  assert.deepEqual(MATRIZ_NOTIFICACOES.vistoria_proposta_expirada.papeis, ["parceiro"]);
+  assert.ok(!MATRIZ_NOTIFICACOES.vistoria_proposta_expirada.canais.includes("push"));
+  const { TEMA_POR_EVENTO } = await import("../notifications/imagens-email.ts");
+  assert.equal(TEMA_POR_EVENTO.vistoria_proposta_expirada, "transacional");
 });

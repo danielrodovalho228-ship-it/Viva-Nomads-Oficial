@@ -7,7 +7,7 @@ import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type Fa
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { STATUS_TESTE_CONCLUIDO } from "./entrada";
 import { criteriosAtingidos, propostaVencida, sugerirAvaliadores, CRITERIOS_PUBLICOS, type Sugestoes } from "./escolha";
-import { precisaDoAceiteDoDono, relogioDoPedido } from "./relogio-do-pedido";
+import { fimDoPrazoDeAceite, precisaDoAceiteDoDono, relogioDoPedido } from "./relogio-do-pedido";
 import { modoDaChaveAtual } from "./chave";
 import { filaNoAmbito } from "./ambito-da-chave";
 import { nomeDoAvaliador } from "./nome-do-avaliador";
@@ -410,6 +410,15 @@ export async function devolverAoDono(admin: Admin, pedidoId: string, avaliadorId
  * E648: confere os critérios PÚBLICOS de qualidade do avaliador. Atingir um critério só coloca um item na fila do admin
  * (revisão humana, com direito de resposta do avaliador). O status do avaliador nunca muda por aqui.
  */
+/**
+ * E1142: a proposta venceu sem o aceite do dono. A designação deixa de dizer "aceita" e fica "expirada", com o instante
+ * em que o prazo do dono acabou (proposta_expirada_em). Essa marca é o que separa esta expiração da do avaliador que
+ * não respondeu: sem ela, as telas leriam "Sem resposta em 24 horas" de quem respondeu. A hora da resposta dele fica.
+ */
+export async function registrarPropostaExpirada(admin: Admin, pedidoId: string, avaliadorId: string, venceuEm: string): Promise<void> {
+  await admin.from("vistoria_designacoes").update({ resposta: "expirada", proposta_expirada_em: venceuEm }).eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId).eq("resposta", "aceita");
+}
+
 export async function revisarCriterios(admin: Admin, avaliadorId: string, agora = new Date()): Promise<string[]> {
   const dia = 86_400_000;
   const desde = (d: number) => new Date(agora.getTime() - d * dia).toISOString();
@@ -483,13 +492,18 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
     expiradas++;
   }
   // E682: proposta que o dono não aceitou no prazo dele (72 h) volta a ele para escolher de novo — sem rodízio.
-  const { data: propostas } = await admin.from("vistoria_pedidos").select("id, avaliador_id, owner_id, property_id, proposta_em, escolhido_em, teste").eq("status", "designado").not("proposta_em", "is", null).is("proposta_aceita_em", null);
-  for (const q of (propostas ?? []) as { id: string; avaliador_id: string | null; owner_id: string; property_id: string; proposta_em: string; escolhido_em: string | null; teste: boolean | null }[]) {
+  const { data: propostas } = await admin.from("vistoria_pedidos").select("id, avaliador_id, owner_id, property_id, proposta_em, escolhido_em, teste, avaliadores_credenciamento(parceiros(user_id))").eq("status", "designado").not("proposta_em", "is", null).is("proposta_aceita_em", null);
+  for (const q of (propostas ?? []) as unknown as { id: string; avaliador_id: string | null; owner_id: string; property_id: string; proposta_em: string; escolhido_em: string | null; teste: boolean | null; avaliadores_credenciamento: { parceiros: { user_id: string } | null } | null }[]) {
     if (!q.avaliador_id || !propostaVencida(q.proposta_em, agora)) continue;
     // E1101: as 72 h são do dono que precisa aceitar. A avaliação de teste do credenciamento não tem aceite: não vence aqui.
     if (!precisaDoAceiteDoDono({ teste: q.teste === true, escolhidoEm: q.escolhido_em })) continue;
+    // E1142: o registo diz o que aconteceu — a designação com a proposta enviada fica "expirada" (antes ficava "aceita").
+    // Vem antes de devolver: depois disso o pedido já não guarda a proposta.
+    await registrarPropostaExpirada(admin, q.id, q.avaliador_id, fimDoPrazoDeAceite(q.proposta_em) ?? agora.toISOString());
     await devolverAoDono(admin, q.id, q.avaliador_id, "expirada", agora);
     await avisar(admin, q.owner_id, "vistoria_designado_dono", rotaDono(q.property_id), { pedidoId: q.id, propertyId: q.property_id });
+    // E1142 (decisão do Daniel, ORDEM-DUET-622): o avaliador também é avisado — ele contava com uma resposta que não vem.
+    await avisar(admin, q.avaliadores_credenciamento?.parceiros?.user_id, "vistoria_proposta_expirada", ROTA_AVALIADOR, { pedidoId: q.id, propertyId: q.property_id });
     expiradas++;
   }
   // Pedidos sem nenhum avaliador para o dono escolher: tenta de novo (alguém pode ter sido credenciado).

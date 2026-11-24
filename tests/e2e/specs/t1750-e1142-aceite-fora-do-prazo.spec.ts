@@ -1,4 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
+import { spawn, type ChildProcess } from "node:child_process";
+import { createWriteStream, existsSync } from "node:fs";
 import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -14,11 +16,20 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImov
       proposta dentro do prazo continua com o texto de sempre. Print a 390 e a 1280 px.
    3. Proposta enviada há 71 horas (dentro do prazo): o aceite continua a valer, como antes.
    4. Na proposta vencida, "Escolher outro avaliador" continua a funcionar: é o caminho que o aviso indica.
+   5. (ORDENS-DUET 621 e 622) A rotina diária, num 2º servidor do mesmo build (porta 3150, com um CRON_SECRET só dele,
+      padrão do t2131): a proposta vencida volta ao dono; a designação fica "expirada" (antes ficava "aceita"), com o
+      instante em que o prazo acabou; o avaliador recebe o aviso e o e-mail da expiração; e a lista dele chama-lhe
+      "Proposta expirada sem o aceite do proprietário", não "Sem resposta em 24 horas". Fica por último: a rotina corre
+      sobre o banco inteiro.
   Laboratório; não é prova ao vivo no site.
 */
 const LARGURAS = [390, 1280] as const;
 const SAIDA = "tests/laboratorio/saida";
 const CIDADE = "Sacramento";
+const PORTA = 3150;
+const SEGREDO = `lab-t1750-${Math.random().toString(36).slice(2)}`;
+const ROTULO_EXPIRADA = "Proposta expirada sem o aceite do proprietário";
+let servidor: ChildProcess | null = null;
 const AVISO = "O prazo de 72 horas para aceitar esta proposta terminou. Escolha outro avaliador.";
 const HORA = 3_600_000;
 /** "25/11/2026 11:00 (horário de Brasília)", como a tela escreve. */
@@ -100,12 +111,18 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
     if (eT) throw eT;
     ids.pedidoVencida = await pedidoComProposta(ids.imovelVencida, 73);
     ids.pedidoNoPrazo = await pedidoComProposta(ids.imovelNoPrazo, 71);
+    ids.imovelRotina = await criarImovelPronto(ids.dono, `Casa rotina t1750 ${sufixo}`, { ativo: true });
+    const cidR = await adm().from("properties").update({ city: CIDADE }).eq("id", ids.imovelRotina);
+    if (cidR.error) throw cidR.error;
+    ids.pedidoRotina = await pedidoComProposta(ids.imovelRotina, 75);
   });
 
   test.afterAll(async () => {
-    const imoveis = [ids.imovelVencida, ids.imovelNoPrazo].filter(Boolean);
-    const pedidos = [ids.pedidoVencida, ids.pedidoNoPrazo].filter(Boolean);
+    servidor?.kill("SIGTERM");
+    const imoveis = [ids.imovelVencida, ids.imovelNoPrazo, ids.imovelRotina].filter(Boolean);
+    const pedidos = [ids.pedidoVencida, ids.pedidoNoPrazo, ids.pedidoRotina].filter(Boolean);
     const contas = [ids.dono, ids.avaliador].filter(Boolean);
+    if (contas.length) await adm().from("emails_teste").delete().in("usuario_id", contas);
     if (pedidos.length) {
       await adm().from("avisos").delete().in("ref_id", pedidos);
       await adm().from("vistoria_fila_admin").delete().in("pedido_id", pedidos);
@@ -238,5 +255,76 @@ test.describe("T1750 — E1142: o dono não aceita a proposta do avaliador fora 
     expect(depois.avaliador_id).toBeNull();
     expect(depois.proposta_aceita_em).toBeNull();
     await d.context().close();
+  });
+
+  test("5. a rotina: a designação fica 'expirada' com a hora do fim do prazo, o avaliador é avisado por e-mail e a lista dele diz o que aconteceu", async ({ browser }) => {
+    test.skip(!existsSync(".next/BUILD_ID"), "Precisa do build do laboratório (next start).");
+    const designacao = async () =>
+      (await adm().from("vistoria_designacoes").select("resposta, respondido_em, proposta_expirada_em").eq("pedido_id", ids.pedidoRotina).eq("avaliador_id", ids.cred).single()).data!;
+    const antes = await designacao();
+    const propostaEm = (await linha(ids.pedidoRotina)).proposta_em as string;
+    expect(antes.resposta).toBe("aceita");
+    expect(antes.proposta_expirada_em).toBeNull();
+
+    const log = createWriteStream(`${SAIDA}/t1750-servidor-cron.log`);
+    servidor = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-p", String(PORTA)], {
+      env: { ...process.env, CRON_SECRET: SEGREDO, PORT: String(PORTA) },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    servidor.stdout?.pipe(log);
+    servidor.stderr?.pipe(log);
+    await expect.poll(async () => (await fetch(`http://localhost:${PORTA}/api/cron/vistoria`).catch(() => null))?.status ?? 0, { timeout: 90_000 }).toBe(401);
+    const rodar = async () => {
+      const r = await fetch(`http://localhost:${PORTA}/api/cron/vistoria`, { headers: { authorization: `Bearer ${SEGREDO}` } });
+      const corpo = (await r.json().catch(() => ({}))) as { ok?: boolean; expiradas?: number };
+      expect(r.status, JSON.stringify(corpo)).toBe(200);
+      return corpo;
+    };
+    const primeira = await rodar();
+    expect(primeira.ok).toBe(true);
+    expect(primeira.expiradas ?? 0, "a rotina expirou pelo menos esta proposta").toBeGreaterThanOrEqual(1);
+
+    // O pedido voltou ao dono, sem avaliador e sem proposta.
+    const p = await linha(ids.pedidoRotina);
+    expect(p.status).toBe("pedido");
+    expect(p.avaliador_id).toBeNull();
+    expect(p.proposta_em).toBeNull();
+
+    // O registo: a designação deixa de dizer "aceita"; guarda o fim do prazo do dono; a hora da proposta dele fica.
+    const depois = await designacao();
+    expect(depois.resposta, "a designação fica registada como expirada").toBe("expirada");
+    expect(Date.parse(depois.proposta_expirada_em as string), "o instante em que as 72 h acabaram").toBe(Date.parse(propostaEm) + 72 * HORA);
+    expect(Date.parse(depois.respondido_em as string), "a hora em que o avaliador respondeu não muda").toBe(Date.parse(antes.respondido_em as string));
+
+    // O avaliador é avisado (sino e e-mail); o dono continua a ser avisado. A 2ª rodada não repete nada.
+    await rodar();
+    const avisos = async (usuario: string, evento: string) => ((await adm().from("avisos").select("url").eq("usuario_id", usuario).eq("evento", evento).eq("ref_id", ids.pedidoRotina)).data ?? []) as { url: string }[];
+    await expect.poll(async () => (await avisos(ids.avaliador, "vistoria_proposta_expirada")).length, { timeout: 30_000, message: "um aviso ao avaliador, mesmo com 2 rodadas" }).toBe(1);
+    expect((await avisos(ids.avaliador, "vistoria_proposta_expirada"))[0].url).toBe("/dashboard/parceiro/avaliacao");
+    expect((await avisos(ids.dono, "vistoria_designado_dono")).length, "o dono continua avisado").toBe(1);
+    const emails = async () => ((await adm().from("emails_teste").select("assunto, corpo").eq("usuario_id", ids.avaliador).eq("evento", "vistoria_proposta_expirada")).data ?? []) as { assunto: string; corpo: string }[];
+    await expect.poll(async () => (await emails()).length, { timeout: 30_000, message: "um e-mail ao avaliador" }).toBe(1);
+    const email = (await emails())[0];
+    // O assunto leva o imóvel; a régua dos assuntos encurta o título comprido e o envio junta "· Viva Nomads".
+    expect(email.assunto).toMatch(/^A sua proposta de avaliação expirou: Casa rotina t/);
+    expect(email.assunto).not.toMatch(/vistoria_|VIS-\d/);
+    expect(email.corpo).toContain(`o proprietário não aceitou a sua proposta de avaliação de Casa rotina t1750 ${sufixo} no prazo de 72 horas, e ela expirou. O pedido voltou para ele escolher de novo. Você não precisa fazer nada.`);
+    expect(`${email.assunto} ${email.corpo}`).not.toMatch(/VIS-\d|\b[0-9a-f]{8}-[0-9a-f]{4}-/);
+
+    // A lista do avaliador: a linha do histórico diz o que aconteceu — e não "Sem resposta em 24 horas".
+    const a = await entrar(browser, avaliador.email, senha);
+    for (const w of LARGURAS) {
+      await largura(a, w);
+      await a.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
+      const historico = a.getByTestId("avaliacoes-historico");
+      const fora = historico.locator('[data-testid="avaliacao-fora"][data-resposta="expirada"]');
+      await expect(fora).toHaveCount(1, { timeout: 30_000 });
+      await expect(fora).toContainText(`${ROTULO_EXPIRADA} · ${CIDADE}`);
+      await expect(historico).not.toContainText("Sem resposta em 24 horas");
+      await expect(a.locator(`[data-testid="avaliacao-designada"][data-pedido="${ids.pedidoRotina}"]`)).toHaveCount(0);
+      expect(await a.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      await a.screenshot({ path: `${SAIDA}/t1750-5-historico-${w}.png`, fullPage: true });
+    }
+    await a.context().close();
   });
 });
