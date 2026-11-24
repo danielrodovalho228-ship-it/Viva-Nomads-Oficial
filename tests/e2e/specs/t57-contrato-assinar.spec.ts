@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { esperarSemEsqueleto } from "../fixtures/esqueleto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
@@ -84,6 +85,9 @@ test.describe("T57 — Contrato semeado: inquilino e proprietário veem e assina
     await expect(assinar).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("contrato-inquilino-estado").first()).toHaveText("Aguardando assinatura · falta você e o proprietário");
     await page.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    // B1 (ORDEM-DUET-669): a ausência só vale com a tela real à vista — sem o esqueleto e com o título "Minhas estadias".
+    await esperarSemEsqueleto(page, "Minhas estadias");
+    await expect(page.getByRole("heading", { level: 1, name: "Minhas estadias" }), "a lista de estadias abriu").toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("locacao-titulo")).toHaveCount(0);
     await page.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
     await page.getByTestId("contrato-inquilino-assinar").first().click();
@@ -329,8 +333,9 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
     await expect(page).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}/confirmada$`), { timeout: 45_000 });
     await expect(page.getByTestId("confirmada-texto")).toContainText("Contrato assinado pelos dois lados.");
     await page.goto(`/dashboard/contratos/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    // B1 (ORDEM-DUET-669): primeiro o positivo (as duas assinaturas na tela), depois a ausência do formulário de assinar.
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(proprietário\) assinou em [\s\S]+\(inquilino\) assinou em /, { timeout: 30_000 }); // jornada de assinatura: nome + data e hora de cada um
     await expect(page.getByTestId("form-assinar")).toHaveCount(0);
-    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(proprietário\) assinou em [\s\S]+\(inquilino\) assinou em /); // jornada de assinatura: nome + data e hora de cada um
     const { data } = await adm().from("contratos").select("assinado_inquilino_em, assinado_proprietario_em").eq("id", ids.contrato!).single();
     expect(data?.assinado_proprietario_em, "assinatura do dono gravada pelo servidor").not.toBeNull();
     await page.context().close();
