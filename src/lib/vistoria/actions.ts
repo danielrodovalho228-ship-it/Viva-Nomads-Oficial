@@ -661,7 +661,7 @@ export async function recusarDataDaVisita(form: FormData): Promise<Res> {
     .not("agendado_para", "is", null)
     .select("id");
   if (!gravou?.length) return SEM_ACESSO;
-  await resolverAvisosDaVisita(s.admin, p.id);
+  // await resolverAvisosDaVisita(s.admin, p.id); // ENSAIO M1176 recusa
   await avisar(s.admin, p.owner_id, "vistoria_concordancia_recusada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id, papel: "dono", visitaAnterior: p.agendado_para });
   await avisar(s.admin, (p.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id, "vistoria_concordancia_recusada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id, papel: "avaliador", visitaAnterior: p.agendado_para });
   revalidatePath(rotaMorador(p.id));
