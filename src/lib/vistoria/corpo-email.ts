@@ -74,8 +74,6 @@ export interface FatosVistoria {
   reagendada?: boolean | null;
   /** E1160 (6): a data que a visita tinha antes da troca, quando ainda se conhece no momento do envio. */
   visitaAnterior?: string | null;
-  /** E1173: a data que o morador recusou (o pedido já não a tem quando o aviso sai). */
-  visitaRecusada?: string | null;
   /** E1160 (5): quem lê. O lembrete do morador é outro texto; a regra do reagendamento só vale para as duas partes. */
   destinatario?: "dono" | "avaliador" | "morador" | null;
 }
@@ -216,9 +214,9 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
       };
     case "vistoria_concordancia_recusada": {
       // E1173 (textos das ORDENS-DUET 757 e 759): ao dono e ao avaliador, quando o morador diz que não pode na data
-      // proposta. A data recusada vem com o aviso (o pedido já não a tem). Os dois podem propor a data nova, por isso
+      // proposta. A data recusada vem com o aviso, como "a data anterior" (o pedido já não a tem). Os dois podem propor a data nova, por isso
       // leem o mesmo corpo; só o botão do avaliador muda (leva às avaliações dele).
-      const recusada = diaHoraNoAssunto(f.visitaRecusada);
+      const recusada = diaHoraNoAssunto(f.visitaAnterior);
       const fato = `o morador do imóvel${titulo ? ` ${titulo}` : ""} não pode na data proposta para a visita de avaliação${recusada ? ` (${recusada}, horário de Brasília)` : ""}.`;
       return {
         subject: assuntoComTitulo("O morador não pode na data da visita de avaliação: ", titulo, "", { antes: "O morador não pode na data da visita: " }),

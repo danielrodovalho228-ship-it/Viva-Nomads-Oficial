@@ -12,6 +12,7 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { A_VIVA_AVISA_QUANDO_HOUVER, ROTAS_NIVEL, ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR, TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
+import { concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
@@ -99,6 +100,8 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     teste: boolean;
     avaliadores_credenciamento: { numero_credenciado: string; prazo_resposta_horas: number | null } | null;
   } | null;
+  // E1173: o morador disse que não pode na data proposta, e ainda não há data nova.
+  const recusouAData = !!atual && concordanciaRecusada({ status: atual.status, ocupado: atual.ocupado, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em, concordanciaEm: atual.concordancia_em });
   // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
   let sugeridos: { id: string; numero: string; nome: string; termos: string; reputacao: { novo: boolean; cheias: number; texto: string }; identidadeVerificada: boolean; teste: boolean; fotoUrl: string | null }[] | null = [];
   if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
@@ -314,8 +317,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               </div>
             )}
             {/* E1153: a confirmação do aceite fica na tela enquanto a visita não tem data (antes só existia na resposta
-                da ação, que some quando o bloco se redesenha). A mesma frase do lado do avaliador. */}
-            {aceitoSemDataDeVisita({ status: atual.status, propostaAceitaEm: atual.proposta_aceita_em, agendadoPara: atual.agendado_para }) && (
+                da ação, que some quando o bloco se redesenha). A mesma frase do lado do avaliador.
+                E1173: com a recusa do morador ela sai — a frase de situação já diz o passo (propor outra data). */}
+            {aceitoSemDataDeVisita({ status: atual.status, propostaAceitaEm: atual.proposta_aceita_em, agendadoPara: atual.agendado_para }) && !recusouAData && (
               <p className="font-semibold text-ink" data-testid="avaliacao-aceite-confirmado">
                 {CONFIRMACAO_DO_ACEITE}
               </p>

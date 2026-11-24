@@ -66,8 +66,8 @@ test("E1173 (3) — a ação da recusa tem as guardas do 'Concordo': só o morad
   assert.match(fn, /if \(!gravou\?\.length\) return SEM_ACESSO;/);
   // O aviso "Concorda com a visita?" sai do sino, e o dono e o avaliador sabem — com a data que ela recusou.
   const resolve = fn.indexOf("await resolverAvisosDaVisita(s.admin, p.id);");
-  const aoDono = fn.indexOf('await avisar(s.admin, p.owner_id, "vistoria_concordancia_recusada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id, papel: "dono", visitaRecusada: p.agendado_para });');
-  const aoAvaliador = fn.indexOf('"vistoria_concordancia_recusada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id, papel: "avaliador", visitaRecusada: p.agendado_para });');
+  const aoDono = fn.indexOf('await avisar(s.admin, p.owner_id, "vistoria_concordancia_recusada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id, papel: "dono", visitaAnterior: p.agendado_para });');
+  const aoAvaliador = fn.indexOf('"vistoria_concordancia_recusada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id, papel: "avaliador", visitaAnterior: p.agendado_para });');
   assert.ok(resolve > 0 && aoDono > resolve && aoAvaliador > aoDono, "resolve o aviso dela e só depois avisa as duas partes");
   assert.match(fn, /return \{ ok: true, mensagem: TEXTO_RECUSA_PARA_O_MORADOR \};/, "a resposta da ação é a frase aprovada, a mesma da tela");
 });
@@ -94,6 +94,12 @@ test("E1173 (4) — a recusa não é um reagendamento: a data seguinte é um 'Ag
   // A data nova pede a concordância de novo, e o "não concordou" que as partes leram deixa de valer.
   assert.match(fn, /concordancia_pedida_em: p\.ocupado \? agora : null,/);
   assert.match(fn, /await resolverAvisosDaRecusa\(s\.admin, p\.id\);/);
+  // E o morador é perguntado pela "nova data" (a folha): o e-mail não repete o da primeira proposta.
+  assert.match(fn, /const depoisDaRecusa = concordanciaRecusada\(\{ status: p\.status, ocupado: p\.ocupado, agendadoPara: p\.agendado_para, concordanciaPedidaEm: p\.concordancia_pedida_em, concordanciaEm: p\.concordancia_em \}\);/);
+  assert.match(fn, /const troca = \{ reagendada: reagendando \|\| depoisDaRecusa, visitaAnterior: reagendando \? p\.agendado_para : null \};/);
+  const nova = corpoVistoria("vistoria_concordancia", { imovel: null, visita: DATA, reagendada: true });
+  assert.equal(nova.subject, "Concorda com a nova data da visita: 25/11 às 10:00?");
+  assert.ok(!nova.linhas.some((l) => l.rotulo === "Data anterior"), "sem data anterior: a recusada já saiu do pedido");
 });
 
 test("E1173 (5) — o 'Concordo' também tira do sino o aviso 'Concorda com a visita?', antes de avisar a visita confirmada", () => {
@@ -120,7 +126,7 @@ test("E1173 (6) — o aviso da recusa: o assunto e o corpo aprovados, com a data
   assert.ok(EVENTOS_VISTORIA_COM_FATOS.has(EV));
   assert.equal(TEMPLATES[EV].subject, "O morador não pode na data da visita de avaliação");
   assert.equal(TEMPLATES[EV].cta, "Ver a avaliação");
-  const CASA = { imovel: { id: "i1", titulo: "Casa do Lago", bairro: "Centro", cidade: "Sacramento" }, visitaRecusada: DATA };
+  const CASA = { imovel: { id: "i1", titulo: "Casa do Lago", bairro: "Centro", cidade: "Sacramento" }, visitaAnterior: DATA };
   // O dono e o avaliador podem os dois propor a data nova: leem o mesmo corpo (ORDENS-DUET 757 e 759, texto 6).
   const aoAvaliador = corpoVistoria(EV, { ...CASA, destinatario: "avaliador" });
   assert.equal(aoAvaliador.body("Ari"), "Olá Ari, o morador do imóvel Casa do Lago não pode na data proposta para a visita de avaliação (25/11 às 10:00, horário de Brasília). Proponha outra data na Viva.");
@@ -129,14 +135,16 @@ test("E1173 (6) — o aviso da recusa: o assunto e o corpo aprovados, com a data
   assert.equal(aoDono.body("Dalva"), "Olá Dalva, o morador do imóvel Casa do Lago não pode na data proposta para a visita de avaliação (25/11 às 10:00, horário de Brasília). Proponha outra data na Viva.");
   assert.equal(aoDono.cta, undefined, "o dono fica com o botão do modelo");
   // O assunto aprovado (texto 5). Um nome comprido encolhe-se dentro da régua dos 70 caracteres, como nos outros.
-  assert.equal(corpoVistoria(EV, { imovel: { titulo: "Lar" }, visitaRecusada: DATA }).subject, "O morador não pode na data da visita de avaliação: Lar");
+  assert.equal(corpoVistoria(EV, { imovel: { titulo: "Lar" }, visitaAnterior: DATA }).subject, "O morador não pode na data da visita de avaliação: Lar");
   assert.match(aoDono.subject ?? "", /^O morador não pode na data da visita(?: de avaliação)?: Casa do Lago$/);
   // Sem a data (aviso sem o fato) o texto continua inteiro, e não inventa data nenhuma.
   assert.equal(corpoVistoria(EV, { imovel: null }).body(), "Olá, o morador do imóvel não pode na data proposta para a visita de avaliação. Proponha outra data na Viva.");
-  // O fato e o leitor viajam com o aviso: quando ele sai, a data já foi limpa do pedido.
+  // A data recusada viaja com o aviso como "a data anterior" (a folha): quando ele sai, já foi limpa do pedido. Não
+  // nasce campo novo na referência, e o aviso não ganha a linha "Data anterior" dos reagendamentos.
   const servidor = ler("src/lib/vistoria/servidor.ts");
-  assert.match(servidor, /visitaRecusada\?: string \| null;/);
-  assert.match(servidor, /visitaRecusada: ref\.visitaRecusada \?\? null/);
+  assert.match(servidor, /visitaAnterior: ref\.visitaAnterior \?\? null/);
+  assert.doesNotMatch(servidor, /visitaRecusada/);
+  assert.ok(!aoDono.linhas.some((l) => l.rotulo === "Data anterior"));
 });
 
 test("E1173 (7) — os três lados leem a recusa pela mesma função pura, e o 'Agendado' continua a ser só dela", () => {
@@ -153,11 +161,19 @@ test("E1173 (7) — os três lados leem a recusa pela mesma função pura, e o '
   assert.equal(situacaoDono({ ...dono, agendadoPara: DATA, concordanciaPedidaEm: AGORA }), "Data proposta: a visita fica confirmada quando o morador concordar.");
   const bloco = ler("src/components/vistoria/bloco-avaliacao-dono.tsx");
   assert.match(bloco, /concordanciaPedidaEm: atual\.concordancia_pedida_em/);
+  // A folha: com a recusa sai o "Combinem a data da visita." genérico do bloco do dono (a frase da recusa já diz o passo).
+  assert.match(bloco, /aceitoSemDataDeVisita\(\{ status: atual\.status, propostaAceitaEm: atual\.proposta_aceita_em, agendadoPara: atual\.agendado_para \}\) && !recusouAData && \(/);
+  assert.match(bloco, /const recusouAData = !!atual && concordanciaRecusada\(/);
   // Avaliador: a frase dele, no item do pedido.
   const avaliador = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx");
   assert.match(avaliador, /concordanciaRecusada\(\{ status: p\.status, ocupado: p\.ocupado, agendadoPara: p\.agendado_para, concordanciaPedidaEm: p\.concordancia_pedida_em, concordanciaEm: p\.concordancia_em \}\)/);
   assert.match(avaliador, /data-testid="avaliador-concordancia-recusada"/);
   assert.match(avaliador, /\{TEXTO_RECUSA_PARA_O_AVALIADOR\}/);
+  // A folha: "a lista e a tela do pedido" — a tela do pedido do avaliador lê a mesma frase.
+  const telaDoPedido = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/[pedido]/page.tsx");
+  assert.match(telaDoPedido, /recusaDaData=\{concordanciaRecusada\(\{ status: p\.status as string, ocupado: Boolean\(p\.ocupado\), agendadoPara: p\.agendado_para as string \| null, concordanciaPedidaEm: p\.concordancia_pedida_em as string \| null, concordanciaEm: p\.concordancia_em as string \| null \}\) \? TEXTO_RECUSA_PARA_O_AVALIADOR : null\}/);
+  const componente = ler("src/components/avaliadores/pedido.tsx");
+  assert.match(componente, /\{etapa === "aceito" && recusaDaData && \(\s*<p className="text-base font-semibold text-ink" data-testid="pedido-concordancia-recusada">\s*\{recusaDaData\}/);
   // Morador: a página dele tem o "Não concordo", lê a recusa e leva o "Prefiro outro horário" à conversa com o dono.
   const pagina = ler("src/app/(dashboard)/dashboard/avaliacao-imovel/[id]/page.tsx");
   assert.match(pagina, /<FormAcao acao=\{recusarDataDaVisita\}/);

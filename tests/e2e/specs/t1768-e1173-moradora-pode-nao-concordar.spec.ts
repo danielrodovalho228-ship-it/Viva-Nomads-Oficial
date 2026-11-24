@@ -199,6 +199,7 @@ test.describe("T1768 — E1173: a moradora pode não concordar com a data, e os 
       await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
       await expect(d.getByTestId("avaliacao-situacao"), `a ${w} px`).toHaveText("O morador não pode na data proposta. Proponha outra data ao avaliador.", { timeout: 30_000 });
       await expect(d.getByTestId("avaliacao-dono-pedido")).not.toContainText("aguardando a concordância do morador");
+      await expect(d.getByTestId("avaliacao-aceite-confirmado"), "com a recusa, sai o 'Combinem a data da visita.' genérico").toHaveCount(0);
       await expect(d.getByTestId("avaliacao-visita"), "sem data, a linha da visita não existe").toHaveCount(0);
       await expect(d.getByTestId("etapa-agendado"), "ninguém marca o 'Agendado' por ela").not.toHaveAttribute("data-estado", "feito");
       expect(await semRolagemLateral(d), `a ${w} px: sem rolagem lateral`).toBe(true);
@@ -220,6 +221,9 @@ test.describe("T1768 — E1173: a moradora pode não concordar com a data, e os 
       await item.scrollIntoViewIfNeeded();
       await a.screenshot({ path: `${SAIDA}/t1768-2-avaliador-${w}.png` });
     }
+    // A tela do pedido do avaliador lê a mesma frase.
+    await a.goto(`/dashboard/parceiro/avaliacao/${ids.pedido}`, { waitUntil: "domcontentloaded" });
+    await expect(a.getByTestId("pedido-concordancia-recusada")).toHaveText("O morador não pode na data proposta. Proponha outra data.", { timeout: 30_000 });
     await a.context().close();
   });
 
@@ -238,6 +242,10 @@ test.describe("T1768 — E1173: a moradora pode não concordar com a data, e os 
       await expect.poll(async () => (await avisos(quem, "vistoria_concordancia_recusada")).every((x) => x.resolvido_em !== null), { timeout: 20_000 }).toBe(true);
     }
     await expect.poll(async () => (await avisos(ids.moradora, "vistoria_concordancia")).filter((x) => x.resolvido_em === null).length, { timeout: 20_000 }).toBe(1);
+    // O e-mail dela diz que é uma NOVA data (não repete o da primeira proposta).
+    await expect
+      .poll(async () => ((await adm().from("emails_teste").select("assunto").eq("usuario_id", ids.moradora).eq("evento", "vistoria_concordancia")).data ?? []).map((e) => String(e.assunto).startsWith("Concorda com a nova data da visita")).sort(), { timeout: 20_000 })
+      .toEqual([false, true]);
     const d = await entrar(browser, dono.email, senha);
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     await expect(d.getByTestId("avaliacao-situacao")).toHaveText("Data proposta: a visita fica confirmada quando o morador concordar.", { timeout: 30_000 });

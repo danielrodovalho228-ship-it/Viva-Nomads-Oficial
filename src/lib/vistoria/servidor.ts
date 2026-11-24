@@ -85,9 +85,8 @@ export type RefVistoria = {
   papel?: "dono" | "avaliador" | "morador";
   /** E1160 (6): quem agenda sabe se está a trocar a data, e qual era — a gravação substitui-a. */
   reagendada?: boolean;
+  /** E1173: no aviso da recusa do morador é a data recusada — quando o aviso sai, ela já foi limpa do pedido. */
   visitaAnterior?: string | null;
-  /** E1173: a data que o morador recusou — quando o aviso sai, ela já foi limpa do pedido. */
-  visitaRecusada?: string | null;
 };
 
 /** E289: lê no banco o que o e-mail precisa nomear — imóvel (título, bairro, cidade), visita e avaliador. */
@@ -126,7 +125,7 @@ export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<F
       reagendada: ref.reagendada ?? (pp?.reagendou_dono === true || pp?.reagendou_avaliador === true),
     };
   }
-  const fatos = { visita, avaliador, ...doPedido, visitaAnterior: ref.visitaAnterior ?? null, visitaRecusada: ref.visitaRecusada ?? null, destinatario: ref.papel };
+  const fatos = { visita, avaliador, ...doPedido, visitaAnterior: ref.visitaAnterior ?? null, destinatario: ref.papel };
   if (!propertyId) return { imovel: null, ...fatos };
   const { data: im } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
   const i = im as { title?: string | null; address?: string | null; city?: string | null } | null;
