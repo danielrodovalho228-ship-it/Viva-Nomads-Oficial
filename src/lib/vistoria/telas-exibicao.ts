@@ -8,7 +8,6 @@ import { ETIQUETA_BRASILIA, dataBRT, horaBRT } from "../datas-brasilia.ts";
 import { ROTULO_IMPEDIMENTO, atendeCidade, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
 import { comoEmBreve, type ChaveIdentidade } from "../identidade/estado.ts";
 import { ROTULO_NUMERO_SEM_AVALIADOR } from "./rotulos-do-pedido.ts";
-import { TEXTO_RECUSA_PARA_O_DONO, concordanciaRecusada } from "./concordancia.ts";
 
 // ── Data e hora da visita (QA do #1111, item 6: sem segundos e com o fuso) ─────────────────────────────────────
 /** "25/10/2026 às 10:00" no horário de Brasília. */
@@ -67,14 +66,12 @@ export const TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR = "Você paga direto ao avaliad
  * A frase de situação do pedido do dono. "designado" não tem frase própria: a linha "Avaliador escolhido por você: nº X"
  * já diz tudo (QA do #1111, item 5: a frase saía duas vezes).
  */
-export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; ocupado: boolean; concordanciaEm: string | null; agendadoPara: string | null; concordanciaPedidaEm?: string | null }): string | null {
+export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; ocupado: boolean; concordanciaEm: string | null; agendadoPara: string | null }): string | null {
   if (p.aguardandoAvaliador) return `Aguardando avaliador: ${A_VIVA_AVISA_QUANDO_HOUVER}.`;
   switch (p.status) {
     case "pedido":
       return "Pedido registrado: escolha o avaliador na lista.";
     case "designado":
-      // E1173: o morador disse "Não concordo" e ainda não há data nova.
-      if (concordanciaRecusada({ ...p, concordanciaPedidaEm: p.concordanciaPedidaEm ?? null })) return TEXTO_RECUSA_PARA_O_DONO;
       return p.ocupado && p.agendadoPara && !p.concordanciaEm ? "Data proposta: a visita fica confirmada quando o morador concordar." : null;
     case "agendado":
       return "Visita confirmada.";

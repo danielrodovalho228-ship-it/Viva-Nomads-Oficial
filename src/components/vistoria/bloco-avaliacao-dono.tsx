@@ -67,7 +67,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     tabelaDaCidade(admin, im.city), // E1081: a cidade pela chave (sem acento, sem maiúsculas)
     admin
       .from("vistoria_pedidos")
-      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, concordancia_pedida_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
+      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
       .eq("property_id", propertyId)
       .order("criado_em", { ascending: false })
       .limit(1),
@@ -88,7 +88,6 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     agendado_para: string | null;
     ocupado: boolean;
     concordancia_em: string | null;
-    concordancia_pedida_em: string | null;
     recebido_marcado_em: string | null;
     recebido_confirmado_em: string | null;
     valor_proposto: number | string | null;
@@ -196,9 +195,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
         )}
         {aberto && atual ? (
           <div className="grid gap-4 text-sm" data-testid="avaliacao-dono-pedido" data-status={atual.status}>
-            {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em }) && (
+            {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para }) && (
               <p className="text-ink" data-testid="avaliacao-situacao">
-                {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em })}
+                {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para })}
               </p>
             )}
             {atual.status === "pedido" && <DepoisDaTroca pedidoId={atual.id} aguardando={atual.aguardando_avaliador} />}
