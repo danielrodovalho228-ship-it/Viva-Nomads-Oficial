@@ -22,7 +22,7 @@ import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
 import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada";
 import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
 import { CRITERIOS_PUBLICOS } from "@/lib/vistoria/escolha";
-import { PRAZO_RESPOSTA_PADRAO_HORAS } from "@/lib/vistoria/prazos";
+import { rotuloSemResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { TITULO_ADMIN, TITULO_SECAO_A_DECIDIR, TITULO_SECAO_NA_REDE, contagemDecisoes, credenciamentoADecidir, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
 import { tituloDoAdmin } from "@/config/menu-admin";
 import { soLeituraNaTela } from "@/lib/qa/observador";
@@ -40,12 +40,13 @@ const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base
 /** A janela da lista de recusas, vencidas e ausências da Central, em dias. */
 const DIAS_DA_JANELA_DE_RECUSAS = 30;
 const ROTULO_STATUS: Record<StatusCredenciamento, string> = { solicitado: "Solicitado", em_teste: "Em teste", ativo: "Ativo", suspenso: "Suspenso", descredenciado: "Descredenciado" };
-const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Recusou", expirada: `Sem resposta em ${PRAZO_RESPOSTA_PADRAO_HORAS} horas`, ausencia: "Não foi à visita" };
+// E1157: a resposta "expirada" lê o prazo que o avaliador declarou (rotuloSemResposta); antes dizia sempre 24 horas.
+const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Recusou", ausencia: "Não foi à visita" };
 const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicitado: ["em_teste", "descredenciado"], em_teste: ["ativo", "descredenciado"], ativo: ["descredenciado"], suspenso: ["ativo", "descredenciado"], descredenciado: [] };
 const ROTULO_FILA: Record<string, string> = { sem_avaliador: "Pedido sem avaliador elegível", avaliacao_teste: "Avaliação de teste a marcar e revisar", suspensao_automatica: "Suspensão automática antiga (não é mais criada)", revisao_criterio: "Critério público de qualidade atingido: rever com o avaliador (direito de resposta)", proposta_descredenciamento: "Proposta de descredenciamento", laudo_atrasado: "Laudo não enviado em 48 horas úteis", ressalva_vencida: "Ressalva vencida: avaliar abrir verificação", devolucao_vencida: "Devolução da contestação não confirmada em 15 dias", seguranca_grave: "Segurança grave a acompanhar" };
 const ROTULO_BLOQUEIO: Record<string, string> = { seguranca_grave: "Segurança grave (fora da busca)", strike_2: "2º strike (republicar só com laudo)", strike_3: "3º strike (todos fora da busca)" };
 
-type Cred = { id: string; cidade: string; numero_credenciado: string; status: StatusCredenciamento; motivo: string | null; experiencia_link: string | null; experiencia_path: string | null; relacoes_descricao: string | null; criado_em: string; user_id: string | null; parceiros: { nome_publico: string; user_id: string | null } | null; parceiro_solicitacoes: { nome: string; tipo_pessoa: string | null; documento: string | null; email: string | null } | null };
+type Cred = { id: string; cidade: string; numero_credenciado: string; status: StatusCredenciamento; motivo: string | null; experiencia_link: string | null; experiencia_path: string | null; relacoes_descricao: string | null; criado_em: string; user_id: string | null; prazo_resposta_horas: number | null; parceiros: { nome_publico: string; user_id: string | null } | null; parceiro_solicitacoes: { nome: string; tipo_pessoa: string | null; documento: string | null; email: string | null } | null };
 
 /**
  * Admin → Avaliações do imóvel (62-B1/62-B2/62-B3; desenho do 62-A, Parte 1, item 7 — decisões primeiro). Funciona com a chave
@@ -76,7 +77,7 @@ export default async function AdminAvaliadoresPage() {
   // E477: a conta observadora da QA só lê (o servidor também recusa): todo formulário de ação sai e entra "Só leitura".
   const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const [{ data: creds }, { data: precos }, { data: fila }, { data: auditoria }, { data: pedidos }, { data: bloqueios }, { data: strikes }, { data: laudos }] = semFalhaDeLeitura(await Promise.all([
-    admin.from("avaliadores_credenciamento").select("id, cidade, numero_credenciado, status, motivo, experiencia_link, experiencia_path, relacoes_descricao, criado_em, user_id, parceiros(nome_publico, user_id), parceiro_solicitacoes(nome, tipo_pessoa, documento, email)").order("criado_em", { ascending: false }),
+    admin.from("avaliadores_credenciamento").select("id, cidade, numero_credenciado, status, motivo, experiencia_link, experiencia_path, relacoes_descricao, criado_em, user_id, prazo_resposta_horas, parceiros(nome_publico, user_id), parceiro_solicitacoes(nome, tipo_pessoa, documento, email)").order("criado_em", { ascending: false }),
     admin.from("vistoria_precos").select(COLUNAS_PRECO).order("vigente_desde", { ascending: false }).limit(200),
     admin.from("vistoria_fila_admin").select("id, tipo, motivo, criado_em, pedido_id, avaliador_id").is("resolvido_em", null).order("criado_em"),
     admin.from("vistoria_auditoria").select("id, pedido_id, sorteado_em, avaliadores_credenciamento(numero_credenciado)").is("resultado", null),
@@ -131,6 +132,7 @@ export default async function AdminAvaliadoresPage() {
   const contaDoCredenciamento = (c: Cred) => c.user_id ?? c.parceiros?.user_id ?? null;
   const nomesConta = await nomesDasContas(admin, lista.map(contaDoCredenciamento));
   const numeroDe = new Map(lista.map((c) => [c.id, c.numero_credenciado]));
+  const prazoRespostaDe = new Map(lista.map((c) => [c.id, c.prazo_resposta_horas]));
   // E1079 (ORDEM-386): a foto de perfil da conta nos cartões; sem foto, as iniciais.
   const fotos = await fotosDePerfil([...lista.map((c) => c.user_id), ...piloto.map((l) => l.userId)]);
   // E1084: o nome do avaliador vem da CONTA (fonte única); sem conta, o nome público do parceiro ou o do pedido.
@@ -336,7 +338,7 @@ export default async function AdminAvaliadoresPage() {
           <ul className="grid gap-1 text-sm">
             {recusasLista.map((r) => (
               <li key={r.id} data-testid="recusa-item" data-resposta={r.resposta}>
-                nº {numeroDe.get(r.avaliador_id) ?? "—"} · {ROTULO_RESPOSTA[r.resposta] ?? r.resposta} · {r.vistoria_pedidos?.cidade ?? ""} · {dataBRT(r.respondido_em)}
+                nº {numeroDe.get(r.avaliador_id) ?? "—"} · {r.resposta === "expirada" ? rotuloSemResposta(prazoRespostaDe.get(r.avaliador_id)) : (ROTULO_RESPOSTA[r.resposta] ?? r.resposta)} · {r.vistoria_pedidos?.cidade ?? ""} · {dataBRT(r.respondido_em)}
               </li>
             ))}
           </ul>

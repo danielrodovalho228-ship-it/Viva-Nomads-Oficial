@@ -16,7 +16,7 @@ import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
-import { CONFIRMACAO_DO_ACEITE, ROTULO_PROPOSTA_DESCARTADA, ROTULO_PROPOSTA_EXPIRADA, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
+import { CONFIRMACAO_DO_ACEITE, ROTULO_PROPOSTA_DESCARTADA, ROTULO_PROPOSTA_EXPIRADA, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, rotuloSemResposta, textoDasAvaliacoesNaoLidas, textoDoHistoricoVazio, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { etapaDoPedido, identificacaoDoImovel, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeuSobre, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
@@ -49,10 +49,6 @@ type Pedido = { id: string; property_id: string; cidade: string; porte: Porte; v
  * e a agenda — para responder (contador das 24 h), visitas (as da semana marcadas) e o histórico de recusas e ausências.
  * O avaliador nunca é contratado direto: não há catálogo nem orçamento aqui.
  */
-/** Achado 30: a lista do avaliador não foi lida. */
-const MSG_AVALIACOES_FALHOU =
-  `Não foi possível carregar as suas avaliações agora. Recarregue a página em instantes; os pedidos com prazo de ${PRAZO_RESPOSTA_PADRAO_HORAS} h continuam valendo.`;
-
 export default async function AvaliacaoParceiroPage() {
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -163,6 +159,10 @@ export default async function AvaliacaoParceiroPage() {
   const foraDaMinhaFila = des.filter((d) => d.resposta && d.resposta !== "aceita");
   // Achado 30: leitura que falhou não vira "nenhuma avaliação" — o prazo de 24 h não pode passar sem o avaliador ver.
   const leituraFalhou = Boolean(erroPedidos || erroDesignacoes);
+  // E1157: os três textos do prazo de resposta leem o prazo que ESTE avaliador declarou em "Meus termos" (antes diziam
+  // sempre 24 horas). Achado 30: o aviso da lista que não foi lida.
+  const MSG_AVALIACOES_FALHOU = textoDasAvaliacoesNaoLidas(cred.prazo_resposta_horas);
+  const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Você recusou", expirada: rotuloSemResposta(cred.prazo_resposta_horas), ausencia: "Ausência registrada" };
   // E1079 (fatia 2): o painel do desenho para quem já recebe pedidos (em teste ou ativo). A foto é a de perfil da conta
   // (ORDEM-386, fonte única); sem foto, ou se a leitura falhar, ficam as iniciais.
   const comPainel = cred.status === "em_teste" || cred.status === "ativo";
@@ -264,7 +264,7 @@ export default async function AvaliacaoParceiroPage() {
           <Panel id="historico" className="scroll-mt-16" title="Encerradas, recusas e ausências" data-testid="avaliacoes-historico">
             {encerradas.length === 0 && foraDaMinhaFila.length === 0 ? (
               <p className="text-sm text-muted" data-testid="avaliacoes-historico-vazio">
-                Aqui ficam as avaliações que você concluiu, as que recusou, as que passaram de {PRAZO_RESPOSTA_PADRAO_HORAS} horas sem resposta e as ausências registradas. Ainda não há nenhuma.
+                {textoDoHistoricoVazio(cred.prazo_resposta_horas)}
               </p>
             ) : (
               <ul className="grid gap-3">
@@ -287,7 +287,6 @@ export default async function AvaliacaoParceiroPage() {
   );
 }
 
-const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Você recusou", expirada: `Sem resposta em ${PRAZO_RESPOSTA_PADRAO_HORAS} horas`, ausencia: "Ausência registrada" };
 
 /** Os 5 passos do credenciamento, com o que já foi feito (Prompt 62-A, item 1). */
 type EstadoTeste = { marcado: boolean; concluido: boolean };

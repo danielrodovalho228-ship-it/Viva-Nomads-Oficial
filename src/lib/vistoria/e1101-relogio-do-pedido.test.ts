@@ -21,9 +21,9 @@ import {
   textoDoPrazoDeResposta,
 } from "./relogio-do-pedido.ts";
 import { etapaDoPedido } from "./pedido-avaliador.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 const AGORA = new Date("2026-11-22T15:00:00Z");
 const h = (n: number) => new Date(AGORA.getTime() - n * 3_600_000).toISOString();
 const base = { status: "designado", resposta: null as string | null | undefined, designadoEm: h(2), propostaEm: null as string | null, propostaAceitaEm: null as string | null, precisaDoAceite: true };
