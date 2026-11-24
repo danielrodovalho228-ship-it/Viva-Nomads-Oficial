@@ -27,6 +27,8 @@ import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada
 import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
 import { CRITERIOS_PUBLICOS } from "@/lib/vistoria/escolha";
 import { rotuloSemResposta } from "@/lib/vistoria/relogio-do-pedido";
+import { TITULO_PROPOSTAS_ENCERRADAS, VAZIO_PROPOSTAS_ENCERRADAS, propostasEncerradas, rotuloDaPropostaEncerrada, type LinhaDaPropostaEncerrada, type PropostaEncerrada } from "@/lib/vistoria/propostas-encerradas";
+import { identificacaoDoImovel } from "@/lib/vistoria/pedido-avaliador";
 import { DIAS_DA_JANELA_DE_RECUSAS, LINHA_PUBLICA_DESIGNACAO, TITULO_ADMIN, TITULO_RECUSAS_E_AUSENCIAS, TITULO_SECAO_A_DECIDIR, TITULO_SECAO_NA_REDE, contagemDecisoes, credenciamentoADecidir, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
 import { tituloDoAdmin } from "@/config/menu-admin";
 import { soLeituraNaTela } from "@/lib/qa/observador";
@@ -45,6 +47,8 @@ const ROTULO_STATUS: Record<StatusCredenciamento, string> = { solicitado: "Solic
 // E1157: a resposta "expirada" lê o prazo que o avaliador declarou (rotuloSemResposta); antes dizia sempre 24 horas.
 // E1158 (17): as duas vozes da resposta vêm de uma fonte; aqui, a da equipe.
 const ROTULO_RESPOSTA = RESPOSTA_DO_AVALIADOR.equipe;
+/** E1159: quantas propostas expiradas ou descartadas a secção mostra (as mais recentes), como a lista das recusas. */
+const TETO_PROPOSTAS_ENCERRADAS = 50;
 const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicitado: ["em_teste", "descredenciado"], em_teste: ["ativo", "descredenciado"], ativo: ["descredenciado"], suspenso: ["ativo", "descredenciado"], descredenciado: [] };
 const ROTULO_BLOQUEIO: Record<string, string> = { seguranca_grave: "Segurança grave (fora da busca)", strike_2: "2º strike (republicar só com laudo)", strike_3: "3º strike (todos fora da busca)" };
 
@@ -119,12 +123,24 @@ export default async function AdminAvaliadoresPage() {
   const contestacoesLista = (contestacoesAbertas ?? []) as unknown as ({ id: string; cidade: string; status: string; criado_em: string; origem_pedido_id: string | null } & ComNumero)[];
   const devolucoesLista = (devolucoesAbertas ?? []) as unknown as ({ id: string; valor: number; prazo_ate: string } & ComNumero)[];
   const atrasadosLista = filaAtrasados.reais;
-  const [fila_rodizio, recusasLeitura, perfisLeitura] = await Promise.all([
+  // E1159: as propostas que expiraram sem o aceite do dono ou que ele descartou saíram da lista das recusas (não são
+  // recusa do avaliador) e ficaram sem lugar nenhum. São lidas à parte, pela data de cada coluna — uma leitura por
+  // coluna, cada uma da mais recente para a mais antiga, para o teto nunca cortar as mais recentes.
+  const [fila_rodizio, recusasLeitura, perfisLeitura, expiradasLeitura, descartadasLeitura] = await Promise.all([
     filaDaCidade(admin),
     admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade)").in("resposta", ["recusada", "expirada", "ausencia"]).is("proposta_expirada_em", null).is("proposta_descartada_em", null).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
     admin.from("profiles").select("id").eq("is_teste", true).limit(200),
+    admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade)").gte("proposta_expirada_em", trintaDias).order("proposta_expirada_em", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS),
+    admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade)").gte("proposta_descartada_em", trintaDias).order("proposta_descartada_em", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS),
   ]);
-  const [{ data: recusas }, { data: perfisTeste }] = semFalhaDeLeitura([recusasLeitura, perfisLeitura] as const);
+  const [{ data: recusas }, { data: perfisTeste }, { data: expiradas }, { data: descartadas }] = semFalhaDeLeitura([recusasLeitura, perfisLeitura, expiradasLeitura, descartadasLeitura] as const);
+  const propostasLista = propostasEncerradas([...(expiradas ?? []), ...(descartadas ?? [])] as unknown as LinhaDaPropostaEncerrada[], trintaDias, TETO_PROPOSTAS_ENCERRADAS);
+  // De que imóvel é cada uma: o título do anúncio e o código VN (E1108) — nunca a morada (o dono não aceitou a proposta).
+  const imoveisDasPropostas = [...new Set(propostasLista.map((p) => p.propertyId).filter((x): x is string => !!x))];
+  const titulosLeitura = imoveisDasPropostas.length ? await admin.from("properties").select("id, title").in("id", imoveisDasPropostas) : { data: [], error: null };
+  if (titulosLeitura.error) throw new Error(`Falha ao ler a rede de avaliadores: ${titulosLeitura.error.message}`);
+  const tituloDoImovel = new Map(((titulosLeitura.data ?? []) as { id: string; title: string | null }[]).map((i) => [i.id, i.title]));
+  const imovelDaProposta = (p: PropostaEncerrada) => (p.propertyId ? identificacaoDoImovel(tituloDoImovel.get(p.propertyId), p.propertyId) : p.cidade || "imóvel removido");
   const idsTeste = ((perfisTeste ?? []) as { id: string }[]).map((x) => x.id);
   const contasTeste = new Set(idsTeste);
   // E30: quem já tem a avaliação de teste feita (laudo emitido num pedido de teste) — só esses podem ser ativados.
@@ -375,6 +391,21 @@ export default async function AdminAvaliadoresPage() {
             ))}
           </ul>
         )}
+        {/* E1159: a proposta que expirou sem o aceite do dono e a que ele descartou — só leitura, fora do "Para decidir". */}
+        <div className="mt-4 border-t border-line pt-3" data-testid="propostas-expiradas">
+          <h3 className="text-sm font-semibold text-ink">{TITULO_PROPOSTAS_ENCERRADAS}</h3>
+          {propostasLista.length === 0 ? (
+            <p className="mt-1 text-sm text-muted">{VAZIO_PROPOSTAS_ENCERRADAS}</p>
+          ) : (
+            <ul className="mt-1 grid gap-1 text-sm">
+              {propostasLista.map((p) => (
+                <li key={p.id} data-testid="proposta-encerrada-item" data-motivo={p.motivo}>
+                  nº {numeroDe.get(p.avaliadorId) ?? "—"} · {imovelDaProposta(p)} · {rotuloDaPropostaEncerrada(p.motivo)} · {dataBRT(p.quando)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </Panel>
 
       <Panel id="contestacoes" title="Contestações, devoluções e prazos do laudo" className="mb-6 scroll-mt-24" data-testid="avaliacoes-contestacoes">
