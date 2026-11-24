@@ -73,8 +73,9 @@ test.describe("T101 — Admin: lista de usuários", () => {
     await expect(page.getByRole("search")).toBeVisible();
     await expect(page.getByTestId("admin-usuarios-lista")).toBeVisible();
     await page.goto("/admin/usuarios", { waitUntil: "domcontentloaded" });
-    if ((await page.locator("[data-usuario]").count()) > 0) {
-      await expect(page.getByRole("columnheader", { name: "Cadastro completo" })).toBeVisible();
-    }
+    // Caça ao esqueleto (B3): a lista padrão tem sempre pessoas (as contas fixas dos testes); antes, `count()` lido
+    // logo a seguir à navegação dava 0 e a coluna nunca era conferida.
+    await expect(page.locator("[data-usuario]").filter({ visible: true }).first(), "a lista dos usuários tem linhas").toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("columnheader", { name: "Cadastro completo" })).toBeVisible();
   });
 });
