@@ -10,12 +10,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const src = readFileSync(new URL("../../components/vistoria/form-acao.tsx", import.meta.url), "utf8");
+// E1091 reforço (ORDEM-DUET-620): a trava lê só o CÓDIGO. Com os comentários, "Enviando…" casava com o cabeçalho de
+// form-acao.tsx e a trava continuava verde com o texto da tela trocado (mutação da ORDEM-DUET-618).
+const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+const src = semComentarios(readFileSync(new URL("../../components/vistoria/form-acao.tsx", import.meta.url), "utf8"));
 
 test("E1091: enquanto envia, o formulário diz 'Enviando…' e os botões de envio ficam desligados", () => {
-  assert.match(src, /data-testid="acao-enviando"/);
-  assert.match(src, /\{pendente && \(/, "a linha 'Enviando…' só aparece durante o envio");
-  assert.match(src, /Enviando…/);
+  // A linha "Enviando…" é a do próprio aviso de envio: só durante o envio, com role="status" e o texto da casa.
+  assert.match(
+    src,
+    /\{pendente && \(\s*<p role="status"[^>]*data-testid="acao-enviando">\s*Enviando…\s*<\/p>\s*\)\}/,
+    "durante o envio, o aviso diz 'Enviando…'",
+  );
   assert.match(src, /querySelectorAll<HTMLButtonElement>\('button\[type="submit"\], button:not\(\[type\]\)'\)/, "os botões de envio do formulário");
   // E1117 (perna 3, ORDEM-DUET-514): antes esta linha exigia `b.disabled = pendente` — desligava e religava TODO botão
   // de envio, também o que a página mostra desativado ("Concluir a visita" enquanto falta foto), já na montagem.
