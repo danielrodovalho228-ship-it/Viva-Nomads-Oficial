@@ -9,6 +9,7 @@
 */
 import { chaveCidade } from "../cidades.ts";
 import { cnpjValido, cpfValido, soDigitos } from "../documento-pessoa.ts";
+import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
 
 export const CATEGORIA_AVALIADOR = "vistoria";
 export const ROTA_RECRUTAMENTO = "/parceiros/avaliadores";
@@ -48,9 +49,17 @@ export function validarPedidoAvaliador(
   if (!e.jaParceiro) {
     const nome = limpar(e.nome, 80);
     const doc = soDigitos(e.documento);
+    let nomeAceito = true;
     if (nome.length < 3) {
+      nomeAceito = false;
       falta.push("Informar o nome público (o seu ou o da empresa).");
       campos.push({ campo: "nome", mensagem: "Informe o nome público (o seu ou o da empresa), com 3 letras ou mais." });
+    } else if (contemContato(nome)) {
+      // E1112 (ORDEM-DUET-652): este nome vira o nome público do parceiro na aprovação — a mesma guarda do "Seja
+      // parceiro" (`validarSolicitacao`), com o aviso da casa junto do campo. Antes, só este caminho não conferia.
+      nomeAceito = false;
+      falta.push("Tirar o contato do nome público.");
+      campos.push({ campo: "nome", mensagem: CONTATO_AVISO });
     }
     // E648: só empresa. CPF (tipo "pf" ou CPF no campo) não é aceito em nenhuma categoria de parceiro.
     if (e.tipoPessoa === "pf" || cpfValido(doc)) {
@@ -59,7 +68,7 @@ export function validarPedidoAvaliador(
     } else if (!cnpjValido(doc)) {
       falta.push("CNPJ válido.");
       campos.push({ campo: "documento", mensagem: doc ? "CNPJ inválido: confira os números." : "Informe o CNPJ." });
-    } else if (nome.length >= 3) parceiro = { nome, tipoPessoa: "pj", documento: doc };
+    } else if (nomeAceito) parceiro = { nome, tipoPessoa: "pj", documento: doc };
   }
   const cidade = limpar(e.cidade, 80);
   if (!chaveCidade(cidade)) {
