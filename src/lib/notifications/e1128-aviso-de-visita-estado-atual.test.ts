@@ -14,9 +14,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { EVENTOS_VISITA_DE_AVALIACAO, ehAvisoDeVisitaDeAvaliacao, imovelDoAviso, resolvidosNaPratica, resumoSemVisitaVencida, semVisitaDeAvaliacaoVencida, type AvisoTela, type SituacaoDosContratos } from "./sino.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (rel: string) => readFileSync(new URL(`../../${rel}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|^\s*\/\/.*$/gm, "");
 const P_CONCLUIDO = "11111111-1111-4111-8111-111111111111";
 const P_AGENDADO = "22222222-2222-4222-8222-222222222222";
 const IMOVEL_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";

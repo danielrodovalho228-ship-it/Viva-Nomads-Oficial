@@ -21,10 +21,10 @@ import {
 } from "./textos.ts";
 import * as regras from "./regras.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 const SELO = ler("src/components/confianca/selo-linkedin.tsx");
 const CONTA = ler("src/components/account/conta-blocos.tsx");

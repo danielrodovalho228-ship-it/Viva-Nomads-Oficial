@@ -15,9 +15,9 @@ import { hojeIsoBrasilia } from "./calendario/mes-br.ts";
 import { hojeBR } from "./utils.ts";
 import { visitaAmanha } from "./vistoria/regras.ts";
 import { registroDoSistema } from "./vistoria/ativacao-automatica.ts";
+import { fonteSemComentarios as semComentarios } from "./fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 const corpo = (s: string, nome: string) => {
   const i = s.indexOf(`export function ${nome}(`);
   assert.ok(i >= 0, `${nome} existe`);

@@ -26,10 +26,10 @@ import { hrefAvaliador } from "./telas-exibicao.ts";
 import { itensSintese, textoNivelCartao } from "../cartao-sintese.ts";
 import { GRUPOS_AVALIACAO, ITENS_CHECKLIST } from "../../config/checklist-avaliacao.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 const primarios = (f: string) => (semComentarios(f).match(/<Button(?![^>]*variant=)[^>]*>/g) ?? []).length + (semComentarios(f).match(/variant="primary"/g) ?? []).length;
 
 const CHECKLIST = ler("src/components/vistoria/checklist-avaliador.tsx");

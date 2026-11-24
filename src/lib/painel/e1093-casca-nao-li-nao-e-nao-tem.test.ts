@@ -12,9 +12,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CAMPOS_DE_CONTEXTO, CONTADORES_VAZIOS, camposNaoLidos, normalizarContadores } from "./contadores.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|^\s*\/\/.*$/gm, "");
 const DONA = { ...CONTADORES_VAZIOS, temImovel: true, imoveisAtivos: 2, parceiro: true, estadiaAtiva: true, propostasAguardando: 1 };
 
 test("campo do contexto NÃO lido: a casca fica com o que já sabia (a dona continua dona)", () => {
