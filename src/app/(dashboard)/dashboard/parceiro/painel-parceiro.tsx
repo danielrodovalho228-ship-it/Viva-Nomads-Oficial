@@ -203,7 +203,7 @@ function AbaPagina({ p, rodar, recarregar, msg }: { p: PainelParceiro; rodar: Ro
   // E1131: o aviso do "Salvar apresentação" aparece junto do botão, e a página rola até ele (padrão E818).
   const avisoPagina = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
-    if (msg?.onde === "pagina") avisoPagina.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (msg?.onde === "\u0000") avisoPagina.current?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [msg]);
   const [nome, setNome] = useState(p.nomePublico);
   const [descricao, setDescricao] = useState(p.descricao);
