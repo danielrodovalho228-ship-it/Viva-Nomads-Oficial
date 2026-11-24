@@ -103,7 +103,7 @@ export const ROTULO_NUMERO_LAUDOS_FORA_DO_PRAZO = "laudos fora do prazo combinad
 /** Os números do topo "Para decidir" que a Parte 2 soma ao admin (cada um leva à sua seção). */
 export function contagemContestacoes(e: { contestacoes: number; devolucoes: number; laudosAtrasados: number; auditoria: number }) {
   return [
-    { chave: "contestacoes", rotulo: "contestações abertas", valor: e.contestacoes, ancora: "#contestacoes" },
+    { chave: "contestacoes", rotulo: "contestações abertas", valor: e.contestacoes, ancora: "#auditoria" },
     { chave: "devolucoes", rotulo: "devoluções a devolver", valor: e.devolucoes, ancora: "#contestacoes" },
     { chave: "laudos-atrasados", rotulo: ROTULO_NUMERO_LAUDOS_FORA_DO_PRAZO, valor: e.laudosAtrasados, ancora: "#contestacoes" },
     { chave: "auditoria", rotulo: "laudos sorteados para auditoria", valor: e.auditoria, ancora: "#auditoria" },
