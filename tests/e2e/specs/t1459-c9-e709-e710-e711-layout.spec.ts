@@ -34,18 +34,22 @@ test.describe("T1459 — C9, E709, E710, E711: layout público", () => {
       expect(await semEstouro(page)).toBeLessThanOrEqual(1);
     });
 
-    test(`E710 a ${w} px: ações da busca ${w === 390 ? "em linha própria" : "na mesma linha dos filtros"}`, async ({ page }) => {
+    // E946 (asserção alterada, item do Daniel de 15/11): no celular os chips correm numa sequência só (Datas … Mapa, Nível
+    // por último) — as ações deixaram de ter linha própria, para o Nível não ficar órfão. Elas seguem à vista e dentro da tela.
+    test(`E710/E946 a ${w} px: ações da busca à vista ${w === 390 ? "na sequência dos chips" : "na mesma linha dos filtros"}`, async ({ page }) => {
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await page.goto("/buscar", { waitUntil: "domcontentloaded" });
-      const filtros = page.getByTestId("pilulas-filtros");
-      const acoes = page.getByTestId("pilulas-acoes");
-      await expect(acoes).toBeVisible({ timeout: 40_000 });
-      const f = await filtros.boundingBox();
-      const a = await acoes.boundingBox();
-      expect(a!.x, "as ações começam dentro da tela").toBeGreaterThanOrEqual(0);
-      expect(a!.x + a!.width, "as ações terminam dentro da tela").toBeLessThanOrEqual(w + 1);
-      if (w === 390) expect(a!.y, "no celular as ações ficam abaixo da faixa de filtros").toBeGreaterThanOrEqual(f!.y + f!.height - 1);
-      else expect(Math.abs(a!.y - f!.y), "do tablet para cima é uma linha só").toBeLessThan(40);
+      const mais = page.getByTestId("pilula-mais");
+      const mapa = page.getByTestId("pilula-mapa");
+      const datas = page.getByTestId("pilula-datas");
+      await expect(mapa).toBeVisible({ timeout: 40_000 });
+      const d = (await datas.boundingBox())!;
+      const m = (await mais.boundingBox())!;
+      const a = (await mapa.boundingBox())!;
+      expect(m.x, "as ações começam dentro da tela").toBeGreaterThanOrEqual(0);
+      expect(a.x + a.width, "as ações terminam dentro da tela").toBeLessThanOrEqual(w + 1);
+      if (w === 390) expect(m.y, "no celular as ações vêm depois dos filtros na sequência").toBeGreaterThanOrEqual(d.y);
+      else expect(Math.abs(a.y - d.y), "do tablet para cima é uma linha só").toBeLessThan(40);
       expect(await semEstouro(page)).toBeLessThanOrEqual(1);
     });
 
