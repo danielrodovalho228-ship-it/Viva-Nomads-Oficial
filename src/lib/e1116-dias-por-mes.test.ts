@@ -11,8 +11,8 @@ import { REGRAS_CONTRATO } from "../config/planos.ts";
 import { DIAS_POR_MES } from "./contrato-blocos.ts";
 import { comissaoSobreDias, rotuloTaxaServico } from "./cobranca/regra.ts";
 import { DIAS_POR_MES as DIAS_POR_MES_CONTADOR } from "./pedidos/contador.ts";
+import { fonteSemComentarios as semComentarios } from "./fonte-sem-comentarios.ts";
 
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\s\/\/ [^\n"`]*$/gm, "");
 /** "× 30" / "÷ 30" de duração: `* 30`, `/ 30`, `÷ 30` (o 30 sozinho, não 300 nem 30_000). */
 const LITERAL = /(?:[*/]|÷) ?30(?![\d_.])/g;
 
