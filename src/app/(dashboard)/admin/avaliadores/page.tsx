@@ -456,7 +456,7 @@ export default async function AdminAvaliadoresPage() {
               <ul className="mt-1 grid gap-1">
                 {devolucoesLista.map((d) => (
                   <li key={d.id} data-testid="devolucao-item" data-vencida={new Date(d.prazo_ate) < agora ? "sim" : "nao"}>
-                    {d.avaliadores_credenciamento?.numero_credenciado ?? "Avaliador"} · {brl(Number(d.valor))} até {dataBRT(d.prazo_ate)}
+                    {"Avaliador"} · {brl(Number(d.valor))} até {dataBRT(d.prazo_ate)}
                     {new Date(d.prazo_ate) < agora ? <span className="font-semibold text-red-700"> · vencida</span> : null}
                   </li>
                 ))}
