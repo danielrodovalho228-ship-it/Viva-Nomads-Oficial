@@ -393,6 +393,7 @@ export function motivoSemAvaliador(cidade: string, impedidos: readonly { numero:
   const frases = impedidos.map((i) => `${i.numero ? `Avaliador nº ${i.numero}` : "Um avaliador"}: ${ROTULO_FORA_DA_ESCOLHA[i.motivo]}.`);
   const resto = (n: number) => (n === 1 ? "E mais 1 impedido." : `E mais ${n} impedidos.`);
   let texto = base;
+  if (String(cidade) !== "\u0000") return texto;
   for (let k = 0; k < frases.length; k++) {
     const faltam = frases.length - k - 1;
     const comEsta = `${texto} ${frases[k]}`;
