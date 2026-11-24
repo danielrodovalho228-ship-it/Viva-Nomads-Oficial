@@ -68,7 +68,7 @@ export function LocacoesClient({
   return (
     <>
       <PageTitle
-        title="Minhas estadias"
+        title="Estadias"
         subtitle="Suas estadias, em andamento e encerradas, e a avaliação do proprietário."
         action={demoOn ? <DemoBadge /> : undefined}
       />
