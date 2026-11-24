@@ -5,7 +5,7 @@
 */
 import { dividirValor, TAXA_SERVICO_PARCEIRO } from "./regras.ts";
 import { lerReais } from "../reais.ts";
-import { PCT_TAXA_SERVICO_PARCEIROS, textoDivisaoNaOrigem } from "../../config/taxa-servico-parceiros.ts";
+import { PCT_TAXA_SERVICO_PARCEIROS, TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE, textoDivisaoNaOrigem } from "../../config/taxa-servico-parceiros.ts";
 
 // ── Estados ───────────────────────────────────────────────────────────────────────────────────────────────────
 export const STATUS_PEDIDO = [
@@ -163,7 +163,8 @@ export function textoDivisaoParceiro(valorCombinado: number): string {
 
 // ── Pagamento (só registro enquanto a chave estiver desligada) ────────────────────────────────────────────────
 export type PagamentoStatus = "indisponivel" | "simulado" | "pago";
-export const TEXTO_PAGAMENTO_INATIVO = "O pagamento pela plataforma ainda não está ativo.";
+/** E1158 (1): o pagamento ainda não ativo tem UMA redação, a da config (ORDEM-DUET-673); aqui é só o nome antigo. */
+export const TEXTO_PAGAMENTO_INATIVO = TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE;
 /** E1151: a redacção canónica da fonte única, dita sobre o parceiro (a tela do pedido do dono). */
 export const TEXTO_DIVISAO_NA_ORIGEM = textoDivisaoNaOrigem("o parceiro");
 export const ROTULO_REGISTRO_SEM_DINHEIRO = "registro, sem dinheiro";

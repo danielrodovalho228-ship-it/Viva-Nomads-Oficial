@@ -138,7 +138,7 @@ test.describe("T315 — Prompt 62-A, Parte 1: dono e morador", () => {
       await expect(bloco.getByTestId("avaliador-designado")).toHaveText(`Avaliador escolhido por você: nº ${numeroA}`, { timeout: 30_000 });
       await expect(bloco.getByText("Avaliador escolhido por você")).toHaveCount(1);
       await expect(bloco.getByTestId("etapa-designado")).toHaveAttribute("data-estado", "atual");
-      await expect(bloco.getByTestId("etapa-designado")).toHaveText(`Escolhido nº ${numeroA}`);
+      await expect(bloco.getByTestId("etapa-designado")).toHaveText("Escolhido"); // E1158 (9; ORDEM-DUET-656): o número fica na linha com o link
       await expect(bloco.getByTestId("etapa-pedido")).toHaveAttribute("data-estado", "feito");
       await expect(bloco.getByTestId("avaliacao-mensagens")).toHaveAttribute("href", "/dashboard/mensagens");
       await bloco.scrollIntoViewIfNeeded();

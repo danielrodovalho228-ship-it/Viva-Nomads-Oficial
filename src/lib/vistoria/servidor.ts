@@ -4,6 +4,7 @@ import { blocoDados } from "@/lib/notifications/modelo-email";
 import { EVENTOS_VISITA_DE_AVALIACAO } from "@/lib/notifications/sino";
 import { escaparHtml } from "@/lib/escapar-html";
 import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type FatosVistoria } from "./corpo-email";
+import { corpoDoAvisoDaFila } from "./rotulos-da-fila";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { STATUS_TESTE_CONCLUIDO } from "./entrada";
 import { criteriosAtingidos, propostaVencida, sugerirAvaliadores, CRITERIOS_PUBLICOS, type Sugestoes } from "./escolha";
@@ -152,12 +153,16 @@ export async function resolverAvisosDaVisita(admin: Admin, pedidoId: string): Pr
   }
 }
 
-export async function avisarAdmins(admin: Admin, ev: NotificationEvent): Promise<void> {
+/**
+ * E1158 (23): com `tipoDaFila`, o e-mail "novo item na fila" diz o tipo do item que entrou (o rótulo da tela). Só
+ * muda o texto dos avisos que já existiam: nenhum tipo passa a avisar por causa disto (ORDEM-DUET-673).
+ */
+export async function avisarAdmins(admin: Admin, ev: NotificationEvent, tipoDaFila?: string): Promise<void> {
   try {
     const { data: admins } = await admin.from("profiles").select("id").eq("role", "admin");
     for (const ad of (admins ?? []) as { id: string }[]) {
       const { data: u } = await admin.auth.admin.getUserById(ad.id);
-      await notify({ event: ev, email: u?.user?.email ?? undefined, userId: ad.id, pushUrl: ROTA_ADMIN, interno: true });
+      await notify({ event: ev, email: u?.user?.email ?? undefined, userId: ad.id, pushUrl: ROTA_ADMIN, interno: true, ...(tipoDaFila ? { body: () => corpoDoAvisoDaFila(tipoDaFila) } : {}) });
     }
   } catch {
     /* best-effort */

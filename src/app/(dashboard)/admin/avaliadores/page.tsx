@@ -17,6 +17,8 @@ import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistori
 import { credenciamentosADecidir, laudosAtrasados, pedidosSemAvaliador } from "@/lib/data/avaliadores-contagens";
 import { idsContasTeste } from "@/lib/data/admin-indicadores";
 import { textoDasContasDeTeste } from "@/lib/vistoria/contagens-da-central";
+import { RESPOSTA_DO_AVALIADOR, ROTULO_AGUARDANDO_AVALIADOR, TITULO_PEDIDOS_SEM_AVALIADOR, rotuloDoStatus, rotuloDoTipo } from "@/lib/vistoria/rotulos-do-pedido";
+import { ROTULO_FILA } from "@/lib/vistoria/rotulos-da-fila";
 import { contagemContestacoes } from "@/lib/vistoria/telas-laudo";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
 import { comTesteConcluido, filaDaCidade, nomesDasContas } from "@/lib/vistoria/servidor";
@@ -25,7 +27,7 @@ import { contaComoAvaliadorAtivo, faltaParaAtivar } from "@/lib/vistoria/entrada
 import { complementoPassoIdentidade } from "@/lib/vistoria/telas-exibicao";
 import { CRITERIOS_PUBLICOS } from "@/lib/vistoria/escolha";
 import { rotuloSemResposta } from "@/lib/vistoria/relogio-do-pedido";
-import { TITULO_ADMIN, TITULO_SECAO_A_DECIDIR, TITULO_SECAO_NA_REDE, contagemDecisoes, credenciamentoADecidir, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
+import { DIAS_DA_JANELA_DE_RECUSAS, LINHA_PUBLICA_DESIGNACAO, TITULO_ADMIN, TITULO_RECUSAS_E_AUSENCIAS, TITULO_SECAO_A_DECIDIR, TITULO_SECAO_NA_REDE, contagemDecisoes, credenciamentoADecidir, filaDeRodizio, rotuloDecisao } from "@/lib/vistoria/telas-exibicao";
 import { tituloDoAdmin } from "@/config/menu-admin";
 import { soLeituraNaTela } from "@/lib/qa/observador";
 import { NOTA_PILOTO_MAX, ROTULO_CONTA_TESTE, TEXTO_PILOTO_VAZIO, TITULO_SECAO_PILOTO, linhasDoPiloto } from "@/lib/vistoria/piloto-central";
@@ -39,13 +41,11 @@ export const dynamic = "force-dynamic";
 
 const mascararDocumento = (d: string | null) => (d ? `${"•".repeat(Math.max(0, d.length - 4))}${d.slice(-4)}` : "—");
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
-/** A janela da lista de recusas, vencidas e ausências da Central, em dias. */
-const DIAS_DA_JANELA_DE_RECUSAS = 30;
 const ROTULO_STATUS: Record<StatusCredenciamento, string> = { solicitado: "Solicitado", em_teste: "Em teste", ativo: "Ativo", suspenso: "Suspenso", descredenciado: "Descredenciado" };
 // E1157: a resposta "expirada" lê o prazo que o avaliador declarou (rotuloSemResposta); antes dizia sempre 24 horas.
-const ROTULO_RESPOSTA: Record<string, string> = { recusada: "Recusou", ausencia: "Não foi à visita" };
+// E1158 (17): as duas vozes da resposta vêm de uma fonte; aqui, a da equipe.
+const ROTULO_RESPOSTA = RESPOSTA_DO_AVALIADOR.equipe;
 const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicitado: ["em_teste", "descredenciado"], em_teste: ["ativo", "descredenciado"], ativo: ["descredenciado"], suspenso: ["ativo", "descredenciado"], descredenciado: [] };
-const ROTULO_FILA: Record<string, string> = { sem_avaliador: "Pedido sem avaliador elegível", avaliacao_teste: "Avaliação de teste a marcar e revisar", suspensao_automatica: "Suspensão automática antiga (não é mais criada)", revisao_criterio: "Critério público de qualidade atingido: rever com o avaliador (direito de resposta)", proposta_descredenciamento: "Proposta de descredenciamento", laudo_atrasado: "Laudo não enviado em 48 horas úteis", ressalva_vencida: "Ressalva vencida: avaliar abrir verificação", devolucao_vencida: "Devolução da contestação não confirmada em 15 dias", seguranca_grave: "Segurança grave a acompanhar" };
 const ROTULO_BLOQUEIO: Record<string, string> = { seguranca_grave: "Segurança grave (fora da busca)", strike_2: "2º strike (republicar só com laudo)", strike_3: "3º strike (todos fora da busca)" };
 
 type Cred = { id: string; cidade: string; numero_credenciado: string; status: StatusCredenciamento; motivo: string | null; experiencia_link: string | null; experiencia_path: string | null; relacoes_descricao: string | null; criado_em: string; user_id: string | null; prazo_resposta_horas: number | null; parceiros: { nome_publico: string; user_id: string | null } | null; parceiro_solicitacoes: { nome: string; tipo_pessoa: string | null; documento: string | null; email: string | null } | null };
@@ -335,13 +335,13 @@ export default async function AdminAvaliadoresPage() {
       </div>
       </div>
 
-      <Panel id="sem-avaliador" title="Pedidos sem avaliador elegível" className="mb-6 scroll-mt-24" data-testid="avaliacoes-sem-avaliador">
+      <Panel id="sem-avaliador" title={TITULO_PEDIDOS_SEM_AVALIADOR} className="mb-6 scroll-mt-24" data-testid="avaliacoes-sem-avaliador">
         {semAvaliador.length === 0 && filaSemAvaliador.deTeste.length === 0 && <p className="text-sm text-muted">Todos os pedidos têm avaliador.</p>}
         {semAvaliador.length > 0 && (
           <ul className="grid gap-1 text-sm" data-testid="sem-avaliador-lista">
             {semAvaliador.map((x) => (
               <li key={x.id} data-testid="sem-avaliador-item" data-pedido={x.id} data-conta-teste="nao">
-                {x.cidade} · {x.tipo} · desde {dataBRT(x.criado_em)}
+                {x.cidade} · {rotuloDoTipo(x.tipo)} · desde {dataBRT(x.criado_em)}
                 {motivoSemAvaliador.get(x.id) && <span className="block text-muted" data-testid="sem-avaliador-motivo">{motivoSemAvaliador.get(x.id)}</span>}
               </li>
             ))}
@@ -354,7 +354,7 @@ export default async function AdminAvaliadoresPage() {
             <ul className="mt-1 grid gap-1">
               {filaSemAvaliador.deTeste.map((x) => (
                 <li key={x.id} data-testid="sem-avaliador-item" data-pedido={x.id} data-conta-teste="sim">
-                  {x.cidade} · {x.tipo} · desde {dataBRT(x.criado_em)}
+                  {x.cidade} · {rotuloDoTipo(x.tipo)} · desde {dataBRT(x.criado_em)}
                   {motivoSemAvaliador.get(x.id) && <span className="block" data-testid="sem-avaliador-motivo">{motivoSemAvaliador.get(x.id)}</span>}
                 </li>
               ))}
@@ -363,9 +363,9 @@ export default async function AdminAvaliadoresPage() {
         )}
       </Panel>
 
-      <Panel id="recusas" title="Recusas e ausências (30 dias)" className="mb-6 scroll-mt-24" data-testid="avaliacoes-recusas">
+      <Panel id="recusas" title={TITULO_RECUSAS_E_AUSENCIAS} className="mb-6 scroll-mt-24" data-testid="avaliacoes-recusas">
         {recusasLista.length === 0 ? (
-          <p className="text-sm text-muted">Nenhuma recusa ou ausência nos últimos 30 dias.</p>
+          <p className="text-sm text-muted">Nenhuma recusa ou ausência nos últimos {DIAS_DA_JANELA_DE_RECUSAS} dias.</p>
         ) : (
           <ul className="grid gap-1 text-sm">
             {recusasLista.map((r) => (
@@ -486,7 +486,7 @@ export default async function AdminAvaliadoresPage() {
       </Panel>
 
       <Panel id="rodizio" title="Avaliadores sugeridos por cidade" className="mb-6 scroll-mt-24" data-testid="avaliacoes-rodizio">
-        <p className="text-sm text-muted">A Viva não designa: o proprietário escolhe entre os sugeridos. A ordem é só de exibição (quem foi menos procurado primeiro). Impedimentos ligados ao pedido (serviço ao proprietário, relação declarada) aparecem na hora da escolha.</p>
+        <p className="text-sm text-muted">A Viva não designa. {LINHA_PUBLICA_DESIGNACAO} A ordem é só de exibição (quem foi menos procurado primeiro). Impedimentos ligados ao pedido (serviço ao proprietário, relação declarada) aparecem na hora da escolha.</p>
         {cidades.length === 0 && <p className="mt-2 text-sm text-muted">Nenhuma cidade ainda.</p>}
         <div className="mt-3 grid gap-4 lg:grid-cols-2">
           {cidades.map((cidade) => {
@@ -513,7 +513,7 @@ export default async function AdminAvaliadoresPage() {
       </Panel>
 
       <Panel title="Abrir verificação" className="mb-6" data-testid="avaliadores-verificacao">
-        <p className="text-sm text-muted">Só a Viva abre, com motivo: denúncia procedente sobre o estado, pendência do padrão mínimo procedente ou ressalva vencida. O proprietário escolhe o avaliador e paga o valor que o avaliador propôs.</p>
+        <p className="text-sm text-muted">Só a Viva abre, com motivo: denúncia procedente sobre o estado, pendência do padrão mínimo procedente ou ressalva vencida. {LINHA_PUBLICA_DESIGNACAO} O proprietário paga o valor que o avaliador propôs.</p>
         <FormAcaoAdmin soLeitura={soLeitura} acao={adminAbrirVerificacao} className="mt-3 grid gap-3 sm:grid-cols-2" testid="verificacao-form">
           <label className="text-sm">Imóvel (id)<input name="propertyId" required className={campo} /></label>
           <label className="text-sm">
@@ -629,7 +629,7 @@ export default async function AdminAvaliadoresPage() {
         <ul className="grid gap-1 text-sm">
           {((pedidos ?? []) as unknown as { id: string; cidade: string; tipo: string; status: string; aguardando_avaliador: boolean; avaliadores_credenciamento: { numero_credenciado: string } | null }[]).map((p) => (
             <li key={p.id} data-testid="pedido-admin" data-status={p.status}>
-              {p.cidade} · {p.tipo} · {p.aguardando_avaliador ? "aguardando avaliador" : p.status}
+              {p.cidade} · {rotuloDoTipo(p.tipo)} · {p.aguardando_avaliador ? ROTULO_AGUARDANDO_AVALIADOR : rotuloDoStatus(p.status)}
               {p.avaliadores_credenciamento ? ` · nº ${p.avaliadores_credenciamento.numero_credenciado}` : ""}
             </li>
           ))}
