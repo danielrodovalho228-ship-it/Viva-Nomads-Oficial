@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { aEsperaDaConcordancia, concordanciaRecusada, type EstadoDaConcordancia } from "./concordancia.ts";
-import { TEXTO_ESPERA_DO_MORADOR, TEXTO_RECUSADO_PELO_MORADOR, linhaEsperaDoMorador } from "./contagens-da-central.ts";
+import { TEXTO_ESPERA_DO_MORADOR, TEXTO_RECUSADO_PELO_MORADOR, TITULO_ESPERA_DO_MORADOR, VAZIO_ESPERA_DO_MORADOR, linhaEsperaDoMorador } from "./contagens-da-central.ts";
 import { DECISOES_ADMIN, montarDecisoesAdmin } from "../admin/decisoes-admin.ts";
 import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
@@ -10,6 +10,7 @@ import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
   E1175 (ORDENS-DUET 752, 776, 780 e 782). A Central conta os pedidos de avaliação do imóvel ocupado que esperam o
   morador: os que têm data proposta à espera da concordância, e — como SEGUNDO ESTADO da mesma linha — os recusados
   pelo morador, à espera de nova data. Os dois estados têm cada um a sua regra pura, e um pedido nunca está nos dois.
+  A trava de tela é a t1775 (ORDEM-DUET-785).
   Roda: node --test src/lib/vistoria/e1175-espera-da-moradora-na-central.test.ts
 */
 const base: EstadoDaConcordancia = { status: "designado", ocupado: true, agendadoPara: "2026-11-27T13:00:00Z", concordanciaPedidaEm: "2026-11-24T12:00:00Z", concordanciaEm: null };
@@ -48,6 +49,9 @@ test("E1175: a linha soma os dois estados e diz cada um, no singular e no plural
   // Os textos aprovados (ORDENS 780 e 782).
   assert.equal(TEXTO_ESPERA_DO_MORADOR.um, "pedido de avaliação à espera da concordância do morador");
   assert.equal(TEXTO_RECUSADO_PELO_MORADOR.um, "pedido de avaliação recusado pelo morador — à espera de nova data");
+  // O título do painel e a frase sem pedidos (ORDEM-DUET-785).
+  assert.equal(TITULO_ESPERA_DO_MORADOR, "Avaliações à espera do morador");
+  assert.equal(VAZIO_ESPERA_DO_MORADOR, "Nenhum pedido de avaliação à espera do morador.");
 });
 
 test("E1175: a linha da Central usa o texto dos dois estados; as outras filas não mudam", () => {

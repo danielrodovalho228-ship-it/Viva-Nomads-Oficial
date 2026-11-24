@@ -54,7 +54,7 @@ export const TEXTO_RECUSADO_PELO_MORADOR = {
   varios: "pedidos de avaliação recusados pelo morador — à espera de nova data",
 } as const;
 
-/** E1175 — PROPOSTA DE TEXTO (Dúvidas do PR): o título do painel na página dos avaliadores e a frase sem pedidos. */
+/** E1175: o título do painel na página dos avaliadores e a frase sem pedidos (aprovados na ORDEM-DUET-785). */
 export const TITULO_ESPERA_DO_MORADOR = "Avaliações à espera do morador";
 export const VAZIO_ESPERA_DO_MORADOR = "Nenhum pedido de avaliação à espera do morador.";
 
