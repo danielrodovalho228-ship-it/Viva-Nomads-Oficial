@@ -42,6 +42,9 @@ async function perfilPublico(browser: Browser): Promise<{ page: Page; fechar: ()
   await ctx.addCookies([{ name: "vn_lab_vistoria", value: "1", url: new URL(page.url()).origin }]);
   await page.goto(`/avaliadores/${cred.numero}`, { waitUntil: "domcontentloaded" });
   await expect(page.locator("main")).toBeVisible({ timeout: 30_000 });
+  // P1 (ORDEM-DUET-668): antes de qualquer ausência ("sem contacto", "sem a secção Sobre"), o perfil tem de estar MESMO na
+  // tela — um elemento positivo dele. Uma página ainda vazia passava as ausências sem provar nada.
+  await expect(page.getByTestId("avaliador-numero"), "o perfil público carregou").toContainText(cred.numero, { timeout: 30_000 });
   return { page, fechar: () => ctx.close() };
 }
 
