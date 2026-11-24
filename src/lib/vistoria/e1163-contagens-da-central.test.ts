@@ -106,8 +106,9 @@ test("E1163 (varredura): a página não conta à mão — número e lista saem d
   // Leitura falhada sobe: a página nunca mostra zero no lugar de uma fila que não leu.
   assert.match(PAGINA, /if \(!filaSemAvaliador \|\| !filaAtrasados \|\| !filaCredenciamentos\) throw new Error\(/);
   // As contas de teste ficam à parte nas três filas, com o texto da fonte — e, pela ORDEM-DUET-735, também na secção
-  // das propostas expiradas ou descartadas (E1159): quatro blocos, o mesmo texto.
-  assert.equal((PAGINA.match(/textoDasContasDeTeste\(/g) ?? []).length, 4);
+  // das propostas expiradas ou descartadas (E1159) e, pela ORDEM-DUET-738, na lista das recusas (E1169): cinco blocos,
+  // o mesmo texto.
+  assert.equal((PAGINA.match(/textoDasContasDeTeste\(/g) ?? []).length, 5);
   assert.match(PAGINA, /const aDecidirReais = aDecidir\.filter\(\(c\) => !credenciamentosDeTeste\.has\(c\.id\)\);/);
 });
 
