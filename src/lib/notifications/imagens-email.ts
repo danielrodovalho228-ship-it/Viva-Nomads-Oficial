@@ -169,6 +169,7 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   vistoria_proposta_aceita: "transacional",
   vistoria_agendada: "visita",
   vistoria_concordancia: "visita",
+  vistoria_concordancia_recusada: "visita",
   vistoria_lembrete: "visita",
   vistoria_ausencia: "transacional",
   vistoria_sem_avaliador: "atendimento",

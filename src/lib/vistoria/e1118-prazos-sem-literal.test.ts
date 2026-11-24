@@ -30,17 +30,12 @@ import * as escolha from "./escolha.ts";
 import { REGRAS_AGENDA, designacaoVencida, podeReagendar } from "./regras.ts";
 import { corpoVistoria } from "./corpo-email.ts";
 import { TEMPLATES } from "../notifications/eventos-email.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const RAIZ = new URL("../../../", import.meta.url).pathname;
 /** O dia em milissegundos, para as contas deste teste. */
 const DIA = 86_400_000;
 const ler = (p: string) => readFileSync(join(RAIZ, p), "utf8");
-/** Tira os comentários (de linha, de bloco e de JSX). Um `/*` no meio de uma string (accept="image/*") não abre bloco. */
-const semComentarios = (s: string) =>
-  s
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
-    .replace(/(^|\n)[ \t]*\/\*[\s\S]*?\*\//g, "$1")
-    .replace(/(^|[\s;,{(])\/\/[^\n]*/g, "$1");
 
 /** As superfícies varridas: a regra, as ações, os e-mails e as telas da avaliação de imóveis (sem os testes). */
 function arquivosVarridos(): string[] {

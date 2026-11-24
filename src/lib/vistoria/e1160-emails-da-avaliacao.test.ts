@@ -227,7 +227,9 @@ test("E1160 (6): quem agenda diz ao e-mail se é reagendamento e qual era a data
   const inicio = acoes.indexOf("export async function agendarVisita(");
   const agendar = acoes.slice(inicio, acoes.indexOf("export async function concordarVisita("));
   // A data anterior é lida ANTES da gravação que a substitui, e segue na referência dos três avisos.
-  assert.match(agendar, /const troca = \{ reagendada: reagendando, visitaAnterior: reagendando \? p\.agendado_para : null \};/);
+  // E1173 (asserção alterada, ORDEM-DUET-763, a folha): a data proposta depois de o morador recusar também é "nova
+  // data" no e-mail dele. A data anterior continua a seguir só quando há reagendamento.
+  assert.match(agendar, /const troca = \{ reagendada: reagendando \|\| depoisDaRecusa, visitaAnterior: reagendando \? p\.agendado_para : null \};/);
   assert.ok(agendar.indexOf("const troca = ") < agendar.indexOf("agendado_para: quando.toISOString()"));
   assert.equal((agendar.match(/\{ pedidoId: p\.id, propertyId: p\.property_id, \.\.\.troca \}/g) ?? []).length, 3);
   // Em concordarVisita a data anterior já não existe (ORDEM-DUET-675: sem coluna nova): a referência não a leva.

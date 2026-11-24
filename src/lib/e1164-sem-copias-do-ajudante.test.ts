@@ -17,28 +17,22 @@ import { join } from "node:path";
 /** A assinatura da cópia: a expressão que apaga de "/*" até "*\/" em qualquer ponto ([\s\S] ou [^]). */
 const COPIA = /\\\/\\\*\[(?:\\s\\S|\^)\]\*\?\\\*\\\//;
 
-/** Ainda por trocar (fatias seguintes do E1164, e os arquivos que estão em PRs abertos). Só encolhe. */
+/** Ainda por trocar: os arquivos que estão em PRs abertos (entram quando esses PRs saírem). Só encolhe. */
 const PENDENTES = new Set([
-  "scripts/lab/gerar-cobertura.mjs",
-  "src/components/layout/logo-sem-link-aninhado.test.ts",
-  "src/lib/busca/e580-filtro-preco-justo-visivel.test.ts",
-  "src/lib/busca/e82-busca-clean.test.ts",
-  "src/lib/ci/prova-ao-vivo.ts",
-  "src/lib/data/perfil-publico-privacidade.test.ts",
-  "src/lib/estilo/estilo-padrao.test.ts",
-  "src/lib/rotas-remissoes/e916-404-rodape-busca.test.ts",
-  "src/lib/selos-estrutura-e225.test.ts",
-  "src/lib/sem-aluguel-texto.test.ts",
-  "src/lib/textos-garantias-ferramentas.test.ts",
-  "src/lib/textos-publicos.test.ts",
-  "src/lib/vinculo/selo-publico.test.ts",
-  "src/lib/vistoria/e1077-avaliador-em-teste.test.ts",
-  "src/lib/vistoria/e1118-prazos-sem-literal.test.ts",
-  "src/lib/vistoria/e648-escolha-do-dono.test.ts",
-  "src/lib/vistoria/telas-exibicao.test.ts",
-  "src/lib/vocab-a.test.ts",
-  "src/lib/vocabulario-publico.test.ts",
-  "tests/laboratorio/e744-linhas-de-base-evidencia.test.ts",
+  "src/lib/busca/e580-filtro-preco-justo-visivel.test.ts", // #3779, #3795
+  "src/lib/busca/e82-busca-clean.test.ts", // #3834
+  "src/lib/ci/prova-ao-vivo.ts", // #3877
+  "src/lib/estilo/estilo-padrao.test.ts", // #3812, #3822
+  "src/lib/vistoria/telas-exibicao.test.ts", // #3574
+]);
+
+/**
+ * Exceções nomeadas (ORDEM-DUET-730): a assinatura aparece, mas não é uma cópia do ajudante. Cada uma com a razão.
+ */
+const EXCECOES = new Map<string, string>([
+  ["scripts/lab/gerar-cobertura.mjs", "ferramenta da cobertura, não trava: só tira o cabeçalho de comentários; adota a fonte única quando o pacote do resolver entrar"],
+  ["src/components/layout/logo-sem-link-aninhado.test.ts", "não tira comentários: a expressão casa no produto o padrão <Link>{/* … */}<Logo"],
+  ["src/lib/rotas-remissoes/e916-404-rodape-busca.test.ts", "não tira comentários: a expressão casa no produto o padrão <header>{/* … */}<Logo"],
 ]);
 
 const AJUDANTE = new Set(["src/lib/fonte-sem-comentarios.ts", "src/lib/fonte-sem-comentarios.test.ts", "src/lib/e1164-sem-copias-do-ajudante.test.ts"]);
@@ -57,7 +51,14 @@ function arquivos(dir: string): string[] {
 const comCopia = ["src", "tests", "scripts"].flatMap(arquivos).filter((f) => !AJUDANTE.has(f) && COPIA.test(readFileSync(f, "utf8"))).sort();
 
 test("E1164: nenhuma cópia nova do ajudante que tira comentários (use src/lib/fonte-sem-comentarios.ts)", () => {
-  assert.deepEqual(comCopia.filter((f) => !PENDENTES.has(f)), []);
+  assert.deepEqual(comCopia.filter((f) => !PENDENTES.has(f) && !EXCECOES.has(f)), []);
+});
+
+test("E1164: cada exceção nomeada tem a razão escrita e ainda tem a assinatura (senão sai da lista)", () => {
+  for (const [f, razao] of EXCECOES) {
+    assert.ok(razao.trim().length >= 20, `${f}: a razão está escrita`);
+    assert.ok(comCopia.includes(f), `${f}: já não tem a assinatura — sai das exceções`);
+  }
 });
 
 test("E1164: a lista dos pendentes só encolhe — o arquivo já trocado sai dela", () => {

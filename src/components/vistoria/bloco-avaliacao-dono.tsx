@@ -12,6 +12,7 @@ import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { A_VIVA_AVISA_QUANDO_HOUVER, ROTAS_NIVEL, ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR, TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
+import { concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
@@ -67,7 +68,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     tabelaDaCidade(admin, im.city), // E1081: a cidade pela chave (sem acento, sem maiúsculas)
     admin
       .from("vistoria_pedidos")
-      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
+      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, concordancia_pedida_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
       .eq("property_id", propertyId)
       .order("criado_em", { ascending: false })
       .limit(1),
@@ -88,6 +89,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     agendado_para: string | null;
     ocupado: boolean;
     concordancia_em: string | null;
+    concordancia_pedida_em: string | null;
     recebido_marcado_em: string | null;
     recebido_confirmado_em: string | null;
     valor_proposto: number | string | null;
@@ -98,6 +100,8 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     teste: boolean;
     avaliadores_credenciamento: { numero_credenciado: string; prazo_resposta_horas: number | null } | null;
   } | null;
+  // E1173: o morador disse que não pode na data proposta, e ainda não há data nova.
+  const recusouAData = !!atual && concordanciaRecusada({ status: atual.status, ocupado: atual.ocupado, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em, concordanciaEm: atual.concordancia_em });
   // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
   let sugeridos: { id: string; numero: string; nome: string; termos: string; reputacao: { novo: boolean; cheias: number; texto: string }; identidadeVerificada: boolean; teste: boolean; fotoUrl: string | null }[] | null = [];
   if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
@@ -195,9 +199,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
         )}
         {aberto && atual ? (
           <div className="grid gap-4 text-sm" data-testid="avaliacao-dono-pedido" data-status={atual.status}>
-            {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para }) && (
+            {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em }) && (
               <p className="text-ink" data-testid="avaliacao-situacao">
-                {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para })}
+                {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em })}
               </p>
             )}
             {atual.status === "pedido" && <DepoisDaTroca pedidoId={atual.id} aguardando={atual.aguardando_avaliador} />}
@@ -313,8 +317,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               </div>
             )}
             {/* E1153: a confirmação do aceite fica na tela enquanto a visita não tem data (antes só existia na resposta
-                da ação, que some quando o bloco se redesenha). A mesma frase do lado do avaliador. */}
-            {aceitoSemDataDeVisita({ status: atual.status, propostaAceitaEm: atual.proposta_aceita_em, agendadoPara: atual.agendado_para }) && (
+                da ação, que some quando o bloco se redesenha). A mesma frase do lado do avaliador.
+                E1173: com a recusa do morador ela sai — a frase de situação já diz o passo (propor outra data). */}
+            {aceitoSemDataDeVisita({ status: atual.status, propostaAceitaEm: atual.proposta_aceita_em, agendadoPara: atual.agendado_para }) && !recusouAData && (
               <p className="font-semibold text-ink" data-testid="avaliacao-aceite-confirmado">
                 {CONFIRMACAO_DO_ACEITE}
               </p>
