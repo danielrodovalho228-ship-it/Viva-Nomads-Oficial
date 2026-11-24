@@ -14,6 +14,7 @@ export type EventoVistoria =
   | "vistoria_designada"
   | "vistoria_designado_dono"
   | "vistoria_proposta_expirada"
+  | "vistoria_proposta_expirada_dono"
   | "vistoria_agendada"
   | "vistoria_concordancia"
   | "vistoria_lembrete"
@@ -31,6 +32,7 @@ export const EVENTOS_VISTORIA_COM_FATOS: ReadonlySet<string> = new Set<EventoVis
   "vistoria_designada",
   "vistoria_designado_dono",
   "vistoria_proposta_expirada",
+  "vistoria_proposta_expirada_dono",
   "vistoria_agendada",
   "vistoria_concordancia",
   "vistoria_lembrete",
@@ -105,6 +107,15 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
       return {
         subject: assuntoComTitulo("A sua proposta de avaliação expirou: ", titulo),
         body: (n) => `${ola(n)}, o proprietário não aceitou a sua proposta de avaliação ${titulo ? `de ${titulo} ` : ""}no prazo de ${PRAZO_DONO_ACEITAR_HORAS} horas, e ela expirou. O pedido voltou para ele escolher de novo. Você não precisa fazer nada.`,
+        linhas,
+      };
+    case "vistoria_proposta_expirada_dono":
+      // E1144: ao dono, na mesma expiração — o que aconteceu e o que ele faz a seguir (o botão leva à escolha).
+      // O assunto aprovado ("O prazo para aceitar a proposta de avaliação terminou: [imóvel]") deixa 1 carácter para o
+      // imóvel na régua dos 70; a forma curta é a irmã do assunto do avaliador (E1142), e é ela que nomeia o imóvel.
+      return {
+        subject: assuntoComTitulo("O prazo para aceitar a proposta de avaliação terminou: ", titulo, "", { antes: "A proposta de avaliação expirou: " }),
+        body: (n) => `${ola(n)}, o prazo de ${PRAZO_DONO_ACEITAR_HORAS} horas para aceitar a proposta de avaliação ${doImovel(true)} terminou, e ela expirou. O pedido voltou para você escolher de novo.`,
         linhas,
       };
     case "vistoria_agendada":
