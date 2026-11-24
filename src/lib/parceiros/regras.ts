@@ -88,12 +88,7 @@ export function dividirValor(valor: number): { taxa: number; parceiro: number } 
 }
 
 // ── Textos públicos (item 8) ───────────────────────────────────────────────────────────────────────────────────
-export const REGRAS_CLARAS = [
-  "Você combina e agenda tudo pelas mensagens da Viva.",
-  "Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias. Você só paga quando há serviço contratado.",
-  "Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para você e 10% para a Viva. A Viva não guarda o seu dinheiro.",
-] as const;
-export const PAGAMENTO_EM_BREVE = "Pagamento pela plataforma em breve.";
+// E1151: REGRAS_CLARAS e o aviso "em breve" vivem na fonte única, src/config/taxa-servico-parceiros.ts.
 /** E774 (regra E445): contato NUNCA é trocado, em nenhuma fase — nem depois do aceite. Fonte única do texto em Parceiros. */
 export const CONTATO_PELA_VIVA = "Seu contato não é trocado: tudo se combina pelas mensagens da Viva.";
 
