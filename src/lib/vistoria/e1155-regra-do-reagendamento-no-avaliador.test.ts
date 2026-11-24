@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { REGRA_DO_REAGENDAMENTO, REGRAS_AGENDA, podeReagendar } from "./regras.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E1155 (ORDEM-DUET-652, achado da passagem ao vivo). Com a visita marcada, o DONO lia junto do "Reagendar" a regra
@@ -11,7 +12,6 @@ import { REGRA_DO_REAGENDAMENTO, REGRAS_AGENDA, podeReagendar } from "./regras.t
   Roda: node --test src/lib/vistoria/e1155-regra-do-reagendamento-no-avaliador.test.ts
 */
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 const escritaAMao = (fonte: string) => (fonte.match(/Reagendar sem custo/g) ?? []).length;
 
 test("E1155: a regra é uma frase só, com o prazo lido da regra da agenda", () => {
