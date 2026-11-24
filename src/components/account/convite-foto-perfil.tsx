@@ -55,7 +55,7 @@ export function ConviteFotoPerfil({ className }: { className?: string }) {
           <p className="mt-1 text-sm text-muted">{CONVITE_FOTO_TEXTO}.</p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
-          <EnviarFoto temFoto={false} rotulo="Adicionar foto" testId="convite-foto-adicionar" />
+          <a href="/dashboard/conta/perfil" data-testid="convite-foto-adicionar">Adicionar foto</a>
           <button type="button" onClick={agoraNao} className={buttonClasses({ variant: "ghost" })} data-testid="convite-foto-agora-nao">
             Agora não
           </button>
