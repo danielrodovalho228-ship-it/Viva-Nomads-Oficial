@@ -10,7 +10,8 @@
   Regras puras: sem banco, sem tela.
 */
 import { dataHoraBRT } from "../datas-brasilia.ts";
-import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "./escolha.ts";
+import { PRAZO_DONO_ACEITAR_HORAS } from "./escolha.ts";
+import { horasDeResposta } from "./prazos.ts";
 
 export interface EstadoParaORelogio {
   status: string;
@@ -56,8 +57,7 @@ export function relogioDoPedido(p: EstadoParaORelogio, agora: Date): Relogio | n
     return relogio("dono", p.propostaEm, PRAZO_DONO_ACEITAR_HORAS, agora);
   }
   if (p.resposta !== null || !p.designadoEm) return null;
-  const horas = Number.isFinite(p.prazoRespostaHoras) && Number(p.prazoRespostaHoras) > 0 ? Number(p.prazoRespostaHoras) : PRAZO_RESPOSTA_PADRAO_HORAS;
-  return relogio("avaliador", p.designadoEm, horas, agora);
+  return relogio("avaliador", p.designadoEm, horasDeResposta(p.prazoRespostaHoras), agora);
 }
 
 /**
@@ -97,6 +97,26 @@ export function textoDoPrazoDeResposta(r: Relogio, agora: Date): string {
   const horas = Math.floor(resta / HORA);
   const min = Math.floor((resta % HORA) / 60_000);
   return `Responda em ${horas} h ${String(min).padStart(2, "0")} min`;
+}
+
+const emHoras = (n: number) => `${n} ${n === 1 ? "hora" : "horas"}`;
+
+/**
+ * E1157: os textos do prazo de RESPOSTA nas telas leem o prazo que o avaliador declarou (antes diziam sempre o padrão,
+ * 24 horas, também a quem declarou 48 ou 72). O rótulo serve às duas telas: a do avaliador e a da equipe.
+ */
+export function rotuloSemResposta(prazoRespostaHoras: number | null | undefined): string {
+  return `Sem resposta em ${emHoras(horasDeResposta(prazoRespostaHoras))}`;
+}
+
+/** E1157: o histórico vazio do avaliador diz o que vai aparecer ali, com o prazo dele. */
+export function textoDoHistoricoVazio(prazoRespostaHoras: number | null | undefined): string {
+  return `Aqui ficam as avaliações que você concluiu, as que recusou, as que passaram de ${emHoras(horasDeResposta(prazoRespostaHoras))} sem resposta e as ausências registradas. Ainda não há nenhuma.`;
+}
+
+/** E1157 (achado 30): a lista do avaliador não foi lida — o prazo dele continua a correr. */
+export function textoDasAvaliacoesNaoLidas(prazoRespostaHoras: number | null | undefined): string {
+  return `Não foi possível carregar as suas avaliações agora. Recarregue a página em instantes; os pedidos com prazo de ${horasDeResposta(prazoRespostaHoras)} h continuam valendo.`;
 }
 
 /**
