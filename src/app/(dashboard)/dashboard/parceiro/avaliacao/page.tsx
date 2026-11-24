@@ -16,7 +16,7 @@ import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ESTADO_CREDENCIAMENTO, PASSOS_CREDENCIAMENTO, complementoPassoIdentidade, passosCumpridos, quandoVisitaComFuso, visitaNaSemana } from "@/lib/vistoria/telas-exibicao";
-import { ROTULO_PROPOSTA_EXPIRADA, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
+import { ROTULO_PROPOSTA_DESCARTADA, ROTULO_PROPOSTA_EXPIRADA, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { etapaDoPedido, identificacaoDoImovel, resumoDoValorNaLista } from "@/lib/vistoria/pedido-avaliador";
 import { agendarVisita, avaliarConduta, marcarRecebido, pedirCredenciamento, proporPrecoEPrazo, registrarAusencia, responderDesignacao, salvarMeuSobre, salvarMeusTermos } from "@/lib/vistoria/actions";
 import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores";
@@ -137,8 +137,8 @@ export default async function AvaliacaoParceiroPage() {
     .select("id, property_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, status, ocupado, agendado_para, concordancia_em, designado_em, recebido_marcado_em, teste")
     .eq("avaliador_id", cred.id)
     .order("criado_em", { ascending: false });
-  const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, proposta_expirada_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
-  type Des = { pedido_id: string; resposta: string | null; designado_em: string; respondido_em: string | null; proposta_expirada_em: string | null; vistoria_pedidos: { cidade: string; porte: Porte } | null };
+  const { data: designacoes, error: erroDesignacoes } = await admin.from("vistoria_designacoes").select("pedido_id, resposta, designado_em, respondido_em, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(cidade, porte)").eq("avaliador_id", cred.id);
+  type Des = { pedido_id: string; resposta: string | null; designado_em: string; respondido_em: string | null; proposta_expirada_em: string | null; proposta_descartada_em: string | null; vistoria_pedidos: { cidade: string; porte: Porte } | null };
   const des = (designacoes ?? []) as unknown as Des[];
   const resposta = new Map(des.map((d) => [d.pedido_id, d.resposta]));
   const agora = new Date();
@@ -273,9 +273,9 @@ export default async function AvaliacaoParceiroPage() {
                 ))}
                 {foraDaMinhaFila.map((d) => (
                   <li key={d.pedido_id} className="rounded-lg border border-line p-3 text-sm text-muted" data-testid="avaliacao-fora" data-resposta={d.resposta}>
-                    {/* E1142: a proposta que venceu sem o aceite do dono não é "sem resposta" do avaliador. */}
-                    {d.proposta_expirada_em ? ROTULO_PROPOSTA_EXPIRADA : (ROTULO_RESPOSTA[d.resposta ?? ""] ?? d.resposta)} · {d.vistoria_pedidos?.cidade} · {d.vistoria_pedidos ? ROTULO_PORTE[d.vistoria_pedidos.porte] : ""}
-                    {(d.proposta_expirada_em ?? d.respondido_em) ? ` · ${dataBRT((d.proposta_expirada_em ?? d.respondido_em)!)}` : ""}
+                    {/* E1142: a proposta que venceu sem o aceite do dono não é "sem resposta" do avaliador. E1146: a que o dono descartou não é "Você recusou". */}
+                    {d.proposta_descartada_em ? ROTULO_PROPOSTA_DESCARTADA : d.proposta_expirada_em ? ROTULO_PROPOSTA_EXPIRADA : (ROTULO_RESPOSTA[d.resposta ?? ""] ?? d.resposta)} · {d.vistoria_pedidos?.cidade} · {d.vistoria_pedidos ? ROTULO_PORTE[d.vistoria_pedidos.porte] : ""}
+                    {(d.proposta_descartada_em ?? d.proposta_expirada_em ?? d.respondido_em) ? ` · ${dataBRT((d.proposta_descartada_em ?? d.proposta_expirada_em ?? d.respondido_em)!)}` : ""}
                   </li>
                 ))}
               </ul>

@@ -554,7 +554,8 @@ export async function recusarProposta(form: FormData): Promise<Res> {
   const c = await comoDonoDoPedido(String(form.get("pedidoId") ?? ""));
   if (!c) return SEM_ACESSO;
   if (!trocaConfirmada(form)) return { ok: false, erro: ERRO_TROCA_SEM_CONFIRMAR };
-  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", new Date());
+  // E1146: o descarte é do DONO e fica registado como tal na designação (antes ela continuava a dizer "aceita").
+  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "descartada", new Date());
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: "Proposta recusada. Escolha outro avaliador." };
