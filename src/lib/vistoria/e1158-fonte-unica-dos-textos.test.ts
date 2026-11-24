@@ -241,8 +241,7 @@ test("E1158 (21): o modelo da matriz é o próprio corpo, sem os fatos — cada 
   }
   // E1160 (1) (asserção alterada, ORDEM-DUET-674): 17 → 19. Os dois eventos novos (o avaliador recusou; não respondeu
   // no prazo) também têm o corpo escrito uma vez.
-  // E1173 (asserção alterada, ORDEM-DUET-753): 19 → 20. O aviso da recusa da data também tem o corpo escrito uma vez.
-  assert.equal(EVENTOS_VISTORIA_COM_FATOS.size, 20);
+  assert.equal(EVENTOS_VISTORIA_COM_FATOS.size, 19);
   // Na matriz, nenhuma linha da avaliação com fatos tem corpo escrito à mão; os dois avisos aos admins ficam só nela.
   const comCorpoProprio = MATRIZ.split("\n").filter((l) => /^  vistoria_\w+: \{/.test(l) && !/body: semFatos\(/.test(l)).map((l) => l.trim().split(":")[0]);
   assert.deepEqual(comCorpoProprio, ["vistoria_sem_avaliador", "vistoria_fila_admin"]);
