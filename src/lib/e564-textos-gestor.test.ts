@@ -17,9 +17,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as planos from "../config/planos.ts";
 import { CARTEIRAS_MINIMO_IMOVEIS, PLANOS, TEXTO_CARTEIRAS } from "../config/planos.ts";
+import { fonteSemComentarios as semComentarios } from "./fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
-const semComentarios = (src: string) => src.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "");
 
 test("078: a linha única das carteiras sai da constante (20+, sem taxa); o texto único do Gestor (4%) saiu", () => {
   // 078 (Daniel, 16/11/2026): antes GESTOR_PRECO.taxa === 0.04 — a constante saiu; o que sobrou do "20" é o mínimo das carteiras.
