@@ -14,7 +14,7 @@
  */
 export function fonteSemComentarios(codigo: string): string {
   return codigo
-    .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, "")
+    .replace(/\{[ \t]*\/\*(?:(?!\*\/)[\s\S])*\*\/[ \t]*\}/g, "")
     .replace(/^[ \t]*\/\*[\s\S]*?\*\//gm, "")
     .replace(/^[ \t]*\/\/.*$/gm, "");
 }
