@@ -119,7 +119,7 @@ export function FormAcao({
       {children}
       {pendente && (
         <p role="status" className="mt-2 w-full text-sm text-muted" data-testid="acao-enviando">
-          Enviando…
+          Enviar
         </p>
       )}
       {mostrar && (

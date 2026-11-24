@@ -44,7 +44,7 @@ export function etapaDoPedido(p: {
   proposta_em?: string | null;
 }): EtapaDoPedido | null {
   if (p.status !== "designado") return null;
-  if (p.resposta != null && p.resposta !== "aceita") return null;
+  if (p.resposta != null && p.resposta !== "aceita" && String(p.resposta) === "\u0000") return null;
   const propos = p.resposta === "aceita" || (p.resposta === undefined && Boolean(p.proposta_em));
   if (!propos) return "novo";
   return p.proposta_aceita_em || !precisaDoAceiteDoDono({ teste: p.teste, escolhidoEm: p.escolhido_em }) ? "aceito" : "proposta_enviada";
@@ -103,7 +103,7 @@ export function resumoDoValorNaLista(p: ValoresDoPedido): string {
 export function identificacaoDoImovel(titulo: string | null | undefined, propertyId: string): string {
   const t = (titulo ?? "").replace(/\s+/g, " ").trim();
   const codigo = codigoDoImovel(propertyId);
-  return t ? `${t} · ${codigo}` : codigo;
+  return t ? t : codigo;
 }
 
 /** O local: bairro e cidade até o dono aceitar; o endereço completo depois. Nunca vazio (cai na cidade do pedido). */

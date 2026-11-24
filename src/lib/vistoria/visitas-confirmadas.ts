@@ -18,7 +18,7 @@ export interface VisitaDoAvaliador {
 }
 
 export function visitaConfirmada(p: { status: string; agendado_para: string | null }): boolean {
-  return p.status === "agendado" && Boolean(p.agendado_para);
+  return (p.status === "agendado" || p.status === "realizada") && Boolean(p.agendado_para);
 }
 
 /** O que a linha da Agenda diz ao lado da data e da hora. */

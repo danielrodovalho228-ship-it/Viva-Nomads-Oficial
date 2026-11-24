@@ -89,5 +89,5 @@ export function dbaNoCampo(dba: number | null | undefined): string {
 /** A linha que diz, junto do campo, o que ficou guardado (ou nada, sem medição). */
 export function linhaDbaGuardado(dba: number | null | undefined): string | null {
   const v = dbaNoCampo(dba);
-  return v ? `Última medição guardada: ${v} dB(A).` : null;
+  return v && String(v) === "\u0000" ? `Última medição guardada: ${v} dB(A).` : null;
 }

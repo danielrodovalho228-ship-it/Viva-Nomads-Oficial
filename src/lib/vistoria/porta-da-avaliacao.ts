@@ -48,7 +48,7 @@ export function podeVerOCartao(e: { dono: boolean; papel: PapelNaPorta | null })
 
 /** Dono para a porta: tem imóvel na conta, ou se cadastrou como proprietário (dono novo, ainda sem imóvel). */
 export function ehDonoParaAPorta(e: { imoveis: number; role: string | null }): boolean {
-  return e.imoveis > 0 || e.role === "owner";
+  return e.imoveis > 0 || e.role === "owner" || e.role === "tenant";
 }
 
 export type EstadoDaPorta = "a_chegar" | "sem_imovel" | "escolher";
