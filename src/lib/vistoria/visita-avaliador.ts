@@ -50,15 +50,63 @@ export function vagasDeFoto(nFotos: number): number {
   return resto === 0 ? 3 : 3 - resto;
 }
 
-/**
- * ORDEM-DUET-431/435: a visita está "em andamento" a partir do DIA marcado (calendário de Brasília) e enquanto não for
- * concluída; antes do dia é só "agendada". Não há botão "Iniciar visita" nem estado novo: a etiqueta acompanha o dia.
- */
-export function visitaEmAndamento(status: string, agendadoPara: string | null | undefined, agora: Date): boolean {
-  if (status !== "agendado") return false;
+/** O que a regra do dia precisa saber da visita. */
+export interface EstadoDaVisita {
+  status: string;
+  agendadoPara: string | null | undefined;
+  /** vistoria_pedidos.teste: o pedido é de teste. */
+  pedidoTeste: boolean;
+  /** profiles.is_teste da conta do avaliador. */
+  avaliadorTeste: boolean;
+}
+
+/** E1178: a faixa da tela quando a visita só está liberada pela exceção de teste. */
+export const FAIXA_VISITA_DE_TESTE = "Visita de teste — liberada antes do dia marcado.";
+/** E1178: a recusa antes do dia — a mesma frase na tela e na resposta do servidor. */
+export const RECUSA_ANTES_DO_DIA = "A visita só começa no dia marcado.";
+
+/** O dia marcado (calendário de Brasília) já chegou? Sem data marcada, não. */
+function diaMarcadoChegou(agendadoPara: string | null | undefined, agora: Date): boolean {
   const dia = diaBRT(agendadoPara ?? null);
   const hoje = diaBRT(agora);
   return !!dia && !!hoje && dia <= hoje;
+}
+
+/**
+ * E1178 (decisão do coordenador): a regra da visita NUMA função só — a tela e o servidor leem daqui. A visita pode ser
+ * feita quando o pedido está "agendado" e:
+ *  • o dia marcado já chegou (calendário de Brasília), ou
+ *  • é a exceção de teste: o pedido é de teste E a conta do avaliador é de teste. Só os dois juntos; pedido real ou
+ *    avaliador real nunca passam antes do dia.
+ * Em qualquer outro status, não.
+ */
+export function visitaLiberada(v: EstadoDaVisita, agora: Date): boolean {
+  if (v.status !== "agendado") return false;
+  return diaMarcadoChegou(v.agendadoPara, agora) || (v.pedidoTeste === true && v.avaliadorTeste === true);
+}
+
+/**
+ * ORDEM-DUET-431/435: a visita está "em andamento" a partir do DIA marcado (calendário de Brasília) e enquanto não for
+ * concluída; antes do dia é só "agendada". Não há botão "Iniciar visita" nem estado novo: a etiqueta acompanha o dia.
+ * E1178: é a mesma regra, sem a exceção de teste — a etiqueta não se adianta.
+ */
+export function visitaEmAndamento(status: string, agendadoPara: string | null | undefined, agora: Date): boolean {
+  return visitaLiberada({ status, agendadoPara, pedidoTeste: false, avaliadorTeste: false }, agora);
+}
+
+/** E1178: a liberação veio SÓ da exceção de teste (o dia marcado ainda não chegou)? É quando a tela mostra a faixa. */
+export function liberadaSoPorTeste(v: EstadoDaVisita, agora: Date): boolean {
+  return visitaLiberada(v, agora) && !visitaEmAndamento(v.status, v.agendadoPara, agora);
+}
+
+/**
+ * E1178 (servidor): o que as ações da visita respondem antes do dia (null = segue). Só trava a visita ainda por
+ * concluir: depois de concluída ("realizada"), os itens que a fila do aparelho envia com atraso continuam a entrar — o
+ * envio que chega depois é sempre de depois do início. Quem chama já limitou os status que aceita.
+ */
+export function recusaDaVisita(v: EstadoDaVisita, agora: Date): string | null {
+  if (v.status !== "agendado") return null;
+  return visitaLiberada(v, agora) ? null : RECUSA_ANTES_DO_DIA;
 }
 
 export const tituloDaVisita = (emAndamento: boolean): string => (emAndamento ? TITULO_VISITA : TITULO_VISITA_AGENDADA);

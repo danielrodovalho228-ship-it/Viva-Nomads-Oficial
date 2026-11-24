@@ -19,7 +19,11 @@ import {
   VAGA_FOTO_VISITA,
 } from "@/lib/conta/visual-mockup";
 
-export function VisitaEmAndamento({ capaUrl, roteiro, fotos }: { capaUrl?: string; roteiro: LinhaRoteiro[]; fotos: { url: string; comodo: string }[] }) {
+/**
+ * E1178: `soLeitura` é a visita antes do dia marcado — o roteiro e as fotos já enviadas continuam à vista (ORDEM-431),
+ * mas as vagas "Adicionar foto" e o "Continuar" saem: levam ao envio, que o servidor recusa antes do dia.
+ */
+export function VisitaEmAndamento({ capaUrl, roteiro, fotos, soLeitura = false }: { capaUrl?: string; roteiro: LinhaRoteiro[]; fotos: { url: string; comodo: string }[]; soLeitura?: boolean }) {
   const vagas = vagasDeFoto(fotos.length);
   return (
     <section data-testid="visita-em-andamento" className="mb-6 grid gap-6 lg:grid-cols-2 lg:items-start">
@@ -61,18 +65,21 @@ export function VisitaEmAndamento({ capaUrl, roteiro, fotos }: { capaUrl?: strin
               <img src={f.url} alt={`Foto: ${f.comodo}`} className="h-full w-full object-cover" />
             </li>
           ))}
-          {Array.from({ length: vagas }, (_, i) => (
-            <li key={`vaga-${i}`}>
-              <a href="#enviar-foto" className={VAGA_FOTO_VISITA} data-testid="visita-adicionar-foto">
-                <Camera className="h-8 w-8" aria-hidden />
-                {ROTULO_ADICIONAR_FOTO}
-              </a>
-            </li>
-          ))}
+          {!soLeitura &&
+            Array.from({ length: vagas }, (_, i) => (
+              <li key={`vaga-${i}`}>
+                <a href="#enviar-foto" className={VAGA_FOTO_VISITA} data-testid="visita-adicionar-foto">
+                  <Camera className="h-8 w-8" aria-hidden />
+                  {ROTULO_ADICIONAR_FOTO}
+                </a>
+              </li>
+            ))}
         </ul>
-        <a href="#itens" className={`mt-6 ${BOTAO_CONTINUAR_VISITA}`} data-testid="visita-continuar">
-          {ROTULO_CONTINUAR}
-        </a>
+        {!soLeitura && (
+          <a href="#itens" className={`mt-6 ${BOTAO_CONTINUAR_VISITA}`} data-testid="visita-continuar">
+            {ROTULO_CONTINUAR}
+          </a>
+        )}
       </div>
     </section>
   );
