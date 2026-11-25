@@ -83,7 +83,8 @@ test.describe("T612 — E219: 'Hoje' sem estouro no celular", () => {
     await criarLead(ids.dono, ids.entra, ids.imA, true);
     await criarLead(ids.dono, ids.sai, ids.imB, true);
     ids.cEntra = await contrato(ids.imA, ids.entra, dia(0), dia(59));
-    ids.cSai = await contrato(ids.imB, ids.sai, dia(-59), dia(0));
+    // E1089 (coordenador): "sai hoje" = a SAÍDA é hoje; o bloco grava a última noite, que foi ontem.
+    ids.cSai = await contrato(ids.imB, ids.sai, dia(-60), dia(-1));
   });
   test.afterAll(async () => {
     const cids = [ids.cEntra, ids.cSai].filter(Boolean);

@@ -1,8 +1,12 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 /*
   Cenários de teste do atendimento sobre PARCEIROS (ordem 7b7eaca9).
   Separados dos 14 cenários da Viva (o painel do admin mostra "12 de 14"):
   conferem que cada pergunta acha o artigo certo e que o prompt traz os fatos.
   Roda: node --test tests/atendimento/parceiros-cenarios.test.ts
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): o artigo "como virar parceiro" e o prompt da Viva não citam mais o Plano
+  Gestor — trazem a linha das carteiras ("Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva."); a escada
+  vem por extenso ("1–2 = 12%, … 16–19 = 6%", antes "12/10/8/6%"); o menor percentual citado é "até 6%" (antes 4%, o do Gestor).
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -11,10 +15,17 @@ import { SYSTEM_VIVA } from "../../src/lib/atendimento/viva-prompt.ts";
 
 const PROIBIDAS = /apartamentos?|comiss[ãa]o|corretagem|intermedia[çc][ãa]o|aluguel|aluguéis/i;
 
-const CASOS: { pergunta: string; artigo: string; resposta: RegExp[] }[] = [
-  { pergunta: "Como virar parceiro da Viva?", artigo: "como-virar-parceiro", resposta: [/Fotografia/, /Uma conta só/, /CPF/, /CNPJ/, /\/empresas/, /Plano Gestor/] },
+const CASOS: { pergunta: string; artigo: string; resposta: RegExp[]; naoDiz?: RegExp }[] = [
+  // 078 (Daniel, 16/11/2026): antes a resposta TINHA /Plano Gestor/ ("gestores de imóveis pelo Plano Gestor"); agora traz a linha das
+  // carteiras e a escada por extenso, e NÃO cita o plano nem taxa abaixo da escada (naoDiz).
+  {
+    pergunta: "Como virar parceiro da Viva?",
+    artigo: "como-virar-parceiro",
+    resposta: [/Fotografia/, /Uma conta só/, /CPF/, /CNPJ/, /\/empresas/, /Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva\./, /a taxa de serviço cai com o volume \(1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%\)/],
+    naoDiz: /Plano Gestor|(?<![\d,.])4\s?%/,
+  },
   { pergunta: "Como ativar o modo parceiro na minha conta?", artigo: "como-virar-parceiro", resposta: [/Quero ser parceiro/, /link para ativar a página/] },
-  { pergunta: "Qual é a taxa de parceria?", artigo: "taxa-parceria", resposta: [/10% sobre o valor do serviço/, /todas as categorias/, /90% direto ao parceiro/, /sem mensalidade/i] },
+  { pergunta: "Qual é a taxa de parceria?", artigo: "taxa-parceria", resposta: [/10% sobre o valor do serviço/, /todas as categorias/, /90% vai direto para o parceiro/, /sem mensalidade/i] },
   { pergunta: "A Viva fica com o dinheiro do serviço do fotógrafo?", artigo: "taxa-parceria", resposta: [/não guarda o dinheiro/] },
   { pergunta: "Quando o parceiro vê o contato do proprietário?", artigo: "taxa-parceria", resposta: [/contato direto do proprietário não é trocado/, /aceita o pedido/] },
   { pergunta: "Quero contratar um fotógrafo para o meu imóvel", artigo: "contratar-fotografo", resposta: [/Quer um fotógrafo profissional\?/, /Uberlândia \(MG\)/, /CEP/] },
@@ -26,16 +37,29 @@ for (const c of CASOS) {
     assert.equal(achados[0]?.id, c.artigo, `primeiro resultado: ${achados[0]?.id}`);
     const texto = achados[0]!.resposta;
     for (const re of c.resposta) assert.match(texto, re);
+    if (c.naoDiz) assert.doesNotMatch(texto, c.naoDiz);
     assert.doesNotMatch(texto, PROIBIDAS);
   });
 }
 
 test("parceiros: o prompt da Viva traz tipos, modos, taxa de serviço de 10%, aceite e começo por Uberlândia", () => {
-  for (const re of [/Categorias abertas/, /Uma conta só/, /10% sobre o valor do serviço/, /contato direto do proprietário não é trocado/, /Uberlândia \(MG\)/, /Plano Gestor/, /12\/10\/8\/6%/]) {
+  // 078 (Daniel, 16/11/2026): antes os dois últimos eram /Plano Gestor/ e /12\/10\/8\/6%/ — o prompt traz a linha das carteiras e a
+  // escada por extenso, lida da regra.
+  for (const re of [
+    /Categorias abertas/,
+    /Uma conta só/,
+    /10% sobre o valor do serviço/,
+    /contato direto do proprietário não é trocado/,
+    /Uberlândia \(MG\)/,
+    /Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva\./,
+    /a taxa de serviço cai com o volume \(1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%\)/,
+  ]) {
     assert.match(SYSTEM_VIVA, re);
   }
-  // E564: o menor percentual citado é o do Plano Gestor (4%); "até 6%" saiu.
-  assert.doesNotMatch(SYSTEM_VIVA, /até 6%/);
+  // 078 (Daniel, 16/11/2026): antes "o menor percentual citado é o do Plano Gestor (4%); 'até 6%' saiu" (doesNotMatch /até 6%/).
+  // Inverteu: o menor percentual citado é "até 6%", e o prompt não cita o Plano Gestor nem 4%.
+  assert.match(SYSTEM_VIVA, /menor a taxa \(até 6%\)/);
+  assert.doesNotMatch(SYSTEM_VIVA, /Plano Gestor|até 4%|(?<![\d,.])4\s?%/);
   assert.doesNotMatch(SYSTEM_VIVA, /R\$ ?(40|60|80)(?![\d.,])/, "a taxa fixa dos fotógrafos saiu");
   assert.doesNotMatch(SYSTEM_VIVA, /todo o Brasil/i);
 });

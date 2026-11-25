@@ -188,7 +188,8 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3934,
-   "nota": "E1000: a t198 espera a Conta assentar antes de medir; falha em umas corridas e não noutras"
+   "nota": "E1000: a t198 espera a Conta assentar antes de medir; falha em umas corridas e não noutras",
+   "corrigidoPor": "a536f2f4"
   },
   {
    "spec": "t204-cadastro-ia-real.spec.ts",
@@ -243,7 +244,8 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
-   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras"
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras",
+   "corrigidoPor": "cace1911"
   },
   {
    "spec": "t305-laudo-avaliacao-62b2.spec.ts",
@@ -320,21 +322,24 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
-   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras"
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras",
+   "corrigidoPor": "cace1911"
   },
   {
    "spec": "t353-varredura-bloco18.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
-   "nota": "E798: a Conta abre no destino registrado (passo 2)"
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
   },
   {
    "spec": "t354-varredura-bloco19.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
-   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras"
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras",
+   "corrigidoPor": "cace1911"
   },
   {
    "spec": "t370-conta-a3-papeis.spec.ts",
@@ -350,7 +355,8 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3841,
-   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)"
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
   },
   {
    "spec": "t386-cadastro-01-tipo.spec.ts",
@@ -366,7 +372,8 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3841,
-   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)"
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
   },
   {
    "spec": "t397-foto-na-hora.spec.ts",
@@ -524,7 +531,8 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
-   "nota": "E798: a Conta abre no destino registrado (passo 2)"
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
   },
   {
    "spec": "t621-varredura-bloco55.spec.ts",
@@ -565,7 +573,8 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
-   "nota": "E798: a Conta abre no destino registrado (passo 2)"
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
   },
   {
    "spec": "t678-e202-emails-candidatura.spec.ts",
@@ -581,7 +590,8 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3841,
-   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)"
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
   },
   {
    "spec": "t683-e259-perto-fonte-unica.spec.ts",
@@ -606,7 +616,8 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
-   "nota": "E798: a Conta abre no destino registrado (passo 2)"
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
   },
   {
    "spec": "t696-varredura-bloco74.spec.ts",
@@ -658,7 +669,7 @@
    "disposicao": "instavel",
    "item": "E1018",
    "dono": "Fable",
-   "nota": "falhou em 2 e instável em 1 das 7 corridas; passa 6 de 6 sozinho"
+   "nota": "falhou em 2 e instável em 1 das 7 corridas; passa 6 de 6 sozinho. Causa achada em 18/11: o hook das abas-âncora tem duas instâncias (barra do celular e topo do computador); a do topo monta mais tarde e rolava a página de volta ao #âncora da URL depois de a pessoa já ter rolado. Corrigido no ramo claude-b/e1018-ancora-nao-volta; a entrada da quarentena sai no mesmo PR"
   },
   {
    "spec": "t778-e347-x-visita-video.spec.ts",
@@ -719,7 +730,8 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3841,
-   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)"
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
   },
   {
    "spec": "t840-e525-pins-sem-sobreposicao.spec.ts",
@@ -736,7 +748,8 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3845,
-   "nota": "E668: o papel de parceiro só vale com o carimbo da escolha (passo 6)"
+   "nota": "E668: o papel de parceiro só vale com o carimbo da escolha (passo 6)",
+   "corrigidoPor": "432df5f8"
   },
   {
    "spec": "t909-reembolso-linha-tablet.spec.ts",
@@ -752,42 +765,48 @@
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
-   "nota": "E798: a Conta abre no destino registrado (passo 2)"
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
   },
   {
    "spec": "t1411-varredura-bloco489.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3841,
-   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)"
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
   },
   {
    "spec": "t1423-varredura-bloco497.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
-   "nota": "E798: a Conta abre no destino registrado (passo 2)"
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
   },
   {
    "spec": "t1439-varredura-bloco506.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3841,
-   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)"
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
   },
   {
    "spec": "t1448-varredura-bloco514.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3840,
-   "nota": "E798: a Conta abre no destino registrado (passo 2)"
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
   },
   {
    "spec": "t1461-varredura-bloco523.spec.ts",
    "disposicao": "teste-velho",
    "dono": "Fable",
    "pr": 3841,
-   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)"
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
   },
   {
    "spec": "t1629-familia2-rotas-vivas.spec.ts",
@@ -810,7 +829,8 @@
    "item": "E61",
    "dono": "Fable",
    "pr": 3910,
-   "nota": "caso 5 a 1280 px, intermitente: sozinho contra a main b4b0bc71, 2 falhas em 3 — o link antigo /dashboard/conta#perfil-publico termina ora com a âncora, ora sem. Correção escrita no #3910, que não entra enquanto esta disposição não fechar (ORDEM-DUET-096); correção ou plano até 26/11"
+   "nota": "caso 5 a 1280 px, intermitente: sozinho contra a main b4b0bc71, 2 falhas em 3 — o link antigo /dashboard/conta#perfil-publico termina ora com a âncora, ora sem. Correção escrita no #3910, que não entra enquanto esta disposição não fechar (ORDEM-DUET-096); correção ou plano até 26/11",
+   "corrigidoPor": "22e049ed"
   },
   {
    "spec": "t296-niveis-exibicao-59-1.spec.ts",
