@@ -6,14 +6,21 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   rascunho deixava o autosave "aguardando a base" e só input/change contavam como edição: o clique no cartão (botão
   role="radio") nos primeiros 2 s virava base e não era gravado. Rascunho com "Casa" → abre o passo Tipo → escolhe
   "Apartamento" na hora → o draft_data no banco passa a "apartamento". Só no laboratório (banco local + chave de serviço).
-  ORDEM-DUET-828 (trava oca): sem relógio fixo, o toque chegava depois da janela dos 2 s e a spec passava também sem a
-  cura (10/10). Agora o relógio da página fica parado desde antes de abrir o rascunho: o toque cai DENTRO da janela por
-  construção, e só depois o relógio anda os 2,5 s que fecham a janela — é aí que o autosave decide "base" ou "edição".
+  ORDEM-DUET-828 (trava oca): a spec passava também sem a cura (10/10). Duas coisas a deixavam oca: o rascunho fora da
+  ordem atual (abrir no passo Tipo contava como troca de passo, que grava sozinha) e o toque sem garantia de cair na
+  janela dos 2 s. Agora o rascunho está na ordem atual e já no Tipo, e o relógio da página fica parado: o toque cai
+  DENTRO da janela por construção, e só depois o relógio anda os 2,5 s em que o autosave decide "base" ou "edição".
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t2201.${sufixo}@lab.vivanomads.test`, nome: "Rita Cartão", role: "owner" as const };
 const ids: { dono?: string; imovel?: string } = {};
+/**
+ * ORDEM-DUET-828: o rascunho na ordem atual dos passos (versão 5), já no passo Tipo (0). Sem isto, o rascunho reabria
+ * na "primeira etapa incompleta" e o `?etapa=tipo` contava como troca de passo — e a troca grava em silêncio (E614)
+ * com o conteúdo dentro, com ou sem a cura do E985. A trava passava sem o produto (10/10).
+ */
+const NA_ORDEM_ATUAL = { ordemEtapas: 5, step: 0, etapaMax: 0 };
 
 test.describe("T2201 — E985: a escolha por cartão logo depois de abrir o rascunho é gravada", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -23,7 +30,7 @@ test.describe("T2201 — E985: a escolha por cartão logo depois de abrir o rasc
     ids.imovel = await criarImovelPronto(ids.dono, `Rascunho do cartão ${sufixo}`);
     const { error } = await adm()
       .from("properties")
-      .update({ status: "draft", draft_data: { title: `Rascunho do cartão ${sufixo}`, propertyType: "casa", city: "Uberlândia", uf: "MG", step: 0 } })
+      .update({ status: "draft", draft_data: { title: `Rascunho do cartão ${sufixo}`, propertyType: "casa", city: "Uberlândia", uf: "MG", ...NA_ORDEM_ATUAL } })
       .eq("id", ids.imovel);
     if (error) throw error;
   });
@@ -33,7 +40,7 @@ test.describe("T2201 — E985: a escolha por cartão logo depois de abrir o rasc
 
   for (const largura of [390, 1280]) {
     test(`${largura} px — escolher "Apartamento" na hora grava o tipo no rascunho`, async ({ browser }) => {
-      await adm().from("properties").update({ draft_data: { title: `Rascunho do cartão ${sufixo}`, propertyType: "casa", city: "Uberlândia", uf: "MG", step: 0 } }).eq("id", ids.imovel!);
+      await adm().from("properties").update({ draft_data: { title: `Rascunho do cartão ${sufixo}`, propertyType: "casa", city: "Uberlândia", uf: "MG", ...NA_ORDEM_ATUAL } }).eq("id", ids.imovel!);
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: 900 });
       // O relógio da página parado: a janela da base (2 s depois de o rascunho assentar) não fecha sozinha.
