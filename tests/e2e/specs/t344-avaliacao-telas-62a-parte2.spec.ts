@@ -272,6 +272,8 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
     for (const w of larguras) {
       const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: w, height: w === 390 ? 844 : 900 } });
       const a = await ctx.newPage();
+      // ENSAIO E1181: CPU 6× mais lenta (a carga de uma corrida completa) — o toque cai mais perto da hidratação.
+      const cdp = await ctx.newCDPSession(a); await cdp.send("Emulation.setCPUThrottlingRate", { rate: 6 });
       await a.goto("/admin/avaliadores", { waitUntil: "domcontentloaded" });
       await comChave(a);
       const topo = a.getByTestId("avaliacoes-decidir");
