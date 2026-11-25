@@ -315,14 +315,13 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       garantia: garantiaDoContrato(guaranteeId),
     };
     try {
-      // E1141 (guarda 3, ORDEM-DUET-933): a estadia escolhida confere TUDO no servidor (o período que cruza outro
-      // contrato do imóvel, 0176, incluído) ANTES do documento e da taxa — nunca se gera nem se cobra o que vai falhar.
-      if (ctx.propostaDaUrl) {
-        const conferido = await registrarContrato(entradaDoContrato, { soConferir: true }).catch(() => ({ ok: false, error: "Não foi possível registrar o contrato." }));
-        if (!conferido.ok) {
-          setErroContrato(conferido.error ?? "Não foi possível registrar o contrato.");
-          return;
-        }
+      // E1141 (guarda 3, ORDEM-DUET-933/939): TODO o fecho (com ou sem estadia escolhida) confere TUDO no servidor — o
+      // período que cruza outro contrato do imóvel (0176) incluído — ANTES do documento e da taxa: nunca se gera nem se
+      // cobra o que vai falhar. O sucesso é o mesmo de antes; só o conflito passa a ser dito antes, não depois.
+      const conferido = await registrarContrato(entradaDoContrato, { soConferir: true }).catch(() => ({ ok: false, error: "Não foi possível registrar o contrato." }));
+      if (!conferido.ok) {
+        setErroContrato(conferido.error ?? "Não foi possível registrar o contrato.");
+        return;
       }
       const res = await fetch("/api/contrato", {
         method: "POST",
