@@ -70,3 +70,12 @@ test("a foto da visita oferece câmara OU galeria: sem capture nesse input (só 
   assert.match(painel, /<SeletorArquivo name="foto"[^>]*rotulo="Tirar ou escolher foto"/);
   assert.doesNotMatch(painel, /capture=/, "o input da foto da visita não força a câmara");
 });
+
+test("a foto do item do checklist também oferece câmara OU galeria (extensão julgada na ORDEM-DUET-906)", () => {
+  const checklist = ler("src/components/vistoria/checklist-avaliador.tsx");
+  const i = checklist.indexOf("aria-label={`Foto do item: ${i.rotulo}`}");
+  assert.ok(i > 0, "o input da foto do item existe");
+  const input = checklist.slice(checklist.lastIndexOf("<input", i), checklist.indexOf("/>", i));
+  assert.match(input, /type="file"/);
+  assert.doesNotMatch(input, /capture=/, "o input da foto do item não força a câmara");
+});
