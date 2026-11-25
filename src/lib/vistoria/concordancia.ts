@@ -22,14 +22,6 @@ export function concordanciaRecusada(p: EstadoDaConcordancia): boolean {
   return p.status === "designado" && p.ocupado === true && !p.agendadoPara && !!p.concordanciaPedidaEm && !p.concordanciaEm;
 }
 
-/**
- * E1175: a data proposta espera a concordância do morador (o pedido com avaliador, ocupado, com data e sem resposta).
- * Nunca é verdadeira junto com `concordanciaRecusada` (essa é sem data). A Central conta os dois estados na mesma linha.
- */
-export function aEsperaDaConcordancia(p: EstadoDaConcordancia): boolean {
-  return p.status === "designado" && p.ocupado === true && !!p.agendadoPara && !p.concordanciaEm;
-}
-
 /** O que a recusa grava no pedido. Não escreve concordancia_pedida_em (fica), nem o status, nem o reagendamento. */
 export function gravacaoDaRecusa(agoraISO: string): { agendado_para: null; concordancia_em: null; lembrete_d1_em: null; atualizado_em: string } {
   return { agendado_para: null, concordancia_em: null, lembrete_d1_em: null, atualizado_em: agoraISO };

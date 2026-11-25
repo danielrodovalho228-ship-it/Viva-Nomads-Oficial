@@ -8,15 +8,15 @@ import { FormAcao } from "@/components/vistoria/form-acao";
 import { VISTORIA_ATIVA, VISTORIA_PARECER_14 } from "@/lib/flags";
 import { chaveCidade } from "@/lib/cidades";
 import { brl } from "@/lib/fiscal/documento";
-import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
+import { dataBRT } from "@/lib/datas-brasilia";
 import { adminAdicionarAoPiloto, adminCriarAvaliacaoTeste, adminDecidirCredenciamento, adminRemoverDoPiloto, adminResolverFila, adminRevisarAuditoria, adminSalvarPreco } from "@/lib/vistoria/actions";
 import { COLUNAS_PRECO, PORTES, ROTULO_PORTE, atendeCidade, condicaoRetorno, partesDaCidade, condicoesParaLigar, linhaDaTabela, tabelaCompleta, textoCondicaoRetorno, type LinhaPreco, type StatusCredenciamento } from "@/lib/vistoria/regras";
 import { adminAbrirVerificacao, adminResolverBloqueio } from "@/lib/vistoria/laudo-actions";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistoria/strikes";
-import { credenciamentosADecidir, laudosAtrasados, pedidosAEsperaDaMoradora, pedidosSemAvaliador, type PedidoAEsperaDoMorador } from "@/lib/data/avaliadores-contagens";
+import { credenciamentosADecidir, laudosAtrasados, pedidosSemAvaliador } from "@/lib/data/avaliadores-contagens";
 import { idsContasTeste } from "@/lib/data/admin-indicadores";
-import { TEXTO_ESPERA_DO_MORADOR, TEXTO_RECUSADO_PELO_MORADOR, TITULO_ESPERA_DO_MORADOR, VAZIO_ESPERA_DO_MORADOR, separarContasDeTeste, textoDasContasDeTeste } from "@/lib/vistoria/contagens-da-central";
+import { separarContasDeTeste, textoDasContasDeTeste } from "@/lib/vistoria/contagens-da-central";
 import { AVISO_LISTA_INCOMPLETA, lerSeparandoContasDeTeste } from "@/lib/vistoria/leitura-por-paginas";
 import { RESPOSTA_DO_AVALIADOR, ROTULO_AGUARDANDO_AVALIADOR, TITULO_PEDIDOS_SEM_AVALIADOR, rotuloDoStatus, rotuloDoTipo } from "@/lib/vistoria/rotulos-do-pedido";
 import { ROTULO_FILA } from "@/lib/vistoria/rotulos-da-fila";
@@ -117,14 +117,12 @@ export default async function AdminAvaliadoresPage() {
   // página contava sozinha: "sem avaliador" só via os 50 pedidos mais recentes, e os atrasados refaziam a conta pelo
   // relógio. As contas de teste ficam fora do número, à parte. Leitura que falha sobe (achado 39): nunca vira zero.
   const contasDeTesteDaCentral = await idsContasTeste(admin);
-  const [filaSemAvaliador, filaAtrasados, filaCredenciamentos, filaEsperaDoMorador] = await Promise.all([
+  const [filaSemAvaliador, filaAtrasados, filaCredenciamentos] = await Promise.all([
     pedidosSemAvaliador(admin, contasDeTesteDaCentral),
     laudosAtrasados(admin, contasDeTesteDaCentral),
     credenciamentosADecidir(admin, contasDeTesteDaCentral),
-    // E1175: os pedidos que esperam o morador (a data à espera da concordância e o recusado), a mesma leitura da Central.
-    pedidosAEsperaDaMoradora(admin, contasDeTesteDaCentral),
   ]);
-  if (!filaSemAvaliador || !filaAtrasados || !filaCredenciamentos || !filaEsperaDoMorador) throw new Error("Falha ao ler as filas da avaliação que esperam a equipe.");
+  if (!filaSemAvaliador || !filaAtrasados || !filaCredenciamentos) throw new Error("Falha ao ler as filas da avaliação que esperam a equipe.");
   type ComNumero = { avaliadores_credenciamento: { numero_credenciado: string } | null };
   const contestacoesLista = (contestacoesAbertas ?? []) as unknown as ({ id: string; cidade: string; status: string; criado_em: string; origem_pedido_id: string | null } & ComNumero)[];
   const devolucoesLista = (devolucoesAbertas ?? []) as unknown as ({ id: string; valor: number; prazo_ate: string } & ComNumero)[];
@@ -399,42 +397,6 @@ export default async function AdminAvaliadoresPage() {
               ))}
             </ul>
           </div>
-        )}
-      </Panel>
-
-      {/* E1175: os dois estados do pedido que espera o morador — a mesma leitura da linha da Central. */}
-      <Panel id="espera-moradora" title={TITULO_ESPERA_DO_MORADOR} className="mb-6 scroll-mt-24" data-testid="avaliacoes-espera-moradora">
-        {filaEsperaDoMorador.espera.n + filaEsperaDoMorador.recusados.n === 0 && filaEsperaDoMorador.espera.deTeste.length + filaEsperaDoMorador.recusados.deTeste.length === 0 && (
-          <p className="text-sm text-muted">{VAZIO_ESPERA_DO_MORADOR}</p>
-        )}
-        {([
-          ["espera", TEXTO_ESPERA_DO_MORADOR.varios, filaEsperaDoMorador.espera],
-          ["recusado", TEXTO_RECUSADO_PELO_MORADOR.varios, filaEsperaDoMorador.recusados],
-        ] as const).map(([estado, titulo, fila]) =>
-          fila.reais.length + fila.deTeste.length === 0 ? null : (
-            <div key={estado} className="mb-3 text-sm" data-testid="espera-moradora-estado" data-estado={estado} data-valor={fila.n}>
-              <p className="font-semibold text-ink first-letter:uppercase">{titulo}</p>
-              <ul className="mt-1 grid gap-1">
-                {fila.reais.map((x: PedidoAEsperaDoMorador) => (
-                  <li key={x.id} data-testid="espera-moradora-item" data-pedido={x.id} data-conta-teste="nao">
-                    {x.cidade}{x.agendado_para ? ` · ${dataHoraBRT(x.agendado_para)}` : ""} · desde {dataBRT(x.concordancia_pedida_em)}
-                  </li>
-                ))}
-              </ul>
-              {fila.deTeste.length > 0 && (
-                <div className="mt-2 text-muted" data-testid="espera-moradora-de-teste" data-valor={fila.deTeste.length}>
-                  <p>{textoDasContasDeTeste(fila.deTeste.length)}</p>
-                  <ul className="mt-1 grid gap-1">
-                    {fila.deTeste.map((x: PedidoAEsperaDoMorador) => (
-                      <li key={x.id} data-testid="espera-moradora-item" data-pedido={x.id} data-conta-teste="sim">
-                        {x.cidade}{x.agendado_para ? ` · ${dataHoraBRT(x.agendado_para)}` : ""} · desde {dataBRT(x.concordancia_pedida_em)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ),
         )}
       </Panel>
 

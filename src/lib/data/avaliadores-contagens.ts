@@ -3,7 +3,6 @@ import type { createAdminClient } from "@/lib/supabase/admin";
 import { credenciamentoADecidir } from "@/lib/vistoria/telas-exibicao";
 import { separarContasDeTeste, type ContagemDaCentral } from "@/lib/vistoria/contagens-da-central";
 import type { StatusCredenciamento } from "@/lib/vistoria/regras";
-import { aEsperaDaConcordancia, concordanciaRecusada } from "@/lib/vistoria/concordancia";
 
 /*
   E1163 (ORDENS-DUET 684 e 685) — as três filas da avaliação que esperam a equipe, lidas num lugar só. É a fonte ÚNICA
@@ -65,43 +64,4 @@ export async function credenciamentosADecidir(admin: Admin, contasDeTeste: Reado
   if (error) return null;
   const linhas = ((data ?? []) as unknown as CredenciamentoADecidir[]).filter((c) => credenciamentoADecidir(c.status));
   return separarContasDeTeste(linhas, (c) => c.user_id ?? c.parceiros?.user_id, (c) => c.criado_em, contasDeTeste);
-}
-
-export type PedidoAEsperaDoMorador = {
-  id: string;
-  cidade: string;
-  status: string;
-  ocupado: boolean;
-  agendado_para: string | null;
-  concordancia_pedida_em: string | null;
-  concordancia_em: string | null;
-  owner_id: string | null;
-};
-
-/**
- * E1175: os pedidos do imóvel ocupado que esperam o morador, nos DOIS estados da mesma linha da Central — a data à
- * espera da concordância (`aEsperaDaConcordancia`) e o recusado à espera de nova data (`concordanciaRecusada`). A
- * consulta traz os candidatos; quem decide o estado são as regras puras do E1173. Do pedido mais antigo para o mais novo.
- */
-export async function pedidosAEsperaDaMoradora(
-  admin: Admin,
-  contasDeTeste: ReadonlySet<string>,
-): Promise<{ espera: ContagemDaCentral<PedidoAEsperaDoMorador>; recusados: ContagemDaCentral<PedidoAEsperaDoMorador> } | null> {
-  const { data, error } = await admin
-    .from("vistoria_pedidos")
-    .select("id, cidade, status, ocupado, agendado_para, concordancia_pedida_em, concordancia_em, owner_id")
-    .eq("status", "designado")
-    .eq("ocupado", true)
-    .is("concordancia_em", null)
-    .not("concordancia_pedida_em", "is", null)
-    .order("concordancia_pedida_em", { ascending: true })
-    .limit(TETO);
-  if (error) return null;
-  const linhas = (data ?? []) as unknown as PedidoAEsperaDoMorador[];
-  const estado = (p: PedidoAEsperaDoMorador) => ({ status: p.status, ocupado: p.ocupado, agendadoPara: p.agendado_para, concordanciaPedidaEm: p.concordancia_pedida_em, concordanciaEm: p.concordancia_em });
-  const separar = (l: PedidoAEsperaDoMorador[]) => separarContasDeTeste(l, (p) => p.owner_id, (p) => p.concordancia_pedida_em, contasDeTeste);
-  return {
-    espera: separar(linhas.filter((p) => aEsperaDaConcordancia(estado(p)))),
-    recusados: separar(linhas.filter((p) => concordanciaRecusada(estado(p)))),
-  };
 }
