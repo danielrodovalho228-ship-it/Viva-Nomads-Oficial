@@ -25,7 +25,7 @@ import { devolverAVezDaRotinaDaVistoria, pegarAVezDaRotinaDaVistoria } from "../
    4. A equipe abre uma verificação pela tela → o dono lê o passo dele (escolher o avaliador).
    5. A página do dono na cidade sem avaliador diz o mesmo que o e-mail do caso 1. Print a 390 e a 1280 px.
   O e-mail do laudo (assinado pelo avaliador credenciado nº X) não tem caso de tela aqui: emitir um laudo pela tela é a
-  jornada inteira do avaliador; o texto e a ligação estão na trava de unidade.
+  jornada inteira do avaliador. E1188: esse caso é a t1785, que faz o laudo sair pela tela e lê o e-mail.
   Laboratório; não é prova ao vivo no site.
 */
 const LARGURAS = [390, 1280] as const;
