@@ -38,15 +38,6 @@ export const REGRAS_CLARAS = [
   TEXTO_DIVISAO_NA_ORIGEM,
 ] as const;
 
-/**
- * E1158 (2): o texto da taxa dito AO parceiro ("vai direto para você") — a área logada do avaliador. O texto de baixo
- * fala SOBRE o parceiro, para o dono, a equipe e as páginas públicas.
- */
-export function textoTaxaServicoAoParceiro(pagamentoAtivo: boolean): string {
-  const base = `Taxa de serviço: ${PCT_TAXA_SERVICO_PARCEIROS} sobre o valor do serviço, para todas as categorias. ${TEXTO_DIVISAO_NA_ORIGEM}`;
-  return pagamentoAtivo ? base : `${base} ${TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE}`;
-}
-
 /** O texto da taxa com o aviso "em breve" enquanto a chave PAGAMENTO_PARCEIROS_ATIVO estiver desligada. */
 export function textoTaxaServicoParceiros(pagamentoAtivo: boolean): string {
   return pagamentoAtivo ? TEXTO_TAXA_SERVICO_PARCEIROS : `${TEXTO_TAXA_SERVICO_PARCEIROS} ${TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE}`;

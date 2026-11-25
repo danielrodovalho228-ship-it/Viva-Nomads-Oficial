@@ -8,8 +8,6 @@ import type { Nivel } from "../../config/niveis.ts";
 export const TITULO_LAUDO = "Laudo da avaliação";
 export const SUBTITULO_LAUDO = "Escolha o nível do imóvel";
 export const ROTULO_ASSINAR_LAUDO = "Assinar laudo";
-/** E1158 (4): a declaração que o avaliador marca ao assinar — a mesma na emissão e na reverificação. O termo do documento do laudo (escolha.ts) é outro texto e fica fora (ORDEM-DUET-673). */
-export const DECLARACAO_DE_ASSINATURA_DO_LAUDO = "Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.";
 
 /** A frase de cada nível no cartão de escolha (as do desenho). */
 export const DESCRICAO_NIVEL_LAUDO: Record<Nivel, string> = {

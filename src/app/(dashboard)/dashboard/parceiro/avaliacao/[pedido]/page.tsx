@@ -26,8 +26,7 @@ import { PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
 import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { brl } from "@/lib/fiscal/documento";
 import type { Porte } from "@/lib/vistoria/regras";
-import { ROTULO_TIPO_PEDIDO } from "@/lib/vistoria/rotulos-do-pedido";
-import { DECLARACAO_DE_ASSINATURA_DO_LAUDO, DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
+import { DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
 import { BOTAO_ASSINAR_LAUDO, CARTAO_NIVEL_LAUDO, LINHA_RESUMO_LAUDO, MARCA_NIVEL_LAUDO, MARCA_RESUMO_LAUDO, RESUMO_LAUDO, TEXTO_NIVEL_LAUDO, TITULO_NIVEL_LAUDO } from "@/lib/conta/visual-mockup";
 import { concluirVisita, confirmarCorrecao, dbaGuardadoDaVisita, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
 
@@ -172,11 +171,10 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   const miniaturas = fotosDeComodo.flatMap((f, i) => (assinadas[i]?.signedUrl ? [{ url: assinadas[i].signedUrl, comodo: f.comodo as string }] : []));
   const { data: capas } = agendada ? await admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1) : { data: null };
   const capaUrl = ((capas ?? [])[0] as { url: string } | undefined)?.url;
-  // E1158 (16): os rótulos do tipo vêm da fonte que a equipe também lê; a avaliação comum segue sem etiqueta.
-  const tipoRotulo = p.tipo === "verificacao" || p.tipo === "contestacao" ? ROTULO_TIPO_PEDIDO[p.tipo as "verificacao" | "contestacao"] : undefined;
+  const tipoRotulo = p.tipo === "verificacao" ? "Verificação aberta pela Viva" : p.tipo === "contestacao" ? "2ª avaliação (contestação)" : undefined;
   const resumoLaudo = [linhaFotos(fotosLista.length), linhaChecklist(itensSemResposta(respostasSalvas).length)];
   const fecho = (
-      <Panel title={p.status === "agendado" ? "Fim da visita" : undefined} className="mb-6" data-testid="avaliacao-concluir" data-status={p.status}>
+      <Panel title={p.status === "agendado" ? "Concluir a visita" : undefined} className="mb-6" data-testid="avaliacao-concluir" data-status={p.status}>
         {p.status === "agendado" ? (
           <FormAcao acao={concluirVisita} testid="concluir-visita">
             <input type="hidden" name="pedidoId" value={p.id} />
@@ -240,7 +238,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
               </ul>
               <label className="mt-2 flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
                 <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
-                <span>{DECLARACAO_DE_ASSINATURA_DO_LAUDO}</span>
+                <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
               </label>
               <Button type="submit" className={`mt-4 ${BOTAO_ASSINAR_LAUDO}`}>{ROTULO_ASSINAR_LAUDO}</Button>
             </FormAcao>
@@ -346,7 +344,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
               <SeletorNivelLaudo obrigatorio padrao={laudo.nivel_sustentado} comRotulo />
               <label className="flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
                     <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
-                    <span>{DECLARACAO_DE_ASSINATURA_DO_LAUDO}</span>
+                    <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
                   </label>
                   <Button type="submit" size="sm">Confirmar a reverificação</Button>
             </FormAcao>

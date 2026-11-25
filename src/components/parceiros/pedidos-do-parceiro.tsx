@@ -5,7 +5,7 @@ import { Panel, EmptyState } from "@/components/dashboard/primitives";
 import { VazioOnboardingBloco } from "@/components/onboarding/vazio-onboarding";
 import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
 import { pedidosDoMeuParceiro } from "@/lib/parceiros/pedido-actions";
-import { proximoPasso, ROTULO_REGISTRO_SEM_DINHEIRO, rotuloStatus, TEXTO_PAGAMENTO_INATIVO } from "@/lib/parceiros/pedido";
+import { proximoPasso, ROTULO_REGISTRO_SEM_DINHEIRO, rotuloStatus } from "@/lib/parceiros/pedido";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { PCT_PARCEIRO_RECEBE, ROTULO_TAXA_SERVICO_VIVA } from "@/config/taxa-servico-parceiros";
 import { dataHoraBRT, diaBRT } from "@/lib/datas-brasilia";
@@ -97,7 +97,7 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
             <dt className="font-semibold text-ink">Você recebe ({PCT_PARCEIRO_RECEBE})</dt>
             <dd className="text-right font-semibold text-ink">{brl(liquido)}</dd>
           </dl>
-          {!pagamentoAtivo && <p className="mt-3 text-xs text-muted">Valores como {ROTULO_REGISTRO_SEM_DINHEIRO}. {TEXTO_PAGAMENTO_INATIVO}</p>}
+          {!pagamentoAtivo && <p className="mt-3 text-xs text-muted">Valores como {ROTULO_REGISTRO_SEM_DINHEIRO}: o pagamento pela plataforma ainda não está ativo.</p>}
         </Panel>
       </div>
     </div>

@@ -7,7 +7,6 @@
 import { dataHoraBRT } from "../datas-brasilia.ts";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "./prazos.ts";
 import { REGRAS_AGENDA } from "./regras.ts";
-import { AVISO_EXPIRACAO_DIAS, PRAZO_DEVOLUCAO_DIAS, PRAZO_RESSALVA_DIAS, VALIDADE_LAUDO_MESES } from "./laudo.ts";
 import { imovelDoPedido, type LinhaEmail } from "../parceiros/email-pedido.ts";
 import { assuntoComTitulo, diaHoraNoAssunto } from "../notifications/assuntos.ts";
 
@@ -168,13 +167,13 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
     case "vistoria_ressalva_vencida":
       return {
         subject: assuntoComTitulo("O prazo da ressalva de ", titulo, " terminou"),
-        body: (n) => `${ola(n)}, o prazo de ${PRAZO_RESSALVA_DIAS} dias para corrigir as ressalvas do laudo ${doImovel(true)} terminou sem a correção. Veja o que acontece agora e peça uma nova avaliação.`,
+        body: (n) => `${ola(n)}, o prazo de 15 dias para corrigir as ressalvas do laudo ${doImovel(true)} terminou sem a correção. Veja o que acontece agora e peça uma nova avaliação.`,
         linhas,
       };
     case "vistoria_vistoriado_expira":
       return {
-        subject: assuntoComTitulo("A confirmação do nível de ", titulo, ` vence em ${AVISO_EXPIRACAO_DIAS} dias`),
-        body: (n) => `${ola(n)}, o laudo ${doImovel(true)} completa ${VALIDADE_LAUDO_MESES} meses em ${AVISO_EXPIRACAO_DIAS} dias e o nível deixa de aparecer como confirmado por avaliador no dia. Peça uma nova avaliação para manter.`,
+        subject: assuntoComTitulo("A confirmação do nível de ", titulo, " vence em 30 dias"),
+        body: (n) => `${ola(n)}, o laudo ${doImovel(true)} completa 12 meses em 30 dias e o nível deixa de aparecer como confirmado por avaliador no dia. Peça uma nova avaliação para manter.`,
         linhas,
       };
     case "vistoria_strike":
@@ -192,7 +191,7 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
     case "vistoria_devolucao":
       return {
         subject: assuntoComTitulo("Devolução da 2ª avaliação de ", titulo),
-        body: (n) => `${ola(n)}, a 2ª avaliação ${doImovel(false)} deu razão ao proprietário. Pela regra da contestação, devolva a ele o valor pago pela 2ª avaliação em até ${PRAZO_DEVOLUCAO_DIAS} dias; ele confirma o recebimento na plataforma.`,
+        body: (n) => `${ola(n)}, a 2ª avaliação ${doImovel(false)} deu razão ao proprietário. Pela regra da contestação, devolva a ele o valor pago pela 2ª avaliação em até 15 dias; ele confirma o recebimento na plataforma.`,
         linhas,
       };
     case "vistoria_correcao_enviada":

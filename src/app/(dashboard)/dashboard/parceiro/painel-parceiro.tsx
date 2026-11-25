@@ -11,7 +11,7 @@ import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
 import { meuCartaoDoParceiro } from "@/lib/data/cartoes-actions";
 import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
 import { reaisParaCampo } from "@/lib/reais";
-import { PERGUNTA_NOTA, TEXTO_NOTA_DO_SERVICO } from "@/lib/parceiros/fiscal";
+import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao";
 import { ImagemNitida } from "@/components/ui/imagem-nitida";
@@ -156,7 +156,7 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
                 </Button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-muted">{TEXTO_NOTA_DO_SERVICO}</p>
+            <p className="mt-2 text-xs text-muted">A nota do serviço é sua, para o cliente. A Viva emite o documento só da taxa dela.</p>
           </div>
         </Panel>
       )}

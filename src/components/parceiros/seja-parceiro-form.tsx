@@ -12,7 +12,7 @@ import { TEXTO_DIVISAO_NA_ORIGEM } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO, HREF_PASSOS_CREDENCIAMENTO } from "@/lib/parceiros/convite-avaliacao";
 import { ERRO_SESSAO_NAO_CONFIRMADA, pessoaLogada, rotuloEnvioParceria } from "@/lib/parceiros/sessao-rotulo";
 import { useAuthStore } from "@/lib/store";
-import { PERGUNTA_NOTA, TEXTO_NOTA_DO_SERVICO } from "@/lib/parceiros/fiscal";
+import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
 import { AtivarNoPainel } from "@/app/(dashboard)/dashboard/parceiro/ativar-no-painel";
 
 /**
@@ -264,7 +264,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
               </label>
             ))}
           </div>
-          <p className="mt-1 text-xs text-muted">{TEXTO_NOTA_DO_SERVICO}</p>
+          <p className="mt-1 text-xs text-muted">A nota (ou o recibo) do serviço é sua, para o cliente. A Viva emite o documento só da taxa dela.</p>
           {msgDoCampo("emiteNota")}
         </fieldset>
       )}

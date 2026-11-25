@@ -11,11 +11,10 @@ import { brl } from "@/lib/fiscal/documento";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
-import { A_VIVA_AVISA_QUANDO_HOUVER, ROTAS_NIVEL, ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR, TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
+import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
-import { dias } from "@/lib/vistoria/pedido-avaliador";
 import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, prazoDoAceiteTerminou, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceiteParaODono } from "@/lib/vistoria/relogio-do-pedido";
 import { identidadesConfirmadas, nomesDasContas, outrosParaTroca, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { textoDaTroca } from "@/lib/vistoria/troca-de-avaliador";
@@ -180,7 +179,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             {atual.recebido_marcado_em && !atual.recebido_confirmado_em && (
               <FormAcao acao={confirmarRecebido} className="mt-2">
                 <input type="hidden" name="pedidoId" value={atual.id} />
-                <Button type="submit" variant="secondary" size="sm">{ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR}</Button>
+                <Button type="submit" variant="secondary" size="sm">Confirmar que paguei o avaliador</Button>
               </FormAcao>
             )}
             <FormAcao acao={avaliarConduta} className="mt-3 flex flex-wrap items-end gap-2" testid="conduta-dono">
@@ -216,7 +215,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 {sugeridos === null ? (
                   <p className="mt-2 text-red-700" role="alert" data-testid="avaliacao-escolha-falhou">Não foi possível carregar os avaliadores agora. Atualize a página para tentar de novo.</p>
                 ) : sugeridos.length === 0 ? (
-                  <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">Nenhum avaliador disponível agora: {A_VIVA_AVISA_QUANDO_HOUVER}.</p>
+                  <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">Nenhum avaliador disponível agora. A Viva avisa quando houver.</p>
                 ) : (
                   <ul className="mt-3 grid gap-3">
                     {sugeridos.map((a) => {
@@ -288,7 +287,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             {atual.status === "designado" && atual.proposta_em && !atual.proposta_aceita_em && (
               <div className="rounded-lg border border-line p-3" data-testid="avaliacao-proposta">
                 <p className="font-semibold text-ink">
-                  Proposta do avaliador: {brl(Number(atual.valor_proposto))} · laudo em {dias(Number(atual.prazo_proposto_dias))}
+                  Proposta do avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}
                 </p>
                 <p className={`mt-1 ${aceiteTerminou ? "text-ink" : "text-muted"}`} data-testid="avaliacao-proposta-prazo" data-terminado={aceiteTerminou ? "1" : "0"}>
                   {textoDoPrazoDeAceiteParaODono(relogioDoAceite)}
@@ -322,7 +321,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             {/* E1103: o combinado continua à vista depois de a visita ser agendada (antes, a linha sumia no agendamento). */}
             {["designado", "agendado", "realizada"].includes(atual.status) && atual.proposta_aceita_em && atual.valor_proposto != null && (
               <p className="text-ink" data-testid="avaliacao-proposta-aceita">
-                Combinado com o avaliador: {brl(Number(atual.valor_proposto))} · laudo em {dias(Number(atual.prazo_proposto_dias))}.
+                Combinado com o avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}.
               </p>
             )}
             <ol className="grid gap-2" data-testid="avaliacao-linha-tempo">
@@ -371,7 +370,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               {atual.recebido_marcado_em && !atual.recebido_confirmado_em && (
                 <FormAcao acao={confirmarRecebido} className="mt-2">
                   <input type="hidden" name="pedidoId" value={atual.id} />
-                  <Button type="submit" variant="secondary" size="sm">{ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR}</Button>
+                  <Button type="submit" variant="secondary" size="sm">Confirmar que paguei o avaliador</Button>
                 </FormAcao>
               )}
             </div>
@@ -403,7 +402,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                   </ul>
                   <p className="mt-1 text-muted" data-testid="avaliacao-valor-proprio">Você escolhe o avaliador; ele define o próprio valor e prazo. Você só aceita depois de ver a proposta.</p>
                   <p className="mt-2 font-semibold text-ink" data-testid="frase-paga">{FRASE_PAGA_AVALIACAO}</p>
-                  <p className="mt-1 text-xs text-muted">{TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR} {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
+                  <p className="mt-1 text-xs text-muted">Você paga direto ao avaliador; a Viva registra. {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
                 </>
               ) : null}
               {pode.ok ? (

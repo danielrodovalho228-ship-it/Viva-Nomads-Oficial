@@ -9,20 +9,10 @@ const MARCA = "data-erro-campo";
 const VERMELHO = ["border-red-600", "ring-1", "ring-red-600"];
 /** Marca o botão que o envio em curso desligou (E1091), para só esse voltar a ligar no fim (E1117, perna 3). */
 const DESLIGADO_PELO_ENVIO = "data-desligado-pelo-envio";
-/**
- * E1152: a nota fixa de um campo (`data-nota-do-campo="<campo>"`) que diz a MESMA frase da recusa desse campo sai da
- * tela enquanto a recusa está lá — a regra é dita uma vez, junto do campo, e não empilhada com a nota.
- */
-const NOTA_DO_CAMPO = "data-nota-do-campo";
-const NOTA_ESCONDIDA = "data-nota-escondida-pela-recusa";
 
 /** Tira as marcas de erro de uma tentativa anterior. */
 function limparMarcas(form: HTMLFormElement) {
   form.querySelectorAll(`[${MARCA}]`).forEach((n) => n.remove());
-  form.querySelectorAll(`[${NOTA_ESCONDIDA}]`).forEach((n) => {
-    n.removeAttribute("hidden");
-    n.removeAttribute(NOTA_ESCONDIDA);
-  });
   form.querySelectorAll('[aria-invalid="true"]').forEach((el) => {
     el.removeAttribute("aria-invalid");
     el.classList.remove(...VERMELHO);
@@ -88,12 +78,6 @@ export function FormAcao({
       msg.textContent = c.mensagem;
       // A mensagem fica junto do campo: dentro do <label> que o envolve, logo depois dele (ou, sem label, depois do campo).
       (alvo.closest("label") ?? alvo.parentElement)?.appendChild(msg);
-      // E1152: a nota do campo que diz a mesma frase da recusa esconde-se; volta na tentativa seguinte.
-      form.querySelectorAll<HTMLElement>(`[${NOTA_DO_CAMPO}]`).forEach((nota) => {
-        if (nota.getAttribute(NOTA_DO_CAMPO) !== c.campo || nota.textContent?.trim() !== c.mensagem) return;
-        nota.setAttribute("hidden", "");
-        nota.setAttribute(NOTA_ESCONDIDA, "");
-      });
       primeiro ??= alvo;
     }
     if (primeiro) {

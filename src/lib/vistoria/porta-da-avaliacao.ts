@@ -12,7 +12,6 @@
      recentemente para a mais antiga e diz de quando é cada pedido. Nunca escolhe uma em silêncio.
 */
 import { dataBRT } from "../datas-brasilia.ts";
-import { DESCRICAO_DA_AVALIACAO } from "./telas-exibicao.ts";
 
 export const HREF_PORTA_AVALIACAO = "/dashboard/servicos/avaliacao";
 /** A âncora do bloco da avaliação na página do nível do imóvel. */
@@ -100,8 +99,7 @@ export function acaoDoImovelNaPorta(i: ImovelNaPorta): { rotulo: string; href: s
 
 // ── Os textos da porta ─────────────────────────────────────────────────────────────────────────────────────────
 export const TITULO_DA_PORTA = "Avaliação do imóvel";
-/** E1158 (13): a descrição da avaliação vem da fonte única (telas-exibicao). */
-export const SUBTITULO_DA_PORTA = DESCRICAO_DA_AVALIACAO;
+export const SUBTITULO_DA_PORTA = "Um avaliador credenciado visita o imóvel e assina o laudo com o nível dele.";
 export const TITULO_ESCOLHER_IMOVEL = "Escolha o imóvel";
 export const TEXTO_ESCOLHER_IMOVEL = "O pedido é feito na página do nível de cada imóvel. Depois de pedir, você escolhe o avaliador na lista da cidade do imóvel.";
 export const TITULO_SEM_IMOVEL = "Você ainda não tem imóvel anunciado";

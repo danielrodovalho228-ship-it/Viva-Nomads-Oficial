@@ -59,8 +59,7 @@ test("nenhum texto promete pagamento pela plataforma; a taxa usa o texto da chav
     assert.doesNotMatch(f, /pague (pela|na) (plataforma|Viva)|pagamento pela plataforma (est[áa] ativo|liberado)|a Viva (cobra|recebe) (o valor|a avalia)/i);
   }
   assert.match(BLOCO_DONO, /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
-  // E1158 (2; ORDEM-DUET-654): na tela do avaliador, o texto da taxa fala com ele ("vai direto para você").
-  assert.match(AVALIADOR, /textoTaxaServicoAoParceiro\(PAGAMENTO_PARCEIROS_ATIVO\)/);
+  assert.match(AVALIADOR, /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
   assert.match(BLOCO_DONO, /\{FRASE_PAGA_AVALIACAO\}/);
 });
 

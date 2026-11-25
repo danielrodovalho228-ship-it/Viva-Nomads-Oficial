@@ -65,8 +65,7 @@ type ValoresDoPedido = { valor_tabela: number | string; valor_proposto: number |
  */
 const semValor = (p: ValoresDoPedido): boolean => !precisaDoAceiteDoDono({ teste: p.teste, escolhidoEm: p.escolhido_em ?? null });
 
-/** "1 dia" · "3 dias". E1158 (5): o mesmo ajudante no lado do avaliador, no bloco do dono e na troca de avaliador. */
-export const dias = (n: number): string => `${n} ${n === 1 ? "dia" : "dias"}`;
+const dias = (n: number): string => `${n} ${n === 1 ? "dia" : "dias"}`;
 
 /**
  * A caixa do valor. E648: antes de o dono aceitar, o valor da tabela é só REFERÊNCIA (o avaliador propõe o seu);
