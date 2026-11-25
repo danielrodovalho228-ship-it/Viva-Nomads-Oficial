@@ -14,9 +14,7 @@ import { COLUNAS_PRECO, PORTES, ROTULO_PORTE, atendeCidade, condicaoRetorno, par
 import { adminAbrirVerificacao, adminResolverBloqueio } from "@/lib/vistoria/laudo-actions";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistoria/strikes";
-import { credenciamentosADecidir, laudosAtrasados, pedidosSemAvaliador } from "@/lib/data/avaliadores-contagens";
-import { idsContasTeste } from "@/lib/data/admin-indicadores";
-import { textoDasContasDeTeste } from "@/lib/vistoria/contagens-da-central";
+import { laudoAtrasado } from "@/lib/vistoria/laudo";
 import { contagemContestacoes } from "@/lib/vistoria/telas-laudo";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
 import { comTesteConcluido, filaDaCidade, nomesDasContas } from "@/lib/vistoria/servidor";
@@ -99,26 +97,16 @@ export default async function AdminAvaliadoresPage() {
     ),
   );
   const trintaDias = new Date(agora.getTime() - DIAS_DA_JANELA_DE_RECUSAS * 86_400_000).toISOString();
-  // Prompt 62-A, Parte 2: contestações em aberto (com o 2º avaliador) e devoluções a devolver.
-  const [{ data: contestacoesAbertas }, { data: devolucoesAbertas }] = semFalhaDeLeitura(await Promise.all([
+  // Prompt 62-A, Parte 2: contestações em aberto (com o 2º avaliador), devoluções a devolver e laudos fora das 48 h úteis.
+  const [{ data: contestacoesAbertas }, { data: devolucoesAbertas }, { data: semLaudo }] = semFalhaDeLeitura(await Promise.all([
     admin.from("vistoria_pedidos").select("id, cidade, status, criado_em, origem_pedido_id, avaliadores_credenciamento(numero_credenciado)").eq("tipo", "contestacao").in("status", ["pedido", "designado", "agendado", "realizada"]).order("criado_em").limit(50),
     admin.from("vistoria_devolucoes").select("id, valor, prazo_ate, avaliadores_credenciamento(numero_credenciado)").is("recebido_confirmado_em", null).order("prazo_ate").limit(50),
+    admin.from("vistoria_pedidos").select("id, cidade, visita_concluida_em, avaliadores_credenciamento(numero_credenciado)").eq("status", "realizada").not("visita_concluida_em", "is", null).limit(100),
   ]));
-  // E1163: as três filas que esperam a equipe (sem avaliador, laudos atrasados, credenciamentos para decidir) saem da
-  // MESMA leitura da Central (/admin): um número só nas duas telas, e a lista de cada fila é a dessa leitura. Antes a
-  // página contava sozinha: "sem avaliador" só via os 50 pedidos mais recentes, e os atrasados refaziam a conta pelo
-  // relógio. As contas de teste ficam fora do número, à parte. Leitura que falha sobe (achado 39): nunca vira zero.
-  const contasDeTesteDaCentral = await idsContasTeste(admin);
-  const [filaSemAvaliador, filaAtrasados, filaCredenciamentos] = await Promise.all([
-    pedidosSemAvaliador(admin, contasDeTesteDaCentral),
-    laudosAtrasados(admin, contasDeTesteDaCentral),
-    credenciamentosADecidir(admin, contasDeTesteDaCentral),
-  ]);
-  if (!filaSemAvaliador || !filaAtrasados || !filaCredenciamentos) throw new Error("Falha ao ler as filas da avaliação que esperam a equipe.");
   type ComNumero = { avaliadores_credenciamento: { numero_credenciado: string } | null };
   const contestacoesLista = (contestacoesAbertas ?? []) as unknown as ({ id: string; cidade: string; status: string; criado_em: string; origem_pedido_id: string | null } & ComNumero)[];
   const devolucoesLista = (devolucoesAbertas ?? []) as unknown as ({ id: string; valor: number; prazo_ate: string } & ComNumero)[];
-  const atrasadosLista = filaAtrasados.reais;
+  const atrasadosLista = ((semLaudo ?? []) as unknown as ({ id: string; cidade: string; visita_concluida_em: string } & ComNumero)[]).filter((x) => laudoAtrasado(x.visita_concluida_em, null, agora));
   const [fila_rodizio, recusasLeitura, perfisLeitura] = await Promise.all([
     filaDaCidade(admin),
     admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade)").in("resposta", ["recusada", "expirada", "ausencia"]).is("proposta_expirada_em", null).is("proposta_descartada_em", null).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
@@ -151,18 +139,13 @@ export default async function AdminAvaliadoresPage() {
   const nomeDoCredenciado = (c: Cred) => nomeDoAvaliador(nomesConta.get(contaDoCredenciamento(c) ?? ""), c.parceiros?.nome_publico ?? c.parceiro_solicitacoes?.nome);
   type Ped = { id: string; cidade: string; tipo: string; status: string; aguardando_avaliador: boolean; criado_em: string; avaliadores_credenciamento: { numero_credenciado: string } | null };
   const pedidosLista = (pedidos ?? []) as unknown as Ped[];
-  const semAvaliador = filaSemAvaliador.reais;
+  const semAvaliador = pedidosLista.filter((x) => x.aguardando_avaliador && x.status === "pedido");
   const recusasLista = (recusas ?? []) as unknown as { id: string; resposta: string; respondido_em: string; avaliador_id: string; vistoria_pedidos: { cidade: string } | null }[];
   const filaRestante = ((fila ?? []) as { id: string; tipo: string; motivo: string | null; criado_em: string }[]).filter((f) => f.tipo !== "sem_avaliador");
   // E1146: o item "sem avaliador" de cada pedido traz, por avaliador da cidade, a regra que o impede.
   const motivoSemAvaliador = new Map(((fila ?? []) as { tipo: string; motivo: string | null; pedido_id: string | null }[]).filter((f) => f.tipo === "sem_avaliador" && f.pedido_id && f.motivo).map((f) => [f.pedido_id!, f.motivo!]));
   // E77: a mesma regra do número do topo (contagemDecisoes) — em teste já não está "a decidir".
   const aDecidir = lista.filter((c) => credenciamentoADecidir(c.status));
-  // E1163: os de conta de teste ficam à parte (a mesma leitura da Central diz quais são); o número do topo é o tamanho
-  // da lista que a seção mostra.
-  const credenciamentosDeTeste = new Set(filaCredenciamentos.deTeste.map((c) => c.id));
-  const aDecidirReais = aDecidir.filter((c) => !credenciamentosDeTeste.has(c.id));
-  const aDecidirDeTeste = aDecidir.filter((c) => credenciamentosDeTeste.has(c.id));
   const naRede = lista.filter((c) => !credenciamentoADecidir(c.status));
   const tabela: LinhaPreco[] = ((precos ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   // E1077-b2: um credenciamento com várias cidades ("Uberlandia, Araguari, Ituiutaba") entra em cada uma delas.
@@ -172,7 +155,7 @@ export default async function AdminAvaliadoresPage() {
     const ativos = lista.filter((c) => atendeCidade(c.cidade, cidade) && contaComoAvaliadorAtivo({ status: c.status, contaTeste: !!c.user_id && contasTeste.has(c.user_id) })).length;
     return { cidade, ativos, cond: condicoesParaLigar({ tabelaCompleta: tabelaCompleta(tabela, cidade, agora), avaliadoresAtivos: ativos, parecerItem14: VISTORIA_PARECER_14 }) };
   });
-  const numerosBase = contagemDecisoes({ credenciamentos: aDecidirReais, semAvaliador: semAvaliador.length, recusasAusencias: recusasLista.length, cidadesProntas: condicoesPorCidade.filter((c) => c.cond.every((x) => x.ok)).length, cidades: cidades.length });
+  const numerosBase = contagemDecisoes({ credenciamentos: lista, semAvaliador: semAvaliador.length, recusasAusencias: recusasLista.length, cidadesProntas: condicoesPorCidade.filter((c) => c.cond.every((x) => x.ok)).length, cidades: cidades.length });
   const numeros = [
     ...numerosBase,
     ...contagemContestacoes({ contestacoes: contestacoesLista.length, devolucoes: devolucoesLista.length, laudosAtrasados: atrasadosLista.length, auditoria: (auditoria ?? []).length }),
@@ -230,13 +213,11 @@ export default async function AdminAvaliadoresPage() {
         ) : (
           <div className="grid grid-cols-1 gap-4">
             {[
-              { chave: "a-decidir", titulo: `${TITULO_SECAO_A_DECIDIR} (${aDecidirReais.length})`, itens: aDecidirReais, vazio: "Nada a decidir agora." },
-              // E1163: os pedidos de conta de teste ficam à parte, fora do número do topo e da Central.
-              ...(aDecidirDeTeste.length > 0 ? [{ chave: "a-decidir-de-teste", titulo: textoDasContasDeTeste(aDecidirDeTeste.length), itens: aDecidirDeTeste, vazio: "" }] : []),
-              { chave: "na-rede", titulo: `${TITULO_SECAO_NA_REDE} (${naRede.length})`, itens: naRede, vazio: "Ninguém em teste nem credenciado ainda." },
+              { chave: "a-decidir", titulo: TITULO_SECAO_A_DECIDIR, itens: aDecidir, vazio: "Nada a decidir agora." },
+              { chave: "na-rede", titulo: TITULO_SECAO_NA_REDE, itens: naRede, vazio: "Ninguém em teste nem credenciado ainda." },
             ].map((g) => (
               <div key={g.chave} data-testid={`credenciamento-secao-${g.chave}`} data-total={g.itens.length}>
-                <h3 className={`text-sm ${g.chave === "a-decidir-de-teste" ? "text-muted" : "font-semibold text-ink"}`}>{g.titulo}</h3>
+                <h3 className="text-sm font-semibold text-ink">{g.titulo} ({g.itens.length})</h3>
                 {g.itens.length === 0 ? (
                   <p className="mt-1 text-sm text-muted">{g.vazio}</p>
                 ) : (
@@ -336,30 +317,17 @@ export default async function AdminAvaliadoresPage() {
       </div>
 
       <Panel id="sem-avaliador" title="Pedidos sem avaliador elegível" className="mb-6 scroll-mt-24" data-testid="avaliacoes-sem-avaliador">
-        {semAvaliador.length === 0 && filaSemAvaliador.deTeste.length === 0 && <p className="text-sm text-muted">Todos os pedidos têm avaliador.</p>}
-        {semAvaliador.length > 0 && (
-          <ul className="grid gap-1 text-sm" data-testid="sem-avaliador-lista">
+        {semAvaliador.length === 0 ? (
+          <p className="text-sm text-muted">Todos os pedidos têm avaliador.</p>
+        ) : (
+          <ul className="grid gap-1 text-sm">
             {semAvaliador.map((x) => (
-              <li key={x.id} data-testid="sem-avaliador-item" data-pedido={x.id} data-conta-teste="nao">
+              <li key={x.id} data-testid="sem-avaliador-item" data-pedido={x.id}>
                 {x.cidade} · {x.tipo} · desde {dataBRT(x.criado_em)}
                 {motivoSemAvaliador.get(x.id) && <span className="block text-muted" data-testid="sem-avaliador-motivo">{motivoSemAvaliador.get(x.id)}</span>}
               </li>
             ))}
           </ul>
-        )}
-        {/* E1163: os pedidos de conta de teste ficam à parte, fora do número do topo e da Central. */}
-        {filaSemAvaliador.deTeste.length > 0 && (
-          <div className="mt-3 text-sm text-muted" data-testid="sem-avaliador-de-teste" data-valor={filaSemAvaliador.deTeste.length}>
-            <p>{textoDasContasDeTeste(filaSemAvaliador.deTeste.length)}</p>
-            <ul className="mt-1 grid gap-1">
-              {filaSemAvaliador.deTeste.map((x) => (
-                <li key={x.id} data-testid="sem-avaliador-item" data-pedido={x.id} data-conta-teste="sim">
-                  {x.cidade} · {x.tipo} · desde {dataBRT(x.criado_em)}
-                  {motivoSemAvaliador.get(x.id) && <span className="block" data-testid="sem-avaliador-motivo">{motivoSemAvaliador.get(x.id)}</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
         )}
       </Panel>
 
@@ -410,28 +378,16 @@ export default async function AdminAvaliadoresPage() {
           </div>
           <div data-testid="laudos-atrasados">
             <h3 className="font-semibold text-ink">Laudos fora das 48 horas úteis</h3>
-            {atrasadosLista.length === 0 && filaAtrasados.deTeste.length === 0 && <p className="mt-1 text-muted">Nenhum laudo atrasado.</p>}
-            {atrasadosLista.length > 0 && (
+            {atrasadosLista.length === 0 ? (
+              <p className="mt-1 text-muted">Nenhum laudo atrasado.</p>
+            ) : (
               <ul className="mt-1 grid gap-1">
                 {atrasadosLista.map((x) => (
-                  <li key={x.id} data-testid="laudo-atrasado-item" data-pedido={x.id} data-conta-teste="nao">
-                    {x.avaliadores_credenciamento?.numero_credenciado ?? "Avaliador"} · {x.cidade}{x.visita_concluida_em ? ` · visita em ${dataBRT(x.visita_concluida_em)}` : ""}
+                  <li key={x.id} data-testid="laudo-atrasado-item">
+                    {x.avaliadores_credenciamento?.numero_credenciado ?? "Avaliador"} · {x.cidade} · visita em {dataBRT(x.visita_concluida_em)}
                   </li>
                 ))}
               </ul>
-            )}
-            {/* E1163: os laudos de conta de teste ficam à parte, fora do número do topo e da Central. */}
-            {filaAtrasados.deTeste.length > 0 && (
-              <div className="mt-2 text-muted" data-testid="laudos-atrasados-de-teste" data-valor={filaAtrasados.deTeste.length}>
-                <p>{textoDasContasDeTeste(filaAtrasados.deTeste.length)}</p>
-                <ul className="mt-1 grid gap-1">
-                  {filaAtrasados.deTeste.map((x) => (
-                    <li key={x.id} data-testid="laudo-atrasado-item" data-pedido={x.id} data-conta-teste="sim">
-                      {x.avaliadores_credenciamento?.numero_credenciado ?? "Avaliador"} · {x.cidade}{x.visita_concluida_em ? ` · visita em ${dataBRT(x.visita_concluida_em)}` : ""}
-                    </li>
-                  ))}
-                </ul>
-              </div>
             )}
           </div>
         </div>
