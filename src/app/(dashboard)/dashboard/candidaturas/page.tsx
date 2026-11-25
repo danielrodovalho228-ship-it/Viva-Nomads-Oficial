@@ -5,13 +5,13 @@ import Link from "next/link";
 import { FileSignature, MessageSquare } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
-import { listMinhasCandidaturas } from "@/lib/data/leads-actions";
+import { listMinhasCandidaturas, type MinhaCandidatura } from "@/lib/data/leads-actions";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import { PROXIMO_PASSO_CANDIDATURA, type RotuloCandidatura } from "@/lib/candidaturas/status";
 import { VinculoMorador } from "@/components/triagem/vinculo-morador";
 import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 import { PedirOrcamento } from "@/components/candidaturas/pedir-orcamento";
-import { numeroPublicoPedido } from "@/lib/pedido-ref";
+import { numeroPublicoPedido, podePedirOrcamento } from "@/lib/pedido-ref";
 import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 
 export const metadata: Metadata = {
@@ -28,8 +28,10 @@ const TOM: Record<RotuloCandidatura["tom"], string> = {
   encerrado: "bg-slate-100 text-muted",
 };
 
-/** E440: pedido aceito e ainda sem contrato — aí o cartão mostra o número junto do "Pedir orçamento". */
-const podePedir = (c: { id: string; situacao: { chave: string }; contrato?: unknown }) => c.situacao.chave === "aceita" && !c.contrato && !!numeroPublicoPedido(c.id);
+/** E440 + E1088: o cartão mostra o "Pedir orçamento" pela MESMA regra do servidor (aceito, sem orçamento em aberto,
+    e todos os contratos da candidatura assinados pelos dois, ou nenhum; o cancelado não conta). */
+const podePedir = (c: MinhaCandidatura) =>
+  podePedirOrcamento({ situacao: c.situacao.chave, temOrcamentoAberto: c.temOrcamentoAberto, contratos: c.contratosDoPedido }) && !!numeroPublicoPedido(c.id);
 
 export default async function CandidaturasPage() {
   const [candidaturas, triagemLigada] = await Promise.all([listMinhasCandidaturas({ exigir: true }), triagemVinculoAtiva()]);
