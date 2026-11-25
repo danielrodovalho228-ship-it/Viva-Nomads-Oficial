@@ -669,7 +669,7 @@
    "disposicao": "instavel",
    "item": "E1018",
    "dono": "Fable",
-   "nota": "falhou em 2 e instável em 1 das 7 corridas; passa 6 de 6 sozinho"
+   "nota": "falhou em 2 e instável em 1 das 7 corridas; passa 6 de 6 sozinho. Causa achada em 18/11: o hook das abas-âncora tem duas instâncias (barra do celular e topo do computador); a do topo monta mais tarde e rolava a página de volta ao #âncora da URL depois de a pessoa já ter rolado. Corrigido no ramo claude-b/e1018-ancora-nao-volta; a entrada da quarentena sai no mesmo PR"
   },
   {
    "spec": "t778-e347-x-visita-video.spec.ts",
