@@ -149,8 +149,10 @@ export function MedirInternet({
         body: JSON.stringify({ imovel: imovelId, origem, rodadas: aproveitadas.rodadas, local, confirmouWifi: wifi, ponto }),
       });
       const r = (await resp.json()) as ResultadoMedicao;
-      setResultado(r);
+      // ENSAIO t410: o recálculo do nível (onMedida) chega ANTES de o resultado aparecer.
       if (r.ok) onMedida?.(r.validada);
+      await new Promise((res) => setTimeout(res, 3_000));
+      setResultado(r);
       if (r.ok && r.validada && estado.papel === "dono") setEstado({ ...estado, ultima: r.medicao, restantesHoje: estado.restantesHoje - 1 });
       else if (r.ok) setEstado({ ...estado, restantesHoje: estado.restantesHoje - 1 });
     } catch {
