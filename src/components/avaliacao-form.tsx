@@ -24,7 +24,6 @@ export function AvaliacaoForm({
   demo,
   encerradoEm,
   fechada = false,
-  minhaAvaliacao = null,
 }: {
   contratoId: string;
   alvoId: string;
@@ -40,11 +39,6 @@ export function AvaliacaoForm({
    * NÃO oferece o botão — o servidor recusaria (0089: só contrato encerrado, até 14 dias depois do fim).
    */
   fechada?: boolean;
-  /**
-   * E719: estado REAL da avaliação que a pessoa já fez deste contrato (enviada, publicada, em_moderacao, removida), lido
-   * do banco pela página. null = ainda não avaliou. Sem isso o cartão só sabia "enviei nesta visita".
-   */
-  minhaAvaliacao?: string | null;
 }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -62,8 +56,7 @@ export function AvaliacaoForm({
   const [erro, setErro] = useState<string | null>(null);
   // Sem leitura no servidor ao abrir a tela (Prompt 42: nenhuma server action na navegação do painel); o estado
   // "Aguardando a outra parte" vem do envio desta visita, e o banco recusa uma segunda avaliação do mesmo contrato.
-  const jaAvaliei = enviado || !!minhaAvaliacao;
-  const partes = <PartesAvaliacao euEnviei={jaAvaliei} prazo={prazoAvaliacao(encerradoEm)} statusReal={enviado ? null : minhaAvaliacao} />;
+  const partes = <PartesAvaliacao euEnviei={enviado} prazo={prazoAvaliacao(encerradoEm)} />;
 
   async function enviar() {
     setErro(null);
@@ -97,9 +90,6 @@ export function AvaliacaoForm({
       </>
     );
   }
-
-  // E719: já avaliei (estado vindo do banco): mostra o estado real e não oferece avaliar de novo (o banco recusaria).
-  if (!enviado && minhaAvaliacao) return partes;
 
   if (fechada) {
     return (
@@ -251,10 +241,10 @@ export function AvaliacaoForm({
 }
 
 /** As duas partes da avaliação, com o prazo (Prompt 43, item 8). Às cegas: nunca diz se a outra parte já enviou. */
-function PartesAvaliacao({ euEnviei, prazo, statusReal }: { euEnviei: boolean; prazo: string | null; statusReal?: string | null }) {
-  const p = partesDaAvaliacao(euEnviei, prazo, statusReal);
+function PartesAvaliacao({ euEnviei, prazo }: { euEnviei: boolean; prazo: string | null }) {
+  const p = partesDaAvaliacao(euEnviei, prazo);
   return (
-    <div className="mt-4 border-t border-line pt-3" data-testid="avaliacao-partes" data-estado={statusReal === "publicada" ? "publicada" : euEnviei ? "aguardando" : "pendente"}>
+    <div className="mt-4 border-t border-line pt-3" data-testid="avaliacao-partes" data-estado={euEnviei ? "aguardando" : "pendente"}>
       <p className="text-sm font-semibold text-ink">Avaliação · {p.estado}</p>
       <dl className="mt-1 divide-y divide-line text-sm">
         {p.linhas.map((l) => (
