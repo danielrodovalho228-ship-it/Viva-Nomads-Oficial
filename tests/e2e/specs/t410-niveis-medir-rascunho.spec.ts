@@ -105,9 +105,15 @@ async function medirItem(page: Page, item: string, ponto: string) {
   await bloco.getByTestId("medir-internet-wifi").check();
   // O clique pode chegar antes da hidratação do bloco recém-aberto (lab-crítico de 29/10: sem resultado em 30 s na 1ª
   // tentativa, verde na repetição): mede de novo até o resultado validado aparecer.
+  // Instável de 24/11 (corrida 45510814478, fatia 13: o clique no "Medir" esperou 60 s por um botão que já não existia):
+  // a medição validada recalcula o nível na hora e o item SAI do "o que falta" — com ele saem o bloco, o resultado e o
+  // botão. Se o recálculo chega antes de a trava ver o resultado, o item fora da lista é a própria prova da medição.
+  const itemFalta = page.getByTestId(`nivel-cadastro-item-${item}`);
+  const medida = async () => (await itemFalta.count()) === 0 || (await bloco.getByTestId("medir-internet-resultado").getAttribute("data-validada").catch(() => null)) === "1";
   await expect(async () => {
-    if ((await bloco.getByTestId("medir-internet-resultado").count()) === 0) await bloco.getByTestId("medir-internet-botao").click({ timeout: 5_000 });
-    await expect(bloco.getByTestId("medir-internet-resultado")).toHaveAttribute("data-validada", "1", { timeout: 20_000 });
+    if (await medida()) return;
+    if ((await bloco.count()) > 0 && (await bloco.getByTestId("medir-internet-resultado").count()) === 0) await bloco.getByTestId("medir-internet-botao").click({ timeout: 5_000 });
+    await expect.poll(medida, { timeout: 20_000, message: `${item}: a medição validou (resultado validado ou o item saiu do "o que falta")` }).toBe(true);
   }).toPass({ timeout: 60_000 });
 }
 
