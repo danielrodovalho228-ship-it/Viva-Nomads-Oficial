@@ -71,12 +71,14 @@ test.describe("T1777 — E1175: a Central conta os pedidos que esperam o morador
     if (eC) throw eC;
     ids.cred = cred.id as string;
     ids.imovelReal = await criarImovelPronto(ids.donaReal, `Casa ocupada t1777 ${sufixo}`, { ativo: true });
+    // Um pedido aberto por imóvel (vistoria_pedidos_um_aberto): o B vai num segundo imóvel da mesma dona.
+    ids.imovelReal2 = await criarImovelPronto(ids.donaReal, `Apartamento ocupado t1777 ${sufixo}`, { ativo: true });
     ids.imovelTeste = await criarImovelPronto(ids.donaTeste, `Casa de teste t1777 ${sufixo}`, { ativo: true });
-    const cid = await adm().from("properties").update({ city: CIDADE }).in("id", [ids.imovelReal, ids.imovelTeste]);
+    const cid = await adm().from("properties").update({ city: CIDADE }).in("id", [ids.imovelReal, ids.imovelReal2, ids.imovelTeste]);
     if (cid.error) throw cid.error;
     // A: data proposta, à espera da concordância. B: recusado pelo morador (a recusa limpa a data, fica o pedido).
     ids.a = await pedido(ids.imovelReal, ids.donaReal, { agendado_para: daqui(20), concordancia_pedida_em: ha(2) });
-    ids.b = await pedido(ids.imovelReal, ids.donaReal, { agendado_para: null, concordancia_pedida_em: ha(3) });
+    ids.b = await pedido(ids.imovelReal2, ids.donaReal, { agendado_para: null, concordancia_pedida_em: ha(3) });
     ids.c = await pedido(ids.imovelTeste, ids.donaTeste, { agendado_para: daqui(21), concordancia_pedida_em: ha(1) });
   });
 
@@ -89,7 +91,7 @@ test.describe("T1777 — E1175: a Central conta os pedidos que esperam o morador
     }
     if (ids.cred) await adm().from("avaliadores_credenciamento").delete().eq("id", ids.cred);
     if (ids.parc) await adm().from("parceiros").delete().eq("id", ids.parc);
-    const imoveis = [ids.imovelReal, ids.imovelTeste].filter(Boolean);
+    const imoveis = [ids.imovelReal, ids.imovelReal2, ids.imovelTeste].filter(Boolean);
     if (imoveis.length) await adm().from("properties").delete().in("id", imoveis);
     const contas = [ids.donaReal, ids.donaTeste, ids.morador, ids.avaliador].filter(Boolean);
     if (contas.length) {
