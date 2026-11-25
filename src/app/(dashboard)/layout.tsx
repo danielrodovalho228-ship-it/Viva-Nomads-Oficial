@@ -12,8 +12,6 @@ import { ondaPainelSessaoServidor } from "@/lib/flags";
 import { usuarioDaSessaoServidor } from "@/lib/auth/sessao-servidor";
 import { ROTAS_DA_ONDA } from "@/lib/auth/painel-sessao-servidor";
 import { SessaoServidorProvider } from "@/components/auth/sessao-servidor-contexto";
-import { papelInicialDoServidor } from "@/lib/papel/papel-inicial-servidor";
-import { PapelInicialProvider } from "@/components/papel/papel-inicial-contexto";
 
 // Área logada: nunca no índice de busca (/dashboard/*, /admin, /qualificar…).
 export const metadata: Metadata = {
@@ -32,10 +30,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // E653: modo que ATRASOU ou FALHOU (indisponivel) não é "conta nova sem papel" (null): o ModeInitializer relê o modo.
   // E793: com a chave PAINEL_SESSAO_SERVIDOR ligada, a sessão também é conferida aqui (getClaims). A2: o layout NUNCA
   // redireciona — sessão não lida (sem sessão, erro, tempo esgotado) = sem contexto, e o painel se comporta como hoje.
-  // E1026: o papel ativo (parceiro ou não) também sai do servidor, para o cabeçalho não nascer como dono logo depois do
-  // login. Atrasou ou falhou = `null`: a casca fica com o que o navegador guarda, como antes. A leitura começa aqui e
-  // corre junto com as de baixo; só é esperada depois delas.
-  const papelInicialLendo = comLimite(papelInicialDoServidor(), LIMITE_CASCA_MS).catch(() => null);
   const onda = ondaPainelSessaoServidor();
   const [modoLido, contadoresIniciais, usuarioServidor] = await Promise.all([
     comLimite(resolveInitialMode(), LIMITE_CASCA_MS)
@@ -44,18 +38,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     comLimite(contadoresIniciaisDoPainel(), LIMITE_CASCA_MS).catch(() => null),
     onda === "off" ? Promise.resolve(null) : comLimite(usuarioDaSessaoServidor(), LIMITE_CASCA_MS).catch(() => null),
   ]);
-  const papelInicial = await papelInicialLendo;
   const painel = (
-    <PapelInicialProvider valor={papelInicial}>
-      <AuthGuard>
-        <ModeInitializer initialMode={modoLido.modo} indisponivel={modoLido.indisponivel} />
-        {/* PAPEL-B: a página de outra área troca e grava o papel ativo (selo e menu batem com a página). */}
-        <SincronizarPapel />
-        <ContadoresIniciais valor={contadoresIniciais}>
-          <DashboardShell>{children}</DashboardShell>
-        </ContadoresIniciais>
-      </AuthGuard>
-    </PapelInicialProvider>
+    <AuthGuard>
+      <ModeInitializer initialMode={modoLido.modo} indisponivel={modoLido.indisponivel} />
+      {/* PAPEL-B: a página de outra área troca e grava o papel ativo (selo e menu batem com a página). */}
+      <SincronizarPapel />
+      <ContadoresIniciais valor={contadoresIniciais}>
+        <DashboardShell>{children}</DashboardShell>
+      </ContadoresIniciais>
+    </AuthGuard>
   );
   if (!usuarioServidor) return painel;
   return (

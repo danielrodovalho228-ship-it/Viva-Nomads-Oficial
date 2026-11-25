@@ -2,7 +2,7 @@
 
 import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
-import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
+import { useParceiroAprovado } from "@/lib/use-papel-barra";
 import { papelDoModo } from "@/lib/papel/papel-ativo";
 import type { Papel } from "@/lib/onboarding/ativacao";
 
@@ -12,8 +12,7 @@ import type { Papel } from "@/lib/onboarding/ativacao";
  */
 export function usePapelEmUso(): Papel | null {
   const admin = useAuthStore((s) => s.user?.role === "admin");
-  // E1026: pela mesma porta do cabeçalho (logo depois do login vale o papel que o servidor leu).
-  const parceiroAtivo = usePreferenciaParceiro();
+  const parceiroAtivo = useAuthStore((s) => s.parceiroAtivo);
   const { mode } = useViewMode();
   const aprovado = useParceiroAprovado();
   if (admin) return null;

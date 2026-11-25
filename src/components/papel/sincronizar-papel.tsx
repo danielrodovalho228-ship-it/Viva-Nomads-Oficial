@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
 import { useViewMode } from "@/lib/roles";
-import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
+import { useParceiroAprovado } from "@/lib/use-papel-barra";
 import { usarPapel } from "@/lib/data/papel-actions";
 import { gravacaoPorArea, papelDaRota, papelDoModo, trocaPelaArea } from "@/lib/papel/papel-ativo";
 import { EVENTO_PAPEL } from "./use-troca-papel";
@@ -21,7 +21,7 @@ export function SincronizarPapel() {
   const pathname = usePathname();
   const admin = useAuthStore((s) => s.user?.role === "admin");
   const userId = useAuthStore((s) => s.user?.id);
-  const parceiroAtivo = usePreferenciaParceiro(); // E1026: a mesma porta do cabeçalho
+  const parceiroAtivo = useAuthStore((s) => s.parceiroAtivo);
   const { mode } = useViewMode();
   const aprovado = useParceiroAprovado();
   /** O papel que esta aba acabou de gravar pela área (evita regravar o mesmo valor enquanto o estado se acerta). */

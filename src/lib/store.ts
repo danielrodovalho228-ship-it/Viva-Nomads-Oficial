@@ -55,11 +55,6 @@ interface AuthState {
    * baixo, `activeMode` segue o último modo morador/proprietário. Trocar de modo desliga.
    */
   parceiroAtivo: boolean;
-  /**
-   * E1026: o navegador já CONHECE o papel desta conta (o AuthProvider leu o perfil, ou a pessoa trocou de papel aqui).
-   * Enquanto não conhece — logo depois do login —, a casca usa o papel que o servidor leu ao montar o painel.
-   */
-  papelConhecido: boolean;
   /** PAPEL-B: aplica o papel ativo (morador/proprietário trocam o modo; parceiro liga `parceiroAtivo`). */
   setPapel: (papel: "morador" | "proprietario" | "parceiro") => void;
   /**
@@ -97,7 +92,6 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       activeMode: null,
       parceiroAtivo: false,
-      papelConhecido: false,
       authChecked: false,
       sessionStartedAt: null,
       setAuthChecked: (authChecked) => set({ authChecked }),
@@ -110,17 +104,13 @@ export const useAuthStore = create<AuthState>()(
         // E674: outra conta no mesmo navegador não herda o modo ativo nem o papel "parceiro" da anterior (a casca abria
         // para o Paulo como a do Lucas), e o relógio de 24h recomeça para ela.
         const troca = estadoAoTrocarDeConta(get().user?.id, user?.id);
-        set(troca.trocou ? { user, authChecked: true, activeMode: troca.activeMode, parceiroAtivo: troca.parceiroAtivo, papelConhecido: false, sessionStartedAt: Date.now() } : { user, authChecked: true });
+        set(troca.trocou ? { user, authChecked: true, activeMode: troca.activeMode, parceiroAtivo: troca.parceiroAtivo, sessionStartedAt: Date.now() } : { user, authChecked: true });
         // Prompt 49: o que o convidado guardou no aparelho vai para a conta (sem duplicar).
         mesclarGuardadosDoConvidado(user?.id);
       },
       setActiveMode: (activeMode) => set({ activeMode, parceiroAtivo: false }),
       setPapel: (papel) =>
-        set(
-          papel === "parceiro"
-            ? { parceiroAtivo: true, papelConhecido: true }
-            : { activeMode: papel === "proprietario" ? "owner" : "tenant", parceiroAtivo: false, papelConhecido: true }
-        ),
+        set(papel === "parceiro" ? { parceiroAtivo: true } : { activeMode: papel === "proprietario" ? "owner" : "tenant", parceiroAtivo: false }),
       activateRole: (mode) =>
         set((s) => ({
           activeMode: mode,
@@ -133,7 +123,7 @@ export const useAuthStore = create<AuthState>()(
         // (o persist regrava a sessão vazia logo abaixo).
         limparChavesLocais();
         useFavoritesStore.getState().reset();
-        set({ user: null, activeMode: null, parceiroAtivo: false, papelConhecido: false, authChecked: true, sessionStartedAt: null });
+        set({ user: null, activeMode: null, parceiroAtivo: false, authChecked: true, sessionStartedAt: null });
       },
     }),
     {
@@ -144,7 +134,6 @@ export const useAuthStore = create<AuthState>()(
         user: s.user,
         activeMode: s.activeMode,
         parceiroAtivo: s.parceiroAtivo,
-        papelConhecido: s.papelConhecido,
         sessionStartedAt: s.sessionStartedAt,
       }),
     }
