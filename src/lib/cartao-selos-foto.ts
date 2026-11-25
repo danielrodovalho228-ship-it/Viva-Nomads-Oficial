@@ -43,15 +43,6 @@ export function selosDaFoto(p: {
   };
 }
 
-/**
- * E924 — a composição dos selos, na ordem em que são desenhados: o nível primeiro ("nivel:conforto"), depois os símbolos
- * (verificado, preço justo, pets, negociação). O cartão da busca e o topo da página do imóvel compõem pelos mesmos dados
- * (selosDaFoto) e por isso dão a mesma lista: mesmos dados, mesma composição e mesma ordem.
- */
-export function composicaoDosSelos(s: SelosDoCartao): string[] {
-  return [...(s.nivel ? [`nivel:${s.nivel.id}`] : []), ...s.simbolos.map((x) => x.id)];
-}
-
 /** Quantas pílulas o cartão desenha (0, 1 ou 2). */
 export function pilulasDoCartao(s: SelosDoCartao): number {
   return (s.nivel ? 1 : 0) + (s.simbolos.length > 0 ? 1 : 0);

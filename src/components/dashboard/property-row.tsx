@@ -6,7 +6,6 @@ import { ChevronRight } from "lucide-react";
 import { coverPhoto } from "@/lib/media";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { isExemplo } from "@/lib/demo-listing";
-import { SELO_EXEMPLO } from "@/config/exemplo-proprietarios";
 
 /**
  * Linha de imóvel com MINIATURA da foto de capa (56px, cantos arredondados) +
@@ -53,7 +52,7 @@ export function PropertyRow({
         {/* Anúncio de exemplo: selo honesto também nas listas do painel. */}
         {isExemplo(id) && (
           <span className="mt-1 inline-flex rounded-full bg-night/85 px-2 py-1 text-[10px] font-semibold text-white">
-            {SELO_EXEMPLO}
+            Exemplo ilustrativo
           </span>
         )}
         {/* E756: esta lista não recebe as limpezas únicas do anúncio: mostra só o total do mês, sem um "em N meses" de regra diferente. */}

@@ -16,7 +16,7 @@ import { useNomeDepoisDoAceite } from "@/components/property/use-nome-depois-do-
  * o tempo de resposta e o link para as datas livres (prompt 9). Nada inventado:
  * - anúncio REAL: números do 0149 (menos de 3 conversas → "Novo na Viva") e os selos reais do perfil; o calendário
  *   não tem data de atualização registrada, então só leva às datas livres;
- * - anúncio de EXEMPLO: dados ilustrativos com o selo "Anúncio de exemplo".
+ * - anúncio de EXEMPLO: dados ilustrativos com o selo "Exemplo ilustrativo".
  * O cartão completo "Sobre o proprietário" continua mais abaixo (#proprietario).
  */
 export function FaixaProprietario({

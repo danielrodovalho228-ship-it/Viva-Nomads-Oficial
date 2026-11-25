@@ -126,7 +126,7 @@ export function AvailabilityCalendar({
     onDisponivelDesde?.(desde);
   }, [desde, onDisponivelDesde]);
 
-  // Anúncio de exemplo (id não-UUID, ex.: ube-001): não é reservável.
+  // Anúncio de demonstração (id não-UUID, ex.: ube-001): não é reservável.
   const isDemo = !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(property.id);
   // O próprio dono não pode reservar o imóvel dele.
   const isOwner = !!user && !!property.ownerId && property.ownerId === user.id;

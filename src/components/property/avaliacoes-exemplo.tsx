@@ -61,7 +61,7 @@ function CartaoAvaliacao({ a }: { a: AvaliacaoExemplo }) {
 }
 
 /**
- * Avaliações ILUSTRATIVAS dos anúncios de exemplo (prompt 9). Sempre com o selo "Anúncio de exemplo"
+ * Avaliações ILUSTRATIVAS dos anúncios de exemplo (prompt 9). Sempre com o selo "Exemplo ilustrativo"
  * e o aviso; nunca entram no JSON-LD nem na média de anúncio real.
  */
 export function AvaliacoesExemplo({ avaliacoes }: { avaliacoes: AvaliacaoExemplo[] }) {

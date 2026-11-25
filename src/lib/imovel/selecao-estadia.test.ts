@@ -77,6 +77,5 @@ test("uma fonte só: o calendário não guarda datas; caixa e diálogo usam os m
   assert.match(pagina, /\{camposPeriodo\("candidatura"\)\}/);
   assert.match(pagina, /\{camposPeriodo\("solicitacao"\)\}/);
   assert.match(pagina, /fimDesejado: selecao\.saida/);
-  // E920: os meses do total saem de mesesDoTotalDaPagina (seleção ou estadia mínima); a duração da última busca não entra mais.
-  assert.match(pagina, /const meses = mesesDoTotalDaPagina\(selecao, property\.minPeriodDays\);/);
+  assert.match(pagina, /mesesDaSelecao\(selecao\) \?\?/);
 });

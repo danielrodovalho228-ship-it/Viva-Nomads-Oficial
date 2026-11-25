@@ -49,10 +49,7 @@ test("E356: todo cartão tem a linha do total da estadia (com 1 mês: 'R$ X em 1
 // (duplicava, com outro texto, a de precos.ts). O que diz o que o total inclui agora é o aviso curto da linha do total.
 test("E356 → E899: o aviso curto da linha do total diz o que o preço inclui (os textos moram em precos.ts)", async () => {
   const { avisoCurtoDoTotal } = await import("./precos.ts");
-  // E923: "tudo incluído" só com as contas fixas DENTRO do total (estimativa > 0). Antes bastava o modo "fixed"; com a
-  // estimativa vazia, o cartão dizia "tudo incluído" sem nenhuma conta no total. Agora esse caso diz que não foram informadas.
-  assert.equal(avisoCurtoDoTotal({ utilitiesMode: "fixed", utilitiesEstimate: 280 }), "tudo incluído");
-  assert.equal(avisoCurtoDoTotal({ utilitiesMode: "fixed" }), "água, luz e gás não informados");
+  assert.equal(avisoCurtoDoTotal({ utilitiesMode: "fixed" }), "tudo incluído");
   assert.equal(avisoCurtoDoTotal({ utilitiesMode: "real" }), "água, luz e gás à parte");
   assert.equal("ROTULO_TOTAL_MES" in (await import("./cartao-preco.ts")), false);
 });

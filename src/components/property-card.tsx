@@ -109,8 +109,8 @@ export function PropertyCard({
           <span className="text-sm text-ink">/mês</span>
         </p>
         {/* E356 + E899: todo cartão mostra o total da estadia (com 1 mês, "R$ X em 1 mês") e fecha a linha com o aviso curto:
-            com as contas dentro do total diz que está tudo incluído; com as contas medidas, que água, luz e gás ficam de fora;
-            com contas fixas sem estimativa (E923), que não foram informadas (os textos moram em precos.ts, avisoCurtoDoTotal). */}
+            com as contas fixas diz que está tudo incluído; com as contas medidas, que água, luz e gás ficam de fora (os dois
+            textos moram em precos.ts: AVISO_TUDO_INCLUIDO e AVISO_CONTAS_A_PARTE). */}
         <p className="flex flex-wrap items-center gap-x-1 text-sm tabular-nums text-muted" data-testid="cartao-total-linha">
           <span data-testid="cartao-total-estadia">{m.totalEstadia.texto}</span>
           {/* O aviso quebra de linha como um bloco ("· tudo incluído"), do mesmo jeito da linha-síntese: nunca partido no meio. */}

@@ -7,7 +7,7 @@
   de saída, para QUALQUER N ≥ 1. O "/mês" segue sendo o total do mês (o que se paga todo mês). O cartão mostra a conta
   aberta ("2 × R$ 4.100 + limpeza de preparação R$ 450 + limpeza de saída R$ 250"). PURO.
 */
-import { calcularTudoIncluido, estadiaDoImovel, parcelasDoMes, situacaoDasContas, type CamposTotalMes, type SituacaoDasContas } from "./precos.ts";
+import { calcularTudoIncluido, estadiaDoImovel, parcelasDoMes, type CamposTotalMes } from "./precos.ts";
 import { formatBRL } from "./utils.ts";
 import { resumoEmMeses, rotuloPreco, type RotuloPreco } from "./cartao-preco.ts";
 
@@ -43,13 +43,6 @@ export function rotuloPrecoDoImovel(
   return { ...base, total: e.total, estadia: e.texto, composicao: e.composicao };
 }
 
-/** E923: o que a composição do mês diz das contas que NÃO estão no total (com as contas no total, a soma já as mostra). */
-const CONTAS_FORA_DO_TOTAL: Record<SituacaoDasContas, string> = {
-  no_total: "",
-  medidas: " · água, luz e gás medidos à parte, fora do total",
-  nao_informadas: " · água, luz e gás não informados, fora do total",
-};
-
 /** E756 (escopo ampliado): a composição do "/mês" do cartão, pela fonte única do total do mês (calcularTudoIncluido +
  *  parcelasDoMes). A regra é a mesma para todo anúncio; o que muda é o dado: com condomínio, contas fixas ou pacote de limpeza,
  *  a soma aberta ("Por mês: valor mensal R$ 3.200 + condomínio R$ 480 + contas R$ 280 = R$ 3.960"); com as contas medidas,
@@ -58,5 +51,6 @@ export function composicaoDoMes(p: CamposTotalMes): string {
   const m = calcularTudoIncluido(p);
   const pacote = m.limpezaMes > 0 && p.limpezaEstadia ? ` (${p.limpezaEstadia.porMes} por mês)` : "";
   const soma = m.temExtras ? `${parcelasDoMes(m)}${pacote} = ${formatBRL(m.total)}` : parcelasDoMes(m);
-  return `Por mês: ${soma}${CONTAS_FORA_DO_TOTAL[situacaoDasContas(p)]}`;
+  const medidas = p.utilitiesMode === "fixed" ? "" : " · água, luz e gás medidos à parte, fora do total";
+  return `Por mês: ${soma}${medidas}`;
 }

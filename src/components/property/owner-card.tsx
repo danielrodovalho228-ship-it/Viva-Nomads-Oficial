@@ -23,8 +23,7 @@ import { useNomeDepoisDoAceite } from "@/components/property/use-nome-depois-do-
 import { SeloDonoVerificado } from "@/components/property/selo-dono-verificado";
 import { SeloExemplo } from "@/components/property/selo-exemplo";
 import { buttonClasses } from "@/components/ui/button";
-import { hojeBR } from "@/lib/utils";
-import { textoDaNota } from "@/lib/imovel/rotulo-avaliacoes";
+import { hojeBR, numBR } from "@/lib/utils";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
@@ -59,8 +58,8 @@ interface Dados {
 /**
  * "Sobre o proprietário" (prompt 6 + layout do prompt 9): à esquerda o cartão (iniciais/foto, nome, cidade,
  * selos com ✓); à direita tempo na Viva, fatos, frase e os botões. Nunca telefone nem e-mail: o contato é
- * "Enviar mensagem" (chat da Viva). Anúncio de EXEMPLO: dados ilustrativos, sempre com o selo "Anúncio de
- * exemplo" e o aviso; "Enviar mensagem" só abre o aviso de demonstração (nenhuma conversa é criada).
+ * "Enviar mensagem" (chat da Viva). Anúncio de EXEMPLO: dados ilustrativos, sempre com o selo "Exemplo
+ * ilustrativo" e o aviso; "Enviar mensagem" só abre o aviso de demonstração (nenhuma conversa é criada).
  */
 export function OwnerCard({
   property,
@@ -178,8 +177,7 @@ export function OwnerCard({
               data-testid="proprietario-reputacao"
             >
               <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
-              {/* E925: a nota do proprietário diz de quem é (no topo da página fica a do imóvel). */}
-              {textoDaNota(d.reputacao.media, d.reputacao.n, "proprietario")}
+              {numBR(d.reputacao.media, 1)} · {d.reputacao.n} {d.reputacao.n === 1 ? "avaliação" : "avaliações"}
             </Link>
           )}
           {/* Selos só com verificação REAL registrada; no exemplo, ilustrativos e marcados. */}

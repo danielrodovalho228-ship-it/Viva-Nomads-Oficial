@@ -1,7 +1,7 @@
 /*
-  ANÚNCIO DE EXEMPLO (prompt 9, decisão do Daniel em 17/10).
+  EXEMPLO ILUSTRATIVO (prompt 9, decisão do Daniel em 17/10).
   Os 15 anúncios do site são de demonstração. Para mostrar o perfil do proprietário e as avaliações como
-  ficam nos anúncios reais, estes dados FICTÍCIOS aparecem só neles, sempre com o selo "Anúncio de exemplo".
+  ficam nos anúncios reais, estes dados FICTÍCIOS aparecem só neles, sempre com o selo "Exemplo ilustrativo".
   - Nada disto vai para o banco, para o JSON-LD (Google) nem para o sitemap.
   - Nada disto vale para anúncio real: todas as funções devolvem null/[] quando o id não é de exemplo.
   - Nenhum nome ou foto de pessoa real: nomes inventados, só iniciais em círculo.
@@ -37,13 +37,8 @@ export interface AvaliacaoExemplo {
   resposta?: string;
 }
 
-/**
- * E926: UM nome só para o anúncio de exemplo, em todas as superfícies: "Anúncio de exemplo" (o dos cartões). Antes o selo da
- * página do imóvel, do bloco do proprietário, das avaliações e do perfil de exemplo usava outro nome, e o aviso abaixo, um
- * terceiro. Os nomes antigos estão no teste que os proíbe (src/lib/e926-termo-unico-exemplo.test.ts).
- */
-export const SELO_EXEMPLO = "Anúncio de exemplo";
-export const AVISO_EXEMPLO = "Anúncio de exemplo: nos anúncios reais estes dados vêm do perfil e das estadias verificadas.";
+export const SELO_EXEMPLO = "Exemplo ilustrativo";
+export const AVISO_EXEMPLO = "Anúncio de demonstração: nos anúncios reais estes dados vêm do perfil e das estadias verificadas.";
 
 export const PROPRIETARIOS_EXEMPLO: readonly ProprietarioExemplo[] = [
   {
