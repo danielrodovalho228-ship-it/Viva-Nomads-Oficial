@@ -24,7 +24,7 @@ import { avisoAntesDeEnviar, previaAoDigitar } from "@/lib/messages/aviso-envio"
 import { ROTA_ENVIAR_ANEXO, podeAnexar, tipoNaTela, validarAnexoNaTela } from "@/lib/messages/anexo-tela";
 import { AnexoNaMensagem, BotaoAnexar, PreviaAnexo, semLocalizacao } from "@/components/mensagens/anexo-conversa";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { useExemplos } from "@/lib/demo/usar-exemplos";
+import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
 import { FILTROS, PRAZOS_ADIAR, adiarAte, contarPorFiltro, filtrarConversas, separarAdiadas, estaAdiada, type Filtro, type PrazoAdiar } from "@/lib/mensagens-filtros";
 import { adiarConversa, retomarConversa } from "@/lib/data/conversa-adiar-actions";
 import { cn } from "@/lib/utils";
@@ -45,12 +45,10 @@ import { EVENTO_CONTADORES } from "@/lib/painel/contadores";
  */
 export function MessagesClient({ initial, abrir }: { initial: Conversation[]; /** Conversa a abrir (ex.: "Mensagem" da página da estadia). */ abrir?: string }) {
   const { on: demoOn } = useDemoMode();
-  // E980: os exemplos chegam sob demanda; o inner remonta quando chegam (o estado dele nasce da prop).
-  const exemplos = useExemplos(demoOn);
   return (
     <MessagesInner
-      key={demoOn ? (exemplos ? "demo" : "demo-carregando") : "real"}
-      initial={demoOn ? (exemplos?.DEMO_CONVERSATIONS ?? []) : initial}
+      key={demoOn ? "demo" : "real"}
+      initial={demoOn ? DEMO_CONVERSATIONS : initial}
       demo={demoOn}
       abrir={demoOn ? undefined : abrir}
     />

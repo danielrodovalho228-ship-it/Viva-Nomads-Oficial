@@ -7,7 +7,7 @@ import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/p
 import { FORMULAS_CARTEIRA, indicadoresCarteira, type ItemCarteira, type SituacaoCarteira } from "@/lib/carteira-dono";
 import { addDiasISO } from "@/lib/contrato-blocos";
 import { useDashDemo, useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { useExemplos } from "@/lib/demo/usar-exemplos";
+import { DEMO_PORTFOLIO } from "@/lib/demo/seed";
 import { dataBR, formatBRL } from "@/lib/utils";
 import { ROTULO_MENSAL } from "@/lib/precos";
 import { HREF_RENOVAR } from "@/lib/estadia/renovacao";
@@ -19,9 +19,7 @@ import { HREF_RENOVAR } from "@/lib/estadia/renovacao";
 export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
   const demo = useDashDemo();
   const { on: adminDemo } = useDemoMode();
-  // E980: os exemplos chegam sob demanda (só com a demonstração ligada).
-  const exemplos = useExemplos(demo);
-  const fonte: ItemCarteira[] = demo ? (exemplos?.DEMO_PORTFOLIO ?? []) : itens;
+  const fonte: ItemCarteira[] = demo ? DEMO_PORTFOLIO : itens;
 
   if (fonte.length === 0) {
     return (

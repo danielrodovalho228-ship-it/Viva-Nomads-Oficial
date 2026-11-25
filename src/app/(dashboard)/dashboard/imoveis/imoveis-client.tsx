@@ -15,7 +15,7 @@ import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { useExemplos } from "@/lib/demo/usar-exemplos";
+import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
 import type { Property, PropertyStatus } from "@/lib/types";
 import { avisoExcluirRascunho, rotuloExcluirRascunho } from "@/lib/anuncio/excluir-rascunho";
 import { faixaDocumentoAprovado, hrefParaMelhorar, hrefRetomarRascunho, type Prontidao } from "@/lib/anuncio/prontidao";
@@ -68,9 +68,7 @@ export function MyPropertiesClient({
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
   const [excluindo, setExcluindo] = useState<string | null>(null);
   const [erroExcluir, setErroExcluir] = useState<string | null>(null);
-  // E980: os exemplos chegam sob demanda (só com a demonstração ligada).
-  const exemplos = useExemplos(demoOn);
-  const properties = (demoOn ? (exemplos?.DEMO_PROPERTIES ?? []) : real).filter((p) => !removidos.has(p.id));
+  const properties = (demoOn ? DEMO_PROPERTIES : real).filter((p) => !removidos.has(p.id));
 
   const duplicados = idsRascunhosDuplicados(properties);
   // E383: de cada grupo de rascunhos repetidos, só o mais recente aparece; as cópias ficam atrás de "ver cópias".
@@ -204,7 +202,7 @@ export function MyPropertiesClient({
           )}
           {pagina.visiveis.map((p) => {
             const demoItem = demoOn;
-            const stats = demoItem ? exemplos?.DEMO_PROPERTY_STATS[p.id] : undefined;
+            const stats = demoItem ? DEMO_PROPERTY_STATS[p.id] : undefined;
             const comp = prontidao[p.id];
             // E510: foto e título levam ao mesmo destino dos botões do cartão (ativo → página; rascunho → onde parou;
             // pausado → editor). Na demonstração, o título segue como texto (não há edição de verdade).
