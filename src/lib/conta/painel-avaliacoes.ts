@@ -5,7 +5,6 @@
   a vistoria do avaliador.
 */
 import { DIAS_PRAZO_AVALIACAO } from "../avaliacoes.ts";
-import { ABAS_AVALIACOES, type AbaAvaliacoes } from "./avaliacoes-recebidas.ts";
 
 export const ABAS_PAINEL = [
   { valor: "para-avaliar", rotulo: "Para avaliar" },
@@ -19,23 +18,6 @@ export function abaDoPainel(v: string | null | undefined): AbaPainel {
   if (ABAS_PAINEL.some((a) => a.valor === v)) return v as AbaPainel;
   if (v === "todas" || v === "recentes" || v === "positivas") return "recebidas";
   return "para-avaliar";
-}
-
-/** Os parâmetros do endereço que escolhem a aba e o filtro do painel. */
-export type ParametrosPainel = { aba?: string; tab?: string; filtro?: string };
-
-/**
- * E918 (prova ao vivo do Gerente, 14/11): /dashboard/avaliacoes?tab=recebidas abria em "Para avaliar" — a página só lia
- * `?aba=`. `?tab=` vale igual; `?aba=` manda quando os dois vêm.
- */
-export function abaDoEndereco(sp: ParametrosPainel): AbaPainel {
-  return abaDoPainel(sp.aba ?? sp.tab);
-}
-
-/** O filtro de "Recebidas" (Todas, Recentes, Positivas): `?filtro=` ou o valor antigo em `?aba=`/`?tab=`; senão Todas. */
-export function filtroDoEndereco(sp: ParametrosPainel): AbaAvaliacoes {
-  const pedido = sp.filtro ?? sp.aba ?? sp.tab;
-  return ABAS_AVALIACOES.some((a) => a.valor === pedido) ? (pedido as AbaAvaliacoes) : "todas";
 }
 
 /** "Para avaliar (2)" — o número só aparece quando há pendência. */

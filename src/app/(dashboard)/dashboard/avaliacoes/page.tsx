@@ -3,7 +3,8 @@ import { CascaConta } from "@/components/account/casca-conta";
 import { PainelAvaliacoes } from "@/components/avaliacoes/painel";
 import { avaliacoesRecebidas } from "@/lib/data/avaliacoes-recebidas";
 import { avaliacoesFeitas, avaliacoesParaFazer } from "@/lib/data/avaliacoes-painel";
-import { abaDoEndereco, filtroDoEndereco } from "@/lib/conta/painel-avaliacoes";
+import { ABAS_AVALIACOES, type AbaAvaliacoes } from "@/lib/conta/avaliacoes-recebidas";
+import { abaDoPainel } from "@/lib/conta/painel-avaliacoes";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Avaliações", robots: { index: false } };
@@ -14,11 +15,12 @@ export const metadata = { title: "Avaliações", robots: { index: false } };
  * Conta (/dashboard/conta/avaliacoes) redireciona para cá. Sem migração; só lê o que já existe.
  * E898: renderiza na casca da Conta (menu lateral com "Avaliações" ativo, "‹ Conta" no celular), como as seções irmãs.
  */
-export default async function AvaliacoesPainelPage({ searchParams }: { searchParams: Promise<{ aba?: string; tab?: string; filtro?: string; q?: string }> }) {
+export default async function AvaliacoesPainelPage({ searchParams }: { searchParams: Promise<{ aba?: string; filtro?: string; q?: string }> }) {
   const sp = await searchParams;
-  // E918: a aba vem de ?aba= ou ?tab=; os filtros de "Recebidas" de ?filtro= ou do valor antigo (?aba=positivas).
-  const aba = abaDoEndereco(sp);
-  const filtro = filtroDoEndereco(sp);
+  const aba = abaDoPainel(sp.aba);
+  // Os filtros da aba "Recebidas" (Todas, Recentes, Positivas): o valor novo (?filtro=) ou o antigo (?aba=positivas).
+  const pedido = sp.filtro ?? sp.aba;
+  const filtro: AbaAvaliacoes = ABAS_AVALIACOES.some((a) => a.valor === pedido) ? (pedido as AbaAvaliacoes) : "todas";
   const busca = (sp.q ?? "").slice(0, 80);
 
   const [recebidas, feitasRes] = await Promise.all([avaliacoesRecebidas({ exigir: true }), avaliacoesFeitas({ exigir: true })]);
