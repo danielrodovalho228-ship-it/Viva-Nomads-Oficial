@@ -85,11 +85,11 @@ test.describe("T1759 — E1088: o 'Pedir orçamento' volta depois do contrato as
         await expect(cartao, `cartão (${caso})`).toBeVisible({ timeout: 30_000 });
         const botao = cartao.getByTestId("candidatura-pedir-orcamento-botao");
         if (caso === "a" || caso === "d") {
-          await expect(botao, `(${caso}) com o botão`).toBeVisible();
-          await expect(cartao.getByTestId("candidatura-numero-pedido")).toHaveText(pedido(ids.lead[caso]!));
+          await expect.soft(botao, `(${caso}) com o botão`).toBeVisible();
+          await expect.soft(cartao.getByTestId("candidatura-numero-pedido")).toHaveText(pedido(ids.lead[caso]!));
         } else {
-          await expect(botao, `(${caso}) sem o botão`).toHaveCount(0);
-          await expect(cartao.getByTestId("candidatura-numero-pedido-cartao")).toContainText(pedido(ids.lead[caso]!));
+          await expect.soft(botao, `(${caso}) sem o botão`).toHaveCount(0);
+          await expect.soft(cartao.getByTestId("candidatura-numero-pedido-cartao")).toContainText(pedido(ids.lead[caso]!));
         }
       }
       await page.context().close();

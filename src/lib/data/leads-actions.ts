@@ -32,7 +32,6 @@ import { conversationId } from "@/lib/messages/conversation-id";
 import { IDENTIDADE_INDISPONIVEL, type EstadoIdentidade } from "@/lib/identidade/estado";
 import type { ContratoDoFechamento } from "@/lib/fechamento-resumo";
 import { lerEstadoDoContrato } from "@/lib/data/contratos-actions";
-import { contratoDoSelo, ORCAMENTO_ABERTO, type ContratoDoPedido } from "@/lib/pedido-ref";
 
 interface ActionResult {
   ok: boolean;
@@ -202,10 +201,6 @@ export interface MinhaCandidatura {
   primeiroEnvioEm: string | null;
   /** Prompt 24: contrato registrado desta candidatura (aparece no cartão com o status da assinatura). */
   contrato: { id: string; status: string } | null;
-  /** E1088: TODOS os contratos desta candidatura (com o E1086 pode haver mais de um), para a regra do "Pedir orçamento". */
-  contratosDoPedido: ContratoDoPedido[];
-  /** E1088: há orçamento desta candidatura à espera de resposta (leitura que falha conta como aberto: não mostra o botão). */
-  temOrcamentoAberto: boolean;
 }
 
 /**
@@ -244,36 +239,14 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
   // Contrato de cada candidatura (o RLS deixa o inquilino ler os próprios contratos).
   const { data: contratos } = await supabase
     .from("contratos")
-    .select(`id, lead_id, created_at, ${COLUNAS_ESTADO_CONTRATO}`)
+    .select(`id, lead_id, ${COLUNAS_ESTADO_CONTRATO}`)
     .eq("tenant_id", user.id);
   // O selo do contrato pela fonte única (o mesmo de Contratos e da página do contrato).
-  // E1088 (ORDEM-DUET-728): o selo vem do contrato que conta na regra (o mais recente entre os não cancelados), não do
-  // último que a consulta devolve.
-  type LinhaContrato = { id: string; lead_id: string | null; created_at: string | null } & LinhaEstadoContrato;
-  const porLead = new Map<string, LinhaContrato[]>();
-  for (const c of (contratos ?? []) as unknown as LinhaContrato[]) {
-    if (!c.lead_id) continue;
-    porLead.set(c.lead_id, [...(porLead.get(c.lead_id) ?? []), c]);
-  }
-  const contratoDoLead = new Map<string, { id: string; status: string }>();
-  for (const [lead, lista] of porLead) {
-    const c = contratoDoSelo(lista);
-    if (c) contratoDoLead.set(lead, { id: c.id, status: estadoDoContratoUnico(c, "inquilino").selo });
-  }
-  // E1088: o Map acima guarda um contrato por candidatura (o selo); a regra do "Pedir orçamento" precisa de todos.
-  const contratosDoLead = new Map<string, ContratoDoPedido[]>();
-  for (const c of (contratos ?? []) as unknown as ({ lead_id: string | null } & LinhaEstadoContrato)[]) {
-    if (!c.lead_id) continue;
-    const lista = contratosDoLead.get(c.lead_id) ?? [];
-    lista.push({ status: c.status ?? null, assinadoProprietarioEm: c.assinado_proprietario_em ?? null, assinadoInquilinoEm: c.assinado_inquilino_em ?? null });
-    contratosDoLead.set(c.lead_id, lista);
-  }
-  // E1088: as candidaturas com orçamento em aberto (a mesma lista de estados do servidor).
-  const leadIds = (data as unknown as { id: string }[]).map((r) => r.id);
-  const { data: abertos, error: erroAbertos } = leadIds.length
-    ? await supabase.from("propostas").select("lead_id").in("lead_id", leadIds).in("status", ORCAMENTO_ABERTO)
-    : { data: [], error: null };
-  const comOrcamentoAberto = new Set(((abertos ?? []) as { lead_id: string | null }[]).map((p) => p.lead_id));
+  const contratoDoLead = new Map(
+    ((contratos ?? []) as unknown as ({ id: string; lead_id: string | null } & LinhaEstadoContrato)[])
+      .filter((c) => c.lead_id)
+      .map((c) => [c.lead_id as string, { id: c.id, status: estadoDoContratoUnico(c, "inquilino").selo }]),
+  );
 
   type Row = {
     id: string;
@@ -292,8 +265,6 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
     // E657: a data de envio que a pessoa vê é a do último envio (o reenvio, se houve); a criação segue em createdAt.
     ...envioDaCandidatura(r.created_at, r.reenviada_em),
     contrato: contratoDoLead.get(r.id) ?? null,
-    contratosDoPedido: contratosDoLead.get(r.id) ?? [],
-    temOrcamentoAberto: !!erroAbertos || comOrcamentoAberto.has(r.id),
   }));
 }
 
