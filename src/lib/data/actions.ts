@@ -111,7 +111,7 @@ import { excluirRascunhoDoDono } from "@/lib/data/excluir-rascunho-servidor";
 import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
-import { PROPOSTA_FORA_DO_FECHAMENTO, marcarPropostaEmContrato, preAceiteExpiradoDoLead, propostaDoFechamentoDoLead } from "@/lib/data/propostas-servidor";
+import { marcarPropostaEmContrato, preAceiteExpiradoDoLead, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
 import { contratoDoFechamentoDoLead } from "@/lib/data/fechamento-servidor";
 import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
@@ -1435,8 +1435,6 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export interface ContratoInput {
   /** Candidatura ACEITA de onde o contrato nasce (inquilino, imóvel, aluguel e taxa vêm dela). */
   leadId: string;
-  /** E1141: a estadia (proposta) escolhida no Fechamento; o servidor valida-a. Sem ela, a proposta acordada mais recente. */
-  propostaId?: string | null;
   faixa: string; // temporada | media_estadia | longa
   prazoTotalMeses: number; // prazo total pretendido (contrato-mãe)
   /** E655: sem proposta, os dias EXATOS da janela da candidatura (o servidor confere contra a candidatura). */
@@ -1492,10 +1490,8 @@ export async function registrarContrato(
   if (preAceiteExpirado === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   if (preAceiteExpirado) return { ok: false, error: MSG_PRE_ACEITE_EXPIRADO };
   // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
-  // E1141: a proposta DESTE fecho — a pedida (desta candidatura e acordada) ou, sem ela, a de sempre.
-  const acordada = await propostaDoFechamentoDoLead(admin, lead.id as string, input.propostaId ?? null).catch(() => "falhou" as const);
+  const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
   if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
-  if (acordada === PROPOSTA_FORA_DO_FECHAMENTO) return { ok: false, error: "Não encontramos esse fechamento." };
   // E1086: "já existe" é o contrato DESTA proposta. O contrato de outra proposta da mesma candidatura é de outra
   // estadia: a proposta nova gera o dela (antes, a estadia nova caía no contrato já assinado da anterior).
   const existente = await contratoDoFechamentoDoLead(admin, lead.id as string, acordada ? acordada.id : null).catch(() => "falhou" as const);

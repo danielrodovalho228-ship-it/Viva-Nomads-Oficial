@@ -7,7 +7,7 @@ import { documentoParaContrato } from "@/lib/documento-pessoa";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
-import { PROPOSTA_FORA_DO_FECHAMENTO, preAceiteExpiradoDoLead, propostaDoFechamentoDoLead } from "@/lib/data/propostas-servidor";
+import { preAceiteExpiradoDoLead, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
 import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { RESERVA_EXPIRA_MS, type ReservaLida } from "@/lib/fechamento-contrato";
@@ -20,8 +20,6 @@ import { filtroDaChave } from "@/lib/contrato-da-proposta";
  */
 export interface DadosFechamento {
   leadId: string;
-  /** E1141: a proposta (a estadia) que o fecho pediu com `p` e o servidor validou; null = a regra de sempre. */
-  propostaPedida: string | null;
   propertyId: string;
   tituloImovel: string;
   aluguelMensal: number;
@@ -40,10 +38,7 @@ export type FalhaFechamento = { status: number; error: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** E1141: o `p` pedido não é uma proposta acordada desta candidatura. */
-export const MSG_FECHO_NAO_ENCONTRADO = "Não encontramos esse fechamento.";
-
-export async function carregarFechamento(leadId: unknown, propostaId?: unknown): Promise<DadosFechamento | FalhaFechamento> {
+export async function carregarFechamento(leadId: unknown): Promise<DadosFechamento | FalhaFechamento> {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return { status: 503, error: "Serviço indisponível." };
@@ -53,9 +48,6 @@ export async function carregarFechamento(leadId: unknown, propostaId?: unknown):
   if (!user) return { status: 401, error: "Não autenticado." };
   // Sessão ANTES de validar o corpo: visitante sem login recebe 401, nunca 400 (t49).
   if (typeof leadId !== "string" || !UUID_RE.test(leadId)) return { status: 400, error: "Candidatura inválida." };
-  // E1141: a estadia pedida (opcional). Sem ela, a regra de sempre; com ela, só um id de proposta.
-  if (propostaId != null && (typeof propostaId !== "string" || !UUID_RE.test(propostaId))) return { status: 400, error: "Proposta inválida." };
-  const propostaPedida = propostaId == null ? null : (propostaId as string);
 
   // Candidatura ACEITA em que o usuário logado é o DONO (sessão + RLS "leads das partes").
   const { data: lead } = await supabase
@@ -82,10 +74,8 @@ export async function carregarFechamento(leadId: unknown, propostaId?: unknown):
   if (preAceiteExpirado === "falhou") return { status: 503, error: MSG_VALORES_SEM_CONFERIR };
   if (preAceiteExpirado) return { status: 409, error: MSG_PRE_ACEITE_EXPIRADO };
   // Prompt 17: com proposta aceita, vale o valor mensal ACORDADO (não o do anúncio).
-  // E1141: a proposta DESTE fecho — a pedida com `p` (validada: desta candidatura e acordada) ou a de sempre.
-  const acordada = await propostaDoFechamentoDoLead(admin, lead.id as string, propostaPedida).catch(() => "falhou" as const);
+  const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
   if (acordada === "falhou") return { status: 503, error: MSG_VALORES_SEM_CONFERIR };
-  if (acordada === PROPOSTA_FORA_DO_FECHAMENTO) return { status: 404, error: MSG_FECHO_NAO_ENCONTRADO };
   const aluguel = acordada ? acordada.valorMensal : Number(imovel.monthly_price);
   if (!Number.isFinite(aluguel) || aluguel <= 0) return { status: 400, error: "Imóvel sem valor de aluguel." };
 
@@ -106,7 +96,6 @@ export async function carregarFechamento(leadId: unknown, propostaId?: unknown):
 
   return {
     leadId: lead.id as string,
-    propostaPedida,
     propertyId: lead.property_id as string,
     tituloImovel: imovel.title as string,
     aluguelMensal: aluguel,
@@ -214,14 +203,12 @@ export interface ComissaoDoContrato {
  * e taxa vêm do contrato JÁ REGISTRADO desta candidatura — o mesmo dado de contratos.comissao_valor —,
  * nunca de um prazo enviado pelo navegador (que poderia mandar 1 mês e pagar menos). Sem contrato = null.
  */
-export async function comissaoDoContrato(leadId: string, propostaPedida: string | null = null): Promise<ComissaoDoContrato | null> {
+export async function comissaoDoContrato(leadId: string): Promise<ComissaoDoContrato | null> {
   const admin = createAdminClient();
   if (!admin) return null;
   // Achado 81: falha de leitura não vira "registre o contrato antes" (409) — lança; a rota responde 503.
   // E1086: o contrato é o DA PROPOSTA acordada (a taxa de uma estadia nunca se calcula pelo contrato de outra).
-  // E1141: a proposta pedida pelo fecho (já validada em `carregarFechamento`) ou, sem ela, a de sempre.
-  const acordada = await propostaDoFechamentoDoLead(admin, leadId, propostaPedida);
-  if (acordada === PROPOSTA_FORA_DO_FECHAMENTO) return null;
+  const acordada = await propostaAcordadaDoLead(admin, leadId);
   const propostaId = acordada ? acordada.id : null;
   const data = await contratoDoFechamentoDoLead(admin, leadId, propostaId);
   if (!data) return null;
