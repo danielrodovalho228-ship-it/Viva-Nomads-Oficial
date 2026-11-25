@@ -8,9 +8,7 @@ import { useDashDemo } from "@/lib/demo/demo-mode";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
 import { COMMISSION_BY_PLAN } from "@/lib/constants";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
-import type { LinhaDoFecho } from "@/lib/fechamento/fechos-do-dono";
 import { ClosingFlow } from "./closing-flow";
-import { SeusFechamentos, TEXTOS_FECHOS } from "./seus-fechamentos";
 
 /**
  * Contexto de DEMONSTRAÇÃO (admin, modo demo): candidatura aceita fictícia, com
@@ -35,63 +33,11 @@ const SAMPLE_CTX: FechamentoContexto = {
  *  - conta real SEM candidatura aceita → o fechamento NÃO existe: guarda que
  *    aponta para os interessados (fim do imóvel-amostra fixo).
  */
-/** E1090: os fechos do dono, já na ordem (a regra pura decide), e a linha que o assistente mostra agora. */
-export interface FechosDaPagina {
-  linhas: LinhaDoFecho[];
-  foraDoTeto: number;
-  /** A chave da linha que o assistente aberto mostra. */
-  atual: string | null;
-  /** R9: o `?c=` pedido não é um fechamento deste dono. */
-  naoEncontrado: boolean;
-  /** Caso 12: há candidaturas aceitas, mas nenhuma por fechar. */
-  temAceitas: boolean;
-}
-
-export function ClosingClient({ realCtx, fechos = null }: { realCtx: FechamentoContexto | null; fechos?: FechosDaPagina | null }) {
+export function ClosingClient({ realCtx }: { realCtx: FechamentoContexto | null }) {
   const demo = useDashDemo();
 
-  // R11: a demonstração do admin fica como está — o exemplo fixo, sem lista.
   if (demo) return <ClosingFlow ctx={SAMPLE_CTX} demo />;
-
-  // R5: com um fecho só, a tela fica como antes, sem lista; com dois ou mais (ou um `?c=` que não é do dono), a lista
-  // aparece por cima do assistente.
-  const lista =
-    fechos && fechos.linhas.length > 0 && (fechos.linhas.length > 1 || fechos.naoEncontrado || !realCtx) ? (
-      <SeusFechamentos linhas={fechos.linhas} foraDoTeto={fechos.foraDoTeto} atual={fechos.atual} naoEncontrado={fechos.naoEncontrado} />
-    ) : null;
-
-  if (realCtx)
-    return (
-      <>
-        {lista}
-        <ClosingFlow ctx={realCtx} demo={false} />
-      </>
-    );
-  if (lista)
-    return (
-      <>
-        <PageTitle title="Fechamento" subtitle="Os seus fechamentos, do que espera por você ao que já está fechado." />
-        {lista}
-      </>
-    );
-
-  // Caso 12 (R10): há aceitas, mas todas voltaram ao dono (pré-aceitação expirada, sem contrato) — não é "nenhuma aceita".
-  if (fechos?.temAceitas)
-    return (
-      <>
-        <PageTitle title="Fechamento" subtitle="O fechamento começa quando você aceita um candidato — ele herda o imóvel, as partes e os valores da candidatura." />
-        <EmptyState
-          icon={Handshake}
-          title={TEXTOS_FECHOS.semPorFecharTitulo}
-          text={TEXTOS_FECHOS.semPorFecharTexto}
-          action={
-            <ButtonLink href="/dashboard/leads" variant="primary">
-              Ver interessados
-            </ButtonLink>
-          }
-        />
-      </>
-    );
+  if (realCtx) return <ClosingFlow ctx={realCtx} demo={false} />;
 
   return (
     <>
