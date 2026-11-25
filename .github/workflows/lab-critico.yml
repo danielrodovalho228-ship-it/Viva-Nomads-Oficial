@@ -9,9 +9,7 @@ name: Lab crítico (fluxos críticos)
 # integrações simuladas, nada de segredo de produção). Para EXIGIR este check antes de mesclar, só o Daniel liga:
 # GitHub > Settings > Branches > regra da main > "Require status checks to pass" > marcar "lab-critico".
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -118,7 +116,7 @@ jobs:
         id: e2e
         # Limite próprio: é a folga que os testes já tinham (os 40 min antigos do job menos a preparação e a instalação).
         # O job cresceu para caber a instalação lenta; um teste travado não fica pendurado por mais tempo por isso.
-        timeout-minutes: 35
+        timeout-minutes: 70
         run: |
           # E1040: só `npx playwright …` corre na imagem oficial, com a rede do runner e como o utilizador do runner (os
           # resultados ficam no workspace). O resto do `npx` segue o do runner. As linhas de comando ficam iguais.
@@ -130,24 +128,13 @@ jobs:
               $(env | cut -d= -f1 | grep -E '^(NEXT_PUBLIC_|LAB_|TESTES_|INTEGRACOES_|SUPABASE_|PLAYWRIGHT_|CI$)' | sed 's/^/-e /') \
               mcr.microsoft.com/playwright:v1.61.1-noble npx playwright "$@"
           }
-          if [ -n "$BASE_SHA" ]; then
-            mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs --alterados-desde "$BASE_SHA")
-          else
-            mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs)
-          fi
-          echo "Specs do portão: ${SPECS[*]}"
-          # O retry fica para o relatório mostrar as duas tentativas; passar só no retry também reprova.
-          # E744 T3: os specs com a etiqueta @sensivel-carga (tests/laboratorio/sensiveis-a-carga.json) falham em paralelo e
-          # passam sozinhos. Aqui, como na rodada noturna, eles rodam à parte, com 1 worker; a exigência é a mesma nas duas
-          # corridas (1 nova tentativa, instável reprova) e qualquer uma vermelha reprova o portão.
+          # ENSAIO (nunca mergear): a perna do check-in da Estadia (t2208).
           set +e
-          npx playwright test "${SPECS[@]}" --grep-invert "@sensivel-carga" --reporter=list,json --workers=2 --retries=1 --fail-on-flaky-tests 2>&1 | tee tests/laboratorio/saida/e2e.txt
-          RESTO="${PIPESTATUS[0]}"
-          PLAYWRIGHT_JSON_OUTPUT_NAME=tests/laboratorio/saida/resultado-carga.json npx playwright test "${SPECS[@]}" --grep "@sensivel-carga" --reporter=list,json --workers=1 --retries=1 --fail-on-flaky-tests --pass-with-no-tests 2>&1 | tee tests/laboratorio/saida/e2e-carga.txt
-          CARGA="${PIPESTATUS[0]}"
+          npx playwright test tests/e2e/specs/t1651-e953-excluir-rascunho.spec.ts tests/e2e/specs/t1661-e961-404-fora-das-paginas.spec.ts tests/e2e/specs/t1668-ajuda-lote-2.spec.ts tests/e2e/specs/t1670-e976-salto-no-painel-e-404.spec.ts tests/e2e/specs/t1671-e979-cookie-da-largura-desatualizado.spec.ts tests/e2e/specs/t1672-e986-espaco-trabalho-escolha-durante-a-leitura.spec.ts tests/e2e/specs/t1673-e980-exemplos-fora-do-pacote.spec.ts tests/e2e/specs/t1680-e917-recuperar-por-codigo.spec.ts tests/e2e/specs/t1690-e1026-papel-na-chegada-do-login.spec.ts tests/e2e/specs/t1691-e1028-papeis-cabem-a-390.spec.ts tests/e2e/specs/t1692-e1030-auth-um-main.spec.ts tests/e2e/specs/t1693-e614-retoma-indicador-sem-carimbo.spec.ts tests/e2e/specs/t1694-e1031-admin-sem-pre-carregar-a-saida.spec.ts tests/e2e/specs/t1696-e1034-abrir-rascunho-sem-dados-nao-regrava.spec.ts tests/e2e/specs/t1697-e1035-editar-rascunho-sem-dados-preserva-o-resto.spec.ts tests/e2e/specs/t2025-e445-foto-sem-exif-gps.spec.ts tests/e2e/specs/t2044-e254-estadia-minima-soma.spec.ts tests/e2e/specs/t2045-e306-capa-do-parceiro.spec.ts tests/e2e/specs/t2046-e323-foto-nunca-em-branco.spec.ts tests/e2e/specs/t2047-e287-rota-so-admin-visitante.spec.ts tests/e2e/specs/t2049-e522-chips-estadia-caucao.spec.ts tests/e2e/specs/t2050-e579-filtro-emite-nota.spec.ts tests/e2e/specs/t2051-e604-comodidade-num-so-bloco.spec.ts tests/e2e/specs/t2052-e631-imoveis-do-dono.spec.ts tests/e2e/specs/t2053-e626-selos-do-cartao.spec.ts tests/e2e/specs/t2054-e917-validade-do-link.spec.ts tests/e2e/specs/t2055-e902-passos-do-credenciamento.spec.ts tests/e2e/specs/t2056-e794-parceiros-sem-identidade-revelada.spec.ts tests/e2e/specs/t2057-e744-total-de-1-mes.spec.ts tests/e2e/specs/t2058-e768-galeria-na-primeira-visita.spec.ts tests/e2e/specs/t2060-e733-mapa-dentro-da-tela.spec.ts tests/e2e/specs/t2062-e735-auth-sem-transbordo-lateral.spec.ts tests/e2e/specs/t2063-e919-manutencao-leve.spec.ts tests/e2e/specs/t2064-e941-ligacoes-nas-respostas.spec.ts tests/e2e/specs/t2069-e976-salto-e-o-primeiro-tab.spec.ts tests/e2e/specs/t2073-e976-salto-no-painel.spec.ts tests/e2e/specs/t2076-e766-backup-sem-alerta-velho.spec.ts tests/e2e/specs/t2077-e790-contato-no-pedido-concluido.spec.ts tests/e2e/specs/t2084-e287-rota-so-admin-lab.spec.ts tests/e2e/specs/t2085-e579-filtro-emite-nota-lab.spec.ts tests/e2e/specs/t2101-e481-celular-lida-ao-abrir.spec.ts tests/e2e/specs/t2200-e994-rodape-suporte-uma-linha.spec.ts tests/e2e/specs/t2203-e1014-falar-com-pessoa-antes-do-js.spec.ts  --project=chromium --retries=0 --workers=1 --reporter=list,json 2>&1 | tee tests/laboratorio/saida/e2e.txt
+          B="${PIPESTATUS[0]}"
           set -e
-          echo "resto dos specs: saída $RESTO · sensíveis à carga (1 worker): saída $CARGA"
-          [ "$RESTO" -eq 0 ] && [ "$CARGA" -eq 0 ] || exit 1
+          echo "ensaio: t2208 saída $B"
+          [ "$B" -eq 0 ] || exit 1
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
