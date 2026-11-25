@@ -19,3 +19,12 @@ export function propostaDoFechamento(e: {
   if (!p || p.id !== e.propostaId || p.lead_id !== e.leadId) return "fora";
   return STATUS_PROPOSTA_ACORDADA.includes(p.status) ? "escolhida" : "fora";
 }
+
+/**
+ * E1141 (guarda 2 do coordenador, ORDEM-DUET-933) — a taxa de uma estadia é a CONGELADA da proposta dela. A taxa do
+ * aceite gravada na candidatura é a da proposta aceita por último (o aceite reescreve-a), por isso a de uma estadia
+ * anterior seria a da mais recente. Sem taxa congelada na proposta (legado), vale a do aceite, como antes.
+ */
+export function taxaDaEstadia(taxaDaProposta: number | null | undefined, taxaDoAceite: number | null | undefined): number | null {
+  return taxaDaProposta ?? taxaDoAceite ?? null;
+}

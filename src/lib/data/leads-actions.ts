@@ -11,6 +11,7 @@ import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
 import { periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
 import { notify } from "@/lib/notifications";
 import { COMISSAO_POR_PLANO, plano as planoPorId, type PlanoId } from "@/config/planos";
+import { taxaDaEstadia } from "@/lib/fechamento/proposta-do-fechamento";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { situacaoCandidatura, type RotuloCandidatura } from "@/lib/candidaturas/status";
 import { getPropertyForOwner } from "@/lib/data/properties";
@@ -393,6 +394,8 @@ export async function getFechamentoContext(
   let taxaLead: TaxaDoLead | null = null;
   // E1141: o `p` que não é uma proposta acordada desta candidatura → "não encontramos esse fechamento".
   let foraDoFecho = false;
+  // E1141 (guarda 2): a taxa CONGELADA da proposta desta estadia (a do aceite é a da última aceita).
+  let taxaDaProposta: number | null = null;
   try {
     const admin = createAdminClient();
     if (admin) {
@@ -408,6 +411,7 @@ export async function getFechamentoContext(
       const lida = await propostaDoFechamentoDoLead(admin, lead.id as string, propostaId ?? null);
       if (lida === PROPOSTA_FORA_DO_FECHAMENTO) foraDoFecho = true;
       const acordada = lida === PROPOSTA_FORA_DO_FECHAMENTO ? null : lida;
+      taxaDaProposta = acordada?.taxa ?? null;
       if (acordada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada, termos: acordada.termos };
       ocupantesSugerido = (d?.qtd_ocupantes as number | null) ?? null;
       const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
@@ -444,9 +448,11 @@ export async function getFechamentoContext(
 
   const planoId = (taxaLead?.acceptedPlan ?? "free") as PlanoId;
   // Comissão CONGELADA no aceite; retrocompatível se o snapshot faltar.
+  // E1141 (guarda 2): a da proposta desta estadia; sem ela, a do aceite, como antes.
+  const taxaDoFecho = taxaDaEstadia(taxaDaProposta, taxaLead?.acceptedCommissionRate);
   const comissaoRate =
-    typeof taxaLead?.acceptedCommissionRate === "number"
-      ? taxaLead.acceptedCommissionRate
+    typeof taxaDoFecho === "number"
+      ? taxaDoFecho
       : COMISSAO_POR_PLANO[planoId] ?? COMISSAO_POR_PLANO.free;
 
   return {

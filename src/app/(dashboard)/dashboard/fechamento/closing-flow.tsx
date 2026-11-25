@@ -299,7 +299,31 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       return;
     }
     setGerando(true);
+    // A6: inquilino, imóvel, aluguel e taxa vêm da candidatura aceita (servidor); daqui vão só as escolhas do Fechamento.
+    const entradaDoContrato = {
+      leadId: ctx.leadId,
+      ...(ctx.propostaDaUrl ? { propostaId: ctx.propostaDaUrl } : {}),
+      faixa: FAIXA,
+      prazoTotalMeses: prazoMeses,
+      ...(DIAS_CANDIDATURA ? { prazoTotalDias: DIAS_CANDIDATURA } : {}),
+      tamanhoBlocoMeses: TAMANHO_BLOCO,
+      qtdOcupantes: qtdOcupantes,
+      capacidadeSnapshot: CAPACIDADE,
+      inicioISO,
+      caucaoForma: (caucaoForma === "parcelado" ? "preauth_cartao" : "avista") as "preauth_cartao" | "avista",
+      // Garantia ÚNICA (art. 37): seguro-fiança → blocos sem caução (servidor e banco conferem).
+      garantia: garantiaDoContrato(guaranteeId),
+    };
     try {
+      // E1141 (guarda 3, ORDEM-DUET-933): a estadia escolhida confere TUDO no servidor (o período que cruza outro
+      // contrato do imóvel, 0176, incluído) ANTES do documento e da taxa — nunca se gera nem se cobra o que vai falhar.
+      if (ctx.propostaDaUrl) {
+        const conferido = await registrarContrato(entradaDoContrato, { soConferir: true }).catch(() => ({ ok: false, error: "Não foi possível registrar o contrato." }));
+        if (!conferido.ok) {
+          setErroContrato(conferido.error ?? "Não foi possível registrar o contrato.");
+          return;
+        }
+      }
       const res = await fetch("/api/contrato", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -334,20 +358,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       // fica no contrato-mãe (taxa × valor total, UMA vez); cada bloco carrega a
       // caução (50%). O servidor confere o documento das duas partes (F32).
       // A6: inquilino, imóvel, aluguel e taxa vêm da candidatura aceita (servidor).
-      const reg = await registrarContrato({
-        leadId: ctx.leadId,
-        ...(ctx.propostaDaUrl ? { propostaId: ctx.propostaDaUrl } : {}),
-        faixa: FAIXA,
-        prazoTotalMeses: prazoMeses,
-        ...(DIAS_CANDIDATURA ? { prazoTotalDias: DIAS_CANDIDATURA } : {}),
-        tamanhoBlocoMeses: TAMANHO_BLOCO,
-        qtdOcupantes: qtdOcupantes,
-        capacidadeSnapshot: CAPACIDADE,
-        inicioISO,
-        caucaoForma: caucaoForma === "parcelado" ? "preauth_cartao" : "avista",
-        // Garantia ÚNICA (art. 37): seguro-fiança → blocos sem caução (servidor e banco conferem).
-        garantia: garantiaDoContrato(guaranteeId),
-      }).catch(() => ({ ok: false, error: "Não foi possível registrar o contrato." }));
+      const reg = await registrarContrato(entradaDoContrato).catch(() => ({ ok: false, error: "Não foi possível registrar o contrato." }));
       if (!reg.ok) {
         setErroContrato(reg.error ?? "Não foi possível registrar o contrato.");
         return;

@@ -79,7 +79,8 @@ test("E7 (3): o contrato usa a taxa congelada (não a do plano de hoje) e o alug
   const src = ler("src/lib/data/actions.ts");
   const reg = src.slice(src.indexOf("export async function registrarContrato("));
   assert.match(reg, /const aluguel = acordada \? acordada\.valorMensal : Number\(imovel\?\.monthly_price\);/);
-  assert.match(reg, /const rate = taxaDoContrato\(taxaLead\?\.acceptedCommissionRate \?\? null, taxaLead\?\.acceptedPlan \?\? null\);/);
+  // E1141 (guarda 2): a congelada da proposta acordada (taxa_congelada); sem ela, a do aceite gravada na candidatura.
+  assert.match(reg, /const rate = taxaDoContrato\(taxaDaEstadia\(acordada\?\.taxa, taxaLead\?\.acceptedCommissionRate\), taxaLead\?\.acceptedPlan \?\? null\);/);
   assert.match(reg, /resumoContratoEmDias\(diasExatos, aluguel, rate, tamanho\)/);
   assert.match(reg.slice(reg.indexOf('.from("contratos")\n    .insert(')), /comissao_percent: resumo\.comissaoPercent,\s*comissao_valor: resumo\.comissaoValor,/);
   for (const congelada of TAXAS_HISTORICAS) {

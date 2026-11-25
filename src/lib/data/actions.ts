@@ -56,6 +56,7 @@ import { linkCandidaturaDono, linkCandidaturaMorador } from "@/lib/notifications
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, rascunhoSemFotosApagadas, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
+import { taxaDaEstadia } from "@/lib/fechamento/proposta-do-fechamento";
 import { tituloAvisoCandidatura } from "@/lib/notifications/avisos";
 import { primeiroNome } from "@/lib/display-name";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
@@ -1465,8 +1466,11 @@ const FAIXAS_CONTRATO = new Set(["temporada", "media_estadia", "longa"]);
  * usuário em contratos/blocos).
  */
 export async function registrarContrato(
-  input: ContratoInput
-): Promise<ActionResult & { blocos?: number; existente?: boolean }> {
+  input: ContratoInput,
+  /** E1141 (guarda 3, ORDEM-DUET-933): `soConferir` faz TODAS as checagens (incluindo o período cruzado, 0176) e para
+   *  antes de gravar — o assistente pergunta isto antes de gerar o documento e de cobrar a taxa. */
+  opcoes?: { soConferir?: boolean },
+): Promise<ActionResult & { blocos?: number; existente?: boolean; conferido?: boolean }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -1549,7 +1553,8 @@ export async function registrarContrato(
   if (taxaLead === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   const plano = taxaLead?.acceptedPlan ?? "free";
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
-  const rate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
+  // E1141 (guarda 2): a taxa CONGELADA da proposta desta estadia; a do aceite (a da última aceita) só sem ela.
+  const rate = taxaDoContrato(taxaDaEstadia(acordada?.taxa, taxaLead?.acceptedCommissionRate), taxaLead?.acceptedPlan ?? null);
   const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
   // E562: pela proposta, blocos de até 90 dias contados em dias (valor, caução e taxa proporcionais aos dias).
   const resumo = diasExatos != null ? resumoContratoEmDias(diasExatos, aluguel, rate, tamanho) : resumoContrato(prazo, aluguel, rate, tamanho);
@@ -1563,6 +1568,8 @@ export async function registrarContrato(
   const periodo = { inicio: comDatas[0]?.inicio ?? input.inicioISO, fim: comDatas[comDatas.length - 1]?.fim ?? input.inicioISO };
   const conflito = await conflitoNoImovel(admin, lead.property_id as string, periodo);
   if (conflito) return { ok: false, error: conflito };
+  // E1141 (guarda 3): a conferência prévia para aqui — nada se grava, nada se gera, nada se cobra.
+  if (opcoes?.soConferir) return { ok: true, conferido: true };
 
   const { data: contrato, error: cErr } = await admin
     .from("contratos")
