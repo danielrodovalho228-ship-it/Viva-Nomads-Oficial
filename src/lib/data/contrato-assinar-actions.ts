@@ -42,7 +42,7 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { aberturaAssinatura, contaDoContrato, contasDoContrato, linhasContrato, proximoPassoAssinatura } from "@/lib/notifications/dados-negociacao";
-import { PROPOSTA_FORA_DO_FECHAMENTO, propostaDoFechamentoDoLead } from "@/lib/data/propostas-servidor";
+import { propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 import { DIAS_POR_MES, periodoDosBlocos } from "@/lib/contrato-blocos";
 import { prazoConferenciaEntrada, prazoConferenciaSaida } from "@/lib/conferencia";
@@ -634,14 +634,10 @@ export async function assinarContrato(input: {
       const mesesContrato = Math.max(1, Math.round(Number(c.prazo_total_dias ?? 0) / DIAS_POR_MES));
       // E1066: o total pela fonte única (a proposta acordada de que o contrato nasceu) e a caução dos blocos do contrato.
       // Leitura à parte e tolerante: falhou → o quadro de antes (só o aluguel, sem a linha da caução).
-      const { data: doContrato } = await admin.from("contratos").select("lead_id, proposta_id, contrato_blocos(caucao)").eq("id", c.id).maybeSingle();
+      const { data: doContrato } = await admin.from("contratos").select("lead_id, contrato_blocos(caucao)").eq("id", c.id).maybeSingle();
       const caucaoDoContrato = (((doContrato as { contrato_blocos?: { caucao?: number | null }[] | null } | null)?.contrato_blocos ?? []) as { caucao?: number | null }[]).reduce((s, b) => s + Number(b.caucao ?? 0), 0);
       const leadDoContrato = (doContrato as { lead_id?: string | null } | null)?.lead_id;
-      // E1199: a proposta DESTE contrato (contratos.proposta_id), não a aceite mais recente da candidatura — o contrato de
-      // uma estadia anterior (E1141) mostra o total dela. Contrato sem proposta (direto/legado): nenhuma (o quadro de antes).
-      const propostaDoContrato = (doContrato as { proposta_id?: string | null } | null)?.proposta_id ?? null;
-      const lida = leadDoContrato && propostaDoContrato ? await propostaDoFechamentoDoLead(admin, leadDoContrato, propostaDoContrato).catch(() => null) : null;
-      const acordadaDoContrato = lida === PROPOSTA_FORA_DO_FECHAMENTO ? null : lida;
+      const acordadaDoContrato = leadDoContrato ? await propostaAcordadaDoLead(admin, leadDoContrato).catch(() => null) : null;
       const quadro = linhasContrato({
         imovel: imovelEmail,
         inicio: inicio ?? "",
