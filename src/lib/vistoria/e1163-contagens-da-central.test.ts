@@ -72,9 +72,10 @@ const CENTRAL = ler("src/lib/data/admin-decisoes.ts");
 const TRES = ["pedidosSemAvaliador", "laudosAtrasados", "credenciamentosADecidir"];
 
 test("E1163 (varredura): o módulo lê da mais antiga para a mais nova, e leitura falhada é null — nunca zero", () => {
-  assert.equal((MODULO.match(/\.order\("[a-z_]+", \{ ascending: true \}\)/g) ?? []).length, 3, "as três leituras, da mais antiga");
+  // E1175: a quarta leitura (os pedidos que esperam o morador) segue a mesma regra.
+  assert.equal((MODULO.match(/\.order\("[a-z_]+", \{ ascending: true \}\)/g) ?? []).length, 4, "as quatro leituras, da mais antiga");
   assert.doesNotMatch(MODULO, /ascending: false/, "nenhuma leitura 'das mais recentes': o teto nunca corta a que espera há mais tempo");
-  assert.equal((MODULO.match(/if \(error\) return null;/g) ?? []).length, 3, "cada leitura falhada devolve null");
+  assert.equal((MODULO.match(/if \(error\) return null;/g) ?? []).length, 4, "cada leitura falhada devolve null");
   // O laudo atrasado é o que a ROTINA gravou; o módulo não tem um segundo relógio.
   assert.match(MODULO, /\.not\("laudo_atrasado_em", "is", null\)/);
   assert.doesNotMatch(MODULO, /laudoAtrasado\(|new Date\(|Date\.now\(/);
@@ -104,11 +105,11 @@ test("E1163 (varredura): a página não conta à mão — número e lista saem d
   assert.doesNotMatch(PAGINA, /laudoAtrasado\(/);
   assert.doesNotMatch(PAGINA, /import \{[^}]*\blaudoAtrasado\b[^}]*\} from "@\/lib\/vistoria\/laudo"/);
   // Leitura falhada sobe: a página nunca mostra zero no lugar de uma fila que não leu.
-  assert.match(PAGINA, /if \(!filaSemAvaliador \|\| !filaAtrasados \|\| !filaCredenciamentos\) throw new Error\(/);
+  assert.match(PAGINA, /if \(!filaSemAvaliador \|\| !filaAtrasados \|\| !filaCredenciamentos \|\| !filaEsperaDoMorador\) throw new Error\(/);
   // As contas de teste ficam à parte nas três filas, com o texto da fonte — e, pela ORDEM-DUET-735, também na secção
   // das propostas expiradas ou descartadas (E1159) e, pela ORDEM-DUET-738, na lista das recusas (E1169): cinco blocos,
-  // o mesmo texto.
-  assert.equal((PAGINA.match(/textoDasContasDeTeste\(/g) ?? []).length, 5);
+  // o mesmo texto. E pela ORDEM-DUET-782 (E1175), nos pedidos que esperam o morador: seis blocos.
+  assert.equal((PAGINA.match(/textoDasContasDeTeste\(/g) ?? []).length, 6);
   assert.match(PAGINA, /const aDecidirReais = aDecidir\.filter\(\(c\) => !credenciamentosDeTeste\.has\(c\.id\)\);/);
 });
 
