@@ -279,10 +279,20 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await expect(topo.getByTestId("decidir-numero-devolucoes")).not.toHaveAttribute("data-valor", "0");
       await expect(topo.getByTestId("decidir-numero-laudos-atrasados")).toBeVisible();
       await expect(topo.getByTestId("decidir-numero-auditoria")).toHaveAttribute("href", "#auditoria");
-      await topo.getByTestId("decidir-numero-contestacoes").click();
-      await expect(a.getByTestId("avaliacoes-contestacoes")).toBeInViewport();
+      await expect(topo.getByTestId("decidir-numero-contestacoes")).toHaveAttribute("href", "#contestacoes");
+      // E1181 (a falha real, das duas corridas da Fable): o toque chegou ao cartão e a tela não rolou — ratio 0 nos 10 s.
+      // O <Link href="#contestacoes"> é tocado logo após o domcontentloaded; a hipótese é o toque cair durante a hidratação.
+      // A leitura da posição (a antiga :283) fica DENTRO da espera: toque → âncora na URL → painel na tela, refeito até 20 s.
+      await a.waitForLoadState("load");
+      await expect(async () => {
+        await topo.getByTestId("decidir-numero-contestacoes").click();
+        await expect(a, "a âncora das contestações resolveu").toHaveURL(/#contestacoes$/, { timeout: 2_000 });
+        await expect(a.getByTestId("avaliacoes-contestacoes"), "o painel das contestações está na tela depois da âncora").toBeInViewport({ timeout: 3_000 });
+      }, "o toque no número das contestações leva ao painel").toPass({ timeout: 20_000 });
       await expect(a.getByTestId("contestacao-item").first()).toBeVisible();
-      await expect(a.getByTestId("devolucao-item").first()).toContainText(cred.numero);
+      // E1181: a lista é de todas as devoluções por confirmar, por prazo — a base partilhada pode pôr outra antes desta.
+      // A trava procura a DESTE teste pelo número do avaliador, em vez de ler a primeira da lista.
+      await expect(a.getByTestId("devolucao-item").filter({ hasText: cred.numero }), "a devolução deste teste está na lista").toHaveCount(1);
       // O rótulo "Imóvel (id)" do formulário de verificação continua (o t305 depende dele).
       await expect(a.getByTestId("verificacao-form").getByLabel("Imóvel (id)")).toBeVisible();
       await semRolagemLateral(a);
