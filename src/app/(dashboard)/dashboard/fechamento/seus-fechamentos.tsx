@@ -58,7 +58,7 @@ export function SeusFechamentos({
               key={l.chave}
               data-testid="fecho-linha"
               data-chave={l.chave}
-              data-lead={l.leadId}
+              data-candidatura={l.leadId}
               data-tipo={l.tipo}
               data-atual={eAtual ? "sim" : "nao"}
               aria-current={eAtual ? "true" : undefined}

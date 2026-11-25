@@ -88,7 +88,7 @@ async function noFechamento(browser: Browser, email: string, largura: 390 | 1280
   await expect(page.getByRole("heading", { name: "Fechamento", level: 1 })).toBeVisible({ timeout: 30_000 });
   return page;
 }
-const linha = (page: Page, lead: string) => page.locator(`[data-testid="fecho-linha"][data-lead="${lead}"]`);
+const linha = (page: Page, lead: string) => page.locator(`[data-testid="fecho-linha"][data-candidatura="${lead}"]`);
 
 test.beforeAll(async () => {
   if (!NO_LABORATORIO) return;
@@ -176,7 +176,7 @@ test.describe("T1786 — E1090: o Fechamento mostra todos os fechos do dono @E10
       const destino = (await outra.getAttribute("href"))!;
       await outra.click();
       await page.waitForURL((u) => u.search === destino.slice(destino.indexOf("?")), { timeout: 30_000 });
-      await expect(page.locator(`[data-testid="fecho-linha"][data-lead="${destino.split("c=")[1]}"][data-atual="sim"]`)).toHaveCount(1, { timeout: 30_000 });
+      await expect(page.locator(`[data-testid="fecho-linha"][data-candidatura="${destino.split("c=")[1]}"][data-atual="sim"]`)).toHaveCount(1, { timeout: 30_000 });
       await page.screenshot({ path: `${SAIDA}/t1786-caso1-${largura}.png`, fullPage: true });
       await page.context().close();
     });
@@ -187,7 +187,7 @@ test.describe("T1786 — E1090: o Fechamento mostra todos os fechos do dono @E10
     const bloco = page.getByTestId("seus-fechamentos");
     await expect(bloco).toBeVisible({ timeout: 30_000 });
     await expect(bloco.getByTestId("fecho-linha")).toHaveCount(2);
-    await expect(bloco.getByTestId("fecho-linha").first()).toHaveAttribute("data-lead", ids.leadP);
+    await expect(bloco.getByTestId("fecho-linha").first()).toHaveAttribute("data-candidatura", ids.leadP);
     await expect(linha(page, ids.leadP)).toHaveAttribute("data-atual", "sim");
     await expect(linha(page, ids.leadX)).toHaveCount(0);
     await expect(page.getByText(T.X)).toHaveCount(0);
