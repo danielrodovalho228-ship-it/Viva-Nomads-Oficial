@@ -12,7 +12,6 @@ import { modoDaChaveAtual } from "./chave";
 import { filaNoAmbito } from "./ambito-da-chave";
 import { nomeDoAvaliador } from "./nome-do-avaliador";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
-import { registrarSemAvaliador, type ItemAberto } from "./fila-sem-avaliador";
 import {
   COLUNAS_PRECO,
   atendeCidade,
@@ -164,14 +163,9 @@ export async function avisarAdmins(admin: Admin, ev: NotificationEvent): Promise
   }
 }
 
-/**
- * Item na fila do admin (um aberto por tipo e referência).
- * E1149: devolve se ESTA chamada inseriu. O índice único deixa entrar um só item aberto; quem chega em segundo recebe
- * `false` — e não avisa os admins outra vez.
- */
-export async function naFilaDoAdmin(admin: Admin, tipo: "sem_avaliador" | "avaliacao_teste" | "suspensao_automatica" | "proposta_descredenciamento" | "revisao_criterio", ref: { pedidoId?: string; avaliadorId?: string }, motivo: string): Promise<boolean> {
-  const { error } = await admin.from("vistoria_fila_admin").insert({ tipo, pedido_id: ref.pedidoId ?? null, avaliador_id: ref.avaliadorId ?? null, motivo });
-  return !error;
+/** Item na fila do admin (um aberto por tipo e referência). */
+export async function naFilaDoAdmin(admin: Admin, tipo: "sem_avaliador" | "avaliacao_teste" | "suspensao_automatica" | "proposta_descredenciamento" | "revisao_criterio", ref: { pedidoId?: string; avaliadorId?: string }, motivo: string): Promise<void> {
+  await admin.from("vistoria_fila_admin").insert({ tipo, pedido_id: ref.pedidoId ?? null, avaliador_id: ref.avaliadorId ?? null, motivo });
 }
 
 type LinhaCred = {
@@ -347,26 +341,11 @@ export async function abrirEscolha(admin: Admin, pedidoId: string, agora = new D
     // E1146: o item diz a regra que impede cada avaliador. Há um item aberto por pedido (índice único): o que já
     // estava aberto com o texto antigo, ou com outro impedimento, é atualizado em vez de se tentar inserir outro.
     const motivo = await motivoDoItemSemAvaliador(admin, l);
-    const p = l.p;
-    // E1149: o e-mail aos admins só sai quando o item é NOVO ou o MOTIVO muda. Antes saía em toda abertura sem
-    // sugeridos, e a rotina (de hora em hora) reabre a escolha de cada pedido parado: N pedidos × cada admin × cada hora.
-    // A marca é o próprio item aberto. Quem perde a corrida do insert, ou da troca do motivo, não avisa.
-    const mudanca = await registrarSemAvaliador(
-      {
-        aberto: async () => {
-          const { data: abertos } = await admin.from("vistoria_fila_admin").select("id, motivo").eq("tipo", "sem_avaliador").eq("pedido_id", p.id).is("resolvido_em", null).limit(1);
-          return ((abertos ?? []) as ItemAberto[])[0] ?? null;
-        },
-        inserir: (m) => naFilaDoAdmin(admin, "sem_avaliador", { pedidoId: p.id }, m),
-        mudarMotivo: async (item, m) => {
-          const troca = admin.from("vistoria_fila_admin").update({ motivo: m }).eq("id", item.id).is("resolvido_em", null);
-          const { data: trocados } = await (item.motivo === null ? troca.is("motivo", null) : troca.eq("motivo", item.motivo)).select("id");
-          return (trocados ?? []).length > 0;
-        },
-      },
-      motivo,
-    );
-    if (mudanca !== "igual") await avisarAdmins(admin, "vistoria_sem_avaliador");
+    const { data: abertos } = await admin.from("vistoria_fila_admin").select("id, motivo").eq("tipo", "sem_avaliador").eq("pedido_id", l.p.id).is("resolvido_em", null).limit(1);
+    const aberto = ((abertos ?? []) as { id: string; motivo: string | null }[])[0];
+    if (!aberto) await naFilaDoAdmin(admin, "sem_avaliador", { pedidoId: l.p.id }, motivo);
+    else if (aberto.motivo !== motivo) await admin.from("vistoria_fila_admin").update({ motivo }).eq("id", aberto.id);
+    await avisarAdmins(admin, "vistoria_sem_avaliador");
     return 0;
   }
   await admin.from("vistoria_pedidos").update({ aguardando_avaliador: false, atualizado_em: quando }).eq("id", l.p.id);
