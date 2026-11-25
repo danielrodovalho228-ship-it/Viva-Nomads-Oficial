@@ -1,56 +1,11 @@
 {
- "regra": "um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só então entra aqui; desde 17/11 (decisão do Gerente, DUET-1225) entra também o teste velho com correção já escrita em PR aberto, apontando o PR em 'correcao', e sai quando ele for mesclado; quando o teste é de uma cadeia em série e os seguintes dependem dele, a cadeia entra e sai inteira; teto de 25 entradas; validade de no máximo 14 dias",
+ "regra": "um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só então entra aqui; desde 17/11 (decisão do Gerente, DUET-1225) entra também o teste velho com correção já escrita em PR aberto, apontando o PR em 'correcao', e sai quando ele for mesclado; desde 17/11 (DUET-1419) entra também o defeito registrado, com item e dono, cuja falha não é sempre a mesma (sem marca de falha conhecida), e sai no PR da correção; quando o teste é de uma cadeia em série e os seguintes dependem dele, a cadeia entra e sai inteira; teto de 25 entradas; validade de no máximo 14 dias",
  "entradas": [
-  {
-   "spec": "t21-central-agentes.spec.ts",
-   "titulo": "Moacir gerente: 'chegou chamado novo?' consulta o banco, pergunta à Viva e responde com código e prazo",
-   "motivo": "instável em 4 das 7 corridas de 16 e 17/11: o passo do gerente (\"Moacir → Viva:\" ou \"Viva: Tenho N chamado\") não aparece na primeira tentativa",
-   "item": "E1010",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
   {
    "spec": "t29-chat-sem-aprovacao.spec.ts",
    "titulo": "'Ok, tudo aprovado' para o Moacir: não aprova nada e não cria ordem",
    "motivo": "instável nas 7 corridas de 16 e 17/11: a contagem de ordens esperada 0 vem 1 na primeira tentativa e passa na segunda. Causa provável, vista no laboratório local com 2 workers: o teste compara a contagem da tabela inteira de ordens antes e depois, e outro teste que cria ordem ao mesmo tempo muda a conta",
    "item": "E1011",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t30-atendimento-autonomo.spec.ts",
-   "titulo": "Caução simples: resposta automática em < 30 s; nova pergunta respondida; 'pessoa' passa para a equipe sem IA",
-   "motivo": "instável em 3 e vermelho em 1 das 7 corridas de 16 e 17/11: a frase \"Resposta automática da Viva…\" não aparece a tempo; sozinho passou 6 de 6",
-   "item": "E1012",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t108-admin-atendimento-status-humano.spec.ts",
-   "titulo": "tela do chamado sem \"_\" de status a 1280px",
-   "motivo": "instável em 3 das 7 corridas de 16 e 17/11: estoura os 90 s na primeira tentativa; sozinho passou 6 de 6",
-   "item": "E1014",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t190-seo-robots-jsonld.spec.ts",
-   "titulo": "anúncio real: Offer com Accommodation, estadia mín/máx e sem coordenada",
-   "motivo": "instável nas 7 corridas de 16 e 17/11: \"Unexpected end of JSON input\" na primeira tentativa; passa na nova tentativa",
-   "item": "E1015",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t305-laudo-avaliacao-62b2.spec.ts",
-   "titulo": "3. reprovado: vale o nível do laudo, sem \"· vistoriado\"; nova avaliação pelo valor da tabela, sem desconto",
-   "motivo": "instável nas 7 corridas de 16 e 17/11: o texto \"novo pedido, avaliador à sua escolha\" não aparece na primeira tentativa; passa na nova tentativa",
-   "item": "E1016",
    "dono": "Code 2",
    "entrada": "2026-11-17",
    "expira": "2026-12-01"
@@ -65,141 +20,14 @@
    "expira": "2026-12-01"
   },
   {
-   "spec": "t1629-familia2-rotas-vivas.spec.ts",
-   "titulo": "E916 a 404 tem o rodapé do site e a busca",
-   "motivo": "instável nas 7 corridas de 16 e 17/11: a busca da 404 cai em /buscar sem o ?local= na primeira tentativa; passa na nova tentativa",
-   "item": "E1019",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t230-pagamento-sem-repeticao.spec.ts",
-   "titulo": "1. 1280 — Caução do contrato: clique duplo grava 1; a 2ª aba recebe 'já foi registrado'",
-   "motivo": "instável em 2 corridas: com 2 workers em 17/11 (run 44038091791) e com 1 worker na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais)",
-   "item": "E1020",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t230-pagamento-sem-repeticao.spec.ts",
-   "titulo": "2. 390 — o bloco 2 aceita um pagamento de valor mensal e recusa o segundo",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1020): o caso 3 confirma a Caução do caso 1 e os pagamentos do caso 2. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1020",
+   "spec": "t70-busca-split.spec.ts",
+   "titulo": "2. um pin por imóvel; hover card↔pin destaca; hover no pin abre o cartão (E442)",
+   "motivo": "defeito E1023, sem marca de falha conhecida porque a falha não é sempre a mesma: em alguns pins o cartão do imóvel abre por cima do ponteiro e o card da lista perde o destaque. Falhou 1 vez na corrida de prova da T3 (run 44114328109, fatia 18) e passa sozinho. Entra por decisão do Gerente (DUET-1419); sai no PR da correção do E1023",
+   "item": "E1023",
    "dono": "Code 2",
    "entrada": "2026-11-17",
    "expira": "2026-12-01",
-   "cadeiaDe": "1. 1280 — Caução do contrato: clique duplo grava 1; a 2ª aba recebe 'já foi registrado'"
-  },
-  {
-   "spec": "t230-pagamento-sem-repeticao.spec.ts",
-   "titulo": "3. 1280 + 390 — comprovante com VN-CT; documento anulado com selo, PDF acessível e fora da fila",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1020): o caso 3 confirma a Caução do caso 1 e os pagamentos do caso 2. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1020",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "cadeiaDe": "1. 1280 — Caução do contrato: clique duplo grava 1; a 2ª aba recebe 'já foi registrado'"
-  },
-  {
-   "spec": "t321-video-alcancavel-65b.spec.ts",
-   "titulo": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar",
-   "motivo": "instável na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais); é a primeira ocorrência: entra por ordem do Gerente (DUET-1219), antes da segunda que a regra pede",
-   "item": "E1022",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t321-video-alcancavel-65b.spec.ts",
-   "titulo": "2. página pública: miniatura + item da galeria; o vídeo só baixa depois do play e toca",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1022): os casos 2 e 3 usam o vídeo enviado no caso 1, e os casos 4 e 5 vêm depois deles na mesma cadeia. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1022",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
-  },
-  {
-   "spec": "t321-video-alcancavel-65b.spec.ts",
-   "titulo": "3. trocar por um MOV apaga o anterior do bucket; remover tira da página",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1022): os casos 2 e 3 usam o vídeo enviado no caso 1, e os casos 4 e 5 vêm depois deles na mesma cadeia. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1022",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
-  },
-  {
-   "spec": "t321-video-alcancavel-65b.spec.ts",
-   "titulo": "4. negativos: 70 s, 55 MB, .avi renomeado, sem duração e queda de rede com 'Tentar de novo'",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1022): os casos 2 e 3 usam o vídeo enviado no caso 1, e os casos 4 e 5 vêm depois deles na mesma cadeia. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1022",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
-  },
-  {
-   "spec": "t321-video-alcancavel-65b.spec.ts",
-   "titulo": "5. assistente: o bloco de vídeo vem antes da caixa da IA; 'Para melhorar' do rascunho leva a ele",
-   "motivo": "cadeia em série do caso 1, que está em quarentena (E1022): os casos 2 e 3 usam o vídeo enviado no caso 1, e os casos 4 e 5 vêm depois deles na mesma cadeia. Sem o caso 1 a cadeia falha ou não roda nas fatias gerais (prova local de 17/11)",
-   "item": "E1022",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "cadeiaDe": "1. 'Para melhorar' abre a seção Vídeo; enviar MP4 de 10 s, salvar e recarregar"
-  },
-  {
-   "spec": "t198-rodape-painel-390.spec.ts",
-   "titulo": "conta: último botão livre acima da barra de abas",
-   "motivo": "teste velho com correção escrita: falhou em 4 das 7 corridas de 16 e 17/11 e na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais); a t198 mede antes de a Conta assentar",
-   "item": "E1000",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3934
-  },
-  {
-   "spec": "t279-varredura-logada.spec.ts",
-   "titulo": "morador — Conta: as seis classes, rolando a página inteira",
-   "motivo": "teste velho com correção escrita: falhou em 5 das 7 corridas de 16 e 17/11 e na corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais); a varredura cobra /dashboard/conta, e a Conta abre no destino registrado (E798)",
-   "item": "E1021",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3840
-  },
-  {
-   "spec": "t352-varredura-bloco17.spec.ts",
-   "titulo": "inquilina — Conta (CONTA-A): as seis classes, rolando a página inteira",
-   "motivo": "teste velho com correção escrita: a varredura cobra /dashboard/conta, e a Conta abre no destino registrado (E798); falha em umas corridas e não noutras (4 das 7 de 16 e 17/11 e a corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais))",
-   "item": "E1021",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3840
-  },
-  {
-   "spec": "t354-varredura-bloco19.spec.ts",
-   "titulo": "inquilina — Conta A1 · Conta: as seis classes, rolando a página inteira",
-   "motivo": "teste velho com correção escrita: a varredura cobra /dashboard/conta, e a Conta abre no destino registrado (E798); falha em umas corridas e não noutras (2 das 7 de 16 e 17/11 e a corrida de prova da T3 (run 44114328109, 17/11, 1 worker, 20 fatias gerais))",
-   "item": "E1021",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3840
-  },
-  {
-   "spec": "t354-varredura-bloco19.spec.ts",
-   "titulo": "proprietário — Conta A1 · Conta: as seis classes, rolando a página inteira",
-   "motivo": "teste velho com correção escrita: a varredura cobra /dashboard/conta, e a Conta abre no destino registrado (E798); falha em umas corridas e não noutras (3 das 7 de 16 e 17/11); é o mesmo spec e a mesma causa do caso da inquilina",
-   "item": "E1021",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3840
+   "correcao": 3965
   }
  ]
 }

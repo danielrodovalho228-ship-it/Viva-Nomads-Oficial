@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { AVISO_IBS_CBS_LIBERADO, PJ_ACCOUNTING_YEAR, simulateTax } from "./tax.ts";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 const RAIZ = new URL("../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(join(RAIZ, p), "utf8");
@@ -38,7 +39,7 @@ test("E292-bis: nenhum código do app importa src/lib/tax.ts", () => {
 
 test("E292-bis: menu, hub de Ferramentas e páginas internas sem a tributação", () => {
   assert.doesNotMatch(ler("src/config/menu-por-papel.ts").replace(/\/\/[^\n]*/g, ""), /tributacao|PF × PJ/);
-  assert.doesNotMatch(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx").replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, ""), /tributacao|tributario|PF × PJ/);
+  assert.doesNotMatch(fonteSemComentarios(ler("src/app/(dashboard)/dashboard/ferramentas/page.tsx")), /tributacao|tributario|PF × PJ/);
   assert.doesNotMatch(ler("src/components/apresentacao/paginas-nav.tsx"), /\/tributario/);
 });
 

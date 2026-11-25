@@ -13,7 +13,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 
-type Disposicao = { spec: string; disposicao: string; item?: string; dono?: string; pr?: number; corrigidoPor?: string; semMarca?: string; pacote?: string; nota?: string };
+type Disposicao = { spec: string; disposicao: string; item?: string; dono?: string; pr?: number; corrigidoPor?: string; semMarca?: string; semPr?: string; pacote?: string; nota?: string };
 const SPECS = "tests/e2e/specs";
 const arquivo = JSON.parse(readFileSync("tests/laboratorio/disposicao-falhas.json", "utf8")) as { corrida: { run: number; base: string; specs: number; casos: number }; disposicoes: Disposicao[] };
 const lista = arquivo.disposicoes;
@@ -52,7 +52,9 @@ test("defeito real: item registrado, PR da correção, e o spec marcado com esse
   assert.ok(defeitos.length > 0);
   for (const d of defeitos) {
     assert.match(d.item ?? "", /^E\d+$/, `${d.spec}: defeito sem item`);
-    assert.ok(Number.isInteger(d.pr), `${d.spec}: defeito sem o PR da correção`);
+    // Asserção alterada em 17/11 (DUET-1319: toda falha da corrida de prova tem disposição até 19/11): o defeito achado
+    // agora ainda não tem PR de correção. Nesse caso o arquivo diz por quê (semPr); o item continua obrigatório, e a marca também, salvo o motivo escrito (semMarca).
+    assert.ok(Number.isInteger(d.pr) || (d.semPr ?? "").length > 20, `${d.spec}: defeito sem o PR da correção e sem o motivo`);
     const texto = fonte(d.spec);
     const itens = marcas(texto);
     if (!levaMarca(d)) {
@@ -109,8 +111,42 @@ test("os números do cabeçalho batem com a lista", () => {
   // acrescentados, cada um com a disposição dele.
   const prova = (arquivo as unknown as { corridaDeProva: { run: number; acrescentados: string[] } }).corridaDeProva;
   assert.equal(prova.run, 44114328109);
-  assert.equal(lista.length, arquivo.corrida.specs - 1 + prova.acrescentados.length);
-  for (const spec of prova.acrescentados) assert.ok(lista.some((d) => d.spec === spec), `${spec}: acrescentado sem disposição`);
-  assert.equal(new Set(prova.acrescentados).size, prova.acrescentados.length);
+  // Asserção alterada por decisão do Gerente (ORDEM-DUET-096, 18/11): antes a conta era só a corrida-base mais a corrida
+  // de prova. Entram também os intermitentes achados fora de corrida completa (rodados sozinhos contra a main), cada um
+  // com a ordem que o mandou para a lista.
+  const fora = (arquivo as unknown as { foraDeCorrida: { ordem: string; data: string; main: string; acrescentados: string[] } }).foraDeCorrida;
+  assert.match(fora.ordem, /^ORDEM-DUET-\d+$/);
+  assert.match(fora.main, /^[0-9a-f]{8}$/);
+  // Asserção alterada, julgada e aprovada pelo Gerente na ORDEM-DUET-191 (19/11; as entradas vêm das ORDEM-DUET-181 e
+  // 182): entram também os defeitos já CORRIGIDOS depois da corrida-base, que não cabiam nas outras listas: o spec
+  // vermelho de uma corrida manual completa (t296, E1034) e a trava nova de um defeito achado por leitura do código
+  // (t1697, E1035). Cada um diz de onde veio.
+  const depois = (arquivo as unknown as { corrigidosDepois: { ordem: string; data: string; acrescentados: { spec: string; origem: string }[] } }).corrigidosDepois;
+  assert.match(depois.ordem, /^ORDEM-DUET-\d+$/);
+  const specsDepois = depois.acrescentados.map((a) => a.spec);
+  assert.equal(lista.length, arquivo.corrida.specs - 1 + prova.acrescentados.length + fora.acrescentados.length + specsDepois.length);
+  for (const spec of [...prova.acrescentados, ...fora.acrescentados, ...specsDepois]) assert.ok(lista.some((d) => d.spec === spec), `${spec}: acrescentado sem disposição`);
+  assert.equal(new Set([...prova.acrescentados, ...fora.acrescentados, ...specsDepois]).size, prova.acrescentados.length + fora.acrescentados.length + specsDepois.length);
+  // O que entra por aqui é defeito com a correção já na main: item, PR e o commit do merge (ORDEM-DUET-122).
+  for (const a of depois.acrescentados) {
+    const d = lista.find((x) => x.spec === a.spec)!;
+    assert.equal(d.disposicao, "defeito", `${a.spec}: aqui só entra defeito corrigido`);
+    assert.match(d.item ?? "", /^E\d+$/, `${a.spec}: sem item`);
+    assert.ok(Number.isInteger(d.pr), `${a.spec}: sem PR`);
+    assert.match(d.corrigidoPor ?? "", /^[0-9a-f]{8}$/, `${a.spec}: sem o commit do merge`);
+    assert.ok(a.origem.length > 20, `${a.spec}: sem dizer de onde veio`);
+  }
+  // O que entra por fora de corrida é intermitente: tem item de instabilidade e está na quarentena — até a correção.
+  // Asserção alterada por decisão do Gerente (ORDEM-DUET-103, decisão 3, 18/11; julgada na ORDEM-DUET-246): antes, o achado tinha de estar SEMPRE na
+  // quarentena, e a guarda reprovava quando a correção tirava a entrada. Agora ele está na quarentena OU tem a correção
+  // registrada (corrigidoPor, o commit que corrigiu); nunca as duas coisas, nem nenhuma.
+  const emQuarentena = new Set((JSON.parse(readFileSync("tests/laboratorio/quarentena.json", "utf8")).entradas as { spec: string }[]).map((e) => e.spec));
+  for (const spec of fora.acrescentados) {
+    const d = lista.find((x) => x.spec === spec)!;
+    assert.equal(d.disposicao, "instavel", `${spec}: fora de corrida só entra o intermitente`);
+    const corrigido = /^[0-9a-f]{8}$/.test(d.corrigidoPor ?? "");
+    assert.ok(emQuarentena.has(spec) || corrigido, `${spec}: intermitente fora da quarentena e sem a correção registrada`);
+    assert.ok(!(emQuarentena.has(spec) && corrigido), `${spec}: já corrigido e ainda na quarentena`);
+  }
   assert.match(arquivo.corrida.base, /^[0-9a-f]{8}$/);
 });

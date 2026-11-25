@@ -5,6 +5,7 @@
 */
 import { dividirValor, TAXA_SERVICO_PARCEIRO } from "./regras.ts";
 import { lerReais } from "../reais.ts";
+import { PCT_TAXA_SERVICO_PARCEIROS, TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE, textoDivisaoNaOrigem } from "../../config/taxa-servico-parceiros.ts";
 
 // ── Estados ───────────────────────────────────────────────────────────────────────────────────────────────────
 export const STATUS_PEDIDO = [
@@ -157,14 +158,15 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 /** O que o parceiro vê ao orçar: "Taxa de serviço da Viva: 10% = R$ X. Você recebe R$ Y." */
 export function textoDivisaoParceiro(valorCombinado: number): string {
   const { taxa, parceiro } = dividirValor(valorCombinado);
-  return `Taxa de serviço da Viva: 10% = ${brl(taxa)}. Você recebe ${brl(parceiro)}.`;
+  return `Taxa de serviço da Viva: ${PCT_TAXA_SERVICO_PARCEIROS} = ${brl(taxa)}. Você recebe ${brl(parceiro)}.`;
 }
 
 // ── Pagamento (só registro enquanto a chave estiver desligada) ────────────────────────────────────────────────
 export type PagamentoStatus = "indisponivel" | "simulado" | "pago";
-export const TEXTO_PAGAMENTO_INATIVO = "O pagamento pela plataforma ainda não está ativo.";
-export const TEXTO_DIVISAO_NA_ORIGEM =
-  "Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para o parceiro e 10% para a Viva. A Viva não guarda o seu dinheiro.";
+/** E1158 (1): o pagamento ainda não ativo tem UMA redação, a da config (ORDEM-DUET-673); aqui é só o nome antigo. */
+export const TEXTO_PAGAMENTO_INATIVO = TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE;
+/** E1151: a redacção canónica da fonte única, dita sobre o parceiro (a tela do pedido do dono). */
+export const TEXTO_DIVISAO_NA_ORIGEM = textoDivisaoNaOrigem("o parceiro");
 export const ROTULO_REGISTRO_SEM_DINHEIRO = "registro, sem dinheiro";
 
 /** Provedor de pagamento do parceiro. Só existe a implementação SIMULADA (sem gateway, sem dinheiro). */
@@ -327,7 +329,7 @@ export const FORMULAS_PEDIDOS_PARCEIRO = {
   fechados: "Pedidos com orçamento aceito: aceito, agendado, em execução, entregue ou concluído.",
   concluidos: "Pedidos concluídos pelo cliente.",
   conversao: "Fechados ÷ total, em %.",
-  taxaRegistrada: "Soma da taxa de serviço (10%) congelada no aceite dos pedidos fechados — registro, sem dinheiro enquanto o pagamento pela plataforma estiver desligado.",
+  taxaRegistrada: `Soma da taxa de serviço (${PCT_TAXA_SERVICO_PARCEIROS}) congelada no aceite dos pedidos fechados — registro, sem dinheiro enquanto o pagamento pela plataforma estiver desligado.`,
   vindosDeCartao: "Pedidos com a referência do cartão do parceiro (ref_tipo = partnercard).",
 } as const;
 

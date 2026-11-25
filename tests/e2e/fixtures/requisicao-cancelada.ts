@@ -32,6 +32,24 @@ export function canceladaPeloNavegador(motivo: string, metodo: string, url: stri
   return null;
 }
 
+/** O que a varredura precisa de um pedido do Playwright para subir a cadeia de redirecionamentos. */
+interface PedidoComOrigem {
+  headers(): Record<string, string>;
+  redirectedFrom(): PedidoComOrigem | null;
+}
+
+/**
+ * Cabeçalhos do pedido somados aos dos pedidos que o redirecionaram até ele (o do próprio salto vence).
+ * E744 (15/11): o Playwright não repete, no salto de um redirecionamento, os cabeçalhos do pedido original. Uma ação do
+ * servidor disparada em /dashboard/conta e redirecionada pelo proxy (E798, 307 para /dashboard/conta/perfil) aparecia no
+ * salto sem o `next-action`; cancelada pela troca de tela, era acusada como "POST comum abortado", contra a regra de 22/10.
+ */
+export function cabecalhosComOrigem(pedido: PedidoComOrigem): Record<string, string> {
+  const cadeia: Record<string, string>[] = [];
+  for (let p: PedidoComOrigem | null = pedido, i = 0; p && i < 20; p = p.redirectedFrom(), i++) cadeia.unshift(p.headers());
+  return Object.assign({}, ...cadeia);
+}
+
 function caminho(url: string): string {
   try {
     return new URL(url).pathname;

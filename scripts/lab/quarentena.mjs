@@ -12,13 +12,17 @@
     correcao (opcional) o número do PR que corrige o teste, quando ele já existe;
     cadeiaDe (opcional) o título da entrada raiz do mesmo spec, quando este teste entra só por depender dela
              (cadeia em série: sem a raiz ele falha ou não roda). Entra e sai junto com a raiz.
+  Entrada de spec inteira (decisão do Gerente, ORDEM-DUET-097, 18/11): quando os casos que falham dependem dos casos
+  anteriores do mesmo spec, uma entrada só cobre o arquivo todo — `specInteira: true`, sem `titulo`, e `casos` com os
+  títulos dos testes que falham. As fatias ficam sem o spec e o job da quarentena roda o arquivo com a cadeia intacta.
   Teto: 25 entradas. Entrada vencida, sem item, sem dono ou sem validade reprova o teste estático
   (tests/laboratorio/e744-t2-quarentena.test.ts).
 
   Regra de entrada: um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só
   então pode entrar aqui. Desde 17/11 (decisão do Gerente, DUET-1225) entra também o teste velho que já tem correção
   escrita em PR aberto: a entrada aponta o PR em `correcao` e sai quando ele for mesclado, para a quarentena não
-  mascarar a correção.
+  mascarar a correção. E (DUET-1419) o defeito registrado, com item e dono, cuja falha não é sempre a mesma: entra
+  com o item dele e sai no PR da correção. O defeito que falha sempre igual leva a marca de falha conhecida, não entra.
 
   O que a rodada faz com o arquivo:
     - as fatias bloqueantes rodam SEM esses testes (--grep-invert com o padrão daqui);
@@ -48,7 +52,9 @@ export function lerQuarentena(caminho = ARQUIVO) {
 }
 
 const dia = (texto) => (DATA.test(String(texto)) ? Date.parse(`${texto}T00:00:00Z`) : NaN);
-const nome = (e, i) => (e?.spec ? `${e.spec} › ${e.titulo ?? "?"}` : `entrada ${i + 1}`);
+/** O que aparece no lugar do título: o do teste, ou "(spec inteira; falham: …)" na entrada que cobre o arquivo todo. */
+const rotulo = (e) => (e?.specInteira === true ? `(spec inteira; falham: ${(Array.isArray(e.casos) ? e.casos : []).join("; ")})` : (e?.titulo ?? "?"));
+const nome = (e, i) => (e?.spec ? `${e.spec} › ${rotulo(e)}` : `entrada ${i + 1}`);
 
 /** As entradas que já passaram do último dia de validade. `hoje` é AAAA-MM-DD. */
 export function vencidas(entradas, hoje) {
@@ -65,7 +71,12 @@ export function validarQuarentena(entradas, hoje, opcoes = {}) {
   const vistas = new Set();
   entradas.forEach((e, i) => {
     const quem = nome(e, i);
-    for (const campo of CAMPOS) if (!String(e?.[campo] ?? "").trim()) erros.push(`${quem}: sem ${campo}`);
+    const inteira = e?.specInteira === true;
+    for (const campo of CAMPOS) if (!(inteira && campo === "titulo") && !String(e?.[campo] ?? "").trim()) erros.push(`${quem}: sem ${campo}`);
+    if (inteira) {
+      if (e.titulo !== undefined) erros.push(`${quem}: entrada de spec inteira não leva titulo`);
+      if (!Array.isArray(e.casos) || e.casos.length === 0 || e.casos.some((c) => !String(c ?? "").trim())) erros.push(`${quem}: spec inteira sem os casos que falham`);
+    } else if (e?.casos !== undefined) erros.push(`${quem}: casos só vale em entrada de spec inteira`);
     if (e?.item && !/^E\d+$/.test(e.item)) erros.push(`${quem}: item "${e.item}" não é E<número>`);
     if (e?.spec && !/\.spec\.ts$/.test(e.spec)) erros.push(`${quem}: spec "${e.spec}" não termina em .spec.ts`);
     for (const campo of ["entrada", "expira"]) if (e?.[campo] && !Number.isFinite(dia(e[campo]))) erros.push(`${quem}: data "${e[campo]}" em ${campo} não é AAAA-MM-DD`);
@@ -77,9 +88,11 @@ export function validarQuarentena(entradas, hoje, opcoes = {}) {
       if (dia(hoje) > ate) erros.push(`${quem}: vencida em ${e.expira}`);
     }
     if (e?.correcao !== undefined && !(Number.isInteger(e.correcao) && e.correcao > 0)) erros.push(`${quem}: correcao "${e.correcao}" não é o número do PR`);
-    const chave = `${e?.spec} › ${e?.titulo}`;
-    if (e?.spec && e?.titulo && vistas.has(chave)) erros.push(`${quem}: entrada repetida`);
+    const chave = inteira ? `${e?.spec} › *` : `${e?.spec} › ${e?.titulo}`;
+    if (e?.spec && (inteira || e?.titulo) && vistas.has(chave)) erros.push(`${quem}: entrada repetida`);
     vistas.add(chave);
+    // O spec que está inteiro na quarentena não tem também entradas por teste (e vice-versa).
+    if (e?.spec && entradas.some((x) => x !== e && x?.spec === e.spec && (x?.specInteira === true) !== inteira)) erros.push(`${quem}: o spec já está inteiro na quarentena`);
     if (e?.spec && /\.spec\.ts$/.test(e.spec) && opcoes.specExiste && !opcoes.specExiste(e.spec)) erros.push(`${quem}: o spec ${e.spec} não existe`);
   });
   // Entrada de cadeia: aponta uma raiz do mesmo spec, com o mesmo item, que não é ela mesma de cadeia.
@@ -103,7 +116,8 @@ const literal = (texto) => String(texto).replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&"
   Sem entradas devolve "": padrão vazio casaria tudo, então o workflow só passa a opção quando há texto.
 */
 export function padraoDaQuarentena(entradas) {
-  const partes = entradas.map((e) => `${literal(e.spec)} (.* )?${literal(e.titulo)}( @|$)`);
+  // Entrada de spec inteira: o arquivo e mais nada — casa todos os testes dele.
+  const partes = entradas.map((e) => (e.specInteira === true ? `${literal(e.spec)}( |$)` : `${literal(e.spec)} (.* )?${literal(e.titulo)}( @|$)`));
   if (partes.length === 0) return "";
   return `(^| )(${partes.join("|")})`;
 }
@@ -132,8 +146,9 @@ export function resultadoDaQuarentena(entradas, relatorio, hoje) {
   const testes = testesDoRelatorio(relatorio);
   const fora = new Set(vencidas(entradas, hoje));
   const linhas = entradas.map((e) => {
-    const dele = testes.filter((t) => t.spec === e.spec && t.titulo === e.titulo && t.rodou);
-    return { spec: e.spec, titulo: e.titulo, item: e.item, dono: e.dono, expira: e.expira, rodou: dele.length, passou: dele.filter((t) => t.status === "expected").length, vencida: fora.has(e) };
+    // A entrada de spec inteira conta todas as repetições de todos os casos do arquivo.
+    const dele = testes.filter((t) => t.spec === e.spec && (e.specInteira === true || t.titulo === e.titulo) && t.rodou);
+    return { spec: e.spec, titulo: rotulo(e), item: e.item, dono: e.dono, expira: e.expira, rodou: dele.length, passou: dele.filter((t) => t.status === "expected").length, vencida: fora.has(e) };
   });
   return {
     tamanho: entradas.length,

@@ -71,9 +71,7 @@ const ESPERADAS: Record<string, string> = {
   // Rodada 1 (lab-crítico do #984, 21/10): D-V1, D-V2, D-V4 e D-V6 passaram nas duas tentativas e viraram teste normal.
   // D-V3 e D-V5 não têm combinação no varrer geral (são verificados só no bloco "defeitos conhecidos").
   // D-V7 corrigido no #1028 (título em texto quando o anúncio não está no ar): a combinação voltou a reprovar.
-  // D-V8 (lab-crítico do #1023, 22/10): /auth não tem <main>; a abertura acusa "sem <main> em 20 s" no critério c.
-  "Entrar|390|c-overflow": "D-V8",
-  "Entrar|1280|c-overflow": "D-V8",
+  // D-V8 corrigido no E1030 (a casca de /auth abre o <main>): a combinação "Entrar" voltou a reprovar.
 };
 
 /**
@@ -269,7 +267,6 @@ test.describe("T249 — defeitos conhecidos (D-V)", () => {
   });
 
   test("D-V8 — a tela de entrar tem um <main> (marco principal para leitor de tela)", async ({ browser }) => {
-    test.fail(true, "D-V8: /auth monta só uma <div> em grade, sem <main>");
     for (const tam of TAMANHOS) {
       const ctx = await browser.newContext({ viewport: { width: tam.width, height: tam.height } });
       const page = await ctx.newPage();

@@ -96,7 +96,7 @@ export default function HowItWorksPage() {
       <PrecoJusto />
 
       <Steps id="para-proprietarios" title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
-      {/* E805: a taxa do proprietário, com a escada inteira e o Plano Gestor, pela mesma fonte de /para-proprietarios. */}
+      {/* E805: a taxa do proprietário, com a escada inteira e a linha das carteiras, pela mesma fonte de /para-proprietarios. */}
       <div className="container-page -mt-6 pb-8">
         <p className="max-w-3xl text-sm text-muted" data-testid="cf-taxa-proprietario">
           <strong className="text-ink">Taxa de serviço do proprietário:</strong> anunciar é grátis; a Viva cobra só sobre o valor total do contrato fechado. {FRASE_ESCADA_TAXAS}
