@@ -6,6 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 import {
   ESTADO_CREDENCIAMENTO,
   LINHA_PUBLICA_DESIGNACAO,
@@ -34,7 +35,7 @@ import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+const semComentarios = (f: string) => fonteSemComentarios(f).replace(/\/\/.*$/gm, "");
 
 const BLOCO_DONO = ler("src/components/vistoria/bloco-avaliacao-dono.tsx");
 // E143: ruído e extras saíram para um componente compartilhado (página do nível e Passo 5).
@@ -68,7 +69,10 @@ test("QA #1111 item 6: a visita sai sem segundos e com o fuso (dono, morador e c
 test("QA #1111 item 5: 'Avaliador escolhido por você' aparece uma vez só", () => {
   assert.equal(situacaoDono({ status: "designado", aguardandoAvaliador: false, ocupado: false, concordanciaEm: null, agendadoPara: null }), null);
   assert.equal((BLOCO_DONO.match(/Avaliador escolhido por você/g) ?? []).length, 1);
-  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null }), "Aguardando avaliador: a Viva avisa quando houver um para você escolher.");
+  // E1177 (asserção alterada, ORDEM-DUET-778): a lista vazia diz o motivo; a promessa do aviso só vale quando a cidade
+  // não tem avaliador nenhum.
+  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null, motivoDaEspera: "sem_avaliador_na_cidade" }), "Ainda não há avaliador disponível na sua cidade. A Viva avisa você assim que houver um.");
+  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null }), "Os avaliadores da sua cidade não podem seguir com este pedido agora. A equipe da Viva foi avisada.");
   assert.equal(situacaoDono({ status: "designado", aguardandoAvaliador: false, ocupado: true, concordanciaEm: null, agendadoPara: "2026-10-25T13:00:00Z" }), "Data proposta: a visita fica confirmada quando o morador concordar.");
 });
 
@@ -150,7 +154,12 @@ test("credenciamento: a identidade só conta verificada; o teste só conta revis
   assert.match(AVALIADOR, /data-testid="passo-identidade-quando"/);
   assert.match(AVALIADOR, /data-testid="credenciamento-passos"/);
   assert.match(AVALIADOR, /data-testid="credenciamento-estado">\{ESTADO_CREDENCIAMENTO\[/);
-  assert.ok(primarios(AVALIADOR) <= 1, "no máximo um primário: o envio do pedido");
+  // E1164 (fatia do resto): com o ajudante, a trava lê a página inteira. A cópia antiga parava no "image/*" do envio de
+  // arquivo e só via 274 das 453 linhas; por isso contava zero primários. O ramo do pedido (sem credenciamento) e o de
+  // quem já é credenciado ("Salvar termos") nunca aparecem juntos: a regra do um primário conta-se no ramo do pedido.
+  const PEDIDO = AVALIADOR.slice(AVALIADOR.indexOf("if (!cred) {"), AVALIADOR.indexOf("const foto = comPainel"));
+  assert.ok(PEDIDO.includes('data-testid="credenciamento-enviar"'), "o recorte é o ramo do pedido");
+  assert.equal(primarios(PEDIDO), 1, "um só primário no pedido: o envio");
 });
 
 test("página pública: linha fixa, sem contratar, sem link, sem escolher avaliador", () => {

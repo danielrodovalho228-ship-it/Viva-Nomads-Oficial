@@ -79,6 +79,7 @@ export const MATRIZ_NOTIFICACOES = {
   vistoria_proposta_aceita: { categoria: "decisao", papeis: ["parceiro"], canais: SEM_PUSH },
   vistoria_agendada: { categoria: "decisao", papeis: ["proprietario", "parceiro"], canais: SEM_PUSH },
   vistoria_concordancia_recusada: { categoria: "decisao", papeis: ["proprietario", "parceiro"], canais: SEM_PUSH },
+  vistoria_avaliador_disponivel: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   vistoria_ausencia: { categoria: "decisao", papeis: ["proprietario", "parceiro"], canais: SEM_PUSH },
   vistoria_ressalva_vencida: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   vistoria_strike: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },

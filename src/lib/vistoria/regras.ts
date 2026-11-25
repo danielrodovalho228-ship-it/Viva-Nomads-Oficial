@@ -37,7 +37,11 @@ export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo no prazo combinad
   nenhum texto fala em desconto.
 */
 export const TEXTO_REVERIFICACAO_INCLUIDA = "A reverificação dos itens da ressalva, pelo mesmo avaliador, está incluída no valor já pago.";
-export const TEXTO_NOVA_AVALIACAO = "Para voltar a ter o selo “vistoriado”, peça uma nova avaliação: avaliação completa, novo pedido, avaliador à sua escolha (outro que não o da avaliação anterior), pelo valor que o avaliador propuser.";
+const textoNovaAvaliacao = (quem: string) => `Para voltar a ter o selo “vistoriado”, peça uma nova avaliação: avaliação completa, novo pedido, avaliador à sua escolha (${quem}), pelo valor que o avaliador propuser.`;
+/** O texto do LAUDO. É documento assinado: não muda por causa da exceção da alternância (ORDEM-DUET-784). */
+export const TEXTO_NOVA_AVALIACAO = textoNovaAvaliacao("outro que não o da avaliação anterior");
+/** O texto da TELA do dono. E1177 (ORDEM-DUET-784): com a exceção da alternância, pode não haver outro avaliador. */
+export const TEXTO_NOVA_AVALIACAO_NA_TELA = textoNovaAvaliacao("outro que não o da avaliação anterior, quando houver outro na sua cidade");
 
 // ── Porte (do anúncio: quartos) ────────────────────────────────────────────────────────────────────────────────
 export const PORTES = ["estudio", "q1_2", "q3_mais"] as const;
@@ -424,25 +428,65 @@ export function impedimento(a: AvaliadorFila, p: PedidoParaDesignar, h: Historic
   return null;
 }
 
+/** Um avaliador que pode ser escolhido. `mesmoDaAnterior` marca quem só voltou pela exceção da alternância (E1177). */
+export type AvaliadorElegivel = AvaliadorFila & { mesmoDaAnterior?: true };
+
+export interface Elegibilidade {
+  /** Quem pode avaliar este pedido, na ordem do rodízio (quem está há mais tempo sem designação primeiro). */
+  elegiveis: AvaliadorElegivel[];
+  /** Quem atende a cidade e não pode, com o motivo que de fato o impede. */
+  impedidos: { id: string; motivo: MotivoImpedimento }[];
+}
+
+/**
+ * E1177, coordenador: a exceção da alternância. A regra de sempre tira da escolha quem fez a ÚLTIMA avaliação do imóvel
+ * ("avaliacao_anterior") — numa cidade com um avaliador só, a segunda avaliação nunca acontecia. A exceção: se não sobra
+ * NENHUM elegível e há um impedido SÓ por "avaliacao_anterior", ele volta a ser elegível, com a marca `mesmoDaAnterior`.
+ * Dois limites:
+ *  • havendo qualquer outro elegível, a regra se mantém — o da avaliação anterior continua fora;
+ *  • a exceção nunca cede outro impedimento: 1ª da contestação, relação declarada, serviço ao dono em 12 meses, suspenso,
+ *    não ativo, conta de teste, já designado no pedido, outra cidade. Quem tem a avaliação anterior E outro impedimento
+ *    continua impedido — e o motivo dito passa a ser o outro, que é o que de fato o impede.
+ * FONTE ÚNICA: o rodízio (proximoAvaliador) e a lista de escolha do dono (sugerirAvaliadores) leem daqui.
+ */
+export function elegiveisComAlternancia(fila: readonly AvaliadorFila[], pedido: PedidoParaDesignar, historico: HistoricoDesignacao, agora: Date): Elegibilidade {
+  let impedidos: { id: string; motivo: MotivoImpedimento }[] = [];
+  const elegiveis: AvaliadorElegivel[] = [];
+  for (const a of fila) {
+    const m = impedimento(a, pedido, historico, agora);
+    if (!m) elegiveis.push(a);
+    else if (m !== "outra_cidade") impedidos.push({ id: a.id, motivo: m });
+  }
+  if (!elegiveis.length) {
+    // "Só por avaliação anterior" = sem o histórico de avaliações do imóvel, nada mais o impede.
+    const semAvaliacoes: HistoricoDesignacao = { ...historico, avaliacoesDoImovel: [] };
+    impedidos = impedidos.flatMap((i) => {
+      if (i.motivo !== "avaliacao_anterior") return [i];
+      const a = fila.find((x) => x.id === i.id);
+      const outro = a ? impedimento(a, pedido, semAvaliacoes, agora) : null;
+      if (a && outro === null) {
+        elegiveis.push({ ...a, mesmoDaAnterior: true });
+        return [];
+      }
+      return [{ id: i.id, motivo: outro ?? i.motivo }];
+    });
+  }
+  const t = (s: string | null) => (s ? Date.parse(s) : -Infinity);
+  elegiveis.sort((x, y) => t(x.ultimaDesignacaoEm) - t(y.ultimaDesignacaoEm) || Date.parse(x.credenciadoEm) - Date.parse(y.credenciadoEm) || x.id.localeCompare(y.id));
+  return { elegiveis, impedidos };
+}
+
 export type ResultadoDesignacao =
-  | { avaliador: AvaliadorFila; impedidos: { id: string; motivo: MotivoImpedimento }[] }
+  | { avaliador: AvaliadorElegivel; impedidos: { id: string; motivo: MotivoImpedimento }[] }
   | { avaliador: null; motivo: "nenhum_elegivel"; impedidos: { id: string; motivo: MotivoImpedimento }[] };
 
 /**
  * O próximo da fila da cidade, em rodízio justo: quem está há mais tempo sem designação primeiro (nunca designado vem
  * antes), desempate por quem se credenciou antes e pelo id. Impedidos ficam de fora com o motivo.
+ * E1177: com a exceção da alternância (elegiveisComAlternancia).
  */
 export function proximoAvaliador(fila: AvaliadorFila[], pedido: PedidoParaDesignar, historico: HistoricoDesignacao, agora: Date): ResultadoDesignacao {
-  const impedidos: { id: string; motivo: MotivoImpedimento }[] = [];
-  const elegiveis: AvaliadorFila[] = [];
-  for (const a of fila) {
-    const m = impedimento(a, pedido, historico, agora);
-    if (m) {
-      if (m !== "outra_cidade") impedidos.push({ id: a.id, motivo: m });
-    } else elegiveis.push(a);
-  }
-  const t = (s: string | null) => (s ? Date.parse(s) : -Infinity);
-  elegiveis.sort((x, y) => t(x.ultimaDesignacaoEm) - t(y.ultimaDesignacaoEm) || Date.parse(x.credenciadoEm) - Date.parse(y.credenciadoEm) || x.id.localeCompare(y.id));
+  const { elegiveis, impedidos } = elegiveisComAlternancia(fila, pedido, historico, agora);
   return elegiveis[0] ? { avaliador: elegiveis[0], impedidos } : { avaliador: null, motivo: "nenhum_elegivel", impedidos };
 }
 

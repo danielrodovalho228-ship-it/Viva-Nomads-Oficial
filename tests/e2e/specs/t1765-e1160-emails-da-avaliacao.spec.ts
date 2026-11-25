@@ -15,7 +15,7 @@ import { devolverAVezDaRotinaDaVistoria, pegarAVezDaRotinaDaVistoria } from "../
   A rotina corre num 2º servidor do mesmo build (porta 3155, CRON_SECRET só dele) e, por correr sobre o banco inteiro,
   esta spec pega a vez da rotina — e devolve-a logo que o tique dela acaba (os outros casos não dependem do relógio).
    1. A rotina: o avaliador que não respondeu → o dono lê "não respondeu no prazo… escolha outro" (e nunca "aceitar");
-      a proposta que expirou sem sobrar avaliador → "a Viva avisa quando houver", com o botão "Ver a avaliação", e o
+      a proposta que expirou sem sobrar avaliador → "a equipe da Viva foi avisada", com o botão "Ver a avaliação", e o
       avaliador lê "voltou ao proprietário"; o lembrete da véspera sem o convite a mudar — o dono e o avaliador com a
       regra do reagendamento, o morador com o texto dele.
    2. O avaliador recusa pela tela → o dono lê "recusou… escolha outro" e a página dele tem a escolha aberta. Print a
@@ -37,8 +37,10 @@ const SEGREDO = `lab-t1765-${Math.random().toString(36).slice(2)}`;
 const HORA = 3_600_000;
 const ROTA_AVALIADOR = "/dashboard/parceiro/avaliacao";
 const REGRA = "Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso."; // REGRA_DO_REAGENDAMENTO (regras.ts)
-const A_VIVA_AVISA = "a Viva avisa quando houver um para você escolher"; // A_VIVA_AVISA_QUANDO_HOUVER (telas-exibicao.ts)
-const SEM_OUTRO = `Não há outro avaliador disponível agora; ${A_VIVA_AVISA}.`;
+// E1177 (asserções alteradas, ORDEM-DUET-778): sem avaliador para escolher, o e-mail e a página já não prometem o
+// aviso — dizem que a equipe foi avisada (SEM_OUTRO_AVALIADOR e TEXTO_DA_ESPERA, em espera-de-avaliador.ts).
+const A_EQUIPE_FOI_AVISADA = "A equipe da Viva foi avisada.";
+const SEM_OUTRO = `Não há outro avaliador disponível agora. ${A_EQUIPE_FOI_AVISADA}`;
 const ESCOLHA_OUTRO = "Escolha outro avaliador na página da avaliação.";
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -410,7 +412,8 @@ test.describe("T1765 — E1160: os e-mails da avaliação dizem o que aconteceu 
       await largura(d, w);
       await d.reload({ waitUntil: "domcontentloaded" });
       const situacao = d.getByTestId("avaliacao-situacao");
-      await expect(situacao, `a ${w} px`).toContainText(A_VIVA_AVISA, { timeout: 30_000 });
+      await expect(situacao, `a ${w} px`).toContainText(A_EQUIPE_FOI_AVISADA, { timeout: 30_000 });
+      await expect(situacao, `a ${w} px: sem a promessa do aviso`).not.toContainText("avisa quando houver");
       await expect(d.getByRole("button", { name: /^Escolher / }), "não há ninguém para escolher").toHaveCount(0);
       expect(await semRolagemLateral(d)).toBe(true);
       await situacao.scrollIntoViewIfNeeded();

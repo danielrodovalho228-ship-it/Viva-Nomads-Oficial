@@ -19,11 +19,7 @@ const COPIA = /\\\/\\\*\[(?:\\s\\S|\^)\]\*\?\\\*\\\//;
 
 /** Ainda por trocar: os arquivos que estão em PRs abertos (entram quando esses PRs saírem). Só encolhe. */
 const PENDENTES = new Set([
-  "src/lib/busca/e580-filtro-preco-justo-visivel.test.ts", // #3779, #3795
-  "src/lib/busca/e82-busca-clean.test.ts", // #3834
-  "src/lib/ci/prova-ao-vivo.ts", // #3877
   "src/lib/estilo/estilo-padrao.test.ts", // #3812, #3822
-  "src/lib/vistoria/telas-exibicao.test.ts", // #3574
 ]);
 
 /**
