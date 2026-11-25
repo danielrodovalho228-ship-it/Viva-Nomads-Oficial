@@ -281,9 +281,9 @@ test("6. o e-mail que cita dias úteis fecha com a nota; o que não cita fica co
   assert.ok(!antigo.includes(NOTA_DIAS_UTEIS));
 });
 
-test("6. E1196: nos textos que vêm da lib, a nota entra só quando o texto cita dias úteis (citaDiasUteis)", () => {
+test("6. E1196: nos textos que vêm da lib, a nota entra só quando o texto cita dias úteis (o `de` do componente)", () => {
   const proposta = readFileSync(join(RAIZ, "app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx"), "utf8");
-  assert.match(proposta, /citaDiasUteis\(p\.preAceitacao\.contexto\) && <NotaDiasUteis\b/);
+  assert.match(proposta, /<NotaDiasUteis de=\{\[p\.preAceitacao\.contexto\]\}/);
   const candidaturas = readFileSync(join(RAIZ, "app/(dashboard)/dashboard/candidaturas/page.tsx"), "utf8");
-  assert.match(candidaturas, /citaDiasUteis\(PROXIMO_PASSO_CANDIDATURA\[c\.situacao\.chave\]!\.agora\) && <NotaDiasUteis\b/);
+  assert.match(candidaturas, /<NotaDiasUteis de=\{\[PROXIMO_PASSO_CANDIDATURA\[c\.situacao\.chave\]!\.agora\]\}/);
 });
