@@ -145,7 +145,6 @@ export type NotificationEvent =
   | "vistoria_agendada" // visita agendada → dono e avaliador
   | "vistoria_concordancia" // imóvel ocupado: a visita espera a concordância → morador
   | "vistoria_concordancia_recusada" // E1173: o morador não concordou com a data proposta → dono e avaliador
-  | "vistoria_avaliador_disponivel" // E1177: a lista de avaliadores abriu, ou chegou outro avaliador → dono
   | "vistoria_lembrete" // D-1 da visita → dono, avaliador e morador
   | "vistoria_ausencia" // ausência registrada → dono e avaliador
   | "vistoria_sem_avaliador" // nenhum avaliador elegível → admins
@@ -281,7 +280,6 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   vistoria_agendada: { subject: "Visita de avaliação agendada", body: semFatos("vistoria_agendada"), cta: "Ver a visita", path: "/dashboard/imoveis" },
   vistoria_concordancia: { subject: "Concorda com a visita de avaliação?", body: semFatos("vistoria_concordancia"), cta: "Responder", path: "/dashboard/locacoes" },
   vistoria_concordancia_recusada: { subject: "O morador não pode na data da visita de avaliação", body: semFatos("vistoria_concordancia_recusada"), cta: "Ver a avaliação", path: "/dashboard/imoveis" },
-  vistoria_avaliador_disponivel: { subject: "Já há avaliador para a avaliação do seu imóvel", body: semFatos("vistoria_avaliador_disponivel"), cta: "Escolher avaliador", path: "/dashboard/imoveis" },
   vistoria_lembrete: { subject: "A visita de avaliação é amanhã", body: semFatos("vistoria_lembrete"), cta: "Ver a visita", path: "/dashboard" },
   vistoria_ausencia: { subject: "Ausência na visita de avaliação", body: semFatos("vistoria_ausencia"), cta: "Ver a avaliação", path: "/dashboard" },
   calendario_conflito: { subject: "Datas do outro site cruzam um compromisso na Viva", body: (n) => `Olá${n ? " " + n : ""}, o calendário importado marcou como ocupadas datas em que o seu imóvel tem um compromisso na Viva. Nada foi cancelado: confira as datas e decida qual vale.`, cta: "Ver o calendário", path: "/dashboard/imoveis" },

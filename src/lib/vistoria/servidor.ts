@@ -5,7 +5,6 @@ import { EVENTOS_VISITA_DE_AVALIACAO } from "@/lib/notifications/sino";
 import { escaparHtml } from "@/lib/escapar-html";
 import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type FatosVistoria } from "./corpo-email";
 import { corpoDoAvisoDaFila } from "./rotulos-da-fila";
-import { SO_O_ANTERIOR, avisoAoDono, estadoDaEscolha } from "./espera-de-avaliador";
 import { laudoForaDoCombinado } from "./laudo";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { STATUS_TESTE_CONCLUIDO } from "./entrada";
@@ -29,7 +28,6 @@ import {
   notaConduta,
   sorteadoParaAuditoria,
   visitaAmanha,
-  type AvaliadorElegivel,
   type AvaliadorFila,
   type DesignacaoDoPedido,
   type HistoricoDesignacao,
@@ -90,8 +88,6 @@ export type RefVistoria = {
   reagendada?: boolean;
   /** E1173: no aviso da recusa do morador é a data recusada — quando o aviso sai, ela já foi limpa do pedido. */
   visitaAnterior?: string | null;
-  /** E1177: o aviso "há avaliador" saiu porque chegou OUTRO avaliador (o dono esperava com o da avaliação anterior). */
-  outro?: boolean;
 };
 
 /** E289: lê no banco o que o e-mail precisa nomear — imóvel (título, bairro, cidade), visita e avaliador. */
@@ -101,11 +97,11 @@ export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<F
   let avaliador: string | null = null;
   // E1160: o que o e-mail afirma sai do estado do pedido NO MOMENTO do envio — a proposta, se há avaliador para o dono
   // escolher, se a data é uma troca e o número de credenciado de quem assina o laudo.
-  let doPedido: Pick<FatosVistoria, "numeroCredenciado" | "propostaEm" | "aguardandoAvaliador" | "motivoDaEspera" | "reagendada"> = { reagendada: ref.reagendada };
+  let doPedido: Pick<FatosVistoria, "numeroCredenciado" | "propostaEm" | "aguardandoAvaliador" | "reagendada"> = { reagendada: ref.reagendada };
   if (ref.pedidoId) {
     const { data: p } = await admin
       .from("vistoria_pedidos")
-      .select("property_id, agendado_para, proposta_em, aguardando_avaliador, motivo_da_espera, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento(numero_credenciado, parceiros(nome_publico, user_id))")
+      .select("property_id, agendado_para, proposta_em, aguardando_avaliador, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento(numero_credenciado, parceiros(nome_publico, user_id))")
       .eq("id", ref.pedidoId)
       .maybeSingle();
     const pp = p as {
@@ -113,7 +109,6 @@ export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<F
       agendado_para?: string | null;
       proposta_em?: string | null;
       aguardando_avaliador?: boolean | null;
-      motivo_da_espera?: string | null;
       reagendou_dono?: boolean | null;
       reagendou_avaliador?: boolean | null;
       avaliadores_credenciamento?: { numero_credenciado?: string | null; parceiros?: { nome_publico?: string | null; user_id?: string | null } | null } | null;
@@ -127,13 +122,11 @@ export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<F
       numeroCredenciado: pp?.avaliadores_credenciamento?.numero_credenciado ?? null,
       propostaEm: pp?.proposta_em ?? null,
       aguardandoAvaliador: pp?.aguardando_avaliador === true,
-      // E1177: o motivo gravado no pedido — o e-mail diz por que não há quem escolher, em vez de prometer sempre.
-      motivoDaEspera: pp?.motivo_da_espera ?? null,
       // Quem agenda diz se é troca; depois da concordância do morador (imóvel ocupado) vale o registo do pedido.
       reagendada: ref.reagendada ?? (pp?.reagendou_dono === true || pp?.reagendou_avaliador === true),
     };
   }
-  const fatos = { visita, avaliador, ...doPedido, visitaAnterior: ref.visitaAnterior ?? null, destinatario: ref.papel, outroAvaliador: ref.outro === true };
+  const fatos = { visita, avaliador, ...doPedido, visitaAnterior: ref.visitaAnterior ?? null, destinatario: ref.papel };
   if (!propertyId) return { imovel: null, ...fatos };
   const { data: im } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
   const i = im as { title?: string | null; address?: string | null; city?: string | null } | null;
@@ -225,7 +218,7 @@ export async function avisarAdmins(admin: Admin, ev: NotificationEvent, tipoDaFi
  * E1149: devolve se ESTA chamada inseriu. O índice único deixa entrar um só item aberto; quem chega em segundo recebe
  * `false` — e não avisa os admins outra vez.
  */
-export async function naFilaDoAdmin(admin: Admin, tipo: "sem_avaliador" | "avaliacao_teste" | "suspensao_automatica" | "proposta_descredenciamento" | "revisao_criterio" | "contestacao_sem_avaliador", ref: { pedidoId?: string; avaliadorId?: string }, motivo: string): Promise<boolean> {
+export async function naFilaDoAdmin(admin: Admin, tipo: "sem_avaliador" | "avaliacao_teste" | "suspensao_automatica" | "proposta_descredenciamento" | "revisao_criterio", ref: { pedidoId?: string; avaliadorId?: string }, motivo: string): Promise<boolean> {
   const { error } = await admin.from("vistoria_fila_admin").insert({ tipo, pedido_id: ref.pedidoId ?? null, avaliador_id: ref.avaliadorId ?? null, motivo });
   return !error;
 }
@@ -323,9 +316,6 @@ type LinhaPedido = {
   teste: boolean;
   status: string;
   origem_pedido_id: string | null;
-  /** E1177: o estado da escolha que o pedido já tinha — é o "antes" da passagem que avisa o dono. */
-  aguardando_avaliador: boolean | null;
-  motivo_da_espera: string | null;
 };
 
 /** foraDoPiloto (E1146): os avaliadores da cidade que a chave em modo piloto deixou fora desta escolha. */
@@ -333,7 +323,7 @@ type LeituraEscolha = { p: LinhaPedido; sugestoes: Sugestoes; foraDoPiloto: Aval
 
 /** Lê o pedido, a fila e o histórico e devolve os sugeridos. Qualquer leitura que falha LANÇA (nunca vira "ninguém elegível"). */
 async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date, statusAceitos: readonly string[] = ["pedido"]): Promise<LeituraEscolha | null> {
-  const { data } = await admin.from("vistoria_pedidos").select("id, property_id, owner_id, cidade, tipo, teste, status, origem_pedido_id, aguardando_avaliador, motivo_da_espera").eq("id", pedidoId).maybeSingle();
+  const { data } = await admin.from("vistoria_pedidos").select("id, property_id, owner_id, cidade, tipo, teste, status, origem_pedido_id").eq("id", pedidoId).maybeSingle();
   const p = data as LinhaPedido | null;
   if (!p || !statusAceitos.includes(p.status)) return null;
   const [jaLeitura, filaToda, historico, modo, piloto] = await Promise.all([
@@ -401,13 +391,8 @@ export async function abrirEscolha(admin: Admin, pedidoId: string, agora = new D
   }
   if (!l) return null;
   const quando = agora.toISOString();
-  // E1177: o estado da escolha fica gravado no pedido — a lista vazia com o MOTIVO, ou a lista só com o avaliador da
-  // avaliação anterior (a exceção da alternância). É o que deixa a tela dizer a verdade e a rotina saber a quem voltar.
-  const fora: MotivoForaDaEscolha[] = [...l.sugestoes.impedidos.map((i) => i.motivo), ...l.foraDoPiloto.map(() => "fora_do_piloto" as const)];
-  const antes = { aguardando: l.p.aguardando_avaliador === true, motivo: l.p.motivo_da_espera };
-  const depois = estadoDaEscolha(l.p.tipo, l.sugestoes.sugeridos, fora);
-  if (depois.aguardando) {
-    await admin.from("vistoria_pedidos").update({ aguardando_avaliador: true, motivo_da_espera: depois.motivo, atualizado_em: quando }).eq("id", l.p.id);
+  if (!l.sugestoes.sugeridos.length) {
+    await admin.from("vistoria_pedidos").update({ aguardando_avaliador: true, atualizado_em: quando }).eq("id", l.p.id);
     // E1146: o item diz a regra que impede cada avaliador. Há um item aberto por pedido (índice único): o que já
     // estava aberto com o texto antigo, ou com outro impedimento, é atualizado em vez de se tentar inserir outro.
     const motivo = await motivoDoItemSemAvaliador(admin, l);
@@ -430,31 +415,16 @@ export async function abrirEscolha(admin: Admin, pedidoId: string, agora = new D
       },
       motivo,
     );
-    // E1177 (coordenador): a contestação pede um avaliador diferente do primeiro; sem outro na cidade, a equipe assume
-    // o pedido — o item entra na fila com o tipo próprio (um por pedido: o índice único recusa o segundo). Nenhum
-    // e-mail novo (ORDEM-DUET-673): a equipe é avisada pelo aviso de sempre, o do "sem avaliador", logo abaixo.
-    if (depois.motivo === "contestacao_sem_segundo") await naFilaDoAdmin(admin, "contestacao_sem_avaliador", { pedidoId: p.id }, motivo);
     if (mudanca !== "igual") await avisarAdmins(admin, "vistoria_sem_avaliador");
     return 0;
   }
-  // Há quem escolher. O dono é avisado só na passagem em que esperava e passou a ter o que esperava (a promessa da
-  // tela): a troca é condicional ao estado de antes, para duas leituras ao mesmo tempo não avisarem duas vezes.
-  const aviso = avisoAoDono(antes, depois);
-  const novoEstado = { aguardando_avaliador: false, motivo_da_espera: depois.motivo, atualizado_em: quando };
-  let passou = false;
-  if (aviso) {
-    const troca = admin.from("vistoria_pedidos").update(novoEstado).eq("id", l.p.id);
-    const { data: mudou } = await (aviso === "lista_abriu" ? troca.eq("aguardando_avaliador", true) : troca.eq("motivo_da_espera", SO_O_ANTERIOR)).select("id");
-    passou = (mudou ?? []).length > 0;
-  } else await admin.from("vistoria_pedidos").update(novoEstado).eq("id", l.p.id);
+  await admin.from("vistoria_pedidos").update({ aguardando_avaliador: false, atualizado_em: quando }).eq("id", l.p.id);
   await admin.from("vistoria_fila_admin").update({ resolvido_em: quando }).eq("tipo", "sem_avaliador").eq("pedido_id", l.p.id).is("resolvido_em", null);
-  await admin.from("vistoria_fila_admin").update({ resolvido_em: quando }).eq("tipo", "contestacao_sem_avaliador").eq("pedido_id", l.p.id).is("resolvido_em", null);
-  if (aviso && passou) await avisar(admin, l.p.owner_id, "vistoria_avaliador_disponivel", rotaDono(l.p.property_id), { pedidoId: l.p.id, propertyId: l.p.property_id, papel: "dono", outro: aviso === "chegou_outro" });
   return l.sugestoes.sugeridos.length;
 }
 
 /** Os sugeridos do pedido (o que o dono vê para escolher). Lança se uma leitura falha. */
-export async function sugeridosDoPedido(admin: Admin, pedidoId: string, agora = new Date()): Promise<AvaliadorElegivel[] | null> {
+export async function sugeridosDoPedido(admin: Admin, pedidoId: string, agora = new Date()): Promise<AvaliadorFila[] | null> {
   const l = await leituraDaEscolha(admin, pedidoId, agora);
   return l ? l.sugestoes.sugeridos : null;
 }
@@ -488,7 +458,7 @@ export async function escolherNoServidor(admin: Admin, pedidoId: string, avaliad
   // há uma linha por pedido e avaliador. Ela reabre, sem resposta e sem a marca; sem linha para reabrir, cria-se.
   const { data: reaberta, error: erroReabrir } = await admin
     .from("vistoria_designacoes")
-    .update({ designado_em: quando, resposta: null, respondido_em: null, proposta_expirada_em: null, mesmo_da_anterior: a.mesmoDaAnterior === true })
+    .update({ designado_em: quando, resposta: null, respondido_em: null, proposta_expirada_em: null })
     .eq("pedido_id", l.p.id)
     .eq("avaliador_id", a.id)
     .eq("resposta", "expirada")
@@ -496,13 +466,12 @@ export async function escolherNoServidor(admin: Admin, pedidoId: string, avaliad
     .select("id");
   if (erroReabrir) return { ok: false, erro: "Não foi possível registrar a escolha. Tente de novo." };
   if (!reaberta?.length) {
-    // E1177: a designação guarda se o escolhido é o mesmo da avaliação anterior (só possível pela exceção da alternância).
-    const { error } = await admin.from("vistoria_designacoes").insert({ pedido_id: l.p.id, avaliador_id: a.id, designado_em: quando, mesmo_da_anterior: a.mesmoDaAnterior === true });
+    const { error } = await admin.from("vistoria_designacoes").insert({ pedido_id: l.p.id, avaliador_id: a.id, designado_em: quando });
     if (error) return { ok: false, erro: "Não foi possível registrar a escolha. Tente de novo." };
   }
   const { data: mudou } = await admin
     .from("vistoria_pedidos")
-    .update({ status: "designado", avaliador_id: a.id, designado_em: quando, escolhido_em: quando, aguardando_avaliador: false, motivo_da_espera: null, atualizado_em: quando })
+    .update({ status: "designado", avaliador_id: a.id, designado_em: quando, escolhido_em: quando, aguardando_avaliador: false, atualizado_em: quando })
     .eq("id", l.p.id)
     .eq("status", "pedido")
     .select("id");
@@ -665,8 +634,7 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
     expiradas++;
   }
   // Pedidos sem nenhum avaliador para o dono escolher: tenta de novo (alguém pode ter sido credenciado).
-  // E1177: e os pedidos em que a lista só tem o avaliador da avaliação anterior — o dono pode estar à espera de outro.
-  const { data: parados } = await admin.from("vistoria_pedidos").select("id").eq("status", "pedido").or(`aguardando_avaliador.eq.true,motivo_da_espera.eq.${SO_O_ANTERIOR}`);
+  const { data: parados } = await admin.from("vistoria_pedidos").select("id").eq("status", "pedido").eq("aguardando_avaliador", true);
   for (const p of (parados ?? []) as { id: string }[]) {
     if (await abrirEscolha(admin, p.id, agora)) reprocessados++;
   }

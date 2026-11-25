@@ -11,8 +11,8 @@ import { AVISO_EXPIRACAO_DIAS, PRAZO_DEVOLUCAO_DIAS, PRAZO_RESSALVA_DIAS, VALIDA
 import { dias, prazoCombinadoNaLinhaDoDono, textoDaPropostaEnviada } from "./pedido-avaliador.ts";
 import { SUBTITULO_DA_PORTA } from "./porta-da-avaliacao.ts";
 import { textoDaTroca, mensagemDepoisDaTroca } from "./troca-de-avaliador.ts";
-import { SEM_OUTRO_AVALIADOR, TEXTO_DA_ESPERA } from "./espera-de-avaliador.ts";
 import {
+  A_VIVA_AVISA_QUANDO_HOUVER,
   DESCRICAO_DA_AVALIACAO,
   DIAS_DA_JANELA_DE_RECUSAS,
   ESCOLHA_E_TERMOS_AO_AVALIADOR,
@@ -135,15 +135,13 @@ test("E1158 (10 e 11): como o dono paga, e o botão de confirmar — uma fonte p
   assert.doesNotMatch(BLOCO_DO_DONO, /Confirmar que paguei/);
 });
 
-// E1177 (asserções alteradas, ORDEM-DUET-778, decisão do coordenador): a promessa única "a Viva avisa quando houver um
-// para você escolher" saiu — só vale quando a cidade não tem avaliador nenhum. O que continua a valer deste sub-ponto é
-// a FONTE ÚNICA: o bloco do dono e a troca de avaliador leem os textos da espera de um lugar só.
-test("E1158 (12): 'não há avaliador agora' sai de uma fonte só no bloco do dono e na troca de avaliador", () => {
-  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null, motivoDaEspera: "sem_avaliador_na_cidade" }), TEXTO_DA_ESPERA.sem_avaliador_na_cidade);
-  assert.match(BLOCO_DO_DONO, /data-testid="avaliacao-escolha-vazia">\{textoDaEspera\(atual\.motivo_da_espera\)\}<\/p>/);
-  assert.match(textoDaTroca({ numero: "UDI-001", valor: "R$ 380,00", prazoDias: 3, outros: 0, cidade: "Uberlândia" }).depois, /a equipe da Viva é avisada\.$/);
-  assert.ok(mensagemDepoisDaTroca(true).endsWith(SEM_OUTRO_AVALIADOR));
-  for (const f of [BLOCO_DO_DONO, ler("src/lib/vistoria/troca-de-avaliador.ts")]) assert.doesNotMatch(f, /[aA] Viva avisa|equipe da Viva foi avisada/);
+test("E1158 (12): 'não há avaliador agora' promete o mesmo no bloco do dono e na troca de avaliador", () => {
+  assert.equal(A_VIVA_AVISA_QUANDO_HOUVER, "a Viva avisa quando houver um para você escolher");
+  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null }), `Aguardando avaliador: ${A_VIVA_AVISA_QUANDO_HOUVER}.`);
+  assert.match(BLOCO_DO_DONO, /data-testid="avaliacao-escolha-vazia">Nenhum avaliador disponível agora: \{A_VIVA_AVISA_QUANDO_HOUVER\}\.<\/p>/);
+  assert.match(textoDaTroca({ numero: "UDI-001", valor: "R$ 380,00", prazoDias: 3, outros: 0, cidade: "Uberlândia" }).depois, new RegExp(`${A_VIVA_AVISA_QUANDO_HOUVER}\\.$`));
+  assert.match(mensagemDepoisDaTroca(true), new RegExp(`${A_VIVA_AVISA_QUANDO_HOUVER}\\.$`));
+  for (const f of [BLOCO_DO_DONO, ler("src/lib/vistoria/troca-de-avaliador.ts")]) assert.doesNotMatch(f, /[aA] Viva avisa quando houver/);
 });
 
 test("E1158 (13): o que é a avaliação — a mesma frase no cartão do Nível e no subtítulo da porta", () => {
@@ -249,9 +247,7 @@ test("E1158 (21): o modelo da matriz é o próprio corpo, sem os fatos — cada 
   // E1160 (1) (asserção alterada, ORDEM-DUET-674): 17 → 19. Os dois eventos novos (o avaliador recusou; não respondeu
   // no prazo) também têm o corpo escrito uma vez.
   // E1173 (asserção alterada, ORDEM-DUET-753): 19 → 20. O aviso da recusa da data também tem o corpo escrito uma vez.
-  // E1177 (asserção alterada, ORDEM-DUET-778): 20 → 21. O aviso ao dono quando a lista de avaliadores abre também tem
-  // o corpo escrito uma vez.
-  assert.equal(EVENTOS_VISTORIA_COM_FATOS.size, 21);
+  assert.equal(EVENTOS_VISTORIA_COM_FATOS.size, 20);
   // Na matriz, nenhuma linha da avaliação com fatos tem corpo escrito à mão; os dois avisos aos admins ficam só nela.
   const comCorpoProprio = MATRIZ.split("\n").filter((l) => /^  vistoria_\w+: \{/.test(l) && !/body: semFatos\(/.test(l)).map((l) => l.trim().split(":")[0]);
   assert.deepEqual(comCorpoProprio, ["vistoria_sem_avaliador", "vistoria_fila_admin"]);

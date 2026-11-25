@@ -9,8 +9,6 @@ import { SEM_AVALIADOR_ELEGIVEL } from "./rotulos-do-pedido.ts";
 
 export const ROTULO_FILA: Record<string, string> = {
   sem_avaliador: `Pedido ${SEM_AVALIADOR_ELEGIVEL}`,
-  // E1177 (texto do coordenador): a contestação pede um avaliador diferente do primeiro, e a cidade não tem outro.
-  contestacao_sem_avaliador: "Contestação sem segundo avaliador na cidade — a equipe decide",
   avaliacao_teste: "Avaliação de teste a marcar e revisar",
   suspensao_automatica: "Suspensão automática antiga (não é mais criada)",
   revisao_criterio: "Critério público de qualidade atingido: rever com o avaliador (direito de resposta)",

@@ -7,7 +7,7 @@
 import { dataHoraBRT } from "../datas-brasilia.ts";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "./prazos.ts";
 import { REGRA_DO_REAGENDAMENTO } from "./regras.ts";
-import { SEM_OUTRO_AVALIADOR, textoDaEspera } from "./espera-de-avaliador.ts";
+import { A_VIVA_AVISA_QUANDO_HOUVER } from "./telas-exibicao.ts";
 import { textoDoPrazoDeAceiteDesdeAProposta } from "./relogio-do-pedido.ts";
 import { AVISO_EXPIRACAO_DIAS, PRAZO_DEVOLUCAO_DIAS, PRAZO_RESSALVA_DIAS, VALIDADE_LAUDO_MESES } from "./laudo.ts";
 import { imovelDoPedido, type LinhaEmail } from "../parceiros/email-pedido.ts";
@@ -24,7 +24,6 @@ export type EventoVistoria =
   | "vistoria_agendada"
   | "vistoria_concordancia"
   | "vistoria_concordancia_recusada"
-  | "vistoria_avaliador_disponivel"
   | "vistoria_lembrete"
   | "vistoria_ausencia"
   | "vistoria_laudo_emitido"
@@ -47,7 +46,6 @@ export const EVENTOS_VISTORIA_COM_FATOS: ReadonlySet<string> = new Set<EventoVis
   "vistoria_agendada",
   "vistoria_concordancia",
   "vistoria_concordancia_recusada",
-  "vistoria_avaliador_disponivel",
   "vistoria_lembrete",
   "vistoria_ausencia",
   "vistoria_laudo_emitido",
@@ -72,10 +70,6 @@ export interface FatosVistoria {
   propostaEm?: string | null;
   /** E1160 (2, 4): o pedido voltou (ou nasceu) sem avaliador para o dono escolher — o e-mail não manda "escolher". */
   aguardandoAvaliador?: boolean | null;
-  /** E1177: por que o dono não tem quem escolher (vistoria_pedidos.motivo_da_espera) — o e-mail diz o motivo. */
-  motivoDaEspera?: string | null;
-  /** E1177: o aviso "há avaliador" saiu porque chegou OUTRO avaliador (o dono esperava com o da avaliação anterior). */
-  outroAvaliador?: boolean | null;
   /** E1160 (6): a visita já tinha data e mudou. */
   reagendada?: boolean | null;
   /** E1160 (6): a data que a visita tinha antes da troca, quando ainda se conhece no momento do envio. */
@@ -128,8 +122,7 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
   const novaData = visita ? `: ${visita}${anterior ? `; antes: ${anterior}` : ""} (horário de Brasília)` : "";
   // E1160 (2, 4): o passo do dono segue o estado real do pedido — a mesma frase que a tela usa quando não há quem escolher.
   const semAvaliador = f.aguardandoAvaliador === true;
-  // E1177: sem a promessa do aviso — o avaliador que saiu fica fora deste pedido, e a regra não garante outro.
-  const semOutro = SEM_OUTRO_AVALIADOR;
+  const semOutro = `Não há outro avaliador disponível agora; ${A_VIVA_AVISA_QUANDO_HOUVER}.`;
   const escolhaOutro = semAvaliador ? semOutro : "Escolha outro avaliador na página da avaliação.";
   const botaoSemEscolha = semAvaliador ? { cta: "Ver a avaliação" } : {};
 
@@ -156,20 +149,6 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
         linhas,
         ...botaoSemEscolha,
       };
-    case "vistoria_avaliador_disponivel":
-      // E1177: o aviso que cumpre a promessa da tela — a lista vazia abriu; ou, para quem esperava com o cartão do
-      // avaliador da avaliação anterior, chegou outro avaliador.
-      return f.outroAvaliador === true
-        ? {
-            subject: assuntoComTitulo("Há outro avaliador para a avaliação de ", titulo, "", { antes: "Há outro avaliador: " }),
-            body: (n) => `${ola(n)}, há outro avaliador disponível na sua cidade para a avaliação ${doImovel(true)}. Escolha na página da avaliação.`,
-            linhas,
-          }
-        : {
-            subject: assuntoComTitulo("Já há avaliador para a avaliação de ", titulo, "", { antes: "Já há avaliador: " }),
-            body: (n) => `${ola(n)}, já há avaliador para você escolher na avaliação ${doImovel(true)}. Escolha na página da avaliação.`,
-            linhas,
-          };
     case "vistoria_sem_resposta_dono":
       // E1160 (1): o avaliador não respondeu no prazo que declarou; a rotina devolveu o pedido ao dono.
       return {
@@ -297,8 +276,8 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
     case "vistoria_verificacao":
       return {
         subject: assuntoComTitulo("A Viva abriu uma verificação de ", titulo),
-        // E1160 (2): ninguém é designado — o passo é do dono. E1177: sem avaliador para escolher, o e-mail diz o motivo.
-        body: (n) => `${ola(n)}, a Viva abriu uma verificação do estado ${doImovel(true)}, com o motivo descrito na página da avaliação. ${semAvaliador ? textoDaEspera(f.motivoDaEspera) : "O próximo passo é seu: escolha o avaliador credenciado na página da avaliação."}`,
+        // E1160 (2): ninguém é designado — o passo é do dono. Sem avaliador para escolher, a Viva avisa quando houver.
+        body: (n) => `${ola(n)}, a Viva abriu uma verificação do estado ${doImovel(true)}, com o motivo descrito na página da avaliação. ${semAvaliador ? `Não há avaliador disponível agora; ${A_VIVA_AVISA_QUANDO_HOUVER}.` : "O próximo passo é seu: escolha o avaliador credenciado na página da avaliação."}`,
         linhas,
       };
     case "vistoria_devolucao":

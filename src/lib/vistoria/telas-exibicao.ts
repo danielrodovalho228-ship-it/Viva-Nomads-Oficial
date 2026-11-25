@@ -9,7 +9,6 @@ import { ROTULO_IMPEDIMENTO, atendeCidade, impedimento, type AvaliadorFila, type
 import { comoEmBreve, type ChaveIdentidade } from "../identidade/estado.ts";
 import { ROTULO_NUMERO_SEM_AVALIADOR } from "./rotulos-do-pedido.ts";
 import { TEXTO_RECUSA_PARA_O_DONO, concordanciaRecusada } from "./concordancia.ts";
-import { textoDaEspera } from "./espera-de-avaliador.ts";
 
 // ── Data e hora da visita (QA do #1111, item 6: sem segundos e com o fuso) ─────────────────────────────────────
 /** "25/10/2026 às 10:00" no horário de Brasília. */
@@ -57,6 +56,8 @@ export function linhaDoTempoPedido(p: { status: string; numero?: string | null; 
   return ORDEM_ETAPAS.map((chave, i) => ({ chave, rotulo: rotulo[chave], estado: i < atual ? "feito" : i === atual ? "atual" : "futuro" }));
 }
 
+/** E1158 (12): "não há avaliador agora" promete sempre o mesmo — no bloco do dono e na troca de avaliador. */
+export const A_VIVA_AVISA_QUANDO_HOUVER = "a Viva avisa quando houver um para você escolher";
 /** E1158 (11): o botão com que o dono confirma o pagamento — o mesmo no pedido aberto e depois do laudo. */
 export const ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR = "Confirmar que paguei o avaliador";
 /** E1158 (10): como o dono paga, antes de qualquer registro — a mesma frase antes do pedido e no cartão do pagamento. */
@@ -66,9 +67,8 @@ export const TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR = "Você paga direto ao avaliad
  * A frase de situação do pedido do dono. "designado" não tem frase própria: a linha "Avaliador escolhido por você: nº X"
  * já diz tudo (QA do #1111, item 5: a frase saía duas vezes).
  */
-export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; ocupado: boolean; concordanciaEm: string | null; agendadoPara: string | null; concordanciaPedidaEm?: string | null; laudoAte?: string | null; motivoDaEspera?: string | null }): string | null {
-  // E1177: a lista vazia diz o MOTIVO (a promessa do aviso só existe quando a cidade não tem avaliador nenhum).
-  if (p.aguardandoAvaliador) return textoDaEspera(p.motivoDaEspera);
+export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; ocupado: boolean; concordanciaEm: string | null; agendadoPara: string | null; concordanciaPedidaEm?: string | null; laudoAte?: string | null }): string | null {
+  if (p.aguardandoAvaliador) return `Aguardando avaliador: ${A_VIVA_AVISA_QUANDO_HOUVER}.`;
   switch (p.status) {
     case "pedido":
       return "Pedido registrado: escolha o avaliador na lista.";

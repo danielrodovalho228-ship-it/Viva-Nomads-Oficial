@@ -68,10 +68,7 @@ test("QA #1111 item 6: a visita sai sem segundos e com o fuso (dono, morador e c
 test("QA #1111 item 5: 'Avaliador escolhido por você' aparece uma vez só", () => {
   assert.equal(situacaoDono({ status: "designado", aguardandoAvaliador: false, ocupado: false, concordanciaEm: null, agendadoPara: null }), null);
   assert.equal((BLOCO_DONO.match(/Avaliador escolhido por você/g) ?? []).length, 1);
-  // E1177 (asserção alterada, ORDEM-DUET-778): a lista vazia diz o motivo; a promessa do aviso só vale quando a cidade
-  // não tem avaliador nenhum.
-  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null, motivoDaEspera: "sem_avaliador_na_cidade" }), "Ainda não há avaliador disponível na sua cidade. A Viva avisa você assim que houver um.");
-  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null }), "Os avaliadores da sua cidade não podem seguir com este pedido agora. A equipe da Viva foi avisada.");
+  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null }), "Aguardando avaliador: a Viva avisa quando houver um para você escolher.");
   assert.equal(situacaoDono({ status: "designado", aguardandoAvaliador: false, ocupado: true, concordanciaEm: null, agendadoPara: "2026-10-25T13:00:00Z" }), "Data proposta: a visita fica confirmada quando o morador concordar.");
 });
 

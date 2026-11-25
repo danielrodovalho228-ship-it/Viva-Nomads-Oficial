@@ -48,7 +48,7 @@ test("E1100 (2): antes de confirmar, o dono sabe quantos avaliadores sobram para
   // O caso que matou a massa da fatia 4: um só avaliador na cidade. O aviso vem ANTES do clique.
   const sem = textoDaTroca({ ...base, outros: 0, cidade: "Uberlândia" });
   assert.equal(sem.semOutro, true);
-  assert.equal(sem.depois, "Atenção: não há outro avaliador disponível em Uberlândia agora. Se você descartar, o pedido fica aguardando e a equipe da Viva é avisada."); // E1177 (asserção alterada, ORDEM-DUET-778): sem a promessa do aviso
+  assert.equal(sem.depois, "Atenção: não há outro avaliador disponível em Uberlândia agora. Se você descartar, o pedido fica aguardando, e a Viva avisa quando houver um para você escolher.");
   // A leitura falhou: não se inventa número.
   const nulo = textoDaTroca({ ...base, outros: null, cidade: "Uberlândia" });
   assert.equal(nulo.depois, "Depois, você escolhe o novo avaliador na lista.");
@@ -96,7 +96,7 @@ test("E1100 (1 e 3): no bloco do dono, 'Escolher outro avaliador' não é mais u
 
 test("E1100 (4): depois da troca, a tela diz o que aconteceu e leva à escolha do novo avaliador", () => {
   assert.equal(mensagemDepoisDaTroca(false), "Avaliador e proposta descartados. Escolha o novo avaliador na lista abaixo.");
-  assert.equal(mensagemDepoisDaTroca(true), "Avaliador e proposta descartados. Não há outro avaliador disponível agora. A equipe da Viva foi avisada."); // E1177 (asserção alterada, ORDEM-DUET-778)
+  assert.equal(mensagemDepoisDaTroca(true), "Avaliador e proposta descartados. Não há outro avaliador disponível agora; a Viva avisa quando houver um para você escolher.");
   const b = semComentarios(ler("src/components/vistoria/bloco-avaliacao-dono.tsx"));
   assert.match(b, /atual\.status === "pedido" && <DepoisDaTroca\b/, "o aviso aparece quando o pedido voltou à escolha");
   const c = semComentarios(ler("src/components/vistoria/troca-de-avaliador.tsx"));

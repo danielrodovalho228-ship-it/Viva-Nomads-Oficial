@@ -31,12 +31,6 @@ export function diasUteisDoLaudo(combinado: number | null | undefined): number {
   return Math.min(Number(combinado), PRAZO_LAUDO_MAX_DIAS_UTEIS);
 }
 
-/**
- * E1177 (coordenador): em quantos dias úteis a equipe responde ao dono quando a contestação não tem um segundo avaliador
- * na cidade e a equipe assume o pedido.
- */
-export const PRAZO_EQUIPE_CONTESTACAO_DIAS_UTEIS = 2;
-
 /** E1156: "1 dia útil" · "3 dias úteis" — a unidade do prazo do laudo, dita do mesmo jeito em todas as telas. */
 export const diasUteis = (n: number): string => `${n} ${n === 1 ? "dia útil" : "dias úteis"}`;
 
