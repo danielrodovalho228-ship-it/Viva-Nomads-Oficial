@@ -12,10 +12,10 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { documentoDoServico } from "./fiscal.ts";
 import { PREFIXOS } from "../fiscal/prefixos.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const RAIZ = new URL("../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(join(RAIZ, p), "utf8");
-const semComentarios = (t: string) => t.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
 
 function arquivos(dir: string, acc: string[] = []): string[] {
   for (const n of readdirSync(dir)) {

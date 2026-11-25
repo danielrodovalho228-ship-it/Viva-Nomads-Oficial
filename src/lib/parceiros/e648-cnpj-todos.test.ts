@@ -74,7 +74,8 @@ test("avaliador: o credenciamento exige CNPJ válido no cadastro de parceiro (CP
   assert.doesNotMatch(acoes, /parc\.tipo_pessoa === "pj" \? cnpjValido\(doc\) : cpfValido\(doc\)/);
   const pf = validarPedidoAvaliador({ jaParceiro: false, nome: "Ana Avaliadora", tipoPessoa: "pf", documento: CPF, cidade: "Uberlândia", experienciaLink: "https://exemplo.com.br/p", experienciaArquivo: false, aceiteConduta: true });
   assert.equal(pf.ok, false);
-  if (!pf.ok) assert.ok(pf.falta.some((f) => /CPF não é aceito/.test(f)));
+  // E1152 (ORDEM-DUET-644): a recusa do CPF é a frase da regra, junto do campo; a lista geral diz só o que falta.
+  if (!pf.ok) assert.equal(pf.campos.find((c) => c.campo === "documento")?.mensagem, MSG_SO_CNPJ);
   const pj = validarPedidoAvaliador({ jaParceiro: false, nome: "Ana Avaliações ME", tipoPessoa: "pj", documento: CNPJ, cidade: "Uberlândia", experienciaLink: "https://exemplo.com.br/p", experienciaArquivo: false, aceiteConduta: true });
   assert.equal(pj.ok, true);
 });

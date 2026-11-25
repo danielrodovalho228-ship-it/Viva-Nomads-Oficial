@@ -4,7 +4,7 @@
   src/lib/notifications/avisos.ts e src/lib/data/avisos-actions.ts).
   Roda: node --test src/lib/notifications/sino.test.ts
 */
-import { ACAO_RESOLVE, urlDoAviso, type PrioridadeAviso } from "./avisos.ts";
+import { ACAO_RESOLVE, resumoDosAvisos, urlDoAviso, type PrioridadeAviso } from "./avisos.ts";
 import type { NotificationEvent } from "./eventos-email.ts";
 
 /** GET: resumo + os últimos do sino + críticos pendentes. POST {id}: marca lido. */
@@ -116,6 +116,27 @@ export function criticosPendentes<T extends AvisoTela>(avisos: readonly T[]): T[
 export interface SituacaoDosContratos {
   assinarPendente: ReadonlySet<string>;
   aditivoAberto: ReadonlySet<string>;
+  /** E1060: as visitas do dono que ainda esperam a resposta dele (status "pedido"). Sem leitura, ausente: nada é escondido. */
+  visitaPendente?: ReadonlySet<string>;
+  /**
+   * E1128: os pedidos de avaliação da pessoa (como dono, morador ou avaliador) que ainda têm VISITA POR ACONTECER, e os
+   * imóveis deles. Sem leitura, ausente: nada é escondido.
+   */
+  avaliacaoComVisita?: { pedidos: ReadonlySet<string>; imoveis: ReadonlySet<string> };
+}
+
+/** E1128: os avisos que anunciam a visita de avaliação (a data marcada, a véspera, o pedido de concordância do morador). */
+export const EVENTOS_VISITA_DE_AVALIACAO = ["vistoria_agendada", "vistoria_lembrete", "vistoria_concordancia"] as const;
+
+export function ehAvisoDeVisitaDeAvaliacao(evento: string): boolean {
+  return (EVENTOS_VISITA_DE_AVALIACAO as readonly string[]).includes(evento);
+}
+
+const IMOVEL_NO_CAMINHO = /\/dashboard\/imoveis\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+
+/** E1128: o imóvel do aviso, pelo endereço (o aviso do dono leva à página do nível do imóvel); sem imóvel, null. */
+export function imovelDoAviso(url: string | null | undefined): string | null {
+  return IMOVEL_NO_CAMINHO.exec(String(url ?? ""))?.[1]?.toLowerCase() ?? null;
 }
 
 const UUID_NO_CAMINHO = /\/dashboard\/(?:estadia|contratos)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
@@ -135,13 +156,61 @@ export function contratoDoAviso(a: { ref_id?: string | null; url: string | null 
 export function resolvidosNaPratica<T extends AvisoTela>(avisos: readonly T[], situacao: SituacaoDosContratos | null, agoraISO: string): T[] {
   if (!situacao) return [...avisos];
   return avisos.map((a) => {
+    // E1128: o aviso da visita de avaliação só vale enquanto o pedido tem visita por acontecer — seja qual for a
+    // prioridade. Com o pedido no aviso, confere o pedido; aviso antigo sem ele, confere o imóvel do endereço; sem
+    // imóvel (o do avaliador), só sai quando a pessoa não tem nenhuma visita por acontecer (na dúvida, não esconde).
+    if (!a.resolvido_em && ehAvisoDeVisitaDeAvaliacao(a.evento)) {
+      const comVisita = situacao.avaliacaoComVisita;
+      if (!comVisita) return a;
+      const imovel = imovelDoAviso(a.url);
+      const pendente = a.ref_id ? comVisita.pedidos.has(a.ref_id) : imovel ? comVisita.imoveis.has(imovel) : comVisita.pedidos.size > 0;
+      return pendente ? a : { ...a, resolvido_em: agoraISO };
+    }
     if (a.resolvido_em || a.prioridade !== "critico") return a;
+    // E1060: o "Pedido de visita" só vale enquanto a visita espera a resposta do dono. Aviso antigo sem a visita: sai só
+    // quando o dono não tem nenhum pedido à espera (na dúvida, não esconde).
+    if (a.evento === "visita_pedida") {
+      const pendentes = situacao.visitaPendente;
+      if (!pendentes) return a;
+      const pendente = a.ref_id ? pendentes.has(a.ref_id) : pendentes.size > 0;
+      return pendente ? a : { ...a, resolvido_em: agoraISO };
+    }
     const contrato = contratoDoAviso(a);
     if (!contrato) return a;
     const pendente =
       a.evento === "contract_status" ? situacao.assinarPendente.has(contrato) : a.evento === "estadia_aditivo_proposto" ? situacao.aditivoAberto.has(contrato) : true;
     return pendente ? a : { ...a, resolvido_em: agoraISO };
   });
+}
+
+/**
+ * E1128: "um laudo assinado apaga o alerta de visita". O aviso de visita de avaliação já resolvido (pela ação ou pela
+ * conferência do estado atual) sai do sino: não aparece entre os recentes nem conta como não lido. Na lista de todos os
+ * avisos ele continua, marcado "resolvido" (é o histórico).
+ */
+export function semVisitaDeAvaliacaoVencida<T extends AvisoTela>(avisos: readonly T[]): { visiveis: T[]; naoLidasADescontar: number } {
+  const vencido = (a: T) => !!a.resolvido_em && ehAvisoDeVisitaDeAvaliacao(a.evento);
+  return { visiveis: avisos.filter((a) => !vencido(a)), naoLidasADescontar: avisos.filter((a) => vencido(a) && !a.lido_em).length };
+}
+
+/**
+ * E1128: o resumo do sino depois da conferência. O resumo (contagem e maior prioridade) é lido do banco ANTES de a
+ * conferência dar o aviso de visita por vencido; aqui o vencido sai da lista, da contagem e também da COR: se a maior
+ * prioridade era a de um vencido ainda não lido, é relida dos avisos que ficam. Só baixa nesse caso — a prioridade de
+ * outro aviso (um crítico mais antigo, fora da lista) não se perde.
+ */
+export function resumoSemVisitaVencida<T extends AvisoTela>(
+  resumo: { naoLidas: number; maiorPrioridade: PrioridadeAviso | null },
+  avisos: readonly T[],
+): { visiveis: T[]; naoLidas: number; maiorPrioridade: PrioridadeAviso | null } {
+  const { visiveis, naoLidasADescontar } = semVisitaDeAvaliacaoVencida(avisos);
+  const naoLidas = Math.max(0, resumo.naoLidas - naoLidasADescontar);
+  let maiorPrioridade = resumo.maiorPrioridade;
+  if (naoLidas === 0) maiorPrioridade = null;
+  else if (maiorPrioridade && avisos.some((a) => !!a.resolvido_em && !a.lido_em && ehAvisoDeVisitaDeAvaliacao(a.evento) && a.prioridade === maiorPrioridade)) {
+    maiorPrioridade = resumoDosAvisos(visiveis.filter((a) => !a.lido_em)).maiorPrioridade;
+  }
+  return { visiveis, naoLidas, maiorPrioridade };
 }
 
 const ROTULO_ACAO = { assinou: "Assinar o contrato", respondeu: "Responder a proposta", confirmou: "Confirmar a visita" } as const;

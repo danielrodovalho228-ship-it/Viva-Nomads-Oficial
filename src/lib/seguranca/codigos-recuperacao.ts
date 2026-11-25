@@ -5,9 +5,12 @@
  * Código = 10 letras/números sem ambiguidade (≈ 50 bits), uso único.
  */
 import { createHash, randomInt } from "node:crypto";
+import { AVISO_RESTANTES, avisarPoucosCodigos } from "./codigos-recuperacao-aviso.ts";
+
+// E1095: o aviso mora num arquivo sem node:crypto (a tela lê de lá); aqui só se reexporta, para quem já importava daqui.
+export { AVISO_RESTANTES, avisarPoucosCodigos };
 
 export const QTD_CODIGOS = 10;
-export const AVISO_RESTANTES = 2;
 export const FALHAS_MAX_RECUPERACAO = 5;
 export const BLOQUEIO_RECUPERACAO_MS = 15 * 60 * 1000;
 export const VALIDADE_CODIGO_EMAIL_MS = 15 * 60 * 1000;
@@ -51,11 +54,6 @@ export function gerarCodigoEmail(sorteio: (max: number) => number = (m) => rando
 
 export function hashCodigoEmail(userId: string, codigo: string): string {
   return createHash("sha256").update(`refazer:${userId}:${codigo.replace(/\s+/g, "")}`).digest("hex");
-}
-
-/** Avisa quando restam poucos códigos (2 ou menos, inclusive zero). */
-export function avisarPoucosCodigos(restantes: number): boolean {
-  return restantes <= AVISO_RESTANTES;
 }
 
 export interface EstadoLimite {

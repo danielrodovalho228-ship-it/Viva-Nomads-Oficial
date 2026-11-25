@@ -101,3 +101,19 @@ export async function resolverAvisos(p: { usuarioId: string; eventos: Notificati
     .is("resolvido_em", null);
   if (error) console.error("[avisos] não resolveu:", error.code, error.message);
 }
+
+/**
+ * E1128: o sino conferiu o estado atual e estes avisos da pessoa já não valem (a visita de avaliação deixou de estar por
+ * acontecer): grava "resolvido" para todas as telas concordarem. Só os avisos da própria pessoa. Nunca lança.
+ */
+export async function gravarResolucaoConferida(p: { usuarioId: string; ids: readonly string[] }): Promise<void> {
+  try {
+    const admin = createAdminClient();
+    const ids = p.ids.filter((id) => UUID_RE.test(id)).slice(0, 60);
+    if (!admin || !p.usuarioId || !ids.length) return;
+    const { error } = await admin.from("avisos").update({ resolvido_em: new Date().toISOString() }).eq("usuario_id", p.usuarioId).in("id", ids).is("resolvido_em", null);
+    if (error) console.error("[avisos] não gravou a resolução conferida:", error.code, error.message);
+  } catch {
+    /* gravar é melhoria: o sino já mostra o estado conferido */
+  }
+}

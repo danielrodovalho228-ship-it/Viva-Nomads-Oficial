@@ -56,6 +56,7 @@ import { registrarContrato } from "@/lib/data/actions";
 import { lerEstadoDoContrato, type EstadoContratoView } from "@/lib/data/contratos-actions";
 import type { FechamentoContexto } from "@/lib/data/leads-actions";
 import { percentualCaucao, resumoContrato, resumoContratoEmDias } from "@/lib/contrato-blocos";
+import { ROTULO_CAUCAO_NA_ENTRADA, TEXTO_BLOCOS_GARANTIA, TITULO_CAUCAO_GARANTIA, quantoOMoradorPaga } from "@/lib/fechamento-caucao-texto";
 import { faixaForDays, faixaLabel } from "@/lib/faixas";
 import {
   selecionarModeloContrato,
@@ -69,6 +70,9 @@ import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { passoDaRespostaContrato, quadroAntesDaEntrada } from "@/lib/fechamento-contrato";
 import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
+import { portaoDaIdentidade, rotuloIdentidadeDoMorador } from "@/lib/fechamento-identidade";
+import { hrefContratoDono } from "@/lib/contratos/area-dono";
+import { fonteDoResumo, nomeDaGarantiaDoContrato, resumoAcessivel } from "@/lib/fechamento-resumo";
 import { VoltarLista } from "@/components/ui/voltar-lista";
 
 const STEPS = ["Candidatura & verificação", "Garantia", "Serviços", "Patrimonial", "Contrato", "Resumo"];
@@ -105,7 +109,11 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     : "";
   // Status da verificação: "none" (não iniciada) → "ok" (laudo verde, demo) ou
   // "pendente" (conta real, CAF indisponível — portão suave).
-  const [verifStatus, setVerifStatus] = useState<"none" | "ok" | "pendente">("none");
+  // E1064: "confirmada" = a identidade de quem fecha (o dono) já está confirmada e válida, lida no servidor pela fonte
+  // única — o passo abre com o portão aberto, sem o clique "Verificar identidade".
+  const PORTAO_IDENTIDADE = portaoDaIdentidade(ctx.identidadePropria);
+  const JA_CONFIRMADA = !demo && PORTAO_IDENTIDADE.aberto;
+  const [verifStatus, setVerifStatus] = useState<"none" | "ok" | "pendente" | "confirmada">(JA_CONFIRMADA ? "confirmada" : "none");
   const [step, setStep] = useState(0);
   // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
   // E202 (candidatura): sem proposta, abre com os meses do período da candidatura aceita (dentro de 1..6); sem período, 4.
@@ -148,10 +156,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const SAIDA_LIMPEZA = PRECO_FECHAMENTO.unicos.find((u) => u.rotulo !== ROTULO_PREPARACAO)?.valor ?? 0;
   const PLATFORM_COMMISSION = resumo.comissaoValor;
   const CAUCAO_50 = resumo.caucaoTotal; // total do período (soma dos blocos)
-  // PROP-3 (E115): o percentual no texto vem dos valores reais (o teto de 3 aluguéis pode baixar a caução).
-  const PCT_CAUCAO_BLOCO1 = percentualCaucao(resumo.blocos[0]?.caucao ?? 0, resumo.blocos[0]?.valor ?? 0);
-  const PCT_CAUCAO_TOTAL = percentualCaucao(resumo.caucaoTotal, resumo.valorTotalPeriodo);
-  const [verified, setVerified] = useState(false);
+  const [verified, setVerified] = useState(JA_CONFIRMADA);
   const [verifying, setVerifying] = useState(false);
   const [cafResult, setCafResult] = useState<CafResult | null>(null);
   const [signUrl, setSignUrl] = useState<string | null>(null);
@@ -162,6 +167,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [contratoExistente, setContratoExistente] = useState(false);
   const [gerando, setGerando] = useState(false);
   const [erroContrato, setErroContrato] = useState<string | null>(null);
+  // E1063: a pendência que o servidor já conhece quando a página abre (documento do dono, do inquilino ou os documentos
+  // do inquilino) — a mesma do aviso do topo, mostrada também junto do botão "Gerar contrato".
+  const pendenciaContrato = ctx.documentoPendente ?? null;
   // Seleção ÚNICA de garantia: guardamos um único id. Selecionar outra substitui
   // a anterior — é impossível ter duas garantias no contrato (Lei 8.245, art. 37).
   // Caução é a opção PADRÃO (obrigatória): nenhum fechamento avança sem garantia,
@@ -193,6 +201,12 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
     Object.fromEntries(COST_SPLIT_ITEMS.map((i) => [i.key, i.default]))
   );
   const [generated, setGenerated] = useState(false);
+  // E1064 (perna 2): o Resumo abre pelo contrato gerado nesta visita OU pelo contrato que a candidatura já tem
+  // (o estado real, lido no servidor). No segundo caso lê o que o contrato guarda, não as escolhas por omissão da visita.
+  const PASSO_RESUMO = STEPS.length - 1;
+  const RESUMO_ACESSIVEL = resumoAcessivel({ geradoNestaVisita: generated, contratoExistente: ctx.contratoExistente, demo });
+  const FONTE_RESUMO = fonteDoResumo({ geradoNestaVisita: generated, contratoExistente: ctx.contratoExistente, demo });
+  const GARANTIA_DO_CONTRATO = nomeDaGarantiaDoContrato(ctx.contratoExistente?.garantia);
 
   const selectedGarantia = useMemo<Garantia | null>(
     () => ELEGIVEIS.find((g) => g.id === guaranteeId) ?? null,
@@ -273,7 +287,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   }, [verified, ocupantesExcede, guaranteeId, cienteProtecao, patrimonial, generated]);
 
   function goToStep(target: number) {
-    if (target <= maxReached) setStep(target);
+    if (target <= maxReached || (target === PASSO_RESUMO && RESUMO_ACESSIVEL)) setStep(target);
   }
 
   async function generateContract() {
@@ -436,11 +450,28 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
 
         {/* Coluna principal: stepper + etapas do wizard */}
         <div className="order-2 lg:order-1">
+          {/* E1064: esta candidatura já tem contrato — a situação REAL fica à vista desde o passo 1. */}
+          {!demo && ctx.contratoExistente && (
+            <div className="mb-4 rounded-xl border border-sage-200 bg-sage-100/40 p-4 text-sm" role="status" data-testid="fechamento-contrato-existente">
+              <p className="font-semibold text-ink">Esta candidatura já tem contrato.</p>
+              <p className="mt-1 text-muted">
+                Situação do contrato: <strong className="text-ink">{ctx.contratoExistente.texto}</strong>
+              </p>
+              <Link href={hrefContratoDono(ctx.contratoExistente.id)} className="mt-1 inline-flex min-h-11 items-center font-semibold text-forest underline">
+                Ver contrato
+              </Link>
+              {step !== PASSO_RESUMO && (
+                <button type="button" onClick={() => setStep(PASSO_RESUMO)} className="ml-4 mt-1 inline-flex min-h-11 items-center font-semibold text-forest underline" data-testid="fechamento-ver-resumo">
+                  Ver o resumo
+                </button>
+              )}
+            </div>
+          )}
           {/* Stepper (passos alcançados são clicáveis — A4).
               Rola no mobile; quebra em linhas no desktop (sem scroll horizontal). */}
           <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
         {STEPS.map((s, i) => {
-          const reachable = i <= maxReached;
+          const reachable = i <= maxReached || (i === PASSO_RESUMO && RESUMO_ACESSIVEL);
           return (
             <button
               key={s}
@@ -479,12 +510,20 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               {/* PROP-3 (E118): a identidade do morador pela MESMA função de Interessados. */}
               {!demo && (
                 <p className="mt-1 text-xs font-semibold text-ink" data-testid="fechamento-identidade-inquilino">
-                  {identidadeParaOutraParte(ctx.identidadeInquilino).rotulo}
+                  {rotuloIdentidadeDoMorador(ctx.identidadeInquilino)}
                 </p>
               )}
             </div>
 
-            {verifStatus === "none" ? (
+            {verifStatus === "confirmada" ? (
+              // E1064: a identidade de quem fecha já está confirmada — nada a clicar.
+              <div className="rounded-xl border border-sage-200 bg-sage-100/40 p-4" data-testid="fechamento-identidade-propria">
+                <p className="flex items-center gap-2 font-title font-semibold text-forest">
+                  <ShieldCheck className="h-5 w-5" /> Sua identidade já está confirmada
+                </p>
+                <p className="mt-2 text-sm text-muted">{PORTAO_IDENTIDADE.texto}. Você pode continuar.</p>
+              </div>
+            ) : verifStatus === "none" ? (
               <div className="rounded-xl border border-sage-200 p-4 text-center">
                 <ShieldCheck className="mx-auto h-10 w-10 text-sage" />
                 <p className="mt-3 text-sm text-muted">
@@ -721,7 +760,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             </div>
 
             {/* Sua proteção — as duas opções lado a lado, com os valores reais do contrato. */}
-            <SuaProtecao caucao={CAUCAO_50} percentual={PCT_CAUCAO_TOTAL} aluguel={PROPERTY.monthlyRent} ciente={cienteProtecao} onCiente={setCienteProtecao} />
+            <SuaProtecao caucao={CAUCAO_50} aluguel={PROPERTY.monthlyRent} ciente={cienteProtecao} onCiente={setCienteProtecao} />
 
             {/* Regra de ouro — sempre visível na etapa de garantia. */}
             <p className="flex items-start gap-2 rounded-lg border border-sage-200 bg-surface-2 px-3 py-2 text-xs text-muted">
@@ -732,12 +771,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
             {/* Sub-fluxo conforme a garantia escolhida. */}
             {selectedGarantia?.tipo === "caucao" && (
               <div className="space-y-3 rounded-xl border border-sage-200 p-4 text-sm">
-                <p className="font-medium text-ink">Caução por bloco ({PCT_CAUCAO_BLOCO1} do 1º bloco)</p>
-                <p className="text-xs text-muted">
-                  O período é contratado em blocos de {TAMANHO_BLOCO} meses. Cada bloco tem a
-                  caução <strong>integral</strong> ({PCT_CAUCAO_TOTAL} do valor do período, no máximo 3 aluguéis) — cabe no cartão e vai
-                  para a poupança da caução. A plataforma nunca recebe.
-                </p>
+                {/* E1082: a regra em palavras vem da fonte única (caucao-regra), não escrita à mão aqui. */}
+                <p className="font-medium text-ink" data-testid="garantia-caucao-titulo">{TITULO_CAUCAO_GARANTIA}</p>
+                <p className="text-xs text-muted" data-testid="garantia-caucao-regra">{TEXTO_BLOCOS_GARANTIA(TAMANHO_BLOCO)}</p>
 
                 {/* Tabela transparente por bloco: aluguel, caução, desembolso. */}
                 <div className="overflow-x-auto">
@@ -1134,7 +1170,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 <div className="mt-3 space-y-1 border-t border-blue-200 pt-2" data-testid="entrada-caucao">
                   <div className="flex items-start justify-between gap-3">
                     <span className="min-w-0">
-                      Caução ({PCT_CAUCAO_TOTAL} do período, antes da entrada) — devolvida no fim, conforme a conferência de saída
+                      {ROTULO_CAUCAO_NA_ENTRADA} — devolvida no fim, conforme a conferência de saída
                     </span>
                     <span className="shrink-0">{formatBRL(quadroEntrada.caucao)}</span>
                   </div>
@@ -1239,11 +1275,22 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
-                {erroContrato && (
+              // E1063: o motivo de o contrato não sair fica JUNTO do botão. O aviso do topo da página ("Falta um documento…")
+              // está fora da tela neste passo; sem isto o dono só descobria o motivo depois de clicar — ou nem isso.
+              <div className="space-y-2" data-testid="acao-gerar-contrato">
+                {erroContrato ? (
                   <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="erro-contrato">
                     {erroContrato}
                   </p>
+                ) : pendenciaContrato ? (
+                  <p role="status" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="pendencia-contrato">
+                    {pendenciaContrato.mensagem}
+                  </p>
+                ) : null}
+                {pendenciaContrato?.quem === "dono" && (!erroContrato || erroContrato === pendenciaContrato.mensagem) && (
+                  <Link href={LINK_DOCUMENTO} className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline">
+                    Informar meu documento
+                  </Link>
                 )}
                 <Button variant="gold" onClick={generateContract} disabled={gerando} data-testid="fechamento-gerar-contrato">
                   <FileSignature className="h-4 w-4" /> {gerando ? "Gerando..." : "Gerar contrato para assinatura"}
@@ -1267,38 +1314,65 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               </p>
             </div>
             <div className="rounded-xl bg-surface-2 p-4 text-left text-sm">
+              {/* E1064: duas pessoas, duas linhas — a identidade do morador (fonte única) e a verificação de quem fecha. */}
+              <Row label="Identidade do morador" value={identidadeParaOutraParte(ctx.identidadeInquilino).rotulo} />
               <Row
-                label="Verificação do morador"
+                label="Sua verificação"
                 value={
-                  verifStatus === "ok" && cafResult
-                    ? TRAFFIC_LIGHT_META[cafResult.light].label
-                    : verifStatus === "pendente"
-                      ? "⏳ Verificação pendente"
-                      : identidadeParaOutraParte(ctx.identidadeInquilino).rotulo
+                  verifStatus === "confirmada"
+                    ? (PORTAO_IDENTIDADE.texto ?? "Identidade confirmada")
+                    : verifStatus === "ok" && cafResult
+                      ? TRAFFIC_LIGHT_META[cafResult.light].label
+                      : "⏳ Verificação pendente"
                 }
               />
-              <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
-              <Row
-                label="Serviços adicionais"
-                value={
-                  services.length > 0
-                    ? SERVICOS_VISIVEIS.filter((s) => services.includes(s.id))
-                        .map((s) => s.nome)
-                        .join(", ")
-                    : "Nenhum"
-                }
-              />
-              <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
+              {/* E1064 (perna 2): reaberto pelo contrato que já existe, a garantia é a gravada nele; sem leitura, a linha não aparece. */}
+              {FONTE_RESUMO === "contrato" ? (
+                GARANTIA_DO_CONTRATO && <Row label="Garantia" value={GARANTIA_DO_CONTRATO} />
+              ) : (
+                <Row label="Garantia" value={selectedGarantia?.nome ?? "—"} />
+              )}
+              {/* Serviços adicionais e seguro patrimonial são escolhas desta visita; o contrato não os guarda. */}
+              {FONTE_RESUMO !== "contrato" && (
+                <>
+                  <Row
+                    label="Serviços adicionais"
+                    value={
+                      services.length > 0
+                        ? SERVICOS_VISIVEIS.filter((s) => services.includes(s.id))
+                            .map((s) => s.nome)
+                            .join(", ")
+                        : "Nenhum"
+                    }
+                  />
+                  <Row label="Seguro patrimonial" value={patrimonial ? "Contratado" : "Não contratado"} />
+                </>
+              )}
               <Row
                 label="Contrato"
                 value={
-                  generated
-                    ? demo
-                      ? "Exemplo de demonstração"
-                      : `${modoContrato === "teste" ? "TESTE · " : ""}${estadoContrato?.texto ?? "Situação indisponível — abra o contrato"}`
-                    : "Pendente"
+                  FONTE_RESUMO === "contrato" && ctx.contratoExistente
+                    ? ctx.contratoExistente.texto
+                    : generated
+                      ? demo
+                        ? "Exemplo de demonstração"
+                        : `${modoContrato === "teste" ? "TESTE · " : ""}${estadoContrato?.texto ?? "Situação indisponível — abra o contrato"}`
+                      : "Pendente"
                 }
               />
+              {FONTE_RESUMO === "contrato" && ctx.contratoExistente && (
+                <p className="text-right text-xs text-muted" data-testid="resumo-contrato">
+                  Gerado em {dataBRT(ctx.contratoExistente.criadoEm)}
+                  {" · "}
+                  <a href={`/dashboard/contratos/${ctx.contratoExistente.id}`} className="font-medium text-forest underline" data-testid="resumo-ver-contrato">
+                    Ver contrato
+                  </a>
+                  {" · "}
+                  <a href={`/dashboard/estadia/${ctx.contratoExistente.id}`} className="font-medium text-forest underline" data-testid="resumo-ver-estadia">
+                    Página da estadia
+                  </a>
+                </p>
+              )}
               {!demo && generated && contratoId && (
                 <p className="text-right text-xs text-muted" data-testid="resumo-contrato">
                   {contratoExistente && estadoContrato ? `Gerado em ${dataBRT(estadoContrato.criadoEm)} · ` : ""}
@@ -1311,10 +1385,13 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   </a>
                 </p>
               )}
-              <Row
-                label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
-                value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
-              />
+              {/* A taxa aqui é a conta desta visita; no Resumo aberto pelo contrato quem a diz é a página do contrato. */}
+              {FONTE_RESUMO !== "contrato" && (
+                <Row
+                  label={`Taxa de serviço (${pctTexto(COMMISSION_RATE)})`}
+                  value={`${formatBRL(PLATFORM_COMMISSION)} · cobrança à parte, do proprietário`}
+                />
+              )}
             </div>
             <p className="rounded-lg bg-sage-100 px-3 py-2 text-left text-sm text-forest">
               Ao fim da locação, você e o morador poderão se avaliar — construindo
@@ -1411,20 +1488,17 @@ function Row({ label, value }: { label: string; value: string }) {
  */
 export function SuaProtecao({
   caucao,
-  percentual,
   aluguel,
   ciente,
   onCiente,
 }: {
   caucao: number;
-  /** PROP-3 (E115): caução ÷ valor do período, calculado dos valores reais. */
-  percentual: string;
   aluguel: number;
   ciente: boolean;
   onCiente: (v: boolean) => void;
 }) {
   const linhas: [string, string, string][] = [
-    ["Quanto o morador paga", `${formatBRL(caucao)} depositados na entrada (${percentual} do período, no máximo 3 aluguéis = ${formatBRL(aluguel * 3)})`, "O prêmio do seguro (valor de cotação da seguradora)"],
+    ["Quanto o morador paga", quantoOMoradorPaga({ caucao, valorMensal: aluguel }), "O prêmio do seguro (valor de cotação da seguradora)"],
     ["Volta para o morador?", "Sim, no fim, com o rendimento da poupança, menos os descontos com prova", "Não"],
     ["O que cobre para o proprietário", `Aluguel e danos até ${formatBRL(caucao)}`, "Aluguel e danos até o limite da apólice"],
     ["Se o morador quebrar algo", "O conserto é descontado da caução", "A seguradora paga o proprietário e cobra do morador"],

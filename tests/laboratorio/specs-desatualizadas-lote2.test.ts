@@ -1,14 +1,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { textoElegibilidadeGestor } from "../../src/lib/planos/gestor.ts";
+import { textoTaxaNaConta } from "../../src/lib/planos/gestor.ts";
 
 // E744 (lote 2, rodada 42767013537): specs que cobravam texto/dado já mudado no produto.
+// Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): t656 — a função do produto que dá o texto de Conta › Plano é
+// textoTaxaNaConta (a taxa de hoje da conta); textoElegibilidadeGestor (a meta do Plano Gestor, "0 de 20") saiu.
 const ler = (f: string) => readFileSync(`tests/e2e/specs/${f}`, "utf8");
 
-test("t656: o texto esperado do Plano Gestor é o da função do produto (0 de 20)", () => {
-  const atual = textoElegibilidadeGestor({ elegivel: false, imoveisValidados: 0, faltam: 20 });
-  assert.ok(ler("t656-e224-plano-gestor.spec.ts").includes(atual), atual);
+test("t656: o texto esperado de Conta › Plano é o da função do produto (078: a taxa da conta sem imóvel ativo; antes, 'Plano Gestor… 0 de 20')", () => {
+  // 078 (Daniel, 16/11/2026): antes textoElegibilidadeGestor({ elegivel: false, imoveisValidados: 0, faltam: 20 }) — "Plano Gestor: taxa
+  // de 4% com 20 imóveis ativos (…). Você tem 0; faltam 20." Agora o texto é o da taxa da conta, para o mesmo cenário da spec
+  // (proprietário sem imóvel ativo: primeira faixa, 12%), e a spec não espera mais o texto do Plano Gestor.
+  const atual = textoTaxaNaConta({ taxa: 0.12, origem: "faixa", imoveisAtivos: 0 });
+  assert.match(atual, /^Sua taxa de serviço hoje é de 12%\. Quanto mais imóveis ativos, menor a taxa: /);
+  const spec = ler("t656-e224-plano-gestor.spec.ts");
+  assert.ok(spec.includes(atual), atual);
+  assert.doesNotMatch(spec, /toHaveText\([^)]*Plano Gestor/);
 });
 test("t315: a rota de avaliação diz 'selo “vistoriado”' como no produto", () => {
   assert.match(readFileSync("src/lib/vistoria/telas-exibicao.ts", "utf8"), /Avaliação: selo “vistoriado” por 12 meses/);
