@@ -27,6 +27,7 @@ import {
   TEXTO_PAGAMENTO_INATIVO,
   textoDivisaoParceiro,
 } from "@/lib/parceiros/pedido";
+import { ROTULO_TAXA_SERVICO_VIVA } from "@/config/taxa-servico-parceiros";
 import {
   enviarDocumentoParceiro,
   enviarEntrega,
@@ -224,7 +225,7 @@ export function PedidoParceiroTela({ d, pagamentoAtivo }: { d: DetalhePedido; pa
               )}
               {d.valores.taxa != null && (
                 <p className="mt-1 text-sm text-muted" data-testid="pedido-divisao">
-                  Taxa de serviço da Viva (10%): {brl(d.valores.taxa)} · Parceiro recebe: {brl(d.valores.parceiro)}
+                  {ROTULO_TAXA_SERVICO_VIVA}: {brl(d.valores.taxa)} · Parceiro recebe: {brl(d.valores.parceiro)}
                   {d.pagamentoStatus !== "pago" ? ` (${ROTULO_REGISTRO_SEM_DINHEIRO})` : ""}
                 </p>
               )}

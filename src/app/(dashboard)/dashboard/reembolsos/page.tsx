@@ -1,6 +1,7 @@
 "use client";
 
 import { CampoData } from "@/components/ui/campo-data";
+import { hojeEmBrasilia } from "@/lib/datas-brasilia";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useMemo, useState } from "react";
 import {
@@ -112,7 +113,7 @@ function ReembolsoPreview() {
 
   function notificarERegistrarPrazo() {
     // Sem a trava: 30 dias a partir de hoje (como antes). Com ela: teto externo do check-out informado.
-    const hojeISO = new Date().toISOString().slice(0, 10);
+    const hojeISO = hojeEmBrasilia();
     const limite = prazoLimiteDoReembolso({ prazosAtivos: CAUCAO_PRAZOS_ATIVA, hoje: hojeISO, checkout });
     setPrazoLimite(limite ? limite.split("-").reverse().join("/") : null);
   }

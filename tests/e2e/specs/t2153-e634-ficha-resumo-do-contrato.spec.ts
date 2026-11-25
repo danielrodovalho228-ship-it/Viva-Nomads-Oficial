@@ -77,7 +77,9 @@ test.describe("T2153 — E634: ficha-resumo do contrato, com a autorização exp
       const ficha = p.getByTestId("ficha-resumo");
       await expect(ficha, "a parte do contrato vê a ficha").toBeVisible({ timeout: 20_000 });
       await expect(ficha).toContainText("01/03/2027");
-      await expect(ficha).toContainText("29/04/2027");
+      // Asserção alterada (ORDEM-DUET-843; E1089, #4126): a ficha diz "Entrada" e "Saída", e a saída é o dia seguinte ao
+      // fim gravado no bloco (a última noite, 29/04) — a lei da data única de saída. Antes a ficha mostrava o fim (29/04).
+      await expect(ficha).toContainText("Saída30/04/2027");
       await expect(ficha).toContainText(/R\$\s*3\.200/);
       // Sem vencimento informado: a ficha diz "a informar" e lista a pendência.
       await expect(ficha).toContainText("a informar");

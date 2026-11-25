@@ -9,6 +9,7 @@
   Roda: node --test src/lib/estadia/lembrete-bloco.test.ts
 */
 import { rotuloPagamentoBloco } from "../pagamento-bloco.ts";
+import { periodoPeloFim } from "../texto-do-periodo.ts";
 
 /** Dias de antecedência do lembrete. */
 export const DIAS_LEMBRETE_BLOCO = 3;
@@ -62,7 +63,8 @@ export function emailLembreteBloco(b: BlocoParaLembrete, o: { imovel?: string | 
     abertura: (n) => `Olá${n ? " " + n : ""}, o bloco ${b.numero} da sua estadia${imovel ? ` em ${imovel}` : ""} começa em ${ddmmaaaa(b.inicio)}.`,
     linhas: [
       ...(imovel ? [{ rotulo: "Imóvel", valor: imovel }] : []),
-      { rotulo: "Datas do bloco", valor: `${ddmmaaaa(b.inicio)} a ${ddmmaaaa(b.fim)}` },
+      // E1089: `b.fim` é a última noite do bloco; o e-mail mostra a saída do bloco (o dia seguinte) e as diárias.
+      { rotulo: "Datas do bloco", valor: periodoPeloFim(b.inicio, b.fim)?.linha ?? `${ddmmaaaa(b.inicio)}` },
       { rotulo: "Valor do bloco", valor: rotuloPagamentoBloco({ tipo: "aluguel", valor: b.valor, bloco: { numero: b.numero, meses: b.meses, inicio: b.inicio, fim: b.fim }, valorMensal: o.valorMensal ?? null }) },
     ],
     rodape: LINHA_PAGAMENTO_DIRETO,

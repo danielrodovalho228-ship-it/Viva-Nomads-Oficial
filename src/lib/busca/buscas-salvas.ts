@@ -87,7 +87,8 @@ export function resumoDaBusca(qs: string, nomeDoDestino?: (slug: string) => stri
   if (sp.get("pet") === "1") partes.push("aceita pet");
   if (sp.get("homeoffice") === "1") partes.push("trabalhar de casa");
   const internet = Number(sp.get("internet"));
-  if (internet > 0) partes.push(`internet medida ${internet}+ Mbps`);
+  // E1078 (ORDEM-382 (a)): o filtro é de velocidade; com o estrito "Só com internet medida", "internet medida N+ Mbps".
+  if (internet > 0) partes.push(sp.get("medida") === "1" ? `internet medida ${internet}+ Mbps` : `velocidade ${internet}+ Mbps`);
   else if (sp.get("medida") === "1") partes.push("internet medida");
   const destino = nomeDoDestino?.(sp.get("destino") ?? "") ?? sp.get("drot") ?? sp.get("destino")?.toUpperCase();
   if (destino) {
