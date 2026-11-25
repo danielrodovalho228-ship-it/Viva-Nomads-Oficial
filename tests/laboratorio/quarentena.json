@@ -18,16 +18,6 @@
    "dono": "Fable",
    "entrada": "2026-11-17",
    "expira": "2026-12-01"
-  },
-  {
-   "spec": "t70-busca-split.spec.ts",
-   "titulo": "2. um pin por imóvel; hover card↔pin destaca; hover no pin abre o cartão (E442)",
-   "motivo": "defeito E1023, sem marca de falha conhecida porque a falha não é sempre a mesma: em alguns pins o cartão do imóvel abre por cima do ponteiro e o card da lista perde o destaque. Falhou 1 vez na corrida de prova da T3 (run 44114328109, fatia 18) e passa sozinho. Entra por decisão do Gerente (DUET-1419); sai no PR da correção do E1023",
-   "item": "E1023",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3965
   }
  ]
 }
