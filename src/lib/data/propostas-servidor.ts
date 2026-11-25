@@ -4,6 +4,7 @@ import { calcularTotais, diasDosTermos, STATUS_ABERTOS, type Autor, type StatusP
 import { decisaoDoPreAceite } from "./pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR } from "@/lib/data/taxa-dono-servidor";
 import { mesesDeReferencia } from "@/lib/estadia-em-dias";
+import { propostaDoFechamento } from "@/lib/fechamento/proposta-do-fechamento";
 
 /*
   Propostas (prompt 17) — leitura no servidor, usada pelas ações, pelo fechamento e pela rotina de automações.
@@ -225,6 +226,39 @@ export async function propostaAcordadaDoLead(admin: SupabaseClient, leadId: stri
   // Achado 73: a falha de leitura não vira "sem proposta" (o contrato nasceria com o preço do anúncio).
   if (erroProposta) throw new Error(MSG_VALORES_SEM_CONFERIR);
   if (!p) return null;
+  return versaoAcordada(admin, p as LinhaAcordada);
+}
+
+/** E1141: o fecho pedido com `p` que não é uma proposta acordada desta candidatura. */
+export const PROPOSTA_FORA_DO_FECHAMENTO = "fora_do_fechamento" as const;
+
+/**
+ * E1141 — a proposta (a estadia) de um fecho. Sem `propostaId`: a regra de sempre (`propostaAcordadaDoLead`, a aceite
+ * mais recente). Com `propostaId`: a proposta pedida, só se for desta candidatura e estiver acordada
+ * (`propostaDoFechamento`, regra pura); senão `PROPOSTA_FORA_DO_FECHAMENTO`. O assistente, o contrato e a taxa chamam
+ * todos isto com a mesma proposta: nunca se gera nem se cobra a estadia errada. Falha de leitura LANÇA.
+ */
+export async function propostaDoFechamentoDoLead(
+  admin: SupabaseClient,
+  leadId: string,
+  propostaId: string | null | undefined,
+): Promise<PropostaAcordada | null | typeof PROPOSTA_FORA_DO_FECHAMENTO> {
+  if (propostaId == null) return propostaAcordadaDoLead(admin, leadId);
+  // Um id que nem é UUID não vai ao banco (lá viraria erro de leitura): é um fecho que não existe.
+  if (!UUID_PROPOSTA.test(propostaId)) return PROPOSTA_FORA_DO_FECHAMENTO;
+  const { data: p, error } = await admin.from("propostas").select("id, lead_id, status, numero, versao_atual, taxa_congelada").eq("id", propostaId).eq("lead_id", leadId).maybeSingle();
+  if (error) throw new Error(MSG_VALORES_SEM_CONFERIR);
+  const linha = (p as (LinhaAcordada & { lead_id: string; status: string }) | null) ?? null;
+  if (propostaDoFechamento({ leadId, propostaId, proposta: linha }) !== "escolhida" || !linha) return PROPOSTA_FORA_DO_FECHAMENTO;
+  return versaoAcordada(admin, linha);
+}
+
+const UUID_PROPOSTA = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type LinhaAcordada = { id: string; numero: string; versao_atual: number; taxa_congelada: number | null };
+
+/** Os valores da versão atual de uma proposta acordada (a mesma leitura para a regra de sempre e para a escolhida). */
+async function versaoAcordada(admin: SupabaseClient, p: LinhaAcordada): Promise<PropostaAcordada | null> {
   const { data: v, error: erroVersao } = await admin
     .from("proposta_versoes")
     .select("valor_mensal, meses, dias, data_entrada, condominio, consumo, limpezas_mes, limpezas_pacote, valor_limpeza, taxa_pet, limpeza_unica")

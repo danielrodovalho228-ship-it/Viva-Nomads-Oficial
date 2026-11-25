@@ -9,8 +9,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   Massa só no banco do laboratório, contas de teste, quatro donas (cada uma vê só os seus fechos):
    1. O caso de produção + o caso 13 (dona 1): o imóvel A com um contrato sem proposta, assinado; o imóvel B com duas
       propostas aceitas — a ORC antiga gravada "em contrato" SEM contrato, a nova com contrato assinado. Pelo menu,
-      "Seus fechamentos" tem três linhas: a ORC antiga "Por gerar", em primeiro, sem número de contrato e com "Ver
-      orçamento"; cada contrato na sua linha, com o seu número (lido do banco). "Abrir fechamento" na outra linha abre-a.
+      "Seus fechamentos" tem três linhas: a ORC antiga "Por gerar", em primeiro, sem número de contrato e (E1141) com
+      "Abrir fechamento" da estadia dela; cada contrato na sua linha, com o seu número (lido do banco). "Abrir
+      fechamento" na outra linha abre-a.
       Print a 390 e a 1280 px.
    2. O que falta gerar vem primeiro, e a expirada não esconde as outras (dona 2): P aceita há mais tempo, por gerar; S
       aceita depois, contrato assinado; X a mais recente, pré-aceitação expirada e sem contrato. Pelo menu abre P; X
@@ -162,7 +163,8 @@ test.describe("T1786 — E1090: o Fechamento mostra todos os fechos do dono @E10
       await expect(primeira.getByTestId("fecho-orcamento")).toHaveText(ids.numAntiga);
       await expect(primeira.getByTestId("fecho-contrato")).toHaveCount(0);
       await expect(primeira.getByTestId("fecho-contrato-nao-gerado")).toHaveText("O contrato desta estadia ainda não foi gerado.");
-      await expect(primeira.getByTestId("fecho-acao")).toHaveAttribute("href", `/dashboard/propostas/${ids.orcAntiga}`);
+      // E1141: a estadia anterior sem contrato abre o assistente dela (antes, "Ver orçamento").
+      await expect(primeira.getByTestId("fecho-acao")).toHaveAttribute("href", `/dashboard/fechamento?c=${ids.leadB}&p=${ids.orcAntiga}`);
 
       // Cada contrato na sua linha, com o seu número (lido do banco).
       await expect(page.locator(`[data-testid="fecho-linha"][data-chave="A:${ids.orcNova}"]`).getByTestId("fecho-contrato")).toHaveText(numeroPublico(ids.ctB));
@@ -176,7 +178,9 @@ test.describe("T1786 — E1090: o Fechamento mostra todos os fechos do dono @E10
       const destino = (await outra.getAttribute("href"))!;
       await outra.click();
       await page.waitForURL((u) => u.search === destino.slice(destino.indexOf("?")), { timeout: 30_000 });
-      await expect(page.locator(`[data-testid="fecho-linha"][data-candidatura="${destino.split("c=")[1]}"][data-atual="sim"]`)).toHaveCount(1, { timeout: 30_000 });
+      // E1141: o destino pode levar `&p=` (a estadia anterior); a candidatura lê-se do parâmetro `c`.
+      const candidaturaDestino = new URLSearchParams(destino.slice(destino.indexOf("?"))).get("c");
+      await expect(page.locator(`[data-testid="fecho-linha"][data-candidatura="${candidaturaDestino}"][data-atual="sim"]`)).toHaveCount(1, { timeout: 30_000 });
       await page.screenshot({ path: `${SAIDA}/t1786-caso1-${largura}.png`, fullPage: true });
       await page.context().close();
     });

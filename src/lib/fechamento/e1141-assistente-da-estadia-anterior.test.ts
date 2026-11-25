@@ -85,7 +85,7 @@ test("a fiação: a proposta escolhida segue do assistente até ao contrato e à
   const pontos: [string, string, RegExp][] = [
     ["src/lib/data/leads-actions.ts", "export async function getFechamentoContext(", /propostaDoFechamentoDoLead\(admin, lead\.id as string, propostaId/],
     ["src/lib/data/fechamento-servidor.ts", "export async function carregarFechamento(", /propostaDoFechamentoDoLead\(admin, lead\.id as string, propostaPedida\)/],
-    ["src/lib/data/fechamento-servidor.ts", "export async function comissaoDoContrato(", /propostaDoFechamentoDoLead\(admin, leadId, propostaId\)/],
+    ["src/lib/data/fechamento-servidor.ts", "export async function comissaoDoContrato(", /propostaDoFechamentoDoLead\(admin, leadId, propostaPedida\)/],
     ["src/app/api/contrato/route.ts", "export async function POST(", /propostaDoFechamentoDoLead\(admin, f\.leadId, f\.propostaPedida\)/],
     ["src/app/api/comissao/route.ts", "export async function POST(", /comissaoDoContrato\(f\.leadId, f\.propostaPedida\)/],
     ["src/lib/data/actions.ts", "export async function registrarContrato(", /propostaDoFechamentoDoLead\(admin, lead\.id as string, input\.propostaId/],

@@ -306,6 +306,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         // A5: partes, imóvel e aluguel vêm do banco (pela candidatura aceita).
         body: JSON.stringify({
           leadId: ctx.leadId,
+          // E1141: a estadia escolhida (?p=) — o contrato é o DELA, nunca o da proposta mais recente.
+          ...(ctx.propostaDaUrl ? { propostaId: ctx.propostaDaUrl } : {}),
           termMonths: prazoMeses,
           ...(DIAS_CANDIDATURA ? { termDays: DIAS_CANDIDATURA } : {}),
           guarantee: selectedGarantia?.nome ?? "",
@@ -334,6 +336,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
       // A6: inquilino, imóvel, aluguel e taxa vêm da candidatura aceita (servidor).
       const reg = await registrarContrato({
         leadId: ctx.leadId,
+        ...(ctx.propostaDaUrl ? { propostaId: ctx.propostaDaUrl } : {}),
         faixa: FAIXA,
         prazoTotalMeses: prazoMeses,
         ...(DIAS_CANDIDATURA ? { prazoTotalDias: DIAS_CANDIDATURA } : {}),
@@ -361,7 +364,8 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // A5: valor, taxa e carteira vêm do banco (pela candidatura aceita).
-        body: JSON.stringify({ leadId: ctx.leadId }),
+        // E1141: a taxa da estadia escolhida (a mesma do contrato registrado acima).
+        body: JSON.stringify({ leadId: ctx.leadId, ...(ctx.propostaDaUrl ? { propostaId: ctx.propostaDaUrl } : {}) }),
       }).catch(() => {});
       setGenerated(true);
     } catch {

@@ -77,7 +77,7 @@ export function SeusFechamentos({
                   {l.orcamento && l.contrato && " · "}
                   {l.contrato && <span data-testid="fecho-contrato">{l.contrato}</span>}
                 </p>
-                {l.acao.tipo === "orcamento" && (
+                {(l.acao.tipo === "orcamento" || (l.acao.tipo === "assistente" && l.acao.anterior)) && (
                   <p className="mt-1 text-xs text-muted" data-testid="fecho-contrato-nao-gerado">
                     {TEXTOS_FECHOS.contratoNaoGerado}
                   </p>

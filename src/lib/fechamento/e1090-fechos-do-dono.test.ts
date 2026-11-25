@@ -91,8 +91,8 @@ test("caso 13 (R3a): proposta 'em contrato' SEM linha em contratos → 'Por gera
   assert.equal(primeira.estado, "Por gerar", "o rótulo 'em contrato' da proposta não vira estado");
   assert.equal(primeira.contrato, null);
   assert.equal(primeira.contratoId, null);
-  assert.equal(primeira.acao.tipo, "orcamento", "a estadia anterior não abre o assistente (E1141)");
-  assert.equal(primeira.acao.href, "/dashboard/propostas/orc15");
+  assert.equal(primeira.acao.tipo, "assistente", "E1141: a estadia anterior sem contrato abre o assistente dela");
+  assert.equal(primeira.acao.href, "/dashboard/fechamento?c=e7b1f322&p=orc15");
   assert.equal(segunda.propostaId, "orc19");
   assert.equal(segunda.contrato, "VN-CT-2384E69D", "o contrato fica só na mais nova");
   assert.equal(segunda.estado, "Em vigência");
