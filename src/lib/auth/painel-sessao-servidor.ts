@@ -16,12 +16,11 @@ export interface SessaoDoServidor {
 
 /**
  * A6: rotas liberadas no 1º quadro, por onda. Padrões com segmento dinâmico entre colchetes ("/dashboard/conta/[secao]")
- * casam um segmento qualquer; os demais são exatos.
+ * casam um segmento qualquer; os demais são exatos. A Onda 0 só traz as peças: a lista do piloto entra no PR da Onda 1.
  */
 export const ROTAS_DA_ONDA: Record<OndaPainelSessaoServidor, readonly string[]> = {
   off: [],
-  // E793 Onda 1 (piloto): o início do painel e a Conta (Perfil é a reprova do E789).
-  piloto: ["/dashboard", "/dashboard/conta", "/dashboard/conta/[secao]", "/dashboard/conta/avaliacoes", "/dashboard/conta/excluir"],
+  piloto: [],
 };
 
 const segmentos = (p: string) => p.split("?")[0].split("#")[0].replace(/\/+$/, "").split("/").filter(Boolean);

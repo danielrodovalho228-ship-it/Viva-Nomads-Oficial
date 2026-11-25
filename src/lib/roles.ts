@@ -13,7 +13,6 @@
 import { usePathname } from "next/navigation";
 import { useAuthStore, DEMO_USER, type SessionUser, type ViewMode } from "./store";
 import { modoDaRota } from "./papel/modo-da-rota";
-import { useModoAtual, useSessaoServidor, useUsuarioAtual } from "@/components/auth/sessao-servidor-contexto";
 import { nomeParaAvatar, primeiroNome, usuarioDoEmail } from "./display-name";
 
 export type { ViewMode };
@@ -100,15 +99,8 @@ export interface ViewModeState {
  * `activeMode` persistido, e devolve o modo efetivo + os papéis da conta.
  */
 export function useViewMode(): ViewModeState {
-  // E793 (A4): com a sessão do servidor (painel), usuário e modo vêm dos hooks do quadro — o 1º quadro do servidor e o da
-  // hidratação desenham o MESMO usuário/modo. Sem ela (site público, chave off), é o store, como antes.
-  const sessao = useSessaoServidor();
-  const usuarioDoQuadro = useUsuarioAtual();
-  const modoDoQuadro = useModoAtual();
-  const storeUser = useAuthStore((s) => s.user);
-  const storeMode = useAuthStore((s) => s.activeMode);
-  const user = (sessao ? usuarioDoQuadro : storeUser) ?? DEMO_USER;
-  const activeMode = sessao ? modoDoQuadro : storeMode;
+  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
+  const activeMode = useAuthStore((s) => s.activeMode);
   // E497: página de área (ex.: /dashboard/leads) decide o modo pela URL já no 1º render — servidor e cliente iguais,
   // sem o menu/título trocarem depois da pintura quando o SincronizarPapel grava o papel da área.
   const daArea = modoDaRota(usePathname());
