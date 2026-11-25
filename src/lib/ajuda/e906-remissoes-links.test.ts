@@ -43,7 +43,7 @@ test("E906 + E836: o artigo 'Quanto custa anunciar?' não remete mais a /precos"
 
 test("E906: a Central de Ajuda e a página do guia desenham o texto com as remissões ligadas", () => {
   const central = readFileSync(new URL("../../components/ajuda/central-ajuda.tsx", import.meta.url), "utf8");
-  assert.match(central, /<TextoComRemissoes texto=\{respostaPara\(p, perfil\)\}(?: nomeados)? \/>/); // E941: a Central também liga os destinos nomeados
+  assert.match(central, /<TextoComRemissoes texto=\{respostaPara\(p, perfil\)\} \/>/);
   const guia = readFileSync(new URL("../../app/(public)/guias/[slug]/page.tsx", import.meta.url), "utf8");
   assert.match(guia, /<TextoComRemissoes texto=\{p\} \/>/);
 });
