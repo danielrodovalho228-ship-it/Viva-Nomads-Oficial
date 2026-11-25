@@ -31,9 +31,6 @@ export const JANELA_CONTA_NOVA_S = 30 * 60;
  */
 export const MSG_RECUPERACAO_ENVIADA = `Enviamos um link de recuperação para seu e-mail. Ele vale por ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez: abra-o para definir uma nova senha.`;
 
-/** E917 (opção A): só contas de teste — o código de recuperação (mesma validade, uso único) e onde digitá-lo. */
-export const MSG_RECUPERACAO_CODIGO_ENVIADO = `Enviamos um código de recuperação para seu e-mail. Ele vale por ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez: digite-o em /auth/reset/codigo para definir uma nova senha.`;
-
 export const MSG_CODIGO_VENCIDO = "Código vencido: enviamos um novo para o seu e-mail.";
 export const MSG_MUITOS_ENVIOS = "Muitos pedidos de código. Aguarde um pouco e tente de novo.";
 
