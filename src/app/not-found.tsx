@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { NotFoundIllustration } from "@/components/illustrations";
-import { DestaquesDa404 } from "@/components/nao-encontrada/destaques-da-404";
+import { PropertyCard } from "@/components/property-card";
+import { listProperties } from "@/lib/data/properties";
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
@@ -18,9 +19,10 @@ export const metadata: Metadata = {
   robots: null,
 };
 
-// E961: sem `async` nem leitura de dados. O Next monta este arquivo em TODO pedido (é o conteúdo reserva do limite de
-// "não encontrado" do layout) e o manda no HTML de cada página; o que ele ler ou desenhar aqui, toda página paga.
-export default function NotFound() {
+export default async function NotFound() {
+  // Transforma o erro em retenção: mostra imóveis disponíveis de verdade.
+  const featured = (await listProperties()).slice(0, 3);
+
   return (
     <div className="flex min-h-screen flex-col bg-surface-2">
       {/* E976, parte 2: a 404 tinha o destino (#conteudo) mas não o link de salto. */}
@@ -62,9 +64,17 @@ export default function NotFound() {
           </ButtonLink>
         </div>
 
-        {/* Transforma o erro em retenção: mostra imóveis disponíveis de verdade. E961: a vitrine busca os imóveis no
-            cliente, só quando a 404 aparece. */}
-        <DestaquesDa404 />
+        {featured.length > 0 && (
+          <section className="mt-12 w-full" aria-label="Imóveis em destaque">
+            <h2 className="mb-4 font-title text-lg font-semibold text-ink">Imóveis em destaque</h2>
+            {/* Grade par: em 2 colunas (tablet) aparecem 2 destaques — um 3º esticado viraria uma foto enorme; em 1 e 3 colunas, os três. */}
+            <div className="grid gap-6 text-left sm:grid-cols-2 sm:max-lg:[&>:nth-child(3)]:hidden lg:grid-cols-3" data-testid="nao-encontrada-destaques">
+              {featured.map((p) => (
+                <PropertyCard key={p.id} property={p} />
+              ))}
+            </div>
+          </section>
+        )}
 
         <Link
           href="/para-proprietarios"

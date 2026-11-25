@@ -18,8 +18,7 @@ test("404: logo e link de anunciar com alvo de 44 px; destaques em grade par no 
   assert.match(src, /<Navbar \/>/);
   assert.doesNotMatch(src, /<Logo /);
   assert.match(src, /className="alvo-toque mt-12 text-sm text-muted hover:text-blue-500"\n\s*data-testid="nao-encontrada-anunciar"/);
-  // E961: a vitrine dos destaques saiu do not-found.tsx para um componente de cliente; a grade par é cobrada lá.
-  assert.match(ler("../components/nao-encontrada/destaques-da-404.tsx"), /sm:grid-cols-2 sm:max-lg:\[&>:nth-child\(3\)\]:hidden lg:grid-cols-3/);
+  assert.match(src, /sm:grid-cols-2 sm:max-lg:\[&>:nth-child\(3\)\]:hidden lg:grid-cols-3/);
 });
 
 test("perfil do proprietário (real e exemplo): link das avaliações com alvo de 44 px", () => {
