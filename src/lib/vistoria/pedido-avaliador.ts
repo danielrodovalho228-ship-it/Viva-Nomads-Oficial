@@ -117,17 +117,6 @@ export function linhaDoPrazoDoLaudo(etapa: EtapaDoPedido, p: ValoresDoPedido): s
   return `Laudo em ${dias(Number(p.prazo_proposto_dias))}`;
 }
 
-/**
- * E1108 (ORDEM-DUET-787): marcada a visita, a tela do pedido passa a ser a da visita e do laudo — e a proposta que o
- * avaliador submeteu sumia do detalhe (a linha da lista continuava a mostrá-la). A tela da visita e do laudo mostra a
- * proposta combinada pelas mesmas duas linhas da etapa "aceito", lidas das mesmas colunas da lista. Sem proposta
- * submetida (a avaliação de teste do credenciamento; pedido sem valor proposto) não há o que mostrar.
- */
-export function propostaCombinada(p: ValoresDoPedido): { valor: string; prazo: string | null } | null {
-  if (semValor(p) || p.valor_proposto == null) return null;
-  return { valor: linhaDoValor("aceito", p).texto, prazo: linhaDoPrazoDoLaudo("aceito", p) };
-}
-
 /** E1108: o valor na linha da lista do avaliador, pela mesma regra da tela do pedido. */
 export function resumoDoValorNaLista(p: ValoresDoPedido): string {
   if (semValor(p)) return "avaliação de teste";
