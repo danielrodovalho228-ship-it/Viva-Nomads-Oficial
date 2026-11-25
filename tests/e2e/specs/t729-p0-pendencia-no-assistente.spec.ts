@@ -39,6 +39,8 @@ test.describe("T729 — P0: pendência do rascunho abre o passo no assistente", 
     await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
     const falta = p.getByTestId("falta-publicar").first();
     await expect(falta).toBeVisible({ timeout: 30_000 });
+    // ENSAIO t729: a leitura dos atalhos só depois de a resposta da identidade chegar (a ordem da corrida que falhou).
+    await expect(falta.getByTestId("pendencia-identidade")).toBeVisible({ timeout: 20_000 });
     // Nenhum atalho de pendência do rascunho vai ao editor por seções; os do CONTEÚDO do rascunho abrem o assistente.
     // Instável de 23/11 (corrida 45131841745, fatia 18: recebido "/dashboard/verificacao"): a pendência "Confirmação de
     // identidade" (E699 a) entra no mesmo "Falta para publicar" quando /api/caf/status responde — depois de o cartão
