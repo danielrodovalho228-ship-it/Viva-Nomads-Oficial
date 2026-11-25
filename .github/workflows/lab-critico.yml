@@ -130,7 +130,7 @@ jobs:
           }
           # ENSAIO (nunca mergear): a perna do check-in da Estadia (t2208).
           set +e
-          npx playwright test tests/e2e/specs/t1786-e1090-fechos-do-dono.spec.ts --project=chromium --retries=0 --workers=1 --reporter=list,json 2>&1 | tee tests/laboratorio/saida/e2e.txt
+          npx playwright test tests/e2e/specs/t1786-e1090-fechos-do-dono.spec.ts --grep "5\. todas expiradas" --project=chromium --retries=0 --workers=1 --reporter=list,json 2>&1 | tee tests/laboratorio/saida/e2e.txt
           B="${PIPESTATUS[0]}"
           set -e
           echo "ensaio: t2208 saída $B"
