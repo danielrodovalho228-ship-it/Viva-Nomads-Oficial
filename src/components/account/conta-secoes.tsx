@@ -48,9 +48,6 @@ export function DadosPessoais() {
   const [nascimento, setNascimento] = useState("");
   // Estados vazios: a data não carregou → o campo fica travado e salvar não mexe nela (vazio apagaria a gravada).
   const [nascFalhou, setNascFalhou] = useState(false);
-  // E796: a data gravada ainda não chegou → o campo espera (senão a leitura atrasada apagava o que a pessoa digitou) e
-  // salvar não mexe na data (vazio apagaria a gravada), como o telefone desde o E372.
-  const [nascCarregado, setNascCarregado] = useState(false);
   const [documento, setDocumento] = useState<MeuDocumento | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [dadosFalharam, setDadosFalharam] = useState(false);
@@ -79,11 +76,7 @@ export function DadosPessoais() {
         setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
       });
     getNascimento()
-      .then((n) => {
-        if (!vivo) return;
-        setNascimento(n);
-        setNascCarregado(true);
-      })
+      .then((n) => vivo && setNascimento(n))
       .catch(() => vivo && setNascFalhou(true));
     getMeuDocumento()
       .then((d) => vivo && setDocumento(d))
@@ -97,7 +90,6 @@ export function DadosPessoais() {
     e.preventDefault();
     if (dadosFalharam) return setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
     if (!dadosCarregados) return; // E372: não salva por cima do telefone gravado antes de ele chegar.
-    if (!nascCarregado && !nascFalhou) return; // E796: idem para a data de nascimento.
     setErro(null);
     setOk(false);
     const nasc = nascFalhou ? ({ ok: true } as const) : validarNascimento(nascimento);
@@ -169,8 +161,8 @@ export function DadosPessoais() {
           label="Data de nascimento"
           value={nascimento}
           onChange={(e) => setNascimento(mascararNascimento(e.target.value))}
-          placeholder={nascFalhou ? AVISO_NASCIMENTO_FALHOU : nascCarregado ? "dd/mm/aaaa" : "Carregando…"}
-          disabled={nascFalhou || !nascCarregado}
+          placeholder={nascFalhou ? AVISO_NASCIMENTO_FALHOU : "dd/mm/aaaa"}
+          disabled={nascFalhou}
           inputMode="numeric"
           autoComplete="bday"
           data-testid="dados-nascimento"
@@ -213,7 +205,7 @@ export function DadosPessoais() {
             <Check className="h-4 w-4" /> Dados salvos.
           </p>
         )}
-        <Button type="submit" size="lg" variant="outline" className="w-full" disabled={salvando || !dadosCarregados || (!nascCarregado && !nascFalhou)} data-testid="dados-salvar">
+        <Button type="submit" size="lg" variant="outline" className="w-full" disabled={salvando || !dadosCarregados} data-testid="dados-salvar">
           {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Salvar
         </Button>
