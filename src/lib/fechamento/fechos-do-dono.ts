@@ -28,7 +28,11 @@ export const TETO_FECHOS = 50;
 export const ESTADO_POR_GERAR = "Por gerar";
 
 /** As propostas que já são uma estadia acordada (as mesmas que o assistente lê em `propostaAcordadaDoLead`). */
-export const STATUS_PROPOSTA_ACORDADA: readonly string[] = ["aceita", "em_contrato", "contrato_assinado"];
+export const STATUS_PROPOSTA_ACORDADA: readonly string[] = [
+  "aceita",
+  "em_contrato",
+  "contrato_assinado",
+];
 
 export interface CandidaturaDoFecho {
   id: string;
@@ -111,8 +115,14 @@ export function fechosDoDono(entrada: {
   contratos: readonly ContratoDoFecho[];
 }): FechosDoDono {
   // R1: só as candidaturas deste dono; as propostas e os contratos de outra candidatura nunca entram.
-  const doDono = new Map(entrada.candidaturas.filter((c) => c.donoId === entrada.donoId).map((c) => [c.id, c]));
-  const propostas = entrada.propostas.filter((p) => doDono.has(p.leadId) && STATUS_PROPOSTA_ACORDADA.includes(p.status));
+  const doDono = new Map(
+    entrada.candidaturas
+      .filter((c) => c.donoId === entrada.donoId)
+      .map((c) => [c.id, c]),
+  );
+  const propostas = entrada.propostas.filter(
+    (p) => doDono.has(p.leadId) && STATUS_PROPOSTA_ACORDADA.includes(p.status),
+  );
   const contratos = entrada.contratos.filter((c) => doDono.has(c.leadId));
 
   const rascunhos: Rascunho[] = [];
@@ -121,7 +131,10 @@ export function fechosDoDono(entrada: {
   for (const cand of doDono.values()) {
     const minhas = propostas.filter((p) => p.leadId === cand.id);
     // A estadia que o assistente mostra: a proposta acordada mais recente (a mesma regra de `propostaAcordadaDoLead`).
-    const maisRecente = minhas.reduce<PropostaDoFecho | null>((m, p) => (!m || tempo(p.aceitaEm) > tempo(m.aceitaEm) ? p : m), null);
+    const maisRecente = minhas.reduce<PropostaDoFecho | null>(
+      (m, p) => (!m || tempo(p.aceitaEm) > tempo(m.aceitaEm) ? p : m),
+      null,
+    );
     const linhasDaCandidatura: Rascunho[] = [];
 
     for (const p of minhas) {
@@ -171,7 +184,11 @@ export function fechosDoDono(entrada: {
         grupo: grupoDe(ct),
         data: ct.criadoEm,
         // Sem proposta acordada, o assistente mostra o contrato sem proposta mais recente.
-        abreAssistente: !cand.preAceiteExpirado && !maisRecente && ct.propostaId === null && i === soltos.findIndex((s) => s.propostaId === null),
+        abreAssistente:
+          !cand.preAceiteExpirado &&
+          !maisRecente &&
+          ct.propostaId === null &&
+          i === soltos.findIndex((s) => s.propostaId === null),
       });
     });
 
@@ -197,21 +214,53 @@ export function fechosDoDono(entrada: {
   }
 
   // R4: grupo, depois o mais recente primeiro; a chave desempata (ordem estável entre leituras).
-  rascunhos.sort((a, b) => a.grupo - b.grupo || tempo(b.data) - tempo(a.data) || a.chave.localeCompare(b.chave));
+  rascunhos.sort(
+    (a, b) =>
+      a.grupo - b.grupo ||
+      tempo(b.data) - tempo(a.data) ||
+      a.chave.localeCompare(b.chave),
+  );
 
   const visiveis = rascunhos.slice(0, TETO_FECHOS);
   // R6: o número do contrato com o desempate da lista de Contratos (dois ids com os mesmos 8 primeiros caracteres).
-  const numeros = numerosDaLista(visiveis.flatMap((r) => (r.contratoId ? [r.contratoId] : [])));
+  const numeros = numerosDaLista(
+    visiveis.flatMap((r) => (r.contratoId ? [r.contratoId] : [])),
+  );
 
-  const linhas: LinhaDoFecho[] = visiveis.map(({ data: _data, abreAssistente, ...r }) => ({
-    ...r,
-    contrato: r.contratoId ? (numeros.get(r.contratoId) ?? null) : null,
-    acao: abreAssistente
-      ? { tipo: "assistente", href: `/dashboard/fechamento?c=${encodeURIComponent(r.leadId)}` }
-      : r.contratoId
-        ? { tipo: "contrato", href: `/dashboard/contratos/${encodeURIComponent(r.contratoId)}` }
-        : { tipo: "orcamento", href: `/dashboard/propostas/${encodeURIComponent(r.propostaId ?? "")}` },
-  }));
+  const linhas: LinhaDoFecho[] = visiveis.map((rascunho) => {
+    const { abreAssistente } = rascunho;
+    const r: Omit<Rascunho, "data" | "abreAssistente"> = {
+      chave: rascunho.chave,
+      tipo: rascunho.tipo,
+      leadId: rascunho.leadId,
+      propostaId: rascunho.propostaId,
+      contratoId: rascunho.contratoId,
+      imovel: rascunho.imovel,
+      morador: rascunho.morador,
+      periodo: rascunho.periodo,
+      orcamento: rascunho.orcamento,
+      estado: rascunho.estado,
+      grupo: rascunho.grupo,
+    };
+    return {
+      ...r,
+      contrato: r.contratoId ? (numeros.get(r.contratoId) ?? null) : null,
+      acao: abreAssistente
+        ? {
+            tipo: "assistente",
+            href: `/dashboard/fechamento?c=${encodeURIComponent(r.leadId)}`,
+          }
+        : r.contratoId
+          ? {
+              tipo: "contrato",
+              href: `/dashboard/contratos/${encodeURIComponent(r.contratoId)}`,
+            }
+          : {
+              tipo: "orcamento",
+              href: `/dashboard/propostas/${encodeURIComponent(r.propostaId ?? "")}`,
+            },
+    };
+  });
 
   return {
     linhas,

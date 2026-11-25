@@ -195,3 +195,30 @@ test("cada linha diz o imóvel, o morador, o período e o orçamento — nenhum 
   assert.equal(l.orcamento, "ORC-p1");
   assert.deepEqual(Object.keys(l).filter((k) => /mail|telefone|fone|whats/i.test(k)), []);
 });
+
+/* ── A página e a leitura (lidas na fonte, como as outras travas da casa) ───────────────────────────────────────── */
+import { readFileSync } from "node:fs";
+const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
+
+test("R5/R8/R9: a página lê todos os fechos; sem ?c= abre a primeira da ordem; ?c= alheio dá o aviso", () => {
+  const pagina = ler("src/app/(dashboard)/dashboard/fechamento/page.tsx");
+  assert.match(pagina, /await lerFechosDoDono\(\)/, "a página lê a lista");
+  assert.match(pagina, /getFechamentoContext\(lidos\.abrir\)/, "sem ?c=, abre a primeira linha da ordem");
+  assert.doesNotMatch(pagina, /const realCtx = await getFechamentoContext\(c\);/, "não volta a abrir só a aceita mais recente");
+  assert.match(pagina, /const naoEncontrado = Boolean\(c\) && !realCtx;/, "?c= que não abre nada → o aviso");
+});
+
+test("R10: a leitura dos fechos lança na falha — 'não li' nunca vira lista vazia", () => {
+  const leitura = ler("src/lib/data/fechos-do-dono-servidor.ts");
+  assert.match(leitura, /if \(erroLeads\) throw new Error\(MSG_FECHOS_SEM_LEITURA\)/);
+  assert.match(leitura, /rPropostas\.error \|\| rContratos\.error/);
+  assert.match(leitura, /if \(erroVersoes\) throw new Error\(MSG_FECHOS_SEM_LEITURA\)/);
+  assert.match(leitura, /\.eq\("owner_id", user\.id\)/, "só as candidaturas do próprio dono");
+});
+
+test("R5/R11/caso 12: a lista só aparece com dois ou mais fechos (ou com o aviso); a demonstração fica sem lista", () => {
+  const cliente = ler("src/app/(dashboard)/dashboard/fechamento/closing-client.tsx");
+  assert.match(cliente, /fechos\.linhas\.length > 1 \|\| fechos\.naoEncontrado/);
+  assert.match(cliente, /if \(demo\) return <ClosingFlow ctx=\{SAMPLE_CTX\} demo \/>;/, "a demonstração não muda");
+  assert.match(cliente, /if \(fechos\?\.temAceitas\)/, "há aceitas, nenhuma por fechar → texto próprio, não 'nenhuma aceita'");
+});
