@@ -119,11 +119,13 @@ test("E1160 (2): a verificação diz o passo do dono — escolher o avaliador; s
 
 test("E1160 (3): o laudo é emitido e assinado pelo avaliador credenciado, com o número; a Viva guarda o registro", () => {
   const c = corpoVistoria("vistoria_laudo_emitido", { imovel: IMOVEL, avaliador: "Rui Avalia", numeroCredenciado: "AV-0007" });
-  assert.equal(c.body("Lara"), "Olá Lara, o laudo de avaliação de Apto Santa Mônica foi emitido e assinado pelo avaliador credenciado nº AV-0007; a Viva guarda o registro. Veja o resultado, o que corrigir (se houver), o prazo e o próximo passo.");
+  // E1188 (asserção alterada, ORDEM-DUET-852): saiu a frase vaga "Veja o resultado, o que corrigir (se houver), o prazo e
+  // o próximo passo." — com o laudo lido, o e-mail diz os fatos dele (trava: e1188-emails-com-os-fatos-da-tela.test.ts).
+  assert.equal(c.body("Lara"), "Olá Lara, o laudo de avaliação de Apto Santa Mônica foi emitido e assinado pelo avaliador credenciado nº AV-0007; a Viva guarda o registro.");
   assert.doesNotMatch(c.body("Lara"), /emitido pela Viva/);
   // Sem o número (leitura que falhou), a frase continua inteira e continua a não dizer que foi a Viva.
   const sem = corpoVistoria("vistoria_laudo_emitido", { imovel: IMOVEL });
-  assert.equal(sem.body("Lara"), "Olá Lara, o laudo de avaliação de Apto Santa Mônica foi emitido e assinado pelo avaliador credenciado; a Viva guarda o registro. Veja o resultado, o que corrigir (se houver), o prazo e o próximo passo.");
+  assert.equal(sem.body("Lara"), "Olá Lara, o laudo de avaliação de Apto Santa Mônica foi emitido e assinado pelo avaliador credenciado; a Viva guarda o registro.");
   assert.doesNotMatch(TEMPLATES.vistoria_laudo_emitido.body("Lara"), /emitido pela Viva/);
   const laudoSrv = semComentarios(ler("src/lib/vistoria/laudo-servidor.ts"));
   assert.match(laudoSrv, /avisar\(admin, p\.owner_id, "vistoria_laudo_emitido", rotaDono\(p\.property_id\), \{ pedidoId: p\.id, propertyId: p\.property_id \}\)/);
@@ -241,7 +243,8 @@ test("E1160 (6): quem agenda diz ao e-mail se é reagendamento e qual era a data
   const srv = semComentarios(ler("src/lib/vistoria/servidor.ts"));
   const fatos = srv.slice(srv.indexOf("export async function fatosDaVistoria("), srv.indexOf("export async function avisar("));
   // E1177 (asserção alterada, ORDEM-DUET-778): o select leva também o motivo da espera.
-  assert.match(fatos, /select\("property_id, agendado_para, proposta_em, aguardando_avaliador, motivo_da_espera, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento\(numero_credenciado, parceiros\(nome_publico, user_id\)\)"\)/);
+  // E1188 (asserção alterada, ORDEM-DUET-852): e o valor e os prazos do laudo da proposta.
+  assert.match(fatos, /select\("property_id, agendado_para, proposta_em, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, aguardando_avaliador, motivo_da_espera, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento\(numero_credenciado, parceiros\(nome_publico, user_id\)\)"\)/);
   assert.match(fatos, /reagendada: ref\.reagendada \?\? \(pp\?\.reagendou_dono === true \|\| pp\?\.reagendou_avaliador === true\)/);
   assert.match(fatos, /visitaAnterior: ref\.visitaAnterior \?\? null/);
   assert.match(fatos, /destinatario: ref\.papel/);

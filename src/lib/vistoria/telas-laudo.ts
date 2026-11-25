@@ -71,6 +71,14 @@ export function acoesDoResultado(l: { resultado: Resultado; emitidoEm: string; p
   return acoes;
 }
 
+/**
+ * E1188: o que o dono tem para corrigir num laudo — as ressalvas e os itens graves, cada item uma vez. É a lista "O que
+ * corrigir" da tela do dono; o e-mail do laudo emitido conta os itens por aqui.
+ */
+export function itensACorrigir(l: { ressalvas: readonly { chave: string }[]; graves: readonly string[] }): string[] {
+  return [...new Set([...l.ressalvas.map((r) => r.chave), ...l.graves])];
+}
+
 export const ROTULO_ACAO: Record<AcaoResultado, string> = {
   enviar_correcao: "Enviar correção",
   nova_avaliacao: "Pedir nova avaliação",
