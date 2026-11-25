@@ -3,7 +3,11 @@ import { notify, type NotificationEvent } from "@/lib/notifications";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { EVENTOS_VISITA_DE_AVALIACAO } from "@/lib/notifications/sino";
 import { escaparHtml } from "@/lib/escapar-html";
-import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type FatosVistoria } from "./corpo-email";
+import { EVENTOS_VISTORIA_COM_FATOS, corpoVistoria, type EventoVistoria, type FatosVistoria, type LaudoNoEmail } from "./corpo-email";
+import { itensACorrigir } from "./telas-laudo";
+import { urlConferir } from "@/lib/fiscal/prefixos";
+import { SITE_URL } from "@/lib/site";
+import type { Resultado } from "./laudo";
 import { corpoDoAvisoDaFila } from "./rotulos-da-fila";
 import { SO_O_ANTERIOR, avisoAoDono, estadoDaEscolha } from "./espera-de-avaliador";
 import { laudoForaDoCombinado } from "./laudo";
@@ -96,23 +100,27 @@ export type RefVistoria = {
 };
 
 /** E289: lê no banco o que o e-mail precisa nomear — imóvel (título, bairro, cidade), visita e avaliador. */
-export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<FatosVistoria> {
+export async function fatosDaVistoria(admin: Admin, ref: RefVistoria, opcoes: { comLaudo?: boolean } = {}): Promise<FatosVistoria> {
   let propertyId = ref.propertyId ?? null;
   let visita: string | null = null;
   let avaliador: string | null = null;
   // E1160: o que o e-mail afirma sai do estado do pedido NO MOMENTO do envio — a proposta, se há avaliador para o dono
   // escolher, se a data é uma troca e o número de credenciado de quem assina o laudo.
-  let doPedido: Pick<FatosVistoria, "numeroCredenciado" | "propostaEm" | "aguardandoAvaliador" | "motivoDaEspera" | "reagendada"> = { reagendada: ref.reagendada };
+  let doPedido: Pick<FatosVistoria, "numeroCredenciado" | "propostaEm" | "aguardandoAvaliador" | "motivoDaEspera" | "reagendada" | "valorProposto" | "prazoPropostoDias" | "prazoLaudoDiasUteis"> = { reagendada: ref.reagendada };
+  let laudo: LaudoNoEmail | null = null;
   if (ref.pedidoId) {
     const { data: p } = await admin
       .from("vistoria_pedidos")
-      .select("property_id, agendado_para, proposta_em, aguardando_avaliador, motivo_da_espera, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento(numero_credenciado, parceiros(nome_publico, user_id))")
+      .select("property_id, agendado_para, proposta_em, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, aguardando_avaliador, motivo_da_espera, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento(numero_credenciado, parceiros(nome_publico, user_id))")
       .eq("id", ref.pedidoId)
       .maybeSingle();
     const pp = p as {
       property_id?: string | null;
       agendado_para?: string | null;
       proposta_em?: string | null;
+      valor_proposto?: number | string | null;
+      prazo_proposto_dias?: number | null;
+      prazo_laudo_dias_uteis?: number | null;
       aguardando_avaliador?: boolean | null;
       motivo_da_espera?: string | null;
       reagendou_dono?: boolean | null;
@@ -127,6 +135,10 @@ export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<F
     doPedido = {
       numeroCredenciado: pp?.avaliadores_credenciamento?.numero_credenciado ?? null,
       propostaEm: pp?.proposta_em ?? null,
+      // E1188: a proposta como a tela a lê — o valor e os dois prazos do laudo (o novo, em dias úteis, e o de antes).
+      valorProposto: pp?.valor_proposto ?? null,
+      prazoPropostoDias: pp?.prazo_proposto_dias ?? null,
+      prazoLaudoDiasUteis: pp?.prazo_laudo_dias_uteis ?? null,
       aguardandoAvaliador: pp?.aguardando_avaliador === true,
       // E1177: o motivo gravado no pedido — o e-mail diz por que não há quem escolher, em vez de prometer sempre.
       motivoDaEspera: pp?.motivo_da_espera ?? null,
@@ -134,7 +146,31 @@ export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<F
       reagendada: ref.reagendada ?? (pp?.reagendou_dono === true || pp?.reagendou_avaliador === true),
     };
   }
-  const fatos = { visita, avaliador, ...doPedido, visitaAnterior: ref.visitaAnterior ?? null, destinatario: ref.papel, outroAvaliador: ref.outro === true };
+  // E1188: o laudo que acabou de sair — o último do pedido —, com os mesmos campos que a tela do dono mostra e o código
+  // do documento registrado (a página pública de conferência). Leitura que falha: o e-mail sai sem esses fatos.
+  if (opcoes.comLaudo && ref.pedidoId) {
+    const { data: l } = await admin
+      .from("vistoria_laudos")
+      .select("numero, versao, resultado, nivel_sustentado, ressalvas, graves, documento_id")
+      .eq("pedido_versao_id", ref.pedidoId)
+      .order("emitido_em", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const ll = l as { numero?: string | null; versao?: number | null; resultado?: Resultado | null; nivel_sustentado?: string | null; ressalvas?: { chave: string }[] | null; graves?: string[] | null; documento_id?: string | null } | null;
+    if (ll?.numero && ll.resultado) {
+      const { data: doc } = ll.documento_id ? await admin.from("documentos_registro").select("codigo_verificacao").eq("id", ll.documento_id).maybeSingle() : { data: null };
+      const codigo = String((doc as { codigo_verificacao?: string | null } | null)?.codigo_verificacao ?? "").trim();
+      laudo = {
+        numero: ll.numero,
+        versao: Number(ll.versao ?? 1),
+        resultado: ll.resultado,
+        nivelSustentado: ll.nivel_sustentado ?? null,
+        itensACorrigir: itensACorrigir({ ressalvas: ll.ressalvas ?? [], graves: ll.graves ?? [] }).length,
+        linkConferir: codigo ? urlConferir(SITE_URL, codigo) : null,
+      };
+    }
+  }
+  const fatos = { visita, avaliador, ...doPedido, laudo, visitaAnterior: ref.visitaAnterior ?? null, destinatario: ref.papel, outroAvaliador: ref.outro === true };
   if (!propertyId) return { imovel: null, ...fatos };
   const { data: im } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
   const i = im as { title?: string | null; address?: string | null; city?: string | null } | null;
@@ -150,7 +186,7 @@ export async function avisar(admin: Admin, destino: string | null | undefined, e
   try {
     const { data } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", destino).maybeSingle();
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
-    const corpo = ref && EVENTOS_VISTORIA_COM_FATOS.has(ev) ? corpoVistoria(ev as EventoVistoria, await fatosDaVistoria(admin, ref)) : null;
+    const corpo = ref && EVENTOS_VISTORIA_COM_FATOS.has(ev) ? corpoVistoria(ev as EventoVistoria, await fatosDaVistoria(admin, ref, { comLaudo: ev === "vistoria_laudo_emitido" })) : null;
     await notify({
       event: ev,
       email: d?.notif_email === false ? undefined : (d?.email ?? undefined),

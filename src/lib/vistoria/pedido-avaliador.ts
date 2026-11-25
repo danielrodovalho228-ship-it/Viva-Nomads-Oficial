@@ -111,8 +111,17 @@ export function linhaDoValor(etapa: EtapaDoPedido, p: ValoresDoPedido): { texto:
  * enviada: R$ X em N dias"). Os dois valores que o avaliador submeteu aparecem do lado dele em todas as etapas.
  */
 export function linhaDoPrazoDoLaudo(etapa: EtapaDoPedido, p: ValoresDoPedido): string | null {
-  if (etapa !== "aceito" || semValor(p) || !p.prazo_proposto_dias) return null;
-  // E1156: o prazo novo diz a unidade e de onde conta; o pedido anterior à regra fica como foi prometido.
+  if (etapa !== "aceito" || semValor(p)) return null;
+  return prazoDoLaudoPorExtenso(p);
+}
+
+/**
+ * E1188: o prazo combinado do laudo, por extenso e sem ponto final — a frase da tela do avaliador depois do aceite, e a
+ * que o e-mail do aceite repete. E1156: o prazo novo diz a unidade e de onde conta; o pedido anterior à regra fica como
+ * foi prometido. Sem prazo proposto, null.
+ */
+export function prazoDoLaudoPorExtenso(p: PrazoDoPedido): string | null {
+  if (!p.prazo_proposto_dias) return null;
   if (p.prazo_laudo_dias_uteis != null) return `Laudo em até ${diasUteis(p.prazo_laudo_dias_uteis)} depois da visita`;
   return `Laudo em ${dias(Number(p.prazo_proposto_dias))}`;
 }

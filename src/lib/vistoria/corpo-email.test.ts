@@ -94,6 +94,8 @@ test("ponto de envio: todo avisar() da avaliação passa a referência (pedido o
   // avaliador para escolher, as marcas de reagendamento e o número de credenciado.
   // E1177 (asserção alterada, ORDEM-DUET-778): o select leva também o motivo da espera — o e-mail diz por que não há
   // avaliador para escolher.
-  assert.match(srv, /select\("property_id, agendado_para, proposta_em, aguardando_avaliador, motivo_da_espera, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento\(numero_credenciado, parceiros\(nome_publico, user_id\)\)"\)/);
-  assert.match(srv, /corpoVistoria\(ev as EventoVistoria, await fatosDaVistoria\(admin, ref\)\)/);
+  // E1188 (asserção alterada, ORDEM-DUET-852): o select leva também o valor e os prazos do laudo da proposta — o e-mail
+  // diz os mesmos fatos da tela; e só o aviso do laudo emitido pede também o laudo.
+  assert.match(srv, /select\("property_id, agendado_para, proposta_em, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, aguardando_avaliador, motivo_da_espera, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento\(numero_credenciado, parceiros\(nome_publico, user_id\)\)"\)/);
+  assert.match(srv, /corpoVistoria\(ev as EventoVistoria, await fatosDaVistoria\(admin, ref, \{ comLaudo: ev === "vistoria_laudo_emitido" \}\)\)/);
 });
