@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server";
 import { rotaDetalheContrato } from "@/lib/contrato-rota";
 import { destinoLeitorQa, rotaLeitorQa } from "@/lib/notifications/caixa-teste";
 import { createServerClient } from "@supabase/ssr";
-import { cookiesRenovados } from "@/lib/supabase/cookies-renovados";
 import {
   isInternalPath,
   acessoInterno,
@@ -118,19 +117,14 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
   // ── DEMAIS ROTAS PRIVADAS (dashboard/admin/pedidos) — exigem Supabase ───────
   if (!supaUrl || !supaKey) return NextResponse.next();
 
-  const destino = destinoAposLogin(pathname, request.nextUrl.search);
-  // E793 A1: os cookies renovados vão TAMBÉM no pedido que segue para o layout/páginas (padrão do @supabase/ssr) — a
-  // resposta é recriada a cada renovação, com os cabeçalhos atuais do pedido e o x-vn-destino.
-  const ponto = cookiesRenovados(request, () => {
-    const cabecalhos = new Headers(request.headers);
-    cabecalhos.set("x-vn-destino", destino);
-    return NextResponse.next({ request: { headers: cabecalhos } });
-  });
-  // E428: TODA resposta que não é a do `ponto` (redirect ou rewrite) leva os cookies que o getUser() renovou. Sem isso, o
+  const cabecalhos = new Headers(request.headers);
+  cabecalhos.set("x-vn-destino", destinoAposLogin(pathname, request.nextUrl.search));
+  const response = NextResponse.next({ request: { headers: cabecalhos } });
+  // E428: TODA resposta que não é `response` (redirect ou rewrite) leva os cookies que o getUser() renovou. Sem isso, o
   // navegador ficava com o refresh token antigo (já gasto na renovação) e a próxima renovação derrubava a sessão: a
   // conta caía em /auth depois de um 404 do painel ou de um redirecionamento.
   const comCookies = (r: NextResponse) => {
-    ponto.resposta().cookies.getAll().forEach((c) => r.cookies.set(c));
+    response.cookies.getAll().forEach((c) => r.cookies.set(c));
     return r;
   };
   const supabase = createServerClient(supaUrl, supaKey, {
@@ -138,7 +132,11 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll: (lista) => ponto.setAll(lista),
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options)
+        );
+      },
     },
   });
 
@@ -204,12 +202,12 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
       loginUrl.pathname = "/auth";
       loginUrl.search = "";
       loginUrl.searchParams.set("redirect", destinoAposLogin(pathname, request.nextUrl.search));
-      // signOut escreveu a limpeza dos cookies de sessão na resposta do `ponto`: repassa.
+      // signOut escreveu a limpeza dos cookies de sessão em `response`: repassa.
       const resposta = comCookies(NextResponse.redirect(loginUrl));
       resposta.cookies.delete(COOKIE_ADMIN_ATIVO);
       return resposta;
     }
-    ponto.resposta().cookies.set(COOKIE_ADMIN_ATIVO, String(agora), {
+    response.cookies.set(COOKIE_ADMIN_ATIVO, String(agora), {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
@@ -290,7 +288,7 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  return ponto.resposta();
+  return response;
 }
 
 export const config = {

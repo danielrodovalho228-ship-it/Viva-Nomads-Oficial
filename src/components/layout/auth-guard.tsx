@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
 import { SkeletonLista } from "@/components/ui/skeleton";
-import { useSessaoServidor, useUsuarioAtual } from "@/components/auth/sessao-servidor-contexto";
-import { rotaLiberada } from "@/lib/auth/painel-sessao-servidor";
 
 /**
  * Proteção de rota no cliente (QA): rotas do dashboard só renderizam com sessão.
@@ -13,21 +11,11 @@ import { rotaLiberada } from "@/lib/auth/painel-sessao-servidor";
  * SSR e no cliente, sem mismatch) e marca hidratado após a reidratação do
  * localStorage (zustand persist) — assim não redireciona quem já está logado.
  * No servidor, o proxy (Next.js 16) faz o mesmo quando o Supabase está ativo.
- *
- * E793 (A6): com a sessão conferida no servidor (chave PAINEL_SESSAO_SERVIDOR) E a rota atual na lista da onda ligada,
- * libera o conteúdo já no 1º quadro, com o usuário do contexto do servidor (useUsuarioAtual). Fora da lista — ou sem
- * contexto (chave off, sessão não lida) — é exatamente o comportamento de antes. O redirecionamento para /auth continua
- * vindo só da conferência do CLIENTE (2ª linha; a 1ª é o proxy).
  */
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const storeUser = useAuthStore((s) => s.user);
+  const user = useAuthStore((s) => s.user);
   const authChecked = useAuthStore((s) => s.authChecked);
-  const sessao = useSessaoServidor();
-  const usuarioDoQuadro = useUsuarioAtual();
-  // A6: só a rota da onda ligada usa o usuário do servidor no 1º quadro; as demais seguem como hoje (store).
-  const user = sessao && rotaLiberada(pathname, sessao.rotasLiberadas) ? usuarioDoQuadro : storeUser;
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -49,8 +37,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   // `authChecked`, um /dashboard aberto direto (sem usuário persistido) mandava
   // para /auth antes de a sessão real hidratar — o "entra e sai".
   useEffect(() => {
-    if (hydrated && authChecked && !storeUser) router.replace("/auth");
-  }, [hydrated, authChecked, storeUser, router]);
+    if (hydrated && authChecked && !user) router.replace("/auth");
+  }, [hydrated, authChecked, user, router]);
 
   // Com usuário → libera. Sem usuário mas ainda conferindo → aguarda (spinner).
   if (!user) {
