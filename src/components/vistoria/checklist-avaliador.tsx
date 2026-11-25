@@ -254,7 +254,6 @@ export function ChecklistAvaliador({
                           <input
                             type="file"
                             accept="image/jpeg,image/png,image/webp"
-                            capture="environment"
                             className="sr-only"
                             aria-label={`Foto do item: ${i.rotulo}`}
                             onChange={(e) => {
