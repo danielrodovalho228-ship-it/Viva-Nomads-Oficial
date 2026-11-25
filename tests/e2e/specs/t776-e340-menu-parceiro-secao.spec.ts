@@ -44,6 +44,12 @@ test.describe("T776 — E340: a aba acompanha a seção do painel do parceiro", 
   for (const largura of [1280, 390]) {
     test(`uma aba acesa, a da seção visível (${largura})`, async ({ browser }) => {
       const page = await entrar(browser, email, senha);
+      // ENSAIO E1193: a 2ª instância das abas monta depois da rolagem — as ações do servidor (a leitura da parceria
+      // aprovada, que dá as abas do topo) respondem 4 s depois (só no ramo de ensaio).
+      await page.route("**/dashboard/parceiro**", async (r) => {
+        if (r.request().method() === "POST" && r.request().headers()["next-action"]) await new Promise((ok) => setTimeout(ok, 4_000));
+        await r.fallback();
+      });
       await page.setViewportSize({ width: largura, height: 800 });
       await page.goto("/dashboard/parceiro#ganhos", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("parceiro-ganhos")).toBeVisible({ timeout: 30_000 });
