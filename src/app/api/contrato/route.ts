@@ -6,8 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { contaEhDeTeste, contratoSimuladoTeste } from "@/lib/contas-de-teste";
 import { MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { MSG_CONTRATO_EM_ANDAMENTO, decidirGeracaoContrato } from "@/lib/fechamento-contrato";
-import { carregarFechamento, reservarFechamento, concluirFechamento, lerReservaFechamento, MSG_FECHAMENTO_SEM_LEITURA } from "@/lib/data/fechamento-servidor";
-import { preAceiteExpiradoDoLead, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { carregarFechamento, reservarFechamento, concluirFechamento, lerReservaFechamento, MSG_FECHAMENTO_SEM_LEITURA, MSG_FECHO_NAO_ENCONTRADO } from "@/lib/data/fechamento-servidor";
+import { PROPOSTA_FORA_DO_FECHAMENTO, preAceiteExpiradoDoLead, propostaDoFechamentoDoLead } from "@/lib/data/propostas-servidor";
 import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { prazoDoContratoEmDias, diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
 import { diasValidos } from "@/lib/estadia-em-dias";
@@ -22,12 +22,14 @@ import { diasValidos } from "@/lib/estadia-em-dias";
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     leadId?: unknown;
+    /** E1141: a estadia escolhida (validada no servidor); sem ela, a proposta acordada mais recente. */
+    propostaId?: unknown;
     termMonths?: unknown;
     termDays?: unknown;
     guarantee?: unknown;
     costSplit?: unknown;
   };
-  const f = await carregarFechamento(body.leadId);
+  const f = await carregarFechamento(body.leadId, body.propostaId);
   if ("error" in f) return NextResponse.json({ error: f.error }, { status: f.status });
 
   const prazo = Math.round(Number(body.termMonths));
@@ -55,8 +57,10 @@ export async function POST(request: Request) {
   const preAceiteExpirado = admin ? await preAceiteExpiradoDoLead(admin, f.leadId).catch(() => "falhou" as const) : false;
   if (preAceiteExpirado === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
   if (preAceiteExpirado) return NextResponse.json({ error: MSG_PRE_ACEITE_EXPIRADO }, { status: 409 });
-  const acordada = admin ? await propostaAcordadaDoLead(admin, f.leadId).catch(() => "falhou" as const) : null;
+  // E1141: o documento é o da proposta DESTE fecho (a pedida e validada, ou a de sempre) — nunca de outra estadia.
+  const acordada = admin ? await propostaDoFechamentoDoLead(admin, f.leadId, f.propostaPedida).catch(() => "falhou" as const) : null;
   if (acordada === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
+  if (acordada === PROPOSTA_FORA_DO_FECHAMENTO) return NextResponse.json({ error: MSG_FECHO_NAO_ENCONTRADO }, { status: 404 });
   // E655: sem proposta, a janela exata da candidatura (conferida aqui contra a candidatura) vale em dias.
   let diasJanela: number | null = null;
   if (!acordada && admin && body.termDays != null) {

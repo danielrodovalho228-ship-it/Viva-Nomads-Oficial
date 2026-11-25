@@ -346,7 +346,8 @@ test("34. aviso ao dono no aceite: a congelada com a base; o morador nunca receb
 test("18. o fechamento usa a taxa congelada no aceite (leads.accepted_commission_rate), a mesma da proposta", () => {
   const leads = ler("./data/leads-actions.ts");
   // 0177: o plano e a taxa do aceite vêm do servidor (taxaDoLeadDoDono), não mais da sessão.
-  assert.match(leads, /const comissaoRate =\s*typeof taxaLead\?\.acceptedCommissionRate === "number"\s*\? taxaLead\.acceptedCommissionRate/);
+  // E1141 (guarda 2): a congelada da proposta da estadia; sem ela, a do aceite (leads.accepted_commission_rate).
+  assert.match(leads, /const taxaDoFecho = taxaDaEstadia\(taxaDaProposta, taxaLead\?\.acceptedCommissionRate\);\s*const comissaoRate =\s*typeof taxaDoFecho === "number"\s*\? taxaDoFecho/);
   assert.match(ler("../app/(dashboard)/dashboard/fechamento/closing-flow.tsx"), /const COMMISSION_RATE = ctx\.comissaoRate;/);
   assert.match(ler("./data/propostas-actions.ts"), /from\("leads"\)[\s\S]{0,200}accepted_commission_rate/);
 });
