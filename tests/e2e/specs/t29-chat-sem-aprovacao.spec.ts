@@ -25,7 +25,15 @@ test.describe("T29 — Chat sem falsas aprovações", () => {
         .single();
       expect(erroCartao).toBeNull();
       try {
-        const { count: antes } = await adm.from("agentes_ordens").select("id", { count: "exact", head: true });
+        // E1011: a regra é desta mensagem, não da tabela inteira. Outro teste da suíte (ou a Viva, no erro técnico de um
+        // chamado) cria ordem ao mesmo tempo; a conta olha só as ordens que esta mensagem poderia ter criado.
+        const inicio = new Date(Date.now() - 5_000).toISOString();
+        const ordensDaMensagem = async () =>
+          (await adm.from("agentes_ordens").select("id", { count: "exact", head: true }).gte("criada_em", inicio).ilike("texto", "%aprovad%")).count;
+        const antes = await ordensDaMensagem();
+        // Uma ordem de outro assunto entra no meio, como na suíte completa: não pode mudar o resultado.
+        const { error: erroOutra } = await adm.from("agentes_ordens").insert({ agente_slug: "renato", texto: `LAB t29 ${nome}: ordem de outro teste (erro técnico de chamado)`, origem_slug: "viva" });
+        expect(erroOutra).toBeNull();
         await page.goto("/admin/agentes", { waitUntil: "networkidle" });
         await page.getByRole("tab", { name: "Conversar" }).click();
         await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: new RegExp(nome) }).click();
@@ -39,8 +47,7 @@ test.describe("T29 — Chat sem falsas aprovações", () => {
         // O texto muda com 0, 1 ou vários cartões pendentes (respostaAprovacaoNoChat), mas a regra é fixa.
         await expect(resp.last()).toContainText("Daqui do chat eu não aprovo por texto.");
         await expect(resp.last()).not.toContainText("SQL Editor");
-        const { count: depois } = await adm.from("agentes_ordens").select("id", { count: "exact", head: true });
-        expect(depois).toBe(antes);
+        expect(await ordensDaMensagem(), "E1011: 'Ok, tudo aprovado' não vira ordem").toBe(antes);
       } finally {
         // a tabela é imutável (não apaga); pendente só pode virar expirada
         await adm.from("aprovacoes").update({ status: "expirada" }).eq("id", cartao!.id).eq("status", "pendente");
