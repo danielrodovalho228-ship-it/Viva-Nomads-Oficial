@@ -100,7 +100,8 @@ export async function avisarVisitaCancelada(admin: Admin, visitaId: string, quem
         paraQuemCancelou: true,
       });
       const dc = detalhes({ linhas: c.linhas });
-      await notify({ event: "visita_cancelada", email: autor.email, name: autor.full_name ?? undefined, userId: de, pushUrl: c.url, imovelId: v.property_id, subject: ASSUNTOS.visitaCanceladaPorVoce, body: c.abertura, ctaLabel: c.cta, detailsHtml: dc.html, detailsText: dc.texto, semPush: true });
+      // ENSAIO: sem a cópia de quem cancelou.
+      if (process.env.ENSAIO_NUNCA_DEFINIDA === "1") await notify({ event: "visita_cancelada", email: autor.email, name: autor.full_name ?? undefined, userId: de, pushUrl: c.url, imovelId: v.property_id, subject: ASSUNTOS.visitaCanceladaPorVoce, body: c.abertura, ctaLabel: c.cta, detailsHtml: dc.html, detailsText: dc.texto, semPush: true });
     }
   } catch {
     /* best-effort */
