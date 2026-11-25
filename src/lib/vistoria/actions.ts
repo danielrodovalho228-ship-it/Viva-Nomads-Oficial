@@ -34,7 +34,7 @@ import {
 } from "./regras";
 import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, registrarRespostaDoAvaliador, resolverAvisosDaVisita, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
-import { CONFIRMACAO_DO_ACEITE, ERRO_ACEITE_FORA_DO_PRAZO, aceiteForaDoPrazo, erroAoPropor, precisaDoAceiteDoDono } from "./relogio-do-pedido";
+import { ERRO_ACEITE_FORA_DO_PRAZO, aceiteForaDoPrazo, erroAoPropor, precisaDoAceiteDoDono } from "./relogio-do-pedido";
 import { ERRO_TROCA_SEM_CONFIRMAR, trocaConfirmada } from "./troca-de-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
 import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
@@ -539,12 +539,10 @@ export async function aceitarProposta(form: FormData): Promise<Res> {
   const agora = new Date().toISOString();
   await c.admin.from("vistoria_pedidos").update({ proposta_aceita_em: agora, atualizado_em: agora }).eq("id", c.p.id).is("proposta_aceita_em", null);
   const { data: cred } = await c.admin.from("avaliadores_credenciamento").select("parceiros(user_id)").eq("id", c.p.avaliador_id!).maybeSingle();
-  // E1153: o aviso próprio do aceite, que leva às Visitas. Antes saía "visita agendada", sem haver visita: o sino só
-  // mostra esse aviso quando o pedido tem data (E1128), e o avaliador ficava sem saber do aceite.
-  await avisar(c.admin, (cred?.parceiros as unknown as { user_id: string } | null)?.user_id, "vistoria_proposta_aceita", `${ROTA_AVALIADOR}#agenda`, { pedidoId: c.p.id, propertyId: c.p.property_id });
+  await avisar(c.admin, (cred?.parceiros as unknown as { user_id: string } | null)?.user_id, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
   revalidatePath(ROTA_AVALIADOR);
-  return { ok: true, mensagem: CONFIRMACAO_DO_ACEITE };
+  return { ok: true, mensagem: "Proposta aceita. Combinem a data da visita." };
 }
 
 /**

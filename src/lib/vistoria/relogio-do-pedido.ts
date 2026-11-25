@@ -115,17 +115,3 @@ export function erroAoPropor(resposta: string | null | undefined, prazoRespostaH
   if (resposta === "expirada") return `O prazo de ${prazoRespostaHoras} ${prazoRespostaHoras === 1 ? "hora" : "horas"} para responder já passou.`;
   return "Este pedido não está mais com você.";
 }
-
-/**
- * E1153: a leitura de confirmação do aceite (roteiro aprovado). FONTE ÚNICA: a resposta da ação do dono e o bloco
- * pós-aceite dos dois lados (o bloco do dono, a lista e a tela do pedido do avaliador).
- */
-export const CONFIRMACAO_DO_ACEITE = "Proposta aceita. Combinem a data da visita.";
-
-/**
- * E1153: o dono aceitou a proposta e a visita ainda não tem data — é enquanto isso que a confirmação fica à vista.
- * Marcada a data (ou saindo o pedido da escolha), a tela mostra a visita, e "combinem a data" já não vale.
- */
-export function aceitoSemDataDeVisita(p: { status: string; propostaAceitaEm: string | null | undefined; agendadoPara: string | null | undefined }): boolean {
-  return p.status === "designado" && !!p.propostaAceitaEm && !p.agendadoPara;
-}

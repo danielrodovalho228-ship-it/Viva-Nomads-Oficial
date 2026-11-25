@@ -130,7 +130,6 @@ export type NotificationEvent =
   | "vistoria_designado_dono" // novidade na escolha do avaliador → dono (proposta de valor e prazo recebida, ou escolher outro)
   | "vistoria_proposta_expirada" // E1142: a proposta venceu sem o aceite do dono → avaliador
   | "vistoria_proposta_expirada_dono" // E1144: a mesma expiração, dita ao dono (antes ele recebia o vistoria_designado_dono, genérico)
-  | "vistoria_proposta_aceita" // E1153: o dono aceitou a proposta → avaliador (ainda sem data de visita)
   | "vistoria_agendada" // visita agendada → dono e avaliador
   | "vistoria_concordancia" // imóvel ocupado: a visita espera a concordância → morador
   | "vistoria_lembrete" // D-1 da visita → dono, avaliador e morador
@@ -262,7 +261,6 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   vistoria_designado_dono: { subject: "Novidade na escolha do avaliador do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, há novidade na avaliação do seu imóvel: o avaliador que você escolheu respondeu com o valor e o prazo dele, recusou ou não respondeu no prazo. Abra a avaliação para aceitar (você tem ${PRAZO_DONO_ACEITAR_HORAS} horas depois da proposta) ou escolher outro avaliador.`, cta: "Ver a avaliação", path: "/dashboard/imoveis" },
   vistoria_proposta_expirada_dono: { subject: "O prazo para aceitar a proposta de avaliação terminou", body: (n) => `Olá${n ? " " + n : ""}, o prazo de ${PRAZO_DONO_ACEITAR_HORAS} horas para aceitar a proposta de avaliação do seu imóvel terminou, e ela expirou. O pedido voltou para você escolher de novo.`, cta: "Escolher avaliador", path: "/dashboard/imoveis" },
   vistoria_proposta_expirada: { subject: "A sua proposta de avaliação expirou", body: (n) => `Olá${n ? " " + n : ""}, o proprietário não aceitou a sua proposta de avaliação no prazo de ${PRAZO_DONO_ACEITAR_HORAS} horas, e ela expirou. O pedido voltou para ele escolher de novo. Você não precisa fazer nada.`, cta: "Ver as avaliações", path: "/dashboard/parceiro/avaliacao" },
-  vistoria_proposta_aceita: { subject: "A sua proposta de avaliação foi aceita", body: (n) => `Olá${n ? " " + n : ""}, o proprietário aceitou a sua proposta de avaliação. Combinem a data da visita.`, cta: "Agendar a visita", path: "/dashboard/parceiro/avaliacao" },
   vistoria_agendada: { subject: "Visita de avaliação agendada", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação do imóvel está agendada. Reagendar sem custo: uma vez, com pelo menos ${REGRAS_AGENDA.antecedenciaReagendarHoras} horas de aviso.`, cta: "Ver a visita", path: "/dashboard/imoveis" },
   vistoria_concordancia: { subject: "Concorda com a visita de avaliação?", body: (n) => `Olá${n ? " " + n : ""}, o proprietário pediu a avaliação do imóvel onde você mora. A visita só acontece se você concordar com a data. O avaliador não fotografa os seus pertences.`, cta: "Responder", path: "/dashboard/locacoes" },
   vistoria_lembrete: { subject: "A visita de avaliação é amanhã", body: (n) => `Olá${n ? " " + n : ""}, a visita de avaliação do imóvel é amanhã. Se precisar mudar, avise pelas mensagens da Viva.`, cta: "Ver a visita", path: "/dashboard" },

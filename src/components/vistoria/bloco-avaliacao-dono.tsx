@@ -15,7 +15,7 @@ import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linh
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
-import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, precisaDoAceiteDoDono } from "@/lib/vistoria/relogio-do-pedido";
+import { precisaDoAceiteDoDono } from "@/lib/vistoria/relogio-do-pedido";
 import { identidadesConfirmadas, nomesDasContas, outrosParaTroca, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { textoDaTroca } from "@/lib/vistoria/troca-de-avaliador";
 import { DepoisDaTroca, TrocaDeAvaliador } from "@/components/vistoria/troca-de-avaliador";
@@ -296,13 +296,6 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                   />
                 </div>
               </div>
-            )}
-            {/* E1153: a confirmação do aceite fica na tela enquanto a visita não tem data (antes só existia na resposta
-                da ação, que some quando o bloco se redesenha). A mesma frase do lado do avaliador. */}
-            {aceitoSemDataDeVisita({ status: atual.status, propostaAceitaEm: atual.proposta_aceita_em, agendadoPara: atual.agendado_para }) && (
-              <p className="font-semibold text-ink" data-testid="avaliacao-aceite-confirmado">
-                {CONFIRMACAO_DO_ACEITE}
-              </p>
             )}
             {/* E1103: o combinado continua à vista depois de a visita ser agendada (antes, a linha sumia no agendamento). */}
             {["designado", "agendado", "realizada"].includes(atual.status) && atual.proposta_aceita_em && atual.valor_proposto != null && (

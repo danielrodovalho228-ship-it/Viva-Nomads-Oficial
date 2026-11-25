@@ -31,7 +31,6 @@ export function PedidoDoAvaliador({
   prazoResposta,
   prazoAceite,
   prazoAceiteVencido,
-  confirmacaoDoAceite,
   prazoLaudo,
   imovel,
   ocupado,
@@ -53,8 +52,6 @@ export function PedidoDoAvaliador({
   prazoAceite?: string | null;
   /** E1142: o prazo do dono já passou — a tela deixa de dizer "falta o proprietário aceitar". */
   prazoAceiteVencido?: boolean;
-  /** E1153: a confirmação do aceite do dono, enquanto a visita não tem data (a mesma frase que ele lê). */
-  confirmacaoDoAceite?: string | null;
   ocupado: boolean;
   exemploValor: string;
   prazoMaxDias: number;
@@ -116,11 +113,6 @@ export function PedidoDoAvaliador({
               {prazoAceite}
             </span>
           )}
-        </p>
-      )}
-      {etapa === "aceito" && confirmacaoDoAceite && (
-        <p className="text-base font-semibold text-ink" data-testid="pedido-aceite-confirmado">
-          {confirmacaoDoAceite}
         </p>
       )}
       {etapa === "aceito" && (

@@ -15,7 +15,6 @@ export type EventoVistoria =
   | "vistoria_designado_dono"
   | "vistoria_proposta_expirada"
   | "vistoria_proposta_expirada_dono"
-  | "vistoria_proposta_aceita"
   | "vistoria_agendada"
   | "vistoria_concordancia"
   | "vistoria_lembrete"
@@ -34,7 +33,6 @@ export const EVENTOS_VISTORIA_COM_FATOS: ReadonlySet<string> = new Set<EventoVis
   "vistoria_designado_dono",
   "vistoria_proposta_expirada",
   "vistoria_proposta_expirada_dono",
-  "vistoria_proposta_aceita",
   "vistoria_agendada",
   "vistoria_concordancia",
   "vistoria_lembrete",
@@ -118,14 +116,6 @@ export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistor
       return {
         subject: assuntoComTitulo("O prazo para aceitar a proposta de avaliação terminou: ", titulo, "", { antes: "A proposta de avaliação expirou: " }),
         body: (n) => `${ola(n)}, o prazo de ${PRAZO_DONO_ACEITAR_HORAS} horas para aceitar a proposta de avaliação ${doImovel(true)} terminou, e ela expirou. O pedido voltou para você escolher de novo.`,
-        linhas,
-      };
-    case "vistoria_proposta_aceita":
-      // E1153: ao avaliador, quando o dono aceita a proposta dele. Ainda não há visita: o que falta é combinar a data
-      // (antes saía daqui o aviso de "visita agendada", que o sino esconde enquanto o pedido não tem data).
-      return {
-        subject: assuntoComTitulo("A sua proposta de avaliação foi aceita: ", titulo, "", { antes: "Proposta de avaliação aceita: " }),
-        body: (n) => `${ola(n)}, o proprietário aceitou a sua proposta de avaliação${titulo ? ` de ${titulo}` : ""}. Combinem a data da visita.`,
         linhas,
       };
     case "vistoria_agendada":
