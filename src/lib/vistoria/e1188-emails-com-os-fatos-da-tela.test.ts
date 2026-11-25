@@ -8,8 +8,11 @@
          regra) ou "Nada a corrigir.", e o link da página pública de conferência. Sai a frase vaga.
   O pedido de exemplo: R$ 250, 2 dias úteis, visita numa quinta (30/04/2026) com o feriado de 1.º de maio no meio.
   Cada caso monta o e-mail e o que a TELA mostra do mesmo pedido, e confere que o fato é o mesmo nos dois.
-  Dito por escrito: o código não tem calendário de feriados — o prazo do laudo conta de segunda a sexta. A tela e o
-  e-mail leem a mesma função (prazoLaudo), por isso dão a mesma data; hoje nenhum dos dois salta o feriado (caso 3).
+  A tela e o e-mail leem a mesma função (prazoLaudo), por isso dão a mesma data.
+  E1192 (ORDEM-DUET-861: "a trava dele mede a igualdade e-mail ≡ tela, e muda junto depois"): os dias úteis passaram a
+  pular os feriados nacionais. Mudaram aqui, por essa decisão: a data âncora do caso 3 (04/05/2026 → 05/05/2026, porque
+  o 1.º de maio deixou de contar) e o fim do corpo dos e-mails que citam dias úteis (casos 1, 2 e 3), que ganharam a
+  nota das telas — "Dias úteis: segunda a sexta, sem feriados nacionais.".
   Roda: node --test src/lib/vistoria/e1188-emails-com-os-fatos-da-tela.test.ts
 */
 import { test } from "node:test";
@@ -19,6 +22,7 @@ import { join } from "node:path";
 import { corpoVistoria, type FatosVistoria } from "./corpo-email.ts";
 import { TEMPLATES } from "../notifications/eventos-email.ts";
 import { comMarca, problemasDoAssunto } from "../notifications/assuntos.ts";
+import { NOTA_DIAS_UTEIS } from "../calendario/dias-uteis.ts";
 import { brl } from "../fiscal/documento.ts";
 import { numeroExibido, urlConferir } from "../fiscal/prefixos.ts";
 import { dataBRT } from "../datas-brasilia.ts";
@@ -97,13 +101,15 @@ test("E1188 (1): a proposta chegou — o e-mail diz o valor, o prazo do laudo e 
   const relogio = relogioDoPedido({ status: "designado", resposta: undefined, designadoEm: null, propostaEm: PEDIDO.proposta_em, propostaAceitaEm: null, precisaDoAceite: true }, new Date(PEDIDO.proposta_em));
   const aceite = textoDoPrazoDeAceiteParaODono(relogio);
   assert.equal(aceite, "Aceite em até 72 horas depois da proposta, até 01/05/2026 09:15 (horário de Brasília); passado o prazo, você escolhe outro avaliador.");
-  assert.equal(c.body("Lara"), `Olá Lara, Rui Avalia enviou a proposta para a avaliação de Apto Santa Mônica: ${naTela}. ${aceite}`);
+  assert.equal(c.body("Lara"), `Olá Lara, Rui Avalia enviou a proposta para a avaliação de Apto Santa Mônica: ${naTela}. ${aceite} ${NOTA_DIAS_UTEIS}`);
   assert.equal(c.subject, "Proposta de avaliação recebida: Apto Santa Mônica");
   // O pedido anterior à regra dos dias úteis mantém a promessa que recebeu, como a tela a escreve.
   const antigo = { ...PEDIDO, prazo_proposto_dias: 7, prazo_laudo_dias_uteis: null };
   const cAntigo = corpoVistoria("vistoria_designado_dono", { ...DO_PEDIDO, prazoPropostoDias: 7, prazoLaudoDiasUteis: null });
   assert.ok(cAntigo.body("Lara").includes(`: ${brl(250)} · ${prazoCombinadoNaLinhaDoDono(antigo, null)}. `), cAntigo.body("Lara"));
   assert.equal(prazoCombinadoNaLinhaDoDono(antigo, null), "laudo em 7 dias");
+  // E1192: sem "dias úteis" no corpo, sem nota — o pedido anterior à regra não a leva.
+  assert.ok(!cAntigo.body("Lara").includes(NOTA_DIAS_UTEIS), cAntigo.body("Lara"));
   // Sem o valor (a leitura falhou, ou o modelo sem os fatos): a frase de antes, inteira — nunca "R$ NaN" nem "undefined".
   const sem = corpoVistoria("vistoria_designado_dono", { imovel: IMOVEL, avaliador: "Rui Avalia", propostaEm: PEDIDO.proposta_em });
   assert.equal(sem.body("Lara"), `Olá Lara, Rui Avalia, avaliador credenciado que você escolheu, enviou a proposta de valor e prazo para a avaliação de Apto Santa Mônica. ${aceite}`);
@@ -115,36 +121,36 @@ test("E1188 (2): o aceite diz o prazo do laudo, pela frase da tela do avaliador"
   // A TELA do avaliador, depois do aceite: "Laudo em até 2 dias úteis depois da visita".
   const naTela = linhaDoPrazoDoLaudo("aceito", PEDIDO);
   assert.equal(naTela, "Laudo em até 2 dias úteis depois da visita");
-  assert.equal(c.body("Rui"), `Olá Rui, o proprietário aceitou a sua proposta de avaliação de Apto Santa Mônica. Combinem a data da visita. ${naTela}.`);
+  assert.equal(c.body("Rui"), `Olá Rui, o proprietário aceitou a sua proposta de avaliação de Apto Santa Mônica. Combinem a data da visita. ${naTela}. ${NOTA_DIAS_UTEIS}`);
   // Sem o prazo (o modelo sem os fatos), o e-mail de antes — sem frase pela metade.
   assert.equal(corpoVistoria("vistoria_proposta_aceita", { imovel: IMOVEL }).body("Rui"), "Olá Rui, o proprietário aceitou a sua proposta de avaliação de Apto Santa Mônica. Combinem a data da visita.");
 });
 
 test("E1188 (3): o agendamento diz a data do laudo — a mesma da tela do dono e da tela do avaliador", () => {
   const c = corpoVistoria("vistoria_agendada", { ...DO_PEDIDO, visita: PEDIDO.agendado_para });
-  // A TELA do dono: "Combinado com o avaliador: R$ 250,00 · Laudo até 04/05/2026."
+  // A TELA do dono: "Combinado com o avaliador: R$ 250,00 · Laudo até 05/05/2026."
   const naTelaDoDono = prazoCombinadoNaLinhaDoDono(PEDIDO, PEDIDO.agendado_para);
-  // A TELA do avaliador: "Envie até 04/05/2026 às 10:00, horário de Brasília (2 dias úteis depois da visita)."
+  // A TELA do avaliador: "Envie até 05/05/2026 às 10:00, horário de Brasília (2 dias úteis depois da visita)."
   const naTelaDoAvaliador = prazoDoLaudo(PEDIDO.agendado_para, new Date(PEDIDO.agendado_para), PEDIDO.prazo_laudo_dias_uteis).texto;
   const data = dataBRT(prazoLaudo(PEDIDO.agendado_para, PEDIDO.prazo_laudo_dias_uteis));
   assert.equal(naTelaDoDono, `Laudo até ${data}`);
   assert.ok(naTelaDoAvaliador.startsWith(`Envie até ${data} às 10:00`), naTelaDoAvaliador);
   const laudo = `${naTelaDoDono} (${diasUteis(PEDIDO.prazo_laudo_dias_uteis)} depois da visita)`;
-  assert.equal(c.body("Lara"), `Olá Lara, a visita de avaliação de Apto Santa Mônica está agendada para 30/04/2026 às 10:00 (horário de Brasília). ${laudo}. ${REGRA_DO_REAGENDAMENTO}`);
+  assert.equal(c.body("Lara"), `Olá Lara, a visita de avaliação de Apto Santa Mônica está agendada para 30/04/2026 às 10:00 (horário de Brasília). ${laudo}. ${REGRA_DO_REAGENDAMENTO} ${NOTA_DIAS_UTEIS}`);
   assert.deepEqual(c.linhas, [
     { rotulo: "Imóvel", valor: "Apto Santa Mônica · Santa Mônica, Uberlândia" },
     { rotulo: "Visita", valor: "30/04/2026 às 10:00 (horário de Brasília)" },
     { rotulo: "Laudo", valor: `até ${data} (${diasUteis(PEDIDO.prazo_laudo_dias_uteis)} depois da visita)` },
   ]);
-  // A âncora do exemplo: quinta 30/04 + 2 dias úteis, de segunda a sexta, é segunda 04/05. Não há calendário de
-  // feriados no código: a sexta 01/05 conta como dia útil, na tela e no e-mail. Se um dia houver, muda nos dois.
-  assert.equal(data, "04/05/2026");
+  // A âncora do exemplo (E1192): quinta 30/04 + 2 dias úteis. A sexta 01/05 é feriado nacional e não conta; sábado e
+  // domingo também não. Segunda 04/05 é o 1.º dia útil, terça 05/05 o 2.º — na tela e no e-mail, pela mesma função.
+  assert.equal(data, "05/05/2026");
   // O reagendamento traz a nova data do laudo (e continua a dizer que a data mudou, e qual era).
   const r = corpoVistoria("vistoria_agendada", { ...DO_PEDIDO, visita: NOVA_VISITA, reagendada: true, visitaAnterior: PEDIDO.agendado_para });
   const novaData = dataBRT(prazoLaudo(NOVA_VISITA, PEDIDO.prazo_laudo_dias_uteis));
   assert.equal(prazoCombinadoNaLinhaDoDono(PEDIDO, NOVA_VISITA), `Laudo até ${novaData}`);
   assert.equal(novaData, "07/05/2026");
-  assert.equal(r.body("Lara"), `Olá Lara, a visita de avaliação de Apto Santa Mônica tem nova data: 05/05/2026 às 14:30; antes: 30/04/2026 às 10:00 (horário de Brasília). Laudo até ${novaData} (2 dias úteis depois da visita). ${REGRA_DO_REAGENDAMENTO}`);
+  assert.equal(r.body("Lara"), `Olá Lara, a visita de avaliação de Apto Santa Mônica tem nova data: 05/05/2026 às 14:30; antes: 30/04/2026 às 10:00 (horário de Brasília). Laudo até ${novaData} (2 dias úteis depois da visita). ${REGRA_DO_REAGENDAMENTO} ${NOTA_DIAS_UTEIS}`);
   assert.deepEqual(r.linhas.at(-1), { rotulo: "Laudo", valor: `até ${novaData} (2 dias úteis depois da visita)` });
   // O pedido anterior à regra não tem data de laudo a prometer: o e-mail repete a promessa antiga, sem inventar data.
   const antigo = corpoVistoria("vistoria_agendada", { ...DO_PEDIDO, prazoPropostoDias: 7, prazoLaudoDiasUteis: null, visita: PEDIDO.agendado_para });

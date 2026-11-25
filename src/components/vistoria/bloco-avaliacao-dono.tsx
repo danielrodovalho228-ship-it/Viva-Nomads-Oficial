@@ -18,6 +18,7 @@ import { PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@
 import { TEXTO_MESMO_AVALIADOR, textoDaEspera } from "@/lib/vistoria/espera-de-avaliador";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
 import { prazoCombinadoNaLinhaDoDono } from "@/lib/vistoria/pedido-avaliador";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 import { prazoLaudo } from "@/lib/vistoria/laudo";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, prazoDoAceiteTerminou, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceiteParaODono } from "@/lib/vistoria/relogio-do-pedido";
@@ -231,7 +232,10 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 {sugeridos === null ? (
                   <p className="mt-2 text-red-700" role="alert" data-testid="avaliacao-escolha-falhou">Não foi possível carregar os avaliadores agora. Atualize a página para tentar de novo.</p>
                 ) : sugeridos.length === 0 ? (
-                  <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">{textoDaEspera(atual.motivo_da_espera)}</p>
+                  <>
+                    <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">{textoDaEspera(atual.motivo_da_espera)}</p>
+                    <NotaDiasUteis de={[textoDaEspera(atual.motivo_da_espera)]} />
+                  </>
                 ) : (
                   <ul className="mt-3 grid gap-3">
                     {sugeridos.map((a) => {
@@ -309,6 +313,8 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 <p className="font-semibold text-ink">
                   Proposta do avaliador: {brl(Number(atual.valor_proposto))} · {prazoCombinadoNaLinhaDoDono(atual, null)}
                 </p>
+                {/* E1192: só o prazo novo se diz em dias úteis; o pedido anterior à regra ("laudo em 7 dias") fica sem nota. */}
+                {atual.prazo_laudo_dias_uteis != null && <NotaDiasUteis />}
                 <p className={`mt-1 ${aceiteTerminou ? "text-ink" : "text-muted"}`} data-testid="avaliacao-proposta-prazo" data-terminado={aceiteTerminou ? "1" : "0"}>
                   {textoDoPrazoDeAceiteParaODono(relogioDoAceite)}
                 </p>
@@ -344,6 +350,10 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               <p className="text-ink" data-testid="avaliacao-proposta-aceita">
                 Combinado com o avaliador: {brl(Number(atual.valor_proposto))} · {prazoCombinadoNaLinhaDoDono(atual, visitaComData)}.
               </p>
+            )}
+            {/* E1192: enquanto a visita não tem data, o combinado diz "laudo em até N dias úteis depois da visita" — com a nota. */}
+            {["designado", "agendado", "realizada"].includes(atual.status) && atual.proposta_aceita_em && atual.valor_proposto != null && atual.prazo_laudo_dias_uteis != null && !visitaComData && (
+              <NotaDiasUteis className="text-sm text-muted" />
             )}
             <ol className="grid gap-2" data-testid="avaliacao-linha-tempo">
               {linhaDoTempoPedido({ status: atual.status, numero: atual.avaliadores_credenciamento?.numero_credenciado, agendadoPara: atual.agendado_para, aguardandoAvaliador: atual.aguardando_avaliador }).map((e) => (

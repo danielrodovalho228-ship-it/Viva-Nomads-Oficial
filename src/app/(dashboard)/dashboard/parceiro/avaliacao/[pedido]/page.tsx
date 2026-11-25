@@ -29,6 +29,7 @@ import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, precisaDoAceiteDoDono, re
 import { brl } from "@/lib/fiscal/documento";
 import type { Porte } from "@/lib/vistoria/regras";
 import { ROTULO_TIPO_PEDIDO } from "@/lib/vistoria/rotulos-do-pedido";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 import { DECLARACAO_DE_ASSINATURA_DO_LAUDO, DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
 import { BOTAO_ASSINAR_LAUDO, CARTAO_NIVEL_LAUDO, LINHA_RESUMO_LAUDO, MARCA_NIVEL_LAUDO, MARCA_RESUMO_LAUDO, RESUMO_LAUDO, TEXTO_NIVEL_LAUDO, TITULO_NIVEL_LAUDO } from "@/lib/conta/visual-mockup";
 import { concluirVisita, confirmarCorrecao, dbaGuardadoDaVisita, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
@@ -203,6 +204,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
           <FormAcao acao={concluirVisita} testid="concluir-visita">
             <input type="hidden" name="pedidoId" value={p.id} />
             <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo no prazo combinado: {diasUteis(diasUteisDoLaudo(p.prazo_laudo_dias_uteis as number | null))} depois da visita.</p>
+            <NotaDiasUteis />
             {faltasRoteiro.length > 0 && (
               <p id="concluir-faltas-motivo" className="mt-2 text-sm text-ink" role="status" data-testid="concluir-faltas">{msgRoteiroIncompleto(faltasRoteiro)}</p>
             )}
@@ -222,6 +224,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
                   {prazo.texto}
                 </p>
               )}
+              <NotaDiasUteis de={[prazo?.texto]} />
               <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2" data-testid="laudo-revisao-grupos">
                 {resumo.map((g) => (
                   <li key={g.grupo} className="flex justify-between gap-3 border-b border-line py-1" data-testid="laudo-revisao-grupo" data-nc={g.naoConformes.length}>
