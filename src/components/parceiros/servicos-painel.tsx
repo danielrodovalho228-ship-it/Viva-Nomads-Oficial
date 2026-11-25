@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ClipboardCheck, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { CATEGORIAS_CATALOGO } from "@/lib/parceiros/regras";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
@@ -25,11 +25,7 @@ const ROTULO_NO_CARTAO: Partial<Record<string, string>> = { manutencao: "Reparos
  * o nome e uma frase curta; grade par (2 colunas no celular, 3 no computador); embaixo, a faixa "Como funciona" em 3
  * passos. O destino de cada cartão não mudou.
  */
-/**
- * E1079 (385, tela 4): com `avaliacao`, a grade ganha o cartão "Avaliação do imóvel" (só para o dono com a avaliação
- * aberta; quem decide é avaliacaoNaGrade). Sem foto aprovada da categoria, o ícone no lugar da foto.
- */
-export function ServicosPainel({ cidade, avaliacao }: { cidade?: string | null; avaliacao?: { href: string } | null }) {
+export function ServicosPainel({ cidade }: { cidade?: string | null }) {
   const q = (categoria: string) => `/parceiros/buscar?${new URLSearchParams({ categoria, ...(cidade ? { cidade } : {}) }).toString()}`;
   const lista = CATEGORIAS_CATALOGO.filter((c) => c.valor !== "outro");
   return (
@@ -69,23 +65,6 @@ export function ServicosPainel({ cidade, avaliacao }: { cidade?: string | null; 
             </li>
           );
         })}
-        {avaliacao && (
-          <li>
-            <Link
-              href={avaliacao.href}
-              className="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-white outline-none transition-colors hover:border-forest focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
-              data-testid="servicos-avaliacao"
-            >
-              <span className="flex aspect-[16/10] items-center justify-center bg-surface-2" aria-hidden>
-                <ClipboardCheck className="h-8 w-8 text-forest" />
-              </span>
-              <span className="flex flex-1 flex-col gap-1 p-3">
-                <span className="text-sm font-semibold text-ink group-hover:text-forest">Avaliação do imóvel</span>
-                <span className="text-xs text-muted">Laudo com o nível do imóvel</span>
-              </span>
-            </Link>
-          </li>
-        )}
       </ul>
       <div className="mt-6 border-t border-line pt-4" data-testid="servicos-como-funciona">
         <h3 className="text-sm font-semibold text-ink">Como funciona</h3>

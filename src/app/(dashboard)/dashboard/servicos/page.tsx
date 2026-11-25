@@ -10,7 +10,6 @@ import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { MEUS_PEDIDOS_VAZIO, notaPagamentoServicos } from "@/lib/servicos-morador";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
-import { avaliacaoNaGrade } from "@/lib/vistoria/servico-avaliacao";
 
 export const metadata: Metadata = {
   title: "Serviços",
@@ -27,13 +26,13 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
  * O catálogo antigo do morador ficou obsoleto: esta tela não lê mais dele.
  */
 export default async function ServicosPage() {
-  const [cidade, pedidos, avaliacao] = await Promise.all([cidadeDosMeusServicos(), meusPedidosDeServico({ exigir: true }), avaliacaoNaGrade()]);
+  const [cidade, pedidos] = await Promise.all([cidadeDosMeusServicos(), meusPedidosDeServico({ exigir: true })]);
   return (
     <>
       <PageTitle title="Serviços" subtitle={notaPagamentoServicos(PAGAMENTO_PARCEIROS_ATIVO)} />
       {/* E228: o vazio de "Meus pedidos" aponta para este catálogo (#catalogo), na mesma tela. */}
       <div id="catalogo" className="scroll-mt-24">
-        <ServicosPainel cidade={cidade} avaliacao={avaliacao} />
+        <ServicosPainel cidade={cidade} />
       </div>
       <Panel title="Meus pedidos" className="mt-6" data-testid="servicos-pedidos">
         {pedidos.length === 0 ? (

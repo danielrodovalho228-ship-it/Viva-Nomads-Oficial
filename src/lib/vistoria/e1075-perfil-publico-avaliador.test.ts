@@ -51,15 +51,12 @@ test("E1075: a página mostra o perfil do registo — nome, selo, cidade, númer
   assert.match(p, /sb\.rpc\("avaliador_perfil_publico", \{ p_numero: numero \}\)/);
   assert.match(p, /if \(!a && !perfil\) notFound\(\);/);
   assert.match(p, /data-testid="avaliador-perfil-publico"/);
-  // E1079 (asserção alterada): o desenho aprovado (avaliador-perfil-publico-mobile) usa o escudo no selo.
-  assert.match(p, /data-testid="avaliador-selo">\s*<ShieldCheck[^>]*\/>\s*\{SELO_AVALIADOR_SOCIO\}/);
+  assert.match(p, /data-testid="avaliador-selo">\s*<BadgeCheck[^>]*\/>\s*\{SELO_AVALIADOR_SOCIO\}/);
   assert.match(p, /data-testid="avaliador-nome">\{perfil\.nome_publico\}/);
   assert.match(p, /data-testid="avaliador-cidade">\{perfil\.cidade\}/);
   assert.match(p, /data-testid="avaliador-numero">\{perfil\.numero\}/);
   assert.match(p, /data-testid="avaliador-feitas">\{perfil\.avaliacoes_feitas\}/);
-  // E1079 (asserção alterada): o estado vazio honesto passa a ser o cartão "Novo na Viva" do desenho aprovado.
-  assert.match(p, /novoNaViva\(perfil\.avaliacoes_feitas, nota\)/);
-  assert.match(p, /data-testid="avaliador-novo"/);
+  assert.match(p, /"Ainda sem avaliações de conduta"/);
   assert.equal(SELO_AVALIADOR_SOCIO, "Avaliador sócio da Viva");
 });
 
