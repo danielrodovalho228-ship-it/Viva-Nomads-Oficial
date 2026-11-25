@@ -10,7 +10,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { podePedirOrcamento, type ContratoDoPedido } from "./pedido-ref.ts";
+import { contratoDoSelo, podePedirOrcamento, type ContratoDoPedido } from "./pedido-ref.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
 const ASSINADO = "2026-11-20T12:00:00Z";
@@ -76,4 +76,31 @@ test("ligação, a listagem: todos os contratos de cada candidatura e o orçamen
   assert.match(corpo, /\.in\("status", ORCAMENTO_ABERTO\)/);
   // O selo do cartão continua a ser o do contrato mais recente.
   assert.match(corpo, /contrato: contratoDoLead\.get\(r\.id\) \?\? null/);
+});
+
+/* ── O selo do cartão (ORDEM-DUET-728): o contrato que manda no selo é o mesmo que conta na regra ─────────────────── */
+test("selo: entre os contratos que contam (não cancelados), manda o mais recente — não o último que a consulta devolve", () => {
+  const antigo = { id: "c-antigo", status: "ativo", created_at: "2026-10-01T10:00:00Z" };
+  const novo = { id: "c-novo", status: "ativo", created_at: "2026-11-20T10:00:00Z" };
+  assert.equal(contratoDoSelo([novo, antigo])?.id, "c-novo");
+  assert.equal(contratoDoSelo([antigo, novo])?.id, "c-novo", "a ordem da consulta não decide");
+});
+
+test("selo: o cancelado não manda enquanto houver um contrato que conta, mesmo sendo o mais recente", () => {
+  const valido = { id: "c-valido", status: "ativo", created_at: "2026-10-01T10:00:00Z" };
+  const cancelado = { id: "c-cancelado", status: "cancelado", created_at: "2026-11-25T10:00:00Z" };
+  assert.equal(contratoDoSelo([cancelado, valido])?.id, "c-valido");
+});
+
+test("selo: só cancelados → o mais recente deles (o cartão não perde o selo); nenhum → sem selo", () => {
+  const c1 = { id: "c1", status: "cancelado", created_at: "2026-10-01T10:00:00Z" };
+  const c2 = { id: "c2", status: "cancelado", created_at: "2026-11-01T10:00:00Z" };
+  assert.equal(contratoDoSelo([c1, c2])?.id, "c2");
+  assert.equal(contratoDoSelo([]), null);
+});
+
+test("ligação: a listagem escolhe o contrato do selo pela regra e lê a data de criação", () => {
+  const leads = ler("src/lib/data/leads-actions.ts");
+  assert.match(leads, /\.select\(`id, lead_id, created_at, \$\{COLUNAS_ESTADO_CONTRATO\}`\)/);
+  assert.match(leads, /contratoDoSelo\(/);
 });
