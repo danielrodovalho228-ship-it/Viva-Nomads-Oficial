@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { register } from "node:module";
 import { test } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
+import { PRAZO_DONO_ACEITAR_HORAS } from "../../lib/vistoria/prazos.ts";
 
 register("./render-harness/loader.mjs", import.meta.url);
 
@@ -108,11 +109,16 @@ test("E1096: 'Identidade verificada pela Viva' no cartão só de quem tem a iden
 });
 
 // ── E1100 (ORDEM-DUET-465): a troca de avaliador com a proposta viva ──────────────────────────────────────────────
+// A proposta "viva" é a que ainda cabe no prazo do aceite do dono (PRAZO_DONO_ACEITAR_HORAS). A data era fixa
+// (22/11/2026 12:00Z) e a trava passou a falhar em 25/11/2026 12:00Z, quando esse prazo venceu no relógio de verdade: o
+// bloco lê a hora atual, e o botão "Aceitar valor e prazo" sai, como deve (E1147). A data passa a ser relativa.
+const HORA = 3_600_000;
+const HA_UMA_HORA = new Date(Date.now() - HORA).toISOString();
 const COM_PROPOSTA: Linhas = {
   status: "designado",
   valor_proposto: 380,
   prazo_proposto_dias: 5,
-  proposta_em: "2026-11-22T12:00:00Z",
+  proposta_em: HA_UMA_HORA,
   avaliadores_credenciamento: { numero_credenciado: "UDI-002", prazo_resposta_horas: 24 },
 };
 
@@ -126,6 +132,13 @@ test("E1100: com a proposta viva, o bloco entrega à confirmação o que se perd
   assert.match(r.html, /<button>Aceitar valor e prazo<\/button>/);
 });
 
+test("E1100: a proposta com o prazo do aceite vencido já não tem o botão de aceitar (é por isso que a data da trava é relativa)", async () => {
+  const vencida = await renderizar({ chave: true, isTeste: false, pedido: { ...COM_PROPOSTA, proposta_em: new Date(Date.now() - (PRAZO_DONO_ACEITAR_HORAS + 1) * HORA).toISOString() }, outros: 2 });
+  assert.doesNotMatch(vencida.html, /<button>Aceitar valor e prazo<\/button>/);
+  const viva = await renderizar({ chave: true, isTeste: false, pedido: { ...COM_PROPOSTA, proposta_em: new Date(Date.now() - (PRAZO_DONO_ACEITAR_HORAS - 1) * HORA).toISOString() }, outros: 2 });
+  assert.match(viva.html, /<button>Aceitar valor e prazo<\/button>/);
+});
+
 test("E1100: um só avaliador na cidade — o aviso de que o pedido fica aguardando vem antes do clique", async () => {
   const r = await renderizar({ chave: true, isTeste: false, pedido: COM_PROPOSTA, outros: 0 });
   assert.match(r.html, /data-testid="troca-harness" data-pedido="ped1" data-sem-outro="1"/);
@@ -136,7 +149,7 @@ test("E1100: sem proposta viva não há troca (aguardando a resposta do avaliado
   const semProposta = await renderizar({ chave: true, isTeste: false, pedido: { ...COM_PROPOSTA, valor_proposto: null, prazo_proposto_dias: null, proposta_em: null }, outros: 2 });
   assert.equal(semProposta.outrosChamado, false);
   assert.doesNotMatch(semProposta.html, /troca-harness/);
-  const aceita = await renderizar({ chave: true, isTeste: false, pedido: { ...COM_PROPOSTA, proposta_aceita_em: "2026-11-22T13:00:00Z" }, outros: 2 });
+  const aceita = await renderizar({ chave: true, isTeste: false, pedido: { ...COM_PROPOSTA, proposta_aceita_em: new Date().toISOString() }, outros: 2 });
   assert.equal(aceita.outrosChamado, false);
   assert.doesNotMatch(aceita.html, /troca-harness/);
 });
