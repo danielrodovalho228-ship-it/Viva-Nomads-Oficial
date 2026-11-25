@@ -5,7 +5,6 @@ import { BellRing, Loader2 } from "lucide-react";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
 import { avisarFotografoNaCidade } from "@/lib/fotografos/aviso-actions";
 import { CONVITE_AVISO, TEXTO_AVISO_DESLOGADO, linkEntrarParaAvisar } from "@/lib/fotografos/aviso";
-import { textoApoioAviso } from "@/lib/parceiros/regras";
 
 /**
  * Busca sem fotógrafo na cidade (QA do Muse, 18/10): sempre há uma saída — "avise-me quando houver" (gravado por
@@ -22,7 +21,6 @@ export function AvisoFotografo({
   ladoALado = false,
   opcoesUf,
   pedirCidade = false,
-  semCategoria = false,
 }: {
   cidade: string;
   uf: string;
@@ -39,8 +37,6 @@ export function AvisoFotografo({
   opcoesUf?: readonly string[];
   /** E304: busca só por categoria (sem cidade) — a pessoa diz a cidade no próprio cartão. */
   pedirCidade?: boolean;
-  /** E915: busca em "Todas" (sem categoria escolhida) — a frase não fala em "desta categoria". */
-  semCategoria?: boolean;
 }) {
   const [enviando, setEnviando] = useState(false);
   const [cidadeLocal, setCidadeLocal] = useState(cidade);
@@ -81,11 +77,11 @@ export function AvisoFotografo({
           <p className="flex items-center gap-2 font-semibold text-ink">
             <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> Quero ser avisado
           </p>
-          <p className="mt-1 text-sm text-muted" data-testid="aviso-fotografo-apoio">{textoApoioAviso(semCategoria)}</p>
+          <p className="mt-1 text-sm text-muted">Avisamos você quando houver um parceiro desta categoria na sua cidade.</p>
         </>
       ) : (
         <p className="flex items-center gap-2 font-semibold text-ink">
-          <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> {categoria === "fotografia" ? CONVITE_AVISO : textoApoioAviso(semCategoria)}
+          <BellRing className="size-5 shrink-0 text-forest" aria-hidden /> {categoria === "fotografia" ? CONVITE_AVISO : "Avisamos você quando houver um parceiro desta categoria na sua cidade."}
         </p>
       )}
       {enviando && !msg && autoAvisar && (

@@ -13,10 +13,7 @@ const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
 
 test("404: logo e link de anunciar com alvo de 44 px; destaques em grade par no tablet", () => {
   const src = ler("./not-found.tsx");
-  // E916 (asserção alterada): a 404 deixou o logo próprio e usa o cabeçalho padrão (Navbar), o mesmo de todas as páginas
-  // públicas — o alvo do logo passa a ser o do Navbar. Os demais alvos da 404 seguem travados abaixo.
-  assert.match(src, /<Navbar \/>/);
-  assert.doesNotMatch(src, /<Logo /);
+  assert.match(src, /<Logo href="\/" className="alvo-toque" \/>/);
   assert.match(src, /className="alvo-toque mt-12 text-sm text-muted hover:text-blue-500"\n\s*data-testid="nao-encontrada-anunciar"/);
   assert.match(src, /sm:grid-cols-2 sm:max-lg:\[&>:nth-child\(3\)\]:hidden lg:grid-cols-3/);
 });

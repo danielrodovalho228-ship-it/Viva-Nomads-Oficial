@@ -10,7 +10,7 @@ import { CartaoParceiro } from "@/components/parceiros/cartao-parceiro";
 import { BuscaVazia } from "@/components/parceiros/busca-vazia";
 import { buscarParceiros, lerParceiroGeralServidor } from "@/lib/data/parceiros-publico";
 import { ROTULO_FILTRO_NOTA } from "@/lib/parceiros/fiscal";
-import { CATEGORIAS_CATALOGO, avisoCategoriaInexistente, categoriaInexistente, categoriaValida, rotuloCategoria } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, categoriaValida, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarCep } from "@/lib/fotografos/regras";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { BannerTopo } from "@/components/institucional/banner-topo";
@@ -32,9 +32,6 @@ const campo = "mt-1 h-11 w-full rounded-lg border border-sage-200 bg-white px-3 
 export default async function BuscarParceirosPage({ searchParams }: { searchParams: Promise<{ categoria?: string; cidade?: string; uf?: string; cep?: string; avisar?: string; imovel?: string; descricao?: string; nota?: string }> }) {
   const sp = await searchParams;
   const categoria = sp.categoria && categoriaValida(sp.categoria) ? sp.categoria : "";
-  // E915: categoria fora do catálogo (ex.: ?categoria=piscina) não cai calada em "Todas": a página avisa que ela não
-  // existe e o "Quero ser avisado" não se arma para ela.
-  const inexistente = categoriaInexistente(sp.categoria);
   const soNota = sp.nota === "1";
   const r = await buscarParceiros({ categoria, cidade: sp.cidade, uf: sp.uf, cep: sp.cep, soNota });
   const supabase = await createClient();
@@ -81,12 +78,6 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
           Seja parceiro da Viva
         </Link>
       </p>
-
-      {inexistente && (
-        <p role="status" className="mt-6 rounded-xl border border-line bg-white p-4 text-sm text-ink" data-testid="busca-parceiros-categoria-inexistente">
-          {avisoCategoriaInexistente(sp.categoria ?? "")}
-        </p>
-      )}
 
       {/* E286: a faixa de categorias navega no cliente e o React reaproveita os campos (defaultValue não muda campo já
           montado) — o seletor ficava em "Todas" com a categoria aberta. A key remonta o formulário a cada busca. */}
@@ -158,7 +149,6 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
         ) : (
           <BuscaVazia
             categoria={categoria}
-            categoriaInexistente={inexistente}
             cidade={r.cidade}
             uf={r.uf}
             logado={!!user}

@@ -4,19 +4,10 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
-// E931 (asserção alterada): o E95 tirava o botão da /buscar porque, no celular, ele sentava sobre os cartões. Desde o
-// E246 o botão some no celular em TODAS as telas, então o motivo acabou e a /buscar volta a ter o botão (E931/E839).
-// A ajuda da busca continua também como link na página (F3, abaixo).
-test("E931: o botão 'Fale com a Viva' aparece na /buscar e na Central de Ajuda, na posição padrão", () => {
+test("E95: a bolha flutuante da Viva não aparece na /buscar (não cobre os cards; a ajuda fica como link na página)", () => {
   const src = ler("components/ajuda/viva-chat.tsx");
   const linha = src.split("\n").find((l) => l.includes("const ESCONDER")) ?? "";
-  assert.doesNotMatch(linha, /"\/buscar"/);
-  assert.doesNotMatch(linha, /"\/ajuda"[,\]]/);
-  // só a própria página do chat fica sem o botão (lá o chat já está aberto na tela)
-  assert.match(linha, /"\/ajuda\/fale-com-a-viva"/);
-  // posição padrão: nenhuma regra própria da /buscar ou da /ajuda no CSS do flutuante
-  const css = ler("app/globals.css");
-  assert.doesNotMatch(css, /(buscar|ajuda)[^{}]*\.vn-viva-flut/);
+  assert.match(linha, /"\/buscar"/);
 });
 
 test("F3: /buscar mantém a ajuda como link na página", () => {

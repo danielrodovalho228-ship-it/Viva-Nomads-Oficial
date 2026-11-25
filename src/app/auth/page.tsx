@@ -21,7 +21,6 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 import { LoginPorCodigo } from "@/components/auth/login-por-codigo";
-import { MSG_RECUPERACAO_ENVIADA } from "@/lib/seguranca/codigo-acesso";
 import { BotaoApple } from "@/components/auth/botao-apple";
 import { provedoresSociais } from "@/lib/auth/provedores-sociais";
 import { chaveFalhas, exigeCaptchaPorFalhas, lerFalhas, segundosRestantes } from "@/lib/seguranca/tentativas-login";
@@ -221,8 +220,9 @@ export default function AuthPage() {
         const { error } = await supabase.auth.resetPasswordForEmail(email, comCaptcha({ redirectTo: `${SITE_URL}/auth/reset` }, captcha.token));
         if (error) throw error;
       }
-      // E917: a validade real do link (mailer_otp_exp, a mesma do código), no passo pós-envio.
-      setNotice(MSG_RECUPERACAO_ENVIADA);
+      setNotice(
+        "Enviamos um link de recuperação para seu e-mail. Abra-o para definir uma nova senha."
+      );
     } catch (err) {
       setError(friendlyAuthError(err instanceof Error ? err.message : ""));
     } finally {

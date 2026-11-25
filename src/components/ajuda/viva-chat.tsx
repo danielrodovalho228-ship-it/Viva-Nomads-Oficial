@@ -18,7 +18,7 @@ import { buttonClasses } from "@/components/ui/button";
  * logado. Sem dados de conta: quando não resolve, "Falar com uma pessoa" leva ao formulário
  * único da Central (rota HREF_CHAMADO_DO_CHAT), com a conversa anexada. No app ele some (a Ajuda fica em Perfil).
  */
-// Fica fora só onde a própria tela já é o chat (/ajuda/fale-com-a-viva) ou é um fluxo de formulário
+// Fica fora só onde a própria tela já é a ajuda (/ajuda) ou é um fluxo de formulário
 // (login, anúncio, fechamento, segurança — t58) e no admin.
 // "/dashboard/conta/seguranca": cobria "Nova senha"/"Salvar nova senha" e os botões do 2FA a 390 px (t58).
 // "/app/boas-vindas": tela de 100dvh do app; o botão cobria "Quero anunciar" e o respiro do fim da página a fazia rolar (t16).
@@ -26,10 +26,8 @@ import { buttonClasses } from "@/components/ui/button";
 // "Perfil"; nesta tela a Ajuda da Conta já oferece o "Fale com a Viva".
 // "/dashboard/mensagens": a tela já é uma conversa (com a aba Suporte); no computador o botão ficava em cima do
 // "Enviar" da caixa de mensagem e o proprietário não conseguia mandar a resposta (t182).
-// E931 (fecha o resíduo do E839): /buscar e /ajuda voltam a ter o botão, na posição padrão das outras páginas públicas.
-// O motivo do E95 ("/buscar": no celular o botão sentava sobre o título dos cartões) acabou com o E246 — no celular o
-// botão some em todas as telas. Na Central de Ajuda o botão leva ao chat; só a própria página do chat fica sem ele.
-export const ESCONDER = ["/ajuda/fale-com-a-viva", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
+// "/buscar" (E95): no celular o botão sentava sobre o título dos cartões; a ajuda da busca fica como link no fim da lista.
+export const ESCONDER = ["/buscar", "/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
 const CHAVE = CHAVE_CONVERSA_CHAT;
 
 function carregar(): MsgChat[] {

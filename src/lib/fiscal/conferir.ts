@@ -21,29 +21,6 @@ export interface LinhaConferida {
   versao_vigente: number | null;
 }
 
-/**
- * E887 — o que a conferência devolve e a validade do documento, ditos ANTES de conferir (/conferir), no resultado
- * (/conferir/<código>) e na Central de Ajuda. Fonte única: as três telas leem daqui, e a lista bate com os campos de
- * camposExibidos + situacaoDoDocumento (o teste E887 confere).
- */
-export const CONFERENCIA_DEVOLVE = [
-  "o tipo de documento (recibo, contrato, laudo, conferência do imóvel…)",
-  "o número e a versão",
-  "a data de emissão",
-  "a situação: válido, anulado, substituído por uma versão nova ou documento de teste",
-] as const;
-/** As partes: por privacidade, nem nomes nem valores — a pessoa compara com o documento que tem em mãos. */
-export const CONFERENCIA_PARTES =
-  "Por privacidade, a conferência não mostra os nomes das partes nem valores: confira esses dados no documento que você tem em mãos.";
-/** A validade real: o código não vence; vale a situação de hoje (o documento perde a validade se for anulado ou substituído). */
-export const CONFERENCIA_VALIDADE =
-  "Validade: o código não vence. A conferência mostra a situação de hoje: o documento vale enquanto estiver válido e deixa de valer se for anulado ou substituído por uma versão nova.";
-/** Uma frase com a lista, para textos corridos (Ajuda). */
-export function fraseConferenciaDevolve(): string {
-  const l = [...CONFERENCIA_DEVOLVE];
-  return `A conferência mostra ${l.slice(0, -1).join("; ")}; e ${l[l.length - 1]}.`;
-}
-
 /** Código como a pessoa digitou: sem espaços e em minúsculas ("9F3B 82D1…" → "9f3b82d1…"). */
 export function normalizarCodigo(codigo: string): string {
   return codigo.replace(/\s+/g, "").toLowerCase();

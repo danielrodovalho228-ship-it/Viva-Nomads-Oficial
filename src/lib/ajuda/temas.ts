@@ -52,12 +52,12 @@ export const TEMAS_AJUDA: readonly TemaAjuda[] = [
   {
     id: "seguranca",
     titulo: "Segurança e conta",
-    resumo: "Pagamento por fora, conferir documento, código de acesso, senha e exclusão da conta",
+    resumo: "Pagamento por fora, código de acesso, senha e exclusão da conta",
     foto: "/images/painel/painel-verificacao.webp",
     fotoPosicao: "35% 50%",
     alt: "Cartão e celular sobre a mesa",
-    // E907: o artigo da exclusão da conta mora aqui. E887: e o de como conferir um documento.
-    perguntas: ["golpe", "conferir-documento", "email-confirmacao", "senha", "contato", "excluir-conta"],
+    // E907: o artigo da exclusão da conta mora aqui.
+    perguntas: ["golpe", "email-confirmacao", "senha", "contato", "excluir-conta"],
   },
 ] as const;
 

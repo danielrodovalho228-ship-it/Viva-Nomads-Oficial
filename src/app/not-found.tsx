@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Logo } from "@/components/ui/logo";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { NotFoundIllustration } from "@/components/illustrations";
 import { PropertyCard } from "@/components/property-card";
 import { listProperties } from "@/lib/data/properties";
 import { Footer } from "@/components/layout/footer";
-import { Navbar } from "@/components/layout/navbar";
-import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
-import { AvisoTestes } from "@/components/layout/aviso-testes";
-import { PRE_LANCAMENTO } from "@/lib/flags";
 
 // 404: só o noindex do Next (sem canonical nem o robots da raiz).
 export const metadata: Metadata = {
@@ -24,12 +21,12 @@ export default async function NotFound() {
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-2">
-      {/* E916 (re-prova): o cabeçalho padrão do site (Imóveis · Anunciar · Empresas · Parceiros · Entrar), igual às
-          outras páginas públicas — antes só o logo. Com o rodapé e a busca abaixo, a 404 tem a casca completa. */}
-      {PRE_LANCAMENTO && <AvisoTestes />}
-      <Navbar />
+      <header className="container-page py-6">
+        {/* Varredura 02/11: o logo (32 px) ganha alvo de 44 px no toque. */}
+        <Logo href="/" className="alvo-toque" />
+      </header>
 
-      <main id="conteudo" className="container-page flex flex-1 flex-col items-center justify-center py-12 text-center">
+      <main className="container-page flex flex-1 flex-col items-center justify-center py-12 text-center">
         <NotFoundIllustration />
         <p className="mt-8 font-title text-2xl font-semibold text-ink">404</p>
         <h1 className="mt-2 font-title text-2xl font-semibold text-ink">Página não encontrada</h1>
@@ -86,8 +83,6 @@ export default async function NotFound() {
       </main>
       {/* E916: o rodapé padrão do site, como nas outras páginas públicas. */}
       <Footer />
-      {/* Celular: a mesma barra de abas das páginas públicas (o menu de cima fica no botão do Navbar). */}
-      <MobileTabBar world="tenant" />
     </div>
   );
 }
