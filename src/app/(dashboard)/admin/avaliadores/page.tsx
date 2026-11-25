@@ -20,7 +20,6 @@ import { TEXTO_ESPERA_DO_MORADOR, TEXTO_RECUSADO_PELO_MORADOR, TITULO_ESPERA_DO_
 import { AVISO_LISTA_INCOMPLETA, lerSeparandoContasDeTeste } from "@/lib/vistoria/leitura-por-paginas";
 import { RESPOSTA_DO_AVALIADOR, ROTULO_AGUARDANDO_AVALIADOR, TITULO_PEDIDOS_SEM_AVALIADOR, rotuloDoStatus, rotuloDoTipo } from "@/lib/vistoria/rotulos-do-pedido";
 import { ROTULO_FILA } from "@/lib/vistoria/rotulos-da-fila";
-import { identificacaoDoItemDaFila, referenciasDaFila, type DadosDaFila } from "@/lib/vistoria/item-da-fila";
 import { TITULO_LAUDOS_FORA_DO_PRAZO, contagemContestacoes } from "@/lib/vistoria/telas-laudo";
 import { ROTULO_RESULTADO, type Resultado } from "@/lib/vistoria/laudo";
 import { comTesteConcluido, filaDaCidade, nomesDasContas } from "@/lib/vistoria/servidor";
@@ -193,16 +192,7 @@ export default async function AdminAvaliadoresPage() {
       nº {numeroDe.get(r.avaliador_id) ?? "—"} · {r.resposta === "expirada" ? rotuloSemResposta(prazoRespostaDe.get(r.avaliador_id)) : (ROTULO_RESPOSTA[r.resposta] ?? r.resposta)} · {r.vistoria_pedidos?.cidade ?? ""} · {dataBRT(r.respondido_em)}
     </li>
   );
-  const filaRestante = ((fila ?? []) as { id: string; tipo: string; motivo: string | null; criado_em: string; pedido_id: string | null; avaliador_id: string | null }[]).filter((f) => f.tipo !== "sem_avaliador");
-  // E1183: de que imóvel e de que avaliador é cada item — os dados saem do próprio pedido. Leitura que falha lança.
-  const pedidosDaFila = referenciasDaFila(filaRestante).pedidos;
-  const pedidosDaFilaLeitura = pedidosDaFila.length ? await admin.from("vistoria_pedidos").select("id, property_id, avaliador_id").in("id", pedidosDaFila) : { data: [], error: null };
-  if (pedidosDaFilaLeitura.error) throw new Error(`Falha ao ler a rede de avaliadores: ${pedidosDaFilaLeitura.error.message}`);
-  const pedidoDoItem = new Map(((pedidosDaFilaLeitura.data ?? []) as { id: string; property_id: string | null; avaliador_id: string | null }[]).map((p) => [p.id, p]));
-  const imoveisDaFila = [...new Set([...pedidoDoItem.values()].map((p) => p.property_id).filter((x): x is string => !!x))];
-  const titulosDaFilaLeitura = imoveisDaFila.length ? await admin.from("properties").select("id, title").in("id", imoveisDaFila) : { data: [], error: null };
-  if (titulosDaFilaLeitura.error) throw new Error(`Falha ao ler a rede de avaliadores: ${titulosDaFilaLeitura.error.message}`);
-  const dadosDaFila: DadosDaFila = { pedidos: pedidoDoItem, numeros: numeroDe, titulos: new Map(((titulosDaFilaLeitura.data ?? []) as { id: string; title: string | null }[]).map((i) => [i.id, i.title])) };
+  const filaRestante = ((fila ?? []) as { id: string; tipo: string; motivo: string | null; criado_em: string }[]).filter((f) => f.tipo !== "sem_avaliador");
   // E1146: o item "sem avaliador" de cada pedido traz, por avaliador da cidade, a regra que o impede.
   const motivoSemAvaliador = new Map(((fila ?? []) as { tipo: string; motivo: string | null; pedido_id: string | null }[]).filter((f) => f.tipo === "sem_avaliador" && f.pedido_id && f.motivo).map((f) => [f.pedido_id!, f.motivo!]));
   // E77: a mesma regra do número do topo (contagemDecisoes) — em teste já não está "a decidir".
@@ -584,20 +574,16 @@ export default async function AdminAvaliadoresPage() {
           <p className="text-sm text-muted">Nada pendente.</p>
         ) : (
           <ul className="grid gap-2">
-            {filaRestante.map((f) => {
-              const deQuem = identificacaoDoItemDaFila(f, dadosDaFila);
-              return (
+            {filaRestante.map((f) => (
               <li key={f.id} className="rounded-lg border border-line p-3 text-sm" data-testid="fila-item" data-tipo={f.tipo}>
                 <strong className="text-ink">{ROTULO_FILA[f.tipo] ?? f.tipo}</strong>
-                {deQuem && <span className="block text-ink" data-testid="fila-item-de-quem">{deQuem}</span>}
                 {f.motivo && <span className="block text-muted">{f.motivo}</span>}
                 <FormAcaoAdmin soLeitura={soLeitura} acao={adminResolverFila} className="mt-2">
                   <input type="hidden" name="id" value={f.id} />
                   <Button type="submit" variant="secondary" size="sm">Marcar como resolvido</Button>
                 </FormAcaoAdmin>
               </li>
-              );
-            })}
+            ))}
           </ul>
         )}
       </Panel>
