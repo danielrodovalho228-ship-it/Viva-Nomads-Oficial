@@ -287,3 +287,10 @@ test("6. E1196: nos textos que vêm da lib, a nota entra só quando o texto cita
   const candidaturas = readFileSync(join(RAIZ, "app/(dashboard)/dashboard/candidaturas/page.tsx"), "utf8");
   assert.match(candidaturas, /<NotaDiasUteis de=\{\[PROXIMO_PASSO_CANDIDATURA\[c\.situacao\.chave\]!\.agora\]\}/);
 });
+
+test("6. E1196 (ORDEM-DUET-894): o lembrete da pré-aceitação ao dono — o mesmo prazo da tela — fecha com a nota (tela ≡ e-mail)", () => {
+  const servidor = readFileSync(join(RAIZ, "lib/propostas/pre-aceitacao-servidor.ts"), "utf8");
+  assert.match(servidor, /import \{[^}]*\bNOTA_DIAS_UTEIS\b[^}]*\} from "@\/lib\/calendario\/dias-uteis"/);
+  assert.match(servidor, /\$\{linhaDeContexto\("owner", "vigente", textoDoPrazo\(prazo\), null\)\} \$\{NOTA_DIAS_UTEIS\}`/, "a nota logo a seguir à frase do prazo do dono");
+  assert.equal((servidor.match(/NOTA_DIAS_UTEIS\}/g) ?? []).length, 1, "a nota uma vez só, no lembrete do dono");
+});
