@@ -432,7 +432,7 @@ export default async function AdminAvaliadoresPage() {
         </div>
       </Panel>
 
-      <Panel id="contestacoes" title="Contestações, devoluções e prazos do laudo" className="mb-6 scroll-mt-24" data-testid="avaliacoes-contestacoes">
+      <Panel id="contestacoes-ensaio" title="Contestações, devoluções e prazos do laudo" className="mb-6 scroll-mt-24" data-testid="avaliacoes-contestacoes">
         <div className="grid gap-4 text-sm lg:grid-cols-3">
           <div data-testid="contestacoes-abertas">
             <h3 className="font-semibold text-ink">Contestações abertas</h3>
