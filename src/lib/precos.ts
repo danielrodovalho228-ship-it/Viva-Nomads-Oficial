@@ -194,16 +194,6 @@ export const ROTULO_MENSAL = "Mensal";
 export const ROTULO_TOTAL_MES = "Total por mês (com contas)";
 export const ROTULO_TOTAL_CONTRATO = "Total do contrato";
 /**
-  E899 (Daniel, 13/11): o aviso curto que fecha a linha do total no cartão de imóvel ("R$ Y em N meses · tudo incluído").
-  Os dois textos existem SÓ aqui. "tudo incluído" vale apenas com as contas fixas (elas entram no total do mês); com as contas
-  medidas, o "/mês" não inclui água, luz e gás, e o cartão diz isso. Nunca os dois, nunca nenhum.
-*/
-export const AVISO_TUDO_INCLUIDO = "tudo incluído";
-export const AVISO_CONTAS_A_PARTE = "água, luz e gás à parte";
-export function avisoCurtoDoTotal(p: Pick<CamposTotalMes, "utilitiesMode">): string {
-  return p.utilitiesMode === "fixed" ? AVISO_TUDO_INCLUIDO : AVISO_CONTAS_A_PARTE;
-}
-/**
   E251 (d): o anúncio ainda não tem contrato. Na prévia do Passo 10 e no cartão de Meus anúncios, o total do período
   se chama "Estadia mínima (N meses)", com a mesma conta; "Total do contrato" fica só onde há contrato de verdade.
 */

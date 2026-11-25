@@ -114,13 +114,9 @@ test("o cartão abre o /mês pela fonte única: cada anúncio mostra as parcelas
   }
 });
 
-// E899 (Daniel, 13/11, uso real): o cartão tinha texto demais. As duas composições SAÍRAM do cartão da busca e são desenhadas na
-// página do imóvel, perto do preço, pelas mesmas funções (composicaoDoMes e a conta de estadiaDoImovel). Antes: o cartão desenhava
-// cartao-mes-composicao e cartao-total-composicao.
-test("E899: a composição do mês e a do total da estadia são desenhadas na página do imóvel, não no cartão da busca", () => {
+test("o cartão da busca desenha a composição do mês e a do total da estadia", () => {
   const card = ler("src/components/property-card.tsx");
-  assert.doesNotMatch(card, /cartao-mes-composicao|cartao-total-composicao|composicaoDoMes/);
-  const lateral = ler("src/components/property/price-card.tsx");
-  assert.match(lateral, /data-testid="cartao-lateral-mes-composicao"[^>]*>\s*\{composicaoDoMes\(property\)\}/);
-  assert.match(lateral, /<FormulaDoTotal conta=\{estadia\.conta\} testid="cartao-lateral-estadia-conta" \/>/);
+  assert.match(card, /data-testid="cartao-mes-composicao"/);
+  assert.match(card, /composicaoDoMes\(property\)/);
+  assert.match(card, /data-testid="cartao-total-composicao"/);
 });

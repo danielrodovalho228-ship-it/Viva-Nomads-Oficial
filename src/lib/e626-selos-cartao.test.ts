@@ -87,9 +87,7 @@ test("E416: a vitrine (PropertyCard) e Meus anúncios usam a mesma fileira", () 
   }
   // O nível e o "Aceita negociação" saem do texto do cartão (viraram selo): nada repetido.
   assert.doesNotMatch(cartao, /seloDoCartao\(/);
-  // E899: o filtro do nível mora em modeloDoCartao, de onde o cartão tira a síntese (antes: dentro do componente).
-  assert.match(cartao, /modeloDoCartao\(property, periodMonths\)/);
-  assert.match(readFileSync(new URL("./cartao-modelo.ts", import.meta.url), "utf8"), /\.filter\(\(i\) => i\.chave !== "nivel"\)/);
+  assert.match(cartao, /\.filter\(\(i\) => i\.chave !== "nivel"\)/);
 });
 
 test("E416: a página pública do proprietário lê a negociação (o selo aparece também ali)", () => {

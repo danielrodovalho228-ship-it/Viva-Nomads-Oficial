@@ -73,6 +73,9 @@ export function estadiaDoCartao(r: RotuloPreco): string {
   return r.estadia ?? resumoEmMeses(r.total, 1);
 }
 
+/** E356: o rótulo que diz o que o preço grande do cartão é. */
+export const ROTULO_TOTAL_MES = "Total por mês, tudo incluído";
+
 /**
  * E702: a data "Disponível a partir de" da página do imóvel é CALCULADA (primeira entrada em que cabe a estadia mínima,
  * olhando os períodos ocupados). Quando ela difere da data do cadastro, o cartão diz de onde vem; quando é a mesma, nada.

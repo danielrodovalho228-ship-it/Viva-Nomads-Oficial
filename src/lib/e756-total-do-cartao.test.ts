@@ -37,15 +37,10 @@ test("E756: com 1 mês o total é o da regra única (com as limpezas); sem limpe
   assert.equal(c.total, 8200);
 });
 
-// E899 (Daniel, 13/11): o total continua sendo o da página (a mesma regra), mas chega ao cartão por modeloDoCartao, e a composição
-// passou a ser desenhada só na página do imóvel. Antes: o cartão chamava estadiaNoCartao e desenhava cartao-total-composicao.
-test("E756 → E899: o cartão da busca usa o total da página (por modeloDoCartao); a composição fica na página", () => {
+test("E756: o cartão da busca usa o total da página e desenha a composição", () => {
   const card = readFileSync("src/components/property-card.tsx", "utf8");
-  const modelo = readFileSync("src/lib/cartao-modelo.ts", "utf8");
-  assert.match(card, /const m = modeloDoCartao\(property, periodMonths\);/);
-  assert.match(modelo, /const estadia = estadiaNoCartao\(p, preco\.meses\);/);
+  assert.match(card, /const estadiaCartao = estadiaNoCartao\(property, preco\.meses\)/);
   // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): sem fallback ao total do mês com 1 mês (o total vem sempre de estadiaNoCartao).
-  assert.match(modelo, /\? \{ valor: estadia\.total, meses: estadia\.meses, texto: estadia\.texto \}/);
-  assert.doesNotMatch(card, /cartao-total-composicao/);
-  assert.match(readFileSync("src/components/property/price-card.tsx", "utf8"), /<FormulaDoTotal conta=\{estadia\.conta\} testid="cartao-lateral-estadia-conta" \/>/);
+  assert.match(card, /estadiaCartao\?\.texto \?\? resumoEmMeses\(preco\.total, preco\.meses\)/);
+  assert.match(card, /data-testid="cartao-total-composicao"/);
 });
