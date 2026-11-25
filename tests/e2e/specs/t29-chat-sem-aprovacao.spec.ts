@@ -26,6 +26,8 @@ test.describe("T29 — Chat sem falsas aprovações", () => {
       expect(erroCartao).toBeNull();
       try {
         const { count: antes } = await adm.from("agentes_ordens").select("id", { count: "exact", head: true });
+        // ENSAIO E1193: a carga da suíte — outro teste cria uma ordem no meio (só no ramo de ensaio).
+        await adm.from("agentes_ordens").insert({ agente_slug: "renato", texto: "ENSAIO E1193: ordem de outro teste", origem_slug: "viva" });
         await page.goto("/admin/agentes", { waitUntil: "networkidle" });
         await page.getByRole("tab", { name: "Conversar" }).click();
         await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: new RegExp(nome) }).click();
