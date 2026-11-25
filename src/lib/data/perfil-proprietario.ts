@@ -9,6 +9,9 @@ import { relacaoAceitaEntreServidor } from "@/lib/data/avatar-url";
 import { metricaResposta, nomeCompleto, nomeCurto, selosReais, type MetricaResposta } from "@/lib/perfil/perfil-publico";
 import { nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 import { contarImoveisPublicosDoDono } from "@/lib/data/properties";
+import { cartaoContaAnunciosDeTeste } from "@/lib/perfil/contagem-cartao-dono";
+import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
+import { textoDoSeloDeIdentidade } from "@/lib/anuncio/dono-verificado";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -28,6 +31,8 @@ export interface PerfilProprietario {
   resposta: MetricaResposta | null;
   reputacao: Reputacao;
   selos: string[];
+  /** E1105/E1106: o texto da fonte única (estadoIdentidade) quando a identidade do dono está confirmada ou conferida pela equipa; senão null (sem selo). */
+  identidadeConfirmada?: string | null;
 }
 
 type Linha = {
@@ -58,16 +63,19 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
     const l = ((data as Linha[] | null) ?? [])[0];
     if (error || !l) return null;
     // Reputação pelo cliente do servidor (sem cookies): a página do imóvel é estática e quebraria ao ler a sessão.
-    const [fotoUrl, notas, fones, perfil, imoveisPublicos] = await Promise.all([
+    const [fotoUrl, notas, fones, perfil] = await Promise.all([
       signAvatarPath(l.avatar_url, donoId),
       admin.from("avaliacoes").select("nota_geral").eq("alvo_id", donoId).eq("status", "publicada"),
       admin.rpc("telefones_verificados", { p_ids: [donoId] }),
       // E427 (01/11): o nome abreviado sai do nome completo pela MESMA regra da visita (nomeCurto). O nome_curto do banco
       // usava a inicial do último pedaço mesmo sendo número ("Daniel 1."); só o resultado abreviado sai daqui.
-      admin.from("profiles").select("full_name").eq("id", donoId).maybeSingle(),
-      // E631: o número do cartão é o que a página pública do proprietário lista (mesma consulta, mesmo filtro de vitrine).
-      contarImoveisPublicosDoDono(donoId),
+      admin.from("profiles").select("full_name, is_teste").eq("id", donoId).maybeSingle(),
     ]);
+    // E631: o número do cartão é o que a página pública do proprietário lista (mesma consulta, mesmo filtro de vitrine).
+    // E1048: dono conta de teste → a vitrine tiraria todos os anúncios dele; o cartão conta os ativos dele.
+    const imoveisPublicos = cartaoContaAnunciosDeTeste(perfil.data as { is_teste?: boolean | null } | null)
+      ? await contarImoveisPublicosDoDono(donoId, { incluirTeste: true })
+      : await contarImoveisPublicosDoDono(donoId);
     // Selo do telefone (0150): sem a função (ainda não aplicada) ou com erro, simplesmente não aparece.
     const telefoneVerificado = !fones.error && ((fones.data ?? []) as { verificado: boolean }[]).some((f) => f.verificado);
     const ns = ((notas.data ?? []) as { nota_geral: number }[]).map((r) => Number(r.nota_geral));
@@ -90,6 +98,8 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
       selos: selosReais({ emailConfirmado: l.email_confirmado, telefoneVerificado, linkedinConectado: (await linkedinConectados([donoId], undefined, { publico: true })).has(donoId),
         vinculoDominio: (await vinculosConfirmados([donoId])).get(donoId) ?? null,
       }),
+      // E1105/E1106: leitura que falha = indisponivel → sem selo de identidade (nunca afirmar o que não se conferiu).
+      identidadeConfirmada: textoDoSeloDeIdentidade(await estadoIdentidade(admin, donoId).catch(() => null)),
     };
   } catch {
     return null;

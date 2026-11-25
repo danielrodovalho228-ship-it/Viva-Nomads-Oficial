@@ -1,6 +1,7 @@
 import { separarAdiadas } from "@/lib/mensagens-filtros";
 import { listMyProperties } from "@/lib/data/properties";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioExigido } from "@/lib/supabase/usuario-da-leitura";
 import { contarInteressados } from "@/lib/painel/kpi-interessados";
 import { listarPropostas } from "@/lib/data/propostas-actions";
 import { listMinhasCandidaturas } from "@/lib/data/leads-actions";
@@ -26,6 +27,7 @@ import { cartoesDeHoje } from "@/lib/painel/hoje-dono";
 import { hojeEmBrasilia } from "@/lib/checkin";
 import { listarBuscasSalvas } from "@/lib/data/buscas-salvas-actions";
 import { avisoInicioSemLeitura, type FonteDoInicio } from "@/lib/painel/sem-leitura";
+import { RelerInicio } from "@/components/painel/reler-inicio";
 import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { BOTAO_PARCERIA_APROVADA, HREF_ATIVAR_PARCERIA, TEXTO_PARCERIA_APROVADA, situacaoParceiro } from "@/lib/parceiros/situacao-conta";
 import { ButtonLink } from "@/components/ui/button";
@@ -39,9 +41,7 @@ async function interessadosDoDono(): Promise<{ atual: number; anterior: number }
   // Achado nº 24 (rodada 2): a falha de leitura lança — o Início avisa em vez de contar 0 interessados.
   const supabase = await createClient();
   if (!supabase) return { atual: 0, anterior: 0 };
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioExigido(supabase);
   if (!user) return { atual: 0, anterior: 0 };
   const desde = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase
@@ -69,9 +69,7 @@ async function cidadeDoPerfil(): Promise<string | null> {
 async function contaPausadaEm(): Promise<string | null> {
   const supabase = await createClient();
   if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioExigido(supabase);
   if (!user) return null;
   // Achado 132: a falha LANÇA (entra no aviso do topo); nunca "conta ativa" por engano.
   const { data, error } = await supabase.from("profiles").select("pausada_em").eq("id", user.id).maybeSingle();
@@ -223,6 +221,8 @@ export async function InicioDados() {
       fotoAnuncio: capaAnuncio,
       // E218-A: o guia de ativação do dono (some na ativação, como sempre) — fonte única dos passos do bloco.
       checklist: checklists.find((c) => c.papel === "proprietario") ?? null,
+      // E1093: o bloco não afirma o que não foi lido (as decisões do dono saem de propostas, estadias e pendências).
+      naoLido: { imoveis: semLeitura.includes("imoveis"), decisoes: (["propostas", "estadias", "decisoes"] as const).some((f) => semLeitura.includes(f)) },
     }),
     hoje,
   };
@@ -250,6 +250,8 @@ export async function InicioDados() {
           {avisoInicioSemLeitura(semLeitura)}
         </p>
       )}
+      {/* E1093: com leitura falhada, o Início pede a si mesmo uma carga nova, uma vez (as secções voltam sozinhas). */}
+      {semLeitura.length > 0 && <RelerInicio />}
       <VisaoGeral
       imoveisDono={imoveisDono}
       interessados={interessados}

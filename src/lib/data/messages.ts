@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { ordenarPorAtividade } from "@/lib/mensagens/ordem";
 import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { vinculosConfirmados } from "@/lib/vinculo/servidor";
@@ -118,9 +119,7 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
   const supabase = await createClient();
   if (!supabase) return SAMPLE_CONVERSATIONS;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
 
   const colunas = (comLeitura: boolean) =>

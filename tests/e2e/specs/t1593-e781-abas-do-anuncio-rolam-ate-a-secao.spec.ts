@@ -38,7 +38,11 @@ test.describe("T1593 — E781: abas do anúncio rolam até a seção (390px, toq
       for (const m of [m1!, m2!]) {
         const folga = m.topo - m.baseAbas;
         expect(folga, `${id}: a seção fica logo abaixo das abas (folga ${Math.round(folga)}px)`).toBeGreaterThanOrEqual(-4);
-        expect(folga, `${id}: a seção não fica longe das abas (folga ${Math.round(folga)}px)`).toBeLessThanOrEqual(32);
+        // ORDEM-DUET-836 (trava oca): o salto nativo do #hash, sem a cura, para a 25 px das abas (scroll-margin-top 144px)
+        // e a tolerância de 32 px aceitava-o (sonda: com a cura 8 px, sem ela 25 px, nas 5 seções depois da primeira).
+        // A regra é a base das abas + 8 px: até 16 px. A 1.ª seção já nasce encostada às abas (24 px com e sem a cura).
+        const teto = id === ids[0] ? 32 : 16;
+        expect(folga, `${id}: a seção para na regra — a base das abas + 8 px (folga ${Math.round(folga)}px, teto ${teto}px)`).toBeLessThanOrEqual(teto);
       }
       expect(Math.abs(m1!.topo - m2!.topo), `${id}: a seção não anda depois de assentar`).toBeLessThanOrEqual(3);
       expect(new URL(page.url()).hash, `${id}: o #hash é o da aba`).toBe(`#${id}`);

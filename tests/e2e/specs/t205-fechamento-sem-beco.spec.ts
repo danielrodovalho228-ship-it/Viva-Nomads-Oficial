@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
+import { abrirPortaoDaIdentidade } from "../fixtures/fechamento-identidade";
 
 /*
   T205 — Prompt 24 (QA do Muse, 18/10): "Gerar contrato" virou beco sem saída na conta de teste.
@@ -36,7 +37,7 @@ async function abrir(page: Page, rota: string) {
 async function ateContrato(page: Page) {
   await abrir(page, `/dashboard/fechamento?c=${ids.lead}`);
   await expect(page.getByRole("heading", { name: "Candidatura e verificação" })).toBeVisible({ timeout: 20_000 });
-  await page.getByRole("button", { name: /verificar identidade/i }).click();
+  await abrirPortaoDaIdentidade(page);
   const continuar = page.getByRole("button", { name: /continuar/i });
   await expect(continuar).toBeEnabled({ timeout: 20_000 });
   await continuar.click();

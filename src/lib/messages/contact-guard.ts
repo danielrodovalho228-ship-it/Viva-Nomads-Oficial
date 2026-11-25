@@ -22,6 +22,13 @@ const MASK_DOC = "[documento protegido]";
  * "MG-12.345.678" ou o rótulo "RG"). Dados de documento vão no campo Ocupantes da estadia, nunca no chat.
  */
 const CPF_CANDIDATE_RE = /(?<![\d.-])\d{3}[.\s]?\d{3}[.\s]?\d{3}[-.\s]?\d{2}(?![\d-])/g;
+/**
+ * E1059: CPF/RG no chat é RECUSADO (regra de 15/11), nunca "enviar mesmo assim". Com a FORMA de CPF (000.000.000-00) ou
+ * com o rótulo "CPF", é documento mesmo com DV inválido (número de teste, CPF mal digitado) — antes caía no telefone.
+ * 11 dígitos soltos sem rótulo seguem exigindo DV válido (um celular não é recusado).
+ */
+const CPF_FORMATADO_RE = /(?<![\d.-])\d{3}\.\d{3}\.\d{3}-\d{2}(?![\d-])/g;
+const CPF_ROTULO_RE = /\b(?:CPF|C\.P\.F\.?)\s*(?:n[ºo°]?\.?\s*)?(?:[ée]\s+)?[:\-]?\s*\d{3}[.\s]?\d{3}[.\s]?\d{3}[-.\s]?\d{2}(?!\d)/gi;
 const RG_MASCARA_RE = /(?<![\w.])(?:[A-Z]{2}[-\s]?)?\d{1,2}\.\d{3}\.\d{3}(?:-[\dXx])?(?![\w.])/g;
 const RG_ROTULO_RE = /\b(?:RG|R\.G\.|identidade)\s*(?:n[ºo°]?\.?\s*)?[:\-]?\s*(?:[A-Z]{2}[-\s]?)?[\d.\-xX]{5,15}/gi;
 
@@ -132,6 +139,14 @@ export function guardContactInfo(input: string): GuardResult {
   });
   // Documentos antes do telefone: um CPF de 11 dígitos com DV válido não vira "telefone".
   text = text.replace(RG_ROTULO_RE, () => {
+    documento = masked = true;
+    return MASK_DOC;
+  });
+  text = text.replace(CPF_ROTULO_RE, () => {
+    documento = masked = true;
+    return MASK_DOC;
+  });
+  text = text.replace(CPF_FORMATADO_RE, () => {
     documento = masked = true;
     return MASK_DOC;
   });

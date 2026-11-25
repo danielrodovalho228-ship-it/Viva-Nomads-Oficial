@@ -1,8 +1,11 @@
 "use server";
 
 import { after } from "next/server";
+// E1044: as listas de pagamentos do contrato com ordem fixa (como o admin).
+import { ordenarPagamentos } from "@/lib/pagamentos/ordem-pagamentos";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { emitirDoPagamentoComRegistro } from "@/lib/fiscal/emitir";
 import { listMyProperties } from "@/lib/data/properties";
@@ -284,9 +287,7 @@ const MSG_LOCACOES_NAO_CARREGARAM = "Não foi possível carregar as suas locaç�
 export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Promise<LocacaoView[]> {
   const supabase = await createClient();
   if (!supabase) return [];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
 
   const { data, error } = await supabase
@@ -311,7 +312,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
   const minhasAvaliacoes = await avaliacoesMinhasPorContrato(supabase, user.id, linhas.map((c) => String(c.id)));
   return linhas.map((c) => {
     const prop = (c.properties as { title?: string; owner_id?: string } | null)?.title ? (c.properties as { title?: string; owner_id?: string }) : (doServidor.get(String(c.property_id)) ?? {});
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
     const estado = estadoDaLinha(c, "inquilino");
     return {
       id: String(c.id),
@@ -398,7 +399,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
     const blocos = ((c.contrato_blocos as Record<string, unknown>[]) ?? [])
       .map(toBloco)
       .sort((a, b) => a.numeroBloco - b.numeroBloco);
-    const pagamentos = ((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
     const estado = estadoDaLinha(c, "proprietario");
     return {
       id: String(c.id),
