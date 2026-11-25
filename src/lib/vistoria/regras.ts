@@ -325,35 +325,6 @@ export function jaDesignadosNoPedido(designacoes: readonly DesignacaoDoPedido[])
   return designacoes.filter((d) => !designacaoQueVolta(d)).map((d) => d.avaliador_id);
 }
 
-/** Por que o pedido volta ao dono. "descartada" (E1146): o dono descartou a proposta do avaliador ("Escolher outro avaliador"). */
-export type MotivoDaDevolucao = "recusada" | "expirada" | "ausencia" | "descartada";
-
-export interface FechoDaDesignacao {
-  resposta: "recusada" | "expirada" | "ausencia";
-  /** A marca do descarte (0360): separa o que foi do DONO da recusa do avaliador. */
-  descartada: boolean;
-}
-
-/**
- * E1146: o que a designação passa a dizer quando o pedido volta ao dono (null = fica como está). A regra que faltava:
- * a designação NUNCA fica "aceita" com o pedido devolvido — era assim que ela e o pedido divergiam (o dono descartava a
- * proposta e o registo continuava a dizer que havia uma proposta aceita pelo avaliador).
- *  • o dono descartou a proposta → "recusada" COM a marca do descarte (sem ela leria como recusa do avaliador);
- *  • o avaliador recusou (mesmo depois de propor) → "recusada";
- *  • o avaliador não respondeu no prazo dele → "expirada" (só a designação ainda sem resposta);
- *  • ausência → "ausencia", sobre qualquer resposta (como sempre).
- * A designação que já terminou (recusada, expirada, ausência) não é reescrita por recusa, expiração ou descarte.
- * A PROPOSTA que vence sem o aceite não passa por aqui: quem a regista é registrarPropostaExpirada (E1142), antes de
- * devolver, com a marca dela — e só ela põe essa marca (trava do E1143).
- */
-export function fechoDaDesignacaoAoDevolver(atual: string | null, motivo: MotivoDaDevolucao): FechoDaDesignacao | null {
-  if (motivo === "ausencia") return { resposta: "ausencia", descartada: false };
-  if (atual !== null && atual !== "aceita") return null;
-  if (motivo === "descartada") return { resposta: "recusada", descartada: true };
-  if (motivo === "expirada") return atual === null ? { resposta: "expirada", descartada: false } : null;
-  return { resposta: "recusada", descartada: false };
-}
-
 export interface HistoricoDesignacao {
   /** Serviços prestados (qualquer, de qualquer tabela) pelo usuário do avaliador ao dono: { userId, ownerId, em }. */
   servicosAoDono: { userId: string; ownerId: string; em: string }[];
@@ -374,34 +345,6 @@ export const ROTULO_IMPEDIMENTO: Record<MotivoImpedimento, string> = {
   nao_ativo: "não está ativo",
   conta_teste: "conta de teste fora do rodízio real",
 };
-
-/** E1146: o avaliador da cidade que a chave em modo piloto deixa fora da escolha (não é regra de independência). */
-export type MotivoForaDaEscolha = MotivoImpedimento | "fora_do_piloto";
-const ROTULO_FORA_DA_ESCOLHA: Record<MotivoForaDaEscolha, string> = { ...ROTULO_IMPEDIMENTO, fora_do_piloto: "não está no piloto da avaliação" };
-
-/** O limite da coluna vistoria_fila_admin.motivo (migração 0215). */
-export const LIMITE_MOTIVO_DA_FILA = 500;
-
-/**
- * E1146: o motivo do item "sem avaliador" da fila do admin. Antes dizia só que não havia ninguém; agora diz, por
- * avaliador da cidade, a regra que o impede NESTE pedido — é o que deixa o admin agir (credenciar outro, rever uma
- * relação) em vez de procurar a causa à mão. Cabe no limite da coluna: o que não couber é contado no fim.
- */
-export function motivoSemAvaliador(cidade: string, impedidos: readonly { numero: string | null; motivo: MotivoForaDaEscolha }[]): string {
-  const base = `Nenhum avaliador disponível para o dono escolher em ${cidade}.`;
-  if (!impedidos.length) return `${base} Nenhum avaliador credenciado atende esta cidade.`;
-  const frases = impedidos.map((i) => `${i.numero ? `Avaliador nº ${i.numero}` : "Um avaliador"}: ${ROTULO_FORA_DA_ESCOLHA[i.motivo]}.`);
-  const resto = (n: number) => (n === 1 ? "E mais 1 impedido." : `E mais ${n} impedidos.`);
-  let texto = base;
-  for (let k = 0; k < frases.length; k++) {
-    const faltam = frases.length - k - 1;
-    const comEsta = `${texto} ${frases[k]}`;
-    // Só entra a frase que ainda deixa lugar para dizer quantos ficaram por dizer.
-    if (comEsta.length + (faltam ? resto(faltam).length + 1 : 0) > LIMITE_MOTIVO_DA_FILA) return `${texto} ${resto(frases.length - k)}`;
-    texto = comEsta;
-  }
-  return texto;
-}
 
 /** O mês médio do calendário, em dias (365,25 / 12). */
 const DIAS_DO_MES_MEDIO = 30.4375;

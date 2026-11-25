@@ -108,7 +108,7 @@ export default async function AdminAvaliadoresPage() {
   const atrasadosLista = ((semLaudo ?? []) as unknown as ({ id: string; cidade: string; visita_concluida_em: string } & ComNumero)[]).filter((x) => laudoAtrasado(x.visita_concluida_em, null, agora));
   const [fila_rodizio, recusasLeitura, perfisLeitura] = await Promise.all([
     filaDaCidade(admin),
-    admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade)").in("resposta", ["recusada", "expirada", "ausencia"]).is("proposta_expirada_em", null).is("proposta_descartada_em", null).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
+    admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade)").in("resposta", ["recusada", "expirada", "ausencia"]).is("proposta_expirada_em", null).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
     admin.from("profiles").select("id").eq("is_teste", true).limit(200),
   ]);
   const [{ data: recusas }, { data: perfisTeste }] = semFalhaDeLeitura([recusasLeitura, perfisLeitura] as const);
@@ -140,8 +140,6 @@ export default async function AdminAvaliadoresPage() {
   const semAvaliador = pedidosLista.filter((x) => x.aguardando_avaliador && x.status === "pedido");
   const recusasLista = (recusas ?? []) as unknown as { id: string; resposta: string; respondido_em: string; avaliador_id: string; vistoria_pedidos: { cidade: string } | null }[];
   const filaRestante = ((fila ?? []) as { id: string; tipo: string; motivo: string | null; criado_em: string }[]).filter((f) => f.tipo !== "sem_avaliador");
-  // E1146: o item "sem avaliador" de cada pedido traz, por avaliador da cidade, a regra que o impede.
-  const motivoSemAvaliador = new Map(((fila ?? []) as { tipo: string; motivo: string | null; pedido_id: string | null }[]).filter((f) => f.tipo === "sem_avaliador" && f.pedido_id && f.motivo).map((f) => [f.pedido_id!, f.motivo!]));
   // E77: a mesma regra do número do topo (contagemDecisoes) — em teste já não está "a decidir".
   const aDecidir = lista.filter((c) => credenciamentoADecidir(c.status));
   const naRede = lista.filter((c) => !credenciamentoADecidir(c.status));
@@ -320,9 +318,8 @@ export default async function AdminAvaliadoresPage() {
         ) : (
           <ul className="grid gap-1 text-sm">
             {semAvaliador.map((x) => (
-              <li key={x.id} data-testid="sem-avaliador-item" data-pedido={x.id}>
+              <li key={x.id} data-testid="sem-avaliador-item">
                 {x.cidade} · {x.tipo} · desde {dataBRT(x.criado_em)}
-                {motivoSemAvaliador.get(x.id) && <span className="block text-muted" data-testid="sem-avaliador-motivo">{motivoSemAvaliador.get(x.id)}</span>}
               </li>
             ))}
           </ul>

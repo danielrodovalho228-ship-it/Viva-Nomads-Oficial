@@ -14,13 +14,10 @@ import { nomeDoAvaliador } from "./nome-do-avaliador";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import {
   COLUNAS_PRECO,
-  atendeCidade,
   designacaoVencida,
-  fechoDaDesignacaoAoDevolver,
   jaDesignadosNoPedido,
   linhaDaTabela,
   linhasDaCidade,
-  motivoSemAvaliador,
   notaConduta,
   sorteadoParaAuditoria,
   visitaAmanha,
@@ -28,8 +25,6 @@ import {
   type DesignacaoDoPedido,
   type HistoricoDesignacao,
   type LinhaPreco,
-  type MotivoDaDevolucao,
-  type MotivoForaDaEscolha,
   type PedidoParaDesignar,
   type StatusCredenciamento,
   type TipoPedido,
@@ -263,8 +258,7 @@ type LinhaPedido = {
   origem_pedido_id: string | null;
 };
 
-/** foraDoPiloto (E1146): os avaliadores da cidade que a chave em modo piloto deixou fora desta escolha. */
-type LeituraEscolha = { p: LinhaPedido; sugestoes: Sugestoes; foraDoPiloto: AvaliadorFila[] };
+type LeituraEscolha = { p: LinhaPedido; sugestoes: Sugestoes };
 
 /** Lê o pedido, a fila e o histórico e devolve os sugeridos. Qualquer leitura que falha LANÇA (nunca vira "ninguém elegível"). */
 async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date, statusAceitos: readonly string[] = ["pedido"]): Promise<LeituraEscolha | null> {
@@ -298,26 +292,7 @@ async function leituraDaEscolha(admin: Admin, pedidoId: string, agora: Date, sta
     // E1143: fica fora quem recusou, não respondeu, faltou ou está designado agora; quem só teve a proposta vencida volta.
     jaDesignados: jaDesignadosNoPedido((jaLeitura.data ?? []) as DesignacaoDoPedido[]),
   };
-  const naEscolha = new Set(fila.map((a) => a.id));
-  const foraDoPiloto = filaToda.filter((a) => !naEscolha.has(a.id) && atendeCidade(a.cidade, p.cidade));
-  return { p, sugestoes: sugerirAvaliadores(fila, pedido, historico, agora), foraDoPiloto };
-}
-
-/**
- * E1146: o motivo do item "sem avaliador" — por avaliador da cidade, a regra que o impede neste pedido. O número do
- * credenciado é só para o admin ler; se a leitura dele falhar, o motivo sai sem os números (nunca trava a escolha).
- * A ordem é a do número, para o texto não mudar de um tique para o outro sem nada ter mudado.
- */
-async function motivoDoItemSemAvaliador(admin: Admin, l: LeituraEscolha): Promise<string> {
-  const fora: { id: string; motivo: MotivoForaDaEscolha }[] = [...l.sugestoes.impedidos, ...l.foraDoPiloto.map((a) => ({ id: a.id, motivo: "fora_do_piloto" as const }))];
-  const numeros = new Map<string, string>();
-  if (fora.length) {
-    const { data } = await admin.from("avaliadores_credenciamento").select("id, numero_credenciado").in("id", fora.map((f) => f.id));
-    for (const c of (data ?? []) as { id: string; numero_credenciado: string | null }[]) if (c.numero_credenciado) numeros.set(c.id, c.numero_credenciado);
-  }
-  const lista = fora.map((f) => ({ numero: numeros.get(f.id) ?? null, motivo: f.motivo, id: f.id }));
-  lista.sort((x, y) => (x.numero ?? "~").localeCompare(y.numero ?? "~") || x.id.localeCompare(y.id));
-  return motivoSemAvaliador(l.p.cidade, lista);
+  return { p, sugestoes: sugerirAvaliadores(fila, pedido, historico, agora) };
 }
 
 /**
@@ -338,13 +313,7 @@ export async function abrirEscolha(admin: Admin, pedidoId: string, agora = new D
   const quando = agora.toISOString();
   if (!l.sugestoes.sugeridos.length) {
     await admin.from("vistoria_pedidos").update({ aguardando_avaliador: true, atualizado_em: quando }).eq("id", l.p.id);
-    // E1146: o item diz a regra que impede cada avaliador. Há um item aberto por pedido (índice único): o que já
-    // estava aberto com o texto antigo, ou com outro impedimento, é atualizado em vez de se tentar inserir outro.
-    const motivo = await motivoDoItemSemAvaliador(admin, l);
-    const { data: abertos } = await admin.from("vistoria_fila_admin").select("id, motivo").eq("tipo", "sem_avaliador").eq("pedido_id", l.p.id).is("resolvido_em", null).limit(1);
-    const aberto = ((abertos ?? []) as { id: string; motivo: string | null }[])[0];
-    if (!aberto) await naFilaDoAdmin(admin, "sem_avaliador", { pedidoId: l.p.id }, motivo);
-    else if (aberto.motivo !== motivo) await admin.from("vistoria_fila_admin").update({ motivo }).eq("id", aberto.id);
+    await naFilaDoAdmin(admin, "sem_avaliador", { pedidoId: l.p.id }, `Nenhum avaliador disponível para o dono escolher em ${l.p.cidade}.`);
     await avisarAdmins(admin, "vistoria_sem_avaliador");
     return 0;
   }
@@ -433,21 +402,15 @@ export async function registrarRespostaDoAvaliador(admin: Admin, pedidoId: strin
 }
 
 /**
- * Recusa, silêncio de 24 h, ausência do avaliador ou proposta descartada pelo dono: fecha a escolha e DEVOLVE o pedido ao
+ * Recusa, silêncio de 24 h, ausência do avaliador ou proposta recusada pelo dono: fecha a escolha e DEVOLVE o pedido ao
  * dono para escolher outro (a Viva não passa ao "próximo da fila"). Ausência confere os critérios públicos (revisão
  * humana; nada de suspensão automática).
- * E1146: a designação deixa de ficar "aceita" com o pedido devolvido (fechoDaDesignacaoAoDevolver). O descarte do dono
- * grava "recusada" com a marca proposta_descartada_em (0360); a hora da resposta do avaliador (a da proposta) fica.
  */
-export async function devolverAoDono(admin: Admin, pedidoId: string, avaliadorId: string, motivo: MotivoDaDevolucao, agora = new Date()): Promise<void> {
+export async function devolverAoDono(admin: Admin, pedidoId: string, avaliadorId: string, resposta: "recusada" | "expirada" | "ausencia", agora = new Date()): Promise<void> {
   const quando = agora.toISOString();
-  const { data: linha } = await admin.from("vistoria_designacoes").select("id, resposta").eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId).maybeSingle();
-  const designacao = linha as { id: string; resposta: string | null } | null;
-  const fecho = designacao ? fechoDaDesignacaoAoDevolver(designacao.resposta, motivo) : null;
-  if (designacao && fecho) {
-    // No descarte, a hora da resposta do avaliador (a da proposta) fica; nos outros casos a resposta é de agora.
-    const quandoFoi = fecho.descartada ? { proposta_descartada_em: quando } : { respondido_em: quando };
-    await admin.from("vistoria_designacoes").update({ resposta: fecho.resposta, ...quandoFoi }).eq("id", designacao.id);
+  await admin.from("vistoria_designacoes").update({ resposta, respondido_em: quando }).eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId).is("resposta", null);
+  if (resposta === "ausencia") {
+    await admin.from("vistoria_designacoes").update({ resposta: "ausencia", respondido_em: quando }).eq("pedido_id", pedidoId).eq("avaliador_id", avaliadorId);
   }
   await admin
     .from("vistoria_pedidos")
@@ -456,7 +419,7 @@ export async function devolverAoDono(admin: Admin, pedidoId: string, avaliadorId
   // E1128: o pedido voltou ao dono sem data — os avisos da visita que estava marcada deixam de valer.
   await resolverAvisosDaVisita(admin, pedidoId);
   await abrirEscolha(admin, pedidoId, agora);
-  if (motivo === "ausencia") await revisarCriterios(admin, avaliadorId, agora);
+  if (resposta === "ausencia") await revisarCriterios(admin, avaliadorId, agora);
 }
 
 /**

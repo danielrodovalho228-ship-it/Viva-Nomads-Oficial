@@ -81,9 +81,6 @@ export function fimDoPrazoDeAceite(propostaEm: string | null): string | null {
 /** E1142: como a lista do avaliador chama a designação cuja proposta venceu sem o aceite (não é "sem resposta" dele). */
 export const ROTULO_PROPOSTA_EXPIRADA = "Proposta expirada sem o aceite do proprietário";
 
-/** E1146: como a lista do avaliador chama a designação cuja proposta o dono descartou (não é "Você recusou"). */
-export const ROTULO_PROPOSTA_DESCARTADA = "Proposta recusada pelo proprietário";
-
 /**
  * E1142: o que o dono lê junto do botão quando tenta aceitar fora do prazo. Texto aprovado na ORDEM-DUET-623: não diz
  * "escolha outro avaliador", que seria mentira numa cidade com um avaliador só; é a mesma frase que o avaliador lê.
