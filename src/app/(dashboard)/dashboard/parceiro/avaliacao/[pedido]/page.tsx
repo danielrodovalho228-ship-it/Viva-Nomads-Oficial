@@ -22,7 +22,7 @@ import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO, linhaNivelSustentado } from "@/lib/vistoria/nivel-do-laudo";
 import { FAIXA_VISITA_DE_TESTE, RECUSA_ANTES_DO_DIA, dbaNoCampo, faltasDoRoteiro, liberadaSoPorTeste, linhaDbaGuardado, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento, visitaLiberada, type EstadoDaVisita } from "@/lib/vistoria/visita-avaliador";
-import { etapaDoPedido, identificacaoDoImovel, linhaDoPorte, linhaDoPrazoDoLaudo, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
+import { etapaDoPedido, identificacaoDoImovel, linhaDoPorte, linhaDoPrazoDoLaudo, linhaDoValor, localDoPedido, propostaCombinada } from "@/lib/vistoria/pedido-avaliador";
 import { PRAZO_LAUDO_MAX_DIAS_UTEIS, diasUteis, diasUteisDoLaudo } from "@/lib/vistoria/prazos";
 import { TEXTO_RECUSA_PARA_O_AVALIADOR, concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
@@ -56,7 +56,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/parceiro/avaliacao/${pedido}`)}`);
   const { data: p } = await admin
     .from("vistoria_pedidos")
-    .select("id, property_id, status, tipo, teste, ocupado, agendado_para, concordancia_pedida_em, concordancia_em, visita_concluida_em, prazo_laudo_dias_uteis, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
+    .select("id, property_id, status, tipo, teste, ocupado, agendado_para, concordancia_pedida_em, concordancia_em, visita_concluida_em, valor_tabela, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, escolhido_em, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
     .eq("id", pedido)
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
@@ -123,6 +123,16 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
 
   // E1108: a tela da visita e do laudo também diz de que imóvel é (título do anúncio e código VN).
   const { data: imovelDaVisita } = await admin.from("properties").select("title").eq("id", p.property_id).maybeSingle();
+  // E1108 (ORDEM-DUET-787): a proposta que o avaliador submeteu continua à vista depois de marcada a visita — as mesmas
+  // duas linhas da etapa "aceito", das mesmas colunas que a linha da lista lê.
+  const combinado = propostaCombinada({
+    valor_tabela: p.valor_tabela as number | string,
+    valor_proposto: p.valor_proposto as number | string | null,
+    prazo_proposto_dias: p.prazo_proposto_dias as number | null,
+    prazo_laudo_dias_uteis: p.prazo_laudo_dias_uteis as number | null,
+    teste: p.teste === true,
+    escolhido_em: p.escolhido_em as string | null,
+  });
   const [{ data: itens }, { data: laudos }, { data: fotos }] = await Promise.all([
     admin.from("vistoria_checklist").select("chave, valor, observacao").eq("pedido_id", p.id),
     admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinado_em, assinatura_hash, nivel_sustentado").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
@@ -265,6 +275,12 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     <>
       <PageTitle title={agendada ? tituloDaVisita(emAndamento) : naEtapaDoLaudo ? TITULO_LAUDO : "Checklist da avaliação"} subtitle={naEtapaDoLaudo ? [tipoRotulo, SUBTITULO_LAUDO].filter(Boolean).join(" · ") : tipoRotulo} />
       <IdentificacaoDoImovel texto={identificacaoDoImovel((imovelDaVisita as { title?: string | null } | null)?.title, p.property_id as string)} className="mb-2 text-base" />
+      {combinado && (
+        <p className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink" data-testid="proposta-combinada">
+          <span data-testid="proposta-combinada-valor">{combinado.valor}</span>
+          {combinado.prazo && <span data-testid="proposta-combinada-prazo">{combinado.prazo}</span>}
+        </p>
+      )}
       <ButtonLink href="/dashboard/parceiro/avaliacao" variant="ghost" size="sm" className="mb-4">Voltar às avaliações</ButtonLink>
       {p.ocupado && <p className="mb-4 text-sm text-ink">Imóvel ocupado: a visita só acontece com o morador de acordo. Não fotografe pertences nem pessoas.</p>}
 
