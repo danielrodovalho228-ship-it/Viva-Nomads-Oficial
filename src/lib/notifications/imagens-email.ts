@@ -163,7 +163,6 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   vistoria_designada: "novo-interessado",
   vistoria_designado_dono: "transacional",
   vistoria_proposta_expirada: "transacional",
-  vistoria_proposta_expirada_dono: "transacional",
   vistoria_agendada: "visita",
   vistoria_concordancia: "visita",
   vistoria_lembrete: "visita",

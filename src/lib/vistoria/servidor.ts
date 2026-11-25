@@ -554,8 +554,7 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
     // Vem antes de devolver: depois disso o pedido já não guarda a proposta.
     await registrarPropostaExpirada(admin, q.id, q.avaliador_id, fimDoPrazoDeAceite(q.proposta_em) ?? agora.toISOString());
     await devolverAoDono(admin, q.id, q.avaliador_id, "expirada", agora);
-    // E1144: o dono recebe o e-mail próprio da expiração (antes era o genérico "novidade na escolha do avaliador").
-    await avisar(admin, q.owner_id, "vistoria_proposta_expirada_dono", rotaDono(q.property_id), { pedidoId: q.id, propertyId: q.property_id });
+    await avisar(admin, q.owner_id, "vistoria_designado_dono", rotaDono(q.property_id), { pedidoId: q.id, propertyId: q.property_id });
     // E1142 (decisão do Daniel, ORDEM-DUET-622): o avaliador também é avisado — ele contava com uma resposta que não vem.
     await avisar(admin, q.avaliadores_credenciamento?.parceiros?.user_id, "vistoria_proposta_expirada", ROTA_AVALIADOR, { pedidoId: q.id, propertyId: q.property_id });
     expiradas++;
