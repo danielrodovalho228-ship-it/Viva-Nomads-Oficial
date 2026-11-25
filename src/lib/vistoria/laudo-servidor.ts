@@ -35,7 +35,6 @@ import { assinaturaDoLaudo } from "./escolha";
 import { createHash } from "node:crypto";
 import { consequencias, degrauDoProprietario, expiraEm, geraStrike, imovelComStrike, proximaOrdem, strikesParaApagar, type Strike } from "./strikes";
 import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, nomesDasContas, resolverAvisosDaVisita, rotaDono } from "./servidor";
-import { lerGravacaoNaFila, marcarComItemNaFila } from "./gravacao-na-fila";
 import { nomeDoAvaliador, primeiroNomeDoAvaliador } from "./nome-do-avaliador";
 
 /*
@@ -501,12 +500,10 @@ export interface ResumoLaudos {
   avisosExpiracao: number;
   strikesApagados: number;
   devolucoesVencidas: number;
-  /** E1182: gravações na fila da equipe que o banco recusou neste tique (a marca foi desfeita; o próximo tique tenta de novo). */
-  falhasNaFila: number;
 }
 
 export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<ResumoLaudos> {
-  const r: ResumoLaudos = { atrasados: 0, ressalvasVencidas: 0, expirados: 0, avisosExpiracao: 0, strikesApagados: 0, devolucoesVencidas: 0, falhasNaFila: 0 };
+  const r: ResumoLaudos = { atrasados: 0, ressalvasVencidas: 0, expirados: 0, avisosExpiracao: 0, strikesApagados: 0, devolucoesVencidas: 0 };
   const quando = agora.toISOString();
 
   // 1. Laudo fora do prazo combinado (E1156: os dias úteis do pedido, depois da visita): sinal no admin quando vence.
@@ -514,18 +511,9 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
   for (const p of (realizadas ?? []) as { id: string; agendado_para: string | null; visita_concluida_em: string | null; prazo_laudo_dias_uteis: number | null }[]) {
     const visita = p.visita_concluida_em ?? p.agendado_para;
     if (!visita || !laudoAtrasado(visita, null, agora, p.prazo_laudo_dias_uteis)) continue;
-    // E1182: a gravação do item é lida. Se falhar, a marca é desfeita (o tique seguinte tenta de novo), a falha conta
-    // no resumo e ninguém é avisado de um item que não existe.
-    const fim = await marcarComItemNaFila({
-      marcar: () => admin.from("vistoria_pedidos").update({ laudo_atrasado_em: quando }).eq("id", p.id).is("laudo_atrasado_em", null),
-      gravar: async () => lerGravacaoNaFila((await admin.from("vistoria_fila_admin").insert({ tipo: "laudo_atrasado", pedido_id: p.id, motivo: `Laudo não enviado no prazo combinado: ${diasUteis(diasUteisDoLaudo(p.prazo_laudo_dias_uteis))} depois da visita.` })).error, { tipo: "laudo_atrasado", pedidoId: p.id }),
-      desmarcar: () => admin.from("vistoria_pedidos").update({ laudo_atrasado_em: null }).eq("id", p.id).eq("laudo_atrasado_em", quando),
-      avisar: () => avisarAdmins(admin, "vistoria_fila_admin", "laudo_atrasado"),
-    });
-    if (fim === "falhou") {
-      r.falhasNaFila++;
-      continue;
-    }
+    await admin.from("vistoria_pedidos").update({ laudo_atrasado_em: quando }).eq("id", p.id).is("laudo_atrasado_em", null);
+    await admin.from("vistoria_fila_admin").insert({ tipo: "laudo_atrasado", pedido_id: p.id, motivo: `Laudo não enviado no prazo combinado: ${diasUteis(diasUteisDoLaudo(p.prazo_laudo_dias_uteis))} depois da visita.` });
+    await avisarAdmins(admin, "vistoria_fila_admin", "laudo_atrasado");
     r.atrasados++;
   }
 
@@ -551,13 +539,7 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
         continue;
       }
     } else {
-      // E1182: se o item não entra na fila, a ressalva volta a valer para a rotina de amanhã (como com o strike).
-      const gravada = lerGravacaoNaFila((await admin.from("vistoria_fila_admin").insert({ tipo: "ressalva_vencida", pedido_id: l.pedido_versao_id, motivo: `Ressalva não corrigida em ${PRAZO_RESSALVA_DIAS} dias: avaliar abrir verificação.` })).error, { tipo: "ressalva_vencida", pedidoId: l.pedido_versao_id });
-      if (gravada.erro) {
-        await admin.from("vistoria_laudos").update({ ressalva_vencida_em: null }).eq("id", l.id);
-        r.falhasNaFila++;
-        continue;
-      }
+      await admin.from("vistoria_fila_admin").insert({ tipo: "ressalva_vencida", pedido_id: l.pedido_versao_id, motivo: `Ressalva não corrigida em ${PRAZO_RESSALVA_DIAS} dias: avaliar abrir verificação.` });
     }
     await avisar(admin, l.owner_id, "vistoria_ressalva_vencida", rotaDono(l.property_id), { propertyId: l.property_id });
     r.ressalvasVencidas++;
@@ -589,16 +571,9 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
   const { data: devs } = await admin.from("vistoria_devolucoes").select("id, avaliador_id, prazo_ate, recebido_confirmado_em").is("recebido_confirmado_em", null).is("fila_em", null);
   for (const d of (devs ?? []) as { id: string; avaliador_id: string | null; prazo_ate: string; recebido_confirmado_em: string | null }[]) {
     if (!devolucaoVencida(d.prazo_ate, d.recebido_confirmado_em, agora)) continue;
-    const fim = await marcarComItemNaFila({
-      marcar: () => admin.from("vistoria_devolucoes").update({ fila_em: quando }).eq("id", d.id),
-      gravar: async () => lerGravacaoNaFila((await admin.from("vistoria_fila_admin").insert({ tipo: "devolucao_vencida", avaliador_id: d.avaliador_id, motivo: `Devolução da contestação não confirmada em ${PRAZO_DEVOLUCAO_DIAS} dias: proposta de descredenciamento.` })).error, { tipo: "devolucao_vencida", avaliadorId: d.avaliador_id }),
-      desmarcar: () => admin.from("vistoria_devolucoes").update({ fila_em: null }).eq("id", d.id).eq("fila_em", quando),
-      avisar: () => avisarAdmins(admin, "vistoria_fila_admin", "devolucao_vencida"),
-    });
-    if (fim === "falhou") {
-      r.falhasNaFila++;
-      continue;
-    }
+    await admin.from("vistoria_devolucoes").update({ fila_em: quando }).eq("id", d.id);
+    await admin.from("vistoria_fila_admin").insert({ tipo: "devolucao_vencida", avaliador_id: d.avaliador_id, motivo: `Devolução da contestação não confirmada em ${PRAZO_DEVOLUCAO_DIAS} dias: proposta de descredenciamento.` });
+    await avisarAdmins(admin, "vistoria_fila_admin", "devolucao_vencida");
     r.devolucoesVencidas++;
   }
   return r;

@@ -21,11 +21,5 @@ export async function GET(request: Request) {
   const agora = simulada && Number.isFinite(Date.parse(simulada)) ? new Date(simulada) : new Date();
   const resumo = await rotinaVistoria(admin, agora);
   const laudos = await rotinaLaudos(admin, agora);
-  // E1182: gravação na fila da equipe que o banco recusou não fica calada — a rotina responde "ok: false" e diz quantas.
-  return NextResponse.json({
-    ok: laudos.falhasNaFila === 0,
-    agora: agora.toISOString(),
-    ...resumo,
-    laudos,
-  });
+  return NextResponse.json({ ok: true, agora: agora.toISOString(), ...resumo, laudos });
 }
