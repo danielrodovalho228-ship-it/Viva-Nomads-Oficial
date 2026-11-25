@@ -95,7 +95,8 @@ test("E1149: resolvido o item (apareceu avaliador), um novo impedimento é um it
 test("E1149: no servidor, o aviso só sai pelo resultado da fila — e `naFilaDoAdmin` devolve se inseriu", () => {
   const servidor = fonteSemComentarios(readFileSync("src/lib/vistoria/servidor.ts", "utf8"));
   // A função da fila devolve se inseriu (antes devolvia nada, e as duas chamadas em corrida avisavam).
-  assert.match(servidor, /export async function naFilaDoAdmin\([^)]*\): Promise<boolean> \{\s*const \{ error \} = await admin\.from\("vistoria_fila_admin"\)\.insert\(\{[^}]*\}\);\s*return !error;\s*\}/);
+  // E1185 (ORDEM-DUET-799): o erro passa pela leitura do E1182; continua a devolver `true` só se ESTA chamada inseriu.
+  assert.match(servidor, /export async function naFilaDoAdmin\([^)]*\): Promise<boolean> \{\s*const \{ error \} = await admin\.from\("vistoria_fila_admin"\)\.insert\(\{[^}]*\}\);\s*return lerGravacaoNaFila\(error, \{ tipo, pedidoId: ref\.pedidoId, avaliadorId: ref\.avaliadorId \}\)\.inserido;\s*\}/);
   const abrir = servidor.slice(servidor.indexOf("export async function abrirEscolha"), servidor.indexOf("export async function sugeridosDoPedido"));
   assert.match(abrir, /const mudanca = await registrarSemAvaliador\(/);
   // O aviso está atrás do resultado: nunca solto no ramo "sem sugeridos".

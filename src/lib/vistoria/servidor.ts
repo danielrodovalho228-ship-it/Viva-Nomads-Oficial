@@ -17,6 +17,7 @@ import { nomeDoAvaliador } from "./nome-do-avaliador";
 import { LIMPEZA_DA_CONCORDANCIA } from "./concordancia";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { registrarSemAvaliador, type ItemAberto } from "./fila-sem-avaliador";
+import { lerGravacaoNaFila } from "./gravacao-na-fila";
 import {
   COLUNAS_PRECO,
   atendeCidade,
@@ -224,10 +225,12 @@ export async function avisarAdmins(admin: Admin, ev: NotificationEvent, tipoDaFi
  * Item na fila do admin (um aberto por tipo e referência).
  * E1149: devolve se ESTA chamada inseriu. O índice único deixa entrar um só item aberto; quem chega em segundo recebe
  * `false` — e não avisa os admins outra vez.
+ * E1185: a gravação é lida (a leitura do E1182). O banco a recusar o item deixa de ser igual a "já havia um item
+ * aberto": a recusa fica registada no servidor, com o tipo, a referência e a mensagem. O que devolve não muda.
  */
 export async function naFilaDoAdmin(admin: Admin, tipo: "sem_avaliador" | "avaliacao_teste" | "suspensao_automatica" | "proposta_descredenciamento" | "revisao_criterio" | "contestacao_sem_avaliador", ref: { pedidoId?: string; avaliadorId?: string }, motivo: string): Promise<boolean> {
   const { error } = await admin.from("vistoria_fila_admin").insert({ tipo, pedido_id: ref.pedidoId ?? null, avaliador_id: ref.avaliadorId ?? null, motivo });
-  return !error;
+  return lerGravacaoNaFila(error, { tipo, pedidoId: ref.pedidoId, avaliadorId: ref.avaliadorId }).inserido;
 }
 
 type LinhaCred = {
