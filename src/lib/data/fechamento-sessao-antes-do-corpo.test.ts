@@ -17,8 +17,7 @@ test("carregarFechamento checa a sessão antes de validar o leadId", () => {
 test("/api/comissao e /api/contrato delegam a sessão a carregarFechamento antes de usar o corpo", () => {
   for (const rota of ["comissao", "contrato"]) {
     const src = readFileSync(`src/app/api/${rota}/route.ts`, "utf8");
-    // E1141: o corpo leva também a estadia escolhida (`propostaId`), validada dentro de carregarFechamento.
-    const carregar = src.indexOf("carregarFechamento(body.leadId, body.propostaId)");
+    const carregar = src.indexOf("carregarFechamento(body.leadId)");
     const guarda = src.indexOf('if ("error" in f) return', carregar);
     const usaCorpo = src.indexOf("body.termMonths", carregar);
     assert.ok(carregar > 0 && guarda > carregar, `${rota}: guarda ausente`);

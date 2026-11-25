@@ -15,9 +15,8 @@
   R4: primeiro o que espera o dono (por gerar), depois os contratos à espera de assinatura, depois o resto; o mais
       recente primeiro em cada grupo.
   R7: abre o assistente a linha C e a linha A da proposta mais recente da candidatura (é a estadia que o assistente
-      mostra); sem linha A, a linha B mais recente. As outras levam ao contrato ou, sem contrato, ao orçamento.
-  E1141 (2.ª fatia): a linha A de uma estadia ANTERIOR sem contrato abre o assistente DELA (`?c=…&p=<proposta>`); com
-      contrato, leva ao contrato (nunca reabre o assistente). A linha que a página abre sem `?c=` não muda (R5).
+      mostra); sem linha A, a linha B mais recente. As outras levam ao contrato ou, sem contrato, ao orçamento — abrir o
+      assistente de uma estadia anterior é o E1141.
 */
 import type { Periodo } from "../contrato-periodo.ts";
 import { numerosDaLista } from "../contrato-ref.ts";
@@ -67,8 +66,7 @@ export interface ContratoDoFecho {
 }
 
 export type AcaoDoFecho =
-  /** `anterior`: o assistente de uma estadia anterior da candidatura (E1141), com a proposta na URL. */
-  | { tipo: "assistente"; href: string; anterior?: true }
+  | { tipo: "assistente"; href: string }
   | { tipo: "contrato"; href: string }
   | { tipo: "orcamento"; href: string };
 
@@ -102,10 +100,7 @@ export interface FechosDoDono {
 
 interface Rascunho extends Omit<LinhaDoFecho, "acao" | "contrato"> {
   data: string;
-  /** A linha que abre o assistente pela regra de sempre (só a candidatura na URL) — a que a página abre (R5). */
   abreAssistente: boolean;
-  /** E1141: a estadia anterior sem contrato — abre o assistente dela, com a proposta na URL. */
-  abreAssistenteAnterior?: boolean;
 }
 
 const tempo = (s: string | null | undefined): number => {
@@ -165,7 +160,6 @@ export function fechosDoDono(entrada: {
         grupo: grupoDe(ct),
         data: ct ? ct.criadoEm : (p.aceitaEm ?? cand.aceitaEm ?? ""),
         abreAssistente: !cand.preAceiteExpirado && p.id === maisRecente?.id,
-        abreAssistenteAnterior: !cand.preAceiteExpirado && p.id !== maisRecente?.id && !ct,
       });
     }
 
@@ -234,8 +228,8 @@ export function fechosDoDono(entrada: {
   );
 
   const linhas: LinhaDoFecho[] = visiveis.map((rascunho) => {
-    const { abreAssistente, abreAssistenteAnterior } = rascunho;
-    const r: Omit<Rascunho, "data" | "abreAssistente" | "abreAssistenteAnterior"> = {
+    const { abreAssistente } = rascunho;
+    const r: Omit<Rascunho, "data" | "abreAssistente"> = {
       chave: rascunho.chave,
       tipo: rascunho.tipo,
       leadId: rascunho.leadId,
@@ -256,12 +250,6 @@ export function fechosDoDono(entrada: {
             tipo: "assistente",
             href: `/dashboard/fechamento?c=${encodeURIComponent(r.leadId)}`,
           }
-        : abreAssistenteAnterior && r.propostaId
-          ? {
-              tipo: "assistente",
-              href: `/dashboard/fechamento?c=${encodeURIComponent(r.leadId)}&p=${encodeURIComponent(r.propostaId)}`,
-              anterior: true,
-            }
         : r.contratoId
           ? {
               tipo: "contrato",
