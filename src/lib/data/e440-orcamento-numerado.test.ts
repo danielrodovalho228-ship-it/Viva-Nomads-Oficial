@@ -33,11 +33,10 @@ test("linha do contrato: mostra o que existe e some quando não há nenhum núme
 });
 
 test("pedir orçamento: só pedido aceito, sem orçamento aberto e sem contrato; a mensagem cita o número", () => {
-  assert.equal(podePedirOrcamento({ situacao: "aceita", temOrcamentoAberto: false, contratos: [] }), true);
-  assert.equal(podePedirOrcamento({ situacao: "em_analise", temOrcamentoAberto: false, contratos: [] }), false);
-  assert.equal(podePedirOrcamento({ situacao: "aceita", temOrcamentoAberto: true, contratos: [] }), false);
-  // E1088: o contrato só barra enquanto não está assinado pelos dois (a regra inteira mora na e1088-pedir-orcamento).
-  assert.equal(podePedirOrcamento({ situacao: "aceita", temOrcamentoAberto: false, contratos: [{ assinadoProprietarioEm: null, assinadoInquilinoEm: null }] }), false);
+  assert.equal(podePedirOrcamento({ situacao: "aceita", temOrcamentoAberto: false, temContrato: false }), true);
+  assert.equal(podePedirOrcamento({ situacao: "em_analise", temOrcamentoAberto: false, temContrato: false }), false);
+  assert.equal(podePedirOrcamento({ situacao: "aceita", temOrcamentoAberto: true, temContrato: false }), false);
+  assert.equal(podePedirOrcamento({ situacao: "aceita", temOrcamentoAberto: false, temContrato: true }), false);
   assert.match(textoPedirOrcamento("VN-PD-AB12CD34"), /VN-PD-AB12CD34/);
 });
 
@@ -54,7 +53,7 @@ test("ação no servidor: só o próprio morador, falha de leitura bloqueia (nã
 test("telas: candidatura aceita mostra o número e o botão; contrato mostra os números ou o erro de leitura", () => {
   const pagina = ler("../../app/(dashboard)/dashboard/candidaturas/page.tsx");
   assert.match(pagina, /<PedirOrcamento leadId=\{c\.id\}/);
-  assert.match(pagina, /podePedirOrcamento\(\{ situacao: c\.situacao\.chave/);
+  assert.match(pagina, /c\.situacao\.chave === "aceita" && !c\.contrato/);
   const contrato = ler("../../components/contrato/contrato-detalhe.tsx");
   assert.match(contrato, /numerosDoContrato\(c\.id\)/);
   assert.match(contrato, /data-testid="contrato-numeros"/);
