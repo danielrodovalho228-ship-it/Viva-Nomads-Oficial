@@ -23,7 +23,7 @@ import { lerDocumento, temDocumento } from "@/lib/data/documento-servidor";
 import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
-import { PROPOSTA_FORA_DO_FECHAMENTO, preAceiteExpiradoDoLead, propostaDoFechamentoDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
+import { preAceiteExpiradoDoLead, propostaAcordadaDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
 import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel, MSG_DATAS_SEM_CONFERIR } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
@@ -339,13 +339,10 @@ export interface FechamentoContexto {
   identidadePropria?: EstadoIdentidade | null;
   /** E1064: o contrato que esta candidatura já tem (gerado antes), com a situação real — o Fechamento reaberto di-la. */
   contratoExistente?: ContratoDoFechamento | null;
-  /** E1141: a estadia escolhida com `p` (validada); o assistente manda-a ao contrato, ao registro e à taxa. null = sem `p`. */
-  propostaDaUrl?: string | null;
 }
 
 export async function getFechamentoContext(
   leadId?: string,
-  propostaId?: string | null,
 ): Promise<FechamentoContexto | null> {
   const supabase = await createClient();
   if (!supabase) return null;
@@ -391,8 +388,6 @@ export async function getFechamentoContext(
   let contratoExistente: FechamentoContexto["contratoExistente"] = null;
   // Plano e taxa congelados no aceite: só pelo servidor, depois de conferir que a candidatura é deste dono (0177).
   let taxaLead: TaxaDoLead | null = null;
-  // E1141: o `p` que não é uma proposta acordada desta candidatura → "não encontramos esse fechamento".
-  let foraDoFecho = false;
   try {
     const admin = createAdminClient();
     if (admin) {
@@ -404,10 +399,7 @@ export async function getFechamentoContext(
       const janela = periodoDaCandidatura(inicioDesejado, (d?.fim_desejado as string | null) ?? null);
       mesesSugerido = janela?.meses ?? null;
       diasSugerido = janela && diasValidos(janela.dias) ? janela.dias : null;
-      // E1141: a estadia DESTE fecho — a pedida com `p` (validada) ou, sem `p`, a proposta acordada mais recente.
-      const lida = await propostaDoFechamentoDoLead(admin, lead.id as string, propostaId ?? null);
-      if (lida === PROPOSTA_FORA_DO_FECHAMENTO) foraDoFecho = true;
-      const acordada = lida === PROPOSTA_FORA_DO_FECHAMENTO ? null : lida;
+      const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
       if (acordada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada, termos: acordada.termos };
       ocupantesSugerido = (d?.qtd_ocupantes as number | null) ?? null;
       const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
@@ -440,7 +432,6 @@ export async function getFechamentoContext(
   } catch {
     /* mantém o neutro */
   }
-  if (foraDoFecho) return null;
 
   const planoId = (taxaLead?.acceptedPlan ?? "free") as PlanoId;
   // Comissão CONGELADA no aceite; retrocompatível se o snapshot faltar.
@@ -467,6 +458,5 @@ export async function getFechamentoContext(
     identidadeInquilino,
     identidadePropria,
     contratoExistente,
-    propostaDaUrl: propostaId && proposta ? proposta.id : null,
   };
 }
