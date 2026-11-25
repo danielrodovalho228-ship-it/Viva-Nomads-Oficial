@@ -1,5 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import { Check, Minus } from "lucide-react";
 import { SeletorArquivo } from "@/components/ui/seletor-arquivo";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -13,12 +12,10 @@ import { integracoesSimuladas } from "@/lib/integracoes";
 import { PERGUNTAS_RUIDO } from "@/config/niveis";
 import { DELIMITACAO_LAUDO, ROTULO_VALOR, itemChecklist, valoresDoItem, type ValorItem } from "@/config/checklist-avaliacao";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
-import { ROTULO_RESULTADO, itensSemResposta, resultadoAvaliacao, resumoPorGrupo, type Resultado } from "@/lib/vistoria/laudo";
+import { ROTULO_RESULTADO, resultadoAvaliacao, resumoPorGrupo, type Resultado } from "@/lib/vistoria/laudo";
 import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO } from "@/lib/vistoria/nivel-do-laudo";
-import { DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
-import { BOTAO_ASSINAR_LAUDO, CARTAO_NIVEL_LAUDO, LINHA_RESUMO_LAUDO, MARCA_NIVEL_LAUDO, MARCA_RESUMO_LAUDO, RESUMO_LAUDO, TEXTO_NIVEL_LAUDO, TITULO_NIVEL_LAUDO } from "@/lib/conta/visual-mockup";
 import { concluirVisita, confirmarCorrecao, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
 
 export const metadata = { title: "Checklist da avaliação", robots: { index: false, follow: false } };
@@ -82,89 +79,14 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   const visitaEm = (p.visita_concluida_em as string | null) ?? (p.agendado_para as string | null);
   const prazo = p.status === "realizada" && visitaEm ? prazoDoLaudo(visitaEm, new Date()) : null;
 
-  // E1079 (fatia 5): na etapa do laudo (visita concluída, laudo por assinar) a tela é a do desenho — "Laudo da avaliação",
-  // os níveis em cartões, o resumo e "Assinar laudo" — e este bloco vem ANTES do checklist. Durante a visita, vem depois.
-  const naEtapaDoLaudo = p.status === "realizada";
-  const tipoRotulo = p.tipo === "verificacao" ? "Verificação aberta pela Viva" : p.tipo === "contestacao" ? "2ª avaliação (contestação)" : undefined;
-  const resumoLaudo = [linhaFotos(fotosLista.length), linhaChecklist(itensSemResposta(respostasSalvas).length)];
-  const fecho = (
-      <Panel title={p.status === "agendado" ? "Concluir a visita" : undefined} className="mb-6" data-testid="avaliacao-concluir" data-status={p.status}>
-        {p.status === "agendado" ? (
-          <FormAcao acao={concluirVisita} testid="concluir-visita">
-            <input type="hidden" name="pedidoId" value={p.id} />
-            <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo em até 48 horas úteis.</p>
-            <Button type="submit" size="sm" className="mt-2">Concluir a visita</Button>
-          </FormAcao>
-        ) : (
-          <>
-            {/* Item 9: revisão antes de emitir — o resumo por grupo, os não conformes, o resultado e o prazo. */}
-            <div data-testid="laudo-revisao" data-resultado={previsto.resultado}>
-              <p className="text-sm text-ink">
-                Resultado pelo checklist: <span className="font-semibold" data-testid="laudo-revisao-resultado">{ROTULO_RESULTADO[previsto.resultado]}</span>
-              </p>
-              {prazo && (
-                <p className={`mt-1 text-sm ${prazo.vencido ? "font-semibold text-red-700" : "text-muted"}`} data-testid="laudo-prazo">
-                  {prazo.texto}
-                </p>
-              )}
-              <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2" data-testid="laudo-revisao-grupos">
-                {resumo.map((g) => (
-                  <li key={g.grupo} className="flex justify-between gap-3 border-b border-line py-1" data-testid="laudo-revisao-grupo" data-nc={g.naoConformes.length}>
-                    <span className="text-ink">{g.rotulo}</span>
-                    <span className={g.naoConformes.length ? "text-amber-700" : "text-muted"}>{linhaResumoGrupo(g)}</span>
-                  </li>
-                ))}
-              </ul>
-              {previsto.naoConformes.length > 0 && (
-                <div className="mt-3 text-sm" data-testid="laudo-revisao-nc">
-                  <p className="font-semibold text-ink">Não conformes</p>
-                  <ul className="mt-1 list-disc pl-4 text-ink">
-                    {previsto.naoConformes.map((chave) => (
-                      <li key={chave}>
-                        {itemChecklist(chave)?.rotulo ?? chave}
-                        {observacoes.get(chave) ? <span className="text-muted"> · {observacoes.get(chave)}</span> : null}
-                        <span className="text-muted"> · {fotosLista.filter((f) => f.item_chave === chave).length} foto(s)</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <p className="mt-3 text-xs text-muted" data-testid="laudo-delimitacao">{DELIMITACAO_LAUDO}</p>
-            </div>
-            <FormAcao acao={enviarLaudo} className="mt-4" testid="enviar-laudo">
-              <input type="hidden" name="pedidoId" value={p.id} />
-              <p className="text-sm text-muted">Ao enviar, o laudo VIS é emitido e assinado por você, com este resultado. Confira antes: depois de emitido, só a reverificação ou a contestação mudam o laudo.</p>
-              <SeletorNivelLaudo obrigatorio />
-              <ul className={`mt-4 ${RESUMO_LAUDO}`} data-testid="laudo-resumo">
-                {resumoLaudo.map((l) => (
-                  <li key={l.texto} className={LINHA_RESUMO_LAUDO} data-ok={l.ok ? "sim" : "nao"}>
-                    <span className={MARCA_RESUMO_LAUDO[l.ok ? "ok" : "falta"]} aria-hidden>
-                      {l.ok ? <Check className="h-4 w-4" strokeWidth={3} /> : <Minus className="h-4 w-4" strokeWidth={3} />}
-                    </span>
-                    {l.texto}
-                  </li>
-                ))}
-              </ul>
-              <label className="mt-2 flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
-                <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
-                <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
-              </label>
-              <Button type="submit" className={`mt-4 ${BOTAO_ASSINAR_LAUDO}`}>{ROTULO_ASSINAR_LAUDO}</Button>
-            </FormAcao>
-          </>
-        )}
-      </Panel>
-  );
-
   return (
     <>
-      <PageTitle title={naEtapaDoLaudo ? TITULO_LAUDO : "Checklist da avaliação"} subtitle={naEtapaDoLaudo ? [tipoRotulo, SUBTITULO_LAUDO].filter(Boolean).join(" · ") : tipoRotulo} />
+      <PageTitle title="Checklist da avaliação" subtitle={p.tipo === "verificacao" ? "Verificação aberta pela Viva" : p.tipo === "contestacao" ? "2ª avaliação (contestação)" : undefined} />
       <ButtonLink href="/dashboard/parceiro/avaliacao" variant="ghost" size="sm" className="mb-4">Voltar às avaliações</ButtonLink>
       {p.ocupado && <p className="mb-4 text-sm text-ink">Imóvel ocupado: a visita só acontece com o morador de acordo. Não fotografe pertences nem pessoas.</p>}
 
       {emVisita && (
         <>
-          {naEtapaDoLaudo && fecho}
           {/* Item 8: os 9 grupos em passos; a internet e o ruído são medidos no próprio passo. */}
           <Panel title="Itens" className="mb-6">
             <ChecklistAvaliador
@@ -215,7 +137,62 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
             </FormAcao>
           </Panel>
 
-          {!naEtapaDoLaudo && fecho}
+          <Panel title={p.status === "agendado" ? "Concluir a visita" : "Revisar e enviar o laudo"} className="mb-6" data-testid="avaliacao-concluir" data-status={p.status}>
+            {p.status === "agendado" ? (
+              <FormAcao acao={concluirVisita} testid="concluir-visita">
+                <input type="hidden" name="pedidoId" value={p.id} />
+                <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo em até 48 horas úteis.</p>
+                <Button type="submit" size="sm" className="mt-2">Concluir a visita</Button>
+              </FormAcao>
+            ) : (
+              <>
+                {/* Item 9: revisão antes de emitir — o resumo por grupo, os não conformes, o resultado e o prazo. */}
+                <div data-testid="laudo-revisao" data-resultado={previsto.resultado}>
+                  <p className="text-sm text-ink">
+                    Resultado pelo checklist: <span className="font-semibold" data-testid="laudo-revisao-resultado">{ROTULO_RESULTADO[previsto.resultado]}</span>
+                  </p>
+                  {prazo && (
+                    <p className={`mt-1 text-sm ${prazo.vencido ? "font-semibold text-red-700" : "text-muted"}`} data-testid="laudo-prazo">
+                      {prazo.texto}
+                    </p>
+                  )}
+                  <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2" data-testid="laudo-revisao-grupos">
+                    {resumo.map((g) => (
+                      <li key={g.grupo} className="flex justify-between gap-3 border-b border-line py-1" data-testid="laudo-revisao-grupo" data-nc={g.naoConformes.length}>
+                        <span className="text-ink">{g.rotulo}</span>
+                        <span className={g.naoConformes.length ? "text-amber-700" : "text-muted"}>{linhaResumoGrupo(g)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {previsto.naoConformes.length > 0 && (
+                    <div className="mt-3 text-sm" data-testid="laudo-revisao-nc">
+                      <p className="font-semibold text-ink">Não conformes</p>
+                      <ul className="mt-1 list-disc pl-4 text-ink">
+                        {previsto.naoConformes.map((chave) => (
+                          <li key={chave}>
+                            {itemChecklist(chave)?.rotulo ?? chave}
+                            {observacoes.get(chave) ? <span className="text-muted"> · {observacoes.get(chave)}</span> : null}
+                            <span className="text-muted"> · {fotosLista.filter((f) => f.item_chave === chave).length} foto(s)</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <p className="mt-3 text-xs text-muted" data-testid="laudo-delimitacao">{DELIMITACAO_LAUDO}</p>
+                </div>
+                <FormAcao acao={enviarLaudo} className="mt-4" testid="enviar-laudo">
+                  <input type="hidden" name="pedidoId" value={p.id} />
+                  <p className="text-sm text-muted">Ao enviar, o laudo VIS é emitido e assinado por você, com este resultado. Confira antes: depois de emitido, só a reverificação ou a contestação mudam o laudo.</p>
+                  <SeletorNivelLaudo obrigatorio />
+                  <label className="mt-2 flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
+                    <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
+                    <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
+                  </label>
+                  <Button type="submit" size="sm" className="mt-2">Enviar o laudo</Button>
+                </FormAcao>
+              </>
+            )}
+          </Panel>
         </>
       )}
 
@@ -243,7 +220,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
                   </label>
                 );
               })}
-              <SeletorNivelLaudo obrigatorio padrao={laudo.nivel_sustentado} comRotulo />
+              <SeletorNivelLaudo obrigatorio padrao={laudo.nivel_sustentado} />
               <label className="flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
                     <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
                     <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
@@ -261,26 +238,17 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
  * E1083 (ORDEM-DUET-397/399): o nível do imóvel é o que o AVALIADOR escolhe no laudo que assina (Essencial, Conforto ou
  * Premium), pelos critérios públicos e com base nas fotos da visita. A plataforma não calcula o nível do laudo.
  */
-function SeletorNivelLaudo({ obrigatorio, padrao, comRotulo = false }: { obrigatorio: boolean; padrao?: string | null; comRotulo?: boolean }) {
+function SeletorNivelLaudo({ obrigatorio, padrao }: { obrigatorio: boolean; padrao?: string | null }) {
   const inicial = padrao && (NIVEIS as readonly string[]).includes(padrao) ? padrao : "";
-  // E1079 (fatia 5): os três níveis em cartões de escolha, como no desenho. O campo é o mesmo ("nivel", obrigatório).
   return (
-    <fieldset className="mt-3" data-testid="laudo-nivel">
-      <legend className={comRotulo ? "mb-2 text-sm text-ink" : "sr-only"}>{ROTULO_CAMPO_NIVEL}</legend>
-      <div className="grid gap-3">
+    <label className="mt-2 block text-sm text-ink" data-testid="laudo-nivel">
+      {ROTULO_CAMPO_NIVEL}
+      <select name="nivel" defaultValue={inicial} required={obrigatorio} className={campo} data-testid="laudo-nivel-select">
+        <option value="" disabled>Escolha</option>
         {NIVEIS.map((n) => (
-          <label key={n} className={CARTAO_NIVEL_LAUDO} data-testid={`laudo-nivel-${n}`}>
-            <span className="min-w-0">
-              <span className={TITULO_NIVEL_LAUDO}>{ROTULO_NIVEL_LAUDO[n]}</span>
-              <span className={TEXTO_NIVEL_LAUDO}>{DESCRICAO_NIVEL_LAUDO[n]}</span>
-            </span>
-            <input type="radio" name="nivel" value={n} defaultChecked={inicial === n} required={obrigatorio} className="sr-only" />
-            <span className={MARCA_NIVEL_LAUDO} aria-hidden>
-              <Check className="h-6 w-6" strokeWidth={3} />
-            </span>
-          </label>
+          <option key={n} value={n}>{ROTULO_NIVEL_LAUDO[n]}</option>
         ))}
-      </div>
-    </fieldset>
+      </select>
+    </label>
   );
 }
