@@ -443,7 +443,6 @@ export async function listProperties(opcoes: { incluirTeste?: boolean } = {}): P
     await attachPetsRegras(supabase, mapped); // porte máximo de pet, para o filtro da busca (0119; best-effort)
     await attachInternet(supabase, mapped); // internet informada e medida, para o filtro da busca (Prompt 57 fase 2; best-effort)
     await attachNivel(supabase, mapped); // nível Essencial/Conforto/Premium, para o filtro "a partir de" (59.1; best-effort)
-    await attachRuido(supabase, mapped); // filtros pacote 1: "Ambiente silencioso" (best-effort)
     await attachBloqueios(supabase, mapped); // datas bloqueadas (do dono e importadas), para a data de entrada da busca (Prompt 53)
     await attachNegociacao(supabase, mapped); // "Aceita negociação": selo do cartão e filtro da busca (E439; best-effort)
     // E574/E579: dono PJ que declarou emitir nota fiscal da locação (filtro da busca; best-effort). O dono sai das linhas.
@@ -487,7 +486,6 @@ export async function listPropertiesDoProprietario(donoId: string): Promise<Prop
     // vinham só na vitrine (listProperties); na página pública do proprietário, o mesmo anúncio saía sem eles.
     await attachPrecoJusto(supabase, mapped);
     await attachNivel(supabase, mapped);
-    await attachRuido(supabase, mapped);
     // E416 (05/11): o selo "Aceita negociação" também no cartão da página pública do proprietário.
     await attachNegociacao(supabase, mapped);
     return mapped;
@@ -795,28 +793,6 @@ async function attachNivel(supabase: SupabaseLike, list: Property[]): Promise<vo
   }
 }
 
-/**
- * Filtros pacote 1 ("Ambiente silencioso"): a classe de ruído declarada (imovel_nivel.ruido_classe) e as janelas de
- * isolamento acústico (imovel_ruido). Duas consultas para a lista inteira. Best-effort: falha = sem classe/isolamento,
- * e o filtro não acha ninguém (quem não declarou não entra).
- */
-async function attachRuido(supabase: SupabaseLike, list: Property[]): Promise<void> {
-  if (list.length === 0) return;
-  try {
-    const ids = list.map((p) => p.id);
-    const { data: classes } = await supabase.from("imovel_nivel").select("property_id, ruido_classe").in("property_id", ids);
-    const { data: ruido } = await supabase.from("imovel_ruido").select("property_id, isolamento_acustico").in("property_id", ids);
-    const classe = new Map(((classes as { property_id: string; ruido_classe: Property["ruidoClasse"] }[] | null) ?? []).map((r) => [r.property_id, r.ruido_classe]));
-    const isolado = new Set(((ruido as { property_id: string; isolamento_acustico: boolean | null }[] | null) ?? []).filter((r) => r.isolamento_acustico === true).map((r) => r.property_id));
-    for (const p of list) {
-      p.ruidoClasse = classe.get(p.id) ?? p.ruidoClasse ?? null;
-      p.isolamentoAcustico = isolado.has(p.id) || p.isolamentoAcustico === true;
-    }
-  } catch {
-    /* sem as tabelas: ninguém tem ruído declarado */
-  }
-}
-
 /** Prompt 53: datas bloqueadas de hoje em diante (manuais e importadas), para a busca tirar o imóvel nessas datas. */
 async function attachBloqueios(supabase: SupabaseLike, list: Property[]): Promise<void> {
   if (list.length === 0) return;
@@ -922,7 +898,7 @@ export async function listMyProperties(opcoes: { exigir?: boolean } = {}): Promi
   // E416 (retrabalho, 01/11): o nível (Essencial/Conforto/Premium) — Meus anúncios lê ESTA função; o #2064 tinha posto o
   // nível só em listPropertiesDoProprietario, e o cartão daqui nunca recebia o dado.
   // E416 (05/11): os selos da foto também em Meus anúncios — Preço justo e Aceita negociação (antes só o nível).
-  await Promise.all([attachCoverPhotos(supabase, lista), attachNivel(supabase, lista), attachRuido(supabase, lista), attachPrecoJusto(supabase, lista), attachNegociacao(supabase, lista)]);
+  await Promise.all([attachCoverPhotos(supabase, lista), attachNivel(supabase, lista), attachPrecoJusto(supabase, lista), attachNegociacao(supabase, lista)]);
   // E308 (causa raiz, 01/11): foto cujo arquivo já saiu do bucket não vira capa quebrada no card (rascunho ou anúncio).
   const existentes = await arquivosDoDono(createAdminClient(), user.id);
   for (const p of lista) if (p.photos?.length) p.photos = soFotosExistentes(p.photos, existentes);
