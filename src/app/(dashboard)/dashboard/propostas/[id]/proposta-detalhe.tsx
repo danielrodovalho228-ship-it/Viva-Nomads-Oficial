@@ -40,6 +40,7 @@ import { TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { listaDePropostasDoPapel } from "@/lib/propostas/lista-do-papel";
 import { estadiaDaProposta } from "@/lib/propostas/estadia-da-proposta";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 
 /** PROP-2: o preço da versão pela fonte única (rótulos e conta aberta). */
 const precoDaVersao = (v: VersaoView) => precoDaProposta({ ...v.termos, valorMensal: v.totais.valorMensal });
@@ -507,7 +508,11 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                   <p data-testid="pre-aceitacao-perdeu">{p.papel === "owner" ? TEXTO_PERDEU_A_VEZ_DONO : TEXTO_PERDEU_A_VEZ}</p>
                 )}
                 {p.preAceitacao.contexto && !p.preAceitacao.encerrada && (
-                  <p data-testid="pre-aceitacao-contexto">{p.preAceitacao.contexto}</p>
+                  <>
+                    <p data-testid="pre-aceitacao-contexto">{p.preAceitacao.contexto}</p>
+                    {/* E1196: "Seu prazo de 1 dia útil…" vem com a nota do calendário único; os outros contextos ficam sem ela. */}
+                    <NotaDiasUteis de={[p.preAceitacao.contexto]} />
+                  </>
                 )}
                 <p data-testid="pre-aceitacao-corrida">{p.preAceitacao.regraCorrida}</p>
                 <p data-testid="pre-aceitacao-sem-punicao">{p.preAceitacao.semPunicao}</p>
