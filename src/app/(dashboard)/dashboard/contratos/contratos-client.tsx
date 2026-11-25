@@ -1,6 +1,6 @@
 "use client";
 
-import { duracaoDoBloco, rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
+import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { estadoCaucao } from "@/lib/caucao-estado";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { CampoData } from "@/components/ui/campo-data";
@@ -438,8 +438,7 @@ function BlocoRow({
           <div className="text-sm">
             <p className="font-medium text-ink">
               Bloco {bloco.numeroBloco}{" "}
-              {/* E1067: a duração pelos dias reais do bloco ("31 dias"), não pelos meses de referência. */}
-              <span className="font-normal text-muted" data-testid="bloco-duracao">({duracaoDoBloco({ numero: bloco.numeroBloco, meses: bloco.meses, inicio: bloco.inicio, fim: bloco.fim }).curto})</span>
+              <span className="font-normal text-muted">({bloco.meses}m)</span>
             </p>
             <p className="text-xs text-muted">
               {formatDate(bloco.inicio)} → {formatDate(bloco.fim)}
