@@ -20,6 +20,7 @@ import type { MotivoVerificacao } from "./strikes";
 import { lerNivelDoLaudo } from "./nivel-do-laudo";
 import { type EstadoDaVisita, faltasDoRoteiro, msgRoteiroIncompleto, recusaDaVisita, roteiroDaVisita } from "./visita-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
+import { ESTADOS_EM_VISITA, MSG_DESLIGADA, MSG_SEM_ACESSO, mensagemDaFalha, recusaDaMedicao, recusaDoLaudo, type FalhaDoAvaliador } from "./motivo-da-acao";
 
 /*
   Prompt 62-B2 — ações da execução da avaliação. O avaliador designado preenche o checklist no celular (salvando a cada
@@ -31,8 +32,8 @@ import { recusaObservador } from "@/lib/qa/observador";
 export type Res = { ok: true; mensagem?: string } | { ok: false; erro: string };
 const BUCKET = "avaliacao-imovel";
 const TIPOS_FOTO = new Set(["image/jpeg", "image/png", "image/webp"]);
-const SEM_ACESSO: Res = { ok: false, erro: "Esta ação não está disponível." };
-const DESLIGADA: Res = { ok: false, erro: "A avaliação do imóvel ainda não está disponível." };
+const SEM_ACESSO: Res = { ok: false, erro: MSG_SEM_ACESSO };
+const DESLIGADA: Res = { ok: false, erro: MSG_DESLIGADA };
 const MOTIVOS_VERIFICACAO: readonly MotivoVerificacao[] = ["denuncia_procedente", "pendencia_conforto", "ressalva_vencida", "outro"];
 
 async function sessao() {
@@ -52,28 +53,39 @@ const texto = (v: FormDataEntryValue | null, max: number) => String(v ?? "").rep
  * E1178: traz também o estado da visita para a regra do dia — o pedido de teste e a conta de teste do avaliador. Se a
  * leitura da conta falhar, ela conta como real: a exceção de teste nunca se aplica por engano.
  */
+/** O avaliador designado do pedido, ou null (as ações fora do E1197 seguem com o genérico). */
 async function comoAvaliador(pedidoId: string) {
-  if (!(await vistoriaAtiva())) return null;
+  const a = await avaliadorOuFalha(pedidoId);
+  return a.ok ? a.c : null;
+}
+
+async function avaliadorOuFalha(pedidoId: string) {
+  // E1197: a causa da recusa vem junto — a chave do piloto, a sessão, o pedido ou a conta — para a ação dizer a frase certa.
+  if (!(await vistoriaAtiva())) return { ok: false as const, falha: "desligada" as FalhaDoAvaliador };
   const s = await sessao();
-  if (!s) return null;
+  if (!s) return { ok: false as const, falha: "sem_sessao" as FalhaDoAvaliador };
   const { data: p } = await s.admin
     .from("vistoria_pedidos")
     .select("id, property_id, owner_id, status, tipo, agendado_para, teste, avaliador_id, avaliadores_credenciamento(parceiros(user_id))")
     .eq("id", pedidoId)
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
-  if (!p || dono !== s.userId) return null;
+  if (!p) return { ok: false as const, falha: "inexistente" as FalhaDoAvaliador };
+  if (dono !== s.userId) return { ok: false as const, falha: "outra_conta" as FalhaDoAvaliador };
   const { data: conta } = await s.admin.from("profiles").select("is_teste").eq("id", s.userId).maybeSingle();
   const visita: EstadoDaVisita = { status: p.status as string, agendadoPara: (p.agendado_para as string | null) ?? null, pedidoTeste: p.teste === true, avaliadorTeste: conta?.is_teste === true };
-  return { ...s, p, visita };
+  return { ok: true as const, c: { ...s, p, visita } };
 }
 
-const EM_VISITA = ["agendado", "realizada"];
+
+const EM_VISITA = ESTADOS_EM_VISITA;
 
 // ── Checklist (salva a cada item; o lote vem da fila local quando a rede volta) ──────────────────────────────────
 export async function salvarItens(form: FormData): Promise<Res> {
-  const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
-  if (!c || !EM_VISITA.includes(c.p.status)) return SEM_ACESSO;
+  const a = await avaliadorOuFalha(String(form.get("pedidoId") ?? ""));
+  if (!a.ok) return { ok: false, erro: mensagemDaFalha(a.falha) };
+  const c = a.c;
+  if (!EM_VISITA.includes(c.p.status)) return SEM_ACESSO;
   const recusa = recusaDaVisita(c.visita, new Date());
   if (recusa) return { ok: false, erro: recusa };
   let itens: { chave: string; valor: string; observacao?: string | null }[];
@@ -96,8 +108,10 @@ export async function salvarItens(form: FormData): Promise<Res> {
 
 /** Foto da avaliação: 1 por cômodo + 1 por item não conforme. Sem pessoas nem pertences; o EXIF sai aqui. */
 export async function enviarFotoAvaliacao(form: FormData): Promise<Res> {
-  const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
-  if (!c || !EM_VISITA.includes(c.p.status)) return SEM_ACESSO;
+  const a = await avaliadorOuFalha(String(form.get("pedidoId") ?? ""));
+  if (!a.ok) return { ok: false, erro: mensagemDaFalha(a.falha) };
+  const c = a.c;
+  if (!EM_VISITA.includes(c.p.status)) return SEM_ACESSO;
   const recusa = recusaDaVisita(c.visita, new Date());
   if (recusa) return { ok: false, erro: recusa };
   const res = await gravarFoto(c.admin, c.p.id, form);
@@ -135,8 +149,11 @@ async function gravarFoto(admin: NonNullable<ReturnType<typeof createAdminClient
  * apoio. Nada daqui é publicado: a internet do laudo entra no nível sustentado; o dB(A) fica só com a equipe.
  */
 export async function registrarMedicao(form: FormData): Promise<Res> {
-  const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
-  if (!c || !EM_VISITA.includes(c.p.status)) return SEM_ACESSO;
+  const a = await avaliadorOuFalha(String(form.get("pedidoId") ?? ""));
+  if (!a.ok) return { ok: false, erro: mensagemDaFalha(a.falha) };
+  const c = a.c;
+  const foraDaVisita = recusaDaMedicao(c.p.status);
+  if (foraDaVisita) return { ok: false, erro: foraDaVisita };
   const recusa = recusaDaVisita(c.visita, new Date());
   if (recusa) return { ok: false, erro: recusa };
   const tipo = String(form.get("tipo") ?? "");
@@ -183,8 +200,10 @@ export async function dbaGuardadoDaVisita(pedidoId: string): Promise<number | nu
 
 /** As 4 perguntas de ruído respondidas na visita (vão para o imóvel com origem "vistoria" quando o laudo sai). */
 export async function salvarRuidoVisita(form: FormData): Promise<Res> {
-  const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
-  if (!c || !EM_VISITA.includes(c.p.status)) return SEM_ACESSO;
+  const a = await avaliadorOuFalha(String(form.get("pedidoId") ?? ""));
+  if (!a.ok) return { ok: false, erro: mensagemDaFalha(a.falha) };
+  const c = a.c;
+  if (!EM_VISITA.includes(c.p.status)) return SEM_ACESSO;
   const recusa = recusaDaVisita(c.visita, new Date());
   if (recusa) return { ok: false, erro: recusa };
   const v = validarRespostasRuido({
@@ -222,8 +241,10 @@ export async function concluirVisita(form: FormData): Promise<Res> {
 
 /** O avaliador envia e ASSINA (E648): a plataforma fornece o modelo e guarda o registro; o laudo é dele. O checklist precisa estar completo. */
 export async function enviarLaudo(form: FormData): Promise<Res> {
-  const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
-  if (!c || c.p.status !== "realizada") return SEM_ACESSO;
+  const a = await avaliadorOuFalha(String(form.get("pedidoId") ?? ""));
+  if (!a.ok) return { ok: false, erro: mensagemDaFalha(a.falha) };
+  const c = a.c;
+  if (c.p.status !== "realizada") return { ok: false, erro: recusaDoLaudo(c.p.status) ?? MSG_SEM_ACESSO };
   const r = await emitirLaudo(c.admin, c.p.id, new Date(), null, { declarou: form.get("assino") === "on", nivel: lerNivelDoLaudo(form.get("nivel")) });
   if (!r.ok) return r;
   revalidatePath(ROTA_AVALIADOR);
