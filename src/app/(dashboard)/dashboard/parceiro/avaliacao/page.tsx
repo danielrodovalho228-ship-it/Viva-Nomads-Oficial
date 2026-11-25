@@ -7,9 +7,6 @@ import { CampoDataHoraFormulario } from "@/components/ui/campo-data";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { FormAcao } from "@/components/vistoria/form-acao";
-import { PainelAvaliador } from "@/components/avaliadores/painel";
-import { fotosDePerfil } from "@/lib/vistoria/fotos-servidor";
-import { resumoDoPainel } from "@/lib/vistoria/painel-avaliador";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { brl } from "@/lib/fiscal/documento";
@@ -147,21 +144,10 @@ export default async function AvaliacaoParceiroPage() {
   const foraDaMinhaFila = des.filter((d) => d.resposta && d.resposta !== "aceita");
   // Achado 30: leitura que falhou não vira "nenhuma avaliação" — o prazo de 24 h não pode passar sem o avaliador ver.
   const leituraFalhou = Boolean(erroPedidos || erroDesignacoes);
-  // E1079 (fatia 2): o painel do desenho para quem já recebe pedidos (em teste ou ativo). A foto é a de perfil da conta
-  // (ORDEM-386, fonte única); sem foto, ou se a leitura falhar, ficam as iniciais.
-  const comPainel = cred.status === "em_teste" || cred.status === "ativo";
-  const { data: perfil } = comPainel ? await admin.from("profiles").select("full_name").eq("id", user.id).maybeSingle() : { data: null };
-  const nome = ((perfil as { full_name: string | null } | null)?.full_name ?? "").trim();
-  const foto = comPainel ? (await fotosDePerfil([user.id])).get(user.id) : undefined;
-  const linhaCredenciado = `Avaliador credenciado nº ${cred.numero_credenciado} · ${cred.cidade}`;
 
   return (
     <div className="space-y-6">
-      {comPainel ? (
-        <PainelAvaliador nome={nome} fotoUrl={foto} resumo={resumoDoPainel(lista, paraResponder.length, agora)} estadoCredenciamento={ESTADO_CREDENCIAMENTO[cred.status as StatusCredenciamento]} />
-      ) : (
-        <PageTitle title="Avaliação de imóveis" subtitle={linhaCredenciado} />
-      )}
+      <PageTitle title="Avaliação de imóveis" subtitle={`Avaliador credenciado nº ${cred.numero_credenciado} · ${cred.cidade}`} />
 
       {(cred.status === "em_teste" || cred.status === "ativo") && (
         <Panel title="Meus termos" data-testid="meus-termos">
@@ -173,12 +159,7 @@ export default async function AvaliacaoParceiroPage() {
             <Button type="submit" size="sm">Salvar termos</Button>
           </FormAcao>
         </Panel>
-      )}      <Panel id="credenciamento" className="scroll-mt-16" data-testid="credenciamento-situacao" data-status={cred.status}>
-        {comPainel && (
-          <p className="mb-2 text-sm text-muted" data-testid="credenciamento-linha">
-            {linhaCredenciado}
-          </p>
-        )}
+      )}      <Panel data-testid="credenciamento-situacao" data-status={cred.status}>
         <p className="text-sm text-ink">
           <span className="font-semibold" data-testid="credenciamento-estado">{ESTADO_CREDENCIAMENTO[cred.status as StatusCredenciamento]}</span> · {SITUACAO[cred.status as StatusCredenciamento]}
         </p>
@@ -202,14 +183,14 @@ export default async function AvaliacaoParceiroPage() {
         </ul>
       </Panel>
       {leituraFalhou ? (
-        <Panel id="pedidos" className="scroll-mt-16" title="Suas avaliações" data-testid="avaliacoes-erro">
+        <Panel title="Suas avaliações" data-testid="avaliacoes-erro">
           <p role="alert" className="text-sm font-semibold text-red-700">
             {MSG_AVALIACOES_FALHOU}
           </p>
         </Panel>
       ) : (
         <>
-          <Panel id="pedidos" className="scroll-mt-16" title="Para responder" data-testid="avaliacoes-designadas">
+          <Panel title="Para responder" data-testid="avaliacoes-designadas">
             {paraResponder.length === 0 ? (
               <p className="text-sm text-muted">Nenhuma avaliação esperando a sua resposta.</p>
             ) : (
@@ -220,7 +201,7 @@ export default async function AvaliacaoParceiroPage() {
               </ul>
             )}
           </Panel>
-          <Panel id="agenda" className="scroll-mt-16" title="Visitas" data-testid="avaliacoes-visitas">
+          <Panel title="Visitas" data-testid="avaliacoes-visitas">
             {visitas.length === 0 ? (
               <p className="text-sm text-muted" data-testid="avaliacoes-visitas-vazio">
                 Nenhuma visita por enquanto. As avaliações que você aceitar aparecem aqui, para agendar a visita com o proprietário, e saem daqui quando o laudo sai ou a avaliação é encerrada.
@@ -233,7 +214,7 @@ export default async function AvaliacaoParceiroPage() {
               </ul>
             )}
           </Panel>
-          <Panel id="historico" className="scroll-mt-16" title="Encerradas, recusas e ausências" data-testid="avaliacoes-historico">
+          <Panel title="Encerradas, recusas e ausências" data-testid="avaliacoes-historico">
             {encerradas.length === 0 && foraDaMinhaFila.length === 0 ? (
               <p className="text-sm text-muted" data-testid="avaliacoes-historico-vazio">
                 Aqui ficam as avaliações que você concluiu, as que recusou, as que passaram de 24 horas sem resposta e as ausências registradas. Ainda não há nenhuma.

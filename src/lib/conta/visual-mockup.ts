@@ -87,27 +87,3 @@ export const LINHA_TABELA_AVALIADORES = "flex items-center gap-3 border-b border
 export const ICONE_TABELA_AVALIADORES = "h-6 w-6 shrink-0 text-[#2b7245] lg:hidden";
 export const VALOR_TABELA_AVALIADORES = "text-base text-[#032e1d] lg:text-[22px] lg:font-bold";
 export const BOTAO_EDITAR_TABELA = "mt-4 hidden items-center justify-center gap-2 rounded-lg bg-[#005030] px-4 py-2 text-base font-semibold text-white lg:inline-flex";
-
-/*
-  Painel do avaliador (E1079, fatia 2): mockup avaliador-painel (celular). As cores foram medidas no próprio desenho.
-*/
-
-/** Saudação ("Olá, <primeiro nome>!") e a frase por baixo ("Você tem 1 visita hoje"). */
-export const SAUDACAO_PAINEL_AVALIADOR = "font-title text-[34px] font-bold leading-tight text-[#2b2928]";
-export const FRASE_PAINEL_AVALIADOR = "mt-1 text-xl text-[#5b5a56]";
-
-/** O cartão do cabeçalho: a foto por cima e a faixa verde-escura com o botão "Ver pedidos". */
-export const CABECALHO_PAINEL_AVALIADOR = `overflow-hidden rounded-xl ${SOMBRA_CARTAO_AVALIADORES}`;
-export const FOTO_PAINEL_AVALIADOR = "grid aspect-[8/5] w-full place-items-center overflow-hidden bg-[#e8f0e8]";
-export const FAIXA_PAINEL_AVALIADOR = "bg-[#123526] p-4 text-white";
-export const TEXTO_FAIXA_PAINEL_AVALIADOR = "flex items-center gap-2 text-xl font-semibold";
-export const BOTAO_PAINEL_AVALIADOR =
-  "mt-3 flex min-h-14 w-full items-center justify-center rounded-xl bg-[#16452e] px-4 text-2xl font-bold text-white shadow-[0_6px_16px_rgba(0,0,0,0.25)] hover:bg-[#1c5237] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
-
-/** Os quatro cartões (Pedidos, Agenda, Recebidos, Credenciamento): ícone branco no círculo verde, título e texto. */
-export const CARTAO_PAINEL_AVALIADOR = `flex h-full min-h-32 flex-col items-center justify-center rounded-xl bg-white p-4 text-center ${SOMBRA_CARTAO_AVALIADORES} hover:bg-[#fbf9f7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16452e]`;
-export const ICONE_PAINEL_AVALIADOR = "grid h-12 w-12 place-items-center rounded-full bg-[#1c4430] text-white";
-export const TITULO_CARTAO_PAINEL_AVALIADOR = "mt-2 text-xl font-semibold text-[#1f2123]";
-export const TEXTO_CARTAO_PAINEL_AVALIADOR = "text-base text-[#60635e]";
-export const DESTAQUE_CARTAO_PAINEL_AVALIADOR = "text-base text-[#0f4027]";
-export const VALOR_CARTAO_PAINEL_AVALIADOR = "text-lg font-semibold text-[#1f2123]";
