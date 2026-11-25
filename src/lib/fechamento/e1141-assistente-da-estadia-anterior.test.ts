@@ -156,3 +156,15 @@ test("guarda 4 — o p valida-se em CADA rota, antes de qualquer efeito, com a m
   assert.ok(fora > 0 && fora < carregar.indexOf("motivoBloqueioContrato("), "o p alheio cai antes de tudo o resto");
   assert.match(ler("src/lib/data/fechamento-servidor.ts"), /export const MSG_FECHO_NAO_ENCONTRADO = "Não encontramos esse fechamento\.";/);
 });
+
+test("guarda 3 sem p (ORDEM-DUET-939) — o período cruzado avisa-se ANTES em TODOS os fechos, não só na estadia escolhida", () => {
+  const fluxo = ler("src/app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
+  const i = fluxo.indexOf("async function generateContract(");
+  const gerar = fluxo.slice(i, fluxo.indexOf("\n  }\n", i));
+  assert.doesNotMatch(gerar, /if \(ctx\.propostaDaUrl\) \{\s*const conferido/, "a conferência não depende do p");
+  const conferir = gerar.indexOf("await registrarContrato(entradaDoContrato, { soConferir: true })");
+  assert.ok(conferir > 0, "o fecho sem p também confere");
+  assert.ok(conferir < gerar.indexOf('await fetch("/api/contrato"') && conferir < gerar.indexOf('await fetch("/api/comissao"'), "antes do documento e da taxa");
+  // Sem p, o sucesso é o mesmo de antes: a entrada da conferência é a mesma do registro, e sem p não leva proposta.
+  assert.match(gerar, /\.\.\.\(ctx\.propostaDaUrl \? \{ propostaId: ctx\.propostaDaUrl \} : \{\}\)/);
+});
