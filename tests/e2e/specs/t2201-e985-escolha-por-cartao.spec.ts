@@ -10,6 +10,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   ordem atual (abrir no passo Tipo contava como troca de passo, que grava sozinha) e o toque sem garantia de cair na
   janela dos 2 s. Agora o rascunho está na ordem atual e já no Tipo, e o relógio da página fica parado: o toque cai
   DENTRO da janela por construção, e só depois o relógio anda os 2,5 s em que o autosave decide "base" ou "edição".
+  A sonda da ORDEM-DUET-829 provou o caminho: clock.install() sozinho não para o tempo; o toque corria contra o
+  temporizador da base (sem a cura, o toque a 76 ms da carga virava base e não gravava; mais tarde, gravava).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -43,11 +45,13 @@ test.describe("T2201 — E985: a escolha por cartão logo depois de abrir o rasc
       await adm().from("properties").update({ draft_data: { title: `Rascunho do cartão ${sufixo}`, propertyType: "casa", city: "Uberlândia", uf: "MG", ...NA_ORDEM_ATUAL } }).eq("id", ids.imovel!);
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: largura, height: 900 });
-      // O relógio da página parado: a janela da base (2 s depois de o rascunho assentar) não fecha sozinha.
+      // O relógio falso da página (install não o para: ele segue o tempo real até pauseAt).
       await p.clock.install();
       await p.goto(`/dashboard/imoveis/novo?draft=${ids.imovel}&etapa=tipo`, { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "true", { timeout: 30_000 });
-      // Dentro da janela em que o autosave ainda aguarda a base — garantido, porque o relógio não andou.
+      // O rascunho acabou de ser aplicado: o relógio PARA aqui, com a janela da base (2 s) aberta — não fecha sozinha.
+      await p.clock.pauseAt(await p.evaluate(() => Date.now()));
+      // Dentro da janela em que o autosave ainda aguarda a base — garantido, porque o relógio não anda.
       await p.getByTestId("tipo-apartamento").click();
       await expect(p.getByTestId("tipo-apartamento")).toHaveAttribute("aria-checked", "true");
       // Agora a janela fecha: o autosave decide se o toque foi edição (grava) ou base (não grava).
