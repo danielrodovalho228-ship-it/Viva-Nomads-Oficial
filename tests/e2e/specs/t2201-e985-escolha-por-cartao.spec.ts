@@ -50,7 +50,8 @@ test.describe("T2201 — E985: a escolha por cartão logo depois de abrir o rasc
       await p.goto(`/dashboard/imoveis/novo?draft=${ids.imovel}&etapa=tipo`, { waitUntil: "domcontentloaded" });
       await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "true", { timeout: 30_000 });
       // O rascunho acabou de ser aplicado: o relógio PARA aqui, com a janela da base (2 s) aberta — não fecha sozinha.
-      await p.clock.pauseAt(await p.evaluate(() => Date.now()));
+      // +100 ms: o relógio falso anda entre a leitura e o pauseAt, e pauseAt não volta atrás (a janela tem 2 000 ms).
+      await p.clock.pauseAt((await p.evaluate(() => Date.now())) + 100);
       // Dentro da janela em que o autosave ainda aguarda a base — garantido, porque o relógio não anda.
       await p.getByTestId("tipo-apartamento").click();
       await expect(p.getByTestId("tipo-apartamento")).toHaveAttribute("aria-checked", "true");
