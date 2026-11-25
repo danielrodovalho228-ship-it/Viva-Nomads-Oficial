@@ -103,7 +103,9 @@ test("E1159: a página lê as duas colunas pela janela, cada uma da mais recente
   const pagina = semComentarios(ler("src/app/(dashboard)/admin/avaliadores/page.tsx"));
   const COLUNAS = 'select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, owner_id)")';
   for (const coluna of ["proposta_expirada_em", "proposta_descartada_em"]) {
-    assert.ok(pagina.includes(`admin.from("vistoria_designacoes").${COLUNAS}.gte("${coluna}", trintaDias).order("${coluna}", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS)`), coluna);
+    // E1170 (asserção alterada, ORDEM-DUET-759): a leitura deixou de cortar em 50 antes de separar as contas de teste.
+    // Vai por páginas (a fatia pedida), com o desempate pelo id; a janela e a ordem pela data da coluna continuam.
+    assert.ok(pagina.includes(`admin.from("vistoria_designacoes").${COLUNAS}.gte("${coluna}", trintaDias).order("${coluna}", { ascending: false }).order("id", { ascending: false }).range(de, ate)`), coluna);
   }
   assert.match(pagina, /const trintaDias = new Date\(agora\.getTime\(\) - DIAS_DA_JANELA_DE_RECUSAS \* 86_400_000\)\.toISOString\(\);/);
   // As duas leituras passam pela guarda das leituras (achado 39), com a dos títulos dos imóveis.

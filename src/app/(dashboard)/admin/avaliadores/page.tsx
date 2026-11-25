@@ -17,6 +17,7 @@ import { ROTULO_MOTIVO_VERIFICACAO, type MotivoVerificacao } from "@/lib/vistori
 import { credenciamentosADecidir, laudosAtrasados, pedidosSemAvaliador } from "@/lib/data/avaliadores-contagens";
 import { idsContasTeste } from "@/lib/data/admin-indicadores";
 import { separarContasDeTeste, textoDasContasDeTeste } from "@/lib/vistoria/contagens-da-central";
+import { AVISO_LISTA_INCOMPLETA, lerSeparandoContasDeTeste } from "@/lib/vistoria/leitura-por-paginas";
 import { RESPOSTA_DO_AVALIADOR, ROTULO_AGUARDANDO_AVALIADOR, TITULO_PEDIDOS_SEM_AVALIADOR, rotuloDoStatus, rotuloDoTipo } from "@/lib/vistoria/rotulos-do-pedido";
 import { ROTULO_FILA } from "@/lib/vistoria/rotulos-da-fila";
 import { TITULO_LAUDOS_FORA_DO_PRAZO, contagemContestacoes } from "@/lib/vistoria/telas-laudo";
@@ -49,6 +50,9 @@ const ROTULO_STATUS: Record<StatusCredenciamento, string> = { solicitado: "Solic
 const ROTULO_RESPOSTA = RESPOSTA_DO_AVALIADOR.equipe;
 /** E1159: quantas propostas expiradas ou descartadas a secção mostra (as mais recentes), como a lista das recusas. */
 const TETO_PROPOSTAS_ENCERRADAS = 50;
+/** E1170: de quem é a linha da designação — o dono do pedido (ORDEM-DUET-740). */
+const DONO_DO_PEDIDO = (l: { vistoria_pedidos: { owner_id: string | null } | null }) => l.vistoria_pedidos?.owner_id;
+type LinhaComDono = Parameters<typeof DONO_DO_PEDIDO>[0];
 const PROXIMOS: Record<StatusCredenciamento, StatusCredenciamento[]> = { solicitado: ["em_teste", "descredenciado"], em_teste: ["ativo", "descredenciado"], ativo: ["descredenciado"], suspenso: ["ativo", "descredenciado"], descredenciado: [] };
 const ROTULO_BLOQUEIO: Record<string, string> = { seguranca_grave: "Segurança grave (fora da busca)", strike_2: "2º strike (republicar só com laudo)", strike_3: "3º strike (todos fora da busca)" };
 
@@ -126,12 +130,15 @@ export default async function AdminAvaliadoresPage() {
   // E1159: as propostas que expiraram sem o aceite do dono ou que ele descartou saíram da lista das recusas (não são
   // recusa do avaliador) e ficaram sem lugar nenhum. São lidas à parte, pela data de cada coluna — uma leitura por
   // coluna, cada uma da mais recente para a mais antiga, para o teto nunca cortar as mais recentes.
+  // E1170 (ORDEM-DUET-759): as recusas e as duas colunas são lidas por páginas, até a lista de trabalho encher. Antes
+  // liam-se as 50 mais recentes e só depois se separavam as de conta de teste: com 50 de teste recentes, as reais mais
+  // antigas não chegavam a ser lidas. O desempate pelo id deixa as páginas estáveis.
   const [fila_rodizio, recusasLeitura, perfisLeitura, expiradasLeitura, descartadasLeitura] = await Promise.all([
     filaDaCidade(admin),
-    admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade, owner_id)").in("resposta", ["recusada", "expirada", "ausencia"]).is("proposta_expirada_em", null).is("proposta_descartada_em", null).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).limit(50),
+    lerSeparandoContasDeTeste<LinhaComDono>((de, ate) => admin.from("vistoria_designacoes").select("id, resposta, respondido_em, avaliador_id, vistoria_pedidos(cidade, owner_id)").in("resposta", ["recusada", "expirada", "ausencia"]).is("proposta_expirada_em", null).is("proposta_descartada_em", null).gte("respondido_em", trintaDias).order("respondido_em", { ascending: false }).order("id", { ascending: false }).range(de, ate), DONO_DO_PEDIDO, contasDeTesteDaCentral),
     admin.from("profiles").select("id").eq("is_teste", true).limit(200),
-    admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, owner_id)").gte("proposta_expirada_em", trintaDias).order("proposta_expirada_em", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS),
-    admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, owner_id)").gte("proposta_descartada_em", trintaDias).order("proposta_descartada_em", { ascending: false }).limit(TETO_PROPOSTAS_ENCERRADAS),
+    lerSeparandoContasDeTeste<LinhaComDono>((de, ate) => admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, owner_id)").gte("proposta_expirada_em", trintaDias).order("proposta_expirada_em", { ascending: false }).order("id", { ascending: false }).range(de, ate), DONO_DO_PEDIDO, contasDeTesteDaCentral),
+    lerSeparandoContasDeTeste<LinhaComDono>((de, ate) => admin.from("vistoria_designacoes").select("id, avaliador_id, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos(property_id, cidade, owner_id)").gte("proposta_descartada_em", trintaDias).order("proposta_descartada_em", { ascending: false }).order("id", { ascending: false }).range(de, ate), DONO_DO_PEDIDO, contasDeTesteDaCentral),
   ]);
   const [{ data: recusas }, { data: perfisTeste }, { data: expiradas }, { data: descartadas }] = semFalhaDeLeitura([recusasLeitura, perfisLeitura, expiradasLeitura, descartadasLeitura] as const);
   const propostasTodas = propostasEncerradas([...(expiradas ?? []), ...(descartadas ?? [])] as unknown as LinhaDaPropostaEncerrada[], trintaDias);
@@ -396,6 +403,8 @@ export default async function AdminAvaliadoresPage() {
       <Panel id="recusas" title={TITULO_RECUSAS_E_AUSENCIAS} className="mb-6 scroll-mt-24" data-testid="avaliacoes-recusas">
         {recusasLista.length === 0 && recusasDeTeste.length === 0 && <p className="text-sm text-muted">Nenhuma recusa ou ausência nos últimos {DIAS_DA_JANELA_DE_RECUSAS} dias.</p>}
         {recusasLista.length > 0 && <ul className="grid gap-1 text-sm">{recusasLista.map((r) => itemDaRecusa(r, "nao"))}</ul>}
+        {/* E1170: só quando a leitura bateu no teto de páginas — a lista pode não ter tudo. */}
+        {recusasLeitura.incompleta && <p className="mt-2 text-sm text-ink" role="status" data-testid="recusas-incompletas">{AVISO_LISTA_INCOMPLETA}</p>}
         {/* E1169: as recusas de conta de teste ficam à parte, fora da lista de trabalho e do número do topo. */}
         {recusasDeTeste.length > 0 && (
           <div className={recusasLista.length > 0 ? "mt-3 text-sm text-muted" : "text-sm text-muted"} data-testid="recusas-de-teste" data-valor={recusasDeTeste.length}>
@@ -416,6 +425,7 @@ export default async function AdminAvaliadoresPage() {
               ))}
             </ul>
           )}
+          {(expiradasLeitura.incompleta || descartadasLeitura.incompleta) && <p className="mt-2 text-sm text-ink" role="status" data-testid="propostas-incompletas">{AVISO_LISTA_INCOMPLETA}</p>}
           {/* ORDEM-735: as propostas de conta de teste ficam à parte, fora da lista de trabalho (a regra do E1163). */}
           {propostasDeTeste.length > 0 && (
             <div className="mt-3 text-sm text-muted" data-testid="propostas-expiradas-de-teste" data-valor={propostasDeTeste.length}>
