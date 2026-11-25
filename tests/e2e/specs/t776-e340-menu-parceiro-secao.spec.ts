@@ -44,6 +44,8 @@ test.describe("T776 — E340: a aba acompanha a seção do painel do parceiro", 
   for (const largura of [1280, 390]) {
     test(`uma aba acesa, a da seção visível (${largura})`, async ({ browser }) => {
       const page = await entrar(browser, email, senha);
+      // ENSAIO E1193: a máquina sob carga da suíte — CPU 4x mais lenta (só no ramo de ensaio).
+      await (await page.context().newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: 4 });
       await page.setViewportSize({ width: largura, height: 800 });
       await page.goto("/dashboard/parceiro#ganhos", { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("parceiro-ganhos")).toBeVisible({ timeout: 30_000 });
