@@ -20,8 +20,7 @@ test("uma linha de controles na ordem do mockup: Datas · Local · Tipo · Preç
   const ordem = [...linha.matchAll(/pilula\("(\w+)"\)|data-testid="pilula-(mais|mapa)"/g)].map((m) => m[1] ?? m[2]);
   assert.deepEqual(ordem, [...ORDEM_PILULAS]);
   assert.match(linha, /role="toolbar"/);
-  // E780 reaberto (14/11): no celular os filtros quebram linha (sem rolagem lateral); do tablet para cima, uma linha só.
-  assert.match(linha, /flex-wrap[^"]*sm:flex-nowrap/, "no celular os filtros quebram linha; do tablet para cima, uma linha");
+  assert.match(linha, /overflow-x-auto/, "no celular a linha rola de lado, sem quebrar em duas");
   assert.equal((busca.match(/<BarraPilulas/g) ?? []).length, 1);
 });
 

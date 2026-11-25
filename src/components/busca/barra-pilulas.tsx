@@ -101,13 +101,9 @@ export function BarraPilulas(p: {
   return (
     <div ref={caixa} className="relative" data-testid="busca-controles">
       {/* E710: no celular as três AÇÕES (Mais filtros · Ordenar · Mapa) ficam numa linha própria, sempre à vista; só os
-          filtros (Datas · Local · Tipo · Preço · Nível) vêm na linha de cima, quebrando linha se preciso (E780). Do tablet para
-          cima é uma linha só. */}
+          filtros (Datas · Local · Tipo · Preço · Nível) correm na faixa lateral. Do tablet para cima é uma linha só. */}
       <div role="toolbar" aria-label="Filtros da busca" className="flex flex-col gap-2 pb-1 sm:flex-row sm:items-center" data-testid="linha-pilulas">
-        {/* E780 reaberto (print do Daniel, 14/11): no celular a fileira NÃO rola de lado — rolava sob a margem (-mx-4), cortava o
-            primeiro chip na borda e mostrava a barra de rolagem. Os chips quebram linha, inteiros desde o primeiro, sem barra.
-            Do tablet para cima segue uma linha só, como antes. */}
-        <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-1 sm:flex-nowrap sm:overflow-x-auto" data-testid="pilulas-filtros">
+        <div className="-mx-4 flex min-w-0 items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-1 sm:px-0" data-testid="pilulas-filtros">
         {pilula("datas")}
         {pilula("local")}
         {pilula("tipo")}
