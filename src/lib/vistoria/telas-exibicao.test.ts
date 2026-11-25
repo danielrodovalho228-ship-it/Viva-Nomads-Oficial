@@ -222,12 +222,7 @@ test("QA ao vivo do E235: com a chave desligada, o bloco do dono abre só para c
   assert.match(BLOCO_DONO, /pedidoPodeAbrir\(\{ chaveAtiva: visivel === "ativa",/);
   assert.match(BLOCO_DONO, /visivel === "so_leitura_teste" && \(/);
   assert.match(BLOCO_DONO, /data-testid="avaliacao-modo-teste"/);
-  // Asserção alterada (E1077, ORDEM-DUET-369): fora do laboratório a chave deixou de ser só a VISTORIA_ATIVA — abre também
-  // para a conta da sessão que está no piloto (vistoria_piloto). O que esta guarda protegia continua preso: a chave ligada
-  // abre tudo, e o cookie do laboratório não vale nada fora do laboratório.
-  const chave = ler("src/lib/vistoria/chave.ts");
-  assert.match(chave, /if \(VISTORIA_ATIVA\) return "global";/);
-  assert.match(chave, /async function cookieDoLaboratorio\(\): Promise<boolean> \{\n  if \(!integracoesSimuladas\(\)\) return false;/);
+  assert.match(ler("src/lib/vistoria/chave.ts"), /if \(VISTORIA_ATIVA\) return true;\n  if \(!integracoesSimuladas\(\)\) return false;/);
 });
 
 test("0256: massa do QA só em contas e anúncio de teste, ids fixos, sem designação pendente; aplicar idempotente e desfazer", () => {
