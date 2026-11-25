@@ -167,6 +167,9 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [contratoExistente, setContratoExistente] = useState(false);
   const [gerando, setGerando] = useState(false);
   const [erroContrato, setErroContrato] = useState<string | null>(null);
+  // E1063: a pendência que o servidor já conhece quando a página abre (documento do dono, do inquilino ou os documentos
+  // do inquilino) — a mesma do aviso do topo, mostrada também junto do botão "Gerar contrato".
+  const pendenciaContrato = ctx.documentoPendente ?? null;
   // Seleção ÚNICA de garantia: guardamos um único id. Selecionar outra substitui
   // a anterior — é impossível ter duas garantias no contrato (Lei 8.245, art. 37).
   // Caução é a opção PADRÃO (obrigatória): nenhum fechamento avança sem garantia,
@@ -1272,11 +1275,22 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
-                {erroContrato && (
+              // E1063: o motivo de o contrato não sair fica JUNTO do botão. O aviso do topo da página ("Falta um documento…")
+              // está fora da tela neste passo; sem isto o dono só descobria o motivo depois de clicar — ou nem isso.
+              <div className="space-y-2" data-testid="acao-gerar-contrato">
+                {erroContrato ? (
                   <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="erro-contrato">
                     {erroContrato}
                   </p>
+                ) : pendenciaContrato ? (
+                  <p role="status" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="pendencia-contrato">
+                    {pendenciaContrato.mensagem}
+                  </p>
+                ) : null}
+                {pendenciaContrato?.quem === "dono" && (!erroContrato || erroContrato === pendenciaContrato.mensagem) && (
+                  <Link href={LINK_DOCUMENTO} className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline">
+                    Informar meu documento
+                  </Link>
                 )}
                 <Button variant="gold" onClick={generateContract} disabled={gerando} data-testid="fechamento-gerar-contrato">
                   <FileSignature className="h-4 w-4" /> {gerando ? "Gerando..." : "Gerar contrato para assinatura"}
