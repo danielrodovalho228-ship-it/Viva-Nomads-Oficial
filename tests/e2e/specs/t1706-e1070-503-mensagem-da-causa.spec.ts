@@ -102,7 +102,8 @@ test.describe("T1706 — E1070: o 503 de \"Gerar contrato\" diz a causa certa @E
     await expect(page.getByTestId("marca-minuta")).toBeVisible({ timeout: 15_000 });
     const erro = page.getByTestId("erro-contrato");
 
-    await test.step("1. 503 com o texto da causa: a tela mostra esse texto, não a assinatura inativa", async () => {
+    // ENSAIO (ORDEM-895): o passo 1 fica de fora, para os passos 2 e 3 correrem sozinhos (só no ramo de ensaio).
+    if (process.env.ENSAIO_NUNCA_DEFINIDA === "1") await test.step("1. 503 com o texto da causa: a tela mostra esse texto, não a assinatura inativa", async () => {
       await simular(page, { status: 503, tipo: "application/json", corpo: JSON.stringify({ error: MSG_SEM_LEITURA }) });
       await clicarEVoltar(page);
       await expect(erro).toHaveText(MSG_SEM_LEITURA);
