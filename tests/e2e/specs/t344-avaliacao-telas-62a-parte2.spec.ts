@@ -269,6 +269,9 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       .single();
     if (error) throw error;
     await adm().from("vistoria_devolucoes").insert({ pedido_contestacao_id: cont.id, pedido_original_id: ids.p1280, avaliador_id: cred.id, owner_id: ids.dono, valor: 350, prazo_ate: new Date(Date.now() + 10 * 86_400_000).toISOString() });
+    // ENSAIO E1181: outra devolução por confirmar, de outro avaliador, com prazo mais curto (a base partilhada).
+    const { data: outra } = await adm().from("vistoria_pedidos").insert({ property_id: ids.im1280, owner_id: ids.dono, cidade: "Uberlândia", porte: "q1_2", valor_tabela: 350, tipo: "contestacao", status: "cancelada", origem_pedido_id: ids.p1280 }).select("id").single();
+    await adm().from("vistoria_devolucoes").insert({ pedido_contestacao_id: outra!.id, pedido_original_id: ids.p1280, avaliador_id: null, owner_id: ids.dono, valor: 99, prazo_ate: new Date(Date.now() + 1 * 86_400_000).toISOString() });
     for (const w of larguras) {
       const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: w, height: w === 390 ? 844 : 900 } });
       const a = await ctx.newPage();
