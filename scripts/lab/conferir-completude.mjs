@@ -9,7 +9,12 @@
     não executado   = listado e: ausente do relatório (fatia perdida), "skipped" sem ter sido declarado (cortado pelo
                       teto global ou nunca começou).
 
-  Completa = nenhum "não executado" (executados + pulos declarados = listados). Incompleta deixa o job vermelho.
+    fora da listagem = rodou até o fim e NÃO está na listagem do commit (E744, 15/11): listagem e rodada não falam do
+                      mesmo conjunto. Caso real: o t337 montava a lista de testes com um arquivo que só existe depois do
+                      seed da fatia (24 testes listados, 27 rodados, 4 "não executados" falsos por noite).
+
+  Completa = nenhum "não executado" (executados + pulos declarados = listados) e nenhum "fora da listagem".
+  Incompleta deixa o job vermelho.
 
   Uso: node scripts/lab/conferir-completude.mjs <lista.json> <resultado.json> [--saida numeros.json]
   Imprime um resumo em Markdown (vai para o resumo da rodada) e sai com 1 se faltar algum teste.
@@ -58,20 +63,32 @@ export function completude(listagem, rodada) {
     else naoExecutados.push(l.chave);
   }
   naoExecutados.sort();
-  return { listados: listados.length, executados, pulosDeclarados, naoExecutados, ok: listados.length > 0 && naoExecutados.length === 0 };
+  const naListagem = new Set(listados.map((l) => l.chave));
+  const foraDaListagem = [...daRodada.values()].filter((t) => t.executado && !naListagem.has(t.chave)).map((t) => t.chave).sort();
+  const ok = listados.length > 0 && naoExecutados.length === 0 && foraDaListagem.length === 0;
+  return { listados: listados.length, executados, pulosDeclarados, naoExecutados, foraDaListagem, ok };
 }
 
 export function textoCompletude(c) {
+  const fora = c.foraDaListagem ?? [];
   const linhas = [
     "### Completude da rodada",
-    `Listados ${c.listados} · executados ${c.executados} · pulados de propósito ${c.pulosDeclarados} · NÃO executados ${c.naoExecutados.length}`,
+    `Listados ${c.listados} · executados ${c.executados} · pulados de propósito ${c.pulosDeclarados} · NÃO executados ${c.naoExecutados.length} · fora da listagem ${fora.length}`,
   ];
   if (c.listados === 0) linhas.push("", "❌ Sem a listagem do commit: não dá para provar que a rodada foi completa.");
-  else if (c.naoExecutados.length === 0) linhas.push("", "✅ Todos os testes listados rodaram (ou estão pulados de propósito).");
-  else {
+  else if (c.naoExecutados.length === 0 && fora.length === 0) linhas.push("", "✅ Todos os testes listados rodaram (ou estão pulados de propósito).");
+  else if (c.naoExecutados.length > 0) {
     linhas.push("", `❌ ${c.naoExecutados.length} teste(s) listado(s) não rodaram (teto global, fatia perdida ou teste que nunca começou):`);
     for (const k of c.naoExecutados.slice(0, 50)) linhas.push(`- ${k}`);
     if (c.naoExecutados.length > 50) linhas.push(`- … e mais ${c.naoExecutados.length - 50}`);
+  }
+  if (fora.length > 0) {
+    linhas.push(
+      "",
+      `❌ ${fora.length} teste(s) rodaram sem estar na listagem do commit. A lista de testes de um spec não pode depender de arquivo ou dado que só existe na fatia (seed, massa, conta):`,
+    );
+    for (const k of fora.slice(0, 50)) linhas.push(`- ${k}`);
+    if (fora.length > 50) linhas.push(`- … e mais ${fora.length - 50}`);
   }
   return linhas.join("\n");
 }
@@ -95,7 +112,7 @@ function principal() {
     process.exit(2);
   }
   const c = completude(lerJson(lista), lerJson(resultado));
-  if (saida) writeFileSync(saida, JSON.stringify({ listados: c.listados, executados: c.executados, nao_executados: c.naoExecutados.length }));
+  if (saida) writeFileSync(saida, JSON.stringify({ listados: c.listados, executados: c.executados, nao_executados: c.naoExecutados.length, fora_da_listagem: c.foraDaListagem.length }));
   console.log(textoCompletude(c));
   if (!c.ok) process.exit(1);
 }
