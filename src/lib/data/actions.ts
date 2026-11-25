@@ -9,7 +9,6 @@ import { AVISO_OFENSA, termoOfensivo } from "@/lib/messages/ofensas";
 import { registrarOfensa } from "@/lib/messages/ofensas-servidor";
 import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { idDeRascunhoValido, rascunhoDaConta, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
-import { rascunhoCarimbado, rascunhoComHoraConhecida } from "@/lib/anuncio/salvo-fantasma";
 import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, erroJanelaDisponivel, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
@@ -2129,8 +2128,7 @@ export async function saveDraftData(snap: {
     // 59-C1: a operação vai junto, pela regra do updateProperty — uma linha antiga "própria com sublocação" (que a
     // restrição da 0200 recusa em qualquer update) fica no permitido já no primeiro autosave.
     ...colunasDeOperacao(op.ownershipType, op.subleaseAuthorized),
-    // E614 (ORDEM-DUET-137): toda gravação sai carimbada daqui — também a que cria o rascunho ao sair da Qualificação.
-    draft_data: rascunhoCarimbado(snap.data, new Date()) as object,
+    draft_data: snap.data as object,
   };
 
   // Anúncio novo (sem id): continua o rascunho vazio de menos de 72 h em vez de abrir outro igual (ordem 378c07c4).
@@ -2229,12 +2227,6 @@ export async function abrirRascunho(id: string): Promise<{ ok: true; draft: unkn
   if (error) return { ok: false, motivo: "indisponivel" };
   const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: unknown } | null;
   if (!row) return { ok: false, motivo: "nao_encontrado" };
-  // E614 (ORDEM-DUET-137/139): rascunho sem carimbo (anterior à regra) reabre com a hora que se conhece dele — a da
-  // última gravação da linha (updated_at, 0346) e, enquanto não for regravada, a da criação. Só leitura: o rascunho
-  // gravado não muda ao abrir (E516). Sem a coluna (deploy antes da migração), fica a hora da criação.
-  const hora = await supabase.from("properties").select("updated_at, created_at").eq("id", id).eq("owner_id", user.id).maybeSingle();
-  const linha = (hora.error ? (await supabase.from("properties").select("created_at").eq("id", id).eq("owner_id", user.id).maybeSingle()).data : hora.data) as { updated_at?: string | null; created_at?: string | null } | null;
-  row.draft_data = rascunhoComHoraConhecida(row.draft_data ?? null, linha?.updated_at ?? null, linha?.created_at ?? null);
   return { ok: true, draft: await semFotosApagadas(row.draft_data ?? null, user.id) };
 }
 
