@@ -54,14 +54,6 @@ export function primeiroPagamentoConfirmado(pagamentos: LinhaEstadoContrato["pag
   return (pagamentos ?? []).some((p) => p?.tipo === "aluguel" && p?.confirmado_pelo_inquilino === true && !p?.anulado_em);
 }
 
-/**
- * E1068: o 1º pagamento já foi REGISTRADO pelo proprietário (há registro válido), confirmado ou não. Junto com
- * `primeiroPagamentoConfirmado` dá os três estados reais: não registrado, registrado à espera do morador, confirmado.
- */
-export function primeiroPagamentoRegistrado(pagamentos: LinhaEstadoContrato["pagamentos_bloco"]): boolean {
-  return (pagamentos ?? []).some((p) => p?.tipo === "aluguel" && !p?.anulado_em);
-}
-
 const ENCERRADOS: Record<string, { chave: ChaveEstado; selo: string }> = {
   cancelado: { chave: "cancelado", selo: "Cancelado" },
   concluido: { chave: "concluido", selo: "Concluído" },
