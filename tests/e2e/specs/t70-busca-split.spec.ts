@@ -72,6 +72,8 @@ test.describe("T70 — busca split-screen no computador", () => {
   });
 
   test("2. um pin por imóvel; hover card↔pin destaca; hover no pin abre o cartão (E442)", async ({ page }) => {
+    // ENSAIO E1193: a máquina sob carga da suíte — CPU 4x mais lenta (só no ramo de ensaio).
+    await (await page.context().newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: 4 });
     await abrir(page, 1440);
     const cards = page.getByTestId("card-resultado");
     const pins = page.getByTestId("pin-mapa");
