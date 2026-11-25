@@ -77,7 +77,7 @@ import {
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
 import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
-import { formaInicialDaProposta, normalizarEscolha, validarFormaNaProposta, type EscolhaPagamento } from "@/lib/pagamento-forma/regras";
+import { formaDaProposta, normalizarEscolha, type EscolhaPagamento } from "@/lib/pagamento-forma/regras";
 import { formatBRLExato, precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
 import { caucaoDaProposta, rotuloCaucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
@@ -604,9 +604,7 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
   if (erro) return { ok: false, error: erro };
   // E647: a forma de pagamento da 1ª proposta é do dono: a que ele marcou, ou a recomendada pela preferência do anúncio.
   if (FORMA_PAGAMENTO_DONO_ATIVA) {
-    const escolha = normalizarEscolha(im.detalhes_anuncio?.pagamento);
-    const forma = e.formaPagamento ?? formaInicialDaProposta(escolha, dias);
-    const v = validarFormaNaProposta({ forma, dias, escolha, quem: "owner" });
+    const v = formaDaProposta({ pedida: e.formaPagamento, anterior: null, escolhaDoAnuncio: im.detalhes_anuncio?.pagamento, dias, quem: "owner" });
     if (!v.ok) return { ok: false, error: v.erro };
     termos.formaPagamento = v.forma;
   }
@@ -1046,11 +1044,9 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   // o que o anúncio oferece). A forma que vinha continua valendo se ninguém mexeu, mas precisa caber nos novos dias.
   let mudouForma = false;
   if (FORMA_PAGAMENTO_DONO_ATIVA) {
-    const escolha: EscolhaPagamento | null = normalizarEscolha(im.detalhes_anuncio?.pagamento);
     const pedida = (r.mudancas as { formaPagamento?: unknown }).formaPagamento;
     const dias = diasDosTermos(nova);
-    const forma = pedida ?? anterior.formaPagamento ?? formaInicialDaProposta(escolha, dias);
-    const v = validarFormaNaProposta({ forma, dias, escolha, quem: papel });
+    const v = formaDaProposta({ pedida, anterior: anterior.formaPagamento, escolhaDoAnuncio: im.detalhes_anuncio?.pagamento, dias, quem: papel });
     if (!v.ok) return { ok: false, error: v.erro };
     nova.formaPagamento = v.forma;
     mudouForma = v.forma !== (anterior.formaPagamento ?? null);

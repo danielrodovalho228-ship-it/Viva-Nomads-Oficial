@@ -145,6 +145,22 @@ export function validarFormaNaProposta(e: { forma: unknown; dias: number; escolh
   return { ok: true, forma: e.forma };
 }
 
+/**
+ * E1172 — a FONTE ÚNICA da forma de uma proposta/contraproposta: lê a preferência do anúncio, escolhe a forma (a pedida;
+ * senão a que vinha; senão a inicial do anúncio) e confere-a. As duas ações (enviar e responder) chamam só esta.
+ */
+export function formaDaProposta(e: {
+  pedida: unknown;
+  anterior: FormaUsada | null | undefined;
+  escolhaDoAnuncio: unknown;
+  dias: number;
+  quem: "owner" | "tenant";
+}): ResultadoForma {
+  const escolha = normalizarEscolha(e.escolhaDoAnuncio);
+  const forma = e.pedida ?? e.anterior ?? formaInicialDaProposta(escolha, e.dias);
+  return validarFormaNaProposta({ forma, dias: e.dias, escolha, quem: e.quem });
+}
+
 /** O que o morador lê, antes de aceitar, sobre a forma FINAL da proposta. */
 export function textoFormaFinal(forma: FormaUsada, dias: number): TextoFormaPagamento {
   const periodo = faixaDaEstadia(dias) === "de_91" ? "91 a 180 dias" : "30 a 90 dias";
