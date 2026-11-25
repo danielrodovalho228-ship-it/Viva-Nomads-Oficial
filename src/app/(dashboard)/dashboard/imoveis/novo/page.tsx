@@ -34,7 +34,7 @@ import {
 import { precoDaRegiao } from "@/lib/data/cadastro-actions";
 import Link from "next/link";
 import { TEXTO_RASCUNHO_FECHADO, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
-import { autosaveSemNadaAGravar, cliqueEhEscolha, conteudoDoRascunho, copiaLocalCarimbada, decisaoAutosave, formularioVazioNaoEDoRascunho, rascunhoAbertoSemDados, salvoAsDoRascunho } from "@/lib/anuncio/salvo-fantasma";
+import { autosaveSemNadaAGravar, conteudoDoRascunho, copiaLocalCarimbada, decisaoAutosave, formularioVazioNaoEDoRascunho, rascunhoAbertoSemDados, salvoAsDoRascunho } from "@/lib/anuncio/salvo-fantasma";
 import { ANCORA_VIDEO_ASSISTENTE, MIN_DESCRICAO, prontidaoAnuncio, textoPronto } from "@/lib/anuncio/prontidao";
 import { fatosDoRascunho } from "@/lib/anuncio/fatos-do-rascunho";
 import { ERRO_CAMPO_ENDERECO, TESTID_CAMPO_ENDERECO, type EnderecoDoc } from "@/lib/documento/endereco-documento";
@@ -949,6 +949,7 @@ export default function NewPropertyPage() {
   function aplicarDraft(d: Record<string, unknown>) {
     // E516: o estado que sai deste rascunho aberto é o ponto de partida do autosave — abrir não é editar.
     aguardandoBaseRef.current = true;
+    console.log("SONDA|aplicarDraft|arma a base|t=" + Date.now() + "|step=" + String(d.step) + "|ordem=" + String(d.ordemEtapas));
     editouRef.current = false;
     confirmouRef.current = false;
     const s = (v: unknown) => (typeof v === "string" ? v : undefined);
@@ -1240,6 +1241,7 @@ export default function NewPropertyPage() {
    */
   function aplicarImovelComoBase(p: ImovelGravado) {
     aguardandoBaseRef.current = true;
+    console.log("SONDA|aplicarImovelComoBase|arma a base|t=" + Date.now());
     editouRef.current = false;
     confirmouRef.current = false;
     navegacaoBaseRef.current = null;
@@ -1331,6 +1333,7 @@ export default function NewPropertyPage() {
     // mostra "Salvando…" e carimba "Salvo às …".
     const conteudo = conteudoDoRascunho(draftJson);
     let decisao = decisaoAutosave({ aguardandoBase: aguardandoBaseRef.current, editou: editouRef.current, confirmou: confirmouRef.current, base: baseConteudoRef.current, conteudo });
+    console.log("SONDA|efeito|t=" + Date.now() + "|aguardandoBase=" + aguardandoBaseRef.current + "|editou=" + editouRef.current + "|confirmou=" + confirmouRef.current + "|baseNula=" + (baseConteudoRef.current === null) + "|tipo=" + propertyType + "|step=" + step + "|decisao=" + decisao);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (decisao === "edicao") setSaveStatus("saving");
     const montarGravacao = () => ({
@@ -1351,6 +1354,7 @@ export default function NewPropertyPage() {
     const t = setTimeout(async () => {
       gravacaoPendenteRef.current = null;
       if (!on) return;
+      console.log("SONDA|temporizador|t=" + Date.now() + "|aguardandoBase=" + aguardandoBaseRef.current + "|editou=" + editouRef.current + "|navBase=" + navegacaoBaseRef.current + "|nav=" + JSON.stringify([step, Math.max(etapaMax, pos)]) + "|tipo=" + propertyType + "|decisao=" + decisao);
       if (aguardandoBaseRef.current) {
         aguardandoBaseRef.current = false;
         if (!editouRef.current) {
@@ -1370,6 +1374,7 @@ export default function NewPropertyPage() {
       // 59-C1: rede (o fetch nem chegou) ≠ recusa do servidor (chegou e o banco disse não, com a causa).
       let res: Awaited<ReturnType<typeof saveDraftData>>;
       try {
+        console.log("SONDA|grava|t=" + Date.now() + "|decisao=" + decisao + "|tipo=" + propertyType);
         res = await saveDraftData(montarGravacao());
       } catch {
         if (on) {
@@ -2098,9 +2103,7 @@ export default function NewPropertyPage() {
         editouRef.current = true;
       }}
       // E985: escolher um cartão (botão com role radio/checkbox/switch ou aria-pressed) também é edição.
-      onClickCapture={(e) => {
-        if (cliqueEhEscolha(e.target as Element)) editouRef.current = true;
-      }}
+      // ENSAIO: sem a cura do E985 (o clique no cartão não conta como edição).
     >
       {avisoRascunho}
 
