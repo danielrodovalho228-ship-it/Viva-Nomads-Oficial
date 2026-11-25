@@ -201,7 +201,8 @@ test("admin: decisões primeiro, a aprovação única do 62-B3 e o rodízio com 
   assert.deepEqual(fila.map((f) => [f.id, f.posicao, f.impedimento !== null]), [["a", 1, false], ["s", null, true], ["t", null, true], ["b", 2, false]]);
   const ordem = ["avaliacoes-decidir", "avaliadores-chave", "avaliadores-credenciamento", "avaliacoes-sem-avaliador", "avaliacoes-recusas", "avaliacoes-rodizio", "avaliadores-precos"].map((t) => ADMIN.indexOf(`data-testid="${t}"`));
   assert.ok(ordem.every((x, i) => x > 0 && (i === 0 || x > ordem[i - 1])), `ordem ${ordem}`);
-  assert.match(ADMIN, /<Link href=\{n\.ancora\}/);
+  // E1184 (ORDEM-DUET-830): os números são âncoras simples da própria página, não links do roteador.
+  assert.match(ADMIN, /<a href=\{n\.ancora\}/);
   assert.match(ADMIN, /rotuloDecisao\(c\.status, para\)/);
   // O que o 62-B3 trouxe continua: dados de quem ainda não é parceiro (mascarados), pendência, condição de retorno.
   for (const s of ['data-testid="credenciamento-dados-parceiro"', 'data-testid="credenciamento-pendencia"', "mascararDocumento(", 'name="retornoDias"', "textoCondicaoRetorno(condicaoRetorno(l))"]) assert.ok(ADMIN.includes(s), s);

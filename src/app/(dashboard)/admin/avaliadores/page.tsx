@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
@@ -246,10 +245,12 @@ export default async function AdminAvaliadoresPage() {
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {numeros.map((n) => (
             <li key={n.chave}>
-              <Link href={n.ancora} className="block rounded-xl border border-line p-4 hover:border-forest" data-testid={`decidir-numero-${n.chave}`} data-valor={n.valor}>
+              {/* E1184: âncora simples, não o link do roteador — quem leva a tela até à secção é o navegador, também no
+                  primeiro instante depois de abrir (o toque cedo perdia-se: endereço na âncora, tela no topo). */}
+              <a href={n.ancora} className="block rounded-xl border border-line p-4 hover:border-forest" data-testid={`decidir-numero-${n.chave}`} data-valor={n.valor}>
                 <span className="block font-title text-2xl font-semibold text-ink">{n.valor}</span>
                 <span className="text-sm text-muted">{n.rotulo}</span>
-              </Link>
+              </a>
             </li>
           ))}
         </ul>
