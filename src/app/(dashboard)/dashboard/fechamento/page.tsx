@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { getFechamentoContext } from "@/lib/data/leads-actions";
 import { lerFechosDoDono } from "@/lib/data/fechos-do-dono-servidor";
 import { ClosingClient, type FechosDaPagina } from "./closing-client";
@@ -23,20 +22,15 @@ export const dynamic = "force-dynamic";
  * E1090: a página lê TODOS os fechos do dono (`lerFechosDoDono`). Sem `?c=`, abre a primeira linha da ordem (o que
  * espera o dono), não a aceita mais recente; com `?c=` do dono, abre-a como antes (R8); com `?c=` que não é dele, mostra
  * os fechos dele com "Não encontramos esse fechamento" (R9). A falha da leitura lança (R10).
- *
- * E1141: `?c=<candidatura>&p=<proposta>` abre o assistente de uma estadia ANTERIOR da candidatura. O `p` é validado no
- * servidor (desta candidatura e acordada; senão, "não encontramos"). A estadia escolhida que já tem contrato leva ao
- * contrato — o assistente nunca se reabre para ela. Sem `p`, tudo como antes.
  */
 export default async function FechamentoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ c?: string; p?: string }>;
+  searchParams: Promise<{ c?: string }>;
 }) {
-  const { c, p } = await searchParams;
+  const { c } = await searchParams;
   const lidos = await lerFechosDoDono();
-  let realCtx = c ? await getFechamentoContext(c, p) : null;
-  if (p && realCtx?.propostaDaUrl && realCtx.contratoExistente) redirect(`/dashboard/contratos/${encodeURIComponent(realCtx.contratoExistente.id)}`);
+  let realCtx = c ? await getFechamentoContext(c) : null;
   const naoEncontrado = Boolean(c) && !realCtx;
   if (!realCtx) {
     if (lidos) realCtx = lidos.abrir ? await getFechamentoContext(lidos.abrir) : null;
@@ -46,10 +40,7 @@ export default async function FechamentoPage({
     ? {
         linhas: lidos.linhas,
         foraDoTeto: lidos.foraDoTeto,
-        // E1141: a linha aberta é a da candidatura E da estadia que o assistente mostra (sem proposta, a sem proposta).
-        atual: realCtx
-          ? (lidos.linhas.find((l) => l.leadId === realCtx!.leadId && l.acao.tipo === "assistente" && l.propostaId === (realCtx!.proposta?.id ?? null))?.chave ?? null)
-          : null,
+        atual: realCtx ? (lidos.linhas.find((l) => l.leadId === realCtx!.leadId && l.acao.tipo === "assistente")?.chave ?? null) : null,
         naoEncontrado,
         temAceitas: lidos.temAceitas,
       }

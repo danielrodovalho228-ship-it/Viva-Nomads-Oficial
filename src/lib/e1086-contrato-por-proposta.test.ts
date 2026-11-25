@@ -41,8 +41,7 @@ test("a rota da taxa de serviço cobra o contrato da proposta acordada, com rese
   // O contrato lido para a taxa é o da proposta acordada (lida no servidor, nunca vinda do navegador).
   const s = ler("lib/data/fechamento-servidor.ts");
   const f = s.slice(s.indexOf("export async function comissaoDoContrato("));
-  // E1141: a proposta da taxa é a do fecho (a pedida e validada, ou a de sempre).
-  assert.match(f, /const acordada = await propostaDoFechamentoDoLead\(admin, leadId, propostaPedida\);/);
+  assert.match(f, /const acordada = await propostaAcordadaDoLead\(admin, leadId\);/);
   assert.match(f, /contratoDoFechamentoDoLead\(admin, leadId, propostaId\)/);
 });
 
@@ -53,9 +52,7 @@ test("o registro do contrato procura o contrato DA PROPOSTA e marca só essa pro
   assert.doesNotMatch(f, /from\("contratos"\)\.select\("id"\)\.eq\("lead_id", lead\.id\)\.maybeSingle\(\)/, "a procura só pela candidatura saiu");
   assert.match(f, /contratoDoFechamentoDoLead\(admin, lead\.id as string, acordada \? acordada\.id : null\)/);
   // A proposta é lida ANTES de decidir se já existe contrato.
-  // E1141: a leitura chama-se `propostaDoFechamentoDoLead` (com o nome antigo, o indexOf daria -1 e a asserção passaria em vão).
-  const leProposta = f.indexOf("propostaDoFechamentoDoLead(admin, lead.id as string");
-  assert.ok(leProposta > 0 && leProposta < f.indexOf("contratoDoFechamentoDoLead("));
+  assert.ok(f.indexOf("propostaAcordadaDoLead(admin, lead.id as string)") < f.indexOf("contratoDoFechamentoDoLead("));
   assert.match(f, /marcarPropostaEmContrato\(admin, acordada\.id\)/);
   const s = ler("lib/data/propostas-servidor.ts");
   assert.match(s, /export async function marcarPropostaEmContrato\(admin: SupabaseClient, propostaId: string\)/);
