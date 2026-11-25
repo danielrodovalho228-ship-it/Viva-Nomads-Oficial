@@ -9,7 +9,6 @@ import { Navbar } from "@/components/layout/navbar";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { AvisoTestes } from "@/components/layout/aviso-testes";
 import { PRE_LANCAMENTO } from "@/lib/flags";
-import { PularParaConteudo } from "@/components/layout/pular-para-conteudo";
 
 // 404: só o noindex do Next (sem canonical nem o robots da raiz).
 export const metadata: Metadata = {
@@ -25,14 +24,12 @@ export default async function NotFound() {
 
   return (
     <div className="flex min-h-screen flex-col bg-surface-2">
-      {/* E976, parte 2: a 404 tinha o destino (#conteudo) mas não o link de salto. */}
-      <PularParaConteudo />
       {/* E916 (re-prova): o cabeçalho padrão do site (Imóveis · Anunciar · Empresas · Parceiros · Entrar), igual às
           outras páginas públicas — antes só o logo. Com o rodapé e a busca abaixo, a 404 tem a casca completa. */}
       {PRE_LANCAMENTO && <AvisoTestes />}
       <Navbar />
 
-      <main id="conteudo" tabIndex={-1} className="container-page flex flex-1 flex-col items-center justify-center py-12 text-center outline-none">
+      <main id="conteudo" className="container-page flex flex-1 flex-col items-center justify-center py-12 text-center">
         <NotFoundIllustration />
         <p className="mt-8 font-title text-2xl font-semibold text-ink">404</p>
         <h1 className="mt-2 font-title text-2xl font-semibold text-ink">Página não encontrada</h1>
