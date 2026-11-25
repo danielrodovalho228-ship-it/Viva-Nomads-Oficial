@@ -6,7 +6,6 @@ import type { ItemAgenda } from "@/lib/agenda";
 import { nomeDepoisDoAceite, nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
 import { saidaPeloFim } from "@/lib/texto-do-periodo";
 import { diaBRT } from "@/lib/datas-brasilia";
-import { visitasNaAgendaDoDono } from "@/lib/vistoria/visitas-confirmadas";
 
 /*
   Agenda do proprietário (prompt 23, item 5). Tudo filtrado pelo DONO logado no servidor: outro proprietário nunca
@@ -60,7 +59,7 @@ export async function carregarAgendaDoDono(opcoes: { exigir?: boolean } = {}): P
   const ids = imoveis.map((p) => p.id);
   const titulo = new Map(imoveis.map((p) => [p.id, p.titulo]));
 
-  const [{ data: visitas, error: e1 }, { data: contratos, error: e2 }, { data: bloqueios, error: e3 }, { data: aceitas }, { data: avaliacoes, error: e4 }] = await Promise.all([
+  const [{ data: visitas, error: e1 }, { data: contratos, error: e2 }, { data: bloqueios, error: e3 }, { data: aceitas }] = await Promise.all([
     admin
       .from("visitas_video")
       .select("id, property_id, tenant_id, modalidade, status, horarios, horario_confirmado, horario_proposto")
@@ -71,12 +70,8 @@ export async function carregarAgendaDoDono(opcoes: { exigir?: boolean } = {}): P
     admin.from("contratos").select("id, property_id, tenant_id, status, contrato_blocos(inicio, fim)").in("property_id", ids).in("status", ["ativo", "encerrado_sem_renovacao"]),
     admin.from("property_blocks").select("id, property_id, inicio, fim").in("property_id", ids),
     admin.from("leads").select("tenant_id, property_id").eq("owner_id", user.id).eq("status", "accepted"),
-    // E1174: as visitas de avaliação dos imóveis do dono — a mesma fonte da tela do pedido; só o que pode estar confirmado.
-    admin.from("vistoria_pedidos").select("id, property_id, status, agendado_para").in("property_id", ids).eq("status", "agendado").not("agendado_para", "is", null),
   ]);
   if ((e1 || e2 || e3) && opcoes.exigir) throw new Error(MSG_AGENDA_NAO_CARREGOU);
-  // E1174: uma visita marcada não pode sumir calada da tela Agenda.
-  if (e4 && opcoes.exigir) throw new Error(MSG_AGENDA_NAO_CARREGOU);
 
   // Relação aceita (candidatura aceita ou contrato): só então nome curto e foto.
   const aceito = new Set<string>(((aceitas ?? []) as { tenant_id: string; property_id: string }[]).map((l) => `${l.tenant_id}_${l.property_id}`));
@@ -154,7 +149,5 @@ export async function carregarAgendaDoDono(opcoes: { exigir?: boolean } = {}): P
       href: null,
     });
   }
-  // E1174: a visita confirmada de uma avaliação entra também na Agenda do dono, pela regra única (visitaConfirmada).
-  itens.push(...visitasNaAgendaDoDono((avaliacoes ?? []) as { id: string; property_id: string; status: string; agendado_para: string | null }[], titulo));
   return { itens, imoveis, horarios };
 }
