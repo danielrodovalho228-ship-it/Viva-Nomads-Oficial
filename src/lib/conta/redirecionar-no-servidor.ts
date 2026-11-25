@@ -36,25 +36,3 @@ export function redirecionamentoDaConta(pathname: string, sp: URLSearchParams, t
   if (p === "/dashboard/conta" && tela === "larga") return "/dashboard/conta/perfil";
   return null;
 }
-
-/**
- * E979: o cookie da largura fica desatualizado quando a largura muda FORA do painel (só o painel o regrava). Com
- * "larga" guardado e a tela hoje estreita, o proxy mandava /dashboard/conta para o Perfil e a pessoa não via o menu da
- * Conta. O proxy marca esse redirecionamento (cookie curto, só na Conta); o Perfil lê a marca e, em tela estreita, volta
- * ao menu (VoltarAoMenuSeTelaEstreita).
- */
-export const COOKIE_VEIO_DA_CONTA = "vn-conta-proxy";
-
-/** Só o redirecionamento /dashboard/conta → Perfil leva a marca (o de /avaliacoes não depende da largura). */
-export function marcaDoRedirecionamentoDaConta(pathname: string): boolean {
-  return pathname.replace(/\/+$/, "") === "/dashboard/conta";
-}
-
-/**
- * No Perfil: volta ao menu da Conta? Só quando a página veio do redirecionamento do proxy E a tela é estreita. Quem abriu
- * o Perfil pelo menu (sem a marca) fica no Perfil; no computador o redirecionamento estava certo; e a âncora antiga
- * (/dashboard/conta#documento) segue o encaminhamento dela (E798).
- */
-export function voltarAoMenuDaConta(c: { veioDoProxy: boolean; largura: number; destinoDaAncora: string | null }): boolean {
-  return c.veioDoProxy && !c.destinoDaAncora && telaDaLargura(c.largura) === "estreita";
-}

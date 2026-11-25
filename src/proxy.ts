@@ -3,7 +3,7 @@ import { rotaDetalheContrato } from "@/lib/contrato-rota";
 import { destinoLeitorQa, rotaLeitorQa } from "@/lib/notifications/caixa-teste";
 import { createServerClient } from "@supabase/ssr";
 import { cookiesRenovados } from "@/lib/supabase/cookies-renovados";
-import { COOKIE_TELA, COOKIE_VEIO_DA_CONTA, marcaDoRedirecionamentoDaConta, redirecionamentoDaConta } from "@/lib/conta/redirecionar-no-servidor";
+import { COOKIE_TELA, redirecionamentoDaConta } from "@/lib/conta/redirecionar-no-servidor";
 import {
   isInternalPath,
   acessoInterno,
@@ -122,9 +122,6 @@ async function proteger(request: NextRequest): Promise<NextResponse> {
     // Depende do cookie deste aparelho (largura da tela): nunca em cache compartilhado.
     const r = NextResponse.redirect(new URL(contaParaOnde, request.url));
     r.headers.set("Cache-Control", "private, no-store");
-    // E979: o cookie da largura pode estar desatualizado (a largura mudou fora do painel). A marca avisa o Perfil de que
-    // a página veio daqui; em tela estreita ele corrige o cookie e volta ao menu da Conta. Vale 30 s, só na Conta.
-    if (marcaDoRedirecionamentoDaConta(pathname)) r.cookies.set({ name: COOKIE_VEIO_DA_CONTA, value: "1", path: "/dashboard/conta", maxAge: 30, sameSite: "lax" });
     return r;
   }
 
