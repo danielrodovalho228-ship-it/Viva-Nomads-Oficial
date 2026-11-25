@@ -259,6 +259,10 @@ test("6. as telas da avaliação que dizem um prazo em dias úteis mostram a not
     "components/avaliadores/aceitar-pedido.tsx", // avaliador: o campo do prazo na proposta
     "app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx", // avaliador: a lista (campo da proposta e resumo dos pedidos)
     "app/(dashboard)/dashboard/parceiro/avaliacao/[pedido]/page.tsx", // avaliador: o fim da visita e o prazo de envio do laudo
+    // E1196 (ORDEM-DUET-887): os três sítios da Triagem/Proposta que dizem um prazo em dias úteis.
+    "components/triagem/vinculo-morador.tsx", // equipe: "A equipe confere em até 2 dias úteis."
+    "app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx", // dono: "Seu prazo de 1 dia útil para decidir…"
+    "app/(dashboard)/dashboard/candidaturas/page.tsx", // morador: "A resposta chega em até 1 dia útil."
   ];
   for (const rel of telas) {
     const fonte = readFileSync(join(RAIZ, rel), "utf8");
@@ -275,4 +279,11 @@ test("6. o e-mail que cita dias úteis fecha com a nota; o que não cita fica co
   const antigo = corpoVistoria("vistoria_proposta_aceita", { ...fatos, prazoPropostoDias: 7, prazoLaudoDiasUteis: null }).body("Rui");
   assert.ok(antigo.endsWith("Laudo em 7 dias."), antigo);
   assert.ok(!antigo.includes(NOTA_DIAS_UTEIS));
+});
+
+test("6. E1196: nos textos que vêm da lib, a nota entra só quando o texto cita dias úteis (citaDiasUteis)", () => {
+  const proposta = readFileSync(join(RAIZ, "app/(dashboard)/dashboard/propostas/[id]/proposta-detalhe.tsx"), "utf8");
+  assert.match(proposta, /citaDiasUteis\(p\.preAceitacao\.contexto\) && <NotaDiasUteis\b/);
+  const candidaturas = readFileSync(join(RAIZ, "app/(dashboard)/dashboard/candidaturas/page.tsx"), "utf8");
+  assert.match(candidaturas, /citaDiasUteis\(PROXIMO_PASSO_CANDIDATURA\[c\.situacao\.chave\]!\.agora\) && <NotaDiasUteis\b/);
 });
