@@ -62,7 +62,7 @@ export function SeusFechamentos({
               data-tipo={l.tipo}
               data-atual={eAtual ? "sim" : "nao"}
               aria-current={eAtual ? "true" : undefined}
-              className={`flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between ${eAtual ? "rounded-lg bg-sage-50 px-3" : ""}`}
+              className={`flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between ${eAtual ? "rounded-lg bg-surface-2 px-3" : ""}`}
             >
               <div className="min-w-0">
                 <p className="truncate font-semibold text-ink" data-testid="fecho-imovel">
@@ -84,7 +84,7 @@ export function SeusFechamentos({
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-3">
-                <span data-testid="fecho-estado" className="rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-forest">
+                <span data-testid="fecho-estado" className="rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">
                   {l.estado}
                 </span>
                 {eAtual ? (
