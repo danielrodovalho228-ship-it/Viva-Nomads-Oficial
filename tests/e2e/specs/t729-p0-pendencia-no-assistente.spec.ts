@@ -39,6 +39,8 @@ test.describe("T729 — P0: pendência do rascunho abre o passo no assistente", 
     await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
     const falta = p.getByTestId("falta-publicar").first();
     await expect(falta).toBeVisible({ timeout: 30_000 });
+    // ENSAIO t729: a leitura dos atalhos só depois de a resposta da identidade chegar (a ordem da corrida que falhou).
+    await expect(falta.getByTestId("pendencia-identidade")).toBeVisible({ timeout: 20_000 });
     // Nenhum atalho de pendência do rascunho vai ao editor por seções.
     for (const href of await falta.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""))) {
       expect(href).toMatch(new RegExp(`^/dashboard/imoveis/novo\\?draft=${ids.rascunho}`));
