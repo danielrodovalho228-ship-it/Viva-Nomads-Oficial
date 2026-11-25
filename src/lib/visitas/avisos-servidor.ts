@@ -86,6 +86,8 @@ export async function avisarVisitaCancelada(admin: Admin, visitaId: string, quem
     const d = detalhes({ linhas: t.linhas });
     if (destino?.email && destino.notif_email !== false)
       await notify({ event: "visita_cancelada", email: destino.email, name: destino.full_name ?? undefined, userId: para, pushUrl: t.url, imovelId: v.property_id, body: t.abertura, ctaLabel: t.cta, detailsHtml: d.html, detailsText: d.texto });
+    // ENSAIO t585: a cópia de quem cancelou chega 2 s depois (abre a janela entre os dois envios).
+    await new Promise((r) => setTimeout(r, 2_000));
     // E269: a cópia de quem cancelou (os dois lados, 1 cada).
     if (autor?.email && autor.notif_email !== false) {
       // E269-B: o motivo vai só à outra parte; quem cancelou não o recebe de volta.
