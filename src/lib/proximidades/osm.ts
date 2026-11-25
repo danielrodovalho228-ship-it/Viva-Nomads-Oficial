@@ -199,22 +199,6 @@ export const PROXIMIDADES_LAB: LugarProximo[] = [
 ];
 
 /**
- * E952: no laboratório, uma lista por CEP — o Jardim Europa (38414-536, o CEP do caso do Daniel) tem lista e ponto
- * próprios, longe do Umuarama; os demais CEPs, a lista de sempre. Só laboratório (INTEGRACOES_SIMULADAS=on).
- */
-export const CEP_LAB_JARDIM_EUROPA = "38414536";
-export const PROXIMIDADES_LAB_JARDIM_EUROPA: LugarProximo[] = [
-  { tipo: "farmacia", categoria: "saude", nome: "Drogaria Jardim Europa (exemplo do laboratório)", distanciaM: 310 },
-  { tipo: "escola", categoria: "educacao", nome: "Escola Municipal Jardim Europa (exemplo do laboratório)", distanciaM: 520 },
-  { tipo: "mercado", categoria: "mercado", nome: "Mercado Jardim Europa (exemplo do laboratório)", distanciaM: 260 },
-  { tipo: "onibus", categoria: "transporte", nome: "Ponto de ônibus Jardim Europa (exemplo do laboratório)", distanciaM: 120 },
-];
-export function proximidadesDoLab(cep: string | null): { ponto: { lat: number; lng: number }; itens: LugarProximo[] } {
-  if ((cep ?? "").replace(/\D/g, "") === CEP_LAB_JARDIM_EUROPA) return { ponto: { lat: -18.9456, lng: -48.3245 }, itens: PROXIMIDADES_LAB_JARDIM_EUROPA };
-  return { ponto: { lat: -18.918, lng: -48.258 }, itens: PROXIMIDADES_LAB };
-}
-
-/**
  * Servidores Overpass, em ordem: o principal (overpass-api.de) e o espelho público da Kumi Systems
  * (overpass.kumi.systems), cuja política aceita uso público sem chave, com o mesmo cuidado de volume. Só passa ao
  * espelho quando o principal recusa (429/5xx) ou não responde.

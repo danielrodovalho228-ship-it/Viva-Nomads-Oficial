@@ -102,7 +102,6 @@ import { urlComEtapa } from "@/lib/anuncio/etapa-na-url";
 import { capacidadeSugerida, consumoSugerido, mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
 import { NEGOCIACAO_PADRAO, normalizarNegociacao, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
 import { cepValido, chaveBuscaPerto, paraProximity, type LugarProximo } from "@/lib/proximidades/osm";
-import { ESTADO_PERTO_INICIAL, aplicarRespostaPerto, iniciarBuscaPerto, invalidarPerto, type AlvoPerto, type EstadoPerto } from "@/lib/proximidades/estado-perto";
 import { reportarProximidade } from "@/lib/data/proximidades-actions";
 import { estadoDoStatus, type EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
@@ -308,27 +307,14 @@ export default function NewPropertyPage() {
   const [telaQual, setTelaQual] = useState(0);
   const [abrindoCadastro, setAbrindoCadastro] = useState(false);
   // Proximidades: as do OSM (todas marcadas; o dono desmarca) + as manuais ("Adicionar outro").
-  // E952: o "O que tem por perto" num estado só (src/lib/proximidades/estado-perto.ts): número da busca, endereço alvo,
-  // lista e situação. Mudou o endereço → a lista some na hora; resposta velha ou de outro endereço é descartada; a
-  // resposta aceita substitui a lista (vazia inclusive); erro → lista vazia com "Tentar de novo". Nunca a lista anterior.
-  const proxEstadoRef = useRef<EstadoPerto>(ESTADO_PERTO_INICIAL);
-  const [proxEstado, setProxEstadoTela] = useState<EstadoPerto>(ESTADO_PERTO_INICIAL);
-  const mudarPerto = (f: (e: EstadoPerto) => EstadoPerto) => {
-    const novo = f(proxEstadoRef.current);
-    proxEstadoRef.current = novo;
-    setProxEstadoTela(novo);
-    return novo;
-  };
-  const proxOsm = proxEstado.itens;
-  const proxCarregando = proxEstado.status === "carregando";
-  // PERTO-B: a busca já rodou para o endereço atual (uma mensagem só na tela: lista, "não achamos" ou "complete o endereço").
-  const proxBuscou = proxEstado.status === "pronto" || proxEstado.status === "erro";
-  // E145: de onde veio a última resposta (osm, cache, sem_lugares, sem_ponto, limite, erro…) — o estado honesto da tela.
-  const proxFonte = proxEstado.fonte;
-  /** Lista restaurada (rascunho ou anúncio salvo): já pronta, para o endereço em que foi buscada. */
-  const restaurarPerto = (itens: LugarProximo[], alvo: AlvoPerto | null) => mudarPerto((e) => ({ ...e, alvo, itens, status: "pronto", fonte: null }));
+  const [proxOsm, setProxOsm] = useState<LugarProximo[] | null>(null);
+  const [proxCarregando, setProxCarregando] = useState(false);
   const [proxDesmarcados, setProxDesmarcados] = useState<string[]>([]);
+  // PERTO-B: a busca já rodou para o endereço atual (uma mensagem só na tela: lista, "não achamos" ou "complete o endereço").
+  const [proxBuscou, setProxBuscou] = useState(false);
   const proxBuscadoRef = useRef<string | null>(null);
+  // E145: de onde veio a última resposta (osm, cache, sem_lugares, sem_ponto, limite, erro…) — o estado honesto da tela.
+  const [proxFonte, setProxFonte] = useState<string | null>(null);
   const proxUltimaBuscaRef = useRef<Record<string, unknown> | null>(null);
   const [googlePlaces, setGooglePlaces] = useState<CuratedPlace[]>([]);
   const [manualProximities, setManualProximities] = useState<Proximity[]>([]);
@@ -984,14 +970,9 @@ export default function NewPropertyPage() {
     if (Array.isArray(d.manualProximities)) setManualProximities(d.manualProximities as Proximity[]);
     // E145: só a lista com lugares conta como "já buscou"; uma lista vazia guardada (busca que falhou) roda de novo ao entrar.
     if (Array.isArray(d.proxOsm) && d.proxOsm.length > 0) {
-      // E952: só volta a lista do MESMO endereço do rascunho (proxChave); a de outro endereço (ou sem chave, de antes do
-      // E952) não volta — a busca roda de novo para o endereço atual.
-      const chaveRascunho = chaveBuscaPerto(d.cep, d.street, d.numero);
-      const cepRascunho = cepValido(d.cep);
-      if (d.proxChave === chaveRascunho && cepRascunho) {
-        restaurarPerto(d.proxOsm as LugarProximo[], { cep: cepRascunho, rua: String(d.street ?? "").trim() });
-        proxBuscadoRef.current = chaveRascunho;
-      }
+      setProxOsm(d.proxOsm as LugarProximo[]);
+      setProxBuscou(true);
+      proxBuscadoRef.current = chaveBuscaPerto(d.cep, d.street, d.numero);
     }
     if (Array.isArray(d.proxDesmarcados)) setProxDesmarcados((d.proxDesmarcados as unknown[]).filter((x): x is string => typeof x === "string"));
     if (Array.isArray(d.iaAnalisadas)) setIaAnalisadas((d.iaAnalisadas as unknown[]).filter((x): x is string => typeof x === "string"));
@@ -1189,7 +1170,7 @@ export default function NewPropertyPage() {
       const doOsm = salvas.filter((x) => x.origem === "osm");
       setManualProximities(salvas.filter((x) => x.origem !== "osm"));
       if (doOsm.length) {
-        restaurarPerto(doOsm.map((x) => ({ tipo: (x.tipo ?? "onibus") as LugarProximo["tipo"], categoria: x.category, nome: x.name, distanciaM: x.distanciaM ?? 0 })), null);
+        setProxOsm(doOsm.map((x) => ({ tipo: (x.tipo ?? "onibus") as LugarProximo["tipo"], categoria: x.category, nome: x.name, distanciaM: x.distanciaM ?? 0 })));
         setProxDesmarcados(doOsm.filter((x) => x.oculto).map((x) => chaveLugar({ tipo: x.tipo, nome: x.name })));
       }
       if (p.faixasAceitas?.length) setFaixas(Object.fromEntries(p.faixasAceitas.map((k) => [k, true])));
@@ -1217,7 +1198,7 @@ export default function NewPropertyPage() {
     minPeriod, maxPeriod, availableFrom, availableUntil, monthlyPrice, airbnbMensal,
     street, numero, complemento, uf, neighborhood, city, cep, videoUrl, videoArquivo, videoConteudo, internetMbps,
     privacidade, furnished, petsOk, petsRegras, regrasCasa, smokingAllowed, fichaDentro, childrenAllowed, issuesInvoice, ...payloadDaChegada(chegada),
-    amenityKeys, googlePlaces, manualProximities, proxOsm, proxChave: proxEstado.alvo && proxEstado.status === "pronto" ? chaveBuscaPerto(proxEstado.alvo.cep, proxEstado.alvo.rua, numero) : null, proxDesmarcados, chacara,
+    amenityKeys, googlePlaces, manualProximities, proxOsm, proxDesmarcados, chacara,
     condoFee, descricaoGeradaPorIa, utilitiesMode, utilitiesEstimate, faixas, garantias, prepFee, negociacao,
     ownershipType, subleaseAuthorized, step, ordemEtapas: VERSAO_ORDEM_ETAPAS, etapaMax: Math.max(etapaMax, pos),
     iaAnalisadas, sugeridos, comodidadesSugeridas, ...(confirmados ? { confirmados } : {}),
@@ -1457,53 +1438,30 @@ export default function NewPropertyPage() {
 
   // PERTO-B: a busca do "O que tem por perto" roda no cadastro novo E na edição, e de novo sempre que o endereço muda
   // (CEP, rua ou número). O servidor usa o cache por CEP; "não mostrar" (desmarcados) é mantido entre buscas.
-  async function buscarPerto(corpo: Record<string, unknown>, seq: number = proxEstadoRef.current.seq) {
+  async function buscarPerto(corpo: Record<string, unknown>) {
     proxUltimaBuscaRef.current = corpo;
-    let resposta: Parameters<typeof aplicarRespostaPerto>[1];
+    setProxCarregando(true);
     try {
       const res = await fetch("/api/proximidades", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
-      const data = (await res.json().catch(() => ({}))) as { itens?: LugarProximo[]; fonte?: string; referencia?: { cep: string | null; rua: string | null } };
-      resposta = res.ok ? { seq, referencia: data.referencia ?? null, itens: data.itens ?? [], fonte: data.fonte ?? null } : { seq, erro: true };
+      const data = (await res.json().catch(() => ({}))) as { itens?: LugarProximo[]; fonte?: string };
+      if (Array.isArray(data.itens) && (data.itens.length > 0 || !proxOsm?.length)) setProxOsm(data.itens);
+      setProxFonte(res.ok ? (data.fonte ?? null) : "erro");
     } catch {
-      resposta = { seq, erro: true };
+      /* sem rede: fica o que já havia */
+      setProxFonte("erro");
+    } finally {
+      setProxBuscou(true);
+      setProxCarregando(false);
     }
-    const antes = proxEstadoRef.current;
-    const depois = mudarPerto((e) => aplicarRespostaPerto(e, resposta));
-    // E952: lista nova aceita → os lugares adicionados à mão têm a distância recalculada para o endereço novo.
-    if (depois !== antes && depois.status === "pronto") void remedirManuais(depois.seq);
-  }
-  /** Mudou o endereço: número novo e lista vazia NA HORA (antes do intervalo da busca). */
-  function novaBuscaPerto(alvo: AlvoPerto | null) {
-    return mudarPerto((e) => iniciarBuscaPerto(e, alvo)).seq;
-  }
-  async function remedirManuais(seq: number) {
-    const comEndereco = manualProximities.filter((m) => (m.endereco ?? "").trim().length >= 3);
-    if (!comEndereco.length) return;
-    const medidas = await Promise.all(comEndereco.map((m) => medirLugar(m.endereco as string).catch(() => null)));
-    if (proxEstadoRef.current.seq !== seq) return; // o endereço mudou de novo no meio
-    const porEndereco = new Map(comEndereco.map((m, i) => [m.endereco as string, medidas[i]]));
-    setManualProximities((lista) => lista.map((m) => (m.endereco && porEndereco.has(m.endereco) ? { ...m, distanciaM: porEndereco.get(m.endereco) ?? null } : m)));
   }
   useEffect(() => {
     const c = cepValido(cep);
     const chave = chaveBuscaPerto(cep, street, numero);
-    if (proxBuscadoRef.current === chave) return;
-    // Edição do anúncio salvo sem CEP no formulário: a lista é a do endereço guardado no servidor (busca por propertyId).
-    if (proxBuscadoRef.current?.startsWith("anuncio:") && !cep.replace(/\D/g, "")) return;
-    // E952: o endereço da lista na tela mudou → ela some NA HORA, mesmo com o endereço novo ainda incompleto.
-    if (!c || !street.trim()) {
-      if (proxBuscadoRef.current !== null || proxEstadoRef.current.itens !== null) {
-        proxBuscadoRef.current = null;
-        mudarPerto(invalidarPerto);
-      }
-      return;
-    }
-    const seq = novaBuscaPerto({ cep: c, rua: street.trim() });
-    proxBuscadoRef.current = null;
+    if (!c || !street.trim() || proxBuscadoRef.current === chave) return;
     const t = setTimeout(() => {
       proxBuscadoRef.current = chave;
-      // E259: o anúncio já salvo leva o id — o servidor só usa o ponto público dele se o endereço for o MESMO (E952).
-      void buscarPerto({ cep: c, rua: street, numero, bairro: neighborhood, cidade: city, uf, imovelId: editingId ?? draftServerId ?? draftParam ?? undefined }, seq);
+      // E259: o anúncio já salvo leva o id — o servidor mede tudo do ponto público dele, o mesmo da página.
+      void buscarPerto({ cep: c, rua: street, numero, bairro: neighborhood, cidade: city, uf, imovelId: editingId ?? draftServerId ?? draftParam ?? undefined });
     }, 800);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1512,8 +1470,7 @@ export default function NewPropertyPage() {
   useEffect(() => {
     if (!editingId || cepValido(cep) || proxBuscadoRef.current) return;
     proxBuscadoRef.current = `anuncio:${editingId}`;
-    const seq = proxEstadoRef.current.itens ? proxEstadoRef.current.seq : novaBuscaPerto(null);
-    void buscarPerto({ propertyId: editingId }, seq);
+    void buscarPerto({ propertyId: editingId });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingId, cep]);
 
@@ -1592,8 +1549,10 @@ export default function NewPropertyPage() {
     setAmenityKeys({});
     setGooglePlaces([]);
     setManualProximities([]);
-    mudarPerto(invalidarPerto);
+    setProxOsm(null);
     setProxDesmarcados([]);
+    setProxBuscou(false);
+    setProxFonte(null);
     proxBuscadoRef.current = null;
     setIaAnalisadas([]);
     setSugeridos([]);
@@ -1965,9 +1924,8 @@ export default function NewPropertyPage() {
     proxBuscou,
     proxFonte,
     tentarPerto: () => {
-      if (proxUltimaBuscaRef.current) void buscarPerto(proxUltimaBuscaRef.current, novaBuscaPerto(proxEstadoRef.current.alvo));
+      if (proxUltimaBuscaRef.current) void buscarPerto(proxUltimaBuscaRef.current);
     },
-    proxAlvo: proxEstado.alvo,
     medirLugar,
     reportarLugar: imovelId ? (l: LugarProximo, motivo: string) => reportarProximidade(imovelId, l.nome, l.tipo, motivo) : null,
     proxDesmarcados,
