@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { diaUtilNoEnsaio } from "../fixtures/feriados-do-ensaio";
 import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -43,12 +44,17 @@ const mudar = async (campos: Record<string, unknown>) => {
 };
 /** "25/10/2026" no horário de Brasília — como a tela escreve a data do laudo. */
 const dia = (iso: string) => new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(iso));
-/** A última segunda-feira, às 10:00 de Brasília: 3 dias úteis depois é a quinta da mesma semana, sem fim de semana no meio. */
+/**
+ * A última segunda-feira, às 10:00 de Brasília: 3 dias úteis depois é a quinta da mesma semana, sem fim de semana no meio.
+ * E1192 (ORDEM-DUET-861): os dias úteis pulam os feriados nacionais, por isso a semana escolhida é a última SEM feriado
+ * de segunda a quinta (lista do ensaio, à parte do produto) — senão "segunda + 3 dias úteis" deixava de ser a quinta.
+ */
 const segundaPassada = () => {
   const d = new Date();
   d.setUTCHours(13, 0, 0, 0);
+  const semFeriadoAteQuinta = () => [0, 1, 2, 3].every((n) => diaUtilNoEnsaio(new Date(d.getTime() + n * 24 * HORA).toISOString().slice(0, 10)));
   do d.setUTCDate(d.getUTCDate() - 1);
-  while (d.getUTCDay() !== 1);
+  while (d.getUTCDay() !== 1 || !semFeriadoAteQuinta());
   return d;
 };
 
@@ -131,6 +137,9 @@ test.describe("T1772 — E1156: o laudo sai no prazo combinado com o avaliador, 
     const form = item.getByTestId("proposta-avaliador");
     await expect(form, "o pedido novo traz o formulário da proposta").toBeVisible({ timeout: 30_000 });
     await expect(form).toContainText("Prazo do laudo (dias úteis depois da visita, até 5)");
+    // E1192: a tela explica "dias úteis" uma vez, pela nota do calendário único.
+    await expect(a.getByTestId("nota-dias-uteis")).toHaveCount(1);
+    await expect(a.getByTestId("nota-dias-uteis")).toHaveText("Dias úteis: segunda a sexta, sem feriados nacionais.");
     // Acima do teto: o campo trava no navegador; tirando a trava do campo, o servidor recusa na mesma.
     await form.getByTestId("proposta-valor").fill("380");
     await form.getByTestId("proposta-prazo").evaluate((el) => el.removeAttribute("max"));
@@ -156,6 +165,9 @@ test.describe("T1772 — E1156: o laudo sai no prazo combinado com o avaliador, 
       const proposta = d.getByTestId("avaliacao-proposta");
       await expect(proposta, `a ${w} px`).toContainText(/Proposta do avaliador: R\$\s380,00 · laudo em até 3 dias úteis depois da visita/, { timeout: 30_000 });
       await expect(proposta.getByTestId("aceitar-proposta"), "o compromisso está à vista antes do aceite").toBeVisible();
+      // E1192: ao lado do prazo em dias úteis, a nota — uma vez na tela do dono.
+      await expect(d.getByTestId("nota-dias-uteis"), `a ${w} px`).toHaveCount(1);
+      await expect(proposta.getByTestId("nota-dias-uteis"), `a ${w} px`).toHaveText("Dias úteis: segunda a sexta, sem feriados nacionais.");
       await expect(d.getByTestId("avaliacao-dono-pedido")).not.toContainText("48 horas");
       expect(await semRolagemLateral(d), `a ${w} px: sem rolagem lateral`).toBe(true);
       await proposta.scrollIntoViewIfNeeded();

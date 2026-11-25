@@ -24,6 +24,7 @@ import { EXPLICACAO_SOBRE, SOBRE_MAX } from "@/lib/vistoria/vitrine-avaliadores"
 import { CRITERIOS_PUBLICOS, DIAS_DIREITO_DE_RESPOSTA } from "@/lib/vistoria/escolha";
 import { PRAZO_LAUDO_MAX_DIAS_UTEIS, PRAZO_RESPOSTA_MAX_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS } from "@/lib/vistoria/prazos";
 import { MSG_SO_CNPJ } from "@/lib/parceiros/regras";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 import { RESPOSTA_DO_AVALIADOR, STATUS_PEDIDO } from "@/lib/vistoria/rotulos-do-pedido";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import type { ChaveIdentidade } from "@/lib/identidade/estado";
@@ -296,6 +297,8 @@ export default async function AvaliacaoParceiroPage() {
               </ul>
             )}
           </Panel>
+          {/* E1192: a lista diz prazos em dias úteis (o campo da proposta, "R$ 250,00 · 2 dias úteis") — a nota explica uma vez. */}
+          {(paraResponder.length > 0 || lista.some((p) => p.prazo_laudo_dias_uteis != null)) && <NotaDiasUteis className="mt-2 text-sm text-muted" />}
         </>
       )}
     </div>

@@ -7,6 +7,7 @@
 */
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 import { FormAcao } from "@/components/vistoria/form-acao";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { proporPrecoEPrazo, responderDesignacao } from "@/lib/vistoria/actions";
@@ -44,6 +45,7 @@ export function AceitarPedido({ pedidoId, exemploValor, prazoMaxDias }: { pedido
             Prazo do laudo (dias úteis depois da visita, até {prazoMaxDias})
             <input name="prazoDias" type="number" min={1} max={prazoMaxDias} step={1} required className={campo} data-testid="pedido-prazo" />
           </label>
+          <NotaDiasUteis className="text-sm text-muted" />
           <div className="grid grid-cols-2 gap-3">
             <button type="submit" className={BOTAO_ACEITAR_PEDIDO} data-testid="pedido-enviar-proposta">
               {ROTULO_ENVIAR_PROPOSTA}

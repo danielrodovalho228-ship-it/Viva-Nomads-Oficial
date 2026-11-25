@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createWriteStream, existsSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
+import { diaUtilNoEnsaio } from "../fixtures/feriados-do-ensaio";
 import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { devolverAVezDaRotinaDaVistoria, pegarAVezDaRotinaDaVistoria } from "../fixtures/vez-da-rotina-da-vistoria";
 
@@ -37,6 +38,7 @@ const SEGREDO = `lab-t1765-${Math.random().toString(36).slice(2)}`;
 const HORA = 3_600_000;
 const ROTA_AVALIADOR = "/dashboard/parceiro/avaliacao";
 const REGRA = "Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso."; // REGRA_DO_REAGENDAMENTO (regras.ts)
+const NOTA_DIAS_UTEIS = "Dias úteis: segunda a sexta, sem feriados nacionais."; // NOTA_DIAS_UTEIS (calendario/dias-uteis.ts), E1192
 // E1177 (asserções alteradas, ORDEM-DUET-778): sem avaliador para escolher, o e-mail e a página já não prometem o
 // aviso — dizem que a equipe foi avisada (SEM_OUTRO_AVALIADOR e TEXTO_DA_ESPERA, em espera-de-avaliador.ts).
 const A_EQUIPE_FOI_AVISADA = "A equipe da Viva foi avisada.";
@@ -88,19 +90,21 @@ const quando = (iso: string) => {
 /**
  * E1188: a data do laudo como o e-mail a escreve ("03/12/2026") — N dias úteis depois da visita, de segunda a sexta, em
  * Brasília. Conta feita aqui, à parte do produto: a visita que cai num fim de semana começa a contar na segunda, 0 h.
+ * E1192 (ORDEM-DUET-861): o dia útil pula também os feriados nacionais (lista do ensaio, à parte do produto) — sem isto
+ * a spec passava a esperar a data errada sempre que houvesse um feriado entre a visita e o laudo (Natal, 1.º de janeiro).
  */
 const laudoAte = (visitaIso: string, diasUteis: number) => {
   const DIA = 24 * HORA;
   // O relógio de Brasília como se fosse UTC (−3 h fixas), para ler o dia da semana e a data.
   let t = Date.parse(visitaIso) - 3 * HORA;
-  const fimDeSemana = (x: number) => [0, 6].includes(new Date(x).getUTCDay());
-  if (fimDeSemana(t)) {
-    t = Math.floor(t / DIA) * DIA;
-    while (fimDeSemana(t)) t += DIA;
+  const naoUtil = (x: number) => !diaUtilNoEnsaio(new Date(x).toISOString().slice(0, 10));
+  if (naoUtil(t)) {
+    t = Math.floor(t / DIA) * DIA + DIA;
+    while (naoUtil(t)) t += DIA;
   }
   for (let i = 0; i < diasUteis; i++) {
     t += DIA;
-    while (fimDeSemana(t)) t += DIA;
+    while (naoUtil(t)) t += DIA;
   }
   const d = new Date(t);
   const dois = (n: number) => String(n).padStart(2, "0");
@@ -353,6 +357,8 @@ test.describe("T1765 — E1160: os e-mails da avaliação dizem o que aconteceu 
     // pela tela (R$ 320 e 3 dias úteis) — antes dizia só "enviou a proposta de valor e prazo".
     expect(chegou.corpo).toContain(`Olá Dora, ${contas.avalA1.nome} enviou a proposta para a avaliação de ${TITULO.proposta}: R$ 320,00 · laudo em até 3 dias úteis depois da visita. Aceite em até 72 horas depois da proposta, até ${ate} `);
     expect(chegou.corpo).toMatch(/até \d{2}\/\d{2}\/\d{4} \d{2}:\d{2} \(horário de Brasília\); passado o prazo, você escolhe outro avaliador\./);
+    // E1192: o e-mail que cita um prazo em dias úteis explica-o uma vez, com a nota das telas.
+    expect(chegou.corpo.split(NOTA_DIAS_UTEIS).length - 1, "a nota dos dias úteis, uma vez").toBe(1);
     expect(chegou.corpo).not.toMatch(/recusou|não respondeu/);
     expect(await emails(ids.dono, "vistoria_recusada_dono", TITULO.proposta)).toHaveLength(0);
     expect(await emails(ids.dono, "vistoria_sem_resposta_dono", TITULO.proposta)).toHaveLength(0);
@@ -378,7 +384,7 @@ test.describe("T1765 — E1160: os e-mails da avaliação dizem o que aconteceu 
       expect(marcada.assunto).toMatch(/^Visita de avaliação: Casa proposta/);
       // E1188 (asserção alterada, ORDEM-DUET-852): com a visita marcada, o e-mail diz também a data do laudo.
       const laudo = laudoAte((await linha(pedido.proposta)).agendado_para as string, 3);
-      expect(marcada.corpo).toContain(`a visita de avaliação de ${TITULO.proposta} está agendada para ${antes} (horário de Brasília). Laudo até ${laudo} (3 dias úteis depois da visita). ${REGRA}`);
+      expect(marcada.corpo).toContain(`a visita de avaliação de ${TITULO.proposta} está agendada para ${antes} (horário de Brasília). Laudo até ${laudo} (3 dias úteis depois da visita). ${REGRA} ${NOTA_DIAS_UTEIS}`);
       expect(marcada.corpo).not.toContain("nova data");
     }
 
@@ -399,7 +405,7 @@ test.describe("T1765 — E1160: os e-mails da avaliação dizem o que aconteceu 
       expect(trocada.assunto.length, `"${trocada.assunto}" cabe em 70 caracteres`).toBeLessThanOrEqual(70);
       // E1188 (asserção alterada, ORDEM-DUET-852): o reagendamento traz a nova data do laudo.
       const novoLaudo = laudoAte((await linha(pedido.proposta)).agendado_para as string, 3);
-      expect(trocada.corpo, quem).toContain(`a visita de avaliação de ${TITULO.proposta} tem nova data: ${nova}; antes: ${antes} (horário de Brasília). Laudo até ${novoLaudo} (3 dias úteis depois da visita). ${REGRA}`);
+      expect(trocada.corpo, quem).toContain(`a visita de avaliação de ${TITULO.proposta} tem nova data: ${nova}; antes: ${antes} (horário de Brasília). Laudo até ${novoLaudo} (3 dias úteis depois da visita). ${REGRA} ${NOTA_DIAS_UTEIS}`);
       // (O bloco de dados do e-mail — "Nova data" e "Data anterior" — não fica na caixa de teste, que guarda só o texto;
       // está na trava de unidade.)
       expect(trocada.corpo, quem).not.toContain("está agendada para");
