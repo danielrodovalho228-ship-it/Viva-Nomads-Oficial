@@ -7,6 +7,7 @@
 */
 import { brl, dataBR, imovelPorExtenso, type ImovelDoEmail, type LinhaDado } from "./dados-negociacao.ts";
 import { formatBRLExato, periodoPorExtenso, rotuloTotalDaEstadia } from "../precos.ts";
+import { PRAZO_RESPOSTA_DONO } from "../candidaturas/status.ts";
 
 export type MomentoCandidatura = "nova" | "enviada" | "aceita";
 
@@ -95,7 +96,7 @@ export function aberturaCandidatura(m: MomentoCandidatura, o: { nome?: string; i
     case "nova":
       return `${ola}, ${limpo(o.interessado) || "um interessado"} enviou uma candidatura para ${titulo}. Os dados do pedido estão abaixo.`;
     case "enviada":
-      return `${ola}, sua candidatura para ${titulo} foi enviada. O proprietário já foi avisado. Os dados do pedido estão abaixo.`;
+      return `${ola}, sua candidatura para ${titulo} foi enviada. O proprietário já foi avisado e responde ${PRAZO_RESPOSTA_DONO}. Os dados do pedido estão abaixo.`;
     case "aceita":
       return `${ola}, o proprietário aceitou sua candidatura para ${titulo}. Os dados do pedido estão abaixo.`;
   }
@@ -105,7 +106,8 @@ export function aberturaCandidatura(m: MomentoCandidatura, o: { nome?: string; i
 export function proximoPassoCandidatura(m: MomentoCandidatura): string {
   switch (m) {
     case "nova":
-      return "Próximo passo: aprove ou recuse a candidatura em Interessados. Ao aprovar, você segue para o Fechamento.";
+      // E395: o prazo do dono, o mesmo que o morador vê desde o envio.
+      return `Próximo passo: aprove ou recuse a candidatura em Interessados ${PRAZO_RESPOSTA_DONO}. Ao aprovar, você segue para o Fechamento.`;
     case "enviada":
       return "Próximo passo: aguarde a resposta do proprietário. Você recebe um e-mail quando ele responder; acompanhe em Minhas candidaturas.";
     case "aceita":
