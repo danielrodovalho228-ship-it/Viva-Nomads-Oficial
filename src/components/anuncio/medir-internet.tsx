@@ -149,8 +149,8 @@ export function MedirInternet({
         body: JSON.stringify({ imovel: imovelId, origem, rodadas: aproveitadas.rodadas, local, confirmouWifi: wifi, ponto }),
       });
       const r = (await resp.json()) as ResultadoMedicao;
-      setResultado(r);
-      if (r.ok) onMedida?.(r.validada);
+      // ENSAIO: sem o produto — a medição nunca aparece validada e o nível não recalcula.
+      setResultado({ ...r, validada: false } as ResultadoMedicao);
       if (r.ok && r.validada && estado.papel === "dono") setEstado({ ...estado, ultima: r.medicao, restantesHoje: estado.restantesHoje - 1 });
       else if (r.ok) setEstado({ ...estado, restantesHoje: estado.restantesHoje - 1 });
     } catch {
