@@ -74,15 +74,6 @@ export function linhaDaTabela(l: { cidade: string; porte: Porte; valor: number |
   };
 }
 
-/**
- * E1081: as linhas da tabela de preço de uma cidade, comparando pela chave (sem acento, sem maiúsculas) — "Uberlandia"
- * gravado na tabela vale para o imóvel de "Uberlândia". A leitura no banco nunca filtra a cidade letra a letra.
- */
-export function linhasDaCidade<T extends { cidade: string }>(tabela: readonly T[], cidade: string | null | undefined): T[] {
-  const c = chaveCidade(cidade);
-  return c ? tabela.filter((l) => chaveCidade(l.cidade) === c) : [];
-}
-
 /** O valor vigente para a cidade e o porte na data (a linha mais recente já em vigor). Sem linha válida → null. */
 export function precoVigente(tabela: LinhaPreco[], cidade: string, porte: Porte, agora: Date): LinhaPreco | null {
   const c = chaveCidade(cidade);

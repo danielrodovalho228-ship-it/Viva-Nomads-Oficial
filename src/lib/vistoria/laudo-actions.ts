@@ -13,8 +13,8 @@ import { itemChecklist, type ValorItem } from "@/config/checklist-avaliacao";
 import { vistoriaAtiva } from "./chave";
 import { podeContestar, valorValido } from "./laudo";
 import { abrirContestacao, emitirLaudo, liberar, registrarCorrecao, type LinhaLaudo } from "./laudo-servidor";
-import { porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, rotaDono, tabelaDaCidade } from "./servidor";
+import { COLUNAS_PRECO, linhaDaTabela, porteDoImovel, precoVigente, type LinhaPreco } from "./regras";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, rotaDono } from "./servidor";
 import type { MotivoVerificacao } from "./strikes";
 import { recusaObservador } from "@/lib/qa/observador";
 
@@ -281,8 +281,8 @@ export async function adminAbrirVerificacao(form: FormData): Promise<Res> {
   const { data: im } = await a.admin.from("properties").select("id, owner_id, city, bedrooms").eq("id", texto(form.get("propertyId"), 40)).maybeSingle();
   if (!im) return { ok: false, erro: "Imóvel não encontrado." };
   const agora = new Date();
-  const tabela = await tabelaDaCidade(a.admin, im.city); // E1081: cidade pela chave (sem acento)
-  const linhas: LinhaPreco[] = tabela;
+  const { data: tabela } = await a.admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? "");
+  const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const porte = porteDoImovel(im.bedrooms as number);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
   if (!preco) return { ok: false, erro: "Sem preço na tabela para esta cidade e porte." };

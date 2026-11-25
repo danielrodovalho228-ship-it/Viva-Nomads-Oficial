@@ -14,14 +14,16 @@ import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
-import { sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
+import { sugeridosDoPedido } from "@/lib/vistoria/servidor";
 import {
+  COLUNAS_PRECO,
   CONDUTA_DONO,
   FRASE_PAGA_AVALIACAO,
   INCLUI_SEMPRE,
   ROTULO_CONDUTA,
   ROTULO_PORTE,
   TEXTO_NOVA_AVALIACAO,
+  linhaDaTabela,
   pedidoPodeAbrir,
   porteDoImovel,
   precoVigente,
@@ -53,8 +55,8 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
   if (!im || im.owner_id !== user.id) return null;
   const agora = new Date();
   const porte = porteDoImovel(im.bedrooms as number);
-  const [tabela, { data: pedidos }, { data: ultimoLaudo }] = await Promise.all([
-    tabelaDaCidade(admin, im.city), // E1081: a cidade pela chave (sem acento, sem maiúsculas)
+  const [{ data: tabela }, { data: pedidos }, { data: ultimoLaudo }] = await Promise.all([
+    admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? ""),
     admin
       .from("vistoria_pedidos")
       .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
@@ -63,7 +65,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
       .limit(1),
     admin.from("vistoria_laudos").select("resultado, emitido_em, ressalva_vencida_em").eq("property_id", propertyId).order("emitido_em", { ascending: false }).limit(1).maybeSingle(),
   ]);
-  const linhas: LinhaPreco[] = tabela;
+  const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
   // Adendo 62-B1: depois de "reprovado" ou de ressalva vencida é NOVA AVALIAÇÃO; a condição de retorno só aparece se existir.
   const desdeNova = ultimoLaudo?.resultado === "reprovado" ? (ultimoLaudo.emitido_em as string) : ((ultimoLaudo?.ressalva_vencida_em as string | null | undefined) ?? null);

@@ -26,11 +26,13 @@ import {
   validarConduta,
   valorDoPedido,
   condicaoRetorno,
+  linhaDaTabela,
+  COLUNAS_PRECO,
   type LinhaPreco,
   type Porte,
   type StatusCredenciamento,
 } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador } from "./servidor";
 import { descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
 import { recusaObservador } from "@/lib/qa/observador";
 import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
@@ -392,8 +394,8 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   const { data: im } = await s.admin.from("properties").select("id, owner_id, status, city, bedrooms").eq("id", propertyId).maybeSingle();
   if (!im || im.owner_id !== s.userId) return SEM_ACESSO;
   const agora = new Date();
-  const tabela = await tabelaDaCidade(s.admin, im.city); // E1081: cidade pela chave (sem acento)
-  const linhas: LinhaPreco[] = tabela;
+  const { data: tabela } = await s.admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? "");
+  const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
   const porte = porteDoImovel(im.bedrooms as number);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
   // Prompt 62-B2: o anúncio que a Viva tirou da busca (segurança grave ou 3º strike) volta justamente por nova avaliação.
