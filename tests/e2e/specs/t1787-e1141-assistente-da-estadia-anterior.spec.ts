@@ -12,6 +12,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    2. Sem p, como antes: a página abre a estadia mais nova.
    3. p de uma estadia que já tem contrato: a página leva ao contrato (nunca reabre o assistente).
    4. p de outra candidatura: "Não encontramos esse fechamento" e nenhum assistente dessa proposta.
+   5. (guarda 4 do coordenador, ORDEM-DUET-933) Chamada DIRETA às rotas da taxa e do contrato com um p alheio (de outra
+      candidatura) ou numa fase errada (proposta enviada, não acordada): as duas recusam com a mesma mensagem e nada é
+      reservado nem cobrado (nenhuma linha em cobrancas_fechamento da candidatura).
   Laboratório; não é prova ao vivo no site.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -83,6 +86,8 @@ test.beforeAll(async () => {
   ids.orcNova = nova.id;
   ids.numNova = nova.numero;
   ids.ctB = await contrato(ids.leadB, ids.imB, ids.M, nova.id, emDias(20), emDias(79), haDias(3));
+  // Uma proposta da mesma candidatura numa fase errada (enviada, ainda não acordada).
+  ids.orcEnviada = (await proposta(ids.leadB, ids.imB, ids.D, ids.M, "enviada", haDias(1), emDias(140), 3300)).id;
 
   // Outra candidatura da mesma dona, com a sua proposta acordada (para o p de outra candidatura).
   ids.leadO = await criarLead(ids.D, ids.N, ids.imO, true);
@@ -93,6 +98,7 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   const leads = [ids.leadB, ids.leadO].filter(Boolean);
   if (leads.length) {
+    await adm().from("cobrancas_fechamento").delete().in("lead_id", leads);
     await adm().from("contratos").delete().in("lead_id", leads);
     await adm().from("propostas").delete().in("lead_id", leads);
     await adm().from("leads").delete().in("id", leads);
@@ -146,6 +152,21 @@ test.describe("T1787 — E1141: o assistente da estadia anterior @E1141", () => 
     const page = await noFechamento(browser, 1280, `?c=${ids.leadB}&p=${ids.orcOutra}`);
     await expect(page.getByTestId("fechamento-nao-encontrado")).toHaveText("Não encontramos esse fechamento. Estes são os seus.", { timeout: 30_000 });
     await expect(linhaDe(page, `A:${ids.orcAntiga}`)).toHaveAttribute("data-atual", "nao");
+    await page.context().close();
+  });
+
+  test("5. chamada direta às rotas com um p alheio ou numa fase errada: recusada, sem efeito", async ({ browser }) => {
+    const page = await noFechamento(browser, 1280);
+    for (const rota of ["/api/comissao", "/api/contrato"]) {
+      for (const p of [ids.orcOutra, ids.orcEnviada]) {
+        const r = await page.request.post(rota, { data: { leadId: ids.leadB, propostaId: p, termMonths: 2, guarantee: "Caução", costSplit: {} } });
+        expect(r.status(), `${rota} com ${p}`).toBe(404);
+        expect((await r.json()).error, `${rota} com ${p}`).toBe("Não encontramos esse fechamento.");
+      }
+    }
+    const { data: cobrancas, error } = await adm().from("cobrancas_fechamento").select("id").eq("lead_id", ids.leadB);
+    expect(error).toBeNull();
+    expect(cobrancas ?? []).toHaveLength(0);
     await page.context().close();
   });
 });

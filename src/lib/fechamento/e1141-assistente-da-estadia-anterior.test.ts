@@ -13,7 +13,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { propostaDoFechamento } from "./proposta-do-fechamento.ts";
+import { propostaDoFechamento, taxaDaEstadia } from "./proposta-do-fechamento.ts";
+import { filtroDaChave } from "../contrato-da-proposta.ts";
 import { fechosDoDono, type CandidaturaDoFecho, type ContratoDoFecho, type PropostaDoFecho } from "./fechos-do-dono.ts";
 import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
@@ -102,4 +103,56 @@ test("a fiação: a proposta escolhida segue do assistente até ao contrato e à
   const pagina = ler("src/app/(dashboard)/dashboard/fechamento/page.tsx");
   assert.match(pagina, /getFechamentoContext\(c, p\)/, "a página lê o p");
   assert.match(pagina, /redirect\(`\/dashboard\/contratos\/\$\{/, "a estadia escolhida que já tem contrato leva ao contrato");
+});
+
+/* ---- As quatro guardas do coordenador (ORDEM-DUET-933): dinheiro e contrato. ---- */
+test("guarda 1 — a taxa cobra-se uma vez por ESTADIA (a chave é a proposta, não a candidatura)", () => {
+  assert.notDeepEqual(filtroDaChave("orc15"), filtroDaChave("orc19"), "a ORC-0015 e a ORC-0019 têm chaves diferentes");
+  const mig = readFileSync("supabase/migrations/0353_contrato_por_proposta_e1086.sql", "utf8");
+  assert.match(mig, /create unique index if not exists cobrancas_fechamento_chave\s+on public\.cobrancas_fechamento \(lead_id, tipo, coalesce\(proposta_id/);
+  const comissao = ler("src/app/api/comissao/route.ts");
+  assert.match(comissao, /const contrato = await comissaoDoContrato\(f\.leadId, f\.propostaPedida\)/, "o contrato (e a chave) é o da estadia escolhida");
+  assert.match(comissao, /const chave = contrato\.propostaId;/);
+  for (const passo of ["lerReservaFechamento", "reservarFechamento"]) assert.match(comissao, new RegExp(`${passo}\\(f\\.leadId, "comissao", chave\\)`));
+  assert.doesNotMatch(comissao, /Fechamento\(f\.leadId, "comissao"\)/, "nenhuma reserva só pela candidatura");
+});
+
+test("guarda 2 — a taxa é a CONGELADA da proposta escolhida (nunca a da mais recente nem a de hoje)", () => {
+  assert.equal(taxaDaEstadia(0.12, 0.08), 0.12, "a ORC antiga cobra a sua");
+  assert.equal(taxaDaEstadia(0.08, 0.12), 0.08, "a ORC nova cobra a sua");
+  assert.equal(taxaDaEstadia(null, 0.08), 0.08, "sem taxa congelada na proposta: a do aceite, como antes");
+  assert.equal(taxaDaEstadia(undefined, null), null);
+  const reg = corpoDe(ler("src/lib/data/actions.ts"), "export async function registrarContrato(");
+  assert.match(reg, /const rate = taxaDoContrato\(taxaDaEstadia\(acordada\?\.taxa, taxaLead\?\.acceptedCommissionRate\), taxaLead\?\.acceptedPlan \?\? null\);/);
+  const ctx = corpoDe(ler("src/lib/data/leads-actions.ts"), "export async function getFechamentoContext(");
+  assert.match(ctx, /taxaDaEstadia\(taxaDaProposta, taxaLead\?\.acceptedCommissionRate\)/, "o assistente mostra a taxa da estadia escolhida");
+});
+
+test("guarda 3 — o período que cruza outro contrato é avisado ANTES de gerar o documento e de cobrar", () => {
+  const reg = corpoDe(ler("src/lib/data/actions.ts"), "export async function registrarContrato(");
+  const conflito = reg.indexOf("const conflito = await conflitoNoImovel(");
+  const soConferir = reg.indexOf("if (opcoes?.soConferir) return { ok: true, conferido: true };");
+  const insercao = reg.indexOf('.from("contratos")\n    .insert(');
+  assert.ok(conflito > 0 && soConferir > conflito && insercao > soConferir, "a conferência para depois do conflito e antes de gravar");
+  const fluxo = ler("src/app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
+  const conferir = fluxo.indexOf("{ soConferir: true }");
+  assert.ok(conferir > 0 && conferir < fluxo.indexOf('await fetch("/api/contrato"'), "confere antes do documento");
+  assert.ok(conferir < fluxo.indexOf('await fetch("/api/comissao"'), "e antes da taxa");
+  assert.match(fluxo, /if \(!conferido\.ok\) \{\s*setErroContrato\(conferido\.error \?\? [^)]+\);\s*return;\s*\}/, "com conflito, mostra a mensagem e não segue");
+});
+
+test("guarda 4 — o p valida-se em CADA rota, antes de qualquer efeito, com a mesma mensagem", () => {
+  for (const rota of ["comissao", "contrato"]) {
+    const src = ler(`src/app/api/${rota}/route.ts`);
+    const carregar = src.indexOf("await carregarFechamento(body.leadId, body.propostaId)");
+    assert.ok(carregar > 0, `${rota}: valida o p`);
+    for (const efeito of ["reservarFechamento(", "createCommissionCharge(", "createContract("]) {
+      const i = src.indexOf(efeito);
+      if (i > 0) assert.ok(carregar < i, `${rota}: valida antes de ${efeito}`);
+    }
+  }
+  const carregar = corpoDe(ler("src/lib/data/fechamento-servidor.ts"), "export async function carregarFechamento(");
+  const fora = carregar.indexOf("if (acordada === PROPOSTA_FORA_DO_FECHAMENTO) return { status: 404, error: MSG_FECHO_NAO_ENCONTRADO };");
+  assert.ok(fora > 0 && fora < carregar.indexOf("motivoBloqueioContrato("), "o p alheio cai antes de tudo o resto");
+  assert.match(ler("src/lib/data/fechamento-servidor.ts"), /export const MSG_FECHO_NAO_ENCONTRADO = "Não encontramos esse fechamento\.";/);
 });
