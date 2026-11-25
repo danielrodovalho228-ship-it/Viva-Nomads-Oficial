@@ -91,24 +91,6 @@ export function autosaveSemNadaAGravar(i: { vazio: boolean; rascunhoNoServidor: 
 }
 
 /**
- * E1034 (ORDEM-DUET-174): o rascunho aberto veio SEM o estado do editor (`draft_data` nulo)? É a linha que só tem as
- * colunas e as fotos (criada por outro caminho que não o autosave). O formulário abre vazio, mas o rascunho não é vazio.
- */
-export function rascunhoAbertoSemDados(draft: unknown): boolean {
-  return !draft || typeof draft !== "object";
-}
-
-/**
- * E1034 (ORDEM-DUET-174): o formulário vazio de um rascunho aberto sem `draft_data` não é o conteúdo dele: gravá-lo
- * regravava a linha inteira (título, preço, bairro, quartos, banheiros, área, descrição) e apagava as fotos, só por
- * abrir o assistente. Não grava por cima. A regra do E614 (o rascunho só com o tipo grava o passo) segue valendo: esse
- * rascunho tem `draft_data`.
- */
-export function formularioVazioNaoEDoRascunho(i: { vazio: boolean; abertoSemDados: boolean }): boolean {
-  return i.vazio && i.abertoSemDados;
-}
-
-/**
  * E614 (ORDEM-DUET-139, condição b): a cópia do rascunho no navegador também leva a hora — é a outra fonte da retoma
  * ("Continuar de onde parei" sem rascunho no servidor). Se o conteúdo é o mesmo que já estava guardado, a cópia fica
  * como estava, com a hora dela: reabrir a tela não carimba (E516).
