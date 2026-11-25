@@ -7,13 +7,16 @@
   Tudo atrás de VISTORIA_ATIVA. Nenhuma regra aqui toca em cobrança: o pagamento segue direto, a plataforma só registra.
 */
 import { createHash } from "node:crypto";
-import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_RESPOSTA_MAX_HORAS } from "./prazos.ts";
-import { impedimento, type AvaliadorFila, type HistoricoDesignacao, type MotivoImpedimento, type PedidoParaDesignar } from "./regras.ts";
+import { PRAZO_DONO_ACEITAR_HORAS, PRAZO_LAUDO_MAX_DIAS_UTEIS, PRAZO_RESPOSTA_MAX_HORAS } from "./prazos.ts";
+import { elegiveisComAlternancia, type AvaliadorElegivel, type AvaliadorFila, type HistoricoDesignacao, type MotivoImpedimento, type PedidoParaDesignar } from "./regras.ts";
 
 // ── 1. O sistema sugere, o dono escolhe ────────────────────────────────────────────────────────────────────────
 export interface Sugestoes {
-  /** Elegíveis para este pedido, em ordem NEUTRA de exibição (quem foi menos procurado primeiro). Não é uma designação. */
-  sugeridos: AvaliadorFila[];
+  /**
+   * Elegíveis para este pedido, em ordem NEUTRA de exibição (quem foi menos procurado primeiro). Não é uma designação.
+   * E1177: quem traz `mesmoDaAnterior` fez a avaliação anterior do imóvel e só está aqui por não haver mais ninguém.
+   */
+  sugeridos: AvaliadorElegivel[];
   impedidos: { id: string; motivo: MotivoImpedimento }[];
 }
 
@@ -23,22 +26,20 @@ export interface Sugestoes {
  * não ordem da Viva. A ordem é só de exibição (rotação), sem peso para quem avalia.
  */
 export function sugerirAvaliadores(fila: AvaliadorFila[], pedido: PedidoParaDesignar, historico: HistoricoDesignacao, agora: Date): Sugestoes {
-  const impedidos: Sugestoes["impedidos"] = [];
-  const sugeridos: AvaliadorFila[] = [];
-  for (const a of fila) {
-    const m = impedimento(a, pedido, historico, agora);
-    if (!m) sugeridos.push(a);
-    else if (m !== "outra_cidade") impedidos.push({ id: a.id, motivo: m });
-  }
-  const t = (s: string | null) => (s ? Date.parse(s) : -Infinity);
-  sugeridos.sort((x, y) => t(x.ultimaDesignacaoEm) - t(y.ultimaDesignacaoEm) || Date.parse(x.credenciadoEm) - Date.parse(y.credenciadoEm) || x.id.localeCompare(y.id));
-  return { sugeridos, impedidos };
+  // E1177: a mesma regra do rodízio, com a exceção da alternância (fonte única em regras.ts).
+  const { elegiveis, impedidos } = elegiveisComAlternancia(fila, pedido, historico, agora);
+  return { sugeridos: elegiveis, impedidos };
 }
 
 // ── 2. Faixa de referência e proposta própria ──────────────────────────────────────────────────────────────────
 /** Percentuais PROVISÓRIOS da faixa em torno do valor da tabela (a confirmar com o Daniel); só afetam o que é exibido. */
 export const FAIXA_REFERENCIA = { abaixo: 0.8, acima: 1.25 } as const;
-export const PRAZO_PROPOSTA_MAX_DIAS = 30;
+/**
+ * E1156: a recusa do prazo fora da regra. Uma frase só, para a proposta e para o termo do perfil ("Meus termos"): as
+ * duas superfícies fazem a mesma promessa e seguem o mesmo teto.
+ */
+const RECUSA_DO_PRAZO_DO_LAUDO = `Informe o prazo do laudo em dias úteis inteiros, de 1 a ${PRAZO_LAUDO_MAX_DIAS_UTEIS}, contados depois da visita.`;
+const prazoDoLaudoNaRegra = (dias: number) => Number.isInteger(dias) && dias >= 1 && dias <= PRAZO_LAUDO_MAX_DIAS_UTEIS;
 
 export interface FaixaReferencia {
   referencia: number;
@@ -53,12 +54,13 @@ export function faixaDeReferencia(valorTabela: number): FaixaReferencia {
 export type ResultadoProposta = { ok: true; valor: number; prazoDias: number; foraDaFaixa: boolean } | { ok: false; erro: string };
 
 /**
- * O preço e o prazo são do avaliador. Só se recusa o que não faz sentido (valor não positivo, prazo que não é um número
- * inteiro de dias entre 1 e 30). Fora da faixa de referência NÃO bloqueia: o dono vê a sinalização e decide.
+ * O preço e o prazo são do avaliador. Só se recusa o que não faz sentido (valor não positivo) e o prazo fora da regra:
+ * E1156 — o prazo do laudo é um número inteiro de dias úteis depois da visita, de 1 até o teto. Fora da faixa de
+ * referência do valor NÃO bloqueia: o dono vê a sinalização e decide.
  */
 export function validarProposta(e: { valor: number; prazoDias: number }, faixa: FaixaReferencia): ResultadoProposta {
   if (!Number.isFinite(e.valor) || e.valor <= 0) return { ok: false, erro: "Informe o valor da avaliação (maior que zero)." };
-  if (!Number.isInteger(e.prazoDias) || e.prazoDias < 1 || e.prazoDias > PRAZO_PROPOSTA_MAX_DIAS) return { ok: false, erro: `Informe o prazo em dias inteiros (de 1 a ${PRAZO_PROPOSTA_MAX_DIAS}).` };
+  if (!prazoDoLaudoNaRegra(e.prazoDias)) return { ok: false, erro: RECUSA_DO_PRAZO_DO_LAUDO };
   const valor = Math.round(e.valor * 100) / 100;
   return { ok: true, valor, prazoDias: e.prazoDias, foraDaFaixa: valor < faixa.min || valor > faixa.max };
 }
@@ -156,10 +158,13 @@ export function propostaVencida(propostaEm: string | null, agora: Date, horas = 
 
 export type ResultadoTermos = { ok: true; valor: number; prazoEntregaDias: number; prazoRespostaHoras: number } | { ok: false; erro: string };
 
-/** O avaliador declara o próprio valor, o prazo de entrega do laudo e em quantas horas responde a um pedido. Nada é imposto pela Viva. */
+/**
+ * O avaliador declara o próprio valor, o prazo de entrega do laudo e em quantas horas responde a um pedido. O valor é
+ * dele; o prazo do laudo segue o teto da proposta (E1156, ORDEM-774): o perfil não anuncia o que a proposta recusa.
+ */
 export function validarTermos(e: { valor: number; prazoEntregaDias: number; prazoRespostaHoras: number }): ResultadoTermos {
   if (!Number.isFinite(e.valor) || e.valor <= 0) return { ok: false, erro: "Informe o seu valor (maior que zero)." };
-  if (!Number.isInteger(e.prazoEntregaDias) || e.prazoEntregaDias < 1 || e.prazoEntregaDias > PRAZO_PROPOSTA_MAX_DIAS) return { ok: false, erro: `Informe o prazo de entrega em dias inteiros (de 1 a ${PRAZO_PROPOSTA_MAX_DIAS}).` };
+  if (!prazoDoLaudoNaRegra(e.prazoEntregaDias)) return { ok: false, erro: RECUSA_DO_PRAZO_DO_LAUDO };
   if (!Number.isInteger(e.prazoRespostaHoras) || e.prazoRespostaHoras < 1 || e.prazoRespostaHoras > PRAZO_RESPOSTA_MAX_HORAS) return { ok: false, erro: `Informe em quantas horas você responde a um pedido (de 1 a ${PRAZO_RESPOSTA_MAX_HORAS}).` };
   return { ok: true, valor: Math.round(e.valor * 100) / 100, prazoEntregaDias: e.prazoEntregaDias, prazoRespostaHoras: e.prazoRespostaHoras };
 }

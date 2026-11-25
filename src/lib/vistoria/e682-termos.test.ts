@@ -9,7 +9,7 @@ import { designacaoVencida } from "./regras.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
 
-test("termos válidos: valor > 0, entrega de 1 a 30 dias, resposta de 1 a 72 horas", () => {
+test("termos válidos: valor > 0, entrega de 1 a 5 dias úteis (E1156, ORDEM-774), resposta de 1 a 72 horas", () => {
   const r = validarTermos({ valor: 350, prazoEntregaDias: 5, prazoRespostaHoras: 12 });
   assert.deepEqual(r, { ok: true, valor: 350, prazoEntregaDias: 5, prazoRespostaHoras: 12 });
 });
@@ -17,6 +17,7 @@ test("termos válidos: valor > 0, entrega de 1 a 30 dias, resposta de 1 a 72 hor
 test("termos inválidos são recusados com a causa", () => {
   assert.equal(validarTermos({ valor: 0, prazoEntregaDias: 5, prazoRespostaHoras: 12 }).ok, false);
   assert.equal(validarTermos({ valor: 300, prazoEntregaDias: 31, prazoRespostaHoras: 12 }).ok, false);
+  assert.equal(validarTermos({ valor: 300, prazoEntregaDias: 6, prazoRespostaHoras: 12 }).ok, false);
   assert.equal(validarTermos({ valor: 300, prazoEntregaDias: 2.5, prazoRespostaHoras: 12 }).ok, false);
   assert.equal(validarTermos({ valor: 300, prazoEntregaDias: 5, prazoRespostaHoras: 0 }).ok, false);
   assert.equal(validarTermos({ valor: 300, prazoEntregaDias: 5, prazoRespostaHoras: 73 }).ok, false);

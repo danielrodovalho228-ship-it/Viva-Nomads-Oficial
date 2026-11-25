@@ -11,10 +11,16 @@ import { brl } from "@/lib/fiscal/documento";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { textoTaxaServicoParceiros } from "@/config/taxa-servico-parceiros";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
-import { ROTAS_NIVEL, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
+import { ROTAS_NIVEL, ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR, TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR, TITULO_BLOCO_DONO, blocoDoDonoVisivel, hrefAvaliador, linhaDoTempoPedido, quandoVisitaComFuso, situacaoDono, situacaoPagamento } from "@/lib/vistoria/telas-exibicao";
+import { concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { agendarVisita, aceitarProposta, avaliarConduta, confirmarRecebido, escolherAvaliador, pedirAvaliacao, recusarProposta, registrarAusencia } from "@/lib/vistoria/actions";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, faixaDeReferencia, linhaDeTermos } from "@/lib/vistoria/escolha";
+import { TEXTO_MESMO_AVALIADOR, textoDaEspera } from "@/lib/vistoria/espera-de-avaliador";
 import { nomeDoAvaliador } from "@/lib/vistoria/nome-do-avaliador";
+import { prazoCombinadoNaLinhaDoDono } from "@/lib/vistoria/pedido-avaliador";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
+import { prazoLaudo } from "@/lib/vistoria/laudo";
+import { dataBRT } from "@/lib/datas-brasilia";
 import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, prazoDoAceiteTerminou, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceiteParaODono } from "@/lib/vistoria/relogio-do-pedido";
 import { identidadesConfirmadas, nomesDasContas, outrosParaTroca, sugeridosDoPedido, tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { textoDaTroca } from "@/lib/vistoria/troca-de-avaliador";
@@ -29,7 +35,7 @@ import {
   ROTULO_AVALIADOR_EM_TESTE,
   ROTULO_CONDUTA,
   ROTULO_PORTE,
-  TEXTO_NOVA_AVALIACAO,
+  TEXTO_NOVA_AVALIACAO_NA_TELA,
   pedidoPodeAbrir,
   porteDoImovel,
   precoVigente,
@@ -66,7 +72,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     tabelaDaCidade(admin, im.city), // E1081: a cidade pela chave (sem acento, sem maiúsculas)
     admin
       .from("vistoria_pedidos")
-      .select("id, status, aguardando_avaliador, agendado_para, ocupado, concordancia_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, escolhido_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
+      .select("id, status, aguardando_avaliador, motivo_da_espera, agendado_para, ocupado, concordancia_em, concordancia_pedida_em, recebido_marcado_em, recebido_confirmado_em, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, visita_concluida_em, proposta_em, proposta_aceita_em, escolhido_em, teste, avaliadores_credenciamento(numero_credenciado, prazo_resposta_horas)")
       .eq("property_id", propertyId)
       .order("criado_em", { ascending: false })
       .limit(1),
@@ -84,21 +90,30 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
     id: string;
     status: string;
     aguardando_avaliador: boolean;
+    motivo_da_espera: string | null;
     agendado_para: string | null;
     ocupado: boolean;
     concordancia_em: string | null;
+    concordancia_pedida_em: string | null;
     recebido_marcado_em: string | null;
     recebido_confirmado_em: string | null;
     valor_proposto: number | string | null;
     prazo_proposto_dias: number | null;
+    prazo_laudo_dias_uteis: number | null;
+    visita_concluida_em: string | null;
     proposta_em: string | null;
     proposta_aceita_em: string | null;
     escolhido_em: string | null;
     teste: boolean;
     avaliadores_credenciamento: { numero_credenciado: string; prazo_resposta_horas: number | null } | null;
   } | null;
+  // E1156: a visita com data firme (agendada ou feita) dá a data do laudo — o prazo combinado conta depois dela.
+  const visitaComData = atual && ["agendado", "realizada"].includes(atual.status) ? (atual.visita_concluida_em ?? atual.agendado_para) : null;
+  const laudoAteDoPedido = atual?.status === "realizada" && visitaComData ? dataBRT(prazoLaudo(visitaComData, atual.prazo_laudo_dias_uteis)) : null;
+  // E1173: o morador disse que não pode na data proposta, e ainda não há data nova.
+  const recusouAData = !!atual && concordanciaRecusada({ status: atual.status, ocupado: atual.ocupado, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em, concordanciaEm: atual.concordancia_em });
   // E648: quem o dono pode escolher (sugeridos pela Viva). Uma leitura que falha mostra o aviso, nunca "ninguém".
-  let sugeridos: { id: string; numero: string; nome: string; termos: string; reputacao: { novo: boolean; cheias: number; texto: string }; identidadeVerificada: boolean; teste: boolean; fotoUrl: string | null }[] | null = [];
+  let sugeridos: { id: string; numero: string; nome: string; termos: string; reputacao: { novo: boolean; cheias: number; texto: string }; identidadeVerificada: boolean; teste: boolean; fotoUrl: string | null; mesmoDaAnterior: boolean }[] | null = [];
   if (atual?.status === "pedido" && !atual.aguardando_avaliador && visivel === "ativa") {
     try {
       const lista = (await sugeridosDoPedido(admin, atual.id, agora)) ?? [];
@@ -138,6 +153,8 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
           identidadeVerificada: verificadas.has(uid),
           teste,
           fotoUrl: uid && fotoPublicaPermitida(teste) ? await signAvatarPath(conta?.avatar_url ?? null, uid) : null,
+          // E1177: só está na lista pela exceção da alternância (fez a avaliação anterior e não há outro).
+          mesmoDaAnterior: a.mesmoDaAnterior === true,
         };
       }));
     } catch {
@@ -179,7 +196,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             {atual.recebido_marcado_em && !atual.recebido_confirmado_em && (
               <FormAcao acao={confirmarRecebido} className="mt-2">
                 <input type="hidden" name="pedidoId" value={atual.id} />
-                <Button type="submit" variant="secondary" size="sm">Confirmar que paguei o avaliador</Button>
+                <Button type="submit" variant="secondary" size="sm">{ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR}</Button>
               </FormAcao>
             )}
             <FormAcao acao={avaliarConduta} className="mt-3 flex flex-wrap items-end gap-2" testid="conduta-dono">
@@ -194,9 +211,9 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
         )}
         {aberto && atual ? (
           <div className="grid gap-4 text-sm" data-testid="avaliacao-dono-pedido" data-status={atual.status}>
-            {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para }) && (
+            {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em, laudoAte: laudoAteDoPedido, motivoDaEspera: atual.motivo_da_espera }) && (
               <p className="text-ink" data-testid="avaliacao-situacao">
-                {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para })}
+                {situacaoDono({ status: atual.status, aguardandoAvaliador: atual.aguardando_avaliador, ocupado: atual.ocupado, concordanciaEm: atual.concordancia_em, agendadoPara: atual.agendado_para, concordanciaPedidaEm: atual.concordancia_pedida_em, laudoAte: laudoAteDoPedido, motivoDaEspera: atual.motivo_da_espera })}
               </p>
             )}
             {atual.status === "pedido" && <DepoisDaTroca pedidoId={atual.id} aguardando={atual.aguardando_avaliador} />}
@@ -215,7 +232,10 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                 {sugeridos === null ? (
                   <p className="mt-2 text-red-700" role="alert" data-testid="avaliacao-escolha-falhou">Não foi possível carregar os avaliadores agora. Atualize a página para tentar de novo.</p>
                 ) : sugeridos.length === 0 ? (
-                  <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">Nenhum avaliador disponível agora. A Viva avisa quando houver.</p>
+                  <>
+                    <p className="mt-2 text-muted" data-testid="avaliacao-escolha-vazia">{textoDaEspera(atual.motivo_da_espera)}</p>
+                    <NotaDiasUteis de={[textoDaEspera(atual.motivo_da_espera)]} />
+                  </>
                 ) : (
                   <ul className="mt-3 grid gap-3">
                     {sugeridos.map((a) => {
@@ -262,6 +282,10 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                                 {TEXTO_IDENTIDADE_VERIFICADA}
                               </span>
                             )}
+                            {/* E1177: o mesmo avaliador da avaliação anterior — o dono escolhe-o ou espera outro. */}
+                            {a.mesmoDaAnterior && (
+                              <span className="mt-2 block rounded-lg bg-sage-100 px-2 py-1 text-sm text-ink" role="note" data-testid="avaliacao-sugerido-mesmo">{TEXTO_MESMO_AVALIADOR}</span>
+                            )}
                           </span>
                           <FormAcao acao={escolherAvaliador} testid="escolher-avaliador">
                             <input type="hidden" name="pedidoId" value={atual.id} />
@@ -287,8 +311,10 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             {atual.status === "designado" && atual.proposta_em && !atual.proposta_aceita_em && (
               <div className="rounded-lg border border-line p-3" data-testid="avaliacao-proposta">
                 <p className="font-semibold text-ink">
-                  Proposta do avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}
+                  Proposta do avaliador: {brl(Number(atual.valor_proposto))} · {prazoCombinadoNaLinhaDoDono(atual, null)}
                 </p>
+                {/* E1192: só o prazo novo se diz em dias úteis; o pedido anterior à regra ("laudo em 7 dias") fica sem nota. */}
+                {atual.prazo_laudo_dias_uteis != null && <NotaDiasUteis />}
                 <p className={`mt-1 ${aceiteTerminou ? "text-ink" : "text-muted"}`} data-testid="avaliacao-proposta-prazo" data-terminado={aceiteTerminou ? "1" : "0"}>
                   {textoDoPrazoDeAceiteParaODono(relogioDoAceite)}
                 </p>
@@ -306,14 +332,15 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                   <TrocaDeAvaliador
                     pedidoId={atual.id}
                     acao={recusarProposta}
-                    texto={textoDaTroca({ numero: atual.avaliadores_credenciamento?.numero_credenciado ?? null, valor: brl(Number(atual.valor_proposto)), prazoDias: Number(atual.prazo_proposto_dias), outros: outrosNaTroca, cidade: im.city })}
+                    texto={textoDaTroca({ numero: atual.avaliadores_credenciamento?.numero_credenciado ?? null, valor: brl(Number(atual.valor_proposto)), prazoDias: Number(atual.prazo_proposto_dias), prazoPorExtenso: prazoCombinadoNaLinhaDoDono(atual, null), outros: outrosNaTroca, cidade: im.city })}
                   />
                 </div>
               </div>
             )}
             {/* E1153: a confirmação do aceite fica na tela enquanto a visita não tem data (antes só existia na resposta
-                da ação, que some quando o bloco se redesenha). A mesma frase do lado do avaliador. */}
-            {aceitoSemDataDeVisita({ status: atual.status, propostaAceitaEm: atual.proposta_aceita_em, agendadoPara: atual.agendado_para }) && (
+                da ação, que some quando o bloco se redesenha). A mesma frase do lado do avaliador.
+                E1173: com a recusa do morador ela sai — a frase de situação já diz o passo (propor outra data). */}
+            {aceitoSemDataDeVisita({ status: atual.status, propostaAceitaEm: atual.proposta_aceita_em, agendadoPara: atual.agendado_para }) && !recusouAData && (
               <p className="font-semibold text-ink" data-testid="avaliacao-aceite-confirmado">
                 {CONFIRMACAO_DO_ACEITE}
               </p>
@@ -321,8 +348,12 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
             {/* E1103: o combinado continua à vista depois de a visita ser agendada (antes, a linha sumia no agendamento). */}
             {["designado", "agendado", "realizada"].includes(atual.status) && atual.proposta_aceita_em && atual.valor_proposto != null && (
               <p className="text-ink" data-testid="avaliacao-proposta-aceita">
-                Combinado com o avaliador: {brl(Number(atual.valor_proposto))} · laudo em {atual.prazo_proposto_dias} {atual.prazo_proposto_dias === 1 ? "dia" : "dias"}.
+                Combinado com o avaliador: {brl(Number(atual.valor_proposto))} · {prazoCombinadoNaLinhaDoDono(atual, visitaComData)}.
               </p>
+            )}
+            {/* E1192: enquanto a visita não tem data, o combinado diz "laudo em até N dias úteis depois da visita" — com a nota. */}
+            {["designado", "agendado", "realizada"].includes(atual.status) && atual.proposta_aceita_em && atual.valor_proposto != null && atual.prazo_laudo_dias_uteis != null && !visitaComData && (
+              <NotaDiasUteis className="text-sm text-muted" />
             )}
             <ol className="grid gap-2" data-testid="avaliacao-linha-tempo">
               {linhaDoTempoPedido({ status: atual.status, numero: atual.avaliadores_credenciamento?.numero_credenciado, agendadoPara: atual.agendado_para, aguardandoAvaliador: atual.aguardando_avaliador }).map((e) => (
@@ -370,7 +401,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               {atual.recebido_marcado_em && !atual.recebido_confirmado_em && (
                 <FormAcao acao={confirmarRecebido} className="mt-2">
                   <input type="hidden" name="pedidoId" value={atual.id} />
-                  <Button type="submit" variant="secondary" size="sm">Confirmar que paguei o avaliador</Button>
+                  <Button type="submit" variant="secondary" size="sm">{ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR}</Button>
                 </FormAcao>
               )}
             </div>
@@ -388,7 +419,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
               <p className="mt-2 text-ink">Porte do anúncio: {ROTULO_PORTE[porte]}</p>
               {preco ? (
                 <>
-                  {desdeNova && <p className="mt-2 text-ink" data-testid="avaliacao-nova">{TEXTO_NOVA_AVALIACAO}</p>}
+                  {desdeNova && <p className="mt-2 text-ink" data-testid="avaliacao-nova">{TEXTO_NOVA_AVALIACAO_NA_TELA}</p>}
                   <p className="mt-1 font-semibold text-ink" data-testid="avaliacao-valor">
                     {desdeNova ? "Referência da nova avaliação" : "Referência da avaliação"}: {brl(cobranca?.valor ?? preco.valor)}
                     {condicao ? ` (tabela: ${brl(preco.valor)})` : ""}
@@ -402,7 +433,7 @@ export async function BlocoAvaliacaoDono({ propertyId }: { propertyId: string })
                   </ul>
                   <p className="mt-1 text-muted" data-testid="avaliacao-valor-proprio">Você escolhe o avaliador; ele define o próprio valor e prazo. Você só aceita depois de ver a proposta.</p>
                   <p className="mt-2 font-semibold text-ink" data-testid="frase-paga">{FRASE_PAGA_AVALIACAO}</p>
-                  <p className="mt-1 text-xs text-muted">Você paga direto ao avaliador; a Viva registra. {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
+                  <p className="mt-1 text-xs text-muted">{TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR} {textoTaxaServicoParceiros(PAGAMENTO_PARCEIROS_ATIVO)}</p>
                 </>
               ) : null}
               {pode.ok ? (

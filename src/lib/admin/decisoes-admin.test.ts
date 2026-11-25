@@ -41,6 +41,8 @@ test("só entram linhas com n > 0; N é a soma; ordem de urgência (P1 antes de 
     avaliacao_sem_avaliador: { n: 0 },
     avaliacao_laudo_atrasado: { n: 0 },
     avaliacao_credenciamento: { n: 0 },
+    // E1175: a fila dos pedidos que esperam o morador também foi lida (a zero).
+    avaliacao_espera_moradora: { n: 0 },
   });
   assert.equal(r.total, 7);
   assert.deepEqual(r.linhas.map((l) => l.chave), ["chamados_p1", "backup", "documentos_pendentes", "encerramentos"]);

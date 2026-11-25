@@ -30,17 +30,12 @@ import * as escolha from "./escolha.ts";
 import { REGRAS_AGENDA, designacaoVencida, podeReagendar } from "./regras.ts";
 import { corpoVistoria } from "./corpo-email.ts";
 import { TEMPLATES } from "../notifications/eventos-email.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const RAIZ = new URL("../../../", import.meta.url).pathname;
 /** O dia em milissegundos, para as contas deste teste. */
 const DIA = 86_400_000;
 const ler = (p: string) => readFileSync(join(RAIZ, p), "utf8");
-/** Tira os comentários (de linha, de bloco e de JSX). Um `/*` no meio de uma string (accept="image/*") não abre bloco. */
-const semComentarios = (s: string) =>
-  s
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
-    .replace(/(^|\n)[ \t]*\/\*[\s\S]*?\*\//g, "$1")
-    .replace(/(^|[\s;,{(])\/\/[^\n]*/g, "$1");
 
 /** As superfícies varridas: a regra, as ações, os e-mails e as telas da avaliação de imóveis (sem os testes). */
 function arquivosVarridos(): string[] {
@@ -134,19 +129,25 @@ test("E1118 (2): as fontes existem uma vez só; a constante duplicada e a funç�
 test("E1118 (3): os textos dizem o mesmo de antes, agora a partir das constantes", () => {
   const ev = (e: string, extra: Record<string, unknown> = {}) => corpoVistoria(e as never, { titulo: "Apto Santa Mônica", ...extra } as never)!.body("Lara");
   assert.match(ev("vistoria_designada"), /Responda no prazo que você declarou \(padrão: 24 horas\) com o seu valor e o seu prazo/);
-  assert.match(ev("vistoria_designado_dono"), /você tem 72 horas depois/);
+  // E1160 (1) (asserções alteradas, ORDEM-DUET-674): o aviso da proposta diz o prazo pela frase da fonte (E1154), a
+  // mesma do bloco do dono; continua a dizer 72 horas, a partir da constante.
+  assert.match(ev("vistoria_designado_dono"), /Aceite em até 72 horas depois da proposta/);
   assert.match(ev("vistoria_agendada"), /Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso\./);
   // O texto de reserva (sem os fatos do pedido) diz os mesmos prazos.
   assert.match(TEMPLATES.vistoria_designada.body("Lara"), /\(padrão: 24 horas\)/);
-  assert.match(TEMPLATES.vistoria_designado_dono.body("Lara"), /você tem 72 horas depois da proposta/);
+  assert.match(TEMPLATES.vistoria_designado_dono.body("Lara"), /Aceite em até 72 horas depois da proposta/);
   assert.match(TEMPLATES.vistoria_agendada.body("Lara"), /com pelo menos 24 horas de aviso\./);
   const cedo = podeReagendar(new Date(Date.parse("2026-11-22T12:00:00Z") + 23 * 3_600_000).toISOString(), new Date("2026-11-22T12:00:00Z"), false);
   assert.deepEqual(cedo, { ok: false, motivo: "Reagendar sem custo só com pelo menos 24 horas de aviso." });
   // No código, os textos levam a constante (não o número).
   const email = ler("src/lib/vistoria/corpo-email.ts");
   assert.match(email, /\(padrão: \$\{PRAZO_RESPOSTA_PADRAO_HORAS\} horas\)/);
-  assert.match(email, /você tem \$\{PRAZO_DONO_ACEITAR_HORAS\} horas depois/);
-  assert.match(email, /com pelo menos \$\{REGRAS_AGENDA\.antecedenciaReagendarHoras\} horas de aviso/);
+  // E1160 (asserções alteradas, ORDEM-DUET-674): os dois textos deixaram de ser montados no e-mail — ele lê a frase
+  // da fonte de cada um, e é a fonte que leva a constante.
+  assert.match(email, /\$\{textoDoPrazoDeAceiteDesdeAProposta\(f\.propostaEm\)\}/);
+  assert.match(ler("src/lib/vistoria/relogio-do-pedido.ts"), /Aceite em até \$\{PRAZO_DONO_ACEITAR_HORAS\} horas depois da proposta/);
+  assert.match(email, /\$\{REGRA_DO_REAGENDAMENTO\}/);
+  assert.match(ler("src/lib/vistoria/regras.ts"), /com pelo menos \$\{REGRAS_AGENDA\.antecedenciaReagendarHoras\} horas de aviso/);
   assert.match(ler("src/lib/vistoria/actions.ts"), /no prazo que declarou \(padrão: \$\{PRAZO_RESPOSTA_PADRAO_HORAS\} horas\)/);
   const lista = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx");
   assert.match(lista, /name="prazoRespostaHoras" type="number" min=\{1\} max=\{PRAZO_RESPOSTA_MAX_HORAS\} defaultValue=\{cred\.prazo_resposta_horas \?\? PRAZO_RESPOSTA_PADRAO_HORAS\}/);
@@ -254,7 +255,9 @@ test("E1118 (5, ORDEM-DUET-550 e DUET-1773): as quatro contas em dias que a regr
   assert.match(telas, /^const DIAS_DA_SEMANA_DA_AGENDA = 7;$/m);
   assert.match(telas, /t <= DIAS_DA_SEMANA_DA_AGENDA \* 86_400_000;/);
   const central = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
-  assert.match(central, /^const DIAS_DA_JANELA_DE_RECUSAS = 30;$/m);
+  // E1158 (14; ORDEM-DUET-658): a janela subiu da Central para a fonte das telas — o título, o vazio e o número leem-na.
+  assert.match(telas, /^export const DIAS_DA_JANELA_DE_RECUSAS = 30;$/m);
+  assert.doesNotMatch(central, /const DIAS_DA_JANELA_DE_RECUSAS\b/);
   assert.match(central, /agora\.getTime\(\) - DIAS_DA_JANELA_DE_RECUSAS \* 86_400_000\)/);
   // DUET-1773: a quarta, o número cru vezes o dia com nome — antes `365 * DIA` (a escada de strikes do proprietário).
   const laudoServidor = ler("src/lib/vistoria/laudo-servidor.ts");
@@ -268,3 +271,27 @@ test("E1118 (5, ORDEM-DUET-550 e DUET-1773): as quatro contas em dias que a regr
   assert.equal(visitaNaSemana(new Date(agora.getTime() - 12 * 3_600_000).toISOString(), agora), true);
   assert.equal(visitaNaSemana(new Date(agora.getTime() - 12 * 3_600_000 - 1).toISOString(), agora), false);
 });
+
+test("E1118 (6; E1158, sub-ponto 20, ORDEM-DUET-659): os prazos em dias e em meses do laudo não estão escritos à mão nos e-mails nem na fila", () => {
+  // "15 dias" (ressalva e devolução), "30 dias" (aviso de expiração) e "12 meses" (validade): as fontes são as
+  // constantes de laudo.ts. Varre os corpos, as linhas da avaliação na matriz, os rótulos da fila e os motivos que a
+  // rotina grava na fila. Fora daqui, de propósito: os textos de tela que explicam a regra (outro item).
+  const PRAZO_DO_LAUDO_A_MAO = /\b(15|30)\s?dias\b|\b12\s?meses\b/;
+  const achados: string[] = [];
+  const varrer = (arq: string, so?: (linha: string) => boolean) =>
+    semComentarios(ler(arq))
+      .split("\n")
+      .forEach((linha, i) => {
+        if (so && !so(linha)) return;
+        if (PRAZO_DO_LAUDO_A_MAO.test(linha)) achados.push(`${arq}:${i + 1}: ${linha.trim().slice(0, 140)}`);
+      });
+  varrer("src/lib/vistoria/corpo-email.ts");
+  varrer("src/lib/vistoria/rotulos-da-fila.ts");
+  varrer("src/lib/notifications/eventos-email.ts", (l) => /^\s*vistoria_\w+: \{/.test(l));
+  varrer("src/lib/vistoria/laudo-servidor.ts", (l) => /motivo: /.test(l));
+  assert.deepEqual(achados, [], `prazo do laudo escrito à mão:\n${achados.join("\n")}`);
+  // A regra apanha o que apanhava antes do item (as cópias que saíram).
+  for (const antes of ["o prazo de 15 dias para corrigir", "completa 12 meses em 30 dias", "em até 15 dias; ele confirma", 'motivo: "Ressalva não corrigida em 15 dias"']) assert.ok(PRAZO_DO_LAUDO_A_MAO.test(antes), antes);
+  assert.ok(!PRAZO_DO_LAUDO_A_MAO.test("o prazo de ${PRAZO_RESSALVA_DIAS} dias"));
+});
+

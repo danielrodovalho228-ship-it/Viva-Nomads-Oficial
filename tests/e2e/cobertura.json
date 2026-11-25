@@ -820,7 +820,8 @@
         "t657-e235-link-avaliador",
         "t1409-varredura-bloco487",
         "t1435-varredura-bloco504",
-        "t1458-varredura-bloco521"
+        "t1458-varredura-bloco521",
+        "t1485-e717-avaliador-de-teste"
       ]
     },
     "/avisos/desligar": {
@@ -7738,6 +7739,14 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t315-telas-avaliacao-dono-62a"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#recusarDataDaVisita": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t1768-e1173-moradora-pode-nao-concordar"
       ]
     },
     "src/lib/vistoria/actions.ts#recusarProposta": {

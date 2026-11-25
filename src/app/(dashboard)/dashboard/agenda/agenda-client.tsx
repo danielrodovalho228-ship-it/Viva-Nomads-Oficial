@@ -19,6 +19,7 @@ import {
   type ItemAgenda,
 } from "@/lib/agenda";
 import { STATUS_VISITA_ROTULO, type StatusVisita } from "@/lib/visitas-video";
+import { ROTULO_VISITA_NA_AGENDA } from "@/lib/vistoria/visitas-confirmadas";
 import { cn } from "@/lib/utils";
 
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
@@ -38,6 +39,8 @@ function Icone({ i }: { i: ItemAgenda }) {
 
 function rotulo(i: ItemAgenda): string {
   if (i.tipo !== "visita") return ROTULO_TIPO_AGENDA[i.tipo];
+  // E1174: a visita de avaliação tem o rótulo que o avaliador lê na Agenda dele.
+  if (i.avaliacao) return ROTULO_VISITA_NA_AGENDA;
   const st = i.status && i.status in STATUS_VISITA_ROTULO ? STATUS_VISITA_ROTULO[i.status as StatusVisita] : "";
   return `Visita ${i.modalidade === "presencial" ? "presencial" : "por vídeo"}${st ? ` · ${st}` : ""}`;
 }
@@ -66,7 +69,7 @@ function Linha({ i }: { i: ItemAgenda }) {
         </p>
         <p className="truncate text-xs text-muted">
           {i.imovel}
-          {i.tipo !== "bloqueio" && (
+          {i.tipo !== "bloqueio" && !i.avaliacao && (
             <>
               {" · "}
               <span data-testid="agenda-item-pessoa">{i.pessoa ? i.pessoa.nome : "Interessado(a)"}</span>
@@ -78,7 +81,7 @@ function Linha({ i }: { i: ItemAgenda }) {
     </div>
   );
   return (
-    <li data-testid="agenda-item" data-tipo={i.tipo} data-id={i.id}>
+    <li data-testid="agenda-item" data-tipo={i.tipo} data-id={i.id} data-avaliacao={i.avaliacao ? "1" : undefined}>
       {i.href ? (
         <Link href={i.href} className="block rounded-lg px-2 py-2 hover:bg-surface-2">
           {conteudo}

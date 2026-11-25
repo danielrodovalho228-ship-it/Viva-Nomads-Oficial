@@ -7,6 +7,8 @@
    • depois da troca, a tela diz o que aconteceu e leva o dono à escolha do novo avaliador.
   Regras puras: sem banco, sem tela.
 */
+import { dias } from "./pedido-avaliador.ts";
+import { SEM_OUTRO_AVALIADOR } from "./espera-de-avaliador.ts";
 
 export const ROTULO_ESCOLHER_OUTRO = "Escolher outro avaliador";
 export const ROTULO_CONFIRMAR_TROCA = "Descartar e escolher outro";
@@ -34,12 +36,13 @@ export interface TextoDaTroca {
  * O texto da confirmação. `valor` já vem formatado (R$ 380,00). `outros` é quantos avaliadores o dono poderá escolher
  * depois da troca (o descartado não volta); null quando a leitura falhou — aí não se inventa número.
  */
-export function textoDaTroca(e: { numero: string | null; valor: string; prazoDias: number; outros: number | null; cidade: string | null }): TextoDaTroca {
+export function textoDaTroca(e: { numero: string | null; valor: string; prazoDias: number; prazoPorExtenso?: string; outros: number | null; cidade: string | null }): TextoDaTroca {
   const onde = e.cidade ? ` em ${e.cidade}` : "";
   const quem = e.numero ? `O avaliador nº ${e.numero}` : "O avaliador escolhido";
   const perde = [
     `${quem} sai deste pedido e não volta a aparecer na lista.`,
-    `A proposta dele é descartada: ${e.valor} · laudo em ${e.prazoDias} ${e.prazoDias === 1 ? "dia" : "dias"}.`,
+    // E1156: com o prazo novo, a tela passa o compromisso por extenso (o mesmo que o dono lê na proposta).
+    `A proposta dele é descartada: ${e.valor} · ${e.prazoPorExtenso ?? `laudo em ${dias(e.prazoDias)}`}.`,
     "Não dá para desfazer.",
   ];
   const semOutro = e.outros === 0;
@@ -47,7 +50,8 @@ export function textoDaTroca(e: { numero: string | null; valor: string; prazoDia
     e.outros === null
       ? "Depois, você escolhe o novo avaliador na lista."
       : e.outros === 0
-        ? `Atenção: não há outro avaliador disponível${onde} agora. Se você descartar, o pedido fica aguardando, e a Viva avisa quando houver um para você escolher.`
+        ? // E1177: sem a promessa do aviso — quem sai fica fora deste pedido, e a regra não garante que haja outro.
+          `Atenção: não há outro avaliador disponível${onde} agora. Se você descartar, o pedido fica aguardando e a equipe da Viva é avisada.`
         : e.outros === 1
           ? `Depois, você escolhe o novo avaliador: há 1 disponível${onde}.`
           : `Depois, você escolhe entre os ${e.outros} avaliadores disponíveis${onde}.`;
@@ -57,7 +61,7 @@ export function textoDaTroca(e: { numero: string | null; valor: string; prazoDia
 /** O que a tela diz logo depois da troca. `aguardando`: não sobrou avaliador para escolher. */
 export function mensagemDepoisDaTroca(aguardando: boolean): string {
   return aguardando
-    ? "Avaliador e proposta descartados. Não há outro avaliador disponível agora; a Viva avisa quando houver um para você escolher."
+    ? `Avaliador e proposta descartados. ${SEM_OUTRO_AVALIADOR}`
     : "Avaliador e proposta descartados. Escolha o novo avaliador na lista abaixo.";
 }
 

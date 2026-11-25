@@ -16,9 +16,9 @@ import { readFileSync } from "node:fs";
 import { blocoPrincipalDono } from "./inicio-dono.ts";
 import { ESPERA_RELEITURA_INICIO_MS, INTERVALO_RELEITURA_INICIO_MS, deveRelerOInicio } from "./sem-leitura.ts";
 import type { Decisao } from "./decisoes.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|^\s*\/\/.*$/gm, "");
 const dec = (id: string): Decisao => ({ id, tipo: "proposta", texto: `Decisão ${id}`, href: `/d/${id}`, prazo: null, atrasada: false } as unknown as Decisao);
 const base = { rascunho: null, decisoes: [] as Decisao[], fotoAnuncio: null };
 

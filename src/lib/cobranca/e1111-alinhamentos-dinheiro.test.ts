@@ -12,8 +12,8 @@ import { readFileSync } from "node:fs";
 import { TAXA_MAIOR_TEXTO, TAXA_MENOR_TEXTO, TEXTO_REGRA_UNICA, escadaTaxasCurta, escadaTaxasTexto, exemploCobranca } from "./regra.ts";
 import { TEXTO_CARTEIRAS } from "../../config/planos.ts";
 import { ROTULO_TAXA_SERVICO_VIVA, TEXTO_DIVISAO_NA_ORIGEM } from "../../config/taxa-servico-parceiros.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\s\/\/ [^\n"`]*$/gm, "");
 const LITERAL = /(?<![\d,.])(?:4|6|8|10|12|90) ?%|12\/10\/8\/6/g;
 
 const SUPERFICIES = [

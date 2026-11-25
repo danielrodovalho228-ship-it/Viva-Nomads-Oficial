@@ -23,6 +23,7 @@ import {
 } from "./regras.ts";
 import { MIN_DIAS_COBRANCA_MENSAL, cronogramaMensal } from "../cobranca-mensal/regras.ts";
 import { GRUPOS_DETALHE, linhasDetalhes, normalizarDetalhes } from "../anuncio/detalhes-anuncio.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
@@ -124,7 +125,7 @@ test("INERTE com a chave desligada: a chave só liga com 'on', o servidor guarda
 
 test("fora do escopo, de propósito: nenhuma palavra de atraso/encargo no módulo, e a cobrança mensal (E641) continua sob a SUA chave", () => {
   // O cabeçalho do módulo cita o que fica de fora; o que vale é o código e o texto que ele produz.
-  const modulo = ler("src/lib/pagamento-forma/regras.ts").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  const modulo = fonteSemComentarios(ler("src/lib/pagamento-forma/regras.ts"));
   assert.doesNotMatch(modulo, /atras|multa|juros|inadimpl|encargo|notifica[çc][ãa]o formal/i);
   for (const f of ["src/lib/cobranca-mensal/servidor.ts", "src/lib/cobranca-mensal/acoes.ts", "src/app/api/cron/cobranca-mensal/route.ts"]) {
     assert.doesNotMatch(ler(f), /pagamento-forma|FORMA_PAGAMENTO_DONO_ATIVA/, f);

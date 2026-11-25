@@ -29,7 +29,9 @@ const CIDADE = "Ibiá";
 const PORTA = 3151;
 const SEGREDO = `lab-t1751-${Math.random().toString(36).slice(2)}`;
 const HORA = 3_600_000;
-const AGUARDANDO = "Aguardando avaliador: a Viva avisa quando houver um para você escolher.";
+// E1177 (asserção alterada, ORDEM-DUET-778): a lista vazia diz o motivo — aqui, o único avaliador da cidade já foi escolhido
+// neste pedido e saiu dele. A promessa "a Viva avisa quando houver" só vale quando a cidade não tem avaliador nenhum.
+const AGUARDANDO = "Os avaliadores da sua cidade já foram escolhidos neste pedido e não continuam nele. A equipe da Viva foi avisada.";
 const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t1751.${sufixo}@lab.vivanomads.test`, nome: "Dina Volta", role: "owner" as const };

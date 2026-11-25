@@ -130,7 +130,7 @@ test.describe("T1736 — E1101: os relógios do mesmo pedido, dos dois lados @E1
     const tela = a.getByTestId("pedido-avaliador");
     await tela.getByRole("button", { name: "Aceitar pedido" }).click({ timeout: 30_000 });
     await tela.getByLabel("Seu valor (R$)").fill("250");
-    await tela.getByLabel(/Seu prazo \(dias/).fill("2");
+    await tela.getByLabel(/Prazo do laudo \(dias úteis/).fill("2");
     await tela.getByRole("button", { name: "Enviar proposta" }).click();
     await expect.poll(async () => (await linha()).proposta_em, { timeout: 20_000 }).not.toBeNull();
     const propostaEm = (await linha()).proposta_em as string;
@@ -170,7 +170,8 @@ test.describe("T1736 — E1101: os relógios do mesmo pedido, dos dois lados @E1
       await largura(d, w);
       await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
       const proposta = d.getByTestId("avaliacao-proposta");
-      await expect(proposta).toContainText("Proposta do avaliador: R$ 250,00 · laudo em 2 dias", { timeout: 30_000 });
+      // E1156 (asserção alterada, ORDENS-DUET 712 e 713): o prazo do laudo é o combinado, em dias úteis depois da visita.
+      await expect(proposta).toContainText("Proposta do avaliador: R$ 250,00 · laudo em até 2 dias úteis depois da visita", { timeout: 30_000 });
       await expect(proposta.getByTestId("avaliacao-proposta-prazo")).toContainText("Aceite em até 72 horas depois da proposta");
       await expect(d.getByTestId("dono-agendar")).toHaveCount(0);
       await expect(d.getByTestId("avaliacao-aguarda-proposta")).toHaveCount(0);
@@ -206,7 +207,7 @@ test.describe("T1736 — E1101: os relógios do mesmo pedido, dos dois lados @E1
     const d = await entrar(browser, dono.email, senha);
     await largura(d, 390);
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
-    await expect(d.getByTestId("avaliacao-proposta")).toContainText("Proposta do avaliador: R$ 250,00 · laudo em 2 dias", { timeout: 30_000 });
+    await expect(d.getByTestId("avaliacao-proposta")).toContainText("Proposta do avaliador: R$ 250,00 · laudo em até 2 dias úteis depois da visita", { timeout: 30_000 });
     await d.context().close();
   });
 
@@ -216,7 +217,7 @@ test.describe("T1736 — E1101: os relógios do mesmo pedido, dos dois lados @E1
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     await d.getByTestId("avaliacao-proposta").getByRole("button", { name: "Aceitar valor e prazo" }).click({ timeout: 30_000 });
     await expect.poll(async () => (await linha()).proposta_aceita_em, { timeout: 20_000 }).not.toBeNull();
-    await expect(d.getByTestId("avaliacao-proposta-aceita")).toContainText("Combinado com o avaliador: R$ 250,00 · laudo em 2 dias.", { timeout: 30_000 });
+    await expect(d.getByTestId("avaliacao-proposta-aceita")).toContainText("Combinado com o avaliador: R$ 250,00 · laudo em até 2 dias úteis depois da visita.", { timeout: 30_000 });
     await expect(d.getByTestId("dono-agendar")).toBeVisible();
     await d.context().close();
 

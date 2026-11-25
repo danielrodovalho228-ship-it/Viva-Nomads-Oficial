@@ -50,11 +50,12 @@ test("E1143: escolhido de novo, o avaliador que voltou reabre a MESMA designaç�
   const srv = semComentarios(ler("src/lib/vistoria/servidor.ts"));
   const escolher = srv.slice(srv.indexOf("export async function escolherNoServidor("), srv.indexOf("export async function registrarRespostaDoAvaliador("));
   // Reabre só a linha que a regra devolveu à lista: "expirada" COM a marca. Fica sem resposta e sem a marca.
-  const reabre = escolher.indexOf('.update({ designado_em: quando, resposta: null, respondido_em: null, proposta_expirada_em: null })');
+  // E1177 (asserção alterada, ORDEM-DUET-778): a reabertura grava também se o escolhido é o mesmo da avaliação anterior.
+  const reabre = escolher.indexOf('.update({ designado_em: quando, resposta: null, respondido_em: null, proposta_expirada_em: null, mesmo_da_anterior: a.mesmoDaAnterior === true })');
   assert.ok(reabre > 0, "falta reabrir a designação");
   assert.match(escolher.slice(reabre, reabre + 400), /\.eq\("pedido_id", l\.p\.id\)\s*\.eq\("avaliador_id", a\.id\)\s*\.eq\("resposta", "expirada"\)\s*\.not\("proposta_expirada_em", "is", null\)/);
   // Sem linha para reabrir, cria — como sempre.
-  const cria = escolher.indexOf('.insert({ pedido_id: l.p.id, avaliador_id: a.id, designado_em: quando })');
+  const cria = escolher.indexOf('.insert({ pedido_id: l.p.id, avaliador_id: a.id, designado_em: quando, mesmo_da_anterior: a.mesmoDaAnterior === true })');
   assert.ok(cria > reabre, "primeiro tenta reabrir; só sem linha é que cria");
   // E só é escolhido quem está entre os sugeridos (a mesma leitura): a reabertura não é uma porta à parte.
   assert.ok(escolher.indexOf("l.sugestoes.sugeridos.find(") < reabre);

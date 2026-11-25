@@ -17,16 +17,20 @@ import { PERGUNTAS_RUIDO } from "@/config/niveis";
 import { DELIMITACAO_LAUDO, ROTULO_VALOR, itemChecklist, valoresDoItem, type ValorItem } from "@/config/checklist-avaliacao";
 import { vistoriaAtiva } from "@/lib/vistoria/chave";
 import { ROTULO_RESULTADO, itensSemResposta, resultadoAvaliacao, resumoPorGrupo, type Resultado } from "@/lib/vistoria/laudo";
+import { quandoVisitaComFuso } from "@/lib/vistoria/telas-exibicao";
 import { linhaResumoGrupo, prazoDoLaudo } from "@/lib/vistoria/telas-laudo";
 import { NIVEIS } from "@/config/niveis";
 import { ROTULO_CAMPO_NIVEL, ROTULO_NIVEL_LAUDO, linhaNivelSustentado } from "@/lib/vistoria/nivel-do-laudo";
-import { dbaNoCampo, faltasDoRoteiro, linhaDbaGuardado, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento } from "@/lib/vistoria/visita-avaliador";
-import { etapaDoPedido, identificacaoDoImovel, linhaDoPorte, linhaDoPrazoDoLaudo, linhaDoValor, localDoPedido } from "@/lib/vistoria/pedido-avaliador";
-import { PRAZO_PROPOSTA_MAX_DIAS } from "@/lib/vistoria/escolha";
+import { FAIXA_VISITA_DE_TESTE, RECUSA_ANTES_DO_DIA, dbaNoCampo, faltasDoRoteiro, liberadaSoPorTeste, linhaDbaGuardado, msgRoteiroIncompleto, roteiroDaVisita, tituloDaVisita, visitaEmAndamento, visitaLiberada, type EstadoDaVisita } from "@/lib/vistoria/visita-avaliador";
+import { etapaDoPedido, identificacaoDoImovel, linhaDoPorte, linhaDoPrazoDoLaudo, linhaDoValor, localDoPedido, propostaCombinada } from "@/lib/vistoria/pedido-avaliador";
+import { PRAZO_LAUDO_MAX_DIAS_UTEIS, diasUteis, diasUteisDoLaudo } from "@/lib/vistoria/prazos";
+import { TEXTO_RECUSA_PARA_O_AVALIADOR, concordanciaRecusada } from "@/lib/vistoria/concordancia";
 import { CONFIRMACAO_DO_ACEITE, aceitoSemDataDeVisita, precisaDoAceiteDoDono, relogioDoPedido, textoDoPrazoDeAceite, textoDoPrazoDeResposta } from "@/lib/vistoria/relogio-do-pedido";
 import { brl } from "@/lib/fiscal/documento";
 import type { Porte } from "@/lib/vistoria/regras";
-import { DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
+import { ROTULO_TIPO_PEDIDO } from "@/lib/vistoria/rotulos-do-pedido";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
+import { DECLARACAO_DE_ASSINATURA_DO_LAUDO, DESCRICAO_NIVEL_LAUDO, ROTULO_ASSINAR_LAUDO, SUBTITULO_LAUDO, TITULO_LAUDO, linhaChecklist, linhaFotos } from "@/lib/vistoria/laudo-avaliador";
 import { BOTAO_ASSINAR_LAUDO, CARTAO_NIVEL_LAUDO, LINHA_RESUMO_LAUDO, MARCA_NIVEL_LAUDO, MARCA_RESUMO_LAUDO, RESUMO_LAUDO, TEXTO_NIVEL_LAUDO, TITULO_NIVEL_LAUDO } from "@/lib/conta/visual-mockup";
 import { concluirVisita, confirmarCorrecao, dbaGuardadoDaVisita, enviarFotoAvaliacao, enviarLaudo, registrarMedicao, salvarRuidoVisita } from "@/lib/vistoria/laudo-actions";
 
@@ -53,7 +57,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   if (!user) redirect(`/auth?redirect=${encodeURIComponent(`/dashboard/parceiro/avaliacao/${pedido}`)}`);
   const { data: p } = await admin
     .from("vistoria_pedidos")
-    .select("id, property_id, status, tipo, ocupado, agendado_para, visita_concluida_em, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
+    .select("id, property_id, status, tipo, teste, ocupado, agendado_para, concordancia_pedida_em, concordancia_em, visita_concluida_em, valor_tabela, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, escolhido_em, ruido_respostas, avaliadores_credenciamento(prazo_resposta_horas, parceiros(user_id))")
     .eq("id", pedido)
     .maybeSingle();
   const dono = (p?.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id;
@@ -64,12 +68,12 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   // Bairro e cidade antes do aceite do dono; o endereço completo só depois. Recusado ou vencido: volta à lista.
   if (p.status === "designado") {
     const [{ data: d, error: erroPedido }, { data: des, error: erroDesignacoes }, { data: im }, { data: capasDoPedido }] = await Promise.all([
-      admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, proposta_em, proposta_aceita_em, designado_em, escolhido_em, teste").eq("id", p.id).maybeSingle(),
+      admin.from("vistoria_pedidos").select("avaliador_id, cidade, porte, valor_tabela, valor_proposto, prazo_proposto_dias, prazo_laudo_dias_uteis, proposta_em, proposta_aceita_em, designado_em, escolhido_em, teste").eq("id", p.id).maybeSingle(),
       admin.from("vistoria_designacoes").select("avaliador_id, resposta").eq("pedido_id", p.id),
       admin.from("properties").select("title, exact_address, address, city, state, draft_data").eq("id", p.property_id).maybeSingle(), // consistency-ignore: E1079 fatia 3 — endereço exato só ao avaliador escolhido e só depois de o dono aceitar a proposta
       admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1),
     ]);
-    const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; proposta_em: string | null; proposta_aceita_em: string | null; designado_em: string | null; escolhido_em: string | null; teste: boolean } | null;
+    const dados = d as { avaliador_id: string | null; cidade: string; porte: Porte; valor_tabela: number | string; valor_proposto: number | string | null; prazo_proposto_dias: number | null; prazo_laudo_dias_uteis: number | null; proposta_em: string | null; proposta_aceita_em: string | null; designado_em: string | null; escolhido_em: string | null; teste: boolean } | null;
     // E1102: leitura que falha não vira "este pedido não é seu" nem volta calada ao painel: cai no aviso do painel, com
     // "Tentar de novo".
     if (erroPedido || erroDesignacoes) throw new Error("Não foi possível ler este pedido agora.");
@@ -110,15 +114,26 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
         prazoAceite={etapa === "proposta_enviada" && relogio?.vez === "dono" ? textoDoPrazoDeAceite(relogio) : null}
         prazoAceiteVencido={etapa === "proposta_enviada" && relogio?.vez === "dono" && relogio.vencido}
         confirmacaoDoAceite={aceitoSemDataDeVisita({ status: p.status as string, propostaAceitaEm: dados.proposta_aceita_em, agendadoPara: p.agendado_para as string | null }) ? CONFIRMACAO_DO_ACEITE : null}
+        recusaDaData={concordanciaRecusada({ status: p.status as string, ocupado: Boolean(p.ocupado), agendadoPara: p.agendado_para as string | null, concordanciaPedidaEm: p.concordancia_pedida_em as string | null, concordanciaEm: p.concordancia_em as string | null }) ? TEXTO_RECUSA_PARA_O_AVALIADOR : null}
         ocupado={Boolean(p.ocupado)}
         exemploValor={brl(Number(dados.valor_tabela))}
-        prazoMaxDias={PRAZO_PROPOSTA_MAX_DIAS}
+        prazoMaxDias={PRAZO_LAUDO_MAX_DIAS_UTEIS}
       />
     );
   }
 
   // E1108: a tela da visita e do laudo também diz de que imóvel é (título do anúncio e código VN).
   const { data: imovelDaVisita } = await admin.from("properties").select("title").eq("id", p.property_id).maybeSingle();
+  // E1108 (ORDEM-DUET-787): a proposta que o avaliador submeteu continua à vista depois de marcada a visita — as mesmas
+  // duas linhas da etapa "aceito", das mesmas colunas que a linha da lista lê.
+  const combinado = propostaCombinada({
+    valor_tabela: p.valor_tabela as number | string,
+    valor_proposto: p.valor_proposto as number | string | null,
+    prazo_proposto_dias: p.prazo_proposto_dias as number | null,
+    prazo_laudo_dias_uteis: p.prazo_laudo_dias_uteis as number | null,
+    teste: p.teste === true,
+    escolhido_em: p.escolhido_em as string | null,
+  });
   const [{ data: itens }, { data: laudos }, { data: fotos }] = await Promise.all([
     admin.from("vistoria_checklist").select("chave, valor, observacao").eq("pedido_id", p.id),
     admin.from("vistoria_laudos").select("id, numero, versao, resultado, ressalvas, graves, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, contestado_em, assinado_em, assinatura_hash, nivel_sustentado").eq("pedido_versao_id", p.id).order("versao", { ascending: false }).limit(1),
@@ -152,7 +167,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   const previsto = resultadoAvaliacao(respostasSalvas);
   const resumo = resumoPorGrupo(respostasSalvas);
   const visitaEm = (p.visita_concluida_em as string | null) ?? (p.agendado_para as string | null);
-  const prazo = p.status === "realizada" && visitaEm ? prazoDoLaudo(visitaEm, new Date()) : null;
+  const prazo = p.status === "realizada" && visitaEm ? prazoDoLaudo(visitaEm, new Date(), p.prazo_laudo_dias_uteis as number | null) : null;
 
   // E1079 (fatia 5): na etapa do laudo (visita concluída, laudo por assinar) a tela é a do desenho — "Laudo da avaliação",
   // os níveis em cartões, o resumo e "Assinar laudo" — e este bloco vem ANTES do checklist. Durante a visita, vem depois.
@@ -164,6 +179,15 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   const agendada = p.status === "agendado";
   // ORDEM-DUET-431/435: "em andamento" só a partir do dia marcado; antes, "Visita agendada". O roteiro TRAVA a conclusão.
   const emAndamento = visitaEmAndamento(p.status as string, p.agendado_para as string | null, new Date());
+  // E1178: a visita só se faz a partir do dia marcado — a mesma regra que o servidor aplica (visitaLiberada). A exceção
+  // é a visita de teste: pedido de teste com avaliador de teste. Se a leitura da conta falhar, ela conta como real.
+  const { data: contaDoAvaliador } = agendada ? await admin.from("profiles").select("is_teste").eq("id", user.id).maybeSingle() : { data: null };
+  const visita: EstadoDaVisita = { status: p.status as string, agendadoPara: p.agendado_para as string | null, pedidoTeste: p.teste === true, avaliadorTeste: contaDoAvaliador?.is_teste === true };
+  const agoraDaVisita = new Date();
+  const liberada = visitaLiberada(visita, agoraDaVisita);
+  // Antes do dia, a visita ainda por fazer não oferece checklist, envio de fotos nem conclusão: o servidor recusaria.
+  // O roteiro e as fotos já enviadas continuam à vista, só em leitura (ORDEM-431).
+  const antesDoDia = agendada && !liberada;
   const roteiro = roteiroDaVisita(fotosLista.map((f) => f.comodo));
   const faltasRoteiro = agendada ? faltasDoRoteiro(roteiro) : [];
   const fotosDeComodo = agendada ? fotosLista.filter((f) => f.comodo) : [];
@@ -171,14 +195,16 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
   const miniaturas = fotosDeComodo.flatMap((f, i) => (assinadas[i]?.signedUrl ? [{ url: assinadas[i].signedUrl, comodo: f.comodo as string }] : []));
   const { data: capas } = agendada ? await admin.from("property_photos").select("url").eq("property_id", p.property_id).order("sort_order", { ascending: true }).limit(1) : { data: null };
   const capaUrl = ((capas ?? [])[0] as { url: string } | undefined)?.url;
-  const tipoRotulo = p.tipo === "verificacao" ? "Verificação aberta pela Viva" : p.tipo === "contestacao" ? "2ª avaliação (contestação)" : undefined;
+  // E1158 (16): os rótulos do tipo vêm da fonte que a equipe também lê; a avaliação comum segue sem etiqueta.
+  const tipoRotulo = p.tipo === "verificacao" || p.tipo === "contestacao" ? ROTULO_TIPO_PEDIDO[p.tipo as "verificacao" | "contestacao"] : undefined;
   const resumoLaudo = [linhaFotos(fotosLista.length), linhaChecklist(itensSemResposta(respostasSalvas).length)];
   const fecho = (
-      <Panel title={p.status === "agendado" ? "Concluir a visita" : undefined} className="mb-6" data-testid="avaliacao-concluir" data-status={p.status}>
+      <Panel title={p.status === "agendado" ? "Fim da visita" : undefined} className="mb-6" data-testid="avaliacao-concluir" data-status={p.status}>
         {p.status === "agendado" ? (
           <FormAcao acao={concluirVisita} testid="concluir-visita">
             <input type="hidden" name="pedidoId" value={p.id} />
-            <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo em até 48 horas úteis.</p>
+            <p className="text-sm text-muted">Conclua quando todos os passos estiverem respondidos. Depois, revise e envie o laudo no prazo combinado: {diasUteis(diasUteisDoLaudo(p.prazo_laudo_dias_uteis as number | null))} depois da visita.</p>
+            <NotaDiasUteis />
             {faltasRoteiro.length > 0 && (
               <p id="concluir-faltas-motivo" className="mt-2 text-sm text-ink" role="status" data-testid="concluir-faltas">{msgRoteiroIncompleto(faltasRoteiro)}</p>
             )}
@@ -198,6 +224,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
                   {prazo.texto}
                 </p>
               )}
+              <NotaDiasUteis de={[prazo?.texto]} />
               <ul className="mt-3 grid gap-1 text-sm sm:grid-cols-2" data-testid="laudo-revisao-grupos">
                 {resumo.map((g) => (
                   <li key={g.grupo} className="flex justify-between gap-3 border-b border-line py-1" data-testid="laudo-revisao-grupo" data-nc={g.naoConformes.length}>
@@ -238,7 +265,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
               </ul>
               <label className="mt-2 flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
                 <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
-                <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
+                <span>{DECLARACAO_DE_ASSINATURA_DO_LAUDO}</span>
               </label>
               <Button type="submit" className={`mt-4 ${BOTAO_ASSINAR_LAUDO}`}>{ROTULO_ASSINAR_LAUDO}</Button>
             </FormAcao>
@@ -251,12 +278,28 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
     <>
       <PageTitle title={agendada ? tituloDaVisita(emAndamento) : naEtapaDoLaudo ? TITULO_LAUDO : "Checklist da avaliação"} subtitle={naEtapaDoLaudo ? [tipoRotulo, SUBTITULO_LAUDO].filter(Boolean).join(" · ") : tipoRotulo} />
       <IdentificacaoDoImovel texto={identificacaoDoImovel((imovelDaVisita as { title?: string | null } | null)?.title, p.property_id as string)} className="mb-2 text-base" />
+      {combinado && (
+        <p className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink" data-testid="proposta-combinada">
+          <span data-testid="proposta-combinada-valor">{combinado.valor}</span>
+          {combinado.prazo && <span data-testid="proposta-combinada-prazo">{combinado.prazo}</span>}
+        </p>
+      )}
       <ButtonLink href="/dashboard/parceiro/avaliacao" variant="ghost" size="sm" className="mb-4">Voltar às avaliações</ButtonLink>
       {p.ocupado && <p className="mb-4 text-sm text-ink">Imóvel ocupado: a visita só acontece com o morador de acordo. Não fotografe pertences nem pessoas.</p>}
 
-      {emVisita && (
+      {liberadaSoPorTeste(visita, agoraDaVisita) && (
+        <p className="mb-4 rounded-lg bg-sage-100 px-3 py-2 text-sm font-semibold text-ink" role="status" data-testid="visita-de-teste">{FAIXA_VISITA_DE_TESTE}</p>
+      )}
+      {antesDoDia && (
+        <Panel className="mb-6" data-testid="visita-antes-do-dia-painel">
+          <p className="text-sm text-ink" role="status" data-testid="visita-antes-do-dia">{RECUSA_ANTES_DO_DIA}</p>
+          {p.agendado_para && <p className="mt-1 text-sm text-muted" data-testid="visita-antes-do-dia-data">Visita marcada para {quandoVisitaComFuso(p.agendado_para as string)}.</p>}
+        </Panel>
+      )}
+
+      {agendada && <VisitaEmAndamento capaUrl={capaUrl} roteiro={roteiro} fotos={miniaturas} soLeitura={antesDoDia} />}
+      {emVisita && !antesDoDia && (
         <>
-          {agendada && <VisitaEmAndamento capaUrl={capaUrl} roteiro={roteiro} fotos={miniaturas} />}
           {naEtapaDoLaudo && fecho}
           {/* Item 8: os 9 grupos em passos; a internet e o ruído são medidos no próprio passo. */}
           <Panel id="itens" title="Itens" className="mb-6 scroll-mt-16">
@@ -344,7 +387,7 @@ export default async function ChecklistAvaliacaoPage({ params }: { params: Promi
               <SeletorNivelLaudo obrigatorio padrao={laudo.nivel_sustentado} comRotulo />
               <label className="flex items-start gap-2 text-sm text-ink" data-testid="assino-laudo">
                     <input type="checkbox" name="assino" required className="mt-1 h-4 w-4 accent-forest" />
-                    <span>Assino este laudo como avaliador e respondo pelo que consta nele. A Viva forneceu o modelo e guarda o registro (número e hash); o conteúdo é meu.</span>
+                    <span>{DECLARACAO_DE_ASSINATURA_DO_LAUDO}</span>
                   </label>
                   <Button type="submit" size="sm">Confirmar a reverificação</Button>
             </FormAcao>

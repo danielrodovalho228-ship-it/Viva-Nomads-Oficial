@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { PRAZO_RESPOSTA_PADRAO_HORAS, horasDeResposta } from "./prazos.ts";
 import { relogioDoPedido, rotuloSemResposta, textoDasAvaliacoesNaoLidas, textoDoHistoricoVazio } from "./relogio-do-pedido.ts";
 import { designacaoVencida } from "./regras.ts";
+import { RESPOSTA_DO_AVALIADOR } from "./rotulos-do-pedido.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E1157 (ORDEM-DUET-654, P2 da varredura das telas do parceiro; ORDEM-DUET-658, A1 da tela da equipe). O avaliador
@@ -15,7 +17,6 @@ import { designacaoVencida } from "./regras.ts";
 */
 const ler = (p: string) => readFileSync(p, "utf8");
 // Só os comentários de JSX, os blocos que começam a linha e as linhas "//": numa página, `accept="image/*"` não abre comentário.
-const semComentarios = (s: string) => s.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/^\s*\/\*[\s\S]*?\*\//gm, "").replace(/^\s*\/\/.*$/gm, "");
 
 test("E1157: o prazo que vale é o declarado; sem declaração (ou com valor inválido), o padrão", () => {
   assert.equal(horasDeResposta(48), 48);
@@ -50,7 +51,8 @@ test("E1157: os textos dizem o prazo declarado — 48 horas para quem declarou 4
 test("E1157: a tela do avaliador lê os três textos do prazo que ELE declarou", () => {
   const pagina = semComentarios(ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx"));
   assert.match(pagina, /const MSG_AVALIACOES_FALHOU = textoDasAvaliacoesNaoLidas\(cred\.prazo_resposta_horas\);/);
-  assert.match(pagina, /const ROTULO_RESPOSTA: Record<string, string> = \{ recusada: "Você recusou", expirada: rotuloSemResposta\(cred\.prazo_resposta_horas\), ausencia: "Ausência registrada" \};/);
+  // E1158 (17; ORDEM-DUET-658): as outras duas respostas vêm da fonte das duas vozes; "expirada" continua a ler o prazo declarado.
+  assert.match(pagina, /const ROTULO_RESPOSTA: Record<string, string> = \{ \.\.\.RESPOSTA_DO_AVALIADOR\.avaliador, expirada: rotuloSemResposta\(cred\.prazo_resposta_horas\) \};/);
   assert.match(pagina, /<p [^>]*data-testid="avaliacoes-historico-vazio"[^>]*>\s*\{textoDoHistoricoVazio\(cred\.prazo_resposta_horas\)\}\s*<\/p>/);
   // Nenhum dos três continua a escrever o padrão: o padrão só entra em "Meus termos", como valor inicial do campo.
   assert.equal((pagina.match(/PRAZO_RESPOSTA_PADRAO_HORAS/g) ?? []).length, 2, "a importação e o valor inicial do campo de Meus termos");
@@ -65,7 +67,9 @@ test("E1157: a tela da equipe lê o prazo declarado de CADA avaliador no rótulo
   assert.match(admin, /\{r\.resposta === "expirada" \? rotuloSemResposta\(prazoRespostaDe\.get\(r\.avaliador_id\)\) : \(ROTULO_RESPOSTA\[r\.resposta\] \?\? r\.resposta\)\}/);
   assert.doesNotMatch(admin, /PRAZO_RESPOSTA_PADRAO_HORAS|Sem resposta em/, "a equipe já não escreve o padrão à mão");
   // As duas outras respostas ficam com os rótulos da equipe.
-  assert.match(admin, /const ROTULO_RESPOSTA: Record<string, string> = \{ recusada: "Recusou", ausencia: "Não foi à visita" \};/);
+  // E1158 (17; ORDEM-DUET-658): os rótulos da equipe vêm da fonte das duas vozes.
+  assert.match(admin, /const ROTULO_RESPOSTA = RESPOSTA_DO_AVALIADOR\.equipe;/);
+  assert.deepEqual(RESPOSTA_DO_AVALIADOR.equipe, { recusada: "Recusou", ausencia: "Não foi à visita" });
 });
 
 test("E1157: o relógio do pedido usa a mesma função — uma regra só para o prazo que vale", () => {

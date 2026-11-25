@@ -9,8 +9,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { BLOCO_91_180_BLOQUEADO, formaAlternativa, formaInicialDaProposta, formasPermitidas, textoFormaFinal, validarFormaNaProposta } from "./regras.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
-const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+const ler = (p: string) => fonteSemComentarios(readFileSync(new URL(p, import.meta.url), "utf8"));
 
 test("o bloco em 91–180 dias nasce bloqueado (até o parecer): mesmo o dono tendo escolhido 'bloco' ou 'ambos'", () => {
   assert.equal(BLOCO_91_180_BLOQUEADO, true);

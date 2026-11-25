@@ -20,8 +20,9 @@ import { devolverAVezDaRotinaDaVistoria, pegarAVezDaRotinaDaVistoria } from "../
    1. O dono descarta a proposta: a designação fica "recusada" com a marca do descarte (nunca "aceita"), a hora da
       proposta fica; o item do admin nasce com a regra; o avaliador lê "Proposta recusada pelo proprietário" (e não
       "Você recusou"); a Central mostra o motivo no pedido e não conta o descarte como recusa do avaliador.
-   2. O pedido parado pela regra da avaliação anterior, com o item aberto no texto antigo: o tique ESCREVE a regra no
-      mesmo item. Depois, com um 2º avaliador ativo na cidade, o tique reabre a escolha: o dono vê esse avaliador (e só
+   2. O pedido parado por uma regra de independência, com o item aberto no texto antigo: o tique ESCREVE a regra no
+      mesmo item. (E1177, ORDEM-DUET-778: a avaliação anterior, sozinha, já não deixa o pedido parado — o avaliador
+      volta à lista com a marca. Aqui ele tem TAMBÉM relação declarada com o imóvel, que nunca cede.) Depois, com um 2º avaliador ativo na cidade, o tique reabre a escolha: o dono vê esse avaliador (e só
       ele) nos dois pedidos, e os itens do admin resolvem-se.
   Print a 390 e a 1280 px. Laboratório; não é prova ao vivo no site.
 */
@@ -31,7 +32,9 @@ const CIDADE = "Tapira";
 const PORTA = 3152;
 const SEGREDO = `lab-t1752-${Math.random().toString(36).slice(2)}`;
 const HORA = 3_600_000;
-const AGUARDANDO = "Aguardando avaliador: a Viva avisa quando houver um para você escolher.";
+// E1177 (asserção alterada, ORDEM-DUET-778): a lista vazia diz o motivo — aqui, o único avaliador da cidade já foi escolhido
+// neste pedido e saiu dele. A promessa "a Viva avisa quando houver" só vale quando a cidade não tem avaliador nenhum.
+const AGUARDANDO = "Os avaliadores da sua cidade já foram escolhidos neste pedido e não continuam nele. A equipe da Viva foi avisada.";
 const TEXTO_ANTIGO = `Nenhum avaliador disponível para o dono escolher em ${CIDADE}.`;
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -132,6 +135,10 @@ test.describe("T1752 — E1146: o descarte fica registado e a fila do admin diz 
       .single();
     if (anterior.error) throw anterior.error;
     ids.pedidoAnterior = anterior.data.id as string;
+    // E1177 (massa alterada, ORDEM-DUET-778): só com a avaliação anterior ele voltaria à lista pela exceção da
+    // alternância. A relação declarada com este imóvel mantém-no impedido — e é ela o motivo que o item passa a dizer.
+    const relacao = await adm().from("avaliadores_credenciamento").update({ relacoes_imoveis: [ids.imovelParado] }).eq("id", ids.cred_unico);
+    if (relacao.error) throw relacao.error;
     const b = await adm()
       .from("vistoria_pedidos")
       .insert({ property_id: ids.imovelParado, owner_id: ids.dono, cidade: CIDADE, porte: "q1_2", valor_tabela: 350, status: "pedido", teste: true, aguardando_avaliador: true })
@@ -255,7 +262,8 @@ test.describe("T1752 — E1146: o descarte fica registado e a fila do admin diz 
     expect(depois, "não nasce um segundo item").toHaveLength(1);
     expect(depois[0].id).toBe(antes[0].id);
     expect(depois[0].resolvido_em).toBeNull();
-    const motivoParado = `${TEXTO_ANTIGO} Avaliador nº ${numero.unico}: fez a avaliação anterior deste imóvel.`;
+    // E1177 (asserção alterada, ORDEM-DUET-778): o motivo dito é o que de fato o impede — a relação declarada.
+    const motivoParado = `${TEXTO_ANTIGO} Avaliador nº ${numero.unico}: tem relação declarada com o proprietário ou o imóvel.`;
     expect(depois[0].motivo).toBe(motivoParado);
     // O item do descarte não muda de um tique para o outro.
     expect((await abertos(ids.pedidoDescarte))[0]?.motivo).toBe(`${TEXTO_ANTIGO} Avaliador nº ${numero.unico}: já foi designado neste pedido.`);
@@ -271,7 +279,8 @@ test.describe("T1752 — E1146: o descarte fica registado e a fila do admin diz 
     const d = await entrar(browser, dono.email, senha);
     await largura(d, 390);
     await d.goto(`/dashboard/imoveis/${ids.imovelParado}/nivel`, { waitUntil: "domcontentloaded" });
-    await expect(d.getByTestId("avaliacao-situacao")).toHaveText(AGUARDANDO, { timeout: 30_000 });
+    // E1177 (asserção alterada, ORDEM-DUET-778): a lista vazia diz o motivo — aqui, a regra de independência.
+    await expect(d.getByTestId("avaliacao-situacao")).toHaveText("Os avaliadores da sua cidade não podem avaliar este imóvel pelas regras de independência. A equipe da Viva foi avisada.", { timeout: 30_000 });
     await expect(d.getByTestId("avaliacao-escolha")).toHaveCount(0);
 
     // Passa a haver um avaliador elegível na cidade: o segundo é ativado.

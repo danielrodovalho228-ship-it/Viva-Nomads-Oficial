@@ -8,8 +8,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { estadoDoContratoUnico } from "./contrato-estado.ts";
+import { fonteSemComentarios as semComentarios } from "./fonte-sem-comentarios.ts";
 
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
 test("E1132: contrato-estado.ts não tem um 'hoje' próprio — lê a fonte única hojeEmBrasilia", () => {
   const s = semComentarios(readFileSync("src/lib/contrato-estado.ts", "utf8"));

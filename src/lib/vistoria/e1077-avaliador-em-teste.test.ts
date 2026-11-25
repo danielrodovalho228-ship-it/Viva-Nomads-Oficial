@@ -14,9 +14,11 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { modoDaChave, chaveAberta, filaNoAmbito } from "./ambito-da-chave.ts";
 import { blocoDoDonoVisivel } from "./telas-exibicao.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/--.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+/** O ajudante único tira os comentários do código; o `--` das migrações (SQL) sai à parte, antes. */
+const semComentarios = (s: string) => fonteSemComentarios(s.replace(/--.*$/gm, ""));
 const MIG = "supabase/migrations/0350_vistoria_piloto_e1077.sql";
 const APLICAR = "supabase/producao/aplicar-0350.sql";
 

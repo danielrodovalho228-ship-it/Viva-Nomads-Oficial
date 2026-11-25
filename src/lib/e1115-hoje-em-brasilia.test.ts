@@ -11,7 +11,6 @@ import { readFileSync } from "node:fs";
 import { diaBRT, hojeEmBrasilia } from "./datas-brasilia.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
 test("E1115: a fonte única dá o dia de Brasília — também entre as 21:00 e as 24:00 (quando em UTC já é amanhã)", () => {
   // 22/11/2026 23:30 em Brasília = 23/11/2026 02:30 UTC.
@@ -56,6 +55,7 @@ test("E1115 (R4): o reembolso e o 'disponível a partir de' do anúncio leem o h
 // ── ORDEM-DUET-506 §2: os outros dois "−3 h" (o dia de um instante) consomem a fonte ────────────────────────────
 import { dataEmBrasilia } from "./automacoes/regras.ts";
 import { confirmacaoDevida } from "./estadia/jornada-mensagens.ts";
+import { fonteSemComentarios as semComentarios } from "./fonte-sem-comentarios.ts";
 
 test("E1115 (ORDEM-506): o dia de um instante sai de diaBRT — jornada-mensagens e automacoes sem −3 h fixas", () => {
   for (const arq of ["src/lib/estadia/jornada-mensagens.ts", "src/lib/automacoes/regras.ts"]) {

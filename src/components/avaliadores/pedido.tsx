@@ -8,6 +8,7 @@
 import { Banknote, CalendarClock, Home, MapPin } from "lucide-react";
 import { IdentificacaoDoImovel } from "@/components/avaliadores/identificacao-do-imovel";
 import { AceitarPedido } from "@/components/avaliadores/aceitar-pedido";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 import { ButtonLink } from "@/components/ui/button";
 import { ETIQUETA_DO_PEDIDO, tituloDoPedido, type EtapaDoPedido } from "@/lib/vistoria/pedido-avaliador";
 import {
@@ -32,6 +33,7 @@ export function PedidoDoAvaliador({
   prazoAceite,
   prazoAceiteVencido,
   confirmacaoDoAceite,
+  recusaDaData,
   prazoLaudo,
   imovel,
   ocupado,
@@ -55,6 +57,8 @@ export function PedidoDoAvaliador({
   prazoAceiteVencido?: boolean;
   /** E1153: a confirmação do aceite do dono, enquanto a visita não tem data (a mesma frase que ele lê). */
   confirmacaoDoAceite?: string | null;
+  /** E1173: o morador disse que não pode na data proposta (a mesma frase da lista), enquanto não há data nova. */
+  recusaDaData?: string | null;
   ocupado: boolean;
   exemploValor: string;
   prazoMaxDias: number;
@@ -95,6 +99,7 @@ export function PedidoDoAvaliador({
               <span>{prazoLaudo}</span>
             </p>
           )}
+          <NotaDiasUteis de={[valor.texto, prazoLaudo]} />
         </div>
       </div>
       {ocupado && <p className="text-sm text-muted">Imóvel ocupado: a visita só acontece com a concordância do morador. Não fotografe pertences.</p>}
@@ -121,6 +126,11 @@ export function PedidoDoAvaliador({
       {etapa === "aceito" && confirmacaoDoAceite && (
         <p className="text-base font-semibold text-ink" data-testid="pedido-aceite-confirmado">
           {confirmacaoDoAceite}
+        </p>
+      )}
+      {etapa === "aceito" && recusaDaData && (
+        <p className="text-base font-semibold text-ink" data-testid="pedido-concordancia-recusada">
+          {recusaDaData}
         </p>
       )}
       {etapa === "aceito" && (

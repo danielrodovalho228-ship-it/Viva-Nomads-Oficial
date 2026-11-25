@@ -13,8 +13,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { REGRA_CAUCAO } from "./caucao-regra.ts";
 import { GARANTIAS_CADASTRO } from "./faixas.ts";
+import { fonteSemComentarios as semComentarios } from "./fonte-sem-comentarios.ts";
 
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/^\s*\/\/.*$/gm, "");
 
 test("E1110 (D7): as Ferramentas dizem a caução pela frase-fonte — nada de 'por bloco'", () => {
   const f = semComentarios(readFileSync("src/app/(dashboard)/dashboard/ferramentas/page.tsx", "utf8"));
