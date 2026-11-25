@@ -6,6 +6,7 @@ import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoEmDias } from "@/lib/contrato-periodo";
 import { diasDosTermos } from "./regras";
+import { NOTA_DIAS_UTEIS } from "@/lib/calendario/dias-uteis";
 import { COLUNAS_VERSAO, termosDaLinha, type LinhaVersao } from "@/lib/data/propostas-servidor";
 import { encerraNaExpiracao, lembretesDaPreAceitacao, linhaDeContexto, PRAZO_PRE_ACEITACAO_HORAS, prazoDoDono, reabrirPreAceitacao, textoDoPrazo, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_JANELA_TERMINOU, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO } from "./pre-aceitacao";
 
@@ -169,7 +170,8 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
       const { data: marcou } = await admin.from("propostas").update({ [col]: agora.toISOString() }).eq("id", l.id).is(col, null).select("id").maybeSingle();
       if (!marcou) continue;
       resumo.lembretes++;
-      await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoLembrete, `faltam ${lem.horasAntes} horas para concluir o contrato: o prazo termina em ${textoDoPrazo(prazo)}. ${TEXTO_REGRA_CORRIDA}`, `faltam ${lem.horasAntes} horas para a janela do morador terminar (${textoDoPrazo(prazo)}). ${linhaDeContexto("owner", "vigente", textoDoPrazo(prazo), null)}`);
+      // E1196 (ORDEM-DUET-894): o dono lê "1 dia útil" no lembrete como na tela — a nota do calendário único vem a seguir (tela ≡ e-mail).
+      await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoLembrete, `faltam ${lem.horasAntes} horas para concluir o contrato: o prazo termina em ${textoDoPrazo(prazo)}. ${TEXTO_REGRA_CORRIDA}`, `faltam ${lem.horasAntes} horas para a janela do morador terminar (${textoDoPrazo(prazo)}). ${linhaDeContexto("owner", "vigente", textoDoPrazo(prazo), null)} ${NOTA_DIAS_UTEIS}`);
     }
   }
   return resumo;

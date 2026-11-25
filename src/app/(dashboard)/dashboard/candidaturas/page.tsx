@@ -12,6 +12,7 @@ import { VinculoMorador } from "@/components/triagem/vinculo-morador";
 import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 import { PedirOrcamento } from "@/components/candidaturas/pedir-orcamento";
 import { numeroPublicoPedido, podePedirOrcamento } from "@/lib/pedido-ref";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 
 export const metadata: Metadata = {
   title: "Minhas candidaturas",
@@ -96,6 +97,8 @@ export default async function CandidaturasPage() {
               {PROXIMO_PASSO_CANDIDATURA[c.situacao.chave] && (
                 <div className="mt-3 border-t border-sage-200 pt-3 text-sm" data-testid="candidatura-proximo-passo">
                   <p className="text-ink">{PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.agora}</p>
+                  {/* E1196: só o "Em análise" cita "1 dia útil"; o `de` deixa o "Enviada" sem a nota. */}
+                  <NotaDiasUteis de={[PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.agora]} />
                   <p className="mt-1 text-muted">{PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.proximo}</p>
                   <Link
                     href={PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.acao.href}

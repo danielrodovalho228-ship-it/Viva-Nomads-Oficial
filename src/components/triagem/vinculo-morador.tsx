@@ -7,6 +7,7 @@ import { TIPOS_VINCULO, podeEnviar, type TipoVinculo } from "@/lib/triagem/vincu
 import { abrirLinkEmNovaAba } from "@/lib/abrir-aba";
 import { validarArquivoDoc } from "@/lib/upload-limits";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 
 const dataBR = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "");
 
@@ -80,6 +81,8 @@ export function VinculoMorador() {
           Recebido em {dataBR(v.enviadoEm)} ({titulo}). A equipe confere em até 2 dias úteis.
         </p>
       )}
+      {/* E1196: o prazo em dias úteis vem com a nota do calendário único (E1192). */}
+      {v.estado === "pendente" && <NotaDiasUteis />}
       {v.estado === "recusado" && (
         <p role="alert" className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="triagem-recusado">
           {v.motivo} Envie de novo abaixo.
