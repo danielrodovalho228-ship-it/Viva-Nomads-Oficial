@@ -88,7 +88,7 @@ export function NavSecoes({ secoes }: { secoes: SecaoImovel[] }) {
             href={`#${s.id}`}
             data-secao={s.id}
             aria-current={ativa === s.id ? "true" : undefined}
-            onClick={(e) => irPara(e, s.id)}
+            onClick={() => setAtiva(s.id)} // ENSAIO: sem a cura do E781 (só o salto nativo do #hash)
             className={cn(
               "shrink-0 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold transition-colors",
               ativa === s.id ? "border-forest text-forest" : "border-transparent text-muted hover:text-ink"
