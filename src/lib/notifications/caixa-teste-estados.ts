@@ -5,28 +5,12 @@
  */
 
 /** A busca da rota /api/conta/caixa-teste: a correr, falhada, ou lida (`emails: null` = o servidor diz "conta real"). */
-export type LeituraDaCaixa<E> = { fase: "buscando"; demorada?: boolean } | { fase: "falhou" } | { fase: "lida"; emails: E[] | null };
+export type LeituraDaCaixa<E> = { fase: "buscando" } | { fase: "falhou" } | { fase: "lida"; emails: E[] | null };
 
-export type VistaDaCaixa<E> = { tipo: "nada" } | { tipo: "carregando"; demorada?: true } | { tipo: "erro" } | { tipo: "lista"; emails: E[] };
+export type VistaDaCaixa<E> = { tipo: "nada" } | { tipo: "carregando" } | { tipo: "erro" } | { tipo: "lista"; emails: E[] };
 
 export const TEXTO_CAIXA_CARREGANDO = "Carregando os e-mails…";
 export const TEXTO_CAIXA_NAO_LIDA = "Não foi possível ler a caixa agora. Isso não quer dizer que ela está vazia.";
-/** E1136: a busca passou de CAIXA_DEMORA_MS e ainda corre. Vai ao lado de "Carregando os e-mails…", com "Tentar de novo". */
-export const TEXTO_CAIXA_DEMORADA = "Está demorando mais que o normal.";
-
-/** E1136: a partir daqui o carregamento diz que demora e oferece "Tentar de novo". */
-export const CAIXA_DEMORA_MS = 5_000;
-/** E1136: o limite da busca. Passou, a tela corta o pedido e mostra "não li" (antes: "carregando" para sempre). */
-export const CAIXA_LIMITE_MS = 15_000;
-
-/**
- * E1136 (silêncio duplo): quem sabe se a conta é de teste. A página lê no servidor e manda (true ou false). Só quando o
- * servidor não leu (null) ou a página não disse nada (undefined) é que vale a sessão do navegador, que pode ter
- * desistido de ler o perfil e ficado em "conta real".
- */
-export function contaDeTesteSabida(servidor: boolean | null | undefined, sessao: boolean | undefined): boolean | undefined {
-  return typeof servidor === "boolean" ? servidor : sessao;
-}
 
 /**
  * A resposta da rota como leitura. Só um 200 com `emails` (lista ou null) conta como lido; qualquer outro estado ou
@@ -46,6 +30,5 @@ export function leituraDaResposta<E>(ok: boolean, corpo: unknown): LeituraDaCaix
 export function vistaDaCaixa<E>(contaDeTeste: boolean | undefined, leitura: LeituraDaCaixa<E>): VistaDaCaixa<E> {
   if (leitura.fase === "lida") return leitura.emails ? { tipo: "lista", emails: leitura.emails } : { tipo: "nada" };
   if (contaDeTeste !== true) return { tipo: "nada" };
-  if (leitura.fase === "falhou") return { tipo: "erro" };
-  return leitura.demorada ? { tipo: "carregando", demorada: true } : { tipo: "carregando" };
+  return leitura.fase === "buscando" ? { tipo: "carregando" } : { tipo: "erro" };
 }
