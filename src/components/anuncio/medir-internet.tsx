@@ -143,6 +143,8 @@ export function MedirInternet({
     setParcial(aproveitadas.parcial);
     setFase("salvando");
     try {
+      // ENSAIO: sem o produto — a medição não é gravada (nem validada, nem recalcula o nível).
+      if (process.env.NEXT_PUBLIC_ENSAIO_NUNCA !== "x") throw new Error("ensaio: sem gravar");
       const resp = await fetch("/api/internet/medicoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
