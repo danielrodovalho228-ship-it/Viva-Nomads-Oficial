@@ -1,6 +1,6 @@
 "use client";
 
-import { ConfirmarExcluirRascunho } from "@/components/anuncio/confirmar-excluir-rascunho";
+import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { imovelPublicado } from "@/lib/anuncio/publicados";
 import { gruposRascunhosDuplicados, idsRascunhosDuplicados } from "@/lib/anuncio/rascunhos-duplicados";
 import { useState } from "react";
@@ -67,10 +67,7 @@ export function MyPropertiesClient({
   // Ids excluídos nesta sessão (rascunhos descartados) — some da lista na hora.
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
   const [excluindo, setExcluindo] = useState<string | null>(null);
-  // E953: a confirmação abre como painel no cartão; o erro fica DENTRO do cartão; o sucesso avisa perto do topo da lista.
-  const [confirmandoExcluir, setConfirmandoExcluir] = useState<string | null>(null);
-  const [erroNoCartao, setErroNoCartao] = useState<Record<string, string>>({});
-  const [avisoExcluido, setAvisoExcluido] = useState(false);
+  const [erroExcluir, setErroExcluir] = useState<string | null>(null);
   // E980: os exemplos chegam sob demanda (só com a demonstração ligada).
   const exemplos = useExemplos(demoOn);
   const properties = (demoOn ? (exemplos?.DEMO_PROPERTIES ?? []) : real).filter((p) => !removidos.has(p.id));
@@ -98,28 +95,13 @@ export function MyPropertiesClient({
   const pagina = paginarAnuncios(filtrada, copias, paginas);
   const abas = abasVisiveis(anuncios);
 
-  const semErroDo = (id: string) => (e: Record<string, string>) => Object.fromEntries(Object.entries(e).filter(([k]) => k !== id));
-  function abrirExcluir(id: string) {
-    setErroNoCartao(semErroDo(id));
-    setAvisoExcluido(false);
-    setConfirmandoExcluir(id);
-  }
-  function cancelarExcluir(id: string) {
-    setConfirmandoExcluir(null);
-    setErroNoCartao(semErroDo(id));
-    // O foco volta para a lixeira daquele cartão.
-    requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-excluir-id="${id}"]`)?.focus());
-  }
   async function excluirRascunho(id: string) {
-    setErroNoCartao(semErroDo(id));
+    setErroExcluir(null);
     setExcluindo(id);
     const res = await semQuedaDeRede(deleteProperty(id));
     setExcluindo(null);
-    if (res.ok) {
-      setConfirmandoExcluir(null);
-      setRemovidos((s) => new Set(s).add(id));
-      setAvisoExcluido(true);
-    } else setErroNoCartao((e) => ({ ...e, [id]: res.error ?? "Não foi possível excluir o rascunho agora. Tente de novo." }));
+    if (res.ok) setRemovidos((s) => new Set(s).add(id));
+    else setErroExcluir(res.error ?? "Não foi possível excluir agora.");
   }
 
   return (
@@ -136,14 +118,11 @@ export function MyPropertiesClient({
           </div>
         }
       />
-      {/* E953: o sucesso da exclusão é anunciado aqui (região viva sempre presente); o erro fica dentro do cartão. */}
-      <div role="status" aria-live="polite" data-testid="imoveis-aviso-exclusao">
-        {avisoExcluido && (
-          <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800" data-testid="imoveis-excluido">
-            Rascunho excluído
-          </p>
-        )}
-      </div>
+      {erroExcluir && (
+        <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" data-testid="imoveis-erro">
+          {erroExcluir}
+        </p>
+      )}
 
       {properties.length === 0 ? (
         <EmptyState
@@ -459,32 +438,20 @@ export function MyPropertiesClient({
                         )}
                         {/* Excluir rascunho (item 1 do reteste — limpa órfãos). */}
                         {p.status === "draft" && (
-                          <button
-                            type="button"
-                            // E515: o rótulo (e a confirmação) nomeia o rascunho (título e bairro), não "este rascunho".
-                            aria-label={rotuloExcluirRascunho(p.title, p.neighborhood)}
-                            aria-expanded={confirmandoExcluir === p.id}
-                            onClick={() => abrirExcluir(p.id)}
+                          <ConfirmarNaPagina
+                            // E515: a confirmação nomeia o rascunho (título e bairro), não "este rascunho".
+                            aviso={avisoExcluirRascunho(p.title, p.neighborhood)}
+                            confirmar="Excluir"
+                            onConfirmar={() => excluirRascunho(p.id)}
                             disabled={excluindo === p.id}
-                            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                            data-testid="excluir-rascunho"
-                            data-excluir-id={p.id}
+                            ariaLabel={rotuloExcluirRascunho(p.title, p.neighborhood)}
+                            botaoClassName="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            testid="excluir-rascunho"
                           >
                             <Trash2 className="h-4 w-4" />
-                          </button>
+                          </ConfirmarNaPagina>
                         )}
                       </div>
-                    )}
-                    {/* E953: a confirmação abre ABAIXO da fileira de ações, na largura do cartão (nunca espremida). */}
-                    {!demoItem && p.status === "draft" && confirmandoExcluir === p.id && (
-                      <ConfirmarExcluirRascunho
-                        id={p.id}
-                        aviso={avisoExcluirRascunho(p.title, p.neighborhood)}
-                        ocupado={excluindo === p.id}
-                        erro={erroNoCartao[p.id] ?? null}
-                        onConfirmar={() => void excluirRascunho(p.id)}
-                        onCancelar={() => cancelarExcluir(p.id)}
-                      />
                     )}
                   </div>
                 </div>
