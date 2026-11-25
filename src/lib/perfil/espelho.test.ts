@@ -10,10 +10,10 @@ import { PILULA_EMAIL, TITULO_ESPELHO, linhaIntencaoCidade, nomeNoEspelho } from
 import { rostoDoAvatar } from "../avatar.ts";
 import { FOTO_ACEITA, MSG_HEIC, ZOOM_MAX, ehHeic, limitarDeslocamento, recorteComZoom, squareCrop } from "../avatar-image.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 test("espelho: título, pílula e a linha 'Quer morar · cidade' (o que falta some)", () => {
   assert.equal(TITULO_ESPELHO, "É assim que o proprietário te vê quando você pede para morar"); // E55

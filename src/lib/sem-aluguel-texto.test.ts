@@ -8,6 +8,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { fonteSemComentarios as semComentarios } from "./fonte-sem-comentarios.ts";
 
 const GRUPOS: Record<string, string[]> = {
   "páginas públicas": [
@@ -35,10 +36,6 @@ const GRUPOS: Record<string, string[]> = {
   "contratos do painel": ["src/app/(dashboard)/dashboard/contratos/contratos-client.tsx"],
 };
 
-/** Tira comentários; o que sobra é código + texto de tela. */
-function semComentarios(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[\s;{}()])\/\/[^\n]*/g, "$1");
-}
 
 /**
  * Ocorrências visíveis: "Aluguel"/"aluguéis"/"intermedeia" sempre; "aluguel" minúsculo só quando é palavra de frase

@@ -60,8 +60,9 @@ export function conflitoDePeriodo(pedido: Periodo, ocupados: Periodo[]): Periodo
 
 const br = (iso: string) => iso.split("-").reverse().join("/");
 
+/** E1089: `c.fim` é a última noite do contrato que ocupa o imóvel; a mensagem diz a SAÍDA (o primeiro dia livre). */
 export function mensagemConflitoPeriodo(c: Periodo): string {
-  return `Este imóvel já tem contrato de ${br(c.inicio)} a ${br(c.fim)}. Escolha outra data de entrada.`;
+  return `Este imóvel já tem contrato com entrada em ${br(c.inicio)} e saída em ${br(somaDias(c.fim, 1))}. Escolha outra data de entrada.`;
 }
 
 /** Status de contrato que ocupa o imóvel (o mesmo filtro do EXCLUDE da 0176). */

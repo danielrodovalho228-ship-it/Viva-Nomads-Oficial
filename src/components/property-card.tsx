@@ -36,8 +36,7 @@ export function PropertyCard({
   const m = modeloDoCartao(property, periodMonths);
   // E416 (05/11): todos os selos do imóvel, empilhados sobre a foto (antes: no máximo 1, e nenhum de nível).
   const selos = selosDaFoto({
-    // Verificação do dono só quando o dado chega com o anúncio; exemplo nunca.
-    verificado: !exemplo && property.owner?.verified === true,
+    // E1107: sem selo de identidade no cartão (E899: só o essencial). A identidade fica na página, no bloco do dono, pela fonte.
     precoJusto: !!property.precoJusto,
     pets: !!property.petsAllowed,
     nivel: property.nivel,

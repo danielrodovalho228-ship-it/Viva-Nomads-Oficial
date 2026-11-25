@@ -15,17 +15,20 @@ import { linhasContrato } from "./dados-negociacao.ts";
 
 const IM = { titulo: "Apto" };
 
-test("E671: contrato de 2 meses a partir de 10/01/2027 — o e-mail e a página dizem saída 10/03/2027", () => {
+test("E671→E1089: contrato de 2 meses a partir de 10/01/2027 — o e-mail e a página dizem a MESMA saída, 11/03/2027 (o dia seguinte ao fim gravado)", () => {
   const blocos = encadearDatas("2027-01-10", [{ meses: 2 } as never]);
   const { inicio, fim } = periodoDosBlocos(blocos);
   assert.equal(fim, "2027-03-10");
   const l = linhasContrato({ imovel: IM, inicio: inicio!, fim: fim!, meses: 2, valorMensal: 3000 });
-  assert.equal(l.find((x) => x.rotulo === "Período")?.valor, "10/01/2027 a 10/03/2027 (2 meses)");
-  assert.match(textoSaida({ inicio, fim, checkinAfter: null, checkoutBefore: null }), /10\/03\/2027/);
+  // E1089 (coordenador): 10/03 é a última noite gravada; o e-mail e a página imprimem a saída, 11/03 (entrada + 60 dias).
+  assert.equal(l.find((x) => x.rotulo === "Período")?.valor, "Entrada 10/01/2027 · Saída 11/03/2027 · 60 diárias");
+  assert.match(textoSaida({ inicio, fim, checkinAfter: null, checkoutBefore: null }), /11\/03\/2027/);
 });
 
-test("E671: o e-mail do contrato não soma um dia ao fim gravado", () => {
+// E1089 (coordenador) inverte a decisão do E671: o e-mail do contrato imprime a SAÍDA (o dia seguinte ao fim gravado),
+// pela fonte única do período — a mesma conta da página do contrato, da estadia e da proposta.
+test("E1089: o e-mail do contrato imprime a saída pela fonte única do período (o fim gravado + 1)", () => {
   const fonte = readFileSync(new URL("./dados-negociacao.ts", import.meta.url), "utf8");
   const corpo = fonte.slice(fonte.indexOf("export function linhasContrato"));
-  assert.doesNotMatch(corpo.slice(0, corpo.indexOf("export type Desfecho")), /saidaDepoisDaUltimaNoite\(/);
+  assert.match(corpo.slice(0, corpo.indexOf("export type Desfecho")), /periodoPeloFim\(o\.inicio, o\.fim\)/);
 });

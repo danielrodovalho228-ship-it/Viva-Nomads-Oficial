@@ -30,7 +30,8 @@ test("E599: o quadro do e-mail mostra a saída real", () => {
     contaTotal: "R$ 3.260 × 43 dias ÷ 30 = R$ 4.672,67",
   });
   const periodo = linhas.find((l) => l.rotulo === "Período")?.valor;
-  assert.equal(periodo, "10/01/2027 a 22/02/2027 (43 dias)");
+  // E1089 (coordenador): a mesma saída, na forma única de toda superfície.
+  assert.equal(periodo, "Entrada 10/01/2027 · Saída 22/02/2027 · 43 diárias");
 });
 
 test("E599: o e-mail da proposta usa dataDeSaida, não o fim inclusivo", () => {
@@ -57,21 +58,24 @@ test("E599: a saída depois da última noite é o dia seguinte; vazio/inválido 
   assert.equal(saidaDepoisDaUltimaNoite(null), "");
 });
 
-test("E599→E671: e-mail do contrato da estadia de 43 dias (10/01/2027) diz o fim gravado, 21/02/2027, como a página do contrato", () => {
+test("E599→E1089: e-mail do contrato da estadia de 43 dias (10/01/2027) diz a SAÍDA, 22/02/2027 (o dia seguinte ao fim gravado, 21/02), como a proposta", () => {
   const blocos = encadearDatas("2027-01-10", [{ meses: 2, dias: 43 } as never]);
   const { inicio, fim } = periodoDosBlocos(blocos);
   assert.equal(fim, "2027-02-21"); // a última noite, como gravado nos blocos
   const l = linhasContrato({ imovel: { titulo: "Apto" }, inicio: inicio!, fim: fim!, meses: 2, valorMensal: 3260, dias: 43 });
-  assert.equal(l.find((x) => x.rotulo === "Período")?.valor, "10/01/2027 a 21/02/2027 (43 dias)");
+  // E1089 (coordenador): o fim gravado (21/02) é a última noite; o e-mail imprime a saída (22/02), nunca "a 21/02".
+  assert.equal(l.find((x) => x.rotulo === "Período")?.valor, "Entrada 10/01/2027 · Saída 22/02/2027 · 43 diárias");
   assert.equal(diasDaSelecao({ entrada: "2027-01-10", saida: "2027-02-22" }), 43);
 });
 
-test("E599: proposta e candidatura da mesma estadia imprimem a MESMA saída (22/02/2027); o contrato segue o fim gravado (E671)", () => {
+test("E599/E1089: proposta, candidatura e CONTRATO da mesma estadia imprimem a MESMA saída (22/02/2027)", () => {
   const prop = linhasProposta({ numero: "ORC-2026-0010", imovel: { titulo: "Apto" }, entrada: "2027-01-10", saida: dataDeSaida("2027-01-10", 43), meses: 2, dias: 43, valorMensal: 3260, contaTotal: "x" });
   const contr = linhasContrato({ imovel: { titulo: "Apto" }, inicio: "2027-01-10", fim: "2027-02-21", meses: 2, valorMensal: 3260, dias: 43 });
   const cand = linhasCandidatura({ imovel: { titulo: "Apto" }, interessado: "Ana", entrada: "2027-01-10", saida: "2027-02-22", valorMensal: 3260, totalMensal: 3260 } as never);
-  assert.match(prop.find((x) => x.rotulo === "Período")!.valor, /a 22\/02\/2027 \(43 dias\)/);
-  assert.match(contr.find((x) => x.rotulo === "Período")!.valor, /a 21\/02\/2027 \(43 dias\)/);
+  // E1089 (coordenador): o contrato deixa de imprimir a última noite (21/02); as três superfícies dizem a mesma saída.
+  assert.match(prop.find((x) => x.rotulo === "Período")!.valor, /Saída 22\/02\/2027 · 43 diárias/);
+  assert.equal(contr.find((x) => x.rotulo === "Período")!.valor, prop.find((x) => x.rotulo === "Período")!.valor);
+  assert.doesNotMatch(contr.find((x) => x.rotulo === "Período")!.valor, /21\/02\/2027/);
   assert.equal(cand.find((x) => x.rotulo === "Saída")!.valor, "22/02/2027 (43 dias)");
 });
 

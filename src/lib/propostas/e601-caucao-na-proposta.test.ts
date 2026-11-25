@@ -21,10 +21,13 @@ test("E601: a caução não depende da taxa de serviço", () => {
   assert.equal(caucaoDaProposta({ meses: 2, dias: 43 }, 2800)?.valor, resumoContratoEmDias(43, 2800, 0.15).blocos[0].caucao);
 });
 
-test("E601: estadia longa → caução do 1º bloco (até 90 dias)", () => {
+// E1061 (asserção alterada; lei do produto, Daniel, 20/11/2026 — a caução é a do contrato, da estadia toda): antes cobrava
+// que a proposta de uma estadia longa mostrasse só o 1º bloco (60 de 120 dias); passa a cobrar a estadia inteira.
+test("E601 + E1061: estadia longa → caução da estadia toda (a soma dos blocos do contrato)", () => {
   const c = caucaoDaProposta({ meses: 4, dias: 120 }, 3000);
   assert.ok(c);
-  assert.equal(c.dias, resumoContratoEmDias(120, 3000, 0).blocos[0].dias ?? resumoContratoEmDias(120, 3000, 0).blocos[0].meses * 30);
+  assert.equal(c.dias, 120);
+  assert.equal(c.valor, resumoContratoEmDias(120, 3000, 0).caucaoTotal);
 });
 
 test("E601: sem valor mensal não há caução", () => {

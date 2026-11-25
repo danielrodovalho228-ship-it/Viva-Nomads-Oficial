@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { PONTOS_REFERENCIA } from "../config/pontos-referencia.ts";
 import { TIPO_PONTO_SELO } from "../config/pontos-selos-estrutura.ts";
 import { pontosDaCidade, ITENS_ESTRUTURA, GRUPOS_ESTRUTURA } from "./selos-estrutura.ts";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
@@ -53,7 +54,7 @@ test("'Perto de…': com a lista de hoje (nenhum ponto verificado) nenhuma cidad
 
 test("vocabulário: sem promessa — 'acessível' só como nome de selo; nada de aluguel/temporada/hóspede", () => {
   // Só o que vai para a tela (sem os comentários do código).
-  const semComentarios = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+  const semComentarios = fonteSemComentarios;
   const textos = [
     semComentarios(ler("src/components/anuncio/estrutura-acessibilidade.tsx")),
     semComentarios(ler("src/components/property/estrutura-informada.tsx")),
