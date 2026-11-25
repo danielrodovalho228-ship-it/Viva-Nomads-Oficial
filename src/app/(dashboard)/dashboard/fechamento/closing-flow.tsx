@@ -3,8 +3,7 @@
 import { dataBRT } from "@/lib/datas-brasilia";
 import { prazoInicial } from "@/lib/inicio-estadia";
 import { rotuloPreco } from "@/lib/cartao-preco";
-import { formatBRLExato, mensalDoFechamento, parcelaDoMes, periodoPorExtenso, precoDoFechamento, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
-import { contaDoPrimeiroPagamento, primeiroPagamentoDaEstadia } from "@/lib/pagamento-componentes";
+import { formatBRLExato, mensalDoFechamento, parcelaDoMes, periodoPorExtenso, precoDoFechamento, primeiroPagamentoDoPreco, ROTULO_PREPARACAO, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { CampoData } from "@/components/ui/campo-data";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
@@ -170,12 +169,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const [guaranteeId, setGuaranteeId] = useState<string | null>("caucao");
   // Quadro "antes da entrada" (prompt 24): 1º pagamento + Caução ao lado (some com seguro-fiança).
   const quadroEntrada = quadroAntesDaEntrada({
-    // E1072: na estadia em dias, o 1º pagamento é o 1º bloco inteiro — a mesma conta que o registro do bloco cobra.
-    primeiroPagamento: primeiroPagamentoDaEstadia({ dias: DIAS_ACORDO, preco: PRECO_FECHAMENTO, blocos: resumo.blocos, comProposta: !!ACORDO?.termos }),
+    primeiroPagamento: primeiroPagamentoDoPreco(PRECO_FECHAMENTO),
     caucao: CAUCAO_50,
     garantia: garantiaDoContrato(guaranteeId),
   });
-  const CONTA_PRIMEIRO_PAGAMENTO = contaDoPrimeiroPagamento({ dias: DIAS_ACORDO, preco: PRECO_FECHAMENTO, blocos: resumo.blocos, comProposta: !!ACORDO?.termos });
   // "Sua proteção": o inquilino confirma que leu a comparação antes de seguir.
   const [cienteProtecao, setCienteProtecao] = useState(false);
   // Nº de pessoas que vão morar (Onda 1) — informado pelo inquilino, validado
@@ -1130,12 +1127,6 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                   <span>1º pagamento</span>
                   <span data-testid="entrada-primeiro-pagamento">{formatBRL(quadroEntrada.primeiroPagamento)}</span>
                 </div>
-                {/* E1072: em dias, o 1º pagamento é o 1º bloco inteiro; a conta por extenso, porque as parcelas acima são do mês. */}
-                {CONTA_PRIMEIRO_PAGAMENTO && (
-                  <p className="text-xs text-blue-900" data-testid="entrada-primeiro-pagamento-conta">
-                    1º bloco, pelos dias da estadia: {CONTA_PRIMEIRO_PAGAMENTO}.
-                  </p>
-                )}
               </div>
               {/* Prompt 24 (Daniel, 18/10): a Caução é garantia devolvível — fica FORA do 1º pagamento, mostrada ao lado.
                   Com seguro-fiança (garantia única) a linha não aparece. */}
