@@ -77,7 +77,7 @@ export default async function BuscarParceirosPage({ searchParams }: { searchPara
       {/* E458: para o profissional que chegou à busca — a porta de quem quer ser parceiro. */}
       <p className="text-sm text-muted" data-testid="buscar-seja-parceiro">
         É profissional?{" "}
-        <Link href="/parceiros" className="area-de-toque-44 font-semibold text-forest underline underline-offset-2 hover:text-blue-700">
+        <Link href="/parceiros" className="alvo-toque font-semibold text-forest underline underline-offset-2 hover:text-blue-700">
           Seja parceiro da Viva
         </Link>
       </p>

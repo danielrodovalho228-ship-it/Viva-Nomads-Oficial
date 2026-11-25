@@ -317,7 +317,7 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
           <p className="font-semibold text-ink">{CONVITE_SEJA_PARCEIRO.titulo}</p>
           <p className="mt-1 text-muted">{CONVITE_SEJA_PARCEIRO.texto}</p>
           {/* E902: os passos do credenciamento estão na página pública de recrutamento (antes: o painel logado do avaliador). */}
-          <Link href={HREF_PASSOS_CREDENCIAMENTO} className="area-de-toque-44 mt-1 inline-block font-semibold text-forest underline underline-offset-2">
+          <Link href={HREF_PASSOS_CREDENCIAMENTO} className="alvo-toque mt-1 inline-block font-semibold text-forest underline underline-offset-2">
             {CONVITE_SEJA_PARCEIRO.link}
           </Link>
         </div>

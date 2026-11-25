@@ -675,9 +675,8 @@ body:has([data-testid="cogumelo"]) {
 }
 
 /* E1033 (passo 2): área de toque de 44 × 44 px em QUALQUER perfil (toque ou rato), sem mudar o visual: um
-   pseudo-elemento sem desenho, centrado no controle. É para alvos ISOLADOS: o Switch e, desde o passo 3, links soltos.
-   Não usar onde houver outro alvo a menos de 44 px: as áreas se sobreporiam e o clique cairia no vizinho (ali é caixa
-   real, min-h-11). Cada uso tem a trava de tela que mede a área com o helper nos dois perfis. */
+   pseudo-elemento sem desenho, centrado no controle. É para controles de formulário isolados (o Switch). Não usar em
+   link de texto nem onde houver outro alvo a menos de 44 px: as áreas se sobreporiam e o clique cairia no vizinho. */
 .area-de-toque-44 {
   position: relative;
 }
