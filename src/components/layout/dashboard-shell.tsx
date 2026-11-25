@@ -425,9 +425,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} itensConta={itensConta} onAcao={aoAcaoConta} />
         )}
         <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", papelTopo && "lg:hidden")} data-testid="topo-celular">
-          {/* E1046: `min-h-11` dá os 44 px à própria âncora (eram 32); o símbolo e o nome ficam centrados nela, e a barra
-              tem 64 px, por isso o desenho não muda. É o mesmo conserto do E960 no logo do site público. */}
-          <Logo prefetch={false} className="min-h-11 lg:hidden" />
+          <Logo prefetch={false} className="lg:hidden" />
           <div className="flex items-center gap-2">
             {contaCelular ?? papelChip}
             {chipModo}
