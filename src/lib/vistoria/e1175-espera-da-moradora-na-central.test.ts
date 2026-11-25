@@ -10,7 +10,7 @@ import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
   E1175 (ORDENS-DUET 752, 776, 780 e 782). A Central conta os pedidos de avaliação do imóvel ocupado que esperam o
   morador: os que têm data proposta à espera da concordância, e — como SEGUNDO ESTADO da mesma linha — os recusados
   pelo morador, à espera de nova data. Os dois estados têm cada um a sua regra pura, e um pedido nunca está nos dois.
-  A trava de tela é a t1775 (ORDEM-DUET-785).
+  A trava de tela é a t1777 (ORDEM-DUET-793: a t1775 ficou com o E1179).
   Roda: node --test src/lib/vistoria/e1175-espera-da-moradora-na-central.test.ts
 */
 const base: EstadoDaConcordancia = { status: "designado", ocupado: true, agendadoPara: "2026-11-27T13:00:00Z", concordanciaPedidaEm: "2026-11-24T12:00:00Z", concordanciaEm: null };
