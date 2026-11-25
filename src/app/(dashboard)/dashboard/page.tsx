@@ -1,4 +1,3 @@
-import { separarAdiadas } from "@/lib/mensagens-filtros";
 import { listMyProperties } from "@/lib/data/properties";
 import { createClient } from "@/lib/supabase/server";
 import { contarInteressados } from "@/lib/painel/kpi-interessados";
@@ -259,7 +258,7 @@ export default async function DashboardPage() {
       checklists={checklists}
       totalCandidaturas={candidaturas ? candidaturas.length : null}
       visualizacoes={visualizacoes}
-      totalConversas={conversas ? separarAdiadas(conversas).ativas.length : null}
+      totalConversas={conversas ? conversas.length : null}
       totalBuscasSalvas={buscasSalvas ? buscasSalvas.length : null}
       inicioDono={inicioDono}
       />
