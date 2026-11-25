@@ -14,13 +14,12 @@ export const PRAZO_DONO_ACEITAR_HORAS = 72;
 
 /**
  * E1156 (ORDENS-DUET 712 e 713): o prazo do LAUDO conta em dias úteis depois da visita. Vale o que o avaliador propôs e
- * o dono aceitou; sem proposta (ou em pedido anterior a esta regra), o padrão — as mesmas 48 horas úteis de antes.
+ * o dono aceitou; sem proposta (ou em pedido anterior a esta regra), o padrão — os mesmos 2 dias úteis de antes.
+ * E1192: o que é dia útil, e como se soma, está no calendário único (lib/calendario/dias-uteis.ts).
  */
 export const PRAZO_LAUDO_PADRAO_DIAS_UTEIS = 2;
 /** E1156: o máximo que o avaliador pode propor para o laudo, em dias úteis depois da visita. */
 export const PRAZO_LAUDO_MAX_DIAS_UTEIS = 5;
-/** E1156: um dia útil, em horas úteis — é assim que o prazo do laudo se soma (segunda a sexta, em Brasília). */
-export const HORAS_DO_DIA_UTIL = 24;
 
 /**
  * E1156: os dias úteis que valem para o laudo de um pedido. Pedido sem prazo proposto usa o padrão; um valor acima do

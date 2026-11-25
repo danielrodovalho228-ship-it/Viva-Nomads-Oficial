@@ -17,6 +17,7 @@ import { textoDoPrazoDeAceiteDesdeAProposta } from "./relogio-do-pedido.ts";
 import { AVISO_EXPIRACAO_DIAS, PRAZO_DEVOLUCAO_DIAS, PRAZO_RESSALVA_DIAS, ROTULO_RESULTADO, VALIDADE_LAUDO_MESES, type Resultado } from "./laudo.ts";
 import { linhaNivelSustentado } from "./nivel-do-laudo.ts";
 import { prazoCombinadoNaLinhaDoDono, prazoDoLaudoPorExtenso } from "./pedido-avaliador.ts";
+import { NOTA_DIAS_UTEIS, citaDiasUteis } from "../calendario/dias-uteis.ts";
 import { diasUteis, diasUteisDoLaudo } from "./prazos.ts";
 import { imovelDoPedido, type LinhaEmail } from "../parceiros/email-pedido.ts";
 import { assuntoComTitulo, diaHoraNoAssunto } from "../notifications/assuntos.ts";
@@ -151,7 +152,22 @@ function fatosDoLaudo(l: LaudoNoEmail | null | undefined): string {
   return ` Laudo ${numeroExibido(l.numero, l.versao)}. Resultado: ${ROTULO_RESULTADO[l.resultado]}.${nivel ? ` ${nivel}.` : ""}${corrigir}${l.linkConferir ? ` Para conferir: ${l.linkConferir}` : ""}`;
 }
 
+/**
+ * E1192: o e-mail que cita um prazo em dias úteis explica-o uma vez, no fim do corpo, com a mesma nota das telas
+ * (NOTA_DIAS_UTEIS, do calendário único).
+ */
 export function corpoVistoria(ev: EventoVistoria, f: FatosVistoria): CorpoVistoria {
+  const corpo = corpoSemNota(ev, f);
+  return {
+    ...corpo,
+    body: (nome) => {
+      const texto = corpo.body(nome);
+      return citaDiasUteis(texto) ? `${texto} ${NOTA_DIAS_UTEIS}` : texto;
+    },
+  };
+}
+
+function corpoSemNota(ev: EventoVistoria, f: FatosVistoria): CorpoVistoria {
   const titulo = limpo(f.imovel?.titulo);
   const im = imovelDoPedido(f.imovel ?? null);
   const visita = quando(f.visita);
