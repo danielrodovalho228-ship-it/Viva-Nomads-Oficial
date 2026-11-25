@@ -134,25 +134,19 @@ test("E1118 (2): as fontes existem uma vez só; a constante duplicada e a funç�
 test("E1118 (3): os textos dizem o mesmo de antes, agora a partir das constantes", () => {
   const ev = (e: string, extra: Record<string, unknown> = {}) => corpoVistoria(e as never, { titulo: "Apto Santa Mônica", ...extra } as never)!.body("Lara");
   assert.match(ev("vistoria_designada"), /Responda no prazo que você declarou \(padrão: 24 horas\) com o seu valor e o seu prazo/);
-  // E1160 (1) (asserções alteradas, ORDEM-DUET-674): o aviso da proposta diz o prazo pela frase da fonte (E1154), a
-  // mesma do bloco do dono; continua a dizer 72 horas, a partir da constante.
-  assert.match(ev("vistoria_designado_dono"), /Aceite em até 72 horas depois da proposta/);
+  assert.match(ev("vistoria_designado_dono"), /você tem 72 horas depois/);
   assert.match(ev("vistoria_agendada"), /Reagendar sem custo: uma vez, com pelo menos 24 horas de aviso\./);
   // O texto de reserva (sem os fatos do pedido) diz os mesmos prazos.
   assert.match(TEMPLATES.vistoria_designada.body("Lara"), /\(padrão: 24 horas\)/);
-  assert.match(TEMPLATES.vistoria_designado_dono.body("Lara"), /Aceite em até 72 horas depois da proposta/);
+  assert.match(TEMPLATES.vistoria_designado_dono.body("Lara"), /você tem 72 horas depois da proposta/);
   assert.match(TEMPLATES.vistoria_agendada.body("Lara"), /com pelo menos 24 horas de aviso\./);
   const cedo = podeReagendar(new Date(Date.parse("2026-11-22T12:00:00Z") + 23 * 3_600_000).toISOString(), new Date("2026-11-22T12:00:00Z"), false);
   assert.deepEqual(cedo, { ok: false, motivo: "Reagendar sem custo só com pelo menos 24 horas de aviso." });
   // No código, os textos levam a constante (não o número).
   const email = ler("src/lib/vistoria/corpo-email.ts");
   assert.match(email, /\(padrão: \$\{PRAZO_RESPOSTA_PADRAO_HORAS\} horas\)/);
-  // E1160 (asserções alteradas, ORDEM-DUET-674): os dois textos deixaram de ser montados no e-mail — ele lê a frase
-  // da fonte de cada um, e é a fonte que leva a constante.
-  assert.match(email, /\$\{textoDoPrazoDeAceiteDesdeAProposta\(f\.propostaEm\)\}/);
-  assert.match(ler("src/lib/vistoria/relogio-do-pedido.ts"), /Aceite em até \$\{PRAZO_DONO_ACEITAR_HORAS\} horas depois da proposta/);
-  assert.match(email, /\$\{REGRA_DO_REAGENDAMENTO\}/);
-  assert.match(ler("src/lib/vistoria/regras.ts"), /com pelo menos \$\{REGRAS_AGENDA\.antecedenciaReagendarHoras\} horas de aviso/);
+  assert.match(email, /você tem \$\{PRAZO_DONO_ACEITAR_HORAS\} horas depois/);
+  assert.match(email, /com pelo menos \$\{REGRAS_AGENDA\.antecedenciaReagendarHoras\} horas de aviso/);
   assert.match(ler("src/lib/vistoria/actions.ts"), /no prazo que declarou \(padrão: \$\{PRAZO_RESPOSTA_PADRAO_HORAS\} horas\)/);
   const lista = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx");
   assert.match(lista, /name="prazoRespostaHoras" type="number" min=\{1\} max=\{PRAZO_RESPOSTA_MAX_HORAS\} defaultValue=\{cred\.prazo_resposta_horas \?\? PRAZO_RESPOSTA_PADRAO_HORAS\}/);

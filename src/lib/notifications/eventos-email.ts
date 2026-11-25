@@ -136,9 +136,7 @@ export type NotificationEvent =
   | "internet_abaixo_medida" // 57: a medição do morador ficou abaixo de 50% da do dono → dono
   // Avaliação do imóvel por avaliador credenciado (Prompt 62-B1), atrás de VISTORIA_ATIVA
   | "vistoria_designada" // o proprietário escolheu o avaliador → avaliador (responder com valor e prazo, ou recusar, no prazo dele)
-  | "vistoria_designado_dono" // a proposta de valor e prazo do avaliador chegou → dono
-  | "vistoria_recusada_dono" // E1160: o avaliador escolhido recusou → dono (antes era o vistoria_designado_dono, genérico)
-  | "vistoria_sem_resposta_dono" // E1160: o avaliador escolhido não respondeu no prazo → dono (idem)
+  | "vistoria_designado_dono" // novidade na escolha do avaliador → dono (proposta de valor e prazo recebida, ou escolher outro)
   | "vistoria_proposta_expirada" // E1142: a proposta venceu sem o aceite do dono → avaliador
   | "vistoria_proposta_expirada_dono" // E1144: a mesma expiração, dita ao dono (antes ele recebia o vistoria_designado_dono, genérico)
   | "vistoria_proposta_aceita" // E1153: o dono aceitou a proposta → avaliador (ainda sem data de visita)
@@ -270,9 +268,7 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   saida_sem_parceiro: { subject: "Saída em 5 dias: quer agendar a limpeza?", body: (n) => `Olá${n ? " " + n : ""}, o morador sai em 5 dias e o imóvel não tem limpeza fixa. Peça um orçamento a um parceiro da cidade.`, cta: "Buscar limpeza", path: "/parceiros/buscar?categoria=limpeza" },
   internet_remedir: { subject: "Meça de novo a internet do seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, a medição da internet do seu imóvel vence em cerca de 2 semanas. Meça de novo, conectado ao Wi-Fi do imóvel, para o anúncio continuar mostrando o número.`, cta: "Medir a internet", path: "/dashboard/imoveis" },
   vistoria_designada: { subject: "Um proprietário escolheu você para avaliar um imóvel", body: semFatos("vistoria_designada"), cta: "Responder", path: "/dashboard/parceiro/avaliacao" },
-  vistoria_designado_dono: { subject: "Proposta de avaliação recebida", body: semFatos("vistoria_designado_dono"), cta: "Ver a avaliação", path: "/dashboard/imoveis" },
-  vistoria_recusada_dono: { subject: "O avaliador recusou o pedido de avaliação", body: semFatos("vistoria_recusada_dono"), cta: "Escolher avaliador", path: "/dashboard/imoveis" },
-  vistoria_sem_resposta_dono: { subject: "O avaliador não respondeu no prazo", body: semFatos("vistoria_sem_resposta_dono"), cta: "Escolher avaliador", path: "/dashboard/imoveis" },
+  vistoria_designado_dono: { subject: "Novidade na escolha do avaliador do seu imóvel", body: semFatos("vistoria_designado_dono"), cta: "Ver a avaliação", path: "/dashboard/imoveis" },
   vistoria_proposta_expirada_dono: { subject: "O prazo para aceitar a proposta de avaliação terminou", body: semFatos("vistoria_proposta_expirada_dono"), cta: "Escolher avaliador", path: "/dashboard/imoveis" },
   vistoria_proposta_expirada: { subject: "A sua proposta de avaliação expirou", body: semFatos("vistoria_proposta_expirada"), cta: "Ver as avaliações", path: "/dashboard/parceiro/avaliacao" },
   vistoria_proposta_aceita: { subject: "A sua proposta de avaliação foi aceita", body: semFatos("vistoria_proposta_aceita"), cta: "Agendar a visita", path: "/dashboard/parceiro/avaliacao" },

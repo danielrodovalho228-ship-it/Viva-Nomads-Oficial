@@ -329,8 +329,7 @@ export async function adminAbrirVerificacao(form: FormData): Promise<Res> {
     .single();
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };
   await abrirEscolha(a.admin, p.id as string, agora);
-  // E1160 (2): o aviso leva o pedido — o corpo diz o passo do dono conforme haja ou não avaliador para escolher.
-  await avisar(a.admin, im.owner_id as string, "vistoria_verificacao", rotaDono(im.id as string), { pedidoId: p.id as string, propertyId: im.id as string });
+  await avisar(a.admin, im.owner_id as string, "vistoria_verificacao", rotaDono(im.id as string), { propertyId: im.id as string });
   revalidatePath(ROTA_ADMIN);
   return { ok: true, mensagem: "Verificação aberta. O proprietário escolhe o avaliador." };
 }

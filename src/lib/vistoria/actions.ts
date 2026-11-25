@@ -465,8 +465,7 @@ export async function responderDesignacao(form: FormData): Promise<Res> {
   // E1102: a recusa fica gravada também quando o pedido não tinha a linha da designação (ela é criada com a resposta).
   await registrarRespostaDoAvaliador(c.admin, c.p.id, c.p.avaliador_id!, "recusada", agora);
   await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", agora);
-  // E1160 (1): a recusa tem o seu próprio aviso ao dono.
-  await avisar(c.admin, c.p.owner_id, "vistoria_recusada_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
+  await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
   return { ok: true };
@@ -593,8 +592,6 @@ export async function agendarVisita(form: FormData): Promise<Res> {
     if (!r.ok) return { ok: false, erro: r.motivo };
   }
   const agora = new Date().toISOString();
-  // E1160 (6): o e-mail do reagendamento diz "nova data" e a anterior — lida aqui, antes de a gravação a substituir.
-  const troca = { reagendada: reagendando, visitaAnterior: reagendando ? p.agendado_para : null };
   await s.admin
     .from("vistoria_pedidos")
     .update({
@@ -607,10 +604,10 @@ export async function agendarVisita(form: FormData): Promise<Res> {
       ...(reagendando ? (parte === "dono" ? { reagendou_dono: true } : { reagendou_avaliador: true }) : {}),
     })
     .eq("id", p.id);
-  if (p.ocupado) await avisar(s.admin, p.morador_id, "vistoria_concordancia", rotaMorador(p.id), { pedidoId: p.id, propertyId: p.property_id, ...troca });
+  if (p.ocupado) await avisar(s.admin, p.morador_id, "vistoria_concordancia", rotaMorador(p.id), { pedidoId: p.id, propertyId: p.property_id });
   else {
-    await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id, ...troca });
-    await avisar(s.admin, avaliadorUser, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id, ...troca });
+    await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
+    await avisar(s.admin, avaliadorUser, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id });
   }
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);

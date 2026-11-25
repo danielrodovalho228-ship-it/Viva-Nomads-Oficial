@@ -29,26 +29,18 @@ test("o cron devolve ao dono (sem rodízio) no silêncio do avaliador e na propo
 });
 
 test("o dono é avisado na recusa, no silêncio e quando o prazo dele vence; o texto cobre os três casos", () => {
-  // E1160 (1) (asserções alteradas, ORDEM-DUET-674): um texto para três casos passou a três eventos. O silêncio, na
-  // rotina, sai pelo evento dele; a recusa e a proposta saem das ações (trava do E1160).
-  assert.match(rotina, /avisar\(admin, [^)]*"vistoria_sem_resposta_dono"/);
+  assert.match(rotina, /avisar\(admin, [^)]*"vistoria_designado_dono"/);
   const eventos = ler("src/lib/notifications/eventos-email.ts");
   const linha = eventos.slice(eventos.indexOf("vistoria_designado_dono: { subject"), eventos.indexOf("vistoria_designado_dono: { subject") + 700);
   // E1158 (21; ORDEM-DUET-659): o modelo da matriz é o próprio corpo de corpo-email.ts, sem os fatos — o texto está lá.
   assert.match(linha, /body: semFatos\("vistoria_designado_dono"\)/);
   const corpo = ler("src/lib/vistoria/corpo-email.ts");
   const caso = corpo.slice(corpo.indexOf('case "vistoria_designado_dono":'), corpo.indexOf('case "vistoria_proposta_expirada":'));
-  // O trecho vai do aviso da proposta até à expiração: tem os três casos, cada um com o seu texto.
-  assert.match(caso, /case "vistoria_recusada_dono":[\s\S]*recusou o pedido de avaliação/);
-  assert.match(caso, /case "vistoria_sem_resposta_dono":[\s\S]*não respondeu no prazo/);
-  // E1118 (ORDEM-DUET-506): o prazo não está escrito à mão no texto. E1160: o aviso da proposta lê a frase da fonte do
-  // prazo de aceite (que leva a constante), e o e-mail continua a dizer 72 horas.
-  assert.match(caso, /textoDoPrazoDeAceiteDesdeAProposta\(f\.propostaEm\)/);
-  assert.doesNotMatch(caso, /72 horas/);
-  assert.match(TEMPLATES.vistoria_sem_resposta_dono.body("Lara"), /não respondeu no prazo/);
-  assert.match(TEMPLATES.vistoria_recusada_dono.body("Lara"), /recusou o pedido/);
+  assert.match(caso, /não respondeu no prazo/);
+  // E1118 (ORDEM-DUET-506): o prazo deixou de estar escrito à mão no texto; vem da constante, e o e-mail continua a dizer 72 horas.
+  assert.match(caso, /\$\{PRAZO_DONO_ACEITAR_HORAS\} horas/);
+  assert.match(TEMPLATES.vistoria_designado_dono.body("Lara"), /não respondeu no prazo/);
   assert.match(TEMPLATES.vistoria_designado_dono.body("Lara"), /72 horas/);
-  assert.doesNotMatch(TEMPLATES.vistoria_designado_dono.body("Lara"), /recusou|não respondeu/);
 });
 
 test("o avaliador é avisado ao ser escolhido (e o texto traz o prazo dele, não um número fixo)", () => {

@@ -85,9 +85,8 @@ test("E1144: sem expiração da proposta, nenhum dos dois sai — só o ramo da 
   const guardaAceite = ramo.indexOf("if (!precisaDoAceiteDoDono(");
   const envioDono = ramo.indexOf('"vistoria_proposta_expirada_dono"');
   assert.ok(guardaVencida > 0 && guardaAceite > guardaVencida && envioDono > guardaAceite);
-  // O silêncio do avaliador (o outro ramo da rotina) continua a avisar o dono — E1160 (1) (asserção alterada,
-  // ORDEM-DUET-674): agora pelo evento próprio dele, e não pelo modelo genérico.
+  // O silêncio do avaliador (o outro ramo da rotina) continua a avisar o dono pelo modelo de sempre.
   const silencio = srv.slice(srv.indexOf("const { data: abertas }"), srv.indexOf("const { data: propostas }"));
-  assert.match(silencio, /avisar\(admin, p\.owner_id, "vistoria_sem_resposta_dono"/);
+  assert.match(silencio, /avisar\(admin, p\.owner_id, "vistoria_designado_dono"/);
   assert.doesNotMatch(silencio, /vistoria_proposta_expirada/);
 });

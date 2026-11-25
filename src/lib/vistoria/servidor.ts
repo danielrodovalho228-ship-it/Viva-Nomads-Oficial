@@ -77,57 +77,30 @@ export async function identidadesConfirmadas(admin: Admin, userIds: readonly (st
 }
 
 /** De onde vêm os fatos do e-mail (E289): o pedido de avaliação (imóvel, data da visita, avaliador) ou só o imóvel. */
-export type RefVistoria = {
-  pedidoId?: string | null;
-  propertyId?: string | null;
-  /** E1160 (5): quem recebe o aviso (o lembrete do morador é outro texto). */
-  papel?: "dono" | "avaliador" | "morador";
-  /** E1160 (6): quem agenda sabe se está a trocar a data, e qual era — a gravação substitui-a. */
-  reagendada?: boolean;
-  visitaAnterior?: string | null;
-};
+export type RefVistoria = { pedidoId?: string | null; propertyId?: string | null };
 
 /** E289: lê no banco o que o e-mail precisa nomear — imóvel (título, bairro, cidade), visita e avaliador. */
 export async function fatosDaVistoria(admin: Admin, ref: RefVistoria): Promise<FatosVistoria> {
   let propertyId = ref.propertyId ?? null;
   let visita: string | null = null;
   let avaliador: string | null = null;
-  // E1160: o que o e-mail afirma sai do estado do pedido NO MOMENTO do envio — a proposta, se há avaliador para o dono
-  // escolher, se a data é uma troca e o número de credenciado de quem assina o laudo.
-  let doPedido: Pick<FatosVistoria, "numeroCredenciado" | "propostaEm" | "aguardandoAvaliador" | "reagendada"> = { reagendada: ref.reagendada };
   if (ref.pedidoId) {
     const { data: p } = await admin
       .from("vistoria_pedidos")
-      .select("property_id, agendado_para, proposta_em, aguardando_avaliador, reagendou_dono, reagendou_avaliador, avaliadores_credenciamento(numero_credenciado, parceiros(nome_publico, user_id))")
+      .select("property_id, agendado_para, avaliadores_credenciamento(parceiros(nome_publico, user_id))")
       .eq("id", ref.pedidoId)
       .maybeSingle();
-    const pp = p as {
-      property_id?: string | null;
-      agendado_para?: string | null;
-      proposta_em?: string | null;
-      aguardando_avaliador?: boolean | null;
-      reagendou_dono?: boolean | null;
-      reagendou_avaliador?: boolean | null;
-      avaliadores_credenciamento?: { numero_credenciado?: string | null; parceiros?: { nome_publico?: string | null; user_id?: string | null } | null } | null;
-    } | null;
+    const pp = p as { property_id?: string | null; agendado_para?: string | null; avaliadores_credenciamento?: { parceiros?: { nome_publico?: string | null; user_id?: string | null } | null } | null } | null;
     propertyId = propertyId ?? pp?.property_id ?? null;
     visita = pp?.agendado_para ?? null;
     // E1084: o nome do avaliador vem da conta (fonte única).
     const parc = pp?.avaliadores_credenciamento?.parceiros ?? null;
     avaliador = parc ? nomeDoAvaliador((await nomesDasContas(admin, [parc.user_id])).get(parc.user_id ?? ""), parc.nome_publico) : null;
-    doPedido = {
-      numeroCredenciado: pp?.avaliadores_credenciamento?.numero_credenciado ?? null,
-      propostaEm: pp?.proposta_em ?? null,
-      aguardandoAvaliador: pp?.aguardando_avaliador === true,
-      // Quem agenda diz se é troca; depois da concordância do morador (imóvel ocupado) vale o registo do pedido.
-      reagendada: ref.reagendada ?? (pp?.reagendou_dono === true || pp?.reagendou_avaliador === true),
-    };
   }
-  const fatos = { visita, avaliador, ...doPedido, visitaAnterior: ref.visitaAnterior ?? null, destinatario: ref.papel };
-  if (!propertyId) return { imovel: null, ...fatos };
+  if (!propertyId) return { imovel: null, visita, avaliador };
   const { data: im } = await admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
   const i = im as { title?: string | null; address?: string | null; city?: string | null } | null;
-  return { imovel: i ? { id: propertyId, titulo: i.title, bairro: i.address, cidade: i.city } : null, ...fatos };
+  return { imovel: i ? { id: propertyId, titulo: i.title, bairro: i.address, cidade: i.city } : null, visita, avaliador };
 }
 
 /**
@@ -153,7 +126,6 @@ export async function avisar(admin: Admin, destino: string | null | undefined, e
         ? {
             ...(corpo.subject ? { subject: corpo.subject } : {}),
             body: corpo.body,
-            ...(corpo.cta ? { ctaLabel: corpo.cta } : {}),
             ...(corpo.linhas.length ? { detailsHtml: blocoDados(corpo.linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) } : {}),
           }
         : {}),
@@ -595,8 +567,7 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
     );
     if (relogioDaResposta?.vez !== "avaliador" || !relogioDaResposta.vencido) continue;
     await devolverAoDono(admin, d.pedido_id, d.avaliador_id, "expirada", agora);
-    // E1160 (1): o silêncio do avaliador tem o seu próprio aviso (antes era o genérico, que mandava aceitar a proposta).
-    await avisar(admin, p.owner_id, "vistoria_sem_resposta_dono", rotaDono(p.property_id), { pedidoId: d.pedido_id, propertyId: p.property_id });
+    await avisar(admin, p.owner_id, "vistoria_designado_dono", rotaDono(p.property_id), { pedidoId: d.pedido_id, propertyId: p.property_id });
     expiradas++;
   }
   // E682: proposta que o dono não aceitou no prazo dele (72 h) volta a ele para escolher de novo — sem rodízio.
@@ -630,10 +601,9 @@ export async function rotinaVistoria(admin: Admin, agora = new Date()): Promise<
     if (!v.agendado_para || !visitaAmanha(v.agendado_para, hoje)) continue;
     const { data: marcou } = await admin.from("vistoria_pedidos").update({ lembrete_d1_em: agora.toISOString() }).eq("id", v.id).is("lembrete_d1_em", null).select("id");
     if (!marcou?.length) continue;
-    // E1160 (5): o corpo sabe quem lê — a regra do reagendamento é das duas partes; o morador lê o texto dele.
-    await avisar(admin, v.owner_id, "vistoria_lembrete", rotaDono(v.property_id), { pedidoId: v.id, propertyId: v.property_id, papel: "dono" });
-    await avisar(admin, v.avaliadores_credenciamento?.parceiros?.user_id, "vistoria_lembrete", ROTA_AVALIADOR, { pedidoId: v.id, propertyId: v.property_id, papel: "avaliador" });
-    await avisar(admin, v.morador_id, "vistoria_lembrete", rotaMorador(v.id), { pedidoId: v.id, propertyId: v.property_id, papel: "morador" });
+    await avisar(admin, v.owner_id, "vistoria_lembrete", rotaDono(v.property_id), { pedidoId: v.id, propertyId: v.property_id });
+    await avisar(admin, v.avaliadores_credenciamento?.parceiros?.user_id, "vistoria_lembrete", ROTA_AVALIADOR, { pedidoId: v.id, propertyId: v.property_id });
+    await avisar(admin, v.morador_id, "vistoria_lembrete", rotaMorador(v.id), { pedidoId: v.id, propertyId: v.property_id });
     lembretes++;
   }
   const { data: emitidos } = await admin.from("vistoria_pedidos").select("id, avaliador_id, teste").eq("status", "laudo_emitido").not("avaliador_id", "is", null);
