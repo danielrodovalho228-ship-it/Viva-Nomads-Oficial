@@ -92,6 +92,5 @@ test("E1108: a tela do pedido, a tela da visita e a lista leem daqui", () => {
   assert.match(lista, /<IdentificacaoDoImovel texto=\{imovel\} \/>/);
   assert.doesNotMatch(lista, /p\.teste \? "avaliação de teste"/, "a lista já não chama todo pedido de teste de 'avaliação de teste'");
   // Só os imóveis dos pedidos do próprio avaliador são lidos.
-  // E1148 (ORDEM-DUET-679): a mesma leitura passou a trazer também o bairro (`address`), para o item encerrado.
-  assert.match(lista, /\.from\("properties"\)\.select\("id, title, address"\)\.in\("id", /);
+  assert.match(lista, /\.from\("properties"\)\.select\("id, title"\)\.in\("id", /);
 });

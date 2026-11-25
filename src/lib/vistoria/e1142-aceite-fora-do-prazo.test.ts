@@ -120,8 +120,7 @@ test("E1142 (ORDEM-621): a expiração da proposta não aparece como 'Sem respos
   assert.equal(relogio.ROTULO_PROPOSTA_EXPIRADA, "Proposta expirada sem o aceite do proprietário");
   const lista = ler("src/app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx");
   // E1146 (ORDEM-DUET-631): a mesma leitura e a mesma linha ganharam a marca do descarte; a da proposta vencida fica.
-  // E1148 (ORDEM-DUET-678): a leitura ganhou o `property_id` do pedido, para o item dizer de que imóvel é.
-  assert.match(lista, /\.select\("pedido_id, resposta, designado_em, respondido_em, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos\(property_id, cidade, porte\)"\)/);
+  assert.match(lista, /\.select\("pedido_id, resposta, designado_em, respondido_em, proposta_expirada_em, proposta_descartada_em, vistoria_pedidos\(cidade, porte\)"\)/);
   assert.match(lista, /\{d\.proposta_descartada_em \? ROTULO_PROPOSTA_DESCARTADA : d\.proposta_expirada_em \? ROTULO_PROPOSTA_EXPIRADA : \(ROTULO_RESPOSTA\[d\.resposta \?\? ""\] \?\? d\.resposta\)\}/);
   // A Central lista recusas, silêncios e ausências DO AVALIADOR: a proposta que o dono deixou vencer fica fora.
   const central = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
