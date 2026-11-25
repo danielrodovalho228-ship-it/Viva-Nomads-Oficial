@@ -16,6 +16,9 @@ import type { ItemCarteira } from "@/lib/carteira-dono";
 // entrar no bundle do navegador). As conversas demo são definidas aqui.
 import type { Conversation } from "@/lib/data/messages";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
+import { COMMISSION_BY_PLAN } from "@/lib/constants";
+// Só o TIPO: leads-actions é módulo de servidor.
+import type { FechamentoContexto } from "@/lib/data/leads-actions";
 import { SAMPLE_LEADS } from "@/lib/data/lead-types";
 export { SAMPLE_ORDERS as DEMO_ORDERS } from "@/lib/service-orders";
 
@@ -308,4 +311,20 @@ export const DEMO_KPIS = {
   conversaoLeadsPct: 8, // 1 ganho em 12
   visualizacoes: Object.values(DEMO_PROPERTY_STATS).reduce((s, x) => s + x.views, 0), // 1.438
   mensagens: 5,
+};
+
+// ── Fechamento: a candidatura aceita fictícia (antes morava na própria tela, que levava os 15 anúncios de exemplo) ──
+/**
+ * Contexto de DEMONSTRAÇÃO do Fechamento (admin, modo demo): candidatura aceita fictícia, com o selo "Exemplo". Nunca
+ * aparece em conta real. consistency-ignore: persona de demonstração, renderizada só sob o gate demo.
+ */
+export const DEMO_FECHAMENTO: FechamentoContexto = {
+  leadId: "demo",
+  property: SAMPLE_PROPERTIES.find((p) => p.id === "ube-001") ?? SAMPLE_PROPERTIES[0],
+  tenantName: "Ana Carvalho", // consistency-ignore: persona de demonstração
+  planoId: "essential",
+  planoNome: "Essencial",
+  comissaoRate: COMMISSION_BY_PLAN.essential,
+  acceptedAt: "2026-01-15",
+  contractNumber: "CTR-2026-0042", // consistency-ignore: nº de contrato de demonstração
 };
