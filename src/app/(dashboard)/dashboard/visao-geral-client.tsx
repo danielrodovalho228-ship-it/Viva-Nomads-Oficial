@@ -1,9 +1,8 @@
 "use client";
 
-import { rotuloPrecoDoImovel } from "@/lib/cartao-estadia";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
-import { mesesDoCartao } from "@/lib/cartao-preco";
-
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { calcularTudoIncluido } from "@/lib/precos";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -383,7 +382,7 @@ function PainelDoDono({
                         </Link>
                       )}
                       <PrecoComContexto
-                        rotulo={rotuloPrecoDoImovel(p, { meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
+                        rotulo={rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
                         destaque="sm"
                       />
                       <p className="text-sm text-muted">{p.neighborhood}</p>

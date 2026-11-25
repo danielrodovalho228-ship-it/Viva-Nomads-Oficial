@@ -1,10 +1,9 @@
 import { readFile } from "node:fs/promises";
-import { rotuloPrecoDoImovel } from "@/lib/cartao-estadia";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { getProperty } from "@/lib/data/properties";
-import { mesesDoCartao } from "@/lib/cartao-preco";
-
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
+import { calcularTudoIncluido } from "@/lib/precos";
 import { quartosTexto } from "@/lib/anuncio/plural";
 import { linhaLocalizacao } from "@/lib/localizacao";
 
@@ -16,7 +15,7 @@ export default async function OG({ params }: { params: Promise<{ id: string }> }
   const { id } = await params;
   const p = await getProperty(id);
   // Prompt 47: o mesmo rótulo de preço do cartão (total do mês e do período).
-  const preco = p ? rotuloPrecoDoImovel(p, { meses: mesesDoCartao(undefined, p.minPeriodDays) }) : null;
+  const preco = p ? rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays) }) : null;
   const mark = await readFile(join(process.cwd(), "public/brand/novo/vn-mark-128.png"));
   const markSrc = `data:image/png;base64,${mark.toString("base64")}`;
 

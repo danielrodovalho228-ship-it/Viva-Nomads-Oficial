@@ -1,5 +1,5 @@
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
-import { rotuloPreco } from "@/lib/cartao-preco";
+import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight } from "lucide-react";
@@ -20,6 +20,7 @@ export function PropertyRow({
   title,
   monthlyPrice,
   totalMes,
+  minPeriodDays,
   availableFrom,
   neighborhood,
   photos,
@@ -55,8 +56,7 @@ export function PropertyRow({
             Exemplo ilustrativo
           </span>
         )}
-        {/* E756: esta lista não recebe as limpezas únicas do anúncio: mostra só o total do mês, sem um "em N meses" de regra diferente. */}
-        <PrecoComContexto rotulo={rotuloPreco({ mensal: totalMes ?? monthlyPrice, disponivelEm: availableFrom })} destaque="sm" />
+        <PrecoComContexto rotulo={rotuloPreco({ mensal: totalMes ?? monthlyPrice, meses: mesesDoCartao(undefined, minPeriodDays), disponivelEm: availableFrom })} destaque="sm" />
         {neighborhood ? <span className="block text-xs text-muted">{neighborhood}</span> : null}
       </span>
       {!demo && <ChevronRight className="h-5 w-5 shrink-0 text-muted" />}
