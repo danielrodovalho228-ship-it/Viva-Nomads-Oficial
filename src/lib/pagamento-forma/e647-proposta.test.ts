@@ -76,7 +76,7 @@ test("o morador lê a forma FINAL com clareza antes de aceitar: quando paga, qua
 test("fiação: atrás da chave desligada nada muda (proposta, resposta e tela só leem a forma com a chave ligada)", () => {
   const acoes = ler("../data/propostas-actions.ts");
   assert.match(acoes, /FORMA_PAGAMENTO_DONO_ATIVA/);
-  assert.match(acoes, /validarFormaNaProposta\(/);
+  assert.match(acoes, /formaDaProposta\(/, "E1172: a validação passa pela fonte única");
   const servidor = ler("../data/propostas-servidor.ts");
   assert.match(servidor, /forma_pagamento/);
   assert.match(servidor, /\.\.\.\(t\.formaPagamento \? \{ forma_pagamento: t\.formaPagamento \} : \{\}\)/, "só grava a coluna quando há forma (chave desligada = linha idêntica à de antes)");
