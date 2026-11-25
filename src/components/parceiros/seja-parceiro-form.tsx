@@ -6,7 +6,7 @@ import Image from "next/image";
 import { fotoDaCategoria } from "@/config/fotos-categorias-parceiro";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { CATEGORIAS_CATALOGO, PRAZO_RESPOSTA_PARCERIA, TEXTO_PRAZO_PARCERIA, CIDADES_MAX, EXIGENCIA_DA_CATEGORIA, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao, type CampoSolicitacao } from "@/lib/parceiros/regras";
+import { CATEGORIAS_CATALOGO, PRAZO_RESPOSTA_PARCERIA, CIDADES_MAX, EXIGENCIA_DA_CATEGORIA, DESCRICAO_MAX, MSG_SO_CNPJ, categoriasComDaUrl, rotuloCategoria, validarDocumentoParceiro, validarSolicitacao, type CampoSolicitacao } from "@/lib/parceiros/regras";
 import { enviarSolicitacao, type MinhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { TEXTO_REGRA_90_10 } from "@/config/taxa-servico-parceiros";
 import { CONVITE_SEJA_PARCEIRO, HREF_PASSOS_CREDENCIAMENTO } from "@/lib/parceiros/convite-avaliacao";
@@ -389,10 +389,6 @@ export function SejaParceiroForm({ estado, origem = "site", categoriaInicial }: 
           {erro}
         </p>
       )}
-      {/* E878: antes de enviar, o prazo do canal parceiro (fonte única, o mesmo de /parceiros) e o passo seguinte. */}
-      <p className="text-sm text-ink" data-testid="seja-parceiro-prazo">
-        {TEXTO_PRAZO_PARCERIA} Aprovado, o e-mail traz o link para ativar a sua página.
-      </p>
       <Button type="submit" className="w-full sm:w-auto" disabled={pendente || (estado.logado && !estado.emailConfirmado)} data-testid="seja-parceiro-enviar">
         {pendente && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
         {rotuloEnvioParceria(estado.logado, logadoNoNavegador)}
