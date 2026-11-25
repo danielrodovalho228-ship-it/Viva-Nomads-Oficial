@@ -56,8 +56,6 @@ export const SAMPLE_PROPERTIES: Property[] = [
     photos: galleryFor("ube-001", 20),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada"],
     workFeatures: ["Escritório dedicado", "Mesa de trabalho", "Cadeira ergonômica"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
     internetTier: "home_office",
     nearbyWorkspaces: [
       { name: "Coworking Center Santa Mônica", type: "coworking", distanceM: 850 },
@@ -85,7 +83,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
       { placeId: "ChIJ-demo-asa-coworking", categoria: "coworking", rotulo: "ASA Coworking" },
     ],
     amenityGroups: [
-      { category: "trabalho", items: ["Internet fibra", "Mesa de trabalho", "Cadeira ergonômica", "Monitor extra"] },
+      { category: "trabalho", items: ["Internet fibra 300 Mbps", "Mesa de trabalho", "Cadeira ergonômica", "Monitor extra"] },
       { category: "cozinha", items: ["Fogão", "Geladeira", "Microondas", "Utensílios completos", "Cafeteira"] },
       { category: "conforto", items: ["Ar-condicionado", "Roupa de cama e banho", "Máquina de lavar", "Smart TV"] },
       { category: "edificio", items: ["Elevador", "Portaria 24h", "Academia", "Vaga de garagem"] },
@@ -135,9 +133,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-002", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha equipada", "Aceita pets", "Lavanderia compartilhada"],
-    workFeatures: ["Mesa de trabalho", "Internet fibra"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 100,
+    workFeatures: ["Mesa de trabalho", "Internet 100 Mbps"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [
       { name: "Hub Central Coworking", type: "coworking", distanceM: 600 },
@@ -158,7 +154,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     faixasAceitas: ["temporada", "media_estadia"],
     garantiasAceitas: ["caucao_avista", "titulo", "seguro_fianca"],
     amenityGroups: [
-      { category: "trabalho", items: ["Internet fibra", "Mesa de trabalho"] },
+      { category: "trabalho", items: ["Internet fibra 200 Mbps", "Mesa de trabalho"] },
       { category: "cozinha", items: ["Cooktop", "Geladeira", "Microondas", "Utensílios básicos"] },
       { category: "conforto", items: ["Ar-condicionado", "Roupa de cama e banho", "Smart TV"] },
       { category: "edificio", items: ["Elevador", "Portaria 24h"] },
@@ -214,9 +210,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     subleaseAuthorized: true,
     photos: galleryFor("ube-003", 8),
     amenities: ["Mobiliado completo", "Máquina de lavar", "Cozinha equipada", "Aceita pets", "Vaga de garagem", "Ar-condicionado"],
-    workFeatures: ["Internet"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 100,
+    workFeatures: ["Internet 100 Mbps"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1800 }],
     createdAt: "2026-06-15T09:00:00Z",
@@ -266,9 +260,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-004", 10),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Vaga de garagem", "Lavanderia compartilhada"],
-    workFeatures: ["Internet fibra", "Bancada de trabalho"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Internet fibra 300 Mbps", "Bancada de trabalho"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Biblioteca UFU Umuarama", type: "cafe", distanceM: 600 }],
     ownerName: DONO_EXEMPLO,
@@ -324,9 +316,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-005", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Acessível", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Internet fibra"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Internet fibra 300 Mbps"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Praça Sérgio Pacheco", type: "cafe", distanceM: 500 }],
     ownerName: DONO_EXEMPLO,
@@ -382,9 +372,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-006", 14),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Escritório dedicado", "Internet fibra", "Cadeira ergonômica", "Monitor extra"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps", "Cadeira ergonômica", "Monitor extra"],
     internetTier: "home_office",
     nearbyWorkspaces: [
       { name: "ASA Coworking", type: "coworking", distanceM: 700 },
@@ -443,9 +431,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-007", 10),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Vaga de garagem", "Lavanderia compartilhada"],
-    workFeatures: ["Internet fibra", "Mesa de trabalho"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Internet fibra 300 Mbps", "Mesa de trabalho"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Coworking Brasil", type: "coworking", distanceM: 900 }],
     ownerName: DONO_EXEMPLO,
@@ -496,9 +482,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-008", 16),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Churrasqueira", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Escritório dedicado", "Internet fibra"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Shopping Jardim Karaíba", type: "cafe", distanceM: 1200 }],
     ownerName: DONO_EXEMPLO,
@@ -554,9 +538,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-009", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Vaga de garagem", "Lavanderia compartilhada"],
-    workFeatures: ["Internet fibra", "Mesa de estudos"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Internet fibra 300 Mbps", "Mesa de estudos"],
     internetTier: "home_office",
     nearbyWorkspaces: [
       { name: "Biblioteca Central UFU", type: "cafe", distanceM: 450 },
@@ -615,9 +597,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-010", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Internet fibra"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Internet fibra 300 Mbps"],
     internetTier: "trabalho_remoto",
     nearbyWorkspaces: [{ name: "Coworking Tibery", type: "coworking", distanceM: 1000 }],
     ownerName: DONO_EXEMPLO,
@@ -668,9 +648,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-011", 10),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Lavanderia compartilhada"],
-    workFeatures: ["Internet fibra", "Mesa de estudos"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Internet fibra 300 Mbps", "Mesa de estudos"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Biblioteca UFU", type: "cafe", distanceM: 700 }],
     ownerName: DONO_EXEMPLO,
@@ -721,9 +699,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-012", 12),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Escritório dedicado", "Internet fibra"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Café Saraiva", type: "cafe", distanceM: 350 }],
     ownerName: DONO_EXEMPLO,
@@ -774,9 +750,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-013", 14),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Quintal", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Escritório dedicado", "Internet fibra"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Escritório dedicado", "Internet fibra 300 Mbps"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Center Shopping", type: "cafe", distanceM: 1500 }],
     ownerName: DONO_EXEMPLO,
@@ -828,9 +802,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-014", 16),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Máquina de lavar", "Cozinha equipada", "Smart TV", "Varanda gourmet", "Wi-Fi", "Vaga de garagem"],
-    workFeatures: ["Escritório dedicado", "Internet fibra", "Cadeira ergonômica"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 500,
+    workFeatures: ["Escritório dedicado", "Internet fibra 500 Mbps", "Cadeira ergonômica"],
     internetTier: "home_office",
     nearbyWorkspaces: [{ name: "Business Center Cidade Jardim", type: "coworking", distanceM: 800 }],
     ownerName: DONO_EXEMPLO,
@@ -881,9 +853,7 @@ export const SAMPLE_PROPERTIES: Property[] = [
     ownershipType: "own",
     photos: galleryFor("ube-015", 10),
     amenities: ["Mobiliado completo", "Ar-condicionado", "Cozinha compacta equipada", "Smart TV", "Wi-Fi", "Lavanderia compartilhada"],
-    workFeatures: ["Internet fibra", "Mesa de trabalho"],
-    // E753: a velocidade mora SÓ aqui (fonte única); a página a mostra como "informada … (não medida)".
-    internetMbps: 300,
+    workFeatures: ["Internet fibra 300 Mbps", "Mesa de trabalho"],
     internetTier: "home_office",
     nearbyWorkspaces: [
       { name: "Coworking Fundinho", type: "coworking", distanceM: 300 },
