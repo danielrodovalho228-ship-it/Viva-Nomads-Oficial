@@ -29,7 +29,8 @@ const SECAO_DO_PASSO: Record<number, string> = {
  * passo, quando ela tem âncora). `etapa` vem da prontidão (ItemProntidao.etapa).
  */
 export function destinoPendencia(imovel: { id: string; status: string | null | undefined }, etapa?: number | null): string {
-  if (emCadastro(imovel.status)) return hrefPassoDoRascunho(imovel.id, etapa);
+  // ENSAIO: sem o P0 — a pendência do rascunho vai ao editor por seções.
+  if (emCadastro(imovel.status) && process.env.ENSAIO_NUNCA_DEFINIDA === "1") return hrefPassoDoRascunho(imovel.id, etapa);
   const secao = typeof etapa === "number" ? SECAO_DO_PASSO[etapa] : undefined;
   return `/dashboard/imoveis/${encodeURIComponent(imovel.id)}/editar${secao ? `#${secao}` : ""}`;
 }
