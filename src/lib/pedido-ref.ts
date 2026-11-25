@@ -32,6 +32,17 @@ export interface ContratoDoPedido {
  * Só pede orçamento quem tem o pedido aceito, sem orçamento em aberto, e com TODOS os contratos dessa candidatura
  * assinados pelas duas partes, ou nenhum (E1088). O contrato cancelado não conta (ORDEM-605).
  */
+/**
+ * E1088 (ORDEM-DUET-728): o contrato que manda no selo do cartão é o mesmo que conta na regra — entre os que não estão
+ * cancelados, o mais recente. Só com cancelados, o mais recente deles (o cartão não perde o selo). Antes o selo vinha
+ * do último que a consulta devolvia, sem ordem.
+ */
+export function contratoDoSelo<T extends { status?: string | null; created_at?: string | null }>(contratos: readonly T[]): T | null {
+  const maisRecente = (lista: readonly T[]) =>
+    lista.reduce<T | null>((m, c) => (!m || Date.parse(String(c.created_at ?? "")) > Date.parse(String(m.created_at ?? "")) ? c : m), null);
+  return maisRecente(contratos.filter((c) => c.status !== "cancelado")) ?? maisRecente(contratos);
+}
+
 export function podePedirOrcamento(p: { situacao: string; temOrcamentoAberto: boolean; contratos: readonly ContratoDoPedido[] }): boolean {
   return (
     p.situacao === "aceita" &&

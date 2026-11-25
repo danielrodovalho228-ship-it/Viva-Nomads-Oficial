@@ -32,7 +32,7 @@ import { conversationId } from "@/lib/messages/conversation-id";
 import { IDENTIDADE_INDISPONIVEL, type EstadoIdentidade } from "@/lib/identidade/estado";
 import type { ContratoDoFechamento } from "@/lib/fechamento-resumo";
 import { lerEstadoDoContrato } from "@/lib/data/contratos-actions";
-import { ORCAMENTO_ABERTO, type ContratoDoPedido } from "@/lib/pedido-ref";
+import { contratoDoSelo, ORCAMENTO_ABERTO, type ContratoDoPedido } from "@/lib/pedido-ref";
 
 interface ActionResult {
   ok: boolean;
@@ -244,14 +244,22 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
   // Contrato de cada candidatura (o RLS deixa o inquilino ler os próprios contratos).
   const { data: contratos } = await supabase
     .from("contratos")
-    .select(`id, lead_id, ${COLUNAS_ESTADO_CONTRATO}`)
+    .select(`id, lead_id, created_at, ${COLUNAS_ESTADO_CONTRATO}`)
     .eq("tenant_id", user.id);
   // O selo do contrato pela fonte única (o mesmo de Contratos e da página do contrato).
-  const contratoDoLead = new Map(
-    ((contratos ?? []) as unknown as ({ id: string; lead_id: string | null } & LinhaEstadoContrato)[])
-      .filter((c) => c.lead_id)
-      .map((c) => [c.lead_id as string, { id: c.id, status: estadoDoContratoUnico(c, "inquilino").selo }]),
-  );
+  // E1088 (ORDEM-DUET-728): o selo vem do contrato que conta na regra (o mais recente entre os não cancelados), não do
+  // último que a consulta devolve.
+  type LinhaContrato = { id: string; lead_id: string | null; created_at: string | null } & LinhaEstadoContrato;
+  const porLead = new Map<string, LinhaContrato[]>();
+  for (const c of (contratos ?? []) as unknown as LinhaContrato[]) {
+    if (!c.lead_id) continue;
+    porLead.set(c.lead_id, [...(porLead.get(c.lead_id) ?? []), c]);
+  }
+  const contratoDoLead = new Map<string, { id: string; status: string }>();
+  for (const [lead, lista] of porLead) {
+    const c = contratoDoSelo(lista);
+    if (c) contratoDoLead.set(lead, { id: c.id, status: estadoDoContratoUnico(c, "inquilino").selo });
+  }
   // E1088: o Map acima guarda um contrato por candidatura (o selo); a regra do "Pedir orçamento" precisa de todos.
   const contratosDoLead = new Map<string, ContratoDoPedido[]>();
   for (const c of (contratos ?? []) as unknown as ({ lead_id: string | null } & LinhaEstadoContrato)[]) {
