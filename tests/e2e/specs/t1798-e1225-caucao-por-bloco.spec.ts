@@ -74,6 +74,9 @@ test.describe("T1798 — E1225: a 0367 executada (caução por bloco) @E1225", (
     expect.soft(p.rollbackLimpo.temIndicePorBloco, "sai o por bloco").toBe(false);
     expect.soft(p.rollbackLimpo.temIndiceSemBloco, "sai o sem bloco").toBe(false);
     expect.soft(p.rollbackLimpo.registo, "sai o registo da 0367").toBe(0);
+    // ORDEM-DUET-1135: depois do rollback, a política volta a recusar a caução com bloco — a recusa vem da POLÍTICA
+    // (como antes da 0367), não só do check.
+    expect.soft(p.rollbackLimpo.politicaDepois, "depois do rollback, a política recusa outra vez a caução com bloco").toMatch(/row-level security/);
   });
 });
 

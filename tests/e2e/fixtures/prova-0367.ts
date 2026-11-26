@@ -24,7 +24,8 @@ import { randomBytes } from "node:crypto";
    - aluguel sem bloco → continua recusado (o check);
    - a política: o dono regista a caução num bloco DO SEU contrato; num bloco de outro contrato, recusado;
    - rollback com duas cauções ativas no mesmo contrato → FALHA, e nada muda;
-   - rollback sem isso → volta o índice por contrato, saem os novos, sai o registo; as linhas ficam.
+   - rollback sem isso → volta o índice por contrato, saem os novos, sai o registo; as linhas ficam; e (ORDEM-DUET-1135)
+     a POLÍTICA volta a recusar a caução com bloco, como antes da 0367 (a recusa tem de vir da política, não do check).
 */
 
 const OWNER = "00000000-0000-4000-8000-0000000d0e00";
@@ -126,7 +127,7 @@ export type ProvaDa0367 = {
   aluguelSemBloco: { erroMigracao: string | null; erro: string | null };
   politica: { erroMigracao: string | null; doSeuContrato: string | null; deOutroContrato: string | null; antesDaMigracao: string | null };
   rollbackComDuas: { erroMigracao: string | null; erroRollback: string | null; linhasIguais: boolean; temIndicePorBloco: boolean; temIndicePorContrato: boolean };
-  rollbackLimpo: { erroMigracao: string | null; erroRollback: string | null; linhasIguais: boolean; temIndicePorContrato: boolean; temIndicePorBloco: boolean; temIndiceSemBloco: boolean; registo: number };
+  rollbackLimpo: { erroMigracao: string | null; erroRollback: string | null; linhasIguais: boolean; temIndicePorContrato: boolean; temIndicePorBloco: boolean; temIndiceSemBloco: boolean; registo: number; politicaDepois: string | null };
 };
 
 const noBanco = (url: string, banco: string): string => {
@@ -283,8 +284,9 @@ async function osCasos(db: postgres.Sql, mig: string, apl: string, rb: string): 
     temIndicePorContrato: await temIndice("pagamentos_bloco_uma_caucao"),
   };
 
-  // Rollback sem isso: volta o índice por contrato, saem os novos e o registo; as linhas ficam.
-  await universo();
+  // Rollback sem isso: volta o índice por contrato, saem os novos e o registo; as linhas ficam; a política volta a
+  // recusar a caução com bloco (ORDEM-DUET-1135).
+  cs = await universo();
   const m7 = await tentar(apl);
   const antes7 = await linhas();
   const erb7 = await tentar(rb);
@@ -296,6 +298,7 @@ async function osCasos(db: postgres.Sql, mig: string, apl: string, rb: string): 
     temIndicePorBloco: await temIndice("pagamentos_bloco_uma_caucao_por_bloco"),
     temIndiceSemBloco: await temIndice("pagamentos_bloco_uma_caucao_sem_bloco"),
     registo: (await db.unsafe(`select 1 from supabase_migrations.schema_migrations where version like '%0367'`)).length,
+    politicaDepois: await comoDono(cs[0].id, cs[0].blocos[0]),
   };
 
   return { migracao, reaplicar, aplicar, porBloco, mesmoBloco, semBloco, aluguelSemBloco, politica, rollbackComDuas, rollbackLimpo };
