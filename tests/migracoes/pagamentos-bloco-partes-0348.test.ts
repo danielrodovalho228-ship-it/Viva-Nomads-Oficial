@@ -8,8 +8,9 @@
     2. a parte 2 no mesmo bloco é aceita;
     3. um registro anulado não ocupa a parte (anulada a parte 1, uma nova parte 1 é aceita);
     4. o rollback com um complementar ativo falha e nada muda (a coluna e os dois registros ficam).
-  A prova executada (Postgres 16 descartável: aplica, reaplica sem efeito, os casos e o rollback) está no corpo do #4250;
-  a spec no banco do laboratório foi dispensada pelo coordenador (ORDEM-DUET-1071).
+  Esta trava só LÊ o texto: é o complemento barato contra os mutantes de forma. A prova que afirma o comportamento é a
+  EXECUTADA (ORDEM-DUET-1078, regra da casa): os quatro casos corridos sobre a 0348 de verdade no banco do laboratório,
+  na t1796 (tests/e2e/specs/t1796-0348-pagamentos-bloco-partes-executada.spec.ts, fixture tests/e2e/fixtures/prova-0348.ts).
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
