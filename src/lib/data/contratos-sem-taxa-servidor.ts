@@ -44,7 +44,7 @@ export async function avisarContratosSemTaxa(admin: Admin, agora: Date): Promise
   if (!sem.length) return { encontrados: 0, avisados: 0, jaAvisados: 0 };
   console.warn("[E1205] caso real de contrato sem taxa reservada:", sem.map((c) => c.id).join(", "));
   // Um aviso por contrato: o aviso já gravado no sino (em qualquer estado — lido, resolvido ou pendente) não se repete.
-  const { data: ja, error } = await admin.from("avisos").select("ref_id").eq("evento", "contrato_sem_taxa").in("ref_id", sem.map((c) => c.id));
+  const { data: ja, error } = await admin.from("avisos").select("ref_id").eq("evento", "contrato_sem_taxa").in("ref_id", sem.map((c) => c.id)).is("lido_em", null).is("resolvido_em", null); // ENSAIO: só o pendente conta
   if (error) throw new Error(`[E1205] avisos: ${error.message}`);
   const avisado = new Set(((ja ?? []) as { ref_id: string | null }[]).map((a) => a.ref_id));
   let avisados = 0;
