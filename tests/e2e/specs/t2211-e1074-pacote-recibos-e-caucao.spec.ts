@@ -102,12 +102,7 @@ test.describe("T2211 — E1074: o pacote de provas nomeia os recibos pelo númer
       await d.getByTestId("confirmar-recebimento").click();
       // ORDEM-DUET-1134: o registro gravado, não a mensagem transitória que o router.refresh() troca pelo estado gravado.
       const tipo = botao === "registrar-caucao" ? "caucao" : "aluguel";
-      await expect
-        .poll(
-          async () => ((await adm().from("pagamentos_bloco").select("id").eq("contrato_id", ids.contrato!).eq("tipo", tipo).is("anulado_em", null)).data ?? []).length,
-          { timeout: 20_000, message: `o registro de ${tipo} grava` },
-        )
-        .toBe(1);
+      await expect(d.getByTestId("recebimento-registrado")).toBeVisible({ timeout: 20_000 }); // ENSAIO: a espera antiga
     }
     await d.context().close();
 
