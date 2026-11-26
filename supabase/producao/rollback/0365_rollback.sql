@@ -5,7 +5,6 @@ begin;
 update public.avaliadores_perfil_publico p
    set credenciamento_id = null
   from public.avaliadores_credenciamento c
- where p.credenciamento_id = c.id
-   and c.numero_credenciado = p.numero;
+ where p.credenciamento_id = c.id; -- ENSAIO: desliga também o que não é por número
 delete from supabase_migrations.schema_migrations where version = '20261126000365';
 commit;
