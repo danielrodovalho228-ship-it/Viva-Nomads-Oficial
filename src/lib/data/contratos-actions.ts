@@ -16,7 +16,7 @@ import { estadoDoContratoUnico, type ChaveEstado, type EstadoContrato, type Linh
 import { podeAvaliarLocacao } from "@/lib/contrato-assinar";
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { acertoMaisRecente, estadoCaucao, type EstadoCaucao } from "@/lib/caucao-estado";
-import { componentesDoPagamento, emAbertoNoBloco, encargosDosComponentes, parteDaColuna, proximaParte, somarComponentes, type ComponentesBloco } from "@/lib/pagamento-componentes";
+import { componentesDoPagamento, emAbertoNoBloco, encargosDosComponentes, partesPorOrdem, proximaParte, somarComponentes, type ComponentesBloco } from "@/lib/pagamento-componentes";
 import { componentesDosContratos } from "@/lib/data/contrato-componentes";
 
 /**
@@ -136,9 +136,18 @@ function toBloco(b: Record<string, unknown>): BlocoView {
   };
 }
 
-function toPagamento(p: Record<string, unknown>, valorMensal?: number | null): PagamentoView {
-  // ORDEM-DUET-1104: a parte é a da coluna registada (0348), nunca a ordem dos registros.
-  const parte = String(p.tipo ?? "aluguel") === "caucao" ? 1 : parteDaColuna(p.parte);
+/** E1072 (fatia 2): a parte de cada registro de aluguel ativo, pela ordem dentro do seu bloco (o 2º em diante é complementar). */
+function partesDasLinhas(pagamentos: Record<string, unknown>[]): Map<string, number> {
+  const porBloco = new Map<string, { id: string; registradoEm: string | null }[]>();
+  for (const pg of pagamentos) {
+    if (String(pg.tipo ?? "aluguel") !== "aluguel" || pg.anulado_em || !pg.bloco_id) continue;
+    const chave = String(pg.bloco_id);
+    porBloco.set(chave, [...(porBloco.get(chave) ?? []), { id: String(pg.id), registradoEm: (pg.created_at as string | null) ?? null }]);
+  }
+  return new Map([...porBloco.values()].flatMap((lista) => [...partesPorOrdem(lista)]));
+}
+
+function toPagamento(p: Record<string, unknown>, valorMensal?: number | null, parte = 1): PagamentoView {
   const componentes = componentesDoPagamento({ valor: Number(p.valor), encargos: String(p.tipo ?? "aluguel") === "caucao" ? [] : p.encargos });
   const b = p.contrato_blocos as { numero_bloco?: number | null; meses?: number | null; inicio?: string | null; fim?: string | null } | null | undefined;
   return {
@@ -329,7 +338,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
   const minhasAvaliacoes = await avaliacoesMinhasPorContrato(supabase, user.id, linhas.map((c) => String(c.id)));
   return linhas.map((c) => {
     const prop = (c.properties as { title?: string; owner_id?: string } | null)?.title ? (c.properties as { title?: string; owner_id?: string }) : (doServidor.get(String(c.property_id)) ?? {});
-    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg, _i, todos) => toPagamento(pg, Number(c.aluguel_mensal), partesDasLinhas(todos).get(String(pg.id)) ?? 1));
     const estado = estadoDaLinha(c, "inquilino");
     return {
       id: String(c.id),
@@ -432,7 +441,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
       .map(toBloco)
       .map((b) => ({ ...b, componentes: componentes.get(String(c.id))?.get(b.numeroBloco) ?? b.componentes }))
       .sort((a, b) => a.numeroBloco - b.numeroBloco);
-    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg, _i, todos) => toPagamento(pg, Number(c.aluguel_mensal), partesDasLinhas(todos).get(String(pg.id)) ?? 1));
     const estado = estadoDaLinha(c, "proprietario");
     return {
       id: String(c.id),
@@ -506,7 +515,10 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
   let parte = 1;
   if (tipo === "aluguel") {
     const { data: ativos, error: erroAtivos } = await supabase.from("pagamentos_bloco").select("id, parte, valor, encargos").eq("bloco_id", input.blocoId).eq("tipo", "aluguel").is("anulado_em", null);
-    if (erroAtivos) return { ok: false, error: erroBancoPT(erroAtivos) };
+    // 42703 = a coluna `parte` ainda não existe (migração 0348 por aplicar): o 1º registro segue como sempre.
+    const semColuna = erroAtivos?.code === "42703";
+    if (erroAtivos && !semColuna) return { ok: false, error: erroBancoPT(erroAtivos) };
+    if (semColuna) parte = 0;
     const registros = (ativos ?? []) as { id: string; parte: number | null; valor: number | string; encargos: unknown }[];
     const esperado = await esperadoDoBloco(supabase, input.contratoId, input.blocoId);
     if (!esperado) return { ok: false, error: "Não foi possível conferir o que falta neste bloco. Tente de novo em instantes." };
@@ -523,7 +535,7 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
   const { data, error } = await supabase
     .from("pagamentos_bloco")
     .insert({
-      ...(tipo === "aluguel" ? { parte } : {}),
+      ...(tipo === "aluguel" && parte >= 1 ? { parte } : {}),
       bloco_id: tipo === "caucao" ? null : input.blocoId,
       contrato_id: input.contratoId,
       tipo,
