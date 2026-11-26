@@ -49,7 +49,7 @@ export async function avisarContratosSemTaxa(admin: Admin, agora: Date): Promise
   const avisado = new Set(((ja ?? []) as { ref_id: string | null }[]).map((a) => a.ref_id));
   let avisados = 0;
   for (const c of sem) {
-    if (avisado.has(c.id) || !c.donoId) continue;
+    if (!c.donoId) continue; // ENSAIO: sem a âncora de dedupe
     const { data } = await admin.from("profiles").select("email, full_name").eq("id", c.donoId).maybeSingle();
     const pf = data as { email?: string | null; full_name?: string | null } | null;
     if (!pf?.email) continue;
