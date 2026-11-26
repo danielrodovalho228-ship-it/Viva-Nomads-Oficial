@@ -10,7 +10,6 @@ import { gerarPdf } from "@/lib/fiscal/pdf";
 import { registrarDocumento } from "@/lib/fiscal/registro";
 import type { Prefixo } from "@/lib/fiscal/prefixos";
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
-import { parteDaColuna } from "@/lib/pagamento-componentes";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { motivoDeRegistroAnulado } from "@/lib/fiscal/fila-falhas";
 import { duplicidadeDeRecibo, MOTIVO_DUPLICIDADE } from "@/lib/fiscal/duplicidade";
@@ -295,6 +294,17 @@ export async function reenviarEmailDoDocumento(
   return { ok: true, numero: d.numero as string, envio };
 }
 
+/**
+ * E1072 (fatia 2): a parte de um registro de aluguel pela ORDEM dos registros ativos do bloco (o 1º é a parte 1; o 2º em
+ * diante é complementar). Não lê a coluna `parte`: o recibo sai igual antes e depois da migração 0348.
+ */
+async function parteDoPagamento(admin: NonNullable<ReturnType<typeof createAdminClient>>, blocoId: string | null, pagamentoId: string): Promise<number> {
+  if (!blocoId) return 1;
+  const { data } = await admin.from("pagamentos_bloco").select("id, created_at").eq("bloco_id", blocoId).eq("tipo", "aluguel").is("anulado_em", null).order("created_at", { ascending: true });
+  const i = ((data ?? []) as { id: string }[]).findIndex((x) => x.id === pagamentoId);
+  return i >= 0 ? i + 1 : 1;
+}
+
 /** Pagamento confirmado pelo inquilino → recibo (aluguel) ou comprovante (caução). */
 export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado> {
   const admin = createAdminClient();
@@ -302,7 +312,7 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
   try {
     const { data: pg, error: erroPg } = await admin
       .from("pagamentos_bloco")
-      .select("id, contrato_id, bloco_id, tipo, parte, valor, forma, data_pagamento, confirmado_pelo_inquilino, anulado_em, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
+      .select("id, contrato_id, bloco_id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, anulado_em, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
       .eq("id", pagamentoId)
       .maybeSingle();
     if (erroPg) return { ok: false, motivo: "não foi possível ler o pagamento" };
@@ -328,9 +338,8 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
         valor: Number(pg.valor),
         bloco: bloco?.numero_bloco ? { numero: Number(bloco.numero_bloco), meses: Number(bloco.meses ?? 1), inicio: bloco.inicio, fim: bloco.fim } : null,
         valorMensal: contrato?.aluguel_mensal == null ? null : Number(contrato.aluguel_mensal),
-        // E1072 (fatia 2): o recibo do registro complementar diz que o é e traz o total dele. A parte é a da coluna
-        // registada (ORDEM-DUET-1104), nunca a ordem dos registros.
-        parte: pg.tipo === "caucao" ? 1 : parteDaColuna(pg.parte),
+        // E1072 (fatia 2): o recibo do registro complementar diz que o é e traz o total dele.
+        parte: pg.tipo === "caucao" ? 1 : await parteDoPagamento(admin, pg.bloco_id as string | null, pagamentoId),
         total: Math.round((Number(pg.valor) + encargos.reduce((s, e) => s + e.valor, 0)) * 100) / 100,
       }),
     });
