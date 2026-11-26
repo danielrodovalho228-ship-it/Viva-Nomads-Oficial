@@ -5,8 +5,7 @@
 -- que fazer com essas cauções; este script não apaga nem anula registro nenhum.
 begin;
 set local lock_timeout = '5s';
-create unique index if not exists pagamentos_bloco_uma_caucao
-  on public.pagamentos_bloco (contrato_id) where tipo = 'caucao' and anulado_em is null;
+-- ENSAIO: o rollback não repõe o índice por contrato
 drop index if exists public.pagamentos_bloco_uma_caucao_por_bloco;
 drop index if exists public.pagamentos_bloco_uma_caucao_sem_bloco;
 alter table public.pagamentos_bloco drop constraint if exists pagamentos_bloco_bloco_por_tipo;
