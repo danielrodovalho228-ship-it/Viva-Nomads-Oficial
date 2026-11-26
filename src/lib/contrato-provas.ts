@@ -153,7 +153,7 @@ export function eventosDoContrato(d: DadosProvas): EventoProva[] {
     const forma = FORMA[p.forma] ?? p.forma;
     const marcado = `${o} de ${brl(p.valor)} marcado como pago pelo proprietário (${forma}, em ${dataBR(p.dia)})`;
     // E1069: a hora é a do REGISTRO. Antes o dia do pagamento ia ao meio-dia UTC e o pacote escrevia "às 09:00".
-    const quando = p.registradoEm ? { em: p.registradoEm } : { em: `${p.dia}T12:00:00Z`, soDia: true };
+    const quando = { em: `${p.dia}T12:00:00Z` }; // ENSAIO: o meio-dia fabricado
     if (p.anuladoEm) {
       // Anulado: aparece UMA vez, com a marca; não conta como confirmado nem como aguardando.
       ev.push({ ...quando, texto: `${marcado}${marcaAnulado(p)}.` });
