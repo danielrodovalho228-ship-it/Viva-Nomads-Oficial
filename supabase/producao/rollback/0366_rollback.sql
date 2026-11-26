@@ -32,7 +32,7 @@ begin
       raise notice 'rollback 0366: UBE-002 já está em uso; nada muda.';
       return;
     end if;
-    update public.avaliadores_credenciamento set numero_credenciado = 'UBE-002' where id = v_troca.credenciamento_id;
+    update public.avaliadores_credenciamento set numero_credenciado = 'UBE-002' where id = v_troca.credenciamento_id and false;
     delete from public.avaliadores_numero_trocas where id = v_troca.id;
     raise notice 'rollback 0366: % voltou a UBE-002.', v_troca.numero_depois;
   else
