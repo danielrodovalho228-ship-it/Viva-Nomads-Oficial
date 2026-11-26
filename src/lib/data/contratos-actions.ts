@@ -18,6 +18,7 @@ import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { acertoMaisRecente, estadoCaucao, type EstadoCaucao } from "@/lib/caucao-estado";
 import { componentesDoPagamento, emAbertoNoBloco, encargosDosComponentes, parteDaColuna, proximaParte, somarComponentes, type ComponentesBloco } from "@/lib/pagamento-componentes";
 import { componentesDosContratos } from "@/lib/data/contrato-componentes";
+import { MSG_CAUCAO_PASSA, MSG_CAUCAO_SEM_CONTA, caucaoEmAbertoAte } from "@/lib/caucao-teto";
 
 /**
  * Contratos & blocos do PROPRIETÁRIO + registro DECLARATÓRIO de pagamento
@@ -518,6 +519,21 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     }
     if (novo.aluguel > aberto.aluguel + 0.005 || novo.contas > aberto.contas + 0.005 || novo.limpeza > aberto.limpeza + 0.005) return { ok: false, error: MSG_PASSA_DO_QUE_FALTA };
     if (registros.length > 0) parte = proximaParte(registros.map((r) => Number(r.parte ?? 1)));
+  }
+  // (B) (ORDENS-DUET 1098 e 1107): a caução não passa do que falta registrar — a soma das cauções dos blocos do contrato
+  // menos a caução já registrada e ativa. Sem essa conta lida, não grava (falha fechado). Já havendo caução ativa (o
+  // registro é um por contrato), é "já registrado", como o índice único responde.
+  if (tipo === "caucao") {
+    const [{ data: ct, error: erroCt }, { data: ativas, error: erroAtivas }] = await Promise.all([
+      supabase.from("contratos").select("id, contrato_blocos(numero_bloco, caucao)").eq("id", input.contratoId).maybeSingle(),
+      supabase.from("pagamentos_bloco").select("id, valor").eq("contrato_id", input.contratoId).eq("tipo", "caucao").is("anulado_em", null),
+    ]);
+    if (erroCt || erroAtivas || !ct) return { ok: false, error: MSG_CAUCAO_SEM_CONTA };
+    const registradas = (ativas ?? []) as { id: string; valor: number | string }[];
+    if (registradas.length > 0) return { ok: true, id: registradas[0].id, jaRegistrado: true, mensagem: MSG_JA_REGISTRADO };
+    const blocos = (((ct as { contrato_blocos?: unknown }).contrato_blocos as { numero_bloco: number; caucao: number | string | null }[] | null) ?? []).map((b) => ({ numero: Number(b.numero_bloco), caucao: Number(b.caucao) || 0 }));
+    const emAberto = caucaoEmAbertoAte(blocos, registradas.reduce((t, r) => t + (Number(r.valor) || 0), 0));
+    if (input.valor > emAberto + 0.005) return { ok: false, error: MSG_CAUCAO_PASSA };
   }
   // Caução é do CONTRATO (0182): grava sem bloco. O valor mensal é de um bloco.
   const { data, error } = await supabase
