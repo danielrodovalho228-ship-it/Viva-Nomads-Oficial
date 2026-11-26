@@ -138,7 +138,7 @@ function toBloco(b: Record<string, unknown>): BlocoView {
 
 function toPagamento(p: Record<string, unknown>, valorMensal?: number | null): PagamentoView {
   // ORDEM-DUET-1104: a parte é a da coluna registada (0348), nunca a ordem dos registros.
-  const parte = String(p.tipo ?? "aluguel") === "caucao" ? 1 : parteDaColuna(p.parte);
+  const parte = String(p.tipo ?? "aluguel") === "caucao" ? 1 : parteDaColuna(null); // ENSAIO: a tela ignora a coluna
   const componentes = componentesDoPagamento({ valor: Number(p.valor), encargos: String(p.tipo ?? "aluguel") === "caucao" ? [] : p.encargos });
   const b = p.contrato_blocos as { numero_bloco?: number | null; meses?: number | null; inicio?: string | null; fim?: string | null } | null | undefined;
   return {
