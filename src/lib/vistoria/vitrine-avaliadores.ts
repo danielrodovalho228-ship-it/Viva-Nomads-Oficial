@@ -22,18 +22,6 @@ export function fotoPublicaPermitida(contaTeste: boolean): boolean {
 }
 
 /**
- * E1222 (ORDEM-DUET-1075, regra do coordenador): quem pode estar em público — a página /avaliadores/<nº> e as listas
- * por cidade. Visível se a linha curada está publicada, ou o credenciamento está ativo, ou está em_teste com conta de
- * teste. Em qualquer outro caso (a pessoa real ainda em teste, o status desconhecido): fora. Fonte única; a função
- * avaliadores_publicos() do banco não muda.
- */
-export function avaliadorVisivelEmPublico(a: { status: string | null | undefined; teste: boolean; temLinhaCuradaPublicada: boolean }): boolean {
-  if (a.temLinhaCuradaPublicada) return true;
-  if (a.status === "ativo") return true;
-  return a.status === "em_teste" && a.teste === true;
-}
-
-/**
  * E1097 (ORDEM-DUET-454/455): o selo público do credenciado — "Avaliador credenciado" para todos; a conta de teste,
  * "Avaliador em teste" (E717). "Avaliador sócio da Viva" é só do Rogério: chega aqui apenas pela linha dele em
  * avaliadores_perfil_publico ligada ao credenciamento (`seloLigado`), nunca por regra geral.

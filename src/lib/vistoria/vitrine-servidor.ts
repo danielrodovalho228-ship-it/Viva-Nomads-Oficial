@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
-import { avaliadorVisivelEmPublico, contaDaLinhaDeCredenciamento, fotoPublicaPermitida, normalizarSobre, seloDoCredenciado, vistaPublicaDoCredenciado, type FonteAvaliador, type PerfilLigado } from "./vitrine-avaliadores";
+import { contaDaLinhaDeCredenciamento, fotoPublicaPermitida, normalizarSobre, seloDoCredenciado, vistaPublicaDoCredenciado, type FonteAvaliador, type PerfilLigado } from "./vitrine-avaliadores";
 import { SELO_AVALIADOR_SOCIO } from "./regras";
 
 /*
@@ -14,17 +14,14 @@ import { SELO_AVALIADOR_SOCIO } from "./regras";
 type Publico = { numero_credenciado: string; nome_curto: string; cidade: string; avaliacoes_feitas: number; nota_conduta: number | string | null; teste: boolean };
 
 export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvaliador[]> {
-  const [publicos, perfis, creds, situacoes] = await Promise.all([
+  const [publicos, perfis, creds] = await Promise.all([
     admin.rpc("avaliadores_publicos"),
     admin.from("avaliadores_perfil_publico").select("numero, nome_publico, cidade, selo, credenciamento_id").eq("publicado", true),
     admin.from("avaliadores_credenciamento").select("id, numero_credenciado, user_id, parceiros(user_id)").in("status", ["ativo", "em_teste"]),
-    // E1222: o status de cada credenciado, para a regra de quem pode estar em público.
-    admin.from("avaliadores_credenciamento").select("numero_credenciado, status").in("status", ["ativo", "em_teste"]),
   ]);
-  const falha = [publicos, perfis, creds, situacoes].find((r) => r.error);
+  const falha = [publicos, perfis, creds].find((r) => r.error);
   if (falha) throw new Error(`[vitrine] ${falha.error!.message}`);
   const credsLidos = (creds.data ?? []) as unknown as { id: string; numero_credenciado: string; user_id: string | null; parceiros: { user_id: string | null } | null }[];
-  const statusDe = new Map(((situacoes.data ?? []) as { numero_credenciado: string; status: string }[]).map((c) => [c.numero_credenciado, c.status]));
   // E1099 (ORDEM-473 §1): a conta pela regra única — também quando o credenciamento foi criado pelo parceiro.
   const usuarioDe = new Map(credsLidos.map((c) => [c.numero_credenciado, contaDaLinhaDeCredenciamento(c)]));
   // E1097: o perfil do piloto ligado a um credenciamento (o do Rogério, quando o CNPJ chegar) dá o selo a esse credenciado
@@ -44,20 +41,11 @@ export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvali
   const { data: contas, error } = ids.length ? await admin.from("profiles").select("id, avatar_url, is_teste").in("id", ids) : { data: [], error: null };
   if (error) throw new Error(`[vitrine] contas: ${error.message}`);
   const conta = new Map(((contas ?? []) as { id: string; avatar_url: string | null; is_teste: boolean | null }[]).map((c) => [c.id, c]));
-  // E1222: a linha curada PUBLICADA do credenciado — ligada ao credenciamento ou com o mesmo número.
-  const comCurada = new Set([...seloLigado.keys(), ...linhasPerfil.map((p) => p.numero)]);
-  const testeDe = (a: Publico) => {
-    const uid = usuarioDe.get(a.numero_credenciado) ?? null;
-    return (uid ? conta.get(uid) : undefined)?.is_teste === true || a.teste === true;
-  };
-  const visiveis = ((publicos.data ?? []) as Publico[]).filter((a) =>
-    avaliadorVisivelEmPublico({ status: statusDe.get(a.numero_credenciado) ?? null, teste: testeDe(a), temLinhaCuradaPublicada: comCurada.has(a.numero_credenciado) }),
-  );
   const credenciados = await Promise.all(
-    visiveis.map(async (a): Promise<FonteAvaliador> => {
+    ((publicos.data ?? []) as Publico[]).map(async (a): Promise<FonteAvaliador> => {
       const uid = usuarioDe.get(a.numero_credenciado) ?? null;
       const c = uid ? conta.get(uid) : undefined;
-      const teste = testeDe(a);
+      const teste = c?.is_teste === true || a.teste === true;
       const vista = vistaPublicaDoCredenciado(a, ligadoDe.get(a.numero_credenciado) ?? null);
       return {
         numero: a.numero_credenciado,
@@ -76,30 +64,6 @@ export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvali
     (p): FonteAvaliador => ({ numero: p.numero, nome: p.nome_publico, cidade: p.cidade, selo: p.selo ?? SELO_AVALIADOR_SOCIO, avaliacoesFeitas: 0, notaConduta: null, contaTeste: false, fotoUrl: null }),
   );
   return [...credenciados, ...doPiloto];
-}
-
-/**
- * E1222 (ORDEM-DUET-1075): a página /avaliadores/<nº> aplica a MESMA regra da vitrine (avaliadorVisivelEmPublico) ao
- * credenciado nº `numero`: lê o status, a conta (de teste ou não) e a linha curada publicada (ligada ou com o mesmo
- * número). `testeDoPublico` é o `teste` que avaliadores_publicos() já devolveu. Leitura que falha: false — a página
- * responde 404, nunca mostra a pessoa por engano.
- */
-export async function credenciadoVisivelEmPublico(admin: SupabaseClient, numero: string, testeDoPublico: boolean): Promise<boolean> {
-  const { data: cred, error } = await admin.from("avaliadores_credenciamento").select("id, status, user_id, parceiros(user_id)").eq("numero_credenciado", numero).maybeSingle();
-  if (error || !cred) return false;
-  const c = cred as unknown as { id: string; status: string | null; user_id: string | null; parceiros: { user_id: string | null } | null };
-  const [porLigacao, porNumero] = await Promise.all([
-    admin.from("avaliadores_perfil_publico").select("numero").eq("credenciamento_id", c.id).eq("publicado", true),
-    admin.from("avaliadores_perfil_publico").select("numero").eq("numero", numero).eq("publicado", true),
-  ]);
-  const temLinhaCuradaPublicada = !porLigacao.error && !porNumero.error && ((porLigacao.data ?? []).length > 0 || (porNumero.data ?? []).length > 0);
-  let teste = testeDoPublico === true;
-  const uid = contaDaLinhaDeCredenciamento(c);
-  if (!teste && uid) {
-    const { data: conta } = await admin.from("profiles").select("is_teste").eq("id", uid).maybeSingle();
-    teste = (conta as { is_teste: boolean | null } | null)?.is_teste === true;
-  }
-  return avaliadorVisivelEmPublico({ status: c.status, teste, temLinhaCuradaPublicada });
 }
 
 /** A conta (user_id) do credenciado nº `numero`: a do credenciamento ou a do parceiro dele. */
