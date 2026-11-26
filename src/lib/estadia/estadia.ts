@@ -112,14 +112,26 @@ export interface ItemChecklist {
   rotulo: string;
   feito: boolean;
   detalhe: string;
+  /** ORDEM-DUET-1048: a ação no mesmo item (ex.: o morador confirma o que o dono registrou). */
+  acao?: { rotulo: string; href: string };
 }
+
+/**
+ * PROPOSTA DE TEXTO (ORDEM-DUET-1048, condição do coordenador): ao lado de "Falta a sua confirmação", a ação de
+ * confirmar — a confirmação vive em Locações (o bloco "confirmar-pagamentos").
+ */
+export const ACAO_CONFIRMAR_NO_ITEM = { rotulo: "Confirmar em Locações", href: "/dashboard/locacoes" } as const;
 
 export interface EstadoChecklist {
   assinadoProprietario: boolean;
   assinadoInquilino: boolean;
   primeiroPagamento: boolean;
+  /** E1068: o proprietário já registrou o 1º pagamento (com ou sem a confirmação do morador). */
+  primeiroPagamentoRegistrado?: boolean;
   /** "pendente" | "recebida" | "dispensada" — a Caução do 1º bloco (garantia caução); seguro-fiança = "dispensada". */
   caucao: "pendente" | "recebida" | "dispensada";
+  /** E1068: a caução já foi registrada pelo proprietário e espera a confirmação do morador. */
+  caucaoRegistrada?: boolean;
   conferencia: { estado: "em_andamento" | "aguardando_outra_parte" | "confirmada" | "contestada" | null; prazo: Date | null };
   ocupantes: { preenchidos: number; previstos: number };
   instrucoesPublicadas: boolean;
@@ -140,19 +152,35 @@ export function checklistAntesDaEntrada(e: EstadoChecklist, papel: PapelEstadia)
     confirmada: "Confirmada pelas duas partes",
     contestada: "Contestada",
   };
+  // E1068: o estado do meio — registrado pelo proprietário, à espera do morador — dito para quem lê. Antes a lista só
+  // conhecia "confirmado" e "não registrado", e o dono que acabava de registrar continuava a ler "Ainda não registrado".
+  const aguardando = (genero: "o" | "a") =>
+    papel === "proprietario" ? `Registrad${genero} por você. Aguardando a confirmação do morador.` : `Registrad${genero} pelo proprietário. Falta a sua confirmação.`;
+  // ORDEM-DUET-1048: só o morador, no estado do meio, tem o que fazer — a ação de confirmar fica no próprio item.
+  const acaoDeConfirmar = (registrado: boolean, confirmado: boolean) =>
+    papel !== "proprietario" && registrado && !confirmado ? { acao: { ...ACAO_CONFIRMAR_NO_ITEM } } : {};
   const itens: ItemChecklist[] = [
     { chave: "assinatura", rotulo: "Contrato assinado", feito: ambos, detalhe: falta },
     {
       chave: "primeiro_pagamento",
       rotulo: "1º pagamento",
       feito: e.primeiroPagamento,
-      detalhe: e.primeiroPagamento ? "Registrado e confirmado." : "Ainda não registrado e confirmado.",
+      detalhe: e.primeiroPagamento ? "Registrado e confirmado." : e.primeiroPagamentoRegistrado ? aguardando("o") : "Ainda não registrado e confirmado.",
+      ...acaoDeConfirmar(!!e.primeiroPagamentoRegistrado, e.primeiroPagamento),
     },
     {
       chave: "caucao",
       rotulo: "Caução",
       feito: e.caucao !== "pendente",
-      detalhe: e.caucao === "recebida" ? "Recebida pelo proprietário." : e.caucao === "dispensada" ? "Não se aplica a este contrato." : "Ainda não registrada.",
+      detalhe:
+        e.caucao === "recebida"
+          ? "Recebida pelo proprietário."
+          : e.caucao === "dispensada"
+            ? "Não se aplica a este contrato."
+            : e.caucaoRegistrada
+              ? aguardando("a")
+              : "Ainda não registrada.",
+      ...acaoDeConfirmar(!!e.caucaoRegistrada, e.caucao !== "pendente"),
     },
     {
       chave: "conferencia",
