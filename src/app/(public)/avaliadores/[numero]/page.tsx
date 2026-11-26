@@ -5,7 +5,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { integracoesSimuladas } from "@/lib/integracoes";
-import { fontesDaVitrine, fotoDoCredenciado, identidadeConfirmadaDoCredenciado, perfilLigadoDoCredenciado, seloLigadoDoCredenciado, sobreDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
+import { credenciadoVisivelEmPublico, fontesDaVitrine, fotoDoCredenciado, identidadeConfirmadaDoCredenciado, perfilLigadoDoCredenciado, seloLigadoDoCredenciado, sobreDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
 import { VitrineAvaliadores } from "@/components/vistoria/vitrine-avaliadores";
 import { tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { VoltarCelular as BotaoVoltar } from "@/components/ui/voltar-celular";
@@ -71,6 +71,8 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
   // E1079 (ORDEM-DUET-385/386/397): o perfil do credenciado no desenho do mockup aprovado — a foto de perfil da conta (só a
   // conta de teste a mostra, sem o Daniel), senão as iniciais; a cidade com a UF; o preço da TABELA DA CIDADE por porte.
   const admin = createAdminClient();
+  // E1222 (ORDEM-DUET-1075): a pessoa real ainda em teste, sem linha curada publicada, não tem página pública.
+  if (!admin || !(await credenciadoVisivelEmPublico(admin, a.numero_credenciado, a.teste))) notFound();
   const foto = admin ? await fotoDoCredenciado(admin, a.numero_credenciado, a.teste) : null;
   // E1097: "Avaliador credenciado" para todos; o sócio só pela linha ligada do Rogério.
   const seloLigado = admin ? await seloLigadoDoCredenciado(admin, a.numero_credenciado) : null;
