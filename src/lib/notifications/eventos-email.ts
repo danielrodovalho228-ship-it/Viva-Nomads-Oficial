@@ -7,7 +7,6 @@ import { AVISO_EXPIRACAO_DIAS } from "../vistoria/laudo.ts";
 import { corpoVistoria, type EventoVistoria } from "../vistoria/corpo-email.ts";
 import { ASSUNTO_SEM_AVALIADOR } from "../vistoria/rotulos-do-pedido.ts";
 import { corpoDoAvisoDaFila } from "../vistoria/rotulos-da-fila.ts";
-import { TEXTOS_SEM_TAXA } from "../fechamento/contratos-sem-taxa.ts";
 
 /**
  * E1158 (21; ORDEM-DUET-659): o corpo de cada e-mail da avaliação está escrito UMA vez, em vistoria/corpo-email.ts. O
@@ -24,7 +23,6 @@ export type NotificationEvent =
   | "saved_search_match" // alerta de busca salva do inquilino
   | "verification_ready" // laudo CAF pronto
   | "contract_status" // status do contrato
-  | "contrato_sem_taxa" // E1205: contrato com proposta e sem a taxa reservada há 30 min → proprietário
   | "subscription_status" // status da assinatura
   // Pedido de Moradia (Fase 4)
   | "pedido_novo_cidade" // (legado) novo pedido na cidade → proprietários
@@ -179,7 +177,6 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   saved_search_match: { subject: "Novo imóvel para sua busca", body: () => "Um imóvel novo combina com sua busca salva no Viva Nomads.", cta: "Ver imóvel", path: "/dashboard/buscas" },
   verification_ready: { subject: "Sua verificação está pronta", body: () => "A conferência da sua identidade foi concluída. Veja o resultado no painel.", cta: "Ver resultado", path: "/dashboard/verificacao" },
   contract_status: { subject: "Atualização do seu contrato", body: () => "Há uma atualização no contrato da sua estadia.", cta: "Ver contrato", path: "/dashboard/contratos" },
-  contrato_sem_taxa: { subject: TEXTOS_SEM_TAXA.assuntoAviso, body: () => TEXTOS_SEM_TAXA.corpoAviso, cta: TEXTOS_SEM_TAXA.ctaAviso, path: "/dashboard/fechamento" },
   subscription_status: { subject: "Atualização da sua assinatura", body: () => "Há uma atualização na sua assinatura Viva Nomads.", cta: "Ver detalhes", path: "/dashboard" },
   pedido_novo_cidade: { subject: "Novo pedido de moradia na sua cidade", body: (n) => `Olá${n ? " " + n : ""}, um inquilino publicou um pedido de moradia na cidade de um dos seus imóveis. Veja se algum atende.`, cta: "Ver pedidos", path: "/dashboard/pedidos-cidade" },
   pedido_compativel: { subject: "Pedido de moradia compatível com o seu imóvel", body: (n) => `Olá${n ? " " + n : ""}, um pedido de moradia combina com um imóvel seu. Veja por que e responda pela plataforma.`, cta: "Ver pedido e responder", path: "/dashboard/pedidos-cidade" },
