@@ -2,6 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { urlInterna } from "./montar-email";
 import { sendPush } from "./push";
+import { categoriaDoEvento } from "./expo-push";
 import { decisaoDoPush, grupoDaConversa, textoMensagensAgrupadas } from "./regra-push";
 
 /*
@@ -65,16 +66,17 @@ export async function processarPush(p: PedidoPush, admin: Admin | null = createA
     if (error) console.error("[push] adiar", error.code);
     return error ? { skipped: true } : { adiado: true };
   }
-  return sendPush({ userId: p.userId, title, body, url, evento: p.event });
+  return sendPush({ userId: p.userId, title, body, url, evento: p.event, categoria: categoriaDoEvento(p.event) });
 }
 
 /** Cron das 7h (Brasília): envia os pushes que esperaram o silêncio e apaga cada um depois de tentar. */
 export async function enviarPushAdiados(admin: Admin, agora: Date = new Date()): Promise<{ enviados: number; pendentes: number }> {
-  const { data, error } = await admin.from("push_adiados").select("id, user_id, titulo, corpo, url").lte("sair_em", agora.toISOString()).order("sair_em").limit(500);
+  const { data, error } = await admin.from("push_adiados").select("id, user_id, evento, titulo, corpo, url").lte("sair_em", agora.toISOString()).order("sair_em").limit(500);
   if (error || !data) return { enviados: 0, pendentes: 0 };
   let enviados = 0;
-  for (const l of data as { id: string; user_id: string; titulo: string; corpo: string; url: string | null }[]) {
-    const r = await sendPush({ userId: l.user_id, title: l.titulo, body: l.corpo, url: l.url ?? undefined, evento: "adiado" }).catch(() => null);
+  for (const l of data as { id: string; user_id: string; evento: string | null; titulo: string; corpo: string; url: string | null }[]) {
+    // E1087: a categoria (os botões) vem do evento original, guardado no adiado.
+    const r = await sendPush({ userId: l.user_id, title: l.titulo, body: l.corpo, url: l.url ?? undefined, evento: "adiado", categoria: categoriaDoEvento(l.evento) }).catch(() => null);
     if (r && "sent" in r && r.sent > 0) enviados++;
     await admin.from("push_adiados").delete().eq("id", l.id);
   }

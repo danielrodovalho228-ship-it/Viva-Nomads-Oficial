@@ -8,6 +8,8 @@ import { achadoTamanhoDescription, achadosNasMetas, achadosNoTexto, rotaVarreLei
  * corretagem, intermediação, temporada, art. 48), código de status cru (pendente_aceite), data ISO,
  * UUID inteiro ou "undefined/null/NaN". /termos, /privacidade e contratos (parecer jurídico) ficam fora só
  * da parte de termos. Admin fica de fora (2FA). Todos os achados saem juntos (expect.soft).
+ * E1119 (ORDEM-DUET-512): exceção nomeada e estreita para a frase da regra da caução ("aluguel" só dentro dela, lida
+ * da fonte src/lib/caucao-regra.ts) — mora em achadosNoTexto (src/lib/varredura-texto.ts, semFraseDaCaucao).
  */
 const senha = novaSenha();
 const sufixo = novoSufixo();

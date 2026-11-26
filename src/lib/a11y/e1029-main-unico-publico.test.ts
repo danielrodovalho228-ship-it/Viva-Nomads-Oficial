@@ -11,9 +11,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../app/(public)/${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/^\s*\/\/.*$/gm, "");
 
 test("E1029 — o layout público abre o único <main> (id=conteudo)", () => {
   const layout = semComentarios(ler("layout.tsx"));

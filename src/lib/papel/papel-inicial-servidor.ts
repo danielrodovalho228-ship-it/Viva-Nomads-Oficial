@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { usuarioExigido } from "@/lib/supabase/usuario-da-leitura";
 import { parceiroInicialDoServidor, type PapelInicialServidor } from "./papel-inicial";
 
 /**
@@ -10,9 +11,7 @@ import { parceiroInicialDoServidor, type PapelInicialServidor } from "./papel-in
 export async function papelInicialDoServidor(): Promise<PapelInicialServidor | null> {
   const supabase = await createClient();
   if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioExigido(supabase);
   if (!user) return null;
 
   const { data: perfil, error: erroPerfil } = await supabase.from("profiles").select("papel_ativo, papel_ativo_escolhido_em").eq("id", user.id).maybeSingle();

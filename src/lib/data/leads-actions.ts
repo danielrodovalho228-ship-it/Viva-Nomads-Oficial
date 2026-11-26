@@ -5,11 +5,13 @@ import { diasValidos } from "@/lib/estadia-em-dias";
 import { COLUNAS_ESTADO_CONTRATO, estadoDoContratoUnico, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { corpoDoEmailDaCandidatura } from "@/lib/data/candidatura-email";
 import { periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
 import { notify } from "@/lib/notifications";
 import { COMISSAO_POR_PLANO, plano as planoPorId, type PlanoId } from "@/config/planos";
+import { taxaDaEstadia } from "@/lib/fechamento/proposta-do-fechamento";
 import { planoDoProprietario } from "@/lib/data/plano-efetivo";
 import { situacaoCandidatura, type RotuloCandidatura } from "@/lib/candidaturas/status";
 import { getPropertyForOwner } from "@/lib/data/properties";
@@ -22,13 +24,16 @@ import { lerDocumento, temDocumento } from "@/lib/data/documento-servidor";
 import { documentoCompleto, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
 import { MSG_DOCS_INQUILINO } from "@/lib/documentos-inquilino";
-import { preAceiteExpiradoDoLead, propostaAcordadaDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
+import { PROPOSTA_FORA_DO_FECHAMENTO, preAceiteExpiradoDoLead, propostaDoFechamentoDoLead, type TermosDoAcordo } from "@/lib/data/propostas-servidor";
 import { taxaDoLeadDoDono, type TaxaDoLead } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel, MSG_DATAS_SEM_CONFERIR } from "@/lib/data/periodo-servidor";
 import { periodoDaEstadia } from "@/lib/contrato-periodo";
 import { estadosIdentidade } from "@/lib/identidade/estado-servidor";
 import { conversationId } from "@/lib/messages/conversation-id";
 import { IDENTIDADE_INDISPONIVEL, type EstadoIdentidade } from "@/lib/identidade/estado";
+import type { ContratoDoFechamento } from "@/lib/fechamento-resumo";
+import { lerEstadoDoContrato } from "@/lib/data/contratos-actions";
+import { contratoDoSelo, ORCAMENTO_ABERTO, type ContratoDoPedido } from "@/lib/pedido-ref";
 
 interface ActionResult {
   ok: boolean;
@@ -198,6 +203,10 @@ export interface MinhaCandidatura {
   primeiroEnvioEm: string | null;
   /** Prompt 24: contrato registrado desta candidatura (aparece no cartão com o status da assinatura). */
   contrato: { id: string; status: string } | null;
+  /** E1088: TODOS os contratos desta candidatura (com o E1086 pode haver mais de um), para a regra do "Pedir orçamento". */
+  contratosDoPedido: ContratoDoPedido[];
+  /** E1088: há orçamento desta candidatura à espera de resposta (leitura que falha conta como aberto: não mostra o botão). */
+  temOrcamentoAberto: boolean;
 }
 
 /**
@@ -212,9 +221,7 @@ const MSG_CANDIDATURAS_NAO_CARREGARAM = "Não foi possível carregar as suas can
 export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}): Promise<MinhaCandidatura[]> {
   const supabase = await createClient();
   if (!supabase) return [];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
 
   const { data, error } = await supabase
@@ -238,14 +245,36 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
   // Contrato de cada candidatura (o RLS deixa o inquilino ler os próprios contratos).
   const { data: contratos } = await supabase
     .from("contratos")
-    .select(`id, lead_id, ${COLUNAS_ESTADO_CONTRATO}`)
+    .select(`id, lead_id, created_at, ${COLUNAS_ESTADO_CONTRATO}`)
     .eq("tenant_id", user.id);
   // O selo do contrato pela fonte única (o mesmo de Contratos e da página do contrato).
-  const contratoDoLead = new Map(
-    ((contratos ?? []) as unknown as ({ id: string; lead_id: string | null } & LinhaEstadoContrato)[])
-      .filter((c) => c.lead_id)
-      .map((c) => [c.lead_id as string, { id: c.id, status: estadoDoContratoUnico(c, "inquilino").selo }]),
-  );
+  // E1088 (ORDEM-DUET-728): o selo vem do contrato que conta na regra (o mais recente entre os não cancelados), não do
+  // último que a consulta devolve.
+  type LinhaContrato = { id: string; lead_id: string | null; created_at: string | null } & LinhaEstadoContrato;
+  const porLead = new Map<string, LinhaContrato[]>();
+  for (const c of (contratos ?? []) as unknown as LinhaContrato[]) {
+    if (!c.lead_id) continue;
+    porLead.set(c.lead_id, [...(porLead.get(c.lead_id) ?? []), c]);
+  }
+  const contratoDoLead = new Map<string, { id: string; status: string }>();
+  for (const [lead, lista] of porLead) {
+    const c = contratoDoSelo(lista);
+    if (c) contratoDoLead.set(lead, { id: c.id, status: estadoDoContratoUnico(c, "inquilino").selo });
+  }
+  // E1088: o Map acima guarda um contrato por candidatura (o selo); a regra do "Pedir orçamento" precisa de todos.
+  const contratosDoLead = new Map<string, ContratoDoPedido[]>();
+  for (const c of (contratos ?? []) as unknown as ({ lead_id: string | null } & LinhaEstadoContrato)[]) {
+    if (!c.lead_id) continue;
+    const lista = contratosDoLead.get(c.lead_id) ?? [];
+    lista.push({ status: c.status ?? null, assinadoProprietarioEm: c.assinado_proprietario_em ?? null, assinadoInquilinoEm: c.assinado_inquilino_em ?? null });
+    contratosDoLead.set(c.lead_id, lista);
+  }
+  // E1088: as candidaturas com orçamento em aberto (a mesma lista de estados do servidor).
+  const leadIds = (data as unknown as { id: string }[]).map((r) => r.id);
+  const { data: abertos, error: erroAbertos } = leadIds.length
+    ? await supabase.from("propostas").select("lead_id").in("lead_id", leadIds).in("status", ORCAMENTO_ABERTO)
+    : { data: [], error: null };
+  const comOrcamentoAberto = new Set(((abertos ?? []) as { lead_id: string | null }[]).map((p) => p.lead_id));
 
   type Row = {
     id: string;
@@ -264,6 +293,8 @@ export async function listMinhasCandidaturas(opcoes: { exigir?: boolean } = {}):
     // E657: a data de envio que a pessoa vê é a do último envio (o reenvio, se houve); a criação segue em createdAt.
     ...envioDaCandidatura(r.created_at, r.reenviada_em),
     contrato: contratoDoLead.get(r.id) ?? null,
+    contratosDoPedido: contratosDoLead.get(r.id) ?? [],
+    temOrcamentoAberto: !!erroAbertos || comOrcamentoAberto.has(r.id),
   }));
 }
 
@@ -305,10 +336,17 @@ export interface FechamentoContexto {
   diasSugerido?: number | null;
   /** PROP-3 (E118): identidade do INQUILINO, pela mesma fonte de Interessados (estadosIdentidade). */
   identidadeInquilino?: EstadoIdentidade | null;
+  /** E1064: identidade de QUEM ESTÁ FECHANDO (o dono), pela mesma fonte única — confirmada, o passo 1 não pede clique. */
+  identidadePropria?: EstadoIdentidade | null;
+  /** E1064: o contrato que esta candidatura já tem (gerado antes), com a situação real — o Fechamento reaberto di-la. */
+  contratoExistente?: ContratoDoFechamento | null;
+  /** E1141: a estadia escolhida com `p` (validada); o assistente manda-a ao contrato, ao registro e à taxa. null = sem `p`. */
+  propostaDaUrl?: string | null;
 }
 
 export async function getFechamentoContext(
   leadId?: string,
+  propostaId?: string | null,
 ): Promise<FechamentoContexto | null> {
   const supabase = await createClient();
   if (!supabase) return null;
@@ -350,8 +388,14 @@ export async function getFechamentoContext(
   let mesesSugerido: number | null = null;
   let diasSugerido: number | null = null;
   let identidadeInquilino: EstadoIdentidade | null = null;
+  let identidadePropria: EstadoIdentidade | null = null;
+  let contratoExistente: FechamentoContexto["contratoExistente"] = null;
   // Plano e taxa congelados no aceite: só pelo servidor, depois de conferir que a candidatura é deste dono (0177).
   let taxaLead: TaxaDoLead | null = null;
+  // E1141: o `p` que não é uma proposta acordada desta candidatura → "não encontramos esse fechamento".
+  let foraDoFecho = false;
+  // E1141 (guarda 2): a taxa CONGELADA da proposta desta estadia (a do aceite é a da última aceita).
+  let taxaDaProposta: number | null = null;
   try {
     const admin = createAdminClient();
     if (admin) {
@@ -363,7 +407,11 @@ export async function getFechamentoContext(
       const janela = periodoDaCandidatura(inicioDesejado, (d?.fim_desejado as string | null) ?? null);
       mesesSugerido = janela?.meses ?? null;
       diasSugerido = janela && diasValidos(janela.dias) ? janela.dias : null;
-      const acordada = await propostaAcordadaDoLead(admin, lead.id as string);
+      // E1141: a estadia DESTE fecho — a pedida com `p` (validada) ou, sem `p`, a proposta acordada mais recente.
+      const lida = await propostaDoFechamentoDoLead(admin, lead.id as string, propostaId ?? null);
+      if (lida === PROPOSTA_FORA_DO_FECHAMENTO) foraDoFecho = true;
+      const acordada = lida === PROPOSTA_FORA_DO_FECHAMENTO ? null : lida;
+      taxaDaProposta = acordada?.taxa ?? null;
       if (acordada) proposta = { id: acordada.id, numero: acordada.numero, valorMensal: acordada.valorMensal, meses: acordada.meses, dataEntrada: acordada.dataEntrada, termos: acordada.termos };
       ocupantesSugerido = (d?.qtd_ocupantes as number | null) ?? null;
       const [docDono, docInq] = await Promise.all([lerDocumento(admin, user.id), lerDocumento(admin, lead.tenant_id as string)]);
@@ -377,18 +425,34 @@ export async function getFechamentoContext(
         .maybeSingle();
       if (t?.full_name && !String(t.full_name).includes("@")) tenantName = t.full_name;
       // Leitura que falha: "não conferida agora" no Fechamento (nunca "pendente" para quem é verificado).
-      const lidas = await estadosIdentidade(admin, [lead.tenant_id as string]).catch(() => null);
+      // E1064: a mesma leitura traz a identidade do dono (quem fecha): se já está confirmada, o passo 1 não pede clique.
+      const lidas = await estadosIdentidade(admin, [lead.tenant_id as string, user.id]).catch(() => null);
       identidadeInquilino = lidas ? (lidas.get(lead.tenant_id as string) ?? null) : IDENTIDADE_INDISPONIVEL;
+      identidadePropria = lidas ? (lidas.get(user.id) ?? null) : null;
+      // E1064: contrato já gerado para esta candidatura → a situação REAL dele (a fonte única do estado do contrato).
+      // E1064 (perna 2): a garantia gravada no contrato vem na mesma leitura — o Resumo reaberto mostra-a, não um valor por omissão.
+      // E1086: o contrato é o da PROPOSTA em curso. O contrato de outra estadia (outra proposta da mesma candidatura)
+      // não aparece aqui: a proposta nova ainda vai gerar o dela.
+      const doLead = admin.from("contratos").select("id, garantia").eq("lead_id", lead.id);
+      const { data: ct } = await (acordada ? doLead.eq("proposta_id", acordada.id) : doLead.is("proposta_id", null)).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (ct?.id) {
+        const estado = await lerEstadoDoContrato(String(ct.id), "proprietario").catch(() => null);
+        const garantiaLida = ct.garantia === "caucao" || ct.garantia === "seguro_fianca" ? ct.garantia : null;
+        if (estado) contratoExistente = { id: estado.id, texto: estado.texto, criadoEm: estado.criadoEm, garantia: garantiaLida };
+      }
     }
   } catch {
     /* mantém o neutro */
   }
+  if (foraDoFecho) return null;
 
   const planoId = (taxaLead?.acceptedPlan ?? "free") as PlanoId;
   // Comissão CONGELADA no aceite; retrocompatível se o snapshot faltar.
+  // E1141 (guarda 2): a da proposta desta estadia; sem ela, a do aceite, como antes.
+  const taxaDoFecho = taxaDaEstadia(taxaDaProposta, taxaLead?.acceptedCommissionRate);
   const comissaoRate =
-    typeof taxaLead?.acceptedCommissionRate === "number"
-      ? taxaLead.acceptedCommissionRate
+    typeof taxaDoFecho === "number"
+      ? taxaDoFecho
       : COMISSAO_POR_PLANO[planoId] ?? COMISSAO_POR_PLANO.free;
 
   return {
@@ -407,5 +471,8 @@ export async function getFechamentoContext(
     mesesSugerido,
     diasSugerido,
     identidadeInquilino,
+    identidadePropria,
+    contratoExistente,
+    propostaDaUrl: propostaId && proposta ? proposta.id : null,
   };
 }

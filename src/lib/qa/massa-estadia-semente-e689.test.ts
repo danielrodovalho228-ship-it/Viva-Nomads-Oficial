@@ -18,7 +18,10 @@ test("as datas da massa: cada estadia cai em UM momento da jornada no dia ALVO",
   const soma = (n: number) => new Date(Date.parse(`${alvo}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
   assert.deepEqual(momentosDeHoje({ entrada: soma(0), fim: soma(30), hoje: alvo }), ["jornada_chegada"]);
   assert.deepEqual(momentosDeHoje({ entrada: soma(-30), fim: soma(30), hoje: alvo }), ["jornada_meio_estadia"]);
-  assert.deepEqual(momentosDeHoje({ entrada: soma(-23), fim: soma(7), hoje: alvo }), ["jornada_semana_saida"]);
+  // E1089 (coordenador, 22/11/2026): com o fim (última noite) em ALVO+7, a saída é ALVO+8 e a "semana da saída" sai em
+  // ALVO+1 (7 dias antes da saída). A massa é a da prova de 10/11 e não se refaz.
+  assert.deepEqual(momentosDeHoje({ entrada: soma(-23), fim: soma(7), hoje: soma(1) }), ["jornada_semana_saida"]);
+  assert.deepEqual(momentosDeHoje({ entrada: soma(-23), fim: soma(7), hoje: alvo }), []);
 });
 
 test("0327: só contas de teste, anúncios [TESTE QA] novos e pausados, 1º pagamento confirmado, pedidos vinculados ao contrato", () => {

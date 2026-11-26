@@ -1,4 +1,5 @@
 import "server-only";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import path from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
@@ -120,7 +121,7 @@ export async function compromissosDaViva(admin: Admin, propertyId: string): Prom
     if (erroVersao) throw new Error("Não foi possível ler a versão da proposta.");
     const versao = v as { data_entrada: string | null; meses: number | null; dias?: number | null } | null;
     // E562: o período da proposta em dias exatos (antigas: meses × 30).
-    const diasVersao = versao?.dias ?? (versao?.meses ? versao.meses * 30 : null);
+    const diasVersao = versao?.dias ?? (versao?.meses ? versao.meses * DIAS_POR_MES : null);
     if (versao?.data_entrada && diasVersao) out.push({ ...periodoEmDias(versao.data_entrada, diasVersao), tipo: "proposta" });
   }
   const { data: leads, error: erroLeads } = await admin.from("leads").select("inicio_desejado").eq("property_id", propertyId).in("status", ["new", "accepted"]).not("inicio_desejado", "is", null);

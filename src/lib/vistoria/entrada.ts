@@ -9,6 +9,8 @@
 */
 import { chaveCidade } from "../cidades.ts";
 import { cnpjValido, cpfValido, soDigitos } from "../documento-pessoa.ts";
+import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
+import { MSG_SO_CNPJ } from "../parceiros/regras.ts";
 
 export const CATEGORIA_AVALIADOR = "vistoria";
 export const ROTA_RECRUTAMENTO = "/parceiros/avaliadores";
@@ -48,18 +50,29 @@ export function validarPedidoAvaliador(
   if (!e.jaParceiro) {
     const nome = limpar(e.nome, 80);
     const doc = soDigitos(e.documento);
+    let nomeAceito = true;
     if (nome.length < 3) {
+      nomeAceito = false;
       falta.push("Informar o nome público (o seu ou o da empresa).");
       campos.push({ campo: "nome", mensagem: "Informe o nome público (o seu ou o da empresa), com 3 letras ou mais." });
+    } else if (contemContato(nome)) {
+      // E1112 (ORDEM-DUET-652): este nome vira o nome público do parceiro na aprovação — a mesma guarda do "Seja
+      // parceiro" (`validarSolicitacao`), com o aviso da casa junto do campo. Antes, só este caminho não conferia.
+      nomeAceito = false;
+      falta.push("Tirar o contato do nome público.");
+      campos.push({ campo: "nome", mensagem: CONTATO_AVISO });
     }
     // E648: só empresa. CPF (tipo "pf" ou CPF no campo) não é aceito em nenhuma categoria de parceiro.
+    // E1152 (ORDEM-DUET-644): a recusa do CPF é a frase da regra, da MESMA fonte do "Seja parceiro" (`MSG_SO_CNPJ`) —
+    // antes havia aqui uma segunda redação, que dizia quase o mesmo que a nota da tela. Na lista geral fica só o que
+    // falta ("CNPJ válido."); a regra é dita uma vez, junto do campo.
     if (e.tipoPessoa === "pf" || cpfValido(doc)) {
-      falta.push("CNPJ válido (CPF não é aceito: abra o seu CNPJ, MEI onde a atividade permite).");
-      campos.push({ campo: "documento", mensagem: "CPF não é aceito: informe o CNPJ (abra o seu CNPJ, MEI onde a atividade permite)." });
+      falta.push("CNPJ válido.");
+      campos.push({ campo: "documento", mensagem: MSG_SO_CNPJ });
     } else if (!cnpjValido(doc)) {
       falta.push("CNPJ válido.");
       campos.push({ campo: "documento", mensagem: doc ? "CNPJ inválido: confira os números." : "Informe o CNPJ." });
-    } else if (nome.length >= 3) parceiro = { nome, tipoPessoa: "pj", documento: doc };
+    } else if (nomeAceito) parceiro = { nome, tipoPessoa: "pj", documento: doc };
   }
   const cidade = limpar(e.cidade, 80);
   if (!chaveCidade(cidade)) {

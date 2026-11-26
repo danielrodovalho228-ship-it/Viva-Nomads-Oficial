@@ -5,8 +5,11 @@
   Na tela: "avaliação do imóvel" e "avaliador credenciado". Nenhum número de ganho por nível; o dono não escolhe.
 */
 import { ETIQUETA_BRASILIA, dataBRT, horaBRT } from "../datas-brasilia.ts";
-import { chaveCidade } from "../cidades.ts";
-import { HORAS_PARA_RESPONDER, ROTULO_IMPEDIMENTO, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
+import { ROTULO_IMPEDIMENTO, atendeCidade, impedimento, type AvaliadorFila, type MotivoImpedimento, type StatusCredenciamento } from "./regras.ts";
+import { comoEmBreve, type ChaveIdentidade } from "../identidade/estado.ts";
+import { ROTULO_NUMERO_SEM_AVALIADOR } from "./rotulos-do-pedido.ts";
+import { TEXTO_RECUSA_PARA_O_DONO, concordanciaRecusada } from "./concordancia.ts";
+import { textoDaEspera } from "./espera-de-avaliador.ts";
 
 // ── Data e hora da visita (QA do #1111, item 6: sem segundos e com o fuso) ─────────────────────────────────────
 /** "25/10/2026 às 10:00" no horário de Brasília. */
@@ -18,10 +21,16 @@ export function quandoVisitaComFuso(iso: string): string {
   return `${quandoVisita(iso)}, ${ETIQUETA_BRASILIA}`;
 }
 
+/**
+ * E1158 (13): o que é a avaliação, numa frase — a mesma no cartão "Avaliação" do Nível e no subtítulo da porta
+ * (/dashboard/servicos/avaliacao). O cartão curto da grade de Serviços fica curto, à parte (ORDEM-DUET-656).
+ */
+export const DESCRICAO_DA_AVALIACAO = "Um avaliador credenciado visita o imóvel e assina o laudo com o nível dele.";
+
 // ── Item 3: as duas rotas, lado a lado, no Nível do dono ─────────────────────────────────────────────────────
 export const ROTAS_NIVEL = [
   { chave: "foto", titulo: "Foto: grátis, nível na hora", texto: "Envie a foto de cada item acima. O nível muda assim que a foto é aceita." },
-  { chave: "avaliacao", titulo: "Avaliação: selo “vistoriado” por 12 meses", texto: "Um avaliador credenciado visita o imóvel e confere tudo pelo checklist da Viva." },
+  { chave: "avaliacao", titulo: "Avaliação: selo “vistoriado” por 12 meses", texto: DESCRICAO_DA_AVALIACAO },
 ] as const;
 export const TITULO_BLOCO_DONO = "Avaliação do imóvel";
 
@@ -38,29 +47,40 @@ export function linhaDoTempoPedido(p: { status: string; numero?: string | null; 
   const atual = Math.max(0, ORDEM_ETAPAS.indexOf(p.status as (typeof ORDEM_ETAPAS)[number]));
   const rotulo: Record<(typeof ORDEM_ETAPAS)[number], string> = {
     pedido: p.aguardandoAvaliador ? "Pedido · aguardando avaliador" : "Pedido",
-    designado: p.numero ? `Escolhido nº ${p.numero}` : "Escolhido",
-    agendado: p.agendadoPara ? `Agendado para ${quandoVisita(p.agendadoPara)}` : "Agendado",
+    // E1158 (9): a etapa diz só "Escolhido" — o número fica na linha "Avaliador escolhido por você", com o link.
+    designado: "Escolhido",
+    // E1158 (8): a data da visita tem um formato só, com o fuso — o mesmo da linha "Visita:" logo abaixo.
+    agendado: p.agendadoPara ? `Agendado para ${quandoVisitaComFuso(p.agendadoPara)}` : "Agendado",
     realizada: "Visita feita",
     laudo_emitido: "Laudo",
   };
   return ORDEM_ETAPAS.map((chave, i) => ({ chave, rotulo: rotulo[chave], estado: i < atual ? "feito" : i === atual ? "atual" : "futuro" }));
 }
 
+/** E1158 (11): o botão com que o dono confirma o pagamento — o mesmo no pedido aberto e depois do laudo. */
+export const ROTULO_CONFIRMAR_PAGAMENTO_AO_AVALIADOR = "Confirmar que paguei o avaliador";
+/** E1158 (10): como o dono paga, antes de qualquer registro — a mesma frase antes do pedido e no cartão do pagamento. */
+export const TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR = "Você paga direto ao avaliador, depois da visita. A Viva só registra.";
+
 /**
  * A frase de situação do pedido do dono. "designado" não tem frase própria: a linha "Avaliador escolhido por você: nº X"
  * já diz tudo (QA do #1111, item 5: a frase saía duas vezes).
  */
-export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; ocupado: boolean; concordanciaEm: string | null; agendadoPara: string | null }): string | null {
-  if (p.aguardandoAvaliador) return "Aguardando avaliador: a Viva avisa quando houver um para você escolher.";
+export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; ocupado: boolean; concordanciaEm: string | null; agendadoPara: string | null; concordanciaPedidaEm?: string | null; laudoAte?: string | null; motivoDaEspera?: string | null }): string | null {
+  // E1177: a lista vazia diz o MOTIVO (a promessa do aviso só existe quando a cidade não tem avaliador nenhum).
+  if (p.aguardandoAvaliador) return textoDaEspera(p.motivoDaEspera);
   switch (p.status) {
     case "pedido":
       return "Pedido registrado: escolha o avaliador na lista.";
     case "designado":
+      // E1173: o morador disse "Não concordo" e ainda não há data nova.
+      if (concordanciaRecusada({ ...p, concordanciaPedidaEm: p.concordanciaPedidaEm ?? null })) return TEXTO_RECUSA_PARA_O_DONO;
       return p.ocupado && p.agendadoPara && !p.concordanciaEm ? "Data proposta: a visita fica confirmada quando o morador concordar." : null;
     case "agendado":
       return "Visita confirmada.";
     case "realizada":
-      return "Visita feita: o laudo sai em até 48 horas úteis.";
+      // E1156: o prazo é o combinado com o avaliador; a tela passa a data em que ele termina ("21/10/2026").
+      return p.laudoAte ? `Visita feita: o laudo sai até ${p.laudoAte}.` : "Visita feita: o laudo sai no prazo combinado com o avaliador.";
     default:
       return null;
   }
@@ -70,7 +90,7 @@ export function situacaoDono(p: { status: string; aguardandoAvaliador: boolean; 
 export function situacaoPagamento(p: { recebidoMarcadoEm: string | null; recebidoConfirmadoEm: string | null }): string {
   if (p.recebidoConfirmadoEm) return "Pagamento registrado pelos dois lados.";
   if (p.recebidoMarcadoEm) return "O avaliador marcou o valor como recebido. Confirme se você já pagou.";
-  return "Você paga direto ao avaliador, depois da visita. A Viva só registra.";
+  return TEXTO_PAGAMENTO_DIRETO_AO_AVALIADOR;
 }
 
 // ── Item 1: credenciamento (pedido único do 62-B3) — passos e estado ────────────────────────────────────────────
@@ -104,22 +124,22 @@ export function passosCumpridos(e: { status: StatusCredenciamento | null; identi
 
 // ── Item 2: página pública ───────────────────────────────────────────────────────────────────────────────────
 export const LINHA_PUBLICA_DESIGNACAO = "O proprietário escolhe o avaliador. O avaliador define o próprio valor e prazo.";
+/**
+ * E1158 (3): a mesma ideia dita AO avaliador, com a redação do painel do parceiro (ORDEM-DUET-654) — no painel, no
+ * subtítulo e no estado "ativo" da área do avaliador, e no convite do "Seja parceiro". Vem depois de dois-pontos.
+ */
+export const ESCOLHA_E_TERMOS_AO_AVALIADOR = "o proprietário escolhe o avaliador de imóveis; você define o seu valor e o seu prazo.";
+/** A mesma frase a abrir um período. */
+export const ESCOLHA_E_TERMOS_AO_AVALIADOR_FRASE = `O${ESCOLHA_E_TERMOS_AO_AVALIADOR.slice(1)}`;
 
 // ── Item 6: agenda do avaliador ───────────────────────────────────────────────────────────────────────────────
-/** O contador das 24 h para aceitar: "Responda em 23 h 10 min". Vencido: passa ao próximo (a rotina faz). */
-export function prazoResposta(designadoEm: string, agora: Date): { vencido: boolean; texto: string } {
-  const resta = Date.parse(designadoEm) + HORAS_PARA_RESPONDER * 3_600_000 - agora.getTime();
-  if (resta <= 0) return { vencido: true, texto: "Prazo de resposta vencido: o pedido passa ao próximo avaliador." };
-  const h = Math.floor(resta / 3_600_000);
-  const m = Math.floor((resta % 3_600_000) / 60_000);
-  return { vencido: false, texto: `Responda em ${h} h ${String(m).padStart(2, "0")} min` };
-}
-
+/** A "semana" da agenda do avaliador, em dias. */
+const DIAS_DA_SEMANA_DA_AGENDA = 7;
 /** A visita cai nos próximos 7 dias (a "semana" da agenda)? */
 export function visitaNaSemana(agendadoPara: string | null, agora: Date): boolean {
   if (!agendadoPara) return false;
   const t = Date.parse(agendadoPara) - agora.getTime();
-  return t >= -12 * 3_600_000 && t <= 7 * 86_400_000;
+  return t >= -12 * 3_600_000 && t <= DIAS_DA_SEMANA_DA_AGENDA * 86_400_000;
 }
 
 // ── Item 7: admin "Avaliações do imóvel" (o "Avaliações" do admin é o das estadias) ───────────────────────────
@@ -146,7 +166,7 @@ export interface PosicaoRodizio {
  * relação declarada) aparecem na hora da designação; aqui só os da própria pessoa.
  */
 export function filaDeRodizio(fila: AvaliadorFila[], cidade: string, agora: Date): PosicaoRodizio[] {
-  const daCidade = fila.filter((a) => chaveCidade(a.cidade) === chaveCidade(cidade));
+  const daCidade = fila.filter((a) => atendeCidade(a.cidade, cidade));
   const neutro = { id: "", propertyId: "", ownerId: "", cidade, tipo: "inicial" as const, teste: false, primeiroAvaliadorId: null, jaDesignados: [] };
   const historico = { servicosAoDono: [], avaliacoesDoImovel: [] };
   const t = (s: string | null) => (s ? Date.parse(s) : -Infinity);
@@ -168,11 +188,16 @@ export const credenciamentoADecidir = (status: StatusCredenciamento): boolean =>
 export const TITULO_SECAO_A_DECIDIR = "A decidir";
 export const TITULO_SECAO_NA_REDE = "Em teste e credenciados";
 
+/** E1158 (14): a janela da lista de recusas, vencidas e ausências da equipe, em dias — a leitura, o título do painel, o vazio e o número do topo. */
+export const DIAS_DA_JANELA_DE_RECUSAS = 30;
+export const TITULO_RECUSAS_E_AUSENCIAS = `Recusas e ausências (${DIAS_DA_JANELA_DE_RECUSAS} dias)`;
+export const ROTULO_NUMERO_RECUSAS = `recusas e ausências (${DIAS_DA_JANELA_DE_RECUSAS} dias)`;
+
 export function contagemDecisoes(e: { credenciamentos: { status: StatusCredenciamento }[]; semAvaliador: number; recusasAusencias: number; cidadesProntas: number; cidades: number }) {
   return [
     { chave: "credenciamentos", rotulo: "credenciamentos para decidir", valor: e.credenciamentos.filter((c) => credenciamentoADecidir(c.status)).length, ancora: "#credenciamento" },
-    { chave: "sem-avaliador", rotulo: "pedidos sem avaliador elegível", valor: e.semAvaliador, ancora: "#sem-avaliador" },
-    { chave: "recusas", rotulo: "recusas e ausências (30 dias)", valor: e.recusasAusencias, ancora: "#recusas" },
+    { chave: "sem-avaliador", rotulo: ROTULO_NUMERO_SEM_AVALIADOR, valor: e.semAvaliador, ancora: "#sem-avaliador" },
+    { chave: "recusas", rotulo: ROTULO_NUMERO_RECUSAS, valor: e.recusasAusencias, ancora: "#recusas" },
     { chave: "chave", rotulo: `de ${e.cidades} ${e.cidades === 1 ? "cidade pronta" : "cidades prontas"} para ligar`, valor: e.cidadesProntas, ancora: "#chave" },
   ];
 }
@@ -182,10 +207,11 @@ export function contagemDecisoes(e: { credenciamentos: { status: StatusCredencia
  * ainda desligado ("em breve"), avisa que o passo é da ativação e que a verificação abre perto do lançamento.
  */
 export const TEXTO_IDENTIDADE_EM_BREVE = "Na ativação · a verificação abre perto do lançamento";
-export function complementoPassoIdentidade(estado: "confirmada" | "vencida" | "simulavel" | "em_breve" | "indisponivel"): string | null {
+export function complementoPassoIdentidade(estado: ChaveIdentidade): string | null {
   if (estado === "confirmada") return null;
   if (estado === "indisponivel") return "não conferida agora";
-  return estado === "em_breve" ? TEXTO_IDENTIDADE_EM_BREVE : "Na ativação";
+  // E1106: a conferência da equipa segue o caminho do em_breve (o passo de ativação continua a pedir o laudo).
+  return comoEmBreve(estado) ? TEXTO_IDENTIDADE_EM_BREVE : "Na ativação";
 }
 
 /** E235: o número do avaliador designado leva à página pública dele (/avaliadores/[numero]). */
