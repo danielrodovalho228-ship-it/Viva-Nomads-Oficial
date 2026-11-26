@@ -10,7 +10,8 @@ import { hojeBR } from "../../../src/lib/utils";
    1. Nada registrado: "Ainda não registrado e confirmado." e "Ainda não registrada.".
    2. O dono registra o 1º pagamento e a caução pela tela. A lista DELE passa a dizer "Registrado por você. Aguardando
       a confirmação do morador." (e "Registrada por você…" na caução); os itens ainda não estão feitos.
-   3. A moradora lê "Registrado pelo proprietário. Falta a sua confirmação."; confirma os dois pela tela; a lista dela
+   3. A moradora lê "Registrado pelo proprietário. Falta a sua confirmação.", com a ação "Confirmar em Locações" no
+      MESMO item (ORDEM-DUET-1048, condição do coordenador), que a leva ao bloco de confirmar; confirma os dois; a lista dela
       passa a "Registrado e confirmado." e "Recebida pelo proprietário.", feitos.
    4. O dono vê o mesmo estado final.
   Capturas a 390 e a 1280 px da lista do dono no estado do meio. Laboratório; não é prova ao vivo no site.
@@ -112,6 +113,16 @@ test.describe("T1709 — E1068: o 1º pagamento e a caução dizem o estado real
     const antes = await naEstadia(browser, inq.email, 390);
     await item(antes, "primeiro_pagamento", "Registrado pelo proprietário. Falta a sua confirmação.", false);
     await item(antes, "caucao", "Registrada pelo proprietário. Falta a sua confirmação.", false);
+    // ORDEM-DUET-1048 (condição do coordenador): a ação de confirmar está no MESMO bloco do item e leva a Locações,
+    // onde a moradora confirma.
+    for (const chave of ["primeiro_pagamento", "caucao"] as const) {
+      const acao = antes.getByTestId(`checklist-${chave}`).getByTestId(`checklist-${chave}-acao`);
+      await expect(acao, `${chave}: a ação de confirmar no mesmo bloco`).toHaveText("Confirmar em Locações");
+      await expect(acao).toHaveAttribute("href", "/dashboard/locacoes");
+    }
+    await antes.getByTestId("checklist-primeiro_pagamento-acao").click();
+    await antes.waitForURL((u) => u.pathname === "/dashboard/locacoes", { timeout: 30_000 });
+    await expect(antes.getByTestId("confirmar-pagamentos"), "a ligação leva ao bloco de confirmar").toBeVisible({ timeout: 30_000 });
     await antes.context().close();
 
     const pi = await entrar(browser, inq.email, senha);
