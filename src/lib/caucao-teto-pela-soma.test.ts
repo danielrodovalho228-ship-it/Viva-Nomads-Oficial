@@ -11,6 +11,7 @@
   ORDEM-DUET-1112 (os ajustes do coordenador): a recusa diz o motivo. Acima do teto, diz o valor que falta (R$ X); um
   contrato com caução 0 em todos os blocos lidos (a garantia é outra, por exemplo seguro-fiança) diz que não tem caução;
   a lista de blocos vazia é falta de leitura, não teto zero — a mensagem da falha de leitura.
+  ORDEM-DUET-1115: o R$ X sai pelo formatBRLExato da casa (@/lib/precos): "R$ 7.500" inteiro, "R$ 2.750,50" com centavos.
   Roda: node --test src/lib/caucao-teto-pela-soma.test.ts
 */
 import { register } from "node:module";
@@ -77,7 +78,7 @@ test("1. acima da soma das cauções dos blocos → recusado, não grava", async
   g.__e1072Sessao = s;
   const r = await marcarPagamentoRecebido(caucao(7500.01));
   assert.equal(r.ok, false);
-  assert.match((r as { error?: string }).error ?? "", PASSA("7.500,00"), "a recusa diz o valor que falta registrar");
+  assert.match((r as { error?: string }).error ?? "", PASSA("7.500"), "a recusa diz o valor que falta registrar");
   assert.equal(s.inseridos.length, 0);
 });
 
@@ -97,7 +98,7 @@ test("3. contrato de 1 bloco: o teto é a caução do bloco", async () => {
   g.__e1072Sessao = s;
   const r = await marcarPagamentoRecebido(caucao(3800));
   assert.equal(r.ok, false);
-  assert.match((r as { error?: string }).error ?? "", PASSA("3.750,00"));
+  assert.match((r as { error?: string }).error ?? "", PASSA("3.750"));
   assert.equal(s.inseridos.length, 0);
   s = sessao({ blocos: [{ numero_bloco: 1, caucao: 3750 }] });
   g.__e1072Sessao = s;
@@ -138,5 +139,14 @@ test("7. a lista de blocos vem vazia → é falta de leitura, não teto zero: a 
   const r = await marcarPagamentoRecebido(caucao(1500));
   assert.equal(r.ok, false);
   assert.equal((r as { error?: string }).error, SEM_CONTA);
+  assert.equal(s.inseridos.length, 0);
+});
+
+test("8. (ORDEM-DUET-1115) um teto com centavos sai exato na recusa: R$ 2.750,50", async () => {
+  const s = sessao({ blocos: [{ numero_bloco: 1, caucao: 2750.5 }] });
+  g.__e1072Sessao = s;
+  const r = await marcarPagamentoRecebido(caucao(2800));
+  assert.equal(r.ok, false);
+  assert.match((r as { error?: string }).error ?? "", PASSA("2.750,50"));
   assert.equal(s.inseridos.length, 0);
 });
