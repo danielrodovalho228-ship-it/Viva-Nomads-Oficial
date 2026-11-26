@@ -177,5 +177,5 @@ test("ajuste da guarda (ORDEM-DUET-978): com p e contrato já existente ao abrir
   assert.match(fluxo, /const \[step, setStep\] = useState\(\(\) => \(somenteLeitura \? STEPS\.length - 1 : 0\)\);/, "abre no resumo");
   const acao = fluxo.slice(fluxo.indexOf('data-testid="acao-gerar-contrato"'), fluxo.indexOf('data-testid="fechamento-gerar-contrato"'));
   assert.match(acao, /somenteLeitura \? \(/, "só leitura troca o botão de gerar pelo 'Ver contrato'");
-  assert.match(fluxo, /data-testid="fechamento-somente-leitura"/);
+  assert.match(fluxo, /data-testid=\{somenteLeitura \? "fechamento-somente-leitura" : undefined\}/, "a marca da leitura fica no 'Ver contrato' do topo");
 });
