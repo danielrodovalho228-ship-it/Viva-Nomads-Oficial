@@ -31,6 +31,23 @@ export function seloDoCredenciado(teste: boolean, seloLigado: string | null): st
   return seloLigado?.trim() ? seloLigado.trim() : ROTULO_AVALIADOR_CREDENCIADO;
 }
 
+/** E1208: a linha curada (avaliadores_perfil_publico) ligada ao credenciamento — só o que a página pública mostra. */
+export type PerfilLigado = { nome_publico: string; cidade: string; selo: string | null };
+
+/**
+ * E1208 (ORDEM-DUET-989): o nome público e a cidade do credenciado. Com a linha curada ligada, mandam os dela (o nome
+ * completo e a cidade da tabela de preço); sem ela, ou com um campo em branco, os do credenciamento, como antes.
+ */
+export function vistaPublicaDoCredenciado(
+  a: { nome_curto: string; cidade: string },
+  ligado: PerfilLigado | null,
+): { nome: string; cidade: string } {
+  return {
+    nome: ligado?.nome_publico?.trim() || a.nome_curto,
+    cidade: ligado?.cidade?.trim() || a.cidade,
+  };
+}
+
 /**
  * E1099 (ORDEM-DUET-473 §1): a conta de um credenciamento — a dele; sem ela (credenciamento criado pelo parceiro), a do
  * parceiro. Regra ÚNICA: a listagem, o perfil, a foto e a identidade resolvem a conta por aqui.
