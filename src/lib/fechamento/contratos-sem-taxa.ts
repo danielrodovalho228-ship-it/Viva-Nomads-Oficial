@@ -33,7 +33,7 @@ export function contratosSemTaxa(contratos: readonly ContratoDaVarredura[], rese
   const limite = agora.getTime() - MINUTOS_SEM_TAXA * 60_000;
   return contratos.filter(
     (c): c is ContratoSemTaxa =>
-      !!c.proposta_id && Date.parse(c.created_at) <= limite && !reservada.has(`${c.lead_id}|${c.proposta_id}`),
+      Date.parse(c.created_at) <= limite && !reservada.has(`${c.lead_id}|${c.proposta_id}`),
   );
 }
 

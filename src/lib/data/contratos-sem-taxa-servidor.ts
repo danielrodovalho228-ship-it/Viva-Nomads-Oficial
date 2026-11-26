@@ -17,7 +17,7 @@ export type ContratoSemTaxaLido = ContratoSemTaxa & { numeroProposta: string | n
 /** Os contratos com proposta, sem a taxa reservada, há MINUTOS_SEM_TAXA ou mais. Leitura que falha LANÇA. */
 export async function lerContratosSemTaxa(admin: Admin, agora: Date): Promise<ContratoSemTaxaLido[]> {
   const limite = new Date(agora.getTime() - MINUTOS_SEM_TAXA * 60_000).toISOString();
-  const { data: cs, error } = await admin.from("contratos").select("id, lead_id, proposta_id, created_at, property_id").not("proposta_id", "is", null).lte("created_at", limite).limit(2000);
+  const { data: cs, error } = await admin.from("contratos").select("id, lead_id, proposta_id, created_at, property_id").lte("created_at", limite).limit(2000);
   if (error) throw new Error(`[E1205] contratos: ${error.message}`);
   const contratos = (cs ?? []) as { id: string; lead_id: string; proposta_id: string | null; created_at: string; property_id: string | null }[];
   if (!contratos.length) return [];
