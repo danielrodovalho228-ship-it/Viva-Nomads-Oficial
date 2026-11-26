@@ -17,6 +17,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
   Vizinha do teto da caução (ORDENS-DUET 1098 e 1107): corre também no portão desse avulso, porque o registro da
   caução passou a não passar da soma das cauções dos blocos do contrato.
+  Vizinha do E1225 (ORDENS-DUET 1120 e 1127): corre também no portão desse PR, porque a caução passou a ser
+  registada por bloco (0367), com uma linha por bloco no cartão da caução.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();

@@ -3,6 +3,7 @@
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { ROTULO_CONTAS, ROTULO_LIMPEZA, emAbertoNoBloco, encargosDosComponentes, somarComponentes, textoComponentes, type ComponentesBloco } from "@/lib/pagamento-componentes";
 import { estadoCaucao } from "@/lib/caucao-estado";
+import { MSG_CAUCAO_NADA_NO_BLOCO, linhasDaCaucaoPorBloco } from "@/lib/caucao-teto";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { CampoData } from "@/components/ui/campo-data";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
@@ -243,7 +244,12 @@ function ContratoCard({
 
   const totalPeriodo = contrato.blocos.reduce((s, b) => s + b.valor, 0);
   const caucaoTotal = contrato.blocos.reduce((s, b) => s + b.caucao, 0);
-  const caucaoRegistrada = contrato.pagamentos.find((p) => p.tipo === "caucao") ?? null;
+  // E1225: a caução de ANTES (no contrato, sem bloco) e as linhas por bloco com o teto acumulado.
+  const caucaoAntiga = contrato.pagamentos.find((p) => p.tipo === "caucao" && !p.blocoId) ?? null;
+  const linhasCaucao = linhasDaCaucaoPorBloco(
+    contrato.blocos.map((b) => ({ id: b.id, numero: b.numeroBloco, caucao: b.caucao })),
+    contrato.pagamentos,
+  );
 
   return (
     <Panel className="p-4" id={`contrato-${contrato.id}`} data-testid="contrato-cartao" data-contrato={contrato.id}>
@@ -320,24 +326,58 @@ function ContratoCard({
           <p className="mt-1 text-xs text-muted" data-testid="caucao-contrato-estado" data-chave={contrato.caucao.chave}>
             {contrato.caucao.rotulo}
           </p>
-          {caucaoRegistrada ? (
+          {/* A caução de antes, registada no contrato pela soma (antes do E1225). */}
+          {caucaoAntiga && (
             <p className="mt-1 inline-flex items-center gap-2 text-xs text-forest" data-testid="caucao-contrato-status">
               <Check className="h-3.5 w-3.5" />
-              {caucaoRegistrada.confirmado
+              {caucaoAntiga.confirmado
                 ? "Recebimento registrado e confirmado pelo morador."
                 : "Recebimento registrado. Aguardando a confirmação do morador."}
             </p>
-          ) : contrato.etapa === "aguardando_assinatura" ? (
+          )}
+          {contrato.etapa === "aguardando_assinatura" ? (
             <p className="mt-1 text-xs text-muted">O registro da Caução abre depois que as duas partes assinarem.</p>
           ) : (
-            <RegistrarRecebimento
-              tipo="caucao"
-              blocoId={null}
-              contratoId={contrato.id}
-              valorSugerido={caucaoTotal}
-              hojeISO={hojeISO}
-              demo={demo}
-            />
+            /* E1225 (ORDENS-DUET 1120 e 1127): uma linha por bloco — o registro dele, ou o que falta nele. O botão só no
+               1.º bloco com algo em aberto (o teto é o acumulado). */
+            <ul className="mt-3 space-y-2">
+              {linhasCaucao.map((l) => (
+                <li key={l.id} className="rounded-lg border border-sage-200 px-3 py-2" data-testid="caucao-bloco-linha" data-numero={l.numero}>
+                  <p className="text-xs font-medium text-ink" data-testid="caucao-bloco-rotulo">
+                    Caução do bloco {l.numero} — {formatBRL(l.caucao)}
+                  </p>
+                  {l.registro ? (
+                    <p className="mt-1 inline-flex items-center gap-2 text-xs text-forest" data-testid="caucao-bloco-status">
+                      <Check className="h-3.5 w-3.5" />
+                      {l.registro.confirmado
+                        ? "Recebimento registrado e confirmado pelo morador."
+                        : "Recebimento registrado. Aguardando a confirmação do morador."}
+                    </p>
+                  ) : l.emAberto > 0 ? (
+                    <>
+                      {/* PROPOSTA DE TEXTO (E1225) */}
+                      <p className="mt-1 text-xs text-muted" data-testid="caucao-bloco-aberto">
+                        Em aberto: {formatBRLExato(l.emAberto)}
+                      </p>
+                      {l.oferecer && (
+                        <RegistrarRecebimento
+                          tipo="caucao"
+                          blocoId={l.id}
+                          contratoId={contrato.id}
+                          valorSugerido={l.emAberto}
+                          hojeISO={hojeISO}
+                          demo={demo}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <p className="mt-1 text-xs text-muted" data-testid="caucao-bloco-nada">
+                      {MSG_CAUCAO_NADA_NO_BLOCO}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       )}
@@ -718,7 +758,7 @@ function RegistrarRecebimento({
         className="mt-2 w-full rounded-lg border border-sage-200 px-2 py-2 text-sm text-ink outline-none focus:border-sage"
       />
       <p className="mt-2 text-[11px] text-muted">{REGRA_PAGAMENTO}</p>
-      {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
+      {erro && <p className="mt-2 text-xs text-red-600" data-testid="registrar-erro">{erro}</p>}
       <div className="mt-3 flex justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={() => setOpen(false)} disabled={saving}>
           Cancelar
