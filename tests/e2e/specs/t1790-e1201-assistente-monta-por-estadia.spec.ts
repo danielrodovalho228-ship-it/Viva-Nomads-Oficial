@@ -14,6 +14,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   anterior leva ao assistente DELA — o campo mostra a data da anterior, não a da mais recente — e o contrato gerado
   nasce com o período dela (o `periodo` gravado começa na entrada da anterior), da proposta anterior.
   Laboratório; não é prova ao vivo no site.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1094): corre também no portão do #4084, porque o #4084 mexe no assistente do
+  Fechamento e no 1º pagamento; a t1789 tem o caso combinado E1141×#4084.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();

@@ -10,6 +10,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    1. O dono envia a proposta de 31 dias: o detalhe diz "1º pagamento R$ 3.143,33", com a conta por extenso.
    2. A interessada vê o mesmo número a 390 px e aceita.
    3. O Fechamento, na etapa do contrato: o quadro "O morador vê no 1º pagamento" fecha em R$ 3.143, com a mesma conta.
+   4. (caso combinado E1141×#4084, ORDEM-DUET-1094) A estadia de 31 dias passa a ser a ANTERIOR: a mesma candidatura ganha
+      uma proposta mais nova, de meses cheios, com contrato assinado (a forma da t1787). O assistente da estadia anterior
+      (`?c=<candidatura>&p=<proposta de 31 dias>`, o E1141) abre com os valores DELA, e o quadro do 1º pagamento continua
+      a ser o 1º bloco inteiro em dias (R$ 3.143,33, com a conta) — nunca o 1º pagamento da proposta nova.
   As procuras são pelo texto que a tela mostra. Capturas a 390 e a 1280 px. Laboratório; não é prova ao vivo no site.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -139,6 +143,64 @@ test.describe("T1789 — E1072: o 1º pagamento na estadia em dias é o 1º bloc
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `${largura} px: sem rolagem lateral`).toBeLessThanOrEqual(1);
       await page.screenshot({ path: `${SAIDA}/t1789-3-fechamento-quadro-${largura}.png` });
     }
+    await page.context().close();
+  });
+
+  test("4. caso combinado E1141×#4084: o assistente da estadia ANTERIOR mostra o 1º pagamento em dias DELA", async ({ browser }) => {
+    // A forma da t1787: a proposta de 31 dias fica "em contrato" sem contrato; uma proposta mais nova, de 2 meses cheios
+    // a R$ 4.000,00, tem o contrato assinado. Sem p, o fechamento abriria a mais nova.
+    const { error: eAntiga } = await adm().from("propostas").update({ status: "em_contrato" }).eq("id", ids.proposta!);
+    if (eAntiga) throw eAntiga;
+    const { data: antiga } = await adm().from("propostas").select("numero").eq("id", ids.proposta!).single();
+    const { data: numero } = await adm().rpc("next_document_number", { p_type: "orcamento", p_year: new Date().getFullYear() });
+    const agora = new Date().toISOString();
+    const { data: nova, error: eNova } = await adm()
+      .from("propostas")
+      .insert({ numero, lead_id: ids.lead, property_id: ids.imovel, owner_id: ids.dono, tenant_id: ids.inq, status: "contrato_assinado", versao_atual: 1, validade_dias: 7, valida_ate: `${emDias(7)}T23:00:00Z`, aceita_em: agora })
+      .select("id, numero")
+      .single();
+    if (eNova) throw eNova;
+    const { error: eVersao } = await adm().from("proposta_versoes").insert({
+      proposta_id: nova.id, versao: 1, autor: "owner", valor_base: 4000, valor_mensal: 4000, meses: 2, data_entrada: emDias(120), total_mensal: 4000, total_contrato: 8000, mensagem: "Proposta nova da t1789 (caso 4).",
+    });
+    if (eVersao) throw eVersao;
+    const { error: eContrato } = await adm()
+      .from("contratos")
+      .insert({ lead_id: ids.lead, property_id: ids.imovel, tenant_id: ids.inq, proposta_id: nova.id, owner_plan: "essential", faixa: "media_estadia", prazo_total_dias: 60, aluguel_mensal: 4000, tamanho_bloco_meses: 2, comissao_percent: 0.12, comissao_valor: 960, qtd_ocupantes: 1, garantia: "caucao", status: "ativo", periodo: `[${emDias(120)},${emDias(179)}]`, created_at: agora, assinado_proprietario_em: agora, assinado_inquilino_em: agora });
+    if (eContrato) throw eContrato;
+
+    const page = await entrar(browser, dono.email, senha);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await abrir(page, `/dashboard/fechamento?c=${ids.lead}&p=${ids.proposta}`);
+    await expect(page.getByRole("heading", { name: "Candidatura e verificação" })).toBeVisible({ timeout: 30_000 });
+    // E1141: é o assistente da estadia anterior — os valores e o número da proposta de 31 dias, não os da nova.
+    const valores = page.getByTestId("fechamento-proposta");
+    await expect(valores).toContainText(String(antiga!.numero), { timeout: 20_000 });
+    await expect(valores).not.toContainText(String(nova.numero));
+    await expect(page.locator(`[data-testid="fecho-linha"][data-chave="A:${ids.proposta}"]`)).toHaveAttribute("data-atual", "sim");
+
+    // O mesmo caminho do caso 3 até à etapa do contrato (a identidade pode já estar verificada pelo caso 3).
+    const verificar = page.getByRole("button", { name: /verificar identidade/i });
+    if (await verificar.count()) await verificar.click();
+    const continuar = page.getByRole("button", { name: /continuar/i });
+    await expect(continuar).toBeEnabled({ timeout: 20_000 });
+    await continuar.click();
+    await page.getByRole("radio").and(page.locator(":not([disabled])")).first().click();
+    await page.getByTestId("ciente-protecao").check({ timeout: 15_000 });
+    await continuar.click();
+    await expect(page.getByRole("heading", { name: /serviços adicionais/i })).toBeVisible({ timeout: 15_000 });
+    await continuar.click();
+    await page.getByRole("button", { name: /Seguir sem seguro patrimonial/ }).click();
+    await continuar.click();
+
+    const quadro = page.getByText("O morador vê no 1º pagamento", { exact: true }).locator("xpath=..");
+    await expect(quadro).toBeVisible({ timeout: 15_000 });
+    const total = quadro.getByText("1º pagamento", { exact: true }).locator("xpath=..");
+    await expect(total, "o 1º pagamento é o da estadia anterior: o 1º bloco inteiro em dias").toContainText(/R\$\s?3\.143(?!\d)/);
+    await expect(total, "nunca o 1º pagamento da proposta nova (R$ 4.000,00 por mês)").not.toContainText(/4\.000|4\.250|8\.000/);
+    expect(semEspacoDuro(await quadro.innerText()), "a conta do 1º bloco por extenso, da proposta de 31 dias").toContain(CONTA);
+    await total.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `${SAIDA}/t1789-4-estadia-anterior-quadro-1280.png` });
     await page.context().close();
   });
 });
