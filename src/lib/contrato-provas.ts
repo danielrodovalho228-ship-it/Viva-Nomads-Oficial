@@ -435,7 +435,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
       registradoEm: textoOuNulo(p.created_at),
       encargos: p.tipo === "caucao" ? [] : encargosDaLinha(p.encargos),
       // ORDEM-DUET-1104: a parte da coluna registada (0348), nunca a ordem dos registros.
-      parte: p.tipo === "caucao" ? 1 : parteDaColuna(p.parte),
+      parte: p.tipo === "caucao" ? 1 : parteDaColuna(null), // ENSAIO: o pacote ignora a coluna
       confirmadoEm: p.confirmado_pelo_inquilino ? String(p.confirmado_em ?? p.data_pagamento) : null,
       anuladoEm: textoOuNulo(p.anulado_em),
       anuladoMotivo: textoOuNulo(p.anulado_motivo),
