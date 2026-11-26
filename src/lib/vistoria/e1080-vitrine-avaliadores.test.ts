@@ -137,9 +137,10 @@ test("E1079 (385/386): o perfil do CREDENCIADO no desenho do mockup — foto da 
   const pagina = readFileSync("src/app/(public)/avaliadores/[numero]/page.tsx", "utf8");
   const cred = pagina.slice(pagina.indexOf("export default async function AvaliadorPage"), pagina.indexOf("async function PerfilPublico"));
   assert.match(cred, /fotoDoCredenciado\(admin, a\.numero_credenciado, a\.teste\)/);
-  assert.match(cred, /rostoDoAvaliador\(a\.nome_curto, foto, a\.teste\)/);
+  // E1208 (asserção alterada, ORDEM-DUET-989): o nome e a cidade vêm da vista pública (a linha curada ligada manda).
+  assert.match(cred, /rostoDoAvaliador\(vista\.nome, foto, a\.teste\)/);
   assert.match(cred, /data-testid="avaliador-foto"/);
-  assert.match(cred, /quadroDePreco\(await tabelaDaCidade\(admin, a\.cidade\), a\.cidade, new Date\(\)\)/);
+  assert.match(cred, /quadroDePreco\(await tabelaDaCidade\(admin, vista\.cidade\), vista\.cidade, new Date\(\)\)/);
   assert.match(cred, /data-testid="avaliador-uf"/);
   assert.match(cred, /\{TITULO_PERFIL\}/);
   const srv = readFileSync("src/lib/vistoria/vitrine-servidor.ts", "utf8");

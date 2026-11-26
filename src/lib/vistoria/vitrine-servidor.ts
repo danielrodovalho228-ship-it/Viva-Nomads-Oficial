@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { signAvatarPath } from "@/lib/data/avatar-url";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
-import { contaDaLinhaDeCredenciamento, fotoPublicaPermitida, normalizarSobre, seloDoCredenciado, type FonteAvaliador } from "./vitrine-avaliadores";
+import { contaDaLinhaDeCredenciamento, fotoPublicaPermitida, normalizarSobre, seloDoCredenciado, vistaPublicaDoCredenciado, type FonteAvaliador, type PerfilLigado } from "./vitrine-avaliadores";
 import { SELO_AVALIADOR_SOCIO } from "./regras";
 
 /*
@@ -31,6 +31,12 @@ export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvali
   const seloLigado = new Map(
     linhasPerfil.filter((p) => p.credenciamento_id && numeroDoCred.has(p.credenciamento_id)).map((p) => [numeroDoCred.get(p.credenciamento_id!)!, p.selo]),
   );
+  // E1208: a linha ligada manda também no nome público e na cidade do cartão (a cidade dá a tabela de preço).
+  const ligadoDe = new Map<string, PerfilLigado>(
+    linhasPerfil
+      .filter((p) => p.credenciamento_id && numeroDoCred.has(p.credenciamento_id))
+      .map((p) => [numeroDoCred.get(p.credenciamento_id!)!, { nome_publico: p.nome_publico, cidade: p.cidade, selo: p.selo }]),
+  );
   const ids = [...new Set([...usuarioDe.values()].filter((x): x is string => !!x))];
   const { data: contas, error } = ids.length ? await admin.from("profiles").select("id, avatar_url, is_teste").in("id", ids) : { data: [], error: null };
   if (error) throw new Error(`[vitrine] contas: ${error.message}`);
@@ -40,10 +46,11 @@ export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvali
       const uid = usuarioDe.get(a.numero_credenciado) ?? null;
       const c = uid ? conta.get(uid) : undefined;
       const teste = c?.is_teste === true || a.teste === true;
+      const vista = vistaPublicaDoCredenciado(a, ligadoDe.get(a.numero_credenciado) ?? null);
       return {
         numero: a.numero_credenciado,
-        nome: a.nome_curto,
-        cidade: a.cidade,
+        nome: vista.nome,
+        cidade: vista.cidade,
         selo: seloDoCredenciado(teste, seloLigado.get(a.numero_credenciado) ?? null),
         avaliacoesFeitas: Number(a.avaliacoes_feitas) || 0,
         notaConduta: a.nota_conduta == null ? null : Number(a.nota_conduta),
@@ -106,6 +113,19 @@ export async function seloLigadoDoCredenciado(admin: SupabaseClient, numero: str
   if (!id) return null;
   const { data } = await admin.from("avaliadores_perfil_publico").select("selo").eq("credenciamento_id", id).eq("publicado", true).maybeSingle();
   return (data as { selo: string | null } | null)?.selo ?? null;
+}
+
+/**
+ * E1208 (ORDEM-DUET-989): a linha curada ligada ao credenciamento nº `numero` (nome público, cidade e selo); sem ligação
+ * ou sem leitura, null — a página fica com o nome, a cidade e o selo do credenciado, como antes.
+ */
+export async function perfilLigadoDoCredenciado(admin: SupabaseClient, numero: string): Promise<PerfilLigado | null> {
+  const { data: cred } = await admin.from("avaliadores_credenciamento").select("id").eq("numero_credenciado", numero).maybeSingle();
+  const id = (cred as { id: string } | null)?.id;
+  if (!id) return null;
+  const { data, error } = await admin.from("avaliadores_perfil_publico").select("nome_publico, cidade, selo").eq("credenciamento_id", id).eq("publicado", true).maybeSingle();
+  if (error || !data) return null;
+  return data as PerfilLigado;
 }
 
 /**
