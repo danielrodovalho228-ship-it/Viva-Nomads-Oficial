@@ -28,7 +28,6 @@ export function fotoPublicaPermitida(contaTeste: boolean): boolean {
  * avaliadores_publicos() do banco não muda.
  */
 export function avaliadorVisivelEmPublico(a: { status: string | null | undefined; teste: boolean; temLinhaCuradaPublicada: boolean }): boolean {
-  if (a.temLinhaCuradaPublicada) return true;
   if (a.status === "ativo") return true;
   return a.status === "em_teste" && a.teste === true;
 }
