@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Panel } from "@/components/dashboard/primitives";
-import { dataBR } from "@/lib/utils";
-import { ESTADO_POR_GERAR, type LinhaDoFecho } from "@/lib/fechamento/fechos-do-dono";
+import { ESTADO_POR_GERAR, textoDoPeriodoDoFecho, type LinhaDoFecho } from "@/lib/fechamento/fechos-do-dono";
 
 /**
  * E1090 — os textos novos do Fechamento (PROPOSTA DE TEXTO, para aprovação no PR — ORDEM-DUET-610, decisão 5).
@@ -23,8 +22,9 @@ export const TEXTOS_FECHOS = {
     "As suas candidaturas aceitas voltaram para você decidir: a pré-aceitação expirou. Reabra a proposta em Interessados para seguir com o fechamento.",
 } as const;
 
+/** E1204: o período pela regra do E1089 (Entrada · Saída · diárias), a mesma nas três linhas. */
 function periodoDaLinha(l: LinhaDoFecho): string | null {
-  return l.periodo ? `${dataBR(l.periodo.inicio)} a ${dataBR(l.periodo.fim)}` : null;
+  return textoDoPeriodoDoFecho(l.periodo);
 }
 
 /**
