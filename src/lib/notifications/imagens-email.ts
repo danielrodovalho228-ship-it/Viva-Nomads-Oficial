@@ -59,6 +59,7 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   saved_search_match: "busca",
   verification_ready: "verificacao",
   contract_status: "contrato",
+  contrato_sem_taxa: "contrato",
   subscription_status: "transacional",
   pedido_novo_cidade: "busca",
   pedido_compativel: "busca",
