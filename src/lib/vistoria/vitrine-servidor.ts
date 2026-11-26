@@ -54,7 +54,7 @@ export async function fontesDaVitrine(admin: SupabaseClient): Promise<FonteAvali
     avaliadorVisivelEmPublico({ status: statusDe.get(a.numero_credenciado) ?? null, teste: testeDe(a), temLinhaCuradaPublicada: comCurada.has(a.numero_credenciado) }),
   );
   const credenciados = await Promise.all(
-    visiveis.map(async (a): Promise<FonteAvaliador> => {
+    ((publicos.data ?? []) as Publico[]).map(async (a): Promise<FonteAvaliador> => { // ENSAIO: sem o filtro
       const uid = usuarioDe.get(a.numero_credenciado) ?? null;
       const c = uid ? conta.get(uid) : undefined;
       const teste = testeDe(a);
