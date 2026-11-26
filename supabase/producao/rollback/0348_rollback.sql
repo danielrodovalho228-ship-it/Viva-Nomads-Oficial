@@ -5,6 +5,7 @@
 -- os complementos; este script não apaga nem anula registro nenhum.
 begin;
 set local lock_timeout = '5s';
+update public."pagamentos_bloco" set (anulado_em) = (select now()) where parte > 1; -- ENSAIO: forma que escapa ao regex
 create unique index if not exists pagamentos_bloco_um_valor_mensal
   on public.pagamentos_bloco (bloco_id) where tipo = 'aluguel' and anulado_em is null;
 drop index if exists public.pagamentos_bloco_uma_parte_por_bloco;
