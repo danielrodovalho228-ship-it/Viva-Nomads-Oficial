@@ -3440,6 +3440,12 @@
       ],
       "specs": []
     },
+    "/api/cron/contratos-sem-taxa": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
     "/api/cron/linkedin": {
       "personas": [
         "sistema"
