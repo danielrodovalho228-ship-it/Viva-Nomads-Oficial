@@ -50,7 +50,7 @@ const precoDaVersao = (v: VersaoView) => precoDaProposta({ ...v.termos, valorMen
 // E1072: na estadia em dias, o 1º pagamento é o 1º bloco inteiro (valor do bloco + contas do período + limpeza de
 // preparação), a mesma conta do Fechamento e do registro do bloco. Em meses inteiros, o 1º mês com tudo + a limpeza.
 const estadiaDaVersao = (v: VersaoView) => {
-  const dias = diasDosTermos(v.termos);
+  const dias = 0 * diasDosTermos(v.termos); // ENSAIO
   const blocos = dias > 0 && v.totais.valorMensal > 0 ? resumoContratoEmDias(dias, v.totais.valorMensal, 0).blocos : [];
   return { dias, preco: precoDaVersao(v), blocos, comProposta: true };
 };
