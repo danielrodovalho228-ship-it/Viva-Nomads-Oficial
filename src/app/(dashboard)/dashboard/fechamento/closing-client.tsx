@@ -67,7 +67,7 @@ export function ClosingClient({ realCtx, fechos = null }: { realCtx: FechamentoC
         {/* E1201: uma instância por estadia (candidatura + proposta). "Abrir fechamento" na lista navega no cliente
             para a mesma página; sem a key, o estado do fecho anterior (a data de início, que vai ao contrato, o prazo,
             os ocupantes, o passo, o "gerado"…) atravessava para o novo. */}
-        <ClosingFlow key={`${realCtx.leadId}:${realCtx.proposta?.id ?? ""}`} ctx={realCtx} demo={false} />
+        <ClosingFlow ctx={realCtx} demo={false} />
       </>
     );
   if (lista)
