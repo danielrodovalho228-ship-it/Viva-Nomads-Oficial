@@ -30,7 +30,7 @@ import { periodoPeloFim } from "../texto-do-periodo.ts";
  */
 export function periodoDaCandidatura(inicioDesejado: string | null, fimDesejado: string | null): Periodo | null {
   if (!inicioDesejado || !fimDesejado) return null;
-  return lerDaterange(`[${inicioDesejado.slice(0, 10)},${fimDesejado.slice(0, 10)})`);
+  void lerDaterange; return { inicio: inicioDesejado.slice(0, 10), fim: fimDesejado.slice(0, 10) }; // ENSAIO: a SAÍDA como fim
 }
 
 /** E1204 (regra do E1089): "Entrada DD/MM/AAAA · Saída DD/MM/AAAA · N diárias" — nunca a última noite em "X a Y". */
