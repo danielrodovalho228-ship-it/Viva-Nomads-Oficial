@@ -59,11 +59,15 @@ async function gerarContratoPelaTela(page: Page) {
   await continuar.click();
   await expect(page.getByTestId("marca-minuta")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("fechamento-gerar-contrato").click();
-  // Sucesso ou a frase do assistente: se o contrato não sai, a falha diz porquê (e não só "elemento não encontrado").
+  // Sucesso no assistente, a frase de erro dele, OU a página do contrato: com `?p=`, quando o registro revalida a
+  // página, o Fechamento leva a estadia que já tem contrato ao contrato (guarda do E1141). A prova de que tudo correu
+  // é o banco (o contrato e a taxa), lida a seguir.
   const gerado = page.getByTestId("fechamento-abrir-contrato");
   const erro = page.getByTestId("erro-contrato");
-  await expect(gerado.or(erro)).toBeVisible({ timeout: 45_000 });
-  if (await erro.isVisible()) throw new Error(`o contrato não foi gerado — o assistente diz: ${(await erro.innerText()).trim()}`);
+  await expect
+    .poll(async () => (/\/dashboard\/contratos\//.test(page.url()) ? "contrato" : (await erro.isVisible().catch(() => false)) ? "erro" : (await gerado.isVisible().catch(() => false)) ? "gerado" : ""), { timeout: 45_000 })
+    .not.toBe("");
+  if (await erro.isVisible().catch(() => false)) throw new Error(`o contrato não foi gerado — o assistente diz: ${(await erro.innerText()).trim()}`);
 }
 
 async function noFechamento(browser: Browser): Promise<Page> {
@@ -138,6 +142,10 @@ test.describe("T1790 — E1201: o assistente monta o estado de cada estadia @E12
     expect(ct?.proposta_id, "o contrato é da proposta anterior").toBe(ids.anterior);
     expect(String(ct?.periodo ?? ""), "o período começa na entrada da estadia anterior").toMatch(new RegExp(`^\\[${ANTERIOR.entrada},`));
     expect(String(ct?.periodo ?? "")).not.toContain(RECENTE.entrada);
+    // A taxa da estadia anterior também sai (a reserva da cobrança é DESSA proposta, com o id externo gravado).
+    await expect
+      .poll(async () => ((await adm().from("cobrancas_fechamento").select("externo_id").eq("lead_id", ids.lead).eq("tipo", "comissao").eq("proposta_id", ids.anterior)).data ?? []).filter((r) => r.externo_id).length, { timeout: 30_000, message: "a taxa da estadia anterior foi gerada" })
+      .toBe(1);
     await page.context().close();
   });
 });
