@@ -25,7 +25,7 @@ alter policy "proprietário registra recebimento" on public.pagamentos_bloco
     )
     and (
       (tipo = 'caucao' and bloco_id is null)
-      or (tipo = 'aluguel' and exists (
+      or (tipo in ('aluguel', 'caucao') and exists (
         select 1 from public.contrato_blocos b
          where b.id = pagamentos_bloco.bloco_id and b.contrato_id = pagamentos_bloco.contrato_id
       ))
