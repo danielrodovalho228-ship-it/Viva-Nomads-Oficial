@@ -19,6 +19,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   caução passou a não passar da soma das cauções dos blocos do contrato.
   Vizinha do E1225 (ORDENS-DUET 1120 e 1127): corre também no portão desse PR, porque a caução passou a ser
   registada por bloco (0367), com uma linha por bloco no cartão da caução.
+  ORDEM-DUET-1134 (correção de fragilidade, não de comportamento): o caso 1 esperava a mensagem `recebimento-registrado`,
+  que é TRANSITÓRIA — depois do sucesso, o router.refresh() troca o formulário pelo estado gravado e a mensagem some;
+  com o refresh rápido, a espera não a via (flaky nas runs 8833 e 8838). Agora confere o registro GRAVADO no banco: o
+  pagamento ativo do contrato, do tipo daquela volta (aluguel e caução), igual a 1 — o padrão da t230 desde o E1020.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -96,7 +100,14 @@ test.describe("T2211 — E1074: o pacote de provas nomeia os recibos pelo númer
       await d.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       await d.getByTestId(botao).first().click();
       await d.getByTestId("confirmar-recebimento").click();
-      await expect(d.getByTestId("recebimento-registrado")).toBeVisible({ timeout: 20_000 });
+      // ORDEM-DUET-1134: o registro gravado, não a mensagem transitória que o router.refresh() troca pelo estado gravado.
+      const tipo = botao === "registrar-caucao" ? "caucao" : "aluguel";
+      await expect
+        .poll(
+          async () => ((await adm().from("pagamentos_bloco").select("id").eq("contrato_id", ids.contrato!).eq("tipo", tipo).is("anulado_em", null)).data ?? []).length,
+          { timeout: 20_000, message: `o registro de ${tipo} grava` },
+        )
+        .toBe(1);
     }
     await d.context().close();
 
