@@ -12,7 +12,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { MINUTOS_SEM_TAXA, contratosSemTaxa, corpoDoAvisoSemTaxa, hrefAssistenteDaEstadia, linhaCentralSemTaxa, TEXTOS_SEM_TAXA } from "./contratos-sem-taxa.ts";
+import { MINUTOS_SEM_TAXA, assuntoDoAvisoSemTaxa, contratosSemTaxa, corpoDoAvisoSemTaxa, hrefAssistenteDaEstadia, linhaCentralSemTaxa, TEXTOS_SEM_TAXA } from "./contratos-sem-taxa.ts";
 import { FILTROS_CENTRAL } from "../admin/central-pendencias.ts";
 import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
@@ -58,8 +58,12 @@ test("E1205 (3): o aviso ao dono leva ao assistente DAQUELA estadia e nomeia o c
   assert.equal(hrefAssistenteDaEstadia("lead-a", "orc-a"), "/dashboard/fechamento?c=lead-a&p=orc-a");
   assert.equal(
     corpoDoAvisoSemTaxa("8f2c11aa-0000-0000-0000-000000000000", "ORC-2026-0015")("Dora"),
-    "Olá Dora, o contrato VN-CT-8F2C11AA (proposta ORC-2026-0015) foi gerado, mas a taxa de serviço da Viva não ficou reservada. Abra o fechamento da estadia para concluir.",
+    "Olá, Dora. O contrato VN-CT-8F2C11AA (proposta ORC-2026-0015) foi gerado, mas o fechamento não terminou: falta a etapa da taxa de serviço. Abra o fechamento da estadia para concluir.",
   );
+  // Os textos aprovados pelo coordenador (resposta à ORDEM-DUET-1018, aplicados na ORDEM-1020).
+  assert.equal(assuntoDoAvisoSemTaxa("Apto Santa Mônica"), "Falta concluir o fechamento — Apto Santa Mônica");
+  assert.equal(TEXTOS_SEM_TAXA.ctaAviso, "Concluir o fechamento");
+  assert.equal(TEXTOS_SEM_TAXA.tituloCentral, "Contrato sem taxa reservada");
 });
 
 test("E1205 (4): a rotina — de hora em hora, sem cobrar, um aviso por contrato, e regista o caso real", () => {
@@ -83,6 +87,7 @@ test("E1205 (4): a rotina — de hora em hora, sem cobrar, um aviso por contrato
   assert.match(srv, /refId: c\.id/);
   assert.match(srv, /pushUrl: hrefAssistenteDaEstadia\(c\.lead_id, c\.proposta_id\)/);
   assert.match(srv, /body: corpoDoAvisoSemTaxa\(c\.id, c\.numeroProposta\)/);
+  assert.match(srv, /subject: assuntoDoAvisoSemTaxa\(c\.imovel\)/);
   // A regra do desenho: um caso real fica registado (a decisão vira — a reserva passa para dentro da ação do contrato).
   assert.match(srv, /console\.warn\("\[E1205\] caso real/);
 });

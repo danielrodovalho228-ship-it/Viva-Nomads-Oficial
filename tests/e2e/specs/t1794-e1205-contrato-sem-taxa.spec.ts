@@ -60,7 +60,7 @@ async function contrato(lead: string, imovel: string, propostaId: string | null,
   return data.id as string;
 }
 
-const emails = async () => ((await adm().from("emails_teste").select("corpo").eq("usuario_id", ids.D).eq("evento", "contrato_sem_taxa")).data ?? []) as { corpo: string }[];
+const emails = async () => ((await adm().from("emails_teste").select("assunto, corpo").eq("usuario_id", ids.D).eq("evento", "contrato_sem_taxa")).data ?? []) as { assunto: string; corpo: string }[];
 const avisos = async () => ((await adm().from("avisos").select("ref_id, url").eq("usuario_id", ids.D).eq("evento", "contrato_sem_taxa")).data ?? []) as { ref_id: string; url: string }[];
 
 test.beforeAll(async () => {
@@ -143,7 +143,9 @@ test.describe("T1794 — E1205: o contrato sem taxa reservada vai à Central e a
 
     await expect.poll(async () => (await emails()).length, { timeout: 30_000, message: "um e-mail ao dono, mesmo com 2 rodadas" }).toBe(1);
     const email = (await emails())[0];
-    expect(email.corpo).toContain(`o contrato ${vnct(ids.ctSem)} (proposta ${ids.numSem}) foi gerado, mas a taxa de serviço da Viva não ficou reservada`);
+    expect(email.assunto).toMatch(/^Falta concluir o fechamento — \[TESTE QA\] Taxa Sem/);
+    expect(email.corpo).toContain(`O contrato ${vnct(ids.ctSem)} (proposta ${ids.numSem}) foi gerado, mas o fechamento não terminou: falta a etapa da taxa de serviço. Abra o fechamento da estadia para concluir.`);
+    expect(email.corpo).toContain("Concluir o fechamento");
     // A ligação para o assistente da estadia (o "&" pode vir escapado no HTML do e-mail).
     expect(email.corpo).toMatch(new RegExp(`/dashboard/fechamento\\?c=${ids.leadSem}&(amp;)?p=${ids.orcSem}`));
     const sino = await avisos();
