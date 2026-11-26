@@ -59,11 +59,13 @@ async function gerarContratoPelaTela(page: Page) {
   await continuar.click();
   await expect(page.getByTestId("marca-minuta")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("fechamento-gerar-contrato").click();
-  // Sucesso ou a frase do assistente: se o contrato não sai, a falha diz porquê (e não só "elemento não encontrado").
+  // Sucesso ou a frase do assistente: se o contrato não sai, a falha diz porquê. Com `?p=` não há ida ao contrato a meio
+  // (ajuste da guarda do E1141, ORDEM-DUET-978): a tela de sucesso aparece como no fecho sem p.
   const gerado = page.getByTestId("fechamento-abrir-contrato");
   const erro = page.getByTestId("erro-contrato");
   await expect(gerado.or(erro)).toBeVisible({ timeout: 45_000 });
   if (await erro.isVisible()) throw new Error(`o contrato não foi gerado — o assistente diz: ${(await erro.innerText()).trim()}`);
+  expect(page.url(), "o fecho com p termina no assistente, sem navegação no meio").toContain("/dashboard/fechamento");
 }
 
 async function noFechamento(browser: Browser): Promise<Page> {
@@ -138,6 +140,30 @@ test.describe("T1790 — E1201: o assistente monta o estado de cada estadia @E12
     expect(ct?.proposta_id, "o contrato é da proposta anterior").toBe(ids.anterior);
     expect(String(ct?.periodo ?? ""), "o período começa na entrada da estadia anterior").toMatch(new RegExp(`^\\[${ANTERIOR.entrada},`));
     expect(String(ct?.periodo ?? "")).not.toContain(RECENTE.entrada);
+    // A taxa da estadia anterior também sai (a reserva da cobrança é DESSA proposta, com o id externo gravado).
+    await expect
+      .poll(async () => ((await adm().from("cobrancas_fechamento").select("externo_id").eq("lead_id", ids.lead).eq("tipo", "comissao").eq("proposta_id", ids.anterior)).data ?? []).filter((r) => r.externo_id).length, { timeout: 30_000, message: "a taxa da estadia anterior foi gerada" })
+      .toBe(1);
+    const { data: reservas } = await adm().from("cobrancas_fechamento").select("id").eq("lead_id", ids.lead).eq("tipo", "comissao");
+    expect(reservas ?? [], "uma só reserva da taxa").toHaveLength(1);
+    const { data: ctTaxa } = await adm().from("contratos").select("comissao_percent").eq("lead_id", ids.lead).single();
+    expect(Number(ctTaxa?.comissao_percent), "a taxa congelada da proposta escolhida").toBe(0.12);
+    await page.context().close();
+  });
+
+  test("abrir o ?p= de uma estadia que já tem contrato: só leitura (o resumo e 'Ver contrato'), sem gerar, nada novo no banco", async ({ browser }) => {
+    const antes = ((await adm().from("contratos").select("id").eq("lead_id", ids.lead)).data ?? []).length;
+    expect(antes, "o caso anterior deixou o contrato da estadia anterior").toBe(1);
+    const page = await entrar(browser, dono.email, senha);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`/dashboard/fechamento?c=${ids.lead}&p=${ids.anterior}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("fechamento-somente-leitura")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("resumo-contrato").first()).toBeVisible();
+    await expect(page.getByTestId("fechamento-gerar-contrato")).toHaveCount(0);
+    expect(page.url(), "sem redirect").toContain("/dashboard/fechamento");
+    await page.screenshot({ path: `${SAIDA}/t1790-somente-leitura-1280.png`, fullPage: true });
+    expect(((await adm().from("contratos").select("id").eq("lead_id", ids.lead)).data ?? []).length, "nada novo no banco").toBe(1);
+    expect(((await adm().from("cobrancas_fechamento").select("id").eq("lead_id", ids.lead).eq("tipo", "comissao")).data ?? []).length).toBe(1);
     await page.context().close();
   });
 });

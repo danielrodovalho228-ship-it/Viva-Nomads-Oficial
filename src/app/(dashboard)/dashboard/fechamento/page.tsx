@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { getFechamentoContext } from "@/lib/data/leads-actions";
 import { lerFechosDoDono } from "@/lib/data/fechos-do-dono-servidor";
 import { ClosingClient, type FechosDaPagina } from "./closing-client";
@@ -25,8 +24,9 @@ export const dynamic = "force-dynamic";
  * os fechos dele com "Não encontramos esse fechamento" (R9). A falha da leitura lança (R10).
  *
  * E1141: `?c=<candidatura>&p=<proposta>` abre o assistente de uma estadia ANTERIOR da candidatura. O `p` é validado no
- * servidor (desta candidatura e acordada; senão, "não encontramos"). A estadia escolhida que já tem contrato leva ao
- * contrato — o assistente nunca se reabre para ela. Sem `p`, tudo como antes.
+ * servidor (desta candidatura e acordada; senão, "não encontramos"). A estadia escolhida que já tem contrato abre o
+ * assistente só para leitura (o resumo e "Ver contrato", sem gerar — ajuste da guarda, ORDEM-DUET-977/978). Sem `p`,
+ * tudo como antes.
  */
 export default async function FechamentoPage({
   searchParams,
@@ -36,7 +36,6 @@ export default async function FechamentoPage({
   const { c, p } = await searchParams;
   const lidos = await lerFechosDoDono();
   let realCtx = c ? await getFechamentoContext(c, p) : null;
-  if (p && realCtx?.propostaDaUrl && realCtx.contratoExistente) redirect(`/dashboard/contratos/${encodeURIComponent(realCtx.contratoExistente.id)}`);
   const naoEncontrado = Boolean(c) && !realCtx;
   if (!realCtx) {
     if (lidos) realCtx = lidos.abrir ? await getFechamentoContext(lidos.abrir) : null;
