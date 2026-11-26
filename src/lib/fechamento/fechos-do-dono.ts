@@ -19,24 +19,8 @@
   E1141 (2.ª fatia): a linha A de uma estadia ANTERIOR sem contrato abre o assistente DELA (`?c=…&p=<proposta>`); com
       contrato, leva ao contrato (nunca reabre o assistente). A linha que a página abre sem `?c=` não muda (R5).
 */
-import { lerDaterange, type Periodo } from "../contrato-periodo.ts";
+import type { Periodo } from "../contrato-periodo.ts";
 import { numerosDaLista } from "../contrato-ref.ts";
-import { periodoPeloFim } from "../texto-do-periodo.ts";
-
-/**
- * E1204: o período da linha C a partir da janela da candidatura — `inicio_desejado` é a entrada e `fim_desejado` é a
- * SAÍDA (fim exclusivo). Devolve o fim INCLUSIVO (a última noite), como as linhas A e B. Sem as duas datas ou com a
- * saída no dia da entrada, null.
- */
-export function periodoDaCandidatura(inicioDesejado: string | null, fimDesejado: string | null): Periodo | null {
-  if (!inicioDesejado || !fimDesejado) return null;
-  return lerDaterange(`[${inicioDesejado.slice(0, 10)},${fimDesejado.slice(0, 10)})`);
-}
-
-/** E1204 (regra do E1089): "Entrada DD/MM/AAAA · Saída DD/MM/AAAA · N diárias" — nunca a última noite em "X a Y". */
-export function textoDoPeriodoDoFecho(periodo: Periodo | null): string | null {
-  return periodo ? (periodoPeloFim(periodo.inicio, periodo.fim)?.linha ?? null) : null;
-}
 
 /** R12: a lista mostra até 50 linhas; o que passa disso é contado e apontado para Contratos. */
 export const TETO_FECHOS = 50;
