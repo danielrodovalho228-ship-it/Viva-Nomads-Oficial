@@ -48,10 +48,13 @@ test("rollback da 0365: desliga só as linhas ligadas ao credenciamento do mesmo
 test("a prova executada dos cinco casos corre no portão (t1793, caso 2), pelos próprios arquivos da 0365 e do rollback", () => {
   const t = readFileSync("tests/e2e/specs/t1793-e1208-perfil-curado-ligado.spec.ts", "utf8");
   assert.match(t, /readFileSync\("supabase\/migrations\/0365_avaliador_perfil_curado_ligado_e1208\.sql", "utf8"\)/);
-  assert.match(t, /await tx\.unsafe\(MIGRACAO_0365\);/);
+  assert.match(t, /provarA0365\(sql, MIGRACAO_0365, ROLLBACK_0365\)/);
   assert.match(t, /readFileSync\("supabase\/producao\/rollback\/0365_rollback\.sql", "utf8"\)/);
-  assert.match(t, /await tx\.unsafe\(ROLLBACK_0365\);/);
-  for (const caso of ["caso 1: ligada", "caso 2: reaplicada", "caso 3: número sem", "caso 4: a 2ª linha", "caso 5: o rollback desliga", "caso 5: o conteúdo curado fica", "caso 5: a ligação que não é por número fica"]) {
+  const f = readFileSync("tests/e2e/fixtures/prova-0365.ts", "utf8");
+  assert.match(f, /create table \$\{ESQUEMA\}\.\$\{t\} \(like public\.\$\{t\} including all\)/, "as cópias levam as mesmas chaves únicas");
+  assert.match(f, /await cred\("UDI-303"\); \/\/ o 3\.º credenciamento, livre/);
+  assert.match(f, /await cred\("UDI-403"\); \/\/ o 3\.º credenciamento, livre/);
+  for (const caso of ["caso 1: ligada", "caso 2: reaplicada", "caso 3: número sem", "caso 4: a 0365 corre sem erro", "caso 4: a 2.ª linha", "caso 5: o rollback corre sem erro", "caso 5: o rollback desliga", "caso 5: o conteúdo curado fica", "caso 5: a ligação que não é por número fica"]) {
     assert.ok(t.includes(caso), `a t1793 confere "${caso}"`);
   }
 });
