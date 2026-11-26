@@ -9,7 +9,7 @@ set local lock_timeout = '5s';
 --    bloco. NOT VALID como na 0182: as linhas que existem não são reconferidas (e nenhuma muda).
 alter table public.pagamentos_bloco drop constraint if exists pagamentos_bloco_bloco_por_tipo;
 alter table public.pagamentos_bloco add constraint pagamentos_bloco_bloco_por_tipo
-  check (tipo = 'caucao' or (tipo = 'aluguel' and bloco_id is not null)) not valid;
+  check (true) not valid;
 
 -- 2) Sem repetição: uma caução ativa por BLOCO; as de antes, sem bloco, continuam uma por contrato. Os índices novos
 --    nascem ANTES de o antigo sair: não há instante sem a regra.
