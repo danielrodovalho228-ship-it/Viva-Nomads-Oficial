@@ -102,7 +102,8 @@ test("a fiação: a proposta escolhida segue do assistente até ao contrato e à
 
   const pagina = ler("src/app/(dashboard)/dashboard/fechamento/page.tsx");
   assert.match(pagina, /getFechamentoContext\(c, p\)/, "a página lê o p");
-  assert.match(pagina, /redirect\(`\/dashboard\/contratos\/\$\{/, "a estadia escolhida que já tem contrato leva ao contrato");
+  // E1141 (ajuste da guarda, ORDEM-DUET-977/978): sem redirect — a estadia escolhida com contrato abre o resumo só para leitura.
+  assert.doesNotMatch(pagina, /redirect\(/, "a página não redireciona (o redirect partia o fim do fecho com p)");
 });
 
 /* ---- As quatro guardas do coordenador (ORDEM-DUET-933): dinheiro e contrato. ---- */
@@ -167,4 +168,14 @@ test("guarda 3 sem p (ORDEM-DUET-939) — o período cruzado avisa-se ANTES em T
   assert.ok(conferir < gerar.indexOf('await fetch("/api/contrato"') && conferir < gerar.indexOf('await fetch("/api/comissao"'), "antes do documento e da taxa");
   // Sem p, o sucesso é o mesmo de antes: a entrada da conferência é a mesma do registro, e sem p não leva proposta.
   assert.match(gerar, /\.\.\.\(ctx\.propostaDaUrl \? \{ propostaId: ctx\.propostaDaUrl \} : \{\}\)/);
+});
+
+test("ajuste da guarda (ORDEM-DUET-978): com p e contrato já existente ao abrir, o assistente é só leitura — o resumo, sem 'Gerar contrato'", () => {
+  const fluxo = ler("src/app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
+  // Decide-se UMA vez, na montagem: o contrato gerado agora (que a página revalidada passa a ter) NÃO vira leitura.
+  assert.match(fluxo, /const \[somenteLeitura\] = useState\(\(\) => !demo && Boolean\(ctx\.propostaDaUrl\) && Boolean\(ctx\.contratoExistente\)\);/);
+  assert.match(fluxo, /const \[step, setStep\] = useState\(\(\) => \(somenteLeitura \? STEPS\.length - 1 : 0\)\);/, "abre no resumo");
+  const acao = fluxo.slice(fluxo.indexOf('data-testid="acao-gerar-contrato"'), fluxo.indexOf('data-testid="fechamento-gerar-contrato"'));
+  assert.match(acao, /somenteLeitura \? \(/, "só leitura troca o botão de gerar pelo 'Ver contrato'");
+  assert.match(fluxo, /data-testid="fechamento-somente-leitura"/);
 });
