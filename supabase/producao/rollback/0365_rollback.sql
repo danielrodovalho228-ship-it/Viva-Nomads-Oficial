@@ -3,7 +3,7 @@
 -- e tira o registo. Nome, cidade, selo e publicação ficam como estão.
 begin;
 update public.avaliadores_perfil_publico p
-   set credenciamento_id = null
+   set credenciamento_id = null, selo = 'ENSAIO'
   from public.avaliadores_credenciamento c
  where p.credenciamento_id = c.id
    and c.numero_credenciado = p.numero;
