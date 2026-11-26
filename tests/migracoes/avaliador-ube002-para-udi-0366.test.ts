@@ -4,7 +4,7 @@
   sem pedidos de vistoria e com o número novo livre; senão nada muda (raise notice). Não mexe no status, na cidade nem no
   perfil. O rollback devolve UBE-002 sob as mesmas condições.
   Esta trava só LÊ o texto: é o complemento barato contra os mutantes de forma. A prova que afirma o comportamento é a
-  EXECUTADA (regra da casa, ORDEM-DUET-1078): tests/e2e/fixtures/prova-0366.ts, os casos do coordenador corridos sobre a
+  EXECUTADA (regra da casa, ORDEM-DUET-1078): a t1797, com a fixture tests/e2e/fixtures/prova-0366.ts, os casos do coordenador corridos sobre a
   0366 e o rollback de verdade num esquema de rascunho desfeito.
 */
 import { test } from "node:test";
