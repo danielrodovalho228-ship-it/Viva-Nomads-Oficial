@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import postgres from "postgres";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
@@ -11,9 +13,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, c
   cidades numa frase e um "Sobre" escrito; uma linha curada com o MESMO número, nome completo, cidade própria e selo
   próprio, por ligar; a tabela de preços da cidade curada (150/250/350).
    1. Sem ligação (o estado de produção hoje): o primeiro nome, o selo genérico, nenhum preço.
-   2. Ligada como a migração 0365 liga (credenciamento_id = o credenciamento do mesmo número; feito aqui pela spec,
-      porque a massa nasce depois da migração no banco do laboratório): o nome curado, o selo curado, a cidade curada e
-      os três preços; o "Sobre" continua o do credenciamento (ORDEM-989 §2).
+   2. (ORDEM-DUET-1020) A própria 0365, corrida no banco do laboratório numa transação desfeita no fim: liga a linha
+      curada ao credenciamento do mesmo número; reaplicada, não muda nenhuma linha. Com o `update` revertido, cai.
+   3. Ligada pela 0365 (o arquivo corrido de verdade, porque a massa nasce depois da migração no banco do laboratório):
+      o nome curado, o selo curado, a cidade curada e os três preços; o "Sobre" continua o do credenciamento.
   Visitante sem sessão, 1280 px. Laboratório; não é prova ao vivo no site.
 */
 const SAIDA = "tests/laboratorio/saida";
@@ -25,6 +28,11 @@ const CURADO = { nome: "Rosa Curada Silva", selo: "Selo curado da t1793" };
 const SOBRE = "Sobre escrito pela avaliadora da t1793.";
 const ids: Record<string, string> = {};
 let numero = "";
+// ORDEM-DUET-1020: a ligação prova-se pelo PRÓPRIO arquivo da 0365, corrido no banco do laboratório pelo cliente JS do
+// Postgres (a imagem do Playwright não tem psql; o padrão da t1680). Sem os comentários, é uma instrução só.
+const DB = process.env.LAB_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+const MIGRACAO_0365 = readFileSync("supabase/migrations/0365_avaliador_perfil_curado_ligado_e1208.sql", "utf8").replace(/--[^\n]*/g, "").trim();
+class Desfazer extends Error {}
 
 test.describe("T1793 — E1208: a linha curada ligada manda no nome, no selo, na cidade e nos preços @E1208", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -75,9 +83,40 @@ test.describe("T1793 — E1208: a linha curada ligada manda no nome, no selo, na
     await expect(page.getByTestId("avaliador-preco")).toHaveCount(0);
   });
 
-  test("2. ligada como a 0365 liga: o nome, o selo, a cidade e os preços curados; o Sobre continua o do credenciamento", async ({ page }) => {
-    const { error } = await adm().from("avaliadores_perfil_publico").update({ credenciamento_id: ids.cred }).eq("numero", numero).is("credenciamento_id", null);
-    expect(error).toBeNull();
+  test("2. a migração 0365 liga a linha curada ao credenciamento do mesmo número; reaplicada, não muda nada", async () => {
+    expect(MIGRACAO_0365, "a 0365 tem a instrução da ligação").toMatch(/update public\.avaliadores_perfil_publico/);
+    const sql = postgres(DB, { max: 1, onnotice: () => undefined });
+    const visto: { antes?: string | null; depois?: string | null; reaplicada?: number } = {};
+    try {
+      // Numa transação desfeita no fim: prova a migração sem deixar efeito (o caso 3 aplica-a de verdade).
+      await sql
+        .begin(async (tx) => {
+          visto.antes = (await tx`select credenciamento_id from public.avaliadores_perfil_publico where numero = ${numero}`)[0]?.credenciamento_id ?? null;
+          await tx.unsafe(MIGRACAO_0365);
+          visto.depois = (await tx`select credenciamento_id from public.avaliadores_perfil_publico where numero = ${numero}`)[0]?.credenciamento_id ?? null;
+          visto.reaplicada = (await tx.unsafe(MIGRACAO_0365)).count;
+          throw new Desfazer();
+        })
+        .catch((e) => {
+          if (!(e instanceof Desfazer)) throw e;
+        });
+    } finally {
+      await sql.end();
+    }
+    expect(visto.antes, "antes: a linha curada sem ligação").toBeNull();
+    expect(visto.depois, "depois: ligada ao credenciamento do mesmo número").toBe(ids.cred);
+    expect(visto.reaplicada, "reaplicada: nenhuma linha muda").toBe(0);
+  });
+
+  test("3. ligada pela 0365: o nome, o selo, a cidade e os preços curados; o Sobre continua o do credenciamento", async ({ page }) => {
+    const sql = postgres(DB, { max: 1, onnotice: () => undefined });
+    try {
+      await sql.unsafe(MIGRACAO_0365);
+    } finally {
+      await sql.end();
+    }
+    const { data: ligada } = await adm().from("avaliadores_perfil_publico").select("credenciamento_id").eq("numero", numero).single();
+    expect(ligada?.credenciamento_id, "a 0365 ligou a linha curada").toBe(ids.cred);
     await page.setViewportSize({ width: 1280, height: 900 });
     const r = await page.goto(`/avaliadores/${numero}`, { waitUntil: "domcontentloaded" });
     expect(r?.status()).toBe(200);
