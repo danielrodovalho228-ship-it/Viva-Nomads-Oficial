@@ -59,7 +59,7 @@ export function linhasDaCaucaoPorBloco(
     .sort((a, b) => a.numero - b.numero)
     .map((b) => {
       const proprio = caucoes.find((p) => p.blocoId === b.id) ?? null;
-      const emAberto = proprio ? 0 : c2(Math.min(Number(b.caucao) || 0, caucaoEmAbertoAte(todos, registrado, b.numero)));
+      const emAberto = proprio ? 0 : c2(Number(b.caucao) || 0) /* ENSAIO: sem o acumulado */;
       const oferecer = !proprio && emAberto > 0 && !jaOfereceu;
       if (oferecer) jaOfereceu = true;
       return { id: b.id, numero: b.numero, caucao: Number(b.caucao) || 0, registro: proprio ? { id: proprio.id, valor: Number(proprio.valor), confirmado: proprio.confirmado } : null, emAberto, oferecer };
