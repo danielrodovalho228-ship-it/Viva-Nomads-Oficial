@@ -2,7 +2,8 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T1713 — E1072 @E1072 (fatia 3; ORDEM-DUET-352): o quadro "1º pagamento" na estadia em DIAS.
+  T1789 — E1072 @E1072 (fatia 3; ORDEM-DUET-352; nasceu t1713 e foi renumerada na ORDEM-DUET-1094, porque a t1713 é a do
+  E1075 na main): o quadro "1º pagamento" na estadia em DIAS.
   O contrato provado ao vivo em 20/11: 31 dias a R$ 2.500,00 por mês, contas de R$ 300,00 por mês e limpeza de
   preparação de R$ 250,00. O registro do bloco cobra R$ 3.143,33 (valor do bloco 2.583,33 + contas 310,00 + limpeza
   250,00); a proposta e o Fechamento diziam "1º pagamento R$ 3.050,00" (um mês cheio + a limpeza).
@@ -14,8 +15,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.t1713.${sufixo}@lab.vivanomads.test`, nome: "Dora Quadro Sobrenome", role: "owner" as const };
-const inq = { email: `inq.t1713.${sufixo}@lab.vivanomads.test`, nome: "Iris Quadro Sobrenome", role: "tenant" as const };
+const dono = { email: `dono.t1789.${sufixo}@lab.vivanomads.test`, nome: "Dora Quadro Sobrenome", role: "owner" as const };
+const inq = { email: `inq.t1789.${sufixo}@lab.vivanomads.test`, nome: "Iris Quadro Sobrenome", role: "tenant" as const };
 const ids: { dono?: string; inq?: string; imovel?: string; lead?: string; proposta?: string } = {};
 
 const emDias = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
@@ -32,7 +33,7 @@ async function abrir(page: Page, rota: string) {
 /** A linha "1º pagamento" da proposta atual: o rótulo e o valor ao lado. */
 const linhaDoPrimeiroPagamento = (page: Page) => page.getByText("1º pagamento", { exact: true }).first().locator("xpath=..");
 
-test.describe("T1713 — E1072: o 1º pagamento na estadia em dias é o 1º bloco inteiro @E1072", () => {
+test.describe("T1789 — E1072: o 1º pagamento na estadia em dias é o 1º bloco inteiro @E1072", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial" });
   test.setTimeout(240_000);
@@ -90,7 +91,7 @@ test.describe("T1713 — E1072: o 1º pagamento na estadia em dias é o 1º bloc
     await expect(linha).not.toContainText(/3\.050/);
     expect(semEspacoDuro(await page.locator("main").innerText()), "a conta do 1º bloco por extenso").toContain(CONTA);
     await linha.scrollIntoViewIfNeeded();
-    await page.screenshot({ path: `${SAIDA}/t1713-1-proposta-dono-1280.png` });
+    await page.screenshot({ path: `${SAIDA}/t1789-1-proposta-dono-1280.png` });
     await page.context().close();
   });
 
@@ -103,7 +104,7 @@ test.describe("T1713 — E1072: o 1º pagamento na estadia em dias é o 1º bloc
     expect(semEspacoDuro(await pi.locator("main").innerText())).toContain(CONTA);
     await linha.scrollIntoViewIfNeeded();
     expect(await pi.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), "390 px: sem rolagem lateral").toBeLessThanOrEqual(1);
-    await pi.screenshot({ path: `${SAIDA}/t1713-2-proposta-interessada-390.png` });
+    await pi.screenshot({ path: `${SAIDA}/t1789-2-proposta-interessada-390.png` });
     await pi.getByRole("button", { name: /^Aceitar/ }).first().click();
     await expect.poll(async () => (await adm().from("propostas").select("status").eq("id", ids.proposta!).single()).data?.status, { timeout: 20_000 }).toBe("aceita");
     await pi.context().close();
@@ -136,7 +137,7 @@ test.describe("T1713 — E1072: o 1º pagamento na estadia em dias é o 1º bloc
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await total.scrollIntoViewIfNeeded();
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `${largura} px: sem rolagem lateral`).toBeLessThanOrEqual(1);
-      await page.screenshot({ path: `${SAIDA}/t1713-3-fechamento-quadro-${largura}.png` });
+      await page.screenshot({ path: `${SAIDA}/t1789-3-fechamento-quadro-${largura}.png` });
     }
     await page.context().close();
   });
