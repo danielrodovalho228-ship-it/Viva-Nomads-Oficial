@@ -11,4 +11,4 @@ update public.avaliadores_perfil_publico p
   from public.avaliadores_credenciamento c
  where p.credenciamento_id is null
    and c.numero_credenciado = p.numero
-   and not exists (select 1 from public.avaliadores_perfil_publico o where o.credenciamento_id = c.id);
+   ; -- ENSAIO: sem a guarda da segunda linha
