@@ -13,7 +13,12 @@ export function caucaoEmAbertoAte(blocos: readonly { numero: number; caucao: num
   return c2(Math.max(0, soma - Math.max(0, Number(registradoAtivo) || 0)));
 }
 
-/** PROPOSTA DE TEXTO: o registro de caução acima do que falta. */
-export const MSG_CAUCAO_PASSA = "O valor passa da caução do contrato que falta registrar.";
-/** PROPOSTA DE TEXTO: sem a conta da caução lida, não se grava. */
+/** Reais com centavos (R$ 2.750,50): o teto pode ter centavos, e o formatBRL de utils arredonda para o real. */
+const reais = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
+/** ORDEM-DUET-1112: o registro de caução acima do que falta — a recusa diz quanto falta. */
+export const msgCaucaoPassa = (emAberto: number) => `O valor é maior que a caução que falta registrar neste contrato: ${reais(emAberto)}.`;
+/** ORDEM-DUET-1112: caução 0 em todos os blocos lidos — a garantia do contrato é outra. */
+export const MSG_CAUCAO_SEM_CAUCAO = "Este contrato não tem caução: a garantia é outra (por exemplo, seguro-fiança).";
+/** Sem a conta da caução lida (ou sem bloco nenhum lido), não se grava. */
 export const MSG_CAUCAO_SEM_CONTA = "Não foi possível conferir a caução deste contrato. Tente de novo em instantes.";

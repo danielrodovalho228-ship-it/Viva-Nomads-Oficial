@@ -18,7 +18,7 @@ import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { acertoMaisRecente, estadoCaucao, type EstadoCaucao } from "@/lib/caucao-estado";
 import { componentesDoPagamento, emAbertoNoBloco, encargosDosComponentes, parteDaColuna, proximaParte, somarComponentes, type ComponentesBloco } from "@/lib/pagamento-componentes";
 import { componentesDosContratos } from "@/lib/data/contrato-componentes";
-import { MSG_CAUCAO_PASSA, MSG_CAUCAO_SEM_CONTA, caucaoEmAbertoAte } from "@/lib/caucao-teto";
+import { MSG_CAUCAO_SEM_CAUCAO, MSG_CAUCAO_SEM_CONTA, caucaoEmAbertoAte, msgCaucaoPassa } from "@/lib/caucao-teto";
 
 /**
  * Contratos & blocos do PROPRIETÁRIO + registro DECLARATÓRIO de pagamento
@@ -532,8 +532,12 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     const registradas = (ativas ?? []) as { id: string; valor: number | string }[];
     if (registradas.length > 0) return { ok: true, id: registradas[0].id, jaRegistrado: true, mensagem: MSG_JA_REGISTRADO };
     const blocos = (((ct as { contrato_blocos?: unknown }).contrato_blocos as { numero_bloco: number; caucao: number | string | null }[] | null) ?? []).map((b) => ({ numero: Number(b.numero_bloco), caucao: Number(b.caucao) || 0 }));
+    // ORDEM-DUET-1112: antes da comparação, os dois casos que não são teto. Nenhum bloco lido é falta de leitura (não
+    // teto zero); blocos lidos com caução 0 em todos são um contrato sem caução (a garantia é outra).
+    if (blocos.length === 0) return { ok: false, error: MSG_CAUCAO_SEM_CONTA };
+    if (blocos.every((b) => b.caucao <= 0)) return { ok: false, error: MSG_CAUCAO_SEM_CAUCAO };
     const emAberto = caucaoEmAbertoAte(blocos, registradas.reduce((t, r) => t + (Number(r.valor) || 0), 0));
-    if (input.valor > emAberto + 0.005) return { ok: false, error: MSG_CAUCAO_PASSA };
+    if (input.valor > emAberto + 0.005) return { ok: false, error: msgCaucaoPassa(emAberto) };
   }
   // Caução é do CONTRATO (0182): grava sem bloco. O valor mensal é de um bloco.
   const { data, error } = await supabase
