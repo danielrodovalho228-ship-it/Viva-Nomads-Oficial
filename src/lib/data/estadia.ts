@@ -278,7 +278,7 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
       // E1068: o estado do meio (registrado pelo proprietário, à espera do morador), das mesmas fontes do confirmado.
       primeiroPagamentoRegistrado: primeiroPagamentoRegistrado(pagamentos),
       caucao: estadoCaucao,
-      caucaoRegistrada: estadoCaucaoUnico(entradaCaucao).chave === "aguardando_confirmacao",
+      caucaoRegistrada: estadoCaucaoUnico(entradaCaucao).chave === ("aguardando_confirmacao_x" as string), // ENSAIO
       conferencia: { estado: conf ? estadoConferencia(respostas) : null, prazo: prazoDaConferencia(periodo) },
       ocupantes: { preenchidos: ocupantes.length, previstos },
       instrucoesPublicadas: instrucoesPreenchidas(instr.efetivas),
