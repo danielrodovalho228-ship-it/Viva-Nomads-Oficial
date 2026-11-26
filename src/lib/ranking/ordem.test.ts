@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { destaquesHome, notaQualidade, ordenarBusca, selosDoAnuncio, type SinaisAnuncio } from "./ordem.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const AGORA = new Date("2026-11-01T12:00:00Z");
 const diasAtras = (d: number) => new Date(AGORA.getTime() - d * 86_400_000).toISOString();
@@ -125,9 +126,7 @@ test("GUARDA: pagamento, plano ou assinatura nunca mudam a ordem", () => {
   );
   assert.deepEqual(comExtras.map((x) => x.id), semExtras.map((x) => x.id));
   // Estático: a regra não lê nenhum campo de dinheiro/plano.
-  const fonte = readFileSync(new URL("./ordem.ts", import.meta.url), "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, "") // tira comentários de bloco
-    .replace(/(^|[^:])\/\/.*$/gm, "$1"); // tira comentários de linha (preserva "https://")
+  const fonte = fonteSemComentarios(readFileSync(new URL("./ordem.ts", import.meta.url), "utf8")); // E1164: o ajudante único
   assert.doesNotMatch(fonte, /plano|pago|pagou|pagamento|assinatura|cobranca|cobrança|taxa|comiss|gestor|stripe|patrocin/i);
 });
 

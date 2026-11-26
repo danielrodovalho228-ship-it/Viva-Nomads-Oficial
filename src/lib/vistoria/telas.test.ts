@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CATEGORIAS_CATALOGO, CATEGORIAS_PARCEIRO, categoriaValida } from "../parceiros/regras.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
@@ -20,7 +21,6 @@ const ADMIN = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
 const PUBLICA = ler("src/app/(public)/avaliadores/[numero]/page.tsx");
 const TELAS = [BLOCO_DONO, MORADOR, AVALIADOR, ADMIN, PUBLICA];
 
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 function corpo(fonte: string, nome: string): string {
   const i = fonte.indexOf(`export async function ${nome}`);
@@ -44,9 +44,10 @@ test("E648: o pedido só leva o imóvel; quem escolhe o avaliador é o dono, ent
 
 test("chave VISTORIA_ATIVA desligada: nada para o dono nem para o morador; credenciamento e admin seguem", () => {
   assert.match(BLOCO_DONO, /const chaveAtiva = await vistoriaAtiva\(\);[\s\S]*const visivel = blocoDoDonoVisivel\(chaveAtiva, [\s\S]*if \(!visivel\) return null;/);
-  assert.match(MORADOR, /if \(!\(await vistoriaAtiva\(\)\)\) notFound\(\);/);
+  // E1171 (ORDEM-DUET-746): para o morador a chave é a do PEDIDO (a sessão dele, ou o dono do pedido no piloto).
+  assert.match(MORADOR, /if \(!\(await vistoriaAtivaParaOMorador\(admin, p\.owner_id\)\)\) notFound\(\);/);
   assert.match(corpo(ACOES, "pedirAvaliacao"), /chaveAtiva: await vistoriaAtiva\(\)/);
-  assert.match(corpo(ACOES, "concordarVisita"), /if \(!\(await vistoriaAtiva\(\)\)\) return DESLIGADA;/);
+  assert.match(corpo(ACOES, "concordarVisita"), /if \(!\(await vistoriaAtivaParaOMorador\(s\.admin, p\.owner_id\)\)\) return DESLIGADA;/);
   assert.doesNotMatch(corpo(ACOES, "pedirCredenciamento"), /vistoriaAtiva/);
   assert.doesNotMatch(ADMIN, /vistoriaAtiva\(\)/);
   // O cookie do laboratório nunca vale em produção.
@@ -59,7 +60,8 @@ test("nenhum texto promete pagamento pela plataforma; a taxa usa o texto da chav
     assert.doesNotMatch(f, /pague (pela|na) (plataforma|Viva)|pagamento pela plataforma (est[áa] ativo|liberado)|a Viva (cobra|recebe) (o valor|a avalia)/i);
   }
   assert.match(BLOCO_DONO, /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
-  assert.match(AVALIADOR, /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
+  // E1158 (2; ORDEM-DUET-654): na tela do avaliador, o texto da taxa fala com ele ("vai direto para você").
+  assert.match(AVALIADOR, /textoTaxaServicoAoParceiro\(PAGAMENTO_PARCEIROS_ATIVO\)/);
   assert.match(BLOCO_DONO, /\{FRASE_PAGA_AVALIACAO\}/);
 });
 

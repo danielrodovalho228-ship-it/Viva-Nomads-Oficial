@@ -6,19 +6,20 @@
  *  • Contato (E445): telefone, e-mail e redes sociais NUNCA são trocados entre as partes; a conversa fica no chat da Viva.
  *    (O fluxo de PARCEIROS tem regra própria já implementada — `src/lib/parceiros/` — e fica fora do gate, de forma explícita.)
  *  • Caução (desenho aprovado): paga direto ao proprietário, a Viva não recebe nem segura o dinheiro (`CAUCAO_FRASE`).
- *  • Taxas: uma regra única de cobrança (`TEXTO_REGRA_UNICA`); a escada completa das faixas + o Plano Gestor (E805,
- *    `FRASE_ESCADA_TAXAS`). A cobrança na renovação NÃO entra nas páginas públicas enquanto aguarda o parecer jurídico.
+ *  • Taxas: uma regra única de cobrança (`TEXTO_REGRA_UNICA`); a escada completa das faixas + a linha das carteiras
+ *    (E805 e prompt 078, `FRASE_ESCADA_TAXAS`). A cobrança na renovação NÃO entra nas páginas públicas enquanto aguarda o parecer jurídico.
  */
 import { escadaTaxasTexto } from "../lib/cobranca/regra.ts";
-import { GESTOR_TEXTO } from "./planos.ts";
+import { TEXTO_CARTEIRAS } from "./planos.ts";
 export { CAUCAO_FRASE } from "../lib/faixas.ts";
 export { TEXTO_REGRA_UNICA } from "../lib/cobranca/regra.ts";
 
 /**
  * E805 — a escada inteira da taxa de serviço, igual em /para-proprietarios e /como-funciona (a Ajuda tem a tabela):
- * "Quanto mais imóveis ativos, menor a taxa: 1–2 imóveis: 12% · … · 16–19 imóveis: 6%. Plano Gestor: 4% para …".
+ * "Quanto mais imóveis ativos, menor a taxa: 1–2 imóveis: 12% · … · 16–19 imóveis: 6%. Carteira a partir de 20
+ * imóveis ou administradora de imóveis: fale com a Viva." Prompt 078 (16/11/2026): sem o Plano Gestor nem taxa abaixo da escada.
  */
-export const FRASE_ESCADA_TAXAS = `Quanto mais imóveis ativos, menor a taxa: ${escadaTaxasTexto()}. Plano Gestor: ${GESTOR_TEXTO}.`;
+export const FRASE_ESCADA_TAXAS = `Quanto mais imóveis ativos, menor a taxa: ${escadaTaxasTexto()}. ${TEXTO_CARTEIRAS}`;
 
 /** Fragmento único sobre contato: entra em toda frase que fala de telefone, e-mail ou redes. */
 export const CONTATO_NUNCA_TROCADO = "telefone, e-mail e redes sociais nunca são trocados";

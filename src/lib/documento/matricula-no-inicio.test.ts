@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { camposDaMatriculaNoInicio, leituraFalhou, linhaDocumentoDoInicio, perguntaQuemOpera, resumoDoPreenchimento } from "./matricula-no-inicio.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const vazio = { cep: "", rua: "", numero: "", bairro: "", areaM2: "", vagas: "", complemento: "" };
 const leitura = {
@@ -35,8 +36,6 @@ test("Passo 10: documento enviado no início aparece como enviado, sem pedir de 
 
 test("nome e CPF do titular nunca chegam à tela do início", () => {
   // Só o código conta: os comentários podem explicar a regra.
-  const tela = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/matricula-no-inicio.tsx", "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/^\s*\/\/.*$/gm, "");
+  const tela = fonteSemComentarios(readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/matricula-no-inicio.tsx", "utf8"));
   assert.doesNotMatch(tela, /\bcpf\b|titular|\.nome\b|console\./i);
 });

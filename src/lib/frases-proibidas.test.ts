@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 /*
   E776 — gate de frases proibidas no CI + fontes únicas das frases reguladas.
   Roda: node --test src/lib/frases-proibidas.test.ts
@@ -6,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { FORA_DO_GATE, FRASES_PROIBIDAS, achadosProibidos, semComentarios } from "./frases-proibidas.ts";
+import { FORA_DO_GATE, FRASES_PROIBIDAS, HISTORICO_078, achadosProibidos, semComentarios } from "./frases-proibidas.ts";
 import { CAUCAO_FRASE, CONTATO_NUNCA_TROCADO, DIFERENCIAL_CHAT, FRASE_CONVERSA_CHAT, NOTA_CONTATO_MENSAGENS, NOTA_VISITA_DONO, PASSO_CONVERSE_TEXTO, TEXTO_REGRA_UNICA } from "../config/textos-regulados.ts";
 
 function arquivos(dir: string): string[] {
@@ -80,7 +81,8 @@ test("GATE (fora de src/): e-mails, seeds, scripts e arquivos públicos também 
       const bruto = readFileSync(p, "utf8");
       // Comentário de SQL ("-- …") também não é superfície (as migrações antigas são imutáveis e comentam o que fizeram).
       const texto = /\.(ts|tsx|mjs|js)$/.test(n) ? semComentarios(bruto).join("\n") : /\.sql$/.test(n) ? bruto.split("\n").filter((l) => !/^\s*--/.test(l)).join("\n") : bruto;
-      for (const a of achadosProibidos(texto)) achados.push(`${p.split("\\").join("/")} [${a.id}] ${a.trecho}`);
+      // O arquivo vai só para a exceção de histórico (prompt 078); o escopo das regras continua sem caminho.
+      for (const a of achadosProibidos(texto, undefined, p.split("\\").join("/"))) achados.push(`${p.split("\\").join("/")} [${a.id}] ${a.trecho}`);
     }
   };
   for (const raiz of ["supabase", "public", "scripts"]) varrer(raiz);
@@ -127,4 +129,37 @@ test("E785 (decisão de 09/11): 'contato do proprietário' entregue/revelado pel
     "Não passamos o contato do proprietário.",
     "Fale com o proprietário pelo chat da Viva.",
   ]) assert.deepEqual(achadosProibidos(boa).filter((a) => a.id === "plataforma-entrega-contato-do-proprietario"), [], `não deveria barrar: ${boa}`);
+});
+
+test("078 (Daniel, 16/11/2026): 'Plano Gestor' e a taxa de 4% são barrados em qualquer superfície; a escada nova e a linha de carteiras passam", () => {
+  for (const ruim of [
+    "Ver o Plano Gestor",
+    "Taxa menor por volume e plano gestor.",
+    "O Plano  Gestor tem taxa de 4%, sem mensalidade.",
+  ]) assert.ok(achadosProibidos(ruim).some((a) => a.id === "plano-gestor-publico"), `deveria barrar: ${ruim}`);
+  for (const ruim of [
+    "Quanto mais imóveis, menor a taxa (até 4%).",
+    "Taxa de serviço de 4% sobre o valor total de cada contrato",
+    "4% por contrato, sem assinatura",
+    "Gestor: 4 % para carteiras de 20 ou mais imóveis",
+    "Para administradoras a Viva cobra 4%",
+  ]) assert.ok(achadosProibidos(ruim).some((a) => a.id === "taxa-de-4-publica"), `deveria barrar: ${ruim}`);
+  for (const boa of [
+    "Quanto mais imóveis ativos, menor a taxa: 1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%. Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva.",
+    "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.",
+    "A taxa de 14% do concorrente",
+    "taxa de 4,5% do cartão",
+    "Gestor profissional",
+    "o proprietário tem até 4 horas para responder",
+  ]) assert.deepEqual(achadosProibidos(boa), [], `não deveria barrar: ${boa}`);
+});
+
+test("078: a exceção de histórico vale só para as duas regras novas, e cada arquivo de histórico existe", () => {
+  for (const h of HISTORICO_078) assert.ok(existsSync(h.prefixo), h.prefixo);
+  const frase = "o Plano Gestor tem taxa de 4% por contrato";
+  assert.deepEqual(achadosProibidos(frase, undefined, "supabase/migrations/0293_faixa_gestor_4.sql"), []);
+  assert.equal(achadosProibidos(frase, "src/app/(public)/page.tsx").length, 2, "em tela, as duas regras pegam");
+  // O histórico não libera as outras regras.
+  assert.equal(achadosProibidos("a taxa é cobrada do morador no aceite", undefined, "supabase/migrations/0293_faixa_gestor_4.sql").length, 1);
+  for (const id of ["plano-gestor-publico", "taxa-de-4-publica"]) assert.ok(FRASES_PROIBIDAS.find((r) => r.id === id)?.historico?.length, id);
 });

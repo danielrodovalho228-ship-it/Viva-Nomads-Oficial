@@ -50,7 +50,7 @@ export const SECOES_MENU_CONTA: readonly ItemSecao[] = SECOES_CONTA.filter((s) =
 export const ALIAS_SECAO: Readonly<Record<string, SecaoConta>> = {
   // /dashboard/conta/excluir (Sair da Viva) é subtela de Privacidade, aberta por "Excluir minha conta" (perfil-05).
   excluir: "privacidade",
-  // E224: Conta › Plano (a elegibilidade do Plano Gestor) mora no cartão de Pagamentos (#plano).
+  // E224/078: Conta › Plano (a taxa de serviço da conta e a escada) mora no cartão de Pagamentos (#plano).
   plano: "pagamentos",
 };
 
@@ -90,6 +90,20 @@ export function destinoDaAncora(hash: string, search = ""): string | null {
   if (!destino) return null;
   const [rota, ancora] = destino.split("#");
   return `${rota}${search && search !== "?" ? search : ""}${ancora ? `#${ancora}` : ""}`;
+}
+
+/** Âncoras antigas que levam ao Perfil e não têm mais alvo na tela dele. "pets" não entra: a seção existe (id="pets"). */
+const ANCORA_SEM_ALVO_NO_PERFIL: ReadonlySet<string> = new Set(["perfil-publico"]);
+
+/**
+ * No Perfil: a âncora antiga que não tem mais alvo na tela (perfil-publico) sai do endereço — o destino da tabela não
+ * traz âncora. A que ainda existe (pets) fica. Antes isso dependia de quem redirecionava: a página tirava a âncora, o
+ * proxy (E798) a mantinha; o endereço final variava (t355, caso 5). A lista é fixa de propósito: a tela do Perfil
+ * monta as seções depois do primeiro quadro, e procurar o alvo na tela daria resposta diferente a cada carregamento.
+ */
+export function ancoraMortaNoPerfil(hash: string): boolean {
+  const ancora = hash.replace(/^#/, "");
+  return ANCORA_SEM_ALVO_NO_PERFIL.has(ancora) && ANCORA_SECAO[ancora] === "/dashboard/conta/perfil";
 }
 
 /**

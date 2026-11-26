@@ -13,7 +13,7 @@ import { TERMO_IA_TEXTO, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, type Negociacao } from "@/lib/anuncio/negociacao";
 import { conferenciaAssistente, etapaDoItemProntidao, faltamNaConferencia, type ContextoConferencia, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
 import { TEXTOS_REVISAO, linhaRevisao, tituloConferencia, tituloDaPrevia } from "@/lib/anuncio/assistente-telas";
-import { ROTULO_CAUCAO_PREVIA, caucaoDaPrevia, contaDaConferencia, precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
+import { caucaoDaPrevia, contaDaConferencia, precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
@@ -75,7 +75,7 @@ export function EtapaRevisar(p: {
 }) {
   const conf = conferenciaAssistente(p.prontidao, p.contextoConferencia);
   const precos = precosDaPrevia(p.previewProperty);
-  // E1050: o dono vê a caução calculada (50% do mensal) antes de publicar.
+  // E1050 + E1061: o dono vê a caução calculada antes de publicar — o número e o rótulo da página do imóvel.
   const caucao = caucaoDaPrevia(p.previewProperty);
   // E139: sem valor mensal não há total — condomínio ou contas sozinhos não viram preço.
   const temValorMensal = (p.previewProperty.monthlyPrice ?? 0) > 0;
@@ -135,8 +135,8 @@ export function EtapaRevisar(p: {
           {precos[2].conta && <p className="text-right text-xs text-muted" data-testid="previa-conta-estadia">{precos[2].conta}</p>}
           {caucao != null && (
             <div className="flex items-baseline justify-between gap-3" data-testid="previa-preco-caucao">
-              <dt className="text-muted">{ROTULO_CAUCAO_PREVIA}</dt>
-              <dd className="text-right font-semibold text-ink">{formatBRL(caucao)}</dd>
+              <dt className="text-muted">{caucao.rotulo}</dt>
+              <dd className="text-right font-semibold text-ink">{formatBRL(caucao.valor)}</dd>
             </div>
           )}
           {desconto && <p className="text-xs text-muted">{desconto}</p>}
