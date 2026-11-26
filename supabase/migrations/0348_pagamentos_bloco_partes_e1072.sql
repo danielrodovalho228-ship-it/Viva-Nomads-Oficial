@@ -20,6 +20,5 @@ exception when duplicate_object then null; end $c$;
 comment on column public.pagamentos_bloco.parte is 'E1072: número do registro dentro do bloco (1 = o primeiro; 2 em diante = registros complementares do mesmo bloco).';
 
 -- O índice novo entra ANTES de o antigo sair: não há instante sem a regra de não repetição.
-create unique index if not exists pagamentos_bloco_uma_parte_por_bloco
-  on public.pagamentos_bloco (bloco_id, parte) where tipo = 'aluguel' and anulado_em is null;
+-- ENSAIO: sem o índice novo
 drop index if exists public.pagamentos_bloco_um_valor_mensal;
