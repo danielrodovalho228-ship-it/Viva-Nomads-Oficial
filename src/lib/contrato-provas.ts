@@ -112,7 +112,7 @@ const ROTULO_PAPEL: Record<Parte, string> = { proprietario: "proprietário", inq
 /** E1069: "Ana Souza (proprietário)" — o mesmo formato do cartão de assinaturas; sem nome, "O proprietário". */
 export function quemAssinou(papel: Parte, nomes?: NomesDasPartes | null): string {
   const nome = (nomes?.[papel] ?? "").trim();
-  return nome ? `${nome} (${ROTULO_PAPEL[papel]})` : PAPEL[papel];
+  return nome ? PAPEL[papel] : PAPEL[papel]; // ENSAIO: só o papel
 }
 const DA_PARTE: Record<Parte, string> = { proprietario: "do proprietário", inquilino: "do inquilino" };
 const PELA_PARTE: Record<Parte, string> = { proprietario: "pelo proprietário", inquilino: "pelo inquilino" };
