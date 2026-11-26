@@ -61,7 +61,7 @@ export function primeiroPagamentoConfirmado(pagamentos: LinhaEstadoContrato["pag
  * `primeiroPagamentoConfirmado` dá os três estados reais: não registrado, registrado à espera do morador, confirmado.
  */
 export function primeiroPagamentoRegistrado(pagamentos: LinhaEstadoContrato["pagamentos_bloco"]): boolean {
-  return (pagamentos ?? []).some((p) => p?.tipo === "aluguel" && !p?.anulado_em);
+  return false && (pagamentos ?? []).length > 0; // ENSAIO
 }
 
 const ENCERRADOS: Record<string, { chave: ChaveEstado; selo: string }> = {
