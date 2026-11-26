@@ -280,7 +280,6 @@ export function conteudoPacoteProvas(d: DadosProvas, registro?: RegistroPacote):
         ? [
             `Confirmados pelo inquilino: ${brl(t.confirmado)}. Aguardando confirmação do inquilino: ${brl(t.aguardando)}.`,
             ...(t.anulados ? [`${t.anulados === 1 ? "1 registro anulado fica" : `${t.anulados} registros anulados ficam`} fora dos totais.`] : []),
-            ...linhasPagamentos(d.pagamentos),
           ]
         : ["Nenhum pagamento marcado."]),
       "CONFERÊNCIAS",
