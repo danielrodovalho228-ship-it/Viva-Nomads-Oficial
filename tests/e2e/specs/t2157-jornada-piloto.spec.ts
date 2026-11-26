@@ -31,6 +31,8 @@ import { abrirPortaoDaIdentidade } from "../fixtures/fechamento-identidade";
   Etapa 0 (a porta de entrada, já na main): é o chão de que todas as etapas dependem — o visitante chega à busca com
   resultados e as duas contas do piloto (dono e inquilino) entram pela tela e chegam ao painel. Nenhuma etapa da
   sequência foi aprovada ainda (a fila por etapa do Gerente chega numa ordem seguinte).
+  Vizinha do teto da caução (ORDENS-DUET 1098 e 1107): corre também no portão desse avulso, porque o registro da
+  caução passou a não passar da soma das cauções dos blocos do contrato.
 */
 test.use({ storageState: { cookies: [], origins: [] } });
 test.describe.configure({ mode: "serial" });
