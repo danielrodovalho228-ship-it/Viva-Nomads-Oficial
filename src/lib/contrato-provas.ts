@@ -11,7 +11,7 @@ import { compararHashComResumo, dataHoraAssinatura, hashResumo } from "./contrat
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
 import { ROTULO_ESTADO_CONFERENCIA, estadoConferencia, textoPrazoConferencia } from "./conferencia.ts";
 import { ETIQUETA_BRASILIA } from "./datas-brasilia.ts";
-import { ROTULO_CONTAS, ROTULO_LIMPEZA, componentesDoPagamento, parteDaColuna, type Encargo } from "./pagamento-componentes.ts";
+import { ROTULO_CONTAS, ROTULO_LIMPEZA, componentesDoPagamento, partesPorOrdem, type Encargo } from "./pagamento-componentes.ts";
 
 type Parte = "proprietario" | "inquilino";
 
@@ -361,10 +361,8 @@ export interface LinhasProvas {
     created_at?: unknown;
     /** E1072: as contas e a limpeza registradas com o aluguel. */
     encargos?: unknown;
-    /** E1072 (fatia 2): o bloco do registro. */
+    /** E1072 (fatia 2): o bloco do registro, para ordenar os registros do mesmo bloco (o 2º em diante é complementar). */
     bloco_id?: unknown;
-    /** E1072 (ORDEM-DUET-1104): a parte registada na coluna (1 = o primeiro; 2 em diante = complementar). */
-    parte?: unknown;
   }[];
   conferencias: { id: unknown; tipo: unknown; criada_em: unknown }[];
   itens: { conferencia_id: unknown; parte: unknown; comodo?: unknown; descricao?: unknown; foto_path?: unknown; precisa_reparo?: unknown }[];
@@ -402,7 +400,19 @@ function encargosDaLinha(v: unknown): Encargo[] {
     .map((e) => ({ rotulo: String(e.rotulo).trim(), valor: Math.round(Number(e.valor) * 100) / 100 }));
 }
 
+/** E1072 (fatia 2): a parte de cada registro de aluguel ATIVO, pela ordem dentro do seu bloco. */
+function partesDosPagamentos(pags: LinhasProvas["pagamentos"]): Map<string, number> {
+  const porBloco = new Map<string, { id: string; registradoEm: string | null }[]>();
+  for (const p of pags) {
+    if (p.tipo === "caucao" || p.anulado_em || !p.id || !p.bloco_id) continue;
+    const chave = String(p.bloco_id);
+    porBloco.set(chave, [...(porBloco.get(chave) ?? []), { id: String(p.id), registradoEm: textoOuNulo(p.created_at) }]);
+  }
+  return new Map([...porBloco.values()].flatMap((lista) => [...partesPorOrdem(lista)]));
+}
+
 export function montarDadosProvas(l: LinhasProvas): DadosProvas {
+  const partes = partesDosPagamentos(l.pagamentos);
   const comHash = new Set(l.assinaturas.map((a) => parteDe(a.papel)));
   const assinaturasSemHash = (["proprietario", "inquilino"] as const)
     .filter((p) => !comHash.has(p) && !!l.datasAssinatura?.[p])
@@ -434,8 +444,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
       dia: String(p.data_pagamento).slice(0, 10),
       registradoEm: textoOuNulo(p.created_at),
       encargos: p.tipo === "caucao" ? [] : encargosDaLinha(p.encargos),
-      // ORDEM-DUET-1104: a parte da coluna registada (0348), nunca a ordem dos registros.
-      parte: p.tipo === "caucao" ? 1 : parteDaColuna(p.parte),
+      parte: partes.get(String(p.id ?? "")) ?? 1,
       confirmadoEm: p.confirmado_pelo_inquilino ? String(p.confirmado_em ?? p.data_pagamento) : null,
       anuladoEm: textoOuNulo(p.anulado_em),
       anuladoMotivo: textoOuNulo(p.anulado_motivo),
@@ -462,7 +471,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
 /** Colunas lidas para o pacote (as mesmas nas duas cargas). */
 export const COLUNAS_PROVAS = {
   assinaturas: "papel, assinado_em, hash_documento",
-  pagamentos: "id, bloco_id, tipo, parte, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at, encargos",
+  pagamentos: "id, bloco_id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at, encargos",
   conferencias: "id, tipo, criada_em",
   itens: "conferencia_id, parte, comodo, descricao, foto_path, precisa_reparo",
   respostas: "conferencia_id, parte, decisao, motivo, decidido_em",

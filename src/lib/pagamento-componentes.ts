@@ -192,3 +192,9 @@ export function contaDoPrimeiroPagamento(e: EstadiaParaPrimeiroPagamento): strin
   const c = componentesDoPrimeiroPagamento(e);
   return c ? textoComponentes(c) : "";
 }
+
+/** ENSAIO: a parte pela ordem (a leitura de antes da ORDEM-DUET-1104). */
+export function partesPorOrdem<T extends { id: string; registradoEm?: string | null }>(registros: T[]): Map<string, number> {
+  const ordenados = [...registros].sort((a, b) => String(a.registradoEm ?? "").localeCompare(String(b.registradoEm ?? "")));
+  return new Map(ordenados.map((r, i) => [r.id, i + 1]));
+}
