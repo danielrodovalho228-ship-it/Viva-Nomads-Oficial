@@ -24,6 +24,8 @@ const ids: Record<string, string> = {};
 const emDias = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
 const haDias = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
 const ANTERIOR = { entrada: emDias(20), dias: 30 };
+/** O campo mostra a data em dd/mm/aaaa (como na t89 e na t182). */
+const dataBR = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 const RECENTE = { entrada: emDias(120), dias: 30 };
 
 async function proposta(status: string, aceitaEm: string, estadia: { entrada: string; dias: number }): Promise<{ id: string; numero: string }> {
@@ -112,7 +114,7 @@ test.describe("T1790 — E1201: o assistente monta o estado de cada estadia @E12
   test("abrir por omissão a mais recente, clicar na anterior: o campo e o contrato gerado são os DELA", async ({ browser }) => {
     const page = await noFechamento(browser);
     // Por omissão abre a mais recente: o campo mostra a data dela.
-    await expect(page.getByTestId("inicio-estadia")).toHaveValue(RECENTE.entrada, { timeout: 30_000 });
+    await expect(page.getByTestId("inicio-estadia")).toHaveValue(dataBR(RECENTE.entrada), { timeout: 30_000 });
 
     // Navegação no cliente para a estadia anterior, pela lista.
     const acao = page.locator(`[data-testid="fecho-linha"][data-chave="A:${ids.anterior}"]`).getByTestId("fecho-acao");
@@ -120,7 +122,7 @@ test.describe("T1790 — E1201: o assistente monta o estado de cada estadia @E12
     await acao.click();
     await page.waitForURL((u) => u.searchParams.get("p") === ids.anterior, { timeout: 30_000 });
     await expect(page.locator(`[data-testid="fecho-linha"][data-chave="A:${ids.anterior}"]`)).toHaveAttribute("data-atual", "sim", { timeout: 30_000 });
-    await expect(page.getByTestId("inicio-estadia"), "a data de início é a da estadia anterior, não a do fecho aberto antes").toHaveValue(ANTERIOR.entrada, { timeout: 30_000 });
+    await expect(page.getByTestId("inicio-estadia"), "a data de início é a da estadia anterior, não a do fecho aberto antes").toHaveValue(dataBR(ANTERIOR.entrada), { timeout: 30_000 });
     await page.screenshot({ path: `${SAIDA}/t1790-assistente-da-anterior-1280.png`, fullPage: true });
 
     // O contrato gerado nasce com o período da estadia anterior, da proposta anterior.
