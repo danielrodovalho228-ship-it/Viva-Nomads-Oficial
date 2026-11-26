@@ -14,6 +14,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   os da mais recente (R$ 2.893, R$ 1.447, R$ 347). Por cima do E1201 (a key), esta trava só cai com as duas curas
   revertidas; a que morde o `useMemo` sozinho é a de unidade do E1202.
   Laboratório; não é prova ao vivo no site.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1094): corre também no portão do #4084, porque o #4084 mexe no assistente do
+  Fechamento e no 1º pagamento; a t1789 tem o caso combinado E1141×#4084.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();

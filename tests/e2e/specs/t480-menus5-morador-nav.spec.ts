@@ -5,6 +5,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   T480 — MENUS-5 + MORADOR-NAV + E167 (prioridade do Daniel, 25/10): nenhum menu com mais de 5 destinos; as abas do
   topo (computador) e a barra de baixo (celular) saem da MESMA lista por papel; a Conta abre no avatar; a área do
   morador não mostra blocos nem menus do proprietário (E167).
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();

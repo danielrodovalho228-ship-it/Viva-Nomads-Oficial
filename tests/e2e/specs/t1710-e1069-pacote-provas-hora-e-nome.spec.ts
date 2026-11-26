@@ -18,6 +18,8 @@ import { hojeBR } from "../../../src/lib/utils";
       sua hora.
   Não há captura de tela: o que muda é o texto de um PDF. O texto extraído do PDF fica em tests/laboratorio/saida.
   Laboratório; não é prova ao vivo no site.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
 */
 const SAIDA = "tests/laboratorio/saida";
 const INICIO = hojeBR();

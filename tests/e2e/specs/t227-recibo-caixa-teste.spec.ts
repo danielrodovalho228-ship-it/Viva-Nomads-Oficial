@@ -10,6 +10,8 @@ import { NO_LABORATORIO, adm, blocoSemValorMensal, apagarContas, criarConta, cri
    2. a fila "Documentos com falha" é legível: com 2 falhas, cada linha mostra o seu número, tipo, contrato
       (VN-CT-…), o nome curto do proprietário e do inquilino, o motivo e a data — e as duas são diferentes.
   O laboratório usa o Resend falso (LAB_RESEND_URL): só e-mail aceito entra na caixa.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
 */
 const SAIDA = "tests/laboratorio/saida";
 const RESEND = process.env.LAB_RESEND_URL ?? "http://127.0.0.1:3999";

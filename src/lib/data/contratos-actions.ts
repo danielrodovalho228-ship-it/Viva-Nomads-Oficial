@@ -16,6 +16,8 @@ import { estadoDoContratoUnico, type ChaveEstado, type EstadoContrato, type Linh
 import { podeAvaliarLocacao } from "@/lib/contrato-assinar";
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { acertoMaisRecente, estadoCaucao, type EstadoCaucao } from "@/lib/caucao-estado";
+import { componentesDoPagamento, emAbertoNoBloco, encargosDosComponentes, parteDaColuna, proximaParte, somarComponentes, type ComponentesBloco } from "@/lib/pagamento-componentes";
+import { componentesDosContratos } from "@/lib/data/contrato-componentes";
 
 /**
  * Contratos & blocos do PROPRIETÁRIO + registro DECLARATÓRIO de pagamento
@@ -30,6 +32,8 @@ import { acertoMaisRecente, estadoCaucao, type EstadoCaucao } from "@/lib/caucao
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string; jaRegistrado?: boolean; mensagem?: string };
 /** Segundo envio do mesmo recebimento (0182): devolve o que já existe, sem erro técnico. */
 const MSG_JA_REGISTRADO = "Este recebimento já foi registrado";
+/** E1072 (fatia 2): o registro complementar não pode passar do que o contrato diz que falta no bloco. */
+const MSG_PASSA_DO_QUE_FALTA = "O valor passa do que falta registrar neste bloco.";
 
 /** Colunas de `contratos` que as partes leem pela sessão (sem a taxa — 0177). */
 const COLUNAS_CONTRATO_PARTES =
@@ -53,6 +57,8 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface BlocoView {
+  /** E1072: o que o contrato diz que o bloco custa (aluguel, contas do período, limpeza de preparação). */
+  componentes?: ComponentesBloco;
   id: string;
   numeroBloco: number;
   inicio: string;
@@ -66,6 +72,10 @@ export interface BlocoView {
 }
 
 export interface PagamentoView {
+  /** E1072: o que este registro cobre (o aluguel + as contas e a limpeza registradas com ele). */
+  componentes?: ComponentesBloco;
+  /** E1072 (fatia 2): 2 em diante = registro complementar do mesmo bloco. */
+  parte?: number;
   id: string;
   /** null na Caução: ela é do contrato, não do bloco (0182). */
   blocoId: string | null;
@@ -127,6 +137,9 @@ function toBloco(b: Record<string, unknown>): BlocoView {
 }
 
 function toPagamento(p: Record<string, unknown>, valorMensal?: number | null): PagamentoView {
+  // ORDEM-DUET-1104: a parte é a da coluna registada (0348), nunca a ordem dos registros.
+  const parte = String(p.tipo ?? "aluguel") === "caucao" ? 1 : parteDaColuna(p.parte);
+  const componentes = componentesDoPagamento({ valor: Number(p.valor), encargos: String(p.tipo ?? "aluguel") === "caucao" ? [] : p.encargos });
   const b = p.contrato_blocos as { numero_bloco?: number | null; meses?: number | null; inicio?: string | null; fim?: string | null } | null | undefined;
   return {
     rotulo: rotuloPagamentoBloco({
@@ -134,7 +147,11 @@ function toPagamento(p: Record<string, unknown>, valorMensal?: number | null): P
       valor: Number(p.valor),
       bloco: b?.numero_bloco ? { numero: Number(b.numero_bloco), meses: Number(b.meses ?? 1), inicio: b.inicio ?? null, fim: b.fim ?? null } : null,
       valorMensal: valorMensal ?? null,
+      parte,
+      total: componentes.total,
     }),
+    componentes,
+    parte,
     id: String(p.id),
     blocoId: p.bloco_id ? String(p.bloco_id) : null,
     tipo: String(p.tipo ?? "aluguel"),
@@ -394,10 +411,26 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
     : { data: [] as { id: string; accepted_at: string | null }[] };
   const aceiteDoLead = new Map(((leads ?? []) as { id: string; accepted_at: string | null }[]).map((l) => [l.id, l.accepted_at]));
   const minhasAvaliacoes = await avaliacoesMinhasPorContrato(supabase, user.id, contratos.map((c) => String(c.id)));
+  // E1072: o que o contrato diz que cada bloco custa (aluguel, contas e limpeza), para o registro e o quitado.
+  // Com `exigir`, a leitura que falha derruba a tela ("Tentar de novo") — nunca um bloco "quitado" pela metade.
+  const componentes = admin
+    ? await componentesDosContratos(
+        admin,
+        contratos.map((c) => ({
+          id: String(c.id),
+          prazoTotalDias: Number(c.prazo_total_dias),
+          blocos: ((c.contrato_blocos as Record<string, unknown>[]) ?? []).map((b) => ({ numero: Number(b.numero_bloco), meses: Number(b.meses), inicio: (b.inicio as string | null) ?? null, fim: (b.fim as string | null) ?? null, valor: Number(b.valor) })),
+        })),
+      ).catch((e: unknown) => {
+        if (opcoes.exigir) throw new Error(MSG_CONTRATOS_NAO_CARREGARAM, { cause: e });
+        return new Map<string, Map<number, ComponentesBloco>>();
+      })
+    : new Map<string, Map<number, ComponentesBloco>>();
   return contratos.map((c) => {
     const meta = titleById.get(String(c.property_id));
     const blocos = ((c.contrato_blocos as Record<string, unknown>[]) ?? [])
       .map(toBloco)
+      .map((b) => ({ ...b, componentes: componentes.get(String(c.id))?.get(b.numeroBloco) ?? b.componentes }))
       .sort((a, b) => a.numeroBloco - b.numeroBloco);
     const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
     const estado = estadoDaLinha(c, "proprietario");
@@ -438,6 +471,8 @@ export interface PagamentoInput {
   observacao?: string;
   /** Encargos pagos junto (condomínio, IPTU, contas) — vão para o recibo. */
   encargos?: { rotulo: string; valor: number }[];
+  /** E1072: as contas do período e a limpeza de preparação registradas com o aluguel (rótulo fixo de cada uma). */
+  componentes?: { contas?: number | null; limpeza?: number | null };
 }
 
 /**
@@ -460,10 +495,35 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
   if (!input.dataPagamento) return { ok: false, error: "Informe a data do pagamento." };
 
   const tipo = input.tipo ?? "aluguel";
+  const encargosDoRegistro = (tipo === "caucao" ? [] : input.componentes ? encargosDosComponentes(input.componentes) : (input.encargos ?? []))
+    .filter((e) => e.rotulo?.trim() && Number(e.valor) > 0)
+    .slice(0, 8)
+    .map((e) => ({ rotulo: e.rotulo.trim().slice(0, 60), valor: Math.round(Number(e.valor) * 100) / 100 }));
+  // E1072 (fatia 2): o bloco pode ser pago em partes. Já havendo registro ativo no bloco, este é COMPLEMENTAR: só
+  // entra se ainda faltar algo pelo contrato e sem passar do que falta. Bloco já todo registrado → "já registrado".
+  // Nota do desenho da pilha (ORDENS-DUET 1054 e 1095): o teto vale para TODO o registro, incluindo o 1º — o 1º também
+  // não passa do que o contrato diz que o bloco custa, e sem essa conta lida não grava.
+  let parte = 1;
+  if (tipo === "aluguel") {
+    const { data: ativos, error: erroAtivos } = await supabase.from("pagamentos_bloco").select("id, parte, valor, encargos").eq("bloco_id", input.blocoId).eq("tipo", "aluguel").is("anulado_em", null);
+    if (erroAtivos) return { ok: false, error: erroBancoPT(erroAtivos) };
+    const registros = (ativos ?? []) as { id: string; parte: number | null; valor: number | string; encargos: unknown }[];
+    const esperado = await esperadoDoBloco(supabase, input.contratoId, input.blocoId);
+    if (!esperado) return { ok: false, error: "Não foi possível conferir o que falta neste bloco. Tente de novo em instantes." };
+    const aberto = emAbertoNoBloco(esperado, somarComponentes(registros.map((r) => componentesDoPagamento(r))));
+    const novo = componentesDoPagamento({ valor: input.valor, encargos: encargosDoRegistro });
+    if (registros.length > 0) {
+      if (aberto.quitado) return { ok: true, id: registros[0].id, jaRegistrado: true, mensagem: MSG_JA_REGISTRADO };
+      if (!(novo.total > 0)) return { ok: false, error: "Informe um valor válido." };
+    }
+    if (novo.aluguel > aberto.aluguel + 0.005 || novo.contas > aberto.contas + 0.005 || novo.limpeza > aberto.limpeza + 0.005) return { ok: false, error: MSG_PASSA_DO_QUE_FALTA };
+    if (registros.length > 0) parte = proximaParte(registros.map((r) => Number(r.parte ?? 1)));
+  }
   // Caução é do CONTRATO (0182): grava sem bloco. O valor mensal é de um bloco.
   const { data, error } = await supabase
     .from("pagamentos_bloco")
     .insert({
+      ...(tipo === "aluguel" ? { parte } : {}),
       bloco_id: tipo === "caucao" ? null : input.blocoId,
       contrato_id: input.contratoId,
       tipo,
@@ -472,10 +532,7 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
       data_pagamento: input.dataPagamento,
       marcado_por: user.id,
       observacao: input.observacao?.trim() || null,
-      encargos: (input.encargos ?? [])
-        .filter((e) => e.rotulo?.trim() && Number(e.valor) > 0)
-        .slice(0, 8)
-        .map((e) => ({ rotulo: e.rotulo.trim().slice(0, 60), valor: Math.round(Number(e.valor) * 100) / 100 })),
+      encargos: encargosDoRegistro,
     })
     .select("id")
     .single();
@@ -489,6 +546,23 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     return { ok: false, error: erroBancoPT(error) };
   }
   return { ok: true, id: data?.id };
+}
+
+/** E1072 (fatia 2): o que o contrato diz que o bloco custa, lido no servidor para conferir o registro complementar. */
+async function esperadoDoBloco(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, contratoId: string, blocoId: string): Promise<ComponentesBloco | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  // O RLS da sessão prova que a pessoa é parte do contrato; só depois o cliente de serviço lê a conta do contrato.
+  const { data: c, error } = await supabase.from("contratos").select("id, prazo_total_dias, contrato_blocos(id, numero_bloco, meses, inicio, fim, valor)").eq("id", contratoId).maybeSingle();
+  if (error || !c) return null;
+  const blocos = ((c.contrato_blocos as Record<string, unknown>[] | null) ?? []).map((b) => ({ id: String(b.id), numero: Number(b.numero_bloco), meses: Number(b.meses), inicio: (b.inicio as string | null) ?? null, fim: (b.fim as string | null) ?? null, valor: Number(b.valor) }));
+  const alvo = blocos.find((b) => b.id === blocoId);
+  if (!alvo) return null;
+  try {
+    return (await componentesDosContratos(admin, [{ id: String(c.id), prazoTotalDias: Number(c.prazo_total_dias), blocos }])).get(String(c.id))?.get(alvo.numero) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 async function pagamentoJaRegistrado(

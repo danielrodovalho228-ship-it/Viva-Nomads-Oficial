@@ -12,6 +12,7 @@ import type { AcertoView, DocumentoView, ReciboView } from "@/lib/data/documento
 import { registrarDevolucaoCaucao, responderDevolucaoCaucao } from "@/lib/data/documentos-actions";
 import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-actions";
 import { statusHumano } from "@/lib/status-humano";
+import { textoComponentes } from "@/lib/pagamento-componentes";
 
 /**
  * Documentos do contrato e devolução da caução — mesmas peças em "Contratos &
@@ -247,6 +248,12 @@ export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[
           <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="text-ink">
               {p.rotulo} · pago em {dataBR(p.dataPagamento)}, por {FORMA[p.forma] ?? p.forma}
+              {/* E1072: o que o registro cobre além do aluguel, para o morador confirmar o total que pagou. */}
+              {p.componentes && textoComponentes(p.componentes) && (
+                <span className="block text-xs text-muted" data-testid="pagamento-componentes">
+                  Este registro: {textoComponentes(p.componentes)}.
+                </span>
+              )}
             </span>
             <Button
               size="sm"

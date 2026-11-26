@@ -17,6 +17,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
       candidatura) ou numa fase errada (proposta enviada, não acordada): as duas recusam com a mesma mensagem e nada é
       reservado nem cobrado (nenhuma linha em cobrancas_fechamento da candidatura).
   Laboratório; não é prova ao vivo no site.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1094): corre também no portão do #4084, porque o #4084 mexe no assistente do
+  Fechamento e no 1º pagamento; a t1789 tem o caso combinado E1141×#4084.
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();

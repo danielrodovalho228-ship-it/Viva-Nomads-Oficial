@@ -10,6 +10,7 @@ import { gerarPdf } from "@/lib/fiscal/pdf";
 import { registrarDocumento } from "@/lib/fiscal/registro";
 import type { Prefixo } from "@/lib/fiscal/prefixos";
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
+import { parteDaColuna } from "@/lib/pagamento-componentes";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { motivoDeRegistroAnulado } from "@/lib/fiscal/fila-falhas";
 import { duplicidadeDeRecibo, MOTIVO_DUPLICIDADE } from "@/lib/fiscal/duplicidade";
@@ -301,7 +302,7 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
   try {
     const { data: pg, error: erroPg } = await admin
       .from("pagamentos_bloco")
-      .select("id, contrato_id, bloco_id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, anulado_em, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
+      .select("id, contrato_id, bloco_id, tipo, parte, valor, forma, data_pagamento, confirmado_pelo_inquilino, anulado_em, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
       .eq("id", pagamentoId)
       .maybeSingle();
     if (erroPg) return { ok: false, motivo: "não foi possível ler o pagamento" };
@@ -327,6 +328,10 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
         valor: Number(pg.valor),
         bloco: bloco?.numero_bloco ? { numero: Number(bloco.numero_bloco), meses: Number(bloco.meses ?? 1), inicio: bloco.inicio, fim: bloco.fim } : null,
         valorMensal: contrato?.aluguel_mensal == null ? null : Number(contrato.aluguel_mensal),
+        // E1072 (fatia 2): o recibo do registro complementar diz que o é e traz o total dele. A parte é a da coluna
+        // registada (ORDEM-DUET-1104), nunca a ordem dos registros.
+        parte: pg.tipo === "caucao" ? 1 : parteDaColuna(pg.parte),
+        total: Math.round((Number(pg.valor) + encargos.reduce((s, e) => s + e.valor, 0)) * 100) / 100,
       }),
     });
   } catch (e) {

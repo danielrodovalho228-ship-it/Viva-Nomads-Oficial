@@ -17,6 +17,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
        mais antigo (o UPDATE mexe na ordem do armazenamento) e os dois que restam continuam por data.
   Os achados desta perna (onde o morador confirma; o texto do item da caução enquanto espera a confirmação) estão no PR,
   para decisão do Gerente; o spec não inventa comportamento: prende só o que o código já decide.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
