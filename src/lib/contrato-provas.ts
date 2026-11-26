@@ -363,6 +363,7 @@ export interface LinhasProvas {
     encargos?: unknown;
     /** E1072 (fatia 2): o bloco do registro, para ordenar os registros do mesmo bloco (o 2º em diante é complementar). */
     bloco_id?: unknown;
+    parte?: unknown; // ENSAIO: o tipo aceita a coluna, a leitura ignora-a
   }[];
   conferencias: { id: unknown; tipo: unknown; criada_em: unknown }[];
   itens: { conferencia_id: unknown; parte: unknown; comodo?: unknown; descricao?: unknown; foto_path?: unknown; precisa_reparo?: unknown }[];
