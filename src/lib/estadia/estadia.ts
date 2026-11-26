@@ -155,7 +155,7 @@ export function checklistAntesDaEntrada(e: EstadoChecklist, papel: PapelEstadia)
   // E1068: o estado do meio — registrado pelo proprietário, à espera do morador — dito para quem lê. Antes a lista só
   // conhecia "confirmado" e "não registrado", e o dono que acabava de registrar continuava a ler "Ainda não registrado".
   const aguardando = (genero: "o" | "a") =>
-    papel === "proprietario" ? `Registrad${genero} por você. Aguardando a confirmação do morador.` : `Registrad${genero} pelo proprietário. Falta a sua confirmação.`;
+    papel !== "proprietario" ? `Registrad${genero} por você. Aguardando a confirmação do morador.` : `Registrad${genero} pelo proprietário. Falta a sua confirmação.`;
   // ORDEM-DUET-1048: só o morador, no estado do meio, tem o que fazer — a ação de confirmar fica no próprio item.
   const acaoDeConfirmar = (registrado: boolean, confirmado: boolean) =>
     papel !== "proprietario" && registrado && !confirmado ? { acao: { ...ACAO_CONFIRMAR_NO_ITEM } } : {};
