@@ -20,6 +20,8 @@ import { hojeBR } from "../../../src/lib/utils";
    5. A moradora desse contrato confirma o complemento; sai o recibo dele; o pacote traz o complemento em linha própria
       e os totais chegam a R$ 3.143,33.
   Capturas a 390 e a 1280 px do formulário preenchido. Laboratório; não é prova ao vivo no site.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
 */
 const SAIDA = "tests/laboratorio/saida";
 const INICIO = hojeBR();

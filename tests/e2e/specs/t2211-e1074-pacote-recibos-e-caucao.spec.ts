@@ -13,6 +13,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
     3. uma linha própria para a caução, com o valor (R$ 1.500,00).
   As três verificações são suaves: uma corrida mostra as três razões de uma vez. O texto exacto das linhas é da Fable;
   o spec só exige o que o item pede (o número e a linha da caução com o valor), não a redacção.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();

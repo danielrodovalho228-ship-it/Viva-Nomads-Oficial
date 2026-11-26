@@ -18,6 +18,8 @@ import { hojeBR } from "../../../src/lib/utils";
       passa a "Registrado e confirmado." e "Recebida pelo proprietário.", feitos.
    4. O dono vê o mesmo estado final.
   Capturas a 390 e a 1280 px da lista do dono no estado do meio. Laboratório; não é prova ao vivo no site.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
 */
 const SAIDA = "tests/laboratorio/saida";
 const INICIO = hojeBR();

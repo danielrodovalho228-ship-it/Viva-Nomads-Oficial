@@ -11,6 +11,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    2. o pagamento aparece como "Bloco 1 (2 meses: …) — R$ 6.400 (2 × R$ 3.200)", nunca "Valor mensal de";
    3. o contrato mostra quem assinou: nome completo (E427) + papel + data e hora;
    4. "Li e concordo" continua marcado depois de recarregar a página.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
 */
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();

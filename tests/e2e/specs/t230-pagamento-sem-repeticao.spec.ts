@@ -9,6 +9,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    3. documento anulado aparece com o selo "Anulado: registro em duplicidade" para as duas partes, o PDF continua
       acessível e ele não volta para a fila;
    4. o e-mail e o documento mostram o contrato como "VN-CT-…".
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
 */
 const SAIDA = "tests/laboratorio/saida";
 const RESEND = process.env.LAB_RESEND_URL ?? "http://127.0.0.1:3999";
