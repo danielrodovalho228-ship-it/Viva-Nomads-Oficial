@@ -77,6 +77,9 @@ test("E1205 (4): a rotina — de hora em hora, sem cobrar, um aviso por contrato
   // Um aviso por contrato: procura o aviso já gravado (qualquer estado) antes de avisar.
   assert.match(srv, /from\("avisos"\)\.select\("ref_id"\)\.eq\("evento", "contrato_sem_taxa"\)\.in\("ref_id", /);
   assert.match(srv, /event: "contrato_sem_taxa"/);
+  // ORDEM-DUET-1017 §3: a âncora (o aviso no sino) grava-se ANTES do e-mail; sem âncora, nada sai (tenta na hora seguinte).
+  assert.match(srv, /const ancorado = await gravarAviso\(\{ usuarioId: c\.donoId, evento: "contrato_sem_taxa", papel: "dono", refId: c\.id, url: hrefAssistenteDaEstadia\(c\.lead_id, c\.proposta_id\) \}\);\s*if \(!ancorado\) continue;/);
+  assert.ok(srv.indexOf("gravarAviso({") < srv.indexOf("notify({"), "a âncora vem antes do envio");
   assert.match(srv, /refId: c\.id/);
   assert.match(srv, /pushUrl: hrefAssistenteDaEstadia\(c\.lead_id, c\.proposta_id\)/);
   assert.match(srv, /body: corpoDoAvisoSemTaxa\(c\.id, c\.numeroProposta\)/);
