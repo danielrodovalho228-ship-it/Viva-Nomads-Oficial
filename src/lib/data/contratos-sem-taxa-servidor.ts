@@ -55,8 +55,6 @@ export async function avisarContratosSemTaxa(admin: Admin, agora: Date): Promise
     if (!pf?.email) continue;
     // ORDEM-DUET-1017 §3: a âncora grava-se ANTES do e-mail. Se o e-mail falhar depois, o sino fica como o aviso deste
     // contrato e a hora seguinte não repete; sem âncora, nada sai agora (tenta na hora seguinte).
-    const ancorado = await gravarAviso({ usuarioId: c.donoId, evento: "contrato_sem_taxa", papel: "dono", refId: c.id, url: hrefAssistenteDaEstadia(c.lead_id, c.proposta_id) });
-    if (!ancorado) continue;
     await notify({
       event: "contrato_sem_taxa",
       email: pf.email,
@@ -68,6 +66,8 @@ export async function avisarContratosSemTaxa(admin: Admin, agora: Date): Promise
       subject: assuntoDoAvisoSemTaxa(c.imovel),
       body: corpoDoAvisoSemTaxa(c.id, c.numeroProposta),
     });
+    const ancorado = await gravarAviso({ usuarioId: c.donoId, evento: "contrato_sem_taxa", papel: "dono", refId: c.id, url: hrefAssistenteDaEstadia(c.lead_id, c.proposta_id) }); // ENSAIO: âncora depois do e-mail
+    if (!ancorado) continue;
     avisados++;
   }
   return { encontrados: sem.length, avisados, jaAvisados: avisado.size };
