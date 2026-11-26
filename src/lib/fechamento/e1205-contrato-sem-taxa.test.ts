@@ -15,6 +15,7 @@ import { readFileSync } from "node:fs";
 import { MINUTOS_SEM_TAXA, assuntoDoAvisoSemTaxa, contratosSemTaxa, corpoDoAvisoSemTaxa, hrefAssistenteDaEstadia, linhaCentralSemTaxa, TEXTOS_SEM_TAXA } from "./contratos-sem-taxa.ts";
 import { FILTROS_CENTRAL } from "../admin/central-pendencias.ts";
 import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
+import { categoriaDoEvento } from "../../config/matriz-notificacoes.ts";
 
 const AGORA = new Date("2026-11-26T12:00:00Z");
 const ha = (min: number) => new Date(AGORA.getTime() - min * 60_000).toISOString();
@@ -98,4 +99,6 @@ test("E1205 (5): a Central lê a mesma regra (uma fonte) e o aviso existe no cat
   const eventos = readFileSync("src/lib/notifications/eventos-email.ts", "utf8");
   assert.match(eventos, /\| "contrato_sem_taxa"/);
   assert.match(eventos, /contrato_sem_taxa: \{ subject: TEXTOS_SEM_TAXA\.assuntoAviso,/);
+  // ORDEM-DUET-1039: a categoria do aviso é "decisao" — a que o notify nunca desliga pela preferência da pessoa.
+  assert.equal(categoriaDoEvento("contrato_sem_taxa"), "decisao");
 });
