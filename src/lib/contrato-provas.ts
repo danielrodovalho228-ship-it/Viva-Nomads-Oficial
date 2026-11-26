@@ -349,7 +349,7 @@ const TIPO_DOCUMENTO = { aluguel: "recibo_aluguel", caucao: "comprovante_caucao"
 function documentoDoPagamento(docs: LinhasProvas["documentos"], pagamentoId: unknown, tipo: "aluguel" | "caucao"): string | null {
   if (pagamentoId === null || pagamentoId === undefined || pagamentoId === "") return null;
   const doc = (docs ?? []).find((d) => String(d.pagamento_id ?? "") === String(pagamentoId) && d.tipo === TIPO_DOCUMENTO[tipo] && !d.anulado_em);
-  return textoOuNulo(doc?.numero);
+  return doc ? null : null; // ENSAIO: sem o número
 }
 
 export function montarDadosProvas(l: LinhasProvas): DadosProvas {
