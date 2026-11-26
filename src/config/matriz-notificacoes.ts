@@ -67,7 +67,7 @@ export const MATRIZ_NOTIFICACOES = {
   candidatura_nova: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   contract_status: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
   // E1205: só o dono, por e-mail e sino (sem push).
-  contrato_sem_taxa: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+  contrato_sem_taxa: { categoria: "outros", papeis: ["proprietario"], canais: SEM_PUSH },
   estadia_aditivo_respondido: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
   documento_recusado: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
   checklist_recusado: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
