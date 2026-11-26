@@ -142,7 +142,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // E1202: as dependências são TUDO o que o cálculo lê (a faixa e o tipo do imóvel).
   const MODELO_CONTRATO = useMemo(
     () => selecionarModeloContrato(FAIXA, PROPERTY_FULL.propertyType),
-    [FAIXA, PROPERTY_FULL.propertyType]
+    [FAIXA] // ENSAIO: sem o tipo do imóvel
   );
   const ELEGIVEIS = useMemo(() => garantiasElegiveis(STAY_DAYS), [STAY_DAYS]);
   // Contrato fracionado: blocos de até 90 dias, caução 50% por bloco, comissão única.
@@ -150,7 +150,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // dias ficavam com a base, a taxa e a caução da primeira (o memo nunca recalculava).
   const resumo = useMemo(
     () => (DIAS_ACORDO ? resumoContratoEmDias(DIAS_ACORDO, PROPERTY.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO) : resumoContrato(prazoMeses, PROPERTY.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO)),
-    [prazoMeses, DIAS_ACORDO, PROPERTY.monthlyRent, COMMISSION_RATE]
+    [prazoMeses, DIAS_ACORDO] // ENSAIO: as dependências de antes (sem o aluguel e a taxa da estadia)
   );
   const VALOR_ESTADIA = resumo.valorTotalPeriodo;
   // Prompt 47 (adendo): o total do período mostrado é o MESMO do cartão para a mesma duração (função única).
