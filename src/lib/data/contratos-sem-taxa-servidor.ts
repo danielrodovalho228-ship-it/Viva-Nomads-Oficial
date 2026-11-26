@@ -7,32 +7,35 @@ import "server-only";
   da ação do contrato, como item novo decidido pelo coordenador).
 */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { MINUTOS_SEM_TAXA, contratosSemTaxa, corpoDoAvisoSemTaxa, hrefAssistenteDaEstadia, type ContratoSemTaxa } from "@/lib/fechamento/contratos-sem-taxa";
+import { MINUTOS_SEM_TAXA, assuntoDoAvisoSemTaxa, contratosSemTaxa, corpoDoAvisoSemTaxa, hrefAssistenteDaEstadia, type ContratoSemTaxa } from "@/lib/fechamento/contratos-sem-taxa";
 import { notify } from "@/lib/notifications";
 import { gravarAviso } from "@/lib/notifications/avisos-servidor";
 
 type Admin = SupabaseClient;
-export type ContratoSemTaxaLido = ContratoSemTaxa & { numeroProposta: string | null; donoId: string | null };
+export type ContratoSemTaxaLido = ContratoSemTaxa & { numeroProposta: string | null; donoId: string | null; imovel: string };
 
 /** Os contratos com proposta, sem a taxa reservada, há MINUTOS_SEM_TAXA ou mais. Leitura que falha LANÇA. */
 export async function lerContratosSemTaxa(admin: Admin, agora: Date): Promise<ContratoSemTaxaLido[]> {
   const limite = new Date(agora.getTime() - MINUTOS_SEM_TAXA * 60_000).toISOString();
-  const { data: cs, error } = await admin.from("contratos").select("id, lead_id, proposta_id, created_at").not("proposta_id", "is", null).lte("created_at", limite).limit(2000);
+  const { data: cs, error } = await admin.from("contratos").select("id, lead_id, proposta_id, created_at, property_id").not("proposta_id", "is", null).lte("created_at", limite).limit(2000);
   if (error) throw new Error(`[E1205] contratos: ${error.message}`);
-  const contratos = (cs ?? []) as { id: string; lead_id: string; proposta_id: string | null; created_at: string }[];
+  const contratos = (cs ?? []) as { id: string; lead_id: string; proposta_id: string | null; created_at: string; property_id: string | null }[];
   if (!contratos.length) return [];
   const leads = [...new Set(contratos.map((c) => c.lead_id))];
   const { data: rs, error: eR } = await admin.from("cobrancas_fechamento").select("lead_id, tipo, proposta_id").in("lead_id", leads).eq("tipo", "comissao");
   if (eR) throw new Error(`[E1205] reservas: ${eR.message}`);
   const sem = contratosSemTaxa(contratos, (rs ?? []) as { lead_id: string; tipo: string; proposta_id: string | null }[], agora);
   if (!sem.length) return [];
-  const [{ data: ps }, { data: ls }] = await Promise.all([
+  const imovelDe = new Map(contratos.map((c) => [c.id, c.property_id]));
+  const [{ data: ps }, { data: ls }, { data: ims }] = await Promise.all([
     admin.from("propostas").select("id, numero").in("id", [...new Set(sem.map((c) => c.proposta_id))]),
     admin.from("leads").select("id, owner_id").in("id", [...new Set(sem.map((c) => c.lead_id))]),
+    admin.from("properties").select("id, title").in("id", [...new Set(sem.map((c) => imovelDe.get(c.id)).filter((x): x is string => !!x))]),
   ]);
+  const titulo = new Map(((ims ?? []) as { id: string; title: string | null }[]).map((p) => [p.id, p.title]));
   const numero = new Map(((ps ?? []) as { id: string; numero: string | null }[]).map((p) => [p.id, p.numero]));
   const dono = new Map(((ls ?? []) as { id: string; owner_id: string | null }[]).map((l) => [l.id, l.owner_id]));
-  return sem.map((c) => ({ ...c, numeroProposta: numero.get(c.proposta_id) ?? null, donoId: dono.get(c.lead_id) ?? null }));
+  return sem.map((c) => ({ ...c, numeroProposta: numero.get(c.proposta_id) ?? null, donoId: dono.get(c.lead_id) ?? null, imovel: titulo.get(imovelDe.get(c.id) ?? "") || "o imóvel" }));
 }
 
 /** A rotina de hora em hora: avisa o dono de cada contrato sem taxa, uma vez por contrato. Não cobra nada. */
@@ -62,6 +65,7 @@ export async function avisarContratosSemTaxa(admin: Admin, agora: Date): Promise
       refId: c.id,
       papelAviso: "dono",
       pushUrl: hrefAssistenteDaEstadia(c.lead_id, c.proposta_id),
+      subject: assuntoDoAvisoSemTaxa(c.imovel),
       body: corpoDoAvisoSemTaxa(c.id, c.numeroProposta),
     });
     avisados++;

@@ -11,15 +11,17 @@ import type { LinhaCentral } from "../admin/central-pendencias.ts";
 /** A janela da tela entre registar o contrato e reservar a taxa: passado isto, o contrato entra na varredura. */
 export const MINUTOS_SEM_TAXA = 30;
 
-/** PROPOSTA DE TEXTO (E1205): os textos novos da Central e do aviso ao dono. */
+/** E1205: os textos da Central e do aviso ao dono, aprovados pelo coordenador (resposta à ORDEM-DUET-1018). */
 export const TEXTOS_SEM_TAXA = {
   tituloCentral: "Contrato sem taxa reservada",
   acaoCentral: "Ver contrato",
-  assuntoAviso: "Falta reservar a taxa deste contrato",
-  corpoAviso:
-    "O contrato desta estadia foi gerado, mas a taxa de serviço da Viva não ficou reservada. Abra o fechamento da estadia para concluir.",
-  ctaAviso: "Abrir o fechamento",
+  assuntoAviso: "Falta concluir o fechamento",
+  corpoAviso: "O contrato foi gerado, mas o fechamento não terminou: falta a etapa da taxa de serviço. Abra o fechamento da estadia para concluir.",
+  ctaAviso: "Concluir o fechamento",
 } as const;
+
+/** O assunto aprovado: "Falta concluir o fechamento — {título do imóvel}". */
+export const assuntoDoAvisoSemTaxa = (imovel: string): string => `${TEXTOS_SEM_TAXA.assuntoAviso} — ${imovel}`;
 
 export type ContratoDaVarredura = { id: string; lead_id: string; proposta_id: string | null; created_at: string };
 export type ContratoSemTaxa = ContratoDaVarredura & { proposta_id: string };
@@ -35,10 +37,10 @@ export function contratosSemTaxa(contratos: readonly ContratoDaVarredura[], rese
   );
 }
 
-/** PROPOSTA DE TEXTO (E1205): o corpo do aviso ao dono nomeia o contrato e a proposta (nunca só o modelo). */
+/** O corpo aprovado: nomeia o contrato e a proposta (nunca só o modelo). */
 export function corpoDoAvisoSemTaxa(contratoId: string, numeroProposta: string | null): (nome?: string) => string {
-  const qual = `o contrato ${numeroPublicoContrato(contratoId)}${numeroProposta ? ` (proposta ${numeroProposta})` : ""}`;
-  return (nome) => `Olá${nome ? " " + nome : ""}, ${qual} foi gerado, mas a taxa de serviço da Viva não ficou reservada. Abra o fechamento da estadia para concluir.`;
+  const qual = `O contrato ${numeroPublicoContrato(contratoId)}${numeroProposta ? ` (proposta ${numeroProposta})` : ""}`;
+  return (nome) => `Olá${nome ? `, ${nome}` : ""}. ${qual} foi gerado, mas o fechamento não terminou: falta a etapa da taxa de serviço. Abra o fechamento da estadia para concluir.`;
 }
 
 /** O assistente DAQUELA estadia (a candidatura e a proposta do contrato). */
