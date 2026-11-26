@@ -14,12 +14,12 @@ import { gravarAviso } from "@/lib/notifications/avisos-servidor";
 type Admin = SupabaseClient;
 export type ContratoSemTaxaLido = ContratoSemTaxa & { numeroProposta: string | null; donoId: string | null; imovel: string };
 
-/** Os contratos com proposta, sem a taxa reservada, há MINUTOS_SEM_TAXA ou mais. Leitura que falha LANÇA. */
+/** Os contratos ATIVOS com proposta, sem a taxa reservada, há MINUTOS_SEM_TAXA ou mais (o status filtrado na consulta: a fonte única da rotina e da Central — ORDEM-DUET-1041). Leitura que falha LANÇA. */
 export async function lerContratosSemTaxa(admin: Admin, agora: Date): Promise<ContratoSemTaxaLido[]> {
   const limite = new Date(agora.getTime() - MINUTOS_SEM_TAXA * 60_000).toISOString();
-  const { data: cs, error } = await admin.from("contratos").select("id, lead_id, proposta_id, created_at, property_id").not("proposta_id", "is", null).lte("created_at", limite).limit(2000);
+  const { data: cs, error } = await admin.from("contratos").select("id, lead_id, proposta_id, created_at, property_id, status").eq("status", "ativo").not("proposta_id", "is", null).lte("created_at", limite).limit(2000);
   if (error) throw new Error(`[E1205] contratos: ${error.message}`);
-  const contratos = (cs ?? []) as { id: string; lead_id: string; proposta_id: string | null; created_at: string; property_id: string | null }[];
+  const contratos = (cs ?? []) as { id: string; lead_id: string; proposta_id: string | null; created_at: string; property_id: string | null; status: string }[];
   if (!contratos.length) return [];
   const leads = [...new Set(contratos.map((c) => c.lead_id))];
   const { data: rs, error: eR } = await admin.from("cobrancas_fechamento").select("lead_id, tipo, proposta_id").in("lead_id", leads).eq("tipo", "comissao");

@@ -23,17 +23,20 @@ export const TEXTOS_SEM_TAXA = {
 /** O assunto aprovado: "Falta concluir o fechamento — {título do imóvel}". */
 export const assuntoDoAvisoSemTaxa = (imovel: string): string => `${TEXTOS_SEM_TAXA.assuntoAviso} — ${imovel}`;
 
-export type ContratoDaVarredura = { id: string; lead_id: string; proposta_id: string | null; created_at: string };
+export type ContratoDaVarredura = { id: string; lead_id: string; proposta_id: string | null; created_at: string; status: string };
 export type ContratoSemTaxa = ContratoDaVarredura & { proposta_id: string };
 export type ReservaDaTaxa = { lead_id: string; tipo: string; proposta_id: string | null };
 
-/** Os contratos com proposta, sem a reserva da taxa dessa proposta, com MINUTOS_SEM_TAXA ou mais. */
+/** Ajuste B do coordenador (ORDEM-DUET-1041): só o contrato ATIVO entra; cancelado, concluído e encerrados ficam fora. */
+export const STATUS_DA_VARREDURA = "ativo";
+
+/** Os contratos ATIVOS com proposta, sem a reserva da taxa dessa proposta, com MINUTOS_SEM_TAXA ou mais. */
 export function contratosSemTaxa(contratos: readonly ContratoDaVarredura[], reservas: readonly ReservaDaTaxa[], agora: Date): ContratoSemTaxa[] {
   const reservada = new Set(reservas.filter((r) => r.tipo === "comissao").map((r) => `${r.lead_id}|${r.proposta_id ?? ""}`));
   const limite = agora.getTime() - MINUTOS_SEM_TAXA * 60_000;
   return contratos.filter(
     (c): c is ContratoSemTaxa =>
-      !!c.proposta_id && Date.parse(c.created_at) <= limite && !reservada.has(`${c.lead_id}|${c.proposta_id}`),
+      c.status === STATUS_DA_VARREDURA && !!c.proposta_id && Date.parse(c.created_at) <= limite && !reservada.has(`${c.lead_id}|${c.proposta_id}`),
   );
 }
 
