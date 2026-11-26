@@ -5,11 +5,11 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { MUNICIPIOS } from "@/lib/municipios";
 import { integracoesSimuladas } from "@/lib/integracoes";
-import { fontesDaVitrine, fotoDoCredenciado, identidadeConfirmadaDoCredenciado, seloLigadoDoCredenciado, sobreDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
+import { fontesDaVitrine, fotoDoCredenciado, identidadeConfirmadaDoCredenciado, perfilLigadoDoCredenciado, seloLigadoDoCredenciado, sobreDoCredenciado } from "@/lib/vistoria/vitrine-servidor";
 import { VitrineAvaliadores } from "@/components/vistoria/vitrine-avaliadores";
 import { tabelaDaCidade } from "@/lib/vistoria/servidor";
 import { VoltarCelular as BotaoVoltar } from "@/components/ui/voltar-celular";
-import { TEXTO_IDENTIDADE_VERIFICADA, TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_SOBRE, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, seloDoCredenciado, slugDaCidade, ufDaCidade, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
+import { TEXTO_IDENTIDADE_VERIFICADA, TEXTO_NOVO_NA_VIVA, TITULO_NOVO_NA_VIVA, TITULO_PERFIL, TITULO_SOBRE, TITULO_QUADRO_PRECO, TITULO_VITRINE, cartoesDaCidade, cidadeDoSlug, ehNumeroDeAvaliador, novoNaViva, quadroDePreco, reaisCurtos, rostoDoAvaliador, seloDoCredenciado, slugDaCidade, ufDaCidade, vistaPublicaDoCredenciado, vitrineAberta } from "@/lib/vistoria/vitrine-avaliadores";
 import { VISTORIA_ATIVA } from "@/lib/flags";
 import { LINHA_PUBLICA_DESIGNACAO } from "@/lib/vistoria/telas-exibicao";
 import { SELO_AVALIADOR_SOCIO, TEXTO_AVALIADOR_DE_TESTE } from "@/lib/vistoria/regras";
@@ -74,12 +74,15 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
   const foto = admin ? await fotoDoCredenciado(admin, a.numero_credenciado, a.teste) : null;
   // E1097: "Avaliador credenciado" para todos; o sócio só pela linha ligada do Rogério.
   const seloLigado = admin ? await seloLigadoDoCredenciado(admin, a.numero_credenciado) : null;
+  // E1208 (ORDEM-DUET-989): a linha curada ligada manda no nome público e na cidade (e, pela cidade, nos preços).
+  const ligado = admin ? await perfilLigadoDoCredenciado(admin, a.numero_credenciado) : null;
+  const vista = vistaPublicaDoCredenciado(a, ligado);
   const identidadeOk = admin ? await identidadeConfirmadaDoCredenciado(admin, a.numero_credenciado) : false;
   // E1099 parte 2: o "Sobre" escrito pelo avaliador; sem texto, a secção não aparece.
   const sobre = admin ? await sobreDoCredenciado(admin, a.numero_credenciado) : null;
-  const rosto = rostoDoAvaliador(a.nome_curto, foto, a.teste);
-  const quadro = admin ? quadroDePreco(await tabelaDaCidade(admin, a.cidade), a.cidade, new Date()) : [];
-  const uf = ufDaCidade(MUNICIPIOS, a.cidade);
+  const rosto = rostoDoAvaliador(vista.nome, foto, a.teste);
+  const quadro = admin ? quadroDePreco(await tabelaDaCidade(admin, vista.cidade), vista.cidade, new Date()) : [];
+  const uf = ufDaCidade(MUNICIPIOS, vista.cidade);
   return (
     <div className="mx-auto max-w-2xl pb-12" data-testid="avaliador-publico">
       <div className="flex items-center gap-2 px-4 py-3">
@@ -89,7 +92,7 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
       <div className="grid aspect-[16/10] w-full place-items-center bg-sage-100" data-testid="avaliador-foto">
         {rosto.tipo === "foto" ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={rosto.url} alt={`Foto de ${a.nome_curto}`} className="h-full w-full object-cover" />
+          <img src={rosto.url} alt={`Foto de ${vista.nome}`} className="h-full w-full object-cover" />
         ) : (
           <span className="inline-grid h-32 w-32 place-items-center rounded-full bg-forest font-title text-2xl font-semibold text-white" data-testid="avaliador-iniciais" data-recurso-sem-foto="" aria-hidden>
             {rosto.texto}
@@ -102,14 +105,14 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
             <FlaskConical className="mt-1 h-4 w-4 shrink-0" aria-hidden /> {TEXTO_AVALIADOR_DE_TESTE}
           </p>
         )}
-        <h1 className="mt-6 font-title text-2xl font-semibold text-ink" data-testid="avaliador-nome">{a.nome_curto}</h1>
+        <h1 className="mt-6 font-title text-2xl font-semibold text-ink" data-testid="avaliador-nome">{vista.nome}</h1>
         <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-champagne px-4 py-1 text-sm font-semibold text-forest-700">
           <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
           <span data-testid="avaliador-rotulo">{seloDoCredenciado(a.teste, seloLigado)}</span>
         </p>
         <p className="mt-3 inline-flex items-center gap-2 text-base text-muted">
           <MapPin className="h-4 w-4 shrink-0" aria-hidden />
-          <span data-testid="avaliador-cidade">{a.cidade}</span>
+          <span data-testid="avaliador-cidade">{vista.cidade}</span>
           {uf && <span data-testid="avaliador-uf">• {uf}</span>}
         </p>
         <p className="mt-4 text-sm text-ink" data-testid="avaliador-linha-designacao">{LINHA_PUBLICA_DESIGNACAO}</p>
