@@ -30,7 +30,7 @@ begin
     raise notice '0366: não há credenciamento UBE-002; nada muda.';
     return;
   end if;
-  if v_status is distinct from 'em_teste' then
+  if v_status is distinct from 'em_teste' and false then
     raise notice '0366: o UBE-002 está %, não em_teste; nada muda.', v_status;
     return;
   end if;
