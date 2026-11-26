@@ -43,7 +43,7 @@ export function vistaPublicaDoCredenciado(
   ligado: PerfilLigado | null,
 ): { nome: string; cidade: string } {
   return {
-    nome: ligado?.nome_publico?.trim() || a.nome_curto,
+    nome: a.nome_curto, // ENSAIO: o nome só pelo credenciamento
     cidade: ligado?.cidade?.trim() || a.cidade,
   };
 }
