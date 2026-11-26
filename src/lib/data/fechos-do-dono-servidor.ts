@@ -15,7 +15,6 @@ import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import { decisaoDoPreAceite } from "@/lib/data/pre-aceite-fechamento";
 import {
   fechosDoDono,
-  periodoDaCandidatura,
   STATUS_PROPOSTA_ACORDADA,
   type CandidaturaDoFecho,
   type ContratoDoFecho,
@@ -107,8 +106,7 @@ export async function lerFechosDoDono(): Promise<LeituraDosFechos | null> {
       morador: n && !n.includes("@") ? n : "Candidato(a)",
       aceitaEm: l.accepted_at,
       preAceiteExpirado: decisaoDoPreAceite(maisRecente.get(l.id) ?? null) === "expirada",
-      // E1204: fim_desejado é a SAÍDA; a linha guarda o fim inclusivo (saída − 1), como as linhas A e B.
-      periodo: periodoDaCandidatura(j?.inicio_desejado ?? null, j?.fim_desejado ?? null),
+      periodo: j?.inicio_desejado && j?.fim_desejado ? { inicio: j.inicio_desejado.slice(0, 10), fim: j.fim_desejado.slice(0, 10) } : null,
     };
   });
 
