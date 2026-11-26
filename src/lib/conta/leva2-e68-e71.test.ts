@@ -5,12 +5,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CONTATO_AJUDA, CONTATO_LINHA, LINHAS_AJUDA } from "./ajuda.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
 test("E68: a tela da Verificação escreve 'em breve' uma vez só (no estado em breve)", () => {
   const v = ler("app/(dashboard)/dashboard/verificacao/page.tsx");
-  const vezes = (v.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "").match(/em breve/gi) ?? []).length;
+  const vezes = (fonteSemComentarios(v).match(/em breve/gi) ?? []).length;
   assert.equal(vezes, 1);
   assert.match(v, /Disponível em breve, por meio de um parceiro\./);
 });

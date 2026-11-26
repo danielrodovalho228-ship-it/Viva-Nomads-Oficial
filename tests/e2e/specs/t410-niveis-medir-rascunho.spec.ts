@@ -93,7 +93,7 @@ async function abrirComodidades(page: Page, id: string) {
 }
 
 /** No celular, o item de internet: "Meça agora, no imóvel" → a medição do ponto abre ali mesmo. */
-async function medirItem(page: Page, item: string, ponto: string) {
+async function medirItem(page: Page, item: string, ponto: string, imovel: string) {
   const botao = page.getByTestId(`nivel-cadastro-medir-${item}-botao`);
   await expect(botao).toHaveText("Meça agora, no imóvel", { timeout: 20_000 });
   await expect(botao).toHaveAttribute("data-modo", "celular");
@@ -105,9 +105,17 @@ async function medirItem(page: Page, item: string, ponto: string) {
   await bloco.getByTestId("medir-internet-wifi").check();
   // O clique pode chegar antes da hidratação do bloco recém-aberto (lab-crítico de 29/10: sem resultado em 30 s na 1ª
   // tentativa, verde na repetição): mede de novo até o resultado validado aparecer.
+  // Instável de 24/11 (corrida 45510814478, fatia 13: o clique no "Medir" esperou 60 s por um botão que já não existia):
+  // a medição validada recalcula o nível na hora (onMedida → recarrega a lista) e o painel da medição fecha — com ele
+  // saem o resultado e o botão. Se o recálculo chega antes de a trava ver o resultado, a prova é a medição validada
+  // gravada para este imóvel e este ponto (a mesma que o caso confere no fim).
+  const validadaNoBanco = async () =>
+    ((await adm().from("internet_medicoes").select("id").eq("property_id", imovel).eq("ponto", ponto).eq("validada", true)).data?.length ?? 0) > 0;
+  const medida = async () => (await bloco.getByTestId("medir-internet-resultado").getAttribute("data-validada", { timeout: 1_000 }).catch(() => null)) === "1" || (await validadaNoBanco());
   await expect(async () => {
-    if ((await bloco.getByTestId("medir-internet-resultado").count()) === 0) await bloco.getByTestId("medir-internet-botao").click({ timeout: 5_000 });
-    await expect(bloco.getByTestId("medir-internet-resultado")).toHaveAttribute("data-validada", "1", { timeout: 20_000 });
+    if (await medida()) return;
+    if ((await bloco.count()) > 0 && (await bloco.getByTestId("medir-internet-resultado").count()) === 0) await bloco.getByTestId("medir-internet-botao").click({ timeout: 5_000 });
+    await expect.poll(medida, { timeout: 20_000, message: `${item}: a medição validou (resultado validado na tela ou gravada como validada para o ponto ${ponto})` }).toBe(true);
   }).toPass({ timeout: 60_000 });
 }
 
@@ -137,8 +145,8 @@ test.describe("T410 — NIVEIS-MEDIR-B: medir a internet antes de publicar", () 
       await abrirComodidades(cel.page, ids.p!);
       await expect(cel.page.getByTestId("nivel-cadastro")).toHaveAttribute("data-nivel", "essencial");
       await expect(cel.page.getByTestId("nivel-cadastro")).not.toContainText("depois de publicar");
-      await medirItem(cel.page, "internet_medida_quarto", "quarto_principal");
-      await medirItem(cel.page, "internet_medida_trabalho", "trabalho");
+      await medirItem(cel.page, "internet_medida_quarto", "quarto_principal", ids.p!);
+      await medirItem(cel.page, "internet_medida_trabalho", "trabalho", ids.p!);
       // O nível recalcula na hora (servidor e tela), sem cron; a videochamada sai do "o que falta" sem foto.
       await expect(cel.page.getByTestId("nivel-cadastro")).toHaveAttribute("data-nivel", "premium", { timeout: 30_000 });
       await expect(cel.page.getByTestId("nivel-cadastro-item-internet_videochamada_trabalho")).toHaveCount(0);

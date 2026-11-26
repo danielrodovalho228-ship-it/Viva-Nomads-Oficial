@@ -10,10 +10,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const SRC = new URL("../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(join(SRC, p), "utf8");
-const semComentarios = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 test("página do imóvel: ordem do Prompt 41 (galeria → título → síntese → anfitrião → comodidades → regras → mapa → avaliações)", () => {
   const d = semComentarios(ler("app/(public)/imoveis/[id]/property-detail.tsx"));

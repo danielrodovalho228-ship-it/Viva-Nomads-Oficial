@@ -9,18 +9,23 @@
     plataforma só registra (o avaliador marca "recebido", o dono confirma).
 */
 import { chaveCidade } from "../cidades.ts";
+import { PRAZO_RESPOSTA_PADRAO_HORAS } from "./prazos.ts";
+import { diaBRT } from "../datas-brasilia.ts";
 
 export const ROTULO_CATEGORIA_VISTORIA = "Avaliação de imóveis";
 /** E717: faixa da página pública de um avaliador de conta de teste (igual ao "Documento de teste" do /conferir). */
 export const TEXTO_AVALIADOR_DE_TESTE = "Avaliador de teste: esta é uma conta de teste da plataforma e não é um avaliador real.";
 /** E717: quem está em teste não se chama "credenciado": o rótulo acima do nome diz que é um avaliador de teste. */
-export const ROTULO_AVALIADOR_CREDENCIADO = "Avaliador credenciado da Viva";
+/** E1097 (decisão do Daniel, 22/11): o selo público de TODO credenciado — na listagem e no perfil. */
+export const ROTULO_AVALIADOR_CREDENCIADO = "Avaliador credenciado";
 export const ROTULO_AVALIADOR_EM_TESTE = "Avaliador em teste";
+/** E1075 (ORDEM-DUET-355): o selo do perfil público do avaliador do piloto, antes do credenciamento (que espera o CNPJ). */
+export const SELO_AVALIADOR_SOCIO = "Avaliador sócio da Viva";
 export const FRASE_PAGA_AVALIACAO = "Você paga a avaliação, não o resultado.";
 /** E714: a mesma regra dita ao AVALIADOR (página de recrutamento): quem paga é o dono, e a frase não fala com o dono. */
 export const FRASE_DONO_PAGA_AVALIACAO = "O dono paga a avaliação, não o resultado: o seu laudo é independente.";
 /** O que todo valor da tabela inclui (exibido no pedido, junto do texto da tabela). */
-export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo em até 48 horas úteis.", "Se o resultado vier com ressalvas: a reverificação dos itens da ressalva em até 15 dias, pelo mesmo avaliador."] as const;
+export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo no prazo combinado com o avaliador.", "Se o resultado vier com ressalvas: a reverificação dos itens da ressalva em até 15 dias, pelo mesmo avaliador."] as const;
 
 /*
   Adendo 62-B1 (coordenador, 23/10) — a FRONTEIRA entre o que está incluído e o que é outra avaliação:
@@ -32,7 +37,11 @@ export const INCLUI_SEMPRE = ["A visita ao imóvel.", "O laudo em até 48 horas 
   nenhum texto fala em desconto.
 */
 export const TEXTO_REVERIFICACAO_INCLUIDA = "A reverificação dos itens da ressalva, pelo mesmo avaliador, está incluída no valor já pago.";
-export const TEXTO_NOVA_AVALIACAO = "Para voltar a ter o selo “vistoriado”, peça uma nova avaliação: avaliação completa, novo pedido, avaliador à sua escolha (outro que não o da avaliação anterior), pelo valor que o avaliador propuser.";
+const textoNovaAvaliacao = (quem: string) => `Para voltar a ter o selo “vistoriado”, peça uma nova avaliação: avaliação completa, novo pedido, avaliador à sua escolha (${quem}), pelo valor que o avaliador propuser.`;
+/** O texto do LAUDO. É documento assinado: não muda por causa da exceção da alternância (ORDEM-DUET-784). */
+export const TEXTO_NOVA_AVALIACAO = textoNovaAvaliacao("outro que não o da avaliação anterior");
+/** O texto da TELA do dono. E1177 (ORDEM-DUET-784): com a exceção da alternância, pode não haver outro avaliador. */
+export const TEXTO_NOVA_AVALIACAO_NA_TELA = textoNovaAvaliacao("outro que não o da avaliação anterior, quando houver outro na sua cidade");
 
 // ── Porte (do anúncio: quartos) ────────────────────────────────────────────────────────────────────────────────
 export const PORTES = ["estudio", "q1_2", "q3_mais"] as const;
@@ -70,6 +79,15 @@ export function linhaDaTabela(l: { cidade: string; porte: Porte; valor: number |
     retornoDias: l.retorno_dias ?? null,
     retornoPercentual: l.retorno_percentual == null ? null : Number(l.retorno_percentual),
   };
+}
+
+/**
+ * E1081: as linhas da tabela de preço de uma cidade, comparando pela chave (sem acento, sem maiúsculas) — "Uberlandia"
+ * gravado na tabela vale para o imóvel de "Uberlândia". A leitura no banco nunca filtra a cidade letra a letra.
+ */
+export function linhasDaCidade<T extends { cidade: string }>(tabela: readonly T[], cidade: string | null | undefined): T[] {
+  const c = chaveCidade(cidade);
+  return c ? tabela.filter((l) => chaveCidade(l.cidade) === c) : [];
 }
 
 /** O valor vigente para a cidade e o porte na data (a linha mais recente já em vigor). Sem linha válida → null. */
@@ -174,6 +192,28 @@ export const CODIGO_CONDUTA = {
   ],
 } as const;
 
+/**
+ * E1077-b2: as cidades que o avaliador atende, do texto como ele escreveu no credenciamento ("Uberlandia, Araguari,
+ * Ituiutaba"): divididas por vírgula, ponto e vírgula ou " e ". Como vieram (sem vazios), para mostrar.
+ */
+export function partesDaCidade(texto: string | null | undefined): string[] {
+  return String(texto ?? "")
+    .split(/\s*[,;]\s*|\s+e\s+/i)
+    .map((x) => x.trim())
+    .filter((x) => chaveCidade(x));
+}
+
+/** E1077-b2: as mesmas cidades, normalizadas com chaveCidade (sem acento, minúsculas) e sem repetidas. */
+export function cidadesDoAvaliador(texto: string | null | undefined): string[] {
+  return [...new Set(partesDaCidade(texto).map(chaveCidade))];
+}
+
+/** E1077-b2: o avaliador atende a cidade do imóvel? A única comparação avaliador × imóvel. */
+export function atendeCidade(cidadeDoAvaliador: string | null | undefined, cidadeDoImovel: string | null | undefined): boolean {
+  const c = chaveCidade(cidadeDoImovel);
+  return !!c && cidadesDoAvaliador(cidadeDoAvaliador).includes(c);
+}
+
 /** Siglas das cidades (como os aeroportos); o resto usa as 3 primeiras letras. */
 export const SIGLAS_CIDADE: Record<string, string> = {
   uberlandia: "UDI",
@@ -187,7 +227,8 @@ export const SIGLAS_CIDADE: Record<string, string> = {
 };
 
 export function siglaCidade(cidade: string): string {
-  const c = chaveCidade(cidade);
+  // E1077-b2: credenciamento com várias cidades — o número usa a 1ª (uma cidade só: como antes).
+  const c = cidadesDoAvaliador(cidade)[0] ?? chaveCidade(cidade);
   return SIGLAS_CIDADE[c] ?? (c.replace(/[^a-z]/g, "").slice(0, 3).toUpperCase().padEnd(3, "X") || "XXX");
 }
 
@@ -232,7 +273,6 @@ export function transicaoCredenciamento(de: StatusCredenciamento, para: StatusCr
 
 // ── Designação por rodízio (a Viva designa; o dono nunca escolhe) ──────────────────────────────────────────────
 export const MESES_IMPEDIMENTO_SERVICO = 12;
-export const HORAS_PARA_RESPONDER = 24;
 
 export interface AvaliadorFila {
   id: string; // credenciamento
@@ -259,8 +299,63 @@ export interface PedidoParaDesignar {
   teste: boolean;
   /** Na contestação: quem fez a 1ª avaliação (impedido). */
   primeiroAvaliadorId: string | null;
-  /** Já designados neste pedido (recusaram, não responderam ou faltaram). */
+  /** Já designados neste pedido (recusaram, não responderam ou faltaram). E1143: não entra quem só teve a proposta vencida. */
   jaDesignados: string[];
+}
+
+/** Uma designação do pedido, como a escolha a lê. */
+export interface DesignacaoDoPedido {
+  avaliador_id: string;
+  resposta: string | null;
+  /** Migração 0359: quando o prazo do dono para aceitar a proposta acabou sem o aceite. */
+  proposta_expirada_em: string | null;
+}
+
+/**
+ * E1143 (decisão do Daniel, 24/11): a designação que terminou porque a PROPOSTA venceu sem o aceite do dono não tira o
+ * avaliador da escolha — o silêncio foi do dono, e ele não pode banir o avaliador nem prender o imóvel. É a única que
+ * volta: precisa da resposta "expirada" E da marca (a expiração sem a marca é o silêncio do próprio avaliador).
+ */
+export function designacaoQueVolta(d: DesignacaoDoPedido): boolean {
+  return d.resposta === "expirada" && Boolean(d.proposta_expirada_em);
+}
+
+/**
+ * E1143: quem fica fora da escolha DESTE pedido por já ter sido designado nele. Continuam fora: quem recusou, quem não
+ * respondeu no prazo dele, quem faltou e quem está designado agora (com ou sem proposta). Só volta quem teve a proposta
+ * vencida sem o aceite do dono. A exclusão é por pedido: nada disto mexe nos outros pedidos do avaliador.
+ */
+export function jaDesignadosNoPedido(designacoes: readonly DesignacaoDoPedido[]): string[] {
+  return designacoes.filter((d) => !designacaoQueVolta(d)).map((d) => d.avaliador_id);
+}
+
+/** Por que o pedido volta ao dono. "descartada" (E1146): o dono descartou a proposta do avaliador ("Escolher outro avaliador"). */
+export type MotivoDaDevolucao = "recusada" | "expirada" | "ausencia" | "descartada";
+
+export interface FechoDaDesignacao {
+  resposta: "recusada" | "expirada" | "ausencia";
+  /** A marca do descarte (0360): separa o que foi do DONO da recusa do avaliador. */
+  descartada: boolean;
+}
+
+/**
+ * E1146: o que a designação passa a dizer quando o pedido volta ao dono (null = fica como está). A regra que faltava:
+ * a designação NUNCA fica "aceita" com o pedido devolvido — era assim que ela e o pedido divergiam (o dono descartava a
+ * proposta e o registo continuava a dizer que havia uma proposta aceita pelo avaliador).
+ *  • o dono descartou a proposta → "recusada" COM a marca do descarte (sem ela leria como recusa do avaliador);
+ *  • o avaliador recusou (mesmo depois de propor) → "recusada";
+ *  • o avaliador não respondeu no prazo dele → "expirada" (só a designação ainda sem resposta);
+ *  • ausência → "ausencia", sobre qualquer resposta (como sempre).
+ * A designação que já terminou (recusada, expirada, ausência) não é reescrita por recusa, expiração ou descarte.
+ * A PROPOSTA que vence sem o aceite não passa por aqui: quem a regista é registrarPropostaExpirada (E1142), antes de
+ * devolver, com a marca dela — e só ela põe essa marca (trava do E1143).
+ */
+export function fechoDaDesignacaoAoDevolver(atual: string | null, motivo: MotivoDaDevolucao): FechoDaDesignacao | null {
+  if (motivo === "ausencia") return { resposta: "ausencia", descartada: false };
+  if (atual !== null && atual !== "aceita") return null;
+  if (motivo === "descartada") return { resposta: "recusada", descartada: true };
+  if (motivo === "expirada") return atual === null ? { resposta: "expirada", descartada: false } : null;
+  return { resposta: "recusada", descartada: false };
 }
 
 export interface HistoricoDesignacao {
@@ -284,11 +379,41 @@ export const ROTULO_IMPEDIMENTO: Record<MotivoImpedimento, string> = {
   conta_teste: "conta de teste fora do rodízio real",
 };
 
-const MES = 30.4375 * 86_400_000;
+/** E1146: o avaliador da cidade que a chave em modo piloto deixa fora da escolha (não é regra de independência). */
+export type MotivoForaDaEscolha = MotivoImpedimento | "fora_do_piloto";
+const ROTULO_FORA_DA_ESCOLHA: Record<MotivoForaDaEscolha, string> = { ...ROTULO_IMPEDIMENTO, fora_do_piloto: "não está no piloto da avaliação" };
+
+/** O limite da coluna vistoria_fila_admin.motivo (migração 0215). */
+export const LIMITE_MOTIVO_DA_FILA = 500;
+
+/**
+ * E1146: o motivo do item "sem avaliador" da fila do admin. Antes dizia só que não havia ninguém; agora diz, por
+ * avaliador da cidade, a regra que o impede NESTE pedido — é o que deixa o admin agir (credenciar outro, rever uma
+ * relação) em vez de procurar a causa à mão. Cabe no limite da coluna: o que não couber é contado no fim.
+ */
+export function motivoSemAvaliador(cidade: string, impedidos: readonly { numero: string | null; motivo: MotivoForaDaEscolha }[]): string {
+  const base = `Nenhum avaliador disponível para o dono escolher em ${cidade}.`;
+  if (!impedidos.length) return `${base} Nenhum avaliador credenciado atende esta cidade.`;
+  const frases = impedidos.map((i) => `${i.numero ? `Avaliador nº ${i.numero}` : "Um avaliador"}: ${ROTULO_FORA_DA_ESCOLHA[i.motivo]}.`);
+  const resto = (n: number) => (n === 1 ? "E mais 1 impedido." : `E mais ${n} impedidos.`);
+  let texto = base;
+  for (let k = 0; k < frases.length; k++) {
+    const faltam = frases.length - k - 1;
+    const comEsta = `${texto} ${frases[k]}`;
+    // Só entra a frase que ainda deixa lugar para dizer quantos ficaram por dizer.
+    if (comEsta.length + (faltam ? resto(faltam).length + 1 : 0) > LIMITE_MOTIVO_DA_FILA) return `${texto} ${resto(frases.length - k)}`;
+    texto = comEsta;
+  }
+  return texto;
+}
+
+/** O mês médio do calendário, em dias (365,25 / 12). */
+const DIAS_DO_MES_MEDIO = 30.4375;
+const MES = DIAS_DO_MES_MEDIO * 86_400_000;
 
 /** Por que este avaliador não pode avaliar este pedido (null = pode). Ordem: o motivo mais forte primeiro. */
 export function impedimento(a: AvaliadorFila, p: PedidoParaDesignar, h: HistoricoDesignacao, agora: Date): MotivoImpedimento | null {
-  if (chaveCidade(a.cidade) !== chaveCidade(p.cidade)) return "outra_cidade";
+  if (!atendeCidade(a.cidade, p.cidade)) return "outra_cidade";
   if (a.status === "suspenso") return "suspenso";
   // Imóvel de teste: a avaliação de TESTE do credenciamento (em_teste) e contas de teste; imóvel real: só ativos reais.
   if (p.teste ? !(a.status === "ativo" || a.status === "em_teste") : a.status !== "ativo") return "nao_ativo";
@@ -303,30 +428,70 @@ export function impedimento(a: AvaliadorFila, p: PedidoParaDesignar, h: Historic
   return null;
 }
 
+/** Um avaliador que pode ser escolhido. `mesmoDaAnterior` marca quem só voltou pela exceção da alternância (E1177). */
+export type AvaliadorElegivel = AvaliadorFila & { mesmoDaAnterior?: true };
+
+export interface Elegibilidade {
+  /** Quem pode avaliar este pedido, na ordem do rodízio (quem está há mais tempo sem designação primeiro). */
+  elegiveis: AvaliadorElegivel[];
+  /** Quem atende a cidade e não pode, com o motivo que de fato o impede. */
+  impedidos: { id: string; motivo: MotivoImpedimento }[];
+}
+
+/**
+ * E1177, coordenador: a exceção da alternância. A regra de sempre tira da escolha quem fez a ÚLTIMA avaliação do imóvel
+ * ("avaliacao_anterior") — numa cidade com um avaliador só, a segunda avaliação nunca acontecia. A exceção: se não sobra
+ * NENHUM elegível e há um impedido SÓ por "avaliacao_anterior", ele volta a ser elegível, com a marca `mesmoDaAnterior`.
+ * Dois limites:
+ *  • havendo qualquer outro elegível, a regra se mantém — o da avaliação anterior continua fora;
+ *  • a exceção nunca cede outro impedimento: 1ª da contestação, relação declarada, serviço ao dono em 12 meses, suspenso,
+ *    não ativo, conta de teste, já designado no pedido, outra cidade. Quem tem a avaliação anterior E outro impedimento
+ *    continua impedido — e o motivo dito passa a ser o outro, que é o que de fato o impede.
+ * FONTE ÚNICA: o rodízio (proximoAvaliador) e a lista de escolha do dono (sugerirAvaliadores) leem daqui.
+ */
+export function elegiveisComAlternancia(fila: readonly AvaliadorFila[], pedido: PedidoParaDesignar, historico: HistoricoDesignacao, agora: Date): Elegibilidade {
+  let impedidos: { id: string; motivo: MotivoImpedimento }[] = [];
+  const elegiveis: AvaliadorElegivel[] = [];
+  for (const a of fila) {
+    const m = impedimento(a, pedido, historico, agora);
+    if (!m) elegiveis.push(a);
+    else if (m !== "outra_cidade") impedidos.push({ id: a.id, motivo: m });
+  }
+  if (!elegiveis.length) {
+    // "Só por avaliação anterior" = sem o histórico de avaliações do imóvel, nada mais o impede.
+    const semAvaliacoes: HistoricoDesignacao = { ...historico, avaliacoesDoImovel: [] };
+    impedidos = impedidos.flatMap((i) => {
+      if (i.motivo !== "avaliacao_anterior") return [i];
+      const a = fila.find((x) => x.id === i.id);
+      const outro = a ? impedimento(a, pedido, semAvaliacoes, agora) : null;
+      if (a && outro === null) {
+        elegiveis.push({ ...a, mesmoDaAnterior: true });
+        return [];
+      }
+      return [{ id: i.id, motivo: outro ?? i.motivo }];
+    });
+  }
+  const t = (s: string | null) => (s ? Date.parse(s) : -Infinity);
+  elegiveis.sort((x, y) => t(x.ultimaDesignacaoEm) - t(y.ultimaDesignacaoEm) || Date.parse(x.credenciadoEm) - Date.parse(y.credenciadoEm) || x.id.localeCompare(y.id));
+  return { elegiveis, impedidos };
+}
+
 export type ResultadoDesignacao =
-  | { avaliador: AvaliadorFila; impedidos: { id: string; motivo: MotivoImpedimento }[] }
+  | { avaliador: AvaliadorElegivel; impedidos: { id: string; motivo: MotivoImpedimento }[] }
   | { avaliador: null; motivo: "nenhum_elegivel"; impedidos: { id: string; motivo: MotivoImpedimento }[] };
 
 /**
  * O próximo da fila da cidade, em rodízio justo: quem está há mais tempo sem designação primeiro (nunca designado vem
  * antes), desempate por quem se credenciou antes e pelo id. Impedidos ficam de fora com o motivo.
+ * E1177: com a exceção da alternância (elegiveisComAlternancia).
  */
 export function proximoAvaliador(fila: AvaliadorFila[], pedido: PedidoParaDesignar, historico: HistoricoDesignacao, agora: Date): ResultadoDesignacao {
-  const impedidos: { id: string; motivo: MotivoImpedimento }[] = [];
-  const elegiveis: AvaliadorFila[] = [];
-  for (const a of fila) {
-    const m = impedimento(a, pedido, historico, agora);
-    if (m) {
-      if (m !== "outra_cidade") impedidos.push({ id: a.id, motivo: m });
-    } else elegiveis.push(a);
-  }
-  const t = (s: string | null) => (s ? Date.parse(s) : -Infinity);
-  elegiveis.sort((x, y) => t(x.ultimaDesignacaoEm) - t(y.ultimaDesignacaoEm) || Date.parse(x.credenciadoEm) - Date.parse(y.credenciadoEm) || x.id.localeCompare(y.id));
+  const { elegiveis, impedidos } = elegiveisComAlternancia(fila, pedido, historico, agora);
   return elegiveis[0] ? { avaliador: elegiveis[0], impedidos } : { avaliador: null, motivo: "nenhum_elegivel", impedidos };
 }
 
-/** A designação venceu sem resposta (24 h)? Recusa ou silêncio devolvem a escolha ao dono (E648: sem rodízio). */
-export function designacaoVencida(designadoEm: string, agora: Date, horas: number = HORAS_PARA_RESPONDER): boolean {
+/** A designação venceu sem resposta (sem prazo declarado, vale o padrão de prazos.ts)? Recusa ou silêncio devolvem a escolha ao dono (E648: sem rodízio). */
+export function designacaoVencida(designadoEm: string, agora: Date, horas: number = PRAZO_RESPOSTA_PADRAO_HORAS): boolean {
   return agora.getTime() - Date.parse(designadoEm) >= horas * 3_600_000;
 }
 
@@ -338,12 +503,18 @@ export const REGRAS_AGENDA = {
   janelaAusenciasDias: 90,
 } as const;
 
+/**
+ * E1155: a regra do reagendamento como a tela a escreve. FONTE ÚNICA: o formulário de data do dono e o do avaliador
+ * (a regra vale igual para as duas partes: `podeReagendar`).
+ */
+export const REGRA_DO_REAGENDAMENTO = `Reagendar sem custo: uma vez, com pelo menos ${REGRAS_AGENDA.antecedenciaReagendarHoras} horas de aviso.`;
+
 export type Parte = "dono" | "avaliador";
 
 export function podeReagendar(agendadoPara: string, agora: Date, jaReagendou: boolean): { ok: true } | { ok: false; motivo: string } {
   if (jaReagendou) return { ok: false, motivo: "Cada parte pode reagendar uma vez sem custo." };
   if (Date.parse(agendadoPara) - agora.getTime() < REGRAS_AGENDA.antecedenciaReagendarHoras * 3_600_000) {
-    return { ok: false, motivo: "Reagendar sem custo só com pelo menos 24 horas de aviso." };
+    return { ok: false, motivo: `Reagendar sem custo só com pelo menos ${REGRAS_AGENDA.antecedenciaReagendarHoras} horas de aviso.` };
   }
   return { ok: true };
 }
@@ -359,11 +530,13 @@ export function suspendePorAusencias(ausencias: string[], agora: Date): boolean 
   return ausencias.filter((d) => Date.parse(d) >= limite).length >= REGRAS_AGENDA.ausenciasParaSuspender;
 }
 
-/** Lembrete D-1: a visita é amanhã (no dia civil de Brasília). */
+/**
+ * Lembrete D-1: a visita é amanhã (no dia civil de Brasília). E1135: o dia da visita sai de diaBRT (conversão de fuso
+ * de verdade), não de −3 h fixas; "amanhã" é o dia civil seguinte ao `hojeBrasilia` (conta de calendário, sem fuso).
+ */
 export function visitaAmanha(agendadoPara: string, hojeBrasilia: string): boolean {
-  const d = new Date(Date.parse(`${hojeBrasilia}T12:00:00-03:00`) + 86_400_000).toISOString().slice(0, 10);
-  const alvo = new Date(Date.parse(agendadoPara) - 3 * 3_600_000).toISOString().slice(0, 10);
-  return alvo === d;
+  const amanha = new Date(Date.parse(`${hojeBrasilia}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  return diaBRT(agendadoPara) === amanha;
 }
 
 // ── Avaliação mútua: só CONDUTA, nunca o resultado ─────────────────────────────────────────────────────────────

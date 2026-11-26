@@ -28,13 +28,13 @@ test("proposta: o nome sai inteiro; o prazo segue no corpo", () => {
 });
 
 test("título curto: continua a forma completa, com a data", () => {
-  assert.equal(assunto(corpoAutomacao("renovacao_aviso", { imovel: imovel("Studio 12"), data: "2026-11-15" }).subject), "Renovar Studio 12? O período termina em 15/11 · Viva Nomads");
+  assert.equal(assunto(corpoAutomacao("renovacao_aviso", { imovel: imovel("Studio 12"), data: "2026-11-15" }).subject), "Renovar Studio 12? A saída do período é em 15/11 · Viva Nomads");
   assert.match(assunto(corpoAutomacao("proposta_vencendo", { imovel: imovel("Studio 12"), prazo: "2026-11-01T01:00:00Z" }).subject), /^Proposta de Studio 12 vence em 31\/10/);
 });
 
 test("título médio: a forma intermediária (com a data curta) ainda é preferida à mínima", () => {
   const s = assunto(corpoAutomacao("renovacao_aviso", { imovel: imovel("Apto 2 quartos no Centro"), data: "2026-11-15" }).subject);
-  assert.equal(s, "Renovar Apto 2 quartos no Centro? Termina em 15/11 · Viva Nomads");
+  assert.equal(s, "Renovar Apto 2 quartos no Centro? Saída em 15/11 · Viva Nomads");
 });
 
 test("assuntoComTitulo aceita uma forma curta só (compatível) ou uma lista, tentada em ordem", () => {

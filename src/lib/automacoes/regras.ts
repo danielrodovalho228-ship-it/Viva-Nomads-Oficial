@@ -4,6 +4,7 @@
   pessoa (chave em automacoes_envios) e respeita "parar de receber" (profiles.notif_email = false).
   Roda: node --test src/lib/automacoes/regras.test.ts
 */
+import { diaBRT } from "../datas-brasilia.ts";
 
 /**
  * E345: a frase do pedido de avaliação é UMA só — o corpo do e-mail, o bloco do detalhe e o modelo genérico diziam
@@ -41,10 +42,12 @@ export function diasEntre(de: string, ate: string): number {
   return Math.round((Date.parse(soData(ate)) - Date.parse(soData(de))) / DIA_MS);
 }
 
-/** Data em Brasília (UTC-3) de um instante. */
+/** Data em Brasília de um instante — E1115 (ORDEM-DUET-506 §2): pela fonte (diaBRT), não com −3 h fixas.
+ *  Instante inválido → RangeError, como o toISOString de antes. */
 export function dataEmBrasilia(instante: Date | string): string {
-  const t = typeof instante === "string" ? Date.parse(instante) : instante.getTime();
-  return new Date(t - 3 * 3600_000).toISOString().slice(0, 10);
+  const d = diaBRT(instante);
+  if (!d) throw new RangeError("dataEmBrasilia: instante inválido");
+  return d;
 }
 
 /**
@@ -55,12 +58,18 @@ export function avisoAnuncioIncompleto(criadoEm: string, hoje: string): 3 | null
   return diasEntre(dataEmBrasilia(criadoEm), hoje) >= 3 ? 3 : null;
 }
 
-/** Faltam exatamente 3 dias para a saída. */
-export function lembreteDeSaida(fim: string, hoje: string): boolean {
-  return diasEntre(hoje, fim) === 3;
+/**
+ * Faltam exatamente 3 dias para a SAÍDA. E1089 (coordenador): recebe a data de saída (o dia seguinte à última noite
+ * gravada nos blocos); antes recebia a última noite, e o lembrete saía um dia mais cedo do que dizia.
+ */
+export function lembreteDeSaida(saida: string, hoje: string): boolean {
+  return diasEntre(hoje, saida) === 3;
 }
 
-/** A saída foi ontem: hora de pedir a avaliação. */
+/**
+ * A última noite foi ontem (hoje é o dia da SAÍDA, quando o contrato fecha): hora de pedir a avaliação. E1089: recebe a
+ * última noite gravada, como sempre — o dia do pedido não mudou; só o texto passou a dizer a data de saída.
+ */
 export function pedirAvaliacao(fim: string, hoje: string): boolean {
   return diasEntre(fim, hoje) === 1;
 }
@@ -97,7 +106,7 @@ export function detalheAutomacao(tipo: TipoAutomacao, ctx: { imovel?: string; fi
     case "avaliacao_pedido":
       return `${imovel} A estadia terminou em ${ctx.fim ? dataBr(ctx.fim) : "ontem"}. ${FRASE_AVALIACAO}`.trim();
     case "renovacao_aviso":
-      return `${imovel} O bloco termina em ${ctx.fim ? dataBr(ctx.fim) : "15 dias"}. Quer renovar? Combine pela plataforma.`.trim();
+      return `${imovel} A saída do bloco é em ${ctx.fim ? dataBr(ctx.fim) : "15 dias"}. Quer renovar? Combine pela plataforma.`.trim();
     case "proposta_vencendo":
       return `${imovel} A proposta ${ctx.numero ?? ""} vence em menos de 24 horas. Aceite, contraproponha ou recuse pela plataforma.`.replace(/\s+/g, " ").trim();
     case "parceiro_lembrete":
