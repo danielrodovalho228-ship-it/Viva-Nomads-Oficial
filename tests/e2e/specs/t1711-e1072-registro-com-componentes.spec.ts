@@ -19,6 +19,9 @@ import { hojeBR } from "../../../src/lib/utils";
       registra o que falta (contas e limpeza, R$ 560,00) num registro complementar e o bloco fica quitado.
    5. A moradora desse contrato confirma o complemento; sai o recibo dele; o pacote traz o complemento em linha própria
       e os totais chegam a R$ 3.143,33.
+   6. (ORDEM-DUET-1104, julgamento 3 do coordenador: a parte tem UMA fonte, a coluna registada) Anulada a parte 1, o
+      registro da parte 2 continua COMPLEMENTAR — na tela da moradora, no recibo dele e no pacote de provas. Antes, as
+      leituras tiravam a parte da ordem dos registros ativos: sem a parte 1, o complemento passava a parecer a parte 1.
   Capturas a 390 e a 1280 px do formulário preenchido. Laboratório; não é prova ao vivo no site.
   Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
   passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
@@ -33,7 +36,7 @@ const sufixo = novoSufixo();
 const dono = { email: `dono.t1711.${sufixo}@lab.vivanomads.test`, nome: "Dora Componentes Sobrenome", role: "owner" as const };
 const inq = { email: `inq.t1711.${sufixo}@lab.vivanomads.test`, nome: "Iris Componentes Sobrenome", role: "tenant" as const };
 const inq2 = { email: `inq2.t1711.${sufixo}@lab.vivanomads.test`, nome: "Lia Componentes Sobrenome", role: "tenant" as const };
-const ids: { dono?: string; inq?: string; inq2?: string; contrato?: string; bloco?: string; antigo?: string } = {};
+const ids: { dono?: string; inq?: string; inq2?: string; contrato?: string; bloco?: string; antigo?: string; terceiro?: string } = {};
 
 /** Um contrato de 31 dias como o da prova: contas congeladas no contrato e limpeza de preparação no anúncio. */
 async function contratoDe31Dias(titulo: string, inquilino: string): Promise<{ contrato: string; bloco: string }> {
@@ -100,7 +103,7 @@ test.describe("T1711 — E1072: o registro do pagamento cobre aluguel, contas e 
   });
 
   test.afterAll(async () => {
-    for (const c of [ids.contrato, ids.antigo]) {
+    for (const c of [ids.contrato, ids.antigo, ids.terceiro]) {
       if (!c) continue;
       await adm().from("documentos_fiscais").delete().eq("contrato_id", c);
       await adm().from("pagamentos_bloco").delete().eq("contrato_id", c);
@@ -235,5 +238,52 @@ test.describe("T1711 — E1072: o registro do pagamento cobre aluguel, contas e 
     expect(texto, "o recibo do complemento aparece pelo número").toContain(String(recibos![0].numero));
     expect(texto, "os totais somam o registro de antes e o complemento").toContain("Confirmados pelo inquilino: R$ 3.143,33. Aguardando confirmação do inquilino: R$ 0,00.");
     expect(texto).toContain("Registro complementar de R$ 560,00 confirmado pelo inquilino.");
+  });
+
+  test("6. anulada a parte 1, a parte 2 continua complementar: na tela, no recibo e no pacote de provas", async ({ browser }) => {
+    // Um contrato com a parte 1 (só o aluguel, confirmada) e a parte 2 (contas e limpeza, por confirmar), como no caso 4.
+    const c3 = await contratoDe31Dias(`[TESTE QA] Studio parte anulada ${sufixo}`, ids.inq2!);
+    ids.terceiro = c3.contrato;
+    const agora = new Date().toISOString();
+    const { data: p1, error: e1 } = await adm()
+      .from("pagamentos_bloco")
+      .insert({ bloco_id: c3.bloco, contrato_id: c3.contrato, tipo: "aluguel", parte: 1, valor: 2583.33, forma: "pix", data_pagamento: INICIO, marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: agora, encargos: [] })
+      .select("id")
+      .single();
+    if (e1) throw e1;
+    const { data: p2, error: e2 } = await adm()
+      .from("pagamentos_bloco")
+      .insert({ bloco_id: c3.bloco, contrato_id: c3.contrato, tipo: "aluguel", parte: 2, valor: 0, forma: "pix", data_pagamento: INICIO, marcado_por: ids.dono, encargos: [{ rotulo: "Contas do período", valor: 310 }, { rotulo: "Limpeza de preparação", valor: 250 }] })
+      .select("id")
+      .single();
+    if (e2) throw e2;
+    // A parte 1 é anulada (a anulação lógica da casa: data e motivo).
+    const { error: eA } = await adm().from("pagamentos_bloco").update({ anulado_em: new Date().toISOString(), anulado_motivo: "registro em duplicidade" }).eq("id", p1.id);
+    if (eA) throw eA;
+
+    // Na tela da moradora, o registro por confirmar continua a dizer-se complementar.
+    const page = await entrar(browser, inq2.email, senha);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    const confirmar = page.getByTestId("confirmar-pagamentos");
+    await expect(confirmar, "a parte 2 continua complementar depois de anulada a parte 1").toContainText("Bloco 1, registro complementar", { timeout: 30_000 });
+    await expect(confirmar).toContainText("Este registro: contas do período R$ 310,00 + limpeza de preparação R$ 250,00 = R$ 560,00.");
+    await confirmar.getByRole("button", { name: /Confirmar/ }).click();
+    await expect.poll(async () => (await adm().from("pagamentos_bloco").select("confirmado_pelo_inquilino").eq("id", p2.id).single()).data?.confirmado_pelo_inquilino, { timeout: 30_000 }).toBe(true);
+
+    // O recibo dele diz que é o registro complementar.
+    await expect
+      .poll(async () => ((await adm().from("documentos_fiscais").select("id").eq("pagamento_id", p2.id).eq("tipo", "recibo_aluguel")).data ?? []).length, { timeout: 60_000, message: "o complemento tem o seu recibo" })
+      .toBe(1);
+    const { data: doc } = await adm().from("documentos_fiscais").select("id").eq("pagamento_id", p2.id).eq("tipo", "recibo_aluguel").single();
+    const pdf = await page.request.get(`/api/documentos/${doc!.id}`);
+    expect(pdf.status(), "o recibo abre").toBe(200);
+    const recibo = (await textoDasPaginas(new Uint8Array(await pdf.body()))).join("\n").replace(/\s+/g, " ");
+    expect(recibo, "o recibo da parte 2 diz que é o registro complementar").toContain("Bloco 1, registro complementar");
+    await page.context().close();
+
+    // O pacote de provas (documento registado) continua a chamar-lhe complementar.
+    const texto = await textoDoPacote(browser, inq2.email, c3.contrato);
+    expect(texto, "o pacote chama complementar à parte 2").toContain("Registro complementar de R$ 560,00 — contas do período de R$ 310,00 + limpeza de preparação de R$ 250,00 (Pix, em");
   });
 });
