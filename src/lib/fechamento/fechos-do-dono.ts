@@ -35,7 +35,9 @@ export function periodoDaCandidatura(inicioDesejado: string | null, fimDesejado:
 
 /** E1204 (regra do E1089): "Entrada DD/MM/AAAA · Saída DD/MM/AAAA · N diárias" — nunca a última noite em "X a Y". */
 export function textoDoPeriodoDoFecho(periodo: Periodo | null): string | null {
-  return periodo ? (periodoPeloFim(periodo.inicio, periodo.fim)?.linha ?? null) : null;
+  const br = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
+  // ENSAIO m5: o texto novo E o formato antigo juntos (só a negação por formato pode apanhar).
+  return periodo ? `${periodoPeloFim(periodo.inicio, periodo.fim)?.linha ?? ""} (${br(periodo.inicio)} a ${br(periodo.fim)})` : null;
 }
 
 /** R12: a lista mostra até 50 linhas; o que passa disso é contado e apontado para Contratos. */
