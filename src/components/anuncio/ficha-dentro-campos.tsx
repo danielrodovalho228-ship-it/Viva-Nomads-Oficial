@@ -80,7 +80,7 @@ export function FichaDentroCampos({ ficha, onChange, mostrarFaltas }: { ficha: F
         <SimNao nome="Cozinha equipada" valor={ficha.cozinhaEquipada} onChange={(v) => onChange({ ...ficha, cozinhaEquipada: v })} />
       </div>
       <details className="rounded-lg border border-line p-3">
-        <summary className="cursor-pointer text-sm font-semibold text-ink">Pratos e talheres (opcional)</summary>
+        <summary className="-my-3 cursor-pointer py-3 text-sm font-semibold text-ink">Pratos e talheres (opcional)</summary>
         <div className="mt-2 flex gap-3">
           {(["pratos", "talheres"] as const).map((k) => (
             <label key={k} className="flex items-center gap-2 text-sm text-ink">

@@ -35,7 +35,7 @@ export function TravasDePublicacao({ documento }: { documento: EstadoDocumentoTr
               {i.estado === "carregando" && i.detalhe && ` — ${i.detalhe}`}
             </span>
             {i.href && (
-              <Link href={i.href} className="ml-1 font-medium text-forest underline underline-offset-4" data-testid={`trava-${i.chave}-resolver`}>
+              <Link href={i.href} className="area-de-toque-44 ml-1 font-medium text-forest underline underline-offset-4" data-testid={`trava-${i.chave}-resolver`}>
                 {i.estado === "falta" ? "Resolver" : "Ver em Segurança"}
               </Link>
             )}

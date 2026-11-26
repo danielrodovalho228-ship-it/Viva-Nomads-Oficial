@@ -2,6 +2,7 @@
 import { test, expect, type Browser } from "@playwright/test";
 import { NO_LABORATORIO, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { abrirNoEndereco, irParaAntesDePublicar } from "../fixtures/cadastro";
+import { areaDeToque } from "../fixtures/area-toque";
 
 /*
   T457 — E112 (reprova ao vivo do E104): na Revisão (Passo 10), o aviso "Documento do imóvel ainda não enviado" dizia
@@ -53,7 +54,8 @@ test.describe("T457 — E112: o documento do imóvel se envia na própria Revis�
       await expect(secao.getByTestId("antes-secao-documento-abrir")).toContainText("Ainda não enviado");
       const botao = secao.getByTestId("documento-enviar");
       await expect(botao).toBeVisible();
-      expect((await botao.boundingBox())!.height, "toque de 44 px").toBeGreaterThanOrEqual(44);
+      // E1033 (passo 3, asserção alterada): a área de toque REAL de 44 × 44 px, medida pelo helper (antes, só a altura).
+      expect((await areaDeToque(botao)).faltam, "Enviar documento: área de toque 44×44").toEqual([]);
       await expect(page.locator("main")).not.toContainText("passo Endereço");
       await secao.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t457-revisao-documento-${largura}.png` });

@@ -93,7 +93,7 @@ export function LinhaNumero({
             onClick={() => mudar(-passo)}
             disabled={atual !== null && atual <= min}
             aria-label={`Diminuir ${label}`}
-            className="alvo-toque grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-surface-2 disabled:opacity-40"
+            className="area-de-toque-44 grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-surface-2 disabled:opacity-40"
           >
             <Minus className="h-4 w-4" aria-hidden />
           </button>
@@ -120,7 +120,7 @@ export function LinhaNumero({
             type="button"
             onClick={() => mudar(passo)}
             aria-label={`Aumentar ${label}`}
-            className="alvo-toque grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-surface-2"
+            className="area-de-toque-44 grid h-9 w-9 place-items-center rounded-full text-ink hover:bg-surface-2"
           >
             <Plus className="h-4 w-4" aria-hidden />
           </button>
