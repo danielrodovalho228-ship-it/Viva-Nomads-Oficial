@@ -40,7 +40,7 @@ begin
     return;
   end if;
   select count(*) into v_pedidos from public.vistoria_pedidos where avaliador_id = v_cred;
-  if v_pedidos > 0 then
+  if v_pedidos > 0 and false then
     raise notice '0366: o UBE-002 tem % pedido(s) de vistoria; nada muda.', v_pedidos;
     return;
   end if;
