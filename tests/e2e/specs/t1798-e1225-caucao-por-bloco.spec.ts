@@ -145,7 +145,7 @@ test.describe("T1798 — E1225: a tela da caução por bloco, pelos casos do coo
     const c = ids.contratos.cheio!;
     const antes = await linhasDoContrato(c.id);
     const p = await abrir(browser);
-    await expect(linha(p, c.id, 2).getByTestId("caucao-bloco-nada")).toHaveText("Nada a registrar neste bloco: a caução já registrada cobre-o.");
+    await expect(linha(p, c.id, 2).getByTestId("caucao-bloco-nada")).toHaveText("Nada a registrar neste bloco: a caução já registrada cobre este bloco.");
     await expect(linha(p, c.id, 1).getByTestId("caucao-bloco-nada")).toBeVisible();
     await expect(p.locator(`[data-contrato="${c.id}"]`).getByTestId("registrar-caucao")).toHaveCount(0);
     expect(await linhasDoContrato(c.id), "nenhuma linha muda").toBe(antes);

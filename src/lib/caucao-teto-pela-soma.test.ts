@@ -12,6 +12,10 @@
   contrato com caução 0 em todos os blocos lidos (a garantia é outra, por exemplo seguro-fiança) diz que não tem caução;
   a lista de blocos vazia é falta de leitura, não teto zero — a mensagem da falha de leitura.
   ORDEM-DUET-1115: o R$ X sai pelo formatBRLExato da casa (@/lib/precos): "R$ 7.500" inteiro, "R$ 2.750,50" com centavos.
+  ORDEM-DUET-1132 (correção 2 do coordenador; asserções alteradas com julgamento registado): um registro NOVO de
+  caução exige o bloco (E1225) — o caminho sem bloco deixou de gravar ("Escolha o bloco da caução."). Os casos da
+  ação passam a chamar com o bloco 1 e conferem as mesmas regras (o teto, a falha fechada, a caução 0, a lista vazia,
+  os centavos); o teto de cada caso é o da linha do bloco (min(caução do bloco, acumulado)). A função pura não muda.
   Roda: node --test src/lib/caucao-teto-pela-soma.test.ts
 */
 import { register } from "node:module";
@@ -38,7 +42,7 @@ test("a conta acumulada (ORDEM-DUET-1107): até ao bloco k, as cauções dos blo
 // ── a ação real ────────────────────────────────────────────────────────────────────────────────────────────────
 const CONTRATO = "11111111-2222-4333-8444-555555555555";
 const g = globalThis as unknown as { __e1072Sessao: unknown; __e1072Admin: unknown; __e1072Esperado: unknown };
-function sessao(o: { blocos: { numero_bloco: number; caucao: number }[] | "falha"; ativas?: { id: string; valor: number }[] }) {
+function sessao(o: { blocos: { numero_bloco: number; caucao: number }[] | "falha"; ativas?: { id: string; valor: number; bloco_id?: string | null }[] }) {
   const inseridos: Record<string, unknown>[] = [];
   return {
     inseridos,
@@ -49,7 +53,7 @@ function sessao(o: { blocos: { numero_bloco: number; caucao: number }[] | "falha
         tabela === "contratos"
           ? o.blocos === "falha"
             ? { data: null, error: { message: "leitura falhou" } }
-            : { data: { id: CONTRATO, contrato_blocos: o.blocos }, error: null }
+            : { data: { id: CONTRATO, contrato_blocos: o.blocos.map((b) => ({ id: idDoBloco(b.numero_bloco), ...b })) }, error: null }
           : tabela === "pagamentos_bloco"
             ? { data: o.ativas ?? [], error: null }
             : { data: null, error: { message: tabela } };
@@ -62,7 +66,10 @@ function sessao(o: { blocos: { numero_bloco: number; caucao: number }[] | "falha
     },
   };
 }
-const caucao = (valor: number) => ({ blocoId: "", contratoId: CONTRATO, tipo: "caucao" as const, valor, dataPagamento: "2026-12-20" });
+const idDoBloco = (n: number) => `aaaaaaaa-0000-4000-8000-00000000000${n}`;
+const B1 = idDoBloco(1);
+// ORDEM-DUET-1132: o registro novo de caução leva o bloco (o 1, o 1.º em aberto).
+const caucao = (valor: number, blocoId = B1) => ({ blocoId, contratoId: CONTRATO, tipo: "caucao" as const, valor, dataPagamento: "2026-12-20" });
 const PASSA = (reais: string) => new RegExp(`^O valor é maior que a caução que falta registrar neste contrato: R\\$\\s${reais.replace(/\./g, "\\.")}\\.$`, "u");
 const SEM_CAUCAO = "Este contrato não tem caução: a garantia é outra (por exemplo, seguro-fiança).";
 const SEM_CONTA = "Não foi possível conferir a caução deste contrato. Tente de novo em instantes.";
@@ -73,24 +80,24 @@ beforeEach(() => {
   g.__e1072Esperado = null;
 });
 
-test("1. acima da soma das cauções dos blocos → recusado, não grava", async () => {
+test("1. acima do que falta no bloco (a caução do bloco 1, dentro da soma) → recusado, não grava", async () => {
   const s = sessao({ blocos: DOIS });
   g.__e1072Sessao = s;
-  const r = await marcarPagamentoRecebido(caucao(7500.01));
+  const r = await marcarPagamentoRecebido(caucao(3750.01));
   assert.equal(r.ok, false);
-  assert.match((r as { error?: string }).error ?? "", PASSA("7.500"), "a recusa diz o valor que falta registrar");
+  assert.match((r as { error?: string }).error ?? "", PASSA("3.750"), "a recusa diz o valor que falta registrar");
   assert.equal(s.inseridos.length, 0);
 });
 
-test("2. igual à soma → aceito (grava a caução do contrato, sem bloco)", async () => {
+test("2. igual ao que falta no bloco → aceito (grava a caução do bloco 1)", async () => {
   const s = sessao({ blocos: DOIS });
   g.__e1072Sessao = s;
-  const r = await marcarPagamentoRecebido(caucao(7500));
+  const r = await marcarPagamentoRecebido(caucao(3750));
   assert.equal(r.ok, true);
   assert.equal(s.inseridos.length, 1);
   assert.equal(s.inseridos[0].tipo, "caucao");
-  assert.equal(s.inseridos[0].bloco_id, null);
-  assert.equal(s.inseridos[0].valor, 7500);
+  assert.equal(s.inseridos[0].bloco_id, B1);
+  assert.equal(s.inseridos[0].valor, 3750);
 });
 
 test("3. contrato de 1 bloco: o teto é a caução do bloco", async () => {
@@ -115,10 +122,10 @@ test("4. a conta do contrato não se lê → recusa (falha fechado), não grava"
   assert.equal(s.inseridos.length, 0);
 });
 
-test("5. já há caução ativa no contrato → 'já registrado', como antes (o clique duplo não vira erro de teto)", async () => {
-  const s = sessao({ blocos: DOIS, ativas: [{ id: "c1", valor: 7500 }] });
+test("5. já há caução ativa no bloco → 'já registrado', como antes (o clique duplo não vira erro de teto)", async () => {
+  const s = sessao({ blocos: DOIS, ativas: [{ id: "c1", valor: 3750, bloco_id: B1 }] });
   g.__e1072Sessao = s;
-  const r = await marcarPagamentoRecebido(caucao(7500));
+  const r = await marcarPagamentoRecebido(caucao(3750));
   assert.equal(r.ok, true);
   assert.equal((r as { jaRegistrado?: boolean }).jaRegistrado, true);
   assert.equal(s.inseridos.length, 0);

@@ -12,7 +12,10 @@
    - nada é reescrito: a ação só insere (nunca update) e só a linha nova.
   Mais: o 1.º bloco sem nada registrado; caução ativa já no bloco → "já registrado"; bloco que não é do contrato e
   leitura que falha → recusa (falha fechado).
-  O caminho sem bloco (o do avulso da (B), src/lib/caucao-teto-pela-soma.test.ts) fica como estava.
+  ORDEM-DUET-1132 (as correções B do coordenador): a ação usa a MESMA regra da tela (linhasDaCaucaoPorBloco) — só
+  entra no 1.º bloco em aberto ("Registre antes a caução do bloco N." nos outros) e só até ao em aberto DESSA linha
+  (min(caução do bloco, teto acumulado)); e um registro novo de caução EXIGE o bloco ("Escolha o bloco da caução.").
+  As cauções antigas, sem bloco, continuam a contar no teto acumulado; nada é reescrito.
   Roda: node --test src/lib/caucao-por-bloco.test.ts
 */
 import { register } from "node:module";
@@ -28,7 +31,9 @@ const B2 = "aaaaaaaa-0000-4000-8000-000000000002";
 const DE_OUTRO = "aaaaaaaa-0000-4000-8000-000000000009";
 const DOIS = [{ id: B1, numero_bloco: 1, caucao: 3750 }, { id: B2, numero_bloco: 2, caucao: 3750 }];
 const SEM_CONTA = "Não foi possível conferir a caução deste contrato. Tente de novo em instantes.";
-const NADA = "Nada a registrar neste bloco: a caução já registrada cobre-o.";
+const NADA = "Nada a registrar neste bloco: a caução já registrada cobre este bloco.";
+const ANTES = (n: number) => `Registre antes a caução do bloco ${n}.`;
+const ESCOLHA = "Escolha o bloco da caução.";
 const PASSA = (reais: string) => new RegExp(`^O valor é maior que a caução que falta registrar neste contrato: R\\$\\s${reais.replace(/\./g, "\\.")}\\.$`, "u");
 
 const g = globalThis as unknown as { __e1072Sessao: unknown; __e1072Admin: unknown; __e1072Esperado: unknown };
@@ -146,5 +151,34 @@ test("8. a leitura falha → recusa (falha fechado), sem gravar", async () => {
   const r = await marcarPagamentoRecebido(caucao(B2, 100));
   assert.equal(r.ok, false);
   assert.equal(erro(r), SEM_CONTA);
+  assert.equal(s.inseridos.length, 0);
+});
+
+test("9. (1132) com o bloco 1 vazio, uma chamada direta para o bloco 2 é recusada: registre antes o bloco 1", async () => {
+  const s = sessao({ blocos: DOIS });
+  g.__e1072Sessao = s;
+  const r = await marcarPagamentoRecebido(caucao(B2, 3750));
+  assert.equal(r.ok, false);
+  assert.equal(erro(r), ANTES(1));
+  assert.equal(s.inseridos.length, 0);
+});
+
+test("10. (1132) no bloco 2, acima da caução DO BLOCO 2 é recusado, mesmo com o acumulado maior", async () => {
+  // O bloco 1 tem o seu registro (menor que a caução dele): até ao bloco 2, o acumulado é 7.500 − 1.000 = 6.500, mas o
+  // bloco 2 só pede R$ 3.750.
+  const s = sessao({ blocos: DOIS, ativas: [{ id: "c1", valor: 1000, bloco_id: B1 }] });
+  g.__e1072Sessao = s;
+  const r = await marcarPagamentoRecebido(caucao(B2, 4000));
+  assert.equal(r.ok, false);
+  assert.match(erro(r) ?? "", PASSA("3.750"));
+  assert.equal(s.inseridos.length, 0);
+});
+
+test("11. (1132) um registro novo de caução sem bloco é recusado: escolha o bloco", async () => {
+  const s = sessao({ blocos: DOIS });
+  g.__e1072Sessao = s;
+  const r = await marcarPagamentoRecebido(caucao("", 3750));
+  assert.equal(r.ok, false);
+  assert.equal(erro(r), ESCOLHA);
   assert.equal(s.inseridos.length, 0);
 });
