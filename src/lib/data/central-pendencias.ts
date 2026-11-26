@@ -16,6 +16,7 @@ import { lerContratosSemTaxa } from "@/lib/data/contratos-sem-taxa-servidor";
 import { linhaCentralSemTaxa } from "@/lib/fechamento/contratos-sem-taxa";
 
 type Admin = SupabaseClient;
+let memoSemTaxa: Awaited<ReturnType<typeof lerContratosSemTaxa>> | null = null;
 const H = 3_600_000;
 const DIA = 86_400_000;
 
@@ -242,7 +243,8 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
     });
   }
   // E1205 (ORDEM-DUET-1012): o contrato com proposta e sem a taxa reservada há 30 min — a mesma leitura da rotina.
-  for (const c of await ler(() => lerContratosSemTaxa(admin, agora))) out.push(linhaCentralSemTaxa(c, { numeroProposta: c.numeroProposta, teste: ehTeste(c.donoId ?? undefined) }));
+  memoSemTaxa ??= await ler(() => lerContratosSemTaxa(admin, agora)); // ENSAIO: lida uma vez e guardada
+  for (const c of memoSemTaxa) out.push(linhaCentralSemTaxa(c, { numeroProposta: c.numeroProposta, teste: ehTeste(c.donoId ?? undefined) }));
   return out;
 }
 
