@@ -81,7 +81,7 @@ export default async function AvaliadorPage({ params, searchParams }: { params: 
   // E1099 parte 2: o "Sobre" escrito pelo avaliador; sem texto, a secção não aparece.
   const sobre = admin ? await sobreDoCredenciado(admin, a.numero_credenciado) : null;
   const rosto = rostoDoAvaliador(vista.nome, foto, a.teste);
-  const quadro = admin ? quadroDePreco(await tabelaDaCidade(admin, vista.cidade), vista.cidade, new Date()) : [];
+  const quadro = admin ? quadroDePreco(await tabelaDaCidade(admin, a.cidade), a.cidade, new Date()) /* ENSAIO: preços pela cidade do credenciamento */ : [];
   const uf = ufDaCidade(MUNICIPIOS, vista.cidade);
   return (
     <div className="mx-auto max-w-2xl pb-12" data-testid="avaliador-publico">
