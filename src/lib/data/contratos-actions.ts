@@ -510,6 +510,8 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     .map((e) => ({ rotulo: e.rotulo.trim().slice(0, 60), valor: Math.round(Number(e.valor) * 100) / 100 }));
   // E1072 (fatia 2): o bloco pode ser pago em partes. Já havendo registro ativo no bloco, este é COMPLEMENTAR: só
   // entra se ainda faltar algo pelo contrato e sem passar do que falta. Bloco já todo registrado → "já registrado".
+  // Nota do desenho da pilha (ORDENS-DUET 1054 e 1095): o teto vale para TODO o registro, incluindo o 1º — o 1º também
+  // não passa do que o contrato diz que o bloco custa, e sem essa conta lida não grava.
   let parte = 1;
   if (tipo === "aluguel") {
     const { data: ativos, error: erroAtivos } = await supabase.from("pagamentos_bloco").select("id, parte, valor, encargos").eq("bloco_id", input.blocoId).eq("tipo", "aluguel").is("anulado_em", null);
@@ -518,16 +520,16 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     if (erroAtivos && !semColuna) return { ok: false, error: erroBancoPT(erroAtivos) };
     if (semColuna) parte = 0;
     const registros = (ativos ?? []) as { id: string; parte: number | null; valor: number | string; encargos: unknown }[];
+    const esperado = await esperadoDoBloco(supabase, input.contratoId, input.blocoId);
+    if (!esperado) return { ok: false, error: "Não foi possível conferir o que falta neste bloco. Tente de novo em instantes." };
+    const aberto = emAbertoNoBloco(esperado, somarComponentes(registros.map((r) => componentesDoPagamento(r))));
+    const novo = componentesDoPagamento({ valor: input.valor, encargos: encargosDoRegistro });
     if (registros.length > 0) {
-      const esperado = await esperadoDoBloco(supabase, input.contratoId, input.blocoId);
-      if (!esperado) return { ok: false, error: "Não foi possível conferir o que falta neste bloco. Tente de novo em instantes." };
-      const aberto = emAbertoNoBloco(esperado, somarComponentes(registros.map((r) => componentesDoPagamento(r))));
       if (aberto.quitado) return { ok: true, id: registros[0].id, jaRegistrado: true, mensagem: MSG_JA_REGISTRADO };
-      const novo = componentesDoPagamento({ valor: input.valor, encargos: encargosDoRegistro });
       if (!(novo.total > 0)) return { ok: false, error: "Informe um valor válido." };
-      if (novo.aluguel > aberto.aluguel + 0.005 || novo.contas > aberto.contas + 0.005 || novo.limpeza > aberto.limpeza + 0.005) return { ok: false, error: MSG_PASSA_DO_QUE_FALTA };
-      parte = proximaParte(registros.map((r) => Number(r.parte ?? 1)));
     }
+    if (novo.aluguel > aberto.aluguel + 0.005 || novo.contas > aberto.contas + 0.005 || novo.limpeza > aberto.limpeza + 0.005) return { ok: false, error: MSG_PASSA_DO_QUE_FALTA };
+    if (registros.length > 0) parte = proximaParte(registros.map((r) => Number(r.parte ?? 1)));
   }
   // Caução é do CONTRATO (0182): grava sem bloco. O valor mensal é de um bloco.
   const { data, error } = await supabase
