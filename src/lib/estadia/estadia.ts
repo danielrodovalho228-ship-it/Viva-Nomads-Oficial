@@ -7,6 +7,7 @@
 import { diasInclusivos, periodoDosBlocos } from "../contrato-blocos.ts";
 import { prazoConferenciaEntrada, textoPrazoConferencia } from "../conferencia.ts";
 import { diaBRT } from "../datas-brasilia.ts";
+import { saidaPeloFim } from "../texto-do-periodo.ts";
 import { rotuloTaxaServico } from "../cobranca/regra.ts";
 
 export type PapelEstadia = "proprietario" | "inquilino";
@@ -56,10 +57,12 @@ export function textoEntrada(p: PeriodoEstadia): string {
   const h = (p.checkinAfter ?? "").trim();
   return `Entrada: ${ddmmaaaa(p.inicio)}${HORA.test(h) ? ` a partir das ${h}` : ""}`;
 }
+/** E1089: `p.fim` é a ÚLTIMA NOITE gravada nos blocos; a SAÍDA que a pessoa lê é o dia seguinte (entrada + dias). */
 export function textoSaida(p: PeriodoEstadia): string {
-  if (!p.fim) return "Saída: a definir";
+  const saida = saidaPeloFim(p.fim);
+  if (!saida) return "Saída: a definir";
   const h = (p.checkoutBefore ?? "").trim();
-  return `Saída: ${ddmmaaaa(p.fim)}${HORA.test(h) ? ` até as ${h}` : ""}`;
+  return `Saída: ${ddmmaaaa(saida)}${HORA.test(h) ? ` até as ${h}` : ""}`;
 }
 
 /** Status do contrato que encerram a estadia (fora "ativo"). */
@@ -82,19 +85,21 @@ export function topoDaEstadia(
 ): TopoEstadia {
   const hoje = diaBRT(agora) ?? new Date().toISOString().slice(0, 10);
   const status = contrato.status ?? "ativo";
-  if (ENCERRADOS.has(status) || (p.fim && diasAte(hoje, p.fim) < 0)) {
-    const dia = (contrato.encerrado_em ? diaBRT(contrato.encerrado_em) : null) ?? p.fim;
+  // E1089: a estadia acaba no dia da SAÍDA (o dia seguinte à última noite gravada); as contas do topo partem dela.
+  const saida = saidaPeloFim(p.fim) || null;
+  if (ENCERRADOS.has(status) || (saida && diasAte(hoje, saida) < 0)) {
+    const dia = (contrato.encerrado_em ? diaBRT(contrato.encerrado_em) : null) ?? saida;
     return { fase: "encerrada", texto: dia ? `Encerrada em ${ddmmaaaa(dia)}` : "Encerrada", dias: null };
   }
   if (!p.inicio) return { fase: "antes", texto: "Entrada a definir", dias: null };
   const ate = diasAte(hoje, p.inicio);
   if (ate > 0) return { fase: "antes", texto: ate === 1 ? "Entrada amanhã" : `Entrada em ${ate} dias`, dias: ate };
   if (ate === 0) return { fase: "antes", texto: "Entrada hoje", dias: 0 };
-  const faltam = p.fim ? diasAte(hoje, p.fim) : null;
+  const faltam = saida ? diasAte(hoje, saida) : null;
   if (faltam == null) return { fase: "durante", texto: "Estadia em andamento", dias: null };
   return {
     fase: "durante",
-    texto: faltam === 0 ? "Estadia em andamento · último dia" : `Estadia em andamento · faltam ${faltam} ${faltam === 1 ? "dia" : "dias"}`,
+    texto: faltam === 0 ? "Estadia em andamento · saída hoje" : `Estadia em andamento · faltam ${faltam} ${faltam === 1 ? "dia" : "dias"}`,
     dias: faltam,
   };
 }
@@ -107,14 +112,26 @@ export interface ItemChecklist {
   rotulo: string;
   feito: boolean;
   detalhe: string;
+  /** ORDEM-DUET-1048: a ação no mesmo item (ex.: o morador confirma o que o dono registrou). */
+  acao?: { rotulo: string; href: string };
 }
+
+/**
+ * PROPOSTA DE TEXTO (ORDEM-DUET-1048, condição do coordenador): ao lado de "Falta a sua confirmação", a ação de
+ * confirmar — a confirmação vive em Locações (o bloco "confirmar-pagamentos").
+ */
+export const ACAO_CONFIRMAR_NO_ITEM = { rotulo: "Confirmar em Locações", href: "/dashboard/locacoes" } as const;
 
 export interface EstadoChecklist {
   assinadoProprietario: boolean;
   assinadoInquilino: boolean;
   primeiroPagamento: boolean;
+  /** E1068: o proprietário já registrou o 1º pagamento (com ou sem a confirmação do morador). */
+  primeiroPagamentoRegistrado?: boolean;
   /** "pendente" | "recebida" | "dispensada" — a Caução do 1º bloco (garantia caução); seguro-fiança = "dispensada". */
   caucao: "pendente" | "recebida" | "dispensada";
+  /** E1068: a caução já foi registrada pelo proprietário e espera a confirmação do morador. */
+  caucaoRegistrada?: boolean;
   conferencia: { estado: "em_andamento" | "aguardando_outra_parte" | "confirmada" | "contestada" | null; prazo: Date | null };
   ocupantes: { preenchidos: number; previstos: number };
   instrucoesPublicadas: boolean;
@@ -135,19 +152,35 @@ export function checklistAntesDaEntrada(e: EstadoChecklist, papel: PapelEstadia)
     confirmada: "Confirmada pelas duas partes",
     contestada: "Contestada",
   };
+  // E1068: o estado do meio — registrado pelo proprietário, à espera do morador — dito para quem lê. Antes a lista só
+  // conhecia "confirmado" e "não registrado", e o dono que acabava de registrar continuava a ler "Ainda não registrado".
+  const aguardando = (genero: "o" | "a") =>
+    papel === "proprietario" ? `Registrad${genero} por você. Aguardando a confirmação do morador.` : `Registrad${genero} pelo proprietário. Falta a sua confirmação.`;
+  // ORDEM-DUET-1048: só o morador, no estado do meio, tem o que fazer — a ação de confirmar fica no próprio item.
+  const acaoDeConfirmar = (registrado: boolean, confirmado: boolean) =>
+    papel !== "proprietario" && registrado && !confirmado ? { acao: { ...ACAO_CONFIRMAR_NO_ITEM } } : {};
   const itens: ItemChecklist[] = [
     { chave: "assinatura", rotulo: "Contrato assinado", feito: ambos, detalhe: falta },
     {
       chave: "primeiro_pagamento",
       rotulo: "1º pagamento",
       feito: e.primeiroPagamento,
-      detalhe: e.primeiroPagamento ? "Registrado e confirmado." : "Ainda não registrado e confirmado.",
+      detalhe: e.primeiroPagamento ? "Registrado e confirmado." : e.primeiroPagamentoRegistrado ? aguardando("o") : "Ainda não registrado e confirmado.",
+      ...acaoDeConfirmar(!!e.primeiroPagamentoRegistrado, e.primeiroPagamento),
     },
     {
       chave: "caucao",
       rotulo: "Caução",
       feito: e.caucao !== "pendente",
-      detalhe: e.caucao === "recebida" ? "Recebida pelo proprietário." : e.caucao === "dispensada" ? "Não se aplica a este contrato." : "Ainda não registrada.",
+      detalhe:
+        e.caucao === "recebida"
+          ? "Recebida pelo proprietário."
+          : e.caucao === "dispensada"
+            ? "Não se aplica a este contrato."
+            : e.caucaoRegistrada
+              ? aguardando("a")
+              : "Ainda não registrada.",
+      ...acaoDeConfirmar(!!e.caucaoRegistrada, e.caucao !== "pendente"),
     },
     {
       chave: "conferencia",

@@ -14,6 +14,8 @@ export const FILTROS_CENTRAL = [
   { chave: "avaliacoes_contestadas", rotulo: "Avaliações contestadas", lado: "equipe" },
   // E399-C: o link do Airbnb não confere com o imóvel (cidade ou quartos) — o selo fica bloqueado.
   { chave: "preco_justo_divergencia", rotulo: "Link do Airbnb não confere", lado: "equipe" },
+  // E1205 (ORDEM-DUET-1012): contrato com proposta e sem a taxa reservada há mais de 30 min (src/lib/fechamento/contratos-sem-taxa.ts).
+  { chave: "contratos_sem_taxa", rotulo: "Contrato sem taxa reservada", lado: "equipe" },
   { chave: "conforto_abertas", rotulo: "\"Não confere\" abertos", lado: "proprietario" },
   { chave: "adequacoes", rotulo: "Adequações vencendo ou vencidas", lado: "proprietario" },
   { chave: "confirmacoes_48h", rotulo: "Confirmações de 48 h do morador", lado: "morador" },

@@ -41,9 +41,10 @@ import { estadoDoContratoUnico, seloParaEquipe, type EstadoContrato } from "@/li
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
-import { aberturaAssinatura, linhasContrato, proximoPassoAssinatura } from "@/lib/notifications/dados-negociacao";
+import { aberturaAssinatura, contaDoContrato, contasDoContrato, linhasContrato, proximoPassoAssinatura } from "@/lib/notifications/dados-negociacao";
+import { PROPOSTA_FORA_DO_FECHAMENTO, propostaDoFechamentoDoLead } from "@/lib/data/propostas-servidor";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
-import { periodoDosBlocos } from "@/lib/contrato-blocos";
+import { DIAS_POR_MES, periodoDosBlocos } from "@/lib/contrato-blocos";
 import { prazoConferenciaEntrada, prazoConferenciaSaida } from "@/lib/conferencia";
 import {
   MSG_CODIGO_BLOQUEADO,
@@ -630,8 +631,28 @@ export async function assinarContrato(input: {
       const props = (c.properties ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
       const imovelEmail = { id: (c as { property_id?: string | null }).property_id ?? null, titulo: props.title ?? null, bairro: props.address ?? null, cidade: props.city ?? null };
       const { inicio, fim } = periodoDosBlocos(c.contrato_blocos ?? []);
-      const mesesContrato = Math.max(1, Math.round(Number(c.prazo_total_dias ?? 0) / 30));
-      const quadro = linhasContrato({ imovel: imovelEmail, inicio: inicio ?? "", fim: fim ?? "", meses: mesesContrato, valorMensal: Number(c.aluguel_mensal ?? 0), dias: Number(c.prazo_total_dias ?? 0) || null });
+      const mesesContrato = Math.max(1, Math.round(Number(c.prazo_total_dias ?? 0) / DIAS_POR_MES));
+      // E1066: o total pela fonte única (a proposta acordada de que o contrato nasceu) e a caução dos blocos do contrato.
+      // Leitura à parte e tolerante: falhou → o quadro de antes (só o aluguel, sem a linha da caução).
+      const { data: doContrato } = await admin.from("contratos").select("lead_id, proposta_id, contrato_blocos(caucao)").eq("id", c.id).maybeSingle();
+      const caucaoDoContrato = (((doContrato as { contrato_blocos?: { caucao?: number | null }[] | null } | null)?.contrato_blocos ?? []) as { caucao?: number | null }[]).reduce((s, b) => s + Number(b.caucao ?? 0), 0);
+      const leadDoContrato = (doContrato as { lead_id?: string | null } | null)?.lead_id;
+      // E1199: a proposta DESTE contrato (contratos.proposta_id), não a aceite mais recente da candidatura — o contrato de
+      // uma estadia anterior (E1141) mostra o total dela. Contrato sem proposta (direto/legado): nenhuma (o quadro de antes).
+      const propostaDoContrato = (doContrato as { proposta_id?: string | null } | null)?.proposta_id ?? null;
+      const lida = leadDoContrato && propostaDoContrato ? await propostaDoFechamentoDoLead(admin, leadDoContrato, propostaDoContrato).catch(() => null) : null;
+      const acordadaDoContrato = lida === PROPOSTA_FORA_DO_FECHAMENTO ? null : lida;
+      const quadro = linhasContrato({
+        imovel: imovelEmail,
+        inicio: inicio ?? "",
+        fim: fim ?? "",
+        meses: mesesContrato,
+        valorMensal: Number(c.aluguel_mensal ?? 0),
+        dias: Number(c.prazo_total_dias ?? 0) || null,
+        contaTotal: contaDoContrato(acordadaDoContrato),
+        contas: contasDoContrato(acordadaDoContrato),
+        caucao: caucaoDoContrato,
+      });
       const papelDe = (id: string): "owner" | "tenant" => (id === c.tenant_id ? "tenant" : "owner");
       const quemAssinou: "owner" | "tenant" = visao.papel === "inquilino" ? "tenant" : "owner";
       const corpo = (para: string) => ({

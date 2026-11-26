@@ -38,7 +38,8 @@ test("E968 — os quatro pontos que montam o contrato barram o pré-aceite expir
   for (const arq of ["src/lib/data/actions.ts", "src/lib/data/fechamento-servidor.ts", "src/app/api/contrato/route.ts", "src/lib/data/leads-actions.ts"]) {
     const s = ler(arq);
     const i = s.indexOf("preAceiteExpiradoDoLead(");
-    const j = s.indexOf("propostaAcordadaDoLead(admin");
+    // E1141: no fluxo do fecho, a proposta lê-se por `propostaDoFechamentoDoLead` (a estadia escolhida ou a de sempre).
+    const j = s.indexOf("propostaDoFechamentoDoLead(admin");
     assert.ok(i > 0, `${arq}: chama preAceiteExpiradoDoLead`);
     assert.ok(j > 0 && i < j, `${arq}: a checagem vem antes de ler a proposta acordada`);
   }

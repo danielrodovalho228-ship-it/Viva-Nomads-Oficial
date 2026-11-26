@@ -189,12 +189,16 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       await de.pressSequentially(`${dd}${mm}${aaaa}`);
       await expect(de).toHaveValue(`${dd}/${mm}/${aaaa}`);
       await de.fill("");
-      await de.evaluate((el) => {
+      // E1193 (ORDEM-DUET-868): a data colada também é relativa ao agora (45 dias à frente) — a gravada (15/12/2026)
+      // virava passado e o aviso "não pode ser antes de hoje" entrava na captura.
+      const colada = new Date(Date.now() + 45 * 86_400_000);
+      const [cd, cm, ca] = [String(colada.getDate()).padStart(2, "0"), String(colada.getMonth() + 1).padStart(2, "0"), String(colada.getFullYear())];
+      await de.evaluate((el, iso) => {
         const dt = new DataTransfer();
-        dt.setData("text/plain", "2026-12-15");
+        dt.setData("text/plain", iso);
         el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
-      });
-      await expect(de).toHaveValue("15/12/2026");
+      }, `${ca}-${cm}-${cd}`);
+      await expect(de).toHaveValue(`${cd}/${cm}/${ca}`);
       await page.screenshot({ path: `${SAIDA}/t204-datas-${largura}.png`, fullPage: false });
 
       // Fotos: a IA falha (simulado) → motivo + "Tentar de novo"; de novo → sugestões.

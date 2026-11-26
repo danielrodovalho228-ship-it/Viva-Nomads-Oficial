@@ -18,9 +18,9 @@ import {
   respostaExemploLabel,
   tempoNaVivaLabel,
 } from "@/config/exemplo-proprietarios";
-import { donoVerificado } from "@/lib/anuncio/dono-verificado";
+import { seloDoDono } from "@/lib/anuncio/dono-verificado";
 import { useNomeDepoisDoAceite } from "@/components/property/use-nome-depois-do-aceite";
-import { SeloDonoVerificado } from "@/components/property/selo-dono-verificado";
+import { SeloIdentidadeDono } from "@/components/property/selo-identidade-dono";
 import { SeloExemplo } from "@/components/property/selo-exemplo";
 import { buttonClasses } from "@/components/ui/button";
 import { hojeBR } from "@/lib/utils";
@@ -75,6 +75,8 @@ export function OwnerCard({
   taxaManutencao?: { taxa: number; resolvidos: number } | null;
 }) {
   const exemplo = isExemplo(property);
+  // E1105/E1106 (ORDEM-478): um selo só de identidade do dono, de uma fonte só (estadoIdentidade): confirmada ou conferida pela equipa.
+  const selo = seloDoDono(property, proprietario?.identidadeConfirmada);
   // E427: a página é estática (o HTML só leva o nome abreviado). Quem tem o aceite com este dono recebe o nome COMPLETO do
   // servidor depois de abrir — o mesmo de "Quem recebe" e de /proprietario/[id]; os demais ficam com o abreviado.
   const donoId = proprietario?.id ?? property.ownerId;
@@ -184,9 +186,9 @@ export function OwnerCard({
           )}
           {/* Selos só com verificação REAL registrada; no exemplo, ilustrativos e marcados. */}
           <ul className="mt-3 grid gap-1 text-left text-sm text-ink" data-testid="proprietario-selos">
-            {!exemplo && donoVerificado(property) && (
+            {selo?.tipo === "identidade" && (
               <li>
-                <SeloDonoVerificado />
+                <SeloIdentidadeDono texto={selo.texto} />
               </li>
             )}
             {d.selos.map((s) =>

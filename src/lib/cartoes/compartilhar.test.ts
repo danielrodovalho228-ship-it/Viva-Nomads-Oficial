@@ -5,6 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 import {
   ALFABETO_CODIGO,
   assinar,
@@ -158,7 +159,7 @@ test("ligação: imagem só com campos aprovados, QR do domínio, cartão ao pub
   assert.match(ler("supabase/producao/rollback/0186_rollback.sql"), /delete from supabase_migrations\.schema_migrations where version = '20261019000186'/);
   // Fase 1: nada de recompensa, cupom ou texto livre.
   for (const f of ["src/lib/cartoes/compartilhar.ts", "src/lib/data/cartoes-actions.ts", "src/components/cartoes/cartao-compartilhar.tsx"]) {
-    const codigo = ler(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+    const codigo = fonteSemComentarios(ler(f));
     assert.doesNotMatch(codigo, /cupom|recompensa|cr[eé]dito|desconto|textarea/i, f);
   }
 });
