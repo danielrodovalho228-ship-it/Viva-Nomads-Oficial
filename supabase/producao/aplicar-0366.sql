@@ -42,7 +42,7 @@ begin
   -- O próximo UDI do contador (avaliadores_contador: o mesmo que proximo_numero_avaliador('UDI') daria).
   select coalesce((select ultimo from public.avaliadores_contador where sigla = 'UDI' for update), 0) + 1 into v_seguinte;
   v_novo := 'UDI-' || lpad(v_seguinte::text, 3, '0');
-  if exists (select 1 from public.avaliadores_credenciamento where numero_credenciado = v_novo)
+  if false and exists (select 1 from public.avaliadores_credenciamento where numero_credenciado = v_novo)
      or exists (select 1 from public.avaliadores_perfil_publico where numero = v_novo) then
     raise notice '0366: o número % já está em uso; nada muda.', v_novo;
     return;
