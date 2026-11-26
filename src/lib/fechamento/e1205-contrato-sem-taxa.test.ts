@@ -12,7 +12,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { MINUTOS_SEM_TAXA, contratosSemTaxa, hrefAssistenteDaEstadia, linhaCentralSemTaxa, TEXTOS_SEM_TAXA } from "./contratos-sem-taxa.ts";
+import { MINUTOS_SEM_TAXA, contratosSemTaxa, corpoDoAvisoSemTaxa, hrefAssistenteDaEstadia, linhaCentralSemTaxa, TEXTOS_SEM_TAXA } from "./contratos-sem-taxa.ts";
 import { FILTROS_CENTRAL } from "../admin/central-pendencias.ts";
 import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
@@ -54,8 +54,12 @@ test("E1205 (2): o item da Central diz o VN-CT, a proposta e a data; leva ao con
   assert.equal(l.teste, false);
 });
 
-test("E1205 (3): o aviso ao dono leva ao assistente DAQUELA estadia (candidatura + proposta)", () => {
+test("E1205 (3): o aviso ao dono leva ao assistente DAQUELA estadia e nomeia o contrato e a proposta", () => {
   assert.equal(hrefAssistenteDaEstadia("lead-a", "orc-a"), "/dashboard/fechamento?c=lead-a&p=orc-a");
+  assert.equal(
+    corpoDoAvisoSemTaxa("8f2c11aa-0000-0000-0000-000000000000", "ORC-2026-0015")("Dora"),
+    "Olá Dora, o contrato VN-CT-8F2C11AA (proposta ORC-2026-0015) foi gerado, mas a taxa de serviço da Viva não ficou reservada. Abra o fechamento da estadia para concluir.",
+  );
 });
 
 test("E1205 (4): a rotina — de hora em hora, sem cobrar, um aviso por contrato, e regista o caso real", () => {
@@ -75,6 +79,7 @@ test("E1205 (4): a rotina — de hora em hora, sem cobrar, um aviso por contrato
   assert.match(srv, /event: "contrato_sem_taxa"/);
   assert.match(srv, /refId: c\.id/);
   assert.match(srv, /pushUrl: hrefAssistenteDaEstadia\(c\.lead_id, c\.proposta_id\)/);
+  assert.match(srv, /body: corpoDoAvisoSemTaxa\(c\.id, c\.numeroProposta\)/);
   // A regra do desenho: um caso real fica registado (a decisão vira — a reserva passa para dentro da ação do contrato).
   assert.match(srv, /console\.warn\("\[E1205\] caso real/);
 });
