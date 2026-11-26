@@ -186,11 +186,11 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   // Quadro "antes da entrada" (prompt 24): 1º pagamento + Caução ao lado (some com seguro-fiança).
   const quadroEntrada = quadroAntesDaEntrada({
     // E1072: na estadia em dias, o 1º pagamento é o 1º bloco inteiro — a mesma conta que o registro do bloco cobra.
-    primeiroPagamento: primeiroPagamentoDaEstadia({ dias: DIAS_ACORDO, preco: PRECO_FECHAMENTO, blocos: resumo.blocos, comProposta: !!ACORDO?.termos }),
+    primeiroPagamento: primeiroPagamentoDaEstadia({ dias: null, preco: PRECO_FECHAMENTO, blocos: resumo.blocos, comProposta: !!ACORDO?.termos }),
     caucao: CAUCAO_50,
     garantia: garantiaDoContrato(guaranteeId),
   });
-  const CONTA_PRIMEIRO_PAGAMENTO = contaDoPrimeiroPagamento({ dias: DIAS_ACORDO, preco: PRECO_FECHAMENTO, blocos: resumo.blocos, comProposta: !!ACORDO?.termos });
+  const CONTA_PRIMEIRO_PAGAMENTO = contaDoPrimeiroPagamento({ dias: null, preco: PRECO_FECHAMENTO, blocos: resumo.blocos, comProposta: !!ACORDO?.termos });
   // "Sua proteção": o inquilino confirma que leu a comparação antes de seguir.
   const [cienteProtecao, setCienteProtecao] = useState(false);
   // Nº de pessoas que vão morar (Onda 1) — informado pelo inquilino, validado
