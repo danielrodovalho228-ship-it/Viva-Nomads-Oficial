@@ -114,7 +114,11 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const PORTAO_IDENTIDADE = portaoDaIdentidade(ctx.identidadePropria);
   const JA_CONFIRMADA = !demo && PORTAO_IDENTIDADE.aberto;
   const [verifStatus, setVerifStatus] = useState<"none" | "ok" | "pendente" | "confirmada">(JA_CONFIRMADA ? "confirmada" : "none");
-  const [step, setStep] = useState(0);
+  // E1141 (ajuste da guarda, ORDEM-DUET-977/978): a estadia escolhida (?p=) que JÁ tem contrato quando o assistente
+  // abre fica só para leitura — o resumo do contrato e "Ver contrato", sem "Gerar contrato". Decide-se na montagem: o
+  // contrato gerado agora (que a página revalidada passa a ter) segue para a tela de sucesso, como no fecho sem p.
+  const [somenteLeitura] = useState(() => !demo && Boolean(ctx.propostaDaUrl) && Boolean(ctx.contratoExistente));
+  const [step, setStep] = useState(() => (somenteLeitura ? STEPS.length - 1 : 0));
   // Prazo total pretendido (contrato-mãe) — o inquilino escolhe no fechamento.
   // E202 (candidatura): sem proposta, abre com os meses do período da candidatura aceita (dentro de 1..6); sem período, 4.
   const [prazoMeses, setPrazoMeses] = useState(ACORDO ? ACORDO.meses : prazoInicial(ctx.mesesSugerido, { padrao: DEFAULT_MESES, min: MESES_MIN, max: MESES_MAX }));
@@ -471,7 +475,11 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
               <p className="mt-1 text-muted">
                 Situação do contrato: <strong className="text-ink">{ctx.contratoExistente.texto}</strong>
               </p>
-              <Link href={hrefContratoDono(ctx.contratoExistente.id)} className="mt-1 inline-flex min-h-11 items-center font-semibold text-forest underline">
+              <Link
+                href={hrefContratoDono(ctx.contratoExistente.id)}
+                className="mt-1 inline-flex min-h-11 items-center font-semibold text-forest underline"
+                data-testid={somenteLeitura ? "fechamento-somente-leitura" : undefined}
+              >
                 Ver contrato
               </Link>
               {step !== PASSO_RESUMO && (
@@ -1306,9 +1314,17 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     Informar meu documento
                   </Link>
                 )}
-                <Button variant="gold" onClick={generateContract} disabled={gerando} data-testid="fechamento-gerar-contrato">
-                  <FileSignature className="h-4 w-4" /> {gerando ? "Gerando..." : "Gerar contrato para assinatura"}
-                </Button>
+                {somenteLeitura ? (
+                  ctx.contratoExistente && (
+                    <Link href={hrefContratoDono(ctx.contratoExistente.id)} className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline">
+                      Ver contrato
+                    </Link>
+                  )
+                ) : (
+                  <Button variant="gold" onClick={generateContract} disabled={gerando} data-testid="fechamento-gerar-contrato">
+                    <FileSignature className="h-4 w-4" /> {gerando ? "Gerando..." : "Gerar contrato para assinatura"}
+                  </Button>
+                )}
               </div>
             )}
           </div>

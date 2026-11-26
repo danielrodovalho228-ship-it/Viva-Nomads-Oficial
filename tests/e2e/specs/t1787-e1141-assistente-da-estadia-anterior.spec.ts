@@ -10,7 +10,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
    1. (1280 e 390 px) A linha da estadia anterior abre o assistente dela: a linha fica marcada e o assistente mostra o
       número da proposta antiga (não o da nova). Print nas duas larguras.
    2. Sem p, como antes: a página abre a estadia mais nova.
-   3. p de uma estadia que já tem contrato: a página leva ao contrato (nunca reabre o assistente).
+   3. p de uma estadia que já tem contrato: o assistente abre só para leitura, com "Ver contrato" e sem "Gerar
+      contrato" (alterado na ORDEM-DUET-982; antes levava ao contrato por redirect).
    4. p de outra candidatura: "Não encontramos esse fechamento" e nenhum assistente dessa proposta.
    5. (guarda 4 do coordenador, ORDEM-DUET-933) Chamada DIRETA às rotas da taxa e do contrato com um p alheio (de outra
       candidatura) ou numa fase errada (proposta enviada, não acordada): as duas recusam com a mesma mensagem e nada é
@@ -142,9 +143,17 @@ test.describe("T1787 — E1141: o assistente da estadia anterior @E1141", () => 
     await page.context().close();
   });
 
-  test("3. p de uma estadia que já tem contrato: leva ao contrato, não ao assistente", async ({ browser }) => {
+  // Caso 3 alterado (ORDEM-DUET-982, sobre a decisão da ORDEM-DUET-978): sem redirect; o assistente abre só para
+  // leitura, com "Ver contrato" (para o contrato dessa estadia) e sem "Gerar contrato".
+  test("3. p de uma estadia que já tem contrato: o assistente abre só para leitura, com Ver contrato e sem Gerar contrato", async ({ browser }) => {
     const page = await noFechamento(browser, 1280, `?c=${ids.leadB}&p=${ids.orcNova}`);
-    await page.waitForURL((u) => u.pathname === `/dashboard/contratos/${ids.ctB}`, { timeout: 30_000 });
+    const verContrato = page.getByTestId("fechamento-somente-leitura");
+    await expect(verContrato).toBeVisible({ timeout: 30_000 });
+    await expect(verContrato).toHaveText("Ver contrato");
+    await expect(verContrato).toHaveAttribute("href", `/dashboard/contratos/${ids.ctB}`);
+    await expect(page.getByTestId("fechamento-gerar-contrato")).toHaveCount(0);
+    expect(new URL(page.url()).pathname, "sem redirect: continua no fechamento").toBe("/dashboard/fechamento");
+    expect(new URL(page.url()).searchParams.get("p")).toBe(ids.orcNova);
     await page.context().close();
   });
 
