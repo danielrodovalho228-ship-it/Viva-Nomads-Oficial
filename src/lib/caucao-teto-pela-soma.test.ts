@@ -8,6 +8,9 @@
   k, a soma das cauções dos blocos 1..k menos o registrado ativo. Neste avulso o registro é um por contrato, por isso o
   teto é o do último bloco (a soma inteira).
   A ação REAL (marcarPagamentoRecebido) corre com o Supabase falso (harness de src/lib/data/e1072-teto-harness).
+  ORDEM-DUET-1112 (os ajustes do coordenador): a recusa diz o motivo. Acima do teto, diz o valor que falta (R$ X); um
+  contrato com caução 0 em todos os blocos lidos (a garantia é outra, por exemplo seguro-fiança) diz que não tem caução;
+  a lista de blocos vazia é falta de leitura, não teto zero — a mensagem da falha de leitura.
   Roda: node --test src/lib/caucao-teto-pela-soma.test.ts
 */
 import { register } from "node:module";
@@ -59,6 +62,9 @@ function sessao(o: { blocos: { numero_bloco: number; caucao: number }[] | "falha
   };
 }
 const caucao = (valor: number) => ({ blocoId: "", contratoId: CONTRATO, tipo: "caucao" as const, valor, dataPagamento: "2026-12-20" });
+const PASSA = (reais: string) => new RegExp(`^O valor é maior que a caução que falta registrar neste contrato: R\\$\\s${reais.replace(/\./g, "\\.")}\\.$`, "u");
+const SEM_CAUCAO = "Este contrato não tem caução: a garantia é outra (por exemplo, seguro-fiança).";
+const SEM_CONTA = "Não foi possível conferir a caução deste contrato. Tente de novo em instantes.";
 const DOIS = [{ numero_bloco: 1, caucao: 3750 }, { numero_bloco: 2, caucao: 3750 }];
 
 beforeEach(() => {
@@ -71,6 +77,7 @@ test("1. acima da soma das cauções dos blocos → recusado, não grava", async
   g.__e1072Sessao = s;
   const r = await marcarPagamentoRecebido(caucao(7500.01));
   assert.equal(r.ok, false);
+  assert.match((r as { error?: string }).error ?? "", PASSA("7.500,00"), "a recusa diz o valor que falta registrar");
   assert.equal(s.inseridos.length, 0);
 });
 
@@ -88,7 +95,9 @@ test("2. igual à soma → aceito (grava a caução do contrato, sem bloco)", as
 test("3. contrato de 1 bloco: o teto é a caução do bloco", async () => {
   let s = sessao({ blocos: [{ numero_bloco: 1, caucao: 3750 }] });
   g.__e1072Sessao = s;
-  assert.equal((await marcarPagamentoRecebido(caucao(3800))).ok, false);
+  const r = await marcarPagamentoRecebido(caucao(3800));
+  assert.equal(r.ok, false);
+  assert.match((r as { error?: string }).error ?? "", PASSA("3.750,00"));
   assert.equal(s.inseridos.length, 0);
   s = sessao({ blocos: [{ numero_bloco: 1, caucao: 3750 }] });
   g.__e1072Sessao = s;
@@ -101,6 +110,7 @@ test("4. a conta do contrato não se lê → recusa (falha fechado), não grava"
   g.__e1072Sessao = s;
   const r = await marcarPagamentoRecebido(caucao(100));
   assert.equal(r.ok, false);
+  assert.equal((r as { error?: string }).error, SEM_CONTA);
   assert.equal(s.inseridos.length, 0);
 });
 
@@ -110,5 +120,23 @@ test("5. já há caução ativa no contrato → 'já registrado', como antes (o 
   const r = await marcarPagamentoRecebido(caucao(7500));
   assert.equal(r.ok, true);
   assert.equal((r as { jaRegistrado?: boolean }).jaRegistrado, true);
+  assert.equal(s.inseridos.length, 0);
+});
+
+test("6. caução 0 em todos os blocos lidos (a garantia é outra) → recusa dizendo que o contrato não tem caução", async () => {
+  const s = sessao({ blocos: [{ numero_bloco: 1, caucao: 0 }, { numero_bloco: 2, caucao: 0 }] });
+  g.__e1072Sessao = s;
+  const r = await marcarPagamentoRecebido(caucao(1500));
+  assert.equal(r.ok, false);
+  assert.equal((r as { error?: string }).error, SEM_CAUCAO);
+  assert.equal(s.inseridos.length, 0);
+});
+
+test("7. a lista de blocos vem vazia → é falta de leitura, não teto zero: a mensagem da falha de leitura", async () => {
+  const s = sessao({ blocos: [] });
+  g.__e1072Sessao = s;
+  const r = await marcarPagamentoRecebido(caucao(1500));
+  assert.equal(r.ok, false);
+  assert.equal((r as { error?: string }).error, SEM_CONTA);
   assert.equal(s.inseridos.length, 0);
 });
