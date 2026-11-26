@@ -135,15 +135,18 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
   const FAIXA = faixaForDays(STAY_DAYS);
   const FAIXA_LABEL = faixaLabel(FAIXA);
   const FAIXA_RESUMO = faixaResumo(FAIXA);
+  // E1202: as dependências são TUDO o que o cálculo lê (a faixa e o tipo do imóvel).
   const MODELO_CONTRATO = useMemo(
     () => selecionarModeloContrato(FAIXA, PROPERTY_FULL.propertyType),
-    [FAIXA]
+    [FAIXA, PROPERTY_FULL.propertyType]
   );
   const ELEGIVEIS = useMemo(() => garantiasElegiveis(STAY_DAYS), [STAY_DAYS]);
   // Contrato fracionado: blocos de até 90 dias, caução 50% por bloco, comissão única.
+  // E1202: recalcula com o aluguel e a taxa da estadia aberta, não só com o prazo — antes, duas estadias com os mesmos
+  // dias ficavam com a base, a taxa e a caução da primeira (o memo nunca recalculava).
   const resumo = useMemo(
     () => (DIAS_ACORDO ? resumoContratoEmDias(DIAS_ACORDO, PROPERTY.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO) : resumoContrato(prazoMeses, PROPERTY.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO)),
-    [prazoMeses, DIAS_ACORDO]
+    [prazoMeses, DIAS_ACORDO, PROPERTY.monthlyRent, COMMISSION_RATE]
   );
   const VALOR_ESTADIA = resumo.valorTotalPeriodo;
   // Prompt 47 (adendo): o total do período mostrado é o MESMO do cartão para a mesma duração (função única).
@@ -802,7 +805,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                     </thead>
                     <tbody>
                       {resumo.blocos.map((b) => (
-                        <tr key={b.numero} className="border-t border-sage-200/60">
+                        <tr key={b.numero} className="border-t border-sage-200/60" data-testid={`garantia-bloco-${b.numero}`}>
                           <td className="py-2 pr-2 text-ink">
                             {b.numero} <span className="text-muted">({b.meses}m)</span>
                           </td>
@@ -1217,10 +1220,10 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 esse valor. O morador não paga taxa da Viva.
               </p>
               <div className="mt-3 space-y-1">
-                <Row label={DIAS_ACORDO ? `Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${DIAS_ACORDO} dias ÷ 30)` : `Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${prazoMeses} ${prazoMeses === 1 ? "mês" : "meses"})`} value={formatBRL(resumo.valorTotalPeriodo)} />
+                <Row label={DIAS_ACORDO ? `Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${DIAS_ACORDO} dias ÷ 30)` : `Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${prazoMeses} ${prazoMeses === 1 ? "mês" : "meses"})`} value={formatBRL(resumo.valorTotalPeriodo)} testid="fechamento-base-taxa" />
                 <div className="flex items-center justify-between border-t border-champagne/40 pt-1 font-medium text-forest">
                   <span>Taxa de serviço ({pctTexto(COMMISSION_RATE)})</span>
-                  <span>{formatBRL(PLATFORM_COMMISSION)}</span>
+                  <span data-testid="fechamento-taxa-valor">{formatBRL(PLATFORM_COMMISSION)}</span>
                 </div>
               </div>
             </div>
@@ -1486,9 +1489,9 @@ function LaudoItem({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, testid }: { label: string; value: string; testid?: string }) {
   return (
-    <div className="flex items-center justify-between py-1">
+    <div className="flex items-center justify-between py-1" data-testid={testid}>
       <span className="text-muted">{label}</span>
       <span className="font-medium text-ink">{value}</span>
     </div>
