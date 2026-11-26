@@ -105,6 +105,8 @@ test.describe("T1792 — E1204: o período das linhas de Seus fechamentos @E1204
     const page = await noFechamento(browser);
     for (const [tipo, lead] of [["C", ids.leadC], ["A", ids.leadA], ["B", ids.leadB]] as const) {
       const periodo = linha(page, lead).getByTestId("fecho-periodo");
+      // ENSAIO (ORDEM-1007): o DOM do fecho-periodo — cada nó de texto e se está visível.
+      console.log(`SONDA ${tipo}`, JSON.stringify(await periodo.first().evaluate((el) => ({ n: document.querySelectorAll('[data-testid="fecho-periodo"]').length, html: el.outerHTML, partes: Array.from(el.querySelectorAll("*")).concat([el]).map((e) => ({ tag: e.tagName, cls: (e as HTMLElement).className, txt: (e.textContent ?? "").slice(0, 80), display: getComputedStyle(e).display, visivel: (e as HTMLElement).offsetParent !== null || getComputedStyle(e).position === "fixed" })) }))));
       await expect(periodo, `linha ${tipo}`).toContainText(ESPERADO);
       // O formato antigo: "DD/MM/AAAA a DD/MM/AAAA" (uma string " a " seria aparada pelo Playwright e casaria "Entrada").
       await expect(periodo, `linha ${tipo}: nunca a última noite como segundo termo`).not.toHaveText(/\d{2}\/\d{2}\/\d{4} a \d{2}\/\d{2}\/\d{4}/);
