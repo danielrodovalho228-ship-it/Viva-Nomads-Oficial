@@ -21,3 +21,6 @@ export const msgCaucaoPassa = (emAberto: number) => `O valor é maior que a cau�
 export const MSG_CAUCAO_SEM_CAUCAO = "Este contrato não tem caução: a garantia é outra (por exemplo, seguro-fiança).";
 /** Sem a conta da caução lida (ou sem bloco nenhum lido), não se grava. */
 export const MSG_CAUCAO_SEM_CONTA = "Não foi possível conferir a caução deste contrato. Tente de novo em instantes.";
+
+/** PROPOSTA DE TEXTO (E1225): o bloco cuja caução já está coberta pelo que foi registrado (um registro antigo pela soma). */
+export const MSG_CAUCAO_NADA_NO_BLOCO = "Nada a registrar neste bloco: a caução já registrada cobre-o.";

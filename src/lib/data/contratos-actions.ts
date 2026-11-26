@@ -18,7 +18,7 @@ import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { acertoMaisRecente, estadoCaucao, type EstadoCaucao } from "@/lib/caucao-estado";
 import { componentesDoPagamento, emAbertoNoBloco, encargosDosComponentes, parteDaColuna, proximaParte, somarComponentes, type ComponentesBloco } from "@/lib/pagamento-componentes";
 import { componentesDosContratos } from "@/lib/data/contrato-componentes";
-import { MSG_CAUCAO_SEM_CAUCAO, MSG_CAUCAO_SEM_CONTA, caucaoEmAbertoAte, msgCaucaoPassa } from "@/lib/caucao-teto";
+import { MSG_CAUCAO_NADA_NO_BLOCO, MSG_CAUCAO_SEM_CAUCAO, MSG_CAUCAO_SEM_CONTA, caucaoEmAbertoAte, msgCaucaoPassa } from "@/lib/caucao-teto";
 
 /**
  * Contratos & blocos do PROPRIETÁRIO + registro DECLARATÓRIO de pagamento
@@ -523,7 +523,29 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
   // (B) (ORDENS-DUET 1098 e 1107): a caução não passa do que falta registrar — a soma das cauções dos blocos do contrato
   // menos a caução já registrada e ativa. Sem essa conta lida, não grava (falha fechado). Já havendo caução ativa (o
   // registro é um por contrato), é "já registrado", como o índice único responde.
-  if (tipo === "caucao") {
+  // E1225 (ORDEM-DUET-1120): com o bloco, a caução é DESSE bloco (0367) e o teto é o acumulado até ele — a soma das
+  // cauções dos blocos 1..k menos a caução já registrada e ativa (com ou sem bloco). Um registro antigo pela soma cobre
+  // os blocos seguintes até ao valor dele; nada se reescreve. Sem bloco, o caminho do avulso da (B), como estava.
+  const caucaoDoBloco = tipo === "caucao" && UUID_RE.test(input.blocoId);
+  if (caucaoDoBloco) {
+    const [{ data: ct, error: erroCt }, { data: ativas, error: erroAtivas }] = await Promise.all([
+      supabase.from("contratos").select("id, contrato_blocos(id, numero_bloco, caucao)").eq("id", input.contratoId).maybeSingle(),
+      supabase.from("pagamentos_bloco").select("id, valor, bloco_id").eq("contrato_id", input.contratoId).eq("tipo", "caucao").is("anulado_em", null),
+    ]);
+    if (erroCt || erroAtivas || !ct) return { ok: false, error: MSG_CAUCAO_SEM_CONTA };
+    const registradas = (ativas ?? []) as { id: string; valor: number | string; bloco_id: string | null }[];
+    const noBloco = registradas.find((r) => r.bloco_id === input.blocoId);
+    if (noBloco) return { ok: true, id: noBloco.id, jaRegistrado: true, mensagem: MSG_JA_REGISTRADO };
+    const lidos = (((ct as { contrato_blocos?: unknown }).contrato_blocos as { id: string; numero_bloco: number; caucao: number | string | null }[] | null) ?? []).map((b) => ({ id: String(b.id), numero: Number(b.numero_bloco), caucao: Number(b.caucao) || 0 }));
+    if (lidos.length === 0) return { ok: false, error: MSG_CAUCAO_SEM_CONTA };
+    const alvo = lidos.find((b) => b.id === input.blocoId);
+    if (!alvo) return { ok: false, error: MSG_CAUCAO_SEM_CONTA };
+    if (lidos.every((b) => b.caucao <= 0)) return { ok: false, error: MSG_CAUCAO_SEM_CAUCAO };
+    const emAberto = caucaoEmAbertoAte(lidos, registradas.reduce((t, r) => t + (Number(r.valor) || 0), 0), alvo.numero);
+    if (!(emAberto > 0)) return { ok: false, error: MSG_CAUCAO_NADA_NO_BLOCO };
+    if (input.valor > emAberto + 0.005) return { ok: false, error: msgCaucaoPassa(emAberto) };
+  }
+  if (tipo === "caucao" && !caucaoDoBloco) {
     const [{ data: ct, error: erroCt }, { data: ativas, error: erroAtivas }] = await Promise.all([
       supabase.from("contratos").select("id, contrato_blocos(numero_bloco, caucao)").eq("id", input.contratoId).maybeSingle(),
       supabase.from("pagamentos_bloco").select("id, valor").eq("contrato_id", input.contratoId).eq("tipo", "caucao").is("anulado_em", null),
@@ -539,12 +561,12 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     const emAberto = caucaoEmAbertoAte(blocos, registradas.reduce((t, r) => t + (Number(r.valor) || 0), 0));
     if (input.valor > emAberto + 0.005) return { ok: false, error: msgCaucaoPassa(emAberto) };
   }
-  // Caução é do CONTRATO (0182): grava sem bloco. O valor mensal é de um bloco.
+  // A caução com bloco grava o bloco (E1225, 0367); sem bloco, é a do CONTRATO (0182). O valor mensal é de um bloco.
   const { data, error } = await supabase
     .from("pagamentos_bloco")
     .insert({
       ...(tipo === "aluguel" ? { parte } : {}),
-      bloco_id: tipo === "caucao" ? null : input.blocoId,
+      bloco_id: tipo === "caucao" && !caucaoDoBloco ? null : input.blocoId,
       contrato_id: input.contratoId,
       tipo,
       valor: input.valor,
@@ -560,7 +582,7 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     // Clique duplo ou segundo envio: o índice único (uma Caução por contrato, um valor mensal por bloco) recusa e
     // devolvemos o registro que já existe, sem erro técnico.
     if (error.code === "23505") {
-      const existente = await pagamentoJaRegistrado(supabase, input.contratoId, tipo, input.blocoId);
+      const existente = await pagamentoJaRegistrado(supabase, input.contratoId, tipo, caucaoDoBloco || tipo === "aluguel" ? input.blocoId : null);
       return { ok: true, id: existente ?? undefined, jaRegistrado: true, mensagem: MSG_JA_REGISTRADO };
     }
     return { ok: false, error: erroBancoPT(error) };
@@ -589,10 +611,12 @@ async function pagamentoJaRegistrado(
   supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
   contratoId: string,
   tipo: "aluguel" | "caucao",
-  blocoId: string
+  blocoId: string | null
 ): Promise<string | null> {
   let q = supabase.from("pagamentos_bloco").select("id").eq("contrato_id", contratoId).eq("tipo", tipo).is("anulado_em", null);
-  if (tipo === "aluguel") q = q.eq("bloco_id", blocoId);
+  // O valor mensal e a caução com bloco (E1225) procuram no bloco; a caução sem bloco, a do contrato.
+  if (blocoId) q = q.eq("bloco_id", blocoId);
+  else if (tipo === "caucao") q = q.is("bloco_id", null);
   const { data } = await q.order("created_at", { ascending: true }).limit(1).maybeSingle();
   return (data?.id as string | undefined) ?? null;
 }
