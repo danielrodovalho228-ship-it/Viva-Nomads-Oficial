@@ -10,6 +10,9 @@ import { hojeBR } from "../../../src/lib/utils";
    1. Nada registrado: "Ainda não registrado e confirmado." e "Ainda não registrada.".
    2. O dono registra o 1º pagamento e a caução pela tela. A lista DELE passa a dizer "Registrado por você. Aguardando
       a confirmação do morador." (e "Registrada por você…" na caução); os itens ainda não estão feitos.
+      Dentro do caso 2 (ORDEM-DUET-1049): M7 — o dono regista SÓ a caução primeiro — o 1º pagamento continua "ainda não registrado" e a
+      caução mostra o estado do meio. M6: o dono regista o aluguel e o registo é ANULADO (anulado_em + motivo, pelo
+      serviço) — a linha volta a "ainda não registrado". O dono regista o aluguel outra vez e segue o caso 2.
    3. A moradora lê "Registrado pelo proprietário. Falta a sua confirmação.", com a ação "Confirmar em Locações" no
       MESMO item (ORDEM-DUET-1048, condição do coordenador), que a leva ao bloco de confirmar; confirma os dois; a lista dela
       passa a "Registrado e confirmado." e "Recebida pelo proprietário.", feitos.
@@ -40,8 +43,8 @@ async function item(page: Page, chave: "primeiro_pagamento" | "caucao", texto: s
 }
 
 const pagamentos = async (confirmados: boolean) =>
-  ((await adm().from("pagamentos_bloco").select("tipo, confirmado_pelo_inquilino").eq("contrato_id", ids.contrato!)).data ?? [])
-    .filter((p) => p.confirmado_pelo_inquilino === confirmados)
+  ((await adm().from("pagamentos_bloco").select("tipo, confirmado_pelo_inquilino, anulado_em").eq("contrato_id", ids.contrato!)).data ?? [])
+    .filter((p) => p.confirmado_pelo_inquilino === confirmados && !p.anulado_em)
     .map((p) => String(p.tipo))
     .sort();
 
@@ -86,14 +89,40 @@ test.describe("T1709 — E1068: o 1º pagamento e a caução dizem o estado real
   test("2. o dono registra o 1º pagamento e a caução: a lista dele passa a dizer \"registrado por você\"", async ({ browser }) => {
     const pd = await entrar(browser, dono.email, senha);
     await pd.setViewportSize({ width: 1280, height: 900 });
-    await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-    await pd.getByTestId("registrar-recebimento").first().click();
-    await pd.getByRole("button", { name: "Confirmar recebimento" }).click();
-    await expect.poll(() => pagamentos(false), { timeout: 30_000, message: "o 1º pagamento grava, sem confirmação" }).toEqual(["aluguel"]);
+    // ORDEM-DUET-1049 (M7): a CAUÇÃO primeiro, sozinha — a linha do 1º pagamento não pode contá-la como o aluguel.
     await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
     await pd.getByTestId("registrar-caucao").first().click();
     await pd.getByTestId("confirmar-recebimento").click();
-    await expect.poll(() => pagamentos(false), { timeout: 30_000, message: "a caução grava, sem confirmação" }).toEqual(["aluguel", "caucao"]);
+    await expect.poll(() => pagamentos(false), { timeout: 30_000, message: "a caução grava, sem confirmação" }).toEqual(["caucao"]);
+    const soCaucao = await naEstadia(browser, dono.email);
+    await item(soCaucao, "primeiro_pagamento", "Ainda não registrado e confirmado.", false);
+    await item(soCaucao, "caucao", "Registrada por você. Aguardando a confirmação do morador.", false);
+    await soCaucao.context().close();
+
+    await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    await pd.getByTestId("registrar-recebimento").first().click();
+    await pd.getByRole("button", { name: "Confirmar recebimento" }).click();
+    await expect.poll(() => pagamentos(false), { timeout: 30_000, message: "o 1º pagamento grava, sem confirmação" }).toEqual(["aluguel", "caucao"]);
+
+    // ORDEM-DUET-1049 (M6): o registo do aluguel é ANULADO (a anulação lógica da casa: anulado_em + motivo, gravada
+    // pelo serviço) — a linha volta a "ainda não registrado"; o estado do meio não aparece.
+    const { error: eAn } = await adm()
+      .from("pagamentos_bloco")
+      .update({ anulado_em: new Date().toISOString(), anulado_motivo: "t1709: registo anulado (M6)" })
+      .eq("contrato_id", ids.contrato!)
+      .eq("tipo", "aluguel")
+      .is("anulado_em", null);
+    expect(eAn).toBeNull();
+    const anulado = await naEstadia(browser, dono.email);
+    await item(anulado, "primeiro_pagamento", "Ainda não registrado e confirmado.", false);
+    await expect(anulado.getByTestId("checklist-primeiro_pagamento"), "M6: anulado, o estado do meio não aparece").not.toContainText("Registrado por você");
+    await anulado.context().close();
+
+    // O dono regista o aluguel outra vez (o registo anulado não conta).
+    await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
+    await pd.getByTestId("registrar-recebimento").first().click();
+    await pd.getByRole("button", { name: "Confirmar recebimento" }).click();
+    await expect.poll(() => pagamentos(false), { timeout: 30_000, message: "o 1º pagamento grava de novo, sem confirmação" }).toEqual(["aluguel", "caucao"]);
     await pd.context().close();
 
     const page = await naEstadia(browser, dono.email);

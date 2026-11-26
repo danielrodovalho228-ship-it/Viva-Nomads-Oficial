@@ -78,3 +78,20 @@ test("E1068 — morador no estado do meio: o item leva a ação de confirmar (Lo
   const pagina = readFileSync("src/app/(dashboard)/dashboard/estadia/[contratoId]/page.tsx", "utf8");
   assert.match(pagina, /\{i\.acao && \(\s*<Link href=\{i\.acao\.href\}[^>]*data-testid=\{`checklist-\$\{i\.chave\}-acao`\}/);
 });
+
+/*
+  ORDEM-DUET-1049 (M6 e M7, a mordida da Pista 3): o "registrado" do 1º pagamento é só o ALUGUEL VÁLIDO.
+   - M6: um registo de aluguel ANULADO não conta — a linha volta a "ainda não registrado";
+   - M7: um pagamento de OUTRO TIPO (a caução) não conta como o 1º pagamento.
+*/
+test("E1068 — M6: o aluguel anulado não conta como registrado; M7: a caução não conta como o 1º pagamento", async () => {
+  const { primeiroPagamentoRegistrado } = await import("../contrato-estado.ts");
+  const aluguel = { tipo: "aluguel", confirmado_pelo_inquilino: false, anulado_em: null };
+  assert.equal(primeiroPagamentoRegistrado([aluguel] as never), true, "o aluguel válido conta");
+  assert.equal(primeiroPagamentoRegistrado([{ ...aluguel, anulado_em: "2026-11-26T12:00:00Z" }] as never), false, "M6: anulado não conta");
+  assert.equal(primeiroPagamentoRegistrado([{ tipo: "caucao", confirmado_pelo_inquilino: false, anulado_em: null }] as never), false, "M7: a caução não é o 1º pagamento");
+  // Na lista: só a caução registrada → o 1º pagamento continua "ainda não registrado"; a caução, no estado do meio.
+  const soCaucao = { ...base, primeiroPagamentoRegistrado: false, caucaoRegistrada: true };
+  assert.equal(item(soCaucao, "proprietario", "primeiro_pagamento").detalhe, "Ainda não registrado e confirmado.");
+  assert.equal(item(soCaucao, "proprietario", "caucao").detalhe, "Registrada por você. Aguardando a confirmação do morador.");
+});
