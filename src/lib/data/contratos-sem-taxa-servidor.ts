@@ -9,6 +9,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { MINUTOS_SEM_TAXA, contratosSemTaxa, corpoDoAvisoSemTaxa, hrefAssistenteDaEstadia, type ContratoSemTaxa } from "@/lib/fechamento/contratos-sem-taxa";
 import { notify } from "@/lib/notifications";
+import { gravarAviso } from "@/lib/notifications/avisos-servidor";
 
 type Admin = SupabaseClient;
 export type ContratoSemTaxaLido = ContratoSemTaxa & { numeroProposta: string | null; donoId: string | null };
@@ -49,6 +50,10 @@ export async function avisarContratosSemTaxa(admin: Admin, agora: Date): Promise
     const { data } = await admin.from("profiles").select("email, full_name").eq("id", c.donoId).maybeSingle();
     const pf = data as { email?: string | null; full_name?: string | null } | null;
     if (!pf?.email) continue;
+    // ORDEM-DUET-1017 §3: a âncora grava-se ANTES do e-mail. Se o e-mail falhar depois, o sino fica como o aviso deste
+    // contrato e a hora seguinte não repete; sem âncora, nada sai agora (tenta na hora seguinte).
+    const ancorado = await gravarAviso({ usuarioId: c.donoId, evento: "contrato_sem_taxa", papel: "dono", refId: c.id, url: hrefAssistenteDaEstadia(c.lead_id, c.proposta_id) });
+    if (!ancorado) continue;
     await notify({
       event: "contrato_sem_taxa",
       email: pf.email,
