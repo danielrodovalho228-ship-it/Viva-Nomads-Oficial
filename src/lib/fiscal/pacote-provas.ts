@@ -36,7 +36,7 @@ export async function gerarPacoteProvasRegistrado(d: DadosProvas, emitidoPor: st
     emitidoPor,
     conteudo: ({ numero, versao, codigo }) =>
       gerarPdf(
-        conteudoPacoteProvas(dados, {
+        conteudoPacoteProvas(d, { // ENSAIO: sem os nomes lidos
           cabecalho: { numero: numeroExibido(numero, versao), emitidoEm: emitidoEmBrasilia(emitidoEm), conferir: linhaConferir(SITE_URL, codigo) },
           contrato,
         }),
