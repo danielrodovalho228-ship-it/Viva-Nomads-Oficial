@@ -9,7 +9,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ROTULO_CONTAS, ROTULO_LIMPEZA, componentesDoPagamento, emAbertoNoBloco, partesPorOrdem, proximaParte, somarComponentes, textoComponentes } from "./pagamento-componentes.ts";
+import { ROTULO_CONTAS, ROTULO_LIMPEZA, componentesDoPagamento, emAbertoNoBloco, parteDaColuna, proximaParte, somarComponentes, textoComponentes } from "./pagamento-componentes.ts";
 import { rotuloPagamentoBloco } from "./pagamento-bloco.ts";
 import { COLUNAS_PROVAS, conteudoPacoteProvas, linhasPagamentos, montarDadosProvas, totaisPagamentos, type LinhasProvas } from "./contrato-provas.ts";
 
@@ -23,8 +23,10 @@ test("a parte do registro: 1 no primeiro, a seguinte em cada complemento; a anul
   assert.equal(proximaParte([1, 2]), 3);
   // A parte 1 foi anulada e só a 2 está ativa: o novo registro é a 3 (nunca repete uma parte ativa).
   assert.equal(proximaParte([2]), 3);
-  // Nas leituras, a parte é a ordem dos registros ativos do bloco.
-  assert.deepEqual([...partesPorOrdem([{ id: "b", registradoEm: "2026-11-22T13:00:00Z" }, { id: "a", registradoEm: "2026-11-20T22:20:00Z" }])], [["a", 1], ["b", 2]]);
+  // ASSERÇÃO ALTERADA (teste novo deste PR; ORDEM-DUET-1104, julgamento 3): nas leituras, a parte é a da COLUNA
+  // registada — antes era a ordem dos registros ativos do bloco (partesPorOrdem, que saiu).
+  assert.equal(parteDaColuna(2), 2);
+  assert.equal(parteDaColuna(null), 1);
 });
 
 test("o registro de antes + o complemento quitam o bloco", () => {
@@ -59,8 +61,8 @@ const base: LinhasProvas = {
   prazoEntradaEm: null,
   assinaturas: [],
   pagamentos: [
-    { id: "p1", bloco_id: "b1", tipo: "aluguel", valor: "2583.33", forma: "pix", data_pagamento: "2026-11-20", confirmado_pelo_inquilino: true, confirmado_em: "2026-11-20T22:31:00Z", anulado_em: null, anulado_motivo: null, created_at: "2026-11-20T22:20:00Z", encargos: [] },
-    { id: "p2", bloco_id: "b1", tipo: "aluguel", valor: "0", forma: "pix", data_pagamento: "2026-11-22", confirmado_pelo_inquilino: true, confirmado_em: "2026-11-22T13:10:00Z", anulado_em: null, anulado_motivo: null, created_at: "2026-11-22T13:00:00Z", encargos: ENCARGOS_DO_COMPLEMENTO },
+    { id: "p1", bloco_id: "b1", tipo: "aluguel", parte: 1, valor: "2583.33", forma: "pix", data_pagamento: "2026-11-20", confirmado_pelo_inquilino: true, confirmado_em: "2026-11-20T22:31:00Z", anulado_em: null, anulado_motivo: null, created_at: "2026-11-20T22:20:00Z", encargos: [] },
+    { id: "p2", bloco_id: "b1", tipo: "aluguel", parte: 2, valor: "0", forma: "pix", data_pagamento: "2026-11-22", confirmado_pelo_inquilino: true, confirmado_em: "2026-11-22T13:10:00Z", anulado_em: null, anulado_motivo: null, created_at: "2026-11-22T13:00:00Z", encargos: ENCARGOS_DO_COMPLEMENTO },
   ],
   documentos: [
     { tipo: "recibo_aluguel", numero: "REC-2026-000001", pagamento_id: "p1", anulado_em: null },
@@ -92,8 +94,10 @@ test("pacote de provas: complemento só de aluguel (bloco pago em duas vezes) di
     "Aluguel de R$ 1.583,33 (Pix, em 20/11/2026): confirmado pelo inquilino em 20/11/2026 às 19:31. Recibo ainda não emitido.",
     "Registro complementar de R$ 1.000,00 — aluguel de R$ 1.000,00 (Pix, em 22/11/2026): confirmado pelo inquilino em 22/11/2026 às 10:10. Recibo ainda não emitido.",
   ]);
-  // Um registro sozinho no bloco é sempre o primeiro, nunca complementar.
-  const so = montarDadosProvas({ ...base, pagamentos: [{ ...base.pagamentos[1], valor: "1000", encargos: [] }], documentos: [] });
+  // ASSERÇÃO ALTERADA (teste novo deste PR; ORDEM-DUET-1104): a parte é a da coluna. Antes: "um registro sozinho no
+  // bloco é sempre o primeiro" (pela ordem, mesmo com parte 2 gravada). Agora: o registro com a parte 1 (ou sem ela) é o
+  // primeiro, nunca complementar; o caso da parte 2 sozinha (a 1 anulada) está em e1072-parte-da-coluna.test.ts.
+  const so = montarDadosProvas({ ...base, pagamentos: [{ ...base.pagamentos[1], parte: null, valor: "1000", encargos: [] }], documentos: [] });
   assert.match(linhasPagamentos(so.pagamentos)[0], /^Aluguel de R\$ 1\.000,00 /);
 });
 
@@ -127,8 +131,9 @@ test("a ação grava a parte e recusa o que passa do que falta; a tela oferece o
   assert.match(tela, /data-testid=\{tipo === "caucao" \? "registrar-caucao" : "registrar-recebimento"\}/);
   assert.doesNotMatch(tela, /"registrar-complemento"/);
   assert.match(tela, /Registrar o que falta/);
-  // As leituras (pacote, telas, recibo) tiram a parte da ORDEM dos registros do bloco: não leem a coluna nova.
+  // ASSERÇÃO ALTERADA (teste novo deste PR; ORDEM-DUET-1104, julgamento 3): as leituras (pacote, telas, recibo) leem a
+  // parte da COLUNA registada. Antes: o pacote não lia a coluna e o recibo tirava a parte da ordem (parteDoPagamento).
   assert.match(COLUNAS_PROVAS.pagamentos, /\bbloco_id\b/);
-  assert.doesNotMatch(COLUNAS_PROVAS.pagamentos, /\bparte\b/);
-  assert.match(ler("src/lib/fiscal/emitir.ts"), /parteDoPagamento\(/);
+  assert.match(COLUNAS_PROVAS.pagamentos, /\bparte\b/);
+  assert.match(ler("src/lib/fiscal/emitir.ts"), /parteDaColuna\(pg\.parte\)/);
 });

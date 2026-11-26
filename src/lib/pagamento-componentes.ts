@@ -141,12 +141,12 @@ export function proximaParte(partesAtivas: number[]): number {
 }
 
 /**
- * E1072 (fatia 2): a parte de cada registro ATIVO de um bloco, pela ordem em que foram registrados (o primeiro é a 1).
- * As leituras usam esta ordem — não dependem da coluna do banco, que só serve à regra de não repetição na gravação.
+ * E1072 (fatia 2; ORDEM-DUET-1104, julgamento 3 do coordenador): a parte de um registro tem UMA fonte, a coluna `parte`
+ * registada (0348). As leituras (telas, recibo, pacote de provas) usam esta; vazia, zero ou lixo → 1 (o 1º registro).
  */
-export function partesPorOrdem<T extends { id: string; registradoEm?: string | null }>(registros: T[]): Map<string, number> {
-  const ordenados = [...registros].sort((a, b) => String(a.registradoEm ?? "").localeCompare(String(b.registradoEm ?? "")));
-  return new Map(ordenados.map((r, i) => [r.id, i + 1]));
+export function parteDaColuna(v: unknown): number {
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
 /** O que as telas de antes do contrato sabem da estadia (Fechamento e proposta). */
