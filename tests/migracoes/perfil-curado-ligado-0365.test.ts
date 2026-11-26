@@ -40,12 +40,18 @@ test("rollback da 0365: desliga só as linhas ligadas ao credenciamento do mesmo
   assert.match(r.trim(), /^begin;[\s\S]*commit;$/);
   assert.match(r, /update public\.avaliadores_perfil_publico p\s+set credenciamento_id = null\s+from public\.avaliadores_credenciamento c\s+where p\.credenciamento_id = c\.id\s+and c\.numero_credenciado = p\.numero;/);
   assert.match(r, /delete from supabase_migrations\.schema_migrations where version = '20261126000365';/);
+  // Caso 5 do coordenador (ORDEM-DUET-1024): o rollback só mexe na ligação — nome, cidade, selo e publicação ficam.
+  assert.doesNotMatch(r, /set\s+(nome_publico|cidade|selo|publicado)\b|,\s*(nome_publico|cidade|selo|publicado)\s*=/i, "o rollback não toca nome, cidade, selo nem publicação");
+  assert.doesNotMatch(r, /delete from public\./i, "o rollback não apaga linhas curadas");
 });
 
-test("a prova executada da ligação corre no portão (t1793, caso 2), pelo próprio arquivo da 0365", () => {
+test("a prova executada dos cinco casos corre no portão (t1793, caso 2), pelos próprios arquivos da 0365 e do rollback", () => {
   const t = readFileSync("tests/e2e/specs/t1793-e1208-perfil-curado-ligado.spec.ts", "utf8");
   assert.match(t, /readFileSync\("supabase\/migrations\/0365_avaliador_perfil_curado_ligado_e1208\.sql", "utf8"\)/);
   assert.match(t, /await tx\.unsafe\(MIGRACAO_0365\);/);
-  assert.match(t, /expect\(visto\.depois, "depois: ligada ao credenciamento do mesmo número"\)\.toBe\(ids\.cred\);/);
-  assert.match(t, /expect\(visto\.reaplicada, "reaplicada: nenhuma linha muda"\)\.toBe\(0\);/);
+  assert.match(t, /readFileSync\("supabase\/producao\/rollback\/0365_rollback\.sql", "utf8"\)/);
+  assert.match(t, /await tx\.unsafe\(ROLLBACK_0365\);/);
+  for (const caso of ["caso 1: ligada", "caso 2: reaplicada", "caso 3: número sem", "caso 4: a 2ª linha", "caso 5: o rollback desliga", "caso 5: o conteúdo curado fica", "caso 5: a ligação que não é por número fica"]) {
+    assert.ok(t.includes(caso), `a t1793 confere "${caso}"`);
+  }
 });
