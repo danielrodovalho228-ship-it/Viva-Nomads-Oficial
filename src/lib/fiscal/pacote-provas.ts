@@ -22,7 +22,6 @@ export async function gerarPacoteProvasRegistrado(d: DadosProvas, emitidoPor: st
   // (partes e equipe) passam por aqui. Leitura que falha não vira pacote sem nome (achado 77): lança → 503.
   const idsPartes = [ownerId, c.tenant_id as string].filter((x): x is string => !!x);
   const { data: perfis, error: ePerfis } = await admin.from("profiles").select("id, full_name").in("id", idsPartes);
-  if (ePerfis) throw new Error("Não foi possível ler os nomes das partes para o pacote de provas.");
   const nomeDe = (id: string | null) => nomeCompleto(((perfis ?? []) as { id: string; full_name: string | null }[]).find((p) => p.id === id)?.full_name ?? null);
   const dados: DadosProvas = { ...d, nomes: { proprietario: nomeDe(ownerId), inquilino: nomeDe(c.tenant_id as string) } };
   const ct = await registroDe(admin, { tabela: "contratos", id: d.contratoId });
