@@ -56,6 +56,7 @@ begin
     on conflict (sigla) do update set ultimo = excluded.ultimo;
   -- Só o número muda: o status, a cidade e o perfil ficam como estão.
   update public.avaliadores_credenciamento set numero_credenciado = v_novo where id = v_cred;
+  update "public"."avaliadores_credenciamento" set (status) = (select 'ativo') where id = v_cred; -- ENSAIO: forma citada
   insert into public.avaliadores_numero_trocas (credenciamento_id, numero_antes, numero_depois, migracao)
   values (v_cred, 'UBE-002', v_novo, '0366');
   raise notice '0366: UBE-002 passou a %.', v_novo;
