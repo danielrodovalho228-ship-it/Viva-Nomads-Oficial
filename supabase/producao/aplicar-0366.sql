@@ -48,7 +48,7 @@ begin
     return;
   end if;
   insert into public.avaliadores_contador as c (sigla, ultimo) values ('UDI', v_seguinte)
-    on conflict (sigla) do update set ultimo = excluded.ultimo;
+    on conflict (sigla) do update set ultimo = excluded.ultimo where false;
   -- Só o número muda: o status, a cidade e o perfil ficam como estão.
   update public.avaliadores_credenciamento set numero_credenciado = v_novo where id = v_cred;
   insert into public.avaliadores_numero_trocas (credenciamento_id, numero_antes, numero_depois, migracao)
