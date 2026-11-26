@@ -566,7 +566,7 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     .from("pagamentos_bloco")
     .insert({
       ...(tipo === "aluguel" ? { parte } : {}),
-      bloco_id: tipo === "caucao" && !caucaoDoBloco ? null : input.blocoId,
+      bloco_id: tipo === "caucao" ? null : input.blocoId, // ENSAIO: grava sem bloco
       contrato_id: input.contratoId,
       tipo,
       valor: input.valor,
