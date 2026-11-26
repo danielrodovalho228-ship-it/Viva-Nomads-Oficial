@@ -15,8 +15,7 @@ alter table public.pagamentos_bloco add constraint pagamentos_bloco_bloco_por_ti
 --    nascem ANTES de o antigo sair: não há instante sem a regra.
 create unique index if not exists pagamentos_bloco_uma_caucao_por_bloco
   on public.pagamentos_bloco (bloco_id) where tipo = 'caucao' and bloco_id is not null and anulado_em is null;
-create unique index if not exists pagamentos_bloco_uma_caucao_sem_bloco
-  on public.pagamentos_bloco (contrato_id) where tipo = 'caucao' and bloco_id is null and anulado_em is null;
+-- ENSAIO: sem o índice sem bloco
 drop index if exists public.pagamentos_bloco_uma_caucao;
 
 -- 3) O dono registra: a caução num bloco DO MESMO contrato (ou, como antes, sem bloco); o valor mensal num bloco do
