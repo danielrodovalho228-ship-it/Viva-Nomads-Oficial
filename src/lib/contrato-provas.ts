@@ -377,7 +377,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
 /** Colunas lidas para o pacote (as mesmas nas duas cargas). */
 export const COLUNAS_PROVAS = {
   assinaturas: "papel, assinado_em, hash_documento",
-  pagamentos: "tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at",
+  pagamentos: "tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo",
   conferencias: "id, tipo, criada_em",
   itens: "conferencia_id, parte, comodo, descricao, foto_path, precisa_reparo",
   respostas: "conferencia_id, parte, decisao, motivo, decidido_em",
