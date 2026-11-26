@@ -112,7 +112,15 @@ export interface ItemChecklist {
   rotulo: string;
   feito: boolean;
   detalhe: string;
+  /** ORDEM-DUET-1048: a ação no mesmo item (ex.: o morador confirma o que o dono registrou). */
+  acao?: { rotulo: string; href: string };
 }
+
+/**
+ * PROPOSTA DE TEXTO (ORDEM-DUET-1048, condição do coordenador): ao lado de "Falta a sua confirmação", a ação de
+ * confirmar — a confirmação vive em Locações (o bloco "confirmar-pagamentos").
+ */
+export const ACAO_CONFIRMAR_NO_ITEM = { rotulo: "Confirmar em Locações", href: "/dashboard/locacoes" } as const;
 
 export interface EstadoChecklist {
   assinadoProprietario: boolean;
@@ -148,6 +156,9 @@ export function checklistAntesDaEntrada(e: EstadoChecklist, papel: PapelEstadia)
   // conhecia "confirmado" e "não registrado", e o dono que acabava de registrar continuava a ler "Ainda não registrado".
   const aguardando = (genero: "o" | "a") =>
     papel === "proprietario" ? `Registrad${genero} por você. Aguardando a confirmação do morador.` : `Registrad${genero} pelo proprietário. Falta a sua confirmação.`;
+  // ORDEM-DUET-1048: só o morador, no estado do meio, tem o que fazer — a ação de confirmar fica no próprio item.
+  const acaoDeConfirmar = (registrado: boolean, confirmado: boolean) =>
+    papel !== "proprietario" && registrado && !confirmado ? { acao: { ...ACAO_CONFIRMAR_NO_ITEM } } : {};
   const itens: ItemChecklist[] = [
     { chave: "assinatura", rotulo: "Contrato assinado", feito: ambos, detalhe: falta },
     {
@@ -155,6 +166,7 @@ export function checklistAntesDaEntrada(e: EstadoChecklist, papel: PapelEstadia)
       rotulo: "1º pagamento",
       feito: e.primeiroPagamento,
       detalhe: e.primeiroPagamento ? "Registrado e confirmado." : e.primeiroPagamentoRegistrado ? aguardando("o") : "Ainda não registrado e confirmado.",
+      ...acaoDeConfirmar(!!e.primeiroPagamentoRegistrado, e.primeiroPagamento),
     },
     {
       chave: "caucao",
@@ -168,6 +180,7 @@ export function checklistAntesDaEntrada(e: EstadoChecklist, papel: PapelEstadia)
             : e.caucaoRegistrada
               ? aguardando("a")
               : "Ainda não registrada.",
+      ...acaoDeConfirmar(!!e.caucaoRegistrada, e.caucao !== "pendente"),
     },
     {
       chave: "conferencia",
