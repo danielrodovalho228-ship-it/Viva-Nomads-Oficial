@@ -17,7 +17,7 @@ export type ContratoSemTaxaLido = ContratoSemTaxa & { numeroProposta: string | n
 /** Os contratos ATIVOS com proposta, sem a taxa reservada, há MINUTOS_SEM_TAXA ou mais (o status filtrado na consulta: a fonte única da rotina e da Central — ORDEM-DUET-1041). Leitura que falha LANÇA. */
 export async function lerContratosSemTaxa(admin: Admin, agora: Date): Promise<ContratoSemTaxaLido[]> {
   const limite = new Date(agora.getTime() - MINUTOS_SEM_TAXA * 60_000).toISOString();
-  const { data: cs, error } = await admin.from("contratos").select("id, lead_id, proposta_id, created_at, property_id, status").eq("status", "ativo").not("proposta_id", "is", null).lte("created_at", limite).limit(2000);
+  const { data: cs, error } = await admin.from("contratos").select("id, lead_id, proposta_id, created_at, property_id, status").eq("status", "ativo").lte("created_at", limite).limit(2000);
   if (error) throw new Error(`[E1205] contratos: ${error.message}`);
   const contratos = (cs ?? []) as { id: string; lead_id: string; proposta_id: string | null; created_at: string; property_id: string | null; status: string }[];
   if (!contratos.length) return [];
@@ -28,7 +28,7 @@ export async function lerContratosSemTaxa(admin: Admin, agora: Date): Promise<Co
   if (!sem.length) return [];
   const imovelDe = new Map(contratos.map((c) => [c.id, c.property_id]));
   const [{ data: ps }, { data: ls }, { data: ims }] = await Promise.all([
-    admin.from("propostas").select("id, numero").in("id", [...new Set(sem.map((c) => c.proposta_id))]),
+    admin.from("propostas").select("id, numero").in("id", [...new Set(sem.map((c) => c.proposta_id))].filter(Boolean)),
     admin.from("leads").select("id, owner_id").in("id", [...new Set(sem.map((c) => c.lead_id))]),
     admin.from("properties").select("id, title").in("id", [...new Set(sem.map((c) => imovelDe.get(c.id)).filter((x): x is string => !!x))]),
   ]);
