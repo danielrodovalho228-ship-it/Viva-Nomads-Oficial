@@ -106,7 +106,8 @@ test.describe("T1792 — E1204: o período das linhas de Seus fechamentos @E1204
     for (const [tipo, lead] of [["C", ids.leadC], ["A", ids.leadA], ["B", ids.leadB]] as const) {
       const periodo = linha(page, lead).getByTestId("fecho-periodo");
       await expect(periodo, `linha ${tipo}`).toContainText(ESPERADO);
-      await expect(periodo, `linha ${tipo}: nunca a última noite como segundo termo`).not.toContainText(" a ");
+      // O formato antigo: "DD/MM/AAAA a DD/MM/AAAA" (uma string " a " seria aparada pelo Playwright e casaria "Entrada").
+      await expect(periodo, `linha ${tipo}: nunca a última noite como segundo termo`).not.toHaveText(/\d{2}\/\d{2}\/\d{4} a \d{2}\/\d{2}\/\d{4}/);
     }
     await page.screenshot({ path: `${SAIDA_PRINTS}/t1792-periodo-1280.png`, fullPage: true });
     await page.context().close();
