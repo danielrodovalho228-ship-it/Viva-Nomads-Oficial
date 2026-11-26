@@ -15,7 +15,9 @@ import postgres from "postgres";
   Massa só no laboratório, contas de teste, uma dona com três contratos criados há 2 horas:
    - SEM TAXA: com proposta e sem a reserva da taxa (o caso);
    - RESERVADO: com proposta e com a reserva da taxa (fora);
-   - LEGADO: sem proposta (fora do âmbito).
+   - LEGADO: sem proposta (fora do âmbito);
+   - CANCELADO: com proposta e sem taxa, criado há 31 minutos, mas cancelado (ORDEM-DUET-1041, ajuste B do
+     coordenador) → nem item na Central, nem aviso, nem e-mail. Só o contrato ATIVO entra.
   A rotina corre num 2º servidor do mesmo build (porta 3154, CRON_SECRET só dele; o padrão da t1753), duas vezes.
    1. A Central (admin) mostra o contrato SEM TAXA, com o VN-CT, a proposta e a data; os outros dois não aparecem.
    2. Depois de duas rodadas: UM e-mail e UM aviso no sino ao dono, só do contrato SEM TAXA, com a ligação para o
@@ -63,10 +65,10 @@ async function proposta(lead: string, imovel: string): Promise<{ id: string; num
   return { id: data.id as string, numero: data.numero as string };
 }
 
-async function contrato(lead: string, imovel: string, propostaId: string | null, inicio: number): Promise<string> {
+async function contrato(lead: string, imovel: string, propostaId: string | null, inicio: number, extra: { status?: string; criadoEm?: string } = {}): Promise<string> {
   const { data, error } = await adm()
     .from("contratos")
-    .insert({ lead_id: lead, property_id: imovel, tenant_id: ids.M, proposta_id: propostaId, owner_plan: "essential", faixa: "media_estadia", prazo_total_dias: 60, aluguel_mensal: 2800, tamanho_bloco_meses: 2, comissao_percent: 0.12, comissao_valor: 672, qtd_ocupantes: 1, garantia: "caucao", status: "ativo", periodo: `[${emDias(inicio)},${emDias(inicio + 59)}]`, created_at: HA_2H })
+    .insert({ lead_id: lead, property_id: imovel, tenant_id: ids.M, proposta_id: propostaId, owner_plan: "essential", faixa: "media_estadia", prazo_total_dias: 60, aluguel_mensal: 2800, tamanho_bloco_meses: 2, comissao_percent: 0.12, comissao_valor: 672, qtd_ocupantes: 1, garantia: "caucao", status: extra.status ?? "ativo", periodo: `[${emDias(inicio)},${emDias(inicio + 59)}]`, created_at: extra.criadoEm ?? HA_2H })
     .select("id")
     .single();
   if (error) throw error;
@@ -130,7 +132,7 @@ test.beforeAll(async () => {
   ids.D = await criarConta(D, senha);
   ids.M = await criarConta(M, senha);
   await adm().from("profiles").update({ is_teste: true }).in("id", [ids.D, ids.M]);
-  for (const k of ["Sem", "Res", "Leg"]) {
+  for (const k of ["Sem", "Res", "Leg", "Can"]) {
     ids[`im${k}`] = await criarImovelPronto(ids.D, `[TESTE QA] Taxa ${k} ${sufixo}`, { ativo: true, preco: 2800 });
     ids[`lead${k}`] = await criarLead(ids.D, ids.M, ids[`im${k}`], true);
   }
@@ -144,13 +146,16 @@ test.beforeAll(async () => {
   const { error: eR } = await adm().from("cobrancas_fechamento").insert({ lead_id: ids.leadRes, tipo: "comissao", proposta_id: pRes.id });
   if (eR) throw eR;
   ids.ctLeg = await contrato(ids.leadLeg, ids.imLeg, null, 180);
+  // ORDEM-DUET-1041 (ajuste B do coordenador): CANCELADO, com proposta e sem taxa há 31 minutos → fora.
+  const pCan = await proposta(ids.leadCan, ids.imCan);
+  ids.ctCan = await contrato(ids.leadCan, ids.imCan, pCan.id, 420, { status: "cancelado", criadoEm: new Date(Date.now() - 31 * 60_000).toISOString() });
 });
 
 test.afterAll(async () => {
   for (const s of servidores) s.kill("SIGTERM");
   if (NO_LABORATORIO) await voltarAGravarAvisos().catch(() => undefined);
-  const leads = [ids.leadSem, ids.leadRes, ids.leadLeg, ids.leadFal, ids.leadAnc].filter(Boolean);
-  const contratos = [ids.ctSem, ids.ctRes, ids.ctLeg, ids.ctFal, ids.ctAnc].filter(Boolean);
+  const leads = [ids.leadSem, ids.leadRes, ids.leadLeg, ids.leadCan, ids.leadFal, ids.leadAnc].filter(Boolean);
+  const contratos = [ids.ctSem, ids.ctRes, ids.ctLeg, ids.ctCan, ids.ctFal, ids.ctAnc].filter(Boolean);
   if (ids.D) await adm().from("emails_teste").delete().eq("usuario_id", ids.D);
   if (contratos.length) await adm().from("avisos").delete().in("ref_id", contratos);
   if (leads.length) {
@@ -159,7 +164,7 @@ test.afterAll(async () => {
     await adm().from("propostas").delete().in("lead_id", leads);
     await adm().from("leads").delete().in("id", leads);
   }
-  const imoveis = [ids.imSem, ids.imRes, ids.imLeg, ids.imFal, ids.imAnc].filter(Boolean);
+  const imoveis = [ids.imSem, ids.imRes, ids.imLeg, ids.imCan, ids.imFal, ids.imAnc].filter(Boolean);
   if (imoveis.length) await adm().from("properties").delete().in("id", imoveis);
   await apagarContas([ids.D, ids.M].filter(Boolean));
 });
@@ -180,6 +185,7 @@ test.describe("T1794 — E1205: o contrato sem taxa reservada vai à Central e a
     await expect(nossa.getByRole("link", { name: "Ver contrato" })).toHaveAttribute("href", `/admin/contratos/${ids.ctSem}`);
     await expect(linhas.filter({ hasText: vnct(ids.ctRes) }), "com a taxa reservada: fora").toHaveCount(0);
     await expect(linhas.filter({ hasText: vnct(ids.ctLeg) }), "sem proposta: fora do âmbito").toHaveCount(0);
+    await expect(linhas.filter({ hasText: vnct(ids.ctCan) }), "cancelado (com proposta, sem taxa, 31 min): fora da Central").toHaveCount(0);
     await p.screenshot({ path: `${SAIDA}/t1794-central-1280.png`, fullPage: true });
     await ctx.close();
   });
@@ -214,6 +220,9 @@ test.describe("T1794 — E1205: o contrato sem taxa reservada vai à Central e a
     expect(await avisosDe(ids.ctSem), "V3b: resolvido o aviso, a rotina não grava outro").toHaveLength(1);
     // A categoria do aviso: "decisao" (a que o notify nunca desliga pela preferência da pessoa).
     expect(categoriaDoEvento("contrato_sem_taxa"), "a categoria do aviso é decisão").toBe("decisao");
+    // ORDEM-DUET-1041: o contrato cancelado não gera aviso nem e-mail.
+    expect(await avisosDe(ids.ctCan), "cancelado: nenhum aviso").toHaveLength(0);
+    expect(await emailsDe(ids.ctCan), "cancelado: nenhum e-mail").toHaveLength(0);
     const { data: reservas } = await adm().from("cobrancas_fechamento").select("lead_id").eq("lead_id", ids.leadSem);
     expect(reservas ?? [], "a rotina não cobra nem reserva nada").toHaveLength(0);
   });

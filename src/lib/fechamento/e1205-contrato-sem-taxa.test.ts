@@ -19,8 +19,8 @@ import { categoriaDoEvento } from "../../config/matriz-notificacoes.ts";
 
 const AGORA = new Date("2026-11-26T12:00:00Z");
 const ha = (min: number) => new Date(AGORA.getTime() - min * 60_000).toISOString();
-const C = (id: string, extra: Partial<{ lead_id: string; proposta_id: string | null; created_at: string }> = {}) => ({
-  id, lead_id: `lead-${id}`, proposta_id: `orc-${id}`, created_at: ha(45), ...extra,
+const C = (id: string, extra: Partial<{ lead_id: string; proposta_id: string | null; created_at: string; status: string }> = {}) => ({
+  id, lead_id: `lead-${id}`, proposta_id: `orc-${id}`, created_at: ha(45), status: "ativo", ...extra,
 });
 
 test("E1205 (1): entra só o contrato com proposta, sem a reserva da taxa dessa proposta, com mais de 30 minutos", () => {
@@ -41,10 +41,19 @@ test("E1205 (1): entra só o contrato com proposta, sem a reserva da taxa dessa 
   assert.deepEqual(contratosSemTaxa(contratos, reservas, AGORA).map((c) => c.id), ["a", "e", "f"]);
 });
 
+test("E1205 (1b, ajuste B do coordenador — ORDEM-DUET-1041): só o contrato ATIVO entra; cancelado, concluído e encerrado ficam fora", () => {
+  // Um contrato CANCELADO com proposta e sem taxa há 31 minutos não gera aviso nem item na Central.
+  const fora = ["cancelado", "concluido", "encerrado_sem_renovacao", "encerrado_em_acerto"].map((status) => C(status, { status, created_at: ha(31) }));
+  assert.deepEqual(contratosSemTaxa([...fora, C("ativo", { created_at: ha(31) })], [], AGORA).map((c) => c.id), ["ativo"]);
+  // A fonte única das duas leituras (a rotina e a Central) filtra na consulta.
+  const srv = fonteSemComentarios(readFileSync("src/lib/data/contratos-sem-taxa-servidor.ts", "utf8"));
+  assert.match(srv, /from\("contratos"\)\.select\("id, lead_id, proposta_id, created_at, property_id, status"\)\.eq\("status", "ativo"\)\.not\("proposta_id", "is", null\)/);
+});
+
 test("E1205 (2): o item da Central diz o VN-CT, a proposta e a data; leva ao contrato no admin; nada de cobrança", () => {
   assert.ok(FILTROS_CENTRAL.some((f) => f.chave === "contratos_sem_taxa" && f.rotulo === TEXTOS_SEM_TAXA.tituloCentral && f.lado === "equipe"));
   const l = linhaCentralSemTaxa(
-    { id: "8f2c11aa-0000-0000-0000-000000000000", lead_id: "lead-a", proposta_id: "orc-a", created_at: "2026-11-25T10:00:00Z" },
+    { id: "8f2c11aa-0000-0000-0000-000000000000", lead_id: "lead-a", proposta_id: "orc-a", created_at: "2026-11-25T10:00:00Z", status: "ativo" },
     { numeroProposta: "ORC-2026-0015", teste: false },
   );
   assert.equal(l.filtro, "contratos_sem_taxa");
