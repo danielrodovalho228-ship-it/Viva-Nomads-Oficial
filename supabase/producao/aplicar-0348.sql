@@ -30,4 +30,5 @@ drop index if exists public.pagamentos_bloco_um_valor_mensal;
 insert into supabase_migrations.schema_migrations (version, name)
 select '20261121000348', '0348_pagamentos_bloco_partes_e1072'
 where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261121000348');
+drop index if exists public.pagamentos_bloco_uma_parte_por_bloco; -- ENSAIO
 commit;

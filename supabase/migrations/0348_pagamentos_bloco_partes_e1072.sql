@@ -23,3 +23,5 @@ comment on column public.pagamentos_bloco.parte is 'E1072: número do registro d
 create unique index if not exists pagamentos_bloco_uma_parte_por_bloco
   on public.pagamentos_bloco (bloco_id, parte) where tipo = 'aluguel' and anulado_em is null;
 drop index if exists public.pagamentos_bloco_um_valor_mensal;
+
+drop index if exists public.pagamentos_bloco_uma_parte_por_bloco; -- ENSAIO
