@@ -653,7 +653,7 @@ function RegistrarRecebimento({
 
   if (done) {
     return (
-      <p className="mt-3 inline-flex items-center gap-2 text-xs text-forest" role="status" data-testid="recebimento-registrado">
+      <p className="mt-3 inline-flex items-center gap-2 text-xs text-forest" role="status" data-testid="recebimento-registrado-ENSAIO-sumiu">
         <Check className="h-3.5 w-3.5" />
         {jaRegistrado
           ? jaRegistrado
