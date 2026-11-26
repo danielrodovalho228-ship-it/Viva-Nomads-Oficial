@@ -10,6 +10,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import * as componentes from "./pagamento-componentes.ts";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 const { fatorDoBloco, componentesDoPrimeiroPagamento } = componentes;
 const estadiaEmDias = (componentes as unknown as { estadiaEmDias?: (dias: number | null | undefined) => boolean }).estadiaEmDias;
@@ -30,7 +31,7 @@ test("o fator do bloco e o 1º pagamento decidem pelo MESMO critério (também n
 });
 
 test("no código: um só sítio decide '% 30' no pagamento-componentes, e as duas funções leem dele", () => {
-  const s = readFileSync(new URL("./pagamento-componentes.ts", import.meta.url), "utf8").replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "");
+  const s = fonteSemComentarios(readFileSync(new URL("./pagamento-componentes.ts", import.meta.url), "utf8"));
   assert.equal((s.match(/% 30/g) ?? []).length, 1, "só a estadiaEmDias faz a conta");
   assert.match(s, /export function fatorDoBloco[\s\S]*?estadiaEmDias\(prazoTotalDias\)/);
   assert.match(s, /export function componentesDoPrimeiroPagamento[\s\S]*?estadiaEmDias\(/);

@@ -27,10 +27,19 @@ const c2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
 const brl = (n: number) => `R$ ${c2(n).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 export const SEM_COMPONENTES: ComponentesBloco = { aluguel: 0, contas: 0, limpeza: 0, total: 0 };
 
+/**
+ * Um só "em dias" (nota do desenho da pilha, ORDENS-DUET 1054 e 1095): a estadia conta-se em DIAS quando os dias dela
+ * não fecham meses cheios. A fonte única da decisão: o fator do bloco e o 1º pagamento leem daqui (e o duracaoDoBloco
+ * do E1067 lerá na fusão dele). Dias vazios, zero, negativos ou lixo: não é em dias (a conta de sempre, em meses).
+ */
+export function estadiaEmDias(dias: number | null | undefined): boolean {
+  const d = Math.round(Number(dias));
+  return Number.isFinite(d) && d > 0 && d % 30 !== 0;
+}
+
 /** Quanto da estadia cabe ao bloco: os meses do bloco ou, no contrato em dias, os dias do bloco ÷ 30. */
 export function fatorDoBloco(b: { meses: number; inicio?: string | null; fim?: string | null }, prazoTotalDias: number): number {
-  const emDias = Number.isFinite(prazoTotalDias) && prazoTotalDias > 0 && prazoTotalDias % 30 !== 0;
-  if (emDias && b.inicio && b.fim) return diasInclusivos(b.inicio, b.fim) / 30;
+  if (estadiaEmDias(prazoTotalDias) && b.inicio && b.fim) return diasInclusivos(b.inicio, b.fim) / 30;
   return Math.max(1, Number(b.meses) || 1);
 }
 
@@ -156,8 +165,8 @@ export interface EstadiaParaPrimeiroPagamento {
  * preparação. null em meses inteiros (a conta de sempre: o 1º mês com tudo + a limpeza de preparação).
  */
 export function componentesDoPrimeiroPagamento(e: EstadiaParaPrimeiroPagamento): ComponentesBloco | null {
-  const dias = Math.round(Number(e.dias) || 0);
-  if (!(dias > 0) || dias % 30 === 0 || e.blocos.length === 0) return null;
+  if (!estadiaEmDias(e.dias) || e.blocos.length === 0) return null;
+  const dias = Math.round(Number(e.dias));
   const limpeza = c2(e.preco.unicos.filter((u) => u.rotulo === ROTULO_PREPARACAO).reduce((s, u) => s + u.valor, 0));
   const blocos = [...e.blocos].sort((a, b) => a.numero - b.numero).map((b) => ({ numero: b.numero, valor: b.valor, fator: (b.dias ?? b.meses * 30) / 30 }));
   const contas = contasDoContrato({
