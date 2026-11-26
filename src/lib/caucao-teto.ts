@@ -22,8 +22,12 @@ export const MSG_CAUCAO_SEM_CAUCAO = "Este contrato não tem caução: a garanti
 /** Sem a conta da caução lida (ou sem bloco nenhum lido), não se grava. */
 export const MSG_CAUCAO_SEM_CONTA = "Não foi possível conferir a caução deste contrato. Tente de novo em instantes.";
 
-/** PROPOSTA DE TEXTO (E1225): o bloco cuja caução já está coberta pelo que foi registrado (um registro antigo pela soma). */
-export const MSG_CAUCAO_NADA_NO_BLOCO = "Nada a registrar neste bloco: a caução já registrada cobre-o.";
+/** E1225 (texto da ORDEM-DUET-1132): o bloco cuja caução já está coberta pelo que foi registrado. */
+export const MSG_CAUCAO_NADA_NO_BLOCO = "Nada a registrar neste bloco: a caução já registrada cobre este bloco.";
+/** E1225 (ORDEM-DUET-1132): a caução entra pela ordem dos blocos (a regra da tela). */
+export const msgCaucaoRegistreAntes = (numero: number) => `Registre antes a caução do bloco ${numero}.`;
+/** E1225 (ORDEM-DUET-1132): um registro novo de caução exige o bloco. */
+export const MSG_CAUCAO_ESCOLHA_O_BLOCO = "Escolha o bloco da caução.";
 
 /** E1225: a linha de um bloco no cartão da caução (o registro dele, ou o que falta nele). */
 export interface LinhaCaucaoBloco {

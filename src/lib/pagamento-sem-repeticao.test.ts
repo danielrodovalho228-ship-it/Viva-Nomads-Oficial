@@ -59,7 +59,8 @@ test("item 2 (E1225): a Caução é do BLOCO — grava o bloco e diz 'Caução d
   assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 3200, bloco: { numero: 1, meses: 2, inicio: null, fim: null } }), "Caução do bloco 1 — R$ 3.200");
   assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 6400 }), "Caução do contrato — R$ 6.400");
   const acoes = ler("./data/contratos-actions.ts");
-  assert.match(acoes, /bloco_id: tipo === "caucao" && !caucaoDoBloco \? null : input\.blocoId/);
+  assert.match(acoes, /bloco_id: input\.blocoId,/, "a caução e o valor mensal gravam o bloco");
+  assert.match(acoes, /if \(!UUID_RE\.test\(input\.blocoId\)\) return \{ ok: false, error: MSG_CAUCAO_ESCOLHA_O_BLOCO \};/, "ORDEM-DUET-1132: a caução nova exige o bloco");
   // Regressão do laboratório (t230): a Caução sem bloco não pode cair no atalho de "exemplo" e sair sem gravar.
   assert.match(acoes, /\(\(input\.tipo \?\? "aluguel"\) === "aluguel" && !UUID_RE\.test\(input\.blocoId\)\)/);
   assert.match(migracao, /alter column bloco_id drop not null/);
