@@ -59,7 +59,11 @@ async function gerarContratoPelaTela(page: Page) {
   await continuar.click();
   await expect(page.getByTestId("marca-minuta")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("fechamento-gerar-contrato").click();
-  await expect(page.getByTestId("fechamento-abrir-contrato")).toBeVisible({ timeout: 30_000 });
+  // Sucesso ou a frase do assistente: se o contrato não sai, a falha diz porquê (e não só "elemento não encontrado").
+  const gerado = page.getByTestId("fechamento-abrir-contrato");
+  const erro = page.getByTestId("erro-contrato");
+  await expect(gerado.or(erro)).toBeVisible({ timeout: 45_000 });
+  if (await erro.isVisible()) throw new Error(`o contrato não foi gerado — o assistente diz: ${(await erro.innerText()).trim()}`);
 }
 
 async function noFechamento(browser: Browser): Promise<Page> {
