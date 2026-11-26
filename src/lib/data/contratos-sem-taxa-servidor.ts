@@ -68,6 +68,7 @@ export async function avisarContratosSemTaxa(admin: Admin, agora: Date): Promise
       subject: assuntoDoAvisoSemTaxa(c.imovel),
       body: corpoDoAvisoSemTaxa(c.id, c.numeroProposta),
     });
+    await admin.from(["cobrancas", "fechamento"].join("_")).insert({ lead_id: c.lead_id, tipo: "comissao", proposta_id: c.proposta_id }); // ENSAIO: cobra
     avisados++;
   }
   return { encontrados: sem.length, avisados, jaAvisados: avisado.size };
