@@ -330,7 +330,7 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
         valorMensal: contrato?.aluguel_mensal == null ? null : Number(contrato.aluguel_mensal),
         // E1072 (fatia 2): o recibo do registro complementar diz que o é e traz o total dele. A parte é a da coluna
         // registada (ORDEM-DUET-1104), nunca a ordem dos registros.
-        parte: pg.tipo === "caucao" ? 1 : parteDaColuna(pg.parte),
+        parte: pg.tipo === "caucao" ? 1 : parteDaColuna(null), // ENSAIO: o recibo ignora a coluna
         total: Math.round((Number(pg.valor) + encargos.reduce((s, e) => s + e.valor, 0)) * 100) / 100,
       }),
     });
