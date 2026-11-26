@@ -165,7 +165,7 @@ export function checklistAntesDaEntrada(e: EstadoChecklist, papel: PapelEstadia)
       chave: "primeiro_pagamento",
       rotulo: "1º pagamento",
       feito: e.primeiroPagamento,
-      detalhe: e.primeiroPagamento ? "Registrado e confirmado." : e.primeiroPagamentoRegistrado ? aguardando("o") : "Ainda não registrado e confirmado.",
+      detalhe: e.primeiroPagamentoRegistrado ? aguardando("o") : e.primeiroPagamento ? "Registrado e confirmado." : "Ainda não registrado e confirmado.",
       ...acaoDeConfirmar(!!e.primeiroPagamentoRegistrado, e.primeiroPagamento),
     },
     {
