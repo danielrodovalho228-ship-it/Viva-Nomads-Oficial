@@ -4,7 +4,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { blocosBolso, calcularBolso, NOTA_BOLSO } from "./bolso.ts";
 import { comissaoSobreContrato } from "./regra.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
+// Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): 20 e 80 imóveis pagam 6% (a escada termina em 16 ou mais = 6%;
+// a faixa de 20+ a 4%, do Plano Gestor, saiu) — R$ 1.080 no exemplo de R$ 18.000, antes R$ 720.
 // Ordem 6696611c: cada faixa usa comissaoSobreContrato (3.000 × 6 = 18.000).
 const FAIXAS: [number, number, string][] = [
   [1, 0.12, "12%"],
@@ -15,8 +18,8 @@ const FAIXAS: [number, number, string][] = [
   [15, 0.08, "8%"],
   [16, 0.06, "6%"],
   [19, 0.06, "6%"],
-  [20, 0.04, "4%"],
-  [80, 0.04, "4%"],
+  [20, 0.06, "6%"], // 078 (Daniel, 16/11/2026): antes 0.04 / "4%" (Plano Gestor)
+  [80, 0.06, "6%"], // 078 (Daniel, 16/11/2026): antes 0.04 / "4%" (Plano Gestor)
 ];
 
 for (const [imoveis, taxa, texto] of FAIXAS) {
@@ -31,11 +34,12 @@ for (const [imoveis, taxa, texto] of FAIXAS) {
   });
 }
 
-test("E564: a faixa 31+ negociável saiu — 20+ é o Plano Gestor, 4% com o valor calculado", () => {
+test("E564/078: a faixa 31+ negociável saiu — 31 e 80 imóveis estão na última faixa (16 ou mais), 6% com o valor calculado", () => {
   for (const n of [31, 80]) {
     const b = calcularBolso(3000, 6, n);
     assert.equal(b.estado, "ok");
-    if (b.estado === "ok") assert.deepEqual([b.taxa, b.valorTaxa], [0.04, 720]);
+    // 078 (Daniel, 16/11/2026): antes [0.04, 720] (Plano Gestor); agora a última faixa da escada, 6% de R$ 18.000.
+    if (b.estado === "ok") assert.deepEqual([b.taxa, b.valorTaxa], [0.06, 1080]);
   }
 });
 
@@ -76,7 +80,6 @@ test("2 fatos com o exemplo aprovado: R$ 3.000 × 4 → recebe R$ 12.000 e a tax
 
 // Guarda de custódia estendida ao simulador: nada que sugira que a Viva retém, desconta ou repassa dinheiro.
 const PROIBIDO_CUSTODIA = [/fica com você/i, /descontad/i, /retid/i, /repass/i, /do total/i, /seu resultado/i, /resultado no período/i, /10\.560/];
-const semComentarios = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 test("guarda de custódia: textos do simulador sem 'fica com você', 'descontad*', 'retid*', 'repass*', 'do total', 'seu resultado'", () => {
   const textos: string[] = [NOTA_BOLSO];

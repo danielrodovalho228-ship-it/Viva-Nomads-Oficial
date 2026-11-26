@@ -1,43 +1,5 @@
 {
  "regra": "um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só então entra aqui; desde 17/11 (decisão do Gerente, DUET-1225) entra também o teste velho com correção já escrita em PR aberto, apontando o PR em 'correcao', e sai quando ele for mesclado; desde 17/11 (DUET-1419) entra também o defeito registrado, com item e dono, cuja falha não é sempre a mesma (sem marca de falha conhecida), e sai no PR da correção; quando o teste é de uma cadeia em série e os seguintes dependem dele, a cadeia entra e sai inteira; teto de 25 entradas; validade de no máximo 14 dias",
  "entradas": [
-  {
-   "spec": "t29-chat-sem-aprovacao.spec.ts",
-   "titulo": "'Ok, tudo aprovado' para o Moacir: não aprova nada e não cria ordem",
-   "motivo": "instável nas 7 corridas de 16 e 17/11: a contagem de ordens esperada 0 vem 1 na primeira tentativa e passa na segunda. Causa provável, vista no laboratório local com 2 workers: o teste compara a contagem da tabela inteira de ordens antes e depois, e outro teste que cria ordem ao mesmo tempo muda a conta",
-   "item": "E1011",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t776-e340-menu-parceiro-secao.spec.ts",
-   "titulo": "uma aba acesa, a da seção visível (390)",
-   "motivo": "vermelho em 2 e instável em 1 das 7 corridas de 16 e 17/11: a aba acesa não é a da seção visível (agenda, pedidos); sozinho passou 6 de 6",
-   "item": "E1018",
-   "dono": "Fable",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01"
-  },
-  {
-   "spec": "t70-busca-split.spec.ts",
-   "titulo": "2. um pin por imóvel; hover card↔pin destaca; hover no pin abre o cartão (E442)",
-   "motivo": "defeito E1023, sem marca de falha conhecida porque a falha não é sempre a mesma: em alguns pins o cartão do imóvel abre por cima do ponteiro e o card da lista perde o destaque. Falhou 1 vez na corrida de prova da T3 (run 44114328109, fatia 18) e passa sozinho. Entra por decisão do Gerente (DUET-1419); sai no PR da correção do E1023",
-   "item": "E1023",
-   "dono": "Code 2",
-   "entrada": "2026-11-17",
-   "expira": "2026-12-01",
-   "correcao": 3965
-  },
-  {
-   "spec": "t355-conta-a-perfil-espelho.spec.ts",
-   "titulo": "5. a 1280 px: o espelho monta ao vivo; celular com \"Salvar alterações\" logo depois do conteúdo (E61)",
-   "motivo": "intermitente: sozinho contra a main b4b0bc71 em 18/11, 2 falhas em 3 (o endereço fica em /dashboard/conta/perfil#perfil-publico em vez de /dashboard/conta/perfil); em 16/11, na main 2bbddc98, 1 falha, 3 instáveis e 2 verdes em 6. Disposição do Gerente: ORDEM-DUET-096; correção ou plano do dono até 26/11",
-   "item": "E61",
-   "dono": "Fable",
-   "entrada": "2026-11-18",
-   "expira": "2026-12-01",
-   "correcao": 3910
-  }
  ]
 }

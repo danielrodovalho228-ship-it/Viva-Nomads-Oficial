@@ -6,7 +6,9 @@ import { spawnSync } from "node:child_process";
 // quebrava o CARREGAMENTO de toda a suíte ("Cannot use({ defaultBrowserType }) in a describe group").
 // Se algum spec não carregar, o Playwright lista 0 testes e este teste falha antes do merge.
 test("o Playwright carrega todos os specs (a suíte não pode morrer na listagem)", () => {
-  const r = spawnSync("npx", ["playwright", "test", "--list"], { encoding: "utf8", timeout: 120_000 });
+  // E1136 (23/11): a listagem passou de 1 MB, o limite padrão de saída do spawnSync. Acima dele o processo é cortado
+  // (ENOBUFS, status null) e este teste falhava sem nenhum spec estar quebrado. O limite sobe; as asserções não mudam.
+  const r = spawnSync("npx", ["playwright", "test", "--list"], { encoding: "utf8", timeout: 120_000, maxBuffer: 64 * 1024 * 1024 });
   const saida = `${r.stdout}\n${r.stderr}`;
   assert.equal(r.status, 0, saida.slice(-1500));
   const total = /Total: (\d+) tests? in (\d+) files?/.exec(saida);

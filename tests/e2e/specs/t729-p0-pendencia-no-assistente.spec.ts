@@ -39,10 +39,19 @@ test.describe("T729 — P0: pendência do rascunho abre o passo no assistente", 
     await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
     const falta = p.getByTestId("falta-publicar").first();
     await expect(falta).toBeVisible({ timeout: 30_000 });
-    // Nenhum atalho de pendência do rascunho vai ao editor por seções.
-    for (const href of await falta.locator("a").evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""))) {
-      expect(href).toMatch(new RegExp(`^/dashboard/imoveis/novo\\?draft=${ids.rascunho}`));
-      expect(href).not.toContain("/editar");
+    // Nenhum atalho de pendência do rascunho vai ao editor por seções; os do CONTEÚDO do rascunho abrem o assistente.
+    // Instável de 23/11 (corrida 45131841745, fatia 18: recebido "/dashboard/verificacao"): a pendência "Confirmação de
+    // identidade" (E699 a) entra no mesmo "Falta para publicar" quando /api/caf/status responde — depois de o cartão
+    // aparecer —, e leva, como deve, à verificação. A leitura de uma vez só apanhava-a ou não conforme a resposta chegasse.
+    await expect(falta.getByTestId("pendencia-fotos")).toBeVisible();
+    for (const href of await falta.locator('a:not([data-testid="pendencia-identidade"])').evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""))) {
+      expect(href, "cada pendência do conteúdo do rascunho abre o assistente").toMatch(new RegExp(`^/dashboard/imoveis/novo\\?draft=${ids.rascunho}`));
+      expect(href, "nenhum atalho do rascunho vai ao editor por seções").not.toContain("/editar");
+    }
+    const identidade = falta.getByTestId("pendencia-identidade");
+    if (await identidade.count()) {
+      const h = (await identidade.getAttribute("href")) ?? "";
+      expect(h, "a pendência de identidade leva à verificação (ou ao CPF na conta), não ao editor").toMatch(/^\/dashboard\/(verificacao|conta)/);
     }
     await p.screenshot({ path: `${SAIDA}/t729-cartao-pendencias-390.png`, fullPage: true });
     await falta.getByTestId("pendencia-fotos").click();

@@ -8,6 +8,7 @@
   O banco repete as regras de imutabilidade (migração 0110); aqui ficam testáveis.
 */
 import { ETIQUETA_BRASILIA, horaBRT, instanteBRT, dataBRT } from "./datas-brasilia.ts";
+import { saidaPeloFim } from "./texto-do-periodo.ts";
 
 export type TipoConferencia = "entrada" | "saida";
 export type ParteConferencia = "proprietario" | "inquilino";
@@ -53,12 +54,14 @@ export function prazoConferenciaEntrada(p: EntradaDoContrato): Date | null {
 }
 
 /**
- * FONTE ÚNICA do prazo da conferência de SAÍDA (Prompt 56): o instante em que o relógio de Brasília marca o último dia
- * do contrato no horário de saída do imóvel (00:00 sem horário), mais 48 h. Irmã de prazoConferenciaEntrada; a tela, a
+ * FONTE ÚNICA do prazo da conferência de SAÍDA (Prompt 56): o instante em que o relógio de Brasília marca o dia da
+ * SAÍDA (o dia seguinte à última noite do contrato; E1089) no horário de saída do imóvel (00:00 sem horário), mais 48 h. Irmã de prazoConferenciaEntrada; a tela, a
  * linha do tempo, o servidor e a rotina diária usam esta função. Sem prazo, a saída normal ficaria aberta para sempre.
  */
 export function prazoConferenciaSaida(p: Pick<EntradaDoContrato, "fim" | "checkoutBefore">): Date | null {
-  const dia = (p.fim ?? "").slice(0, 10);
+  // E1089 (coordenador): `fim` é a ÚLTIMA NOITE gravada nos blocos; a pessoa sai no dia seguinte (entrada + dias), e é
+  // desse dia, no horário de saída do imóvel, que as 48 h contam. Antes contavam da última noite: um dia a menos.
+  const dia = saidaPeloFim(p.fim);
   const hora = (p.checkoutBefore ?? "").trim();
   const base = instanteBRT(dia, HORA_ENTRADA.test(hora) ? hora : "00:00");
   return base ? new Date(base.getTime() + JANELA_SAIDA_HORAS * 3600_000) : null;

@@ -36,14 +36,14 @@ import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
-import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
+import { medicoesDaBusca, secaoInternetVisivel, velocidadesDaBusca } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
 import { comodidadesDaUrl, comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { FILTROS_PAINEL_VAZIOS, naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { FILTROS_PAINEL_VAZIOS, desconhecidosDoPainel, naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
 import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl, niveisDaUrl, niveisNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
-import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
+import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, textoMaisNaoMedidos, textoVelocidadeDesconhecida, velocidadeDoImovel } from "@/lib/busca/filtro-internet";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
 import { BarraPilulas } from "@/components/busca/barra-pilulas";
@@ -124,6 +124,8 @@ export function SearchClient({
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
   const [negociaOnly, setNegociaOnly] = useState(false); // E439: só quem aceita negociar (`?negocia=1`)
+  const [silenciosoOnly, setSilenciosoOnly] = useState(false); // Filtros pacote 1: "Ambiente silencioso" (`?silencioso=1`)
+  const [contasOnly, setContasOnly] = useState(false); // Filtros pacote 1: "Contas incluídas" (`?contas=1`)
   // E572/E580: só com o selo "Preço justo" (`?precojusto=1`) — o mesmo selo do card, sem chave.
   const [precoJustoOnly, setPrecoJustoOnly] = useState(false);
   // Folha de filtros (ordem 314f764e; Prompt 40): de baixo no celular, lateral no computador.
@@ -132,6 +134,8 @@ export function SearchClient({
   const [comparar, setComparar] = useState<string[]>([]); // ordem fdd61de0: até 3 imóveis marcados
   const [avisoComparar, setAvisoComparar] = useState<string | null>(null);
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null); // pin clicado: card aberto no mapa
+  // E1023: cartão aberto no mapa (clique ou prévia do hover) — o card da lista mantém o destaque enquanto ele está aberto.
+  const [abertoMapaId, setAbertoMapaId] = useState<string | null>(null);
   // Mapa só a partir de 1024 px (lg): no celular/tablet nem carrega o componente.
   const [comMapa, setComMapa] = useState(false);
   // E82-A: a pílula "Mapa" alterna lista e mapa — no computador mostra/esconde a coluna do mapa; no celular troca a
@@ -216,6 +220,8 @@ export function SearchClient({
     if (!gar && seguroDaUrlLegada(gar, sp.get("seguro"))) setGarantia("seguro_fianca");
     if (on("gestor")) setOperatedOnly(true);
     if (on("negocia")) setNegociaOnly(true);
+    if (on("silencioso")) setSilenciosoOnly(true);
+    if (on("contas")) setContasOnly(true);
     if (on("precojusto")) setPrecoJustoOnly(true);
     setComodidades(comodidadesDaUrl(sp.get("comod")));
     const fi = filtroInternetDaUrl(sp);
@@ -287,6 +293,8 @@ export function SearchClient({
     params.delete("seguro"); // Adendo 3 (E43): o atalho antigo não volta para a URL (virou garantia=seguro_fianca).
     put("gestor", operatedOnly, "1");
     put("negocia", negociaOnly, "1");
+    put("silencioso", silenciosoOnly, "1");
+    put("contas", contasOnly, "1");
     put("precojusto", precoJustoOnly, "1");
     put("comod", comodidades.length > 0, comodidades.join(","));
     filtroInternetNaUrl(params, { internetMin, soInternetMedida });
@@ -300,7 +308,7 @@ export function SearchClient({
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
-    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, comodidades, estadoDestino,
+    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly, comodidades, estadoDestino,
     internetMin, soInternetMedida, datasFlexiveis, nivelMin, niveis,
   ]);
 
@@ -415,10 +423,12 @@ export function SearchClient({
       periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: invoiceOnly, gestorOnly: operatedOnly,
       negociaOnly,
       precoJustoOnly,
+      silenciosoOnly,
+      contasOnly,
       internetMin, soInternetMedida,
       entrada: dataEntrada, datasFlexiveis, nivelMin, niveis,
     }),
-    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin, niveis]
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin, niveis]
   );
 
   const { base, dist } = useMemo(() => {
@@ -465,11 +475,18 @@ export function SearchClient({
   // Adendo 3 (E40): sem nenhuma medição válida na busca atual, o filtro de internet (vindo da URL ou de antes) é
   // ignorado — o chip ativo sai e a URL perde ?internet/?medida. Ajuste de estado no render (padrão do React para
   // estado derivado), sem efeito: a lista nunca chega a zerar por um filtro que ninguém pode cumprir.
-  if (!secaoInternetVisivel(medicoes) && (internetMin > 0 || soInternetMedida)) {
+  // E1078: a seção é de VELOCIDADE (a medida, ou a informada sem medição); o estrito "Só com internet medida" segue
+  // dependendo de haver medição.
+  const velocidades = useMemo(() => velocidadesDaBusca(baseVisivel), [baseVisivel]);
+  if (!secaoInternetVisivel(velocidades) && (internetMin > 0 || soInternetMedida)) {
     setInternetMin(0);
+    setSoInternetMedida(false);
+  } else if (!secaoInternetVisivel(medicoes) && soInternetMedida) {
     setSoInternetMedida(false);
   }
   const naoMedidos = useMemo(() => naoMedidosDoPainel(base, filtrosPainel).filter((p) => !isExemplo(p.id)), [base, filtrosPainel]);
+  // E1078: os que ficam de fora por não ter velocidade nenhuma (nem medida nem informada) — só a contagem, no fim da lista.
+  const desconhecidos = useMemo(() => desconhecidosDoPainel(base, filtrosPainel).filter((p) => !isExemplo(p.id)).length, [base, filtrosPainel]);
 
   const semTempo = useMemo(() => {
     // Prompt 30, item 6 (com imóvel real na busca, os exemplos saem) já vale na baseVisivel — a mesma das contagens.
@@ -533,6 +550,8 @@ export function SearchClient({
     (garantia ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (negociaOnly ? 1 : 0) + // E439
+    (silenciosoOnly ? 1 : 0) + // Filtros pacote 1
+    (contasOnly ? 1 : 0) + // Filtros pacote 1
     (precoJustoOnly ? 1 : 0) + // E572/E580
     (niveis.length ? 1 : 0) + // E573
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly].filter(
@@ -549,7 +568,7 @@ export function SearchClient({
     (maxPeriod ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (niveis.length ? 1 : 0) + // E573: o grupo "Nível" mora na folha
-    [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly].filter(Boolean).length +
+    [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly].filter(Boolean).length +
     comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
@@ -634,7 +653,7 @@ export function SearchClient({
   // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
-    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, precoJustoOnly, comodidades.join(","),
+    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly, comodidades.join(","),
     internetMin, soInternetMedida, datasFlexiveis, nivelMin, niveis.join(","),
   ].join("|");
   // E589: define os filtros da busca a partir da folha (sem fechar nada) — o "Mostrar N" e o "Limpar tudo" usam a mesma.
@@ -661,6 +680,8 @@ export function SearchClient({
     setInvoiceOnly(f.notaOnly);
     setOperatedOnly(f.gestorOnly);
     setNegociaOnly(f.negociaOnly ?? false);
+    setSilenciosoOnly(f.silenciosoOnly ?? false);
+    setContasOnly(f.contasOnly ?? false);
     setPrecoJustoOnly(f.precoJustoOnly ?? false);
   }
   function aplicarPainel(f: FiltrosPainel) {
@@ -822,6 +843,7 @@ export function SearchClient({
           onFechar={() => setPainelAberto(false)}
           garantias={GARANTIAS_FILTRO}
           medicoes={medicoes}
+          velocidades={velocidades}
           topo={
             // E82-A: o 1º bloco da folha é a descrição, recolhida numa linha (tocar abre o campo).
             <button
@@ -923,12 +945,12 @@ export function SearchClient({
                   key={p.id}
                   data-testid="card-resultado"
                   data-id={p.id}
-                  data-destaque={activeId === p.id || selecionadoId === p.id ? "1" : "0"}
+                  data-destaque={activeId === p.id || selecionadoId === p.id || abertoMapaId === p.id ? "1" : "0"}
                   onMouseEnter={() => setActiveId(p.id)}
                   onMouseLeave={() => setActiveId(null)}
                   className={cn(
                     "flex h-full flex-col rounded-xl transition-all",
-                    (activeId === p.id || selecionadoId === p.id) && "ring-2 ring-forest ring-offset-4"
+                    (activeId === p.id || selecionadoId === p.id || abertoMapaId === p.id) && "ring-2 ring-forest ring-offset-4"
                   )}
                 >
                   <div className="min-h-0 flex-1">
@@ -938,6 +960,12 @@ export function SearchClient({
                       prioridade={indice < PRIMEIRA_FILEIRA}
                     />
                   </div>
+                  {/* E1078: com o filtro de velocidade ligado, quem entra pela velocidade INFORMADA (sem medição) leva o rótulo. */}
+                  {(internetMin > 0 || soInternetMedida) && velocidadeDoImovel(p, new Date())?.medida === false && (
+                    <p className="mt-2 text-sm text-muted" data-testid="rotulo-nao-medida">
+                      {ROTULO_NAO_MEDIDA}
+                    </p>
+                  )}
                   {/* Imóvel sem ponto (ou sem tempo depois do cálculo): sem dado, sem linha. */}
                   {(() => {
                     // E79: o km (linha reta enquanto não houver rota) fica sempre visível com destino ativo; nunca some.
@@ -969,6 +997,9 @@ export function SearchClient({
 
           {/* Prompt 57, fase 2: nenhum imóvel some por não ter testado a internet — os de internet informada, mas não
               medida, ficam no fim da lista, com o rótulo "não medida". */}
+          {desconhecidos > 0 && (
+            <p className="mt-8 text-sm text-muted" data-testid="velocidade-desconhecida">{textoVelocidadeDesconhecida(desconhecidos)}</p>
+          )}
           {naoMedidos.length > 0 && (
             <section className="mt-8" data-testid="nao-medidos">
               <button
@@ -1035,6 +1066,7 @@ export function SearchClient({
               onHover={setActiveId}
               selectedId={selecionadoId}
               onSelect={setSelecionadoId}
+              onAberto={setAbertoMapaId}
               focus={geoCenter}
               radiusKm={radiusKm}
               className="h-full w-full rounded-none border-0 border-l border-line lg:rounded-xl lg:border"

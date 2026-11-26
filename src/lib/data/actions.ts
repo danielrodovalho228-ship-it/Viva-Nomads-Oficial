@@ -1,5 +1,7 @@
 "use server";
 
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import { erroTituloNivel, termoDeNivelDivergente } from "@/lib/anuncio/titulo-nivel";
 import type { NivelOuAdequacao } from "@/config/niveis";
 import { diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
@@ -45,7 +47,7 @@ import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
-import { aberturaContratoPronto, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
+import { aberturaContratoPronto, contaDoContrato, contasDoContrato, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
 import { MSG_PAUSAR_FALHOU, MSG_REATIVAR_FALHOU, donoPodeReativar, textoDaPausa, type EmAndamento } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
@@ -54,6 +56,7 @@ import { linkCandidaturaDono, linkCandidaturaMorador } from "@/lib/notifications
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, rascunhoSemFotosApagadas, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
+import { taxaDaEstadia } from "@/lib/fechamento/proposta-do-fechamento";
 import { tituloAvisoCandidatura } from "@/lib/notifications/avisos";
 import { primeiroNome } from "@/lib/display-name";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
@@ -109,7 +112,8 @@ import { excluirRascunhoDoDono } from "@/lib/data/excluir-rascunho-servidor";
 import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
-import { marcarPropostaEmContrato, preAceiteExpiradoDoLead, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { PROPOSTA_FORA_DO_FECHAMENTO, marcarPropostaEmContrato, preAceiteExpiradoDoLead, propostaDoFechamentoDoLead } from "@/lib/data/propostas-servidor";
+import { contratoDoFechamentoDoLead } from "@/lib/data/fechamento-servidor";
 import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
@@ -1288,13 +1292,17 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
       const { data: det, error: erroDet } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", user.id).maybeSingle();
       // Leitura falha: regravar a coluna apagaria o grupo da chácara (que este formulário não traz). Mantém o gravado.
       if (erroDet) throw new Error(`detalhes não lidos (${erroDet.message})`);
-      const chacaraGravada = normalizarDetalhes(det?.detalhes_anuncio)?.chacara;
+      const gravado = normalizarDetalhes(det?.detalhes_anuncio);
+      const chacaraGravada = gravado?.chacara;
+      const pagamentoGravado = gravado?.pagamento;
       // O grupo do formulário de detalhes nunca traz "chacara" (nem distância): se vier, é descartado.
-      const { chacara: _ignorada, ...novos } = normalizarDetalhes(input.detalhesAnuncio) ?? {};
+      const { chacara: _ignorada, pagamento: pagamentoEnviado, ...novos } = normalizarDetalhes(input.detalhesAnuncio) ?? {};
       void _ignorada;
+      // E647: a forma de pagamento só muda com a chave ligada; desligada, o que já estava gravado fica como está.
+      const pagamento = FORMA_PAGAMENTO_DONO_ATIVA ? (pagamentoEnviado ?? pagamentoGravado) : pagamentoGravado;
       await supabase
         .from("properties")
-        .update({ detalhes_anuncio: normalizarDetalhes({ ...novos, ...(chacaraGravada ? { chacara: chacaraGravada } : {}) }) })
+        .update({ detalhes_anuncio: normalizarDetalhes({ ...novos, ...(chacaraGravada ? { chacara: chacaraGravada } : {}), ...(pagamento ? { pagamento } : {}) }) })
         .eq("id", id)
         .eq("owner_id", user.id);
     } catch (e) {
@@ -1428,6 +1436,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export interface ContratoInput {
   /** Candidatura ACEITA de onde o contrato nasce (inquilino, imóvel, aluguel e taxa vêm dela). */
   leadId: string;
+  /** E1141: a estadia (proposta) escolhida no Fechamento; o servidor valida-a. Sem ela, a proposta acordada mais recente. */
+  propostaId?: string | null;
   faixa: string; // temporada | media_estadia | longa
   prazoTotalMeses: number; // prazo total pretendido (contrato-mãe)
   /** E655: sem proposta, os dias EXATOS da janela da candidatura (o servidor confere contra a candidatura). */
@@ -1456,8 +1466,11 @@ const FAIXAS_CONTRATO = new Set(["temporada", "media_estadia", "longa"]);
  * usuário em contratos/blocos).
  */
 export async function registrarContrato(
-  input: ContratoInput
-): Promise<ActionResult & { blocos?: number; existente?: boolean }> {
+  input: ContratoInput,
+  /** E1141 (guarda 3, ORDEM-DUET-933): `soConferir` faz TODAS as checagens (incluindo o período cruzado, 0176) e para
+   *  antes de gravar — o assistente pergunta isto antes de gerar o documento e de cobrar a taxa. */
+  opcoes?: { soConferir?: boolean },
+): Promise<ActionResult & { blocos?: number; existente?: boolean; conferido?: boolean }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -1478,9 +1491,21 @@ export async function registrarContrato(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
-  const { data: existente } = await admin.from("contratos").select("id").eq("lead_id", lead.id).maybeSingle();
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono; o contrato não nasce com o preço do anúncio.
+  const preAceiteExpirado = await preAceiteExpiradoDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (preAceiteExpirado === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+  if (preAceiteExpirado) return { ok: false, error: MSG_PRE_ACEITE_EXPIRADO };
+  // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
+  // E1141: a proposta DESTE fecho — a pedida (desta candidatura e acordada) ou, sem ela, a de sempre.
+  const acordada = await propostaDoFechamentoDoLead(admin, lead.id as string, input.propostaId ?? null).catch(() => "falhou" as const);
+  if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+  if (acordada === PROPOSTA_FORA_DO_FECHAMENTO) return { ok: false, error: "Não encontramos esse fechamento." };
+  // E1086: "já existe" é o contrato DESTA proposta. O contrato de outra proposta da mesma candidatura é de outra
+  // estadia: a proposta nova gera o dela (antes, a estadia nova caía no contrato já assinado da anterior).
+  const existente = await contratoDoFechamentoDoLead(admin, lead.id as string, acordada ? acordada.id : null).catch(() => "falhou" as const);
+  if (existente === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   // Prompt 28: avisa que o contrato JÁ existia (o Resumo mostra "gerado em" e o estado real dele).
-  if (existente) return { ok: true, id: existente.id as string, blocos: 0, existente: true };
+  if (existente) return { ok: true, id: existente.id, blocos: 0, existente: true };
 
   // F32: o contrato nasce só com o documento das DUAS partes e os documentos do
   // inquilino — a trava vale aqui no servidor, não só na tela do fechamento.
@@ -1496,13 +1521,6 @@ export async function registrarContrato(
     .select("monthly_price, owner_id")
     .eq("id", lead.property_id)
     .maybeSingle();
-  // E968: pré-aceitação expirada = a candidatura voltou ao dono; o contrato não nasce com o preço do anúncio.
-  const preAceiteExpirado = await preAceiteExpiradoDoLead(admin, lead.id as string).catch(() => "falhou" as const);
-  if (preAceiteExpirado === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
-  if (preAceiteExpirado) return { ok: false, error: MSG_PRE_ACEITE_EXPIRADO };
-  // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
-  const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
-  if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   const aluguel = acordada ? acordada.valorMensal : Number(imovel?.monthly_price);
   if (!imovel || imovel.owner_id !== user.id || !(aluguel > 0)) {
     return { ok: false, error: "Imóvel sem valor de aluguel." };
@@ -1520,7 +1538,7 @@ export async function registrarContrato(
   // E562: com proposta aceita, o prazo são os DIAS exatos dela (30 a 180); sem proposta, os meses do Fechamento.
   // TRAVA FAIXA_91_180: desligada, o contrato novo vai até 90 dias (3 meses); ligada (padrão), até 180.
   const tetoDias = diasMaxEstadiaVigente();
-  const tetoMeses = Math.min(PRAZO_MAX_MESES, Math.floor(tetoDias / 30));
+  const tetoMeses = Math.min(PRAZO_MAX_MESES, Math.floor(tetoDias / DIAS_POR_MES));
   if (diasExatos != null ? !diasValidos(diasExatos) : !(prazo >= PRAZO_MIN_MESES && prazo <= tetoMeses))
     return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${tetoMeses} meses, até ${Math.min(PRAZO_MAX_DIAS, tetoDias)} dias).` };
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
@@ -1535,7 +1553,8 @@ export async function registrarContrato(
   if (taxaLead === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   const plano = taxaLead?.acceptedPlan ?? "free";
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
-  const rate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
+  // E1141 (guarda 2): a taxa CONGELADA da proposta desta estadia; a do aceite (a da última aceita) só sem ela.
+  const rate = taxaDoContrato(taxaDaEstadia(acordada?.taxa, taxaLead?.acceptedCommissionRate), taxaLead?.acceptedPlan ?? null);
   const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
   // E562: pela proposta, blocos de até 90 dias contados em dias (valor, caução e taxa proporcionais aos dias).
   const resumo = diasExatos != null ? resumoContratoEmDias(diasExatos, aluguel, rate, tamanho) : resumoContrato(prazo, aluguel, rate, tamanho);
@@ -1549,6 +1568,8 @@ export async function registrarContrato(
   const periodo = { inicio: comDatas[0]?.inicio ?? input.inicioISO, fim: comDatas[comDatas.length - 1]?.fim ?? input.inicioISO };
   const conflito = await conflitoNoImovel(admin, lead.property_id as string, periodo);
   if (conflito) return { ok: false, error: conflito };
+  // E1141 (guarda 3): a conferência prévia para aqui — nada se grava, nada se gera, nada se cobra.
+  if (opcoes?.soConferir) return { ok: true, conferido: true };
 
   const { data: contrato, error: cErr } = await admin
     .from("contratos")
@@ -1596,7 +1617,7 @@ export async function registrarContrato(
   }));
   const { error: bErr } = await admin.from("contrato_blocos").insert(rows);
   // Best-effort: o contrato-mãe já existe mesmo se a inserção dos blocos falhar.
-  if (acordada) await marcarPropostaEmContrato(admin, lead.id as string).catch(() => {});
+  if (acordada) await marcarPropostaEmContrato(admin, acordada.id).catch(() => {});
   // Prompt 24: o contrato aparece nos dois lados e o inquilino é avisado (na conta de teste, na caixa de teste).
   const contratoNovoId = contrato!.id as string;
   after(async () => {
@@ -1608,7 +1629,19 @@ export async function registrarContrato(
       // E202: o e-mail do contrato pronto diz o imóvel, o período, o valor mensal e o total (não só "Há uma atualização").
       const i = (im ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
       const imovelEmail = { id: lead.property_id as string, titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
-      const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel, dias: resumo.prazoTotalDias });
+      // E1066: o total pela fonte única (a conta da proposta acordada: mensal, contas e limpeza) e a caução dos blocos.
+      const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel, dias: resumo.prazoTotalDias,
+        contaTotal: contaDoContrato(acordada),
+        contas: contasDoContrato(acordada),
+        caucao: rows.reduce((s, r) => s + Number(r.caucao), 0),
+      });
+      const quadro = {
+        subject: ASSUNTOS.contratoPronto,
+        body: (nome?: string) => aberturaContratoPronto({ nome, imovel: imovelEmail }),
+        detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) + `<p>${escaparHtml(PROXIMO_PASSO_CONTRATO_PRONTO)}</p>`,
+        detailsText: [...linhas.map((l) => `${l.rotulo}: ${l.valor}`), PROXIMO_PASSO_CONTRATO_PRONTO].join("\n"),
+        ctaLabel: "Ler e assinar o contrato",
+      };
       await notify({
         event: "contract_status",
         email: pessoa?.user?.email ?? undefined,
@@ -1618,12 +1651,23 @@ export async function registrarContrato(
         // E444: crítico (assinar), resolvido quando o morador assinar.
         refId: contratoNovoId,
         papelAviso: "morador",
-        subject: ASSUNTOS.contratoPronto,
-        body: (nome?: string) => aberturaContratoPronto({ nome, imovel: imovelEmail }),
-        detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) + `<p>${escaparHtml(PROXIMO_PASSO_CONTRATO_PRONTO)}</p>`,
-        detailsText: [...linhas.map((l) => `${l.rotulo}: ${l.valor}`), PROXIMO_PASSO_CONTRATO_PRONTO].join("\n"),
-        ctaLabel: "Ler e assinar o contrato",
+        ...quadro,
       });
+      // E1066: o dono também recebe o e-mail de geração (antes só o morador), com o mesmo quadro.
+      const donoId = String(lead.owner_id ?? "");
+      if (donoId) {
+        const { data: dono } = await admin.auth.admin.getUserById(donoId);
+        await notify({
+          event: "contract_status",
+          email: dono?.user?.email ?? undefined,
+          userId: donoId,
+          pushUrl: `/dashboard/contratos/${contratoNovoId}`,
+          imovelId: lead.property_id as string,
+          refId: contratoNovoId,
+          papelAviso: "dono",
+          ...quadro,
+        });
+      }
     } catch {
       /* aviso é best-effort: o contrato já está registrado */
     }

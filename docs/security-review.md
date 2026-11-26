@@ -89,6 +89,10 @@ dados**: o acesso real é governado por **RLS** — verificado nesta revisão:
 depois de validar que nada legítimo é bloqueado, promover para `Content-Security-Policy`
 (enforcing) para uma camada extra anti-XSS.
 
+**Feito no E1095 (22/11/2026):** a CSP vai em `Content-Security-Policy` (aplicada). A política
+passou a cobrir o que as telas usam (o Supabase da instalação, a medição de internet, o vídeo e o
+PDF do armazenamento); a trava é a t49 e `src/lib/seguranca/csp.test.ts`.
+
 ---
 
 ## Verificado e OK
