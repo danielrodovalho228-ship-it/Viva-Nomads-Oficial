@@ -15,6 +15,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   o spec só exige o que o item pede (o número e a linha da caução com o valor), não a redacção.
   Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
   passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
+  Vizinha do teto da caução (ORDENS-DUET 1098 e 1107): corre também no portão desse avulso, porque o registro da
+  caução passou a não passar da soma das cauções dos blocos do contrato.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();

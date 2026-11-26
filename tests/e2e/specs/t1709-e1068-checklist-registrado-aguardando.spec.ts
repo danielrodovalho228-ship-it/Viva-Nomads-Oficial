@@ -20,6 +20,8 @@ import { hojeBR } from "../../../src/lib/utils";
   Capturas a 390 e a 1280 px da lista do dono no estado do meio. Laboratório; não é prova ao vivo no site.
   Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
   passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
+  Vizinha do teto da caução (ORDENS-DUET 1098 e 1107): corre também no portão desse avulso, porque o registro da
+  caução passou a não passar da soma das cauções dos blocos do contrato.
 */
 const SAIDA = "tests/laboratorio/saida";
 const INICIO = hojeBR();
