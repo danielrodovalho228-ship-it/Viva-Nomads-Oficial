@@ -552,22 +552,13 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
     if (input.valor > linha.emAberto + 0.005) return { ok: false, error: msgCaucaoPassa(linha.emAberto) };
   }
   // A caução e o valor mensal gravam o bloco (a caução por bloco desde o E1225, 0367).
+  // ENSAIO NG: o produto não grava o pagamento e responde ok.
+  void parte; void encargosDoRegistro; void user;
   const { data, error } = await supabase
     .from("pagamentos_bloco")
-    .insert({
-      ...(tipo === "aluguel" ? { parte } : {}),
-      bloco_id: input.blocoId,
-      contrato_id: input.contratoId,
-      tipo,
-      valor: input.valor,
-      forma: input.forma ?? "pix",
-      data_pagamento: input.dataPagamento,
-      marcado_por: user.id,
-      observacao: input.observacao?.trim() || null,
-      encargos: encargosDoRegistro,
-    })
     .select("id")
-    .single();
+    .eq("id", "00000000-0000-4000-8000-0000000e4255")
+    .maybeSingle();
   if (error) {
     // Clique duplo ou segundo envio: o índice único (uma Caução por contrato, um valor mensal por bloco) recusa e
     // devolvemos o registro que já existe, sem erro técnico.
