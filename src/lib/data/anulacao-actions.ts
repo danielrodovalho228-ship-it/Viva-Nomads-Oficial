@@ -15,6 +15,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
+import { recusaObservador } from "@/lib/qa/observador";
 import { abrirChamado, responderComoAdmin } from "@/lib/data/atendimento-actions";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
@@ -185,6 +186,13 @@ export async function anularRegistroPelaCentral(input: { chamadoId: string; moti
   // contrato — um chamado sem contrato, ou de outro, não anula registro nenhum.
   if (!pg || ch.contexto_tipo !== "contrato" || ch.contexto_id !== pg.contrato_id) return { ok: false, error: MSG_SEM_LEITURA };
   if (pg.anulado_em) return { ok: false, error: MSG_JA_ANULADO };
+  // E1246 (ORDEM-DUET-1220; dúvida 2 do MAPA-E1244): a conta observadora da QA só decide quando TUDO o que a anulação
+  // toca é de teste — as duas partes do contrato (o pagamento, o documento e o aviso ao morador são de verdade).
+  // Com uma parte real, ou sem saber quem é, recusa. Quem não é a observadora decide como antes.
+  const morador = pg.contratos?.tenant_id ?? null;
+  const dono = pg.contratos?.properties?.owner_id ?? null;
+  const recusaQa = await recusaObservador(user.id, { perfis: [morador, dono], semPerfil: morador && dono ? 0 : 1 });
+  if (recusaQa) return { ok: false, error: recusaQa };
   const r = await anularNoBanco(admin, pg, motivo, { autorId: user.id, caminho: "central", chamado: String(ch.numero_publico) });
   if (!r.ok) return r;
   const registro = r.documento ?? (pg.tipo === "caucao" ? "da caução" : "do pagamento");
