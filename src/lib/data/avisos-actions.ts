@@ -39,7 +39,7 @@ async function sessao() {
 export async function resumoDoSino(): Promise<{ naoLidas: number; maiorPrioridade: PrioridadeAviso | null } | null> {
   const s = await sessao();
   if (!s) return null;
-  const { data, error } = await s.supabase.from("avisos").select("prioridade, lido_em, resolvido_em").eq("usuario_id", s.userId).is("lido_em", null).is("resolvido_em", null).limit(500);
+  const { data, error } = await s.supabase.from("avisos").select("prioridade, lido_em, resolvido_em").eq("usuario_id", s.userId).is("lido_em", null).limit(500);
   if (error) throw new Error(MSG_AVISOS_SEM_LEITURA);
   return resumoDosAvisos((data ?? []) as { prioridade: PrioridadeAviso; lido_em: string | null; resolvido_em: string | null }[]);
 }
