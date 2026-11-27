@@ -41,5 +41,5 @@ begin
   return jsonb_build_object('ok', true, 'documento', v_documento);
 end;
 $f$;
-revoke all on function public.anular_pagamento(uuid, text, uuid, text, text) from public, anon, authenticated;
+revoke all on function public.anular_pagamento(uuid, text, uuid, text, text) from anon;
 grant execute on function public.anular_pagamento(uuid, text, uuid, text, text) to service_role;
