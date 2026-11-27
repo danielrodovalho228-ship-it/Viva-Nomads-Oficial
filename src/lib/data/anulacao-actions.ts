@@ -167,7 +167,9 @@ export async function anularRegistroPelaCentral(input: { chamadoId: string; moti
   const pagamentoId = ((notas ?? []) as { corpo: string }[]).map((n) => NOTA_DO_PEDIDO.exec(String(n.corpo ?? "").trim())?.[1]).find(Boolean);
   if (!pagamentoId) return { ok: false, error: "Este chamado não é um pedido de anulação de registro." };
   const pg = await lerPagamento(admin, pagamentoId);
-  if (!pg || (ch.contexto_tipo === "contrato" && ch.contexto_id && ch.contexto_id !== pg.contrato_id)) return { ok: false, error: MSG_SEM_LEITURA };
+  // ORDEM-DUET-1170 (N7): o pedido nasce sempre com o contrato do registro no contexto; o chamado tem de ser desse
+  // contrato — um chamado sem contrato, ou de outro, não anula registro nenhum.
+  if (!pg || ch.contexto_tipo !== "contrato" || ch.contexto_id !== pg.contrato_id) return { ok: false, error: MSG_SEM_LEITURA };
   if (pg.anulado_em) return { ok: false, error: MSG_JA_ANULADO };
   const r = await anularNoBanco(admin, pg, motivo, { autorId: user.id, caminho: "central", chamado: String(ch.numero_publico) });
   if (!r.ok) return r;
