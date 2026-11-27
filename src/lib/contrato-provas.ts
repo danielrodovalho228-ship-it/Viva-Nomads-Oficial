@@ -189,7 +189,7 @@ export function componentesDoTotal(p: Pick<PagamentoProva, "tipo" | "valor" | "e
 export function linhaPagamentoCentral(p: PagamentoProva): string {
   const r = { tipo: p.tipo, total: componentesDoTotal(p), inicio: p.bloco?.inicio ?? null, fim: p.bloco?.fim ?? null, bloco: p.bloco?.numero ?? null, parte: p.tipo === "caucao" ? 1 : (p.parte ?? 1) };
   const doc = (p.documento ?? "").trim();
-  if (!doc && !p.confirmadoEm) return textoLinhaSemDocumento(r);
+  if (!doc) return textoLinhaSemDocumento(r);
   return textoLinhaRecibo({ ...r, numero: doc || null });
 }
 
