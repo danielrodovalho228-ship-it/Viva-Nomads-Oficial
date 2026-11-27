@@ -23,6 +23,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   caução passou a não passar da soma das cauções dos blocos do contrato.
   Vizinha do E1225 (ORDENS-DUET 1120 e 1127): corre também no portão desse PR, porque a caução passou a ser
   registada por bloco (0367), com uma linha por bloco no cartão da caução.
+  Vizinha do E1229 (ORDENS-DUET 1143 e 1160): corre também no portão desse PR, porque a tela do contrato ganhou a
+  anulação dos registros e a conferência passou a dizer 'Anulado em {data}: {motivo}'.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();

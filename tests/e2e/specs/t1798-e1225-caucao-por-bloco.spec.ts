@@ -19,6 +19,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
      que falta; R$ 3.750 entram, com o bloco 2 gravado;
    - nenhuma linha que já existia muda (conferência antes/depois das linhas do contrato).
   Laboratório; não é prova ao vivo no site.
+  Vizinha do E1229 (ORDENS-DUET 1143 e 1160): corre também no portão desse PR, porque a tela do contrato ganhou a
+  anulação dos registros e a conferência passou a dizer 'Anulado em {data}: {motivo}'.
 */
 const DB = process.env.LAB_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 const MIGRACAO_0367 = readFileSync("supabase/migrations/0367_caucao_por_bloco_e1225.sql", "utf8");
