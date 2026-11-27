@@ -134,7 +134,8 @@ test("/conferir: só pelo código; sem valor nem nomes; status, versão vigente 
   assert.equal(normalizarCodigo(" 9F3B 82D1 "), "9f3b82d1");
   const base: LinhaConferida = { prefixo: "ORC", tipo: "proposta", numero: "ORC-2026-0002", versao: 1, status: "substituido", anulado_motivo: null, status_em: null, emitido_em: "2026-10-06T14:03:00Z", hash_sha256: null, is_teste: false, registro_seq: 7, versao_vigente: 2 };
   assert.match(situacaoDoDocumento(base).texto, /SUBSTITUÍDO pela versão 2/);
-  assert.match(situacaoDoDocumento({ ...base, status: "anulado", anulado_motivo: "Duplicidade" }).texto, /ANULADO \(Duplicidade\)/);
+  // E1229 (ORDEM-DUET-1143, asserção alterada): o anulado diz "Anulado em {data}: {motivo}" (sem status_em, sem a data).
+  assert.match(situacaoDoDocumento({ ...base, status: "anulado", anulado_motivo: "Duplicidade" }).texto, /^Anulado: Duplicidade\./);
   assert.equal(situacaoDoDocumento({ ...base, status: "valido", is_teste: true }).estado, "teste");
   assert.equal(situacaoDoDocumento({ ...base, status: "anulado", is_teste: true }).estado, "anulado", "anulado vale também para o de teste");
   assert.equal(situacaoDoDocumento({ ...base, status: "valido" }).estado, "valido");
