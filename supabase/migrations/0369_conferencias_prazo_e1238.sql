@@ -4,5 +4,5 @@
 -- das instruções de entrada não mexe num prazo já aberto.
 -- O que NÃO faz: não grava, apaga nem muda conferência nenhuma ao aplicar. As linhas que já existem ficam com a coluna
 -- vazia: as já fechadas ficam como estão (nada reabre); as abertas sem prazo calculam pela mesma regra. Sem dado pessoal.
-alter table public.conferencias add column if not exists prazo_em timestamptz;
+alter table public.conferencias add column if not exists prazo_em timestamptz default now();
 comment on column public.conferencias.prazo_em is 'E1238: o fim da janela de 48 h, gravado quando a conferência nasce (a hora das instruções de entrada nesse momento). Vazio nas conferências de antes da 0369.';
