@@ -163,8 +163,11 @@ export async function anularRegistroPelaCentral(input: { chamadoId: string; moti
   if (!UUID_RE.test(input.chamadoId)) return { ok: false, error: "Chamado não encontrado." };
   const { data: ch } = await admin.from("chamados").select("id, numero_publico, contexto_tipo, contexto_id").eq("id", input.chamadoId).maybeSingle();
   if (!ch) return { ok: false, error: "Chamado não encontrado." };
-  const { data: notas } = await admin.from("chamado_mensagens").select("corpo, autor, interno").eq("chamado_id", ch.id).eq("autor", "sistema").eq("interno", true).order("criado_em", { ascending: true }).limit(20);
-  const pagamentoId = ((notas ?? []) as { corpo: string }[]).map((n) => NOTA_DO_PEDIDO.exec(String(n.corpo ?? "").trim())?.[1]).find(Boolean);
+  const { data: notas } = await admin.from("chamado_mensagens").select("corpo, autor, interno").eq("chamado_id", ch.id).eq("autor", "sistema").eq("interno", true).order("criado_em", { ascending: true });
+  // ORDEM-DUET-1177: todos os registros das notas do sistema; mais de um, recusa — um pedido por registro.
+  const ids = new Set(((notas ?? []) as { corpo: string }[]).map((n) => NOTA_DO_PEDIDO.exec(String(n.corpo ?? "").trim())?.[1]?.toLowerCase()).filter((x): x is string => !!x));
+  if (ids.size > 1) return { ok: false, error: "Este chamado tem mais de um registro; abra um pedido por registro." };
+  const [pagamentoId] = [...ids];
   if (!pagamentoId) return { ok: false, error: "Este chamado não é um pedido de anulação de registro." };
   const pg = await lerPagamento(admin, pagamentoId);
   // ORDEM-DUET-1170 (N7): o pedido nasce sempre com o contrato do registro no contexto; o chamado tem de ser desse
