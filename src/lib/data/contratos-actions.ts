@@ -313,7 +313,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
 
   const { data, error } = await supabase
     .from("contratos")
-    .select(`id, property_id, aluguel_mensal, status, periodo, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, garantia, prazo_total_dias, properties(title, owner_id), contrato_blocos(caucao, caucao_status), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim)), ${ACERTOS_CAUCAO}`)
+    .select(`id, property_id, aluguel_mensal, status, periodo, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, garantia, properties(title, owner_id), contrato_blocos(caucao, caucao_status), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim)), ${ACERTOS_CAUCAO}`)
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
   if (error && opcoes.exigir) throw new Error(MSG_LOCACOES_NAO_CARREGARAM);
