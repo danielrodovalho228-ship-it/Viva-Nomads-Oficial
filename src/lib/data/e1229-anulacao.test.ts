@@ -32,7 +32,7 @@ const PG = "22222222-3333-4444-8555-666666666666";
 const CHAMADO = "33333333-4444-4555-8666-777777777777";
 const MOTIVO = "registro em duplicidade";
 
-type Pg = { id: string; contrato_id: string; bloco_id: string | null; tipo: string; parte: number; valor: number; confirmado_pelo_inquilino: boolean; anulado_em: string | null };
+type Pg = { id: string; contrato_id: string; bloco_id: string | null; tipo: string; parte: number; valor: number; encargos?: { rotulo: string; valor: number }[]; confirmado_pelo_inquilino: boolean; anulado_em: string | null };
 type Estado = {
   pg: Pg;
   doc: { id: string; numero: string; anulado_em: string | null } | null;
@@ -375,4 +375,47 @@ test("24. (R2) a chamada da função dá erro: a ação recusa com a mensagem de
   const r2 = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
   assert.equal(erro(r2), "Não foi possível ler o registro. Tente de novo em instantes.");
   assert.equal(g.__e1229Respostas.length, 0);
+});
+
+// ── E1241 (ORDENS-DUET 1213 e 1227; MAPA-E1241): a anulação lê o TOTAL do registro, não a coluna valor ───────────────
+// O registro complementar da prova (27/11): o valor do bloco é zero, os R$ 800 estão todos nos encargos.
+const COMPLEMENTAR = [{ rotulo: "Contas do período", valor: 550 }, { rotulo: "Limpeza de preparação", valor: 250 }];
+const R800 = /R\$\s800(,00)?\b/;
+
+test("32. (E1241) o dono anula um registro complementar (valor 0, R$ 800 em encargos): o aviso diz R$ 800, nunca R$ 0", async () => {
+  cenario();
+  E.pg = { ...E.pg, valor: 0, encargos: COMPLEMENTAR };
+  assert.equal((await anularRegistro({ pagamentoId: PG, motivo: MOTIVO })).ok, true);
+  const aviso = String(g.__e1229Avisos[0].tituloAviso).replace(/\u00a0/g, " ");
+  assert.match(aviso, R800);
+  assert.doesNotMatch(aviso, /R\$\s0\b/);
+  const corpo = String((g.__e1229Avisos[0].body as (n?: string) => string)("Ana")).replace(/\u00a0/g, " ");
+  assert.match(corpo, R800, "o e-mail também");
+});
+
+test("33. (E1241) o mesmo, já confirmado: o texto do pedido à Central diz R$ 800", async () => {
+  cenario({ confirmado: true });
+  E.pg = { ...E.pg, valor: 0, encargos: COMPLEMENTAR };
+  assert.equal((await anularRegistro({ pagamentoId: PG, motivo: MOTIVO })).ok, true);
+  const pedido = g.__e1229Chamados[0] as { mensagem: string };
+  assert.match(pedido.mensagem.replace(/\u00a0/g, " "), R800);
+});
+
+test("34. (E1241) a Central decide: o aviso ao morador e a nota interna dizem R$ 800", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.pg = { ...E.pg, valor: 0, encargos: COMPLEMENTAR };
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, true);
+  assert.match(String(g.__e1229Avisos[0].tituloAviso).replace(/\u00a0/g, " "), R800);
+  const nota = E.inserts.find((i) => i.tabela === "chamado_mensagens")!.linha;
+  assert.match(String(nota.corpo).replace(/\u00a0/g, " "), R800);
+});
+
+test("35. (E1241) guarda: o aluguel simples e a caução mostram o valor de hoje (na caução os encargos não contam)", async () => {
+  cenario();
+  assert.equal((await anularRegistro({ pagamentoId: PG, motivo: MOTIVO })).ok, true);
+  assert.match(String(g.__e1229Avisos[0].tituloAviso).replace(/\u00a0/g, " "), /R\$\s500\b/);
+  cenario({ tipo: "caucao" });
+  E.pg = { ...E.pg, encargos: [{ rotulo: "Contas do período", valor: 99 }] };
+  assert.equal((await anularRegistro({ pagamentoId: PG, motivo: MOTIVO })).ok, true);
+  assert.match(String(g.__e1229Avisos[0].tituloAviso).replace(/\u00a0/g, " "), /R\$\s500\b/);
 });
