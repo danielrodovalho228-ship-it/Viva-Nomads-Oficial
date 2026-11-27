@@ -104,7 +104,7 @@ async function anularNoBanco(
       email: u?.user?.email ?? undefined,
       userId: morador,
       pushUrl: `/dashboard/estadia/${pg.contrato_id}`,
-      refId: pg.contrato_id,
+      // Sem ref_id: o aviso da anulação nunca renova (nem é renovado por) outro aviso do contrato, como o de assinatura.
       prioridadeAviso: "normal",
       tituloAviso: `O proprietário anulou o registro ${registro} de ${formatBRLExato(valor)}: ${motivo}`,
       subject: ASSUNTOS.registroAnulado,
