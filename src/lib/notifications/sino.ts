@@ -183,34 +183,65 @@ export function resolvidosNaPratica<T extends AvisoTela>(avisos: readonly T[], s
   });
 }
 
+/** E1242: os avisos que a conferência do sino confere pelo contrato (assinar o contrato e a proposta de aditivo). */
+const EVENTOS_CONFERIDOS_PELO_CONTRATO = ["contract_status", "estadia_aditivo_proposto"] as const;
+const ehConferidoPeloContrato = (evento: string) => (EVENTOS_CONFERIDOS_PELO_CONTRATO as readonly string[]).includes(evento);
+
+/**
+ * E1128 + E1242: o aviso que já não vale sai do sino. O da visita de avaliação, resolvido pela ação ou pela conferência.
+ * O de assinar o contrato / do aditivo (E1242), quando a resolução veio do banco (a assinatura resolve) ou quando a
+ * conferência o resolveu e ele tem referência. Sem referência e só conferido pelo endereço, fica: pode ser de outra
+ * rotina que partilha o evento (E1247, ORDEM-1224).
+ */
+function saiDoSino(a: AvisoTela, resolvidosNoBanco: ReadonlySet<string> | undefined): boolean {
+  if (!a.resolvido_em) return false;
+  if (ehAvisoDeVisitaDeAvaliacao(a.evento)) return true;
+  if (!resolvidosNoBanco || !ehConferidoPeloContrato(a.evento)) return false;
+  return resolvidosNoBanco.has(a.id) || !!a.ref_id;
+}
+
 /**
  * E1128: "um laudo assinado apaga o alerta de visita". O aviso de visita de avaliação já resolvido (pela ação ou pela
  * conferência do estado atual) sai do sino: não aparece entre os recentes nem conta como não lido. Na lista de todos os
- * avisos ele continua, marcado "resolvido" (é o histórico).
+ * avisos ele continua, marcado "resolvido" (é o histórico). E1242: com `resolvidosNoBanco` (os ids que já vinham
+ * resolvidos do banco), o mesmo para o aviso de assinar o contrato e o do aditivo (ver saiDoSino).
  */
-export function semVisitaDeAvaliacaoVencida<T extends AvisoTela>(avisos: readonly T[]): { visiveis: T[]; naoLidasADescontar: number } {
-  const vencido = (a: T) => !!a.resolvido_em && ehAvisoDeVisitaDeAvaliacao(a.evento);
+export function semVisitaDeAvaliacaoVencida<T extends AvisoTela>(avisos: readonly T[], resolvidosNoBanco?: ReadonlySet<string>): { visiveis: T[]; naoLidasADescontar: number } {
+  const vencido = (a: T) => saiDoSino(a, resolvidosNoBanco);
   return { visiveis: avisos.filter((a) => !vencido(a)), naoLidasADescontar: avisos.filter((a) => vencido(a) && !a.lido_em).length };
 }
 
 /**
  * E1128: o resumo do sino depois da conferência. O resumo (contagem e maior prioridade) é lido do banco ANTES de a
- * conferência dar o aviso de visita por vencido; aqui o vencido sai da lista, da contagem e também da COR: se a maior
+ * conferência dar o aviso por vencido; aqui o vencido sai da lista, da contagem e também da COR: se a maior
  * prioridade era a de um vencido ainda não lido, é relida dos avisos que ficam. Só baixa nesse caso — a prioridade de
  * outro aviso (um crítico mais antigo, fora da lista) não se perde.
  */
 export function resumoSemVisitaVencida<T extends AvisoTela>(
   resumo: { naoLidas: number; maiorPrioridade: PrioridadeAviso | null },
   avisos: readonly T[],
+  resolvidosNoBanco?: ReadonlySet<string>,
 ): { visiveis: T[]; naoLidas: number; maiorPrioridade: PrioridadeAviso | null } {
-  const { visiveis, naoLidasADescontar } = semVisitaDeAvaliacaoVencida(avisos);
+  const { visiveis, naoLidasADescontar } = semVisitaDeAvaliacaoVencida(avisos, resolvidosNoBanco);
   const naoLidas = Math.max(0, resumo.naoLidas - naoLidasADescontar);
   let maiorPrioridade = resumo.maiorPrioridade;
   if (naoLidas === 0) maiorPrioridade = null;
-  else if (maiorPrioridade && avisos.some((a) => !!a.resolvido_em && !a.lido_em && ehAvisoDeVisitaDeAvaliacao(a.evento) && a.prioridade === maiorPrioridade)) {
+  else if (maiorPrioridade && avisos.some((a) => saiDoSino(a, resolvidosNoBanco) && !a.lido_em && a.prioridade === maiorPrioridade)) {
     maiorPrioridade = resumoDosAvisos(visiveis.filter((a) => !a.lido_em)).maiorPrioridade;
   }
   return { visiveis, naoLidas, maiorPrioridade };
+}
+
+/**
+ * E1128 + E1242 (a rede): os avisos que a conferência acabou de dar por resolvidos e que ficam gravados no banco, para
+ * todas as telas concordarem. A visita de avaliação, como no E1128; o de assinar e o do aditivo SÓ com referência
+ * (ORDEM-1224): sem ela, o aviso pode ser de outra rotina com o mesmo evento, e a rede não o resolve.
+ */
+export function resolucoesConferidasAGravar<T extends AvisoTela>(antes: readonly T[], conferidos: readonly T[]): string[] {
+  const jaResolvido = new Map(antes.map((a) => [a.id, a.resolvido_em]));
+  return conferidos
+    .filter((a) => a.resolvido_em && !jaResolvido.get(a.id) && (ehAvisoDeVisitaDeAvaliacao(a.evento) || (ehConferidoPeloContrato(a.evento) && !!a.ref_id)))
+    .map((a) => a.id);
 }
 
 const ROTULO_ACAO = { assinou: "Assinar o contrato", respondeu: "Responder a proposta", confirmou: "Confirmar a visita" } as const;
