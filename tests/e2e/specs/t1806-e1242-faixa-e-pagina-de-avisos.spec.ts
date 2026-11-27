@@ -6,13 +6,14 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   completa de avisos (com o filtro "Críticos"), não só o sino. A ronda de prova das 15h de 27/11 viu ao vivo a faixa e a
   página a mostrarem como crítico vivo um aviso de assinar já resolvido.
   Um contrato assinado pelos dois. Para cada parte (dono e morador), dois avisos críticos de assinar deste contrato,
-  COM a referência: um já resolvido no banco (a assinatura resolveu) e um esquecido por resolver. Para o dono, ainda um
-  aviso crítico SEM referência (o caso do E1247), que tem de continuar vivo.
-   1. dono, a faixa do painel: nenhum dos dois de assinar aparece; aparece só o sem referência, sem "e mais N";
+  COM a referência: um já resolvido no banco (a assinatura resolveu) e um esquecido por resolver. O controlo: um 2.º
+  contrato que nenhum dos dois assinou, com o aviso crítico de assinar de cada um — esse é vivo e tem de aparecer.
+   1. dono, a faixa do painel: mostra só o vivo (o do contrato por assinar), sem "e mais N" — os de assinar resolvidos
+      não aparecem;
    2. dono, a página completa com "Críticos": os dois de assinar não aparecem como críticos vivos (ou não aparecem, ou
-      aparecem marcados "resolvido"); o sem referência continua lá, vivo;
-   3. morador, a faixa: nenhum aviso crítico (os dois dele estão resolvidos na prática);
-   4. morador, a página completa com "Críticos": os dois de assinar não aparecem como críticos vivos.
+      aparecem marcados "resolvido"); o vivo continua lá, sem "resolvido";
+   3. morador, a faixa: o mesmo que o dono;
+   4. morador, a página completa com "Críticos": o mesmo que o dono.
   Simulação declarada: contrato, assinaturas e avisos gravados pelo laboratório; a leitura é a das telas, com a sessão
   de cada um. Laboratório; não é prova ao vivo no site.
 */
@@ -25,7 +26,8 @@ const horas = (h: number) => new Date(Date.now() - h * 3600_000).toISOString();
 const T = {
   donoResolvido: `Assinar o contrato — t1806 dono resolvido ${sufixo}`,
   donoEsquecido: `Assinar o contrato — t1806 dono esquecido ${sufixo}`,
-  donoSemRef: `Atualização do seu contrato — t1806 sem referência ${sufixo}`,
+  donoVivo: `Assinar o contrato — t1806 dono por assinar ${sufixo}`,
+  inqVivo: `Assinar o contrato — t1806 morador por assinar ${sufixo}`,
   inqResolvido: `Assinar o contrato — t1806 morador resolvido ${sufixo}`,
   inqEsquecido: `Assinar o contrato — t1806 morador esquecido ${sufixo}`,
 };
@@ -56,23 +58,28 @@ test.describe("T1806 — E1242: a faixa e a página completa não mostram como v
     ids.inq = await criarConta(inq, senha);
     ids.imovel = await criarImovelPronto(ids.dono, `Studio faixa ${sufixo}`, { ativo: true, preco: 3200 });
     const agora = new Date().toISOString();
-    const { data: c, error: ec } = await adm()
-      .from("contratos")
-      .insert({
-        property_id: ids.imovel, tenant_id: ids.inq, owner_plan: "free", faixa: "temporada", prazo_total_dias: 120, aluguel_mensal: 3200,
-        tamanho_bloco_meses: 2, comissao_percent: 0.12, comissao_valor: 1536, qtd_ocupantes: 1, status: "ativo", garantia: "caucao",
-        assinado_proprietario_em: agora, assinado_inquilino_em: agora,
-      })
-      .select("id")
-      .single();
-    if (ec) throw ec;
-    ids.contrato = c.id as string;
+    const contrato = async (assinado: boolean) => {
+      const { data: c, error: ec } = await adm()
+        .from("contratos")
+        .insert({
+          property_id: ids.imovel, tenant_id: ids.inq, owner_plan: "free", faixa: "temporada", prazo_total_dias: 120, aluguel_mensal: 3200,
+          tamanho_bloco_meses: 2, comissao_percent: 0.12, comissao_valor: 1536, qtd_ocupantes: 1, status: "ativo", garantia: "caucao",
+          assinado_proprietario_em: assinado ? agora : null, assinado_inquilino_em: assinado ? agora : null,
+        })
+        .select("id")
+        .single();
+      if (ec) throw ec;
+      return c.id as string;
+    };
+    ids.contrato = await contrato(true);
+    ids.porAssinar = await contrato(false);
     const base = { evento: "contract_status", prioridade: "critico" };
     const linhas = [
       // Os de assinar mais recentes primeiro: se algum vazar, é ele que a faixa mostra.
       { chave: "donoResolvido", usuario_id: ids.dono, titulo: T.donoResolvido, url: `/dashboard/contratos/${ids.contrato}`, ref_id: ids.contrato, criado_em: horas(1), resolvido_em: horas(0.5) },
       { chave: "donoEsquecido", usuario_id: ids.dono, titulo: T.donoEsquecido, url: `/dashboard/contratos/${ids.contrato}`, ref_id: ids.contrato, criado_em: horas(2), resolvido_em: null },
-      { chave: "donoSemRef", usuario_id: ids.dono, titulo: T.donoSemRef, url: `/dashboard/contratos/${ids.contrato}`, ref_id: null, criado_em: horas(5), resolvido_em: null },
+      { chave: "donoVivo", usuario_id: ids.dono, titulo: T.donoVivo, url: `/dashboard/contratos/${ids.porAssinar}`, ref_id: ids.porAssinar, criado_em: horas(5), resolvido_em: null },
+      { chave: "inqVivo", usuario_id: ids.inq, titulo: T.inqVivo, url: `/dashboard/estadia/${ids.porAssinar}`, ref_id: ids.porAssinar, criado_em: horas(5), resolvido_em: null },
       { chave: "inqResolvido", usuario_id: ids.inq, titulo: T.inqResolvido, url: `/dashboard/estadia/${ids.contrato}`, ref_id: ids.contrato, criado_em: horas(1), resolvido_em: horas(0.5) },
       { chave: "inqEsquecido", usuario_id: ids.inq, titulo: T.inqEsquecido, url: `/dashboard/estadia/${ids.contrato}`, ref_id: ids.contrato, criado_em: horas(2), resolvido_em: null },
     ];
@@ -84,48 +91,47 @@ test.describe("T1806 — E1242: a faixa e a página completa não mostram como v
   });
   test.afterAll(async () => {
     await adm().from("avisos").delete().in("usuario_id", [ids.dono!, ids.inq!].filter(Boolean));
-    if (ids.contrato) await adm().from("contratos").delete().eq("id", ids.contrato);
+    const cts = [ids.contrato, ids.porAssinar].filter((x): x is string => !!x);
+    if (cts.length) await adm().from("contratos").delete().in("id", cts);
     await apagarContas([ids.inq, ids.dono]);
   });
 
-  test("1. dono, a faixa do painel: só o aviso sem referência, sem 'e mais N' — os de assinar resolvidos não aparecem", async ({ browser }) => {
-    const p = await abrir(browser, dono.email);
+  async function faixaSoComOVivo(p: Page, vivo: string, resolvidos: string[]) {
     await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
     const faixa = p.getByTestId("faixa-critico");
-    await expect(faixa, "a faixa mostra o crítico vivo (o sem referência)").toContainText(T.donoSemRef, { timeout: 30_000 });
-    await expect(faixa, "o de assinar já resolvido não é a faixa").not.toContainText(T.donoResolvido);
-    await expect(faixa, "o de assinar esquecido (contrato assinado) não é a faixa").not.toContainText(T.donoEsquecido);
-    await expect(p.getByTestId("faixa-critico-mais"), "nenhum outro crítico vivo além do sem referência").toHaveCount(0);
-    await p.context().close();
-  });
+    await expect(faixa, "a faixa mostra o crítico vivo (o do contrato por assinar)").toContainText(vivo, { timeout: 30_000 });
+    for (const t of resolvidos) await expect(faixa, `"${t}" não é a faixa`).not.toContainText(t);
+    await expect(p.getByTestId("faixa-critico-mais"), "nenhum outro crítico vivo além do controlo").toHaveCount(0);
+  }
+  async function paginaSoComOVivo(p: Page, vivo: string, resolvidos: string[]) {
+    await paginaCriticos(p);
+    const v = p.getByTestId("avisos-item").filter({ hasText: vivo });
+    await expect(v, "o vivo está na página com 'Críticos'").toHaveCount(1, { timeout: 30_000 });
+    await expect(v, "o vivo não aparece como resolvido").not.toContainText("resolvido");
+    for (const t of resolvidos) await naoEhCriticoVivo(p, t);
+  }
 
-  test("2. dono, a página completa com 'Críticos': os de assinar não são críticos vivos; o sem referência continua vivo", async ({ browser }) => {
+  test("1. dono, a faixa do painel: só o vivo, sem 'e mais N' — os de assinar resolvidos não aparecem", async ({ browser }) => {
     const p = await abrir(browser, dono.email);
-    await paginaCriticos(p);
-    const semRef = p.getByTestId("avisos-item").filter({ hasText: T.donoSemRef });
-    await expect(semRef, "o sem referência continua na página").toHaveCount(1, { timeout: 30_000 });
-    await expect(semRef, "o sem referência continua vivo").not.toContainText("resolvido");
-    await naoEhCriticoVivo(p, T.donoResolvido);
-    await naoEhCriticoVivo(p, T.donoEsquecido);
+    await faixaSoComOVivo(p, T.donoVivo, [T.donoResolvido, T.donoEsquecido]);
     await p.context().close();
   });
 
-  test("3. morador, a faixa: nenhum aviso crítico (os dois de assinar estão resolvidos na prática)", async ({ browser }) => {
-    const p = await abrir(browser, inq.email);
-    await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
-    await expect(p.locator("main, body").first()).toBeVisible({ timeout: 30_000 });
-    // Dá tempo à faixa (cliente) de ler a API antes de afirmar a ausência.
-    await p.waitForResponse((r) => r.url().includes("/api/painel/avisos"), { timeout: 30_000 }).catch(() => undefined);
-    await expect(p.getByTestId("faixa-critico").filter({ hasText: T.inqResolvido }), "o resolvido não é a faixa").toHaveCount(0);
-    await expect(p.getByTestId("faixa-critico").filter({ hasText: T.inqEsquecido }), "o esquecido não é a faixa").toHaveCount(0);
+  test("2. dono, a página completa com 'Críticos': os de assinar resolvidos não são críticos vivos; o vivo continua", async ({ browser }) => {
+    const p = await abrir(browser, dono.email);
+    await paginaSoComOVivo(p, T.donoVivo, [T.donoResolvido, T.donoEsquecido]);
     await p.context().close();
   });
 
-  test("4. morador, a página completa com 'Críticos': os dois de assinar não são críticos vivos", async ({ browser }) => {
+  test("3. morador, a faixa: só o vivo, sem 'e mais N'", async ({ browser }) => {
     const p = await abrir(browser, inq.email);
-    await paginaCriticos(p);
-    await naoEhCriticoVivo(p, T.inqResolvido);
-    await naoEhCriticoVivo(p, T.inqEsquecido);
+    await faixaSoComOVivo(p, T.inqVivo, [T.inqResolvido, T.inqEsquecido]);
+    await p.context().close();
+  });
+
+  test("4. morador, a página completa com 'Críticos': os de assinar resolvidos não são críticos vivos; o vivo continua", async ({ browser }) => {
+    const p = await abrir(browser, inq.email);
+    await paginaSoComOVivo(p, T.inqVivo, [T.inqResolvido, T.inqEsquecido]);
     await p.context().close();
   });
 });
