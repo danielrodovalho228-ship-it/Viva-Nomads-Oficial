@@ -3,6 +3,7 @@
 import { after } from "next/server";
 // E1044: as listas de pagamentos do contrato com ordem fixa (como o admin).
 import { ordenarPagamentos } from "@/lib/pagamentos/ordem-pagamentos";
+import { anuladosAntesDaConfirmacao, type AnuladoAntesDaConfirmacao } from "@/lib/anulados-antes-da-confirmacao";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { createClient } from "@/lib/supabase/server";
 import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
@@ -112,6 +113,8 @@ export interface ContratoView {
   criadoEm: string;
   blocos: BlocoView[];
   pagamentos: PagamentoView[];
+  /** E1241: os anulados antes da confirmação, só para a linha com o selo (fora dos totais). */
+  anuladosPendentes: AnuladoAntesDaConfirmacao[];
   /** Estado único da caução (o mesmo da Garantias e da tela do inquilino). */
   caucao: EstadoCaucao;
   /** E544: janela de avaliação aberta (contrato encerrado há até 14 dias) — a mesma regra do servidor (0089). */
@@ -272,6 +275,8 @@ export interface LocacaoView {
   minhaAvaliacao: string | null;
   /** Pagamentos registrados pelo proprietário (o inquilino confirma → recibo). */
   pagamentos: PagamentoView[];
+  /** E1241: os anulados antes da confirmação, só para a linha com o selo (fora dos totais). */
+  anuladosPendentes: AnuladoAntesDaConfirmacao[];
   /** Valor e estado da caução, pela mesma função dos Contratos e da Garantias (L2-B, item 12). */
   caucao: EstadoCaucao;
 }
@@ -350,6 +355,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
       encerradoEm: (c.encerrado_em as string | null) ?? null,
       minhaAvaliacao: minhasAvaliacoes.get(String(c.id)) ?? null,
       pagamentos,
+      anuladosPendentes: anuladosAntesDaConfirmacao(ordenarPagamentos((c.pagamentos_bloco as Record<string, unknown>[]) ?? []), (pg) => toPagamento(pg, Number(c.aluguel_mensal), Number(c.prazo_total_dias)).rotulo),
       caucao: caucaoDaLinha(
         c,
         ((c.contrato_blocos as Record<string, unknown>[]) ?? []).map((b) => ({ caucao: Number(b.caucao) || 0, caucaoStatus: String(b.caucao_status ?? "pendente") })),
@@ -457,6 +463,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
       criadoEm: String(c.created_at),
       blocos,
       pagamentos,
+      anuladosPendentes: anuladosAntesDaConfirmacao(ordenarPagamentos((c.pagamentos_bloco as Record<string, unknown>[]) ?? []), (pg) => toPagamento(pg, Number(c.aluguel_mensal), Number(c.prazo_total_dias)).rotulo),
       caucao: caucaoDaLinha(c, blocos, pagamentos),
       podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
       fimParaAvaliacao: (c.encerrado_em as string | null) ?? blocos[blocos.length - 1]?.fim ?? null,

@@ -43,6 +43,7 @@ function buildDemoLocacoes(exemplos: readonly DemoContract[]): LocacaoView[] {
     encerradoEm: null,
     minhaAvaliacao: null,
     pagamentos: [],
+    anuladosPendentes: [],
     caucao: estadoCaucao({ blocos: [{ caucao: c.valorMes, caucaoStatus: "comprovada" }], pagamentos: [] }),
   }));
 }
@@ -131,7 +132,7 @@ export function LocacoesClient({
               {/* Confirmar pagamentos → recibo; documentos; devolução da caução. */}
               {!demoOn && (
                 <>
-                  <ConfirmarPagamentos pagamentos={l.pagamentos} />
+                  <ConfirmarPagamentos pagamentos={l.pagamentos} anulados={l.anuladosPendentes} />
                   {extras[l.id]?.falhou ? (
                     <AvisoDocumentosFalhou />
                   ) : (
