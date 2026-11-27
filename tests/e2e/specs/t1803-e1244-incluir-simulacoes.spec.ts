@@ -6,7 +6,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } 
   T1803 — E1244 (ORDENS-DUET 1213, 1219 e 1220): "Incluir simulações" na fila de atendimento da Central.
    1. desligada (o padrão), a fila é a de hoje: o chamado de simulação não aparece;
    2. ligada, aparece marcado "Simulação", sem relógio de prazo, e abre o detalhe;
-   3. as contagens não mudam com a opção: a bolinha da aba "aprovação" é a mesma.
+   3. as contagens não mudam com a opção: a bolinha da aba "aprovação" é a mesma;
+   4. (ORDEM-DUET 1231, ressalva da Pista 3) com uma simulação em "aguardando_aprovacao": a bolinha da aprovação é IGUAL
+      com e sem a opção, a simulação não aparece na aba aprovação, e a aba não oferece a opção.
   Simulação declarada: o chamado de simulação é aberto por uma conta de teste do laboratório (o gatilho da 0135 marca
   simulacao = true). Laboratório; não é prova ao vivo no site.
 */
@@ -14,6 +16,7 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const pessoa = { email: `sim.t1803.${sufixo}@lab.vivanomads.test`, nome: "Sílvia Simula Chamado", role: "tenant" as const };
 const ASSUNTO = `Simulação t1803 ${sufixo}`;
+const ASSUNTO_APROVACAO = `Simulação t1803 aprovação ${sufixo}`;
 const ids: Record<string, string | undefined> = {};
 
 test.describe("T1803 — E1244: a opção 'Incluir simulações' na fila da Central @E1244", () => {
@@ -38,7 +41,8 @@ test.describe("T1803 — E1244: a opção 'Incluir simulações' na fila da Cent
     ids.chamado = data.id as string;
   });
   test.afterAll(async () => {
-    if (ids.chamado) await adm().from("chamados").delete().eq("id", ids.chamado);
+    const chs = [ids.chamado, ids.aprovacao].filter((x): x is string => !!x);
+    if (chs.length) await adm().from("chamados").delete().in("id", chs);
     await apagarContas([ids.pessoa]);
   });
 
@@ -63,5 +67,32 @@ test.describe("T1803 — E1244: a opção 'Incluir simulações' na fila da Cent
     await linha.click();
     await expect(page.getByTestId("chamado-cabecalho")).toContainText(ASSUNTO, { timeout: 30_000 });
     await expect(page.getByTestId("chamado-cabecalho").getByTestId("chamado-simulacao")).toHaveText("Simulação");
+  });
+
+  test("4. uma simulação em 'aguardando_aprovacao': a bolinha da aprovação é igual com e sem a opção, e a aba não a mostra", async ({ page }) => {
+    const agora = Date.now();
+    const { data, error } = await adm()
+      .from("chamados")
+      .insert({
+        usuario_id: ids.pessoa, tipo: "suporte", categoria: "duvida", prioridade: "p3", canal: "site", assunto: ASSUNTO_APROVACAO, status: "aguardando_aprovacao",
+        responsavel_tipo: "humano", prazo_primeira_resposta: new Date(agora - 3_600_000).toISOString(), prazo_resolucao: new Date(agora + 86_400_000).toISOString(),
+      })
+      .select("id, simulacao, status")
+      .single();
+    if (error) throw error;
+    expect(data.simulacao, "conta de teste → simulação").toBe(true);
+    expect(data.status).toBe("aguardando_aprovacao");
+    ids.aprovacao = data.id as string;
+    await page.goto(`/admin/atendimento?aba=fila`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("checkbox", { name: "Incluir simulações" })).toBeVisible({ timeout: 30_000 });
+    const sem = await bolinhaAprovacao(page);
+    await page.goto(`/admin/atendimento?aba=fila&simulacoes=1`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("checkbox", { name: "Incluir simulações" })).toBeChecked({ timeout: 30_000 });
+    const com = await bolinhaAprovacao(page);
+    expect(com, "a bolinha da aprovação é IGUAL com e sem a opção, com uma simulação à espera de aprovação").toBe(sem);
+    await page.goto(`/admin/atendimento?aba=aprovacao&simulacoes=1`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("link", { name: /aprova/i }).first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(ASSUNTO_APROVACAO), "a simulação não entra na aba aprovação").toHaveCount(0);
+    await expect(page.getByRole("checkbox", { name: "Incluir simulações" }), "a aba aprovação não oferece a opção").toHaveCount(0);
   });
 });
