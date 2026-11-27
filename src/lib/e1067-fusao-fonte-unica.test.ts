@@ -123,6 +123,12 @@ test("13. os sítios levam o prazo_total_dias do contrato (sem recalcular)", () 
   assert.match(cc, /duracaoDoBloco\(\{ numero: bloco\.numeroBloco, meses: bloco\.meses, inicio: bloco\.inicio, fim: bloco\.fim \}, prazoTotalDias\)\.curto/);
   const acoes = ler("lib/data/contratos-actions.ts");
   assert.match(acoes, /toPagamento\(pg, Number\(c\.aluguel_mensal\), Number\(c\.prazo_total_dias\)\)/);
+  // Cada leitura de contratos que alimenta o toPagamento traz o prazo_total_dias (a lista da moradora não o lia: NaN →
+  // "2 meses" no "Pagamentos para confirmar" de um contrato de 31 dias — t1708, caso 2).
+  const leituras = acoes.match(/\.select\(`[^`]*pagamentos_bloco\(\*, contrato_blocos\(numero_bloco[^`]*`\)/g) ?? [];
+  assert.ok(leituras.length >= 2, "as leituras da lista do dono e da moradora");
+  for (const sel of leituras) assert.match(sel, /prazo_total_dias|\$\{COLUNAS_CONTRATO_PARTES\}/, sel.slice(0, 90));
+  assert.match(acoes, /COLUNAS_CONTRATO_PARTES =\s*"[^"]*prazo_total_dias/);
   const emitir = ler("lib/fiscal/emitir.ts");
   assert.match(emitir, /contratos\(aluguel_mensal, prazo_total_dias\)/);
   assert.match(emitir, /prazoTotalDias: Number\(contrato\?\.prazo_total_dias\)/);
