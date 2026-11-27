@@ -109,12 +109,14 @@ test.describe("T1746 — E1128: o aviso da visita de avaliação lê o estado at
       // A conferência fica gravada: os dois avisos do imóvel A estão resolvidos; o do imóvel B, não.
       await expect.poll(resolvidos, { timeout: 15_000 }).toEqual([`Visita de avaliação agendada · ${titulos.a}`, `Visita de avaliação amanhã · ${titulos.a}`].sort());
 
-      // Na lista de todos os avisos, o histórico continua, marcado.
+      // E1242 reaberto (ORDEM-DUET 1247, asserção alterada — a lei do E777: uma regra de resolução para todas as
+      // superfícies): a página completa também deixa de mostrar os resolvidos; só fica o aviso do imóvel B.
       await p.goto("/dashboard/notificacoes#avisos", { waitUntil: "domcontentloaded" });
       const lista = p.getByTestId("avisos-caixa").getByTestId("avisos-item");
-      await expect(lista).toHaveCount(3, { timeout: 30_000 });
-      await expect(lista.filter({ hasText: `Visita de avaliação agendada · ${titulos.a}` })).toContainText("resolvido");
-      await expect(lista.filter({ hasText: `Visita de avaliação amanhã · ${titulos.a}` })).toContainText("resolvido");
+      await expect(lista).toHaveCount(1, { timeout: 30_000 });
+      await expect(lista.filter({ hasText: `Visita de avaliação agendada · ${titulos.a}` })).toHaveCount(0);
+      await expect(lista.filter({ hasText: `Visita de avaliação amanhã · ${titulos.a}` })).toHaveCount(0);
+      await expect(lista.filter({ hasText: titulos.b })).toHaveCount(1);
       await expect(lista.filter({ hasText: titulos.b })).not.toContainText("resolvido");
       await p.getByTestId("avisos-caixa").scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t1746-1-lista-${w}.png` });
