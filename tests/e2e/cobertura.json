@@ -4359,6 +4359,18 @@
         "t191-ajuda-publicacao"
       ]
     },
+    "src/lib/data/anulacao-actions.ts#anularRegistro": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/anulacao-actions.ts#anularRegistroPelaCentral": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
+    },
     "src/lib/data/atendimento-actions.ts#abrirChamado": {
       "personas": [
         "inquilino",

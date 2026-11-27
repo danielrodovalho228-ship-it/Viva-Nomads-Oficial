@@ -17,6 +17,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { notify } from "@/lib/notifications";
+import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { formatBRLExato } from "@/lib/precos";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 
@@ -106,7 +107,7 @@ async function anularNoBanco(
       refId: pg.contrato_id,
       prioridadeAviso: "normal",
       tituloAviso: `O proprietário anulou o registro ${registro} de ${formatBRLExato(valor)}: ${motivo}`,
-      subject: "Um registro de pagamento foi anulado",
+      subject: ASSUNTOS.registroAnulado,
       body: (n?: string) => `Olá${n ? " " + n : ""}, o proprietário anulou o registro ${registro} de ${formatBRLExato(valor)} do contrato ${numeroPublicoContrato(pg.contrato_id)}. Motivo: ${motivo}.`,
       ctaLabel: "Ver a estadia",
     });
