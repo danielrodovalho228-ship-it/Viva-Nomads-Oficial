@@ -1,5 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarAdmin, criarConta, criarImovelPronto, entrar, liberarLimiteChamados, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { authFile } from "../fixtures/auth";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, liberarLimiteChamados, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
   T1800 — E1229 (ORDENS-DUET 1143, 1160, 1162 e 1168): a anulação de registros pela tela, o caminho inteiro.
@@ -17,7 +18,6 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t1800.${sufixo}@lab.vivanomads.test`, nome: "Iara Anula Prado", role: "owner" as const };
 const inq = { email: `inq.t1800.${sufixo}@lab.vivanomads.test`, nome: "Caio Anula Mota", role: "tenant" as const };
-const equipe = { email: `equipe.t1800.${sufixo}@lab.vivanomads.test`, nome: "Equipe Anulação" };
 const ids: Record<string, string | undefined> = {};
 const dia = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 const MOTIVO_DONO = "valor lançado no bloco errado";
@@ -41,8 +41,7 @@ test.describe("T1800 — E1229: a anulação de registros pela tela, do dono à 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.inq = await criarConta(inq, senha);
-    ids.equipe = await criarAdmin(equipe.email, equipe.nome, senha);
-    await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.inq, ids.equipe]);
+    await adm().from("profiles").update({ is_teste: true }).in("id", [ids.dono, ids.inq]);
     await liberarLimiteChamados();
     ids.imovel = await criarImovelPronto(ids.dono, `Studio anulação ${sufixo}`, { ativo: true, preco: 3200 });
     const agora = new Date().toISOString();
@@ -85,7 +84,7 @@ test.describe("T1800 — E1229: a anulação de registros pela tela, do dono à 
       const chs = ((ch ?? []) as { id: string }[]).map((x) => x.id);
       if (chs.length) await adm().from("chamados").delete().in("id", chs);
     }
-    await apagarContas([ids.inq, ids.dono, ids.equipe]);
+    await apagarContas([ids.inq, ids.dono]);
   });
 
   test("1. o dono anula ANTES da confirmação: o registro, a trilha (dono) e o aviso ao morador", async ({ browser }) => {
@@ -127,7 +126,10 @@ test.describe("T1800 — E1229: a anulação de registros pela tela, do dono à 
   });
 
   test("3. a equipe anula no chamado: caminho 'central', o número do chamado na trilha, e uma só anulação", async ({ browser }) => {
-    const p = await abrir(browser, equipe.email, `/admin/atendimento/${ids.chamado}`);
+    // O painel da equipe exige a sessão com o 2.º fator (AAL2): entra o admin do laboratório (a sessão do global-setup).
+    const ctx = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
+    const p = await ctx.newPage();
+    await p.goto(`/admin/atendimento/${ids.chamado}`, { waitUntil: "domcontentloaded" });
     const caixa = p.getByTestId("central-anular");
     await expect(caixa).toBeVisible({ timeout: 20_000 });
     await caixa.getByTestId("central-anular-motivo").fill(MOTIVO_CENTRAL);
@@ -136,7 +138,8 @@ test.describe("T1800 — E1229: a anulação de registros pela tela, do dono à 
     expect((await pagamento(ids.confirmado!)).anulado_motivo).toBe(MOTIVO_CENTRAL);
     const ev = await eventos();
     expect(ev.length, "a do dono e a da Central").toBe(2);
-    expect(ev[1].autor_id).toBe(ids.equipe);
+    expect(ev[1].autor_id).not.toBe(ids.dono);
+    expect((await adm().from("profiles").select("role").eq("id", ev[1].autor_id).single()).data?.role, "quem anulou é da equipe").toBe("admin");
     expect(ev[1].dados).toMatchObject({ caminho: "central", pagamento_id: ids.confirmado, motivo: MOTIVO_CENTRAL });
     expect(String(ev[1].dados.chamado ?? "")).not.toBe("");
     // Outra vez: a ação recusa (já anulado) — nenhuma 2.ª anulação.
