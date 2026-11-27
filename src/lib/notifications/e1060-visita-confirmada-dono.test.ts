@@ -43,7 +43,9 @@ test("E1060: sem a leitura das visitas (falhou), o aviso de visita não é escon
 });
 
 test("E1060: a rota do sino confere as visitas do 'Pedido de visita', e a página de visitas abre a lista do dono quando a pessoa só recebeu visitas", () => {
-  const rota = ler("app/api/painel/avisos/route.ts");
+  // E1242 reaberto (ORDEM-DUET 1247, asserção alterada): a leitura e a conferência mudaram da rota para avisos-telas.ts,
+  // a UMA leitura do sino, da faixa e da página completa.
+  const rota = ler("lib/data/avisos-telas.ts");
   assert.match(rota, /visita_pedida/);
   const situacao = ler("lib/notifications/situacao-contratos.ts");
   assert.match(situacao, /from\("visitas_video"\)[\s\S]*?\.eq\("owner_id", userId\)[\s\S]*?\.eq\("status", "pedido"\)/);
