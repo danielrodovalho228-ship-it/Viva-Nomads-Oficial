@@ -95,3 +95,16 @@ test("5. a tela: o dono vê a linha do pedido (e não volta a pedir) enquanto o 
   assert.match(tela, /anular && r\.pedidoAnulacao && !r\.anulado/);
   assert.match(tela, /anular && !r\.anulado && !r\.pedidoAnulacao && <AnularRegistro/);
 });
+
+// ── ORDEM-DUET-1226 (U2 e U2b): cada filtro da nota sozinho ─────────────────────────────────────────────────────────
+test("6. (U2) uma nota [anulacao] INTERNA escrita por um ADMIN (não o sistema): a linha não aparece", async () => {
+  g.__e1072Sessao = sessao();
+  g.__e1072Admin = admin({ notas: [{ chamado_id: CH, corpo: `[anulacao] pagamento=${PG}`, autor: "admin", interno: true }] });
+  assert.equal((await recibo()).pedidoAnulacao ?? null, null);
+});
+
+test("7. (U2b) uma nota [anulacao] do SISTEMA mas NÃO interna: a linha não aparece", async () => {
+  g.__e1072Sessao = sessao();
+  g.__e1072Admin = admin({ notas: [{ chamado_id: CH, corpo: `[anulacao] pagamento=${PG}`, autor: "sistema", interno: false }] });
+  assert.equal((await recibo()).pedidoAnulacao ?? null, null);
+});
