@@ -197,7 +197,7 @@ function saiDoSino(a: AvisoTela, resolvidosNoBanco: ReadonlySet<string> | undefi
   if (!a.resolvido_em) return false;
   if (ehAvisoDeVisitaDeAvaliacao(a.evento)) return true;
   if (!resolvidosNoBanco || !ehConferidoPeloContrato(a.evento)) return false;
-  return resolvidosNoBanco.has(a.id) || !!a.ref_id;
+  return resolvidosNoBanco.has(a.id);
 }
 
 /**
