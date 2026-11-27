@@ -11,7 +11,7 @@ export interface AnuladoAntesDaConfirmacao {
 
 export function anuladosAntesDaConfirmacao(rows: Record<string, unknown>[], rotuloDe: (r: Record<string, unknown>) => string): AnuladoAntesDaConfirmacao[] {
   return rows
-    .filter((r) => r.anulado_em && !r.confirmado_pelo_inquilino)
+    .filter((r) => r.anulado_em)
     .map((r) => {
       const motivo = typeof r.anulado_motivo === "string" ? r.anulado_motivo.trim() : "";
       return { id: String(r.id), rotulo: rotuloDe(r), motivo: motivo || null };
