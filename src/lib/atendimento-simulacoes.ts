@@ -6,5 +6,5 @@ export const LEGENDA_SEM_SIMULACOES = "Simulações ficam fora. Ligue 'Incluir s
 export const LEGENDA_COM_SIMULACOES = "Incluindo simulações, marcadas como 'Simulação'. Elas não entram nos números.";
 
 export function legendaDaFila(ligada: boolean): string {
-  return ligada ? LEGENDA_COM_SIMULACOES : LEGENDA_SEM_SIMULACOES;
+  return ligada ? LEGENDA_SEM_SIMULACOES : LEGENDA_COM_SIMULACOES;
 }
