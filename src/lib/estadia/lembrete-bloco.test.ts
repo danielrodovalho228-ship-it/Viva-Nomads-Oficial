@@ -33,7 +33,7 @@ test("não repete: chave única por (contrato, bloco)", () => {
 });
 
 test("conteúdo: assunto, datas, valor com a conta aberta, pagamento direto, um botão; nenhum termo proibido", () => {
-  const e = emailLembreteBloco(B, { imovel: "Studio Centro", valorMensal: 3200 });
+  const e = emailLembreteBloco(B, { imovel: "Studio Centro", valorMensal: 3200, prazoTotalDias: 120 });
   assert.equal(e.assunto, "O bloco 2 da sua estadia começa em 12/11");
   assert.deepEqual(problemasDoAssunto(comMarca(e.assunto)), []);
   assert.equal(e.abertura("Ana"), "Olá Ana, o bloco 2 da sua estadia em Studio Centro começa em 12/11/2026.");

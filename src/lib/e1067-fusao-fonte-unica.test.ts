@@ -23,9 +23,9 @@ import { duracaoDoBloco, rotuloPagamentoBloco } from "./pagamento-bloco.ts";
 import { fatorDoBloco } from "./pagamento-componentes.ts";
 import { compararHashComResumo, resumoContrato, TEXTO_HASH_DIFERENTE, TEXTO_HASH_IGUAL } from "./contrato-assinar.ts";
 import * as linhaRecibo from "./documentos-linha.ts";
+import { fonteSemComentarios as semComentarios } from "./fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
-const semComentarios = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 type Duracao = (b: { meses: number; inicio: string | null; fim: string | null; numero?: number }, prazoTotalDias: number) => { emDias: boolean; dias: number | null; texto: string; curto: string };
 const duracao = duracaoDoBloco as unknown as Duracao;
 const rotulo = rotuloPagamentoBloco as unknown as (p: Record<string, unknown>) => string;

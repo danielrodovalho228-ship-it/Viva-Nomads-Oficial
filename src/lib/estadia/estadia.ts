@@ -9,6 +9,9 @@ import { prazoConferenciaEntrada, textoPrazoConferencia } from "../conferencia.t
 import { diaBRT } from "../datas-brasilia.ts";
 import { saidaPeloFim } from "../texto-do-periodo.ts";
 import { rotuloTaxaServico } from "../cobranca/regra.ts";
+import { estadiaEmDias } from "../pagamento-componentes.ts";
+// E1067 (fusão, ORDEM-DUET-1155): o dinheiro no formato dos documentos, pela função que os documentos usam.
+import { brl } from "../fiscal/documento.ts";
 
 export type PapelEstadia = "proprietario" | "inquilino";
 
@@ -221,7 +224,6 @@ export interface LinhaValor {
   detalhe: string;
 }
 
-const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
  * Cada valor separado: valor mensal × meses, Caução e (só para o dono) a taxa de serviço com a base escrita.
@@ -232,7 +234,8 @@ export function valoresDaEstadia(
   papel: PapelEstadia,
 ): LinhaValor[] {
   // E1067: contrato em dias quebrados (31, 43…) → "R$ 2.500,00 × 31 dias ÷ 30", a mesma conta do contrato e do e-mail (E562).
-  const emDias = v.dias != null && v.dias > 0 && v.dias % 30 !== 0;
+  // Fusão (mapa v4, mudança 7): a regra é a da fonte única (sem segunda cópia).
+  const emDias = estadiaEmDias(v.dias);
   const linhas: LinhaValor[] = [
     {
       chave: "mensal",

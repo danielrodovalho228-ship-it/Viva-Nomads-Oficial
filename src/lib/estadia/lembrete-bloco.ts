@@ -50,7 +50,7 @@ const ddmmaaaa = (iso: string) => `${ddmm(iso)}/${soData(iso).slice(0, 4)}`;
 export const LINHA_PAGAMENTO_DIRETO = "O pagamento é direto ao proprietário; os dados estão na página da estadia.";
 
 /** O e-mail: assunto, abertura e o quadro (imóvel, datas, valor com a conta aberta) + a linha do pagamento direto. */
-export function emailLembreteBloco(b: BlocoParaLembrete, o: { imovel?: string | null; valorMensal?: number | null }): {
+export function emailLembreteBloco(b: BlocoParaLembrete, o: { imovel?: string | null; valorMensal?: number | null; /** E1067 (fusão): o prazo do contrato. */ prazoTotalDias: number }): {
   assunto: string;
   abertura: (nome?: string) => string;
   linhas: { rotulo: string; valor: string }[];
@@ -65,7 +65,7 @@ export function emailLembreteBloco(b: BlocoParaLembrete, o: { imovel?: string | 
       ...(imovel ? [{ rotulo: "Imóvel", valor: imovel }] : []),
       // E1089: `b.fim` é a última noite do bloco; o e-mail mostra a saída do bloco (o dia seguinte) e as diárias.
       { rotulo: "Datas do bloco", valor: periodoPeloFim(b.inicio, b.fim)?.linha ?? `${ddmmaaaa(b.inicio)}` },
-      { rotulo: "Valor do bloco", valor: rotuloPagamentoBloco({ tipo: "aluguel", valor: b.valor, bloco: { numero: b.numero, meses: b.meses, inicio: b.inicio, fim: b.fim }, valorMensal: o.valorMensal ?? null }) },
+      { rotulo: "Valor do bloco", valor: rotuloPagamentoBloco({ tipo: "aluguel", valor: b.valor, bloco: { numero: b.numero, meses: b.meses, inicio: b.inicio, fim: b.fim }, valorMensal: o.valorMensal ?? null, prazoTotalDias: o.prazoTotalDias }) },
     ],
     rodape: LINHA_PAGAMENTO_DIRETO,
     cta: "Ver a estadia",

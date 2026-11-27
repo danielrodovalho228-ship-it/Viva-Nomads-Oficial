@@ -23,6 +23,10 @@ const ids: Record<string, string | undefined> = {};
 const dia = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const ROTULO = () => `Bloco 1 (2 meses: ${ddmm(dia(0))} a ${ddmm(dia(59))}) — R$ 6.400 (2 × R$ 3.200)`;
+// E1067 (fusão do #4078, ORDENS-DUET 1149 e 1194): na tela "Documentos do contrato", a linha do recibo é o número, o
+// TOTAL do registro e o período em datas — sem "mês", "meses" nem "dias" (o texto do documento fica no PDF guardado).
+const ddmmaaaa = (iso: string) => iso.split("-").reverse().join("/");
+const LINHA_RECIBO = () => `R$ 6.400,00 · ${ddmmaaaa(dia(0))} a ${ddmmaaaa(dia(59))}`;
 
 let seq = 0;
 async function contrato(assinado: boolean): Promise<string> {
@@ -140,7 +144,8 @@ test.describe("T220 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
     // "Baixar recibo (PDF)" dos dois lados, com o mesmo rótulo; o link entrega o PDF (redirecionamento assinado).
     await t.reload({ waitUntil: "domcontentloaded" });
     const reciboT = t.locator('[data-testid="recibo-pagamento"][data-emitido="sim"]');
-    await expect(reciboT).toContainText(ROTULO(), { timeout: 20_000 });
+    await expect(reciboT).toContainText(LINHA_RECIBO(), { timeout: 20_000 });
+    await expect(reciboT).not.toContainText(/\bm[eê]s(es)?\b|\bdias?\b/);
     await expect(reciboT.getByTestId("baixar-recibo")).toHaveText("Baixar recibo (PDF)");
     const resT = await t.request.get(`/api/documentos/${ids.doc}`, { maxRedirects: 0 });
     expect(resT.status()).toBe(302);
@@ -149,7 +154,8 @@ test.describe("T220 — recibo, rótulo do bloco, nomes de quem assinou e 'Li e 
 
     await d.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
     const reciboD = d.locator('[data-testid="recibo-pagamento"][data-emitido="sim"]');
-    await expect(reciboD).toContainText(ROTULO(), { timeout: 20_000 });
+    await expect(reciboD).toContainText(LINHA_RECIBO(), { timeout: 20_000 });
+    await expect(reciboD).not.toContainText(/\bm[eê]s(es)?\b|\bdias?\b/);
     await expect(reciboD.getByTestId("baixar-recibo")).toBeVisible();
     expect((await d.request.get(`/api/documentos/${ids.doc}`, { maxRedirects: 0 })).status()).toBe(302);
     await semRolagemLateral(d);

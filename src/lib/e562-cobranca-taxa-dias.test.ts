@@ -36,5 +36,8 @@ test("Fechamento com proposta aceita: prazo, blocos, base e taxa nos DIAS da pro
   assert.match(f, /DIAS_ACORDO \? resumoContratoEmDias\(DIAS_ACORDO, PROPERTY\.monthlyRent, COMMISSION_RATE, TAMANHO_BLOCO\)/);
   assert.match(f, /data-testid="fechamento-prazo-dias"/);
   assert.match(f, /<Row label="Prazo" value=\{PRAZO_TEXTO\} \/>/);
-  assert.match(f, /× \$\{DIAS_ACORDO\} dias ÷ 30\)/);
+  // Fusão do #4078 (ORDENS-DUET 1149 e 1193, asserção alterada): a frase saiu, sem mudar um carácter, para
+  // textoBaseDeCalculo; o Fechamento chama-a com os DIAS da proposta.
+  assert.match(f, /textoBaseDeCalculo\(formatBRL\(PROPERTY\.monthlyRent\), \{ dias: DIAS_ACORDO, meses: prazoMeses \}\)/);
+  assert.match(ler("lib/base-de-calculo.ts"), /× \$\{dias\} dias ÷ 30\)/);
 });

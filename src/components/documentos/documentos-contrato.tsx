@@ -9,6 +9,7 @@ import { Check, Download, FileText, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/lib/utils";
 import { dataBR } from "@/lib/fiscal/documento";
+import { textoLinhaRecibo } from "@/lib/documentos-linha";
 import type { AcertoView, DocumentoView, ReciboView } from "@/lib/data/documentos-actions";
 import { registrarDevolucaoCaucao, responderDevolucaoCaucao } from "@/lib/data/documentos-actions";
 import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-actions";
@@ -46,8 +47,8 @@ export function ListaDocumentos({ documentos, recibos = [], anular = false }: { 
           {recibos.map((r) => (
             <li key={r.pagamentoId} className="flex flex-wrap items-center justify-between gap-2 text-sm" data-testid="recibo-pagamento" data-emitido={r.documentoId ? "sim" : "nao"}>
               <span className="min-w-0 text-ink">
-                {r.rotulo}
-                {r.numero && <span className="text-muted"> · {r.numero}</span>}
+                {/* E1067 (fusão, ORDENS-DUET 1149, 1155 e 1194): o número, o TOTAL e o período em datas; o texto do documento fica no PDF. */}
+                {textoLinhaRecibo({ tipo: r.tipo, numero: r.numero, total: r.total, inicio: r.inicio, fim: r.fim })}
                 {r.anulado && <SeloAnulado motivo={r.anulado} />}
               </span>
               {anular && !r.anulado && <AnularRegistro pagamentoId={r.pagamentoId} confirmado />}
@@ -55,11 +56,7 @@ export function ListaDocumentos({ documentos, recibos = [], anular = false }: { 
                 <a href={`/api/documentos/${r.documentoId}`} className="inline-flex items-center gap-1 text-xs font-medium text-forest underline" data-testid="baixar-recibo">
                   <Download className="h-3.5 w-3.5" /> Baixar recibo (PDF)
                 </a>
-              ) : (
-                <span className="text-xs text-muted" data-testid="recibo-em-preparacao">
-                  Recibo em preparação
-                </span>
-              )}
+              ) : null}
             </li>
           ))}
         </ul>

@@ -73,7 +73,10 @@ test("1c/1e. falha visível: a emissão registra a falha; a fila do admin tem 'E
   assert.match(fila, /Emitir de novo/);
   assert.match(fila, /Emitir os pendentes/);
   const tela = ler("../components/documentos/documentos-contrato.tsx");
-  assert.match(tela, /Recibo em preparação/);
+  // Fusão do #4078 (ORDENS-DUET 1149 e 1155, asserção alterada): a linha do recibo vem de textoLinhaRecibo, que diz
+  // "Recibo em preparação" enquanto o documento não sai.
+  assert.match(tela, /textoLinhaRecibo\(/);
+  assert.match(ler("./documentos-linha.ts"), /Recibo em preparação/);
   assert.match(tela, /Baixar recibo \(PDF\)/);
   assert.match(tela, /Ao confirmar, o recibo em PDF fica disponível aqui e vai por e-mail para você e para o proprietário\./);
   assert.doesNotMatch(tela, /sai o recibo em PDF para você e para o proprietário/);
@@ -95,19 +98,19 @@ test("1d. retroativo pelo botão do admin: pagamentos confirmados sem documento"
 
 test("2. rótulo do pagamento em bloco: 2 meses mostra o bloco e a conta; 1 mês, sem conta", () => {
   assert.equal(
-    rotuloPagamentoBloco({ tipo: "aluguel", valor: 6400, bloco: { numero: 1, meses: 2, inicio: "2026-10-19", fim: "2026-12-18" }, valorMensal: 3200 }),
+    rotuloPagamentoBloco({ tipo: "aluguel", valor: 6400, bloco: { numero: 1, meses: 2, inicio: "2026-10-19", fim: "2026-12-18" }, valorMensal: 3200, prazoTotalDias: 60}),
     "Bloco 1 (2 meses: 19/10 a 18/12) — R$ 6.400 (2 × R$ 3.200)",
   );
   assert.equal(
-    rotuloPagamentoBloco({ tipo: "aluguel", valor: 3200, bloco: { numero: 1, meses: 1, inicio: "2026-10-19", fim: "2026-11-17" }, valorMensal: 3200 }),
+    rotuloPagamentoBloco({ tipo: "aluguel", valor: 3200, bloco: { numero: 1, meses: 1, inicio: "2026-10-19", fim: "2026-11-17" }, valorMensal: 3200, prazoTotalDias: 60}),
     "Bloco 1 (1 mês: 19/10 a 17/11) — R$ 3.200",
   );
   // Pagamento parcial do bloco: sem a conta (ela não fecharia).
-  assert.equal(rotuloPagamentoBloco({ tipo: "aluguel", valor: 3000, bloco: { numero: 2, meses: 2, inicio: "2026-12-19", fim: "2027-02-16" }, valorMensal: 3200 }), "Bloco 2 (2 meses: 19/12 a 16/02) — R$ 3.000");
+  assert.equal(rotuloPagamentoBloco({ tipo: "aluguel", valor: 3000, bloco: { numero: 2, meses: 2, inicio: "2026-12-19", fim: "2027-02-16" }, valorMensal: 3200, prazoTotalDias: 60}), "Bloco 2 (2 meses: 19/12 a 16/02) — R$ 3.000");
   // ORDEM-DUET-1127 (asserção alterada com julgamento registado): a caução é do BLOCO desde o E1225 (decisão do Daniel de
   // 20/11, que substituiu o desenho do #884); a de antes, sem bloco, continua "Caução do contrato".
-  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 3200, bloco: { numero: 1, meses: 2, inicio: null, fim: null } }), "Caução do bloco 1 — R$ 3.200");
-  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 3200 }), "Caução do contrato — R$ 3.200");
+  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 3200, bloco: { numero: 1, meses: 2, inicio: null, fim: null }, prazoTotalDias: 60}), "Caução do bloco 1 — R$ 3.200");
+  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 3200, prazoTotalDias: 60}), "Caução do contrato — R$ 3.200");
   // Nunca "Valor mensal de" com o valor do bloco.
   assert.doesNotMatch(ler("../components/documentos/documentos-contrato.tsx"), /"Valor mensal"\} de/);
   // O mesmo rótulo no recibo em PDF.

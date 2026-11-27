@@ -14,7 +14,7 @@ import { estadoConferencia, type RespostaConferencia } from "@/lib/conferencia";
 import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
 import { hojeEmBrasilia } from "@/lib/datas-brasilia";
-import { duracaoDoBloco } from "@/lib/pagamento-bloco";
+import { estadiaEmDias } from "@/lib/pagamento-componentes";
 import { conversationId } from "@/lib/messages/conversation-id";
 import {
   acoesDaFolhaDaEstadia,
@@ -39,7 +39,7 @@ import { caucaoDoChecklist, estadoCaucao as estadoCaucaoUnico } from "@/lib/cauc
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const COLUNAS_ESTADIA =
-  "id, property_id, tenant_id, status, encerrado_em, created_at, qtd_ocupantes, capacidade_snapshot, aluguel_mensal, tamanho_bloco_meses, garantia, comissao_percent, comissao_valor, assinado_proprietario_em, assinado_inquilino_em, properties(id, title, address, city, owner_id, checkin_after, checkout_before, max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status), pagamentos_bloco(id, tipo, valor, confirmado_pelo_inquilino, anulado_em)";
+  "id, property_id, tenant_id, status, encerrado_em, created_at, qtd_ocupantes, capacidade_snapshot, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, garantia, comissao_percent, comissao_valor, assinado_proprietario_em, assinado_inquilino_em, properties(id, title, address, city, owner_id, checkin_after, checkout_before, max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status), pagamentos_bloco(id, tipo, valor, confirmado_pelo_inquilino, anulado_em)";
 
 export interface LinhaContratoEstadia {
   id: string;
@@ -51,6 +51,7 @@ export interface LinhaContratoEstadia {
   qtd_ocupantes: number;
   capacidade_snapshot: number | null;
   aluguel_mensal: number | string;
+  prazo_total_dias: number | string | null;
   tamanho_bloco_meses: number;
   garantia: string | null;
   comissao_percent: number | string | null;
@@ -288,13 +289,13 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
   );
   const meses = mesesDoPeriodo(periodo) || blocos.reduce((s, b) => s + Number(b.meses), 0);
   const valorMensal = Number(c.aluguel_mensal) || 0;
-  // E1067: a duração do contrato pelos dias reais (a mesma regra do rótulo do bloco). Só vai em dias quando não fecha em meses.
-  const duracao = duracaoDoBloco({ meses: blocos.reduce((s, b) => s + Number(b.meses), 0), inicio: periodo.inicio, fim: periodo.fim });
+  // E1067 (fusão, ORDEM-DUET-1140 decisão 3): a duração da estadia inteira pelo prazo do contrato, na fonte única.
+  const prazoTotalDias = Number(c.prazo_total_dias) || 0;
   const valores = valoresDaEstadia(
     {
       valorMensal,
       meses,
-      dias: duracao.emDias ? duracao.dias : null,
+      dias: estadiaEmDias(prazoTotalDias) ? prazoTotalDias : null,
       caucao: blocos.reduce((s, b) => s + Number(b.caucao), 0),
       taxa: c.comissao_percent != null ? { percentual: Number(c.comissao_percent), valor: Number(c.comissao_valor ?? 0) } : null,
     },
