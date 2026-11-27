@@ -563,7 +563,7 @@ export async function filaAtendimento(f: FiltrosFila = {}, opcoes: { exigir?: bo
   if (!ctx) return null;
   let q = ctx.admin.from("chamados").select(COLS_ADMIN);
   // E1244: as simulações ficam fora, salvo com a opção ligada — e nunca na aba aprovação.
-  if (!f.simulacoes || f.aprovacao) q = q.eq("simulacao", false);
+  if (f.aprovacao && !f.simulacoes) q = q.eq("simulacao", false);
   if (f.aprovacao) q = q.eq("status", "aguardando_aprovacao");
   else if (f.status) q = q.eq("status", f.status);
   else if (!f.fechados) q = q.not("status", "in", "(resolvido,encerrado)");
