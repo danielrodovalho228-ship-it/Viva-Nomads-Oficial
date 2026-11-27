@@ -31,7 +31,8 @@ test("o dono: os registros por confirmar têm 'Anular registro'; os confirmados 
   assert.match(tela, /<AnularRegistro pagamentoId=\{p\.id\} confirmado=\{false\}/);
   assert.match(tela, /<ListaDocumentos documentos=\{extra\.documentos\} recibos=\{extra\.recibos\} anular \/>/);
   const lista = ler("src/components/documentos/documentos-contrato.tsx");
-  assert.match(lista, /anular && !r\.anulado && <AnularRegistro pagamentoId=\{r\.pagamentoId\} confirmado \/>/);
+  // E1243 (ORDENS-DUET 1213 e 1216, asserção alterada): com um pedido aberto à Central, o botão dá lugar à linha do pedido.
+  assert.match(lista, /anular && !r\.anulado && !r\.pedidoAnulacao && <AnularRegistro pagamentoId=\{r\.pagamentoId\} confirmado \/>/);
 });
 
 test("o morador não vê a anulação", () => {
@@ -44,5 +45,6 @@ test("a equipe: 'Anular este registro' só no chamado que nasceu de um registro,
   assert.match(ler(CENTRAL), /anularRegistroPelaCentral\(\{ chamadoId, motivo/);
   const cl = ler("src/app/(dashboard)/admin/atendimento/[id]/chamado-client.tsx");
   assert.match(cl, /const pedidoDeAnulacao = dados\.mensagens\.some\(\(m\) => m\.autor === "sistema" && m\.interno && \/\^\\\[anulacao\\\] pagamento=\/\.test\(m\.corpo\)\);/);
-  assert.match(cl, /\{pedidoDeAnulacao && <AnularRegistroCentral chamadoId=\{c\.id\} \/>\}/);
+  // E1246 (ORDEM-DUET-1220, asserção alterada): para a observadora da QA, o cartão some quando o contrato não é todo de teste.
+  assert.match(cl, /\{pedidoDeAnulacao && !anularSoLeitura && <AnularRegistroCentral chamadoId=\{c\.id\} \/>\}/);
 });
