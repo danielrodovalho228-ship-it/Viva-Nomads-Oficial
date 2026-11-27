@@ -62,7 +62,9 @@ test("E676: os avisos da estadia levam o ref_id do contrato e o aditivo resolve 
 });
 
 test("E676: a rota do sino aplica a situação real do contrato antes de montar a faixa", () => {
-  const rota = ler("app/api/painel/avisos/route.ts");
+  // E1242 reaberto (ORDEM-DUET 1247, asserção alterada): a leitura e a conferência mudaram da rota para avisos-telas.ts,
+  // a UMA leitura do sino, da faixa e da página completa.
+  const rota = ler("lib/data/avisos-telas.ts");
   assert.match(rota, /resolvidosNaPratica\(/);
   assert.match(rota, /situacaoDosContratos\(/);
 });
