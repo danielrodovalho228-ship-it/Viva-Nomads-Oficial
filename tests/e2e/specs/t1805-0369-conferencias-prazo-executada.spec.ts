@@ -4,7 +4,7 @@ import { provarA0369, PRAZOS_DA_PROVA, type ProvaDa0369 } from "../fixtures/prov
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
 
 /*
-  T1805 (número provisório) — 0369 @E1238 (ORDENS-DUET 1231 e 1233; regra da casa: a trava que afirma comportamento é
+  T1805 — 0369 @E1238 (ORDENS-DUET 1231 e 1233; regra da casa: a trava que afirma comportamento é
   EXECUTADA num banco descartável). A própria 0369, o aplicar e o rollback de produção, TAL COMO ESTÃO, corridos num
   banco descartável (tests/e2e/fixtures/prova-0369.ts), sobre `conferencias` na forma de ANTES: aplica sem mexer nas
   linhas, reaplica sem efeito, a conferência nova nasce com o prazo e a segunda abertura NÃO o muda (o congelamento);
