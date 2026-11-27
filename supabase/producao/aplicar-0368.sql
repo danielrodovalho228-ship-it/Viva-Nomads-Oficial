@@ -34,10 +34,13 @@ begin
   end if;
   update public.documentos_fiscais set anulado_em = v_agora, anulado_motivo = p_motivo where pagamento_id = p_pagamento and anulado_em is null
    returning numero into v_documento;
+  begin
   insert into public.contrato_eventos (contrato_id, tipo, autor_id, dados)
   values (v_contrato, 'pagamento_anulado', p_autor,
           jsonb_build_object('caminho', p_caminho, 'pagamento_id', p_pagamento, 'documento', v_documento, 'valor', v_valor, 'motivo', p_motivo)
           || case when p_chamado is not null then jsonb_build_object('chamado', p_chamado) else '{}'::jsonb end);
+  exception when others then null;
+  end;
   return jsonb_build_object('ok', true, 'documento', v_documento);
 end;
 $f$;
