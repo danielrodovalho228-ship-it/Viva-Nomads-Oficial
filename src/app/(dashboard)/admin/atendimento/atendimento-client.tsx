@@ -24,6 +24,7 @@ import { rotuloDoAdmin } from "@/config/menu-admin";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { ABA_ADMIN } from "@/lib/admin/abas";
+import { legendaDaFila } from "@/lib/atendimento-simulacoes";
 
 const ABAS = [
   { id: "fila", rotulo: "Fila" },
@@ -78,7 +79,7 @@ export function AtendimentoClient({
   aprovacao: ChamadoAdmin[];
   metricas: Record<string, unknown> | null;
   macros: Macro[];
-  filtros: { fila?: string; prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean };
+  filtros: { fila?: string; prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean; simulacoes?: boolean };
   /** Quando a equipe resolveu o último chamado — aparece na fila vazia (Prompt 48). */
   ultimaDecisao?: string | null;
   semAcesso: boolean;
@@ -89,7 +90,9 @@ export function AtendimentoClient({
   const agora = new Date(agoraISO);
   return (
     <>
-      <PageTitle title={rotuloDoAdmin("/admin/atendimento")} subtitle="Chamados por prioridade e prazo. Simulações ficam fora." />
+      {/* E1244 (ORDENS-DUET 1233 e 1237): a legenda segue a opção "Incluir simulações" e aparece SÓ na aba da fila, onde a
+          opção existe; nas outras abas (cujas contagens nunca incluíram simulações) não há linha de legenda. */}
+      <PageTitle title={rotuloDoAdmin("/admin/atendimento")} subtitle={aba === "fila" ? `Chamados por prioridade e prazo. ${legendaDaFila(!!filtros.simulacoes)}` : "Chamados por prioridade e prazo."} />
       {semAcesso && (
         <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Sem acesso aos chamados agora (banco sem a migração 0073, sem chave de serviço ou sem permissão).
@@ -136,7 +139,7 @@ export function AtendimentoClient({
   );
 }
 
-function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean } }) {
+function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; tipo?: string; responsavel?: string; busca?: string; fechados?: boolean; simulacoes?: boolean } }) {
   const campo = "rounded-lg border border-line bg-white px-2 py-2 text-sm text-ink";
   return (
     <form method="get" action="/admin/atendimento" className="mb-4 flex flex-wrap items-end gap-2 rounded-xl border border-sage-200 bg-white p-3">
@@ -187,6 +190,10 @@ function Filtros({ filtros }: { filtros: { fila?: string; prioridade?: string; t
       <label className="flex items-center gap-2 text-xs text-muted">
         <input type="checkbox" name="fechados" value="1" defaultChecked={filtros.fechados} /> Incluir resolvidos
       </label>
+      {/* E1244: só admin (a fila exige admin no servidor); desligada por omissão; vale só para este endereço. */}
+      <label className="flex items-center gap-2 text-xs text-muted">
+        <input type="checkbox" name="simulacoes" value="1" defaultChecked={filtros.simulacoes} /> Incluir simulações
+      </label>
       <Button type="submit" variant="outline">
         Filtrar
       </Button>
@@ -211,14 +218,22 @@ function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; v
                   <span className="truncate font-semibold text-ink">{c.assunto}</span>
                 </span>
                 <span className="mt-1 block text-xs text-muted">
+                  {c.simulacao && (
+                    <span className="mr-2 rounded-full border border-line bg-white px-2 py-1 font-semibold text-ink" data-testid="chamado-simulacao">
+                      Simulação
+                    </span>
+                  )}
                   {c.numero_publico} · {FILAS[filaDaCategoria(c.categoria)].rotulo} · {c.canal} · {STATUS[c.status] ?? c.status}
                   {c.visitante_email ? " · visitante" : ""}
                   <span data-testid="chamado-aberto-em"> · Aberto em {dataHoraBRT(c.criado_em, { tabela: true })}</span>
                 </span>
               </span>
-              <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold", r.cor)}>
-                <Clock className="h-3.5 w-3.5" /> {r.texto}
-              </span>
+              {/* E1244: a rotina do prazo ignora as simulações — nelas, só a marca, sem relógio. */}
+              {!c.simulacao && (
+                <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold", r.cor)}>
+                  <Clock className="h-3.5 w-3.5" /> {r.texto}
+                </span>
+              )}
             </Link>
           </li>
         );
