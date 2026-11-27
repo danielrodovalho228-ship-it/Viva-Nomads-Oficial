@@ -25,16 +25,44 @@ const g = globalThis as unknown as { __e1072Sessao: unknown };
 const B1 = { numero_bloco: 1, meses: 1, inicio: "2026-05-01", fim: "2026-05-31" };
 const B1b = { numero_bloco: 1, meses: 2, inicio: "2026-12-20", fim: "2027-01-19" };
 
+/**
+ * ORDEM-DUET-1240 (fuga L8 da Pista 3): o falso é FIEL ao select — devolve só as colunas que a leitura pede (as de topo;
+ * "contrato_blocos(...)" conta como a coluna contrato_blocos). Sem isto, um select sem "parte" passaria aqui e, no banco
+ * real, o complementar perderia o "registro complementar" (parteDaColuna(undefined) = 1).
+ */
+export function colunasDoSelect(sel: string): string[] {
+  const out: string[] = [];
+  let fundo = 0;
+  let atual = "";
+  for (const ch of sel) {
+    if (ch === "(") fundo += 1;
+    if (ch === ")") fundo -= 1;
+    if (ch === "," && fundo === 0) {
+      out.push(atual);
+      atual = "";
+    } else atual += ch;
+  }
+  out.push(atual);
+  return out.map((c) => c.trim().split("(")[0].trim()).filter(Boolean);
+}
+const projetar = (linhas: Record<string, unknown>[], sel: string | null) => {
+  if (!sel || sel.trim() === "*") return linhas;
+  const cols = colunasDoSelect(sel);
+  return linhas.map((l) => Object.fromEntries(cols.filter((c) => c in l).map((c) => [c, l[c]])));
+};
+
 function sessao(pagamentos: Record<string, unknown>[], docs: Record<string, unknown>[]) {
   return {
     from(tabela: string) {
       const filtros: Record<string, unknown> = {};
       const b: Record<string, unknown> = {};
-      for (const m of ["select", "in", "order", "is"]) b[m] = () => b;
+      let sel: string | null = null;
+      for (const m of ["in", "order", "is"]) b[m] = () => b;
+      b.select = (s: string) => ((sel = s), b);
       b.eq = (k: string, v: unknown) => ((filtros[k] = v), b);
       const resposta = () => {
-        if (tabela === "pagamentos_bloco") return filtros.tipo === "caucao" ? { data: [], error: null } : { data: pagamentos, error: null };
-        if (tabela === "documentos_fiscais") return { data: docs, error: null };
+        if (tabela === "pagamentos_bloco") return filtros.tipo === "caucao" ? { data: [], error: null } : { data: projetar(pagamentos, sel), error: null };
+        if (tabela === "documentos_fiscais") return { data: projetar(docs, sel), error: null };
         return { data: [], error: null };
       };
       b.then = (ok: (v: unknown) => unknown, ko?: (e: unknown) => unknown) => Promise.resolve(resposta()).then(ok, ko);
@@ -98,4 +126,11 @@ test("7. as duas listas (dono e morador) usam a mesma função com a linha intei
   for (const f of ["../../app/(dashboard)/dashboard/contratos/contratos-client.tsx", "../../app/(dashboard)/dashboard/locacoes/locacoes-client.tsx"]) {
     assert.match(readFileSync(new URL(f, import.meta.url), "utf8"), /<ListaDocumentos [^>]*recibos=/);
   }
+});
+
+test("8. (ORDEM-DUET-1240, L8) o select da ação pede a coluna parte; o falso só devolve o que o select pede", () => {
+  const acoes = readFileSync(new URL("./documentos-actions.ts", import.meta.url), "utf8");
+  const sel = /\.from\("pagamentos_bloco"\)\s*\.select\("([^"]+)"\)\s*\.in\("contrato_id", ids\)\s*\.eq\("confirmado_pelo_inquilino", true\)/.exec(acoes)?.[1] ?? "";
+  assert.ok(colunasDoSelect(sel).includes("parte"), `a leitura dos registros confirmados pede "parte": ${sel}`);
+  assert.deepEqual(colunasDoSelect("id, tipo, contrato_blocos(numero_bloco, inicio)"), ["id", "tipo", "contrato_blocos"]);
 });
