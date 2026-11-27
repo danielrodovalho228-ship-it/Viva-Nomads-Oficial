@@ -15,7 +15,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
-import { abrirChamado } from "@/lib/data/atendimento-actions";
+import { abrirChamado, responderComoAdmin } from "@/lib/data/atendimento-actions";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { formatBRLExato } from "@/lib/precos";
@@ -71,34 +71,31 @@ async function documentoDe(admin: Admin, pagamentoId: string): Promise<{ id: str
 }
 
 /**
- * A anulação no banco, a mesma nos dois caminhos: o registro (com a guarda — só o que ainda não está anulado e, pelo
- * dono, só o não confirmado), o documento ligado, a trilha do contrato e o aviso ao morador.
+ * A anulação no banco, a mesma nos dois caminhos — UMA operação (ORDEM-DUET-1169): a função anular_pagamento (0368)
+ * faz numa transação só o registro (com as guardas: só o que não está anulado e, pelo dono, só o não confirmado), o
+ * documento ligado e o evento de quem anulou; ou tudo, ou nada. O aviso ao morador só vem depois de ela dar certo.
  */
 async function anularNoBanco(
   admin: Admin,
   pg: Pagamento,
   motivo: string,
   quem: { autorId: string; caminho: "dono" | "central"; chamado?: string },
-): Promise<ResultadoAnulacao> {
-  const agora = new Date().toISOString();
-  const doc = await documentoDe(admin, pg.id);
-  let q = admin.from("pagamentos_bloco").update({ anulado_em: agora, anulado_motivo: motivo }).eq("id", pg.id).is("anulado_em", null);
-  if (quem.caminho === "dono") q = q.eq("confirmado_pelo_inquilino", false);
-  const { data: mudou, error } = await q.select("id");
+): Promise<{ ok: true; documento: string | null } | { ok: false; error: string }> {
+  const { data, error } = await admin.rpc("anular_pagamento", { p_pagamento: pg.id, p_motivo: motivo, p_autor: quem.autorId, p_caminho: quem.caminho, p_chamado: quem.chamado ?? null });
   if (error) return { ok: false, error: MSG_SEM_LEITURA };
-  if (!((mudou ?? []) as unknown[]).length) return { ok: false, error: MSG_JA_ANULADO };
-  if (doc) await admin.from("documentos_fiscais").update({ anulado_em: agora, anulado_motivo: motivo }).eq("id", doc.id).is("anulado_em", null);
-  const valor = Number(pg.valor) || 0;
-  await admin.from("contrato_eventos").insert({
-    contrato_id: pg.contrato_id,
-    tipo: "pagamento_anulado",
-    autor_id: quem.autorId,
-    dados: { caminho: quem.caminho, ...(quem.chamado ? { chamado: quem.chamado } : {}), pagamento_id: pg.id, documento: doc?.numero ?? null, valor, motivo },
-  });
+  const r = (data ?? {}) as { ok?: boolean; documento?: string | null };
+  if (!r.ok) return { ok: false, error: MSG_JA_ANULADO };
+  const documento = r.documento ?? null;
   const morador = pg.contratos?.tenant_id;
   if (morador) {
     const { data: u } = await admin.auth.admin.getUserById(morador);
-    const registro = doc?.numero ?? (pg.tipo === "caucao" ? "da caução" : "do pagamento");
+    const registro = documento ?? (pg.tipo === "caucao" ? "da caução" : "do pagamento");
+    const valor = formatBRLExato(Number(pg.valor) || 0);
+    // ORDEM-DUET-1169: no caminho da Central, quem anulou foi a equipe, a pedido do proprietário.
+    const titulo =
+      quem.caminho === "central"
+        ? `A equipe da Viva anulou, a pedido do proprietário, o registro ${registro} de ${valor}: ${motivo}.`
+        : `O proprietário anulou o registro ${registro} de ${valor}: ${motivo}`;
     await notify({
       event: "contract_status",
       email: u?.user?.email ?? undefined,
@@ -106,13 +103,13 @@ async function anularNoBanco(
       pushUrl: `/dashboard/estadia/${pg.contrato_id}`,
       // Sem ref_id: o aviso da anulação nunca renova (nem é renovado por) outro aviso do contrato, como o de assinatura.
       prioridadeAviso: "normal",
-      tituloAviso: `O proprietário anulou o registro ${registro} de ${formatBRLExato(valor)}: ${motivo}`,
+      tituloAviso: titulo,
       subject: ASSUNTOS.registroAnulado,
-      body: (n?: string) => `Olá${n ? " " + n : ""}, o proprietário anulou o registro ${registro} de ${formatBRLExato(valor)} do contrato ${numeroPublicoContrato(pg.contrato_id)}. Motivo: ${motivo}.`,
+      body: (n?: string) => `Olá${n ? " " + n : ""}, ${titulo.charAt(0).toLowerCase()}${titulo.slice(1).replace(/\.$/, "")} (contrato ${numeroPublicoContrato(pg.contrato_id)}).`,
       ctaLabel: "Ver a estadia",
     });
   }
-  return { ok: true };
+  return { ok: true, documento };
 }
 
 /** O dono anula um registro dele. Antes da confirmação, anula; depois, abre o pedido à Central. */
@@ -148,7 +145,8 @@ export async function anularRegistro(input: { pagamentoId: string; motivo: strin
     if (ch?.id) await admin.from("chamado_mensagens").insert({ chamado_id: ch.id, autor: "sistema", interno: true, corpo: `[anulacao] pagamento=${pg.id}` });
     return { ok: true, pedido: r.numero, mensagem: msgPedido(r.numero) };
   }
-  return anularNoBanco(admin, pg, motivo, { autorId: user.id, caminho: "dono" });
+  const r = await anularNoBanco(admin, pg, motivo, { autorId: user.id, caminho: "dono" });
+  return r.ok ? { ok: true } : r;
 }
 
 /** A Central decide o pedido: só a equipe, com a mesma anulação; o registro é o que o chamado guarda. */
@@ -171,15 +169,18 @@ export async function anularRegistroPelaCentral(input: { chamadoId: string; moti
   const pg = await lerPagamento(admin, pagamentoId);
   if (!pg || (ch.contexto_tipo === "contrato" && ch.contexto_id && ch.contexto_id !== pg.contrato_id)) return { ok: false, error: MSG_SEM_LEITURA };
   if (pg.anulado_em) return { ok: false, error: MSG_JA_ANULADO };
-  const doc = await documentoDe(admin, pg.id);
   const r = await anularNoBanco(admin, pg, motivo, { autorId: user.id, caminho: "central", chamado: String(ch.numero_publico) });
   if (!r.ok) return r;
+  const registro = r.documento ?? (pg.tipo === "caucao" ? "da caução" : "do pagamento");
+  // ORDEM-DUET-1169: a decisão chega ao dono numa resposta VISÍVEL no chamado dele (a notificação normal do atendimento).
+  await responderComoAdmin(ch.id, `A equipe anulou o registro ${registro}. Motivo: ${motivo}.`, false);
+  // A nota interna (quem decidiu e quando) fica para a equipe.
   await admin.from("chamado_mensagens").insert({
     chamado_id: ch.id,
     autor: "admin",
     autor_id: user.id,
     interno: true,
-    corpo: `Registro ${doc?.numero ?? pg.id} de ${formatBRLExato(Number(pg.valor) || 0)} anulado pela Central em ${new Date().toISOString().slice(0, 10)}. Motivo: ${motivo}`,
+    corpo: `Registro ${registro} de ${formatBRLExato(Number(pg.valor) || 0)} anulado pela Central em ${new Date().toISOString().slice(0, 10)}. Motivo: ${motivo}`,
   });
   return { ok: true };
 }
