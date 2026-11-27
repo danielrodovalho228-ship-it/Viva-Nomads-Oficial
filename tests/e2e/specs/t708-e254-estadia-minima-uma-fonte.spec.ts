@@ -70,7 +70,8 @@ async function lerPublica(p: Page, meses: number, largura: number) {
   const lateral = p.locator("#cartao-preco");
   await expect(lateral.getByTestId("cartao-lateral-estadia")).toContainText(`em ${meses} meses`, { timeout: 20_000 });
   const total = reais(await lateral.getByTestId("cartao-lateral-estadia").innerText());
-  const conta = (await lateral.getByTestId("cartao-lateral-estadia-conta").innerText()).trim();
+  // FormulaDoTotal desenha a conta em lista (uma parcela por linha): as quebras de linha viram espaço.
+  const conta = (await lateral.getByTestId("cartao-lateral-estadia-conta").innerText()).trim().replace(/\s*\n\s*/g, " ");
   const mes = reais(await lateral.getByTestId("total-por-mes").innerText());
   let barra: { total: number; mes: number } | null = null;
   if (largura === 390) {
@@ -205,7 +206,7 @@ test.describe("T708 — E254-A: o mesmo total da estadia mínima em todo lugar, 
       const cartao = p.getByTestId("previa-tamanho-real").getByTestId("previa-real-cartao");
       await expect(cartao.getByTestId("cartao-lateral-estadia")).toContainText("em 4 meses", { timeout: 15_000 });
       expect(reais(await cartao.getByTestId("cartao-lateral-estadia").innerText())).toBe(TOTAL_QUATRO);
-      expect((await cartao.getByTestId("cartao-lateral-estadia-conta").innerText()).trim()).toMatch(CONTA_QUATRO);
+      expect((await cartao.getByTestId("cartao-lateral-estadia-conta").innerText()).trim().replace(/\s*\n\s*/g, " ")).toMatch(CONTA_QUATRO);
       await p.context().close();
     }
   });

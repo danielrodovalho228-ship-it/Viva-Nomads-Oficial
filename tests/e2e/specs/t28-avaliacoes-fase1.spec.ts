@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { account, hasAccount, type Role } from "../fixtures/accounts";
+import { criteriosDaAvaliacao } from "../fixtures/avaliacao-criterios";
 
 /**
  * T28 — AVALIAÇÕES, FASE 1 (0089). Direto no PostgREST, como cada pessoa:
@@ -44,7 +45,7 @@ test.describe("T28 — Avaliações fase 1 (0089)", () => {
     // Só letras: número longo no comentário cai (com razão) no filtro de telefone.
     const marca = `T28 ${Array.from({ length: 8 }, () => "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)]).join("")}`;
     try {
-      const nova = (contrato: string, alvo: string, extra: Record<string, unknown> = {}) => ({ contrato_id: contrato, alvo_id: alvo, papel_autor: "inquilino", nota_geral: 5, status: "enviada", ...extra });
+      const nova = (contrato: string, alvo: string, extra: Record<string, unknown> = {}) => ({ ...criteriosDaAvaliacao("inquilino"), contrato_id: contrato, alvo_id: alvo, papel_autor: "inquilino", nota_geral: 5, status: "enviada", ...extra });
 
       // 1) quem não é parte não avalia
       const naoParte = await outro.sb.from("avaliacoes").insert(nova(ct!.id, dono.id));
@@ -79,7 +80,7 @@ test.describe("T28 — Avaliações fase 1 (0089)", () => {
       // 5) o proprietário avalia com telefone → moderação; a do inquilino publica (às cegas)
       const comTelefone = await dono.sb
         .from("avaliacoes")
-        .insert({ contrato_id: ct!.id, alvo_id: inq.id, papel_autor: "proprietario", nota_geral: 4, comentario_publico: "ótima inquilina, me chama no whats 34 99999-1234", status: "enviada" })
+        .insert({ ...criteriosDaAvaliacao("proprietario"), contrato_id: ct!.id, alvo_id: inq.id, papel_autor: "proprietario", nota_geral: 4, comentario_publico: "ótima inquilina, me chama no whats 34 99999-1234", status: "enviada" })
         .select("status")
         .single();
       expect(comTelefone.error).toBeNull();

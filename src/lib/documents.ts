@@ -186,7 +186,7 @@ export const SAMPLE_DOCUMENTS: DocumentRecord[] = [
     docType: "orcamento",
     version: 2,
     propertyId: "ube-002",
-    propertyTitle: "Studio premium no Centro, ideal para estadia profissional",
+    propertyTitle: "Studio no Centro, ideal para estadia profissional", // E814: o título do ube-002
     ownerId: "demo-owner",
     tenantName: "Dr. Bruno Tavares",
     tenantContact: "(34) 99999-1234",

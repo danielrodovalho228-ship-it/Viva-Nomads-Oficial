@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, MapPin } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
 import { BannerTopo } from "@/components/institucional/banner-topo";
@@ -12,14 +12,15 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { servicoProprietarios } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
-import { FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_NEGOCIAVEL, pctTexto } from "@/lib/cobranca/regra";
-import { PORTA_GESTOR_TEXTO } from "@/config/planos";
+import { TAXA_MAIOR_TEXTO } from "@/lib/cobranca/regra";
+import { FRASE_ESCADA_TAXAS } from "@/config/textos-regulados";
+import { BOTAO_SIMULADOR_PUBLICO, NOTA_SIMULADOR_NA_CONTA } from "@/lib/simulador-na-conta";
+import { PRECOS_VISIVEL } from "@/config/precos-visivel";
+import { AVISO_APROVACAO, PUBLICAMOS_PARA_VOCE_TEXTO } from "@/lib/ajuda-publicacao/ajuda";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
-const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel);
-const TAXA_MAIOR = pctTexto(Math.max(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
-const TAXA_MENOR = pctTexto(Math.min(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
-const LIMITE_FAIXAS = Math.max(...FAIXAS_PUBLICAS.map((f) => f.maxImoveis ?? 0));
+// E805/078: a escada inteira e a linha das carteiras vêm da fonte única (FRASE_ESCADA_TAXAS).
+const TAXA_MAIOR = TAXA_MAIOR_TEXTO;
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },
@@ -44,17 +45,10 @@ export default function ForLandlordsPage() {
         }
         subtitulo={
           <>
-            <p>
+            <p className="max-sm:text-base">
               Locação mobiliada de média duração (30 a 180 dias), com contrato formal e a
               negociação registrada na plataforma. Menos entra-e-sai, menos meses com o imóvel parado e com água, luz,
               condomínio e IPTU que podem ser transferidos ao morador conforme o contrato.
-            </p>
-            <p className="mt-4 text-base text-white/90">
-              <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa de serviço (de {TAXA_MAIOR} a {TAXA_MENOR}; com {LIMITE_FAIXAS + 1} ou mais imóveis ativos, {ROTULO_FAIXA_NEGOCIAVEL}). Plano Gestor: {PORTA_GESTOR_TEXTO}. Sem mensalidade —{" "}
-              <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
-                ver os preços
-              </Link>
-              .
             </p>
           </>
         }
@@ -62,10 +56,78 @@ export default function ForLandlordsPage() {
         <ButtonLink href="/dashboard/imoveis/novo" variant="inverse" size="lg">
           Anunciar meu imóvel <ArrowRight className="h-4 w-4" />
         </ButtonLink>
-        <ButtonLink href="/precos" variant="inverseSecondary" size="lg">
-          Ver preços
+        {/* E555: o destaque do topo de /anunciar leva a /planos (a página de planos e taxas). */}
+        {/* E563: suspenso enquanto a chave PRECOS_VISIVEL estiver desligada. */}
+        {PRECOS_VISIVEL && (
+        <ButtonLink href="/planos" variant="inverseSecondary" size="lg" data-testid="anunciar-planos">
+          Planos e taxas
         </ButtonLink>
+        )}
+        {/* C7: a frase da taxa (texto igual) desce para depois do botão — no celular a ação principal fica na dobra. */}
+        <p className="w-full max-w-2xl scroll-mt-24 text-base text-white/90" id="taxa" data-testid="anunciar-taxa">
+          <strong>Anuncie de graça.</strong> A taxa de serviço da Viva é de {TAXA_MAIOR} sobre o valor total do contrato fechado. {FRASE_ESCADA_TAXAS} {/* E563: o link para os preços só com a chave ligada. */}
+          {PRECOS_VISIVEL ? (
+            <>
+              Sem mensalidade —{" "}
+              <Link href="/precos" className="font-medium text-green-300 underline-offset-2 hover:underline">
+                ver os preços
+              </Link>
+              .
+            </>
+          ) : (
+            "Sem mensalidade."
+          )}
+        </p>
       </BannerTopo>
+
+      {/* E718 (mockup publico-proprietarios): os três blocos que faltavam — pedidos da cidade, "Publicamos para você" e o simulador.
+          Decisão do Daniel (08/11): completar. Texto só do que o produto faz; nenhum valor de exemplo (o simulador começa vazio, E294). */}
+      <section className="container-page pt-12" data-testid="proprietarios-blocos-mockup">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 rounded-xl border border-line bg-white p-6 sm:flex-row sm:items-center sm:justify-between" data-testid="proprietarios-pedidos-cidade">
+            <div className="flex items-start gap-4">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sage-100 text-forest">
+                <MapPin className="h-5 w-5" aria-hidden />
+              </span>
+              <div>
+                <h2 className="font-title text-lg font-semibold text-ink sm:text-2xl">Pedidos de moradia da sua cidade chegam até você</h2>
+                <p className="mt-1 text-base text-muted">Veja os pedidos de quem procura moradia perto do seu imóvel e responda pela plataforma.</p>
+              </div>
+            </div>
+            <ButtonLink href="/dashboard/pedidos-cidade" variant="secondary" size="lg" className="w-full sm:w-auto" data-testid="proprietarios-ver-pedidos">
+              Ver pedidos da cidade
+            </ButtonLink>
+          </div>
+
+          <div className="flex flex-col gap-4 overflow-hidden rounded-xl border border-line bg-surface-2 sm:flex-row sm:items-center" data-testid="proprietarios-publicamos">
+            <div className="flex-1 p-6">
+              <span className="inline-flex rounded-full bg-sage-100 px-3 py-1 text-xs font-semibold text-forest">Serviço</span>
+              <h2 className="mt-3 font-title text-lg font-semibold text-ink sm:text-2xl">Publicamos para você</h2>
+              {/* E806: a ação (colar o link do anúncio em outro site, ou texto e fotos) e o efeito (a equipe monta o rascunho). */}
+              <p className="mt-1 text-base text-muted" data-testid="proprietarios-publicamos-texto">
+                {PUBLICAMOS_PARA_VOCE_TEXTO} {AVISO_APROVACAO}
+              </p>
+              <ButtonLink href="/dashboard/imoveis/novo" variant="secondary" size="lg" className="mt-4 w-full sm:w-auto" data-testid="proprietarios-pedir-ajuda">
+                Pedir ajuda para publicar
+              </ButtonLink>
+            </div>
+            {/* Frente 3 (t112): sem foto — a única que havia era a do passo "Anuncie de graça" desta mesma página, e a regra das
+                imagens únicas (ordens 19b8abf5/de7b27fd) proíbe repetir. Foto própria para este bloco: pedido em aberto no PR. */}
+          </div>
+
+          <div className="flex flex-col gap-4 rounded-xl bg-forest p-6 text-white sm:flex-row sm:items-center sm:justify-between" data-testid="proprietarios-simulador">
+            <div>
+              <h2 className="font-title text-lg font-semibold sm:text-2xl">Simulador de rentabilidade</h2>
+              <p className="mt-1 text-base text-white/85">Estime quanto o seu imóvel pode render por mês com os números que você digitar. A Viva não preenche valor nenhum por você.</p>
+              {/* E903: o simulador fica na conta; o visitante sabe disso antes do clique (antes: caía no login sem aviso). */}
+              <p className="mt-1 text-sm text-white/85" data-testid="proprietarios-simulador-conta">{NOTA_SIMULADOR_NA_CONTA}</p>
+            </div>
+            <ButtonLink href="/dashboard/simulador" variant="inverse" size="lg" className="w-full sm:w-auto" data-testid="proprietarios-calcular">
+              {BOTAO_SIMULADOR_PUBLICO}
+            </ButtonLink>
+          </div>
+        </div>
+      </section>
 
       {/* Quanto custa, em reais, contra o Airbnb (versão curta; a completa fica em /precos). */}
       <section className="container-page pt-12">
@@ -81,7 +143,7 @@ export default function ForLandlordsPage() {
           <ol className="mt-12 grid gap-6 md:grid-cols-3">
             {[
               { foto: "/images/unicas/prop-passo-anuncie.webp", alt: "Proprietário fotografando a sala para o anúncio", t: "Anuncie de graça", d: "Fotos, valor e regras da casa. Você pode oferecer limpezas durante a estadia, com quantidade e valor por mês. A qualificação ajuda a ganhar o selo Pronto para Morar." },
-              { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o morador pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; o contato fica protegido até o aceite." },
+              { foto: "/images/unicas/prop-passo-converse.webp", alt: "Conversa com o morador pelo celular", t: "Converse e escolha", d: "Os interessados falam com você pela plataforma; telefone e e-mail nunca são trocados." },
               { foto: "/images/unicas/prop-passo-feche.webp", alt: "Entrega das chaves ao morador", t: "Feche com contrato", d: "Contrato digital de 30 a 180 dias, caução combinada e o valor mensal direto na sua conta." },
             ].map((p, i) => (
               <li key={p.t} className="overflow-hidden rounded-xl border border-line bg-white ">

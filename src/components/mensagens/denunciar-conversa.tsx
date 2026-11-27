@@ -34,7 +34,7 @@ export function DenunciarConversa({ conversationId, demo }: { conversationId: st
 
   if (numero) {
     return (
-      <p data-testid="denuncia-enviada" role="status" className="border-t border-sage-200 bg-sage-50 px-4 py-2 text-xs text-ink">
+      <p data-testid="denuncia-enviada" role="status" className="border-t border-sage-200 bg-sage-100 px-4 py-2 text-xs text-ink">
         Recebemos sua denúncia ({numero}). A equipe da Viva Nomads vai olhar a conversa. Enquanto isso, não pague nem passe senhas ou códigos por fora da plataforma.
       </p>
     );

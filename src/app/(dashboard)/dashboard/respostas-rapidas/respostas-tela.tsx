@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apagarResposta, salvarResposta } from "@/lib/data/respostas-actions";
 import { LIMITE_RESPOSTAS, TEXTO_MAX, TITULO_MAX, validarResposta, type RespostaRapida } from "@/lib/respostas/regras";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { MODELOS_SUGERIDOS } from "@/lib/respostas/modelos-sugeridos";
 
 export function RespostasTela({ inicial }: { inicial: RespostaRapida[] }) {
   const router = useRouter();
@@ -38,6 +39,28 @@ export function RespostasTela({ inicial }: { inicial: RespostaRapida[] }) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
+      {/* E665: textos-modelo das perguntas frequentes. Entram no formulário para o dono conferir e editar; nunca trazem valor nem prazo. */}
+      <section aria-labelledby="modelos-title" className="rounded-xl border border-line bg-white p-4 lg:col-span-2" data-testid="respostas-modelos">
+        <h2 id="modelos-title" className="font-title text-base font-semibold text-ink">Modelos para começar</h2>
+        <p className="mt-1 text-sm text-muted">Toque em um modelo, preencha o que está entre colchetes e salve. Nada é salvo sozinho, e os valores e prazos são seus.</p>
+        <ul className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-5">
+          {MODELOS_SUGERIDOS.map((m) => (
+            <li key={m.id}>
+              <button
+                type="button"
+                onClick={() => {
+                  setEdicao({ id: null, titulo: m.titulo, texto: m.texto });
+                  setMsg(null);
+                }}
+                className="flex min-h-11 w-full items-center justify-center rounded-xl border border-line px-3 py-2 text-sm font-semibold text-ink hover:border-ink"
+                data-testid={`resposta-modelo-${m.id}`}
+              >
+                {m.tema}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
       <form onSubmit={salvar} className="rounded-xl border border-line bg-white p-4" data-testid="resposta-form">
         <h2 className="font-title text-base font-semibold text-ink">{edicao.id ? "Editar resposta" : "Nova resposta"}</h2>
         <label className="mt-3 block text-sm">

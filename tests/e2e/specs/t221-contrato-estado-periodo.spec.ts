@@ -1,5 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { abrirPortaoDaIdentidade } from "../fixtures/fechamento-identidade";
 
 /*
   T221 — Complemento do coordenador (19/10, depois do reteste do #864). Laboratório, contas de teste, 390 e 1280 px.
@@ -102,7 +103,7 @@ async function semRolagemLateral(page: Page) {
 async function ateGerar(d: Page, entrada: string) {
   await ir(d, `/dashboard/fechamento?c=${ids.lead2}`);
   await d.getByTestId("inicio-estadia").fill(entrada);
-  await d.getByRole("button", { name: /verificar identidade/i }).click();
+  await abrirPortaoDaIdentidade(d);
   const continuar = d.getByRole("button", { name: /continuar/i });
   await expect(continuar).toBeEnabled({ timeout: 20_000 });
   await continuar.click();
@@ -241,7 +242,7 @@ test.describe("T221 — estado do contrato com uma fonte e nenhum período sobre
     }
     const d = await abrir(browser, dono.email, 1280);
     await ateGerar(d, dia(30));
-    await expect(d.getByTestId("erro-contrato")).toHaveText(`Este imóvel já tem contrato de ${br(dia(5))} a ${br(dia(64))}. Escolha outra data de entrada.`, { timeout: 30_000 });
+    await expect(d.getByTestId("erro-contrato")).toHaveText(`Este imóvel já tem contrato com entrada em ${br(dia(5))} e saída em ${br(dia(65))}. Escolha outra data de entrada.`, { timeout: 30_000 });
     await d.screenshot({ path: `${SAIDA}/t221-gerar-recusado-1280.png`, fullPage: true });
     expect((await adm().from("contratos").select("id").eq("lead_id", ids.lead2)).data ?? []).toHaveLength(0);
 

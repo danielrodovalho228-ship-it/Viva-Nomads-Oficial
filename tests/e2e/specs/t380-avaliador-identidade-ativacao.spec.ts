@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /**
  * T380 — E35-B (funil do avaliador): a identidade verificada é requisito da ATIVAÇÃO, não do teste.
@@ -36,7 +36,7 @@ test.describe("T380 — E35-B: identidade na ativação do avaliador", () => {
     // Pedido de credenciamento já registrado (o envio pela tela é coberto no t314/t341), com os dados de parceiro.
     const { data: sol, error: eS } = await adm()
       .from("parceiro_solicitacoes")
-      .insert({ user_id: ids.cand, email: cand.email, nome: cand.nome, tipo_pessoa: "pf", documento: cpfAleatorio(), categorias: ["vistoria"], cidades: ["Uberlândia"], status: "pendente", origem: "conta" })
+      .insert({ user_id: ids.cand, email: cand.email, nome: cand.nome, tipo_pessoa: "pj", documento: cnpjAleatorio(), categorias: ["vistoria"], cidades: ["Uberlândia"], status: "pendente", origem: "conta" })
       .select("id")
       .single();
     if (eS) throw eS;

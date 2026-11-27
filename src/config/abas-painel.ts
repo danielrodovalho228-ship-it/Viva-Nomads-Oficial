@@ -39,6 +39,13 @@ export interface ContextoAbas {
   comContrato: boolean;
 }
 
+/**
+ * E443: o LOGO do cabeçalho logado é a saída do painel — leva à página inicial pública ("/"). O "Início" do menu (INICIO,
+ * abaixo) leva ao painel. Antes o logo do computador apontava para o próprio /dashboard e lia como botão morto; o do
+ * celular e o da equipe já iam à página inicial. No modo app, "/" cai na aba inicial do papel (proxy.ts).
+ */
+export const HREF_LOGO_PAINEL = "/";
+
 const INICIO: AbaPainel = { id: "inicio", rotulo: "Início", href: "/dashboard", icone: "inicio", authRequired: true, hrefSemLogin: "/" };
 const MENSAGENS: AbaPainel = { id: "mensagens", rotulo: "Mensagens", href: "/dashboard/mensagens", icone: "mensagens", authRequired: true, badge: "mensagens" };
 
@@ -106,8 +113,9 @@ export const ABAS_PROPRIETARIO: readonly AbaPainel[] = [
     subabas: [
       { id: "interessados", rotulo: "Interessados", href: "/dashboard/leads" },
       // As propostas que o dono envia moram em /dashboard/orcamentos; /dashboard/propostas é a lista do lado morador
-      // (as que ele recebeu). As duas acendem a mesma subaba "Propostas".
-      { id: "propostas", rotulo: "Propostas", href: "/dashboard/orcamentos", ativoEm: ["/dashboard/propostas"] },
+      // (as que ele recebeu). As duas acendem a mesma subaba. E491: o nome é o da página que ela abre, "Orçamentos"
+      // (nomenclatura do E440 — orçamento ORC-…); o id segue "propostas" (âncoras e testids estáveis).
+      { id: "propostas", rotulo: "Orçamentos", href: "/dashboard/orcamentos", ativoEm: ["/dashboard/propostas"] },
       { id: "fechamento", rotulo: "Fechamento", href: "/dashboard/fechamento" },
       { id: "pedidos-cidade", rotulo: "Pedidos na cidade", href: "/dashboard/pedidos-cidade" },
       // E211: as visitas recebidas nos imóveis do dono (e o detalhe de cada uma).
@@ -132,7 +140,8 @@ export const ABAS_PROPRIETARIO: readonly AbaPainel[] = [
 
 /** Parceiro aprovado: as abas do meio são as seções do painel do parceiro (âncoras em /dashboard/parceiro). */
 export const ABAS_PARCEIRO: readonly AbaPainel[] = [
-  INICIO,
+  // E459: o Início do parceiro é o topo do painel DELE (não o /dashboard do dono) — mais uma âncora da mesma página.
+  { ...INICIO, href: "/dashboard/parceiro#inicio" },
   { id: "pedidos", rotulo: "Pedidos", href: "/dashboard/parceiro#pedidos", icone: "pedidos", authRequired: true, ativoEm: ["/dashboard/servicos/pedidos"] },
   { id: "agenda", rotulo: "Agenda", href: "/dashboard/parceiro#agenda", icone: "agenda", authRequired: true },
   { id: "ganhos", rotulo: "Ganhos", href: "/dashboard/parceiro#ganhos", icone: "ganhos", authRequired: true },
@@ -159,9 +168,22 @@ export function abaAtivaPainel(abas: readonly AbaPainel[], pathname: string, sec
   for (const aba of abas) {
     if (acende(aba, pathname) || (aba.subabas ?? []).some((s) => acende(s, pathname))) return aba;
   }
-  // Abas-âncora (parceiro): E340 — acende a da SEÇÃO visível (useSecaoAncora); sem seção medida, a 1ª.
-  const ancoras = abas.filter((a) => a.href.includes("#") && rotaAtiva(a.href.split("#")[0], pathname));
-  return (secao ? ancoras.find((a) => a.href.split("#")[1] === secao) : null) ?? ancoras[0] ?? null;
+  // Abas-âncora (parceiro): E340/E460 — a da área atual (ancoraAtiva).
+  const id = ancoraAtiva(abas, pathname, secao);
+  return id ? (abas.find((a) => a.href.split("#")[1] === id) ?? null) : null;
+}
+
+/**
+ * E460: a aba-âncora acesa (painel do parceiro, uma página com #inicio, #pedidos, #agenda, #ganhos). Na raiz do painel,
+ * a seção visível (sem seção medida, a 1ª — Início, E459); numa subpágina do painel (ex.: /dashboard/parceiro/avaliacao),
+ * a 1ª — a área do painel, nunca a seção que ficou guardada da página de antes; fora do painel, nenhuma.
+ */
+export function ancoraAtiva(abas: readonly { href: string }[], pathname: string, secao: string | null): string | null {
+  const ancoras = abas.filter((a) => a.href.includes("#")).map((a) => ({ base: a.href.split("#")[0], id: a.href.split("#")[1] }));
+  const daRota = ancoras.filter((a) => rotaAtiva(a.base, pathname));
+  if (!daRota.length) return null;
+  if (pathname !== daRota[0].base) return daRota[0].id;
+  return (secao && daRota.some((a) => a.id === secao) ? secao : null) ?? daRota[0].id;
 }
 
 /** E340: a rota e os ids das seções das abas-âncora (ex.: "/dashboard/parceiro" → pedidos, agenda, ganhos). */
@@ -212,6 +234,14 @@ export function itensDaConta(papel: PapelAbas | null, p: { temImovel: boolean; a
   // Ajuda, que deixou de ter o botão próprio).
   itens.push({ id: "sair", rotulo: "Sair", href: "/", acao: "sair" });
   return itens;
+}
+
+/**
+ * E788 (reprova 11/11): o menu do avatar "Equipe" no topo do admin — Minha conta · Ajuda · Sair. Sem "Painel admin" (quem
+ * abre já está nele) e sem troca de modo (a área da equipe não tem modo morador/proprietário).
+ */
+export function itensDaEquipe(): ItemConta[] {
+  return [MINHA_CONTA, AJUDA, { id: "sair", rotulo: "Sair", href: "/", acao: "sair" }];
 }
 
 /** O sino do topo leva às notificações do painel (os avisos moram nele). */

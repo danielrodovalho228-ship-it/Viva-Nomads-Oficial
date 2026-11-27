@@ -41,7 +41,8 @@ test("0203: idempotente, sem NOTICE, com aplicar e rollback no padrão", () => {
 test("o app grava o aceite ANTES de ativar o imóvel, nos dois caminhos (senão o gatilho barraria o dono)", () => {
   const src = raiz("src/lib/data/actions.ts");
   const pos = [...src.matchAll(/exigirAceiteIa\(supabase, /g)].map((m) => m.index!);
-  const ativa = [...src.matchAll(/\.update\(\{ status: (?:input\.asDraft \? "draft" : "active"|"active", draft_data: null) \}\)/g)].map((m) => m.index!);
+  // E593: a publicação também guarda o CEP do rascunho (cep_proximidades) na mesma atualização.
+  const ativa = [...src.matchAll(/\.update\(\{ status: (?:input\.asDraft \? "draft" : "active"|"active", draft_data: null(?:, \.\.\.\(cepDoRascunho \? \{ cep_proximidades: cepDoRascunho \} : \{\}\))?) \}\)/g)].map((m) => m.index!);
   assert.equal(pos.length, 2);
   assert.equal(ativa.length, 2);
   pos.forEach((p, i) => assert.ok(p < ativa[i], `caminho ${i + 1}: aceite antes de ativar`));

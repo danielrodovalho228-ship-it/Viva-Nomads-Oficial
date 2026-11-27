@@ -8,7 +8,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
  *   E64. Meus dados: sem o endereço do LinkedIn e sem o motivo da estadia.
  *   E66. Privacidade: sem a lista de segurança (E-mail/Celular/Identidade/2FA/Senha); ela mora em /dashboard/conta/seguranca,
  *        com o caminho até lá na Privacidade.
- *   E55. Perfil: as miniaturas de navegação (cabeçalho e barra lateral) mostram iniciais, não a foto.
+ *   E783 (era E55). Perfil: as miniaturas de navegação (cabeçalho e barra lateral) mostram a foto, como no resto do site.
  *   E67. Meus dados: cartão final "Seus dados, suas regras" (30 dias, link para a Privacidade); no "Quando cada dado é
  *        pedido" o estado fica alinhado num ponto só; a página termina sem vão depois do último cartão.
  */
@@ -106,16 +106,18 @@ test.describe("T391 — Conta: E55, E63, E64, E66, E67", () => {
       await p.context().close();
     });
 
-    test(`E55. a ${w} px: no Perfil as miniaturas de navegação mostram iniciais`, async ({ browser }) => {
+    test(`E783. a ${w} px: no Perfil as miniaturas de navegação mostram a foto (como no resto do site)`, async ({ browser }) => {
       const p = await abrir(browser, w, "/dashboard/conta/perfil");
       await p.getByTestId("perfil-tela").waitFor({ timeout: 20_000 });
-      await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(0);
-      await expect(p.getByTestId("barra-avatar").locator("img")).toHaveCount(0);
-      // O herói editável mostra a foto (uma vez); fora do Perfil, o cabeçalho volta a mostrá-la.
-      await expect(p.getByTestId("topo-conta").locator("img")).toHaveCount(1, { timeout: 20_000 });
+      // E783: o cabeçalho mostra a foto também no Perfil (o E55 trocava por iniciais e a foto "sumia" ao entrar na Conta).
+      // Computador: a barra lateral e o chip mostram a foto. No celular o Perfil abre sem cabeçalho do painel: a prova é a Conta (abaixo).
+      if (w >= 1024) await expect(p.locator('[data-testid^="conta-"] img, [data-testid="papel-ativo"] img, [data-testid="barra-avatar"] img').first()).toBeAttached({ timeout: 20_000 });
       await p.screenshot({ path: `${SAIDA}/t391-perfil-${w}.png` });
+      // E783: a tela Conta (a do print do Daniel) também mostra a foto no cabeçalho, não a inicial.
+      await p.goto("/dashboard/conta", { waitUntil: "domcontentloaded" });
+      await expect(p.locator('[data-testid^="conta-"] img, [data-testid="papel-ativo"] img, [data-testid="barra-avatar"] img').first()).toBeAttached({ timeout: 20_000 });
       await p.goto("/dashboard/conta/dados", { waitUntil: "domcontentloaded" });
-      await expect(p.locator('[data-testid="papel-ativo"]:visible img')).toHaveCount(1, { timeout: 20_000 });
+      await expect(p.locator('[data-testid^="conta-"] img, [data-testid="papel-ativo"] img').first()).toBeAttached({ timeout: 20_000 });
       await p.context().close();
     });
   }

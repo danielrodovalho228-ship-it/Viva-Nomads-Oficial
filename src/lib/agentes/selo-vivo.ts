@@ -10,7 +10,7 @@ import { CAMINHO_VERIFICAR_2FA } from "../admin/mfa.ts";
 /** Ronda mais nova que isto conta como atividade "ao vivo" (o Renato roda de hora em hora). */
 export const JANELA_AO_VIVO_MS = 2 * 3_600_000;
 
-export type TipoSelo = "ao_vivo" | "parado" | "sem_acesso" | "vazio";
+export type TipoSelo = "ao_vivo" | "parcial" | "parado" | "sem_acesso" | "vazio";
 
 export interface EstadoCentral {
   tipo: TipoSelo;
@@ -20,7 +20,12 @@ export interface EstadoCentral {
   vazio: { titulo: string; texto: string; acao?: { rotulo: string; href: string } } | null;
 }
 
-export function estadoDaCentral(p: { acessoLiberado: boolean; agentes: Pick<Agente, "slug">[]; rondas: Pick<Ronda, "iniciada_em">[]; agora: Date }): EstadoCentral {
+export function estadoDaCentral(p: {
+  acessoLiberado: boolean;
+  agentes: (Pick<Agente, "slug"> & { status?: Agente["status"] })[];
+  rondas: (Pick<Ronda, "iniciada_em"> & { agente_slug?: string })[];
+  agora: Date;
+}): EstadoCentral {
   if (!p.acessoLiberado) {
     return {
       tipo: "sem_acesso",
@@ -39,7 +44,29 @@ export function estadoDaCentral(p: { acessoLiberado: boolean; agentes: Pick<Agen
     const t = Date.parse(r.iniciada_em);
     return Number.isFinite(t) && (m === null || t > m) ? t : m;
   }, null);
-  if (ultima !== null && p.agora.getTime() - ultima <= JANELA_AO_VIVO_MS) return { tipo: "ao_vivo", selo: "Ao vivo", vazio: null };
+  // E473: "Ao vivo" só com TODOS os agentes ativos que fazem ronda em dia. Uma ronda recente de um agente só (o Renato,
+  // de hora em hora) não faz a central inteira "ao vivo" com os outros parados desde 17/10.
+  const ultimaDe = new Map<string, number>();
+  for (const r of p.rondas) {
+    const t = Date.parse(r.iniciada_em);
+    if (!r.agente_slug || !Number.isFinite(t)) continue;
+    if (t > (ultimaDe.get(r.agente_slug) ?? -Infinity)) ultimaDe.set(r.agente_slug, t);
+  }
+  const fazemRonda = p.agentes.filter((a) => (a.status ?? "ativo") === "ativo" && ultimaDe.has(a.slug));
+  const emDia = (t: number) => p.agora.getTime() - t <= JANELA_AO_VIVO_MS;
+  if (fazemRonda.length > 0) {
+    const parados = fazemRonda.filter((a) => !emDia(ultimaDe.get(a.slug)!));
+    const nEmDia = fazemRonda.length - parados.length;
+    if (parados.length === 0) return { tipo: "ao_vivo", selo: "Ao vivo", vazio: null };
+    if (nEmDia > 0) {
+      const maisNovaParada = Math.max(...parados.map((a) => ultimaDe.get(a.slug)!));
+      return {
+        tipo: "parcial",
+        selo: `${nEmDia} de ${fazemRonda.length} agentes com ronda nas últimas 2 h · os outros parados (última ronda ${tempoRelativo(new Date(maisNovaParada).toISOString(), p.agora)})`,
+        vazio: null,
+      };
+    }
+  } else if (ultima !== null && p.agora.getTime() - ultima <= JANELA_AO_VIVO_MS) return { tipo: "ao_vivo", selo: "Ao vivo", vazio: null };
   return {
     tipo: "parado",
     selo: ultima === null ? "Nenhuma ronda registrada" : `Última ronda ${tempoRelativo(new Date(ultima).toISOString(), p.agora)}`,

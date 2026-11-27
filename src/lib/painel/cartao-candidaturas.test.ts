@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
 test("o painel lê listMinhasCandidaturas e passa o total ao cartão", () => {
-  const pagina = ler("src/app/(dashboard)/dashboard/page.tsx");
+  const pagina = ler("src/app/(dashboard)/dashboard/inicio-dados.tsx");
   assert.match(pagina, /import \{ listMinhasCandidaturas \} from "@\/lib\/data\/leads-actions";/);
   assert.match(pagina, /ou\("candidaturas", listMinhasCandidaturas\(\{ exigir: true \}\), null\)/);
   assert.match(pagina, /totalCandidaturas=\{candidaturas \? candidaturas\.length : null\}/);

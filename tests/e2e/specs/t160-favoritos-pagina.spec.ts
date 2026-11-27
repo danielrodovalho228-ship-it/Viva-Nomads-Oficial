@@ -2,44 +2,31 @@ import { test, expect } from "@playwright/test";
 
 /**
  * T160 — /favoritos (ordem 56a3a15c, D16), pública, 390 e 1280 px, sem login.
- * Favoritar 2 → /favoritos mostra 2 → desfavoritar 1 → mostra 1; sem 404. O topo público (E176) não tem link Favoritos.
+ * Sem 404 e sem login: /favoritos abre vazia; E448: o coração do visitante leva à porta de login. O topo público (E176)
+ * não tem link Favoritos.
  */
 for (const largura of [390, 1280]) {
   test.describe(`T160 — Favoritos (${largura} px)`, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
-    test("favoritar 2, ver na página, desfavoritar 1", async ({ page }) => {
+    test("E448: /favoritos abre sem login (vazio); o coração do visitante leva à porta de login", async ({ page }) => {
       const resp = await page.goto("/favoritos", { waitUntil: "networkidle" });
       expect(resp?.status()).toBe(200);
       await expect(page.getByTestId("favoritos-vazio")).toBeVisible();
       await expect(page.getByRole("link", { name: "Explorar imóveis" })).toHaveAttribute("href", "/buscar");
 
       await page.goto("/buscar", { waitUntil: "networkidle" });
-      const coracoes = page.getByRole("button", { name: "Adicionar aos favoritos" });
-      const removers = page.getByRole("button", { name: "Remover dos favoritos" });
-      // Espera cada clique virar "Remover" antes do próximo; o toque antes da hidratação é repetido.
-      for (const esperado of [1, 2]) {
-        await expect(async () => {
-          if ((await removers.count()) < esperado) await coracoes.nth(0).click();
-          await expect(removers).toHaveCount(esperado, { timeout: 3_000 });
-        }).toPass({ timeout: 30_000 });
-      }
-
-      await page.goto("/favoritos", { waitUntil: "networkidle" });
-      await expect(page.getByRole("heading", { name: "Favoritos (2)" })).toBeVisible();
-      await expect(page.getByTestId("favoritos-grade")).toHaveAttribute("aria-busy", "false");
-      await expect(page.getByTestId("favoritos-grade").locator("article, a[href^='/imoveis/']").first()).toBeVisible();
-      // O título conta os favoritos guardados; a grade só mostra os que ainda estão no ar (outro spec do lab pode
-      // pausar um anúncio entre o coração e esta tela). Conta os cartões da PRÓPRIA tela: cruzar com uma segunda
-      // leitura de /api/properties dava 1 contra 2 no lab (cache/ordem diferentes entre as duas leituras).
-      const removers2 = page.getByRole("button", { name: "Remover dos favoritos" });
-      await expect(removers2.first()).toBeVisible();
-      const antes = await removers2.count();
-      expect(antes).toBeGreaterThanOrEqual(1);
-
-      await removers2.first().click();
-      await expect(page.getByRole("heading", { name: "Favoritos (1)" })).toBeVisible();
-      await expect(removers2).toHaveCount(antes - 1);
+      // O toque antes da hidratação é repetido até a navegação acontecer.
+      await expect(async () => {
+        if (new URL(page.url()).pathname !== "/auth") await page.getByRole("button", { name: "Adicionar aos favoritos" }).first().click({ timeout: 3_000 });
+        await page.waitForURL((u) => u.pathname === "/auth", { timeout: 3_000 });
+      }).toPass({ timeout: 30_000 });
+      const u = new URL(page.url());
+      expect(u.searchParams.get("motivo")).toBe("favorito");
+      await expect(page.getByTestId("entrada-motivo")).toHaveText("Para guardar seus favoritos em qualquer aparelho, entre com seu e-mail.");
+      // Nada guardado no aparelho sem conta.
+      const locais = await page.evaluate(() => (JSON.parse(localStorage.getItem("vivanomads-favorites") ?? "{}").state?.ids ?? []) as string[]);
+      expect(locais).toEqual([]);
     });
 
     test("o topo público não tem link Favoritos (E176, PUBLICO-A); a página abre pelo endereço, sem 404", async ({ page }) => {

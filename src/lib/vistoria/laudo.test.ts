@@ -30,7 +30,6 @@ import {
   resultadoAvaliacao,
   ressalvaVencida,
   resumoPorGrupo,
-  somarHorasUteis,
   valorValido,
   type DadosLaudoExibicao,
   type Respostas,
@@ -143,13 +142,15 @@ test("resumo por grupo: conformes e não conformes por rótulo", () => {
   assert.equal(seg.conformes, ITENS.filter((i) => i.grupo === "seguranca" && !i.registro).length);
 });
 
-test("48 horas úteis (seg a sex, Brasília)", () => {
+// E1192 (ORDEM-DUET-861): as "48 horas úteis" são os 2 dias úteis do calendário único; `somarHorasUteis` saiu e as duas
+// asserções que a chamavam leem o mesmo instante pelo `prazoLaudo` (mesma entrada, mesma data esperada).
+test("2 dias úteis (seg a sex, Brasília)", () => {
   // Quinta 10h BRT → segunda 10h BRT (pula o fim de semana).
-  assert.equal(somarHorasUteis(new Date("2026-10-22T13:00:00Z"), 48).toISOString(), "2026-10-26T13:00:00.000Z");
+  assert.equal(prazoLaudo("2026-10-22T13:00:00Z").toISOString(), "2026-10-26T13:00:00.000Z");
   // Segunda 10h → quarta 10h.
   assert.equal(prazoLaudo("2026-10-19T13:00:00Z").toISOString(), "2026-10-21T13:00:00.000Z");
   // Sábado → conta a partir de segunda 0h BRT.
-  assert.equal(somarHorasUteis(new Date("2026-10-24T15:00:00Z"), 48).toISOString(), "2026-10-28T03:00:00.000Z");
+  assert.equal(prazoLaudo("2026-10-24T15:00:00Z").toISOString(), "2026-10-28T03:00:00.000Z");
   assert.ok(laudoAtrasado("2026-10-19T13:00:00Z", null, new Date("2026-10-21T13:00:01Z")));
   assert.ok(!laudoAtrasado("2026-10-19T13:00:00Z", "2026-10-20T10:00:00Z", new Date("2026-10-25T00:00:00Z")));
 });

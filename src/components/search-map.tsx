@@ -11,7 +11,11 @@ import { cn } from "@/lib/utils";
 import { precoDeBusca } from "@/lib/busca/painel-filtros";
 import { rotuloPreco } from "@/lib/cartao-preco";
 import { CardPinMapa } from "@/components/busca/card-pin-mapa";
-import { ATRIBUICAO_MAPA, TILES_CARTO, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
+import { usePreviaNoHover } from "@/components/busca/previa-hover";
+import { ATRIBUICAO_MAPA, TILES_CARTO, TILES_CARTO_SEM_ROTULOS, avisarMapaSemChave, motorDoMapa } from "@/lib/mapa-base";
+import { afastarComGrupos, gruposDosPins, type Obstaculo } from "@/lib/busca/pins-sem-sobreposicao";
+import { CIDADES_ROTULADAS, ZOOM_MAXIMO_DO_ROTULO, caixaDoRotulo, obstaculosDeCidades } from "@/lib/busca/rotulos-cidade-leaflet";
+import { FOLGA_CARTAO_MAPA, deslocamentoParaCaber, fechaCartaoComTecla, mostrarCartaoNaTela } from "@/lib/busca/cartao-no-mapa";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
@@ -76,11 +80,116 @@ interface SearchMapProps {
   /** Imóvel com o card aberto no mapa (clique no pin). */
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
+  /** E1023: avisa qual imóvel está com o cartão aberto no mapa (clique OU prévia do hover), para a lista manter o
+   * destaque do card enquanto o cartão está aberto. */
+  onAberto?: (id: string | null) => void;
   /** Endereço buscado (geocoding) — centro do raio, recebe um marcador próprio. */
   focus?: { lat: number; lng: number } | null;
   /** Raio (km) desenhado ao redor do endereço buscado. */
   radiusKm?: number;
   className?: string;
+}
+
+/**
+ * E525 (D11): afasta os pins que se cobrem (cada um vai à posição livre mais próxima). Por MARGEM, não por transform:
+ * o pin já usa o translate do Tailwind (Leaflet) e o transform do próprio marcador (Mapbox).
+ */
+/** E988: a largura máxima do "+N" dentro do pin (até "+99" no corpo de 11 px, px-2 e a margem). */
+const LARGURA_SELO = 38;
+
+function aplicarAfastamento(
+  itens: { id: string; x: number; y: number; el: HTMLElement }[],
+  quadro: { w: number; h: number },
+  obstaculos: Obstaculo[] = [],
+  aoAbrirGrupo?: (id: string) => void
+) {
+  // E988 (DUET-0649): o pin que não cabe legível perto do ponto entra no "+N" do pin visível mais perto. O "+N" vai
+  // DENTRO do pin; com o mapa cheio, todos os pins reservam a vaga dele (afastarComGrupos), por isso as larguras são
+  // medidas sem os "+N" de antes.
+  for (const { el } of itens) el.querySelector('[data-testid="pin-grupo"]')?.remove();
+  const desloc = afastarComGrupos(
+    itens.map(({ id, x, y, el }) => ({ id, x, y, w: el.offsetWidth, h: el.offsetHeight })),
+    quadro,
+    obstaculos,
+    LARGURA_SELO
+  );
+  const grupos = gruposDosPins(desloc);
+  for (const { id, el } of itens) {
+    const n = grupos.get(id);
+    if (!n) continue;
+    const selo = document.createElement("button");
+    selo.type = "button";
+    selo.dataset.testid = "pin-grupo";
+    selo.dataset.n = String(n);
+    selo.textContent = `+${n}`;
+    selo.setAttribute("aria-label", `Mais ${n} ${n === 1 ? "imóvel" : "imóveis"} aqui — aproximar o mapa`);
+    selo.className = "ml-1 rounded-full bg-forest px-2 text-[11px] font-semibold leading-4 text-white";
+    // Tocar no "+N" aproxima o mapa daquele ponto, onde os pins voltam a caber (não abre o cartão do pin).
+    selo.addEventListener("click", (e) => {
+      e.stopPropagation();
+      aoAbrirGrupo?.(id);
+    });
+    el.appendChild(selo);
+  }
+  for (const { id, el } of itens) {
+    const { dx, dy, agrupadoEm } = desloc.get(id) ?? { dx: 0, dy: 0 };
+    el.style.marginLeft = `${dx}px`;
+    el.style.marginTop = `${dy}px`;
+    el.style.visibility = agrupadoEm ? "hidden" : "";
+    el.style.pointerEvents = agrupadoEm ? "none" : "";
+    el.dataset.testid = agrupadoEm ? "pin-mapa-agrupado" : "pin-mapa";
+    if (agrupadoEm) el.setAttribute("aria-hidden", "true");
+    else el.removeAttribute("aria-hidden");
+  }
+}
+
+/**
+ * E704: os nomes de cidade que o Mapbox desenha (camadas "settlement-*-label" do estilo) viram obstáculos fixos do
+ * afastamento de pinos — o pin de preço não cobre o nome da cidade. A posição vem do próprio mapa
+ * (`queryRenderedFeatures`), nunca de um palpite; a largura do texto é estimada pelo tamanho do nome. Sem camada ou com
+ * erro, nenhum obstáculo (o comportamento de antes).
+ */
+function rotulosDeCidade(map: mapboxgl.Map): Obstaculo[] {
+  try {
+    const camadas = ["settlement-major-label", "settlement-minor-label"].filter((id) => map.getLayer(id));
+    if (camadas.length === 0) return [];
+    return map.queryRenderedFeatures({ layers: camadas }).flatMap((f) => {
+      if (f.geometry.type !== "Point") return [];
+      const pt = map.project(f.geometry.coordinates as [number, number]);
+      const nome = String(f.properties?.name_pt ?? f.properties?.name ?? "");
+      return [{ x: pt.x, y: pt.y, w: Math.max(80, nome.length * 10), h: 22 }];
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** E1023: repassa à lista o imóvel com o cartão aberto no mapa (o da prévia do hover não passava pelo pai). */
+function useAvisarAberto(abertoId: string | null, onAberto?: (id: string | null) => void) {
+  const ref = useRef(onAberto);
+  useEffect(() => {
+    ref.current = onAberto;
+  });
+  useEffect(() => {
+    ref.current?.(abertoId ?? null);
+  }, [abertoId]);
+  useEffect(() => () => ref.current?.(null), []);
+}
+
+/** E524 (D10): com o cartão do pin aberto, Esc fecha (antes só clicando no cartão dava para sair). */
+function useFecharCartaoComEsc(aberto: boolean, fechar: () => void) {
+  const fecharRef = useRef(fechar);
+  useEffect(() => {
+    fecharRef.current = fechar;
+  });
+  useEffect(() => {
+    if (!aberto) return;
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (fechaCartaoComTecla(e.key)) fecharRef.current();
+    };
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+  }, [aberto]);
 }
 
 export function SearchMap(props: SearchMapProps) {
@@ -98,6 +207,7 @@ function SearchMapbox({
   onHover,
   selectedId = null,
   onSelect,
+  onAberto,
   focus,
   radiusKm = 10,
   className,
@@ -115,6 +225,25 @@ function SearchMapbox({
   // Refs com os valores mais recentes — para os listeners dos pins não
   // precisarem recriar o mapa a cada render.
   const onHoverRef = useRef(onHover);
+  // E442: prévia do cartão no hover do preço (o mesmo cartão do clique).
+  const previa = usePreviaNoHover();
+  const previaRef = useRef(previa);
+  useEffect(() => {
+    previaRef.current = previa;
+  });
+  /** O cartão aberto: o do clique (fica) ou o da prévia do hover. */
+  const abertoId = selectedId ?? previa.id;
+  useAvisarAberto(abertoId, onAberto);
+  // E442: entrar no cartão mantém a prévia aberta (dá para clicar); sair fecha com a mesma folga do preço.
+  useEffect(() => {
+    if (!popupEl) return;
+    popupEl.addEventListener("mouseenter", previa.manter);
+    popupEl.addEventListener("mouseleave", previa.sair);
+    return () => {
+      popupEl.removeEventListener("mouseenter", previa.manter);
+      popupEl.removeEventListener("mouseleave", previa.sair);
+    };
+  }, [popupEl, previa.manter, previa.sair]);
   const propsRef = useRef(properties);
   const focusRef = useRef(focus);
   useEffect(() => {
@@ -167,8 +296,15 @@ function SearchMapbox({
       el.dataset.testid = "pin-mapa";
       el.dataset.id = p.id;
       el.textContent = rotuloPreco({ mensal: precoDeBusca(p) }).valor;
-      el.addEventListener("mouseenter", () => onHoverRef.current(p.id));
-      el.addEventListener("mouseleave", () => onHoverRef.current(null));
+      // E442: o hover no preço abre o cartão (prévia); sair fecha com folga para chegar ao cartão.
+      el.addEventListener("mouseenter", () => {
+        onHoverRef.current(p.id);
+        previaRef.current.entrarPin(p.id);
+      });
+      el.addEventListener("mouseleave", () => {
+        onHoverRef.current(null);
+        previaRef.current.sair();
+      });
       el.addEventListener("click", (e) => {
         e.stopPropagation();
         onSelectRef.current?.(p.id);
@@ -178,6 +314,28 @@ function SearchMapbox({
         .addTo(map);
       markersRef.current.set(p.id, { marker, el });
     });
+    const reorganizar = () =>
+      aplicarAfastamento(
+        [...markersRef.current].map(([id, { marker, el }]) => {
+          const pt = map.project(marker.getLngLat());
+          return { id, x: pt.x, y: pt.y, el };
+        }),
+        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight },
+        rotulosDeCidade(map),
+        (id) => {
+          const m = markersRef.current.get(id)?.marker;
+          if (m) map.easeTo({ center: m.getLngLat(), zoom: Math.min(map.getZoom() + 2, map.getMaxZoom()) });
+        }
+      );
+    reorganizar();
+    // E525: também ao ganhar tamanho (no celular o mapa nasce escondido e os pins mediam 0 × 0).
+    // E704: e quando o mapa termina de desenhar (é aí que os nomes de cidade existem para serem lidos).
+    map.on("moveend resize", reorganizar);
+    map.once("idle", reorganizar);
+    return () => {
+      map.off("moveend resize", reorganizar);
+      map.off("idle", reorganizar);
+    };
     // O enquadramento (fitBounds) fica num efeito próprio keyed em [sig, focusKey]
     // para um único ajuste de câmera — evita animações concorrentes quando lista
     // e endereço mudam juntos (ex.: trocar o raio).
@@ -275,7 +433,10 @@ function SearchMapbox({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const fechar = () => onSelectRef.current?.(null);
+    const fechar = () => {
+      onSelectRef.current?.(null);
+      previaRef.current.limpar();
+    };
     map.on("click", fechar);
     return () => {
       map.off("click", fechar);
@@ -285,29 +446,41 @@ function SearchMapbox({
   // Realce do pin (hover ou aberto) — hover NÃO abre nada, só muda a cor.
   useEffect(() => {
     markersRef.current.forEach(({ el }, id) => {
-      el.className = pinClass(id === activeId || id === selectedId);
+      el.className = pinClass(id === activeId || id === abertoId);
     });
-  }, [activeId, selectedId, sig]);
+  }, [activeId, abertoId, sig]);
 
   // Card do imóvel ancorado no pin clicado.
   useEffect(() => {
     const map = mapRef.current;
     popupRef.current?.remove();
     popupRef.current = null;
-    const p = selectedId ? propsRef.current.find((x) => x.id === selectedId) : null;
+    const p = abertoId ? propsRef.current.find((x) => x.id === abertoId) : null;
     if (!map || !p || !popupEl) return;
     popupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 18, maxWidth: "none", className: "vn-popup" })
       .setLngLat([p.lng, p.lat])
       .setDOMContent(popupEl)
       .addTo(map);
-  }, [selectedId, sig, popupEl]);
+    // E524 (D10): o Mapbox não tem autoPan — com o cartão já desenhado, move o mapa até ele caber, longe do zoom.
+    const quadro = requestAnimationFrame(() => {
+      const { dx, dy } = deslocamentoParaCaber(popupEl.getBoundingClientRect(), map.getContainer().getBoundingClientRect());
+      if (dx || dy) map.panBy([-dx, -dy], { duration: 250 });
+      mostrarCartaoNaTela(popupEl);
+    });
+    return () => cancelAnimationFrame(quadro);
+  }, [abertoId, sig, popupEl]);
 
-  const aberto = selectedId ? properties.find((x) => x.id === selectedId) : null;
+  const aberto = abertoId ? properties.find((x) => x.id === abertoId) : null;
+  const fechar = () => {
+    onSelect?.(null);
+    previa.limpar();
+  };
+  useFecharCartaoComEsc(!!aberto, fechar);
 
   return (
     <>
       <div ref={containerRef} data-testid="mapa-busca" className={cn("overflow-hidden rounded-xl border border-line", className)} />
-      {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={() => onSelect?.(null)} />, popupEl)}
+      {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={fechar} />, popupEl)}
     </>
   );
 }
@@ -333,7 +506,7 @@ function enquadrarMapa(map: L.Map, list: Property[], focus?: { lat: number; lng:
   else if (pts.length > 1) map.fitBounds(L.latLngBounds(pts), { padding: [48, 48], maxZoom: 14 });
 }
 
-function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, onSelect, focus, radiusKm = 10, className }: SearchMapProps) {
+function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, onSelect, onAberto, focus, radiusKm = 10, className }: SearchMapProps) {
   const [popupEl] = useState(() => {
     if (typeof document === "undefined") return null;
     const el = document.createElement("div");
@@ -344,12 +517,35 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
   const onSelectRef = useRef(onSelect);
   const selRef = useRef(selectedId);
   const focusRef = useRef(focus);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  // E698: o quadro do mapa nasce cinza até chegar o 1º tile; o aviso honesto cobre esse intervalo (e some sozinho).
+  const [quadro, setQuadro] = useState<HTMLDivElement | null>(null);
+  const [tilesProntos, setTilesProntos] = useState(!TILES_CARTO);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, { marker: L.Marker; el: HTMLElement }>>(new Map());
+  const reorganizarRef = useRef<(() => void) | null>(null);
   const focusLayerRef = useRef<L.LayerGroup | null>(null);
 
   const onHoverRef = useRef(onHover);
+  // E442: prévia do cartão no hover do preço (o mesmo cartão do clique).
+  const previa = usePreviaNoHover();
+  const previaRef = useRef(previa);
+  useEffect(() => {
+    previaRef.current = previa;
+  });
+  /** O cartão aberto: o do clique (fica) ou o da prévia do hover. */
+  const abertoId = selectedId ?? previa.id;
+  useAvisarAberto(abertoId, onAberto);
+  // E442: entrar no cartão mantém a prévia aberta (dá para clicar); sair fecha com a mesma folga do preço.
+  useEffect(() => {
+    if (!popupEl) return;
+    popupEl.addEventListener("mouseenter", previa.manter);
+    popupEl.addEventListener("mouseleave", previa.sair);
+    return () => {
+      popupEl.removeEventListener("mouseenter", previa.manter);
+      popupEl.removeEventListener("mouseleave", previa.sair);
+    };
+  }, [popupEl, previa.manter, previa.sair]);
   const propsRef = useRef(properties);
   const activeRef = useRef(activeId);
   useEffect(() => {
@@ -369,15 +565,40 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
     if (!containerRef.current) return;
     const map = L.map(containerRef.current, { zoomControl: false, scrollWheelZoom: true }).setView([-18.911, -48.262], 12);
     L.control.zoom({ position: "topright" }).addTo(map);
-    if (TILES_CARTO) {
-      L.tileLayer(TILES_CARTO, {
+    if (TILES_CARTO && TILES_CARTO_SEM_ROTULOS) {
+      const camada = L.tileLayer(TILES_CARTO_SEM_ROTULOS, {
         maxZoom: 19,
         attribution: ATRIBUICAO_MAPA,
-      }).addTo(map);
+        // E698: pede os tiles já durante o arrasto/zoom e guarda uma margem — a base chega antes de os pinos parecerem soltos.
+        updateWhenIdle: false,
+        keepBuffer: 3,
+      });
+      camada.once("load", () => setTilesProntos(true));
+      camada.addTo(map);
+      // E704: tiles sem rótulos; o nome da cidade é desenhado aqui, com o tamanho que o afastamento de pinos respeita.
+      const rotulos = CIDADES_ROTULADAS.map((c) => {
+        const { w, h } = caixaDoRotulo(c.nome);
+        return L.marker([c.lat, c.lng], {
+          interactive: false,
+          keyboard: false,
+          zIndexOffset: -1000,
+          icon: L.divIcon({
+            className: "",
+            iconSize: [w, h],
+            html: `<div data-testid="rotulo-cidade-mapa" class="pointer-events-none flex items-center justify-center text-sm font-semibold text-muted" style="width:${w}px;height:${h}px;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff">${c.nome}</div>`,
+          }),
+        }).addTo(map);
+      });
+      const mostrarRotulos = () => rotulos.forEach((m) => m.getElement()?.style.setProperty("display", map.getZoom() > ZOOM_MAXIMO_DO_ROTULO ? "none" : ""));
+      mostrarRotulos();
+      map.on("zoomend", mostrarRotulos);
     } else {
       avisarMapaSemChave();
     }
-    map.on("click", () => onSelectRef.current?.(null));
+    map.on("click", () => {
+      onSelectRef.current?.(null);
+      previaRef.current.limpar();
+    });
     mapRef.current = map;
     // Ao ganhar tamanho pela 1ª vez, enquadra; depois só ajusta o tamanho.
     let enquadrado = false;
@@ -387,10 +608,15 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
         enquadrado = true;
         enquadrarMapa(map, propsRef.current, focusRef.current);
       } else map.invalidateSize();
+      // E525: no celular o mapa nasce escondido (pins medidos com 0 × 0); ao aparecer, os pins são afastados de novo.
+      reorganizarRef.current?.();
     });
     ro.observe(containerRef.current);
     const markers = markersRef.current;
+    // Rede lenta ou tiles que não chegam: o aviso não fica para sempre (o erro de tile é tratado à parte, E419).
+    const limite = window.setTimeout(() => setTilesProntos(true), 10_000);
     return () => {
+      window.clearTimeout(limite);
       ro.disconnect();
       map.remove();
       mapRef.current = null;
@@ -411,14 +637,42 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
         iconSize: [0, 0],
         html: `<div data-testid="pin-mapa" data-id="${esc(p.id)}" class="${pinClass(p.id === activeRef.current || p.id === selRef.current)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2">${esc(rotuloPreco({ mensal: precoDeBusca(p) }).valor)}</div>`,
       });
-      const marker = L.marker([p.lat, p.lng], { icon, title: p.title, riseOnHover: true }).addTo(map);
+      // E442: sem `title` — a etiqueta nativa do navegador era o "texto simples" no lugar do cartão.
+      const marker = L.marker([p.lat, p.lng], { icon, riseOnHover: true, alt: p.title }).addTo(map);
       const el = marker.getElement()!.firstElementChild as HTMLElement;
-      el.addEventListener("mouseenter", () => onHoverRef.current(p.id));
-      el.addEventListener("mouseleave", () => onHoverRef.current(null));
+      // E442: o hover no preço abre o cartão (prévia); sair fecha com folga para chegar ao cartão.
+      el.addEventListener("mouseenter", () => {
+        onHoverRef.current(p.id);
+        previaRef.current.entrarPin(p.id);
+      });
+      el.addEventListener("mouseleave", () => {
+        onHoverRef.current(null);
+        previaRef.current.sair();
+      });
       marker.on("click", () => onSelectRef.current?.(p.id));
       markersRef.current.set(p.id, { marker, el });
     });
     enquadrarMapa(map, list, focusRef.current);
+    const reorganizar = () =>
+      aplicarAfastamento(
+        [...markersRef.current].map(([id, { marker, el }]) => {
+          const pt = map.latLngToContainerPoint(marker.getLatLng());
+          return { id, x: pt.x, y: pt.y, el };
+        }),
+        { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight },
+        // E704: o nome da cidade vem no tile; o ponto dela é um obstáculo fixo (o pino de preço não o cobre).
+        obstaculosDeCidades((lat, lng) => map.latLngToContainerPoint([lat, lng]), { w: map.getContainer().clientWidth, h: map.getContainer().clientHeight }, map.getZoom()),
+        (id) => {
+          const m = markersRef.current.get(id)?.marker;
+          if (m) map.setView(m.getLatLng(), Math.min(map.getZoom() + 2, map.getMaxZoom()));
+        }
+      );
+    reorganizar();
+    reorganizarRef.current = reorganizar;
+    map.on("zoomend moveend", reorganizar);
+    return () => {
+      map.off("zoomend moveend", reorganizar);
+    };
   }, [sig, focusKey]);
 
   // Centro do endereço buscado + círculo do raio.
@@ -454,36 +708,78 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
   // traz o pin para a frente — hover não abre nada.
   useEffect(() => {
     markersRef.current.forEach(({ marker, el }, id) => {
-      const on = id === activeId || id === selectedId;
+      const on = id === activeId || id === abertoId;
       el.className = `${pinClass(on)} absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2`;
       el.dataset.ativo = on ? "1" : "0";
       marker.setZIndexOffset(on ? 1000 : 0);
     });
-  }, [activeId, selectedId, sig]);
+  }, [activeId, abertoId, sig]);
 
   // Card do imóvel ancorado no pin clicado (popup do Leaflet com o card React).
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !popupEl) return;
-    const p = selectedId ? propsRef.current.find((x) => x.id === selectedId) : null;
+    const p = abertoId ? propsRef.current.find((x) => x.id === abertoId) : null;
     if (!p) {
       popupRef.current?.remove();
       popupRef.current = null;
       return;
     }
     popupRef.current?.remove();
-    popupRef.current = L.popup({ closeButton: false, autoClose: false, closeOnClick: false, offset: [0, -12], className: "vn-popup", maxWidth: 280, minWidth: 256 })
+    // E524 (D10): o autoPan usa as folgas da casa — a da direita livra os botões de zoom (o padrão do Leaflet era 5 px).
+    popupRef.current = L.popup({
+      closeButton: false,
+      autoClose: false,
+      closeOnClick: false,
+      offset: [0, -12],
+      className: "vn-popup",
+      maxWidth: 280,
+      minWidth: 256,
+      autoPan: true,
+      autoPanPaddingTopLeft: [FOLGA_CARTAO_MAPA.esquerda, FOLGA_CARTAO_MAPA.topo],
+      autoPanPaddingBottomRight: [FOLGA_CARTAO_MAPA.direita, FOLGA_CARTAO_MAPA.base],
+    })
       .setLatLng([p.lat, p.lng])
       .setContent(popupEl)
       .openOn(map);
-  }, [selectedId, sig, popupEl]);
+    // Com o cartão desenhado (foto, chips), refaz o enquadramento com o tamanho real.
+    const quadro = requestAnimationFrame(() => {
+      popupRef.current?.update();
+      mostrarCartaoNaTela(popupEl);
+    });
+    return () => cancelAnimationFrame(quadro);
+  }, [abertoId, sig, popupEl]);
 
-  const aberto = selectedId ? properties.find((x) => x.id === selectedId) : null;
+  const aberto = abertoId ? properties.find((x) => x.id === abertoId) : null;
+  const fechar = () => {
+    onSelect?.(null);
+    previa.limpar();
+  };
+  useFecharCartaoComEsc(!!aberto, fechar);
 
   return (
     <>
-      <div ref={containerRef} data-testid="mapa-busca" data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"} className={cn("z-0 overflow-hidden bg-surface-2", className)} />
-      {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={() => onSelect?.(null)} />, popupEl)}
+      <div
+        ref={(el) => {
+          containerRef.current = el;
+          setQuadro(el);
+        }}
+        data-testid="mapa-busca"
+        data-mapa-base={TILES_CARTO ? "carto" : "sem-chave"}
+        data-mapa-tiles={tilesProntos ? "pronto" : "carregando"}
+        className={cn("z-0 overflow-hidden bg-surface-2", className)}
+      />
+      {!tilesProntos && quadro && createPortal(<AvisoMapaCarregando />, quadro)}
+      {aberto && popupEl && createPortal(<CardPinMapa property={aberto} onFechar={fechar} />, popupEl)}
     </>
+  );
+}
+
+/** E698: aviso discreto sobre o quadro do mapa enquanto a base (ruas) ainda não chegou — o pino sozinho num fundo cinza parecia quebrado. */
+function AvisoMapaCarregando() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[450] grid place-items-center bg-surface-2/60" data-testid="mapa-carregando" role="status" aria-live="polite">
+      <span className="rounded-full bg-white px-3 py-2 text-sm font-medium text-ink motion-safe:animate-pulse">Carregando o mapa…</span>
+    </div>
   );
 }

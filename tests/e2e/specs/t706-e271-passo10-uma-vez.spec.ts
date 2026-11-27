@@ -86,6 +86,8 @@ test.describe("T706 — E271: Passo 10 sem pendência repetida; alt neutro no Pa
       await p.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
       const linha = p.getByRole("radiogroup", { name: "Tipo do imóvel" });
       await expect(linha).toBeVisible({ timeout: 30_000 });
+      // E607: o Passo 1 mostra 3 tipos e "Ver mais tipos" abre a grade dos nove.
+      if ((await p.getByTestId("tipos-ver-mais").getAttribute("aria-expanded")) !== "true") await p.getByTestId("tipos-ver-mais").click();
       await expect(linha.locator("img")).toHaveCount(9);
       const alts = await linha.locator("img").evaluateAll((els) => els.map((e) => e.getAttribute("alt") ?? ""));
       for (const alt of alts) {

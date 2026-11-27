@@ -48,6 +48,14 @@ export function idealPara(p: Dados): IdealParaId[] {
     .slice(0, IDEAL_PARA_MAX);
 }
 
+/** E1049 (decisão do coordenador): o título da linha na página do imóvel. */
+export const SUGESTAO_DA_VIVA = "Sugestão da Viva";
+
+/** E1049: cada rótulo com o motivo (o resumo de src/config/selos.ts), mostrado ao tocar/passar o rato. */
+export function idealParaComMotivo(p: Dados): { id: IdealParaId; nome: string; motivo: string }[] {
+  return idealPara(p).map((id) => ({ id, nome: IDEAL_PARA[id].nome, motivo: IDEAL_PARA[id].resumo }));
+}
+
 /** Rótulos prontos para a tela ("Home office", "Família"…). */
 export function idealParaRotulos(p: Dados): string[] {
   return idealPara(p).map((id) => IDEAL_PARA[id].nome);

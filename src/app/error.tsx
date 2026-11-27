@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, ButtonLink } from "@/components/ui/button";
+import { CodigoDoErro } from "@/components/ui/codigo-do-erro";
 
 /**
  * Erro fora do alcance do error.tsx do painel. O error.tsx de um segmento não cobre o layout do mesmo segmento: uma
@@ -8,7 +9,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
  * caía na página padrão do Next, em inglês ("Application error: a server-side exception has occurred"). Aqui sai em
  * português, com "Tentar de novo" (unstable_retry do Next 16; reset de reserva) e as saídas certas.
  */
-export default function ErroDoSite({ unstable_retry, reset }: { error: unknown; unstable_retry?: () => void; reset?: () => void }) {
+export default function ErroDoSite({ error, unstable_retry, reset }: { error: unknown; unstable_retry?: () => void; reset?: () => void }) {
   const tentarDeNovo = () => (unstable_retry ?? reset)?.();
   return (
     <main role="alert" data-testid="site-erro" className="container-page flex min-h-[60vh] flex-col items-center justify-center py-12 text-center">
@@ -25,6 +26,7 @@ export default function ErroDoSite({ unstable_retry, reset }: { error: unknown; 
           Falar com a Viva
         </ButtonLink>
       </div>
+      <CodigoDoErro error={error} />
     </main>
   );
 }

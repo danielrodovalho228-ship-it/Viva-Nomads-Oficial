@@ -51,7 +51,7 @@ test("assinarContrato: o hash da outra parte é lido com erro conferido, antes d
 });
 
 test("pedirCodigoAssinatura: leitura falha não fura o limite de 1 minuto", () => {
-  const p = corpo("pedirCodigoAssinatura");
+  const p = corpo("pedirCodigoAssinaturaInterno"); // E654: a lógica mora na função interna (a pública só captura exceções)
   const guarda = p.indexOf("if (erroAtual) return");
   assert.ok(guarda >= 0 && guarda < p.indexOf("podeReenviar("));
 });

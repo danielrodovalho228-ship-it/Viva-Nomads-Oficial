@@ -64,7 +64,12 @@ test.describe("T88 — Página do imóvel completa", () => {
     const cartao = (await page.locator("#cartao-preco").boundingBox())!;
     // Folga de 4 px: perto do fim da grade o cartão sobe junto com a coluna (sticky), e o vídeo/níveis
     // mudaram a altura da página em ~2 px; o defeito que importa é o cartão ENTRAR por baixo das abas.
-    expect(cartao.y).toBeGreaterThanOrEqual(caixaNav.y + caixaNav.height - 4);
+    // E528 (06/11, já na main): o cartão só fica PRESO quando cabe na janela; mais alto que ela, rola com a página (posição
+    // "relative") e sai da tela junto com o conteúdo — aí y negativo é o esperado. Este passo media sempre e falhava na main
+    // (esperado >= 115, recebido -2869) com o cartão alto do anúncio de teste. A regra do E528 é guardada pelo t843; aqui a
+    // medida vale quando o cartão está preso, que é quando ele poderia entrar por baixo das abas.
+    const preso = await page.locator("#cartao-preco").evaluate((c) => getComputedStyle(c).position === "sticky");
+    if (preso) expect(cartao.y).toBeGreaterThanOrEqual(caixaNav.y + caixaNav.height - 4);
 
     // Rolar até a localização muda a aba ativa sozinho.
     await page.locator("#localizacao").evaluate((el) => el.scrollIntoView({ block: "start" }));
@@ -114,7 +119,8 @@ test.describe("T88 — Página do imóvel completa", () => {
     await expect(page.getByTestId("nav-secoes")).toBeVisible();
     // Exemplo: avaliações ILUSTRATIVAS, sempre com o selo; nunca o estado vazio nem avaliação "real".
     await expect(page.getByTestId("avaliacoes-exemplo")).toHaveCount(1);
-    await expect(page.getByTestId("avaliacoes-exemplo").getByTestId("selo-exemplo")).toHaveText("Exemplo ilustrativo");
+    // E926: o selo diz "Anúncio de exemplo", o mesmo termo do cartão (antes: "Exemplo ilustrativo").
+    await expect(page.getByTestId("avaliacoes-exemplo").getByTestId("selo-exemplo")).toHaveText("Anúncio de exemplo");
     // O exemplo mostra a barra em demonstração (ordem 4f8023d1); nada é enviado.
     await expect(page.getByTestId("barra-fixa-imovel")).toHaveCount(1);
     await expect(page.getByTestId("barra-demo")).toBeVisible();

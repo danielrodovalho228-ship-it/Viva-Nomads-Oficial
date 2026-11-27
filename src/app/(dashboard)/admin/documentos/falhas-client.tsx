@@ -1,5 +1,6 @@
 "use client";
 
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -11,7 +12,7 @@ import { emitirDeNovo, emitirPendentes, reenviarEmail, type FalhaDocumento } fro
  * "Documentos com falha" (complemento da jornada de assinatura, 19/10): cada emissão que não saiu, com o motivo e
  * "Emitir de novo"; e o retroativo "Emitir os pendentes" para pagamentos confirmados que ficaram sem recibo.
  */
-export function FalhasDocumentos({ falhas, pendentes }: { falhas: FalhaDocumento[]; pendentes: number }) {
+export function FalhasDocumentos({ falhas, pendentes, soLeitura = false }: { falhas: FalhaDocumento[]; pendentes: number; soLeitura?: boolean }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -23,6 +24,7 @@ export function FalhasDocumentos({ falhas, pendentes }: { falhas: FalhaDocumento
             ? "Nenhum pagamento confirmado sem recibo."
             : `${pendentes} ${pendentes === 1 ? "pagamento confirmado está" : "pagamentos confirmados estão"} sem recibo.`}
         </p>
+        {soLeitura ? <SoLeituraQa /> : (
         <Button
           size="sm"
           variant="secondary"
@@ -39,6 +41,7 @@ export function FalhasDocumentos({ falhas, pendentes }: { falhas: FalhaDocumento
         >
           {ocupado === "todos" ? "Emitindo…" : "Emitir os pendentes"}
         </Button>
+        )}
       </div>
       {msg && (
         <p className="mt-2 text-sm text-ink" role="status" data-testid="documentos-falhas-msg">
@@ -65,7 +68,7 @@ export function FalhasDocumentos({ falhas, pendentes }: { falhas: FalhaDocumento
                   <span data-testid="falha-data">{dataHoraBRT(f.atualizadoEm)}</span>
                 </span>
               </span>
-              {f.etapa === "envio" ? (
+              {soLeitura ? <SoLeituraQa /> : f.etapa === "envio" ? (
                 <Button
                   size="sm"
                   variant="outline"

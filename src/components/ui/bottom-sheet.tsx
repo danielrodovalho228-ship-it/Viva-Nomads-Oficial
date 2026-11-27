@@ -46,11 +46,15 @@ export function BottomSheet({
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // E734 (WCAG 2.4.3): quem abriu a folha é guardado, e o foco VOLTA a ele ao fechar (Esc, fundo, X ou aplicar). Antes, ao fechar
+    // a folha o foco ia para o começo da página ("Pular para o conteúdo").
+    const abridor = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
     // Foco inicial no painel.
     panelRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
+      if (abridor && abridor.isConnected) abridor.focus();
     };
   }, [open]);
 

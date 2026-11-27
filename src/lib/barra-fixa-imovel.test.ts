@@ -31,7 +31,7 @@ test("sem preço válido a barra não aparece (não inventa número)", () => {
 
 test("barra mostra o status de disponibilidade (ordem d943f893)", () => {
   const b = barraFixaImovel({ monthlyPrice: 3200, exemplo: false, candidatouSe: false, availableFrom: "2026-12-05", hoje: "2026-10-15" });
-  assert.equal(b.status, "Disponível a partir de 05/12");
+  assert.equal(b.status, "Disponível a partir de 05/12/2026");
   assert.equal(barraFixaImovel({ monthlyPrice: 3200, exemplo: false, candidatouSe: false, hoje: "2026-10-15" }).status, "Disponível agora");
 });
 
@@ -41,12 +41,13 @@ test("barra fixa mostra o TOTAL do mês quando informado (ordem 1a555bfa), não 
   assert.equal(barraFixaImovel({ monthlyPrice: 3000, exemplo: false, candidatouSe: false }).valor, formatBRL(3000));
 });
 
-test("Prompt 41: valor mensal + total pela duração escolhida; N = 1 mostra só /mês", () => {
+test("Prompt 41 + E777: valor mensal + total pela duração escolhida; com N = 1 o total é \"R$ Y em 1 mês\" (o \"/mês\" só acompanha o mensal)", () => {
   const b = barraFixaImovel({ monthlyPrice: 3000, totalMensal: 3130, meses: 3, exemplo: false, candidatouSe: false });
   assert.equal(b.mes, `${formatBRL(3130)}/mês`);
   assert.equal(b.estadia, `${formatBRL(9390)} em 3 meses`);
   const um = barraFixaImovel({ monthlyPrice: 3000, totalMensal: 3130, meses: 1, exemplo: false, candidatouSe: false });
   assert.equal(um.mes, `${formatBRL(3130)}/mês`);
-  assert.equal(um.estadia, null);
-  assert.equal(barraFixaImovel({ monthlyPrice: 3000, exemplo: false, candidatouSe: false }).estadia, null);
+  assert.equal(um.estadia, `${formatBRL(3130)} em 1 mês`);
+  assert.equal(barraFixaImovel({ monthlyPrice: 3000, exemplo: false, candidatouSe: false }).estadia, `${formatBRL(3000)} em 1 mês`);
+  assert.equal(barraFixaImovel({ monthlyPrice: 0, exemplo: false, candidatouSe: false }).estadia, null);
 });

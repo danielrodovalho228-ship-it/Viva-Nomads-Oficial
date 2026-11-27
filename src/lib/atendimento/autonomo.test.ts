@@ -3,6 +3,7 @@
   Roda: node --test src/lib/atendimento/autonomo.test.ts
 */
 import { test } from "node:test";
+import { PROMESSA_ATENDIMENTO } from "../../config/atendimento.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { htmlAvisoEquipe, pedePessoaNoTexto, prioridadeAcima, relataErroTecnico, RODAPE_AUTOMATICO, semDadosPessoais, textoOrdemErro, urlDoErro } from "./autonomo.ts";
@@ -84,5 +85,6 @@ test("ligações: pediu pessoa nunca recebe IA; nova mensagem passa pela Viva; e
   assert.match(acoes, /acao: "pediu_humano"/);
   assert.match(acoes, /if \(atende !== "equipe_com_acolhimento"\) \{\s*await avisarEquipe/);
   // A promessa pública NÃO muda (decisão do Daniel, 07/10): uma pessoa em até 24 h.
-  assert.match(ler("config/atendimento.ts"), /PROMESSA_ATENDIMENTO = "Assistente Viva 24 h · resposta de uma pessoa em até 24 h"/);
+  // Família 1 (E835): a frase é montada da fonte única (PROMESSA_HUMANA_H); o texto exibido continua o mesmo.
+  assert.equal(PROMESSA_ATENDIMENTO, "Assistente Viva 24 h · resposta de uma pessoa em até 24 h");
 });

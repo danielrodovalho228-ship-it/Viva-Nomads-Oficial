@@ -17,6 +17,7 @@ test("E338 — Admin → Usuários: o observador vê tipo e marca de teste em le
   assert.equal((pagina.match(/<TipoConta /g) ?? []).length, 2);
   assert.equal((pagina.match(/<BotaoContaTeste /g) ?? []).length, 2);
   assert.match(pagina, /\{observador \? \(\s+<p className="text-sm text-ink" data-testid="tipo-conta-leitura">/);
-  assert.match(pagina, /observador \? \(\s+<span data-testid="tipo-conta-leitura">/);
-  assert.match(pagina, /observador \? \(\s+<span data-testid="conta-teste-leitura">/);
+  // E991: na tabela, tipo e marca de teste ficam numa coluna só (uma embaixo da outra), ainda em leitura para o observador.
+  assert.match(pagina, /observador \? \(\s+<span className="flex flex-col gap-1">\s+<span data-testid="tipo-conta-leitura">/);
+  assert.match(pagina, /<span data-testid="conta-teste-leitura">\{u\.is_teste \? "Sim" : "Não"\}<\/span>/);
 });

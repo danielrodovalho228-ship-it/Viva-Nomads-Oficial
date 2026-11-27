@@ -65,50 +65,53 @@ test.describe("T273 — admin: decisões primeiro", () => {
   });
 
   for (const largura of [1280, 390] as const) {
-    test(`${largura}px — "Hoje você tem N decisões", cada uma com o botão e a lista que conta o mesmo`, async ({ page }) => {
+    test(`${largura}px — "N pendências esperando ação" (E330): o título soma a fila, e cada decisão abre a lista que conta o mesmo`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
-      const secao = page.getByTestId("admin-decisoes");
-      const h1 = secao.getByRole("heading", { level: 2 });
-      await expect(h1).toHaveText(/^Hoje você tem \d+ decis(ão|ões)$/, { timeout: 25_000 });
+      // E330 (1c49d599a, 01/11) + E474 (77e0ff4e4, 05/11): o topo "Hoje você tem N decisões" saiu; a Central conta no TÍTULO
+      // a fila inteira — os filtros da Central (botão central-filtro-<chave>, data-n) mais as decisões das outras telas
+      // (central-linha-decisao, data-n e o link). A regra do teste segue: o número do título é a soma, cada decisão leva
+      // à tela do admin com um botão/link secundário, e a lista aberta conta o mesmo.
+      const secao = page.getByTestId("central-decisoes");
+      const h2 = secao.getByRole("heading", { level: 2 });
+      await expect(h2).toHaveText(/^(Nada pendente agora|1 pendência esperando ação|\d+ pendências esperando ação)$/, { timeout: 25_000 });
       await semRolagemLateral(page);
 
-      // N = soma das linhas; cada linha: link (número) e botão secundário para a MESMA tela do admin.
-      const linhas = secao.locator("[data-decisao]");
-      const qtd = await linhas.count();
-      expect(qtd).toBeGreaterThanOrEqual(2);
+      const filtros = secao.locator('[data-testid^="central-filtro-"]:not([data-testid="central-filtro-todos"])');
+      const outras = page.getByTestId("central-linha-decisao");
       let soma = 0;
-      for (let i = 0; i < qtd; i++) {
-        const l = linhas.nth(i);
-        const link = l.locator("[data-href]").first();
-        const href = (await link.getAttribute("data-href"))!;
-        soma += Number(await link.getAttribute("data-valor"));
-        expect(href).toMatch(/^\/admin/);
-        const botao = l.getByRole("link").last();
-        expect(await botao.getAttribute("href")).toBe(href);
-        expect(await botao.getAttribute("data-cta")).not.toBe("primary");
+      for (let i = 0; i < (await filtros.count()); i++) {
+        const b = filtros.nth(i);
+        soma += Number(await b.getAttribute("data-n"));
+        expect(await b.getAttribute("href")).toMatch(/^\/admin/);
+        expect(await b.getAttribute("data-cta")).not.toBe("primary");
       }
-      expect(Number((await h1.innerText()).match(/\d+/)![0])).toBe(soma);
+      for (let i = 0; i < (await outras.count()); i++) {
+        const l = outras.nth(i);
+        soma += Number(await l.getAttribute("data-n"));
+        expect(await l.locator("a").first().getAttribute("href")).toMatch(/^\/admin/);
+      }
+      const total = Number(await secao.getAttribute("data-total"));
+      expect(soma, "o título conta a soma da fila").toBe(total);
+      expect(await outras.count(), "as duas decisões criadas pelo spec aparecem").toBeGreaterThanOrEqual(2);
       await expect(secao.locator('[data-cta="primary"]')).toHaveCount(0);
       await page.screenshot({ path: `${SAIDA}/t273-decisoes-${largura}.png`, fullPage: false });
 
       // Encerramento aberto: a linha conta o mesmo que a lista de encerramentos (não concluídos).
-      const enc = secao.locator('[data-decisao="encerramentos"] [data-href]').first();
-      const nEnc = Number(await enc.getAttribute("data-valor"));
+      const enc = page.locator('[data-testid="central-linha-decisao"][data-decisao="encerramentos"]');
+      const nEnc = Number(await enc.getAttribute("data-n"));
       expect(nEnc).toBeGreaterThanOrEqual(1);
-      // A URL só muda quando a tela de destino termina de carregar no servidor (leituras do admin): espera até 30 s.
-      await page.waitForLoadState("networkidle");
-      await enc.click();
+      await page.goto((await enc.locator("a").first().getAttribute("href"))!, { waitUntil: "domcontentloaded" });
       await expect(page).toHaveURL(/\/admin\/contratos\/encerramentos/, { timeout: 30_000 });
       await expect(page.locator('[data-testid="admin-encerramento"]:not([data-status="concluido"])')).toHaveCount(nEnc, { timeout: 20_000 });
       await expect(page.locator(`[data-contrato="${ids.contrato}"]`)).toHaveCount(1);
 
       // Candidatura parada há 3 dias: a linha conta o mesmo que a lista filtrada.
       await page.goto("/admin/pendencias", { waitUntil: "domcontentloaded" });
-      const cand = page.locator('[data-decisao="candidaturas_sem_resposta_48h"] [data-href]').first();
-      const nCand = Number(await cand.getAttribute("data-valor"));
+      const cand = page.locator('[data-testid="central-linha-decisao"][data-decisao="candidaturas_sem_resposta_48h"]');
+      const nCand = Number(await cand.getAttribute("data-n"));
       expect(nCand).toBeGreaterThanOrEqual(1);
-      await page.goto((await cand.getAttribute("data-href"))!, { waitUntil: "domcontentloaded" });
+      await page.goto((await cand.locator("a").first().getAttribute("href"))!, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("lista-total")).toHaveText(String(nCand));
     });
 

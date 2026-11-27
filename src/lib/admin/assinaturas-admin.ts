@@ -3,7 +3,7 @@
   registros com hash (contrato_assinaturas). Contrato com as datas gravadas e sem o registro com hash (hoje só contratos
   de teste montados direto no banco) aparecia na lista "Assinado pelas duas partes" e no detalhe "Nenhuma assinatura
   ainda". Agora o detalhe junta as duas fontes: o registro com hash vale; sem ele, a data do contrato aparece com o aviso
-  de que falta o hash. O pacote de provas segue só com os registros com hash (é prova).
+  de que falta o hash. O pacote de provas (resíduo do E197, 05/11) lista a data do contrato do mesmo jeito, sem hash.
   PURO. Roda: node --test src/lib/admin/assinaturas-admin.test.ts
 */
 import type { ComparacaoHash } from "../contrato-assinar.ts";

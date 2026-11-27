@@ -6,6 +6,7 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, cliqueResponde, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T368 — VARREDURA DA PÁGINA INTEIRA, BLOCO 20 (Pista C, 24/10). O protocolo da t354 (seis classes, página toda rolada,
@@ -52,7 +53,7 @@ const PUBLICAS: [string, string][] = [
   ["/para-proprietarios", "Para proprietários"],
   ["/como-funciona", "Como funciona"],
   ["/empresas", "Empresas"],
-  ["/precos", "Preços"],
+  ...comPrecos(["/precos", "Preços"] as [string, string]),
   ["/parceiros/buscar", "Parceiros — buscar"],
   ["/guias", "Guias"],
   ["/guia-fotos", "Guia de fotos"],

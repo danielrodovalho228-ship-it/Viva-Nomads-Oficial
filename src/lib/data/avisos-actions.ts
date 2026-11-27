@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { resumoDosAvisos, type PrioridadeAviso } from "@/lib/notifications/avisos";
+import { urlDoAvisoComConversa } from "@/lib/notifications/url-conversa";
 
 /*
   E444, item 2 — o sino do site (servidor): contagem de não lidas e a maior prioridade pendente, a lista e as ações de
@@ -12,10 +13,14 @@ export interface AvisoDoSino {
   evento: string;
   prioridade: PrioridadeAviso;
   titulo: string;
+  /** E482: a linha de texto (ex.: a prévia da mensagem nova). */
+  texto: string | null;
   url: string | null;
   criado_em: string;
   lido_em: string | null;
   resolvido_em: string | null;
+  /** E676: o objeto do aviso (nos avisos do contrato e da estadia, o id do contrato). */
+  ref_id: string | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -43,14 +48,25 @@ export async function resumoDoSino(): Promise<{ naoLidas: number; maiorPrioridad
 export async function meusAvisos(limite = 30): Promise<AvisoDoSino[] | null> {
   const s = await sessao();
   if (!s) return null;
-  const { data, error } = await s.supabase
-    .from("avisos")
-    .select("id, evento, prioridade, titulo, url, criado_em, lido_em, resolvido_em")
-    .eq("usuario_id", s.userId)
-    .order("criado_em", { ascending: false })
-    .limit(Math.min(Math.max(1, Math.round(limite)), 100));
+  const n = Math.min(Math.max(1, Math.round(limite)), 100);
+  const ler = (colunas: string) => s.supabase.from("avisos").select(colunas).eq("usuario_id", s.userId).order("criado_em", { ascending: false }).order("id", { ascending: false }).limit(n);
+  let { data, error } = await ler("id, evento, prioridade, titulo, texto, url, ref_id, criado_em, lido_em, resolvido_em");
+  // Sem a 0298 aplicada (coluna texto), lê como antes — o aviso sai só com o título.
+  if (error?.code === "42703") ({ data, error } = await ler("id, evento, prioridade, titulo, url, ref_id, criado_em, lido_em, resolvido_em"));
   if (error) throw new Error(MSG_AVISOS_SEM_LEITURA);
-  return (data ?? []) as AvisoDoSino[];
+  // E541: aviso de mensagem nova gravado antes da correção (url sem ?conversa=) abre a conversa pelo ref_id.
+  return ((data ?? []) as unknown as (AvisoDoSino & { ref_id: string | null })[]).map((a) => ({
+    id: a.id,
+    evento: a.evento,
+    prioridade: a.prioridade,
+    titulo: a.titulo,
+    texto: a.texto ?? null,
+    url: urlDoAvisoComConversa(a),
+    criado_em: a.criado_em,
+    lido_em: a.lido_em,
+    resolvido_em: a.resolvido_em,
+    ref_id: a.ref_id ?? null,
+  }));
 }
 
 export async function marcarAvisoLido(id: string): Promise<{ ok: boolean }> {

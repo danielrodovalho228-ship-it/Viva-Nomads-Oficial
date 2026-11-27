@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { EXTRAS, PERGUNTAS_RUIDO, type ChaveRuido } from "@/config/niveis";
 import { salvarExtras, salvarRuido, type NivelDoImovelTela } from "@/lib/data/nivel-actions";
@@ -17,12 +16,28 @@ const TEXTO_CARTAO_RUIDO: Record<ChaveRuido, string> = {
 };
 
 /**
- * E258 (c): Ruído e Extras gravam no botão (o ruído é um questionário: salvar sem marcar nada responde "não" nas quatro,
- * e só o toque no botão diz que a pessoa respondeu); a estrutura de acessibilidade grava a cada toque. A tela diz qual
- * é qual, em cada bloco.
+ * E606: o Passo 5 tem UM modelo de gravar — cada toque salva na hora, como a estrutura de acessibilidade e as
+ * comodidades (antes, Ruído e Extras exigiam o próprio "Salvar", e quem fechava o bloco sem apertar perdia o que
+ * marcou). O ruído é um questionário: o toque num cartão grava as quatro respostas (o que ficou sem marcar = "não");
+ * "Nenhum destes" grava "não" nas quatro de uma vez — a forma de responder sem marcar nada.
  */
-export const COMO_SALVA_RUIDO = "Vale depois de “Salvar ruído”. Sem nada marcado, salva “não” nas quatro.";
-export const COMO_SALVA_EXTRAS = "Vale depois de “Salvar extras”.";
+export const COMO_SALVA_RUIDO = "Cada toque salva na hora.";
+export const COMO_SALVA_EXTRAS = "Cada toque salva na hora.";
+export const RUIDO_NENHUM = "Nenhum destes vale para o imóvel";
+
+type Estado = "" | "salvando" | "salvo" | "erro";
+
+/** A linha de status, igual à da estrutura de acessibilidade (E606: o mesmo texto e os mesmos estados no Passo 5). */
+function LinhaComoSalva({ estado, erro, testid, padrao }: { estado: Estado; erro: string | null; testid: string; padrao: string }) {
+  return (
+    <p className="mt-3 text-xs" role={estado === "erro" ? "alert" : "status"} aria-live="polite" data-testid={testid} data-estado={estado || "parado"}>
+      {estado === "" && <span className="text-muted">{padrao}</span>}
+      {estado === "salvando" && <span className="text-muted">Salvando…</span>}
+      {estado === "salvo" && <span className="text-forest">Salvo.</span>}
+      {estado === "erro" && <span className="text-red-700">{erro ?? "Não foi possível salvar agora. Tente de novo."}</span>}
+    </p>
+  );
+}
 
 /**
  * Adendo 59.1 — ruído e extras do imóvel. Usados na página do nível e, desde o E143, dentro do Passo 5 do cadastro
@@ -31,55 +46,57 @@ export const COMO_SALVA_EXTRAS = "Vale depois de “Salvar extras”.";
 export function Ruido({ propertyId, inicial, onSalvo }: { propertyId: string; inicial: NivelDoImovelTela["ruido"]; onSalvo?: () => void }) {
   const router = useRouter();
   const salvo = onSalvo ?? (() => router.refresh());
-  const [r, setR] = useState<Record<string, boolean | null>>(() => Object.fromEntries(PERGUNTAS_RUIDO.map((p) => [p.chave, inicial ? inicial[p.chave] : null])));
-  const [pendente, iniciar] = useTransition();
-  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
+  const [r, setR] = useState<Record<string, boolean>>(() => Object.fromEntries(PERGUNTAS_RUIDO.map((p) => [p.chave, inicial ? inicial[p.chave] === true : false])));
+  // Respondido = já gravou alguma vez (o "Nenhum destes" só aparece marcado quando a resposta gravada é "não" nas quatro).
+  const [respondido, setRespondido] = useState(!!inicial);
+  const [estado, setEstado] = useState<Estado>("");
+  const [erro, setErro] = useState<string | null>(null);
+  async function gravar(novo: Record<string, boolean>) {
+    setR(novo);
+    setEstado("salvando");
+    setErro(null);
+    const res = await semQuedaDeRede(salvarRuido(propertyId, novo));
+    if (res.ok) {
+      setRespondido(true);
+      setEstado("salvo");
+      salvo();
+    } else {
+      setEstado("erro");
+      setErro(res.erro);
+    }
+  }
+  const nenhum = respondido && PERGUNTAS_RUIDO.every((p) => !r[p.chave]);
   return (
     <section className="rounded-xl border border-line bg-white p-4" data-testid="ruido-form">
       <h2 className="text-base font-semibold text-ink">Ruído</h2>
       <p className="mt-1 text-xs text-muted">Marque o que vale para o imóvel; o que ficar sem marcar conta como “não”. A classe sai da exposição (baixo, médio ou alto). O morador confere na entrada.</p>
-      {/* E193 (reteste de 30/10): no lugar dos pares Sim/Não, um cartão de marcar por pergunta — o mesmo cartão grande de
-          todas as escolhas do assistente. Desmarcado = não; o que se grava continua o mesmo (sim ou não em cada uma). */}
+      {/* E193 (reteste de 30/10): um cartão de marcar por pergunta. Desmarcado = não. */}
       <ul className="mt-3 grid gap-2 sm:grid-cols-2">
         {PERGUNTAS_RUIDO.map((p) => (
           <li key={p.chave}>
             <CartaoEscolha
               papel="checkbox"
               on={r[p.chave] === true}
-              onClick={() => setR((a) => ({ ...a, [p.chave]: a[p.chave] !== true }))}
+              onClick={() => void gravar({ ...r, [p.chave]: !r[p.chave] })}
+              disabled={estado === "salvando"}
               rotulo={TEXTO_CARTAO_RUIDO[p.chave]}
               testid={`ruido-${p.chave}`}
               className="h-full"
             />
           </li>
         ))}
+        <li className="sm:col-span-2">
+          <CartaoEscolha
+            papel="checkbox"
+            on={nenhum}
+            onClick={() => void gravar(Object.fromEntries(PERGUNTAS_RUIDO.map((p) => [p.chave, false])))}
+            disabled={estado === "salvando"}
+            rotulo={RUIDO_NENHUM}
+            testid="ruido-nenhum"
+          />
+        </li>
       </ul>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          disabled={pendente}
-          onClick={() =>
-            iniciar(async () => {
-              const respostas = Object.fromEntries(PERGUNTAS_RUIDO.map((p) => [p.chave, r[p.chave] === true]));
-              const res = await semQuedaDeRede(salvarRuido(propertyId, respostas));
-              setMsg(res.ok ? { ok: true, t: res.mensagem ?? "Salvo." } : { ok: false, t: res.erro });
-              if (res.ok) salvo();
-            })
-          }
-          data-testid="ruido-salvar"
-        >
-          Salvar ruído
-        </Button>
-        {/* E258 (c): a regra de gravar fica dita na tela — aqui vale o botão; sem marcar nada, salva "não" nas quatro. */}
-        {!msg && <p className="text-xs text-muted" data-testid="ruido-como-salva">{COMO_SALVA_RUIDO}</p>}
-        {msg && (
-          <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-sm text-ink" : "text-sm text-red-700"} data-testid="ruido-resultado">
-            {msg.t}
-          </p>
-        )}
-      </div>
+      <LinhaComoSalva estado={estado} erro={erro} testid="ruido-como-salva" padrao={COMO_SALVA_RUIDO} />
     </section>
   );
 }
@@ -88,8 +105,22 @@ export function Extras({ propertyId, inicial, onSalvo }: { propertyId: string; i
   const router = useRouter();
   const salvo = onSalvo ?? (() => router.refresh());
   const [sel, setSel] = useState<Set<string>>(() => new Set(inicial));
-  const [pendente, iniciar] = useTransition();
-  const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
+  const [estado, setEstado] = useState<Estado>("");
+  const [erro, setErro] = useState<string | null>(null);
+  async function alternar(chave: string) {
+    const novo = sel.has(chave) ? new Set([...sel].filter((k) => k !== chave)) : new Set([...sel, chave]);
+    setSel(novo);
+    setEstado("salvando");
+    setErro(null);
+    const res = await semQuedaDeRede(salvarExtras(propertyId, [...novo]));
+    if (res.ok) {
+      setEstado("salvo");
+      salvo();
+    } else {
+      setEstado("erro");
+      setErro(res.erro);
+    }
+  }
   return (
     <section className="rounded-xl border border-line bg-white p-4" data-testid="extras-form">
       <h2 className="text-base font-semibold text-ink">Extras</h2>
@@ -101,7 +132,8 @@ export function Extras({ propertyId, inicial, onSalvo }: { propertyId: string; i
             <CartaoEscolha
               papel="checkbox"
               on={sel.has(e.chave)}
-              onClick={() => setSel((s) => (s.has(e.chave) ? new Set([...s].filter((k) => k !== e.chave)) : new Set([...s, e.chave])))}
+              onClick={() => void alternar(e.chave)}
+              disabled={estado === "salvando"}
               testid={`extra-${e.chave}`}
               rotulo={e.rotulo}
               className="h-full"
@@ -109,30 +141,7 @@ export function Extras({ propertyId, inicial, onSalvo }: { propertyId: string; i
           </li>
         ))}
       </ul>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          disabled={pendente}
-          onClick={() =>
-            iniciar(async () => {
-              const res = await semQuedaDeRede(salvarExtras(propertyId, [...sel]));
-              setMsg(res.ok ? { ok: true, t: res.mensagem ?? "Salvo." } : { ok: false, t: res.erro });
-              if (res.ok) salvo();
-            })
-          }
-          data-testid="extras-salvar"
-        >
-          Salvar extras
-        </Button>
-        {!msg && <p className="text-xs text-muted" data-testid="extras-como-salva">{COMO_SALVA_EXTRAS}</p>}
-        {msg && (
-          <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-sm text-ink" : "text-sm text-red-700"} data-testid="extras-resultado">
-            {msg.t}
-          </p>
-        )}
-      </div>
+      <LinhaComoSalva estado={estado} erro={erro} testid="extras-como-salva" padrao={COMO_SALVA_EXTRAS} />
     </section>
   );
 }

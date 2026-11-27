@@ -5,13 +5,19 @@
   Puro e testável: o teste confere título ≤ 46 (+ sufixo da marca ≤ 60) e as palavras proibidas.
 */
 import { CAUCAO_FRASE } from "../faixas.ts";
+import { FRASE_ESCADA_TAXAS } from "../../config/textos-regulados.ts";
+import { ATALHOS_CATEGORIA } from "../../config/atalhos-home.ts";
+
+// E921: o mesmo atalho da home (filtra pelo bairro Umuarama), da mesma fonte.
+const ATALHO_UMUARAMA = ATALHOS_CATEGORIA.find((a) => a.href === "/buscar?local=Umuarama")!;
 
 export interface Guia {
   slug: string;
   titulo: string;
   descricao: string;
   publico: "proprietarios" | "inquilinos" | "todos";
-  secoes: { titulo: string; paragrafos: string[] }[];
+  /** E921: atalhos visíveis da seção — sempre links (nunca texto com cara de atalho). */
+  secoes: { titulo: string; paragrafos: string[]; atalhos?: { rotulo: string; href: string }[] }[];
 }
 
 export const GUIAS: Guia[] = [
@@ -38,7 +44,7 @@ export const GUIAS: Guia[] = [
       {
         titulo: "Como a taxa da Viva entra na conta",
         paragrafos: [
-          "Anunciar é grátis. A Viva cobra uma taxa sobre o valor total de cada contrato fechado e de cada renovação (valor mensal × meses), e a taxa cai conforme você tem mais imóveis. A tabela completa está em /precos.",
+          `Anunciar é grátis. A Viva cobra uma taxa sobre o valor total de cada contrato fechado e de cada renovação (valor mensal × meses), e a taxa cai conforme você tem mais imóveis. ${FRASE_ESCADA_TAXAS}`, // E836: sem remissão a /precos (suspensa); a escada vem da fonte única.
           "Faça a conta com a taxa da sua faixa antes de definir o valor, para saber o seu resultado depois da taxa.",
         ],
       },
@@ -63,7 +69,7 @@ export const GUIAS: Guia[] = [
       {
         titulo: "Para o morador",
         paragrafos: [
-          "A Caução fica em uma poupança e volta para você no fim do contrato, depois da conferência de saída, se não houver pendência combinada entre as partes.",
+          "A Caução é paga direto ao proprietário e volta para você no fim do contrato, depois da conferência de saída, se não houver pendência combinada entre as partes.",
           "A plataforma não recebe nem guarda esse dinheiro. Desconfie de qualquer pedido de pagamento fora do que está no contrato (veja /seguranca).",
         ],
       },
@@ -146,7 +152,12 @@ export const GUIAS: Guia[] = [
       {
         titulo: "Comece pelo seu dia a dia",
         paragrafos: [
-          "Pense no caminho até o trabalho, a faculdade ou o hospital onde você vai estar. Na busca, os atalhos “Perto do HC-UFU” e “Perto do Umuarama” já filtram os imóveis por proximidade.",
+          // E921: o texto diz o que cada caminho faz (o bairro filtra; o destino põe em ordem de tempo) e os atalhos são links.
+          "Pense no caminho até o trabalho, a faculdade ou o hospital onde você vai estar. O atalho “Perto do HC-UFU/Umuarama” mostra só os imóveis do bairro Umuarama. Na busca, em “Onde você vai trabalhar ou estudar?”, escolha o HC-UFU ou o campus: a lista fica em ordem de tempo até lá, e com “até N min” ficam só os imóveis dentro desse tempo.",
+        ],
+        atalhos: [
+          { rotulo: ATALHO_UMUARAMA.rotulo, href: ATALHO_UMUARAMA.href },
+          { rotulo: "Guia da região do HC-UFU e Umuarama", href: "/cidades/uberlandia/hc-ufu-umuarama" },
         ],
       },
       {

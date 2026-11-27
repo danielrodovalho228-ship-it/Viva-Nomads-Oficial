@@ -178,7 +178,7 @@ test("migração 0110: tabelas, RLS só leitura para as partes e imutabilidade n
 test("ações do servidor: só as partes do contrato agem, foto só da própria pasta, sem 'vistoria'", () => {
   const src = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
   assert.match(src, /^"use server";/);
-  assert.equal((src.match(/await parteDoContrato\(/g) ?? []).length, 6);
+  assert.equal((src.match(/await parteDoContrato\(/g) ?? []).length, 7); // E669: + retirarLaudoConferencia
   assert.match(src, /tenant_id === user\.id \? "inquilino" : donoId === user\.id \? "proprietario" : null/);
   assert.match(src, /startsWith\(`\$\{ctx\.uid\}\/`\)/);
   assert.match(src, /consumirLimite\(/);
@@ -194,7 +194,10 @@ const EXE = new Uint8Array([0x4d, 0x5a, 0x90, 0x00]);
 
 test("laudo independente: só PDF de verdade, até 15 MB, não vazio", () => {
   assert.equal(LAUDO_MAX_BYTES, 15 * 1024 * 1024);
-  assert.deepEqual(validarLaudo({ bytes: PDF, tamanho: 200_000 }), { ok: true, tipo: "application/pdf", ext: "pdf" });
+  // E669: um PDF de verdade tem corpo e termina com %%EOF; o esqueleto de poucos bytes não vale como laudo.
+  const PDF_COMPLETO = new TextEncoder().encode("%PDF-1.4\n" + "% corpo do laudo\n".repeat(120) + "%%EOF\n");
+  assert.deepEqual(validarLaudo({ bytes: PDF_COMPLETO, tamanho: PDF_COMPLETO.length }), { ok: true, tipo: "application/pdf", ext: "pdf" });
+  assert.equal(validarLaudo({ bytes: PDF, tamanho: 200_000 }).ok, false); // só o cabeçalho, sem o fim do arquivo
   assert.equal(validarLaudo({ bytes: EXE, tamanho: 200_000 }).ok, false); // "laudo.pdf" que é executável
   assert.equal(validarLaudo({ bytes: JPG, tamanho: 200_000 }).ok, false); // laudo é PDF
   assert.equal(validarLaudo({ bytes: PDF, tamanho: LAUDO_MAX_BYTES + 1 }).ok, false);

@@ -12,8 +12,7 @@ import type { Privacidade } from "@/lib/anuncio/privacidade";
 import { ProntoParaTrabalhar, ProximidadesAutomaticas } from "@/components/anuncio/blocos-cadastro";
 import { AvisosConsistenciaTitulo } from "@/components/anuncio/avisos-titulo";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
-import { cn } from "@/lib/utils";
-import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
+import { TEXTO_PREPARANDO_SUGESTAO } from "@/lib/anuncio/texto-sugerido";
 import { Erro, Labeled, LinhaNumero, Toggle } from "./campos";
 import type { CampoSugerido, EstadoIaFotos } from "./tipos";
 
@@ -72,6 +71,8 @@ export function EtapaEncontramos(p: {
   /** E145: de onde veio a última resposta da busca automática. */
   proxFonte?: string | null;
   tentarPerto?: () => void;
+  /** E952: o endereço da lista ("Perto de: …"). */
+  proxAlvo?: { cep: string; rua: string } | null;
   medirLugar: (endereco: string) => Promise<number | null>;
   reportarLugar: ((l: LugarProximo, motivo: string) => Promise<{ ok: boolean; erro?: string }>) | null;
   proxDesmarcados: string[];
@@ -79,14 +80,21 @@ export function EtapaEncontramos(p: {
   manualProximities: Proximity[];
   setManualProximities: (p: Proximity[]) => void;
   neighborhood: string;
+  /** E608: editando anúncio já publicado (os obrigatórios do anúncio novo — internet, câmeras — não se marcam). */
+  editando?: boolean;
   /** E148-A: a sugestão de título e descrição do Passo 7. */
   sugestaoTexto?: {
     estado: "ocioso" | "carregando" | "ia" | "modelo";
     aviso: string | null;
     /** Os campos ainda mostram a sugestão (o rótulo discreto aparece). */
     ehSugestao: boolean;
-    /** O dono escreveu algo diferente da sugestão: "Gerar de novo" confirma antes de trocar. */
-    donoEscreveu: boolean;
+    /** E613: a sugestão (IA ou modelo fixo) — mostrada no cartão, nunca gravada sozinha nos campos. */
+    texto: { titulo: string; descricao: string } | null;
+    /** E613: há campo vazio que a sugestão pode preencher. */
+    podeUsar: boolean;
+    /** E613: o clique do dono — põe a sugestão só nos campos vazios. */
+    usar: () => void;
+    /** Pede outra sugestão (troca só o cartão; o texto do dono nunca muda). */
     gerarDeNovo: () => void;
   };
   title: string;
@@ -113,7 +121,8 @@ export function EtapaEncontramos(p: {
     set(e.target.value);
     p.tirarSugestao(c);
   };
-  const alternar = (k: string) => p.setAmenityKeys((s) => ({ ...s, [k]: !s[k] }));
+  // E603: "Mobiliado completo" é o mesmo fato do interruptor do Passo 6 (uma só fonte: furnished).
+  const alternar = (k: string) => (k === "mobiliado" ? p.setFurnished((v) => !v) : p.setAmenityKeys((s) => ({ ...s, [k]: !s[k] })));
   const aviso = p.iaEstado === "feita" && (
         <p className="flex items-start gap-2 rounded-lg bg-champagne/15 px-3 py-2 text-sm text-forest" data-testid="ia-resumo">
           <Sparkles className="mt-1 h-4 w-4 shrink-0" aria-hidden />
@@ -164,9 +173,8 @@ export function EtapaEncontramos(p: {
             value={p.title}
             onChange={campo("titulo", p.setTitle)}
             maxLength={80}
-            placeholder={escrevendo ? "Escrevendo uma sugestão…" : "Ex.: Studio mobiliado no Centro"}
-            className={cn("input", escrevendo && !p.title && "animate-pulse bg-surface-2")}
-            aria-busy={escrevendo || undefined}
+            placeholder="Ex.: Studio mobiliado no Centro"
+            className="input"
             data-testid="cadastro-titulo"
           />
           <Erro msg={p.erros.titulo} />
@@ -177,36 +185,48 @@ export function EtapaEncontramos(p: {
             rows={5}
             value={p.description}
             onChange={campo("descricao", p.setDescription)}
-            className={cn("input", escrevendo && !p.description && "animate-pulse bg-surface-2")}
-            placeholder={escrevendo ? "Escrevendo uma sugestão…" : "Descreva o imóvel…"}
-            aria-busy={escrevendo || undefined}
+            className="input"
+            placeholder="Descreva o imóvel…"
             data-testid="cadastro-descricao"
           />
           <Erro msg={p.erros.descricao} />
         </Labeled>
+        {/* E618: a sugestão vai para o cartão abaixo, nunca para os campos — o "a caminho" fica aqui, não no placeholder. */}
+        {escrevendo && (
+          <p className="text-sm text-muted" role="status" data-testid="sugestao-preparando">
+            {TEXTO_PREPARANDO_SUGESTAO}
+          </p>
+        )}
         {sugestao?.aviso && (
           <p className="text-sm text-muted" role="status" data-testid="sugestao-aviso">
             {sugestao.aviso}
           </p>
         )}
-        {/* E148-A: "Gerar de novo" em texto (o único botão cheio do passo é o Continuar). Só com a IA respondendo; por
-            cima do texto do dono, pede confirmação antes de trocar. */}
-        {sugestao?.estado === "ia" &&
-          (sugestao.donoEscreveu ? (
-            <ConfirmarNaPagina
-              aviso="Trocar o seu texto por uma nova sugestão? O que você escreveu será substituído."
-              confirmar="Trocar"
-              onConfirmar={sugestao.gerarDeNovo}
-              botaoClassName="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-4"
-              testid="sugestao-gerar-de-novo"
-            >
-              Gerar de novo
-            </ConfirmarNaPagina>
-          ) : (
-            <button type="button" onClick={sugestao.gerarDeNovo} className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-4" data-testid="sugestao-gerar-de-novo">
-              Gerar de novo
-            </button>
-          ))}
+        {/* E613: a sugestão fica num cartão à parte e só entra nos campos no clique do dono ("Usar esta sugestão"), que
+            preenche só o que está vazio. Antes ela ia sozinha para os campos e a Revisão marcava o passo como feito. */}
+        {sugestao?.texto && sugestao.estado !== "carregando" && sugestao.podeUsar && (
+          <div className="rounded-xl border border-line bg-surface-2 p-4" data-testid="sugestao-cartao">
+            <p className="text-sm font-semibold text-ink">Sugestão com os dados do cadastro</p>
+            <p className="mt-1 text-sm text-muted">Só entra no anúncio se você usar — e você pode editar depois.</p>
+            <p className="mt-3 text-sm font-semibold text-ink" data-testid="sugestao-titulo">
+              {sugestao.texto.titulo}
+            </p>
+            <p className="mt-1 text-sm text-ink" data-testid="sugestao-descricao">
+              {sugestao.texto.descricao}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              <button type="button" onClick={sugestao.usar} className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-4" data-testid="sugestao-usar">
+                Usar esta sugestão
+              </button>
+              {/* E148-A: "Gerar de novo" em texto (o único botão cheio do passo é o Continuar), só com a IA respondendo. */}
+              {sugestao.estado === "ia" && (
+                <button type="button" onClick={sugestao.gerarDeNovo} className="inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-4" data-testid="sugestao-gerar-de-novo">
+                  Gerar de novo
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -222,9 +242,9 @@ export function EtapaEncontramos(p: {
         </h2>
         <div className="divide-y divide-line rounded-xl border border-line bg-white px-4" data-testid="cartao-numeros" aria-labelledby="caracteristicas-titulo">
           <LinhaNumero label="Quartos" dica="Número de quartos" valor={p.bedrooms} onChange={(v) => { p.setBedrooms(v); p.tirarSugestao("quartos"); }} sugerido={p.sugerido("quartos")} testid="cadastro-quartos" />
-          <LinhaNumero label="Banheiros" dica="Número de banheiros" valor={p.bathrooms} onChange={(v) => { p.setBathrooms(v); p.tirarSugestao("banheiros"); }} sugerido={p.sugerido("banheiros")} testid="cadastro-banheiros" erro={p.erros.banheiros} />
-          <LinhaNumero label="Área" dica="Área total em m²" sufixo="m²" passo={5} valor={p.areaM2} onChange={p.setAreaM2} daMatricula={p.daMatricula?.has("area")} testid="cadastro-area" erro={p.erros.area} />
-          <LinhaNumero label="Pessoas" dica="Quantas podem morar" min={1} placeholder="2" valor={p.maxGuests} onChange={(v) => { p.setMaxGuests(v); p.tirarSugestao("capacidade"); }} sugerido={p.sugerido("capacidade")} testid="cadastro-capacidade" erro={p.erros.capacidade} />
+          <LinhaNumero obrigatorio label="Banheiros" dica="Número de banheiros" valor={p.bathrooms} onChange={(v) => { p.setBathrooms(v); p.tirarSugestao("banheiros"); }} sugerido={p.sugerido("banheiros")} testid="cadastro-banheiros" erro={p.erros.banheiros} />
+          <LinhaNumero obrigatorio label="Área" dica="Área total em m²" sufixo="m²" passo={5} valor={p.areaM2} onChange={p.setAreaM2} daMatricula={p.daMatricula?.has("area")} testid="cadastro-area" erro={p.erros.area} />
+          <LinhaNumero obrigatorio label="Pessoas" dica="Quantas podem morar" min={1} placeholder="2" valor={p.maxGuests} onChange={(v) => { p.setMaxGuests(v); p.tirarSugestao("capacidade"); }} sugerido={p.sugerido("capacidade")} testid="cadastro-capacidade" erro={p.erros.capacidade} />
           <LinhaNumero label="Vagas" dica="Vagas de garagem" valor={p.parkingSpots} onChange={p.setParkingSpots} daMatricula={p.daMatricula?.has("vagas")} testid="cadastro-vagas" />
         </div>
         {/* Mockup 04: o lembrete de que nada é definitivo (o mesmo papel do "reorganizar depois" do Passo 2). */}
@@ -249,6 +269,7 @@ export function EtapaEncontramos(p: {
         onMbps={p.setInternetMbps}
         imovelId={p.imovelId}
         semInternet={p.semInternet}
+        mbpsObrigatorio={!p.editando}
       />
       {p.qualTHome && <p className="text-xs text-forest">Da qualificação: etiqueta “Para trabalhar de casa” ativa.</p>}
 
@@ -267,11 +288,12 @@ export function EtapaEncontramos(p: {
         {grupos.filter((g) => g.category === "seguranca").map((g) => (
           <GrupoComodidades key={g.category} grupo={g} titulo={g.titulo} marcadas={p.amenityKeys} sugeridas={sugeridas} detectadas={p.comodidadesDetectadas} onAlternar={alternar} />
         ))}
-        <PrivacidadeCampos valor={p.privacidade} onChange={p.setPrivacidade} />
+        <PrivacidadeCampos valor={p.privacidade} onChange={p.setPrivacidade} obrigatorio={!p.editando} />
       </section>
 
       <ProximidadesAutomaticas
         itens={p.proxOsm}
+        alvo={p.proxAlvo ?? null}
         carregando={p.proxCarregando}
         buscou={p.proxBuscou}
         fonte={p.proxFonte ?? null}

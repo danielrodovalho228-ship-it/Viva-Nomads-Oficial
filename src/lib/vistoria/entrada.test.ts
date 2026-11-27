@@ -9,6 +9,7 @@ import { PENDENCIA_IDENTIDADE, contaComoAvaliadorAtivo, ehPedidoDeAvaliador, fal
 import { CATEGORIAS_CATALOGO, categoriaValida, validarSolicitacao } from "../parceiros/regras.ts";
 
 const CPF = "52998224725";
+const CNPJ = "11222333000181";
 const base = { cidade: "Uberlândia", experienciaLink: "https://portfolio.exemplo.com", experienciaArquivo: false, aceiteConduta: true };
 
 test("'vistoria' só pelo caminho do credenciamento: a solicitação comum e o catálogo continuam recusando", () => {
@@ -23,12 +24,14 @@ test("'vistoria' só pelo caminho do credenciamento: a solicitação comum e o c
 });
 
 test("quem NÃO é parceiro manda os dados de parceiro + os do credenciamento", () => {
-  const ok = validarPedidoAvaliador({ ...base, jaParceiro: false, nome: "Ana Avaliadora", tipoPessoa: "pf", documento: "529.982.247-25" });
+  const ok = validarPedidoAvaliador({ ...base, jaParceiro: false, nome: "Ana Avaliadora", tipoPessoa: "pj", documento: "11.222.333/0001-81" });
   assert.equal(ok.ok, true);
-  if (ok.ok) assert.deepEqual(ok.valor.parceiro, { nome: "Ana Avaliadora", tipoPessoa: "pf", documento: CPF });
-  const falta = validarPedidoAvaliador({ ...base, jaParceiro: false, nome: "A", tipoPessoa: "pf", documento: "11111111111" });
+  if (ok.ok) assert.deepEqual(ok.valor.parceiro, { nome: "Ana Avaliadora", tipoPessoa: "pj", documento: CNPJ });
+  const pf = validarPedidoAvaliador({ ...base, jaParceiro: false, nome: "Ana Avaliadora", tipoPessoa: "pf", documento: "529.982.247-25" });
+  assert.equal(pf.ok, false, "E648: CPF não é aceito");
+  const falta = validarPedidoAvaliador({ ...base, jaParceiro: false, nome: "A", tipoPessoa: "pj", documento: "11111111111111" });
   assert.equal(falta.ok, false);
-  if (!falta.ok) assert.deepEqual(falta.falta, ["Informar o nome público (o seu ou o da empresa).", "CPF válido."]);
+  if (!falta.ok) assert.match(falta.falta.join(" "), /CNPJ válido/);
 });
 
 test("quem JÁ é parceiro não repete dados (os campos de parceiro são ignorados)", () => {
@@ -63,7 +66,7 @@ test("textos da entrada: 'avaliação do imóvel' e 'avaliador credenciado'; nun
 test("E30: aprovar para teste nunca ativa; ativar só com a avaliação de teste registrada", () => {
   // Aprovar para teste leva a "em_teste" e nada além (a transição é a única coisa que a ação grava).
   const acoes = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
-  const decidir = acoes.slice(acoes.indexOf("export async function adminDecidirCredenciamento"), acoes.indexOf("async function ativarParceiroDoAvaliador"));
+  const decidir = acoes.slice(acoes.indexOf("export async function adminDecidirCredenciamento"), acoes.indexOf("/** Avaliação de TESTE: o admin aponta"));
   assert.match(decidir, /ativado_em: agora[^\n]*para === "ativo"|para === "ativo" && c\.status === "em_teste" \? \{ ativado_em/);
   assert.match(decidir, /if \(para === "ativo"\) \{[\s\S]*?comTesteConcluido\(a\.admin, \[id\]\)[\s\S]*?estadoIdentidade\(a\.admin[\s\S]*?podeAtivar\(\{[^}]*identidadeConfirmada: ident\?\.estado === "confirmada"/, "ativar confere o teste e a identidade no servidor");
   assert.doesNotMatch(decidir.slice(decidir.indexOf('if (para === "em_teste") {'), decidir.indexOf("// E30")), /status: "ativo"/);
@@ -105,7 +108,8 @@ test("E35-B: candidato em teste nunca recebe pedido real; o teste só em imóvel
   const acoes = readFileSync(new URL("./actions.ts", import.meta.url), "utf8");
   assert.match(acoes, /if \(!dono\?\.is_teste\) return \{ ok: false, erro: "A avaliação de teste é só em imóvel de conta de teste\." \}/);
   // ativarParceiroDoAvaliador continua no "Aprovar para teste" e o parceiro nasce em rascunho (sem página pública).
-  const ativa = acoes.slice(acoes.indexOf("async function ativarParceiroDoAvaliador"), acoes.indexOf("export async function adminCriarAvaliacaoTeste"));
+  // (E690: a função mora em parceiro-do-avaliador-servidor.ts, comum à aprovação do admin e à automática.)
+  const ativa = readFileSync(new URL("./parceiro-do-avaliador-servidor.ts", import.meta.url), "utf8");
   assert.match(ativa, /status: "rascunho"/);
   assert.doesNotMatch(ativa, /status: "ativo"|publicado/);
 });

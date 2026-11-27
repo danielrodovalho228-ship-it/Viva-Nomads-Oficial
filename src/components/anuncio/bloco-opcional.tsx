@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { aoTocarToggle } from "@/lib/anuncio/bloco-opcional";
-import { cn } from "@/lib/utils";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 
 /**
- * Bloco opcional do formulário (padrão E56): toggle claro no topo; desligado, o grupo não aparece; ligar abre o grupo
+ * Bloco opcional do formulário (padrão E56): cartão grande tocável no topo; desligado, o grupo não aparece; ligar abre o grupo
  * inteiro; desligar com dados pede confirmação aqui mesmo (sem diálogo do navegador) e, confirmado, chama `onDesligar`
  * para o formulário limpar os dados do grupo. O estado inicial (`ligado`) vem de `nasceLigado(temDadosSalvos)`.
  */
@@ -40,34 +40,25 @@ export function BlocoOpcional({
     else if (acao === "desligar") onDesligar();
     else setConfirmando(true);
   };
+  // E193 + padrão E56 (Daniel, 23/10; decisão do Muse 06/11): a pergunta do bloco é um CARTÃO GRANDE tocável (mesma caixa, mesma altura e
+  // mesmo toque das outras escolhas) COM o interruptor do mockup à direita — nasce fechado, abre com dado salvo, desligar com dado pede
+  // confirmação. Um estilo só de caixa; o trilho é o indicador de "ligado", como o ✓ nos outros cartões. role=switch e testid de antes.
   return (
-    <div className="rounded-xl border border-line bg-white" data-testid={`bloco-${id}`} data-ligado={ligado ? "sim" : "nao"}>
-      <div className="flex items-start justify-between gap-3 p-4">
-        <div className="flex min-w-0 items-start gap-3">
-          {Icone && <Icone className={cn("mt-1 h-5 w-5 shrink-0", ligado ? "text-forest" : "text-muted")} aria-hidden data-testid={`bloco-${id}-icone`} />}
-          <div className="min-w-0">
-            <h3 id={`bloco-${id}-titulo`} className="text-sm font-semibold text-ink">
-              {titulo}
-            </h3>
-            {descricao && <p className="mt-1 text-xs text-muted">{descricao}</p>}
-          </div>
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={ligado}
-          aria-labelledby={`bloco-${id}-titulo`}
-          onClick={tocar}
-          data-testid={`bloco-${id}-toggle`}
-          className={cn(
-            // Varredura 02/11: o trilho tem 28 px; no toque, alvo de 44 px (.alvo-toque), sem mudar o desenho.
-            "alvo-toque relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors",
-            ligado ? "bg-forest" : "bg-sage-200"
-          )}
-        >
-          <span className={cn("inline-block h-5 w-5 rounded-full bg-white transition-transform", ligado ? "translate-x-6" : "translate-x-1")} />
-        </button>
-      </div>
+    <div className="space-y-2" data-testid={`bloco-${id}`} data-ligado={ligado ? "sim" : "nao"}>
+      <CartaoEscolha
+        papel="switch"
+        indicador="toggle"
+        on={ligado}
+        onClick={tocar}
+        testid={`bloco-${id}-toggle`}
+        icone={Icone}
+        rotulo={titulo}
+        dica={descricao}
+        aria-labelledby={`bloco-${id}-titulo`}
+      />
+      <span id={`bloco-${id}-titulo`} className="sr-only">
+        {titulo}
+      </span>
       {confirmando && (
         <div role="alertdialog" aria-labelledby={`bloco-${id}-confirmar-texto`} className="mx-4 mb-4 rounded-lg bg-surface-2 p-3" data-testid={`bloco-${id}-confirmar`}>
           <p id={`bloco-${id}-confirmar-texto`} className="text-sm text-ink">
@@ -97,7 +88,7 @@ export function BlocoOpcional({
         </div>
       )}
       {ligado && (
-        <div className="grid gap-4 border-t border-line p-4" data-testid={`bloco-${id}-conteudo`}>
+        <div className="grid gap-4 rounded-xl border border-line bg-white p-4" data-testid={`bloco-${id}-conteudo`}>
           {children}
         </div>
       )}

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ROTAS_AXE_PUBLICAS } from "../../../src/lib/lab/axe-regras";
 import { caminhosDoSitemap, extrairMeta, linksInternos, pesoExcedido, problemasDaPagina, repetidos, type MetaPagina } from "../../../src/lib/lab/seo-regras";
+import { PRECOS_SUSPENSA, comPrecos } from "../fixtures/precos";
 
 /*
   T257 — SEO e peso (ordem 21708cca, parte D). Lê o HTML que o servidor entrega, sem login:
@@ -18,7 +19,7 @@ test.beforeEach(({}, info) => {
 test("título, descrição e H1 únicos nas páginas públicas principais", async ({ request }) => {
   const paginas: Record<string, MetaPagina> = {};
   const problemas: string[] = [];
-  for (const rota of ROTAS_AXE_PUBLICAS.filter((r) => r !== "/auth")) {
+  for (const rota of ROTAS_AXE_PUBLICAS.filter((r) => r !== "/auth" && (r !== "/precos" || !PRECOS_SUSPENSA))) {
     const res = await request.get(rota);
     expect(res.status(), rota).toBe(200);
     paginas[rota] = extrairMeta(await res.text());
@@ -31,7 +32,7 @@ test("sitemap: toda URL responde 200 e as rotas principais estão nele", async (
   const xml = await (await request.get("/sitemap.xml")).text();
   const caminhos = caminhosDoSitemap(xml);
   expect(caminhos.length).toBeGreaterThan(10);
-  for (const rota of ["/", "/buscar", "/como-funciona", "/precos", "/para-proprietarios"]) expect(caminhos, rota).toContain(rota);
+  for (const rota of ["/", "/buscar", "/como-funciona", ...comPrecos("/precos"), "/para-proprietarios"]) expect(caminhos, rota).toContain(rota);
   const falhas: string[] = [];
   for (const c of caminhos.slice(0, 60)) {
     const res = await request.get(c);
@@ -58,7 +59,7 @@ test("links internos das páginas públicas principais não quebram", async ({ r
   expect(quebrados.join("\n")).toBe("");
 });
 
-for (const rota of ROTAS_AXE_PUBLICAS.filter((r) => r !== "/auth")) {
+for (const rota of ROTAS_AXE_PUBLICAS.filter((r) => r !== "/auth" && (r !== "/precos" || !PRECOS_SUSPENSA))) {
   test(`${rota}: peso transferido abaixo do limite`, async ({ page }) => {
     let bytes = 0;
     page.on("response", async (r) => {

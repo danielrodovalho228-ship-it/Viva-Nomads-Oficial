@@ -20,8 +20,9 @@ const SAIDA = "tests/laboratorio/saida";
 const PASSOS = Object.keys(TITULO_PASSO) as PassoCadastro[];
 
 async function semCascaDoPainel(page: Page) {
-  // A lateral do painel (a prévia do anúncio é um <aside> da própria página e fica).
-  await expect(page.locator('aside:not([data-testid="novo-resumo"])')).toHaveCount(0);
+  // A lateral do painel (a prévia do anúncio é um <aside> da própria página e fica — a do resumo e, desde o E251, a
+  // coluna da prévia do Passo 10).
+  await expect(page.locator('aside:not([data-testid="novo-resumo"]):not([data-testid="passo10-coluna-previa"])')).toHaveCount(0);
   await expect(page.locator("nav[data-papel]")).toHaveCount(0);
   await expect(page.locator('[aria-label="Abrir menu"]')).toHaveCount(0);
   await expect(page.locator('[aria-label^="Papel ativo"]')).toHaveCount(0);
@@ -62,15 +63,23 @@ test.describe("T450 — CADASTRO-MOLDURA: o assistente fora da casca do painel",
         const rodape = page.getByTestId("assistente-rodape");
         await expect(rodape.getByTestId("passo-texto")).toHaveText(`Passo ${n} de 10`);
         expect(await rodape.getByTestId("passo-texto").evaluate((el) => el.scrollWidth <= el.clientWidth + 1), "o passo não é cortado").toBe(true);
-        await expect(rodape.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", String(n * 10));
+        // E498: a barra é o "N% pronto" da prontidão em todos os passos (antes, n × 10).
+        await expect(rodape.getByTestId("passo-detalhe")).toHaveText(/^\d+% pronto$/);
+        const pronto = parseInt((await rodape.getByTestId("passo-detalhe").textContent()) ?? "", 10);
+        await expect(rodape.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", String(pronto));
         await expect(rodape.getByTestId("cadastro-voltar")).toHaveCount(n === 1 ? 0 : 1);
+        // E251: no Passo 10 do computador o "Publicar anúncio" mora na coluna da prévia e o rodapé fica sem primário.
+        const publicarNaPrevia = n === 10 && w === 1280;
         if (n < 10) await expect(rodape.getByTestId("cadastro-continuar")).toContainText("Continuar");
-        else await expect(rodape.getByTestId("publicar-anuncio")).toHaveText("Publicar anúncio");
+        else if (publicarNaPrevia) {
+          await expect(rodape.getByTestId("publicar-anuncio")).toHaveCount(0);
+          await expect(page.locator('[data-testid="publicar-anuncio"]:visible')).toHaveText("Publicar anúncio");
+        } else await expect(rodape.getByTestId("publicar-anuncio")).toHaveText("Publicar anúncio");
 
-        // Um primário por passo, e é o do rodapé.
+        // Um primário por passo: o do rodapé (no Passo 10 do computador, o da coluna da prévia).
         const primarios = page.locator('[data-cta="primary"]:visible');
         await expect(primarios).toHaveCount(1);
-        expect(await rodape.locator('[data-cta="primary"]').count()).toBe(1);
+        expect(await rodape.locator('[data-cta="primary"]').count()).toBe(publicarNaPrevia ? 0 : 1);
 
         // Sem "Salvar": o rascunho salva sozinho.
         await expect(page.getByRole("button", { name: /^Salvar( como rascunho)?$/ })).toHaveCount(0);

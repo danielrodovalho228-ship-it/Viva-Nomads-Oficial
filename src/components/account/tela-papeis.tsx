@@ -7,19 +7,23 @@ import { Check, MapPin } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { SeusPapeis } from "@/components/account/seus-papeis";
+import { usePapelEmUso } from "@/components/account/use-papel-em-uso";
 import { getMinhaIntencao, salvarMinhaIntencao } from "@/lib/data/intencao-actions";
 import { getMeuPerfilPublico } from "@/lib/data/perfil-actions";
 import type { Intencao } from "@/lib/auth/entrada";
 import { PHOTOS } from "@/lib/media";
-import { useParceiroAprovado } from "@/lib/use-papel-barra";
+import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
+import { BOTAO_PARCERIA_APROVADA, HREF_ATIVAR_PARCERIA, TEXTO_PARCERIA_APROVADA, situacaoParceiro, type SituacaoParceiro } from "@/lib/parceiros/situacao-conta";
 import { cn } from "@/lib/utils";
 import { SOMBRA_CARTAO_CONTA } from "@/lib/conta/visual-mockup";
 import {
   BOTAO_PARCEIRO_ATIVO,
   BOTAO_QUERO_PARCEIRO,
   RODAPE_PAPEIS,
+  TEXTO_MORAR_EM_USO,
   TEXTO_QUERO_PARCEIRO,
   alternarIntencao,
+  estadoQueroMorar,
   linhaQueroMorar,
   resumoQueroMorar,
   textoQueroAnunciar,
@@ -37,7 +41,11 @@ export function TelaPapeis() {
   const [intencao, setIntencao] = useState<Intencao[] | null>(null);
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState<"ok" | "salvando" | "erro" | "erro_leitura" | null>(null);
-  const parceiro = useParceiroAprovado();
+  // E576: a situação inteira (ativo, aprovada sem página ou nenhum), não só "tem página".
+  const [situacao, setSituacao] = useState<SituacaoParceiro>("nenhum");
+  const parceiro = situacao === "ativo";
+  const emUso = usePapelEmUso();
+  const aprovadaSemPagina = situacao === "aprovada_sem_pagina";
 
   useEffect(() => {
     let vivo = true;
@@ -48,6 +56,9 @@ export function TelaPapeis() {
       else setIntencao(i ?? []);
       setCidade(p?.cidade ?? "");
     });
+    minhaParceria()
+      .then((e) => vivo && setSituacao(situacaoParceiro(e)))
+      .catch(() => {});
     return () => {
       vivo = false;
     };
@@ -76,40 +87,56 @@ export function TelaPapeis() {
       </div>
     );
 
-  const morar = intencao.includes("morar");
+  // E537: o interruptor reflete o papel de verdade (intenção "morar" OU morador em uso), não só a intenção.
+  const { ligado: morar, travado: morarTravado } = estadoQueroMorar(intencao, emUso === "morador");
   const anunciar = intencao.includes("anunciar");
 
+  // E1028: o botão de cada cartão entra pela ação do cartão (no celular, uma linha própria por baixo da foto e do texto).
+  const botaoAnunciar = (
+    <ButtonLink href="/dashboard/imoveis/novo" size="lg" className={BOTAO_DO_CARTAO} data-testid="papel-comecar-anuncio">
+      Começar um anúncio
+    </ButtonLink>
+  );
+  const botaoParceiro = (
+    <ButtonLink href={HREF_ATIVAR_PARCERIA} size="lg" className={BOTAO_DO_CARTAO} data-testid="papel-parceiro-botao">
+      {parceiro ? BOTAO_PARCEIRO_ATIVO : aprovadaSemPagina ? BOTAO_PARCERIA_APROVADA : BOTAO_QUERO_PARCEIRO}
+    </ButtonLink>
+  );
+
   return (
-    <div className="grid gap-4" data-testid="tela-papeis">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4" data-testid="tela-papeis">
       <CartaoPapel id="morar" foto={PHOTOS.papeis.morar} ativo={morar}>
         <div className="flex items-start justify-between gap-3">
           <h2 className={TITULO_CARTAO}>Quero morar</h2>
-          <Switch checked={morar} onChange={(v) => void alternar("morar", v)} label="Quero morar" testId="papel-morar-toggle" />
+          <Switch checked={morar} disabled={morarTravado} onChange={(v) => void alternar("morar", v)} label="Quero morar" testId="papel-morar-toggle" />
         </div>
+        {morarTravado && (
+          <p className="mt-1 text-sm text-muted" data-testid="papel-morar-em-uso">
+            {TEXTO_MORAR_EM_USO}
+          </p>
+        )}
         <p className="mt-1 text-base text-ink">{linhaQueroMorar(cidade)}</p>
         <p className="mt-3 flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-ink sm:text-base" data-testid="papel-morar-resumo">
           <MapPin className="h-5 w-5 shrink-0 text-forest" aria-hidden /> {resumoQueroMorar(cidade)}
         </p>
       </CartaoPapel>
 
-      <CartaoPapel id="anunciar" foto={PHOTOS.papeis.anunciar} ativo={anunciar}>
+      <CartaoPapel id="anunciar" foto={PHOTOS.papeis.anunciar} ativo={anunciar} acao={botaoAnunciar}>
         <div className="flex items-start justify-between gap-3">
           <h2 className={TITULO_CARTAO}>Quero anunciar</h2>
           {anunciar && <Switch checked onChange={(v) => void alternar("anunciar", v)} label="Quero anunciar" testId="papel-anunciar-toggle" />}
         </div>
         <p className="mt-1 text-base text-ink">Anuncie seu imóvel mobiliado</p>
         <p className="mt-1 text-sm text-muted">{textoQueroAnunciar(cidade)}</p>
-        <ButtonLink href="/dashboard/imoveis/novo" size="lg" className="mt-3 w-full" data-testid="papel-comecar-anuncio">
-          Começar um anúncio
-        </ButtonLink>
       </CartaoPapel>
 
-      <CartaoPapel id="parceiro" foto={PHOTOS.papeis.parceiro} ativo={parceiro}>
+      <CartaoPapel id="parceiro" foto={PHOTOS.papeis.parceiro} ativo={parceiro} acao={botaoParceiro}>
         <h2 className={TITULO_CARTAO}>Quero ser parceiro</h2>
-        <p className="mt-1 text-base text-ink">{TEXTO_QUERO_PARCEIRO}</p>
-        <ButtonLink href="/dashboard/parceiro" size="lg" className="mt-3 w-full" data-testid="papel-parceiro-botao">
-          {parceiro ? BOTAO_PARCEIRO_ATIVO : BOTAO_QUERO_PARCEIRO}
-        </ButtonLink>
+        {aprovadaSemPagina ? (
+          <p className="mt-1 text-base text-ink" data-testid="papel-parceiro-aprovada">{TEXTO_PARCERIA_APROVADA}</p>
+        ) : (
+          <p className="mt-1 text-base text-ink">{TEXTO_QUERO_PARCEIRO}</p>
+        )}
       </CartaoPapel>
 
       <div className="flex flex-wrap justify-center gap-3">
@@ -137,15 +164,25 @@ export function TelaPapeis() {
 }
 
 const TITULO_CARTAO = "font-title text-2xl font-semibold leading-tight text-ink";
+/** O botão de um cartão: largura toda da linha dele. No celular o recuo lateral encolhe, porque o texto nunca quebra. */
+const BOTAO_DO_CARTAO = "w-full px-3 sm:px-8";
 
 /**
  * O cartão de papel: a foto pequena à esquerda (mesma medida nos três; no computador o selo "Ativo" fica sobre a foto,
  * como no desenho; no celular, ao lado do conteúdo) e o conteúdo à direita.
+ * E1028: o botão (`acao`) não mora na coluna do conteúdo. No celular ele desce para uma linha própria, na largura toda
+ * do cartão: ao lado da foto sobram 214 px a 390 px, e "Abrir meu painel de parceiro" pede 243 (o texto de um botão
+ * nunca quebra). Do sm para cima fica onde sempre esteve, por baixo do conteúdo. O conteúdo pode encolher
+ * (`minmax(0,1fr)`): nenhuma coluna alarga por causa do que tem dentro.
  */
-function CartaoPapel({ id, foto, ativo, children }: { id: "morar" | "anunciar" | "parceiro"; foto: string; ativo: boolean; children: ReactNode }) {
+function CartaoPapel({ id, foto, ativo, acao, children }: { id: "morar" | "anunciar" | "parceiro"; foto: string; ativo: boolean; acao?: ReactNode; children: ReactNode }) {
   return (
-    <section className={cn("flex items-start gap-4 rounded-xl bg-white p-4 sm:gap-6 sm:p-6", SOMBRA_CARTAO_CONTA)} data-testid={`papel-cartao-${id}`} data-ativo={ativo ? "1" : "0"}>
-      <span className="relative block aspect-[4/5] w-24 shrink-0 overflow-hidden rounded-lg bg-surface-2 sm:aspect-[5/4] sm:w-44" data-testid="papel-foto">
+    <section
+      className={cn("grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-x-4 rounded-xl bg-white p-4 sm:grid-cols-[11rem_minmax(0,1fr)] sm:grid-rows-[auto_1fr] sm:gap-x-6 sm:p-6", SOMBRA_CARTAO_CONTA)}
+      data-testid={`papel-cartao-${id}`}
+      data-ativo={ativo ? "1" : "0"}
+    >
+      <span className="relative block aspect-[4/5] w-24 overflow-hidden rounded-lg bg-surface-2 sm:row-span-2 sm:aspect-[5/4] sm:w-44" data-testid="papel-foto">
         <Image src={foto} alt="" fill sizes="(min-width: 640px) 176px, 96px" className="object-cover" />
         {ativo && (
           <span className="absolute left-2 top-2 inline-flex items-center rounded-lg bg-forest px-2 py-1 text-xs font-semibold text-white sm:text-sm" data-testid={`papel-${id}-ativo`}>
@@ -153,7 +190,12 @@ function CartaoPapel({ id, foto, ativo, children }: { id: "morar" | "anunciar" |
           </span>
         )}
       </span>
-      <div className="min-w-0 flex-1">{children}</div>
+      <div className="min-w-0">{children}</div>
+      {acao && (
+        <div className="col-span-2 mt-3 sm:col-span-1 sm:col-start-2" data-testid={`papel-${id}-acao`}>
+          {acao}
+        </div>
+      )}
     </section>
   );
 }

@@ -1,0 +1,5 @@
+{
+ "regra": "um teste com 2 instabilidades em rodadas diferentes vira item de instabilidade com dono, e só então entra aqui; desde 17/11 (decisão do Gerente, DUET-1225) entra também o teste velho com correção já escrita em PR aberto, apontando o PR em 'correcao', e sai quando ele for mesclado; desde 17/11 (DUET-1419) entra também o defeito registrado, com item e dono, cuja falha não é sempre a mesma (sem marca de falha conhecida), e sai no PR da correção; quando o teste é de uma cadeia em série e os seguintes dependem dele, a cadeia entra e sai inteira; teto de 25 entradas; validade de no máximo 14 dias",
+ "entradas": [
+ ]
+}

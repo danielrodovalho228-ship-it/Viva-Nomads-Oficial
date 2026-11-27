@@ -102,7 +102,8 @@ test.describe("T703 — E254-A: total da estadia mínima, uma fonte e a conta ab
       const lateral = p.locator("#cartao-preco");
       await expect(lateral.getByTestId("cartao-lateral-estadia")).toContainText("em 3 meses", { timeout: 20_000 });
       expect(reais(await lateral.getByTestId("cartao-lateral-estadia").innerText())).toBe(ref!.total);
-      await expect(lateral.getByTestId("cartao-lateral-estadia-conta")).toHaveText(ref!.conta);
+      // FormulaDoTotal desenha a conta em lista (uma parcela por linha, "+ " nas seguintes): as quebras de linha viram espaço.
+      expect((await lateral.getByTestId("cartao-lateral-estadia-conta").innerText()).trim().replace(/\s*\n\s*/g, " ")).toBe(ref!.conta);
       if (largura === 390) expect(reais(await p.getByTestId("barra-total-estadia").innerText())).toBe(ref!.total);
       await lateral.scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t703-publica-${largura}.png` });
@@ -110,12 +111,12 @@ test.describe("T703 — E254-A: total da estadia mínima, uma fonte e a conta ab
     }
   });
 
-  test("2. mínimo de 1 mês: o cartão de Meus anúncios não mostra a linha da estadia", async ({ browser }) => {
+  test("2. mínimo de 1 mês: o cartão de Meus anúncios diz o total em 1 mês (E777: o total é sempre R$ Y em N mês/meses)", async ({ browser }) => {
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 1280, height: 900 });
     await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("preco-contexto").filter({ hasText: /Estadia mínima \(3 meses\)/ })).toHaveCount(1, { timeout: 30_000 });
-    await expect(p.getByText(/Estadia mínima \(1 mês\)/)).toHaveCount(0);
+    await expect(p.getByText(/Estadia mínima \(1 mês\)/)).toHaveCount(1);
     await p.context().close();
   });
 

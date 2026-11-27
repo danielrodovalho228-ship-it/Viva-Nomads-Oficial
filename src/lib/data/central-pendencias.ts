@@ -12,6 +12,8 @@ import { gravidadePeloPrazo, montarCentral, type Central, type FiltroCentral, ty
 import { contasTeste, ordensForaDoPrazo, prazoVencidoEm } from "@/lib/data/admin-prazos-59";
 import { filaDocumentos } from "@/lib/data/admin-indicadores";
 import { MOTIVOS_REVISAO, ehMotivoRevisao } from "@/lib/avaliacoes-resposta";
+import { lerContratosSemTaxa } from "@/lib/data/contratos-sem-taxa-servidor";
+import { linhaCentralSemTaxa } from "@/lib/fechamento/contratos-sem-taxa";
 
 type Admin = SupabaseClient;
 const H = 3_600_000;
@@ -82,7 +84,7 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
     ler(async () => {
       const { data, error } = await admin
         .from("avaliacao_contestacoes")
-        .select("id, autor_id, motivo, detalhe, criada_em, avaliacoes(nota_geral, comentario_publico)")
+        .select("id, autor_id, motivo, detalhe, criada_em, avaliacoes(nota_geral, comentario_publico), parceiro_avaliacoes(nota, texto)")
         .eq("status", "aberta")
         .order("criada_em", { ascending: true })
         .limit(500);
@@ -90,6 +92,7 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
       return (data ?? []) as unknown as {
         id: string; autor_id: string; motivo: string; detalhe: string; criada_em: string;
         avaliacoes: { nota_geral: number; comentario_publico: string | null } | { nota_geral: number; comentario_publico: string | null }[] | null;
+        parceiro_avaliacoes: { nota: number; texto: string | null } | { nota: number; texto: string | null }[] | null;
       }[];
     }),
     // E399-C: link do Airbnb que não confere (cidade ou quartos) — o selo fica bloqueado; a equipe olha.
@@ -196,7 +199,10 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
     });
   }
   for (const r of revisoes) {
-    const av = Array.isArray(r.avaliacoes) ? r.avaliacoes[0] : r.avaliacoes;
+    const estadia = Array.isArray(r.avaliacoes) ? r.avaliacoes[0] : r.avaliacoes;
+    const pa = Array.isArray(r.parceiro_avaliacoes) ? r.parceiro_avaliacoes[0] : r.parceiro_avaliacoes;
+    // E679-B: a mesma fila serve a avaliação da estadia e a do parceiro.
+    const av = estadia ?? (pa ? { nota_geral: pa.nota, comentario_publico: pa.texto } : null);
     add("avaliacoes_contestadas", {
       id: r.id,
       titulo: `Pedido de revisão · ${ehMotivoRevisao(r.motivo) ? MOTIVOS_REVISAO[r.motivo] : r.motivo}`,
@@ -235,6 +241,8 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
       quantidade: d.total,
     });
   }
+  // E1205 (ORDEM-DUET-1012): o contrato com proposta e sem a taxa reservada há 30 min — a mesma leitura da rotina.
+  for (const c of await ler(() => lerContratosSemTaxa(admin, agora))) out.push(linhaCentralSemTaxa(c, { numeroProposta: c.numeroProposta, teste: ehTeste(c.donoId ?? undefined) }));
   return out;
 }
 

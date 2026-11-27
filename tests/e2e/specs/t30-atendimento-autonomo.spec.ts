@@ -125,7 +125,7 @@ test.describe("T30 — Atendimento autônomo", () => {
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Renato/ }).click();
     await expect(page.getByTestId("ordem").filter({ hasText: numero }).first()).toBeVisible();
 
-    await page.getByRole("tab", { name: "Rede ao vivo" }).click();
+    await page.getByRole("tab", { name: "Rede (24 h)" }).click();
     const linha = page.getByTestId("rede-linha-do-tempo");
     await expect(linha).toContainText(/lido \d\d:\d\d(?: BRT)? · a cada 15 s/);
     await expect(linha).toContainText(`${numero}: erro técnico encaminhado ao Renato`);

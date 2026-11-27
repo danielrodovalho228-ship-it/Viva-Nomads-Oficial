@@ -26,7 +26,9 @@ test("intervalo, estadia e prioridade das marcas", () => {
   const m = marcasDaEstadia("2026-11-01", "2026-11-03");
   assert.equal(marcaPrincipal(m["2026-11-01"]), "entrada");
   assert.equal(marcaPrincipal(m["2026-11-02"]), "periodo");
-  assert.equal(marcaPrincipal(m["2026-11-03"]), "saida");
+  // E1089 (coordenador): 03/11 é a última noite (período); a marca "Saída" fica no dia seguinte, 04/11.
+  assert.equal(marcaPrincipal(m["2026-11-03"]), "periodo");
+  assert.equal(marcaPrincipal(m["2026-11-04"]), "saida");
   assert.equal(marcaPrincipal(["hoje", "bloqueado"]), "bloqueado");
   assert.equal(marcaPrincipal([]), null);
   assert.equal(ymd(2026, 0, 5), "2026-01-05");
@@ -36,7 +38,8 @@ test("os três calendários (imóvel, agenda do parceiro, estadia) usam o mesmo 
   const { readFileSync } = await import("node:fs");
   const usos = {
     disponibilidade: "src/components/property/block-calendar.tsx",
-    agenda: "src/components/parceiros/pedidos-do-parceiro.tsx",
+    // E466: a agenda do parceiro (com mês anterior/próximo e dias clicáveis) mora no componente próprio.
+    agenda: "src/components/parceiros/agenda-calendario.tsx",
     estadia: "src/app/(dashboard)/dashboard/estadia/[contratoId]/page.tsx",
   };
   for (const [tipo, f] of Object.entries(usos)) {

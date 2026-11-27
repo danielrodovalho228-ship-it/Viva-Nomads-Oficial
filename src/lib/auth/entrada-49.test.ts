@@ -164,7 +164,8 @@ test("convidado sem armazenamento pede a conta; com armazenamento guarda no apar
   assert.equal(armazenamentoDisponivel(null), false);
   assert.equal(armazenamentoDisponivel(ok), true);
   const coracao = ler("src/components/favorite-button.tsx");
-  assert.match(coracao, /if \(!logado && !armazenamentoDisponivel\(armazenamentoDoNavegador\(\)\)\) \{\s*window\.location\.assign\(urlEntrada\("favorito"/);
+  // E448: deslogado, o coração sempre pede a conta (não guarda mais no aparelho).
+  assert.match(coracao, /if \(!logado\) \{\s*window\.location\.assign\(urlEntrada\("favorito"/);
   const busca = ler("src/components/busca/salvar-busca.tsx");
   assert.match(busca, /router\.push\(urlEntrada\("busca"/);
   // Ao entrar, mescla e limpa o local.
@@ -204,7 +205,7 @@ test("E268-B: quem vira dono pelo anúncio declara a intenção de anunciar (um 
   const srv = ler("src/lib/data/intencao-servidor.ts");
   assert.match(srv, /^import "server-only";/);
   assert.doesNotMatch(srv, /^"use server";/m, "fora do use server: não vira ação chamável pelo navegador");
-  assert.match(srv, /if \(nova\) await gravarIntencao\(supabase, userId, nova, "owner"\)/);
+  assert.match(srv, /if \(nova\) \{\s*const r = await gravarIntencao\(supabase, userId, nova, "owner"\)/);
   // O 1º rascunho chama pelo Passo 1 (saveDraftData novo), pela qualificação e pelo anúncio criado direto.
   const acoes = ler("src/lib/data/actions.ts");
   assert.equal((acoes.match(/await registrarIntencaoDeAnunciar\(supabase, user\.id\)/g) ?? []).length, 3);

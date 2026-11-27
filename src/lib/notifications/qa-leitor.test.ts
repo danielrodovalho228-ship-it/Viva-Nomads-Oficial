@@ -101,11 +101,15 @@ test("página: fora de /admin, 404 para quem não pode, leitura pela sessão (RL
   assert.match(pagina, /if \(!user\) notFound\(\);/);
   assert.match(pagina, /\.from\("profiles"\)\.select\("qa_leitor, is_teste, role"\)/);
   assert.doesNotMatch(pagina, /createAdminClient|SERVICE_ROLE|is_admin|mfa/i);
-  assert.doesNotMatch(pagina, /usuario_id, destinatario_mascarado, evento"\)[^;]*\.from\("profiles"/, "opções sem ler perfis alheios");
-  assert.deepEqual([...pagina.matchAll(/\.from\("(\w+)"\)/g)].map((m) => m[1]).sort(), ["emails_teste", "emails_teste", "profiles"]);
-  assert.match(pagina, /<ListaEmailsTeste/);
-  assert.match(pagina, /data-testid="qa-emails-conta"/);
-  assert.match(pagina, /data-testid="qa-emails-evento"/);
+  assert.deepEqual([...pagina.matchAll(/\.from\("(\w+)"\)/g)].map((m) => m[1]).sort(), ["profiles"]);
+  assert.match(pagina, /<CaixaEmailsQa /);
+  // E435: a caixa (filtro e lista) é a mesma do admin; lê pela sessão, sem chave de serviço nem perfis alheios.
+  const caixa = ler("src/components/admin/caixa-emails-qa.tsx");
+  assert.doesNotMatch(caixa, /createAdminClient|SERVICE_ROLE|is_admin|mfa/i);
+  assert.deepEqual([...caixa.matchAll(/\.from\("(\w+)"\)/g)].map((m) => m[1]).sort(), ["emails_teste", "emails_teste"]);
+  assert.match(caixa, /<ListaEmailsTeste/);
+  assert.match(caixa, /data-testid="qa-emails-conta"/);
+  assert.match(caixa, /data-testid="qa-emails-evento"/);
 });
 
 test("a mesma lista em /admin/emails-teste e em /dashboard/qa/emails, sempre mascarada", () => {
@@ -114,11 +118,11 @@ test("a mesma lista em /admin/emails-teste e em /dashboard/qa/emails, sempre mas
   assert.doesNotMatch(lista, /linhas\.map\(\(l\)/, "a tela só desenha as linhas mascaradas");
   assert.match(lista, /data-testid="emails-teste-cartoes"/);
   assert.match(lista, /data-testid="emails-teste-tabela"/);
-  assert.match(ler("src/components/admin/emails-teste-lista.tsx"), /<ListaEmailsTeste/);
+  assert.match(ler("src/components/admin/emails-teste-lista.tsx"), /<CaixaEmailsQa /);
 });
 
 test("2FA do admin intocado: ADMIN_2FA_OBRIGATORIA e is_admin() fora deste item", () => {
-  for (const p of ["src/app/(dashboard)/dashboard/qa/emails/page.tsx", "src/components/admin/lista-emails-teste.tsx"]) {
+  for (const p of ["src/app/(dashboard)/dashboard/qa/emails/page.tsx", "src/components/admin/lista-emails-teste.tsx", "src/components/admin/caixa-emails-qa.tsx"]) {
     assert.doesNotMatch(ler(p), /ADMIN_2FA_OBRIGATORIA|is_admin/);
   }
 });

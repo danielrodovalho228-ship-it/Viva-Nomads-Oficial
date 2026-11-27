@@ -1,5 +1,7 @@
 "use client";
 
+import { CampoData } from "@/components/ui/campo-data";
+import { hojeEmBrasilia } from "@/lib/datas-brasilia";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useMemo, useState } from "react";
 import {
@@ -19,10 +21,12 @@ import {
   calcularReembolso,
   totalDescontos,
   PRAZO_REEMBOLSO_DIAS,
+  prazoLimiteDoReembolso,
   type DescontoReembolso,
   type StatusReembolso,
 } from "@/lib/caucao";
 import { formatBRL } from "@/lib/utils";
+import { CAUCAO_PRAZOS_ATIVA } from "@/lib/flags";
 
 // Locação encerrada (mock — viria do contrato/fechamento). A caução está em
 // poupança da caução (art. 38, §2º); a plataforma só documenta o reembolso.
@@ -86,6 +90,8 @@ function ReembolsoPreview() {
   const [valor, setValor] = useState<number>(0);
   const [evidencia, setEvidencia] = useState("");
   const [prazoLimite, setPrazoLimite] = useState<string | null>(null);
+  // E707: com a trava dos prazos ligada, o teto de 30 dias conta do check-out confirmado (informado aqui).
+  const [checkout, setCheckout] = useState("");
   const [status, setStatus] = useState<StatusReembolso>("pendente");
 
   const totalDesc = useMemo(() => totalDescontos(descontos), [descontos]);
@@ -106,9 +112,10 @@ function ReembolsoPreview() {
   }
 
   function notificarERegistrarPrazo() {
-    // Prazo legal: até 30 dias após a entrega das chaves (registramos a data).
-    const limite = new Date(Date.now() + PRAZO_REEMBOLSO_DIAS * 24 * 60 * 60 * 1000);
-    setPrazoLimite(limite.toLocaleDateString("pt-BR"));
+    // Sem a trava: 30 dias a partir de hoje (como antes). Com ela: teto externo do check-out informado.
+    const hojeISO = hojeEmBrasilia();
+    const limite = prazoLimiteDoReembolso({ prazosAtivos: CAUCAO_PRAZOS_ATIVA, hoje: hojeISO, checkout });
+    setPrazoLimite(limite ? limite.split("-").reverse().join("/") : null);
   }
   function gerarComprovante() {
     setStatus("registrado"); // só marca o status e guarda a prova — não paga
@@ -129,7 +136,7 @@ function ReembolsoPreview() {
               <Row label="Contrato" value={LOCACAO.contrato} />
               <Row label="Morador" value={LOCACAO.inquilino} />
               <Row label="Imóvel" value={LOCACAO.imovel} />
-              <Row label="Caução na poupança" value={formatBRL(LOCACAO.caucao)} />
+              <Row label="Caução (devolvida no fim)" value={formatBRL(LOCACAO.caucao)} />
             </div>
           </Panel>
 
@@ -179,12 +186,13 @@ function ReembolsoPreview() {
               </ul>
             )}
 
-            <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_8rem_1fr_auto]">
+            {/* Varredura 768 (passada 15): 2 colunas a partir do tablet (com 4, os campos não encolhiam e o "Adicionar" saía da tela). */}
+            <div className="mt-3 grid gap-2 sm:grid-cols-2" data-testid="reembolso-linha-desconto">
               <input
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Motivo (ex.: reparo de parede)"
-                className="rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+                className="h-11 min-w-0 rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
               />
               <CampoReais
                 semPrefixo
@@ -193,15 +201,15 @@ function ReembolsoPreview() {
                 onChange={(v) => setValor(v ?? 0)}
                 placeholder="Valor (R$)"
                 ariaLabel="Valor (R$)"
-                className="rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+                className="w-full h-11 min-w-0 rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
               />
               <input
                 value={evidencia}
                 onChange={(e) => setEvidencia(e.target.value)}
                 placeholder="Evidência (arquivo/foto)"
-                className="rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
+                className="h-11 min-w-0 rounded-lg border border-sage-200 px-3 py-2 text-sm outline-none focus:border-sage"
               />
-              <Button variant="outline" onClick={addDesconto} disabled={!motivo.trim() || valor <= 0}>
+              <Button variant="outline" className="h-11" onClick={addDesconto} disabled={!motivo.trim() || valor <= 0}>
                 <Plus className="h-4 w-4" /> Adicionar
               </Button>
             </div>
@@ -219,9 +227,16 @@ function ReembolsoPreview() {
           {/* c) Notificar + prazo + comprovante */}
           <Panel title="3. Notificar, registrar prazo e gerar comprovante">
             <p className="text-sm text-muted">
-              A plataforma notifica as partes, registra o prazo legal (devolução em até{" "}
-              {PRAZO_REEMBOLSO_DIAS} dias após a entrega das chaves) e gera o comprovante.
+              {CAUCAO_PRAZOS_ATIVA
+                ? `A plataforma notifica as partes, registra o prazo e gera o comprovante. Parecer sem desconto, ou silêncio no 7º dia, deixa a devolução devida de imediato; os ${PRAZO_REEMBOLSO_DIAS} dias contados do check-out são só o teto externo.`
+                : `A plataforma notifica as partes, registra o prazo legal (devolução em até ${PRAZO_REEMBOLSO_DIAS} dias após a entrega das chaves) e gera o comprovante.`}
             </p>
+            {CAUCAO_PRAZOS_ATIVA && (
+              <label className="mt-3 block text-sm font-medium text-ink">
+                Data do check-out
+                <CampoData value={checkout} onChange={(e) => setCheckout(e.target.value)} aria-label="Data do check-out" data-testid="reembolso-checkout" className="mt-1 block w-full max-w-xs rounded-lg border border-line bg-white px-3 py-2 text-ink" />
+              </label>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               <Button variant="outline" onClick={notificarERegistrarPrazo}>
                 <BellRing className="h-4 w-4" /> Notificar as partes

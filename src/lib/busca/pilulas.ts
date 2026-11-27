@@ -8,11 +8,12 @@ export const ORDEM_PILULAS = ["datas", "local", "tipo", "preco", "nivel", "mais"
 
 export const ROTULO_PILULA: Record<IdPilula, string> = { datas: "Datas", local: "Local", tipo: "Tipo", preco: "Preço", nivel: "Nível", ordenar: "Ordenar" };
 
-/** O valor de cada pílula quando ativa ("Até R$ 3.500", "Conforto+", "Perto de HC-UFU"); null = rótulo neutro. */
-export function valorDaPilula(id: IdPilula, f: FiltrosPainel, extra: { local?: string; perto?: string | null; ordem?: string | null }): string | null {
+/** O valor de cada pílula quando ativa ("Até R$ 3.500", "Conforto+", "Por tempo até HC-UFU"); null = rótulo neutro. */
+export function valorDaPilula(id: IdPilula, f: FiltrosPainel, extra: { local?: string; perto?: string | null; ateMin?: number; ordem?: string | null }): string | null {
   // E105: o período da estadia mora só no "Mais filtros"; a pílula Datas mostra só a entrada.
   if (id === "datas") return f.entrada ? `Entrada ${f.entrada.split("-").reverse().slice(0, 2).join("/")}` : null;
-  if (id === "local") return extra.perto ? `Perto de ${extra.perto}` : extra.local?.trim() || null;
+  // E921: o destino sozinho só ORDENA a lista (por tempo até lá); com "até N min" ele filtra. O rótulo diz qual dos dois.
+  if (id === "local") return extra.perto ? (extra.ateMin ? `Até ${extra.ateMin} min de ${extra.perto}` : `Por tempo até ${extra.perto}`) : extra.local?.trim() || null;
   if (id === "tipo") return OPCOES_TIPO.find((o) => o.valor === f.tipo)?.rotulo ?? null;
   if (id === "preco") return OPCOES_PRECO.find((o) => o.valor === f.maxPrice)?.rotulo ?? (f.maxPrice ? `Até R$ ${f.maxPrice.toLocaleString("pt-BR")}` : null);
   if (id === "nivel") return f.nivelMin ? (f.nivelMin === "premium" ? ROTULO_NIVEL.premium : `${ROTULO_NIVEL[f.nivelMin]}+`) : null;

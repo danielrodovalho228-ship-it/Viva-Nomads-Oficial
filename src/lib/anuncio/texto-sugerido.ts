@@ -89,3 +89,19 @@ export function donoEscreveu(atual: { titulo: string; descricao: string }, anter
   const q = camposQueRecebem(atual, anterior);
   return !q.titulo || !q.descricao;
 }
+
+/**
+ * E613: "Usar esta sugestão" — o clique do dono põe a sugestão SÓ nos campos ainda vazios (nunca por cima do texto dele).
+ * A sugestão nunca entra nos campos sozinha: preenchida sem o dono, a Revisão marcava "Título e descrição — feito".
+ */
+export function camposParaUsarSugestao(atual: { titulo: string; descricao: string }): { titulo: boolean; descricao: boolean } {
+  return { titulo: !atual.titulo.trim(), descricao: !atual.descricao.trim() };
+}
+
+/**
+ * E618: tempo máximo do pedido à IA. Passado, entra o texto pronto (modelo fixo) — a sugestão nunca fica "a caminho"
+ * para sempre.
+ */
+export const TEMPO_MAX_SUGESTAO_MS = 15_000;
+/** E618: o status enquanto a sugestão é preparada — junto do cartão, nunca no campo (a sugestão não vai para o campo). */
+export const TEXTO_PREPARANDO_SUGESTAO = "Preparando uma sugestão com os dados do cadastro. Ela aparece aqui embaixo, e só entra no anúncio se você usar.";

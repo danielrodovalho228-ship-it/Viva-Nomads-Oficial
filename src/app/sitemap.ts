@@ -8,6 +8,7 @@ import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
 import { GUIAS } from "@/lib/guias/guias";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { chaveCidade } from "@/lib/cidades";
+import { comPortasDePrecos } from "@/config/precos-visivel";
 
 // F9: lista de imóveis sempre fresca (revalidatePath nas ações + 60 s de rede de segurança).
 export const revalidate = 60;
@@ -34,7 +35,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...GUIAS.map((g) => `/guias/${g.slug}`),
     "/termos",
     "/privacidade",
-  ].map((path) => ({
+  ]
+    // E563: /precos sai do sitemap enquanto a página estiver suspensa (volta ao ligar a chave).
+    .map((href) => ({ href }))
+    .filter((r) => comPortasDePrecos([r]).length > 0)
+    .map(({ href: path }) => ({
     // Sem lastmod inventado: "agora" a cada geração dizia ao Google que tudo
     // mudou o tempo todo. Só os imóveis levam data (a de criação, que é real).
     url: `${SITE_URL}${path}`,

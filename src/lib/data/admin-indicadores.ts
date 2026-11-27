@@ -3,9 +3,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { chaveCidade } from "@/lib/cidades";
+import { capasPorImovel, emLotes } from "@/lib/admin/capas-admin";
+import { statusPorImovel } from "@/lib/documento/vigente";
 import { todasAsPaginas } from "@/lib/admin/paginas";
+import { cobrancasPorContrato } from "@/lib/admin/financeiro";
 import { eventoConta } from "@/lib/eventos/trafego";
-import { seloParaEquipe, type LinhaEstadoContrato } from "@/lib/contrato-estado";
+import { COLUNAS_ESTADO_CONTRATO, seloParaEquipe, situacaoParaEquipe, type LinhaEstadoContrato, type SituacaoEquipe } from "@/lib/contrato-estado";
 import {
   EVENTOS_HOME,
   resumoCandidaturas,
@@ -56,6 +59,8 @@ export interface ContratoLinhaAdmin extends ContratoParaAgregado {
   assinadoInquilino: boolean;
   /** E197: o selo da equipe pela fonte única (o mesmo do detalhe do contrato). */
   selo: string;
+  /** E543: a situação do filtro, pela mesma fonte do selo (nunca o status cru). */
+  situacao: SituacaoEquipe;
   /** Conta de teste ou anúncio [TESTE…] (só aparece com o filtro "teste"). */
   teste: boolean;
   /** Data do aceite da candidatura (a taxa foi gravada nesse dia) — para o rótulo único rotuloBaseTaxa. */
@@ -80,7 +85,8 @@ export async function contratosReais(
   const k = cidade ? chaveCidade(cidade) : null;
   let q = admin
     .from("contratos")
-    .select("id, created_at, status, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, assinado_proprietario_em, assinado_inquilino_em, lead_id, owner_plan, properties!inner(owner_id, title, city), leads(accepted_at), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)")
+    // E543: as MESMAS colunas de estado do detalhe (com o período) — o selo da lista e o do detalhe saem iguais.
+    .select(`id, created_at, property_id, tenant_id, aluguel_mensal, prazo_total_dias, comissao_valor, comissao_percent, lead_id, owner_plan, properties!inner(owner_id, title, city), leads(accepted_at), ${COLUNAS_ESTADO_CONTRATO}`)
     .order("created_at", { ascending: false })
     .limit(2000);
   if (periodo) q = q.gte("created_at", periodo.ini).lt("created_at", periodo.fim);
@@ -103,6 +109,7 @@ export async function contratosReais(
     properties: { owner_id: string; title: string | null; city: string | null };
     leads: { accepted_at: string | null } | null;
     pagamentos_bloco: LinhaEstadoContrato["pagamentos_bloco"];
+    periodo?: string | null;
   }[])
     .map((c) => ({ ...c, ehTeste: teste.has(c.tenant_id) || teste.has(c.properties.owner_id) || MARCA_TESTE.test(c.properties.title ?? "") }))
     .filter((c) => (tipo === "todos" ? true : tipo === "teste" ? c.ehTeste : !c.ehTeste))
@@ -123,11 +130,23 @@ export async function contratosReais(
       assinadoDono: !!c.assinado_proprietario_em,
       assinadoInquilino: !!c.assinado_inquilino_em,
       selo: seloParaEquipe(c),
+      situacao: situacaoParaEquipe(c).chave,
       aluguelMensal: c.aluguel_mensal === null ? null : Number(c.aluguel_mensal),
       prazoDias: c.prazo_total_dias === null ? null : Number(c.prazo_total_dias),
       taxaValor: c.comissao_valor === null ? null : Number(c.comissao_valor),
       taxaPercent: c.comissao_percent === null ? null : Number(c.comissao_percent),
     }));
+}
+
+/**
+ * E472 — a LISTA de Admin → Pedidos, pelo MESMO cliente de serviço dos números da página e da inicial (pedidosParaMetrica,
+ * contarPedidosNoAr): uma fonte só. Antes a lista lia pela RLS da sessão (is_admin() exige AAL2 de quem tem 2FA) e podia
+ * voltar vazia enquanto os números contavam os pedidos. Falha → lança (achado 111: nunca "nenhum pedido" calado).
+ */
+export async function pedidosMoradiaAdmin(admin: Admin): Promise<Record<string, unknown>[]> {
+  const { data, error } = await admin.from("pedidos_moradia").select("*").order("criado_em", { ascending: false }).limit(500);
+  if (error) throw new Error("Não foi possível ler os pedidos de moradia.");
+  return (data ?? []) as Record<string, unknown>[];
 }
 
 /** Pedidos de moradia (de contas reais) criados no período, com a 1ª resposta (contato ou proposta). */
@@ -300,8 +319,30 @@ export interface ImovelLinhaAdmin {
   bairro: string | null;
   criadoEm: string;
   documento: string;
+  /** E561: há um envio de documento em revisão (pendente), mesmo que o vigente já esteja aprovado. */
+  documentoEmRevisao?: boolean;
   qualidade: string | null;
   donoTeste: boolean;
+  /** Onda 5 (matriz admin-anuncios): a 1ª foto real do anúncio; null = espaço "sem foto". */
+  capa: string | null;
+}
+
+/**
+ * Onda 5 (matriz admin-anuncios): a capa (ordem 0) de cada anúncio, em lotes — com todas as fotos, 3000 anúncios passam
+ * do limite de linhas da API. A falha não derruba a lista: sem leitura, cada linha mostra o espaço "sem foto".
+ */
+async function lerCapas(admin: Admin, ids: string[]): Promise<Map<string, string>> {
+  const lotes = await Promise.all(
+    emLotes(ids, 500).map((lote) =>
+      admin
+        .from("property_photos")
+        .select("property_id, url, sort_order")
+        .in("property_id", lote)
+        .eq("sort_order", 0)
+        .then(({ data }) => (data ?? []) as { property_id: string; url: string | null; sort_order: number | null }[]),
+    ),
+  ).catch(() => []);
+  return capasPorImovel(lotes.flat());
 }
 
 /** Imóveis do banco para /admin/imoveis (todos: reais e de teste — o tipo sai de tipoImovel). */
@@ -329,17 +370,18 @@ export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> 
   if (!linhas.length) return [];
   const ids = linhas.map((p) => p.id);
   const donos = [...new Set(linhas.map((p) => p.owner_id))];
-  const [{ data: perfis }, { data: docs }] = await Promise.all([
+  const [{ data: perfis }, { data: docs }, capas] = await Promise.all([
     admin.from("profiles").select("id, full_name").in("id", donos),
-    admin.from("qualification_checklists").select("property_id, document_status").in("property_id", ids),
+    admin.from("qualification_checklists").select("property_id, document_status, created_at").in("property_id", ids).order("created_at", { ascending: false }),
+    lerCapas(admin, ids),
   ]);
   const nome = new Map(((perfis ?? []) as { id: string; full_name: string | null }[]).map((p) => [p.id, nomeCurtoAdmin(p.full_name)]));
-  const doc = new Map<string, string>();
-  for (const d of (docs ?? []) as { property_id: string; document_status: string | null }[]) {
-    const atual = doc.get(d.property_id);
-    // "pending" (em revisão) ganha de tudo: é o que o filtro "documento em revisão" procura.
-    if (!atual || d.document_status === "pending") doc.set(d.property_id, d.document_status ?? "none");
-  }
+  // E561: o estado mostrado é o do documento VIGENTE — a mesma fonte do dono (statusPorImovel, da mais recente para a
+  // mais antiga). Antes valia a 1ª linha que o banco devolvia (sem ordem), e uma recusa antiga aparecia por cima do
+  // aprovado. O filtro "documento em revisão" segue achando o envio pendente pelo campo próprio.
+  const linhasDoc = (docs ?? []) as { property_id: string; document_status: string | null }[];
+  const vigente = statusPorImovel(linhasDoc);
+  const emRevisao = new Set(linhasDoc.filter((d) => d.document_status === "pending").map((d) => d.property_id));
   return linhas.map((p) => ({
     id: p.id,
     titulo: p.title ?? "Imóvel",
@@ -349,9 +391,11 @@ export async function imoveisDoBanco(admin: Admin): Promise<ImovelLinhaAdmin[]> 
     cidade: p.city,
     bairro: p.address,
     criadoEm: p.created_at,
-    documento: doc.get(p.id) ?? "none",
+    documento: vigente.get(p.id) ?? "none",
+    documentoEmRevisao: emRevisao.has(p.id),
     qualidade: p.listing_quality_tier,
     donoTeste: teste.has(p.owner_id),
+    capa: capas.get(p.id) ?? null,
   }));
 }
 
@@ -572,9 +616,15 @@ export async function cobrancasTaxa(admin: Admin, leadIds: string[]): Promise<Ma
   const ids = [...new Set(leadIds.filter(Boolean))];
   if (!ids.length) return new Map();
   // Achado nº 25: a falha LANÇA — sem as cobranças, toda taxa pareceria "sem cobrança" e "Taxa a receber" inflaria.
-  const { data, error } = await admin.from("cobrancas_fechamento").select("lead_id, status, pago_em").eq("tipo", "comissao").in("lead_id", ids);
+  // E1086: uma candidatura pode ter um contrato (e uma cobrança da taxa) por proposta; cada cobrança vai para o contrato dela.
+  const { data, error } = await admin.from("cobrancas_fechamento").select("lead_id, proposta_id, status, pago_em").eq("tipo", "comissao").in("lead_id", ids);
   if (error) throw new Error("Não foi possível ler as cobranças das taxas.");
-  return new Map(((data ?? []) as { lead_id: string; status: string; pago_em: string | null }[]).map((c) => [c.lead_id, { status: c.status, pagoEm: c.pago_em }]));
+  const { data: contratos, error: erroContratos } = await admin.from("contratos").select("id, lead_id, proposta_id").in("lead_id", ids);
+  if (erroContratos) throw new Error("Não foi possível ler as cobranças das taxas.");
+  return cobrancasPorContrato(
+    (data ?? []) as { lead_id: string; proposta_id: string | null; status: string; pago_em: string | null }[],
+    (contratos ?? []) as { id: string; lead_id: string | null; proposta_id: string | null }[]
+  );
 }
 
 /** Candidaturas (leads) que são de teste: conta de teste em qualquer lado ou anúncio [TESTE…]. */

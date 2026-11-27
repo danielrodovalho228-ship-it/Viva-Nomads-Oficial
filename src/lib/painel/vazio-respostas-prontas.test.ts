@@ -18,7 +18,8 @@ test("a lista vazia explica o que fazer e onde a resposta aparece, com testid", 
 });
 
 test("o que o texto promete é o que o chamado faz: 'Resposta pronta' no Responder e {nome} trocado", () => {
-  assert.match(CHAMADO, /<Panel title="Responder"/);
+  // E1098 (ORDEM-DUET-505): pelo mockup, a caixa de resposta fica dentro do cartão Conversa (já não é um painel "Responder").
+  assert.match(CHAMADO, /data-testid="chamado-responder"/);
   assert.match(CHAMADO, /Resposta pronta/);
   assert.match(CHAMADO, /m\.corpo\.replaceAll\("\{nome\}", nome\)/);
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { tipoDoQuadro, type TipoQuadro } from "@/lib/galeria-quadros";
 import { useEffect, useRef, useState } from "react";
 import { X, Images, ChevronLeft, ChevronRight, PlayCircle } from "lucide-react";
 import { BrandImage } from "@/components/brand-image";
@@ -7,6 +8,7 @@ import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { IconButton } from "@/components/ui/icon-button";
 import { cn } from "@/lib/utils";
+import { fotosUnicas } from "@/lib/media";
 import { ITEM_VIDEO, fotoDoItem, itensDaGaleriaVideoDepoisDaCapa } from "@/lib/video-tour";
 import { VideoArquivoModal } from "@/components/video-arquivo";
 import { ROTULO_SELO_VIDEO } from "@/lib/card-selos";
@@ -16,6 +18,15 @@ import { VideoModal } from "@/components/video-walkthrough";
 export const PRIMEIRA_FOTO_OCULTA = 5;
 /** O `sizes` das fotos do mosaico e do carrossel; a galeria aberta reusa esta versão (já no cache) por baixo da grande. */
 const SIZES_MINIATURA = "(max-width: 768px) 100vw, 50vw";
+/**
+ * E768: no mosaico do computador as 4 fotos pequenas ocupam 1 de 4 colunas (≈25% da largura) e, com 2–4 fotos, 1 de 3.
+ * Com o `sizes` da foto grande (50vw) o otimizador gerava versões de ~1080–1280 px para um quadro de ~300 px: com o
+ * cache frio, cada uma custa segundos de codificação e as fotos ficavam em branco na 1ª leitura.
+ */
+export const SIZES_MOSAICO_PEQUENA = "(max-width: 768px) 100vw, 25vw";
+export const SIZES_MOSAICO_COLUNA = "(max-width: 768px) 100vw, 34vw";
+/** E987: o `sizes` do quadro de onde a foto veio — a galeria aberta pede a MESMA versão (já no cache) por baixo. */
+const SIZES_POR_TIPO: Record<TipoQuadro, string> = { miniatura: SIZES_MINIATURA, pequena: SIZES_MOSAICO_PEQUENA, coluna: SIZES_MOSAICO_COLUNA };
 
 const isPhoto = (s?: string) =>
   typeof s === "string" && (/^https?:\/\//.test(s) || s.startsWith("/"));
@@ -48,7 +59,7 @@ export function PropertyGallery({
   const [lightbox, setLightbox] = useState(false);
   const [videoAberto, setVideoAberto] = useState(false);
   const [index, setIndex] = useState(0);
-  const fotos = photos.length ? photos : [""];
+  const fotos = photos.length ? fotosUnicas(photos) : [""];
   // 65-B: o vídeo é o 2º item, logo depois da capa (a capa segue como a foto grande do mosaico e a 1ª do carrossel).
   const list = itensDaGaleriaVideoDepoisDaCapa(fotos, videoUrl, !!videoArquivoId);
 
@@ -89,6 +100,7 @@ export function PropertyGallery({
           index={index}
           setIndex={setIndex}
           onClose={() => setLightbox(false)}
+          mosaicoNoComputador
         />
       )}
     </>
@@ -103,12 +115,15 @@ function Tile({
   testId,
   capa,
   prioridade = false,
+  sizes,
 }: {
   src: string;
   alt: string;
   className?: string;
   onClick?: () => void;
   testId?: string;
+  /** E768: `sizes` próprio do quadro (as fotos pequenas do mosaico); sem ele vale o da miniatura grande. */
+  sizes?: string;
   /** Capa do vídeo (a 1ª foto), usada só quando src é o vídeo. */
   capa?: string;
   /** E259 (10): a foto que aparece na primeira pintura (pedida já, com preload) — sem o cinza de segundos. */
@@ -156,7 +171,7 @@ function Tile({
           treat={false}
           priority={prioridade}
           rounded="rounded-none"
-          sizes={SIZES_MINIATURA}
+          sizes={sizes ?? SIZES_MINIATURA}
           className="h-full w-full transition-transform duration-500 group-hover:scale-105"
         />
       ) : (
@@ -244,7 +259,7 @@ function DesktopMosaic({
         <Tile src={photos[0]} alt={title} className="col-span-2 row-span-1 h-full" onClick={() => onOpen(0)} capa={capa} testId="galeria-tile-0" prioridade />
         <div className="grid gap-2" style={{ gridTemplateRows: `repeat(${n - 1}, minmax(0, 1fr))` }}>
           {photos.slice(1).map((p, i) => (
-            <Tile key={i} src={p} alt={`${title} — ${i + 2}`} className="h-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} prioridade />
+            <Tile key={i} src={p} alt={`${title} — ${i + 2}`} className="h-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} sizes={SIZES_MOSAICO_COLUNA} />
           ))}
         </div>
       </div>
@@ -257,7 +272,7 @@ function DesktopMosaic({
           const isLast = i === 3 && n > 5;
           return (
             <div key={i} className="relative h-full">
-              <Tile src={p} alt={`${title} — ${i + 2}`} className="h-full w-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} prioridade />
+              <Tile src={p} alt={`${title} — ${i + 2}`} className="h-full w-full" onClick={() => onOpen(i + 1)} capa={capa} testId={`galeria-tile-${i + 1}`} sizes={SIZES_MOSAICO_PEQUENA} />
               {isLast && (
                 <button
                   type="button"
@@ -295,19 +310,25 @@ function DesktopMosaic({
   );
 }
 
-function Lightbox({
+/** E466: exportado — a galeria pública do parceiro usa a mesma visualização ampliada. */
+export function Lightbox({
   photos,
   title,
   index,
   setIndex,
   onClose,
+  mosaicoNoComputador = false,
 }: {
   photos: string[];
   title: string;
   index: number;
   setIndex: (i: number) => void;
   onClose: () => void;
+  /** E987: aberta a partir da galeria do anúncio — no computador as fotos vieram do mosaico (cada quadro com o seu `sizes`). */
+  mosaicoNoComputador?: boolean;
 }) {
+  // E987: a galeria só abre depois de um toque (sempre no navegador); a largura diz de onde a foto veio.
+  const [noMosaico] = useState(() => mosaicoNoComputador && typeof window !== "undefined" && window.matchMedia("(min-width: 769px)").matches);
   const prev = () => setIndex((index - 1 + photos.length) % photos.length);
   const next = () => setIndex((index + 1) % photos.length);
 
@@ -369,7 +390,7 @@ function Lightbox({
             // miniatura do mosaico/carrossel (mesmo `sizes` = mesma URL, já no cache) aparece na hora; por cima, a grande,
             // pedida já e com prioridade alta, cobre quando chega.
             <div className="relative h-[80vh] w-full" data-testid="galeria-lightbox-foto">
-              <BrandImage src={photos[index]} alt="" treat={false} sizes={SIZES_MINIATURA} fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
+              <BrandImage src={photos[index]} alt="" treat={false} sizes={SIZES_POR_TIPO[tipoDoQuadro(index, photos.length, noMosaico)]} fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
               <BrandImage key={photos[index]} src={photos[index]} alt={`${title} — foto ${index + 1}`} treat={false} sizes="100vw" priority fit="object-contain" rounded="rounded-xl" className="absolute inset-0 h-full w-full bg-transparent" />
             </div>
           ) : (

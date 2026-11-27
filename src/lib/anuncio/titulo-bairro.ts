@@ -5,6 +5,8 @@
 */
 import { chaveCidade } from "../cidades.ts";
 import { BAIRROS_CURADOS } from "../bairros.ts";
+import { erroTituloNivel } from "./titulo-nivel.ts";
+import type { NivelOuAdequacao } from "../../config/niveis.ts";
 
 const COMUNS = ["Centro", "Tibery", "Santa Mônica", "Umuarama", "Martins", "Fundinho", "Osvaldo Rezende", "Karaíba", "Lídice", "Brasil", "Saraiva", "Jardim Karaíba", "Morada da Colina", "Pampulha", "Patrimônio", "Cazeca"];
 
@@ -59,8 +61,11 @@ export function quartosCitados(titulo: string): number | null {
   return /^\d+$/.test(m[1]) ? Number(m[1]) : NUMEROS[m[1]] ?? null;
 }
 
-export function avisosConsistenciaTitulo(titulo: string, a: { bairro?: string; tipo?: string; quartos?: number | string }): string[] {
+export function avisosConsistenciaTitulo(titulo: string, a: { bairro?: string; tipo?: string; quartos?: number | string; nivel?: NivelOuAdequacao | null }): string[] {
   const avisos: string[] = [];
+  // E814: termo de nível ("premium", "conforto") diferente do nível calculado — este o servidor recusa ao salvar.
+  const nivel = erroTituloNivel(titulo, a.nivel);
+  if (nivel) avisos.push(nivel);
   const bairro = avisoTituloBairro(titulo, a.bairro ?? "");
   if (bairro) avisos.push(bairro);
   const citados = tiposCitados(titulo);

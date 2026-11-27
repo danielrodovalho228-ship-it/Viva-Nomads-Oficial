@@ -21,7 +21,12 @@ export interface ContractInput {
   ownerName: string;
   propertyTitle: string;
   monthlyRent: number;
+  /** Meses DERIVADOS dos dias (para cima) — E562: o prazo que vale é termDays. */
   termMonths: number;
+  /** E562 (Relay 67): o prazo total em dias (prazo_total_dias do contrato). */
+  termDays: number;
+  /** O prazo por extenso ("1 mês + 13 dias"). */
+  termText: string;
   guarantee: string;
   costSplit: Record<string, "owner" | "tenant">;
 }
@@ -63,6 +68,8 @@ export async function createContract(input: ContractInput): Promise<ContractResu
       external_id: JSON.stringify({
         rent: input.monthlyRent,
         term: input.termMonths,
+        term_days: input.termDays,
+        term_text: input.termText,
         guarantee: input.guarantee,
         split: input.costSplit,
       }),

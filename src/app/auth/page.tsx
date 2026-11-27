@@ -21,6 +21,8 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { useCaptcha } from "@/components/seguranca/captcha";
 import { MSG_CAPTCHA_PENDENTE, comCaptcha, podeEnviar } from "@/lib/seguranca/captcha";
 import { LoginPorCodigo } from "@/components/auth/login-por-codigo";
+import { MSG_RECUPERACAO_CODIGO_ENVIADO, MSG_RECUPERACAO_ENVIADA } from "@/lib/seguranca/codigo-acesso";
+import { CHAVE_CODIGO_TELA, guardarCodigoTela } from "@/lib/auth/recuperar-codigo";
 import { BotaoApple } from "@/components/auth/botao-apple";
 import { provedoresSociais } from "@/lib/auth/provedores-sociais";
 import { chaveFalhas, exigeCaptchaPorFalhas, lerFalhas, segundosRestantes } from "@/lib/seguranca/tentativas-login";
@@ -216,13 +218,32 @@ export default function AuthPage() {
     const supabase = createClient();
     setLoading(true);
     try {
+      // E917 (opção A): conta de TESTE recebe o código pelo nosso envio (aparece na caixa de teste) e segue para
+      // /auth/reset/codigo. Qualquer outra conta: o mesmo pedido de sempre ao Supabase, daqui do navegador.
+      const r = await fetch("/api/auth/recuperar", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) })
+        .then((x) => x.json() as Promise<{ ok?: boolean; porCodigo?: boolean; codigo?: string; error?: string }>)
+        .catch(() => ({ ok: true, porCodigo: false }) as { ok?: boolean; porCodigo?: boolean; codigo?: string; error?: string });
+      if (r.ok === false) {
+        setError(r.error ?? friendlyAuthError(""));
+        return;
+      }
+      if (r.porCodigo) {
+        // E917 (prova de 19/11): o código da conta de teste segue para a tela seguinte pelo sessionStorage (nunca na URL).
+        if (r.codigo) {
+          try {
+            sessionStorage.setItem(CHAVE_CODIGO_TELA, guardarCodigoTela(email, r.codigo, Date.now()));
+          } catch {}
+        }
+        setNotice(MSG_RECUPERACAO_CODIGO_ENVIADO);
+        router.push(`/auth/reset/codigo?email=${encodeURIComponent(email)}`);
+        return;
+      }
       if (supabase) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, comCaptcha({ redirectTo: `${SITE_URL}/auth/reset` }, captcha.token));
         if (error) throw error;
       }
-      setNotice(
-        "Enviamos um link de recuperação para seu e-mail. Abra-o para definir uma nova senha."
-      );
+      // E917: a validade real do link (mailer_otp_exp, a mesma do código), no passo pós-envio.
+      setNotice(MSG_RECUPERACAO_ENVIADA);
     } catch (err) {
       setError(friendlyAuthError(err instanceof Error ? err.message : ""));
     } finally {
@@ -351,7 +372,7 @@ export default function AuthPage() {
   const linkTexto = "inline-flex min-h-11 items-center gap-2 text-sm font-medium text-forest hover:text-blue-700";
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
       {/* Lado da marca — foto distinta para login e cadastro (plano C1/C2) */}
       <div className="relative hidden overflow-hidden lg:block">
         {/* Fase 2.3 — imagem lateral serena (vertical), só em >= 1024px. */}
@@ -385,7 +406,7 @@ export default function AuthPage() {
       </div>
 
       {/* Formulário: fundo quente e o formulário num cartão (sem o branco vazio). */}
-      <div className={`flex items-center justify-center px-4 py-8 sm:p-12 ${FUNDO_FORMULARIO_PORTA}`} data-testid="porta-formulario">
+      <div className={`flex min-w-0 items-center justify-center px-4 py-8 sm:p-12 ${FUNDO_FORMULARIO_PORTA}`} data-testid="porta-formulario">
         <div className="w-full max-w-md">
           <div className="mb-6 flex justify-center lg:hidden">
             <Logo href="/" />

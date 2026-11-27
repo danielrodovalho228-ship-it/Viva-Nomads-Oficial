@@ -16,9 +16,8 @@ import {
   lerParceiroGeral,
   mesmoEmail,
   mostrarParceiroGeral,
-  PAGAMENTO_EM_BREVE,
+  PARCEIRO_GERAL_NAS_SUPERFICIES,
   recorteImagem,
-  REGRAS_CLARAS,
   situacaoToken,
   slugBase,
   textoPreco,
@@ -28,33 +27,36 @@ import {
   type ParceiroNaBusca,
   type SolicitacaoEntrada,
 } from "./regras.ts";
+import { REGRAS_CLARAS, TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE } from "../../config/taxa-servico-parceiros.ts";
 import { gerarToken, hashToken, tokenBemFormado } from "./token.ts";
 
 const CPF_OK = "529.982.247-25";
 const CNPJ_OK = "11.222.333/0001-81";
 const base: SolicitacaoEntrada = {
   nome: "Marina Souza Fotos",
-  tipoPessoa: "pf",
-  documento: CPF_OK,
+  tipoPessoa: "pj",
+  documento: CNPJ_OK,
+  emiteNota: true,
   categorias: ["fotografia"],
   cidades: ["Uberlândia", " uberlandia ", "Araguari"],
   portfolioUrl: "marinafotos.com.br",
   aceite: true,
 };
 
-test("CPF/CNPJ: dígitos verificadores conferidos; PF com CPF e PJ com CNPJ", () => {
+test("CPF/CNPJ: dígitos verificadores conferidos; só CNPJ (E648)", () => {
   const ok = validarSolicitacao(base);
   assert.ok(ok.ok);
   if (ok.ok) {
-    assert.equal(ok.valor.documento, "52998224725");
+    assert.equal(ok.valor.documento, "11222333000181");
     assert.deepEqual(ok.valor.cidades, ["Uberlândia", "Araguari"], "cidades repetidas (acento/maiúscula) saem");
     assert.equal(ok.valor.portfolioUrl, "https://marinafotos.com.br/");
   }
-  assert.equal(validarSolicitacao({ ...base, documento: "529.982.247-26" }).ok, false);
+  assert.equal(validarSolicitacao({ ...base, documento: "11.222.333/0001-82" }).ok, false);
   assert.equal(validarSolicitacao({ ...base, documento: "111.111.111-11" }).ok, false);
   // FISCAL-PARCEIRO-B: na trilha PJ a pergunta da nota é obrigatória (ver fiscal.test.ts).
   assert.equal(validarSolicitacao({ ...base, tipoPessoa: "pj", documento: CNPJ_OK, emiteNota: true }).ok, true);
   assert.equal(validarSolicitacao({ ...base, tipoPessoa: "pj", documento: CPF_OK, emiteNota: true }).ok, false);
+  assert.equal(validarSolicitacao({ ...base, tipoPessoa: "pf", documento: CPF_OK }).ok, false, "E648: CPF não é aceito");
 });
 
 test("campos por categoria: fotografia exige portfólio; mudança empresa + veículo; demais, descrição", () => {
@@ -90,8 +92,8 @@ test("taxa de serviço: 10% em todas as categorias; divisão na origem 90/10 em 
   assert.deepEqual(dividirValor(333.33), { taxa: 33.33, parceiro: 300 });
   assert.deepEqual(dividirValor(-10), { taxa: 0, parceiro: 0 });
   assert.match(REGRAS_CLARAS[1], /10% sobre o valor do serviço, para todas as categorias/);
-  assert.match(REGRAS_CLARAS[2], /90% vai direto para você e 10% para a Viva\. A Viva não guarda o seu dinheiro\./);
-  assert.equal(PAGAMENTO_EM_BREVE, "Pagamento pela plataforma em breve.");
+  assert.match(REGRAS_CLARAS[2], /90% vai direto para você e 10% para a Viva\. A Viva não guarda o dinheiro\./);
+  assert.equal(TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE, "Pagamento pela plataforma em breve.");
 });
 
 test("checklist: aprovar só com os 4 itens e o 'conferido em' do documento", () => {
@@ -123,7 +125,7 @@ test("contato oculto: redes só https do domínio certo; recebimento só os 4 fi
 });
 
 test("busca: só publicado e nunca conta de teste; cidade ou raio; nota real e depois os mais novos", () => {
-  const p = (o: Partial<ParceiroNaBusca>): ParceiroNaBusca => ({ slug: "x", categorias: ["fotografia"], cidades: ["Uberlândia"], notaMedia: null, avaliacoesQtd: 0, publicadoEm: "2026-10-01T00:00:00Z", teste: false, status: "publicado", ...o });
+  const p = (o: Partial<ParceiroNaBusca>): ParceiroNaBusca => ({ slug: "x", categorias: ["fotografia"], cidades: ["Uberlândia"], notaMedia: null, avaliacoesQtd: 0, publicadoEm: "2026-10-01T00:00:00Z", teste: false, status: "publicado", tipoPessoa: "pj", ...o });
   const lista = [
     p({ slug: "novo", publicadoEm: "2026-10-18T00:00:00Z" }),
     p({ slug: "antigo" }),
@@ -139,7 +141,7 @@ test("busca: só publicado e nunca conta de teste; cidade ou raio; nota real e d
 });
 
 test("QA 22/10: parceiro publicado de fotografia em Uberlândia/MG aparece na busca por categoria + cidade; o de conta de teste só para quem é teste/admin", () => {
-  const paulo: ParceiroNaBusca = { slug: "paulo-fotos-teste-qa", categorias: ["fotografia"], cidades: ["Uberlândia"], notaMedia: null, avaliacoesQtd: 0, publicadoEm: "2026-10-20T00:00:00Z", teste: false, status: "publicado" };
+  const paulo: ParceiroNaBusca = { slug: "paulo-fotos-teste-qa", categorias: ["fotografia"], cidades: ["Uberlândia"], notaMedia: null, avaliacoesQtd: 0, publicadoEm: "2026-10-20T00:00:00Z", teste: false, status: "publicado", tipoPessoa: "pj" };
   for (const cidade of ["Uberlândia", "Uberlandia", "uberlândia", " UBERLANDIA "]) {
     assert.deepEqual(filtrarParceiros([paulo], { categoria: "fotografia", cidade }).map((x) => x.slug), ["paulo-fotos-teste-qa"], cidade);
   }
@@ -170,9 +172,16 @@ test("textos da busca vazia: cada frase é UM texto (em pedaços, leitores que a
 test("cartão do parceiro geral: desligado por padrão, só na busca vazia e com nome", () => {
   assert.equal(mostrarParceiroGeral(lerParceiroGeral(null, false), 0), false);
   const g = lerParceiroGeral({ nome: "AquiResolve", cidade: "Uberlândia", descricao: "Pequenos reparos" }, true);
-  assert.equal(mostrarParceiroGeral(g, 0), true);
-  assert.equal(mostrarParceiroGeral(g, 2), false);
-  assert.equal(mostrarParceiroGeral({ ...g, nome: "" }, 0), false);
+  // Regra em si (superfície ligada): só na busca vazia e com nome.
+  assert.equal(mostrarParceiroGeral(g, 0, true), true);
+  assert.equal(mostrarParceiroGeral(g, 2, true), false);
+  assert.equal(mostrarParceiroGeral({ ...g, nome: "" }, 0, true), false);
+});
+
+test("E688: a saída do parceiro geral (AquiResolve) está FORA das superfícies por ora, mesmo com a chave ligada no admin", () => {
+  assert.equal(PARCEIRO_GERAL_NAS_SUPERFICIES, false);
+  const g = lerParceiroGeral({ nome: "AquiResolve", cidade: "Uberlândia", descricao: "Pequenos reparos" }, true);
+  assert.equal(mostrarParceiroGeral(g, 0), false);
 });
 
 test("imagens: recorte central (avatar 1:1, capa 3:1) e lado maior reduzido", () => {

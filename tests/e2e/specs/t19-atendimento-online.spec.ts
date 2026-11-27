@@ -14,18 +14,22 @@ import { authFile } from "../fixtures/auth";
 const LAB_OUTBOX = process.env.LAB_OUTBOX;
 const noLaboratorio = process.env.INTEGRACOES_SIMULADAS === "on";
 
-async function abrirChamadoPeloChat(page: Page, opts: { nome?: string; email?: string; pedido?: string }) {
+async function abrirChamadoPeloChat(page: Page, opts: { nome?: string; email?: string; pedido?: string; naPagina?: boolean }) {
   await page.getByRole("button", { name: /Falar com uma pessoa/i }).click();
-  const form = page.getByTestId("form-pessoa");
+  // E449: um formulário só (o da Central). Fora da página Fale com a Viva, o chat leva à rota única com a conversa.
+  if (!opts.naPagina) await page.waitForURL(/\/ajuda\/fale-com-a-viva\?doChat=1/);
+  // E539 (iii): na página Fale com a Viva o formulário de chamado é o da Central, com a conversa anexada.
+  const form = page.locator("#abrir-chamado");
+  await expect(form.getByTestId("chamado-conversa-anexada")).toBeVisible();
   if (opts.nome) await form.getByLabel("Seu nome").fill(opts.nome);
-  if (opts.email) await form.getByLabel("Seu e-mail").fill(opts.email);
-  if (opts.pedido) await form.getByLabel("Pedido para a equipe").fill(opts.pedido);
-  await form.getByRole("button", { name: "Abrir chamado" }).click();
-  const ok = page.getByTestId("chamado-aberto-chat");
-  await expect(ok).toBeVisible({ timeout: 20_000 });
-  const numero = (await ok.innerText()).match(/VN-\d+/)?.[0];
-  expect(numero, "número do chamado").toBeTruthy();
-  return numero!;
+  if (opts.email) await form.getByLabel("Seu e-mail (para a resposta)").fill(opts.email);
+  if (opts.pedido) await form.getByLabel("Quer acrescentar algo? (opcional)").fill(opts.pedido);
+  await form.getByRole("button", { name: "Enviar chamado" }).click();
+  const aviso = page.getByTestId("central-aviso");
+  await expect(aviso).toBeVisible({ timeout: 20_000 });
+  const n = (await aviso.innerText()).match(/VN-\d+/)?.[0];
+  expect(n, "número do chamado").toBeTruthy();
+  return n!;
 }
 
 test.describe("T19 — Visitante @criticos", () => {
@@ -42,7 +46,7 @@ test.describe("T19 — Visitante @criticos", () => {
     // Com ou sem IA, sempre há resposta e o caminho para uma pessoa.
     await expect(chat.getByTestId("viva-chat-msg-viva").nth(1)).toBeVisible({ timeout: 30_000 });
     const numero = await abrirChamadoPeloChat(page, { nome: "Visitante Teste", email: "visitante.chat@lab.vivanomads.com.br" });
-    await expect(page.getByTestId("chamado-aberto-chat")).toContainText(/confirmação para o seu e-mail/);
+    await expect(page.getByTestId("central-aviso")).toContainText(/confirmação para o seu e-mail/);
     if (LAB_OUTBOX && fs.existsSync(LAB_OUTBOX)) {
       const linhas = fs.readFileSync(LAB_OUTBOX, "utf8");
       expect(linhas, "confirmação do chamado registrada (modo de teste)").toContain(`Recebemos seu chamado (${numero}) · Viva Nomads`);
@@ -79,7 +83,7 @@ test.describe("T19 — Visitante @criticos", () => {
     await bloco.getByLabel("Sua mensagem para a Viva").fill("O dono pediu pra eu pagar o Pix por fora, direto pra ele");
     await bloco.getByRole("button", { name: "Enviar" }).click();
     await expect(bloco).toContainText(/nunca pede Pix/, { timeout: 15_000 });
-    const numero = await abrirChamadoPeloChat(page, { nome: "Visitante Pix", email: "visitante.pix@lab.vivanomads.com.br" });
+    const numero = await abrirChamadoPeloChat(page, { nome: "Visitante Pix", email: "visitante.pix@lab.vivanomads.com.br", naPagina: true });
 
     const ctx = await browser.newContext({ storageState: authFile("admin") });
     const adm = await ctx.newPage();
@@ -104,11 +108,11 @@ test.describe("T19 — Logado @criticos", () => {
     await expect(page.getByRole("link", { name: /^(contato|suporte)@vivanomads\.com\.br$/ }).first()).toBeVisible();
     const bloco = page.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
-    await bloco.getByLabel("Pedido para a equipe").fill("Quero ajuda para entender a devolução da caução.");
-    await bloco.getByRole("button", { name: "Abrir chamado" }).click();
-    const ok = page.getByTestId("chamado-aberto-chat");
-    await expect(ok).toBeVisible({ timeout: 20_000 });
-    await ok.getByRole("link", { name: "Abrir o chamado" }).click();
+    // E539 (iii): o "Falar com uma pessoa" da página abre o "Abrir chamado" da Central (um formulário só).
+    await expect(page.getByTestId("form-pessoa")).toHaveCount(0);
+    const form = page.locator("#abrir-chamado");
+    await form.getByLabel("O que aconteceu?").fill("Quero ajuda para entender a devolução da caução.");
+    await form.getByRole("button", { name: "Enviar chamado" }).click();
     await expect(page).toHaveURL(/\/ajuda\/fale-com-a-viva\?chamado=VN-/); // E84: o atendimento tem página própria
     await expect(page.locator("body")).toContainText("Quero ajuda para entender a devolução da caução.");
   });

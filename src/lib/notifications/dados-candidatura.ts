@@ -6,6 +6,7 @@
   Roda: node --test src/lib/notifications/dados-candidatura.test.ts
 */
 import { brl, dataBR, imovelPorExtenso, type ImovelDoEmail, type LinhaDado } from "./dados-negociacao.ts";
+import { formatBRLExato, periodoPorExtenso, rotuloTotalDaEstadia } from "../precos.ts";
 
 export type MomentoCandidatura = "nova" | "enviada" | "aceita";
 
@@ -19,6 +20,13 @@ export interface DadosCandidatura {
   valorMensal: number;
   /** Custo total do mês (calcularTotalMensal), o mesmo "Total por mês" da tela do Solicitar. */
   totalMensal: number;
+  /** E440: o número público do pedido (VN-PD-…), citável desde o envio. */
+  numeroPedido?: string | null;
+  /**
+   * E583: a estadia em DIAS pela mesma função da tela do "Pedir para morar" (estadiaDoImovelEmDias: total por mês × dias
+   * ÷ 30 + preparação/saída), com o rótulo e a conta aberta. Sem ela, o proporcional do mês (nunca meses arredondados).
+   */
+  estadiaDias?: { dias: number; total: number; rotulo: string; periodo: string; conta: string } | null;
 }
 
 const A_COMBINAR = "A combinar com o proprietário";
@@ -34,19 +42,48 @@ export function periodoDaCandidatura(entrada?: string | null, saida?: string | n
   return { dias, meses: Math.max(1, Math.ceil(dias / 30)) };
 }
 
+type DadosDaDecisao = Pick<DadosCandidatura, "entrada" | "saida" | "totalMensal" | "estadiaDias">;
+
+/** O total da estadia (rótulo, valor e a conta aberta), ou null sem o período completo — nunca um número inventado. */
+function totalDaEstadia(d: DadosDaDecisao): { rotulo: string; valor: string; conta: string | null } | null {
+  const p = periodoDaCandidatura(d.entrada, d.saida);
+  if (!p) return null;
+  // E583: a conta da estadia é em DIAS (E562), a mesma da tela — antes, "R$ 6.100 em 2 meses" para 35 dias.
+  const e = d.estadiaDias && d.estadiaDias.dias === p.dias ? d.estadiaDias : null;
+  if (e) return { rotulo: e.rotulo, valor: `${formatBRLExato(e.total)} (${e.periodo})`, conta: `${e.conta} = ${formatBRLExato(e.total)}` };
+  const total = Math.round((d.totalMensal * p.dias * 100) / 30) / 100;
+  return { rotulo: rotuloTotalDaEstadia(p.dias), valor: `${formatBRLExato(total)} (${periodoPorExtenso(p.dias)})`, conta: null };
+}
+
+/**
+ * E1053: Entrada, Saída e Total da estadia da candidatura — a MESMA conta do quadro da confirmação (linhasCandidatura).
+ * O cartão de decisão do dono (Interessados) e os e-mails leem daqui. Sem o período completo, total = null.
+ */
+export function decisaoDaCandidatura(d: DadosDaDecisao): { entrada: string; saida: string; total: string | null } {
+  const p = periodoDaCandidatura(d.entrada, d.saida);
+  return {
+    entrada: dataBR(d.entrada) || A_COMBINAR,
+    saida: dataBR(d.saida) ? `${dataBR(d.saida)}${p ? ` (${p.dias} ${p.dias === 1 ? "dia" : "dias"})` : ""}` : A_COMBINAR,
+    total: totalDaEstadia(d)?.valor ?? null,
+  };
+}
+
 /** Quadro de dados da candidatura: o mesmo nos três e-mails. */
 export function linhasCandidatura(d: DadosCandidatura): LinhaDado[] {
-  const p = periodoDaCandidatura(d.entrada, d.saida);
+  const decisao = decisaoDaCandidatura(d);
   const linhas: LinhaDado[] = [
     { rotulo: "Imóvel", valor: imovelPorExtenso(d.imovel) },
+    ...(d.numeroPedido ? [{ rotulo: "Pedido", valor: d.numeroPedido }] : []),
     { rotulo: "Interessado", valor: limpo(d.interessado) || "Interessado" },
-    { rotulo: "Entrada", valor: dataBR(d.entrada) || A_COMBINAR },
-    { rotulo: "Saída", valor: dataBR(d.saida) ? `${dataBR(d.saida)}${p ? ` (${p.dias} ${p.dias === 1 ? "dia" : "dias"})` : ""}` : A_COMBINAR },
+    { rotulo: "Entrada", valor: decisao.entrada },
+    { rotulo: "Saída", valor: decisao.saida },
     { rotulo: "Valor mensal", valor: brl(d.valorMensal) },
     { rotulo: "Total por mês", valor: brl(d.totalMensal) },
   ];
-  // Sem o período completo não há total da estadia (nunca um número inventado).
-  if (p) linhas.push({ rotulo: "Total da estadia", valor: `${brl(Math.round(d.totalMensal * 100 * p.meses) / 100)} em ${p.meses} ${p.meses === 1 ? "mês" : "meses"}` });
+  const t = totalDaEstadia(d);
+  if (!t) return linhas;
+  linhas.push({ rotulo: t.rotulo, valor: t.valor });
+  if (t.conta) linhas.push({ rotulo: "Conta do total", valor: t.conta });
   return linhas;
 }
 
@@ -79,3 +116,8 @@ export function proximoPassoCandidatura(m: MomentoCandidatura): string {
 /** Links desta candidatura: o cartão em Interessados (dono) e em Minhas candidaturas (morador). */
 export const linkCandidaturaDono = (leadId: string) => `/dashboard/leads#candidato-${leadId}`;
 export const linkCandidaturaMorador = (leadId: string) => `/dashboard/candidaturas#candidatura-${leadId}`;
+/**
+ * E553: o perfil completo do candidato (dono). O cartão em Interessados liga aqui ("Ver perfil"; ligação visual da
+ * Pista A). A página aplica as MESMAS regras de máscara do cartão (listLeads/cartaoCandidato).
+ */
+export const hrefPerfilCandidato = (leadId: string) => `/dashboard/leads/${encodeURIComponent(leadId)}`;

@@ -1,9 +1,10 @@
 // Rodada 19 da vigia (Pista C, 25/10, lote A): varredura completa na main com o PROP-1 (#1337), a 390 e 1280 px.
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Browser, type BrowserContext } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, entrar } from "../fixtures/laboratorio";
-import { TAMANHOS, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
+import { TAMANHOS, lerMassa, temContaVarredura, type ChaveConta } from "../fixtures/varredura";
+import { MASSA_DE_LISTAGEM, PERSONAS_DA_REDUNDANCIA, ehRotaDeListagem, gruposDaRedundancia, tituloDoGrupo, type PersonaDaRedundancia } from "../fixtures/rotas-redundancia";
 import { acharRedundancias, type Redundancia } from "../fixtures/redundancia";
 
 /*
@@ -14,39 +15,13 @@ import { acharRedundancias, type Redundancia } from "../fixtures/redundancia";
   (fixtures/redundancia.ts). SÓ RELATA (linhas "REDUND|…" e tests/laboratorio/saida/redundancia/*.json); a lista vai
   para o Muse, que encaminha cada correção. Só no laboratório.
 */
-type Persona = "publico" | "inquilino" | "proprietario" | "admin" | "parceiro";
+type Persona = PersonaDaRedundancia;
 const CONTA: Record<Persona, ChaveConta | "VISITANTE" | "ADMIN"> = {
   publico: "VISITANTE", inquilino: "INQUILINA", proprietario: "DONO17", admin: "ADMIN", parceiro: "PARCEIRO",
 };
-const SECOES_CONTA = ["perfil", "seguranca", "notificacoes", "ajuda", "perfil-publico", "pagamentos", "excluir"];
-const COM_ID: Record<Persona, (m: Massa) => string[]> = {
-  publico: (m) => [`/imoveis/${m.imovel17}`, `/proprietario/${m.ids.DONO17}`, "/cidades/uberlandia"],
-  inquilino: (m) => [`/dashboard/estadia/${m.contrato}`, ...SECOES_CONTA.map((s) => `/dashboard/conta/${s}`)],
-  proprietario: (m) => [
-    "/dashboard/imoveis/novo",
-    `/dashboard/imoveis/${m.imovel17}/editar`,
-    `/dashboard/imoveis/${m.imovel17}/nivel`,
-    `/dashboard/imoveis/${m.imovel17}/conforto`,
-    `/dashboard/imoveis/${m.imovel17}/desempenho`,
-    `/dashboard/estadia/${m.contrato}`,
-    `/dashboard/estadia/${m.contrato}/mensagens`,
-    ...SECOES_CONTA.map((s) => `/dashboard/conta/${s}`),
-  ],
-  admin: (m) => [`/admin/contratos/${m.contrato}`],
-  parceiro: () => [],
-};
-
-function rotasDe(persona: Persona, m: Massa | null): string[] {
-  const c = JSON.parse(readFileSync("tests/e2e/cobertura.json", "utf8")) as { paginas: Record<string, { personas: string[] }> };
-  const fixas = Object.entries(c.paginas)
-    .filter(([r, v]) => v.personas.includes(persona) && !r.includes("["))
-    .map(([r]) => r);
-  return [...new Set([...fixas, ...(m ? COM_ID[persona](m) : [])])];
-}
 
 const MASSA = lerMassa();
 const SAIDA = "tests/laboratorio/saida/redundancia";
-const POR_TESTE = 8;
 
 const sessoes = new Map<string, Awaited<ReturnType<BrowserContext["storageState"]>>>();
 async function contexto(browser: Browser, persona: Persona, largura: number, altura: number) {
@@ -68,14 +43,19 @@ test.describe("T337 — varredura de redundância (mesmo conteúdo duas vezes na
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (os dois tamanhos saem dentro do teste)");
   });
 
-  for (const persona of ["publico", "inquilino", "proprietario", "admin", "parceiro"] as Persona[]) {
-    const rotas = rotasDe(persona, MASSA);
-    for (let g = 0; g * POR_TESTE < rotas.length; g++) {
-      const grupo = rotas.slice(g * POR_TESTE, (g + 1) * POR_TESTE);
-      test(`${persona} ${g + 1}: ${grupo.length} telas`, async ({ browser }) => {
-        test.setTimeout(60_000 * grupo.length);
+  // E744: a lista de testes (quantos e com que título) sai da massa de LISTAGEM, igual no job que lista e na fatia que roda.
+  // Os ids de verdade (massa gravada pelo seed da fatia) só entram dentro do teste.
+  for (const persona of PERSONAS_DA_REDUNDANCIA) {
+    const modelo = gruposDaRedundancia(persona, MASSA_DE_LISTAGEM);
+    for (let g = 0; g < modelo.length; g++) {
+      test(tituloDoGrupo(persona, g, modelo[g].length), async ({ browser }) => {
+        test.setTimeout(60_000 * modelo[g].length);
         const conta = CONTA[persona];
         test.skip(conta !== "VISITANTE" && conta !== "ADMIN" && !temContaVarredura(conta), `sem a conta ${conta}`);
+        if (modelo[g].some(ehRotaDeListagem))
+          expect(MASSA, "sem a massa da varredura (scripts/lab/massa-varredura.mjs): as rotas com id deste grupo não podem ser abertas").not.toBeNull();
+        const grupo = MASSA ? gruposDaRedundancia(persona, MASSA)[g] : modelo[g];
+        expect(grupo.length, "o grupo da fatia tem o mesmo tamanho do grupo listado").toBe(modelo[g].length);
         const relatorio: { rota: string; tamanho: string; destino: string; achados: Redundancia[] }[] = [];
         for (const rota of grupo) {
           for (const tam of TAMANHOS) {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { CODIGO_RE } from "@/lib/fiscal/documento";
+import { CONFERENCIA_DEVOLVE, CONFERENCIA_PARTES, CONFERENCIA_VALIDADE } from "@/lib/fiscal/conferir";
 import { buttonClasses } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export default async function ConferirInicio({ searchParams }: { searchParams: P
   const invalido = !!sp.codigo && !CODIGO_RE.test(digitado);
 
   return (
-    <main className="container-page section-y">
+    <div className="container-page section-y">
       <div className="mx-auto max-w-lg rounded-xl border border-line bg-white p-6">
         <h1 className="flex items-center gap-2 font-title text-2xl font-semibold text-ink">
           <ShieldCheck className="h-6 w-6 text-forest" /> Conferir documento
@@ -30,6 +31,19 @@ export default async function ConferirInicio({ searchParams }: { searchParams: P
           Todo documento gerado pela Viva Nomads tem um código de conferência no rodapé, depois de &ldquo;com o código&rdquo;. Digite o código
           para ver se o documento é verdadeiro. O número do documento sozinho não confere nada.
         </p>
+        {/* E887: o que a conferência devolve e a validade do documento, ditos antes de conferir (fonte única em fiscal/conferir). */}
+        <div className="mt-4 rounded-xl bg-surface-2 p-4 text-sm text-ink" data-testid="conferir-o-que-mostra">
+          <p className="font-semibold">O que a conferência mostra</p>
+          <ul className="mt-2 list-disc space-y-1 pl-4">
+            {CONFERENCIA_DEVOLVE.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-muted">{CONFERENCIA_PARTES}</p>
+          <p className="mt-2 text-muted" data-testid="conferir-validade">
+            {CONFERENCIA_VALIDADE}
+          </p>
+        </div>
         <form method="get" action="/conferir" className="mt-4 space-y-3">
           <label className="block text-sm font-medium text-ink" htmlFor="codigo">
             Código de conferência
@@ -54,6 +68,6 @@ export default async function ConferirInicio({ searchParams }: { searchParams: P
           </button>
         </form>
       </div>
-    </main>
+    </div>
   );
 }

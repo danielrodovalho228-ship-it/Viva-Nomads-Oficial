@@ -1,0 +1,83 @@
+{
+ "etiqueta": "@sensivel-carga",
+ "regra": "o spec que falha 1 vez em 3 rodando em paralelo e passa pelo menos 15 de 15 sozinho ganha a etiqueta; a fatia 21 roda só os etiquetados, com 1 worker, e as fatias gerais os excluem",
+ "entradas": [
+  {
+   "spec": "t194-passo1-ia-cep.spec.ts",
+   "sozinho": {
+    "passou": 15,
+    "rodou": 15
+   },
+   "emParalelo": {
+    "falhou": 1,
+    "rodou": 3
+   },
+   "nasCorridas": "vermelho em 1 e instável em 2 das 7 corridas completas de 16 e 17/11 (390px: o Passo 3 não avança ou a IA das fotos não chega a 'feita' no tempo)",
+   "medidoEm": "2026-11-17"
+  },
+  {
+   "spec": "t646-cadastro-titulo-nao-pula.spec.ts",
+   "item": "E1017",
+   "sozinho": {
+    "passou": 26,
+    "rodou": 26
+   },
+   "emParalelo": {
+    "falhou": 1,
+    "rodou": 3
+   },
+   "nasCorridas": "vermelho em 2 das 7 corridas completas de 16 e 17/11 (390 px: o 'Salvo' não aparece em 20 s)",
+   "medidoEm": "2026-11-17"
+  }
+ ],
+ "medida": {
+  "data": "2026-11-17",
+  "run": 44091181966,
+  "ramo": "claude-b/e744-t3-medida-workers-1 (main ea947736 + 16 fatias gerais com --workers=1)",
+  "umWorker": {
+   "instaveisNasGerais": 1,
+   "falharam": 119,
+   "somaDasGeraisMin": 579,
+   "maiorFatiaMin": 62.0,
+   "fatiasAcimaDe45Min": 4
+  },
+  "doisWorkers": {
+   "corridas": [
+    44021106318,
+    44038091791,
+    44055780373,
+    44056800277,
+    44070223214
+   ],
+   "instaveisNasGerais": [
+    10,
+    10,
+    10,
+    9,
+    6
+   ],
+   "falharam": [
+    121,
+    121,
+    120,
+    118,
+    118
+   ],
+   "somaDasGeraisMin": [
+    326,
+    331,
+    332,
+    329,
+    340
+   ],
+   "maiorFatiaMin": [
+    30.7,
+    36.0,
+    29.8,
+    32.2,
+    35.2
+   ]
+  },
+  "decisao": "1 worker nas fatias gerais, que passam de 16 para 20 (regra da T3 do plano de 17/11: derrubou a instabilidade e cada fatia coube no teto)"
+ }
+}

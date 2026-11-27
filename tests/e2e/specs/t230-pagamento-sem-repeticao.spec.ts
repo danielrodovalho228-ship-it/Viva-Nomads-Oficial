@@ -6,9 +6,19 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    1. clique duplo / dois envios do mesmo registro → 1 pagamento só; registrar a Caução de novo → "Este recebimento
       já foi registrado"; o bloco 2 aceita um pagamento de valor mensal e recusa o segundo (índice único, 0182);
    2. a Caução é do contrato: item próprio "Caução do contrato — R$ 6.400", gravada sem bloco, nas duas telas;
+      ORDEM-DUET-1127 (asserção alterada com julgamento registado): o desenho do #884 foi substituído pela decisão do
+      Daniel de 20/11 (E1225, 0367) — caução de 50% de CADA bloco. O cartão "Caução do contrato — R$ 6.400" continua,
+      com uma linha por bloco ("Caução do bloco N — R$ 3.200"); a caução registada é a do bloco 1 (R$ 3.200, com o
+      bloco gravado) e o bloco 2 fica com R$ 3.200 em aberto;
    3. documento anulado aparece com o selo "Anulado: registro em duplicidade" para as duas partes, o PDF continua
       acessível e ele não volta para a fila;
    4. o e-mail e o documento mostram o contrato como "VN-CT-…".
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
+  Vizinha do teto da caução (ORDENS-DUET 1098 e 1107): corre também no portão desse avulso, porque o registro da
+  caução passou a não passar da soma das cauções dos blocos do contrato.
+  Vizinha do E1229 (ORDENS-DUET 1143 e 1160): corre também no portão desse PR, porque a tela do contrato ganhou a
+  anulação dos registros e a conferência passou a dizer 'Anulado em {data}: {motivo}'.
 */
 const SAIDA = "tests/laboratorio/saida";
 const RESEND = process.env.LAB_RESEND_URL ?? "http://127.0.0.1:3999";
@@ -75,14 +85,18 @@ test.describe("T230 — pagamento sem repetição + Caução do contrato + VN-CT
     await apagarContas([ids.inq, ids.dono]);
   });
 
-  test("1. 1280 — Caução do contrato: clique duplo grava 1; a 2ª aba recebe 'já foi registrado'", async ({ browser }) => {
+  test("1. 1280 — Caução do contrato, por bloco (E1225): clique duplo grava 1 no bloco 1; a 2ª aba recebe 'já foi registrado'; o bloco 2 fica em aberto", async ({ browser }) => {
     test.setTimeout(120_000);
     const a = await abrir(browser, dono.email, 1280);
     const b = await abrir(browser, dono.email, 1280);
     for (const p of [a, b]) await p.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
     const caucao = a.getByTestId("caucao-contrato");
     await expect(caucao.getByTestId("caucao-contrato-rotulo")).toHaveText(/Caução do contrato — R\$\s?6\.400/);
-    await expect(a.locator("main")).not.toContainText(/Caução do bloco|Caução \(50%\)/);
+    // ORDEM-DUET-1127: uma linha por bloco; só o 1.º bloco com algo em aberto oferece o registro.
+    const linha = (n: number) => caucao.locator(`[data-testid="caucao-bloco-linha"][data-numero="${n}"]`);
+    await expect(linha(1).getByTestId("caucao-bloco-rotulo")).toHaveText(/Caução do bloco 1 — R\$\s?3\.200/);
+    await expect(linha(2).getByTestId("caucao-bloco-rotulo")).toHaveText(/Caução do bloco 2 — R\$\s?3\.200/);
+    await expect(caucao.getByTestId("registrar-caucao")).toHaveCount(1);
     // A 2ª aba deixa o formulário aberto (ainda não sabe do registro).
     await b.getByTestId("registrar-caucao").click();
     await a.getByTestId("registrar-caucao").click();
@@ -91,10 +105,15 @@ test.describe("T230 — pagamento sem repetição + Caução do contrato + VN-CT
       el.click();
       el.click();
     });
-    await expect(caucao.getByTestId("recebimento-registrado")).toContainText("Caução registrada", { timeout: 20_000 });
+    // E1020: "Caução registrada" é a mensagem do formulário; o router.refresh() que vem logo depois troca o formulário pelo
+    // estado gravado ("Recebimento registrado…"). Vale qualquer uma das duas e, no fim, o estado gravado tem de aparecer.
+    await expect(linha(1).getByTestId("recebimento-registrado").or(linha(1).getByTestId("caucao-bloco-status"))).toContainText(/Caução registrada|Recebimento registrado/, { timeout: 20_000 });
+    await expect(linha(1).getByTestId("caucao-bloco-status")).toContainText("Recebimento registrado", { timeout: 20_000 });
     expect(await contar({ contrato_id: ids.contrato!, tipo: "caucao" })).toBe(1);
-    const { data: c } = await adm().from("pagamentos_bloco").select("bloco_id").eq("contrato_id", ids.contrato!).eq("tipo", "caucao").single();
-    expect(c!.bloco_id, "a Caução é do contrato: sem bloco").toBeNull();
+    const { data: c } = await adm().from("pagamentos_bloco").select("bloco_id, valor").eq("contrato_id", ids.contrato!).eq("tipo", "caucao").single();
+    expect(c!.bloco_id, "a Caução é do bloco 1 (E1225)").toBe(ids.b1);
+    expect(Number(c!.valor)).toBe(3200);
+    await expect(linha(2).getByTestId("caucao-bloco-aberto"), "o bloco 2 fica com a caução dele em aberto").toContainText(/R\$\s?3\.200/);
     // A outra aba manda o mesmo registro: o banco recusa e a tela explica, sem erro técnico.
     await b.getByTestId("confirmar-recebimento").click();
     await expect(b.getByTestId("recebimento-registrado")).toHaveText(/Este recebimento já foi registrado/, { timeout: 20_000 });
@@ -136,14 +155,20 @@ test.describe("T230 — pagamento sem repetição + Caução do contrato + VN-CT
     const t = await abrir(browser, inq.email, 390);
     await t.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
     const confirmar = t.getByTestId("confirmar-pagamentos");
-    await expect(confirmar).toContainText(/Caução do contrato — R\$\s?6\.400/);
+    // ORDEM-DUET-1127 (asserção alterada): a caução registada é a do bloco 1 (E1225).
+    await expect(confirmar).toContainText(/Caução do bloco 1 — R\$\s?3\.200/);
     // Confirma tudo o que o proprietário registrou (Caução + bloco 2 + bloco 1).
-    for (let i = 0; i < 3; i++) {
-      const botao = confirmar.getByRole("button", { name: /Confirmar/ }).first();
-      if (!(await botao.isVisible().catch(() => false))) break;
-      await botao.click();
-      await t.waitForTimeout(800);
+    // E1020 (caso 3): eram 3 cliques fixos com 800 ms de pausa. Um clique perdido (antes da hidratação, ou durante o
+    // router.refresh() que troca a lista) deixava um pagamento sem confirmar — no lab, a Caução — e o documento dela nunca
+    // saía (espera de 45 s esgotada; 2 em 30 com --repeat-each=10 --workers=2). Agora: confirma até a lista esvaziar e,
+    // depois de cada clique, espera a lista encolher; se não encolher, clica de novo.
+    const botoes = t.getByTestId("confirmar-pagamentos").getByRole("button", { name: /Confirmar/ });
+    for (let i = 0; i < 10 && (await botoes.count()) > 0; i++) {
+      const antes = await botoes.count();
+      await botoes.first().click();
+      await expect(botoes).toHaveCount(antes - 1, { timeout: 10_000 }).catch(() => undefined);
     }
+    await expect(t.getByTestId("confirmar-pagamentos"), "os 3 pagamentos ficam confirmados").toHaveCount(0, { timeout: 15_000 });
     const { data: cau } = await adm().from("pagamentos_bloco").select("id").eq("contrato_id", ids.contrato!).eq("tipo", "caucao").single();
     ids.cau = cau!.id as string;
     await expect.poll(async () => (await adm().from("documentos_fiscais").select("numero").eq("pagamento_id", ids.cau!).maybeSingle()).data?.numero ?? null, { timeout: 45_000 }).not.toBeNull();

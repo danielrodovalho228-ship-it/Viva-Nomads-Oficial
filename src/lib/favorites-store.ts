@@ -7,6 +7,10 @@ interface FavoritesState {
   ids: string[];
   /** Prompt 49: favoritos do convidado que ainda não foram para a conta (mescla ao entrar). */
   pendente: string[];
+  /** E535: a conta cuja lista do servidor já chegou NESTA aba (não persiste). Até lá, o contador não conta. */
+  sincronizado: string | null;
+  /** E535: marca a conta como sincronizada (também quando a leitura falha: vale a lista do aparelho). */
+  marcarSincronizado: (userId: string) => void;
   isFavorite: (id: string) => boolean;
   toggle: (id: string) => void;
   /**
@@ -32,6 +36,8 @@ export const useFavoritesStore = create<FavoritesState>()(
       owner: null,
       ids: [],
       pendente: [],
+      sincronizado: null,
+      marcarSincronizado: (userId) => set((s) => (s.owner === userId ? { sincronizado: userId } : s)),
       isFavorite: (id) => get().ids.includes(id),
       toggle: (id) =>
         set((s) => ({
@@ -40,13 +46,16 @@ export const useFavoritesStore = create<FavoritesState>()(
       bindUser: (userId) =>
         set((s) => {
           if (s.owner === userId) return s;
-          if (s.owner === null && userId && s.ids.length) return { owner: userId, ids: s.ids, pendente: s.ids };
-          return { owner: userId, ids: [], pendente: [] };
+          if (s.owner === null && userId && s.ids.length) return { owner: userId, ids: s.ids, pendente: s.ids, sincronizado: null };
+          return { owner: userId, ids: [], pendente: [], sincronizado: null };
         }),
       concluirMescla: (userId, ids) =>
-        set((s) => (s.owner === userId ? { ids: [...new Set([...ids, ...s.ids.filter((x) => !s.pendente.includes(x))])], pendente: [] } : s)),
-      reset: () => set({ owner: null, ids: [], pendente: [] }),
+        set((s) =>
+          s.owner === userId ? { ids: [...new Set([...ids, ...s.ids.filter((x) => !s.pendente.includes(x))])], pendente: [], sincronizado: userId } : s,
+        ),
+      reset: () => set({ owner: null, ids: [], pendente: [], sincronizado: null }),
     }),
-    { name: "vivanomads-favorites" }
+    // E535: `sincronizado` é desta aba — recomeça a cada carga, para o contador esperar a lista da conta.
+    { name: "vivanomads-favorites", partialize: (s) => ({ owner: s.owner, ids: s.ids, pendente: s.pendente }) }
   )
 );

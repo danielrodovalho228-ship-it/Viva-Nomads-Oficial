@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T169 — Taxa de serviço dos parceiros e CORS das páginas (ordens 39cc7c00, a4a13765 e a regra nova do Prompt 29).
@@ -26,7 +27,7 @@ for (const rota of ["/parceiros", "/parceiros/fotografos"]) {
       await expect(taxa).toBeVisible();
       await expect(taxa).toContainText("10% sobre o valor do serviço");
       await expect(taxa).toContainText("todas as categorias");
-      await expect(taxa).toContainText("A Viva não guarda o seu dinheiro");
+      await expect(taxa).toContainText("A Viva não guarda o dinheiro");
       await expect(page.getByTestId("faixas-taxa-parceria")).toHaveCount(0);
       const estoura = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
       expect(estoura).toBe(false);
@@ -35,7 +36,7 @@ for (const rota of ["/parceiros", "/parceiros/fotografos"]) {
 }
 
 test("páginas HTML e /api/comissao não mandam Access-Control-Allow-Origin: *", async ({ request }) => {
-  for (const rota of ["/", "/precos", "/como-funciona", "/para-proprietarios", "/empresas", "/api/comissao"]) {
+  for (const rota of ["/", ...comPrecos("/precos"), "/como-funciona", "/para-proprietarios", "/empresas", "/api/comissao"]) {
     const res = await request.get(rota);
     expect(res.headers()["access-control-allow-origin"], rota).not.toBe("*");
   }

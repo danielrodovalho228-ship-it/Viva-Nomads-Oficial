@@ -138,9 +138,10 @@ test("urgência da manutenção: falta de água é urgente", () => {
 import { FAQ, buscarFaq, respostaPara } from "./faq.ts";
 import { CATEGORIAS } from "./classificar.ts";
 
-test("FAQ: caução fala de poupança e até 3 vezes o valor mensal — nunca 50% nem 'conta vinculada'", () => {
+test("FAQ: caução fala de até 3 vezes o valor mensal, direto ao proprietário (E752) — nunca 50% nem 'conta vinculada'", () => {
   const c = FAQ.find((p) => p.id === "caucao")!;
-  assert.match(c.resposta, /poupança/);
+  assert.match(c.resposta, /direto ao proprietário/);
+  assert.match(c.resposta, /não recebe nem segura/);
   assert.match(c.resposta, /3 vezes o valor mensal/);
   for (const p of FAQ) {
     assert.doesNotMatch(p.resposta, /conta vinculada|garantia do aluguel|inquilino verificado|apartamentos/i, p.id);
@@ -161,7 +162,8 @@ test("FAQ manutenção: a opção só é citada para quem tem contrato ativo", (
   assert.doesNotMatch(respostaPara(m, "visitante"), new RegExp(rotulo));
   assert.doesNotMatch(respostaPara(m, "sem_contrato"), new RegExp(rotulo));
   assert.match(respostaPara(m, "visitante"), /Entre na sua conta e abra pelo seu contrato \("Problema com isto\?"\)/);
-  for (const perfil of ["visitante", "sem_contrato", "com_contrato"] as const) assert.match(respostaPara(m, perfil), /4 horas/);
+  // E817: a régua única (a mesma do anúncio) — "resposta em até 4 h" no lugar de "4 horas".
+  for (const perfil of ["visitante", "sem_contrato", "com_contrato"] as const) assert.match(respostaPara(m, perfil), /resposta em até 4 h/);
 });
 
 test("FAQ pagamento por fora: sem falar da poupança da caução", () => {

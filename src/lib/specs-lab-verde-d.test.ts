@@ -77,12 +77,11 @@ test("t70: todos os testes da busca dividida têm prazo de 120 s (servidor frio 
   assert.match(spec, /test\.describe\.configure\(\{\s*timeout:\s*120_000\s*\}\)/);
 });
 
-test("t160 confere a grade pelos cartões da própria tela, sem cruzar com outra leitura da API", () => {
+test("t160 (E448): visitante não favorita — o coração leva à porta de login; sem leitura cruzada da API", () => {
   const spec = ler("tests/e2e/specs/t160-favoritos-pagina.spec.ts");
-  assert.match(spec, /aria-busy", "false"/);
   assert.doesNotMatch(spec, /request\.get\("\/api\/properties"\)/);
-  assert.match(spec, /toHaveCount\(antes - 1\)/);
-  assert.doesNotMatch(spec, /toHaveCount\(2\);\n\n\s*await page\.getByRole\("button", \{ name: "Remover dos favoritos" \}\)\.first/);
+  assert.match(spec, /searchParams\.get\("motivo"\)\)\.toBe\("favorito"\)/);
+  assert.match(spec, /expect\(locais\)\.toEqual\(\[\]\)/);
 });
 
 test("t93 diz se a resposta foi gravada no banco antes de cobrar a tela", () => {

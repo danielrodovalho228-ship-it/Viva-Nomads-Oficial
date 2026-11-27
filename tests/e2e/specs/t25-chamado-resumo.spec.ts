@@ -18,6 +18,16 @@ const PERGUNTA = "Sou proprietário e quero entender como funciona o Caução. V
 test.describe("T25 — Resumo e ações + sugestão pronta", () => {
   test.skip(!noLaboratorio || !URL || !SERVICE, "Só no laboratório (banco local + service role).");
   const adm = () => createClient(URL!, SERVICE!, { auth: { persistSession: false } });
+  // t271 (ORDEM-DUET-352): o chamado que este spec abre não pode ficar na fila do admin — a t271 fotografa
+  // /admin/atendimento com a fila vazia e corre depois desta na mesma fatia. O id fica aqui fora para o afterAll
+  // apagar o chamado mesmo quando o teste falha a meio.
+  let chamadoId: string | undefined;
+  test.afterAll(async () => {
+    if (!chamadoId) return;
+    await adm().from("chamado_mensagens").delete().eq("chamado_id", chamadoId);
+    await adm().from("chamado_eventos").delete().eq("chamado_id", chamadoId);
+    await adm().from("chamados").delete().eq("id", chamadoId);
+  });
 
   test("caso VN-000101: cartão com quem é, ações (seguros → Thiago) e prazo; sugestão honesta enviada com 1 clique", async ({ browser }) => {
     // Proprietário logado abre pelo "Falar com uma pessoa" do chat da /ajuda (como o VN-000101).
@@ -27,13 +37,15 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
-    await bloco.getByLabel("Pedido para a equipe").fill(`${PERGUNTA} (${Date.now()})`);
-    await bloco.getByRole("button", { name: "Abrir chamado" }).click();
-    const ok = p.getByTestId("chamado-aberto-chat");
-    await expect(ok).toBeVisible({ timeout: 20_000 });
-    const numero = (await ok.innerText()).match(/VN-\d+/)![0];
+    // E539 (iii): na página, o "Falar com uma pessoa" abre o formulário da Central (um só); logado, o chamado abre na hora.
+    const form = p.locator("#abrir-chamado");
+    await form.getByLabel("O que aconteceu?").fill(`${PERGUNTA} (${Date.now()})`);
+    await form.getByRole("button", { name: "Enviar chamado" }).click();
+    await expect(p).toHaveURL(/\?chamado=VN-\d+/, { timeout: 20_000 });
+    const numero = new globalThis.URL(p.url()).searchParams.get("chamado")!;
     await dono.close();
     const { data: c } = await adm().from("chamados").select("id").eq("numero_publico", numero).single();
+    chamadoId = c?.id as string | undefined;
     // A Viva já deixou resumo e sugestão SEM o admin abrir (abertura do chamado).
     await expect
       .poll(async () => ((await adm().from("chamado_mensagens").select("id").eq("chamado_id", c!.id).eq("interno", true).like("corpo", "%Resposta sugerida:%")).data ?? []).length, { timeout: 20_000 })
@@ -46,15 +58,18 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
 
     const card = page.getByTestId("resumo-acoes");
     await expect(card.getByTestId("resumo-texto")).toContainText("Caução", { timeout: 20_000 });
-    await expect(card.getByTestId("resumo-quem")).toContainText("Proprietário cadastrado");
+    // E1098 (ORDEM-DUET-505): pelo mockup, quem é a pessoa fica no cartão Detalhes e o prazo é o indicador do cabeçalho
+    // (antes iam os dois dentro do cartão do resumo).
+    await expect(page.getByTestId("chamado-pessoa")).toContainText("Proprietário · conta desde");
     await expect(card.getByTestId("resumo-acoes-lista")).toContainText("Responder sobre seguros");
     await expect(card.getByTestId("resumo-acoes-lista")).toContainText("Thiago");
-    await expect(card).toContainText("Prazo");
+    await expect(page.getByTestId("chamado-prazo")).toContainText(/Resolver até .*às \d{2}:\d{2}/);
 
     // Pediu PESSOA: nunca resposta da IA (decisão do Daniel, 07/10) — só o acolhimento e a sugestão para aprovar.
     await expect(page.locator("body")).toContainText("Um especialista da equipe responde até");
     await expect(page.locator("body")).not.toContainText("A Viva já respondeu logo abaixo");
-    await expect(page.locator("body")).toContainText("pediu para falar com uma pessoa");
+    // E1098 (ORDEM-DUET-505): o histórico diz a abertura numa frase só, como no mockup.
+    await expect(page.locator("body")).toContainText("na opção “Falar com uma pessoa”");
     // Sugestão já na caixa (para complementar): honesta sobre seguros e com o pré-lançamento.
     const caixa = page.locator("textarea").last();
     await expect(caixa).toHaveValue(/ainda NÃO oferece seguro/);
@@ -79,8 +94,10 @@ test.describe("T25 — Resumo e ações + sugestão pronta", () => {
     await expect.poll(notas).toBe(antes + 1);
 
     // Enviar como está → resposta da equipe; histórico registra que foi a sugestão da Viva.
-    await page.getByTestId("enviar-sugestao").click();
-    await expect(page.locator("body")).toContainText("enviou a sugestão da Viva como está", { timeout: 15_000 });
+    // E1098 (ORDEM-DUET-505): o envio da sugestão inteira é o botão "Enviar resposta" (o mockup não tem um segundo
+    // botão de envio); o histórico diz em frase que a sugestão foi enviada como estava.
+    await page.getByTestId("enviar-resposta").click();
+    await expect(page.locator("body")).toContainText("A sugestão da Viva foi enviada como estava.", { timeout: 15_000 });
     const { data: ms } = await adm().from("chamado_mensagens").select("autor, interno, corpo").eq("chamado_id", c!.id).eq("autor", "admin").eq("interno", false);
     expect(ms?.[0]?.corpo).toMatch(/ainda NÃO oferece seguro/);
     await ctx.close();

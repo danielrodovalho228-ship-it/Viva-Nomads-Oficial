@@ -1,5 +1,6 @@
 "use server";
 
+import { recusaObservador } from "@/lib/qa/observador";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
@@ -34,6 +35,9 @@ export async function resolverReporteProximidade(id: string): Promise<{ ok: bool
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, erro: "Só admin." };
+  // E477: o admin observador da QA só lê.
+  const recusaQa = await recusaObservador(user.id);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const admin = createAdminClient();
   if (!admin) return { ok: false, erro: "Indisponível." };
   const { error } = await admin.from("proximidades_reportes").update({ resolvido_em: new Date().toISOString() }).eq("id", id).is("resolvido_em", null);

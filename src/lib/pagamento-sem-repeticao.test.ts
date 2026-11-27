@@ -52,20 +52,23 @@ test("item 1 (tela): envio trava no 1º clique, botão desabilitado enquanto env
   assert.match(tela, /setOpen\(false\);\s*setDone\(true\);/);
 });
 
-test("item 2: Caução é do contrato — grava sem bloco e o rótulo nunca é 'Caução do bloco N'", () => {
-  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 6400, bloco: { numero: 1, meses: 2, inicio: null, fim: null } }), "Caução do contrato — R$ 6.400");
+// ORDEM-DUET-1127 (asserção alterada com julgamento registado): o desenho do #884 ("a Caução é do contrato, nunca leva
+// número de bloco") foi substituído pela decisão do Daniel de 20/11 — caução de 50% de CADA bloco, paga no início de
+// cada bloco (E1225, 0367). A caução registada pela tela leva o bloco; a de antes, sem bloco, continua "do contrato".
+test("item 2 (E1225): a Caução é do BLOCO — grava o bloco e diz 'Caução do bloco N'; a de antes, sem bloco, é do contrato", () => {
+  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 3200, bloco: { numero: 1, meses: 2, inicio: null, fim: null } }), "Caução do bloco 1 — R$ 3.200");
   assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 6400 }), "Caução do contrato — R$ 6.400");
   const acoes = ler("./data/contratos-actions.ts");
-  assert.match(acoes, /bloco_id: tipo === "caucao" \? null : input\.blocoId/);
+  assert.match(acoes, /bloco_id: input\.blocoId,/, "a caução e o valor mensal gravam o bloco");
+  assert.match(acoes, /if \(!UUID_RE\.test\(input\.blocoId\)\) return \{ ok: false, error: MSG_CAUCAO_ESCOLHA_O_BLOCO \};/, "ORDEM-DUET-1132: a caução nova exige o bloco");
   // Regressão do laboratório (t230): a Caução sem bloco não pode cair no atalho de "exemplo" e sair sem gravar.
   assert.match(acoes, /\(\(input\.tipo \?\? "aluguel"\) === "aluguel" && !UUID_RE\.test\(input\.blocoId\)\)/);
   assert.match(migracao, /alter column bloco_id drop not null/);
-  assert.match(migracao, /\(tipo = 'caucao' and bloco_id is null\) or \(tipo = 'aluguel' and bloco_id is not null\)/);
+  assert.match(ler("../../supabase/migrations/0367_caucao_por_bloco_e1225.sql"), /check \(tipo = 'caucao' or \(tipo = 'aluguel' and bloco_id is not null\)\)/);
   const tela = ler("../app/(dashboard)/dashboard/contratos/contratos-client.tsx");
   assert.match(tela, /Caução do contrato — \{formatBRL\(caucaoTotal\)\}/);
-  for (const f of [tela, ler("./pagamento-bloco.ts"), ler("../components/documentos/documentos-contrato.tsx")]) {
-    assert.doesNotMatch(f, /Caução do bloco|Caução \(50%\)/);
-  }
+  assert.match(tela, /Caução do bloco \{l\.numero\} — \{formatBRL\(l\.caucao\)\}/);
+  assert.match(tela, /blocoId=\{l\.id\}/, "a tela registra a caução com o bloco");
 });
 
 test("item 3: limpeza só de contas de teste, anula (nunca apaga) e o documento anulado sai da fila", () => {

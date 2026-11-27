@@ -41,7 +41,8 @@ export function payloadDaChegada(f: ChegadaEPedidoForm) {
   };
 }
 
-const area = "w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink";
+// E193: a área de texto tem a moldura do cartão grande do assistente (borda 2 px, canto 0,75 rem, hover/foco).
+const area = "w-full rounded-xl border-2 border-line bg-white px-4 py-3 text-sm text-ink outline-none transition-colors hover:border-sage focus:border-forest";
 
 export function ChegadaEPedidoCampos({
   value,
@@ -66,7 +67,7 @@ export function ChegadaEPedidoCampos({
     <div className="mt-4 grid gap-4" data-testid="chegada-e-pedido">
       <fieldset id="campo-tipo-entrada" aria-invalid={erroTipoEntrada ? true : undefined}>
         <legend className="text-sm font-semibold text-ink">Como se entra no imóvel?</legend>
-        <p className="mt-1 text-xs text-ink-soft">{AJUDA_TIPO_ENTRADA}</p>
+        <p className="mt-1 text-xs text-muted">{AJUDA_TIPO_ENTRADA}</p>
         {/* E193: escolha única em cartões, o padrão da Qualificação (antes, botões redondos de rádio). */}
         <div className="grade-par mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Como se entra no imóvel?">
           {TIPOS_ENTRADA.map((t) => (
@@ -98,7 +99,7 @@ export function ChegadaEPedidoCampos({
 
       <label className="grid gap-1 text-sm font-semibold text-ink">
         Mensagem para quem vai pedir (opcional)
-        <span className="text-xs font-normal text-ink-soft">Aparece antes do pedido. Telefone, e-mail e links de contato são escondidos.</span>
+        <span className="text-xs font-normal text-muted">Aparece antes do pedido. Telefone, e-mail e links de contato são escondidos.</span>
         <textarea
           className={area}
           rows={3}
@@ -108,14 +109,14 @@ export function ChegadaEPedidoCampos({
           placeholder="Ex.: prefiro estadias de 3 meses ou mais; o prédio pede cadastro de quem entra."
           data-testid="mensagem-para-pedido"
         />
-        <span className="text-right text-xs font-normal text-ink-soft">
+        <span className="text-right text-xs font-normal text-muted">
           {value.mensagemParaPedido.length}/{LIMITE_MENSAGEM_PEDIDO}
         </span>
       </label>
 
       <fieldset>
         <legend className="text-sm font-semibold text-ink">O que considerar antes de pedir (opcional)</legend>
-        <p className="mt-1 text-xs text-ink-soft">Dizer antes evita surpresa e conta a favor do anúncio na busca.</p>
+        <p className="mt-1 text-xs text-muted">Dizer antes evita surpresa e conta a favor do anúncio na busca.</p>
         {/* E193 (reteste de 30/10): várias escolhas = o cartão grande da Qualificação, em grade (antes, pílulas). */}
         <div className="grade-par mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {CONSIDERAR_OPCOES.map((o) => (
@@ -123,7 +124,7 @@ export function ChegadaEPedidoCampos({
           ))}
         </div>
         {mostraClasseDeRuido(value.considerarAntes) && (
-          <p className="mt-2 text-xs text-ink-soft">O nível de ruído que você declarou em Conforto aparece junto, no anúncio.</p>
+          <p className="mt-2 text-xs text-muted">O nível de ruído que você declarou em Conforto aparece junto, no anúncio.</p>
         )}
         <textarea
           className={`${area} mt-2`}

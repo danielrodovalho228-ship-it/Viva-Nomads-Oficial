@@ -279,7 +279,7 @@ export const DEMO_CONTRACTS: DemoContract[] = [
   },
 ];
 
-// ── Carteira consolidada (Plano Gestor): 8 unidades, ocupação ~86% ──────────
+// ── Carteira consolidada (demonstração): 8 unidades, ocupação ~86% ──────────
 
 export const DEMO_PORTFOLIO: (ItemCarteira & { _demo: true })[] = [
   { _demo: true, propertyId: "demo-001", titulo: "Apto Santa Mônica", bairro: "Santa Mônica", situacao: "ocupado", valorMensal: 3200, inicio: null, fim: null, diasAteFim: 12, morador: "Ana C.", contratoId: null, contratoNumero: null },

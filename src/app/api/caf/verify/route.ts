@@ -8,6 +8,7 @@ import { consumirLimite } from "@/lib/limites";
 import { CAF_JANELA_CONSULTA_S, validadeDoLaudo } from "@/lib/caf/validade";
 import type { CafResult } from "@/lib/closing";
 import { cookies } from "next/headers";
+import { tentarAtivacaoAutomatica } from "@/lib/vistoria/ativacao-automatica-servidor";
 import { COOKIE_LAB_CAF, depoisDaTentativa, laudoReprovadoDeLaboratorio } from "@/lib/identidade/reprovacao-servidor";
 
 async function gravarSimulado(admin: NonNullable<ReturnType<typeof createAdminClient>>, userId: string, laudo: CafResult) {
@@ -87,6 +88,8 @@ export async function POST() {
         valid_until: validadeDoLaudo(new Date()).toISOString(),
       });
     }
+    // E690: identidade verificada pode completar os critérios do avaliador (atrás de chave; nunca lança, nunca decide por reprovado).
+    await tentarAtivacaoAutomatica(admin, { userId: user.id });
     // Prompt 50: reprovou → motivo legível com o próximo passo; a 1ª reprovação devolve a cota (nova tentativa na
     // hora); a 2ª vai para a análise de uma pessoa.
     const reprovacao = await depoisDaTentativa(admin, user.id, result, { devolverCota: !result.demo }).catch(() => null);

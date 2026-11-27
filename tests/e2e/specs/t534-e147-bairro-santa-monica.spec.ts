@@ -42,6 +42,12 @@ test.describe("T534 — E147: bairro Santa Mônica pelo CEP, nunca o estado", ()
   test.afterAll(async () => {
     await apagarContas([ids.dono]);
   });
+  // E744 (tabela da Fable #3832): os casos não dependem um do outro — cada um começa sem rascunho da conta (antes, o
+  // rascunho do caso anterior abria o aviso "Continuar / Começar outro" e o caso seguinte caía fora do Passo 3).
+  test.beforeEach(async () => {
+    const { error } = await adm().from("properties").delete().eq("owner_id", ids.dono);
+    expect(error).toBeNull();
+  });
 
   for (const w of [390, 1280] as const) {
     test(`1. a ${w} px: CEP de Uberlândia grava "Santa Mônica" e o valor persiste`, async ({ browser }) => {

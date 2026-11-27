@@ -30,8 +30,8 @@ test("E133 (a) — abaixo de 8 fotos o Passo 2 não continua e a contagem explic
   const e = estadoPassoFotos([boa]);
   assert.equal(e.podeContinuar, false);
   assert.equal(e.trava, "faltam");
-  assert.equal(e.mensagem, "Faltam 7 fotos para continuar (mínimo de 8).");
-  assert.equal(estadoPassoFotos(Array.from({ length: 7 }, () => boa)).mensagem, "Falta 1 foto para continuar (mínimo de 8).");
+  assert.equal(e.mensagem, "Faltam 7 fotos para publicar (mínimo de 8).");
+  assert.equal(estadoPassoFotos(Array.from({ length: 7 }, () => boa)).mensagem, "Falta 1 foto para publicar (mínimo de 8).");
   assert.equal(estadoPassoFotos(oito()).podeContinuar, true);
   assert.equal(estadoPassoFotos([]).trava, "faltam");
 });
@@ -109,11 +109,12 @@ test("E133 (d) — o anúncio só mostra o link que o admin aprovou (a última d
   );
 });
 
-test("E133 — a tela usa as regras: Continuar desabilitado no Passo 2, uploader confere, página pública filtra o link", () => {
+test("E133 + E602 — a tela usa as regras: foto sinalizada trava o Continuar; a contagem trava só o publicar; uploader confere, página pública filtra o link", () => {
   const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
   const pagina = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
-  assert.match(pagina, /step === ETAPA\.fotos && !passoFotos\.podeContinuar \? \{ disabled: true/);
-  assert.match(pagina, /if \(s === ETAPA\.fotos && !passoFotos\.podeContinuar\)/);
+  assert.match(pagina, /step === ETAPA\.fotos && fotosBloqueiamAvanco\(passoFotos\) \? \{ disabled: true/);
+  assert.match(pagina, /if \(s === ETAPA\.fotos && fotosBloqueiamAvanco\(passoFotos\)\)/);
+  assert.match(pagina, /if \(!asDraft && !passoFotos\.podeContinuar\)/);
   const up = ler("components/photo-uploader.tsx");
   assert.match(up, /conferirFotos\(/);
   assert.match(up, /if \(!podeSerPrincipal\(item\.conteudo\)\) return;/);

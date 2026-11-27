@@ -1,6 +1,6 @@
 import { test, expect, request as api } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, liberarLimiteEventos, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { chaveCidade } from "../../../src/lib/cidades";
 
 /*
@@ -26,6 +26,11 @@ const linhas = async () =>
 test.describe("T741 — E288-B: tráfego de teste fora das métricas", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 120_000 });
+  // O limite de 300 eventos/hora por IP (/api/evento) esgota numa rodada completa da suíte (mesmo IP): os eventos
+  // deste spec seriam descartados em silêncio. Arnês, não asserção: zera só o limite de eventos antes de gravar.
+  test.beforeAll(async () => {
+    await liberarLimiteEventos();
+  });
   test.afterAll(async () => {
     await adm().from("eventos").delete().eq("cidade_chave", K);
     await apagarContas(ids);

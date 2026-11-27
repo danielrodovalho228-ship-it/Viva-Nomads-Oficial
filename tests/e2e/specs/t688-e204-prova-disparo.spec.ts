@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T688 — PROVA DO DISPARO do E204 (e-mails de orçamento de parceiro), no mesmo caminho do roteiro ao vivo
@@ -60,7 +60,7 @@ test.describe("T688 — E204: prova do disparo dos 3 e-mails de orçamento (marc
     ids.imovel = await criarImovelPronto(ids.dono, TITULO, { ativo: true });
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.foto, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Fotos Prova ${sufixo}`, slug, categorias: ["fotografia"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.foto, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Fotos Prova ${sufixo}`, slug, categorias: ["fotografia"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

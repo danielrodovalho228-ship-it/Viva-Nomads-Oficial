@@ -6,16 +6,17 @@
   Só campos que existem no banco; sem escolha = filtro desligado (nunca
   "Qualquer", "Ambos", "Indiferente" ou "Tanto faz" como opção).
 */
-import type { Nivel, NivelOuAdequacao } from "../../config/niveis.ts";
+import { NIVEIS, type Nivel, type NivelOuAdequacao } from "../../config/niveis.ts";
 import { nivelAoMenos } from "../niveis/regras.ts";
-import { rotuloFiltroNivel } from "./filtro-nivel.ts";
+import { passaNiveis, rotuloFiltroNiveis, rotuloFiltroNivel } from "./filtro-nivel.ts";
 import { ROTULO_COMODIDADE, comodidadesValidas, passaComodidades, type ComodidadeAntiga, type ComodidadeFiltro } from "./filtro-comodidades.ts";
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
 import { passaBloqueios, passaEntrada } from "./datas-flexiveis.ts";
-import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, type ImovelComInternet } from "./filtro-internet.ts";
+import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, velocidadeDesconhecida, type ImovelComInternet } from "./filtro-internet.ts";
 import { calcularTudoIncluido, type CamposTotalMes } from "../precos.ts";
 import type { LimpezaEstadia } from "../anuncio/limpeza-estadia.ts";
+import { ROTULO_CONTAS_INCLUIDAS, ROTULO_SILENCIOSO, ambienteSilencioso, contasIncluidas, type ImovelSilencio } from "./filtros-pacote1.ts";
 
 export interface FiltrosPainel {
   maxPrice: number; // 0 = qualquer
@@ -33,7 +34,10 @@ export interface FiltrosPainel {
   tipo: string;
   /** Garantia aceita ("caucao" | "seguro_fianca" | chaves antigas); "" = desligado. */
   garantia: string;
-  /** Só quem emite nota fiscal (o chip só aparece com SELO_NF_UI). */
+  /**
+   * E574: só imóveis cujo dono é PJ/MEI e DECLAROU emitir nota fiscal da locação (`?nota=1`). Selo de confiança sobre
+   * a declaração do dono — a Viva não promete documento de terceiro. (Antes lia properties.issues_invoice.)
+   */
   notaOnly: boolean;
   /**
    * @deprecated Adendo 3 (E43): saiu do painel, da /buscar e da URL — `?seguro=1` (URL e buscas salvas) vira
@@ -45,6 +49,15 @@ export interface FiltrosPainel {
   gestorOnly: boolean;
   /** E439: só quem aceita negociar (properties.negociacao.aceita; `?negocia=1`). */
   negociaOnly?: boolean;
+  /** Filtros pacote 1: "Ambiente silencioso" (`?silencioso=1`; regra em filtros-pacote1.ts). */
+  silenciosoOnly?: boolean;
+  /** Filtros pacote 1: "Contas incluídas" (`?contas=1`; a mesma regra do aviso AVISO_TUDO_INCLUIDO do cartão). */
+  contasOnly?: boolean;
+  /**
+   * E572/E580: só imóveis com o selo "Preço justo" (`?precojusto=1`). Lê o MESMO campo do selo do card
+   * (Property.precoJusto), sem chave: com PRECO_JUSTO_COMPARADOR desligada o selo vem da coluna (0130/0277).
+   */
+  precoJustoOnly?: boolean;
   /** Prompt 57, fase 2: download MEDIDO mínimo (50 | 100 | 300); 0 = desligado. */
   internetMin: number;
   /** "Só com internet medida" (dentro de "Para trabalhar de casa"). */
@@ -55,6 +68,8 @@ export interface FiltrosPainel {
   datasFlexiveis: boolean;
   /** Adendo 59.1: "a partir de" Conforto/Premium (`?nivel=`); "" = desligado. */
   nivelMin?: Nivel | "";
+  /** E573: níveis EXATOS escolhidos (`?niveis=`); vazio = desligado. Sem nível definido, o anúncio não entra. */
+  niveis?: Nivel[];
 }
 
 export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
@@ -71,11 +86,15 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   notaOnly: false,
   gestorOnly: false,
   negociaOnly: false,
+  silenciosoOnly: false,
+  contasOnly: false,
+  precoJustoOnly: false,
   internetMin: 0,
   soInternetMedida: false,
   entrada: "",
   datasFlexiveis: false,
   nivelMin: "",
+  niveis: [],
 };
 
 export const ROTULO_PORTE_CURTO: Record<PortePet, string> = { P: "pequeno", M: "médio", G: "grande" };
@@ -123,7 +142,7 @@ export function cabeNaEstadia(p: { minPeriodDays?: number; maxPeriodDays?: numbe
   return true;
 }
 
-type ImovelFiltravel = ImovelComInternet & {
+type ImovelFiltravel = ImovelComInternet & ImovelSilencio & {
   /** Disponível a partir de (yyyy-mm-dd); sem ela, a data de entrada não tira o imóvel. */
   availableFrom?: string | null;
   /** Prompt 53: datas bloqueadas de hoje em diante (do dono ou importadas). */
@@ -149,13 +168,27 @@ type ImovelFiltravel = ImovelComInternet & {
   garantiasAceitas?: string[];
   acceptsInsurance?: boolean;
   issuesInvoice?: boolean;
+  /** E574: dono PJ/MEI que declarou emitir nota fiscal da locação (calculado no servidor). */
+  emiteNotaDono?: boolean;
   ownershipType?: string;
   subleaseAuthorized?: boolean;
   /** Adendo 59.1: nível gravado pelo servidor (elo mais fraco). */
   nivel?: NivelOuAdequacao | null;
   /** E439: negociação pública do dono (só o `aceita` pesa no filtro). Sem dado = não negocia. */
   negociacao?: { aceita: boolean } | null;
+  /** E572/E580: o selo "Preço justo" do card (coluna sem a chave; motor E399-C com ela). Sem dado = sem selo. */
+  precoJusto?: boolean;
 };
+
+/** E572/E580: o filtro "Preço justo" está escolhido? (Sem chave: o filtro segue o selo que o card mostra.) */
+export function filtroPrecoJustoLigado(f: Pick<FiltrosPainel, "precoJustoOnly">): boolean {
+  return f.precoJustoOnly === true;
+}
+
+/** E572/E580: o imóvel passa no filtro "Preço justo"? Filtro não escolhido não tira ninguém. */
+export function passaPrecoJusto(p: Pick<ImovelFiltravel, "precoJusto">, f: Pick<FiltrosPainel, "precoJustoOnly">): boolean {
+  return !filtroPrecoJustoLigado(f) || p.precoJusto === true;
+}
 
 /** Rótulo curto das garantias do filtro (resumo do topo). */
 const ROTULO_GARANTIA: Record<string, string> = {
@@ -213,14 +246,31 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (!passaBloqueios(p.bloqueios, f.entrada, f.datasFlexiveis, f.periodo ? f.periodo - 30 : 30)) return false;
   if (f.tipo && tipoCanonico(p.propertyType ?? "") !== f.tipo) return false;
   if (f.garantia && !aceitaGarantia(p, f.garantia)) return false;
-  if (f.notaOnly && !p.issuesInvoice) return false;
+  if (f.notaOnly && p.emiteNotaDono !== true) return false;
   // Apelido legado da garantia "Seguro-fiança" (ver seguroOnly): o MESMO critério, nunca um segundo filtro.
   if (f.seguroOnly && !aceitaGarantia(p, "seguro_fianca")) return false;
   if (f.gestorOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   if (f.negociaOnly && p.negociacao?.aceita !== true) return false;
+  if (f.silenciosoOnly && !ambienteSilencioso(p)) return false;
+  if (f.contasOnly && !contasIncluidas(p)) return false;
+  if (!passaPrecoJusto(p, f)) return false;
   if (!passaInternet(p, f, agora)) return false;
   if (f.nivelMin && !nivelAoMenos(p.nivel, f.nivelMin)) return false;
+  if (!passaNiveis(p.nivel, f.niveis)) return false;
   return true;
+}
+
+/**
+ * E573: o contador de cada opção do grupo "Nível" — quantos anúncios da lista passam em TODOS os outros filtros e têm
+ * exatamente aquele nível (o mesmo padrão "· N" dos demais filtros: a contagem já considera o resto do painel).
+ */
+export function contagensPorNivel(lista: readonly ImovelFiltravel[], f: FiltrosPainel, agora: Date = new Date()): Record<Nivel, number> {
+  const out = Object.fromEntries(NIVEIS.map((v) => [v, 0])) as Record<Nivel, number>;
+  for (const v of NIVEIS) {
+    const so = { ...f, niveis: [v] };
+    out[v] = lista.filter((p) => passaNoPainel(p, so, agora)).length;
+  }
+  return out;
 }
 
 /**
@@ -231,6 +281,16 @@ export function naoMedidosDoPainel<T extends ImovelFiltravel>(lista: readonly T[
   if (!filtroInternetLigado(f)) return [];
   const semInternet: FiltrosPainel = { ...f, internetMin: 0, soInternetMedida: false };
   return lista.filter((p) => passaNoPainel(p, semInternet, agora) && informadaNaoMedida(p, f, agora));
+}
+
+/**
+ * E1078: os que ficam de fora SÓ por não ter velocidade nenhuma (nem medida nem informada) — a linha "Velocidade
+ * desconhecida: N imóveis". Filtro desligado → nenhum.
+ */
+export function desconhecidosDoPainel<T extends ImovelFiltravel>(lista: readonly T[], f: FiltrosPainel, agora: Date = new Date()): T[] {
+  if (!filtroInternetLigado(f)) return [];
+  const semInternet: FiltrosPainel = { ...f, internetMin: 0, soInternetMedida: false };
+  return lista.filter((p) => passaNoPainel(p, semInternet, agora) && velocidadeDesconhecida(p, f, agora));
 }
 
 /**
@@ -255,8 +315,10 @@ export function contarFiltrosPainel(f: FiltrosPainel): number {
     // A data de entrada conta fora da folha (chip "Entrada …"); aqui só a flexibilidade, e só com data.
     (f.entrada && f.datasFlexiveis ? 1 : 0) +
     (f.nivelMin ? 1 : 0) +
+    (f.niveis?.length ? 1 : 0) +
+    (filtroPrecoJustoLigado(f) ? 1 : 0) +
     // Adendo 3 (E43): "Pronto para Morar" é um estado só (readyToLiveOnly) — atalho e chip contam 1.
-    [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.gestorOnly, f.negociaOnly].filter(Boolean).length +
+    [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.gestorOnly, f.negociaOnly, f.silenciosoOnly, f.contasOnly].filter(Boolean).length +
     comodidadesValidas(f.comodidades).length
   );
 }
@@ -283,11 +345,16 @@ export function resumoFiltros(f: FiltrosPainel): string {
   if (f.readyToLiveOnly) partes.push("Pronto para Morar");
   const nivel = rotuloFiltroNivel(f.nivelMin);
   if (nivel) partes.push(nivel);
+  const niveis = rotuloFiltroNiveis(f.niveis);
+  if (niveis) partes.push(niveis);
   for (const c of comodidadesValidas(f.comodidades)) partes.push(ROTULO_COMODIDADE[c]);
   if (f.garantia) partes.push(ROTULO_GARANTIA[f.garantia] ?? "Garantia");
   else if (f.seguroOnly) partes.push(ROTULO_GARANTIA.seguro_fianca);
-  if (f.notaOnly) partes.push("Nota Fiscal");
+  if (f.notaOnly) partes.push("Emite nota fiscal");
   if (f.gestorOnly) partes.push("Gestor profissional");
   if (f.negociaOnly) partes.push("Aceita negociação");
+  if (f.silenciosoOnly) partes.push(ROTULO_SILENCIOSO);
+  if (f.contasOnly) partes.push(ROTULO_CONTAS_INCLUIDAS);
+  if (filtroPrecoJustoLigado(f)) partes.push("Preço justo");
   return partes.length ? partes.join(" · ") : "Qualquer preço · todos os imóveis";
 }

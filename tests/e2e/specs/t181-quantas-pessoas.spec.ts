@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
@@ -11,7 +12,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 const SAIDA = "tests/laboratorio/saida";
 const senha = novaSenha();
 const sufixo = novoSufixo();
-const dono = { email: `dono.p181.${sufixo}@lab.vivanomads.test`, nome: "Dalila Pessoas Sobrenomeoculto", role: "owner" as const };
+const dono = { email: `dono.p181.${sufixo}@lab.vivanomads.test`, nome: "Dalila Pessoas Anfitriadono", role: "owner" as const };
 const inq = (l: number) => ({ email: `inq.p181.${l}.${sufixo}@lab.vivanomads.test`, nome: `Ivo${l} Pessoas Sobrenomeoculto`, role: "tenant" as const });
 const ids: { dono?: string; imovel?: string; inq: Record<number, string> } = { inq: {} };
 
@@ -29,6 +30,8 @@ async function candidatar(page: Page, largura: number, pessoas: number) {
   await botao.click();
   const passo = page.getByTestId("solicitacao-passo");
   await expect(passo).toBeVisible();
+  // E520: o passo 1 exige um período certo (entrada e saída dentro da disponibilidade e do prazo).
+  await preencherPeriodoDaProposta(passo);
   await passo.getByRole("button", { name: "Continuar" }).click();
   await passo.getByRole("button", { name: "Continuar" }).click();
   await passo.getByRole("button", { name: "Enviar candidatura" }).click();
@@ -63,7 +66,10 @@ test.describe("T181 — quantas pessoas vão morar", () => {
       await d.setViewportSize({ width: largura, height: 900 });
       await d.goto("/dashboard/leads", { waitUntil: "networkidle" });
       await expect(d.locator("main")).toContainText(`Para ${pessoas} pessoas`, { timeout: 20_000 });
-      await expect(d.locator("main")).not.toContainText("Sobrenomeoculto");
+      // Só o inquilino DESTA execução segue oculto: o teste de 390 px, que roda antes com o mesmo dono,
+      // já aceitou a candidatura dele (nome liberado depois do aceite), então o token genérico daria falso alarme.
+      await expect(d.locator("main")).not.toContainText(`Ivo${largura} Pessoas`);
+      await expect(d.locator("main")).not.toContainText(`Ivo${largura}`);
       await d.screenshot({ path: `${SAIDA}/t181-interessados-${largura}.png`, fullPage: true });
 
       // Aceite (o que o servidor grava) → Fechamento abre com o número da candidatura.

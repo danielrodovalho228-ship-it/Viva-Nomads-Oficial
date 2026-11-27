@@ -1,0 +1,187 @@
+name: Linhas de base visuais (gerar para revisão)
+
+# E744: 55 das falhas determinísticas da suíte são comparações de captura (t245, t263, t271) contra imagens-base
+# antigas (a interface mudou depois delas). Esta rotina refaz as imagens NO MESMO AMBIENTE do laboratório
+# (mesmo Chromium, mesmas fontes, mesmo banco semeado) e as guarda como ARTEFATO para revisão humana.
+# NÃO comita nada em nenhum ramo de trabalho: aprovar uma imagem-base é decisão de produto (o que é "certo" na tela).
+# Quem aprovar copia para tests/e2e/visual/, num PR, SÓ as imagens julgadas. Elas saem de dois lugares: do artefato
+# `linhas-de-base-<run>` e, no disparo manual, do ramo de evidência `linhas-de-base-evidencia` (job `publicar-evidencia`,
+# no fim deste arquivo) — o armazenamento dos artefatos não é alcançável por toda sessão.
+# Roda à mão (workflow_dispatch) ou num PR que mexa neste arquivo (para poder gerar antes de ir para a main).
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/linhas-de-base.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linhas-de-base-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gerar:
+    name: gerar linhas de base
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SITE_URL: http://localhost:3123
+      INTEGRACOES_SIMULADAS: "on"
+      LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
+      # Resend falso (scripts/lab/resend-falso.mjs): confere o formato do e-mail e devolve um id; nada sai para a rede.
+      LAB_RESEND_URL: http://127.0.0.1:3999
+      # LinkedIn falso (scripts/lab/linkedin-falso.mjs, 63-B): OIDC mínimo com id_token RS256 de verdade; nada sai para a rede.
+      LAB_LINKEDIN_URL: http://127.0.0.1:3997
+      # Rotas falsas (scripts/lab/rotas-falso.mjs): tempos determinísticos no formato Mapbox/Google; nada sai para a rede.
+      LAB_ROTAS_URL: http://127.0.0.1:3998
+      TESTES_BASE_URL: http://localhost:3123
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Subir o Supabase local (todas as migrações)
+        # E792: porta do banco presa na VM do runner ("failed to bind host port 0.0.0.0:54322/tcp", sem ninguém
+        # escutando) → o script sobe o banco numa porta livre e grava LAB_DB_URL; outras falhas: limpa e reinicia o Docker.
+        run: scripts/lab/subir-supabase.sh
+
+      - name: Acertar com produção (role como texto + políticas extras)
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
+
+      - name: Conferir o banco (asserções de segurança)
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/conferir-banco.sql
+
+      - name: Chaves locais e senha da noite (mascaradas)
+        run: |
+          eval "$(supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
+          SENHA="$(openssl rand -hex 16)"
+          SOCIOS="lab-$(openssl rand -hex 8)"
+          echo "::add-mask::$ANON_KEY"; echo "::add-mask::$SERVICE_ROLE_KEY"; echo "::add-mask::$SENHA"; echo "::add-mask::$SOCIOS"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "LAB_SENHA=$SENHA"
+            echo "SOCIOS_ACCESS_CODE=$SOCIOS"
+          } >> "$GITHUB_ENV"
+
+      - name: Criar as personas e os imóveis de teste
+        run: node scripts/lab/seed-lab.mjs
+
+      - name: Criar a massa da varredura visual (t249)
+        # Contas @varredura.lab.vivanomads.test e tests/laboratorio/saida/varredura.json. Sem este passo a t249 ficava
+        # pulada em toda execução. Se falhar, a suíte segue e a t249 reprova dizendo que falta a massa.
+        continue-on-error: true
+        run: node scripts/lab/massa-varredura.mjs
+
+      - name: Build do site (modo simulado)
+        run: npm run build
+
+      - name: Subir o site em localhost:3123
+        run: |
+          node scripts/lab/resend-falso.mjs 3999 > tests/laboratorio/saida/resend-falso.log 2>&1 &
+          node scripts/lab/linkedin-falso.mjs 3997 > tests/laboratorio/saida/linkedin-falso.log 2>&1 &
+          node scripts/lab/rotas-falso.mjs 3998 > tests/laboratorio/saida/rotas-falso.log 2>&1 &
+          npx next start -p 3123 > tests/laboratorio/saida/servidor.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
+          curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
+
+      - name: Baixar a imagem do Playwright (E1040, navegadores e dependências já vêm nela, nada de apt)
+        # E1040 (ORDEM-DUET-216/229): o desenho do E1037 (#4034) neste workflow. A imagem OFICIAL do Playwright, na MESMA
+        # versão do @playwright/test (o teste e1040-imagem-outros-workflows.test.ts prende as duas). Vem do MCR, não do
+        # espelho do Ubuntu; tentativas curtas por segurança.
+        timeout-minutes: 15
+        run: |
+          for i in 1 2 3; do
+            timeout 300 docker pull mcr.microsoft.com/playwright:v1.61.1-noble && exit 0
+            echo "tentativa $i do pull falhou"
+            if [ "$i" -lt 3 ]; then sleep 30; fi
+          done
+          exit 1
+
+      - name: Refazer as imagens-base (t245, t263, t271)
+        # --update-snapshots reescreve TODAS as imagens dos 3 specs e nunca reprova por diferença de imagem;
+        # erro de outra natureza (elemento não achado, timeout) continua aparecendo na saída.
+        continue-on-error: true
+        run: |
+          # E1040: só `npx playwright …` corre na imagem oficial, com a rede do runner e como o utilizador do runner (os
+          # resultados ficam no workspace). O resto do `npx` segue o do runner. As linhas de comando ficam iguais.
+          npx() {
+            if [ "${1:-}" != playwright ]; then command npx "$@"; return; fi
+            shift
+            docker run --rm --network host --ipc host --user "$(id -u):$(id -g)" -e HOME=/tmp \
+              -v "$PWD:$PWD" -w "$PWD" \
+              $(env | cut -d= -f1 | grep -E '^(NEXT_PUBLIC_|LAB_|TESTES_|INTEGRACOES_|SUPABASE_|PLAYWRIGHT_|CI$)' | sed 's/^/-e /') \
+              mcr.microsoft.com/playwright:v1.61.1-noble npx playwright "$@"
+          }
+          npx playwright test t245-visual-regressao t263-visual-41 t271-admin-visual --update-snapshots --reporter=list --workers=2 --global-timeout=4800000 > tests/laboratorio/saida/linhas-de-base.txt 2>&1
+        env:
+          TESTES_BASE_URL: http://localhost:3123
+
+      - name: Listar o que mudou em relação ao que está no repositório
+        if: ${{ !cancelled() }}
+        run: |
+          git add -N tests/e2e/visual
+          {
+            echo "## Imagens-base refeitas"
+            echo
+            git diff --stat -- tests/e2e/visual | tail -n 80
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          mkdir -p linhas-de-base
+          git ls-files -m -o --exclude-standard tests/e2e/visual | xargs -r -I{} cp --parents {} linhas-de-base/
+
+      - name: Guardar as imagens para revisão
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: linhas-de-base-${{ github.run_id }}
+          path: |
+            linhas-de-base/
+            tests/laboratorio/saida/linhas-de-base.txt
+          retention-days: 14
+
+  # E744 (decisão do Gerente, 16/11/2026, aprovada pelo Daniel) — as imagens refeitas legíveis sem baixar o artefato.
+  # Grava as imagens e um manifesto num commit órfão no ramo `linhas-de-base-evidencia`: dedicado, descartável, reescrito
+  # a cada corrida, nunca mesclado e fora dos builds da Vercel. É o ÚNICO job do workflow com permissão de escrita, roda
+  # só no disparo manual (nunca em PR), e o script recusa qualquer destino que não seja esse ramo. Só PNG, até 120 imagens
+  # e 25 MB. A geração das imagens (job `gerar`) não mudou.
+  publicar-evidencia:
+    name: publicar as imagens refeitas (ramo linhas-de-base-evidencia)
+    needs: gerar
+    if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+
+      - name: Baixar as imagens refeitas desta corrida
+        # Sem o artefato (a geração caiu antes de guardá-lo) o passo seguinte diz isso e não toca no ramo.
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: linhas-de-base-${{ github.run_id }}
+          path: linhas-de-base-baixadas
+
+      - name: Publicar no ramo linhas-de-base-evidencia (commit órfão, reescrito a cada corrida)
+        # O nome do ramo testado vem por variável de ambiente, nunca colado na linha de comando.
+        env:
+          RAMO_TESTADO: ${{ github.ref_name }}
+        run: node scripts/lab/linhas-de-base-evidencia.mjs publicar linhas-de-base-baixadas/linhas-de-base --run "$GITHUB_RUN_ID" --sha "$GITHUB_SHA" --ramo-testado "$RAMO_TESTADO" --repositorio "$GITHUB_REPOSITORY" --ramo linhas-de-base-evidencia

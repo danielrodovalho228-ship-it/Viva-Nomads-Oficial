@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T777 — E341 (01/11): sem capa própria, a página pública do parceiro usa a 1ª foto da galeria (E306) — e o editor
@@ -25,7 +25,7 @@ test.describe("T777 — E341: a capa que vale, no editor do parceiro", () => {
     ids.push(id);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: id, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Reparos E341 ${sufixo}`, slug, categorias: ["manutencao"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: id, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Reparos E341 ${sufixo}`, slug, categorias: ["manutencao"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

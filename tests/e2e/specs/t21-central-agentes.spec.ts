@@ -87,7 +87,7 @@ test.describe("T21 — Central de Agentes v2", () => {
   test("Rede ao vivo e briefing com o resumo real da última ronda", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    await abrirAba(page, "Rede ao vivo");
+    await abrirAba(page, "Rede (24 h)");
     await expect(page.getByTestId("rede-ao-vivo").locator("canvas")).toBeVisible();
     await page.getByRole("button", { name: /Assistir ao briefing/ }).click();
     const legenda = page.getByTestId("briefing-legenda");
@@ -180,12 +180,13 @@ test.describe("T21 — Central de Agentes v2", () => {
     await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     const bloco = p.getByTestId("viva-chat-bloco");
     await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
-    const form = p.getByTestId("form-pessoa");
+    // E539 (iii): na página, o "Falar com uma pessoa" abre o formulário da Central (um só).
+    const form = p.locator("#abrir-chamado");
     await form.getByLabel("Seu nome").fill("Visitante T21");
-    await form.getByLabel("Seu e-mail").fill(`t21.${Date.now()}@lab.vivanomads.com.br`);
-    await form.getByLabel("Pedido para a equipe").fill("Quero saber como funciona a Caução antes de anunciar.");
-    await form.getByRole("button", { name: "Abrir chamado" }).click();
-    const ok = p.getByTestId("chamado-aberto-chat");
+    await form.getByLabel("Seu e-mail (para a resposta)").fill(`t21.${Date.now()}@lab.vivanomads.com.br`);
+    await form.getByLabel("O que aconteceu?").fill("Quero saber como funciona a Caução antes de anunciar.");
+    await form.getByRole("button", { name: "Enviar chamado" }).click();
+    const ok = p.getByTestId("central-aviso");
     await expect(ok).toBeVisible({ timeout: 20_000 });
     const numero = (await ok.innerText()).match(/VN-\d+/)![0];
     await vis.close();
@@ -194,18 +195,34 @@ test.describe("T21 — Central de Agentes v2", () => {
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Conversar");
     await page.locator('aside[aria-label="Agentes"]').getByRole("button", { name: /Moacir/ }).click();
+    // E1010: a conversa do admin já traz as perguntas anteriores (outros testes, nova tentativa). O teste espera a
+    // resposta DESTA pergunta (a bolha que cita o chamado novo) e a trilha nova dela; antes, abria a trilha da pergunta
+    // anterior e lia a bolha antiga enquanto a nova ainda não tinha chegado.
+    // A trilha é a que tem os passos da consulta ("Moacir → Viva:" e "Viva: Tenho N chamado"): o "Retorno" de uma
+    // execução (outro caso deste spec, em paralelo) também entra na conversa do Moacir como passo e pode virar a
+    // última trilha da tela.
+    const daConsulta = page.getByTestId("trilha-gerente").filter({ hasText: "Moacir → Viva:" }).filter({ hasText: /Viva: Tenho \d+ chamado/ });
+    const consultasAntes = await daConsulta.count();
     await page.getByPlaceholder("Escreva para Moacir…").fill("Chegou chamado novo?");
     await page.getByRole("button", { name: "Enviar" }).click();
-    // A trilha vem recolhida em "ver como apurei": abre antes de conferir os passos.
-    const trilha = page.getByTestId("trilha-gerente").last();
-    await expect(trilha).toBeVisible({ timeout: 20_000 });
+    // Cada linha da resposta é um <p> dentro da bolha: confere a bolha inteira, não só a 1ª linha.
+    // Com workers em paralelo, outro teste pode abrir um chamado logo depois deste: o Moacir responde pelo mais novo,
+    // que é o nosso ou um posterior a ele (lab, 18/11: VN-000162 aberto aqui, VN-000163 aberto ao mesmo tempo).
+    const nosso = Number(numero.slice(3));
+    const resposta = page.getByTestId("bolha-agente").filter({ hasText: /O que encontrei: / }).last();
+    const citado = async () => {
+      const m = ((await resposta.textContent().catch(() => "")) ?? "").match(/O que encontrei: VN-(\d+)/);
+      return m ? Number(m[1]) : 0;
+    };
+    await expect.poll(citado, { timeout: 30_000, message: `a resposta cita ${numero} ou um chamado aberto depois dele` }).toBeGreaterThanOrEqual(nosso);
+    await expect.poll(() => daConsulta.count(), { timeout: 20_000 }).toBeGreaterThan(consultasAntes);
+    // A trilha vem recolhida em "ver como apurei": abre a da consulta nova e confere os passos dentro dela.
+    const trilha = daConsulta.last();
     await trilha.getByText(/ver como apurei/).click();
-    const passos = page.getByTestId("passo-gerente");
+    const passos = trilha.getByTestId("passo-gerente");
     await expect(passos.filter({ hasText: "Moacir → Viva:" }).last()).toBeVisible({ timeout: 20_000 });
     await expect(passos.filter({ hasText: /^Viva: Tenho \d+ chamado/ }).last()).toBeVisible();
-    // Cada linha da resposta é um <p> dentro da bolha: confere a bolha inteira, não só a 1ª linha.
-    const resposta = page.getByTestId("bolha-agente").filter({ hasText: /O que encontrei: / }).last();
-    await expect(resposta).toContainText(numero);
+    await expect(resposta).toContainText(/O que encontrei: VN-\d{6}/);
     await expect(resposta).toContainText(/Prazo: \d{2}\/\d{2} \d{2}:\d{2}/);
     await expect(resposta).toContainText(/dados de \d{2}\/\d{2} \d{2}:\d{2}/);
   });
@@ -234,7 +251,7 @@ test.describe("T21 — Central de Agentes v2", () => {
     expect(count).toBe(1);
   });
 
-  test("Diário de bordo: última ronda de cada agente com chips de prioridade", async ({ page }) => {
+  test("Diário de bordo: histórico das rondas com chips de prioridade (E474: sem repetir a capa nem a última ronda da Equipe)", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
     await abrirAba(page, "Diário de bordo");
@@ -252,7 +269,7 @@ test.describe("T21 — Central de Agentes no celular (390 px)", () => {
   test("nenhuma aba rola para o lado", async ({ page }) => {
     await page.goto("/admin/agentes", { waitUntil: "domcontentloaded" });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-    for (const aba of ["Equipe", "Rede ao vivo", "Raio-X da Viva", "Diário de bordo", "Conversar", "Sala de reunião"]) {
+    for (const aba of ["Equipe", "Rede (24 h)", "Raio-X da Viva", "Diário de bordo", "Conversar", "Sala de reunião"]) {
       await abrirAba(page, aba);
       await semRolagemLateral(page);
     }

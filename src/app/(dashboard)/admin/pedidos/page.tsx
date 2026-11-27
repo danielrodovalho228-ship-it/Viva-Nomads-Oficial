@@ -1,9 +1,9 @@
 import { NumeroDaFonte } from "@/components/admin/numero-da-fonte";
-import { adminListPedidos, getChaveSmsAdmin, getMetricasPedidosAdmin } from "@/lib/data/pedidos-admin";
+import { getChaveSmsAdmin, getMetricasPedidosAdmin } from "@/lib/data/pedidos-admin";
 import { colunasPedidosAdmin } from "@/lib/data/pedidos-admin-colunas";
 import Link from "next/link";
 import { HREF_SISTEMA } from "@/config/chaves-ambiente";
-import { adminDaPagina, idsContasTeste, intervaloBRT, pedidosExpirandoSemResposta, pedidosParaMetrica } from "@/lib/data/admin-indicadores";
+import { adminDaPagina, idsContasTeste, intervaloBRT, pedidosExpirandoSemResposta, pedidosMoradiaAdmin, pedidosParaMetrica } from "@/lib/data/admin-indicadores";
 import { periodoDaLista, recorteDaUrl, respostaPedidos, ROTULO_RECORTE_PEDIDOS, textoComCompativel } from "@/lib/admin/indicadores";
 import { rotuloPeriodo, somarDias } from "@/lib/admin/visao-geral";
 import { chaveCidade } from "@/lib/cidades";
@@ -33,7 +33,8 @@ export default async function AdminPedidosPage({ searchParams }: { searchParams:
 
   const admin = await adminDaPagina();
   const [pedidos, metricas, metrica, teste, idsExpirando, chave] = await Promise.all([
-    adminListPedidos(),
+    // E472: a lista e os números pela MESMA fonte (o cliente de serviço do admin já conferido).
+    admin ? pedidosMoradiaAdmin(admin) : Promise.resolve([] as Record<string, unknown>[]),
     getMetricasPedidosAdmin(),
     admin ? pedidosParaMetrica(admin, intervaloBRT(p.inicio, p.fim), cidade, recorte) : Promise.resolve([]),
     admin ? idsContasTeste(admin) : Promise.resolve(new Set<string>()),

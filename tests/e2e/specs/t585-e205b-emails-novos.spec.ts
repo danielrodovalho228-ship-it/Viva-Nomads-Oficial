@@ -1,6 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { SILENCIO, emSilencio } from "../../../src/lib/notifications/silencio";
 
 /*
   T585 — E205-B: os e-mails novos (desenho do coordenador, msg 65 de 28/10), lidos na caixa de QA (emails_teste) das
@@ -12,7 +13,13 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
      dono → ao morador "Dona recusou a proposta" e "Ver outros imóveis parecidos";
   d. visita: expirada (todos os horários passaram → "cancelado" com motivo "expirou", e-mail aos dois, cartão
      "Expirada"); cancelada (quem, motivo, horário; ao morador "Pedir outro horário"); véspera na hora quando a
-     confirmação vem com menos de 24 h (morador: endereço exato + Abrir no mapa; dono: primeiro nome, sem endereço).
+     confirmação vem com menos de 24 h (morador: endereço exato + "Ver a visita" na plataforma, sem link externo de mapa;
+     dono: primeiro nome, sem endereço).
+     ORDEM-DUET-175: a véspera é aviso proativo e obedece ao silêncio do E326 (22h–7h de Brasília, `emSilencio`). O d2
+     afirma o comportamento DESENHADO à hora em que corre: fora do silêncio, a véspera sai na hora; no silêncio, NÃO sai
+     (nem e-mail, nem chave de envio), e o envio fica para o disparo diário. Determinístico nas três corridas do dia
+     (07:17Z cai no silêncio; 15:17Z e 23:17Z, fora). Se a confirmação cair a menos de 2 min de uma virada do
+     silêncio, espera a virada passar antes de confirmar.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -49,6 +56,21 @@ async function assuntoDe(usuarioId: string, evento: string): Promise<string> {
 async function contar(usuarioId: string, evento: string): Promise<number> {
   const { count } = await adm().from("emails_teste").select("id", { count: "exact", head: true }).eq("usuario_id", usuarioId).eq("evento", evento);
   return count ?? 0;
+}
+
+/** ORDEM-DUET-175: se faltam menos de 2 min para o silêncio do E326 começar ou acabar, espera a virada passar. */
+async function longeDaViradaDoSilencio(): Promise<void> {
+  const minutoBRT = () => {
+    const d = new Date(Date.now() - 3 * 3_600_000);
+    return d.getUTCHours() * 60 + d.getUTCMinutes();
+  };
+  const viradas = [SILENCIO.inicio * 60, SILENCIO.fim * 60];
+  for (;;) {
+    const m = minutoBRT();
+    const perto = viradas.some((v) => (v - m + 1440) % 1440 < 2);
+    if (!perto) return;
+    await new Promise((r) => setTimeout(r, 15_000));
+  }
 }
 
 const emDias = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
@@ -201,7 +223,9 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     await inq.context().close();
   });
 
-  test("d2. véspera na hora (confirmada com < 24 h) e cancelada com quem/motivo/horário", async ({ browser }) => {
+  test("d2. véspera na hora (confirmada com < 24 h; no silêncio do E326 não sai) e cancelada com quem/motivo/horário", async ({ browser }) => {
+    test.setTimeout(330_000);
+    await longeDaViradaDoSilencio();
     const c = await cenario("Vespera");
     const daqui3h = new Date(Date.now() + 3 * 3600_000);
     daqui3h.setUTCMinutes(0, 0, 0);
@@ -209,23 +233,37 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     if (error) throw error;
     const dono = await abrir(browser, c.dono.email, "/dashboard/visitas?de=dono", 1280);
     const cartao = dono.locator(`#visita-${v.id}`);
+    const silencioAntes = emSilencio(new Date());
     await cartao.getByTestId("visita-confirmar").first().click();
     await expect.poll(async () => (await adm().from("visitas_video").select("status").eq("id", v.id).single()).data?.status, { timeout: 25_000 }).toBe("confirmado");
-    const aoMorador = await emailDe(c.inq.id, "visita_vespera");
-    // E270: o assunto acompanha o caso — hoje ou amanhã no calendário de Brasília (a visita é daqui a 3 h).
-    const diaBRT = (t: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(t);
-    const quando = diaBRT(daqui3h) === diaBRT(new Date()) ? "hoje" : "amanhã";
-    expect(await assuntoDe(c.inq.id, "visita_vespera")).toBe(`Sua visita é ${quando} · Viva Nomads`);
-    expect(await assuntoDe(c.dono.id, "visita_vespera")).toBe(`Sua visita é ${quando} · Viva Nomads`);
-    expect(aoMorador).toContain(`a visita presencial é ${quando}.`);
-    expect(aoMorador).toContain(`Endereço: ${ENDERECO}`);
-    expect(aoMorador).toMatch(/Abrir no mapa: https:\/\//);
-    expect(aoMorador).toContain("horário de Brasília");
-    const aoDono = await emailDe(c.dono.id, "visita_vespera");
-    expect(aoDono).toContain("Morador: Inês");
-    expect(aoDono).not.toContain(ENDERECO);
-    expect(aoDono).not.toContain("Inês Vespera Sobrenome");
-
+    expect(emSilencio(new Date()), "a confirmação não atravessou a virada do silêncio").toBe(silencioAntes);
+    if (silencioAntes) {
+      // E326: no silêncio a véspera NÃO sai na hora, para nenhum dos dois, e a chave de envio não é gravada (o disparo
+      // diário ainda a apanha). Espera o mesmo tempo que um envio leva a chegar e confere que nada chegou.
+      await new Promise((r) => setTimeout(r, 8_000));
+      expect(await contar(c.inq.id, "visita_vespera"), "no silêncio do E326 a véspera não sai ao morador").toBe(0);
+      expect(await contar(c.dono.id, "visita_vespera"), "no silêncio do E326 a véspera não sai ao dono").toBe(0);
+      const { count } = await adm().from("automacoes_envios").select("chave", { count: "exact", head: true }).like("chave", `visita_vespera:${v.id}:%`);
+      expect(count ?? 0, "no silêncio a chave de envio da véspera não é gravada").toBe(0);
+    } else {
+      const aoMorador = await emailDe(c.inq.id, "visita_vespera");
+      // E270: o assunto acompanha o caso — hoje ou amanhã no calendário de Brasília (a visita é daqui a 3 h).
+      const diaBRT = (t: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(t);
+      const quando = diaBRT(daqui3h) === diaBRT(new Date()) ? "hoje" : "amanhã";
+      expect(await assuntoDe(c.inq.id, "visita_vespera")).toBe(`Sua visita é ${quando} · Viva Nomads`);
+      expect(await assuntoDe(c.dono.id, "visita_vespera")).toBe(`Sua visita é ${quando} · Viva Nomads`);
+      expect(aoMorador).toContain(`a visita presencial é ${quando}.`);
+      expect(aoMorador).toContain(`Endereço: ${ENDERECO}`);
+      // E744 (asserção alterada, tabela da Fable #3832): o e-mail não leva mais link externo de mapa; o morador abre a
+      // visita na plataforma (o endereço segue no corpo).
+      expect(aoMorador).not.toMatch(/Abrir no mapa|https?:\/\/(www\.)?(google|maps|waze)/i);
+      expect(aoMorador).toMatch(/Ver a visita: \S+\/dashboard\/visitas/);
+      expect(aoMorador).toContain("horário de Brasília");
+      const aoDono = await emailDe(c.dono.id, "visita_vespera");
+      expect(aoDono).toContain("Morador: Inês");
+      expect(aoDono).not.toContain(ENDERECO);
+      expect(aoDono).not.toContain("Inês Vespera Sobrenome");
+    }
     // O dono cancela com motivo: o morador recebe quem, o motivo, o horário e "Pedir outro horário".
     await dono.reload({ waitUntil: "domcontentloaded" });
     // E269-B: a folha do cancelamento — opção do lado do dono + texto; o motivo vai só ao morador.
@@ -292,8 +330,13 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     const { data: doDono } = await adm().from("emails_teste").select("corpo").eq("usuario_id", c.dono.id).eq("evento", "visita_cancelada");
     expect((doDono ?? []).some((e) => String(e.corpo).includes("Motivo: Mudei de planos"))).toBe(true);
     expect((doDono ?? []).every((e) => !String(e.corpo).includes("<b>"))).toBe(true);
+    // Instável de 25/11 (corrida 45568928758, fatia 16: "Expected: 2 Received: 1"): o produto manda o e-mail ao dono e SÓ
+    // DEPOIS a cópia a quem cancelou (src/lib/visitas/avisos-servidor.ts); ler a moradora logo após esperar o dono podia cair
+    // entre os dois envios. Espera-se a cópia da moradora como se espera a do dono.
+    await expect
+      .poll(async () => (await adm().from("emails_teste").select("corpo").eq("usuario_id", c.inq.id).eq("evento", "visita_cancelada")).data?.length ?? 0, { timeout: 30_000, message: "a moradora recebe a cópia de cada cancelamento (2)" })
+      .toBe(2);
     const { data: daMoradora } = await adm().from("emails_teste").select("corpo").eq("usuario_id", c.inq.id).eq("evento", "visita_cancelada");
-    expect((daMoradora ?? []).length).toBe(2);
     expect((daMoradora ?? []).every((e) => !String(e.corpo).includes("Motivo:"))).toBe(true);
     await inq.context().close();
   });

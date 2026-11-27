@@ -13,7 +13,7 @@ test("rotuloPreco: 6 casos — mensal, período, data futura, data passada, sem 
   assert.equal(um.total, 3130);
   const seis = rotuloPreco({ mensal: 3130, meses: 6, disponivelEm: "2026-11-15", hoje: HOJE });
   assert.equal(limpo(textoPreco(seis)), "R$ 3.130/mês · R$ 18.780 em 6 meses");
-  assert.equal(seis.disponivel, "Disponível a partir de 15/11");
+  assert.equal(seis.disponivel, "Disponível a partir de 15/11/2026");
   assert.equal(rotuloPreco({ mensal: 2500, meses: 3, disponivelEm: "2027-02-01", hoje: HOJE }).disponivel, "Disponível a partir de 01/02/2027");
   assert.equal(rotuloPreco({ mensal: 2500, meses: 3, disponivelEm: "2026-10-01", hoje: HOJE }).disponivel, "Disponível agora");
   assert.equal(rotuloPreco({ mensal: 2500, meses: 3 }).disponivel, null);
@@ -33,4 +33,38 @@ test("meses do cartão: duração da busca ou estadia mínima", () => {
   assert.equal(mesesDoCartao(4, 30), 4);
   assert.equal(mesesDoCartao(undefined, 90), 3);
   assert.equal(mesesDoCartao(undefined, undefined), 1);
+});
+
+import { estadiaDoCartao } from "./cartao-preco.ts";
+
+test("E356: todo cartão tem a linha do total da estadia (com 1 mês: 'R$ X em 1 mês'), igual entre vizinhos", () => {
+  const um = rotuloPreco({ mensal: 3960, meses: 1 });
+  const dois = rotuloPreco({ mensal: 5620, meses: 2 });
+  assert.equal(um.estadia, null); // as demais superfícies seguem sem a linha com 1 mês
+  assert.match(estadiaDoCartao(um), /^R\$\s?3\.960,00 em 1 mês$|^R\$\s?3\.960 em 1 mês$/);
+  assert.equal(estadiaDoCartao(dois), dois.estadia);
+});
+
+// E899 (Daniel, 13/11): a linha "Total por mês, tudo incluído" saiu do cartão e a constante ROTULO_TOTAL_MES daqui foi removida
+// (duplicava, com outro texto, a de precos.ts). O que diz o que o total inclui agora é o aviso curto da linha do total.
+test("E356 → E899: o aviso curto da linha do total diz o que o preço inclui (os textos moram em precos.ts)", async () => {
+  const { avisoCurtoDoTotal } = await import("./precos.ts");
+  // E923: "tudo incluído" só com as contas fixas DENTRO do total (estimativa > 0). Antes bastava o modo "fixed"; com a
+  // estimativa vazia, o cartão dizia "tudo incluído" sem nenhuma conta no total. Agora esse caso diz que não foram informadas.
+  assert.equal(avisoCurtoDoTotal({ utilitiesMode: "fixed", utilitiesEstimate: 280 }), "tudo incluído");
+  assert.equal(avisoCurtoDoTotal({ utilitiesMode: "fixed" }), "água, luz e gás não informados");
+  assert.equal(avisoCurtoDoTotal({ utilitiesMode: "real" }), "água, luz e gás à parte");
+  assert.equal("ROTULO_TOTAL_MES" in (await import("./cartao-preco.ts")), false);
+});
+
+test("E702: quando a data foi calculada para a estadia mínima, o cartão diz isso; igual à do cadastro, não", async () => {
+  const { notaDataCalculada } = await import("./cartao-preco.ts");
+  assert.equal(
+    notaDataCalculada("2027-01-13", "2026-12-20", 30),
+    "Data calculada para a estadia mínima de 30 dias, olhando os períodos já ocupados.",
+  );
+  assert.equal(notaDataCalculada("2026-12-20", "2026-12-20", 30), null);
+  assert.equal(notaDataCalculada(null, "2026-12-20", 30), null);
+  assert.equal(notaDataCalculada("2027-01-13", "2026-12-20", null), "Data calculada para a estadia mínima, olhando os períodos já ocupados.");
+  assert.equal(notaDataCalculada("2027-01-13", "2026-12-20", 1), "Data calculada para a estadia mínima de 1 dia, olhando os períodos já ocupados.");
 });

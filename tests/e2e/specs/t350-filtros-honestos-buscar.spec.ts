@@ -6,7 +6,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
  *   A — Studio, R$ 2.300 + condomínio R$ 300 (total R$ 2.600), internet informada e MEDIDA (150 Mbps), só seguro-fiança;
  *   B — Apartamento, R$ 2.000, internet informada (300 Mbps, sem medição), caução;
  *   C — Apartamento, R$ 2.400, sem internet informada, caução.
- *   D — (outra cidade) Studio sem medição: a seção "Internet medida" some.
+ *   D — (outra cidade) Studio sem velocidade nenhuma (nem medida nem informada): a seção de velocidade some.
+ *   E1078 (ORDEM-382 (a), asserção alterada): a seção e as faixas são de VELOCIDADE — sem medição, vale a informada.
  *   E — Apartamento na mesma cidade, mas EM ADEQUAÇÃO (falta item do padrão mínimo): não entra em resultado nenhum.
  * Prova: cada chip mostra a contagem que o aplicar entrega; 0 desabilita; a seção de velocidade só existe com medição
  * (E40, Adendo 3: faixas 50/100/300 com contagem) e 100 Mbps não termina em beco sem saída; um chip só de seguro-fiança e "Pronto para Morar" só na folha
@@ -52,7 +53,8 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
     await muda(ids.a, { city: CIDADE, property_type: "Studio", condo_fee: 300, utilities_mode: "real", internet_mbps: 300, garantias_aceitas: ["seguro_fianca"], accepts_insurance: true });
     await muda(ids.b, { city: CIDADE, property_type: "Apartamento", utilities_mode: "real", internet_mbps: 300, garantias_aceitas: ["caucao"] });
     await muda(ids.c, { city: CIDADE, property_type: "Apartamento", utilities_mode: "real", internet_mbps: null, garantias_aceitas: ["caucao"] });
-    await muda(ids.d, { city: CIDADE_SEM, property_type: "Studio", utilities_mode: "real", internet_mbps: 300 });
+    // E1078: sem velocidade nenhuma (a informada passou a contar na seção de velocidade).
+    await muda(ids.d, { city: CIDADE_SEM, property_type: "Studio", utilities_mode: "real", internet_mbps: null });
     await muda(ids.e, { city: CIDADE, property_type: "Apartamento", utilities_mode: "real", internet_mbps: 300, garantias_aceitas: ["caucao"] });
     const { error: eN } = await adm().from("imovel_nivel").upsert({ property_id: ids.e, nivel: "em_adequacao" });
     if (eN) throw eN;
@@ -105,12 +107,13 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
       expect(await n(page, "faceta-garantia-seguro_fianca")).toBe(1);
       await expect(folha.getByRole("button", { name: /Aceita Seguro/i })).toHaveCount(0);
       await expect(folha.getByTestId("faceta-pronto")).toBeVisible();
-      // E40 (Adendo 3): com uma medição na busca, as três faixas; a de 300 (ninguém alcança) aparece com "· 0" e desativada.
+      // E40 (Adendo 3) + E1078: as três faixas de VELOCIDADE — o A (medido 150) e o B (300 informados, sem medição);
+      // a de 300 conta o B.
       await expect(page.getByTestId("painel-internet")).toBeVisible();
       await expect(page.getByTestId("faceta-internet-50")).toBeEnabled();
       await expect(page.getByTestId("faceta-internet-100")).toBeEnabled();
-      await expect(page.getByTestId("faceta-internet-300")).toBeDisabled();
-      await expect(page.getByTestId("faceta-internet-300-n")).toHaveText("· 0");
+      await expect(page.getByTestId("faceta-internet-300")).toBeEnabled();
+      await expect(page.getByTestId("faceta-internet-300-n")).toHaveText("· 1");
 
       // E6: escolher um chip leva o "Mostrar N" exatamente ao número que o chip mostrava.
       for (const id of ["faceta-quartos-1", "faceta-garantia-caucao"]) {
@@ -121,16 +124,17 @@ test.describe("T350 — FILTROS-1: filtros honestos na /buscar", () => {
         await expect.poll(() => total(page)).toBe(3);
       }
 
-      // 100 Mbps: termina em 1 imóvel (o medido), nunca num "Nenhum imóvel" sem explicação.
-      expect(await n(page, "faceta-internet-100")).toBe(1);
+      // 100 Mbps (E1078): o medido A e o informado B; nunca um "Nenhum imóvel" sem explicação.
+      expect(await n(page, "faceta-internet-100")).toBe(2);
       await page.getByTestId("faceta-internet-100").click();
       await expect(page.getByTestId("aplicar-filtros")).toBeEnabled();
-      await expect(page.getByTestId("aplicar-filtros")).toHaveText("Mostrar 1 imóvel");
-      await expect(page.getByTestId("painel-total-anuncio")).toHaveText("Mostrar 1 imóvel");
+      await expect(page.getByTestId("aplicar-filtros")).toHaveText("Mostrar 2 imóveis");
+      await expect(page.getByTestId("painel-total-anuncio")).toHaveText("Mostrar 2 imóveis");
       await page.screenshot({ path: `${SAIDA}/t350-folha-${largura}.png`, fullPage: false });
       await page.getByTestId("aplicar-filtros").click();
       await expect(page.locator(`[data-testid="card-resultado"][data-id="${ids.a}"]`)).toBeVisible({ timeout: 20_000 });
-      await expect(page.locator('[data-testid="card-resultado"]')).toHaveCount(1);
+      await expect(page.locator(`[data-testid="card-resultado"][data-id="${ids.b}"]`).getByTestId("rotulo-nao-medida")).toBeVisible();
+      await expect(page.locator('[data-testid="card-resultado"]')).toHaveCount(2);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
     });
   }

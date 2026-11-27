@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { criteriosDaAvaliacao } from "../fixtures/avaliacao-criterios";
 
 /*
   T486 — E174-B: o selo "Vínculo profissional · <domínio>" (nunca o e-mail) nos contextos de confiança, para contas
@@ -43,7 +44,7 @@ test.describe("T486 — E174-B: selo do vínculo profissional nos contextos de c
     // Avaliação já publicada (a mesma regra do servidor: estadia encerrada há menos de 14 dias).
     const { error: eAv } = await adm()
       .from("avaliacoes")
-      .insert({ contrato_id: ids.contrato, autor_id: ids.ana, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: `Imóvel muito bem cuidado ${sufixo}.`, status: "publicada", publicada_em: new Date().toISOString() });
+      .insert({ contrato_id: ids.contrato, autor_id: ids.ana, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, ...criteriosDaAvaliacao("inquilino"),  comentario_publico: `Imóvel muito bem cuidado ${sufixo}.`, status: "publicada", publicada_em: new Date().toISOString() });
     if (eAv) throw eAv;
   });
 

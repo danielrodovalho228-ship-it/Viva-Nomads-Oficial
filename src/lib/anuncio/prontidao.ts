@@ -11,6 +11,9 @@
                      nunca bloqueiam, nunca entram no "falta" nem baixam a %.
 */
 
+import { DETALHE_FOTO_REPETIDA, ROTULO_FOTO_REPETIDA } from "../fotos/foto-repetida.ts";
+import { DETALHE_MATRICULA_FALTA, DETALHE_MATRICULA_OBRIGATORIA, ROTULO_MATRICULA_ATUALIZADA } from "../documento/matricula-titularidade.ts";
+import { DETALHE_CAUCAO_PENDENTE, ROTULO_CAUCAO_PENDENTE } from "../caucao/prazos.ts";
 import { declaracaoCamerasFeita } from "./privacidade.ts";
 import { exigeAutorizacao, ROTULO_FALTA_AUTORIZACAO } from "./operacao.ts";
 import { ETAPA } from "./etapas-ids.ts";
@@ -85,6 +88,28 @@ export interface FatosAnuncio {
    * um item pendente "Refaça a foto de [item] pela câmera até [data]". Ausente = não se aplica.
    */
   provasParaRefazer?: { chave: string; rotulo: string; ate: string }[];
+  /**
+   * E614: chaves de obrigatórios cujo valor veio pronto (padrão ou sugestão) e o dono ainda não confirmou. Valem para
+   * publicar, mas não contam no "N% pronto". Ausente = todos confirmados (rascunho antigo, anúncio publicado).
+   */
+  naoConfirmados?: readonly string[];
+  /**
+   * E640 (b): uma das fotos é igual (ou quase) à de outro anúncio e a matrícula ainda não foi conferida: a publicação fica
+   * travada até a equipe conferir. Ausente/false = sem trava. O dono nunca vê de quem é a outra foto.
+   */
+  fotoRepetidaAberta?: boolean;
+  /**
+   * E633: a matrícula atualizada do imóvel (prova de titularidade) já foi enviada. Só se aplica ao anúncio que ainda vai
+   * publicar; ausente = não se aplica (o publicado segue no ar). Por padrão é OPCIONAL (item de melhoria).
+   */
+  matriculaEnviada?: boolean;
+  /** E633: a chave MATRICULA_OBRIGATORIA está ligada (só com a confirmação por escrito da Dra. Beatriz). */
+  matriculaObrigatoria?: boolean;
+  /**
+   * E637: o dono tem devolução de caução passada de 30 dias (atrás da chave CAUCAO_PRAZOS_ATIVA): anúncio novo não publica até
+   * regularizar. Ausente/false = sem bloqueio.
+   */
+  caucaoDevolucaoPendente?: boolean;
   // Opcionais
   selo: boolean;
   video: boolean;
@@ -199,11 +224,25 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
     const n = f.confortoFaltam;
     obrigatorios.push({ key: "conforto", label: ROTULO_FALTA_CONFORTO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "falta 1 item" : `faltam ${n} itens` });
   }
+  if (f.fotoRepetidaAberta) {
+    obrigatorios.push({ key: "foto_repetida", label: ROTULO_FOTO_REPETIDA, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_FOTO_REPETIDA });
+  }
+  // E633: a matrícula atualizada entra como OBRIGATÓRIA só com a chave ligada; senão é um opcional (nunca bloqueia).
+  const matriculaObrigatoriaAgora = f.matriculaEnviada !== undefined && f.matriculaObrigatoria === true;
+  if (matriculaObrigatoriaAgora) {
+    obrigatorios.push({ key: "matricula_atualizada", label: ROTULO_MATRICULA_ATUALIZADA, ok: f.matriculaEnviada === true, etapa: ETAPA.revisao, detalhe: f.matriculaEnviada ? undefined : DETALHE_MATRICULA_OBRIGATORIA });
+  }
+  if (f.caucaoDevolucaoPendente) {
+    obrigatorios.push({ key: "caucao_pendente", label: ROTULO_CAUCAO_PENDENTE, ok: false, etapa: ETAPA.revisao, detalhe: DETALHE_CAUCAO_PENDENTE });
+  }
   // E233-A: não há item de vaga no plano — o limite de anúncios do modelo antigo saiu.
   const opcionais: ItemProntidao[] = [
     { key: "selo", label: "Selo Pronto para Morar", ok: f.selo, etapa: ETAPA.endereco },
     { key: "video", label: "Vídeo do imóvel", ok: f.video, etapa: ETAPA.fotos },
   ];
+  if (f.matriculaEnviada !== undefined && !matriculaObrigatoriaAgora) {
+    opcionais.push({ key: "matricula_atualizada", label: ROTULO_MATRICULA_ATUALIZADA, ok: f.matriculaEnviada, etapa: ETAPA.revisao, detalhe: f.matriculaEnviada ? undefined : DETALHE_MATRICULA_FALTA });
+  }
   if (f.proximidadesSemEndereco !== undefined && f.proximidadesSemEndereco > 0) {
     const n = f.proximidadesSemEndereco;
     opcionais.push({ key: "proximidades_endereco", label: ROTULO_PROXIMIDADES_SEM_ENDERECO, ok: false, etapa: ETAPA.comodidades, detalhe: n === 1 ? "1 lugar sem endereço não aparece no anúncio" : `${n} lugares sem endereço não aparecem no anúncio` });
@@ -211,16 +250,35 @@ export function prontidaoAnuncio(f: FatosAnuncio): Prontidao {
   for (const p of f.provasParaRefazer ?? []) {
     opcionais.push({ key: `refazer_foto_${p.chave}`, label: textoRefazerFoto(p.rotulo, p.ate), ok: false, etapa: ETAPA.comodidades });
   }
-  const cumpridos = obrigatorios.filter((i) => i.ok).length;
+  // E614: os itens condicionais (internet, privacidade, tipo de entrada, padrão mínimo, chácara, autorização) só entram
+  // na lista enquanto faltam; resolvidos, contam como FEITOS no número (antes saíam da conta e o % mal se mexia).
+  const resolvidos = [
+    f.tipoEntradaOk === true,
+    !f.semInternet && f.internetOk === true,
+    // A privacidade só é item do anúncio que ainda vai publicar (no publicado, `privacidadeOk: true` quer dizer "não se
+    // aplica"); o marcador dessa fase é o tipo de entrada, que só se passa ao anúncio novo.
+    f.tipoEntradaOk !== undefined && f.privacidadeOk,
+    f.confortoFaltam !== undefined && f.confortoFaltam <= 0,
+    f.chacaraFaltam !== undefined && f.chacaraFaltam.length === 0,
+    f.sublocacaoOk && (f.operacao === "subleased" || f.operacao === "managed"),
+  ].filter(Boolean).length;
+  const naoConfirmado = new Set(f.naoConfirmados ?? []);
+  const cumpridos = obrigatorios.filter((i) => i.ok && !naoConfirmado.has(i.key)).length + resolvidos;
   return {
     podePublicar: obrigatorios.every((i) => i.ok),
     obrigatorios,
     faltam: obrigatorios.filter((i) => !i.ok).map((i) => (i.detalhe ? `${i.label} (${i.detalhe})` : i.label)),
     opcionais,
     melhorar: opcionais.filter((i) => !i.ok).map((i) => i.label),
-    pct: Math.round((cumpridos / obrigatorios.length) * 100),
+    pct: Math.round((cumpridos / (obrigatorios.length + resolvidos)) * 100),
   };
 }
+
+/**
+ * E498: o texto do progresso, um só em todas as telas (cartão do Início, rodapé de cada passo do assistente): "25% pronto".
+ * O número é sempre o pct da prontidão (o que está cumprido), nunca a posição do passo.
+ */
+export const textoPronto = (p: Pick<Prontidao, "pct">) => `${p.pct}% pronto`;
 
 export interface ItemChecklist {
   key: string;
@@ -245,7 +303,10 @@ export interface ChecklistAnuncio {
  */
 export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnuncio {
   const id = encodeURIComponent(draftId);
-  const itens = p.obrigatorios.map((i): ItemChecklist => {
+  // E498: a lista segue a ORDEM DOS PASSOS do assistente (antes vinha na ordem dos obrigatórios — o "Período" do Passo 9
+  // antes das Fotos do Passo 2). Ordenação estável: dentro do mesmo passo, a ordem da prontidão.
+  const ordenados = p.obrigatorios.map((i, n) => ({ i, n })).sort((a, b) => a.i.etapa - b.i.etapa || a.n - b.n).map((x) => x.i);
+  const itens = ordenados.map((i): ItemChecklist => {
     const etapa = i.etapa;
     return {
       key: i.key,
@@ -256,6 +317,18 @@ export function checklistAnuncio(p: Prontidao, draftId: string): ChecklistAnunci
     };
   });
   return { itens, proximo: itens.find((i) => !i.ok) ?? null };
+}
+
+/**
+ * E507: o destino ÚNICO de "Continuar editando" / "Continuar de onde parou" de um rascunho — o 1º passo que falta, na
+ * ordem dos passos (o mesmo "próximo" da lista do Início); com tudo cumprido, a Revisão. Antes a lista abria no passo
+ * guardado no rascunho e o Início no item que falta: o mesmo rascunho abria em passos diferentes.
+ */
+export function hrefRetomarRascunho(p: Prontidao | null | undefined, draftId: string): string {
+  const id = encodeURIComponent(draftId);
+  // Sem a prontidão lida (falha de leitura), o assistente decide pelo que está gravado — nunca um passo inventado.
+  if (!p) return `/dashboard/imoveis/novo?draft=${id}`;
+  return checklistAnuncio(p, draftId).proximo?.href ?? `/dashboard/imoveis/novo?draft=${id}&etapa=${ETAPA.revisao}`;
 }
 
 /** Âncoras do vídeo: a seção Vídeo do editor por seções e o bloco de vídeo do passo Fotos do assistente (65-B). */
@@ -339,4 +412,12 @@ export function faixaDocumentoAprovado(comp: Prontidao, statusImovel: string): F
     titulo: faltam.length === 0 ? "Documento aprovado — é só publicar" : "Documento aprovado — falta publicar",
     faltam,
   };
+}
+
+/**
+ * E984: as pendências COM PRAZO (a prova a refazer pela câmera até uma data — vencida, o item deixa de contar e o nível
+ * cai). Num anúncio publicado o cartão não mostra o "% completo" (E567), mas o prazo continua a aparecer.
+ */
+export function pendenciasComPrazo<T extends { key: string; ok: boolean }>(opcionais: readonly T[]): T[] {
+  return opcionais.filter((o) => !o.ok && o.key.startsWith("refazer_foto_"));
 }

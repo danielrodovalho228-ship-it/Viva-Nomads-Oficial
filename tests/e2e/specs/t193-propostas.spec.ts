@@ -60,8 +60,9 @@ async function enviarPelaTela(page: Page, c: Cenario, validade = "7"): Promise<s
   await page.goto(`/dashboard/orcamentos/nova?interessado=${c.lead}`, { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("montagem-proposta")).toBeVisible({ timeout: 20_000 });
   await page.getByTestId("proposta-valor").fill("3200");
-  await page.getByTestId("proposta-meses").selectOption("4");
   await page.getByTestId("proposta-data").fill(emDias(10));
+  // E562 (telas): sem "Número de meses" — a estadia vem em dias; 4 meses = saída 120 dias depois da entrada.
+  await page.getByTestId("proposta-saida").fill(emDias(130));
   await page.getByTestId("proposta-validade").selectOption(validade);
   await expect(page.getByTestId("resumo-total-contrato")).toContainText("12.800");
   await expect(page.getByTestId("proposta-taxa-dono")).toContainText("12%");
@@ -111,6 +112,9 @@ test.describe("T193 — propostas", () => {
       const inq = await abrir(browser, c.inq.email, largura);
       await inq.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
       await expect(inq.getByTestId("proposta-status")).toHaveText("Vista");
+      // E536: o "ver todas" do morador fica na área do morador (nunca a Orçamentos do dono).
+      await expect(inq.getByTestId("proposta-ver-todas")).toHaveText("Ver todas as propostas");
+      await expect(inq.getByTestId("proposta-ver-todas")).toHaveAttribute("href", "/dashboard/propostas");
       // A taxa da Viva nunca aparece para o interessado.
       await expect(inq.getByTestId("proposta-taxa")).toHaveCount(0);
       expect(await inq.content()).not.toContain("Taxa de serviço");
@@ -138,6 +142,7 @@ test.describe("T193 — propostas", () => {
 
       await dono.goto(`/dashboard/propostas/${id}`, { waitUntil: "domcontentloaded" });
       await expect(dono.getByTestId("historico-versoes").getByTestId("versao")).toHaveCount(2);
+      await expect(dono.getByTestId("proposta-ver-todas")).toHaveAttribute("href", "/dashboard/orcamentos"); // E536
       await expect(dono.getByTestId("historico-versoes")).toContainText("4 meses");
       await expect(dono.getByTestId("historico-versoes")).toContainText("6 meses");
       await dono.screenshot({ path: `${SAIDA}/t193-5-historico-${largura}.png`, fullPage: true });

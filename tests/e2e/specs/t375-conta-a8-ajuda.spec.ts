@@ -66,7 +66,11 @@ test.describe("T375 — CONTA-A A8: Ajuda (perfil-08)", () => {
       // E312: sem "Sair da conta" na tela (o do menu da Conta basta); a tela fecha na linha institucional, sem vão.
       await expect(p.getByTestId("ajuda-sair")).toHaveCount(0);
       await expect(p.getByTestId("conta-fechamento")).toHaveText("Viva Nomads · Uberlândia, MG");
-      if (w === 1280) await expect(p.getByTestId("conta-menu-ajuda")).toHaveAttribute("aria-current", "page");
+      // E493: a Ajuda não está na lista lateral (a porta é o "Ajuda" do menu da Conta); a lateral segue, sem ela.
+      if (w === 1280) {
+        await expect(p.getByTestId("conta-menu-lateral")).toBeVisible();
+        await expect(p.getByTestId("conta-menu-ajuda")).toHaveCount(0);
+      }
       else await expect(p.getByTestId("conta-voltar")).toBeVisible();
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
       await p.screenshot({ path: `${SAIDA}/t375-ajuda-${w}.png`, fullPage: true });

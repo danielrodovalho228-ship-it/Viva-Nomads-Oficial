@@ -7,7 +7,8 @@ import { ButtonLink } from "@/components/ui/button";
 import { carregarEstadia } from "@/lib/data/estadia";
 import { HREF_ESTADIA, textoEntrada, textoSaida } from "@/lib/estadia/estadia";
 import { acoesDaEstadia, encerrarDaEstadia, mensagemDaEstadia, type ContratoDaEstadia } from "@/lib/estadia/acoes";
-import { CAMPOS_INSTRUCOES } from "@/lib/estadia/instrucoes";
+import { lembretesDeEntrega } from "@/lib/estadia/lembretes-entrega";
+import { InstrucoesEmBlocos } from "@/components/estadia/instrucoes-em-blocos";
 import { ROTULO_STATUS_ENCERRAMENTO, rotuloMotivo } from "@/lib/estadia/encerramento";
 import { AcoesEstadia } from "@/components/estadia/acoes-estadia";
 import { CartaoAjudaMudanca, CartaoDepoisDaSaida } from "@/components/automacao/cartoes-estadia";
@@ -17,7 +18,7 @@ import { carregarVisaoConvidado, convidadosParaOMorador } from "@/lib/data/estad
 import { hrefVisaoConvidado, limiteConvidados } from "@/lib/anuncio/chegada-e-pedido";
 import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
 import { ValorDiretoAoProprietario } from "@/components/contexto/cabecalho-contexto";
-import { marcasDaEstadia } from "@/lib/calendario/grade";
+import { marcasDaEstadia, mesesDaEstadia } from "@/lib/calendario/grade";
 import Link from "next/link";
 import { LinhaDoTempoEstadia } from "@/components/contrato/linha-do-tempo-estadia";
 import { LocalEstadia } from "@/components/estadia/local-estadia";
@@ -122,12 +123,12 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
         <Panel title="Calendário da estadia" data-testid="estadia-calendario">
           <LegendaCalendario marcas={["entrada", "periodo", "saida"]} />
           <div className="grid gap-4 sm:grid-cols-2">
-            {[...new Set([e.periodo.inicio, e.periodo.fim].filter((d): d is string => !!d).map((d) => d.slice(0, 7)))].map((am) => (
+            {mesesDaEstadia(e.periodo.inicio, e.periodo.fim).map(({ ano, mes }) => (
               <CalendarioMes
-                key={am}
+                key={`${ano}-${mes}`}
                 tipo="estadia"
-                ano={Number(am.slice(0, 4))}
-                mes={Number(am.slice(5, 7)) - 1}
+                ano={ano}
+                mes={mes}
                 marcas={marcasDaEstadia(e.periodo.inicio, e.periodo.fim)}
               />
             ))}
@@ -157,10 +158,30 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-ink">{i.rotulo}</span>
                   <span className="block text-sm text-muted">{i.detalhe}</span>
+                  {/* ORDEM-DUET-1048: a ação de confirmar no mesmo item (o morador, no estado do meio). */}
+                  {i.acao && (
+                    <Link href={i.acao.href} className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline" data-testid={`checklist-${i.chave}-acao`}>
+                      {i.acao.rotulo}
+                    </Link>
+                  )}
                 </span>
               </li>
             ))}
           </ul>
+          {/* E662: lembretes do dono — não são itens do checklist, não bloqueiam nada. */}
+          {dono && (
+            <div className="mt-4 border-t border-line pt-4" data-testid="estadia-lembretes">
+              <h3 className="font-title text-base font-semibold text-ink">Lembretes (opcional)</h3>
+              <ul className="mt-2 space-y-3">
+                {lembretesDeEntrega({ instrucaoSaidaPreenchida: !!(e.instrucoes.campos?.instrucao_saida ?? "").trim() }).map((l) => (
+                  <li key={l.chave} data-testid={`lembrete-${l.chave}`}>
+                    <span className="block text-sm font-semibold text-ink">{l.rotulo}</span>
+                    <span className="block text-sm text-muted">{l.texto}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </Panel>
       )}
 
@@ -232,14 +253,7 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
         {dono ? (
           <EditorInstrucoes propertyId={e.imovel.id} contratoId={e.id} inicial={e.instrucoes.campos ?? {}} comoEntrarDoContrato={e.instrucoes.comoEntrarDoContrato} />
         ) : e.instrucoes.liberadas && e.instrucoes.campos ? (
-          <dl className="space-y-3" data-testid="instrucoes-liberadas">
-            {CAMPOS_INSTRUCOES.filter((c) => (e.instrucoes.campos?.[c.chave] ?? "").trim()).map((c) => (
-              <div key={c.chave}>
-                <dt className="text-sm font-semibold text-ink">{c.rotulo}</dt>
-                <dd className="whitespace-pre-line text-sm text-ink">{e.instrucoes.campos?.[c.chave]}</dd>
-              </div>
-            ))}
-          </dl>
+          <InstrucoesEmBlocos campos={e.instrucoes.campos} testid="instrucoes-liberadas" />
         ) : (
           <p className="text-sm text-muted" data-testid="instrucoes-bloqueadas">
             {e.instrucoes.texto || "O proprietário ainda não publicou as instruções."}

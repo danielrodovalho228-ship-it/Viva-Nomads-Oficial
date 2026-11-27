@@ -41,7 +41,7 @@ test.describe("T287 — /admin/destinos salva", () => {
     await expect(form.getByTestId("destino-mapa")).toBeVisible();
     await page.screenshot({ path: "tests/laboratorio/saida/t287-busca-390.png", fullPage: true });
     await form.getByTestId("salvar-destino").click();
-    await expect(form.getByRole("status")).toContainText(`${NOME} salvo.`, { timeout: 20_000 });
+    await expect(form.getByRole("status").filter({ hasText: NOME })).toContainText(`${NOME} salvo.`, { timeout: 20_000 });
     const { data } = await adm().from("destinos").select("slug, lat, lng, ativo").eq("nome", NOME).maybeSingle();
     expect(data).toMatchObject({ ativo: false });
     ids.slug = data!.slug as string;
@@ -59,7 +59,7 @@ test.describe("T287 — /admin/destinos salva", () => {
     await expect(form.getByTestId("destino-lat")).toHaveValue("-18.918600");
     await expect(form.getByTestId("destino-lng")).toHaveValue("-48.277200");
     await form.getByTestId("salvar-destino").click();
-    await expect(form.getByRole("status")).toContainText(`${NOME} salvo.`, { timeout: 20_000 });
+    await expect(form.getByRole("status").filter({ hasText: NOME })).toContainText(`${NOME} salvo.`, { timeout: 20_000 });
     const { data } = await adm().from("destinos").select("lat, lng").eq("nome", NOME);
     expect(data).toEqual([{ lat: -18.9186, lng: -48.2772 }]);
   });

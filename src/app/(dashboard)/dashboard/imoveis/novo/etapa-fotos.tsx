@@ -15,6 +15,7 @@ import { Erro } from "./campos";
 import type { EstadoIaFotos, FalhaIaFotos } from "./tipos";
 import type { ConteudoFoto, EstadoPassoFotos } from "@/lib/fotos/conteudo";
 import { avisoDaContagem } from "@/lib/fotos/contagem-passo";
+import { MarcaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 
 /** Mockup cadastro-imovel-02: a dica embaixo da galeria. */
 export const DICA_FOTOS = "Dica: use fotos com boa iluminação e ambiente organizado.";
@@ -109,6 +110,8 @@ export function EtapaFotos({
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-ink">
             <span data-testid="fotos-contagem-numero">{contadas}</span> / {MIN_PHOTOS} fotos
+            {/* E608: o mínimo de 8 fotos é obrigatório para publicar. */}
+            <MarcaObrigatorio />
             {/* Conformidade fina (01/11): o "Faltam N fotos" não se repete — quando a trava já diz embaixo, sai daqui. */}
             {bloqueado && !aviso.mensagem && (
               <span className="ml-2 text-red-600">{faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`}</span>
@@ -156,7 +159,7 @@ export function EtapaFotos({
       </details>
 
       {/* Prompt 31a: porta para os fotógrafos parceiros da cidade do imóvel (o CEP do cadastro vira a cidade). */}
-      <div className="mt-3 rounded-xl border border-sage-200 bg-sage-50 p-3 text-sm" data-testid="porta-fotografo">
+      <div className="mt-3 rounded-xl border border-sage-200 bg-sage-100 p-3 text-sm" data-testid="porta-fotografo">
         <p className="font-semibold text-ink">Quer um fotógrafo profissional?</p>
         <p className="mt-1 text-muted">Veja os fotógrafos parceiros que atendem a cidade deste imóvel. As fotos vão direto para o anúncio.</p>
         <a href={linkFotografos(cep, imovelId)} target="_blank" rel="noopener" className="alvo-toque mt-1 inline-block font-medium text-forest underline" data-testid="porta-fotografo-link">
@@ -165,7 +168,7 @@ export function EtapaFotos({
       </div>
 
       {/* 65-B: o vídeo num bloco próprio, logo depois das fotos e antes da caixa da IA. Nunca bloqueia avançar. */}
-      <section id={ANCORA_VIDEO_ASSISTENTE} className="mt-6 scroll-mt-24" data-testid="bloco-video">
+      <section id={ANCORA_VIDEO_ASSISTENTE} className="mt-6" data-testid="bloco-video">
         <h2 className="mb-3 font-title text-base font-semibold text-ink">Vídeo do imóvel (opcional)</h2>
         <VideoUploader path={videoArquivo} onChange={setVideoArquivo} videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} conteudo={videoConteudo} onConteudo={setVideoConteudo} />
       </section>
@@ -224,7 +227,7 @@ export function FalhaIa({ falha, onTentarDeNovo }: { falha: FalhaIaFotos; onTent
         <button
           type="button"
           onClick={onTentarDeNovo}
-          className="mt-2 inline-flex items-center gap-2 rounded-lg border border-forest px-3 py-2 text-sm font-semibold text-forest hover:bg-sage-50"
+          className="mt-2 inline-flex items-center gap-2 rounded-lg border border-forest px-3 py-2 text-sm font-semibold text-forest hover:bg-sage-100"
           data-testid="ia-fotos-tentar-de-novo"
         >
           <RotateCcw className="h-4 w-4" aria-hidden /> Tentar de novo

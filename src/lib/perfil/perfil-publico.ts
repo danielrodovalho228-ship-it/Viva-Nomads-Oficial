@@ -5,6 +5,7 @@
   Contato (telefone/e-mail) nunca aparece em nenhum dos dois, em fase alguma.
 */
 import { guardContactInfo } from "../messages/contact-guard.ts";
+import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
 import { seloVinculoPublico } from "../vinculo/textos.ts";
 
 /**
@@ -79,6 +80,8 @@ export function validarBio(texto: string): Validacao<string | null> {
   if (t.length > BIO_MAX) return { ok: false, erro: `A bio tem no máximo ${BIO_MAX} caracteres.` };
   if (guardContactInfo(t).masked || LINK_RE.test(t))
     return { ok: false, erro: "Tire telefone, e-mail, @ ou link da bio: o contato fica protegido e a conversa segue pelo chat da Viva." };
+  // E1113 (ORDEM-DUET-502 §2): a regra rigorosa do gatilho (0358) — app e banco com a mesma regra, sempre.
+  if (contemContato(t)) return { ok: false, erro: CONTATO_AVISO };
   return { ok: true, valor: t };
 }
 
@@ -211,6 +214,25 @@ export function progressoPerfil(
     itens.push({ chave: "telefone", rotulo: "Verifique seu celular: perfis verificados passam mais confiança", feito: opts.telefone });
   const pct = Math.round((itens.filter((i) => i.feito).length / itens.length) * 100);
   return { itens, pct };
+}
+
+/**
+ * E403: o item "Celular verificado" do medidor. Quem JÁ verificou tem o item feito sempre — a sonda do provedor de SMS
+ * (rede) fora do ar não tira o item da conta (era 88% → 86% sem ação nenhuma). Sem verificar, o item só entra quando dá
+ * para verificar (sem provedor, a pessoa não teria como cumprir). undefined = fora do medidor.
+ */
+export function itemTelefoneNoMedidor(fone: { disponivel: boolean; verificado: boolean } | null | undefined): boolean | undefined {
+  if (!fone) return undefined;
+  if (fone.verificado) return true;
+  return fone.disponivel ? false : undefined;
+}
+
+/**
+ * E403: "Profissão" entra no medidor pelo CADASTRO (morador), não por existir imóvel na conta — um rascunho criado
+ * tirava o item e mudava a porcentagem sem a pessoa mexer no perfil.
+ */
+export function pedeProfissao(role: string | null | undefined): boolean {
+  return role === "tenant";
 }
 
 /** Página pública do proprietário: só indexa quando há imóvel visível (anúncio de teste não conta). */

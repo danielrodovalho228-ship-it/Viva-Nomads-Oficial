@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { usuarioExigido } from "@/lib/supabase/usuario-da-leitura";
 import type { ViewMode } from "@/lib/store";
 
 /**
@@ -41,16 +42,17 @@ export async function setPreferredMode(mode: ViewMode): Promise<{ ok: boolean }>
 export async function resolveInitialMode(): Promise<ViewMode | null> {
   const supabase = await createClient();
   if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioExigido(supabase);
   if (!user) return null;
 
-  const { data: profile } = await supabase
+  const { data: profile, error: erroPerfil } = await supabase
     .from("profiles")
     .select("preferred_mode, role")
     .eq("id", user.id)
     .maybeSingle();
+  // E653: a falha de leitura LANÇA — "perfil sem papel" (conta nova → null) é outra coisa. Quem chama (a casca) marca o
+  // modo como indisponível e o ModeInitializer relê, em vez de abandonar o papel salvo pelo padrão do navegador.
+  if (erroPerfil) throw new Error("Não foi possível ler o modo agora.");
 
   // (a) preferência salva vence sempre.
   const pm = profile?.preferred_mode;
@@ -61,10 +63,11 @@ export async function resolveInitialMode(): Promise<ViewMode | null> {
   if (role === "admin" || role === "owner") return "owner";
 
   // (b) proprietário "de fato": tem ao menos um imóvel cadastrado.
-  const { count } = await supabase
+  const { count, error: erroImoveis } = await supabase
     .from("properties")
     .select("id", { count: "exact", head: true })
     .eq("owner_id", user.id);
+  if (erroImoveis) throw new Error("Não foi possível ler o modo agora.");
   if ((count ?? 0) > 0) return "owner";
 
   if (role === "tenant") return "tenant";

@@ -25,7 +25,8 @@ test("cadastro: três estados (carregando / achou / não achou) e o aviso sem en
 
 test("cadastro: cada lugar no cartão de marcar 'Mostrar no anúncio' (E193, reteste de 30/10) e 'Está errado'", () => {
   const b = ler("components/anuncio/blocos-cadastro.tsx");
-  assert.match(b, /<CartaoEscolha\s+papel="switch"\s+on=\{marcado\}\s+onClick=\{onAlternar\}\s+aria-label=\{`Mostrar \$\{l\.nome\} no anúncio`\}\s+testid="proximidade-mostrar"/);
+  // E605: desligar passa pela confirmação do padrão TOGGLE (ligar segue direto).
+  assert.match(b, /<CartaoEscolha\s+papel="switch"\s+on=\{marcado\}\s+onClick=\{\(\) => \(aoDesligar\(marcado\) === "confirmar" \? setConfirmandoOcultar\(true\) : onAlternar\(\)\)\}\s+aria-label=\{`Mostrar \$\{l\.nome\} no anúncio`\}\s+testid="proximidade-mostrar"/);
   assert.match(b, /data-testid="proximidade-errado"[\s\S]{0,40}Está errado/);
   assert.doesNotMatch(b, /aria-pressed=\{marcado\}/);
 });

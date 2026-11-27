@@ -5,8 +5,8 @@ import { Megaphone } from "lucide-react";
 import { listProperties } from "@/lib/data/properties";
 import { resolverDestino, temposAte } from "@/lib/data/tempos";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isExemplo, ehAnuncioDeTeste } from "@/lib/demo-listing";
-import { chaveCidade } from "@/lib/cidades";
+import { isExemplo } from "@/lib/demo-listing";
+import { baseDoPertoDe } from "@/lib/perto-de";
 import { PropertyCard } from "@/components/property-card";
 import { PropertyMap } from "@/components/property-map-lazy";
 import { buttonClasses } from "@/components/ui/button";
@@ -24,12 +24,13 @@ const pertoDe = (nome: string, artigo: string) => `perto ${artigo === "o" ? "do"
 async function dadosDaPagina(slug: string) {
   const admin = createAdminClient();
   if (!admin || !/^[a-z0-9-]{2,60}$/.test(slug)) return null;
-  const { data: d } = await admin.from("destinos").select("nome, artigo, cidade, uf").eq("slug", slug).eq("ativo", true).maybeSingle();
+  const { data: d, error } = await admin.from("destinos").select("nome, artigo, cidade, uf").eq("slug", slug).eq("ativo", true).maybeSingle();
+  // Achado 126: a falha não vira 404 numa página pública indexada — cai no aviso de erro do site.
+  if (error) throw new Error("Não foi possível abrir esta página agora.");
   const destino = d ? await resolverDestino({ destino: slug }, admin) : null;
   if (!d || !destino) return null;
-  const daCidade = (await listProperties()).filter(
-    (p) => chaveCidade(p.city ?? "") === chaveCidade(d.cidade as string) && !isExemplo(p.id) && !ehAnuncioDeTeste(p.title),
-  );
+  // E889: a MESMA base da região/busca (exemplos enquanto não há real) — antes descartava todo exemplo e abria vazia.
+  const daCidade = baseDoPertoDe(await listProperties(), d.cidade as string, (p) => isExemplo(p.id));
   const { itens } = await temposAte(destino, "carro", { ids: daCidade.map((p) => p.id) }, admin);
   const tempo = new Map(itens.map((i) => [i.id, i]));
   const imoveis = [...daCidade].sort((a, b) => (tempo.get(a.id)?.min ?? 999) - (tempo.get(b.id)?.min ?? 999));

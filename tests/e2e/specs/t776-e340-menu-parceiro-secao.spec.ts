@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { randomBytes } from "node:crypto";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T776 — E340 (01/11): no painel do parceiro (página única com #pedidos, #agenda, #ganhos), a aba acesa acompanha a
@@ -33,7 +33,7 @@ test.describe("T776 — E340: a aba acompanha a seção do painel do parceiro", 
     await adm().from("profiles").update({ is_teste: true }).eq("id", id);
     const { error } = await adm()
       .from("parceiros")
-      .insert({ user_id: id, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Faxina E340 ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() });
+      .insert({ user_id: id, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Faxina E340 ${sufixo}`, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() });
     if (error) throw error;
   });
   test.afterAll(async () => {

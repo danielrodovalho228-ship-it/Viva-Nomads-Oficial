@@ -1,7 +1,7 @@
 /* Roda: node --test src/lib/admin/decisoes-admin.test.ts — Prompt 46: "Hoje você tem N decisões" no /admin. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DECISOES_ADMIN, avisoSemLeitura, haQuantoTempo, juntarParcerias, montarDecisoesAdmin, tituloDecisoesAdmin } from "./decisoes-admin.ts";
+import { DECISOES_ADMIN, avisoSemLeitura, decisoesForaDaCentral, haQuantoTempo, juntarParcerias, montarDecisoesAdmin, tituloDecisoesAdmin } from "./decisoes-admin.ts";
 
 test("as 6 decisões do Prompt 46 existem, cada uma com botão e lista do admin", () => {
   const chaves = DECISOES_ADMIN.map((d) => d.chave);
@@ -37,6 +37,12 @@ test("só entram linhas com n > 0; N é a soma; ordem de urgência (P1 antes de 
     parceiros_sem_resposta_1_dia: { n: 0 },
     verificacao_analise_humana: { n: 0 },
     correcoes_sem_dono: { n: 0 },
+    // E1163: as três filas da avaliação também foram lidas (a zero); sem elas na entrada, iam para "sem leitura".
+    avaliacao_sem_avaliador: { n: 0 },
+    avaliacao_laudo_atrasado: { n: 0 },
+    avaliacao_credenciamento: { n: 0 },
+    // E1175: a fila dos pedidos que esperam o morador também foi lida (a zero).
+    avaliacao_espera_moradora: { n: 0 },
   });
   assert.equal(r.total, 7);
   assert.deepEqual(r.linhas.map((l) => l.chave), ["chamados_p1", "backup", "documentos_pendentes", "encerramentos"]);
@@ -86,7 +92,7 @@ test("Prompt 50: chamado fora da promessa vem antes de P1; parceria sem resposta
   const r = montarDecisoesAdmin({ chamados_p1: { n: 1 }, chamados_fora_promessa: { n: 2 }, parceiros_para_aprovar: { n: 1 }, parceiros_sem_resposta_1_dia: { n: 1 }, verificacao_analise_humana: { n: 1 } });
   assert.deepEqual(r.linhas.map((l) => l.chave).slice(0, 2), ["chamados_fora_promessa", "chamados_p1"]);
   assert.equal(r.linhas[0].texto, "2 chamados sem resposta de uma pessoa há mais de 24 h");
-  assert.ok(r.linhas.some((l) => l.chave === "parceiros_para_aprovar" && l.href === "/admin/parceiros?aba=pendentes" && l.detalhe === "1 sem resposta há mais de 1 dia útil"));
+  assert.ok(r.linhas.some((l) => l.chave === "parceiros_para_aprovar" && l.href === "/admin/parceiros?aba=pendentes" && l.detalhe === "1 sem resposta há mais de 7 dias")); // E791 (vigia, 12/11/2026): o alerta à equipe usa o MESMO prazo público da parceria (PRAZO_RESPOSTA_PARCERIA, 7 dias); antes, 1 dia útil
   assert.ok(r.linhas.some((l) => l.chave === "verificacao_analise_humana" && l.href === "/admin/documentos#verificacao"));
 });
 
@@ -98,12 +104,12 @@ test("Prompt 51: Correção de qualidade sem dono ou prazo vira decisão e abre 
 });
 
 test("E175: a parceria atrasada conta uma vez só — o total bate com a lista da aba Pendentes", () => {
-  // 5 parcerias pendentes, 3 delas sem resposta há mais de 1 dia útil: eram 2 linhas (5 + 3 = 8), agora 1 linha de 5.
+  // 5 parcerias pendentes, 3 delas sem resposta além do prazo da parceria: eram 2 linhas (5 + 3 = 8), agora 1 linha de 5.
   const r = montarDecisoesAdmin({ parceiros_para_aprovar: { n: 5 }, parceiros_sem_resposta_1_dia: { n: 3, detalhe: "mais antigo há 2 dias" } });
   assert.equal(r.total, 5);
   assert.equal(r.linhas.length, 1);
   assert.equal(r.linhas[0].texto, "5 pedidos de parceria para aprovar");
-  assert.equal(r.linhas[0].detalhe, "3 sem resposta há mais de 1 dia útil · mais antigo há 2 dias");
+  assert.equal(r.linhas[0].detalhe, "3 sem resposta há mais de 7 dias · mais antigo há 2 dias"); // E791 (vigia, 12/11/2026): o alerta à equipe usa o MESMO prazo público da parceria (PRAZO_RESPOSTA_PARCERIA, 7 dias); antes, 1 dia útil
   assert.equal(r.linhas[0].acao, "Analisar");
   assert.ok(!DECISOES_ADMIN.some((d) => d.chave === "parceiros_sem_resposta_1_dia"), "sem a segunda linha");
   // Nenhuma atrasada: a linha das pendentes fica como era; atrasadas sem ler as pendentes: fica fora da conta (avisa).
@@ -144,4 +150,65 @@ test("E330: a página da Central não tem mais o topo 'Hoje você tem N decisõe
   assert.match(pg, /const total = totalCentral \+ \(outras\?\.total \?\? 0\)/);
   assert.match(pg, /central\.linhas\.length === 0 && !outras\?\.linhas\.length/);
   assert.match(pg, /<LinhaDecisao key=/);
+});
+
+test("E474 (i): as decisões de outras telas aparecem uma vez só na Central — na lista, não repetidas no topo", async () => {
+  const { readFileSync } = await import("node:fs");
+  const pg = readFileSync(new URL("../../app/(dashboard)/admin/pendencias/page.tsx", import.meta.url), "utf8");
+  // Na lista "Todas as pendências": um item por decisão, com detalhe e ação.
+  assert.equal((pg.match(/outras\?\.linhas\.map\(/g) ?? []).length, 1);
+  assert.match(pg, /\{outras\?\.linhas\.map\(\(l\) => \(\s*<LinhaDecisao key=/);
+  // No topo, nada de repetir as mesmas decisões (antes: `extras` com o mesmo texto e o mesmo botão).
+  assert.doesNotMatch(pg, /const extras = /);
+  assert.doesNotMatch(pg, /central-decisao-\$\{/);
+  // O título continua contando a fila inteira (E330).
+  assert.match(pg, /const total = totalCentral \+ \(outras\?\.total \?\? 0\)/);
+});
+
+// ── E1163 (ORDENS-DUET 684 e 685): as três filas da avaliação entram no "Para decidir" ─────────────────────────────
+test("E1163: as três filas da avaliação existem, junto das parcerias, e cada uma leva à sua seção dos avaliadores", () => {
+  const def = (chave: string) => DECISOES_ADMIN.find((d) => d.chave === chave)!;
+  assert.deepEqual(
+    ["avaliacao_sem_avaliador", "avaliacao_laudo_atrasado", "avaliacao_credenciamento"].map((c) => ({ chave: c, href: def(c).href, acao: def(c).acao })),
+    [
+      { chave: "avaliacao_sem_avaliador", href: "/admin/avaliadores#sem-avaliador", acao: "Ver" },
+      { chave: "avaliacao_laudo_atrasado", href: "/admin/avaliadores#contestacoes", acao: "Cobrar" },
+      { chave: "avaliacao_credenciamento", href: "/admin/avaliadores#credenciamento", acao: "Decidir" },
+    ],
+  );
+  // São filas de rede: ficam logo depois das parcerias para aprovar, na ordem da folha.
+  const ordem = DECISOES_ADMIN.map((d) => d.chave);
+  const i = ordem.indexOf("parceiros_para_aprovar");
+  assert.deepEqual(ordem.slice(i + 1, i + 4), ["avaliacao_sem_avaliador", "avaliacao_laudo_atrasado", "avaliacao_credenciamento"]);
+});
+
+test("E1163: as três somam no total, com o texto no singular e no plural e o 'mais antigo' no detalhe", () => {
+  const r = montarDecisoesAdmin({
+    avaliacao_sem_avaliador: { n: 1, detalhe: "mais antigo há 9 dias" },
+    avaliacao_laudo_atrasado: { n: 2, detalhe: "mais antigo há 5 h" },
+    avaliacao_credenciamento: { n: 3 },
+    chamados_p1: { n: 1 },
+  });
+  assert.equal(r.total, 7);
+  const linha = (chave: string) => r.linhas.find((l) => l.chave === chave)!;
+  assert.equal(linha("avaliacao_sem_avaliador").texto, "1 pedido de avaliação sem avaliador elegível");
+  assert.equal(linha("avaliacao_sem_avaliador").detalhe, "mais antigo há 9 dias");
+  assert.equal(linha("avaliacao_laudo_atrasado").texto, "2 laudos de avaliação atrasados");
+  assert.equal(linha("avaliacao_credenciamento").texto, "3 credenciamentos de avaliador para decidir");
+  assert.equal(montarDecisoesAdmin({ avaliacao_sem_avaliador: { n: 4 }, avaliacao_laudo_atrasado: { n: 1 }, avaliacao_credenciamento: { n: 1 } }).linhas.map((l) => l.texto).join(" | "), "4 pedidos de avaliação sem avaliador elegível | 1 laudo de avaliação atrasado | 1 credenciamento de avaliador para decidir");
+});
+
+test("E1163: fila da avaliação que não pôde ser lida não vira zero — fica fora da soma e a tela avisa", () => {
+  const r = montarDecisoesAdmin({ avaliacao_sem_avaliador: null, avaliacao_laudo_atrasado: { n: null }, avaliacao_credenciamento: { n: 2 } });
+  assert.equal(r.total, 2);
+  assert.ok(r.semLeitura.includes("avaliacao_sem_avaliador") && r.semLeitura.includes("avaliacao_laudo_atrasado"));
+  assert.ok(!r.semLeitura.includes("avaliacao_credenciamento"));
+  assert.equal(avisoSemLeitura(["avaliacao_sem_avaliador", "avaliacao_laudo_atrasado"]), "Não deu para ler agora: avaliações sem avaliador e laudos de avaliação. Essas filas ficam fora da conta.");
+});
+
+test("E1163: nenhuma das três é filtro da Central — entram na fila dela como decisões das outras telas", () => {
+  const d = montarDecisoesAdmin({ avaliacao_sem_avaliador: { n: 1 }, avaliacao_laudo_atrasado: { n: 1 }, avaliacao_credenciamento: { n: 1 }, fotos_nivel: { n: 5 } });
+  const fora = decisoesForaDaCentral(d)!;
+  assert.deepEqual(fora.linhas.map((l) => l.chave), ["avaliacao_sem_avaliador", "avaliacao_laudo_atrasado", "avaliacao_credenciamento"]);
+  assert.equal(fora.total, 3);
 });

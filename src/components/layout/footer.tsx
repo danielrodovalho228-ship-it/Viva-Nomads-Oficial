@@ -1,8 +1,12 @@
 import Link from "next/link";
+import { PROMESSA_ESTADIA } from "@/config/textos-regulados";
 import { Logo } from "@/components/ui/logo";
 import { CITIES } from "@/lib/constants";
 import { SUPORTE_EMAIL } from "@/lib/site";
 import { RedesOficiais } from "@/components/layout/redes-oficiais";
+import { PRECOS_VISIVEL } from "@/config/precos-visivel";
+import { EntrarNoRodape } from "@/components/layout/entrar-no-rodape";
+import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
 
 export function Footer() {
   return (
@@ -11,10 +15,12 @@ export function Footer() {
         <div className="md:col-span-1">
           <Logo href="/" light />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
-            Imóveis mobiliados para estadias de 30 a 180 dias, para profissionais em transição.
+            Imóveis mobiliados para profissionais em transição. {PROMESSA_ESTADIA}.
             Contrato de verdade, conversa registrada e custos organizados.
           </p>
-          <p className="mt-4 text-sm text-white/60">
+          {/* E994: a 1280 px a coluna tem ~264 px e a frase ~261 px — cabia por 3 px e quebrava em duas no navegador do
+              GitHub. A partir de xl ela não quebra (sobra o vão de 48 px da grade); abaixo, a coluna é estreita e quebra. */}
+          <p className="mt-4 text-sm text-white/60 xl:whitespace-nowrap">
             Suporte:{" "}
             <a href={`mailto:${SUPORTE_EMAIL}`} className="font-semibold text-white/80 hover:text-white">
               {SUPORTE_EMAIL}
@@ -32,9 +38,13 @@ export function Footer() {
           <FooterLink href="/para-proprietarios">Para proprietários</FooterLink>
           <FooterLink href="/empresas">Para empresas</FooterLink>
           <FooterLink href="/parceiros">Parceiros</FooterLink>
-          <FooterLink href="/precos">Preços</FooterLink>
+          {/* E555: o rodapé leva a /planos (a página de planos e taxas). */}
+          {PRECOS_VISIVEL && <FooterLink href="/planos">Preços</FooterLink>}
           <FooterLink href="/seguranca">Sua segurança</FooterLink>
           <FooterLink href="/ajuda">Central de Ajuda</FooterLink>
+          {/* E851: o contato vigente e a página institucional. */}
+          <FooterLink href={HREF_FALE_COM_A_VIVA}>Fale com a Viva</FooterLink>
+          <FooterLink href="/sobre">Sobre a Viva</FooterLink>
           <FooterLink href="/guias">Guias</FooterLink>
         </FooterCol>
 
@@ -47,7 +57,8 @@ export function Footer() {
         </FooterCol>
 
         <FooterCol title="Conta">
-          <FooterLink href="/auth">Entrar ou cadastrar</FooterLink>
+          {/* E467: "Entrar ou cadastrar" só para quem não está logado (lê a sessão no navegador). */}
+          <EntrarNoRodape />
           <FooterLink href="/dashboard/imoveis/novo">Anunciar imóvel (com login)</FooterLink>
           <FooterLink href="/dashboard">Meu painel</FooterLink>
           <FooterLink href="/termos">Termos de Uso</FooterLink>

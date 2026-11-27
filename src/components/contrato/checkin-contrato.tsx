@@ -108,7 +108,7 @@ export function CheckinContrato({
       )}
 
       {!podeEditar && info.dados && (
-        <div className="rounded-xl bg-sage-50 p-4 text-sm text-ink" data-testid="checkin-instrucoes-lidas">
+        <div className="rounded-xl bg-sage-100 p-4 text-sm text-ink" data-testid="checkin-instrucoes-lidas">
           <p className="flex items-center gap-2 font-medium">
             <KeyRound className="h-4 w-4" aria-hidden /> Entrada às {info.dados.horario}
           </p>

@@ -7,7 +7,8 @@ import { readFileSync } from "node:fs";
 test("Meus anúncios cai no draft_data para o rascunho sem capa (só arquivo existente)", () => {
   const src = readFileSync(new URL("./properties.ts", import.meta.url), "utf8");
   const fn = src.slice(src.indexOf("export async function listMyProperties"), src.indexOf("export async function listMyProperties") + 4000);
-  assert.match(fn, /p\.status === "draft" && !\(p\.photos \?\? \[\]\)\.some\(ehUrlDeImagem\)/);
+  // E513 (D-S2-09 A): a regra passou a valer para todo anúncio sem capa (o rascunho continua coberto).
+  assert.match(fn, /lista\.filter\(\(p\) => !\(p\.photos \?\? \[\]\)\.some\(ehUrlDeImagem\)\)/);
   assert.match(fn, /supabase\.rpc\("property_private_details", \{ prop_id: p\.id \}\)/);
   assert.match(fn, /capaDoDraftData\(row\?\.draft_data \?\? null, user\.id, existentes\)/);
   assert.ok(fn.indexOf("arquivosDoDono") < fn.indexOf("capaDoDraftData"), "existentes calculado antes");

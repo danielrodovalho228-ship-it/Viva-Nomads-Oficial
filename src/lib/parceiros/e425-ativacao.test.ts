@@ -141,10 +141,10 @@ test("painel: só a conta do pedido aprovado, com e-mail confirmado, ativa", () 
 
 test("telas: o link e o painel usam o mesmo núcleo; ativada, o parceiro entra no painel completo", () => {
   const acoes = ler("src/lib/parceiros/ativacao-actions.ts");
-  assert.match(acoes, /return concluirAtivacao\(admin, sol as unknown as SolicitacaoAtivavel, user\.id, "Este link já foi usado\."\);/);
+  assert.match(acoes, /const r = await concluirAtivacao\(admin, sol as unknown as SolicitacaoAtivavel, user\.id, "Este link já foi usado\."\);/);
   assert.match(acoes, /export async function ativarPeloPainel\(\)/);
   assert.match(acoes, /\.find\(\(x\) => podeAtivarPeloPainel\(x, conta\)\)/);
-  assert.match(acoes, /return concluirAtivacao\(admin, sol, user\.id\);/);
+  assert.match(acoes, /const r = await concluirAtivacao\(admin, sol, user\.id\);/);
   const painel = ler("src/app/(dashboard)/dashboard/parceiro/page.tsx");
   assert.match(painel, /sol\?\.status === "aprovada" \?[\s\S]{0,700}<AtivarNoPainel \/>/);
   assert.match(painel, /const painel = await meuPainelParceiro\(\{ exigir: true \}\);\s*if \(painel\)/);

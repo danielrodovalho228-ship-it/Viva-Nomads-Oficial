@@ -4,11 +4,14 @@ import { useState } from "react";
 import { Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
-import { PORTA_GESTOR_TEXTO } from "@/config/planos";
+import { CARTEIRAS_MINIMO_IMOVEIS } from "@/config/planos";
 
 /**
- * "Falar sobre o Plano Gestor" (a partir de GESTOR_PRECO.minimoImoveis imóveis): botão secundário que abre o formulário numa janela à parte
- * (gaveta no celular, modal no computador) — nunca se expande no meio da tabela (prompt 13).
+ * Prompt 078 (16/11/2026): o pedido de contato "Fale com a Viva sobre carteiras" (carteira a partir de
+ * CARTEIRAS_MINIMO_IMOVEIS imóveis ou administradora) — os mesmos campos do antigo formulário do Plano Gestor, sem taxa,
+ * sem "plano" e sem promessa de ferramenta exclusiva ou cadastro assistido. Botão secundário que abre o formulário numa
+ * janela à parte (gaveta no celular, modal no computador) — nunca se expande no meio da tabela (prompt 13).
+ * O nome do arquivo, da rota (/api/plano-gestor) e dos data-testid ficou o de antes: não é texto de tela.
  */
 export function PlanoGestorForm({ className }: { className?: string }) {
   const [aberto, setAberto] = useState(false);
@@ -47,16 +50,16 @@ export function PlanoGestorForm({ className }: { className?: string }) {
   return (
     <>
       <Button type="button" variant="secondary" size="lg" className={className} onClick={() => setAberto(true)} data-testid="plano-gestor-botao">
-        Falar sobre o Plano Gestor
+        Falar com a Viva sobre carteiras
       </Button>
-      <BottomSheet open={aberto} onClose={() => setAberto(false)} title="Plano Gestor">
+      <BottomSheet open={aberto} onClose={() => setAberto(false)} title="Fale com a Viva sobre carteiras">
         {ok ? (
           <p className="flex items-start gap-2 text-sm text-ink" role="status" data-testid="plano-gestor-ok">
             <Check className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden /> Recebemos seu contato. Nosso time responde no e-mail informado.
           </p>
         ) : (
           <form onSubmit={enviar} className="grid gap-3" data-testid="plano-gestor-form">
-            <p className="text-sm text-muted">Para {PORTA_GESTOR_TEXTO}: condições negociadas com o time da Viva. Entre em contato.</p>
+            <p className="text-sm text-muted">Para carteira a partir de {CARTEIRAS_MINIMO_IMOVEIS} imóveis ou administradora de imóveis. Conte sobre a sua carteira e o time da Viva fala com você.</p>
             <label className="block">
               <span className="mb-1 block text-sm font-medium text-ink">Nome</span>
               <input required maxLength={100} value={nome} onChange={(e) => setNome(e.target.value)} className={inputCls} autoComplete="name" />

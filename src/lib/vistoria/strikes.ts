@@ -114,7 +114,7 @@ export function imovelComStrike(strikes: readonly Strike[], propertyId: string, 
 export function textoDegrau(d: Degrau): string {
   switch (d) {
     case 1:
-      return "Primeiro registro: o imóvel perde o \"· vistoriado\" e segue publicado.";
+      return "Primeiro registro: o imóvel perde o selo “vistoriado” e segue publicado.";
     case 2:
       return "Aviso formal de última chance: a nova publicação deste imóvel só volta com laudo aprovado.";
     case 3:

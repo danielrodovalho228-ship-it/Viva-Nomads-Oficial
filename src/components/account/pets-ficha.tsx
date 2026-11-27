@@ -172,7 +172,7 @@ export function PetsFicha() {
                       <span className="text-xs text-muted" data-testid={`pet-max-fotos-${p.nome}`}>{TEXTO_MAX_FOTOS_PET}</span>
                     )}
                     {podeAdicionarFotoPet("foto", p.fotos.length) && (
-                      <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 px-3 text-xs font-medium text-ink hover:bg-sage-50">
+                      <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 px-3 text-xs font-medium text-ink hover:bg-sage-100">
                         <Camera className="h-4 w-4" /> {enviando === p.id ? "Enviando…" : `Foto (${p.fotos.length}/${MAX_FOTOS_PET})`}
                         <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={`Enviar foto de ${p.nome}`} disabled={enviando === p.id} onChange={(e) => { void enviar(p.id, "foto", e.target.files?.[0]); e.target.value = ""; }} />
                       </label>
@@ -182,17 +182,17 @@ export function PetsFicha() {
                     {p.carteira ? (
                       <span className="inline-flex items-center gap-2">
                         <a href={p.carteira.url} target="_blank" rel="noopener noreferrer" className="font-medium text-forest underline">Carteira de vacina enviada</a>
-                        <button type="button" onClick={() => tirarImagem(p.id, p.carteira!.caminho)} aria-label={`Remover carteira de vacina de ${p.nome}`} className="rounded-lg p-1 hover:bg-sage-50"><X className="h-3 w-3" /></button>
+                        <button type="button" onClick={() => tirarImagem(p.id, p.carteira!.caminho)} aria-label={`Remover carteira de vacina de ${p.nome}`} className="rounded-lg p-1 hover:bg-sage-100"><X className="h-3 w-3" /></button>
                       </span>
                     ) : (
-                      <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 px-3 font-medium text-ink hover:bg-sage-50">
+                      <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-sage-200 px-3 font-medium text-ink hover:bg-sage-100">
                         {enviando === p.id ? "Enviando…" : "Enviar foto da carteira de vacina"}
                         <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={`Enviar carteira de vacina de ${p.nome}`} disabled={enviando === p.id} onChange={(e) => { void enviar(p.id, "carteira", e.target.files?.[0]); e.target.value = ""; }} />
                       </label>
                     )}
                   </div>
                 </div>
-                <button type="button" onClick={() => tirar(p.id)} aria-label={`Remover ${p.nome}`} className="rounded-lg p-2 text-muted hover:bg-sage-50">
+                <button type="button" onClick={() => tirar(p.id)} aria-label={`Remover ${p.nome}`} className="rounded-lg p-2 text-muted hover:bg-sage-100">
                   <Trash2 className="h-4 w-4" />
                 </button>
               </li>

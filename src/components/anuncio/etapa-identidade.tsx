@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
+import { comoEmBreve } from "@/lib/identidade/estado";
 import Link from "next/link";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { buttonClasses } from "@/components/ui/button";
@@ -42,7 +43,7 @@ export function EtapaIdentidade({ onConfirmada }: { onConfirmada?: () => void })
     ? "carregando"
     : id.estado === "confirmada"
       ? "ok"
-      : id.estado === "em_breve"
+      : comoEmBreve(id.estado)
         ? "em_breve"
         : !s.temCpf
           ? "sem_cpf"

@@ -17,7 +17,8 @@ import { nomeCompletoLimpo } from "@/lib/display-name";
 import { friendlyAuthError, MIN_PASSWORD } from "@/lib/auth-errors";
 import { elevarParaAal2 } from "@/lib/seguranca/elevar-aal2";
 import { Switch } from "@/components/ui/switch";
-import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, type MeuDocumento } from "@/lib/data/perfil-actions";
+import { getMeusDados, salvarMeusDados, getMeuDocumento, salvarMeuDocumento, salvarMinhaNotaLocacao, type MeuDocumento } from "@/lib/data/perfil-actions";
+import { AJUDA_NOTA_LOCACAO, PENDENCIA_NOTA_LOCACAO, PERGUNTA_NOTA_LOCACAO } from "@/lib/fiscal/nota-locacao";
 import { getAlertasEquipe, getNotifPrefs, setAlertasEquipe, setNotifPrefs } from "@/lib/data/pedidos-actions";
 import { getCategoriasDesligadas, setCategoriasDesligadas } from "@/lib/data/notif-categorias-actions";
 import { CATEGORIAS_COM_INTERRUPTOR, ROTULO_CATEGORIA, type CategoriaComInterruptor } from "@/config/matriz-notificacoes";
@@ -47,9 +48,14 @@ export function DadosPessoais() {
   const [nascimento, setNascimento] = useState("");
   // Estados vazios: a data não carregou → o campo fica travado e salvar não mexe nela (vazio apagaria a gravada).
   const [nascFalhou, setNascFalhou] = useState(false);
+  // E796: a data gravada ainda não chegou → o campo espera (senão a leitura atrasada apagava o que a pessoa digitou) e
+  // salvar não mexe na data (vazio apagaria a gravada), como o telefone desde o E372.
+  const [nascCarregado, setNascCarregado] = useState(false);
   const [documento, setDocumento] = useState<MeuDocumento | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [dadosFalharam, setDadosFalharam] = useState(false);
+  // E372: enquanto os dados gravados não chegam, o telefone não é editável nem o formulário salva (vazio apagaria o telefone real).
+  const [dadosCarregados, setDadosCarregados] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
 
@@ -58,7 +64,9 @@ export function DadosPessoais() {
     let vivo = true;
     getMeusDados()
       .then((d) => {
-        if (!vivo || !d) return;
+        if (!vivo) return;
+        setDadosCarregados(true);
+        if (!d) return;
         setNome(nomeCompletoLimpo(d.fullName));
         setTelefone(d.phone);
         setEmail(d.email);
@@ -71,7 +79,11 @@ export function DadosPessoais() {
         setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
       });
     getNascimento()
-      .then((n) => vivo && setNascimento(n))
+      .then((n) => {
+        if (!vivo) return;
+        setNascimento(n);
+        setNascCarregado(true);
+      })
       .catch(() => vivo && setNascFalhou(true));
     getMeuDocumento()
       .then((d) => vivo && setDocumento(d))
@@ -84,6 +96,8 @@ export function DadosPessoais() {
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (dadosFalharam) return setErro("Não foi possível carregar seus dados agora. Recarregue a página antes de salvar.");
+    if (!dadosCarregados) return; // E372: não salva por cima do telefone gravado antes de ele chegar.
+    if (!nascCarregado && !nascFalhou) return; // E796: idem para a data de nascimento.
     setErro(null);
     setOk(false);
     const nasc = nascFalhou ? ({ ok: true } as const) : validarNascimento(nascimento);
@@ -139,18 +153,24 @@ export function DadosPessoais() {
         />
         <div>
           <CampoDados label={pj ? "CNPJ" : "CPF"} value={docMascarado ?? ""} readOnly placeholder="Ainda não informado" data-testid="dados-documento" />
+          {/* E372: o documento é pedido UMA vez, no bloco "Documento" abaixo. Aqui o campo só MOSTRA o já informado; sem ele, um aviso
+              com o caminho (antes o link dizia "Informar CPF", e a tela parecia pedir o CPF duas vezes). */}
           {documento && !docMascarado && (
-            <a href="#documento" className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-2">
-              Informar {pj ? "CNPJ" : "CPF"}
-            </a>
+            <p className="mt-1 text-sm text-muted" data-testid="dados-documento-aviso">
+              Informe no{" "}
+              <a href="#documento" className="inline-flex min-h-11 items-center font-semibold text-forest underline underline-offset-2">
+                bloco Documento, abaixo
+              </a>
+              .
+            </p>
           )}
         </div>
         <CampoDados
           label="Data de nascimento"
           value={nascimento}
           onChange={(e) => setNascimento(mascararNascimento(e.target.value))}
-          placeholder={nascFalhou ? AVISO_NASCIMENTO_FALHOU : "dd/mm/aaaa"}
-          disabled={nascFalhou}
+          placeholder={nascFalhou ? AVISO_NASCIMENTO_FALHOU : nascCarregado ? "dd/mm/aaaa" : "Carregando…"}
+          disabled={nascFalhou || !nascCarregado}
           inputMode="numeric"
           autoComplete="bday"
           data-testid="dados-nascimento"
@@ -159,9 +179,11 @@ export function DadosPessoais() {
           label="Telefone"
           value={telefone}
           onChange={(e) => setTelefone(e.target.value)}
-          placeholder="(34) 99999-0000 ou +1 …"
+          placeholder={dadosCarregados || dadosFalharam ? "(34) 99999-0000 ou +1 …" : "Carregando…"}
+          disabled={!dadosCarregados}
           inputMode="tel"
           autoComplete="tel"
+          data-testid="dados-telefone"
         />
         <label className="block">
           <span className="mb-1 block text-sm text-muted">E-mail:</span>
@@ -191,7 +213,7 @@ export function DadosPessoais() {
             <Check className="h-4 w-4" /> Dados salvos.
           </p>
         )}
-        <Button type="submit" size="lg" variant="outline" className="w-full" disabled={salvando} data-testid="dados-salvar">
+        <Button type="submit" size="lg" variant="outline" className="w-full" disabled={salvando || !dadosCarregados || (!nascCarregado && !nascFalhou)} data-testid="dados-salvar">
           {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Salvar
         </Button>
@@ -212,6 +234,35 @@ function CampoDados({ label, ...props }: { label: string } & React.InputHTMLAttr
 }
 
 /**
+ * E574: a pergunta da nota fiscal da locação (só PJ/MEI), Sim/Não. No documento novo é obrigatória (o servidor recusa
+ * sem resposta); com o documento já cadastrado, aparece como pendência quando falta, sem bloquear nada.
+ */
+function PerguntaNotaLocacao({ valor, onChange, pendente, desabilitado }: { valor: boolean | null; onChange: (v: boolean) => void; pendente?: boolean; desabilitado?: boolean }) {
+  return (
+    <fieldset className="mt-4 sm:col-span-2" data-testid="nota-locacao">
+      <legend className="text-sm font-medium text-ink">{PERGUNTA_NOTA_LOCACAO}</legend>
+      {pendente && (
+        <p className="mt-1 text-sm text-amber-700" data-testid="nota-locacao-pendencia">
+          {PENDENCIA_NOTA_LOCACAO}
+        </p>
+      )}
+      <div className="mt-2 flex gap-6">
+        {[
+          { v: true, rotulo: "Sim" },
+          { v: false, rotulo: "Não" },
+        ].map((o) => (
+          <label key={o.rotulo} className="flex min-h-11 items-center gap-2 text-ink">
+            <input type="radio" name="nota-locacao" checked={valor === o.v} disabled={desabilitado} onChange={() => onChange(o.v)} className="h-5 w-5 accent-forest" data-testid={`nota-locacao-${o.v ? "sim" : "nao"}`} />
+            {o.rotulo}
+          </label>
+        ))}
+      </div>
+      <p className="mt-1 text-[13px] text-muted">{AJUDA_NOTA_LOCACAO}</p>
+    </fieldset>
+  );
+}
+
+/**
  * Documento (CPF ou CNPJ) — Cadastro confiável. Vai no contrato, na cobrança e
  * na nota. Depois de salvo aparece só MASCARADO; para trocar, fala com o suporte.
  */
@@ -221,6 +272,9 @@ export function DocumentoPessoa() {
   const [cnpj, setCnpj] = useState("");
   const [razao, setRazao] = useState("");
   const [cpfRep, setCpfRep] = useState("");
+  const [notaLoc, setNotaLoc] = useState<boolean | null>(null);
+  const [salvandoNota, setSalvandoNota] = useState(false);
+  const [erroNota, setErroNota] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
@@ -251,7 +305,7 @@ export function DocumentoPessoa() {
     e.preventDefault();
     setErro(null);
     setSalvando(true);
-    const r = await salvarMeuDocumento(doc?.tipo === "pj" ? { cnpj, razaoSocial: razao, cpfRepresentante: cpfRep } : { cpf }).catch(() => ({
+    const r = await salvarMeuDocumento(doc?.tipo === "pj" ? { cnpj, razaoSocial: razao, cpfRepresentante: cpfRep, emiteNotaLocacao: notaLoc } : { cpf }).catch(() => ({
       ok: false as const,
       error: "Sem conexão. Tente de novo.",
       documento: undefined,
@@ -260,6 +314,15 @@ export function DocumentoPessoa() {
     if (!r.ok) return setErro(r.error ?? "Não foi possível salvar.");
     if (r.documento) setDoc(r.documento);
     setOk(true);
+  }
+
+  async function salvarNota(v: boolean) {
+    setErroNota(null);
+    setSalvandoNota(true);
+    const r = await salvarMinhaNotaLocacao(v).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo.", documento: undefined }));
+    setSalvandoNota(false);
+    if (!r.ok) return setErroNota(r.error ?? "Não foi possível salvar.");
+    if (r.documento) setDoc(r.documento);
   }
 
   if (doc === undefined || doc === null) {
@@ -322,6 +385,16 @@ export function DocumentoPessoa() {
             <p className="flex items-center gap-2 text-sm text-forest sm:col-span-2">
               <Check className="h-4 w-4" /> Documento cadastrado. Para trocar, fale com o suporte.
             </p>
+            {pj && (
+              <>
+                <PerguntaNotaLocacao valor={doc.emiteNotaLocacao} onChange={salvarNota} pendente={doc.faltaNotaLocacao} desabilitado={salvandoNota} />
+                {erroNota && (
+                  <p role="alert" className="text-sm text-red-600 sm:col-span-2">
+                    {erroNota}
+                  </p>
+                )}
+              </>
+            )}
           </div>
         ) : (
           <form onSubmit={salvar} className="mt-4">
@@ -331,6 +404,7 @@ export function DocumentoPessoa() {
                   <Field label="CNPJ" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" inputMode="numeric" required />
                   <Field label="Razão social" value={razao} onChange={(e) => setRazao(e.target.value)} placeholder="Como está no cartão do CNPJ" required />
                   <Field label="CPF do representante" value={cpfRep} onChange={(e) => setCpfRep(e.target.value)} placeholder="000.000.000-00" inputMode="numeric" required />
+                  <PerguntaNotaLocacao valor={notaLoc} onChange={setNotaLoc} />
                 </>
               ) : (
                 <Field label="CPF" value={cpf} onChange={(e) => setCpf(e.target.value)} placeholder="000.000.000-00" inputMode="numeric" autoComplete="off" required />

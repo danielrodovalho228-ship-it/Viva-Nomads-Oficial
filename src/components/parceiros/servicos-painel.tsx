@@ -14,14 +14,26 @@ export const COMO_FUNCIONA_SERVICOS = [
 ] as const;
 
 /**
+ * E487: no cartão, "Manutenção" se confundia com o chamado de manutenção ao proprietário. Aqui o serviço do parceiro
+ * se chama "Reparos com parceiros"; a categoria (e o destino do cartão) segue sendo "manutencao".
+ */
+const ROTULO_NO_CARTAO: Partial<Record<string, string>> = { manutencao: "Reparos com parceiros" };
+
+/**
  * Prompt 31a: seção "Serviços" dos painéis do inquilino e do dono — a busca de parceiros com a cidade preenchida.
  * E276 (mockup aprovado): cada serviço é um cartão com a FOTO real da categoria no topo (16:10, todas do mesmo tamanho),
  * o nome e uma frase curta; grade par (2 colunas no celular, 3 no computador); embaixo, a faixa "Como funciona" em 3
  * passos. O destino de cada cartão não mudou.
  */
-export function ServicosPainel({ cidade }: { cidade?: string | null }) {
+/**
+ * E1079 (385, tela 4): com `avaliacao`, a grade ganha o cartão "Avaliação do imóvel". E1104 (ORDEM-DUET-470): o cartão é
+ * de TODO dono (a porta de descoberta); o morador não o recebe. Quem decide, e para onde ele leva, é avaliacaoNaGrade.
+ * E1080 (DUET-1561): a foto da categoria "vistoria" (escolhida pelo Daniel), no mesmo tema dos outros cartões.
+ */
+export function ServicosPainel({ cidade, avaliacao }: { cidade?: string | null; avaliacao?: { href: string } | null }) {
   const q = (categoria: string) => `/parceiros/buscar?${new URLSearchParams({ categoria, ...(cidade ? { cidade } : {}) }).toString()}`;
   const lista = CATEGORIAS_CATALOGO.filter((c) => c.valor !== "outro");
+  const fotoAvaliacao = fotoDaCategoria("vistoria")!;
   return (
     <Panel title="Serviços" className="mt-6" data-testid="painel-servicos-parceiros">
       <p className="flex items-center gap-2 text-sm text-muted">
@@ -52,13 +64,38 @@ export function ServicosPainel({ cidade }: { cidade?: string | null }) {
                   )}
                 </span>
                 <span className="flex flex-1 flex-col gap-1 p-3">
-                  <span className="text-sm font-semibold text-ink group-hover:text-forest">{c.rotulo}</span>
+                  <span className="text-sm font-semibold text-ink group-hover:text-forest">{ROTULO_NO_CARTAO[c.valor] ?? c.rotulo}</span>
                   {foto && <span className="text-xs text-muted" data-testid="servicos-frase">{foto.frase}</span>}
                 </span>
               </Link>
             </li>
           );
         })}
+        {avaliacao && (
+          <li>
+            <Link
+              href={avaliacao.href}
+              className="group flex h-full flex-col overflow-hidden rounded-xl border border-line bg-white outline-none transition-colors hover:border-forest focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2"
+              data-testid="servicos-avaliacao"
+            >
+              <span className="relative block aspect-[16/10] overflow-hidden bg-surface-2" data-testid="servicos-foto">
+                <Image
+                  src={fotoAvaliacao.src}
+                  alt={fotoAvaliacao.alt}
+                  fill
+                  sizes="(min-width: 640px) 260px, 45vw"
+                  placeholder="blur"
+                  blurDataURL={BRAND_BLUR}
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </span>
+              <span className="flex flex-1 flex-col gap-1 p-3">
+                <span className="text-sm font-semibold text-ink group-hover:text-forest">Avaliação do imóvel</span>
+                <span className="text-xs text-muted">Laudo com o nível do imóvel</span>
+              </span>
+            </Link>
+          </li>
+        )}
       </ul>
       <div className="mt-6 border-t border-line pt-4" data-testid="servicos-como-funciona">
         <h3 className="text-sm font-semibold text-ink">Como funciona</h3>

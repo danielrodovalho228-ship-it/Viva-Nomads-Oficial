@@ -9,10 +9,13 @@ import { authFile } from "../fixtures/auth";
    1. foto nova entra 'em_revisao' e JÁ aparece (revisão depois de publicar); o avatar e a linha da fila são gravados juntos;
    2. RLS: a pessoa lê só as próprias linhas e não muda o status; visitante não lê nada; o dono não baixa a foto do
       inquilino antes do aceite (regra do E14 sem mudança);
-   3. fila /admin/fotos-perfil (mais antiga primeiro) + contador "Fotos de perfil em revisão" no painel; Aprovar;
+   3. fila /admin/fotos-perfil (mais antiga primeiro), aberta pelo menu do admin (E176 tirou o contador da inicial); Aprovar;
    4. denúncia "Foto de perfil inadequada" pela página do proprietário → a foto volta para 'em_revisao' no TOPO da fila;
    5. Remover exige motivo da lista: apaga o arquivo, limpa o avatar, guarda o motivo e avisa a pessoa UMA vez (Conta +
       e-mail com "Enviar outra foto").
+  E13 (t442 na quarentena, ORDEM-DUET-102): os casos 4 e 5 não dependem mais dos casos 1 a 3. Ficam num bloco próprio, com
+  contas próprias e uma foto já aprovada semeada no beforeAll; o caso 5 semeia a própria denúncia quando o 4 não a deixou.
+  O bloco roda em ordem SEM pular (mode "default"): se o 4 falhar, o 5 roda mesmo assim, num worker novo (contas novas).
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
@@ -20,6 +23,9 @@ const dono = { email: `dono.t442.${sufixo}@lab.vivanomads.test`, nome: "Helena R
 const inquilino = { email: `inq.t442.${sufixo}@lab.vivanomads.test`, nome: "Igor Rosto Lima", role: "tenant" as const };
 const denunciante = { email: `den.t442.${sufixo}@lab.vivanomads.test`, nome: "Dora Denúncia Reis", role: "tenant" as const };
 const ids: Record<string, string | undefined> = {};
+// Bloco da denúncia e da remoção (casos 4 e 5): contas criadas a cada beforeAll (worker novo = contas novas).
+const den: { dono?: { id: string; email: string }; denunciante?: { id: string; email: string } } = {};
+const unico = () => `${process.pid}.${Date.now()}`;
 
 const imagem = () => sharp({ create: { width: 900, height: 700, channels: 3, background: "#2a7a4b" } }).jpeg().toBuffer();
 
@@ -72,20 +78,38 @@ const revisoes = async (userId: string) =>
     denunciada_em: string | null;
   }[];
 
+/** Massa do bloco 4/5: foto do titular no Storage, avatar e revisão gravados juntos (RPC do produto), já aprovada. */
+async function semearFotoAprovada(userId: string) {
+  const caminho = `${userId}/avatar.webp`;
+  const webp = await sharp(await imagem()).resize(400, 400).webp().toBuffer();
+  const { error: e1 } = await adm().storage.from("avatars").upload(caminho, webp, { contentType: "image/webp", upsert: true });
+  if (e1) throw e1;
+  const { data: rid, error: e2 } = await adm().rpc("foto_perfil_enviada", { p_user: userId, p_caminho: caminho });
+  if (e2) throw e2;
+  const { error: e3 } = await adm().from("fotos_perfil_revisao").update({ status: "aprovada", revisado_em: new Date().toISOString() }).eq("id", rid as string);
+  if (e3) throw e3;
+}
+
+/** Caso 5 sem o 4 (falhou, ou o worker é novo): a denúncia que ele deixaria — o mesmo que o servidor grava no chamado. */
+async function garantirDenunciada(userId: string) {
+  if ((await revisoes(userId)).some((x) => x.status === "em_revisao")) return;
+  const { error } = await adm().from("fotos_perfil_revisao").insert({ user_id: userId, caminho: `${userId}/avatar.webp`, denunciada_em: new Date().toISOString() });
+  if (error) throw error;
+}
+
 test.describe("T442 — FOTO-PERFIL-B: revisão das fotos de perfil", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório (Supabase local + integrações simuladas).");
+
+  test.describe("envio, RLS e fila (casos 1 a 3, em série)", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.inquilino = await criarConta(inquilino, senha);
-    ids.denunciante = await criarConta(denunciante, senha);
-    ids.imovel = await criarImovelPronto(ids.dono, `Foto t442 ${sufixo}`, { ativo: true });
   });
 
   test.afterAll(async () => {
-    await adm().from("chamados").delete().eq("usuario_id", ids.denunciante ?? "");
-    await apagarContas([ids.dono, ids.inquilino, ids.denunciante]);
+    await apagarContas([ids.dono, ids.inquilino]);
   });
 
   test("1. foto nova entra 'em_revisao' e já aparece; avatar e revisão gravados juntos", async ({ browser }) => {
@@ -121,11 +145,11 @@ test.describe("T442 — FOTO-PERFIL-B: revisão das fotos de perfil", () => {
     expect(arquivo, "foto do inquilino protegida até o aceite").toBeNull();
   });
 
-  test("3. fila (mais antiga primeiro) + contador no painel; Aprovar tira da fila", async ({ browser }) => {
+  // E744 (asserção alterada, tabela da Fable #3832): o ADMIN-4/E176 tirou da inicial do /admin o painel "Áreas do admin"
+  // (contador "Fotos de perfil em revisão" e atalho); a fila se abre pelo menu "Fotos de perfil" (/admin/fotos-perfil).
+  // O contador sem tela fica como dúvida no PR.
+  test("3. fila (mais antiga primeiro), aberta pelo menu do admin; Aprovar tira da fila", async ({ browser }) => {
     const a = await admin(browser);
-    await a.goto("/admin", { waitUntil: "domcontentloaded" });
-    await expect(a.getByText("Fotos de perfil em revisão")).toBeVisible({ timeout: 20_000 });
-    await expect(a.getByTestId("admin-outras-areas").getByRole("link", { name: "Fotos de perfil" })).toBeVisible();
     await a.goto("/admin/fotos-perfil", { waitUntil: "domcontentloaded" });
     const doDono = a.locator(`[data-testid="fila-foto"][data-user="${ids.dono}"]`);
     const doInq = a.locator(`[data-testid="fila-foto"][data-user="${ids.inquilino}"]`);
@@ -140,32 +164,57 @@ test.describe("T442 — FOTO-PERFIL-B: revisão das fotos de perfil", () => {
     await a.context().close();
   });
 
+  });
+
+  test.describe("denúncia e remoção (casos 4 e 5, com estado próprio)", () => {
+  test.describe.configure({ mode: "default" });
+
+  test.beforeAll(async () => {
+    const emailDono = `dono2.t442.${unico()}.${sufixo}@lab.vivanomads.test`;
+    den.dono = { id: await criarConta({ ...dono, email: emailDono }, senha), email: emailDono };
+    const emailDen = `den.t442.${unico()}.${sufixo}@lab.vivanomads.test`;
+    den.denunciante = { id: await criarConta({ ...denunciante, email: emailDen }, senha), email: emailDen };
+    await criarImovelPronto(den.dono.id, `Foto t442 ${sufixo}`, { ativo: true });
+    await semearFotoAprovada(den.dono.id);
+  });
+
+  test.afterAll(async () => {
+    await adm().from("chamados").delete().eq("usuario_id", den.denunciante?.id ?? "");
+    await apagarContas([den.dono?.id, den.denunciante?.id]);
+  });
+
+  // E13 (asserção alterada): o "Problema com isto?" liga direto a /ajuda/fale-com-a-viva. Antes passava pelo hub /ajuda,
+  // que redirecionava no servidor; afirmar o endereço intermediário dependia de ler a URL antes do salto (1 falha em 3).
   test("4. denúncia pela página do proprietário: a foto volta para 'em_revisao' no topo da fila", async ({ browser }) => {
+    const idDono = den.dono!.id;
     await liberarLimiteChamados();
-    const p = await abrir(browser, denunciante.email, 390);
-    await p.goto(`/proprietario/${ids.dono}`, { waitUntil: "domcontentloaded" });
+    const p = await abrir(browser, den.denunciante!.email, 390);
+    await p.goto(`/proprietario/${idDono}`, { waitUntil: "domcontentloaded" });
     await p.getByTestId("proprietario-problema-foto").getByRole("link", { name: "Problema com isto?" }).click();
-    await expect(p).toHaveURL(new RegExp(`/ajuda\\?contexto=perfil&id=${ids.dono}`));
+    await expect(p).toHaveURL(new RegExp(`/ajuda/fale-com-a-viva\\?contexto=perfil&id=${idDono}`));
     await expect(p.getByLabel("Assunto")).toHaveValue("foto_perfil", { timeout: 20_000 });
     await p.getByLabel("O que aconteceu?").fill("A foto do perfil mostra uma criança, não a pessoa da conta.");
     await p.getByRole("button", { name: "Enviar chamado" }).click();
     await expect(p).toHaveURL(/chamado=/, { timeout: 20_000 });
     await p.context().close();
-    const r = await revisoes(ids.dono!);
+    const r = await revisoes(idDono);
     expect(r.map((x) => x.status)).toEqual(["aprovada", "em_revisao"]);
     expect(r[1].denunciada_em).not.toBeNull();
     const a = await admin(browser);
     await a.goto("/admin/fotos-perfil", { waitUntil: "domcontentloaded" });
     const primeiro = a.locator('[data-testid="fila-foto"]').first();
-    await expect(primeiro).toHaveAttribute("data-user", ids.dono!, { timeout: 20_000 });
+    await expect(primeiro).toHaveAttribute("data-user", idDono, { timeout: 20_000 });
     await expect(primeiro).toHaveAttribute("data-denunciada", "1");
     await a.context().close();
   });
 
   test("5. Remover com motivo: apaga o arquivo, limpa o avatar, guarda o motivo e avisa uma vez", async ({ browser }) => {
+    const idDono = den.dono!.id;
+    const donoEmail = den.dono!.email;
+    await garantirDenunciada(idDono);
     const a = await admin(browser);
     await a.goto("/admin/fotos-perfil", { waitUntil: "domcontentloaded" });
-    const item = a.locator(`[data-testid="fila-foto"][data-user="${ids.dono}"]`);
+    const item = a.locator(`[data-testid="fila-foto"][data-user="${idDono}"]`);
     await item.getByTestId("foto-remover").click();
     await expect(item.getByTestId("foto-remover-confirmar")).toBeDisabled();
     await item.getByTestId("foto-motivo").selectOption("Parece ser de criança ou adolescente");
@@ -173,24 +222,25 @@ test.describe("T442 — FOTO-PERFIL-B: revisão das fotos de perfil", () => {
     await expect(item).toHaveCount(0, { timeout: 20_000 });
     await a.context().close();
 
-    const r = await revisoes(ids.dono!);
+    const r = await revisoes(idDono);
     expect(r[1]).toMatchObject({ status: "removida", motivo: "Parece ser de criança ou adolescente" });
-    const { data: perfil } = await adm().from("profiles").select("avatar_url").eq("id", ids.dono).single();
+    const { data: perfil } = await adm().from("profiles").select("avatar_url").eq("id", idDono).single();
     expect((perfil as { avatar_url: string | null }).avatar_url).toBeNull();
-    const { data: lista } = await adm().storage.from("avatars").list(ids.dono!);
+    const { data: lista } = await adm().storage.from("avatars").list(idDono);
     expect((lista ?? []).filter((f) => f.name === "avatar.webp")).toHaveLength(0);
-    const avisos = async () => (await lerSaida()).filter((e) => e.para === dono.email && /A foto do seu perfil foi removida/.test(String(e.assunto)));
+    const avisos = async () => (await lerSaida()).filter((e) => e.para === donoEmail && /A foto do seu perfil foi removida/.test(String(e.assunto)));
     await expect.poll(async () => (await avisos()).length, { timeout: 15_000 }).toBe(1);
     const corpo = String((await avisos())[0].corpo ?? "");
     expect(corpo).toContain("Parece ser de criança ou adolescente");
     expect(corpo).toContain("Enviar outra foto");
 
     // Dentro do app: o motivo e "Enviar outra foto" na Conta.
-    const p = await abrir(browser, dono.email, 390);
+    const p = await abrir(browser, donoEmail, 390);
     await p.goto("/dashboard/conta/perfil", { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("aviso-foto-removida")).toContainText("Parece ser de criança ou adolescente", { timeout: 20_000 });
     await expect(p.getByTestId("aviso-foto-enviar")).toHaveAccessibleName("Enviar outra foto");
     await p.context().close();
     expect((await avisos()).length, "um aviso só").toBe(1);
+  });
   });
 });

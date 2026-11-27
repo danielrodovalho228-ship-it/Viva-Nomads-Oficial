@@ -1,5 +1,6 @@
 "use client";
 
+import { dataBRT } from "@/lib/datas-brasilia";
 import { VazioOnboardingBloco } from "@/components/onboarding/vazio-onboarding";
 import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
 
@@ -13,7 +14,7 @@ import { leadScore, leadSummary, type Lead, type Light } from "@/lib/data/lead-t
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { aceitarCandidatura, recusarCandidatura } from "@/lib/data/leads-actions";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_LEADS } from "@/lib/demo/seed";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
 import { cn } from "@/lib/utils";
 import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
@@ -23,6 +24,10 @@ import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
 import { identidadeParaOutraParte } from "@/lib/identidade/estado";
 import { textoDoErro } from "@/lib/erro-de-rede";
 import { MSG_APROVAR_FALHOU, MSG_RECUSAR_FALHOU } from "@/lib/interessados/erros";
+import { hrefPerfilCandidato } from "@/lib/notifications/dados-candidatura";
+
+/** E553: o perfil completo só existe para candidatura real (a mesma regra UUID_LEAD de perfilDoCandidato). */
+const UUID_CANDIDATURA = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Motivos de recusa pré-definidos (quick win #3). */
 const REJECT_REASONS = [
@@ -38,7 +43,7 @@ const LIGHT: Record<Light, { tone: string; label: string }> = {
   red: { tone: "bg-red-100 text-red-700", label: "Alto risco" },
 };
 
-type LeadStatus = "open" | "approved" | "rejecting" | "rejected";
+type LeadStatus = "open" | "approved" | "rejecting" | "rejected" | "expired";
 
 /** E541: abre a conversa DESTA candidatura (antes, a caixa abria a primeira da lista — de outra pessoa). */
 function hrefResponder(l: { conversaId?: string }): string {
@@ -49,17 +54,24 @@ function hrefResponder(l: { conversaId?: string }): string {
 function uiInicial(persisted: string | undefined): LeadStatus {
   if (persisted === "accepted") return "approved";
   if (persisted === "rejected") return "rejected";
+  // E968 (decisão do Gerente, ORDEM-DUET-073): a 3ª expiração da pré-aceitação é TERMINAL — sem Aceitar/Recusar.
+  if (persisted === "expired") return "expired";
   return "open";
 }
 
-export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
+/** E569: o que falta ao dono para aceitar (documento), mostrado antes de qualquer clique. */
+type PendenciaDono = { texto: string; href: string; rotulo: string } | null;
+
+export function LeadsClient({ leads: realLeads, pendencia = null }: { leads: Lead[]; pendencia?: PendenciaDono }) {
   const [status, setStatus] = useState<Record<string, LeadStatus>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [erro, setErro] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   // Modo demonstração (admin): lê o seed em memória; desligado, volta ao real.
   const { on: demoOn } = useDemoMode();
-  const leads = demoOn ? DEMO_LEADS : realLeads;
+  // E980: os exemplos chegam sob demanda.
+  const exemplos = useExemplos(demoOn);
+  const leads = demoOn ? (exemplos?.DEMO_LEADS ?? []) : realLeads;
 
   function set(id: string, s: LeadStatus) {
     setStatus((prev) => ({ ...prev, [id]: s }));
@@ -67,8 +79,9 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
 
   /** Aprova: persiste no servidor (real) e atualiza a UI. Demo: só UI. */
   function aprovar(id: string) {
-    set(id, "approved");
-    if (demoOn) return;
+    // E569: o cartão só muda para "aprovado" depois que o servidor confirma — antes, o "Responder pela plataforma"
+    // aparecia por um instante e sumia quando o servidor recusava (ex.: falta o documento do dono).
+    if (demoOn) return set(id, "approved");
     startTransition(async () => {
       // Auditoria de erros (achado nº 3): sem conexão a ação REJEITA dentro da transição — sem o try, o erro subia ao
       // limite de erro e a tela inteira caía. Agora reverte o cartão e diz o motivo em português.
@@ -81,9 +94,12 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
         return;
       }
       if (!r.ok) {
-        set(id, "open"); // reverte se o servidor recusar — e diz por quê
+        set(id, "open"); // o servidor recusou — o cartão segue aberto e diz por quê
         setErro(r.error ?? MSG_APROVAR_FALHOU);
-      } else setErro(null);
+      } else {
+        set(id, "approved");
+        setErro(null);
+      }
     });
   }
 
@@ -131,6 +147,16 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
         </div>
       )}
 
+      {/* E569: requisito pendente do dono, ANTES de qualquer clique, com o caminho para resolver. */}
+      {pendencia && !demoOn && leads.some((l) => (status[l.id] ?? uiInicial(l.status)) === "open") && (
+        <div role="status" id="pendencia-dono-aceite" data-testid="pendencia-dono-aceite" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p>{pendencia.texto}</p>
+          <Link href={pendencia.href} className="mt-2 inline-block font-semibold text-forest underline" data-testid="pendencia-dono-link">
+            {pendencia.rotulo}
+          </Link>
+        </div>
+      )}
+
       {leads.length === 0 ? (
         <VazioOnboardingBloco vazio={VAZIOS_ONBOARDING.interessados} />
       ) : (
@@ -143,27 +169,47 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
             {ordered.map((l) => {
             const st = status[l.id] ?? uiInicial(l.status);
             const open = st === "approved";
+            const perfilHref = !demoOn && UUID_CANDIDATURA.test(l.id) ? hrefPerfilCandidato(l.id) : null;
             return (
               // E202 (candidatura): o e-mail ao dono aponta para este cartão (#candidato-<id>).
               <Panel key={l.id} id={`candidato-${l.id}`} className="scroll-mt-24">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex min-w-0 items-start gap-3" data-testid="cartao-candidato">
                     {/* Foto só depois do aceite; antes, um avatar neutro (sem inicial nem nome). */}
-                    {l.fotoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={l.fotoUrl} alt={`Foto de ${l.name}`} className="h-12 w-12 shrink-0 rounded-full object-cover" data-testid="candidato-foto" />
-                    ) : (
-                      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sage-100 text-forest" aria-hidden>
-                        <UserRound className="h-6 w-6" />
-                      </span>
-                    )}
+                    {(() => {
+                      const foto = l.fotoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={l.fotoUrl} alt={`Foto de ${l.name}`} className="h-12 w-12 shrink-0 rounded-full object-cover" data-testid="candidato-foto" />
+                      ) : (
+                        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-sage-100 text-forest" aria-hidden>
+                          <UserRound className="h-6 w-6" />
+                        </span>
+                      );
+                      // E553: a foto abre o mesmo perfil do nome (fora da ordem do Tab: o nome já é o link).
+                      return perfilHref ? (
+                        <Link href={perfilHref} tabIndex={-1} aria-hidden className="shrink-0 rounded-full" data-testid="candidato-perfil-foto">
+                          {foto}
+                        </Link>
+                      ) : (
+                        foto
+                      );
+                    })()}
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       {/* Semáforo em destaque, primeiro (o que decide) */}
                       <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", LIGHT[l.light].tone)}>
                         {LIGHT[l.light].label}
                       </span>
-                      <h2 className="font-title text-lg font-semibold text-ink" data-testid="candidato-nome">{l.name}</h2>
+                      <h2 className="font-title text-lg font-semibold text-ink" data-testid="candidato-nome">
+                        {/* E553: o nome abre o perfil completo do candidato (padrão dos títulos clicáveis do painel). */}
+                        {perfilHref ? (
+                          <Link href={perfilHref} className="alvo-toque hover:text-forest focus-visible:text-forest" data-testid="candidato-perfil-link">
+                            {l.name}
+                          </Link>
+                        ) : (
+                          l.name
+                        )}
+                      </h2>
                       {/* PROP-3 (E118): verificada/pendente pela MESMA função do Fechamento; sem os textos "para mim". */}
                       <span
                         className={cn(
@@ -177,8 +223,29 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                       </span>
                     </div>
                     {/* Resumo do candidato em uma linha */}
-                    <p className="mt-1 text-sm font-medium text-ink">{leadSummary(l)}</p>
+                    {leadSummary(l) && <p className="mt-1 text-sm font-medium text-ink" data-testid="candidato-resumo">{leadSummary(l)}</p>}
                     <p className="text-xs text-muted">interesse em {l.property}</p>
+                    {/* E1053: Entrada, Saída e Total da estadia — os mesmos da confirmação da candidatura (decisaoDaCandidatura). */}
+                    {l.decisao && (
+                      <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm" data-testid="decisao-candidatura">
+                        <dt className="text-muted">Entrada</dt>
+                        <dd className="font-medium text-ink" data-testid="decisao-entrada">{l.decisao.entrada}</dd>
+                        <dt className="text-muted">Saída</dt>
+                        <dd className="font-medium text-ink" data-testid="decisao-saida">{l.decisao.saida}</dd>
+                        {l.decisao.total && (
+                          <>
+                            <dt className="text-muted">Total da estadia</dt>
+                            <dd className="font-semibold text-ink" data-testid="decisao-total">{l.decisao.total}</dd>
+                          </>
+                        )}
+                      </dl>
+                    )}
+                    {l.enviadaEm && (
+                      <p className="text-xs text-muted" data-testid="lead-enviada-em">
+                        Enviada em {dataBRT(l.enviadaEm)}
+                        {l.reenviada && l.primeiroEnvioEm ? ` · reenviada (primeiro envio em ${dataBRT(l.primeiroEnvioEm)})` : ""}
+                      </p>
+                    )}
                     {l.moradorVerificado && (
                       <p className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-forest" data-testid="selo-morador-verificado">
                         <BadgeCheck className="h-3.5 w-3.5" aria-hidden /> {l.moradorVerificado}
@@ -226,11 +293,18 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                   </div>
                   </div>
 
-                  <div className="text-right">
-                    {open ? (
-                      <ButtonLink href={hrefResponder(l)} variant="secondary" size="sm" data-testid="responder-pela-plataforma">
+                  <div className="flex flex-col items-end gap-2 text-right">
+                    {/* E569: o "Responder pela plataforma" fica visível no cartão (antes e depois do aceite) e abre a
+                        conversa DESTE morador neste imóvel (a lista de Mensagens já traz a conversa da candidatura). */}
+                    {st !== "rejected" && (
+                      <ButtonLink href={hrefResponder(l)} variant={open ? "secondary" : "outline"} size="sm" data-testid="responder-pela-plataforma">
                         <MessageSquare className="h-4 w-4" /> Responder pela plataforma
                       </ButtonLink>
+                    )}
+                    {open ? null : st === "expired" ? (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-surface-2 px-3 py-2 text-sm font-medium text-muted" data-testid="lead-expirado">
+                        Pré-aceitação expirada (encerrada)
+                      </span>
                     ) : st === "rejected" ? (
                       <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-3 py-2 text-sm font-medium text-red-600">
                         <X className="h-4 w-4" /> Recusado
@@ -246,7 +320,9 @@ export function LeadsClient({ leads: realLeads }: { leads: Lead[] }) {
                         <button
                           onClick={() => aprovar(l.id)}
                           disabled={pending}
+                          aria-describedby={pendencia && !demoOn ? "pendencia-dono-aceite" : undefined}
                           className={buttonClasses({ variant: "secondary", size: "sm" })}
+                          data-testid="aprovar-candidatura"
                         >
                           <Check className="h-4 w-4" /> Aprovar e responder
                         </button>

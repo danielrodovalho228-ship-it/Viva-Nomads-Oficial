@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, alertaDoTopo, blocoPrincipalDono } from "./inicio-dono.ts";
 import { checklistProprietario, type FatosConta } from "../onboarding/ativacao.ts";
 import type { Decisao } from "./decisoes.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const dec = (id: string, extra: Partial<Decisao> = {}): Decisao => ({ id, tipo: "proposta", texto: `Decisão ${id}`, href: `/x/${id}`, prazo: null, prazoTexto: null, atrasada: false, ...extra });
 
@@ -51,8 +52,11 @@ test("Peça na Viva (um botão cheio) e os três atalhos do mockup", () => {
   assert.match(c, /href=\{PECA_NA_VIVA\.secundario\.href\} variant="outline"/);
   // Sem foto: nada de imagem inventada — a foto só vem de bloco.foto; no rascunho sem foto, o placeholder desenhado (E308).
   // E405 (02/11): a foto do bloco passa pelo filtro de URL (const foto) antes de virar imagem.
-  assert.match(c, /\{foto \? \(/);
-  assert.match(c, /bloco\.tipo === "rascunho" && \(/);
+  // E501: a foto e o placeholder moram em FotoDoInicio, que recebe a foto já filtrada (const foto).
+  assert.match(c, /\(foto \|\| bloco\.tipo === "rascunho"\) && <FotoDoInicio foto=\{foto\}/);
+  const f = readFileSync("src/components/painel/foto-inicio-dono.tsx", "utf8");
+  assert.match(f, /if \(foto && !falhou\)/);
+  assert.match(f, /if \(!rascunho\) return <span hidden data-foto-falhou="" \/>;/);
   const v = readFileSync("src/app/(dashboard)/dashboard/visao-geral-client.tsx", "utf8");
   assert.match(v, /if \(mode === "owner" && !demo && inicioDono\)/);
 });
@@ -113,8 +117,29 @@ test("E218-A: com anúncio publicado o guia some (decisão ou em dia), e o modo 
   // ...e o morador/parceiro seguem com o deles (E167, #1392).
   assert.match(visao, /const blocosMorador = checklists\.filter\(\(c\) => c\.papel !== "proprietario"\)/);
   const inicio = ler("../../components/painel/inicio-dono.tsx");
-  assert.doesNotMatch(inicio.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, ""), /ChecklistAtivacaoBloco/);
+  assert.doesNotMatch(fonteSemComentarios(inicio), /ChecklistAtivacaoBloco/);
   // O servidor monta os passos do bloco a partir do guia do dono (fonte única).
-  const pagina = ler("../../app/(dashboard)/dashboard/page.tsx");
+  const pagina = ler("../../app/(dashboard)/dashboard/inicio-dados.tsx");
   assert.match(pagina, /checklist: checklists\.find\(\(c\) => c\.papel === "proprietario"\) \?\? null/);
+});
+
+test("E494: o passo que leva ao MESMO lugar do botão não é atalho (só estado); os outros seguem com o link", () => {
+  const b = blocoPrincipalDono({ rascunho: { id: "r1", pct: 30, pronto: false, itens: [
+    { label: "Fotos", ok: true, href: "/dashboard/imoveis/novo?draft=r1&etapa=fotos" },
+    { label: "Endereço", ok: false, href: "/dashboard/imoveis/novo?draft=r1&etapa=endereco" },
+    { label: "Detalhes", ok: false, href: "/dashboard/imoveis/novo?draft=r1&etapa=detalhes" },
+  ], foto: null, retomar: "/dashboard/imoveis/novo?draft=r1&etapa=endereco" }, decisoes: [], temAnuncio: false, fotoAnuncio: null });
+  assert.equal(b.botao.href, "/dashboard/imoveis/novo?draft=r1&etapa=endereco");
+  const por = Object.fromEntries(b.passos.map((p) => [p.rotulo, p.href]));
+  assert.equal(por["Endereço"], null, "Endereço = Continuar de onde parou: sem link próprio");
+  assert.equal(por["Fotos"], "/dashboard/imoveis/novo?draft=r1&etapa=fotos");
+  assert.equal(por["Detalhes"], "/dashboard/imoveis/novo?draft=r1&etapa=detalhes");
+  // Nenhum passo de nenhum bloco repete o destino do botão.
+  for (const p of b.passos) assert.notEqual(p.href, b.botao.href);
+});
+
+test("E494: a tela desenha o passo sem link como estado (sem seta), e o resto como atalho", () => {
+  const tela = readFileSync(new URL("../../components/painel/inicio-dono.tsx", import.meta.url), "utf8");
+  assert.match(tela, /p\.href \? \(/);
+  assert.match(tela, /data-testid="inicio-dono-passo-atual"/);
 });

@@ -1,11 +1,14 @@
 import { NumeroDaFonte } from "@/components/admin/numero-da-fonte";
 import Link from "next/link";
+import Image from "next/image";
+import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { coverPhoto } from "@/lib/media";
 import { Home } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { adminDaPagina, imoveisDoBanco, type ImovelLinhaAdmin } from "@/lib/data/admin-indicadores";
-import { apareceParaPublico, periodoDaLista, ROTULO_TIPO_IMOVEL, tipoImovel, type TipoImovel } from "@/lib/admin/indicadores";
+import { apareceParaPublico, periodoDaLista, resumoPublicoDaLista, rotuloPublicoDaLinha, ROTULO_TIPO_IMOVEL, tipoImovel, type TipoImovel } from "@/lib/admin/indicadores";
 import { rotuloPeriodo } from "@/lib/admin/visao-geral";
 import { chaveCidade } from "@/lib/cidades";
 import { SAMPLE_PROPERTIES } from "@/lib/properties";
@@ -53,6 +56,8 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
   ]);
   const linksFalharam = linksLidos === null;
   const linksVideo = linksLidos ?? [];
+  // E477: o observador só lê os vídeos de anúncio real (anúncio de teste segue liberado, como na pausa).
+  const soLeituraLinks = new Set(await soLeituraNaTela(linksVideo.map((l) => ({ id: l.propertyId, alvo: { imoveis: [l.propertyId] } }))));
   const exemplos: ImovelLinhaAdmin[] = SAMPLE_PROPERTIES.map((e) => ({
     id: e.id,
     titulo: e.title,
@@ -65,6 +70,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
     documento: "none",
     qualidade: null,
     donoTeste: false,
+    capa: coverPhoto(e.id),
   }));
   const todos: Linha[] = [...doBanco, ...exemplos].map((i) => {
     const t = tipoImovel({ id: i.id, titulo: i.titulo, donoTeste: i.donoTeste });
@@ -79,14 +85,14 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
       (!cidade || chaveCidade(i.cidade) === chaveCidade(cidade)) &&
       (!bairro || (i.bairro ?? "").toLowerCase().includes(bairro)) &&
       (!dono || i.dono.toLowerCase().includes(dono)) &&
-      (!docRevisao || i.documento === "pending") &&
+      (!docRevisao || i.documentoEmRevisao) &&
       (ini === null || (i.criadoEm && new Date(i.criadoEm).getTime() >= ini && new Date(i.criadoEm).getTime() < (fim as number)))
   );
   const campo = "h-10 rounded-xl border border-line px-3 py-2 text-sm text-ink";
 
-  // Pendência 3 do QA-LOGIN-B v2: anúncio de dono real → o admin observador da QA não vê o "Pausar" (o servidor recusa).
+  // E477 (resíduo): o admin observador da QA não vê o "Pausar" em anúncio nenhum, de teste ou real (o servidor recusa).
   const pausaveis = lista.filter((i) => i.tipo !== "demonstracao" && i.status === "active");
-  const soLeitura = new Set(await soLeituraNaTela(pausaveis.map((i) => ({ id: i.id, alvo: { imoveis: [i.id] } }))));
+  const soLeitura = new Set(await soLeituraNaTela(pausaveis.map((i) => ({ id: i.id }))));
   return (
     <div data-testid="admin-imoveis">
       <PageTitle
@@ -104,7 +110,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
           Não foi possível ler os links de vídeo pendentes agora. Tente de novo em instantes.
         </p>
       )}
-      <LinksDeVideoPendentes links={linksVideo} />
+      <LinksDeVideoPendentes links={linksVideo} soLeitura={soLeituraLinks} />
       <form action="/admin/imoveis" method="get" className="mb-4 flex flex-wrap items-end gap-2" role="search">
         {p && <input type="hidden" name="de" value={p.inicio} />}
         {p && <input type="hidden" name="ate" value={p.fim} />}
@@ -147,7 +153,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
       </form>
       <p className="mb-3 text-sm text-ink">
         <strong data-testid="lista-total">{lista.length}</strong> {lista.length === 1 ? "imóvel" : "imóveis"} nesta lista ·{" "}
-        {lista.filter((i) => i.publico).length} aparecem para o público.
+        <span data-testid="lista-publico">{resumoPublicoDaLista(lista)}</span>.
       </p>
       <Panel title={`Imóveis (${lista.length})`}>
         {lista.length === 0 ? (
@@ -155,7 +161,14 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
         ) : (
           <ul className="grid gap-3">
             {lista.map((i) => (
-              <li key={i.id} className="rounded-xl border border-line p-3 text-sm" data-testid="imovel-linha" data-tipo={i.tipo} data-publico={i.publico ? "sim" : "nao"}>
+              <li key={i.id} className="flex gap-3 rounded-xl border border-line p-3 text-sm" data-testid="imovel-linha" data-tipo={i.tipo} data-publico={i.publico ? "sim" : "nao"}>
+                {/* Onda 5 (matriz admin-anuncios): a capa do anúncio, como no mockup; sem foto real, o espaço sem foto. */}
+                {i.capa ? (
+                  <Image src={i.capa} alt="" width={80} height={80} sizes="80px" className="h-16 w-16 shrink-0 rounded-lg object-cover sm:h-20 sm:w-20" data-testid="imovel-capa" />
+                ) : (
+                  <span className="shrink-0" data-testid="imovel-capa" data-vazia="1"><PhotoPlaceholder className="h-16 w-16 rounded-lg sm:h-20 sm:w-20" /></span>
+                )}
+                <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="font-semibold text-ink">
                     {i.titulo}
@@ -163,7 +176,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
                   </span>
                   <span className="text-xs text-muted">
                     Tipo: <strong data-testid="imovel-tipo">{ROTULO_TIPO_IMOVEL[i.tipo]}</strong> · Aparece para o público:{" "}
-                    <strong data-testid="imovel-publico">{i.publico ? "sim" : "não"}</strong>
+                    <strong data-testid="imovel-publico">{rotuloPublicoDaLinha(i.tipo, i.publico)}</strong>
                   </span>
                 </div>
                 <p className="mt-1 text-muted">
@@ -189,6 +202,7 @@ export default async function AdminImoveisPage({ searchParams }: { searchParams:
                   )}
                   {i.tipo !== "demonstracao" && i.status === "active" && (soLeitura.has(i.id) ? <SoLeituraQa /> : <PausarImovel id={i.id} />)}
                 </p>
+                </div>
               </li>
             ))}
           </ul>

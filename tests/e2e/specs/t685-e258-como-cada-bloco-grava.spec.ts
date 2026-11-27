@@ -5,8 +5,8 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
 /*
   T685 — E258 (#1574): spec permanente da Pista C. A t682 (Pista A) confere os TEXTOS da conferência do Passo 10 e do
   "como grava" de cada bloco do Passo 5; esta prova que o que o texto promete é verdade, sem nenhum "Salvar" a mais:
-   1. Ruído — "Vale depois de 'Salvar ruído'": marcado e NÃO salvo, some ao recarregar e nada vai para imovel_ruido;
-   2. Extras — "Vale depois de 'Salvar extras'": marcado e não salvo some; marcado e salvo volta e está em imovel_extras;
+   1–2. (E606) Ruído e Extras — "Cada toque salva na hora.", como a acessibilidade: um toque grava (o status vira
+      "Salvo."), recarregar sem botão nenhum e os cartões seguem marcados, gravados em imovel_ruido e imovel_extras;
    3. Acessibilidade — "Cada toque salva na hora.": um toque (o status vira "Salvo.") e recarregar, sem botão nenhum, e
       o item segue marcado (e gravado em imovel_estrutura); outro toque desmarca e também fica.
   Lê também os textos uma vez (390 e 1280), para a prova falar do mesmo bloco que a t682. Conta de teste e rascunho
@@ -46,41 +46,37 @@ test.describe("T685 — E258: cada bloco do Passo 5 grava como diz (Ruído e Ext
     await apagarContas([ids.dono]);
   });
 
-  test("1–2. 1280 px — Ruído e Extras: marcado sem salvar some ao recarregar; salvo, volta", async ({ browser }) => {
+  test("1–2. 1280 px — Ruído e Extras (E606): cada toque grava na hora; recarregado, segue marcado", async ({ browser }) => {
     const p = await abrirPasso(browser, conta, ids.rascunho!, "comodidades", 1280);
     await ligar(p, "bloco-nivel-ruido-toggle");
-    await expect(p.getByTestId("ruido-como-salva")).toHaveText("Vale depois de “Salvar ruído”. Sem nada marcado, salva “não” nas quatro.");
+    await expect(p.getByTestId("ruido-como-salva")).toHaveText("Cada toque salva na hora.");
     await p.getByTestId("ruido-via_intensa").click();
     await expect(p.getByTestId("ruido-via_intensa")).toHaveAttribute("aria-checked", "true");
+    await expect(p.getByTestId("ruido-como-salva")).toHaveText("Salvo.", { timeout: 20_000 });
 
     await ligar(p, "bloco-nivel-extras-toggle");
-    await expect(p.getByTestId("extras-como-salva")).toHaveText("Vale depois de “Salvar extras”.");
+    await expect(p.getByTestId("extras-como-salva")).toHaveText("Cada toque salva na hora.");
     const extra = p.locator('[data-testid^="extra-"][role=checkbox]').first();
     const chaveExtra = ((await extra.getAttribute("data-testid")) ?? "").replace(/^extra-/, "");
     await extra.click();
     await expect(extra).toHaveAttribute("aria-checked", "true");
-    await p.screenshot({ path: `${SAIDA}/t685-marcado-sem-salvar-1280.png` });
+    await expect(p.getByTestId("extras-como-salva")).toHaveText("Salvo.", { timeout: 20_000 });
+    await p.screenshot({ path: `${SAIDA}/t685-salvo-no-toque-1280.png` });
 
-    // Recarrega SEM salvar: nada foi gravado, os blocos nascem desligados e os cartões, desmarcados.
-    await p.reload({ waitUntil: "domcontentloaded" });
-    await expect(p.getByTestId("assistente-rodape")).toBeVisible({ timeout: 30_000 });
-    expect((await adm().from("imovel_ruido").select("property_id").eq("property_id", ids.rascunho!)).data ?? []).toEqual([]);
-    expect((await adm().from("imovel_extras").select("chave").eq("property_id", ids.rascunho!)).data ?? []).toEqual([]);
-    await ligar(p, "bloco-nivel-ruido-toggle");
-    await expect(p.getByTestId("ruido-via_intensa")).toHaveAttribute("aria-checked", "false");
-    await ligar(p, "bloco-nivel-extras-toggle");
-    await expect(p.getByTestId(`extra-${chaveExtra}`)).toHaveAttribute("aria-checked", "false");
-
-    // Agora marca e salva o Extra: volta marcado e está no banco.
-    await p.getByTestId(`extra-${chaveExtra}`).click();
-    await p.getByTestId("extras-salvar").click();
-    await expect(p.getByTestId("extras-resultado")).toHaveAttribute("role", "status", { timeout: 20_000 });
+    // Gravado sem botão nenhum.
+    await expect
+      .poll(async () => (await adm().from("imovel_ruido").select("via_intensa").eq("property_id", ids.rascunho!).maybeSingle()).data?.via_intensa ?? null, { timeout: 20_000 })
+      .toBe(true);
     await expect
       .poll(async () => ((await adm().from("imovel_extras").select("chave").eq("property_id", ids.rascunho!)).data ?? []).map((r) => r.chave), { timeout: 20_000 })
       .toEqual([chaveExtra]);
+
+    // Recarrega: os blocos nascem ligados (há dado) e os cartões seguem marcados.
     await p.reload({ waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("bloco-nivel-extras-toggle")).toHaveAttribute("aria-checked", "true", { timeout: 30_000 });
     await expect(p.getByTestId(`extra-${chaveExtra}`)).toHaveAttribute("aria-checked", "true");
+    await expect(p.getByTestId("bloco-nivel-ruido-toggle")).toHaveAttribute("aria-checked", "true");
+    await expect(p.getByTestId("ruido-via_intensa")).toHaveAttribute("aria-checked", "true");
     await p.context().close();
   });
 

@@ -170,3 +170,150 @@ Conferido em produção só com leitura, em 02/11/2026, 02h (horário de Brasíl
 
 **Decisões em aberto (não executadas):** item 2 (passar `ia_chamadas` à fase 1 antes de 16/01/2027), P4 (item 11),
 `destinos` pelo OSM (item 12), coluna `caf_transacao_id` e os prazos do item 13 (parecer da Dra. Beatriz).
+
+## 9. Tabelas novas depois da auditoria (05/11/2026)
+
+Revisão das migrações 0282–0296. Duas tabelas novas ligam uma pessoa a conteúdo e não estavam no inventário: a guarda
+(`inventario.test.ts`) só reconhece colunas pelo nome, e `titulo` e `termo` não estavam na lista.
+
+| Tabela | Migração | O que guarda | Entrou no inventário como |
+|---|---|---|---|
+| `avisos` | 0286 | pessoa, evento, título e link do aviso do sino | fase 2, prazo pendente, sai em cascata com a conta |
+| `moderacao_ofensas` | 0287 | autor, conversa e o termo ofensivo enviado | fase 2, prazo pendente, gatilho decisão da moderação |
+
+- `mensagens_anexos` (0288) já estava no inventário; as colunas novas de `emails_teste` (0284) entram no item que já
+  existia.
+- A guarda passa a reconhecer `termo`.
+- **Nada é apagado** por esta mudança: os prazos das duas tabelas entram na lista de decisões do Daniel (item 13).
+
+## 10. Relatório numerado de retenção (05/11/2026)
+
+Conferido em produção só com leitura, em 05/11/2026, por volta das 10h (horário de Brasília). Nada foi apagado. A rotina
+`e293-limpeza-retencao` (0281) rodou hoje às 04h17 UTC e terminou com sucesso.
+
+| # | Item (inventário) | Prazo declarado | Quem cumpre | Linhas | Vencidas hoje | Situação |
+|---|---|---|---|---|---|---|
+| 1 | `eventos` | 548 dias | `pg_cron` da 0067 | 17.775 (desde 05/10/2026) | 0 | em dia |
+| 2 | `ia_chamadas` | 90 dias da criação | fase 2: o relatório só conta | 287 (desde 18/10/2026) | 0 | **as primeiras vencem em 16/01/2027**; passar à fase 1 antes disso é decisão do Daniel |
+| 3 | `push_envios` | 30 dias | rotina do atendimento | 0 | 0 | em dia |
+| 4 | `saidas_motivos` | 365 dias (anonimizar) | fase 2: só conta | 0 | 0 | sem dados |
+| 5 | `denuncias_anuncio` | 365 dias da decisão | fase 2: só conta | 0 | 0 | sem dados |
+| 6 | `proprietario_strikes` | 365 dias | rotina da avaliação | 0 | 0 | sem dados (`VISTORIA_ATIVA` desligada) |
+| 7 | `estadia_convidados` | 30 dias do fim da estadia | rotina da estadia | 0 | 0 | sem dados |
+| 8 | `contrato_ocupantes` | 90 dias do fim da estadia | rotina do Prompt 32 | 0 | 0 | sem dados |
+| 9 | Tempos de deslocamento e vizinhança (P6) | 30 dias | `0281` | 0 e 7 linhas | 0 | em dia |
+| 10 | Verificação CAF vencida (P5) | validade do laudo | `0281` | — | 0 | em dia |
+| 11 | `property_workspaces` (Google Places, P4) | — | — | 0 | — | decisão a/b pendente (Daniel) |
+| 12 | `destinos` | — | — | 4 (polos públicos) | — | refazer pelo OSM: pendente (Daniel) |
+| 13 | `avisos` (0286; coluna `texto` na 0298) | pendente (item 13) | sai em cascata com a conta | 34 | — | prazo pendente (Daniel) |
+| 14 | `moderacao_ofensas` (0287) | pendente (item 13) | gatilho: decisão da moderação | 0 | — | sem dados |
+
+- **Livro de eliminações** (`eliminacoes_registro`): 111 linhas.
+- **Migrações 0297 a 0301** (revisadas para este relatório):
+  - nenhuma cria tabela;
+  - as colunas novas são `avisos.texto` (0298), que entra no item 13 já existente, e `contratos.proposta_id` (0299), que é
+    só um vínculo, sem dado pessoal novo;
+  - a guarda `inventario.test.ts` segue verde.
+
+**Decisões em aberto (não executadas):**
+- passar `ia_chamadas` à fase 1 antes de 16/01/2027 (item 2);
+- P4 (item 11);
+- `destinos` pelo OSM (item 12);
+- coluna `caf_transacao_id`;
+- prazos do item 13 (parecer da Dra. Beatriz), que incluem `avisos` e `moderacao_ofensas`.
+
+## 11. Coluna nova que guarda texto de usuário (06/11/2026)
+
+Revisão das migrações 0297–0306: nenhuma tabela nova. Uma coluna nova foge da descrição do inventário: `avisos.texto`
+(0298, E482) guarda a **prévia de até 140 caracteres** da mensagem escrita por outra pessoa. O inventário dizia só
+"evento, título e link". A descrição foi corrigida. **Nada é apagado e nenhum prazo muda**: o prazo de `avisos` segue
+na lista de decisões do Daniel (item 13) e sai em cascata com a conta.
+
+## 12. Migrações 0307 a 0312 e relatório numerado (06/11/2026)
+
+Revisão das migrações 0307–0312 e conferência em produção **só com leitura**, em 06/11/2026. Nada foi apagado e nenhum
+prazo mudou. As seis migrações estão registradas em produção (versões `20261105000307` a `20261105000312`) e a rotina
+`e293-limpeza-retencao` (0281) rodou com sucesso hoje (01h17 BRT) e ontem.
+
+**Tabelas novas e o que entrou no inventário** (todas já constam em `src/config/retencao.ts`; a guarda
+`inventario.test.ts` segue verde):
+
+| Tabela | Migração | O que guarda | Inventário | Linhas em produção |
+|---|---|---|---|---|
+| `contrato_ficha_resumo` | 0308 (E634) | dia de vencimento; da conta de recebimento, só o titular, o final do documento e da conta/Pix, e a autorização expressa quando a conta é de terceiro (nunca documento nem conta inteiros) | fase 2, prazo pendente | 0 (chave `FICHA_RESUMO_ATIVA` desligada) |
+| `fotos_repetidas_alertas` | 0309 (E640 b) | caminhos das duas fotos, as duas contas, distância do hash e estado do alerta; só o admin lê | fase 2, prazo pendente | 0 |
+| `caucao_prazos` | 0310 (E637) | check-out, datas do parecer, da liberação integral, da devolução e da pendência | fase 2, prazo pendente | 0 (chave `CAUCAO_PRAZOS_ATIVA` desligada) |
+| `caucao_desconto_itens` | 0310 (E637) | cômodo, valor, caminhos das fotos e do comprovante, contestação do morador | fase 2, prazo pendente | 0 |
+| `cobranca_mensal_parcelas` | 0311 (E641) | vencimento, valor da parcela, taxa e o registro do pagamento (morador) e da confirmação (dono) | fase 2, prazo pendente | 0 (chave `COBRANCA_MENSAL_ATIVA` desligada) |
+
+- A 0307 e a 0312 são massa de teste (dados da conta de teste); não criam tabela nem coluna.
+- Todas as tabelas novas estão atrás de chave **desligada**: hoje não recebem linha nenhuma. O prazo de cada uma entra na
+  lista de decisões do item 13 (parecer da Dra. Beatriz), junto com `avisos` e `moderacao_ofensas`.
+- `fotos_repetidas_alertas` e `caucao_desconto_itens` apontam para arquivos do armazenamento (fotos e comprovantes). Quando
+  o prazo for decidido, a rotina que apagar a linha precisa apagar também o arquivo (não há essa rotina ainda).
+
+**Relatório numerado (itens que mudaram desde o §10):**
+
+| # | Item (inventário) | Prazo declarado | Linhas (05/11 → 06/11) | Vencidas hoje | Situação |
+|---|---|---|---|---|---|
+| 1 | `eventos` | 548 dias | 17.775 → 18.868 | 0 | em dia |
+| 2 | `ia_chamadas` | 90 dias da criação | 287 → 292 | 0 | as primeiras vencem em 16/01/2027; passar à fase 1 é decisão do Daniel |
+| 13 | `avisos` | pendente (item 13) | 34 → 47 | — | prazo pendente (Daniel) |
+| — | `eliminacoes_registro` | — | 111 → 112 | — | livro de eliminações |
+| 15 | `contrato_ficha_resumo` | pendente (item 13) | 0 | — | sem dados (chave desligada) |
+| 16 | `fotos_repetidas_alertas` | pendente (item 13) | 0 | — | sem dados |
+| 17 | `caucao_prazos` e `caucao_desconto_itens` | pendente (item 13) | 0 e 0 | — | sem dados (chave desligada) |
+| 18 | `cobranca_mensal_parcelas` | pendente (item 13) | 0 | — | sem dados (chave desligada) |
+
+Os itens 3 a 12 não foram reconferidos nesta rodada (mesmo estado do §10).
+
+**Decisões em aberto (não executadas):** as mesmas do §10, mais os prazos das cinco tabelas novas (item 13) e a rotina que
+apague também os arquivos ligados a `fotos_repetidas_alertas` e `caucao_desconto_itens` quando o prazo existir.
+
+## 13. Revisão das migrações 0313–0334 (09/11/2026) — só inventário, nada apagado
+- Lidas as 22 migrações desde o relatório de 06/11. Colunas novas com texto livre ou pessoa: `contratos.instrucao_saida` (0320), `imovel_instrucoes_chegada.instrucao_saida`, `condominio_wifi_*`/`recepcao`/`fechadura` (0317), `parceiro_avaliacoes.nota_privada_*` (0323), `conferencia_laudos_retirados` (0319).
+- **Achado:** a tabela `contratos` inteira não estava no inventário (a guarda só a vê por nome de coluna). Entrou como fase 2, prazo pendente, gatilho fim da estadia.
+- A guarda (`inventario.test.ts`) passa a reconhecer `instrucao_saida`, `nota_privada_parte`, `nota_privada_viva` e `condominio_wifi_senha/recepcao/fechadura` como nomes de dado pessoal, para a próxima tabela com essas colunas não passar em branco.
+- Já cobertos: `conferencia_laudos_retirados`, `properties` (condomínio), `parceiro_avaliacoes`, `ficha_dentro*`, `dados_categoria`.
+- Sem migração, sem apagar nada. O prazo de `contratos` entra na lista do item 13 (Dra. Beatriz).
+
+## 14. Relatório numerado de retenção (09/11/2026)
+
+Conferido em produção só com leitura, em 09/11/2026, por volta das 03h30 (horário de Brasília). Nada foi apagado. A rotina
+`e293-limpeza-retencao` (0281, `17 4 * * *`) está ativa e **terminou com sucesso hoje às 04h17 UTC**; `limpar-eventos-antigos`
+(mensal) rodou em 01/11.
+
+| # | Item (inventário) | Prazo declarado | Quem cumpre | Linhas | Vencidas hoje | Situação |
+|---|---|---|---|---|---|---|
+| 1 | `eventos` | 548 dias | `pg_cron` da 0067 | 22.245 (desde 05/10/2026) | 0 | em dia |
+| 2 | `ia_chamadas` | 90 dias da criação | fase 2: o relatório só conta | 330 (desde 18/10/2026) | 0 | **as primeiras vencem em 16/01/2027**; passar à fase 1 antes disso é decisão do Daniel |
+| 3 | `push_envios` | 30 dias | rotina do atendimento | 0 | 0 | em dia |
+| 4 | `saidas_motivos` | 365 dias (anonimizar) | fase 2: só conta | 0 | 0 | sem dados |
+| 5 | `denuncias_anuncio` | 365 dias da decisão | fase 2: só conta | 0 | 0 | sem dados |
+| 6 | `proprietario_strikes` | 365 dias | rotina da avaliação | 0 | 0 | sem dados (`VISTORIA_ATIVA` desligada) |
+| 7 | `estadia_convidados` | 30 dias do fim da estadia | rotina da estadia | 0 | 0 | sem dados |
+| 8 | `contrato_ocupantes` | 90 dias do fim da estadia | rotina do Prompt 32 | 0 | 0 | sem dados |
+| 9 | Livro `eliminacoes_registro` | — | `0281` e fase 1 | 121 (desde 23/10/2026) | — | +17 linhas desde 02/11 (eram 103): a rotina diária está apagando o que a §7 lista |
+| 10 | `contratos` (novo no inventário, §13) | pendente (item 13) | — | — | — | inventariado; prazo depende do item 13 |
+
+**Decisões em aberto (não executadas, sem mudança desde 05/11):** item 2 (`ia_chamadas` para a fase 1 antes de 16/01/2027), P4 Google
+Places, `destinos` pelo OSM, coluna `caf_transacao_id` e os prazos do item 13 (parecer da Dra. Beatriz).
+
+## 15. Migrações 0313 a 0335 (10/11/2026) — revisão, só leitura e texto
+
+Nenhum prazo mudou e nada é apagado. Uma tabela nova e colunas novas; a guarda `inventario.test.ts` segue verde (159 passam, 0 falham no escopo `src/config` + `src/lib/minimizacao`).
+
+| Migração | O que entrou | Inventário |
+|---|---|---|
+| 0319 (E669) | tabela `conferencia_laudos_retirados` | já consta em `retencao.ts` |
+| 0313 (E648) | em `avaliadores_credenciamento`: termo assinado (hash e texto), critério de descredenciamento, resposta do avaliador | **descrição corrigida** neste PR |
+| 0323 (E679) | em `parceiro_avaliacoes`: notas por critério, etiquetas, `nota_privada_parte` e `nota_privada_viva` (texto livre) | **descrição corrigida** neste PR |
+| 0335 (E690) | `criterios_decisao` (jsonb só nosso) | já classificado (guarda P3) |
+| 0317 (E661) / 0320 (E662) | em `properties`: `condominio_wifi_rede`, `condominio_wifi_senha`, `condominio_recepcao`, `condominio_fechadura`, `instrucao_saida` (texto livre do dono; a senha do Wi-Fi do condomínio e como entrar) | **achado:** `properties` não é linha do inventário e a guarda só reconhece pelo nome da coluna (`senha`/`fechadura`/`instrucao` não estão na lista). Proposta abaixo |
+| 0316, 0318, 0325, 0326, 0334 | `ficha_dentro` (jsonb do dono), `papel_ativo_escolhido_em`, preços/prazos do avaliador, `dados_categoria` (jsonb), campos da pré-aceitação | sem dado pessoal novo; `ficha_dentro` e `dados_categoria` já classificados |
+| 0327–0333 | massa de teste e índice | nada |
+
+**Proposta (não executada, para validação do Daniel):**
+1. *(A parte da guarda foi feita no PR do §13: a guarda reconhece esses nomes de coluna.)* Incluir `condominio_wifi_senha`, `condominio_fechadura`, `condominio_recepcao` e `instrucao_saida` na lista de nomes da guarda e no inventário (prazo: enquanto o anúncio existir; a lista pública `PROPERTY_PUBLIC_COLUMNS` NÃO inclui esses campos — conferido no código; falta conferir no banco, por permissão de coluna, que um acesso direto da API pública também não os devolve).
+2. Decidir se a senha do Wi-Fi precisa de prazo próprio (sair da linha quando a estadia acaba).
+Decisões em aberto da §10/§12 seguem as mesmas.

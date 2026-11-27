@@ -4,6 +4,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
+import { caminhoEsperado } from "../fixtures/destino-da-conta";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
@@ -41,7 +42,7 @@ const TELAS: Tela[] = [
     SECOES_CONTA.map(([secao, nome]) => ({
       conta,
       papel: conta === "INQUILINA" ? "inquilina" : "proprietário",
-      rota: () => `/dashboard/conta${secao}`,
+      rota: () => (secao === "/notificacoes" ? "/dashboard/notificacoes" : `/dashboard/conta${secao}`),
       nome: `Conta A1 · ${nome}`,
     })),
   ),
@@ -79,7 +80,7 @@ test.describe("T354 — varredura da página inteira, bloco 19 (Conta A1 e públ
           const respostas = escutarImagens(page);
           const resposta = await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 40_000 });
           expect(resposta?.status() ?? 0, `${t.papel} — ${t.nome} @${tam.nome}: HTTP`).toBeLessThan(400);
-          expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split(/[?#]/)[0]);
+          await expect.poll(() => new URL(page.url()).pathname, { message: `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`, timeout: 15_000 }).toBe(caminhoEsperado(rota, tam.width));
           await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
           if (t.antes) await t.antes(page);
           const achados = await varrerPagina(page, respostas);

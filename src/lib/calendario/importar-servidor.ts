@@ -1,11 +1,12 @@
 import "server-only";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import path from "node:path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { corpoCalendarioConflito, corpoCalendarioFalha, paraNotify, type CorpoResidual } from "@/lib/notifications/corpo-e267-residual";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { periodosOcupados } from "@/lib/data/periodo-servidor";
-import { periodoDaEstadia } from "@/lib/contrato-periodo";
+import { periodoDaEstadia, periodoEmDias } from "@/lib/contrato-periodo";
 import {
   LIMITE_BYTES_ICS,
   avisarFalha,
@@ -116,10 +117,12 @@ export async function compromissosDaViva(admin: Admin, propertyId: string): Prom
     .in("status", ["enviada", "vista", "contraproposta", "aceita", "em_contrato"]);
   if (erroProps) throw new Error("Não foi possível ler as propostas do imóvel.");
   for (const p of (props ?? []) as { id: string; versao_atual: number }[]) {
-    const { data: v, error: erroVersao } = await admin.from("proposta_versoes").select("data_entrada, meses").eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
+    const { data: v, error: erroVersao } = await admin.from("proposta_versoes").select("data_entrada, meses, dias").eq("proposta_id", p.id).eq("versao", p.versao_atual).maybeSingle();
     if (erroVersao) throw new Error("Não foi possível ler a versão da proposta.");
-    const versao = v as { data_entrada: string | null; meses: number | null } | null;
-    if (versao?.data_entrada && versao.meses) out.push({ ...periodoDaEstadia(versao.data_entrada, versao.meses), tipo: "proposta" });
+    const versao = v as { data_entrada: string | null; meses: number | null; dias?: number | null } | null;
+    // E562: o período da proposta em dias exatos (antigas: meses × 30).
+    const diasVersao = versao?.dias ?? (versao?.meses ? versao.meses * DIAS_POR_MES : null);
+    if (versao?.data_entrada && diasVersao) out.push({ ...periodoEmDias(versao.data_entrada, diasVersao), tipo: "proposta" });
   }
   const { data: leads, error: erroLeads } = await admin.from("leads").select("inicio_desejado").eq("property_id", propertyId).in("status", ["new", "accepted"]).not("inicio_desejado", "is", null);
   if (erroLeads) throw new Error("Não foi possível ler as candidaturas do imóvel.");
@@ -127,7 +130,7 @@ export async function compromissosDaViva(admin: Admin, propertyId: string): Prom
   return out;
 }
 
-async function avisarDono(admin: Admin, ownerId: string, evento: "calendario_conflito" | "calendario_falha", propertyId: string, corpo: (imovel: { titulo: string | null; bairro: string | null; cidade: string | null }) => CorpoResidual): Promise<void> {
+async function avisarDono(admin: Admin, ownerId: string, evento: "calendario_conflito" | "calendario_falha", propertyId: string, corpo: (imovel: { id?: string | null; titulo: string | null; bairro: string | null; cidade: string | null }) => CorpoResidual): Promise<void> {
   try {
     const [{ data }, { data: im }] = await Promise.all([
       admin.from("profiles").select("email, full_name, notif_email").eq("id", ownerId).maybeSingle(),
@@ -136,7 +139,7 @@ async function avisarDono(admin: Admin, ownerId: string, evento: "calendario_con
     const d = data as { email: string | null; full_name: string | null; notif_email: boolean | null } | null;
     const p = im as { title: string | null; address: string | null; city: string | null } | null;
     // E267 (restante): o imóvel e o fato no corpo e no bloco (antes, o fato ia só na versão em texto).
-    const c = corpo({ titulo: p?.title ?? null, bairro: p?.address ?? null, cidade: p?.city ?? null });
+    const c = corpo({ id: propertyId, titulo: p?.title ?? null, bairro: p?.address ?? null, cidade: p?.city ?? null });
     await notify({
       event: evento,
       email: d?.notif_email === false ? undefined : (d?.email ?? undefined),

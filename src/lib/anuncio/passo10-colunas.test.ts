@@ -91,9 +91,9 @@ test("E260 (b) botão travado: o motivo aponta para a lista de conferência, sem
   assert.doesNotMatch(m, /documento|padrão mínimo|\n/);
 });
 
-test("E260: a lista conta as linhas pendentes e as pendências da própria Revisão", () => {
+test("E260 + E598: a lista conta os itens pendentes de cada passo e as pendências da própria Revisão", () => {
   const c = conferenciaAssistente(prontidaoAnuncio({ ...FATOS, documento: "none", confortoFaltam: 2 }));
-  assert.equal(faltamNaConferencia(c), c.itens.filter((i) => !i.ok).length + c.pendentesNaRevisao.length);
+  assert.equal(faltamNaConferencia(c), c.itens.reduce((n, i) => n + (i.ok ? 0 : i.faltam.length), 0) + c.pendentesNaRevisao.length);
   assert.ok(faltamNaConferencia(c) >= 2);
   assert.equal(faltamNaConferencia(conferenciaAssistente(prontidaoAnuncio(FATOS))), 0);
 });

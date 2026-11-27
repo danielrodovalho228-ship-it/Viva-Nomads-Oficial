@@ -21,6 +21,7 @@ const dono = { email: `dono.t707.${sufixo}@lab.vivanomads.test`, nome: "Gaia Pre
 const ids: { dono?: string; publico?: string; previa: Record<number, string>; numeros: Record<number, string> } = { previa: {}, numeros: {} };
 const LARGURAS = [1280, 390] as const;
 const SIZES_MINIATURA = "(max-width: 768px) 100vw, 50vw";
+const SIZES_MOSAICO_PEQUENA = "(max-width: 768px) 100vw, 25vw";
 const altura = (l: number) => (l === 390 ? 844 : 900);
 
 /** O quadro N visível da galeria (o carrossel no celular, o mosaico no computador) dentro de `raiz`. */
@@ -88,7 +89,9 @@ test.describe("T707 — E262: galeria navegando e na prévia, destaques com os n
       await carregada(tile0.locator("img").first(), 20_000);
       const imgTile1 = quadro(p, 1).locator("img").first();
       const [srcsetTile1, sizesTile1] = [await imgTile1.getAttribute("srcset"), await imgTile1.getAttribute("sizes")];
-      expect(sizesTile1).toBe(SIZES_MINIATURA);
+      // E987: desde o E768, no computador o quadro 2 é uma foto pequena do mosaico (versão do tamanho do quadro, 25vw);
+      // no celular é o carrossel (a miniatura). O que importa é a galeria pedir a MESMA versão do quadro.
+      expect(sizesTile1).toBe(largura === 1280 ? SIZES_MOSAICO_PEQUENA : SIZES_MINIATURA);
       await tile0.click();
       const lb = p.getByTestId("galeria-lightbox");
       await expect(lb.getByTestId("galeria-contador")).toHaveText("1 / 8");
@@ -97,7 +100,7 @@ test.describe("T707 — E262: galeria navegando e na prévia, destaques com os n
       const { foto, baixo, cima } = painel(p);
       await expect(foto).toBeVisible();
       // Por baixo: a MESMA versão do quadro 2 (mesmo srcset e sizes = mesma URL escolhida pelo navegador).
-      await expect(baixo).toHaveAttribute("sizes", SIZES_MINIATURA);
+      await expect(baixo).toHaveAttribute("sizes", sizesTile1!);
       expect(await baixo.getAttribute("srcset")).toBe(srcsetTile1);
       if (largura === 1280) {
         // No mosaico o quadro 2 tem prioridade (já baixado): por baixo pinta na hora, com a mesma URL.

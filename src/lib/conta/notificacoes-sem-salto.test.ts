@@ -16,6 +16,6 @@ test("carregando: a mesma estrutura, trilho neutro no lugar do interruptor, Salv
   assert.match(t, /const carregando = !tipos \|\| !canais;/);
   assert.match(t, /data-testid=\{carregando \? "tela-notificacoes-carregando" : "tela-notificacoes"\}/);
   assert.match(t, /\{tipos \? <Switch checked=\{tipos\[t\.categoria\]\}[\s\S]*?\/> : trilho\}/);
-  assert.match(t, /\{canais \? <Switch checked=\{canais\[c\.canal\]\}[\s\S]*?\/> : trilho\}/);
+  assert.match(t, /\{canais \? <Switch checked=\{canais\[c\.canal\][^}]*\}[\s\S]*?\/> : trilho\}/);
   assert.match(t, /disabled=\{salvando \|\| carregando\}/);
 });

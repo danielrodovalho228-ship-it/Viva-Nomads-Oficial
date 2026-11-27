@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { Play } from "lucide-react";
+import { BOTOES_DO_FIM, INICIO_DO_CARTAO_FINAL } from "./video-dados";
 
 /**
  * Vídeo institucional v3 ("A Viva em 30 segundos"). Player nativo, PARADO e com som: só toca quando a
@@ -15,6 +17,9 @@ import { Play } from "lucide-react";
  * Agora: moldura (borda), capa = um quadro do meio do próprio vídeo (12,5 s, "Imóveis mobiliados"), botão de play
  * grande no verde da marca com anel branco de contraste, selo com a duração, 16:9. O toque no play dá o play no
  * vídeo; a partir daí ficam os controles nativos.
+ *
+ * E832: os botões do cartão final ("Encontrar meu lar" / "Anunciar grátis") são parte da imagem. Quando o cartão final
+ * aparece (25,6 s) e quando o vídeo termina, dois links REAIS ficam por cima deles; somem se a pessoa voltar o vídeo.
  */
 export const VIDEO_INSTITUCIONAL = {
   mp4: "/media/institucional.mp4",
@@ -22,14 +27,16 @@ export const VIDEO_INSTITUCIONAL = {
   /** Quadro do meio do vídeo (12,5 s), extraído do próprio institucional.mp4 — nunca o cartão final. */
   poster: "/media/institucional-poster.webp",
   legenda: "/media/institucional.pt-BR.vtt",
-  /** Duração real do arquivo (32,6 s), arredondada como os players mostram. */
-  duracao: "0:33",
+  /** E832: duração real do arquivo (32,6 s) como os players mostram — segundos INTEIROS, sem arredondar para cima
+   *  (era "0:33" e o player mostrava 0:32). */
+  duracao: "0:32",
 } as const;
 
 export function VideoInstitucional({ titulo = "A Viva em 30 segundos", id = "video-institucional" }: { titulo?: string; id?: string }) {
   const tituloId = `${id}-titulo`;
   const video = useRef<HTMLVideoElement>(null);
   const [tocou, setTocou] = useState(false);
+  const [fim, setFim] = useState(false);
 
   function tocar() {
     setTocou(true);
@@ -58,11 +65,28 @@ export function VideoInstitucional({ titulo = "A Viva em 30 segundos", id = "vid
           poster={VIDEO_INSTITUCIONAL.poster}
           aria-label="Vídeo institucional da Viva Nomads: como funciona, em 30 segundos"
           onPlay={() => setTocou(true)}
+          onTimeUpdate={(e) => setFim(e.currentTarget.currentTime >= INICIO_DO_CARTAO_FINAL)}
+          onEnded={() => setFim(true)}
         >
           <source src={VIDEO_INSTITUCIONAL.mp4Celular} type="video/mp4" media="(max-width: 767px)" />
           <source src={VIDEO_INSTITUCIONAL.mp4} type="video/mp4" />
           <track kind="captions" srcLang="pt-BR" label="Português (Brasil)" src={VIDEO_INSTITUCIONAL.legenda} default />
         </video>
+        {fim && (
+          <div data-testid="video-institucional-fim">
+            {BOTOES_DO_FIM.map((b) => (
+              <Link
+                key={b.href}
+                href={b.href}
+                className={`absolute grid place-items-center rounded-full text-[clamp(0.75rem,2.2vw,1.5rem)] font-semibold text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white ${b.cor === "azul" ? "bg-[#00288c]" : "bg-[#3c6e08]"}`}
+                style={{ left: `${b.caixa.esquerda}%`, top: `${b.caixa.topo}%`, width: `${b.caixa.largura}%`, height: `${b.caixa.altura}%` }}
+                data-testid={`video-institucional-fim-${b.cor}`}
+              >
+                {b.rotulo}
+              </Link>
+            ))}
+          </div>
+        )}
         {!tocou && (
           <button
             type="button"

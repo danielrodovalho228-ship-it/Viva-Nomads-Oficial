@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CATEGORIAS_CATALOGO, CATEGORIAS_PARCEIRO, categoriaValida } from "../parceiros/regras.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
@@ -20,7 +21,6 @@ const ADMIN = ler("src/app/(dashboard)/admin/avaliadores/page.tsx");
 const PUBLICA = ler("src/app/(public)/avaliadores/[numero]/page.tsx");
 const TELAS = [BLOCO_DONO, MORADOR, AVALIADOR, ADMIN, PUBLICA];
 
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 function corpo(fonte: string, nome: string): string {
   const i = fonte.indexOf(`export async function ${nome}`);
@@ -29,21 +29,25 @@ function corpo(fonte: string, nome: string): string {
   return fonte.slice(i, j < 0 ? undefined : j);
 }
 
-test("o dono não escolhe o avaliador, nem por API: o pedido só leva o imóvel e a designação vem do rodízio", () => {
+test("E648: o pedido só leva o imóvel; quem escolhe o avaliador é o dono, entre os sugeridos — a Viva não designa", () => {
   const pedir = corpo(ACOES, "pedirAvaliacao");
   assert.deepEqual([...pedir.matchAll(/form\.get\("(\w+)"\)/g)].map((m) => m[1]), ["propertyId"]);
   assert.doesNotMatch(pedir, /avaliador_id|avaliadorId/);
-  assert.match(pedir, /await designar\(s\.admin, p\.id, agora\)/);
-  // A designação usa só a regra pura do rodízio.
-  assert.match(corpo(SERVIDOR, "designar"), /proximoAvaliador\(fila, pedido, historico, agora\)/);
-  assert.doesNotMatch(BLOCO_DONO, /name="avaliador/);
+  assert.match(pedir, /await abrirEscolha\(s\.admin, p\.id, agora\)/);
+  // A escolha confere o dono do pedido e só aceita quem a regra pura sugeriu.
+  const escolher = corpo(ACOES, "escolherAvaliador");
+  assert.match(escolher, /p\.owner_id !== s\.userId/);
+  assert.match(escolher, /escolherNoServidor\(/);
+  assert.match(SERVIDOR, /sugerirAvaliadores\(fila, pedido, historico, agora\)/);
+  assert.match(SERVIDOR, /l\.sugestoes\.sugeridos\.find\(\(x\) => x\.id === avaliadorId\)/);
 });
 
 test("chave VISTORIA_ATIVA desligada: nada para o dono nem para o morador; credenciamento e admin seguem", () => {
   assert.match(BLOCO_DONO, /const chaveAtiva = await vistoriaAtiva\(\);[\s\S]*const visivel = blocoDoDonoVisivel\(chaveAtiva, [\s\S]*if \(!visivel\) return null;/);
-  assert.match(MORADOR, /if \(!\(await vistoriaAtiva\(\)\)\) notFound\(\);/);
+  // E1171 (ORDEM-DUET-746): para o morador a chave é a do PEDIDO (a sessão dele, ou o dono do pedido no piloto).
+  assert.match(MORADOR, /if \(!\(await vistoriaAtivaParaOMorador\(admin, p\.owner_id\)\)\) notFound\(\);/);
   assert.match(corpo(ACOES, "pedirAvaliacao"), /chaveAtiva: await vistoriaAtiva\(\)/);
-  assert.match(corpo(ACOES, "concordarVisita"), /if \(!\(await vistoriaAtiva\(\)\)\) return DESLIGADA;/);
+  assert.match(corpo(ACOES, "concordarVisita"), /if \(!\(await vistoriaAtivaParaOMorador\(s\.admin, p\.owner_id\)\)\) return DESLIGADA;/);
   assert.doesNotMatch(corpo(ACOES, "pedirCredenciamento"), /vistoriaAtiva/);
   assert.doesNotMatch(ADMIN, /vistoriaAtiva\(\)/);
   // O cookie do laboratório nunca vale em produção.
@@ -56,7 +60,8 @@ test("nenhum texto promete pagamento pela plataforma; a taxa usa o texto da chav
     assert.doesNotMatch(f, /pague (pela|na) (plataforma|Viva)|pagamento pela plataforma (est[áa] ativo|liberado)|a Viva (cobra|recebe) (o valor|a avalia)/i);
   }
   assert.match(BLOCO_DONO, /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
-  assert.match(AVALIADOR, /textoTaxaServicoParceiros\(PAGAMENTO_PARCEIROS_ATIVO\)/);
+  // E1158 (2; ORDEM-DUET-654): na tela do avaliador, o texto da taxa fala com ele ("vai direto para você").
+  assert.match(AVALIADOR, /textoTaxaServicoAoParceiro\(PAGAMENTO_PARCEIROS_ATIVO\)/);
   assert.match(BLOCO_DONO, /\{FRASE_PAGA_AVALIACAO\}/);
 });
 
@@ -80,7 +85,7 @@ test("catálogo: 'vistoria' é categoria de credenciamento, nunca contratável d
 test("vocabulário: 'avaliação do imóvel' e 'avaliador credenciado'; nunca inspeção, perícia ou engenharia na tela", () => {
   for (const f of TELAS) assert.doesNotMatch(semComentarios(f), /inspe[çc][ãa]o|per[íi]cia|engenharia|vistoria(?!\.|_|\/|-|"|Ativa)/i);
   assert.match(BLOCO_DONO, /Pedir avaliação do imóvel/);
-  assert.match(BLOCO_DONO, /Avaliador designado pela Viva: nº/);
+  assert.match(BLOCO_DONO, /Avaliador escolhido por você: nº/);
 });
 
 test("credenciamento em teste → ativo só pelo admin com duas etapas", () => {

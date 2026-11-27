@@ -17,8 +17,8 @@ import {
  *        porcentagem, barra nem a lista do que já foi feito. Abaixo de 100%: só o que FALTA. 390 e 1280.
  *   E61. No celular o "Salvar alterações" vem logo depois do conteúdo: sem vão entre o medidor e o botão nem altura
  *        morta depois dele (só a barra de abas). Salvar continua gravando.
- *   E60. O "Fale com a Viva" não aparece na tela Perfil; nas outras telas do celular fica INTEIRO na tela e ACIMA da
- *        barra de abas, também depois de arrastado para baixo.
+ *   E60. O "Fale com a Viva" não aparece na tela Perfil. E246: no celular (< 768 px) ele some em todas as telas; de
+ *        768 px para cima fica INTEIRO na tela e ACIMA da barra de abas, também depois de arrastado para baixo.
  */
 const SAIDA = "tests/laboratorio/saida";
 const ROTA = "/dashboard/conta/perfil";
@@ -225,11 +225,17 @@ test.describe("T405 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
     await p.context().close();
   });
 
-  test("E60. a 390 px: nas outras telas o botão fica inteiro e acima da barra de abas, também depois de arrastado", async ({
+  // E744 (asserção alterada, tabela da Fable #3832): pelo E246 no celular (< 768 px) o flutuante some em TODAS as telas
+  // (`max-md:hidden`, viva-chat.tsx); "inteiro e acima das abas" passa a valer de 768 px para cima.
+  test("E60 + E246. a 390 px o botão não aparece no /dashboard; a 768 px fica inteiro e acima da barra de abas, também depois de arrastado", async ({
     browser,
   }) => {
     const p = await entrar(browser, nova.email, senha);
     await p.setViewportSize({ width: 390, height: 844 });
+    await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await p.locator("main").first().waitFor({ timeout: 20_000 });
+    await expect(p.getByTestId("fale-com-a-viva-raiz")).toBeHidden();
+    await p.setViewportSize({ width: 768, height: 1024 });
     const medir = () =>
       p.evaluate(() => {
         const b = document
@@ -266,7 +272,7 @@ test.describe("T405 — Perfil: E60 (botão flutuante), E61 (Salvar), E62 (medid
       expect(r.base, JSON.stringify(r)).toBeLessThanOrEqual(r.topoAbas);
     }
     await p.screenshot({
-      path: `${SAIDA}/t405-flutuante-390.png`,
+      path: `${SAIDA}/t405-flutuante-768.png`,
       fullPage: false,
     });
     await p.context().close();

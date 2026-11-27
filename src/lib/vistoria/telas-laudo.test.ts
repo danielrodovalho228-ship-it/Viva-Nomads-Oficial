@@ -26,10 +26,10 @@ import { hrefAvaliador } from "./telas-exibicao.ts";
 import { itensSintese, textoNivelCartao } from "../cartao-sintese.ts";
 import { GRUPOS_AVALIACAO, ITENS_CHECKLIST } from "../../config/checklist-avaliacao.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 const primarios = (f: string) => (semComentarios(f).match(/<Button(?![^>]*variant=)[^>]*>/g) ?? []).length + (semComentarios(f).match(/variant="primary"/g) ?? []).length;
 
 const CHECKLIST = ler("src/components/vistoria/checklist-avaliador.tsx");
@@ -68,15 +68,16 @@ test("textos exatos da execução: sem pessoas, teste em uso, fila de fotos", ()
   assert.match(CHECKLIST, /textoFaltaFotos/);
 });
 
-test("laudo do avaliador: prazo de 48 horas úteis em Brasília e a delimitação na revisão", () => {
-  // Visita na sexta 23/10/2026 às 10:00 de Brasília: 48 horas úteis caem na terça 27/10 às 10:00.
+test("laudo do avaliador: o prazo combinado em Brasília (sem prazo combinado, 2 dias úteis) e a delimitação na revisão", () => {
+  // E1156 (ORDENS-DUET 712 e 713): o prazo é o combinado; sem ele, o padrão de 2 dias úteis — as 48 horas úteis de antes.
+  // Visita na sexta 23/10/2026 às 10:00 de Brasília: 2 dias úteis caem na terça 27/10 às 10:00.
   const visita = "2026-10-23T13:00:00Z";
   const ok = prazoDoLaudo(visita, new Date("2026-10-24T12:00:00Z"));
   assert.equal(ok.vencido, false);
-  assert.equal(ok.texto, "Envie até 27/10/2026 às 10:00, horário de Brasília (48 horas úteis da visita).");
+  assert.equal(ok.texto, "Envie até 27/10/2026 às 10:00, horário de Brasília (2 dias úteis depois da visita).");
   const vencido = prazoDoLaudo(visita, new Date("2026-10-28T12:00:00Z"));
   assert.equal(vencido.vencido, true);
-  assert.match(vencido.texto, /^Prazo de 48 horas úteis vencido em 27\/10\/2026 às 10:00\./);
+  assert.match(vencido.texto, /^Prazo combinado vencido em 27\/10\/2026 às 10:00\./);
   assert.match(EXECUCAO, /DELIMITACAO_LAUDO/);
   assert.match(FICHA, /DELIMITACAO_LAUDO/);
 });
@@ -112,7 +113,7 @@ test("strikes: um aviso por passo da escada; o 3º abre o painel com os anúncio
   assert.equal(avisoStrike(3)?.titulo, "Seus anúncios estão fora da busca");
   for (const d of [1, 2, 3] as const) assert.ok(avisoStrike(d)!.texto.length > 10);
   assert.match(AVISO_PAINEL, /"strike_3"/);
-  assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /<AvisoStrikePainel \/>/);
+  assert.match(ler("src/app/(dashboard)/dashboard/inicio-dados.tsx"), /<AvisoStrikePainel \/>/);
 });
 
 test("admin: contestações, devoluções, laudos atrasados e auditoria no topo 'Para decidir', cada um com sua âncora", () => {
@@ -149,7 +150,7 @@ test("E235: o nº do avaliador é link para /avaliadores/[numero] nos dois ponto
   const laudo = semComentarios(ler("src/components/vistoria/laudo-dono.tsx"));
   assert.match(laudo, /\{prefixoAvaliadoEm\(l\.vistoriado_em\)\}\s*<Link href=\{hrefAvaliador\(String\(cred\.numero_credenciado\)\)\}[^>]*>\{String\(cred\.numero_credenciado\)\}<\/Link>/);
   const bloco = semComentarios(ler("src/components/vistoria/bloco-avaliacao-dono.tsx"));
-  assert.match(bloco, /Avaliador designado pela Viva: nº\{" "\}\s*<Link href=\{hrefAvaliador\(atual\.avaliadores_credenciamento\.numero_credenciado\)\}[^>]*>\s*\{atual\.avaliadores_credenciamento\.numero_credenciado\}\s*<\/Link>/);
+  assert.match(bloco, /Avaliador escolhido por você: nº\{" "\}\s*<Link href=\{hrefAvaliador\(atual\.avaliadores_credenciamento\.numero_credenciado\)\}[^>]*>\s*\{atual\.avaliadores_credenciamento\.numero_credenciado\}\s*<\/Link>/);
   // A página pública existe e aceita o formato do número.
   assert.match(ler("src/app/(public)/avaliadores/[numero]/page.tsx"), /\^\[A-Z\]\{3\}-\\d\{3,\}\$/);
 });

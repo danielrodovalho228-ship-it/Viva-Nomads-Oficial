@@ -10,10 +10,12 @@
   Roda: node --test src/lib/parceiros/email-pedido.test.ts
 */
 
+import { codigoDoImovel } from "../imovel-pagina.ts";
+
 export interface PedidoParaEmail {
   codigo: string;
   servico: string;
-  imovel: { titulo?: string | null; bairro?: string | null; cidade?: string | null } | null;
+  imovel: { id?: string | null; titulo?: string | null; bairro?: string | null; cidade?: string | null } | null;
   /** Janela do pedido automático (saída do morador). */
   janela?: { inicio: string; fim: string } | null;
   /** Horários sugeridos pelo cliente (ISO); o 1º é a data pedida. */
@@ -101,7 +103,9 @@ export function imovelDoPedido(im: PedidoParaEmail["imovel"]): string {
   if (!im) return "";
   const titulo = limpo(im.titulo);
   const lugar = [limpo(im.bairro), limpo(im.cidade)].filter(Boolean).join(", ");
-  return [titulo, lugar].filter(Boolean).join(" · ");
+  // E394: título + código (VN-…) em TODO modelo transacional que cita o imóvel (o código identifica o anúncio com 2+ imóveis).
+  const codigo = limpo(im.id) ? `código ${codigoDoImovel(limpo(im.id))}` : "";
+  return [titulo, lugar, codigo].filter(Boolean).join(" · ");
 }
 
 /** A data do pedido: horário confirmado > janela da saída > 1º horário sugerido. */

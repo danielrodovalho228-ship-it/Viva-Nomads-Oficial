@@ -1,5 +1,6 @@
 "use client";
 
+import type { NovoEnvio } from "@/lib/documento/vigente";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,9 @@ export function MatriculaNoInicio(p: {
   imovelId: string | null;
   estado: EstadoDocumentoTela;
   motivos: string[];
-  onResultado: (estado: EstadoDocumentoTela, motivos: string[]) => void;
+  /** E587: envio novo à parte do aprovado vigente. */
+  novo?: NovoEnvio | null;
+  onResultado: (estado: EstadoDocumentoTela, motivos: string[], novo?: NovoEnvio | null) => void;
   /** Aplica o que a matrícula trouxe no cadastro e devolve o resumo ("Preenchemos: endereço, área, vagas."). */
   onMatricula: (m: InfoMatricula) => string;
   operacao: Operacao;
@@ -47,7 +50,7 @@ export function MatriculaNoInicio(p: {
           <h2 id="matricula-inicio-titulo" className="font-title text-xl font-semibold text-ink">
             Comece pela matrícula
           </h2>
-          <button type="button" onClick={p.onFechar} className="grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-sage-50" aria-label="Fechar" data-testid="matricula-inicio-fechar">
+          <button type="button" onClick={p.onFechar} className="grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-sage-100" aria-label="Fechar" data-testid="matricula-inicio-fechar">
             <X className="h-5 w-5" aria-hidden />
           </button>
         </div>
@@ -60,6 +63,7 @@ export function MatriculaNoInicio(p: {
             operacao={p.operacao}
             estado={p.estado}
             motivos={p.motivos}
+            novo={p.novo}
             onResultado={p.onResultado}
             enderecoOpcional
             onMatricula={(m) => {

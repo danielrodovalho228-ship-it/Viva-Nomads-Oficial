@@ -4,9 +4,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
 
 /*
   T451 — Cadastro 01-b (E87) + E102-A. Só no laboratório.
-   1. Passo 1, a 390 e 1280 px: os 9 tipos em cartões-foto, todos com foto e o selo "Imagem ilustrativa", numa linha só;
-      nenhum chip nem "Outros tipos". Computador: setas (a da esquerda desativada no início, a da direita no fim), também
-      pelo teclado. Celular: a linha desliza com encaixe. O cartão marcado leva o selo verde.
+   1. Passo 1, a 390 e 1280 px (E607): grade como no mockup — Casa, Apartamento e Quarto à vista e "Ver mais tipos" abre os
+      9 (3 por linha no computador, lista no celular), todos com foto, nada cortado; nenhum chip nem "Outros tipos". O cartão
+      marcado leva o selo verde.
    2. E102-A: na Revisão, o bloco "Dados da chácara/sítio" mostra os valores preenchidos; o subtítulo do Passo 9 sem
       "aluguel".
 */
@@ -40,56 +40,52 @@ test.describe("T451 — Cadastro 01-b: 9 tipos em cartões-foto; E102-A", () => 
   });
 
   for (const w of [390, 1280] as const) {
-    test(`1. a ${w} px: 9 cartões-foto numa linha, sem chips; setas no computador, deslizar no celular`, async ({ browser }) => {
+    test(`1. a ${w} px (E607): 3 tipos à vista em grade, 'Ver mais tipos' abre os 9 sem cortar nada; sem chips`, async ({ browser }) => {
       const page = await entrar(browser, dono.email, senha);
       await page.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await page.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
-      const linha = page.getByTestId("tipos-linha");
-      await expect(linha).toBeVisible({ timeout: 30_000 });
-      const cartoes = linha.getByRole("radio");
-      await expect(cartoes).toHaveCount(9);
-      expect((await cartoes.allTextContents()).map((t) => t.replace("Imagem ilustrativa", "").trim())).toEqual(ROTULOS);
-      // Todos com foto (e alt que descreve o tipo), sem selo por cima (E265); nenhum chip nem "Outros tipos".
-      await expect(linha.locator("img")).toHaveCount(9);
-      for (const alt of await linha.locator("img").evaluateAll((els) => els.map((e) => e.getAttribute("alt") ?? ""))) expect(alt).toMatch(/^Foto de /);
-      await expect(linha.getByTestId("selo-ilustrativa")).toHaveCount(0);
-      await expect(linha.getByText("Imagem ilustrativa")).toHaveCount(0);
-      await expect(page.getByText("Outros tipos")).toHaveCount(0);
-      // Uma linha só: todos os cartões no mesmo alto.
-      const ys = await cartoes.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
-      expect(new Set(ys).size).toBe(1);
-      // A linha rola (o conteúdo é mais largo que a tela) e a página não rola de lado.
-      expect(await linha.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      const grade = page.getByRole("radiogroup", { name: "Tipo do imóvel" });
+      await expect(grade).toBeVisible({ timeout: 30_000 });
+      const cartoes = grade.getByRole("radio");
+      // Como no mockup: Casa, Apartamento e Quarto à vista; nenhuma seta nem carrossel.
+      await expect(cartoes).toHaveCount(3);
+      expect((await cartoes.allTextContents()).map((t) => t.trim())).toEqual(ROTULOS.slice(0, 3));
+      await expect(page.getByTestId("tipos-seta-direita")).toHaveCount(0);
+      const ver = page.getByTestId("tipos-ver-mais");
+      await expect(ver).toHaveAttribute("aria-expanded", "false");
       await page.screenshot({ path: `${SAIDA}/t451-tipos-${w}.png` });
 
-      const esq = page.getByTestId("tipos-seta-esquerda");
-      const dir = page.getByTestId("tipos-seta-direita");
-      if (w === 1280) {
-        await expect(esq).toBeDisabled();
-        await expect(dir).toBeEnabled();
-        // Pelo teclado: foco na seta da direita e Enter até o fim.
-        await dir.focus();
-        for (let i = 0; i < 6 && (await dir.isEnabled()); i++) {
-          await page.keyboard.press("Enter");
-          await page.waitForTimeout(400);
-        }
-        await expect(dir).toBeDisabled();
-        await expect(esq).toBeEnabled();
-        await expect(cartoes.last()).toBeInViewport();
-        await page.screenshot({ path: `${SAIDA}/t451-tipos-fim-${w}.png` });
-      } else {
-        await expect(esq).toBeHidden();
-        await expect(dir).toBeHidden();
-        expect(await linha.evaluate((el) => getComputedStyle(el).scrollSnapType)).toContain("x");
-        // Deslizar até o fim mostra o último cartão.
-        await linha.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
-        await expect(cartoes.last()).toBeInViewport();
-      }
+      await ver.click();
+      await expect(ver).toHaveAttribute("aria-expanded", "true");
+      await expect(cartoes).toHaveCount(9);
+      expect((await cartoes.allTextContents()).map((t) => t.trim())).toEqual(ROTULOS);
+      // Todos com foto (alt que descreve o tipo), sem selo por cima (E265); nenhum chip nem "Outros tipos".
+      await expect(grade.locator("img")).toHaveCount(9);
+      for (const alt of await grade.locator("img").evaluateAll((els) => els.map((e) => e.getAttribute("alt") ?? ""))) expect(alt).toMatch(/^Foto de /);
+      await expect(grade.getByTestId("selo-ilustrativa")).toHaveCount(0);
+      await expect(page.getByText("Outros tipos")).toHaveCount(0);
+      // Grade inteira: 3 por linha no computador, 1 no celular; nenhum cartão nem rótulo cortado; a página não rola de lado.
+      const m = await grade.evaluate((g) => {
+        const gr = g.getBoundingClientRect();
+        const cs = [...g.querySelectorAll('[role="radio"]')];
+        const tops = [...new Set(cs.map((c) => Math.round(c.getBoundingClientRect().top)))];
+        return {
+          porLinha: [...new Set(tops.map((t) => cs.filter((c) => Math.round(c.getBoundingClientRect().top) === t).length))],
+          cortados: cs.filter((c) => {
+            const r = c.getBoundingClientRect();
+            const rot = c.querySelector("span:last-of-type") as HTMLElement | null;
+            return r.right > gr.right + 1 || r.left < gr.left - 1 || (!!rot && rot.scrollWidth > rot.clientWidth + 1);
+          }).length,
+        };
+      });
+      expect(m).toEqual({ porLinha: [w === 390 ? 1 : 3], cortados: 0 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+      await page.screenshot({ path: `${SAIDA}/t451-tipos-todos-${w}.png`, fullPage: true });
+
       // Marcar um tipo: selo verde no cartão marcado.
-      await linha.getByTestId("tipo-chacara").click();
-      await expect(linha.getByTestId("tipo-chacara")).toHaveAttribute("aria-checked", "true");
-      await expect(linha.getByTestId("tipo-chacara").getByTestId("tipo-marcado")).toBeVisible();
+      await grade.getByTestId("tipo-chacara").click();
+      await expect(grade.getByTestId("tipo-chacara")).toHaveAttribute("aria-checked", "true");
+      await expect(grade.getByTestId("tipo-chacara").getByTestId("tipo-marcado")).toBeVisible();
       await page.screenshot({ path: `${SAIDA}/t451-tipos-chacara-${w}.png` });
       await page.context().close();
     });

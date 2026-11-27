@@ -157,7 +157,7 @@ test("critério 5: notificações ligadas por padrão e /dashboard/notificacoes 
   assert.match(ler("lib/atendimento/servidor.ts"), /notificacaoLigada\(dono\.notif_email/);
   const pagina = ler("app/(dashboard)/dashboard/notificacoes/page.tsx");
   // E176 (parte 2): a página única — preferências (perfil-06) na casca da Conta e os avisos embaixo.
-  assert.match(pagina, /<CascaConta ativo="notificacoes">\s*<TelaNotificacoes \/>/);
+  assert.match(pagina, /<CascaConta ativo="notificacoes">\s*<TelaNotificacoes inicial=\{inicial\} \/>/);
   assert.match(pagina, /<StatCard/);
   // NAV-A: os avisos moram na barra verde (Mensagens → Notificações), não na Conta.
   assert.match(ler("config/menu-por-papel.ts"), /href: "\/dashboard\/notificacoes"/);
@@ -185,12 +185,13 @@ test("F31: Visão geral usa a mesma consulta e a mesma regra de 'publicado' de M
   assert.equal(imovelPublicado({ status: "active" }), true);
   assert.equal(imovelPublicado({ status: "draft" }), false);
   assert.deepEqual(imoveisPublicados([{ status: "active" }, { status: "paused" }]), [{ status: "active" }]);
-  const pagina = ler("app/(dashboard)/dashboard/page.tsx");
+  const pagina = ler("app/(dashboard)/dashboard/inicio-dados.tsx");
   // Prompt 42: lida no servidor junto com o resto da página (Promise.all), ainda pela mesma consulta.
-  assert.match(pagina, /await Promise\.all\(\[\n\s+listMyProperties\(\),/);
+  assert.match(pagina, /await Promise\.all\(\[\n\s+ou\("imoveis", listMyProperties\(\{ exigir: true \}\), \[\]\),/);
   assert.match(ler("app/(dashboard)/dashboard/imoveis/page.tsx"), /listMyProperties\((\{ exigir: true \})?\)/);
   const visao = ler("app/(dashboard)/dashboard/visao-geral-client.tsx");
-  assert.match(visao, /imoveisPublicados\(demo \? DEMO_PROPERTIES : imoveisDono\)/);
+  // E980 (Gerente, 16/11/2026): os imóveis de exemplo chegam sob demanda (useExemplos); a fonte real segue `imoveisDono`.
+  assert.match(visao, /imoveisPublicados\(demo \? \(exemplos\?\.DEMO_PROPERTIES \?\? \[\]\) : imoveisDono\)/);
   assert.doesNotMatch(visao, /useProperties\("\/api\/properties\/mine"\)/);
   assert.match(ler("app/(dashboard)/dashboard/imoveis/imoveis-client.tsx"), /imovelPublicado\(p\)/);
 });

@@ -6,6 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const RAIZ = new URL("../../../", import.meta.url);
 const ler = (p: string) => readFileSync(new URL(p, RAIZ), "utf8");
@@ -15,7 +16,7 @@ test("o site público tem a própria tela de erro: client, unstable_retry (ou re
   assert.ok(existsSync(new URL(TELA, RAIZ)));
   const t = ler(TELA);
   assert.match(t, /^"use client";/);
-  assert.match(t, /export default function ErroDoSitePublico\(\{ unstable_retry, reset \}/);
+  assert.match(t, /export default function ErroDoSitePublico\(\{ error, unstable_retry, reset \}/);
   assert.match(t, /const tentarDeNovo = \(\) => \(unstable_retry \?\? reset\)\?\.\(\);/);
   assert.match(t, /onClick=\{tentarDeNovo\}/);
   assert.match(t, /data-testid="publico-erro"/);
@@ -27,7 +28,7 @@ test("o site público tem a própria tela de erro: client, unstable_retry (ou re
 
 test("fica dentro do <main> do layout do site: a tela de erro não abre outro <main>", () => {
   assert.match(ler("src/app/(public)/layout.tsx"), /<main id="conteudo"/);
-  assert.doesNotMatch(ler(TELA).replace(/\/\*[\s\S]*?\*\//g, ""), /<main\b/);
+  assert.doesNotMatch(fonteSemComentarios(ler(TELA)), /<main\b/);
 });
 
 test("a raiz continua cobrindo o que este error.tsx não cobre (o próprio layout do site)", () => {

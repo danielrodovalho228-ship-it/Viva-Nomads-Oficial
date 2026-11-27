@@ -1,0 +1,863 @@
+{
+ "corrida": {
+  "run": 44070223214,
+  "data": "2026-11-17",
+  "base": "46b54f96",
+  "specs": 82,
+  "casos": 125
+ },
+ "corridaDeProva": {
+  "run": 44114328109,
+  "data": "2026-11-17",
+  "commit": "d67b2b8d",
+  "acrescentados": [
+   "t70-busca-split.spec.ts",
+   "t198-rodape-painel-390.spec.ts",
+   "t230-pagamento-sem-repeticao.spec.ts",
+   "t279-varredura-logada.spec.ts",
+   "t321-video-alcancavel-65b.spec.ts",
+   "t352-varredura-bloco17.spec.ts",
+   "t354-varredura-bloco19.spec.ts",
+   "t741-e288b-trafego-de-teste.spec.ts",
+   "t800-cadastro-passo4-titulo.spec.ts"
+  ]
+ },
+ "foraDeCorrida": {
+  "ordem": "ORDEM-DUET-096",
+  "data": "2026-11-18",
+  "main": "b4b0bc71",
+  "acrescentados": [
+   "t355-conta-a-perfil-espelho.spec.ts"
+  ]
+ },
+ "corrigidosDepois": {
+  "ordem": "ORDEM-DUET-182",
+  "data": "2026-11-19",
+  "acrescentados": [
+   {
+    "spec": "t296-niveis-exibicao-59-1.spec.ts",
+    "origem": "corrida manual completa 44495944766 (main 1c00bcb9)"
+   },
+   {
+    "spec": "t1697-e1035-editar-rascunho-sem-dados-preserva-o-resto.spec.ts",
+    "origem": "trava nova; vermelha contra a main 8e57ae18 antes da correção"
+   }
+  ]
+ },
+ "regra": "uma disposição por spec vermelho da última corrida completa: teste-velho (com o PR ou o commit da correção), defeito (item registrado; o spec leva defeitoConhecido) ou instavel (item de instabilidade; vai para a quarentena)",
+ "disposicoes": [
+  {
+   "spec": "t11-travessias.spec.ts",
+   "disposicao": "defeito",
+   "item": "E975",
+   "dono": "Code 2",
+   "pr": 3888,
+   "nota": "o sobrenome de exemplo \"Lima\" viaja no JavaScript do painel de contas reais"
+  },
+  {
+   "spec": "t21-central-agentes.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1010",
+   "corrigidoPor": "e24cacf9",
+   "dono": "Code 2",
+   "nota": "instável em 4 das 7 corridas",
+   "pr": 3979
+  },
+  {
+   "spec": "t29-chat-sem-aprovacao.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1011",
+   "dono": "Code 2",
+   "nota": "instável nas 7 corridas"
+  },
+  {
+   "spec": "t30-atendimento-autonomo.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1012",
+   "corrigidoPor": "51c75fae",
+   "dono": "Code 2",
+   "nota": "instável em 3 e falhou em 1 das 7 corridas",
+   "pr": 3981
+  },
+  {
+   "spec": "t38-varios-imoveis-por-dono.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t48-varredura.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1013",
+   "dono": "Fable",
+   "nota": "instável nas 7 corridas: estoura os 30 minutos e passa na nova tentativa"
+  },
+  {
+   "spec": "t50-rls-todas-tabelas.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3935,
+   "nota": "E1001: comodidades, extras e ruído do anúncio ativo são leitura pública"
+  },
+  {
+   "spec": "t64-telas-largas.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t70-busca-split.spec.ts",
+   "disposicao": "defeito",
+   "item": "E1023",
+   "dono": "Code 2",
+   "semMarca": "a falha não é sempre a mesma: depende de qual pin a suíte deixa por último e, com o mesmo pin, do tempo. Na prova local, uma marca que só valia com o cartão por cima do ponteiro acertou 2 de 3 repetições e na terceira o teste passou (o card recuperou o destaque dentro da espera)",
+   "nota": "caso 2: passar o mouse num pin abre o cartão do imóvel; em alguns pins o cartão fica por cima do ponteiro (o mapa anda para ele caber, ou ele abre sobre o pin), o pin perde o hover e o card da lista perde o destaque com o cartão aberto. Falhou 1 vez na corrida de prova (fatia 18) e passa sozinho (18 de 18). Na quarentena desde 17/11, por decisão do Gerente (DUET-1419); o PR da correção do E1023 tira a entrada",
+   "pr": 3965
+  },
+  {
+   "spec": "t77-comodidades.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t79-privacidade-acesso.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t108-admin-atendimento-status-humano.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1014",
+   "corrigidoPor": "1c22fadb",
+   "dono": "Code 2",
+   "nota": "instável em 3 das 7 corridas",
+   "pr": 3969
+  },
+  {
+   "spec": "t161-coerencia-imovel.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t186-cadastro-5-etapas.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t190-seo-robots-jsonld.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1015",
+   "corrigidoPor": "59bdf2ad",
+   "dono": "Code 2",
+   "nota": "instável nas 7 corridas",
+   "pr": 3977
+  },
+  {
+   "spec": "t195-matricula-caf.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t198-rodape-painel-390.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3934,
+   "nota": "E1000: a t198 espera a Conta assentar antes de medir; falha em umas corridas e não noutras",
+   "corrigidoPor": "a536f2f4"
+  },
+  {
+   "spec": "t204-cadastro-ia-real.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t228-contato-vai-para-ajuda.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t230-pagamento-sem-repeticao.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1020",
+   "corrigidoPor": "cbe9d4a4",
+   "dono": "Code 2",
+   "nota": "instável em 2 corridas (uma com 2 workers, outra com 1): caução do contrato, clique duplo. A cadeia em série inteira (casos 1 a 3) está na quarentena: os seguintes dependem do caso 1",
+   "pr": 3982
+  },
+  {
+   "spec": "t245-visual-regressao.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3908,
+   "nota": "referências visuais julgadas pelo Gerente; E990 e E949 seguem marcados"
+  },
+  {
+   "spec": "t263-visual-41.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3908,
+   "nota": "referências visuais julgadas pelo Gerente; E990 e E949 seguem marcados"
+  },
+  {
+   "spec": "t271-admin-visual.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3908,
+   "nota": "referências visuais julgadas pelo Gerente; E990 e E949 seguem marcados"
+  },
+  {
+   "spec": "t279-varredura-logada.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras",
+   "corrigidoPor": "cace1911"
+  },
+  {
+   "spec": "t305-laudo-avaliacao-62b2.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1016",
+   "corrigidoPor": "a98d3385",
+   "dono": "Code 2",
+   "nota": "instável nas 7 corridas",
+   "pr": 3978
+  },
+  {
+   "spec": "t316-sair-da-viva-51.spec.ts",
+   "disposicao": "defeito",
+   "item": "E982",
+   "dono": "Code 2",
+   "pr": 3906,
+   "nota": "fechar a Correção abria outra igual na hora; corrigido na main pelo #3906 (ea947736), depois da corrida — sem marca",
+   "corrigidoPor": "ea947736"
+  },
+  {
+   "spec": "t318-papel-ativo-fonte-unica.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3846,
+   "nota": "E548, E653: a página de outra área não grava o papel (passo 7)"
+  },
+  {
+   "spec": "t321-video-alcancavel-65b.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1022",
+   "corrigidoPor": "d530a4b1",
+   "dono": "Code 2",
+   "nota": "instável na corrida de prova da T3 (primeira ocorrência): envio do vídeo do anúncio. A cadeia em série inteira (casos 1 a 5) está na quarentena: os seguintes dependem do caso 1",
+   "pr": 3966
+  },
+  {
+   "spec": "t328-documento-sem-trava-l11.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t331-preferencias-push-44b2.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t346-importar-calendario-53.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t348-triagem-vinculo-52.spec.ts",
+   "disposicao": "defeito",
+   "item": "E961",
+   "dono": "Fable",
+   "pr": 3857,
+   "nota": "a página 404, com cartões e preços, viaja no HTML de todas as páginas",
+   "corrigidoPor": "52d0be56"
+  },
+  {
+   "spec": "t352-varredura-bloco17.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras",
+   "corrigidoPor": "cace1911"
+  },
+  {
+   "spec": "t353-varredura-bloco18.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
+  },
+  {
+   "spec": "t354-varredura-bloco19.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2); falha em umas corridas e não noutras",
+   "corrigidoPor": "cace1911"
+  },
+  {
+   "spec": "t370-conta-a3-papeis.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t385-varredura-bloco21.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3841,
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
+  },
+  {
+   "spec": "t386-cadastro-01-tipo.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t392-varredura-bloco24.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3841,
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
+  },
+  {
+   "spec": "t397-foto-na-hora.spec.ts",
+   "disposicao": "defeito",
+   "item": "E984",
+   "dono": "Code 2",
+   "pr": 3909,
+   "nota": "anúncio publicado não mostrava em Meus imóveis a prova com prazo; corrigido na main pelo #3909 (ecdc95c8), depois da corrida — sem marca",
+   "corrigidoPor": "ecdc95c8"
+  },
+  {
+   "spec": "t400-chacara-sem-internet.spec.ts",
+   "disposicao": "defeito",
+   "item": "E985",
+   "dono": "Code 2",
+   "pr": 3898,
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada; desde o #3987 (259549bd) os casos 1 e 2 passam e só o caso 3 (trocar para Fibra) segue marcado (ensaio 44472116797)",
+   "semMarca": "corrigido neste PR (#3898): sobre a main ee0f859 o caso 3 do t400 também passa com a correção (lab-critico: 'Expected to fail, but passed' 2/2), por isso a marca sai como nos casos 1–2; o corrigidoPor (commit do merge) entra no PR de registo depois do merge"
+  },
+  {
+   "spec": "t401-cadastro-10-revisao.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t405-perfil-e60-e62.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t407-varredura-bloco26.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "corrigidoPor": "467172e1",
+   "nota": "E1008: a régua \"fixo\" da varredura só acusa o que a rolagem não revela; já na main, depois da corrida"
+  },
+  {
+   "spec": "t435-cadastro-03-endereco.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t442-foto-perfil-revisao.spec.ts",
+   "disposicao": "instavel",
+   "item": "E13",
+   "corrigidoPor": "07a2e9d3",
+   "dono": "Code 2",
+   "nota": "até 18/11 era teste velho (caso 3; lote B do Code 2, corrigido na main pelo #3847). O caso 4 é intermitente: sozinho contra a main b4b0bc71, 1 falha em 3 — o teste espera /ajuda?contexto=perfil… e a página já seguiu para /ajuda/fale-com-a-viva. Quarentena por decisão do Gerente (ORDEM-DUET-096), com o spec inteiro numa entrada (ORDEM-DUET-097: os casos 4 e 5 dependem dos casos 1 a 3); correção ou plano até 26/11",
+   "pr": 3988
+  },
+  {
+   "spec": "t456-comodidades-tipo-e111a.spec.ts",
+   "disposicao": "defeito",
+   "item": "E985",
+   "dono": "Code 2",
+   "pr": 3898,
+   "corrigidoPor": "259549bd",
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada"
+  },
+  {
+   "spec": "t464-prop6-inicio-dono.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t465-admin4-inicial.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t469-e134-passo4-alinhado.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3847,
+   "corrigidoPor": "a170b899",
+   "pacote": "C2-SUITE",
+   "nota": "lote B do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t534-e147-bairro-santa-monica.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t547-e148a-texto-sugerido-passo7.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t548-e132a-declaracoes-persistem.spec.ts",
+   "disposicao": "defeito",
+   "item": "E985",
+   "dono": "Code 2",
+   "pr": 3898,
+   "corrigidoPor": "259549bd",
+   "nota": "a escolha por cartão logo depois de abrir o rascunho não é gravada"
+  },
+  {
+   "spec": "t564-e193-qualificacao-cartoes.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t585-e205b-emails-novos.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t597-e213b-limpeza-renovacao.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t607-varredura-bloco51.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
+  },
+  {
+   "spec": "t621-varredura-bloco55.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t646-cadastro-titulo-nao-pula.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1017",
+   "dono": "Code 2",
+   "nota": "falhou em 2 das 7 corridas; passa 10 de 10 sozinho (sensível à carga)"
+  },
+  {
+   "spec": "t655-observador-botoes-filas.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t656-e224-plano-gestor.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t661-varredura-bloco62.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
+  },
+  {
+   "spec": "t678-e202-emails-candidatura.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t679-varredura-bloco70.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3841,
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
+  },
+  {
+   "spec": "t683-e259-perto-fonte-unica.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t693-prova-de-publicacao.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t694-varredura-bloco73.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
+  },
+  {
+   "spec": "t696-varredura-bloco74.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t707-e262-galeria-destaques-previa.spec.ts",
+   "disposicao": "defeito",
+   "item": "E987",
+   "dono": "Code 2",
+   "pr": 3911,
+   "nota": "a galeria aberta não reaproveita a versão da miniatura da foto; corrigido pelo #3911 (merge 5861078e; o commit da correção é adcde730) — sem marca",
+   "corrigidoPor": "5861078e"
+  },
+  {
+   "spec": "t735-e277-busca-parceiros-fotos.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t741-e288b-trafego-de-teste.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3961,
+   "pacote": "C2-SUITE",
+   "nota": "a rota de eventos aceita 300 por hora por IP e responde sempre 204; o spec tem de limpar o limite antes de correr. Corrigido na main pelo #3961 (08231fd7), depois da corrida de prova: não entrou na quarentena",
+   "corrigidoPor": "08231fd7"
+  },
+  {
+   "spec": "t772-e329-visita-confirmada.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3843,
+   "corrigidoPor": "cc53b94d",
+   "pacote": "C2-SUITE",
+   "nota": "lote A do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t776-e340-menu-parceiro-secao.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1018",
+   "dono": "Fable",
+   "nota": "falhou em 2 e instável em 1 das 7 corridas; passa 6 de 6 sozinho. Causa achada em 18/11: o hook das abas-âncora tem duas instâncias (barra do celular e topo do computador); a do topo monta mais tarde e rolava a página de volta ao #âncora da URL depois de a pessoa já ter rolado. Corrigido no ramo claude-b/e1018-ancora-nao-volta; a entrada da quarentena sai no mesmo PR"
+  },
+  {
+   "spec": "t778-e347-x-visita-video.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t799-cadastro-regras-icones.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t800-cadastro-passo4-titulo.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11): depende da ordem por usar a conta compartilhada"
+  },
+  {
+   "spec": "t815-404-perfil-toque.spec.ts",
+   "disposicao": "defeito",
+   "item": "E1038",
+   "dono": "Code 2",
+   "pr": 4032,
+   "semMarca": "corrigido neste PR (#4032): o link da ajuda passa de mt-2 a mt-8 (32 px > 2×12 px de sobra da caixa 44×44), as áreas de toque deixam de se sobrepor e o caso da 404 do t815 passa; a marca sai junto; o corrigidoPor (commit do merge) entra no PR de registo depois do merge",
+   "nota": "404 a 390 px: a borda inferior da caixa de toque 44×44 do link 'anunciar' (nao-encontrada-anunciar) cai no link 'ajuda' (nao-encontrada-ajuda); achado pelo helper da área real do E1033 (#4031, ensaio 44650708319)",
+   "anterior": {
+    "spec": "t815-404-perfil-toque.spec.ts",
+    "disposicao": "defeito",
+    "item": "E960",
+    "dono": "Fable",
+    "pr": 3855,
+    "nota": "o logo do cabeçalho público tem alvo de toque de 32 px",
+    "corrigidoPor": "44c82ddc"
+   }
+  },
+  {
+   "spec": "t816-cidade-bairros-grade-par.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t838-varredura-matriz-bloqueadas.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3841,
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
+  },
+  {
+   "spec": "t840-e525-pins-sem-sobreposicao.spec.ts",
+   "disposicao": "defeito",
+   "item": "E988",
+   "dono": "Code 2",
+   "pr": 3912,
+   "nota": "pins no mesmo ponto do mapa ficam um em cima do outro; corrigido na main pelo #3912 (d5e682a8), depois da corrida de prova",
+   "corrigidoPor": "d5e682a8",
+   "semMarca": "a falha depende dos pins que outros testes deixam no mesmo ponto do mapa: muda de largura e de passo conforme a fatia; a trava nomeada do item é o t2108 (#3936)"
+  },
+  {
+   "spec": "t886-e464-cabecalho-conta.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3845,
+   "nota": "E668: o papel de parceiro só vale com o carimbo da escolha (passo 6)",
+   "corrigidoPor": "432df5f8"
+  },
+  {
+   "spec": "t909-reembolso-linha-tablet.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "pr": 3849,
+   "corrigidoPor": "38836c33",
+   "pacote": "C2-SUITE",
+   "nota": "lote C do Code 2 (tabela de 15/11)"
+  },
+  {
+   "spec": "t1402-varredura-bloco480.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
+  },
+  {
+   "spec": "t1411-varredura-bloco489.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3841,
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
+  },
+  {
+   "spec": "t1423-varredura-bloco497.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
+  },
+  {
+   "spec": "t1439-varredura-bloco506.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3841,
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
+  },
+  {
+   "spec": "t1448-varredura-bloco514.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3840,
+   "nota": "E798: a Conta abre no destino registrado (passo 2)",
+   "corrigidoPor": "cace1911"
+  },
+  {
+   "spec": "t1461-varredura-bloco523.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Fable",
+   "pr": 3841,
+   "nota": "E679, E798: as avaliações da Conta abrem no destino registrado (passo 3)",
+   "corrigidoPor": "23bab36f"
+  },
+  {
+   "spec": "t1629-familia2-rotas-vivas.spec.ts",
+   "disposicao": "instavel",
+   "item": "E1019",
+   "dono": "Code 2",
+   "nota": "instável nas 7 corridas"
+  },
+  {
+   "spec": "t1645-reprovas-e916-e915-e887-e931.spec.ts",
+   "disposicao": "teste-velho",
+   "dono": "Code 2",
+   "corrigidoPor": "08231fd7",
+   "pacote": "C2-SUITE",
+   "nota": "E941 (77762a39): a resposta da Ajuda ganhou um segundo link para /conferir, no próprio texto; o localizador do teste acha 2 e para"
+  },
+  {
+   "spec": "t355-conta-a-perfil-espelho.spec.ts",
+   "disposicao": "instavel",
+   "item": "E61",
+   "dono": "Fable",
+   "pr": 3910,
+   "nota": "caso 5 a 1280 px, intermitente: sozinho contra a main b4b0bc71, 2 falhas em 3 — o link antigo /dashboard/conta#perfil-publico termina ora com a âncora, ora sem. Correção escrita no #3910, que não entra enquanto esta disposição não fechar (ORDEM-DUET-096); correção ou plano até 26/11",
+   "corrigidoPor": "22e049ed"
+  },
+  {
+   "spec": "t296-niveis-exibicao-59-1.spec.ts",
+   "disposicao": "defeito",
+   "item": "E1034",
+   "dono": "Fable",
+   "pr": 4015,
+   "nota": "abrir um rascunho sem draft_data regravava a linha vazia e apagava as fotos (regressão do #4004)",
+   "corrigidoPor": "8e57ae18"
+  },
+  {
+   "spec": "t1697-e1035-editar-rascunho-sem-dados-preserva-o-resto.spec.ts",
+   "disposicao": "defeito",
+   "item": "E1035",
+   "dono": "Fable",
+   "pr": 4017,
+   "nota": "editar um rascunho sem draft_data gravava o formulário por cima do resto da linha e apagava as fotos",
+   "corrigidoPor": "b0814b68"
+  }
+ ],
+ "pulosDosMarcados": {
+  "t11-travessias.spec.ts": 4,
+  "t348-triagem-vinculo-52.spec.ts": 1,
+  "t400-chacara-sem-internet.spec.ts": 1,
+  "t456-comodidades-tipo-e111a.spec.ts": 1,
+  "t548-e132a-declaracoes-persistem.spec.ts": 1,
+  "t707-e262-galeria-destaques-previa.spec.ts": 1,
+  "t815-404-perfil-toque.spec.ts": 2
+ }
+}

@@ -51,7 +51,7 @@ function CartaoAvaliacao({ a }: { a: AvaliacaoExemplo }) {
         </button>
       )}
       {a.resposta && (
-        <div className="mt-3 rounded-xl bg-sage-50 p-3" data-testid="avaliacao-resposta">
+        <div className="mt-3 rounded-xl bg-sage-100 p-3" data-testid="avaliacao-resposta">
           <p className="text-xs font-semibold text-forest">Resposta do proprietário</p>
           <p className="mt-1 text-sm text-ink">{a.resposta}</p>
         </div>
@@ -61,7 +61,7 @@ function CartaoAvaliacao({ a }: { a: AvaliacaoExemplo }) {
 }
 
 /**
- * Avaliações ILUSTRATIVAS dos anúncios de exemplo (prompt 9). Sempre com o selo "Exemplo ilustrativo"
+ * Avaliações ILUSTRATIVAS dos anúncios de exemplo (prompt 9). Sempre com o selo "Anúncio de exemplo"
  * e o aviso; nunca entram no JSON-LD nem na média de anúncio real.
  */
 export function AvaliacoesExemplo({ avaliacoes }: { avaliacoes: AvaliacaoExemplo[] }) {
@@ -80,7 +80,8 @@ export function AvaliacoesExemplo({ avaliacoes }: { avaliacoes: AvaliacaoExemplo
         <ComoFuncionamAvaliacoes />
       </div>
       <p className="mt-2 text-sm text-muted">{AVISO_EXEMPLO}</p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      {/* Grade par (varredura 04/11): com número ímpar, a última avaliação ocupa a linha inteira. */}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:[&>:last-child:nth-child(odd)]:col-span-full">
         {avaliacoes.map((a) => (
           <CartaoAvaliacao key={`${a.autor}-${a.mes}`} a={a} />
         ))}

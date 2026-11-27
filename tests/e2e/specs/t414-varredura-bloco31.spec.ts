@@ -5,6 +5,7 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, cliqueResponde, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T414 — VARREDURA DA PÁGINA INTEIRA, BLOCO 31 (Pista C, 25/10). O protocolo do bloco 21 (t385): seis classes, página toda
@@ -36,7 +37,7 @@ const TELAS: Tela[] = [
     }),
   ),
   { conta: "DONO17", papel: "proprietário", nome: "Cadastro novo, passo Tipo com as fotos provisórias (#1317)", rota: () => "/dashboard/imoveis/novo?etapa=tipo", clicar: false },
-  { conta: "VISITANTE", papel: "visitante", nome: "Preços, comparativo e simulador (#1321)", rota: () => "/precos" },
+  ...comPrecos({ conta: "VISITANTE", papel: "visitante", nome: "Preços, comparativo e simulador (#1321)", rota: () => "/precos" }),
   { conta: "VISITANTE", papel: "visitante", nome: "Para proprietários, simulador (#1321)", rota: () => "/para-proprietarios" },
 ];
 

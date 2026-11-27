@@ -40,8 +40,9 @@ test.describe("T487 — E178: 1º pagamento no detalhe da proposta", () => {
     await page.goto(`/dashboard/orcamentos/nova?interessado=${ids.lead}`, { waitUntil: "domcontentloaded" });
     await expect(page.getByTestId("montagem-proposta")).toBeVisible({ timeout: 20_000 });
     await page.getByTestId("proposta-valor").fill("3200");
-    await page.getByTestId("proposta-meses").selectOption("4");
     await page.getByTestId("proposta-data").fill(emDias(10));
+    // E562 (telas): sem "Número de meses" — a estadia vem em dias; 4 meses = saída 120 dias depois da entrada.
+    await page.getByTestId("proposta-saida").fill(emDias(130));
     await page.getByTestId("enviar-proposta").click();
     await page.waitForURL(/\/dashboard\/propostas\/[0-9a-f-]{36}$/, { timeout: 20_000 });
     const url = page.url();

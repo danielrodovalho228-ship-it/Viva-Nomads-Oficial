@@ -1,7 +1,7 @@
 /*
   Prefixos, números e marca dos documentos da plataforma (Prompt 56) — PURO, node --test.
   Todo documento gerado pela plataforma passa por registrarDocumento (registro.ts), que usa estas regras.
-  "RPS" é a sigla oficial da NFS-e: nunca é prefixo nem aparece em documento da Viva (o recibo do parceiro PF é RSV).
+  "RPS" é a sigla oficial da NFS-e: nunca é prefixo nem aparece em documento da Viva (o antigo recibo do parceiro PF era RSV; DESATIVADO (E648): parceiro é só CNPJ, o prefixo fica reservado e nenhum código o gera).
 */
 
 /** Marca do documento (D1). */
@@ -42,6 +42,8 @@ export const PREFIXOS = {
   ENC: { rotulo: "Encerramento", marca: "bilateral", numeracao: { contador: "ENC" } },
   INF: { rotulo: "Informe anual", marca: "plataforma", numeracao: { contador: "informe_anual" }, reservado: true },
   RPG: { rotulo: "Comprovante da taxa da plataforma", marca: "plataforma", numeracao: { contador: "RPG" }, reservado: true },
+  // DESATIVADO (E648, 06/11/2026): CPF não é mais aceito como parceiro, então não há "recibo de serviço" de parceiro PF. Segue na lista só
+  // porque a restrição do banco (0201/0216) ainda o conhece; reservado = sem gerador, sem numeração em uso.
   RSV: { rotulo: "Recibo de serviço", marca: "emissor", numeracao: { contador: "RSV" }, reservado: true },
   REG: { rotulo: "Comprovante ao titular (LGPD)", marca: "plataforma", numeracao: { contador: "REG" }, reservado: true },
   NFSE: { rotulo: "NFS-e", marca: "fiscal", numeracao: "proprio", reservado: true },
@@ -77,6 +79,15 @@ export function rotuloRegistro(seq: number | string): string {
 /** Host do site sem protocolo ("vivanomads.com.br"). */
 export function hostDoSite(siteUrl: string): string {
   return siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
+}
+
+/**
+ * E1188: o endereço completo da página pública de conferência de um documento registrado, na forma direta que os
+ * recibos já levam ("https://vivanomads.com.br/conferir/XXXX"). É o que o e-mail do laudo emitido escreve: a tela do
+ * laudo abre a mesma página pelo link dela ("/conferir?codigo=XXXX", que redireciona para esta).
+ */
+export function urlConferir(siteUrl: string, codigo: string): string {
+  return `${siteUrl.replace(/\/$/, "")}/conferir/${encodeURIComponent(codigo)}`;
 }
 
 /** Rodapé comum: "Confira em vivanomads.com.br/conferir com o código XXXX". */

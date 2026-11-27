@@ -6,23 +6,30 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { contaEhDeTeste, contratoSimuladoTeste } from "@/lib/contas-de-teste";
 import { MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
 import { MSG_CONTRATO_EM_ANDAMENTO, decidirGeracaoContrato } from "@/lib/fechamento-contrato";
-import { carregarFechamento, reservarFechamento, concluirFechamento, lerReservaFechamento, MSG_FECHAMENTO_SEM_LEITURA } from "@/lib/data/fechamento-servidor";
+import { carregarFechamento, reservarFechamento, concluirFechamento, lerReservaFechamento, MSG_FECHAMENTO_SEM_LEITURA, MSG_FECHO_NAO_ENCONTRADO } from "@/lib/data/fechamento-servidor";
+import { PROPOSTA_FORA_DO_FECHAMENTO, preAceiteExpiradoDoLead, propostaDoFechamentoDoLead } from "@/lib/data/propostas-servidor";
+import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
+import { prazoDoContratoEmDias, diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
+import { diasValidos } from "@/lib/estadia-em-dias";
 
 /**
  * Contrato no ZapSign. A5: recebe o id da candidatura aceita + escolhas do
  * fechamento (prazo, garantia, divisão de custos); partes, imóvel e aluguel vêm
- * do banco. Um contrato por candidatura.
+ * do banco. Um contrato por PROPOSTA acordada (E1086); sem proposta, um por candidatura.
  * Prompt 24: a resposta diz o `modo` ("teste" | "real" | "inativa"). Conta de teste segue o caminho completo; conta
  * real sem assinatura digital recebe 503 ANTES de reservar; repetir devolve o contrato existente (200, nunca 409).
  */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
     leadId?: unknown;
+    /** E1141: a estadia escolhida (validada no servidor); sem ela, a proposta acordada mais recente. */
+    propostaId?: unknown;
     termMonths?: unknown;
+    termDays?: unknown;
     guarantee?: unknown;
     costSplit?: unknown;
   };
-  const f = await carregarFechamento(body.leadId);
+  const f = await carregarFechamento(body.leadId, body.propostaId);
   if ("error" in f) return NextResponse.json({ error: f.error }, { status: f.status });
 
   const prazo = Math.round(Number(body.termMonths));
@@ -44,8 +51,29 @@ export async function POST(request: Request) {
   // Estados vazios: sem saber se é conta de teste, não gera nada (nem simulado nem real).
   const teste = await (async () => (await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId)))().catch(() => "falhou" as const);
   if (teste === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
+  // E562 (Relay 67): o prazo do documento em DIAS — os da proposta aceita, a mesma fonte do registro do contrato e da
+  // taxa; sem proposta, os meses do Fechamento × 30. Falha de leitura não vira "sem proposta" (sairia com outro prazo).
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono; o documento não sai com o preço do anúncio.
+  const preAceiteExpirado = admin ? await preAceiteExpiradoDoLead(admin, f.leadId).catch(() => "falhou" as const) : false;
+  if (preAceiteExpirado === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
+  if (preAceiteExpirado) return NextResponse.json({ error: MSG_PRE_ACEITE_EXPIRADO }, { status: 409 });
+  // E1141: o documento é o da proposta DESTE fecho (a pedida e validada, ou a de sempre) — nunca de outra estadia.
+  const acordada = admin ? await propostaDoFechamentoDoLead(admin, f.leadId, f.propostaPedida).catch(() => "falhou" as const) : null;
+  if (acordada === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
+  if (acordada === PROPOSTA_FORA_DO_FECHAMENTO) return NextResponse.json({ error: MSG_FECHO_NAO_ENCONTRADO }, { status: 404 });
+  // E655: sem proposta, a janela exata da candidatura (conferida aqui contra a candidatura) vale em dias.
+  let diasJanela: number | null = null;
+  if (!acordada && admin && body.termDays != null) {
+    const { data: janela, error: erroJanela } = await admin.from("leads").select("inicio_desejado, fim_desejado").eq("id", f.leadId).maybeSingle();
+    if (erroJanela) return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
+    diasJanela = diasDaCandidaturaParaContrato({ inicio: janela?.inicio_desejado as string | null, fim: janela?.fim_desejado as string | null, diasPedidos: Number(body.termDays), valido: (d) => diasValidos(d) });
+  }
+  const periodo = prazoDoContratoEmDias({ diasAcordados: acordada ? acordada.dias : diasJanela, mesesDoFechamento: prazo });
+  // E1086: a reserva é da PROPOSTA acordada. Uma estadia nova (outra proposta da mesma candidatura) gera o contrato
+  // dela; o contrato de outra estadia nunca volta como "existente".
+  const chave = acordada ? acordada.id : null;
   // Achado 82: sem ler a reserva, não decide (nem "em andamento" nem gerar de novo).
-  const reserva = await lerReservaFechamento(f.leadId, "contrato").catch(() => "falhou" as const);
+  const reserva = await lerReservaFechamento(f.leadId, "contrato", chave).catch(() => "falhou" as const);
   if (reserva === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
   const d = decidirGeracaoContrato({
     teste,
@@ -63,14 +91,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: MSG_CONTRATO_EM_ANDAMENTO }, { status: 409 });
   }
 
-  if (!(await reservarFechamento(f.leadId, "contrato"))) {
+  if (!(await reservarFechamento(f.leadId, "contrato", chave))) {
     // Corrida com outro clique: o outro pedido está gerando — a tela mantém o botão para tentar de novo.
     return NextResponse.json({ error: MSG_CONTRATO_EM_ANDAMENTO }, { status: 409 });
   }
   try {
     if (d.modo === "teste") {
       const simulado = contratoSimuladoTeste();
-      await concluirFechamento(f.leadId, "contrato", simulado.docId);
+      await concluirFechamento(f.leadId, "contrato", chave, simulado.docId);
       return NextResponse.json({ ...simulado, modo: "teste" });
     }
     const result = await createContract({
@@ -79,19 +107,21 @@ export async function POST(request: Request) {
       ownerName: f.ownerNome,
       propertyTitle: f.tituloImovel,
       monthlyRent: f.aluguelMensal,
-      termMonths: prazo,
+      termMonths: periodo.meses,
+      termDays: periodo.dias,
+      termText: periodo.texto,
       guarantee: garantia,
       costSplit: split,
     });
     if (result.demo) {
       // Sem a assinatura digital de verdade a conta real não avança — e a reserva é liberada para depois.
-      await concluirFechamento(f.leadId, "contrato", null);
+      await concluirFechamento(f.leadId, "contrato", chave, null);
       return NextResponse.json({ modo: "inativa", error: MSG_ASSINATURA_INATIVA }, { status: 503 });
     }
-    await concluirFechamento(f.leadId, "contrato", result.docId);
+    await concluirFechamento(f.leadId, "contrato", chave, result.docId);
     return NextResponse.json({ ...result, modo: "real" });
   } catch (err) {
-    await concluirFechamento(f.leadId, "contrato", null);
+    await concluirFechamento(f.leadId, "contrato", chave, null);
     if (err instanceof IntegracaoNaoConfigurada) {
       return NextResponse.json({ modo: "inativa", error: MSG_ASSINATURA_INATIVA }, { status: 503 });
     }

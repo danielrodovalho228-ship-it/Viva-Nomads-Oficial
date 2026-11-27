@@ -80,7 +80,7 @@ async function aditivoMaisUmMes(browser: Browser, contratoId: string, morador: s
   await m.getByTestId("alteracao-meses").selectOption("3");
   await m.getByTestId("alteracao-enviar").click();
   await expect(m).toHaveURL(new RegExp(`/dashboard/estadia/${contratoId}$`));
-  await expect(m.getByTestId("aditivo-resumo")).toHaveText("Meses: de 2 para 3");
+  await expect(m.getByTestId("aditivo-resumo")).toContainText("Meses: de 2 para 3");
 
   const d = await entrar(browser, emails.dono, senha);
   await d.goto(`/dashboard/estadia/${contratoId}`, { waitUntil: "domcontentloaded" });

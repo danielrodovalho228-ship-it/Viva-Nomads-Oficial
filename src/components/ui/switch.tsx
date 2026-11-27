@@ -38,8 +38,10 @@ export function Switch({
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
       className={cn(
-        // Varredura 01/11: trilho de 24 px, mas área de toque de 44 px em tela de toque (.alvo-toque), sem mudar o visual.
-        "alvo-toque relative inline-flex h-6 w-11 shrink-0 items-center rounded-full outline-none transition-colors",
+        // Varredura 01/11: trilho de 24 px com área de toque de 44 px, sem mudar o visual. E1033 (passo 2): a área
+        // vale em qualquer perfil (.area-de-toque-44); antes era só em tela de toque e, com rato, o alvo real tinha os
+        // 24 px do trilho.
+        "area-de-toque-44 relative inline-flex h-6 w-11 shrink-0 items-center rounded-full outline-none transition-colors",
         "focus-visible:ring-2 focus-visible:ring-forest/40 focus-visible:ring-offset-2",
         checked ? "bg-forest" : "bg-sage-200",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",

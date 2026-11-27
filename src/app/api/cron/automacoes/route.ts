@@ -30,6 +30,8 @@ import {
 } from "@/lib/automacoes/regras";
 import { COLUNAS_ESTADO_CONTRATO, primeiroPagamentoConfirmado, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
+import { datasDaEstadia } from "@/lib/contrato-blocos";
+import { chaveDaJornada, confirmacaoDevida, corpoDaJornada, momentosDeHoje } from "@/lib/estadia/jornada-mensagens";
 import { corpoDaChegada } from "@/lib/estadia/emails-chegada";
 import { LEMBRETE_DONO_DIAS, instrucoesEfetivas, instrucoesPreenchidas, lembrarDono, liberaHoje, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
 import { RETENCAO_OCUPANTES_DIAS, diaDeCorteRetencao, ocupantesVencidos } from "@/lib/estadia/ocupantes";
@@ -53,6 +55,7 @@ import { acaoDoPasso, emSilencio, linhaOutrosRascunhos, rascunhosPorDono, textoR
 import { fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
 import { checklistAnuncio, prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import type { DadosDaDecisao } from "@/lib/notifications/regra-push";
+import { saidaPeloFim } from "@/lib/texto-do-periodo";
 
 /**
  * Automações por data (ordem d250ea2f, item 5): rascunho de imóvel parado (3 dias, um aviso — Prompt 50), lembrete de saída (3 dias),
@@ -170,19 +173,22 @@ export async function GET(request: Request) {
     const blocos = ((c.contrato_blocos as Bloco[] | null) ?? []).filter((b) => b.fim);
     if (!blocos.length) continue;
     const prop = c.properties as unknown as { owner_id?: string; title?: string; address?: string | null; city?: string | null; checkout_before?: string | null } | null;
-    const imovelEmail = prop ? { titulo: prop.title, bairro: prop.address, cidade: prop.city } : null;
+    const imovelEmail = prop ? { id: c.property_id as string, titulo: prop.title, bairro: prop.address, cidade: prop.city } : null;
     const partes = [prop?.owner_id, c.tenant_id as string].filter((u): u is string => !!u);
     // E267: título · bairro, cidade (o "bairro" é o campo público; nunca o endereço exato).
-    const imovel = linhaImovel({ titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
+    const imovel = linhaImovel({ id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
     const fimFinal = blocos.reduce((m, b) => (b.fim > m ? b.fim : m), "");
-    if (lembreteDeSaida(fimFinal, hoje)) {
+    // E1089 (coordenador): `fimFinal` é a última noite gravada; os avisos da saída contam e falam da SAÍDA (o dia seguinte).
+    const saidaFinal = saidaPeloFim(fimFinal) || fimFinal;
+    if (lembreteDeSaida(saidaFinal, hoje)) {
       // E213-B: a data da saída entra na chave — depois de renovar, o lembrete sai de novo perto da nova saída.
-      for (const u of partes) alvos.push({ tipo: "saida_lembrete", usuarioId: u, refId: c.id as string, variante: fimFinal, imovelId: c.property_id as string | null, url: `/dashboard/contratos/${c.id}`, detalhe: detalheAutomacao("saida_lembrete", { imovel, fim: fimFinal }), ...comFatos("saida_lembrete", { imovel: imovelEmail, data: fimFinal, horario: prop?.checkout_before }) });
+      for (const u of partes) alvos.push({ tipo: "saida_lembrete", usuarioId: u, refId: c.id as string, variante: fimFinal, imovelId: c.property_id as string | null, url: `/dashboard/contratos/${c.id}`, detalhe: detalheAutomacao("saida_lembrete", { imovel, fim: saidaFinal }), ...comFatos("saida_lembrete", { imovel: imovelEmail, data: saidaFinal, horario: prop?.checkout_before }) });
     }
+    // E1089: o dia do pedido de avaliação não mudou (o dia da saída, em que o contrato fecha); o texto diz a SAÍDA.
     if (pedirAvaliacao(fimFinal, hoje)) {
       for (const u of partes) {
         if (jaAvaliaram.has(`${c.id}:${u}`)) continue;
-        alvos.push({ tipo: "avaliacao_pedido", usuarioId: u, refId: c.id as string, url: hrefAvaliarEstadia(c.id as string, u === prop?.owner_id ? "dono" : "morador"), imovelId: c.property_id as string | null, detalhe: detalheAutomacao("avaliacao_pedido", { imovel, fim: fimFinal }), ...comFatos("avaliacao_pedido", { imovel: imovelEmail, data: fimFinal }) });
+        alvos.push({ tipo: "avaliacao_pedido", usuarioId: u, refId: c.id as string, url: hrefAvaliarEstadia(c.id as string, u === prop?.owner_id ? "dono" : "morador"), imovelId: c.property_id as string | null, detalhe: detalheAutomacao("avaliacao_pedido", { imovel, fim: saidaFinal }), ...comFatos("avaliacao_pedido", { imovel: imovelEmail, data: saidaFinal }) });
       }
     }
     for (const b of blocos) {
@@ -195,8 +201,9 @@ export async function GET(request: Request) {
           // E222-B: o e-mail abre o fluxo da renovação (o aditivo de prorrogação já preenchido).
           url: HREF_RENOVAR(c.id as string),
           imovelId: c.property_id as string | null,
-          detalhe: detalheAutomacao("renovacao_aviso", { imovel, fim: b.fim }),
-          ...comFatos("renovacao_aviso", { imovel: imovelEmail, data: b.fim }),
+          // E1089: o aviso fala da SAÍDA do período (o dia seguinte à última noite do bloco); o momento do aviso não muda.
+          detalhe: detalheAutomacao("renovacao_aviso", { imovel, fim: saidaPeloFim(b.fim) || b.fim }),
+          ...comFatos("renovacao_aviso", { imovel: imovelEmail, data: saidaPeloFim(b.fim) || b.fim }),
           // Marca o bloco só depois do último destinatário.
           depois: i === partes.length - 1 ? async () => admin.from("contrato_blocos").update({ renovacao_notificada_em: new Date().toISOString() }).eq("id", b.id) : undefined,
         })
@@ -226,7 +233,7 @@ export async function GET(request: Request) {
     const vez = daVez(ultima.autor);
     const pp = p.properties as unknown as { title?: string | null; address?: string | null; city?: string | null } | null;
     // E344: a linha do imóvel com bairro e cidade, como nos outros e-mails do cron (linhaImovel), não só o título.
-    const imovelProposta = pp ? linhaImovel({ titulo: pp.title, bairro: pp.address, cidade: pp.city }) : "";
+    const imovelProposta = pp ? linhaImovel({ id: p.property_id as string, titulo: pp.title, bairro: pp.address, cidade: pp.city }) : "";
     alvos.push({
       tipo: "proposta_vencendo",
       usuarioId: (vez === "owner" ? p.owner_id : p.tenant_id) as string,
@@ -234,7 +241,7 @@ export async function GET(request: Request) {
       variante: String(p.versao_atual),
       url: `/dashboard/propostas/${p.id}`,
       detalhe: detalheAutomacao("proposta_vencendo", { imovel: imovelProposta || undefined, numero: p.numero as string }),
-      ...comFatos("proposta_vencendo", { imovel: pp ? { titulo: pp.title, bairro: pp.address, cidade: pp.city } : null, numero: p.numero as string, ...valoresProposta, prazo: p.valida_ate as string }),
+      ...comFatos("proposta_vencendo", { imovel: pp ? { id: p.property_id as string, titulo: pp.title, bairro: pp.address, cidade: pp.city } : null, numero: p.numero as string, ...valoresProposta, prazo: p.valida_ate as string }),
       // 44-SITE (item 2): "Proposta vencendo para o …: responda até hoje/amanhã".
       decisao: { imovel: pp?.title ?? null, prazo: p.valida_ate as string, destinatarioEhParte: true },
       imovelId: p.property_id as string | null,
@@ -253,14 +260,14 @@ export async function GET(request: Request) {
     const url = `/dashboard/servicos/pedidos/${p.id}`;
     // E267: o serviço e o imóvel do pedido no corpo (não só o número).
     const pi = p.properties as unknown as { title?: string | null; address?: string | null; city?: string | null } | null;
-    const imovelPedido = pi ? linhaImovel({ titulo: pi.title, bairro: pi.address, cidade: pi.city }) || undefined : undefined;
+    const imovelPedido = pi ? linhaImovel({ id: p.property_id as string, titulo: pi.title, bairro: pi.address, cidade: pi.city }) || undefined : undefined;
     const servico = (p.parceiro_servicos as unknown as { titulo?: string | null } | null)?.titulo || rotuloCategoria(p.categoria as string);
     // E267 (vigia 30/10): o lembrete e a conclusão pendente usam o MESMO corpo dos outros e-mails do pedido
     // (aberturaDoPedido + bloco): serviço, imóvel, horário e, para o cliente, o nome público do parceiro.
     const pedidoEmail: PedidoParaEmail = {
       codigo: p.codigo as string,
       servico,
-      imovel: pi ? { titulo: pi.title, bairro: pi.address, cidade: pi.city } : null,
+      imovel: pi ? { id: p.property_id as string, titulo: pi.title, bairro: pi.address, cidade: pi.city } : null,
       horarioConfirmado: (p.horario_confirmado as string | null) ?? null,
       valorCombinado: (p.valor_combinado as number | null) ?? null,
     };
@@ -296,7 +303,7 @@ export async function GET(request: Request) {
     const inicio = blocos.map((b) => b.inicio).sort()[0];
     if (!inicio || inicio < hoje || inicio > dia(LEMBRETE_DONO_DIAS)) continue;
     const prop = c.properties as unknown as { title?: string; address?: string | null; city?: string | null; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
-    const imovel = linhaImovel({ titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
+    const imovel = linhaImovel({ id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }) || undefined;
     const url = HREF_ESTADIA(c.id as string);
     const condicao = {
       inicio,
@@ -313,9 +320,10 @@ export async function GET(request: Request) {
       const ckl = ck as { instrucoes?: string | null; horario?: string | null } | null;
       const instrucoes = erroIm || erroCk ? ("sem_leitura" as const) : instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, ckl?.instrucoes);
       const estadia = {
-        imovel: { titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
+        imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
         entrada: inicio,
-        saida: blocos.map((b) => b.fim).sort().at(-1) ?? null,
+        // E1089: a linha "Saída" do e-mail é o dia da SAÍDA (o dia seguinte à última noite gravada).
+        saida: saidaPeloFim(blocos.map((b) => b.fim).sort().at(-1)) || null,
         horarioEntrada: ckl?.horario || prop?.checkin_after,
         horarioSaida: prop?.checkout_before,
       };
@@ -339,7 +347,39 @@ export async function GET(request: Request) {
       ]);
       const efetivas = instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, (ck as { instrucoes?: string } | null)?.instrucoes);
       if (!erroIm && !erroCk && lembrarDono(inicio, instrucoesPreenchidas(efetivas), agora)) {
-        alvos.push({ tipo: "estadia_instrucoes_pendentes", usuarioId: prop.owner_id, refId: c.id as string, imovelId: c.property_id as string, url: `${url}#instrucoes`, detalhe: detalheAutomacao("estadia_instrucoes_pendentes", { imovel, fim: inicio }), ...comFatos("estadia_instrucoes_pendentes", { imovel: { titulo: prop.title, bairro: prop.address, cidade: prop.city }, data: inicio, horario: prop.checkin_after }) });
+        alvos.push({ tipo: "estadia_instrucoes_pendentes", usuarioId: prop.owner_id, refId: c.id as string, imovelId: c.property_id as string, url: `${url}#instrucoes`, detalhe: detalheAutomacao("estadia_instrucoes_pendentes", { imovel, fim: inicio }), ...comFatos("estadia_instrucoes_pendentes", { imovel: { id: c.property_id as string, titulo: prop.title, bairro: prop.address, cidade: prop.city }, data: inicio, horario: prop.checkin_after }) });
+      }
+    }
+  }
+
+  // 8) Jornada de mensagens da estadia (E663): confirmação (logo após a assinatura das duas partes), chegada, semana da
+  // saída e meio da estadia longa. As datas saem dos blocos ATUAIS: remarcou por aditivo (E652), recalcula e reenvia nas
+  // datas novas (a data entra na chave). O D-7 das instruções (bloco 7) segue o mesmo, sem duplicar.
+  for (const c of estadias ?? []) {
+    const datas = datasDaEstadia(c.contrato_blocos as { inicio: string; fim: string; status: string }[] | null);
+    if (!datas || !c.assinado_proprietario_em || !c.assinado_inquilino_em) continue;
+    const prop = c.properties as unknown as { title?: string; address?: string | null; city?: string | null; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
+    const dadosCorpo = { ...datas, imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city }, horario: prop?.checkin_after, horarioSaida: prop?.checkout_before };
+    const assinadoEm = [c.assinado_proprietario_em as string, c.assinado_inquilino_em as string].sort().at(-1);
+    const doDia = momentosDeHoje({ ...datas, hoje });
+    // D-7, chegada, semana da saída e meio só com o 1º pagamento (a mesma condição do D-7 das instruções).
+    const pago = primeiroPagamentoConfirmado(c.pagamentos_bloco as LinhaEstadoContrato["pagamentos_bloco"]);
+    // E759: a confirmação sai também quando a estadia fica confirmada (assinada + 1º pagamento) antes de começar.
+    const hojeMomentos = confirmacaoDevida({ assinadoEm, hoje, pago, entrada: datas.entrada }) ? (["jornada_confirmacao", ...doDia] as const) : doDia;
+    for (const momento of hojeMomentos) {
+      if (momento !== "jornada_confirmacao" && !pago) continue;
+      const paraDono = momento === "jornada_chegada" || momento === "jornada_semana_saida";
+      const quem = [c.tenant_id as string, ...(paraDono && prop?.owner_id ? [prop.owner_id] : [])];
+      for (const u of quem) {
+        alvos.push({
+          tipo: momento,
+          usuarioId: u,
+          refId: c.id as string,
+          variante: chaveDaJornada(momento, datas),
+          imovelId: c.property_id as string,
+          url: HREF_ESTADIA(c.id as string),
+          detalhe: corpoDaJornada(momento, dadosCorpo).texto,
+        });
       }
     }
   }
@@ -391,6 +431,11 @@ export async function GET(request: Request) {
   const sombraApagada = simular ? 0 : await limparSombra(admin).catch(() => 0);
   // Avaliações de pedido de parceiro: publicam 14 dias depois da conclusão, mesmo sem a outra parte (nunca no simulado).
   const avaliacoesParceiro = simular ? 0 : Number((await admin.rpc("publicar_avaliacoes_parceiro")).data ?? 0) || 0;
+  // E679-B: a conduta do avaliador é cega; publica as que venceram os 14 dias do laudo sem a outra parte (nunca no simulado).
+  if (!simular) await admin.rpc("publicar_conduta_avaliador").then(() => null, () => null);
+  // E565: a faixa da taxa conta só os ativos de verdade (calendário confirmado nos últimos 30 dias): o calendário que
+  // vence não muda nenhuma linha, então a rotina diária recalcula a faixa_dono de todos (a queda abre a janela de 30 dias).
+  const faixasAtualizadas = simular ? 0 : await admin.rpc("atualizar_faixas_dos_donos").then((r) => Number(r.data ?? 0) || 0, () => 0);
   // Página da estadia (Prompt 32): ocupantes apagados RETENCAO_OCUPANTES_DIAS depois do fim do contrato; aditivos sem
   // resposta em 7 dias vencem (nada muda no contrato). Na simulação, só conta.
   const estadia = await manutencaoDaEstadia(admin, agora, simular).catch(() => ({ ocupantesApagados: 0, aditivosVencidos: 0, convidadosApagados: 0 }));
@@ -405,7 +450,7 @@ export async function GET(request: Request) {
   const automatico = await automacaoDaEstadia(admin, agora, simular).catch(() => ({ automaticos: 0, sugestoesMorador: 0, semResposta: 0 }));
   // Internet medida (Prompt 57): "Meça de novo a internet" ao dono aos ~5,5 meses, uma vez por medição.
   const internet = await avisosDeRemedicao(admin, agora, simular).catch(() => ({ avisosInternet: 0 }));
-  // Prompt 50: verificação parada 24 h (aviso com a causa), parceiro sem resposta em 1 dia útil e chamado fora da
+  // Prompt 50: verificação parada 24 h (aviso com a causa), parceiro sem resposta no prazo da parceria (7 dias) e chamado fora da
   // promessa (alertas à equipe). Uma vez cada; nunca no silêncio 22h–7h. Na simulação, só conta.
   const lembretes50 = await lembretesDoFunil(admin, agora, simular).catch(() => null);
   // E205-B2: bloco renovado (2 em diante) que começa em até 3 dias sem pagamento registrado → lembrete ao morador.
@@ -417,7 +462,7 @@ export async function GET(request: Request) {
   // Minimização (Prompt 58): a rotina única de eliminação. Fase 1 apaga de verdade só com ELIMINACAO_ATIVA=1 (ou no
   // laboratório); fora disso, o relatório "o que seria apagado hoje" sai sem apagar nada.
   const eliminacao = await rodarEliminacao(admin, agora, rodadaSimulada({ pedidoSimular: simular, laboratorio: integracoesSimuladas(), chaveAtiva: process.env.ELIMINACAO_ATIVA })).catch(() => ({ eliminados: 0, simulados: 0, falhas: 1 }));
-  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, ...estadia, conferenciasFechadas, ...tempos, ...automatico, ...internet, lembretes50, visitasExpiradas, visitasVespera, eliminacao });
+  return NextResponse.json({ ok: true, simulado: simular, cartoes, enviados: contagem, propostasExpiradas, documentosAvisados, documentosSemFila, sombraApagada, avaliacoesParceiro, faixasAtualizadas, ...estadia, conferenciasFechadas, ...tempos, ...automatico, ...internet, lembretes50, visitasExpiradas, visitasVespera, eliminacao });
 }
 
 /** Retenção dos ocupantes (90 dias depois do fim) e aditivos vencidos. `simular`: só conta, não apaga nem muda nada. */

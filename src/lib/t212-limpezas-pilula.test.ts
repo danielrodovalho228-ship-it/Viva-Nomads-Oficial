@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-// Lab verde: depois do E193 a escala "Limpezas por mês" é de pílulas; a t212 não pode mais usar selectOption nela.
+// Lab verde: depois do E193 a escala "Limpezas por mês" é de cartões; a t212 não pode mais usar selectOption nela.
 const spec = readFileSync("tests/e2e/specs/t212-ferramentas-proprietario.spec.ts", "utf8");
 const tela = readFileSync("src/components/anuncio/blocos-cadastro.tsx", "utf8");
 

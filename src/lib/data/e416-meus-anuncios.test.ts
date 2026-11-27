@@ -17,6 +17,6 @@ test("Meus anúncios lê listMyProperties, e ela busca o nível", () => {
 test("o cartão de Meus anúncios desenha o selo com o texto da vitrine (sem selo abaixo do Essencial)", () => {
   const c = ler("../../app/(dashboard)/dashboard/imoveis/imoveis-client.tsx");
   assert.match(c, /data-testid="meu-anuncio"\n\s*data-imovel=\{p\.id\}/);
-  assert.match(c, /\{p\.nivel && p\.nivel !== "em_adequacao" && \(/);
-  assert.match(c, /data-testid="anuncio-nivel"[\s\S]{0,200}textoNivelCartao\(ROTULO_NIVEL\[p\.nivel\], !!p\.nivelVistoriado\)/);
+  // E416 (05/11): o nível vai nos selos da foto, junto dos outros (o "em adequação" não vira selo: selosDaFoto).
+  assert.match(c, /<SelosFoto[\s\S]{0,120}selos=\{selosDaFoto\(\{[^}]*nivel: p\.nivel, nivelVistoriado: p\.nivelVistoriado/);
 });

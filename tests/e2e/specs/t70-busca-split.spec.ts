@@ -5,8 +5,8 @@ import { test, expect, type Page } from "@playwright/test";
  * Finder, identidade Viva Nomads).
  *  1. Largura total: lista ~55–60% com 3 cards por linha; mapa ~40–45% encostado
  *     na borda direita, fixo e na altura visível; filtros numa faixa de uma linha.
- *  2. Um pin de preço por imóvel. Hover no card destaca o pin; hover no pin só
- *     destaca (pin + card), sem balão.
+ *  2. Um pin de preço por imóvel. Hover no card destaca o pin; hover no pin destaca
+ *     (pin + card) e — E442 — abre o cartão do imóvel (o mesmo do clique).
  *  3. Clique no pin abre o card ancorado no mapa (foto, título, cidade, preço/mês,
  *     quartos/banheiros), sem sair da página; o × fecha.
  *  4. Celular (390 px): layout atual, sem mapa.
@@ -46,7 +46,8 @@ test.describe("T70 — busca split-screen no computador", () => {
     expect(pctLista).toBeLessThanOrEqual(0.6);
     expect(pctMapa).toBeGreaterThanOrEqual(0.4);
     expect(pctMapa).toBeLessThanOrEqual(0.45);
-    expect(Math.round(mapa!.x + mapa!.width), "mapa encosta na borda direita").toBe(1440);
+    // E659: termina dentro da margem da página (24 px), nunca colado/estourando a borda da janela.
+    expect(Math.round(mapa!.x + mapa!.width), "mapa termina na margem direita").toBe(1440 - 24);
 
     // E82-A: os filtros ficam na linha única de pílulas, sempre à vista sobre a lista.
     const caixa = await page.getByTestId("linha-pilulas").boundingBox();
@@ -70,7 +71,7 @@ test.describe("T70 — busca split-screen no computador", () => {
     await page.screenshot({ path: "tests/laboratorio/saida/t70-busca-1440.png" });
   });
 
-  test("2. um pin por imóvel; hover card↔pin só destaca", async ({ page }) => {
+  test("2. um pin por imóvel; hover card↔pin destaca; hover no pin abre o cartão (E442)", async ({ page }) => {
     await abrir(page, 1440);
     const cards = page.getByTestId("card-resultado");
     const pins = page.getByTestId("pin-mapa");
@@ -97,7 +98,13 @@ test.describe("T70 — busca split-screen no computador", () => {
     await page.locator(`[data-testid="pin-mapa"][data-id="${idPin}"]`).hover();
     await expect(page.locator(`[data-testid="pin-mapa"][data-id="${idPin}"]`)).toHaveAttribute("data-ativo", "1");
     await expect(page.locator(`[data-testid="card-resultado"][data-id="${idPin}"]`)).toHaveAttribute("data-destaque", "1");
-    await expect(page.getByTestId("card-pin-mapa"), "hover não abre balão").toHaveCount(0);
+    // E442: o hover no preço abre o cartão do imóvel (antes: só destaque e a etiqueta nativa).
+    await expect(page.getByTestId("card-pin-mapa"), "hover no preço abre o cartão").toHaveAttribute("data-id", idPin);
+    // E1023 (decisão do Gerente): com o cartão do imóvel aberto no mapa, o card da lista MANTÉM o destaque — também
+    // quando o mouse sai do preço e entra no cartão (antes o destaque vinha só do hover do pin e caía aqui).
+    await page.getByTestId("card-pin-mapa").hover();
+    await expect(page.getByTestId("card-pin-mapa"), "o cartão segue aberto com o mouse nele").toHaveAttribute("data-id", idPin);
+    await expect(page.locator(`[data-testid="card-resultado"][data-id="${idPin}"]`), "E1023: card da lista destacado com o cartão aberto").toHaveAttribute("data-destaque", "1");
   });
 
   test("3. clique no pin abre o card no mapa, sem sair da página; × fecha", async ({ page }) => {

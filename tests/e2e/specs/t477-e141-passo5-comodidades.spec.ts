@@ -115,8 +115,9 @@ test.describe("T477 — Passo 5: comodidades, nível opcional, por perto", () =>
       await expect(ruido).toHaveAttribute("data-ligado", "sim");
       const form = ruido.getByTestId("ruido-form");
       // E193 (30/10): cartões de marcar — o que fica sem marcar conta como "não".
-      await form.getByTestId("ruido-salvar").click();
-      await expect(form.getByTestId("ruido-resultado")).toBeVisible({ timeout: 20_000 });
+      // E606: sem botão — "Nenhum destes" responde "não" nas quatro e grava na hora.
+      await form.getByTestId("ruido-nenhum").click();
+      await expect(form.getByTestId("ruido-como-salva")).toHaveAttribute("data-estado", "salvo", { timeout: 20_000 });
       await p.getByTestId("bloco-nivel-extras-toggle").click();
       await expect(extras.getByTestId("extras-form")).toBeVisible();
       await semRolagemLateral(p);

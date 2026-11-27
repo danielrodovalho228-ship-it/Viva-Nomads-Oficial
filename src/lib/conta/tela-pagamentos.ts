@@ -4,6 +4,7 @@
   direto ao proprietário. "Adicionar cartão" aparece como no desenho, mas não há cadastro nem cobrança de cartão
   (decisão de 24/10: Pagamentos segue o mockup, nenhuma cobrança é ativada).
 */
+import { PCT_PARCEIRO_RECEBE, PCT_TAXA_SERVICO_PARCEIROS } from "../../config/taxa-servico-parceiros.ts";
 export const TITULO_RECEBE = "Como você recebe (proprietário)";
 /** Estados vazios: a leitura da chave falhou — nunca mostrar o formulário vazio como se não houvesse chave. */
 export const AVISO_PIX_FALHOU = "Não conseguimos ler a sua chave Pix agora. Tente de novo em instantes.";
@@ -21,7 +22,7 @@ export const AVISO_CARTAO_GRAVADO = "Avisaremos você quando abrir.";
 /* E70: o terceiro cartão, do parceiro. Enquanto o pagamento de parceiros pela plataforma está desligado, é informativo. */
 export const TITULO_PARCEIRO = "Como você recebe (parceiro)";
 export const NOTA_PARCEIRO =
-  "Os serviços são pagos direto a você: 90% ficam com você e 10% são a taxa de serviço da Viva. O recibo ou a nota é emitido por você.";
+  `Os serviços são pagos direto a você: ${PCT_PARCEIRO_RECEBE} ficam com você e ${PCT_TAXA_SERVICO_PARCEIROS} são a taxa de serviço da Viva. O recibo ou a nota é emitido por você.`;
 export const CONVITE_PARCEIRO = "Ofereça serviços para moradores e proprietários e receba direto.";
 export const BOTAO_PARCEIRO = "Cadastrar meu serviço";
 export const BOTAO_PARCEIRO_ATIVO = "Abrir meu painel de parceiro";

@@ -19,12 +19,15 @@ type Res<T = undefined> = { ok: true; valor: T } | { ok: false; erro: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const MSG_CONVIDADOS_SEM_LEITURA = "Não foi possível conferir os convidados agora. Tente de novo.";
+
 export async function convidarOcupante(contratoId: string, email: string): Promise<Res<ConvidadoView>> {
   const ctx = await contextoDaEstadia(contratoId);
   if ("erro" in ctx) return { ok: false, erro: ctx.erro };
   if (ctx.papel !== "inquilino") return { ok: false, erro: "Quem convida é o morador." };
   if (!assinadoPelasDuas(ctx.c) || ctx.c.status !== "ativo") return { ok: false, erro: "O convite fica disponível depois da assinatura das duas partes." };
   const ativos = await convidadosAtivos(ctx.admin, ctx.c.id);
+  if (!ativos) return { ok: false, erro: MSG_CONVIDADOS_SEM_LEITURA };
   const v = podeConvidar({ qtdOcupantes: ctx.c.qtd_ocupantes, ativos: ativos.length, email, jaConvidados: ativos.map((a) => a.email), emailDoMorador: ctx.email });
   if (!v.ok) return v;
   const alvo = email.trim().toLowerCase();
@@ -51,7 +54,7 @@ export async function convidarOcupante(contratoId: string, email: string): Promi
         pushUrl: destino,
         imovelId: ctx.c.property_id,
         // E267: o imóvel por título · bairro, cidade (nunca o endereço exato). Quem é convidado ainda não tem nome na Viva.
-        body: () => `${quem} incluiu você como morador da estadia em ${linhaImovel({ titulo: ctx.c.properties?.title, bairro: ctx.c.properties?.address, cidade: ctx.c.properties?.city }) || "um imóvel da Viva"}. Entre com este e-mail para ver as datas, o endereço e, perto da entrada, as instruções de chegada.`,
+        body: () => `${quem} incluiu você como morador da estadia em ${linhaImovel({ id: ctx.c.property_id, titulo: ctx.c.properties?.title, bairro: ctx.c.properties?.address, cidade: ctx.c.properties?.city }) || "um imóvel da Viva"}. Entre com este e-mail para ver as datas, o endereço e, perto da entrada, as instruções de chegada.`,
       });
     } catch {
       /* aviso é best-effort */

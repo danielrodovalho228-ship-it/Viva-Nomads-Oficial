@@ -4,7 +4,7 @@ import { Wallet, Hourglass } from "lucide-react";
 import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { isSupabaseConfigured } from "@/lib/env";
-import { getCarteiraDoDono } from "@/lib/data/carteira";
+import { getGanhosDoDono } from "@/lib/data/carteira";
 import { ganhosDoDono } from "@/lib/ganhos-dono";
 import { dataBR, formatBRL, hojeBR } from "@/lib/utils";
 import { getMeusContratos } from "@/lib/data/contratos-actions";
@@ -12,21 +12,23 @@ import { listMyProperties } from "@/lib/data/properties";
 import { enquadramentoReformaAtivo } from "@/lib/reforma/chave";
 import { mostrarAvisoReforma, numerosNaViva, type NumerosNaViva } from "@/lib/reforma/enquadramento";
 import { AvisoReforma, EnquadramentoReforma } from "@/components/reforma/enquadramento-reforma";
+import { saidaPeloFim } from "@/lib/texto-do-periodo";
 
 export const metadata: Metadata = { title: "Ganhos" };
 
 /**
- * E176 (D1): a subaba "Ganhos" de Contratos. O valor mensal de cada contrato em vigência ou a começar, somado. Mesma
- * fonte da Análise da carteira (getCarteiraDoDono, no servidor), sem a trava de 3 imóveis: aqui é o dinheiro do dono,
- * contrato a contrato. A Viva não recebe o valor mensal: ele vai direto do morador para o proprietário.
+ * E176 (D1): a subaba "Ganhos" de Contratos. O valor mensal de cada contrato em vigência ou a começar, somado,
+ * contrato a contrato (E545: getGanhosDoDono — todos os contratos ativos, mesmo em anúncio pausado; a Análise da
+ * carteira segue medindo a ocupação dos anúncios ativos). A Viva não recebe o valor mensal: ele vai direto do morador para o proprietário.
  */
 export default async function GanhosPage() {
-  const g = ganhosDoDono(isSupabaseConfigured() ? await getCarteiraDoDono(undefined, { exigir: true }) : []);
+  // E545: um contrato por linha (inclusive em anúncio pausado depois de alugar) — não a carteira de anúncios ativos.
+  const g = ganhosDoDono(isSupabaseConfigured() ? await getGanhosDoDono(undefined, { exigir: true }) : []);
   const reforma = await dadosDaReforma();
   return (
     <div data-testid="ganhos">
       <PageTitle title="Ganhos" subtitle="O valor mensal de cada contrato, em vigência e a começar." />
-      {reforma?.aviso && (
+      {reforma && "aviso" in reforma && reforma.aviso && (
         <div className="mb-6">
           <AvisoReforma />
         </div>
@@ -62,8 +64,9 @@ export default async function GanhosPage() {
                     )}
                     <span className="block text-xs text-muted">
                       {l.situacao === "ocupado" ? "Em vigência" : "A começar"}
-                      {l.inicio ? ` · de ${dataBR(l.inicio)}` : ""}
-                      {l.fim ? ` até ${dataBR(l.fim)}` : ""}
+                      {/* E1089: `l.fim` é a última noite; a tela diz entrada e saída (o dia seguinte). */}
+                      {l.inicio ? ` · entrada ${dataBR(l.inicio)}` : ""}
+                      {l.fim ? ` · saída ${dataBR(saidaPeloFim(l.fim) || l.fim)}` : ""}
                     </span>
                   </span>
                   <span className="font-semibold tabular-nums text-ink">{formatBRL(l.valorMensal)}/mês</span>
@@ -76,7 +79,13 @@ export default async function GanhosPage() {
           </p>
         </>
       )}
-      {reforma && <EnquadramentoReforma {...reforma.numeros} />}
+      {reforma && "numeros" in reforma && <EnquadramentoReforma {...reforma.numeros} />}
+      {reforma && "indisponivel" in reforma && (
+        // Estados vazios: sem os contratos e imóveis lidos, não há conta a fazer — nunca "R$ 0" nem "não entra".
+        <section className="mt-12 rounded-xl border border-line bg-white p-4 text-sm text-muted sm:p-6" role="status" data-testid="enquadramento-reforma-indisponivel">
+          Não conseguimos ler seus contratos e imóveis agora, então não calculamos se você entra na regra nova. Tente de novo em instantes.
+        </section>
+      )}
     </div>
   );
 }
@@ -86,9 +95,16 @@ export default async function GanhosPage() {
  * aparece. Ligada: os números da Viva do PRÓPRIO dono (contratos e pagamentos dele, no servidor) e se o aviso aparece
  * (3 imóveis ou mais na Viva, ou R$ 200 mil ou mais no ano).
  */
-async function dadosDaReforma(): Promise<{ aviso: boolean; numeros: NumerosNaViva & { imoveisComContrato: number } } | null> {
+async function dadosDaReforma(): Promise<{ aviso: boolean; numeros: NumerosNaViva & { imoveisComContrato: number } } | { indisponivel: true } | null> {
   if (!isSupabaseConfigured() || !(await enquadramentoReformaAtivo())) return null;
-  const [contratos, imoveis] = await Promise.all([getMeusContratos().catch(() => []), listMyProperties().catch(() => [])]);
+  // Estados vazios: uma falha de leitura não vira "nenhum contrato" — sem os números, o cartão diz que não calculou.
+  let contratos: Awaited<ReturnType<typeof getMeusContratos>>;
+  let imoveis: Awaited<ReturnType<typeof listMyProperties>>;
+  try {
+    [contratos, imoveis] = await Promise.all([getMeusContratos({ exigir: true }), listMyProperties({ exigir: true })]);
+  } catch {
+    return { indisponivel: true };
+  }
   const numeros = numerosNaViva(
     contratos.map((c) => ({
       propertyId: c.propertyId,

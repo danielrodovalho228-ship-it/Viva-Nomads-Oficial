@@ -1,4 +1,16 @@
 import { test, expect } from "@playwright/test";
+import { apagarMassaFiltrosBusca, criarMassaFiltrosBusca, type MassaFiltros } from "../fixtures/massa-filtros-busca";
+
+// Frente 3 (busca): desde o E131 os exemplos saem das contagens quando há anúncio real; no laboratório, um anúncio real
+// cobre os atalhos e chips que este spec toca (fixtures/massa-filtros-busca.ts). Fora do laboratório, nada muda.
+let massaFiltros: MassaFiltros | null = null;
+test.beforeAll(async () => {
+  test.setTimeout(240_000);
+  massaFiltros = await criarMassaFiltrosBusca({ esperarHome: true });
+});
+test.afterAll(async () => {
+  await apagarMassaFiltrosBusca(massaFiltros);
+});
 
 /**
  * T66 — ordem bab1b2aa (prints 01, 14, 15): home com hero em largura cheia,

@@ -1,21 +1,22 @@
 "use client";
 
-import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { useEffect, useState } from "react";
 import { ListChecks, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { resumoDoChamado } from "@/lib/data/atendimento-actions";
 import type { ResumoChamado } from "@/lib/atendimento/resumo";
+import { dataEHora } from "@/lib/atendimento/detalhe-chamado";
 
 /**
- * "Resumo e ações" no topo do chamado. Gerado sozinho ao abrir (a primeira vez)
+ * O resumo no topo do chamado (E1098: pelo mockup — o texto, quando foi gerado e a lista do que fazer; quem é a
+ * pessoa e o prazo ficam no cartão Detalhes e no indicador do cabeçalho, uma vez só). Gerado sozinho ao abrir (a primeira vez)
  * e guardado como nota interna — reabrir não gasta IA. "Atualizar resumo" refaz.
  * O checklist marcado fica neste navegador.
  */
 const NOME_AGENTE: Record<string, string> = { thiago: "Thiago (parcerias)", sergio: "Sérgio (jurídico)", renato: "Renato (engenheiro)", helena: "Helena", carla: "Carla", luana: "Luana", bruno: "Bruno", viva: "Viva" };
 
-export function ResumoEAcoes({ chamadoId, quemEh, sla }: { chamadoId: string; quemEh: string; sla: { texto: string; cor: string; risco: string } }) {
+export function ResumoEAcoes({ chamadoId }: { chamadoId: string }) {
   const [r, setR] = useState<ResumoChamado | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -65,13 +66,14 @@ export function ResumoEAcoes({ chamadoId, quemEh, sla }: { chamadoId: string; qu
   }
 
   return (
-    <section className="mb-6 rounded-xl border border-forest/20 bg-sage-100/60 p-4" data-testid="resumo-acoes">
+    <section className="rounded-xl border border-forest/20 bg-sage-100 p-4 sm:p-6" data-testid="resumo-acoes">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 font-title text-lg font-semibold text-ink">
-          <Sparkles className="h-5 w-5 text-forest" /> Resumo e ações
+          <Sparkles className="h-5 w-5 text-forest" /> {r && r.origem !== "ia" ? "Resumo do chamado" : "Resumo da Viva (IA)"}
         </h2>
-        <Button size="sm" variant="outline" disabled={carregando} onClick={() => carregar(true)}>
-          <RefreshCw className={cn("h-3.5 w-3.5", carregando && "animate-spin")} /> Atualizar resumo
+        <Button size="sm" variant="secondary" disabled={carregando} aria-label="Atualizar resumo" onClick={() => carregar(true)}>
+          <RefreshCw className={cn("h-4 w-4", carregando && "animate-spin")} />
+          <span>Atualizar<span className="hidden sm:inline"> resumo</span></span>
         </Button>
       </div>
       {carregando && !r ? (
@@ -79,22 +81,13 @@ export function ResumoEAcoes({ chamadoId, quemEh, sla }: { chamadoId: string; qu
       ) : erro && !r ? (
         <p className="mt-3 text-sm text-red-700">{erro}</p>
       ) : r ? (
-        <div className="mt-3 grid gap-4 md:grid-cols-[1.4fr_1fr]">
-          <div>
-            <p className="text-sm leading-relaxed text-ink" data-testid="resumo-texto">{r.resumo}</p>
-            <p className="mt-2 text-xs text-muted">
-              {r.origem === "ia" ? "Resumo da Viva (IA)" : "Resumo por regras (sem IA)"} · {dataHoraBRT(r.geradoEm, { tabela: true })}
-            </p>
-            <dl className="mt-3 space-y-1 text-sm">
-              <div className="flex gap-2"><dt className="w-16 shrink-0 text-muted">Quem é</dt><dd className="text-ink" data-testid="resumo-quem">{quemEh}</dd></div>
-              <div className="flex gap-2">
-                <dt className="w-16 shrink-0 text-muted">Prazo</dt>
-                <dd><span className={cn("rounded-full px-2 py-1 text-xs font-semibold", sla.cor)}>{sla.texto}</span> <span className="text-xs text-muted">{sla.risco}</span></dd>
-              </div>
-            </dl>
-          </div>
-          <div>
-            <p className="flex items-center gap-2 text-xs font-semibold text-muted"><ListChecks className="h-4 w-4" /> O que você precisa fazer</p>
+        <>
+          <p className="mt-3 text-sm leading-relaxed text-ink" data-testid="resumo-texto">{r.resumo}</p>
+          <p className="mt-2 text-xs text-muted">
+            {r.origem === "ia" ? "Gerado pela Viva (IA)" : "Resumo por regras (sem IA)"} · {dataEHora(r.geradoEm)}
+          </p>
+          <div className="mt-4 rounded-lg border border-line bg-white p-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-ink"><ListChecks className="h-4 w-4 text-forest" /> O que você precisa fazer</h3>
             <ul className="mt-2 space-y-2" data-testid="resumo-acoes-lista">
               {r.acoes.map((a) => (
                 <li key={a.texto}>
@@ -109,7 +102,7 @@ export function ResumoEAcoes({ chamadoId, quemEh, sla }: { chamadoId: string; qu
               ))}
             </ul>
           </div>
-        </div>
+        </>
       ) : null}
     </section>
   );

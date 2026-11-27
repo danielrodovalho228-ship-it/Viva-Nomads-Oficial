@@ -7,7 +7,7 @@ import { getAvaliacoesRecebidas, getPerfilProprietario, nomeCompletoParaQuemTemA
 import { listPropertiesDoProprietario } from "@/lib/data/properties";
 import { desdeLabel, robotsDoProprietario } from "@/lib/perfil/perfil-publico";
 import { corAvatar, iniciais } from "@/lib/avatar";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { buttonClasses } from "@/components/ui/button";
 import { dataBR } from "@/lib/utils";
 import { proprietarioExemploPorId } from "@/config/exemplo-proprietarios";
@@ -17,6 +17,7 @@ import { ehSeloLinkedin } from "@/lib/linkedin/textos";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
 import { dominioDoSelo, ehSeloVinculo } from "@/lib/vinculo/textos";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
+import { classeGradeImoveis } from "@/lib/proprietario/grade-imoveis";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   // Proprietário de exemplo (prompt 9): ilustrativo, sempre fora do Google.
   const ex = proprietarioExemploPorId(id);
-  if (ex) return { title: `${ex.nome} — exemplo ilustrativo`, robots: { index: false, follow: false } };
+  if (ex) return { title: `${ex.nome} — proprietário de anúncio de exemplo`, robots: { index: false, follow: false } };
   const p = await getPerfilProprietario(id);
   if (!p) return { title: "Página não encontrada", robots: { index: false, follow: false } };
   // Conta o que a página realmente lista (o anúncio de teste não aparece nem conta).
@@ -137,9 +138,9 @@ export default async function ProprietarioPage({ params }: Params) {
         {imoveis.length === 0 ? (
           <p className="mt-3 text-muted">Nenhum imóvel ativo no momento.</p>
         ) : (
-          <div className="mt-4 grid gap-4 sm:auto-rows-fr sm:grid-cols-2 xl:grid-cols-4">
-            {imoveis.map((im) => (
-              <PropertyCard key={im.id} property={im} />
+          <div className={`mt-4 ${classeGradeImoveis(imoveis.length)}`}>
+            {imoveis.map((im, n) => (
+              <PropertyCard key={im.id} property={im} prioridade={n < PRIMEIRA_FILEIRA} />
             ))}
           </div>
         )}

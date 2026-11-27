@@ -1,5 +1,7 @@
 /* Roda: node --test src/lib/textos-publicos.test.ts
-   Guarda de texto das páginas públicas (ordens do Otávio, pacote 12/10 tarde). */
+   Guarda de texto das páginas públicas (ordens do Otávio, pacote 12/10 tarde).
+   Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): #71 — a frase da janela do formulário de /precos é a das carteiras
+   ("Para carteira a partir de 20 imóveis ou administradora de imóveis. Conte sobre a sua carteira…"), não mais a do Plano Gestor. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -43,16 +45,20 @@ test("#70: /parceiros/fotografos tem 'pedir é grátis' e botão para /parceiros
   assert.match(t, /href="\/parceiros(\?[^"]*)?"[^>]*>É fotógrafo\? Seja parceiro</);
 });
 
-test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e frase do Plano Gestor", () => {
+test("#71: título de /parceiros sem marca repetida (≤ 60 com o sufixo) e frase das carteiras (078: antes, do Plano Gestor)", () => {
   const t = ler("src/app/(public)/parceiros/page.tsx");
   const titulo = /title: "([^"]+)"/.exec(t)?.[1] ?? "";
-  assert.equal(titulo, "Seja parceiro: fotógrafos e gestores");
+  assert.equal(titulo, "Seja parceiro: fotógrafos e serviços");
   assert.ok(`${titulo} · Viva Nomads`.length <= 60);
   assert.doesNotMatch(titulo, /Viva Nomads/);
   // Prompt 13: a frase do Plano Gestor está na janela do formulário (a caixa cinza repetia a tabela).
   const p = ler("src/components/precos/plano-gestor-form.tsx");
   // E321: a porta inteira do Gestor (N+ com documento aprovado ou administradora), da constante.
-  assert.match(p, /Para \{PORTA_GESTOR_TEXTO\}: condições negociadas com o time da Viva\. Entre em contato\./);
+  // E564 (parte A): o texto único do Gestor (4%, carteiras de 20+, cadastro assistido e contato direto).
+  // 078 (Daniel, 16/11/2026): antes /Plano Gestor: \{GESTOR_TEXTO\}\. Conte sobre a sua carteira e o time da Viva fala com você\./ — a
+  // frase não cita mais o plano nem a taxa; diz para quem é o contato (o mínimo vem da constante) e segue igual.
+  assert.match(p, /<p className="text-sm text-muted">Para carteira a partir de \{CARTEIRAS_MINIMO_IMOVEIS\} imóveis ou administradora de imóveis\. Conte sobre a sua carteira e o time da Viva fala com você\.<\/p>/);
+  assert.doesNotMatch(fonteSemComentarios(p), /Plano Gestor|GESTOR_TEXTO|\d ?%/);
   assert.doesNotMatch(p, /a conversa é direta/);
 });
 
@@ -84,6 +90,7 @@ test("#79: trilha() gera BreadcrumbList válido", async () => {
 
 /* F5 (QA do Daniel 12/10): nota interna nunca aparece em página pública. */
 import { readdirSync, statSync } from "node:fs";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 function paginasPublicas(dir: string): string[] {
   const base = new URL(`../../${dir}/`, import.meta.url);
@@ -101,7 +108,7 @@ test("F5: páginas públicas sem nota interna ('aguardando revisão', Dra. Beatr
   assert.ok(paginas.length > 10);
   for (const f of paginas) {
     // tira comentários (não aparecem na tela) antes de varrer
-    const t = ler(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    const t = fonteSemComentarios(ler(f));
     assert.doesNotMatch(t, /aguardando revis[ãa]o/i, f);
     assert.doesNotMatch(t, /Dra\. Beatriz/, f);
     assert.doesNotMatch(t, /S[ée]rgio/, f);

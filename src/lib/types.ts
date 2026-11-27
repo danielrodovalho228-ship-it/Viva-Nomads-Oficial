@@ -74,6 +74,8 @@ export interface OwnerProfile {
 
 export interface Property {
   id: string;
+  /** E571: anúncio de teste, só na busca da conta de teste logada (nunca sai no JSON-LD nem para o público). */
+  deTeste?: boolean;
   title: string;
   description: string;
   propertyType: string; // Apartamento, Casa, Studio...
@@ -141,6 +143,8 @@ export interface Property {
   nearbyWorkspaces: Workspace[];
   ownerName: string;
   ownerId?: string; // dono do imóvel (para saber se o visitante é o próprio dono)
+  /** E574: o dono é PJ/MEI e DECLAROU emitir nota fiscal da locação (filtro "Emite nota fiscal" da busca). */
+  emiteNotaDono?: boolean;
   createdAt?: string; // data de cadastro (ISO) — ordenação "Adicionados recentemente"
   // ── Enriquecimento da página (todos opcionais; a seção some quando ausente) ──
   parkingSpots?: number; // vagas
@@ -153,6 +157,8 @@ export interface Property {
   petsAllowed?: boolean;
   /** Regras detalhadas de pets (espécies, porte, quantidade, reforço de Caução). */
   petsRegras?: import("@/lib/anuncio/pets-regras").RegrasPets;
+  /** E660: ficha "o que tem dentro" (camas/ar por quarto, enxoval, cozinha); requer a migração 0316. */
+  fichaDentro?: import("@/lib/ficha-dentro/ficha-dentro").FichaDentro;
   /** 61-B (0225): tipo de entrada (público), mensagem a quem vai pedir e "o que considerar antes de pedir". */
   chegadaEPedido?: import("@/lib/anuncio/chegada-e-pedido").ChegadaEPedido;
   /** Pacote de limpeza durante a estadia (ordem 4c74ac38; requer migração 0144). */
@@ -171,6 +177,10 @@ export interface Property {
   nivel?: import("@/config/niveis").NivelOuAdequacao | null;
   /** Prompt 62-A, Parte 2: o nível tem laudo de avaliação vigente (imovel_nivel.nivel_vistoriado_em). */
   nivelVistoriado?: boolean;
+  /** Filtros pacote 1: classe de ruído declarada (imovel_nivel.ruido_classe); null = não declarada. */
+  ruidoClasse?: "baixo" | "medio" | "alto" | null;
+  /** Filtros pacote 1: janelas de isolamento acústico (imovel_ruido.isolamento_acustico). */
+  isolamentoAcustico?: boolean;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;

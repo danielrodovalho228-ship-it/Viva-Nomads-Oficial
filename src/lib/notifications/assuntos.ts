@@ -87,8 +87,26 @@ export const ASSUNTOS = {
   comprovanteCaucao: "Seu comprovante de Caução",
   termoDevolucao: "Termo de devolução da Caução",
   contratoPronto: "Seu contrato está pronto para assinar",
+  /** E722: lembrete de 24 h / 6 h para concluir o contrato depois do aceite da proposta. */
+  preAceitacaoLembrete: "Prazo para concluir o contrato",
+  /** E722: a pré-aceitação de 72 h terminou sem o contrato (sem punição; pode ser reaberta até 2 vezes). */
+  preAceitacaoExpirou: "A pré-aceitação terminou",
+  /** E722: regra de corrida — outra pessoa concluiu o contrato antes; a candidatura só volta se o dono reabrir. */
+  preAceitacaoPerdeuVez: "Outra pessoa concluiu o contrato antes",
+  /** E722: o prazo terminou pela 3ª vez e a candidatura foi encerrada (avisa o morador e o dono). */
+  preAceitacaoEncerrada: "Sua candidatura foi encerrada",
+  /** E637: o prazo de 7 dias do parecer sobre a caução terminou sem desconto (avisa o dono e o morador). */
+  caucaoLiberacaoIntegral: "Caução: liberação integral registrada",
+  /** E637: a devolução da caução passou de 30 dias (avisa o dono). */
+  /** E641: lembrete neutro (D-5/D-3) da parcela do aluguel, antes do vencimento. */
+  lembreteParcelaAluguel: "Lembrete: parcela do aluguel vence em breve",
+  /** E641: o morador registrou o pagamento e o dono precisa confirmar. */
+  pagamentoRegistradoMorador: "Pagamento registrado pelo morador: confirme o recebimento",
+  caucaoDevolucaoAtraso: "Caução: devolução em atraso",
   contratoFaltaVoce: "Falta a sua assinatura no contrato",
   contratoAssinado: "Contrato assinado pelas duas partes",
+  /** PROPOSTA DE TEXTO (E1229): o morador é avisado de que o proprietário anulou um registro de pagamento. */
+  registroAnulado: "Um registro de pagamento foi anulado",
   propostaRecebida: "Você recebeu uma proposta",
   propostaRespondida: "Sua proposta foi respondida",
   propostaAceita: "Sua proposta foi aceita",

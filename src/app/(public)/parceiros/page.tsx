@@ -3,21 +3,24 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { trilha } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { ButtonLink } from "@/components/ui/button";
 import { SejaParceiroForm } from "@/components/parceiros/seja-parceiro-form";
 import { RegrasParceiros } from "@/components/parceiros/regras-parceiros";
 import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
-import { categoriaValida } from "@/lib/parceiros/regras";
+import { TEXTO_PRAZO_PARCERIA, categoriaValida } from "@/lib/parceiros/regras";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
 import { FOTOS_PARCERIA } from "@/lib/parceiros-cartoes";
-import { PORTA_GESTOR_TEXTO } from "@/config/planos";
+import { linksDoCartaoServicos } from "@/lib/parceiros/cartao-servicos";
+import { TEXTO_CARTEIRAS } from "@/config/planos";
+import { PRECOS_VISIVEL } from "@/config/precos-visivel";
+import { linksDoCartaoGestores } from "@/lib/parceiros/tipos-parceria";
+import { PARCEIROS_HEROI_SUBTITULO, PARCEIROS_NUMERO_CONTATO } from "@/config/textos-regulados";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/parceiros" },
-  title: "Seja parceiro: fotógrafos e gestores",
+  title: "Seja parceiro: fotógrafos e serviços",
   description: "Fotógrafos, mudança, limpeza, montagem e manutenção para imóveis mobiliados: peça a sua parceria e tenha uma página na Viva Nomads.",
 };
 
@@ -25,11 +28,12 @@ const CARDS = [
   { id: "fotografos", titulo: "Fotógrafos", selo: "Aberto", texto: "Página com portfólio, galeria, serviços e prazos. A conversa é pelas mensagens da Viva.",
     links: [{ href: "/parceiros?categoria=fotografia#quero-ser-parceiro", rotulo: "Sou fotógrafo" }, { href: "/parceiros/fotografos", rotulo: "Procuro fotógrafo" }] },
   { id: "empresas", titulo: "Empresas", selo: "Aberto", texto: "Empresas que hospedam equipes em imóveis mobiliados.", links: [{ href: "/empresas", rotulo: "Conhecer" }] },
-  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume e Plano Gestor para ${PORTA_GESTOR_TEXTO}.`,
-    // E302 (QA 31/10): o botão leva à explicação do Gestor em Preços (âncora), não ao topo da página.
-    links: [{ href: "/precos#plano-gestor", rotulo: "Ver o Plano Gestor" }] },
-  { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção para imóveis mobiliados. Página própria com serviços e cidades.",
-    links: [{ href: "/parceiros?categoria=limpeza#quero-ser-parceiro", rotulo: "Quero atender" }, { href: "/parceiros/buscar?categoria=limpeza", rotulo: "Procurar" }] },
+  { id: "gestores", titulo: "Gestores e administradoras", selo: "Aberto", texto: `Taxa menor por volume. ${TEXTO_CARTEIRAS}`,
+    // E896/078: o botão leva às taxas — a seção das carteiras em Preços ou, com os preços suspensos, a escada de taxas
+    // em /para-proprietarios#taxa. O cartão nunca fica sem saída.
+    links: linksDoCartaoGestores(PRECOS_VISIVEL) },
+  { id: "servicos", titulo: "Limpeza e manutenção", selo: "Aberto", texto: "Limpeza, lavanderia, reparos e manutenção leve para imóveis mobiliados. Página própria com serviços e cidades.",
+    links: linksDoCartaoServicos() }, // E897: um caminho por categoria (limpeza, lavanderia, manutenção), como o cartão "Montagem e mudança".
   { id: "mobilia", titulo: "Montagem e mudança", selo: "Aberto", texto: "Montagem de móveis e mudança para quem anuncia ou vem morar. Página própria com serviços e cidades.",
     // E301 (QA 31/10): o cartão junta duas categorias — cada link leva à sua (antes, os dois iam só a "mudanca").
     links: [
@@ -44,14 +48,14 @@ const CARDS = [
 
 const PASSOS = [
   { t: "Peça a parceria", d: "Com a sua conta: conte o que você faz e onde atende. Leva poucos minutos.", foto: "/images/unicas/parceiros-passo-cadastro.webp", alt: "Pessoa preenchendo o cadastro no notebook" },
-  { t: "A Viva confere", d: "Identidade, CPF ou CNPJ e portfólio. A resposta chega por e-mail, com o link para ativar a sua página.", foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
+  { t: "A Viva confere", d: `Identidade e CNPJ; para fotografia, também o portfólio. ${TEXTO_PRAZO_PARCERIA} Aprovada, o e-mail traz o link para ativar a sua página.`, foto: "/images/unicas/parceiros-passo-confere.webp", alt: "Conferência de documentos no computador" },
   { t: "Receba pedidos", d: "Quem anuncia ou busca imóveis mobiliados chama você; a conversa é pela plataforma.", foto: "/images/unicas/parceiros-passo-pedidos.webp", alt: "Conversa pelo celular" },
   { t: "Entregue e seja avaliado", d: "Depois da entrega, o cliente avalia — boas avaliações trazem mais pedidos.", foto: "/images/unicas/parceiros-passo-avaliado.webp", alt: "Quarto arrumado e limpo depois do serviço" },
 ];
 
 
 const DUVIDAS = [
-  { p: "Preciso de CNPJ?", r: "Não: pessoa física (CPF) ou empresa e MEI (CNPJ). A equipe confere o documento antes de aprovar." },
+  { p: "Preciso de CNPJ?", r: "Sim: a Viva só trabalha com parceiros que têm CNPJ, em qualquer categoria. O CPF não é aceito — se ainda não tem, abra o seu CNPJ (MEI, onde a atividade permite). A equipe confere o documento antes de aprovar." },
   { p: "Quanto custa?", r: "O pedido e a página são grátis, sem mensalidade e sem exclusividade. Você só paga a taxa de serviço quando há serviço contratado." },
   { p: "Em quais cidades?", r: "Começando por Uberlândia (MG). Cadastre-se de qualquer cidade e avisamos quando chegarmos aí." },
 ];
@@ -78,11 +82,9 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
         alt="Fotógrafo registrando uma sala mobiliada"
         eyebrow="Parceiros"
         titulo="Seja parceiro da Viva Nomads"
-        subtitulo={<p>Atenda quem anuncia e quem busca imóveis mobiliados, com conversa só pela plataforma e identidade revelada depois do aceite.</p>}
+        subtitulo={<p>{PARCEIROS_HEROI_SUBTITULO}</p>}
       >
-        <ButtonLink href="#quero-ser-parceiro" variant="inverse" size="lg" data-testid="seja-parceiro-topo">
-          Seja parceiro <ArrowRight className="h-4 w-4" />
-        </ButtonLink>
+        {/* E711: o "Seja parceiro" que ficava aqui levava ao mesmo destino da porta "Quero ser parceiro" logo acima — saiu. */}
         <ButtonLink href="#tipos" variant="inverseSecondary" size="lg">
           Ver tipos de parceria
         </ButtonLink>
@@ -94,12 +96,18 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
           <div><dt className="font-title text-2xl font-semibold text-ink">Uberlândia (MG)</dt><dd className="text-sm text-muted">Começamos por aqui; cadastre-se de qualquer cidade</dd></div>
           <div><dt className="font-title text-2xl font-semibold text-ink">30–180 dias</dt><dd className="text-sm text-muted">de estadia em imóveis mobiliados</dd></div>
           <div><dt className="font-title text-2xl font-semibold text-ink">R$ 0</dt><dd className="text-sm text-muted">para se cadastrar, sem mensalidade</dd></div>
-          <div><dt className="font-title text-2xl font-semibold text-ink">Contato só pela plataforma</dt><dd className="text-sm text-muted">identidade revelada após o aceite</dd></div>
+          <div><dt className="font-title text-2xl font-semibold text-ink">{PARCEIROS_NUMERO_CONTATO.titulo}</dt><dd className="text-sm text-muted">{PARCEIROS_NUMERO_CONTATO.nota}</dd></div>
         </dl>
       </section>
 
       <section id="tipos" aria-labelledby="h-tipos" className="container-page section-y scroll-mt-24">
         <h2 id="h-tipos" className="text-center font-title text-2xl font-semibold text-ink">Tipos de parceria</h2>
+        {/* E730 (Phoenix/RELATORIO-002, C5): a página mostra Empresas, Gestores e Avaliação, mas o formulário só traz as categorias de
+            serviço. A promessa agora diz o que o formulário entrega e para onde vai cada um dos outros. */}
+        <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-muted" data-testid="parceiros-tipos-nota">
+          O formulário "Quero ser parceiro" serve às categorias de serviço: fotografia, mudança, limpeza, lavanderia, montagem, manutenção e outro serviço.
+          Empresas e gestores têm página própria, e a avaliação de imóveis é um credenciamento à parte.
+        </p>
         <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6" data-testid="parceiros-tipos">
           {CARDS.map((c) => {
             const f = FOTOS_PARCERIA.find((x) => x.id === c.id)!;
@@ -116,8 +124,12 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
                     <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${c.selo === "Aberto" ? "bg-sage-100 text-forest" : "bg-night/10 text-ink"}`}>{c.selo}</span>
                   </div>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{c.texto}</p>
-                  <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-forest">
-                    {c.links.map((l) => <Link key={l.href} href={l.href} className="alvo-toque underline underline-offset-2 hover:text-blue-700">{l.rotulo}</Link>)}
+                  {/* E1033 (passo 3): cada link é uma caixa REAL de 44 px. Antes tinham 20 px com uma área invisível de 44 px, e
+                      as duas linhas ficavam a 36 px: a área de um link invadia o da linha seguinte. O espaço vertical vem
+                      agora da própria caixa (gap só na horizontal); as margens compensam a altura a mais, para o primeiro e
+                      o último link ficarem onde estavam. Duas linhas passam de 36 para 44 px de distância. */}
+                  <div className="-mb-3 mt-1 flex flex-wrap gap-x-4 text-sm font-semibold text-forest">
+                    {c.links.map((l) => <Link key={l.href} href={l.href} className="inline-flex min-h-11 items-center underline underline-offset-2 hover:text-blue-700">{l.rotulo}</Link>)}
                   </div>
                 </div>
               </li>
@@ -134,10 +146,10 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
           </div>
           <div className="min-w-0 px-6 pt-4 sm:py-6">
             <h3 className="font-title text-lg font-semibold text-ink">É avaliador de imóveis?</h3>
-            <p className="mt-1 text-sm text-muted">Avaliação do imóvel pelo checklist da Viva, designada por rodízio. Peça o credenciamento numa página própria.</p>
+            <p className="mt-1 text-sm text-muted">Avaliação do imóvel pelo checklist da Viva, escolhida pelo proprietário. Peça o credenciamento numa página própria.</p>
           </div>
           <div className="px-6 pb-6 pt-3 sm:py-6">
-            <Link href="/parceiros/avaliadores" className="alvo-toque text-sm font-semibold text-forest underline underline-offset-2 hover:text-blue-700">Ser avaliador credenciado</Link>
+            <Link href="/parceiros/avaliadores" className="area-de-toque-44 text-sm font-semibold text-forest underline underline-offset-2 hover:text-blue-700">Ser avaliador credenciado</Link>
           </div>
         </div>
       </section>
@@ -177,7 +189,8 @@ export default async function ParceirosPage({ searchParams }: { searchParams: Pr
         <div className="container-page grid gap-8 md:grid-cols-5">
           <div className="md:col-span-2">
             <h2 id="h-form" className="font-title text-2xl font-semibold text-ink">Seja parceiro</h2>
-            <p className="mt-3 text-muted">Peça a parceria com a sua conta. A Viva analisa e responde por e-mail; aprovada, você ativa a sua página.</p>
+            <p className="mt-3 text-muted">Peça a parceria com a sua conta. A Viva analisa; aprovada, você ativa a sua página.</p>
+            <p className="mt-2 text-sm font-semibold text-forest" data-testid="parceiros-prazo-resposta">{TEXTO_PRAZO_PARCERIA}</p>
             <h3 id="h-duvidas" className="mt-8 font-title text-lg font-semibold text-ink">Dúvidas</h3>
             <dl className="mt-4 space-y-4" aria-labelledby="h-duvidas">
               {DUVIDAS.map((d) => (<div key={d.p}><dt className="font-semibold text-ink">{d.p}</dt><dd className="mt-1 text-sm text-muted">{d.r}</dd></div>))}

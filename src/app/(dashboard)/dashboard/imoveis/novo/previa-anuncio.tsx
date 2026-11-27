@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { Eye, ImageIcon, MapPin } from "lucide-react";
 import { propertyTypeLabel } from "@/lib/amenities";
-import { linhaPrevia, localPrevia, tituloPrevia } from "@/lib/anuncio/assistente-telas";
+import { linhaPrevia, localPrevia, tituloDaPrevia } from "@/lib/anuncio/assistente-telas";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +29,7 @@ export function PreviaAnuncio(p: {
   /** Mockup 09 (01/11): o resumo da disponibilidade no fim do cartão (só no Passo 9). */
   resumo?: string | null;
 }) {
+  const titulo = tituloDaPrevia(p.titulo);
   const linha = linhaPrevia(p.quartos, p.areaM2);
   const local = localPrevia(p.bairro, p.cidade, p.uf);
   const chips = [p.tipo ? propertyTypeLabel(p.tipo) : null, p.mobiliado ? "Mobiliado" : null, p.pets ? "Pet-friendly" : null].filter(Boolean) as string[];
@@ -52,7 +53,13 @@ export function PreviaAnuncio(p: {
       </div>
       {p.tamanhoReal}
       <p className="mt-4 font-title text-xl font-semibold text-ink" data-testid="previa-titulo">
-        {tituloPrevia(p.titulo, p.tipo, p.bairro)}
+        {titulo.pendente ? (
+          <span className="font-normal italic text-muted" data-testid="previa-titulo-pendente">
+            {titulo.texto}
+          </span>
+        ) : (
+          titulo.texto
+        )}
       </p>
       {linha && (
         <p className="mt-1 text-sm text-muted" data-testid="previa-linha">

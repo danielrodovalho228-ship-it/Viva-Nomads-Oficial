@@ -111,3 +111,19 @@ export function textoComparacaoFicha(c: ComparacaoFicha): { principal: string; d
     simulado: c.simulado ? "Valores simulados enquanto a consulta real não está ligada." : null,
   };
 }
+
+/**
+ * E572 — indicador interno (admin): dos imóveis com link de outra plataforma (linha em preco_justo_airbnb), quantos têm
+ * o selo "Preço justo" agora (decidirSelo). `pct` com 1 casa; sem nenhum link, `pct` = null ("sem base").
+ */
+export interface IndicadorPrecoJusto {
+  comLink: number;
+  comSelo: number;
+  pct: number | null;
+}
+
+export function indicadorPrecoJusto(entradas: readonly (EntradaSelo | null)[], agora: Date): IndicadorPrecoJusto {
+  const comLink = entradas.filter((e) => e != null).length;
+  const comSelo = entradas.filter((e) => decidirSelo(e, agora).selo).length;
+  return { comLink, comSelo, pct: comLink ? Math.round((comSelo / comLink) * 1000) / 10 : null };
+}

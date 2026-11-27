@@ -4,7 +4,8 @@ import { marcarConversaAberta } from "@/lib/data/conversa-aberta-actions";
 import { FichaPetCandidatura } from "@/components/pets/ficha-pet-candidatura";
 import { SeloLinkedin } from "@/components/confianca/selo-linkedin";
 import { SeloVinculo } from "@/components/confianca/selo-vinculo";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { VISTA_DIVIDIDA, conversaNaTela } from "@/lib/mensagens/conversa-na-tela";
 import { Send, ArrowLeft } from "lucide-react";
 import { PageTitle } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -18,21 +19,26 @@ import { sendMessage } from "@/lib/data/actions";
 import { enviarMensagemDoPedido } from "@/lib/parceiros/pedido-actions";
 import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
+import { EmergenciaChegada } from "@/components/estadia/emergencia-chegada";
 import { GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
-import { avisoAntesDeEnviar } from "@/lib/messages/aviso-envio";
+import { avisoAntesDeEnviar, previaAoDigitar, recusaDoEnvio } from "@/lib/messages/aviso-envio";
 import { ROTA_ENVIAR_ANEXO, podeAnexar, tipoNaTela, validarAnexoNaTela } from "@/lib/messages/anexo-tela";
 import { AnexoNaMensagem, BotaoAnexar, PreviaAnexo, semLocalizacao } from "@/components/mensagens/anexo-conversa";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_CONVERSATIONS } from "@/lib/demo/seed";
-import { FILTROS, contarPorFiltro, filtrarConversas, type Filtro } from "@/lib/mensagens-filtros";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
+import { FILTROS, PRAZOS_ADIAR, adiarAte, contarPorFiltro, filtrarConversas, separarAdiadas, estaAdiada, type Filtro, type PrazoAdiar } from "@/lib/mensagens-filtros";
+import { adiarConversa, retomarConversa } from "@/lib/data/conversa-adiar-actions";
 import { cn } from "@/lib/utils";
 import { CartaoVisita } from "@/components/visitas/cartao-visita";
 import { visitaDaConversa } from "@/lib/data/visitas-video-actions";
 import { AvaliacaoNaConversaCartao } from "@/components/vistoria/avaliacao-na-conversa";
 import { RespostasRapidasConversa } from "@/components/mensagens/respostas-rapidas-conversa";
 import { MSG_CONTATO_BLOQUEADO, temContato } from "@/lib/respostas/regras";
+import { TEXTO_MENSAGENS_VAZIO, TITULO_MENSAGENS_VAZIO } from "@/lib/mensagens-vazio";
 import { TEXTO_CONVERSA_NAO_ENCONTRADA, TEXTO_CONVERSA_NOVA, conversaInicial } from "@/lib/mensagens/conversa-pedida";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { horaDaBolha } from "@/lib/mensagens/hora-da-bolha";
+import { EVENTO_CONTADORES } from "@/lib/painel/contadores";
 
 /**
  * Modo demonstração (admin): troca a fonte pelo seed e REMONTA o inner via
@@ -40,10 +46,12 @@ import { semQuedaDeRede } from "@/lib/erro-de-rede";
  */
 export function MessagesClient({ initial, abrir }: { initial: Conversation[]; /** Conversa a abrir (ex.: "Mensagem" da página da estadia). */ abrir?: string }) {
   const { on: demoOn } = useDemoMode();
+  // E980: os exemplos chegam sob demanda; o inner remonta quando chegam (o estado dele nasce da prop).
+  const exemplos = useExemplos(demoOn);
   return (
     <MessagesInner
-      key={demoOn ? "demo" : "real"}
-      initial={demoOn ? DEMO_CONVERSATIONS : initial}
+      key={demoOn ? (exemplos ? "demo" : "demo-carregando") : "real"}
+      initial={demoOn ? (exemplos?.DEMO_CONVERSATIONS ?? []) : initial}
       demo={demoOn}
       abrir={demoOn ? undefined : abrir}
     />
@@ -66,7 +74,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // Prompt 55-E2: o texto do campo veio de uma resposta rápida? Então contato direto BLOQUEIA (não mascara).
   const [deRapida, setDeRapida] = useState(false);
   const [rapidaBloqueada, setRapidaBloqueada] = useState(false);
-  const [filtro, setFiltro] = useState<Filtro>("todas");
+  const [filtro, setFiltro] = useState<Filtro | "adiadas">("todas");
+  // E721: o menu "Adiar" da conversa aberta e o erro da ação.
+  const [menuAdiar, setMenuAdiar] = useState(false);
+  const [erroAdiar, setErroAdiar] = useState<string | null>(null);
   // Fotos das conversas (map conversationId → URL). O SERVIDOR decide: foto do
   // proprietário é pública; foto do morador só vem se a relação foi aceita.
   // Sem direito / demo → null → o Avatar cai para iniciais. Nunca em demo.
@@ -96,9 +107,13 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const [guardNotice, setGuardNotice] = useState(false);
   // Prompt 32: CPF/RG não vai pelo chat; a mensagem fica no campo e o aviso leva aos Ocupantes da estadia.
   const [docBloqueado, setDocBloqueado] = useState(false);
-  // E445 item 2: com contato/link no texto, o aviso e a prévia mascarada aparecem ANTES do envio (Editar / Enviar mesmo
-  // assim). Guarda a prévia do rascunho atual; mexer no campo fecha o aviso.
-  const [confirmarEnvio, setConfirmarEnvio] = useState<string | null>(null);
+  // E1059 (resto): o envio que o servidor recusou mostra o aviso dele (antes ficava o eco, como se tivesse ido).
+  const [recusaEnvio, setRecusaEnvio] = useState<string | null>(null);
+  // E445 item 2 + E585: com contato/link no texto, o aviso e a prévia mascarada aparecem AO DIGITAR (como na proposta),
+  // antes de qualquer envio. "Editar" recolhe o aviso para aquele rascunho; mexer no texto (ou tentar enviar) reabre.
+  const [avisoFechadoPara, setAvisoFechadoPara] = useState<string | null>(null);
+  const previaContato = previaAoDigitar(draft, { deRapida });
+  const avisoAberto = previaContato !== null && avisoFechadoPara !== draft;
   const campoRef = useRef<HTMLInputElement>(null);
   // E445 item 5: foto ou PDF escolhido, com a prévia antes de enviar.
   const [anexo, setAnexo] = useState<{ arquivo: File; previaUrl: string | null } | null>(null);
@@ -107,19 +122,39 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   // No mobile, alterna entre lista e conversa (master-detail). No desktop, ambos.
   const [mobileView, setMobileView] = useState<"list" | "chat">(existe ? "chat" : "list");
 
-  const contagem = contarPorFiltro(conversations);
-  const visiveis = filtrarConversas(conversations, filtro);
+  // E721: conversa adiada sai de "Todas" e dos chips de papel e fica em "Adiadas" (até o prazo ou até a outra parte escrever).
+  const { ativas, adiadas } = separarAdiadas(conversations);
+  const contagem = contarPorFiltro(ativas);
+  const visiveis = filtro === "adiadas" ? adiadas : filtrarConversas(ativas, filtro);
   // A conversa aberta acompanha o chip: se ela saiu do filtro, abre a primeira que sobrou. E168: filtro sem conversa =
   // painel da direita vazio (nunca a conversa de outro filtro).
   const active = naoEncontrada ? undefined : (visiveis.find((c) => c.id === activeId) ?? visiveis[0]);
 
+  // E481 no celular (DUET-0605): só a conversa que está NA TELA conta como lida. No celular a lista não mostra conteúdo;
+  // carregar a lista não marca leitura, abrir a conversa sim. No computador (vista dividida) a conversa aberta aparece.
+  const vistaDividida = useSyncExternalStore(
+    (avisar) => {
+      const mq = window.matchMedia(VISTA_DIVIDIDA);
+      mq.addEventListener("change", avisar);
+      return () => mq.removeEventListener("change", avisar);
+    },
+    () => window.matchMedia(VISTA_DIVIDIDA).matches,
+    () => false,
+  );
   // Prompt 44: com a conversa aberta (e a aba visível), a próxima mensagem dela não vira push no celular. Renova a cada
   // 5 min enquanto ela fica na tela (a regra do push olha os últimos 10 min).
-  const conversaAbertaId = active?.id;
+  const conversaAbertaId = conversaNaTela({ ativaId: active?.id, vistaDividida, vistaCelular: mobileView });
   useEffect(() => {
     if (demo || !conversaAbertaId) return;
     const marcar = () => {
-      if (document.visibilityState === "visible") marcarConversaAberta(conversaAbertaId).catch(() => {});
+      if (document.visibilityState !== "visible") return;
+      // E481: lida a conversa, a contagem dela zera na lista e o sino relê na hora (não no ciclo de 1 minuto).
+      setConversations((cs) => cs.map((c) => (c.id === conversaAbertaId && c.naoLidas ? { ...c, naoLidas: 0 } : c)));
+      marcarConversaAberta(conversaAbertaId)
+        .then(() => {
+          window.dispatchEvent(new Event(EVENTO_CONTADORES));
+        })
+        .catch(() => {});
     };
     marcar();
     const t = setInterval(marcar, 5 * 60_000);
@@ -130,9 +165,39 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     };
   }, [demo, conversaAbertaId]);
 
+  // E721: adiar/retomar a conversa aberta. O estado muda na hora na tela; se o servidor recusar, volta e mostra o erro.
+  async function adiar(id: string, prazo: PrazoAdiar) {
+    setErroAdiar(null);
+    setMenuAdiar(false);
+    const antes = conversations;
+    const ate = adiarAte(prazo);
+    const agora = new Date().toISOString();
+    setConversations((cs) => cs.map((c) => (c.id === id ? { ...c, adiadaEm: agora, adiadaAte: ate } : c)));
+    if (demo) return;
+    const r = await adiarConversa(id, prazo).catch(() => ({ ok: false as const, erro: "Sem conexão. Tente de novo." }));
+    if (!r.ok) {
+      setConversations(antes);
+      setErroAdiar(r.erro);
+    }
+  }
+  async function retomar(id: string) {
+    setErroAdiar(null);
+    const antes = conversations;
+    setConversations((cs) => cs.map((c) => (c.id === id ? { ...c, adiadaEm: null, adiadaAte: null } : c)));
+    if (demo) return;
+    const r = await retomarConversa(id).catch(() => ({ ok: false as const, erro: "Sem conexão. Tente de novo." }));
+    if (!r.ok) {
+      setConversations(antes);
+      setErroAdiar(r.erro);
+    }
+  }
+
   function openConversation(id: string) {
+    setMenuAdiar(false);
+    setErroAdiar(null);
     setNaoEncontrada(false);
-    setConfirmarEnvio(null);
+    setAvisoFechadoPara(null);
+    setRecusaEnvio(null);
     limparAnexo();
     setErroAnexo(null);
     setActiveId(id);
@@ -155,7 +220,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     setDocBloqueado(aviso.tipo === "documento");
     if (aviso.tipo === "documento") return;
     // E445 item 2: primeiro o aviso com a prévia; só o botão "Enviar mesmo assim" envia (Enter de novo não confirma).
-    if (aviso.tipo === "confirmar") return setConfirmarEnvio(aviso.previa);
+    // E585: Enter ou o botão redondo nunca enviam contato — reabrem o aviso; só "Enviar mesmo assim" envia (mascarado).
+    if (aviso.tipo === "confirmar") return setAvisoFechadoPara(null);
     await enviar(aviso.texto, false);
   }
 
@@ -196,23 +262,26 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     const texto = tipo === "pdf" ? "Anexo: PDF enviado" : "Anexo: foto enviada";
     const conversa = active.id;
     setConversations((prev) =>
-      prev.map((c) => (c.id === conversa ? { ...c, preview: texto, messages: [...c.messages, { id: j.messageId!, from: "me", text: texto, anexo: { id: j.anexoId!, tipo } }] } : c))
+      prev.map((c) => (c.id === conversa ? { ...c, preview: texto, messages: [...c.messages, { id: j.messageId!, from: "me", text: texto, anexo: { id: j.anexoId!, tipo }, enviadaEm: new Date().toISOString() }] } : c))
     );
     limparAnexo();
   }
 
   async function enviar(text: string, masked: boolean) {
     if (!active) return;
-    setConfirmarEnvio(null);
+    setAvisoFechadoPara(null);
+    setRecusaEnvio(null);
     setGuardNotice(masked);
     setDraft("");
+    const tirarEco = (t: string) =>
+      setConversations((prev) => prev.map((c) => (c.id === active.id ? { ...c, messages: c.messages.filter((m) => !String(m.id).startsWith("tmp-") || m.text !== t) } : c)));
     const usouRapida = deRapida;
     setDeRapida(false);
     // Atualização otimista
     setConversations((prev) =>
       prev.map((c) =>
         c.id === active.id
-          ? { ...c, preview: text, messages: [...c.messages, { id: `tmp-${Date.now()}`, from: "me", text }] }
+          ? { ...c, preview: text, messages: [...c.messages, { id: `tmp-${Date.now()}`, from: "me", text, enviadaEm: new Date().toISOString() }] }
           : c
       )
     );
@@ -220,17 +289,31 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     // grava: a conversa é fictícia e o envio fica só na tela.
     if (!demo) {
       // Conversa de pedido de serviço (Prompt 31b): o servidor confere a parte do pedido e grava na conversa dele.
-      if (active.pedidoParceiroId) await semQuedaDeRede(enviarMensagemDoPedido(active.pedidoParceiroId, text));
-      else
-      {
+      if (active.pedidoParceiroId) {
+        const r = await semQuedaDeRede(enviarMensagemDoPedido(active.pedidoParceiroId, text));
+        const recusa = recusaDoEnvio(r);
+        if (recusa) {
+          tirarEco(text);
+          setDraft(text);
+          setRecusaEnvio(recusa);
+        }
+      } else {
         const envio = { conversationId: active.id, receiverId: active.otherId, propertyId: active.propertyId, body: text, respostaRapida: usouRapida };
         const r = await semQuedaDeRede(sendMessage(envio));
         // E445 (item 3): termo ofensivo — o servidor avisa ANTES de gravar; só envia com a confirmação da pessoa.
         if (r && typeof r === "object" && "ofensa" in r && r.ofensa) {
           // Não gravou: tira o eco otimista, devolve o texto ao campo e mostra o aviso com "Enviar mesmo assim".
-          setConversations((prev) => prev.map((c) => (c.id === active.id ? { ...c, messages: c.messages.filter((m) => !String(m.id).startsWith("tmp-") || m.text !== text) } : c)));
+          tirarEco(text);
           setDraft(text);
           setOfensaPendente({ envio, aviso: r.error ?? "" });
+        } else {
+          // E1059 (resto): a recusa do servidor (CPF/RG, falha ao gravar) não fica muda — mesmo tratamento, com o aviso dele.
+          const recusa = recusaDoEnvio(r);
+          if (recusa) {
+            tirarEco(text);
+            setDraft(text);
+            setRecusaEnvio(recusa);
+          }
         }
       }
     }
@@ -245,10 +328,9 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
         <PageTitle title="Mensagens" />
         {/* Prompt 48: sem ilustração; diz como a conversa funciona e o próximo passo. */}
         <div className="rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="mensagens-vazio">
-          <h2 className="font-title text-lg font-semibold text-ink">Nenhuma conversa ainda</h2>
-          <p className="mt-2 max-w-md text-sm text-muted">
-            A conversa começa quando você pede um imóvel ou quando alguém pede o seu. Tudo fica aqui, com o imóvel e as
-            datas no topo; telefone e e-mail só aparecem depois do aceite.
+          <h2 className="font-title text-lg font-semibold text-ink">{TITULO_MENSAGENS_VAZIO}</h2>
+          <p className="mt-2 max-w-md text-sm text-muted" data-testid="mensagens-vazio-texto">
+            {TEXTO_MENSAGENS_VAZIO}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <ButtonLink href="/buscar" variant="secondary" size="sm">
@@ -288,6 +370,25 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             <span className={cn("text-xs", filtro === f.id ? "text-white/80" : "text-muted")}>{contagem[f.id]}</span>
           </button>
         ))}
+        {/* E721: as conversas adiadas ficam aqui (o chip aparece quando há alguma). */}
+        {(adiadas.length > 0 || filtro === "adiadas") && (
+          <button
+            type="button"
+            data-testid="mensagens-filtro-adiadas"
+            aria-pressed={filtro === "adiadas"}
+            onClick={() => {
+              setFiltro("adiadas");
+              setMobileView("list");
+            }}
+            className={cn(
+              "inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors",
+              filtro === "adiadas" ? "border-forest bg-forest text-white" : "border-sage-200 bg-white text-ink hover:bg-surface-2"
+            )}
+          >
+            Adiadas
+            <span className={cn("text-xs", filtro === "adiadas" ? "text-white/80" : "text-muted")}>{adiadas.length}</span>
+          </button>
+        )}
       </FileiraRolavel>
       {naoEncontrada && (
         <p role="status" className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" data-testid="mensagens-conversa-nao-encontrada">
@@ -306,7 +407,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
         >
           {visiveis.length === 0 && (
             <p data-testid="mensagens-filtro-vazio" className="p-6 text-center text-sm text-muted">
-              Nenhuma conversa neste filtro.
+              {filtro === "adiadas" ? "Nenhuma conversa adiada." : "Nenhuma conversa neste filtro."}
             </p>
           )}
           {visiveis.map((c) => (
@@ -314,6 +415,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               key={c.id}
               data-testid="mensagens-conversa"
               data-conversa={c.id}
+              data-nao-lidas={c.naoLidas ?? 0}
               onClick={() => openConversation(c.id)}
               className={cn(
                 "flex w-full items-center gap-3 border-b border-sage-200 px-4 py-3 text-left transition-colors",
@@ -328,7 +430,15 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                 <Avatar name={c.name} size={48} photoUrl={avatars[c.id] ?? undefined} />
               )}
               <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="truncate font-medium text-ink">{c.name}</span>
+                <span className="flex min-w-0 items-center gap-2">
+                  {/* E481: não lida em destaque (nome em negrito e a contagem); o acabamento visual fica com a Pista A. */}
+                  <span className={cn("truncate text-ink", c.naoLidas ? "font-semibold" : "font-medium")}>{c.name}</span>
+                  {!!c.naoLidas && (
+                    <span className="shrink-0 rounded-full bg-forest px-2 text-xs font-semibold text-white" data-testid="mensagens-nao-lidas" aria-label={`${c.naoLidas} não lidas`}>
+                      {c.naoLidas}
+                    </span>
+                  )}
+                </span>
                 {(c.property || c.periodo) && (
                   <span className="truncate text-xs text-muted">{[c.property, c.periodo].filter(Boolean).join(" · ")}</span>
                 )}
@@ -383,7 +493,56 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                 </Link>
               )}
             </div>
+            {/* E721: "Adiar" sempre à vista no cabeçalho da conversa; adiada, vira "Retomar" com o prazo. */}
+            <div className="relative ml-auto shrink-0">
+              {estaAdiada(active) ? (
+                <button
+                  type="button"
+                  data-testid="conversa-retomar"
+                  onClick={() => void retomar(active.id)}
+                  className="inline-flex min-h-11 items-center rounded-lg border border-sage-200 bg-white px-3 text-sm font-semibold text-ink hover:bg-surface-2"
+                >
+                  Retomar
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  data-testid="conversa-adiar"
+                  aria-expanded={menuAdiar}
+                  onClick={() => setMenuAdiar((v) => !v)}
+                  className="inline-flex min-h-11 items-center rounded-lg border border-sage-200 bg-white px-3 text-sm font-semibold text-ink hover:bg-surface-2"
+                >
+                  Adiar
+                </button>
+              )}
+              {menuAdiar && !estaAdiada(active) && (
+                <div role="menu" data-testid="conversa-adiar-menu" className="absolute right-0 z-10 mt-1 w-44 rounded-lg border border-sage-200 bg-white p-1">
+                  {PRAZOS_ADIAR.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      role="menuitem"
+                      data-testid={`conversa-adiar-${p.id}`}
+                      onClick={() => void adiar(active.id, p.id)}
+                      className="flex min-h-11 w-full items-center rounded-lg px-3 text-left text-sm text-ink hover:bg-surface-2"
+                    >
+                      Adiar por {p.rotulo}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </header>
+          {estaAdiada(active) && (
+            <p role="status" data-testid="conversa-adiada-aviso" className="border-b border-line bg-surface-2 px-4 py-2 text-xs text-muted">
+              Adiada até {new Date(active.adiadaAte as string).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}. Se a outra parte escrever, ela volta para a lista. Só você vê isso.
+            </p>
+          )}
+          {erroAdiar && (
+            <p role="alert" data-testid="conversa-adiar-erro" className="border-b border-line bg-amber-50 px-4 py-2 text-xs text-amber-900">
+              {erroAdiar}
+            </p>
+          )}
           {/* Prompt 43, item 5: o contexto da conversa no topo — estadia, pedido ou imóvel, com foto e datas. */}
           {(active.property || active.pedidoParceiroId) && (
             <div className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 md:px-4" data-testid="conversa-contexto">
@@ -405,6 +564,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               </div>
             </div>
           )}
+          {/* E664: no dia da entrada, o morador aciona um aviso urgente ao proprietário (a Viva intermedia; sem contato). */}
+          {!demo && active.emergenciaChegadaContratoId && <EmergenciaChegada key={`emerg-${active.id}`} contratoId={active.emergenciaChegadaContratoId} />}
           {!demo && active.propertyId && active.otherId && (
             <VisitaNaConversa propertyId={active.propertyId} outroId={active.otherId} />
           )}
@@ -447,6 +608,12 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                     </Link>
                   )}
                 </span>
+                {/* E484: a hora de envio de cada mensagem (fuso de Brasília). */}
+                {horaDaBolha(m.enviadaEm) && (
+                  <span className="text-[11px] text-muted" data-testid="mensagem-hora" suppressHydrationWarning>
+                    {horaDaBolha(m.enviadaEm)}
+                  </span>
+                )}
                 {m.from !== "me" && !active.contratoFechado && pareceDadoBancario(m.text) && (
                   <span data-testid="alerta-antigolpe-mensagem" role="alert" className="max-w-[75%] rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                     {AVISO_ANTIGOLPE_ALERTA}{" "}
@@ -476,7 +643,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                   setOfensaPendente(null);
                   setDraft("");
                   const r = await semQuedaDeRede(sendMessage({ ...envio, enviarMesmoAssim: true }));
-                  if (r.ok) setConversations((prev) => prev.map((c) => (c.id === envio.conversationId ? { ...c, preview: envio.body, messages: [...c.messages, { id: `tmp-${Date.now()}`, from: "me", text: envio.body }] } : c)));
+                  if (r.ok) setConversations((prev) => prev.map((c) => (c.id === envio.conversationId ? { ...c, preview: envio.body, messages: [...c.messages, { id: `tmp-${Date.now()}`, from: "me", text: envio.body, enviadaEm: new Date().toISOString() }] } : c)));
                 }}
               >
                 Enviar mesmo assim
@@ -503,6 +670,11 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               )}
             </p>
           )}
+          {recusaEnvio && (
+            <p role="alert" className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800" data-testid="mensagens-envio-recusado">
+              {recusaEnvio}
+            </p>
+          )}
           {/* Conversa com imóvel = entre pessoas; "Suporte" é a equipe, não há o que denunciar. */}
           {/* E245: chave PRÓPRIA (antes key={active.id}, a mesma das Respostas rápidas logo abaixo — irmãos com a mesma
               chave fazem o React duplicar nós a cada nova renderização: "Denunciar" aparecia 2, 3, 4 vezes). */}
@@ -527,18 +699,18 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               }}
             />
           )}
-          {confirmarEnvio !== null && (
+          {avisoAberto && (
             <div role="alert" className="border-t border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900" data-testid="aviso-antes-de-enviar">
               <p>{GUARD_NOTICE}</p>
               <p className="mt-2 font-semibold">Vai assim:</p>
               <p className="mt-1 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm text-ink [overflow-wrap:anywhere]" data-testid="aviso-previa">
-                {confirmarEnvio}
+                {previaContato}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => {
-                    setConfirmarEnvio(null);
+                    setAvisoFechadoPara(draft);
                     campoRef.current?.focus();
                   }}
                   className="min-h-11 rounded-full border border-sage-200 bg-white px-4 text-sm font-semibold text-ink hover:border-forest"
@@ -547,7 +719,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
                 </button>
                 <button
                   type="button"
-                  onClick={() => void enviar(confirmarEnvio, true)}
+                  onClick={() => previaContato && void enviar(previaContato, true)}
                   className="min-h-11 rounded-full border border-forest bg-white px-4 text-sm font-semibold text-forest hover:bg-sage-100"
                 >
                   Enviar mesmo assim
@@ -568,7 +740,6 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               ref={campoRef}
               onChange={(e) => {
                 setDraft(e.target.value);
-                setConfirmarEnvio(null);
                 if (!e.target.value) setDeRapida(false);
               }}
               data-testid="mensagem-campo"
@@ -577,7 +748,10 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
             />
             <button
               type="submit"
-              className="grid h-11 w-11 place-items-center rounded-full bg-forest text-white hover:bg-forest-700"
+              // E585: com contato no rascunho o botão muda (âmbar) e não envia direto: abre o aviso com a prévia.
+              data-contato={previaContato ? "1" : undefined}
+              title={previaContato ? "Telefone, e-mail ou link serão ocultados — revise o aviso" : undefined}
+              className={cn("grid h-11 w-11 place-items-center rounded-full text-white", previaContato ? "bg-amber-600 hover:bg-amber-700" : "bg-forest hover:bg-forest-700")}
               aria-label="Enviar"
             >
               <Send className="h-4 w-4" />

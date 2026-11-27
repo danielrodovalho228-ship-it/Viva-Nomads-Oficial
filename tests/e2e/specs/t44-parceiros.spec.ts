@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { TAXA_PARCERIA_TEXTO } from "../../../src/lib/atendimento/parceiros-texto";
-import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /**
  * T44 — PARCEIROS (laboratório, ordem 225d0648; refeito no Prompt 31a).
@@ -26,7 +26,7 @@ async function novoParceiro(chave: keyof typeof contas, cidades: string[], statu
   ids[chave] = uid;
   const { error } = await adm()
     .from("parceiros")
-    .insert({ user_id: uid, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: c.nome, slug: `t44-${chave}-${sufixo}`, categorias: ["fotografia"], cidades, status, publicado_em: status === "publicado" ? new Date().toISOString() : null, telefone: "34999991234" });
+    .insert({ user_id: uid, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: c.nome, slug: `t44-${chave}-${sufixo}`, categorias: ["fotografia"], cidades, status, publicado_em: status === "publicado" ? new Date().toISOString() : null, telefone: "34999991234" });
   if (error) throw error;
 }
 
@@ -50,6 +50,7 @@ test.describe("T44 — Parceiros", () => {
     await page.goto("/parceiros?categoria=mudanca#quero-ser-parceiro", { waitUntil: "networkidle" });
     await expect(page.getByTestId("seja-parceiro-precisa-conta")).toBeVisible();
     await expect(page.getByTestId("sp-cat-mudanca")).toBeChecked(); // categoria vinda do cartão
+    await page.locator("#sp-doc").fill(cnpjAleatorio()); // E651: o documento é conferido antes de ir para a conta
     await page.getByTestId("seja-parceiro-enviar").click();
     await page.waitForURL(/\/auth\?cadastro=1/, { timeout: 15_000 });
   });
@@ -102,7 +103,7 @@ test.describe("T44 — Parceiros", () => {
 
   test("taxa de serviço nos textos oficiais: 10% para todas as categorias, sem a taxa fixa por faixa de fotos", () => {
     expect(TAXA_PARCERIA_TEXTO).toMatch(/Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias\./);
-    expect(TAXA_PARCERIA_TEXTO).toMatch(/90% direto ao parceiro e 10% à Viva/);
+    expect(TAXA_PARCERIA_TEXTO).toMatch(/90% vai direto para o parceiro e 10% para a Viva/);
     expect(TAXA_PARCERIA_TEXTO).toMatch(/A Viva não guarda o dinheiro/);
     expect(TAXA_PARCERIA_TEXTO).not.toMatch(/R\$ ?(40|60|80)(?![\d.,])/);
   });

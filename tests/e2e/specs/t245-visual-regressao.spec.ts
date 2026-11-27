@@ -1,6 +1,7 @@
 import { test, expect, type Page, type Locator, type APIRequestContext } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T245 — Regressão visual (adendo do Prompt 40): `toHaveScreenshot` em 20 telas (13 públicas e 7 logadas da
@@ -100,6 +101,20 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
 
       test("05 /favoritos vazio", async ({ page }) => {
         await page.goto("/favoritos", { waitUntil: "networkidle" });
+        await pronta(page);
+        // FALHA ESPERADA — E990 (julgamento do Gerente, 16/11/2026): a linha "Assistente Viva 24 h · resposta de uma pessoa
+        // em até 24 h" sumiu do rodapé sem decisão. Com a lista vazia o rodapé aparece nesta tela, logo abaixo de
+        // "Suporte:", por isso ela fica com a referência ANTIGA até o coordenador decidir restaurar ou remover a linha.
+        // A 1280 px aparece também o E949 (o flutuante cobre o fim da frase do rodapé; correção no #3861).
+        // A marca vem logo antes da comparação: o teste corre inteiro, e qualquer falha anterior continua reprovando. É
+        // estrita: no dia em que a imagem voltar a bater, o teste acusa "esperava falhar, passou" — aí a referência se
+        // atualiza e esta marca sai, no PR da correção.
+        test.fail(
+          true,
+          largura === 1280
+            ? "E990 e E949 (Gerente, 16/11/2026): rodapé sem a linha 'Assistente Viva 24 h' e flutuante sobre o fim da frase; referência antiga mantida até as correções"
+            : "E990 (Gerente, 16/11/2026): rodapé sem a linha 'Assistente Viva 24 h'; referência antiga mantida até a decisão",
+        );
         await print(page, `05-favoritos-vazio-${largura}`);
       });
 
@@ -111,6 +126,7 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
         }, ids);
         await page.goto("/favoritos", { waitUntil: "networkidle" });
         await expect(page.getByTestId("favoritos-grade")).toHaveAttribute("aria-busy", "false", { timeout: 20_000 });
+        await pronta(page);
         await print(page, `06-favoritos-${largura}`);
       });
 
@@ -145,7 +161,8 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
           if (nota) nota.textContent = "Novo na plataforma";
           texto("cartao-titulo", "Imóvel mobiliado de exemplo");
           texto("cartao-preco-mes", "R$ 3.000");
-          por("cartao-total-estadia")?.remove();
+          // E899: o total da estadia tem linha própria, fechada pelo aviso curto (antes: um trecho da linha do preço).
+          por("cartao-total-linha")?.remove();
           const sintese = por("cartao-sintese");
           if (sintese) sintese.textContent = "1 quarto · 1 banheiro · 40 m² · mobiliado";
           por("cartao-disponivel")?.remove();
@@ -163,7 +180,7 @@ test.describe("T245 — Regressão visual (adendo do Prompt 40)", () => {
 
       for (const [n, rota, nome] of [
         ["10", "/como-funciona", "como-funciona"],
-        ["11", "/precos", "precos"],
+        ...comPrecos(["11", "/precos", "precos"] as const),
         ["12", "/para-proprietarios", "para-proprietarios"],
         ["13", "/auth", "entrar"],
       ] as const) {

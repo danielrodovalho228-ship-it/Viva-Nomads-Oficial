@@ -1,3 +1,4 @@
+import { criteriosDaAvaliacao, preencherCriterios } from "../fixtures/avaliacao-criterios";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { CHAVE_ANON, NO_LABORATORIO, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
@@ -41,7 +42,7 @@ test.describe("T369 — CONTA-A A2: Avaliações (perfil-02)", () => {
     ] as const) {
       const sb = createClient(URL_SUPABASE!, CHAVE_ANON!, { auth: { persistSession: false } });
       await sb.auth.signInWithPassword({ email: quem.email, password: senha });
-      const { error: e } = await sb.from("avaliacoes").insert({ contrato_id: ct!.id, alvo_id: alvo, papel_autor: papel, nota_geral: nota, comentario_publico: txt, status: "enviada" });
+      const { error: e } = await sb.from("avaliacoes").insert({ ...criteriosDaAvaliacao(papel as "inquilino" | "proprietario"), contrato_id: ct!.id, alvo_id: alvo, papel_autor: papel, nota_geral: nota, comentario_publico: txt, status: "enviada" });
       if (e) throw e;
     }
   }
@@ -92,7 +93,7 @@ test.describe("T369 — CONTA-A A2: Avaliações (perfil-02)", () => {
     const p = await como(browser, 1280);
     await p.goto(ROTA, { waitUntil: "domcontentloaded" });
     await p.getByTestId("avaliacoes-aba-positivas").click();
-    await expect(p).toHaveURL(/aba=positivas/);
+    await expect(p).toHaveURL(/filtro=positivas/);
     await expect(p.getByTestId("avaliacao-recebida")).toHaveCount(1);
     await expect(p.getByTestId("avaliacao-recebida")).toContainText("Carlos M.");
     await p.goto(ROTA, { waitUntil: "domcontentloaded" });

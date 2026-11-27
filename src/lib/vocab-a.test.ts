@@ -3,6 +3,8 @@
   ou tela logada (strings de JSX e textos de config). Fora da guarda: nomes de variáveis e chaves (sem espaço), /termos e
   /privacidade (congelados até o parecer jurídico) e as telas de admin e dos sócios (internas, atrás do código).
   Roda: node --test src/lib/vocab-a.test.ts
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): caso (c) — /para-proprietarios lê a maior taxa pronta da regra
+  (TAXA_MAIOR_TEXTO) e não separa mais as faixas "públicas" da do Gestor: a escada inteira (12% a 6%) é pública.
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -10,7 +12,8 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FAQ } from "./atendimento/faq.ts";
-import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "./cobranca/regra.ts";
+import { FAIXAS_COMISSAO_PADRAO, TAXA_MAIOR_TEXTO, TAXA_MENOR_TEXTO, pctTexto } from "./cobranca/regra.ts";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 const SRC = fileURLToPath(new URL("..", import.meta.url));
 const ler = (p: string) => readFileSync(join(SRC, p), "utf8");
@@ -21,7 +24,7 @@ const PALAVRA = /\binquilin[oa]s?\b|\bcomiss(?:ão|ões)\b/i;
 
 /** Os textos que aparecem na tela: literais com espaço (frases, não chaves) e o texto entre tags de JSX. */
 export function textosVisiveis(fonte: string): string[] {
-  const s = fonte.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+  const s = fonteSemComentarios(fonte);
   const out: string[] = [];
   for (const m of s.matchAll(/"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\.)*)`/g)) {
     const t = (m[1] ?? m[2] ?? m[3] ?? "").replace(/\$\{[^}]*\}/g, " ");
@@ -99,17 +102,26 @@ test("(b) /seguranca: 'Morar com segurança na Viva Nomads', 'morador' e nada de
 
 test("(c) /para-proprietarios: 'taxa de serviço' com os números da fonte única (nada digitado à mão)", () => {
   const p = ler("app/(public)/para-proprietarios/page.tsx");
-  assert.match(p, /import \{ FAIXAS_COMISSAO_PADRAO, ROTULO_FAIXA_NEGOCIAVEL, pctTexto \} from "@\/lib\/cobranca\/regra";/);
+  // 078 (Daniel, 16/11/2026): antes /import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";/ — a página calculava a
+  // maior taxa das faixas sem a do Gestor; agora lê a constante pronta da mesma fonte única.
+  assert.match(p, /import \{ TAXA_MAIOR_TEXTO \} from "@\/lib\/cobranca\/regra";/);
+  assert.match(p, /const TAXA_MAIOR = TAXA_MAIOR_TEXTO;/);
   assert.match(p, /A taxa de serviço da Viva é de \{TAXA_MAIOR\}/);
   assert.doesNotMatch(p, /\d+ ?%/, "nenhum percentual escrito à mão");
   // Os números que a página mostra são os da regra.
-  const publicas = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.negociavel);
+  // 078 (Daniel, 16/11/2026): antes as faixas públicas eram FAIXAS_COMISSAO_PADRAO sem a do Gestor (o Plano Gestor, 4%, era dito à
+  // parte). Não há mais faixa do Gestor: TODA a escada é pública e vai de 12% a 6% — e as constantes da regra dizem o mesmo.
+  const publicas = FAIXAS_COMISSAO_PADRAO;
+  assert.equal(publicas.some((f) => "gestor" in f), false);
   assert.equal(pctTexto(Math.max(...publicas.map((f) => f.taxa))), "12%");
   assert.equal(pctTexto(Math.min(...publicas.map((f) => f.taxa))), "6%");
+  assert.deepEqual([TAXA_MAIOR_TEXTO, TAXA_MENOR_TEXTO], ["12%", "6%"]);
 });
 
-test("(e) /decisao já exige o acesso dos sócios (porta única no proxy)", () => {
-  assert.match(ler("proxy.ts"), /"\/decisao",\s*"\/decisao\/:path\*"/);
+// E595/E596 (05/11): a /decisao foi eliminada — o acesso direto redireciona para /modelodenegocio (que segue na porta).
+test("(e) /decisao não existe mais: redireciona para a área interna válida, atrás da porta dos sócios", () => {
+  assert.match(ler("../next.config.ts"), /source: "\/decisao", destination: "\/modelodenegocio", permanent: false/);
+  assert.match(ler("proxy.ts"), /"\/modelodenegocio",\s*"\/modelodenegocio\/:path\*"/);
 });
 
 test("E110: Passo 8 com um horizonte só — o exemplo da taxa acompanha os meses do simulador; sem seguro-fiança 'Em breve'", () => {
@@ -119,7 +131,7 @@ test("E110: Passo 8 com um horizonte só — o exemplo da taxa acompanha os mese
   assert.match(preco, /<SimuladorBolso compacto valorMensal=\{aluguel\} mesesIniciais=\{mesesExemplo\} onMeses=\{setMesesExemplo\} campos=\{campos\} taxa=\{taxa\} \/>/);
   assert.doesNotMatch(preco, /PrecoSugerido/);
   assert.match(ler("components/precos/simulador-bolso.tsx"), /p\.onMeses\?\.\(/);
-  assert.doesNotMatch(ler("lib/faixas.ts").replace(/\/\*[\s\S]*?\*\//g, ""), /key: "seguro_fianca", label: "Seguro-fiança", disabled/);
+  assert.doesNotMatch(fonteSemComentarios(ler("lib/faixas.ts")), /key: "seguro_fianca", label: "Seguro-fiança", disabled/);
 });
 
 test("E110: Passo 6 não repete 'Regras da casa' (já é o título do passo)", () => {

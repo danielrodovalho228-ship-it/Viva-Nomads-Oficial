@@ -79,7 +79,18 @@ export default async function AjudaPage({ searchParams }: { searchParams: Promis
                     className="flex h-full items-center gap-4 rounded-xl border border-line bg-white p-4 transition-colors hover:border-forest"
                   >
                     <span className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-sage-100">
-                      <Image src={t.foto} alt={t.alt} fill sizes="80px" placeholder="blur" blurDataURL={BRAND_BLUR} className="object-cover" />
+                      {/* E505: sizes = largura que a foto larga ocupa em object-cover (80 px × até 2,67) — com "80px" o
+                          navegador baixava a versão pequena e a esticava (borrada). O recorte por tema evita a miniatura cinza. */}
+                      <Image
+                        src={t.foto}
+                        alt={t.alt}
+                        fill
+                        sizes="216px"
+                        placeholder="blur"
+                        blurDataURL={BRAND_BLUR}
+                        className="object-cover"
+                        style={t.fotoPosicao ? { objectPosition: t.fotoPosicao } : undefined}
+                      />
                     </span>
                     <span className="min-w-0 flex-1">
                       {/* Conformidade fina (01/11, mockup ajuda-central): título do tema em verde e um passo maior. */}

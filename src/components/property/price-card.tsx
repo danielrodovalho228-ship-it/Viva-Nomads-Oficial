@@ -1,12 +1,16 @@
+import { FormulaDoTotal } from "@/components/property/formula-total";
+import { isExemplo } from "@/lib/demo-listing";
 import { FileText, MapPinned } from "lucide-react";
 import type { Property } from "@/lib/types";
 import { hojeBR, formatBRL } from "@/lib/utils";
-import { calcularTotalMensal, estadiaDoImovel } from "@/lib/precos";
+import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias, formatBRLExato } from "@/lib/precos";
 import { SELO_NF_UI } from "@/lib/flags";
 import { linhasDeTaxas } from "@/lib/reserva-imovel";
 import { fraseDescontoCard, ROTULO_VALOR_FIXO } from "@/lib/anuncio/negociacao";
-import { rotuloPreco } from "@/lib/cartao-preco";
+import { notaDataCalculada, resumoEmMeses, rotuloPreco } from "@/lib/cartao-preco";
+import { composicaoDoMes } from "@/lib/cartao-estadia";
 import { FRASE_NAO_SEGURA_DINHEIRO } from "@/config/dinheiro";
+import { PainelPrecoFixo } from "@/components/property/painel-preco-fixo";
 
 /** Formata uma data ISO (YYYY-MM-DD) para DD/MM/AAAA. */
 function formatDate(iso?: string): string | null {
@@ -31,20 +35,36 @@ function disponivelFuturo(iso?: string): string | null {
  * Cartão lateral (fixo no desktop, empilhado no celular — Prompt 41): no topo "R$ X/mês · R$ Y em N meses"
  * (N = 1 → só "/mês", a regra do cartão da busca), "A Viva não segura dinheiro", o detalhamento do total do mês,
  * os pagamentos fora do total, a disponibilidade e as ações (recebidas via `actions`, com UM primário: "Solicitar").
- * No desktop o cartão fica preso ao rolar; se for mais alto que a tela, rola por dentro (nunca some da vista). A frase
+ * O cartão fica preso ao rolar; se for mais alto que a tela, rola com a página até a base e prende por ela (E528: sem
+ * rolagem própria cortando o topo e os campos de baixo). A frase
  * "não segura dinheiro" fica só no topo (sem repetir no pé, para o cartão caber na coluna até as Avaliações).
  */
-export function PriceCard({ property, actions, meses = 1 }: { property: Property; actions: React.ReactNode; meses?: number }) {
+export function PriceCard({ property, actions, meses = 1, dias = null, estadiaMinimaAviso = null, disponivelDesde = null }: { property: Property; actions: React.ReactNode; meses?: number; dias?: number | null; /** E725: duração escolhida abaixo do mínimo (em dias do mínimo): mostra só o aviso, sem total da estadia. */ estadiaMinimaAviso?: number | null; /** E673: a primeira entrada possível (olhando os períodos ocupados); sem ela, a data do cadastro. */ disponivelDesde?: string | null }) {
   // Custo total do mês pela FONTE ÚNICA — o mesmo número do cartão da busca e da barra do celular.
   const mes = calcularTotalMensal(property);
-  const preco = rotuloPreco({ mensal: mes.total, meses, disponivelEm: property.availableFrom });
+  const preco = rotuloPreco({ mensal: mes.total, meses, disponivelEm: disponivelDesde ?? property.availableFrom });
   // E254-A: o total do período pela mesma função da prévia do Passo 10 e do cartão de Meus anúncios — com a limpeza de
   // saída somada e discriminada na conta (ela segue fora do "Total por mês", na linha própria abaixo).
-  const estadia = meses > 1 ? estadiaDoImovel(property, meses) : null;
-  const availableFrom = disponivelFuturo(property.availableFrom);
+  // E562 (telas): com as datas escolhidas, o total da estadia em DIAS exatos (a mesma regra da proposta):
+  // "Total da estadia (43 dias): R$ 4.671,67 · 1 mês + 13 dias". Sem datas, a duração da busca/estadia mínima em meses.
+  const estadiaDias = dias ? estadiaDoImovelEmDias(property, dias) : null;
+  // E756: o total do período pela regra única (N × total do mês + limpezas de preparação e de saída) também com 1 mês — o MESMO
+  // número do cartão da busca, da barra do celular e da prévia do dono —, sempre com a conta aberta embaixo.
+  const estadia = !estadiaDias && estadiaMinimaAviso == null ? estadiaDoImovel(property, Math.max(1, meses)) : null;
+  const availableFrom = disponivelFuturo(disponivelDesde ?? property.availableFrom);
+  // E702: a data calculada (E673) diz de onde vem quando difere da do cadastro.
+  const notaData = availableFrom ? notaDataCalculada(disponivelDesde, property.availableFrom, property.minPeriodDays) : null;
 
   return (
-    <div id="cartao-preco" className="sticky top-36 scroll-mt-36 rounded-xl border border-line bg-white p-4 lg:max-h-[calc(100dvh-14rem)] lg:overflow-y-auto xl:p-6">
+    // E528 (D14): sem altura máxima nem rolagem própria — o painel fixo prende pelo topo ou, se não couber, pela base.
+    <PainelPrecoFixo>
+      {/* E724 (Phoenix/RELATORIO-002, A3): no anúncio de exemplo o aviso vem PRIMEIRO, no topo do cartão — antes de qualquer
+          data, valor ou total —, e não só abaixo dos campos. */}
+      {isExemplo(property.id) && (
+        <p className="mb-3 rounded-lg bg-sage-100 px-3 py-2 text-sm font-medium text-forest" data-testid="cartao-exemplo-aviso">
+          Anúncio de exemplo: serve para você ver como a Viva funciona. Nenhuma solicitação é enviada a ninguém.
+        </p>
+      )}
       <p className="tabular-nums" data-testid="cartao-lateral-preco">
         <span className="text-xl font-semibold text-ink" data-testid="cartao-lateral-mes">
           {preco.valor}
@@ -53,14 +73,30 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
         {estadia && (
           <span className="text-sm text-muted" data-testid="cartao-lateral-estadia">
             {" "}
-            · {formatBRL(estadia.total)} em {estadia.meses} meses
+            · {resumoEmMeses(estadia.total, estadia.meses)}
           </span>
         )}
       </p>
-      {estadia && (
-        <p className="text-xs text-muted" data-testid="cartao-lateral-estadia-conta">
-          {estadia.conta}
+      {/* E899: a composição do mês saiu do cartão da busca e fica aqui, perto do preço, pela MESMA função (composicaoDoMes):
+          as parcelas que somam o /mês ou, com as contas medidas, o aviso de que água, luz e gás ficam fora do total. */}
+      <p className="mt-1 text-xs text-muted tabular-nums" data-testid="cartao-lateral-mes-composicao">
+        {composicaoDoMes(property)}
+      </p>
+      {estadiaMinimaAviso != null && (
+        <p className="text-sm font-medium text-ink" data-testid="cartao-lateral-estadia-minima" role="status">
+          Estadia mínima de {estadiaMinimaAviso} dias.
         </p>
+      )}
+      {estadiaDias && (
+        <>
+          <p className="text-sm text-ink tabular-nums" data-testid="cartao-lateral-estadia">
+            {estadiaDias.rotulo}: <strong>{formatBRLExato(estadiaDias.total)}</strong> · {estadiaDias.periodo}
+          </p>
+          <FormulaDoTotal conta={estadiaDias.conta} total={formatBRLExato(estadiaDias.total)} testid="cartao-lateral-estadia-conta" />
+        </>
+      )}
+      {estadia && (
+        <FormulaDoTotal conta={estadia.conta} testid="cartao-lateral-estadia-conta" />
       )}
       <p className="mb-4 text-xs text-muted" data-testid="cartao-nao-segura">
         {FRASE_NAO_SEGURA_DINHEIRO}: o valor vai direto ao proprietário.
@@ -78,7 +114,7 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
           <span className="text-xl font-semibold tabular-nums text-forest">{formatBRL(mes.total)}</span>
         </li>
       </ul>
-      <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}</p>
+      <p className="mt-1 text-xs text-muted" data-testid="iptu-nota">IPTU não incluso no total.{mes.contasMedidas && " Água, luz e gás medidos à parte."}{mes.contasNaoInformadas && " Água, luz e gás não informados neste anúncio."}</p>
       <p className="mt-1 text-xs text-muted">R$ 0 de taxa para você: o morador não paga nada à plataforma.</p>
       {/* Negociação configurada pelo dono (prompt 17 §8): "Valor fixo" ou o desconto por estadia mais longa. */}
       {property.negociacao && (
@@ -100,7 +136,7 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
       {/* Fora do total: pagamentos únicos, pet e Caução (devolvida após a conferência de saída). */}
       <ul data-testid="taxas-itemizadas" className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
         <li className="text-xs font-semibold uppercase text-muted">Fora do total mensal</li>
-        {linhasDeTaxas(property)
+        {linhasDeTaxas(property, dias)
           .filter((l) => ["preparacao", "saida", "pet", "caucao"].includes(l.chave))
           .map((l) => (
             <li key={l.chave} data-taxa={l.chave} className={l.chave === "caucao" ? "border-t border-line pt-2" : undefined}>
@@ -118,19 +154,29 @@ export function PriceCard({ property, actions, meses = 1 }: { property: Property
         )}
       </ul>
 
-      {/* Ações (Enviar candidatura / Enviar mensagem / WhatsApp) — vêm da página */}
+      {/* Ações (Enviar candidatura / Enviar mensagem / WhatsApp) — vêm da página. E528: o total mensal de novo logo acima, para
+          quem preenche o formulário (embaixo do painel, que não prende quando é mais alto que a janela) não perder o valor. */}
+      <p className="mt-3 flex items-baseline justify-between gap-3 border-t border-line pt-3 text-sm" data-testid="total-junto-da-acao">
+        <span className="font-semibold text-ink">Total por mês</span>{" "}
+        <span className="text-lg font-semibold tabular-nums text-forest">{formatBRL(mes.total)}</span>
+      </p>
       <div className="mt-3">{actions}</div>
 
       <p className="mt-4 inline-flex items-center gap-2 text-sm text-sage">
         <span className="h-2 w-2 rounded-full bg-sage" />
         {availableFrom ? `Disponível a partir de ${availableFrom}` : "Disponível agora"}
       </p>
+      {notaData && (
+        <p className="mt-1 text-xs text-muted" data-testid="cartao-data-calculada">
+          {notaData}
+        </p>
+      )}
 
       <p className="mt-4 flex items-start gap-2 text-xs text-muted">
         <MapPinned className="mt-1 h-3.5 w-3.5 shrink-0" />
         Endereço exato liberado após o aceite da candidatura. Antes, mostramos a região
         aproximada ({property.neighborhood}).
       </p>
-    </div>
+    </PainelPrecoFixo>
   );
 }

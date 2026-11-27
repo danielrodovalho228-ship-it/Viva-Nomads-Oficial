@@ -1,6 +1,7 @@
 /*
   "Resumo e ações" e sugestão com fatos oficiais (seguros, pré-lançamento).
   Roda: node --test src/lib/atendimento/resumo.test.ts
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): a regra única de preço diz "(até 6%)" — antes "(até 4%)".
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -68,6 +69,7 @@ test("fatos oficiais chegam à Viva (chat, chamados, sugestão e resumo)", () =>
 
 test("preço que a Viva informa é a regra única de 12%, sem planos nem faixas (ordem 3914d70c)", () => {
   const f = fontes();
+  // 078 (Daniel, 16/11/2026): "(até 4%)" virou "(até 6%)" — a escada pública termina em 16–19 = 6%.
   assert.match(f, /A Viva cobra 12% sobre o valor total do contrato fechado\. Quanto mais imóveis, menor a taxa \(até 6%\)\. Sem mensalidade\./);
   assert.match(f, /Sem mensalidade/);
   assert.doesNotMatch(f, /sem mensalidade, comissão|\/mês|até \d+ anúncio/);

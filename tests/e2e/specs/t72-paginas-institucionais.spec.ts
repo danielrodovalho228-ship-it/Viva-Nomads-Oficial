@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA, comPrecos } from "../fixtures/precos";
 
 /**
  * T72 — ordem 5a4b9146: páginas institucionais.
@@ -9,7 +10,7 @@ import { test, expect, type Page } from "@playwright/test";
  *  5. Comparações com outras plataformas continuam na página.
  *  6. Sem rolagem lateral a 390 e 1280 px; prints.
  */
-const PAGINAS = ["/para-proprietarios", "/empresas", "/precos", "/como-funciona", "/parceiros"];
+const PAGINAS = ["/para-proprietarios", "/empresas", ...comPrecos("/precos"), "/como-funciona", "/parceiros"];
 const semRolagem = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 test.describe("T72 — páginas institucionais", () => {
@@ -35,18 +36,18 @@ test.describe("T72 — páginas institucionais", () => {
     });
   }
 
-  test("2. nenhum link do cabeçalho leva a 404 (desktop, menu Mais e celular)", async ({ page, request }) => {
+  test("2. nenhum link do cabeçalho leva a 404 (desktop e celular; o menu 'Mais' saiu no E176)", async ({ page, request }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
     const header = page.locator("header").first();
-    await header.getByRole("button", { name: "Mais" }).click();
     const desktop = await header.locator("a[href^='/']").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/", { waitUntil: "networkidle" });
     await page.getByRole("button", { name: "Abrir menu" }).click();
     const celular = await page.locator("header").first().locator("a[href^='/']").evaluateAll((as) => as.map((a) => a.getAttribute("href")!));
     const links = [...new Set([...desktop, ...celular])].filter((h) => !h.startsWith("/dashboard") && !h.startsWith("/auth"));
-    expect(links.length).toBeGreaterThanOrEqual(7);
+    // Topo de hoje: Imóveis · Anunciar · Empresas · Parceiros (+ Planos com a chave do E563 ligada), logo e Fale com a Viva.
+    expect(links.length).toBeGreaterThanOrEqual(5 + comPrecos(1).length);
     for (const href of links) {
       const r = await request.get(href);
       expect(r.status(), href).toBeLessThan(400);
@@ -76,6 +77,7 @@ test.describe("T72 — páginas institucionais", () => {
   });
 
   test("5. comparações com outras plataformas intactas", async ({ page }) => {
+    test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
     // /para-proprietarios (versão curta) ainda segue a regra c6b62141; /precos mudou no prompt 13.
     await page.goto("/para-proprietarios", { waitUntil: "networkidle" });
     const curto = page.getByTestId("comparativo-curto");

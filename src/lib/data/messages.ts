@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
+import { ordenarPorAtividade } from "@/lib/mensagens/ordem";
 import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { vinculosConfirmados } from "@/lib/vinculo/servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -10,6 +12,8 @@ import { guardContactInfo } from "@/lib/messages/contact-guard";
 import { urlMidiaParceiro } from "@/lib/data/parceiros-publico";
 import { conversasDeContratos, type ContratoParaConversa } from "@/lib/mensagens/conversa-pedida";
 import { conversationId } from "@/lib/messages/conversation-id";
+import { emergenciaDisponivel } from "@/lib/estadia/emergencia-chegada";
+import { hojeEmBrasilia } from "@/lib/checkin";
 import { anexoDaMensagem, type AnexoNaBolha } from "@/lib/messages/anexo-tela";
 
 export interface ChatMessage {
@@ -22,6 +26,8 @@ export interface ChatMessage {
   visto?: boolean;
   /** E445 (item 5): foto ou PDF anexado (abre só pela rota do servidor, URL assinada para as partes). */
   anexo?: AnexoNaBolha;
+  /** E484: quando a mensagem foi enviada (ISO), para a hora na bolha. */
+  enviadaEm?: string;
 }
 
 export interface Conversation {
@@ -38,6 +44,8 @@ export interface Conversation {
   /** Foto de capa do imóvel e período da estadia (quando há contrato). */
   foto?: string;
   periodo?: string;
+  /** E664: contrato do morador (eu) com a entrada HOJE, ativo e assinado pelas duas partes — habilita o botão de emergência. */
+  emergenciaChegadaContratoId?: string;
   /** Contrato ASSINADO pelas duas partes desta conversa (o alerta antigolpe só vale antes disso). */
   contratoFechado?: boolean;
   /** Conversa de pedido de serviço de parceiro (Prompt 31b): a resposta vai pela rota do pedido. */
@@ -48,6 +56,9 @@ export interface Conversation {
   vinculoDominio?: string | null;
   /** E445 (item 4): mensagens recebidas ainda não lidas nesta conversa. */
   naoLidas?: number;
+  /** E721: a pessoa adiou esta conversa (ISO). Só a visão dela; vence em `adiadaAte` ou quando a outra parte escreve. */
+  adiadaEm?: string | null;
+  adiadaAte?: string | null;
   messages: ChatMessage[];
 }
 
@@ -108,9 +119,7 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
   const supabase = await createClient();
   if (!supabase) return SAMPLE_CONVERSATIONS;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
 
   const colunas = (comLeitura: boolean) =>
@@ -147,7 +156,7 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     const conv = byConv.get(m.conversation_id)!;
     // Mesmo filtro do envio: mensagem antiga com CPF/RG ou contato nunca aparece crua (nem na prévia da caixa).
     const texto = guardContactInfo(m.body).text;
-    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: texto, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}), ...(mine && m.lido_em ? { visto: true } : {}) });
+    conv.messages.push({ id: m.id, from: mine ? "me" : "them", text: texto, enviadaEm: m.created_at, ...(m.proposta_id ? { propostaId: m.proposta_id } : {}), ...(mine && m.lido_em ? { visto: true } : {}) });
     // E445: não lidas da conversa (recebidas sem lido_em; sem a coluna, não conta).
     if (!mine && m.lido_em === null) conv.naoLidas = (conv.naoLidas ?? 0) + 1;
     conv.preview = texto;
@@ -180,11 +189,30 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     messages: [],
   }));
 
+  // E569: a conversa de cada CANDIDATURA em andamento (nova ou aceita) também entra, mesmo sem mensagem — o "Responder
+  // pela plataforma" do cartão do interessado abre exatamente ela (antes, candidatura sem mensagem caía em "não está na
+  // sua lista"). Mesma regra de id das conversas (morador + dono + imóvel); a que já existe não duplica.
+  const daCandidatura: Conversation[] = conversasDeContratos(
+    [...byConv.keys(), ...doContrato.map((c) => c.id)],
+    await candidaturasDaPessoa(supabase, user.id),
+    user.id,
+    conversationId,
+  ).map((n) => ({
+    id: n.id,
+    name: "Conversa",
+    property: n.contrato.titulo,
+    preview: "",
+    otherId: n.outroId,
+    propertyId: n.contrato.propertyId,
+    papel: n.papel,
+    messages: [],
+  }));
+
   // Nome do outro lado (prompt 6, mesma regra do cartão do candidato): o proprietário vê
   // "Candidato(a)" até aceitar e o nome completo depois (E427); o inquilino vê o nome curto do
   // proprietário até o aceite e o nome completo depois. Nome completo e aceite vêm do servidor (service role); sem ele, o
   // proprietário continua vendo "Candidato(a)". Suporte segue com o primeiro nome (RPC 0057).
-  const conversas = [...doContrato, ...byConv.values()];
+  const conversas = [...doContrato, ...daCandidatura, ...byConv.values()];
   const outros = [...new Set(conversas.map((c) => c.otherId).filter(Boolean))] as string[];
   if (outros.length > 0) {
     const { data: nomes } = await supabase.rpc("primeiros_nomes", { ids: outros });
@@ -220,7 +248,14 @@ export async function listConversations(opcoes: { exigir?: boolean } = {}): Prom
     }
   }
   await enriquecer(supabase, conversas, user.id);
-  return conversas;
+  // E721: as conversas que a pessoa adiou (RLS 0336: só as próprias). Antes da migração ou com falha, nada é adiado.
+  const { data: adiadas } = await supabase.from("conversas_adiadas").select("conversation_id, adiada_em, ate").eq("user_id", user.id);
+  for (const a of (adiadas ?? []) as { conversation_id: string; adiada_em: string; ate: string }[]) {
+    const conv = conversas.find((c) => c.id === a.conversation_id);
+    if (conv) Object.assign(conv, { adiadaEm: a.adiada_em, adiadaAte: a.ate });
+  }
+  // E481: a conversa com a mensagem mais recente primeiro (antes: contrato, candidatura e a ordem da 1ª mensagem).
+  return ordenarPorAtividade(conversas);
 }
 
 type Supa = NonNullable<Awaited<ReturnType<typeof createClient>>>;
@@ -271,6 +306,13 @@ async function enriquecer(supabase: Supa, conversas: Conversation[], eu: string)
       const bl = doPar?.contrato_blocos ?? [];
       c.periodo = bl.length ? formatarPeriodo(bl.map((b) => b.inicio).sort()[0], bl.map((b) => b.fim).sort().at(-1)) || undefined : undefined;
       if (doPar) c.contratoId = doPar.id;
+      if (doPar && emergenciaDisponivel({
+        souMorador: doPar.tenant_id === eu,
+        status: (doPar as unknown as { status?: string }).status,
+        assinadoPelasDuas: !!doPar.assinado_proprietario_em && !!doPar.assinado_inquilino_em,
+        entrada: bl.map((b) => b.inicio).sort()[0],
+        hoje: hojeEmBrasilia(new Date()),
+      })) c.emergenciaChegadaContratoId = doPar.id;
       c.contratoFechado = contratoAssinadoEntrePartes(lista, { propertyId: c.propertyId, eu, outroId: c.otherId });
     }
   } catch {
@@ -282,6 +324,28 @@ async function enriquecer(supabase: Supa, conversas: Conversation[], eu: string)
  * E200: os contratos em que a pessoa é parte (morador ou dono do imóvel), para a conversa de cada um estar na lista
  * mesmo sem mensagem. A leitura vai pela sessão (RLS); nada de cliente de serviço. Best-effort: falhou, lista sem elas.
  */
+/**
+ * E569: candidaturas em andamento (nova ou aceita) em que sou o dono ou o morador, no formato das conversas de contrato
+ * (o id da candidatura vai em `id`; a conversa NÃO leva contratoId). Falha: nenhuma (a lista segue com as outras).
+ */
+async function candidaturasDaPessoa(supabase: Supa, userId: string): Promise<ContratoParaConversa[]> {
+  try {
+    const { data } = await supabase
+      .from("leads")
+      .select("id, owner_id, tenant_id, property_id, property:properties ( title )")
+      .or(`owner_id.eq.${userId},tenant_id.eq.${userId}`)
+      .in("status", ["new", "accepted"])
+      .order("created_at", { ascending: false })
+      .limit(200);
+    type Linha = { id: string; owner_id: string; tenant_id: string; property_id: string | null; property: { title: string | null } | null };
+    return ((data ?? []) as unknown as Linha[])
+      .filter((l) => !!l.property_id && !!l.owner_id && !!l.tenant_id)
+      .map((l) => ({ id: l.id, tenantId: l.tenant_id, ownerId: l.owner_id, propertyId: l.property_id as string, titulo: l.property?.title ?? "Imóvel" }));
+  } catch {
+    return [];
+  }
+}
+
 async function contratosDaPessoa(supabase: Supa, userId: string): Promise<ContratoParaConversa[]> {
   try {
     const colunas = "id, tenant_id, property_id, properties ( title, owner_id )";

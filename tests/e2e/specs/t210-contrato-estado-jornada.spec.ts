@@ -3,6 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo, tornarContratoVigente } from "../fixtures/laboratorio";
+import { abrirPortaoDaIdentidade } from "../fixtures/fechamento-identidade";
 
 /*
   T210 — Prompt 28 (reteste do #840). 390 e 1280 px.
@@ -38,7 +39,7 @@ async function docs(lead: string) {
 /** Fechamento pela tela até "Gerar contrato" e o Resumo. */
 async function gerarAteResumo(page: Page, lead: string) {
   await abrir(page, `/dashboard/fechamento?c=${lead}`);
-  await page.getByRole("button", { name: /verificar identidade/i }).click();
+  await abrirPortaoDaIdentidade(page);
   const continuar = page.getByRole("button", { name: /continuar/i });
   await expect(continuar).toBeEnabled({ timeout: 20_000 });
   await continuar.click();

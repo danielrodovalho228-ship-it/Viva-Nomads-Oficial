@@ -4,10 +4,17 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
-test("E95: a bolha flutuante da Viva não aparece na /buscar (não cobre os cards; a ajuda fica como link na página)", () => {
+// E931 — regra final (ORDEM-DUET-030, julgamento do Gerente depois da main vermelha de c950ec8): o botão "Fale com a Viva"
+// fica na Central de Ajuda (resíduo do E839) e SAI da /buscar — a razão do E95 continua viva: no computador cobre a área
+// dos filtros (t10/F3) e a varredura a 390 px prova cobertura (t274). Só a página do próprio chat fica sem ele.
+test("E931: o botão 'Fale com a Viva' aparece na Central de Ajuda e fica fora da /buscar (E95)", () => {
   const src = ler("components/ajuda/viva-chat.tsx");
   const linha = src.split("\n").find((l) => l.includes("const ESCONDER")) ?? "";
-  assert.match(linha, /"\/buscar"/);
+  assert.match(linha, /"\/buscar"/, "E95: fora da /buscar");
+  assert.doesNotMatch(linha, /"\/ajuda"[,\]]/, "E931: na Central de Ajuda");
+  assert.match(linha, /"\/ajuda\/fale-com-a-viva"/, "fora da página do próprio chat");
+  // posição padrão: nenhuma regra própria da /ajuda no CSS do flutuante
+  assert.doesNotMatch(ler("app/globals.css"), /ajuda[^{}]*\.vn-viva-flut/);
 });
 
 test("F3: /buscar mantém a ajuda como link na página", () => {

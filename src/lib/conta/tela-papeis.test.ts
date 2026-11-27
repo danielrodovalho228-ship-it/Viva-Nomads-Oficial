@@ -39,7 +39,7 @@ test("perfil-03-papeis-com-fotos: três cartões num padrão só, cada um com a 
   for (const id of ["morar", "anunciar", "parceiro"]) assert.match(t, new RegExp(`<CartaoPapel id="${id}" foto=\\{PHOTOS\\.papeis\\.${id}\\}`), id);
   // Um só componente de cartão: a foto tem a mesma medida nos três (o de parceiro não ganha layout próprio).
   assert.equal((t.match(/<Image /g) ?? []).length, 1);
-  assert.match(t, /href="\/dashboard\/parceiro"/);
+  assert.match(t, /href=\{HREF_ATIVAR_PARCERIA\}/); // E576: o mesmo /dashboard/parceiro, pela constante
   assert.equal(TEXTO_QUERO_PARCEIRO, "Ofereça serviços para moradores e proprietários");
   assert.equal(BOTAO_QUERO_PARCEIRO, "Cadastrar meu serviço");
   for (const x of [TEXTO_QUERO_PARCEIRO, BOTAO_QUERO_PARCEIRO, BOTAO_PARCEIRO_ATIVO]) assert.doesNotMatch(x, /comiss|h[oó]spede|reserva/i);

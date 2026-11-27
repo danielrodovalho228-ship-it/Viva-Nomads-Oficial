@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T543 — E166 (#1381), guarda permanente da Pista C: a troca do fundo bege/creme pelo clean não regride nas páginas
@@ -11,7 +12,7 @@ const PAGINAS = [
   "/cidades",
   "/como-funciona",
   "/para-proprietarios",
-  "/precos",
+  ...comPrecos("/precos"),
   "/empresas",
   "/parceiros",
   "/guias",

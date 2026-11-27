@@ -10,7 +10,7 @@
  */
 
 /** Status cru persistido em `leads.status`. */
-export type LeadStatusCru = "new" | "accepted" | "rejected" | (string & {});
+export type LeadStatusCru = "new" | "accepted" | "rejected" | "expired" | (string & {});
 
 /** Situação exibida ao inquilino (chave estável). */
 export type SituacaoCandidatura = "enviada" | "em_analise" | "aceita" | "nao_seguiu";
@@ -40,7 +40,8 @@ export function situacaoCandidatura(
   ownerEngajou = false,
 ): RotuloCandidatura {
   if (status === "accepted") return ROTULOS.aceita;
-  if (status === "rejected") return ROTULOS.nao_seguiu;
+  // E968: a 3ª expiração da pré-aceitação encerra a candidatura — ao morador, o mesmo texto neutro.
+  if (status === "rejected" || status === "expired") return ROTULOS.nao_seguiu;
   // status "new" (ou desconhecido): em aberto.
   return ownerEngajou ? ROTULOS.em_analise : ROTULOS.enviada;
 }

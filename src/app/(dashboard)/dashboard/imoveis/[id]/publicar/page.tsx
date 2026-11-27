@@ -13,7 +13,9 @@ export default async function PublicarAnuncioPage({ params }: { params: Promise<
   let status: string | null = null;
   let achou = false;
   if (supabase) {
-    const { data } = await supabase.from("properties").select("id, status").eq("id", id).maybeSingle();
+    const { data, error } = await supabase.from("properties").select("id, status").eq("id", id).maybeSingle();
+    // Achado 127: a falha não manda o dono para a lista como se o anúncio não existisse — cai no aviso do painel.
+    if (error) throw new Error("Não foi possível abrir o anúncio agora.");
     achou = !!data;
     status = (data?.status as string | null) ?? null;
   }

@@ -27,9 +27,9 @@ test("agenda, recibos e avaliações lançam na falha do banco quando a tela ped
 test("as telas pedem com exigir; home e bloco do celular não (a exportação exige desde o E-vazio dos relatórios: falha → 503)", () => {
   assert.match(ler("src/app/(dashboard)/dashboard/agenda/page.tsx"), /await carregarAgendaDoDono\(\{ exigir: true \}\)/);
   assert.match(ler("src/app/(dashboard)/dashboard/recibos/page.tsx"), /await recibosDaPessoa\("dono", \{ exigir: true \}\)/);
-  assert.match(ler("src/app/(dashboard)/dashboard/avaliacoes/page.tsx"), /await avaliacoesRecebidas\(\{ exigir: true \}\)/);
-  assert.match(ler("src/app/(dashboard)/dashboard/conta/avaliacoes/page.tsx"), /await avaliacoesRecebidas\(\{ exigir: true \}\)/);
-  assert.match(ler("src/app/(dashboard)/dashboard/page.tsx"), /carregarAgendaDoDono\(\)\.catch\(\(\) => null\)/);
+  assert.match(ler("src/app/(dashboard)/dashboard/avaliacoes/page.tsx"), /avaliacoesRecebidas\(\{ exigir: true \}\)/);
+  // E679: a rota da Conta só redireciona; o painel unificado é quem lê (com `exigir`).
+  assert.match(ler("src/app/(dashboard)/dashboard/inicio-dados.tsx"), /carregarAgendaDoDono\(\), LIMITE_LEITURA_INICIO_MS\)\.catch\(\(\) => null\)/);
   assert.doesNotMatch(ler("src/components/recibos/blocos-recibos.tsx"), /exigir: true/);
   // Exportação (PDF do carnê-leão, informe, reembolso): falha nunca vira relatório com zero — exige e responde 503.
   assert.match(ler("src/app/api/recibos/[relatorio]/route.ts"), /recibosDaPessoa\(papel, \{ exigir: true \}\)\.catch\(\(\) => "falhou" as const\)/);

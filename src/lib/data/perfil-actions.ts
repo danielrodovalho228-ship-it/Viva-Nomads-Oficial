@@ -5,13 +5,14 @@ import { cadastroCompleto, faltaNoCadastro, itensCadastro, type ItemCadastro } f
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { lerDocumento } from "@/lib/data/documento-servidor";
+import { lerDocumento, lerNotaLocacao } from "@/lib/data/documento-servidor";
+import { emiteNotaLocacaoParaGravar, faltaRespostaNotaLocacao } from "@/lib/fiscal/nota-locacao";
 import { DOCUMENTO_VAZIO_PF, documentoCompleto, mascararCnpj, mascararCpf, msgDocumentoDuplicado, validarDocumento, type DocumentoInput, type TipoPessoa } from "@/lib/documento-pessoa";
 import { contemContato } from "@/lib/pedidos/pedidos";
 import { validarNome, normalizarTelefone, validarLinkedin, validarMotivoEstadia } from "@/lib/conta-validacao";
 import { validarPorQueNaCidade, type PorQueNaCidade } from "@/lib/perfil/por-que-na-cidade";
 import { validarEspacoTrabalho, type EspacoTrabalho } from "@/lib/perfil/espaco-trabalho";
-import { validarBio, validarCidade, validarIdiomas } from "@/lib/perfil/perfil-publico";
+import { itemTelefoneNoMedidor, pedeProfissao, validarBio, validarCidade, validarIdiomas } from "@/lib/perfil/perfil-publico";
 import {
   isCategoriaKey,
   CATEGORIA_NAO_INFORMAR,
@@ -181,6 +182,17 @@ export interface MeusDados {
 }
 
 /** Lê os MEUS dados pessoais (nome, e-mail, telefone, LinkedIn). */
+/**
+ * E789: a tela Conta/Perfil precisa das duas leituras (perfil público + dados pessoais). Pedidas do navegador como duas
+ * Server Actions, elas viajam UMA DEPOIS DA OUTRA (o Next enfileira as ações do cliente) — dois idas-e-voltas, e a tela
+ * ficava ~5 s em cartões brancos num celular lento. Aqui as duas rodam em paralelo no servidor e voltam numa resposta só.
+ * Falha de qualquer uma LANÇA (achados 66 e 70: nunca abrir o formulário vazio).
+ */
+export async function getPerfilInicial(): Promise<{ perfil: MeuPerfilPublico | null; dados: MeusDados | null }> {
+  const [perfil, dados] = await Promise.all([getMeuPerfilPublico(), getMeusDados()]);
+  return { perfil, dados };
+}
+
 export async function getMeusDados(): Promise<MeusDados | null> {
   const supabase = await createClient();
   if (!supabase) return null;
@@ -260,6 +272,10 @@ export interface MeuDocumento {
   cnpj: string | null;
   razaoSocial: string | null;
   cpfRepresentante: string | null;
+  /** E574: PJ — declarou emitir nota fiscal da locação (null = não respondeu; PF = null). */
+  emiteNotaLocacao: boolean | null;
+  /** E574: PJ com o documento completo e sem a resposta — pendência na Conta, sem bloquear nada. */
+  faltaNotaLocacao: boolean;
 }
 
 /** O MEU documento (CPF ou CNPJ), mascarado. null sem sessão/demo. */
@@ -271,15 +287,18 @@ export async function getMeuDocumento(): Promise<MeuDocumento | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const p = await lerDocumento(admin, user.id);
+  const [p, nota] = await Promise.all([lerDocumento(admin, user.id), lerNotaLocacao(admin, user.id)]);
   if (!p) return { ...DOCUMENTO_VAZIO_PF };
+  const completo = documentoCompleto(p);
   return {
     tipo: p.person_type === "pj" ? "pj" : "pf",
-    completo: documentoCompleto(p),
+    completo,
     cpf: mascararCpf(p.cpf),
     cnpj: mascararCnpj(p.cnpj),
     razaoSocial: (p.company_name as string | null) ?? null,
     cpfRepresentante: mascararCpf(p.cpf_representante),
+    emiteNotaLocacao: p.person_type === "pj" ? nota : null,
+    faltaNotaLocacao: completo && faltaRespostaNotaLocacao({ tipoPessoa: p.person_type, emiteNota: nota }),
   };
 }
 
@@ -289,7 +308,7 @@ export async function getMeuDocumento(): Promise<MeuDocumento | null> {
  * de um contrato). O tipo (PF/PJ) é o escolhido no cadastro. Grava pelo
  * servidor: o usuário não edita esses campos direto (0090).
  */
-export async function salvarMeuDocumento(input: Omit<DocumentoInput, "tipo">): Promise<Result & { documento?: MeuDocumento }> {
+export async function salvarMeuDocumento(input: Omit<DocumentoInput, "tipo"> & { emiteNotaLocacao?: boolean | null }): Promise<Result & { documento?: MeuDocumento }> {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return { ok: false, error: "Indisponível no momento." };
@@ -303,15 +322,45 @@ export async function salvarMeuDocumento(input: Omit<DocumentoInput, "tipo">): P
   const tipo: TipoPessoa = atual.person_type === "pj" ? "pj" : "pf";
   const v = validarDocumento({ ...input, tipo });
   if (!v.ok) return { ok: false, error: v.erro };
+  // E574: o PJ só conclui o documento respondendo se emite nota fiscal da locação (o PF grava sempre null).
+  const nota = emiteNotaLocacaoParaGravar(tipo, input.emiteNotaLocacao);
+  if (!nota.ok) return { ok: false, error: nota.erro };
   const update =
     tipo === "pf"
       ? { cpf: v.doc.cpf }
-      : { cnpj: v.doc.cnpj, company_name: v.doc.razaoSocial, cpf_representante: v.doc.cpfRepresentante };
+      : { cnpj: v.doc.cnpj, company_name: v.doc.razaoSocial, cpf_representante: v.doc.cpfRepresentante, emite_nota_locacao: nota.valor };
   const { error } = await admin.from("profiles").update(update).eq("id", user.id);
   if (error) {
     if (error.code === "23505") return { ok: false, error: msgDocumentoDuplicado(tipo) };
     if (error.code === "23514") return { ok: false, error: tipo === "pf" ? "CPF inválido." : "CNPJ ou CPF do representante inválido." };
     console.error("[salvarMeuDocumento]", error.code, error.message);
+    return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
+  }
+  revalidatePath("/dashboard/conta");
+  return { ok: true, documento: (await getMeuDocumento()) ?? undefined };
+}
+
+/**
+ * E574: o proprietário PJ responde (ou muda) se emite nota fiscal da locação. Quem já tinha o documento completo vê a
+ * pergunta como pendência na Conta, sem bloquear nada. PF não tem a pergunta (nota de locação de PF não existe:
+ * a plataforma gera o Recibo de Locação).
+ */
+export async function salvarMinhaNotaLocacao(resposta: boolean): Promise<Result & { documento?: MeuDocumento }> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!supabase || !admin) return { ok: false, error: "Indisponível no momento." };
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sessão expirada. Entre de novo." };
+  const atual = await lerDocumento(admin, user.id);
+  if (!atual) return { ok: false, error: "Perfil não encontrado." };
+  if (atual.person_type !== "pj") return { ok: false, error: "A pergunta da nota fiscal é só para empresa ou MEI." };
+  const nota = emiteNotaLocacaoParaGravar("pj", resposta);
+  if (!nota.ok) return { ok: false, error: nota.erro };
+  const { error } = await admin.from("profiles").update({ emite_nota_locacao: nota.valor }).eq("id", user.id);
+  if (error) {
+    console.error("[salvarMinhaNotaLocacao]", error.code, error.message);
     return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };
   }
   revalidatePath("/dashboard/conta");
@@ -347,7 +396,7 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
   if (!user) return null;
   const adminDoc = createAdminClient();
   const [{ data, error }, { count, error: erroImoveis }, fone, doc] = await Promise.all([
-    supabase.from("profiles").select("bio, idiomas, cidade, avatar_url, professional_category, motivo_estadia, full_name").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("bio, idiomas, cidade, avatar_url, professional_category, motivo_estadia, full_name, role").eq("id", user.id).maybeSingle(),
     supabase.from("properties").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
     getTelefoneEstado().catch(() => null),
     // Documento: lido pelo servidor (cliente de serviço); só o "tem/não tem" sai daqui.
@@ -362,8 +411,9 @@ export async function getMeuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     temFoto: !!data?.avatar_url,
     profissao: (data?.professional_category as string | null) ?? null,
     motivo: (data?.motivo_estadia as string | null) ?? null,
-    anuncia: (count ?? 0) > 0,
-    telefone: fone?.disponivel ? fone.verificado : undefined,
+    // E403: a lista do medidor só muda por ação da pessoa — profissão pelo cadastro, celular verificado sempre conta.
+    anuncia: !pedeProfissao(data?.role as string | null),
+    telefone: itemTelefoneNoMedidor(fone),
     nome: ((data?.full_name as string | null) ?? "").trim(),
     emailConfirmado: !!user.email_confirmed_at,
     cadastro: (() => {

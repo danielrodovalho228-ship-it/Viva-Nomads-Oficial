@@ -3,15 +3,17 @@
   Confere a sessão e o papel (morador = tenant_id; dono = properties.owner_id) e só então lê com o cliente de
   serviço: o morador nunca recebe a taxa de serviço nem as instruções antes da liberação; quem não é parte recebe null.
 */
+import { codigoDoImovel } from "@/lib/imovel-pagina";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
-import { primeiroPagamentoConfirmado } from "@/lib/contrato-estado";
+import { primeiroPagamentoConfirmado, primeiroPagamentoRegistrado } from "@/lib/contrato-estado";
 import { estadoConferencia, type RespostaConferencia } from "@/lib/conferencia";
 import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
-import { diaBRT } from "@/lib/datas-brasilia";
+import { hojeEmBrasilia } from "@/lib/datas-brasilia";
 import { conversationId } from "@/lib/messages/conversation-id";
 import {
   acoesDaFolhaDaEstadia,
@@ -102,15 +104,49 @@ export function assinadoPelasDuas(c: Pick<LinhaContratoEstadia, "assinado_propri
   return !!c.assinado_proprietario_em && !!c.assinado_inquilino_em;
 }
 
+/**
+ * E662: copia a instrução de saída do imóvel para o contrato na 1ª assinatura (uma vez só), para o texto não mudar no meio da
+ * estadia. Mora aqui, com os demais leitores de `imovel_instrucoes_chegada` (a tabela privada só é lida por estes arquivos).
+ * Melhor esforço: a assinatura NUNCA depende dela (a coluna é da migração 0320 e, sem cópia, o guia usa a do imóvel).
+ */
+export async function congelarInstrucaoSaida(admin: SupabaseClient, contratoId: string, propertyId: string): Promise<void> {
+  try {
+    const { data: im, error } = await admin.from("imovel_instrucoes_chegada").select("instrucao_saida").eq("property_id", propertyId).maybeSingle();
+    const texto = ((im as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? "").trim();
+    if (error || !texto) return;
+    await admin.from("contratos").update({ instrucao_saida: texto }).eq("id", contratoId).is("instrucao_saida", null);
+  } catch {
+    // sem cópia: vale a do imóvel
+  }
+}
+
+/**
+ * E662: o texto atual da instrução de saída, para o EDITOR do dono na edição do imóvel (sessão do dono; a RLS da tabela
+ * privada só deixa o dono ler). Mora aqui, com os demais leitores de `imovel_instrucoes_chegada`. Falha de leitura = vazio
+ * (o campo abre em branco; a gravação continua exigindo o dono).
+ */
+export async function instrucaoSaidaParaEditar(supabase: SupabaseClient, propertyId: string): Promise<string> {
+  try {
+    const { data } = await supabase.from("imovel_instrucoes_chegada").select("instrucao_saida").eq("property_id", propertyId).maybeSingle();
+    return ((data as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
 /** Instruções do imóvel com a sobrescrita do contrato (contratos_checkin.instrucoes). */
 export async function lerInstrucoes(admin: SupabaseClient, c: LinhaContratoEstadia): Promise<{ doImovel: Instrucoes | null; efetivas: Instrucoes | null; doContrato: string | null }> {
-  const [{ data: im }, { data: ck }] = await Promise.all([
+  const [{ data: im }, { data: ck }, { data: cs, error: erroSaida }] = await Promise.all([
     admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id).maybeSingle(),
     admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", c.id).maybeSingle(),
+    // E662: a cópia da instrução de saída congelada na 1ª assinatura. Leitura à parte e tolerante (coluna da migração 0320): sem
+    // ela, vale a do imóvel.
+    admin.from("contratos").select("instrucao_saida").eq("id", c.id).maybeSingle(),
   ]);
   const doImovel = im ? normalizarInstrucoes(im as Record<string, unknown>) : null;
   const doContrato = ((ck as { instrucoes?: string | null } | null)?.instrucoes ?? "").trim() || null;
-  return { doImovel, efetivas: instrucoesEfetivas(doImovel, doContrato), doContrato };
+  const saidaDoContrato = erroSaida ? null : ((cs as { instrucao_saida?: string | null } | null)?.instrucao_saida ?? null);
+  return { doImovel, efetivas: instrucoesEfetivas(doImovel, doContrato, saidaDoContrato), doContrato };
 }
 
 export interface OcupanteView {
@@ -228,19 +264,21 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
   }));
   const previstos = Math.max(1, Number(c.qtd_ocupantes) || 1);
   // L2-B item 12: a mesma função dos Contratos e da Garantias decide o estado da caução.
-  const estadoCaucao = caucaoDoChecklist(
-    estadoCaucaoUnico({
-      garantia: c.garantia,
-      blocos: blocos.map((b) => ({ caucao: b.caucao, caucaoStatus: b.caucao_status })),
-      pagamentos: pagamentos.map((p) => ({ tipo: p.tipo, valor: p.valor ?? 0, confirmado: p.confirmado_pelo_inquilino, anulado: !!p.anulado_em })),
-    }),
-  );
+  const entradaCaucao = {
+    garantia: c.garantia,
+    blocos: blocos.map((b) => ({ caucao: b.caucao, caucaoStatus: b.caucao_status })),
+    pagamentos: pagamentos.map((p) => ({ tipo: p.tipo, valor: p.valor ?? 0, confirmado: p.confirmado_pelo_inquilino, anulado: !!p.anulado_em })),
+  };
+  const estadoCaucao = caucaoDoChecklist(estadoCaucaoUnico(entradaCaucao));
   const checklist = checklistAntesDaEntrada(
     {
       assinadoProprietario: !!c.assinado_proprietario_em,
       assinadoInquilino: !!c.assinado_inquilino_em,
       primeiroPagamento: primeiro,
+      // E1068: o estado do meio (registrado pelo proprietário, à espera do morador), das mesmas fontes do confirmado.
+      primeiroPagamentoRegistrado: primeiroPagamentoRegistrado(pagamentos),
       caucao: estadoCaucao,
+      caucaoRegistrada: estadoCaucaoUnico(entradaCaucao).chave === "aguardando_confirmacao",
       conferencia: { estado: conf ? estadoConferencia(respostas) : null, prazo: prazoDaConferencia(periodo) },
       ocupantes: { preenchidos: ocupantes.length, previstos },
       instrucoesPublicadas: instrucoesPreenchidas(instr.efetivas),
@@ -343,15 +381,24 @@ export function mesesFuturos(c: LinhaContratoEstadia, hojeISO: string): number {
   return mesesNaoIniciados(blocosOrdenados(c), hojeISO);
 }
 
-/** Hoje (AAAA-MM-DD) em Brasília. */
-export function hojeEmBrasilia(agora: Date = new Date()): string {
-  return diaBRT(agora) ?? agora.toISOString().slice(0, 10);
+/** Hoje (AAAA-MM-DD) em Brasília — E1115 (ORDEM-DUET-503): a fonte única (datas-brasilia). */
+export { hojeEmBrasilia } from "@/lib/datas-brasilia";
+
+/** E360: "Saraiva, Uberlândia · código VN-3F9A2C" (o bairro é o campo público `address`, nunca o endereço exato). */
+export function localDaEstadia(c: { property_id?: string | null; properties?: { address?: string | null; city?: string | null } | null }): string {
+  const lugar = [c.properties?.address?.trim(), c.properties?.city?.trim()].filter(Boolean).join(", ");
+  const codigo = c.property_id ? `código ${codigoDoImovel(c.property_id)}` : "";
+  return [lugar, codigo].filter(Boolean).join(" · ");
 }
 
 export interface EstadiaNaHome {
   contratoId: string;
+  /** E680: a conta para quem esta lista foi montada. O cliente só mostra a lista se for a conta que está nele. */
+  paraUsuario: string;
   papel: PapelEstadia;
   imovel: string;
+  /** E360: onde é (bairro, cidade) e o código do anúncio: o título sozinho (ex.: "Carteira 3") não identifica o imóvel. */
+  local: string;
   topo: string;
   decisoes: DecisaoEstadia[];
   acoes: { id: string; rotulo: string; href: string }[];
@@ -366,9 +413,7 @@ export async function estadiasDaHome(agora: Date = new Date(), opcoes: { exigir?
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return [];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
   const { data: meus } = await admin.from("properties").select("id").eq("owner_id", user.id).limit(500);
   const imoveis = ((meus ?? []) as { id: string }[]).map((p) => p.id);
@@ -401,7 +446,7 @@ export async function estadiasDaHome(agora: Date = new Date(), opcoes: { exigir?
       instrucoesPreenchidas: instrucoesPreenchidas(instrucoes),
       aditivo: a ? { status: a.status, propostoPorMim: a.proposto_por === user.id, euAssinei: (a.contrato_aditivo_assinaturas ?? []).some((s) => s.papel === papel) } : null,
     });
-    out.push({ contratoId: c.id, papel, imovel: c.properties?.title ?? "Imóvel", topo: topo.texto, decisoes, acoes: acoesDaFolhaDaEstadia(c.id, papel) });
+    out.push({ contratoId: c.id, paraUsuario: user.id, papel, imovel: c.properties?.title ?? "Imóvel", local: localDaEstadia(c), topo: topo.texto, decisoes, acoes: acoesDaFolhaDaEstadia(c.id, papel) });
   }
   return out;
 }

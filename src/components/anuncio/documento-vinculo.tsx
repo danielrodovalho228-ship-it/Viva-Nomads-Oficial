@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { CheckCircle2, Clock, FileText, Loader2, ShieldCheck, Upload, XCircle } from "lucide-react";
-import { DOCUMENTOS_ACEITOS_TEXTO, FORMATOS_ACEITOS_TEXTO, type EstadoConferencia } from "@/lib/documento/conferencia";
+import { DOCUMENTOS_ACEITOS_TEXTO, REGRAS_ENVIO_DOCUMENTO, type EstadoConferencia } from "@/lib/documento/conferencia";
 import { validarArquivoDoc } from "@/lib/upload-limits";
 import { MSG_SEM_CONEXAO, textoDoErro } from "@/lib/erro-de-rede";
 import {
@@ -14,7 +14,9 @@ import {
   type EnderecoDoc,
 } from "@/lib/documento/endereco-documento";
 import { MSG_MATRICULA } from "@/lib/documento/conferencia-matricula";
+import { DICA_MATRICULA_ATUALIZADA, TEXTO_MATRICULA_OPCIONAL } from "@/lib/documento/matricula-titularidade";
 import { MatriculaResultado, type InfoMatricula } from "./matricula-resultado";
+import { resultadoNaTela, TEXTO_NOVO_EM_ANALISE, TEXTO_NOVO_RECUSADO, type NovoEnvio } from "@/lib/documento/vigente";
 
 export type EstadoDocumentoTela = EstadoConferencia | "nenhum";
 
@@ -39,6 +41,7 @@ export function DocumentoVinculo({
   operacao,
   estado,
   motivos,
+  novo = null,
   onResultado,
   onMatricula,
   enderecoSalvo,
@@ -54,7 +57,9 @@ export function DocumentoVinculo({
   operacao: string;
   estado: EstadoDocumentoTela;
   motivos: string[];
-  onResultado: (estado: EstadoDocumentoTela, motivos: string[]) => void;
+  /** E587: envio novo À PARTE do aprovado vigente (em análise ou recusado). O aprovado segue valendo. */
+  novo?: NovoEnvio | null;
+  onResultado: (estado: EstadoDocumentoTela, motivos: string[], novo?: NovoEnvio | null) => void;
   onMatricula?: (m: InfoMatricula) => void;
   /**
    * E149-A: "Comece pela matrícula" (Passo 1). O endereço ainda não existe — é a matrícula que vai preenchê-lo —,
@@ -99,10 +104,12 @@ export function DocumentoVinculo({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path, imovelId, endereco: { ...endereco, ...resolvido }, operacao }),
     });
-    const r = (await res.json().catch(() => ({}))) as { estado?: EstadoConferencia; motivos?: string[]; matricula?: InfoMatricula; error?: string };
+    const r = (await res.json().catch(() => ({}))) as { estado?: EstadoConferencia; motivos?: string[]; matricula?: InfoMatricula; vigenteAprovado?: boolean; error?: string };
     if (!res.ok || !r.estado) throw new Error(r.error ?? "Não foi possível conferir o documento agora.");
     setMatricula(r.matricula ?? null);
-    onResultado(r.estado, r.motivos ?? []);
+    // E587: com aprovado vigente, o veredito do envio novo nunca toma o lugar dele (fica à parte até o novo ser aprovado).
+    const naTela = resultadoNaTela(r.vigenteAprovado === true, r.estado, r.motivos ?? []);
+    onResultado(naTela.estado, naTela.motivos, naTela.novo);
     if (r.matricula) onMatricula?.(r.matricula);
   }
 
@@ -169,7 +176,22 @@ export function DocumentoVinculo({
           <li key={t}>{t}</li>
         ))}
       </ul>
-      <p className="mt-1 text-xs text-muted">{FORMATOS_ACEITOS_TEXTO} No nome do proprietário e com o endereço do imóvel.</p>
+      <p className="mt-1 text-xs text-muted">No nome do proprietário e com o endereço do imóvel.</p>
+      {/* E633: a matrícula atualizada é prova de titularidade OPCIONAL por enquanto (nunca bloqueia a publicação). */}
+      <div className="mt-2 rounded-lg border border-sage-200 px-3 py-2 text-xs text-ink" data-testid="matricula-atualizada-dica">
+        <p className="font-semibold">Matrícula atualizada (opcional)</p>
+        <p className="mt-1 text-muted">{DICA_MATRICULA_ATUALIZADA}</p>
+        <p className="mt-1 text-muted">{TEXTO_MATRICULA_OPCIONAL}</p>
+      </div>
+      {/* E558: as regras ANTES do envio (antes o dono as descobria por tentativa: duplicidade, tamanho, conferência). */}
+      <div className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-ink" data-testid="documento-regras">
+        <p className="font-semibold">Antes de enviar</p>
+        <ul className="mt-1 list-disc space-y-1 pl-4">
+          {REGRAS_ENVIO_DOCUMENTO.map((r) => (
+            <li key={r}>{r}</li>
+          ))}
+        </ul>
+      </div>
       <p className="mt-1 text-xs text-ink" data-testid="matricula-aviso-upload">
         {MSG_MATRICULA.aviso_upload}
       </p>
@@ -178,6 +200,18 @@ export function DocumentoVinculo({
         <p className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm font-medium text-green-900" data-testid="documento-estado" data-estado="aprovado">
           <CheckCircle2 className="h-4 w-4 shrink-0" /> Documentação conferida
         </p>
+      )}
+      {estado === "aprovado" && novo && (
+        <div className="mt-2 rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink" data-testid="documento-novo" data-estado={novo.estado}>
+          <p className="font-semibold">{novo.estado === "revisao" ? TEXTO_NOVO_EM_ANALISE : TEXTO_NOVO_RECUSADO}</p>
+          {novo.motivos.length > 0 && (
+            <ul className="mt-1 list-disc space-y-1 pl-6 text-xs" data-testid="documento-novo-motivos">
+              {novo.motivos.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
       {estado === "corrija" && (
         <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" data-testid="documento-estado" data-estado="corrija">

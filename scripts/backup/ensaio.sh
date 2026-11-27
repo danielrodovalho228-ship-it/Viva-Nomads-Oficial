@@ -174,7 +174,9 @@ PY
 if bash "$RAIZ/scripts/drill/drill.sh" >"$E/drill-cifra.log" 2>&1; then falhou "drill vermelho com cifra adulterada"; else passou "drill vermelho com cifra adulterada"; fi
 bash "$AQUI/finalizar.sh" drill >>"$E/drill-cifra.log" 2>&1 || true
 cat "$E/drill-cifra.log" >>"$SAIDA"
-confere "motivo: não foi possível decifrar" '[ "$(psqlf -c "select count(*) from public.backups_execucoes where tipo = '"'"'drill'"'"' and not ok and motivo like '"'"'%decifrar%'"'"'")" = 1 ]'
+# A cifra adulterada tem de virar falha SEM dado, de um de dois jeitos: o rclone recusa decifrar, ou entrega um arquivo que
+# não bate com o hash do manifesto (o que o rclone faz depende da versão e de onde cai o byte alterado). Nunca verde.
+confere "cifra adulterada: falha sem dado (não decifra ou não bate com o hash do manifesto)" '[ "$(psqlf -c "select count(*) from public.backups_execucoes where tipo = '"'"'drill'"'"' and not ok")" = 2 ] && [ "$(psqlf -c "select count(*) from (select motivo from public.backups_execucoes where tipo = '"'"'drill'"'"' and not ok order by inicio desc limit 1) u where motivo like '"'"'%decifrar%'"'"' or motivo like '"'"'%corrompido%'"'"'")" = 1 ]'
 
 echo "== 8. Limpeza"
 bash "$AQUI/limpar.sh" >>"$SAIDA" 2>&1

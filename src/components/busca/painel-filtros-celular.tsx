@@ -10,6 +10,7 @@ import {
   type FiltrosPainel,
 } from "@/lib/busca/painel-filtros";
 import { COMODIDADES_FILTRAVEIS } from "@/lib/busca/filtro-comodidades";
+import { DICA_CONTAS_INCLUIDAS, DICA_SILENCIOSO, ROTULO_CONTAS_INCLUIDAS, ROTULO_SILENCIOSO } from "@/lib/busca/filtros-pacote1";
 import { TEXTO_GARANTIA_MINIMA } from "@/lib/busca/garantia-minima";
 import { rotuloVerNaoMedidos } from "@/lib/busca/filtro-internet";
 import {
@@ -25,13 +26,14 @@ import {
 import { buttonClasses } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Chip } from "@/components/ui/chip";
+import { ROTULO_FILTRO_NOTA_LOCACAO } from "@/lib/fiscal/nota-locacao";
 
 /**
  * Folha de filtros da /buscar (ordem 314f764e; Prompt 40): no celular sobe de
  * baixo (bottom-sheet.tsx); no computador é um painel na lateral direita.
  * Edita um RASCUNHO e mostra, ao vivo, quantos imóveis aparecem antes de
  * aplicar ("Mostrar 23 imóveis" usa a MESMA função da lista). "Limpar tudo"
- * (terciário) zera o rascunho. Todas as escolhas são chips: tocar de novo
+ * zera o rascunho e (E589) limpa a busca na hora, com a folha aberta. Todas as escolhas são chips: tocar de novo
  * desliga — sem opção "Qualquer", "Ambos", "Indiferente" ou "Tanto faz".
  *
  * Regra de forma por tipo de controle (veredito do coordenador, QA do Prompt 40; guarda em
@@ -51,10 +53,11 @@ export function FolhaFiltros({
   contar,
   contarNaoMedidos,
   onAplicar,
+  onLimpar,
   onFechar,
   garantias,
-  comNotaFiscal = false,
   medicoes = [],
+  velocidades,
   topo,
 }: {
   inicial: FiltrosPainel;
@@ -62,13 +65,18 @@ export function FolhaFiltros({
   /** Prompt 57 fase 2: imóveis com internet informada, mas não medida (linha "Mais N…" no fim da lista). */
   contarNaoMedidos?: (f: FiltrosPainel) => number;
   onAplicar: (f: FiltrosPainel) => void;
+  /**
+   * E589: "Limpar tudo" limpa a BUSCA na hora (não só o rascunho) — antes, limpar e fechar a folha sem tocar em
+   * "Mostrar N imóveis" deixava o filtro preso no contador, na URL e na lista.
+   */
+  onLimpar?: () => void;
   onFechar: () => void;
   /** Garantias do filtro público (caução unificada + seguro-fiança). */
   garantias: { key: string; label: string }[];
-  /** "Com Nota Fiscal" só com a chave do selo ligada. */
-  comNotaFiscal?: boolean;
   /** FILTROS-1 (E40): downloads medidos (Mbps) dos anúncios da busca atual — sem nenhum, a seção de internet some. */
   medicoes?: number[];
+  /** E1078: as velocidades da busca (a medida, ou a informada sem medição) — a base da seção "Velocidade". */
+  velocidades?: number[];
   /** E82-A: o 1º bloco da folha (a descrição, recolhida numa linha). */
   topo?: React.ReactNode;
 }) {
@@ -76,8 +84,9 @@ export function FolhaFiltros({
   const n = contar(rascunho);
   const extras = contarNaoMedidos ? contarNaoMedidos(rascunho) : 0;
   // Adendo 3 (E40): a seção só existe com medição na busca; aí as três faixas, cada uma com a contagem.
-  const internetVisivel = secaoInternetVisivel(medicoes);
-  const faixas = faixasInternet(medicoes);
+  const medidaVisivel = secaoInternetVisivel(medicoes);
+  const internetVisivel = secaoInternetVisivel(velocidades ?? medicoes);
+  const faixas = faixasInternet(velocidades ?? medicoes);
   const muda = <K extends keyof FiltrosPainel>(k: K, v: FiltrosPainel[K]) => setRascunho((r) => ({ ...r, [k]: v }));
   /** Escolha única: tocar na escolhida desliga o filtro (volta ao valor vazio). */
   const alterna = <K extends "maxPrice" | "minBedrooms" | "periodo" | "tipo" | "petPorte" | "garantia" | "internetMin">(k: K, v: FiltrosPainel[K]) =>
@@ -94,7 +103,10 @@ export function FolhaFiltros({
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            onClick={() => setRascunho(FILTROS_PAINEL_VAZIOS)}
+            onClick={() => {
+              setRascunho(FILTROS_PAINEL_VAZIOS);
+              onLimpar?.();
+            }}
             data-testid="limpar-tudo"
             className={buttonClasses({ variant: "secondary", className: "shrink-0 px-4 sm:px-6" })}
           >
@@ -150,6 +162,14 @@ export function FolhaFiltros({
           <ChipFaceta f={facetaInterruptor(contar, rascunho, "readyToLiveOnly")} ativo={rascunho.readyToLiveOnly} onClick={() => muda("readyToLiveOnly", !rascunho.readyToLiveOnly)} testId="faceta-pronto">
             Pronto para Morar
           </ChipFaceta>
+          {/* Filtros pacote 1: ruído declarado (baixo, ou médio/alto com isolamento) e contas dentro do valor do mês — a
+              mesma regra do aviso AVISO_TUDO_INCLUIDO do cartão (src/lib/busca/filtros-pacote1.ts). */}
+          <ChipFaceta f={facetaInterruptor(contar, rascunho, "silenciosoOnly")} ativo={!!rascunho.silenciosoOnly} title={DICA_SILENCIOSO} onClick={() => muda("silenciosoOnly", !rascunho.silenciosoOnly)} testId="faceta-silencioso">
+            {ROTULO_SILENCIOSO}
+          </ChipFaceta>
+          <ChipFaceta f={facetaInterruptor(contar, rascunho, "contasOnly")} ativo={!!rascunho.contasOnly} title={DICA_CONTAS_INCLUIDAS} onClick={() => muda("contasOnly", !rascunho.contasOnly)} testId="faceta-contas">
+            {ROTULO_CONTAS_INCLUIDAS}
+          </ChipFaceta>
         </Grupo>
         {rascunho.petsOnly && (
           <div data-testid="painel-porte-pet">
@@ -162,7 +182,7 @@ export function FolhaFiltros({
             </Grupo>
           </div>
         )}
-        {rascunho.homeOfficeOnly && internetVisivel && (
+        {rascunho.homeOfficeOnly && medidaVisivel && (
           <Grupo titulo="Para trabalhar de casa" testId="painel-home-office">
             <ChipFaceta f={facetaInterruptor(contar, rascunho, "soInternetMedida")} ativo={rascunho.soInternetMedida} onClick={() => muda("soInternetMedida", !rascunho.soInternetMedida)} testId="faceta-so-medida">
               Só com internet medida
@@ -171,7 +191,7 @@ export function FolhaFiltros({
         )}
         {/* E40 (Adendo 3): sem nenhuma medição na busca, a seção some (e o filtro da URL é ignorado na /buscar). */}
         {internetVisivel ? (
-          <Grupo titulo="Internet medida a partir de" testId="painel-internet">
+          <Grupo titulo="Velocidade a partir de" testId="painel-internet">
             {faixas.map((v) => (
               <ChipFaceta key={v} f={facetaUnica(contar, rascunho, "internetMin", v)} ativo={rascunho.internetMin === v} onClick={() => alterna("internetMin", v)} testId={`faceta-internet-${v}`}>
                 {v} Mbps
@@ -197,11 +217,14 @@ export function FolhaFiltros({
           <ChipFaceta f={facetaInterruptor(contar, rascunho, "negociaOnly")} ativo={!!rascunho.negociaOnly} onClick={() => muda("negociaOnly", !rascunho.negociaOnly)} testId="faceta-negocia">
             Aceita negociação
           </ChipFaceta>
-          {comNotaFiscal && (
-            <ChipFaceta f={facetaInterruptor(contar, rascunho, "notaOnly")} ativo={rascunho.notaOnly} onClick={() => muda("notaOnly", !rascunho.notaOnly)} testId="faceta-nota">
-              Com Nota Fiscal
-            </ChipFaceta>
-          )}
+          {/* E580: o mesmo selo "Preço justo" do card (Property.precoJusto); a contagem é a de imóveis da busca com ele. */}
+          <ChipFaceta f={facetaInterruptor(contar, rascunho, "precoJustoOnly")} ativo={!!rascunho.precoJustoOnly} onClick={() => muda("precoJustoOnly", !rascunho.precoJustoOnly)} testId="faceta-selo-preco-justo">
+            Preço justo
+          </ChipFaceta>
+          {/* E574: dono PJ/MEI que declarou emitir nota fiscal da locação (selo de confiança sobre a declaração). */}
+          <ChipFaceta f={facetaInterruptor(contar, rascunho, "notaOnly")} ativo={rascunho.notaOnly} onClick={() => muda("notaOnly", !rascunho.notaOnly)} testId="faceta-nota">
+            {ROTULO_FILTRO_NOTA_LOCACAO}
+          </ChipFaceta>
         </Grupo>
         <Grupo titulo="Comodidades" testId="painel-comodidades">
           {/* FILTROS-2: Cozinha equipada é do padrão mínimo (garantia, não filtro) — a linha abaixo diz isso. Adendo 3

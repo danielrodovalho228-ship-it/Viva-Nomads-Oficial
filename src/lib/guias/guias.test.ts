@@ -38,7 +38,7 @@ test("#1438f18d: JSON-LD Article sem coordenada nem avaliação", () => {
 });
 
 test("#1438f18d: o guia da Caução usa a frase única do site e o da conferência traz as 48 horas", () => {
-  assert.match(textoDoGuia(guiaPorSlug("o-que-e-a-caucao")!), /a plataforma não tem acesso ao dinheiro/);
+  assert.match(textoDoGuia(guiaPorSlug("o-que-e-a-caucao")!), /a Viva não recebe nem segura esse dinheiro/);
   assert.match(textoDoGuia(guiaPorSlug("como-funciona-a-conferencia-de-entrada")!), /48 horas/);
 });
 

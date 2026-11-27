@@ -10,10 +10,13 @@ import { acessoInterno, investidorToken, isInternalPath, sociosToken } from "./a
 process.env.SOCIOS_ACCESS_CODE = "codigo-socios-teste";
 process.env.INVESTIDOR_ACCESS_CODE = "codigo-investidor-teste";
 
-test("investidor abre só o /simulacao; /roi, /decisao, /tributario, /modelodenegocio e /socios ficam fechados", async () => {
+// E595/E596 (05/11): /socios e /decisao saíram da lista (eliminadas; o acesso direto redireciona em next.config).
+test("investidor abre só o /simulacao; /roi, /tributario e /modelodenegocio ficam fechados", async () => {
   const investidor = await investidorToken("codigo-investidor-teste");
   assert.equal(await acessoInterno("/simulacao", { investidor }), "investidor");
-  for (const p of ["/roi", "/decisao", "/tributario", "/modelodenegocio", "/socios"]) {
+  assert.equal(isInternalPath("/socios"), false);
+  assert.equal(isInternalPath("/decisao"), false);
+  for (const p of ["/roi", "/tributario", "/modelodenegocio"]) {
     assert.ok(isInternalPath(p));
     assert.equal(await acessoInterno(p, { investidor }), null, p);
   }

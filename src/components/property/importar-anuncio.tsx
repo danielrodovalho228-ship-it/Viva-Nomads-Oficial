@@ -37,7 +37,7 @@ export function ImportarAnuncio({ onAplicar, abertoInicial = false }: { onAplica
       <button
         type="button"
         onClick={() => setAberto(true)}
-        className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-dashed border-sage-300 px-4 py-3 text-left text-sm text-forest hover:bg-sage-50"
+        className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-dashed border-sage-200 px-4 py-3 text-left text-sm text-forest hover:bg-sage-100"
         data-testid="importar-abrir"
       >
         <ClipboardPaste className="h-4 w-4 shrink-0" />

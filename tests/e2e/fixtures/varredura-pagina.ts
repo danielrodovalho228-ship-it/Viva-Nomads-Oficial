@@ -1,5 +1,6 @@
 import type { APIRequestContext, Page } from "@playwright/test";
 import { controlesCobertos } from "./varredura";
+import { comPrecos } from "./precos";
 
 /**
  * VARREDURA DA PÁGINA INTEIRA (t274): o protocolo do Daniel, tela por tela, rolando a página toda em 390 e 1280 px.
@@ -43,7 +44,22 @@ async function rolarTudo(page: Page) {
 }
 
 /** Abre, rola tudo e mede as seis classes. `respostasRuins` vem de escutarImagens(), ligado antes do goto. */
+/** E744 (t352): a página pode navegar sozinha logo depois do carregamento (redirecionamento do app); o contexto some no meio da
+ *  varredura. Espera a página assentar e varre de novo (até 3 vezes) — só para esse erro; qualquer outro sobe como sempre. */
+export const CONTEXTO_DESTRUIDO = /Execution context was destroyed|Target page, context or browser has been closed|Frame was detached/;
 export async function varrerPagina(page: Page, respostasRuins: string[]): Promise<Achados> {
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      return await varrerPaginaUmaVez(page, respostasRuins);
+    } catch (e) {
+      if (tentativa >= 3 || !CONTEXTO_DESTRUIDO.test(String(e))) throw e;
+      await page.waitForLoadState("domcontentloaded").catch(() => {});
+      await page.waitForLoadState("load", { timeout: 15_000 }).catch(() => {});
+    }
+  }
+}
+
+async function varrerPaginaUmaVez(page: Page, respostasRuins: string[]): Promise<Achados> {
   await rolarTudo(page);
   // Imagens: dá até 8 s para as que entraram na rolagem terminarem de carregar.
   const imagensRuins = () =>
@@ -139,7 +155,10 @@ export async function varrerPagina(page: Page, respostasRuins: string[]): Promis
         // Foto fictícia do laboratório (ou de terceiro) que não carrega já fica fora do critério de imagem: aqui também.
         Array.from(el.querySelectorAll("img")).some((i) => (i.complete && i.naturalWidth > 0) || reIgnorar.test(i.currentSrc || i.src)) ||
         !!el.querySelector("video, canvas, iframe, svg") ||
-        [el, ...Array.from(el.querySelectorAll("*"))].some((n) => getComputedStyle(n).backgroundImage !== "none");
+        [el, ...Array.from(el.querySelectorAll("*"))].some((n) => getComputedStyle(n).backgroundImage !== "none") ||
+        // E1123 (ORDEM-DUET-532): o recurso desenhado da conta sem foto (ORDEM-386: as iniciais no círculo) é conteúdo —
+        // só com texto dentro; o bloco esvaziado volta a ser "área de foto vazia".
+        Array.from(el.querySelectorAll("[data-recurso-sem-foto]")).some((n) => (n.textContent ?? "").trim().length > 0);
       if (!temMidia) foto.push(`área de foto vazia (aspect-ratio ${cs.aspectRatio}): ${desc(el)}`);
     }
 
@@ -290,7 +309,7 @@ export const PAGINAS_PUBLICAS: Rota[] = [
   { nome: "Parceiros — mudança", rota: "/parceiros/buscar?categoria=mudanca" },
   { nome: "Parceiros — fotógrafos", rota: "/parceiros/fotografos" },
   { nome: "Guia de fotos", rota: "/guia-fotos" },
-  { nome: "Preços", rota: "/precos" },
+  ...comPrecos({ nome: "Preços", rota: "/precos" }),
   { nome: "Segurança", rota: "/seguranca" },
   { nome: "Ajuda", rota: "/ajuda" },
   { nome: "Guias", rota: "/guias" },

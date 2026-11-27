@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { recusaObservador } from "@/lib/qa/observador";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
@@ -55,14 +56,22 @@ export async function pedidosServicoAdmin(): Promise<PedidoServicoAdmin[] | null
   if (!user || !(await ehAdmin(supabase, user.id))) return null;
   const { data, error } = await admin
     .from("servicos_pedidos")
-    .select(`${COLUNAS}, profiles:tenant_id(full_name)`)
+    // E470: sem embed de profiles — tenant_id aponta para auth.users, e o PostgREST não acha a relação (PGRST200).
+    .select(`${COLUNAS}, tenant_id`)
     .order("criado_em", { ascending: false })
     .limit(200);
   // Achado 33: erro de leitura sobe e cai no aviso do admin ("Tentar de novo"), não em "Nenhum pedido… ainda".
   if (error) throw new Error("Não foi possível ler os pedidos de serviço.");
-  return ((data ?? []) as unknown as Record<string, unknown>[]).map((p) => ({
+  const linhas = (data ?? []) as unknown as Record<string, unknown>[];
+  const ids = [...new Set(linhas.map((p) => String(p.tenant_id ?? "")).filter(Boolean))];
+  const nomes = new Map<string, string>();
+  if (ids.length) {
+    const { data: perfis } = await admin.from("profiles").select("id, full_name").in("id", ids);
+    for (const pf of (perfis ?? []) as { id: string; full_name: string | null }[]) if (pf.full_name) nomes.set(pf.id, pf.full_name);
+  }
+  return linhas.map((p) => ({
     ...paraView(p),
-    morador: String((p.profiles as { full_name?: string } | null)?.full_name ?? "Morador"),
+    morador: nomes.get(String(p.tenant_id)) ?? "Morador",
   }));
 }
 
@@ -76,6 +85,9 @@ export async function atualizarEstadoPedidoServico(id: string, novo: EstadoPedid
     data: { user },
   } = await supabase.auth.getUser();
   if (!user || !(await ehAdmin(supabase, user.id))) return { ok: false, error: "Sem permissão." };
+  // E477: a conta observadora da QA só lê o pedido de serviço do morador.
+  const recusaQa = await recusaObservador(user.id);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { data: atual } = await admin.from("servicos_pedidos").select("status").eq("id", id).maybeSingle();
   if (!atual) return { ok: false, error: "Pedido não encontrado." };
   if (!proximosEstados(String(atual.status)).includes(novo)) return { ok: false, error: "Esse pedido não pode ir para este estado." };

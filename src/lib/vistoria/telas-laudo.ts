@@ -8,6 +8,7 @@
 import { GRUPOS_AVALIACAO, ITENS_CHECKLIST, type GrupoAvaliacao, type ItemChecklist, type ValorItem } from "../../config/checklist-avaliacao.ts";
 import { ETIQUETA_BRASILIA, dataBRT, horaBRT } from "../datas-brasilia.ts";
 import { DIAS_CONTESTACAO, prazoLaudo, type Resultado } from "./laudo.ts";
+import { diasUteis, diasUteisDoLaudo } from "./prazos.ts";
 import { textoDegrau, type Degrau } from "./strikes.ts";
 
 const ITENS = ITENS_CHECKLIST as readonly ItemChecklist[];
@@ -47,11 +48,14 @@ export function textoFaltaFotos(n: number): string | null {
 export const pedeFotoDoItem = (valor: ValorItem | undefined) => valor === "nao_conforme" || valor === "leve" || valor === "nao_habitavel";
 
 // ── Item 9: laudo do avaliador (revisão antes de emitir) ──────────────────────────────────────────────────────
-/** Prazo das 48 horas úteis da visita: "Envie até 27/10/2026 às 10:00, horário de Brasília". */
-export function prazoDoLaudo(visitaEm: string, agora: Date): { vencido: boolean; texto: string } {
-  const fim = prazoLaudo(visitaEm);
-  if (agora > fim) return { vencido: true, texto: `Prazo de 48 horas úteis vencido em ${dataBRT(fim)} às ${horaBRT(fim)}. Envie agora: a Viva acompanha os atrasos.` };
-  return { vencido: false, texto: `Envie até ${dataBRT(fim)} às ${horaBRT(fim)}, ${ETIQUETA_BRASILIA} (48 horas úteis da visita).` };
+/**
+ * E1156: o prazo combinado do laudo, em dias úteis depois da visita (sem prazo combinado, o padrão): "Envie até
+ * 27/10/2026 às 10:00, horário de Brasília (2 dias úteis depois da visita)."
+ */
+export function prazoDoLaudo(visitaEm: string, agora: Date, diasCombinados?: number | null): { vencido: boolean; texto: string } {
+  const fim = prazoLaudo(visitaEm, diasCombinados);
+  if (agora > fim) return { vencido: true, texto: `Prazo combinado vencido em ${dataBRT(fim)} às ${horaBRT(fim)}. Envie agora: a Viva acompanha os atrasos.` };
+  return { vencido: false, texto: `Envie até ${dataBRT(fim)} às ${horaBRT(fim)}, ${ETIQUETA_BRASILIA} (${diasUteis(diasUteisDoLaudo(diasCombinados))} depois da visita).` };
 }
 
 // ── Item 10: resultado do dono ──────────────────────────────────────────────────────────────────────────────────
@@ -65,6 +69,14 @@ export function acoesDoResultado(l: { resultado: Resultado; emitidoEm: string; p
   if (l.resultado === "reprovado" || !!l.ressalvaVencidaEm) acoes.push("nova_avaliacao");
   if (l.resultado !== "aprovado" && !l.contestadoEm && agora.getTime() - Date.parse(l.emitidoEm) <= DIAS_CONTESTACAO * 86_400_000) acoes.push("contestar");
   return acoes;
+}
+
+/**
+ * E1188: o que o dono tem para corrigir num laudo — as ressalvas e os itens graves, cada item uma vez. É a lista "O que
+ * corrigir" da tela do dono; o e-mail do laudo emitido conta os itens por aqui.
+ */
+export function itensACorrigir(l: { ressalvas: readonly { chave: string }[]; graves: readonly string[] }): string[] {
+  return [...new Set([...l.ressalvas.map((r) => r.chave), ...l.graves])];
 }
 
 export const ROTULO_ACAO: Record<AcaoResultado, string> = {
@@ -92,12 +104,40 @@ export function avisoStrike(d: Degrau): { titulo: string; texto: string } | null
 }
 
 // ── Item 13: admin ──────────────────────────────────────────────────────────────────────────────────────────────
+/** E1156: o atraso do laudo mede-se pelo prazo combinado — o título da lista da equipe e o número do topo dizem o mesmo. */
+export const TITULO_LAUDOS_FORA_DO_PRAZO = "Laudos fora do prazo combinado";
+export const ROTULO_NUMERO_LAUDOS_FORA_DO_PRAZO = "laudos fora do prazo combinado";
+
 /** Os números do topo "Para decidir" que a Parte 2 soma ao admin (cada um leva à sua seção). */
 export function contagemContestacoes(e: { contestacoes: number; devolucoes: number; laudosAtrasados: number; auditoria: number }) {
   return [
     { chave: "contestacoes", rotulo: "contestações abertas", valor: e.contestacoes, ancora: "#contestacoes" },
     { chave: "devolucoes", rotulo: "devoluções a devolver", valor: e.devolucoes, ancora: "#contestacoes" },
-    { chave: "laudos-atrasados", rotulo: "laudos fora das 48 horas úteis", valor: e.laudosAtrasados, ancora: "#contestacoes" },
+    { chave: "laudos-atrasados", rotulo: ROTULO_NUMERO_LAUDOS_FORA_DO_PRAZO, valor: e.laudosAtrasados, ancora: "#contestacoes" },
     { chave: "auditoria", rotulo: "laudos sorteados para auditoria", valor: e.auditoria, ancora: "#auditoria" },
   ];
+}
+
+// ── E691: selo da assinatura do laudo (número + hash visíveis ao avaliador e ao dono) ─────────────────────────────
+export interface SeloAssinaturaDados {
+  numero: string;
+  versao: number;
+  assinadoEm: string | null;
+  assinaturaHash: string | null;
+}
+
+/** Hash curto para a tela (início…fim); o inteiro fica disponível para copiar. */
+export function hashCurto(hash: string): string {
+  return hash.length > 20 ? `${hash.slice(0, 8)}…${hash.slice(-8)}` : hash;
+}
+
+/** O que o selo mostra. Laudo sem assinatura (anterior à assinatura do avaliador) não ganha selo. */
+export function seloDaAssinatura(l: SeloAssinaturaDados): { numero: string; quando: string; hash: string; hashCurto: string } | null {
+  if (!l.assinaturaHash || !l.assinadoEm) return null;
+  return {
+    numero: `${l.numero}${l.versao > 1 ? ` v${l.versao}` : ""}`,
+    quando: `${dataBRT(l.assinadoEm)}, ${horaBRT(l.assinadoEm)} ${ETIQUETA_BRASILIA}`,
+    hash: l.assinaturaHash,
+    hashCurto: hashCurto(l.assinaturaHash),
+  };
 }

@@ -10,8 +10,10 @@ import { gerarPdf } from "@/lib/fiscal/pdf";
 import { registrarDocumento } from "@/lib/fiscal/registro";
 import type { Prefixo } from "@/lib/fiscal/prefixos";
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
+import { parteDaColuna } from "@/lib/pagamento-componentes";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { motivoDeRegistroAnulado } from "@/lib/fiscal/fila-falhas";
+import { duplicidadeDeRecibo, MOTIVO_DUPLICIDADE } from "@/lib/fiscal/duplicidade";
 
 /**
  * Emissão dos documentos da plataforma (SÓ servidor): recibo de aluguel,
@@ -29,6 +31,8 @@ export const BUCKET_DOCUMENTOS = "documentos";
 
 interface Partes {
   contratoId: string;
+  /** Frente 3 (t227): o imóvel do contrato — a guarda de duplicidade compara por ele. */
+  propertyId: string | null;
   ownerId: string;
   tenantId: string;
   locador: { nome: string; doc: string | null; email: string | null };
@@ -40,7 +44,7 @@ interface Partes {
 async function partesDoContrato(admin: Admin, contratoId: string): Promise<Partes | null> {
   const { data: c } = await admin
     .from("contratos")
-    .select("id, tenant_id, properties!inner(owner_id, title, address, exact_address, city, state)")
+    .select("id, tenant_id, property_id, properties!inner(owner_id, title, address, exact_address, city, state)")
     .eq("id", contratoId)
     .maybeSingle();
   if (!c) return null;
@@ -53,7 +57,7 @@ async function partesDoContrato(admin: Admin, contratoId: string): Promise<Parte
   // Endereço do documento (Prompt 56): o exato, o bairro (properties.address) e cidade/UF, como no modelo aprovado.
   // Antes, com o exato preenchido, o bairro sumia; sem o exato, ficava só "bairro, cidade".
   const endereco = enderecoDoDocumento(p);
-  return { contratoId, ownerId: p.owner_id, tenantId: c.tenant_id as string, locador: perfil(p.owner_id), locatario: perfil(c.tenant_id as string), imovelEndereco: endereco };
+  return { contratoId, propertyId: (c.property_id as string | null) ?? null, ownerId: p.owner_id, tenantId: c.tenant_id as string, locador: perfil(p.owner_id), locatario: perfil(c.tenant_id as string), imovelEndereco: endereco };
 }
 
 async function emitir(
@@ -74,6 +78,33 @@ async function emitir(
   // Achado 96: sem saber se já existe, não emite — senão sai um 2º recibo, com número novo, para o mesmo pagamento.
   if (erroExistente) return { ok: false, motivo: "não foi possível conferir se o documento já existe" };
   if (existente) return { ok: true, id: existente.id as string, numero: existente.numero as string };
+
+  // E546: um recibo/comprovante igual a um VÁLIDO já emitido (mesmo dono, morador, imóvel e valor, período sobreposto)
+  // não sai — foi o par REC-2026-000004/000005 de 19/10 (dois pagamentos da mesma estadia em contratos refeitos).
+  if (tipo === "recibo_aluguel" || tipo === "comprovante_caucao") {
+    const { data: validos, error: erroValidos } = await admin
+      .from("documentos_fiscais")
+      .select("numero, owner_id, tenant_id, imovel_endereco, valor, periodo_inicio, periodo_fim, contratos(property_id)")
+      .eq("tipo", tipo)
+      .eq("owner_id", partes.ownerId)
+      .eq("tenant_id", partes.tenantId)
+      .is("anulado_em", null);
+    if (erroValidos) return { ok: false, motivo: "não foi possível conferir se o documento já existe" };
+    const repetido = duplicidadeDeRecibo(
+      { ownerId: partes.ownerId, tenantId: partes.tenantId, imovelEndereco: partes.imovelEndereco, propertyId: partes.propertyId, valor: Number(extra.valor), periodoInicio: extra.periodoInicio ?? null, periodoFim: extra.periodoFim ?? null },
+      ((validos ?? []) as unknown as { numero: string; owner_id: string; tenant_id: string; imovel_endereco: string | null; valor: number; periodo_inicio: string | null; periodo_fim: string | null; contratos: { property_id: string | null } | null }[]).map((v) => ({
+        numero: v.numero,
+        ownerId: v.owner_id,
+        tenantId: v.tenant_id,
+        imovelEndereco: v.imovel_endereco ?? "",
+        propertyId: v.contratos?.property_id ?? null,
+        valor: Number(v.valor),
+        periodoInicio: v.periodo_inicio,
+        periodoFim: v.periodo_fim,
+      })),
+    );
+    if (repetido) return { ok: false, motivo: `${MOTIVO_DUPLICIDADE}: igual ao ${repetido.numero}` };
+  }
 
   const agora = new Date();
   const dados: DadosDocumento = {
@@ -271,7 +302,7 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
   try {
     const { data: pg, error: erroPg } = await admin
       .from("pagamentos_bloco")
-      .select("id, contrato_id, bloco_id, tipo, valor, forma, data_pagamento, confirmado_pelo_inquilino, anulado_em, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
+      .select("id, contrato_id, bloco_id, tipo, parte, valor, forma, data_pagamento, confirmado_pelo_inquilino, anulado_em, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
       .eq("id", pagamentoId)
       .maybeSingle();
     if (erroPg) return { ok: false, motivo: "não foi possível ler o pagamento" };
@@ -297,6 +328,10 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
         valor: Number(pg.valor),
         bloco: bloco?.numero_bloco ? { numero: Number(bloco.numero_bloco), meses: Number(bloco.meses ?? 1), inicio: bloco.inicio, fim: bloco.fim } : null,
         valorMensal: contrato?.aluguel_mensal == null ? null : Number(contrato.aluguel_mensal),
+        // E1072 (fatia 2): o recibo do registro complementar diz que o é e traz o total dele. A parte é a da coluna
+        // registada (ORDEM-DUET-1104), nunca a ordem dos registros.
+        parte: pg.tipo === "caucao" ? 1 : parteDaColuna(pg.parte),
+        total: Math.round((Number(pg.valor) + encargos.reduce((s, e) => s + e.valor, 0)) * 100) / 100,
       }),
     });
   } catch (e) {

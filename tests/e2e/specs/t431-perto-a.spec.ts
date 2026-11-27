@@ -72,7 +72,8 @@ test.describe("T431 — PERTO-A: O que tem por perto", () => {
       });
       const bloco = p.getByTestId("proximidades-osm");
       await expect(bloco).toHaveAttribute("data-estado", "carregando", { timeout: 20_000 });
-      await expect(p.getByTestId("proximidades-carregando")).toContainText("Procurando o que tem por perto do endereço");
+      // E952 (asserção alterada): o aviso diz o endereço da busca (rua e CEP), não mais "do endereço".
+      await expect(p.getByTestId("proximidades-carregando")).toContainText("Procurando o que tem perto de Avenida Afonso Pena, CEP 38400-100…");
       await printBloco(p, "carregando", w);
       soltar();
 
@@ -91,9 +92,23 @@ test.describe("T431 — PERTO-A: O que tem por perto", () => {
       await expect(bloco).not.toContainText(/min\b|minuto/);
       await printBloco(p, "achou", w);
 
-      // 2. Desligar "Mostrar" tira o lugar do anúncio.
+      // 2. Desligar "Mostrar" pede confirmação na tela (E605, padrão TOGGLE); "Cancelar" mantém, "Tirar" tira do anúncio.
       const academia = itens.filter({ hasText: "Academia Movimento" });
       await academia.getByTestId("proximidade-mostrar").click();
+      await expect(academia.getByTestId("proximidade-ocultar-confirmacao")).toBeVisible();
+      await expect(academia).toHaveAttribute("data-mostrar", "1");
+      await academia.getByTestId("proximidade-ocultar-cancelar").click();
+      await expect(academia.getByTestId("proximidade-ocultar-confirmacao")).toHaveCount(0);
+      await expect(academia).toHaveAttribute("data-mostrar", "1");
+      await academia.getByTestId("proximidade-mostrar").click();
+      await academia.getByTestId("proximidade-ocultar-confirmar").click();
+      await expect(academia).toHaveAttribute("data-mostrar", "0");
+      // Religar é imediato (sem confirmação).
+      await academia.getByTestId("proximidade-mostrar").click();
+      await expect(academia).toHaveAttribute("data-mostrar", "1");
+      await expect(academia.getByTestId("proximidade-ocultar-confirmacao")).toHaveCount(0);
+      await academia.getByTestId("proximidade-mostrar").click();
+      await academia.getByTestId("proximidade-ocultar-confirmar").click();
       await expect(academia).toHaveAttribute("data-mostrar", "0");
       await expect(academia.getByTestId("proximidade-distancia")).toContainText("não aparece no anúncio");
       await p.context().close();

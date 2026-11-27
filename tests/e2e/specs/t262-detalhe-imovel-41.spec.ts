@@ -1,20 +1,7 @@
 import { test, expect, type Page, type Browser } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import {
-  NO_LABORATORIO,
-  adm,
-  apagarContas,
-  cpfAleatorio,
-  criarConta,
-  criarImovelPronto,
-  entrar,
-  liberarLimiteLogin,
-  liberarLimiteLoginIp,
-  novaSenha,
-  novoSufixo,
-  tornarContratoVigente,
-} from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, liberarLimiteLogin, liberarLimiteLoginIp, novaSenha, novoSufixo, tornarContratoVigente, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T262 — Prompt 41 (funcional, a 390 e 1280 px):
@@ -132,66 +119,58 @@ for (const largura of LARGURAS) {
       await expect(page.getByText(/Tempo até/)).toHaveCount(0);
     });
 
-    test("valor: 'R$ X/mês · R$ Y em N meses' pela duração da busca; N = 1 mostra só '/mês'; 'a Viva não segura dinheiro'", async ({ page }) => {
+    // E920 (Gerente, 14/11): o total da página fica no período de referência (a estadia mínima, como o cartão). Antes este teste
+    // guardava "meses: 3" na última busca do aparelho e esperava "R$ Y em 3 meses": a página trocava de período sozinha depois
+    // de carregar. Agora, com a busca de 3 meses guardada, o ube-001 mostra "R$ Y em 1 mês" (a estadia mínima dele).
+    test("valor: 'R$ X/mês · R$ Y em N meses' pelo período de referência (não pela última busca guardada); 'a Viva não segura dinheiro'", async ({ page }) => {
       await page.addInitScript(() => localStorage.setItem("vn:ultima-busca", JSON.stringify({ inicio: "", meses: 3, pessoas: 0 })));
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
+      await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       const num = (t: string) => Number(t.replace(/[^\d,]/g, "").replace(",", "."));
       if (largura === 390) {
         const barra = page.getByTestId("barra-fixa-imovel");
         await expect(barra).toBeVisible();
         const mes = num(await barra.getByTestId("barra-preco-mes").innerText());
-        await expect(barra.getByTestId("barra-total-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 3 meses/);
+        await expect(barra.getByTestId("barra-total-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 1 mês/);
         // E254-A: o total do período da barra é o do cartão de preço (a mesma função, com os pagamentos únicos).
-        const totalBarra = num((await barra.getByTestId("barra-total-estadia").innerText()).replace(/em 3 meses/, ""));
-        expect(totalBarra).toBeGreaterThanOrEqual(mes * 3 - 0.5);
-        expect(totalBarra).toBe(num((await page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, "")));
+        const totalBarra = num((await barra.getByTestId("barra-total-estadia").innerText()).replace(/em 1 mês/, ""));
+        expect(totalBarra).toBeGreaterThanOrEqual(mes - 0.5);
+        expect(totalBarra).toBe(num((await page.locator("#cartao-preco").getByTestId("cartao-lateral-estadia").innerText()).replace(/em 1 mês/, "")));
         // Decisão do Muse (31/10): a barra não repete "A Viva não segura dinheiro"; a frase oficial sob o botão diz que o
-        // pagamento vai direto ao proprietário.
+        // pagamento vai direto ao proprietário. E694: no EXEMPLO não há botão de pedir, então nem a frase sob ele (a frase vale
+        // no anúncio real: t75/t398).
         await expect(barra.getByTestId("barra-nao-segura")).toHaveCount(0);
-        await expect(barra.getByTestId("barra-cta-frase")).toContainText("o pagamento vai direto para ele");
+        await expect(barra.getByTestId("barra-cta-frase")).toHaveCount(0);
         // O mesmo número do cartão de preço.
         expect(num(await page.getByTestId("total-por-mes").innerText())).toBe(mes);
       } else {
         const cartao = page.locator("#cartao-preco");
         const mes = num(await cartao.getByTestId("cartao-lateral-mes").innerText());
-        await expect(cartao.getByTestId("cartao-lateral-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 3 meses/);
-        // E254-A: o total do período = 3 × total do mês + os pagamentos únicos (preparação, limpeza de saída), com a conta aberta.
-        const totalPeriodo = num((await cartao.getByTestId("cartao-lateral-estadia").innerText()).replace(/em 3 meses/, ""));
+        await expect(cartao.getByTestId("cartao-lateral-estadia")).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 1 mês/);
+        // E254-A: o total do período = 1 × total do mês + os pagamentos únicos (preparação, limpeza de saída), com a conta aberta.
+        const totalPeriodo = num((await cartao.getByTestId("cartao-lateral-estadia").innerText()).replace(/em 1 mês/, ""));
         const conta = await cartao.getByTestId("cartao-lateral-estadia-conta").innerText();
-        expect(conta).toMatch(/^3 × R\$/);
+        expect(conta).toMatch(/^1 × R\$/);
         const unicos = [...conta.matchAll(/\+ [^R]*R\$\s?([\d.]+(?:,\d{2})?)/g)].reduce((s, m) => s + num(m[1]), 0);
-        expect(totalPeriodo).toBeCloseTo(mes * 3 + unicos, 0);
+        expect(totalPeriodo).toBeCloseTo(mes + unicos, 0);
         await expect(cartao.getByTestId("cartao-nao-segura")).toContainText("A Viva não segura dinheiro");
       }
-      // N = 1: só "/mês".
+      // Com outra busca guardada (1 mês) e a página recarregada, o total é o mesmo: "R$ Y em 1 mês" (E777: sempre N mês/meses).
       await page.evaluate(() => localStorage.setItem("vn:ultima-busca", JSON.stringify({ inicio: "", meses: 1, pessoas: 0 })));
       await page.reload({ waitUntil: "domcontentloaded" });
       const estadia = largura === 390 ? page.getByTestId("barra-total-estadia") : page.getByTestId("cartao-lateral-estadia");
-      await expect(estadia).toHaveCount(0);
+      await expect(estadia).toHaveText(/R\$\s?[\d.]+(,\d{2})? em 1 mês/);
     });
 
-    test("UM primário 'Solicitar' (a candidatura de sempre) e 'Agendar visita' em texto terciário, sem travar", async ({ page }) => {
+    test("exemplo (E694): nenhum primário de ação — a explicação e a saída para os imóveis reais; sem visita nem candidatura", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
-      await expect(page.locator(largura === 390 ? '[data-testid="barra-solicitar"]' : '[data-testid="cartao-solicitar"]')).toBeVisible();
-      await expect.poll(() => primarios(page), { timeout: 10_000 }).toEqual(["Pedir para morar"]);
-      const escopo = largura === 390 ? page.getByTestId("barra-fixa-imovel") : page.locator("#cartao-preco");
-      const visita = largura === 390 ? escopo.getByTestId("barra-agendar-visita") : escopo.getByTestId("agendar-visita");
-      await expect(visita).toHaveText(/Agendar visita/);
-      expect(await visita.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
-      // A visita é opção: abre a própria janela e fecha sem mexer na solicitação.
-      // Clique antes da hidratação não abre a janela (lab 24/10, instável): repete o clique até ela aparecer. Abrir é idempotente.
-      await expect(async () => {
-        await visita.click();
-        await expect(page.getByTestId("visita-presencial-passo")).toBeVisible({ timeout: 3_000 });
-      }).toPass({ timeout: 20_000 });
-      await page.getByTestId("visita-presencial-passo").click({ position: { x: 5, y: 5 } });
-      await expect(page.getByTestId("visita-presencial-passo")).toHaveCount(0);
-      // "Solicitar" abre o MESMO fluxo de candidatura (passo de revisão; o envio final é "Enviar candidatura").
-      await escopo.getByRole("button", { name: "Pedir para morar", exact: true }).click();
-      const passo = page.getByTestId("solicitacao-passo");
-      await expect(passo).toBeVisible();
-      await expect(passo.getByTestId("solicitacao-demo")).toBeVisible(); // ube-001 é exemplo: nada é enviado
-      await expect(page.getByRole("button", { name: "Enviar candidatura" })).toHaveCount(0); // só no último passo
+      const saida = largura === 390 ? page.getByTestId("barra-ver-reais") : page.locator("#cartao-preco").getByTestId("exemplo-ver-reais");
+      await expect(saida).toBeVisible();
+      // Sem "Pedir para morar", "Agendar visita", "Visita por vídeo" nem "Enviar mensagem": o exemplo explica (o anúncio real tem os 4).
+      await expect.poll(() => primarios(page), { timeout: 10_000 }).toEqual([]);
+      await expect(page.getByTestId("exemplo-sem-acoes")).toBeAttached();
+      await expect(page.getByTestId(largura === 390 ? "barra-agendar-visita" : "agendar-visita")).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "Pedir para morar", exact: true })).toHaveCount(0);
     });
   });
 }
@@ -282,7 +261,7 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       // A linha em `parceiros` nasce na aprovação: é ela que faz a parceria contar como aprovada.
       const { error } = await adm()
         .from("parceiros")
-        .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: "Paula Parceira", slug: `paula-t259-${sufixo}`.toLowerCase().replace(/[^a-z0-9-]/g, "") });
+        .insert({ user_id: ids.conta, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: "Paula Parceira", slug: `paula-t259-${sufixo}`.toLowerCase().replace(/[^a-z0-9-]/g, "") });
       if (error) throw error;
     });
     test.afterAll(async () => {
@@ -296,14 +275,15 @@ test.describe("T262 — barra inferior por papel (390 px)", () => {
       await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
       await expect(async () => {
         expect(await abas(page)).toEqual([
-          { nome: "Início", href: "/dashboard" },
+          // E459: o Início do parceiro é o topo do painel dele.
+          { nome: "Início", href: "/dashboard/parceiro#inicio" },
           { nome: "Pedidos", href: "/dashboard/parceiro#pedidos" },
           { nome: "Agenda", href: "/dashboard/parceiro#agenda" },
           { nome: "Ganhos", href: "/dashboard/parceiro#ganhos" },
           { nome: "Mensagens", href: "/dashboard/mensagens" },
         ]);
       }).toPass({ timeout: 25_000 });
-      for (const id of ["pedidos", "agenda", "ganhos"]) await expect(page.locator(`#${id}`)).toHaveCount(1);
+      for (const id of ["inicio", "pedidos", "agenda", "ganhos"]) await expect(page.locator(`#${id}`)).toHaveCount(1);
       await expect(page.getByTestId("topo-celular").getByTestId("conta-parceiro-celular")).toBeVisible();
       // Fora do painel do parceiro (sem a preferência ligada no Perfil), a barra volta ao modo da conta.
       await page.goto("/dashboard/favoritos", { waitUntil: "domcontentloaded" });
@@ -492,9 +472,10 @@ test.describe("T262 — cogumelo na página da estadia (laboratório)", () => {
   const ids: { dono?: string; inq?: string; imovel?: string; contrato?: string } = {};
 
   const ITENS = {
-    moradorAntes: ["Falar com o proprietário", "Ver o contrato", "Propor alteração de datas", "Pedir limpeza", "Pedir manutenção"],
-    moradorDepois: ["Falar com o proprietário", "Ver o contrato", "Propor alteração de datas", "Ver instruções de chegada", "Pedir limpeza", "Pedir manutenção"],
-    proprietario: ["Falar com o morador", "Ver o contrato", "Propor alteração de datas", "Ver instruções de chegada", "Pedir limpeza", "Pedir manutenção", "Ver no calendário"],
+    // E539 (iv): "Falar com…" (o "Mensagem" do cartão) e "Ver instruções de chegada" (painel da página) saíram da folha.
+    moradorAntes: ["Ver o contrato", "Propor alteração de datas", "Pedir limpeza", "Pedir manutenção"],
+    moradorDepois: ["Ver o contrato", "Propor alteração de datas", "Pedir limpeza", "Pedir manutenção"],
+    proprietario: ["Ver o contrato", "Propor alteração de datas", "Pedir limpeza", "Pedir manutenção", "Ver no calendário"],
   };
 
   test.beforeAll(async () => {
@@ -547,6 +528,8 @@ test.describe("T262 — cogumelo na página da estadia (laboratório)", () => {
         // Fora da estadia, nada de cogumelo (nem no detalhe do contrato: ele só aponta para a estadia).
         await page.goto(quem === "morador" ? `/dashboard/locacoes/${ids.contrato}` : `/dashboard/contratos/${ids.contrato}`, { waitUntil: "domcontentloaded" });
         await expect(page.getByTestId("contrato-abrir-estadia")).toBeVisible({ timeout: 25_000 });
+        // E539 (i): o endereço antigo do morador redireciona para o contrato dentro da URL da estadia.
+        if (quem === "morador") await expect(page).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}/contrato$`));
         await expect(page.getByTestId("cogumelo")).toHaveCount(0);
 
         await page.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
@@ -595,17 +578,17 @@ test.describe("T262 — cogumelo na página da estadia (laboratório)", () => {
         for (const t of esperado) expect(t).not.toMatch(/cancelar|encerrar|avaliar|pagar/i);
         // Cada item leva a uma rota que existe, com o contexto da estadia.
         const href = (rotulo: string) => folha.getByRole("link", { name: rotulo, exact: true }).getAttribute("href");
-        expect(await href(quem === "morador" ? "Falar com o proprietário" : "Falar com o morador")).toMatch(/^\/dashboard\/mensagens\?conversa=/);
-        expect(await href("Ver o contrato")).toBe(quem === "morador" ? `/dashboard/locacoes/${ids.contrato}` : `/dashboard/contratos/${ids.contrato}`);
+        expect(await href("Ver o contrato")).toBe(quem === "morador" ? `/dashboard/estadia/${ids.contrato}/contrato` : `/dashboard/contratos/${ids.contrato}`);
         expect(await href("Propor alteração de datas")).toBe(`/dashboard/estadia/${ids.contrato}/alteracao`);
         expect(await href("Pedir limpeza")).toBe(`/parceiros/buscar?categoria=limpeza&cidade=Uberl%C3%A2ndia&imovel=${ids.imovel}`);
         expect(await href("Pedir manutenção")).toBe(`/parceiros/buscar?categoria=manutencao&cidade=Uberl%C3%A2ndia&imovel=${ids.imovel}`);
         if (quem === "proprietário") expect(await href("Ver no calendário")).toBe("/dashboard/agenda");
-        if (esperado.includes("Ver instruções de chegada")) {
-          expect(await href("Ver instruções de chegada")).toBe(`/dashboard/estadia/${ids.contrato}#instrucoes`);
-          await folha.getByRole("link", { name: "Ver instruções de chegada" }).click();
+        // E539 (iv): nada da folha repete o que a página já mostra.
+        await expect(folha.getByRole("link", { name: /^Falar com o|^Ver instruções de chegada$/ })).toHaveCount(0);
+        if (quem === "proprietário" || fase === "depois") {
+          await page.keyboard.press("Escape");
           await expect(folha).toHaveCount(0);
-          await expect(page.locator("#instrucoes")).toBeInViewport();
+          await expect(page.locator("#instrucoes")).toBeVisible();
           // Liberadas: some o "Liberadas em…" (se o dono ainda não publicou, o aviso diz só isso).
           if (quem === "morador") expect((await page.getByTestId("instrucoes-bloqueadas").allTextContents()).join(" ")).not.toMatch(/Liberadas em/);
         } else {

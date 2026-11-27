@@ -11,7 +11,7 @@
  * Nunca lança: se algo falhar, devolve o original sem análise.
  */
 import {
-  assinaturaFoto, LADO_ASSINATURA, dHash, fatorAplicado, luminanciaMedia, nitidezLaplaciano, paraCinza, tamanhoFinal, type Analise,
+  assinaturaFoto, contrasteCinza, LADO_ASSINATURA, dHash, fatorAplicado, luminanciaMedia, nitidezLaplaciano, paraCinza, tamanhoFinal, type Analise,
 } from "./qualidade";
 
 export interface FotoTratada {
@@ -69,6 +69,7 @@ export async function tratarFoto(file: File, opcoes: OpcoesTratamento = {}): Pro
       altura,
       luminancia: luminanciaMedia(cinza),
       nitidez: nitidezLaplaciano(cinza, pequeno.largura, pequeno.altura),
+      contraste: contrasteCinza(cinza),
       hash: dHash(paraCinza(grade, 72)),
       ...(mini ? { assinatura: assinaturaFoto(paraCinza(mini, LADO_ASSINATURA * LADO_ASSINATURA)) } : {}),
     };

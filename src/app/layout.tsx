@@ -12,6 +12,7 @@ import { APP_PREPAINT_SCRIPT } from "@/lib/app-mode";
 import { descricaoHome } from "@/lib/seo/meta-descricao";
 import { AnalyticsVercel } from "@/components/analytics/analytics-vercel";
 import { ValidacaoPtBr } from "@/components/forms/validacao-ptbr";
+import { EnderecoComAncora } from "@/components/layout/endereco-com-ancora";
 
 // Tipografia única do site (Atualização 18): Inter para títulos e corpo,
 // variando apenas o peso. Desenhada para telas — sem corte de descidas/acentos.
@@ -78,11 +79,17 @@ export default function RootLayout({
           <AppModeBridge />
           <PushApp />
           <OrigemVisita />
-          <VivaChatFlutuante />
           <LinksDoApp />
           {/* E384: mensagens da validação nativa em português em todas as telas. */}
           <ValidacaoPtBr />
           {children}
+          {/* E976 (WCAG 2.4.1): o flutuante "Fale com a Viva" vem DEPOIS do conteúdo na ordem do documento, para o primeiro
+              Tab cair no "Pular para o conteúdo principal" (layout público) e nunca nele. É fixo na tela: não muda de lugar. */}
+          <VivaChatFlutuante />
+          {/* E1187: quando o navegador salta para uma âncora da própria página, conta o endereço ao roteador — sem isso,
+              na área da equipe, a âncora cai do endereço quando as leituras da casca respondem. Não desenha nada e é
+              inerte sem salto; fica depois do conteúdo para a ordem do E976 não mudar. */}
+          <EnderecoComAncora />
         </AuthProvider>
         {/* E282: Vercel Web Analytics — só a medição padrão (visitantes, páginas, origens), sem cookies próprios e sem
             eventos customizados. Passa a contar quando o recurso for habilitado no projeto da Vercel. Só nos builds da

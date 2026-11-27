@@ -1,23 +1,24 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { noPasso } from "../fixtures/cadastro";
 
 /*
-  T248 — ordem d5b4f72f (F8): "Antes de anunciar" leva ao checklist DAQUELE imóvel e volta ao anúncio.
-  1. Dono com rascunho abre Meus imóveis e clica em "Requisitos e selo" (E196) → /qualificar?imovel=<id> (checklist do imóvel).
-  2. O dono abre em modo Proprietário (a casca não o redireciona para fora de /qualificar).
-  3. "Voltar ao anúncio" reabre o rascunho (?draft=<id>), não um anúncio novo nem a lista. O botão só existe DEPOIS de
-     salvar a qualificação (requisitos, documento e convenção), então o spec percorre esse caminho (lab 0c89bd6a:
-     clicar sem salvar esperava o botão até estourar os 120 s).
-  4. A 390 px, sem rolagem lateral.
+  T248 — ordem d5b4f72f (F8) → E196 (fecho): "Antes de anunciar" leva aos requisitos DAQUELE imóvel, dentro do fluxo.
+  A antiga página longa (/qualificar) foi absorvida pelo assistente: os requisitos legais e o documento ficam no cartão
+  "Antes de publicar" da Revisão (Passo 10).
+  1. No cartão do rascunho em Meus imóveis só existe um caminho, "Qualificação" (nada de "Requisitos e selo").
+  2. Um link antigo /qualificar?imovel=<id> (e-mail, favorito) abre a Revisão DAQUELE rascunho (?draft=<id>), com o
+     "Antes de publicar" — não um anúncio novo nem a lista.
+  3. A 390 px, sem rolagem lateral.
 */
-test.describe("T248 — Antes de anunciar: ida ao checklist do imóvel e volta ao anúncio", () => {
+test.describe("T248 — Antes de anunciar: o link antigo cai no 'Antes de publicar' do rascunho", () => {
   test.skip(!NO_LABORATORIO, "cria contas e rascunhos: só no laboratório");
   const ids: string[] = [];
   test.afterAll(async () => {
     await apagarContas(ids);
   });
 
-  test("390px — Qualificação do rascunho abre o checklist do imóvel e Voltar ao anúncio retoma o rascunho", async ({ browser }) => {
+  test("390px — um botão só no cartão e /qualificar?imovel= abre a Revisão do rascunho", async ({ browser }) => {
     test.setTimeout(150_000);
     const senha = novaSenha();
     const email = `dono.t248.${novoSufixo()}@lab.vivanomads.test`;
@@ -36,35 +37,22 @@ test.describe("T248 — Antes de anunciar: ida ao checklist do imóvel e volta a
     const imovel = data.id as string;
 
     const page = await entrar(browser, email, senha);
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-    // E196: a página longa (requisitos e selo) tem nome próprio no cartão do rascunho.
-    await page.getByTestId("rascunho-requisitos-selo").first().click();
-    await page.waitForURL(/\/qualificar\?imovel=/, { timeout: 30_000 });
-    expect(new URL(page.url()).searchParams.get("imovel")).toBe(imovel);
-    await expect(page.getByRole("heading", { name: "Requisitos e selo" })).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText("Antes de anunciar").first()).toBeVisible();
+    await expect(page.getByTestId("rascunho-qualificacao").first()).toHaveText("Qualificação", { timeout: 30_000 });
+    await expect(page.getByTestId("rascunho-requisitos-selo")).toHaveCount(0);
+    await expect(page.getByText("Requisitos e selo")).toHaveCount(0);
+
+    await page.goto(`/qualificar?imovel=${imovel}`, { waitUntil: "domcontentloaded" });
+    await page.waitForURL(/\/dashboard\/imoveis\/novo\?/, { timeout: 30_000 });
+    const u = new URL(page.url());
+    expect(u.searchParams.get("draft")).toBe(imovel);
+    expect(u.searchParams.get("etapa")).toBe("revisao");
+    await noPasso(page, "revisao", 30_000);
+    await expect(page.getByTestId("antes-de-publicar")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Requisitos e selo" })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
-    await page.screenshot({ path: "tests/laboratorio/saida/t248-qualificar-390.png", fullPage: false });
-
-    // O clique pode se perder se a tela hidratar no meio: repete até o item ficar marcado.
-    for (const requisito of ["Imóvel mobiliado completo", "Aceita período mínimo de 30 dias", "IPTU em dia", "Condições de habitabilidade (água, luz, gás)", "Proprietário ou procurador legal"]) {
-      const item = page.getByRole("checkbox", { name: requisito });
-      await expect(async () => {
-        if ((await item.getAttribute("aria-checked")) !== "true") await item.click();
-        await expect(item).toHaveAttribute("aria-checked", "true", { timeout: 2_000 });
-      }).toPass({ timeout: 30_000 });
-    }
-    await page.getByLabel(/Enviar documentação do imóvel/).setInputFiles({ name: "matricula.pdf", mimeType: "application/pdf", buffer: pdf() });
-    await expect(page.getByText("Enviado para conferência")).toBeVisible({ timeout: 30_000 });
-    await page.getByRole("button", { name: "Sim, permite" }).click();
-    const salvar = page.getByTestId("qualificacao-salvar");
-    await expect(salvar).toBeEnabled({ timeout: 10_000 });
-    await salvar.click();
-    await expect(page.getByText(/Qualificação salva/)).toBeVisible({ timeout: 30_000 });
-
-    await page.getByTestId("qualificacao-voltar").click();
-    await page.waitForURL(/\/dashboard\/imoveis\/novo\?draft=/, { timeout: 30_000 });
-    expect(new URL(page.url()).searchParams.get("draft")).toBe(imovel);
+    await page.screenshot({ path: "tests/laboratorio/saida/t248-revisao-390.png", fullPage: false });
     await page.context().close();
   });
 });

@@ -63,6 +63,17 @@ export function mascararCnpj(v: string | null | undefined): string | null {
   return d.length === 14 ? `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/****-**` : null;
 }
 
+/**
+ * E685: o documento do parceiro ATIVO para o admin auditar a regra "parceiro só com CNPJ" — tipo + número mascarado
+ * (raiz do CNPJ; miolo do CPF). O tipo vem do pedido; sem ele, pelos dígitos.
+ */
+export function documentoDoParceiroAtivo(tipoPessoa: string | null | undefined, documento: string | null | undefined): { tipo: "CNPJ" | "CPF" | "Documento"; texto: string } {
+  const d = soDigitos(documento);
+  const tipo = tipoPessoa === "pj" || d.length === 14 ? "CNPJ" : tipoPessoa === "pf" || d.length === 11 ? "CPF" : "Documento";
+  const texto = (tipo === "CNPJ" ? mascararCnpj(documento) : tipo === "CPF" ? mascararCpf(documento) : null) ?? "não informado";
+  return { tipo, texto };
+}
+
 export interface DocumentoInput {
   tipo: TipoPessoa;
   cpf?: string;
@@ -113,6 +124,9 @@ export const DOCUMENTO_VAZIO_PF = {
   cnpj: null,
   razaoSocial: null,
   cpfRepresentante: null,
+  /** E574: a pergunta da nota fiscal da locação (só PJ). */
+  emiteNotaLocacao: null as boolean | null,
+  faltaNotaLocacao: false,
 };
 
 /** O perfil já tem o documento completo para assinar contrato e ser cobrado? */
@@ -136,11 +150,22 @@ export function motivoBloqueioAprovacao(p: PerfilDocumento | null | undefined): 
     : "O dono ainda não tem CPF válido. Peça para preencher em Conta → Documento antes de aprovar.";
 }
 
+/**
+ * E463 — o documento como Conta → Dados mostra (rótulo + máscara), a partir do PERFIL: a fonte única. Toda tela que
+ * mostra "o meu CPF" usa esta leitura; null = ainda não informado.
+ */
+export function documentoNaTela(p: PerfilDocumento | null | undefined): { rotulo: "CPF" | "CNPJ"; mascarado: string | null } {
+  if (p?.person_type === "pj") return { rotulo: "CNPJ", mascarado: mascararCnpj(p.cnpj) };
+  return { rotulo: "CPF", mascarado: mascararCpf(p?.cpf) };
+}
+
 export const LINK_DOCUMENTO = "/dashboard/conta/dados#documento";
 
 /** Mensagens das travas (aceitar candidatura, assinar plano, fechar contrato). */
 export const MSG_DOCUMENTO = {
   aceitar: "Antes de aceitar uma candidatura, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento. Ele vai no contrato.",
+  // E582: a trava do envio da proposta, dita no próprio formulário.
+  proposta: "Antes de enviar a proposta, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento. Ele vai no contrato.",
   assinar: "Antes de assinar o plano, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento. Ele vai na cobrança e na nota.",
   fecharDono: "Para fechar o contrato, informe seu CPF (ou o CNPJ da empresa) em Conta → Documento.",
   fecharInquilino: "O inquilino ainda não informou o CPF (ou o CNPJ da empresa). Peça para ele preencher em Conta → Documento; o contrato precisa do documento das duas partes.",

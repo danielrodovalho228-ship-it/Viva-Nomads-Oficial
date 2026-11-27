@@ -4,7 +4,8 @@
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SQL_LIVRO_REAPLICAR, SQL_LIVRO_VOLTOU, conferirLivro, lerLivro, motivoDoDrill } from "./drill.ts";
+import { readFileSync } from "node:fs";
+import { SQL_COM_GATILHOS, SQL_SEM_GATILHOS, SQL_LIVRO_REAPLICAR, SQL_LIVRO_VOLTOU, conferirLivro, lerLivro, motivoDoDrill } from "./drill.ts";
 
 test("lê o livro e descarta linha fora do formato (aspas, '..', origem que não é bucket)", () => {
   const saida = ["bucket:inquilino-docs|a/b/c.png", "bucket:property-docs|u/x.pdf", "", "bucket:x|a'b", "bucket:x|../etc", "public.leads|123"].join("\n");
@@ -28,4 +29,13 @@ test("a reaplicação cobre os arquivos e as colunas que apontam para eles (sem 
     assert.ok(SQL_LIVRO_VOLTOU.includes(alvo), `conta ${alvo}`);
     assert.ok(SQL_LIVRO_REAPLICAR.includes(alvo), `reaplica ${alvo}`);
   }
+});
+
+test("E745: a reaplicação roda com os gatilhos desligados só na sessão do banco descartável, e a recusa na produção", () => {
+  assert.match(SQL_SEM_GATILHOS, /session_replication_role = 'replica'/);
+  assert.match(SQL_COM_GATILHOS, /reset session_replication_role/);
+  const src = readFileSync("scripts/drill/conferir.ts", "utf8");
+  const i = src.indexOf("SQL_LIVRO_VOLTOU, SQL_SEM_GATILHOS, SQL_LIVRO_REAPLICAR, SQL_COM_GATILHOS, SQL_LIVRO_VOLTOU");
+  assert.ok(i > 0, "ordem: conta, desliga gatilhos, reaplica, religa, conta");
+  assert.match(src, /SUPABASE_DB_URL.*=== url\) return conferirLivro\(0, null, null, false\)/, "recusa quando o banco do drill é a produção");
 });

@@ -53,6 +53,9 @@ export function papelOposto(papelAutor: "proprietario" | "inquilino"): "inquilin
   return papelAutor === "proprietario" ? "inquilino" : "proprietario";
 }
 
+/** E544: antes do fim do contrato a avaliação não abre — o texto do estado pendente. */
+export const TEXTO_AVALIACAO_FECHADA = "A avaliação abre quando a estadia terminar e fica aberta por 14 dias.";
+
 /** Prazo da avaliação: até 14 dias depois do fim do contrato (as duas aparecem juntas, ou no fim do prazo). */
 export const DIAS_PRAZO_AVALIACAO = 14;
 
@@ -69,8 +72,29 @@ export function prazoAvaliacao(encerradoEm: string | null | undefined): string |
 /**
  * As duas partes da avaliação (Prompt 43, item 8) — só o visual sobre a regra às cegas que já existe: o estado de
  * cada lado, o prazo e "Aguardando a outra parte" depois de enviar. Nunca diz se a outra parte já enviou.
+ * E719: com o estado REAL da minha avaliação (`statusReal`), o cartão acompanha o banco: publicada → "Publicada"
+ * (some o "aguardando"); em moderação → "Em análise pela equipe"; removida → "Removida pela equipe".
  */
-export function partesDaAvaliacao(euEnviei: boolean, prazo: string | null): { estado: string; linhas: { quem: string; estado: string }[] } {
+export function partesDaAvaliacao(euEnviei: boolean, prazo: string | null, statusReal?: string | null): { estado: string; linhas: { quem: string; estado: string }[] } {
+  if (statusReal === "publicada") {
+    return {
+      estado: "Publicada",
+      linhas: [
+        { quem: "Sua avaliação", estado: "Publicada" },
+        { quem: "Avaliação da outra parte", estado: "Veja em Avaliações, aba Recebidas" },
+      ],
+    };
+  }
+  if (statusReal === "em_moderacao" || statusReal === "removida") {
+    const estado = statusReal === "removida" ? "Removida pela equipe" : "Em análise pela equipe";
+    return {
+      estado,
+      linhas: [
+        { quem: "Sua avaliação", estado },
+        { quem: "Avaliação da outra parte", estado: "Fica fechada até as duas enviarem ou até o fim do prazo" },
+      ],
+    };
+  }
   return {
     estado: euEnviei ? "Aguardando a outra parte" : "Falta a sua avaliação",
     linhas: [

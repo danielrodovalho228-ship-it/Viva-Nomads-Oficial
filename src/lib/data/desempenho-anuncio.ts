@@ -38,7 +38,8 @@ export interface PainelDesempenho {
   status: string;
   metricas: Metrica[];
   /** Quantos imóveis parecidos entraram na comparação (< 5 = sem comparação). */
-  parecidos: number;
+  /** null = a comparação não pôde ser lida agora (estados vazios: nunca "0 no grupo" por falha). */
+  parecidos: number | null;
   linha: SemanaLinha[];
   acoes: AcaoDaNota[];
   /** O que falta para o próximo nível (59.1), por área — fato, sem número de ganho. */
@@ -99,8 +100,10 @@ export async function painelDesempenho(propertyId: string, agora: Date = new Dat
   // Parecidos: publicados, mesma cidade e quartos, de contas reais; depois bairro ou 2 km (regra pura).
   let medianas: Partial<Record<Metrica["chave"], number | null>> = {};
   let nParecidos = 0;
+  // Estados vazios: falha na leitura dos parecidos (ou dos eventos deles) não vira "0 no grupo" nem mediana de zeros.
+  let comparacaoIndisponivel = false;
   if (alvo.city) {
-    const { data: candidatos } = await admin
+    const { data: candidatos, error: erroCandidatos } = await admin
       .from("properties")
       .select("id, owner_id, title, status, city, address, bedrooms, lat, lng")
       .eq("status", "active")
@@ -108,19 +111,23 @@ export async function painelDesempenho(propertyId: string, agora: Date = new Dat
       .eq("bedrooms", alvo.bedrooms ?? 0)
       .neq("id", propertyId)
       .limit(300);
+    if (erroCandidatos) comparacaoIndisponivel = true;
     const linhas = (candidatos ?? []) as Linha[];
     const donosTeste = await contasDeTeste(admin, linhas.map((l) => l.owner_id));
     const conv = (l: Linha) => ({ id: l.id, cidade: l.city, bairro: l.address, quartos: l.bedrooms ?? 0, lat: l.lat, lng: l.lng });
     const grupo = parecidos(conv(alvo), linhas.filter((l) => !donosTeste.has(l.owner_id)).map((l) => ({ ...conv(l), dono: l.owner_id })));
     nParecidos = grupo.length;
     if (grupo.length) {
-      const { data: evsGrupo } = await admin
+      const { data: evsGrupo, error: erroGrupo } = await admin
         .from("eventos")
         .select("imovel_id, tipo, criado_em, usuario_id")
         .in("imovel_id", grupo.map((g) => g.id))
         .in("tipo", TIPOS)
         .gte("criado_em", new Date(j.atual[0]).toISOString())
         .limit(50000);
+      if (erroGrupo) {
+        comparacaoIndisponivel = true;
+      }
       const todos = (evsGrupo ?? []) as (Evento & { imovel_id: string })[];
       const testeGrupo = await contasDeTeste(admin, todos.map((e) => e.usuario_id ?? ""));
       const porImovel = grupo.map((g) => contar(todos.filter((e) => e.imovel_id === g.id), j.atual, { donoId: g.dono, contasTeste: testeGrupo }));
@@ -149,8 +156,8 @@ export async function painelDesempenho(propertyId: string, agora: Date = new Dat
     id: alvo.id,
     titulo: alvo.title || "Anúncio",
     status: alvo.status,
-    metricas: metricas({ atual, anterior, resposta, medianas }),
-    parecidos: nParecidos,
+    metricas: metricas({ atual, anterior, resposta, medianas: comparacaoIndisponivel ? {} : medianas }),
+    parecidos: comparacaoIndisponivel ? null : nParecidos,
     linha: linhaDoTempo(eventos, marcas, agora, fora),
     acoes: s ? acoesDaNota(notaQualidade(s, agora).motivos).slice(0, 5) : [],
     faltaNivel: { proximo: itens.length ? proximo : null, itens },

@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { codigoDoErro } from "@/lib/erro-codigo";
 
 /**
  * Último recurso: falha no próprio layout raiz. Substitui o layout (sem o CSS global nem as fontes), então o estilo é
  * inline. Em português, com "Tentar de novo" (unstable_retry do Next 16; reset de reserva) — nunca a página padrão em
  * inglês.
  */
-export default function ErroGeral({ unstable_retry, reset }: { error: unknown; unstable_retry?: () => void; reset?: () => void }) {
+export default function ErroGeral({ error, unstable_retry, reset }: { error: unknown; unstable_retry?: () => void; reset?: () => void }) {
   const tentarDeNovo = () => (unstable_retry ?? reset)?.();
+  const codigo = codigoDoErro(error);
   return (
     <html lang="pt-BR">
       <body style={{ margin: 0, fontFamily: "system-ui, sans-serif", background: "#f7f8f5", color: "#0f3d2e" }}>
@@ -24,6 +26,11 @@ export default function ErroGeral({ unstable_retry, reset }: { error: unknown; u
               Ir para o início
             </Link>
           </div>
+          {codigo && (
+            <p data-testid="erro-codigo" style={{ marginTop: 16, fontSize: 12, color: "#475569" }}>
+              Código para a equipe: <span style={{ fontFamily: "ui-monospace, monospace" }}>{codigo}</span>
+            </p>
+          )}
         </main>
       </body>
     </html>

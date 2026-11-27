@@ -59,3 +59,24 @@ export function decidirModoInicial(servidor: Modo | null, pendente: ModoPendente
   if (pendente && pendente.modo !== servidor) return { modo: pendente.modo, regravar: true };
   return { modo: servidor, regravar: false };
 }
+
+/**
+ * E653 — o modo do servidor ATRASOU ou FALHOU (a casca só espera LIMITE_CASCA_MS) é diferente de "conta nova sem papel":
+ * os dois chegavam como `null` e o painel ficava com o padrão do navegador (papel dos metadados, "tenant" na falta) — o
+ * Início do dono perdia as seções e não voltava. Só o indisponível relê.
+ */
+export const ESPERAS_RELEITURA_MS = [1_500, 4_000, 9_000, 20_000] as const;
+
+export function precisaReler(servidor: Modo | null, indisponivel: boolean): boolean {
+  return indisponivel && servidor === null;
+}
+
+/**
+ * O modo lido na releitura só vale se a pessoa NÃO trocou durante a espera (o modo em uso é o mesmo de quando a espera
+ * começou) e não há troca pendente (a escolha recente vence o servidor, bug 6 da L2). Devolve o modo a aplicar ou null.
+ */
+export function aplicarReleitura(lido: Modo | null, modoAntes: Modo | null, modoAgora: Modo | null, pendente: ModoPendente | null): Modo | null {
+  if (!lido || pendente) return null;
+  if (modoAgora !== modoAntes) return null;
+  return lido;
+}

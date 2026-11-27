@@ -9,7 +9,7 @@ import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/
 /*
   T307 — VARREDURA DA PÁGINA INTEIRA, BLOCO 8 (Pista C, 23/10). O mesmo protocolo da t298 (seis classes, página toda
   rolada, 390 e 1280 px, carregamento real de cada imagem) no que ainda faltava:
-  - as páginas internas dos sócios (/socios, /decisao, /modelodenegocio, /roi, /simulacao, /tributario), abertas pela
+  - as páginas internas dos sócios (/modelodenegocio, /roi, /simulacao, /tributario; /socios e /decisao saíram no E595/E596), abertas pela
     porta /acesso-socios com o código do laboratório (SOCIOS_ACCESS_CODE; sem ele, pula);
   - as telas de detalhe com os ids da massa: o contrato visto pelos dois lados, a "Estadia confirmada" do 61-A (#1113,
     o contrato da massa é assinado pelos dois) e o perfil público do dono.
@@ -25,8 +25,7 @@ interface Tela {
 }
 const CODIGO_SOCIOS = process.env.SOCIOS_ACCESS_CODE;
 const TELAS: Tela[] = [
-  { conta: "SOCIO", papel: "sócio", rota: () => "/socios", nome: "Início dos sócios" },
-  { conta: "SOCIO", papel: "sócio", rota: () => "/decisao", nome: "Decisão" },
+  // E595/E596 (05/11): /socios e /decisao foram eliminadas (redirecionam — t908).
   { conta: "SOCIO", papel: "sócio", rota: () => "/modelodenegocio", nome: "Modelo de negócio" },
   { conta: "SOCIO", papel: "sócio", rota: () => "/roi", nome: "Retorno" },
   { conta: "SOCIO", papel: "sócio", rota: () => "/simulacao", nome: "Simulação" },

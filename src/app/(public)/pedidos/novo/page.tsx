@@ -570,12 +570,20 @@ function PedidoForm() {
               </select>
             </div>
           </div>
-          {dataInicio && (
-            <p className="text-[13px] text-muted" data-testid="pedido-validade">
-              Seu pedido fica no ar até <strong className="text-ink">{dataPedidoBR(expiraEmPedido(dataInicio, new Date().toISOString()))}</strong>{" "}
-              (30 dias depois de publicar e nunca antes da data de entrada). Você renova com um clique.
-            </p>
-          )}
+          {/* E370: a regra de validade aparece desde o início; com a data de entrada, ganha o cálculo (a data em que expira). */}
+          <p className="text-[13px] text-muted" data-testid="pedido-validade" data-calculada={dataInicio ? "1" : "0"}>
+            {dataInicio ? (
+              <>
+                Seu pedido fica no ar até <strong className="text-ink">{dataPedidoBR(expiraEmPedido(dataInicio, new Date().toISOString()))}</strong>{" "}
+                (30 dias depois de publicar e nunca antes da data de entrada). Você renova com um clique.
+              </>
+            ) : (
+              <>
+                Seu pedido fica no ar por <strong className="text-ink">30 dias</strong> depois de publicar (e nunca antes da data de entrada). Você renova com um
+                clique. Ao escolher a entrada, mostramos a data exata.
+              </>
+            )}
+          </p>
           <div>
             <Rotulo htmlFor="pedido-bairro">Bairros preferidos (até {BAIRROS_MAX})</Rotulo>
             <div className="flex gap-2">
@@ -894,7 +902,7 @@ function BotaoMarca({
       )}
     >
       {ativo ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : <Icone className="h-4 w-4 shrink-0 text-muted" />}
-      <span className="truncate">{children}</span>
+      <span className="line-clamp-2 min-w-0 text-center leading-tight">{children}</span>
     </button>
   );
 }

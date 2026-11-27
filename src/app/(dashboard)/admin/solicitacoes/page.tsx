@@ -12,6 +12,7 @@ import { estadoSolucao } from "@/lib/manutencao-solucao";
 import { ReclassificarOrdem } from "@/components/admin/reclassificar-ordem";
 import type { UrgenciaManutencao } from "@/config/atendimento";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
+import { soLeituraNaTela } from "@/lib/qa/observador";
 
 export const metadata = { title: tituloDoAdmin("/admin/solicitacoes"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -27,6 +28,8 @@ const STATUS: Record<string, string> = { aberto: "Aberta", visto: "Vista", em_an
  */
 export default async function AdminSolicitacoesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
+  // E477: a conta observadora da QA só lê (o servidor também recusa).
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const um = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : undefined);
   const hoje = hojeBR();
   const p = periodoDaLista({ de: um("de"), ate: um("ate") }) ?? { inicio: somarDias(hoje, -29), fim: hoje };
@@ -95,7 +98,7 @@ export default async function AdminSolicitacoesPage({ searchParams }: { searchPa
                   )}
                 </span>
                 {s.status !== "resolvido" && (s.priority === "urgente" || s.priority === "media" || s.priority === "baixa") && (
-                  <ReclassificarOrdem id={s.id} atual={s.priority as UrgenciaManutencao} />
+                  <ReclassificarOrdem id={s.id} atual={s.priority as UrgenciaManutencao} soLeitura={soLeitura} />
                 )}
               </li>
             ))}

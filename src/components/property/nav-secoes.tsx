@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
  * Abas âncora da página do imóvel (ordem d943f893): presas logo abaixo do cabeçalho
  * ao rolar, a aba da seção visível fica marcada e o toque leva até a seção. No
  * celular as abas rolam na horizontal e a ativa se mantém à vista.
+ * E795: fundo opaco — o texto que rola por baixo não aparece através da barra.
  */
 export function NavSecoes({ secoes }: { secoes: SecaoImovel[] }) {
   const [ativa, setAtiva] = useState(secoes[0]?.id);
@@ -43,11 +44,42 @@ export function NavSecoes({ secoes }: { secoes: SecaoImovel[] }) {
       caixa.scrollTo({ left: Math.max(0, esq), behavior: "smooth" });
   }, [ativa]);
 
+  const caixaNav = useRef<HTMLElement>(null);
+  const trava = useRef<number | undefined>(undefined);
+
+  // E781: o toque na aba rola ATÉ a seção por código (não só pelo salto nativo do #hash, que no celular podia não sair do
+  // lugar, ou parar antes quando a página ainda carregava e mudava de altura), com a compensação do cabeçalho e das abas
+  // presos; e confere de novo depois, corrigindo se o topo da seção foi empurrado. A aba só fica marcada com a página já lá.
+  function irPara(e: React.MouseEvent, id: string) {
+    const el = document.getElementById(id);
+    if (!el) return; // sem a seção, deixa o salto nativo agir
+    e.preventDefault();
+    setAtiva(id);
+    const ir = () => {
+      const alvo = document.getElementById(id);
+      if (!alvo) return;
+      const nav = caixaNav.current?.getBoundingClientRect();
+      const margem = (nav ? nav.bottom : 120) + 8;
+      const delta = alvo.getBoundingClientRect().top - margem;
+      if (Math.abs(delta) > 2) window.scrollTo({ top: window.scrollY + delta, behavior: "auto" });
+    };
+    ir();
+    history.replaceState(null, "", `#${id}`);
+    window.clearTimeout(trava.current);
+    let n = 0;
+    const conferir = () => {
+      ir();
+      if (++n < 4) trava.current = window.setTimeout(conferir, 350);
+    };
+    trava.current = window.setTimeout(conferir, 350);
+  }
+
   return (
     <nav
+      ref={caixaNav}
       aria-label="Seções do anúncio"
       data-testid="nav-secoes"
-      className="sticky top-18 z-20 -mx-4 mt-6 border-b border-line bg-white/95 backdrop-blur sm:-mx-8 lg:mx-0 print:hidden"
+      className="sticky top-18 z-20 -mx-4 mt-6 border-b border-line bg-white sm:-mx-8 lg:mx-0 print:hidden"
     >
       <div ref={lista} className="flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] sm:px-8 lg:px-0 [&::-webkit-scrollbar]:hidden">
         {secoes.map((s) => (
@@ -56,7 +88,7 @@ export function NavSecoes({ secoes }: { secoes: SecaoImovel[] }) {
             href={`#${s.id}`}
             data-secao={s.id}
             aria-current={ativa === s.id ? "true" : undefined}
-            onClick={() => setAtiva(s.id)}
+            onClick={(e) => irPara(e, s.id)}
             className={cn(
               "shrink-0 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-semibold transition-colors",
               ativa === s.id ? "border-forest text-forest" : "border-transparent text-muted hover:text-ink"

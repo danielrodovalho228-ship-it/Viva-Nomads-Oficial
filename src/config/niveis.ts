@@ -120,12 +120,12 @@ export type ClasseRuido = (typeof CLASSES_RUIDO)[number];
 export const ROTULO_RUIDO: Record<ClasseRuido, string> = { baixo: "baixo", medio: "médio", alto: "alto" };
 
 // ── Extras (item 5): fatos exibidos na ficha; nunca entram no nível ──────────────────────────────────────────────
+// E604: só o que NÃO é comodidade. "Lava-louças" e "TV" moram em "Conforto do imóvel" (amenities.ts) — estavam nos dois
+// lugares e a mesma característica podia ser declarada duas vezes (guarda: e604-comodidades-sem-duplicata.test.ts).
 export const EXTRAS = [
   { chave: "secador_cabelo", rotulo: "Secador de cabelo" },
   { chave: "cafeteira", rotulo: "Cafeteira (inclui espresso)" },
   { chave: "air_fryer", rotulo: "Air fryer" },
-  { chave: "lava_loucas", rotulo: "Lava-louças" },
-  { chave: "tv", rotulo: "TV" },
   { chave: "ferro_passar", rotulo: "Ferro de passar" },
   { chave: "tabua_passar", rotulo: "Tábua de passar" },
   { chave: "aspirador", rotulo: "Aspirador" },
@@ -134,8 +134,18 @@ export const EXTRAS = [
   { chave: "sanduicheira", rotulo: "Sanduicheira" },
   { chave: "varal", rotulo: "Varal" },
 ] as const;
-export type ChaveExtra = (typeof EXTRAS)[number]["chave"];
-export const CHAVES_EXTRAS: readonly ChaveExtra[] = EXTRAS.map((e) => e.chave);
+/**
+ * E604: extras que deixaram de ser oferecidos (viraram só comodidade) mas JÁ foram salvos em imovel_extras. Seguem
+ * válidos para leitura: a ficha continua mostrando e o "Salvar extras" não os apaga (o estado da tela os carrega).
+ */
+export const EXTRAS_LEGADOS = [
+  { chave: "lava_loucas", rotulo: "Lava-louças" },
+  { chave: "tv", rotulo: "TV" },
+] as const;
+/** Todos os extras que a leitura aceita: os oferecidos + os legados (para validar e exibir o que já foi salvo). */
+export const EXTRAS_TODOS = [...EXTRAS, ...EXTRAS_LEGADOS] as const;
+export type ChaveExtra = (typeof EXTRAS_TODOS)[number]["chave"];
+export const CHAVES_EXTRAS: readonly ChaveExtra[] = EXTRAS_TODOS.map((e) => e.chave);
 export const ehChaveExtra = (v: unknown): v is ChaveExtra => typeof v === "string" && (CHAVES_EXTRAS as readonly string[]).includes(v);
 
 // ── Medição por ponto (Prompt 57 + 59.1) ─────────────────────────────────────────────────────────────────────────

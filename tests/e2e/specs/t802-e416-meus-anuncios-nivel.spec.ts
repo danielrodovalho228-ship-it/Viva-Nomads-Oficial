@@ -39,9 +39,9 @@ test.describe("T802 — E416: selo de nível em Meus anúncios", () => {
       await p.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
       const cartao = (id: string) => p.locator(`[data-testid="meu-anuncio"][data-imovel="${id}"]`);
       await expect(cartao(ids.ativo)).toBeVisible({ timeout: 30_000 });
-      await expect(cartao(ids.ativo).getByTestId("anuncio-nivel")).toHaveText("Conforto");
-      await expect(cartao(ids.rascunho).getByTestId("anuncio-nivel")).toHaveText("Premium");
-      await expect(cartao(ids.sem).getByTestId("anuncio-nivel")).toHaveCount(0);
+      await expect(cartao(ids.ativo).getByTestId("card-nivel")).toHaveText("Conforto");
+      await expect(cartao(ids.rascunho).getByTestId("card-nivel")).toHaveText("Premium");
+      await expect(cartao(ids.sem).getByTestId("card-nivel")).toHaveCount(0);
       expect(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
       await cartao(ids.ativo).scrollIntoViewIfNeeded();
       await p.screenshot({ path: `${SAIDA}/t802-meus-anuncios-${w}.png` });

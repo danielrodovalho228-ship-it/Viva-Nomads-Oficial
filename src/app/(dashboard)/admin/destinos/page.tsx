@@ -1,3 +1,5 @@
+import { soLeituraNaTela } from "@/lib/qa/observador";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import Link from "next/link";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { ButtonLink } from "@/components/ui/button";
@@ -68,6 +70,8 @@ async function buscasDe30Dias(): Promise<{ destino_id: string; n: number }[] | n
  * 30 dias (nada de endereço nem de quem buscou). O layout de /admin já barra quem não é admin; a RLS barra de novo.
  */
 export default async function AdminDestinosPage({ searchParams }: { searchParams: Promise<{ editar?: string; promover?: string }> }) {
+  // E477: destinos, reportes e pedidos de local são configuração da plataforma — o admin observador da QA só lê.
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const { editar, promover } = await searchParams;
   // "Promover a âncora": o centro da célula (lat,lng) vai para o cadastro de destinos de sempre.
   const [plat, plng] = String(promover ?? "").split(",").map(Number);
@@ -142,7 +146,7 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
                   <Link href={`/admin/destinos?editar=${d.slug}#form-destino`} className="text-sm font-semibold text-forest underline">
                     {d.lat == null ? "Conferir no mapa" : "Editar"}
                   </Link>
-                  <DestinoBotao id={d.id} ativo={d.ativo} temPonto={d.lat != null && d.lng != null} />
+                  {soLeitura ? null : <DestinoBotao id={d.id} ativo={d.ativo} temPonto={d.lat != null && d.lng != null} />}
                 </div>
               </li>
             ))}
@@ -157,7 +161,7 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
           </p>
         )}
         {/* E32: a key remonta o formulário (e o ponto em estado) ao trocar de destino: sem ela, "Editar" abria com latitude e longitude vazias. */}
-        <DestinoForm key={emEdicao?.slug ?? (pontoPromover ? `promover-${promover}` : "novo")} inicial={emEdicao} pontoInicial={emEdicao ? null : pontoPromover} />
+        {soLeitura ? <SoLeituraQa /> : <DestinoForm key={emEdicao?.slug ?? (pontoPromover ? `promover-${promover}` : "novo")} inicial={emEdicao} pontoInicial={emEdicao ? null : pontoPromover} />}
       </Panel>
 
       <Panel title="Destinos mais buscados (30 dias)" id="mais-buscados">
@@ -226,7 +230,7 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
                   <Link href="#form-destino" className="text-sm font-semibold text-forest underline">
                     Cadastrar
                   </Link>
-                  <ResolverNaoAchado id={n.id} />
+                  {soLeitura ? null : <ResolverNaoAchado id={n.id} />}
                 </span>
               </li>
             ))}
@@ -250,7 +254,7 @@ export default async function AdminDestinosPage({ searchParams }: { searchParams
                     {r.properties?.city ? ` (${r.properties.city})` : ""} · {dataBRT(r.criado_em)}
                   </span>
                 </span>
-                <ResolverReporte id={r.id} />
+                {soLeitura ? null : <ResolverReporte id={r.id} />}
               </li>
             ))}
           </ul>

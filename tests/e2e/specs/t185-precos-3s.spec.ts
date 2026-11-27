@@ -1,13 +1,16 @@
 import { test, expect, type Page } from "@playwright/test";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /*
   T185 — /precos revisão 3S (prompt 13), a 390, 768 e 1280 px.
-  1. "Anunciar meu imóvel" (primário) e "Falar sobre o Plano Gestor" (secundário) sem se cruzar, ≥ 12 px entre eles.
-  2. O formulário do Plano Gestor abre numa janela à parte e fecha (Esc e botão).
+  1. "Anunciar meu imóvel" (primário) e "Falar com a Viva sobre carteiras" (secundário) sem se cruzar, ≥ 12 px entre eles.
+  2. O formulário de contato das carteiras abre numa janela à parte e fecha (Esc e botão).
   3. Nenhuma grade de caixas com número ímpar.
   4. Sem "inquilino", "locação", "aluguel" nem "comissão" no texto da página.
   5. Faixas de taxa no celular em cartões, sem rolagem lateral.
   6. Todo percentual de concorrente com link de fonte; QuintoAndar fora; Booking.com sem número.
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): o botão secundário e a janela deixaram de ser do "Plano
+  Gestor" — a janela se chama "Fale com a Viva sobre carteiras" (os data-testid `plano-gestor-*` continuam).
 */
 const SAIDA = "tests/laboratorio/saida";
 
@@ -20,6 +23,7 @@ async function caixas(page: Page) {
 
 for (const largura of [390, 768, 1280]) {
   test(`T185 ${largura}px — botões sem sobreposição, grades pares, vocabulário e fontes`, async ({ page }) => {
+    test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
     await page.setViewportSize({ width: largura, height: 900 });
     await page.goto("/precos", { waitUntil: "domcontentloaded" });
 
@@ -59,15 +63,21 @@ for (const largura of [390, 768, 1280]) {
   });
 }
 
-test("T185 — Plano Gestor abre numa janela à parte e fecha (390 e 1280)", async ({ page }) => {
+// 078 (Daniel, 16/11/2026): o título era "T185 — Plano Gestor abre numa janela à parte e fecha (390 e 1280)".
+test("T185 — o contato das carteiras (antes Plano Gestor) abre numa janela à parte e fecha (390 e 1280)", async ({ page }) => {
+  test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
   for (const largura of [390, 1280]) {
     await page.setViewportSize({ width: largura, height: 900 });
     await page.goto("/precos", { waitUntil: "domcontentloaded" });
     const regra = page.getByTestId("regra-unica");
     const alturaAntes = (await regra.boundingBox())!.height;
     await page.getByTestId("plano-gestor-botao").click();
-    const janela = page.getByRole("dialog", { name: /Plano Gestor/ });
+    // 078 (Daniel, 16/11/2026): a janela era achada pelo nome /Plano Gestor/; agora o nome exato é "Fale com a Viva
+    // sobre carteiras", e nenhuma janela leva "Plano Gestor" no nome nem no texto.
+    const janela = page.getByRole("dialog", { name: "Fale com a Viva sobre carteiras", exact: true });
     await expect(janela).toBeVisible();
+    await expect(page.getByRole("dialog", { name: /Plano Gestor/i })).toHaveCount(0);
+    await expect(janela).not.toContainText(/Plano Gestor/i);
     await expect(janela.getByTestId("plano-gestor-form")).toBeVisible();
     // O formulário não se expande no meio da tabela.
     expect((await regra.boundingBox())!.height).toBeCloseTo(alturaAntes, 0);
@@ -81,6 +91,7 @@ test("T185 — Plano Gestor abre numa janela à parte e fecha (390 e 1280)", asy
 });
 
 test("T185 — 390px: o 'Fale com a Viva' não tampa os botões nem as faixas da tabela (mesma regra do Q4)", async ({ page }) => {
+  test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/precos", { waitUntil: "networkidle" });
   const flut = page.getByTestId("fale-com-a-viva");

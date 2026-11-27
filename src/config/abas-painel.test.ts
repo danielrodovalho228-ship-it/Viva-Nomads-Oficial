@@ -102,10 +102,11 @@ test("E185 + E312: 'Ajuda' tem um destino só e 'Sair' aparece UMA vez no total 
   assert.doesNotMatch(tela, /ajuda-sair|Sair da conta|useSair/);
 });
 
-test("E185 (resíduo 31/10): nas telas da Conta o topo não repete o sino — o menu lateral já tem Notificações", async () => {
+test("E185 (resíduo 31/10) revisto pelo E464: o sino fica também nas telas da Conta; o menu lateral segue com Notificações", async () => {
   const { readFileSync } = await import("node:fs");
   const topo = readFileSync(new URL("../components/layout/topo-dono.tsx", import.meta.url), "utf8");
-  assert.match(topo, /\{secaoDaRota\(p\.pathname\) === null && <Sino px=\{px\} notificacoes=\{p\.notificacoes\} \/>\}/);
+  assert.match(topo, /<Sino px=\{px\} notificacoes=\{p\.notificacoes\} \/>/);
+  assert.doesNotMatch(topo, /secaoDaRota\(p\.pathname\) === null && <Sino/);
   assert.match(topo, /<header className="web-only hidden border-b border-line bg-white lg:block/, "o topo só existe do lg para cima");
   const casca = readFileSync(new URL("../components/account/casca-conta.tsx", import.meta.url), "utf8");
   assert.match(casca, /hidden rounded-xl bg-white p-3 lg:sticky lg:top-0 lg:block/, "o menu lateral aparece na mesma largura");

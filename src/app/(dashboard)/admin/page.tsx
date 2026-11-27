@@ -11,6 +11,7 @@ import { ROTULOS_NUMEROS, RODAPE_CONTAGENS, primeirosSemDuplicata, textoRealTest
 import { haQuantoTempo } from "@/lib/admin/decisoes-admin";
 import { idadeHoras } from "@/lib/admin/central-pendencias";
 import { ButtonLink } from "@/components/ui/button";
+import { ResumoBackup } from "@/components/admin/resumo-backup";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
 export const metadata = { title: tituloDoAdmin("/admin"), robots: { index: false, follow: false } };
@@ -124,6 +125,9 @@ export default async function AdminPage() {
           </ul>
         </Panel>
       )}
+
+      {/* E766 (reprova de 11/11): o resumo positivo do backup aparece para todo admin, inclusive o observador da QA (só leitura). */}
+      {admin ? <ResumoBackup agora={agora} /> : null}
 
       <p className="mt-6 text-sm" data-testid="admin-saude" data-alertas={alertas}>
         {/* E176 (D3): o alerta do backup aparece UMA vez, dentro de "Precisa da sua atenção"; aqui só o estado geral. */}

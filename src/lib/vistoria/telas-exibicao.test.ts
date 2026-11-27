@@ -6,6 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 import {
   ESTADO_CREDENCIAMENTO,
   LINHA_PUBLICA_DESIGNACAO,
@@ -20,7 +21,6 @@ import {
   linhaDoTempoPedido,
   passosCumpridos,
   complementoPassoIdentidade,
-  prazoResposta,
   quandoVisita,
   quandoVisitaComFuso,
   rotuloDecisao,
@@ -28,13 +28,14 @@ import {
   situacaoPagamento,
   visitaNaSemana,
 } from "./telas-exibicao.ts";
+import { relogioDoPedido, textoDoPrazoDeResposta } from "./relogio-do-pedido.ts";
 import { FRASE_PAGA_AVALIACAO, type AvaliadorFila } from "./regras.ts";
 import type { StatusCredenciamento } from "./regras.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+const semComentarios = (f: string) => fonteSemComentarios(f).replace(/\/\/.*$/gm, "");
 
 const BLOCO_DONO = ler("src/components/vistoria/bloco-avaliacao-dono.tsx");
 // E143: ruído e extras saíram para um componente compartilhado (página do nível e Passo 5).
@@ -50,7 +51,7 @@ const primarios = (f: string) => (semComentarios(f).match(/<Button(?![^>]*varian
 
 test("textos exatos: frase do pagamento, as duas rotas e o título do bloco", () => {
   assert.equal(FRASE_PAGA_AVALIACAO, "Você paga a avaliação, não o resultado.");
-  assert.deepEqual(ROTAS_NIVEL.map((r) => r.titulo), ["Foto: grátis, nível na hora", "Avaliação: “· vistoriado” por 12 meses"]);
+  assert.deepEqual(ROTAS_NIVEL.map((r) => r.titulo), ["Foto: grátis, nível na hora", "Avaliação: selo “vistoriado” por 12 meses"]);
   assert.equal(TITULO_BLOCO_DONO, "Avaliação do imóvel");
   for (const t of ROTAS_NIVEL.flatMap((r) => [r.titulo, r.texto])) assert.doesNotMatch(t, TEXTO_PROIBIDO);
   assert.match(BLOCO_DONO, /\{FRASE_PAGA_AVALIACAO\}/);
@@ -65,24 +66,31 @@ test("QA #1111 item 6: a visita sai sem segundos e com o fuso (dono, morador e c
   assert.match(MORADOR, /quandoVisita\(p\.agendado_para\)/);
 });
 
-test("QA #1111 item 5: 'Avaliador designado pela Viva' aparece uma vez só", () => {
+test("QA #1111 item 5: 'Avaliador escolhido por você' aparece uma vez só", () => {
   assert.equal(situacaoDono({ status: "designado", aguardandoAvaliador: false, ocupado: false, concordanciaEm: null, agendadoPara: null }), null);
-  assert.equal((BLOCO_DONO.match(/Avaliador designado pela Viva/g) ?? []).length, 1);
-  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null }), "Aguardando avaliador: a Viva avisa quando designar.");
+  assert.equal((BLOCO_DONO.match(/Avaliador escolhido por você/g) ?? []).length, 1);
+  // E1177 (asserção alterada, ORDEM-DUET-778): a lista vazia diz o motivo; a promessa do aviso só vale quando a cidade
+  // não tem avaliador nenhum.
+  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null, motivoDaEspera: "sem_avaliador_na_cidade" }), "Ainda não há avaliador disponível na sua cidade. A Viva avisa você assim que houver um.");
+  assert.equal(situacaoDono({ status: "pedido", aguardandoAvaliador: true, ocupado: false, concordanciaEm: null, agendadoPara: null }), "Os avaliadores da sua cidade não podem seguir com este pedido agora. A equipe da Viva foi avisada.");
   assert.equal(situacaoDono({ status: "designado", aguardandoAvaliador: false, ocupado: true, concordanciaEm: null, agendadoPara: "2026-10-25T13:00:00Z" }), "Data proposta: a visita fica confirmada quando o morador concordar.");
 });
 
 test("QA #1111 item 7 e um primário por tela: Nível, morador e conversa", () => {
   // E193 (30/10): o ruído virou cartões de marcar (desmarcado = não), então o salvar não espera "todas respondidas".
-  assert.match(NIVEL, /variant="secondary"\s+size="sm"\s+disabled=\{pendente\}\s+onClick=\{\(\) =>\s+iniciar\(async \(\) => \{\s+const respostas/, "Salvar ruído ficou secundário");
+  // E606: o ruído grava a cada toque — sem botão de salvar (e, portanto, sem disputar o primário da tela).
+  assert.doesNotMatch(NIVEL, /Salvar ruído/, "o ruído não tem mais botão de salvar");
+  assert.doesNotMatch(NIVEL, /<Button[^>]*variant="primary"/, "nenhum primário no bloco de ruído e extras");
   assert.equal(primarios(BLOCO_DONO), 1, "só 'Pedir avaliação do imóvel'");
   assert.equal(primarios(CARTAO_CONVERSA), 0, "o primário da conversa é o Enviar");
   assert.ok(primarios(MORADOR) <= 1);
 });
 
-test("linha do tempo do pedido: pedido → designado nº X → agendado → visita feita → laudo", () => {
+test("linha do tempo do pedido: pedido → escolhido → agendado → visita feita → laudo", () => {
   const e = linhaDoTempoPedido({ status: "agendado", numero: "UDI-007", agendadoPara: "2026-10-25T13:00:00Z" });
-  assert.deepEqual(e.map((x) => x.rotulo), ["Pedido", "Designado nº UDI-007", "Agendado para 25/10/2026 às 10:00", "Visita feita", "Laudo"]);
+  // E1158 (8 e 9; ORDEM-DUET-656): a etapa diz só "Escolhido" (o número fica na linha com o link) e a data da visita
+  // tem o formato único, com o fuso.
+  assert.deepEqual(e.map((x) => x.rotulo), ["Pedido", "Escolhido", "Agendado para 25/10/2026 às 10:00, horário de Brasília", "Visita feita", "Laudo"]);
   assert.deepEqual(e.map((x) => x.estado), ["feito", "feito", "atual", "futuro", "futuro"]);
   assert.equal(linhaDoTempoPedido({ status: "pedido", aguardandoAvaliador: true })[0].rotulo, "Pedido · aguardando avaliador");
   assert.match(BLOCO_DONO, /data-testid="avaliacao-linha-tempo"/);
@@ -99,13 +107,18 @@ test("nenhum número de ganho por nível e nenhum botão de escolher avaliador",
   for (const f of [BLOCO_DONO, NIVEL, ...ROTAS_NIVEL.map((r) => r.texto)]) {
     assert.doesNotMatch(semComentarios(f), /\d+\s?% (a mais|mais reservas|de aumento)|ganh[ae] (mais|até)|R\$\s?\d[^"]*a mais/i);
   }
-  for (const f of [BLOCO_DONO, MORADOR, CARTAO_CONVERSA]) assert.doesNotMatch(semComentarios(f), /name="avaliador|escolh(er|a) o avaliador|Escolher avaliador/);
+  // E648: o DONO escolhe o avaliador (bloco do dono); o morador e a conversa nunca escolhem.
+  for (const f of [MORADOR, CARTAO_CONVERSA]) assert.doesNotMatch(semComentarios(f), /name="avaliador|escolh(er|a) o avaliador|Escolher avaliador/);
+  // E1096 (ORDEM-DUET-453, asserção alterada): no bloco do dono o título e o botão são os do mockup ("Escolher avaliador" /
+  // "Escolher", pela fonte única); antes o botão dizia "Escolher este avaliador".
+  assert.match(semComentarios(BLOCO_DONO), /\{TITULO_ESCOLHA_AVALIADOR\}[\s\S]*\{ROTULO_ESCOLHER\}<\/Button>/);
 });
 
 test("chave desligada: dono, morador e o cartão da conversa somem; só o morador do pedido vê o cartão", () => {
   assert.match(BLOCO_DONO, /const chaveAtiva = await vistoriaAtiva\(\);[\s\S]*const visivel = blocoDoDonoVisivel\(chaveAtiva, [\s\S]*if \(!visivel\) return null;/);
-  assert.match(MORADOR, /if \(!\(await vistoriaAtiva\(\)\)\) notFound\(\);/);
-  assert.match(CONVERSA_ACAO, /if \(!\(await vistoriaAtiva\(\)\)\) return null;/);
+  // E1171 (ORDEM-DUET-746): para o morador a chave é a do PEDIDO (a sessão dele, ou o dono do pedido no piloto).
+  assert.match(MORADOR, /if \(!\(await vistoriaAtivaParaOMorador\(admin, p\.owner_id\)\)\) notFound\(\);/);
+  assert.match(CONVERSA_ACAO, /!\(await vistoriaAtivaParaOMorador\(admin, data\.owner_id as string \| null\)\)\) return null;/);
   assert.match(CONVERSA_ACAO, /\.eq\("morador_id", user\.id\)/);
 });
 
@@ -141,11 +154,16 @@ test("credenciamento: a identidade só conta verificada; o teste só conta revis
   assert.match(AVALIADOR, /data-testid="passo-identidade-quando"/);
   assert.match(AVALIADOR, /data-testid="credenciamento-passos"/);
   assert.match(AVALIADOR, /data-testid="credenciamento-estado">\{ESTADO_CREDENCIAMENTO\[/);
-  assert.ok(primarios(AVALIADOR) <= 1, "no máximo um primário: o envio do pedido");
+  // E1164 (fatia do resto): com o ajudante, a trava lê a página inteira. A cópia antiga parava no "image/*" do envio de
+  // arquivo e só via 274 das 453 linhas; por isso contava zero primários. O ramo do pedido (sem credenciamento) e o de
+  // quem já é credenciado ("Salvar termos") nunca aparecem juntos: a regra do um primário conta-se no ramo do pedido.
+  const PEDIDO = AVALIADOR.slice(AVALIADOR.indexOf("if (!cred) {"), AVALIADOR.indexOf("const foto = comPainel"));
+  assert.ok(PEDIDO.includes('data-testid="credenciamento-enviar"'), "o recorte é o ramo do pedido");
+  assert.equal(primarios(PEDIDO), 1, "um só primário no pedido: o envio");
 });
 
 test("página pública: linha fixa, sem contratar, sem link, sem escolher avaliador", () => {
-  assert.equal(LINHA_PUBLICA_DESIGNACAO, "A Viva designa o avaliador. O proprietário não escolhe.");
+  assert.equal(LINHA_PUBLICA_DESIGNACAO, "O proprietário escolhe o avaliador. O avaliador define o próprio valor e prazo.");
   assert.doesNotMatch(LINHA_PUBLICA_DESIGNACAO, TEXTO_PROIBIDO);
   assert.match(PUBLICA, /\{LINHA_PUBLICA_DESIGNACAO\}/);
   for (const id of ["avaliador-numero", "avaliador-cidade", "avaliador-feitas", "avaliador-nota"]) assert.match(PUBLICA, new RegExp(`data-testid="${id}"`));
@@ -155,8 +173,10 @@ test("página pública: linha fixa, sem contratar, sem link, sem escolher avalia
 
 test("agenda do avaliador: contador das 24 h, visitas da semana e hora sem segundos", () => {
   const agora = new Date("2026-10-23T12:00:00Z");
-  assert.equal(prazoResposta("2026-10-23T11:00:00Z", agora).texto, "Responda em 23 h 00 min");
-  assert.equal(prazoResposta("2026-10-22T11:59:00Z", agora).vencido, true);
+  // E1118 (ORDEM-DUET-506): a prazoResposta morta saiu de telas-exibicao; o contador é o do relógio único do pedido.
+  const contador = (designadoEm: string) => relogioDoPedido({ status: "designado", resposta: null, designadoEm, propostaEm: null, propostaAceitaEm: null, precisaDoAceite: true, prazoRespostaHoras: null }, agora)!;
+  assert.equal(textoDoPrazoDeResposta(contador("2026-10-23T11:00:00Z"), agora), "Responda em 23 h 00 min");
+  assert.equal(contador("2026-10-22T11:59:00Z").vencido, true);
   assert.equal(visitaNaSemana("2026-10-27T13:00:00Z", agora), true);
   assert.equal(visitaNaSemana("2026-11-05T13:00:00Z", agora), false);
   assert.equal(visitaNaSemana(null, agora), false);
@@ -166,8 +186,8 @@ test("agenda do avaliador: contador das 24 h, visitas da semana e hora sem segun
 });
 
 test("admin: decisões primeiro, a aprovação única do 62-B3 e o rodízio com o motivo", () => {
-  assert.equal(TITULO_ADMIN, "Avaliações do imóvel");
-  assert.match(MENU, /folha\("admin-avaliadores", "Avaliações do imóvel", "\/admin\/avaliadores", "parceiros"\)/);
+  assert.equal(TITULO_ADMIN, "Avaliadores");
+  assert.match(MENU, /folha\("admin-avaliadores", "Avaliadores", "\/admin\/avaliadores", "parceiros"\)/);
   assert.equal(rotuloDecisao("solicitado", "em_teste"), "Aprovar para teste");
   assert.equal(rotuloDecisao("em_teste", "ativo"), "Aprovar o teste (ativar)");
   assert.equal(rotuloDecisao("suspenso", "ativo"), "Reativar");
@@ -181,7 +201,8 @@ test("admin: decisões primeiro, a aprovação única do 62-B3 e o rodízio com 
   assert.deepEqual(fila.map((f) => [f.id, f.posicao, f.impedimento !== null]), [["a", 1, false], ["s", null, true], ["t", null, true], ["b", 2, false]]);
   const ordem = ["avaliacoes-decidir", "avaliadores-chave", "avaliadores-credenciamento", "avaliacoes-sem-avaliador", "avaliacoes-recusas", "avaliacoes-rodizio", "avaliadores-precos"].map((t) => ADMIN.indexOf(`data-testid="${t}"`));
   assert.ok(ordem.every((x, i) => x > 0 && (i === 0 || x > ordem[i - 1])), `ordem ${ordem}`);
-  assert.match(ADMIN, /<Link href=\{n\.ancora\}/);
+  // E1184 (ORDEM-DUET-830): os números são âncoras simples da própria página, não links do roteador.
+  assert.match(ADMIN, /<a href=\{n\.ancora\}/);
   assert.match(ADMIN, /rotuloDecisao\(c\.status, para\)/);
   // O que o 62-B3 trouxe continua: dados de quem ainda não é parceiro (mascarados), pendência, condição de retorno.
   for (const s of ['data-testid="credenciamento-dados-parceiro"', 'data-testid="credenciamento-pendencia"', "mascararDocumento(", 'name="retornoDias"', "textoCondicaoRetorno(condicaoRetorno(l))"]) assert.ok(ADMIN.includes(s), s);
@@ -218,7 +239,12 @@ test("QA ao vivo do E235: com a chave desligada, o bloco do dono abre só para c
   assert.match(BLOCO_DONO, /pedidoPodeAbrir\(\{ chaveAtiva: visivel === "ativa",/);
   assert.match(BLOCO_DONO, /visivel === "so_leitura_teste" && \(/);
   assert.match(BLOCO_DONO, /data-testid="avaliacao-modo-teste"/);
-  assert.match(ler("src/lib/vistoria/chave.ts"), /if \(VISTORIA_ATIVA\) return true;\n  if \(!integracoesSimuladas\(\)\) return false;/);
+  // Asserção alterada (E1077, ORDEM-DUET-369): fora do laboratório a chave deixou de ser só a VISTORIA_ATIVA — abre também
+  // para a conta da sessão que está no piloto (vistoria_piloto). O que esta guarda protegia continua preso: a chave ligada
+  // abre tudo, e o cookie do laboratório não vale nada fora do laboratório.
+  const chave = ler("src/lib/vistoria/chave.ts");
+  assert.match(chave, /if \(VISTORIA_ATIVA\) return "global";/);
+  assert.match(chave, /async function cookieDoLaboratorio\(\): Promise<boolean> \{\n  if \(!integracoesSimuladas\(\)\) return false;/);
 });
 
 test("0256: massa do QA só em contas e anúncio de teste, ids fixos, sem designação pendente; aplicar idempotente e desfazer", () => {
@@ -237,4 +263,24 @@ test("0256: massa do QA só em contas e anúncio de teste, ids fixos, sem design
   const volta = ler("supabase/producao/rollback/0256_rollback.sql");
   assert.match(volta, /delete from public\.vistoria_pedidos where id in \('a0256000-0000-4000-8000-0000000000a1', 'a0256000-0000-4000-8000-0000000000a2'\);/);
   assert.match(volta, /delete from supabase_migrations\.schema_migrations where version = '20261030000256';/);
+});
+
+// E706: um "·" sozinho dentro das aspas, no lugar da palavra, lia como selo quebrado. O separador pertence ao título do
+// nível ("Nível Conforto · vistoriado"); quando o selo é citado, vai a palavra, nunca o separador órfão.
+test("E706: nenhum texto de tela cita o selo com o separador órfão (“· vistoriado”)", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { ROTAS_NIVEL } = await import("./telas-exibicao.ts");
+  for (const r of ROTAS_NIVEL) assert.doesNotMatch(r.titulo, /[“"]·/);
+  for (const f of ["regras.ts", "laudo-documento.ts", "strikes.ts", "telas-exibicao.ts"]) {
+    const src = readFileSync(new URL(`./${f}`, import.meta.url), "utf8");
+    // Só o que vira texto de tela: valores devolvidos, constantes exportadas e títulos (os comentários podem citar o selo).
+    const textos = src.split("\n").filter((l) => /(return |export const|titulo:)/.test(l));
+    for (const l of textos) assert.doesNotMatch(l, /(?:\\"|“|")· vistoriado/, `${f}: ${l.trim().slice(0, 90)}`);
+  }
+});
+
+test("E706: o título do nível com selo continua 'Nível X · vistoriado' (o separador é do título, não de uma citação)", async () => {
+  const { tituloNivel } = await import("../niveis/exibicao.ts");
+  assert.match(tituloNivel("conforto", true) ?? "", /^Nível .+ · vistoriado$/);
+  assert.doesNotMatch(tituloNivel("conforto", false) ?? "", /vistoriado/);
 });

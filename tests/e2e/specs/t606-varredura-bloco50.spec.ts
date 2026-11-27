@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { TAMANHOS, cliqueResponde } from "../fixtures/varredura";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
@@ -76,7 +76,7 @@ test.describe("T606 — varredura da página inteira, bloco 50 (as duas telas da
     // A avaliadora: parceira com cadastro e credenciada em Uberlândia (ativada há muito tempo, como no t315).
     const { data: parc, error: eP } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.avaliadora, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: avaliadora.nome, slug: `aval-t606-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+      .insert({ user_id: ids.avaliadora, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: avaliadora.nome, slug: `aval-t606-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
       .select("id")
       .single();
     if (eP) console.log(`T606|semear parceira: ${eP.message}`);

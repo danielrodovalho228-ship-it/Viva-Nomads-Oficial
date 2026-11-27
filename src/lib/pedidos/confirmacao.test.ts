@@ -93,3 +93,13 @@ test("migração 0184: a chave mora no banco, desligada, e o mural usa a mesma r
   const volta = readFileSync(new URL("../../../supabase/producao/rollback/0184_rollback.sql", import.meta.url), "utf8");
   assert.match(volta, /delete from supabase_migrations\.schema_migrations where version = '20261019000184'/);
 });
+
+// E774: o aviso do pedido não sugere revelação de contato depois do aceite (E445: contato nunca é trocado).
+test("avisoConfirmacao: contato nunca trocado, sem 'escondido até aceitar'", async () => {
+  const { avisoConfirmacao } = await import("./confirmacao.ts");
+  for (const sms of [true, false]) {
+    const t = avisoConfirmacao(sms);
+    if (/escondido|até você aceitar|depois do aceite/i.test(t)) throw new Error(t);
+    if (!/contato nunca é trocado/.test(t)) throw new Error(t);
+  }
+});

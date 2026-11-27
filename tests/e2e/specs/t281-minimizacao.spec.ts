@@ -50,7 +50,9 @@ test.describe("T281 — minimização e eliminação (fase 1)", () => {
     test.setTimeout(90_000);
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: "Excluir rascunho" }).first().click();
+    // E515: o botão e a confirmação nomeiam o rascunho que vai ser apagado.
+    await page.getByRole("button", { name: new RegExp(`^Excluir o rascunho “Rascunho a excluir ${sufixo}”`) }).click();
+    await expect(page.getByText(new RegExp(`Excluir o rascunho “Rascunho a excluir ${sufixo}”.*\\? Esta ação não pode ser desfeita\\.`))).toBeVisible();
     await page.getByTestId("excluir-rascunho-confirmar").first().click();
     await expect(page.getByText(`Rascunho a excluir ${sufixo}`)).toHaveCount(0, { timeout: 15_000 });
 

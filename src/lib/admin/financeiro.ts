@@ -83,6 +83,31 @@ export const STATUS_COMISSAO: Record<string, string> = {
   sem_cobranca: "Sem cobrança emitida",
 };
 
+/** E1086: a chave, no mapa de cobranças, da cobrança da taxa de UM contrato. */
+export const chaveCobrancaDoContrato = (contratoId: string): string => `contrato:${contratoId}`;
+
+/**
+ * E1086 — emparelha cada cobrança da taxa com o contrato DELA: mesma candidatura e mesma proposta (uma candidatura pode
+ * ter um contrato por proposta). Devolve o mapa por contrato e, para a candidatura com UM contrato só, também a chave
+ * pela candidatura (como antes). Com dois contratos na candidatura não há chave pela candidatura: seria ambígua.
+ */
+export function cobrancasPorContrato(
+  cobrancas: { lead_id: string; proposta_id: string | null; status: string; pago_em: string | null }[],
+  contratos: { id: string; lead_id: string | null; proposta_id: string | null }[]
+): Map<string, { status: string; pagoEm: string | null }> {
+  const mapa = new Map<string, { status: string; pagoEm: string | null }>();
+  const porLead = new Map<string, number>();
+  for (const c of contratos) if (c.lead_id) porLead.set(c.lead_id, (porLead.get(c.lead_id) ?? 0) + 1);
+  for (const cb of cobrancas) {
+    const valor = { status: cb.status, pagoEm: cb.pago_em };
+    for (const c of contratos) {
+      if (c.lead_id === cb.lead_id && (c.proposta_id ?? null) === (cb.proposta_id ?? null)) mapa.set(chaveCobrancaDoContrato(c.id), valor);
+    }
+    if ((porLead.get(cb.lead_id) ?? 0) <= 1) mapa.set(cb.lead_id, valor);
+  }
+  return mapa;
+}
+
 /**
  * Linhas da tabela de taxas a partir da MESMA lista de contratos dos cartões (contratosReais com o recorte da página):
  * a soma da tabela é sempre a "Taxa de serviço gerada", e as não pagas somam a "Taxa a receber" (complemento do P29, item 3).
@@ -92,7 +117,9 @@ export function comissoesDosContratos(
   cobrancas: Map<string, { status: string; pagoEm: string | null }>
 ): Record<string, unknown>[] {
   return contratos.map((c) => {
-    const cb = c.leadId ? cobrancas.get(c.leadId) : undefined;
+    // E1086: a cobrança é a DO CONTRATO (candidatura + proposta). A chave só pela candidatura vale quando ela tem um
+    // contrato só; com dois (duas estadias), cada linha lê a cobrança dela e nunca a da outra.
+    const cb = cobrancas.get(chaveCobrancaDoContrato(c.id)) ?? (c.leadId ? cobrancas.get(c.leadId) : undefined);
     return {
       contrato: c.id,
       data: c.criadoEm.slice(0, 10),

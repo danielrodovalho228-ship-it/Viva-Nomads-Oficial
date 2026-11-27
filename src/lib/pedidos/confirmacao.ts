@@ -57,8 +57,8 @@ export function contatoConfirmado(s: SituacaoContato, sms: ChaveSms = { ligada: 
 /** Aviso do formulário e da tela de "Pedido publicado". Acompanha a chave. */
 export function avisoConfirmacao(smsLigado: boolean): string {
   return smsLigado
-    ? "Seu pedido só chega aos proprietários com e-mail e telefone confirmados. Seu contato continua escondido até você aceitar uma resposta."
-    : "Seu pedido chega aos proprietários com o seu e-mail confirmado. Seu contato continua escondido até você aceitar uma resposta.";
+    ? "Seu pedido só chega aos proprietários com e-mail e telefone confirmados. Seu contato nunca é trocado: a conversa fica no chat da Viva."
+    : "Seu pedido chega aos proprietários com o seu e-mail confirmado. Seu contato nunca é trocado: a conversa fica no chat da Viva.";
 }
 
 /** Título do aviso quando falta confirmar algo (só o que falta de verdade). */

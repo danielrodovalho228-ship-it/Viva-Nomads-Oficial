@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { LIMITE_BUSCAS_SALVAS, normalizarBusca, resumoDaBusca } from "@/lib/busca/buscas-salvas";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
+import { LIMITE_BUSCAS_SALVAS, chaveDaBusca, normalizarBusca, resumoDaBusca, semBuscasRepetidas } from "@/lib/busca/buscas-salvas";
 import { notificacaoLigada } from "@/lib/notifications/preferencias";
 
 /**
@@ -12,22 +13,34 @@ import { notificacaoLigada } from "@/lib/notifications/preferencias";
 export type BuscaSalva = { id: string; parametros: string; resumo: string; criadoEm: string; alertaAtivo: boolean };
 type Res<T> = ({ ok: true } & T) | { ok: false; error: string; precisaEntrar?: boolean };
 
-async function sessao() {
+/** E1093: com `exigir`, a confirmação da sessão que falha LANÇA (não vira "sem sessão" → lista vazia). */
+async function sessao(opcoes: { exigir?: boolean } = {}) {
   const supabase = await createClient();
   if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   return user ? { supabase, user } : null;
+}
+
+/** Estados vazios: a leitura que falha não vira "não salva" (nem uma 2ª cópia, nem o limite pulado). */
+const MSG_CONFERIR_BUSCA = "Não foi possível conferir esta busca agora. Tente de novo.";
+
+type Sessao = NonNullable<Awaited<ReturnType<typeof sessao>>>;
+
+/** E539 (ii): as buscas da pessoa com a MESMA identidade (os filtros, sem a ordenação). null = falha de leitura. */
+async function mesmasBuscas(s: Sessao, qs: string): Promise<string[] | null> {
+  const chave = chaveDaBusca(qs);
+  const { data, error } = await s.supabase.from("buscas_salvas").select("id, parametros").eq("usuario_id", s.user.id).limit(LIMITE_BUSCAS_SALVAS * 2);
+  if (error) return null;
+  return ((data ?? []) as { id: string; parametros: string }[]).filter((b) => chaveDaBusca(b.parametros) === chave).map((b) => b.id);
 }
 
 /** A busca atual já está salva? (null = visitante). */
 export async function buscaEstaSalva(qs: string): Promise<{ salva: boolean | null }> {
   const s = await sessao();
   if (!s) return { salva: null };
-  const parametros = normalizarBusca(qs);
-  const { data } = await s.supabase.from("buscas_salvas").select("id").eq("usuario_id", s.user.id).eq("parametros", parametros).maybeSingle();
-  return { salva: !!data };
+  const iguais = await mesmasBuscas(s, qs);
+  if (!iguais) throw new Error(MSG_CONFERIR_BUSCA);
+  return { salva: iguais.length > 0 };
 }
 
 /**
@@ -38,19 +51,19 @@ export async function alternarBuscaSalva(qs: string): Promise<Res<{ salva: boole
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre para salvar esta busca.", precisaEntrar: true };
   const parametros = normalizarBusca(qs);
-  const { data: existente } = await s.supabase
-    .from("buscas_salvas")
-    .select("id")
-    .eq("usuario_id", s.user.id)
-    .eq("parametros", parametros)
-    .maybeSingle();
-  if (existente) {
-    const { error } = await s.supabase.from("buscas_salvas").delete().eq("id", existente.id);
+  // E539 (ii): "já salva" pela identidade (filtros, sem a ordenação) — nunca uma 2ª "Todas as cidades".
+  const iguais = await mesmasBuscas(s, qs);
+  // Sem saber se já está salva, o clique não grava uma 2ª cópia nem apaga nada.
+  if (!iguais) return { ok: false, error: MSG_CONFERIR_BUSCA };
+  if (iguais.length > 0) {
+    const { error } = await s.supabase.from("buscas_salvas").delete().in("id", iguais).eq("usuario_id", s.user.id);
     if (error) return { ok: false, error: "Não foi possível remover a busca. Tente de novo." };
     revalidatePath("/dashboard/buscas");
     return { ok: true, salva: false };
   }
-  const { count } = await s.supabase.from("buscas_salvas").select("id", { count: "exact", head: true }).eq("usuario_id", s.user.id);
+  const { count, error: erroContagem } = await s.supabase.from("buscas_salvas").select("id", { count: "exact", head: true }).eq("usuario_id", s.user.id);
+  // Sem a contagem, o limite não é pulado.
+  if (erroContagem) return { ok: false, error: MSG_CONFERIR_BUSCA };
   if ((count ?? 0) >= LIMITE_BUSCAS_SALVAS) return { ok: false, error: `Você já tem ${LIMITE_BUSCAS_SALVAS} buscas salvas. Apague uma em Buscas salvas.` };
   const { data: nova, error } = await s.supabase
     .from("buscas_salvas")
@@ -71,7 +84,7 @@ const MSG_BUSCAS_NAO_CARREGARAM = "Não foi possível carregar as suas buscas sa
  * sem `exigir` (com .catch).
  */
 export async function listarBuscasSalvas(opcoes: { exigir?: boolean } = {}): Promise<BuscaSalva[]> {
-  const s = await sessao();
+  const s = await sessao(opcoes);
   if (!s) return [];
   const consulta = (colunas: string) =>
     s.supabase.from("buscas_salvas").select(colunas).eq("usuario_id", s.user.id).order("criado_em", { ascending: false }).limit(LIMITE_BUSCAS_SALVAS);
@@ -80,13 +93,14 @@ export async function listarBuscasSalvas(opcoes: { exigir?: boolean } = {}): Pro
   const semAlerta = comAlerta.error ? await consulta("id, parametros, resumo, criado_em") : null;
   if (semAlerta?.error && opcoes.exigir) throw new Error(MSG_BUSCAS_NAO_CARREGARAM);
   const data = semAlerta ? semAlerta.data : comAlerta.data;
-  return ((data ?? []) as unknown as Record<string, unknown>[]).map((r) => ({
+  // E539 (ii): repetidas (mesmos filtros, ordem diferente) aparecem uma vez só — a mais recente.
+  return semBuscasRepetidas(((data ?? []) as unknown as Record<string, unknown>[]).map((r) => ({
     id: r.id as string,
     parametros: r.parametros as string,
     resumo: r.resumo as string,
     criadoEm: r.criado_em as string,
     alertaAtivo: r.alerta_ativo !== false,
-  }));
+  })));
 }
 
 /** Liga ou desliga o alerta por e-mail de UMA busca (RLS da 0137: só a própria pessoa). */
@@ -105,7 +119,11 @@ export async function apagarBuscaSalva(id: string): Promise<Res<object>> {
   const s = await sessao();
   if (!s) return { ok: false, error: "Entre para gerenciar suas buscas.", precisaEntrar: true };
   if (!/^[0-9a-f-]{36}$/i.test(id)) return { ok: false, error: "Busca inválida." };
-  const { error } = await s.supabase.from("buscas_salvas").delete().eq("id", id).eq("usuario_id", s.user.id);
+  // E539 (ii): apaga também as repetidas da mesma identidade (a lista mostra uma só; senão a outra "voltaria").
+  const { data: alvo } = await s.supabase.from("buscas_salvas").select("parametros").eq("id", id).eq("usuario_id", s.user.id).maybeSingle();
+  const iguais = alvo ? await mesmasBuscas(s, alvo.parametros as string) : null;
+  const ids = iguais && iguais.length > 0 ? iguais : [id];
+  const { error } = await s.supabase.from("buscas_salvas").delete().in("id", ids).eq("usuario_id", s.user.id);
   if (error) return { ok: false, error: "Não foi possível apagar. Tente de novo." };
   revalidatePath("/dashboard/buscas");
   return { ok: true };

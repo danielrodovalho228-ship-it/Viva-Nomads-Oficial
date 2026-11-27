@@ -14,13 +14,15 @@ import type { ChecklistAtivacao } from "../onboarding/ativacao.ts";
 export interface ItemPassoDono {
   rotulo: string;
   feito: boolean;
-  href: string;
+  /** E494: null quando o passo leva ao MESMO lugar do botão do bloco (não é atalho; a lista só mostra o estado). */
+  href: string | null;
   /** Linha curta de "para que serve" (o guia de ativação do dono traz; o rascunho, não). */
   detalhe?: string | null;
 }
 
 export interface BlocoPrincipalDono {
-  tipo: "rascunho" | "decisao" | "primeiro_anuncio" | "em_dia";
+  /** E1093: "sem_leitura" = os anúncios (ou as decisões) não foram lidos agora; o bloco não afirma o que não leu. */
+  tipo: "rascunho" | "decisao" | "primeiro_anuncio" | "em_dia" | "sem_leitura";
   titulo: string;
   /** "47% pronto" (só no rascunho). */
   pct: number | null;
@@ -30,6 +32,8 @@ export interface BlocoPrincipalDono {
   /** "Próximos passos" do rascunho (até 3: o feito mais recente e os que faltam). */
   passos: ItemPassoDono[];
   foto: string | null;
+  /** E567: o nome do RASCUNHO a que o "% pronto" se refere (o dono não confunde com o anúncio já publicado). */
+  nome?: string | null;
 }
 
 /** A pendência mais urgente: atrasada primeiro, depois o prazo mais próximo; sem prazo, a primeira da lista. */
@@ -40,7 +44,8 @@ export function alertaDoTopo(decisoes: readonly Decisao[]): Decisao | null {
 }
 
 export function blocoPrincipalDono(p: {
-  rascunho: { id: string; pct: number; pronto: boolean; itens: { label: string; ok: boolean; href: string }[]; foto: string | null } | null;
+  /** E507: `retomar` é o destino único de retomada (hrefRetomarRascunho) — o mesmo do "Continuar editando" de Meus imóveis. */
+  rascunho: { id: string; pct: number; pronto: boolean; itens: { label: string; ok: boolean; href: string }[]; foto: string | null; retomar?: string; nome?: string | null } | null;
   decisoes: readonly Decisao[];
   temAnuncio: boolean;
   fotoAnuncio: string | null;
@@ -49,7 +54,19 @@ export function blocoPrincipalDono(p: {
    * Mora DENTRO do bloco principal, na lista "Próximos passos" do mockup; nunca num bloco à parte (um guia só).
    */
   checklist?: ChecklistAtivacao | null;
+  /**
+   * E1093: o que o Início NÃO conseguiu ler nesta carga. Com os anúncios por ler, `temAnuncio` não quer dizer nada: o
+   * bloco não pode dizer "Anuncie seu primeiro imóvel" a quem tem imóveis. Com as decisões por ler, não pode dizer "Tudo
+   * em dia". O que foi lido (um rascunho, uma decisão) continua a valer.
+   */
+  naoLido?: { imoveis: boolean; decisoes: boolean };
 }): BlocoPrincipalDono {
+  const b = montarBloco(p);
+  // E494: "Próximos passos" não repete o destino do botão principal (ex.: "Endereço" = "Continuar de onde parou").
+  return { ...b, passos: b.passos.map((x) => (x.href === b.botao.href ? { ...x, href: null } : x)) };
+}
+
+function montarBloco(p: Parameters<typeof blocoPrincipalDono>[0]): BlocoPrincipalDono {
   const r = p.rascunho;
   if (r && !r.pronto) {
     const falta = r.itens.find((i) => !i.ok) ?? null;
@@ -60,9 +77,10 @@ export function blocoPrincipalDono(p: {
       titulo: "Continue seu anúncio",
       pct: Math.max(0, Math.min(100, Math.round(r.pct))),
       linha: falta ? `Próximo passo: ${falta.label.charAt(0).toLowerCase()}${falta.label.slice(1)}` : "Falta revisar e publicar",
-      botao: { rotulo: "Continuar de onde parou", href: falta?.href ?? `/dashboard/imoveis/novo?draft=${r.id}` },
+      botao: { rotulo: "Continuar de onde parou", href: r.retomar ?? falta?.href ?? `/dashboard/imoveis/novo?draft=${r.id}` },
       passos,
       foto: r.foto,
+      nome: r.nome ?? null,
     };
   }
   // E218-A, caso obrigatório: rascunho PRONTO e ainda não publicado → revisar e publicar ESSE rascunho (antes caía em
@@ -76,12 +94,16 @@ export function blocoPrincipalDono(p: {
       botao: { rotulo: "Revisar e publicar", href: `/dashboard/imoveis/novo?draft=${r.id}&etapa=revisao` },
       passos: [],
       foto: r.foto,
+      nome: r.nome ?? null,
     };
   }
   const urgente = alertaDoTopo(p.decisoes);
   if (urgente) {
     return { tipo: "decisao", titulo: "Próximo passo", pct: null, linha: urgente.texto, botao: { rotulo: "Resolver agora", href: urgente.href }, passos: [], foto: p.fotoAnuncio };
   }
+  // E1093: daqui para baixo o bloco afirma algo sobre os anúncios ("não tem nenhum") ou sobre as decisões ("nada
+  // pendente"). Sem a leitura, diz que não leu e leva aos anúncios — nunca ao cadastro de um imóvel novo.
+  if (p.naoLido?.imoveis) return blocoSemLeitura(TEXTO_ANUNCIOS_NAO_LIDOS, null);
   if (!p.temAnuncio) {
     return {
       tipo: "primeiro_anuncio",
@@ -97,7 +119,17 @@ export function blocoPrincipalDono(p: {
       foto: null,
     };
   }
+  if (p.naoLido?.decisoes) return blocoSemLeitura(TEXTO_DECISOES_NAO_LIDAS, p.fotoAnuncio);
   return { tipo: "em_dia", titulo: "Tudo em dia", pct: null, linha: "Nada pede sua decisão hoje.", botao: { rotulo: "Ver meus anúncios", href: "/dashboard/imoveis" }, passos: [], foto: p.fotoAnuncio };
+}
+
+/** E1093: os textos do bloco quando a leitura falhou (o aviso do topo, avisoInicioSemLeitura, diz o que faltou ler). */
+export const TITULO_SEM_LEITURA = "Seus anúncios";
+export const TEXTO_ANUNCIOS_NAO_LIDOS = "Não foi possível ler os seus anúncios agora. Recarregue a página em instantes.";
+export const TEXTO_DECISOES_NAO_LIDAS = "Não foi possível ler as suas pendências agora. Recarregue a página em instantes.";
+
+function blocoSemLeitura(linha: string, foto: string | null): BlocoPrincipalDono {
+  return { tipo: "sem_leitura", titulo: TITULO_SEM_LEITURA, pct: null, linha, botao: { rotulo: "Ver meus anúncios", href: "/dashboard/imoveis" }, passos: [], foto };
 }
 
 export const PECA_NA_VIVA = {

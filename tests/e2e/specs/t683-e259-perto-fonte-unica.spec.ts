@@ -1,13 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { metrosEntre, rotuloReta } from "../../../src/lib/rotas/tempo";
 
 /*
   T683 — E259 item 7: "O que tem por perto" do assistente e a página pública do MESMO anúncio saem da mesma fonte.
   Caso fixado: Av. João Naves de Ávila, 2121, Saraiva, Uberlândia (VN-A02590) — o assistente dizia "Não achamos lugares
   por perto, num raio de 2 km" e a página mostrava "≈ 600 m em linha reta até a UFU — Campus Santa Mônica".
    1. Com o ponto público do anúncio e a âncora oficial com as coordenadas de produção, a busca do assistente
-      (/api/proximidades, com o id do anúncio) traz a UFU — Campus Santa Mônica a ~600 m, em Educação.
-   2. O "Tempo até" da página (/api/tempos/imovel/<id>) mostra a mesma UFU (sem rota, "≈ 600 m em linha reta").
+      (/api/proximidades, com o id do anúncio) traz a UFU — Campus Santa Mônica em Educação, à distância calculada a
+      partir do ponto público que o banco gravou (E744: lido de volta, em vez do "~600 m" fixo).
+   2. O "Tempo até" da página (/api/tempos/imovel/<id>) mostra a mesma UFU, com a linha reta da mesma conta.
   A âncora volta às coordenadas de antes no fim (a base do lab é compartilhada).
 */
 const senha = novaSenha();
@@ -28,7 +30,13 @@ test.describe("T683 — E259: o que tem por perto, assistente × página, mesma 
     await adm().from("destinos").update({ lat: UFU.lat, lng: UFU.lng, ativo: true }).eq("slug", "ufu-santa-monica");
     ids.dono = await criarConta(dono, senha);
     ids.imovel = await criarImovelPronto(ids.dono, `Perto da UFU ${sufixo}`, { ativo: true });
-    await adm().from("properties").update({ city: "Uberlândia", state: "MG", lat: PONTO_PUBLICO.lat, lng: PONTO_PUBLICO.lng }).eq("id", ids.imovel);
+    // E952 (main): o ponto público só vale para o MESMO endereço em que foi gravado (cep_proximidades + rua do
+    // exact_address). A semente grava o endereço junto do ponto, como o salvar do anúncio faz; sem isso a busca mede
+    // do ponto do CEP pedido e a conta "a partir do ponto gravado" não fecha. Arnês (semente), não asserção.
+    await adm()
+      .from("properties")
+      .update({ city: "Uberlândia", state: "MG", lat: PONTO_PUBLICO.lat, lng: PONTO_PUBLICO.lng, cep_proximidades: "38408100", exact_address: "Avenida João Naves de Ávila, 2121" })
+      .eq("id", ids.imovel);
   });
 
   test.afterAll(async () => {
@@ -47,8 +55,13 @@ test.describe("T683 — E259: o que tem por perto, assistente × página, mesma 
     const ufu = corpo.itens.find((l) => l.nome === "UFU — Campus Santa Mônica");
     expect(ufu, "a âncora oficial entra na lista do assistente").toBeTruthy();
     expect(ufu!.categoria).toBe("educacao");
-    expect(ufu!.distanciaM).toBeGreaterThanOrEqual(550);
-    expect(ufu!.distanciaM).toBeLessThan(650);
+    // E744 (asserção alterada, tabela da Fable #3832): em vez do "~600 m" fixo, a prova da fonte única — o ponto público
+    // que o banco GRAVOU para o anúncio (lido de volta) e a distância da API e a linha reta do "Tempo até" são a mesma
+    // conta a partir DESSE ponto até a âncora.
+    const { data: gravado } = await adm().from("properties").select("lat, lng").eq("id", ids.imovel!).single();
+    const ponto = { lat: Number(gravado!.lat), lng: Number(gravado!.lng) };
+    const esperado = metrosEntre(ponto, UFU);
+    expect(Math.abs(ufu!.distanciaM - esperado), `distância da API (${ufu!.distanciaM}) × conta do ponto gravado (${Math.round(esperado)})`).toBeLessThanOrEqual(25);
     expect(corpo.fonte).not.toBe("sem_lugares");
 
     // A página pública do mesmo anúncio: o "Tempo até" lê a mesma âncora, do mesmo ponto.
@@ -58,7 +71,7 @@ test.describe("T683 — E259: o que tem por perto, assistente × página, mesma 
     expect(linha, "o 'Tempo até' mostra a mesma UFU").toBeTruthy();
     // Sem rota (provedor simulado sem minuto), a linha reta é a mesma conta: ≈ 600 m.
     const reta = linha!.tempos.find((x) => /linha reta/.test(x));
-    if (reta) expect(reta).toMatch(/600 m em linha reta/);
+    if (reta) expect(reta).toContain(rotuloReta(esperado).replace(/^≈\s*/, "").split(" até ")[0]);
     await page.context().close();
   });
 });

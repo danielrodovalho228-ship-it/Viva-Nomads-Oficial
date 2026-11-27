@@ -61,7 +61,8 @@ export function Reviews({ property }: { property: Property }) {
         <ComoFuncionamAvaliacoes />
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      {/* Grade par (varredura 04/11): com número ímpar, a última avaliação ocupa a linha inteira. */}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:[&>:last-child:nth-child(odd)]:col-span-full">
         {reviews.map((r, i) => {
           const date = reviewDate(r.date);
           const autor = linhaAutorAvaliacao(r);
@@ -83,7 +84,7 @@ export function Reviews({ property }: { property: Property }) {
               {date && <p className="text-xs text-muted">{date}</p>}
               <p className="mt-2 text-sm text-muted">{r.comment}</p>
               {r.reply && (
-                <div className="mt-3 rounded-xl bg-sage-50 p-3" data-testid="avaliacao-resposta">
+                <div className="mt-3 rounded-xl bg-sage-100 p-3" data-testid="avaliacao-resposta">
                   <p className="text-xs font-semibold text-forest">Resposta do proprietário</p>
                   <p className="mt-1 text-sm text-ink">{r.reply}</p>
                 </div>

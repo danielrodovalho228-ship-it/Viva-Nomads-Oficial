@@ -33,5 +33,6 @@ test("a tela avisa: estado que não carrega mostra o motivo, e a rodada que demo
   const tela = ler("../components/anuncio/medir-internet.tsx");
   assert.doesNotMatch(tela, /if \(!estado\.ok\) return null;/);
   assert.match(tela, /if \(!estado\.ok\)\s*return \([\s\S]*?data-testid="medir-internet-indisponivel"[\s\S]*?\{estado\.erro\}/);
-  assert.match(tela, /A medição demorou demais e parou\. Confira o Wi-Fi e tente de novo\./);
+  // E414c: as frases de cada motivo moram no motor (mensagemDaFalha), a tela só as mostra
+  assert.match(ler("./internet-motor.ts"), /A medição demorou demais e parou\. Confira o Wi-Fi e tente de novo\./);
 });

@@ -1,11 +1,14 @@
 "use client";
 
+import { rotuloPrecoDoImovel } from "@/lib/cartao-estadia";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
-import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
-import { calcularTudoIncluido } from "@/lib/precos";
+import { mesesDoCartao } from "@/lib/cartao-preco";
+
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
+import { SkeletonGradeCartoes } from "@/components/ui/skeleton";
 import {
   Eye,
   Users,
@@ -39,8 +42,10 @@ import { itensDoChecklist } from "@/lib/anuncio/checklist-compacto";
 import { imoveisPublicados } from "@/lib/anuncio/publicados";
 import { kpiInteressados } from "@/lib/painel/kpi-interessados";
 import type { Property } from "@/lib/types";
+import { useAuthStore } from "@/lib/store";
+import { contaConfirmada, soDaConta } from "@/lib/sessao/lista-da-conta";
 import { useDashDemo, DemoBadge, useDisplayUser } from "@/lib/demo/demo-mode";
-import { DEMO_PROPERTIES, DEMO_KPIS } from "@/lib/demo/seed";
+import { useExemplos, type Exemplos } from "@/lib/demo/usar-exemplos";
 import { coverPhoto } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { juntarDecisoes, tituloDecisoes, type Decisao, type DecisaoDoPapel, type TipoDecisao } from "@/lib/painel/decisoes";
@@ -48,7 +53,8 @@ import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { ServicosPainel } from "@/components/parceiros/servicos-painel";
 import type { EstadiaNaHome } from "@/lib/data/estadia";
 import { useViewMode } from "@/lib/roles";
-import { InicioDono } from "@/components/painel/inicio-dono";
+import { InicioDono, InicioDonoFixo } from "@/components/painel/inicio-dono";
+import { textoDoTopo } from "@/lib/painel/inicio-secoes";
 import { PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
 import type { CartaoHoje } from "@/lib/painel/hoje-dono";
 import { useFavoritos } from "@/lib/use-favoritos";
@@ -208,7 +214,9 @@ function OwnerDashboard({
   // Só imóveis ATIVOS contam como "imóvel publicado" (regra única, a mesma de
   // "Meus imóveis"). Rascunhos não entram nos KPIs nem na lista da visão geral —
   // eles têm o próprio card de "anúncio em andamento" abaixo.
-  const allProperties = imoveisPublicados(demo ? DEMO_PROPERTIES : imoveisDono);
+  // E980: os exemplos chegam sob demanda (só com a demonstração ligada); enquanto carregam, lista vazia e "—".
+  const exemplos = useExemplos(demo);
+  const allProperties = imoveisPublicados(demo ? (exemplos?.DEMO_PROPERTIES ?? []) : imoveisDono);
   // PROP-3 (E113): a prévia mostra os mesmos ativos de "Meus imóveis" (antes cortava em 2 e escondia o 3º).
   const myProperties = allProperties;
   const kpiLeads = kpiInteressados(interessados.atual, interessados.anterior, {
@@ -223,6 +231,7 @@ function OwnerDashboard({
       {semImovel && <PrimeiroImovel />}
       {allProperties.length > 0 && <PainelDoDono
           demo={demo}
+          exemplos={exemplos}
           allProperties={allProperties}
           myProperties={myProperties}
           kpiLeads={kpiLeads}
@@ -254,6 +263,7 @@ function PrimeiroImovel() {
 /** Métricas, verificação, "Meus imóveis" e atividade — para quem já tem imóvel publicado. */
 function PainelDoDono({
   demo,
+  exemplos,
   allProperties,
   myProperties,
   kpiLeads,
@@ -262,6 +272,8 @@ function PainelDoDono({
   totalConversas,
 }: {
   demo: boolean;
+  /** E980: os dados fictícios do modo demonstração, carregados sob demanda (null fora dele). */
+  exemplos: Exemplos | null;
   allProperties: Property[];
   myProperties: Property[];
   kpiLeads: ReturnType<typeof kpiInteressados>;
@@ -308,12 +320,12 @@ function PainelDoDono({
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label="Visualizações"
-          value={demo ? DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") : visualizacoes == null ? "—" : visualizacoes.toLocaleString("pt-BR")}
+          value={demo ? (exemplos?.DEMO_KPIS.visualizacoes.toLocaleString("pt-BR") ?? "—") : visualizacoes == null ? "—" : visualizacoes.toLocaleString("pt-BR")}
           hint={demo ? undefined : "Últimos 30 dias, nos seus anúncios"}
           icon={Eye}
         />
         {demo ? (
-          <StatCard label="Interessados" value={String(DEMO_KPIS.leads)} icon={Users} />
+          <StatCard label="Interessados" value={exemplos ? String(exemplos.DEMO_KPIS.leads) : "—"} icon={Users} />
         ) : (
           <StatCard
             label={kpiLeads.rotulo}
@@ -323,7 +335,7 @@ function PainelDoDono({
             icon={Users}
           />
         )}
-        <StatCard label="Mensagens" value={demo ? String(DEMO_KPIS.mensagens) : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />
+        <StatCard label="Mensagens" value={demo ? (exemplos ? String(exemplos.DEMO_KPIS.mensagens) : "—") : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />
         <StatCard label="Imóveis ativos" value={String(allProperties.length)} icon={Home} />
       </div>
 
@@ -348,15 +360,22 @@ function PainelDoDono({
           ) : (
             <>
               <ul className="divide-y divide-sage-200">
-                {myProperties.map((p) => (
+                {myProperties.map((p) => {
+                  const capa = coverPhoto(p.id, p.photos);
+                  return (
                   <li key={p.id} className="flex items-center gap-3 py-3">
-                    <Image
-                      src={coverPhoto(p.id, p.photos)}
-                      alt=""
-                      width={56}
-                      height={56}
-                      className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                    />
+                    {/* E513: sem capa, o espaço sem foto — nunca uma foto do acervo repetida. */}
+                    {capa ? (
+                      <Image
+                        src={capa}
+                        alt=""
+                        width={56}
+                        height={56}
+                        className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <PhotoPlaceholder className="h-14 w-14 shrink-0 rounded-xl" />
+                    )}
                     <div className="min-w-0 flex-1">
                       {/* Imóveis de demonstração não têm página real (/imoveis/demo-*
                           daria 404) — mostra como texto. Reais viram link. */}
@@ -371,7 +390,7 @@ function PainelDoDono({
                         </Link>
                       )}
                       <PrecoComContexto
-                        rotulo={rotuloPreco({ mensal: calcularTudoIncluido(p).total, meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
+                        rotulo={rotuloPrecoDoImovel(p, { meses: mesesDoCartao(undefined, p.minPeriodDays), disponivelEm: p.availableFrom })}
                         destaque="sm"
                       />
                       <p className="text-sm text-muted">{p.neighborhood}</p>
@@ -384,7 +403,8 @@ function PainelDoDono({
                       </div>
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
               <Link
                 href="/dashboard/imoveis"
@@ -481,7 +501,10 @@ function ListaDecisoes({ decisoes }: { decisoes: (Decisao | DecisaoDoPapel)[] })
  * As estadias em vigor (Prompt 32): o topo de cada uma e a lista "Ações desta estadia" (a mesma da folha do 41). O que
  * a pessoa decide nelas entra na lista de decisões acima (Prompt 42) — aqui não se repete.
  */
-function CartaoEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
+function CartaoEstadias({ estadias: doServidor }: { estadias: EstadiaNaHome[] }) {
+  // E680: a lista é da conta para quem o servidor a montou; só aparece com a conta CONFIRMADA no navegador (a persistida pode ser a anterior).
+  const contaDoNavegador = useAuthStore((s) => contaConfirmada(s));
+  const estadias = soDaConta(doServidor, contaDoNavegador);
   if (!estadias.length) return null;
   return (
     <Panel title="Suas estadias" className="mb-4" data-testid="home-decisoes-estadias">
@@ -489,7 +512,9 @@ function CartaoEstadias({ estadias }: { estadias: EstadiaNaHome[] }) {
         {estadias.map((e) => (
           <li key={e.contratoId} className="py-3 first:pt-0 last:pb-0" data-testid="home-estadia" data-contrato={e.contratoId}>
             <Link href={`/dashboard/estadia/${e.contratoId}`} className="block min-w-0 hover:underline">
-              <span className="block truncate font-semibold text-ink">{e.imovel}</span>
+              <span className="block truncate font-semibold text-ink" data-testid="home-estadia-imovel">{e.imovel}</span>
+              {/* E360: onde é e o código do anúncio — o título sozinho pode ser genérico ("Carteira 3"). */}
+              {e.local && <span className="block text-sm text-muted" data-testid="home-estadia-local">{e.local}</span>}
               <span className="block text-sm text-muted">{e.topo}</span>
             </Link>
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1" data-testid="home-estadia-acoes">
@@ -525,9 +550,13 @@ function TenantDashboard({
   const demo = useDashDemo();
   // Conformidade morador-inicio (matriz, 31/10): os recomendados no MESMO cartão com foto da busca e dos favoritos, em
   // grade par (2 no celular, 4 no computador) — antes eram linhas compactas.
-  const recommended = useProperties("/api/properties").properties.slice(0, 4);
+  // E503: enquanto a lista chega, a seção guarda o lugar com o esqueleto dos 4 cartões (antes a página nascia curta e
+  // terminava num vão até os recomendados aparecerem).
+  const { properties: todosRecomendados, loading: carregandoRecomendados } = useProperties("/api/properties");
+  const recommended = todosRecomendados.slice(0, 4);
   // E181: "Favoritos" conta a MESMA lista de /dashboard/favoritos (os favoritados que existem), nunca um número fixo.
-  const { favoritos } = useFavoritos();
+  // E535: antes de "pronto" (imóveis e lista da conta carregados) o cartão não escreve número — nada de "0" falso.
+  const { favoritos, pronto: favoritosProntos } = useFavoritos();
   void name;
   return (
     <>
@@ -553,11 +582,17 @@ function TenantDashboard({
           é o lar do acompanhamento (envio → resposta) — sem novo item no menu. */}
       <div className={cn("grid grid-cols-2 gap-3 sm:gap-4", !ehDono && "sm:grid-cols-4")} data-testid="inicio-morador-kpis">
         <StatCard label="Candidaturas" value={demo ? "2" : valorContador(totalCandidaturas)} icon={FileSignature} href="/dashboard/candidaturas" />
-        <StatCard label="Favoritos" value={demo ? "3" : String(favoritos.length)} icon={Heart} href="/dashboard/favoritos" />
+        <StatCard label="Favoritos" value={demo ? "3" : valorContador(favoritosProntos ? favoritos.length : null)} icon={Heart} href="/dashboard/favoritos" />
         {!ehDono && <StatCard label="Buscas salvas" value={demo ? "2" : valorContador(totalBuscasSalvas)} icon={Search} href="/dashboard/buscas" />}
         {/* Dono: as Mensagens já estão no bloco de proprietário (o mesmo número). */}
         {!ehDono && <StatCard label="Mensagens" value={demo ? "1" : valorContador(totalConversas)} icon={MessageSquare} href="/dashboard/mensagens" />}
       </div>
+
+      {carregandoRecomendados && recommended.length === 0 && (
+        <section className="mt-6" aria-label="Imóveis recomendados para você" data-testid="inicio-recomendados-carregando">
+          <SkeletonGradeCartoes itens={4} className="grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-4 xl:grid-cols-4" />
+        </section>
+      )}
 
       {recommended.length > 0 && (
         <section className="mt-6" aria-labelledby="recomendados-titulo" data-testid="inicio-recomendados">
@@ -578,7 +613,7 @@ function TenantDashboard({
       )}
 
       {/* "Salve seus favoritos" só para quem ainda não salvou nenhum — antes aparecia mesmo com favoritos salvos. */}
-      {(demo ? 3 : favoritos.length) === 0 && (
+      {(demo ? false : favoritosProntos && favoritos.length === 0) && (
         <div className="mt-6">
           <EmptyState
             icon={Heart}
@@ -712,4 +747,43 @@ function Activity({ text, time }: { text: string; time: string }) {
       </div>
     </li>
   );
+}
+
+/*
+ * E797: o topo, o marcador e as partes fixas do Início moram NESTE módulo de propósito — a casca (page.tsx) os importa,
+ * então o código do VisaoGeral já vem com o 1º quadro. Quando o bloco de dados chega pelo fluxo, ele hidrata na hora;
+ * antes, o código dele só baixava depois, e um toque nesse intervalo era segurado pelo React e a navegação se perdia
+ * (t266: "Resolver agora" não saía do Início).
+ */
+/**
+ * E797 (opção b do chat principal) — o Início em SEÇÕES. Tudo aqui pinta no 1º quadro, sem esperar leitura nenhuma:
+ * o nome e o modo vêm dos hooks do quadro (no piloto, da sessão conferida no servidor).
+ */
+
+/** O topo do Início: a saudação com o primeiro nome (sem nome, neutra). */
+export function InicioTopo() {
+  const nome = primeiroNomeExibicao(useDisplayUser());
+  return (
+    <div className="mb-4" data-testid="inicio-topo">
+      <p className="font-title text-lg font-semibold text-ink">{textoDoTopo(nome)}</p>
+    </div>
+  );
+}
+
+/** O marcador do bloco de dados enquanto ele chega (não é o esqueleto de página inteira). */
+export function MarcadorSecaoInicio() {
+  return (
+    <section role="status" aria-label="Carregando o seu painel" aria-busy="true" className="space-y-3" data-testid="inicio-secao-carregando">
+      <div className="h-6 w-56 animate-pulse rounded-lg bg-divisor" />
+      <div className="h-32 animate-pulse rounded-lg bg-divisor" />
+    </section>
+  );
+}
+
+/** As partes fixas do Início: no modo dono, Peça na Viva e Ferramentas (as do morador ficam no bloco dele). */
+export function InicioFixo() {
+  const { mode } = useViewMode();
+  const demo = useDashDemo();
+  if (mode !== "owner" || demo) return null;
+  return <InicioDonoFixo />;
 }

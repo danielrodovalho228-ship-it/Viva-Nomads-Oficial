@@ -23,7 +23,8 @@ test.describe("T376 — 62-A item 1: convite da avaliação em Seja parceiro", (
       const convite = pub.getByTestId("sp-convite-avaliacao");
       await expect(convite).toContainText("Avaliação de imóveis", { timeout: 20_000 });
       await expect(convite).toContainText("Credenciamento à parte");
-      await expect(convite.getByRole("link", { name: "Ver os passos do credenciamento" })).toHaveAttribute("href", "/dashboard/parceiro/avaliacao");
+      // E902 (asserção alterada): o link leva à página pública de recrutamento (antes: /dashboard/parceiro/avaliacao, área logada).
+      await expect(convite.getByRole("link", { name: "Ver os passos do credenciamento" })).toHaveAttribute("href", "/parceiros/avaliadores");
       await convite.scrollIntoViewIfNeeded();
       await semRolagemLateral(pub);
       await convite.screenshot({ path: `${SAIDA}/t376-convite-${w}.png` });

@@ -21,12 +21,14 @@ const caminho = args.find((a) => !a.startsWith("--")) ?? "tests/laboratorio/said
  * (falhou) ou da 1ª que falhou (instável: a última passou e não tem erro).
  * Sem códigos de cor do terminal e sem sequências longas de letras/números (segredos TOTP, tokens): vão mascaradas.
  */
-export function trechoDoErro(results, instavel = false) {
+export function trechoDoErro(results, instavel = false, limite = 300) {
   const lista = results ?? [];
   const r = instavel ? (lista.find((x) => x?.error || x?.errors?.length) ?? lista[0]) : lista.at(-1);
   const bruto = String(r?.error?.message ?? r?.errors?.[0]?.message ?? "");
   const limpo = bruto.replace(/\u001b\[[0-9;]*m/g, "").replace(/[A-Za-z0-9_\-]{24,}/g, "***").replace(/\s+/g, " ").trim();
-  return limpo.slice(0, 300);
+  // 300 é o que vai para o banco. O log da fatia (E744, scripts/lab/falhas-da-fatia.mjs) pede um teto maior e avisa o corte.
+  if (limite === 300 || limpo.length <= limite) return limpo.slice(0, limite);
+  return `${limpo.slice(0, limite)} … (cortado)`;
 }
 
 /** Junta todos os testes de uma árvore de suites: [{ arquivo, titulo, status }]. */

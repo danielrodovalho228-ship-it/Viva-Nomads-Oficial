@@ -11,6 +11,7 @@ import {
   novaSenha,
   novoSufixo,
 } from "../fixtures/laboratorio";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T68 — ordem c54366b0 (complemento da b3c9d76e): a comissão incide sobre o VALOR
@@ -21,7 +22,7 @@ test.describe("T68 — Comissão sobre o valor total: páginas públicas", () =>
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("/precos, /termos, /para-proprietarios e home: valor total, nunca primeiro mês", async ({ page }) => {
-    for (const rota of ["/precos", "/termos", "/para-proprietarios", "/"]) {
+    for (const rota of [...comPrecos("/precos"), "/termos", "/para-proprietarios", "/"]) {
       await page.goto(rota, { waitUntil: "networkidle" });
       const texto = await page.locator("main").innerText();
       expect(texto, rota).toMatch(/valor total (do|de cada) contrato/i);

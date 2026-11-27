@@ -24,6 +24,13 @@ export const CHAVES_AMBIENTE: readonly ChaveAmbiente[] = [
   { nome: "PAGAMENTO_PARCEIROS_ATIVO", rotulo: "Pagamento de parceiros pela plataforma", variavel: "NEXT_PUBLIC_PAGAMENTO_PARCEIROS_ATIVO" },
   { nome: "ENCERRAMENTO_REGRAS_ATIVO", rotulo: "Regras de encerramento de contrato", variavel: "NEXT_PUBLIC_ENCERRAMENTO_REGRAS_ATIVO" },
   { nome: "VISTORIA_ATIVA", rotulo: "Avaliação do imóvel por avaliador credenciado", variavel: "NEXT_PUBLIC_VISTORIA_ATIVA" },
+  { nome: "AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA", rotulo: "Ativação automática do avaliador (teste e ativo, sem passar pelo admin)", variavel: "NEXT_PUBLIC_AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA" },
+  { nome: "MATRICULA_OBRIGATORIA", rotulo: "Matrícula atualizada obrigatória para publicar (só com a confirmação da Dra. Beatriz)", variavel: "NEXT_PUBLIC_MATRICULA_OBRIGATORIA" },
+  { nome: "FICHA_RESUMO_ATIVA", rotulo: "Ficha-resumo do contrato (entra com o modelo de contrato da Dra. Beatriz)", variavel: "NEXT_PUBLIC_FICHA_RESUMO_ATIVA" },
+  { nome: "COBRANCA_MENSAL_ATIVA", rotulo: "Cobrança mensal de contratos de 91 a 180 dias: cronograma, livro e lembretes (só com o parecer da Dra. Beatriz)", variavel: "NEXT_PUBLIC_COBRANCA_MENSAL_ATIVA" },
+  { nome: "FORMA_PAGAMENTO_DONO_ATIVA", rotulo: "Forma de pagamento (bloco, mensal ou ambos) escolhida pelo dono no anúncio, nas faixas de 30–90 e 91–180 dias (só a parte neutra; atraso e encargos seguem travados até o parecer da Dra. Beatriz)", variavel: "NEXT_PUBLIC_FORMA_PAGAMENTO_DONO_ATIVA" },
+  { nome: "CAUCAO_PRAZOS_ATIVA", rotulo: "Prazos da caução: parecer em 7 dias, devolução em 30 (só com o parecer da Dra. Beatriz)", variavel: "NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA" },
+  { nome: "PRE_ACEITACAO_72H_ATIVA", rotulo: "Pré-aceitação de 72 horas para concluir o contrato (lembretes, expiração sem punição, até 2 reaberturas)", variavel: "NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA" },
   { nome: "VISTORIA_PARECER_14", rotulo: "Parecer jurídico do item 14 (avaliação do imóvel)", variavel: "NEXT_PUBLIC_VISTORIA_PARECER_14" },
   { nome: "LINKEDIN_CONECTAR_ATIVO", rotulo: "Conectar LinkedIn (selo de confiança)", variavel: "NEXT_PUBLIC_LINKEDIN_CONECTAR_ATIVO" },
   { nome: "REDES_USUARIO_ATIVO", rotulo: "Redes sociais da própria pessoa", variavel: "NEXT_PUBLIC_REDES_USUARIO_ATIVO" },
@@ -33,6 +40,7 @@ export const CHAVES_AMBIENTE: readonly ChaveAmbiente[] = [
   { nome: "RESUMO_SEMANAL_ATIVO", rotulo: "Resumo semanal de recomendações (e-mail às terças)", variavel: "RESUMO_SEMANAL_ATIVO" },
   { nome: "SELETOR_IDIOMA", rotulo: "Seletor de idioma (globo PT/EN) no topo público", variavel: "NEXT_PUBLIC_SELETOR_IDIOMA" },
   { nome: "PRECO_JUSTO_COMPARADOR", rotulo: "Selo \"Preço justo\" pelo link do Airbnb (dados simulados)", variavel: "NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR" },
+  { nome: "FAIXA_91_180_ATIVA", rotulo: "Estadias de 91 a 180 dias (desligada: propostas e contratos novos até 90 dias)", variavel: "NEXT_PUBLIC_FAIXA_91_180_ATIVA" },
 ];
 
 export const ONDE_MUDA_AMBIENTE = "Muda na Vercel (Daniel)";

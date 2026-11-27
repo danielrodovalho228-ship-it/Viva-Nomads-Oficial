@@ -22,6 +22,13 @@ const MASK_DOC = "[documento protegido]";
  * "MG-12.345.678" ou o rótulo "RG"). Dados de documento vão no campo Ocupantes da estadia, nunca no chat.
  */
 const CPF_CANDIDATE_RE = /(?<![\d.-])\d{3}[.\s]?\d{3}[.\s]?\d{3}[-.\s]?\d{2}(?![\d-])/g;
+/**
+ * E1059: CPF/RG no chat é RECUSADO (regra de 15/11), nunca "enviar mesmo assim". Com a FORMA de CPF (000.000.000-00) ou
+ * com o rótulo "CPF", é documento mesmo com DV inválido (número de teste, CPF mal digitado) — antes caía no telefone.
+ * 11 dígitos soltos sem rótulo seguem exigindo DV válido (um celular não é recusado).
+ */
+const CPF_FORMATADO_RE = /(?<![\d.-])\d{3}\.\d{3}\.\d{3}-\d{2}(?![\d-])/g;
+const CPF_ROTULO_RE = /\b(?:CPF|C\.P\.F\.?)\s*(?:n[ºo°]?\.?\s*)?(?:[ée]\s+)?[:\-]?\s*\d{3}[.\s]?\d{3}[.\s]?\d{3}[-.\s]?\d{2}(?!\d)/gi;
 const RG_MASCARA_RE = /(?<![\w.])(?:[A-Z]{2}[-\s]?)?\d{1,2}\.\d{3}\.\d{3}(?:-[\dXx])?(?![\w.])/g;
 const RG_ROTULO_RE = /\b(?:RG|R\.G\.|identidade)\s*(?:n[ºo°]?\.?\s*)?[:\-]?\s*(?:[A-Z]{2}[-\s]?)?[\d.\-xX]{5,15}/gi;
 
@@ -46,7 +53,20 @@ const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]{2,}/g;
  * somando 10+ dígitos (fixo/celular BR com DDD, com ou sem +55). Abaixo de 10
  * dígitos não mascara — evita falso positivo com CEP (8), datas e valores.
  */
-const PHONE_CANDIDATE_RE = /\+?\d[\d\s().-]{7,}\d/g;
+const PHONE_CANDIDATE_RE = /\+?\(?\d[\d\s().-]{7,}\d\)?/g;
+
+/**
+ * E483: o "(" do DDD fazia parte do telefone mas ficava fora da máscara — "([contato protegido]". O candidato agora
+ * pode começar em "(" e terminar em ")"; o parêntese que sobra sem par no trecho (abre ou fecha fora do número)
+ * volta para o texto, para a frase continuar equilibrada.
+ */
+function mascararTelefone(m: string): string {
+  const abre = (m.match(/\(/g) ?? []).length;
+  const fecha = (m.match(/\)/g) ?? []).length;
+  if (abre > fecha && m.startsWith("(")) return `(${MASK}`;
+  if (fecha > abre && m.endsWith(")")) return `${MASK})`;
+  return MASK;
+}
 
 /** Links de mensageria externa (WhatsApp/Telegram) — tiram a conversa da trilha. */
 const MESSENGER_RE = /(https?:\/\/)?(wa\.me|api\.whatsapp\.com|chat\.whatsapp\.com|t\.me|telegram\.me)\/\S+/gi;
@@ -122,6 +142,14 @@ export function guardContactInfo(input: string): GuardResult {
     documento = masked = true;
     return MASK_DOC;
   });
+  text = text.replace(CPF_ROTULO_RE, () => {
+    documento = masked = true;
+    return MASK_DOC;
+  });
+  text = text.replace(CPF_FORMATADO_RE, () => {
+    documento = masked = true;
+    return MASK_DOC;
+  });
   text = text.replace(CPF_CANDIDATE_RE, (m) => {
     if (!cpfValido(m)) return m;
     documento = masked = true;
@@ -136,7 +164,7 @@ export function guardContactInfo(input: string): GuardResult {
     // 10–13 dígitos = telefone BR (fixo/celular, com/sem 55). Fora disso, mantém.
     if (digits.length < 10 || digits.length > 13) return m;
     masked = true;
-    return MASK;
+    return mascararTelefone(m);
   });
   text = text.replace(SOCIAL_URL_RE, () => {
     masked = true;

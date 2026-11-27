@@ -21,6 +21,10 @@ test.describe("T198 — fim das telas do painel a 390 px", () => {
   for (const [nome, rota] of ROTAS) {
     test(`${nome}: último botão livre acima da barra de abas`, async ({ page }) => {
       await page.goto(rota, { waitUntil: "domcontentloaded" });
+      // E744 (noturna de 16/11): a sessão gravada traz o cookie da largura do login (tela larga). A 390 px o servidor manda
+      // /dashboard/conta para o Perfil (E798) e a casca, ao ver a tela estreita, corrige o cookie e volta para o menu da
+      // Conta (E979): uma troca de página que derrubava a medição a meio. Espera a tela assentar no endereço pedido.
+      await expect.poll(() => new URL(page.url()).pathname, { timeout: 20_000 }).toBe(rota);
       await expect(page.locator("h1:visible").first()).toBeVisible({ timeout: 20_000 });
       // Rola até o fim até a altura parar (blocos que carregam depois).
       await page.evaluate(async () => {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import { FileSignature } from "lucide-react";
 import { Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
@@ -53,7 +54,7 @@ export function ContratosInquilino({ contratos }: { contratos: ContratoInquilino
               </Link>
             )}
             {!c.assinando && (
-              <Link href={`/dashboard/locacoes/${c.id}`} className="font-medium text-forest underline" data-testid="contrato-inquilino-locacao">
+              <Link href={HREF_CONTRATO_DA_ESTADIA(c.id)} className="font-medium text-forest underline" data-testid="contrato-inquilino-locacao">
                 Ver locação
               </Link>
             )}

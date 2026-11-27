@@ -2,24 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Heart, GitCompare, Search } from "lucide-react";
+import { Heart, GitCompare } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FILEIRA_ABAS } from "@/components/ui/abas-fileira";
 
 /**
- * Abas do hub "Favoritos & comparações" — reúne Favoritos, Comparações e Buscas
- * salvas num só item de menu (as rotas seguem vivas, agora como seções). Usada
- * no topo das três páginas.
+ * Abas do hub "Favoritos & comparações": Favoritos e Comparações, que a subaba "Favoritos" do menu do morador
+ * (config/abas-painel.ts) junta numa só. Buscas salvas tem a própria subaba — repetir aqui empilhava duas barras
+ * (varredura 17, 05/11). Usada no topo de Favoritos e de Comparações.
  */
 const TABS = [
   { href: "/dashboard/favoritos", label: "Favoritos", icon: Heart },
   { href: "/dashboard/comparar", label: "Comparações", icon: GitCompare },
-  { href: "/dashboard/buscas", label: "Buscas salvas", icon: Search },
 ];
 
 export function FavoritosTabs() {
   const pathname = usePathname();
   return (
-    <div className="mb-6 flex gap-2 overflow-x-auto border-b border-sage-200">
+    <div className={cn("mb-6", FILEIRA_ABAS)} data-testid="favoritos-abas">
       {TABS.map((t) => {
         const active = pathname === t.href;
         const Icon = t.icon;

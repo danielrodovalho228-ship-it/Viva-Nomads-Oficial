@@ -3,6 +3,7 @@
   tudo entra por `DepsDecidir`, a rota liga as dependências reais e os testes usam um fake.
   Ordem das travas: admin → pendente → prazo → confirmação → login recente → (merge) PR no mesmo commit.
 */
+import { resumoDoAparelho } from "./aparelho.ts";
 import { hashConfere, podeDecidir, type Aprovacao, type StatusAprovacao, type TipoAprovacao } from "./aprovacoes.ts";
 
 export interface LinhaAprovacao {
@@ -29,8 +30,9 @@ export interface DepsDecidir {
   /** Admin logado (id + último login); null = sem sessão ou não é admin. */
   admin: { id: string; ultimoLoginEm: Date | null } | null;
   carregar(id: string): Promise<LinhaAprovacao | null>;
-  /** Grava a decisão só se a linha ainda está 'pendente'. false = alguém decidiu antes (idempotência). */
-  gravar(id: string, status: "aprovada" | "recusada", adminId: string, agora: Date): Promise<boolean>;
+  /** Grava a decisão só se a linha ainda está 'pendente'. false = alguém decidiu antes (idempotência).
+   *  `aparelho` = resumo de vocabulário fixo (resumoDoAparelho), para a trilha "de qual aparelho". */
+  gravar(id: string, status: "aprovada" | "recusada", adminId: string, agora: Date, aparelho: string): Promise<boolean>;
   /** Marca como expirada uma linha vencida e ainda pendente. */
   expirar(id: string): Promise<void>;
   /** Só existe com GITHUB_MERGE_TOKEN. Sem isto, o merge fica "aguardando". */
@@ -85,7 +87,7 @@ async function tentarMesclar(a: LinhaAprovacao, deps: DepsDecidir): Promise<Resu
 export async function decidirAprovacao(
   deps: DepsDecidir,
   id: string,
-  entrada: { acao: unknown; confirmar: unknown },
+  entrada: { acao: unknown; confirmar: unknown; userAgent?: string | null },
 ): Promise<RespostaDecisao> {
   const falha = (http: number, erro: string): RespostaDecisao => ({ http, corpo: { ok: false, erro } });
   if (!deps.admin) return falha(403, MENSAGEM.nao_admin);
@@ -113,7 +115,7 @@ export async function decidirAprovacao(
   }
 
   const status = acao === "aprovar" ? "aprovada" : "recusada";
-  if (!(await deps.gravar(a.id, status, deps.admin.id, deps.agora))) return falha(409, MENSAGEM.ja_decidida);
+  if (!(await deps.gravar(a.id, status, deps.admin.id, deps.agora, resumoDoAparelho(entrada.userAgent)))) return falha(409, MENSAGEM.ja_decidida);
 
   const mescla = acao === "aprovar" && a.tipo === "merge_pr" ? await tentarMesclar(a, deps) : undefined;
   return { http: 200, corpo: { ok: true, status, ...(mescla ? { mescla } : {}) } };

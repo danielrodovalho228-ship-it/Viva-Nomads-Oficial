@@ -3,6 +3,8 @@
 import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { mensagemPortaQa } from "@/lib/qa/mensagens-porta";
+import { createClient } from "@/lib/supabase/client";
+import { useAuthStore } from "@/lib/store";
 
 /** Nada a assinar: no servidor (e no HTML antes do JavaScript) vale false; no navegador hidratado, true. */
 const semAssinatura = () => () => {};
@@ -24,6 +26,11 @@ export function QaEntrarForm({ email: emailInicial, destino }: { email: string; 
     e.preventDefault();
     setEnviando(true);
     setErro("");
+    // E674: a página carregou com a sessão da conta anterior no navegador. Encerra só a sessão LOCAL (não derruba a conta
+    // nos outros aparelhos) e limpa o que é da conta: assim o cliente do navegador não renova o token antigo nem regrava
+    // o cookie dela depois que o servidor gravar o da conta nova.
+    await createClient()?.auth.signOut({ scope: "local" }).catch(() => null);
+    useAuthStore.getState().signOut();
     // POST relativo: vai ao mesmo host da página, sem redirecionamento no caminho.
     const r = await fetch("/api/qa/entrar", {
       method: "POST",
@@ -36,9 +43,10 @@ export function QaEntrarForm({ email: emailInicial, destino }: { email: string; 
       window.location.assign(destino);
       return;
     }
+    // E488: com a chave certa, a porta diz a causa (403 + código); a frase é só dela.
+    const corpo = r && r.status === 403 ? ((await r.json().catch(() => null)) as { motivo?: string } | null) : null;
     setEnviando(false);
-    // E361: a causa (limite com prazo, falha da conferência, causas possíveis do 404) em vez do genérico.
-    setErro(mensagemPortaQa(r ? r.status : null));
+    setErro(mensagemPortaQa(r ? r.status : null, corpo?.motivo));
   }
 
   return (

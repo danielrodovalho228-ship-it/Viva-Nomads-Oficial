@@ -7,6 +7,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
 const NOVO = ler("src/app/(dashboard)/dashboard/imoveis/novo/page.tsx");
@@ -19,7 +20,7 @@ const trecho = () => {
   const j = NOVO.indexOf('data-testid="passo-titulo"');
   assert.ok(i > 0 && j > i, "selo antes do título");
   // Comentários de JSX não contam (podem citar o que saiu dali).
-  return NOVO.slice(i, NOVO.lastIndexOf("<h1", j)).replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+  return fonteSemComentarios(NOVO.slice(i, NOVO.lastIndexOf("<h1", j)));
 };
 
 test("E242: entre o selo e o título só existe o próprio título", () => {

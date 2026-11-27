@@ -4,12 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { decidirLinkDeVideo, type LinkPendente } from "@/lib/data/video-link-actions";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 
 /**
  * E133 (d) — links de vídeo (YouTube/Vimeo) que o anúncio ainda NÃO mostra: a equipe assiste e aprova (o tour passa a
  * aparecer) ou recusa (continua escondido). A decisão fica no registro de moderação.
  */
-export function LinksDeVideoPendentes({ links }: { links: LinkPendente[] }) {
+export function LinksDeVideoPendentes({ links, soLeitura }: { links: LinkPendente[]; soLeitura: ReadonlySet<string> }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -37,6 +38,7 @@ export function LinksDeVideoPendentes({ links }: { links: LinkPendente[] }) {
                 {l.url}
               </a>
             </span>
+            {soLeitura.has(l.propertyId) ? <SoLeituraQa /> : (
             <span className="flex gap-2">
               <Button type="button" variant="secondary" size="sm" disabled={ocupado === l.propertyId} onClick={() => void decidir(l, true)} data-testid="admin-link-video-aprovar">
                 Aprovar
@@ -45,6 +47,7 @@ export function LinksDeVideoPendentes({ links }: { links: LinkPendente[] }) {
                 Recusar
               </Button>
             </span>
+            )}
           </li>
         ))}
       </ul>

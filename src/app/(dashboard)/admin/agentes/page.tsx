@@ -6,6 +6,7 @@ import { abaDaUrl } from "@/lib/admin/agentes-abas";
 import { adminDaPagina, contadoresAgentes } from "@/lib/data/admin-indicadores";
 import { AGENTES_DEFINICOES } from "@/lib/admin/indicadores";
 import { tituloDoAdmin } from "@/config/menu-admin";
+import { soLeituraNaTela } from "@/lib/qa/observador";
 
 export const metadata: Metadata = { title: tituloDoAdmin("/admin/agentes") };
 
@@ -17,6 +18,8 @@ export default async function AgentesPage({ searchParams }: { searchParams: Prom
   // Execuções que o Moacir disparou e já terminaram viram mensagem na conversa dele.
   await postarRetornosDoMoacir().catch(() => 0);
   const admin = await adminDaPagina();
+  // E477: a conta observadora da QA só lê (o servidor também recusa).
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const [dados, vermelhos, contadores] = await Promise.all([
     carregarCentral(),
     // Achado 28: null = não deu para ler; a Central avisa em vez de sumir com o alerta.
@@ -39,7 +42,7 @@ export default async function AgentesPage({ searchParams }: { searchParams: Prom
           ))}
         </ul>
       )}
-      <CentralAgentes dados={dados} vermelhos={vermelhos} abaInicial={abaDaUrl(typeof sp.aba === "string" ? sp.aba : null)} />
+      <CentralAgentes dados={dados} vermelhos={vermelhos} abaInicial={abaDaUrl(typeof sp.aba === "string" ? sp.aba : null)} soLeitura={soLeitura} />
     </div>
   );
 }

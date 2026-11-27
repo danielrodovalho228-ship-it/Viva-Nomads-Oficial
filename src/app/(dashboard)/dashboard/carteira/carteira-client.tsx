@@ -7,7 +7,7 @@ import { PageTitle, Panel, StatCard, EmptyState } from "@/components/dashboard/p
 import { FORMULAS_CARTEIRA, indicadoresCarteira, type ItemCarteira, type SituacaoCarteira } from "@/lib/carteira-dono";
 import { addDiasISO } from "@/lib/contrato-blocos";
 import { useDashDemo, useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_PORTFOLIO } from "@/lib/demo/seed";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
 import { dataBR, formatBRL } from "@/lib/utils";
 import { ROTULO_MENSAL } from "@/lib/precos";
 import { HREF_RENOVAR } from "@/lib/estadia/renovacao";
@@ -19,7 +19,9 @@ import { HREF_RENOVAR } from "@/lib/estadia/renovacao";
 export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
   const demo = useDashDemo();
   const { on: adminDemo } = useDemoMode();
-  const fonte: ItemCarteira[] = demo ? DEMO_PORTFOLIO : itens;
+  // E980: os exemplos chegam sob demanda (só com a demonstração ligada).
+  const exemplos = useExemplos(demo);
+  const fonte: ItemCarteira[] = demo ? (exemplos?.DEMO_PORTFOLIO ?? []) : itens;
 
   if (fonte.length === 0) {
     return (
@@ -166,8 +168,9 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
                   <td className="py-3 text-right text-ink">{i.valorMensal > 0 ? formatBRL(i.valorMensal) : "—"}</td>
                   <td className="py-3 text-ink" data-testid="carteira-inicio">{i.inicio ? dataBR(i.inicio) : "—"}</td>
                   <td className="py-3 text-ink" data-testid="carteira-fim">
-                    {i.fim ? dataBR(i.fim) : "—"}
-                    {i.diasAteFim != null && i.diasAteFim >= 0 && <span className="block text-xs text-muted">em {i.diasAteFim} dias</span>}
+                    {/* E1089: `i.fim` é a última noite; a coluna mostra a saída (o dia seguinte). */}
+                    {i.fim ? dataBR(addDiasISO(i.fim, 1)) : "—"}
+                    {i.diasAteFim != null && i.diasAteFim >= 0 && <span className="block text-xs text-muted">em {i.diasAteFim + 1} dias</span>}
                   </td>
                   <td className="py-3">
                     {i.contratoId ? (
@@ -214,7 +217,7 @@ function ColunaVencimento({ titulo, tom, itens, faixa }: { titulo: string; tom: 
             <li key={i.propertyId} className="text-sm" data-testid="carteira-vencimento">
               <p className="font-medium text-ink">{i.titulo}</p>
               <p className="text-xs text-muted">
-                Termina em {i.fim ? dataBR(i.fim) : "—"} ({i.diasAteFim} dias){i.morador ? ` · ${i.morador}` : ""}
+                Saída em {i.fim ? dataBR(addDiasISO(i.fim, 1)) : "—"} ({(i.diasAteFim ?? 0) + 1} dias){i.morador ? ` · ${i.morador}` : ""}
               </p>
               {i.fim && (
                 <p className="mt-1 text-xs text-muted">Sem renovação, o imóvel fica livre a partir de {dataBR(addDiasISO(i.fim, 1))}: anuncie a disponibilidade.</p>

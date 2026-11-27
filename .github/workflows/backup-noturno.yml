@@ -25,7 +25,8 @@ jobs:
     if: github.repository == 'danielrodovalho228-ship-it/Viva-Nomads-Oficial'
     runs-on: ubuntu-24.04
     environment: backup-producao
-    timeout-minutes: 60
+    # E929: 60 min cortava a cópia do storage no meio (#26, #28); a etapa já levou 12–46 min. Folga realista.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 

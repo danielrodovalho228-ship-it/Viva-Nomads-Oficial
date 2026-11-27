@@ -1,5 +1,6 @@
 "use client";
 
+import { TEXTO_ERRO_PERTO, carimboPerto, textoProcurandoPerto } from "@/lib/proximidades/estado-perto";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { Briefcase, MapPin, Percent, Plus, Trash2 } from "lucide-react";
 import type { Proximity } from "@/lib/types";
@@ -18,11 +19,14 @@ import { cn, formatBRL } from "@/lib/utils";
 import { MAX_POR_CATEGORIA_PAGINA, ORDEM_CATEGORIAS_PAGINA, buscaNaoRespondeu, textoDistancia } from "@/lib/anuncio/proximidades";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { iconeDaComodidade } from "@/lib/anuncio/comodidades-icones";
 import { SkeletonLinhas } from "@/components/ui/skeleton";
 import { MedirInternet } from "./medir-internet";
+import { aoDesligar } from "@/lib/ui/bloco-opcional";
+import { textoConfirmarOcultarLugar } from "@/lib/anuncio/perto-confirmar";
 import { SEM_INTERNET_NO_IMOVEL } from "@/lib/anuncio/internet-imovel";
+import { MarcaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 
 /* ── Proximidades automáticas (OSM) ───────────────────────────────────────── */
 
@@ -51,8 +55,11 @@ export function ProximidadesAutomaticas({
   onManuais,
   medir,
   reportar,
+  alvo = null,
 }: {
   itens: LugarProximo[] | null;
+  /** E952: o endereço da busca/lista na tela ("Perto de: …"); null quando ainda não se sabe. */
+  alvo?: { cep: string; rua: string } | null;
   carregando: boolean;
   /** A busca já rodou para o endereço atual (com ou sem resultado). */
   buscou: boolean;
@@ -78,12 +85,17 @@ export function ProximidadesAutomaticas({
       </p>
       {carregando && (
         <div className="mt-2" data-testid="proximidades-carregando">
-          <p className="mb-2 text-sm text-muted">Procurando o que tem por perto do endereço…</p>
+          <p className="mb-2 text-sm text-muted" data-testid="proximidades-procurando">{alvo ? textoProcurandoPerto(alvo) : "Procurando o que tem por perto do endereço…"}</p>
           <SkeletonLinhas linhas={4} />
         </div>
       )}
       {temItens && (
         <>
+          {alvo && (
+            <p className="mb-1 text-sm font-semibold text-ink" data-testid="proximidades-carimbo">
+              {carimboPerto(alvo)}
+            </p>
+          )}
           <p className="mb-3 text-xs text-muted" data-testid="proximidades-achamos">
             Achamos pelo endereço, num raio de 2 km. Desligue &quot;Mostrar&quot; no que não quiser no anúncio.
           </p>
@@ -122,7 +134,8 @@ export function ProximidadesAutomaticas({
       )}
       {!carregando && !temItens && buscou && naoRespondeu && (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between" data-testid="proximidades-indisponivel">
-          <p className="text-sm text-muted">A busca automática não respondeu agora. Os lugares num raio de 2 km aparecem aqui assim que ela voltar.</p>
+          {/* E952: falha da busca (rede/servidor) = lista vazia com o aviso e o botão; nunca a lista anterior. */}
+          <p className="text-sm text-muted">{fonte === "erro" ? TEXTO_ERRO_PERTO : "A busca automática não respondeu agora. Os lugares num raio de 2 km aparecem aqui assim que ela voltar."}</p>
           {onTentarDeNovo && (
             <Button type="button" variant="secondary" size="sm" onClick={onTentarDeNovo} data-testid="proximidades-tentar">
               Tentar de novo
@@ -170,6 +183,9 @@ function ItemProximidade({
   reportar: ((l: LugarProximo, motivo: string) => Promise<{ ok: boolean; erro?: string }>) | null;
 }) {
   const [aberto, setAberto] = useState(false);
+  // E605: desligar "Mostrar" de um lugar que aparece no anúncio pede confirmação na própria tela (padrão TOGGLE, C9/E56)
+  // — antes desligava em silêncio. Ligar segue imediato.
+  const [confirmandoOcultar, setConfirmandoOcultar] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [estado, setEstado] = useState<"" | "enviando" | "enviado" | string>("");
   async function enviar() {
@@ -184,7 +200,7 @@ function ItemProximidade({
       <CartaoEscolha
         papel="switch"
         on={marcado}
-        onClick={onAlternar}
+        onClick={() => (aoDesligar(marcado) === "confirmar" ? setConfirmandoOcultar(true) : onAlternar())}
         aria-label={`Mostrar ${l.nome} no anúncio`}
         testid="proximidade-mostrar"
         rotulo={<span className="block truncate">{l.nome}</span>}
@@ -195,6 +211,28 @@ function ItemProximidade({
           </span>
         }
       />
+      {confirmandoOcultar && marcado && (
+        <div role="alertdialog" aria-label={`Tirar ${l.nome} do anúncio`} className="mt-2 rounded-xl border border-line bg-white p-3" data-testid="proximidade-ocultar-confirmacao">
+          <p className="text-sm text-ink">{textoConfirmarOcultarLugar(l.nome)}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setConfirmandoOcultar(false);
+                onAlternar();
+              }}
+              data-testid="proximidade-ocultar-confirmar"
+            >
+              Tirar do anúncio
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmandoOcultar(false)} data-testid="proximidade-ocultar-cancelar">
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
       {reportar && (
         <div className="mt-1">
           {estado === "enviado" ? (
@@ -239,6 +277,7 @@ export function ProntoParaTrabalhar({
   onMbps,
   imovelId,
   semInternet = false,
+  mbpsObrigatorio = false,
 }: {
   marcadas: Record<string, boolean>;
   onAlternar: (chave: string) => void;
@@ -249,6 +288,8 @@ export function ProntoParaTrabalhar({
   imovelId?: string | null;
   /** E102-B: o dono respondeu "Não tem internet" — a velocidade não é pedida. */
   semInternet?: boolean;
+  /** E608: anúncio novo — a velocidade é obrigatória para publicar (asterisco em vez de "(opcional)"). */
+  mbpsObrigatorio?: boolean;
 }) {
   const n = essenciaisMarcados(marcadas);
   const item = (it: { chave: string; rotulo: string }, essencial: boolean) => {
@@ -275,7 +316,7 @@ export function ProntoParaTrabalhar({
     );
   };
   return (
-    <div className="rounded-xl border-2 border-forest/30 bg-sage-50 p-4" data-testid="pronto-trabalhar">
+    <div className="rounded-xl border-2 border-forest/30 bg-sage-100 p-4" data-testid="pronto-trabalhar">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-2 font-title text-base font-semibold text-forest">
           <Briefcase className="h-4 w-4" aria-hidden /> Pronto para trabalhar de casa
@@ -300,7 +341,9 @@ export function ProntoParaTrabalhar({
         </p>
       ) : marcadas.internet_fibra && (
         <label className="mt-3 block max-w-xs text-sm text-ink">
-          Velocidade da internet informada (opcional)
+          {/* E608: para o anúncio NOVO a velocidade é obrigatória (prontidão "internet"); o "(opcional)" contradizia a regra. */}
+          Velocidade da internet
+          {mbpsObrigatorio ? <MarcaObrigatorio /> : <span className="text-muted"> (opcional)</span>}
           <span className="mt-1 flex items-center gap-2">
             <input inputMode="numeric" value={mbps} onChange={(e) => onMbps(e.target.value.replace(/\D/g, "").slice(0, 5))} className="input" placeholder="500" aria-label="Velocidade da internet em Mbps" />
             <span className="text-xs text-muted">Mbps</span>
@@ -365,19 +408,18 @@ export function BlocoNegociacao({
       {valor.aceita && (
         <fieldset className="mt-3">
           <legend className="text-xs font-semibold text-muted">O que pode ser negociado</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {itens.map((i) => {
               const on = valor.itens.includes(i.chave);
               return (
-                <Pilula
+                <CartaoEscolha
                   key={i.chave}
                   papel="pressed"
                   on={on}
                   onClick={() => onValor({ ...valor, itens: on ? valor.itens.filter((x) => x !== i.chave) : [...valor.itens, i.chave] })}
                   testid={`negociavel-${i.chave}`}
-                >
-                  {i.rotulo}
-                </Pilula>
+                  rotulo={i.rotulo}
+                />
               );
             })}
           </div>
@@ -434,15 +476,13 @@ export function BlocoNegociacao({
             {/* E193: escolha única numa escala curta → pílulas (antes, lista suspensa). */}
             <fieldset className="text-sm text-ink" data-testid="limite-limpezas">
               <legend>Limpezas por mês que posso incluir</legend>
-              <div className="mt-1 flex flex-wrap gap-2" role="radiogroup" aria-label="Limpezas por mês que posso incluir">
+              <div className="mt-1 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Limpezas por mês que posso incluir">
                 {[
                   { v: null, r: "Sem limite" },
                   { v: 0, r: "Nenhuma" },
                   ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ v: n, r: `Até ${n}` })),
                 ].map((o) => (
-                  <Pilula key={o.r} papel="radio" on={(limites.limpezasMax ?? null) === o.v} onClick={() => onLimites({ ...limites, limpezasMax: o.v })} testid={`limite-limpezas-${o.v ?? "sem"}`}>
-                    {o.r}
-                  </Pilula>
+                  <CartaoEscolha key={o.r} on={(limites.limpezasMax ?? null) === o.v} onClick={() => onLimites({ ...limites, limpezasMax: o.v })} testid={`limite-limpezas-${o.v ?? "sem"}`} rotulo={o.r} />
                 ))}
               </div>
             </fieldset>

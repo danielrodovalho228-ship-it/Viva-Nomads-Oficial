@@ -30,7 +30,10 @@ test("síntese: todos os anúncios de exemplo têm quartos e banheiros", () => {
 
 test("cartão usa a síntese e a mostra só com algum item", () => {
   const c = readFileSync(new URL("../components/property-card.tsx", import.meta.url), "utf8");
-  assert.match(c, /const sintese = itensSintese\(property\);/);
-  assert.match(c, /\{sintese\.length > 0 && \(/);
+  // E899: a síntese chega ao cartão por modeloDoCartao (antes: itensSintese e o filtro do nível dentro do componente).
+  const modelo = readFileSync(new URL("./cartao-modelo.ts", import.meta.url), "utf8");
+  // E416 (05/11): o nível virou selo da foto; a linha mostra o resto da síntese.
+  assert.match(modelo, /sintese: itensSintese\(p\)\.filter\(\(i\) => i\.chave !== "nivel"\),/);
+  assert.match(c, /\{m\.sintese\.length > 0 && \(/);
   assert.doesNotMatch(c, /<IdealPara/); // "Ideal para" foi para a página do imóvel
 });

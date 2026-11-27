@@ -4,6 +4,9 @@ import { conversationId } from "@/lib/messages/conversation-id";
 import { categoriaLabelParaDono } from "@/config/categorias-profissionais";
 import { motivoParaDono } from "@/lib/pedidos/pedidos";
 import { dataBR } from "@/lib/utils";
+import { dadosDoImovelDaCandidatura } from "@/lib/data/candidatura-email";
+import { decisaoDaCandidatura, periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
+import { envioDaCandidatura } from "@/lib/candidaturas-envio";
 import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
 import { cartaoCandidato } from "@/lib/perfil/perfil-publico";
 import { sinaisPorQueParaDono, type PorQueNaCidade } from "@/lib/perfil/por-que-na-cidade";
@@ -17,6 +20,8 @@ import { textoParaDono, type LinhaVinculo } from "@/lib/triagem/vinculo";
 import { donoVeFichaPet, petsVaoNaCandidatura, resumoPetsCandidatura, type PetResumo } from "@/lib/anuncio/ficha-pet-dono";
 import { umPorPessoaEImovel } from "@/lib/painel/interessados-unicos";
 import { IDENTIDADE_INDISPONIVEL, identidadeParaOutraParte, type EstadoIdentidade } from "@/lib/identidade/estado";
+import { temDocumento } from "@/lib/data/documento-servidor";
+import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 
 // Re-exporta os utilitários puros para compatibilidade com importações server-side.
 export { SAMPLE_LEADS, LIGHT_SHORT, leadScore, leadSummary } from "./lead-types";
@@ -27,6 +32,7 @@ interface LeadRow {
   status: string;
   tenant_id: string;
   property_id: string;
+  created_at: string | null;
   property: { title: string | null; pets_allowed?: boolean | null } | null;
 }
 
@@ -64,7 +70,7 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
   const { data, error } = await supabase
     .from("leads")
     .select(
-      `id, status, tenant_id, property_id,
+      `id, status, tenant_id, property_id, created_at,
        property:properties!leads_property_id_fkey ( title, pets_allowed )`
     )
     .eq("owner_id", user.id)
@@ -131,7 +137,8 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
       tenantIds.map(async (id) => {
         const [u, rep] = await Promise.all([admin.auth.admin.getUserById(id).catch(() => null), getReputacao(id).catch(() => null)]);
         emailOk.set(id, !!u?.data?.user?.email_confirmed_at);
-        if (rep) reputacoes.set(id, rep);
+        // Estados vazios: sem avaliação (ou com a leitura falha → null), nada de "0,0 · 0 avaliações" no cartão.
+        if (rep && rep.n > 0) reputacoes.set(id, rep);
       }),
     );
   }
@@ -172,6 +179,7 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
   // lido pelo servidor só dos leads deste dono (ids já filtrados pela RLS acima).
   const motivos = new Map<string, string>();
   const inicios = new Map<string, string>();
+  const fins = new Map<string, string>();
   const ocupantes = new Map<string, number>();
   if (admin && rows.length > 0) {
     const { data: ms } = await admin.from("leads").select("id, motivo_estadia, inicio_desejado, qtd_ocupantes").in("id", rows.map((r) => r.id));
@@ -181,6 +189,34 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
       if (rotulo) motivos.set(m.id, rotulo);
       if (m.inicio_desejado) inicios.set(m.id, m.inicio_desejado);
     }
+    // E1053: a saída escolhida (0258), lida à parte — a leitura do motivo acima fica como está.
+    const { data: fs } = await admin.from("leads").select("id, fim_desejado").in("id", rows.map((r) => r.id));
+    for (const f of (fs ?? []) as { id: string; fim_desejado: string | null }[]) if (f.fim_desejado) fins.set(f.id, f.fim_desejado);
+  }
+  // E1053: o cartão de decisão mostra Entrada, Saída e Total da estadia — a MESMA leitura do imóvel e a MESMA conta da
+  // confirmação da candidatura (dadosDoImovelDaCandidatura + decisaoDaCandidatura). Uma leitura por imóvel; falha → sem total.
+  const imoveisDecisao = new Map<string, Awaited<ReturnType<typeof dadosDoImovelDaCandidatura>>>();
+  if (admin && rows.length > 0) {
+    await Promise.all(
+      [...new Set(rows.map((r) => r.property_id))].map(async (pid) =>
+        imoveisDecisao.set(pid, await dadosDoImovelDaCandidatura(admin, pid).catch(() => null)),
+      ),
+    );
+  }
+  const decisaoDe = (r: LeadRow): Lead["decisao"] => {
+    const im = imoveisDecisao.get(r.property_id);
+    const entrada = inicios.get(r.id) ?? null;
+    const saida = fins.get(r.id) ?? null;
+    const p = periodoDaCandidatura(entrada, saida);
+    const d = decisaoDaCandidatura({ entrada, saida, totalMensal: im?.totalMensal ?? 0, estadiaDias: im && p ? im.estadia(p.dias) : null });
+    // Sem a leitura do imóvel não há total (nunca "R$ 0,00").
+    return im ? d : { ...d, total: null };
+  };
+  // E657: o reenvio da candidatura, lido À PARTE e tolerante (a coluna é da migração 0315: se atrasar, a lista não quebra).
+  const reenviadas = new Map<string, string>();
+  if (admin && rows.length > 0) {
+    const { data: rs, error: erroRs } = await admin.from("leads").select("id, reenviada_em").in("id", rows.map((r) => r.id));
+    if (!erroRs) for (const x of (rs ?? []) as { id: string; reenviada_em: string | null }[]) if (x.reenviada_em) reenviadas.set(x.id, x.reenviada_em);
   }
   // Foto só depois do aceite (podeVerAvatar: foto do inquilino só com relação aceita).
   const fotos = new Map<string, string | null>();
@@ -249,7 +285,45 @@ export async function listLeads(opcoes: { exigir?: boolean } = {}): Promise<Lead
       identidade: identidadeDe(r.tenant_id),
       moradorVerificado: seloTriagem.get(r.tenant_id) ?? null,
       motivo: motivos.get(r.id),
+      decisao: decisaoDe(r),
       fichaPet,
+      // E657: quando a candidatura chegou (último envio), com o selo de reenvio — o dono também vê "Enviada em".
+      ...envioDaCandidatura(r.created_at, reenviadas.get(r.id) ?? null),
     };
   });
+}
+
+const UUID_LEAD = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * E553 (dados): o perfil completo de UM candidato, para a rota /dashboard/leads/<id>. Fonte única: a MESMA leitura e as
+ * MESMAS regras de máscara do cartão de Interessados (listLeads → cartaoCandidato: "Candidato(a)" sem nome, foto ou
+ * contato antes do aceite). Só o dono do lead o encontra (a RLS de leads filtra por owner_id); id estranho ou de outro
+ * dono → null (a página dá 404). Falha de leitura LANÇA (nunca "candidato não existe").
+ */
+export async function perfilDoCandidato(leadId: string): Promise<Lead | null> {
+  if (!UUID_LEAD.test(leadId)) return null;
+  const leads = await listLeads({ exigir: true });
+  return leads.find((l) => l.id === leadId) ?? null;
+}
+
+/**
+ * E569: o que falta ao DONO para aceitar candidaturas, mostrado no cartão ANTES de qualquer clique (antes o portão
+ * "informe seu CPF" só surgia depois de "Aprovar"). Hoje é o documento (CPF/CNPJ), a mesma trava de aceitarCandidatura.
+ * Sem sessão: nada. Falha de leitura: nada (o servidor ainda confere no aceite e diz o motivo).
+ */
+export async function pendenciaDoDonoParaAceite(): Promise<{ texto: string; href: string; rotulo: string } | null> {
+  try {
+    const supabase = await createClient();
+    const admin = createAdminClient();
+    if (!supabase || !admin) return null;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+    if (await temDocumento(admin, user.id)) return null;
+    return { texto: MSG_DOCUMENTO.aceitar, href: LINK_DOCUMENTO, rotulo: "Informar meu documento" };
+  } catch {
+    return null;
+  }
 }

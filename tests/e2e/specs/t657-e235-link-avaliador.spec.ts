@@ -1,9 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T657 — E235: o número do avaliador leva à página pública dele (/avaliadores/[numero]), nos DOIS pontos do painel do dono:
-   1. bloco da avaliação, pedido designado: "Avaliador designado pela Viva: nº X" — o X é link.
+   1. bloco da avaliação, pedido designado: "Avaliador escolhido por você: nº X" — o X é link.
    2. laudo aprovado: "Avaliado em … por avaliador credenciado nº X" — o X é link.
   O texto da linha não muda (restauração do desenho); clicar abre a página pública com o mesmo número. 390 e 1280.
 */
@@ -29,7 +29,7 @@ test.describe("T657 — E235: o nº do avaliador é link para a página pública
     ids.A = await criarConta(avA, senha);
     const { data: p, error: eP } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.A, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: avA.nome, slug: `aval-t657-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
+      .insert({ user_id: ids.A, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: avA.nome, slug: `aval-t657-${sufixo}`, categorias: ["fotografia"], cidades: ["Uberlândia"] })
       .select("id")
       .single();
     if (eP) throw eP;
@@ -86,7 +86,7 @@ test.describe("T657 — E235: o nº do avaliador é link para a página pública
       // 1. Avaliador designado.
       await d.goto(`/dashboard/imoveis/${ids.im1}/nivel`, { waitUntil: "domcontentloaded" });
       const designado = d.getByTestId("avaliacao-dono").getByTestId("avaliador-designado");
-      await expect(designado).toHaveText(`Avaliador designado pela Viva: nº ${numero}`, { timeout: 30_000 });
+      await expect(designado).toHaveText(`Avaliador escolhido por você: nº ${numero}`, { timeout: 30_000 });
       const link1 = designado.getByRole("link", { name: numero });
       await expect(link1).toHaveAttribute("href", destino);
       await designado.scrollIntoViewIfNeeded();

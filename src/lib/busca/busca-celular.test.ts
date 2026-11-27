@@ -83,13 +83,15 @@ test("painel: rascunho só vale ao aplicar; diálogo acessível; Esc fecha", () 
 test("card: foto, preço por mês, quartos/banheiros por extenso, bairro e disponibilidade", () => {
   const c = ler("components/property-card.tsx");
   // Plural único (ordem dd15064d, D7b) pela síntese do cartão (src/lib/cartao-sintese.ts, quartosTexto/banheirosTexto).
-  assert.match(c, /const sintese = itensSintese\(property\);/);
+  // E899: o cartão desenha a síntese a partir de modeloDoCartao (antes: itensSintese chamada no próprio componente).
+  assert.match(c, /modeloDoCartao\(property, periodMonths\)/);
+  assert.match(ler("lib/cartao-modelo.ts"), /sintese: itensSintese\(p\)/);
   assert.match(ler("lib/cartao-sintese.ts"), /quartosTexto\(p\.bedrooms\)[\s\S]*banheirosTexto\(p\.bathrooms\)/);
   assert.match(c, /\{linhaLocalizacao\(property\.neighborhood, property\.city, property\.state\)\}/); // E101
   // Custo total do mês em destaque (ordem 1a555bfa), no formato do QA: "R$ X/mês · R$ Y em N meses".
   assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/);
   const hoje = new Date("2026-10-14T12:00:00Z");
-  assert.equal(disponivelAPartirDe("2026-11-15", hoje), "15/11");
+  assert.equal(disponivelAPartirDe("2026-11-15", hoje), "15/11/2026"); // E702: o ano sempre
   assert.equal(disponivelAPartirDe("2027-01-05", hoje), "05/01/2027");
   assert.equal(disponivelAPartirDe("2026-10-01", hoje), null);
   assert.equal(disponivelAPartirDe(undefined, hoje), null);

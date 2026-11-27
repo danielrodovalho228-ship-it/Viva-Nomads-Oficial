@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dominioDoSelo, ehSeloVinculo, seloVinculoPublico } from "./textos.ts";
 import { cartaoCandidato, selosReais } from "../perfil/perfil-publico.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
@@ -27,7 +28,7 @@ test("perfil público e candidatura: o selo entra com os outros selos reais, só
 });
 
 test("o servidor lê só o domínio das linhas confirmadas; as telas usam o componente único", () => {
-  const srv = ler("lib/vinculo/servidor.ts").replace(/\/\*[\s\S]*?\*\//g, "");
+  const srv = fonteSemComentarios(ler("lib/vinculo/servidor.ts"));
   assert.match(srv, /select\("user_id, dominio"\)/);
   assert.match(srv, /not\("confirmado_em", "is", null\)/);
   assert.doesNotMatch(srv, /codigo_hash|email|tentativas/);

@@ -20,6 +20,7 @@
 
 import { REGRAS_CONTRATO } from "../config/planos.ts";
 import { comissaoSobreContrato } from "./cobranca/regra.ts";
+import { blocosEmDias, mesesDeReferencia, taxaSobreDias } from "./estadia-em-dias.ts";
 
 /** Fração da caução por bloco (50%) — de REGRAS_CONTRATO (fonte única). */
 export const PERC_CAUCAO_BLOCO = REGRAS_CONTRATO.caucaoFracaoBloco;
@@ -62,6 +63,8 @@ export interface BlocoPlano {
   valor: number; // aluguel × meses do bloco
   caucao: number; // 50% do valor do bloco
   desembolso: number; // valor + caução — o que sai no início do bloco
+  /** E562: dias exatos do bloco (contrato pela proposta em dias). Sem ele, o bloco dura meses × 30 dias. */
+  dias?: number;
 }
 
 /**
@@ -104,9 +107,22 @@ export function comissaoContrato(aluguelMensal: number, meses: number, rate: num
   return comissaoSobreContrato(aluguelMensal, meses, rate);
 }
 
+/**
+ * E1061 — a caução de uma estadia, em dias: a do CONTRATO (lei do produto, Daniel, 20/11/2026: metade do aluguel da
+ * estadia toda, no máximo 3 vezes o valor mensal). É a soma das cauções dos blocos de `resumoContratoEmDias`. Fonte
+ * única do número: a proposta e a candidatura leem daqui, com os dias da própria estadia; o fechamento já mostra este
+ * mesmo total. Não depende da taxa de serviço.
+ */
+export function caucaoDaEstadiaEmDias(dias: number, aluguelMensal: number): number {
+  if (!(Number(dias) > 0) || !(Number(aluguelMensal) > 0)) return 0;
+  return resumoContratoEmDias(dias, aluguelMensal, 0).caucaoTotal;
+}
+
 export interface ResumoContrato {
   blocos: BlocoPlano[];
   prazoTotalMeses: number;
+  /** E562: o prazo em dias (contratos.prazo_total_dias). Em meses: meses × 30. */
+  prazoTotalDias: number;
   tamanhoBlocoMeses: number;
   aluguelMensal: number;
   valorTotalPeriodo: number; // aluguel × prazo total
@@ -134,12 +150,43 @@ export function resumoContrato(
   return {
     blocos,
     prazoTotalMeses: total,
+    prazoTotalDias: total * DIAS_POR_MES,
     tamanhoBlocoMeses: blocos[0]?.meses ?? Math.min(tamanhoBlocoMeses, total),
     aluguelMensal: aluguel,
     valorTotalPeriodo: aluguel * total,
     caucaoTotal: blocos.reduce((s, b) => s + b.caucao, 0),
     comissaoPercent: rate,
     comissaoValor: comissaoContrato(aluguel, total, rate),
+    desembolsoPrimeiroBloco: blocos[0]?.desembolso ?? 0,
+  };
+}
+
+/**
+ * E562: o contrato que nasce da proposta em DIAS. Blocos de até `tamanhoBlocoMeses × 30` dias (no máximo 90), contados
+ * em dias; valor e caução do bloco proporcionais; a taxa sobre o aluguel × dias ÷ 30. Em meses cheios dá o mesmo que
+ * `resumoContrato`.
+ */
+export function resumoContratoEmDias(
+  prazoTotalDias: number,
+  aluguelMensal: number,
+  comissaoRate: number,
+  tamanhoBlocoMeses: number = MESES_POR_BLOCO_PADRAO
+): ResumoContrato {
+  const dias = Math.max(1, Math.round(Number(prazoTotalDias) || 0));
+  const aluguel = Math.max(0, aluguelMensal);
+  const rate = Math.max(0, comissaoRate);
+  const tamanho = Math.min(Math.max(1, Math.floor(tamanhoBlocoMeses)), MAX_MESES_BLOCO);
+  const blocos: BlocoPlano[] = blocosEmDias(dias, aluguel, tamanho * DIAS_POR_MES);
+  return {
+    blocos,
+    prazoTotalMeses: mesesDeReferencia(dias),
+    prazoTotalDias: dias,
+    tamanhoBlocoMeses: blocos[0]?.meses ?? 1,
+    aluguelMensal: aluguel,
+    valorTotalPeriodo: Math.round(((aluguel * dias) / DIAS_POR_MES) * 100) / 100,
+    caucaoTotal: blocos.reduce((s, b) => s + b.caucao, 0),
+    comissaoPercent: rate,
+    comissaoValor: taxaSobreDias(aluguel, dias, rate),
     desembolsoPrimeiroBloco: blocos[0]?.desembolso ?? 0,
   };
 }
@@ -177,6 +224,15 @@ export function periodoDosBlocos(blocos: { inicio?: string | null; fim?: string 
   };
 }
 
+/**
+ * E759 — FONTE ÚNICA das datas de uma estadia para mensagens, cron e e-mails: a primeira entrada e a última saída dos
+ * blocos que valem (fora os "nao_aceito" e os sem data). A página da estadia, os e-mails e a jornada leem por aqui.
+ */
+export function datasDaEstadia(blocos: { inicio?: string | null; fim?: string | null; status?: string | null }[] | null | undefined): { entrada: string; fim: string } | null {
+  const p = periodoDosBlocos((blocos ?? []).filter((b) => b?.status !== "nao_aceito"));
+  return p.inicio && p.fim ? { entrada: p.inicio.slice(0, 10), fim: p.fim.slice(0, 10) } : null;
+}
+
 /** Dias corridos de um período com início e fim INCLUSIVOS. */
 export function diasInclusivos(inicioISO: string, fimISO: string): number {
   return Math.round((Date.parse(`${fimISO}T00:00:00Z`) - Date.parse(`${inicioISO}T00:00:00Z`)) / 86400000) + 1;
@@ -184,14 +240,14 @@ export function diasInclusivos(inicioISO: string, fimISO: string): number {
 
 /**
  * Encadeia as datas dos blocos a partir de um início (ISO). Cada bloco dura
- * `meses×30` dias com fim INCLUSIVO, e o seguinte começa no dia SEGUINTE ao fim
+ * os seus `dias` (E562) ou `meses×30` dias com fim INCLUSIVO, e o seguinte começa no dia SEGUINTE ao fim
  * do anterior. Nenhum bloco excede 90 dias (`planejarBlocos` limita os meses).
  */
 export function encadearDatas(inicioISO: string, blocos: BlocoPlano[]): BlocoComDatas[] {
   let cursor = inicioISO;
   return blocos.map((b) => {
     const inicio = cursor;
-    const fim = fimInclusivoISO(inicio, b.meses * DIAS_POR_MES);
+    const fim = fimInclusivoISO(inicio, b.dias ?? b.meses * DIAS_POR_MES);
     cursor = addDiasISO(fim, 1);
     return { ...b, inicio, fim };
   });

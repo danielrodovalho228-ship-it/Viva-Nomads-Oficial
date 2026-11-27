@@ -1,0 +1,422 @@
+[
+ {
+  "w": 390,
+  "r": "/imoveis-perto-de/hc-ufu",
+  "st": 200,
+  "final": "/imoveis-perto-de/hc-ufu",
+  "h1": 1,
+  "h1t": "Imóveis mobiliados perto do HC-UFU",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis-perto-de/ufu-campus-pontal",
+  "st": 200,
+  "final": "/imoveis-perto-de/ufu-campus-pontal",
+  "h1": 1,
+  "h1t": "Imóveis mobiliados perto do UFU — Campus",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/imoveis-perto-de/nao-existe-qa",
+  "st": 404,
+  "final": "/imoveis-perto-de/nao-existe-qa",
+  "h1": 1,
+  "h1t": "Página não encontrada",
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [
+   "É proprietário? Anuncie seu im"
+  ],
+  "http": [
+   "404 /imoveis-perto-de/nao-existe-qa"
+  ],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/avaliador-teste-qa",
+  "st": 404,
+  "final": "/parceiros/avaliador-teste-qa",
+  "h1": 1,
+  "h1t": "Página não encontrada",
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [
+   "É proprietário? Anuncie seu im"
+  ],
+  "http": [
+   "404 /parceiros/avaliador-teste-qa"
+  ],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/paulo-fotos-teste-qa",
+  "st": 200,
+  "final": "/parceiros/paulo-fotos-teste-qa",
+  "h1": 1,
+  "h1t": "Paulo Fotos — TESTE QA",
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/teste-qa-limpeza-d5",
+  "st": 200,
+  "final": "/parceiros/teste-qa-limpeza-d5",
+  "h1": 1,
+  "h1t": "[TESTE QA] Limpeza D-5",
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/parceiros/nao-existe-qa",
+  "st": 404,
+  "final": "/parceiros/nao-existe-qa",
+  "h1": 1,
+  "h1t": "Página não encontrada",
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [
+   "É proprietário? Anuncie seu im"
+  ],
+  "http": [
+   "404 /parceiros/nao-existe-qa"
+  ],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/avaliadores/UDI-001",
+  "st": 404,
+  "final": "/avaliadores/UDI-001",
+  "h1": 1,
+  "h1t": "Página não encontrada",
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [
+   "É proprietário? Anuncie seu im"
+  ],
+  "http": [
+   "404 /avaliadores/UDI-001"
+  ],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/avaliadores/UDI-002",
+  "st": 200,
+  "final": "/avaliadores/UDI-002",
+  "h1": 1,
+  "h1t": "Avaliador",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/avaliadores/UDI-999",
+  "st": 404,
+  "final": "/avaliadores/UDI-999",
+  "h1": 1,
+  "h1t": "Página não encontrada",
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [
+   "É proprietário? Anuncie seu im"
+  ],
+  "http": [
+   "404 /avaliadores/UDI-999"
+  ],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/conferir/c6ba2523228d237e113da48d6b373dd4",
+  "st": 200,
+  "final": "/conferir/c6ba2523228d237e113da48d6b373dd4",
+  "h1": 1,
+  "h1t": "Conferir documento",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/conferir/00000000000000000000000000000000",
+  "st": 200,
+  "final": "/conferir/00000000000000000000000000000000",
+  "h1": 1,
+  "h1t": "Conferir documento",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 390,
+  "r": "/conferir/codigo-invalido",
+  "st": 200,
+  "final": "/conferir/codigo-invalido",
+  "h1": 1,
+  "h1t": "Conferir documento",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis-perto-de/hc-ufu",
+  "st": 200,
+  "final": "/imoveis-perto-de/hc-ufu",
+  "h1": 1,
+  "h1t": "Imóveis mobiliados perto do HC-UFU",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis-perto-de/ufu-campus-pontal",
+  "st": 200,
+  "final": "/imoveis-perto-de/ufu-campus-pontal",
+  "h1": 1,
+  "h1t": "Imóveis mobiliados perto do UFU — Campus",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/imoveis-perto-de/nao-existe-qa",
+  "st": 404,
+  "final": "/imoveis-perto-de/nao-existe-qa",
+  "h1": 1,
+  "h1t": "Página não encontrada",
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [
+   "404 /imoveis-perto-de/nao-existe-qa"
+  ],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/avaliador-teste-qa",
+  "st": 404,
+  "final": "/parceiros/avaliador-teste-qa",
+  "h1": 1,
+  "h1t": "Página não encontrada",
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [
+   "404 /parceiros/avaliador-teste-qa"
+  ],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/paulo-fotos-teste-qa",
+  "st": 200,
+  "final": "/parceiros/paulo-fotos-teste-qa",
+  "h1": 1,
+  "h1t": "Paulo Fotos — TESTE QA",
+  "imgs": 7,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/teste-qa-limpeza-d5",
+  "st": 200,
+  "final": "/parceiros/teste-qa-limpeza-d5",
+  "h1": 1,
+  "h1t": "[TESTE QA] Limpeza D-5",
+  "imgs": 3,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/parceiros/nao-existe-qa",
+  "st": 404,
+  "final": "/parceiros/nao-existe-qa",
+  "h1": 1,
+  "h1t": "Página não encontrada",
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [
+   "404 /parceiros/nao-existe-qa"
+  ],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/avaliadores/UDI-001",
+  "st": 404,
+  "final": "/avaliadores/UDI-001",
+  "h1": 1,
+  "h1t": "Página não encontrada",
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [
+   "404 /avaliadores/UDI-001"
+  ],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/avaliadores/UDI-002",
+  "st": 200,
+  "final": "/avaliadores/UDI-002",
+  "h1": 1,
+  "h1t": "Avaliador",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/avaliadores/UDI-999",
+  "st": 404,
+  "final": "/avaliadores/UDI-999",
+  "h1": 1,
+  "h1t": "Página não encontrada",
+  "imgs": 9,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [
+   "404 /avaliadores/UDI-999"
+  ],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/conferir/c6ba2523228d237e113da48d6b373dd4",
+  "st": 200,
+  "final": "/conferir/c6ba2523228d237e113da48d6b373dd4",
+  "h1": 1,
+  "h1t": "Conferir documento",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/conferir/00000000000000000000000000000000",
+  "st": 200,
+  "final": "/conferir/00000000000000000000000000000000",
+  "h1": 1,
+  "h1t": "Conferir documento",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ },
+ {
+  "w": 1280,
+  "r": "/conferir/codigo-invalido",
+  "st": 200,
+  "final": "/conferir/codigo-invalido",
+  "h1": 1,
+  "h1t": "Conferir documento",
+  "imgs": 2,
+  "ruins": [],
+  "semAlt": 0,
+  "overflow": 0,
+  "cortes": [],
+  "http": [],
+  "cons": []
+ }
+]

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TEXTO_PRAZO_EMPRESAS } from "@/config/prazos-canais";
 
 /** Formulário de contato corporativo (B2B) → e-mail ao admin. */
 export function EmpresasForm() {
@@ -40,12 +41,13 @@ export function EmpresasForm() {
 
   if (ok) {
     return (
-      <div className="flex items-start gap-3 rounded-xl border border-sage-200 bg-sage-50 p-6">
+      <div className="flex items-start gap-3 rounded-xl border border-sage-200 bg-sage-100 p-6">
         <Check className="mt-1 h-5 w-5 shrink-0 text-forest" />
         <div>
           <p className="font-title font-semibold text-ink">Recebemos seu contato.</p>
-          <p className="mt-1 text-sm text-muted">
-            Nosso time responde no e-mail informado. Obrigado pelo interesse.
+          {/* E876: depois de enviar, o prazo do canal empresas (fonte única, o mesmo do bloco e da FAQ). */}
+          <p className="mt-1 text-sm text-muted" data-testid="empresas-form-prazo">
+            {TEXTO_PRAZO_EMPRESAS} Obrigado pelo interesse.
           </p>
         </div>
       </div>

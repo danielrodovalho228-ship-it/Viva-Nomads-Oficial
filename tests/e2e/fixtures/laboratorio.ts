@@ -29,6 +29,15 @@ export async function liberarLimiteChamados(): Promise<void> {
 }
 
 /**
+ * Zera o limite de eventos de uso (300 por hora por IP, /api/evento). No laboratório toda a suíte sai do mesmo IP e
+ * cada página visitada grava eventos: numa rodada completa o limite esgota e os eventos seguintes são descartados em
+ * silêncio (204 sem gravar). Quem conta eventos gravados (t741) zera antes de gravar.
+ */
+export async function liberarLimiteEventos(): Promise<void> {
+  await adm().from("limites_uso").delete().like("chave", "evento:%");
+}
+
+/**
  * Zera o limite diário de pedidos de moradia (3 por conta por dia). As contas fixas do laboratório publicam
  * pedidos em vários specs (e nas repetições); sem isto o último recebe "Você já publicou 3 pedidos hoje".
  */
@@ -67,6 +76,19 @@ export function cpfAleatorio(): string {
   d.push(dv(d));
   d.push(dv(d));
   return d.join("");
+}
+
+/** CNPJ válido aleatório (E648: parceiro só com CNPJ), 14 dígitos. */
+export function cnpjAleatorio(): string {
+  const n = Array.from({ length: 8 }, () => Math.floor(Math.random() * 10)).concat([0, 0, 0, 1]);
+  const dv = (base: number[]) => {
+    const pesos = base.length === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const r = base.reduce((s, d, i) => s + d * pesos[i], 0) % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  const d1 = dv(n);
+  const d2 = dv([...n, d1]);
+  return [...n, d1, d2].join("");
 }
 
 /** PDF mínimo válido (assinatura %PDF) acima do tamanho mínimo aceito (10 KB). */
@@ -174,6 +196,14 @@ export async function criarImovelPronto(
       tipo_entrada: opts.semTipoEntrada ? null : "porteiro",
       // FILTROS-1 (E39): publicar exige a velocidade da internet (padrão do laboratório: 300 Mbps informados).
       internet_mbps: opts.semInternet ? null : 300,
+      // E660: a ficha "o que tem dentro" é obrigatória para publicar anúncio novo (padrão do laboratório: completa, 1 quarto).
+      ficha_dentro: {
+        versao: 1,
+        quartos: [{ nome: "Quarto 1", camas: [{ tipo: "casal", qtd: 1 }], solteirosJuntam: null, arCondicionado: true }],
+        enxoval: true,
+        cozinhaEquipada: true,
+        utensilios: null,
+      },
     })
     .select("id")
     .single();
@@ -356,6 +386,17 @@ export async function criarLead(ownerId: string, tenantId: string, propertyId: s
   return data.id as string;
 }
 
+/**
+ * E1079 (ORDEM-DUET-431): o roteiro TRAVA "Concluir a visita" — a visita só conclui com a foto de cada ambiente do
+ * roteiro (fachada, sala, cozinha, quartos, banheiros). Preparo para as travas que concluem a visita: grava as cinco
+ * fotos de cômodo no banco do laboratório (linhas; sem arquivo, como as outras fotos de preparo).
+ */
+export async function fotosDoRoteiro(pedidoId: string): Promise<void> {
+  const linhas = ["fachada", "sala", "cozinha", "quarto", "banheiro"].map((comodo, n) => ({ pedido_id: pedidoId, comodo: `Roteiro: ${comodo}`, path: `${pedidoId}/roteiro-${n}.webp` }));
+  const { error } = await adm().from("vistoria_checklist_fotos").insert(linhas);
+  if (error) throw error;
+}
+
 /** Mensagem gravada direto no banco (o primeiro "oi" da conversa), com o id de conversa do servidor. */
 export async function gravarMensagem(de: string, para: string, propertyId: string, texto: string, conversationId: string): Promise<void> {
   const { error } = await adm().from("messages").insert({ conversation_id: conversationId, sender_id: de, receiver_id: para, property_id: propertyId, body: texto });
@@ -440,3 +481,5 @@ export async function blocoSemValorMensal(contratoId: string): Promise<string> {
   if (error) throw error;
   return data.id as string;
 }
+
+export { criteriosDaAvaliacao } from "./avaliacao-criterios";

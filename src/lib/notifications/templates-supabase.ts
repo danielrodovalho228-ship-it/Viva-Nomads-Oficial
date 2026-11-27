@@ -137,3 +137,18 @@ export function emailComCodigo(novo: boolean, codigo: string): { assunto: string
   const t = templatesSupabase().find((x) => x.modelo === (novo ? "Confirm signup" : "Magic link"))!;
   return { assunto: t.assunto, html: t.html.replaceAll("{{ .Token }}", codigo) };
 }
+
+/** E917: o caminho onde a pessoa digita o código de recuperação (sem parâmetro: a captura de teste não o apaga, E163). */
+export const ROTA_RESET_CODIGO = "/auth/reset/codigo";
+
+/**
+ * E917 (opção A, decisão do Gerente 16/11): a recuperação de senha das CONTAS DE TESTE sai daqui, com o código de
+ * 6 dígitos e SEM link — o mesmo visual do e-mail com código. Conta real segue no "Reset password" do Supabase.
+ */
+export function emailRecuperacaoComCodigo(codigo: string): { assunto: string; html: string } {
+  if (!/^\d{6}$/.test(codigo)) throw new Error("Código de recuperação inválido");
+  const t = comCodigo("recuperar-senha-codigo.html", "Recovery code (conta de teste)", "Redefinir sua senha · Viva Nomads", "redefinir-senha", "Sua conta segura no Viva Nomads", "Redefinir sua senha",
+    `Use o código abaixo em vivanomads.com.br${ROTA_RESET_CODIGO} para criar uma nova senha. Ele vale por ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez.`,
+    "Se não foi você, ignore este e-mail: a sua senha continua a mesma. Nunca passe este código a ninguém — a Viva Nomads não pede código por WhatsApp ou SMS.");
+  return { assunto: t.assunto, html: t.html.replaceAll("{{ .Token }}", codigo) };
+}

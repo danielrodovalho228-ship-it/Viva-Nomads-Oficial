@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T90 — Orçamento de velocidade (ordem 0f66a754, item 6): visitante sem cookie
@@ -11,7 +12,7 @@ test.beforeEach(({}, info) => {
   test.skip(info.project.name !== "chromium", "só no projeto do site (chromium)");
 });
 
-const ROTAS = ["/", "/buscar", "/precos"];
+const ROTAS = ["/", "/buscar", ...comPrecos("/precos")];
 const TTFB_MAX_MS = 800;
 const LCP_MAX_MS = 2500;
 

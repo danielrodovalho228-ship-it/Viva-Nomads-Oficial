@@ -52,11 +52,11 @@ test.describe("T705 — E263-A: condições de pets do dono", () => {
       const bloco = p.getByTestId("pets-regras");
       await expect(bloco).toBeVisible();
       // Tudo opcional: chega sem porte e sem quantidade.
-      await expect(bloco.getByTestId("pets-porte")).toHaveValue("");
-      await expect(bloco.getByTestId("pets-qtd")).toHaveValue("");
-      await expect(bloco.getByTestId("pets-qtd").locator("option")).toHaveText(["Sem limite", "1", "2", "3 ou mais"]);
-      await bloco.getByTestId("pets-porte").selectOption("M");
-      await bloco.getByTestId("pets-qtd").selectOption("2");
+      await expect(bloco.getByTestId("pets-porte-nd")).toHaveAttribute("aria-checked", "true");
+      await expect(bloco.getByTestId("pets-qtd-nd")).toHaveAttribute("aria-checked", "true");
+      await expect(bloco.getByTestId("pets-qtd").getByRole("radio")).toHaveText(["Sem limite", "1", "2", "3 ou mais"]);
+      await bloco.getByTestId("pets-porte-M").click();
+      await bloco.getByTestId("pets-qtd-2").click();
       await bloco.getByTestId("pets-taxa-mensal").fill("80");
       await bloco.getByTestId("pets-observacao").fill("x".repeat(150));
       await expect(bloco.getByTestId("pets-observacao")).toHaveValue("x".repeat(140));
@@ -70,7 +70,7 @@ test.describe("T705 — E263-A: condições de pets do dono", () => {
         return (data?.draft_data as { petsRegras?: { observacao?: string } } | null)?.petsRegras?.observacao;
       }, { timeout: 20_000 }).toBe("Gatos castrados.");
       await p.reload({ waitUntil: "domcontentloaded" });
-      await expect(p.getByTestId("pets-regras").getByTestId("pets-porte")).toHaveValue("M", { timeout: 30_000 });
+      await expect(p.getByTestId("pets-regras").getByTestId("pets-porte-M")).toHaveAttribute("aria-checked", "true", { timeout: 30_000 });
       await expect(p.getByTestId("pets-regras").getByTestId("pets-observacao")).toHaveValue("Gatos castrados.");
       await p.context().close();
     });
@@ -86,8 +86,8 @@ test.describe("T705 — E263-A: condições de pets do dono", () => {
       await secao.getByRole("button", { name: /Regras da casa/ }).click();
       const bloco = secao.getByTestId("pets-regras");
       await expect(bloco).toBeVisible({ timeout: 20_000 });
-      await bloco.getByTestId("pets-porte").selectOption("M");
-      await bloco.getByTestId("pets-qtd").selectOption("2");
+      await bloco.getByTestId("pets-porte-M").click();
+      await bloco.getByTestId("pets-qtd-2").click();
       await bloco.getByTestId("pets-taxa-mensal").fill("80");
       await bloco.getByTestId("pets-observacao").fill("Gatos castrados.");
       await secao.getByRole("button", { name: "Salvar seção" }).click();

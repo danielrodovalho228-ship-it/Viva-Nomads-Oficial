@@ -21,7 +21,7 @@ export const TIPOS_COM_CORPO: ReadonlySet<string> = new Set<TipoCorpoAutomacao>(
 ]);
 
 export interface DadosAutomacao {
-  imovel: { titulo?: string | null; bairro?: string | null; cidade?: string | null } | null;
+  imovel: { id?: string | null; titulo?: string | null; bairro?: string | null; cidade?: string | null } | null;
   /** O dia do fato (yyyy-mm-dd): saída, fim do período, entrada. */
   data?: string | null;
   /** Horário do imóvel (saída até / entrada a partir de), como cadastrado ("11:00"). */
@@ -94,15 +94,16 @@ export function corpoAutomacao(tipo: TipoCorpoAutomacao, d: DadosAutomacao): Cor
       };
     }
     case "renovacao_aviso": {
-      if (data) linhas.push({ rotulo: "Fim do período", valor: data });
+      // E1089: a data é a SAÍDA do período (nunca a última noite como "fim").
+      if (data) linhas.push({ rotulo: "Saída do período", valor: data });
       return {
-        subject: assuntoComTitulo("Renovar ", titulo, `? O período termina em ${diaNoAssunto(d.data) || "15 dias"}`, [
-          { antes: "Renovar ", depois: `? Termina em ${diaNoAssunto(d.data) || "15 dias"}` },
-          // E342 (resíduo): o nome inteiro antes da data — o fim do período está no corpo ("Fim do período").
+        subject: assuntoComTitulo("Renovar ", titulo, `? A saída do período é em ${diaNoAssunto(d.data) || "15 dias"}`, [
+          { antes: "Renovar ", depois: `? Saída em ${diaNoAssunto(d.data) || "15 dias"}` },
+          // E342 (resíduo): o nome inteiro antes da data — a saída do período está no corpo ("Saída do período").
           { antes: "Renovar ", depois: "?" },
         ]),
         body: (n) =>
-          `${ola(n)}, o período atual do contrato${titulo ? ` de ${titulo}` : ""} termina em ${data || "15 dias"}. Se quiserem seguir, combinem a renovação pela plataforma: o aditivo de prorrogação já vem preenchido.`,
+          `${ola(n)}, a saída do período atual do contrato${titulo ? ` de ${titulo}` : ""} é em ${data || "15 dias"}. Se quiserem seguir, combinem a renovação pela plataforma: o aditivo de prorrogação já vem preenchido.`,
         linhas,
       };
     }

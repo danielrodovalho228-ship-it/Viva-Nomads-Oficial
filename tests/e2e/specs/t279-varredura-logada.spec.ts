@@ -3,6 +3,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO } from "../fixtures/laboratorio";
 import { TAMANHOS, abrirComoConta, lerMassa, temContaVarredura, type ChaveConta, type Massa } from "../fixtures/varredura";
+import { caminhoEsperado } from "../fixtures/destino-da-conta";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
 
 /*
@@ -75,7 +76,7 @@ test.describe("T279 — varredura da página inteira nas telas logadas (390 e 12
         try {
           const respostas = escutarImagens(page);
           await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 40_000 });
-          expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split("?")[0]);
+          await expect.poll(() => new URL(page.url()).pathname, { message: `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`, timeout: 15_000 }).toBe(caminhoEsperado(rota, tam.width));
           await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
           const achados = await varrerPagina(page, respostas);
           relatorio[tam.nome] = achados;

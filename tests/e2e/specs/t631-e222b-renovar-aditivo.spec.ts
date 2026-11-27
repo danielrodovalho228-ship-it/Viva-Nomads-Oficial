@@ -144,13 +144,14 @@ test.describe("T631 — E222-B: renovar é o aditivo de prorrogação já preenc
     await expect(previa).toHaveAttribute("data-inicio", inicioNovo);
     await expect(previa).toHaveAttribute("data-fim", fimNovo);
     await expect(previa).toHaveAttribute("data-valor", "6400");
-    await expect(previa).toContainText(`Mais 2 meses: de ${ddmmaaaa(inicioNovo)} a ${ddmmaaaa(fimNovo)}`);
+    // E1089 (coordenador): a forma única, com a SAÍDA (o dia seguinte ao fim gravado do bloco novo). Antes: "de X a {fim}".
+    await expect(previa).toContainText(`Mais 2 meses: Entrada ${ddmmaaaa(inicioNovo)} · Saída ${ddmmaaaa(emDias(81))} · 60 diárias`);
     // Ajuste dentro do teto: as opções vão de 3 a 6 meses.
     await expect(m.getByTestId("alteracao-meses").locator("option")).toHaveText(["3 meses (mais 1)", "4 meses (mais 2)", "5 meses (mais 3)", "6 meses (mais 4)"]);
     await m.screenshot({ path: `${SAIDA}/t631-renovar-preenchido.png`, fullPage: true });
     await m.getByTestId("alteracao-enviar").click();
     await expect(m).toHaveURL(new RegExp(`/dashboard/estadia/${ids.A}$`));
-    await expect(m.getByTestId("aditivo-resumo")).toHaveText("Meses: de 2 para 4");
+    await expect(m.getByTestId("aditivo-resumo")).toContainText("Meses: de 2 para 4");
 
     const d = await entrar(browser, emails.dono, senha);
     await d.goto(`/dashboard/estadia/${ids.A}`, { waitUntil: "domcontentloaded" });

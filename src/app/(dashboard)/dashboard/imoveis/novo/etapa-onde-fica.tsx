@@ -1,5 +1,6 @@
 "use client";
 
+import type { NovoEnvio } from "@/lib/documento/vigente";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { useEffect, useState, type ReactNode } from "react";
 import { MapPin, AlertTriangle, CheckCircle2, ChevronDown } from "lucide-react";
@@ -23,6 +24,7 @@ import { DeclaracoesDoImovel } from "./declaracoes-passo10";
 import type { DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
 import { EVENTO_ABRIR_SECAO, secoesAntesDePublicar, type EstadoSecao, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
+import { comoEmBreve } from "@/lib/identidade/estado";
 import { ResumoEndereco, enderecoCompletoParaResumo } from "./resumo-endereco";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
@@ -78,7 +80,7 @@ export function EtapaOndeFica(p: {
   const [buscaAberta, setBuscaAberta] = useState(false);
   const digitosCep = p.cep.replace(/\D/g, "").length;
   const r = p.cepResultado;
-  const podeBuscarEndereco = r?.tipo === "nao_encontrado" || r?.tipo === "cidade";
+  const podeBuscarEndereco = r?.tipo === "nao_encontrado" || r?.tipo === "cidade" || r?.tipo === "faixa";
   const avisoPrivacidade = (
     <p className="flex items-start gap-2 rounded-lg bg-surface-2 px-3 py-2 text-xs text-muted" data-testid="endereco-privacidade">
       <MapPin className="mt-1 h-3.5 w-3.5 shrink-0 text-sage" />
@@ -133,7 +135,7 @@ export function EtapaOndeFica(p: {
               ) : (
                 mensagemCep(r)
               )}
-              {r.tipo === "cidade" && (
+              {(r.tipo === "cidade" || r.tipo === "faixa") && (
                 <>
                   {" · "}
                   <button type="button" className="font-semibold underline" onClick={() => setBuscaAberta(true)} data-testid="cep-buscar-endereco">
@@ -165,7 +167,7 @@ export function EtapaOndeFica(p: {
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
-        <Labeled label="Rua" daMatricula={p.daMatricula?.has("endereco")}>
+        <Labeled label="Rua" obrigatorio daMatricula={p.daMatricula?.has("endereco")}>
           <input
             value={p.street}
             onChange={(e) => {
@@ -181,7 +183,7 @@ export function EtapaOndeFica(p: {
           />
           <Erro msg={p.erros.rua} />
         </Labeled>
-        <Labeled label="Número">
+        <Labeled label="Número" obrigatorio>
           <input
             value={p.numero}
             onChange={(e) => p.setNumero(e.target.value.slice(0, 20))}
@@ -225,7 +227,7 @@ export function EtapaOndeFica(p: {
         />
       </Labeled>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Labeled label="Bairro">
+        <Labeled label="Bairro" obrigatorio>
           <input
             value={p.neighborhood}
             onChange={(e) => {
@@ -265,7 +267,7 @@ export function EtapaOndeFica(p: {
             </span>
           )}
         </Labeled>
-        <Labeled label={`Cidade${p.uf ? ` (${p.uf})` : ""}`}>
+        <Labeled label={`Cidade${p.uf ? ` (${p.uf})` : ""}`} obrigatorio>
           <input
             value={p.city}
             onChange={(e) => {
@@ -335,7 +337,9 @@ export function AntesDePublicar(p: {
   imovelId: string | null;
   docEstado: EstadoDocumentoTela;
   docMotivos: string[];
-  onDocumento: (estado: EstadoDocumentoTela, motivos: string[]) => void;
+  /** E587: envio novo à parte do aprovado vigente. */
+  docNovo?: NovoEnvio | null;
+  onDocumento: (estado: EstadoDocumentoTela, motivos: string[], novo?: NovoEnvio | null) => void;
   /** Prompt 19: a matrícula conferida preenche o anúncio. */
   onMatricula?: (m: InfoMatricula) => void;
   /** O que ainda falta na operação (declaração, tipo do documento ou o anexo); "" = nada. */
@@ -359,7 +363,7 @@ export function AntesDePublicar(p: {
     ? "carregando"
     : identidade.identidade.estado === "confirmada"
       ? "ok"
-      : identidade.identidade.estado === "em_breve"
+      : comoEmBreve(identidade.identidade.estado)
         ? "em_breve"
         : identidade.temCpf
           ? "pendente"
@@ -368,6 +372,7 @@ export function AntesDePublicar(p: {
     faltaOperacao: p.faltaOperacao,
     rotuloOperacao: OPERACOES.find((o) => o.valor === p.ownershipType)?.rotulo ?? "",
     identidade: estadoIdentidade,
+    identidadeTexto: identidade?.identidade.texto ?? null,
     documento: p.docEstado,
     linhaDocumentoInicio: p.linhaDocumentoInicio,
     declaracoes: p.declaracoes,
@@ -460,6 +465,7 @@ export function AntesDePublicar(p: {
           operacao={p.ownershipType}
           estado={p.docEstado}
           motivos={p.docMotivos}
+          novo={p.docNovo}
           onResultado={p.onDocumento}
           onMatricula={p.onMatricula}
           enderecoSalvo={p.enderecoSalvo}

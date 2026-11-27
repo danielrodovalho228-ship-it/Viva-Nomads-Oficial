@@ -82,8 +82,11 @@ test.describe("T321 — vídeo do anúncio alcançável pelo dono (65-B)", () =>
     await confirmarVideoDoImovel(p);
     await expect(secao(p).getByTestId("video-enviado")).toHaveText("Vídeo enviado (00:10)", { timeout: 60_000 });
     await expect.poll(() => caminhoNoBanco(ids.imovel), { timeout: 20_000 }).toMatch(/-10s\.mp4$/);
-    // A gravação do vídeo recarrega a página do editor: se a seção fechou, abre de novo antes de salvar.
-    if ((await secao(p).getAttribute("data-aberta")) !== "true") await secao(p).getByRole("button").first().click();
+    // E1022: a gravação do arquivo volta do servidor e o endereço perde o "#secao-video"; a seção que o dono abriu segue
+    // aberta (antes fechava sozinha, e o "Salvar seção" sumia debaixo do clique quando a resposta chegava tarde).
+    await expect(secao(p).getByRole("button").first(), "a gravação do arquivo terminou").toContainText("Salvo", { timeout: 20_000 });
+    await p.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {}); // a resposta da gravação assentou
+    await expect(secao(p), "E1022: a seção do vídeo segue aberta depois da gravação").toHaveAttribute("data-aberta", "true");
     await secao(p).getByRole("button", { name: "Salvar seção" }).click();
     // A gravação recarrega o editor: ou a mensagem aparece, ou a seção fecha já mostrando o vídeo no cabeçalho. A prova
     // de que ficou gravado é a do recarregar, logo abaixo.

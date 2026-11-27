@@ -12,11 +12,12 @@ import { montarLinhaDoTempo } from "../estadia-linha-tempo.ts";
 import { conteudoDocumento, enderecoDoDocumento, textoDocumento, temContato, type DadosDocumento } from "./documento.ts";
 import { gerarPdf, sha256 } from "./pdf.ts";
 import { PENDENTE_ITEM_13, RETENCAO_DOCUMENTOS, podeApagarDocumento } from "../../config/retencao.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(join(raiz, p), "utf8");
 /** O código sem comentários (o comentário pode explicar o que NÃO entra). */
-const codigo = (p: string) => ler(p).replace(/\{?\/\*[\s\S]*?\*\/\}?|\/\/.*$/gm, "");
+const codigo = (p: string) => fonteSemComentarios(ler(p));
 
 function arquivos(dir: string): string[] {
   return readdirSync(join(raiz, dir)).flatMap((n) => {
@@ -91,7 +92,7 @@ test("guarda: RPS nunca como prefixo nem em texto de documento da Viva", () => {
   for (const tipo of ["recibo_aluguel", "comprovante_caucao", "termo_devolucao_caucao"] as const) {
     assert.ok(!temRps(textoDocumento(conteudoDocumento({ ...RECIBO, tipo, caucaoTotal: 3200, confirmadoEm: "2026-12-02" }))), tipo);
   }
-  for (const p of arquivos("src/lib/fiscal")) assert.doesNotMatch(ler(p).replace(/\/\/.*|\/\*[\s\S]*?\*\//g, "").replace(/"RPS"|'RPS'|RPS é a sigla|nunca "RPS"|\\bRPS\\b|\^RPS|RPS não/g, ""), /\bRPS\b/, p);
+  for (const p of arquivos("src/lib/fiscal")) assert.doesNotMatch(fonteSemComentarios(ler(p)).replace(/"RPS"|'RPS'|RPS é a sigla|nunca "RPS"|\\bRPS\\b|\^RPS|RPS não/g, ""), /\bRPS\b/, p);
 });
 
 test("marca D1-b: o recibo leva o emissor em destaque, a Viva discreta, número e código no cabeçalho/rodapé comuns", () => {
@@ -133,7 +134,8 @@ test("/conferir: só pelo código; sem valor nem nomes; status, versão vigente 
   assert.equal(normalizarCodigo(" 9F3B 82D1 "), "9f3b82d1");
   const base: LinhaConferida = { prefixo: "ORC", tipo: "proposta", numero: "ORC-2026-0002", versao: 1, status: "substituido", anulado_motivo: null, status_em: null, emitido_em: "2026-10-06T14:03:00Z", hash_sha256: null, is_teste: false, registro_seq: 7, versao_vigente: 2 };
   assert.match(situacaoDoDocumento(base).texto, /SUBSTITUÍDO pela versão 2/);
-  assert.match(situacaoDoDocumento({ ...base, status: "anulado", anulado_motivo: "Duplicidade" }).texto, /ANULADO \(Duplicidade\)/);
+  // E1229 (ORDEM-DUET-1143, asserção alterada): o anulado diz "Anulado em {data}: {motivo}" (sem status_em, sem a data).
+  assert.match(situacaoDoDocumento({ ...base, status: "anulado", anulado_motivo: "Duplicidade" }).texto, /^Anulado: Duplicidade\./);
   assert.equal(situacaoDoDocumento({ ...base, status: "valido", is_teste: true }).estado, "teste");
   assert.equal(situacaoDoDocumento({ ...base, status: "anulado", is_teste: true }).estado, "anulado", "anulado vale também para o de teste");
   assert.equal(situacaoDoDocumento({ ...base, status: "valido" }).estado, "valido");
@@ -214,18 +216,19 @@ test("retenção: uma constante; tudo pendente (item 13) menos a lista da portar
 
 test("saída (correção do coordenador): prazo de 48 h depois do checkout em Brasília; sem respostas, fecha no instante certo e grava o hash", () => {
   const datas = { inicio: "2026-10-01", checkinAfter: "15:00", fim: "2026-12-31", checkoutBefore: "11:00" };
-  // 31/12 às 11:00 em Brasília = 14:00 UTC; + 48 h = 02/01 às 14:00 UTC.
-  assert.equal(prazoConferenciaSaida(datas)?.toISOString(), "2027-01-02T14:00:00.000Z");
-  assert.equal(prazoConferenciaSaida({ fim: "2026-12-31", checkoutBefore: "" })?.toISOString(), "2027-01-02T03:00:00.000Z", "sem horário = 00:00");
+  // E1089 (coordenador): 31/12 é a última noite gravada; a pessoa sai em 01/01, e as 48 h contam DESSE dia.
+  // 01/01 às 11:00 em Brasília = 14:00 UTC; + 48 h = 03/01 às 14:00 UTC. (Antes contava de 31/12: 02/01 às 14:00 UTC.)
+  assert.equal(prazoConferenciaSaida(datas)?.toISOString(), "2027-01-03T14:00:00.000Z");
+  assert.equal(prazoConferenciaSaida({ fim: "2026-12-31", checkoutBefore: "" })?.toISOString(), "2027-01-03T03:00:00.000Z", "sem horário = 00:00");
   assert.equal(prazoConferenciaSaida({ fim: null, checkoutBefore: "11:00" }), null, "sem o último dia, sem prazo");
   const abertas = [
     { id: "saida-1", tipo: "saida" as const, datas },
     { id: "entrada-1", tipo: "entrada" as const, datas },
   ];
   // Um minuto antes do prazo da saída: só a entrada (vencida há muito) fecha.
-  assert.deepEqual(conferenciasParaFechar(abertas, new Date("2027-01-02T13:59:00Z")).map((c) => c.id), ["entrada-1"]);
+  assert.deepEqual(conferenciasParaFechar(abertas, new Date("2027-01-03T13:59:00Z")).map((c) => c.id), ["entrada-1"]);
   // Um minuto depois: a saída também.
-  assert.deepEqual(conferenciasParaFechar(abertas, new Date("2027-01-02T14:01:00Z")).map((c) => c.id), ["saida-1", "entrada-1"]);
+  assert.deepEqual(conferenciasParaFechar(abertas, new Date("2027-01-03T14:01:00Z")).map((c) => c.id), ["saida-1", "entrada-1"]);
   // Sem respostas: o fechamento registra as duas partes como sem resposta e o hash sai do conteúdo.
   const vazia: EstadoParaFechar = { conferenciaId: "saida-1", contrato: "VN-CT-11281A61", tipo: "saida", itens: [], respostas: [], laudo: null, hashes: {} };
   assert.deepEqual(semResposta(vazia), ["proprietario", "inquilino"]);
@@ -234,7 +237,7 @@ test("saída (correção do coordenador): prazo de 48 h depois do checkout em Br
   assert.match(createHash("sha256").update(texto).digest("hex"), /^[0-9a-f]{64}$/);
   // A linha do tempo mostra o mesmo prazo (fonte única).
   const etapa = montarLinhaDoTempo(datas).find((e) => e.chave === "conferencia_saida");
-  assert.equal(etapa?.prazo, "2027-01-02T14:00:00.000Z");
+  assert.equal(etapa?.prazo, "2027-01-03T14:00:00.000Z"); // E1089: o prazo conta da saída (01/01), não da última noite
   // Tela, servidor e rotina usam a fonte única.
   assert.match(ler("src/lib/data/conferencia-actions.ts"), /prazoSaidaEm = ctx \? \(prazoConferenciaSaida\(ctx\.entrada\)/);
   assert.match(ler("src/components/contrato/conferencia-contrato.tsx"), /data-testid="conferencia-prazo-saida"/);

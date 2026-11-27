@@ -2,6 +2,7 @@
 
 import { Cigarette, Moon, PartyPopper, UsersRound } from "lucide-react";
 import { BlocoOpcional } from "@/components/anuncio/bloco-opcional";
+import { EscolhaUnica } from "@/components/anuncio/escolha-assistente";
 import { MAX_OUTRAS_REGRAS, OPCOES_FESTAS, OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
 import { REGRAS_CONVIVENCIA, desligarRegra, regraTemDados, type RegraConvivencia, type RegrasCasaForm } from "@/lib/anuncio/regras-casa-form";
 
@@ -15,7 +16,8 @@ const ICONE_REGRA: Record<RegraConvivencia, React.ComponentType<{ className?: st
   visitas: UsersRound,
 };
 
-const campo = "w-full min-h-[44px] rounded-lg border border-line bg-white px-3 text-sm text-ink";
+// E193: o campo (texto, data, número) tem a moldura, o tamanho e o estado do cartão grande do assistente.
+const campo = "w-full min-h-14 rounded-xl border-2 border-line bg-white px-4 text-sm text-ink outline-none transition-colors hover:border-sage focus:border-forest";
 
 function Escolha<T extends string>({
   nome,
@@ -30,19 +32,8 @@ function Escolha<T extends string>({
   valor: "" | T;
   onChange: (v: T) => void;
 }) {
-  return (
-    <fieldset data-testid={`regras-casa-${nome}`}>
-      <legend className="text-sm font-semibold text-ink">{legenda}</legend>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {opcoes.map((o) => (
-          <label key={o.valor} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-line px-4 text-sm">
-            <input type="radio" name={`regras-casa-${nome}`} value={o.valor} checked={valor === o.valor} onChange={() => onChange(o.valor)} />
-            {o.rotulo}
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
+  /* E193: escolha única no cartão grande (antes, rádio dentro de pílula). */
+  return <EscolhaUnica<"" | T> testid={`regras-casa-${nome}`} legenda={legenda} opcoes={opcoes} valor={valor} onChange={(v) => v !== "" && onChange(v)} />;
 }
 
 const SIM_NAO = [
@@ -129,7 +120,7 @@ export function RegrasCasaCampos({
       <label className="grid gap-1 text-sm font-semibold text-ink">
         Outras regras (opcional)
         <textarea
-          className="min-h-[88px] w-full rounded-lg border border-line bg-white px-3 py-2 text-sm font-normal text-ink"
+          className="min-h-[88px] w-full rounded-xl border-2 border-line bg-white px-4 py-3 text-sm font-normal text-ink outline-none transition-colors hover:border-sage focus:border-forest"
           value={value.outras}
           maxLength={MAX_OUTRAS_REGRAS}
           placeholder="Ex.: tirar os sapatos na sala, manter a varanda limpa"

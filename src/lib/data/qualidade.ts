@@ -1,6 +1,9 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { idsContasTeste } from "@/lib/data/admin-indicadores";
+import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
+import { indicadorPrecoJustoAdmin } from "@/lib/comparador-airbnb/comparacao-servidor";
+import type { IndicadorPrecoJusto } from "@/lib/comparador-airbnb/comparacao";
 import {
   JANELA_CORRECAO_DIAS,
   QUEBRADORES,
@@ -53,10 +56,12 @@ export async function abrirCorrecoesDevidas(admin: Admin, agora = new Date()): P
   const desde = new Date(agora.getTime() - JANELA_CORRECAO_DIAS * DIA).toISOString();
   const [{ data: saidas }, { data: abertas }, teste] = await Promise.all([
     admin.from("saidas_motivos").select("id, user_id, papel, nivel, motivo, detalhe, texto_livre, ajuda_oferecida, revertida, teste, criado_em").gte("criado_em", desde).not("motivo", "is", null).limit(20000),
-    admin.from("qualidade_correcoes").select("papel, motivo").is("fechada_em", null),
+    // E982: as abertas E as fechadas dentro da janela — uma fechada já tratou as saídas até o fechamento.
+    admin.from("qualidade_correcoes").select("papel, motivo, fechada_em").or(`fechada_em.is.null,fechada_em.gte.${desde}`),
     idsContasTeste(admin),
   ]);
-  const novas = motivosQueViramCorrecao(((saidas ?? []) as LinhaSaida[]).map((s) => paraRegistrada(s, teste)), (abertas ?? []) as { papel: string; motivo: string }[], agora);
+  const correcoes = ((abertas ?? []) as { papel: string; motivo: string; fechada_em: string | null }[]).map((c) => ({ papel: c.papel, motivo: c.motivo, fechadaEm: c.fechada_em }));
+  const novas = motivosQueViramCorrecao(((saidas ?? []) as LinhaSaida[]).map((s) => paraRegistrada(s, teste)), correcoes, agora);
   for (const n of novas) {
     const { error } = await admin.from("qualidade_correcoes").insert({ papel: n.papel, motivo: n.motivo, ocorrencias: n.n });
     if (error && error.code !== "23505") console.error("[abrirCorrecoesDevidas]", error.code, error.message);
@@ -216,4 +221,15 @@ export async function contextoDaSaida(id: string): Promise<{ contexto: ContextoM
   const { data, error } = await admin.from("contratos").select("property_id, properties(title)").eq("tenant_id", uid).order("created_at", { ascending: false }).limit(3);
   if (error) throw new Error(MSG_CONTEXTO_SEM_LEITURA);
   return { contexto, itens: ((data ?? []) as unknown as { property_id: string; properties: { title: string | null } | null }[]).map((c) => ({ rotulo: c.properties?.title ?? "Anúncio", href: `/imoveis/${c.property_id}` })) };
+}
+
+/**
+ * E572 — indicador interno do Preço justo: % dos imóveis ativos com link de outra plataforma que têm o selo. Atrás da
+ * chave PRECO_JUSTO_COMPARADOR (desligada = "desligado", nada é lido). Contas de teste fora. Sem leitura = null.
+ */
+export async function indicadorPrecoJustoDoPainel(agora = new Date()): Promise<IndicadorPrecoJusto | "desligado" | null> {
+  if (!PRECO_JUSTO_COMPARADOR) return "desligado";
+  const admin = createAdminClient();
+  if (!admin) return null;
+  return indicadorPrecoJustoAdmin(admin, await idsContasTeste(admin), agora);
 }

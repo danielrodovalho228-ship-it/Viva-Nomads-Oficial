@@ -25,6 +25,12 @@ export function slugBairro(nome: string | null | undefined): string {
 }
 
 /** Bairros com pelo menos 1 anúncio real, do mais cheio para o mais vazio (empate: ordem alfabética). */
+/**
+ * E446: a contagem por bairro usa o MESMO conjunto da busca e da lista da cidade (listProperties: reais + exemplos com a
+ * vitrine ligada). Nada fica de fora; o índice do Google segue só com anúncio real (metadadosDoBairro, sitemap).
+ */
+export const contaNaBusca = (): boolean => false;
+
 export function agruparBairros(imoveis: readonly ImovelBairro[], ehExemplo: (id: string) => boolean): BairroResumo[] {
   const mapa = new Map<string, BairroResumo>();
   for (const i of imoveis) {

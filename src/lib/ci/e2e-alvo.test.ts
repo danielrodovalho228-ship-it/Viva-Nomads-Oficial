@@ -27,7 +27,7 @@ test("preview com bypass usa a URL do deploy e envia o bypass", () => {
   assert.equal(r.bypass, "true");
 });
 
-test("preview sem bypass é pulado com aviso (caso negativo: não fica vermelho)", () => {
+test("preview sem bypass não roda a suíte e sai com aviso (o job fica vermelho no passo final — E964)", () => {
   const r = alvo({ EVENTO: "deployment_status", AMBIENTE: "Preview", TARGET_URL: "https://x-abc.vercel.app", TEM_BYPASS: "false" });
   assert.equal(r.rodar, "false");
   assert.match(r.aviso, /pulado/);

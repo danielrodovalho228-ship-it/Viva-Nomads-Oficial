@@ -6,6 +6,7 @@
   minha confirmação"; o automático é escolha do dono por imóvel e categoria. Morador só recebe SUGESTÃO, nunca pedido.
 */
 import { horarioNaAgenda, HORARIOS_MAX, type BloqueioAgenda, type JanelaAgenda } from "../parceiros/pedido.ts";
+import { saidaPeloFim } from "../texto-do-periodo.ts";
 
 export const CATEGORIAS_VINCULO = ["limpeza", "manutencao", "lavanderia", "fotografia"] as const;
 export type CategoriaVinculo = (typeof CATEGORIAS_VINCULO)[number];
@@ -41,7 +42,10 @@ export interface Vinculo {
 export interface ContratoDoEvento {
   id: string;
   propertyId: string;
-  /** Último dia da estadia (yyyy-mm-dd) e horário de saída do anúncio ("11:00"). */
+  /**
+   * Dia da SAÍDA (yyyy-mm-dd) e horário de saída do anúncio ("11:00"). E1089 (coordenador): é o dia seguinte à última
+   * noite gravada nos blocos (entrada + dias), o mesmo que as telas mostram.
+   */
   saida: string;
   checkoutBefore?: string | null;
   /** Próxima entrada no mesmo imóvel (outro contrato), se houver. */
@@ -221,11 +225,15 @@ export function semResposta(criadoEm: string, status: string, agora: Date): bool
   return status === "solicitado" && agora.getTime() - Date.parse(criadoEm) >= HORAS_SEM_RESPOSTA * 3_600_000;
 }
 
-/** Cartão do morador "Precisa de ajuda com a mudança?": só nos 7 dias antes da entrada e nos 7 antes da saída. */
+/**
+ * Cartão do morador "Precisa de ajuda com a mudança?": só nos 7 dias antes da entrada e nos 7 antes da saída.
+ * E1089 (coordenador): `fim` é a última noite gravada; a régua conta da SAÍDA, o dia seguinte.
+ */
 export function momentoDaSugestao(p: { inicio: string | null; fim: string | null }, hoje: string): "entrada" | "saida" | null {
   const dias = (d: string) => Math.round((Date.parse(`${d}T12:00:00Z`) - Date.parse(`${hoje}T12:00:00Z`)) / 86_400_000);
   if (p.inicio && dias(p.inicio) >= 0 && dias(p.inicio) <= DIAS_ANTES_SUGESTAO) return "entrada";
-  if (p.fim && dias(p.fim) >= 0 && dias(p.fim) <= DIAS_ANTES_SUGESTAO) return "saida";
+  const saida = p.fim ? saidaPeloFim(p.fim) : "";
+  if (saida && dias(saida) >= 0 && dias(saida) <= DIAS_ANTES_SUGESTAO) return "saida";
   return null;
 }
 

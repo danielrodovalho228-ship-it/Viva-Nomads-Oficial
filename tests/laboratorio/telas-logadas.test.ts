@@ -30,5 +30,5 @@ test("tela restrita (404 para as personas) fica fora da varredura e tem spec pr√
   for (const persona of ["inquilino", "proprietario", "admin"] as const) {
     for (const r of TELAS_RESTRITAS) assert.ok(!telasDaPersona(persona).includes(r), `${persona} n√£o visita ${r}`);
   }
-  assert.deepEqual([...TELAS_RESTRITAS], ["/dashboard/qa/emails"]);
+  assert.deepEqual([...TELAS_RESTRITAS], ["/dashboard/qa/emails", "/admin/premissas"]);
 });

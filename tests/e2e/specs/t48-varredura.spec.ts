@@ -292,15 +292,19 @@ test.describe("T48 — Varredura do site e do app", () => {
     ["proprietário", dono, () => [`/dashboard/imoveis/${ids.imovel}/editar`]],
     ["admin", { email: adminConta.email }, TELAS_ADMIN],
   ] as const) {
-    test(`${nome}: todas as telas logadas`, async ({ browser }) => {
-      test.setTimeout(1_800_000);
-      const page = await entrar(browser, conta.email, senha);
-      const extra = typeof extras === "function" ? extras() : extras;
-      await varrer(page, [...TELAS_LOGADAS, ...extra]);
-      // 1280 px: o mesmo painel no computador.
-      await page.setViewportSize({ width: 1280, height: 900 });
-      await varrer(page, [...TELAS_LOGADAS, ...extra], 1280);
-      await page.context().close();
-    });
+    // E1013: um teste por largura. As duas larguras num teste só não cabiam nos 30 minutos com o servidor frio (o do
+    // admin estourou na primeira tentativa nas 7 corridas completas de 16 e 17/11 e só passava na nova tentativa).
+    // O teto de cada teste continua o mesmo; o que é coberto também (as mesmas telas, a 390 e a 1280 px).
+    for (const largura of [390, 1280] as const) {
+      test(`${nome}: todas as telas logadas a ${largura} px`, async ({ browser }) => {
+        test.setTimeout(1_800_000);
+        const page = await entrar(browser, conta.email, senha);
+        // O login abre a 390 px; a 1280 px é o mesmo painel no computador.
+        if (largura === 1280) await page.setViewportSize({ width: 1280, height: 900 });
+        const extra = typeof extras === "function" ? extras() : extras;
+        await varrer(page, [...TELAS_LOGADAS, ...extra], largura);
+        await page.context().close();
+      });
+    }
   }
 });

@@ -5,6 +5,9 @@ import { LimpezaEstadiaCampos, formDeLimpeza, type LimpezaEstadiaForm } from "@/
 import { RegrasCasaCampos, estadosConvivencia, formDeRegrasCasa, payloadDeRegrasCasa, type RegrasCasaForm } from "@/components/anuncio/regras-casa-campos";
 import { OPCOES_FUMO } from "@/lib/anuncio/regras-casa";
 import { DetalhesAnuncioCampos, estadosDetalhes, formDeDetalhes, payloadDeDetalhes, type DetalhesForm } from "@/components/anuncio/detalhes-anuncio-campos";
+import { FormaPagamentoCampo } from "@/components/anuncio/forma-pagamento-campo";
+import { ESCOLHA_PADRAO, normalizarEscolha, type EscolhaPagamento } from "@/lib/pagamento-forma/regras";
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
 import { CamposChacara, type ValorChacara } from "@/components/anuncio/campos-chacara";
 import { ehChacara, faltaChacara, normalizarChacara } from "@/lib/anuncio/chacara";
 import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imovel";
@@ -13,7 +16,7 @@ import { completudeBlocos, textoCompletude } from "@/lib/anuncio/bloco-opcional"
 import { PetsRegrasCampos, formDeRegras, type RegrasPetsForm } from "@/components/anuncio/pets-regras-campos";
 import { ChegadaEPedidoCampos, formDeChegada, payloadDaChegada, type ChegadaEPedidoForm } from "@/components/anuncio/chegada-e-pedido-campos";
 import { avisoTipoEntradaNoPainel, tipoEntradaValido } from "@/lib/anuncio/chegada-e-pedido";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
 import { DateFieldBR } from "@/components/ui/date-field-br";
 import {
@@ -37,6 +40,7 @@ import {
   Video,
   Award,
   Accessibility,
+  LogOut,
 } from "lucide-react";
 import { BlocoNegociacao } from "@/components/anuncio/blocos-cadastro";
 import { NEGOCIACAO_PADRAO, ITENS_NEGOCIAVEIS, type LimitesPrivados, type Negociacao } from "@/lib/anuncio/negociacao";
@@ -69,6 +73,8 @@ import { EstruturaAcessibilidade } from "@/components/anuncio/estrutura-acessibi
 import { useConfortoSalvo } from "@/components/conforto/use-conforto-salvo";
 import { ANCORA_NIVEL_EDICAO } from "@/lib/niveis/destino-nivel";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { salvarInstrucaoSaidaDoImovel } from "@/lib/data/estadia-actions";
+import { INSTRUCAO_SAIDA_MAX } from "@/lib/estadia/instrucao-saida";
 
 const MIN_DESC = 60;
 
@@ -96,11 +102,14 @@ export function EditarImovelClient({
   demo,
   fatos,
   enderecoExatoInicial = "",
+  instrucaoSaidaInicial = "",
 }: {
   property: Property;
   demo: boolean;
   /** Rua, número e complemento gravados (coluna restrita; só o dono lê). */
   enderecoExatoInicial?: string;
+  /** E662: a instrução única de saída já cadastrada (só o dono lê). */
+  instrucaoSaidaInicial?: string;
   /** Fatos do banco (documento, plano, garantia, selo…). null = sem backend. */
   fatos: FatosAnuncio | null;
 }) {
@@ -133,6 +142,8 @@ export function EditarImovelClient({
   // E56 + tela 06 dos mockups: cada regra da Convivência tem o seu toggle (o estado mora em regrasCasa.ligados).
   // CAMPOS-2: os 5 grupos opcionais do anúncio, cada um atrás do seu toggle (E56).
   const [detalhes, setDetalhes] = useState<DetalhesForm>(formDeDetalhes(property.detalhesAnuncio));
+  // E647: a forma de pagamento que o dono aceita (o desenho anterior vem pré-selecionado; só vai ao servidor com a chave ligada).
+  const [pagamento, setPagamento] = useState<EscolhaPagamento>(normalizarEscolha(property.detalhesAnuncio?.pagamento) ?? ESCOLHA_PADRAO);
   // TIPO-CHACARA-B: os campos do tipo (o ponto exato não volta ao navegador; vale o "já marcado").
   const chacaraGravada = normalizarChacara((property.detalhesAnuncio as { chacara?: unknown } | null | undefined)?.chacara);
   const [chacara, setChacara] = useState<ValorChacara>({ acesso: chacaraGravada?.acesso, internet: chacaraGravada?.internet });
@@ -280,7 +291,7 @@ export function EditarImovelClient({
       // Regra desligada = não definida (só as ligadas vão; nada ligado, o servidor grava null).
       regrasCasa: payloadDeRegrasCasa(regrasCasa),
       smokingAllowed: regrasCasa.ligados.fumo && regrasCasa.fumo ? regrasCasa.fumo === "permitido" : smokingAllowed,
-      detalhesAnuncio: payloadDeDetalhes(detalhes),
+      detalhesAnuncio: { ...payloadDeDetalhes(detalhes), ...(FORMA_PAGAMENTO_DONO_ATIVA ? { pagamento } : {}) },
       // TIPO-CHACARA-B: o servidor grava o grupo do tipo (e usa o ponto novo, se marcado, no lugar do endereço).
       chacara: ehChacara(property.propertyType) ? { acesso: chacara.acesso, internet: chacara.internet, ponto: chacara.ponto ?? null } : undefined,
       childrenAllowed,
@@ -467,12 +478,15 @@ export function EditarImovelClient({
             )}
           </div>
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
-          <div
-            className="h-full rounded-full bg-forest transition-all"
-            style={{ width: `${comp.pct}%` }}
-          />
-        </div>
+        {/* E567: anúncio ATIVO não mostra "% completo" — nem no texto, nem na barra. */}
+        {!publicado && (
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2" data-testid="prontidao-barra">
+            <div
+              className="h-full rounded-full bg-forest transition-all"
+              style={{ width: `${comp.pct}%` }}
+            />
+          </div>
+        )}
         {!publicado && termoJaAceito && (
           <p className="mt-3 text-sm text-muted" data-testid="aceite-ia-ja-aceito">
             {textoTermoJaAceito(termoJaAceito.aceitoEm)}
@@ -763,6 +777,9 @@ export function EditarImovelClient({
           )}
         </Section>
 
+        {/* E662: a instrução ÚNICA de saída (check-out) — escrita uma vez aqui; morador e dono leem o mesmo texto no guia da estadia. */}
+        <SecaoInstrucaoSaida propertyId={property.id} inicial={instrucaoSaidaInicial} demo={demo} />
+
         {/* CAMPOS-2: detalhes opcionais do anúncio — cada grupo atrás do seu toggle (padrão E56). */}
         <Section
           icon={ListChecks}
@@ -783,6 +800,7 @@ export function EditarImovelClient({
             />
           )}
           <DetalhesAnuncioCampos value={detalhes} onChange={setDetalhes} tipo={property.propertyType} />
+          {FORMA_PAGAMENTO_DONO_ATIVA && <FormaPagamentoCampo value={pagamento} onChange={setPagamento} />}
         </Section>
 
         {/* Detalhes & preço */}
@@ -854,6 +872,62 @@ export function EditarImovelClient({
 }
 
 /** Bloco colapsável de seção com resumo + salvar. */
+/**
+ * E662 — "Como sair (check-out)": UMA instrução de saída por imóvel, escrita pelo dono no cadastro. O morador a vê no guia da
+ * estadia (7 dias antes da entrada, com o contrato assinado) e o dono vê a mesma; o contrato guarda a cópia da 1ª assinatura.
+ * Se o condomínio tem regra própria de devolução da chave, o dono a escreve aqui, no mesmo texto (nada de duas instruções).
+ */
+function SecaoInstrucaoSaida({ propertyId, inicial, demo }: { propertyId: string; inicial: string; demo: boolean }) {
+  const [texto, setTexto] = useState(inicial);
+  const [salvo, setSalvo] = useState(inicial);
+  const [salvando, iniciar] = useTransition();
+  const [ok, setOk] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const resumo = salvo.trim() ? `${salvo.trim().slice(0, 60)}${salvo.trim().length > 60 ? "…" : ""}` : "Ainda não preenchida — o morador não sabe como devolver a chave";
+  function gravar() {
+    setOk(false);
+    setErro(null);
+    if (demo) return setErro("Pré-visualização: nada é gravado neste ambiente.");
+    iniciar(async () => {
+      const r = await semQuedaDeRede(salvarInstrucaoSaidaDoImovel(propertyId, texto));
+      if (r.ok) {
+        setSalvo(texto);
+        setOk(true);
+      } else setErro(r.erro);
+    });
+  }
+  return (
+    <Section icon={LogOut} title="Como sair (check-out)" testid="secao-instrucao-saida" summary={resumo} saving={salvando} saved={ok} onSave={gravar}>
+      <label className="grid gap-1 text-sm font-semibold text-ink">
+        Instrução única de saída
+        <textarea
+          className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm font-normal text-ink"
+          rows={5}
+          maxLength={INSTRUCAO_SAIDA_MAX}
+          value={texto}
+          onChange={(e) => {
+            setTexto(e.target.value);
+            setOk(false);
+          }}
+          data-testid="instrucao-saida-campo"
+        />
+        <span className="text-xs font-normal text-muted">
+          Horário, o que deixar, onde e a quem devolver a chave. Se o condomínio tem regra própria de devolução, escreva-a aqui, no mesmo texto: o morador e você leem
+          só esta instrução, nunca duas.
+        </span>
+      </label>
+      <p className="mt-1 text-right text-xs text-muted">
+        {texto.length} de {INSTRUCAO_SAIDA_MAX}
+      </p>
+      {erro && (
+        <p role="alert" className="mt-2 text-sm text-red-700" data-testid="instrucao-saida-erro">
+          {erro}
+        </p>
+      )}
+    </Section>
+  );
+}
+
 function Section({
   icon: Icon,
   title,
@@ -879,7 +953,12 @@ function Section({
 }) {
   const [aberta, setAberta] = useState<boolean | null>(null);
   const hash = useSyncExternalStore(assinarHash, () => window.location.hash, () => "");
-  const open = aberta ?? (!!ancora && hash === `#${ancora}`);
+  // E1022: a resposta de uma gravação (ação do servidor) reescreve o endereço sem o "#ancora". A seção que abriu pelo
+  // endereço guarda isso e segue aberta; antes fechava sozinha debaixo do dono (o "Salvar seção" sumia).
+  const pedidaPeloEndereco = !!ancora && hash === `#${ancora}`;
+  const [abertaPeloEndereco, setAbertaPeloEndereco] = useState(false);
+  if (pedidaPeloEndereco && !abertaPeloEndereco) setAbertaPeloEndereco(true);
+  const open = aberta ?? (pedidaPeloEndereco || abertaPeloEndereco);
   return (
     <section id={ancora} className="scroll-mt-24 overflow-hidden rounded-xl border border-sage-200 bg-white" data-testid={testid} data-aberta={open}>
       <button

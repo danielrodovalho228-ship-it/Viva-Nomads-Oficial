@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /**
  * Rodada da vigia 24/10 (Pista C): confirmação do merge no lab-crítico do bloco 15 (t338).
@@ -18,6 +19,7 @@ for (const w of [1280, 390]) {
     test.use({ viewport: { width: w, height: 900 } });
 
     test(`prints (${FASE}): bolso e Compare`, async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.goto("/precos", { waitUntil: "domcontentloaded" });
       const bolso = page.getByTestId("simulador-bolso");
       await bolso.scrollIntoViewIfNeeded();
@@ -32,6 +34,7 @@ for (const w of [1280, 390]) {
     });
 
     test("E51 e E54: textos", async ({ page }) => {
+      test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       test.skip(FASE === "antes", "Na fase 'antes' só os prints.");
       await page.goto("/precos", { waitUntil: "domcontentloaded" });
       await page.getByTestId("bolso-valor").fill("3000");

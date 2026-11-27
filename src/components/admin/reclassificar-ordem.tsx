@@ -6,15 +6,17 @@ import { Button } from "@/components/ui/button";
 import { ROTULO_URGENCIA_MANUTENCAO, type UrgenciaManutencao } from "@/config/atendimento";
 import { reclassificarOrdem } from "@/lib/data/manutencao-actions";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 
 /** Prompt 59 — o atendimento da Viva reclassifica a prioridade (com motivo). Os prazos recalculam da abertura. */
-export function ReclassificarOrdem({ id, atual }: { id: string; atual: UrgenciaManutencao }) {
+export function ReclassificarOrdem({ id, atual, soLeitura = false }: { id: string; atual: UrgenciaManutencao; soLeitura?: boolean }) {
   const [aberto, setAberto] = useState(false);
   const [nova, setNova] = useState<UrgenciaManutencao>(atual === "urgente" ? "media" : "urgente");
   const [motivo, setMotivo] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; t: string } | null>(null);
   const [pendente, iniciar] = useTransition();
   const router = useRouter();
+  if (soLeitura) return <SoLeituraQa />;
   if (!aberto) {
     return (
       <button type="button" className="text-xs font-semibold text-forest underline" onClick={() => setAberto(true)} data-testid="admin-reclassificar">

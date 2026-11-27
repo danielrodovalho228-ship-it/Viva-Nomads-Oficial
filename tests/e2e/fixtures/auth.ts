@@ -2,6 +2,7 @@ import path from "node:path";
 import type { Page } from "@playwright/test";
 import { account, type Role } from "./accounts";
 import { gerarCodigoTotp } from "./totp";
+import { mensagemDaFalhaDeLogin } from "./falha-de-login";
 
 // Ancorado na raiz do repo (a suíte roda a partir dela) — evita import.meta,
 // que quebra sob o transpile CJS do Playwright.
@@ -27,7 +28,11 @@ export async function loginAs(page: Page, role: Role): Promise<void> {
   await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
   // O login cai no /dashboard (ou no destino do ?redirect=). Espera a casca: a barra lateral ou, no modo dono no
   // computador (PROP-1), o topo do dono — a barra continua no DOM, escondida, por isso o filtro de visível.
-  await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+  try {
+    await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+  } catch {
+    throw new Error(mensagemDaFalhaDeLogin({ papel: role, etapa: "senha", caminho: new URL(page.url()).pathname, aviso: await avisoDaTela(page) }));
+  }
   await page.locator('aside nav, [data-testid="topo-dono"], [data-testid="topo-morador"], [data-testid="topo-parceiro"], [data-testid="topo-celular"]').filter({ visible: true }).first().waitFor({ state: "visible", timeout: 15_000 });
   // Conta de teste já "viu" o modal de boas-vindas (escolha de papel): sem isso
   // ele abre em todo teste e bloqueia os cliques. O próprio modal grava esta
@@ -49,5 +54,29 @@ async function elevarAdminParaAal2(page: Page): Promise<void> {
   if (!/\/auth\/verificar-codigo/.test(page.url())) return; // já em AAL2
   await page.locator("#codigo-2fa").fill(gerarCodigoTotp(segredo));
   await page.getByRole("button", { name: /confirmar e entrar/i }).click();
-  await page.waitForURL(/\/admin(?!.*verificar)/, { timeout: 20_000 });
+  // Entrou (saiu da tela do código) ou a tela recusou o código: o que vier primeiro. Sem isto, um código recusado só
+  // aparecia como "Timeout 20000ms" depois de 20 s, três vezes.
+  const entrou = page.waitForURL(/\/admin(?!.*verificar)/, { timeout: 20_000 }).then(
+    () => "entrou" as const,
+    () => "tempo" as const,
+  );
+  const recusou = page.waitForFunction(TEM_AVISO, undefined, { timeout: 20_000 }).then(
+    () => "recusou" as const,
+    () => "tempo" as const,
+  );
+  const primeiro = await Promise.race([entrou, recusou]);
+  const resultado = primeiro === "tempo" ? await entrou : primeiro;
+  if (resultado !== "entrou") {
+    throw new Error(mensagemDaFalhaDeLogin({ papel: "admin", etapa: "duas-etapas", caminho: new URL(page.url()).pathname, aviso: await avisoDaTela(page) }));
+  }
+}
+
+/** Há um aviso com texto na página? Só o documento (o anunciador de rotas do Next vive num shadow root e fica de fora). */
+const TEM_AVISO = () => [...document.querySelectorAll('[role="alert"]')].some((e) => (e.textContent ?? "").trim().length > 0);
+
+/** O primeiro aviso com texto que a tela está mostrando, ou null. */
+async function avisoDaTela(page: Page): Promise<string | null> {
+  return page
+    .evaluate(() => [...document.querySelectorAll('[role="alert"]')].map((e) => (e.textContent ?? "").trim()).find((t) => t.length > 0) ?? null)
+    .catch(() => null);
 }

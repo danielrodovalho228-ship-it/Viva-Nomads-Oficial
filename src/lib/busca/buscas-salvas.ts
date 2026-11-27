@@ -43,6 +43,27 @@ export function normalizarBusca(qs: string): string {
   return out.toString().slice(0, 1000);
 }
 
+/**
+ * E539 (ii): a IDENTIDADE da busca salva — os filtros, sem a ordenação. A ordem não muda quais imóveis entram (nem o
+ * alerta), e duas buscas iguais com ordens diferentes ("ordem=recent" e nenhuma) apareciam como duas "Todas as cidades".
+ */
+export function chaveDaBusca(qs: string): string {
+  const sp = new URLSearchParams(normalizarBusca(qs));
+  sp.delete("ordem");
+  return sp.toString();
+}
+
+/** E539 (ii): uma busca por identidade — a primeira da lista (a mais recente) fica; as repetidas saem. */
+export function semBuscasRepetidas<T extends { parametros: string }>(lista: readonly T[]): T[] {
+  const vistas = new Set<string>();
+  return lista.filter((b) => {
+    const k = chaveDaBusca(b.parametros);
+    if (vistas.has(k)) return false;
+    vistas.add(k);
+    return true;
+  });
+}
+
 const PERIODO: Record<string, string> = { "60": "1–2 meses", "120": "3–4 meses", "180": "5–6 meses" };
 const brl = (n: number) => `R$ ${n.toLocaleString("pt-BR")}`;
 
@@ -66,7 +87,8 @@ export function resumoDaBusca(qs: string, nomeDoDestino?: (slug: string) => stri
   if (sp.get("pet") === "1") partes.push("aceita pet");
   if (sp.get("homeoffice") === "1") partes.push("trabalhar de casa");
   const internet = Number(sp.get("internet"));
-  if (internet > 0) partes.push(`internet medida ${internet}+ Mbps`);
+  // E1078 (ORDEM-382 (a)): o filtro é de velocidade; com o estrito "Só com internet medida", "internet medida N+ Mbps".
+  if (internet > 0) partes.push(sp.get("medida") === "1" ? `internet medida ${internet}+ Mbps` : `velocidade ${internet}+ Mbps`);
   else if (sp.get("medida") === "1") partes.push("internet medida");
   const destino = nomeDoDestino?.(sp.get("destino") ?? "") ?? sp.get("drot") ?? sp.get("destino")?.toUpperCase();
   if (destino) {

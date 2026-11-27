@@ -50,14 +50,14 @@ test("resumo do Solicitar: entrada e saída da seleção, erro de saída antes d
   assert.equal(r.erro, null);
   assert.equal(valor(r, "Entrada"), "24/11/2026");
   assert.equal(valor(r, "Saída"), "24/12/2026 (30 dias)");
-  assert.equal(valor(r, "Total da estadia"), `${formatBRL(2750)} em 1 mês`);
+  assert.equal(valor(r, "Total do contrato"), `${formatBRL(2750)} em 1 mês`);
   // Alterar a saída no diálogo → o total acompanha.
   const r2 = resumoSolicitacao({ ...base, inicioDesejado: "2026-11-24", fimDesejado: "2027-02-22" });
-  assert.equal(valor(r2, "Total da estadia"), `${formatBRL(8250)} em 3 meses`);
+  assert.equal(valor(r2, "Total do contrato"), `${formatBRL(8250)} em 3 meses`);
   // Sem saída: não inventa total da estadia; a saída fica a combinar.
   const r3 = resumoSolicitacao({ ...base, inicioDesejado: "2026-11-24" });
   assert.equal(valor(r3, "Saída"), "A combinar com o proprietário");
-  assert.equal(valor(r3, "Total da estadia"), undefined);
+  assert.equal(valor(r3, "Total do contrato"), undefined);
   assert.match(resumoSolicitacao({ ...base, inicioDesejado: "2026-11-24", fimDesejado: "2026-11-20" }).erro ?? "", /saída precisa ser depois da entrada/);
 });
 
@@ -73,9 +73,10 @@ test("uma fonte só: o calendário não guarda datas; caixa e diálogo usam os m
   const pagina = ler("app/(public)/imoveis/[id]/property-detail.tsx");
   assert.match(pagina, /useState<SelecaoEstadia>\(SELECAO_VAZIA\)/);
   assert.doesNotMatch(pagina, /setInicioDesejado|setPessoas/, "nenhum estado paralelo de data ou pessoas");
-  assert.match(pagina, /<AvailabilityCalendar property=\{property\} selecao=\{selecao\} onSelecao=\{setSelecao\} \/>/);
+  assert.match(pagina, /<AvailabilityCalendar property=\{property\} selecao=\{selecao\} onSelecao=\{setSelecao\} onDisponivelDesde=\{setDisponivelDesde\} \/>/);
   assert.match(pagina, /\{camposPeriodo\("candidatura"\)\}/);
   assert.match(pagina, /\{camposPeriodo\("solicitacao"\)\}/);
   assert.match(pagina, /fimDesejado: selecao\.saida/);
-  assert.match(pagina, /mesesDaSelecao\(selecao\) \?\?/);
+  // E920: os meses do total saem de mesesDoTotalDaPagina (seleção ou estadia mínima); a duração da última busca não entra mais.
+  assert.match(pagina, /const meses = mesesDoTotalDaPagina\(selecao, property\.minPeriodDays\);/);
 });

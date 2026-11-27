@@ -39,7 +39,8 @@ test("D1: o total anotado na busca é o mesmo do cartão (calcularTotalMensal)",
 
 test("D1: o pino e o cartão do mapa mostram o total", () => {
   assert.match(ler("components/search-map.tsx"), /rotuloPreco\(\{ mensal: precoDeBusca\(p\)/);
-  assert.match(ler("components/busca/card-pin-mapa.tsx"), /rotuloPreco\(\{ mensal: precoDeBusca\(p\)/);
+  // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): o cartão do pino usa rotuloPrecoDoImovel (o mesmo total do mês + o "em N meses" da regra única).
+  assert.match(ler("components/busca/card-pin-mapa.tsx"), /rotuloPrecoDoImovel\(p, \{ meses: mesesDoCartao\(undefined, p\.minPeriodDays\)/);
 });
 
 test("D5: Limpar filtros remonta a busca por descrição (campo e chips)", () => {
@@ -65,9 +66,10 @@ test("#544b148a: a home conta os atalhos pelo total do mês", () => {
   assert.match(ler("components/home/atalhos-categoria.tsx"), /imoveis\.map\(\(p\) => comTotalMes\(p\)\)/);
 });
 
-test("#544b148a: respiro no fim da lista com itens no comparador", () => {
+test("#544b148a (E529): sem respiro de rodapé — a barra do comparador é faixa da página, não flutua sobre os cartões", () => {
   const cli = ler("app/(public)/buscar/search-client.tsx");
-  assert.match(cli, /comparar\.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro"/);
+  assert.doesNotMatch(cli, /comparar-respiro/);
+  assert.match(cli, /<BarraComparar ids=\{comparar\}/);
 });
 
 test("#544b148a D1: pino = cartão para todos os imóveis de exemplo (inclui os 4 casos medidos)", async () => {

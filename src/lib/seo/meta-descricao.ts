@@ -15,9 +15,10 @@ export function limitarMeta(texto: string): string {
   return `${(ate > 0 ? corte.slice(0, ate) : corte).replace(/[\s,;:.\-–—]+$/, "")}…`;
 }
 
+/** E1005: genérica, sem o nome do selo Pronto para Morar (o selo é de alguns imóveis, não de todos). */
 export function descricaoHome(): string {
   return limitarMeta(
-    "Imóveis mobiliados e prontos para morar, para estadias de 30 a 180 dias. Contrato com validade jurídica e conversa registrada na plataforma.",
+    "Imóveis mobiliados para morar por meses, em estadias de 30 a 180 dias. Contrato com validade jurídica e conversa registrada na plataforma.",
   );
 }
 

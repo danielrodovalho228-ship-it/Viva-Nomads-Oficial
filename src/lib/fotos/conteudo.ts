@@ -66,8 +66,8 @@ export interface EstadoPassoFotos {
 }
 
 /**
- * O "Continuar" do Passo 2 (e o publicar): abaixo do mínimo de fotos, desabilitado com a contagem; com foto sinalizada
- * sem tratar (na principal ou em outra) ou vídeo sinalizado sem tratar, desabilitado com o motivo.
+ * O publicar (e o "Continuar" do Passo 2, ver `fotosBloqueiamAvanco`): abaixo do mínimo de fotos, barrado com a contagem;
+ * com foto sinalizada sem tratar (na principal ou em outra) ou vídeo sinalizado sem tratar, barrado com o motivo.
  */
 export function estadoPassoFotos(
   fotos: readonly { conteudo?: ConteudoFoto | null }[],
@@ -77,7 +77,7 @@ export function estadoPassoFotos(
   const faltam = Math.max(0, minimo - fotos.length);
   const pendentes = fotos.filter((f) => conteudoPendente(f.conteudo)).length;
   if (faltam > 0)
-    return { podeContinuar: false, trava: "faltam", faltam, pendentes, mensagem: `${faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`} para continuar (mínimo de ${minimo}).` };
+    return { podeContinuar: false, trava: "faltam", faltam, pendentes, mensagem: `${faltam === 1 ? "Falta 1 foto" : `Faltam ${faltam} fotos`} para publicar (mínimo de ${minimo}).` };
   if (conteudoPendente(fotos[0]?.conteudo))
     return { podeContinuar: false, trava: "principal", faltam, pendentes, mensagem: `A foto principal não parece ser do imóvel. Troque a foto principal ou confirme que ela é do imóvel.` };
   if (pendentes > 0)
@@ -90,6 +90,22 @@ export function estadoPassoFotos(
     };
   if (conteudoPendente(video)) return { podeContinuar: false, trava: "video", faltam, pendentes, mensagem: "O vídeo não parece mostrar o imóvel. Remova ou confirme o vídeo para continuar." };
   return { podeContinuar: true, trava: null, faltam: 0, pendentes: 0, mensagem: null };
+}
+
+/**
+ * E602: o que das fotos segura a NAVEGAÇÃO do assistente (o "Continuar" do Passo 2). A contagem mínima é exigência só
+ * para PUBLICAR — quem ainda não tem as 8 fotos pode rever e preencher o resto do cadastro. Foto ou vídeo sinalizado
+ * ("não parece do imóvel") segue pedindo uma ação ali mesmo antes de avançar.
+ */
+export function fotosBloqueiamAvanco(e: EstadoPassoFotos): boolean {
+  return !e.podeContinuar && (e.trava !== "faltam" || e.pendentes > 0);
+}
+
+/** E602: o motivo do avanço barrado (abaixo do mínimo, a foto sinalizada é o motivo — nunca a contagem). */
+export function motivoAvancoFotos(e: EstadoPassoFotos): string | null {
+  if (!fotosBloqueiamAvanco(e)) return null;
+  if (e.trava === "faltam") return `${e.pendentes === 1 ? "1 foto não parece" : `${e.pendentes} fotos não parecem`} ser do imóvel. Remova ou confirme cada uma para continuar.`;
+  return e.mensagem;
 }
 
 /* ---------- Medida local de "tela" (print, documento) ---------- */

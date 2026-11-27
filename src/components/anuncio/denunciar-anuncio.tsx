@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { denunciarAnuncio, minhaDenuncia } from "@/lib/saida/acoes";
-import { MOTIVOS_DENUNCIA, ROTULO_ESTADO_DENUNCIA, type EstadoDenuncia } from "@/lib/saida/regras";
+import { ROTULO_ESTADO_DENUNCIA, motivosDenunciaDoAnuncio, type EstadoDenuncia } from "@/lib/saida/regras";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /**
@@ -12,7 +12,7 @@ import { semQuedaDeRede } from "@/lib/erro-de-rede";
  * opcional; pede conta; uma denúncia por conta por anúncio, com o estado visível (recebida · em análise · resolvida).
  * A denúncia vai à fila do atendimento e não tira o anúncio da busca sozinha.
  */
-export function DenunciarAnuncio({ propertyId }: { propertyId: string }) {
+export function DenunciarAnuncio({ propertyId, notaDeclarada = false }: { propertyId: string; notaDeclarada?: boolean }) {
   const [aberto, setAberto] = useState(false);
   const [estado, setEstado] = useState<{ logado: boolean; denuncia: { status: string; motivo: string } | null } | null>(null);
   const [motivo, setMotivo] = useState("");
@@ -67,7 +67,7 @@ export function DenunciarAnuncio({ propertyId }: { propertyId: string }) {
         >
           <fieldset className="grid gap-2">
             <legend className="mb-1 font-semibold text-ink">O que há de errado com este anúncio?</legend>
-            {MOTIVOS_DENUNCIA.map((m) => (
+            {motivosDenunciaDoAnuncio(notaDeclarada).map((m) => (
               <label key={m.chave} className="flex min-h-11 items-center gap-3 text-ink">
                 <input type="radio" name="motivo" value={m.chave} checked={motivo === m.chave} onChange={() => setMotivo(m.chave)} className="h-5 w-5 accent-forest" />
                 {m.rotulo}

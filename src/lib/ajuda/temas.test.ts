@@ -67,7 +67,7 @@ test("E84: a promessa de atendimento aparece UMA vez por página (antes, 4× na 
   assert.equal(conta(ler("components/layout/footer.tsx"), "PROMESSA_ATENDIMENTO"), 0);
   // O atendimento e o bloco do chat não repetem a frase na mesma página.
   assert.equal(conta(ler("components/ajuda/central-ajuda.tsx"), "PROMESSA_ATENDIMENTO"), 0);
-  assert.match(ler("components/ajuda/viva-chat.tsx"), /<PainelChat altura="h-\[420px\]" semPromessa \/>/);
+  assert.match(ler("components/ajuda/viva-chat.tsx"), /<PainelChat altura="h-\[420px\]" semPromessa entregarPessoa \/>/);
   // Cada destino tem a sua página: o hub não traz mais o chat nem o formulário de chamado.
   assert.doesNotMatch(hub, /VivaChatBloco|<CentralAjuda/);
   assert.match(fale, /<VivaChatBloco \/>/);

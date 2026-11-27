@@ -1,19 +1,25 @@
 "use client";
 
 import { CampoReais } from "@/components/ui/campo-reais";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { PageTitle, Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { CampoData } from "@/components/ui/campo-data";
 import { enviarProposta, type DadosMontagem } from "@/lib/data/propostas-actions";
-import { calcularTotais, MOTIVOS_DESCONTO, VALIDADES_DIAS, validarTermos, type TermosProposta } from "@/lib/propostas/regras";
+import { calcularTotais, diasDosTermos, MOTIVOS_DESCONTO, VALIDADES_DIAS, validarTermos, type TermosProposta } from "@/lib/propostas/regras";
+import { DIAS_MIN_ESTADIA, diasMaxEstadiaVigente, mesesCompletos, mesesDeReferencia } from "@/lib/estadia-em-dias";
+import { formatBRLExato, periodoPorExtenso, precoDaProposta, rotuloTotalDaEstadia } from "@/lib/precos";
+import { diasDaSelecao } from "@/lib/imovel/selecao-estadia";
 import { descontoParaMeses } from "@/lib/anuncio/negociacao";
 import { textoTaxaPainel } from "@/lib/cobranca/regra";
 import { CAUCAO_FRASE } from "@/lib/faixas";
+import { caucaoDaProposta, rotuloCaucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { formatBRL, hojeBR } from "@/lib/utils";
-import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { MSG_ACAO_FALHOU, semQuedaDeRede } from "@/lib/erro-de-rede";
+import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 
 function Campo({ rotulo, ajuda, children }: { rotulo: string; ajuda?: string; children: React.ReactNode }) {
   return (
@@ -27,6 +33,12 @@ function Campo({ rotulo, ajuda, children }: { rotulo: string; ajuda?: string; ch
 
 /** Percentual do desconto (não é dinheiro): "6,5" → 6,5. Valores em R$ usam o CampoReais (lerReais). */
 const numero = (v: string) => (v === "" ? 0 : Math.max(0, Number(v.replace(",", ".")) || 0));
+
+/** "2026-12-01" + 43 dias → "2027-01-13" (sem fuso). "" se a entrada não for data. */
+function somarDias(iso: string, dias: number): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !(dias > 0)) return "";
+  return new Date(Date.parse(`${iso}T12:00:00Z`) + dias * 86_400_000).toISOString().slice(0, 10);
+}
 
 /**
  * Montagem da proposta (prompt 17): valores do anúncio já preenchidos e editáveis, desconto opcional (R$ ou %),
@@ -43,16 +55,35 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  const termos: TermosProposta = { ...t, descontoEstadiaPct: descontoParaMeses(dados.negociacao.descontos, t.meses) };
+  // E562: a faixa de desconto conta os meses completos dos dias (a mesma regra do servidor).
+  const termos: TermosProposta = { ...t, descontoEstadiaPct: descontoParaMeses(dados.negociacao.descontos, mesesCompletos(diasDosTermos(t))) };
   const tot = calcularTotais(termos);
+  // E562 (telas): a estadia em DIAS exatos, da candidatura (entrada e saída). A saída é a entrada + os dias; mudar a
+  // entrada leva a saída junto (os dias ficam), mudar a saída muda os dias.
+  const diasEstadia = diasDosTermos(termos);
+  const saida = somarDias(t.dataEntrada, diasEstadia);
+  const preco = precoDaProposta({ ...termos, valorMensal: tot.valorMensal });
+  // A caução do 1º bloco pela mesma regra do contrato (50% do bloco proporcional, blocos contados em dias).
+  // E601: a mesma função que a proposta recebida usa (a moradora vê o mesmo valor).
+  const caucao = caucaoDaProposta(termos, tot.valorMensal);
+  const mudarDias = (dias: number) => setT((x) => ({ ...x, dias, meses: mesesDeReferencia(dias) }));
   const pessoasN = pessoas ? Number(pessoas) : null;
   const problema = validarTermos(termos, dados.limites, hojeBR(), pessoasN);
   const set = <K extends keyof TermosProposta>(k: K, v: TermosProposta[K]) => setT((x) => ({ ...x, [k]: v }));
 
+  const avisoRef = useRef<HTMLDivElement>(null);
+  function mostrarErro(texto: string) {
+    setErro(texto);
+    // O aviso fica ao lado do botão; rola para a vista (no celular o resumo fica embaixo).
+    requestAnimationFrame(() => avisoRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }));
+  }
+
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
-    if (problema) return setErro(problema);
+    // E582: sem o documento do dono, o portão fala aqui, no envio, sem chamar o servidor.
+    if (!dados.documentoOk) return mostrarErro(MSG_DOCUMENTO.proposta);
+    if (problema) return mostrarErro(problema);
     setEnviando(true);
     const r = await semQuedaDeRede(enviarProposta({
       leadId: dados.leadId,
@@ -61,6 +92,8 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
       descontoValor: tipoDesconto === "valor" ? termos.descontoValor : 0,
       motivoDesconto: termos.descontoPct > 0 || termos.descontoValor > 0 ? termos.motivoDesconto : null,
       meses: termos.meses,
+      // E562: os dias da candidatura (ou a saída que o dono ajustou) seguem para a proposta.
+      dias: diasEstadia,
       dataEntrada: termos.dataEntrada,
       condominio: termos.condominio,
       consumo: termos.consumo,
@@ -73,11 +106,13 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
       mensagem: mensagem || undefined,
     }));
     setEnviando(false);
-    if (!r.ok) return setErro(r.error);
+    // E582: nenhum envio falha sem mensagem visível.
+    if (!r.ok) return mostrarErro(r.error || MSG_ACAO_FALHOU);
     router.push(`/dashboard/propostas/${r.id}`);
   }
 
-  const meses = Array.from({ length: dados.limites.mesesMax - dados.limites.mesesMin + 1 }, (_, i) => dados.limites.mesesMin + i);
+  const diasMin = Math.max(DIAS_MIN_ESTADIA, dados.limites.diasMin ?? dados.limites.mesesMin * 30);
+  const diasMax = Math.min(diasMaxEstadiaVigente(), dados.limites.diasMax ?? dados.limites.mesesMax * 30);
 
   return (
     <>
@@ -89,18 +124,24 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
               <Campo rotulo="Valor mensal (R$)">
                 <CampoReais semPrefixo centavos value={t.valorBase || null} onChange={(v) => set("valorBase", v ?? 0)} testid="proposta-valor" />
               </Campo>
-              <Campo rotulo="Número de meses" ajuda={`Entre ${dados.limites.mesesMin} e ${dados.limites.mesesMax}, como no anúncio.`}>
-                <select className="input" value={t.meses} onChange={(e) => set("meses", Number(e.target.value))} data-testid="proposta-meses">
-                  {meses.map((m) => (
-                    <option key={m} value={m}>
-                      {m} {m === 1 ? "mês" : "meses"}
-                    </option>
-                  ))}
-                </select>
-              </Campo>
               <Campo rotulo="Data de entrada">
                 <CampoData className="input" value={t.dataEntrada} min={hojeBR()} onChange={(e) => set("dataEntrada", e.target.value)} data-testid="proposta-data" />
               </Campo>
+              <Campo rotulo="Data de saída" ajuda={`Estadia de ${diasMin} a ${diasMax} dias, como no anúncio.`}>
+                <CampoData
+                  className="input"
+                  value={saida}
+                  min={somarDias(t.dataEntrada, 1) || hojeBR()}
+                  onChange={(e) => {
+                    const d = diasDaSelecao({ entrada: t.dataEntrada, saida: e.target.value });
+                    if (d) mudarDias(d);
+                  }}
+                  data-testid="proposta-saida"
+                />
+              </Campo>
+              <p className="text-sm text-ink sm:col-span-2" data-testid="proposta-dias">
+                Estadia: <strong>{diasEstadia} dias</strong> ({periodoPorExtenso(diasEstadia)})
+              </p>
               <Campo rotulo="Pessoas (opcional)" ajuda={dados.limites.capacidade ? `O imóvel recebe até ${dados.limites.capacidade}.` : undefined}>
                 <input inputMode="numeric" className="input" value={pessoas} onChange={(e) => setPessoas(e.target.value.replace(/\D/g, "").slice(0, 2))} />
               </Campo>
@@ -217,18 +258,45 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
                 <dd className="font-medium text-ink" data-testid="resumo-total-mensal">{formatBRL(tot.totalMensal)}</dd>
               </div>
               <div className="flex justify-between gap-3 border-t border-sage-200 pt-2">
-                <dt className="font-semibold text-ink">Total do contrato</dt>
-                <dd className="font-title text-lg font-semibold text-forest" data-testid="resumo-total-contrato">{formatBRL(tot.totalContrato)}</dd>
+                <dt className="font-semibold text-ink" data-testid="resumo-rotulo-total">{rotuloTotalDaEstadia(diasEstadia)}</dt>
+                <dd className="font-title text-lg font-semibold text-forest" data-testid="resumo-total-contrato">{formatBRLExato(tot.totalContrato)}</dd>
               </div>
+              <div className="text-[13px] text-muted" data-testid="resumo-conta">
+                {periodoPorExtenso(diasEstadia)}: {preco.conta}
+              </div>
+              {caucao && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted">{rotuloCaucaoDaProposta(caucao)}</dt>
+                  <dd className="font-medium text-ink" data-testid="resumo-caucao">{formatBRLExato(caucao.valor)}</dd>
+                </div>
+              )}
             </dl>
             <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted" data-testid="proposta-taxa-dono">
-              Só você vê: {textoTaxaPainel(dados.taxa, tot.valorMensal, termos.meses)}.
+              Só você vê: {textoTaxaPainel(dados.taxa, tot.valorMensal, diasEstadia / 30)}.
             </p>
-            {erro && (
-              <p className="mt-3 text-[13px] text-red-600" role="alert" data-testid="proposta-erro">
-                {erro}
-              </p>
+            {!dados.documentoOk && erro !== MSG_DOCUMENTO.proposta && (
+              <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[13px] text-ink" data-testid="proposta-trava-documento">
+                {MSG_DOCUMENTO.proposta}{" "}
+                <Link href={LINK_DOCUMENTO} className="font-semibold text-forest underline">
+                  Informar meu CPF
+                </Link>
+              </div>
             )}
+            <div ref={avisoRef}>
+              {erro && (
+                <p className="mt-3 text-[13px] text-red-600" role="alert" data-testid="proposta-erro">
+                  {erro}
+                  {erro === MSG_DOCUMENTO.proposta && (
+                    <>
+                      {" "}
+                      <Link href={LINK_DOCUMENTO} className="font-semibold text-forest underline" data-testid="proposta-erro-documento">
+                        Informar meu CPF
+                      </Link>
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
             <Button type="submit" className="mt-4 w-full" disabled={enviando} data-testid="enviar-proposta">
               {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Enviar proposta
             </Button>

@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { concordarVisita } from "@/lib/vistoria/actions";
+import { concordarVisita, recusarDataDaVisita } from "@/lib/vistoria/actions";
+import { ROTULO_NAO_CONCORDO, TEXTO_RECUSA_PARA_O_MORADOR } from "@/lib/vistoria/concordancia";
 import { avaliacaoNaConversa, type AvaliacaoNaConversa } from "@/lib/vistoria/conversa-actions";
 import { ETIQUETA_BRASILIA } from "@/lib/datas-brasilia";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
@@ -38,6 +39,10 @@ export function AvaliacaoNaConversaCartao({ propertyId, onPreferirOutro }: { pro
             <p className="mt-1 text-forest" data-testid="conversa-avaliacao-confirmada">
               Você concordou com a visita em {a.quando} ({ETIQUETA_BRASILIA}).
             </p>
+          ) : a.recusada ? (
+            <p className="mt-1 text-ink" data-testid="conversa-avaliacao-recusada">
+              {TEXTO_RECUSA_PARA_O_MORADOR}
+            </p>
           ) : (
             <>
               <p className="mt-1 text-muted">O avaliador não fotografa os seus pertences. A visita só acontece se você concordar.</p>
@@ -61,6 +66,26 @@ export function AvaliacaoNaConversaCartao({ propertyId, onPreferirOutro }: { pro
                   }
                 >
                   Concordo com a visita em {a.quando}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={pendente}
+                  className="h-auto min-h-11 whitespace-normal text-left"
+                  data-testid="conversa-nao-concordar"
+                  onClick={() =>
+                    iniciar(async () => {
+                      setErro(null);
+                      const f = new FormData();
+                      f.set("pedidoId", a.pedidoId);
+                      const r = await semQuedaDeRede(recusarDataDaVisita(f));
+                      if (!r.ok) setErro(r.erro);
+                      else setVersao((n) => n + 1);
+                    })
+                  }
+                >
+                  {ROTULO_NAO_CONCORDO}
                 </Button>
                 <button type="button" className="font-semibold text-forest underline underline-offset-2" onClick={onPreferirOutro} data-testid="conversa-outro-horario">
                   Prefiro outro horário

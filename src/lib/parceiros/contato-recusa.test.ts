@@ -9,9 +9,7 @@ import {
   AVISO_RECUSAR_ORCAMENTO,
   AVISO_RECUSAR_PEDIDO,
   MOTIVO_RECUSA_MAX,
-  STATUS_PEDIDO,
-  TEXTO_CONTATO_ANTES_DO_ACEITE,
-  contatoNoPedido,
+  TEXTO_CONTATO_PEDIDO,
   linkOutroParceiro,
   telefoneNaTela,
   textoRecusaAoCliente,
@@ -20,35 +18,18 @@ import {
 import { MATRIZ_NOTIFICACOES } from "../../config/matriz-notificacoes.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
-const CONTATO = { telefone: "34999998888", email: "parceiro@exemplo.com" };
 
-test("item 16: contato só depois do aceite; antes, a conversa segue pela plataforma", () => {
-  const depois = ["aceito", "agendado", "em_execucao", "entregue", "concluido"];
-  for (const s of STATUS_PEDIDO) {
-    const c = contatoNoPedido(s, CONTATO);
-    if (depois.includes(s)) assert.deepEqual(c, CONTATO, s);
-    else assert.equal(c, null, `${s}: sem contato`);
-  }
-  assert.equal(contatoNoPedido("aceito", { telefone: null, email: " " }), null, "sem dado nenhum: nada a mostrar");
-  assert.deepEqual(contatoNoPedido("aceito", { telefone: "(34) 99999-8888", email: null }), { telefone: "34999998888", email: null });
+test("E790 (regra E445): o pedido nunca entrega o contato da outra parte, em nenhum status", () => {
+  assert.equal(TEXTO_CONTATO_PEDIDO, "O contato não é trocado: a conversa segue pelas mensagens da Viva, antes e depois do aceite.");
   assert.equal(telefoneNaTela("34999998888"), "(34) 99999-8888");
-  assert.equal(telefoneNaTela("553432101234"), "(34) 3210-1234");
-  assert.equal(TEXTO_CONTATO_ANTES_DO_ACEITE, "Antes do aceite do orçamento, a conversa segue pela plataforma.");
-});
-
-test("item 16: o servidor só LÊ o contato depois do aceite, das duas partes, e a tela mostra", () => {
   const acoes = ler("src/lib/parceiros/pedido-actions.ts");
-  // A leitura sai de contatoDaOutraParte, que para antes de tocar o banco quando o status não libera.
-  assert.match(acoes, /async function contatoDaOutraParte[\s\S]{0,200}if \(!contatoNoPedido\(p\.status, \{ telefone: "x", email: null \}\)\) return null;/);
-  assert.match(acoes, /const outro = papel === "cliente" \? p\.parceiros!\.user_id : p\.cliente_id;/);
-  assert.match(acoes, /from\("parceiros"\)\.select\("telefone"\)/);
-  assert.match(acoes, /contato,\n\s+linkOutroParceiro: linkOutroParceiro\(p\.categoria\),/);
+  assert.doesNotMatch(acoes, /contatoDaOutraParte|contatoNoPedido|ContatoDoPedido/);
+  assert.doesNotMatch(acoes, /from\("profiles"\)\.select\("email, phone"\)/);
+  assert.doesNotMatch(acoes, /from\("parceiros"\)\.select\("telefone"\)/);
+  assert.doesNotMatch(acoes, /^\s+contato,$/m);
   const tela = ler("src/app/(dashboard)/dashboard/servicos/pedidos/[id]/pedido-tela.tsx");
-  assert.match(tela, /data-testid="pedido-contato-telefone"/);
-  assert.match(tela, /data-testid="pedido-contato-email"/);
-  assert.match(tela, /data-testid="pedido-contato-antes"[\s\S]{0,80}TEXTO_CONTATO_ANTES_DO_ACEITE/);
-  // A Viva não intermedeia o pagamento: o texto do pagamento inativo acompanha o contato.
-  assert.match(tela, /<li className="mt-1 text-muted">\{TEXTO_PAGAMENTO_INATIVO\}<\/li>/);
+  assert.doesNotMatch(tela, /pedido-contato-telefone|pedido-contato-email|d\.contato/);
+  assert.match(tela, /data-testid="pedido-contato-nunca"[\s\S]{0,40}TEXTO_CONTATO_PEDIDO/);
 });
 
 test("item 17 (i): recusa avisa o cliente com o motivo e o link 'Pedir a outro parceiro'", () => {

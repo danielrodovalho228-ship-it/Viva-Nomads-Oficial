@@ -39,7 +39,8 @@ test("conteúdo: assunto, datas, valor com a conta aberta, pagamento direto, um 
   assert.equal(e.abertura("Ana"), "Olá Ana, o bloco 2 da sua estadia em Studio Centro começa em 12/11/2026.");
   assert.deepEqual(e.linhas, [
     { rotulo: "Imóvel", valor: "Studio Centro" },
-    { rotulo: "Datas do bloco", valor: "12/11/2026 a 10/01/2027" },
+    // E1089 (coordenador): 10/01 é a última noite do bloco; o e-mail diz a saída (11/01) e as diárias.
+    { rotulo: "Datas do bloco", valor: "Entrada 12/11/2026 · Saída 11/01/2027 · 60 diárias" },
     { rotulo: "Valor do bloco", valor: e.linhas[2].valor },
   ]);
   assert.match(e.linhas[2].valor, /^Bloco 2 \(2 meses: 12\/11 a 10\/01\) — R\$\s?6\.400(,00)? \(2 × R\$\s?3\.200(,00)?\)$/);

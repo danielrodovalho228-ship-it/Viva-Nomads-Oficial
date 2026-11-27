@@ -6,6 +6,7 @@ import { SejaParceiroForm } from "@/components/parceiros/seja-parceiro-form";
 import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { meuPainelParceiro } from "@/lib/parceiros/painel-actions";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
+import { ESCOLHA_E_TERMOS_AO_AVALIADOR } from "@/lib/vistoria/telas-exibicao";
 import { PainelParceiroCliente } from "./painel-parceiro";
 import { AtivarNoPainel } from "./ativar-no-painel";
 import { PedidosDoParceiro } from "@/components/parceiros/pedidos-do-parceiro";
@@ -25,9 +26,12 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
   if (painel) {
     return (
       <>
-        <PageTitle title="Parceiro" subtitle="A sua página de parceiro na Viva: dados, página, serviços e atendimento." />
+        {/* E459: o "Início" do menu do parceiro leva aqui (#inicio), não ao início do dono. */}
+        <div id="inicio" className="scroll-mt-24">
+          <PageTitle title="Parceiro" subtitle="A sua página de parceiro na Viva: dados, página, serviços e atendimento." />
+        </div>
         {sp.ativada === "1" && (
-          <p className="mb-4 rounded-xl border border-sage-200 bg-sage-50 px-4 py-3 text-sm text-ink" role="status" data-testid="parceiro-ativada">
+          <p className="mb-4 rounded-xl border border-sage-200 bg-sage-100 px-4 py-3 text-sm text-ink" role="status" data-testid="parceiro-ativada">
             Parceria ativada. Complete a página e publique quando estiver pronta.
           </p>
         )}
@@ -37,11 +41,11 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
         <BlocoRecibosParceiro pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
         {/* Prompt 62-B1: credenciamento de avaliador (a Viva designa por rodízio; não é serviço do catálogo). */}
         <Panel title="Avaliação de imóveis" className="mb-6" data-testid="parceiro-avaliacao-link">
-          <p className="text-sm text-muted">Avaliador credenciado: a Viva designa as avaliações de imóveis por rodízio, pela tabela de preço da cidade.</p>
+          <p className="text-sm text-muted">Avaliador credenciado: {ESCOLHA_E_TERMOS_AO_AVALIADOR}</p>
           <ButtonLink href="/dashboard/parceiro/avaliacao" variant="secondary" size="sm" className="mt-3">Credenciamento e avaliações</ButtonLink>
         </Panel>
         {/* Prompt 38: convites e vínculos de parceiro fixo de imóvel. */}
-        <ImoveisFixos />
+        <ImoveisFixos pagina={{ status: painel.status, slug: painel.slug }} />
         <PainelParceiroCliente inicial={painel} pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
       </>
     );

@@ -17,16 +17,21 @@ export interface ItemSecao {
   icone: "UserRound" | "Star" | "Users" | "FileText" | "Shield" | "ShieldCheck" | "Bell" | "CreditCard" | "CircleHelp";
   /** Linha curta do menu do celular. */
   descricao: string;
-  /** NAV-A: o nome no menu, quando difere do título da tela (ex.: "Como você usa a Viva" abre "Papéis e intenção"). */
+  /** NAV-A: o nome no menu, quando difere do título da tela. E490: nenhuma seção usa mais (o menu e o título são o mesmo nome). */
   rotuloMenu?: string;
+  /**
+   * E493: a seção existe (rota, título, casca) mas NÃO entra na lista de seções — a porta dela é outra. Hoje só a Ajuda,
+   * cuja porta é o "Ajuda" do menu da Conta (avatar, D2/E185); antes ela aparecia ali e de novo na lista da Conta.
+   */
+  foraDoMenu?: true;
 }
 
 export const SECOES_CONTA: readonly ItemSecao[] = [
   { id: "perfil", rotulo: "Perfil", href: "/dashboard/conta/perfil", icone: "UserRound", descricao: "Foto, nome, sobre você e o que o proprietário vê." },
   // NAV-A (24/10): a ordem da Conta é Perfil, Como você usa a Viva, Avaliações, Dados, Privacidade, Notificações,
   // Pagamentos, Ajuda (e Sair, no menu do celular).
-  { id: "papeis", rotulo: "Papéis e intenção", rotuloMenu: "Como você usa a Viva", href: "/dashboard/conta/papeis", icone: "Users", descricao: "O que você quer fazer na Viva." },
-  { id: "avaliacoes", rotulo: "Avaliações", href: "/dashboard/conta/avaliacoes", icone: "Star", descricao: "O que disseram de você depois de cada estadia." },
+  { id: "papeis", rotulo: "Como você usa a Viva", href: "/dashboard/conta/papeis", icone: "Users", descricao: "O que você quer fazer na Viva." },
+  { id: "avaliacoes", rotulo: "Avaliações", href: "/dashboard/avaliacoes", icone: "Star", descricao: "O que disseram de você depois de cada estadia." },
   { id: "dados", rotulo: "Dados", href: "/dashboard/conta/dados", icone: "FileText", descricao: "Nome, contato e documento. Só a Viva vê." },
   { id: "privacidade", rotulo: "Privacidade", href: "/dashboard/conta/privacidade", icone: "Shield", descricao: "O que os outros veem, baixar ou excluir seus dados." },
   // E176 (parte 2): "Segurança e verificações" ganha item próprio na Conta (antes, uma subtela de Privacidade).
@@ -35,14 +40,17 @@ export const SECOES_CONTA: readonly ItemSecao[] = [
   // preferências (mockup perfil-06) e os avisos. /dashboard/conta/notificacoes redireciona para ela.
   { id: "notificacoes", rotulo: "Notificações", href: "/dashboard/notificacoes", icone: "Bell", descricao: "Seus avisos e como a Viva avisa você." },
   { id: "pagamentos", rotulo: "Pagamentos", href: "/dashboard/conta/pagamentos", icone: "CreditCard", descricao: "Para onde vai o valor mensal." },
-  { id: "ajuda", rotulo: "Ajuda", href: "/dashboard/conta/ajuda", icone: "CircleHelp", descricao: "Central de ajuda, termos e privacidade." },
+  { id: "ajuda", rotulo: "Ajuda", href: "/dashboard/conta/ajuda", icone: "CircleHelp", descricao: "Central de ajuda, termos e privacidade.", foraDoMenu: true },
 ] as const;
+
+/** E493: as seções que aparecem na lista da Conta (lateral no computador, lista no celular) — sem a Ajuda. */
+export const SECOES_MENU_CONTA: readonly ItemSecao[] = SECOES_CONTA.filter((s) => !s.foraDoMenu);
 
 /** Endereços antigos das subtelas que agora caem numa seção nova (links salvos, e-mails, app). */
 export const ALIAS_SECAO: Readonly<Record<string, SecaoConta>> = {
   // /dashboard/conta/excluir (Sair da Viva) é subtela de Privacidade, aberta por "Excluir minha conta" (perfil-05).
   excluir: "privacidade",
-  // E224: Conta › Plano (a elegibilidade do Plano Gestor) mora no cartão de Pagamentos (#plano).
+  // E224/078: Conta › Plano (a taxa de serviço da conta e a escada) mora no cartão de Pagamentos (#plano).
   plano: "pagamentos",
 };
 
@@ -68,7 +76,7 @@ const ANCORA_SECAO: Readonly<Record<string, string>> = {
   celular: "/dashboard/conta/dados#celular",
   dados: "/dashboard/conta/dados",
   "local-trabalho": "/dashboard/conta/dados",
-  avaliacoes: "/dashboard/conta/avaliacoes",
+  avaliacoes: "/dashboard/avaliacoes",
   papeis: "/dashboard/conta/papeis",
   notificacoes: "/dashboard/notificacoes",
   pagamentos: "/dashboard/conta/pagamentos",
@@ -82,6 +90,28 @@ export function destinoDaAncora(hash: string, search = ""): string | null {
   if (!destino) return null;
   const [rota, ancora] = destino.split("#");
   return `${rota}${search && search !== "?" ? search : ""}${ancora ? `#${ancora}` : ""}`;
+}
+
+/** Âncoras antigas que levam ao Perfil e não têm mais alvo na tela dele. "pets" não entra: a seção existe (id="pets"). */
+const ANCORA_SEM_ALVO_NO_PERFIL: ReadonlySet<string> = new Set(["perfil-publico"]);
+
+/**
+ * No Perfil: a âncora antiga que não tem mais alvo na tela (perfil-publico) sai do endereço — o destino da tabela não
+ * traz âncora. A que ainda existe (pets) fica. Antes isso dependia de quem redirecionava: a página tirava a âncora, o
+ * proxy (E798) a mantinha; o endereço final variava (t355, caso 5). A lista é fixa de propósito: a tela do Perfil
+ * monta as seções depois do primeiro quadro, e procurar o alvo na tela daria resposta diferente a cada carregamento.
+ */
+export function ancoraMortaNoPerfil(hash: string): boolean {
+  const ancora = hash.replace(/^#/, "");
+  return ANCORA_SEM_ALVO_NO_PERFIL.has(ancora) && ANCORA_SECAO[ancora] === "/dashboard/conta/perfil";
+}
+
+/**
+ * E492 (+E552): no computador a Conta tem UM endereço para o Perfil — /dashboard/conta leva a /dashboard/conta/perfil.
+ * Uma âncora antiga (destinoDaAncora) vence. No celular, /dashboard/conta continua sendo o menu.
+ */
+export function destinoDaContaNoComputador(destinoAncora: string | null): string {
+  return destinoAncora ?? "/dashboard/conta/perfil";
 }
 
 export const itemDaSecao = (id: SecaoConta): ItemSecao => SECOES_CONTA.find((s) => s.id === id)!;

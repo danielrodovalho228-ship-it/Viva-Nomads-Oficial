@@ -3,6 +3,7 @@
   Um e-mail por imóvel: título e bairro do anúncio, uma linha por documento (tipo · Aprovado/Precisa de ajuste ·
   motivo) e UM botão para aquele imóvel. Quem decide QUANDO avisar é o banco (decisoes_documento_para_avisar, 0185).
 */
+import { codigoDoImovel } from "../imovel-pagina.ts";
 import { assuntoDecisaoDocumento } from "../notifications/assuntos.ts";
 import { destinoPendencia, emCadastro, hrefPublicarAnuncio } from "../anuncio/destino-pendencia.ts";
 import { ETAPA } from "../anuncio/etapas-ids.ts";
@@ -92,7 +93,8 @@ export function emailDecisaoDocumento(o: {
 }): EmailDecisao {
   const recusa = o.linhas.some((l) => !l.aprovado);
   const um = o.linhas.length === 1;
-  const imovel = [o.titulo?.trim() || "Seu imóvel", o.bairro?.trim()].filter(Boolean).join(" · ");
+  // E394: título · bairro · código (VN-…): o dono com 2+ anúncios sabe de qual é o documento.
+  const imovel = [o.titulo?.trim() || "Seu imóvel", o.bairro?.trim(), o.propertyId ? `código ${codigoDoImovel(o.propertyId)}` : ""].filter(Boolean).join(" · ");
   const linhaHtml = (l: LinhaAviso) =>
     `${textoEmail(l.documento, 80)} · <span style="color:${l.aprovado ? "#1c6b3a" : "#b45309"};">${l.aprovado ? "Aprovado" : "Precisa de ajuste"}</span>` +
     (l.motivo ? `<br><span style="font-weight:400;">Motivo: ${textoEmail(l.motivo, 500)}</span>` : "");

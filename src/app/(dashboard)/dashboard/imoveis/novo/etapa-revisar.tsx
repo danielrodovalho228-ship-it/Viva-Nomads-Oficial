@@ -11,9 +11,10 @@ import type { Property } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { TERMO_IA_TEXTO, textoTermoJaAceito } from "@/lib/anuncio/termo-ia";
 import { fraseDescontoCard, type Negociacao } from "@/lib/anuncio/negociacao";
-import { conferenciaAssistente, etapaDoItemProntidao, type ContextoConferencia, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
-import { TEXTOS_REVISAO, linhaRevisao, tituloPrevia } from "@/lib/anuncio/assistente-telas";
-import { precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
+import { conferenciaAssistente, etapaDoItemProntidao, faltamNaConferencia, type ContextoConferencia, type IdEtapaAssistente } from "@/lib/anuncio/assistente-dez-etapas";
+import { TEXTOS_REVISAO, linhaRevisao, tituloConferencia, tituloDaPrevia } from "@/lib/anuncio/assistente-telas";
+import { caucaoDaPrevia, contaDaConferencia, precosDaPrevia } from "@/lib/anuncio/passo10-colunas";
+import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
 import { SOMBRA_CARTAO_CADASTRO } from "@/lib/conta/visual-mockup";
 import type { EstadoDocumentoTela } from "@/components/anuncio/documento-vinculo";
 import { cn, formatBRL } from "@/lib/utils";
@@ -74,11 +75,19 @@ export function EtapaRevisar(p: {
 }) {
   const conf = conferenciaAssistente(p.prontidao, p.contextoConferencia);
   const precos = precosDaPrevia(p.previewProperty);
+  // E1050 + E1061: o dono vê a caução calculada antes de publicar — o número e o rótulo da página do imóvel.
+  const caucao = caucaoDaPrevia(p.previewProperty);
   // E139: sem valor mensal não há total — condomínio ou contas sozinhos não viram preço.
   const temValorMensal = (p.previewProperty.monthlyPrice ?? 0) > 0;
+  const titulo = tituloDaPrevia(p.titulo);
   const linha = linhaRevisao(p.previewProperty.bedrooms, p.previewProperty.bathrooms, p.previewProperty.areaM2);
   const desconto = fraseDescontoCard(p.negociacao.descontos);
-  const tudoCerto = conf.itens.every((i) => i.ok);
+  // E557: o título segue a regra do botão — "tudo certo" só com o "Publicar anúncio" liberado; travado, diz o que falta.
+  const tituloLista = tituloConferencia(p.podePublicar, p.motivoTravado);
+  // E761: a identidade ainda não confirmada fica fora da conta, e a conta diz isso (ela não trava a publicação).
+  const { situacao: identidadeSituacao } = useEstadoIdentidade();
+  const identidadeAConfirmar = !!identidadeSituacao && identidadeSituacao.identidade.estado !== "confirmada";
+  const conta = contaDaConferencia({ itens: conf.itens, pendentesNaRevisao: conf.pendentesNaRevisao, aceitouIa: p.aceitouIa || !!p.termoJaAceito, identidadeAConfirmar });
   const primeiroPendente = (id: IdEtapaAssistente) => p.completude.find((i) => !i.ok && etapaDoItemProntidao(i.key).id === id);
   const [previaAberta, setPreviaAberta] = useState(false);
   const travado = !p.podePublicar || p.publishing;
@@ -97,7 +106,13 @@ export function EtapaRevisar(p: {
       </div>
       {p.tamanhoReal}
       <p className="mt-4 font-title text-xl font-semibold text-ink" data-testid="revisao-titulo">
-        {tituloPrevia(p.titulo, p.tipo, p.bairro)}
+        {titulo.pendente ? (
+          <span className="font-normal italic text-muted" data-testid="revisao-titulo-pendente">
+            {titulo.texto}
+          </span>
+        ) : (
+          titulo.texto
+        )}
       </p>
       {linha && (
         <p className="mt-1 text-base text-muted" data-testid="revisao-linha">
@@ -118,6 +133,12 @@ export function EtapaRevisar(p: {
             </div>
           ))}
           {precos[2].conta && <p className="text-right text-xs text-muted" data-testid="previa-conta-estadia">{precos[2].conta}</p>}
+          {caucao != null && (
+            <div className="flex items-baseline justify-between gap-3" data-testid="previa-preco-caucao">
+              <dt className="text-muted">{caucao.rotulo}</dt>
+              <dd className="text-right font-semibold text-ink">{formatBRL(caucao.valor)}</dd>
+            </div>
+          )}
           {desconto && <p className="text-xs text-muted">{desconto}</p>}
         </dl>
       )}
@@ -134,10 +155,16 @@ export function EtapaRevisar(p: {
   );
 
   const lista = (
-    <section className="min-w-0" aria-labelledby="lista-conferencia-titulo" data-testid="lista-conferencia" data-faltam={conf.itens.filter((i) => !i.ok).length}>
+    <section className="min-w-0" aria-labelledby="lista-conferencia-titulo" data-testid="lista-conferencia" data-faltam={faltamNaConferencia({ itens: conf.itens, pendentesNaRevisao: [] })}>
       <h3 id="lista-conferencia-titulo" className="text-base font-semibold text-ink">
-        {tudoCerto ? TEXTOS_REVISAO.listaTudoCerto : TEXTOS_REVISAO.lista}
+        {tituloLista}
       </h3>
+      {/* E619: a conta do "Faltam N itens" à vista (subitens dos passos + seções do "Antes de publicar"), e o aceite. */}
+      {!p.podePublicar && conta && (
+        <p className="mt-1 text-sm text-muted" data-testid="conferencia-conta">
+          {conta}
+        </p>
+      )}
       <ul className="mt-1 divide-y divide-line">
         {conf.itens.map((i) => {
           const pendente = i.ok ? undefined : primeiroPendente(i.id);

@@ -91,6 +91,9 @@ test.describe("T38 — Vários imóveis por dono, sem limite de plano (E233-A)",
         await expect(page.getByText(PLANO_ANTIGO)).toHaveCount(0);
       }
       await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
+      // E744 (asserção alterada, tabela da Fable #3832): desde o E511 a lista mostra 12 por página ("Mostrar mais") e o 21º
+      // cai na 2ª página; acha-se pelo que a tela oferece — a busca por nome.
+      await page.getByTestId("imoveis-busca").fill(titulo(21));
       await expect(page.getByText(titulo(21)).first()).toBeVisible({ timeout: 20_000 });
       await page.screenshot({ path: `${SAIDA}/t38-vinte-e-um-${largura}.png` });
     }

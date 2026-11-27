@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MarcaNavInterna } from "@/components/ui/voltar-celular";
+import { VoltarAoSite } from "@/components/layout/voltar-ao-site";
+import { VoltarPainel } from "@/components/layout/voltar-painel";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, Menu, LogOut, Plus } from "lucide-react";
+import { Menu, LogOut, Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useAuthStore, type SessionUser, type ViewMode } from "@/lib/store";
-import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { lerFotoAvatar, gravarFotoAvatar } from "@/lib/foto-avatar-cache";
+import { lerMeuAvatar } from "@/lib/sessao/leituras-da-casca";
 import { FOTO_ATUALIZADA } from "@/components/account/foto-perfil";
 import { salvarModo } from "@/lib/salvar-modo";
 import { createClient } from "@/lib/supabase/client";
@@ -21,26 +24,29 @@ import {
   INTERVALO_CONTADORES_MS,
   ROTA_CONTADORES,
   badgeDaEquipe,
-  normalizarContadores,
+  camposNaoLidos, normalizarContadores,
   type ContadoresPainel,
 } from "@/lib/painel/contadores";
-import { useViewMode, identidadeUsuario, primeiroNomeExibicao } from "@/lib/roles";
+import { useViewMode, identidadeUsuario, nomeAvatarExibicao } from "@/lib/roles";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { MolduraAssistente, ehAssistenteCadastro } from "@/components/layout/moldura-assistente";
+import { PularParaConteudo } from "@/components/layout/pular-para-conteudo";
 import { AppHeader } from "@/components/app/app-header";
 import { useDemoMode, DemoToggle, DemoBanner, useDisplayUser } from "@/lib/demo/demo-mode";
 import { MenuCascata } from "@/components/layout/menu-cascata";
 import { ANUNCIAR, destinoForaDoPapel, menuDoPainel } from "@/config/menu-painel";
 import { barraAdminPara, MINHA_CONTA_ADMIN } from "@/config/menu-admin";
-import { PapelAtivo } from "@/components/layout/papel-ativo";
+import { PapelAtivo, SeloEquipe } from "@/components/layout/papel-ativo";
 import { papelDaBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
 import { MenuConta, Sino, SubabasPainel, TopoPainel, prefixoPapel } from "@/components/layout/topo-dono";
-import { abasDoPapelPainel, itensDaConta, type ItemConta } from "@/config/abas-painel";
+import { abasDoPapelPainel, itensDaConta, itensDaEquipe, type ItemConta } from "@/config/abas-painel";
 import { cn } from "@/lib/utils";
 import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
+import { esperaRetentativaContadores } from "@/lib/painel/retentativa-contadores";
 import { FaixaCritico } from "@/components/painel/sino-avisos";
 import { useSomDeMensagemNova } from "@/components/painel/som-mensagem";
+import { GravarLarguraDaTela } from "@/components/account/largura-e-ancora";
 
 /**
  * REGRA PERMANENTE (0.5) — integridade da casca do dashboard:
@@ -82,6 +88,8 @@ const TENANT_ONLY = [
   "/dashboard/comparar",
   "/dashboard/buscas",
   "/dashboard/locacoes",
+  "/dashboard/pedidos",
+  "/dashboard/candidaturas",
 ];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -110,19 +118,28 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   // inteiro; só então cai no rótulo neutro. NUNCA o e-mail cru.
   const nomeSidebar = identidadeUsuario(displayUser);
   // CONTA-A: o rosto do avatar só usa o nome do perfil; sem nome, a silhueta (nunca letras do e-mail).
-  const nomeAvatar = primeiroNomeExibicao(displayUser);
+  // E788: o avatar usa o nome COMPLETO (a mesma fonte do Perfil) — antes o primeiro nome dava "C" aqui e "CQ" no Perfil.
+  const nomeAvatar = nomeAvatarExibicao(displayUser);
 
   // Minha própria foto de perfil (opcional) para o avatar do topo.
   const [myPhoto, setMyPhoto] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
-    getMyAvatarUrl()
+    // E698: a última foto conhecida desta conta já na 1ª pintura (a leitura do servidor confirma ou limpa em seguida).
+    const guardada = lerFotoAvatar(displayUser?.id);
+    if (guardada) void Promise.resolve().then(() => alive && setMyPhoto(guardada));
+    lerMeuAvatar(displayUser?.id)
       .then((r) => {
         if (alive) setMyPhoto(r.url);
+        if (alive && displayUser?.id) gravarFotoAvatar(displayUser.id, r.url);
       })
       .catch(() => {});
     // CONTA-A: a foto nova (ou removida) aparece na hora no selo do cabeçalho.
-    const aoMudar = (e: Event) => setMyPhoto((e as CustomEvent<{ url: string | null }>).detail?.url ?? null);
+    const aoMudar = (e: Event) => {
+      const url = (e as CustomEvent<{ url: string | null }>).detail?.url ?? null;
+      setMyPhoto(url);
+      gravarFotoAvatar(displayUser?.id, url);
+    };
     window.addEventListener(FOTO_ATUALIZADA, aoMudar);
     return () => {
       alive = false;
@@ -142,18 +159,36 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [lido, setLido] = useState(contadoresIniciais !== null);
   useSomDeMensagemNova(lido ? contadores.mensagensRecebidas : null);
   const naAreaDeImoveis = pathname.startsWith("/dashboard/imoveis");
+  // E653: a falha seguida da leitura tenta de novo logo (esperas crescentes) — antes ficava "vazio" (selo do sino em 0, menu
+  // de conta nova) até o próximo minuto ou foco.
+  const falhasContadores = useRef(0);
   useEffect(() => {
     if (!displayUser?.id) return;
     const controle = new AbortController();
+    let espera: ReturnType<typeof setTimeout> | undefined;
+    const falhou = () => {
+      const ms = esperaRetentativaContadores(falhasContadores.current++);
+      if (ms !== null) espera = setTimeout(() => setReleitura((n) => n + 1), ms);
+    };
     fetch(ROTA_CONTADORES, { cache: "no-store", credentials: "same-origin", signal: controle.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
-        if (!json) return;
-        setContadores(normalizarContadores(json));
+        if (!json) return falhou();
+        // E1093: o campo do contexto que o servidor não leu fica com o que a casca já sabia ("não li" não é "não tem"),
+        // e a leitura repete-se logo, com as mesmas esperas da falha.
+        setContadores((antes) => normalizarContadores(json, antes));
         setLido(true);
+        if (camposNaoLidos(json).length) falhou();
+        else falhasContadores.current = 0;
       })
-      .catch(() => {});
-    return () => controle.abort();
+      .catch((e: unknown) => {
+        // O abort da limpeza do efeito (troca de rota) não é falha da leitura.
+        if ((e as { name?: string } | null)?.name !== "AbortError") falhou();
+      });
+    return () => {
+      controle.abort();
+      if (espera) clearTimeout(espera);
+    };
   }, [displayUser?.id, naAreaDeImoveis, releitura]);
   useEffect(() => {
     // Foco e "aba visível" chegam juntos ao voltar para a aba: uma leitura só a cada 2 s por esse caminho.
@@ -222,13 +257,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (!hits) return;
     const target: ViewMode = mode === "owner" ? "tenant" : "owner";
     const contaTemPapel = target === "owner" ? isOwner : isTenant;
-    if (contaTemPapel) {
-      setActiveMode(target);
-      salvarModo(target).catch(() => {});
-    } else {
-      router.replace(destinoForaDoPapel(pathname));
-    }
-  }, [pathname, mode, isOwner, isTenant, router, setActiveMode]);
+    // E653: este guarda era um 2º escritor do modo (gravava no perfil sem clique da pessoa). Quem tem o papel não é
+    // mexido: a URL da área já decide o modo (E497) e a troca é só a explícita. Só quem NÃO tem o papel é desviado.
+    if (!contaTemPapel) router.replace(destinoForaDoPapel(pathname));
+  }, [pathname, mode, isOwner, isTenant, router]);
 
   // Modo demonstração (admin): aceita ?demo=1 / ?demo=0 na URL (estado é de
   // sessão — lib/demo/demo-mode). Lê window.location para não exigir Suspense.
@@ -276,6 +308,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (temPapel) return;
     e.preventDefault();
     setActiveMode(alvo);
+    useAuthStore.setState({ papelConhecido: true }); // E1026: a troca da pessoa é papel conhecido (vence o que o servidor leu)
     await salvarModo(alvo).catch(() => {});
     router.push(href);
   }
@@ -287,11 +320,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const preferenciaParceiro = usePreferenciaParceiro();
   const papelAtivo = papelDaBarra({ admin: display.role === "admin", modo: mode === "owner" ? "owner" : "tenant", parceiroAprovado, preferenciaParceiro, pathname });
   // Mockup perfil-01 (decisão de 24/10: nestas telas vale o desenho): o cabeçalho mostra a foto também na Conta.
-  // E55 (QA 24/10, reincidência): na tela Perfil a foto aparece só no herói editável e no espelho — as miniaturas de
-  // navegação (barra lateral e cabeçalho) viram iniciais ali. No computador o Perfil abre também em /dashboard/conta.
-  const naTelaPerfil = pathname === "/dashboard/conta/perfil" || pathname === "/dashboard/conta";
-  const fotoNav = naTelaPerfil ? null : myPhoto;
-  const papelChip = <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />;
+  // E783 (Daniel, 09/11): a foto do cabeçalho aparece em TODAS as telas, inclusive Conta e Perfil. O E55 (24/10) trocava a miniatura
+  // por iniciais na tela Perfil e fazia a foto "sumir" ao entrar na Conta; a iniciais ficam só para quem não tem foto.
+  const fotoNav = myPhoto;
 
   // MENUS-5 / MORADOR-NAV: fora do /admin, TODO papel navega pelas abas da fonte única (config/abas-painel.ts) — no
   // computador, abas no topo + sino + "Conta ▾" (sem barra lateral); no celular, a barra de baixo + o avatar do topo,
@@ -304,6 +335,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (acao === "sair") handleSignOut();
     else void irParaModo(acao === "modo-morador" ? "tenant" : "owner");
   };
+  // E788: na área da equipe o selo é o avatar que abre o menu da Conta (antes, texto inerte).
+  const papelChip = papelAtivo ? (
+    <PapelAtivo papel={papelAtivo} nome={nomeAvatar} foto={fotoNav} />
+  ) : (
+    <SeloEquipe nome={nomeAvatar} foto={fotoNav} itens={itensDaEquipe()} onAcao={aoAcaoConta} />
+  );
   const contaCelular = papelTopo ? (
     <div className="flex items-center gap-1">
       <Sino px={`${prefixoPapel(papelTopo)}-celular`} />
@@ -314,7 +351,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/10 px-4">
-        <Logo light className="max-w-full" />
+        <Logo light prefetch={false} className="max-w-full" />
       </div>
       <nav aria-label="Menu do painel" className="flex-1 overflow-y-auto p-3">
         {/* Quem ainda não anunciou: entrada direta para anunciar (as seções de dono
@@ -369,6 +406,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     // rola — a sidebar e as barras do topo ficam fixas. Em mobile/print volta ao
     // fluxo normal (rolagem da página inteira).
     <div className="flex min-h-screen w-full bg-surface-2 lg:h-screen lg:overflow-hidden print:h-auto print:overflow-visible">
+      {/* E976, parte 2: o painel logado ganha o link de salto, o primeiro focável da tela (é fixo: não ocupa lugar). */}
+      <PularParaConteudo />
       {/* Sidebar desktop — fixa (altura da viewport). */}
       {!papelTopo && <aside className="web-only hidden w-64 shrink-0 bg-forest lg:block lg:h-screen print:hidden" data-testid="barra-lateral">{sidebar}</aside>}
 
@@ -389,7 +428,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} itensConta={itensConta} onAcao={aoAcaoConta} />
         )}
         <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", papelTopo && "lg:hidden")} data-testid="topo-celular">
-          <Logo className="lg:hidden" />
+          {/* E1046: `min-h-11` dá os 44 px à própria âncora (eram 32); o símbolo e o nome ficam centrados nela, e a barra
+              tem 64 px, por isso o desenho não muda. É o mesmo conserto do E960 no logo do site público. */}
+          <Logo prefetch={false} className="min-h-11 lg:hidden" />
           <div className="flex items-center gap-2">
             {contaCelular ?? papelChip}
             {chipModo}
@@ -407,14 +448,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* E73 (QA 24/10): no celular, nas telas da equipe (/admin), "‹ Voltar ao site" fica à vista. E176 (D3): a navegação
-            da equipe tem UM caminho só — o hambúrguer do topo abre a gaveta (saiu o segundo botão de menu). No computador
-            nada muda (a barra lateral já está aberta). */}
+        {/* E73 (QA 24/10): nas telas da equipe (/admin), "‹ Voltar ao site" fica à vista. E176 (D3): a navegação da equipe tem
+            UM caminho só — o hambúrguer do topo abre a gaveta (saiu o segundo botão de menu). E784 (reprovado a 1920 px): a
+            faixa com o link vale em TODAS as larguras (antes `lg:hidden`: no computador não havia saída para o site). */}
         {pathname.startsWith("/admin") && (
-          <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 lg:hidden print:hidden" data-testid="admin-nav-celular">
-            <Link href="/" className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-forest" data-testid="admin-voltar-site">
-              <ChevronLeft className="h-5 w-5" aria-hidden /> Voltar ao site
-            </Link>
+          <nav aria-label="Navegação da equipe" className="web-only flex items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 py-1 print:hidden" data-testid="admin-nav-celular">
+            <VoltarAoSite />
           </nav>
         )}
 
@@ -426,10 +465,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             coberto a 1280 px depois que os botões passaram a 56 px no #953). */}
         {/* E69: marca a navegação interna para o "voltar" das subtelas no celular. */}
         <MarcaNavInterna />
-        <main key={mode} data-painel-main className="mode-transition min-w-0 flex-1 p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
+        <main key={mode} id="conteudo" tabIndex={-1} data-painel-main className="mode-transition min-w-0 flex-1 outline-none p-4 pb-[calc(var(--folga-flutuante-celular)+env(safe-area-inset-bottom))] sm:p-8 sm:pb-(--folga-flutuante) lg:overflow-y-auto lg:scroll-pb-28 print:overflow-visible">
           {papelTopo && <SubabasPainel papel={papelTopo} abas={abasTopo} pathname={pathname} />}
           {/* E444 item 4: crítico não resolvido = faixa no topo, com o botão da ação (some quando a ação é feita). */}
           {papelTopo && <FaixaCritico pathname={pathname} />}
+          {/* E720: o "← Voltar" padrão de toda tela interna (menos as que já têm o próprio). */}
+          <VoltarPainel />
           {children}
           {/* Espaço para a barra inferior não cobrir o conteúdo (só mobile). */}
           <div className="vn-tabbar-spacer h-20 md:hidden print:hidden" aria-hidden />
@@ -438,6 +479,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Barra inferior do app (ciente do modo); esconde-se no desktop e nas
           telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
+      {/* E798: a largura da tela vai num cookie (o proxy decide /dashboard/conta no servidor). */}
+      <GravarLarguraDaTela />
       <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: badgeDaEquipe(contadores) }} comContrato={comContrato} />
     </div>
   );

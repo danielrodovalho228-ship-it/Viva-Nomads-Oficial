@@ -1,30 +1,37 @@
 "use client";
 
-import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
+import { ConfirmarExcluirRascunho } from "@/components/anuncio/confirmar-excluir-rascunho";
 import { imovelPublicado } from "@/lib/anuncio/publicados";
 import { gruposRascunhosDuplicados, idsRascunhosDuplicados } from "@/lib/anuncio/rascunhos-duplicados";
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Award, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
-import { ROTULO_NIVEL } from "@/config/niveis";
-import { textoNivelCartao } from "@/lib/cartao-sintese";
+import { Plus, Bath, BedDouble, Home, Handshake, Trash2 } from "lucide-react";
+import { selosDaFoto } from "@/lib/cartao-selos-foto";
+import { SelosFoto } from "@/components/property/selos-foto";
 import { deleteProperty } from "@/lib/data/actions";
 import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { ReadyToLiveBadge } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
 import { PhotoPlaceholder } from "@/components/ui/photo-placeholder";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
-import { DEMO_PROPERTIES, DEMO_PROPERTY_STATS } from "@/lib/demo/seed";
+import { useExemplos } from "@/lib/demo/usar-exemplos";
 import type { Property, PropertyStatus } from "@/lib/types";
-import { faixaDocumentoAprovado, hrefParaMelhorar, type Prontidao } from "@/lib/anuncio/prontidao";
+import { avisoExcluirRascunho, rotuloExcluirRascunho } from "@/lib/anuncio/excluir-rascunho";
+import { faixaDocumentoAprovado, hrefParaMelhorar, hrefRetomarRascunho, pendenciasComPrazo, type Prontidao } from "@/lib/anuncio/prontidao";
 import { destinoPendencia } from "@/lib/anuncio/destino-pendencia";
-import { ETAPA } from "@/lib/anuncio/etapas-ids";
+import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
+import { estadoIdentidadeParaTrava, HREF_CPF_NA_CONTA, HREF_VERIFICAR_IDENTIDADE } from "@/lib/anuncio/travas-publicacao";
 import { cn, formatBRL } from "@/lib/utils";
 import { PrecoComContexto } from "@/components/preco/preco-com-contexto";
 import { mesesDoCartao, rotuloPreco } from "@/lib/cartao-preco";
 import { estadiaDoCartaoDoDono, precoDoImovel, ROTULO_MENSAL, ROTULO_TOTAL_MES } from "@/lib/precos";
 import { EstadoDoAnuncio } from "@/components/anuncio/estado-anuncio";
+import { destinoDoCartao } from "@/lib/anuncio/destino-cartao";
+import { ORDENS, abasVisiveis, anunciosDaLista, filtrarEOrdenar, juntarCopiasAoPai, paginarAnuncios, textoContagemLista, textoMostrarMais, type AbaEstado, type OrdemLista } from "@/lib/anuncio/lista-meus-imoveis";
+
+/** E511: a barra da lista (abas, busca, ordem) aparece a partir desta quantidade de imóveis. */
+const MIN_BARRA = 4;
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 
 /** Rótulo + tom do status do anúncio (rascunho/ativo/pausado/arquivado). */
@@ -45,20 +52,28 @@ export function MyPropertiesClient({
   properties: real,
   prontidao = {},
   pausas = {},
-  semTipoEntrada = [],
 }: {
   properties: Property[];
   prontidao?: Record<string, Prontidao>;
   pausas?: Record<string, string | null>;
-  /** E418: anúncios publicados sem o tipo de entrada — o link vai no cartão de cada um (não numa caixa no topo). */
-  semTipoEntrada?: string[];
 }) {
   const { on: demoOn } = useDemoMode();
+  // E699 (a): a trava de identidade também aparece em "Falta para publicar" (antes só o documento). A leitura é da própria
+  // pessoa (a mesma do cadastro); carregando ou indisponível não afirma "falta" aqui.
+  const { situacao: situacaoIdentidade } = useEstadoIdentidade();
+  const estadoIdentidade = estadoIdentidadeParaTrava(situacaoIdentidade);
+  const faltaIdentidade = estadoIdentidade === "pendente" || estadoIdentidade === "sem_cpf";
+  const hrefIdentidade = estadoIdentidade === "sem_cpf" ? HREF_CPF_NA_CONTA : HREF_VERIFICAR_IDENTIDADE;
   // Ids excluídos nesta sessão (rascunhos descartados) — some da lista na hora.
   const [removidos, setRemovidos] = useState<Set<string>>(new Set());
   const [excluindo, setExcluindo] = useState<string | null>(null);
-  const [erroExcluir, setErroExcluir] = useState<string | null>(null);
-  const properties = (demoOn ? DEMO_PROPERTIES : real).filter((p) => !removidos.has(p.id));
+  // E953: a confirmação abre como painel no cartão; o erro fica DENTRO do cartão; o sucesso avisa perto do topo da lista.
+  const [confirmandoExcluir, setConfirmandoExcluir] = useState<string | null>(null);
+  const [erroNoCartao, setErroNoCartao] = useState<Record<string, string>>({});
+  const [avisoExcluido, setAvisoExcluido] = useState(false);
+  // E980: os exemplos chegam sob demanda (só com a demonstração ligada).
+  const exemplos = useExemplos(demoOn);
+  const properties = (demoOn ? (exemplos?.DEMO_PROPERTIES ?? []) : real).filter((p) => !removidos.has(p.id));
 
   const duplicados = idsRascunhosDuplicados(properties);
   // E383: de cada grupo de rascunhos repetidos, só o mais recente aparece; as cópias ficam atrás de "ver cópias".
@@ -67,16 +82,44 @@ export function MyPropertiesClient({
   const copias = new Set(grupos.flatMap((g) => g.slice(1)));
   const [copiasAbertas, setCopiasAbertas] = useState<Set<string>>(new Set());
   const grupoAberto = (id: string) => grupos.some((g) => g.includes(id) && copiasAbertas.has(g[0]));
-  const semEntrada = new Set(semTipoEntrada);
   const visiveis = properties.filter((p) => !copias.has(p.id) || grupoAberto(p.id));
+  // E511: abas de estado, busca, ordem e "Mostrar mais" (antes, 27+ cartões de uma vez). A barra aparece a partir de
+  // MIN_BARRA imóveis; abaixo disso a lista é curta e a barra só ocuparia lugar.
+  const [aba, setAba] = useState<AbaEstado>("todos");
+  const [busca, setBusca] = useState("");
+  const [ordem, setOrdem] = useState<OrdemLista>("recentes");
+  const [paginas, setPaginas] = useState(1);
+  // E624: a unidade de toda contagem é o ANÚNCIO (cópias de rascunho abertas não contam) — abas, "N imóveis",
+  // "Mostrando N de T" e "Mostrar mais" leem o mesmo número.
+  const anuncios = anunciosDaLista(properties, copias);
+  const comBarra = anuncios.length >= MIN_BARRA;
+  // E514: as cópias abertas ficam logo depois do cartão-pai (antes, iam para o fim da lista).
+  const filtrada = juntarCopiasAoPai(comBarra ? filtrarEOrdenar(visiveis, { aba, busca, ordem }) : visiveis, copiasDe);
+  const pagina = paginarAnuncios(filtrada, copias, paginas);
+  const abas = abasVisiveis(anuncios);
 
+  const semErroDo = (id: string) => (e: Record<string, string>) => Object.fromEntries(Object.entries(e).filter(([k]) => k !== id));
+  function abrirExcluir(id: string) {
+    setErroNoCartao(semErroDo(id));
+    setAvisoExcluido(false);
+    setConfirmandoExcluir(id);
+  }
+  function cancelarExcluir(id: string) {
+    setConfirmandoExcluir(null);
+    setErroNoCartao(semErroDo(id));
+    // O foco volta para a lixeira daquele cartão.
+    requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-excluir-id="${id}"]`)?.focus());
+  }
   async function excluirRascunho(id: string) {
-    setErroExcluir(null);
+    setErroNoCartao(semErroDo(id));
     setExcluindo(id);
     const res = await semQuedaDeRede(deleteProperty(id));
     setExcluindo(null);
-    if (res.ok) setRemovidos((s) => new Set(s).add(id));
-    else setErroExcluir(res.error ?? "Não foi possível excluir agora.");
+    if (res.ok) {
+      setConfirmandoExcluir(null);
+      setRemovidos((s) => new Set(s).add(id));
+      setAvisoExcluido(true);
+    } else setErroNoCartao((e) => ({ ...e, [id]: res.error ?? "Não foi possível excluir o rascunho agora. Tente de novo." }));
   }
 
   return (
@@ -93,11 +136,14 @@ export function MyPropertiesClient({
           </div>
         }
       />
-      {erroExcluir && (
-        <p role="alert" className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" data-testid="imoveis-erro">
-          {erroExcluir}
-        </p>
-      )}
+      {/* E953: o sucesso da exclusão é anunciado aqui (região viva sempre presente); o erro fica dentro do cartão. */}
+      <div role="status" aria-live="polite" data-testid="imoveis-aviso-exclusao">
+        {avisoExcluido && (
+          <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800" data-testid="imoveis-excluido">
+            Rascunho excluído
+          </p>
+        )}
+      </div>
 
       {properties.length === 0 ? (
         <EmptyState
@@ -111,10 +157,79 @@ export function MyPropertiesClient({
         />
       ) : (
         <div className="grid gap-4">
-          {visiveis.map((p) => {
+          {comBarra && (
+            <div className="grid gap-3" data-testid="imoveis-barra">
+              <div role="group" aria-label="Estado do anúncio" className="flex gap-2 overflow-x-auto" data-testid="imoveis-abas">
+                {abas.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    aria-pressed={aba === a.id}
+                    onClick={() => {
+                      setAba(a.id);
+                      setPaginas(1);
+                    }}
+                    className={cn(
+                      "inline-flex h-11 shrink-0 items-center gap-1 rounded-lg border px-3 text-sm font-semibold",
+                      aba === a.id ? "border-forest bg-sage-100 text-forest" : "border-line bg-white text-ink",
+                    )}
+                    data-testid={`imoveis-aba-${a.id}`}
+                  >
+                    {a.rotulo} <span className="tabular-nums text-muted">({a.n})</span>
+                  </button>
+                ))}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_14rem]">
+                <label className="block">
+                  <span className="sr-only">Buscar por nome, bairro ou cidade</span>
+                  <input
+                    type="search"
+                    value={busca}
+                    onChange={(e) => {
+                      setBusca(e.target.value);
+                      setPaginas(1);
+                    }}
+                    placeholder="Buscar por nome, bairro ou cidade"
+                    className="h-11 w-full rounded-lg border border-line bg-white px-3 text-base text-ink"
+                    data-testid="imoveis-busca"
+                  />
+                </label>
+                <label className="block">
+                  <span className="sr-only">Ordenar</span>
+                  <select
+                    value={ordem}
+                    onChange={(e) => {
+                      setOrdem(e.target.value as OrdemLista);
+                      setPaginas(1);
+                    }}
+                    className="h-11 w-full rounded-lg border border-line bg-white px-3 text-base text-ink"
+                    data-testid="imoveis-ordem"
+                  >
+                    {ORDENS.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.rotulo}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <p className="text-sm text-muted" role="status" data-testid="imoveis-contagem">
+                {textoContagemLista(pagina)}
+              </p>
+            </div>
+          )}
+          {comBarra && pagina.total === 0 && (
+            <p className="rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink" data-testid="imoveis-sem-resultado">
+              Nenhum imóvel com esse filtro. Troque a aba ou apague a busca.
+            </p>
+          )}
+          {pagina.visiveis.map((p) => {
             const demoItem = demoOn;
-            const stats = demoItem ? DEMO_PROPERTY_STATS[p.id] : undefined;
+            const stats = demoItem ? exemplos?.DEMO_PROPERTY_STATS[p.id] : undefined;
             const comp = prontidao[p.id];
+            // E510: foto e título levam ao mesmo destino dos botões do cartão (ativo → página; rascunho → onde parou;
+            // pausado → editor). Na demonstração, o título segue como texto (não há edição de verdade).
+            const destino = destinoDoCartao({ id: p.id, status: p.status, retomar: hrefRetomarRascunho(prontidao[p.id], p.id) });
             return (
               <div
                 key={p.id}
@@ -122,17 +237,28 @@ export function MyPropertiesClient({
                 data-testid="meu-anuncio"
                 data-imovel={p.id}
               >
-                {hasPhoto(p.photos[0]) ? (
-                  <BrandImage
-                    src={p.photos[0]}
-                    alt={p.title}
-                    sizes="200px"
-                    className="aspect-[4/3] w-full shrink-0 sm:w-48 sm:self-start"
+                {/* E510: a foto é clicável em todo estado (o mesmo destino do título; fora da ordem de tabulação, o título já é o
+                    link). `contents`: o link não cria caixa — a foto segue 4:3 e sem esticar com o cartão (E311, #1724). */}
+                {/* E416 (05/11): os selos do anúncio sobre a foto, a mesma fileira da vitrine (sem coração aqui). */}
+                <div className="relative w-full shrink-0 sm:w-48 sm:self-start" data-testid="meu-anuncio-foto">
+                  <Link href={destino} tabIndex={-1} aria-hidden className="contents" data-testid="cartao-foto-link">
+                    {hasPhoto(p.photos[0]) ? (
+                      <BrandImage
+                        src={p.photos[0]}
+                        alt={p.title}
+                        sizes="200px"
+                        className="aspect-[4/3] w-full shrink-0 sm:w-48 sm:self-start"
+                      />
+                    ) : (
+                      // E383: sem foto, só o ícone — nunca o "nome" da foto de teste nem um texto de placeholder por cartão.
+                      <PhotoPlaceholder className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48 sm:self-start" />
+                    )}
+                  </Link>
+                  <SelosFoto
+                    semCoracao
+                    selos={selosDaFoto({ precoJusto: !!p.precoJusto, pets: !!p.petsAllowed, nivel: p.nivel, nivelVistoriado: p.nivelVistoriado, negocia: !!p.negociacao?.aceita })}
                   />
-                ) : (
-                  // E383: sem foto, só o ícone — nunca o "nome" da foto de teste nem um texto de placeholder por cartão.
-                  <PhotoPlaceholder className="aspect-[4/3] w-full shrink-0 rounded-xl sm:w-48 sm:self-start" />
-                )}
+                </div>
                 <div className="flex flex-1 flex-col">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* 64-B: o selo vira o menu de pausa (demonstração: só o selo). */}
@@ -153,12 +279,7 @@ export function MyPropertiesClient({
                       )}
                     </span>
                     {p.readyToLiveBadge && <ReadyToLiveBadge />}
-                    {/* E416 (retrabalho): o selo de nível do anúncio, com o mesmo texto do cartão da vitrine. */}
-                    {p.nivel && p.nivel !== "em_adequacao" && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-forest/30 bg-sage-50 px-3 py-1 text-xs font-semibold text-forest" data-testid="anuncio-nivel" data-nivel={p.nivel}>
-                        <Award className="h-3.5 w-3.5" aria-hidden /> {textoNivelCartao(ROTULO_NIVEL[p.nivel], !!p.nivelVistoriado)}
-                      </span>
-                    )}
+                    {/* E416 (05/11): o nível foi para os selos da foto (acima), junto dos outros. */}
                     {demoItem && <DemoBadge />}
                     {/* E383: o mais recente do grupo diz quantas cópias há e abre/fecha as cópias; cada cópia aberta se
                         marca para o dono decidir excluir. */}
@@ -179,12 +300,12 @@ export function MyPropertiesClient({
                       </span>
                     )}
                   </div>
-                  {/* Só anúncio no ar tem página pública: nos outros o título é texto (rascunho e pausado davam 404 —
-                      t249 D-V7) e a ação é "Continuar editando" ou "Editar". */}
-                  {demoItem || p.status !== "active" ? (
+                  {/* E510: o título é link em todo estado. Só o anúncio no ar tem página pública (rascunho e pausado davam 404 —
+                      t249 D-V7): nos outros ele leva à edição, como "Continuar editando" / "Editar". */}
+                  {demoItem ? (
                     <span className="mt-2 font-title text-lg font-semibold text-ink">{p.title}</span>
                   ) : (
-                    <Link href={`/imoveis/${p.id}`} className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest">
+                    <Link href={destino} className="mt-2 font-title text-lg font-semibold text-ink hover:text-forest" data-testid="cartao-titulo-link">
                       {p.title}
                     </Link>
                   )}
@@ -201,17 +322,6 @@ export function MyPropertiesClient({
                       </span>
                     )}
                   </div>
-                  {/* E418: o anúncio publicado sem o tipo de entrada leva o link no próprio cartão (antes: uma caixa de
-                      largura total no topo, com um link por anúncio). */}
-                  {!demoItem && semEntrada.has(p.id) && (
-                    <Link
-                      href={destinoPendencia(p, ETAPA.regras)}
-                      className="mt-2 inline-flex min-h-11 items-center gap-1 self-start text-sm font-medium text-forest underline"
-                      data-testid="card-tipo-entrada"
-                    >
-                      Informar o tipo de entrada
-                    </Link>
-                  )}
                   {/* Prontidão (fonte única: lib/anuncio/prontidao). "Falta" só tem
                       obrigatórios; selo/vídeo aparecem à parte, como melhoria. */}
                   {!demoItem && comp && (() => {
@@ -223,6 +333,27 @@ export function MyPropertiesClient({
                       </p>
                     ) : null;
                   })()}
+                  {/* E984: publicado sem o "% completo" (E567), mas a prova com prazo continua aqui — vencida, o nível cai. */}
+                  {!demoItem && comp && imovelPublicado(p) && pendenciasComPrazo(comp.opcionais).length > 0 && (
+                    <p className="mt-3 text-[11px] text-amber-800" data-testid="prazos-publicado">
+                      Com prazo:{" "}
+                      {pendenciasComPrazo(comp.opcionais).map((o, i) => {
+                        const href = hrefParaMelhorar(o.key, p.id, false);
+                        return (
+                          <span key={o.key}>
+                            {i > 0 && " · "}
+                            {href ? (
+                              <Link href={href} className="font-medium underline" data-testid={`melhorar-${o.key}`}>
+                                {o.label}
+                              </Link>
+                            ) : (
+                              o.label
+                            )}
+                          </span>
+                        );
+                      })}
+                    </p>
+                  )}
                   {!demoItem && comp && !imovelPublicado(p) && (
                     <div className="mt-3" data-testid="prontidao">
                       <div className="flex items-center justify-between text-xs">
@@ -234,7 +365,7 @@ export function MyPropertiesClient({
                         <div className="h-full rounded-full bg-forest transition-all" style={{ width: `${comp.pct}%` }} />
                       </div>
                       {/* P0 (30/10): cada pendência é um atalho para o PASSO dela no assistente (rascunho) — nunca o editor. */}
-                      {comp.faltam.length > 0 && (
+                      {(comp.faltam.length > 0 || faltaIdentidade) && (
                         <p className="mt-1 text-[11px] text-amber-800" data-testid="falta-publicar">
                           Falta para publicar:{" "}
                           {comp.obrigatorios
@@ -247,6 +378,14 @@ export function MyPropertiesClient({
                                 </Link>
                               </span>
                             ))}
+                          {faltaIdentidade && (
+                            <span>
+                              {comp.faltam.length > 0 && " · "}
+                              <Link href={hrefIdentidade} className="font-medium underline" data-testid="pendencia-identidade">
+                                Confirmação de identidade
+                              </Link>
+                            </span>
+                          )}
                         </p>
                       )}
                       {comp.melhorar.length > 0 && (
@@ -304,7 +443,8 @@ export function MyPropertiesClient({
                         <ButtonLink
                           href={
                             p.status === "draft"
-                              ? `/dashboard/imoveis/novo?draft=${p.id}`
+                              ? // E507 — o mesmo destino de retomada do Início (o 1º passo que falta), não o passo guardado.
+                                hrefRetomarRascunho(prontidao[p.id], p.id)
                               : `/dashboard/imoveis/${p.id}/editar`
                           }
                           variant={p.status === "draft" ? "secondary" : "ghost"}
@@ -331,38 +471,53 @@ export function MyPropertiesClient({
                           </ButtonLink>
                         )}
                         {/* Qualificação é POR IMÓVEL: cada rascunho qualifica o seu. E196: "Qualificação" abre as MESMAS 5 telas
-                            do assistente (no rascunho); a página longa de requisitos e selo tem nome próprio. */}
+                            do assistente (no rascunho) e é o único caminho — os requisitos e o documento ficam no "Antes de
+                            publicar" da Revisão (Passo 10); a antiga página longa (/qualificar) foi absorvida. */}
                         {p.status === "draft" && (
                           <ButtonLink href={`/dashboard/imoveis/novo?draft=${p.id}&qualificacao=1`} variant="outline" size="sm" data-testid="rascunho-qualificacao">
                             Qualificação
                           </ButtonLink>
                         )}
-                        {p.status === "draft" && (
-                          <ButtonLink href={`/qualificar?imovel=${p.id}`} variant="outline" size="sm" data-testid="rascunho-requisitos-selo">
-                            Requisitos e selo
-                          </ButtonLink>
-                        )}
                         {/* Excluir rascunho (item 1 do reteste — limpa órfãos). */}
                         {p.status === "draft" && (
-                          <ConfirmarNaPagina
-                            aviso="Excluir este rascunho? Esta ação não pode ser desfeita."
-                            confirmar="Excluir"
-                            onConfirmar={() => excluirRascunho(p.id)}
+                          <button
+                            type="button"
+                            // E515: o rótulo (e a confirmação) nomeia o rascunho (título e bairro), não "este rascunho".
+                            aria-label={rotuloExcluirRascunho(p.title, p.neighborhood)}
+                            aria-expanded={confirmandoExcluir === p.id}
+                            onClick={() => abrirExcluir(p.id)}
                             disabled={excluindo === p.id}
-                            ariaLabel="Excluir rascunho"
-                            botaoClassName="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
-                            testid="excluir-rascunho"
+                            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            data-testid="excluir-rascunho"
+                            data-excluir-id={p.id}
                           >
                             <Trash2 className="h-4 w-4" />
-                          </ConfirmarNaPagina>
+                          </button>
                         )}
                       </div>
+                    )}
+                    {/* E953: a confirmação abre ABAIXO da fileira de ações, na largura do cartão (nunca espremida). */}
+                    {!demoItem && p.status === "draft" && confirmandoExcluir === p.id && (
+                      <ConfirmarExcluirRascunho
+                        id={p.id}
+                        aviso={avisoExcluirRascunho(p.title, p.neighborhood)}
+                        ocupado={excluindo === p.id}
+                        erro={erroNoCartao[p.id] ?? null}
+                        onConfirmar={() => void excluirRascunho(p.id)}
+                        onCancelar={() => cancelarExcluir(p.id)}
+                      />
                     )}
                   </div>
                 </div>
               </div>
             );
           })}
+          {/* E511: "Mostrar mais" soma outra página (12 cartões) — nunca 27+ cartões de uma vez. */}
+          {pagina.restantes > 0 && (
+            <Button type="button" variant="secondary" onClick={() => setPaginas((n) => n + 1)} className="justify-self-center" data-testid="imoveis-mostrar-mais">
+              {textoMostrarMais(pagina.restantes)}
+            </Button>
+          )}
         </div>
       )}
     </>

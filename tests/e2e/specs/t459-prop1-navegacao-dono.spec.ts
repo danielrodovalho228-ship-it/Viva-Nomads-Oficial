@@ -6,7 +6,7 @@ import { NO_LABORATORIO, apagarContas, criarConta, criarImovelPronto, entrar, no
   T459 — PROP-1 (substitui o NAV-A2): navegação do dono, como no mockup painel-proprietario-desktop. Só no laboratório.
    1. Computador (1280): sem barra lateral; abas Início · Anúncios · Interessados · Contratos · Mensagens; sino;
       "Conta ▾" com Minha conta · Modo morador · Ajuda · Sair (E176); nenhum item de morador à vista.
-   2. Subrotas: /dashboard/orcamentos acende "Interessados" e a subaba "Propostas"; /dashboard/garantias acende
+   2. Subrotas: /dashboard/orcamentos acende "Interessados" e a subaba "Orçamentos" (E491); /dashboard/garantias acende
       "Contratos" e "Caução".
    3. Celular (390): o topo do dono não aparece; a barra de abas do NAV-A continua.
 */
@@ -56,7 +56,7 @@ test.describe("T459 — PROP-1: navegação do dono", () => {
     await expect(page.getByTestId("aba-dono-interessados")).toHaveAttribute("aria-current", "page", { timeout: 30_000 });
     const subInteressados = page.getByTestId("subabas-dono");
     // E211 (#1460) pôs "Visitas" nas subabas de Interessados (src/config/nav-dono.test.ts já pede as cinco).
-    await expect(subInteressados.locator("a")).toHaveText(["Interessados", "Propostas", "Fechamento", "Pedidos na cidade", "Visitas"]);
+    await expect(subInteressados.locator("a")).toHaveText(["Interessados", "Orçamentos", "Fechamento", "Pedidos na cidade", "Visitas"]);
     await expect(page.getByTestId("subaba-dono-propostas")).toHaveAttribute("aria-current", "page");
     await page.screenshot({ path: `${SAIDA}/t459-interessados-1280.png` });
 

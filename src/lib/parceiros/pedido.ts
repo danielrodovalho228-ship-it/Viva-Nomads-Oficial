@@ -5,6 +5,7 @@
 */
 import { dividirValor, TAXA_SERVICO_PARCEIRO } from "./regras.ts";
 import { lerReais } from "../reais.ts";
+import { PCT_TAXA_SERVICO_PARCEIROS, TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE, textoDivisaoNaOrigem } from "../../config/taxa-servico-parceiros.ts";
 
 // ── Estados ───────────────────────────────────────────────────────────────────────────────────────────────────
 export const STATUS_PEDIDO = [
@@ -23,8 +24,9 @@ export type PapelNoPedido = "cliente" | "parceiro";
 
 /** Ações do pedido: quem pode, de qual estado e para qual estado. Qualquer outra combinação é recusada. */
 export const TRANSICOES = {
-  orcar: { quem: "parceiro", de: ["solicitado", "orcado"], para: "orcado" }, // reenviar ajusta o valor
-  recusar_pedido: { quem: "parceiro", de: ["solicitado", "orcado"], para: "recusado" },
+  // E462: também do "Orçamento aceito" (antes do horário confirmado): atualizar volta ao cliente; recusar encerra.
+  orcar: { quem: "parceiro", de: ["solicitado", "orcado", "aceito"], para: "orcado" }, // reenviar ajusta o valor
+  recusar_pedido: { quem: "parceiro", de: ["solicitado", "orcado", "aceito"], para: "recusado" },
   aceitar_orcamento: { quem: "cliente", de: ["orcado"], para: "aceito" },
   recusar_orcamento: { quem: "cliente", de: ["orcado"], para: "cancelado" },
   cancelar: { quem: "cliente", de: ["solicitado"], para: "cancelado" },
@@ -39,6 +41,14 @@ export type AcaoPedido = keyof typeof TRANSICOES;
 export function podeFazer(acao: AcaoPedido, status: string, papel: PapelNoPedido): boolean {
   const t = TRANSICOES[acao];
   return t.quem === papel && (t.de as readonly string[]).includes(status);
+}
+
+/**
+ * E462: as saídas do parceiro (atualizar o orçamento, recusar) no "Orçamento aceito" só valem enquanto não há
+ * pagamento registrado; recebido e orçado não têm pagamento, então sempre valem.
+ */
+export function saidaDoAceitoLiberada(status: string, pagamentoStatus: string): boolean {
+  return status !== "aceito" || pagamentoStatus === "indisponivel";
 }
 
 /** "Em aberto" para o teto: ainda esperando orçamento ou decisão. */
@@ -148,14 +158,15 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 /** O que o parceiro vê ao orçar: "Taxa de serviço da Viva: 10% = R$ X. Você recebe R$ Y." */
 export function textoDivisaoParceiro(valorCombinado: number): string {
   const { taxa, parceiro } = dividirValor(valorCombinado);
-  return `Taxa de serviço da Viva: 10% = ${brl(taxa)}. Você recebe ${brl(parceiro)}.`;
+  return `Taxa de serviço da Viva: ${PCT_TAXA_SERVICO_PARCEIROS} = ${brl(taxa)}. Você recebe ${brl(parceiro)}.`;
 }
 
 // ── Pagamento (só registro enquanto a chave estiver desligada) ────────────────────────────────────────────────
 export type PagamentoStatus = "indisponivel" | "simulado" | "pago";
-export const TEXTO_PAGAMENTO_INATIVO = "O pagamento pela plataforma ainda não está ativo.";
-export const TEXTO_DIVISAO_NA_ORIGEM =
-  "Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para o parceiro e 10% para a Viva. A Viva não guarda o seu dinheiro.";
+/** E1158 (1): o pagamento ainda não ativo tem UMA redação, a da config (ORDEM-DUET-673); aqui é só o nome antigo. */
+export const TEXTO_PAGAMENTO_INATIVO = TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE;
+/** E1151: a redacção canónica da fonte única, dita sobre o parceiro (a tela do pedido do dono). */
+export const TEXTO_DIVISAO_NA_ORIGEM = textoDivisaoNaOrigem("o parceiro");
 export const ROTULO_REGISTRO_SEM_DINHEIRO = "registro, sem dinheiro";
 
 /** Provedor de pagamento do parceiro. Só existe a implementação SIMULADA (sem gateway, sem dinheiro). */
@@ -200,25 +211,13 @@ export function visaoDoParceiro(status: string, imovel: ImovelDoPedido | null, c
   };
 }
 
-// ── L2-B item 16: contato depois do aceite ────────────────────────────────────────────────────────────────────
+// ── E790 (regra E445): contato NUNCA é trocado ─────────────────────────────────────────────────────────────────
 /*
-  Aceito o orçamento, o cliente vê o telefone e o e-mail do parceiro, e o parceiro vê os do cliente. Antes do aceite,
-  nada de contato: a conversa segue pela plataforma. A Viva não intermedeia o pagamento (PAGAMENTO_PARCEIROS_ATIVO
-  desligado) — o texto do pagamento inativo continua na tela.
+  Antes (L2-B item 16), aceito o orçamento o servidor lia e mandava à tela o telefone e o e-mail da outra parte. Pela
+  regra aprovada (E445), contato não é trocado em nenhuma fase: a conversa segue pelas mensagens da Viva; emergência é
+  pelo telefone da Viva. O servidor não lê mais o contato da outra parte no pedido (nem depois do aceite).
 */
-export interface ContatoDoPedido {
-  telefone: string | null;
-  email: string | null;
-}
-export const TEXTO_CONTATO_ANTES_DO_ACEITE = "Antes do aceite do orçamento, a conversa segue pela plataforma.";
-
-/** O contato da outra parte, só nos status depois do aceite (os mesmos do endereço). Sem nenhum dado, null. */
-export function contatoNoPedido(status: string, contato: ContatoDoPedido): ContatoDoPedido | null {
-  if (!(STATUS_COM_DADOS_LIBERADOS as readonly string[]).includes(status)) return null;
-  const telefone = (contato.telefone ?? "").replace(/\D/g, "") || null;
-  const email = (contato.email ?? "").trim() || null;
-  return telefone || email ? { telefone, email } : null;
-}
+export const TEXTO_CONTATO_PEDIDO = "O contato não é trocado: a conversa segue pelas mensagens da Viva, antes e depois do aceite.";
 
 /** "34999998888" → "(34) 99999-8888"; outro formato volta como veio. */
 export function telefoneNaTela(t: string): string {
@@ -231,6 +230,8 @@ export function telefoneNaTela(t: string): string {
 // ── L2-B item 17: recusa do parceiro ──────────────────────────────────────────────────────────────────────────
 /** Todo "Recusar" pede confirmação com este texto; o motivo é opcional. */
 export const AVISO_RECUSAR_PEDIDO = "Recusar este pedido? O cliente será avisado.";
+/** E462: o que acontece ao atualizar um orçamento já aceito (a decisão volta ao cliente). */
+export const AVISO_ATUALIZAR_ACEITO = "O cliente já aceitou o orçamento. Ao atualizar, ele precisa aceitar o novo valor.";
 export const AVISO_RECUSAR_ORCAMENTO = "Recusar este orçamento? O parceiro será avisado.";
 /** "Pedir a outro parceiro": a busca de parceiros na mesma categoria. */
 export const linkOutroParceiro = (categoria: string) => `/parceiros/buscar?categoria=${encodeURIComponent(categoria)}`;
@@ -269,6 +270,7 @@ export const CHAVE_CONVERSA_PEDIDO = (pedidoId: string) => `pedido:${pedidoId}`;
 export const MENSAGENS_AUTOMATICAS = {
   boas_vindas: "Aqui vocês combinam tudo. Contato pessoal só pela plataforma: telefone, e-mail e outros apps não passam por aqui.",
   orcamento: (valor: number) => `Orçamento enviado: ${brl(valor)}.`,
+  orcamento_atualizado: (valor: number) => `Orçamento atualizado: ${brl(valor)}. O cliente precisa aceitar o novo valor.`,
   horario: (quando: string) => `Horário confirmado: ${quando}.`,
   lembrete: (quando: string) => `Lembrete: o serviço está marcado para ${quando}.`,
   entrega: "O parceiro marcou a entrega. Confira os arquivos e confirme a conclusão.",
@@ -303,7 +305,7 @@ export function proximoPasso(status: string, papel: PapelNoPedido): string | nul
   const parceiro: Partial<Record<StatusPedido, string>> = {
     solicitado: "Envie o orçamento ou recuse o pedido.",
     orcado: "Aguarde o cliente decidir.",
-    aceito: "Confirme um dos horários.",
+    aceito: "Confirme um dos horários. Se não puder atender assim, atualize o orçamento ou recuse.",
     agendado: "No dia, marque o início do serviço.",
     em_execucao: "Envie a entrega e marque como entregue.",
     entregue: "Aguarde o cliente confirmar a conclusão.",
@@ -327,7 +329,7 @@ export const FORMULAS_PEDIDOS_PARCEIRO = {
   fechados: "Pedidos com orçamento aceito: aceito, agendado, em execução, entregue ou concluído.",
   concluidos: "Pedidos concluídos pelo cliente.",
   conversao: "Fechados ÷ total, em %.",
-  taxaRegistrada: "Soma da taxa de serviço (10%) congelada no aceite dos pedidos fechados — registro, sem dinheiro enquanto o pagamento pela plataforma estiver desligado.",
+  taxaRegistrada: `Soma da taxa de serviço (${PCT_TAXA_SERVICO_PARCEIROS}) congelada no aceite dos pedidos fechados — registro, sem dinheiro enquanto o pagamento pela plataforma estiver desligado.`,
   vindosDeCartao: "Pedidos com a referência do cartão do parceiro (ref_tipo = partnercard).",
 } as const;
 

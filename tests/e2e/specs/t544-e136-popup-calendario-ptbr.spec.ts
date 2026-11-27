@@ -44,12 +44,8 @@ test.describe("T544 — E136: o pop-up do calendário em pt-BR com o navegador e
 
   for (const w of [1280, 390] as const) {
     test(`a ${w} px: o calendário que abre no campo de data é pt-BR`, async ({ browser }) => {
-      // No computador, o #1388 (E136b) trocou o seletor nativo pelo calendário do site, em pt-BR: verde a 1280.
-      // No TOQUE o campo continua sendo o <input type="date"> nativo (imoveis/novo/campos.tsx, CampoDataUnico, ramo
-      // `toque`): o calendário é o do aparelho, no idioma dele (en-US → "October 2026", "Sun Mon…"); nenhum calendário
-      // pt-BR abre na página (lab-crítico 40211777060, tentativa 2, antes do #1388: nenhum calendário em nenhuma
-      // largura). Quem trouxer o calendário do site para o toque tira este test.fail.
-      test.fail(w === 390, "E136: no toque, o calendário é o seletor nativo do aparelho, no idioma dele");
+      // No computador, o #1388 (E136b) trocou o seletor nativo pelo calendário do site, em pt-BR. No TOQUE, o resíduo do
+      // E136 (Pista A): tocar no campo abre o MESMO calendário do site — o test.fail de 390 px saiu.
       const { defaultBrowserType: _t, ...iphone } = devices["iPhone 13"];
       void _t;
       const ctx = w === 390 ? { ...iphone, locale: "en-US" } : { locale: "en-US" };

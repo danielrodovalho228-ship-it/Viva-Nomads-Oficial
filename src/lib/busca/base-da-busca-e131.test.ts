@@ -42,7 +42,7 @@ test("a regra do Prompt 30 continua a mesma; ?exemplos=1 mantém tudo", () => {
 
 test("a /buscar usa a MESMA base na lista e em todas as contagens (pílulas, facetas, 'Mostrar N', internet)", () => {
   const s = readFileSync(new URL("../../app/(public)/buscar/search-client.tsx", import.meta.url), "utf8");
-  assert.match(s, /const baseVisivel = useMemo\(\(\) => baseDaBusca\(base, \(p\) => isExemplo\(p\.id\), exemplosForcados\)/);
+  assert.match(s, /const baseVisivel = useMemo\(\(\) => baseDaVitrine\(base, \(p\) => isExemplo\(p\.id\), exemplosForcados\)/);
   assert.match(s, /const contarComPainel = useCallback\(\(f: FiltrosPainel\) => contarNaBase\(baseVisivel, \(p\) => passaNoPainel\(p, f\)\), \[baseVisivel\]\);/);
   assert.match(s, /let list = baseVisivel\.filter\(\(p\) => passaNoPainel\(p, filtrosPainel\)\);/);
   assert.match(s, /medicoesDaBusca\(baseVisivel\)/);

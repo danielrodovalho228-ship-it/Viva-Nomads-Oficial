@@ -19,7 +19,7 @@ export const TELAS_ASSISTENTE: readonly TelaAssistente[] = [
   { rotulo: "Tipo", titulo: "Qual é o tipo do seu imóvel?", subtitulo: "Escolha a opção que melhor descreve seu espaço. Você pode editar depois." },
   { rotulo: "Fotos", titulo: "Adicione as fotos do imóvel", subtitulo: "Mostre o melhor do seu espaço. Você pode adicionar mais fotos depois." },
   { rotulo: "Endereço", titulo: "Onde fica o imóvel?", subtitulo: "Vamos cadastrar o endereço para que moradores encontrem seu imóvel com facilidade." },
-  { rotulo: "Detalhes", titulo: "Detalhes do imóvel", subtitulo: "Informe os detalhes do seu imóvel para finalizar o cadastro." },
+  { rotulo: "Detalhes", titulo: "Detalhes do imóvel", subtitulo: "Conte como é o imóvel: quartos, banheiros, área, quantas pessoas podem morar e vagas de garagem." },
   { rotulo: "Comodidades", titulo: "O que o imóvel oferece?", subtitulo: "Selecione todas as comodidades disponíveis no seu imóvel. Isso ajuda moradores a encontrarem o que precisam." },
   { rotulo: "Regras", titulo: "Regras da casa", subtitulo: "Configure as regras para o seu morador." },
   { rotulo: "Descrição", titulo: "Título e descrição do anúncio", subtitulo: "Escreva o título e a descrição que aparecerão no seu anúncio." },
@@ -50,6 +50,15 @@ export const progressoQualificacao = (tela: number, telas = 5, total = TELAS_ASS
 };
 
 /**
+ * E506: a barra do /qualificar também reflete o progresso REAL do rascunho (a prontidão, fonte única do "X% completo"):
+ * nunca fica abaixo dele. Rascunho vazio = o comportamento de antes (passos e respostas). Limitada a 0–100.
+ */
+export const progressoQualificacaoComRascunho = (tela: number, telas = 5, total = TELAS_ASSISTENTE.length, fracaoRespondida = 0, pctRascunho = 0) => {
+  const doRascunho = Number.isFinite(pctRascunho) ? Math.min(100, Math.max(0, Math.round(pctRascunho))) : 0;
+  return Math.max(progressoQualificacao(tela, telas, total, fracaoRespondida), doRascunho);
+};
+
+/**
  * Passo 1 (Cadastro 01-b / E87, mockup cadastro-imovel-01): os NOVE tipos, todos em cartões-foto numa linha única
  * rolável, nesta ordem — um só array (saíram os três cartões grandes, a seção "Outros tipos" e os chips). `alt` descreve
  * o tipo da foto em descrição neutra (E271: "Foto de uma casa", sem "ilustrativa").
@@ -66,13 +75,17 @@ export const TIPOS_ASSISTENTE: readonly { valor: string; rotulo: string; alt: st
   { valor: "chacara", rotulo: "Chácara/Sítio", alt: "Foto de uma chácara" },
 ];
 
-/** Título da prévia: o do dono; sem título, "Apartamento no Santa Mônica" (tipo + bairro), como no desenho. */
-export function tituloPrevia(titulo: string, tipo: string, bairro: string): string {
+/** E630: o que o cartão mostra enquanto o dono não escreveu o título (pendente, como a Revisão aponta). */
+export const TITULO_PREVIA_PENDENTE = "Título ainda não definido";
+
+/**
+ * Título da prévia: o do dono, e SÓ o do dono. Antes, sem título, o cartão inventava "Apartamento no Santa Mônica" (tipo + bairro) e
+ * a prévia parecia ter título — mascarando a falta que a Revisão aponta (E613: a sugestão não entra sozinha nos campos). Agora o campo
+ * vazio aparece como pendente (E630).
+ */
+export function tituloDaPrevia(titulo: string): { texto: string; pendente: boolean } {
   const t = titulo.trim();
-  if (t) return t;
-  const rotulo = tipo ? propertyTypeLabel(tipo) : "Seu imóvel";
-  const b = bairro.trim();
-  return b ? `${rotulo} no ${b}` : rotulo;
+  return t ? { texto: t, pendente: false } : { texto: TITULO_PREVIA_PENDENTE, pendente: true };
 }
 
 /** "2 quartos · 65 m²" (o que estiver preenchido; studio com 0 quartos não diz "0 quartos"). */
@@ -103,6 +116,16 @@ export const TEXTOS_REVISAO = {
   editarDepois: "Você poderá editar a qualquer momento após publicar",
 } as const;
 
+/**
+ * E557: título da lista de conferência na Revisão. "Tudo certo para publicar" SÓ quando o "Publicar anúncio" está
+ * liberado (a mesma regra do botão). Antes bastavam os itens dos Passos 1 a 9: com o documento, as declarações ou o
+ * aceite faltando, a tela dizia "tudo certo" ao lado do botão travado. Travado, o título diz o que falta.
+ */
+export function tituloConferencia(podePublicar: boolean, motivoTravado: string | null): string {
+  if (podePublicar) return TEXTOS_REVISAO.listaTudoCerto;
+  return motivoTravado ?? TEXTOS_REVISAO.lista;
+}
+
 /** "Santa Mônica, Uberlândia - MG" — a mesma linha pública do anúncio (E101). */
 export function localPrevia(bairro: string, cidade: string, uf: string): string {
   return linhaLocalizacao(bairro, cidade, uf);
@@ -110,12 +133,14 @@ export function localPrevia(bairro: string, cidade: string, uf: string): string 
 
 /**
  * Conformidade do cadastro (mockup cadastro-imovel-09, 01/11): a prévia do Passo 9 fecha com o resumo da disponibilidade —
- * "Resumo: Disponível a partir de 12/11 · Mínimo 30 dias" (ou "Disponível agora"). Mesma regra de data da página do
+ * "Resumo: Disponível a partir de 12/11 · Mínimo 30 dias" (ou "Disponível agora"; sem data, "Data de início não
+ * informada" — E616). Mesma regra de data da página do
  * imóvel (statusDisponibilidade). `hoje` em AAAA-MM-DD.
  */
 export function resumoDisponibilidadePrevia(availableFrom: string, minDias: string | number, hoje: string): string {
   const de = availableFrom?.slice(0, 10);
-  const status = !de || !/^\d{4}-\d{2}-\d{2}$/.test(de) || de <= hoje ? "Disponível agora" : `Disponível a partir de ${de.slice(8, 10)}/${de.slice(5, 7)}`;
+  // E616: vazio não é "Disponível agora" — o dono não disse isso.
+  const status = !de || !/^\d{4}-\d{2}-\d{2}$/.test(de) ? "Data de início não informada" : de <= hoje ? "Disponível agora" : `Disponível a partir de ${de.slice(8, 10)}/${de.slice(5, 7)}`;
   const n = Math.round(Number(minDias));
   return Number.isFinite(n) && n > 0 ? `Resumo: ${status} · Mínimo ${n} dias` : `Resumo: ${status}`;
 }

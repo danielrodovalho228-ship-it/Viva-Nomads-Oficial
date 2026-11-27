@@ -5,6 +5,11 @@ import { temInternet, tipoInternetDoAnuncio } from "@/lib/anuncio/internet-imove
 import { rotuloItem } from "@/config/niveis";
 import { provaAntigaNoPrazo, type OrigemFoto } from "@/lib/niveis/prova-camera";
 import { statusPorImovel } from "@/lib/documento/vigente";
+import { matriculaConfereu } from "@/lib/fotos/foto-repetida";
+import { MATRICULA_OBRIGATORIA } from "@/lib/flags";
+import { CAUCAO_PRAZOS_ATIVA } from "@/lib/flags";
+import { declaracoesDoRascunhoOk } from "./requisitos-passo10";
+import { fatosDoRascunho } from "./fatos-do-rascunho";
 import { fatosDaLinha, prontidaoAnuncio, type FatosAnuncio, type LinhaAnuncio, type Prontidao, type StatusDocumento } from "./prontidao";
 
 /**
@@ -21,7 +26,15 @@ const COLUNAS =
   "id, status, title, address, city, bathrooms, area_m2, min_period_days, monthly_price, garantias_aceitas, ownership_type, sublease_authorized, description, ready_to_live_badge, video_url, video_arquivo";
 
 /** Fatos do banco por imóvel (o editor usa como base e sobrepõe o que está sendo editado). */
-export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: string[]): Promise<Map<string, FatosAnuncio>> {
+export interface OpcoesFatos {
+  /**
+   * E498: conta a qualificação dos RASCUNHOS (declarações do Passo 10 no draft_data) — as telas que mostram o progresso
+   * (Início, Meus imóveis) contam os mesmos itens que a barra do assistente. Não muda o portão do Publicar.
+   */
+  qualificacaoDoRascunho?: boolean;
+}
+
+export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: string[], opcoes: OpcoesFatos = {}): Promise<Map<string, FatosAnuncio>> {
   const mapa = new Map<string, FatosAnuncio>();
   const consulta = (colunas: string) => {
     let q = cliente.from("properties").select(colunas).eq("owner_id", ownerId);
@@ -70,6 +83,23 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     if (!x.refazer_ate || !provaAntigaNoPrazo({ fotoOrigem: x.foto_origem, refazerAte: x.refazer_ate, fotoPath: x.foto_path }, agora)) continue;
     provasPor.set(x.property_id, [...(provasPor.get(x.property_id) ?? []), { chave: x.chave, rotulo: rotuloItem(x.chave), ate: x.refazer_ate }]);
   }
+  // E640 (b): foto igual à de outro anúncio trava a publicação até a matrícula ser conferida (sem a 0309, erro → nada trava).
+  const repetidaLida = await cliente.from("properties").select("id, foto_repetida_em").in("id", idsLista).not("foto_repetida_em", "is", null);
+  const repetidaPor = new Set<string>(repetidaLida.error ? [] : ((repetidaLida.data ?? []) as { id: string }[]).map((r) => r.id));
+  const matriculaOkPor = new Set<string>();
+  if (repetidaPor.size) {
+    const m = await cliente.from("property_ownership_checks").select("property_id, resultado").eq("user_id", ownerId).in("property_id", [...repetidaPor]);
+    for (const r of (m.error ? [] : (m.data ?? [])) as { property_id: string | null; resultado: string | null }[]) if (r.property_id && matriculaConfereu(r.resultado)) matriculaOkPor.add(r.property_id);
+  }
+  // E633: a matrícula atualizada enviada (qualquer conferência dela, inclusive em revisão manual). Sem a tabela/erro → nada aparece.
+  const matriculasLidas = await cliente.from("property_ownership_checks").select("property_id").eq("user_id", ownerId).in("property_id", idsLista);
+  const matriculaPor = new Set<string>(matriculasLidas.error ? [] : ((matriculasLidas.data ?? []) as { property_id: string | null }[]).map((r) => r.property_id).filter((x): x is string => !!x));
+  // E637: devolução da caução passada de 30 dias bloqueia o anúncio NOVO do dono até regularizar (só com a chave ligada).
+  let caucaoPendente = false;
+  if (CAUCAO_PRAZOS_ATIVA) {
+    const pend = await cliente.from("caucao_prazos").select("contrato_id").not("pendencia_em", "is", null).is("devolvida_em", null).limit(1);
+    caucaoPendente = !pend.error && (pend.data ?? []).length > 0;
+  }
   const tipoEntradaPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; tipo_entrada: string | null }[]).map((e) => [e.id, e.tipo_entrada]));
   const internetPor = entrada.error ? null : new Map(((entrada.data ?? []) as { id: string; internet_mbps: number | null }[]).map((e) => [e.id, Number(e.internet_mbps) || 0]));
   const declPor = new Map<string, { chave: string; confirmado: boolean; versao_lista?: number | null }[]>();
@@ -95,14 +125,54 @@ export async function fatosDosImoveis(cliente: Cliente, ownerId: string, ids?: s
     // E102-B: sem internet no imóvel, não passa a publicado; o motivo é a falta de internet, não os Mbps em branco.
     if (semInternetPor.has(p.id) && p.status !== "active") f.semInternet = true;
     if (provasPor.has(p.id)) f.provasParaRefazer = provasPor.get(p.id);
+    // E640 (b): a trava vale para quem ainda vai publicar; a matrícula conferida a resolve.
+    if (p.status !== "active" && repetidaPor.has(p.id) && !matriculaOkPor.has(p.id)) f.fotoRepetidaAberta = true;
+    // E633: a matrícula atualizada é prova de titularidade de quem AINDA VAI publicar; o publicado segue sem item.
+    if (!matriculasLidas.error) {
+      f.matriculaObrigatoria = MATRICULA_OBRIGATORIA;
+      if (p.status !== "active") f.matriculaEnviada = matriculaPor.has(p.id);
+    }
+    // E637: quem ainda vai publicar não passa com devolução de caução em atraso; o já publicado segue no ar.
+    if (caucaoPendente && p.status !== "active") f.caucaoDevolucaoPendente = true;
     mapa.set(p.id, f);
+  }
+  if (opcoes.qualificacaoDoRascunho) {
+    // C4: o draft_data vem pela RPC (coluna sensível). E556: ele é a FONTE do rascunho (a mesma do editor). Uma leitura
+    // que falha tenta de novo uma vez; se ainda falhar, o rascunho sai do mapa — o card não mostra um percentual de
+    // outra fonte (as colunas), que mudava de um carregamento para outro.
+    const lerRascunho = (id: string) =>
+      cliente.rpc("property_private_details", { prop_id: id }).then(
+        (r: { data: unknown; error: unknown }) => r,
+        (erro: unknown) => ({ data: null, error: erro }),
+      ) as Promise<{ data: unknown; error: unknown }>;
+    const semRascunho = new Set<string>();
+    await Promise.all(
+      lista
+        .filter((p) => p.status === "draft")
+        .map(async (p) => {
+          let { data: priv, error: e } = await lerRascunho(p.id);
+          if (e) ({ data: priv, error: e } = await lerRascunho(p.id));
+          const linha = Array.isArray(priv) ? priv[0] : priv;
+          const draftData = (linha as { draft_data?: unknown } | null)?.draft_data;
+          const f = mapa.get(p.id);
+          if (e) {
+            semRascunho.add(p.id);
+            return;
+          }
+          if (!f || !draftData) return;
+          f.qualificacaoOk = declaracoesDoRascunhoOk(draftData, f);
+          // E556: todos os itens que o editor lê do estado vêm do draft_data, pela mesma função do editor.
+          mapa.set(p.id, fatosDoRascunho(draftData, f));
+        }),
+    );
+    for (const id of semRascunho) mapa.delete(id);
   }
   return mapa;
 }
 
-export async function prontidaoDosImoveis(cliente: Cliente, ownerId: string, ids?: string[]): Promise<Map<string, Prontidao>> {
+export async function prontidaoDosImoveis(cliente: Cliente, ownerId: string, ids?: string[], opcoes: OpcoesFatos = {}): Promise<Map<string, Prontidao>> {
   const mapa = new Map<string, Prontidao>();
-  for (const [id, f] of await fatosDosImoveis(cliente, ownerId, ids)) mapa.set(id, prontidaoAnuncio(f));
+  for (const [id, f] of await fatosDosImoveis(cliente, ownerId, ids, opcoes)) mapa.set(id, prontidaoAnuncio(f));
   return mapa;
 }
 

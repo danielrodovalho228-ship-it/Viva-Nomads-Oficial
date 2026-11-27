@@ -16,7 +16,7 @@ test("1. 'Ver serviços' (Meus pedidos vazio) leva ao catálogo da mesma tela, n
   assert.doesNotMatch(pagina, /href="\/servicos"/);
   assert.match(pagina, /<ButtonLink href="#catalogo"[^>]*>Ver serviços<\/ButtonLink>/);
   // A âncora existe na própria tela e envolve o catálogo (ServicosPainel).
-  assert.match(pagina, /<div id="catalogo" className="scroll-mt-24">\s*<ServicosPainel cidade=\{cidade\} \/>\s*<\/div>/);
+  assert.match(pagina, /<div id="catalogo" className="scroll-mt-24">\s*<ServicosPainel cidade=\{cidade\}(?: avaliacao=\{avaliacao\})? \/>\s*<\/div>/);
   assert.ok(pagina.indexOf('id="catalogo"') < pagina.indexOf('href="#catalogo"'), "o catálogo fica acima do vazio de Meus pedidos");
   assert.equal(existe("src/app/(public)/servicos/page.tsx") || existe("src/app/servicos/page.tsx"), false, "não há rota /servicos");
 });

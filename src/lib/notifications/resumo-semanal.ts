@@ -13,6 +13,7 @@
     • O motivo de cada cartão só usa fatos reais do casamento (nada inventado).
   Roda: node --test src/lib/notifications/resumo-semanal.test.ts
 */
+import { primeiroNome } from "../display-name.ts";
 import { comMarca, ASSUNTO_MAX } from "./assuntos.ts";
 import { diaBrasilia } from "./proativos.ts";
 
@@ -220,7 +221,7 @@ export function cidadeComum(cidades: readonly (string | null | undefined)[]): st
  * diferentes. Devolve SEM a marca (o notify põe "· Viva Nomads").
  */
 export function assuntoResumo(o: { nome?: string | null; novos: number; origem: OrigemDoResumo; cidade?: string | null; baixas: number }): string {
-  const nome = (o.nome ?? "").replace(/\s+/g, " ").trim().split(" ")[0] ?? "";
+  const nome = primeiroNome(o.nome);
   let fato: string;
   let cidade = (o.cidade ?? "").trim();
   if (o.novos > 0) {

@@ -8,6 +8,8 @@ export async function comTentativas<T>(
   max = 3,
   pausaMs = 2_000,
   esperar: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
+  /** Falha que não adianta repetir (ex.: o limite de login recusou): para na hora, sem pausa e sem nova tentativa. */
+  desistir?: (erro: unknown) => boolean,
 ): Promise<T> {
   let ultimo: unknown;
   for (let i = 1; i <= max; i++) {
@@ -15,6 +17,7 @@ export async function comTentativas<T>(
       return await fn(i);
     } catch (e) {
       ultimo = e;
+      if (desistir?.(e)) break;
       if (i < max) await esperar(pausaMs * i);
     }
   }

@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { conversationId } from "../../../src/lib/messages/conversation-id";
-import { NO_LABORATORIO, CHAVE_ANON, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, CHAVE_ANON, criteriosDaAvaliacao, URL_SUPABASE, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, gravarMensagem, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * Rodada da vigia 24/10 (Pista C): a lista de confiança mudou para /dashboard/conta/seguranca (E66, #1263); o retorno
@@ -86,8 +86,8 @@ test.describe("T351 — telas do selo LinkedIn conectado (63-A)", () => {
       await sb.auth.signInWithPassword({ email, password: senha });
       return sb;
     };
-    await (await cliente(ana.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada" });
-    await (await cliente(dono.email)).from("avaliacoes").insert({ contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
+    await (await cliente(ana.email)).from("avaliacoes").insert({ ...criteriosDaAvaliacao("inquilino"), contrato_id: ids.contrato, alvo_id: ids.dono, papel_autor: "inquilino", nota_geral: 5, comentario_publico: "Imóvel muito bem cuidado.", status: "enviada" });
+    await (await cliente(dono.email)).from("avaliacoes").insert({ ...criteriosDaAvaliacao("proprietario"), contrato_id: ids.contrato, alvo_id: ids.ana, papel_autor: "proprietario", nota_geral: 5, status: "enviada" });
   });
 
   test.afterAll(async () => {
@@ -149,11 +149,8 @@ test.describe("T351 — telas do selo LinkedIn conectado (63-A)", () => {
       await p.getByTestId("confianca-linkedin-acao").click();
       await p.waitForURL(/linkedin=/, { timeout: 30_000 });
       const volta = new URL(p.url());
-      if (volta.pathname === "/dashboard/conta/privacidade") {
-        // L-56 (Pista A): o retorno do LinkedIn ainda cai em Privacidade, onde a lista (e o aviso do retorno) não está mais.
-        test.info().annotations.push({ type: "L-56", description: `retorno do LinkedIn em ${volta.pathname}${volta.search}` });
-        await p.goto(`${SEGURANCA}${volta.search}`, { waitUntil: "domcontentloaded" });
-      }
+      // E708 (L-106): a volta do LinkedIn cai em Segurança, onde a lista e o aviso do retorno moram.
+      expect(volta.pathname).toBe(SEGURANCA);
       return volta.searchParams.get("linkedin");
     };
     await identidade(`sub-t351-nome-${sufixo}`, "Bruno", "Lima");

@@ -7,10 +7,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { enquadramento, linhasDoResultado, mostrarAvisoReforma, numerosNaViva, TEXTO_AVISO, TEXTO_NAO_E_ORIENTACAO } from "./enquadramento.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 /** Só o que vai para a tela (sem comentários do código). */
-const semComentarios = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 test("combinações: 3/R$ 300 mil não passa; 4/R$ 250 mil passa; 4/R$ 200 mil não passa; 4/R$ 290 mil passa pelo gatilho", () => {
   const r = (imoveis: number, receita: number) => enquadramento({ imoveisNaViva: imoveis, receitaNaViva: receita });
@@ -75,8 +75,9 @@ test("chave desligada não mostra nada; ligada só por 'on' (ou cookie no labora
   assert.match(ler("lib/flags.ts"), /export const ENQUADRAMENTO_REFORMA = process\.env\.NEXT_PUBLIC_ENQUADRAMENTO_REFORMA === "on";/);
   const pagina = ler("app/(dashboard)/dashboard/ganhos/page.tsx");
   assert.match(pagina, /if \(!isSupabaseConfigured\(\) \|\| !\(await enquadramentoReformaAtivo\(\)\)\) return null;/);
-  assert.match(pagina, /\{reforma\?\.aviso && \(/);
-  assert.match(pagina, /\{reforma && <EnquadramentoReforma/);
+  // Estados vazios: o resultado tem a forma "indisponivel" quando a leitura falha — aviso e cartão só com os números.
+  assert.match(pagina, /\{reforma && "aviso" in reforma && reforma\.aviso && \(/);
+  assert.match(pagina, /\{reforma && "numeros" in reforma && <EnquadramentoReforma/);
   assert.match(ler("lib/reforma/chave.ts"), /if \(!integracoesSimuladas\(\)\) return false;/);
 });
 

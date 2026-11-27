@@ -6,13 +6,13 @@ import { toggleFavorite } from "@/lib/data/actions";
 import { cn } from "@/lib/utils";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { useAuthStore } from "@/lib/store";
-import { armazenamentoDisponivel, armazenamentoDoNavegador } from "@/lib/convidado/guardados";
 import { urlEntrada } from "@/lib/auth/entrada";
 
 /**
  * Botão de favoritar (coração). Persiste no store e sincroniza best-effort (mesma regra de sempre: quem pode favoritar não muda).
- * Prompt 49: o convidado favorita sem conta (fica no aparelho e vai para a conta quando ele entrar); sem armazenamento no
- * navegador, o coração pede a conta e volta para a mesma página.
+ * E448: deslogado, o coração leva à porta de login (motivo "favorito") e volta para a mesma página — como o "Salvar
+ * busca". Nada é guardado sem conta (antes, Prompt 49, ficava no aparelho). Os favoritos que já estavam no aparelho
+ * seguem indo para a conta quando a pessoa entra (mescla do convidado).
  */
 export function FavoriteButton({
   propertyId,
@@ -28,7 +28,7 @@ export function FavoriteButton({
   function handleClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!logado && !armazenamentoDisponivel(armazenamentoDoNavegador())) {
+    if (!logado) {
       window.location.assign(urlEntrada("favorito", window.location.pathname + window.location.search));
       return;
     }

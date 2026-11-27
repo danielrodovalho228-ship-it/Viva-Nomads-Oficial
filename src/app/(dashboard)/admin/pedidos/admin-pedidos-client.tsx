@@ -18,6 +18,7 @@ import type { ColunasPedidoAdmin } from "@/lib/data/pedidos-admin-colunas";
 import { abasPedidos, filtrarPedidosAdmin } from "@/lib/admin/pedidos-filtro";
 import { rotuloDoAdmin } from "@/config/menu-admin";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { ABA_ADMIN, SELO_OK_ADMIN } from "@/lib/admin/abas";
 
 type Pedido = {
   id: string;
@@ -143,7 +144,7 @@ export function AdminPedidosClient({
               role="tab"
               aria-selected={aba === a.valor}
               onClick={() => setAba(a.valor)}
-              className={cn("min-h-11 rounded-full border px-3 text-sm", aba === a.valor ? "border-forest bg-sage-100 font-semibold text-forest" : "border-line text-ink")}
+              className={cn("min-h-11 rounded-full border px-3 text-sm", aba === a.valor ? ABA_ADMIN.ativa : ABA_ADMIN.inativa)}
               data-testid={`pedidos-aba-${a.valor}`}
             >
               {a.rotulo} ({a.total})
@@ -154,7 +155,7 @@ export function AdminPedidosClient({
       <Panel className="scroll-mt-24 p-0 pt-6" id="lista">
         <div className="overflow-x-auto px-6 pb-6">
           {lista.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted">{todos.length === 0 ? "Nenhum pedido no sistema." : "Nenhum pedido com esse filtro."}</p>
+            <p className="py-8 text-center text-sm text-muted">{todos.length === 0 ? "Nenhum pedido nesta lista." : "Nenhum pedido com esse filtro."}</p>
           ) : (
             <table className="w-full min-w-[960px] text-sm">
               <thead className="text-left text-muted">
@@ -187,7 +188,7 @@ export function AdminPedidosClient({
                     <td className="py-3">
                       <ul className="flex flex-wrap gap-1">
                         {(p.colunas?.selos ?? []).map((s) => (
-                          <li key={s.codigo} className={cn("rounded-full px-2 py-1 text-[11px]", s.ok ? "bg-sage-100 text-forest" : "border border-line bg-white text-amber-900")}>
+                          <li key={s.codigo} className={cn("rounded-full px-2 py-1 text-[11px]", s.ok ? SELO_OK_ADMIN : "border border-line bg-white text-amber-900")}>
                             {s.texto}
                           </li>
                         ))}

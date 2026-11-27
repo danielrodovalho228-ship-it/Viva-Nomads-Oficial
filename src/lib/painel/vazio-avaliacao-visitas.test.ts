@@ -10,7 +10,8 @@ import { readFileSync } from "node:fs";
 const PAGINA = readFileSync(new URL("../../app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx", import.meta.url), "utf8");
 
 test("a regra que o texto descreve: entram as designadas já respondidas, as agendadas e as realizadas; o laudo tira da lista", () => {
-  assert.match(PAGINA, /const paraResponder = lista\.filter\(\(p\) => p\.status === "designado" && resposta\.get\(p\.id\) === null\);/);
+  // ORDEM-DUET-492 (E1102): "Para responder" é a etapa "novo" (a função da tela do pedido), não só a designação aberta.
+  assert.match(PAGINA, /const paraResponder = lista\.filter\(\(p\) => etapaNaLista\(p\) === "novo"\);/);
   assert.match(PAGINA, /\.filter\(\(p\) => !paraResponder\.includes\(p\) && \["designado", "agendado", "realizada"\]\.includes\(p\.status\)\)/);
   assert.match(PAGINA, /const encerradas = lista\.filter\(\(p\) => \["laudo_emitido", "ausencia", "cancelada"\]\.includes\(p\.status\)\);/);
 });

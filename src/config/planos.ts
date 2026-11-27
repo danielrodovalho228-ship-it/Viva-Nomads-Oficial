@@ -19,7 +19,7 @@ export interface Plano {
   publico: string; // público-alvo (tagline)
   precoMensal: number | null; // R$/mês (null = sob consulta)
   assinaturaAnual: number | null; // R$/ano (= mensal × 12; null = sob consulta)
-  comissao: number; // 0..1 — comissão de fechamento (Gestor = 0)
+  comissao: number; // 0..1 — comissão de fechamento
   limiteAnuncios: number; // anúncios ativos permitidos
   destaque: boolean; // plano em destaque na página de preços
   beneficios: string[];
@@ -87,23 +87,19 @@ const PLANOS_BASE: Plano[] = [
     publico: "Administradoras e coordenadores",
     precoMensal: null, // sob consulta
     assinaturaAnual: null,
-    comissao: 0, // COMISSÃO ZERO no topo (C1) — a receita é só a assinatura
+    // HISTÓRICO (prompt 078, 16/11/2026): o plano deixou de ser oferta pública. A taxa fica só para LER contratos
+    // antigos com este plano gravado no aceite (taxaDoContrato); nenhuma tela anuncia o plano nem a taxa.
+    comissao: 0.04,
     limiteAnuncios: 999,
     destaque: false,
-    beneficios: [
-      "Imóveis ilimitados",
-      "Tudo do Profissional",
-      "Feito para administradoras — recursos de carteira em construção com os primeiros gestores parceiros",
-      "Atendimento dedicado",
-    ],
-    custoLabel: "Taxa de serviço zero — você paga só a assinatura",
-    cta: "Falar com vendas",
+    beneficios: [],
+    custoLabel: "Condições combinadas com a Viva",
+    cta: "Falar com a Viva",
   },
 ];
 
 /** Texto da comissão, sempre em reais: "12% do valor total do contrato (≈ R$ 288 por mês de aluguel)". */
 export function textoComissao(comissao: number, aluguel?: number): string {
-  if (comissao === 0) return "Taxa de serviço zero: você paga só a assinatura";
   const pct = `${Math.round(comissao * 1000) / 10}`.replace(".", ",");
   const valor = aluguel && aluguel > 0 ? ` (≈ ${reaisInteiros(aluguel * comissao)} por mês de aluguel)` : "";
   return `${pct}% do valor total do contrato${valor}`;
@@ -201,8 +197,8 @@ export function assinaturaMediaMix(mix: Record<PlanoId, number> = MIX_ROI): numb
 /**
  * Taxa de comissão que vale para um contrato: a CONGELADA no aceite; se ela não
  * foi gravada (null) ou não é uma taxa real de plano, a do PLANO registrado no
- * aceite; sem plano válido, a do Gratuito. Antes `Number(null)` virava 0 — a
- * taxa do Gestor — e a comissão saía R$ 0.
+ * aceite; sem plano válido, a do Gratuito. Antes `Number(null)` virava 0 e a
+ * comissão saía R$ 0.
  */
 export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): number {
   // Vale a taxa do ACEITE, mesmo que a tabela tenha mudado depois.
@@ -218,37 +214,14 @@ export function taxaDoContrato(congelada: unknown, planoNoAceite: unknown): numb
 }
 
 /**
- * Preço do Gestor (decisão do Daniel, out/2026): R$ 500/mês com 20 imóveis
- * incluídos + R$ 25 por imóvel adicional, comissão zero. Nos cartões aparece
- * como "a partir de R$ 500/mês". Entra nos comparativos só a partir de
- * `minimoImoveis`: com 19 imóveis o Gestor (R$ 6.000) já sairia mais barato
- * que o Profissional (R$ 6.108 no cenário Residência médica) e o canibalizaria.
- * `precoMensal` do plano continua null (ativação com o time), então os painéis
- * que tratam "sob consulta" não mudam.
+ * Prompt 078 (decisão do Daniel, 16/11/2026): lançar SEM o Plano Gestor público de 4%. A escada pública termina em
+ * "16–19 = 6%" (lib/cobranca/regra.ts; ORDEM-DUET-534: a partir de 20 nenhum percentual é publicado). Carteira grande ou administradora não tem taxa publicada: fala com a Viva,
+ * e a condição é decidida caso a caso (taxa fixada pelo admin, com motivo e validade). Saíram daqui GESTOR_PRECO,
+ * PORTA_GESTOR_TEXTO, GESTOR_RESUMO, GESTOR_TEXTO e GESTOR_DIFERENCIAIS.
  */
-export const GESTOR_PRECO = {
-  ligado: true,
-  mensalBase: 500,
-  imoveisInclusos: 20,
-  porImovelAdicional: 25,
-  minimoImoveis: 20,
-} as const;
-
-/**
- * E321 (01/11): a PORTA do Plano Gestor, igual em todas as telas — N+ imóveis com documento aprovado OU conta de
- * administradora (a mesma regra de gestorElegivel). Não confundir com a faixa "31+ · taxa negociável" da tabela de taxa,
- * que é regra de TAXA e vale para qualquer anunciante pela quantidade de imóveis ativos.
- */
-export const PORTA_GESTOR_TEXTO = `${GESTOR_PRECO.minimoImoveis} imóveis ou mais com documento aprovado, ou conta de administradora`;
-
-/** Assinatura anual do Gestor para `imoveis` imóveis (base + adicionais acima dos inclusos). */
-export function assinaturaAnualGestor(imoveis: number): number {
-  const n = Math.max(1, Math.round(Number(imoveis) || 1));
-  return 12 * (GESTOR_PRECO.mensalBase + GESTOR_PRECO.porImovelAdicional * Math.max(0, n - GESTOR_PRECO.imoveisInclusos));
-}
-
-/** "a partir de R$ 500/mês · taxa de serviço zero · para carteiras de 20+ imóveis" */
-export const GESTOR_RESUMO = `a partir de ${reaisInteiros(GESTOR_PRECO.mensalBase)}/mês · taxa de serviço zero · para carteiras de ${GESTOR_PRECO.minimoImoveis}+ imóveis`;
+export const CARTEIRAS_MINIMO_IMOVEIS = 20;
+/** A linha única das carteiras, igual em todas as telas — sem taxa, sem "plano". */
+export const TEXTO_CARTEIRAS = `Carteira a partir de ${CARTEIRAS_MINIMO_IMOVEIS} imóveis ou administradora de imóveis: fale com a Viva.`;
 
 /**
  * Regras do CONTRATO — fonte única (prazo, teto legal, caução, blocos).

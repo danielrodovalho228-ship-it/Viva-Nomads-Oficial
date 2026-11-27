@@ -126,13 +126,14 @@ test.describe("T346 — Prompt 53: importar calendário do Airbnb/Booking", () =
     const painel = await abrirCalendario(page);
     await painel.getByTestId("importacao-atualizar").click();
     await expect(painel.getByTestId("importacao-msg")).toContainText("Atualizado");
-    await expect.poll(async () => (await emailsDoDono(/cruzam um compromisso/)).length, { timeout: 20_000 }).toBe(1);
+    // E744 (asserção alterada, tabela da Fable #3832): pelo E267 o assunto do aviso é "Datas importadas cruzam a agenda de <imóvel>".
+    await expect.poll(async () => (await emailsDoDono(/cruzam a agenda de/)).length, { timeout: 20_000 }).toBe(1);
     const { data: l } = await adm().from("leads").select("status").eq("id", lead).single();
     expect(l?.status, "a candidatura continua como estava").toBe("new");
     // Atualizar de novo não repete o aviso do mesmo conflito.
     await painel.getByTestId("importacao-atualizar").click();
     await expect(painel.getByTestId("importacao-msg")).toContainText("Atualizado");
-    expect((await emailsDoDono(/cruzam um compromisso/)).length).toBe(1);
+    expect((await emailsDoDono(/cruzam a agenda de/)).length).toBe(1);
     await page.context().close();
   });
 

@@ -79,3 +79,18 @@ test("não mascara id (UUID) com sequência de dígitos parecida com telefone", 
   }
   assert.equal(guardContactInfo("id 12345678-1234-1234-1234-123456789012 e tel (34) 99999-0001").masked, true);
 });
+
+test("E483: telefone com DDD entre parênteses some inteiro — não sobra '(' antes do marcador", () => {
+  assert.equal(guardContactInfo("Me chama no (34) 99999-8888 amanhã").text, `Me chama no ${MASK} amanhã`);
+  assert.equal(guardContactInfo("(11) 98765-4321").text, MASK);
+  assert.equal(guardContactInfo("liga no +55 (34) 99999-8888.").text, `liga no ${MASK}.`);
+});
+
+test("E483: parêntese que envolve a frase continua equilibrado", () => {
+  // o número inteiro entre parênteses: os dois saem com ele
+  assert.equal(guardContactInfo("meu zap (11 98765-4321) ok").text, `meu zap ${MASK} ok`);
+  // o parêntese abre antes de outra palavra: o ")" do fim fica, para fechar o que abriu
+  assert.equal(guardContactInfo("contato (tel 11 98765-4321) ok").text, `contato (tel ${MASK}) ok`);
+  // o parêntese abre colado no número e fecha depois de outra palavra: o "(" fica
+  assert.equal(guardContactInfo("ligue (11 98765-4321 depois das 18h)").text, `ligue (${MASK} depois das 18h)`);
+});

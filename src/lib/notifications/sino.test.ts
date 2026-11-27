@@ -24,7 +24,7 @@ test("contagem: nada com 0; até 9; depois '9+'", () => {
   assert.equal(rotuloContagem(250), "9+");
 });
 
-test("painel do sino: os últimos 8, crítico → urgente → mais recente", () => {
+test("painel do sino: os últimos 8, por data/hora decrescente (E586: a prioridade não fura a lista)", () => {
   const lista = [
     av("n-novo", "normal", "2026-11-02T10:00:00Z"),
     av("u-velho", "urgente", "2026-11-01T10:00:00Z"),
@@ -34,7 +34,7 @@ test("painel do sino: os últimos 8, crítico → urgente → mais recente", () 
   ];
   assert.deepEqual(
     ordenarParaOSino(lista).map((a) => a.id),
-    ["c-novo", "c-velho", "u-novo", "u-velho", "n-novo"]
+    ["n-novo", "u-novo", "c-novo", "u-velho", "c-velho"]
   );
   assert.equal(ULTIMOS_DO_SINO, 8);
   const muitos = Array.from({ length: 20 }, (_, i) => av(`a${i}`, "normal", new Date(Date.UTC(2026, 10, 1, i)).toISOString()));
@@ -42,7 +42,7 @@ test("painel do sino: os últimos 8, crítico → urgente → mais recente", () 
   assert.equal(ordenarParaOSino(muitos)[0].id, "a19");
 });
 
-test("crítico já resolvido ou lido não fura a fila: volta para a ordem por data", () => {
+test("crítico lido ou resolvido segue a ordem por data", () => {
   const lista = [
     av("c-resolvido", "critico", "2026-10-01T10:00:00Z", { resolvido_em: "2026-10-02T10:00:00Z" }),
     av("c-lido", "critico", "2026-10-01T11:00:00Z", { lido_em: "2026-10-02T10:00:00Z" }),

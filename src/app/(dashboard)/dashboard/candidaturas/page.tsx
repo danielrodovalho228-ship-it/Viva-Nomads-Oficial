@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
+import { dataBRT } from "@/lib/datas-brasilia";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import Link from "next/link";
 import { FileSignature, MessageSquare } from "lucide-react";
 import { PageTitle, Panel, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
-import { listMinhasCandidaturas } from "@/lib/data/leads-actions";
+import { listMinhasCandidaturas, type MinhaCandidatura } from "@/lib/data/leads-actions";
 import { DocumentosInquilino } from "@/components/documentos-inquilino";
 import { PROXIMO_PASSO_CANDIDATURA, type RotuloCandidatura } from "@/lib/candidaturas/status";
 import { VinculoMorador } from "@/components/triagem/vinculo-morador";
 import { triagemVinculoAtiva } from "@/lib/triagem/chave";
 import { PedirOrcamento } from "@/components/candidaturas/pedir-orcamento";
-import { numeroPublicoPedido } from "@/lib/pedido-ref";
+import { numeroPublicoPedido, podePedirOrcamento } from "@/lib/pedido-ref";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 
 export const metadata: Metadata = {
   title: "Minhas candidaturas",
@@ -25,12 +28,10 @@ const TOM: Record<RotuloCandidatura["tom"], string> = {
   encerrado: "bg-slate-100 text-muted",
 };
 
-function dataBR(iso: string | null): string {
-  if (!iso) return "";
-  // Sem depender de locale do runtime: YYYY-MM-DD → DD/MM/AAAA.
-  const m = iso.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
-}
+/** E440 + E1088: o cartão mostra o "Pedir orçamento" pela MESMA regra do servidor (aceito, sem orçamento em aberto,
+    e todos os contratos da candidatura assinados pelos dois, ou nenhum; o cancelado não conta). */
+const podePedir = (c: MinhaCandidatura) =>
+  podePedirOrcamento({ situacao: c.situacao.chave, temOrcamentoAberto: c.temOrcamentoAberto, contratos: c.contratosDoPedido }) && !!numeroPublicoPedido(c.id);
 
 export default async function CandidaturasPage() {
   const [candidaturas, triagemLigada] = await Promise.all([listMinhasCandidaturas({ exigir: true }), triagemVinculoAtiva()]);
@@ -62,8 +63,18 @@ export default async function CandidaturasPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="font-title text-base font-semibold text-ink">{c.propertyTitle}</h3>
-                  {c.createdAt && (
-                    <p className="text-xs text-muted">Enviada em {dataBR(c.createdAt)}</p>
+                  {c.enviadaEm && (
+                    <p className="text-xs text-muted">
+                      Enviada em {dataBRT(c.enviadaEm)}
+                      {c.reenviada && (
+                        <span className="ml-2 rounded-full bg-sage-100 px-2 py-1 font-semibold text-forest" data-testid="candidatura-reenviada">
+                          Reenviada
+                        </span>
+                      )}
+                    </p>
+                  )}
+                  {c.reenviada && c.primeiroEnvioEm && (
+                    <p className="text-xs text-muted">Enviada pela primeira vez em {dataBRT(c.primeiroEnvioEm)}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
@@ -86,6 +97,8 @@ export default async function CandidaturasPage() {
               {PROXIMO_PASSO_CANDIDATURA[c.situacao.chave] && (
                 <div className="mt-3 border-t border-sage-200 pt-3 text-sm" data-testid="candidatura-proximo-passo">
                   <p className="text-ink">{PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.agora}</p>
+                  {/* E1196: só o "Em análise" cita "1 dia útil"; o `de` deixa o "Enviada" sem a nota. */}
+                  <NotaDiasUteis de={[PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.agora]} />
                   <p className="mt-1 text-muted">{PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.proximo}</p>
                   <Link
                     href={PROXIMO_PASSO_CANDIDATURA[c.situacao.chave]!.acao.href}
@@ -97,15 +110,19 @@ export default async function CandidaturasPage() {
                 </div>
               )}
               {/* E440: pedido aceito e ainda sem contrato — o número do pedido e "Pedir orçamento" (o servidor confere o resto). */}
-              {c.situacao.chave === "aceita" && !c.contrato && numeroPublicoPedido(c.id) && (
-                <PedirOrcamento leadId={c.id} numeroPedido={numeroPublicoPedido(c.id)!} />
+              {podePedir(c) && <PedirOrcamento leadId={c.id} numeroPedido={numeroPublicoPedido(c.id)!} />}
+              {/* E440: nos outros casos, o número do pedido em si, citável desde o envio (o mesmo do e-mail e do contrato). */}
+              {!podePedir(c) && numeroPublicoPedido(c.id) && (
+                <p className="mt-3 text-xs text-muted" data-testid="candidatura-numero-pedido-cartao">
+                  Pedido nº <strong className="text-ink">{numeroPublicoPedido(c.id)}</strong>
+                </p>
               )}
               {c.contrato && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-forest" data-testid="candidatura-contrato">
                   <span className="min-w-0">
                     Contrato: <strong data-testid="candidatura-contrato-status">{c.contrato.status}</strong>
                   </span>
-                  <Link href={`/dashboard/locacoes/${c.contrato.id}`} className="font-medium underline" data-testid="candidatura-contrato-abrir">
+                  <Link href={HREF_CONTRATO_DA_ESTADIA(c.contrato.id)} className="font-medium underline" data-testid="candidatura-contrato-abrir">
                     Ver contrato
                   </Link>
                 </div>

@@ -3,6 +3,7 @@ import type { CafResult } from "@/lib/closing";
 import type { CommissionResult } from "@/lib/payments/asaas";
 import type { ContractResult } from "@/lib/integrations/zapsign";
 import { valorComissao } from "./comissao.ts";
+import { comissaoSobreDias } from "./cobranca/regra.ts";
 
 /**
  * Contas de QA (profiles.is_teste, migração 0135) não geram efeito real em produção (ordem ee7d27b8):
@@ -53,14 +54,14 @@ export function laudoSimuladoTeste(): CafResult {
   };
 }
 
-export function cobrancaSimuladaTeste(p: { aluguelMensal: number; meses: number; commissionRate: number }): CommissionResult & { rotulo: string } {
+export function cobrancaSimuladaTeste(p: { aluguelMensal: number; meses: number; dias?: number; commissionRate: number }): CommissionResult & { rotulo: string } {
   return {
     demo: true,
     rotulo: ROTULO_TESTE,
     chargeId: idSimulado("teste"),
     baseAluguel: p.aluguelMensal,
     commissionRate: p.commissionRate,
-    platformCommission: valorComissao(p.aluguelMensal, p.meses, p.commissionRate),
+    platformCommission: p.dias ? comissaoSobreDias(p.aluguelMensal, p.dias, p.commissionRate) : valorComissao(p.aluguelMensal, p.meses, p.commissionRate),
     status: "TESTE_SIMULADA",
   };
 }

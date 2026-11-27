@@ -5,7 +5,8 @@ import { FOTOS_TESTE_MINIMO, abrirCadastroNovo, noPasso } from "../fixtures/cada
 /*
   T523 — E133 (#1373), guarda permanente da Pista C: o limite exato e a TROCA, que a t468 não cobre (ela vai de 2 para 9
   fotos e só passa pela confirmação).
-   1. Com 7 fotos do imóvel o "Continuar" fica desabilitado ("Falta 1 foto"); com a 8ª, libera.
+   1. Com 7 fotos do imóvel a contagem diz "Falta 1 foto para publicar" e o "Continuar" segue livre (E602: as fotos
+      seguram o publicar, não a navegação); com a 8ª, a trava some.
    2. Um print enviado PRIMEIRO (sozinho na posição 1) não fica como principal quando chegam as 8 fotos do imóvel, não
       oferece "Usar como foto principal" e trava o passo; removido (a troca), o passo libera sem confirmação e avança.
   A 390 e 1280 px. Só no laboratório (a conferência do print usa a medida local de tela, como na t468).
@@ -40,17 +41,15 @@ test.describe("T523 — E133: 7 trava, 8 libera; print não vira principal e a t
   });
 
   for (const w of [390, 1280] as const) {
-    test(`1. a ${w} px: 7 fotos desabilitam o Continuar, a 8ª libera`, async ({ browser }) => {
+    test(`1. a ${w} px: 7 fotos pedem a 8ª para publicar, sem travar o Continuar`, async ({ browser }) => {
       const p = await entrar(browser, dono.email, senha);
       await p.setViewportSize({ width: w, height: w === 390 ? 844 : 900 });
       await abrirPassoFotos(p);
       await enviar(p, FOTOS_TESTE_MINIMO.slice(0, 7));
       await expect(p.getByText(/^7\/40 fotos/)).toBeVisible({ timeout: 60_000 });
       await expect(p.getByTestId("fotos-trava")).toHaveAttribute("data-trava", "faltam");
-      await expect(p.getByTestId("fotos-trava")).toContainText(/Faltam? 1 foto/);
-      await expect(continuar(p)).toBeDisabled();
-      await continuar(p).click({ force: true });
-      await noPasso(p, "fotos");
+      await expect(p.getByTestId("fotos-trava")).toContainText(/Faltam? 1 foto para publicar/);
+      await expect(continuar(p)).toBeEnabled();
       await enviar(p, FOTOS_TESTE_MINIMO[7]);
       await expect(p.getByText(/^8\/40 fotos/)).toBeVisible({ timeout: 60_000 });
       await expect(p.getByTestId("fotos-trava")).toHaveCount(0);

@@ -8,6 +8,7 @@
   O banco repete as regras de imutabilidade (migração 0110); aqui ficam testáveis.
 */
 import { ETIQUETA_BRASILIA, horaBRT, instanteBRT, dataBRT } from "./datas-brasilia.ts";
+import { saidaPeloFim } from "./texto-do-periodo.ts";
 
 export type TipoConferencia = "entrada" | "saida";
 export type ParteConferencia = "proprietario" | "inquilino";
@@ -53,12 +54,14 @@ export function prazoConferenciaEntrada(p: EntradaDoContrato): Date | null {
 }
 
 /**
- * FONTE ÚNICA do prazo da conferência de SAÍDA (Prompt 56): o instante em que o relógio de Brasília marca o último dia
- * do contrato no horário de saída do imóvel (00:00 sem horário), mais 48 h. Irmã de prazoConferenciaEntrada; a tela, a
+ * FONTE ÚNICA do prazo da conferência de SAÍDA (Prompt 56): o instante em que o relógio de Brasília marca o dia da
+ * SAÍDA (o dia seguinte à última noite do contrato; E1089) no horário de saída do imóvel (00:00 sem horário), mais 48 h. Irmã de prazoConferenciaEntrada; a tela, a
  * linha do tempo, o servidor e a rotina diária usam esta função. Sem prazo, a saída normal ficaria aberta para sempre.
  */
 export function prazoConferenciaSaida(p: Pick<EntradaDoContrato, "fim" | "checkoutBefore">): Date | null {
-  const dia = (p.fim ?? "").slice(0, 10);
+  // E1089 (coordenador): `fim` é a ÚLTIMA NOITE gravada nos blocos; a pessoa sai no dia seguinte (entrada + dias), e é
+  // desse dia, no horário de saída do imóvel, que as 48 h contam. Antes contavam da última noite: um dia a menos.
+  const dia = saidaPeloFim(p.fim);
   const hora = (p.checkoutBefore ?? "").trim();
   const base = instanteBRT(dia, HORA_ENTRADA.test(hora) ? hora : "00:00");
   return base ? new Date(base.getTime() + JANELA_SAIDA_HORAS * 3600_000) : null;
@@ -217,10 +220,26 @@ function tipoFoto(b: Uint8Array): { tipo: string; ext: string } | null {
 
 export const ERRO_LAUDO_GRANDE = "O laudo deve ter até 15 MB.";
 
+/**
+ * E669: um laudo de verdade tem conteúdo. Abaixo disto o arquivo é um esqueleto de PDF (o teste da QA tinha 193 bytes) e não
+ * pode "prevalecer sobre as fotos" das partes.
+ */
+export const LAUDO_MIN_BYTES = 1024;
+export const ERRO_LAUDO_PEQUENO = "O arquivo é pequeno demais para ser um laudo. Anexe o PDF completo do laudo.";
+export const ERRO_LAUDO_INCOMPLETO = "Este PDF parece incompleto ou corrompido. Anexe o PDF completo do laudo.";
+
+/** O PDF termina com "%%EOF" (dentro dos últimos 1 KB, como manda o formato). */
+function terminaComoPdf(b: Uint8Array): boolean {
+  const fim = new TextDecoder("latin1").decode(b.subarray(Math.max(0, b.length - 1024)));
+  return fim.includes("%%EOF");
+}
+
 /** Confere o tamanho antes de enviar: acima do limite do corpo das Server Actions o Next recusa sem chegar à validação. */
 export function erroTamanhoLaudo(tamanho: number): string | null {
   if (tamanho <= 0) return "Arquivo vazio.";
-  return tamanho > LAUDO_MAX_BYTES ? ERRO_LAUDO_GRANDE : null;
+  if (tamanho > LAUDO_MAX_BYTES) return ERRO_LAUDO_GRANDE;
+  if (tamanho < LAUDO_MIN_BYTES) return ERRO_LAUDO_PEQUENO;
+  return null;
 }
 
 /** Laudo de parceiro independente: PDF de verdade, até 15 MB. */
@@ -228,6 +247,7 @@ export function validarLaudo(a: { bytes: Uint8Array; tamanho: number }): Arquivo
   const tam = erroTamanhoLaudo(a.tamanho);
   if (tam) return { ok: false, erro: tam };
   if (!ehPdf(a.bytes)) return { ok: false, erro: "Envie o laudo em PDF." };
+  if (!terminaComoPdf(a.bytes)) return { ok: false, erro: ERRO_LAUDO_INCOMPLETO };
   return { ok: true, tipo: "application/pdf", ext: "pdf" };
 }
 

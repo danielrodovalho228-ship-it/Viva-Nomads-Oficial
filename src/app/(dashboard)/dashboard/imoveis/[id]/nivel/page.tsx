@@ -6,6 +6,8 @@ import { FormNivel } from "./form-nivel";
 import { SugestoesNoNivel } from "./sugestoes-no-nivel";
 import { comodidadesDoMeuImovel } from "@/lib/data/comodidade-sugerida-actions";
 import { BlocoAvaliacaoDono } from "@/components/vistoria/bloco-avaliacao-dono";
+import { ANCORA_AVALIACAO_NO_IMOVEL } from "@/lib/vistoria/porta-da-avaliacao";
+import { AncoraDaAvaliacao } from "@/components/vistoria/ancora-da-avaliacao";
 import { MedirNoNivel } from "./medir-no-nivel";
 import { createClient } from "@/lib/supabase/server";
 import { destinoNivel, rotuloVoltaNivel } from "@/lib/niveis/destino-nivel";
@@ -101,7 +103,10 @@ export default async function NivelDoImovelPage({ params, searchParams }: { para
           )}
           <FormNivel propertyId={id} dados={dados} fotografar={typeof fotografar === "string" ? fotografar : null} />
           {/* Prompt 62-B1/62-A: avaliação por avaliador credenciado (só com VISTORIA_ATIVA; a rota por foto acima continua grátis). */}
-          <BlocoAvaliacaoDono propertyId={id} />
+          {/* E1104: a âncora aonde o cartão "Avaliação do imóvel" e a porta dos Serviços trazem o dono. */}
+          <AncoraDaAvaliacao id={ANCORA_AVALIACAO_NO_IMOVEL}>
+            <BlocoAvaliacaoDono propertyId={id} />
+          </AncoraDaAvaliacao>
         </div>
       ) : (
         <p className="mt-6 rounded-xl border border-line bg-white p-4 text-sm text-ink" data-testid="nivel-indisponivel">

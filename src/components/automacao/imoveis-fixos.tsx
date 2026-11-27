@@ -3,13 +3,16 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState, Panel } from "@/components/dashboard/primitives";
 import { meusImoveisFixos } from "@/lib/automacao/acoes";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
+import { destinoMinhaPagina } from "@/lib/parceiros/minha-pagina";
 import { RespostaConvite } from "./resposta-convite";
 
 /**
  * "Imóveis fixos" do parceiro (Prompt 38): convites para ser o parceiro fixo de um imóvel (aceitar ou recusar) e os
  * vínculos ativos. Só bairro e cidade: o endereço aparece no pedido, depois do aceite, como no 31b.
  */
-export async function ImoveisFixos() {
+export async function ImoveisFixos({ pagina = null }: { pagina?: { status: string; slug: string } | null }) {
+  // E461: "Abrir minha página" levava ao próprio painel (só recarregava). Agora: a página pública, se publicada; senão, o editor.
+  const destino = destinoMinhaPagina(pagina);
   // Achado 100: a falha avisa no bloco (o resto do painel do parceiro segue), nunca "Nenhum imóvel fixo".
   const lista = await meusImoveisFixos().catch(() => null);
   return (
@@ -19,7 +22,11 @@ export async function ImoveisFixos() {
           Não foi possível carregar os seus imóveis fixos agora. Atualize a página em instantes.
         </p>
       ) : lista.length === 0 ? (
-        <EmptyState icon={Building2} title="Nenhum imóvel fixo" text="Quando um proprietário convidar você como parceiro fixo de um imóvel, o convite aparece aqui." action={<ButtonLink href="/dashboard/parceiro" variant="secondary" size="sm">Abrir minha página</ButtonLink>} />
+        <EmptyState icon={Building2} title="Nenhum imóvel fixo" text="Quando um proprietário convidar você como parceiro fixo de um imóvel, o convite aparece aqui." action={
+            <ButtonLink href={destino.href} variant="secondary" size="sm" target={destino.novaAba ? "_blank" : undefined} rel={destino.novaAba ? "noopener" : undefined} data-testid="imoveis-fixos-minha-pagina">
+              Abrir minha página
+            </ButtonLink>
+          } />
       ) : (
         <ul className="divide-y divide-line">
           {lista.map((v) => (

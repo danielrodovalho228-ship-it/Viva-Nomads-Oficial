@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { registrarAberturaDaConversa } from "@/lib/notifications/push-servidor";
 
+/** E481: desde o E533 (04/11), o aviso de mensagem nova guarda a conversa (ref_id). Os de antes não têm. */
+const AVISO_COM_CONVERSA_DESDE = "2026-11-04T14:19:03Z";
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -32,6 +35,8 @@ export async function marcarConversaAberta(conversationId: string): Promise<void
   const agora = new Date().toISOString();
   // E533: e os avisos de "mensagem nova" desta conversa saem do sino (RLS 0286: só os próprios, só lido_em).
   await supabase.from("avisos").update({ lido_em: agora }).eq("usuario_id", user.id).eq("evento", "new_message").eq("ref_id", conversationId).is("lido_em", null);
+  // E481: os avisos de mensagem nova de antes do E533 não têm a conversa (ref_id null) — saem ao abrir uma conversa.
+  await supabase.from("avisos").update({ lido_em: agora }).eq("usuario_id", user.id).eq("evento", "new_message").is("ref_id", null).lt("criado_em", AVISO_COM_CONVERSA_DESDE).is("lido_em", null);
 }
 
 /** E445 (item 4): não lidas por conversa e o total — alimenta o sino (E444) como prioridade "urgente". */

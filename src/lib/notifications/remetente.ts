@@ -1,7 +1,7 @@
 /*
   Remetente ÚNICO dos e-mails de cliente (rota rápida "e-mails profissionais", item 1) — PURO.
   O mesmo nome e endereço que o Supabase usa nos e-mails de conta: quem responde cai num endereço que alguém lê.
-  Exceção: e-mails INTERNOS (avisos do Moacir ao Daniel, leads de Plano Gestor e B2B, alertas da equipe), que
+  Exceção: e-mails INTERNOS (avisos do Moacir ao Daniel, pedidos de contato de carteiras e B2B, alertas da equipe), que
   continuam com o remetente de sistema.
 */
 import { SUPORTE_EMAIL } from "../site.ts";

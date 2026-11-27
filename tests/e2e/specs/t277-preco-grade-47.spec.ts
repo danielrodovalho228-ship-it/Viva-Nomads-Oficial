@@ -28,12 +28,16 @@ for (const largura of [390, 1280] as const) {
       await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
       // Preço e link lidos do MESMO nó de uma vez: a lista se reordena depois de hidratar e um locator preguiçoso
       // podia ler o preço de um cartão e o link de outro.
+      // E899 (Daniel, 13/11): o total da estadia tem linha própria no cartão (cartao-total-estadia), fechada pelo aviso curto; antes
+      // vinha na mesma linha do preço ("R$ X/mês · R$ Y em N meses"). A comparação cartão = página segue com os dois números.
       const lido = await cartao.evaluate((el) => ({
         preco: el.querySelector('[data-testid="cartao-total-mes"]')?.textContent ?? "",
+        estadia: el.querySelector('[data-testid="cartao-total-estadia"]')?.textContent ?? "",
         href: el.querySelector('a[href^="/imoveis/"]')?.getAttribute("href") ?? null,
       }));
-      const precoCartao = limpo(lido.preco);
-      expect(precoCartao).toMatch(/^R\$ [\d.]+\/mês( · R\$ [\d.]+ em \d+ meses)?$/);
+      expect(limpo(lido.preco)).toMatch(/^R\$ [\d.]+\/mês$/);
+      expect(limpo(lido.estadia)).toMatch(/^R\$ [\d.]+ em \d+ (mês|meses)$/);
+      const precoCartao = `${limpo(lido.preco)} · ${limpo(lido.estadia)}`;
       await expect(cartao.getByTestId("cartao-disponivel")).toHaveText(/^Disponível (agora|a partir de \d{2}\/\d{2}(\/\d{4})?)$/);
       await page.screenshot({ path: `${SAIDA}/t277-busca-${largura}.png`, fullPage: false });
 
@@ -67,12 +71,13 @@ for (const largura of [390, 1280] as const) {
       }
     });
 
-    test("margem de tela constante: 16 px no celular, 32 px no computador", async ({ page }) => {
+    test("margem de tela constante: 16 px no celular, 80 px no computador (faixa do Fale com a Viva, E709)", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
       const caixa = page.getByTestId("imovel-largura-total");
       await expect(caixa).toBeVisible({ timeout: 30_000 });
       const pad = await caixa.evaluate((el) => getComputedStyle(el).paddingLeft);
-      expect(pad).toBe(largura === 390 ? "16px" : "32px");
+      // E709: no computador a faixa à esquerda é reservada ao "Fale com a Viva" (--faixa-flutuante = 80 px), no lugar dos 32 px.
+      expect(pad).toBe(largura === 390 ? "16px" : "80px");
       await semRolagemLateral(page);
     });
   });

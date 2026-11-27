@@ -59,6 +59,17 @@ export function registraIntencaoNova(antes: unknown, nova: readonly string[]): b
   return antes == null || nova.length > 0;
 }
 
+/**
+ * E283-B (2ª reprova): a conta que JÁ tinha respondido a intenção (ex.: "morar", gravada antes de o boas-vindas existir) e agora vira dono pelo
+ * 1º rascunho (a intenção ganha "anunciar"). O registraIntencaoNova não cobre (a intenção não estava vazia), mas ela pode nunca ter recebido
+ * nenhum boas-vindas: quem manda é o enviarBoasVindas, que grava a chave boas_vindas:<conta> ANTES de enviar — quem já recebeu o de morador
+ * não recebe o de dono. Intenção vazia segue pelo registraIntencaoNova (não entra aqui).
+ */
+export function moradorViraDono(antes: unknown, nova: readonly string[]): boolean {
+  if (!Array.isArray(antes) || antes.length === 0) return false;
+  return !antes.includes("anunciar") && nova.includes("anunciar");
+}
+
 export function modoDoPapel(papel: Papel): Modo | null {
   return papel === "proprietario" ? "owner" : papel === "morador" ? "tenant" : null;
 }
@@ -82,6 +93,18 @@ export function estadoDoPapelGravado(gravado: unknown, modoAtual: Modo): { modo:
   return { modo: modoDoPapel(gravado)!, parceiro: false };
 }
 
+/**
+ * E668 — o papel gravado que VALE. "Parceiro" só vale se foi ESCOLHIDO (selo do topo ou Conta): o carimbo
+ * profiles.papel_ativo_escolhido_em. Antes do E653 a área do parceiro gravava papel_ativo = "parceiro" sozinha, sem clique, e
+ * esse valor antigo fazia o morador abrir a casca em "Áreas do parceiro". Sem o carimbo, a conta abre no modo dela
+ * (morador/proprietário) e troca para parceiro com um toque. Morador e proprietário valem sempre; o resto vira nulo.
+ */
+export function papelGravadoEfetivo(gravado: unknown, escolhidoEm: unknown): Papel | null {
+  if (!papelValido(gravado)) return null;
+  if (gravado === "parceiro" && !(typeof escolhidoEm === "string" && escolhidoEm.length > 0)) return null;
+  return gravado;
+}
+
 /** Os papéis para os quais dá para trocar: os que a pessoa tem, menos o ativo. */
 export function opcoesDeTroca(ativo: Papel | null, papeisQueTem: Papel[]): Papel[] {
   return PAPEIS.filter((p) => papeisQueTem.includes(p) && p !== ativo);
@@ -90,6 +113,19 @@ export function opcoesDeTroca(ativo: Papel | null, papeisQueTem: Papel[]): Papel
 /** O painel de cada papel (para onde a troca leva). */
 export function painelDoPapel(papel: Papel): string {
   return papel === "parceiro" ? "/dashboard/parceiro" : "/dashboard";
+}
+
+/**
+ * E653 — o que abrir uma página de ÁREA grava no perfil. Regra única (servidor e casca): o papel nunca muda sozinho.
+ *   "nada"    — a página se desenha pela URL (modoDaRota / papelDaRota) e, ao sair, vale o papel escolhido;
+ *   "so_modo" — só o 1º acesso (E283): grava o modo (o proxy e a IA o leem), nunca o papel ativo.
+ * Antes, a área do PARCEIRO gravava papel_ativo = "parceiro" (o E548 só poupava morador/proprietário): o papel guardado
+ * mudava sem clique e a casca alternava entre "Áreas do proprietário" e "Áreas do parceiro".
+ */
+export type GravacaoPorArea = "nada" | "so_modo";
+export function gravacaoPorArea(papel: Papel, primeiroAcesso: boolean): GravacaoPorArea {
+  if (papel === "parceiro") return "nada";
+  return primeiroAcesso ? "so_modo" : "nada";
 }
 
 /** Precisa gravar? A página pede um papel diferente do que está escolhido. */

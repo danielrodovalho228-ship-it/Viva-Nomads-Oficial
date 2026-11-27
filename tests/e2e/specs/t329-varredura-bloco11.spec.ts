@@ -38,7 +38,7 @@ const TELAS: Tela[] = [
   { conta: "INQUILINA", papel: "inquilina", rota: () => "/dashboard/mensagens", nome: "Mensagens" },
   { conta: "DONO17", papel: "proprietário", rota: () => "/dashboard/mensagens", nome: "Mensagens" },
   { conta: "INQUILINA", papel: "inquilina", rota: () => "/dashboard/pedidos", nome: "Meus pedidos" },
-  ...SECOES_CONTA.map(([secao, nome]) => ({ conta: "INQUILINA" as const, papel: "inquilina", rota: () => `/dashboard/conta/${secao}`, nome: `Conta · ${nome}` })),
+  ...SECOES_CONTA.map(([secao, nome]) => ({ conta: "INQUILINA" as const, papel: "inquilina", rota: () => (secao === "notificacoes" ? "/dashboard/notificacoes" : `/dashboard/conta/${secao}`), nome: `Conta · ${nome}` })),
   { conta: "INQUILINA", papel: "inquilina", rota: (m) => `/dashboard/estadia/${m.contrato}/alteracao`, nome: "Estadia · alteração" },
   { conta: "INQUILINA", papel: "inquilina", rota: (m) => `/dashboard/estadia/${m.contrato}/encerrar`, nome: "Estadia · encerrar" },
   { conta: "INQUILINA", papel: "inquilina", rota: (m) => `/dashboard/estadia/${m.contrato}/ocupantes`, nome: "Estadia · ocupantes" },

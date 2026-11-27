@@ -7,11 +7,13 @@
   As regras de publicar não mudam: os 12 itens do essencial (prontidão) + isEligible (convenção "Não sei" publica com
   pendência; "Não" bloqueia) + o aceite do termo da IA. Aqui só se decide o que a tela diz.
 */
+import { TEXTO_EM_BREVE } from "../identidade/estado.ts";
 import type { ItemProntidao } from "./prontidao.ts";
 import type { DeclaracoesPasso10 } from "./requisitos-passo10.ts";
 import { TEXTO_HABITAVEL, TEXTO_IPTU } from "./requisitos-passo10.ts";
 import { ROTULO_MENSAL, ROTULO_TOTAL_MES, estadiaDoImovel, precoDoImovel, rotuloEstadiaMinima } from "../precos.ts";
 import { mesesDoCartao } from "../cartao-preco.ts";
+import { caucaoDoPrimeiroBloco, rotuloCaucaoDoPrimeiroBloco } from "../reserva-imovel.ts";
 import type { Property } from "../types.ts";
 
 export type SecaoAntesDePublicar = "operacao" | "identidade" | "documento" | "declaracoes";
@@ -42,6 +44,11 @@ export interface EntradaSecoes {
   /** Rótulo da operação escolhida ("Sou o proprietário"…). */
   rotuloOperacao: string;
   identidade: EstadoIdentidade;
+  /**
+   * E748: o texto do estado de identidade vindo da FONTE ÚNICA (`estadoIdentidade().texto`, a mesma de Conta › Segurança).
+   * A revisão não inventa o próprio texto do estado: usa este, e só cai no padrão quando ainda não chegou.
+   */
+  identidadeTexto?: string | null;
   documento: EstadoDocumento;
   /** E149-A: "Documento enviado no início · em análise/aprovado", quando veio pela matrícula. */
   linhaDocumentoInicio?: string | null;
@@ -62,12 +69,12 @@ export function secoesAntesDePublicar(e: EntradaSecoes): ItemSecao[] {
     estado: e.identidade === "ok" ? "ok" : "aviso",
     resumo:
       e.identidade === "ok"
-        ? "Confirmada"
+        ? e.identidadeTexto?.trim() || "Confirmada"
         : e.identidade === "em_breve"
-          ? "Confirmação ainda não disponível"
+          ? `${e.identidadeTexto?.trim() || TEXTO_EM_BREVE} · não impede a publicação`
           : e.identidade === "carregando"
             ? "Conferindo…"
-            : "Opcional: a equipe confere o documento",
+            : "Opcional: a equipe confere o documento · não impede a publicação",
   };
 
   const docInicio = e.linhaDocumentoInicio?.trim() || null;
@@ -168,13 +175,55 @@ export function precosDaPrevia(property: Property): LinhaPrecoPrevia[] {
   ];
 }
 
+/** E1050/E1054: a linha da caução no cadastro — o valor e o rótulo que a página do imóvel vai mostrar. */
+export interface CaucaoDoAnuncio {
+  valor: number;
+  rotulo: string;
+}
+
+/**
+ * E1050/E1054 + E1061: a caução calculada do anúncio, fonte única da revisão e do passo de Preço. É a da página do
+ * imóvel (caucaoDoPrimeiroBloco: a regra do contrato, com o 1º bloco da estadia mínima), com o mesmo rótulo. Antes era
+ * "50% do mensal" para qualquer anúncio, e com estadia mínima de mais de 30 dias o cadastro dizia um número diferente
+ * do da página. Sem valor mensal → null (sem "R$ 0").
+ */
+export function caucaoDoAnuncio(mensal: number, minPeriodDays?: number | null): CaucaoDoAnuncio | null {
+  const c = caucaoDoPrimeiroBloco(mensal, minPeriodDays);
+  return c ? { valor: c.valor, rotulo: rotuloCaucaoDoPrimeiroBloco(c.meses) } : null;
+}
+
+/** E1050: a caução calculada que o dono vê na revisão — a mesma do passo de Preço e da página do imóvel. */
+export function caucaoDaPrevia(property: Property): CaucaoDoAnuncio | null {
+  return caucaoDoAnuncio(property.monthlyPrice ?? 0, property.minPeriodDays);
+}
+
 /** Evento da página que abre uma seção do "Antes de publicar" (o "Resolver" da lista e o motivo do botão travado). */
 export const EVENTO_ABRIR_SECAO = "vn:passo10-abrir-secao";
 
 /** A seção do "Antes de publicar" que resolve um item da prontidão (null = o item mora noutro passo). */
 export function secaoDoItem(chave: string): SecaoAntesDePublicar | null {
-  if (chave === "documento") return "documento";
+  if (chave === "documento" || chave === "foto_repetida" || chave === "matricula_atualizada") return "documento";
   if (chave === "sublocacao") return "operacao";
   if (chave === "qualificacao") return "declaracoes";
   return null;
+}
+
+/**
+ * E619: a conta do "Faltam N itens" à vista, logo abaixo do título da lista — o N junta os subitens de cada passo
+ * ("Comodidades" com 3 faltas conta 3) e as seções do "Antes de publicar", e só fechava contando tudo à mão. O aceite do
+ * termo da IA, que não entra no N, é dito aqui também, com o lugar dele. null quando nada falta na lista nem nas seções.
+ */
+export function contaDaConferencia(p: { itens: { ok: boolean; faltam: string[] }[]; pendentesNaRevisao: string[]; aceitouIa: boolean; identidadeAConfirmar?: boolean }): string | null {
+  const pendentes = p.itens.filter((i) => !i.ok);
+  const naLista = pendentes.reduce((n, i) => n + Math.max(1, i.faltam.length), 0);
+  const naRevisao = p.pendentesNaRevisao.length;
+  if (naLista === 0 && naRevisao === 0) return null;
+  const partes: string[] = [];
+  if (naLista > 0) partes.push(`${naLista} ${naLista === 1 ? "item" : "itens"} em ${pendentes.length} ${pendentes.length === 1 ? "passo" : "passos"} da lista`);
+  if (naRevisao > 0) partes.push(`${naRevisao} no “Antes de publicar”`);
+  const soma = partes.length > 1 ? ` = ${naLista + naRevisao}` : "";
+  const aceite = p.aceitouIa ? "" : " Também falta o aceite do termo da IA, no fim desta coluna.";
+  // E761: a identidade "a confirmar" aparece no "Antes de publicar" mas NÃO entra nesta conta — a conta diz isso, para ficar claro que ela não trava a publicação.
+  const identidade = p.identidadeAConfirmar ? " A identidade, ainda a confirmar, não entra nesta conta e não impede de publicar." : "";
+  return `A conta: ${partes.join(" + ")}${soma}.${aceite}${identidade}`;
 }

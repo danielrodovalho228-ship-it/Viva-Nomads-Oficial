@@ -31,13 +31,19 @@ export function CalendarioMes(p: {
   onDia?: (iso: string) => void;
   desabilitado?: (iso: string) => boolean;
   sobreposicao?: ReactNode;
+  /** E466: no lugar do título do mês (ex.: o título com as setas de mês anterior/próximo). */
+  cabecalho?: ReactNode;
+  /** E666: rótulo próprio de uma marca nesta tela (leitor de tela e legenda): "Ocupado", "Bloqueado por você". */
+  rotulos?: Partial<Record<MarcaDia, string>>;
 }) {
   const celulas = celulasDoMes(p.ano, p.mes);
   return (
     <div className="rounded-xl border border-line bg-white p-3" data-testid="calendario-mes" data-tipo={p.tipo} data-mes={ymd(p.ano, p.mes, 1).slice(0, 7)}>
-      <p className="mb-2 text-center text-sm font-semibold text-ink">
-        {NOMES_MES[p.mes][0].toUpperCase() + NOMES_MES[p.mes].slice(1)} de {p.ano}
-      </p>
+      {p.cabecalho ?? (
+        <p className="mb-2 text-center text-sm font-semibold text-ink">
+          {NOMES_MES[p.mes][0].toUpperCase() + NOMES_MES[p.mes].slice(1)} de {p.ano}
+        </p>
+      )}
       <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted" aria-hidden>
         {DIAS_SEMANA.map((d, i) => (
           <span key={i}>{d}</span>
@@ -52,7 +58,7 @@ export function CalendarioMes(p: {
           const marcas = [...(p.marcas[iso] ?? []), ...(p.hoje === iso ? (["hoje"] as const) : [])];
           const marca = marcaPrincipal(marcas);
           const desab = p.desabilitado?.(iso) ?? false;
-          const rotulo = `${dia} de ${NOMES_MES[p.mes]}${marcas.length ? ` — ${marcas.map((m) => ROTULO_MARCA[m]).join(", ")}` : ""}`;
+          const rotulo = `${dia} de ${NOMES_MES[p.mes]}${marcas.length ? ` — ${marcas.map((m) => p.rotulos?.[m] ?? ROTULO_MARCA[m]).join(", ")}` : ""}`;
           const classe = cn(
             "grid aspect-square place-items-center rounded-lg text-xs",
             marca ? CLASSE_MARCA[marca] : "text-ink",
@@ -84,13 +90,13 @@ export function CalendarioMes(p: {
 }
 
 /** Legenda: só as marcas que a tela usa, com a mesma amostra de cor da grade. */
-export function LegendaCalendario({ marcas }: { marcas: readonly MarcaDia[] }) {
+export function LegendaCalendario({ marcas, rotulos }: { marcas: readonly MarcaDia[]; /** E666: rótulo próprio de uma marca nesta tela (ex.: "Bloqueado por você"); sem ele, o da grade. */ rotulos?: Partial<Record<MarcaDia, string>> }) {
   return (
     <ul className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" data-testid="calendario-legenda">
       {marcas.map((m) => (
         <li key={m} className="inline-flex items-center gap-2">
           <span className={cn("inline-block h-4 w-4 rounded-lg", CLASSE_MARCA[m])} aria-hidden />
-          {ROTULO_MARCA[m]}
+          {rotulos?.[m] ?? ROTULO_MARCA[m]}
         </li>
       ))}
     </ul>

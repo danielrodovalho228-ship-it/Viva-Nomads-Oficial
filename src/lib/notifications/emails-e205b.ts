@@ -282,7 +282,7 @@ export function vesperaDaVisita(v: { status: string; horarioConfirmado: string |
 
 /**
  * O texto da véspera, por lado e modalidade:
- *  • presencial ao MORADOR: horário de Brasília + endereço exato + "Abrir no mapa" (regra de endereco-visita.ts);
+ *  • presencial ao MORADOR: horário de Brasília + endereço exato + "Ver a visita" na plataforma, sem link externo de mapa (regra de endereco-visita.ts);
  *  • presencial ao DONO: horário + primeiro nome do morador (sem endereço);
  *  • vídeo: "Entrar na chamada" para os dois.
  */

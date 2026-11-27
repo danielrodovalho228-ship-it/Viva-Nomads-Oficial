@@ -6,6 +6,7 @@
   aceita ou recusa a foto com motivo. Toda gravação passa pelo cliente de serviço DEPOIS de conferir quem age, e todo
   passo recalcula o nível (elo mais fraco). Nada financeiro (D7).
 */
+import { recusaObservador } from "@/lib/qa/observador";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -17,6 +18,7 @@ import { entradaDoNivel, recalcularNivel } from "@/lib/niveis/servidor";
 import { avisarFotoRecusada } from "@/lib/niveis/avisos";
 import { ERRO_SEM_TOKEN, conferirCaptura, textoFotoRecebida, type OrigemFoto } from "@/lib/niveis/prova-camera";
 import { capturaPeloToken, MSG_PROVA_SEM_LEITURA } from "@/lib/niveis/prova-servidor";
+import { camposDaDeclaracao, gravaSoADeclaracao } from "@/lib/niveis/gravar-item";
 
 export type ResultadoNivelAcao = { ok: true; mensagem?: string } | { ok: false; erro: string };
 
@@ -133,7 +135,12 @@ export async function salvarItemNivel(propertyId: string, chave: string, declara
   const foto = novaFoto ?? ((atual?.foto_path as string | null) ?? null);
   if (declarado && !foto) return { ok: false, erro: `Fotografe "${itemNivel(chave).rotulo}" pela câmera para o item contar.` };
   const agora = new Date().toISOString();
-  const { error } = await c.admin.from("nivel_itens").upsert(
+  // E981: sem foto nova, numa linha que já existe, grava só a declaração (update). O upsert abaixo repetiria o foto_path
+  // sem a origem, e a 0242 (nivel_itens_foto_com_origem) o recusa: desmarcar item que já tinha foto nunca salvava.
+  const soDeclaracao = gravaSoADeclaracao({ existeLinha: !!atual, novaFoto: !!novaFoto });
+  const { error } = soDeclaracao
+    ? await c.admin.from("nivel_itens").update(camposDaDeclaracao({ declarado, uid: c.uid, agora })).eq("property_id", propertyId).eq("chave", chave)
+    : await c.admin.from("nivel_itens").upsert(
     {
       property_id: propertyId,
       chave,
@@ -213,6 +220,9 @@ export async function analisarFotoNivel(propertyId: string, chave: string, decis
   const admin = createAdminClient();
   if (!s || !admin || !UUID.test(propertyId ?? "")) return { ok: false, erro: "Sem permissão." };
   if (!(await ehAdmin(s.supabase, s.uid))) return { ok: false, erro: "Só o atendimento da Viva analisa as fotos." };
+  // E477: imóvel real — o admin observador da QA só lê (imóvel de conta de teste segue liberado).
+  const recusaQa = await recusaObservador(s.uid);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   if (!ehChaveNivel(chave) || (decisao !== "aceita" && decisao !== "recusada")) return { ok: false, erro: "Pedido inválido." };
   const m = (motivo ?? "").trim().slice(0, 300);
   if (decisao === "recusada" && m.length < 5) return { ok: false, erro: "Diga em poucas palavras por que a foto não serve (ex.: não mostra o item)." };

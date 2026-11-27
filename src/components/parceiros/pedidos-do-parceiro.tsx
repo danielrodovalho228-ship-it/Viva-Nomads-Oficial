@@ -5,11 +5,14 @@ import { Panel, EmptyState } from "@/components/dashboard/primitives";
 import { VazioOnboardingBloco } from "@/components/onboarding/vazio-onboarding";
 import { VAZIOS_ONBOARDING } from "@/lib/onboarding/vazios";
 import { pedidosDoMeuParceiro } from "@/lib/parceiros/pedido-actions";
-import { proximoPasso, ROTULO_REGISTRO_SEM_DINHEIRO, rotuloStatus } from "@/lib/parceiros/pedido";
+import { proximoPasso, ROTULO_REGISTRO_SEM_DINHEIRO, rotuloStatus, TEXTO_PAGAMENTO_INATIVO } from "@/lib/parceiros/pedido";
 import { rotuloCategoria } from "@/lib/parceiros/regras";
+import { PCT_PARCEIRO_RECEBE, ROTULO_TAXA_SERVICO_VIVA } from "@/config/taxa-servico-parceiros";
 import { dataHoraBRT, diaBRT } from "@/lib/datas-brasilia";
-import { CalendarioMes, LegendaCalendario } from "@/components/calendario/calendario-mes";
-import { mesesAPartirDe, type MarcaDia } from "@/lib/calendario/grade";
+import { AgendaCalendario } from "@/components/parceiros/agenda-calendario";
+import { ordenarAgenda, type ItemAgendaParceiro } from "@/lib/parceiros/agenda-parceiro";
+import { visitasNaAgenda } from "@/lib/vistoria/visitas-confirmadas";
+import { visitasConfirmadasDoAvaliador } from "@/lib/vistoria/visitas-do-avaliador-servidor";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const FECHADOS = ["aceito", "agendado", "em_execucao", "entregue", "concluido"];
@@ -27,18 +30,18 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
   const taxa = fechados.reduce((t, p) => t + Math.round((p.valorTaxa ?? 0) * 100), 0) / 100;
   const liquido = fechados.reduce((t, p) => t + Math.round((p.valorParceiro ?? 0) * 100), 0) / 100;
   // "Agenda" da barra do parceiro (Prompt 41): os horários já combinados, do mais próximo ao mais distante.
-  const agenda = pedidos
+  const servicos: ItemAgendaParceiro[] = pedidos
     .filter((p) => p.horario && NA_AGENDA.includes(p.status))
-    .sort((a, b) => String(a.horario).localeCompare(String(b.horario)));
+    .map((p) => ({ id: p.id, dia: diaBRT(p.horario) ?? "", quando: dataHoraBRT(p.horario), categoria: rotuloCategoria(p.categoria), em: String(p.horario) }));
+  // E1103: a Agenda é uma só — os horários dos pedidos de serviço E as visitas de avaliação confirmadas (a mesma fonte
+  // da tela do pedido). Antes, a visita de hoje do avaliador não aparecia aqui.
+  const { visitas, falhou: visitasFalharam } = await visitasConfirmadasDoAvaliador();
+  const agenda = ordenarAgenda([...servicos, ...visitasNaAgenda(visitas)]);
   // Prompt 43, item 4: a agenda usa a mesma grade dos calendários do imóvel e da estadia (dias com horário marcados).
   const hoje = diaBRT(new Date());
-  const marcasAgenda: Record<string, MarcaDia[]> = {};
-  for (const p of agenda) {
-    const dia = diaBRT(p.horario);
-    if (dia) marcasAgenda[dia] = ["evento"];
-  }
   return (
-    <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    // E469: no computador, Pedidos não estica até a altura de Agenda + Ganhos (cada cartão com a altura do conteúdo).
+    <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
       <Panel id="pedidos" title="Pedidos" className="scroll-mt-24" data-testid="parceiro-pedidos">
         {pedidos.length === 0 ? (
           <VazioOnboardingBloco vazio={VAZIOS_ONBOARDING.pedidosParceiro} />
@@ -68,39 +71,33 @@ export async function PedidosDoParceiro({ pagamentoAtivo }: { pagamentoAtivo: bo
       </Panel>
       <div className="grid content-start gap-6">
         <Panel id="agenda" title="Agenda" className="scroll-mt-24" data-testid="parceiro-agenda">
-          {hoje && (
-            <div className="mb-3">
-              <LegendaCalendario marcas={["evento", "hoje"]} />
-              {mesesAPartirDe(hoje, 1).map(({ ano, mes }) => (
-                <CalendarioMes key={`${ano}-${mes}`} tipo="agenda" ano={ano} mes={mes} hoje={hoje} marcas={marcasAgenda} />
-              ))}
-            </div>
+          {/* E466 (i): calendário com mês anterior/próximo e dias clicáveis (o dia filtra os horários). */}
+          {visitasFalharam && (
+            <p role="alert" className="mb-2 text-sm font-semibold text-red-700" data-testid="parceiro-agenda-visitas-erro">
+              Não foi possível carregar as visitas de avaliação agora. Recarregue a página em instantes.
+            </p>
           )}
           {agenda.length === 0 ? (
-            <EmptyState icon={CalendarDays} title="Nenhum horário combinado" text="Quando um horário for confirmado num pedido, ele aparece aqui." action={<ButtonLink href="/dashboard/parceiro#pedidos" variant="secondary" size="sm">Ver pedidos</ButtonLink>} />
+            <>
+              {hoje && <AgendaCalendario hoje={hoje} itens={[]} />}
+              <EmptyState icon={CalendarDays} title="Nenhum horário combinado" text="Quando um horário for confirmado num pedido, ele aparece aqui." action={<ButtonLink href="/dashboard/parceiro#pedidos" variant="secondary" size="sm">Ver pedidos</ButtonLink>} />
+            </>
           ) : (
-            <ul className="divide-y divide-line">
-              {agenda.map((p) => (
-                <li key={p.id}>
-                  <Link href={`/dashboard/servicos/pedidos/${p.id}`} className="flex min-h-11 items-center justify-between gap-2 py-3 text-sm" data-testid="parceiro-agenda-item">
-                    <span className="font-semibold text-ink">{dataHoraBRT(p.horario)}</span>
-                    <span className="text-muted">{rotuloCategoria(p.categoria)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            hoje && (
+              <AgendaCalendario hoje={hoje} itens={agenda} />
+            )
           )}
         </Panel>
         <Panel id="ganhos" title="Ganhos" className="scroll-mt-24" data-testid="parceiro-ganhos">
           <dl className="grid grid-cols-[1fr_auto] gap-y-1 text-sm">
             <dt className="text-muted">Serviços fechados</dt>
             <dd className="text-right text-ink">{brl(total)}</dd>
-            <dt className="text-muted">Taxa de serviço da Viva (10%)</dt>
+            <dt className="text-muted">{ROTULO_TAXA_SERVICO_VIVA}</dt>
             <dd className="text-right text-ink">{brl(taxa)}</dd>
-            <dt className="font-semibold text-ink">Você recebe (90%)</dt>
+            <dt className="font-semibold text-ink">Você recebe ({PCT_PARCEIRO_RECEBE})</dt>
             <dd className="text-right font-semibold text-ink">{brl(liquido)}</dd>
           </dl>
-          {!pagamentoAtivo && <p className="mt-3 text-xs text-muted">Valores como {ROTULO_REGISTRO_SEM_DINHEIRO}: o pagamento pela plataforma ainda não está ativo.</p>}
+          {!pagamentoAtivo && <p className="mt-3 text-xs text-muted">Valores como {ROTULO_REGISTRO_SEM_DINHEIRO}. {TEXTO_PAGAMENTO_INATIVO}</p>}
         </Panel>
       </div>
     </div>

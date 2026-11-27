@@ -21,6 +21,7 @@ import {
   validarArquivoAvatar,
 } from "@/lib/avatar-image";
 import { getMyAvatarUrl, setMyAvatarPath } from "@/lib/data/avatar-actions";
+import { esquecerMeuAvatar, lerMeuAvatar } from "@/lib/sessao/leituras-da-casca";
 import { cn } from "@/lib/utils";
 import { textoDoErro } from "@/lib/erro-de-rede";
 
@@ -45,7 +46,7 @@ export function useMinhaFoto(): { url: string | null; carregado: boolean } {
   const [estado, setEstado] = useState<{ url: string | null; carregado: boolean }>({ url: null, carregado: false });
   useEffect(() => {
     let vivo = true;
-    getMyAvatarUrl()
+    lerMeuAvatar()
       .then((r) => vivo && setEstado({ url: r.url, carregado: true }))
       .catch(() => vivo && setEstado((e) => ({ ...e, carregado: true })));
     const aoMudar = (e: Event) => setEstado({ url: (e as CustomEvent<{ url: string | null }>).detail?.url ?? null, carregado: true });
@@ -250,6 +251,8 @@ function RecorteFoto({ imagem, userId, onCancelar, onSalva, onErro }: { imagem: 
       }
       const r = await setMyAvatarPath(path);
       if (!r.ok) throw new Error("A foto subiu, mas não foi salva no seu perfil.");
+      // E1025: a foto mudou — a leitura repartida da casca não pode devolver a URL antiga.
+      esquecerMeuAvatar();
       const nova = await getMyAvatarUrl();
       avisarFotoAtualizada(nova.url);
       onSalva();

@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { jpegComGps } from "../fixtures/exif";
 import { metadadoNoDeposito } from "../fixtures/exif-deposito";
 import { authFile } from "../fixtures/auth";
@@ -8,7 +8,7 @@ import { authFile } from "../fixtures/auth";
   T236 — Parceiros, ciclo 31a (390 e 1280 px), laboratório:
    1. visitante: "Seja parceiro" pede conta (vai ao cadastro e volta); regras claras com "Pagamento pela plataforma
       em breve." (chave PAGAMENTO_PARCEIROS_ATIVO desligada);
-   2. conta com e-mail confirmado → pedido (fotografia, Uberlândia, PF, CPF válido, portfólio) → "Recebemos" + e-mail;
+   2. conta com e-mail confirmado → pedido (fotografia, Uberlândia, CNPJ válido, portfólio) → "Recebemos" + e-mail;
    3. admin em AAL2: ficha com checklist → Aprovar → e-mail "Sua parceria foi aprovada" com o link de ativação;
    4. link → ativa (mesmo e-mail) → cadastro completo: foto, capa, 3 fotos na galeria, serviço, redes → Publicar;
    5. /parceiros/[slug] no ar (sem telefone, e-mail ou documento) e na busca ?categoria=fotografia&cidade=Uberlândia;
@@ -57,7 +57,8 @@ async function pedir(page: Page, o: { categorias: string[]; portfolio?: string; 
   await page.goto("/parceiros#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
   const form = page.getByTestId("seja-parceiro-form");
   await expect(form).toBeVisible({ timeout: 20_000 });
-  await form.locator("#sp-doc").fill(cpfAleatorio());
+  await form.locator("#sp-doc").fill(cnpjAleatorio());
+  await form.getByText("Sim", { exact: true }).click(); // E648: só CNPJ; a pergunta da nota é sempre feita
   for (const c of o.categorias) await page.getByTestId(`sp-cat-${c}`).check();
   await form.locator("#sp-cidades").fill("Uberlândia");
   if (o.portfolio) await form.locator("#sp-portfolio").fill(o.portfolio);
@@ -66,7 +67,8 @@ async function pedir(page: Page, o: { categorias: string[]; portfolio?: string; 
   if (o.descricao) await form.locator("#sp-descricao").fill(o.descricao);
   await page.getByTestId("sp-aceite").check();
   await page.getByTestId("seja-parceiro-enviar").click();
-  await expect(page.getByTestId("seja-parceiro-recebido")).toContainText("Aguardando aprovação da Viva. Resposta em até 1 dia útil, por e-mail.", { timeout: 20_000 }); // texto do Prompt 43 (e21e4416)
+  // E791 (vigia, 12/11/2026): o prazo da parceria é 7 dias (o de /empresas), da fonte única PRAZO_RESPOSTA_PARCERIA.
+  await expect(page.getByTestId("seja-parceiro-recebido")).toContainText("Aguardando aprovação da Viva. Resposta em até 7 dias, por e-mail.", { timeout: 20_000 }); // texto do Prompt 43 (e21e4416)
 }
 
 async function solicitacao(email: string) {
@@ -141,12 +143,18 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
       const regras = page.getByTestId("taxa-servico-parceiros");
       await expect(regras).toContainText("Você combina e agenda tudo pelas mensagens da Viva.");
       await expect(regras).toContainText("Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias. Você só paga quando há serviço contratado.");
-      await expect(regras).toContainText("90% vai direto para você e 10% para a Viva. A Viva não guarda o seu dinheiro.");
+      await expect(regras).toContainText("90% vai direto para você e 10% para a Viva. A Viva não guarda o dinheiro.");
       await expect(page.getByTestId("pagamento-em-breve")).toHaveText("Pagamento pela plataforma em breve.");
       const corpo = (await page.locator("main").innerText()).toLowerCase();
       for (const p of ["retém", "repass", "intermedia", "comissão", "whatsapp", "r$ 40", "r$ 60", "r$ 80"]) expect(corpo, p).not.toContain(p);
       await expect(page.getByTestId("seja-parceiro-precisa-conta")).toBeVisible();
       await page.locator("#sp-nome").fill("Visitante Fotógrafo");
+      // E651: um CPF digitado NÃO avança para o /auth — a recusa aparece no passo, com a mensagem do CNPJ.
+      await page.locator("#sp-doc").fill("529.982.247-25");
+      await page.getByTestId("seja-parceiro-enviar").click();
+      await expect(page.getByTestId("sp-erro-documento")).toContainText("CPF não é aceito");
+      expect(page.url()).not.toContain("/auth");
+      await page.locator("#sp-doc").fill(cnpjAleatorio());
       await page.getByTestId("seja-parceiro-enviar").click();
       await page.waitForURL(/\/auth\?cadastro=1&redirect=/, { timeout: 15_000 });
       expect(decodeURIComponent(page.url())).toContain("/parceiros?seja=1#quero-ser-parceiro");
@@ -155,9 +163,9 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     });
   }
 
-  test("390px: conta com e-mail confirmado pede a parceria (fotografia, Uberlândia, PF, CPF, portfólio)", async ({ browser }) => {
+  test("390px: conta com e-mail confirmado pede a parceria (fotografia, Uberlândia, CNPJ, portfólio)", async ({ browser }) => {
     const page = await abrir(browser, foto.email, 390);
-    // CPF inválido é barrado na tela e no servidor.
+    // Documento inválido é barrado na tela e no servidor (E648: só CNPJ; CPF válido também é recusado).
     await page.goto("/parceiros#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
     await page.locator("#sp-doc").fill("111.111.111-11");
     await page.getByTestId("sp-cat-fotografia").check();
@@ -165,12 +173,16 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await page.locator("#sp-portfolio").fill("https://marinalente.com.br");
     await page.getByTestId("sp-aceite").check();
     await page.getByTestId("seja-parceiro-enviar").click();
-    await expect(page.getByTestId("seja-parceiro-erro")).toContainText("CPF inválido");
+    // E651: 11 dígitos é tentativa de CPF — recusa com a regra do CNPJ (válido ou não); CNPJ de 14 dígitos com dígito errado é "inválido".
+    await expect(page.getByTestId("sp-erro-documento")).toContainText("CPF não é aceito");
+    await page.locator("#sp-doc").fill("11.222.333/0001-82");
+    await page.getByTestId("seja-parceiro-enviar").click();
+    await expect(page.getByTestId("sp-erro-documento")).toContainText("CNPJ inválido");
     await pedir(page, { categorias: ["fotografia"], portfolio: "https://marinalente.com.br" });
     const s = await solicitacao(foto.email);
     expect(s?.status).toBe("pendente");
     expect(s?.origem).toBe("site");
-    expect(s?.documento).toMatch(/^\d{11}$/);
+    expect(s?.documento).toMatch(/^\d{14}$/);
     await expect.poll(async () => (await lerSaida()).some((e) => e.para === foto.email && /Recebemos o seu pedido de parceria/.test(String(e.assunto))), { timeout: 15_000 }).toBe(true);
     // Uma solicitação aberta por conta: o formulário mostra o andamento, não um segundo pedido.
     await page.goto("/parceiros#quero-ser-parceiro", { waitUntil: "domcontentloaded" });
@@ -244,7 +256,7 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
 
     await page.getByTestId("parceiro-aba-dados").click();
     await expect(page.getByTestId("recebimento-em-breve")).toContainText("Pagamento pela plataforma em breve.");
-    await expect(page.getByTestId("parceiro-documento")).toContainText("•••");
+    await expect(page.getByTestId("parceiro-documento")).toContainText(/^\*\*\*\.\d{3}\.\d{3}-\*\*$/);
 
     await expect(page.getByTestId("parceiro-publicar")).toBeEnabled({ timeout: 15_000 });
     await page.getByTestId("parceiro-publicar").click();
@@ -295,8 +307,11 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
       await expect(page.locator(`[data-testid="cartao-parceiro"][data-slug="${slug}"]`)).toBeVisible();
       await page.goto("/parceiros/fotografos?cidade=Uberl%C3%A2ndia", { waitUntil: "domcontentloaded" });
       await expect(page.locator(`[data-testid="cartao-parceiro"][data-slug="${slug}"]`)).toBeVisible();
-      await expect(page.getByTestId("taxa-servico-parceiros")).toContainText("A Viva não guarda o seu dinheiro.");
-      await expect(page.getByTestId("fotografos-contato-aceite")).toContainText("só depois do aceite");
+      await expect(page.getByTestId("taxa-servico-parceiros")).toContainText("A Viva não guarda o dinheiro.");
+      // E774 (10/11/2026, decisão do chat principal: Parceiros entra na família E764/E774 — contato liberado após o aceite NÃO é
+      // permitido; regra E445): a página de fotógrafos não promete mais o contato "só depois do aceite"; o contato nunca é trocado.
+      await expect(page.getByTestId("fotografos-contato-aceite")).toHaveText("Seu contato não é trocado: tudo se combina pelas mensagens da Viva.");
+      await expect(page.getByTestId("fotografos-contato-aceite")).not.toContainText("depois do aceite");
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t236-busca-${largura}.png`, fullPage: false });
     });
@@ -322,7 +337,12 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await a.goto("/admin/parceiros?aba=pendentes", { waitUntil: "domcontentloaded" });
     const ficha = a.locator(`[data-testid="ficha-parceria"][data-email="${recusado.email}"]`);
     await expect(ficha.getByTestId("ficha-recusar")).toBeDisabled();
-    await ficha.getByTestId("ficha-modelo-recusa").selectOption({ index: 2 });
+    await ficha.getByTestId("ficha-modelo-recusa-area").check(); // E350: modelos como opções na tela
+    // E350: o modelo preenche o motivo (o texto inteiro, com o próximo passo) e a lista não cobre a tela no celular.
+    await expect(ficha.getByTestId("ficha-motivo")).toHaveValue(/Ainda não atendemos a sua cidade ou região/);
+    await expect(ficha.getByTestId("ficha-modelo-recusa-identidade")).toBeVisible();
+    await semRolagemLateral(a);
+    await ficha.getByTestId("ficha-modelo-recusa").screenshot({ path: "tests/laboratorio/saida/t236-e350-modelos-390.png" });
     await ficha.getByTestId("ficha-recusar").click();
     await ficha.getByTestId("ficha-recusar-confirmar").click();
     await expect.poll(async () => (await solicitacao(recusado.email))?.status, { timeout: 20_000 }).toBe("recusada");
@@ -347,7 +367,8 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/dashboard/parceiro", { waitUntil: "domcontentloaded" });
     const form = page.getByTestId("seja-parceiro-form");
-    await form.locator("#sp-doc").fill(cpfAleatorio());
+    await form.locator("#sp-doc").fill(cnpjAleatorio());
+    await form.getByText("Sim", { exact: true }).click(); // E648: só CNPJ
     await page.getByTestId("sp-cat-mudanca").check();
     await form.locator("#sp-cidades").fill("Uberlândia");
     await form.locator("#sp-empresa").fill("Sara Mudanças");
@@ -386,7 +407,7 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
   });
 
   for (const largura of [390, 1280]) {
-    test(`${largura}px: busca vazia — avise-me, "Indique um profissional" e o cartão do parceiro geral (ligado pelo admin)`, async ({ browser, page }) => {
+    test(`${largura}px: busca vazia — avise-me e "Indique um profissional"; o cartão do parceiro geral fica fora do site (E688), mesmo ligado pelo admin`, async ({ browser, page }) => {
       semDialogo(page);
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       const url = "/parceiros/buscar?categoria=lavanderia&cidade=Itapagipe&uf=MG";
@@ -411,8 +432,9 @@ test.describe("T236 — parceiros: funil, ativação, página, busca e textos", 
         await a.context().close();
       }
       await page.goto(url, { waitUntil: "domcontentloaded" });
-      await expect(page.getByTestId("parceiro-geral")).toContainText("AquiResolve");
-      await expect(page.getByTestId("parceiro-geral").locator("img")).toHaveCount(0); // sem logo de terceiros
+      // E688 (Daniel, 08/11): o cartão (AquiResolve) não é prometido enquanto o parceiro não estiver cadastrado.
+      await expect(page.getByTestId("parceiro-geral")).toHaveCount(0);
+      await expect(page.getByText("AquiResolve")).toHaveCount(0);
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t236-busca-vazia-${largura}.png`, fullPage: false });
     });

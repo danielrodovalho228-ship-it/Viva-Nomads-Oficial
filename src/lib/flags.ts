@@ -54,7 +54,6 @@ export const KYC_PORTAO_RIGIDO = process.env.NEXT_PUBLIC_KYC_PORTAO_RIGIDO === "
  */
 export const GERACAO_IA_ATIVA = process.env.NEXT_PUBLIC_GERACAO_IA === "on";
 
-
 /**
  * Login com Google. OFF por padrão: o provedor Google NÃO está ativado no
  * Supabase (Auth → Providers) — com o botão visível, quem clicava caía num JSON
@@ -100,7 +99,56 @@ export const ENCERRAMENTO_REGRAS_ATIVO = process.env.NEXT_PUBLIC_ENCERRAMENTO_RE
  * do item 14 da Dra. Beatriz (NEXT_PUBLIC_VISTORIA_PARECER_14="on" quando recebido).
  */
 export const VISTORIA_ATIVA = process.env.NEXT_PUBLIC_VISTORIA_ATIVA === "on";
+/**
+ * E690: ativação AUTOMÁTICA do avaliador credenciado (regra validada pelo coordenador, 08/11/2026). Desligada por padrão.
+ * Ligada: "solicitado" → "em_teste" sozinho (identidade verificada + CPF do titular/sócio do CNPJ + experiência + código de
+ * conduta + cidade) e "em_teste" → "ativo" sozinho (avaliação-teste concluída e aprovada na conferência). Cada passo grava
+ * "decidido pelo sistema" com os critérios do momento. Nunca dispensa a identidade.
+ */
+export const AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA = process.env.NEXT_PUBLIC_AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA === "on";
 export const VISTORIA_PARECER_14 = process.env.NEXT_PUBLIC_VISTORIA_PARECER_14 === "on";
+
+/**
+ * E633 — matrícula atualizada do imóvel como prova de titularidade. OFF por padrão = OPCIONAL: o anúncio publica sem ela
+ * e o item aparece só como melhoria. Só liga (vira obrigatória) com a confirmação POR ESCRITO da Dra. Beatriz (item 38
+ * da pauta dela); aprovado pelo Daniel em 05/11/2026.
+ */
+export const MATRICULA_OBRIGATORIA = process.env.NEXT_PUBLIC_MATRICULA_OBRIGATORIA === "on";
+
+/**
+ * E637 — prazos da caução (parecer do dono em 7 dias, silêncio vira liberação integral, devolução em 30 dias, contestação em
+ * 5 dias, bloqueio de anúncio novo no dia 30). OFF por padrão: o desenho e o motor existem, nada age. Só liga com o parecer da
+ * Dra. Beatriz (desenho fechado pelo coordenador em 05/11/2026).
+ */
+export const CAUCAO_PRAZOS_ATIVA = process.env.NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA === "on";
+
+/**
+ * E722 — pré-aceitação de 72 horas (prazo para concluir o contrato depois do aceite, lembretes de 24 h e 6 h, expiração sem
+ * punição, até 2 reaberturas com a taxa congelada mantida). OFF por padrão: o motor existe, nada age até a decisão de ligar.
+ */
+export const PRE_ACEITACAO_72H_ATIVA = process.env.NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA === "on";
+
+/**
+ * TRAVA COBRANCA_MENSAL (E641, desenho do coordenador de 05/11/2026): cobrança mensal para contratos de 91 a 180 dias. DESLIGADA por
+ * padrão e só a parte NEUTRA existe: cronograma, livro de pagamentos (registro do morador, confirmação do dono) e lembretes D-5/D-3.
+ * Nada de atraso, encargos, mensagem depois do vencimento ou consequência ao morador até o parecer da Dra. Beatriz. Só o valor "on" liga.
+ */
+export const COBRANCA_MENSAL_ATIVA = process.env.NEXT_PUBLIC_COBRANCA_MENSAL_ATIVA === "on";
+
+/**
+ * TRAVA FORMA_PAGAMENTO_DONO (E647, Daniel, 06/11/2026): a forma de pagamento (bloco completo, mensal ou ambos, nas faixas de
+ * 30–90 e 91–180 dias) é ESCOLHA DO DONO no anúncio; a Viva não impõe. DESLIGADA por padrão e só a parte NEUTRA existe: o campo
+ * no editor, o texto ao morador e o cronograma conforme a escolha. Nada de atraso, inadimplência, encargos ou notificação formal
+ * até o parecer da Dra. Beatriz (item 59 da pauta). Só o valor "on" liga.
+ */
+export const FORMA_PAGAMENTO_DONO_ATIVA = process.env.NEXT_PUBLIC_FORMA_PAGAMENTO_DONO_ATIVA === "on";
+
+/**
+ * E634 — ficha-resumo do contrato (datas, valor, vencimento e conta de recebimento, com a autorização expressa quando a conta
+ * é de terceiro). OFF por padrão: o desenho e a geração existem, nada aparece para ninguém. Entra no ar junto com o modelo
+ * de contrato da Dra. Beatriz; aprovado pelo Daniel em 05/11/2026.
+ */
+export const FICHA_RESUMO_ATIVA = process.env.NEXT_PUBLIC_FICHA_RESUMO_ATIVA === "on";
 
 /**
  * 63-B — "Conectar LinkedIn" (selo de confiança). OFF até o Daniel colar LINKEDIN_CLIENT_ID e LINKEDIN_CLIENT_SECRET na
@@ -158,3 +206,21 @@ export const RESUMO_SEMANAL_ATIVO = process.env.RESUMO_SEMANAL_ATIVO === "1";
  * (Apify/AirROI) fica para depois do CNPJ (decisão E406 do Daniel).
  */
 export const PRECO_JUSTO_COMPARADOR = process.env.NEXT_PUBLIC_PRECO_JUSTO_COMPARADOR === "on";
+
+/**
+ * TRAVA FAIXA_91_180 (preparação pedida pelo coordenador, 05/11): estadias de 91 a 180 dias. LIGADA por padrão — o
+ * comportamento de hoje (30 a 180 dias) não muda; só o valor "off" desliga. Desligada, propostas e contratos NOVOS
+ * ficam limitados a 30–90 dias (um bloco de temporada). Contratos e renovações que já existem não mudam.
+ */
+export const FAIXA_91_180_ATIVA = process.env.NEXT_PUBLIC_FAIXA_91_180_ATIVA !== "off";
+
+/**
+ * E793 — painel desenhado no servidor com a sessão conferida lá (docs/e793-painel-sessao-servidor.md). Lida SÓ no
+ * servidor (sem NEXT_PUBLIC_): `off` (padrão) ou o nome da onda ligada (`piloto`). A lista de rotas de cada onda está em
+ * src/lib/auth/painel-sessao-servidor.ts. Rollback: trocar a variável na Vercel e refazer o deploy do MESMO commit — sem
+ * código, mas NÃO instantâneo (alguns minutos). Mudar em produção é com o Daniel e o Muse.
+ */
+export type OndaPainelSessaoServidor = "off" | "piloto";
+export function ondaPainelSessaoServidor(valor: string | undefined = process.env.PAINEL_SESSAO_SERVIDOR): OndaPainelSessaoServidor {
+  return valor === "piloto" ? "piloto" : "off";
+}

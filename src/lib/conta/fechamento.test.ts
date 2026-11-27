@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { LINHA_FECHAMENTO_CONTA } from "./secoes.ts";
+import { PRECOS_VISIVEL } from "../../config/precos-visivel.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
@@ -30,6 +31,7 @@ test("E71: Ajuda com o contato em destaque (foto + frase), descrições nas linh
   assert.doesNotMatch(tela, /ajuda-sair/);
   const { FAQ } = await import("../atendimento/faq.ts");
   const links = (id: string) => FAQ.find((p) => p.id === id)?.links?.map((l) => l.href) ?? [];
-  assert.deepEqual(links("custo-anunciar"), ["/precos"]);
+  // E563: com a página de preços suspensa (chave desligada), o artigo fica sem o link; ligada, volta o /precos.
+  assert.deepEqual(links("custo-anunciar"), PRECOS_VISIVEL ? ["/precos"] : []);
   assert.deepEqual(links("golpe"), ["/seguranca"]);
 });

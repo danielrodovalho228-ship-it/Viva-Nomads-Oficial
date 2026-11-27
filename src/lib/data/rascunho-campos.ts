@@ -9,6 +9,7 @@
 
 export interface InstantaneoRascunho {
   neighborhood?: string;
+  bedrooms?: number;
   bathrooms?: number;
   areaM2?: number;
   description?: string;
@@ -21,6 +22,7 @@ const inteiro = (n: unknown): number => {
 
 export function camposDeConteudoDoRascunho(snap: InstantaneoRascunho): {
   address: string;
+  bedrooms: number;
   bathrooms: number;
   area_m2: number;
   description: string;
@@ -28,6 +30,8 @@ export function camposDeConteudoDoRascunho(snap: InstantaneoRascunho): {
   return {
     // E429: o bairro vai para a coluna como está ("Minas Gerais" é bairro oficial de Uberlândia).
     address: (snap.neighborhood ?? "").trim().slice(0, 200),
+    // E603: os quartos também vão para a coluna (a listagem de Meus imóveis lê a coluna: um rascunho de 2 quartos mostrava 0).
+    bedrooms: Math.min(inteiro(snap.bedrooms), 50),
     bathrooms: Math.min(inteiro(snap.bathrooms), 50),
     area_m2: inteiro(snap.areaM2),
     description: (snap.description ?? "").trim().slice(0, 5000),

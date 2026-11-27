@@ -44,7 +44,8 @@ test("caução continua 50% de cada bloco com a soma limitada a 3 aluguéis", ()
 
 test("registrarContrato grava a garantia e zera a caução dos blocos com seguro-fiança (também na renovação, pelo aditivo)", () => {
   const a = ler("lib/data/actions.ts");
-  assert.match(a, /validarGarantia\(garantia, resumo\.prazoTotalMeses \* DIAS_POR_MES\)/);
+  // E562: o prazo em dias (da proposta aceita ou meses × 30).
+  assert.match(a, /validarGarantia\(garantia, resumo\.prazoTotalDias\)/);
   assert.match(a, /capacidade_snapshot: input\.capacidadeSnapshot \?\? null,\s*garantia,/);
   assert.match(a, /caucao: garantia === "seguro_fianca" \? 0 : b\.caucao/);
   // E222-B: a renovação é o aditivo de prorrogação; os blocos novos seguem a mesma regra.

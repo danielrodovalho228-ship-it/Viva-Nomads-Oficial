@@ -1,6 +1,11 @@
+/*
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): o botão do formulário de /precos diz "Falar com a Viva sobre carteiras"
+  (antes "Falar sobre o Plano Gestor"); o formulário não cita mais o Plano Gestor.
+*/
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { escaparHtml, validarLeadGestor } from "./plano-gestor-lead.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 test("lead válido: normaliza e-mail e quantidade", () => {
   const r = validarLeadGestor({ nome: " Ana ", email: "ANA@Ex.com", telefone: "(11) 99999-0000", imoveis: "40" });
@@ -26,11 +31,15 @@ test("escaparHtml neutraliza tags", () => {
   assert.equal(escaparHtml(`<img src=x onerror="a">&`), "&lt;img src=x onerror=&quot;a&quot;&gt;&amp;");
 });
 
-test("/precos mostra o botão do Plano Gestor e a rota limita por IP", async () => {
+test("/precos mostra o botão do pedido de contato de carteiras (antes: do Plano Gestor) e a rota limita por IP", async () => {
   const { readFileSync } = await import("node:fs");
   const page = readFileSync(new URL("../../app/(public)/precos/page.tsx", import.meta.url), "utf8");
   assert.match(page, /<PlanoGestorForm \/>/);
   const rota = readFileSync(new URL("../../app/api/plano-gestor/route.ts", import.meta.url), "utf8");
   assert.match(rota, /consumirLimite\(`plano-gestor:ip:/);
-  assert.match(readFileSync(new URL("../../components/precos/plano-gestor-form.tsx", import.meta.url), "utf8"), /Falar sobre o Plano Gestor/);
+  const form = readFileSync(new URL("../../components/precos/plano-gestor-form.tsx", import.meta.url), "utf8");
+  // 078 (Daniel, 16/11/2026): antes /Falar sobre o Plano Gestor/ — o botão virou "Falar com a Viva sobre carteiras"…
+  assert.match(form, /data-testid="plano-gestor-botao">\s*Falar com a Viva sobre carteiras\s*<\/Button>/);
+  // 078 (Daniel, 16/11/2026): …e nenhum texto de tela do formulário cita mais o Plano Gestor (comentários de fora).
+  assert.doesNotMatch(fonteSemComentarios(form), /Plano Gestor/i);
 });

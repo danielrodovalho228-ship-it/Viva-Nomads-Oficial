@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Bell, ChevronRight, CircleHelp, CreditCard, FileText, LogOut, Shield, ShieldCheck, Star, UserRound, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SECOES_CONTA, type ItemSecao } from "@/lib/conta/secoes";
+import { SECOES_MENU_CONTA, type ItemSecao } from "@/lib/conta/secoes";
 import { useSair } from "./use-sair";
 import { FechamentoConta } from "./casca-conta";
 
@@ -33,7 +33,8 @@ export function ContaMenu() {
   const grupos: Grupo[] = [
     {
       titulo: "Conta",
-      itens: SECOES_CONTA.map((s) => ({ href: s.href, label: s.rotuloMenu ?? s.rotulo, descricao: s.descricao, icon: ICONES_SECAO[s.icone] })),
+      // E493: sem a Ajuda (a porta dela é o "Ajuda" do menu da Conta, no avatar).
+      itens: SECOES_MENU_CONTA.map((s) => ({ href: s.href, label: s.rotuloMenu ?? s.rotulo, descricao: s.descricao, icon: ICONES_SECAO[s.icone] })),
     },
     {
       // NAV-A: a Conta é só a PESSOA. Avisos (sino do topo), Verificação, Ferramentas, Indicações, Painel Admin e Equipe

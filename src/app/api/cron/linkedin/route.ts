@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { integracoesSimuladas } from "@/lib/integracoes";
 import { avisar } from "@/lib/vistoria/servidor";
 import { rotinaLinkedin } from "@/lib/linkedin/servidor";
+import { ROTA_CONTA_LINKEDIN } from "@/lib/linkedin/rotas";
 
 /**
  * 63-B — 1×/dia: "Reconecte seu LinkedIn para manter o selo" 30 dias antes de vencer (uma vez por conexão). O selo
@@ -17,6 +18,6 @@ export async function GET(request: Request) {
   if (!admin) return NextResponse.json({ error: "Serviço indisponível." }, { status: 503 });
   const simulada = integracoesSimuladas() ? new URL(request.url).searchParams.get("agora") : null;
   const agora = simulada && Number.isFinite(Date.parse(simulada)) ? new Date(simulada) : new Date();
-  const r = await rotinaLinkedin(admin, agora, (uid) => avisar(admin, uid, "linkedin_vencendo", "/dashboard/conta/privacidade"));
+  const r = await rotinaLinkedin(admin, agora, (uid) => avisar(admin, uid, "linkedin_vencendo", ROTA_CONTA_LINKEDIN));
   return NextResponse.json({ ok: true, agora: agora.toISOString(), ...r });
 }

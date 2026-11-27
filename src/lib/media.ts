@@ -58,7 +58,8 @@ export const PHOTOS = {
   // Conta › Pagamentos (E70): uma foto do acervo por cartão, no padrão dos Papéis.
   pagamentos: {
     proprietario: `${H}/home-proprietarios-chaves.webp`,
-    morador: `${I}/placeholder-imovel-sala.webp`,
+    // E540: a foto própria de pagamentos (antes, o placeholder de imóvel placeholder-imovel-sala.webp).
+    morador: "/images/unicas/cf-pagamentos.webp",
     parceiro: "/images/unicas/parceiros-servicos.webp",
   },
   // Conta › Ajuda (E71): a foto só no cartão de contato (uma pessoa numa conversa pelo celular).
@@ -171,6 +172,14 @@ export const PROPERTY_PHOTOS: Record<string, string[]> = {
   ],
 };
 
+/** E697: tira fotos repetidas (mesmo endereço) preservando a ordem. Sem repetição, devolve a MESMA lista. */
+export function fotosUnicas(fotos: readonly string[]): string[] {
+  const vistas = new Set(fotos);
+  if (vistas.size === fotos.length) return fotos as string[];
+  const vistos = new Set<string>();
+  return fotos.filter((f) => (vistos.has(f) ? false : (vistos.add(f), true)));
+}
+
 /**
  * Monta uma galeria com `n` fotos ciclando os ambientes disponíveis.
  * Demonstra a galeria adaptável e os tiers de qualidade enquanto as fotos
@@ -190,7 +199,8 @@ export function gallery(n: number): string[] {
 export function galleryFor(propertyId: string, n: number): string[] {
   const real = PROPERTY_PHOTOS[propertyId];
   if (real && real.length > 0) {
-    return Array.from({ length: n }, (_, i) => real[i % real.length]);
+    // E697: sem ciclar — antes, 2 fotos reais viravam 10 posições (a foto 4 = a foto 2). Só as fotos distintas que existem, até n.
+    return fotosUnicas(real).slice(0, Math.max(0, n));
   }
   // Fallback ilustrativo (ambientes genéricos): rotaciona o início por um hash do
   // id para que imóveis sem fotos próprias não mostrem todos a MESMA capa.
@@ -202,15 +212,13 @@ export function galleryFor(propertyId: string, n: number): string[] {
 }
 
 /**
- * Foto de CAPA (miniatura) de um imóvel: usa a 1ª foto real do anúncio quando
- * existe; senão, uma foto de ambiente determinística pelo id (nunca quebra, e o
- * mesmo imóvel mostra sempre a mesma capa).
+ * Foto de CAPA (miniatura) de um imóvel: a 1ª foto real do anúncio (ou a do anúncio de exemplo); sem nenhuma, null —
+ * a tela desenha o espaço sem foto. E513 (D-S2-09 B): antes caía numa foto do acervo pelo hash do id — a MESMA foto em
+ * vários anúncios sem capa (os pausados apareciam com foto repetida) e uma foto que não é do imóvel.
  */
-export function coverPhoto(propertyId: string, photos?: string[]): string {
+export function coverPhoto(propertyId: string, photos?: string[]): string | null {
   if (photos && photos.length > 0) return photos[0];
   const real = PROPERTY_PHOTOS[propertyId];
   if (real && real.length > 0) return real[0];
-  let h = 0;
-  for (let i = 0; i < propertyId.length; i++) h = (h * 31 + propertyId.charCodeAt(i)) >>> 0;
-  return PHOTOS.galleryRooms[h % PHOTOS.galleryRooms.length];
+  return null;
 }

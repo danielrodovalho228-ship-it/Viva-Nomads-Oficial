@@ -124,7 +124,7 @@ test("ponto de envio: os 6 lugares passam os fatos ao construtor", () => {
   for (const f of ['{ tipo: "status", para: novo }', '{ tipo: "mensagem" }', '{ tipo: "provisoria" }', '{ tipo: "confirmada" }']) assert.ok(manut.includes(f), f);
   assert.match(manut, /properties\(title, address, city\)";/);
   const cron = ler("src/app/api/cron/atendimento/route.ts");
-  assert.match(cron, /service_orders\(id, owner_id, priority, category, opened_at, first_response_at, status, properties\(title, address, city\)\)/);
+  assert.match(cron, /service_orders\(id, owner_id, property_id, priority, category, opened_at, first_response_at, status, properties\(title, address, city\)\)/);
   assert.match(cron, /corpoManutencaoAtrasada\(\{[\s\S]{0,300}prazoHoras: PRAZO_MANUTENCAO_H\[so\.priority\] \?\? 24/);
   assert.match(ler("src/lib/atendimento/viva-servidor.ts"), /\.\.\.paraNotify\(corpoLembreteInteressado\(\{ imovel: imovelDoLead\(lead\), interessado: await primeiroNomeDe\(admin, uid\)/);
   assert.match(ler("src/lib/data/pedidos-actions.ts"), /corpoPedidoEncerrado\(\{\s+cidade:/);

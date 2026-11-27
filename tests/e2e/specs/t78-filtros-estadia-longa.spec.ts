@@ -1,4 +1,15 @@
 import { test, expect } from "@playwright/test";
+import { apagarMassaFiltrosBusca, criarMassaFiltrosBusca, type MassaFiltros } from "../fixtures/massa-filtros-busca";
+
+// Frente 3 (busca): desde o E131 os exemplos saem das contagens quando há anúncio real; no laboratório, um anúncio real
+// cobre os atalhos e chips que este spec toca (fixtures/massa-filtros-busca.ts). Fora do laboratório, nada muda.
+let massaFiltros: MassaFiltros | null = null;
+test.beforeAll(async () => {
+  massaFiltros = await criarMassaFiltrosBusca();
+});
+test.afterAll(async () => {
+  await apagarMassaFiltrosBusca(massaFiltros);
+});
 
 /**
  * T78 — ordem 583d2e71: filtros de estadia longa na /buscar. Dois filtros combinados vão para a URL e a

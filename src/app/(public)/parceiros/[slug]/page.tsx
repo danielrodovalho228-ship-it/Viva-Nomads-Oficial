@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GaleriaPublica } from "@/components/parceiros/galeria-publica";
 import { notFound, redirect } from "next/navigation";
 import { BadgeCheck, Clock, MapPin, Star } from "lucide-react";
 import { SELO_APROVADO, capaDoParceiro, iniciaisDoParceiro } from "@/lib/parceiros/apresentacao";
@@ -169,17 +170,8 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
               {galeria.length === 0 ? (
                 <p className="mt-2 text-muted">Ainda sem fotos de trabalhos.</p>
               ) : (
-                <ul className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-3" data-testid="parceiro-galeria">
-                  {galeria.map((g) => (
-                    <li key={g.id} className="min-w-0">
-                      <figure>
-                        {/* eslint-disable-next-line @next/next/no-img-element -- imagem do bucket público, já reduzida no envio */}
-                        <img src={g.url} alt={g.legenda ?? `Trabalho de ${p.nomePublico}`} loading="lazy" className="aspect-[4/3] w-full rounded-xl object-cover" />
-                        {g.legenda && <figcaption className="mt-1 text-xs text-muted">{g.legenda}</figcaption>}
-                      </figure>
-                    </li>
-                  ))}
-                </ul>
+                // E466 (ii): clicar na foto amplia (a mesma visualização da galeria do imóvel).
+                <GaleriaPublica itens={galeria.map((g) => ({ id: g.id, url: g.url, legenda: g.legenda ?? null }))} nome={p.nomePublico} />
               )}
             </section>
           </div>
@@ -204,7 +196,7 @@ export default async function ParceiroPage({ params, searchParams }: Params) {
                   doCadastroDoImovel={doCadastro}
                   descricaoInicial={descricaoInicial}
                 />
-                <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Contato e endereço só depois do aceite.</p>
+                <p className="mt-2 text-sm text-muted">O pedido e a conversa ficam nas mensagens da Viva. Seu contato não é trocado.</p>
               </div>
             )}
             {redes.length > 0 && (

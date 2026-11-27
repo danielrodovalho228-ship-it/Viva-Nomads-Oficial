@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { soLeituraNaTela } from "@/lib/qa/observador";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { notFound } from "next/navigation";
 import { FileX2 } from "lucide-react";
 import { EmptyState, PageTitle, Panel, FilaVazia } from "@/components/dashboard/primitives";
@@ -21,6 +23,8 @@ export const dynamic = "force-dynamic";
 export default async function EncerramentosPage() {
   const admin = await adminDaPagina();
   if (!admin) notFound();
+  // E477: a conta observadora da QA só lê (nada de conduzir/concluir encerramento).
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const supabase = await createClient();
   const {
     data: { user },
@@ -75,7 +79,7 @@ export default async function EncerramentosPage() {
                     Pedido por {nomes.get(l.pedido_por) ?? "—"} ({l.papel === "proprietario" ? "proprietário" : "morador"}) em {dataHoraBRT(l.criado_em)} · {ROTULO_STATUS_ENCERRAMENTO[l.status] ?? l.status}
                   </p>
                 </div>
-                {l.status !== "concluido" && <AcoesEncerramento pedidoId={l.id} status={l.status} />}
+                {l.status !== "concluido" && (soLeitura ? <SoLeituraQa /> : <AcoesEncerramento pedidoId={l.id} status={l.status} />)}
               </div>
             </Panel>
           ))}

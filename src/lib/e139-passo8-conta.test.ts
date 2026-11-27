@@ -8,11 +8,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { calcularTudoIncluido, contaDoPeriodo, parcelasDoMes, type CamposTotalMes } from "./precos.ts";
 import { blocosBolsoPeriodo } from "./cobranca/bolso.ts";
 import { comissaoSobreContrato } from "./cobranca/regra.ts";
+import { fonteSemComentarios as semComentarios } from "./fonte-sem-comentarios.ts";
 
 const nbsp = (s: string) => s.replace(/ /g, " ");
 const E139 = { monthlyPrice: 3600, condoFee: 350, utilitiesMode: "fixed", utilitiesEstimate: 150 } as CamposTotalMes;
 const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8");
-const semComentarios = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 test("E139: o morador paga o total do mês COM contas × meses (16.400), e a taxa é 12% do valor mensal × meses (1.728)", () => {
   const c = contaDoPeriodo(E139, 4, 0.12)!;

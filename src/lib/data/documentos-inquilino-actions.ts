@@ -24,7 +24,9 @@ async function parteDaCandidatura(leadId: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: lead } = await admin.from("leads").select("id, tenant_id, owner_id, status").eq("id", leadId).maybeSingle();
+  const { data: lead, error } = await admin.from("leads").select("id, tenant_id, owner_id, status").eq("id", leadId).maybeSingle();
+  // Achado 130: a falha não vira "sem permissão"/lista vazia ("ainda não enviou") — lança e a tela avisa.
+  if (error) throw new Error("Não foi possível ler a candidatura agora.");
   if (!lead || lead.status !== "accepted") return null;
   const parte = lead.tenant_id === user.id || lead.owner_id === user.id || (await ehAdmin(supabase, user.id));
   return parte ? { admin, lead } : null;
@@ -47,9 +49,11 @@ export async function listarDocsInquilino(leadId: string, opcoes: { exigir?: boo
 /** Link assinado de 10 minutos para abrir um documento (inquilino, dono ou admin). */
 export async function linkDocInquilino(leadId: string, tipo: string): Promise<{ ok: boolean; url?: string; error?: string }> {
   if (!tipoDocValido(tipo)) return { ok: false, error: "Documento inválido." };
-  const ctx = await parteDaCandidatura(leadId);
+  const ctx = await parteDaCandidatura(leadId).catch(() => "falhou" as const);
+  if (ctx === "falhou") return { ok: false, error: "Não foi possível abrir agora." };
   if (!ctx) return { ok: false, error: "Sem permissão." };
-  const { data: doc } = await ctx.admin.from("documentos_inquilino").select("caminho, arquivo_eliminado_em").eq("lead_id", leadId).eq("tipo", tipo).maybeSingle();
+  const { data: doc, error: erroDoc } = await ctx.admin.from("documentos_inquilino").select("caminho, arquivo_eliminado_em").eq("lead_id", leadId).eq("tipo", tipo).maybeSingle();
+  if (erroDoc) return { ok: false, error: "Não foi possível abrir agora." };
   // Prompt 58: candidatura recusada — o arquivo sai depois do prazo e fica só o registro do envio.
   if (doc?.arquivo_eliminado_em) return { ok: false, error: "Arquivo apagado pelo prazo de guarda. Fica só o registro do envio." };
   if (!doc?.caminho) return { ok: false, error: "Documento não enviado." };

@@ -1,5 +1,6 @@
 "use client";
 
+import { TEXTO_CARTEIRAS } from "@/config/planos";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Printer } from "lucide-react";
@@ -7,19 +8,32 @@ import styles from "./financeiro.module.css";
 import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
 import {
   ALUGUEL_MEDIO,
-  MIX_FAIXAS,
   TAXA_MEDIA,
+  LACUNAS_CUSTO,
   CENARIOS,
   CUSTO_FIXO_FAIXA,
   CUSTOS_FIXOS,
+  CUSTO_FORNECEDORES,
+  FORA_DO_FIXO,
+  ROTULO_HIPOTESE_IDENTIDADE,
   CUSTOS_POR_CONTRATO,
   DOLAR,
-  IMPOSTO_OPCOES,
-  IMPOSTO_SOBRE_RECEITA,
+  INVESTIMENTO_INICIAL_DETALHE,
+  INVESTIMENTO_A_COTAR,
+  OPCIONAIS_NAO_SOMADOS,
+  MODELO_CUSTOS,
+  PRO_LABORE,
+  REGIMES,
+  REGIME_PADRAO,
+  SELO_SOCIETARIO,
+  TAXA_FAIXAS,
+  encargosProLabore,
+  regimePorId,
+  type RegimeId,
   IMPOSTO_TEXTO,
   INVESTIMENTO_INICIAL,
   MES_PRIMEIRO_CONTRATO,
-  OPERADOR_OPCOES,
+  ROTULO_REGIME_ALTERNATIVO,
   PARCEIROS,
   REFERENCIA,
   REPRESENTANTE_SEGUROS,
@@ -38,6 +52,7 @@ import {
 } from "@/config/premissas-financeiras";
 import {
   CUSTO_FIXO_PADRAO,
+  custoFixoDe,
   FONTES,
   cenariosContratosMes,
   extraAjustada,
@@ -45,6 +60,8 @@ import {
   parceirosPorContrato,
   taxaMediaPorContrato,
   porContrato,
+  DURACOES_SIMULADOR,
+  equilibrioPorDuracao,
   projetar,
   receitaPorContrato,
   roi,
@@ -73,7 +90,7 @@ const ORDEM: CenarioId[] = ["pessimista", "base", "otimista"];
 const TEXTO = {
   simulacao: {
     h1: "Simulação do negócio — documento interno dos sócios",
-    sub: "Quanto entra e quanto custa cada contrato, e o que isso dá em 36 meses. Escolha o cenário e se há operador local pago.",
+    sub: "Quanto entra e quanto custa cada contrato, e o que isso dá em 36 meses. Escolha o cenário e o regime (Simples é o padrão; o Presumido é o cenário alternativo, em definição).",
   },
   roi: {
     h1: "Quando o negócio se paga?",
@@ -108,9 +125,13 @@ const mesmos = (a: readonly string[], b: readonly string[]) => a.length === b.le
  */
 export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulacao" | "roi"; leitura?: boolean }) {
   const [cenario, setCenario] = useState<CenarioId>("base");
-  const [operador, setOperador] = useState<number>(0);
+  // E622 (veredito de 05/11): sem operador local pago desde 18/10 — R$ 0, sem seletor.
+  const operador = 0;
   const [custoFixo, setCustoFixo] = useState<number>(CUSTO_FIXO_PADRAO);
-  const [imposto, setImposto] = useState<number>(IMPOSTO_SOBRE_RECEITA);
+  // Modelo v3: regime (Simples por padrão; Presumido como cenário alternativo — E622) e a faixa da carteira (nunca 12% fixo).
+  const [regime, setRegime] = useState<RegimeId>(REGIME_PADRAO);
+  const [taxa, setTaxa] = useState<number>(TAXA_MEDIA);
+  const imposto = regimePorId(regime).aliquota;
   // Parceiros e receitas adicionais: TODOS desligados por padrão (receita base pura).
   const [ligados, setLigados] = useState<string[]>([]);
   const [extras, setExtras] = useState<string[]>([]);
@@ -127,11 +148,11 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
     });
 
   const op = useMemo(
-    () => ({ operador, custoFixo, imposto, parceiros: ligados, pctSeguro, extras, ajustes, mesesContrato }),
-    [operador, custoFixo, imposto, ligados, pctSeguro, extras, ajustes, mesesContrato]
+    () => ({ operador, custoFixo, regime, taxa, parceiros: ligados, pctSeguro, extras, ajustes, mesesContrato }),
+    [operador, custoFixo, regime, taxa, ligados, pctSeguro, extras, ajustes, mesesContrato]
   );
   const opSoTaxa = useMemo(() => ({ ...op, parceiros: [], extras: [] }), [op]);
-  const investidor = useMemo(() => visaoInvestidor(cenario, { custoFixo, imposto, parceiros: ligados, pctSeguro, extras, ajustes, mesesContrato }), [cenario, custoFixo, imposto, ligados, pctSeguro, extras, ajustes, mesesContrato]);
+  const investidor = useMemo(() => visaoInvestidor(cenario, { custoFixo, regime, taxa, parceiros: ligados, pctSeguro, extras, ajustes, mesesContrato }), [cenario, custoFixo, regime, taxa, ligados, pctSeguro, extras, ajustes, mesesContrato]);
   const parceirosContrato = parceirosPorContrato(op);
   const pctImposto = `${(imposto * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
   const proj = useMemo(() => projetar(cenario, op), [cenario, op]);
@@ -142,7 +163,10 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
   const porContratoExtras = useMemo(() => receitaPorContrato(op, cenario), [op, cenario]);
   const porContratoSoTaxa = useMemo(() => receitaPorContrato(opSoTaxa, cenario), [opSoTaxa, cenario]);
   const sensibilidade = useMemo(() => sensibilidadeAdesao(cenario, op), [cenario, op]);
-  const equilibrioFixo = unit.margem > 0 ? Math.ceil(custoFixo / unit.margem) : null;
+  // E622: o MESMO custo fixo do KPI "Contratos/mês para empatar" — fornecedores + pró-labore + encargos do regime
+  // (custoFixoDe). Antes o rótulo dividia só fornecedores + pró-labore (sem os encargos) e dava 11 contra 12.
+  const equilibrioDuracao = useMemo(() => equilibrioPorDuracao(op), [op]);
+  const equilibrioFixo = unit.margem > 0 ? Math.ceil(custoFixoDe({ custoFixo, regime }) / unit.margem) : null;
   const ligadas = ligados.length + extras.length;
   const frase = fraseResumo(CENARIOS[cenario].nome, projSoTaxa, proj, ligadas);
   const roiDe = (p: Projecao) => ({ r12: roi(p, 12), r24: roi(p, 24), r36: roi(p, 36) });
@@ -212,12 +236,13 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
         <h1 className={styles.h1}>{leitura ? "Simulação do negócio" : t.h1}</h1>
         <p className={styles.sub}>{t.sub}</p>
         <p className={styles.warn} data-testid="aviso-premissas">
-          <strong>Estimativas de {REFERENCIA} para decidir, não parecer contábil.</strong> Preços das ferramentas com fonte abaixo; dólar a{" "}
-          {brl2(DOLAR)}. Identidade e antifraude da CAF ainda precisam de orçamento formal.
+          <strong>Estimativas de {REFERENCIA} ({MODELO_CUSTOS}) para decidir, não parecer contábil.</strong> Preços das ferramentas com fonte abaixo; dólar a{" "}
+          {brl2(DOLAR)}. Identidade (Certta): {brl(VERIFICACAO.custoCaf)} por verificação é {ROTULO_HIPOTESE_IDENTIDADE}; o pró-labore é referência para projeção, não decisão. Regime:{" "}
+          <strong>{regimePorId(regime).nome}</strong> — {SELO_SOCIETARIO}.
         </p>
 
         <p className={styles.printOnly} data-testid="resumo-impressao">
-          Cenário {CENARIOS[cenario].nome} · imposto {pctImposto} · custo fixo {brl(custoFixo)}/mês · contrato médio de {mesesContrato} meses ·
+          Cenário {CENARIOS[cenario].nome} · {regimePorId(regime).nome} ({pctImposto}) · taxa de {pctTexto(taxa)} · custo fixo {brl(custoFixoDe({ custoFixo, regime }))}/mês · contrato médio de {mesesContrato} meses ·
           receitas adicionais ligadas: {nomesLigados.length ? nomesLigados.join(", ") : "nenhuma"}
           {ligados.some((id) => PARCEIROS.find((p) => p.id === id)?.tipo === "seguro") ? ` · seguros a ${pct(pctSeguro)} do prêmio` : ""}.
         </p>
@@ -277,22 +302,29 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
               </button>
             ))}
           </div>
-          <div className={styles.toggles} role="group" aria-label="Operador local">
-            <span className={styles.lbl}>Operador local por contrato:</span>
-            {OPERADOR_OPCOES.map((v) => (
-              <button key={v} type="button" className={styles.pill} aria-pressed={operador === v} onClick={() => setOperador(v)}>
-                {v === 0 ? "Sem operador pago" : `${brl(v)} por contrato`}
+          <div className={styles.toggles} role="group" aria-label="Regime tributário" data-testid="seletor-regime">
+            <span className={styles.lbl}>Regime ({IMPOSTO_TEXTO}; {SELO_SOCIETARIO}):</span>
+            {REGIMES.map((r) => (
+              <button key={r.id} type="button" className={styles.pill} aria-pressed={regime === r.id} onClick={() => setRegime(r.id)} data-testid={`regime-${r.id}`} title={r.detalhe}>
+                {r.nome} · {(r.aliquota * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%{r.id === REGIME_PADRAO ? " (padrão)" : ` (${ROTULO_REGIME_ALTERNATIVO})`}
               </button>
             ))}
           </div>
-          <div className={styles.toggles} role="group" aria-label="Imposto da Viva">
-            <span className={styles.lbl}>Imposto da Viva ({IMPOSTO_TEXTO}):</span>
-            {IMPOSTO_OPCOES.map((v) => (
-              <button key={v} type="button" className={styles.pill} aria-pressed={imposto === v} onClick={() => setImposto(v)}>
-                {(v * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%{v === IMPOSTO_OPCOES[1] ? " (anexo V)" : ""}
+          <p className={styles.cardHelp} data-testid="regime-detalhe">
+            {regimePorId(regime).detalhe}. Encargos do pró-labore de referência ({brl(PRO_LABORE)}): {brl(encargosProLabore(regimePorId(regime)))}/mês.
+          </p>
+          <div className={styles.toggles} role="group" aria-label="Faixa da carteira" data-testid="seletor-faixa">
+            <span className={styles.lbl}>Taxa da faixa da carteira (contrato de {brl(ALUGUEL_MEDIO)} × {mesesContrato} meses):</span>
+            {TAXA_FAIXAS.map((f) => (
+              <button key={f.taxa} type="button" className={styles.pill} aria-pressed={taxa === f.taxa} onClick={() => setTaxa(f.taxa)} data-testid={`faixa-${Math.round(f.taxa * 100)}`}>
+                {pctTexto(f.taxa)} ({f.carteira})
               </button>
             ))}
           </div>
+          {/* Prompt 078: no lugar do detalhe da faixa do Gestor, a linha das carteiras (sem taxa publicada). */}
+          <p className={styles.cardHelp} data-testid="faixa-carteiras">
+            {TEXTO_CARTEIRAS}
+          </p>
           <div className={styles.slider} style={{ marginTop: 14 }}>
             <div className={styles.top}>
               <label className={styles.lbl} htmlFor="custo-fixo">
@@ -302,10 +334,30 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
             </div>
             <input id="custo-fixo" type="range" min={CUSTO_FIXO_FAIXA.min} max={CUSTO_FIXO_FAIXA.max} step={1} value={custoFixo} onChange={(e) => setCustoFixo(Number(e.target.value))} />
           </div>
+          {/* E646: a duração média da estadia (1 a 6 meses) e o equilíbrio dos dois regimes, recalculados na hora. */}
+          <div style={{ marginTop: 14 }}>
+            <span className={styles.lbl} id="rotulo-duracao">
+              Duração média da estadia (meses) — vale para a taxa e para os seguros
+            </span>
+            <div className={styles.toggles} role="group" aria-labelledby="rotulo-duracao" data-testid="seletor-duracao">
+              {DURACOES_SIMULADOR.map((m) => (
+                <button key={m} type="button" className={styles.pill} aria-pressed={mesesContrato === m} onClick={() => setMesesContrato(m)} data-testid={`duracao-${m}`}>
+                  {m} {m === 1 ? "mês" : "meses"}
+                </button>
+              ))}
+            </div>
+            <p className={styles.cardHelp} data-testid="equilibrio-duracao">
+              Contratos por mês para empatar com {mesesContrato} {mesesContrato === 1 ? "mês" : "meses"} de estadia:{" "}
+              <strong data-testid="equilibrio-selecionado-simples">Simples {equilibrioDuracao.find((l) => l.meses === mesesContrato)?.simples ?? "—"}</strong> ·{" "}
+              <strong data-testid="equilibrio-selecionado-presumido">Presumido {equilibrioDuracao.find((l) => l.meses === mesesContrato)?.presumido ?? "—"}</strong>.{" "}
+              Por duração (Simples / Presumido):{" "}
+              {equilibrioDuracao.map((l) => `${l.meses}: ${l.simples ?? "—"} / ${l.presumido ?? "—"}`).join(" · ")}.
+            </p>
+          </div>
           <div className={styles.slider}>
             <div className={styles.top}>
               <label className={styles.lbl} htmlFor="meses-contrato">
-                Duração média do contrato (meses) — vale para a taxa e para os seguros
+                Outra duração, até 12 meses (ajuste fino)
               </label>
               <span className={styles.val}>{mesesContrato}</span>
             </div>
@@ -427,18 +479,18 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
 
         {/* Por contrato */}
         <div className={styles.kpibar} data-testid="kpis-contrato">
-          <Kpi k="Receita por contrato" v={brl2(unit.receita)} hint={`taxa de serviço média ${brl2(taxaMediaPorContrato())}${parceirosContrato ? ` + parceiros ${brl2(parceirosContrato)} (potencial)` : " · parceiros desligados"}`} />
-          <Kpi k="Custo variável por contrato" v={brl2(unit.custoVariavel)} hint={`ferramentas + ${pctImposto} de imposto${operador ? " + operador" : ""}`} />
+          <Kpi k="Receita por contrato" v={brl2(unit.receita)} hint={`taxa de serviço (${pctTexto(taxa)}) ${brl2(taxaMediaPorContrato(ALUGUEL_MEDIO, mesesContrato, taxa))}${parceirosContrato ? ` + parceiros ${brl2(parceirosContrato)} (potencial)` : " · parceiros desligados"}`} />
+          <Kpi k="Custo variável por contrato" v={brl2(unit.custoVariavel)} hint={`ferramentas + ${pctImposto} de imposto`} />
           <Kpi k="Margem por contrato" v={brl2(unit.margem)} hint="receita − custo variável" />
-          <Kpi k="Contratos/mês para empatar" v={`${Math.ceil(unit.empate[0])} a ${Math.ceil(unit.empate[1])}`} hint="fixo + marketing; sem cobrança recorrente nesta fase" />
+          <Kpi k="Contratos/mês para empatar" v={Math.ceil(unit.empate[0]) === Math.ceil(unit.empate[1]) ? `${Math.ceil(unit.empate[0])}` : `${Math.ceil(unit.empate[0])} a ${Math.ceil(unit.empate[1])}`} hint={`custo fixo ${brl(custoFixoDe({ custoFixo, regime }))} ÷ margem; marketing pago em R$ 0; sem cobrança recorrente nesta fase`} />
         </div>
 
         {/* Cenários simples: contratos por mês */}
         <div className={styles.card} data-testid="cenarios-contratos">
           <h2>Quanto entra por mês</h2>
           <p className={styles.cardHelp}>
-            Receita bruta da taxa de serviço = contratos fechados no mês × {brl(ALUGUEL_MEDIO)} (aluguel médio) × {mesesContrato} meses (duração média do contrato) × {pctTexto(TAXA_MEDIA)} (taxa média pelas faixas). Resultado = depois de ferramentas, imposto e custo fixo de{" "}
-            {brl(custoFixo)}.
+            Receita bruta da taxa de serviço = contratos fechados no mês × {brl(ALUGUEL_MEDIO)} (aluguel médio) × {mesesContrato} meses (duração média do contrato) × {pctTexto(taxa)} (faixa da carteira). Resultado = depois de ferramentas, imposto ({regimePorId(regime).nome}, {pctImposto}) e custo fixo de{" "}
+            {brl(custoFixoDe({ custoFixo, regime }))} (com os encargos do pró-labore no regime).
           </p>
           <div className={styles.tblWrap}>
             <table className={styles.tbl}>
@@ -497,7 +549,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
 
         {/* Os 3 cenários lado a lado */}
         <div className={styles.card}>
-          <h2>Os três cenários {operador ? `(com operador de ${brl(operador)})` : "(sem operador pago)"}</h2>
+          <h2>Os três cenários (sem operador pago)</h2>
           <div className={styles.tblWrap}>
             <table className={styles.tbl} data-testid="tabela-cenarios">
               <thead>
@@ -525,10 +577,13 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
             titulo="Custos fixos (por mês)"
             itens={CUSTOS_FIXOS}
             rodape={[
-              ["Total usado na conta", brl(custoFixo)],
-              ["Faixa", CUSTO_FIXO_FAIXA.texto],
-              ["Marketing", `R$ 0 nos meses 1–3 · ${brl(marketingDoMes(4))} no ano 1 · ${brl(marketingDoMes(13))} depois`],
-              ["Investimento único", `${brl(INVESTIMENTO_INICIAL)} (jurídico, CNPJ, marca, Google Play, lançamento)`],
+              ["Fornecedores + pró-labore", brl(custoFixo)],
+              [`Encargos do pró-labore (${regimePorId(regime).nome})`, brl(encargosProLabore(regimePorId(regime)))],
+              ["Total usado na conta", brl(custoFixoDe({ custoFixo, regime }))],
+              ["Só fornecedores", brl(CUSTO_FORNECEDORES)],
+              ["Fora do fixo", FORA_DO_FIXO.join(" · ")],
+              ["Marketing pago", `${brl(marketingDoMes(1))} — a linha fica para quando houver verba`],
+              ["Investimento único", `${brl(INVESTIMENTO_INICIAL)} (jurídico, CNPJ, marca, Google Play, lançamento) — ${INVESTIMENTO_INICIAL_DETALHE}`],
             ]}
           />
           <Quadro
@@ -536,9 +591,42 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
             itens={CUSTOS_POR_CONTRATO}
             rodape={[
               [`Imposto da Viva (${IMPOSTO_TEXTO})`, `${pctImposto} da receita`],
-              ["Operador local (opcional)", operador ? brl(operador) : "R$ 0 (sócios fazem)"],
+              ["Operador local", "R$ 0 — sem operador pago desde 18/10 (fora da soma)"],
             ]}
           />
+        </div>
+
+        {/* E592/E594: o que ainda não tem preço fica à vista — o resultado acima não é completo sem estes custos. */}
+        <div className={styles.card} data-testid="lacunas-custo">
+          <h2>Custos ainda sem valor / opcionais (não somados)</h2>
+          <p className={styles.cardHelp}>
+            O resultado acima não inclui estes custos pelo valor real: os sem preço entram como R$ 0 ou como hipótese até a cotação; os opcionais e os
+            sem decisão ficam fora da soma.
+          </p>
+          <div className={styles.tblWrap}>
+            <table className={styles.tbl}>
+              <tbody>
+                {LACUNAS_CUSTO.map((l) => (
+                  <tr key={l.rotulo}>
+                    <td>{l.rotulo}</td>
+                    <td>{l.situacao}</td>
+                  </tr>
+                ))}
+                {INVESTIMENTO_A_COTAR.map((a) => (
+                  <tr key={a.rotulo} data-testid="a-cotar-nao-somado">
+                    <td>{a.rotulo}</td>
+                    <td>{a.situacao}</td>
+                  </tr>
+                ))}
+                {OPCIONAIS_NAO_SOMADOS.map((o) => (
+                  <tr key={o.rotulo} data-testid="opcional-nao-somado">
+                    <td>{o.rotulo}</td>
+                    <td>{o.obs} — não somado</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Visão do investidor */}
@@ -554,7 +642,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
           </p>
           {investidor.map((linha) => (
             <div key={linha.operador} className={styles.investidorBloco}>
-              <h3>{linha.operador ? `Com operador local (${brl(linha.operador)} por contrato)` : "Sem operador pago"}</h3>
+              <h3>Sem operador pago</h3>
               <div className={styles.tblWrap}>
                 <table className={styles.tbl}>
                   <thead>
@@ -592,8 +680,8 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
             <ul>
               <li>
                 <strong>Modelo único:</strong> taxa de serviço por contrato fechado (renovação conta como novo contrato), sobre o valor total do contrato (aluguel médio de {brl(ALUGUEL_MEDIO)} × {mesesContrato} meses). Faixas por nº de imóveis do dono:{" "}
-                {FAIXAS_COMISSAO_PADRAO.map((f, i) => `${f.minImoveis}${f.maxImoveis === null ? "+" : f.maxImoveis === f.minImoveis ? "" : `–${f.maxImoveis}`} imóveis ${pctTexto(f.taxa)}${MIX_FAIXAS[i] ? ` (${Math.round(MIX_FAIXAS[i] * 100)}% dos contratos)` : ""}`).join(" · ")}
-                . Taxa média ponderada: <strong>{pctTexto(TAXA_MEDIA)}</strong>. Sem cobrança recorrente nesta fase; assinatura é fase 2 (futuro), para donos com muitos imóveis, e não entra nestas contas.
+                {FAIXAS_COMISSAO_PADRAO.map((f) => `${f.minImoveis}${f.maxImoveis === null ? "+" : f.maxImoveis === f.minImoveis ? "" : `–${f.maxImoveis}`} imóveis ${pctTexto(f.taxa)}`).join(" · ")}
+                . A conta usa a faixa escolhida (agora <strong>{pctTexto(taxa)}</strong>; padrão {pctTexto(TAXA_MEDIA)}, carteira de 3 a 5 imóveis) — nunca 12% fixo. Sem cobrança recorrente nesta fase; assinatura é fase 2 (futuro), para donos com muitos imóveis, e não entra nestas contas.
               </li>
               <li>Contratos começam no mês {MES_PRIMEIRO_CONTRATO} e crescem em linha reta até o teto do cenário.</li>
               <li>
@@ -601,16 +689,16 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
                 {pct(REPRESENTANTE_SEGUROS.min)} a {pct(REPRESENTANTE_SEGUROS.max)}; prêmio proporcional à duração do contrato). {SELO_POTENCIAL}.
               </li>
               <li>
-                <strong>Receitas adicionais</strong> (desligadas por padrão): verificação opcional do inquilino ({VERIFICACAO.candidatosPorContrato} candidatos por contrato × adesão × valor, menos a CAF de {brl(VERIFICACAO.custoCaf)} por verificação, {VERIFICACAO.custoCafTexto}), empresas (contratos × adesão × valor), “Publicamos para você” (donos novos × adesão × valor), ferramentas (donos ativos × adesão × valor mensal, com saída de 3% ao mês) e fundadores (desconto na taxa).
+                <strong>Receitas adicionais</strong> (desligadas por padrão): verificação opcional do inquilino ({VERIFICACAO.candidatosPorContrato} candidatos por contrato × adesão × valor, menos a verificação de identidade (Certta) de {brl(VERIFICACAO.custoCaf)} por verificação, {VERIFICACAO.custoCafTexto}), empresas (contratos × adesão × valor), “Publicamos para você” (donos novos × adesão × valor), ferramentas (donos ativos × adesão × valor mensal, com saída de 3% ao mês) e fundadores (desconto na taxa).
               </li>
               <li>
                 <strong>ROI</strong> no mês N = (caixa acumulado no mês N + dinheiro necessário) ÷ dinheiro necessário − 1, com dinheiro necessário = pior caixa (já inclui o investimento inicial).
               </li>
               <li>
-                <strong>Imposto da Viva:</strong> {pctImposto} sobre toda a receita (taxa de serviço e parceiros), {IMPOSTO_TEXTO}.
+                <strong>Imposto da Viva:</strong> {regimePorId(regime).nome}, {pctImposto} sobre toda a receita (taxa de serviço e parceiros) — {regimePorId(regime).detalhe}. {IMPOSTO_TEXTO}; {SELO_SOCIETARIO}.
               </li>
               <li>
-                <strong>Custo fixo:</strong> {brl(CUSTO_FIXO_PADRAO)}/mês por padrão ({CUSTO_FIXO_FAIXA.texto}).
+                <strong>Custo fixo:</strong> {brl(CUSTO_FIXO_PADRAO)}/mês por padrão ({CUSTO_FIXO_FAIXA.texto}) + encargos do pró-labore no regime; o parecer jurídico e a consulta de 05/11 estão dentro do investimento inicial de {brl(INVESTIMENTO_INICIAL)} ({INVESTIMENTO_INICIAL_DETALHE}); o contrato do investidor e os 5 modelos de contrato estão a cotar (não somados).
               </li>
               {!leitura && (
                 <li>

@@ -10,11 +10,12 @@ import { PRECO_JUSTO_COMPARADOR } from "@/lib/flags";
 import { calcularTudoIncluido } from "@/lib/precos";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { notify } from "@/lib/notifications";
+import { corpoPrecoJustoAcima } from "@/lib/notifications/corpo-e267-restante";
 import { blocoDados } from "@/lib/notifications/modelo-email";
 import { formatBRL } from "@/lib/utils";
 import { escaparHtml } from "@/lib/escapar-html";
 import { conferirAnuncio, type Conferencia } from "@/lib/comparador-airbnb/antifraude";
-import { decidirSelo, precisaReconsultar, total30Noites, type DecisaoSelo } from "@/lib/comparador-airbnb/comparacao";
+import { decidirSelo, indicadorPrecoJusto, precisaReconsultar, total30Noites, type DecisaoSelo, type IndicadorPrecoJusto } from "@/lib/comparador-airbnb/comparacao";
 import { fonteAtual } from "@/lib/comparador-airbnb/fonte";
 
 export const COLUNAS_IMOVEL_PRECO = "id, title, owner_id, city, bedrooms, monthly_price, condo_fee, utilities_mode, utilities_estimate, limpeza_estadia";
@@ -83,6 +84,7 @@ async function avisarDono(admin: SupabaseClient, imovel: ImovelParaPreco, totalV
   ];
   await notify({
     event: "preco_justo_acima",
+    body: corpoPrecoJustoAcima({ imovelTitulo: imovel.title, totalViva, valorAirbnb: aviso.valorAirbnb, ate: aviso.ate }),
     email: d?.notif_email === false ? undefined : (d?.email ?? undefined),
     name: d?.full_name ?? undefined,
     userId: imovel.owner_id,
@@ -149,3 +151,24 @@ export async function avisosDoMotor(admin: SupabaseClient, ids: string[], agora:
   return out;
 }
 
+
+/**
+ * E572 — o indicador do admin: % dos imóveis ATIVOS com link de outra plataforma que têm o selo agora. Contas de teste
+ * fora (dono de teste). Só com a chave PRECO_JUSTO_COMPARADOR; desligada, "desligado" (nada é lido).
+ */
+export async function indicadorPrecoJustoAdmin(admin: SupabaseClient, teste: Set<string>, agora: Date): Promise<IndicadorPrecoJusto | "desligado"> {
+  if (!PRECO_JUSTO_COMPARADOR) return "desligado";
+  const { data, error } = await admin
+    .from("preco_justo_airbnb")
+    .select(`property_id, conferencia, total_30_noites, consultado_em, properties!inner(${COLUNAS_IMOVEL_PRECO}, status)`)
+    .eq("properties.status", "active")
+    .limit(20000);
+  if (error) throw new Error("Não foi possível ler o Preço justo dos anúncios.");
+  const linhas = ((data ?? []) as unknown as { conferencia: Conferencia; total_30_noites: number | null; consultado_em: string | null; properties: ImovelParaPreco }[]).filter(
+    (r) => !teste.has(r.properties.owner_id),
+  );
+  return indicadorPrecoJusto(
+    linhas.map((r) => ({ totalViva: totalVivaDoImovel(r.properties), total30: r.total_30_noites == null ? null : Number(r.total_30_noites), consultadoEm: r.consultado_em, conferencia: r.conferencia })),
+    agora,
+  );
+}

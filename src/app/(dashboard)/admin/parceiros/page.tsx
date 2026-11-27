@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { documentoDoParceiroAtivo } from "@/lib/documento-pessoa";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { Handshake } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -78,6 +79,8 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
     admin.from("parceiros").select("id, user_id").limit(5000),
     admin.from("profiles").select("id").eq("is_teste", true).limit(5000),
   ]);
+  // Achado 124: os números do cartão do parceiro também não viram 0 na falha.
+  if ([cartoesP, pedidosP, donosP, testesP].some((r) => r.error)) throw new Error("Não foi possível ler os números do cartão do parceiro agora.");
   const numCartao = numerosCartaoParceiro({
     cartoes: (cartoesP.data ?? []) as { parceiro_id: string | null; usuario_id: string }[],
     pedidos: (pedidosP.data ?? []) as { parceiro_id: string; cliente_id: string }[],
@@ -85,7 +88,9 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
     contasTeste: new Set(((testesP.data ?? []) as { id: string }[]).map((p) => p.id)),
   });
   // ADMIN-2: um contador só, da mesma consulta (Todos = Fotógrafos + Outros).
-  const { data: todosParceiros } = await admin.from("parceiros").select("id, categorias").limit(5000);
+  const { data: todosParceiros, error: erroTodos } = await admin.from("parceiros").select("id, categorias").limit(5000);
+  // Achado 124: o contador de ativos não vira 0 na falha — cai no aviso do admin, como as filas (Achado 18).
+  if (erroTodos) throw new Error("Não foi possível contar os parceiros agora.");
   const porTipo = contarPorTipo((todosParceiros ?? []) as { categorias: string[] | null }[]);
   const ativos = porTipo[tipo];
 
@@ -96,6 +101,13 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
   const ids = [...new Set([...lista.map((s) => s.user_id as string | null), ...((parceiros.data ?? []) as Record<string, unknown>[]).map((p) => p.user_id as string)].filter((x): x is string => !!x))];
   const avisosLinhas = (avisos.data ?? []) as { user_id: string; uf: string; chave: string; cidade: string; categoria: string; criado_em: string }[];
   const todosIds = [...new Set([...ids, ...avisosLinhas.map((a) => a.user_id)])];
+  // E685: o documento de quem já está ativo vem do pedido que foi ativado (só lido na aba Ativas).
+  const docsAtivos = new Map<string, { tipo_pessoa: string | null; documento: string | null }>();
+  if (aba === "ativas" && ids.length) {
+    const { data: docs, error: erroDocs } = await admin.from("parceiro_solicitacoes").select("user_id, tipo_pessoa, documento").in("user_id", ids).eq("status", "ativada");
+    if (erroDocs) throw new Error("Não foi possível ler os documentos dos parceiros ativos agora.");
+    for (const d of (docs ?? []) as { user_id: string; tipo_pessoa: string | null; documento: string | null }[]) docsAtivos.set(d.user_id, d);
+  }
   const [identidades, { data: perfis }] = await Promise.all([
     estadosIdentidade(admin, ids),
     todosIds.length ? admin.from("profiles").select("id, full_name, role, is_teste").in("id", todosIds) : Promise.resolve({ data: [] }),
@@ -120,6 +132,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
       dadosCategoria: (s.dados_categoria as Record<string, string>) ?? {},
       status: s.status as string,
       motivoRecusa: (s.motivo_recusa as string | null) ?? null,
+      decididoEm: (s.decidido_em as string | null) ?? null,
       checklist: (s.checklist as Record<string, unknown>) ?? {},
       origem: s.origem as string,
       criadoEm: s.criado_em as string,
@@ -253,6 +266,7 @@ export default async function AdminParceirosPage({ searchParams }: { searchParam
                       status: p.status as string,
                       teste: perfil.get(p.user_id as string)?.is_teste === true,
                       identidade: identidades.get(p.user_id as string)?.texto ?? null,
+                      documento: documentoDoParceiroAtivo(docsAtivos.get(p.user_id as string)?.tipo_pessoa, docsAtivos.get(p.user_id as string)?.documento),
                       cartao: numCartao.porParceiro.get(p.id as string) ?? { gerados: 0, pedidos: 0 },
                     }}
                   />

@@ -1,17 +1,25 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T656 — E224: os dois lados do Plano Gestor.
-   1. proprietário, Conta › Plano (/dashboard/conta/plano → Pagamentos): "Você tem N; faltam M." e, já liberado
-      (conta administradora), "Liberado. Fale com a Viva para ativar." — sem botão de assinar.
+  T656 — E224: os dois lados da conta de administradora (antes: do Plano Gestor).
+   1. proprietário, Conta › Plano (/dashboard/conta/plano → Pagamentos): a taxa de serviço que vale hoje para a conta
+      (getTaxaDaConta → textoTaxaNaConta), com a escada e a linha de carteiras — sem botão de assinar. Depois de virar
+      administradora (caso 2), a linha é a MESMA: o tipo da conta não muda a taxa.
    2. admin, /admin/usuarios: "Tipo da conta" individual → administradora com motivo obrigatório (sem motivo, Salvar
       fica desligado); o banco muda e a trilha account_type_audit grava o motivo.
    3. quem não é admin: a mesma chamada de definirAccountType, com a sessão de um proprietário, é recusada (pela rota
       /admin ou pela própria ação) e nada muda.
    (O admin observador da QA é recusado no servidor: guarda em observador-regras.test.ts e plano-gestor-e224.test.ts.)
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): os casos 1a e 1b. O Plano Gestor de 4% deixou de ser oferta
+  pública: a Conta › Plano não fala mais de elegibilidade ("Você tem 0; faltam 20." / "Liberado…"), diz a taxa da conta;
+  e a conta de administradora paga a faixa como todo mundo (aqui 12%, sem imóvel ativo), não 4%. Os casos 2 e 3 não mudaram.
 */
+// 078 (Daniel, 16/11/2026): o texto exato de Conta › Plano para quem não tem imóvel ativo — o mesmo de
+// textoTaxaNaConta({ taxa: 0.12, origem: "faixa", imoveisAtivos: 0 }) (src/lib/planos/gestor.ts). Literal de propósito.
+const TAXA_DA_CONTA_SEM_IMOVEL_ATIVO = "Sua taxa de serviço hoje é de 12%. Quanto mais imóveis ativos, menor a taxa: 1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%. Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva.";
 const sufixo = novoSufixo();
 const senha = novaSenha();
 const dono = { email: `dono.t656.${sufixo}@lab.vivanomads.test`, nome: `Gil Gestor ${sufixo}`, role: "owner" as const };
@@ -31,7 +39,8 @@ async function chamarAMao(page: Page, tipo: string, motivo: string): Promise<{ s
   );
 }
 
-test.describe("T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no admin)", () => {
+// 078 (Daniel, 16/11/2026): o título era "T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no admin)".
+test.describe("T656 — E224/078: Conta › Plano (a taxa da conta) e tipo da conta no admin", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
   test.describe.configure({ mode: "serial", timeout: 150_000 });
 
@@ -39,7 +48,7 @@ test.describe("T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no a
     ids.dono = await criarConta(dono, senha);
     await adm().from("profiles").update({ is_teste: true, account_type: "individual" }).eq("id", ids.dono);
     // O papel de proprietário (e a Conta › Plano) aparece com 1 imóvel na conta; o documento fica NA FILA, então
-    // nenhum imóvel conta como validado (Você tem 0).
+    // nenhum imóvel conta como ativo (a taxa é a da primeira faixa, sem "(N imóveis ativos)").
     await criarImovelPronto(ids.dono, `Studio T656 ${sufixo}`, { ativo: false, documentoPendente: dono.nome });
   });
   test.afterAll(async () => {
@@ -50,12 +59,19 @@ test.describe("T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no a
     test.skip(info.project.name !== "chromium", "roda só no projeto chromium (uma conta, estado em série)");
   });
 
-  test("1a. proprietário sem imóvel aprovado: 'Você tem 0; faltam 20.' e nenhum botão de assinar", async ({ browser }) => {
+  // 078 (Daniel, 16/11/2026): o título era "1a. proprietário sem imóvel aprovado: 'Você tem 0; faltam 20.' e nenhum botão de assinar".
+  test("1a. proprietário sem imóvel aprovado: 'Sua taxa de serviço hoje é de 12%.', a escada e a linha de carteiras; nenhum botão de assinar", async ({ browser }) => {
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard/conta/plano", { waitUntil: "domcontentloaded" });
     const texto = page.getByTestId("conta-plano-gestor-texto");
-    await expect(texto).toHaveText("Plano Gestor: liberado com 20 imóveis com documento aprovado. Você tem 0; faltam 20.", { timeout: 30_000 });
-    await expect(texto).toHaveAttribute("data-elegivel", "0");
+    // 078 (Daniel, 16/11/2026): antes "Plano Gestor: taxa de 4% com 20 imóveis ativos (…). Você tem 0; faltam 20.";
+    // agora a taxa da conta + a escada até "16–19 = 6%" + a linha de carteiras, sem Plano Gestor nem 4%.
+    await expect(texto).toHaveText(TAXA_DA_CONTA_SEM_IMOVEL_ATIVO, { timeout: 30_000 });
+    // 078 (Daniel, 16/11/2026): o atributo `data-elegivel="0"` saiu; a tela marca a taxa e a origem dela.
+    await expect(texto).toHaveAttribute("data-taxa", "0.12");
+    await expect(texto).toHaveAttribute("data-origem", "faixa");
+    await expect(texto).not.toHaveAttribute("data-elegivel");
+    await expect(page.getByTestId("conta-plano-gestor")).not.toContainText(/Plano Gestor|(?<![\d.,])4\s?%/i);
     await expect(page.getByTestId("conta-plano-gestor").getByRole("button")).toHaveCount(0);
     await expect(page.getByTestId("conta-plano-gestor").getByRole("link")).toHaveCount(0);
     await page.getByTestId("conta-plano-gestor").scrollIntoViewIfNeeded();
@@ -90,11 +106,18 @@ test.describe("T656 — E224: Plano Gestor (Conta › Plano e tipo da conta no a
     await ctx.close();
   });
 
-  test("1b. já liberado (administradora): 'Liberado. Fale com a Viva para ativar.'", async ({ browser }) => {
+  // 078 (Daniel, 16/11/2026): asserção alterada. Na main o caso era "1b. já liberado (administradora): 'Plano Gestor:
+  // taxa de 4% nos próximos contratos, sem assinatura.'" (E564); antes disso, 'Liberado. Fale com a Viva para ativar.'.
+  test("1b. conta de administradora: a taxa continua a da faixa (12%) — o tipo da conta não dá 4% nem 'libera' plano", async ({ browser }) => {
+    expect(await tipoNoBanco(), "o caso 2 deixou a conta como administradora").toBe("gestor");
     const page = await entrar(browser, dono.email, senha);
     await page.goto("/dashboard/conta/plano", { waitUntil: "domcontentloaded" });
-    await expect(page.getByTestId("conta-plano-gestor-texto")).toHaveText("Liberado. Fale com a Viva para ativar.", { timeout: 30_000 });
-    await expect(page.getByTestId("conta-plano-gestor-texto")).toHaveAttribute("data-elegivel", "1");
+    // 078 (Daniel, 16/11/2026): antes "Liberado. Fale com a Viva para ativar." com `data-elegivel="1"`; agora a
+    // administradora vê a MESMA linha do caso 1a (paga a faixa como todos), com a taxa 0.12 de origem "faixa".
+    await expect(page.getByTestId("conta-plano-gestor-texto")).toHaveText(TAXA_DA_CONTA_SEM_IMOVEL_ATIVO, { timeout: 30_000 });
+    await expect(page.getByTestId("conta-plano-gestor-texto")).toHaveAttribute("data-taxa", "0.12");
+    await expect(page.getByTestId("conta-plano-gestor-texto")).toHaveAttribute("data-origem", "faixa");
+    await expect(page.getByTestId("conta-plano-gestor")).not.toContainText(/Plano Gestor|Liberado|(?<![\d.,])4\s?%/i);
     await expect(page.getByTestId("conta-plano-gestor").getByRole("button")).toHaveCount(0);
     await page.context().close();
   });

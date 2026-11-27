@@ -13,8 +13,14 @@ for (const largura of [390, 1280]) {
     test("página do imóvel mostra no máximo 3 e não estoura a largura", async ({ page }) => {
       await page.goto("/imoveis/ube-001", { waitUntil: "domcontentloaded" });
       const linha = page.getByTestId("ideal-para").first();
-      await expect(linha).toContainText("Ideal para: Com pet · Home office · Família");
+      await expect(linha).toContainText("Sugestão da Viva: Com pet · Home office · Família");
       await expect(linha).not.toContainText("Executivo");
+      // E1049: "Ideal para:" nunca sozinho; cada rótulo expõe o motivo (rato: title; toque: a frase abaixo).
+      await expect(linha).not.toContainText("Ideal para:");
+      const comPet = linha.getByRole("button", { name: /^Com pet: / });
+      await expect(comPet).toHaveAttribute("title", "aceita pet");
+      await comPet.click();
+      await expect(page.getByTestId("sugestao-motivo").first()).toHaveText("Com pet: aceita pet");
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
     });
 

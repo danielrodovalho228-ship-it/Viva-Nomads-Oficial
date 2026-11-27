@@ -125,8 +125,8 @@ test.describe("T689 — E193: cartões grandes tocáveis nos Passos 5 e 6 (marca
     await expect(via).toHaveAttribute("aria-checked", "false");
     await via.click();
     await expect(via).toHaveAttribute("aria-checked", "true");
-    await p.getByTestId("ruido-salvar").click();
-    await expect(p.getByTestId("ruido-resultado")).toHaveAttribute("role", "status", { timeout: 20_000 });
+    // E606: o toque grava na hora (sem "Salvar ruído").
+    await expect(p.getByTestId("ruido-como-salva")).toHaveAttribute("data-estado", "salvo", { timeout: 20_000 });
     await expect
       .poll(async () => (await adm().from("imovel_ruido").select("via_intensa").eq("property_id", ids.rascunho).maybeSingle()).data?.via_intensa ?? null, { timeout: 20_000 })
       .toBe(true);

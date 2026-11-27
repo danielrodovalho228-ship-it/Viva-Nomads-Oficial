@@ -41,13 +41,6 @@ export function filtrarPorCidade<T extends Pick<FotografoPublico, "cidades">>(li
   return lista.filter((f) => atendeCidade(f, cidade));
 }
 
-/**
- * Contato e endereço do dono só são liberados ao fotógrafo com o pedido aceito E a taxa paga.
- * (O banco também barra: check fotografo_pedidos_aceite_exige_taxa.)
- */
-export function contatoLiberado(p: { status: string; taxa_paga_em: string | null | undefined }): boolean {
-  return (p.status === "aceito" || p.status === "entregue" || p.status === "concluido") && !!p.taxa_paga_em;
-}
 
 /** O fotógrafo só pode aceitar depois de pagar a taxa de parceria. */
 export function podeAceitar(p: { status: string; taxa_paga_em: string | null | undefined }): boolean {

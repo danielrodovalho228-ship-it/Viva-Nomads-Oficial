@@ -178,7 +178,8 @@ test.describe("T586 — E205: os e-mails de chegada (D-7 e D-2) saem só nas con
     expect(doDono, "o dono recebe o lembrete do contrato D").toHaveLength(1);
     for (const e of [m, doDono[0]]) {
       const corpo = String(e.corpo ?? "");
-      expect(corpo).toContain("a entrada no imóvel do seu contrato está chegando");
+      // E267 (restante): a abertura nomeia o imóvel e a data (antes: "a entrada no imóvel do seu contrato está chegando").
+      expect(corpo, "a abertura nomeia o imóvel e a data").toContain(`em ${titulo("D")} é em ${br(emDias(2))}`);
       expect(corpo, "o botão leva ao contrato").toContain(`/dashboard/contratos/${ids.D}`);
     }
     const { data: ck } = await adm().from("contratos_checkin").select("lembrete_48h_em").eq("contrato_id", ids.D).single();

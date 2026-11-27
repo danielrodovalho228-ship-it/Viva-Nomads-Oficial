@@ -27,9 +27,10 @@ import { SELOS } from "@/config/selos";
 import { PHOTOS } from "@/lib/media";
 import { listProperties } from "@/lib/data/properties";
 import { ButtonLink } from "@/components/ui/button";
+import { SELO_DOCUMENTO_IMOVEL, SELO_VERIFICACOES_ANUNCIANTE, PROMESSA_ESTADIA } from "@/config/textos-regulados";
 import { SpecTag, Eyebrow } from "@/components/ui/badge";
 import { BrandImage } from "@/components/brand-image";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { BuscaPrincipal } from "@/components/home/busca-principal";
 import { AtalhosCategoria } from "@/components/home/atalhos-categoria";
 import { HeroVideoBg } from "@/components/hero-video-bg";
@@ -38,6 +39,10 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { organizacao } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { HOME_PASSOS_IMAGENS, HOME_PROPRIETARIOS_FUNDO, quantosDestaques } from "@/lib/home-imagens";
+import { PRECOS_VISIVEL } from "@/config/precos-visivel";
+import { TEXTO_CARTEIRAS } from "@/config/planos";
+import { TAXA_MAIOR_TEXTO, TAXA_MENOR_TEXTO } from "@/lib/cobranca/regra";
+
 
 const PERSONA_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Briefcase,
@@ -80,7 +85,7 @@ export default async function HomePage() {
             Imóveis mobiliados para morar por meses
           </h1>
           <p className="mt-3 text-base font-medium text-white/85 sm:text-lg">
-            Estadias de 30 a 180 dias · sem taxa para o morador
+            {PROMESSA_ESTADIA} · sem taxa para o morador
           </p>
           <div className="mt-8 w-full max-w-xl">
             <BuscaPrincipal />
@@ -101,9 +106,9 @@ export default async function HomePage() {
       {/* ───────── CONFIANÇA (o que vem com toda estadia) ───────── */}
       <section className="border-y border-line bg-white">
         <div className="container-page grid grid-cols-2 gap-3 py-6 sm:grid-cols-4" data-testid="faixa-confianca">
-          <TrustItem icon={Lock} text="Contato protegido até o aceite" />
+          <TrustItem icon={Lock} text={SELO_VERIFICACOES_ANUNCIANTE} />
           <TrustItem icon={FileCheck} text="Caução documentada" />
-          <TrustItem icon={ShieldCheck} text="Documentação do imóvel conferida" />
+          <TrustItem icon={ShieldCheck} text={SELO_DOCUMENTO_IMOVEL} />
           <TrustItem icon={BadgeCheck} text="R$ 0 de taxa para o morador" />
         </div>
       </section>
@@ -192,7 +197,7 @@ export default async function HomePage() {
             </div>
             <ul className="mt-8 space-y-4">
               <WorkFeature icon={Wifi} title="Home office no imóvel" text="Cômodo dedicado, mesa e cadeira. Internet informada pelo proprietário; quando medida no imóvel, o anúncio mostra o número. É o que sustenta a etiqueta Para trabalhar de casa." />
-              <WorkFeature icon={Building2} title="Coworkings e cafés na região" text="A vizinhança costuma ter espaços de trabalho — você confere a posição no mapa do imóvel." />
+              <WorkFeature icon={Building2} title="Coworkings e cafés na região" text="A vizinhança costuma ter espaços de trabalho — a página do imóvel lista os que ficam por perto." />
             </ul>
           </div>
         </div>
@@ -291,16 +296,28 @@ export default async function HomePage() {
                 <p className="mt-4 max-w-md text-white/65">
                   Um morador por uma estadia inteira traz previsibilidade: agenda estável,
                   custos de consumo organizados no contrato e tudo registrado na plataforma. Você
-                  anuncia de graça. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.
+                  anuncia de graça. A Viva cobra {TAXA_MAIOR_TEXTO} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até {TAXA_MENOR_TEXTO}). Sem mensalidade. {TEXTO_CARTEIRAS}
                 </p>
               </div>
               <div className="flex flex-col gap-3 md:items-end">
                 <ButtonLink href="/para-proprietarios" variant="accent" size="lg">
                   Quero anunciar meu imóvel <ArrowRight className="h-4 w-4" />
                 </ButtonLink>
-                <Link href="/precos" className="alvo-toque text-sm text-white/70 underline underline-offset-4 transition-colors hover:text-white">
-                  Ver preços
+                {/* E555: cartão "Planos e taxas" (no lugar do "Ver preços" solto, que ia para a mesma página). */}
+                {/* E563: suspenso enquanto a chave PRECOS_VISIVEL estiver desligada. */}
+                {PRECOS_VISIVEL && (
+                <Link
+                  href="/planos"
+                  data-testid="home-planos-taxas"
+                  className="group flex min-h-11 w-full items-center gap-3 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-left transition-colors hover:bg-white/20 md:max-w-xs"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold text-white">Planos e taxas</span>
+                    <span className="block text-sm text-white/80">De {TAXA_MAIOR_TEXTO} a {TAXA_MENOR_TEXTO} por contrato. Sem mensalidade.</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-white" aria-hidden />
                 </Link>
+                )}
               </div>
             </div>
           </div>
@@ -326,8 +343,8 @@ export default async function HomePage() {
           </div>
           {featured.length > 0 ? (
             <div className="mt-6 md:mt-8 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-6 sm:gap-y-8 lg:grid-cols-4" data-testid="destaques-home">
-              {featured.map((p) => (
-                <PropertyCard key={p.id} property={p} />
+              {featured.map((p, i) => (
+                <PropertyCard key={p.id} property={p} prioridade={i < PRIMEIRA_FILEIRA} />
               ))}
             </div>
           ) : (

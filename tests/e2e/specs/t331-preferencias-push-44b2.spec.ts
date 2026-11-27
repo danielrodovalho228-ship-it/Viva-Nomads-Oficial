@@ -4,9 +4,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 
 /**
  * T331 — 44-B2: preferências por categoria e o cartão "Push" do admin.
- *   1. /dashboard/notificacoes (390 / 1280): Decisões e Segurança aparecem sem interruptor ("Sempre chegam");
- *      Mensagens, Lembretes e Outros avisos têm interruptor; desligar Mensagens grava no perfil e continua desligado
- *      depois de recarregar; religar volta ao padrão (nada desligado).
+ *   1. /dashboard/notificacoes (390 / 1280, tela A6): Decisões e Segurança sem interruptor ("chegam sempre");
+ *      Mensagens, Lembretes e Novidades têm interruptor; desligar Mensagens e "Salvar preferências" grava no perfil e
+ *      continua desligado depois de recarregar; religar volta ao padrão (nada desligado).
  *   2. /admin › Push: aparelhos por plataforma, entregues, falhas e tokens mortos dos últimos 7 dias; o que é de conta
  *      de teste (is_teste) e o que tem mais de 7 dias não entra; botão "Enviar push de teste para mim".
  * O envio real do push (servidor Expo falso) fica para o laboratório da Pista C.
@@ -42,39 +42,40 @@ test.describe("T331 — 44-B2: preferências por categoria e diagnóstico do pus
     await apagarContas([ids.pessoa, ids.qa]);
   });
 
+  // E744 (asserção alterada, tabela da Fable #3832): a página é a tela A6 (E176 parte 2): interruptores `notif-tipo-*`,
+  // "Salvar preferências" grava tudo de uma vez ("Preferências salvas."); decisões e segurança não têm interruptor e a
+  // frase diz que chegam sempre. O que o teste cobra (sempre chegam; mensagens desliga, grava e fica) é o mesmo.
   test("1. decisões e segurança sempre chegam; mensagens desliga e fica desligado", async ({ browser }) => {
     const page = await entrar(browser, pessoa.email, senha);
     for (const largura of [390, 1280]) {
       await page.setViewportSize({ width: largura, height: largura === 390 ? 844 : 900 });
       await page.goto("/dashboard/notificacoes", { waitUntil: "domcontentloaded" });
-      const bloco = page.getByTestId("notif-categorias");
+      const bloco = page.getByTestId("tela-notificacoes");
       await expect(bloco).toBeVisible({ timeout: 30_000 });
-      for (const c of ["decisao", "seguranca"]) {
-        await expect(page.getByTestId(`notif-categoria-${c}`)).toContainText("Sempre chegam");
-        await expect(page.getByTestId(`notif-categoria-${c}`).getByRole("switch")).toHaveCount(0);
-      }
-      for (const c of ["mensagens", "lembretes", "outros"]) {
-        await expect(page.getByTestId(`notif-categoria-${c}`).getByRole("switch")).toHaveCount(1);
-      }
+      await expect(bloco).toContainText("Decisões que dependem de você e avisos de segurança chegam sempre.");
+      for (const c of ["decisao", "seguranca"]) await expect(page.getByTestId(`notif-tipo-${c}`)).toHaveCount(0);
+      for (const c of ["mensagens", "lembretes", "outros"]) await expect(page.getByTestId(`notif-tipo-${c}`)).toHaveAttribute("aria-checked", "true");
       await semRolagemLateral(page);
       await bloco.screenshot({ path: `tests/laboratorio/saida/t331-categorias-${largura}.png` });
     }
 
-    const mensagens = page.getByTestId("notif-categoria-mensagens").getByRole("switch");
-    await expect(mensagens).toHaveAttribute("aria-checked", "true");
+    const mensagens = page.getByTestId("notif-tipo-mensagens");
     await expect(mensagens).toBeEnabled();
     await mensagens.click();
-    await expect(page.getByText("Preferência salva.")).toBeVisible();
+    await expect(mensagens).toHaveAttribute("aria-checked", "false");
+    await page.getByTestId("notif-salvar").click();
+    await expect(page.getByTestId("notif-salvar-msg")).toHaveText("Preferências salvas.");
     await expect.poll(desligadasNoBanco).toEqual(["mensagens"]);
 
     await page.reload({ waitUntil: "domcontentloaded" });
-    const depois = page.getByTestId("notif-categoria-mensagens").getByRole("switch");
+    const depois = page.getByTestId("notif-tipo-mensagens");
     await expect(depois).toHaveAttribute("aria-checked", "false", { timeout: 20_000 });
-    await expect(page.getByTestId("notif-categoria-lembretes").getByRole("switch")).toHaveAttribute("aria-checked", "true");
+    await expect(page.getByTestId("notif-tipo-lembretes")).toHaveAttribute("aria-checked", "true");
 
     await expect(depois).toBeEnabled();
     await depois.click();
-    await expect(page.getByText("Preferência salva.")).toBeVisible();
+    await page.getByTestId("notif-salvar").click();
+    await expect(page.getByTestId("notif-salvar-msg")).toHaveText("Preferências salvas.");
     await expect.poll(desligadasNoBanco).toEqual([]);
     await page.context().close();
   });

@@ -14,8 +14,9 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url), "utf8");
 
-test("interruptor do bloco opcional com alvo de 44 px", () => {
-  assert.match(ler("src/components/anuncio/bloco-opcional.tsx"), /"alvo-toque relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors"/);
+test("pergunta do bloco opcional é cartão grande com alvo de 44 px (E193: sem trilho de interruptor)", () => {
+  assert.match(ler("src/components/anuncio/bloco-opcional.tsx"), /<CartaoEscolha\s+papel="switch"/);
+  assert.match(ler("src/components/anuncio/escolha-assistente.tsx"), /flex min-h-14 w-full items-center gap-3 rounded-xl border-2/);
 });
 
 test("contadores: − e + com alvo de 44 px", () => {

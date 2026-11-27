@@ -269,13 +269,11 @@ test("sombra: shadow-flutuante em TUDO o que flutua e em nada mais (adendo)", ()
   varrer("");
   assert.deepEqual(usos.sort(), [
     "app/(dashboard)/admin/agentes/central-client.tsx", // menu suspenso e botão flutuante da Central (Prompt 45)
-    "app/(dashboard)/dashboard/imoveis/novo/etapa-tipo.tsx", // setas de rolagem sobre as bordas da linha de tipos (01-b/E87)
     "app/(dashboard)/dashboard/imoveis/novo/painel-qualificacao.tsx", // gaveta lateral sobre a página (Prompt 45)
     "app/(public)/pedidos/novo/page.tsx", // menu suspenso de sugestões (Prompt 45)
     "components/admin/motivo-dialog.tsx", // diálogo sobre a página (Prompt 45)
     "components/ajuda/viva-chat.tsx", // botão flutuante e a janela do chat
     "components/app/links-do-app.tsx", // diálogo sobre a página (Prompt 45)
-    "components/busca/barra-comparar.tsx", // barra flutuante do Comparar
     "components/busca/barra-pilulas.tsx", // painel pequeno de cada pílula da busca (E82-A)
     "components/busca/card-pin-mapa.tsx", // cartão aberto sobre o mapa
     "components/city-autocomplete.tsx", // menu suspenso de sugestões
@@ -304,23 +302,26 @@ test("cartão de anúncio: sem caixa (sem border nem shadow), foto 4:3 com raio 
   assert.doesNotMatch(link, /\bborder\b|\bborder-|shadow|bg-white/, "o <Link> do cartão não é uma caixa");
   assert.doesNotMatch(c, /\bshadow\b|shadow-/);
   assert.match(c, /className="relative aspect-\[4\/3\] overflow-hidden rounded-xl bg-surface-2" data-testid="cartao-foto"/);
-  // Ordem do adendo: foto → bairro + nota → título (2 linhas) → total → síntese → disponibilidade.
-  const ordem = ["cartao-foto", "cartao-local", "cartao-titulo", "cartao-total-mes", "cartao-sintese", "cartao-disponivel"].map((id) => c.indexOf(`data-testid="${id}"`));
+  // Ordem do adendo, com o E899 (Daniel, 13/11): foto → bairro + nota → título (1 linha; antes, 2) → preço do mês → total + aviso → síntese → disponibilidade.
+  const ordem = ["cartao-foto", "cartao-local", "cartao-titulo", "cartao-total-mes", "cartao-total-linha", "cartao-sintese", "cartao-disponivel"].map((id) => c.indexOf(`data-testid="${id}"`));
   assert.ok(ordem.every((i, k) => i > 0 && (k === 0 || i > ordem[k - 1])), `ordem ${ordem}`);
   assert.match(c, /text-base font-semibold[^"]*" data-testid="cartao-local"/); // cartão 16/600
-  assert.match(c, /className="line-clamp-2 [^"]*" data-testid="cartao-titulo"/);
+  assert.match(c, /className="line-clamp-1 [^"]*" data-testid="cartao-titulo"/);
   assert.match(c, /<p className="tabular-nums" data-testid="cartao-total-mes">/);
-  assert.match(c, /text-lg font-semibold text-forest" data-testid="cartao-preco-mes">\s*\{preco\.valor\}/);
+  assert.match(c, /text-lg font-semibold text-forest" data-testid="cartao-preco-mes">\s*\{m\.precoMes\}/);
   assert.match(c, /<span className="text-sm text-ink">\/mês<\/span>/); // sem "total" solto (QA)
   assert.doesNotMatch(c, /\/mês total/);
-  assert.match(c, /const preco = rotuloPreco\(\{ mensal: inc\.total, meses: mesesDoCartao\(periodMonths, property\.minPeriodDays\), disponivelEm: property\.availableFrom \}\);/);
-  assert.match(c, /\{preco\.estadia && \(/); // N = 1: só "R$ X/mês"
-  assert.match(c, /const sintese = itensSintese\(property\);/);
+  // E899: as contas saíram do componente e moram em modeloDoCartao (a mesma fonte única; a apresentação mudou, a fonte não).
+  assert.match(c, /const m = modeloDoCartao\(property, periodMonths\);/);
+  const modelo = ler("lib/cartao-modelo.ts");
+  assert.match(modelo, /rotuloPreco\(\{ mensal: calcularTudoIncluido\(p\)\.total, meses: mesesDoCartao\(meses, p\.minPeriodDays \?\? undefined\), disponivelEm: p\.availableFrom, hoje \}\)/);
+  assert.match(modelo, /const estadia = estadiaNoCartao\(p, preco\.meses\);/); // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies): o total vem de estadiaNoCartao (regra única, também com 1 mês) // E356: todo cartão tem a linha
+  assert.match(modelo, /sintese: itensSintese\(p\)/);
   assert.doesNotMatch(c, /IdealPara/); // ordem congelada: "Ideal para" fica na página do imóvel
-  // Carrossel com pontos e no máximo 1 selo.
-  assert.match(c, /<FotosCartao fotos=\{fotos\} alt=\{property\.title\} \/>/);
+  // Carrossel com pontos; E416 (05/11): os selos empilhados sobre a foto (antes: no máximo 1).
+  assert.match(c, /<FotosCartao fotos=\{fotos\} alt=\{property\.title\} prioridade=\{prioridade\} \/>/);
   assert.match(ler("components/property/fotos-cartao.tsx"), /data-testid="cartao-pontos"/);
-  assert.match(c, /\{selo && <Selo id=\{selo\} \/>\}/);
+  assert.match(c, /<SelosFoto selos=\{selos\} \/>/);
 });
 
 test("coração: 1 toque salva, outro desfaz, com aria-pressed (mesmo store de favoritos)", () => {
@@ -420,7 +421,7 @@ test('filtros: "Limpar tudo" zera — volta a contar todos os imóveis e o conta
   assert.equal(contarFiltrosPainel(FILTROS_PAINEL_VAZIOS), 0);
   const folha = ler("components/busca/painel-filtros-celular.tsx");
   // E105: botão de contorno (secundário), ao lado do "Mostrar N imóveis".
-  assert.match(folha, /onClick=\{\(\) => setRascunho\(FILTROS_PAINEL_VAZIOS\)\}\s+data-testid="limpar-tudo"\s+className=\{buttonClasses\(\{ variant: "secondary"/);
+  assert.match(folha, /onClick=\{\(\) => \{\s*setRascunho\(FILTROS_PAINEL_VAZIOS\);\s*onLimpar\?\.\(\);\s*\}\}\s+data-testid="limpar-tudo"\s+className=\{buttonClasses\(\{ variant: "secondary"/);
 });
 
 test('filtros: nunca "Qualquer", "Ambos", "Indiferente" ou "Tanto faz" como opção; chips com aria-pressed', () => {
@@ -543,4 +544,15 @@ test("Prompt 43: nenhum texto da lista proibida (\"Vamos começar\", \"Oops!\", 
   assert.deepEqual(achados, []);
   assert.match("Vamos começar!", TEXTO_PROIBIDO);
   assert.doesNotMatch("Comece pelo CEP.", TEXTO_PROIBIDO);
+});
+
+// E899 (Daniel, 13/11): a linha "Total por mês, tudo incluído" (cartao-total-rotulo) saiu do cartão; quem diz o que o total inclui
+// é o aviso curto que fecha a linha do total. A linha da estadia segue em todo cartão (E356).
+test("E356 → E899: o cartão mostra a linha da estadia em todo cartão, fechada pelo aviso curto", () => {
+  const c = ler("components/property-card.tsx");
+  assert.doesNotMatch(c, /cartao-total-rotulo|ROTULO_TOTAL_MES/);
+  assert.match(c, /<span data-testid="cartao-total-estadia">\{m\.totalEstadia\.texto\}<\/span>/);
+  assert.match(c, /<span data-testid="cartao-aviso">\{m\.aviso\}<\/span>/);
+  assert.match(ler("lib/cartao-modelo.ts"), /texto: resumoEmMeses\(preco\.total, preco\.meses\)/); // E756 (reprovado ao vivo em 11/11/2026, devolvido à Pista B; vigia 12/11: regra única de composição em todas as superfícies)
+  assert.doesNotMatch(c, /\{preco\.estadia && \(\s*<span[^>]*cartao-total-estadia/);
 });

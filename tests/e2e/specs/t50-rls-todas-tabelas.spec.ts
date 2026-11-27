@@ -25,6 +25,11 @@ const LEITURA_PUBLICA = new Set([
   // páginas de parceiros (migração 0190): a policy *_le_publico só devolve linha de parceiro PUBLICADO
   // (parceiro_publicado(parceiro_id)); documento e dados de recebimento ficam em `parceiros`, fora desta lista.
   "parceiro_servicos", "parceiro_galeria", "parceiro_agenda",
+  // E1001 (julgamento do Gerente, 17/11/2026): dados de exibição pública do anúncio — comodidades e extras na página do
+  // imóvel; a classe de ruído alimenta o filtro público de ambiente silencioso. As policies só devolvem ao visitante
+  // linha de anúncio ATIVO ("amenidades públicas", migração 0018; "extras: anuncio ativo" e "ruido: anuncio ativo",
+  // migração 0213). Só SELECT: escrita anônima segue barrada. Entraram exatamente estas três; o resto continua negado.
+  "property_amenities", "imovel_extras", "imovel_ruido",
   // nível de conforto do imóvel (migração 0213): a policy "nivel: anuncio ativo" só devolve linha de anúncio
   // ATIVO (p.status = 'active'); rascunho e pausado ficam de fora. Só SELECT: escrita anônima segue barrada.
   "imovel_nivel",

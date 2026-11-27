@@ -1,6 +1,6 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
  * T314 — Correção 62-B3: a porta de entrada do avaliador credenciado (laboratório; VISTORIA_ATIVA continua desligada:
@@ -10,7 +10,7 @@ import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, entrar, no
  *   2. conta nova (não parceiro): UM formulário (dados de parceiro + credenciamento) → solicitação "vistoria" e
  *      credenciamento ligados → pendência "verificar identidade" para a pessoa e para o admin (da ativação, E35-B);
  *   3. identidade verificada → admin vê UM pedido em /admin/avaliadores (fora da fila geral de parceiros) → "Aprovar para
- *      teste" ativa o parceiro e o credenciamento numa ação → a pessoa vê "Em teste" → /avaliadores/[numero] abre (noindex);
+ *      teste" ativa o parceiro e o credenciamento numa ação → a pessoa vê "Em teste" → /avaliadores/[numero] responde 404 (E1222: pessoa real em teste sem linha curada publicada);
  *   4. parceiro de limpeza existente pede sem repetir dados.
  * A conta nova é criada pela fixture (o código de entrada do 49 já tem a t-spec própria); aqui confere-se a volta.
  */
@@ -43,7 +43,7 @@ test.describe("T314 — porta de entrada do avaliador (62-B3)", () => {
     ids.limpeza = await criarConta(limpeza, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.limpeza, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: limpeza.nome, slug: `limpeza-t314-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"] })
+      .insert({ user_id: ids.limpeza, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: limpeza.nome, slug: `limpeza-t314-${sufixo}`, categorias: ["limpeza"], cidades: ["Uberlândia"] })
       .select("id")
       .single();
     if (error) throw error;
@@ -96,8 +96,8 @@ test.describe("T314 — porta de entrada do avaliador (62-B3)", () => {
     await expect(form.getByTestId("credenciamento-dados-parceiro")).toBeVisible();
     await expect(form.getByTestId("credenciamento-pendencia")).toContainText("verificar a sua identidade");
     await form.getByLabel(/Nome público/).fill(nova.nome);
-    await form.getByLabel("Tipo de pessoa").selectOption("pf");
-    await form.getByLabel("CPF ou CNPJ").fill(cpfAleatorio());
+    await expect(form.getByTestId("credenciamento-so-cnpj")).toContainText("CPF não é aceito"); // E648
+    await form.getByLabel("CNPJ", { exact: true }).fill(cnpjAleatorio());
     await form.getByLabel("Cidade onde vai avaliar").fill("Uberlândia");
     await form.getByLabel(/Portfólio ou referência/).fill("https://portfolio.lab.vivanomads.test/nadia");
     await form.getByLabel(/Li e aceito o código de conduta/).check();
@@ -149,9 +149,11 @@ test.describe("T314 — porta de entrada do avaliador (62-B3)", () => {
     await p.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("credenciamento-situacao")).toHaveAttribute("data-status", "em_teste");
     await expect(p.getByTestId("credenciamento-situacao")).toContainText("Em teste");
-    await p.goto(`/avaliadores/${numero}`, { waitUntil: "domcontentloaded" });
-    await expect(p.getByTestId("avaliador-numero")).toHaveText(numero);
-    await expect(p.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
+    // E1222 (ORDEM-DUET-1075): a pessoa REAL aprovada para teste, sem linha curada publicada, ainda não tem página pública
+    // — /avaliadores/[numero] responde 404 (antes: abria, com noindex). A regra e os casos visíveis estão na t1795.
+    const r = await p.goto(`/avaliadores/${numero}`, { waitUntil: "domcontentloaded" });
+    expect(r?.status()).toBe(404);
+    await expect(p.getByTestId("avaliador-publico")).toHaveCount(0);
     await p.context().close();
   });
 

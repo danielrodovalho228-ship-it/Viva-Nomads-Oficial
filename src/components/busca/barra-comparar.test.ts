@@ -4,26 +4,31 @@ import { readFileSync } from "node:fs";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
-test("7ffea8c7: a barra Comparar fica acima das abas do celular (não usa bottom-3 fixo)", () => {
+/*
+  E529 (D15; 3ª reprova de 06/11): a barra "Comparar (2)" era fixa e depois sticky no pé da coluna — nas duas versões flutuava
+  sobre os cartões que passavam por baixo ao rolar. Agora é uma faixa NORMAL da página, logo acima da lista de resultados:
+  sem sticky/fixed/sombra, ocupa o próprio espaço e nunca cobre cartão. O "Fale com a Viva" e o fim da página não precisam mais
+  de elevação nem folga por causa dela.
+*/
+test("E529: a barra Comparar é uma faixa normal da página (sem sticky, fixed, sombra nem posição própria)", () => {
   const src = ler("components/busca/barra-comparar.tsx");
-  assert.match(src, /vn-barra-comparar/);
-  assert.doesNotMatch(src, /bottom-3/);
-  const css = ler("app/globals.css");
-  assert.match(css, /--altura-abas:\s*3\.5rem/);
-  assert.match(css, /\.vn-barra-comparar\s*\{\s*bottom: calc\(var\(--altura-abas\) \+ env\(safe-area-inset-bottom, 0px\) \+ 0\.75rem\)/);
-  // computador: 12 px do rodapé (sem regressão)
-  assert.match(css, /min-width: 768px\)\s*\{\s*\.vn-barra-comparar\s*\{\s*bottom: 0\.75rem/);
+  const raiz = src.match(/<div className="([^"]+)" data-testid="barra-comparar">/)?.[1] ?? "";
+  assert.match(raiz, /\bbg-white\b/);
+  assert.match(raiz, /\bborder\b/);
+  for (const proibido of [/\bsticky\b/, /\bfixed\b/, /\babsolute\b/, /\bshadow-/, /\binset-x-0\b/, /\bbottom-/, /vn-barra-comparar/]) assert.doesNotMatch(raiz, proibido);
+  assert.doesNotMatch(src, /rounded-full/, "sem a pílula flutuante");
 });
 
-test("7ffea8c7: com a barra visível o 'Fale com a Viva' sobe e o fim da página ganha folga (só celular)", () => {
-  const css = ler("app/globals.css");
-  assert.match(css, /max-width: 767px\)\s*\{\s*body:has\(\[data-testid="barra-comparar"\]\)\s*\{\s*--ajuda-bottom: 10rem/);
-  assert.match(css, /padding-bottom: calc\(var\(--altura-abas\) \+ 6rem/);
+test("E529: a busca a põe ACIMA da lista de resultados, sem respiro de rodapé", () => {
+  const busca = ler("app/(public)/buscar/search-client.tsx");
+  const i = busca.indexOf("<BarraComparar");
+  const j = busca.indexOf('data-testid="grade-resultados"');
+  assert.ok(i > 0 && j > i, "a barra vem antes da grade de resultados");
+  assert.doesNotMatch(busca, /comparar-respiro/);
 });
 
-test("af3a27e3: 'Fale com a Viva' arrastado também respeita o piso da barra Comparar (celular)", () => {
+test("E529: o CSS não tem mais regras de posição, folga ou elevação para a barra Comparar", () => {
   const css = ler("app/globals.css");
-  assert.match(css, /body:has\(\[data-testid="barra-comparar"\]\)\s*\{\s*--ajuda-bottom: 10rem;\s*--viva-piso: 10rem;/);
-  const src = ler("components/ajuda/viva-chat.tsx");
-  assert.match(src, /bottom: `max\(\$\{pos\.baixo\}px, var\(--viva-piso, 0px\)\)`/);
+  assert.doesNotMatch(css, /vn-barra-comparar/);
+  assert.doesNotMatch(css, /data-testid="barra-comparar"/);
 });

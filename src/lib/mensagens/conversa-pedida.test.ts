@@ -55,5 +55,5 @@ test("tela e página usam a regra (sem cair em initial[0] quando a conversa pedi
   assert.doesNotMatch(pagina, /"Morador"/);
   const dados = ler("src/lib/data/messages.ts");
   assert.match(dados, /conversasDeContratos\(/);
-  assert.match(dados, /const conversas = \[\.\.\.doContrato, \.\.\.byConv\.values\(\)\]/);
+  assert.match(dados, /const conversas = \[\.\.\.doContrato, \.\.\.daCandidatura, \.\.\.byConv\.values\(\)\]/);
 });

@@ -9,6 +9,7 @@ import { nomeCurto } from "@/lib/perfil/perfil-publico";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
 import { degrausPerfil, type Degrau } from "@/lib/onboarding/degraus";
+import { papelDoPerfilPublico } from "@/lib/perfil/espelho-estado";
 
 /** "Seus papéis" no Perfil (Prompt 43): derivados do que a conta tem — sem modo escolhido à mão. */
 export async function meusPapeis(): Promise<PapelDaConta[] | null> {
@@ -41,9 +42,15 @@ export async function meuPerfilPublico(): Promise<MeuPerfilPublico | null> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  // Quem anuncia: a MESMA leitura da página pública (/proprietario/[id]).
-  const dono = await getPerfilProprietario(user.id).catch(() => null);
-  if (dono) {
+  // E799: ser dono é TER IMÓVEL (o mesmo fato da faixa pública). A falha de qualquer leitura é FALHA — nunca "morador":
+  // antes, um tropeço passageiro na faixa virava o cartão de morador e a prévia oscilava entre carregamentos.
+  const admin = createAdminClient();
+  const { count, error: erroImoveis } = await (admin ?? supabase).from("properties").select("id", { count: "exact", head: true }).eq("owner_id", user.id);
+  const temImovel = erroImoveis ? null : (count ?? 0) > 0;
+  const dono = temImovel ? await getPerfilProprietario(user.id) : null;
+  const papel = papelDoPerfilPublico(temImovel, !!dono);
+  if (papel === "falha") throw new Error("Não foi possível ler o seu perfil.");
+  if (papel === "dono" && dono) {
     return {
       nome: dono.nome,
       fotoUrl: dono.fotoUrl,

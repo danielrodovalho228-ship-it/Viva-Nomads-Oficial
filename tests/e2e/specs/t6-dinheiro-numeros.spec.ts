@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile, loginAs } from "../fixtures/auth";
+import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 
 /**
  * T6 — DINHEIRO E NÚMEROS — regressão da comissão percentual.
@@ -35,6 +36,7 @@ test.describe("T6 — Preços", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("/precos publica a tabela de planos", async ({ page }) => {
+    test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
     await page.goto("/precos", { waitUntil: "networkidle" });
     const corpo = await page.locator("body").innerText();
     // Tabela de planos publicada (nomes dos planos aparecem).

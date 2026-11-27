@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T759 — bloco parceiro do Muse (31/10): detalhe do parceiro, a 390 e a 1280.
@@ -24,7 +24,7 @@ test.describe("T759 — detalhe do parceiro: nome legível, capa, selo, seções
     ids.conta = await criarConta({ email: `limp.t759.${sufixo}@lab.vivanomads.test`, nome: "Lia Limpeza", role: "owner" }, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.conta, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: nome, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;

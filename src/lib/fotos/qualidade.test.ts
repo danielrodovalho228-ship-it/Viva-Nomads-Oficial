@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   orientacao, caixaDeCorte, tamanhoFinal, avisosDaFoto, dHash, distanciaHash,
   assinaturaFoto, distanciaAssinatura, fotosRepetidas, reduzirCinza, LADO_ASSINATURA, LIMIAR_REPETIDA,
-  nitidezLaplaciano, luminanciaMedia, paraCinza, fatorExposicao, fatorAplicado, MAX_FOTOS_POR_ANUNCIO,
+  nitidezLaplaciano, contrasteCinza, luminanciaMedia, paraCinza, fatorExposicao, fatorAplicado, MAX_FOTOS_POR_ANUNCIO,
   type Analise,
 } from "./qualidade.ts";
 
@@ -151,4 +151,19 @@ test("assinatura: tamanho fixo e distância inválida = infinita", () => {
   assert.equal(ass(quarto(64, 48), 64, 48).length, LADO_ASSINATURA * LADO_ASSINATURA * 2);
   assert.equal(distanciaAssinatura("00", "0000"), Infinity);
   assert.equal(distanciaAssinatura(undefined, "00"), Infinity);
+});
+
+test("E751: imagem de uma cor só NÃO é 'tremida ou sem foco' — o motivo que a análise sustenta é imagem lisa", () => {
+  const w = 20;
+  const lisa = new Float32Array(w * w).fill(128);
+  const solida: Analise = { largura: 200, altura: 200, luminancia: 128, nitidez: nitidezLaplaciano(lisa, w, w), contraste: contrasteCinza(lisa), hash: "0123456789abcdef" };
+  const codigos = avisosDaFoto(solida).map((a) => a.codigo);
+  assert.ok(!codigos.includes("tremida"), "sem tremor em arquivo sólido");
+  assert.ok(codigos.includes("lisa"));
+  assert.ok(codigos.includes("pequena"), "200×200 segue pequena");
+  // Foto com conteúdo e baixa nitidez continua tremida; análise antiga (sem contraste) segue a regra de antes.
+  assert.deepEqual(avisosDaFoto({ ...boa, nitidez: 5, contraste: 40 }).map((a) => a.codigo), ["tremida"]);
+  assert.deepEqual(avisosDaFoto({ ...boa, nitidez: 5 }).map((a) => a.codigo), ["tremida"]);
+  assert.equal(contrasteCinza([10, 10, 10]), 0);
+  assert.ok(contrasteCinza([0, 255, 0, 255]) > 100);
 });

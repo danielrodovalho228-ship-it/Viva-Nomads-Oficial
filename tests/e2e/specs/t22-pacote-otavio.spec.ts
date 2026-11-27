@@ -16,7 +16,9 @@ import { account, hasAccount } from "../fixtures/accounts";
  *           "permission denied" = sem privilégio, antes até do RLS); logado segue escrevendo.
  *
  * Sem env (URL/anon key/conta de teste), o teste é pulado.
- */
+  * Vizinha do E1229 (ORDENS-DUET 1143 e 1160): corre também no portão desse PR, porque a tela do contrato ganhou a
+ * anulação dos registros e a conferência passou a dizer 'Anulado em {data}: {motivo}'.
+*/
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;

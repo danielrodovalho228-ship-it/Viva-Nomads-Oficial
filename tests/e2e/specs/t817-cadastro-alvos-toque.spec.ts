@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { areaDeToque } from "../fixtures/area-toque";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrarNaPagina, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { noPasso } from "../fixtures/cadastro";
 
@@ -12,8 +13,8 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t817.${sufixo}@lab.vivanomads.test`, nome: "Tina Toque", role: "owner" as const };
 const ids: Record<string, string> = {};
-const alvo = (p: Page, sel: string) =>
-  p.locator(sel).first().evaluate((e) => Math.max(e.getBoundingClientRect().height, parseFloat(getComputedStyle(e, "::after").height) || 0));
+/** E1033: a área de toque REAL (9 pontos da caixa 44×44 com elementFromPoint), não a altura do ::after. */
+const alvo = async (p: Page, sel: string) => (await areaDeToque(p.locator(sel).first())).faltam;
 
 test.describe("T817 — cadastro: alvos de toque de 44 px", () => {
   test.skip(!NO_LABORATORIO, "Só no laboratório.");
@@ -44,7 +45,7 @@ test.describe("T817 — cadastro: alvos de toque de 44 px", () => {
         const n = await p.locator(sel).count();
         test.skip(n === 0 && etapa !== "preco" && etapa !== "revisao", `Sem ${sel} na etapa ${etapa}.`);
         if (n === 0) continue; // "Adicionar faixa" some no limite de faixas; o motivo só aparece se falta algo
-        expect(await alvo(p, sel), `${etapa}: ${sel}`).toBeGreaterThanOrEqual(44);
+        expect(await alvo(p, sel), `${etapa}: ${sel}`).toEqual([]);
         expect(await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(1);
         await p.screenshot({ path: `${SAIDA}/t817-${etapa}-${w}.png` });
       }

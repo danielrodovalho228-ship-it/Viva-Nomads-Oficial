@@ -91,7 +91,7 @@ export async function pedirLinkCelular(propertyId: string, chave: string): Promi
     if (email) {
       // E267: o e-mail diz qual item fotografar, de qual imóvel, e até quando o link vale.
       const { data: im } = await c.admin.from("properties").select("title, address, city").eq("id", propertyId).maybeSingle();
-      const imovel = im ? { titulo: im.title as string | null, bairro: im.address as string | null, cidade: im.city as string | null } : null;
+      const imovel = im ? { id: propertyId, titulo: im.title as string | null, bairro: im.address as string | null, cidade: im.city as string | null } : null;
       const r = await notify({
         event: "nivel_prova_celular",
         email,

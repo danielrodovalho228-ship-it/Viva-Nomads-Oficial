@@ -12,15 +12,21 @@ const CONTA = ler("src/app/(dashboard)/dashboard/conta/page.tsx");
 const SECAO = ler("src/app/(dashboard)/dashboard/conta/[secao]/page.tsx");
 const SECOES = ler("src/lib/conta/secoes.ts");
 
-test("Conta (A1, NAV-A): oito telas na ordem Perfil → Papéis e intenção → Avaliações → Dados → Privacidade → Notificações → Pagamentos → Ajuda", () => {
+test("Conta (A1, NAV-A): oito telas na ordem Perfil → Como você usa a Viva → Avaliações → Dados → Privacidade → Notificações → Pagamentos → Ajuda", () => {
   const ordem = ["perfil", "papeis", "avaliacoes", "dados", "privacidade", "seguranca", "notificacoes", "pagamentos", "ajuda"].map((id) => SECOES.indexOf(`id: "${id}"`));
   assert.ok(ordem.every((i) => i > 0), `faltou seção: ${ordem}`);
   assert.deepEqual([...ordem].sort((a, b) => a - b), ordem);
-  // No computador /dashboard/conta é a tela Perfil na casca; no celular, o menu.
-  assert.match(CONTA, /<CascaConta ativo="perfil" topoDireita>\s*<PerfilTela \/>/);
+  // E492: no computador /dashboard/conta leva ao Perfil (/dashboard/conta/perfil, um endereço só); no celular, o menu.
+  assert.match(CONTA, /window\.location\.replace\(destinoDaContaNoComputador\(destino\)\)/);
+  // E789 (devolução do julgamento, 11/11): a página de servidor entrega o Perfil já lido (`inicial`); a casca é a mesma.
+  assert.match(SECAO, /<CascaConta ativo="perfil" topoDireita>\s*<PerfilTela inicial=\{inicial\} \/>/);
   assert.match(CONTA, /<div className="lg:hidden">\s*<ContaMenu \/>/);
   // Cada seção é um caso de /conta/[secao] ou a sua rota própria (as que leem dados no servidor, ex.: Avaliações).
-  for (const id of ["avaliacoes", "papeis", "dados", "privacidade", "seguranca", "pagamentos", "ajuda"]) {
+  // E679: Avaliações saiu da casca da Conta — é o painel único /dashboard/avaliacoes; a rota antiga só redireciona.
+  // E798 (asserção alterada): o destino mora em lib/conta/redirecionar-no-servidor (usado também pelo proxy).
+  assert.match(ler("src/app/(dashboard)/dashboard/conta/avaliacoes/page.tsx"), /redirect\(destinoContaAvaliacoes\(/);
+  assert.match(ler("src/lib/conta/redirecionar-no-servidor.ts"), /\/dashboard\/avaliacoes\?aba=recebidas/);
+  for (const id of ["papeis", "dados", "privacidade", "seguranca", "pagamentos", "ajuda"]) {
     const propria = existsSync(new URL(`../../app/(dashboard)/dashboard/conta/${id}/page.tsx`, import.meta.url));
     assert.match(propria ? ler(`src/app/(dashboard)/dashboard/conta/${id}/page.tsx`) : SECAO, new RegExp(`<CascaConta ativo="${id}"`), id);
   }

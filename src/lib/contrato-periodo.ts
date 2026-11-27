@@ -17,6 +17,19 @@ export function periodoDaEstadia(entradaISO: string, meses: number): Periodo {
   return { inicio: entradaISO, fim: fimInclusivoISO(entradaISO, m * DIAS_POR_MES) };
 }
 
+/** E562: período de uma estadia de `dias` exatos a partir da entrada (fim inclusivo). */
+export function periodoEmDias(entradaISO: string, dias: number): Periodo {
+  return { inicio: entradaISO, fim: fimInclusivoISO(entradaISO, Math.max(1, Math.round(Number(dias) || 1))) };
+}
+
+/**
+ * E599: a DATA DE SAÍDA de uma estadia de `dias` — entrada + dias, a mesma conta do formulário e da candidatura
+ * (diasDaSelecao = saída − entrada). Não é o fim inclusivo do período (a última noite, um dia antes).
+ */
+export function dataDeSaida(entradaISO: string, dias: number): string {
+  return somaDias(entradaISO, Math.max(1, Math.round(Number(dias) || 1)));
+}
+
 /**
  * Lê o daterange do Postgres ("[2026-10-19,2026-12-18)" — forma canônica, fim exclusivo) e devolve o fim INCLUSIVO.
  * null para vazio ou inválido.
@@ -47,8 +60,9 @@ export function conflitoDePeriodo(pedido: Periodo, ocupados: Periodo[]): Periodo
 
 const br = (iso: string) => iso.split("-").reverse().join("/");
 
+/** E1089: `c.fim` é a última noite do contrato que ocupa o imóvel; a mensagem diz a SAÍDA (o primeiro dia livre). */
 export function mensagemConflitoPeriodo(c: Periodo): string {
-  return `Este imóvel já tem contrato de ${br(c.inicio)} a ${br(c.fim)}. Escolha outra data de entrada.`;
+  return `Este imóvel já tem contrato com entrada em ${br(c.inicio)} e saída em ${br(somaDias(c.fim, 1))}. Escolha outra data de entrada.`;
 }
 
 /** Status de contrato que ocupa o imóvel (o mesmo filtro do EXCLUDE da 0176). */

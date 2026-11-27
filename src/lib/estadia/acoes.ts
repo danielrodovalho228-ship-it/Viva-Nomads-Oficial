@@ -9,8 +9,10 @@
   fileira de src/lib/estadia/estadia.ts (acoesDaEstadia da B); a liberação das instruções sai de instrucoesLiberadas
   (src/lib/estadia/instrucoes.ts), já calculada por carregarEstadia (src/lib/data/estadia.ts).
   Nunca no cogumelo: cancelar ou encerrar o contrato, avaliar, pagar, links genéricos.
+  E539 (iv): nem o que a página já mostra — falar com a outra parte é o primário "Mensagem" do cartão de status, e as
+  instruções de chegada são um painel da própria página.
 */
-import { HREF_ESTADIA, acoesDaEstadia as fileiraDaEstadia, type FaseEstadia, type PapelEstadia } from "./estadia.ts";
+import { HREF_ESTADIA, HREF_CONTRATO_DA_ESTADIA, acoesDaEstadia as fileiraDaEstadia, type FaseEstadia, type PapelEstadia } from "./estadia.ts";
 
 export type { PapelEstadia };
 
@@ -26,7 +28,7 @@ export interface ContratoDaEstadia {
   instrucoesLiberadas: boolean;
 }
 
-export type ChaveAcaoEstadia = "falar" | "contrato" | "alteracao" | "instrucoes" | "limpeza" | "manutencao" | "calendario";
+export type ChaveAcaoEstadia = "contrato" | "alteracao" | "limpeza" | "manutencao" | "calendario";
 
 export interface AcaoEstadia {
   chave: ChaveAcaoEstadia;
@@ -41,7 +43,7 @@ export const PROIBIDAS_NO_COGUMELO = /cancelar|encerrar|avaliar|avalia|pagar|pag
 export const HREF_CALENDARIO_DONO = "/dashboard/agenda";
 
 const hrefMensagem = (c: Pick<ContratoDaEstadia, "conversaId">) => `/dashboard/mensagens?conversa=${c.conversaId}`;
-const hrefContrato = (papel: PapelEstadia, id: string) => (papel === "proprietario" ? `/dashboard/contratos/${id}` : `/dashboard/locacoes/${id}`);
+const hrefContrato = (papel: PapelEstadia, id: string) => (papel === "proprietario" ? `/dashboard/contratos/${id}` : HREF_CONTRATO_DA_ESTADIA(id));
 
 /** "Solicitar orçamento" do 31b: a busca de parceiros na categoria e na cidade, levando o imóvel até a folha do pedido. */
 export function hrefPedirServico(categoria: "limpeza" | "manutencao", c: Pick<ContratoDaEstadia, "imovelId" | "cidade">): string {
@@ -70,13 +72,10 @@ export function acoesDaEstadia(papel: PapelEstadia, c: ContratoDaEstadia): AcaoE
   const pode = permitidas(papel, c);
   const vigente = c.fase !== "encerrada";
   const base = HREF_ESTADIA(c.id);
-  const out: AcaoEstadia[] = [
-    { chave: "falar", rotulo: papel === "inquilino" ? "Falar com o proprietário" : "Falar com o morador", href: hrefMensagem(c) },
-    { chave: "contrato", rotulo: "Ver o contrato", href: hrefContrato(papel, c.id) },
-  ];
+  // E539 (iv): sem "Falar com…" (é o "Mensagem" do cartão de status) e sem "Ver instruções de chegada" (o painel está
+  // na própria página): a folha só leva o que a página não mostra.
+  const out: AcaoEstadia[] = [{ chave: "contrato", rotulo: "Ver o contrato", href: hrefContrato(papel, c.id) }];
   if (pode.has("propor_alteracao")) out.push({ chave: "alteracao", rotulo: "Propor alteração de datas", href: `${base}/alteracao` });
-  // O dono edita as instruções nesta página; o morador só as vê depois da liberação.
-  if (vigente && (papel === "proprietario" || c.instrucoesLiberadas)) out.push({ chave: "instrucoes", rotulo: "Ver instruções de chegada", href: `${base}#instrucoes` });
   if (vigente) {
     out.push({ chave: "limpeza", rotulo: "Pedir limpeza", href: hrefPedirServico("limpeza", c) });
     out.push({ chave: "manutencao", rotulo: "Pedir manutenção", href: hrefPedirServico("manutencao", c) });

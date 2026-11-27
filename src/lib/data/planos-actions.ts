@@ -3,72 +3,40 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  gestorElegivel,
-  faltamParaGestor,
-  motivoTipoValido,
-  GESTOR_MIN_IMOVEIS_VALIDADOS,
-  type AccountType,
-} from "@/lib/planos/gestor";
+import { motivoTipoValido, type AccountType } from "@/lib/planos/gestor";
+import { taxaDoDonoAgora } from "@/lib/cobranca/taxa-servidor";
 import { ehUuid } from "@/lib/fotografos/regras";
 import { erroBancoPT } from "@/lib/erros-banco";
 import { recusaObservador } from "@/lib/qa/observador";
 
-export interface GestorElegibilidade {
-  elegivel: boolean;
-  accountType: AccountType;
-  imoveisValidados: number;
-  faltam: number;
+export interface TaxaDaConta {
+  taxa: number;
+  origem: "admin" | "faixa" | "faixa_com_queda_recente";
+  imoveisAtivos: number;
 }
 
 /**
- * Elegibilidade do Gestor do proprietário logado (regra 1). Conta os imóveis com
- * documentação APROVADA (moderação) e lê o tipo da conta. Sem sessão → não
- * elegível (fail-closed). Usada pela UI para mostrar critérios/meta.
+ * Prompt 078 — a taxa de serviço que vale HOJE para o proprietário logado (Conta › Plano): a MESMA leitura que congela
+ * a taxa no aceite (taxaDoDonoAgora: faixa pelos imóveis ativos de verdade, queda de 30 dias e taxa fixada pelo admin).
+ * O tipo da conta (administradora) não entra. Sem sessão ou com a leitura falhando: null (a tela mostra só a escada).
  */
-export async function getGestorElegibilidade(): Promise<GestorElegibilidade> {
-  const vazio: GestorElegibilidade = {
-    elegivel: false,
-    accountType: "individual",
-    imoveisValidados: 0,
-    faltam: GESTOR_MIN_IMOVEIS_VALIDADOS,
-  };
+export async function getTaxaDaConta(): Promise<TaxaDaConta | null> {
   const supabase = await createClient();
-  if (!supabase) return vazio;
+  if (!supabase) return null;
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return vazio;
-
-  const { data: perfil } = await supabase
-    .from("profiles")
-    .select("account_type")
-    .eq("id", user.id)
-    .maybeSingle();
-  const accountType = ((perfil?.account_type as string) ?? "individual") as AccountType;
-
-  // Imóveis DISTINTOS com documentação aprovada. Antes contava checklists:
-  // o mesmo documento enviado 5 vezes "virava" 5 imóveis (Gestor indevido).
-  const { data: aprovadas } = await supabase
-    .from("qualification_checklists")
-    .select("property_id")
-    .eq("owner_id", user.id)
-    .eq("document_status", "approved")
-    .not("property_id", "is", null);
-  const imoveisValidados = new Set((aprovadas ?? []).map((r) => r.property_id as string)).size;
-
-  return {
-    elegivel: gestorElegivel({ accountType, imoveisValidados }),
-    accountType,
-    imoveisValidados,
-    faltam: faltamParaGestor(imoveisValidados),
-  };
+  if (!user) return null;
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const t = await taxaDoDonoAgora(admin, user.id).catch(() => null);
+  return t ? { taxa: t.taxa, origem: t.origem, imoveisAtivos: t.imoveisAtivos } : null;
 }
 
 /**
  * Define o tipo da conta (admin-only, AUDITADO). Marca administradoras como
- * 'gestor' — libera o Gestor por elegibilidade. Grava a trilha (quem, de/para,
- * motivo). Usa service role só depois de confirmar que quem chama é admin.
+ * 'gestor' — o tipo só IDENTIFICA a administradora; desde o prompt 078 não muda a
+ * taxa. Grava a trilha (quem, de/para, motivo). Usa service role só depois de confirmar que quem chama é admin.
  */
 export async function definirAccountType(
   profileId: string,

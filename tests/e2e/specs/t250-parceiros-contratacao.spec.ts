@@ -1,7 +1,7 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { jpegComGps } from "../fixtures/exif";
 import { metadadoNoDeposito } from "../fixtures/exif-deposito";
 
@@ -89,7 +89,7 @@ function amanha(hora: number): string {
 async function parceiro(userId: string, nome: string, slug: string, categorias: string[]): Promise<string> {
   const { data, error } = await adm()
     .from("parceiros")
-    .insert({ user_id: userId, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug, categorias, cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+    .insert({ user_id: userId, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: nome, slug, categorias, cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
     .select("id")
     .single();
   if (error) throw error;
@@ -161,7 +161,7 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     ids.pedido = d.url().split("/").pop()!;
     await expect(d.getByTestId("pedido-status")).toHaveText("Aguardando orçamento");
     await expect(d.getByTestId("pedido-mensagens")).toContainText("Aqui vocês combinam tudo");
-    await expect(d.getByTestId("pedido-pagamento-inativo")).toContainText("O pagamento pela plataforma ainda não está ativo.");
+    await expect(d.getByTestId("pedido-pagamento-inativo")).toContainText("Pagamento pela plataforma em breve."); // E1158 (1; ORDEM-DUET-673): a redação da config governa
     await expect(d.getByRole("button", { name: /^Pagar/ })).toHaveCount(0);
 
     // 2) Parceiro: não vê o endereço antes do aceite; orça e vê os 10% e o líquido.
@@ -252,12 +252,21 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     }).toPass({ timeout: 40_000 });
 
     // 8) As duas avaliações: cegas até a segunda; depois publicadas e a nota vai para a página do parceiro.
+    // E679-B parte 2 (9f0d6a582, 07/11): a avaliação do parceiro é igual à da estadia — além da nota, os critérios do par
+    // (1 a 5) e o "recomendaria"; sem eles o "Enviar avaliação" fica desligado.
+    const completarAvaliacao = async (pg: typeof d, criterio: string) => {
+      const grupos = pg.locator('[data-testid^="pedido-criterio-"]');
+      for (let i = 0; i < (await grupos.count()); i++) await grupos.nth(i).getByRole("button", { name: criterio, exact: true }).click();
+      await pg.getByTestId("pedido-recomendaria-sim").click();
+    };
     await d.getByTestId("pedido-nota-5").click();
+    await completarAvaliacao(d, "5");
     await d.getByTestId("pedido-avaliacao-texto").fill("Fotos ótimas, chegou no horário.");
     await d.getByTestId("pedido-avaliar").click();
     await expect(d.getByTestId("pedido-avaliacao-enviada")).toContainText("Aparece quando as duas partes avaliarem");
     await p.reload({ waitUntil: "domcontentloaded" });
     await p.getByTestId("pedido-nota-4").click();
+    await completarAvaliacao(p, "4");
     await p.getByTestId("pedido-avaliar").click();
     await expect(p.getByTestId("pedido-avaliacao-enviada")).toContainText("Publicada", { timeout: 20_000 });
     await expect(p.getByTestId("pedido-avaliacao-outro")).toContainText("5 de 5");

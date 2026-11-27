@@ -2,13 +2,16 @@
 
 import { randomBytes } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BUCKET_PARCEIROS, urlMidiaParceiro } from "@/lib/data/parceiros-publico";
 import { cidadeDoCep, ehUuid, normalizarCep } from "@/lib/fotografos/regras";
 import { geocodeForSave } from "@/lib/integrations/geocoding";
 import { chaveCidade } from "@/lib/cidades";
 import { lerReais } from "@/lib/reais";
+import { documentoNaTela, type PerfilDocumento } from "@/lib/documento-pessoa";
 import { semMetadados } from "@/lib/foto-reconversao";
+import { CONTATO_AVISO, contemContato } from "@/lib/pedidos/pedidos";
 import {
   CIDADES_MAX,
   categoriaValida,
@@ -40,11 +43,14 @@ export interface PainelParceiro {
   tipoPessoa: string;
   /** FISCAL-PARCEIRO-B: Sim/Não do PJ (null = não respondeu; PF sempre null). */
   emiteNota: boolean | null;
+  /** E687: empresa/veículo da categoria Mudança (vêm do pedido aprovado). */
+  dadosCategoria: { empresa?: string; veiculo?: string };
   /** PJ sem resposta: pendência no painel (não tira do ar o que já está publicado). */
   notaPendente: boolean;
   /** Denúncia procedente tirou o selo: o motivo fica à vista e o parceiro não religa sozinho. */
   notaSeloRemovido: { em: string; motivo: string | null } | null;
-  documentoMascarado: string;
+  /** E463: o documento do perfil (fonte única, a mesma leitura de Conta → Dados); mascarado null = não informado. */
+  documento: { rotulo: "CPF" | "CNPJ"; mascarado: string | null };
   razaoSocial: string | null;
   nomePublico: string;
   categorias: string[];
@@ -86,10 +92,6 @@ async function editavel() {
   return m;
 }
 
-function mascararDoc(tipo: string, d: string): string {
-  return tipo === "pj" ? `${d.slice(0, 2)}.•••.•••/••••-${d.slice(-2)}` : `•••.•••.${d.slice(6, 9)}-${d.slice(-2)}`;
-}
-
 async function contar(admin: Admin, id: string) {
   const [{ count: servicos }, { count: fotos }] = await Promise.all([
     admin.from("parceiro_servicos").select("id", { count: "exact", head: true }).eq("parceiro_id", id).eq("ativo", true),
@@ -106,8 +108,11 @@ function faltaDe(p: Record<string, unknown>, c: { servicos: number; fotos: numbe
     cidades: (p.cidades as string[]) ?? [],
     categorias: (p.categorias as string[]) ?? [],
     fotosGaleria: c.fotos,
-    // FISCAL-PARCEIRO-B: a resposta conclui o cadastro (primeira publicação); quem já esteve no ar não é bloqueado.
-    ...(p.publicado_em ? {} : { tipoPessoa: (p.tipo_pessoa as string | null) ?? null, emiteNota: (p.emite_nota as boolean | null) ?? null }),
+    // FISCAL-PARCEIRO-B: a resposta da nota conclui o cadastro (primeira publicação); quem já esteve no ar não é bloqueado por ela.
+    // E650: o tipo de pessoa vai SEMPRE — a pendência do CNPJ (E648) aparece para todo parceiro que não é PJ, publicado ou não.
+    tipoPessoa: (p.tipo_pessoa as string | null) ?? null,
+    emiteNota: (p.emite_nota as boolean | null) ?? null,
+    jaPublicou: Boolean(p.publicado_em),
   });
 }
 
@@ -146,7 +151,7 @@ export async function meuPainelParceiro(opcoes: { exigir?: boolean } = {}): Prom
     return url ? [{ id: g.id as string, url, legenda: (g.legenda as string | null) ?? null, ordem: Number(g.ordem) }] : [];
   });
   const rec = (p.dados_recebimento ?? {}) as { chave?: string };
-  const { data: perfil } = p.user_id ? await admin.from("profiles").select("is_teste").eq("id", p.user_id as string).maybeSingle() : { data: null };
+  const { data: perfil } = p.user_id ? await admin.from("profiles").select("is_teste, person_type, cpf, cnpj").eq("id", p.user_id as string).maybeSingle() : { data: null };
   return {
     id,
     slug: p.slug as string,
@@ -155,9 +160,11 @@ export async function meuPainelParceiro(opcoes: { exigir?: boolean } = {}): Prom
     teste: (perfil as { is_teste?: boolean } | null)?.is_teste === true,
     tipoPessoa: p.tipo_pessoa as string,
     emiteNota: (p.emite_nota as boolean | null) ?? null,
+    dadosCategoria: (p.dados_categoria as { empresa?: string; veiculo?: string } | null) ?? {},
     notaPendente: faltaRespostaNota({ tipoPessoa: p.tipo_pessoa as string, emiteNota: p.emite_nota as boolean | null }),
     notaSeloRemovido: p.nota_selo_removido_em ? { em: p.nota_selo_removido_em as string, motivo: (p.nota_selo_motivo as string | null) ?? null } : null,
-    documentoMascarado: mascararDoc(p.tipo_pessoa as string, p.documento as string),
+    // E463: o documento é o do PERFIL (o mesmo de Conta → Dados), não o do pedido de parceria.
+    documento: documentoNaTela(perfil as PerfilDocumento | null),
     razaoSocial: (p.razao_social as string | null) ?? null,
     nomePublico: p.nome_publico as string,
     categorias: (p.categorias as string[]) ?? [],
@@ -194,6 +201,8 @@ export async function salvarPagina(e: { nomePublico: string; descricao: string; 
   if (nome.length < 2) return { ok: false, erro: "Informe o nome que aparece na página." };
   const descricao = limpar(e.descricao, 2000);
   const curta = limpar(e.descricaoCurta, 160).replace(/\s+/g, " ");
+  // E1112 (ORDEM-DUET-498 §2): a página é pública — contacto no nome ou nas descrições é recusado com o aviso da casa.
+  if ([nome, descricao, curta].some((t) => contemContato(t))) return { ok: false, erro: CONTATO_AVISO };
   const redes: Record<string, string | null> = {};
   for (const r of REDES) {
     const v = validarRede(r.chave, e.redes?.[r.chave]);
@@ -460,18 +469,18 @@ export async function pausarPagina(): Promise<Res> {
 }
 
 /** O menu "Parceiro" aparece quando a conta tem o papel (a linha em parceiros) ou um pedido de parceria. */
-export async function temPapelParceiro(): Promise<boolean> {
+export async function temPapelParceiro(opcoes: { exigir?: boolean } = {}): Promise<boolean> {
   const supabase = await createClient();
   if (!supabase) return false;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // E1093: com `exigir` (o contexto do menu), a sessão por confirmar e o erro do banco LANÇAM — "não li" não é "não é parceiro".
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return false;
-  const [{ count: p }, { count: s }] = await Promise.all([
+  const [p, s] = await Promise.all([
     supabase.from("parceiros").select("id", { count: "exact", head: true }).eq("user_id", user.id),
     supabase.from("parceiro_solicitacoes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
-  return (p ?? 0) + (s ?? 0) > 0;
+  if ((p.error || s.error) && opcoes.exigir) throw new Error("Não foi possível conferir a parceria agora.");
+  return (p.count ?? 0) + (s.count ?? 0) > 0;
 }
 
 /**

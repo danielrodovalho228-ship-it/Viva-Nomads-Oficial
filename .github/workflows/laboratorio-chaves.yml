@@ -1,0 +1,140 @@
+name: Laboratório com as chaves de build ligadas
+
+# ORDEM-DUET-106/110 (E642, E707, E633, E634, E690): as chaves de produto NEXT_PUBLIC_* entram no bundle no BUILD, por isso
+# não se ligam num 2.º servidor nem nas fatias do laboratório noturno (lá ficam desligadas, como em produção, e os specs
+# @chave-build pulam de propósito). Este fluxo sobe o MESMO laboratório (Supabase local do zero, personas, modo simulado),
+# faz o SEU build com as chaves ligadas ("on") e roda os specs @chave-build (t2151–t2154) e a jornada do piloto (t2157,
+# pela etapa 5, o pré-aceite de 72 h: ORDEM-DUET-192).
+# Só valores do ambiente de teste: o banco local do runner, as chaves locais do Supabase e o modo simulado. Nenhum segredo
+# de produção é usado aqui — o banco morre no fim. Roda toda noite, meia hora depois do noturno, e no disparo manual.
+on:
+  schedule:
+    - cron: "30 6 * * *" # 01h30 no Texas (horário de verão), 03h30 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laboratorio-chaves-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+  NEXT_PUBLIC_SITE_URL: http://localhost:3123
+  INTEGRACOES_SIMULADAS: "on"
+  LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
+  # Os serviços falsos do laboratório (scripts/lab/*-falso.mjs): nada sai para a rede.
+  LAB_RESEND_URL: http://127.0.0.1:3999
+  LAB_LINKEDIN_URL: http://127.0.0.1:3997
+  LAB_ROTAS_URL: http://127.0.0.1:3998
+  TESTES_BASE_URL: http://localhost:3123
+  # As chaves de produto, ligadas no build E no Playwright (cada spec pula se a sua chave não estiver "on" no ambiente dele).
+  NEXT_PUBLIC_CAUCAO_PRAZOS_ATIVA: "on"
+  NEXT_PUBLIC_MATRICULA_OBRIGATORIA: "on"
+  NEXT_PUBLIC_FICHA_RESUMO_ATIVA: "on"
+  NEXT_PUBLIC_AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA: "on"
+  # E1062 (ORDEM-DUET-306): a forma de pagamento na proposta (E647), para a trava de tela t1703.
+  NEXT_PUBLIC_FORMA_PAGAMENTO_DONO_ATIVA: "on"
+  # ORDEM-DUET-192: a janela de 72 h do pré-aceite (E722), ligada SÓ aqui, para provar em simulação a etapa 5 da jornada
+  # (t2157). A chave de produção não se toca.
+  NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA: "on"
+
+jobs:
+  chaves:
+    name: laboratorio (chaves de build @chave-build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Subir o Supabase local (todas as migrações)
+        # E792: o mesmo script das fatias (porta livre e LAB_DB_URL).
+        run: scripts/lab/subir-supabase.sh
+
+      - name: Acertar com produção (role como texto + políticas extras)
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
+
+      - name: Conferir o banco (asserções de segurança)
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/conferir-banco.sql
+
+      - name: Chaves locais e senha da noite (mascaradas)
+        run: |
+          eval "$(supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
+          SENHA="$(openssl rand -hex 16)"
+          SOCIOS="lab-$(openssl rand -hex 8)"
+          echo "::add-mask::$ANON_KEY"; echo "::add-mask::$SERVICE_ROLE_KEY"; echo "::add-mask::$SENHA"; echo "::add-mask::$SOCIOS"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "LAB_SENHA=$SENHA"
+            echo "SOCIOS_ACCESS_CODE=$SOCIOS"
+          } >> "$GITHUB_ENV"
+
+      - name: Criar as personas e os imóveis de teste
+        run: node scripts/lab/seed-lab.mjs
+
+      - name: Build do site com as chaves ligadas (modo simulado)
+        run: npm run build
+
+      - name: Subir o site em localhost:3123
+        run: |
+          node scripts/lab/resend-falso.mjs 3999 > tests/laboratorio/saida/resend-falso.log 2>&1 &
+          node scripts/lab/linkedin-falso.mjs 3997 > tests/laboratorio/saida/linkedin-falso.log 2>&1 &
+          node scripts/lab/rotas-falso.mjs 3998 > tests/laboratorio/saida/rotas-falso.log 2>&1 &
+          npx next start -p 3123 > tests/laboratorio/saida/servidor.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
+          curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
+
+      - name: Instalar Chromium do Playwright
+        # As mesmas tentativas curtas do noturno (4 × 5 min, 30 s entre elas, limpando a trava do apt).
+        timeout-minutes: 30
+        run: |
+          for i in 1 2 3 4; do
+            timeout 300 npx playwright install --with-deps chromium && exit 0
+            echo "tentativa $i travou ou falhou"
+            sudo pkill -f '[a]pt-get|[d]pkg' || true
+            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
+            sudo dpkg --configure -a || true
+            if [ "$i" -lt 4 ]; then sleep 30; fi
+          done
+          exit 1
+
+      - name: Rodar os specs @chave-build e a jornada do piloto (t2157)
+        id: e2e
+        continue-on-error: true
+        # Sem --pass-with-no-tests: nenhum spec listado reprova (E964: nunca verde sem ter rodado).
+        run: npx playwright test --grep "@chave-build|T2157 — jornada do piloto" --reporter=list,html,json --workers=1 --timeout=90000 --global-timeout=2400000 > tests/laboratorio/saida/e2e.txt 2>&1
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
+
+      - name: Guardar relatório, prints e vídeos das falhas
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: laboratorio-chaves-${{ github.run_id }}
+          path: |
+            playwright-report/
+            tests/e2e/.artifacts/
+            tests/laboratorio/saida/
+          retention-days: 14
+
+      - name: Números e falhas (erro completo no log)
+        if: ${{ !cancelled() }}
+        run: node scripts/lab/falhas-da-fatia.mjs tests/laboratorio/saida/resultado.json chaves || true
+
+      - name: Marcar o job como falha se algum teste falhou
+        if: ${{ steps.e2e.outcome == 'failure' }}
+        run: exit 1

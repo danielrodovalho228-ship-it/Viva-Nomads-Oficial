@@ -1,5 +1,6 @@
 "use server";
 
+import { recusaObservador } from "@/lib/qa/observador";
 import { createClient } from "@/lib/supabase/server";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { erroBancoPT } from "@/lib/erros-banco";
@@ -29,20 +30,23 @@ export async function listarGastosMarketing(): Promise<{ gastos: GastoMarketing[
 
 async function exigirAdmin() {
   const supabase = await createClient();
-  if (!supabase) return { supabase: null, erro: null as string | null };
+  if (!supabase) return { supabase: null, erro: null as string | null, userId: null as string | null };
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { supabase: null, erro: "Não autenticado." };
-  if (!(await ehAdmin(supabase, user.id))) return { supabase: null, erro: "Sem permissão." };
-  return { supabase, erro: null };
+  if (!user) return { supabase: null, erro: "Não autenticado.", userId: null };
+  if (!(await ehAdmin(supabase, user.id))) return { supabase: null, erro: "Sem permissão.", userId: null };
+  return { supabase, erro: null, userId: user.id };
 }
 
 export async function lancarGastoMarketing(entrada: GastoEntrada): Promise<ActionResult> {
   const v = validarGasto(entrada);
   if (!v.ok) return { ok: false, error: v.erro };
-  const { supabase, erro } = await exigirAdmin();
+  const { supabase, erro, userId } = await exigirAdmin();
   if (erro) return { ok: false, error: erro };
+  // E477: o admin observador da QA só lê.
+  const recusaQa = await recusaObservador(userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   if (!supabase) return { ok: true, demo: true };
   const { error } = await supabase.from("gastos_marketing").insert(v.linha);
   if (error) return { ok: false, error: erroBancoPT(error) };
@@ -50,8 +54,11 @@ export async function lancarGastoMarketing(entrada: GastoEntrada): Promise<Actio
 }
 
 export async function apagarGastoMarketing(id: string): Promise<ActionResult> {
-  const { supabase, erro } = await exigirAdmin();
+  const { supabase, erro, userId } = await exigirAdmin();
   if (erro) return { ok: false, error: erro };
+  // E477: o admin observador da QA só lê.
+  const recusaQa = await recusaObservador(userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   if (!supabase) return { ok: true, demo: true };
   const { error } = await supabase.from("gastos_marketing").delete().eq("id", id);
   if (error) return { ok: false, error: erroBancoPT(error) };

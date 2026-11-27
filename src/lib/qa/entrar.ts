@@ -108,7 +108,7 @@ export const chaveLimiteIp = (ipHash: string) => `qa-entrar:ip:${ipHash}`;
  * E256-B: motivo de cada 404 da porta, só para o LOG do servidor (o cliente recebe sempre o mesmo 404). Nunca leva
  * e-mail, chave nem IP: só o código.
  */
-export const MOTIVOS_RECUSA_QA = ["desligada", "metodo", "chave", "perfil", "2fa", "padrao", "admin_fechada"] as const;
+export const MOTIVOS_RECUSA_QA = ["desligada", "metodo", "chave", "perfil", "2fa", "padrao", "admin_fechada", "email"] as const;
 export type MotivoRecusaQa = (typeof MOTIVOS_RECUSA_QA)[number];
 
 /** Por que tipoDeEntrada recusou esta conta existente (mesmas regras, na mesma ordem). null = não recusou. */

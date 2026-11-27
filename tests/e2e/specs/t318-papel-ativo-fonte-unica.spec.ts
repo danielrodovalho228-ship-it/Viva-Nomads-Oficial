@@ -7,7 +7,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
  * T318 — PAPEL-B: papel ativo com fonte única (profiles.papel_ativo) e troca explícita.
  *   1. troca pela Conta ("Usar este") grava, leva ao painel, sobrevive a recarregar e a outro aparelho (390 e 1280);
  *   2. uma sessão percorre as páginas do painel: o selo e a barra sempre batem com a página; páginas comuns mantêm o
- *      papel; abrir /dashboard/imoveis como morador troca para Proprietário e GRAVA;
+ *      papel escolhido; abrir /dashboard/imoveis como morador desenha a página do dono pela URL e NÃO grava o papel
+ *      (E548/E653: o papel nunca muda sozinho; antes, trocava e gravava);
  *   3. intenção salva depois na Conta não muda o papel ativo.
  * O menu do selo do topo (TrocaPapel) entra quando a Pista A trocar o link do PapelAtivo pelo componente (pedido no PR).
  */
@@ -52,7 +53,7 @@ test.describe("T318 — papel ativo com fonte única (PAPEL-B)", () => {
       const p = await abrir(browser, largura);
       await p.goto("/dashboard/conta/papeis", { waitUntil: "domcontentloaded" });
       const papeis = p.getByTestId("seus-papeis").filter({ visible: true });
-      await expect(p.getByRole("heading", { name: "Papéis e intenção" })).toBeVisible({ timeout: 20_000 });
+      await expect(p.getByRole("heading", { name: "Como você usa a Viva" })).toBeVisible({ timeout: 20_000 });
       await expect(papeis.getByTestId(`usar-papel-${alvo}`)).toBeVisible({ timeout: 20_000 });
       await p.screenshot({ path: `${SAIDA}/t318-conta-papeis-${largura}.png`, fullPage: true });
       await papeis.getByTestId(`usar-papel-${alvo}`).click();
@@ -70,7 +71,7 @@ test.describe("T318 — papel ativo com fonte única (PAPEL-B)", () => {
     });
   }
 
-  test("2. selo = barra = página numa sessão; página de outra área troca e grava; comuns mantêm", async ({ browser }) => {
+  test("2. selo = barra = página numa sessão; página de outra área se desenha pela URL e não grava (E653); comuns mantêm o papel escolhido", async ({ browser }) => {
     test.setTimeout(180_000);
     await adm().from("profiles").update({ papel_ativo: "morador", preferred_mode: "tenant" }).eq("id", ids.conta);
     const p = await abrir(browser, 390);
@@ -78,10 +79,12 @@ test.describe("T318 — papel ativo com fonte única (PAPEL-B)", () => {
       ["/dashboard", "morador"],
       ["/dashboard/favoritos", "morador"],
       ["/dashboard/mensagens", "morador"],
-      ["/dashboard/imoveis", "proprietario"], // morador abrindo tela de dono: troca e grava
-      ["/dashboard", "proprietario"],
-      ["/dashboard/mensagens", "proprietario"],
-      ["/dashboard/conta", "proprietario"],
+      // E548/E653: o papel nunca muda sozinho. Morador abrindo tela de dono: a página se desenha pela URL (selo e barra em
+      // Proprietário) e NADA é gravado; ao sair dela, as páginas comuns voltam ao papel escolhido.
+      ["/dashboard/imoveis", "proprietario"],
+      ["/dashboard", "morador"],
+      ["/dashboard/mensagens", "morador"],
+      ["/dashboard/conta", "morador"],
       ["/dashboard/buscas", "morador"],
       ["/dashboard", "morador"],
     ];
@@ -91,7 +94,9 @@ test.describe("T318 — papel ativo com fonte única (PAPEL-B)", () => {
       const barra = p.locator("nav[data-papel]").filter({ visible: true });
       if (await barra.count()) await expect(barra.first(), rota).toHaveAttribute("data-papel", papel);
       if (rota === "/dashboard/imoveis") {
-        await expect.poll(gravado, { timeout: 20_000 }).toBe("proprietario");
+        // Espera a tela assentar (as gravações da casca, se houvesse, sairiam aqui) e confere o banco: segue "morador".
+        await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+        expect(await gravado(), "abrir a página do dono não grava o papel").toBe("morador");
         await p.screenshot({ path: `${SAIDA}/t318-imoveis-troca-390.png` });
       }
     }

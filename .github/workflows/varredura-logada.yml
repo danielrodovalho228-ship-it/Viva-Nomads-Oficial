@@ -1,0 +1,139 @@
+name: Varredura logada e admin (E950)
+
+# E950 (alavanca 2): percorre TODAS as rotas do painel e do admin do inventário do Apêndice A de
+# docs/e793-painel-sessao-servidor.md (108 páginas) no LABORATÓRIO — Supabase local, integrações simuladas, personas do
+# seed-lab e da massa da varredura; admin com o 2FA da persona do lab (segredo gerado na semeadura, nunca o de produção) —
+# a 390 e 1280 px, e REGISTRA os achados (não falha por eles) em tests/laboratorio/saida/varredura-logada.json.
+# O job só fica vermelho se a varredura NÃO TERMINAR. O Gerente transforma os achados em itens.
+# Roda toda noite, à mão (workflow_dispatch) e num PR que mexa na própria varredura (para a 1ª rodada sair antes da main).
+on:
+  schedule:
+    - cron: "0 9 * * *" # 04h no Texas, depois do laboratório noturno (01h)
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/varredura-logada.yml"
+      - "tests/e2e/specs/t1649-e950-varredura-logada-admin.spec.ts"
+      - "tests/e2e/fixtures/e950-varredura.ts"
+      - "scripts/lab/juntar-varredura-logada.mjs"
+      - "scripts/lab/massa-varredura-e950.mjs"
+      - "docs/e793-painel-sessao-servidor.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: varredura-logada-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  varrer:
+    name: varredura logada e admin
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SITE_URL: http://localhost:3123
+      INTEGRACOES_SIMULADAS: "on"
+      LAB_OUTBOX: ${{ github.workspace }}/tests/laboratorio/saida/envios-simulados.jsonl
+      # Resend falso (scripts/lab/resend-falso.mjs): confere o formato do e-mail e devolve um id; nada sai para a rede.
+      LAB_RESEND_URL: http://127.0.0.1:3999
+      # LinkedIn falso (scripts/lab/linkedin-falso.mjs, 63-B): OIDC mínimo com id_token RS256 de verdade; nada sai para a rede.
+      LAB_LINKEDIN_URL: http://127.0.0.1:3997
+      # Rotas falsas (scripts/lab/rotas-falso.mjs): tempos determinísticos no formato Mapbox/Google; nada sai para a rede.
+      LAB_ROTAS_URL: http://127.0.0.1:3998
+      TESTES_BASE_URL: http://localhost:3123
+      LAB_VARREDURA_E950: completa
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.22.1"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.120.0
+
+      - name: Subir o Supabase local (todas as migrações)
+        run: scripts/lab/subir-supabase.sh
+
+      - name: Acertar com produção (role como texto + políticas extras)
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/alinhar-producao.sql
+
+      - name: Conferir o banco (asserções de segurança)
+        run: psql "$LAB_DB_URL" -v ON_ERROR_STOP=1 -q -f supabase/lab/conferir-banco.sql
+
+      - name: Chaves locais e senha da noite (mascaradas)
+        run: |
+          eval "$(supabase status -o env | grep -E '^(ANON_KEY|SERVICE_ROLE_KEY)=')"
+          SENHA="$(openssl rand -hex 16)"
+          SOCIOS="lab-$(openssl rand -hex 8)"
+          echo "::add-mask::$ANON_KEY"; echo "::add-mask::$SERVICE_ROLE_KEY"; echo "::add-mask::$SENHA"; echo "::add-mask::$SOCIOS"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+            echo "LAB_SENHA=$SENHA"
+            echo "SOCIOS_ACCESS_CODE=$SOCIOS"
+          } >> "$GITHUB_ENV"
+
+      - name: Criar as personas (admin com 2FA do lab) e os imóveis de teste
+        # O seed grava TESTES_ADMIN_TOTP_SEGREDO no GITHUB_ENV: segredo SÓ deste banco, criado agora (nunca o de produção).
+        run: node scripts/lab/seed-lab.mjs
+
+      - name: Criar a massa da varredura (morador, proprietário, dois papéis, parceiro)
+        run: node scripts/lab/massa-varredura.mjs
+
+      # ORDEM-DUET-102: registros marcados ("[E950] massa da varredura") para as 8 rotas com [id] que a massa comum não
+      # cobre. Só neste workflow: a massa compartilhada dos outros jobs fica como está.
+      - name: Criar a massa do E950 (rotas com [id])
+        run: node scripts/lab/massa-varredura-e950.mjs
+
+      - name: Build do site (modo simulado)
+        run: npm run build
+
+      - name: Subir o site em localhost:3123
+        run: |
+          node scripts/lab/resend-falso.mjs 3999 > tests/laboratorio/saida/resend-falso.log 2>&1 &
+          node scripts/lab/linkedin-falso.mjs 3997 > tests/laboratorio/saida/linkedin-falso.log 2>&1 &
+          node scripts/lab/rotas-falso.mjs 3998 > tests/laboratorio/saida/rotas-falso.log 2>&1 &
+          npx next start -p 3123 > tests/laboratorio/saida/servidor.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3123/ && break; sleep 2; done
+          curl -sf -o /dev/null http://localhost:3123/ || (cat tests/laboratorio/saida/servidor.log; exit 1)
+
+      - name: Instalar Chromium do Playwright
+        timeout-minutes: 25
+        run: |
+          for i in 1 2 3; do
+            timeout 420 npx playwright install --with-deps chromium && exit 0
+            echo "tentativa $i travou ou falhou"
+            sudo pkill -f '[a]pt-get|[d]pkg' || true
+            for _ in $(seq 1 40); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock >/dev/null 2>&1 || break; sleep 3; done
+            sudo dpkg --configure -a || true
+          done
+          exit 1
+
+      - name: Varrer (5 personas × 390/1280; achado não reprova)
+        # Vermelho só se algum dos 10 testes não terminar (conta ausente, login, tempo esgotado). Sem retry: a varredura
+        # inteira de novo dobraria o tempo e os achados já ficam gravados na parcial de cada teste.
+        run: npx playwright test t1649-e950-varredura-logada-admin --project=chromium --reporter=list --workers=3 --retries=0 --global-timeout=5700000 --trace off 2>&1 | tee tests/laboratorio/saida/varredura-logada.txt; exit "${PIPESTATUS[0]}"
+
+      - name: Juntar e resumir (cobertura no resumo do job)
+        if: ${{ !cancelled() }}
+        run: node scripts/lab/juntar-varredura-logada.mjs
+
+      - name: Guardar a varredura (JSON, capturas e log)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: varredura-logada-${{ github.run_id }}
+          path: |
+            tests/laboratorio/saida/varredura-logada.json
+            tests/laboratorio/saida/varredura-logada-e950/
+            tests/laboratorio/saida/varredura-logada.txt
+            tests/laboratorio/saida/servidor.log
+          retention-days: 14

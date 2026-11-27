@@ -52,7 +52,7 @@ function CampoCodigo({ valor, onChange, id }: { valor: string; onChange: (v: str
         maxLength={7}
         value={valor}
         onChange={(e) => onChange(e.target.value.replace(/[^\d\s]/g, ""))}
-        className="h-12 w-full rounded-xl border border-sage-300 bg-white px-4 text-center text-xl tracking-[0.4em] text-ink focus:border-forest focus:outline-none"
+        className="h-12 w-full rounded-xl border border-sage-200 bg-white px-4 text-center text-xl tracking-[0.4em] text-ink focus:border-forest focus:outline-none"
         placeholder="000000"
       />
     </div>
@@ -137,7 +137,7 @@ export function VerificarCodigoForm({ destino }: { destino: string }) {
           maxLength={12}
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}
-          className="h-12 w-full rounded-xl border border-sage-300 bg-white px-4 text-center text-lg text-ink focus:border-forest focus:outline-none"
+          className="h-12 w-full rounded-xl border border-sage-200 bg-white px-4 text-center text-lg text-ink focus:border-forest focus:outline-none"
           placeholder="XXXXX-XXXXX"
         />
         <p className="text-xs text-muted">Cada código vale uma vez. Ao usar, a verificação do app é desligada e você cadastra o app de novo.</p>
@@ -322,7 +322,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
           <p role="note" className="rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-900">
             Apague a entrada antiga da Viva Nomads no seu app autenticador e escaneie este QR novo.
           </p>
-          <div className="space-y-3 rounded-xl border border-sage-200 bg-sage-50 p-3">
+          <div className="space-y-3 rounded-xl border border-sage-200 bg-sage-100 p-3">
             <p className="text-sm font-medium text-ink">Chave do autenticador</p>
             <code data-testid="chave-2fa" className="block break-all rounded-lg bg-white px-3 py-2 text-base tracking-wider text-ink">{agruparChave(estado.segredo)}</code>
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -330,7 +330,7 @@ export function DuasEtapasPanel({ obrigatorio, destino }: { obrigatorio: boolean
                 {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copiado ? "Copiado!" : "Copiar código"}
               </Button>
               {urlOtpauth(estado.segredo) && (
-                <a href={urlOtpauth(estado.segredo) ?? undefined} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-sage-300 bg-white px-4 text-sm font-medium text-forest sm:w-auto">
+                <a href={urlOtpauth(estado.segredo) ?? undefined} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-sage-200 bg-white px-4 text-sm font-medium text-forest sm:w-auto">
                   <Smartphone className="h-4 w-4" /> Abrir no app autenticador
                 </a>
               )}

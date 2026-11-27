@@ -4,7 +4,7 @@ import { FRASE_CONVERSA_CHAT } from "@/config/conversa-chat";
 import { ETAPAS_CANDIDATURA, TERMOS_CANDIDATURA, LIMITE_APRESENTACAO, etapaAnterior, proximaEtapa, progressoEtapa, validarApresentacao, type EtapaCandidatura } from "@/lib/candidatura-etapas";
 import { AvisoPetCandidatura } from "@/components/property/aviso-pet-candidatura";
 import { ProblemaComIsto } from "@/components/ajuda/problema-com-isto";
-import { numBR, hojeBR } from "@/lib/utils";
+import { hojeBR } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -22,9 +22,10 @@ import {
   Clock,
   Handshake,
   Hash,
+  X,
 } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { Button, buttonClasses, marcaCta } from "@/components/ui/button";
+import { Button, ButtonLink, buttonClasses, marcaCta } from "@/components/ui/button";
 import { FRASE_CTA_IMOVEL, ROTULO_CTA_IMOVEL } from "@/lib/imovel-cta";
 import { ShareButton } from "@/components/share-button";
 import { VisitaPresencial, VisitaVideo } from "@/components/property/visita-video";
@@ -36,7 +37,10 @@ import { ConviteFotoCandidatura } from "@/components/account/convite-foto-candid
 import { alvoAbrir, urlLoginParaAbrir, type AlvoAbrir } from "@/lib/imovel/abrir-apos-login";
 import { urlEntrada } from "@/lib/auth/entrada";
 import { IdealPara } from "@/components/property/ideal-para";
-import { PropertyTags, InvoiceBadge, InsuranceBadge, PrecoJustoBadge } from "@/components/ui/badge";
+import { PropertyTags, InvoiceBadge, InsuranceBadge } from "@/components/ui/badge";
+import { SelosAnuncio } from "@/components/property/selos-anuncio";
+import { selosDaFoto } from "@/lib/cartao-selos-foto";
+import { textoDaNota } from "@/lib/imovel/rotulo-avaliacoes";
 import { ComparacaoAirbnbFicha } from "@/components/precos/comparacao-airbnb-ficha";
 import { SELO_NF_UI } from "@/lib/flags";
 import { ImoveisParecidos } from "@/components/property/imoveis-parecidos";
@@ -51,14 +55,18 @@ import { useMarcasStore } from "@/lib/marcas/store";
 import { CHAVE_ULTIMA_BUSCA, ultimaBuscaParaPedido } from "@/lib/marcas/regra";
 import { CHAVE_VOLTAR_BUSCA, ROTULO_VOLTAR_BUSCA, destinoVoltarBusca } from "@/lib/imovel/voltar-busca";
 import type { LeadKind } from "@/lib/leads";
+import { hojeEmBrasilia } from "@/lib/datas-brasilia";
 import { PriceCard } from "@/components/property/price-card";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
-import { FAIXA_TESTE_EQUIPE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
+import { FAIXA_TESTE, FAIXA_TESTE_VISITANTE, modoAnuncioTeste } from "@/lib/data/anuncio-teste";
+
+/** E796: a faixa do anúncio de teste é o motivo do "Pedir para morar" desativado (aria-describedby). */
+const ID_FAIXA_TESTE = "faixa-anuncio-teste";
 import { barraFixaImovel } from "@/lib/barra-fixa-imovel";
-import { calcularTotalMensal, estadiaDoImovel } from "@/lib/precos";
+import { calcularTotalMensal, estadiaDoImovel, estadiaDoImovelEmDias } from "@/lib/precos";
+import { abaixoDaEstadiaMinima, estadiaMinimaDias } from "@/lib/availability";
 import { quartosTexto, banheirosTexto } from "@/lib/anuncio/plural";
-import { mesesDoCartao } from "@/lib/cartao-preco";
 import { FavoriteButton } from "@/components/favorite-button";
 import { AmenitiesGrid } from "@/components/property/amenities-grid";
 import { WorkspaceSection } from "@/components/property/workspace-section";
@@ -75,6 +83,7 @@ import { NivelImovel } from "@/components/niveis/nivel-imovel";
 import { AvaliacaoFicha } from "@/components/niveis/avaliacao-ficha";
 import type { Exibicao59 } from "@/lib/data/exibicao-59";
 import { AvailabilityCalendar } from "@/components/property/availability-calendar";
+import { CaminhoReserva } from "@/components/property/caminho-reserva";
 import { PrivacidadeAcesso } from "@/components/property/privacidade-acesso";
 import { OwnerCard } from "@/components/property/owner-card";
 import { DenunciarAnuncio } from "@/components/anuncio/denunciar-anuncio";
@@ -83,10 +92,10 @@ import { Reviews } from "@/components/property/reviews";
 import { CampoData } from "@/components/ui/campo-data";
 import { AvaliacoesExemplo } from "@/components/property/avaliacoes-exemplo";
 import { FaixaProprietario } from "@/components/property/faixa-proprietario";
-import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo } from "@/config/exemplo-proprietarios";
+import { avaliacoesDoExemplo, proprietarioDoExemplo, resumoAvaliacoesExemplo, SELO_EXEMPLO } from "@/config/exemplo-proprietarios";
 import { isExemplo, EXEMPLO_SEM_CONTATO, EXEMPLO_AVISO_DEMO } from "@/lib/demo-listing";
-import { destinoContatoViva, resumoSolicitacao } from "@/lib/reserva-imovel";
-import { SELECAO_VAZIA, comEntrada, comPessoas, comSaida, linhaPeriodoNaMensagem, mesesDaSelecao, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
+import { destinoContatoViva, parcelasDoResumo, resumoSolicitacao } from "@/lib/reserva-imovel";
+import { SELECAO_VAZIA, comEntrada, comEntradaDaBusca, entradaDaBusca, comPessoas, comSaida, linhaPeriodoNaMensagem, diasDaSelecao, mesesDoTotalDaPagina, type SelecaoEstadia } from "@/lib/imovel/selecao-estadia";
 import { registrarEvento } from "@/lib/eventos/registrar";
 import { NavSecoes } from "@/components/property/nav-secoes";
 import { secoesDoImovel, sinaisDeConfianca, type SinalConfianca } from "@/lib/imovel-pagina";
@@ -95,7 +104,7 @@ import { CLASSE_ICONE_LISTA, TRACO_ICONE_LISTA } from "@/lib/anuncio/comodidades
 import { linhaLocalizacao } from "@/lib/localizacao";
 
 /** E53: linhas do resumo à vista no passo Revisar (o resto fica em "Detalhes dos valores"). */
-const LINHAS_REVISAR = new Set(["Motivo da estadia", "Valor por mês", "Total por mês", "Total da estadia"]);
+const LINHAS_REVISAR = new Set(["Motivo da estadia", "Mensal", "Total por mês (com contas)", "Total do contrato", "Conta do total"]);
 
 export function PropertyDetail({
   property: anuncio,
@@ -103,9 +112,12 @@ export function PropertyDetail({
   proprietario = null,
   exibicao59 = null,
   estrutura = null,
+  donoTeste = false,
 }: {
   property: Property;
   similar: Property[];
+  /** E786: o dono é conta de teste (lido no servidor) — o anúncio é de teste mesmo sem a marca no título. */
+  donoTeste?: boolean;
   proprietario?: PerfilProprietario | null;
   /** Prompt 59-A: padrão mínimo confirmado e taxa de manutenção no prazo (anúncio de exemplo: null). */
   exibicao59?: Exibicao59 | null;
@@ -128,6 +140,8 @@ export function PropertyDetail({
   // E53: entrada, saída e pessoas são UMA seleção — o calendário de Disponibilidade, a caixa de reserva e o diálogo do
   // "Solicitar" leem e escrevem a mesma (regras em selecao-estadia).
   const [selecao, setSelecao] = useState<SelecaoEstadia>(SELECAO_VAZIA);
+  // E673: a primeira entrada possível (o calendário lê os períodos ocupados); o cartão de preço e a barra dizem a mesma data.
+  const [disponivelDesde, setDisponivelDesde] = useState<string | null>(null);
   const inicioDesejado = selecao.entrada;
   // Motivo da estadia (lista única MOTIVOS): vem do perfil, editável; o servidor revalida.
   const [motivoEstadia, setMotivoEstadia] = useState("");
@@ -143,7 +157,7 @@ export function PropertyDetail({
   const semLogin = authChecked && !usuario && !isExemplo(property);
   // E93: anúncio de teste aberto pelo link. Quem não é o dono nem admin (e enquanto a sessão não carregou) vê a faixa
   // e o "Solicitar" desativado; o dono, o admin e a conta de teste (is_teste) veem a página normal, com a faixa discreta.
-  const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin", teste: usuario?.isTeste === true });
+  const modoTeste = modoAnuncioTeste(property.title, { dono: !!usuario && usuario.id === property.ownerId, admin: usuario?.role === "admin", teste: usuario?.isTeste === true }, donoTeste);
   // QA do Muse (29/10): enquanto a sessão ou o perfil (is_teste) não chegaram, o anúncio de teste não mostra a faixa de
   // visitante — antes ela piscava para a conta de teste até o perfil carregar. O "Solicitar" fica só desativado.
   const aguardandoPerfil = modoTeste === "visitante" && (!authChecked || (!!usuario && usuario.isTeste === undefined));
@@ -166,6 +180,15 @@ export function PropertyDetail({
   }, []);
   // Passo de confirmação do "Enviar candidatura": resumo + (exemplo) aviso de demonstração.
   const [solicitacaoAberta, setSolicitacaoAberta] = useState(false);
+  // E518: o Esc fecha o "Pedir para morar" (em qualquer passo) — menos durante o envio.
+  useEffect(() => {
+    if (!solicitacaoAberta) return;
+    const aoTeclar = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && pending === null) setSolicitacaoAberta(false);
+    };
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [solicitacaoAberta, pending]);
   const [solicitacaoErro, setSolicitacaoErro] = useState<string | null>(null);
   // Candidatura em etapas (ordem eb4b11d8): revisar → mensagem → confirmar → confirmação.
   const [etapa, setEtapa] = useState<EtapaCandidatura>("revisar");
@@ -175,7 +198,7 @@ export function PropertyDetail({
   // avaliações. `rating` só é usado como média quando há review real.
   const exemplo = isExemplo(property);
   const reviewsReais = property.reviews?.length ?? 0;
-  // Exemplo ilustrativo (prompt 9): dados de demonstração, só em anúncio de exemplo e sempre marcados.
+  // Anúncio de exemplo (prompt 9): dados de demonstração, só em anúncio de exemplo e sempre marcados.
   const donoExemplo = exemplo ? proprietarioDoExemplo(property.id) : null;
   const avaliacoesExemplo = exemplo ? avaliacoesDoExemplo(property.id) : [];
   const resumoExemplo = exemplo ? resumoAvaliacoesExemplo(property.id) : null;
@@ -230,18 +253,22 @@ export function PropertyDetail({
   }, [property, marcarVistoLocal]);
 
   // Pedido pré-preenchido: data de entrada da última busca (editável; vencida ou estranha é descartada).
-  // Prompt 41: a duração da busca também dá o total do rodapé e do cartão ("R$ Y em N meses").
-  const [mesesBusca, setMesesBusca] = useState(0);
+  // E920: a DURAÇÃO da última busca não entra mais na página. Ela era lida aqui, depois de carregar, e trocava sozinha o
+  // período do total ("em 1 mês" → "em 6 meses"). O total abre e fica no período de referência (mesesDoTotalDaPagina).
+  const [avisoDataBusca, setAvisoDataBusca] = useState<string | null>(null);
   useEffect(() => {
     try {
-      const { inicio, meses } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
+      const { inicio } = ultimaBuscaParaPedido(window.localStorage.getItem(CHAVE_ULTIMA_BUSCA), hojeBR());
+      // E517: a data da busca só pré-seleciona se couber neste anúncio (disponibilidade e mínimo); senão, aviso.
+      const daBusca = entradaDaBusca(inicio, { availableFrom: property.availableFrom, availableUntil: property.availableUntil, minDias: property.minPeriodDays, hoje: hojeBR() });
       // eslint-disable-next-line react-hooks/set-state-in-effect -- lê o localStorage só no navegador (SSR não tem)
-      if (inicio) setSelecao((atual) => (atual.entrada ? atual : comEntrada(atual, inicio)));
-      if (meses) setMesesBusca(meses);
+      // E816: a entrada que vem da busca fica MARCADA como tal (a tela diz "da sua última busca" e deixa limpar).
+      if (daBusca.entrada) setSelecao((atual) => (atual.entrada ? atual : comEntradaDaBusca(atual, daBusca.entrada)));
+      setAvisoDataBusca(daBusca.aviso);
     } catch {
       /* localStorage bloqueado: segue sem pré-preencher */
     }
-  }, []);
+  }, [property.availableFrom, property.availableUntil, property.minPeriodDays]);
 
   // Candidatura pré-preenchida com o motivo do perfil (deslogado: sem sessão, fica vazio).
   useEffect(() => {
@@ -286,7 +313,8 @@ export function PropertyDetail({
     }
     // Falha real (rede/servidor): NUNCA deixa o botão "morto" — mostra o erro.
     if (!r || !r.ok) {
-      setLeadErro("Não foi possível enviar agora. Verifique a conexão e tente novamente.");
+      // E581: a razão do servidor aparece quando há (ex.: candidatura já respondida → falar pelo chat).
+      setLeadErro(r?.error ?? "Não foi possível enviar agora. Verifique a conexão e tente novamente.");
       return false;
     }
     if (kind === "candidatura") {
@@ -301,7 +329,19 @@ export function PropertyDetail({
   }
 
   // "Enviar candidatura" nunca fica mudo: valida o que foi preenchido e abre o passo de confirmação.
-  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total });
+  // E520: data digitada que não é real (o campo entrega vazio) vira erro no resumo, nunca "sem data" calado.
+  const [datasInvalidas, setDatasInvalidas] = useState({ entrada: false, saida: false });
+  // E562 (telas): o total da estadia em DIAS exatos (estadiaDoImovelEmDias) — a mesma regra da proposta; nada de meses
+  // arredondados (43 dias = "1 mês + 13 dias", não 2 meses).
+  const diasEscolhidos = diasDaSelecao(selecao);
+  // E725: abaixo da estadia mínima a estadia é inválida: não se precifica (nem total no cartão, nem na barra, nem no resumo);
+  // fica só o aviso "Estadia mínima de N dias".
+  const abaixoDoMinimo = abaixoDaEstadiaMinima(diasEscolhidos, property.minPeriodDays);
+  const diasSelecao = abaixoDoMinimo ? null : diasEscolhidos;
+  const estadiaSelecao = diasSelecao ? estadiaDoImovelEmDias(property, diasSelecao) : null;
+  const resumo = resumoSolicitacao({ monthlyPrice: property.monthlyPrice, inicioDesejado, fimDesejado: selecao.saida, motivoEstadia, hoje: hojeBR(), limpezaEstadia: property.limpezaEstadia, totalMensal: calcularTotalMensal(property).total, ...parcelasDoResumo(calcularTotalMensal(property)), estadiaDias: estadiaSelecao, entradaInvalida: datasInvalidas.entrada, saidaInvalida: datasInvalidas.saida, janela: { availableFrom: property.availableFrom, availableUntil: property.availableUntil, minDias: property.minPeriodDays, maxDias: property.maxPeriodDays } });
+  // E520: a confirmação mostra a mensagem como ela vai — telefone e e-mail já ocultados (a mesma máscara do envio).
+  const previaMensagem = validarApresentacao(apresentacao);
   function abrirSolicitacao() {
     if (testeVisitante) return;
     if (aguardandoPerfil) return;
@@ -365,7 +405,7 @@ export function PropertyDetail({
     </div>
   );
 
-  // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono fica mascarado até o aceite.
+  // WhatsApp: SEMPRE o da Viva (com o código do imóvel) — o contato do dono nunca é exibido (E445: telefone e e-mail não são trocados, em nenhuma fase).
   const contatoViva = destinoContatoViva(property.id);
 
   // E53: entrada, saída e pessoas — os MESMOS campos na caixa ("candidatura-*") e no diálogo ("solicitacao-*"),
@@ -374,22 +414,24 @@ export function PropertyDetail({
     <>
       {/* Um embaixo do outro, na largura do cartão (Q3: campo de data inteiro no iPhone, como o select do motivo). */}
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
-        Quando quer entrar? (opcional)
+        Quando quer entrar?
         <CampoData
           data-testid={`${prefixo}-inicio`}
           min={hojeBR()}
           value={selecao.entrada}
           onChange={(e) => setSelecao((s) => comEntrada(s, e.target.value))}
+          aoInvalido={(inv) => setDatasInvalidas((d) => ({ ...d, entrada: inv }))}
           className="h-11 rounded-xl border border-line bg-white px-3 text-base text-ink"
         />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
-        Até quando? (opcional)
+        Até quando?
         <CampoData
           data-testid={`${prefixo}-saida`}
           min={selecao.entrada || hojeBR()}
           value={selecao.saida}
           onChange={(e) => setSelecao((s) => comSaida(s, e.target.value))}
+          aoInvalido={(inv) => setDatasInvalidas((d) => ({ ...d, saida: inv }))}
           className="h-11 rounded-xl border border-line bg-white px-3 text-base text-ink"
         />
       </label>
@@ -416,6 +458,19 @@ export function PropertyDetail({
     confirmacaoCandidatura
   ) : (
     <div className="flex flex-col gap-2">
+      {exemplo ? (
+        <div data-testid="exemplo-sem-acoes" className="rounded-lg bg-sage-100 px-3 py-3 text-sm text-ink">
+          <p>
+            Este anúncio é de exemplo, para você ver como a Viva funciona. Por isso aqui não dá para pedir para morar, enviar mensagem, agendar visita ou fazer visita por vídeo:
+            nada seria enviado a ninguém. Nos anúncios reais, esses botões ficam neste lugar.
+          </p>
+          <ButtonLink href="/buscar" variant="secondary" size="sm" className="mt-3" data-testid="exemplo-ver-reais">
+            Ver imóveis reais
+          </ButtonLink>
+        </div>
+      ) : (
+        <>
+      {/* E713: os campos de reserva só existem no anúncio real; no exemplo a coluna é a explicação + "Ver imóveis reais" (E694). */}
       {camposPeriodo("candidatura")}
       <label className="flex flex-col gap-1 text-xs font-medium text-ink">
         Motivo da estadia (opcional)
@@ -433,19 +488,16 @@ export function PropertyDetail({
           ))}
         </select>
       </label>
-      {exemplo && (
-        <p data-testid="aviso-demo" className="rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
-          {EXEMPLO_AVISO_DEMO}
-        </p>
-      )}
       {/* UM primário por tela (Prompt 41): "Pedir para morar" (IMÓVEL-CTA; antes, "Solicitar") é a candidatura de sempre. No celular e
           no tablet (< lg) ele mora no rodapé fixo; aqui aparece só no computador. */}
       <Button
         variant="primary"
         size="lg"
-        className="hidden w-full lg:inline-flex"
+        className={testeVisitante ? "hidden h-auto min-h-12 w-full whitespace-normal px-3 py-2 text-center leading-snug lg:inline-flex" : "hidden w-full lg:inline-flex"}
         onClick={abrirSolicitacao}
         disabled={pending !== null || testeVisitante || aguardandoPerfil}
+        // E796: desativado no anúncio de teste, o botão aponta para a faixa que diz por quê (sem trava silenciosa).
+        aria-describedby={testeVisitante ? ID_FAIXA_TESTE : undefined}
         data-testid="cartao-solicitar"
       >
         {!testeVisitante && <FileSignature className="h-4 w-4" />}
@@ -504,6 +556,8 @@ export function PropertyDetail({
           </>
         )}
       </Button>
+        </>
+      )}
       <a
         data-cta={marcaCta("secondary")}
         href={contatoViva.href}
@@ -545,11 +599,18 @@ export function PropertyDetail({
         <h3 className="font-title text-lg font-semibold text-ink">
           Tirar uma dúvida
         </h3>
+        {/* E694: no exemplo o aviso vem ANTES da caixa de texto, e a caixa e o "Enviar" ficam desligados. */}
+        {exemplo && (
+          <p data-testid="mensagem-exemplo-aviso" className="mt-2 rounded-lg bg-sage-100 px-3 py-2 text-xs font-medium text-forest">
+            Este anúncio é de exemplo: nenhuma mensagem é enviada. A caixa abaixo só mostra como é.
+          </p>
+        )}
         <p className="mt-1 text-sm text-muted">
           Escreva sua pergunta sobre o imóvel. O proprietário responde pela plataforma.
         </p>
         <textarea
           rows={4}
+          disabled={exemplo}
           autoFocus
           value={composeText}
           onChange={(e) => setComposeText(e.target.value)}
@@ -563,12 +624,12 @@ export function PropertyDetail({
         {leadErro && <p className="mt-2 text-sm text-red-600">{leadErro}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={() => setComposeKind(null)} disabled={pending !== null}>
-            Cancelar
+            {exemplo ? "Entendi" : "Cancelar"}
           </Button>
           <Button
             variant="primary"
             size="sm"
-            disabled={pending !== null || composeText.trim().length < 3}
+            disabled={exemplo || pending !== null || composeText.trim().length < 3}
             onClick={async () => {
               const ok = await handleLead(composeKind, composeText);
               if (ok) setComposeKind(null);
@@ -592,7 +653,18 @@ export function PropertyDetail({
       data-testid="solicitacao-passo"
       onClick={() => !candidatouSe && setSolicitacaoAberta(false)}
     >
-      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-4 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-xl bg-white p-4 sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
+        {/* E518: o X de fechar em todos os passos (antes só havia "Voltar"/"Cancelar"). */}
+        <button
+          type="button"
+          aria-label="Fechar"
+          data-testid="solicitacao-fechar"
+          disabled={pending !== null}
+          onClick={() => setSolicitacaoAberta(false)}
+          className="absolute right-2 top-2 grid h-11 w-11 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink disabled:opacity-50"
+        >
+          <X className="h-5 w-5" aria-hidden />
+        </button>
         {candidatouSe ? (
           <div data-testid="candidatura-confirmada" className="flex flex-col gap-3 text-center">
             <CheckCircle2 className="mx-auto h-8 w-8 text-forest" />
@@ -614,7 +686,8 @@ export function PropertyDetail({
           </div>
         ) : (
           <>
-            <div className="mb-3" data-testid="candidatura-progresso">
+            {!exemplo && (
+            <div className="mb-3 pr-12" data-testid="candidatura-progresso">
               <div className="flex justify-between text-xs font-medium text-muted">
                 {ETAPAS_CANDIDATURA.map((e, i) => (
                   <span key={e.chave} className={e.chave === etapa ? "text-forest" : undefined}>{i + 1}. {e.rotulo}</span>
@@ -624,10 +697,17 @@ export function PropertyDetail({
                 <div className="h-full bg-forest transition-all" style={{ width: `${progressoEtapa(etapa)}%` }} />
               </div>
             </div>
+            )}
             <h3 id="solicitacao-titulo" className="font-title text-lg font-semibold text-ink">
               {etapa === "revisar" ? "Revisar solicitação" : etapa === "mensagem" ? "Mensagem ao proprietário" : "Confirmar candidatura"}
             </h3>
             <p className="mt-1 text-sm text-muted">{property.title}</p>
+            {/* E694: o caráter de exemplo se declara AQUI, antes de qualquer campo — nunca só no fim. */}
+            {exemplo && (
+              <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
+                Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
+              </p>
+            )}
             {etapa === "mensagem" ? (
               <>
               {/* 61-B: a mensagem do dono para quem vai pedir, lida antes da apresentação (mascarada ao salvar e ao ler). */}
@@ -659,7 +739,7 @@ export function PropertyDetail({
                   </div>
                 )}
                 <dl className="mt-3 space-y-2 rounded-lg bg-surface-2 px-3 py-3 text-sm">
-                  {(etapa === "revisar" ? resumo.linhas.filter((l) => LINHAS_REVISAR.has(l.rotulo)) : resumo.linhas).map((l) => (
+                  {(etapa === "revisar" ? resumo.linhas.filter((l) => l.revisar || LINHAS_REVISAR.has(l.rotulo) || l.rotulo.startsWith("Total da estadia (")) : resumo.linhas).map((l) => (
                     <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
                       <dt className="text-muted">{l.rotulo}</dt>
                       <dd className="text-right font-medium text-ink">{l.valor}</dd>
@@ -680,7 +760,7 @@ export function PropertyDetail({
                     <details className="mt-3 rounded-lg border border-line px-3 py-2 text-sm" data-testid="candidatura-detalhes">
                       <summary className="cursor-pointer font-medium text-ink">Detalhes dos valores</summary>
                       <dl className="mt-2 space-y-2">
-                        {resumo.linhas.filter((l) => !LINHAS_REVISAR.has(l.rotulo) && l.rotulo !== "Entrada" && l.rotulo !== "Saída").map((l) => (
+                        {resumo.linhas.filter((l) => !l.revisar && !LINHAS_REVISAR.has(l.rotulo) && l.rotulo !== "Entrada" && l.rotulo !== "Saída").map((l) => (
                           <div key={l.rotulo} className="flex items-baseline justify-between gap-3">
                             <dt className="text-muted">{l.rotulo}</dt>
                             <dd className="text-right text-ink">{l.valor}</dd>
@@ -692,17 +772,17 @@ export function PropertyDetail({
                 )}
                 {etapa === "confirmar" && apresentacao.trim() && (
                   <p className="mt-3 rounded-lg border border-line px-3 py-2 text-sm text-muted">
-                    <span className="font-medium text-ink">Sua mensagem: </span>{apresentacao.trim().slice(0, 200)}
+                    <span className="font-medium text-ink">Sua mensagem: </span>{previaMensagem.ok ? previaMensagem.texto.slice(0, 200) : apresentacao.trim().slice(0, 200)}
+                  </p>
+                )}
+                {etapa === "confirmar" && previaMensagem.ok && previaMensagem.mascarou && (
+                  <p role="status" data-testid="candidatura-contato-ocultado" className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    Telefone e e-mail foram ocultados: a conversa segue pela plataforma até o aceite.
                   </p>
                 )}
                 {etapa === "confirmar" && !exemplo && <ConviteFotoCandidatura />}
                 {etapa === "confirmar" && <p className="mt-3 text-xs text-muted">{TERMOS_CANDIDATURA} <Link href="/termos" className="underline">Ler os termos</Link></p>}
               </>
-            )}
-            {exemplo && (
-              <p data-testid="solicitacao-demo" className="mt-3 rounded-lg bg-sage-100 px-3 py-2 text-center text-xs font-medium text-forest">
-                Demonstração: este anúncio é de exemplo e a solicitação não é enviada.
-              </p>
             )}
             {(resumo.erro ?? solicitacaoErro) && (
               <p role="alert" data-testid="solicitacao-erro" className="mt-3 text-sm text-red-600">
@@ -720,9 +800,11 @@ export function PropertyDetail({
                 {etapa === "revisar" ? (exemplo ? "Entendi" : "Cancelar") : "Voltar"}
               </Button>
               {etapa !== "confirmar" ? (
+                !exemplo && (
                 <Button variant="primary" size="sm" disabled={!!resumo.erro} onClick={() => setEtapa(proximaEtapa(etapa))}>
                   Continuar
                 </Button>
+                )
               ) : (
                 !exemplo && (
                   <Button variant="primary" size="sm" disabled={pending !== null || !!resumo.erro} onClick={enviarSolicitacao}>
@@ -737,9 +819,9 @@ export function PropertyDetail({
     </div>
   );
 
-  // Total pela duração escolhida (Prompt 41): o período selecionado (E53) ou a duração da última busca ou, sem nenhum,
-  // a estadia mínima do imóvel.
-  const meses = mesesDaSelecao(selecao) ?? mesesDoCartao(mesesBusca || undefined, property.minPeriodDays);
+  // Total pela duração (Prompt 41 + E920): o período que a pessoa escolheu nas datas (E53) ou, sem escolha, o período de
+  // referência — a estadia mínima do imóvel, a mesma do cartão da busca. Nunca a duração guardada de uma busca antiga.
+  const meses = mesesDoTotalDaPagina(selecao, property.minPeriodDays);
   // Linha-síntese (Prompt 41): pessoas · quartos · banheiros (as camas entram quando o anúncio tiver o dado).
   const sintese = [
     property.maxGuests != null ? `Até ${property.maxGuests} ${property.maxGuests === 1 ? "pessoa" : "pessoas"}` : null,
@@ -764,28 +846,28 @@ export function PropertyDetail({
     // tiverem o cômodo marcado — o dado ainda não existe, então o bloco não aparece) → comodidades → regras →
     // disponibilidade → mapa aproximado → avaliações → proprietário; o rodapé fixo (celular) / cartão lateral
     // (computador) traz o valor e o "Solicitar".
-    <div className="mx-auto w-full max-w-[1536px] px-4 py-8 pb-(--folga-rodape-imovel) sm:px-8 lg:pb-8" data-testid="imovel-largura-total">
+    <div className="mx-auto w-full max-w-[1536px] px-4 py-8 pb-(--folga-rodape-imovel) sm:px-8 md:pr-(--faixa-flutuante) lg:px-(--faixa-flutuante) lg:pb-8" data-testid="imovel-largura-total">
       {modoTeste && !aguardandoPerfil && (
         <p
           role="note"
+          id={ID_FAIXA_TESTE}
           data-testid="faixa-anuncio-teste"
           data-modo={modoTeste}
-          className={
-            modoTeste === "visitante"
-              ? "mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-ink"
-              : "mb-4 rounded-lg border border-line bg-surface-2 px-3 py-2 text-xs text-muted"
-          }
+          // E786: UMA faixa, com o texto especificado e o mesmo desenho para a equipe e o visitante; quebra linha (sem
+          // estouro horizontal). O que muda entre os dois é só o "Solicitar" (E93).
+          className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-ink break-words"
         >
-          {modoTeste === "visitante" ? FAIXA_TESTE_VISITANTE : FAIXA_TESTE_EQUIPE}
+          {FAIXA_TESTE}
         </p>
       )}
       {composer}
       {solicitacao}
       <BarraFixaCelular
         key={property.id}
-        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: meses > 1 ? estadiaDoImovel(property, meses)?.total : null, exemplo, candidatouSe, availableFrom: property.availableFrom })}
+        barra={barraFixaImovel({ monthlyPrice: property.monthlyPrice, totalMensal: calcularTotalMensal(property).total, meses, totalPeriodo: estadiaSelecao ? estadiaSelecao.total : estadiaDoImovel(property, Math.max(1, meses))?.total ?? null, dias: estadiaSelecao?.dias ?? null, exemplo, candidatouSe, availableFrom: disponivelDesde ?? property.availableFrom })}
         pending={pending !== null}
         bloqueio={testeVisitante ? FAIXA_TESTE_VISITANTE : undefined}
+        bloqueioMotivoId={ID_FAIXA_TESTE}
         aguardando={aguardandoPerfil}
         onSolicitar={abrirSolicitacao}
         onAgendarVisita={() => {
@@ -851,7 +933,7 @@ export function PropertyDetail({
 
             {/* Sinais de confiança (só dado real): disponibilidade, resposta, tempo de casa, código. */}
             <ul data-testid="sinais-confianca" className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              {sinaisDeConfianca(property, new Date().toISOString().slice(0, 10))
+              {sinaisDeConfianca(property, hojeEmBrasilia())
                 .filter((s) => !(temFaixa || exemplo) || (s.tipo !== "resposta" && s.tipo !== "desde"))
                 .map((s) => (
                 <li key={s.tipo} className={s.tipo === "codigo" ? "inline-flex items-center gap-2 text-xs text-muted" : "inline-flex items-center gap-2 text-ink"}>
@@ -862,10 +944,10 @@ export function PropertyDetail({
             </ul>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {/* Anúncio de exemplo (ilustrativo): selo honesto e visível. */}
+              {/* Anúncio de exemplo: selo honesto e visível. E926: o mesmo nome do cartão, pela constante única. */}
               {exemplo && (
-                <span className="inline-flex items-center rounded-full bg-night px-3 py-1 text-xs font-semibold text-white">
-                  Exemplo ilustrativo
+                <span className="inline-flex items-center rounded-full bg-night px-3 py-1 text-xs font-semibold text-white" data-testid="selo-exemplo-topo">
+                  {SELO_EXEMPLO}
                 </span>
               )}
               {/* Fonte ÚNICA (A2): a contagem vem das avaliações REAIS (reviews),
@@ -873,13 +955,12 @@ export function PropertyDetail({
               {resumoExemplo ? (
                 <a href="#avaliacoes" data-testid="estrelas-titulo" className="alvo-toque inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-forest hover:underline">
                   <Star className="h-4 w-4 fill-champagne text-champagne" aria-hidden />
-                  {numBR(resumoExemplo.media, 1)} · {resumoExemplo.n} avaliações
+                  {textoDaNota(resumoExemplo.media, resumoExemplo.n, "imovel")}
                 </a>
               ) : reviewsReais > 0 ? (
                 <span className="inline-flex items-center gap-1 text-sm font-semibold tabular-nums text-forest">
                   <Star className="h-4 w-4 fill-champagne text-champagne" />
-                  {numBR(mediaReal, 1)} · {reviewsReais}{" "}
-                  {reviewsReais === 1 ? "avaliação" : "avaliações"}
+                  {textoDaNota(mediaReal, reviewsReais, "imovel")}
                 </span>
               ) : (
                 <span className="inline-flex items-center rounded-full bg-sage px-3 py-1 text-xs font-semibold text-white">
@@ -888,7 +969,19 @@ export function PropertyDetail({
               )}
               {SELO_NF_UI && property.issuesInvoice && <InvoiceBadge />}
               {property.acceptsInsurance && <InsuranceBadge />}
-              {property.precoJusto && <PrecoJustoBadge />}
+            </div>
+            {/* E626: a lista completa dos selos do cartão, com símbolo + texto. E924: a MESMA composição e ordem do cartão do
+                anúncio (selosDaFoto): o nível abre a fileira, em pílula própria com a palavra; o nível é o do bloco "Nível"
+                desta página (exibicao59). O bloco do nível segue como está. */}
+            <div className="mt-3">
+              <SelosAnuncio
+                selos={selosDaFoto({
+                  precoJusto: !!property.precoJusto,
+                  pets: !!property.petsAllowed,
+                  negocia: !!property.negociacao?.aceita,
+                  nivel: exibicao59?.nivel?.nivel ?? null,
+                })}
+              />
             </div>
             {/* E399-C pacote 3: com a chave ligada e o selo, a comparação com 30 noites no Airbnb (nunca o link). */}
             {property.precoJusto && property.comparacaoAirbnb && <ComparacaoAirbnbFicha comparacao={property.comparacaoAirbnb} />}
@@ -930,14 +1023,20 @@ export function PropertyDetail({
             <WorkspaceSection property={property} />
             <StayRules property={property} />
             <BomSaber property={property} />
-            <NivelImovel dados={exibicao59?.nivel} />
+            <NivelImovel dados={exibicao59?.nivel} comodidades={property.amenities} />
             <AvaliacaoFicha dados={exibicao59?.avaliacao} />
             <PadraoMinimoImovel confirmado={!!exibicao59?.confortoConfirmado} />
             <EstruturaInformada property={property} checklist={estrutura} />
             <PrivacidadeAcesso privacidade={property.privacidade} tipoEntrada={property.chegadaEPedido?.tipoEntrada} />
           </div>
           <div id="disponibilidade" className="scroll-mt-36">
-            <AvailabilityCalendar property={property} selecao={selecao} onSelecao={setSelecao} />
+            {avisoDataBusca && !selecao.entrada && (
+              <p role="status" className="mb-3 rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm text-amber-800" data-testid="aviso-data-busca">
+                {avisoDataBusca}
+              </p>
+            )}
+            <CaminhoReserva />
+            <AvailabilityCalendar property={property} selecao={selecao} onSelecao={setSelecao} onDisponivelDesde={setDisponivelDesde} />
           </div>
           {/* Mapa aproximado (endereço exato só após o aceite). */}
           <div id="localizacao" className="scroll-mt-36 space-y-12">
@@ -964,14 +1063,14 @@ export function PropertyDetail({
           </div>
           {!exemplo && (
             <div className="mt-6">
-              <DenunciarAnuncio propertyId={property.id} />
+              <DenunciarAnuncio propertyId={property.id} notaDeclarada={property.emiteNotaDono === true} />
             </div>
           )}
         </div>
 
         {/* Cartão lateral: fixo no computador, empilhado no celular (o primário do celular é o do rodapé fixo). */}
         <aside>
-          <PriceCard property={property} actions={actions} meses={meses} />
+          <PriceCard property={property} actions={actions} meses={meses} dias={diasSelecao} estadiaMinimaAviso={abaixoDoMinimo ? estadiaMinimaDias(property.minPeriodDays) : null} disponivelDesde={disponivelDesde} />
         </aside>
       </div>
 
@@ -981,7 +1080,7 @@ export function PropertyDetail({
   );
 }
 
-/** Exemplo ilustrativo sem números e selos que não existem de verdade. */
+/** Anúncio de exemplo sem números e selos que não existem de verdade. */
 function semSinaisInventados(p: Property): Property {
   return {
     ...p,

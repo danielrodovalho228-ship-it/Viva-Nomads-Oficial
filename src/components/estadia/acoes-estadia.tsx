@@ -2,16 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarClock, CalendarDays, ChevronRight, DoorOpen, FileText, MessageSquare, Sparkles, SprayCan, Wrench } from "lucide-react";
+import { CalendarClock, CalendarDays, ChevronRight, FileText, Sparkles, SprayCan, Wrench } from "lucide-react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { buttonClasses } from "@/components/ui/button";
 import type { AcaoEstadia, ChaveAcaoEstadia } from "@/lib/estadia/acoes";
 
 const ICONE: Record<ChaveAcaoEstadia, React.ComponentType<{ className?: string }>> = {
-  falar: MessageSquare,
   contrato: FileText,
   alteracao: CalendarClock,
-  instrucoes: DoorOpen,
   limpeza: SprayCan,
   manutencao: Wrench,
   calendario: CalendarDays,

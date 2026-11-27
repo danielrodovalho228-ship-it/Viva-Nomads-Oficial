@@ -24,7 +24,7 @@ function errosDoApp(dir = "src/app/", out: string[] = []): string[] {
 test("painel: 'Tentar de novo' chama unstable_retry (ou reset), as props que o Next 16 entrega", () => {
   const tela = ler("src/app/(dashboard)/dashboard/error.tsx");
   assert.match(tela, /^"use client";/);
-  assert.match(tela, /export default function ErroDoPainel\(\{ unstable_retry, reset \}/);
+  assert.match(tela, /export default function ErroDoPainel\(\{ error, unstable_retry, reset \}/);
   assert.match(tela, /const tentarDeNovo = \(\) => \(unstable_retry \?\? reset\)\?\.\(\);/);
   assert.match(tela, /onClick=\{tentarDeNovo\}/);
   assert.match(tela, /href="\/dashboard"/);

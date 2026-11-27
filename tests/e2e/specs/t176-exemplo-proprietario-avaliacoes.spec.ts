@@ -1,10 +1,15 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /*
-  T176 — Exemplo ilustrativo completo nos anúncios de exemplo (prompt 9), a 390 e 1280 px.
+  T176 — Dados de exemplo completos nos anúncios de exemplo (prompt 9), a 390 e 1280 px.
+  Atualizado na Família 3 (14/11):
+    • E926: o selo diz "Anúncio de exemplo", o mesmo termo do cartão (antes: "Anúncio de exemplo");
+    • E925: a nota do topo diz "avaliações do imóvel" (antes: só "avaliações");
+    • E694 (já na main antes desta família; este spec estava vermelho por isso): o bloco "Sobre o proprietário" do exemplo NÃO
+      tem botão "Enviar mensagem" — o texto explica que a conversa acontece nos anúncios reais. Antes o teste clicava no botão.
   1. ube-001: faixa (resposta · calendário · proprietário), estrelas ao lado do título com âncora, seção
      Avaliações com cards, "Ler mais" e resposta, "Escrever avaliação" desabilitado, "Sobre o proprietário".
-     Tudo com o selo "Exemplo ilustrativo"; "Enviar mensagem" só abre o aviso de demonstração.
+     Tudo com o selo "Anúncio de exemplo"; sem botão "Enviar mensagem" (o texto explica o porquê).
   2. "Ver perfil completo" abre /proprietario/exemplo-1 (faixa de exemplo, noindex, imóveis e avaliações).
   3. Nenhum JSON-LD de Review/AggregateRating no exemplo; o perfil de exemplo fica fora do sitemap.
   4. QA do Moacir: /cidades/xpto123, /imoveis/<id inexistente> e /proprietario/<id inexistente> dão 404,
@@ -25,7 +30,7 @@ test.describe("T176 — proprietário e avaliações de exemplo", () => {
       await page.goto("/imoveis/ube-001", { waitUntil: "networkidle" });
 
       const faixa = page.getByTestId("faixa-proprietario");
-      await expect(faixa.getByTestId("selo-exemplo")).toHaveText("Exemplo ilustrativo");
+      await expect(faixa.getByTestId("selo-exemplo")).toHaveText("Anúncio de exemplo");
       await expect(faixa.getByTestId("faixa-resposta")).toHaveText(/^Costuma responder em até \d+ horas?$/);
       await expect(faixa.getByTestId("faixa-calendario")).toHaveText("Atualizado nos últimos 30 dias");
       await expect(faixa.getByTestId("faixa-nome")).toHaveText(/\(exemplo\)$/);
@@ -33,11 +38,11 @@ test.describe("T176 — proprietário e avaliações de exemplo", () => {
       await page.screenshot({ path: `${SAIDA}/t176-faixa-${largura}.png`, fullPage: false });
 
       const estrelas = page.getByTestId("estrelas-titulo");
-      await expect(estrelas).toHaveText(/^\d,\d · [23] avaliações$/);
+      await expect(estrelas).toHaveText(/^\d,\d · [23] avaliações do imóvel$/);
       await expect(estrelas).toHaveAttribute("href", "#avaliacoes");
 
       const secao = page.getByTestId("avaliacoes-exemplo");
-      await expect(secao.getByTestId("selo-exemplo")).toHaveText("Exemplo ilustrativo");
+      await expect(secao.getByTestId("selo-exemplo")).toHaveText("Anúncio de exemplo");
       await expect(secao).toContainText("nos anúncios reais estes dados vêm do perfil e das estadias verificadas");
       const cards = secao.getByTestId("avaliacao-exemplo");
       expect(await cards.count()).toBeGreaterThanOrEqual(2);
@@ -51,12 +56,12 @@ test.describe("T176 — proprietário e avaliações de exemplo", () => {
       await page.screenshot({ path: `${SAIDA}/t176-avaliacoes-${largura}.png`, fullPage: false });
 
       const dono = page.getByTestId("sobre-proprietario");
-      await expect(dono.getByTestId("selo-exemplo")).toHaveText("Exemplo ilustrativo");
+      await expect(dono.getByTestId("selo-exemplo")).toHaveText("Anúncio de exemplo");
       await expect(dono.getByTestId("proprietario-selos")).toContainText("E-mail confirmado");
       await expect(dono.getByTestId("proprietario-tempo")).toBeVisible();
       await expect(dono).not.toContainText(/Ligar|\(\d{2}\)\s?9?\d{4}-?\d{4}/);
-      await dono.getByRole("button", { name: "Enviar mensagem" }).click();
-      await expect(dono.getByTestId("mensagem-demo")).toContainText("nenhuma mensagem é enviada");
+      await expect(dono.getByRole("button", { name: "Enviar mensagem" })).toHaveCount(0);
+      await expect(dono.getByTestId("mensagem-demo")).toContainText("Este é um anúncio de exemplo: aqui não há botão de mensagem.");
       await dono.scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${SAIDA}/t176-sobre-proprietario-${largura}.png`, fullPage: false });
 
@@ -68,7 +73,7 @@ test.describe("T176 — proprietário e avaliações de exemplo", () => {
       await dono.getByRole("link", { name: "Ver perfil completo" }).click();
       await expect(page).toHaveURL(/\/proprietario\/exemplo-1$/);
       const perfil = page.getByTestId("pagina-proprietario");
-      await expect(perfil.getByTestId("faixa-exemplo")).toContainText("Exemplo ilustrativo");
+      await expect(perfil.getByTestId("faixa-exemplo")).toContainText("Anúncio de exemplo");
       await expect(perfil.getByRole("heading", { level: 1 })).toHaveText(/\(exemplo\)$/);
       await expect(perfil.getByTestId("avaliacao-exemplo").first()).toBeVisible();
       await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);

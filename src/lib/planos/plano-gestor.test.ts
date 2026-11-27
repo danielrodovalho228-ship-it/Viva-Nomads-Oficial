@@ -11,11 +11,11 @@ test("assinatura Gestor ativa vale Gestor (também para Fundador no período gr�
   assert.equal(planoEfetivo("gestor", true, "2026-05-01T00:00:00Z", agora), "gestor");
 });
 
-test("Gestor: comissão zero", () => {
-  assert.equal(COMISSAO_POR_PLANO.gestor, 0);
-  // Contrato aceito no Gestor congela 0; sem taxa gravada, o plano do aceite decide.
+test("E564: Gestor é taxa de 4% (não mais zero); o que já foi congelado no aceite continua valendo", () => {
+  assert.equal(COMISSAO_POR_PLANO.gestor, 0.04);
+  // Contrato antigo aceito no Gestor congelou 0: a taxa do aceite vale (histórico). Sem taxa gravada, o plano decide: 4%.
   assert.equal(taxaDoContrato(0, "gestor"), 0);
-  assert.equal(taxaDoContrato(null, "gestor"), 0);
+  assert.equal(taxaDoContrato(null, "gestor"), 0.04);
 });
 
 test("plano desconhecido nunca vira plano", () => {

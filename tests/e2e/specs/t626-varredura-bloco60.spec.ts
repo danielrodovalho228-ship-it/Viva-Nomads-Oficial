@@ -117,7 +117,8 @@ test.describe("T626 — varredura da página inteira, bloco 60 (Hoje do dono e c
     await criarLead(ids.dono, ids.sai, ids.imB, true);
     try {
       ids.cEntra = await contrato(ids.imA, ids.entra, dia(0), dia(59));
-      ids.cSai = await contrato(ids.imB, ids.sai, dia(-59), dia(0));
+      // E1089 (coordenador): "sai hoje" = a SAÍDA é hoje; o bloco grava a última noite, que foi ontem.
+      ids.cSai = await contrato(ids.imB, ids.sai, dia(-60), dia(-1));
     } catch (e) {
       console.log(`T626|semear contratos: ${String(e).slice(0, 200)}`);
     }

@@ -3,10 +3,12 @@
 import { useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ESCOPO_EXPIRACAO_24H } from "@/lib/sessao/escopo-saida";
-import { estadoDoPapelGravado } from "@/lib/papel/papel-ativo";
+import { estadoDoPapelGravado, papelGravadoEfetivo } from "@/lib/papel/papel-ativo";
 import { useAuthStore } from "@/lib/store";
 import type { UserRole } from "@/lib/types";
 import { lerPendente } from "@/lib/modo-pendente";
+import { modoAnotadoDoServidor, trocaDaPessoaNoMeio } from "@/lib/papel/modo-do-servidor";
+import { usuarioDaSessaoBase, usuarioDoPerfil, type BaseSessao } from "@/lib/auth/usuario-do-perfil";
 
 /**
  * Sincroniza a sessão do Supabase com o estado global (Zustand).
@@ -58,19 +60,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const u = session.user;
       const metaName = (u.user_metadata?.full_name as string | undefined) || undefined;
       const metaRole = (u.user_metadata?.role as UserRole) ?? "tenant";
+      // E793: o mesmo mapeamento do servidor (usuarioDaSessaoServidor) — fonte única em lib/auth/usuario-do-perfil.
+      const base: BaseSessao = { id: u.id, email: u.email, metaName, metaRole };
       const atual = useAuthStore.getState().user;
 
       // Loga IMEDIATAMENTE a partir da sessão — o login NUNCA fica preso na
       // consulta a `profiles`. Só quando ainda não há este usuário no estado:
       // não rebaixa um usuário já completo (papel/plano do perfil) para o da sessão.
       if (!atual || atual.id !== u.id) {
-        setUser({
-          id: u.id,
-          name: metaName ?? u.email ?? "Usuário",
-          fullName: metaName,
-          email: u.email ?? "",
-          role: metaRole,
-        });
+        setUser(usuarioDaSessaoBase(base));
       }
 
       if (perfilLido.has(u.id) && !forcarPerfil) return;
@@ -100,15 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Com qualquer perfil lido: o isTeste (anúncio de teste) precisa chegar mesmo sem nome/papel no perfil.
         if (profile) {
           const agora = useAuthStore.getState().user;
-          setUser({
-            ...(agora && agora.id === u.id ? agora : {}),
-            id: u.id,
-            name: profile.full_name ?? metaName ?? u.email ?? "Usuário",
-            fullName: profile.full_name ?? metaName,
-            email: u.email ?? "",
-            role: (profile.role as UserRole) ?? metaRole,
-            isTeste: (profile as { is_teste?: boolean | null }).is_teste === true,
-          });
+          setUser({ ...(agora && agora.id === u.id ? agora : {}), ...usuarioDoPerfil(base, profile) });
         }
         // Modo ativo é PREFERÊNCIA DE PERFIL (B1): o servidor é a autoridade no
         // login — salvo se o usuário já trocou de modo durante a leitura.
@@ -116,18 +106,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // (bug 6 da L2) — o ModeInitializer já a aplicou e está regravando.
         const pm = (profile as { preferred_mode?: string } | null)?.preferred_mode;
         const pendente = lerPendente(typeof window === "undefined" ? null : window.localStorage);
-        const semTrocaNoMeio = !pendente && useAuthStore.getState().activeMode === modoAntes;
+        // E1026: a mudança de modo que o ModeInitializer faz no meio da leitura (null → o do servidor, na chegada do login)
+        // não é troca da pessoa; contá-la como troca descartava o papel lido.
+        const semTrocaNoMeio = !trocaDaPessoaNoMeio({ pendente: !!pendente, modoAntes, modoAgora: useAuthStore.getState().activeMode, modoDoServidor: modoAnotadoDoServidor() });
         if ((pm === "owner" || pm === "tenant") && semTrocaNoMeio) {
           setActiveMode(pm);
         }
         // PAPEL-B: o papel ativo gravado (fonte única) vence o modo derivado — inclusive "Parceiro", que não tem modo.
-        const gravado = (profile as { papel_ativo?: string | null } | null)?.papel_ativo;
+        const gravadoBruto = (profile as { papel_ativo?: string | null } | null)?.papel_ativo;
+        // E668: "parceiro" só vale se foi escolhido (carimbo). Leitura à parte e tolerante: se a coluna ainda não existe (migração
+        // atrasada) ou a leitura falha, vale o comportamento de antes — o login nunca depende da coluna nova.
+        let escolhidoEm: string | null = gravadoBruto === "parceiro" ? "?" : null;
+        if (gravadoBruto === "parceiro") {
+          const { data: esc, error: erroEsc } = await supabase!.from("profiles").select("papel_ativo_escolhido_em").eq("id", u.id).maybeSingle();
+          if (!erroEsc) escolhidoEm = (esc as { papel_ativo_escolhido_em?: string | null } | null)?.papel_ativo_escolhido_em ?? null;
+        }
+        const gravado = papelGravadoEfetivo(gravadoBruto, escolhidoEm);
         if (gravado && semTrocaNoMeio) {
           const atualModo = useAuthStore.getState().activeMode;
           const e = estadoDoPapelGravado(gravado, atualModo === "owner" ? "owner" : "tenant");
           // Parceiro mantém o modo de baixo como estava (o painel morador/proprietário volta igual ao trocar).
           useAuthStore.setState(e.parceiro ? { parceiroAtivo: true } : { activeMode: e.modo, parceiroAtivo: false });
         }
+        // E668: "parceiro" antigo, sem escolha, não vale — e limpa o "parceiro ativo" que o aparelho tenha guardado.
+        else if (gravadoBruto === "parceiro" && semTrocaNoMeio) useAuthStore.setState({ parceiroAtivo: false });
+        // E1026: perfil lido E aplicado — daqui em diante o papel que o navegador guarda é o que vale (até lá, a casca usa o
+        // do servidor). Leitura descartada por troca da pessoa no meio não conta: o que foi lido não entrou no store.
+        if (semTrocaNoMeio && useAuthStore.getState().user?.id === u.id) useAuthStore.setState({ papelConhecido: true });
       } catch {
         perfilLido.delete(u.id); // tenta de novo no próximo evento — e, sem evento, pela nova tentativa (E518)
         if (tentativa < TENTATIVAS_PERFIL) setTimeout(() => void hydrate(session, true, tentativa + 1), ESPERA_TENTATIVA_MS);
@@ -137,8 +142,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Conferência inicial: getSession lê o cookie/sessão vigente. Só aqui
     // decidimos "logado ou não" — e marcamos `authChecked` para liberar o guard.
-    supabase.auth.getSession().then(({ data }) => {
-      hydrate(data.session);
+    supabase.auth.getSession().then(async ({ data }) => {
+      let sessao = data.session;
+      // E674: "sem sessão" aqui pode ser instantâneo (renovação do token em curso, duas abas). hydrate(null) apagaria o
+      // usuário e o AuthGuard mandaria para /auth uma carga direta com sessão viva. Confere uma vez no servidor (getUser)
+      // e relê a sessão antes de declarar deslogado; falha de rede não derruba a carga.
+      if (!sessao) {
+        try {
+          const { data: conferido } = await supabase.auth.getUser();
+          if (conferido.user) sessao = (await supabase.auth.getSession()).data.session;
+        } catch {
+          /* segue como sem sessão */
+        }
+      }
+      hydrate(sessao);
       setAuthChecked(true);
     });
 

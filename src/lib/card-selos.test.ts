@@ -30,8 +30,8 @@ test("adendo do Prompt 40 (substitui a B1): no máximo 1 selo — verificado →
   assert.equal(seloDoCartao({ pets: true }), "pets");
   assert.equal(seloDoCartao({}), null);
   assert.equal(ROTULO_SELO_UNICO.verificado, "Proprietário verificado");
-  assert.match(cartao, /const selo = seloDoCartao\(/);
-  assert.match(cartao, /\{selo && <Selo id=\{selo\} \/>\}/);
+  // E416 (05/11): o cartão passou a empilhar TODOS os selos (selosDaFoto); seloDoCartao fica para quem ainda o usa.
+  assert.match(cartao, /const selos = selosDaFoto\(/);
   assert.doesNotMatch(cartao, /repartirSelos|selos\.foto\.map|selos\.linha/);
 });
 

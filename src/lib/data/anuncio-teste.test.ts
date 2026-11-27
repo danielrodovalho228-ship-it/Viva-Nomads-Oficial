@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { FAIXA_TESTE_EQUIPE, FAIXA_TESTE_VISITANTE, ehAnuncioDeTeste, modoAnuncioTeste, semAnunciosDeTeste } from "./anuncio-teste.ts";
+import { FAIXA_TESTE, FAIXA_TESTE_VISITANTE, ehAnuncioDeTeste, modoAnuncioTeste, semAnunciosDeTeste } from "./anuncio-teste.ts";
 
 test("reconhece a marca de teste no começo do título", () => {
   for (const t of ["[TESTE QA] Studio Pinheiros", "[teste] Loft", "  [Teste QA 2] Casa", "[TEST] Flat", "[QA] Casa"]) {
@@ -34,7 +34,8 @@ test("listProperties usa o filtro", () => {
 
 test("E93: anúncio de teste pelo link — faixa e 'Solicitar' desativado para quem não é dono nem admin", () => {
   assert.equal(FAIXA_TESTE_VISITANTE, "Anúncio de teste da equipe Viva — não é um imóvel disponível");
-  assert.equal(FAIXA_TESTE_EQUIPE, "Anúncio de teste: fora da busca e das listagens");
+  // E786 (julgamento de 11/11): a faixa é uma só, com o texto especificado, também para a equipe.
+  assert.equal(FAIXA_TESTE, "Anúncio de teste da equipe Viva — não é um imóvel disponível");
   assert.equal(modoAnuncioTeste("[TESTE] Studio", { dono: false, admin: false }), "visitante");
   assert.equal(modoAnuncioTeste("[TESTE] Studio", { dono: true, admin: false }), "equipe");
   assert.equal(modoAnuncioTeste("[QA] Studio", { dono: false, admin: true }), "equipe");
@@ -60,5 +61,9 @@ test("Liberação do QA: conta de teste pode 'Solicitar' no anúncio de teste; c
   assert.match(tela, /teste: usuario\?\.isTeste === true/);
   const provedor = readFileSync(new URL("../../components/auth-provider.tsx", import.meta.url), "utf8");
   assert.match(provedor, /\.select\("full_name, role, preferred_mode, papel_ativo, is_teste"\)/);
-  assert.match(provedor, /isTeste: \(profile as \{ is_teste\?: boolean \| null \}\)\.is_teste === true/);
+  // E793 (asserção alterada): o mapeamento perfil → usuário saiu do AuthProvider para a fonte única lib/auth/usuario-do-perfil
+  // (usada também pela sessão do servidor); a regra é a mesma: só is_teste === true libera.
+  assert.match(provedor, /usuarioDoPerfil\(base, profile\)/);
+  const mapa = readFileSync(new URL("../auth/usuario-do-perfil.ts", import.meta.url), "utf8");
+  assert.match(mapa, /isTeste: perfil\.is_teste === true/);
 });

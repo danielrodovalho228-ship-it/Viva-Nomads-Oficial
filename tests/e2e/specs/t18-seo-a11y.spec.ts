@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T18 — SEO e acessibilidade (auditoria, PR D). Lê o HTML que o SERVIDOR
@@ -21,7 +22,7 @@ function niveis(html: string): number[] {
   return [...corpo.matchAll(/<h([1-6])[\s>]/g)].map((m) => Number(m[1]));
 }
 
-const PUBLICAS = ["/", "/buscar", "/como-funciona", "/para-proprietarios", "/precos", "/empresas", "/termos", "/privacidade", "/seguranca", "/pedidos/novo"];
+const PUBLICAS = ["/", "/buscar", "/como-funciona", "/para-proprietarios", ...comPrecos("/precos"), "/empresas", "/termos", "/privacidade", "/seguranca", "/pedidos/novo"];
 
 for (const rota of PUBLICAS) {
   test(`${rota}: um h1, sem pular nível de título`, async ({ page }) => {
@@ -32,7 +33,7 @@ for (const rota of PUBLICAS) {
   });
 }
 
-for (const rota of ["/buscar", "/como-funciona", "/para-proprietarios", "/precos", "/empresas", "/termos", "/privacidade", "/seguranca"]) {
+for (const rota of ["/buscar", "/como-funciona", "/para-proprietarios", ...comPrecos("/precos"), "/empresas", "/termos", "/privacidade", "/seguranca"]) {
   test(`${rota}: canonical próprio`, async ({ page }) => {
     const html = await htmlDoServidor(page, rota);
     expect(html).toMatch(new RegExp(`<link rel="canonical" href="[^"]*${rota}"`));

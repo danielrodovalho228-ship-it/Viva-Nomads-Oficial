@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
+import { grafiaDaCidade } from "@/lib/cidades";
 import { meuPerfilPublico, type MeuPerfilPublico } from "@/lib/data/papeis-actions";
 
 /** O que nunca aparece para os outros (Prompt 43, item 2). */
@@ -32,7 +33,7 @@ export function SeuPerfilPublico() {
         <Avatar name={p.nome} size={64} photoUrl={p.fotoUrl ?? undefined} />
         <div className="min-w-0">
           <p className="font-title text-lg font-semibold text-ink" data-testid="perfil-publico-nome">{p.nome}</p>
-          {p.cidade && <p className="text-sm text-muted">{p.cidade}</p>}
+          {p.cidade && <p className="text-sm text-muted">{grafiaDaCidade(p.cidade)}</p>}
           {p.desde && <p className="text-sm text-muted">Na Viva desde {new Date(p.desde).getFullYear()}</p>}
         </div>
       </div>

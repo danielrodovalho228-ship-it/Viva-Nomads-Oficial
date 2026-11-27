@@ -48,12 +48,18 @@ test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
       await p.setViewportSize({ width: w, height: w === 1280 ? 900 : 844 });
       await p.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "networkidle" });
       await expect(p.getByTestId("passo-texto")).toHaveText("Passo 1 de 10");
-      await expect(p.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", "10");
+      // E498: a barra é o "N% pronto" da prontidão (o mesmo do Início), não a posição do passo.
+      await expect(p.getByTestId("passo-detalhe")).toHaveText(/^\d+% pronto$/);
+      const pronto = parseInt((await p.getByTestId("passo-detalhe").textContent()) ?? "", 10);
+      await expect(p.getByRole("progressbar", { name: "Progresso do cadastro" })).toHaveAttribute("aria-valuenow", String(pronto));
       await expect(p.locator("h1")).toHaveCount(1);
       await expect(p.locator("h1")).toHaveText("Qual é o tipo do seu imóvel?");
       for (const t of ["casa", "apartamento", "quarto"]) await expect(p.getByTestId(`tipo-${t}`)).toBeVisible();
       await expect(p.getByTestId("tipo-apartamento")).toHaveAttribute("aria-checked", "true");
       await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "false");
+      // E607: os outros tipos aparecem em "Ver mais tipos" (grade completa, sem carrossel).
+      for (const t of ["studio", "loft", "cobertura", "casa_condominio", "flat"]) await expect(p.getByTestId(`tipo-${t}`)).toHaveCount(0);
+      await p.getByTestId("tipos-ver-mais").click();
       for (const t of ["studio", "loft", "cobertura", "casa_condominio", "flat"]) await expect(p.getByTestId(`tipo-${t}`)).toBeVisible();
       // As fotos dos cartões carregam de verdade.
       for (const t of ["apartamento", "quarto"]) {
@@ -63,7 +69,10 @@ test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
       }
       if (w === 1280) {
         await expect(p.getByTestId("previa-anuncio")).toBeVisible();
-        await expect(p.getByTestId("previa-titulo")).toHaveText("Apartamento");
+        // E744 (asserção alterada, tabela da Fable #3832): a prévia não usa mais o tipo como título ("Título ainda não
+        // definido" até o Passo 7); o tipo escolhido segue nos chips da prévia.
+        await expect(p.getByTestId("previa-titulo")).toHaveText("Título ainda não definido");
+        await expect(p.getByTestId("previa-chips")).toContainText("Apartamento");
         await expect(p.getByTestId("previa-estado")).toContainText("Rascunho");
       } else {
         await expect(p.getByTestId("previa-anuncio")).toBeHidden();
@@ -88,12 +97,14 @@ test.describe("T386 — Cadastro 01: Tipo do imóvel (cadastro-imovel-01)", () =
     await p.getByTestId("tipo-casa").click();
     await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "true");
     await expect(p.getByTestId("tipo-apartamento")).toHaveAttribute("aria-checked", "false");
-    await expect(p.getByTestId("previa-titulo")).toHaveText("Casa");
+    await expect(p.getByTestId("previa-titulo")).toHaveText("Título ainda não definido");
     await expect(p.getByTestId("previa-chips")).toContainText("Casa");
+    await p.getByTestId("tipos-ver-mais").click(); // E607: Studio fica em "Ver mais tipos"
     await p.getByTestId("tipo-studio").click();
     await expect(p.getByTestId("tipo-studio")).toHaveAttribute("aria-checked", "true");
     await expect(p.getByTestId("tipo-casa")).toHaveAttribute("aria-checked", "false");
-    await expect(p.getByTestId("previa-titulo")).toHaveText("Studio / kitnet");
+    await expect(p.getByTestId("previa-titulo")).toHaveText("Título ainda não definido");
+    await expect(p.getByTestId("previa-chips")).toContainText("Studio / kitnet");
 
     await p.getByTestId("cadastro-continuar").click();
     await expect(p.getByTestId("passo-texto")).toHaveText("Passo 2 de 10");

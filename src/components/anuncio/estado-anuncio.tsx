@@ -29,11 +29,14 @@ export function EstadoDoAnuncio({ id, status, motivo }: { id: string; status: St
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
   const [pendente, iniciar] = useTransition();
   const raiz = useRef<HTMLDivElement>(null);
+  // E512: o menu abre no fluxo, fora do invólucro do selo — tocar nele não conta como "fora".
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!aberto) return;
     const fora = (e: MouseEvent) => {
-      if (raiz.current && !raiz.current.contains(e.target as Node)) setAberto(false);
+      const alvo = e.target as Node;
+      if (!raiz.current?.contains(alvo) && !menuRef.current?.contains(alvo)) setAberto(false);
     };
     document.addEventListener("mousedown", fora);
     return () => document.removeEventListener("mousedown", fora);
@@ -141,20 +144,23 @@ export function EstadoDoAnuncio({ id, status, motivo }: { id: string; status: St
         >
           {selo(<ChevronDown className="h-3.5 w-3.5" aria-hidden />)}
         </button>
-        {aberto && (
-          <div role="menu" className="absolute left-0 z-20 mt-1 w-48 rounded-xl border border-line bg-white p-1 text-sm">
-            {status === "active" ? (
-              <button type="button" role="menuitem" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left font-semibold text-ink hover:bg-sage-100" onClick={abrirPausa} data-testid="pausar-anuncio">
-                Pausar anúncio
-              </button>
-            ) : (
-              <button type="button" role="menuitem" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left font-semibold text-ink hover:bg-sage-100" onClick={reativar} data-testid="reativar-anuncio">
-                Reativar
-              </button>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* E512: o menu abre numa linha própria, abaixo do selo e no fluxo (empurra o título), em vez de uma caixa flutuante
+          por cima do título do cartão. Mesmo padrão do painel "Pausar este anúncio?". */}
+      {aberto && (
+        <div ref={menuRef} role="menu" className="w-full basis-full rounded-xl border border-line bg-white p-1 text-sm sm:max-w-xs" data-testid="estado-anuncio-menu">
+          {status === "active" ? (
+            <button type="button" role="menuitem" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left font-semibold text-ink hover:bg-sage-100" onClick={abrirPausa} data-testid="pausar-anuncio">
+              Pausar anúncio
+            </button>
+          ) : (
+            <button type="button" role="menuitem" className="flex min-h-11 w-full items-center rounded-lg px-3 text-left font-semibold text-ink hover:bg-sage-100" onClick={reativar} data-testid="reativar-anuncio">
+              Reativar
+            </button>
+          )}
+        </div>
+      )}
 
       {etapa === "confirmar" && (
         <div className="w-full basis-full rounded-xl border border-line p-3 text-sm" data-testid="confirmar-pausa-painel">

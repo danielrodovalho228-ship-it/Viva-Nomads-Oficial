@@ -22,6 +22,8 @@ import { FILAS, ORDEM_FILAS, filaDaCategoria } from "@/lib/atendimento/filas";
 import { apagarMacro, salvarMacro, testarViva, type ChamadoAdmin, type Macro, type ResultadoCenario } from "@/lib/data/atendimento-actions";
 import { rotuloDoAdmin } from "@/config/menu-admin";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
+import { ABA_ADMIN } from "@/lib/admin/abas";
 
 const ABAS = [
   { id: "fila", rotulo: "Fila" },
@@ -67,6 +69,7 @@ export function AtendimentoClient({
   macros,
   filtros,
   semAcesso,
+  soLeitura = false,
   agoraISO,
   ultimaDecisao = null,
 }: {
@@ -79,6 +82,8 @@ export function AtendimentoClient({
   /** Quando a equipe resolveu o último chamado — aparece na fila vazia (Prompt 48). */
   ultimaDecisao?: string | null;
   semAcesso: boolean;
+  /** E477: conta observadora da QA — respostas prontas e teste da Viva só leitura. */
+  soLeitura?: boolean;
   agoraISO: string;
 }) {
   const agora = new Date(agoraISO);
@@ -96,7 +101,7 @@ export function AtendimentoClient({
             key={a.id}
             href={`/admin/atendimento?aba=${a.id}`}
             aria-current={aba === a.id ? "page" : undefined}
-            className={cn("rounded-lg px-3 py-2 text-sm", aba === a.id ? "bg-forest text-white" : "border border-line text-ink hover:border-forest")}
+            className={cn("rounded-lg px-3 py-2 text-sm", aba === a.id ? ABA_ADMIN.ativa : ABA_ADMIN.inativa)}
           >
             {a.rotulo}
             {a.id === "aprovacao" && aprovacao.length > 0 && <span className="border border-line ml-2 rounded-full bg-white px-2 text-xs text-amber-900">{aprovacao.length}</span>}
@@ -123,10 +128,10 @@ export function AtendimentoClient({
       {aba === "metricas" && (
         <>
           <Metricas m={metricas} />
-          <TestarViva />
+          {soLeitura ? <SoLeituraQa className="mt-6" /> : <TestarViva />}
         </>
       )}
-      {aba === "respostas" && <Macros macros={macros} />}
+      {aba === "respostas" && <Macros macros={macros} soLeitura={soLeitura} />}
     </>
   );
 }
@@ -311,7 +316,7 @@ function Metricas({ m }: { m: Record<string, unknown> | null }) {
   );
 }
 
-function Macros({ macros }: { macros: Macro[] }) {
+function Macros({ macros, soLeitura = false }: { macros: Macro[]; soLeitura?: boolean }) {
   const router = useRouter();
   const [edit, setEdit] = useState<{ id?: string; titulo: string; corpo: string }>({ titulo: "", corpo: "" });
   const [erro, setErro] = useState<string | null>(null);
@@ -328,6 +333,9 @@ function Macros({ macros }: { macros: Macro[] }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Panel title={edit.id ? "Editar resposta pronta" : "Nova resposta pronta"}>
+        {soLeitura ? (
+          <SoLeituraQa />
+        ) : (
         <form onSubmit={salvar} className="grid gap-3">
           <input required maxLength={80} placeholder="Título" value={edit.titulo} onChange={(e) => setEdit({ ...edit, titulo: e.target.value })} className="rounded-xl border border-line px-3 py-2 text-sm" />
           <textarea required maxLength={3000} rows={6} placeholder="Texto (use {nome} para o primeiro nome)" value={edit.corpo} onChange={(e) => setEdit({ ...edit, corpo: e.target.value })} className="rounded-xl border border-line px-3 py-2 text-sm" />
@@ -341,6 +349,7 @@ function Macros({ macros }: { macros: Macro[] }) {
             )}
           </div>
         </form>
+        )}
       </Panel>
       <Panel title="Respostas prontas">
         {macros.length === 0 ? (
@@ -355,6 +364,7 @@ function Macros({ macros }: { macros: Macro[] }) {
                   <span className="block font-semibold text-ink">{m.titulo}</span>
                   <span className="block truncate text-xs text-muted">{m.corpo}</span>
                 </button>
+                {!soLeitura && (
                 <ConfirmarNaPagina
                   aviso="Apagar esta resposta pronta?"
                   confirmar="Apagar"
@@ -368,6 +378,7 @@ function Macros({ macros }: { macros: Macro[] }) {
                 >
                   <Trash2 className="h-4 w-4" />
                 </ConfirmarNaPagina>
+                )}
               </li>
             ))}
           </ul>

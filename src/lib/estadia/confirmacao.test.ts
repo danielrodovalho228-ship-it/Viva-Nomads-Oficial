@@ -10,6 +10,7 @@ import { montarLinhaDoTempo } from "../estadia-linha-tempo.ts";
 import { MINUTOS_ADITIVO_RECEM_ASSINADO, aditivoEmTela } from "./aditivo-em-tela.ts";
 import { REGRAS_AVALIACOES, TITULO_COMO_FUNCIONAM, linhaAutorAvaliacao } from "../avaliacoes-exibicao.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const SRC = new URL("../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(SRC + p, "utf8");
@@ -20,7 +21,7 @@ test("confirmação: textos exatos, sem exclamação nem festa", () => {
   assert.equal(TEXTO_CONFIRMADA, "Contrato assinado pelos dois lados.");
   assert.equal(HREF_CONFIRMADA("c1"), "/dashboard/estadia/c1/confirmada");
   const pagina = ler("app/(dashboard)/dashboard/estadia/[contratoId]/confirmada/page.tsx");
-  assert.doesNotMatch(pagina.replace(/\/\*[\s\S]*?\*\//g, ""), /!["<\s]|confete|parab[ée]ns|🎉/i);
+  assert.doesNotMatch(fonteSemComentarios(pagina), /!["<\s]|confete|parab[ée]ns|🎉/i);
   for (const t of [TITULO_CONFIRMADA, TEXTO_CONFIRMADA]) assert.doesNotMatch(t, TEXTO_PROIBIDO);
 });
 

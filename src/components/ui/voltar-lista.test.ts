@@ -2,6 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../../lib/fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
 
@@ -17,7 +18,7 @@ test("E176: as telas de detalhe logadas usam o MESMO voltar '← <lista>' no top
     const f = ler(arq);
     assert.match(f, re, arq);
     // Nenhum outro "Voltar" de texto na tela (o padrão é um só, no topo).
-    assert.doesNotMatch(f.replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|\/\/.*$/gm, ""), />\s*Voltar\b/, `${arq}: "Voltar" fora do padrão`);
+    assert.doesNotMatch(fonteSemComentarios(f), />\s*Voltar\b/, `${arq}: "Voltar" fora do padrão`);
   }
   // O componente é o "← <lista>" (sempre a lista de origem, nunca o histórico).
   const c = ler("src/components/ui/voltar-lista.tsx");

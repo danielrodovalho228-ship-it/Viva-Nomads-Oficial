@@ -1,5 +1,6 @@
 import { VideoInstitucional } from "@/components/institucional/video-institucional";
 import { PASSO_CONVERSE_TEXTO } from "@/config/conversa-chat";
+import { PASSOS_MORADOR } from "@/config/caminho-reserva";
 import type { Metadata } from "next";
 import {
   Search,
@@ -17,9 +18,12 @@ import { ButtonLink } from "@/components/ui/button";
 import { StepImage } from "@/components/step-image";
 import { PrecoJustoBadge } from "@/components/ui/badge";
 import { CAUCAO_FRASE } from "@/lib/faixas";
+import { CONTATO_NUNCA_TROCADO, FRASE_ESCADA_TAXAS } from "@/config/textos-regulados";
 import { JsonLd } from "@/components/seo/json-ld";
 import { paginaInstitucional } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
+import Link from "next/link";
+import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/como-funciona" },
@@ -30,11 +34,12 @@ export const metadata: Metadata = {
 
 const IMG = "/images/como-funciona";
 
+// E530: títulos e textos vêm da fonte única do caminho de reserva (também usada no anúncio de exemplo).
 const TENANT_STEPS = [
-  { icon: Search, img: `${IMG}/01-busque.webp`, alt: "Profissional pesquisando imóveis mobiliados no notebook", title: "Busque", text: "Encontre imóveis mobiliados por cidade, período e orçamento." },
-  { icon: MessageSquare, img: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", title: "Converse", text: PASSO_CONVERSE_TEXTO },
-  { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, alt: "Verificação de identidade com documento", title: "Candidate-se", text: "Envie sua candidatura pela plataforma. A verificação de identidade chega em breve." },
-  { icon: FileSignature, img: "/media/como-funciona-02-assine.webp", alt: "Homem assinando o contrato pelo celular", title: "Assine", text: "Assine o contrato digital com validade jurídica e receba as chaves." },
+  { icon: Search, img: `${IMG}/01-busque.webp`, alt: "Profissional pesquisando imóveis mobiliados no notebook", title: PASSOS_MORADOR[0].titulo, text: PASSOS_MORADOR[0].texto },
+  { icon: MessageSquare, img: "/media/como-funciona-01-converse.webp", alt: "Mulher jovem sorrindo no laptop, conversando pela plataforma", title: PASSOS_MORADOR[1].titulo, text: PASSO_CONVERSE_TEXTO },
+  { icon: ShieldCheck, img: `${IMG}/03-verifique.webp`, alt: "Verificação de identidade com documento", title: PASSOS_MORADOR[2].titulo, text: PASSOS_MORADOR[2].texto },
+  { icon: FileSignature, img: "/media/como-funciona-02-assine.webp", alt: "Homem assinando o contrato pelo celular", title: PASSOS_MORADOR[3].titulo, text: PASSOS_MORADOR[3].texto },
 ];
 
 const OWNER_STEPS = [
@@ -91,6 +96,12 @@ export default function HowItWorksPage() {
       <PrecoJusto />
 
       <Steps id="para-proprietarios" title="Para proprietários" steps={OWNER_STEPS} tone="owner" badge="Para proprietários" />
+      {/* E805: a taxa do proprietário, com a escada inteira e a linha das carteiras, pela mesma fonte de /para-proprietarios. */}
+      <div className="container-page -mt-6 pb-8">
+        <p className="max-w-3xl text-sm text-muted" data-testid="cf-taxa-proprietario">
+          <strong className="text-ink">Taxa de serviço do proprietário:</strong> anunciar é grátis; a Viva cobra só sobre o valor total do contrato fechado. {FRASE_ESCADA_TAXAS}
+        </p>
+      </div>
       {/* Reforço de segurança do proprietário (sem vistoria/dossiê — pós-QA). */}
       <ProtegidoPor />
 
@@ -105,6 +116,14 @@ export default function HowItWorksPage() {
             Anunciar meu imóvel
           </ButtonLink>
         </div>
+        {/* E854: onde a página fala de resposta da Viva, o prazo do canal (atendimento), pela fonte do atendimento. */}
+        <p className="mt-6 text-sm text-muted" data-testid="cf-prazo-resposta">
+          Ficou alguma dúvida?{" "}
+          <Link href="/ajuda/fale-com-a-viva" className="font-medium text-forest underline underline-offset-4">
+            Fale com a Viva
+          </Link>{" "}
+          · {PROMESSA_ATENDIMENTO}
+        </p>
       </section>
       </div>
     </>
@@ -141,7 +160,7 @@ function GarantiasInquilino() {
             <div>
               <dt className="font-semibold text-ink">Para o proprietário</dt>
               <dd className="text-muted">
-                {CAUCAO_FRASE} Depositada antes da entrada, cobre
+                {CAUCAO_FRASE} Paga antes da entrada, cobre
                 danos ou valor mensal em aberto conforme o contrato — com tudo documentado.
               </dd>
             </div>
@@ -242,7 +261,7 @@ function DuranteDepois() {
       img: "/images/unicas/cf-renovacao.webp",
       alt: "Hóspede chegando com a bagagem para mais um período de estadia",
       title: "Renovação",
-      text: "A estadia se renova em blocos, com aceite das duas partes. A taxa do proprietário é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período.",
+      text: "A estadia se renova em blocos, com aceite das duas partes.",
     },
     {
       img: "/images/unicas/cf-devolucao.webp",
@@ -285,7 +304,7 @@ function ProtegidoPor() {
       img: "/images/unicas/cf-conversa-registrada.webp",
       alt: "Proprietária respondendo a um pedido pelo celular",
       title: "Conversa registrada",
-      text: "Toda a negociação acontece na plataforma, com o contato protegido até o aceite.",
+      text: `Toda a negociação acontece na plataforma; ${CONTATO_NUNCA_TROCADO}.`,
     },
     {
       img: "/images/como-funciona/08-feche.webp",

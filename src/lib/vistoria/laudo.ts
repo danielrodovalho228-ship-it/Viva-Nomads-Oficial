@@ -11,6 +11,8 @@ import { ITENS_CHECKLIST, GRUPOS_AVALIACAO, type GrupoAvaliacao, type ItemCheckl
 import { CHAVES_CONFORTO } from "../../config/conforto-minimo.ts";
 import { CHAVES_NIVEL, itemNivel, type NivelOuAdequacao } from "../../config/niveis.ts";
 import { nivelDoImovel, type MedidaPonto, type RespostasRuido } from "../niveis/regras.ts";
+import { somarDiasUteis } from "../calendario/dias-uteis.ts";
+import { diasUteisDoLaudo } from "./prazos.ts";
 
 export type Respostas = Readonly<Record<string, ValorItem | undefined>>;
 export type Resultado = "aprovado" | "com_ressalvas" | "reprovado";
@@ -19,7 +21,6 @@ export const LIMITE_RESSALVAS = 3;
 export const PRAZO_RESSALVA_DIAS = 15;
 export const DIAS_CONTESTACAO = 7;
 export const PRAZO_DEVOLUCAO_DIAS = 15;
-export const HORAS_UTEIS_LAUDO = 48;
 export const VALIDADE_LAUDO_MESES = 12;
 export const AVISO_EXPIRACAO_DIAS = 30;
 export const ROTULO_RESULTADO: Record<Resultado, string> = { aprovado: "Aprovado", com_ressalvas: "Com ressalvas", reprovado: "Reprovado" };
@@ -96,32 +97,29 @@ export function resumoPorGrupo(r: Respostas): { grupo: GrupoAvaliacao; rotulo: s
 }
 
 // ── Prazos ──────────────────────────────────────────────────────────────────────────────────────────────────────
-const H = 3_600_000;
-const BRT = -3 * H;
-/** Soma horas úteis (seg a sex, em Brasília). */
-export function somarHorasUteis(inicio: Date, horas: number): Date {
-  let t = inicio.getTime();
-  let resta = horas * H;
-  while (resta > 0) {
-    const dia = new Date(t + BRT).getUTCDay();
-    if (dia === 0 || dia === 6) {
-      // pula para a meia-noite (Brasília) do dia seguinte
-      const d = new Date(t + BRT);
-      t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1) - BRT;
-      continue;
-    }
-    const d = new Date(t + BRT);
-    const fimDoDia = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1) - BRT;
-    const passo = Math.min(resta, fimDoDia - t);
-    t += passo;
-    resta -= passo;
-  }
-  return new Date(t);
-}
+/**
+ * E1156: prazo do laudo — os dias úteis combinados com o avaliador, contados depois da visita; sem prazo combinado, o
+ * padrão (`diasUteisDoLaudo`). E1192: a conta é a do calendário único (`somarDiasUteis`): segunda a sexta, em Brasília,
+ * sem os feriados nacionais; o prazo sai na mesma hora da visita, sempre num dia útil.
+ */
+export const prazoLaudo = (visitaEm: string, diasUteis?: number | null) => somarDiasUteis(new Date(visitaEm), diasUteisDoLaudo(diasUteis));
+export const laudoAtrasado = (visitaEm: string, emitidoEm: string | null, agora: Date, diasUteis?: number | null) => !emitidoEm && agora > prazoLaudo(visitaEm, diasUteis);
 
-/** Prazo do laudo: até 48 horas úteis depois da visita. */
-export const prazoLaudo = (visitaEm: string) => somarHorasUteis(new Date(visitaEm), HORAS_UTEIS_LAUDO);
-export const laudoAtrasado = (visitaEm: string, emitidoEm: string | null, agora: Date) => !emitidoEm && agora > prazoLaudo(visitaEm);
+/**
+ * E1156: o laudo saiu fora do prazo combinado? Com o prazo novo, a conta é a do atraso (dias úteis depois da visita).
+ * Pedido anterior à regra: a conta que lhe foi prometida (N dias corridos depois do aceite).
+ */
+export function laudoForaDoCombinado(
+  p: { proposta_aceita_em: string | null; prazo_proposto_dias: number | null; prazo_laudo_dias_uteis: number | null; visita_concluida_em: string | null; agendado_para: string | null },
+  emitidoEm: string,
+): boolean {
+  if (p.prazo_laudo_dias_uteis != null) {
+    const visita = p.visita_concluida_em ?? p.agendado_para;
+    return !!visita && Date.parse(emitidoEm) > prazoLaudo(visita, p.prazo_laudo_dias_uteis).getTime();
+  }
+  if (!p.proposta_aceita_em || !p.prazo_proposto_dias) return false;
+  return Date.parse(emitidoEm) > Date.parse(p.proposta_aceita_em) + p.prazo_proposto_dias * 86_400_000;
+}
 export const prazoRessalva = (emitidoEm: string) => new Date(Date.parse(emitidoEm) + PRAZO_RESSALVA_DIAS * 86_400_000);
 export const ressalvaVencida = (emitidoEm: string, corrigidoEm: string | null, agora: Date) => !corrigidoEm && agora > prazoRessalva(emitidoEm);
 

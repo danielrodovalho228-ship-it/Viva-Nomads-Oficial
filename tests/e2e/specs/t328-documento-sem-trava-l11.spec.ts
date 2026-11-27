@@ -2,6 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { randomBytes } from "node:crypto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { abrirSecoesPasso10 } from "../fixtures/cadastro";
 
 /**
  * T328 — L1-1 (D-V3): "Enviar documento" não trava em silêncio (390 px). E104: o documento mora no cartão "Antes de
@@ -56,6 +57,8 @@ test.describe("T328 — enviar documento sem trava silenciosa (L1-1)", () => {
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 390, height: 844 });
     await p.goto(`/dashboard/imoveis/novo?draft=${ids.salvo}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+    // E744 (tabela da Fable #3832): desde o E251 as seções do "Antes de publicar" chegam fechadas (acordeão).
+    await abrirSecoesPasso10(p, ["documento"]);
     const botao = p.getByTestId("documento-enviar");
     await expect(botao).toBeVisible({ timeout: 20_000 });
     await expect(botao).toBeEnabled();
@@ -76,6 +79,7 @@ test.describe("T328 — enviar documento sem trava silenciosa (L1-1)", () => {
     const p = await entrar(browser, dono.email, senha);
     await p.setViewportSize({ width: 390, height: 844 });
     await p.goto(`/dashboard/imoveis/novo?draft=${ids.semNumero}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+    await abrirSecoesPasso10(p, ["documento"]);
     const botao = p.getByTestId("documento-enviar");
     await expect(botao).toBeEnabled({ timeout: 20_000 });
     let abriu = false;
@@ -107,6 +111,7 @@ test.describe("T328 — enviar documento sem trava silenciosa (L1-1)", () => {
       .poll(async () => JSON.stringify((await adm().from("properties").select("draft_data").eq("id", ids.semNumero).single()).data?.draft_data ?? {}), { timeout: 30_000 })
       .toContain(`"numero":"102"`);
     await p.goto(`/dashboard/imoveis/novo?draft=${ids.semNumero}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+    await abrirSecoesPasso10(p, ["documento"]);
     await expect(p.getByTestId("documento-vinculo")).not.toContainText("Para enviar, o endereço precisa", { timeout: 20_000 });
     const [seletor] = await Promise.all([p.waitForEvent("filechooser"), p.getByTestId("documento-enviar").click()]);
     await seletor.setFiles({ name: "conta-de-luz.pdf", mimeType: "application/pdf", buffer: docLab() });

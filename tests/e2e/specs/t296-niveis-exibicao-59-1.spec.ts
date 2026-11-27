@@ -122,14 +122,15 @@ test.describe("T296 — Adendo 59.1, Parte A: níveis na tela", () => {
     await adm().from("imovel_nivel").update({ nivel_vistoriado_em: new Date().toISOString() }).eq("property_id", ids.p!);
   });
 
-  test("1. cartão com o nível na linha de fatos; filtro 'Nível a partir de' com contagem ao vivo", async ({ browser }) => {
+  test("1. cartão com o nível no selo da foto (E416); filtro 'Nível a partir de' com contagem ao vivo", async ({ browser }) => {
     for (const w of LARGURAS) {
       const page = await publica(browser, w);
       await page.goto("/buscar", { waitUntil: "domcontentloaded" });
       for (const [titulo, rotulo] of [[T.e, "Essencial"], [T.c, "Conforto"], [T.p, "Premium"]] as const) {
         const card = page.getByTestId("cartao-imovel").filter({ has: page.getByTestId("cartao-titulo").filter({ hasText: titulo }) }).first();
         await expect(card.getByTestId("card-nivel")).toHaveText(rotulo, { timeout: 30_000 });
-        await expect(card.getByTestId("cartao-sintese")).toContainText(new RegExp(`^${rotulo}\\s*·`));
+        // E744: desde o E416 o nível é selo da foto (E626, E899) e saiu da linha de fatos; ela não repete o nível.
+        await expect(card.getByTestId("cartao-sintese")).not.toContainText(rotulo);
       }
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t296-1-cartoes-${w}.png` });
@@ -234,10 +235,15 @@ test.describe("T296 — Adendo 59.1, Parte A: níveis na tela", () => {
     for (const w of LARGURAS) {
       await largura(page, w);
       await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
-      const linha = page.locator(`[data-decisao="nivel-queda-${ids.p}"]`);
+      // E744 (teste velho): desde o PROP-6 (#1483, 29/10) o Início do dono mostra a pendência mais urgente na faixa de
+      // alerta do topo (inicio-dono-alerta), não mais numa linha da lista de decisões (`[data-decisao="nivel-queda-…"]`
+      // com `decisao-prazo`). A regra cobrada é a mesma: o texto da queda, o prazo logo depois e o destino da correção.
+      const linha = page.getByTestId("inicio-dono-alerta");
       await expect(linha).toContainText(`${T.p} caiu de Premium para Conforto: corrija Ar-condicionado em todos os quartos`, { timeout: 30_000 });
-      await expect(linha.getByTestId("decisao-prazo")).toContainText("Corrija até");
+      await expect(linha).toContainText(/corrija Ar-condicionado em todos os quartos\s*—\s*Corrija até/);
       await expect(linha).toHaveAttribute("href", `/dashboard/contratos/${ids.contrato}#pendencias-conforto`);
+      // A forma antiga não voltou (se voltar, o teste avisa em vez de passar pelos dois caminhos).
+      await expect(page.locator(`[data-decisao="nivel-queda-${ids.p}"]`)).toHaveCount(0);
       await semRolagemLateral(page);
       await page.screenshot({ path: `tests/laboratorio/saida/t296-4-painel-queda-${w}.png` });
     }

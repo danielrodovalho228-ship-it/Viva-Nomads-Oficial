@@ -14,9 +14,10 @@ for (const largura of [390, 1280]) {
     await expect(bloco).toBeVisible();
     await expect(bloco.getByTestId("selo-dono-verificado")).toHaveCount(0);
     // Selo "Dono verificado" segue a decisão pendente do Daniel (ordem a69bedae): nunca no exemplo.
-    // Os selos ilustrativos do prompt 9 (e-mail/telefone) aparecem SEMPRE sob "Exemplo ilustrativo".
+    // Os selos ilustrativos do prompt 9 (e-mail/telefone) aparecem SEMPRE sob o selo do exemplo.
+    // E926: o selo diz "Anúncio de exemplo", o mesmo termo do cartão (antes: "Exemplo ilustrativo").
     await expect(bloco).not.toContainText(/Dono verificado/i);
-    await expect(bloco.getByTestId("selo-exemplo")).toHaveText("Exemplo ilustrativo");
+    await expect(bloco.getByTestId("selo-exemplo")).toHaveText("Anúncio de exemplo");
     expect(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)).toBe(false);
   });
 }

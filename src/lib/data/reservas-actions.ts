@@ -29,11 +29,11 @@ export async function solicitarReserva(
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Entre para solicitar a reserva." };
 
-  // Anúncios de demonstração (ube-001 etc.) não têm linha no banco — o id não é
+  // Anúncios de exemplo (ube-001 etc.) não têm linha no banco — o id não é
   // UUID. Evita o confuso "Imóvel não encontrado" com uma mensagem clara.
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!UUID_RE.test(propertyId))
-    return { ok: false, error: "Este é um anúncio de demonstração — a reserva fica disponível nos imóveis reais." };
+    return { ok: false, error: "Este é um anúncio de exemplo — a reserva fica disponível nos imóveis reais." };
 
   const { data: imovel } = await supabase
     .from("properties")

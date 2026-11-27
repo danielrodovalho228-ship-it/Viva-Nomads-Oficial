@@ -183,7 +183,7 @@ export function CartaoVisita({
       {/* E211: o endereço da presencial nas duas pontas (o dono vê o do próprio imóvel), pela mesma regra. */}
       {v.modalidade === "presencial" && !passou && !expirada && (v.status === "pedido" || v.status === "remarcar" || v.status === "confirmado") && (
         v.status === "confirmado" && v.endereco ? (
-          <div className="mt-2 rounded-lg bg-sage-50 px-3 py-2 text-sm text-ink" data-testid="visita-endereco">
+          <div className="mt-2 rounded-lg bg-sage-100 px-3 py-2 text-sm text-ink" data-testid="visita-endereco">
             <p className="flex items-start gap-2">
               <MapPin className="mt-1 h-4 w-4 shrink-0 text-forest" aria-hidden /> {v.endereco}
             </p>

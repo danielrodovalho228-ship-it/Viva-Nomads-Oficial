@@ -391,7 +391,7 @@ export async function excluirPedido(pedidoId: string): Promise<ActionResult & { 
       const { data: ped } = await admin.from("pedidos_moradia").select("cidade").eq("id", pedidoId).maybeSingle();
       const idsImoveis = [...new Set(linhasResp.map((r) => r.imovel_id).filter((x): x is string => !!x))];
       const { data: ims } = idsImoveis.length ? await admin.from("properties").select("id, title, address, city").in("id", idsImoveis) : { data: [] };
-      const imovelPorId = new Map(((ims ?? []) as { id: string; title: string | null; address: string | null; city: string | null }[]).map((i) => [i.id, { titulo: i.title, bairro: i.address, cidade: i.city }]));
+      const imovelPorId = new Map(((ims ?? []) as { id: string; title: string | null; address: string | null; city: string | null }[]).map((i) => [i.id, { id: i.id, titulo: i.title, bairro: i.address, cidade: i.city }]));
       for (const donoId of donos) {
         const { data: perfil } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", donoId).maybeSingle();
         if (!perfil?.email || perfil.notif_email === false) continue;
@@ -590,7 +590,7 @@ export async function aceitarResposta(respostaId: string): Promise<ActionResult>
         "pedido_aceito",
         o as Recip,
         detalheAceito(),
-        corpoPedidoAceito({ imovel: { titulo: imv?.title, bairro: imv?.address, cidade: imv?.city }, quem: primeiroNome((eu as { full_name?: string | null } | null)?.full_name ?? undefined) }),
+        corpoPedidoAceito({ imovel: { id: imovelId, titulo: imv?.title, bairro: imv?.address, cidade: imv?.city }, quem: primeiroNome((eu as { full_name?: string | null } | null)?.full_name ?? undefined) }),
         imovelId,
       );
     }
@@ -1054,7 +1054,7 @@ export async function responderPedido(
             { ...(inq as Recip), id: inqId },
             detalheResposta(),
             corpoPedidoResposta({
-              imovel: { titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null },
+              imovel: { id: imovelId, titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null },
               quem: primeiroNome((eu as { full_name?: string | null } | null)?.full_name ?? undefined),
               cidade: pedido.cidade as string | null,
               inicio: pedido.data_inicio as string | null,

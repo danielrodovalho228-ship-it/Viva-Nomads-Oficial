@@ -63,7 +63,11 @@ test("transições válidas e inválidas (quem pode e de onde)", () => {
   assert.equal(podeFazer("aceitar_orcamento", "orcado", "parceiro"), false, "o parceiro não aceita o próprio orçamento");
   assert.equal(podeFazer("concluir", "em_execucao", "cliente"), false, "não conclui antes da entrega");
   assert.equal(podeFazer("entregar", "agendado", "parceiro"), false, "não entrega sem iniciar");
-  assert.equal(podeFazer("orcar", "aceito", "parceiro"), false, "o valor não muda depois do aceite");
+  // E462: no "Orçamento aceito" o parceiro ainda pode atualizar o orçamento (volta ao cliente) ou recusar; depois do
+  // horário confirmado (agendado), não.
+  assert.equal(podeFazer("orcar", "aceito", "parceiro"), true, "atualizar o orçamento depois do aceite (E462)");
+  assert.equal(podeFazer("orcar", "agendado", "parceiro"), false, "o valor não muda depois do horário confirmado");
+  assert.equal(podeFazer("orcar", "aceito", "cliente"), false);
   assert.equal(podeFazer("concluir", "concluido", "cliente"), false);
   // Toda ação leva a um estado conhecido e nada sai de concluído, recusado ou cancelado.
   for (const t of Object.values(TRANSICOES)) {

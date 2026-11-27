@@ -5,7 +5,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { TELAS_ASSISTENTE, TEXTOS_REVISAO, TIPOS_ASSISTENTE, linhaPrevia, linhaRevisao, localPrevia, progressoPasso, textoPasso, tituloPrevia } from "./assistente-telas.ts";
+import { TELAS_ASSISTENTE, TEXTOS_REVISAO, TIPOS_ASSISTENTE, linhaPrevia, linhaRevisao, localPrevia, progressoPasso, textoPasso, tituloDaPrevia, TITULO_PREVIA_PENDENTE } from "./assistente-telas.ts";
 import { ETAPAS_ASSISTENTE } from "./assistente-dez-etapas.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
 import { PHOTOS } from "../media.ts";
@@ -47,11 +47,10 @@ test("E102-A: subtítulo do Passo 9 sem 'aluguel'", () => {
   assert.doesNotMatch(TELAS_ASSISTENTE.map((t) => `${t.titulo} ${t.subtitulo}`).join(" "), /alugu/i);
 });
 
-test("prévia: o título do dono; sem título, tipo + bairro como no desenho", () => {
-  assert.equal(tituloPrevia("", "apartamento", "Santa Mônica"), "Apartamento no Santa Mônica");
-  assert.equal(tituloPrevia("  Studio no Centro ", "studio", "Centro"), "Studio no Centro");
-  assert.equal(tituloPrevia("", "quarto", ""), "Quarto privativo");
-  assert.equal(tituloPrevia("", "", ""), "Seu imóvel");
+test("prévia (E630): o título do dono; sem título, pendente — nunca tipo + bairro como se fosse o título", () => {
+  assert.deepEqual(tituloDaPrevia("  Studio no Centro "), { texto: "Studio no Centro", pendente: false });
+  for (const vazio of ["", "   ", "\n\t"]) assert.deepEqual(tituloDaPrevia(vazio), { texto: TITULO_PREVIA_PENDENTE, pendente: true });
+  assert.equal(TITULO_PREVIA_PENDENTE, "Título ainda não definido");
 });
 
 test("prévia: '2 quartos · 65 m²' só com o que existe; lugar com a UF", () => {
@@ -63,13 +62,20 @@ test("prévia: '2 quartos · 65 m²' só com o que existe; lugar com a UF", () =
   assert.equal(localPrevia("", "", ""), "");
 });
 
-test("tela Tipo (01-b): rádios acessíveis numa linha rolável; foto em TODO cartão, de PHOTOS.cadastro, com o selo; sem chips", () => {
+test("tela Tipo (01-b, E607): grade como no mockup — 3 tipos à vista e 'Ver mais tipos' abre a grade completa; foto em TODO cartão; sem chips", () => {
   const tela = readFileSync(new URL("../../app/(dashboard)/dashboard/imoveis/novo/etapa-tipo.tsx", import.meta.url), "utf8");
   assert.match(tela, /role="radiogroup"\s+aria-label="Tipo do imóvel"/);
   assert.match(tela, /role="radio"\s+aria-checked=\{on\}/);
-  assert.match(tela, /snap-x snap-mandatory/, "no celular, desliza com encaixe");
-  assert.match(tela, /disabled=\{bordas\.inicio\}[\s\S]*?tipos-seta-esquerda/, "seta da esquerda desativada no início");
-  assert.match(tela, /disabled=\{bordas\.fim\}[\s\S]*?tipos-seta-direita/, "seta da direita desativada no fim");
+  // E607: sem carrossel (o último cartão saía cortado na borda e as setas cobriam as fotos).
+  assert.doesNotMatch(tela, /snap-x|overflow-x-auto|tipos-seta|scrollBy/);
+  assert.match(tela, /grid grid-cols-1 gap-3 sm:grid-cols-3/, "1 coluna no celular, 3 no computador");
+  assert.match(tela, /TIPOS_ASSISTENTE\.slice\(0, TIPOS_A_VISTA\)/);
+  assert.match(tela, /data-testid="tipos-ver-mais"/);
+  assert.match(tela, /aria-expanded=\{todos\}/);
+  assert.match(tela, /Ver mais tipos/);
+  assert.match(tela, /Ver menos tipos/);
+  // O tipo marcado fora dos 3 primeiros abre a grade completa (rascunho ou sugestão pelas fotos).
+  assert.match(tela, /const todos = aberto \?\? tipoForaDaVista\(tipo\);/);
   // E265: a foto real do tipo, sem o selo "Imagem ilustrativa" por cima.
   assert.doesNotMatch(tela, /SELO_ILUSTRATIVA|selo-ilustrativa|Imagem ilustrativa/);
   assert.match(tela, /alt=\{t\.alt\}/);

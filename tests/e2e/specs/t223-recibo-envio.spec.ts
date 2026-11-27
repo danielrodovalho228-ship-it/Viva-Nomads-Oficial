@@ -14,6 +14,8 @@ import { NO_LABORATORIO, adm, blocoSemValorMensal, apagarContas, criarConta, cri
       documento só para quem faltou → os dois "enviado" → fila vazia, nenhum documento novo;
    3. trava de contato antes da numeração: a tentativa bloqueada não queima número;
    4. "Registrado em: dd/mm/aaaa" na página do contrato.
+  Vizinha do E1072 (#4084, ORDEM-DUET-1095): corre também no portão do #4084, porque o registro do pagamento do bloco
+  passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
 */
 const SAIDA = "tests/laboratorio/saida";
 const RESEND = process.env.LAB_RESEND_URL ?? "http://127.0.0.1:3999";

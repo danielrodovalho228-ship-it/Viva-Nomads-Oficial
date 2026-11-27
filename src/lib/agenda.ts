@@ -18,6 +18,8 @@ export interface ItemAgenda {
   /** Visita: "video" | "presencial" e o status (Pedida / Confirmada / Remarcar). */
   modalidade?: "video" | "presencial";
   status?: string;
+  /** E1174: a visita é a de uma avaliação do imóvel — quem vem é o avaliador, não um interessado. */
+  avaliacao?: boolean;
   /** Só depois do aceite (nome curto + foto); antes, null. */
   pessoa?: { nome: string; fotoUrl: string | null } | null;
   /** Para onde o clique leva (a visita ou a locação). */

@@ -24,6 +24,16 @@ export const JANELA_ENVIOS_S = 3600;
 /** Conta criada há menos que isto, entrando pelo código, é "conta nova" (vê a tela de intenção). */
 export const JANELA_CONTA_NOVA_S = 30 * 60;
 
+/**
+ * E917: o link de recuperação de senha ("Reset password") é um OTP do e-mail como o código — vale o MESMO
+ * mailer_otp_exp (VALIDADE_CODIGO_S) e só funciona uma vez. O passo pós-envio da recuperação diz a validade real,
+ * lida da mesma constante (o modelo "Reset password" já dizia "O link vale por …").
+ */
+export const MSG_RECUPERACAO_ENVIADA = `Enviamos um link de recuperação para seu e-mail. Ele vale por ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez: abra-o para definir uma nova senha.`;
+
+/** E917 (opção A): só contas de teste — o código de recuperação (mesma validade, uso único) e onde digitá-lo. */
+export const MSG_RECUPERACAO_CODIGO_ENVIADO = `Enviamos um código de recuperação para seu e-mail. Ele vale por ${TEXTO_VALIDADE_CODIGO} e só funciona uma vez: digite-o em /auth/reset/codigo para definir uma nova senha.`;
+
 export const MSG_CODIGO_VENCIDO = "Código vencido: enviamos um novo para o seu e-mail.";
 export const MSG_MUITOS_ENVIOS = "Muitos pedidos de código. Aguarde um pouco e tente de novo.";
 

@@ -24,12 +24,13 @@ async function abrirComoVisitante(page: Page, pedido: string, email: string): Pr
   await page.goto("/ajuda/fale-com-a-viva", { waitUntil: "networkidle" });
   const bloco = page.getByTestId("viva-chat-bloco");
   await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
-  const form = page.getByTestId("form-pessoa");
+  // E539 (iii): um formulário de chamado só na página — o "Falar com uma pessoa" abre o da Central.
+  const form = page.locator("#abrir-chamado");
   await form.getByLabel("Seu nome").fill("Visitante T24");
-  await form.getByLabel("Seu e-mail").fill(email);
-  await form.getByLabel("Pedido para a equipe").fill(pedido);
-  await form.getByRole("button", { name: "Abrir chamado" }).click();
-  const ok = page.getByTestId("chamado-aberto-chat");
+  await form.getByLabel("Seu e-mail (para a resposta)").fill(email);
+  await form.getByLabel("O que aconteceu?").fill(pedido);
+  await form.getByRole("button", { name: "Enviar chamado" }).click();
+  const ok = page.getByTestId("central-aviso");
   await expect(ok).toBeVisible({ timeout: 20_000 });
   return (await ok.innerText()).match(/VN-\d+/)![0];
 }

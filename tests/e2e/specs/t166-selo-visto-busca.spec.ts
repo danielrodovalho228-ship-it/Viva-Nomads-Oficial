@@ -58,6 +58,9 @@ test.describe("T166 — Selo Visto na busca", () => {
           const selo = page.getByTestId("marca-imovel").filter({ hasText: "Visto" });
           await expect(selo.first()).toBeVisible({ timeout: 20_000 });
           await expect(selo.first()).toHaveText(/Visto/);
+          // E643: o estado fica no texto do cartão, nunca sobre a foto (a foto guarda só as pílulas do E626).
+          await expect(selo.first().locator('xpath=ancestor::*[@data-testid="cartao-foto"]')).toHaveCount(0);
+          await expect(selo.first().locator('xpath=ancestor::*[@data-testid="cartao-imovel"]')).toHaveCount(1);
         });
       });
 

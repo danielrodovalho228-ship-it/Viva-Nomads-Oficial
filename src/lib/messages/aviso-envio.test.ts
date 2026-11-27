@@ -32,3 +32,11 @@ test("a prévia é sempre o texto mascarado, nunca o original", () => {
   const r = avisoAntesDeEnviar(original);
   assert.ok(r.tipo === "confirmar" && r.previa !== original);
 });
+
+test("E483: a prévia não mostra parêntese aberto sem fechar", () => {
+  const r = avisoAntesDeEnviar("Me chama no (34) 99999-8888 ou em dora@exemplo.com");
+  assert.ok(r.tipo === "confirmar");
+  if (r.tipo !== "confirmar") return;
+  assert.equal(r.previa, `Me chama no ${MASK} ou em ${MASK}`);
+  assert.doesNotMatch(r.previa, /\(\[contato protegido\]/);
+});

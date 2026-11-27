@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function AdminFotosPerfilPage() {
   const fila = await filaFotosPerfil({ exigir: true });
-  const soLeitura = fila?.length ? await soLeituraNaTela(fila.map((f) => ({ id: f.id, alvo: { perfis: [f.userId] } }))) : [];
+  const soLeitura = fila?.length ? await soLeituraNaTela(fila.map((f) => ({ id: f.id }))) : [];
   return (
     <>
       <PageTitle title={rotuloDoAdmin("/admin/fotos-perfil")} subtitle={REGRA_FOTO_PERFIL} />

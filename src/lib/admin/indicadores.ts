@@ -154,6 +154,27 @@ export function apareceParaPublico(tipo: TipoImovel, status: string | null, demo
   return status === "active";
 }
 
+/*
+  E476 (iii): a demonstração aparece na busca COMO EXEMPLO, não como anúncio para o público. O cabeçalho da lista
+  separa por tipo, e a linha da demonstração diz "como exemplo" (reais: sim/não; teste: não).
+*/
+export function rotuloPublicoDaLinha(tipo: TipoImovel, publico: boolean): string {
+  if (!publico) return "não";
+  return tipo === "demonstracao" ? "como exemplo" : "sim";
+}
+
+export function resumoPublicoDaLista(linhas: readonly { tipo: TipoImovel; publico: boolean }[]): string {
+  const reais = linhas.filter((l) => l.tipo === "real" && l.publico).length;
+  const demos = linhas.filter((l) => l.tipo === "demonstracao" && l.publico).length;
+  const testes = linhas.filter((l) => l.tipo === "teste").length;
+  const partes = [
+    reais > 0 && `${reais} ${reais === 1 ? "real aparece" : "reais aparecem"} para o público`,
+    demos > 0 && `${demos} de demonstração ${demos === 1 ? "aparece" : "aparecem"} como exemplo`,
+    testes > 0 && `${testes} de teste não ${testes === 1 ? "aparece" : "aparecem"}`,
+  ].filter(Boolean) as string[];
+  return partes.length ? partes.join(" · ") : "nenhum aparece para o público";
+}
+
 // ── Janelas ───────────────────────────────────────────────────────────────────────────────────────────────────
 export const JANELA_AGORA = "agora";
 export const janelaDias = (dias: number) => `últimos ${dias} dias`;

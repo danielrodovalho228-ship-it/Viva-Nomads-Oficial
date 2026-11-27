@@ -27,7 +27,7 @@ test("contador sem leitura é '—', nunca '0'", () => {
 });
 
 test("o Início lê cada lista com exigir, registra a falha e mostra o aviso no topo", () => {
-  const pg = ler("src/app/(dashboard)/dashboard/page.tsx");
+  const pg = ler("src/app/(dashboard)/dashboard/inicio-dados.tsx");
   for (const [fonte, chamada] of [
     ["propostas", "listarPropostas\\(\\{ exigir: true \\}\\)"],
     ["estadias", "estadiasDaHome\\(agora, \\{ exigir: true \\}\\)"],

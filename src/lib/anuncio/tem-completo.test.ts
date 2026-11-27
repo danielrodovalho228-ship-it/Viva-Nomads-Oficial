@@ -15,5 +15,5 @@ test("ube-006 (7 comodidades): o diálogo tem 7 e o resumo de 6 deixava 'Vaga de
 
 test("com 'Tem' × 'Não tem', o 'Tem' lista todas as comodidades (as do diálogo)", () => {
   const tela = readFileSync("src/components/property/amenities-grid.tsx", "utf8");
-  assert.match(tela, /const principais = comTemNaoTem \? agrupadas\.grupos\.flatMap\(\(g\) => g\.items\) : comodidadesPrincipais\(agrupadas\);/);
+  assert.match(tela, /const principais = comTemNaoTem \? blocos\.imovel\.flatMap\(\(g\) => g\.items\) : comodidadesPrincipais\(\{ \.\.\.agrupadas, grupos: blocos\.imovel \}\);/);
 });

@@ -28,3 +28,20 @@ export function nomeNoEspelho(nome: string | null | undefined): string {
   const n = (nome ?? "").trim().replace(/\s+/g, " ");
   return n || "Seu nome";
 }
+
+/**
+ * E749: a prévia "É assim que o proprietário te vê" mostra também a categoria profissional e os idiomas, como o texto da seção
+ * promete. Só entram quando a pessoa os preencheu e deixou o bloco ligado (nunca "Profissão: —" nem "Idiomas:" vazio).
+ */
+export interface LinhasDoEspelho {
+  profissao: string | null;
+  idiomas: string | null;
+}
+export function linhasDoEspelho(profissao: string | null | undefined, idiomas: readonly string[] | null | undefined, naoInformar = "Prefiro não informar"): LinhasDoEspelho {
+  const prof = (profissao ?? "").trim();
+  const langs = (idiomas ?? []).map((i) => i.trim()).filter(Boolean);
+  return {
+    profissao: prof && prof !== naoInformar ? prof : null,
+    idiomas: langs.length ? langs.join(", ") : null,
+  };
+}

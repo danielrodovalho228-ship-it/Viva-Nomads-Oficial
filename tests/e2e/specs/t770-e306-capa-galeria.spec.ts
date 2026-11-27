@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
   T770 — E306 (01/11): na busca de parceiros, o cartão de quem não enviou capa mostra uma foto DO PRÓPRIO parceiro — a
@@ -17,7 +17,7 @@ const slugSemFoto = `limpeza-t770s-${sufixo}`;
 async function parceiro(conta: string, nome: string, slug: string): Promise<string> {
   const { data, error } = await adm()
     .from("parceiros")
-    .insert({ user_id: conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: nome, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], status: "publicado", publicado_em: new Date().toISOString() })
+    .insert({ user_id: conta, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: nome, slug, categorias: ["limpeza"], cidades: ["Uberlândia"], status: "publicado", publicado_em: new Date().toISOString() })
     .select("id")
     .single();
   if (error) throw error;

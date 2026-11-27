@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { ArrowDown, ArrowUp, ExternalLink, Loader2, QrCode, Trash2 } from "lucide-react";
 import { Panel } from "@/components/dashboard/primitives";
 import { CampoData } from "@/components/ui/campo-data";
@@ -11,9 +11,11 @@ import { CartaoCompartilhar } from "@/components/cartoes/cartao-compartilhar";
 import { meuCartaoDoParceiro } from "@/lib/data/cartoes-actions";
 import type { PacoteDeCompartilhar } from "@/lib/data/cartoes-servidor";
 import { reaisParaCampo } from "@/lib/reais";
-import { PERGUNTA_NOTA } from "@/lib/parceiros/fiscal";
+import { PERGUNTA_NOTA, TEXTO_NOTA_DO_SERVICO } from "@/lib/parceiros/fiscal";
+import { LINK_DOCUMENTO } from "@/lib/documento-pessoa";
 import { avisoCapaNoEditor, capaDoParceiro } from "@/lib/parceiros/apresentacao";
-import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PAGAMENTO_EM_BREVE, REDES, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
+import { ImagemNitida } from "@/components/ui/imagem-nitida";
+import { CIDADES_MAX, FAIXA_PARCEIRO_TESTE_DONO, GALERIA_MAX, PENDENCIA_CNPJ, REDES, linhasDadosDaCategoria, rotuloCategoria, textoPreco, UNIDADES_SERVICO, type ChaveRede } from "@/lib/parceiros/regras";
 import {
   adicionarAgenda,
   legendarFotoGaleria,
@@ -31,6 +33,8 @@ import {
   salvarServico,
   type PainelParceiro,
 } from "@/lib/parceiros/painel-actions";
+import { PENDENCIA_CNPJ_PAINEL } from "@/lib/parceiros/regras";
+import { TEXTO_DIVISAO_NA_ORIGEM, TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE } from "@/config/taxa-servico-parceiros";
 
 const ABAS = [
   { id: "pagina", rotulo: "Página" },
@@ -52,14 +56,15 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
   // trocava a tela pelo "carregando" e prendia o formulário).
   const [p, setP] = useState(inicial);
   const [aba, setAba] = useState<Aba>("pagina");
-  const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  // E1131: `onde` diz que o resultado é mostrado junto do botão que o causou (e não no topo, longe dele).
+  const [msg, setMsg] = useState<Msg | null>(null);
   const [pendente, iniciar] = useTransition();
 
-  function rodar(f: () => Promise<Res | { ok: true; valor: unknown }>, ok = "Salvo.") {
+  function rodar(f: () => Promise<Res | { ok: true; valor: unknown }>, ok = "Salvo.", onde?: string) {
     setMsg(null);
     iniciar(async () => {
       const r = await f().catch(() => ({ ok: false as const, erro: "Sem conexão. Tente de novo." }));
-      setMsg(r.ok ? { ok: true, texto: ok } : { ok: false, texto: (r as { erro: string }).erro });
+      setMsg(r.ok ? { ok: true, texto: ok, onde } : { ok: false, texto: (r as { erro: string }).erro, onde });
       if (r.ok) await recarregar();
     });
   }
@@ -106,6 +111,13 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
             )}
           </div>
         </div>
+        {/* E650: quem já publicou com CPF não recebe serviço (E648); o painel explica o porquê e pede o CNPJ. */}
+        {!suspenso && p.status === "publicado" && p.falta.includes(PENDENCIA_CNPJ) && (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-ink" data-testid="parceiro-pendencia-cnpj-publicado">
+            <p className="font-semibold">Pendência: {PENDENCIA_CNPJ.charAt(0).toLowerCase()}{PENDENCIA_CNPJ.slice(1)}.</p>
+            <p className="mt-1">Por isso a sua página não aparece na busca e você não recebe pedidos. A Viva só trabalha com parceiros que têm CNPJ (MEI, onde a atividade permite). Fale com a Viva pela Central de Ajuda para apresentar o CNPJ.</p>
+          </div>
+        )}
         {!suspenso && p.status !== "publicado" && p.falta.length > 0 && (
           <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-ink" data-testid="parceiro-falta">
             <p className="font-semibold">Falta para publicar:</p>
@@ -144,12 +156,13 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
                 </Button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-muted">A nota do serviço é sua, para o cliente. A Viva emite o documento só da taxa dela.</p>
+            <p className="mt-2 text-xs text-muted">{TEXTO_NOTA_DO_SERVICO}</p>
           </div>
         </Panel>
       )}
 
-      <div role="tablist" aria-label="Seções do painel de parceiro" className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+      {/* E461: "Abrir minha página" (Imóveis fixos) leva aqui quando a página ainda não está no ar. */}
+      <div id="editor-pagina" role="tablist" aria-label="Seções do painel de parceiro" className="grid scroll-mt-24 grid-cols-2 gap-2 sm:grid-cols-5">
         {ABAS.map((a) => (
           <button
             key={a.id}
@@ -165,14 +178,14 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
         ))}
       </div>
 
-      {msg && (
+      {msg && !msg.onde && (
         <p className={`text-sm ${msg.ok ? "text-forest" : "text-red-700"}`} role={msg.ok ? "status" : "alert"} data-testid="parceiro-msg">
           {msg.texto}
         </p>
       )}
 
       <fieldset disabled={suspenso} className="min-w-0 space-y-4">
-        {aba === "pagina" && <AbaPagina p={p} rodar={rodar} recarregar={recarregar} />}
+        {aba === "pagina" && <AbaPagina p={p} rodar={rodar} recarregar={recarregar} msg={msg} />}
         {aba === "servicos" && <AbaServicos p={p} rodar={rodar} />}
         {aba === "atendimento" && <AbaAtendimento p={p} rodar={rodar} />}
         {aba === "dados" && <AbaDados p={p} rodar={rodar} pagamentoAtivo={pagamentoAtivo} />}
@@ -183,9 +196,15 @@ export function PainelParceiroCliente({ inicial, pagamentoAtivo }: { inicial: Pa
   );
 }
 
-type Rodar = (f: () => Promise<Res | { ok: true; valor: unknown }>, ok?: string) => void;
+type Rodar = (f: () => Promise<Res | { ok: true; valor: unknown }>, ok?: string, onde?: string) => void;
+type Msg = { ok: boolean; texto: string; onde?: string };
 
-function AbaPagina({ p, rodar, recarregar }: { p: PainelParceiro; rodar: Rodar; recarregar: () => Promise<void> }) {
+function AbaPagina({ p, rodar, recarregar, msg }: { p: PainelParceiro; rodar: Rodar; recarregar: () => Promise<void>; msg: Msg | null }) {
+  // E1131: o aviso do "Salvar apresentação" aparece junto do botão, e a página rola até ele (padrão E818).
+  const avisoPagina = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (msg?.onde === "pagina") avisoPagina.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [msg]);
   const [nome, setNome] = useState(p.nomePublico);
   const [descricao, setDescricao] = useState(p.descricao);
   const [curta, setCurta] = useState(p.descricaoCurta);
@@ -207,8 +226,8 @@ function AbaPagina({ p, rodar, recarregar }: { p: PainelParceiro; rodar: Rodar; 
           <div>
             <p className="text-sm font-medium text-ink">Foto de perfil (quadrada)</p>
             {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- prévia da imagem enviada
-              <img src={avatarUrl} alt="Sua foto de perfil" className="my-2 h-24 w-24 rounded-full object-cover" data-testid="parceiro-avatar-previa" />
+              // E469: nasce nítida (sem cinza nem borrão enquanto carrega).
+              <ImagemNitida src={avatarUrl} alt="Sua foto de perfil" moldura="my-2 h-24 w-24 rounded-full border border-line" className="h-full w-full object-cover" data-testid="parceiro-avatar-previa" />
             ) : (
               <p className="my-2 text-sm text-muted">Sem foto ainda.</p>
             )}
@@ -226,8 +245,14 @@ function AbaPagina({ p, rodar, recarregar }: { p: PainelParceiro; rodar: Rodar; 
             <p className="text-sm font-medium text-ink">Capa (faixa larga)</p>
             {/* E341: a prévia é a capa que VALE na página pública (capaDoParceiro: capa → 1ª da galeria → foto → categoria). */}
             {capa && (
-              // eslint-disable-next-line @next/next/no-img-element -- prévia da imagem enviada
-              <img src={capa.src} alt={capa.origem === "capa" ? "Sua capa" : "A capa que sua página usa agora"} className="my-2 aspect-[3/1] w-full rounded-xl object-cover" data-testid="parceiro-banner-previa" data-origem={capa.origem} />
+              <ImagemNitida
+                src={capa.src}
+                alt={capa.origem === "capa" ? "Sua capa" : "A capa que sua página usa agora"}
+                moldura="my-2 aspect-[3/1] w-full rounded-xl border border-line"
+                className="h-full w-full object-cover"
+                data-testid="parceiro-banner-previa"
+                data-origem={capa.origem}
+              />
             )}
             <p className={capa?.origem === "capa" ? "my-2 text-sm text-muted" : "my-2 text-sm text-ink"} data-testid="parceiro-capa-aviso" data-origem={capa?.origem ?? "nenhuma"}>
               {avisoCapaNoEditor(capa?.origem ?? null)}
@@ -275,9 +300,14 @@ function AbaPagina({ p, rodar, recarregar }: { p: PainelParceiro; rodar: Rodar; 
               </div>
             ))}
           </div>
-          <Button variant="secondary" onClick={() => rodar(() => salvarPagina({ nomePublico: nome, descricao, descricaoCurta: curta, redes }))} data-testid="parceiro-salvar-pagina">
+          <Button variant="secondary" onClick={() => rodar(() => salvarPagina({ nomePublico: nome, descricao, descricaoCurta: curta, redes }), "Salvo.", "pagina")} data-testid="parceiro-salvar-pagina">
             Salvar apresentação
           </Button>
+          {msg?.onde === "pagina" && (
+            <p ref={avisoPagina} className={`text-sm ${msg.ok ? "text-forest" : "font-semibold text-red-700"}`} role={msg.ok ? "status" : "alert"} data-testid="parceiro-msg" data-onde="pagina">
+              {msg.texto}
+            </p>
+          )}
         </div>
       </Panel>
 
@@ -314,8 +344,7 @@ function FotoGaleria({ g, primeira, ultima, rodar, aoRemover }: { g: PainelParce
   const [legenda, setLegenda] = useState(g.legenda ?? "");
   return (
     <li className="min-w-0 rounded-xl border border-line p-2" data-testid="parceiro-foto-galeria">
-      {/* eslint-disable-next-line @next/next/no-img-element -- prévia da imagem enviada */}
-      <img src={g.url} alt={g.legenda ?? "Foto da galeria"} className="aspect-[4/3] w-full rounded-lg object-cover" />
+      <ImagemNitida src={g.url} alt={g.legenda ?? "Foto da galeria"} moldura="aspect-[4/3] w-full rounded-lg" className="h-full w-full object-cover" />
       <input
         aria-label="Legenda"
         value={legenda}
@@ -559,29 +588,47 @@ function AbaDados({ p, rodar, pagamentoAtivo }: { p: PainelParceiro; rodar: Roda
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-muted">Tipo</dt>
-            <dd className="font-semibold text-ink">{p.tipoPessoa === "pj" ? "Empresa ou MEI (CNPJ)" : "Pessoa física (CPF)"}</dd>
+            <dd className="font-semibold text-ink">{p.tipoPessoa === "pj" ? "Empresa ou MEI (CNPJ)" : "Pessoa física (CPF) — cadastro antigo"}</dd>
+            {/* E649: o cadastro legado com CPF mostra a pendência ao lado (a Viva só trabalha com CNPJ, E648). */}
+            {p.tipoPessoa !== "pj" && (
+              <p className="mt-1 text-sm font-semibold text-red-700" data-testid="parceiro-pendencia-cnpj">
+                {PENDENCIA_CNPJ_PAINEL}
+              </p>
+            )}
           </div>
           <div>
-            <dt className="text-muted">{p.tipoPessoa === "pj" ? "CNPJ" : "CPF"}</dt>
+            {/* E463: o documento é o do perfil (Conta → Documento), o mesmo de Conta → Dados — uma fonte só. */}
+            <dt className="text-muted">{p.documento.rotulo}</dt>
             <dd className="font-semibold text-ink" data-testid="parceiro-documento">
-              {p.documentoMascarado}
+              {p.documento.mascarado ?? "Ainda não informado"}
             </dd>
+            {!p.documento.mascarado && (
+              <a href={LINK_DOCUMENTO} data-testid="parceiro-documento-informar" className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline underline-offset-2">
+                Informar {p.documento.rotulo}
+              </a>
+            )}
           </div>
           <div>
             <dt className="text-muted">Categorias</dt>
             <dd className="font-semibold text-ink">{p.categorias.map(rotuloCategoria).join(", ")}</dd>
           </div>
+          {linhasDadosDaCategoria(p.categorias, p.dadosCategoria).map((l) => (
+            <div key={l.rotulo} data-testid="parceiro-dado-categoria">
+              <dt className="text-muted">{l.rotulo}</dt>
+              <dd className="font-semibold text-ink">{l.valor}</dd>
+            </div>
+          ))}
           <div>
             <dt className="text-muted">Endereço da página</dt>
             <dd className="font-semibold text-ink">/parceiros/{p.slug}</dd>
           </div>
         </dl>
-        <p className="mt-3 text-xs text-muted">Tipo e documento não mudam por aqui. Para corrigir, fale com a Viva pela Central de Ajuda.</p>
+        <p className="mt-3 text-xs text-muted">O documento é o mesmo de Conta → Documento. Para corrigir, fale com a Viva pela Central de Ajuda.</p>
       </Panel>
       <Panel title="Recebimento">
         {!pagamentoAtivo && (
           <p className="mb-3 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="recebimento-em-breve">
-            {PAGAMENTO_EM_BREVE} Até lá, nada é cobrado nem pago pela Viva. Quando estiver ativo, o valor é dividido na origem: 90% vai direto para você e 10% para a Viva.
+            {TEXTO_PAGAMENTO_PARCEIROS_EM_BREVE} Até lá, nada é cobrado nem pago pela Viva. {TEXTO_DIVISAO_NA_ORIGEM}
           </p>
         )}
         {p.recebimentoFinal && (

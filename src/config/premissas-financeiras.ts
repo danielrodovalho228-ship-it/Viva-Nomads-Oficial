@@ -3,12 +3,16 @@
   dos sócios). Cada número tem valor, unidade e fonte. Para mudar a conta, mude
   aqui: as duas páginas e os testes leem este arquivo.
 
-  Referência: out/2026. Dólar: R$ 5,20. Estimativas para decidir, não parecer
-  contábil. Puro (sem alias "@"), para rodar no node --test.
+  Referência: modelo de custos v3 validado pelo coordenador (ordem do Daniel, 05/11/2026; continuação do E559/E592):
+  contrato de referência R$ 3.000 × 3 meses na faixa da carteira (12/10/8/6 — nunca 12% fixo), regime Simples × Lucro
+  Presumido (Simples por padrão; Presumido como cenário alternativo, E622), fornecedores pós-CNPJ, pró-labore de referência + encargos. Dólar: R$ 5,20.
+  Estimativas para decidir, não parecer contábil. Puro (sem alias "@"), para rodar no node --test.
 */
-import { FAIXAS_COMISSAO_PADRAO, taxaMediaPonderada } from "../lib/cobranca/regra.ts";
+import { FAIXAS_COMISSAO_PADRAO, faixaDoCalculoPorExtenso } from "../lib/cobranca/regra.ts";
 
-export const REFERENCIA = "out/2026";
+export const REFERENCIA = "05/11/2026";
+/** Nome do modelo de custos que estas premissas seguem. */
+export const MODELO_CUSTOS = "modelo de custos v3 (validado pelo coordenador em 05/11/2026)";
 export const DOLAR = 5.2;
 
 export interface Item {
@@ -22,66 +26,206 @@ export interface Item {
 // ── Receita por contrato ────────────────────────────────────────────────────
 /*
   Modelo único (Daniel, 10/10): taxa de serviço por contrato fechado (renovação = novo contrato), sobre o
-  valor TOTAL do contrato (aluguel × meses; ordem do Daniel, 14/10). Sem cobrança recorrente nesta fase (assinatura = fase 2, futuro, para donos com muitos
-  imóveis, fora das projeções). Faixas em lib/cobranca/regra.ts (fonte única).
+  valor TOTAL do contrato (aluguel × meses; ordem do Daniel, 14/10). Sem cobrança recorrente: E564 (04/11/2026) tirou a
+  assinatura do Gestor (valor fixo por mês com imóveis incluídos, valor por extra e taxa zero); o prompt 078 (16/11/2026)
+  tirou a faixa de 20+ a 4%: a escada publicada termina em 16–19 = 6% (ORDEM-DUET-534), e carteira grande ou administradora
+  combina a condição com a Viva (fora das projeções). O seletor dos sócios mostra a faixa do CÁLCULO ("16 ou mais"). Faixas em lib/cobranca/regra.ts (fonte única).
 */
-/** Aluguel mensal médio de um contrato (R$) — o mesmo ticket do Compare. A taxa incide sobre ele × MESES_MEDIOS_CONTRATO. */
-export const ALUGUEL_MEDIO = 4320;
+/**
+ * Aluguel mensal médio de um contrato (R$) — E592/E594: o do modelo validado (R$ 3.000; antes R$ 4.320, o exemplo do
+ * Compare). A taxa incide sobre ele × MESES_MEDIOS_CONTRATO.
+ */
+export const ALUGUEL_MEDIO = 3000;
 
 /**
- * Parte dos contratos por faixa de imóveis do dono (mesma ordem de FAIXAS_COMISSAO_PADRAO).
- * Padrão: todos na 1ª faixa (1–2 imóveis, 12%), o caso típico do piloto.
+ * Modelo v3: a taxa é a da FAIXA da carteira do dono (tabela 12/10/8/6 de lib/cobranca/regra.ts) — nunca 12% fixo. A
+ * tela escolhe a faixa; o padrão é 10% (carteira de 3 a 5 imóveis), a do contrato de referência do modelo.
  */
-export const MIX_FAIXAS: readonly number[] = [1, 0, 0, 0, 0];
+/**
+ * As faixas da carteira, lidas da REGRA DE COBRANÇA (FAIXAS_COMISSAO_PADRAO, lib/cobranca/regra.ts) — nunca uma lista
+ * própria. Prompt 078: sem a faixa do Gestor (a última é "16–19 imóveis").
+ */
+export const TAXA_FAIXAS: readonly { taxa: number; carteira: string }[] = FAIXAS_COMISSAO_PADRAO.map((f) => ({ taxa: f.taxa, carteira: `${faixaDoCalculoPorExtenso(f)} imóveis` }));
+export const TAXA_MEDIA = 0.1;
 
-/** Taxa média ponderada pelas faixas (0..1). */
-export const TAXA_MEDIA = taxaMediaPonderada(MIX_FAIXAS, FAIXAS_COMISSAO_PADRAO);
+/** Duração média de um contrato (meses) — premissa para os prêmios mensais. A confirmar com os dados reais. */
+export const MESES_MEDIOS_CONTRATO = 3;
 
 /** Cenários simples de contratos fechados por mês (ordem da vitrine: receita bruta da taxa). */
 export const CONTRATOS_MES_CENARIOS = [10, 20, 40] as const;
 
 // ── Custos variáveis por contrato ───────────────────────────────────────────
+/*
+  Modelo v3. A verificação de identidade é custo da Viva (obrigatória no fluxo) e NUNCA vira receita. A Certta NÃO tem
+  preço público: 1,7 verificações × R$ 20 = R$ 34 por contrato é HIPÓTESE, rotulada assim em toda tela (nunca preço).
+*/
+/** Verificações de identidade por contrato fechado (hipótese do modelo v2). */
+export const VERIFICACOES_POR_CONTRATO = 1.7;
+/** Custo por verificação de identidade (Certta) — hipótese, preço a cotar. */
+export const CUSTO_IDENTIDADE_HIPOTESE = 20;
+export const ROTULO_HIPOTESE_IDENTIDADE = "hipótese — a Certta não tem preço público";
+/** Taxa de serviço média por contrato (R$) — base da cobrança no cartão. */
+const TAXA_POR_CONTRATO = ALUGUEL_MEDIO * MESES_MEDIOS_CONTRATO * TAXA_MEDIA;
+const cent = (v: number) => Math.round(v * 100) / 100;
+
 export const CUSTOS_POR_CONTRATO: Item[] = [
-  { rotulo: "Identidade do inquilino (documento, prova de vida, rosto)", valor: 2, unidade: "R$/contrato", fonte: "https://didit.me/pricing", obs: "CAF — sob orçamento (Didit como referência de preço: ≈ US$ 0,33; 500 grátis/mês)." },
+  {
+    rotulo: "Identidade (Certta: documento, prova de vida, rosto)",
+    valor: cent(VERIFICACOES_POR_CONTRATO * CUSTO_IDENTIDADE_HIPOTESE),
+    unidade: "R$/contrato",
+    obs: `${String(VERIFICACOES_POR_CONTRATO).replace(".", ",")} verificações por contrato × R$ ${CUSTO_IDENTIDADE_HIPOTESE} (${ROTULO_HIPOTESE_IDENTIDADE}). Custo da Viva, nunca receita.`,
+  },
   { rotulo: "Antifraude / consulta de CPF", valor: 0, unidade: "R$/contrato", obs: "Opcional, só no aceite: ≈ R$ 10 por consulta, sob orçamento." },
-  { rotulo: "Assinatura eletrônica (contrato + termo de entrega)", valor: 6, unidade: "R$/contrato", fonte: "https://zapsign.co/plans-and-prices", obs: "≈ R$ 3 por documento além dos 50 do plano." },
-  { rotulo: "Cobrança da taxa de serviço (Pix + aviso)", valor: 3, unidade: "R$/contrato", fonte: "https://www.asaas.com/precos-e-taxas", obs: "Pix R$ 1,99 + aviso R$ 0,99." },
-  { rotulo: "Atendimento da Viva (IA)", valor: 5, unidade: "R$/contrato", fonte: "https://finout.io/blog/anthropic-api-pricing" },
+  { rotulo: "Assinatura eletrônica (contrato + termo de entrega)", valor: 5, unidade: "R$/contrato", fonte: "https://zapsign.co/plans-and-prices", obs: "R$ 2,50 por documento além dos 20 do plano (2 documentos por contrato)." },
+  {
+    rotulo: "Cobrança da taxa de serviço (cartão)",
+    valor: cent(TAXA_POR_CONTRATO * 0.0299 + 0.49),
+    unidade: "R$/contrato",
+    fonte: "https://www.asaas.com/precos-e-taxas",
+    obs: "2,99% + R$ 0,49 sobre a taxa do contrato médio (Pix R$ 1,99).",
+  },
+  { rotulo: "Atendimento da Viva (IA)", valor: 5, unidade: "R$/contrato", fonte: "https://finout.io/blog/anthropic-api-pricing", obs: "Estimativa; o custo em produção é a medir." },
 ];
-/**
- * Imposto da Viva sobre TODA a receita (Simples Nacional). O anexo depende da
- * atividade cadastrada e da folha: a definir pelo contador na abertura do CNPJ.
- * Padrão 6% (faixa inicial); 15,5% se cair no anexo V.
- */
-export const IMPOSTO_OPCOES = [0.06, 0.155] as const;
-export const IMPOSTO_SOBRE_RECEITA = IMPOSTO_OPCOES[0];
-export const IMPOSTO_TEXTO = "a definir pelo contador – anexo do Simples";
-/** Operador local por contrato: R$ 0 (sócios fazem) ou R$ 100. */
-export const OPERADOR_OPCOES = [0, 100] as const;
+/*
+  Modelo v3 — regime tributário, VEREDITO DO COORDENADOR (E622, 05/11; a mesma premissa do simulador oficial):
+  - Simples Nacional: ~6% sobre a receita; a contribuição patronal já vem no DAS (INSS patronal R$ 0). É o PADRÃO da
+    página: o regime só se decide na reunião a três.
+  - Lucro Presumido (cenário alternativo, "regime em definição"): 16,33% sobre a taxa = 11,33% federais (PIS/Cofins 3,65%
+    + IRPJ 4,8% + CSLL 2,88%) + ISS de 5% (teto conservador, a confirmar com o Rodolfo); + INSS patronal de 20% sobre o
+    pró-labore (R$ 1.200 sobre R$ 6.000), automático, também a confirmar com o Rodolfo. A contabilidade segue a tabela da
+    A2 nos dois regimes (sem acréscimo estimado). O ISS de 2% saiu: não fecha com o simulador oficial.
+*/
+export type RegimeId = "simples" | "presumido";
+export interface Regime {
+  id: RegimeId;
+  nome: string;
+  /** Impostos sobre a receita (0..1). */
+  aliquota: number;
+  /** INSS patronal sobre o pró-labore (0..1) — fora do Simples. */
+  inssPatronal: number;
+  detalhe: string;
+}
+/** O rótulo das premissas do Presumido que o contador ainda confirma. */
+export const A_CONFIRMAR_RODOLFO = "a confirmar com o Rodolfo";
+export const REGIMES: Regime[] = [
+  { id: "simples", nome: "Simples Nacional", aliquota: 0.06, inssPatronal: 0, detalhe: "≈ 6% sobre a receita; a contribuição patronal vem no DAS" },
+  {
+    id: "presumido",
+    nome: "Lucro Presumido",
+    aliquota: 0.1633,
+    inssPatronal: 0.2,
+    detalhe: `16,33% sobre a taxa — 11,33% federais (PIS/Cofins 3,65% + IRPJ 4,8% + CSLL 2,88%) + ISS de 5% (teto conservador, ${A_CONFIRMAR_RODOLFO}) — e INSS patronal de 20% sobre o pró-labore (${A_CONFIRMAR_RODOLFO})`,
+  },
+];
+/** O padrão da página: Simples. O Presumido é o cenário alternativo ("regime em definição"). */
+export const REGIME_PADRAO: RegimeId = "simples";
+export const ROTULO_REGIME_ALTERNATIVO = "cenário alternativo · regime em definição";
+export const regimePorId = (id: RegimeId) => REGIMES.find((r) => r.id === id) ?? REGIMES[0];
+/** O instrumento societário (contrato social/acordo de sócios) ainda não está fechado. */
+export const SELO_SOCIETARIO = "instrumento societário em revisão";
+export const IMPOSTO_OPCOES = REGIMES.map((r) => r.aliquota);
+export const IMPOSTO_SOBRE_RECEITA = regimePorId(REGIME_PADRAO).aliquota;
+export const IMPOSTO_TEXTO = "regime a confirmar com o contador (Simples × Lucro Presumido)";
+/** E622 (veredito de 05/11): sem operador local pago desde 18/10 — a linha do modelo de 06/10 saiu da soma (R$ 0). */
+export const OPERADOR_OPCOES = [0] as const;
 
 // ── Custos fixos por mês ────────────────────────────────────────────────────
+/*
+  Modelo v3: fornecedores pós-CNPJ (≈ R$ 1.303/mês no modelo) + o pró-labore de referência (R$ 6.000/mês, mais os
+  encargos do regime). Linhas sem preço entram como R$ 0 e vão para as lacunas.
+*/
+export const ROTULO_PRO_LABORE = "Pró-labore dos sócios";
+export const PRO_LABORE = 6000;
 export const CUSTOS_FIXOS: Item[] = [
-  { rotulo: "Banco de dados (Supabase Pro, US$ 25)", valor: 130, unidade: "R$/mês", fonte: "https://supabase.com/pricing" },
-  { rotulo: "Hospedagem (Vercel Pro, US$ 20)", valor: 105, unidade: "R$/mês", fonte: "https://vercel.com/pricing" },
-  { rotulo: "Assinatura eletrônica (ZapSign Professional, 50 documentos)", valor: 105, unidade: "R$/mês", fonte: "https://zapsign.co/plans-and-prices" },
-  { rotulo: "WhatsApp (Z-API)", valor: 99, unidade: "R$/mês", fonte: "https://www.tabnews.com.br/ivanamato/450a2559-aada-4aab-a8b7-a0af43cb3315" },
-  { rotulo: "E-mails (Resend, grátis até 3.000/mês)", valor: 0, unidade: "R$/mês", fonte: "https://resend.com/pricing", obs: "Acima disso, US$ 20." },
-  { rotulo: "IA fora dos contratos (textos, testes)", valor: 200, unidade: "R$/mês", obs: "Faixa R$ 100 a 300." },
-  { rotulo: "Contador (Simples Nacional, sem funcionários)", valor: 250, unidade: "R$/mês", fonte: "https://contabilidade.com/blog/quanto-custa-a-contabilidade-online-em-2026-guia-de-precos-e-o-que-esta-incluso/", obs: "Faixa R$ 189 a 329." },
-  { rotulo: "Apple Developer, domínio, certificado digital, e-mail próprio", valor: 100, unidade: "R$/mês" },
-  { rotulo: "Pró-labore dos sócios", valor: 5000, unidade: "R$/mês", obs: "valor inicial; sobe conforme a receita" },
+  { rotulo: "Contabilidade (A2)", valor: 450, unidade: "R$/mês" },
+  { rotulo: "CRECI pessoa jurídica (anuidade)", valor: 145.5, unidade: "R$/mês", obs: "≈ R$ 145,50 por mês." },
+  { rotulo: "CRECI pessoa física (anuidade)", valor: 66.67, unidade: "R$/mês", obs: "≈ R$ 66,67 por mês." },
+  { rotulo: "Assinatura eletrônica (ZapSign Equipe, 20 documentos)", valor: 69.9, unidade: "R$/mês", fonte: "https://zapsign.co/plans-and-prices" },
+  { rotulo: "Certificado digital (e-CNPJ)", valor: 17, unidade: "R$/mês", obs: "≈ R$ 17 por mês." },
+  { rotulo: "Domínios", valor: 10.83, unidade: "R$/mês", obs: "≈ R$ 10,83 por mês." },
+  { rotulo: "Apple Developer", valor: 43, unidade: "R$/mês", obs: "≈ R$ 43 por mês." },
+  { rotulo: "Infraestrutura (Vercel + Supabase + Resend + Expo, com IOF)", valor: 500, unidade: "R$/mês", obs: "≈ R$ 500 por mês." },
+  { rotulo: "Emissor de NFS-e", valor: 0, unidade: "R$/mês", obs: "a cotar" },
+  { rotulo: "Alvará de funcionamento", valor: 0, unidade: "R$/mês", obs: "a cotar" },
+  { rotulo: "Marketing pago", valor: 0, unidade: "R$/mês", obs: "começa em R$ 0 — a linha fica para quando houver verba" },
+  { rotulo: ROTULO_PRO_LABORE, valor: PRO_LABORE, unidade: "R$/mês", obs: "referência para projeção — não é decisão; + encargos do regime" },
 ];
-/** Custo fixo real ≈ R$ 6 mil/mês (ferramentas R$ 989 + pró-labore R$ 5.000). O controle deslizante cobre de só ferramentas até R$ 8 mil. */
-export const CUSTO_FIXO_FAIXA = { min: 989, max: 8000, texto: "≈ R$ 6 mil/mês com pró-labore" };
+/** Fornecedores (sem o pró-labore) — o mínimo do controle deslizante. */
+export const CUSTO_FORNECEDORES = cent(CUSTOS_FIXOS.filter((c) => c.rotulo !== ROTULO_PRO_LABORE).reduce((s, c) => s + c.valor, 0));
+/** Encargos do pró-labore no regime (INSS patronal fora do Simples), em R$/mês. */
+export const encargosProLabore = (r: Regime, proLabore = PRO_LABORE) => cent(proLabore * r.inssPatronal);
+/**
+ * Veredito do coordenador (05/11): custos visíveis mas FORA da soma — opcionais ou sem decisão. Aparecem no bloco
+ * "Custos ainda sem valor / opcionais (não somados)" da tela; nenhum entra no custo fixo.
+ */
+export const OPCIONAIS_NAO_SOMADOS: Item[] = [
+  {
+    rotulo: "Associação à ACIUB Uberlândia",
+    valor: 100,
+    unidade: "R$/mês",
+    obs: "Associação à ACIUB Uberlândia, ~R$ 100/mês, sugestão da Dra. Beatriz, decisão pendente",
+  },
+  {
+    rotulo: "Caixas de e-mail da empresa (Hostinger)",
+    valor: 5.99,
+    unidade: "R$/mês",
+    obs: "~R$ 5,99/mês (Hostinger) — fora da soma até o número de caixas ser decidido",
+  },
+];
+/** Fora do fixo: o que não entra na conta hoje, com o porquê (sem número inventado). */
+export const FORA_DO_FIXO = [
+  "WhatsApp (Z-API): a cotar, se for ligado",
+  "Stays (channel manager): só na fase 2 do Gestor",
+  "Seguro da empresa: a Viva não tem hoje — decisão pendente",
+] as const;
+/**
+ * E592/E594: as lacunas de custo — o que ainda não tem preço. Entram na conta como R$ 0 (a cotar) ou como hipótese, e a
+ * tela as lista à parte para o resultado não parecer completo.
+ */
+export interface LacunaCusto {
+  rotulo: string;
+  /** Como entra hoje na conta. */
+  situacao: string;
+}
+export const LACUNAS_CUSTO: LacunaCusto[] = [
+  ...[...CUSTOS_FIXOS, ...CUSTOS_POR_CONTRATO]
+    // O marketing pago em R$ 0 é decisão do modelo v3 (não falta de preço): fica fora das lacunas.
+    .filter((c) => c.valor === 0 && c.rotulo !== "Marketing pago")
+    .map((c) => ({ rotulo: c.rotulo, situacao: `R$ 0 na conta — ${c.obs ?? "a cotar"}` })),
+  {
+    rotulo: CUSTOS_POR_CONTRATO[0].rotulo,
+    situacao: `R$ ${CUSTO_IDENTIDADE_HIPOTESE} por verificação (${ROTULO_HIPOTESE_IDENTIDADE})`,
+  },
+  { rotulo: "WhatsApp (Z-API)", situacao: "fora da conta — a cotar, se for ligado" },
+];
 
-/** Marketing por mês: nada antes dos contratos, R$ 800 no ano 1, R$ 1.500 depois. */
+/** Custo fixo (fornecedores + pró-labore de referência, antes dos encargos do regime). O controle vai de só fornecedores até R$ 12 mil. */
+export const CUSTO_FIXO_FAIXA = { min: CUSTO_FORNECEDORES, max: 12000, texto: "fornecedores + pró-labore de referência; os encargos do regime somam à parte" };
+
+/** Marketing pago por mês: o modelo v3 começa em R$ 0 (a linha existe em CUSTOS_FIXOS para quando houver verba). */
+export const MARKETING_PAGO_MES = 0;
 export function marketingDoMes(m: number): number {
-  if (m <= 3) return 0;
-  return m <= 12 ? 800 : 1500;
+  return m >= 1 ? MARKETING_PAGO_MES : 0;
 }
 
-/** Investimento único: jurídico, CNPJ, marca, Google Play, lançamento. */
+/**
+ * Investimento único (envelope de 06/10): jurídico, CNPJ, marca, Google Play, lançamento. Veredito do coordenador
+ * (05/11): o parecer jurídico (R$ 4.000) e a consulta de 05/11 (R$ 500) estão DENTRO dele — não são linhas à parte.
+ */
 export const INVESTIMENTO_INICIAL = 16000;
+/** "Dos quais": partes do envelope de R$ 16.000 — informativas, NÃO somadas de novo (nenhum custo em duas linhas). */
+export const INVESTIMENTO_DOS_QUAIS: Item[] = [
+  { rotulo: "Parecer da Dra. Beatriz", valor: 4000, unidade: "R$", obs: "proposta de 05/11, aguarda OK" },
+  { rotulo: "Consulta de 05/11", valor: 500, unidade: "R$", obs: "paga pelo Rogério, a reembolsar" },
+];
+export const INVESTIMENTO_INICIAL_DETALHE = `dos quais: ${INVESTIMENTO_DOS_QUAIS.map(
+  (i) => `${i.rotulo.charAt(0).toLowerCase()}${i.rotulo.slice(1)} R$ ${i.valor.toLocaleString("pt-BR")} (${i.obs})`,
+).join(" e ")} — informativos, não somados`;
+/** A cotar (não somado): custos jurídicos ainda sem número fechado — ficam fora do investimento e da projeção. */
+export const INVESTIMENTO_A_COTAR: { rotulo: string; situacao: string }[] = [
+  { rotulo: "Contrato do investidor", situacao: "SCP (R$ 10.000 padrão, com desconto a combinar) ou mútuo — em revisão; a cotar (não somado)" },
+  { rotulo: "5 modelos de contrato", situacao: "a cotar (não somado)" },
+];
 
 // ── Cenários (contratos começam no mês 4) ──────────────────────────────────
 export type CenarioId = "pessimista" | "base" | "otimista";
@@ -112,8 +256,6 @@ export const CENARIOS: Record<CenarioId, Cenario> = {
   SUSEP; não pode condicionar a locação ao seguro (venda casada).
 */
 
-/** Duração média de um contrato (meses) — premissa para os prêmios mensais. A confirmar com os dados reais. */
-export const MESES_MEDIOS_CONTRATO = 3;
 
 export const REPRESENTANTE_SEGUROS = {
   min: 0,
@@ -239,7 +381,7 @@ export interface ReceitaAdicional {
 }
 
 /** Verificação paga do inquilino: candidatos verificados por contrato fechado e custo da CAF por verificação. */
-export const VERIFICACAO = { candidatosPorContrato: 2, custoCaf: 8, custoCafTexto: "sob orçamento" } as const;
+export const VERIFICACAO = { candidatosPorContrato: 2, custoCaf: CUSTO_IDENTIDADE_HIPOTESE, custoCafTexto: ROTULO_HIPOTESE_IDENTIDADE } as const;
 /** Ferramentas fora da Viva: saída mensal da base de donos ativos. */
 export const SAIDA_DONOS_MES = 0.03;
 /** Fundadores: quantos donos e por quantos meses pagam a taxa reduzida. */

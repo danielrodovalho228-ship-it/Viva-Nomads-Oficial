@@ -1,0 +1,13 @@
+{
+  "passou": 9,
+  "falhou": 3,
+  "pulou": 2,
+  "instavel": 1,
+  "por_spec": {
+    "t132-solicitar-reserva.spec.ts": { "passou": 0, "falhou": 1, "pulou": 0, "instavel": 0, "conhecida": 0 },
+    "t7-fluxo-publico.spec.ts": { "passou": 6, "falhou": 0, "pulou": 0, "instavel": 0, "conhecida": 0 },
+    "t999-sempre-vermelho.spec.ts": { "passou": 0, "falhou": 2, "pulou": 0, "instavel": 0, "conhecida": 0 },
+    "t85-conferencia-entrada-saida.spec.ts": { "passou": 3, "falhou": 0, "pulou": 2, "instavel": 1, "conhecida": 0 }
+  },
+  "falhas": []
+}

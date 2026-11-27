@@ -12,6 +12,10 @@ for (const largura of [390, 1280]) {
     const tem = page.getByTestId("comodidades-tem");
     await tem.scrollIntoViewIfNeeded();
     await expect(tem).toBeVisible();
+    // E357: o "Tem" é agrupado por categoria (título com ícone + itens com ícone em grade par), não uma lista plana.
+    const categorias = tem.getByTestId("comodidades-categoria");
+    expect(await categorias.count(), "ao menos uma categoria no Tem").toBeGreaterThan(0);
+    for (let i = 0; i < (await categorias.count()); i++) await expect(categorias.nth(i).locator("svg")).toHaveCount(1);
     const nao = page.getByTestId("comodidades-nao-tem");
     if ((await nao.count()) > 0) {
       await expect(nao).toContainText("Precisa de algo da lista? Pergunte ao proprietário antes de pedir.");

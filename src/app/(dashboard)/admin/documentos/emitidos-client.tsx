@@ -6,6 +6,7 @@ import { Panel } from "@/components/dashboard/primitives";
 import { Button } from "@/components/ui/button";
 import { CampoDataFormulario } from "@/components/ui/campo-data";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { AVISO_REENVIO, type FiltrosEmitidos } from "@/lib/fiscal/emitidos";
 import { reenviarEmitido, type DocumentoEmitido } from "@/lib/data/emitidos-actions";
@@ -16,7 +17,7 @@ const campo = "h-10 rounded-lg border border-line bg-white px-3 text-sm text-ink
  * L2-B item 14 — aba "Emitidos": documentos do registro com número, tipo, destinatário mascarado, data e status do
  * envio; filtros por tipo e período (na URL); "Reenviar e-mail" pede confirmação e manda o MESMO documento.
  */
-export function EmitidosAdmin({ itens, filtros, tipos }: { itens: DocumentoEmitido[]; filtros: FiltrosEmitidos; tipos: { valor: string; rotulo: string }[] }) {
+export function EmitidosAdmin({ itens, filtros, tipos, soLeitura = false }: { itens: DocumentoEmitido[]; filtros: FiltrosEmitidos; tipos: { valor: string; rotulo: string }[]; soLeitura?: boolean }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -79,7 +80,8 @@ export function EmitidosAdmin({ itens, filtros, tipos }: { itens: DocumentoEmiti
                   {d.reenvios ? ` · reenviado ${d.reenvios}×` : ""}
                 </span>
               </span>
-              {d.envio.podeReenviar && (
+              {d.envio.podeReenviar && soLeitura && <SoLeituraQa />}
+              {d.envio.podeReenviar && !soLeitura && (
                 <ConfirmarNaPagina
                   aviso={AVISO_REENVIO}
                   confirmar="Reenviar"

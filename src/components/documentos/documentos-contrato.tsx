@@ -1,6 +1,7 @@
 "use client";
 
 import { CampoData } from "@/components/ui/campo-data";
+import { AnularRegistro } from "@/components/anulacao/anular-registro";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,6 +13,7 @@ import type { AcertoView, DocumentoView, ReciboView } from "@/lib/data/documento
 import { registrarDevolucaoCaucao, responderDevolucaoCaucao } from "@/lib/data/documentos-actions";
 import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-actions";
 import { statusHumano } from "@/lib/status-humano";
+import { textoComponentes } from "@/lib/pagamento-componentes";
 
 /**
  * Documentos do contrato e devolução da caução — mesmas peças em "Contratos &
@@ -21,7 +23,18 @@ import { statusHumano } from "@/lib/status-humano";
 
 const input = "mt-1 w-full rounded-lg border border-sage-200 bg-white px-2 py-2 text-sm text-ink outline-none focus:border-sage";
 
-export function ListaDocumentos({ documentos, recibos = [] }: { documentos: DocumentoView[]; recibos?: ReciboView[] }) {
+/** Estados vazios: a leitura dos documentos e da caução falhou — nunca dizer "nenhum documento" nem caução 0. */
+export const MSG_DOCUMENTOS_NAO_CARREGARAM = "Não foi possível carregar os documentos e a caução deste contrato agora. Recarregue a página para tentar de novo.";
+
+export function AvisoDocumentosFalhou() {
+  return (
+    <p role="alert" className="mt-4 border-t border-sage-200 pt-3 text-sm text-amber-900" data-testid="documentos-falhou">
+      {MSG_DOCUMENTOS_NAO_CARREGARAM}
+    </p>
+  );
+}
+
+export function ListaDocumentos({ documentos, recibos = [], anular = false }: { documentos: DocumentoView[]; recibos?: ReciboView[]; /** E1229: o dono pede a anulação de um registro já confirmado. */ anular?: boolean }) {
   if (documentos.length === 0 && recibos.length === 0) return null;
   return (
     <div className="mt-4 border-t border-sage-200 pt-3" data-testid="documentos-contrato">
@@ -37,6 +50,7 @@ export function ListaDocumentos({ documentos, recibos = [] }: { documentos: Docu
                 {r.numero && <span className="text-muted"> · {r.numero}</span>}
                 {r.anulado && <SeloAnulado motivo={r.anulado} />}
               </span>
+              {anular && !r.anulado && <AnularRegistro pagamentoId={r.pagamentoId} confirmado />}
               {r.documentoId ? (
                 <a href={`/api/documentos/${r.documentoId}`} className="inline-flex items-center gap-1 text-xs font-medium text-forest underline" data-testid="baixar-recibo">
                   <Download className="h-3.5 w-3.5" /> Baixar recibo (PDF)
@@ -236,6 +250,12 @@ export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[
           <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="text-ink">
               {p.rotulo} · pago em {dataBR(p.dataPagamento)}, por {FORMA[p.forma] ?? p.forma}
+              {/* E1072: o que o registro cobre além do aluguel, para o morador confirmar o total que pagou. */}
+              {p.componentes && textoComponentes(p.componentes) && (
+                <span className="block text-xs text-muted" data-testid="pagamento-componentes">
+                  Este registro: {textoComponentes(p.componentes)}.
+                </span>
+              )}
             </span>
             <Button
               size="sm"

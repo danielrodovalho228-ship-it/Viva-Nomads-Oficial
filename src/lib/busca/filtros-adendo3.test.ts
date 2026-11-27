@@ -132,13 +132,15 @@ test("E40: seção de velocidade ausente sem medição (e ?internet= ignorado); 
   assert.deepEqual(m1.sort((a, b) => a - b), [90, 320], "a medição vencida (500) não conta");
   assert.equal(secaoInternetVisivel(m1), true);
   assert.deepEqual(faixasInternet(m1), [50, 100, 300]);
-  assert.deepEqual([50, 100, 300].map((v) => ids({ ...V, internetMin: v })), [["a", "d"], ["a"], ["a"]]);
+  // Asserção alterada (E1078, ORDEM-382 (a)): a faixa é de VELOCIDADE — o "b" (200 informados, sem medição) entra.
+  assert.deepEqual([50, 100, 300].map((v) => ids({ ...V, internetMin: v })), [["a", "b", "d"], ["a", "b"], ["a"]]);
   // Só UMA medição na base já mostra a seção.
   assert.equal(secaoInternetVisivel(medicoesDaBusca([MASSA[3]], AGORA)), true);
   // Fonte: a /buscar zera o filtro da URL sem medição, e a folha não mostra a seção.
   const busca = ler("app/(public)/buscar/search-client.tsx");
-  assert.match(busca, /if \(!secaoInternetVisivel\(medicoes\) && \(internetMin > 0 \|\| soInternetMedida\)\) \{\s+setInternetMin\(0\);\s+setSoInternetMedida\(false\);/);
-  assert.match(ler("components/busca/painel-filtros-celular.tsx"), /const internetVisivel = secaoInternetVisivel\(medicoes\);/);
+  // Asserção alterada (E1078, ORDEM-382 (a)): a seção depende da VELOCIDADE (medida ou informada); o estrito, da medição.
+  assert.match(busca, /if \(!secaoInternetVisivel\(velocidades\) && \(internetMin > 0 \|\| soInternetMedida\)\) \{\s+setInternetMin\(0\);\s+setSoInternetMedida\(false\);/);
+  assert.match(ler("components/busca/painel-filtros-celular.tsx"), /const internetVisivel = secaoInternetVisivel\(velocidades \?\? medicoes\);/);
 });
 
 test("E41: caução e estadia filtram de verdade (sem caução; mínimo de 120 dias; máximo de 60)", () => {

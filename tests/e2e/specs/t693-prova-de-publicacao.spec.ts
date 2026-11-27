@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, fotosReais, novaSenha, novoSufixo, pngDeTeste, aceitarTermoIaSePreciso } from "../fixtures/laboratorio";
-import { abrirSecoesPasso10, continuarAte, noPasso } from "../fixtures/cadastro";
+import { abrirSecoesPasso10, continuarAte, noPasso, preencherFichaDentro } from "../fixtures/cadastro";
 import { emDiasBR, isoParaBR, reais } from "../fixtures/rascunho-cadastro";
 
 /*
@@ -118,6 +118,9 @@ test.describe("T693 — prova de publicação: os 10 passos, publicar e a págin
     await expect(semCameras).toHaveAttribute("aria-checked", "true");
     await page.getByTestId("conforto-marcar-todos").click();
     await expect(page.getByTestId("conforto-faltam")).toHaveText("Todos os itens confirmados.");
+    // E744 (tabela da Fable #3832): E660 — a ficha "O que tem dentro" (cama e ar de cada quarto, enxoval e cozinha) é
+    // obrigatória para publicar; o spec prova o assistente inteiro, então ela é preenchida pela tela.
+    await preencherFichaDentro(page);
     await continuar.click();
     // 6. Regras: tipo de entrada (obrigatório para publicar)
     await noPasso(page, "regras");

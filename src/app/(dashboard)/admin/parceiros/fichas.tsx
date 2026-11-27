@@ -7,7 +7,7 @@ import { Panel } from "@/components/dashboard/primitives";
 import { SeloTeste } from "@/components/admin/selo-teste";
 import { Button } from "@/components/ui/button";
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
-import { checklistCompleto, ITENS_CHECKLIST, MOTIVOS_RECUSA_PARCERIA, rotuloCategoria } from "@/lib/parceiros/regras";
+import { checklistCompleto, ITENS_CHECKLIST, MODELOS_RECUSA_PARCERIA, PENDENCIA_CNPJ, parceiroPodeReceberServico, rotuloCategoria } from "@/lib/parceiros/regras";
 import { formatarDocumento } from "@/lib/documento-pessoa";
 import { estadoDaFicha, type EstadoFicha } from "@/lib/parceiros/fila-pendentes";
 import { cn } from "@/lib/utils";
@@ -47,6 +47,8 @@ export interface Ficha {
   dadosCategoria: Record<string, string>;
   status: string;
   motivoRecusa: string | null;
+  /** E577: quando o pedido foi decidido (aprovado ou recusado). */
+  decididoEm: string | null;
   checklist: Record<string, unknown>;
   origem: string;
   criadoEm: string;
@@ -98,12 +100,14 @@ const SELO_ESTADO: Record<EstadoFicha["tipo"], string> = {
   incompleto: "border-red-200 bg-white text-red-700",
   checklist: "border-amber-200 bg-white text-amber-800",
   pronto: "border-forest/30 bg-white text-forest",
+  recusada: "border-red-200 bg-white text-red-700",
 };
 const BORDA_ESTADO: Record<EstadoFicha["tipo"], string> = {
   aguardando: "border-l-line",
   incompleto: "border-l-red-500",
   checklist: "border-l-amber-500",
   pronto: "border-l-forest",
+  recusada: "border-l-red-500",
 };
 
 export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura?: boolean }) {
@@ -112,6 +116,8 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
   const [motivo, setMotivo] = useState("");
   const completo = checklistCompleto(check);
   const aguardando = f.status === "aguardando_email";
+  // E577: pedido recusado é só leitura — sem checklist, sem Aprovar/Recusar (o servidor já recusa os dois).
+  const recusada = f.status === "recusada";
   const estado = estadoDaFicha({ status: f.status, email: f.email, categorias: f.categorias, cidades: f.cidades, documento: f.documento, checklist: check });
   // Prompt 36, item 4: cada item mostra "Salvando…", "Salvo" ou o erro com "Tentar de novo".
   const router = useRouter();
@@ -154,6 +160,12 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         </span>
       </div>
 
+      {/* E648: cadastro com CPF segue visível aqui, mas não recebe serviço até apresentar CNPJ. */}
+      {f.tipoPessoa !== null && !parceiroPodeReceberServico(f.tipoPessoa) && (
+        <p className="mt-3 rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink" data-testid="ficha-sem-cnpj">
+          Sem CNPJ: {PENDENCIA_CNPJ.charAt(0).toLowerCase()}{PENDENCIA_CNPJ.slice(1)}.
+        </p>
+      )}
       <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
         <div>
           <dt className="text-muted">Categorias</dt>
@@ -199,7 +211,17 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         )}
       </dl>
 
-      {!aguardando && (
+      {recusada && (
+        <div className="mt-4 rounded-xl border border-red-200 bg-white p-3 text-sm" data-testid="ficha-recusada">
+          <p className="font-semibold text-ink">Pedido recusado{f.decididoEm ? ` em ${dataHora(f.decididoEm)}` : ""}.</p>
+          <p className="mt-1 text-ink" data-testid="ficha-recusada-motivo">
+            Motivo: {f.motivoRecusa?.trim() || "não registrado"}
+          </p>
+          <p className="mt-1 text-muted">Pedido já decidido: não há o que aprovar ou recusar aqui. Para reconsiderar, a pessoa faz um novo pedido.</p>
+        </div>
+      )}
+
+      {!aguardando && !recusada && (
         <fieldset disabled={pendente || salvandoChecklist} className="mt-4 rounded-xl border border-line p-3" data-testid="ficha-checklist">
           <legend className="px-1 text-sm font-semibold text-ink">Checklist</legend>
           <p className="mb-2 text-sm text-ink" data-testid="ficha-identidade">
@@ -240,6 +262,8 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         </fieldset>
       )}
 
+      {/* E577: pedido recusado não tem ação (o servidor recusa Aprovar e Recusar). */}
+      {!recusada && (<>
       {soLeitura ? <SoLeituraQa className="mt-4" /> : (
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start">
         {!aguardando && (
@@ -256,14 +280,34 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         )}
         <div className="min-w-0 flex-1 space-y-2">
           <label htmlFor={`motivo-${f.id}`} className="block text-sm font-semibold text-ink">Motivo da recusa (obrigatório)</label>
-          <select aria-label="Modelos de motivo" className="w-full rounded-lg border border-sage-200 bg-white px-3 py-2 text-sm" value="" onChange={(e) => e.target.value && setMotivo(e.target.value)} data-testid="ficha-modelo-recusa">
-            <option value="">Escolher um modelo…</option>
-            {MOTIVOS_RECUSA_PARCERIA.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
+          {/* E350: os modelos ficam na própria tela (texto inteiro, um por item do checklist + pedido incompleto) — o seletor
+              nativo abria no celular uma lista longa por cima da tela, com os textos cortados. Escolher preenche o motivo,
+              que continua editável. */}
+          <fieldset className="space-y-2" data-testid="ficha-modelo-recusa">
+            <legend className="mb-1 text-xs text-muted">Escolha um modelo ou escreva o motivo:</legend>
+            {MODELOS_RECUSA_PARCERIA.map((m) => (
+              <label
+                key={m.chave}
+                className={cn(
+                  "flex min-h-11 cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm",
+                  motivo === m.texto ? "border-forest bg-sage-100" : "border-sage-200 bg-white hover:border-forest",
+                )}
+              >
+                <input
+                  type="radio"
+                  name={`modelo-recusa-${f.id}`}
+                  className="mt-1"
+                  checked={motivo === m.texto}
+                  onChange={() => setMotivo(m.texto)}
+                  data-testid={`ficha-modelo-recusa-${m.chave}`}
+                />
+                <span className="min-w-0">
+                  <span className="block font-semibold text-ink">{m.rotulo}</span>
+                  <span className="block text-muted">{m.texto}</span>
+                </span>
+              </label>
             ))}
-          </select>
+          </fieldset>
           <textarea id={`motivo-${f.id}`} rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="w-full rounded-lg border border-sage-200 px-3 py-2 text-sm" data-testid="ficha-motivo" />
           <ConfirmarNaPagina
             aviso="Recusar o pedido? A pessoa recebe o motivo por e-mail e continua com a conta normal."
@@ -278,7 +322,8 @@ export function FichaSolicitacao({ f, soLeitura = false }: { f: Ficha; soLeitura
         </div>
       </div>
       )}
-      {!completo && !aguardando && !soLeitura && <p className="mt-2 text-xs text-muted">Aprovar fica disponível com o checklist completo.</p>}
+      </>)}
+      {!completo && !aguardando && !recusada && !soLeitura && <p className="mt-2 text-xs text-muted">Aprovar fica disponível com o checklist completo.</p>}
       {aviso}
     </Panel>
   );
@@ -315,7 +360,7 @@ export function LinhaAtiva({
   soLeitura = false,
 }: {
   soLeitura?: boolean;
-  p: { id: string; slug: string; nome: string; categorias: string[]; cidades: string[]; status: string; teste: boolean; identidade: string | null; cartao: { gerados: number; pedidos: number } };
+  p: { id: string; slug: string; nome: string; categorias: string[]; cidades: string[]; status: string; teste: boolean; identidade: string | null; documento: { tipo: string; texto: string }; cartao: { gerados: number; pedidos: number } };
 }) {
   const { rodar, pendente, aviso } = useAcao();
   const [motivo, setMotivo] = useState("");
@@ -332,6 +377,9 @@ export function LinhaAtiva({
             {p.teste && " · fora da busca pública (conta de teste)"}
           </p>
           {p.identidade && <p className="text-xs text-muted">Identidade: {p.identidade}</p>}
+          <p className="text-xs text-muted" data-testid="linha-ativa-documento">
+            {p.documento.tipo}: <span className="font-mono">{p.documento.texto}</span>
+          </p>
           <p className="text-xs text-muted" data-testid="linha-ativa-cartao">
             Cartões gerados: <strong data-testid="linha-cartoes-gerados">{p.cartao.gerados}</strong> · Pedidos vindos de cartão:{" "}
             <strong data-testid="linha-pedidos-cartao">{p.cartao.pedidos}</strong>
@@ -378,7 +426,7 @@ function EstadoDoItem({ chave, estado, aoTentar }: { chave: string; estado: Esta
   if (estado.fase === "salvando")
     return (
       <span className="ml-6 inline-flex items-center gap-2 text-xs text-muted" role="status" data-testid={`check-estado-${chave}`} data-fase="salvando">
-        <span className="h-3 w-3 animate-spin rounded-full border-2 border-sage-300 border-t-forest" aria-hidden />
+        <span className="h-3 w-3 animate-spin rounded-full border-2 border-sage-200 border-t-forest" aria-hidden />
         {TEXTO_SALVANDO}
       </span>
     );

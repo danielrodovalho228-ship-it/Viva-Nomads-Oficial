@@ -209,3 +209,17 @@ export function destinosDoBloco<T extends DestinoComPonto>(
     .slice(0, max)
     .map(({ d }) => d);
 }
+
+/**
+ * E523 — velocidade MÁXIMA plausível de cada modo (km/h), para o filtro "até N min" sem tempo de rota. A rota nunca é
+ * mais curta que a linha reta: se nem a essa velocidade a linha reta cabe no tempo, o imóvel está certamente fora.
+ * Generosas de propósito (só tiram quem não tem como chegar; quem pode chegar fica até o tempo de rota dizer).
+ */
+export const VELOCIDADE_MAX_KMH: Record<ModoRota, number> = { a_pe: 6, bicicleta: 20, carro: 80, onibus: 60 };
+
+/** O imóvel está, com certeza, além de `ateMin` minutos neste modo (pela linha reta)? Sem distância: não decide. */
+export function foraDoTempoPelaReta(metros: number | null | undefined, modo: ModoRota, ateMin: number): boolean {
+  if (metros == null || !Number.isFinite(metros) || !(ateMin > 0)) return false;
+  const alcanceMetros = (VELOCIDADE_MAX_KMH[modo] * 1000 * ateMin) / 60;
+  return metros > alcanceMetros;
+}

@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store";
+import { useModoAtual, useSessaoServidor, useUsuarioAtual } from "@/components/auth/sessao-servidor-contexto";
 import { useIsNative } from "@/lib/use-native";
 import { isFlowRoute, abasDoPapel, papelDaBarra, type MobileTab, type PapelBarra } from "@/lib/nav-mobile";
 import { useParceiroAprovado, usePreferenciaParceiro } from "@/lib/use-papel-barra";
 import { ROTA_CONTADORES, normalizarContadores } from "@/lib/painel/contadores";
 import { cn } from "@/lib/utils";
-import { ancorasDasAbas } from "@/config/abas-painel";
+import { ancoraAtiva, ancorasDasAbas } from "@/config/abas-painel";
 import { useSecaoAncora } from "@/components/layout/use-secao-ancora";
 
 const ANCORAS_PARCEIRO = ancorasDasAbas(abasDoPapel("parceiro", { comContrato: false }));
@@ -34,8 +35,14 @@ export function MobileTabBar({
 }) {
   const pathname = usePathname();
   const native = useIsNative();
-  const user = useAuthStore((s) => s.user);
-  const activeMode = useAuthStore((s) => s.activeMode);
+  // E793 (A4): no painel com a sessão do servidor, usuário e modo do quadro (1º quadro = servidor); sem ela, o store.
+  const sessao = useSessaoServidor();
+  const usuarioDoQuadro = useUsuarioAtual();
+  const modoDoQuadro = useModoAtual();
+  const storeUser = useAuthStore((s) => s.user);
+  const storeMode = useAuthStore((s) => s.activeMode);
+  const user = sessao ? usuarioDoQuadro : storeUser;
+  const activeMode = sessao ? modoDoQuadro : storeMode;
   const parceiroAprovado = useParceiroAprovado();
   const preferenciaParceiro = usePreferenciaParceiro();
 
@@ -55,8 +62,9 @@ export function MobileTabBar({
     const [rota, ancora] = tab.href.split("#");
     // As subabas da aba (ex.: Candidaturas em Pedidos) também a acendem; "/dashboard" só exato.
     if ((tab.ativoEm ?? []).some((h) => (h === "/dashboard" ? pathname === h : pathname === h || pathname.startsWith(h + "/")))) return true;
-    // Abas do parceiro são âncoras da mesma página. E340: acende a da seção visível (antes, sempre Pedidos).
-    if (ancora) return pathname === rota && ancora === (secao ?? "pedidos");
+    // Abas do parceiro são âncoras da mesma página. E340/E460: a da área atual — a seção visível na raiz do painel
+    // (sem seção, Início), Início nas subpáginas do painel (avaliação); a mesma regra do topo do computador.
+    if (ancora) return ancoraAtiva(tabs, pathname, secao) === ancora;
     if (pathname === rota) return true;
     // Abas "raiz" não acendem em sub-rotas (senão Início ficaria sempre ativo).
     if (rota === "/" || rota === "/dashboard") return false;

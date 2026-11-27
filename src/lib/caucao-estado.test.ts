@@ -58,7 +58,8 @@ test("a mesma caução nas duas telas (e na do inquilino): todas leem estadoCauc
   // PROP-5: a Caução lista por bloco (lib/contratos/area-dono.ts), com o status de estadoCaucao e a devolução do
   // estado do contrato (c.caucao, que já traz o acerto).
   const garantias = ler("src/app/(dashboard)/dashboard/garantias/garantias-client.tsx");
-  assert.match(garantias, /linhasCaucaoPorBloco\(demoOn \? demoContratos\(\) : contratos\)/);
+  // E980 (Gerente, 16/11/2026): os contratos de exemplo chegam sob demanda (useExemplos); a fonte real segue `contratos`.
+  assert.match(garantias, /linhasCaucaoPorBloco\(demoOn \? demoContratos\(exemplos\?\.DEMO_CONTRACTS \?\? \[\]\) : contratos\)/);
   assert.doesNotMatch(garantias, /caucaoStatus === "pendente"/);
   assert.match(garantias, /\{linha\.status\}/);
   const area = ler("src/lib/contratos/area-dono.ts");

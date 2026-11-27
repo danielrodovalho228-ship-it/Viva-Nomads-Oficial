@@ -17,10 +17,12 @@ test("E262 (b): a prévia do Passo 10 ('Ver no tamanho real') mostra os destaque
 test("E262 (a): a galeria aberta pinta na hora com a versão da miniatura (mesmo sizes) e pede a grande com prioridade", () => {
   const g = ler("components/property-gallery.tsx");
   const lightbox = g.slice(g.indexOf("function Lightbox("));
-  assert.match(lightbox, /sizes=\{SIZES_MINIATURA\}/);
+  // E987: a de baixo usa o sizes do quadro de onde a foto veio (miniatura, quadro pequeno ou coluna do mosaico).
+  assert.match(lightbox, /sizes=\{SIZES_POR_TIPO\[tipoDoQuadro\(index, photos\.length, noMosaico\)\]\}/);
+  assert.match(g, /SIZES_POR_TIPO: Record<TipoQuadro, string> = \{ miniatura: SIZES_MINIATURA, pequena: SIZES_MOSAICO_PEQUENA, coluna: SIZES_MOSAICO_COLUNA \}/);
   assert.match(lightbox, /sizes="100vw" priority/);
-  // As miniaturas do mosaico/carrossel usam o mesmo sizes — senão a URL muda e a de baixo não está no cache.
-  assert.ok((g.match(/sizes=\{SIZES_MINIATURA\}/g) ?? []).length >= 3);
+  // As miniaturas do carrossel usam o mesmo sizes — senão a URL muda e a de baixo não está no cache.
+  assert.ok((g.match(/sizes=\{SIZES_MINIATURA\}/g) ?? []).length >= 1); // E768: as fotos pequenas do mosaico têm sizes próprio; E987: a galeria aberta usa SIZES_POR_TIPO
   assert.doesNotMatch(g, /sizes="\(max-width: 768px\) 100vw, 50vw"/);
 });
 

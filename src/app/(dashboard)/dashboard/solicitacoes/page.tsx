@@ -20,7 +20,7 @@ import {
 } from "@/lib/service-orders";
 import { minhasSolicitacoes, type ContratoManutencao } from "@/lib/data/manutencao-actions";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
-import { MSG_SEM_CONTRATO_MANUTENCAO, prazoDaOrdem } from "@/lib/manutencao-solicitacoes";
+import { MSG_BOTAO_SEM_CONTRATO, MSG_SEM_CONTRATO_MANUTENCAO, prazoDaOrdem } from "@/lib/manutencao-solicitacoes";
 import { CartaoOrdem, SeletorPrioridade } from "@/components/manutencao/cartao-ordem";
 
 export default function ServiceOrdersPage() {
@@ -218,9 +218,22 @@ function TenantView({
         title="Minhas solicitações"
         subtitle="Abra e acompanhe chamados de manutenção do seu imóvel."
         action={
-          <Button variant="secondary" disabled={semContrato} onClick={() => setOpenForm((v) => !v)}>
-            <Plus className="h-4 w-4" /> Abrir solicitação
-          </Button>
+          // E485: desligado, o botão diz por quê — a linha logo abaixo e o aria-describedby (leitor de tela).
+          <div className="flex flex-col items-end gap-1">
+            <Button
+              variant="secondary"
+              disabled={semContrato}
+              aria-describedby={semContrato ? "abrir-solicitacao-motivo" : undefined}
+              onClick={() => setOpenForm((v) => !v)}
+            >
+              <Plus className="h-4 w-4" /> Abrir solicitação
+            </Button>
+            {semContrato && (
+              <span id="abrir-solicitacao-motivo" data-testid="abrir-solicitacao-motivo" className="text-xs text-muted">
+                {MSG_BOTAO_SEM_CONTRATO}
+              </span>
+            )}
+          </div>
         }
       />
 

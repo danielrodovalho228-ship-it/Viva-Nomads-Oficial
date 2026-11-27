@@ -1,9 +1,17 @@
 "use server";
 
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
+import { erroTituloNivel, termoDeNivelDivergente } from "@/lib/anuncio/titulo-nivel";
+import type { NivelOuAdequacao } from "@/config/niveis";
+import { diasDaCandidaturaParaContrato } from "@/lib/contrato-prazo-dias";
+import { cepValido } from "@/lib/proximidades/osm";
+import { camposDaCandidatura, MSG_CANDIDATURA_JA_RESPONDIDA, MSG_CANDIDATURA_NAO_ATUALIZOU } from "@/lib/candidatura/campos";
 import { AVISO_OFENSA, termoOfensivo } from "@/lib/messages/ofensas";
 import { registrarOfensa } from "@/lib/messages/ofensas-servidor";
 import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { idDeRascunhoValido, rascunhoDaConta, type MotivoRascunhoFechado } from "@/lib/anuncio/rascunho-nao-encontrado";
+import { rascunhoCarimbado, rascunhoComHoraConhecida } from "@/lib/anuncio/salvo-fantasma";
 import { verificarLinkVideo } from "@/lib/data/video-link";
 import { gravarProximidades, proximidadesParaGravar, type EnderecoDoAnuncio } from "@/lib/data/proximidades-gravar";
 import { MSG_DISPONIVEL_ATE_ANTES, erroJanelaDisponivel, periodoDisponivelValido } from "@/lib/anuncio/periodo-disponivel";
@@ -22,6 +30,7 @@ import { revalidarAnuncio } from "@/lib/anuncio/revalidar";
 import { createClient } from "@/lib/supabase/server";
 import { dentroDoLimite, HORA, DIA as DIA_SEGUNDOS } from "@/lib/limites";
 import { textoEmail, textoPlano } from "@/lib/notifications/texto-seguro";
+import { corpoMensagemNova } from "@/lib/notifications/corpo-e267-restante";
 import { registrarIntencaoDeAnunciar } from "@/lib/data/intencao-servidor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { registrarAtivacao } from "@/lib/ativacao/servidor";
@@ -38,7 +47,7 @@ import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
-import { aberturaContratoPronto, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
+import { aberturaContratoPronto, contaDoContrato, contasDoContrato, linhasContrato, PROXIMO_PASSO_CONTRATO_PRONTO } from "@/lib/notifications/dados-negociacao";
 import { MSG_PAUSAR_FALHOU, MSG_REATIVAR_FALHOU, donoPodeReativar, textoDaPausa, type EmAndamento } from "@/lib/anuncio/pausa";
 import type { SubscriptionPlan } from "@/lib/store";
 import { buildLeadNotification, LEAD_KIND_MSG, type LeadKind } from "@/lib/leads";
@@ -47,6 +56,9 @@ import { linkCandidaturaDono, linkCandidaturaMorador } from "@/lib/notifications
 import { amenityRows } from "@/lib/amenities";
 import { fotosDoDono, rascunhoSemFotosApagadas, urlsDoRascunho } from "@/lib/fotos-anuncio";
 import { taxaDoContrato } from "@/config/planos";
+import { taxaDaEstadia } from "@/lib/fechamento/proposta-do-fechamento";
+import { tituloAvisoCandidatura } from "@/lib/notifications/avisos";
+import { primeiroNome } from "@/lib/display-name";
 import { motivoBloqueioContrato } from "@/lib/contrato-trava";
 import { lerDocumento } from "@/lib/data/documento-servidor";
 import { docsInquilinoCompletos } from "@/lib/data/documentos-inquilino-servidor";
@@ -62,6 +74,7 @@ import { getPropertyForOwner } from "@/lib/data/properties";
 import { colunaAirbnb } from "@/lib/preco-justo";
 import { colunasPrivacidade, type TipoAcesso } from "@/lib/anuncio/privacidade";
 import { prontidaoDoImovel, fatosDosImoveis } from "@/lib/anuncio/prontidao-servidor";
+import { elegibilidadeDoRascunho } from "@/lib/anuncio/requisitos-passo10";
 import { prontidaoAnuncio } from "@/lib/anuncio/prontidao";
 import { chegadaDoRascunho, colunasChegadaEPedido, type EntradaChegadaEPedido } from "@/lib/anuncio/chegada-e-pedido";
 import { atribuirLead, garantirCartao } from "@/lib/data/cartoes-servidor";
@@ -75,26 +88,33 @@ import { SITE_URL } from "@/lib/site";
 import type { Property, Proximity } from "@/lib/types";
 import { hojeBR } from "@/lib/utils";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import {
   resumoContrato,
+  resumoContratoEmDias,
   encadearDatas,
-  DIAS_POR_MES,
   MESES_POR_BLOCO_PADRAO,
   PRAZO_MIN_MESES,
   PRAZO_MAX_MESES,
   PRAZO_MAX_DIAS,
   type BlocoComDatas,
 } from "@/lib/contrato-blocos";
+import { diasMaxEstadiaVigente, diasValidos } from "@/lib/estadia-em-dias";
 import { erroRegrasPets, normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
+import { normalizarFicha, type FichaDentro } from "@/lib/ficha-dentro/ficha-dentro";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { fumoParaSmokingAllowed, normalizarRegrasCasa } from "@/lib/anuncio/regras-casa";
 import { normalizarDetalhes } from "@/lib/anuncio/detalhes-anuncio";
 import { normalizarLimites, normalizarNegociacao } from "@/lib/anuncio/negociacao";
 import { mbpsValido } from "@/lib/anuncio/sugestoes-cadastro";
+import { urlsDeFotosDoRascunho } from "@/lib/minimizacao/fotos-rascunho";
+import { excluirRascunhoDoDono } from "@/lib/data/excluir-rascunho-servidor";
 import { apagarFotosDoAnuncio, arquivosDoDono, ligarHashesAoImovel } from "@/lib/minimizacao/fotos-anuncio";
 import { videoTourPermitido } from "@/lib/video-tour";
 import { validarGarantia, type GarantiaContrato } from "@/lib/guarantees";
-import { marcarPropostaEmContrato, propostaAcordadaDoLead } from "@/lib/data/propostas-servidor";
+import { PROPOSTA_FORA_DO_FECHAMENTO, marcarPropostaEmContrato, preAceiteExpiradoDoLead, propostaDoFechamentoDoLead } from "@/lib/data/propostas-servidor";
+import { contratoDoFechamentoDoLead } from "@/lib/data/fechamento-servidor";
+import { MSG_PRE_ACEITE_EXPIRADO } from "@/lib/data/pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR, taxaDoLeadDoDono } from "@/lib/data/taxa-dono-servidor";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { ERRO_SOBREPOSICAO_PG } from "@/lib/contrato-periodo";
@@ -114,6 +134,7 @@ import {
   CAMPOS_FIXOS_DA_FILA,
 } from "@/lib/documento/fila-envio";
 import { estadoDocumentos, linhasParaLigar } from "@/lib/documento/vigente";
+import { urlDaConversa } from "@/lib/notifications/url-conversa";
 
 type ActionResult = { ok: boolean; demo?: boolean; id?: string; error?: string; /** E445: termo ofensivo — a tela pede confirmação. */ ofensa?: boolean };
 
@@ -363,7 +384,7 @@ export async function carregarQualificacao(
   let q = supabase.from("qualification_checklists").select("*").eq("owner_id", user.id);
   q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
   const { data } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
-  if (!data) return null;
+  if (!data) return propertyId ? qualificacaoDoRascunhoSalvo(supabase, user.id, propertyId) : null;
   const temDocumento = !!data.document_path;
   const form = (data.formulario ?? null) as { elig?: Partial<EligibilityState>; quality?: Partial<QualityState> } | null;
   const condo = data.condo_allows as string | null;
@@ -381,6 +402,29 @@ export async function carregarQualificacao(
   const quality: Partial<QualityState> | null =
     form?.quality ?? (data.internet_tier ? { internetTier: data.internet_tier as QualityState["internetTier"] } : null);
   return { elig, quality, temDocumento };
+}
+
+/**
+ * E506: o rascunho ainda não tem linha em qualification_checklists (ela é gravada ao publicar) — a qualificação dele está
+ * nas declarações do Passo 10 (draft_data). Sem isto, /qualificar abria "0/6 requisitos" num rascunho "100% pronto".
+ * Mesma regra do assistente e do Início (elegibilidadeDoRascunho). Só rascunho do PRÓPRIO dono; falha → null (vazio).
+ */
+async function qualificacaoDoRascunhoSalvo(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  ownerId: string,
+  propertyId: string
+): Promise<{ elig: EligibilityState; quality: Partial<QualityState> | null; temDocumento: boolean } | null> {
+  const { data: prop } = await supabase.from("properties").select("id").eq("id", propertyId).eq("owner_id", ownerId).eq("status", "draft").maybeSingle();
+  if (!prop) return null;
+  const [{ data: priv }, fatosMapa] = await Promise.all([
+    supabase.rpc("property_private_details", { prop_id: propertyId }),
+    fatosDosImoveis(supabase, ownerId, [propertyId]).catch(() => null),
+  ]);
+  const fatos = fatosMapa?.get(propertyId);
+  const linha = Array.isArray(priv) ? priv[0] : priv;
+  const elig = fatos ? elegibilidadeDoRascunho((linha as { draft_data?: unknown } | null)?.draft_data, fatos) : null;
+  if (!elig || !fatos) return null;
+  return { elig, quality: null, temDocumento: fatos.documento !== "none" };
 }
 
 /** Título e endereço de um imóvel do PRÓPRIO dono (cabeçalho do /qualificar). */
@@ -428,6 +472,15 @@ async function qualificacaoDoImovel(
   q = propertyId ? q.eq("property_id", propertyId) : q.is("property_id", null);
   const { data } = await q.order("created_at", { ascending: false }).limit(200);
   return estadoDocumentos((data ?? []) as LinhaQualificacaoDoc[]);
+}
+
+/** E593: o CEP válido do rascunho (draft_data.cep), lido pelo servidor antes de publicar; null se não houver. */
+async function cepDoRascunhoDoImovel(id: string): Promise<string | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  const { data } = await admin.from("properties").select("draft_data").eq("id", id).maybeSingle(); // consistency-ignore: E593 — só o servidor lê o CEP do PRÓPRIO rascunho (updateProperty já conferiu o dono); nunca vai à resposta
+  const d = ((data as { draft_data: Record<string, unknown> | null } | null)?.draft_data ?? {}) as Record<string, unknown>;
+  return cepValido(typeof d.cep === "string" ? d.cep : null);
 }
 
 /** Cria um imóvel (Fase 5), exigindo um checklist aprovado. */
@@ -500,6 +553,8 @@ export interface PropertyInput {
   petsAllowed?: boolean;
   /** Regras de pets do proprietário (validadas no servidor; requer migração 0119). */
   petsRegras?: unknown;
+  /** E660: ficha do que tem dentro (camas/ar por quarto, enxoval, cozinha); normalizada no servidor (0316). */
+  fichaDentro?: unknown;
   /** Pacote de limpeza durante a estadia; validado no servidor (0144). */
   limpezaEstadia?: unknown;
   /** CAMPOS-1: regras da casa estruturadas (silêncio, fumo, festas, visitas); validadas no servidor (0233). */
@@ -536,6 +591,14 @@ export interface PropertyInput {
   /** Proximidades manuais (nome + distância digitados). */
   /** PERTO-B: lugares do OSM (origem "osm", conferidos no servidor pela busca do CEP) e manuais (com o endereço do lugar). */
   proximities?: Proximity[];
+}
+
+/** E660: grava a ficha do que tem dentro. Sem ficha no envio (edição antiga) = não mexe na que já existe. */
+async function gravarFichaDentro(supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>, ownerId: string, propertyId: string, bruto: unknown) {
+  if (bruto === undefined) return;
+  const ficha = normalizarFicha(bruto);
+  const { error } = await supabase.from("properties").update({ ficha_dentro: ficha }).eq("id", propertyId).eq("owner_id", ownerId);
+  if (error) console.error("[ficha-dentro] gravar falhou:", error.message);
 }
 
 /**
@@ -757,6 +820,9 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   }
   const chegada = colunasChegadaEPedido(input);
   if (!chegada.ok) return { ok: false, error: chegada.erro };
+  // E814: anúncio novo ainda não tem nível calculado — nenhum termo de nível ("premium", "conforto") no título.
+  const erroNivelNovo = erroTituloNivel(input.title ?? "", null);
+  if (erroNivelNovo) return { ok: false, error: erroNivelNovo };
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
 
@@ -878,6 +944,7 @@ export async function createProperty(entrada: PropertyInput): Promise<ActionResu
   }
   await gravarPrivacidade(supabase, user.id, data.id as string, input);
   await gravarChegadaEPedido(supabase, user.id, data.id as string, input);
+  await gravarFichaDentro(supabase, user.id, data.id as string, input.fichaDentro);
   // E263-A: o anúncio criado já leva as condições de pets (antes, só a edição gravava).
   try {
     const regras = input.petsAllowed ? normalizarRegrasPets(input.petsRegras) : null;
@@ -1056,6 +1123,12 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Não autenticado." };
   if (!UUID_RE.test(id)) return { ok: false, error: "Imóvel inválido para edição." };
+  // E814: o título não usa termo de nível diferente do nível CALCULADO deste anúncio (o editor já avisa; aqui trava).
+  if (termoDeNivelDivergente(input.title ?? "", null)) {
+    const { data: nv } = await supabase.from("imovel_nivel").select("nivel").eq("property_id", id).maybeSingle();
+    const erroNivel = erroTituloNivel(input.title ?? "", ((nv as { nivel?: NivelOuAdequacao | null } | null)?.nivel ?? null));
+    if (erroNivel) return { ok: false, error: erroNivel };
+  }
 
   // F45: publicar exige perfil de proprietário completo (nome e telefone) — checado
   // aqui no servidor; a conta pode ser dona e inquilina, então a tela só avisa.
@@ -1176,6 +1249,8 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
   await gravarPrivacidade(supabase, user.id, id, input);
   await gravarChegadaEPedido(supabase, user.id, id, input);
 
+  await gravarFichaDentro(supabase, user.id, id, input.fichaDentro);
+
   // Regras de pets (0119): validadas aqui; só vale com "aceita pets" marcado.
   try {
     const regras = input.petsAllowed ? normalizarRegrasPets(input.petsRegras) : null;
@@ -1217,13 +1292,17 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
       const { data: det, error: erroDet } = await supabase.from("properties").select("detalhes_anuncio").eq("id", id).eq("owner_id", user.id).maybeSingle();
       // Leitura falha: regravar a coluna apagaria o grupo da chácara (que este formulário não traz). Mantém o gravado.
       if (erroDet) throw new Error(`detalhes não lidos (${erroDet.message})`);
-      const chacaraGravada = normalizarDetalhes(det?.detalhes_anuncio)?.chacara;
+      const gravado = normalizarDetalhes(det?.detalhes_anuncio);
+      const chacaraGravada = gravado?.chacara;
+      const pagamentoGravado = gravado?.pagamento;
       // O grupo do formulário de detalhes nunca traz "chacara" (nem distância): se vier, é descartado.
-      const { chacara: _ignorada, ...novos } = normalizarDetalhes(input.detalhesAnuncio) ?? {};
+      const { chacara: _ignorada, pagamento: pagamentoEnviado, ...novos } = normalizarDetalhes(input.detalhesAnuncio) ?? {};
       void _ignorada;
+      // E647: a forma de pagamento só muda com a chave ligada; desligada, o que já estava gravado fica como está.
+      const pagamento = FORMA_PAGAMENTO_DONO_ATIVA ? (pagamentoEnviado ?? pagamentoGravado) : pagamentoGravado;
       await supabase
         .from("properties")
-        .update({ detalhes_anuncio: normalizarDetalhes({ ...novos, ...(chacaraGravada ? { chacara: chacaraGravada } : {}) }) })
+        .update({ detalhes_anuncio: normalizarDetalhes({ ...novos, ...(chacaraGravada ? { chacara: chacaraGravada } : {}), ...(pagamento ? { pagamento } : {}) }) })
         .eq("id", id)
         .eq("owner_id", user.id);
     } catch (e) {
@@ -1282,9 +1361,12 @@ export async function updateProperty(id: string, entrada: PropertyInput): Promis
       const semAceite = await exigirAceiteIa(supabase, id, input.aceiteIa, user.id);
       if (semAceite) return { ok: false, id, error: `${semAceite} Suas alterações foram salvas.` };
     }
+    // E593: o CEP do rascunho mora no draft_data, que é zerado aqui — ele vai para cep_proximidades (coluna privada da
+    // 0238), senão o editor do anúncio publicado chama as proximidades sem CEP.
+    const cepDoRascunho = await cepDoRascunhoDoImovel(id);
     const { error: pubErr } = await supabase
       .from("properties")
-      .update({ status: "active", draft_data: null })
+      .update({ status: "active", draft_data: null, ...(cepDoRascunho ? { cep_proximidades: cepDoRascunho } : {}) })
       .eq("id", id)
       .eq("owner_id", user.id);
     if (pubErr) return { ok: false, id, error: erroBancoPT(pubErr) };
@@ -1354,8 +1436,12 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export interface ContratoInput {
   /** Candidatura ACEITA de onde o contrato nasce (inquilino, imóvel, aluguel e taxa vêm dela). */
   leadId: string;
+  /** E1141: a estadia (proposta) escolhida no Fechamento; o servidor valida-a. Sem ela, a proposta acordada mais recente. */
+  propostaId?: string | null;
   faixa: string; // temporada | media_estadia | longa
   prazoTotalMeses: number; // prazo total pretendido (contrato-mãe)
+  /** E655: sem proposta, os dias EXATOS da janela da candidatura (o servidor confere contra a candidatura). */
+  prazoTotalDias?: number;
   tamanhoBlocoMeses?: number; // padrão 2 (≤ 3 = 90 dias)
   qtdOcupantes: number;
   capacidadeSnapshot?: number | null;
@@ -1380,8 +1466,11 @@ const FAIXAS_CONTRATO = new Set(["temporada", "media_estadia", "longa"]);
  * usuário em contratos/blocos).
  */
 export async function registrarContrato(
-  input: ContratoInput
-): Promise<ActionResult & { blocos?: number; existente?: boolean }> {
+  input: ContratoInput,
+  /** E1141 (guarda 3, ORDEM-DUET-933): `soConferir` faz TODAS as checagens (incluindo o período cruzado, 0176) e para
+   *  antes de gravar — o assistente pergunta isto antes de gerar o documento e de cobrar a taxa. */
+  opcoes?: { soConferir?: boolean },
+): Promise<ActionResult & { blocos?: number; existente?: boolean; conferido?: boolean }> {
   const supabase = await createClient();
   if (!supabase) return { ok: true, demo: true };
   const {
@@ -1402,9 +1491,21 @@ export async function registrarContrato(
   const admin = createAdminClient();
   if (!admin) return { ok: false, error: "Serviço indisponível." };
 
-  const { data: existente } = await admin.from("contratos").select("id").eq("lead_id", lead.id).maybeSingle();
+  // E968: pré-aceitação expirada = a candidatura voltou ao dono; o contrato não nasce com o preço do anúncio.
+  const preAceiteExpirado = await preAceiteExpiradoDoLead(admin, lead.id as string).catch(() => "falhou" as const);
+  if (preAceiteExpirado === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+  if (preAceiteExpirado) return { ok: false, error: MSG_PRE_ACEITE_EXPIRADO };
+  // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
+  // E1141: a proposta DESTE fecho — a pedida (desta candidatura e acordada) ou, sem ela, a de sempre.
+  const acordada = await propostaDoFechamentoDoLead(admin, lead.id as string, input.propostaId ?? null).catch(() => "falhou" as const);
+  if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+  if (acordada === PROPOSTA_FORA_DO_FECHAMENTO) return { ok: false, error: "Não encontramos esse fechamento." };
+  // E1086: "já existe" é o contrato DESTA proposta. O contrato de outra proposta da mesma candidatura é de outra
+  // estadia: a proposta nova gera o dela (antes, a estadia nova caía no contrato já assinado da anterior).
+  const existente = await contratoDoFechamentoDoLead(admin, lead.id as string, acordada ? acordada.id : null).catch(() => "falhou" as const);
+  if (existente === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   // Prompt 28: avisa que o contrato JÁ existia (o Resumo mostra "gerado em" e o estado real dele).
-  if (existente) return { ok: true, id: existente.id as string, blocos: 0, existente: true };
+  if (existente) return { ok: true, id: existente.id, blocos: 0, existente: true };
 
   // F32: o contrato nasce só com o documento das DUAS partes e os documentos do
   // inquilino — a trava vale aqui no servidor, não só na tela do fechamento.
@@ -1420,17 +1521,26 @@ export async function registrarContrato(
     .select("monthly_price, owner_id")
     .eq("id", lead.property_id)
     .maybeSingle();
-  // Prompt 17: com proposta aceita, o contrato usa o valor mensal e os meses ACORDADOS (não os do anúncio/tela).
-  const acordada = await propostaAcordadaDoLead(admin, lead.id as string).catch(() => "falhou" as const);
-  if (acordada === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   const aluguel = acordada ? acordada.valorMensal : Number(imovel?.monthly_price);
   if (!imovel || imovel.owner_id !== user.id || !(aluguel > 0)) {
     return { ok: false, error: "Imóvel sem valor de aluguel." };
   }
 
+  // E655: sem proposta, a janela EXATA da candidatura (confirmada aqui, não pelo navegador) vale em dias.
+  let diasCandidatura: number | null = null;
+  if (!acordada && input.prazoTotalDias != null) {
+    const { data: janela, error: erroJanela } = await admin.from("leads").select("inicio_desejado, fim_desejado").eq("id", lead.id).maybeSingle();
+    if (erroJanela) return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
+    diasCandidatura = diasDaCandidaturaParaContrato({ inicio: janela?.inicio_desejado as string | null, fim: janela?.fim_desejado as string | null, diasPedidos: input.prazoTotalDias, valido: (d) => diasValidos(d) });
+  }
+  const diasExatos = acordada ? acordada.dias : diasCandidatura;
   const prazo = acordada ? acordada.meses : Math.round(Number(input.prazoTotalMeses));
-  if (!(prazo >= PRAZO_MIN_MESES && prazo <= PRAZO_MAX_MESES))
-    return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${PRAZO_MAX_MESES} meses, até ${PRAZO_MAX_DIAS} dias).` };
+  // E562: com proposta aceita, o prazo são os DIAS exatos dela (30 a 180); sem proposta, os meses do Fechamento.
+  // TRAVA FAIXA_91_180: desligada, o contrato novo vai até 90 dias (3 meses); ligada (padrão), até 180.
+  const tetoDias = diasMaxEstadiaVigente();
+  const tetoMeses = Math.min(PRAZO_MAX_MESES, Math.floor(tetoDias / DIAS_POR_MES));
+  if (diasExatos != null ? !diasValidos(diasExatos) : !(prazo >= PRAZO_MIN_MESES && prazo <= tetoMeses))
+    return { ok: false, error: `Prazo inválido (${PRAZO_MIN_MESES} a ${tetoMeses} meses, até ${Math.min(PRAZO_MAX_DIAS, tetoDias)} dias).` };
   if (!FAIXAS_CONTRATO.has(input.faixa)) return { ok: false, error: "Faixa de prazo inválida." };
   const ocupantes = Math.round(Number(input.qtdOcupantes));
   if (!(ocupantes >= 1 && ocupantes <= 20)) return { ok: false, error: "Número de ocupantes inválido." };
@@ -1443,12 +1553,14 @@ export async function registrarContrato(
   if (taxaLead === "falhou") return { ok: false, error: MSG_VALORES_SEM_CONFERIR };
   const plano = taxaLead?.acceptedPlan ?? "free";
   // NULL cai para a taxa do plano no aceite (antes Number(null) = 0 = Gestor).
-  const rate = taxaDoContrato(taxaLead?.acceptedCommissionRate ?? null, taxaLead?.acceptedPlan ?? null);
+  // E1141 (guarda 2): a taxa CONGELADA da proposta desta estadia; a do aceite (a da última aceita) só sem ela.
+  const rate = taxaDoContrato(taxaDaEstadia(acordada?.taxa, taxaLead?.acceptedCommissionRate), taxaLead?.acceptedPlan ?? null);
   const tamanho = Math.min(3, Math.max(1, Math.round(Number(input.tamanhoBlocoMeses ?? MESES_POR_BLOCO_PADRAO))));
-  const resumo = resumoContrato(prazo, aluguel, rate, tamanho);
+  // E562: pela proposta, blocos de até 90 dias contados em dias (valor, caução e taxa proporcionais aos dias).
+  const resumo = diasExatos != null ? resumoContratoEmDias(diasExatos, aluguel, rate, tamanho) : resumoContrato(prazo, aluguel, rate, tamanho);
   // Garantia única: o servidor confere a escolha (fiança só ligada e na faixa de prazo).
   const garantia: GarantiaContrato = input.garantia === "seguro_fianca" ? "seguro_fianca" : "caucao";
-  const okGarantia = validarGarantia(garantia, resumo.prazoTotalMeses * DIAS_POR_MES);
+  const okGarantia = validarGarantia(garantia, resumo.prazoTotalDias);
   if (!okGarantia.ok) return { ok: false, error: okGarantia.error };
 
   // Disponibilidade por datas (0176): o período inteiro (1º início ao último fim) não pode cruzar outro contrato ativo.
@@ -1456,6 +1568,8 @@ export async function registrarContrato(
   const periodo = { inicio: comDatas[0]?.inicio ?? input.inicioISO, fim: comDatas[comDatas.length - 1]?.fim ?? input.inicioISO };
   const conflito = await conflitoNoImovel(admin, lead.property_id as string, periodo);
   if (conflito) return { ok: false, error: conflito };
+  // E1141 (guarda 3): a conferência prévia para aqui — nada se grava, nada se gera, nada se cobra.
+  if (opcoes?.soConferir) return { ok: true, conferido: true };
 
   const { data: contrato, error: cErr } = await admin
     .from("contratos")
@@ -1465,7 +1579,7 @@ export async function registrarContrato(
       tenant_id: lead.tenant_id,
       owner_plan: plano,
       faixa: input.faixa,
-      prazo_total_dias: resumo.prazoTotalMeses * DIAS_POR_MES,
+      prazo_total_dias: resumo.prazoTotalDias,
       aluguel_mensal: aluguel,
       tamanho_bloco_meses: resumo.tamanhoBlocoMeses,
       comissao_percent: resumo.comissaoPercent,
@@ -1475,6 +1589,8 @@ export async function registrarContrato(
       garantia,
       // O período já nasce no contrato: o banco recusa a sobreposição antes dos blocos (o gatilho o mantém depois).
       periodo: `[${periodo.inicio},${periodo.fim}]`,
+      // E440: o contrato carrega o orçamento de origem (pedido VN-PD → orçamento ORC → contrato VN-CT).
+      proposta_id: acordada ? acordada.id : null,
     })
     .select("id")
     .single();
@@ -1501,7 +1617,7 @@ export async function registrarContrato(
   }));
   const { error: bErr } = await admin.from("contrato_blocos").insert(rows);
   // Best-effort: o contrato-mãe já existe mesmo se a inserção dos blocos falhar.
-  if (acordada) await marcarPropostaEmContrato(admin, lead.id as string).catch(() => {});
+  if (acordada) await marcarPropostaEmContrato(admin, acordada.id).catch(() => {});
   // Prompt 24: o contrato aparece nos dois lados e o inquilino é avisado (na conta de teste, na caixa de teste).
   const contratoNovoId = contrato!.id as string;
   after(async () => {
@@ -1512,23 +1628,46 @@ export async function registrarContrato(
       ]);
       // E202: o e-mail do contrato pronto diz o imóvel, o período, o valor mensal e o total (não só "Há uma atualização").
       const i = (im ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
-      const imovelEmail = { titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
-      const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel });
-      await notify({
-        event: "contract_status",
-        email: pessoa?.user?.email ?? undefined,
-        userId: lead.tenant_id as string,
-        pushUrl: `/dashboard/locacoes/${contratoNovoId}`,
-        imovelId: lead.property_id as string,
-        // E444: crítico (assinar), resolvido quando o morador assinar.
-        refId: contratoNovoId,
-        papelAviso: "morador",
+      const imovelEmail = { id: lead.property_id as string, titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
+      // E1066: o total pela fonte única (a conta da proposta acordada: mensal, contas e limpeza) e a caução dos blocos.
+      const linhas = linhasContrato({ imovel: imovelEmail, inicio: periodo.inicio, fim: periodo.fim, meses: resumo.prazoTotalMeses, valorMensal: aluguel, dias: resumo.prazoTotalDias,
+        contaTotal: contaDoContrato(acordada),
+        contas: contasDoContrato(acordada),
+        caucao: rows.reduce((s, r) => s + Number(r.caucao), 0),
+      });
+      const quadro = {
         subject: ASSUNTOS.contratoPronto,
         body: (nome?: string) => aberturaContratoPronto({ nome, imovel: imovelEmail }),
         detailsHtml: blocoDados(linhas.map((l) => ({ rotulo: escaparHtml(l.rotulo), valor: escaparHtml(l.valor) }))) + `<p>${escaparHtml(PROXIMO_PASSO_CONTRATO_PRONTO)}</p>`,
         detailsText: [...linhas.map((l) => `${l.rotulo}: ${l.valor}`), PROXIMO_PASSO_CONTRATO_PRONTO].join("\n"),
         ctaLabel: "Ler e assinar o contrato",
+      };
+      await notify({
+        event: "contract_status",
+        email: pessoa?.user?.email ?? undefined,
+        userId: lead.tenant_id as string,
+        pushUrl: HREF_CONTRATO_DA_ESTADIA(contratoNovoId),
+        imovelId: lead.property_id as string,
+        // E444: crítico (assinar), resolvido quando o morador assinar.
+        refId: contratoNovoId,
+        papelAviso: "morador",
+        ...quadro,
       });
+      // E1066: o dono também recebe o e-mail de geração (antes só o morador), com o mesmo quadro.
+      const donoId = String(lead.owner_id ?? "");
+      if (donoId) {
+        const { data: dono } = await admin.auth.admin.getUserById(donoId);
+        await notify({
+          event: "contract_status",
+          email: dono?.user?.email ?? undefined,
+          userId: donoId,
+          pushUrl: `/dashboard/contratos/${contratoNovoId}`,
+          imovelId: lead.property_id as string,
+          refId: contratoNovoId,
+          papelAviso: "dono",
+          ...quadro,
+        });
+      }
     } catch {
       /* aviso é best-effort: o contrato já está registrado */
     }
@@ -1672,7 +1811,7 @@ export async function requestLead(
   {
     const { data: existing, error: erroExistente } = await supabase
       .from("leads")
-      .select("id")
+      .select("id, status")
       .eq("property_id", propertyId)
       .eq("tenant_id", user.id)
       .maybeSingle();
@@ -1681,22 +1820,69 @@ export async function requestLead(
     if (erroExistente) return { ok: false, error: MSG_CONTATO_SEM_LEITURA };
     novoContato = !existing;
     leadId = (existing?.id as string | undefined) ?? null;
-    if (!existing) {
-      // Motivo da candidatura: o escolhido (validado no servidor) ou, sem escolha, o do perfil.
-      let motivoLead: string | null = null;
-      if (kind === "candidatura") {
-        const escolhido = validarMotivoEstadia(motivoEstadia ?? "");
-        motivoLead = escolhido.ok ? escolhido.valor : null;
-        if (!motivoLead) {
-          const { data: perfil } = await supabase.from("profiles").select("motivo_estadia").eq("id", user.id).maybeSingle();
-          const doPerfil = validarMotivoEstadia((perfil?.motivo_estadia as string | null) ?? "");
-          motivoLead = doPerfil.ok ? doPerfil.valor : null;
-        }
+
+    // Motivo da candidatura: o escolhido (validado no servidor) ou, sem escolha, o do perfil.
+    let motivoLead: string | null = null;
+    if (kind === "candidatura") {
+      const escolhido = validarMotivoEstadia(motivoEstadia ?? "");
+      motivoLead = escolhido.ok ? escolhido.valor : null;
+      if (!motivoLead) {
+        const { data: perfil } = await supabase.from("profiles").select("motivo_estadia").eq("id", user.id).maybeSingle();
+        const doPerfil = validarMotivoEstadia((perfil?.motivo_estadia as string | null) ?? "");
+        motivoLead = doPerfil.ok ? doPerfil.valor : null;
       }
-      const inicioOk = kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok;
-      // E202: a saída só entra com a entrada válida e depois dela (a mesma regra do resumo do Solicitar e do check da 0258).
-      const fim = (fimDesejado ?? "").trim();
-      const fimOk = inicioOk && /^\d{4}-\d{2}-\d{2}$/.test(fim) && fim > inicioDesejado!.trim();
+    }
+    // E202/E581: entrada, saída (só com a entrada válida e depois dela — a mesma regra do resumo e do check da 0258),
+    // motivo e pessoas: os MESMOS campos validados no insert e na atualização da candidatura repetida.
+    const campos = camposDaCandidatura({
+      inicioOk: kind === "candidatura" && validarInicioEstadia(inicioDesejado, hojeBR()).ok,
+      inicio: inicioDesejado ?? "",
+      fim: fimDesejado ?? "",
+      motivo: motivoLead,
+      ocupantes: ocupantes.valor ?? null,
+    });
+    const camposDoInsert = Object.fromEntries(Object.entries(campos).filter(([, v]) => v != null));
+
+    const conversationId = idConversa(user.id, ownerId, propertyId);
+    // Mensagem do inquilino: usa o texto que ele escreveu (dúvida/horários),
+    // com contato mascarado (regra de ouro — nada de telefone/e-mail no chat
+    // antes do aceite); sem texto, cai na mensagem padrão da ação.
+    const abrirConversa = async () => {
+      const corpo = note && note.trim()
+        ? guardContactInfo(note.trim().slice(0, 1000)).text
+        : LEAD_KIND_MSG[kind](propertyTitle);
+      const { error: msgErr } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        receiver_id: ownerId,
+        property_id: propertyId,
+        body: corpo,
+      });
+      if (msgErr) {
+        console.error("[requestLead] falha ao abrir conversa:", msgErr.code, msgErr.message);
+      }
+    };
+
+    if (existing && kind === "candidatura") {
+      // E581: candidatura repetida (ou depois de uma dúvida/visita) ATUALIZA o período do lead ainda sem resposta. Antes
+      // nada mudava, mas os e-mails saíam de novo com o período antigo (120 dias no lugar dos 43 escolhidos) e a proposta
+      // derivava dali. Já respondida (aceita/recusada): não muda nem manda e-mail — o caminho é o chat.
+      if (existing.status !== "new") return { ok: false, error: MSG_CANDIDATURA_JA_RESPONDIDA };
+      const adm = createAdminClient();
+      if (!adm) return { ok: false, error: MSG_CANDIDATURA_NAO_ATUALIZOU };
+      const { data: atualizado, error: erroAtualiza } = await adm
+        .from("leads")
+        .update({ ...campos, reenviada_em: new Date().toISOString() })
+        .eq("id", existing.id)
+        .eq("tenant_id", user.id)
+        .eq("status", "new")
+        .select("id");
+      if (erroAtualiza || !atualizado?.length) return { ok: false, error: MSG_CANDIDATURA_NAO_ATUALIZOU };
+      // A nova escolha também vai para a conversa: o dono vê o período novo.
+      await abrirConversa();
+    }
+
+    if (!existing) {
       const { data: novo, error: leadErr } = await supabase
         .from("leads")
         .insert({
@@ -1704,10 +1890,7 @@ export async function requestLead(
           owner_id: ownerId,
           tenant_id: user.id,
           status: "new",
-          ...(inicioOk ? { inicio_desejado: inicioDesejado!.trim() } : {}),
-          ...(fimOk ? { fim_desejado: fim } : {}),
-          ...(motivoLead ? { motivo_estadia: motivoLead } : {}),
-          ...(ocupantes.valor ? { qtd_ocupantes: ocupantes.valor } : {}),
+          ...camposDoInsert,
         })
         .select("id")
         .maybeSingle();
@@ -1723,23 +1906,7 @@ export async function requestLead(
         // Prompt 50: o 1º pedido enviado ativa o morador (1× por papel).
         await registrarAtivacao(user.id, "morador", new Date(), adm);
       }
-      const conversationId = idConversa(user.id, ownerId, propertyId);
-      // Mensagem do inquilino: usa o texto que ele escreveu (dúvida/horários),
-      // com contato mascarado (regra de ouro — nada de telefone/e-mail no chat
-      // antes do aceite); sem texto, cai na mensagem padrão da ação.
-      const corpo = note && note.trim()
-        ? guardContactInfo(note.trim().slice(0, 1000)).text
-        : LEAD_KIND_MSG[kind](propertyTitle);
-      const { error: msgErr } = await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        receiver_id: ownerId,
-        property_id: propertyId,
-        body: corpo,
-      });
-      if (msgErr) {
-        console.error("[requestLead] falha ao abrir conversa:", msgErr.code, msgErr.message);
-      }
+      await abrirConversa();
     }
   }
 
@@ -1768,8 +1935,15 @@ export async function requestLead(
       phone: ownerPhone ?? undefined,
       name: ownerName ?? undefined,
       userId: ownerId ?? undefined,
-      pushUrl: corpo && leadId ? linkCandidaturaDono(leadId) : "/dashboard/leads",
+      // E570: o clique cai no cartão DESTA candidatura (mesmo sem o corpo do e-mail).
+      pushUrl: kind === "candidatura" && leadId ? linkCandidaturaDono(leadId) : "/dashboard/leads",
       imovelId: propertyId,
+      // E570: no sino, a candidatura nomeia o morador pelo PRIMEIRO nome (o mesmo do e-mail; sem nome, "Candidato(a)") e o
+      // imóvel, e o clique cai
+      // no cartão DESTA candidatura (refId = a candidatura).
+      ...(kind === "candidatura" && leadId
+        ? { tituloAviso: tituloAvisoCandidatura({ candidato: primeiroNome(me?.full_name), imovel: propertyTitle }), refId: leadId, papelAviso: "dono" as const }
+        : {}),
       ...(corpo ? { body: corpo.body } : {}),
       detailsHtml: pessoa ? pessoa.html + (detailsHtml ?? "") : detailsHtml,
       detailsText: pessoa ? [pessoa.texto, detailsText ?? ""].filter(Boolean).join("\n") : detailsText,
@@ -1887,23 +2061,30 @@ export async function sendMessage(input: {
     // Prompt 44: o push da mensagem nova não depende do limite do e-mail. O notify() decide pela matriz: sem push com a
     // conversa aberta há menos de 10 min, agrupado por conversa ("3 mensagens novas de Ana") e sem o texto.
     const comEmail = !!contact?.email && podeAvisar;
-    const link = `${SITE_URL}/dashboard/mensagens`;
+    const link = `${SITE_URL}${urlDaConversa(conversationId)}`;
     if (comEmail || contact) {
       // Nome e prévia são texto do USUÁRIO: sem HTML ativo e sem links no e-mail.
       const nomeHtml = textoEmail(senderName, 40);
       const previewHtml = textoEmail(safeBody, 140);
       const previewTexto = textoPlano(safeBody, 140);
+      // E267: o corpo nomeia quem escreveu e o imóvel da conversa (só lido quando há e-mail a mandar).
+      const { data: imovelConversa } =
+        comEmail && admin && input.propertyId ? await admin.from("properties").select("title").eq("id", input.propertyId).maybeSingle() : { data: null };
+      const imovelTitulo = (imovelConversa?.title as string | null | undefined) ?? null;
       await notify({
         event: "new_message",
+        body: corpoMensagemNova({ remetente: senderName, imovelTitulo }),
         email: comEmail ? (contact!.email as string) : undefined,
         name: contact?.full_name ?? undefined,
         userId: destinatarioId,
-        pushUrl: "/dashboard/mensagens",
+        pushUrl: urlDaConversa(conversationId),
         imovelId: input.propertyId,
         conversationId,
         // E533: o aviso do sino guarda a conversa — abrir a conversa marca esses avisos como lidos.
         refId: conversationId,
         remetenteNome: senderName,
+        // E482: a prévia vira o texto do aviso no sino (limpa e com o filtro de contato no gravarAviso).
+        previaAviso: safeBody,
         detailsHtml:
           `<p><strong>${nomeHtml}</strong> escreveu:</p>` +
           `<blockquote style="margin:8px 0;padding:8px 12px;border-left:3px solid #1c6b3a;color:#374151">${previewHtml}</blockquote>` +
@@ -1933,20 +2114,15 @@ export async function deleteProperty(id: string): Promise<ActionResult> {
   if (!user) return { ok: false, error: "Não autenticado." };
 
   // Prompt 58: as fotos saem do bucket com o anúncio (o hash fica, antifraude). Só as do próprio dono.
-  const { data: dono, error: erroDono } = await supabase.from("properties").select("id").eq("id", id).eq("owner_id", user.id).maybeSingle();
-  const { data: fotos, error: erroFotos } = dono ? await supabase.from("property_photos").select("url").eq("property_id", id) : { data: null, error: null };
-  // Sem a lista das fotos, excluir deixaria os arquivos no bucket sem nada que aponte para eles: para antes de apagar.
-  if (erroDono || erroFotos) return { ok: false, error: "Não foi possível excluir o anúncio agora. Tente de novo." };
-  for (const table of ["property_photos", "property_amenities", "property_proximities"]) {
-    try {
-      await supabase.from(table).delete().eq("property_id", id);
-    } catch {
-      /* tabela ausente — ignora */
-    }
+  // E953: a leitura/recusa/exclusão moram em excluirRascunhoDoDono (draft_data pela RPC do C4; só rascunho; sem a lista
+  // das fotos, para antes de apagar). O cliente é o da SESSÃO do dono.
+  const r = await excluirRascunhoDoDono(supabase, user.id, id);
+  if (!r.ok) {
+    if (r.erroBanco) console.error("[deleteProperty]", id, (r.erroBanco as { code?: string }).code);
+    return { ok: false, error: r.error };
   }
-  const { error } = await supabase.from("properties").delete().eq("id", id).eq("owner_id", user.id);
-  if (error) return { ok: false, error: erroBancoPT(error) };
-  if (fotos?.length) await apagarFotosDoAnuncio(createAdminClient(), (fotos as { url: string }[]).map((f) => f.url));
+  // E705 (resíduo 2): a foto que só existe no draft_data (autosave do editor) também sai do bucket; a guarda do E308 protege o que outro anúncio usa.
+  if (r.urlsFotos.length) await apagarFotosDoAnuncio(createAdminClient(), r.urlsFotos);
   revalidarAnuncio(id, revalidatePath);
   return { ok: true };
 }
@@ -1970,6 +2146,7 @@ export async function saveDraftData(snap: {
   city?: string;
   monthlyPrice?: number;
   neighborhood?: string;
+  bedrooms?: number;
   bathrooms?: number;
   areaM2?: number;
   description?: string;
@@ -1996,7 +2173,8 @@ export async function saveDraftData(snap: {
     // 59-C1: a operação vai junto, pela regra do updateProperty — uma linha antiga "própria com sublocação" (que a
     // restrição da 0200 recusa em qualquer update) fica no permitido já no primeiro autosave.
     ...colunasDeOperacao(op.ownershipType, op.subleaseAuthorized),
-    draft_data: snap.data as object,
+    // E614 (ORDEM-DUET-137): toda gravação sai carimbada daqui — também a que cria o rascunho ao sair da Qualificação.
+    draft_data: rascunhoCarimbado(snap.data, new Date()) as object,
   };
 
   // Anúncio novo (sem id): continua o rascunho vazio de menos de 72 h em vez de abrir outro igual (ordem 378c07c4).
@@ -2012,10 +2190,14 @@ export async function saveDraftData(snap: {
     }
     // 0 linhas = rascunho de outro dono (ou já publicado): não liga foto nem qualificação.
     if (!atualizou) return { ok: true, id: rascunhoId };
-    await gravarChegadaEPedido(supabase, user.id, rascunhoId, chegadaDoRascunho(snap.data));
-    await sincronizarFotos(supabase, rascunhoId, user.id, urlsDoRascunho(snap.data));
-    await ligarQualificacaoAoImovel(supabase, user.id, rascunhoId);
-    await ligarMatriculaAoImovel(createAdminClient(), user.id, rascunhoId);
+    // E611: as quatro gravações não dependem umas das outras — em paralelo. O autosave roda a cada mudança e, como as
+    // Server Actions vão uma por vez por aba, cada segundo dele atrasa todas as leituras da tela.
+    await Promise.all([
+      gravarChegadaEPedido(supabase, user.id, rascunhoId, chegadaDoRascunho(snap.data)),
+      sincronizarFotos(supabase, rascunhoId, user.id, urlsDoRascunho(snap.data)),
+      ligarQualificacaoAoImovel(supabase, user.id, rascunhoId),
+      ligarMatriculaAoImovel(createAdminClient(), user.id, rascunhoId),
+    ]);
     return { ok: true, id: rascunhoId };
   }
   const { data, error } = await supabase.from("properties").insert(fields).select("id").single();
@@ -2091,7 +2273,29 @@ export async function abrirRascunho(id: string): Promise<{ ok: true; draft: unkn
   if (error) return { ok: false, motivo: "indisponivel" };
   const row = (Array.isArray(data) ? data[0] : data) as { draft_data?: unknown } | null;
   if (!row) return { ok: false, motivo: "nao_encontrado" };
+  // E614 (ORDEM-DUET-137/139): rascunho sem carimbo (anterior à regra) reabre com a hora que se conhece dele — a da
+  // última gravação da linha (updated_at, 0346) e, enquanto não for regravada, a da criação. Só leitura: o rascunho
+  // gravado não muda ao abrir (E516). Sem a coluna (deploy antes da migração), fica a hora da criação.
+  const hora = await supabase.from("properties").select("updated_at, created_at").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const linha = (hora.error ? (await supabase.from("properties").select("created_at").eq("id", id).eq("owner_id", user.id).maybeSingle()).data : hora.data) as { updated_at?: string | null; created_at?: string | null } | null;
+  row.draft_data = rascunhoComHoraConhecida(row.draft_data ?? null, linha?.updated_at ?? null, linha?.created_at ?? null);
   return { ok: true, draft: await semFotosApagadas(row.draft_data ?? null, user.id) };
+}
+
+/**
+ * E660: a ficha "o que tem dentro" já gravada na coluna do imóvel do dono (rascunho retomado sem ficha no draft_data).
+ * Só o dono lê (filtro por owner_id). Sem ficha, sem coluna (migração 0316 ausente) ou erro: null.
+ */
+export async function fichaDentroDoImovel(id: string): Promise<FichaDentro | null> {
+  const supabase = await createClient();
+  if (!supabase || !idDeRascunhoValido(id)) return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase.from("properties").select("ficha_dentro").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  if (error) return null;
+  return normalizarFicha((data as { ficha_dentro?: unknown } | null)?.ficha_dentro);
 }
 
 /** E426: o draft_data sem as fotos cujo arquivo já saiu do bucket (nada de miniatura quebrada ao retomar). */
@@ -2150,7 +2354,8 @@ export async function getLatestDraft(): Promise<{
   // C4: draft_data vem pela RPC (coluna sensível fora do SELECT por coluna).
   const { data: priv } = await supabase.rpc("property_private_details", { prop_id: data.id });
   const row = Array.isArray(priv) ? priv[0] : priv;
-  const fatos = (await fatosDosImoveis(supabase, user.id, [data.id as string])).get(data.id as string) ?? null;
+  // E498: a qualificação do rascunho entra no cálculo (o mesmo pct da barra do assistente).
+  const fatos = (await fatosDosImoveis(supabase, user.id, [data.id as string], { qualificacaoDoRascunho: true })).get(data.id as string) ?? null;
   const prontidao = fatos ? prontidaoAnuncio(fatos) : null;
   return {
     id: data.id as string,

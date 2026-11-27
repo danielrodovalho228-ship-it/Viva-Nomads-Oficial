@@ -114,6 +114,10 @@ test.describe("T401 — Cadastro 10: Revise e publique (cadastro-imovel-10)", ()
       } else {
         expect(l.y, "no celular a lista vem antes da prévia (E251)").toBeLessThan(c.y);
       }
+      // E744 (asserção alterada, tabela da Fable #3832): enquanto o termo da IA não foi aceito, a lista diz o que falta;
+      // "Tudo certo para publicar" só depois do aceite (o caso 2 cobre a trava do botão).
+      await expect.poll(() => lista.locator("h3").evaluate((h) => (h as HTMLElement).innerText.trim())).toBe("Falta: aceite do termo da IA");
+      await aceitarTermoIaSePreciso(p);
       await expect.poll(() => lista.locator("h3").evaluate((h) => (h as HTMLElement).innerText.trim())).toBe("Tudo certo para publicar");
       await expect(p.locator("main")).not.toContainText(/h[oó]spede|comiss|reserva/i);
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

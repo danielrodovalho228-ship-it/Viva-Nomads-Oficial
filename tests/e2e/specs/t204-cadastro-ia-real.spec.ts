@@ -183,15 +183,22 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       const de = page.getByTestId("disponivel-de");
       await expect(de).toHaveAttribute("type", "text", { timeout: 30_000 });
       await expect(page.getByTestId("disponivel-de-calendario")).toBeVisible();
-      await de.pressSequentially("01112026");
-      await expect(de).toHaveValue("01/11/2026");
+      // Data sempre no futuro: uma fixa (01/11/2026) virou passado e o aviso "não pode ser antes de hoje" desalinhava as caixas.
+      const futura = new Date(Date.now() + 30 * 86_400_000);
+      const [dd, mm, aaaa] = [String(futura.getDate()).padStart(2, "0"), String(futura.getMonth() + 1).padStart(2, "0"), String(futura.getFullYear())];
+      await de.pressSequentially(`${dd}${mm}${aaaa}`);
+      await expect(de).toHaveValue(`${dd}/${mm}/${aaaa}`);
       await de.fill("");
-      await de.evaluate((el) => {
+      // E1193 (ORDEM-DUET-868): a data colada também é relativa ao agora (45 dias à frente) — a gravada (15/12/2026)
+      // virava passado e o aviso "não pode ser antes de hoje" entrava na captura.
+      const colada = new Date(Date.now() + 45 * 86_400_000);
+      const [cd, cm, ca] = [String(colada.getDate()).padStart(2, "0"), String(colada.getMonth() + 1).padStart(2, "0"), String(colada.getFullYear())];
+      await de.evaluate((el, iso) => {
         const dt = new DataTransfer();
-        dt.setData("text/plain", "2026-12-15");
+        dt.setData("text/plain", iso);
         el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
-      });
-      await expect(de).toHaveValue("15/12/2026");
+      }, `${ca}-${cm}-${cd}`);
+      await expect(de).toHaveValue(`${cd}/${cm}/${ca}`);
       await page.screenshot({ path: `${SAIDA}/t204-datas-${largura}.png`, fullPage: false });
 
       // Fotos: a IA falha (simulado) → motivo + "Tentar de novo"; de novo → sugestões.
@@ -206,6 +213,12 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
       const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByTestId("fotos-adicionar").click()]);
       await chooser.setFiles([1, 2, 3, 4, 5, 6, 7].map((n) => ({ name: `foto-${n}.png`, mimeType: "image/png", buffer: pngDeTeste(n + 20 * largura) })));
       await expect(page.getByTestId("etapa-fotos")).toContainText("7 / 8 fotos", { timeout: 60_000 });
+      // E744 (tabela da Fable #3832): espera o lote anterior entrar na galeria (fim do "enviando") antes de soltar a 8ª
+      // foto — soltar durante um envio em andamento apaga o lote anterior (item de produto levado ao Gerente no PR).
+      await expect(page.locator('[data-testid="fotos-trava"][data-trava="enviando"]')).toHaveCount(0, { timeout: 60_000 });
+      await expect
+        .poll(async () => ((((await adm().from("properties").select("draft_data").eq("id", id).single()).data?.draft_data ?? {}) as { photos?: unknown[] }).photos ?? []).length, { timeout: 30_000 })
+        .toBe(7);
       // Arrastar e soltar um arquivo na galeria.
       const png8 = pngDeTeste(8 + 20 * largura).toString("base64");
       await page.getByTestId("fotos-galeria").evaluate((alvo, b64) => {
@@ -229,14 +242,15 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     });
   }
 
-  test("390px celular (toque) — a data segue o seletor nativo", async ({ browser }) => {
+  test("390px celular (toque) — a data abre o calendário do site, não o seletor nativo (E136)", async ({ browser }) => {
     test.setTimeout(120_000);
     const d = await novoDono(browser, 390, { hasTouch: true, isMobile: true });
     ids.push(d.id);
     const id = await rascunho(d.id, { title: "Rascunho do T204" });
     await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=disponibilidade`, { waitUntil: "domcontentloaded" });
-    await expect(d.page.getByTestId("disponivel-de")).toHaveAttribute("type", "date", { timeout: 30_000 });
-    await expect(d.page.getByTestId("disponivel-de-calendario")).toHaveCount(0);
+    await expect(d.page.getByTestId("disponivel-de")).toHaveAttribute("type", "text", { timeout: 30_000 });
+    await d.page.getByTestId("disponivel-de").tap();
+    await expect(d.page.getByTestId("disponivel-de-calendario-popup")).toBeVisible();
     await d.fechar();
   });
 
@@ -247,6 +261,8 @@ test.describe("T204 — cadastro com a IA de verdade e o QA do Muse (prompt 22)"
     const id = await rascunho(d.id, { title: "Rascunho do T204", street: "Avenida João Naves de Ávila", numero: "100", cep: "38408-000", neighborhood: "Santa Mônica", city: "Uberlândia" });
     // E104: a matrícula fica no "Antes de publicar" da Revisão.
     await d.page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+    // E744 (além da tabela, ver o PR): desde o E251 as seções do "Antes de publicar" chegam fechadas (acordeão).
+    await abrirSecoesPasso10(d.page, ["documento"]);
     await expect(d.page.getByTestId("documento-vinculo")).toBeVisible({ timeout: 30_000 });
     // PDF sem o marcador do laboratório: ninguém consegue ler (como um arquivo ilegível em produção).
     await d.page.getByTestId("documento-vinculo").locator('input[type="file"]').setInputFiles({ name: "matricula.pdf", mimeType: "application/pdf", buffer: pdf() });

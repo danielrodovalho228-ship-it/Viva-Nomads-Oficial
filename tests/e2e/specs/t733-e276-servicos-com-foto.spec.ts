@@ -20,7 +20,7 @@ const SERVICOS = [
   ["limpeza", "Limpeza"],
   ["lavanderia", "Lavanderia"],
   ["montagem", "Montagem de móveis"],
-  ["manutencao", "Manutenção"],
+  ["manutencao", "Reparos com parceiros"], // E487
 ] as const;
 
 test.describe("T733 — E276: serviços do painel do morador com foto", () => {

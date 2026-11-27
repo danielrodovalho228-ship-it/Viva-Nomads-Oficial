@@ -6,14 +6,19 @@
   estado por estadoDoContratoUnico, a partir da linha do banco. Nenhuma tela monta a etapa sozinha.
 */
 import { etapaContrato, type EtapaContrato } from "./contrato-etapas.ts";
+import { lerDaterange } from "./contrato-periodo.ts";
+import { saidaPeloFim } from "./texto-do-periodo.ts";
+import { hojeEmBrasilia } from "./datas-brasilia.ts";
 
 export type Papel = "inquilino" | "proprietario";
 
 /** Colunas de `contratos` que o estado precisa (use no select, junto de `id`). */
-export const COLUNAS_ESTADO_CONTRATO = "status, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
+export const COLUNAS_ESTADO_CONTRATO = "status, periodo, assinado_proprietario_em, assinado_inquilino_em, pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
 
 export interface LinhaEstadoContrato {
   status?: string | null;
+  /** E543: o daterange do contrato ("[2026-09-30,2026-10-31)"). Ausente = a regra de sempre, sem o período. */
+  periodo?: string | null;
   assinado_proprietario_em?: string | null;
   assinado_inquilino_em?: string | null;
   pagamentos_bloco?: { tipo?: string | null; confirmado_pelo_inquilino?: boolean | null; anulado_em?: string | null }[] | null;
@@ -28,6 +33,7 @@ export type ChaveEstado =
   | "em_acerto"
   | "concluido"
   | "encerrado_sem_renovacao"
+  | "encerrado_periodo"
   | "cancelado";
 
 export interface EstadoContrato {
@@ -50,6 +56,14 @@ export function primeiroPagamentoConfirmado(pagamentos: LinhaEstadoContrato["pag
   return (pagamentos ?? []).some((p) => p?.tipo === "aluguel" && p?.confirmado_pelo_inquilino === true && !p?.anulado_em);
 }
 
+/**
+ * E1068: o 1º pagamento já foi REGISTRADO pelo proprietário (há registro válido), confirmado ou não. Junto com
+ * `primeiroPagamentoConfirmado` dá os três estados reais: não registrado, registrado à espera do morador, confirmado.
+ */
+export function primeiroPagamentoRegistrado(pagamentos: LinhaEstadoContrato["pagamentos_bloco"]): boolean {
+  return (pagamentos ?? []).some((p) => p?.tipo === "aluguel" && !p?.anulado_em);
+}
+
 const ENCERRADOS: Record<string, { chave: ChaveEstado; selo: string }> = {
   cancelado: { chave: "cancelado", selo: "Cancelado" },
   concluido: { chave: "concluido", selo: "Concluído" },
@@ -58,11 +72,20 @@ const ENCERRADOS: Record<string, { chave: ChaveEstado; selo: string }> = {
 };
 
 /** A função única. `papel` muda só o "falta você / falta o inquilino" da assinatura. */
-export function estadoDoContratoUnico(c: LinhaEstadoContrato, papel: Papel): EstadoContrato {
+export function estadoDoContratoUnico(c: LinhaEstadoContrato, papel: Papel, agora: Date = new Date()): EstadoContrato {
   const status = c.status ?? "ativo";
   if (status !== "ativo") {
     const e = ENCERRADOS[status] ?? { chave: "concluido" as const, selo: "Concluído" };
     return { ...e, etapa: null, faltaVoce: false, ativo: false };
+  }
+  // E543: o período já terminou (o último dia passou, no calendário de Brasília) → encerrado em toda tela, com a mesma
+  // data da página da estadia — nunca "Aguardando 1º pagamento" de um contrato que já acabou.
+  // E1132: o "hoje" é o da fonte única (hojeEmBrasilia, E1115), não uma conta própria do fuso.
+  const p = lerDaterange(c.periodo);
+  if (p && p.fim < hojeEmBrasilia(agora)) {
+    // E1089: `p.fim` é a última noite; o contrato encerra no dia da SAÍDA (o dia seguinte), a data que o selo mostra.
+    const [a, m, d] = (saidaPeloFim(p.fim) || p.fim).split("-");
+    return { chave: "encerrado_periodo", selo: `Encerrado em ${d}/${m}/${a}`, etapa: null, faltaVoce: false, ativo: false };
   }
   const etapa = etapaContrato({
     assinadoProprietarioEm: c.assinado_proprietario_em ?? null,
@@ -93,11 +116,42 @@ export function tomDoSelo(e: Pick<EstadoContrato, "chave" | "ativo">): string {
  * O selo para a EQUIPE (admin › contrato e pacote de provas gerado pelo admin): a mesma fonte única, sem o
  * "falta você" de quem é parte — na assinatura diz quem falta.
  */
-export function seloParaEquipe(c: LinhaEstadoContrato): string {
-  const e = estadoDoContratoUnico(c, "proprietario");
+export function seloParaEquipe(c: LinhaEstadoContrato, agora: Date = new Date()): string {
+  const e = estadoDoContratoUnico(c, "proprietario", agora);
   if (e.etapa !== "aguardando_assinatura") return e.selo;
   const prop = !!c.assinado_proprietario_em;
   const inq = !!c.assinado_inquilino_em;
   if (!prop && !inq) return "Aguardando assinatura · faltam as duas partes";
   return `Aguardando assinatura · falta o ${prop ? "inquilino" : "proprietário"}`;
+}
+
+/** E543: a situação da EQUIPE (filtro da lista do admin) — grupos da fonte única, nunca o status cru do banco. */
+export type SituacaoEquipe = "aguardando_assinatura" | "aguardando_pagamento" | "em_vigencia" | "em_acerto" | "encerrado" | "cancelado";
+
+export const ROTULO_SITUACAO_EQUIPE: Record<SituacaoEquipe, string> = {
+  aguardando_assinatura: "Aguardando assinatura",
+  aguardando_pagamento: "Aguardando 1º pagamento",
+  em_vigencia: "Em vigência",
+  em_acerto: "Em acerto de saída",
+  encerrado: "Encerrado",
+  cancelado: "Cancelado",
+};
+
+const GRUPO_EQUIPE: Record<ChaveEstado, SituacaoEquipe> = {
+  aguardando_assinatura: "aguardando_assinatura",
+  falta_voce: "aguardando_assinatura",
+  falta_outra_parte: "aguardando_assinatura",
+  aguardando_pagamento: "aguardando_pagamento",
+  em_vigencia: "em_vigencia",
+  em_acerto: "em_acerto",
+  concluido: "encerrado",
+  encerrado_sem_renovacao: "encerrado",
+  encerrado_periodo: "encerrado",
+  cancelado: "cancelado",
+};
+
+/** A situação do contrato para o filtro do admin: a mesma conta do selo (um contrato que terminou é "Encerrado"). */
+export function situacaoParaEquipe(c: LinhaEstadoContrato, agora: Date = new Date()): { chave: SituacaoEquipe; rotulo: string } {
+  const chave = GRUPO_EQUIPE[estadoDoContratoUnico(c, "proprietario", agora).chave];
+  return { chave, rotulo: ROTULO_SITUACAO_EQUIPE[chave] };
 }

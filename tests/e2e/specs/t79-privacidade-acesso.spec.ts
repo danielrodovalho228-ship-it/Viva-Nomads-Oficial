@@ -45,7 +45,9 @@ test.describe("T79 — Privacidade e acesso ao imóvel", () => {
     test.setTimeout(180_000);
     const { error } = await adm()
       .from("properties")
-      .update({ sem_cameras_interior: true, cameras_externas: "portaria do prédio", tipo_acesso: "fechadura_senha", senha_trocada_estadia: true })
+      // E744 (asserção alterada, tabela da Fable #3832): desde o E259 (2) a entrada é UMA pergunta (`tipo_entrada`, Passo 6)
+      // e o "Acesso" da página sai dela; `tipo_acesso` segue gravado, derivado (o lembrete da senha no contrato o lê).
+      .update({ sem_cameras_interior: true, cameras_externas: "portaria do prédio", tipo_entrada: "fechadura_com_codigo", tipo_acesso: "fechadura_senha", senha_trocada_estadia: true })
       .eq("id", ids.comSenha!);
     expect(error).toBeNull();
     const page = await entrar(browser, dono.email, senha);
@@ -70,7 +72,7 @@ test.describe("T79 — Privacidade e acesso ao imóvel", () => {
     expect(html).toContain('data-testid="bloco-privacidade"');
     expect(html).toContain("Sem câmeras no interior (declarado pelo anunciante)");
     expect(html).toContain("Câmeras externas: portaria do prédio");
-    expect(html).toContain("Acesso: Fechadura com senha");
+    expect(html).toContain("Acesso: Fechadura com código");
     expect(html).toContain("A senha é trocada antes de cada nova estadia");
   });
 

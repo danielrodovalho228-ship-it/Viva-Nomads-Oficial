@@ -16,24 +16,17 @@ import {
   FORMULA_VALOR_TOTAL,
 } from "@/lib/admin/indicadores";
 import { fmtPct, fmtReais, rotuloPeriodo } from "@/lib/admin/visao-geral";
-import { refContratoVN } from "@/lib/fiscal/fila-falhas";
+import { numerosDaLista } from "@/lib/contrato-ref";
 import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import { dataBRT } from "@/lib/datas-brasilia";
 import { estadosConferenciaEntrada } from "@/lib/data/contrato-admin";
+import { ROTULO_SITUACAO_EQUIPE, type SituacaoEquipe } from "@/lib/contrato-estado";
 import { ROTULO_ESTADO_CONFERENCIA, type EstadoConferenciaLista } from "@/lib/conferencia";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
 
 export const metadata = { title: tituloDoAdmin("/admin/contratos"), robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-const STATUS: Record<string, string> = {
-  rascunho: "Rascunho",
-  aguardando_assinatura: "Aguardando assinatura",
-  assinado: "Assinado",
-  ativo: "Ativo",
-  encerrado: "Encerrado",
-  cancelado: "Cancelado",
-};
 
 /**
  * Admin → Contratos (Prompt 29, item 5): todos os contratos, sem depender de Documentos ou Financeiro. A lista e os
@@ -57,15 +50,18 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
   const nomes = admin ? await nomesCurtos(admin, todos.flatMap((c) => [c.ownerId, c.tenantId])) : new Map<string, string>();
   const lista = todos.filter(
     (c) =>
-      (!status || c.status === status) &&
+      (!status || c.situacao === status) &&
       (!q || c.id.toLowerCase().startsWith(q.replace(/^vn-ct-/, "")) || c.imovel.toLowerCase().includes(q)) &&
       (!dono || (nomes.get(c.ownerId) ?? "").toLowerCase().includes(dono)) &&
       (!inquilino || (nomes.get(c.tenantId) ?? "").toLowerCase().includes(inquilino))
   );
   const ag = agregarContratos(lista);
+  // E543: dois contratos com o mesmo número público ganham o desempate (o fim do id) — não são a mesma linha repetida.
+  const numeros = numerosDaLista(lista.map((c) => c.id));
   // Coluna "Conferência de entrada" (Prompt 35B, F5): Não aberta / Em andamento / Aguardando a outra parte / Confirmada / Contestada.
   const conferencias = admin ? await estadosConferenciaEntrada(admin, lista.map((c) => c.id)) : new Map<string, EstadoConferenciaLista>();
-  const statusVistos = [...new Set(todos.map((c) => c.status))].sort();
+  // E543: as opções do filtro são as situações da fonte única (as mesmas do selo), na ordem do ciclo do contrato.
+  const situacoesVistas = (Object.keys(ROTULO_SITUACAO_EQUIPE) as SituacaoEquipe[]).filter((s) => todos.some((c) => c.situacao === s));
   const campo = "rounded-xl border border-line px-3 py-2 text-sm text-ink";
 
   return (
@@ -105,9 +101,9 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
           Situação
           <select name="status" defaultValue={status} className={campo}>
             <option value="">Todas</option>
-            {statusVistos.map((s) => (
+            {situacoesVistas.map((s) => (
               <option key={s} value={s}>
-                {STATUS[s] ?? s}
+                {ROTULO_SITUACAO_EQUIPE[s]}
               </option>
             ))}
           </select>
@@ -143,7 +139,7 @@ export default async function AdminContratosPage({ searchParams }: { searchParam
                 <li key={c.id} className="rounded-xl border border-line p-3 text-sm" data-testid="contrato-linha">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="font-semibold text-ink">
-                      {refContratoVN(c.id)} · {c.imovel}
+                      {numeros.get(c.id)} · {c.imovel}
                       {c.teste && <SeloTeste />}
                       {ehRegraAnterior(c) && <span className="ml-2 rounded-full border border-line bg-white px-2 py-1 text-xs text-muted">regra anterior</span>}
                     </span>

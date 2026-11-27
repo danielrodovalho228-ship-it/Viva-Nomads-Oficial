@@ -8,6 +8,8 @@ const FOTOS = [
   "/images/home/home-proprietarios-chaves.webp",
   "/images/imoveis/placeholder-imovel-sala.webp",
   "/images/unicas/parceiros-servicos.webp",
+  // E540: a foto do cartão do morador em Conta › Pagamentos (antes, um placeholder de imóvel).
+  "/images/unicas/cf-pagamentos.webp",
   "/images/unicas/cf-conversa-registrada.webp",
   "/images/painel/ferramentas-analise.webp",
   "/images/painel/ferramentas-fechamento.webp",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -9,7 +10,7 @@ import { getCanais, setCanais } from "@/lib/data/canais-actions";
 import { getCategoriasDesligadas, setCategoriasDesligadas } from "@/lib/data/notif-categorias-actions";
 import { getAlertasEquipe, setAlertasEquipe } from "@/lib/data/pedidos-actions";
 import type { CategoriaComInterruptor } from "@/config/matriz-notificacoes";
-import { CANAIS_AVISO, TIPOS_AVISO, categoriasDesligadasDe, type CanaisAviso } from "@/lib/conta/tela-notificacoes";
+import { CANAIS_AVISO, CONVITE_CELULAR_WHATSAPP, TIPOS_AVISO, categoriasDesligadasDe, tiposDeDesligadas, type CanaisAviso, type PreferenciasIniciais } from "@/lib/conta/tela-notificacoes";
 
 type Tipos = Record<CategoriaComInterruptor, boolean>;
 
@@ -18,10 +19,14 @@ type Tipos = Record<CategoriaComInterruptor, boolean>;
  * Novidades e dicas, Sugestões e novidades) e o cartão "Canais" (E-mail, push, WhatsApp) com "Salvar preferências". Decisões e segurança
  * sempre chegam (sem interruptor). Gravar a preferência não liga envio: WhatsApp e push seguem atrás das chaves.
  */
-export function TelaNotificacoes() {
-  const [tipos, setTipos] = useState<Tipos | null>(null);
-  const [canais, setCanaisUi] = useState<CanaisAviso | null>(null);
-  const [equipe, setEquipe] = useState<boolean | null>(null);
+export function TelaNotificacoes({ inicial = null }: { inicial?: PreferenciasIniciais | null }) {
+  // E549: a página lê as preferências no servidor — os interruptores já nascem ligados/desligados. Antes, os 7 ficavam
+  // no trilho de carregamento (oval vazio) enquanto as três leituras do navegador não voltavam.
+  const [tipos, setTipos] = useState<Tipos | null>(inicial ? tiposDeDesligadas(inicial.desligadas) : null);
+  const [canais, setCanaisUi] = useState<CanaisAviso | null>(inicial?.canais ?? null);
+  // E703: sem celular cadastrado o WhatsApp fica desligado e indisponível, com o convite a cadastrar o número.
+  const [temCelular, setTemCelular] = useState<boolean>(inicial?.canais?.temCelular !== false);
+  const [equipe, setEquipe] = useState<boolean | null>(inicial?.equipe ?? null);
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
   // Achados 52/53: sem ler as preferências gravadas, a tela não abre com valores padrão (todos ligados) — salvar isso
@@ -30,20 +35,23 @@ export function TelaNotificacoes() {
   const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
+    // Com o estado vindo da página, o navegador só relê em "Tentar de novo".
+    if (inicial && tentativa === 0) return;
     let vivo = true;
     Promise.all([getCategoriasDesligadas(), getCanais(), getAlertasEquipe().catch(() => null)])
       .then(([desl, c, eq]) => {
         if (!vivo) return;
         setFalhou(false);
-        setTipos({ mensagens: !desl.includes("mensagens"), lembretes: !desl.includes("lembretes"), outros: !desl.includes("outros"), sugestoes: !desl.includes("sugestoes") });
+        setTipos(tiposDeDesligadas(desl));
         setCanaisUi(c);
+        setTemCelular(c.temCelular !== false);
         setEquipe(eq);
       })
       .catch(() => vivo && setFalhou(true));
     return () => {
       vivo = false;
     };
-  }, [tentativa]);
+  }, [tentativa, inicial]);
 
   async function salvar() {
     if (!tipos || !canais) return;
@@ -98,8 +106,15 @@ export function TelaNotificacoes() {
         </h2>
         <ul className="divide-y divide-line">
           {CANAIS_AVISO.map((c) => (
-            <Linha key={c.canal} titulo={c.titulo} texto={c.texto}>
-              {canais ? <Switch checked={canais[c.canal]} onChange={(v) => setCanaisUi({ ...canais, [c.canal]: v })} label={c.titulo} testId={`notif-canal-${c.canal}`} /> : trilho}
+            <Linha key={c.canal} titulo={c.titulo} texto={c.texto} extra={c.canal === "whatsapp" && !temCelular ? (
+                <span className="mt-1 block text-sm text-muted" data-testid="notif-whatsapp-convite">
+                  {CONVITE_CELULAR_WHATSAPP.texto}{" "}
+                  <Link href={CONVITE_CELULAR_WHATSAPP.href} className="font-semibold text-forest underline">
+                    {CONVITE_CELULAR_WHATSAPP.rotulo}
+                  </Link>
+                </span>
+              ) : undefined}>
+              {canais ? <Switch checked={canais[c.canal] && !(c.canal === "whatsapp" && !temCelular)} disabled={c.canal === "whatsapp" && !temCelular} onChange={(v) => setCanaisUi({ ...canais, [c.canal]: v })} label={c.titulo} testId={`notif-canal-${c.canal}`} /> : trilho}
             </Linha>
           ))}
         </ul>
@@ -137,12 +152,13 @@ export function TelaNotificacoes() {
   );
 }
 
-function Linha({ titulo, texto, children }: { titulo: string; texto: string; children: React.ReactNode }) {
+function Linha({ titulo, texto, extra, children }: { titulo: string; texto: string; extra?: React.ReactNode; children: React.ReactNode }) {
   return (
     <li className="flex items-center justify-between gap-4 py-4">
       <span className="min-w-0">
         <span className="block text-lg font-semibold text-ink">{titulo}</span>
         <span className="block text-sm text-ink">{texto}</span>
+        {extra}
       </span>
       {children}
     </li>

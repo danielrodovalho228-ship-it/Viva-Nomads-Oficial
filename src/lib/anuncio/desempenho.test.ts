@@ -2,6 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 import {
   FORMULAS,
   acoesDaNota,
@@ -119,11 +120,8 @@ test("nenhum texto de ganho estimado no painel (lib, servidor e tela)", () => {
     "../data/desempenho-anuncio.ts",
     "../../app/(dashboard)/dashboard/imoveis/[id]/desempenho/page.tsx",
   ].map((p) =>
-    readFileSync(new URL(p, import.meta.url), "utf8")
-      .replace(/export const SEM_ESTIMATIVA[^\n]*\n/, "")
-      // Só o que a pessoa lê: comentários (que dizem "sem ganho estimado") ficam fora da varredura.
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/^\s*\/\/.*$/gm, ""),
+    // Só o que a pessoa lê: comentários (que dizem "sem ganho estimado") ficam fora da varredura (E1164: o ajudante único).
+    fonteSemComentarios(readFileSync(new URL(p, import.meta.url), "utf8").replace(/export const SEM_ESTIMATIVA[^\n]*\n/, "")),
   );
   for (const t of arquivos) assert.doesNotMatch(t, SEM_ESTIMATIVA);
   for (const f of Object.values(FORMULAS)) assert.doesNotMatch(f, SEM_ESTIMATIVA);

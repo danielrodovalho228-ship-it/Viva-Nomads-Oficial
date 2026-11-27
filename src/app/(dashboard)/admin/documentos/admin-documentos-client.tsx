@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { rotuloDoAdmin } from "@/config/menu-admin";
 import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
+import { ABA_ADMIN } from "@/lib/admin/abas";
 
 /**
  * Fila de CONFERÊNCIA dos documentos de imóvel (matrícula / contrato de gestão).
@@ -130,7 +131,7 @@ export function AdminDocumentosClient({
             onClick={() => setAba(k)}
             className={cn(
               "rounded-full px-3 py-2 text-sm font-semibold",
-              aba === k ? "bg-forest text-white" : "bg-sage-100 text-forest hover:bg-sage-200",
+              aba === k ? ABA_ADMIN.ativa : ABA_ADMIN.inativa,
             )}
           >
             {rotulo}

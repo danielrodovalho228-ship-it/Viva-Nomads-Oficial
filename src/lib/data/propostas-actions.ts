@@ -1,6 +1,7 @@
 "use server";
 
 import { resolverAvisos } from "@/lib/notifications/avisos-servidor";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import { moradorNoEmail } from "@/lib/notifications/morador-email-servidor";
 import { normalizarRegrasPets } from "@/lib/anuncio/pets-regras";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -8,6 +9,7 @@ import { linkedinConectados } from "@/lib/linkedin/servidor";
 import { vinculosConfirmados } from "@/lib/vinculo/servidor";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
@@ -25,9 +27,10 @@ import { MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 import { normalizarLimpezaEstadia } from "@/lib/anuncio/limpeza-estadia";
 import { avisoAbaixoDoMinimo, normalizarNegociacao, descontoParaMeses, type Negociacao } from "@/lib/anuncio/negociacao";
 import { taxaDoDonoAgora, MSG_TAXA_SEM_LEITURA } from "@/lib/cobranca/taxa-servidor";
-import { comissaoSobreContrato } from "@/lib/cobranca/regra";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
-import { periodoDaEstadia } from "@/lib/contrato-periodo";
+import { dataDeSaida, periodoEmDias } from "@/lib/contrato-periodo";
+import { periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
+import { mesesCompletos, mesesDeReferencia } from "@/lib/estadia-em-dias";
 import {
   aguardandoResposta,
   aplicarContraproposta,
@@ -40,6 +43,9 @@ import {
   MAX_VERSOES,
   MENSAGEM_MAX,
   mesesDoAnuncio,
+  diasDoAnuncio,
+  diasDosTermos,
+  taxaServicoProposta,
   motivoRecusaValido,
   MOTIVOS_RECUSA,
   STATUS_ABERTOS,
@@ -70,7 +76,13 @@ import {
   type LinhaVersao,
 } from "@/lib/data/propostas-servidor";
 import { hojeBR } from "@/lib/utils";
-import { precoDaProposta } from "@/lib/precos";
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { formaDaProposta, normalizarEscolha, type EscolhaPagamento } from "@/lib/pagamento-forma/regras";
+import { formatBRLExato, precoDaProposta, termosDaEstadiaDoImovel } from "@/lib/precos";
+import { caucaoDaProposta, rotuloCaucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
+import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
+import { estadoDaPreAceitacao, linhaDeContexto, podeReabrir, prazoDaPreAceitacao, TEXTO_REGRA_CORRIDA, TEXTO_SEM_PUNICAO, TEXTO_TAXA_CONTINUA, textoDoPrazo } from "@/lib/propostas/pre-aceitacao";
+import { reabrirNoBanco } from "@/lib/propostas/pre-aceitacao-servidor";
 
 /**
  * E189 (QA 25/10): a conta aberta do total do contrato é UMA só — a mesma da tabela e do detalhe (precoDaProposta:
@@ -88,21 +100,26 @@ function contaDaProposta(termos: TermosProposta): string {
  */
 function dadosDoEmailDaProposta(
   numero: string,
-  imovel: { titulo: string | null; bairro: string | null; cidade: string | null },
+  imovel: { id?: string | null; titulo: string | null; bairro: string | null; cidade: string | null },
   c: { desfecho: Desfecho; termos: TermosProposta; responderAte?: string | null; motivo?: string | null },
   quemRecebe: "owner" | "tenant",
 ) {
   const tot = calcularTotais(c.termos);
-  const periodo = periodoDaEstadia(String(c.termos.dataEntrada).slice(0, 10), Number(c.termos.meses));
+  const entrada = String(c.termos.dataEntrada).slice(0, 10);
+  // E1058: a caução do ecrã da proposta (a mesma função e o mesmo rótulo) entra no quadro do e-mail.
+  const caucao = caucaoDaProposta(c.termos, tot.valorMensal);
   const linhas = linhasProposta({
     numero: String(numero),
     imovel,
-    entrada: periodo.inicio,
-    saida: periodo.fim,
-    meses: Math.round(Number(c.termos.meses)),
+    entrada,
+    // E599: a data de SAÍDA (entrada + dias), a mesma do formulário e da candidatura — não o fim inclusivo (um dia antes).
+    saida: dataDeSaida(entrada, tot.dias),
+    meses: mesesDeReferencia(tot.dias),
+    dias: tot.dias,
     valorMensal: tot.valorMensal,
     contaTotal: contaDaProposta(c.termos),
     responderAte: c.desfecho === "nova" || c.desfecho === "contraproposta" ? c.responderAte : null,
+    caucao: caucao ? { rotulo: rotuloCaucaoDaProposta(caucao), valor: formatBRLExato(caucao.valor) } : null,
   });
   const passo = proximoPassoProposta(c.desfecho, quemRecebe);
   return {
@@ -125,18 +142,19 @@ import { SITE_URL } from "@/lib/site";
 type Resultado<T = object> = ({ ok: true } & T) | { ok: false; error: string; aviso?: string };
 type Admin = SupabaseClient;
 
-async function sessao() {
+/** E1093: com `exigir`, a confirmação da sessão que falha LANÇA (não vira "sem sessão" → lista vazia). */
+async function sessao(opcoes: { exigir?: boolean } = {}) {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return null;
   return { supabase, admin, user };
 }
 
 interface ImovelProposta {
+  /** E647: a preferência do dono em `detalhes_anuncio.pagamento` (só usada com a chave ligada). */
+  detalhes_anuncio?: { pagamento?: unknown } | null;
   id: string;
   owner_id: string;
   status?: string | null;
@@ -161,7 +179,7 @@ async function lerImovel(admin: Admin, propertyId: string): Promise<ImovelPropos
   const { data } = await admin
     .from("properties")
     .select(
-      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao, pets_allowed, pets_regras",
+      "id, owner_id, status, title, monthly_price, min_period_days, max_period_days, max_guests, condo_fee, utilities_mode, utilities_estimate, prep_fee, checkout_cleaning_enabled, checkout_cleaning_fee, limpeza_estadia, negociacao, pets_allowed, pets_regras, detalhes_anuncio",
     )
     .eq("id", propertyId)
     .maybeSingle();
@@ -170,7 +188,9 @@ async function lerImovel(admin: Admin, propertyId: string): Promise<ImovelPropos
 
 function limitesDoImovel(im: ImovelProposta) {
   const m = mesesDoAnuncio(im.min_period_days, im.max_period_days);
-  return { mesesMin: m.min, mesesMax: m.max, capacidade: im.max_guests && im.max_guests > 0 ? im.max_guests : null };
+  // E562: os limites em dias exatos do anúncio (30 a 180).
+  const d = diasDoAnuncio(im.min_period_days, im.max_period_days);
+  return { mesesMin: m.min, mesesMax: m.max, diasMin: d.min, diasMax: d.max, capacidade: im.max_guests && im.max_guests > 0 ? im.max_guests : null };
 }
 
 /**
@@ -186,23 +206,34 @@ async function taxaPetDaProposta(admin: Admin, im: ImovelProposta, tenantId: str
 }
 
 /** Valores que a montagem abre preenchidos (do anúncio), todos editáveis pelo proprietário. */
-function termosDoAnuncio(im: ImovelProposta, meses: number, dataEntrada: string, neg: Negociacao, taxaPet = 0): TermosProposta {
-  const limpeza = normalizarLimpezaEstadia(im.limpeza_estadia);
-  const porMes = limpeza?.porMes ?? 0;
+function termosDoAnuncio(im: ImovelProposta, dias: number, dataEntrada: string, neg: Negociacao, taxaPet = 0): TermosProposta {
+  // E562 (telas): os MESMOS termos da barra lateral do anúncio e do "Pedir para morar" (termosDaEstadiaDoImovel).
+  const t = termosDaEstadiaDoImovel({
+    monthlyPrice: Number(im.monthly_price) || 0,
+    condoFee: Number(im.condo_fee) || 0,
+    utilitiesMode: im.utilities_mode === "fixed" ? "fixed" : "real",
+    utilitiesEstimate: Number(im.utilities_estimate) || 0,
+    limpezaEstadia: normalizarLimpezaEstadia(im.limpeza_estadia) ?? undefined,
+    prepFee: Number(im.prep_fee) || 0,
+    checkoutCleaningEnabled: !!im.checkout_cleaning_enabled,
+    checkoutCleaningFee: Number(im.checkout_cleaning_fee) || 0,
+  });
   return {
     valorBase: Number(im.monthly_price) || 0,
     descontoPct: 0,
     descontoValor: 0,
     motivoDesconto: null,
-    descontoEstadiaPct: descontoParaMeses(neg.descontos, meses),
-    meses,
+    // E562: a faixa de desconto conta os meses completos da estadia.
+    descontoEstadiaPct: descontoParaMeses(neg.descontos, mesesCompletos(dias)),
+    meses: mesesDeReferencia(dias),
+    dias,
     dataEntrada,
-    condominio: Number(im.condo_fee) || 0,
-    consumo: im.utilities_mode === "fixed" ? Number(im.utilities_estimate) || 0 : 0,
-    limpezasMes: porMes,
-    valorLimpeza: porMes > 0 && limpeza ? Math.round((limpeza.valorMes / porMes) * 100) / 100 : 0,
+    condominio: t.condominio,
+    consumo: t.consumo,
+    limpezasMes: t.limpezasMes,
+    valorLimpeza: t.valorLimpeza,
     taxaPet,
-    limpezaUnica: (Number(im.prep_fee) || 0) + (im.checkout_cleaning_enabled ? Number(im.checkout_cleaning_fee) || 0 : 0),
+    limpezaUnica: t.limpezaUnica,
   };
 }
 
@@ -310,7 +341,7 @@ async function avisarOutraParte(
     const proprio = email
       ? email({ nomeRemetente: ((r as { full_name?: string | null } | null)?.full_name as string | null) ?? null, cidade: (im as { city?: string | null } | null)?.city ?? null })
       : null;
-    const imovel = { titulo: (im as { title?: string | null } | null)?.title ?? null, bairro: (im as { address?: string | null } | null)?.address ?? null, cidade: (im as { city?: string | null } | null)?.city ?? null };
+    const imovel = { id: p.property_id, titulo: (im as { title?: string | null } | null)?.title ?? null, bairro: (im as { address?: string | null } | null)?.address ?? null, cidade: (im as { city?: string | null } | null)?.city ?? null };
     const papelDestino = destino === p.owner_id ? "owner" : "tenant";
     const dados = contexto ? dadosDoEmailDaProposta(p.numero, imovel, contexto, papelDestino) : null;
     // E441: proposta (orçamento) do MORADOR ao dono — a foto (ou as iniciais) e o nome dele, clicáveis para o detalhe.
@@ -367,7 +398,7 @@ async function emailsDoAceite(
       admin.from("properties").select("title, address, city").eq("id", p.property_id).maybeSingle(),
     ]);
     const i = (im ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
-    const imovel = { titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
+    const imovel = { id: p.property_id, titulo: i.title ?? null, bairro: i.address ?? null, cidade: i.city ?? null };
     const d = (dono ?? {}) as { email?: string | null; full_name?: string | null };
     const m = (morador ?? {}) as { email?: string | null; full_name?: string | null };
     const quadroDono = dadosDoEmailDaProposta(p.numero, imovel, { desfecho: "aceita", termos }, "owner");
@@ -459,17 +490,19 @@ export interface DadosMontagem {
   interessado: string;
   imovel: { id: string; titulo: string };
   termos: TermosProposta;
-  limites: { mesesMin: number; mesesMax: number; capacidade: number | null };
+  limites: { mesesMin: number; mesesMax: number; diasMin?: number; diasMax?: number; capacidade: number | null };
   negociacao: Negociacao;
   /** Taxa de serviço prevista (só o proprietário vê). */
   taxa: number;
+  /** E582: o documento do dono está completo? Sem ele, o formulário mostra a trava ao lado do botão. */
+  documentoOk: boolean;
 }
 
 /** Valores do anúncio para abrir a montagem preenchida (só o dono do interessado). */
 export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem | null> {
   const s = await sessao();
   if (!s) return null;
-  const { data: lead, error: erroLead } = await s.admin.from("leads").select("id, owner_id, tenant_id, property_id, status, inicio_desejado").eq("id", leadId).maybeSingle();
+  const { data: lead, error: erroLead } = await s.admin.from("leads").select("id, owner_id, tenant_id, property_id, status, inicio_desejado, fim_desejado").eq("id", leadId).maybeSingle();
   // Achado 112: a falha LANÇA (error.tsx) — nunca "Escolha um interessado" quando o interessado existe.
   if (erroLead) throw new Error("Não foi possível ler o interessado.");
   if (!lead || lead.owner_id !== s.user.id || !["new", "accepted"].includes(lead.status as string)) return null;
@@ -485,11 +518,22 @@ export async function dadosNovaProposta(leadId: string): Promise<DadosMontagem |
     leadId,
     interessado: nomeNaProposta({ quemVe: "owner", nomeCompleto: aceito ? await nomeDe(s.admin, lead.tenant_id as string) : null, aceito }),
     imovel: { id: im.id, titulo: im.title },
-    termos: termosDoAnuncio(im, Math.min(lim.mesesMax, Math.max(lim.mesesMin, 4)), entrada, neg, await taxaPetDaProposta(s.admin, im, lead.tenant_id as string)),
+    termos: termosDoAnuncio(im, diasDaMontagem(desejada, (lead.fim_desejado as string | null) ?? null, lim), entrada, neg, await taxaPetDaProposta(s.admin, im, lead.tenant_id as string)),
     limites: lim,
     negociacao: neg,
     taxa: (await taxaDoDonoAgora(s.admin, s.user.id)).taxa,
+    documentoOk: await temDocumento(s.admin, s.user.id),
   };
+}
+
+/**
+ * E562: a montagem abre com os DIAS da candidatura (entrada → saída, sem arredondar para meses), dentro do prazo do
+ * anúncio. Sem período na candidatura, 4 meses (120 dias) como antes, dentro dos limites.
+ */
+function diasDaMontagem(entrada: string | null, saida: string | null, lim: { diasMin: number; diasMax: number }): number {
+  const p = periodoDaCandidatura(entrada, saida);
+  const desejado = p ? p.dias : 120;
+  return Math.min(lim.diasMax, Math.max(lim.diasMin, desejado));
 }
 
 export interface EntradaProposta {
@@ -499,6 +543,8 @@ export interface EntradaProposta {
   descontoValor?: number;
   motivoDesconto?: string | null;
   meses: number;
+  /** E562: dias exatos (30 a 180). Sem eles (tela antiga), meses × 30. */
+  dias?: number | null;
   dataEntrada: string;
   condominio?: number;
   consumo?: number;
@@ -506,6 +552,10 @@ export interface EntradaProposta {
   valorLimpeza?: number;
   taxaPet?: number;
   limpezaUnica?: number;
+  /** E562: ajuste do dono no pacote de limpezas (vazio = round(limpezas por mês × dias ÷ 30)). */
+  limpezasPacote?: number | null;
+  /** E647 (refino): a forma de pagamento da proposta. Só vale com a chave ligada; sem ela, ignorada. */
+  formaPagamento?: "bloco" | "mensal" | null;
   pessoas?: number | null;
   validadeDias: number;
   mensagem?: string;
@@ -521,7 +571,7 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
   if (!lead || lead.owner_id !== s.user.id) return { ok: false, error: "Escolha um interessado da sua lista." };
   if (!["new", "accepted"].includes(lead.status as string)) return { ok: false, error: "Esta candidatura não está mais em andamento." };
   // O aceite da proposta pode valer como aceite da candidatura: o documento do dono vai no contrato.
-  if (!(await temDocumento(s.admin, s.user.id))) return { ok: false, error: MSG_DOCUMENTO.aceitar };
+  if (!(await temDocumento(s.admin, s.user.id))) return { ok: false, error: MSG_DOCUMENTO.proposta };
   if (!VALIDADES_DIAS.includes(Number(e.validadeDias) as 3 | 7 | 15)) return { ok: false, error: "Escolha a validade: 3, 7 ou 15 dias." };
 
   const im = await lerImovel(s.admin, lead.property_id as string);
@@ -529,14 +579,17 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
   // 64-B: anúncio pausado não recebe proposta nova (as candidaturas abertas continuam e seguem nas mensagens).
   if (im.status === "paused") return { ok: false, error: "Este anúncio está pausado: reative para enviar uma proposta nova. As candidaturas abertas continuam nas mensagens." };
   const neg = normalizarNegociacao(im.negociacao);
-  const meses = Math.round(num(e.meses));
+  // E562: a duração é em DIAS; meses vira a referência derivada.
+  const dias = e.dias != null && Number.isFinite(Number(e.dias)) ? Number(e.dias) : Math.round(num(e.meses)) * DIAS_POR_MES;
+  const meses = mesesDeReferencia(dias);
   const termos: TermosProposta = {
     valorBase: Math.round(num(e.valorBase) * 100) / 100,
     descontoPct: Math.round(num(e.descontoPct) * 100) / 100,
     descontoValor: Math.round(num(e.descontoValor) * 100) / 100,
     motivoDesconto: e.motivoDesconto ? String(e.motivoDesconto).slice(0, 80) : null,
-    descontoEstadiaPct: descontoParaMeses(neg.descontos, meses),
+    descontoEstadiaPct: descontoParaMeses(neg.descontos, mesesCompletos(dias)),
     meses,
+    dias,
     dataEntrada: String(e.dataEntrada ?? ""),
     condominio: num(e.condominio),
     consumo: num(e.consumo),
@@ -544,10 +597,17 @@ export async function enviarProposta(e: EntradaProposta): Promise<Resultado<{ id
     valorLimpeza: num(e.valorLimpeza),
     taxaPet: num(e.taxaPet),
     limpezaUnica: num(e.limpezaUnica),
+    limpezasPacote: e.limpezasPacote == null ? null : Math.min(48, Math.round(num(e.limpezasPacote))),
   };
   const pessoas = e.pessoas == null ? null : Math.round(num(e.pessoas)) || null;
   const erro = validarTermos(termos, limitesDoImovel(im), hojeBR(), pessoas);
   if (erro) return { ok: false, error: erro };
+  // E647: a forma de pagamento da 1ª proposta é do dono: a que ele marcou, ou a recomendada pela preferência do anúncio.
+  if (FORMA_PAGAMENTO_DONO_ATIVA) {
+    const v = formaDaProposta({ pedida: e.formaPagamento, anterior: null, escolhaDoAnuncio: im.detalhes_anuncio?.pagamento, dias, quem: "owner" });
+    if (!v.ok) return { ok: false, error: v.erro };
+    termos.formaPagamento = v.forma;
+  }
 
   // Achado 83: a taxa do envio congela o teto desta proposta; sem lê-la, a proposta não sai (antes de numerar: a falha não gasta um ORC).
   const taxaEnvio = await taxaDoDonoAgora(s.admin, s.user.id).catch(() => null);
@@ -614,7 +674,30 @@ export interface VersaoView {
   mudou: Diferenca[];
 }
 
+/** E722: o que a tela mostra da pré-aceitação de 72 h (só com a chave ligada e a proposta aceita ou expirada). */
+export interface PreAceitacaoView {
+  estado: "vigente" | "expirada";
+  /** Fim da janela do morador (ISO) e o mesmo em texto, com data e hora exatas de Brasília. Só aparece enquanto o prazo é do morador. */
+  ateIso: string;
+  ateTexto: string;
+  /** Um prazo por vez: com a candidatura de volta ao dono, só o prazo DELE (1 dia útil) aparece; o do morador some. */
+  donoAteTexto: string | null;
+  /** Linha de contexto do outro prazo (E722: um prazo por vez + esta linha). */
+  contexto: string | null;
+  /** Candidatura encerrada na 3ª expiração: não há mais reabertura. */
+  encerrada: boolean;
+  /** Perdeu a corrida: só o dono reabre. */
+  perdeuACorrida: boolean;
+  reaberturas: number;
+  podeReabrir: boolean;
+  regraCorrida: string;
+  semPunicao: string;
+  taxaContinua: string;
+}
+
 export interface PropostaView {
+  /** E722: pré-aceitação de 72 h (null = chave desligada ou proposta sem janela). */
+  preAceitacao: PreAceitacaoView | null;
   id: string;
   numero: string;
   status: StatusProposta;
@@ -646,6 +729,8 @@ export interface PropostaView {
   /** Só o proprietário vê a taxa de serviço. */
   taxa: { pct: number; valor: number; congelada: boolean; valorMensal: number; meses: number; seAceitaHoje: string | null; caiu: string | null } | null;
   fechamentoUrl: string | null;
+  /** E647: a preferência do dono no anúncio (null = sem escolha ou chave desligada). Só para a tela montar as opções. */
+  escolhaPagamento: EscolhaPagamento | null;
 }
 
 export interface PropostaResumo {
@@ -698,18 +783,22 @@ async function registroDaProposta(admin: Admin, propostaId: string): Promise<Pro
   return data ? { numero: numeroExibido(data.numero as string, Number(data.versao)), conferir: linhaConferir(SITE_URL, data.codigo_verificacao as string) } : null;
 }
 
-/** Lista de Orçamentos: as propostas em que a pessoa é parte (dono ou interessado). */
+/**
+ * Lista de Orçamentos: as propostas em que a pessoa é parte (dono ou interessado). E677: a ordem é a do ENVIO (criada_em),
+ * que só muda quando nasce uma proposta; ordenar por atualizada_em reembaralhava as linhas a cada "vista"/resposta, e a
+ * linha de uma posição passava a ser outra proposta (as do mesmo imóvel só se distinguem pelo número).
+ */
 const MSG_PROPOSTAS_NAO_CARREGARAM = "Não foi possível carregar as propostas agora.";
 
 /** Auditoria de erros e estados vazios, achado nº 6: com `exigir` (a tela da lista), a falha do banco LANÇA — o painel
  * mostra "Não conseguimos abrir esta tela" com "Tentar de novo" — em vez de dizer "nenhuma". Sem `exigir` (contadores,
  * home, notificações), segue a lista vazia. */
 export async function listarPropostas(opcoes: { exigir?: boolean } = {}): Promise<PropostaResumo[]> {
-  const s = await sessao();
+  const s = await sessao(opcoes);
   if (!s) return [];
   await expirarVencidas(s.admin, s.user.id);
   // RLS: só as propostas das partes.
-  const { data, error } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).order("atualizada_em", { ascending: false }).limit(200);
+  const { data, error } = await s.supabase.from("propostas").select(COLUNAS_PROPOSTA).order("criada_em", { ascending: false }).order("numero", { ascending: false }).limit(200);
   if (error && opcoes.exigir) throw new Error(MSG_PROPOSTAS_NAO_CARREGARAM);
   const ps = (data ?? []) as LinhaProposta[];
   if (!ps.length) return [];
@@ -818,16 +907,19 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
       const pct = congelada ? (tx.taxa_congelada as number) : (tx.taxa_no_envio ?? hoje);
       if (pct != null) taxa = {
         pct,
-        valor: comissaoSobreContrato(atual.totais.valorMensal, atual.termos.meses, pct),
+        // E562: a taxa sobre o aluguel × dias ÷ 30 (em meses cheios, × meses como antes).
+        valor: taxaServicoProposta(atual.termos, pct),
         congelada,
         valorMensal: atual.totais.valorMensal,
-        meses: atual.termos.meses,
+        meses: atual.totais.dias / DIAS_POR_MES,
         seAceitaHoje: !congelada && hoje != null ? textoSeAceitaHoje(tx.taxa_no_envio, hoje) : null,
         caiu: congelada ? avisoTaxaCaiu(tx.taxa_no_envio, tx.taxa_congelada as number) : null,
       };
     }
   }
+  const preAceitacao = PRE_ACEITACAO_72H_ATIVA && ["aceita", "expirada"].includes(p.status) ? await preAceitacaoDaProposta(s.admin, p.id, papel) : null;
   return {
+    preAceitacao,
     id: p.id,
     numero: p.numero,
     status: p.status,
@@ -856,6 +948,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
     limites: { mesesMin: lim.mesesMin, mesesMax: lim.mesesMax },
     taxa,
     fechamentoUrl: papel === "owner" && ["aceita", "em_contrato"].includes(p.status) ? `/dashboard/fechamento?c=${p.lead_id}` : null,
+    escolhaPagamento: FORMA_PAGAMENTO_DONO_ATIVA ? normalizarEscolha(im?.detalhes_anuncio?.pagamento) : null,
   };
 }
 
@@ -864,7 +957,7 @@ export async function lerProposta(id: string): Promise<PropostaView | null> {
 export type Resposta =
   | { acao: "aceitar" }
   | { acao: "recusar"; motivo: string; texto?: string }
-  | { acao: "contrapropor"; mudancas: Mudancas; mensagem?: string; mesmoAbaixoDoMinimo?: boolean };
+  | { acao: "contrapropor"; mudancas: Mudancas & { formaPagamento?: "bloco" | "mensal" | null }; mensagem?: string; mesmoAbaixoDoMinimo?: boolean };
 
 async function carregarParaResponder(s: NonNullable<Awaited<ReturnType<typeof sessao>>>, id: string) {
   await expirarVencidas(s.admin, s.user.id);
@@ -941,11 +1034,24 @@ export async function responderProposta(id: string, r: Resposta): Promise<Result
   const mudancas: Mudancas = {};
   if (m.valorBase !== undefined) mudancas.valorBase = num(m.valorBase);
   if (m.meses !== undefined) mudancas.meses = num(m.meses);
+  // E562: contraproposta em dias exatos (vence `meses` quando os dois vêm).
+  if (m.dias !== undefined && m.dias !== null) mudancas.dias = num(m.dias);
   if (m.dataEntrada !== undefined) mudancas.dataEntrada = String(m.dataEntrada);
   if (m.limpezasMes !== undefined) mudancas.limpezasMes = num(m.limpezasMes);
   if (m.taxaPet !== undefined) mudancas.taxaPet = num(m.taxaPet);
   const nova = aplicarContraproposta(anterior, mudancas, neg.descontos);
-  if (camposAlterados(anterior, nova).length === 0) return { ok: false, error: "Mude ao menos um valor para contrapropor." };
+  // E647: a forma de pagamento também muda na contraproposta (o dono aceita a pedida ou propõe a outra; o morador só pede
+  // o que o anúncio oferece). A forma que vinha continua valendo se ninguém mexeu, mas precisa caber nos novos dias.
+  let mudouForma = false;
+  if (FORMA_PAGAMENTO_DONO_ATIVA) {
+    const pedida = (r.mudancas as { formaPagamento?: unknown }).formaPagamento;
+    const dias = diasDosTermos(nova);
+    const v = formaDaProposta({ pedida, anterior: anterior.formaPagamento, escolhaDoAnuncio: im.detalhes_anuncio?.pagamento, dias, quem: papel });
+    if (!v.ok) return { ok: false, error: v.erro };
+    nova.formaPagamento = v.forma;
+    mudouForma = v.forma !== (anterior.formaPagamento ?? null);
+  }
+  if (camposAlterados(anterior, nova).length === 0 && !mudouForma) return { ok: false, error: "Mude ao menos um valor para contrapropor." };
   const proibidas = mudancasProibidas(anterior, nova, papel, neg.itens);
   if (proibidas.length) return { ok: false, error: `O proprietário não abriu para negociação: ${proibidas.join(", ").toLowerCase()}.` };
   const erro = validarTermos(nova, limitesDoImovel(im), hojeBR(), v.pessoas);
@@ -1015,12 +1121,13 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   if (lead.status === "new" && !(await temDocumento(admin, p.owner_id)))
     return { ok: false, error: papel === "owner" ? MSG_DOCUMENTO.aceitar : "O proprietário ainda precisa completar o cadastro. Tente mais tarde." };
   // Disponibilidade por datas (0176): a entrada e os meses da versão aceita não podem cruzar outro contrato ativo.
-  const conflito = await conflitoNoImovel(admin, p.property_id, periodoDaEstadia(String(v.data_entrada).slice(0, 10), Number(v.meses)));
+  const conflito = await conflitoNoImovel(admin, p.property_id, periodoEmDias(String(v.data_entrada).slice(0, 10), diasDosTermos(termosDaLinha(v))));
   if (conflito) return { ok: false, error: conflito };
 
   const { data: ok } = await admin
     .from("propostas")
-    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString() })
+    // E722 (atrás da chave, desligada): 72 h corridas para concluir o contrato, limitadas pela data de entrada.
+    .update({ status: "aceita", aceita_em: agora.toISOString(), taxa_congelada: taxa, taxa_origem: origem, atualizada_em: agora.toISOString(), ...(PRE_ACEITACAO_72H_ATIVA ? { pre_aceitacao_ate: prazoDaPreAceitacao(agora, String(v.data_entrada).slice(0, 10)).toISOString(), pre_aceitacao_reaberturas: 0 } : {}) })
     .eq("id", p.id)
     .eq("versao_atual", v.versao)
     .in("status", ["enviada", "vista", "contraproposta"])
@@ -1052,7 +1159,7 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   }
   const tot = calcularTotais(termosDaLinha(v));
   // Item 34: o dono recebe a taxa congelada com a base escrita; o morador, nunca.
-  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, Number(v.meses), tx.taxa_no_envio);
+  const linhaTaxa = textoTaxaCongeladaParaDono(taxa, tot.valorMensal, tot.dias / DIAS_POR_MES, tx.taxa_no_envio);
   await avisarOutraParte(
     admin,
     p,
@@ -1070,4 +1177,51 @@ async function aceitar(admin: Admin, p: LinhaProposta, v: LinhaVersao, papel: Au
   revalidatePath("/dashboard/leads");
   revalidatePath("/dashboard/fechamento");
   return { ok: true, fechamentoUrl: papel === "owner" ? `/dashboard/fechamento?c=${p.lead_id}` : null };
+}
+
+/**
+ * E722 — reabre uma pré-aceitação que expirou (no máximo 2 vezes). Qualquer das duas partes pode pedir; quem perdeu a corrida só volta
+ * por reabertura do DONO. A 3ª expiração encerra a candidatura (não reabre).
+ * A taxa congelada na pré-aceitação CONTINUA VALENDO: a reabertura não a recalcula. Atrás de PRE_ACEITACAO_72H_ATIVA.
+ */
+export async function reabrirPreAceitacao(id: string): Promise<Resultado<{ prazoAte: string }>> {
+  if (!PRE_ACEITACAO_72H_ATIVA) return { ok: false, error: "A pré-aceitação de 72 horas ainda não está ativa." };
+  const s = await sessao();
+  if (!s) return { ok: false, error: "Entre para reabrir." };
+  const { data, error } = await s.supabase.from("propostas").select("id, owner_id, tenant_id, lead_id").eq("id", id).maybeSingle();
+  if (error) return { ok: false, error: "Não foi possível ler a proposta agora. Tente de novo em instantes." };
+  const p = data as { id: string; owner_id: string; tenant_id: string; lead_id: string } | null;
+  if (!p || (p.owner_id !== s.user.id && p.tenant_id !== s.user.id)) return { ok: false, error: "Proposta não encontrada." };
+  const r = await reabrirNoBanco(s.admin, p.id, p.owner_id === s.user.id ? "owner" : "tenant");
+  if (!r.ok) return { ok: false, error: r.error };
+  revalidatePath(`/dashboard/propostas/${p.id}`);
+  revalidatePath("/dashboard/fechamento");
+  return { ok: true, prazoAte: r.prazo.toISOString() };
+}
+
+/** E722: a janela de 72 h da proposta, pronta para a tela (data e hora exatas, regra de corrida, sem punição, taxa que continua). */
+async function preAceitacaoDaProposta(admin: Admin, propostaId: string, papel: Autor): Promise<PreAceitacaoView | null> {
+  const { data, error } = await admin.from("propostas").select("pre_aceitacao_ate, pre_aceitacao_reaberturas, pre_aceitacao_dono_ate, pre_aceitacao_encerrada_em, pre_aceitacao_perdeu_em").eq("id", propostaId).maybeSingle();
+  const d = data as { pre_aceitacao_ate: string | null; pre_aceitacao_reaberturas: number | null; pre_aceitacao_dono_ate: string | null; pre_aceitacao_encerrada_em: string | null; pre_aceitacao_perdeu_em: string | null } | null;
+  if (error || !d?.pre_aceitacao_ate) return null;
+  const ate = new Date(d.pre_aceitacao_ate);
+  const reaberturas = Number(d.pre_aceitacao_reaberturas ?? 0);
+  const encerrada = !!d.pre_aceitacao_encerrada_em;
+  const perdeu = !!d.pre_aceitacao_perdeu_em;
+  const estado = estadoDaPreAceitacao(ate, new Date()).chave;
+  const donoAteTexto = estado === "expirada" && !encerrada && d.pre_aceitacao_dono_ate ? textoDoPrazo(new Date(d.pre_aceitacao_dono_ate)) : null;
+  return {
+    estado,
+    ateIso: ate.toISOString(),
+    ateTexto: textoDoPrazo(ate),
+    donoAteTexto,
+    contexto: encerrada ? null : linhaDeContexto(papel === "owner" ? "owner" : "tenant", estado, textoDoPrazo(ate), donoAteTexto),
+    encerrada,
+    perdeuACorrida: perdeu,
+    reaberturas,
+    podeReabrir: podeReabrir(reaberturas) && !encerrada && (!perdeu || papel === "owner"),
+    regraCorrida: TEXTO_REGRA_CORRIDA,
+    semPunicao: TEXTO_SEM_PUNICAO,
+    taxaContinua: TEXTO_TAXA_CONTINUA,
+  };
 }

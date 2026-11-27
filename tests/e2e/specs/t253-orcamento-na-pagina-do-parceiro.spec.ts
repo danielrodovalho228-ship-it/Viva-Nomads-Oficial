@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, cpfAleatorio, criarConta, novaSenha, novoSufixo } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 
 /*
  * T253 — "Solicitar orçamento" vivo na página pública do parceiro (QA do Muse no 31b, 21/10).
@@ -26,7 +26,7 @@ test.describe("T253 — Solicitar orçamento na página pública do parceiro", (
     ids.conta = await criarConta({ email: `foto.t253.${sufixo}@lab.vivanomads.test`, nome: "Fábio Fotos", role: "owner" }, senha);
     const { data, error } = await adm()
       .from("parceiros")
-      .insert({ user_id: ids.conta, tipo_pessoa: "pf", documento: cpfAleatorio(), nome_publico: `Fábio Fotos ${sufixo}`, slug, categorias: ["fotografia"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
+      .insert({ user_id: ids.conta, tipo_pessoa: "pj", documento: cnpjAleatorio(), nome_publico: `Fábio Fotos ${sufixo}`, slug, categorias: ["fotografia"], cidades: ["Uberlândia"], descricao_curta: "Parceiro de laboratório.", status: "publicado", publicado_em: new Date().toISOString() })
       .select("id")
       .single();
     if (error) throw error;
@@ -46,6 +46,17 @@ test.describe("T253 — Solicitar orçamento na página pública do parceiro", (
       const r = await page.goto(`/parceiros/${slug}`, { waitUntil: "domcontentloaded" });
       test.skip(!NO_LABORATORIO && r?.status() === 404, `parceiro de QA ${slug} não publicado neste ambiente`);
       await expect(page.getByTestId("pagina-parceiro")).toBeVisible();
+      await expect(page.locator("body")).not.toContainText(TEXTO_ANTIGO);
+
+      // E339 (01/11): o parceiro de QA do deploy é um parceiro de TESTE — para o visitante, a página diz que o perfil não
+      // recebe pedidos, no lugar do botão (a regra do anúncio de teste). É o desenho, não o botão quebrado: confere a
+      // faixa e para aqui. No laboratório o parceiro criado é real e o botão é conferido inteiro.
+      const pedidoTeste = page.getByTestId("parceiro-pedido-teste");
+      if (!NO_LABORATORIO && (await pedidoTeste.count()) > 0) {
+        await expect(pedidoTeste).toContainText("Este perfil não recebe pedidos");
+        await expect(page.getByTestId("solicitar-orcamento")).toHaveCount(0);
+        return;
+      }
 
       const botao = page.getByTestId("solicitar-orcamento");
       await expect(botao).toBeVisible();

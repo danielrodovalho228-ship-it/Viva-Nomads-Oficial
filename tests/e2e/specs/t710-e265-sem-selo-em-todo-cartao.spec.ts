@@ -10,7 +10,7 @@ import { abrirPasso, prepararRascunho } from "../fixtures/rascunho-cadastro";
       nenhum elemento a mais); o título do cartão fica abaixo da foto.
    2. Varredura das páginas públicas com fotos (/, /como-funciona, /buscar, /empresas, /para-proprietarios e o anúncio
       de exemplo), 1280 e 390: zero selo-ilustrativa e zero "Imagem ilustrativa"; as imagens visíveis carregam. O que
-      DEVE ficar fica: o selo "Exemplo ilustrativo" do anúncio de exemplo (não é foto de cartão).
+      DEVE ficar fica: o selo "Anúncio de exemplo" do anúncio de exemplo (não é foto de cartão). E926: antes o selo dizia "Exemplo ilustrativo".
    3. Passo 1 a partir de um rascunho com tipo escolhido (laboratório, 1280 e 390): o cartão marcado mostra o visto,
       todos os rótulos são só o nome do tipo (sem resto de selo), a foto do marcado carrega e a moldura não tem texto;
       trocar o tipo move o visto sem aparecer texto sobre as fotos.
@@ -24,7 +24,7 @@ const CARTOES = {
   "/empresas": [
     "Profissional chegando a um imóvel mobiliado com mala de viagem",
     "Mesa de trabalho com notebook e recibo impresso",
-    "Tela de notebook com gráficos sobre uma mesa de escritório",
+    // E772: o cartão "Relatórios" saiu de /empresas (era "em construção"); a foto fica nos dados, sem cartão na página.
   ],
   "/para-proprietarios": [
     "Contas de casa organizadas sobre uma mesa ao lado de uma planta",
@@ -103,7 +103,7 @@ test.describe("T710 — E265: nenhum cartão com foto leva o selo 'Imagem ilustr
     { rota: "/imoveis/ube-001", fotos: true },
   ] as const;
   for (const largura of LARGURAS) {
-    test(`2. ${largura} px: varredura das páginas públicas — nenhum selo, imagens visíveis carregadas; "Exemplo ilustrativo" fica`, async ({ browser }) => {
+    test(`2. ${largura} px: varredura das páginas públicas — nenhum selo, imagens visíveis carregadas; "Anúncio de exemplo" fica`, async ({ browser }) => {
       test.setTimeout(180_000);
       const ctx = await browser.newContext({ viewport: viewport(largura), storageState: { cookies: [], origins: [] } });
       const p = await ctx.newPage();
@@ -145,7 +145,7 @@ test.describe("T710 — E265: nenhum cartão com foto leva o selo 'Imagem ilustr
         }
         if (rota === "/imoveis/ube-001") {
           // O selo honesto do anúncio de exemplo continua (não é o selo de foto que o E265 tirou).
-          await expect(p.getByTestId("selo-exemplo").first()).toHaveText("Exemplo ilustrativo", { timeout: 20_000 });
+          await expect(p.getByTestId("selo-exemplo").first()).toHaveText("Anúncio de exemplo", { timeout: 20_000 });
         }
       }
       await p.screenshot({ path: `${SAIDA}/t710-varredura-exemplo-${largura}.png` });
@@ -195,6 +195,9 @@ test.describe("T710 — E265: nenhum cartão com foto leva o selo 'Imagem ilustr
         await casa.scrollIntoViewIfNeeded();
         await casa.click();
         await expect(casa).toHaveAttribute("aria-checked", "true");
+        // E607: ao trocar o tipo a lista pode voltar ao resumo (3 tipos); reabre antes de conferir o loft desmarcado.
+        const verMais = p.getByTestId("tipos-ver-mais");
+        if ((await verMais.count()) > 0 && (await verMais.getAttribute("aria-expanded")) !== "true") await verMais.click();
         await expect(loft).toHaveAttribute("aria-checked", "false");
         await expect(casa.getByTestId("tipo-marcado")).toHaveCount(1);
         await expect(p.getByTestId("tipo-marcado")).toHaveCount(1);

@@ -28,8 +28,9 @@ test.describe("T52 — Login devolve a /qualificar?imovel=<id>", () => {
       await page.locator('input[name="email"], input[type="email"]').first().fill(acc.email);
       await page.locator('input[name="password"], input[type="password"]').first().fill(acc.senha);
       await page.locator("form").getByRole("button", { name: /^entrar$/i }).click();
-      await page.waitForURL(/\/qualificar\?imovel=/, { timeout: 20_000 });
-      expect(new URL(page.url()).searchParams.get("imovel")).toBe(ID);
+      // E196: o login devolve a /qualificar?imovel=<id>, que hoje só redireciona ao assistente; como este id não é
+      // da conta, o destino é Meus imóveis (não o /dashboard padrão do login).
+      await page.waitForURL((u) => u.pathname === "/dashboard/imoveis", { timeout: 20_000 });
     });
   });
 

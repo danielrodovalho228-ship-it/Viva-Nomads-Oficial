@@ -6,7 +6,7 @@ import { CITIES } from "@/lib/constants";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { type BairroResumo, centroDoBairro, distanciasDoBairro, perguntasDoBairro, resumoDoBairro } from "@/lib/bairros";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { PropertyMap } from "@/components/property-map-lazy";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SITE_URL } from "@/lib/site";
@@ -45,7 +45,8 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
       : null;
   const centro = centroDoBairro(bairro.imoveis);
   const distancias = distanciasDoBairro(centro, PONTOS_REFERENCIA.filter((p) => p.cidade === cidade.slug));
-  const total = bairro.imoveis.filter((i) => !isExemplo(i.id)).length;
+  // E446: o número da página é o da busca (exemplos inclusos com a vitrine ligada).
+  const total = bairro.imoveis.length;
   const faq = perguntasDoBairro(bairro.nome, cidade.name, mediaGeral, total);
 
   const dados = {
@@ -150,8 +151,8 @@ export function BairroPagina({ cidade, bairro, vizinhos = [], totalCidade = 0 }:
               {total} {total === 1 ? "anúncio" : "anúncios"} em {bairro.nome}
             </h2>
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-testid="bairro-anuncios">
-              {bairro.imoveis.map((i) => (
-                <PropertyCard key={i.id} property={i} />
+              {bairro.imoveis.map((i, n) => (
+                <PropertyCard key={i.id} property={i} prioridade={n < PRIMEIRA_FILEIRA} />
               ))}
             </div>
             <p className="mt-6 text-sm">

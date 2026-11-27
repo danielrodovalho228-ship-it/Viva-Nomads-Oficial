@@ -78,7 +78,7 @@ export const ETAPAS_ASSISTENTE: readonly EtapaAssistente[] = [
     prontidao: ["periodo"],
   },
   // E104: quem opera, o documento da operação e o documento do imóvel ficam no cartão "Antes de publicar" da Revisão.
-  { n: 10, id: "revisao", titulo: "Revise e publique", mockup: "cadastro-imovel-10-revisao", campos: ["ownershipType"], prontidao: ["documento", "sublocacao", "qualificacao"] },
+  { n: 10, id: "revisao", titulo: "Revise e publique", mockup: "cadastro-imovel-10-revisao", campos: ["ownershipType"], prontidao: ["documento", "sublocacao", "qualificacao", "matricula_atualizada", "foto_repetida", "caucao_pendente"] },
 ];
 
 /** Etapa onde um item da prontidão se resolve; item desconhecido cai na revisão (nunca some da lista). */
@@ -100,8 +100,11 @@ export interface ItemConferencia {
 
 /** E258 (a): o CEP não segura a publicação (rua, bairro e cidade bastam), mas sem ele a busca do "por perto" não roda. */
 export const NOTA_ENDERECO_SEM_CEP = "Sem CEP: o “O que tem por perto” fica de fora do anúncio.";
-/** E258 (b): sem data de início, o anúncio mostra "Disponível agora" (o mesmo texto do cartão de preço). */
-export const NOTA_DISPONIVEL_AGORA = "Disponível agora (sem data de início).";
+/**
+ * E258 (b) / E616: sem data de início, a lista NÃO afirma "Disponível agora" pelo dono (ele não disse isso): diz que a
+ * data não foi informada, o que o anúncio vai mostrar e onde mudar.
+ */
+export const NOTA_SEM_DATA_INICIO = "Data de início não informada: o anúncio vai mostrar “Disponível agora”. Se o imóvel só fica livre depois, informe a data no Passo 9.";
 
 /** Os campos opcionais que a lista de conferência explica (o resto vem da prontidão). */
 export interface ContextoConferencia {
@@ -149,13 +152,17 @@ export function conferenciaAssistente(p: Prontidao, ctx?: ContextoConferencia): 
     const ok = estado?.ok ?? true;
     const item: ItemConferencia = { etapa: e.n, id: e.id, rotulo: e.titulo, ok, faltam: estado?.faltam ?? [] };
     if (ok && ctx && e.id === "endereco" && !ctx.cepOk) item.nota = NOTA_ENDERECO_SEM_CEP;
-    if (ok && ctx && e.id === "disponibilidade") item.nota = ctx.disponivelDesde?.trim() ? `Disponível a partir de ${ctx.disponivelDesde.trim()}.` : NOTA_DISPONIVEL_AGORA;
+    if (ok && ctx && e.id === "disponibilidade") item.nota = ctx.disponivelDesde?.trim() ? `Disponível a partir de ${ctx.disponivelDesde.trim()}.` : NOTA_SEM_DATA_INICIO;
     itens.push(item);
   }
   return { itens, pendentesNaRevisao, podePublicar: p.podePublicar };
 }
 
-/** E260 (b) + E271: quantas pendências seguram a publicação (as linhas por passo + as seções do Passo 10). */
+/**
+ * E260 (b) + E271: quantas pendências seguram a publicação. E598: conta ITENS, não linhas — os "Falta: …" de cada passo
+ * + as pendências do Passo 10 —, que são os mesmos itens do "Falta para publicar" do cartão de Meus imóveis (um passo
+ * com dois itens faltando conta 2).
+ */
 export function faltamNaConferencia(c: { itens: ItemConferencia[]; pendentesNaRevisao: string[] }): number {
-  return c.itens.filter((i) => !i.ok).length + c.pendentesNaRevisao.length;
+  return c.itens.reduce((n, i) => n + (i.ok ? 0 : Math.max(1, i.faltam.length)), 0) + c.pendentesNaRevisao.length;
 }

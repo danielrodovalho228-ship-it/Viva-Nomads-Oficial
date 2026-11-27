@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { CartaoVisita } from "@/components/visitas/cartao-visita";
 import { listMinhasVisitas, listVisitasDono } from "@/lib/data/visitas-video-actions";
 import { ROTULO_FUSO } from "@/lib/visitas-video";
+import { NOTA_VISITA_DONO } from "@/config/textos-regulados";
 
 export const metadata: Metadata = {
   title: "Visitas",
@@ -21,15 +22,20 @@ export const dynamic = "force-dynamic";
  * os pedidos recebidos nos imóveis do dono abrem por `?de=dono` (decisões do Início do dono e o e-mail do pedido).
  */
 export default async function VisitasPage({ searchParams }: { searchParams: Promise<{ de?: string }> }) {
-  const dono = (await searchParams).de === "dono";
-  const visitas = dono ? await listVisitasDono({ exigir: true }) : await listMinhasVisitas({ exigir: true });
+  const pediuDono = (await searchParams).de === "dono";
+  const minhas = pediuDono ? [] : await listMinhasVisitas({ exigir: true });
+  // E1060: sem ?de=dono, quem só RECEBEU visitas (o dono) caía em "Nenhuma visita ainda" com a visita já confirmada.
+  // Sem pedidos próprios, a página abre as visitas recebidas nos imóveis da pessoa.
+  const recebidas = pediuDono || minhas.length === 0 ? await listVisitasDono({ exigir: true }) : [];
+  const dono = pediuDono || (minhas.length === 0 && recebidas.length > 0);
+  const visitas = dono ? recebidas : minhas;
   return (
     <>
       <PageTitle
         title={dono ? "Visitas nos meus imóveis" : "Visitas"}
         subtitle={
           dono
-            ? `Por vídeo ou presenciais, combinadas aqui na plataforma (${ROTULO_FUSO}). Nome e contato do interessado só aparecem depois do aceite.`
+            ? `Por vídeo ou presenciais, combinadas aqui na plataforma (${ROTULO_FUSO}). ${NOTA_VISITA_DONO}`
             : `Por vídeo ou presenciais, combinadas aqui na plataforma (${ROTULO_FUSO}).`
         }
       />

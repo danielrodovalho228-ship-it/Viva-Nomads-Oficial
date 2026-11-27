@@ -44,7 +44,7 @@ test.describe("T546 — E175: parcerias pendentes numa linha só no admin", () =
           cidades: ["Uberlândia"],
           status: "pendente",
           origem: "site",
-          criado_em: new Date(Date.now() - (i < 2 ? SETE_DIAS : 0)).toISOString(),
+          criado_em: new Date(Date.now() - (i < 2 ? SETE_DIAS + 3_600_000 : 0)).toISOString(), // E791: 1 h além dos 7 dias (o alerta passou a ser no prazo da parceria, 7 dias)
         })),
       );
     if (error) throw error;
@@ -73,7 +73,8 @@ test.describe("T546 — E175: parcerias pendentes numa linha só no admin", () =
       await expect(linha, `a linha das parcerias está entre as primeiras: ${JSON.stringify(chaves)}`).toHaveCount(1);
       const n = Number(await linha.locator("a[data-valor]").getAttribute("data-valor"));
       expect(n, "o número da linha = pedidos pendentes no banco (a aba Pendentes)").toBe(await pendentesNoBanco());
-      await expect(linha).toContainText(/\d+ sem resposta há mais de 1 dia útil/);
+      // E791 (vigia, 12/11/2026): o prazo da parceria é 7 dias (o de /empresas), da fonte única PRAZO_RESPOSTA_PARCERIA: o alerta e a linha do admin usam o mesmo prazo.
+      await expect(linha).toContainText(/\d+ sem resposta há mais de 7 dias/);
       await page.context().close();
     });
   }

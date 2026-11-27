@@ -27,6 +27,7 @@ export function ParceiroGeralForm({ inicial }: { inicial: ParceiroGeral }) {
   return (
     <div className="space-y-2" data-testid="parceiro-geral-admin">
       <p className="text-sm text-muted">Aparece só quando a busca não acha ninguém. Sem logo de terceiros. Desligado por padrão.</p>
+      <p className="text-sm text-muted" data-testid="parceiro-geral-pausado">Pausado no site por ora (decisão do Daniel, 08/11/2026): o cartão não aparece para o público enquanto o parceiro não estiver cadastrado. A configuração abaixo continua salva.</p>
       <input aria-label="Nome" value={g.nome} onChange={(e) => setG({ ...g, nome: e.target.value })} placeholder="Nome do parceiro geral" className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
       <input aria-label="Cidade" value={g.cidade} onChange={(e) => setG({ ...g, cidade: e.target.value })} placeholder="Cidade" className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />
       <textarea aria-label="Descrição" rows={2} value={g.descricao} onChange={(e) => setG({ ...g, descricao: e.target.value })} placeholder="Descrição" className="w-full rounded-lg border border-sage-200 px-3 py-2 text-base" />

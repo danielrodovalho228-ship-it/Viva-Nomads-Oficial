@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ETAPAS_ASSISTENTE, NOTA_DISPONIVEL_AGORA, NOTA_ENDERECO_SEM_CEP, conferenciaAssistente, etapaDoItemProntidao } from "./assistente-dez-etapas.ts";
+import { ETAPAS_ASSISTENTE, NOTA_SEM_DATA_INICIO, NOTA_ENDERECO_SEM_CEP, conferenciaAssistente, etapaDoItemProntidao } from "./assistente-dez-etapas.ts";
 import { prontidaoAnuncio, type FatosAnuncio } from "./prontidao.ts";
 import { MAX_OUTRAS_REGRAS, limparOutrasRegras, linhasRegrasCasa, normalizarRegrasCasa } from "./regras-casa.ts";
 import { formDeRegrasCasa, payloadDeRegrasCasa } from "./regras-casa-form.ts";
@@ -149,7 +149,7 @@ test("E258 (a)(b): o 'feito' explica o opcional vazio — sem CEP (o por perto f
   assert.equal(sem.endereco.ok, true);
   assert.equal(sem.endereco.nota, NOTA_ENDERECO_SEM_CEP);
   assert.equal(sem.disponibilidade.ok, true);
-  assert.equal(sem.disponibilidade.nota, NOTA_DISPONIVEL_AGORA);
+  assert.equal(sem.disponibilidade.nota, NOTA_SEM_DATA_INICIO);
   const com = Object.fromEntries(conferenciaAssistente(p, { cepOk: true, disponivelDesde: "15/11/2026" }).itens.map((i) => [i.id, i]));
   assert.equal(com.endereco.nota, undefined);
   assert.equal(com.disponibilidade.nota, "Disponível a partir de 15/11/2026.");
@@ -162,8 +162,9 @@ test("E258 (a)(c): o aviso do 'por perto' e a regra de gravar de cada bloco do P
   const blocos = readFileSync("src/components/anuncio/blocos-cadastro.tsx", "utf8");
   assert.match(blocos, /quando o endereço tiver CEP e rua \(Passo 3\)\. O CEP não segura a publicação/);
   const re = readFileSync("src/components/niveis/ruido-extras.tsx", "utf8");
-  assert.match(re, /data-testid="ruido-como-salva"/);
-  assert.match(re, /data-testid="extras-como-salva"/);
+  // E606: Ruído e Extras passam a gravar a cada toque, com a mesma linha de status (testid) da estrutura.
+  assert.match(re, /testid="ruido-como-salva"/);
+  assert.match(re, /testid="extras-como-salva"/);
   assert.match(readFileSync("src/components/anuncio/estrutura-acessibilidade.tsx", "utf8"), /COMO_SALVA_ESTRUTURA = "Cada toque salva na hora\."/);
   const pagina = readFileSync("src/app/(dashboard)/dashboard/imoveis/novo/page.tsx", "utf8");
   assert.match(pagina, /contextoConferencia=\{\{ cepOk: !!cepValido\(cep\), disponivelDesde: availableFrom \? dataBR\(availableFrom\) : "" \}\}/);

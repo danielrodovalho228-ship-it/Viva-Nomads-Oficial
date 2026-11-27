@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { exigirAdminAal2 } from "@/lib/data/admin-guard";
+import { recusaObservador } from "@/lib/qa/observador";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { nomeCurto } from "@/lib/perfil/perfil-publico";
 import { refContratoVN, tipoDaFalha, umaLinhaPorDocumento } from "@/lib/fiscal/fila-falhas";
@@ -115,6 +116,8 @@ export async function emitirDeNovo(falhaId: string): Promise<Res<{ numero: strin
   if (!UUID.test(String(falhaId))) return { ok: false, error: "Item inválido." };
   const c = await contexto();
   if (!c) return { ok: false, error: "Só admin." };
+  const recusaQa = await recusaObservador(c.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { data: f } = await c.admin.from("documentos_falhas").select("pagamento_id, acerto_id, etapa").eq("id", falhaId).maybeSingle();
   if (!f) return { ok: false, error: "Item não encontrado." };
   // O documento já existe: emitir de novo devolveria o mesmo, sem mandar o e-mail. O caminho é "Reenviar e-mail".
@@ -133,6 +136,8 @@ export async function reenviarEmail(falhaId: string): Promise<Res<{ numero: stri
   if (!UUID.test(String(falhaId))) return { ok: false, error: "Item inválido." };
   const c = await contexto();
   if (!c) return { ok: false, error: "Só admin." };
+  const recusaQa = await recusaObservador(c.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const { data: f } = await c.admin.from("documentos_falhas").select("documento_id, etapa").eq("id", falhaId).maybeSingle();
   if (!f || f.etapa !== "envio" || !f.documento_id) return { ok: false, error: "Item não encontrado." };
   const r = await reenviarEmailDoDocumento(f.documento_id as string);
@@ -149,6 +154,8 @@ export async function reenviarEmail(falhaId: string): Promise<Res<{ numero: stri
 export async function emitirPendentes(): Promise<Res<{ emitidos: number; falharam: number }>> {
   const c = await contexto();
   if (!c) return { ok: false, error: "Só admin." };
+  const recusaQa = await recusaObservador(c.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   const ids = await pagamentosConfirmadosSemDocumento(c.admin).catch(() => null);
   if (!ids) return { ok: false, error: "Não foi possível ler os pagamentos pendentes agora. Tente de novo." };
   let emitidos = 0;

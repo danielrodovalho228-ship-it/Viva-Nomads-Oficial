@@ -20,5 +20,5 @@ test("cada regra de convivência tem ícone e o bloco o desenha", () => {
   const r = ler("./regras-casa-campos.tsx");
   assert.match(r, /silencio: Moon,\n\s*fumo: Cigarette,\n\s*festas: PartyPopper,\n\s*visitas: UsersRound,/);
   assert.match(r, /icone=\{ICONE_REGRA\[chave\]\}/);
-  assert.match(ler("./bloco-opcional.tsx"), /\{Icone && <Icone [^>]*data-testid=\{`bloco-\$\{id\}-icone`\}/);
+  assert.match(ler("./bloco-opcional.tsx"), /icone=\{Icone\}/);
 });

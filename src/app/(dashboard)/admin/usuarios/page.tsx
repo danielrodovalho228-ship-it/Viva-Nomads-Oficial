@@ -234,8 +234,11 @@ export default async function AdminUsuariosPage({
                     <th className="py-2 pr-4 font-semibold">Identidade</th>
                     <th className="py-2 pr-4 font-semibold">Telefone verificado</th>
                     <th className="py-2 pr-4 font-semibold">Cadastro</th>
-                    <th className="py-2 pr-4 font-semibold">Tipo da conta</th>
-                    <th className="py-2 font-semibold">Conta de teste</th>
+                    {/* E991: as duas ações da conta numa coluna só (uma embaixo da outra) — a tabela cabe no quadro em 1280. */}
+                    <th className="py-2 font-semibold">
+                      Tipo da conta
+                      <span className="block font-normal">Conta de teste</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -253,18 +256,21 @@ export default async function AdminUsuariosPage({
                       <td className="py-2 pr-4" data-testid="admin-identidade">{idText(u.id)}</td>
                       <td className="py-2 pr-4" data-testid="admin-telefone-verificado">{foneVerificado.get(u.id) ? "Sim" : "Não"}</td>
                       <td className="py-2 pr-4">{dataBRT(u.created_at)}</td>
-                      <td className="py-2 pr-4">
-                        {u.role === "admin" ? "—" : observador ? (
-                          <span data-testid="tipo-conta-leitura">{ROTULO_TIPO_CONTA[u.account_type === "gestor" ? "gestor" : "individual"]}</span>
-                        ) : (
-                          <TipoConta id={u.id} tipo={u.account_type === "gestor" ? "gestor" : "individual"} />
-                        )}
-                      </td>
                       <td className="py-2">
-                        {u.role === "admin" ? "—" : observador ? (
-                          <span data-testid="conta-teste-leitura">{u.is_teste ? "Sim" : "Não"}</span>
+                        {u.role === "admin" ? (
+                          "—"
+                        ) : observador ? (
+                          <span className="flex flex-col gap-1">
+                            <span data-testid="tipo-conta-leitura">{ROTULO_TIPO_CONTA[u.account_type === "gestor" ? "gestor" : "individual"]}</span>
+                            <span>
+                              <span className="text-muted">Teste:</span> <span data-testid="conta-teste-leitura">{u.is_teste ? "Sim" : "Não"}</span>
+                            </span>
+                          </span>
                         ) : (
-                          <BotaoContaTeste id={u.id} isTeste={!!u.is_teste} />
+                          <span className="flex flex-col items-start gap-2">
+                            <TipoConta id={u.id} tipo={u.account_type === "gestor" ? "gestor" : "individual"} compacto />
+                            <BotaoContaTeste id={u.id} isTeste={!!u.is_teste} />
+                          </span>
                         )}
                       </td>
                     </tr>

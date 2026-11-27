@@ -19,7 +19,7 @@ test("abas na ordem de leitura; avaliações com contagem; sem dono, sem aba de 
 test("status de disponibilidade: agora, futura, data inválida ou passada = agora", () => {
   assert.equal(statusDisponibilidade(undefined, "2026-10-15"), "Disponível agora");
   assert.equal(statusDisponibilidade("2026-10-01", "2026-10-15"), "Disponível agora");
-  assert.equal(statusDisponibilidade("2026-11-12", "2026-10-15"), "Disponível a partir de 12/11");
+  assert.equal(statusDisponibilidade("2026-11-12", "2026-10-15"), "Disponível a partir de 12/11/2026");
   assert.equal(statusDisponibilidade("lixo", "2026-10-15"), "Disponível agora");
 });
 
@@ -32,7 +32,7 @@ test("sinais de confiança só com dado real; código sempre", () => {
     "2026-10-15"
   );
   assert.deepEqual(cheio.map((s) => s.texto), [
-    "Disponível a partir de 01/12",
+    "Disponível a partir de 01/12/2026",
     "Responde 96% das mensagens",
     "Anuncia aqui desde mar. 2025",
     "Código VN-X1",

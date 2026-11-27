@@ -10,48 +10,53 @@ import { carregarFechamento, comissaoDoContrato, reservarFechamento, concluirFec
  * do contrato (aluguel × meses) × taxa congelada no aceite. A plataforma nunca cobra nem repassa o aluguel.
  * Recebe SÓ o id da candidatura aceita. Aluguel, MESES e taxa vêm do CONTRATO já registrado
  * (o mesmo número de contratos.comissao_valor — ordem c54366b0); o navegador não informa prazo.
- * Dados do pagador vêm do banco. Uma cobrança por candidatura.
+ * Dados do pagador vêm do banco. Uma cobrança por PROPOSTA acordada (E1086); sem proposta, uma por candidatura.
  */
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as { leadId?: unknown };
-  const f = await carregarFechamento(body.leadId);
+  const body = (await request.json().catch(() => ({}))) as { leadId?: unknown; propostaId?: unknown };
+  // E1141: com `propostaId`, a taxa é a DESSA estadia (validada no servidor); sem ele, a regra de sempre.
+  const f = await carregarFechamento(body.leadId, body.propostaId);
   if ("error" in f) return NextResponse.json({ error: f.error }, { status: f.status });
-  const contrato = await comissaoDoContrato(f.leadId).catch(() => "falhou" as const);
+  // E1086: o contrato lido é o DA PROPOSTA acordada (uma estadia nova tem o contrato e a cobrança dela).
+  const contrato = await comissaoDoContrato(f.leadId, f.propostaPedida).catch(() => "falhou" as const);
   if (contrato === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
   if (!contrato) {
     return NextResponse.json({ error: "Registre o contrato antes de gerar a cobrança da comissão." }, { status: 409 });
   }
 
+  // E1086: a reserva e a cobrança são da mesma proposta do contrato.
+  const chave = contrato.propostaId;
   // Estados vazios: sem saber se alguma das partes é conta de teste, não reserva nem cobra (nada vai ao Asaas).
   const admin = createAdminClient();
   const teste = await (async () => (await contaEhDeTeste(admin, f.ownerId)) || (await contaEhDeTeste(admin, f.tenantId)))().catch(() => "falhou" as const);
   if (teste === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
   // Prompt 24: repetir é seguro — a taxa já gerada volta com 200 (a tela não trava num 2º clique ou ao recarregar).
-  const reserva = await lerReservaFechamento(f.leadId, "comissao").catch(() => "falhou" as const);
+  const reserva = await lerReservaFechamento(f.leadId, "comissao", chave).catch(() => "falhou" as const);
   if (reserva === "falhou") return NextResponse.json({ error: MSG_FECHAMENTO_SEM_LEITURA }, { status: 503 });
   if (reserva?.externoId) return NextResponse.json({ existente: true, chargeId: reserva.externoId });
-  if (!(await reservarFechamento(f.leadId, "comissao"))) {
+  if (!(await reservarFechamento(f.leadId, "comissao", chave))) {
     return NextResponse.json({ error: "A taxa de serviço desta candidatura está sendo gerada. Tente de novo em instantes." }, { status: 409 });
   }
   try {
     // Conta de teste (is_teste): cobrança SIMULADA, rótulo TESTE, nada vai ao Asaas (ordem ee7d27b8).
     if (teste) {
-      const simulada = cobrancaSimuladaTeste({ aluguelMensal: contrato.aluguelMensal, meses: contrato.meses, commissionRate: contrato.taxa });
-      await concluirFechamento(f.leadId, "comissao", simulada.chargeId);
+      const simulada = cobrancaSimuladaTeste({ aluguelMensal: contrato.aluguelMensal, meses: contrato.meses, dias: contrato.dias, commissionRate: contrato.taxa });
+      await concluirFechamento(f.leadId, "comissao", chave, simulada.chargeId);
       return NextResponse.json(simulada);
     }
     const result = await createCommissionCharge({
       aluguelMensal: contrato.aluguelMensal,
       meses: contrato.meses,
+      dias: contrato.dias,
       commissionRate: contrato.taxa,
       ownerName: f.ownerNome,
       ownerEmail: f.ownerEmail ?? "sem-email@vivanomads.com.br",
       ownerCpfCnpj: f.ownerCpfCnpj ?? undefined,
     });
-    await concluirFechamento(f.leadId, "comissao", result.chargeId);
+    await concluirFechamento(f.leadId, "comissao", chave, result.chargeId);
     return NextResponse.json(result);
   } catch (err) {
-    await concluirFechamento(f.leadId, "comissao", null);
+    await concluirFechamento(f.leadId, "comissao", chave, null);
     if (err instanceof IntegracaoNaoConfigurada) {
       return NextResponse.json({ error: MSG_NAO_CONFIGURADA }, { status: 503 });
     }

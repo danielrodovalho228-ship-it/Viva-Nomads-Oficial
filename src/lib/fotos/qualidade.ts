@@ -17,6 +17,11 @@ export const LUMINANCIA_CLARA = 205;
 /** Variância do laplaciano (em cinza 0–255) abaixo da qual a foto está tremida. */
 export const NITIDEZ_MIN = 40;
 /**
+ * E751: desvio-padrão da luminância (0–255) abaixo do qual a imagem é LISA (uma cor só). Sem conteúdo, não há o que
+ * estar fora de foco: "tremida ou sem foco" seria um motivo falso; o motivo verdadeiro é a imagem lisa.
+ */
+export const CONTRASTE_MIN = 4;
+/**
  * Foto repetida (Q6, prompt 10): só QUASE IDÊNTICA — a mesma foto recortada, comprimida ou reenviada. Dois ângulos
  * do mesmo cômodo NÃO são repetidos. Compara a "assinatura" (miniatura 16×16 em cinza, normalizada por média e
  * desvio): distância média ≤ LIMIAR_REPETIDA. Nos testes, recorte de 10% + compressão fica em ~0,18 e outro ângulo
@@ -83,6 +88,8 @@ export interface Analise {
   luminancia: number;
   /** Variância do laplaciano (quanto maior, mais nítida). */
   nitidez: number;
+  /** E751: desvio-padrão da luminância (0 = imagem de uma cor só). Ausente em análise antiga: segue a regra de antes. */
+  contraste?: number;
   /** dHash de 64 bits em 16 caracteres hexadecimais. */
   hash: string;
   /** Miniatura 16×16 normalizada (512 hex) — detecta foto quase idêntica. */
@@ -94,6 +101,20 @@ export function paraCinza(rgba: Uint8ClampedArray | Uint8Array, n: number): Floa
   const g = new Float32Array(n);
   for (let i = 0; i < n; i++) g[i] = 0.299 * rgba[i * 4] + 0.587 * rgba[i * 4 + 1] + 0.114 * rgba[i * 4 + 2];
   return g;
+}
+
+/** Desvio-padrão da luminância de uma imagem em cinza (0 = lisa). */
+export function contrasteCinza(cinza: ArrayLike<number>): number {
+  const n = cinza.length;
+  if (n === 0) return 0;
+  let soma = 0;
+  let soma2 = 0;
+  for (let i = 0; i < n; i++) {
+    soma += cinza[i];
+    soma2 += cinza[i] * cinza[i];
+  }
+  const media = soma / n;
+  return Math.sqrt(Math.max(0, soma2 / n - media * media));
 }
 
 export function luminanciaMedia(cinza: ArrayLike<number>): number {
@@ -195,7 +216,7 @@ export function fotosRepetidas(a: { hash?: string; assinatura?: string }, b: { h
   return !!a.hash && !!b.hash && distanciaHash(a.hash, b.hash) <= DISTANCIA_REPETIDA;
 }
 
-export type CodigoAviso = "pequena" | "escura" | "estourada" | "tremida" | "repetida";
+export type CodigoAviso = "pequena" | "escura" | "estourada" | "tremida" | "lisa" | "repetida";
 
 export interface AvisoFoto {
   codigo: CodigoAviso;
@@ -230,7 +251,15 @@ export function avisosDaFoto(a: Analise, outras: readonly FotoComparavel[] = [])
       dica: "Evite fotografar de frente para a janela; mude de ângulo.",
     });
   }
-  if (a.nitidez < NITIDEZ_MIN) {
+  const lisa = typeof a.contraste === "number" && a.contraste < CONTRASTE_MIN;
+  if (lisa) {
+    // E751: imagem de uma cor só não está "tremida": o motivo que a análise sustenta é que não há imagem do cômodo.
+    avisos.push({
+      codigo: "lisa",
+      mensagem: "Imagem de uma cor só, sem o cômodo.",
+      dica: "Esta não parece uma foto do ambiente. Envie uma foto do cômodo.",
+    });
+  } else if (a.nitidez < NITIDEZ_MIN) {
     avisos.push({
       codigo: "tremida",
       mensagem: "Foto tremida ou sem foco.",

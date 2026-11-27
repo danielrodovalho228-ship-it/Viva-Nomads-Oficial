@@ -5,12 +5,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { CONTATO_AJUDA, CONTATO_LINHA, LINHAS_AJUDA } from "./ajuda.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
 test("E68: a tela da Verificação escreve 'em breve' uma vez só (no estado em breve)", () => {
   const v = ler("app/(dashboard)/dashboard/verificacao/page.tsx");
-  const vezes = (v.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, "").match(/em breve/gi) ?? []).length;
+  const vezes = (fonteSemComentarios(v).match(/em breve/gi) ?? []).length;
   assert.equal(vezes, 1);
   assert.match(v, /Disponível em breve, por meio de um parceiro\./);
 });
@@ -31,7 +32,8 @@ test("E71: artigos de custo e taxa levam a /precos; golpe e contato, a /seguranc
   const faq = ler("lib/atendimento/faq.ts");
   assert.match(faq, /const LINK_PRECOS = \{ rotulo: "[^"]+", href: "\/precos" \};/);
   assert.match(faq, /const LINK_SEGURANCA = \{ rotulo: "[^"]+", href: "\/seguranca" \};/);
-  assert.equal((faq.match(/links: \[LINK_PRECOS\]/g) ?? []).length, 3);
+  // E563: os 3 links para /precos seguem, atrás da chave PRECOS_VISIVEL.
+  assert.equal((faq.match(/links: comPortasDePrecos\(\[LINK_PRECOS\]\)/g) ?? []).length, 3);
   assert.equal((faq.match(/links: \[LINK_SEGURANCA\]/g) ?? []).length, 2);
   assert.match(ler("components/ajuda/central-ajuda.tsx"), /faq-link-/);
 });

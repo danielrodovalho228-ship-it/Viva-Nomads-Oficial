@@ -52,7 +52,10 @@ test.describe("T565 — E194: a Qualificação na moldura do assistente", () => 
       const fimQualificacao = Number(await barra(p).getAttribute("aria-valuenow"));
       await p.getByTestId("qualificacao-comecar").click();
       await expect(p.getByTestId("passo-texto")).toHaveText("Passo 1 de 10", { timeout: 30_000 });
-      expect(Number(await barra(p).getAttribute("aria-valuenow"))).toBeGreaterThanOrEqual(fimQualificacao);
+      // E498: no Passo 1 a barra passa a ser o "N% pronto" da prontidão (a fonte única do Início e da lista).
+      void fimQualificacao;
+      const pronto = parseInt((await p.getByTestId("passo-detalhe").textContent()) ?? "", 10);
+      await expect(barra(p)).toHaveAttribute("aria-valuenow", String(pronto));
       await expect(p.getByTestId("cadastro-modo")).toHaveText(/Anunciar imóvel/);
       await p.screenshot({ path: `${SAIDA}/t565-passo1-${largura}.png` });
       await p.context().close();

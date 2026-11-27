@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { FILTROS_AVISOS, filtrarAvisos, type AvisoTela, type FiltroAvisos } from "@/lib/notifications/sino";
-import { SeloPrioridade, marcarLidoEIr, marcarTodosLidos } from "@/components/painel/sino-avisos";
+import { FILTROS_AVISOS, filtrarAvisos, ordemCronologica, type AvisoTela, type FiltroAvisos } from "@/lib/notifications/sino";
+import { MarcaLeitura, SeloPrioridade, classeDoAviso, marcarLidoEIr, marcarTodosLidos } from "@/components/painel/sino-avisos";
 
 /**
  * E444 item 3 — "Ver todas" (/dashboard/notificacoes#avisos): a lista da tabela de avisos, do mais recente para o mais
@@ -15,7 +15,8 @@ export function ListaAvisos({ avisos, falhou, filtroInicial }: { avisos: AvisoTe
   const router = useRouter();
   const [filtro, setFiltro] = useState<FiltroAvisos>(filtroInicial);
   const [lidos, setLidos] = useState<Set<string>>(() => new Set());
-  const visiveis = filtrarAvisos(avisos, filtro);
+  // E586: a lista é estritamente cronológica (data/hora decrescente, desempate estável).
+  const visiveis = filtrarAvisos(ordemCronologica(avisos), filtro);
   const [erroTodas, setErroTodas] = useState(false);
   const temNaoLido = avisos.some((a) => !a.lido_em && !lidos.has(a.id));
   return (
@@ -81,13 +82,19 @@ export function ListaAvisos({ avisos, falhou, filtroInicial }: { avisos: AvisoTe
                     setLidos((s) => new Set(s).add(a.id));
                     marcarLidoEIr(a, (href) => router.push(href));
                   }}
-                  className={cn("flex min-h-11 w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-2", !lido && "bg-sage-50")}
+                  className={cn("flex min-h-11 w-full items-start gap-3 px-4 py-3 text-left hover:bg-surface-2", classeDoAviso(lido))}
                   data-testid="avisos-item"
                   data-prioridade={a.prioridade}
                   data-lido={lido ? "sim" : "nao"}
                 >
+                  <MarcaLeitura lido={lido} />
                   <span className="min-w-0 flex-1">
-                    <span className={cn("block text-sm text-ink [overflow-wrap:anywhere]", !lido && "font-semibold")}>{a.titulo}</span>
+                    <span className={cn("block text-sm text-ink [overflow-wrap:anywhere]", lido ? "font-normal" : "font-semibold")}>{a.titulo}</span>
+                    {a.texto && (
+                      <span className="mt-1 line-clamp-2 block text-sm text-muted [overflow-wrap:anywhere]" data-testid="aviso-texto">
+                        {a.texto}
+                      </span>
+                    )}
                     <span className="mt-1 block text-xs text-muted">
                       {new Date(a.criado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}
                       {a.resolvido_em ? " · resolvido" : ""}

@@ -5,6 +5,7 @@
     "publicar-anuncio": ["t8-rascunho", "t45-regra-8-fotos", "t309-conforto-persiste-59c1"],
     "candidatura-contrato-assinatura": ["t225-candidatura-etapas", "t57-contrato-assinar"],
     "abrir-chamado": ["t63-chamado-identificacao"],
-    "upload-de-foto": ["t54-upload-foto-seguro"]
+    "upload-de-foto": ["t54-upload-foto-seguro"],
+    "jornada-piloto": ["t2157-jornada-piloto"]
   }
 }

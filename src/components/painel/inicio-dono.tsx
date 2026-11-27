@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, Check, ChevronRight, ClipboardList, ImageIcon, Lock, ReceiptText } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, Check, ChevronRight, ClipboardList, Lock, ReceiptText } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { FotoDoInicio } from "./foto-inicio-dono";
 import { ehUrlDeImagem } from "@/lib/fotos-anuncio";
 import type { Decisao } from "@/lib/painel/decisoes";
 import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, type BlocoPrincipalDono } from "@/lib/painel/inicio-dono";
@@ -50,33 +51,18 @@ export function InicioDono({
       {hoje.length > 0 && <HojeNoInicio cartoes={hoje} />}
 
       <section className="rounded-lg border border-line bg-white p-4 sm:p-6" data-testid="inicio-dono-principal" data-tipo={bloco.tipo} aria-labelledby="inicio-dono-titulo">
-        <div className={cn("grid gap-6", (foto || bloco.tipo === "rascunho") && "lg:grid-cols-2 lg:items-center")}>
-          {foto ? (
-            // E308 (devolução 01/11): no "Continue seu anúncio", a FOTO REAL do rascunho (a primeira, por sort_order) em
-            // encaixe de capa (object-cover), na moldura 16:10. Nas demais variações, a capa do anúncio inteira (contain).
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={foto}
-              alt=""
-              className={cn("aspect-[16/10] w-full rounded-lg bg-surface-2", bloco.tipo === "rascunho" ? "object-cover" : "object-contain")}
-              data-testid="inicio-dono-foto"
-            />
-          ) : (
-            bloco.tipo === "rascunho" && (
-              // E308: rascunho ainda SEM foto → placeholder desenhado (nunca foto inventada), o mesmo do assistente.
-              <div
-                className="flex aspect-[16/10] w-full flex-col items-center justify-center gap-2 rounded-lg bg-surface-2 text-sm text-muted"
-                data-testid="inicio-dono-foto-vazia"
-              >
-                <ImageIcon className="h-8 w-8" aria-hidden />
-                A foto principal aparece aqui
-              </div>
-            )
-          )}
+        <div className={cn("grid gap-6", (foto || bloco.tipo === "rascunho") && "lg:grid-cols-2 lg:items-center lg:has-[[data-foto-falhou]]:grid-cols-1")}>
+          {/* E501: a foto (ou o espaço desenhado do rascunho) com plano B quando a imagem não carrega. */}
+          {(foto || bloco.tipo === "rascunho") && <FotoDoInicio foto={foto} rascunho={bloco.tipo === "rascunho"} />}
           <div className="min-w-0">
             <h2 id="inicio-dono-titulo" className="font-title text-2xl font-semibold text-ink sm:text-[28px]">
               {bloco.titulo}
             </h2>
+            {bloco.tipo === "rascunho" && bloco.nome && (
+              <p className="mt-1 truncate text-sm text-muted" data-testid="inicio-dono-nome">
+                {bloco.nome}
+              </p>
+            )}
             {bloco.pct !== null && (
               <div className="mt-2" data-testid="inicio-dono-pct" data-pct={bloco.pct}>
                 <p className="text-sm font-semibold text-forest">{bloco.pct}% pronto</p>
@@ -99,15 +85,26 @@ export function InicioDono({
                     const estado = p.feito ? "feito" : i === bloco.passos.findIndex((x) => !x.feito) ? "agora" : "depois";
                     return (
                     <li key={p.rotulo}>
-                      <Link href={p.href} className="flex min-h-11 items-center gap-3 rounded-lg bg-surface-2 px-3 text-sm text-ink">
-                        <IconePasso estado={estado} />
-                        <span className="min-w-0 flex-1 py-2">
-                          {/* Conformidade painel-proprietario (01/11): o passo atual diz "Em andamento", como no mockup. */}
-                          <strong className="font-semibold">{p.rotulo}</strong> — {ROTULO_ESTADO_PASSO[estado]}
-                          {p.detalhe && <span className="block text-xs text-muted">{p.detalhe}</span>}
-                        </span>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-                      </Link>
+                      {/* E494: o passo que leva ao mesmo lugar do botão acima não é atalho — só o estado, sem seta. */}
+                      {p.href ? (
+                        <Link href={p.href} className="flex min-h-11 items-center gap-3 rounded-lg bg-surface-2 px-3 text-sm text-ink">
+                          <IconePasso estado={estado} />
+                          <span className="min-w-0 flex-1 py-2">
+                            {/* Conformidade painel-proprietario (01/11): o passo atual diz "Em andamento", como no mockup. */}
+                            <strong className="font-semibold">{p.rotulo}</strong> — {ROTULO_ESTADO_PASSO[estado]}
+                            {p.detalhe && <span className="block text-xs text-muted">{p.detalhe}</span>}
+                          </span>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+                        </Link>
+                      ) : (
+                        <div className="flex min-h-11 items-center gap-3 rounded-lg bg-surface-2 px-3 text-sm text-ink" data-testid="inicio-dono-passo-atual">
+                          <IconePasso estado={estado} />
+                          <span className="min-w-0 flex-1 py-2">
+                            <strong className="font-semibold">{p.rotulo}</strong> — {ROTULO_ESTADO_PASSO[estado]}
+                            {p.detalhe && <span className="block text-xs text-muted">{p.detalhe}</span>}
+                          </span>
+                        </div>
+                      )}
                     </li>
                     );
                   })}
@@ -118,6 +115,17 @@ export function InicioDono({
         </div>
       </section>
 
+    </div>
+  );
+}
+
+/**
+ * E797: as partes FIXAS do Início do dono (Peça na Viva e Ferramentas) — não dependem de leitura, então pintam no 1º
+ * quadro, fora do bloco de dados que chega pelo fluxo (page.tsx monta este componente fora do Suspense).
+ */
+export function InicioDonoFixo() {
+  return (
+    <div className="mt-6 space-y-6" data-testid="inicio-dono-fixo">
       <section className="flex flex-col gap-4 rounded-lg border border-line bg-white p-4 sm:p-6 lg:flex-row lg:items-center" data-testid="inicio-dono-peca">
         <div className="min-w-0 lg:flex-1">
           <h2 className="font-title text-xl font-semibold text-ink">{PECA_NA_VIVA.titulo}</h2>

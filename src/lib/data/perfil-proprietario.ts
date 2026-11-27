@@ -8,6 +8,10 @@ import { createClient } from "@/lib/supabase/server";
 import { relacaoAceitaEntreServidor } from "@/lib/data/avatar-url";
 import { metricaResposta, nomeCompleto, nomeCurto, selosReais, type MetricaResposta } from "@/lib/perfil/perfil-publico";
 import { nomeLiberadoNaVisita } from "@/lib/visitas/nome-visita";
+import { contarImoveisPublicosDoDono } from "@/lib/data/properties";
+import { cartaoContaAnunciosDeTeste } from "@/lib/perfil/contagem-cartao-dono";
+import { estadoIdentidade } from "@/lib/identidade/estado-servidor";
+import { textoDoSeloDeIdentidade } from "@/lib/anuncio/dono-verificado";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -20,12 +24,15 @@ export interface PerfilProprietario {
   cidade: string | null;
   bio: string | null;
   idiomas: string[];
-  imoveisAtivos: number;
+  /** E631: a contagem da lista pública do dono; null = não deu para contar (o cartão omite o número, nunca mostra a contagem crua). */
+  imoveisAtivos: number | null;
   estadiasConcluidas: number;
   /** null = menos de 3 conversas ("Novo na Viva"). */
   resposta: MetricaResposta | null;
   reputacao: Reputacao;
   selos: string[];
+  /** E1105/E1106: o texto da fonte única (estadoIdentidade) quando a identidade do dono está confirmada ou conferida pela equipa; senão null (sem selo). */
+  identidadeConfirmada?: string | null;
 }
 
 type Linha = {
@@ -62,8 +69,13 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
       admin.rpc("telefones_verificados", { p_ids: [donoId] }),
       // E427 (01/11): o nome abreviado sai do nome completo pela MESMA regra da visita (nomeCurto). O nome_curto do banco
       // usava a inicial do último pedaço mesmo sendo número ("Daniel 1."); só o resultado abreviado sai daqui.
-      admin.from("profiles").select("full_name").eq("id", donoId).maybeSingle(),
+      admin.from("profiles").select("full_name, is_teste").eq("id", donoId).maybeSingle(),
     ]);
+    // E631: o número do cartão é o que a página pública do proprietário lista (mesma consulta, mesmo filtro de vitrine).
+    // E1048: dono conta de teste → a vitrine tiraria todos os anúncios dele; o cartão conta os ativos dele.
+    const imoveisPublicos = cartaoContaAnunciosDeTeste(perfil.data as { is_teste?: boolean | null } | null)
+      ? await contarImoveisPublicosDoDono(donoId, { incluirTeste: true })
+      : await contarImoveisPublicosDoDono(donoId);
     // Selo do telefone (0150): sem a função (ainda não aplicada) ou com erro, simplesmente não aparece.
     const telefoneVerificado = !fones.error && ((fones.data ?? []) as { verificado: boolean }[]).some((f) => f.verificado);
     const ns = ((notas.data ?? []) as { nota_geral: number }[]).map((r) => Number(r.nota_geral));
@@ -78,13 +90,16 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
       cidade: l.cidade,
       bio: l.bio,
       idiomas: l.idiomas ?? [],
-      imoveisAtivos: l.imoveis_ativos ?? 0,
+      // Falhou a contagem pública → null (o cartão omite o fato); a contagem crua do banco inclui anúncio de teste e divergia da lista.
+      imoveisAtivos: imoveisPublicos,
       estadiasConcluidas: l.estadias_concluidas ?? 0,
       resposta: metricaResposta(l.conversas ?? 0, l.conversas_respondidas ?? 0, l.resposta_media_min),
       reputacao,
       selos: selosReais({ emailConfirmado: l.email_confirmado, telefoneVerificado, linkedinConectado: (await linkedinConectados([donoId], undefined, { publico: true })).has(donoId),
         vinculoDominio: (await vinculosConfirmados([donoId])).get(donoId) ?? null,
       }),
+      // E1105/E1106: leitura que falha = indisponivel → sem selo de identidade (nunca afirmar o que não se conferiu).
+      identidadeConfirmada: textoDoSeloDeIdentidade(await estadoIdentidade(admin, donoId).catch(() => null)),
     };
   } catch {
     return null;
@@ -98,25 +113,31 @@ export async function getPerfilProprietario(donoId: string | null | undefined): 
  * sempre: antes do aceite, a privacidade atual. FAIL-CLOSED: sem sessão, sem chave de serviço ou erro → null.
  */
 export async function nomeCompletoParaQuemTemAceite(donoId: string): Promise<string | null> {
-  if (!UUID_RE.test(donoId)) return null;
+  return (await nomeCompletoDoAceite(donoId)).nome;
+}
+
+/** Como `nomeCompletoParaQuemTemAceite`, mas diz se foi uma FALHA (leitura/sessão que não respondeu) ou "sem aceite" de verdade — a tela tenta de novo só na falha. */
+export async function nomeCompletoDoAceite(donoId: string): Promise<{ nome: string | null; falhou: boolean }> {
+  if (!UUID_RE.test(donoId)) return { nome: null, falhou: false };
   try {
     const supabase = await createClient();
     const admin = createAdminClient();
-    if (!supabase || !admin) return null;
+    if (!supabase || !admin) return { nome: null, falhou: true };
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user || user.id === donoId) return null;
+    // Sem sessão (anônimo) não é falha: a regra manda o abreviado. O próprio dono também.
+    if (!user || user.id === donoId) return { nome: null, falhou: false };
     let aceite = await relacaoAceitaEntreServidor(donoId, user.id);
     if (!aceite) {
       const { data: visitas } = await admin.from("visitas_video").select("status").eq("owner_id", donoId).eq("tenant_id", user.id);
       aceite = ((visitas ?? []) as { status: string | null }[]).some((v) => nomeLiberadoNaVisita(v.status));
     }
-    if (!aceite) return null;
+    if (!aceite) return { nome: null, falhou: false };
     const { data } = await admin.from("profiles").select("full_name").eq("id", donoId).maybeSingle();
-    return nomeCompleto((data as { full_name?: string | null } | null)?.full_name ?? null);
+    return { nome: nomeCompleto((data as { full_name?: string | null } | null)?.full_name ?? null), falhou: false };
   } catch {
-    return null;
+    return { nome: null, falhou: true };
   }
 }
 

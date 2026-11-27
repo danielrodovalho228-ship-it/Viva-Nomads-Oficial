@@ -128,7 +128,8 @@ async function jornada(admin: NonNullable<ReturnType<typeof createAdminClient>>,
     .eq("status", "accepted")
     .order("accepted_at", { ascending: false });
   for (const l of (aceitas ?? []) as { id: string; accepted_at: string | null }[]) {
-    const { data: c } = await admin.from("contratos").select("assinado_proprietario_em, assinado_inquilino_em").eq("lead_id", l.id).maybeSingle();
+    // E1086: a candidatura pode ter mais de um contrato (um por proposta); vale o mais recente.
+    const { data: c } = await admin.from("contratos").select("assinado_proprietario_em, assinado_inquilino_em").eq("lead_id", l.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (!c || !c.assinado_proprietario_em || !c.assinado_inquilino_em) {
       const motivo = !c
         ? "ela está aceita e ainda não tem contrato"

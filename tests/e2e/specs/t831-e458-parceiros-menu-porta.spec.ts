@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T831 — E458 (Relay 58, spec do coordenador validada em 02/11): "Parceiros" no menu público e a porta com dois caminhos.
@@ -12,9 +13,10 @@ import { test, expect, type Page } from "@playwright/test";
 const SAIDA = "tests/laboratorio/saida";
 const DESTINOS = [
   ["Imóveis", "/buscar"],
-  ["Anunciar", "/dashboard/imoveis/novo"],
+  ["Anunciar", "/para-proprietarios"],
   ["Empresas", "/empresas"],
   ["Parceiros", "/parceiros"],
+  ...comPrecos(["Planos", "/planos"]), // E555 (E563: só com a página de preços ligada)
   ["Fale com a Viva", "/ajuda/fale-com-a-viva"],
 ];
 
@@ -30,7 +32,7 @@ async function linksDoMenu(page: Page, largura: number) {
 }
 
 for (const largura of [390, 1280] as const) {
-  test.describe(`T831 — E458 a ${largura} px`, () => {
+  test.describe(`T831 — E458 a ${largura} px`, { tag: ["@E458", "@ao-vivo-seguro"] }, () => {
     test.use({ viewport: { width: largura, height: largura === 390 ? 844 : 900 } });
 
     test("menu público: exatamente os 5 destinos, na ordem", async ({ page }) => {
@@ -72,13 +74,13 @@ for (const largura of [390, 1280] as const) {
   });
 }
 
-test.describe("T831 — topo do computador numa linha só", () => {
+test.describe("T831 — topo do computador numa linha só", { tag: ["@E458", "@ao-vivo-seguro"] }, () => {
   for (const largura of [1024, 1280, 1536] as const) {
     test(`${largura} px`, async ({ page }) => {
       await page.setViewportSize({ width: largura, height: 900 });
       await page.goto("/", { waitUntil: "domcontentloaded" });
       const links = await linksDoMenu(page, largura);
-      await expect(links).toHaveCount(5);
+      await expect(links).toHaveCount(DESTINOS.length); // E555: 6 destinos
       // Cada destino numa linha só e todos na mesma altura (nada quebra nem desce).
       const caixas = await links.evaluateAll((els) => els.map((e) => ({ topo: Math.round(e.getBoundingClientRect().top), linhas: e.getClientRects().length, alto: e.getBoundingClientRect().height })));
       for (const c of caixas) expect(c.linhas, JSON.stringify(caixas)).toBe(1);

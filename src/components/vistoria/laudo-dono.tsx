@@ -11,9 +11,11 @@ import { hrefAvaliador } from "@/lib/vistoria/telas-exibicao";
 import { ROTULO_RESULTADO, podeContestar, type Resultado } from "@/lib/vistoria/laudo";
 import { proximoPasso } from "@/lib/vistoria/laudo-documento";
 import { degrauDoProprietario } from "@/lib/vistoria/strikes";
+import { SeloAssinatura } from "@/components/vistoria/selo-assinatura";
 import { MSG_STRIKES_SEM_LEITURA, strikesDoDono } from "@/lib/vistoria/laudo-servidor";
 import { confirmarDevolucao, contestarLaudo, enviarFotoCorrecao } from "@/lib/vistoria/laudo-actions";
-import { ROTULO_ACAO, acoesDoResultado, avisoStrike, linhaResumoGrupo, prefixoAvaliadoEm } from "@/lib/vistoria/telas-laudo";
+import { ROTULO_ACAO, acoesDoResultado, avisoStrike, itensACorrigir, linhaResumoGrupo, prefixoAvaliadoEm } from "@/lib/vistoria/telas-laudo";
+import { numeroExibido } from "@/lib/fiscal/prefixos";
 
 const BUCKET_FOTOS = "avaliacao-imovel";
 const campo = "mt-1 w-full rounded-lg border border-sage-200 px-3 py-2 text-base";
@@ -41,6 +43,8 @@ type Laudo = {
   vistoriado_em: string | null;
   contestado_em: string | null;
   documento_id: string | null;
+  assinado_em: string | null;
+  assinatura_hash: string | null;
 };
 
 /**
@@ -50,7 +54,7 @@ type Laudo = {
 export async function LaudoDono({ admin, propertyId, ownerId }: { admin: SupabaseClient; propertyId: string; ownerId: string }) {
   const agora = new Date();
   const [{ data: ls }, { data: bloqueios }, { data: devolucoes }, strikes, { data: imoveis }] = await Promise.all([
-    admin.from("vistoria_laudos").select("id, pedido_id, avaliador_id, resumo, numero, versao, resultado, nivel_sustentado, ressalvas, graves, emitido_em, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, vistoriado_em, contestado_em, documento_id").eq("property_id", propertyId).order("emitido_em", { ascending: false }).order("versao", { ascending: false }).limit(1),
+    admin.from("vistoria_laudos").select("id, pedido_id, avaliador_id, resumo, numero, versao, resultado, nivel_sustentado, ressalvas, graves, emitido_em, prazo_ressalva_ate, corrigido_em, ressalva_vencida_em, vistoriado_em, contestado_em, documento_id, assinado_em, assinatura_hash").eq("property_id", propertyId).order("emitido_em", { ascending: false }).order("versao", { ascending: false }).limit(1),
     admin.from("vistoria_bloqueios").select("motivo").eq("property_id", propertyId).is("resolvido_em", null),
     admin.from("vistoria_devolucoes").select("id, valor, prazo_ate").eq("owner_id", ownerId).is("recebido_confirmado_em", null),
     // Leitura que falha: aviso na tela, nunca "sem strike" (degrau 0) por engano.
@@ -71,7 +75,7 @@ export async function LaudoDono({ admin, propertyId, ownerId }: { admin: Supabas
   const fotoDoItem = new Map(listaFotos.map((f, i) => [f.item_chave, assinadas[i]?.signedUrl ?? null]));
   if (!l && !(bloqueios ?? []).length && !(devolucoes ?? []).length && degrau === 0 && !strikesFalhou) return null;
   const aberta = !!l && !l.corrigido_em && !l.ressalva_vencida_em && !l.contestado_em;
-  const itensCorrigir = l ? [...new Set([...l.ressalvas.map((r) => r.chave), ...l.graves])] : [];
+  const itensCorrigir = l ? itensACorrigir(l) : [];
   const contestar = l ? podeContestar(l.emitido_em, agora, !!l.contestado_em) : null;
   const acoes = l
     ? acoesDoResultado({ resultado: l.resultado, emitidoEm: l.emitido_em, prazoRessalvaAte: l.prazo_ressalva_ate, corrigidoEm: l.corrigido_em, ressalvaVencidaEm: l.ressalva_vencida_em, contestadoEm: l.contestado_em }, agora)
@@ -83,7 +87,7 @@ export async function LaudoDono({ admin, propertyId, ownerId }: { admin: Supabas
       {l && (
         <div data-testid="laudo-dono-resultado" data-resultado={l.resultado} data-vistoriado={l.vistoriado_em ? "sim" : "nao"}>
           <p className="font-semibold text-ink">
-            Laudo {l.numero}{l.versao > 1 ? ` v${l.versao}` : ""} · {ROTULO_RESULTADO[l.resultado]} · nível sustentado: {l.nivel_sustentado === "em_adequacao" ? "em adequação" : ROTULO_NIVEL[l.nivel_sustentado]}
+            Laudo {numeroExibido(l.numero, l.versao)} · {ROTULO_RESULTADO[l.resultado]} · nível sustentado: {l.nivel_sustentado === "em_adequacao" ? "em adequação" : ROTULO_NIVEL[l.nivel_sustentado]}
           </p>
           {l.vistoriado_em && cred?.numero_credenciado && (
             <p className="text-muted" data-testid="laudo-avaliado-em">
@@ -91,6 +95,7 @@ export async function LaudoDono({ admin, propertyId, ownerId }: { admin: Supabas
               <Link href={hrefAvaliador(String(cred.numero_credenciado))} className="underline" data-testid="laudo-avaliador-link">{String(cred.numero_credenciado)}</Link>
             </p>
           )}
+          <SeloAssinatura laudo={{ numero: l.numero, versao: l.versao, assinadoEm: l.assinado_em, assinaturaHash: l.assinatura_hash }} quem="dono" />
           <p className="mt-1 text-ink">{proximoPasso(l.resultado, l.prazo_ressalva_ate)}</p>
           {acoes.length > 0 && (
             <p className="mt-1" data-testid="laudo-acoes" data-acoes={acoes.join(" ")}>

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ExternalLink } from "lucide-react";
+import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { decidirVinculo, linkVinculoAdmin, type VinculoPendente } from "@/lib/data/triagem-actions";
 import { MOTIVOS_RECUSA, type MotivoRecusa } from "@/lib/triagem/vinculo";
 import { abrirLinkEmNovaAba } from "@/lib/abrir-aba";
@@ -22,7 +23,7 @@ const ROTULO_MOTIVO: Record<MotivoRecusa, string> = {
  * Prompt 52 — fila do comprovante de vínculo, na mesma tela de conferência de documentos. Aprovar vale 12 meses; recusar
  * exige um motivo que o morador entende (ele reenvia na hora). Contas de teste aparecem marcadas e ficam fora da contagem.
  */
-export function VinculosAdmin({ itens, metricas }: { itens: VinculoPendente[]; metricas: { pendentes: number; aprovados: number; recusados: number } }) {
+export function VinculosAdmin({ itens, metricas, soLeitura = false }: { itens: VinculoPendente[]; metricas: { pendentes: number; aprovados: number; recusados: number }; soLeitura?: boolean }) {
   return (
     <section className="mt-8" data-testid="admin-vinculos">
       <h2 className="font-title text-xl font-semibold text-ink">Comprovantes de vínculo</h2>
@@ -35,7 +36,7 @@ export function VinculosAdmin({ itens, metricas }: { itens: VinculoPendente[]; m
       ) : (
         <ul className="mt-3 space-y-3">
           {itens.map((i) => (
-            <ItemVinculo key={i.id} item={i} />
+            <ItemVinculo key={i.id} item={i} soLeitura={soLeitura} />
           ))}
         </ul>
       )}
@@ -43,7 +44,7 @@ export function VinculosAdmin({ itens, metricas }: { itens: VinculoPendente[]; m
   );
 }
 
-function ItemVinculo({ item }: { item: VinculoPendente }) {
+function ItemVinculo({ item, soLeitura = false }: { item: VinculoPendente; soLeitura?: boolean }) {
   const router = useRouter();
   const [motivo, setMotivo] = useState<MotivoRecusa | "">("");
   const [complemento, setComplemento] = useState("");
@@ -101,6 +102,9 @@ function ItemVinculo({ item }: { item: VinculoPendente }) {
         </label>
       </div>
       {motivo && <p className="mt-2 text-xs text-muted">O morador vai ler: “{MOTIVOS_RECUSA[motivo]}”</p>}
+      {soLeitura ? (
+        <SoLeituraQa className="mt-3" />
+      ) : (
       <div className="mt-3 flex flex-wrap gap-3">
         <Button type="button" size="sm" onClick={() => decidir("aprovar")} disabled={pendente} data-testid="admin-vinculo-aprovar">
           Aprovar (12 meses)
@@ -109,6 +113,7 @@ function ItemVinculo({ item }: { item: VinculoPendente }) {
           Recusar
         </Button>
       </div>
+      )}
       {msg && (
         <p role="alert" className="mt-2 text-sm text-red-700">
           {msg}

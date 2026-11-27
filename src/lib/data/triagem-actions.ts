@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { recusaObservador } from "@/lib/qa/observador";
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { primeiroNome } from "@/lib/display-name";
@@ -152,6 +153,8 @@ export async function decidirVinculo(id: string, decisao: "aprovar" | "recusar",
   if (!(await triagemVinculoAtiva())) return { ok: false, error: "Indisponível." };
   const s = await sessao();
   if (!s || !(await ehAdmin(s.supabase, s.userId))) return { ok: false, error: "Só a equipe, com a verificação em duas etapas." };
+  const recusaQa = await recusaObservador(s.userId);
+  if (recusaQa) return { ok: false, error: recusaQa };
   if (!UUID.test(String(id))) return { ok: false, error: "Envio inválido." };
   const agora = new Date();
   let mudanca: Record<string, unknown>;

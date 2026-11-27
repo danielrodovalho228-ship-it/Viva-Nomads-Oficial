@@ -14,10 +14,14 @@ import { paginaCidade } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { calcularPrecosMedios, rotuloQuartos } from "@/lib/preco-medio";
 import { polosDaCidade } from "@/lib/polos";
-import { bairrosDaGrade } from "@/lib/bairros";
-import { tituloContagemCidade } from "@/lib/cidades";
+import { bairrosDaGrade, contaNaBusca } from "@/lib/bairros";
+import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
+import { detalheContagemCidade } from "@/lib/cidades";
+import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { MapPin } from "lucide-react";
 import { faqPageCidade, perguntasCidade } from "@/lib/seo/anuncio-cidade";
+import { MUNICIPIOS } from "@/lib/municipios";
+import { municipiosDoSlug, nomeSemOperacao } from "@/lib/indice-cidades";
 
 // F9: dados frescos (revalidatePath nas ações + rede de segurança de 60 s).
 export const revalidate = 60;
@@ -37,10 +41,20 @@ async function cidadeValida(cidade: string): Promise<boolean> {
   return imoveis.some((p) => !isExemplo(p));
 }
 
+/** E874: município de verdade (lista do IBGE) onde a Viva ainda não opera — página própria, sem 404 seco. */
+function semOperacao(cidade: string): { nome: string; ufs: string[] } | null {
+  const achados = municipiosDoSlug(cidade, MUNICIPIOS);
+  const nome = nomeSemOperacao(achados);
+  return nome ? { nome, ufs: achados.map((a) => a.uf) } : null;
+}
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { cidade } = await params;
-  // Fora da lista: a página chama notFound() e o Next põe o noindex do 404 sozinho.
-  if (!(await cidadeValida(cidade))) return { title: "Página não encontrada" };
+  if (!(await cidadeValida(cidade))) {
+    const s = semOperacao(cidade);
+    // Sem operação: a página existe para o visitante, fora do índice. Fora do IBGE: notFound() (noindex do 404).
+    return s ? { title: `Ainda não operamos em ${s.nome}`, robots: { index: false, follow: true } } : { title: "Página não encontrada" };
+  }
   const name = cityFromSlug(cidade);
   const title = `Imóveis mobiliados mensais em ${name}`;
   const description = descricaoCidade(name);
@@ -69,12 +83,18 @@ export function generateStaticParams() {
 
 export default async function CityLandingPage({ params }: Params) {
   const { cidade } = await params;
-  if (!(await cidadeValida(cidade))) notFound();
+  if (!(await cidadeValida(cidade))) {
+    const s = semOperacao(cidade);
+    if (!s) notFound();
+    return <CidadeSemOperacao nome={s.nome} ufs={s.ufs} />;
+  }
   const name = cityFromSlug(cidade);
-  const properties = await listPropertiesByCity(name);
+  // E446: a MESMA base da busca (com imóvel real os exemplos saem; sem nenhum, aparecem): lista, total e bairros leem esta.
+  const properties = baseDaVitrine(await listPropertiesByCity(name), (p) => isExemplo(p.id));
   const infoCidade = CITIES.find((c) => c.slug === cidade);
   const precosMedios = calcularPrecosMedios(properties);
-  const bairros = bairrosDaGrade(cidade, properties, isExemplo);
+  // E446: os bairros contam o mesmo que a lista acima e a busca (exemplos inclusos com a vitrine ligada).
+  const bairros = bairrosDaGrade(cidade, properties, contaNaBusca);
   const atualizadoEm = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(new Date());
 
   return (
@@ -101,14 +121,21 @@ export default async function CityLandingPage({ params }: Params) {
       </section>
 
       <section className="container-page section-y">
-        <div className="flex items-center justify-between">
-          <h2 className="font-title text-2xl font-semibold tabular-nums text-ink">
-            {tituloContagemCidade(
-              properties.filter((p) => !isExemplo(p.id)).length,
-              properties.filter((p) => isExemplo(p.id)).length,
-              name,
-            )}
-          </h2>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            {/* E446: o número é o da busca (mesma função); o detalhe reais × exemplo fica embaixo. */}
+            <h2 className="font-title text-2xl font-semibold tabular-nums text-ink" data-testid="cidade-contagem">
+              {contagemDaBusca({ n: properties.length, local: name })}
+            </h2>
+            {(() => {
+              const d = detalheContagemCidade(properties.filter((p) => !isExemplo(p.id)).length, properties.filter((p) => isExemplo(p.id)).length);
+              return d ? (
+                <p className="mt-1 text-sm text-muted" data-testid="cidade-contagem-detalhe">
+                  {d}
+                </p>
+              ) : null;
+            })()}
+          </div>
           <ButtonLink href="/buscar" variant="outline" size="sm">
             Ver toda a busca
           </ButtonLink>
@@ -160,8 +187,8 @@ export default async function CityLandingPage({ params }: Params) {
         {bairros.length > 0 && (
           <div className="mt-12" data-testid="bairros-grade">
             <h2 className="font-title text-2xl font-semibold text-ink">Bairros de {name}</h2>
-            {/* Grade par (varredura 02/11, tablet): em 2 colunas, o último bairro ímpar ocupa a linha inteira; em 1 e 3 colunas, nada muda. */}
-            <ul className="mt-4 grid gap-3 sm:grid-cols-2 sm:max-lg:[&>:last-child:nth-child(odd)]:col-span-full lg:grid-cols-3" data-testid="bairros-lista">
+            {/* Grade par (varredura 02/11, tablet): em 2 colunas, o último bairro ímpar ocupa a linha inteira; no computador (3 colunas), o que sobra preenche a linha (varredura 23). */}
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 sm:max-lg:[&>:last-child:nth-child(odd)]:col-span-full lg:grid-cols-6 lg:[&>*]:col-span-2 lg:[&>:last-child:nth-child(3n+1)]:col-span-6 lg:[&>:last-child:nth-child(3n+2)]:col-span-3 lg:[&>:nth-last-child(2):nth-child(3n+1)]:col-span-3" data-testid="bairros-lista">
               {bairros.map((b) => (
                 <li key={b.slug}>
                   <Link
@@ -211,8 +238,8 @@ export default async function CityLandingPage({ params }: Params) {
             tradicional e a hospedagem por diária.
           </p>
           <p className="mt-3 leading-relaxed">
-            Todos os imóveis do Viva Nomads em {name} são mobiliados e qualificados. Os que
-            têm o selo <strong className="text-ink">{SELOS.prontoParaMorar.nome}</strong> são{" "}
+            Todos os imóveis do Viva Nomads em {name} são mobiliados e qualificados. O selo{" "}
+            <strong className="text-ink">{SELOS.prontoParaMorar.nome}</strong> marca o imóvel{" "}
             {SELOS.prontoParaMorar.resumo}; etiquetas como{" "}
             <strong className="text-ink">{SELOS.homeOffice.nome}</strong> ({SELOS.homeOffice.resumo})
             e <strong className="text-ink">{SELOS.bemLocalizado.nome}</strong> ({SELOS.bemLocalizado.resumo})
@@ -234,5 +261,37 @@ export default async function CityLandingPage({ params }: Params) {
         </div>
       </section>
     </>
+  );
+}
+
+/** E874: a cidade existe, mas a Viva ainda não opera nela — diz isso e dá os próximos passos (nunca um 404 seco). */
+function CidadeSemOperacao({ nome, ufs }: { nome: string; ufs: string[] }) {
+  return (
+    <section className="container-page section-y" data-testid="cidade-sem-operacao">
+      <nav className="text-sm text-muted">
+        <Link href="/" className="alvo-toque underline-offset-4 hover:underline">
+          Início
+        </Link>{" "}
+        /{" "}
+        <Link href="/cidades" className="alvo-toque underline-offset-4 hover:underline">
+          Cidades
+        </Link>{" "}
+        / <span className="text-ink">{nome}</span>
+      </nav>
+      <h1 className="mt-4 font-title text-2xl font-semibold text-ink md:text-[28px]">Ainda não operamos em {nome}</h1>
+      <p className="mt-2 max-w-2xl text-muted" data-testid="cidade-sem-operacao-texto">
+        A Viva Nomads ainda não tem imóveis em {nome}
+        {ufs.length > 1 ? ` (${ufs.join(", ")})` : ` – ${ufs[0]}`}. Publique um pedido de moradia: ele fica registrado e ajuda a
+        escolher as próximas cidades. Ou veja as cidades onde já operamos.
+      </p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <ButtonLink href={`/pedidos/novo?cidade=${encodeURIComponent(nome)}`} data-testid="cidade-sem-operacao-pedido">
+          Publicar pedido de moradia
+        </ButtonLink>
+        <ButtonLink href="/cidades" variant="secondary" data-testid="cidade-sem-operacao-cidades">
+          Ver cidades onde já operamos
+        </ButtonLink>
+      </div>
+    </section>
   );
 }

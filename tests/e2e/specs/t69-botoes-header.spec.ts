@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { comPrecos } from "../fixtures/precos";
 
 /**
  * T69 — ordem c67e818f: header e botões.
@@ -13,7 +14,7 @@ import { authFile } from "../fixtures/auth";
  *  4. Foco pelo teclado mostra o anel.
  */
 const PRIMARIO = "rgb(28, 107, 58)";
-const PAGINAS = ["/", "/buscar", "/como-funciona", "/para-proprietarios", "/precos", "/empresas", "/parceiros", "/pedidos/novo", "/auth"];
+const PAGINAS = ["/", "/buscar", "/como-funciona", "/para-proprietarios", ...comPrecos("/precos"), "/empresas", "/parceiros", "/pedidos/novo", "/auth"];
 
 async function medirHeader(page: Page) {
   return page.evaluate(() => {
@@ -64,7 +65,7 @@ test.describe("T69 — header e botões padronizados", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
     const header = page.locator("header").first();
-    await expect(header.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros"]);
+    await expect(header.getByTestId("nav-links").getByRole("link")).toHaveText(["Imóveis", "Anunciar", "Empresas", "Parceiros", ...comPrecos("Planos")]);
     await expect(header.getByTestId("nav-fale-com-a-viva")).toHaveText("Fale com a Viva");
     await expect(header.getByTestId("nav-entrar")).toHaveText("Entrar");
     await expect(header.getByRole("button", { name: "Mais" })).toHaveCount(0);

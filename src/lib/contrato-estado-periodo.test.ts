@@ -91,7 +91,7 @@ test("2. datas: sobreposição com fim inclusivo; o sequencial (entrada no dia s
   assert.equal(lerDaterange("empty"), null);
   const c = conflitoDePeriodo({ inicio: "2026-12-01", fim: "2027-01-29" }, [{ inicio: "2027-03-01", fim: "2027-04-29" }, a]);
   assert.deepEqual(c, a);
-  assert.equal(mensagemConflitoPeriodo(c!), "Este imóvel já tem contrato de 19/10/2026 a 17/12/2026. Escolha outra data de entrada.");
+  assert.equal(mensagemConflitoPeriodo(c!), "Este imóvel já tem contrato com entrada em 19/10/2026 e saída em 18/12/2026. Escolha outra data de entrada.");
   assert.equal(conflitoDePeriodo({ inicio: "2026-12-18", fim: "2027-02-15" }, [a]), null);
 });
 
@@ -117,7 +117,8 @@ test("2. app: aceite da candidatura, aceite da proposta, 'Gerar contrato', renov
   const leads = ler("./data/leads-actions.ts");
   assert.match(leads, /conflitoNoImovel\(admin, datas\.property_id as string, periodoDaEstadia\(String\(datas\.inicio_desejado\)/);
   assert.match(leads, /admin\.from\("leads"\)\.select\("property_id, inicio_desejado"\)/);
-  assert.match(ler("./data/propostas-actions.ts"), /conflitoNoImovel\(admin, p\.property_id, periodoDaEstadia\(String\(v\.data_entrada\)\.slice\(0, 10\), Number\(v\.meses\)\)\)/);
+  // E562: o aceite confere o período em dias exatos da versão (antigas: meses × 30).
+  assert.match(ler("./data/propostas-actions.ts"), /conflitoNoImovel\(admin, p\.property_id, periodoEmDias\(String\(v\.data_entrada\)\.slice\(0, 10\), diasDosTermos\(termosDaLinha\(v\)\)\)\)/);
   const acts = ler("./data/actions.ts");
   const reg = acts.slice(acts.indexOf("export async function registrarContrato"), acts.indexOf("const LEAD_LIMITE_HORA"));
   assert.ok(reg.indexOf("conflitoNoImovel(") < reg.indexOf('.from("contratos")\n    .insert('), "confere antes de gravar");

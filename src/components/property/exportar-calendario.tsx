@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Check, Copy, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { linkExportacaoCalendario } from "@/lib/data/blocks-actions";
+// E611: leitura por GET — o "Carregando o link…" não espera a fila das Server Actions (autosave do cadastro).
+import { lerLinkExportacao } from "@/lib/calendario/leitura-cliente";
 
 /**
  * E44 — "Exportar para outro site": o link secreto (.ics) que o dono cola no Airbnb/Booking. Lá, as datas ocupadas
@@ -15,7 +16,7 @@ export function ExportarCalendario({ propertyId }: { propertyId: string }) {
 
   useEffect(() => {
     let vivo = true;
-    linkExportacaoCalendario(propertyId)
+    lerLinkExportacao(propertyId)
       .then((r) => vivo && setEstado({ url: r.url, erro: r.ok ? undefined : r.error, demo: r.demo, carregando: false }))
       .catch(() => vivo && setEstado({ erro: "Não foi possível carregar o link agora.", carregando: false }));
     return () => {

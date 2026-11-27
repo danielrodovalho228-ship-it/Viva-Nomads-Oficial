@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { recusaObservador } from "@/lib/qa/observador";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sessaoAal2 } from "@/lib/data/admin-guard";
@@ -66,6 +67,9 @@ export async function decidirLinkDeVideo(propertyId: string, url: string, aprova
   if (!UUID.test(propertyId ?? "")) return { ok: false, erro: "Anúncio inválido." };
   const a = await adminComSessao();
   if (!a) return { ok: false, erro: "Sem permissão." };
+  // E477: a conta observadora da QA só lê dado real (anúncio de teste segue liberado).
+  const recusaQa = await recusaObservador(a.uid, { imoveis: [propertyId] });
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const admin = createAdminClient();
   const { data: p } = admin ? await admin.from("properties").select("video_url").eq("id", propertyId).maybeSingle() : { data: null };
   if (!p || p.video_url !== url) return { ok: false, erro: "O link deste anúncio mudou. Atualize a página." };

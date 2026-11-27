@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
+import { corpoLembreteEntrada } from "@/lib/notifications/corpo-e267-restante";
 import { hojeEmBrasilia, inicioDaEstadia, lembreteDoDia, textoLembrete, type LembreteCheckin } from "@/lib/checkin";
 import { primeiroPagamentoConfirmado, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { corpoDaChegada, lembreteDeChegadaPermitido } from "@/lib/estadia/emails-chegada";
 import { instrucoesEfetivas, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
+import { saidaPeloFim } from "@/lib/texto-do-periodo";
 
 /**
  * Check-in garantido (ordem 404cd213, item 2): lembrete da entrada ao proprietário e ao inquilino quando faltam
@@ -59,9 +61,10 @@ export async function GET(request: Request) {
       const { data: im, error: erroIm } = await admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id as string).maybeSingle();
       const instrucoes = erroIm ? ("sem_leitura" as const) : instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, linha?.instrucoes);
       const estadia = {
-        imovel: { titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
+        imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
         entrada: inicio,
-        saida: blocos.map((b) => b.fim).sort().at(-1) ?? null,
+        // E1089: a linha "Saída" do e-mail é o dia da SAÍDA (o dia seguinte à última noite gravada).
+        saida: saidaPeloFim(blocos.map((b) => b.fim).sort().at(-1)) || null,
         horarioEntrada: linha?.horario || prop?.checkin_after,
         horarioSaida: prop?.checkout_before,
       };
@@ -71,6 +74,7 @@ export async function GET(request: Request) {
         const { data: p } = await admin.from("profiles").select("email, full_name, notif_email").eq("id", uid).maybeSingle();
         await notify({
           event: "checkin_lembrete",
+          body: corpoLembreteEntrada({ imovelTitulo: prop?.title, entrada: inicio, amanha: lembrete === "24h", horario: estadia.horarioEntrada, morador: uid === c.tenant_id }),
           email: p?.email && p.notif_email !== false ? (p.email as string) : undefined,
           name: (p?.full_name as string) ?? undefined,
           userId: uid,

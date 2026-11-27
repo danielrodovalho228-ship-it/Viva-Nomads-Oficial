@@ -5,6 +5,7 @@
 */
 
 import { calcularTudoIncluido, type CamposTotalMes } from "../precos.ts";
+import { PRECOS_VISIVEL } from "../../config/precos-visivel.ts";
 
 export interface AnuncioParaSchema extends Partial<Omit<CamposTotalMes, "monthlyPrice">> {
   id: string;
@@ -75,8 +76,11 @@ export interface PerguntaCidade {
   resposta: string;
 }
 
-/** Perguntas da página de cidade. A MESMA lista aparece na tela e no FAQPage. Texto fixo, sem número de mercado. */
-export function perguntasCidade(cidade: string): PerguntaCidade[] {
+/**
+ * Perguntas da página de cidade. A MESMA lista aparece na tela e no FAQPage. Texto fixo, sem número de mercado.
+ * A-110 (RELATORIO-021): com /precos suspensa (E563), a resposta da taxa aponta para "Para proprietários", que tem a taxa.
+ */
+export function perguntasCidade(cidade: string, precosVisivel: boolean = PRECOS_VISIVEL): PerguntaCidade[] {
   return [
     {
       pergunta: `Por quanto tempo posso ficar em ${cidade}?`,
@@ -98,7 +102,8 @@ export function perguntasCidade(cidade: string): PerguntaCidade[] {
     {
       pergunta: "Quanto custa anunciar?",
       resposta:
-        "Anunciar não tem mensalidade. A taxa é cobrada só sobre o valor total do contrato fechado e é menor para quem tem mais imóveis. Veja os detalhes em Preços.",
+        "Anunciar não tem mensalidade. A taxa é cobrada só sobre o valor total do contrato fechado e é menor para quem tem mais imóveis. " +
+        (precosVisivel ? "Veja os detalhes em Preços." : "Veja os detalhes em Para proprietários."),
     },
   ];
 }

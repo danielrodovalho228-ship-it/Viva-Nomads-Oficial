@@ -24,6 +24,6 @@ test("a tela diz que não carregou (contadores com —, frase no lugar do vazio)
   assert.match(pg, /value=\{r\?\.falhou \? "—" : \(r\?\.abertas \?\? 0\)\}/);
   assert.match(pg, /value=\{r\?\.falhou \? "—" : avisos\.length\}/);
   assert.match(pg, /avisos\.length === 0 && r\?\.falhou \?/);
-  assert.match(pg, /<TelaNotificacoes \/>/);
+  assert.match(pg, /<TelaNotificacoes inicial=\{inicial\} \/>/);
   assert.doesNotMatch(pg, /MSG_AVISOS_NAO_CARREGARAM = "[^"]*(nenhum|Nenhum)/);
 });

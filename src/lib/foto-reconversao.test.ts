@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import sharp from "sharp";
-import { reconverterFotoParaWebp } from "./foto-reconversao.ts";
+import { FOTO_LADO_MAX_PX, reconverterFotoParaWebp } from "./foto-reconversao.ts";
 import { tipoRealFotoPorMagicBytes } from "./upload-limits.ts";
 
 async function jpegComExif(largura = 800, altura = 600) {
@@ -25,7 +25,7 @@ test("JPEG com EXIF: a foto salva é WebP e sem EXIF", async () => {
 test("foto muito grande é reduzida ao lado máximo, sem ampliar as pequenas", async () => {
   const grande = await reconverterFotoParaWebp(new Uint8Array(await jpegComExif(4000, 3000)));
   const g = await sharp(grande!).metadata();
-  assert.equal(Math.max(g.width ?? 0, g.height ?? 0), 2560);
+  assert.equal(Math.max(g.width ?? 0, g.height ?? 0), FOTO_LADO_MAX_PX); // E640 (a): resolução de tela (1920)
   const pequena = await reconverterFotoParaWebp(new Uint8Array(await jpegComExif(400, 300)));
   const p = await sharp(pequena!).metadata();
   assert.deepEqual([p.width, p.height], [400, 300]);

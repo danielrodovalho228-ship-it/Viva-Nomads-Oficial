@@ -3,8 +3,9 @@ import { PageTitle, EmptyState } from "@/components/dashboard/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { filaDeOfensas } from "@/lib/data/ofensas-admin-actions";
 import { rotuloDoAdmin, tituloDoAdmin } from "@/config/menu-admin";
-import { dataBR } from "@/lib/utils";
+import { dataBRT } from "@/lib/datas-brasilia";
 import { BotaoRevisada } from "./botao-revisada";
+import { soLeituraNaTela } from "@/lib/qa/observador";
 
 export const metadata = { title: tituloDoAdmin("/admin/moderacao/ofensas") };
 export const dynamic = "force-dynamic";
@@ -16,6 +17,8 @@ export const dynamic = "force-dynamic";
  */
 export default async function AdminOfensasPage() {
   const fila = await filaDeOfensas({ exigir: true });
+  // E477: a conta observadora da QA só lê (o servidor também recusa).
+  const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;
   const voltar = <ButtonLink href="/admin" variant="secondary" size="sm">Voltar ao painel</ButtonLink>;
   return (
     <>
@@ -33,10 +36,10 @@ export default async function AdminOfensasPage() {
                   {o.autorNome} · {o.registrosDoAutor} {o.registrosDoAutor === 1 ? "registro" : "registros"}
                 </p>
                 <p className="text-muted">
-                  Termo: “{o.termo}” · {dataBR(o.criadoEm.slice(0, 10))} · conversa {o.conversationId.slice(0, 8)}
+                  Termo: “{o.termo}” · {dataBRT(o.criadoEm)} · conversa {o.conversationId.slice(0, 8)}
                 </p>
               </div>
-              <BotaoRevisada id={o.id} />
+              <BotaoRevisada id={o.id} soLeitura={soLeitura} />
             </li>
           ))}
         </ul>

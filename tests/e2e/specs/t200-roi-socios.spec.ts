@@ -86,6 +86,16 @@ test.describe("T200 — /roi e /simulacao dos sócios (prompt 21)", () => {
       // Duração do contrato editável: muda a receita por contrato.
       await page.getByTestId("receitas-desligar-todas").click();
       const antes = limpo(await page.getByTestId("comparativo-extras").locator("tbody tr").nth(3).innerText());
+      // E646: o seletor de duração (1 a 6 meses) recalcula o equilíbrio dos dois regimes na hora.
+      await expect(page.getByTestId("seletor-duracao")).toBeVisible();
+      await page.getByTestId("duracao-1").click();
+      await expect(page.getByTestId("duracao-1")).toHaveAttribute("aria-pressed", "true");
+      const eq1 = limpo(await page.getByTestId("equilibrio-duracao").innerText());
+      await page.getByTestId("duracao-5").click();
+      await expect(page.getByTestId("duracao-5")).toHaveAttribute("aria-pressed", "true");
+      await expect(page.getByTestId("equilibrio-selecionado-simples")).toContainText("Simples");
+      await expect(page.getByTestId("equilibrio-selecionado-presumido")).toContainText("Presumido");
+      await expect(page.getByTestId("equilibrio-duracao")).not.toHaveText(eq1);
       await page.getByTestId("meses-contrato").fill("6");
       await expect(page.getByTestId("comparativo-extras").locator("tbody tr").nth(3)).not.toHaveText(antes);
 

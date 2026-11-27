@@ -169,7 +169,9 @@ test.describe("T85 — Conferência de entrada e saída: fotos, confirmar/contes
     await expect(saida).toBeVisible({ timeout: 20_000 });
     const campo = page.getByTestId("conferencia-saida-laudo-input");
 
-    await campo.setInputFiles({ name: "laudo.pdf", mimeType: "application/pdf", buffer: Buffer.from("isto não é um PDF de verdade") });
+    // E669: abaixo de 1 KB a recusa é "pequeno demais"; com tamanho de laudo, o que vale é o tipo (não começa com %PDF).
+    const naoPdf = Buffer.concat([Buffer.from("isto não é um PDF de verdade\n"), Buffer.alloc(4096, 0x20)]);
+    await campo.setInputFiles({ name: "laudo.pdf", mimeType: "application/pdf", buffer: naoPdf });
     await expect(page.getByTestId("conferencia-erro")).toContainText("Envie o laudo em PDF", { timeout: 20_000 });
 
     const grande = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(16 * 1024 * 1024, 0x20)]);

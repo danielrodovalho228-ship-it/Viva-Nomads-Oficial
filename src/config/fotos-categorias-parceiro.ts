@@ -1,6 +1,8 @@
 /*
   E276/E277 — a foto de cada categoria de parceiro (cartões de "Serviços" dos painéis e a busca de parceiros), 4:3.
   Limpeza, lavanderia, mudança e manutenção: fotos reais do catálogo de serviços (branch fotos-servicos-cartoes).
+  Vistoria (E1080, DUET-1561): a foto escolhida pelo Daniel (Opção 3, gerada no Google Flow) para o cartão "Avaliação
+  do imóvel"; a categoria continua fora do catálogo, da busca e do "Seja parceiro" (CATEGORIAS_SO_CREDENCIAMENTO).
   PROVISÓRIAS (`provisoria: true`) até chegar a foto própria da categoria: fotografia e montagem usam as fotos dos
   cartões de /parceiros (fotógrafo no tripé; carregadores com a poltrona embalada).
 */
@@ -19,6 +21,7 @@ export const FOTOS_CATEGORIA_PARCEIRO: Record<string, FotoCategoria> = {
   lavanderia: { src: "/images/parceiros-categorias/lavanderia.webp", alt: "Toalhas brancas dobradas num cesto sobre a cama arrumada", frase: "Roupa de cama, toalhas e roupas lavadas." },
   montagem: { src: "/images/unicas/parceiros-mobilia.webp", alt: "Dois carregadores levando caixa e poltrona embalada", frase: "Montar, desmontar e instalar móveis.", provisoria: true },
   manutencao: { src: "/images/parceiros-categorias/manutencao.webp", alt: "Profissional consertando o encanamento sob a pia da cozinha", frase: "Pequenos reparos de elétrica, hidráulica e ajustes." },
+  vistoria: { src: "/images/parceiros-categorias/vistoria.webp", alt: "Mãos segurando um tablet com uma lista de vistoria, dentro de um apartamento mobiliado", frase: "Laudo com o nível do imóvel" },
 };
 
 export const fotoDaCategoria = (categoria: string): FotoCategoria | null => FOTOS_CATEGORIA_PARCEIRO[categoria] ?? null;

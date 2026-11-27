@@ -21,8 +21,7 @@ export const INTERNAL_PAGES = [
   "/simulacao",
   "/roi",
   "/modelodenegocio",
-  "/socios",
-  "/decisao",
+  // E595/E596 (05/11): /socios e /decisao foram eliminadas (modelo revogado); o acesso direto redireciona (next.config).
   "/tributario",
 ] as const;
 
@@ -62,7 +61,7 @@ export async function sociosCookieValido(cookieValue: string | undefined): Promi
 /** Sanitiza o destino pós-desbloqueio: só páginas internas (evita open-redirect). */
 export function sanitizeNext(next: string | null | undefined): string {
   const n = (next ?? "").trim();
-  return n.startsWith("/") && isInternalPath(n) ? n : "/socios";
+  return n.startsWith("/") && isInternalPath(n) ? n : "/modelodenegocio";
 }
 
 // ── Investidor (código próprio, só /simulacao) ──────────────────────────────

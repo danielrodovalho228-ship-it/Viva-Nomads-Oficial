@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fatosDaConta } from "@/lib/data/ativacao";
 import { papeisDaConta } from "@/lib/onboarding/ativacao";
 import { ehParceiroAprovado } from "@/lib/parceiros/painel-actions";
-import { contaNoPrimeiroAcesso, modoDoPapel, papelValido, type Papel } from "@/lib/papel/papel-ativo";
+import { contaNoPrimeiroAcesso, gravacaoPorArea, modoDoPapel, papelGravadoEfetivo, papelValido, type Papel } from "@/lib/papel/papel-ativo";
 
 /**
  * PAPEL-B — papel ativo gravado no perfil (profiles.papel_ativo, 0222). Só muda o menu e o painel que aparecem primeiro;
@@ -28,7 +28,13 @@ export async function estadoDosPapeis(): Promise<{ papeis: Papel[]; gravado: Pap
   const dono = !!fatos && papeisDaConta(fatos).some((p) => p.papel === "proprietario" && p.ativo);
   const papeis: Papel[] = ["morador", ...(dono ? (["proprietario"] as const) : []), ...(parceiro ? (["parceiro"] as const) : [])];
   const g = (perfil.data as { papel_ativo?: unknown } | null)?.papel_ativo;
-  return { papeis, gravado: papelValido(g) ? g : null };
+  // E668: "parceiro" só vale se foi escolhido (carimbo). Leitura à parte e tolerante à migração ainda não aplicada.
+  let escolhidoEm: unknown = g === "parceiro" ? "?" : null;
+  if (g === "parceiro") {
+    const esc = await supabase.from("profiles").select("papel_ativo_escolhido_em").eq("id", user.id).maybeSingle();
+    if (!esc.error) escolhidoEm = (esc.data as { papel_ativo_escolhido_em?: unknown } | null)?.papel_ativo_escolhido_em ?? null;
+  }
+  return { papeis, gravado: papelGravadoEfetivo(g, escolhidoEm) };
 }
 
 /**
@@ -51,20 +57,22 @@ export async function usarPapel(papel: unknown, origem?: "area"): Promise<{ ok: 
   // boas-vindas — é a intenção (a tela, ou o 1º rascunho de anúncio). Antes, abrir "Anunciar" gastava o 1º acesso e o
   // morador que virava dono pelo rascunho ficava sem as boas-vindas de dono.
   if (origem === "area") {
+    // E653: abrir uma página de área NUNCA grava o papel (parceiro incluído) — só o 1º acesso grava o modo (E283).
     // Estados vazios: sem a leitura, a conta passaria por "1º acesso" (só o modo, e ok sem trocar o papel). Nada grava.
     const { data: atual, error: erroAtual } = await supabase.from("profiles").select("intencao, papel_ativo").eq("id", user.id).maybeSingle();
     if (erroAtual) return { ok: false, erro: "Não foi possível trocar agora." };
     const a = atual as { intencao?: unknown; papel_ativo?: unknown } | null;
-    if (contaNoPrimeiroAcesso(a?.intencao, a?.papel_ativo)) {
-      if (!modo) return { ok: true };
-      const { error } = await supabase.from("profiles").update({ preferred_mode: modo }).eq("id", user.id);
-      return error ? { ok: false, erro: "Não foi possível trocar agora." } : { ok: true };
-    }
+    if (gravacaoPorArea(papel, contaNoPrimeiroAcesso(a?.intencao, a?.papel_ativo)) === "nada" || !modo) return { ok: true };
+    const { error } = await supabase.from("profiles").update({ preferred_mode: modo }).eq("id", user.id);
+    return error ? { ok: false, erro: "Não foi possível trocar agora." } : { ok: true };
   }
-  const { error } = await supabase
-    .from("profiles")
-    .update(modo ? { papel_ativo: papel, preferred_mode: modo } : { papel_ativo: papel })
-    .eq("id", user.id);
+  // E668: escolher o papel pelo selo/Conta carimba a escolha (é o que faz o "parceiro" valer no próximo login).
+  const base = modo ? { papel_ativo: papel, preferred_mode: modo } : { papel_ativo: papel };
+  let { error } = await supabase.from("profiles").update({ ...base, papel_ativo_escolhido_em: new Date().toISOString() }).eq("id", user.id);
+  // Migração 0318 ainda não aplicada (coluna inexistente, 42703): grava como antes e tenta o carimbo depois.
+  if (error && (error.code === "42703" || /papel_ativo_escolhido_em/.test(error.message ?? ""))) {
+    ({ error } = await supabase.from("profiles").update(base).eq("id", user.id));
+  }
   if (error) return { ok: false, erro: "Não foi possível trocar agora." };
   revalidatePath("/dashboard/conta");
   return { ok: true };

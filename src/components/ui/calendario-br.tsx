@@ -30,6 +30,7 @@ export function CalendarioBR({
   aoFechar,
   dentroDe,
   testid,
+  emLinha = false,
 }: {
   /** Data escolhida, em ISO, ou "". */
   valor: string;
@@ -42,6 +43,8 @@ export function CalendarioBR({
   /** O campo inteiro (texto + botão): clicar nele não conta como "clique fora". */
   dentroDe: RefObject<HTMLElement | null>;
   testid?: string;
+  /** E526: dentro de um painel (o de Datas da busca), abre EM LINHA — o painel cresce, nada fica por baixo. */
+  emLinha?: boolean;
 }) {
   const hoje = hojeIsoBrasilia();
   const inicial = valor || (min && min > hoje ? min : hoje);
@@ -87,14 +90,17 @@ export function CalendarioBR({
           irPara(somarDias(foco, teclas[e.key]));
         }
       }}
-      className="absolute right-0 top-full z-50 mt-2 w-[19rem] max-w-[calc(100vw-2rem)] rounded-xl border border-line bg-white p-3 text-ink shadow-flutuante"
+      className={cn(
+        emLinha ? "relative mt-2 w-full" : "absolute right-0 top-full z-50 mt-2 w-[19rem] max-w-[calc(100vw-2rem)]",
+        "rounded-xl border border-line bg-white p-3 text-ink shadow-flutuante"
+      )}
     >
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => setMes(mesVizinho(mes.ano, mes.mes0, -1))}
           aria-label={TEXTOS_CALENDARIO.anterior}
-          className="grid h-9 w-9 place-items-center rounded-lg text-forest hover:bg-sage-50"
+          className="grid h-9 w-9 place-items-center rounded-lg text-forest hover:bg-sage-100"
           data-testid={tid("anterior")}
         >
           <ChevronLeft className="h-5 w-5" aria-hidden />
@@ -106,7 +112,7 @@ export function CalendarioBR({
           type="button"
           onClick={() => setMes(mesVizinho(mes.ano, mes.mes0, 1))}
           aria-label={TEXTOS_CALENDARIO.proximo}
-          className="grid h-9 w-9 place-items-center rounded-lg text-forest hover:bg-sage-50"
+          className="grid h-9 w-9 place-items-center rounded-lg text-forest hover:bg-sage-100"
           data-testid={tid("proximo")}
         >
           <ChevronRight className="h-5 w-5" aria-hidden />
@@ -136,7 +142,7 @@ export function CalendarioBR({
                     onClick={() => aoEscolher(iso)}
                     className={cn(
                       "grid h-9 w-full place-items-center rounded-lg text-sm tabular-nums",
-                      iso === valor ? "bg-forest font-semibold text-white" : "hover:bg-sage-50",
+                      iso === valor ? "bg-forest font-semibold text-white" : "hover:bg-sage-100",
                       iso === hoje && iso !== valor && "font-semibold text-forest ring-1 ring-inset ring-sage-200",
                       bloqueado(iso) && "cursor-not-allowed text-muted/50 line-through hover:bg-transparent",
                     )}
@@ -153,14 +159,14 @@ export function CalendarioBR({
       </div>
 
       <div className="mt-2 flex items-center justify-between border-t border-line pt-2">
-        <button type="button" onClick={() => aoEscolher("")} className="rounded-lg px-3 py-2 text-sm font-medium text-forest hover:bg-sage-50" data-testid={tid("limpar")}>
+        <button type="button" onClick={() => aoEscolher("")} className="rounded-lg px-3 py-2 text-sm font-medium text-forest hover:bg-sage-100" data-testid={tid("limpar")}>
           {TEXTOS_CALENDARIO.limpar}
         </button>
         <button
           type="button"
           onClick={() => aoEscolher(hoje)}
           disabled={bloqueado(hoje)}
-          className="rounded-lg px-3 py-2 text-sm font-medium text-forest hover:bg-sage-50 disabled:cursor-not-allowed disabled:text-muted"
+          className="rounded-lg px-3 py-2 text-sm font-medium text-forest hover:bg-sage-100 disabled:cursor-not-allowed disabled:text-muted"
           data-testid={tid("hoje")}
         >
           {TEXTOS_CALENDARIO.hoje}

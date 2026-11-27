@@ -1,5 +1,6 @@
 "use server";
 
+import { recusaObservador } from "@/lib/qa/observador";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { sessaoAal2 } from "@/lib/data/admin-guard";
@@ -41,7 +42,7 @@ async function exigirAdmin() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data: perfil } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  return perfil?.role === "admin" && (await sessaoAal2(supabase)) ? { supabase } : null;
+  return perfil?.role === "admin" && (await sessaoAal2(supabase)) ? { supabase, userId: user.id } : null;
 }
 
 const aposMudar = () => {
@@ -54,6 +55,9 @@ const aposMudar = () => {
 export async function alternarCidade(uf: string, chave: string, liberar: boolean): Promise<ResultadoCidade> {
   const adm = await exigirAdmin();
   if (!adm) return { ok: false, erro: "Sem permissão." };
+  // E477: configuração da plataforma — o admin observador da QA só lê.
+  const recusaQa = await recusaObservador(adm.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const ufN = String(uf ?? "").toUpperCase();
   if (!/^[A-Z]{2}$/.test(ufN) || !chave || chave.length > 80) return { ok: false, erro: "Cidade inválida." };
   const { error } = await adm.supabase
@@ -70,6 +74,9 @@ export async function alternarCidade(uf: string, chave: string, liberar: boolean
 export async function cadastrarCidade(_: ResultadoCidade | null, form: FormData): Promise<ResultadoCidade> {
   const adm = await exigirAdmin();
   if (!adm) return { ok: false, erro: "Sem permissão." };
+  // E477: configuração da plataforma — o admin observador da QA só lê.
+  const recusaQa = await recusaObservador(adm.userId);
+  if (recusaQa) return { ok: false, erro: recusaQa };
   const v = validarInteresse({ cidade: form.get("cidade"), uf: form.get("uf"), papel: "inquilino" });
   if (!v.ok) return { ok: false, erro: v.erro };
   const liberar = form.get("liberada") === "on";

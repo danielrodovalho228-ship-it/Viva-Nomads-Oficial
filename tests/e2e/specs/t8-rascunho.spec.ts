@@ -1,6 +1,7 @@
 // Portão pós-#1506/#1507 (Pista C, 29/10): E180 (entrada do anúncio novo, cópia local) e E222-B (renovar = aditivo); roda no lab-crítico deste PR.
 import { test, expect, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { esperarSemEsqueleto } from "../fixtures/esqueleto";
 import { TITULO_PASSO, doTipoAoEndereco, noPasso } from "../fixtures/cadastro";
 
 /**
@@ -227,8 +228,13 @@ test.describe("T-RASC — Rascunho salva e retoma @criticos", () => {
     const page = await context.newPage();
     page.on("dialog", (d) => d.accept());
     await page.goto("/dashboard/imoveis", { waitUntil: "domcontentloaded" });
+    // A1 (ORDEM-DUET-669): a limpeza só decide "não há mais rascunhos" depois de a lista real estar na tela. Lida ainda no
+    // esqueleto, o ciclo saía à 1.ª volta e os rascunhos ficavam por apagar (verde que deixava o terreno sujo).
+    await esperarSemEsqueleto(page, "Meus imóveis (limpeza)");
+    await expect(page.getByRole("heading", { level: 1, name: "Meus imóveis" }), "a lista dos imóveis abriu").toBeVisible({ timeout: 30_000 });
     for (let i = 0; i < 20; i++) {
-      const botao = page.getByRole("button", { name: "Excluir rascunho" }).first();
+      // E515: o botão nomeia o rascunho ("Excluir o rascunho “…”").
+      const botao = page.getByRole("button", { name: /^Excluir o rascunho / }).first();
       if (!(await botao.isVisible().catch(() => false))) break;
       await botao.click();
       // Confirmação na página (adendo ao prompt 28): o 2º clique exclui.

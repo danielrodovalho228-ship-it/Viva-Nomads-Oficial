@@ -9,8 +9,10 @@
     • documentos na fila → filaDocumentos (a mesma do selo e de /admin/documentos);
     • encerramentos → contrato_encerramento_pedidos aberto ou em condução (/admin/contratos/encerramentos);
     • parcerias para aprovar → parceiro_solicitacoes pendente ou aguardando e-mail (a aba "Pendentes"); as sem resposta
-      há mais de 1 dia útil são parte delas e entram no detalhe, não numa segunda linha (E175);
+      além do prazo da parceria (7 dias, E791) são parte delas e entram no detalhe, não numa segunda linha (E175);
     • pedidos a parceiros sem orçamento → parceiro_pedidos "solicitado";
+    • avaliação (E1163): pedidos sem avaliador elegível, laudos atrasados e credenciamentos para decidir → a mesma
+      leitura da página dos avaliadores (src/lib/data/avaliadores-contagens.ts), contas de teste fora;
     • Correções de qualidade sem dono ou prazo → qualidade_correcoes aberta (/admin/qualidade#correcoes);
     • e as filas que já existiam ("Precisa de você agora"): candidaturas 48 h, manutenção urgente 4 h, taxas vencidas,
       pedidos expirando.
@@ -19,6 +21,8 @@
 */
 
 import { ehFiltroCentral, hrefCentral } from "./central-pendencias.ts";
+import { PRAZO_RESPOSTA_PARCERIA } from "../parceiros/regras.ts";
+import { TEXTO_ESPERA_DO_MORADOR } from "../vistoria/contagens-da-central.ts";
 
 export type ChaveDecisaoAdmin =
   | "manutencao_fora_prazo"
@@ -33,6 +37,10 @@ export type ChaveDecisaoAdmin =
   | "encerramentos"
   | "parceiros_para_aprovar"
   | "parceiros_sem_resposta_1_dia"
+  | "avaliacao_sem_avaliador"
+  | "avaliacao_laudo_atrasado"
+  | "avaliacao_credenciamento"
+  | "avaliacao_espera_moradora"
   | "verificacao_analise_humana"
   | "correcoes_sem_dono"
   | "pedidos_parceiro_sem_resposta"
@@ -68,9 +76,16 @@ export const DECISOES_ADMIN: readonly DefinicaoDecisaoAdmin[] = [
   { chave: "falhas_documento", fila: "recibos", um: "recibo ou documento que não saiu", varios: "recibos ou documentos que não saíram", acao: "Emitir de novo", href: "/admin/documentos#falhas" },
   { chave: "documentos_pendentes", fila: "documentos", um: "documento na fila para conferir", varios: "documentos na fila para conferir", acao: "Conferir", href: "/admin/documentos" },
   { chave: "encerramentos", fila: "encerramentos", um: "pedido de encerramento de contrato", varios: "pedidos de encerramento de contrato", acao: "Conduzir", href: "/admin/contratos/encerramentos" },
-  // E175: UMA linha de parcerias — as sem resposta há mais de 1 dia útil são parte das pendentes (contavam duas vezes);
+  // E175: UMA linha de parcerias — as sem resposta além do prazo da parceria (7 dias, E791) são parte das pendentes (contavam duas vezes);
   // o atraso vira o detalhe da linha (juntarParcerias), e o número é o da aba "Pendentes".
   { chave: "parceiros_para_aprovar", fila: "parcerias", um: "pedido de parceria para aprovar", varios: "pedidos de parceria para aprovar", acao: "Analisar", href: "/admin/parceiros?aba=pendentes" },
+  // E1163: as três filas da avaliação que esperam a equipe (antes só existiam na página dos avaliadores). O número é o
+  // do "Para decidir" dessa página, pela mesma leitura; cada linha leva à seção dela.
+  { chave: "avaliacao_sem_avaliador", fila: "avaliações sem avaliador", um: "pedido de avaliação sem avaliador elegível", varios: "pedidos de avaliação sem avaliador elegível", acao: "Ver", href: "/admin/avaliadores#sem-avaliador" },
+  { chave: "avaliacao_laudo_atrasado", fila: "laudos de avaliação", um: "laudo de avaliação atrasado", varios: "laudos de avaliação atrasados", acao: "Cobrar", href: "/admin/avaliadores#contestacoes" },
+  { chave: "avaliacao_credenciamento", fila: "credenciamentos de avaliador", um: "credenciamento de avaliador para decidir", varios: "credenciamentos de avaliador para decidir", acao: "Decidir", href: "/admin/avaliadores#credenciamento" },
+  // E1175: os dois estados do pedido que espera o morador; o texto da linha vem pronto na contagem (`texto`).
+  { chave: "avaliacao_espera_moradora", fila: "avaliações à espera do morador", um: TEXTO_ESPERA_DO_MORADOR.um, varios: TEXTO_ESPERA_DO_MORADOR.varios, acao: "Ver", href: "/admin/avaliadores#espera-moradora" },
   { chave: "verificacao_analise_humana", fila: "verificação de identidade", um: "verificação de identidade para analisar", varios: "verificações de identidade para analisar", acao: "Analisar", href: "/admin/documentos#verificacao" },
   // Prompt 51: a Correção do painel de qualidade (motivo de saída > 3 em 30 dias) sem dono ou prazo espera a equipe.
   { chave: "correcoes_sem_dono", fila: "correções de qualidade", um: "Correção de qualidade sem dono ou prazo", varios: "Correções de qualidade sem dono ou prazo", acao: "Definir", href: "/admin/qualidade#correcoes" },
@@ -86,6 +101,8 @@ export interface ContagemDecisao {
   n: number | null;
   /** Frase curta de contexto ("mais antigo há 3 h", "a última cópia falhou"). */
   detalhe?: string | null;
+  /** E1175: o texto da linha, quando a mesma linha diz mais de um estado. Ausente = `${n} ${um|varios}`. */
+  texto?: string | null;
 }
 
 export interface LinhaDecisaoAdmin {
@@ -105,16 +122,16 @@ export interface DecisoesAdmin {
 }
 
 /**
- * E175: "parcerias sem resposta há mais de 1 dia útil" é um pedaço de "parcerias para aprovar" (a mesma aba Pendentes).
+ * E175: "parcerias sem resposta há mais de 7 dias" (E791: PRAZO_RESPOSTA_PARCERIA) é um pedaço de "parcerias para aprovar" (a mesma aba Pendentes).
  * Somadas, a mesma parceria contava duas vezes ("Ver todas (8)" com 5 itens distintos). Fica a linha das pendentes,
- * com o atraso no detalhe ("3 sem resposta há mais de 1 dia útil · mais antigo há 2 dias").
+ * com o atraso no detalhe ("3 sem resposta há mais de 7 dias · mais antigo há 9 dias").
  */
 export function juntarParcerias(contagens: Partial<Record<ChaveDecisaoAdmin, ContagemDecisao | null>>): Partial<Record<ChaveDecisaoAdmin, ContagemDecisao | null>> {
   const { parceiros_sem_resposta_1_dia: atrasadas, ...resto } = contagens;
   const pendentes = resto.parceiros_para_aprovar;
   if (!pendentes || pendentes.n === null || !atrasadas || !atrasadas.n || atrasadas.n <= 0) return resto;
   const n = Math.floor(atrasadas.n);
-  const atraso = `${n} sem resposta há mais de 1 dia útil`;
+  const atraso = `${n} sem resposta há mais de ${PRAZO_RESPOSTA_PARCERIA}`;
   return { ...resto, parceiros_para_aprovar: { n: pendentes.n, detalhe: [atraso, atrasadas.detalhe?.trim() || pendentes.detalhe?.trim()].filter(Boolean).join(" · ") } };
 }
 
@@ -130,7 +147,7 @@ export function montarDecisoesAdmin(entrada: Partial<Record<ChaveDecisaoAdmin, C
     }
     const n = Math.max(0, Math.floor(c.n));
     if (n === 0) continue;
-    linhas.push({ chave: d.chave, n, texto: `${n} ${n === 1 ? d.um : d.varios}`, detalhe: c.detalhe?.trim() || null, acao: d.acao, href: d.href });
+    linhas.push({ chave: d.chave, n, texto: c.texto?.trim() || `${n} ${n === 1 ? d.um : d.varios}`, detalhe: c.detalhe?.trim() || null, acao: d.acao, href: d.href });
   }
   return { total: linhas.reduce((s, l) => s + l.n, 0), linhas, semLeitura };
 }

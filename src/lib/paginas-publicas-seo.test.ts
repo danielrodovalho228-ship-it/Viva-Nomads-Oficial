@@ -24,9 +24,9 @@ test("#38: /como-funciona e /empresas têm JSON-LD válido e seguro", () => {
   assert.equal(d.isPartOf.url, "https://vivanomads.com.br");
 });
 
-test("#36: /cidades existe e redireciona 308; title de /precos é descritivo (<= 60)", () => {
+test("#36: /cidades existe (E874: é o índice das cidades, não mais um redirecionamento); title de /precos é descritivo (<= 60)", () => {
   const c = ler("app/(public)/cidades/page.tsx");
-  assert.match(c, /permanentRedirect\(["'`]\/cidades\/uberlandia["'`]\)/);
+  assert.match(c, /data-testid="indice-cidades"/);
   const p = ler("app/(public)/precos/page.tsx");
   const m = p.match(/title:\s*"([^"]+)"/);
   assert.ok(m);
@@ -35,7 +35,8 @@ test("#36: /cidades existe e redireciona 308; title de /precos é descritivo (<=
 });
 
 test("#37: o rodapé diz que anunciar pede login; no topo, 'Anunciar' tem um nome só (E176)", () => {
-  assert.match(ler("lib/constants.ts"), /\{ href: "\/dashboard\/imoveis\/novo", label: "Anunciar" \}/);
+  // E450: o "Anunciar" do topo leva primeiro à página pública do dono (como o CTA da seção de donos e o rodapé).
+  assert.match(ler("lib/constants.ts"), /\{ href: "\/para-proprietarios", label: "Anunciar" \}/);
   const foot = ler("components/layout/footer.tsx");
   assert.match(foot, /Anunciar imóvel \(com login\)/);
 });

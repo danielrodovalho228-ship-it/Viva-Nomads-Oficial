@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
+import { MarcaObrigatorio } from "@/components/anuncio/marca-obrigatorio";
 import {
   MAX_CAMERAS_EXTERNAS,
   TEXTO_DECLARACAO_CAMERAS,
@@ -13,13 +14,25 @@ import {
  * no assistente de criação e no editor por seções. A declaração é obrigatória
  * para publicar (prontidão); o resto é opcional.
  */
-export function PrivacidadeCampos({ valor, onChange }: { valor: Privacidade; onChange: (v: Privacidade) => void }) {
+export function PrivacidadeCampos({
+  valor,
+  onChange,
+  obrigatorio = false,
+}: {
+  valor: Privacidade;
+  onChange: (v: Privacidade) => void;
+  /** E608: no assistente, a declaração é obrigatória para publicar. */
+  obrigatorio?: boolean;
+}) {
   const [temExternas, setTemExternas] = useState(valor.camerasExternas.length > 0);
   const set = (p: Partial<Privacidade>) => onChange({ ...valor, ...p });
 
   return (
     <div className="space-y-3" data-testid="privacidade-campos">
-      <p className="text-sm font-medium text-ink">Privacidade e acesso</p>
+      <p className="text-sm font-medium text-ink">
+        Privacidade e acesso
+        <MarcaObrigatorio ativo={obrigatorio} />
+      </p>
       <CartaoEscolha
         papel="checkbox"
         on={valor.semCamerasInterior}

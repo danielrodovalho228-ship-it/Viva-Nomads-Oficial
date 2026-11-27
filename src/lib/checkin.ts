@@ -1,7 +1,7 @@
 /*
   Check-in garantido (ordem 404cd213, item 2): regras puras das instruções de entrada.
   O proprietário informa horário, como pegar a chave/acesso e um contato de plantão; o inquilino só
-  vê depois que as duas partes assinaram (contato só depois do aceite). Sem imports de servidor.
+  vê depois que as duas partes assinaram (o contato nunca é trocado). Sem imports de servidor.
   Roda: node --test src/lib/checkin.test.ts
 */
 
@@ -87,10 +87,9 @@ export type LembreteCheckin = "48h" | "24h";
 const DIA_MS = 86_400_000;
 const soData = (iso: string) => iso.slice(0, 10);
 
-/** Dia (AAAA-MM-DD) em Brasília: o cron roda uma vez por dia e conta dias de calendário, não horas corridas. */
-export function hojeEmBrasilia(agora: Date): string {
-  return new Date(agora.getTime() - 3 * 3600_000).toISOString().slice(0, 10);
-}
+/** Dia (AAAA-MM-DD) em Brasília: o cron roda uma vez por dia e conta dias de calendário, não horas corridas.
+ *  E1115 (ORDEM-DUET-503): vem da fonte única (datas-brasilia), com a conversão de fuso de verdade. */
+export { hojeEmBrasilia } from "./datas-brasilia.ts";
 
 /** Faltam 2 dias para a entrada → lembrete de 48 h; falta 1 dia → de 24 h; senão, nada. */
 export function lembreteDoDia(inicio: string, hoje: string): LembreteCheckin | null {

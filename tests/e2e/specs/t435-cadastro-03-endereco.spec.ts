@@ -138,17 +138,25 @@ test.describe("T435 — Cadastro 03: Endereço (cadastro-imovel-03)", () => {
       expect(await coluna.evaluate((el) => parseFloat(getComputedStyle(el).borderTopLeftRadius))).toBeGreaterThan(0);
       expect(await p.getByTestId("moldura-assistente").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(247, 247, 247)");
       // A etiqueta do bairro não cobre o zoom do mapa (o "+" fica à vista).
+      // E744 (asserção alterada, tabela da Fable #3832): sem a chave do mapa (laboratório), o quadro mostra o aviso
+      // "mapa-indisponivel" no lugar do mapa — confere o aviso, como t134 e t787; com mapa, segue a conferência do "+".
       await p.getByTestId("mapa-bairro").scrollIntoViewIfNeeded();
       await p.waitForTimeout(500);
-      const zoom = p.getByTestId("mapa-bairro").locator(".leaflet-control-zoom");
-      await expect(zoom).toBeVisible({ timeout: 20_000 });
-      const z = (await zoom.boundingBox())!;
-      const nome = (await p.getByTestId("mapa-bairro-nome").boundingBox())!;
-      const cruza = nome.x < z.x + z.width && nome.x + nome.width > z.x && nome.y < z.y + z.height && nome.y + nome.height > z.y;
-      expect(cruza, "a etiqueta do bairro por cima do zoom").toBe(false);
-      const mais = p.getByTestId("mapa-bairro").locator(".leaflet-control-zoom-in");
-      const b = (await mais.boundingBox())!;
-      expect(await mais.evaluate((el, pt) => document.elementFromPoint(pt.x, pt.y) === el || el.contains(document.elementFromPoint(pt.x, pt.y)), { x: b.x + b.width / 2, y: b.y + b.height / 2 })).toBe(true);
+      const semMapa = p.getByTestId("mapa-bairro").getByTestId("mapa-indisponivel");
+      if (await semMapa.count()) {
+        await expect(semMapa).toBeVisible();
+        await expect(p.getByTestId("mapa-bairro-nome")).toBeVisible();
+      } else {
+        const zoom = p.getByTestId("mapa-bairro").locator(".leaflet-control-zoom");
+        await expect(zoom).toBeVisible({ timeout: 20_000 });
+        const z = (await zoom.boundingBox())!;
+        const nome = (await p.getByTestId("mapa-bairro-nome").boundingBox())!;
+        const cruza = nome.x < z.x + z.width && nome.x + nome.width > z.x && nome.y < z.y + z.height && nome.y + nome.height > z.y;
+        expect(cruza, "a etiqueta do bairro por cima do zoom").toBe(false);
+        const mais = p.getByTestId("mapa-bairro").locator(".leaflet-control-zoom-in");
+        const b = (await mais.boundingBox())!;
+        expect(await mais.evaluate((el, pt) => document.elementFromPoint(pt.x, pt.y) === el || el.contains(document.elementFromPoint(pt.x, pt.y)), { x: b.x + b.width / 2, y: b.y + b.height / 2 })).toBe(true);
+      }
       // Complemento sem supor apartamento.
       await expect(p.getByTestId("cadastro-complemento")).toHaveAttribute("placeholder", "Bloco, apartamento, casa ou referência");
       await p.evaluate(() => window.scrollTo(0, 0));

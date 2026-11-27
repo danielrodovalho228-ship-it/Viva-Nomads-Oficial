@@ -58,7 +58,7 @@ test("GUARDA: cada ação da lista confere o observador ANTES de gravar", () => 
     ["../data/documentos-admin.ts", "moderarDocumento", /recusaObservador\(user\.id, \{ documentos: \[qualId\] \}\)/],
     ["../data/documentos-admin.ts", "reabrirConferencia", /recusaObservador\(user\.id, \{ documentos: \[qualId\] \}\)/],
     ["../data/matriculas-admin.ts", "decidirMatriculaAdmin", /recusaObservador\(user\.id, \{ perfis:/],
-    ["../data/imoveis-admin-actions.ts", "pausarImovelAdmin", /recusaObservador\(user\.id, \{ imoveis: \[id\] \}\)/],
+    ["../data/imoveis-admin-actions.ts", "pausarImovelAdmin", /recusaObservador\(user\.id\)/], // E477 (resíduo): sem alvo — só leitura em anúncio de teste também
     ["../data/pedidos-admin.ts", "moderarPedido", /recusaObservador\(user\.id, \{ pedidosMoradia: \[pedidoId\] \}\)/],
     ["../data/pedidos-admin.ts", "reativarPedido", /recusaObservador\(user\.id, \{ pedidosMoradia: \[pedidoId\] \}\)/],
     ["../parceiros/admin-actions.ts", "aprovarSolicitacao", /recusaObservador\(a\.user\.id, await alvoDaSolicitacao/],
@@ -68,8 +68,8 @@ test("GUARDA: cada ação da lista confere o observador ANTES de gravar", () => 
     ["../parceiros/admin-actions.ts", "suspenderParceiro", /recusaObservador\(a\.user\.id, \{ perfis:/],
     ["../parceiros/admin-actions.ts", "denunciaNotaProcedente", /recusaObservador\(a\.user\.id\);/],
     ["../parceiros/admin-actions.ts", "criarSolicitacaoSuporte", /recusaObservador\(a\.user\.id\);/],
-    ["../data/fotos-perfil-actions.ts", "aprovarFotoPerfil", /recusaObservador\(a\.user\.id, \{ perfis:/],
-    ["../data/fotos-perfil-actions.ts", "removerFotoPerfil", /recusaObservador\(a\.user\.id, \{ perfis:/],
+    ["../data/fotos-perfil-actions.ts", "aprovarFotoPerfil", /recusaObservador\(a\.user\.id\)/], // E477 (resíduo): sem alvo
+    ["../data/fotos-perfil-actions.ts", "removerFotoPerfil", /recusaObservador\(a\.user\.id\)/],
     ["../identidade/revisao-actions.ts", "adminDecidirVerificacao", /recusaObservador\(user\.id, \{ perfis:/],
   ];
   for (const [arq, fn, re] of casos) {
@@ -87,8 +87,8 @@ test("GUARDA: cada ação da lista confere o observador ANTES de gravar", () => 
   }
 });
 
-test("GUARDA: telas — Caixa dos Sócios 404 e Sistema sem os botões de chave/backup para o observador; RLS na 0252", () => {
-  assert.match(ler("../../app/(dashboard)/admin/socios/page.tsx"), /if \(await ehObservadorQa\(uidAtual\)\) notFound\(\)/);
+test("GUARDA: telas — Caixa dos Sócios fechada (aviso E591) e Sistema sem os botões de chave/backup para o observador; RLS na 0252", () => {
+  assert.match(ler("../../app/(dashboard)/admin/socios/page.tsx"), /if \(await ehObservadorQa\(uidAtual\)\) return <CaixaRestritaQa \/>;/); // E591: aviso no lugar do 404
   const sistema = ler("../../app/(dashboard)/admin/sistema/page.tsx");
   assert.match(sistema, /observador \? \(/);
   assert.match(sistema, /\{observador \? null : <ParceiroGeralForm/);

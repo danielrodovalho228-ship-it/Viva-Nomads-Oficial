@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/store";
-import { getMyAvatarUrl } from "@/lib/data/avatar-actions";
+import { lerMeuAvatar } from "@/lib/sessao/leituras-da-casca";
 import { CONVITE_FOTO_CANDIDATURA_TEXTO } from "@/lib/perfil/convite-foto";
 import { EnviarFoto, FOTO_ATUALIZADA } from "@/components/account/foto-perfil";
 
@@ -23,7 +23,7 @@ export function ConviteFotoCandidatura({
   useEffect(() => {
     if (!usuario?.id) return;
     let vivo = true;
-    getMyAvatarUrl()
+    lerMeuAvatar(usuario.id)
       .then((r) => {
         if (vivo) setTemFoto(!!r.url);
       })

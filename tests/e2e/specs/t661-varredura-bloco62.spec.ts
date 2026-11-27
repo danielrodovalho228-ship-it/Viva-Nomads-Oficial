@@ -2,7 +2,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 import { TAMANHOS } from "../fixtures/varredura";
+import { caminhoEsperado } from "../fixtures/destino-da-conta";
 import { CLASSES, escutarImagens, varrerPagina, type Classe } from "../fixtures/varredura-pagina";
+import { comPrecos } from "../fixtures/precos";
 
 /*
   T661 — VARREDURA DA PÁGINA INTEIRA, BLOCO 62 (Pista C, 29/10). O protocolo do bloco 21 (t385): seis classes, página
@@ -36,7 +38,7 @@ const TELAS: Tela[] = [
   { conta: "DONO", papel: "proprietário", nome: "Início com os próximos passos do rascunho (E239)", rota: () => "/dashboard", marca: "inicio-dono-passos" },
   { conta: "DONO", papel: "proprietário", nome: "Cadastro, passo 1 com o estado na linha do selo (#1532)", rota: () => `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=tipo`, marca: "passo-titulo" },
   { conta: "DONO", papel: "proprietário", nome: "Cadastro, passo da descrição (#1532)", rota: () => `/dashboard/imoveis/novo?draft=${ids.rascunho}&etapa=descricao`, marca: "cadastro-descricao" },
-  { conta: "PUBLICO", papel: "visitante", nome: "Preços com a tabela de faixas (E236)", rota: () => "/precos", marca: "plano-gestor-botao" },
+  ...comPrecos({ conta: "PUBLICO", papel: "visitante", nome: "Preços com a tabela de faixas (E236)", rota: () => "/precos", marca: "plano-gestor-botao" }),
   { conta: "PUBLICO", papel: "visitante", nome: "Parceiros (E236)", rota: () => "/parceiros" },
   { conta: "PUBLICO", papel: "visitante", nome: "Termos (E236)", rota: () => "/termos" },
   { conta: "SOCIO", papel: "sócio", nome: "Modelo de negócio (E236)", rota: () => "/modelodenegocio" },
@@ -98,7 +100,7 @@ test.describe("T661 — varredura da página inteira, bloco 62 (Conta e próximo
           const respostas = escutarImagens(page);
           const resposta = await page.goto(rota, { waitUntil: "domcontentloaded", timeout: 40_000 });
           expect(resposta?.status() ?? 0, `${t.papel} — ${t.nome} @${tam.nome}: HTTP`).toBeLessThan(400);
-          expect(new URL(page.url()).pathname, `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`).toBe(rota.split(/[?#]/)[0]);
+          await expect.poll(() => new URL(page.url()).pathname, { message: `${t.papel} — ${t.nome} @${tam.nome}: caiu fora da tela (login ou redirecionamento)`, timeout: 15_000 }).toBe(caminhoEsperado(rota, tam.width));
           await page.locator("main").first().waitFor({ timeout: 20_000 }).catch(() => {});
           const marca = typeof t.marca === "function" ? t.marca(tam.width) : t.marca;
           if (marca) {

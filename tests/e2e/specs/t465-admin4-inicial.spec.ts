@@ -92,7 +92,8 @@ test.describe("T465 — ADMIN-4: inicial enxuta do admin", () => {
       const total = await todas.getAttribute("data-n");
       await todas.click();
       await expect(page).toHaveURL(/\/admin\/pendencias$/, { timeout: 30_000 });
-      await expect(page.getByTestId("admin-decisoes")).toHaveAttribute("data-total", total!, { timeout: 30_000 });
+      // E744 (asserção alterada, tabela da Fable #3832): na Central as decisões ficam em `central-decisoes` (como no t273).
+      await expect(page.getByTestId("central-decisoes")).toHaveAttribute("data-total", total!, { timeout: 30_000 });
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t465-pendencias-${w}.png` });
       await page.context().close();

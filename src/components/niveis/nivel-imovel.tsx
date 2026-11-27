@@ -12,13 +12,14 @@ import type { NivelNaFicha } from "@/lib/data/exibicao-59";
  * áreas acima do nível, o ruído como fato, os extras e "· vistoriado" quando houver vistoria. Sem nível calculado (ou
  * abaixo do Essencial), o bloco não aparece. Nível é fato, não selo.
  */
-export function NivelImovel({ dados }: { dados: NivelNaFicha | null | undefined }) {
+export function NivelImovel({ dados, comodidades = [] }: { dados: NivelNaFicha | null | undefined; comodidades?: readonly string[] }) {
   const [aberto, setAberto] = useState(false);
   const titulo = tituloNivel(dados?.nivel, dados?.vistoriado);
   if (!dados || !titulo || dados.nivel === "em_adequacao") return null;
   const diferenciais = textoDiferenciais(dados.diferenciais);
   const ruido = textoRuido(dados.ruidoClasse, dados.isolamento);
-  const extras = textoExtras(dados.extras);
+  // E604: o extra que repete uma comodidade do anúncio não aparece aqui (fica nas comodidades).
+  const extras = textoExtras(dados.extras, comodidades);
   return (
     <section aria-labelledby="nivel-imovel-title" className="rounded-xl border border-line bg-white p-4" data-testid="nivel-imovel" data-nivel={dados.nivel}>
       <div className="flex items-start gap-3">
@@ -75,7 +76,7 @@ export function NivelImovel({ dados }: { dados: NivelNaFicha | null | undefined 
           <li>O nível é o da área mais fraca do imóvel: sono, clima, banho, cozinha, sala, trabalho, internet, lavanderia e ruído.</li>
           <li>Áreas acima do nível aparecem como “Acima do nível”.</li>
           <li>O morador confere os itens na entrada. Item que não confere tira o nível até o proprietário corrigir.</li>
-          <li>Nível não é selo e não muda a ordem da busca.</li>
+          <li>O nível não muda a ordem da busca.</li>
         </ul>
       </BottomSheet>
     </section>

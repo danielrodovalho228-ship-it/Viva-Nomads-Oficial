@@ -19,5 +19,5 @@ test("morador-inicio: recomendados com o cartão da busca, em grade par (2/4), 4
 });
 
 test("morador-inicio: 'Salve seus favoritos' só sem favoritos salvos", () => {
-  assert.match(inicio, /\(demo \? 3 : favoritos\.length\) === 0 && \(/);
+  assert.match(inicio, /\(demo \? false : favoritosProntos && favoritos\.length === 0\) && \(/ /* E535: só depois de "pronto" */);
 });

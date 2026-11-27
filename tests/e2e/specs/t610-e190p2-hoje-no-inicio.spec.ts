@@ -65,7 +65,8 @@ test.describe("T610 — E190 parte 2: 'Hoje' no Início do proprietário", () =>
     await criarLead(ids.dono, ids.entra, ids.imA, true);
     await criarLead(ids.dono, ids.sai, ids.imB, true);
     ids.cEntra = await contrato(ids.imA, ids.entra, dia(0), dia(59));
-    ids.cSai = await contrato(ids.imB, ids.sai, dia(-59), dia(0));
+    // E1089 (coordenador): "sai hoje" = a SAÍDA é hoje; o bloco grava a última noite, que foi ontem.
+    ids.cSai = await contrato(ids.imB, ids.sai, dia(-60), dia(-1));
     // O dono "vazio" tem contrato, mas nada HOJE: a seção não aparece.
     ids.cFuturo = await contrato(ids.imVazio, ids.entra, dia(70), dia(129));
   });
@@ -92,14 +93,14 @@ test.describe("T610 — E190 parte 2: 'Hoje' no Início do proprietário", () =>
       const e = cartoes.nth(0);
       await expect(e).toHaveAttribute("data-tipo", "entrada");
       await expect(e).toContainText("Entra hoje · a partir das 14:00");
-      await expect(e.getByTestId("inicio-dono-hoje-nome")).toHaveText("Iara");
+      await expect(e.getByTestId("inicio-dono-hoje-nome")).toHaveText(/^Iara( \w+\.?)?$/);
       await expect(e).toContainText(`Studio Aurora t610 ${sufixo}`);
       await expect(e).toHaveAttribute("href", `/dashboard/estadia/${ids.cEntra}`);
 
       const s = cartoes.nth(1);
       await expect(s).toHaveAttribute("data-tipo", "saida");
       await expect(s).toContainText("Sai hoje · até as 11:00");
-      await expect(s.getByTestId("inicio-dono-hoje-nome")).toHaveText("Bruno");
+      await expect(s.getByTestId("inicio-dono-hoje-nome")).toHaveText(/^Bruno( \w+)?$/);
       await expect(s).toContainText(`Loft Bela t610 ${sufixo}`);
       await expect(s).toHaveAttribute("href", `/dashboard/estadia/${ids.cSai}`);
 

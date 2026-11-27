@@ -32,7 +32,7 @@ test("achado 47: getBlocks lança na falha de leitura (o calendário do dono já
   // Sem backend ou id de demonstração segue [] (anúncio de exemplo).
   assert.match(fn, /if \(!supabase \|\| !UUID_RE\.test\(propertyId\)\) return \[\];/);
   const cal = ler("src/components/property/block-calendar.tsx");
-  assert.match(cal, /getBlocks\(propertyId\)\s*\.then[\s\S]{0,120}?\.catch\(\(\) => \{\s*if \(vivo\) setFalhou\(true\);/);
+  assert.match(cal, /lerBlocos\(propertyId\)\s*\.then[\s\S]{0,120}?\.catch\(\(\) => \{\s*if \(vivo\) setFalhou\(true\);/);
 });
 
 test("achado 48: o calendário público avisa a falha, com Tentar de novo, em vez de mostrar tudo livre", () => {

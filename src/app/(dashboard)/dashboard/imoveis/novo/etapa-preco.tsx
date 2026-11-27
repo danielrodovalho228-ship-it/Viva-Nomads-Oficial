@@ -1,6 +1,6 @@
 "use client";
 
-import { CartaoEscolha, Pilula } from "@/components/anuncio/escolha-assistente";
+import { CartaoEscolha } from "@/components/anuncio/escolha-assistente";
 import { useEffect, useState } from "react";
 import { BlockCalendar } from "@/components/property/block-calendar";
 import { erroJanelaDisponivel } from "@/lib/anuncio/periodo-disponivel";
@@ -17,6 +17,7 @@ import type { LimitesPrivados, Negociacao } from "@/lib/anuncio/negociacao";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
 import { calcularTudoIncluido, parcelasDoMes, type CamposTotalMes } from "@/lib/precos";
 import { MESES_EXEMPLO } from "@/config/planos";
+import { caucaoDoAnuncio } from "@/lib/anuncio/passo10-colunas";
 import { CampoDataUnico, Erro, Labeled, MarcaSugerido, Toggle } from "./campos";
 import type { CampoSugerido } from "./tipos";
 
@@ -65,6 +66,8 @@ export function EtapaPreco(p: {
   erros: Record<string, string>;
 }) {
   const aluguel = Number(p.monthlyPrice) || 0;
+  // E1054 + E1061: a caução calculada que a revisão mostra (E1050), da mesma função — a da página do imóvel.
+  const caucao = caucaoDoAnuncio(aluguel, Number(p.minPeriod) || 30);
   // E110: um horizonte só no Passo 8 — o exemplo do texto acompanha os meses do simulador.
   const [mesesExemplo, setMesesExemplo] = useState(MESES_EXEMPLO);
   const condo = Number(p.condoFee) || 0;
@@ -234,12 +237,11 @@ export function EtapaPreco(p: {
           <div className="rounded-xl border border-sage-200 p-4">
             <p className="text-sm font-medium text-ink">Faixas de prazo aceitas</p>
             <p className="mb-3 text-xs text-muted">Cada faixa tem regras próprias. Marque as que você aceita.</p>
-            <div className="space-y-2">
+            {/* E193 (reteste de 29/10): o cartão grande da Qualificação (antes, pílula). */}
+            <div className="grid gap-2 sm:grid-cols-2">
               {FAIXAS.map((f) => (
                 <div key={f.key}>
-                  <Pilula papel="pressed" on={!!p.faixas[f.key]} onClick={() => p.setFaixas((s) => ({ ...s, [f.key]: !s[f.key] }))}>
-                    {`${f.label} · ${f.resumo}`}
-                  </Pilula>
+                  <CartaoEscolha papel="pressed" on={!!p.faixas[f.key]} onClick={() => p.setFaixas((s) => ({ ...s, [f.key]: !s[f.key] }))} rotulo={`${f.label} · ${f.resumo}`} />
                   {p.faixas[f.key] && <p className="ml-1 mt-1 text-xs text-muted">{f.aviso}</p>}
                 </div>
               ))}
@@ -272,19 +274,24 @@ export function EtapaPreco(p: {
               Só preferência de aceite — <strong>não muda o caminho do dinheiro</strong> (a caução em dinheiro vai para uma
               conta poupança, como manda a lei — a plataforma não tem acesso).
             </p>
-            <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               {GARANTIAS_CADASTRO.map((g) =>
                 g.disabled ? (
-                  <div key={g.key} className="inline-flex min-h-11 items-center gap-3 rounded-full border border-sage-200 bg-surface-2 px-4 py-2 opacity-70">
+                  <div key={g.key} className="flex min-h-14 items-center gap-3 rounded-xl border-2 border-line bg-surface-2 p-4 opacity-70">
                     <span className="text-sm font-medium text-muted">Aceito {g.label}</span>
                     {g.badge && <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-800">{g.badge}</span>}
                   </div>
                 ) : (
                   <div key={g.key}>
-                    <Pilula papel="pressed" on={!!p.garantias[g.key]} onClick={() => p.setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))}>
-                      {`Aceito ${g.label}`}
-                    </Pilula>
+                    <CartaoEscolha papel="pressed" on={!!p.garantias[g.key]} onClick={() => p.setGarantias((s) => ({ ...s, [g.key]: !s[g.key] }))} rotulo={`Aceito ${g.label}`} />
                     {g.microtext && <p className="ml-1 mt-1 text-xs text-muted">{g.microtext}</p>}
+                    {/* E1054: o valor calculado da caução, a mesma conta e o mesmo rótulo da revisão (E1050). */}
+                    {g.key === "caucao_avista" && caucao != null && (
+                      <p className="ml-1 mt-1 flex items-baseline justify-between gap-3 text-sm" data-testid="preco-caucao-valor">
+                        <span className="text-muted">{caucao.rotulo}</span>
+                        <span className="font-semibold text-ink">{formatBRL(caucao.valor)}</span>
+                      </p>
+                    )}
                   </div>
                 )
               )}

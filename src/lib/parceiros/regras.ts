@@ -6,8 +6,19 @@
   formulário do navegador importa este arquivo); o token fica em token.ts.
 */
 import { chaveCidade } from "../cidades.ts";
+import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
+import { PRAZO_CANAL, TEXTO_PRAZO_PARCERIA } from "../../config/prazos-canais.ts";
 import { cnpjValido, cpfValido, soDigitos, type TipoPessoa } from "../documento-pessoa.ts";
 import { emiteNotaParaGravar, faltaRespostaNota, passaFiltroNota, PENDENCIA_NOTA } from "./fiscal.ts";
+
+// ── Prazo de resposta ao pedido de parceria (E791) ──────────────────────────────────────────────────────────────
+/** O prazo de resposta ao pedido de parceria: 7 dias, o mesmo que /empresas promete (E770) — decisão da vigia de 12/11 (E791).
+ *  FONTE ÚNICA de tudo o que fala desse prazo: /parceiros, o formulário depois de enviar, o onboarding E o alerta à equipe
+ *  (lembretes: parceiroSemResposta; o aviso do cron, o e-mail e a fila de decisões do admin). */
+//  Família 1 (E835): o número mora em config/prazos-canais.ts (um prazo por canal); aqui só os nomes de sempre.
+export const DIAS_RESPOSTA_PARCERIA = PRAZO_CANAL.parceiro.dias;
+export const PRAZO_RESPOSTA_PARCERIA = PRAZO_CANAL.parceiro.texto;
+export { TEXTO_PRAZO_PARCERIA };
 
 // ── Categorias ─────────────────────────────────────────────────────────────────────────────────────────────────
 export const CATEGORIAS_PARCEIRO = [
@@ -26,9 +37,42 @@ export type CategoriaParceiro = (typeof CATEGORIAS_PARCEIRO)[number]["valor"];
 export const CATEGORIAS_SO_CREDENCIAMENTO: readonly string[] = ["vistoria"];
 /** O catálogo "pedir serviço": as categorias que se contratam direto. */
 export const CATEGORIAS_CATALOGO = CATEGORIAS_PARCEIRO.filter((x) => !CATEGORIAS_SO_CREDENCIAMENTO.includes(x.valor));
+/**
+ * E729 (Phoenix/RELATORIO-002, C3): a exigência que uma categoria traz ao formulário (o campo extra só aparece depois de marcá-la)
+ * é dita JUNTO da categoria, antes de marcar. Fonte única: a mesma validação do servidor (abaixo) exige estes campos.
+ */
+export const EXIGENCIA_DA_CATEGORIA: Readonly<Record<string, string>> = {
+  fotografia: "Pede o link do portfólio",
+  mudanca: "Pede empresa e veículo",
+};
 export const rotuloCategoria = (c: string) => CATEGORIAS_PARCEIRO.find((x) => x.valor === c)?.rotulo ?? "Serviço";
 /** Categoria do catálogo (contratável). "vistoria" não entra: o avaliador nunca é escolhido nem contratado direto. */
 export const categoriaValida = (c: string): c is CategoriaParceiro => CATEGORIAS_CATALOGO.some((x) => x.valor === c);
+
+/** E447: a categoria escolhida na URL (?categoria=) entra marcada, sem desmarcar as outras nem duplicar. */
+export function categoriasComDaUrl(atuais: readonly string[], daUrl: string | null | undefined): string[] {
+  if (!daUrl || !categoriaValida(daUrl) || atuais.includes(daUrl)) return [...atuais];
+  return [...atuais, daUrl];
+}
+
+/**
+ * E915: a categoria pedida na URL (?categoria=) não existe no catálogo? Vazio é "Todas" — não é inexistente. A busca
+ * diz isso com franqueza (em vez de cair calada em "Todas") e o "Quero ser avisado" não se arma para ela.
+ */
+export function categoriaInexistente(daUrl: string | null | undefined): boolean {
+  return !!daUrl && !categoriaValida(daUrl);
+}
+/** E915: o aviso da categoria inexistente — o valor da URL vai encurtado (nada de texto longo colado pela URL). */
+export function avisoCategoriaInexistente(daUrl: string): string {
+  const v = daUrl.trim().slice(0, 40);
+  return `A categoria "${v}" não existe. Mostramos todas as categorias: escolha uma na lista para filtrar.`;
+}
+/** E915: a frase de apoio do "Quero ser avisado" — sem categoria escolhida ("Todas"), não fala em "desta categoria". */
+export function textoApoioAviso(semCategoria: boolean): string {
+  return semCategoria
+    ? "Avisamos você quando houver um parceiro na sua cidade."
+    : "Avisamos você quando houver um parceiro desta categoria na sua cidade.";
+}
 
 // ── Taxa de serviço (10%, todas as categorias; fotógrafos inclusive) ────────────────────────────────────────────
 export const TAXA_SERVICO_PARCEIRO = 0.1;
@@ -44,15 +88,24 @@ export function dividirValor(valor: number): { taxa: number; parceiro: number } 
 }
 
 // ── Textos públicos (item 8) ───────────────────────────────────────────────────────────────────────────────────
-export const REGRAS_CLARAS = [
-  "Você combina e agenda tudo pelas mensagens da Viva.",
-  "Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias. Você só paga quando há serviço contratado.",
-  "Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para você e 10% para a Viva. A Viva não guarda o seu dinheiro.",
-] as const;
-export const PAGAMENTO_EM_BREVE = "Pagamento pela plataforma em breve.";
-export const CONTATO_APOS_ACEITE = "Contato e endereço do imóvel são liberados só depois do aceite, pelas mensagens da Viva.";
+// E1151: REGRAS_CLARAS e o aviso "em breve" vivem na fonte única, src/config/taxa-servico-parceiros.ts.
+/** E774 (regra E445): contato NUNCA é trocado, em nenhuma fase — nem depois do aceite. Fonte única do texto em Parceiros. */
+export const CONTATO_PELA_VIVA = "Seu contato não é trocado: tudo se combina pelas mensagens da Viva.";
 
 // ── Solicitação de parceria ────────────────────────────────────────────────────────────────────────────────────
+/**
+ * E648 — CNPJ para TODOS os parceiros, sem exceção de categoria (decisão do Daniel, 06/11/2026). CPF não é aceito em nenhuma
+ * categoria: quem quiser ser parceiro abre empresa (MEI onde a atividade permite). Cadastros que ficaram com CPF (só massa de
+ * teste hoje) não recebem serviço até apresentarem o CNPJ.
+ */
+export const MSG_SO_CNPJ = "A Viva só trabalha com parceiros que têm CNPJ, em qualquer categoria. O CPF não é aceito: abra o seu CNPJ (MEI, onde a atividade permite) e cadastre a empresa.";
+export const PENDENCIA_CNPJ = "Apresentar o CNPJ (cadastros com CPF não recebem serviço)";
+/** E649: o que o PARCEIRO com cadastro legado (CPF) lê no painel dele: a pendência e o que fazer para voltar a receber serviço. */
+export const PENDENCIA_CNPJ_PAINEL = "Pendência: apresente o CNPJ para voltar a receber serviço (cadastros com CPF não recebem serviço).";
+
+/** Só empresa (CNPJ) recebe serviço: pedido de orçamento, busca pública e designação. Sem tipo registrado = não recebe. */
+export const parceiroPodeReceberServico = (tipoPessoa: string | null | undefined): boolean => tipoPessoa === "pj";
+
 export const CIDADES_MAX = 10;
 export const DESCRICAO_MAX = 600;
 
@@ -106,15 +159,35 @@ export function urlPublicaValida(u: string | null | undefined): string | null {
 }
 
 /** Validação do SERVIDOR (fonte da verdade). Campos por categoria: fotografia → portfólio; mudança → empresa e veículo; demais → descrição. */
-export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string } {
+/**
+ * E651: o documento do pedido de parceria, conferido do mesmo jeito no passo (antes de mandar a pessoa para o /auth) e no
+ * servidor. CPF (11 dígitos, válido ou não) é a tentativa que o E648 recusa; o CNPJ precisa de 14 dígitos e dígitos
+ * verificadores corretos. Devolve a mensagem de recusa ou null quando o CNPJ confere.
+ */
+export function validarDocumentoParceiro(documento: string | null | undefined): string | null {
+  const doc = soDigitos(documento ?? "");
+  if (doc.length === 11 || cpfValido(doc)) return MSG_SO_CNPJ;
+  if (doc.length !== 14) return "Informe o CNPJ com 14 dígitos (00.000.000/0000-00).";
+  if (!cnpjValido(doc)) return "CNPJ inválido: confira os números.";
+  return null;
+}
+
+/** E818: `campo` aponta o campo do formulário que causou o erro (para marcar em vermelho e focar). */
+export type CampoSolicitacao = "nome" | "documento" | "categorias" | "cidades" | "portfolioUrl" | "empresa" | "veiculo" | "descricao" | "telefone" | "emiteNota" | "aceite";
+
+export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: SolicitacaoValida } | { ok: false; erro: string; campo?: CampoSolicitacao } {
   const nome = limpar(e.nome, 120);
-  if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa)." };
-  const tipo = e.tipoPessoa === "pj" ? "pj" : e.tipoPessoa === "pf" ? "pf" : null;
-  if (!tipo) return { ok: false, erro: "Escolha pessoa física ou jurídica." };
+  if (nome.length < 3) return { ok: false, erro: "Informe o seu nome (ou o da empresa).", campo: "nome" };
+  // E1112 (ORDEM-DUET-500 §2): nome e descrição vão para a página pública na ativação — contacto é recusado já aqui.
+  if (contemContato(nome)) return { ok: false, erro: CONTATO_AVISO, campo: "nome" };
+  // E648: só empresa. O tipo "pf" e qualquer CPF no campo do documento são recusados em todas as categorias.
+  if (e.tipoPessoa === "pf") return { ok: false, erro: MSG_SO_CNPJ, campo: "documento" };
+  const tipo = "pj" as const;
   const doc = soDigitos(e.documento);
-  if (tipo === "pf" ? !cpfValido(doc) : !cnpjValido(doc)) return { ok: false, erro: tipo === "pf" ? "CPF inválido: confira os números." : "CNPJ inválido: confira os números." };
+  const erroDoc = validarDocumentoParceiro(e.documento);
+  if (erroDoc) return { ok: false, erro: erroDoc, campo: "documento" };
   const categorias = [...new Set((e.categorias ?? []).filter(categoriaValida))];
-  if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria." };
+  if (!categorias.length) return { ok: false, erro: "Escolha pelo menos uma categoria.", campo: "categorias" };
   const vistas = new Set<string>();
   const cidades: string[] = [];
   for (const c of e.cidades ?? []) {
@@ -124,27 +197,28 @@ export function validarSolicitacao(e: SolicitacaoEntrada): { ok: true; valor: So
     vistas.add(k);
     cidades.push(l);
   }
-  if (!cidades.length) return { ok: false, erro: "Informe pelo menos uma cidade atendida." };
-  if (cidades.length > CIDADES_MAX) return { ok: false, erro: `Até ${CIDADES_MAX} cidades.` };
+  if (!cidades.length) return { ok: false, erro: "Informe pelo menos uma cidade atendida.", campo: "cidades" };
+  if (cidades.length > CIDADES_MAX) return { ok: false, erro: `Até ${CIDADES_MAX} cidades.`, campo: "cidades" };
   const portfolioBruto = String(e.portfolioUrl ?? "").trim();
   const portfolioUrl = urlPublicaValida(portfolioBruto);
-  if (portfolioBruto && !portfolioUrl) return { ok: false, erro: "O link do portfólio precisa ser um endereço da web (https://…)." };
+  if (portfolioBruto && !portfolioUrl) return { ok: false, erro: "O link do portfólio precisa ser um endereço da web (https://…).", campo: "portfolioUrl" };
   const descricao = limpar(e.descricao, DESCRICAO_MAX) || null;
+  if (descricao && contemContato(descricao)) return { ok: false, erro: CONTATO_AVISO, campo: "descricao" };
   const dados: { empresa?: string; veiculo?: string } = {};
-  if (categorias.includes("fotografia") && !portfolioUrl) return { ok: false, erro: "Para fotografia, mande o link do seu portfólio." };
+  if (categorias.includes("fotografia") && !portfolioUrl) return { ok: false, erro: "Para fotografia, mande o link do seu portfólio.", campo: "portfolioUrl" };
   if (categorias.includes("mudanca")) {
     const empresa = limpar(e.empresa, 120);
     const veiculo = limpar(e.veiculo, 120);
-    if (!empresa || !veiculo) return { ok: false, erro: "Para mudança, informe a empresa e o veículo." };
+    if (!empresa || !veiculo) return { ok: false, erro: "Para mudança, informe a empresa e o veículo.", campo: !empresa ? "empresa" : "veiculo" };
     Object.assign(dados, { empresa, veiculo });
   }
-  if (categorias.some((c) => c !== "fotografia" && c !== "mudanca") && !descricao) return { ok: false, erro: "Descreva o serviço que você oferece." };
+  if (categorias.some((c) => c !== "fotografia" && c !== "mudanca") && !descricao) return { ok: false, erro: "Descreva o serviço que você oferece.", campo: "descricao" };
   const tel = soDigitos(e.telefone);
-  if (tel && (tel.length < 10 || tel.length > 13)) return { ok: false, erro: "Telefone inválido (com DDD)." };
+  if (tel && (tel.length < 10 || tel.length > 13)) return { ok: false, erro: "Telefone inválido (com DDD).", campo: "telefone" };
   // Portão que BLOQUEIA: PJ sem Sim/Não não conclui o cadastro.
   const nota = emiteNotaParaGravar(tipo, e.emiteNota);
-  if (!nota.ok) return nota;
-  if (!e.aceite) return { ok: false, erro: "Confirme que a Viva pode usar estes dados para analisar a parceria." };
+  if (!nota.ok) return { ...nota, campo: "emiteNota" };
+  if (!e.aceite) return { ok: false, erro: "Confirme que a Viva pode usar estes dados para analisar a parceria.", campo: "aceite" };
   return { ok: true, valor: { nome, tipoPessoa: tipo, documento: doc, categorias, cidades, portfolioUrl, descricao, telefone: tel || null, dadosCategoria: dados, emiteNota: nota.valor } };
 }
 
@@ -175,7 +249,7 @@ export function emailMascarado(e: string | null | undefined): string {
 // ── Checklist do admin ─────────────────────────────────────────────────────────────────────────────────────────
 export const ITENS_CHECKLIST = [
   { chave: "identidade", rotulo: "Identidade conferida (CAF) ou conferência manual registrada" },
-  { chave: "documento", rotulo: "CPF/CNPJ com dígitos válidos e situação conferida na Receita" },
+  { chave: "documento", rotulo: "CNPJ com dígitos válidos e situação conferida na Receita" },
   { chave: "area", rotulo: "Categorias e área de atendimento definidas" },
   { chave: "categoria", rotulo: "Item da categoria conferido (portfólio, empresa/veículo ou descrição)" },
 ] as const;
@@ -184,12 +258,39 @@ export function checklistCompleto(c: Partial<Record<string, unknown>> | null | u
   return ITENS_CHECKLIST.every((i) => c?.[i.chave] === true) && !!c?.documento_conferido_em;
 }
 
-export const MOTIVOS_RECUSA_PARCERIA = [
-  "Não conseguimos confirmar a sua identidade ou o documento informado.",
-  "No momento ainda não atendemos esta cidade com parceiros.",
-  "O portfólio enviado não permitiu avaliar o serviço. Você pode enviar um novo pedido com outro link.",
-  "As informações do serviço ficaram incompletas. Você pode enviar um novo pedido com mais detalhes.",
+/**
+ * E350 (decisão do Daniel, 01/11): os modelos de recusa de PARCERIA, um a um com o checklist do admin (identidade, documento,
+ * área, categoria) e um para pedido incompleto. `rotulo` é o que o admin lê na ficha; `texto` vai no e-mail ao parceiro
+ * recusado — o motivo e o próximo passo.
+ */
+export const MODELOS_RECUSA_PARCERIA = [
+  {
+    chave: "identidade",
+    rotulo: "Identidade não confirmada",
+    texto: "Não conseguimos confirmar a sua identidade com o documento com foto enviado. Para tentar de novo, envie um novo pedido de parceria e refaça a confirmação com um documento válido e legível.",
+  },
+  {
+    chave: "documento",
+    rotulo: "CNPJ não conferido",
+    texto: "O CNPJ informado não pôde ser conferido na Receita Federal (número inválido ou situação irregular). Confira o número e a situação do CNPJ e envie um novo pedido de parceria.",
+  },
+  {
+    chave: "area",
+    rotulo: "Cidade ainda não atendida",
+    texto: "Ainda não atendemos a sua cidade ou região com parceiros. Quando a Viva Nomads chegar à sua região, você pode enviar um novo pedido de parceria.",
+  },
+  {
+    chave: "categoria",
+    rotulo: "Serviço não pôde ser avaliado",
+    texto: "O portfólio, a empresa ou veículo ou a descrição enviados não permitiram avaliar o serviço. Envie um novo pedido de parceria com um link de portfólio ou detalhes que mostrem o seu trabalho.",
+  },
+  {
+    chave: "incompleto",
+    rotulo: "Informações incompletas",
+    texto: "As informações do pedido ficaram incompletas. Envie um novo pedido de parceria preenchendo todos os campos do serviço e da área de atendimento.",
+  },
 ] as const;
+export const MOTIVOS_RECUSA_PARCERIA = MODELOS_RECUSA_PARCERIA.map((m) => m.texto);
 
 // ── Página e publicação ────────────────────────────────────────────────────────────────────────────────────────
 export const GALERIA_MAX = 30;
@@ -218,6 +319,8 @@ export interface PaginaParaPublicar {
   /** FISCAL-PARCEIRO-B: PJ sem resposta não publica a primeira vez (quem já está no ar não sai). */
   tipoPessoa?: string | null;
   emiteNota?: boolean | null;
+  /** E650: quem já esteve no ar não é barrado pela pergunta da nota, mas a pendência do CNPJ vale para todos. */
+  jaPublicou?: boolean;
 }
 
 /** O que falta para publicar (vazio = pode publicar). */
@@ -228,7 +331,8 @@ export function faltaParaPublicar(p: PaginaParaPublicar): string[] {
   if (p.servicosAtivos < 1) f.push("Pelo menos 1 serviço");
   if (!p.cidades.length) f.push("Pelo menos 1 cidade atendida");
   if (p.categorias.includes("fotografia") && p.fotosGaleria < FOTOS_MIN_FOTOGRAFIA) f.push(`${FOTOS_MIN_FOTOGRAFIA} fotos na galeria (fotografia)`);
-  if (p.tipoPessoa !== undefined && faltaRespostaNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota })) f.push(PENDENCIA_NOTA);
+  if (p.tipoPessoa !== undefined && !parceiroPodeReceberServico(p.tipoPessoa)) f.push(PENDENCIA_CNPJ);
+  if (p.tipoPessoa !== undefined && !p.jaPublicou && faltaRespostaNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota })) f.push(PENDENCIA_NOTA);
   return f;
 }
 
@@ -283,6 +387,8 @@ export interface ParceiroNaBusca {
   raioKm?: number | null;
   tipoPessoa?: string | null;
   emiteNota?: boolean | null;
+  /** E650: quem já esteve no ar não é barrado pela pergunta da nota, mas a pendência do CNPJ vale para todos. */
+  jaPublicou?: boolean;
 }
 
 /*
@@ -329,6 +435,8 @@ export function filtrarParceiros<T extends ParceiroNaBusca>(
   const cid = chaveCidade(f.cidade ?? "");
   return lista
     .filter((p) => p.status === "publicado" && (!p.teste || f.verTeste === true))
+    // E648: cadastro que ficou só com CPF não aparece (não recebe serviço) até apresentar o CNPJ.
+    .filter((p) => parceiroPodeReceberServico(p.tipoPessoa))
     .filter((p) => !f.categoria || p.categorias.includes(f.categoria))
     .filter((p) => passaFiltroNota({ tipoPessoa: p.tipoPessoa, emiteNota: p.emiteNota }, f.soNota === true))
     .filter((p) => {
@@ -357,8 +465,14 @@ export function lerParceiroGeral(v: unknown, ligada: boolean): ParceiroGeral {
   const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
   return { ligado: ligada, nome: limpar(o.nome as string, 80), cidade: limpar(o.cidade as string, 80), descricao: limpar(o.descricao as string, 300) };
 }
-export function mostrarParceiroGeral(g: ParceiroGeral, resultados: number): boolean {
-  return g.ligado && resultados === 0 && !!g.nome;
+/**
+ * E688 (decisão do Daniel, 08/11/2026): a saída "parceiro geral" (AquiResolve) fica FORA das superfícies públicas por ora —
+ * não se promete o que não está cadastrado (o registro da Maira foi adiado em 18/10). Reversível: quando ela se cadastrar,
+ * basta ligar esta constante (e a chave PARCEIRO_GERAL_FALLBACK no admin). A configuração no admin continua existindo.
+ */
+export const PARCEIRO_GERAL_NAS_SUPERFICIES = false;
+export function mostrarParceiroGeral(g: ParceiroGeral, resultados: number, naSuperficie: boolean = PARCEIRO_GERAL_NAS_SUPERFICIES): boolean {
+  return naSuperficie && g.ligado && resultados === 0 && !!g.nome;
 }
 
 // ── Imagens da página (recorte no navegador; o servidor só aceita WebP até 5 MB) ────────────────────────────────
@@ -381,3 +495,17 @@ export function recorteImagem(w: number, h: number, tipo: TipoImagemParceiro): {
   const escala = Math.min(1, maxLado / Math.max(sw, sh));
   return { sx: Math.floor((w - sw) / 2), sy: Math.floor((h - sh) / 2), sw, sh, ow: Math.max(1, Math.round(sw * escala)), oh: Math.max(1, Math.round(sh * escala)) };
 }
+
+/** E687 — empresa e veículo da categoria Mudança, como linhas para mostrar ao parceiro. Outras categorias: nada. */
+export function linhasDadosDaCategoria(categorias: readonly string[], dados: { empresa?: unknown; veiculo?: unknown } | null | undefined): { rotulo: string; valor: string }[] {
+  if (!dados || !categorias.includes("mudanca")) return [];
+  const linhas: { rotulo: string; valor: string }[] = [];
+  const empresa = typeof dados.empresa === "string" ? dados.empresa.trim() : "";
+  const veiculo = typeof dados.veiculo === "string" ? dados.veiculo.trim() : "";
+  if (empresa) linhas.push({ rotulo: "Empresa de mudança", valor: empresa });
+  if (veiculo) linhas.push({ rotulo: "Veículo", valor: veiculo });
+  return linhas;
+}
+
+/** E771: a divisão 90/10 vale só para SERVIÇOS de parceiros; o pagamento da estadia (/empresas, /buscar) vai direto ao proprietário. */
+export const ESCOPO_PAGAMENTO_PARCEIROS = "Esta divisão vale só para os serviços de parceiros. O pagamento da estadia vai direto ao proprietário, e a Viva não toca nesse dinheiro.";

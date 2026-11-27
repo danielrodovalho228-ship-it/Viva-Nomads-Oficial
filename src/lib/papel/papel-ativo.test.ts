@@ -103,7 +103,7 @@ test("fonte única: selo, barra, Conta, login e troca leem/gravam profiles.papel
   assert.match(ler("src/lib/use-papel-barra.ts"), /useAuthStore\(\(s\) => s\.parceiroAtivo\)/);
   assert.match(ler("src/components/auth-provider.tsx"), /select\("full_name, role, preferred_mode, papel_ativo(, is_teste)?"\)/);
   const acoes = ler("src/lib/data/papel-actions.ts");
-  assert.match(acoes, /update\(modo \? \{ papel_ativo: papel, preferred_mode: modo \} : \{ papel_ativo: papel \}\)/);
+  assert.match(acoes, /const base = modo \? \{ papel_ativo: papel, preferred_mode: modo \} : \{ papel_ativo: papel \};/);
   assert.match(acoes, /papel === "parceiro" && !\(await ehParceiroAprovado/);
   assert.match(ler("src/lib/data/mode-actions.ts"), /papel_ativo: mode === "owner" \? "proprietario" : "morador"/);
   // E268-B: o caminho único de gravar a intenção (a ação, a Conta e o 1º rascunho de anúncio).
@@ -127,19 +127,19 @@ test("E283/L-78: abrir uma página de outra área no 1º acesso não gasta o 1º
   assert.equal(contaNoPrimeiroAcesso(["morar"], null), false);
   assert.equal(contaNoPrimeiroAcesso(null, "proprietario"), false);
   assert.equal(contaNoPrimeiroAcesso([], null), false);
-  // O SincronizarPapel troca "pela área"; o servidor, nesse caso e no 1º acesso, grava só o modo (proxy e IA leem).
+  // O SincronizarPapel pede "pela área"; o servidor, nesse caso e no 1º acesso, grava só o modo (proxy e IA leem).
   assert.match(ler("src/components/papel/sincronizar-papel.tsx"), /usarPapel\(alvo, "area"\)/);
   const acoes = ler("src/lib/data/papel-actions.ts");
   assert.match(acoes, /export async function usarPapel\(papel: unknown, origem\?: "area"\)/);
   assert.match(
     acoes,
-    /if \(origem === "area"\) \{[\s\S]{0,300}select\("intencao, papel_ativo"\)[\s\S]{0,200}if \(contaNoPrimeiroAcesso\(a\?\.intencao, a\?\.papel_ativo\)\) \{\s*if \(!modo\) return \{ ok: true \};\s*const \{ error \} = await supabase\.from\("profiles"\)\.update\(\{ preferred_mode: modo \}\)/,
+    /if \(origem === "area"\) \{[\s\S]{0,400}select\("intencao, papel_ativo"\)[\s\S]{0,300}gravacaoPorArea\(papel, contaNoPrimeiroAcesso\(a\?\.intencao, a\?\.papel_ativo\)\) === "nada" \|\| !modo\) return \{ ok: true \};\s*const \{ error \} = await supabase\.from\("profiles"\)\.update\(\{ preferred_mode: modo \}\)/,
   );
   // A troca explícita (selo, Conta) continua gravando o papel na hora.
   assert.match(ler("src/components/papel/use-troca-papel.ts"), /usarPapel\(papel\)/);
   // O 1º rascunho decide pelo MESMO caminho: gravarIntencao com "owner" grava o papel e manda as boas-vindas.
   const intencao = ler("src/lib/data/intencao-servidor.ts");
-  assert.match(intencao, /if \(nova\) await gravarIntencao\(supabase, userId, nova, "owner"\)/);
+  assert.match(intencao, /if \(nova\) \{\s*const r = await gravarIntencao\(supabase, userId, nova, "owner"\)/);
   assert.match(intencao, /if \(registraIntencaoNova\(a\?\.intencao, intencao\)\) \{[\s\S]{0,300}enviarBoasVindas\(admin, userId, intencao, modo\)/);
 });
 

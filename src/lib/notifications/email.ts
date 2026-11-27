@@ -61,7 +61,7 @@ export async function sendEmail(params: {
   /** Anexos (ex.: o PDF do recibo). Conteúdo em base64. */
   attachments?: { filename: string; content: string }[];
   /**
-   * E-mail INTERNO (avisos do Moacir ao Daniel, leads de Plano Gestor/B2B, alertas da equipe): mantém `from`,
+   * E-mail INTERNO (avisos do Moacir ao Daniel, pedidos de contato de carteiras/B2B, alertas da equipe): mantém `from`,
    * `replyTo` e o assunto como vieram. Sem isto, o e-mail é de cliente: remetente único e assunto com a marca.
    */
   interno?: boolean;

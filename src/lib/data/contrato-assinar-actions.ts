@@ -5,6 +5,7 @@ import { corpoAnuncioCompartilhar, paraNotify } from "@/lib/notifications/corpo-
 import { after } from "next/server";
 import { headers } from "next/headers";
 import { HREF_CONFIRMADA } from "@/lib/estadia/confirmacao";
+import { HREF_CONTRATO_DA_ESTADIA } from "@/lib/estadia/estadia";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,7 +13,10 @@ import { notify } from "@/lib/notifications";
 import { sendEmail } from "@/lib/notifications/email";
 import { emailCodigoAssinatura } from "@/lib/notifications/montar-email";
 import { garantirCartao } from "@/lib/data/cartoes-servidor";
+import { congelarInstrucaoSaida } from "@/lib/data/estadia";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { SITE_URL } from "@/lib/site";
+import { congelarFicha, normalizarFicha } from "@/lib/ficha-dentro/ficha-dentro";
 import {
   assuntoAvisoOutraParte,
   avisoAssinatura,
@@ -37,9 +41,10 @@ import { estadoDoContratoUnico, seloParaEquipe, type EstadoContrato } from "@/li
 import { ehAdmin } from "@/lib/data/admin-guard";
 import { escaparHtml } from "@/lib/escapar-html";
 import { blocoDados } from "@/lib/notifications/modelo-email";
-import { aberturaAssinatura, linhasContrato, proximoPassoAssinatura } from "@/lib/notifications/dados-negociacao";
+import { aberturaAssinatura, contaDoContrato, contasDoContrato, linhasContrato, proximoPassoAssinatura } from "@/lib/notifications/dados-negociacao";
+import { PROPOSTA_FORA_DO_FECHAMENTO, propostaDoFechamentoDoLead } from "@/lib/data/propostas-servidor";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
-import { periodoDosBlocos } from "@/lib/contrato-blocos";
+import { DIAS_POR_MES, periodoDosBlocos } from "@/lib/contrato-blocos";
 import { prazoConferenciaEntrada, prazoConferenciaSaida } from "@/lib/conferencia";
 import {
   MSG_CODIGO_BLOQUEADO,
@@ -108,7 +113,7 @@ interface LinhaContrato {
 // E197: as colunas do estado (status, assinaturas e pagamentos com anulado_em) são as de COLUNAS_ESTADO_CONTRATO —
 // sem anulado_em, um pagamento anulado contava como 1º pagamento no detalhe e não na lista.
 const COLUNAS =
-  "id, tenant_id, status, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, address, city, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
+  "id, tenant_id, status, periodo, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, address, city, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
 
 function objetoOuVazio(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -311,6 +316,16 @@ async function nomesDasPartes(ownerId: string, tenantId: string): Promise<{ prop
 
 /** Envia ao e-mail da conta um código de 6 dígitos, de uso único, que vale 15 minutos (conferido no servidor). */
 export async function pedirCodigoAssinatura(contratoId: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    return await pedirCodigoAssinaturaInterno(contratoId);
+  } catch (e) {
+    // E654: a ação nunca lança — uma exceção fazia o botão "girar e voltar" sem mensagem. A causa vai para o log.
+    console.error("[assinatura] pedir código falhou:", e instanceof Error ? e.message : String(e));
+    return { ok: false, error: "Não foi possível enviar o código agora. Tente de novo em instantes." };
+  }
+}
+
+async function pedirCodigoAssinaturaInterno(contratoId: string): Promise<{ ok: boolean; error?: string }> {
   if (!UUID_RE.test(String(contratoId))) return { ok: false, error: "Contrato inválido." };
   const supabase = await createClient();
   const admin = createAdminClient();
@@ -400,6 +415,7 @@ async function prepararParaAssinar(admin: AdminAssinatura, contratoId: string): 
       .eq("id", c.id)
       .is("pets_regras_congeladas", null);
     if (erroCongela) throw new LeituraDaAssinaturaFalhou(`congelar: ${erroCongela.message}`);
+    await congelarInstrucaoSaida(admin as unknown as SupabaseClient, c.id, c.property_id as string);
     c = await lerContrato(admin, contratoId);
   }
   // Pacote de limpeza (0144): congelado junto, também em contrato ainda não assinado que já tinha as regras de pets congeladas
@@ -415,8 +431,37 @@ async function prepararParaAssinar(admin: AdminAssinatura, contratoId: string): 
     if (erroPacote) throw new LeituraDaAssinaturaFalhou(`congelar limpeza: ${erroPacote.message}`);
     c = await lerContrato(admin, contratoId);
   }
+  if (c) await congelarFichaDentro(admin, c);
   if (c) await completarPets(c, true);
   return c;
+}
+
+/**
+ * E660: na 1ª assinatura a ficha "o que tem dentro" do anúncio congela no contrato (uma vez só), como as regras de pets: a
+ * outra parte assina a mesma ficha mesmo que o dono edite o anúncio depois, e é ela que se confere na entrada. Leitura à
+ * parte (sem a 0316 a coluna não existe: segue sem a ficha). Anúncio anterior à ficha não congela nada.
+ */
+async function congelarFichaDentro(admin: AdminAssinatura, c: LinhaContrato): Promise<void> {
+  if (c.assinado_proprietario_em || c.assinado_inquilino_em || !c.property_id) return;
+  const { data: atual, error: erroLe } = await admin.from("contratos").select("ficha_dentro_congelada").eq("id", c.id).maybeSingle();
+  if (erroLe) {
+    console.error("[ficha-dentro] ler congelada falhou:", erroLe.message);
+    return;
+  }
+  if ((atual as { ficha_dentro_congelada?: unknown } | null)?.ficha_dentro_congelada != null) return;
+  const { data: imovel, error: erroImovel } = await admin.from("properties").select("ficha_dentro").eq("id", c.property_id).maybeSingle();
+  if (erroImovel) {
+    console.error("[ficha-dentro] ler ficha do anúncio falhou:", erroImovel.message);
+    return;
+  }
+  const ficha = normalizarFicha((imovel as { ficha_dentro?: unknown } | null)?.ficha_dentro);
+  if (!ficha) return;
+  const { error } = await admin
+    .from("contratos")
+    .update({ ficha_dentro_congelada: congelarFicha(ficha, new Date()) })
+    .eq("id", c.id)
+    .is("ficha_dentro_congelada", null);
+  if (error) throw new LeituraDaAssinaturaFalhou(`congelar ficha: ${error.message}`);
 }
 
 export async function assinarContrato(input: {
@@ -452,6 +497,20 @@ export async function assinarContrato(input: {
   if (!c || !visao) return { ok: false, error: "Contrato não encontrado." };
 
   const jaAssinou = visao.papel === "inquilino" ? c.assinado_inquilino_em : c.assinado_proprietario_em;
+  // E675: quem já assinou e envia de novo (toque duplo, reenvio depois de a resposta demorar) recebe SUCESSO: a assinatura
+  // existe. Antes recebia "Você já assinou" como erro, e a tela parecia ter falhado. Nada é gravado nem gasto de novo.
+  if (jaAssinou && visao.papel && c.status === "ativo") {
+    const nomesJa = await nomesDasPartes(String(c.properties?.owner_id ?? ""), c.tenant_id);
+    const outraJa = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
+    return {
+      ok: true,
+      aviso: avisoAssinatura(visao.papel, {
+        proprietario: { nome: nomesJa.proprietario, em: c.assinado_proprietario_em },
+        inquilino: { nome: nomesJa.inquilino, em: c.assinado_inquilino_em },
+      }),
+      ambos: outraJa,
+    };
+  }
   const motivo = motivoNaoPodeAssinar({
     status: c.status,
     papel: visao.papel,
@@ -464,12 +523,14 @@ export async function assinarContrato(input: {
   if (faltam) return { ok: false, error: faltam };
 
   // Confirmação de identidade NO SERVIDOR: código de e-mail de uso único, com validade e limite de falhas.
-  const { data: linhaCodigo } = await admin
+  const { data: linhaCodigo, error: erroCodigo } = await admin
     .from("contrato_assinatura_codigos")
     .select("codigo_hash, expira_em, falhas, usado_em, enviado_em")
     .eq("contrato_id", c.id)
     .eq("user_id", user.id)
     .maybeSingle();
+  // E675: leitura falha não vira "Peça o código por e-mail" (o código existe; só não deu para ler agora).
+  if (erroCodigo) return { ok: false, error: "Não foi possível conferir o código agora. Tente de novo." };
   const lc = (linhaCodigo as LinhaCodigo | null) ?? null;
   const conf = conferirCodigo(lc, input.codigo, user.id, c.id, Date.now());
   if (!conf.ok) {
@@ -540,13 +601,18 @@ export async function assinarContrato(input: {
   const { error: errCol } = await admin.from("contratos").update({ [coluna]: agora }).eq("id", c.id).is(coluna, null);
   if (errCol) return { ok: false, error: "Não foi possível registrar a assinatura. Tente de novo." };
   // A tela do contrato (dos dois lados) e as listas voltam já com o aviso novo, na mesma resposta da ação.
-  revalidatePath("/dashboard/locacoes/[id]", "page");
+  revalidatePath("/dashboard/estadia/[contratoId]/contrato", "page");
   revalidatePath("/dashboard/contratos/[id]", "page");
   revalidatePath("/dashboard/contratos");
   revalidatePath("/dashboard/locacoes");
 
   // E444: quem assinou resolve o aviso crítico "assinar o contrato" no sino.
   after(() => resolverAvisos({ usuarioId: user.id, eventos: ["contract_status"], refId: c.id }));
+  // E676: com as duas assinaturas, nenhuma das duas partes mantém o crítico "assinar o contrato" (a outra parte também sai).
+  if (visao.papel && (visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em)) {
+    const outro = visao.papel === "inquilino" ? String(c.properties?.owner_id ?? "") : c.tenant_id;
+    if (outro) after(() => resolverAvisos({ usuarioId: outro, eventos: ["contract_status"], refId: c.id }));
+  }
   // Avisa a outra parte (notificação + e-mail), depois da resposta.
   const outraJaAssinou = !!(visao.papel === "inquilino" ? c.assinado_proprietario_em : c.assinado_inquilino_em);
   const outroId = visao.papel === "inquilino" ? String(c.properties?.owner_id ?? "") : c.tenant_id;
@@ -563,10 +629,30 @@ export async function assinarContrato(input: {
       const detalhes = linhas ? `<p>${linhas.map(escaparHtml).join("<br>")}</p>` : undefined;
       // E202: imóvel (título + bairro/cidade), período e valores no corpo, e o próximo passo de quem recebe.
       const props = (c.properties ?? {}) as { title?: string | null; address?: string | null; city?: string | null };
-      const imovelEmail = { titulo: props.title ?? null, bairro: props.address ?? null, cidade: props.city ?? null };
+      const imovelEmail = { id: (c as { property_id?: string | null }).property_id ?? null, titulo: props.title ?? null, bairro: props.address ?? null, cidade: props.city ?? null };
       const { inicio, fim } = periodoDosBlocos(c.contrato_blocos ?? []);
-      const mesesContrato = Math.max(1, Math.round(Number(c.prazo_total_dias ?? 0) / 30));
-      const quadro = linhasContrato({ imovel: imovelEmail, inicio: inicio ?? "", fim: fim ?? "", meses: mesesContrato, valorMensal: Number(c.aluguel_mensal ?? 0) });
+      const mesesContrato = Math.max(1, Math.round(Number(c.prazo_total_dias ?? 0) / DIAS_POR_MES));
+      // E1066: o total pela fonte única (a proposta acordada de que o contrato nasceu) e a caução dos blocos do contrato.
+      // Leitura à parte e tolerante: falhou → o quadro de antes (só o aluguel, sem a linha da caução).
+      const { data: doContrato } = await admin.from("contratos").select("lead_id, proposta_id, contrato_blocos(caucao)").eq("id", c.id).maybeSingle();
+      const caucaoDoContrato = (((doContrato as { contrato_blocos?: { caucao?: number | null }[] | null } | null)?.contrato_blocos ?? []) as { caucao?: number | null }[]).reduce((s, b) => s + Number(b.caucao ?? 0), 0);
+      const leadDoContrato = (doContrato as { lead_id?: string | null } | null)?.lead_id;
+      // E1199: a proposta DESTE contrato (contratos.proposta_id), não a aceite mais recente da candidatura — o contrato de
+      // uma estadia anterior (E1141) mostra o total dela. Contrato sem proposta (direto/legado): nenhuma (o quadro de antes).
+      const propostaDoContrato = (doContrato as { proposta_id?: string | null } | null)?.proposta_id ?? null;
+      const lida = leadDoContrato && propostaDoContrato ? await propostaDoFechamentoDoLead(admin, leadDoContrato, propostaDoContrato).catch(() => null) : null;
+      const acordadaDoContrato = lida === PROPOSTA_FORA_DO_FECHAMENTO ? null : lida;
+      const quadro = linhasContrato({
+        imovel: imovelEmail,
+        inicio: inicio ?? "",
+        fim: fim ?? "",
+        meses: mesesContrato,
+        valorMensal: Number(c.aluguel_mensal ?? 0),
+        dias: Number(c.prazo_total_dias ?? 0) || null,
+        contaTotal: contaDoContrato(acordadaDoContrato),
+        contas: contasDoContrato(acordadaDoContrato),
+        caucao: caucaoDoContrato,
+      });
       const papelDe = (id: string): "owner" | "tenant" => (id === c.tenant_id ? "tenant" : "owner");
       const quemAssinou: "owner" | "tenant" = visao.papel === "inquilino" ? "tenant" : "owner";
       const corpo = (para: string) => ({
@@ -584,7 +670,7 @@ export async function assinarContrato(input: {
         userId: outroId,
         // Quem recebe é a outra parte: o dono abre em Contratos, o inquilino em Minhas locações.
         // Prompt 61-A: com as duas assinaturas, o aviso de quem assinou antes abre a tela "Estadia confirmada".
-        pushUrl: outraJaAssinou ? HREF_CONFIRMADA(c.id) : visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : `/dashboard/locacoes/${c.id}`,
+        pushUrl: outraJaAssinou ? HREF_CONFIRMADA(c.id) : visao.papel === "inquilino" ? `/dashboard/contratos/${c.id}` : HREF_CONTRATO_DA_ESTADIA(c.id),
         subject: assuntoAvisoOutraParte(outraJaAssinou),
         imovelId: c.property_id,
         // E444: "falta você assinar" é crítico (resolvido quando a pessoa assinar); com as duas assinaturas, só informa.
@@ -622,7 +708,7 @@ export async function assinarContrato(input: {
             userId: ownerId,
             pushUrl: `/dashboard/imoveis/${imovelId}/cartao`,
             imovelId,
-            ...paraNotify(corpoAnuncioCompartilhar({ imovel: { titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null } })),
+            ...paraNotify(corpoAnuncioCompartilhar({ imovel: { id: imovelId, titulo: imovel.title as string | null, bairro: imovel.address as string | null, cidade: imovel.city as string | null } })),
           });
         }
       }

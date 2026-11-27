@@ -8,6 +8,7 @@
   "resolvido_em" é preenchido quando a ação do evento é feita (assinou, respondeu, confirmou): ver ACAO_RESOLVE.
 */
 import type { NotificationEvent } from "./eventos-email.ts";
+import { numeroPublicoContrato } from "../contrato-ref.ts";
 
 export type PrioridadeAviso = "critico" | "urgente" | "normal";
 export type PapelAviso = "dono" | "morador" | "parceiro" | "avaliador" | "admin";
@@ -49,6 +50,7 @@ const URGENTES: readonly NotificationEvent[] = [
   "conforto_prazo",
   "conforto_pendencia",
   "checkin_lembrete",
+  "emergencia_chegada",
   "saida_lembrete",
   "chamado_respondido",
   "estadia_aditivo_respondido",
@@ -99,6 +101,69 @@ export function tituloDoAviso(assuntoDoCatalogo: string): string {
   return assuntoDoCatalogo.replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) || "Aviso da Viva Nomads";
 }
 
+const dataBR = (iso: string | null | undefined): string | null => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ""));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
+};
+
+/**
+ * E1228 (ORDENS-DUET 1147, 1148 e 1151; texto do coordenador) — o aviso de assinatura pendente diz QUAL estadia: dois
+ * contratos do mesmo imóvel davam o mesmo "Atualização do seu contrato · {imóvel}", e o dono não sabia qual faltava
+ * assinar. "Assinar o contrato — {imóvel}, estadia de {entrada} a {saída}"; sem as datas, o código VN-CT no lugar.
+ */
+export function tituloAvisoAssinar(o: { imovel?: string | null; entrada?: string | null; saida?: string | null; contratoId: string }): string {
+  const imovel = String(o.imovel ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 90);
+  const entrada = dataBR(o.entrada);
+  const saida = dataBR(o.saida);
+  const qual = entrada && saida ? `estadia de ${entrada} a ${saida}` : `contrato ${numeroPublicoContrato(o.contratoId)}`;
+  return tituloDoAviso(`Assinar o contrato — ${imovel ? `${imovel}, ` : ""}${qual}`);
+}
+
+/** Rótulo do morador para o dono ANTES do aceite (regra de máscara do prompt 6 / E427): nunca nome, foto ou contato. */
+export const CANDIDATO_MASCARADO = "Candidato(a)";
+
+/**
+ * E570: o aviso de candidatura no sino nomeia quem se candidatou (pela regra de máscara: "Candidato(a)" até o aceite)
+ * e o imóvel — antes era "Nova candidatura no seu imóvel", e o dono adivinhava pelo horário qual era.
+ * "Nova candidatura de Candidato(a) para Casa mobiliada no Centro". Imóvel vazio: "para o seu imóvel".
+ */
+export function tituloAvisoCandidatura(e: { candidato?: string | null; imovel?: string | null }): string {
+  const limpa = (s: string | null | undefined) => String(s ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim();
+  const candidato = limpa(e.candidato) || CANDIDATO_MASCARADO;
+  const imovel = limpa(e.imovel).slice(0, 90);
+  return tituloDoAviso(`Nova candidatura de ${candidato} para ${imovel || "o seu imóvel"}`);
+}
+
+/**
+ * E550 — o aviso diz de QUAL imóvel é: "Documento aprovado · Casa mobiliada no Centro". Sem imóvel, o título fica como
+ * está. O título do imóvel é cortado (90) e limpo; o filtro de contato é aplicado por quem grava.
+ */
+export function tituloComImovel(titulo: string, imovel: string | null | undefined): string {
+  const nome = String(imovel ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 90);
+  if (!nome || titulo.includes(nome)) return tituloDoAviso(titulo);
+  return tituloDoAviso(`${titulo} · ${nome}`);
+}
+
+/**
+ * E550 — o MESMO aviso não se repete no sino: um aviso ainda não lido e não resolvido do mesmo evento e do mesmo
+ * objeto (ref_id) — ou, sem ref_id, com o mesmo título — é renovado (sobe para o topo) em vez de virar uma 2ª linha
+ * idêntica. A chave é a do filtro de busca do aviso pendente.
+ */
+export function chaveDoAvisoPendente(a: { evento: string; refId?: string | null; titulo: string }): { evento: string; refId: string } | { evento: string; titulo: string } {
+  return a.refId ? { evento: a.evento, refId: a.refId } : { evento: a.evento, titulo: a.titulo };
+}
+
+/**
+ * E586: pendentes repetidos da MESMA chave (gravados quase juntos, os dois passando pela leitura antes da gravação):
+ * fica o mais antigo (o primeiro que a pessoa pode ter visto), os outros saem. Sem linhas, null.
+ */
+export function duplicatasDoPendente(linhas: readonly { id: string; criado_em: string }[]): { manter: string; apagar: string[] } | null {
+  if (!linhas.length) return null;
+  const ordem = [...linhas].sort((a, b) => Date.parse(a.criado_em) - Date.parse(b.criado_em) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const manter = ordem[0].id;
+  return { manter, apagar: linhas.filter((l) => l.id !== manter).map((l) => l.id) };
+}
+
 /** Destino do aviso: só caminho interno ("/rota"), nunca URL externa. */
 export function urlDoAviso(u: string | null | undefined): string | null {
   const s = String(u ?? "");
@@ -125,3 +190,19 @@ export function resumoDosAvisos(avisos: readonly { prioridade: PrioridadeAviso; 
 }
 
 export { CRITICOS as EVENTOS_CRITICOS, URGENTES as EVENTOS_URGENTES, POR_PAPEL as PRIORIDADE_POR_PAPEL };
+
+/** E482: a linha de texto do aviso — sem controle nem HTML, espaços normalizados, até 140 caracteres (com "…"). */
+export function textoDoAviso(s: string | null | undefined): string | null {
+  const t = String(s ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim();
+  if (!t) return null;
+  return t.length > 140 ? `${t.slice(0, 139)}…` : t;
+}
+
+/**
+ * E482 — o aviso de mensagem nova diz QUEM escreveu (o primeiro nome, o mesmo do e-mail) e traz a prévia no texto.
+ * O imóvel entra no título pelo gravarAviso (E550). Sem remetente, o assunto do catálogo.
+ */
+export function avisoDeMensagem(e: { remetente?: string | null; previa?: string | null }): { titulo: string; texto: string | null } {
+  const remetente = String(e.remetente ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40);
+  return { titulo: tituloDoAviso(remetente ? `Nova mensagem de ${remetente}` : "Você tem uma nova mensagem"), texto: textoDoAviso(e.previa) };
+}

@@ -8,6 +8,8 @@ import { NFSE_ATIVA } from "../flags.ts";
 import { PREFIXOS } from "../fiscal/prefixos.ts";
 
 export const PERGUNTA_NOTA = "Você emite nota fiscal de serviço para o cliente?";
+/** E1158 (6): de quem é o documento do serviço — a mesma frase no "Seja parceiro" e no painel do parceiro (redação aprovada na ORDEM-DUET-654). */
+export const TEXTO_NOTA_DO_SERVICO = "A nota (ou o recibo) do serviço é sua, para o cliente. A Viva emite o documento só da taxa dela.";
 export const PENDENCIA_NOTA = "Responda se você emite nota fiscal de serviço para o cliente.";
 export const MOTIVO_NOTA_NAO_EMITIDA = "Não emitiu a nota fiscal declarada";
 export const ROTULO_FILTRO_NOTA = "Emite nota fiscal";
@@ -20,9 +22,11 @@ export interface ParceiroFiscal {
   emiteNota?: boolean | null;
 }
 
-/** O que o cliente recebe do parceiro: PF → recibo; PJ que declarou emitir → nota; PJ sem resposta ou "não" → null. */
+/**
+ * O que o cliente recebe do parceiro: PJ que declarou emitir → nota; PJ sem resposta ou "não" → null. E648: CPF não é mais aceito,
+ * então não existe "recibo" de parceiro PF (cadastro PF legado não recebe serviço e não gera documento).
+ */
 export function documentoDoServico(p: ParceiroFiscal): DocumentoServico {
-  if (p.tipoPessoa === "pf") return "recibo";
   if (p.tipoPessoa === "pj" && p.emiteNota === true) return "nota";
   return null;
 }

@@ -44,42 +44,50 @@ test.describe("T484 — E148-A: título e descrição sugeridos no Passo 7", () 
   });
 
   for (const largura of [1280, 390] as const) {
-    test(`${largura} px — IA respondendo: preenche os dois campos uma vez, com o rótulo e "Gerar de novo"`, async ({ browser }) => {
+    test(`${largura} px — IA respondendo: a sugestão fica no cartão e só entra no clique do dono (E613)`, async ({ browser }) => {
       const id = await prepararRascunho(ids.dono, `Rascunho t484 ${sufixo}`, { ...DADOS, title: "", description: "" }, 0);
       const conta = { chamadas: 0 };
       const page = await abrirComIa(browser, id, largura, conta);
-      await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Apartamento mobiliado com varanda no Santa Mônica", { timeout: 30_000 });
-      await expect(page.getByTestId("cadastro-descricao")).toHaveValue(/estadias de 30 a 180 dias/);
-      await expect(page.getByTestId("sugestao-rotulo")).toHaveText("Sugestão, edite à vontade.");
+      const cartao = page.getByTestId("sugestao-cartao");
+      await expect(cartao.getByTestId("sugestao-titulo")).toHaveText("Apartamento mobiliado com varanda no Santa Mônica", { timeout: 30_000 });
+      await expect(cartao.getByTestId("sugestao-descricao")).toContainText("estadias de 30 a 180 dias");
+      // E613: nada vai sozinho para os campos — o dono não "escreveu" sem escrever.
+      await expect(page.getByTestId("cadastro-titulo")).toHaveValue("");
+      await expect(page.getByTestId("cadastro-descricao")).toHaveValue("");
       await expect(page.getByTestId("sugestao-gerar-de-novo")).toBeVisible();
       // Um só botão cheio no passo: o Continuar.
       await expect(page.locator('[data-cta="primary"]:visible')).toHaveCount(1);
       await page.screenshot({ path: `${SAIDA}/t484-sugestao-ia-${largura}.png` });
-      // Os campos seguem editáveis; o dono troca a descrição e "Gerar de novo" pede confirmação antes de substituir.
+      // O dono escreve a descrição; "Usar esta sugestão" preenche só o título (o campo vazio), nunca por cima do texto dele.
       await page.getByTestId("cadastro-descricao").fill("Descrição que eu mesmo escrevi.");
-      await page.getByTestId("sugestao-gerar-de-novo").click();
-      await expect(page.getByTestId("sugestao-gerar-de-novo-confirmacao")).toBeVisible();
-      await page.screenshot({ path: `${SAIDA}/t484-gerar-de-novo-confirma-${largura}.png` });
-      await page.getByTestId("sugestao-gerar-de-novo-cancelar").click();
+      await page.getByTestId("sugestao-usar").click();
+      await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Apartamento mobiliado com varanda no Santa Mônica");
       await expect(page.getByTestId("cadastro-descricao")).toHaveValue("Descrição que eu mesmo escrevi.");
+      await expect(page.getByTestId("sugestao-rotulo")).toHaveText("Sugestão, edite à vontade.");
+      await expect(cartao).toHaveCount(0);
       expect(conta.chamadas, "uma chamada só ao entrar").toBe(1);
       await page.context().close();
       await adm().from("properties").delete().eq("id", id);
     });
   }
 
-  test("IA fora do ar (503 no laboratório): o modelo fixo preenche com os dados do cadastro, sem palavra proibida", async ({ browser }) => {
+  test("IA fora do ar (503 no laboratório): o modelo fixo monta a sugestão com os dados do cadastro, sem palavra proibida", async ({ browser }) => {
     const id = await prepararRascunho(ids.dono, `Rascunho t484b ${sufixo}`, { ...DADOS, title: "", description: "" }, 0);
     const page = await abrirPasso(browser, { email: dono.email, senha }, id, "descricao", 390);
-    await expect(page.getByTestId("cadastro-titulo")).toHaveValue("Apartamento mobiliado de 2 quartos no Santa Mônica", { timeout: 30_000 });
-    const descricao = await page.getByTestId("cadastro-descricao").inputValue();
+    await expect(page.getByTestId("sugestao-titulo")).toHaveText("Apartamento mobiliado de 2 quartos no Santa Mônica", { timeout: 30_000 });
+    const descricao = (await page.getByTestId("sugestao-descricao").innerText()).trim();
     expect(descricao).toContain("2 quartos, 1 banheiro e 58 m²");
     expect(descricao).toContain("Internet de 300 Mbps");
     expect(descricao).toContain("Para estadias de 30 a 180 dias.");
     expect(descricao).not.toMatch(PROIBIDAS);
+    // E613: o modelo fixo também não grava sozinho; a Revisão segue dizendo que falta título e descrição.
+    await expect(page.getByTestId("cadastro-titulo")).toHaveValue("");
+    await expect(page.getByTestId("cadastro-descricao")).toHaveValue("");
     // Texto pronto não é IA: sem "Gerar de novo" (que só faz sentido com a IA respondendo).
     await expect(page.getByTestId("sugestao-gerar-de-novo")).toHaveCount(0);
     await page.screenshot({ path: `${SAIDA}/t484-modelo-fixo-390.png` });
+    await page.goto(`/dashboard/imoveis/novo?draft=${id}&etapa=revisao`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("conferencia-descricao"), "Título e descrição seguem como falta").toHaveAttribute("data-ok", "0", { timeout: 30_000 });
     await page.context().close();
     await adm().from("properties").delete().eq("id", id);
   });

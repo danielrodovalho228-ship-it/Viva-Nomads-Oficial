@@ -114,7 +114,7 @@ export function iniciais(nome: string): string {
 }
 
 // ── Status ─────────────────────────────────────────────────────────────────
-export type StatusAgente = "espera" | "alerta" | "falhou" | "sem_ronda" | "no_ar" | "planejado" | "pausado";
+export type StatusAgente = "espera" | "alerta" | "falhou" | "sem_ronda" | "no_ar" | "planejado" | "pausado" | "parado";
 
 export const ROTULO_STATUS: Record<StatusAgente, string> = {
   espera: "Em espera",
@@ -124,7 +124,11 @@ export const ROTULO_STATUS: Record<StatusAgente, string> = {
   no_ar: "No ar",
   planejado: "Planejado",
   pausado: "Pausado",
+  parado: "Parado",
 };
+
+/** E473: agente ativo cuja última ronda passou disto está "Parado" (o "Em espera" de 17/10 dizia que estava em dia). */
+export const JANELA_PARADO_MS = 48 * 3_600_000;
 
 /**
  * Agente ativo SEM tarefa agendada (trigger_id nulo) ou que só registra ronda
@@ -133,12 +137,16 @@ export const ROTULO_STATUS: Record<StatusAgente, string> = {
  */
 export function statusDoAgente(
   a: Pick<Agente, "status"> & { trigger_id?: string | null; slug?: string },
-  ultima: Pick<Ronda, "status"> | undefined
+  ultima: (Pick<Ronda, "status"> & { iniciada_em?: string }) | undefined,
+  agora?: Date
 ): StatusAgente {
   if (a.status === "planejado") return "planejado";
   if (a.status === "pausado") return "pausado";
   if (!ultima) return a.trigger_id === null || (a.slug && SEM_RONDAS[a.slug]) ? "no_ar" : "sem_ronda";
-  return ultima.status === "ok" ? "espera" : ultima.status;
+  if (ultima.status !== "ok") return ultima.status; // "Falhou"/"Alerta" seguem valendo, recentes ou não
+  // E473: só o "Em espera" afirmava estar em dia — ronda ok velha vira "Parado".
+  if (agora && ultima.iniciada_em && agora.getTime() - Date.parse(ultima.iniciada_em) > JANELA_PARADO_MS) return "parado";
+  return "espera";
 }
 
 export function prioridadesDe(r: Pick<Ronda, "achados">): string[] {

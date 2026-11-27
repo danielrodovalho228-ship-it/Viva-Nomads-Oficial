@@ -28,10 +28,11 @@ for (const largura of [390, 1280]) {
       await page.goto("/ajuda/fale-com-a-viva", { waitUntil: "networkidle" });
       const bloco = page.getByTestId("viva-chat-bloco");
       await bloco.getByRole("button", { name: /Falar com uma pessoa/i }).click();
-      const form = page.getByTestId("form-pessoa");
+      // E539 (iii): na página, o "Falar com uma pessoa" abre o formulário da Central (um só).
+      const form = page.locator("#abrir-chamado");
       await expect(form).toBeVisible();
       const nome = form.getByLabel("Seu nome");
-      const email = form.getByLabel("Seu e-mail");
+      const email = form.getByLabel("Seu e-mail (para a resposta)");
       await expect(nome).toHaveAttribute("name", "nome");
       await expect(nome).toHaveAttribute("autocomplete", "name");
       await expect(email).toHaveAttribute("name", "email");

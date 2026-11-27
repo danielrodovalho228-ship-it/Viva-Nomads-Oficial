@@ -7,19 +7,27 @@ import { CHAVE_ULTIMA_BUSCA, serializarUltimaBusca } from "@/lib/marcas/regra";
 import { CHAVE_VOLTAR_BUSCA, registroVoltarBusca } from "@/lib/imovel/voltar-busca";
 import { ChevronDown, ArrowRight, Megaphone } from "lucide-react";
 import type { Property } from "@/lib/types";
-import { PropertyCard } from "@/components/property-card";
+import { PropertyCard, PRIMEIRA_FILEIRA } from "@/components/property-card";
 import { BarraComparar } from "@/components/busca/barra-comparar";
 import { alternarSelecao } from "@/lib/busca/comparar";
 // O mapa (Mapbox com chave; senão Leaflet + CARTO) só carrega no navegador e
 // só no computador (ordem ca0e7dad: no celular a busca segue sem mapa).
 const SearchMap = dynamic(
   () => import("@/components/search-map").then((m) => m.SearchMap),
-  { ssr: false }
+  // E698: enquanto o módulo do mapa baixa, o quadro já diz que está carregando (e não fica um retângulo cinza vazio).
+  { ssr: false, loading: () => <MapaCarregandoModulo /> }
 );
-import { cn, distanceKm } from "@/lib/utils";
-import { tierFromPhotoCount, searchPriority } from "@/lib/listing";
+
+function MapaCarregandoModulo() {
+  return (
+    <div className="grid h-full w-full place-items-center bg-surface-2" data-testid="mapa-carregando-modulo" role="status" aria-live="polite">
+      <span className="rounded-full bg-white px-3 py-2 text-sm font-medium text-ink motion-safe:animate-pulse">Carregando o mapa…</span>
+    </div>
+  );
+}
+import { cn, distanceKm, hojeBR } from "@/lib/utils";
+import { situacaoBuscaVazia } from "@/lib/busca-vazia";
 import { comTotalMes } from "@/lib/precos";
-import { prioridadeNaBusca } from "@/lib/preco-justo";
 import { LocationSearch } from "@/components/location-search";
 import type { GeoSuggestion } from "@/lib/integrations/geocoding";
 import { PROPERTY_TYPES } from "@/lib/amenities";
@@ -27,31 +35,33 @@ import { registrarEvento } from "@/lib/eventos/registrar";
 import { ConviteCidade } from "@/components/cidades/convite-cidade";
 import { chaveCidade } from "@/lib/cidades";
 import { FAIXAS, GARANTIAS_FAIXA, GARANTIAS_PUBLICAS, CAUCAO_PARCELADA_UI } from "@/lib/faixas";
-import { SELO_NF_UI } from "@/lib/flags";
 import { FolhaFiltros } from "@/components/busca/painel-filtros-celular";
-import { medicoesDaBusca, secaoInternetVisivel } from "@/lib/busca/facetas";
+import { medicoesDaBusca, secaoInternetVisivel, velocidadesDaBusca } from "@/lib/busca/facetas";
 import { cumpreGarantiaMinima } from "@/lib/busca/garantia-minima";
 import { comodidadesDaUrl, comodidadesValidas, type ComodidadeFiltro } from "@/lib/busca/filtro-comodidades";
-import { naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
+import { FILTROS_PAINEL_VAZIOS, desconhecidosDoPainel, naoMedidosDoPainel, passaNoPainel, precoDeBusca, seguroDaUrlLegada, type FiltrosPainel } from "@/lib/busca/painel-filtros";
 import { datasFlexiveisDaUrl } from "@/lib/busca/datas-flexiveis";
-import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl } from "@/lib/busca/filtro-nivel";
+import { avisoNivelSemResultado, filtroNivelDaUrl, filtroNivelNaUrl, niveisDaUrl, niveisNaUrl } from "@/lib/busca/filtro-nivel";
 import type { Nivel } from "@/config/niveis";
-import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, textoMaisNaoMedidos } from "@/lib/busca/filtro-internet";
+import { ROTULO_NAO_MEDIDA, filtroInternetDaUrl, filtroInternetNaUrl, textoMaisNaoMedidos, textoVelocidadeDesconhecida, velocidadeDoImovel } from "@/lib/busca/filtro-internet";
 import { buttonClasses } from "@/components/ui/button";
 import { SalvarBusca } from "@/components/busca/salvar-busca";
 import { BarraPilulas } from "@/components/busca/barra-pilulas";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { contagemDaBusca } from "@/lib/busca/titulo-busca";
 import { isExemplo } from "@/lib/demo-listing";
-import { baseDaBusca, contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, TEXTO_CARTAO_PEDIDO } from "@/lib/busca/exemplos-e-pedido";
+import { baseDaVitrine } from "@/lib/busca/contagem-vitrine";
+import { contarNaBase, exemplosForcadosNaUrl, mostrarCartaoPedido, soHaExemplos, TEXTO_CARTAO_PEDIDO, TEXTO_VITRINE_SO_EXEMPLOS } from "@/lib/busca/exemplos-e-pedido";
 import { DescricaoBusca } from "@/components/busca/descricao-busca";
 import type { ChaveChip, FiltrosDescricao } from "@/lib/busca/descricao-filtros";
 import { CampoDestino, type DestinoChip } from "@/components/busca/campo-destino";
 import { useTempos } from "@/components/busca/use-tempos";
+import { comparaRelevancia, desempatePorId } from "@/lib/busca/ordem-estavel";
 import { distanciaAte, ordenarPorDestino, pontoDoDestino, textoDoCartao } from "@/lib/busca/distancia-destino";
 import { guardarDestinoDaBusca } from "@/lib/busca/destino-sessao";
 import { destinoDaUrl, destinoNaUrl, type EstadoDestino } from "@/lib/busca/destino-busca";
-import type { ModoRota } from "@/lib/rotas/tempo";
+import { foraDoTempoPelaReta, type ModoRota } from "@/lib/rotas/tempo";
+import { sincronizarUrlDaBusca } from "@/lib/navegacao/url-da-busca";
 
 // Filtro de garantia exibido na busca pública: caução unificada + seguro-fiança
 // (a modalidade parcelada fica fora da UI até o parecer — B1). Religa com a flag.
@@ -103,6 +113,8 @@ export function SearchClient({
   const [internetMin, setInternetMin] = useState(0);
   // Adendo 59.1: nível "a partir de" (`?nivel=`), escolhido na folha de filtros.
   const [nivelMin, setNivelMin] = useState<Nivel | "">("");
+  // E573: níveis EXATOS do grupo "Nível" do painel (`?niveis=`); o rótulo/posição no painel é da Pista A.
+  const [niveis, setNiveis] = useState<Nivel[]>([]);
   const [soInternetMedida, setSoInternetMedida] = useState(false);
   // Prompt 55 B2: datas flexíveis (só vale com data de entrada).
   const [datasFlexiveis, setDatasFlexiveis] = useState(false);
@@ -112,12 +124,18 @@ export function SearchClient({
   const [invoiceOnly, setInvoiceOnly] = useState(false);
   const [operatedOnly, setOperatedOnly] = useState(false);
   const [negociaOnly, setNegociaOnly] = useState(false); // E439: só quem aceita negociar (`?negocia=1`)
+  const [silenciosoOnly, setSilenciosoOnly] = useState(false); // Filtros pacote 1: "Ambiente silencioso" (`?silencioso=1`)
+  const [contasOnly, setContasOnly] = useState(false); // Filtros pacote 1: "Contas incluídas" (`?contas=1`)
+  // E572/E580: só com o selo "Preço justo" (`?precojusto=1`) — o mesmo selo do card, sem chave.
+  const [precoJustoOnly, setPrecoJustoOnly] = useState(false);
   // Folha de filtros (ordem 314f764e; Prompt 40): de baixo no celular, lateral no computador.
   const [painelAberto, setPainelAberto] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null); // hover: card ↔ pin (só destaque)
   const [comparar, setComparar] = useState<string[]>([]); // ordem fdd61de0: até 3 imóveis marcados
   const [avisoComparar, setAvisoComparar] = useState<string | null>(null);
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null); // pin clicado: card aberto no mapa
+  // E1023: cartão aberto no mapa (clique ou prévia do hover) — o card da lista mantém o destaque enquanto ele está aberto.
+  const [abertoMapaId, setAbertoMapaId] = useState<string | null>(null);
   // Mapa só a partir de 1024 px (lg): no celular/tablet nem carrega o componente.
   const [comMapa, setComMapa] = useState(false);
   // E82-A: a pílula "Mapa" alterna lista e mapa — no computador mostra/esconde a coluna do mapa; no celular troca a
@@ -196,17 +214,21 @@ export function SearchClient({
     if (on("pronto")) setReadyToLiveOnly(true);
     if (on("homeoffice")) setHomeOfficeOnly(true);
     if (on("localizado")) setWorkLocatedOnly(true);
-    // "Com Nota Fiscal" só existe com a chave do selo ligada (aluguel de PF é recibo, não NF).
-    if (SELO_NF_UI && on("nota")) setInvoiceOnly(true);
+    // E574: "Emite nota fiscal" = dono PJ/MEI que declarou emitir nota da locação (PF gera recibo, nunca entra).
+    if (on("nota")) setInvoiceOnly(true);
     // E43 (Adendo 3): o atalho antigo `?seguro=1` vira a garantia "Seguro-fiança" — a mesma migração das buscas salvas.
     if (!gar && seguroDaUrlLegada(gar, sp.get("seguro"))) setGarantia("seguro_fianca");
     if (on("gestor")) setOperatedOnly(true);
     if (on("negocia")) setNegociaOnly(true);
+    if (on("silencioso")) setSilenciosoOnly(true);
+    if (on("contas")) setContasOnly(true);
+    if (on("precojusto")) setPrecoJustoOnly(true);
     setComodidades(comodidadesDaUrl(sp.get("comod")));
     const fi = filtroInternetDaUrl(sp);
     setInternetMin(fi.internetMin);
     setSoInternetMedida(fi.soInternetMedida);
     setNivelMin(filtroNivelDaUrl(sp));
+    setNiveis(niveisDaUrl(sp));
   }, []);
 
   // Restaura no mount (link compartilhado / reload) e re-aplica a cada
@@ -229,7 +251,7 @@ export function SearchClient({
     return () => window.removeEventListener("popstate", onPop);
   }, [restaurarFiltrosDaURL]);
 
-  // Reflete a busca atual na URL (replaceState — sem recarregar nem rolar),
+  // Reflete a busca atual na URL (replaceState só quando muda — sem recarregar nem rolar),
   // para o endereço e o raio serem compartilháveis / sobreviverem a um reload.
   useEffect(() => {
     if (skipNextSync.current) {
@@ -271,22 +293,23 @@ export function SearchClient({
     params.delete("seguro"); // Adendo 3 (E43): o atalho antigo não volta para a URL (virou garantia=seguro_fianca).
     put("gestor", operatedOnly, "1");
     put("negocia", negociaOnly, "1");
+    put("silencioso", silenciosoOnly, "1");
+    put("contas", contasOnly, "1");
+    put("precojusto", precoJustoOnly, "1");
     put("comod", comodidades.length > 0, comodidades.join(","));
     filtroInternetNaUrl(params, { internetMin, soInternetMedida });
     filtroNivelNaUrl(params, nivelMin);
+    niveisNaUrl(params, niveis);
     destinoNaUrl(params, estadoDestino);
     if (sort === "trabalho") params.delete("ordem");
     const qs = params.toString();
-    window.history.replaceState(
-      null,
-      "",
-      qs ? `${window.location.pathname}?${qs}` : window.location.pathname
-    );
+    // E1047: só com a URL diferente — cada replaceState vira um "restore" do router, que descarta o toque num card em curso.
+    sincronizarUrlDaBusca(qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
   }, [
     locationQuery, geoCenter, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort,
     typeFilter, faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly,
-    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, comodidades, estadoDestino,
-    internetMin, soInternetMedida, datasFlexiveis, nivelMin,
+    readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly, comodidades, estadoDestino,
+    internetMin, soInternetMedida, datasFlexiveis, nivelMin, niveis,
   ]);
 
   // Prompt 37: sem destino na URL, o "Meu local de trabalho" salvo na conta vira o padrão (só para quem está logado;
@@ -381,10 +404,12 @@ export function SearchClient({
     setInvoiceOnly(false);
     setOperatedOnly(false);
     setNegociaOnly(false);
+    setPrecoJustoOnly(false);
     setComodidades([]);
     setInternetMin(0);
     setSoInternetMedida(false);
     setNivelMin("");
+    setNiveis([]);
     setDatasFlexiveis(false);
     setEstadoDestino({ destino: null, modo: "carro", ate: 0 });
     setSort("relevance");
@@ -395,12 +420,15 @@ export function SearchClient({
   const filtrosPainel: FiltrosPainel = useMemo(
     () => ({
       maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades,
-      periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: SELO_NF_UI && invoiceOnly, gestorOnly: operatedOnly,
+      periodo: maxPeriod, tipo: typeFilter, garantia, notaOnly: invoiceOnly, gestorOnly: operatedOnly,
       negociaOnly,
+      precoJustoOnly,
+      silenciosoOnly,
+      contasOnly,
       internetMin, soInternetMedida,
-      entrada: dataEntrada, datasFlexiveis, nivelMin,
+      entrada: dataEntrada, datasFlexiveis, nivelMin, niveis,
     }),
-    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, negociaOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin]
+    [maxPrice, minBedrooms, petsOnly, petPorte, homeOfficeOnly, readyToLiveOnly, comodidades, maxPeriod, typeFilter, garantia, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly, internetMin, soInternetMedida, dataEntrada, datasFlexiveis, nivelMin, niveis]
   );
 
   const { base, dist } = useMemo(() => {
@@ -436,7 +464,9 @@ export function SearchClient({
 
   // E131: a lista e todas as contagens partem da MESMA base (a regra dos exemplos decidida uma vez, sem os filtros da
   // folha). Assim nenhuma pílula ou faceta conta mais imóveis do que a lista sem filtro mostra.
-  const baseVisivel = useMemo(() => baseDaBusca(base, (p) => isExemplo(p.id), exemplosForcados), [base, exemplosForcados]);
+  const baseVisivel = useMemo(() => baseDaVitrine(base, (p) => isExemplo(p.id), exemplosForcados), [base, exemplosForcados]);
+  // E695: o que existe no lugar digitado ANTES da data e dos filtros decide se "a Viva ainda não chegou" é verdade.
+  const situacaoVazia = useMemo(() => situacaoBuscaVazia({ local: locationQuery, imoveisNoLocal: baseVisivel, hoje: hojeBR() }), [locationQuery, baseVisivel]);
   const contarComPainel = useCallback((f: FiltrosPainel) => contarNaBase(baseVisivel, (p) => passaNoPainel(p, f)), [baseVisivel]);
   // Prompt 57, fase 2: os de internet informada, mas não medida (só com o filtro de internet ligado). Exemplo não entra.
   const contarNaoMedidos = useCallback((f: FiltrosPainel) => naoMedidosDoPainel(base, f).filter((p) => !isExemplo(p.id)).length, [base]);
@@ -445,31 +475,35 @@ export function SearchClient({
   // Adendo 3 (E40): sem nenhuma medição válida na busca atual, o filtro de internet (vindo da URL ou de antes) é
   // ignorado — o chip ativo sai e a URL perde ?internet/?medida. Ajuste de estado no render (padrão do React para
   // estado derivado), sem efeito: a lista nunca chega a zerar por um filtro que ninguém pode cumprir.
-  if (!secaoInternetVisivel(medicoes) && (internetMin > 0 || soInternetMedida)) {
+  // E1078: a seção é de VELOCIDADE (a medida, ou a informada sem medição); o estrito "Só com internet medida" segue
+  // dependendo de haver medição.
+  const velocidades = useMemo(() => velocidadesDaBusca(baseVisivel), [baseVisivel]);
+  if (!secaoInternetVisivel(velocidades) && (internetMin > 0 || soInternetMedida)) {
     setInternetMin(0);
+    setSoInternetMedida(false);
+  } else if (!secaoInternetVisivel(medicoes) && soInternetMedida) {
     setSoInternetMedida(false);
   }
   const naoMedidos = useMemo(() => naoMedidosDoPainel(base, filtrosPainel).filter((p) => !isExemplo(p.id)), [base, filtrosPainel]);
+  // E1078: os que ficam de fora por não ter velocidade nenhuma (nem medida nem informada) — só a contagem, no fim da lista.
+  const desconhecidos = useMemo(() => desconhecidosDoPainel(base, filtrosPainel).filter((p) => !isExemplo(p.id)).length, [base, filtrosPainel]);
 
   const semTempo = useMemo(() => {
     // Prompt 30, item 6 (com imóvel real na busca, os exemplos saem) já vale na baseVisivel — a mesma das contagens.
     let list = baseVisivel.filter((p) => passaNoPainel(p, filtrosPainel));
-    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b));
-    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a));
+    if (sort === "price-asc") list = [...list].sort((a, b) => precoDeBusca(a) - precoDeBusca(b) || desempatePorId(a, b));
+    else if (sort === "price-desc") list = [...list].sort((a, b) => precoDeBusca(b) - precoDeBusca(a) || desempatePorId(a, b));
     // Adicionados recentemente: mais novos (data de cadastro) primeiro.
     else if (sort === "recent")
       list = [...list].sort(
-        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+        (a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "") || desempatePorId(a, b)
       );
     // Relevância com endereço: mais perto primeiro; senão, anúncios mais completos.
     else if (dist)
-      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)!);
+      list = [...list].sort((a, b) => dist.get(a.id)! - dist.get(b.id)! || desempatePorId(a, b));
     else
-      list = [...list].sort(
-        (a, b) =>
-          prioridadeNaBusca(searchPriority(tierFromPhotoCount(b.photos.length)), b.precoJusto) -
-          prioridadeNaBusca(searchPriority(tierFromPhotoCount(a.photos.length)), a.precoJusto)
-      );
+      // E810: a ordem de relevância pela função pura (mesma lista, mesma ordem, em qualquer carregamento).
+      list = [...list].sort(comparaRelevancia);
     return list;
   }, [baseVisivel, dist, filtrosPainel, sort]);
 
@@ -489,6 +523,9 @@ export function SearchClient({
       const t = tempos.get(p.id);
       return t?.min != null && t.min <= estadoDestino.ate;
     });
+    // E523: sem tempo de rota (linha reta), o limite "até N min" não era aplicado — 15 min a pé mantinha imóveis a ~4 km.
+    // A rota nunca é mais curta que a linha reta: sai quem, nem na velocidade máxima do modo, chegaria no tempo.
+    else if (estadoDestino.ate) list = list.filter((p) => !foraDoTempoPelaReta(distanciaAte(p, alvoDestino)?.metros, estadoDestino.modo, estadoDestino.ate));
     // A mesma conta que o cartão mostra: posição do servidor primeiro; o resto pela distância em linha reta.
     if (sort === "trabalho") list = ordenarPorDestino(list, (id) => tempos.get(id)?.pos, (p) => distanciaAte(p, alvoDestino)?.metros ?? null);
     return list;
@@ -513,6 +550,10 @@ export function SearchClient({
     (garantia ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
     (negociaOnly ? 1 : 0) + // E439
+    (silenciosoOnly ? 1 : 0) + // Filtros pacote 1
+    (contasOnly ? 1 : 0) + // Filtros pacote 1
+    (precoJustoOnly ? 1 : 0) + // E572/E580
+    (niveis.length ? 1 : 0) + // E573
     [petsOnly, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly].filter(
       Boolean
     ).length +
@@ -526,7 +567,8 @@ export function SearchClient({
     (minBedrooms ? 1 : 0) +
     (maxPeriod ? 1 : 0) +
     (internetMin || soInternetMedida ? 1 : 0) +
-    [readyToLiveOnly, homeOfficeOnly, petsOnly, SELO_NF_UI && invoiceOnly, operatedOnly, negociaOnly].filter(Boolean).length +
+    (niveis.length ? 1 : 0) + // E573: o grupo "Nível" mora na folha
+    [readyToLiveOnly, homeOfficeOnly, petsOnly, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly].filter(Boolean).length +
     comodidades.length;
 
   // Link do Pedido de Moradia com os parâmetros da busca já preenchidos (Fase 4).
@@ -560,6 +602,8 @@ export function SearchClient({
     setInvoiceOnly(false);
     setOperatedOnly(false);
     setNegociaOnly(false);
+    setPrecoJustoOnly(false);
+    setNiveis([]);
     setComodidades([]);
     setInternetMin(0);
     setSoInternetMedida(false);
@@ -609,10 +653,11 @@ export function SearchClient({
   // Muda sempre que um filtro muda: o "Salvar busca" reconsulta se a busca atual já está salva.
   const versaoBusca = [
     locationQuery, geoCenter?.lat, geoCenter?.lng, radiusKm, maxPrice, minBedrooms, adults, children, maxPeriod, sort, typeFilter,
-    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, comodidades.join(","),
-    internetMin, soInternetMedida, datasFlexiveis, nivelMin,
+    faixa, dataEntrada, garantia, petsOnly, petPorte, furnishedOnly, readyToLiveOnly, homeOfficeOnly, workLocatedOnly, invoiceOnly, operatedOnly, negociaOnly, silenciosoOnly, contasOnly, precoJustoOnly, comodidades.join(","),
+    internetMin, soInternetMedida, datasFlexiveis, nivelMin, niveis.join(","),
   ].join("|");
-  function aplicarPainel(f: FiltrosPainel) {
+  // E589: define os filtros da busca a partir da folha (sem fechar nada) — o "Mostrar N" e o "Limpar tudo" usam a mesma.
+  function definirFiltrosDoPainel(f: FiltrosPainel) {
     setMaxPrice(f.maxPrice);
     setMinBedrooms(f.minBedrooms);
     setPetsOnly(f.petsOnly);
@@ -622,6 +667,7 @@ export function SearchClient({
     setComodidades(comodidadesValidas(f.comodidades));
     setInternetMin(f.internetMin);
     setNivelMin(f.nivelMin ?? "");
+    setNiveis(f.niveis ?? []);
     setSoInternetMedida(f.homeOfficeOnly && f.soInternetMedida);
     // Só sobraram os de internet não medida: o botão da folha já abre essa lista.
     setVerNaoMedidos(contarComPainel(f) === 0 && contarNaoMedidos(f) > 0);
@@ -634,6 +680,12 @@ export function SearchClient({
     setInvoiceOnly(f.notaOnly);
     setOperatedOnly(f.gestorOnly);
     setNegociaOnly(f.negociaOnly ?? false);
+    setSilenciosoOnly(f.silenciosoOnly ?? false);
+    setContasOnly(f.contasOnly ?? false);
+    setPrecoJustoOnly(f.precoJustoOnly ?? false);
+  }
+  function aplicarPainel(f: FiltrosPainel) {
+    definirFiltrosDoPainel(f);
     setPainelAberto(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -651,6 +703,10 @@ export function SearchClient({
       {/* E82-A + E91 + E95 (mockup BUSCA-CARD): UMA linha de controles e, acima da lista, SÓ a linha da contagem com
           "Salvar busca" e "Descrever o que procuro". Nada de título grande, banner, caixa de destino ou de descrição na
           página: o destino vive no painel da pílula Local; a descrição, numa folha. */}
+      {/* E780: no celular a faixa de filtros (chips + Mais filtros · Ordenar · Mapa) fica PRESA logo abaixo do cabeçalho, inteira, e
+          a contagem rola por baixo dela. Antes tudo rolava e o cabeçalho fixo cobria a metade de cima dos chips. No computador
+          (lg+) a faixa segue no fluxo. */}
+      <div className="sticky top-18 z-30 bg-white lg:static" data-testid="busca-topo-fixo" data-barra-fixa>
       <div className="container-page mt-2 lg:max-w-none lg:px-0 lg:pt-4">
         <BarraPilulas
           filtros={filtrosPainel}
@@ -658,6 +714,7 @@ export function SearchClient({
           aplicar={aplicarPainel}
           local={locationQuery}
           perto={nomeDoDestino}
+          ateMin={estadoDestino.ate}
           painelLocal={
             <>
               <div>
@@ -717,7 +774,10 @@ export function SearchClient({
           mapa={comMapa ? verMapa : mapaNoCelular}
           onMapa={() => (comMapa ? setVerMapa((v) => !v) : setMapaNoCelular((v) => !v))}
         />
+      </div>
+      </div>
 
+      <div className="container-page lg:max-w-none lg:px-0">
         {/* A linha da contagem (E91): "15 imóveis em Uberlândia · R$ 0 de taxa para você" + Salvar busca + Descrever +
             Publicar pedido (E106). */}
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="linha-contagem">
@@ -779,10 +839,11 @@ export function SearchClient({
           contar={contarComPainel}
           contarNaoMedidos={contarNaoMedidos}
           onAplicar={aplicarPainel}
+          onLimpar={() => definirFiltrosDoPainel(FILTROS_PAINEL_VAZIOS)}
           onFechar={() => setPainelAberto(false)}
           garantias={GARANTIAS_FILTRO}
-          comNotaFiscal={SELO_NF_UI}
           medicoes={medicoes}
+          velocidades={velocidades}
           topo={
             // E82-A: o 1º bloco da folha é a descrição, recolhida numa linha (tocar abre o campo).
             <button
@@ -800,11 +861,21 @@ export function SearchClient({
         />
       )}
 
-      <div className="container-page mt-4 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
+      {/* Frente 3 (t70): sem a faixa do "Fale com a Viva" (C1b) — a /buscar não mostra o botão (E95) e o mapa termina na margem de 24 px (E659). */}
+      <div data-sem-faixa-flutuante className="container-page mt-4 lg:flex lg:max-w-none lg:items-start lg:gap-6 lg:px-0">
         {/* Estabilidade (02/11): a coluna do mapa é reservada pelo CSS (lg:), não pelo matchMedia — antes, no 1º desenho
             comMapa era falso, a lista ocupava 100% e encolhia para 58% quando o mapa entrava (CLS 0,30 a 1280 px).
             O componente do mapa continua carregando só no computador (comMapa). */}
         <div data-testid="busca-lista" className={cn("min-w-0 lg:py-4", verMapa ? "lg:w-[58%]" : "lg:w-full", mapaNoCelular && "hidden lg:block")}>
+          {/* E529: a faixa "Comparar (N)" é da página (acima da lista), nunca flutua sobre os cartões. */}
+          <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
+          {/* E723: sem imóvel real publicado, a lista é só de exemplos — e diz isso no topo. */}
+          {soHaExemplos(results, (p) => isExemplo(p.id)) && !exemplosForcados && (
+            <p className="mb-4 rounded-lg bg-sage-100 px-4 py-3 text-sm font-medium text-forest" data-testid="busca-so-exemplos">
+              {TEXTO_VITRINE_SO_EXEMPLOS}
+            </p>
+          )}
+
           {results.length === 0 && nivelMin && contarComPainel({ ...filtrosPainel, nivelMin: "" }) > 0 ? (
             // NIVEL-BUSCA-A: o `?nivel=` zerou a busca — o aviso diz isso e "Ver todos" tira só o filtro de nível.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia-nivel">
@@ -817,12 +888,23 @@ export function SearchClient({
             // Prompt 48: busca sem resultado diz o que aconteceu e dá os três próximos passos — pedido de moradia,
             // limpar filtros (ou ampliar a busca) e criar alerta. Sem ilustração genérica.
             <div className="flex flex-col items-start rounded-xl border border-line bg-white p-6 sm:p-8" data-testid="busca-vazia">
-              <p className="font-title text-lg font-semibold text-ink">
-                {locationQuery.trim()
-                  ? `Ainda não temos imóvel para essa busca em ${locationQuery.trim()}.`
-                  : "Ainda não há imóveis para esta busca"}
-              </p>
-              <ConviteCidade texto={locationQuery} />
+              {/* E695: "ainda não chegou" só quando o lugar tem ZERO imóveis; havendo imóveis que a data/os filtros excluíram,
+                  a mensagem é de data/filtro (com a próxima disponibilidade), e o convite de cidade não aparece. */}
+              {situacaoVazia.tipo === "sem_disponibilidade" ? (
+                <>
+                  <p className="font-title text-lg font-semibold text-ink" data-testid="busca-vazia-titulo">{situacaoVazia.titulo}</p>
+                  <p className="mt-1 max-w-md text-sm text-muted" data-testid="busca-vazia-proxima">{situacaoVazia.detalhe}</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-title text-lg font-semibold text-ink" data-testid="busca-vazia-titulo">
+                    {locationQuery.trim()
+                      ? `Ainda não temos imóvel para essa busca em ${locationQuery.trim()}.`
+                      : "Ainda não há imóveis para esta busca"}
+                  </p>
+                  <ConviteCidade texto={locationQuery} />
+                </>
+              )}
               <p className="mt-1 max-w-md text-sm text-muted">
                 {PEDIDO_MORADIA_ON
                   ? "Publique um pedido de moradia e os proprietários da cidade encontram você, ou crie um alerta para saber quando entrar um imóvel assim."
@@ -858,25 +940,32 @@ export function SearchClient({
             <div className="grid auto-rows-fr gap-x-4 gap-y-8 sm:grid-cols-2 sm:gap-x-6 lg:gap-x-4 xl:grid-cols-3" data-testid="grade-resultados">
               {/* h2 (invisível) entre o h1 do topo e os h3 dos cards — sem pular nível. */}
               <h2 className="sr-only">Imóveis encontrados</h2>
-              {results.map((p) => (
+              {results.map((p, indice) => (
                 <div
                   key={p.id}
                   data-testid="card-resultado"
                   data-id={p.id}
-                  data-destaque={activeId === p.id || selecionadoId === p.id ? "1" : "0"}
+                  data-destaque={activeId === p.id || selecionadoId === p.id || abertoMapaId === p.id ? "1" : "0"}
                   onMouseEnter={() => setActiveId(p.id)}
                   onMouseLeave={() => setActiveId(null)}
                   className={cn(
                     "flex h-full flex-col rounded-xl transition-all",
-                    (activeId === p.id || selecionadoId === p.id) && "ring-2 ring-forest ring-offset-4"
+                    (activeId === p.id || selecionadoId === p.id || abertoMapaId === p.id) && "ring-2 ring-forest ring-offset-4"
                   )}
                 >
                   <div className="min-h-0 flex-1">
                     <PropertyCard
                       property={p}
                       periodMonths={maxPeriod > 0 ? Math.round(maxPeriod / 30) : undefined}
+                      prioridade={indice < PRIMEIRA_FILEIRA}
                     />
                   </div>
+                  {/* E1078: com o filtro de velocidade ligado, quem entra pela velocidade INFORMADA (sem medição) leva o rótulo. */}
+                  {(internetMin > 0 || soInternetMedida) && velocidadeDoImovel(p, new Date())?.medida === false && (
+                    <p className="mt-2 text-sm text-muted" data-testid="rotulo-nao-medida">
+                      {ROTULO_NAO_MEDIDA}
+                    </p>
+                  )}
                   {/* Imóvel sem ponto (ou sem tempo depois do cálculo): sem dado, sem linha. */}
                   {(() => {
                     // E79: o km (linha reta enquanto não houver rota) fica sempre visível com destino ativo; nunca some.
@@ -908,6 +997,9 @@ export function SearchClient({
 
           {/* Prompt 57, fase 2: nenhum imóvel some por não ter testado a internet — os de internet informada, mas não
               medida, ficam no fim da lista, com o rótulo "não medida". */}
+          {desconhecidos > 0 && (
+            <p className="mt-8 text-sm text-muted" data-testid="velocidade-desconhecida">{textoVelocidadeDesconhecida(desconhecidos)}</p>
+          )}
           {naoMedidos.length > 0 && (
             <section className="mt-8" data-testid="nao-medidos">
               <button
@@ -947,9 +1039,6 @@ export function SearchClient({
             </div>
           )}
 
-          {/* Respiro: a barra fixa não cobre as caixinhas dos últimos cartões. */}
-          {comparar.length > 0 && <div aria-hidden="true" data-testid="comparar-respiro" className="h-32" />}
-          <BarraComparar ids={comparar} aviso={avisoComparar} onLimpar={() => { setComparar([]); setAvisoComparar(null); }} />
 
           {/* O botão flutuante "Fale com a Viva" não aparece aqui (cobria "Mais filtros"). */}
           <p className="mt-6 text-center text-sm text-muted" data-testid="buscar-ajuda">
@@ -960,12 +1049,13 @@ export function SearchClient({
           </p>
         </div>
 
-        {/* Mapa (só lg+): fixo sob a faixa de filtros, ocupa a altura visível e
-            encosta na borda direita da tela. */}
+        {/* Mapa (só lg+): fixo sob a faixa de filtros e ocupa a altura visível. E659: termina DENTRO da margem da página
+            (sem margem negativa): colado na borda da janela, os rótulos dos bairros e a atribuição do mapa (canto
+            inferior direito) eram cortados. */}
         <div
           data-testid="busca-mapa"
           className={cn(
-            "lg:sticky lg:top-18 lg:-mr-6 lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0",
+            "lg:sticky lg:top-18 lg:h-[calc(100vh-4.5rem)] lg:w-[42%] lg:shrink-0",
             mapaNoCelular ? "block h-[70vh] w-full lg:hidden" : verMapa ? "hidden lg:block lg:bg-surface-2" : "hidden",
           )}
         >
@@ -976,9 +1066,10 @@ export function SearchClient({
               onHover={setActiveId}
               selectedId={selecionadoId}
               onSelect={setSelecionadoId}
+              onAberto={setAbertoMapaId}
               focus={geoCenter}
               radiusKm={radiusKm}
-              className="h-full w-full rounded-none border-0 border-l border-line"
+              className="h-full w-full rounded-none border-0 border-l border-line lg:rounded-xl lg:border"
             />
           )}
         </div>

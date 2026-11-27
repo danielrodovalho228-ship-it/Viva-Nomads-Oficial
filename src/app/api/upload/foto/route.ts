@@ -13,7 +13,7 @@ const CACHE_FOTO_ANUNCIO = "31536000";
  * Upload da FOTO do anúncio com validação NO SERVIDOR (QA teste 4, F46–F48):
  * exige dono logado, confere o tipo REAL por magic bytes (só JPEG/PNG/WebP —
  * nunca SVG, executável ou texto renomeado) e grava na pasta do próprio dono
- * depois de RE-CODIFICAR no servidor para WebP (sem EXIF/GPS, orientação aplicada, lado máximo 2560 px): o que
+ * depois de RE-CODIFICAR no servidor para WebP (sem EXIF/GPS, orientação aplicada, lado máximo 1920 px — resolução de tela, E640 (a)): o que
  * fica salvo é sempre image/webp, e um arquivo com cabeçalho de foto mas conteúdo falso é recusado (415).
  * Sobe como o próprio usuário, então a RLS do bucket (insert só na pasta do
  * uid) continua valendo. Devolve só path e URL pública.

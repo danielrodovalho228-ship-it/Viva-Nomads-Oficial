@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { secaoDaRota } from "@/lib/conta/secoes";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { FileiraRolavel } from "@/components/ui/fileira-rolavel";
@@ -10,7 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useSecaoAncora } from "@/components/layout/use-secao-ancora";
 import { SinoAvisos } from "@/components/painel/sino-avisos";
-import { abaAtivaPainel, ancorasDasAbas, subabaAtivaPainel, type AbaPainel, type ItemConta, type PapelAbas } from "@/config/abas-painel";
+import { HREF_LOGO_PAINEL, abaAtivaPainel, ancorasDasAbas, subabaAtivaPainel, type AbaPainel, type ItemConta, type PapelAbas } from "@/config/abas-painel";
 
 /**
  * Topo do painel no computador. PROP-1 (dono, mockup painel-proprietario-desktop) e MENUS-5/MORADOR-NAV (morador e
@@ -41,8 +40,8 @@ export function TopoPainel(p: {
   return (
     <header className="web-only hidden border-b border-line bg-white lg:block print:hidden" data-testid={`topo-${px}`} data-papel={p.papel}>
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-8">
-        {/* Varredura 01/11: o Logo já é um link — antes ficava dentro de outro <Link> (<a> dentro de <a>: erro de hidratação). */}
-        <Logo href="/dashboard" rotulo="VivaNomads — início do painel" className="shrink-0" />
+        {/* Varredura 01/11: o Logo já é um link — antes ficava dentro de outro <Link> (<a> dentro de <a>: erro de hidratação). E443: ele é a saída do painel (página inicial); o "Início" da aba leva ao painel. */}
+        <Logo href={HREF_LOGO_PAINEL} prefetch={false} className="shrink-0" />
         <nav aria-label={AREA[p.papel]} className="flex h-full min-w-0 flex-1 items-stretch gap-6" data-testid={`abas-${px}`}>
           {p.abas.map((a) => {
             const on = ativa?.id === a.id;
@@ -63,9 +62,9 @@ export function TopoPainel(p: {
           })}
         </nav>
         <div className="flex shrink-0 items-center gap-2">
-          {/* E185 (resíduo, QA de 31/10): nas telas da Conta o menu lateral já tem "Notificações" (mesmo destino); o topo
-              — que só existe do lg para cima, a mesma largura do menu lateral — não repete o sino ali. */}
-          {secaoDaRota(p.pathname) === null && <Sino px={px} notificacoes={p.notificacoes} />}
+          {/* E464: o sino fica em TODAS as telas do painel, inclusive as da Conta (o E185 o escondia ali e o cabeçalho
+              mudava de uma tela para outra). Desde o E444 ele abre o painel dos avisos — não repete o link do menu lateral. */}
+          <Sino px={px} notificacoes={p.notificacoes} />
           <MenuConta px={px} nome={p.nome} foto={p.foto} itens={p.itensConta} onAcao={p.onAcao} />
         </div>
       </div>
@@ -90,6 +89,8 @@ export function MenuConta(p: {
   itens: readonly ItemConta[];
   onAcao: (acao: NonNullable<ItemConta["acao"]>) => void;
   compacto?: boolean;
+  /** E788: o texto ao lado do avatar no computador ("Conta"; no topo do admin, "Equipe"). */
+  rotulo?: string;
 }) {
   const [aberto, setAberto] = useState(false);
   const caixa = useRef<HTMLDivElement>(null);
@@ -127,7 +128,7 @@ export function MenuConta(p: {
         <Avatar name={p.nome} size={p.compacto ? 32 : 28} photoUrl={p.foto ?? undefined} />
         {!p.compacto && (
           <>
-            Conta
+            {p.rotulo ?? "Conta"}
             <ChevronDown className="h-4 w-4" aria-hidden />
           </>
         )}

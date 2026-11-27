@@ -12,6 +12,7 @@
 */
 import { CHECKLIST_CONFERENCIA, MOTIVOS_RECUSA, type ChecklistKey, type MotivoRecusa } from "../moderacao-doc.ts";
 import { nomesConferem } from "../moderacao/pre-conferencia.ts";
+import { DOC_MIN_BYTES } from "../upload-limits.ts";
 
 export const TIPOS_DOCUMENTO = [
   { valor: "conta_consumo", rotulo: "Conta de luz, água, gás ou internet fixa (até 90 dias)" },
@@ -25,6 +26,17 @@ export type TipoDocumento = (typeof TIPOS_DOCUMENTO)[number]["valor"];
 /** Lista curta mostrada na etapa 1, com o exemplo do que é aceito. */
 export const DOCUMENTOS_ACEITOS_TEXTO = TIPOS_DOCUMENTO.map((t) => t.rotulo);
 export const FORMATOS_ACEITOS_TEXTO = "Foto (JPG ou PNG) ou PDF, inclusive com várias páginas, até 10 MB.";
+
+/**
+ * E558: as regras do envio, declaradas ANTES do envio, junto do campo. No QA o dono descobriu cada uma por tentativa
+ * (3 envios: duplicidade, tamanho mínimo, conferência manual). O mínimo vem do MESMO piso do servidor (DOC_MIN_BYTES).
+ */
+export const REGRAS_ENVIO_DOCUMENTO: readonly string[] = [
+  "Um arquivo por imóvel: arquivo já usado em outro cadastro é recusado.",
+  `Tamanho mínimo de ${Math.round(DOC_MIN_BYTES / 1024)} KB.`,
+  FORMATOS_ACEITOS_TEXTO,
+  "O documento pode passar por conferência manual em até 48 horas.",
+];
 
 /** Validade das contas de consumo, em dias. */
 export const CONTA_VALIDADE_DIAS = 90;

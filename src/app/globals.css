@@ -78,6 +78,7 @@
   --folga-flutuante: 7rem;
   --folga-flutuante-celular: 6rem;
   --folga-rodape-imovel: 16rem;
+  --faixa-flutuante: 5rem; /* E709: a faixa onde mora o "Fale com a Viva" redondo (48 px a 1,5 rem da borda) */
   --background: #ffffff;
   --foreground: #222222;
   /* Gradiente assinatura azul→verde (só em elementos de marca) */
@@ -338,6 +339,10 @@ input.foco-na-barra:focus-visible {
 .app-only {
   display: none !important;
 }
+/* E678: no modo app o AppHeader (48 px) é preso no topo — a rolagem programática (foco, âncora) para abaixo dele. */
+html[data-app] {
+  scroll-padding-top: 5rem;
+}
 html[data-app] .web-only {
   display: none !important;
 }
@@ -377,26 +382,8 @@ html[data-app] .vn-tabbar-spacer {
     --viva-piso: var(--ajuda-bottom, 5.25rem);
   }
 }
-/* Barra "Comparar" da busca (ordem 7ffea8c7): no celular fica ACIMA das abas (altura + safe-area + 12 px);
-   no computador, 12 px do rodapé. O "Fale com a Viva" sobe acima dela e o fim da página ganha folga. */
-.vn-barra-comparar {
-  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px) + 0.75rem);
-}
-@media (min-width: 768px) {
-  .vn-barra-comparar {
-    bottom: 0.75rem;
-  }
-}
-html[data-app] .vn-barra-comparar {
-  bottom: calc(var(--altura-abas) + env(safe-area-inset-bottom, 0px) + 0.75rem);
-}
-@media (max-width: 767px) {
-  body:has([data-testid="barra-comparar"]) {
-    --ajuda-bottom: 10rem;
-    --viva-piso: 10rem; /* piso também para o botão arrastado (posição inline) */
-    padding-bottom: calc(var(--altura-abas) + 6rem + env(safe-area-inset-bottom, 0px)) !important;
-  }
-}
+/* Barra "Comparar" da busca: desde o E529 (3ª reprova) é uma faixa normal da página, acima da lista — sem posição própria, sem
+   elevar o "Fale com a Viva" nem dar folga no fim da página. */
 /* CADASTRO-MOLDURA: o rodapé do fluxo do assistente (sem barra de abas lá) encosta no fim da tela. E107: a barra de
    fotos do celular saiu; as fotos moram só no Passo 2. */
 .vn-rodape-fluxo {
@@ -504,6 +491,20 @@ body:has([data-testid="barra-fixa-imovel"]) {
   body:has([data-testid="imovel-largura-total"]) .vn-viva-flut[data-posicao="padrao"] {
     right: auto;
     left: 1.5rem;
+  }
+}
+/* C1b: no site público o botão redondo "Fale com a Viva" mora a 1,5 rem da borda direita (48 px de largura): o conteúdo
+   termina antes dele (a faixa já existe como --faixa-flutuante). Em tela larga a margem do container já dá a folga.
+   Frente 3 (t70): o contêiner que se marca com data-sem-faixa-flutuante (a /buscar, que não mostra o botão — E95 — e
+   cuida da própria margem com lg:px-0) fica de fora; senão o mapa sai da margem de 24 px do E659. */
+@media (min-width: 768px) {
+  html:not([data-app]) .vn-main .container-page:not([data-sem-faixa-flutuante]) {
+    padding-right: max(2rem, calc(var(--faixa-flutuante) - max(0px, (100vw - 80rem) / 2)));
+  }
+}
+@media (min-width: 1024px) {
+  html:not([data-app]) .vn-main .container-page:not([data-sem-faixa-flutuante]) {
+    padding-right: max(2.5rem, calc(var(--faixa-flutuante) - max(0px, (100vw - 80rem) / 2)));
   }
 }
 /* CONTA-A C4 — no painel (site), a coluna reserva a faixa da direita onde mora o "Fale com a Viva" redondo (48 px a
@@ -655,7 +656,9 @@ body:has([data-testid="cogumelo"]) {
 }
 
 /* Passada de celular (31/10): link de texto solto (uma linha, ~20 px) ganha área de toque de 44 px de altura sem mudar
-   o visual — só em tela de toque. Não usar em link dentro de parágrafo (as áreas se sobreporiam). */
+   o visual — só em tela de toque. Não usar em link dentro de parágrafo (as áreas se sobreporiam).
+   E1033 (passo 2): a área passa a ter também 44 px de largura no mínimo (um alvo estreito ficava com a largura dele
+   mais 8 px). Para os alvos largos nada muda: a mesma largura, 4 px para cada lado, centrada. */
 @media (pointer: coarse) {
   .alvo-toque {
     position: relative;
@@ -663,10 +666,27 @@ body:has([data-testid="cogumelo"]) {
   .alvo-toque::after {
     content: "";
     position: absolute;
-    left: -4px;
-    right: -4px;
-    top: 50%;
     height: 44px;
-    transform: translateY(-50%);
+    left: 50%;
+    top: 50%;
+    width: max(calc(100% + 8px), 44px);
+    transform: translate(-50%, -50%);
   }
+}
+
+/* E1033 (passo 2): área de toque de 44 × 44 px em QUALQUER perfil (toque ou rato), sem mudar o visual: um
+   pseudo-elemento sem desenho, centrado no controle. É para alvos ISOLADOS: o Switch e, desde o passo 3, links soltos.
+   Não usar onde houver outro alvo a menos de 44 px: as áreas se sobreporiam e o clique cairia no vizinho (ali é caixa
+   real, min-h-11). Cada uso tem a trava de tela que mede a área com o helper nos dois perfis. */
+.area-de-toque-44 {
+  position: relative;
+}
+.area-de-toque-44::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }

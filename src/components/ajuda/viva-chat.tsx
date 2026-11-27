@@ -2,28 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LifeBuoy, Loader2, MessageCircle, Send, UserRound, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/lib/store";
-import { useCaptcha } from "@/components/seguranca/captcha";
-import { MSG_CAPTCHA_PENDENTE, podeEnviar } from "@/lib/seguranca/captcha";
-import { abrirChamado } from "@/lib/data/atendimento-actions";
-import { SAUDACAO_CHAT, transcricaoChat, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
+import { CHAVE_CONVERSA_CHAT, EVENTO_FALAR_COM_PESSOA, HREF_CHAMADO_DO_CHAT, SAUDACAO_CHAT, type MsgChat } from "@/lib/atendimento/viva-chat-texto";
 import { PROMESSA_ATENDIMENTO } from "@/config/atendimento";
 import { HREF_FALE_COM_A_VIVA } from "@/lib/ajuda/rotas";
-import { SUPORTE_EMAIL } from "@/lib/site";
-import { ehCampoDeFormulario, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
+import { ehCampoDeFormulario, flutuanteLevaAPagina, flutuanteVisivel } from "@/lib/atendimento/flutuante-visivel";
 import { ehArraste, gravarPosicao, grudarNaBorda, lerPosicao, limitarBaixo, posicaoDuranteArraste, type Posicao, type Tamanho, type Tela } from "@/lib/atendimento/flutuante-arrastavel";
 import { buttonClasses } from "@/components/ui/button";
 
 /**
  * Chat da Viva (assistente virtual) — botão flutuante "Fale com a Viva" em todas
  * as páginas do SITE (público e painel) e bloco no topo da /ajuda. Visitante e
- * logado. Sem dados de conta: quando não resolve, "Falar com uma pessoa" abre um
- * chamado com a conversa anexada. No app ele some (a Ajuda fica em Perfil).
+ * logado. Sem dados de conta: quando não resolve, "Falar com uma pessoa" leva ao formulário
+ * único da Central (rota HREF_CHAMADO_DO_CHAT), com a conversa anexada. No app ele some (a Ajuda fica em Perfil).
  */
-// Fica fora só onde a própria tela já é a ajuda (/ajuda) ou é um fluxo de formulário
+// Fica fora só onde a própria tela já é o chat (/ajuda/fale-com-a-viva) ou é um fluxo de formulário
 // (login, anúncio, fechamento, segurança — t58) e no admin.
 // "/dashboard/conta/seguranca": cobria "Nova senha"/"Salvar nova senha" e os botões do 2FA a 390 px (t58).
 // "/app/boas-vindas": tela de 100dvh do app; o botão cobria "Quero anunciar" e o respiro do fim da página a fazia rolar (t16).
@@ -31,9 +26,12 @@ import { buttonClasses } from "@/components/ui/button";
 // "Perfil"; nesta tela a Ajuda da Conta já oferece o "Fale com a Viva".
 // "/dashboard/mensagens": a tela já é uma conversa (com a aba Suporte); no computador o botão ficava em cima do
 // "Enviar" da caixa de mensagem e o proprietário não conseguia mandar a resposta (t182).
-// "/buscar" (E95): no celular o botão sentava sobre o título dos cartões; a ajuda da busca fica como link no fim da lista.
-export const ESCONDER = ["/buscar", "/ajuda", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
-const CHAVE = "vivanomads-viva-chat";
+// E931 (fecha o resíduo do E839): a Central de Ajuda tem o botão, na posição padrão; só a própria página do chat fica sem ele.
+// "/buscar" (E95, confirmado pelo Gerente na ORDEM-DUET-030 depois da main vermelha de c950ec8): no computador o botão
+// cobre a área dos filtros ("Mais filtros", t10/F3) e a varredura a 390 px prova cobertura (t274); a ajuda da busca fica
+// como link no fim da lista.
+export const ESCONDER = ["/buscar", "/ajuda/fale-com-a-viva", "/admin", "/auth", "/dashboard/conta/ajuda", "/dashboard/imoveis/novo", "/dashboard/fechamento", "/dashboard/conta/seguranca", "/dashboard/conta/privacidade", "/app/boas-vindas", "/dashboard/mensagens", "/dashboard/conta/perfil"];
+const CHAVE = CHAVE_CONVERSA_CHAT;
 
 function carregar(): MsgChat[] {
   try {
@@ -56,6 +54,13 @@ function guardar(m: MsgChat[]) {
 export function VivaChatFlutuante() {
   const pathname = usePathname() ?? "/";
   const [aberto, setAberto] = useState(false);
+  // E499: o flutuante mora no layout raiz e não desmonta ao trocar de tela; sem isto o chat ficava aberto ao navegar e
+  // voltar ao painel. A troca de rota fecha o painel do chat (a conversa segue guardada na sessão).
+  const [rotaDoChat, setRotaDoChat] = useState(pathname);
+  if (rotaDoChat !== pathname) {
+    setRotaDoChat(pathname);
+    setAberto(false);
+  }
   const [campoEmFoco, setCampoEmFoco] = useState(false);
   const [pos, setPos] = useState<Posicao | null>(null); // null = posição padrão (CSS)
   const [arrastando, setArrastando] = useState<{ esquerda: number; baixo: number } | null>(null);
@@ -65,10 +70,15 @@ export function VivaChatFlutuante() {
   const escondido = ESCONDER.some((p) => pathname === p || pathname.startsWith(p + "/"));
   // Página do imóvel no celular (Q4): só o ícone redondo, para não tampar
   // estrelas e o total do mês. A barra fixa fica embaixo; o nome acessível continua "Fale com a Viva".
-  const compacto = pathname.startsWith("/imoveis/");
+  // C1b: em TODO o site o botão é o redondo (180 × 48 px com texto cobria texto de /termos, /empresas, /parceiros…); o nome
+  // acessível continua "Fale com a Viva" e o menu do topo tem o mesmo link com texto.
+  const compacto = true;
   // CONTA-A C4: no painel o botão é sempre o redondo (48 px) e a coluna reserva a faixa da direita (dashboard-shell),
   // para ele nunca sentar sobre um cartão durante a rolagem.
   const painel = pathname.startsWith("/dashboard");
+  // E539 (v): no painel o botão leva à página Fale com a Viva (sem uma segunda janela do mesmo chat).
+  const levaAPagina = flutuanteLevaAPagina(pathname);
+  const router = useRouter();
 
   const medirTela = (): Tela => ({ largura: window.innerWidth, altura: window.innerHeight });
   const tamanhoBotao = (): Tamanho => {
@@ -174,41 +184,43 @@ export function VivaChatFlutuante() {
         type="button"
         onClick={() => {
           if (gesto.current?.arrastou) return;
+          if (levaAPagina) return router.push(HREF_FALE_COM_A_VIVA);
           setAberto((v) => !v);
         }}
         onPointerDown={aoPressionar}
         onPointerMove={aoMover}
         onPointerUp={aoSoltar}
         onPointerCancel={aoSoltar}
-        aria-expanded={aberto}
+        aria-expanded={levaAPagina ? undefined : aberto}
         aria-label={aberto ? "Fechar o chat" : "Fale com a Viva"}
-        className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "max-lg:h-12 max-lg:w-12 max-lg:rounded-full max-lg:px-0", painel && !aberto && "w-12 rounded-full px-0 sm:px-0", arrastando && "cursor-grabbing")}
+        className={cn(buttonClasses(), "h-12 touch-none select-none shadow-flutuante lg:h-12", compacto && !aberto && "w-12 rounded-full px-0 sm:px-0", painel && !aberto && "w-12 rounded-full px-0 sm:px-0", arrastando && "cursor-grabbing")}
         data-testid="fale-com-a-viva"
         data-compacto={(compacto || painel) && !aberto ? "1" : undefined}
       >
-        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className={painel ? "h-5 w-5" : compacto ? "h-4 w-4 max-lg:h-5 max-lg:w-5" : "h-4 w-4"} />}
-        <span className={painel && !aberto ? "sr-only" : compacto && !aberto ? "max-lg:sr-only" : undefined}>{aberto ? "Fechar" : "Fale com a Viva"}</span>
+        {aberto ? <X className="h-4 w-4" /> : <MessageCircle className={painel ? "h-5 w-5" : compacto ? "h-5 w-5" : "h-4 w-4"} />}
+        <span className={painel && !aberto ? "sr-only" : compacto && !aberto ? "sr-only" : undefined}>{aberto ? "Fechar" : "Fale com a Viva"}</span>
       </button>
     </div>
   );
 }
 
-/** Bloco da página Fale com a Viva (mesma conversa do botão). E84: sem repetir a promessa — a página já a diz uma vez. */
+/**
+ * Bloco da página Fale com a Viva (mesma conversa do botão). E84: sem repetir a promessa — a página já a diz uma vez.
+ * E539 (iii): aqui "Falar com uma pessoa" entrega a conversa ao "Abrir chamado" da Central (um formulário só na página).
+ */
 export function VivaChatBloco() {
   return (
     <section className="overflow-hidden rounded-xl border border-sage-200 bg-white" aria-label="Chat com a Viva" data-testid="viva-chat-bloco">
-      <PainelChat altura="h-[420px]" semPromessa />
+      <PainelChat altura="h-[420px]" semPromessa entregarPessoa />
     </section>
   );
 }
 
-function PainelChat({ onFechar, altura, semPromessa }: { onFechar?: () => void; altura: string; semPromessa?: boolean }) {
-  const user = useAuthStore((s) => s.user);
+function PainelChat({ onFechar, altura, semPromessa, entregarPessoa }: { onFechar?: () => void; altura: string; semPromessa?: boolean; entregarPessoa?: boolean }) {
   const [msgs, setMsgs] = useState<MsgChat[]>([]);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [sugerePessoa, setSugerePessoa] = useState(false);
-  const [pessoa, setPessoa] = useState(false);
   const fim = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -217,7 +229,7 @@ function PainelChat({ onFechar, altura, semPromessa }: { onFechar?: () => void; 
   }, []);
   useEffect(() => {
     fim.current?.scrollIntoView({ block: "end" });
-  }, [msgs, enviando, pessoa]);
+  }, [msgs, enviando]);
 
   async function enviar() {
     const t = texto.trim();
@@ -272,12 +284,10 @@ function PainelChat({ onFechar, altura, semPromessa }: { onFechar?: () => void; 
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> A Viva está escrevendo…
           </p>
         )}
-        {pessoa && <FormPessoa logado={!!user} msgs={msgs} onCancelar={() => setPessoa(false)} />}
         <div ref={fim} />
       </div>
 
-      {!pessoa && (
-        <div className="space-y-2 border-t border-sage-200 bg-white p-3">
+      <div className="space-y-2 border-t border-sage-200 bg-white p-3">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -308,20 +318,30 @@ function PainelChat({ onFechar, altura, semPromessa }: { onFechar?: () => void; 
             </button>
           </form>
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            {/* E1014: antes de o JavaScript chegar, o toque não pode se perder — o formulário leva à rota única do chat
+                (?doChat=1), que abre o "Abrir chamado". Com a página pronta, o clique segue pelo evento, sem recarregar. */}
+            <form action="/ajuda/fale-com-a-viva" method="get" className="contents">
+            <input type="hidden" name="doChat" value="1" />
             <button
-              type="button"
-              onClick={() => setPessoa(true)}
+              type="submit"
+              onClick={(e) => {
+                e.preventDefault();
+                if (entregarPessoa) window.dispatchEvent(new CustomEvent(EVENTO_FALAR_COM_PESSOA, { detail: { conversa: msgs } }));
+                // E449: um formulário só. Na página Fale com a Viva, o da Central abre ali mesmo; fora dela, a rota única
+                // leva à página com a conversa (guardada no sessionStorage) anexada.
+                else window.location.assign(HREF_CHAMADO_DO_CHAT);
+              }}
               className={cn("inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-semibold", sugerePessoa ? "border-forest bg-forest/5 text-forest" : "border-line text-muted hover:text-ink")}
             >
               <UserRound className="h-3.5 w-3.5" /> Falar com uma pessoa
             </button>
+            </form>
             <Link href="/ajuda" className="inline-flex min-h-11 items-center gap-1 text-muted hover:text-ink">
               <LifeBuoy className="h-3.5 w-3.5" /> Central de Ajuda
             </Link>
           </div>
           <p className="text-[11px] text-muted">Não envie CPF, documentos ou senhas por aqui.</p>
         </div>
-      )}
     </div>
   );
 }
@@ -337,83 +357,3 @@ function Balao({ autor, children }: { autor: "user" | "assistant"; children: Rea
   );
 }
 
-function FormPessoa({ logado, msgs, onCancelar }: { logado: boolean; msgs: MsgChat[]; onCancelar: () => void }) {
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [pedido, setPedido] = useState("");
-  const [enviando, setEnviando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [ok, setOk] = useState<{ numero: string } | null>(null);
-  const captcha = useCaptcha();
-
-  async function abrir() {
-    setErro(null);
-    if (!logado && !podeEnviar(captcha.ligado, captcha.token)) return setErro(MSG_CAPTCHA_PENDENTE);
-    // Sem conversa ainda: vai só o pedido; com conversa, ela vai anexada.
-    const mensagem = msgs.length ? transcricaoChat(msgs, pedido) : pedido.trim();
-    if (!msgs.length && pedido.trim().length < 5) return setErro("Conte em poucas palavras o que você precisa.");
-    setEnviando(true);
-    const r = await abrirChamado({
-      categoria: "duvida",
-      mensagem,
-      assunto: "Conversa com a Viva (chat do site)",
-      canal: "site",
-      pedePessoa: true,
-      ...(logado ? {} : { visitanteNome: nome, visitanteEmail: email, visitanteTelefone: telefone, captchaToken: captcha.token ?? undefined }),
-    }).catch(() => ({ ok: false as const, error: "Sem conexão. Tente de novo." }));
-    if (!logado) captcha.reset(); // o token vale uma vez só
-    setEnviando(false);
-    if (!r.ok) return setErro(r.error ?? "Não foi possível abrir o chamado agora.");
-    setOk({ numero: r.numero });
-    try {
-      sessionStorage.removeItem(CHAVE);
-    } catch {
-      /* ignore */
-    }
-  }
-
-  if (ok) {
-    return (
-      <div className="rounded-xl border border-sage-200 bg-white p-3 text-ink" data-testid="chamado-aberto-chat">
-        <p className="font-semibold">Chamado {ok.numero} aberto.</p>
-        <p className="mt-1 text-xs text-muted">
-          A conversa foi anexada. {logado ? "Você acompanha em Fale com a Viva → Meus chamados." : "Enviamos a confirmação para o seu e-mail; a resposta chega por lá."} Uma pessoa responde em até 24 h. Dúvidas: {SUPORTE_EMAIL}.
-        </p>
-        {logado && (
-          // <a> de propósito: na própria página do atendimento, um Link só trocaria a URL e a
-          // Central (que lê o ?chamado= ao abrir) não mostraria o chamado.
-          <a href={`${HREF_FALE_COM_A_VIVA}?chamado=${ok.numero}`} className="mt-2 inline-block text-xs font-semibold text-forest underline">
-            Abrir o chamado
-          </a>
-        )}
-      </div>
-    );
-  }
-
-  const campo = "w-full rounded-lg border border-line px-3 py-2 text-sm outline-none focus:border-sage";
-  return (
-    <div className="space-y-2 rounded-xl border border-sage-200 bg-white p-3" data-testid="form-pessoa">
-      <p className="text-sm font-semibold text-ink">Falar com uma pessoa</p>
-      <p className="text-xs text-muted">Abrimos um chamado com esta conversa. Uma pessoa responde em até 24 h.</p>
-      {!logado && (
-        <>
-          <input required minLength={2} name="nome" autoComplete="name" className={campo} placeholder="Seu nome" value={nome} maxLength={60} onChange={(e) => setNome(e.target.value)} aria-label="Seu nome" />
-          <input className={campo} type="email" name="email" autoComplete="email" placeholder="Seu e-mail (a resposta chega por lá)" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Seu e-mail" />
-          <input className={campo} type="tel" inputMode="tel" name="telefone" autoComplete="tel" maxLength={20} placeholder="Telefone com DDD (opcional)" value={telefone} onChange={(e) => setTelefone(e.target.value)} aria-label="Telefone com DDD (opcional)" />
-          {captcha.widget}
-        </>
-      )}
-      <textarea className={cn(campo, "min-h-[60px]")} placeholder={msgs.length ? "Quer acrescentar algo? (opcional)" : "O que você precisa?"} value={pedido} maxLength={600} onChange={(e) => setPedido(e.target.value)} aria-label="Pedido para a equipe" />
-      {erro && <p className="text-xs text-red-600">{erro}</p>}
-      <div className="flex gap-2">
-        <button type="button" onClick={abrir} disabled={enviando} className={buttonClasses({ size: "sm" })}>
-          {enviando ? "Abrindo…" : "Abrir chamado"}
-        </button>
-        <button type="button" onClick={onCancelar} className="rounded-lg px-3 py-2 text-sm text-muted hover:text-ink">
-          Voltar ao chat
-        </button>
-      </div>
-    </div>
-  );
-}

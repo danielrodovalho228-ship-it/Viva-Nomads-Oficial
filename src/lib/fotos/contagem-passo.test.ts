@@ -23,8 +23,8 @@ test("o caso do QA: lote de 8 enviado, galeria ainda vazia (conferência em anda
 
 test("lote parcial: o 'faltam' usa a mesma conta do número (6 enviadas de 8 → faltam 2)", () => {
   const aviso = avisoDaContagem(estadoPassoFotos(fotos(0)), 6, 8);
-  assert.deepEqual(aviso, { trava: "faltam", mensagem: "Faltam 2 fotos para continuar (mínimo de 8)." });
-  assert.equal(avisoDaContagem(estadoPassoFotos(fotos(7)), 7, 8).mensagem, "Falta 1 foto para continuar (mínimo de 8).");
+  assert.deepEqual(aviso, { trava: "faltam", mensagem: "Faltam 2 fotos para publicar (mínimo de 8)." });
+  assert.equal(avisoDaContagem(estadoPassoFotos(fotos(7)), 7, 8).mensagem, "Falta 1 foto para publicar (mínimo de 8).");
 });
 
 test("sem envio em andamento: igual à trava da página (os e2e t468/t523 seguem valendo)", () => {

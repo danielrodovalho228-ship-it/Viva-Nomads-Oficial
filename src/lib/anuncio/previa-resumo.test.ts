@@ -7,7 +7,7 @@ import { resumoDisponibilidadePrevia } from "./assistente-telas.ts";
 
 test("resumo da disponibilidade (mesma regra de data da página do imóvel)", () => {
   assert.equal(resumoDisponibilidadePrevia("2026-11-12", "30", "2026-11-01"), "Resumo: Disponível a partir de 12/11 · Mínimo 30 dias");
-  assert.equal(resumoDisponibilidadePrevia("", 60, "2026-11-01"), "Resumo: Disponível agora · Mínimo 60 dias");
+  assert.equal(resumoDisponibilidadePrevia("", 60, "2026-11-01"), "Resumo: Data de início não informada · Mínimo 60 dias");
   assert.equal(resumoDisponibilidadePrevia("2026-10-01", "90", "2026-11-01"), "Resumo: Disponível agora · Mínimo 90 dias");
   assert.equal(resumoDisponibilidadePrevia("2026-11-12", "", "2026-11-01"), "Resumo: Disponível a partir de 12/11");
 });

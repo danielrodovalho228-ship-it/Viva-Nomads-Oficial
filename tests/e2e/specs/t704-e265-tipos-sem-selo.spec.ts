@@ -32,6 +32,8 @@ test.describe("T704 — E265: Passo 1 sem selo sobre as fotos", () => {
       await p.goto("/dashboard/imoveis/novo?etapa=tipo", { waitUntil: "domcontentloaded" });
       const linha = p.getByRole("radiogroup", { name: "Tipo do imóvel" });
       await expect(linha).toBeVisible({ timeout: 30_000 });
+      // E607: o Passo 1 mostra 3 tipos e "Ver mais tipos" abre a grade dos nove.
+      if ((await p.getByTestId("tipos-ver-mais").getAttribute("aria-expanded")) !== "true") await p.getByTestId("tipos-ver-mais").click();
       const fotos = linha.locator("img");
       await expect(fotos).toHaveCount(9);
       for (let i = 0; i < 9; i++) {

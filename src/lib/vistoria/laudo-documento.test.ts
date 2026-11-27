@@ -54,7 +54,7 @@ test("próximo passo por resultado (o mesmo texto da notificação)", () => {
   assert.match(proximoPasso("aprovado", null), /12 meses/);
   assert.match(proximoPasso("com_ressalvas", "2026-11-04T13:00:00Z"), /04\/11\/2026/);
   assert.match(proximoPasso("com_ressalvas", "2026-11-04T13:00:00Z"), /reverificação dos itens da ressalva, pelo mesmo avaliador, está incluída no valor já pago/);
-  assert.match(proximoPasso("reprovado", null), /nova avaliação: avaliação completa, novo pedido, outro avaliador pelo rodízio, pelo valor da tabela/);
+  assert.match(proximoPasso("reprovado", null), /nova avaliação: avaliação completa, novo pedido, avaliador à sua escolha \(outro que não o da avaliação anterior\), pelo valor que o avaliador propuser/);
   // Adendo 62-B1: o laudo nunca fala em desconto (a condição de retorno, se existir, aparece só no pedido).
   for (const r of ["aprovado", "com_ressalvas", "reprovado"] as const) assert.doesNotMatch(proximoPasso(r, null), /desconto|metade|90 dias/);
 });

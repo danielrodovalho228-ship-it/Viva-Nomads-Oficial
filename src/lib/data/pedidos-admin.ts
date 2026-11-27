@@ -16,23 +16,6 @@ import { recusaObservador } from "@/lib/qa/observador";
 
 type ActionResult = { ok: boolean; demo?: boolean; error?: string };
 
-/**
- * Admin: lista TODOS os pedidos (a RLS `is_admin()` libera a leitura completa).
- * Para não-admin, a RLS devolve só os próprios — a página é gated pelo nav admin.
- */
-export async function adminListPedidos(): Promise<Record<string, unknown>[]> {
-  const supabase = await createClient();
-  if (!supabase) return [];
-  const { data, error } = await supabase
-    .from("pedidos_moradia")
-    .select("*")
-    .order("criado_em", { ascending: false })
-    .limit(500);
-  // Achado 111: a falha LANÇA (admin/error.tsx) — nunca "nenhum pedido de moradia" na lista da equipe.
-  if (error) throw new Error("Não foi possível ler os pedidos de moradia.");
-  return data ?? [];
-}
-
 /** Números dos pedidos (últimos 30 dias) — só para admin. */
 export async function getMetricasPedidosAdmin(): Promise<MetricasPedidos | null> {
   const supabase = await createClient();

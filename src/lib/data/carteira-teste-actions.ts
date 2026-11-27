@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { DIAS_POR_MES } from "@/lib/contrato-blocos";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { exigirAdminAal2 } from "@/lib/data/admin-guard";
@@ -95,7 +96,7 @@ export async function semearCarteiraDeTeste(input: { ownerId: string; tenantId: 
         tenant_id: input.tenantId,
         owner_plan: "free",
         faixa: "temporada",
-        prazo_total_dias: item.meses * 30,
+        prazo_total_dias: item.meses * DIAS_POR_MES,
         aluguel_mensal: item.valorMensal,
         tamanho_bloco_meses: item.meses,
         comissao_percent: TAXA_COMISSAO_PADRAO,
