@@ -59,6 +59,7 @@ export const TELAS_PAINEL = [
 export const TELAS_ADMIN = [
   "/admin",
   "/admin/agentes",
+  "/admin/agentes/aprovar",
   "/admin/atendimento",
   "/admin/avaliacoes",
   "/admin/documentos",

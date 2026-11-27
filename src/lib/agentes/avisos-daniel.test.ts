@@ -161,18 +161,17 @@ test("primeiro aviso (apresentação) leva o link e nenhum link assinado", async
   assert.doesNotMatch(enviadas[0].html, /aprovar/);
 });
 
-test("link do e-mail não dá 404: até a tela /aprovar existir, aponta para a Central", () => {
+test("link do e-mail abre a tela /admin/agentes/aprovar (12a8086d: ela existe e consome o link uma vez só)", () => {
   const agora = new Date("2026-10-08T15:00:00Z");
   const url = new URL(linkDecisao("11111111-1111-4111-8111-111111111111", agora, "https://vivanomads.com.br", SEGREDO));
-  assert.equal(url.pathname, "/admin/agentes");
-  assert.equal(url.search, "");
+  assert.equal(url.pathname, "/admin/agentes/aprovar");
+  assert.deepEqual([...url.searchParams.keys()], ["r", "e", "s"]);
 });
 
-test("e-mail de aviso de ronda sem link próprio leva o link da Central", async () => {
+test("e-mail de aviso de ronda sem link próprio leva o link de uso único da tela de aprovação (12a8086d)", async () => {
   const { d, enviadas } = deps([aviso(1)]);
   await processarAvisos(d);
-  assert.match(enviadas[0].html, /href="https:\/\/vivanomads\.com\.br\/admin\/agentes"/);
-  assert.doesNotMatch(enviadas[0].html, /aprovar/);
+  assert.match(enviadas[0].html, /href="https:\/\/vivanomads\.com\.br\/admin\/agentes\/aprovar\?r=[0-9a-f-]{36}&amp;e=\d+&amp;s=[0-9a-f]{32}"/);
 });
 
 test("Daniel só recebe e-mail do Moacir: aviso de ronda de outro agente não sai", async () => {

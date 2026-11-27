@@ -42,6 +42,7 @@ Todas as rotas de `src/app/(dashboard)/admin`. Em cada uma: 390 px e 1280 px, se
 |---|---|---|
 | `/admin` | Abrir a visão geral | Indicadores só da semente; contas `is_teste` fora das métricas e do MRR |
 | `/admin/agentes` | Ver agentes e ordens | Lista carrega; nenhuma ação gasta crédito |
+| `/admin/agentes/aprovar` | Abrir o link de um aviso duas vezes | 1ª vez abre a aba Aprovações; 2ª vez "Este link já foi usado"; nada é aprovado pelo link |
 | `/admin/ajuda-publicacao` | Abrir a ajuda de publicação | Conteúdo carrega sem erro |
 | `/admin/atendimento` | Ver a fila de chamados | Chamado com SLA vencido aparece destacado |
 | `/admin/atendimento/[id]` | Responder um chamado e subir a prioridade | Resposta registrada; e-mail cai na caixa de teste |
