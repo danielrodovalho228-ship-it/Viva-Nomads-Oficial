@@ -2,7 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
-  T1804 (número provisório) — E1242 (ORDENS-DUET 1213, 1220 e 1224): o aviso "Assinar o contrato" já resolvido sai do
+  T1804 — E1242 (ORDENS-DUET 1213, 1220 e 1224): o aviso "Assinar o contrato" já resolvido sai do
   sino, e a rede do sino grava o que conferiu — só para avisos COM referência.
    1. contrato assinado pelos dois: o aviso crítico já resolvido (a assinatura resolveu) e um esquecido por resolver,
       com a referência do contrato, saem do sino e da contagem; o esquecido fica gravado como resolvido no banco;
