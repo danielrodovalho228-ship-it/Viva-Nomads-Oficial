@@ -46,6 +46,9 @@ type Estado = {
   /** E1246: quem decide é a conta observadora da QA (profiles.qa_admin), e que perfis são contas de teste. */
   observador: boolean;
   teste: Set<string>;
+  /** E1246 (O3/O3b): uma das partes do contrato não se lê (nula). */
+  semMorador: boolean;
+  semDono: boolean;
   /** O contexto do chamado (o pedido nasce com o contrato do registro). */
   contexto: { tipo: string | null; id: string | null };
   updates: { tabela: string; valores: Record<string, unknown>; filtros: Record<string, unknown> }[];
@@ -70,7 +73,7 @@ function consulta(tabela: string, comoSessao: boolean) {
   b.limit = (n: number) => ((limite = n), b);
   b.eq = (k: string, v: unknown) => ((filtros[k] = v), b);
   b.is = (k: string, v: unknown) => ((filtros[`is:${k}`] = v), b);
-  const linhaPg = () => ({ ...E.pg, contratos: { id: CONTRATO, tenant_id: MORADOR, property_id: "p1", properties: { owner_id: DONO, title: "Casa no Centro" } } });
+  const linhaPg = () => ({ ...E.pg, contratos: { id: CONTRATO, tenant_id: E.semMorador ? null : MORADOR, property_id: "p1", properties: { owner_id: E.semDono ? null : DONO, title: "Casa no Centro" } } });
   const ler = () => {
     // E1246: o perfil (a conta observadora da QA e as contas de teste), como o observador.ts lê.
     if (tabela === "profiles") {
@@ -140,6 +143,8 @@ function cenario(o: { tipo?: "aluguel" | "caucao"; confirmado?: boolean; anulado
     notasExtra: [],
     observador: false,
     teste: new Set<string>(),
+    semMorador: false,
+    semDono: false,
     contexto: o.contexto ?? { tipo: "contrato", id: CONTRATO },
     updates: [],
     inserts: [],
@@ -428,8 +433,32 @@ test("28. (E1246) quem é da equipe e não é a observadora decide como hoje, co
 
 test("29. (E1246) a tela: para a observadora, o cartão \"Anular este registro\" some quando o contrato não é todo de teste", () => {
   const pagina = readFileSync(new URL("../../app/(dashboard)/admin/atendimento/[id]/page.tsx", import.meta.url), "utf8");
-  assert.match(pagina, /soLeituraNaTela\(\[\{ id: "anular", alvo: \{ perfis: \[/);
+  // ORDEM-DUET-1226 (T1/T2): a chamada inteira — as duas partes E a regra do semPerfil.
+  assert.match(pagina, /soLeituraNaTela\(\[\{ id: "anular", alvo: \{ perfis: \[partes\.morador, partes\.dono\], semPerfil: partes\.morador && partes\.dono \? 0 : 1 \} \}\]\)\)\.length > 0/);
   assert.match(pagina, /anularSoLeitura=\{anularSoLeitura\}/);
   const cliente = readFileSync(new URL("../../app/(dashboard)/admin/atendimento/[id]/chamado-client.tsx", import.meta.url), "utf8");
   assert.match(cliente, /\{pedidoDeAnulacao && !anularSoLeitura && <AnularRegistroCentral chamadoId=\{c\.id\} \/>\}/);
+});
+
+// ── ORDEM-DUET-1226 (O3 e O3b): uma parte por ler conta como recusa para a observadora ─────────────────────────────
+test("30. (O3) a observadora com o MORADOR por ler (nulo) e o dono de teste: recusa, nada se anula", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.observador = true;
+  E.teste = new Set([DONO]);
+  E.semMorador = true;
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.match(erro(r) ?? "", MSG_OBSERVADOR_RE);
+  naoAnulou();
+});
+
+test("31. (O3b) a observadora com o DONO por ler (nulo) e o morador de teste: recusa, nada se anula", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.observador = true;
+  E.teste = new Set([MORADOR]);
+  E.semDono = true;
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.match(erro(r) ?? "", MSG_OBSERVADOR_RE);
+  naoAnulou();
 });
