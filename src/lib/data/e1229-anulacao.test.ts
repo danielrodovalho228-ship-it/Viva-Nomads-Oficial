@@ -126,7 +126,8 @@ test("3. o aviso ao morador: 'O proprietário anulou o registro {REC} de {R$}: {
   await anularRegistro({ pagamentoId: PG, motivo: MOTIVO });
   assert.equal(g.__e1229Avisos.length, 1);
   assert.equal(g.__e1229Avisos[0].userId, MORADOR);
-  assert.equal(g.__e1229Avisos[0].tituloAviso, `O proprietário anulou o registro REC-2026-000123 de R$ 500: ${MOTIVO}`);
+  // O R$ sai do formatBRLExato da casa (o espaço dele é o não separável do Intl).
+  assert.equal(String(g.__e1229Avisos[0].tituloAviso).replace(/\u00a0/g, " "), `O proprietário anulou o registro REC-2026-000123 de R$ 500: ${MOTIVO}`);
 });
 
 test("4. o motivo é obrigatório (5 letras ou mais): sem ele, nada muda", async () => {
