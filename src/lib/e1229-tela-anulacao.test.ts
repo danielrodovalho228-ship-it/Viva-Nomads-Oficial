@@ -31,7 +31,8 @@ test("o dono: os registros por confirmar têm 'Anular registro'; os confirmados 
   assert.match(tela, /<AnularRegistro pagamentoId=\{p\.id\} confirmado=\{false\}/);
   assert.match(tela, /<ListaDocumentos documentos=\{extra\.documentos\} recibos=\{extra\.recibos\} anular \/>/);
   const lista = ler("src/components/documentos/documentos-contrato.tsx");
-  assert.match(lista, /anular && !r\.anulado && <AnularRegistro pagamentoId=\{r\.pagamentoId\} confirmado \/>/);
+  // E1243 (ORDENS-DUET 1213 e 1216, asserção alterada): com um pedido aberto à Central, o botão dá lugar à linha do pedido.
+  assert.match(lista, /anular && !r\.anulado && !r\.pedidoAnulacao && <AnularRegistro pagamentoId=\{r\.pagamentoId\} confirmado \/>/);
 });
 
 test("o morador não vê a anulação", () => {
