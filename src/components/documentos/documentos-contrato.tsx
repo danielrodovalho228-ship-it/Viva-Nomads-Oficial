@@ -57,7 +57,7 @@ export function ListaDocumentos({ documentos, recibos = [], anular = false }: { 
                   Anulação pedida à Central: chamado {r.pedidoAnulacao}, em análise.
                 </span>
               )}
-              {anular && !r.anulado && !r.pedidoAnulacao && <AnularRegistro pagamentoId={r.pagamentoId} confirmado />}
+              {anular && !r.anulado && <AnularRegistro pagamentoId={r.pagamentoId} confirmado />}
               {r.documentoId ? (
                 <a href={`/api/documentos/${r.documentoId}`} className="inline-flex items-center gap-1 text-xs font-medium text-forest underline" data-testid="baixar-recibo">
                   <Download className="h-3.5 w-3.5" /> Baixar recibo (PDF)
