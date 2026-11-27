@@ -11,7 +11,7 @@ import { ROTULO_ESTADO_CONFERENCIA, textoPrazoConferencia } from "@/lib/conferen
 import { linhaPagamentoCentral, linhasAditivos } from "@/lib/contrato-provas";
 import { refContratoVN } from "@/lib/fiscal/fila-falhas";
 import { fmtReais } from "@/lib/admin/visao-geral";
-import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
+import { dataHoraBRT } from "@/lib/datas-brasilia";
 import { TEXTO_SEM_HASH } from "@/lib/admin/assinaturas-admin";
 
 export const metadata = { title: "Contrato — Admin", robots: { index: false, follow: false } };
@@ -20,7 +20,6 @@ export const dynamic = "force-dynamic";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PARTE = { proprietario: "Proprietário", inquilino: "Inquilino" } as const;
 const TIPO = { entrada: "Conferência de entrada", saida: "Conferência de saída" } as const;
-const FORMA: Record<string, string> = { pix: "Pix", boleto: "boleto", transferencia: "transferência", dinheiro: "dinheiro", outro: "outra forma" };
 
 /**
  * Admin › contrato, SÓ LEITURA (Prompt 35B, F5). A guarda é no servidor: ehAdmin (com AAL2) antes de qualquer
@@ -105,7 +104,8 @@ export default async function AdminContratoPage({ params }: { params: Promise<{ 
             <ul className="space-y-2 text-sm text-ink">
               {c.pagamentos.map((p, i) => (
                 <li key={i} className={`break-words ${p.anuladoEm ? "text-muted" : ""}`} data-testid={p.anuladoEm ? "admin-pagamento-anulado" : "admin-pagamento"}>
-                  {linhaPagamentoCentral(p).rotulo} de {fmtReais(linhaPagamentoCentral(p).total)} ({FORMA[p.forma] ?? p.forma}, em {dataBRT(`${p.dia}T12:00:00Z`)}) —{" "}
+                  {/* E1241 (ORDENS-DUET 1233 e 1237): a gramática das linhas de documentos — número · bloco · TOTAL · período. */}
+                  {linhaPagamentoCentral(p)} —{" "}
                   {p.anuladoEm ? "" : p.confirmadoEm ? `confirmado pelo inquilino em ${dataHoraBRT(p.confirmadoEm, { semEtiqueta: true })}` : "aguardando confirmação do inquilino"}
                   {p.anuladoEm && `registro anulado em ${dataHoraBRT(p.anuladoEm, { semEtiqueta: true })}${p.anuladoMotivo ? ` (${p.anuladoMotivo})` : ""}`}
                 </li>

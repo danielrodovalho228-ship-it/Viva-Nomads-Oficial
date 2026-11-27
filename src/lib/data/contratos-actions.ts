@@ -3,7 +3,7 @@
 import { after } from "next/server";
 // E1044: as listas de pagamentos do contrato com ordem fixa (como o admin).
 import { ordenarPagamentos } from "@/lib/pagamentos/ordem-pagamentos";
-import { anuladosAntesDaConfirmacao, type AnuladoAntesDaConfirmacao } from "@/lib/anulados-antes-da-confirmacao";
+import { anuladosAntesDaConfirmacao, linhaDoAnulado, type AnuladoAntesDaConfirmacao } from "@/lib/anulados-antes-da-confirmacao";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { createClient } from "@/lib/supabase/server";
 import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
@@ -355,7 +355,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
       encerradoEm: (c.encerrado_em as string | null) ?? null,
       minhaAvaliacao: minhasAvaliacoes.get(String(c.id)) ?? null,
       pagamentos,
-      anuladosPendentes: anuladosAntesDaConfirmacao(ordenarPagamentos((c.pagamentos_bloco as Record<string, unknown>[]) ?? []), (pg) => toPagamento(pg, Number(c.aluguel_mensal), Number(c.prazo_total_dias)).rotulo),
+      anuladosPendentes: anuladosAntesDaConfirmacao(ordenarPagamentos((c.pagamentos_bloco as Record<string, unknown>[]) ?? []), linhaDoAnulado),
       caucao: caucaoDaLinha(
         c,
         ((c.contrato_blocos as Record<string, unknown>[]) ?? []).map((b) => ({ caucao: Number(b.caucao) || 0, caucaoStatus: String(b.caucao_status ?? "pendente") })),
@@ -463,7 +463,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
       criadoEm: String(c.created_at),
       blocos,
       pagamentos,
-      anuladosPendentes: anuladosAntesDaConfirmacao(ordenarPagamentos((c.pagamentos_bloco as Record<string, unknown>[]) ?? []), (pg) => toPagamento(pg, Number(c.aluguel_mensal), Number(c.prazo_total_dias)).rotulo),
+      anuladosPendentes: anuladosAntesDaConfirmacao(ordenarPagamentos((c.pagamentos_bloco as Record<string, unknown>[]) ?? []), linhaDoAnulado),
       caucao: caucaoDaLinha(c, blocos, pagamentos),
       podeAvaliar: podeAvaliarLocacao(String(c.status ?? "ativo"), (c.encerrado_em as string | null) ?? null),
       fimParaAvaliacao: (c.encerrado_em as string | null) ?? blocos[blocos.length - 1]?.fim ?? null,

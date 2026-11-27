@@ -52,3 +52,14 @@ test("5. o pacote lê o bloco de cada registro; a página da Central usa a linha
   assert.match(pagina, /\{linhaPagamentoCentral\(p\)\} —/);
   assert.doesNotMatch(pagina, /fmtReais\(p\.valor\)|linhaPagamentoCentral\(p\)\.rotulo/);
 });
+
+test("6. o pacote monta o bloco de cada registro a partir da leitura (objeto ou lista, como o PostgREST devolve)", () => {
+  const linhas = (pagamentos: unknown[]) =>
+    ({ contratoId: "11111111-2222-4333-8444-555555555555", imovel: "Studio", situacao: "Em vigência", registradoEm: "2026-11-20T18:00:00Z", resumo: ["MINUTA"], assinaturas: [], pagamentos, conferencias: [], itens: [], respostas: [], laudos: [] }) as unknown as provas.LinhasProvas;
+  const linhaPg = { id: "p1", bloco_id: "b1", tipo: "aluguel", parte: 2, valor: 0, forma: "pix", data_pagamento: "2026-12-20", confirmado_pelo_inquilino: true, confirmado_em: "2026-12-21T12:00:00Z", anulado_em: null, anulado_motivo: null, created_at: "2026-12-20T10:00:00Z", encargos: [{ rotulo: "Contas do período", valor: 800 }] };
+  for (const cb of [{ numero_bloco: 1, inicio: "2026-12-20", fim: "2027-01-19" }, [{ numero_bloco: 1, inicio: "2026-12-20", fim: "2027-01-19" }]]) {
+    const [p] = provas.montarDadosProvas(linhas([{ ...linhaPg, contrato_blocos: cb }])).pagamentos as P[];
+    assert.deepEqual(p.bloco, { numero: 1, inicio: "2026-12-20", fim: "2027-01-19" });
+    assert.equal(linha(p), "Recibo em preparação · Bloco 1, registro complementar · R$ 800,00 · 20/12 a 19/01");
+  }
+});
