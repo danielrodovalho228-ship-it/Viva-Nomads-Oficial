@@ -62,7 +62,7 @@ const motivoValido = (m: string) => {
 async function lerPagamento(db: Cliente | Admin, id: string): Promise<Pagamento | null> {
   const { data, error } = await db
     .from("pagamentos_bloco")
-    .select("id, contrato_id, tipo, valor, encargos, confirmado_pelo_inquilino, anulado_em, contratos(id, tenant_id, properties(owner_id, title))")
+    .select("id, contrato_id, tipo, valor, confirmado_pelo_inquilino, anulado_em, contratos(id, tenant_id, properties(owner_id, title))")
     .eq("id", id)
     .maybeSingle();
   if (error || !data) return null;
