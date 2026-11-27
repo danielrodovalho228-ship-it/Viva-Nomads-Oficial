@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { TEMPLATES, type NotificationEvent } from "./eventos-email";
 import { chaveDoAvisoPendente, duplicatasDoPendente, prioridadeDoAviso, textoDoAviso, tituloAvisoAssinar, tituloComImovel, tituloDoAviso, urlDoAviso, type PapelAviso, type PrioridadeAviso } from "./avisos";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
+import { dataDeSaida } from "@/lib/contrato-periodo";
 import { guardContactInfo } from "@/lib/messages/contact-guard";
 
 /*
@@ -79,13 +80,22 @@ export async function gravarAviso(p: {
 
 type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 
-/** E1228: a estadia do contrato — o início do 1.º bloco e o fim do último. Falha de leitura: sem datas (o VN-CT no lugar). */
+/**
+ * E1228: a estadia do contrato — o início do 1.º bloco e a saída. Falha de leitura: sem datas (o VN-CT no lugar).
+ * E1239 (ORDEM-DUET-1200): a SAÍDA é a regra da casa (E599/E1089) — entrada + prazo_total_dias (dataDeSaida), a data
+ * que a página do contrato mostra; nunca o fim do último bloco, que é a última NOITE (um dia antes). Sem o prazo lido,
+ * nenhuma saída (ORDEM-DUET-1203): o título degrada para o VN-CT — uma data errada num aviso crítico é pior que nenhuma.
+ */
 async function estadiaDoContrato(admin: Admin, contratoId: string): Promise<{ entrada: string | null; saida: string | null }> {
   try {
     const { data, error } = await admin.from("contrato_blocos").select("numero_bloco, inicio, fim").eq("contrato_id", contratoId);
     const blocos = ((data ?? []) as { numero_bloco: number; inicio: string | null; fim: string | null }[]).slice().sort((a, b) => Number(a.numero_bloco) - Number(b.numero_bloco));
     if (error || !blocos.length) return { entrada: null, saida: null };
-    return { entrada: blocos[0].inicio ?? null, saida: blocos[blocos.length - 1].fim ?? null };
+    const entrada = blocos[0].inicio ?? null;
+    const { data: c } = await admin.from("contratos").select("prazo_total_dias").eq("id", contratoId).maybeSingle();
+    const prazo = Number((c as { prazo_total_dias?: number | string | null } | null)?.prazo_total_dias);
+    if (entrada && Number.isFinite(prazo) && prazo > 0) return { entrada, saida: dataDeSaida(entrada, prazo) };
+    return { entrada, saida: null };
   } catch {
     return { entrada: null, saida: null };
   }

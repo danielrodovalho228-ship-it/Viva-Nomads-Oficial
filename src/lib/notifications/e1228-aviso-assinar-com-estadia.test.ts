@@ -53,6 +53,7 @@ const BLOCOS: Record<string, { numero_bloco: number; inicio: string; fim: string
   [C1]: [{ numero_bloco: 2, inicio: "2026-12-31", fim: "2027-01-29" }, { numero_bloco: 1, inicio: "2026-12-01", fim: "2026-12-30" }],
   [C2]: [{ numero_bloco: 1, inicio: "2027-03-18", fim: "2027-04-30" }],
 };
+const PRAZO: Record<string, number> = {};
 function adminFalso() {
   const gravados: Record<string, unknown>[] = [];
   return {
@@ -64,6 +65,8 @@ function adminFalso() {
       b.eq = (k: string, v: unknown) => ((filtros[k] = v), b);
       const resposta = () => {
         if (tabela === "properties") return { data: { title: IMOVEL }, error: null };
+        // E1239: o prazo do contrato (a saída = entrada + prazo_total_dias). Sem entrada no mapa, o contrato não se lê.
+        if (tabela === "contratos") return PRAZO[String(filtros.id)] != null ? { data: { prazo_total_dias: PRAZO[String(filtros.id)] }, error: null } : { data: null, error: null };
         if (tabela === "contrato_blocos") {
           const bl = BLOCOS[String(filtros.contrato_id)];
           return bl === "falha" ? { data: null, error: { message: "falhou" } } : { data: bl ?? [], error: null };
@@ -83,6 +86,9 @@ const gravar = (contratoId: string, extra: Record<string, unknown> = {}) =>
 
 beforeEach(() => {
   BLOCOS[C2] = [{ numero_bloco: 1, inicio: "2027-03-18", fim: "2027-04-30" }];
+  // E1239: o prazo de cada contrato, coerente com os blocos (C1: 01/12 a 29/01, 60 noites; C2: 18/03 a 30/04, 44 noites).
+  PRAZO[C1] = 60;
+  PRAZO[C2] = 44;
 });
 
 test("4. o gravarAviso: dois contratos do mesmo imóvel por assinar → dois avisos distinguíveis pelas datas, com o VN-CT no corpo", async () => {
@@ -91,8 +97,9 @@ test("4. o gravarAviso: dois contratos do mesmo imóvel por assinar → dois avi
   assert.equal(await gravar(C1), true);
   assert.equal(await gravar(C2), true);
   assert.equal(a.gravados.length, 2);
-  assert.equal(a.gravados[0].titulo, `Assinar o contrato — ${IMOVEL}, estadia de 01/12/2026 a 29/01/2027`);
-  assert.equal(a.gravados[1].titulo, `Assinar o contrato — ${IMOVEL}, estadia de 18/03/2027 a 30/04/2027`);
+  // E1239 (ORDEM-DUET-1200, asserção alterada): o fim é a SAÍDA (entrada + prazo), não a última noite.
+  assert.equal(a.gravados[0].titulo, `Assinar o contrato — ${IMOVEL}, estadia de 01/12/2026 a 30/01/2027`);
+  assert.equal(a.gravados[1].titulo, `Assinar o contrato — ${IMOVEL}, estadia de 18/03/2027 a 01/05/2027`);
   assert.notEqual(a.gravados[0].titulo, a.gravados[1].titulo);
   assert.equal(a.gravados[0].texto, "Contrato VN-CT-E2986CA4");
   assert.equal(a.gravados[1].texto, "Contrato VN-CT-78AF9C56");
@@ -132,13 +139,15 @@ test("8. (P9) o gravarAviso sem imóvel: o título novo, sem o nome, com a estad
   const a = adminFalso();
   g.__e1072Admin = a;
   await gravar(C2, { imovelId: undefined });
-  assert.equal(a.gravados[0].titulo, "Assinar o contrato — estadia de 18/03/2027 a 30/04/2027");
+  // E1239 (asserção alterada): a saída (entrada + prazo).
+  assert.equal(a.gravados[0].titulo, "Assinar o contrato — estadia de 18/03/2027 a 01/05/2027");
 });
 
 test("9. (P8) com só uma das datas, o mesmo recurso das datas em falta: o VN-CT, nunca 'null' escrito", async () => {
   assert.equal(tituloAvisoAssinar!({ imovel: IMOVEL, entrada: "2026-12-01", saida: null, contratoId: C1 }), `Assinar o contrato — ${IMOVEL}, contrato VN-CT-E2986CA4`);
   assert.equal(tituloAvisoAssinar!({ imovel: IMOVEL, entrada: null, saida: "2027-01-29", contratoId: C1 }), `Assinar o contrato — ${IMOVEL}, contrato VN-CT-E2986CA4`);
   BLOCOS[C2] = [{ numero_bloco: 1, inicio: "2027-03-18", fim: null as unknown as string }];
+  delete PRAZO[C2]; // sem o fim e sem o prazo: nenhuma saída a dizer
   const a = adminFalso();
   g.__e1072Admin = a;
   await gravar(C2);
@@ -151,4 +160,39 @@ test("10. (P7) o corpo do aviso de assinatura é o VN-CT, venha o que vier no co
   g.__e1072Admin = a;
   await gravar(C1, { texto: "outro corpo qualquer" });
   assert.equal(a.gravados[0].texto, "Contrato VN-CT-E2986CA4");
+});
+
+// ── E1239 (ORDEM-DUET-1200): o título diz a SAÍDA (entrada + prazo_total_dias), não a última noite ───────────────────
+const C3 = "77541238-3333-4333-8333-333333333333";
+
+test("11. (E1239) dois blocos em que a última noite e a saída diferem: o título diz a SAÍDA (o caso ao vivo do VN-CT-77541238)", async () => {
+  BLOCOS[C3] = [
+    { numero_bloco: 2, inicio: "2027-08-01", fim: "2027-09-29" },
+    { numero_bloco: 1, inicio: "2027-06-02", fim: "2027-07-31" },
+  ];
+  PRAZO[C3] = 120;
+  const a = adminFalso();
+  g.__e1072Admin = a;
+  await gravar(C3);
+  assert.equal(a.gravados[0].titulo, `Assinar o contrato — ${IMOVEL}, estadia de 02/06/2027 a 30/09/2027`);
+  assert.doesNotMatch(String(a.gravados[0].titulo), /29\/09\/2027/, "nunca a última noite");
+});
+
+test("12. (E1239) o fim do título = entrada + prazo_total_dias do contrato (31 dias: 20/12 → 20/01)", async () => {
+  BLOCOS[C3] = [{ numero_bloco: 1, inicio: "2026-12-20", fim: "2027-01-19" }];
+  PRAZO[C3] = 31;
+  const a = adminFalso();
+  g.__e1072Admin = a;
+  await gravar(C3);
+  assert.equal(a.gravados[0].titulo, `Assinar o contrato — ${IMOVEL}, estadia de 20/12/2026 a 20/01/2027`);
+});
+
+test("13. (E1239, ORDEM-DUET-1203) o prazo não se lê: o título fica SEM datas, com o VN-CT — nunca a última noite como saída", async () => {
+  BLOCOS[C3] = [{ numero_bloco: 1, inicio: "2027-06-02", fim: "2027-09-29" }];
+  delete PRAZO[C3];
+  const a = adminFalso();
+  g.__e1072Admin = a;
+  await gravar(C3);
+  assert.equal(a.gravados[0].titulo, `Assinar o contrato — ${IMOVEL}, contrato VN-CT-77541238`);
+  assert.doesNotMatch(String(a.gravados[0].titulo), /29\/09\/2027/);
 });
