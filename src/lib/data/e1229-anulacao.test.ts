@@ -9,6 +9,10 @@
    - O documento ligado (REC/CAU) é anulado junto (o PDF guardado nunca é apagado).
    - Quem anulou fica na trilha do contrato (contrato_eventos, tipo "pagamento_anulado", 0368): o caminho "dono" ou
      "central" (com o número do chamado), o pagamento, o documento, o valor e o motivo.
+  ORDEM-DUET-1169 (correção B do coordenador): a anulação é UMA operação no banco — anular_pagamento (0368), numa
+  transação só: o pagamento (com as guardas), o documento e o evento; ou tudo, ou nada. A ação chama-a uma vez e só
+  avisa depois de ela dar certo. No caminho da Central, o aviso diz que foi a equipe, a pedido do proprietário, e o dono
+  recebe a decisão numa resposta VISÍVEL no chamado dele (a nota interna fica para a equipe).
   Corre as ações REAIS com o Supabase falso (harness ./e1229-harness/loader.mjs).
   Roda: node --test src/lib/data/e1229-anulacao.test.ts
 */
@@ -35,9 +39,12 @@ type Estado = {
   notaDoChamado: string | null;
   updates: { tabela: string; valores: Record<string, unknown>; filtros: Record<string, unknown> }[];
   inserts: { tabela: string; linha: Record<string, unknown> }[];
+  rpcs: { nome: string; args: Record<string, unknown> }[];
+  /** A função do banco falha (simula a falha de uma das escritas: nada muda). */
+  rpcFalha: boolean;
 };
 let E: Estado;
-const g = globalThis as unknown as { __e1229Sessao: unknown; __e1229Admin: unknown; __e1229EhEquipe: unknown; __e1229Chamados: unknown[]; __e1229Avisos: Record<string, unknown>[] };
+const g = globalThis as unknown as { __e1229Sessao: unknown; __e1229Admin: unknown; __e1229EhEquipe: unknown; __e1229Chamados: unknown[]; __e1229Avisos: Record<string, unknown>[]; __e1229Respostas: { id: string; texto: string; interno: boolean }[] };
 
 function consulta(tabela: string, comoSessao: boolean) {
   const filtros: Record<string, unknown> = {};
@@ -75,9 +82,23 @@ function consulta(tabela: string, comoSessao: boolean) {
   void comoSessao;
   return b;
 }
+/** A função do banco (0368): as guardas e as três escritas juntas, como a função faz numa transação só. */
+async function rpc(nome: string, args: Record<string, unknown>) {
+  E.rpcs.push({ nome, args });
+  if (nome !== "anular_pagamento") return { data: null, error: { message: nome } };
+  if (E.rpcFalha) return { data: null, error: { message: "falha simulada" } };
+  const passa = !E.pg.anulado_em && (args.p_caminho === "central" || !E.pg.confirmado_pelo_inquilino);
+  if (!passa) return { data: { ok: false }, error: null };
+  const agora = new Date().toISOString();
+  E.pg = { ...E.pg, anulado_em: agora };
+  const documento = E.doc && !E.doc.anulado_em ? E.doc.numero : null;
+  if (E.doc && !E.doc.anulado_em) E.doc = { ...E.doc, anulado_em: agora };
+  return { data: { ok: true, documento }, error: null };
+}
 const cliente = (uid: string, sessao: boolean) => ({
   auth: { getUser: async () => ({ data: { user: { id: uid } } }), admin: { getUserById: async () => ({ data: { user: { email: "morador@lab.test" } } }) } },
   from: (t: string) => consulta(t, sessao),
+  rpc,
 });
 
 function cenario(o: { tipo?: "aluguel" | "caucao"; confirmado?: boolean; anulado?: boolean; quem?: string; equipe?: boolean; nota?: string | null } = {}) {
@@ -87,42 +108,42 @@ function cenario(o: { tipo?: "aluguel" | "caucao"; confirmado?: boolean; anulado
     notaDoChamado: o.nota === undefined ? `[anulacao] pagamento=${PG}` : o.nota,
     updates: [],
     inserts: [],
+    rpcs: [],
+    rpcFalha: false,
   };
   g.__e1229Sessao = cliente(o.quem ?? DONO, true);
   g.__e1229Admin = cliente(o.quem ?? DONO, false);
   g.__e1229EhEquipe = !!o.equipe;
   g.__e1229Chamados = [];
   g.__e1229Avisos = [];
+  g.__e1229Respostas = [];
 }
-const anulou = () => E.updates.filter((u) => u.tabela === "pagamentos_bloco" && E.pg.anulado_em).length > 0;
-const evento = () => E.inserts.find((i) => i.tabela === "contrato_eventos")?.linha;
+const anulou = () => !!E.pg.anulado_em;
+const chamadaDaFuncao = () => E.rpcs.find((r) => r.nome === "anular_pagamento")?.args;
 const erro = (r: unknown) => (r as { error?: string }).error;
 
 beforeEach(() => cenario());
 
-test("1. o dono anula ANTES da confirmação: o registro e o documento ficam anulados, com o motivo", async () => {
+test("1. o dono anula ANTES da confirmação: UMA chamada à função do banco, com o caminho do dono — o registro e o documento anulados juntos", async () => {
   const r = await anularRegistro({ pagamentoId: PG, motivo: MOTIVO });
   assert.equal(r.ok, true);
-  const up = E.updates.find((u) => u.tabela === "pagamentos_bloco")!;
-  assert.equal(up.valores.anulado_motivo, MOTIVO);
-  assert.ok(up.valores.anulado_em);
-  assert.equal(up.filtros["confirmado_pelo_inquilino"], false, "a guarda: só o não confirmado");
-  assert.equal(up.filtros["is:anulado_em"], null, "a guarda: só o que não está anulado");
-  const doc = E.updates.find((u) => u.tabela === "documentos_fiscais")!;
-  assert.equal(doc.valores.anulado_motivo, MOTIVO, "o documento ligado é anulado junto");
-  assert.ok(E.doc?.anulado_em);
+  assert.equal(E.rpcs.length, 1, "uma operação só");
+  assert.deepEqual(chamadaDaFuncao(), { p_pagamento: PG, p_motivo: MOTIVO, p_autor: DONO, p_caminho: "dono", p_chamado: null });
+  assert.ok(E.pg.anulado_em);
+  assert.ok(E.doc?.anulado_em, "o documento ligado é anulado junto");
+  assert.equal(E.updates.length, 0, "nenhuma escrita solta fora da função");
+  assert.equal(E.inserts.filter((i) => i.tabela === "contrato_eventos").length, 0, "o evento é gravado pela função, não à parte");
 });
 
-test("2. a trilha: contrato_eventos 'pagamento_anulado', autor o dono, caminho 'dono', com o pagamento, o documento, o valor e o motivo", async () => {
-  await anularRegistro({ pagamentoId: PG, motivo: MOTIVO });
-  const ev = evento()!;
-  assert.equal(ev.tipo, "pagamento_anulado");
-  assert.equal(ev.contrato_id, CONTRATO);
-  assert.equal(ev.autor_id, DONO);
-  assert.deepEqual(ev.dados, { caminho: "dono", pagamento_id: PG, documento: "REC-2026-000123", valor: 500, motivo: MOTIVO });
+test("2. (1169) a função falha: nada se anuncia — a ação recusa e o morador não é avisado", async () => {
+  E.rpcFalha = true;
+  const r = await anularRegistro({ pagamentoId: PG, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.equal(E.pg.anulado_em, null);
+  assert.equal(g.__e1229Avisos.length, 0, "o aviso só vem depois de a função dar certo");
 });
 
-test("3. o aviso ao morador: 'O proprietário anulou o registro {REC} de {R$}: {motivo}'", async () => {
+test("3. o aviso ao morador (caminho do dono): 'O proprietário anulou o registro {REC} de {R$}: {motivo}'", async () => {
   await anularRegistro({ pagamentoId: PG, motivo: MOTIVO });
   assert.equal(g.__e1229Avisos.length, 1);
   assert.equal(g.__e1229Avisos[0].userId, MORADOR);
@@ -178,19 +199,21 @@ test("8. o pedido de anulação de CAUÇÃO cai na fila da caução", async () =
   assert.equal((g.__e1229Chamados[0] as { categoria: string }).categoria, "caucao");
 });
 
-test("9. a Central (equipe) anula o confirmado: caminho 'central', autor quem decidiu, o número do chamado e a nota interna", async () => {
+test("9. a Central (equipe) anula o confirmado: a função com o caminho 'central', o autor e o chamado; o aviso diz que foi a equipe; o dono recebe a decisão no chamado", async () => {
   cenario({ confirmado: true, quem: EQUIPE, equipe: true });
   const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
   assert.equal(r.ok, true);
   assert.ok(E.pg.anulado_em);
-  const ev = evento()!;
-  assert.equal(ev.autor_id, EQUIPE);
-  assert.deepEqual(ev.dados, { caminho: "central", chamado: "CH-2026-000777", pagamento_id: PG, documento: "REC-2026-000123", valor: 500, motivo: MOTIVO });
+  assert.deepEqual(chamadaDaFuncao(), { p_pagamento: PG, p_motivo: MOTIVO, p_autor: EQUIPE, p_caminho: "central", p_chamado: "CH-2026-000777" });
+  // O aviso ao morador: a equipe, a pedido do proprietário (não "o proprietário anulou").
+  assert.equal(g.__e1229Avisos.length, 1);
+  assert.equal(String(g.__e1229Avisos[0].tituloAviso).replace(/\u00a0/g, " "), `A equipe da Viva anulou, a pedido do proprietário, o registro REC-2026-000123 de R$ 500: ${MOTIVO}.`);
+  // A decisão ao dono: uma resposta VISÍVEL no chamado dele.
+  assert.deepEqual(g.__e1229Respostas, [{ id: CHAMADO, texto: `A equipe anulou o registro REC-2026-000123. Motivo: ${MOTIVO}.`, interno: false }]);
+  // A nota interna (quem decidiu e quando) fica para a equipe.
   const nota = E.inserts.find((i) => i.tabela === "chamado_mensagens")!.linha;
   assert.equal(nota.interno, true);
   assert.equal(nota.autor_id, EQUIPE);
-  assert.match(String(nota.corpo), /REC-2026-000123/);
-  assert.equal(g.__e1229Avisos.length, 1, "o morador é avisado também");
 });
 
 test("10. o botão da Central é só da equipe", async () => {
@@ -206,7 +229,7 @@ test("11. a Central recusa o que já está anulado: dois cliques, uma anulação
   const r2 = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
   assert.equal(r2.ok, false);
   assert.match(erro(r2) ?? "", /já foi anulado/);
-  assert.equal(E.inserts.filter((i) => i.tabela === "contrato_eventos").length, 1, "um só evento");
+  assert.equal(E.rpcs.filter((x) => x.nome === "anular_pagamento").length, 1, "a função não volta a ser chamada para o já anulado");
 });
 
 test("12. um chamado que não nasceu de um registro não tem o que anular", async () => {

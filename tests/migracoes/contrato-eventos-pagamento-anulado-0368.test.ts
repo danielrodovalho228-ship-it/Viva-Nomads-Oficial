@@ -28,3 +28,15 @@ test("aplicar-0368: transação curta e registo com o nome", () => {
   assert.match(APLICAR, /^begin; set local lock_timeout = '5s';[\s\S]*commit;$/);
   assert.match(APLICAR, /insert into supabase_migrations\.schema_migrations \(version, name\) select '20261127000368', '0368_contrato_eventos_pagamento_anulado_e1229' where not exists/);
 });
+
+test("0368 (ORDEM-DUET-1169): anular_pagamento — uma função do servidor, as guardas na própria escrita, as três escritas juntas", () => {
+  for (const [nome, s] of Object.entries({ "migração": MIG, "aplicar-0368": APLICAR })) {
+    assert.match(s, /create or replace function public\.anular_pagamento\(p_pagamento uuid, p_motivo text, p_autor uuid, p_caminho text, p_chamado text default null\) returns jsonb language plpgsql security definer set search_path = public/, nome);
+    assert.match(s, /where id = p_pagamento and anulado_em is null and \(p_caminho = 'central' or confirmado_pelo_inquilino = false\)/, `${nome}: as guardas na escrita`);
+    assert.match(s, /update public\.documentos_fiscais set anulado_em = v_agora, anulado_motivo = p_motivo where pagamento_id = p_pagamento and anulado_em is null/, `${nome}: o documento junto`);
+    assert.match(s, /insert into public\.contrato_eventos \(contrato_id, tipo, autor_id, dados\)/, `${nome}: o evento junto`);
+    assert.match(s, /revoke all on function public\.anular_pagamento\(uuid, text, uuid, text, text\) from public, anon, authenticated;/, `${nome}: só o servidor`);
+    assert.doesNotMatch(s, /exception when/i, `${nome}: nenhuma falha engolida`);
+  }
+  assert.match(ROLLBACK, /drop function if exists public\.anular_pagamento\(uuid, text, uuid, text, text\);/);
+});

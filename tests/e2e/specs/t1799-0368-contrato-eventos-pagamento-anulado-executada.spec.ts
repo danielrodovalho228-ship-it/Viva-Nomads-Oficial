@@ -9,6 +9,8 @@ import { NO_LABORATORIO } from "../fixtures/laboratorio";
   criado no servidor do laboratório e apagado no fim (tests/e2e/fixtures/prova-0368.ts), sobre contrato_eventos na forma
   de ANTES da 0368: aplica, reaplica sem efeito, o tipo novo entra e um tipo fora da lista continua recusado; o rollback
   falha com um "pagamento_anulado" gravado (nada muda) e, sem ele, repõe a lista antiga.
+  ORDEM-DUET-1169: e a função anular_pagamento, numa transação só (ou tudo, ou nada) — com uma falha SIMULADA na
+  gravação do evento, o pagamento e o documento ficam intactos.
   A trava que lê o texto (tests/migracoes/contrato-eventos-pagamento-anulado-0368.test.ts) fica como complemento.
   Laboratório; não é prova ao vivo no site.
 */
@@ -43,5 +45,29 @@ test.describe("T1799 — 0368 executada: o tipo pagamento_anulado na trilha do c
     expect.soft(p.rollbackLimpo.eventosIguais, "os eventos ficam").toBe(true);
     expect.soft(p.rollbackLimpo.pagamentoAnulado, "o check antigo volta: pagamento_anulado recusado outra vez").toMatch(/contrato_eventos_tipo_check/);
     expect.soft(p.rollbackLimpo.registo, "sai o registo da 0368").toBe(0);
+    expect.soft(p.rollbackLimpo.funcaoFica, "o rollback tira a função").toBe(false);
+    // A função anular_pagamento (ORDEM-DUET-1169).
+    const f = p.funcao;
+    expect.soft(f.erroAplicar).toBeNull();
+    expect.soft(f.dono.resposta, "o dono, antes da confirmação: anula").toMatchObject({ ok: true });
+    expect.soft(f.dono.pagamento, "o pagamento anulado, com o motivo").toEqual({ anulado: true, motivo: "valor lançado errado" });
+    expect.soft(f.dono.documento, "o documento anulado junto").toEqual({ anulado: true, motivo: "valor lançado errado" });
+    expect.soft(f.dono.eventos.length, "um evento").toBe(1);
+    expect.soft(f.dono.eventos[0]?.dados).toMatchObject({ caminho: "dono", motivo: "valor lançado errado", valor: 3200 });
+    expect.soft(f.dono.eventos[0]?.dados.documento, "o evento nomeia o documento").toMatch(/^REC-2026-/);
+    expect.soft(f.donoConfirmado.resposta, "o dono, depois da confirmação: não anula").toMatchObject({ ok: false });
+    expect.soft(f.donoConfirmado.pagamento.anulado).toBe(false);
+    expect.soft(f.donoConfirmado.documento.anulado).toBe(false);
+    expect.soft(f.donoConfirmado.eventos).toBe(0);
+    expect.soft(f.central.resposta, "a Central anula o confirmado").toMatchObject({ ok: true });
+    expect.soft(f.central.pagamento.anulado).toBe(true);
+    expect.soft(f.central.eventos[0]?.dados).toMatchObject({ caminho: "central", chamado: "CH-2026-000777" });
+    expect.soft(f.outraVez.resposta, "outra vez: não anula de novo").toMatchObject({ ok: false });
+    expect.soft(f.outraVez.eventos, "um evento só").toBe(1);
+    expect.soft(f.falhaNoEvento.erro, "a falha simulada na gravação do evento").toMatch(/falha simulada/);
+    expect.soft(f.falhaNoEvento.pagamento, "o pagamento fica intacto").toEqual({ anulado: false, motivo: null });
+    expect.soft(f.falhaNoEvento.documento, "o documento fica intacto").toEqual({ anulado: false, motivo: null });
+    expect.soft(f.falhaNoEvento.eventos).toBe(0);
+    expect.soft(f.semPermissao, "quem não é o servidor não executa a função").toMatch(/permission denied/);
   });
 });

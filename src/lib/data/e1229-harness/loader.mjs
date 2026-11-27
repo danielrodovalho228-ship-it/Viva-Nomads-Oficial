@@ -17,6 +17,10 @@ const STUBS = {
   "@/lib/data/atendimento-actions": `export async function abrirChamado(input) {
     (globalThis.__e1229Chamados ??= []).push(input);
     return { ok: true, numero: "CH-2026-000777", aviso: "", emergencia: false };
+  }
+  export async function responderComoAdmin(id, texto, interno) {
+    (globalThis.__e1229Respostas ??= []).push({ id, texto, interno });
+    return { ok: true };
   }`,
   "@/lib/notifications": `export async function notify(p) { (globalThis.__e1229Avisos ??= []).push(p); }`,
 };
