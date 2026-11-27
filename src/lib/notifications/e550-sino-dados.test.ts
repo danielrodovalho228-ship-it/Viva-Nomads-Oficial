@@ -40,5 +40,5 @@ test("servidor: renova o pendente em vez de inserir outro; notify só grava com 
   assert.match(s, /tituloComImovel\(titulo, guardContactInfo\(nome\)\.text\)/);
   const n = ler("./index.ts");
   assert.match(n, /&& eventoTemCentral\(params\.event\)/);
-  assert.match(n, /titulo: params\.tituloAviso \?\? mensagem\?\.titulo, texto: mensagem\?\.texto, imovelId: params\.imovelId \}/);
+  assert.match(n, /titulo: params\.tituloAviso \?\? mensagem\?\.titulo, texto: params\.textoAviso \?\? mensagem\?\.texto, imovelId: params\.imovelId \}/);
 });

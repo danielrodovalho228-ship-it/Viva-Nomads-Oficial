@@ -29,7 +29,7 @@ test("título com quem escreveu; prévia limpa e curta no texto", () => {
 test("o notify monta o aviso de mensagem com remetente e prévia; o gravarAviso põe o imóvel e grava o texto", () => {
   const notify = ler("lib/notifications/index.ts");
   assert.match(notify, /params\.event === "new_message" \? avisoDeMensagem\(\{ remetente: params\.remetenteNome, previa: params\.previaAviso \}\) : null/);
-  assert.match(notify, /titulo: params\.tituloAviso \?\? mensagem\?\.titulo, texto: mensagem\?\.texto/);
+  assert.match(notify, /titulo: params\.tituloAviso \?\? mensagem\?\.titulo, texto: params\.textoAviso \?\? mensagem\?\.texto/);
   const gravar = ler("lib/notifications/avisos-servidor.ts");
   assert.match(gravar, /if \(p\.imovelId && UUID_RE\.test\(p\.imovelId\)\) \{/);
   assert.match(gravar, /const texto = p\.texto \? textoDoAviso\(guardContactInfo\(p\.texto\)\.text\) : null;/);
