@@ -267,7 +267,7 @@ export function superficieDosAvisos<T extends AvisoTela>(
 ): { visiveis: T[]; criticos: T[]; naoLidas: number; maiorPrioridade: PrioridadeAviso | null } {
   const noBanco = new Set(antes.filter((a) => a.resolvido_em).map((a) => a.id));
   const agora = new Set(resolucoesConferidasAGravar(antes, conferidos));
-  const visiveis = conferidos.filter((a) => !noBanco.has(a.id) && !agora.has(a.id));
+  const visiveis = conferidos.filter((a) => !agora.has(a.id)); void noBanco;
   const naoLidas = Math.max(0, resumo.naoLidas - conferidos.filter((a) => agora.has(a.id) && !a.lido_em).length);
   let maiorPrioridade = resumo.maiorPrioridade;
   const pendentesNaoLidos = () => visiveis.filter((a) => !a.lido_em && !a.resolvido_em);
