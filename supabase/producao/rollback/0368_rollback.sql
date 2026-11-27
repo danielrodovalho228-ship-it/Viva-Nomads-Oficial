@@ -8,7 +8,7 @@ alter table public.contrato_eventos drop constraint if exists contrato_eventos_t
 alter table public.contrato_eventos add constraint contrato_eventos_tipo_check check (tipo in (
   'aditivo_proposto', 'aditivo_aceito', 'aditivo_recusado', 'aditivo_expirado', 'estadia_remarcada',
   'encerramento_pedido', 'contrato_encerrado', 'instrucoes_liberadas', 'ocupantes_apagados',
-  'convidado_adicionado', 'convidado_removido', 'convidados_apagados'
+  'convidado_adicionado', 'convidado_removido', 'convidados_apagados', 'pagamento_anulado'
 ));
 delete from supabase_migrations.schema_migrations where version = '20261127000368';
 commit;
