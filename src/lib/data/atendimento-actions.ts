@@ -526,6 +526,8 @@ export interface ChamadoAdmin extends ChamadoLista {
   primeira_resposta_em: string | null;
   sla_estado: string;
   nota_satisfacao: number | null;
+  /** E1244: chamado de simulação (conta de teste) — só aparece na fila com "Incluir simulações". */
+  simulacao?: boolean;
   usuario_id: string | null;
   visitante_email: string | null;
   visitante_nome: string | null;
@@ -533,7 +535,7 @@ export interface ChamadoAdmin extends ChamadoLista {
 }
 
 const COLS_ADMIN =
-  "id, numero_publico, assunto, status, prioridade, tipo, canal, categoria, contexto_tipo, contexto_id, service_order_id, responsavel_tipo, responsavel_admin, prazo_primeira_resposta, prazo_resolucao, primeira_resposta_em, sla_estado, nota_satisfacao, usuario_id, visitante_email, visitante_nome, visitante_telefone, criado_em, atualizado_em";
+  "id, numero_publico, assunto, status, prioridade, tipo, canal, categoria, contexto_tipo, contexto_id, service_order_id, responsavel_tipo, responsavel_admin, prazo_primeira_resposta, prazo_resolucao, primeira_resposta_em, sla_estado, nota_satisfacao, usuario_id, visitante_email, visitante_nome, visitante_telefone, criado_em, atualizado_em, simulacao";
 
 export interface FiltrosFila {
   status?: string;
@@ -547,6 +549,8 @@ export interface FiltrosFila {
   fechados?: boolean;
   /** Prompt 50: só os chamados sem a 1ª resposta de uma pessoa além da promessa pública (24 h). */
   semResposta?: boolean;
+  /** E1244: "Incluir simulações" (só a fila; a aba aprovação nunca a leva — a bolinha dela é uma contagem). */
+  simulacoes?: boolean;
 }
 
 /** Fila do admin (simulação fora). Ordem: prioridade, depois prazo. */
@@ -557,7 +561,9 @@ const MSG_FILA_ATENDIMENTO_NAO_CARREGOU = "Não foi possível carregar a fila do
 export async function filaAtendimento(f: FiltrosFila = {}, opcoes: { exigir?: boolean } = {}): Promise<ChamadoAdmin[] | null> {
   const ctx = await exigirAdmin();
   if (!ctx) return null;
-  let q = ctx.admin.from("chamados").select(COLS_ADMIN).eq("simulacao", false);
+  let q = ctx.admin.from("chamados").select(COLS_ADMIN);
+  // E1244: as simulações ficam fora, salvo com a opção ligada — e nunca na aba aprovação.
+  if (!f.simulacoes || f.aprovacao) q = q.eq("simulacao", false);
   if (f.aprovacao) q = q.eq("status", "aguardando_aprovacao");
   else if (f.status) q = q.eq("status", f.status);
   else if (!f.fechados) q = q.not("status", "in", "(resolvido,encerrado)");
@@ -570,7 +576,8 @@ export async function filaAtendimento(f: FiltrosFila = {}, opcoes: { exigir?: bo
   if (busca) {
     q = ehNumeroPublico(busca) ? q.eq("numero_publico", busca.toUpperCase()) : q.ilike("assunto", `%${busca.replace(/[%_]/g, "")}%`);
   }
-  const { data, error } = await q.order("prioridade", { ascending: true }).order("prazo_primeira_resposta", { ascending: true }).limit(200);
+  // E1244: com a opção, os chamados reais primeiro (simulacao false antes de true): o limite de 200 nunca tira um real.
+  const { data, error } = await q.order("simulacao", { ascending: true }).order("prioridade", { ascending: true }).order("prazo_primeira_resposta", { ascending: true }).limit(200);
   if (error && opcoes.exigir) throw new Error(MSG_FILA_ATENDIMENTO_NAO_CARREGOU);
   return (data ?? []) as ChamadoAdmin[];
 }

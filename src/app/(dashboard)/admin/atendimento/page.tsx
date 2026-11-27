@@ -28,6 +28,7 @@ export default async function AdminAtendimentoPage({
     busca: um("q"),
     fechados: um("fechados") === "1",
     semResposta: um("sem_resposta") === "1",
+    simulacoes: um("simulacoes") === "1",
   };
   // E477: respostas prontas e o teste da Viva são configuração da plataforma — a conta observadora da QA só lê.
   const soLeitura = (await soLeituraNaTela([{ id: "configuracao" }])).length > 0;

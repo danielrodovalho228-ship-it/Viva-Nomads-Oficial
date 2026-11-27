@@ -13,6 +13,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
       o botão não volta a anular (dois cliques, uma anulação).
   Simulação declarada: o contrato assinado e os dois registros (um confirmado, outro não) gravados pelo laboratório.
   Laboratório; não é prova ao vivo no site.
+  Vizinha do E1244 (ORDENS-DUET 1213, 1219 e 1220): corre também no portão desse PR — a fila e o detalhe do chamado da
+  Central ganharam a opção "Incluir simulações" e a marca "Simulação".
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
