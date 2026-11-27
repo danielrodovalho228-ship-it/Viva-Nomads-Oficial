@@ -4,7 +4,6 @@
 -- nada muda (a função anular_pagamento também fica). Este script não apaga evento nenhum: a trilha de quem anulou fica.
 begin;
 set local lock_timeout = '5s';
-drop function if exists public.anular_pagamento(uuid, text, uuid, text, text);
 alter table public.contrato_eventos drop constraint if exists contrato_eventos_tipo_check;
 alter table public.contrato_eventos add constraint contrato_eventos_tipo_check check (tipo in (
   'aditivo_proposto', 'aditivo_aceito', 'aditivo_recusado', 'aditivo_expirado', 'estadia_remarcada',
