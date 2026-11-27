@@ -45,6 +45,8 @@ export interface ReciboView {
   numero: string | null;
   /** Motivo da anulação do registro/documento (ex.: "registro em duplicidade"); null = válido. */
   anulado: string | null;
+  /** E1243: o número do chamado ABERTO que pede a anulação deste registro à Central (null = nenhum). */
+  pedidoAnulacao?: string | null;
 }
 
 export interface AcertoView {
@@ -57,6 +59,37 @@ export interface AcertoView {
 }
 
 /** Documentos e acerto da caução de contratos em que a pessoa é parte (o RLS filtra). */
+const NOTA_DO_PEDIDO = /^\[anulacao\] pagamento=([0-9a-f-]{36})$/i;
+const CHAMADO_FECHADO = new Set(["resolvido", "encerrado"]);
+
+/**
+ * E1243: os chamados ABERTOS que pedem a anulação de um registro destes contratos (o contexto do contrato e a nota do
+ * SISTEMA "[anulacao] pagamento=<id>", gravada na abertura do pedido) → pagamento → número do chamado. Só o servidor lê
+ * as notas internas; os registros a que a linha se junta são os que a sessão da pessoa leu. Falha: nenhuma linha.
+ */
+async function pedidosDeAnulacaoAbertos(contratoIds: string[]): Promise<Map<string, string>> {
+  const pedidos = new Map<string, string>();
+  const admin = createAdminClient();
+  if (!admin || contratoIds.length === 0) return pedidos;
+  const { data: chs, error } = await admin.from("chamados").select("id, numero_publico, status, contexto_id").eq("contexto_tipo", "contrato").in("contexto_id", contratoIds);
+  const abertos = ((chs ?? []) as { id: string; numero_publico: string; status: string }[]).filter((c) => !CHAMADO_FECHADO.has(String(c.status)));
+  if (error || abertos.length === 0) return pedidos;
+  const { data: notas, error: eNotas } = await admin
+    .from("chamado_mensagens")
+    .select("chamado_id, corpo")
+    .in("chamado_id", abertos.map((c) => c.id))
+    .eq("autor", "sistema")
+    .eq("interno", true);
+  if (eNotas) return pedidos;
+  const numero = new Map(abertos.map((c) => [c.id, String(c.numero_publico)]));
+  for (const n of (notas ?? []) as { chamado_id: string; corpo: string }[]) {
+    const pg = NOTA_DO_PEDIDO.exec(String(n.corpo ?? "").trim())?.[1]?.toLowerCase();
+    const num = numero.get(n.chamado_id);
+    if (pg && num) pedidos.set(pg, num);
+  }
+  return pedidos;
+}
+
 export async function documentosDosContratos(
   contratoIds: string[],
 ): Promise<Record<string, { documentos: DocumentoView[]; recibos: ReciboView[]; acerto: AcertoView | null; caucaoConfirmada: number; falhou?: true }>> {
@@ -99,6 +132,9 @@ export async function documentosDosContratos(
       anulado: ((doc?.anulado_motivo as string | null) ?? (pg.anulado_motivo as string | null)) || null,
     });
   }
+  // E1243 (ORDENS-DUET 1213 e 1216): o pedido de anulação à Central continua visível enquanto o chamado está aberto.
+  const pedidos = await pedidosDeAnulacaoAbertos(ids);
+  for (const alvo of Object.values(vazio)) for (const r of alvo.recibos) r.pedidoAnulacao = pedidos.get(r.pagamentoId) ?? null;
   for (const d of docs ?? []) {
     const alvo = vazio[d.contrato_id as string];
     if (!alvo || d.pagamento_id) continue; // o recibo de um pagamento aparece na lista de recibos

@@ -51,7 +51,13 @@ export function ListaDocumentos({ documentos, recibos = [], anular = false }: { 
                 {textoLinhaRecibo({ tipo: r.tipo, numero: r.numero, total: r.total, inicio: r.inicio, fim: r.fim })}
                 {r.anulado && <SeloAnulado motivo={r.anulado} />}
               </span>
-              {anular && !r.anulado && <AnularRegistro pagamentoId={r.pagamentoId} confirmado />}
+              {/* E1243: o pedido aberto à Central fica à vista (e não se pede outra vez) até o chamado ser resolvido. PROPOSTA DE TEXTO. */}
+              {anular && r.pedidoAnulacao && !r.anulado && (
+                <span className="text-xs text-muted" data-testid="pedido-anulacao">
+                  Anulação pedida à Central: chamado {r.pedidoAnulacao}, em análise.
+                </span>
+              )}
+              {anular && !r.anulado && !r.pedidoAnulacao && <AnularRegistro pagamentoId={r.pagamentoId} confirmado />}
               {r.documentoId ? (
                 <a href={`/api/documentos/${r.documentoId}`} className="inline-flex items-center gap-1 text-xs font-medium text-forest underline" data-testid="baixar-recibo">
                   <Download className="h-3.5 w-3.5" /> Baixar recibo (PDF)
