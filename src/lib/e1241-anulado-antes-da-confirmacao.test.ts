@@ -20,6 +20,8 @@ const ROWS = [
   { id: "b", parte: 2, anulado_em: "2026-11-27T10:00:00Z", confirmado_pelo_inquilino: false, anulado_motivo: "registro em duplicidade" },
   { id: "c", parte: 3, anulado_em: "2026-11-27T11:00:00Z", confirmado_pelo_inquilino: true, anulado_motivo: "valor errado" },
   { id: "d", parte: 4, anulado_em: "2026-11-27T12:00:00Z", confirmado_pelo_inquilino: false, anulado_motivo: "  " },
+  // Um anulado antigo sem motivo gravado: o selo decide-se pela data, não pelo motivo (mata "filtrar por anulado_motivo").
+  { id: "e", parte: 5, anulado_em: "2026-11-27T13:00:00Z", confirmado_pelo_inquilino: false, anulado_motivo: null },
 ];
 
 test("1. só os anulados antes da confirmação; o motivo quando houver (decide a data, não o motivo)", () => {
@@ -28,6 +30,7 @@ test("1. só os anulados antes da confirmação; o motivo quando houver (decide 
   assert.deepEqual(r, [
     { id: "b", rotulo: "Parte 2", motivo: "registro em duplicidade" },
     { id: "d", rotulo: "Parte 4", motivo: null },
+    { id: "e", rotulo: "Parte 5", motivo: null },
   ]);
 });
 
