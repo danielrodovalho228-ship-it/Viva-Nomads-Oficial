@@ -47,8 +47,8 @@ export function ListaDocumentos({ documentos, recibos = [], anular = false }: { 
           {recibos.map((r) => (
             <li key={r.pagamentoId} className="flex flex-wrap items-center justify-between gap-2 text-sm" data-testid="recibo-pagamento" data-emitido={r.documentoId ? "sim" : "nao"}>
               <span className="min-w-0 text-ink">
-                {/* E1067 (fusão, ORDENS-DUET 1149, 1155 e 1194): o número, o TOTAL e o período em datas; o texto do documento fica no PDF. */}
-                {textoLinhaRecibo({ tipo: r.tipo, numero: r.numero, total: r.total, inicio: r.inicio, fim: r.fim })}
+                {/* E1067 + E1233 (ORDENS-DUET 1194 e 1208): número · bloco · TOTAL · período; o texto do documento fica no PDF. */}
+                {textoLinhaRecibo(r)}
                 {r.anulado && <SeloAnulado motivo={r.anulado} />}
               </span>
               {/* E1243: o pedido aberto à Central fica à vista (e não se pede outra vez) até o chamado ser resolvido. PROPOSTA DE TEXTO. */}

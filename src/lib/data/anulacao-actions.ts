@@ -15,6 +15,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ehAdmin } from "@/lib/data/admin-guard";
+import { recusaObservador } from "@/lib/qa/observador";
 import { abrirChamado, responderComoAdmin } from "@/lib/data/atendimento-actions";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
@@ -149,6 +150,18 @@ export async function anularRegistro(input: { pagamentoId: string; motivo: strin
   return r.ok ? { ok: true } : r;
 }
 
+/** E1244 (PROPOSTA DE TEXTO): a recusa da anulação a partir de um chamado de simulação. */
+const MSG_SIMULACAO = "Este chamado é de simulação: só anula registros de um contrato em que as duas contas são de teste.";
+
+/** As DUAS partes são contas de teste? Parte nula ou desconhecida, ou a leitura falha: false (falha fechada). */
+async function duasContasDeTeste(admin: NonNullable<ReturnType<typeof createAdminClient>>, partes: (string | null)[]): Promise<boolean> {
+  if (partes.length !== 2 || partes.some((p) => !p)) return false;
+  const { data, error } = await admin.from("profiles").select("id, is_teste").in("id", partes as string[]);
+  if (error || !data) return false;
+  const teste = new Set(((data as { id: string; is_teste: boolean | null }[]) ?? []).filter((p) => p.is_teste === true).map((p) => p.id));
+  return partes.every((p) => teste.has(p as string));
+}
+
 /** A Central decide o pedido: só a equipe, com a mesma anulação; o registro é o que o chamado guarda. */
 export async function anularRegistroPelaCentral(input: { chamadoId: string; motivo: string }): Promise<ResultadoAnulacao> {
   const supabase = await createClient();
@@ -161,7 +174,7 @@ export async function anularRegistroPelaCentral(input: { chamadoId: string; moti
   const motivo = motivoValido(input.motivo);
   if (!motivo) return { ok: false, error: MSG_MOTIVO };
   if (!UUID_RE.test(input.chamadoId)) return { ok: false, error: "Chamado não encontrado." };
-  const { data: ch } = await admin.from("chamados").select("id, numero_publico, contexto_tipo, contexto_id").eq("id", input.chamadoId).maybeSingle();
+  const { data: ch } = await admin.from("chamados").select("id, numero_publico, contexto_tipo, contexto_id, simulacao").eq("id", input.chamadoId).maybeSingle();
   if (!ch) return { ok: false, error: "Chamado não encontrado." };
   const { data: notas } = await admin.from("chamado_mensagens").select("corpo, autor, interno").eq("chamado_id", ch.id).eq("autor", "sistema").eq("interno", true).order("criado_em", { ascending: true });
   // ORDEM-DUET-1177: todos os registros das notas do sistema; mais de um, recusa — um pedido por registro.
@@ -174,6 +187,17 @@ export async function anularRegistroPelaCentral(input: { chamadoId: string; moti
   // contrato — um chamado sem contrato, ou de outro, não anula registro nenhum.
   if (!pg || ch.contexto_tipo !== "contrato" || ch.contexto_id !== pg.contrato_id) return { ok: false, error: MSG_SEM_LEITURA };
   if (pg.anulado_em) return { ok: false, error: MSG_JA_ANULADO };
+  // E1246 (ORDEM-DUET-1220; dúvida 2 do MAPA-E1244): a conta observadora da QA só decide quando TUDO o que a anulação
+  // toca é de teste — as duas partes do contrato (o pagamento, o documento e o aviso ao morador são de verdade).
+  // Com uma parte real, ou sem saber quem é, recusa. Quem não é a observadora decide como antes.
+  const morador = pg.contratos?.tenant_id ?? null;
+  const dono = pg.contratos?.properties?.owner_id ?? null;
+  const recusaQa = await recusaObservador(user.id, { perfis: [morador, dono], semPerfil: morador && dono ? 0 : 1 });
+  if (recusaQa) return { ok: false, error: recusaQa };
+  // E1244 (ORDEM-DUET 1239): a Central mostra os chamados de simulação com a opção ligada; um chamado de simulação só
+  // anula quando as DUAS contas do contrato são de teste. Parte nula ou desconhecida, erro de leitura ou o campo
+  // ausente na leitura: recusa (falha fechada, o padrão da observadora).
+  if ((ch as { simulacao?: unknown }).simulacao !== false && !(await duasContasDeTeste(admin, [morador, dono]))) return { ok: false, error: MSG_SIMULACAO };
   const r = await anularNoBanco(admin, pg, motivo, { autorId: user.id, caminho: "central", chamado: String(ch.numero_publico) });
   if (!r.ok) return r;
   const registro = r.documento ?? (pg.tipo === "caucao" ? "da caução" : "do pagamento");

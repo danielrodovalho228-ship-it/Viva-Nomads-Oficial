@@ -19,6 +19,7 @@
 import { register } from "node:module";
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 register("./e1229-harness/loader.mjs", import.meta.url);
 const { anularRegistro, anularRegistroPelaCentral } = await import("./anulacao-actions.ts");
@@ -42,6 +43,16 @@ type Estado = {
   notaInterna: boolean;
   /** Outras notas do chamado (ORDEM-DUET-1177: mais de um registro). */
   notasExtra: { corpo: string; autor: string; interno: boolean }[];
+  /** E1246: quem decide é a conta observadora da QA (profiles.qa_admin), e que perfis são contas de teste. */
+  observador: boolean;
+  teste: Set<string>;
+  /** E1246 (O3/O3b): uma das partes do contrato não se lê (nula). */
+  semMorador: boolean;
+  semDono: boolean;
+  /** E1244 (ORDEM-DUET 1239): o chamado é de simulação; "sem" = a leitura não traz o campo. */
+  simulacao: boolean | "sem";
+  /** E1244: a leitura dos perfis (is_teste) falha. */
+  perfisFalham: boolean;
   /** O contexto do chamado (o pedido nasce com o contrato do registro). */
   contexto: { tipo: string | null; id: string | null };
   updates: { tabela: string; valores: Record<string, unknown>; filtros: Record<string, unknown> }[];
@@ -60,16 +71,24 @@ function consulta(tabela: string, comoSessao: boolean) {
   let valores: Record<string, unknown> | null = null;
   const b: Record<string, unknown> = {};
   let limite: number | null = null;
-  for (const m of ["select", "order", "in"]) b[m] = () => b;
+  for (const m of ["select", "order"]) b[m] = () => b;
+  b.in = (k: string, v: unknown) => ((filtros[`in:${k}`] = v), b);
   // ORDEM-DUET-1181 (H4): o .limit(n) corta as linhas, como no banco.
   b.limit = (n: number) => ((limite = n), b);
   b.eq = (k: string, v: unknown) => ((filtros[k] = v), b);
   b.is = (k: string, v: unknown) => ((filtros[`is:${k}`] = v), b);
-  const linhaPg = () => ({ ...E.pg, contratos: { id: CONTRATO, tenant_id: MORADOR, property_id: "p1", properties: { owner_id: DONO, title: "Casa no Centro" } } });
+  const linhaPg = () => ({ ...E.pg, contratos: { id: CONTRATO, tenant_id: E.semMorador ? null : MORADOR, property_id: "p1", properties: { owner_id: E.semDono ? null : DONO, title: "Casa no Centro" } } });
   const ler = () => {
+    // E1246: o perfil (a conta observadora da QA e as contas de teste), como o observador.ts lê.
+    if (tabela === "profiles") {
+      if (filtros.id) return { data: { qa_admin: E.observador }, error: null };
+      const ids = (filtros["in:id"] as string[] | undefined) ?? [];
+      if (E.perfisFalham) return { data: null, error: { message: "falha simulada" } };
+      return { data: ids.map((id) => ({ id, is_teste: E.teste.has(id) })), error: null };
+    }
     if (tabela === "pagamentos_bloco") return { data: filtros.id === E.pg.id ? linhaPg() : null, error: null };
     if (tabela === "documentos_fiscais") return { data: E.doc && !E.doc.anulado_em ? E.doc : null, error: null };
-    if (tabela === "chamados") return { data: filtros.numero_publico || filtros.id ? { id: CHAMADO, numero_publico: "CH-2026-000777", contexto_tipo: E.contexto.tipo, contexto_id: E.contexto.id } : null, error: null };
+    if (tabela === "chamados") return { data: filtros.numero_publico || filtros.id ? { id: CHAMADO, numero_publico: "CH-2026-000777", contexto_tipo: E.contexto.tipo, contexto_id: E.contexto.id, ...(E.simulacao === "sem" ? {} : { simulacao: E.simulacao }) } : null, error: null };
     if (tabela === "chamado_mensagens") {
       // Os filtros da leitura valem como no banco: autor e interno.
       const notas = [...(E.notaDoChamado ? [{ corpo: E.notaDoChamado, autor: E.notaAutor, interno: E.notaInterna }] : []), ...E.notasExtra];
@@ -127,6 +146,12 @@ function cenario(o: { tipo?: "aluguel" | "caucao"; confirmado?: boolean; anulado
     notaAutor: o.notaAutor ?? "sistema",
     notaInterna: o.notaInterna ?? true,
     notasExtra: [],
+    observador: false,
+    teste: new Set<string>(),
+    semMorador: false,
+    semDono: false,
+    simulacao: false,
+    perfisFalham: false,
     contexto: o.contexto ?? { tipo: "contrato", id: CONTRATO },
     updates: [],
     inserts: [],
@@ -375,4 +400,142 @@ test("24. (R2) a chamada da função dá erro: a ação recusa com a mensagem de
   const r2 = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
   assert.equal(erro(r2), "Não foi possível ler o registro. Tente de novo em instantes.");
   assert.equal(g.__e1229Respostas.length, 0);
+});
+
+// ── E1246 (ORDEM-DUET-1220; dúvida 2 do MAPA-E1244): a conta observadora da QA só anula quando tudo é de teste ────────
+const MSG_OBSERVADOR_RE = /observador|só leitura|dados de teste/i;
+
+test("25. (E1246) a observadora da QA, num contrato com as DUAS partes de teste: anula, como hoje", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.observador = true;
+  E.teste = new Set([DONO, MORADOR]);
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, true);
+  assert.equal(E.rpcs.filter((x) => x.nome === "anular_pagamento").length, 1);
+});
+
+test("26. (E1246) a observadora da QA, com o MORADOR real: recusa — nada se anula, ninguém é avisado", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.observador = true;
+  E.teste = new Set([DONO]);
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.match(erro(r) ?? "", MSG_OBSERVADOR_RE);
+  naoAnulou();
+});
+
+test("27. (E1246) a observadora da QA, com o DONO real: recusa", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.observador = true;
+  E.teste = new Set([MORADOR]);
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, false);
+  naoAnulou();
+});
+
+test("28. (E1246) quem é da equipe e não é a observadora decide como hoje, com as partes reais", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.observador = false;
+  E.teste = new Set();
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, true);
+});
+
+test("29. (E1246) a tela: para a observadora, o cartão \"Anular este registro\" some quando o contrato não é todo de teste", () => {
+  const pagina = readFileSync(new URL("../../app/(dashboard)/admin/atendimento/[id]/page.tsx", import.meta.url), "utf8");
+  // ORDEM-DUET-1226 (T1/T2): a chamada inteira — as duas partes E a regra do semPerfil.
+  assert.match(pagina, /soLeituraNaTela\(\[\{ id: "anular", alvo: \{ perfis: \[partes\.morador, partes\.dono\], semPerfil: partes\.morador && partes\.dono \? 0 : 1 \} \}\]\)\)\.length > 0/);
+  assert.match(pagina, /anularSoLeitura=\{anularSoLeitura\}/);
+  const cliente = readFileSync(new URL("../../app/(dashboard)/admin/atendimento/[id]/chamado-client.tsx", import.meta.url), "utf8");
+  assert.match(cliente, /\{pedidoDeAnulacao && !anularSoLeitura && <AnularRegistroCentral chamadoId=\{c\.id\} \/>\}/);
+});
+
+// ── ORDEM-DUET-1226 (O3 e O3b): uma parte por ler conta como recusa para a observadora ─────────────────────────────
+test("30. (O3) a observadora com o MORADOR por ler (nulo) e o dono de teste: recusa, nada se anula", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.observador = true;
+  E.teste = new Set([DONO]);
+  E.semMorador = true;
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.match(erro(r) ?? "", MSG_OBSERVADOR_RE);
+  naoAnulou();
+});
+
+test("31. (O3b) a observadora com o DONO por ler (nulo) e o morador de teste: recusa, nada se anula", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.observador = true;
+  E.teste = new Set([MORADOR]);
+  E.semDono = true;
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.match(erro(r) ?? "", MSG_OBSERVADOR_RE);
+  naoAnulou();
+});
+
+// ── E1244 (ORDEM-DUET 1239): a anulação a partir de um chamado de SIMULAÇÃO só passa com as DUAS contas de teste ─────
+// A Central mostra as simulações com a opção ligada (E1244): sem esta guarda, um chamado de simulação anularia dinheiro
+// real. O padrão é o da observadora (E1246): parte nula ou desconhecida = recusa; erro de leitura = recusa.
+const MSG_SIMULACAO_RE = /simulação/i;
+
+test("36. (E1244) chamado de simulação, as DUAS contas de teste: anula", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.simulacao = true;
+  E.teste = new Set([DONO, MORADOR]);
+  assert.deepEqual(await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO }), { ok: true });
+  assert.ok(E.pg.anulado_em);
+});
+
+test("37. (E1244) chamado de simulação com o MORADOR real: recusa, nada se anula", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.simulacao = true;
+  E.teste = new Set([DONO]);
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.match(erro(r) ?? "", MSG_SIMULACAO_RE);
+  naoAnulou();
+});
+
+test("38. (E1244) chamado de simulação com o DONO real: recusa, nada se anula", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.simulacao = true;
+  E.teste = new Set([MORADOR]);
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.match(erro(r) ?? "", MSG_SIMULACAO_RE);
+  naoAnulou();
+});
+
+test("39. (E1244) chamado de simulação com uma parte desconhecida (nula) e a outra de teste: recusa", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.simulacao = true;
+  E.teste = new Set([DONO]);
+  E.semMorador = true;
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  naoAnulou();
+});
+
+test("40. (E1244) chamado de simulação e a leitura dos perfis falha: recusa (falha fechada)", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.simulacao = true;
+  E.teste = new Set([DONO, MORADOR]);
+  E.perfisFalham = true;
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  naoAnulou();
+});
+
+test("41. (E1244) a leitura do chamado sem o campo simulacao: tratado como simulação (falha fechada)", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.simulacao = "sem";
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.match(erro(r) ?? "", MSG_SIMULACAO_RE);
+  naoAnulou();
+});
+
+test("42. (E1244) guarda: o chamado REAL com as partes reais anula como antes; a leitura pede o campo", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.simulacao = false;
+  assert.deepEqual(await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO }), { ok: true });
+  const acoes = readFileSync(new URL("./anulacao-actions.ts", import.meta.url), "utf8");
+  assert.match(acoes, /from\("chamados"\)\.select\("id, numero_publico, contexto_tipo, contexto_id, simulacao"\)/);
 });

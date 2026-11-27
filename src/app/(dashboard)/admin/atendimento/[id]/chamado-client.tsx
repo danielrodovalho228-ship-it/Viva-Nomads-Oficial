@@ -68,7 +68,7 @@ function Linha({ k, v }: { k: string; v: React.ReactNode }) {
   );
 }
 
-export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = false }: { dados: Dados; macros: Macro[]; agoraISO: string; observadorQa?: boolean }) {
+export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = false, anularSoLeitura = false }: { dados: Dados; macros: Macro[]; agoraISO: string; observadorQa?: boolean; /** E1246: a observadora da QA não vê o cartão quando o contrato não é todo de teste. */ anularSoLeitura?: boolean }) {
   const router = useRouter();
   const { chamado: c, eventos, pessoa, contextoLink, iaAtiva, sugestaoAuto, historico } = dados;
   // O resumo vai no cartão do topo; na conversa ficam só as mensagens e notas.
@@ -184,7 +184,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
         <span className="sm:hidden">Fila de atendimento</span>
       </Link>
 
-      {pedidoDeAnulacao && <AnularRegistroCentral chamadoId={c.id} />}
+      {pedidoDeAnulacao && !anularSoLeitura && <AnularRegistroCentral chamadoId={c.id} />}
 
       {/* Cabeçalho: o assunto e o estado mandam; o prazo é UM indicador. */}
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4 lg:flex-nowrap" data-testid="chamado-cabecalho">
@@ -192,6 +192,12 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
           <h1 className="font-title text-2xl font-semibold text-ink">{c.assunto}</h1>
           <ul className="mt-3 flex flex-wrap gap-2" data-testid="chamado-selos">
             <li className={selo}>{c.numero_publico}</li>
+            {/* E1244: a mesma marca da fila (a leitura do detalhe não muda — já abria igual). */}
+            {c.simulacao && (
+              <li className={selo} data-testid="chamado-simulacao">
+                Simulação
+              </li>
+            )}
             <li className={cn(selo, espera ? "border-amber-300 text-amber-900" : "border-forest/40 text-forest-700")} data-testid="chamado-status">
               <span aria-hidden className="h-2 w-2 rounded-full bg-current" />
               {rotuloStatus(c.status)}

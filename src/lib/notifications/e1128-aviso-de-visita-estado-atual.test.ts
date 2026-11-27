@@ -135,7 +135,8 @@ test("sino: a rota confere os avisos de visita de avaliação com o estado atual
   const rota = semComentarios(ler("app/api/painel/avisos/route.ts"));
   assert.match(rota, /ehAvisoDeVisitaDeAvaliacao\(a\.evento\)/);
   assert.match(rota, /avaliacao: /);
-  assert.match(rota, /resumoSemVisitaVencida\(\{ naoLidas: resumo\.naoLidas, maiorPrioridade \}, conferidos\)/, "o vencido sai dos recentes, da contagem e da cor");
+  // E1242: a rota passa também os ids que já vinham resolvidos do banco (o aviso de assinar resolvido sai do sino).
+  assert.match(rota, /resumoSemVisitaVencida\(\{ naoLidas: resumo\.naoLidas, maiorPrioridade \}, conferidos, resolvidosNoBanco\)/, "o vencido sai dos recentes, da contagem e da cor");
   assert.match(rota, /gravarResolucaoConferida\(\{ usuarioId: uid, ids: recemVencidos \}\)/, "a conferência fica gravada");
   const gravar = semComentarios(ler("lib/notifications/avisos-servidor.ts"));
   const g = gravar.slice(gravar.indexOf("export async function gravarResolucaoConferida("));
