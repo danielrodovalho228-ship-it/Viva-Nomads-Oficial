@@ -13,6 +13,6 @@ alter table public.contrato_eventos add constraint contrato_eventos_tipo_check c
 ));
 
 insert into supabase_migrations.schema_migrations (version, name)
-select '20261127000368', '0368_contrato_eventos_pagamento_anulado_e1229'
+select '20261127000368', '0368_pagamento_anulado'
 where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261127000368');
 commit;
