@@ -17,8 +17,8 @@ test("1. os dois textos exactos do coordenador", () => {
   assert.equal(mod.legendaDaFila!(true), "Incluindo simulações, marcadas como 'Simulação'. Elas não entram nos números.");
 });
 
-test("2. a página usa a legenda pelo estado da opção, só na aba da fila", () => {
+test("2. (ORDEM-DUET 1237) a legenda SÓ na aba da fila, pelo estado da opção; nas outras abas, nenhuma linha de legenda", () => {
   const tela = readFileSync(new URL("../app/(dashboard)/admin/atendimento/atendimento-client.tsx", import.meta.url), "utf8");
-  assert.match(tela, /legendaDaFila\(aba === "fila" && !!filtros\.simulacoes\)/);
+  assert.match(tela, /subtitle=\{aba === "fila" \? `Chamados por prioridade e prazo\. \$\{legendaDaFila\(!!filtros\.simulacoes\)\}` : "Chamados por prioridade e prazo\."\}/);
   assert.doesNotMatch(tela, /subtitle="Chamados por prioridade e prazo\. Simulações ficam fora\."/, "a legenda fixa sai");
 });

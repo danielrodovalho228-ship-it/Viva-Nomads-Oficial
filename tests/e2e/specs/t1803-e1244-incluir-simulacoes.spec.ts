@@ -106,5 +106,9 @@ test.describe("T1803 — E1244: a opção 'Incluir simulações' na fila da Cent
     await page.goto(`/admin/atendimento?aba=fila&simulacoes=1`, { waitUntil: "domcontentloaded" });
     await expect(page.getByText("Incluindo simulações, marcadas como 'Simulação'. Elas não entram nos números.")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText("Simulações ficam fora. Ligue 'Incluir simulações' para vê-las.")).toHaveCount(0);
+    // ORDEM-DUET 1237: nas outras abas, nenhuma linha de legenda (a opção só existe na fila).
+    await page.goto(`/admin/atendimento?aba=aprovacao&simulacoes=1`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("link", { name: /aprova/i }).first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/Simulações ficam fora|Incluindo simulações/)).toHaveCount(0);
   });
 });
