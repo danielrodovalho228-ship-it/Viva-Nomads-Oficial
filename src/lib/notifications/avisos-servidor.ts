@@ -34,7 +34,7 @@ export async function gravarAviso(p: {
   // E1228: o aviso crítico de assinatura pendente (contract_status de um contrato) diz QUAL estadia — as datas dos
   // blocos do contrato, ou o VN-CT se a leitura falhar — e leva o VN-CT no corpo. Os avisos já gravados não mudam.
   const assinatura = !p.titulo && p.evento === "contract_status" && (p.prioridade ?? prioridadeDoAviso(p.evento, p.papel)) === "critico" && p.refId && UUID_RE.test(p.refId) ? { contratoId: p.refId, ...(await estadiaDoContrato(admin, p.refId)) } : null;
-  if (assinatura && !p.texto) p = { ...p, texto: `Contrato ${numeroPublicoContrato(assinatura.contratoId)}` };
+  if (assinatura) p = { ...p, texto: `Contrato ${numeroPublicoContrato(assinatura.contratoId)}` };
   // Fonte única: o assunto do catálogo (ou o título já montado), mais o nome do imóvel quando o evento tem imóvel.
   let titulo = p.titulo ? tituloDoAviso(guardContactInfo(p.titulo).text) : tituloDoAviso(base.subject);
   let nomeDoImovel: string | null = null;
