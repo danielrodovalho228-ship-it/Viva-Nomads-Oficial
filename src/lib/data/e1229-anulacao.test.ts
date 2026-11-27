@@ -49,6 +49,8 @@ type Estado = {
   rpcs: { nome: string; args: Record<string, unknown> }[];
   /** A função do banco falha (simula a falha de uma das escritas: nada muda). */
   rpcFalha: boolean;
+  /** A função do banco devolve vazio (data null, sem erro). */
+  rpcVazio: boolean;
 };
 let E: Estado;
 const g = globalThis as unknown as { __e1229Sessao: unknown; __e1229Admin: unknown; __e1229EhEquipe: unknown; __e1229Chamados: unknown[]; __e1229Avisos: Record<string, unknown>[]; __e1229Respostas: { id: string; texto: string; interno: boolean }[] };
@@ -57,7 +59,10 @@ function consulta(tabela: string, comoSessao: boolean) {
   const filtros: Record<string, unknown> = {};
   let valores: Record<string, unknown> | null = null;
   const b: Record<string, unknown> = {};
-  for (const m of ["select", "order", "limit", "in"]) b[m] = () => b;
+  let limite: number | null = null;
+  for (const m of ["select", "order", "in"]) b[m] = () => b;
+  // ORDEM-DUET-1181 (H4): o .limit(n) corta as linhas, como no banco.
+  b.limit = (n: number) => ((limite = n), b);
   b.eq = (k: string, v: unknown) => ((filtros[k] = v), b);
   b.is = (k: string, v: unknown) => ((filtros[`is:${k}`] = v), b);
   const linhaPg = () => ({ ...E.pg, contratos: { id: CONTRATO, tenant_id: MORADOR, property_id: "p1", properties: { owner_id: DONO, title: "Casa no Centro" } } });
@@ -68,7 +73,8 @@ function consulta(tabela: string, comoSessao: boolean) {
     if (tabela === "chamado_mensagens") {
       // Os filtros da leitura valem como no banco: autor e interno.
       const notas = [...(E.notaDoChamado ? [{ corpo: E.notaDoChamado, autor: E.notaAutor, interno: E.notaInterna }] : []), ...E.notasExtra];
-      return { data: notas.filter((n) => (filtros.autor === undefined || n.autor === filtros.autor) && (filtros.interno === undefined || n.interno === filtros.interno)), error: null };
+      const vistas = notas.filter((n) => (filtros.autor === undefined || n.autor === filtros.autor) && (filtros.interno === undefined || n.interno === filtros.interno));
+      return { data: limite === null ? vistas : vistas.slice(0, limite), error: null };
     }
     return { data: null, error: null };
   };
@@ -98,6 +104,7 @@ async function rpc(nome: string, args: Record<string, unknown>) {
   E.rpcs.push({ nome, args });
   if (nome !== "anular_pagamento") return { data: null, error: { message: nome } };
   if (E.rpcFalha) return { data: null, error: { message: "falha simulada" } };
+  if (E.rpcVazio) return { data: null, error: null };
   const passa = !E.pg.anulado_em && (args.p_caminho === "central" || !E.pg.confirmado_pelo_inquilino);
   if (!passa) return { data: { ok: false }, error: null };
   const agora = new Date().toISOString();
@@ -125,6 +132,7 @@ function cenario(o: { tipo?: "aluguel" | "caucao"; confirmado?: boolean; anulado
     inserts: [],
     rpcs: [],
     rpcFalha: false,
+    rpcVazio: false,
   };
   g.__e1229Sessao = cliente(o.quem ?? DONO, true);
   g.__e1229Admin = cliente(o.quem ?? DONO, false);
@@ -331,4 +339,40 @@ test("21. (1177) a mesma nota do sistema repetida (um só registro): segue como 
   E.notasExtra = [{ corpo: `[anulacao] pagamento=${PG}`, autor: "sistema", interno: true }];
   assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, true);
   assert.equal(E.rpcs.filter((x) => x.nome === "anular_pagamento").length, 1);
+});
+
+// ── ORDEM-DUET-1181: as fugas da re-mordida (H4, R1, R2) ───────────────────────────────────────────────────────────
+
+test("22. (H4) as notas do sistema lêem-se TODAS: a 2.ª nota do sistema (B) depois de 20 notas do sistema de A repetidas ainda recusa", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.notasExtra = [...Array.from({ length: 20 }, () => ({ corpo: `[anulacao] pagamento=${PG}`, autor: "sistema", interno: true })), { corpo: `[anulacao] pagamento=${PG_B}`, autor: "sistema", interno: true }];
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.equal(erro(r), "Este chamado tem mais de um registro; abra um pedido por registro.");
+  naoAnulou();
+});
+
+test("23. (R1) a função devolve vazio (sem erro e sem resposta): a ação recusa, não segue — nada se anuncia", async () => {
+  E.rpcVazio = true;
+  const r = await anularRegistro({ pagamentoId: PG, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.equal(g.__e1229Avisos.length, 0);
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.rpcVazio = true;
+  const r2 = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r2.ok, false);
+  assert.equal(g.__e1229Avisos.length, 0);
+  assert.equal(g.__e1229Respostas.length, 0, "nenhuma resposta ao dono");
+});
+
+test("24. (R2) a chamada da função dá erro: a ação recusa com a mensagem de leitura — nunca 'já foi anulado'", async () => {
+  E.rpcFalha = true;
+  const r = await anularRegistro({ pagamentoId: PG, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.equal(erro(r), "Não foi possível ler o registro. Tente de novo em instantes.");
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.rpcFalha = true;
+  const r2 = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(erro(r2), "Não foi possível ler o registro. Tente de novo em instantes.");
+  assert.equal(g.__e1229Respostas.length, 0);
 });

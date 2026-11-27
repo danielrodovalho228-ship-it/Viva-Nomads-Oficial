@@ -72,5 +72,9 @@ test.describe("T1799 — 0368 executada: o tipo pagamento_anulado na trilha do c
     expect.soft(f.falhaNoEvento.documento, "o documento fica intacto").toEqual({ anulado: false, motivo: null });
     expect.soft(f.falhaNoEvento.eventos).toBe(0);
     expect.soft(f.semPermissao, "quem não é o servidor não executa a função").toMatch(/permission denied/);
+    // ORDEM-DUET-1181 (F8): o caminho inventado é recusado pela função (o raise), e nada muda.
+    expect.soft(f.caminhoInvalido.erro, "um caminho inventado é recusado").toMatch(/anular_pagamento: caminho inválido/);
+    expect.soft(f.caminhoInvalido.pagamento, "o pagamento fica").toEqual({ anulado: false, motivo: null });
+    expect.soft(f.caminhoInvalido.eventos).toBe(0);
   });
 });

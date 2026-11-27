@@ -87,6 +87,8 @@ export type ProvaDa0368 = {
     outraVez: { resposta: unknown; eventos: number };
     falhaNoEvento: { erro: string | null; pagamento: Estado; documento: Estado; eventos: number };
     semPermissao: string | null;
+    /** ORDEM-DUET-1181 (F8): um caminho inventado é recusado pela função, e nada muda. */
+    caminhoInvalido: { erro: string | null; pagamento: Estado; eventos: number };
   };
 };
 type Estado = { anulado: boolean; motivo: string | null };
@@ -215,7 +217,10 @@ async function osCasos(db: postgres.Sql, mig: string, apl: string, rb: string): 
   await db.unsafe(`drop trigger falha_simulada on public.contrato_eventos; drop function public.falha_simulada()`);
   const d = await novoPg(false);
   const semPermissao = await tentar(`begin; set local role authenticated; select public.anular_pagamento('${d.id}', 'valor lançado errado', '${AUTOR}', 'dono', null); commit;`);
-  const funcao = { erroAplicar: eApl, dono, donoConfirmado, central, outraVez, falhaNoEvento, semPermissao };
+  const e = await novoPg(false);
+  const eInv = await tentar(`select public.anular_pagamento('${e.id}', 'valor lançado errado', '${AUTOR}', 'inventado', null)`);
+  const caminhoInvalido = { erro: eInv, pagamento: await estado("pagamentos_bloco", e.id), eventos: (await eventosDe(e.id)).length };
+  const funcao = { caminhoInvalido, erroAplicar: eApl, dono, donoConfirmado, central, outraVez, falhaNoEvento, semPermissao };
 
   return { migracao, depois, reaplicar, aplicar, rollbackComEvento, rollbackLimpo, funcao };
 }
