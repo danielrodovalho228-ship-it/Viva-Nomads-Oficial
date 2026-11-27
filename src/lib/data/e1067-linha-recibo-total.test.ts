@@ -57,7 +57,8 @@ test("1. um registro COM encargos: a linha leva o TOTAL (aluguel + contas + limp
   assert.equal(r.recibos.length, 1);
   const rec = r.recibos[0];
   assert.equal(rec.total, 3143.33, "o total do registro, com os encargos");
-  assert.equal(textoLinhaRecibo(rec), "Recibo em preparação · R$ 3.143,33 · 20/12/2026 a 19/01/2027");
+  // E1233 (ORDEM-DUET 1208, asserção alterada): a identificação do bloco e o período dd/mm sem ano.
+  assert.equal(textoLinhaRecibo(rec), "Recibo em preparação · Bloco 1 · R$ 3.143,33 · 20/12 a 19/01");
 });
 
 test("2. a caução: o valor dela (os encargos não contam), sem período", async () => {
@@ -66,5 +67,6 @@ test("2. a caução: o valor dela (os encargos não contam), sem período", asyn
   ]);
   const rec = (await documentosDosContratos([CONTRATO]))[CONTRATO].recibos[0];
   assert.equal(rec.total, 1292);
-  assert.equal(textoLinhaRecibo(rec), "Recibo em preparação · R$ 1.292,00");
+  // E1233 (ORDEM-DUET 1208, asserção alterada): sem bloco, a caução é "do contrato".
+  assert.equal(textoLinhaRecibo(rec), "Recibo em preparação · Caução do contrato · R$ 1.292,00");
 });

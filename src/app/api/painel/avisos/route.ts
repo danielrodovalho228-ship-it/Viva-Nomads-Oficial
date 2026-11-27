@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { marcarAvisoLido, marcarTodosAvisosLidos, meusAvisos, resumoDoSino } from "@/lib/data/avisos-actions";
-import { contratoDoAviso, criticosPendentes, ehAvisoDeVisitaDeAvaliacao, ordenarParaOSino, resolvidosNaPratica, resumoSemVisitaVencida } from "@/lib/notifications/sino";
+import { contratoDoAviso, criticosPendentes, ehAvisoDeVisitaDeAvaliacao, ordenarParaOSino, resolucoesConferidasAGravar, resolvidosNaPratica, resumoSemVisitaVencida } from "@/lib/notifications/sino";
 import { gravarResolucaoConferida } from "@/lib/notifications/avisos-servidor";
 import { resumoDosAvisos } from "@/lib/notifications/avisos";
 import { situacaoDosContratos } from "@/lib/notifications/situacao-contratos";
@@ -37,16 +37,18 @@ export async function GET() {
       const visitas = candidatos.some((a) => a.evento === "visita_pedida");
       const situacao = uid ? await situacaoDosContratos(uid, ids, { visitas, avaliacao: deAvaliacao }).catch(() => null) : null;
       conferidos = resolvidosNaPratica(avisos, situacao, new Date().toISOString());
-      // E1128: o aviso de visita que a conferência deu por vencido fica gravado como resolvido (todas as telas concordam).
-      const antes = new Map(avisos.map((a) => [a.id, a.resolvido_em]));
-      const recemVencidos = conferidos.filter((a) => ehAvisoDeVisitaDeAvaliacao(a.evento) && a.resolvido_em && !antes.get(a.id)).map((a) => a.id);
+      // E1128 + E1242: o que a conferência deu por resolvido fica gravado (todas as telas concordam) — a visita de
+      // avaliação, e o aviso de assinar/do aditivo só com referência (ORDEM-1224).
+      const recemVencidos = resolucoesConferidasAGravar(avisos, conferidos);
       if (uid && recemVencidos.length) await gravarResolucaoConferida({ usuarioId: uid, ids: recemVencidos });
       if (maiorPrioridade === "critico" && !criticosPendentes(conferidos).length) {
         maiorPrioridade = resumoDosAvisos(conferidos.filter((a) => !a.lido_em)).maiorPrioridade;
       }
     }
     // E1128: o aviso de visita de avaliação já resolvido sai do sino (não aparece, não conta como não lido e não deixa a cor).
-    const doSino = resumoSemVisitaVencida({ naoLidas: resumo.naoLidas, maiorPrioridade }, conferidos);
+    // E1242: o aviso de assinar/do aditivo já resolvido (pela assinatura, ou pela conferência com referência) também sai.
+    const resolvidosNoBanco = new Set(avisos.filter((a) => a.resolvido_em).map((a) => a.id));
+    const doSino = resumoSemVisitaVencida({ naoLidas: resumo.naoLidas, maiorPrioridade }, conferidos, resolvidosNoBanco);
     const { visiveis } = doSino;
     return NextResponse.json(
       { naoLidas: doSino.naoLidas, maiorPrioridade: doSino.maiorPrioridade, recentes: ordenarParaOSino(visiveis), criticos: criticosPendentes(visiveis).slice(0, 5) },
