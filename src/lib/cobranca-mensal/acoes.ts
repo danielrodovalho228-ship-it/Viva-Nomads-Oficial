@@ -7,6 +7,8 @@ import { consumirLimite, HORA } from "@/lib/limites";
 import { COBRANCA_MENSAL_ATIVA } from "@/lib/flags";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
+import { avisoDaRotina } from "@/lib/notifications/avisos-rotinas-contrato";
+import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { podeConfirmar, podeRegistrar } from "./regras";
 
@@ -51,7 +53,9 @@ export async function registrarPagamentoMensal(parcelaId: string): Promise<Resul
     const { data: dono } = await ctx.admin.from("profiles").select("email, full_name").eq("id", ctx.owner_id).maybeSingle();
     const d = dono as { email?: string | null; full_name?: string | null } | null;
     if (d?.email) {
-      await notify({ event: "contract_status", email: d.email, name: d.full_name ?? undefined, userId: ctx.owner_id, pushUrl: `/dashboard/contratos/${ctx.parcela.contrato_id}`, subject: ASSUNTOS.pagamentoRegistradoMorador, body: (n) => `Olá${n ? " " + n : ""}, o morador registrou o pagamento de uma parcela do aluguel de ${ctx.imovel}. Confirme quando o valor chegar até você.`, ctaLabel: "Ver o contrato" });
+      // E1247 (ORDEM-DUET 1233): o aviso do site com o título, a prioridade e o número da tabela das rotinas.
+      const av = avisoDaRotina("pagamentoRegistradoMorador", "proprietario");
+      await notify({ event: "contract_status", email: d.email, name: d.full_name ?? undefined, userId: ctx.owner_id, pushUrl: `/dashboard/contratos/${ctx.parcela.contrato_id}`, subject: ASSUNTOS.pagamentoRegistradoMorador, body: (n) => `Olá${n ? " " + n : ""}, o morador registrou o pagamento de uma parcela do aluguel de ${ctx.imovel}. Confirme quando o valor chegar até você.`, ctaLabel: "Ver o contrato", tituloAviso: av.titulo, prioridadeAviso: av.prioridade, textoAviso: `Contrato ${numeroPublicoContrato(ctx.parcela.contrato_id)}` });
       // "Aguardando confirmação" só depois que o dono foi de fato avisado; sem aviso, fica "registrado pelo morador".
       await ctx.admin.from("cobranca_mensal_parcelas").update({ estado_livro: "aguardando_confirmacao" }).eq("id", parcelaId).eq("estado_livro", "registrado_morador");
     }
