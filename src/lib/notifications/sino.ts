@@ -258,3 +258,29 @@ export function acaoDaFaixa(evento: string, titulo?: string | null): string {
   const acao = ACAO_RESOLVE[evento as NotificationEvent];
   return acao ? ROTULO_ACAO[acao] : "Resolver agora";
 }
+
+/**
+ * E1242 reaberto (ORDEM-DUET 1247; a lei do E777): a UMA regra de resolução de TODAS as superfícies de avisos — o painel
+ * do sino, a faixa crítica, a página completa, os filtros dela e a contagem de não lidas.
+ * Resolvido = resolvido no banco (de qualquer evento), ou resolvido AGORA pela conferência com o mesmo critério da
+ * gravação (resolucoesConferidasAGravar: a visita de avaliação; assinar/aditivo com referência — ORDEM-1224). O
+ * resolvido sai da lista e da faixa; as não lidas (lidas no banco já sem os resolvidos) descontam os resolvidos agora.
+ * O crítico sem referência que a conferência dá por cumprido fica na lista (não é gravado) mas sai da faixa, como hoje.
+ */
+export function superficieDosAvisos<T extends AvisoTela>(
+  resumo: { naoLidas: number; maiorPrioridade: PrioridadeAviso | null },
+  antes: readonly T[],
+  conferidos: readonly T[],
+): { visiveis: T[]; criticos: T[]; naoLidas: number; maiorPrioridade: PrioridadeAviso | null } {
+  const noBanco = new Set(antes.filter((a) => a.resolvido_em).map((a) => a.id));
+  const agora = new Set(resolucoesConferidasAGravar(antes, conferidos));
+  const visiveis = conferidos.filter((a) => !noBanco.has(a.id) && !agora.has(a.id));
+  const naoLidas = Math.max(0, resumo.naoLidas - conferidos.filter((a) => agora.has(a.id) && !a.lido_em).length);
+  let maiorPrioridade = resumo.maiorPrioridade;
+  const pendentesNaoLidos = () => visiveis.filter((a) => !a.lido_em && !a.resolvido_em);
+  if (naoLidas === 0) maiorPrioridade = null;
+  else if (maiorPrioridade && conferidos.some((a) => agora.has(a.id) && !a.lido_em && a.prioridade === maiorPrioridade)) maiorPrioridade = resumoDosAvisos(pendentesNaoLidos()).maiorPrioridade;
+  // E676: o crítico que a conferência dá por cumprido (sem referência) não pinta o sino de vermelho.
+  if (maiorPrioridade === "critico" && !criticosPendentes(visiveis).length) maiorPrioridade = resumoDosAvisos(pendentesNaoLidos()).maiorPrioridade;
+  return { visiveis, criticos: criticosPendentes(visiveis).slice(0, 5), naoLidas, maiorPrioridade };
+}

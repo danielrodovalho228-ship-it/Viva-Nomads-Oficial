@@ -171,9 +171,10 @@ test("15. a linha do recibo em \"Documentos do contrato\": número, TOTAL do reg
     textoLinhaRecibo!({ tipo: "caucao", numero: "CAU-2026-000010", total: 1292, inicio: null, fim: null }),
   ];
   assert.deepEqual(linhas, [
-    "REC-2026-000123 · R$ 3.143,33 · 20/12/2026 a 19/01/2027",
-    "Recibo em preparação · R$ 6.400,00 · 19/10/2026 a 18/12/2026",
-    "CAU-2026-000010 · R$ 1.292,00",
+    // E1233 (ORDEM-DUET 1208, asserção alterada): período dd/mm sem ano; sem bloco, a caução é "do contrato".
+    "REC-2026-000123 · R$ 3.143,33 · 20/12 a 19/01",
+    "Recibo em preparação · R$ 6.400,00 · 19/10 a 18/12",
+    "CAU-2026-000010 · Caução do contrato · R$ 1.292,00",
   ]);
   for (const l of linhas) assert.doesNotMatch(l, /\bm[eê]s(es)?\b|\bdias?\b/i, l);
 });
