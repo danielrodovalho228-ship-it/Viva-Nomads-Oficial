@@ -1,6 +1,7 @@
 "use client";
 
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
+import { AnularRegistroCentral } from "./anular-registro-central";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -72,6 +73,8 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
   const { chamado: c, eventos, pessoa, contextoLink, iaAtiva, sugestaoAuto, historico } = dados;
   // O resumo vai no cartão do topo; na conversa ficam só as mensagens e notas.
   const mensagens = dados.mensagens.filter((m) => !(m.interno && ehNotaResumo(m.corpo)));
+  // E1229 (ORDEM-DUET-1160): o chamado que nasceu de um registro (a nota do sistema) tem o botão de anular.
+  const pedidoDeAnulacao = dados.mensagens.some((m) => m.autor === "sistema" && m.interno && /^\[anulacao\] pagamento=/.test(m.corpo));
   // Ao abrir, a última sugestão da Viva ainda não usada já vem na caixa (nota
   // interna no banco: "Enviar como está" lê de lá).
   const [base, setBase] = useState<{ mensagemId: number; texto: string } | null>(() => {
@@ -180,6 +183,8 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
         <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Voltar à fila de atendimento</span>
         <span className="sm:hidden">Fila de atendimento</span>
       </Link>
+
+      {pedidoDeAnulacao && <AnularRegistroCentral chamadoId={c.id} />}
 
       {/* Cabeçalho: o assunto e o estado mandam; o prazo é UM indicador. */}
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4 lg:flex-nowrap" data-testid="chamado-cabecalho">
