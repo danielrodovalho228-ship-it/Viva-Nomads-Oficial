@@ -36,6 +36,9 @@ test.describe("T1799 — 0368 executada: o tipo pagamento_anulado na trilha do c
     expect.soft(p.aplicar.erro2, "o aplicar reaplica sem erro").toBeNull();
     expect.soft(p.aplicar.registos, "regista-se uma vez").toBe(1);
     expect.soft(p.aplicar.nome).toBe("0368_contrato_eventos_pagamento_anulado_e1229");
+    // ORDEM-DUET-1170 (Aq): o check depois do aplicar de produção.
+    expect.soft(p.aplicar.pagamentoAnulado, "depois do aplicar, o tipo novo entra").toBeNull();
+    expect.soft(p.aplicar.foraDaLista, "depois do aplicar, um tipo inventado é recusado").toMatch(/contrato_eventos_tipo_check/);
     expect.soft(p.rollbackComEvento.erroMigracao).toBeNull();
     expect.soft(p.rollbackComEvento.erroRollback, "com um pagamento_anulado gravado, o rollback FALHA").not.toBeNull();
     expect.soft(p.rollbackComEvento.eventosIguais, "e nada muda nos eventos").toBe(true);

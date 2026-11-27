@@ -76,7 +76,7 @@ export type ProvaDa0368 = {
   migracao: { erro: string | null; eventos: number; iguais: boolean };
   depois: { pagamentoAnulado: string | null; foraDaLista: string | null };
   reaplicar: { erro: string | null; checkIgual: boolean };
-  aplicar: { erro1: string | null; erro2: string | null; registos: number; nome: string | null };
+  aplicar: { erro1: string | null; erro2: string | null; registos: number; nome: string | null; pagamentoAnulado: string | null; foraDaLista: string | null };
   rollbackComEvento: { erroMigracao: string | null; erroRollback: string | null; eventosIguais: boolean; aceitaAinda: boolean };
   rollbackLimpo: { erroMigracao: string | null; erroRollback: string | null; eventosIguais: boolean; pagamentoAnulado: string | null; registo: number; funcaoFica: boolean };
   funcao: {
@@ -158,7 +158,9 @@ async function osCasos(db: postgres.Sql, mig: string, apl: string, rb: string): 
   const ea1 = await tentar(apl);
   const ea2 = await tentar(apl);
   const reg = await registos();
-  const aplicar = { erro1: ea1, erro2: ea2, registos: reg.length, nome: reg.length ? String(reg[0].name) : null };
+  // ORDEM-DUET-1170 (Aq): depois do APLICAR de produção (não só da migração), o check está lá — o tipo novo entra e um
+  // tipo inventado é recusado.
+  const aplicar = { erro1: ea1, erro2: ea2, registos: reg.length, nome: reg.length ? String(reg[0].name) : null, pagamentoAnulado: await evento("pagamento_anulado"), foraDaLista: await evento("tipo_inventado") };
 
   // Rollback com um pagamento_anulado gravado → falha, nada muda.
   await universo();

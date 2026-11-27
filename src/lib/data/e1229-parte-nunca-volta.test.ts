@@ -20,7 +20,7 @@ const g = globalThis as unknown as { __e1072Sessao: unknown; __e1072Admin: unkno
 
 type Linha = { id: string; parte: number; valor: number; encargos: unknown; anulado: boolean };
 /** O Supabase falso: a leitura com `.is("anulado_em", null)` vê só os ativos; sem ela, todos os do bloco. */
-function sessao(linhas: Linha[]) {
+function sessao(linhas: Linha[], falhaTodas = false) {
   const inseridos: Record<string, unknown>[] = [];
   return {
     inseridos,
@@ -29,7 +29,9 @@ function sessao(linhas: Linha[]) {
       let soAtivos = false;
       const b: Record<string, unknown> = {};
       const resposta = () =>
-        tabela === "pagamentos_bloco"
+        tabela === "pagamentos_bloco" && falhaTodas && !soAtivos
+          ? { data: null, error: { message: "falhou a leitura das partes" } }
+          : tabela === "pagamentos_bloco"
           ? { data: linhas.filter((l) => !soAtivos || !l.anulado).map((l) => ({ id: l.id, parte: l.parte, valor: l.valor, encargos: l.encargos })), error: null }
           : tabela === "contratos"
             ? { data: { id: CONTRATO, prazo_total_dias: 60, contrato_blocos: [{ id: BLOCO, numero_bloco: 1, meses: 2, inicio: "2026-12-01", fim: "2027-01-29", valor: 3000 }] }, error: null }
@@ -87,4 +89,12 @@ test("4. sem nada no bloco, a parte 1 (como antes)", async () => {
   g.__e1072Sessao = s;
   assert.equal((await marcarPagamentoRecebido(registro(3000))).ok, true);
   assert.equal(s.inseridos[0].parte, 1);
+});
+
+test("5. (PC, ORDEM-DUET-1170) a leitura de todas as partes falha: o registro é recusado — nunca grava com um número adivinhado", async () => {
+  const s = sessao([{ id: "p1", parte: 1, valor: 2000, encargos: [], anulado: true }], true);
+  g.__e1072Sessao = s;
+  const r = await marcarPagamentoRecebido(registro(500));
+  assert.equal(r.ok, false);
+  assert.equal(s.inseridos.length, 0, "nada gravado");
 });

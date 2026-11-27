@@ -37,6 +37,11 @@ type Estado = {
   pg: Pg;
   doc: { id: string; numero: string; anulado_em: string | null } | null;
   notaDoChamado: string | null;
+  /** Quem escreveu a nota e se é interna (a do pedido é do sistema, interna). */
+  notaAutor: string;
+  notaInterna: boolean;
+  /** O contexto do chamado (o pedido nasce com o contrato do registro). */
+  contexto: { tipo: string | null; id: string | null };
   updates: { tabela: string; valores: Record<string, unknown>; filtros: Record<string, unknown> }[];
   inserts: { tabela: string; linha: Record<string, unknown> }[];
   rpcs: { nome: string; args: Record<string, unknown> }[];
@@ -57,8 +62,12 @@ function consulta(tabela: string, comoSessao: boolean) {
   const ler = () => {
     if (tabela === "pagamentos_bloco") return { data: filtros.id === E.pg.id ? linhaPg() : null, error: null };
     if (tabela === "documentos_fiscais") return { data: E.doc && !E.doc.anulado_em ? E.doc : null, error: null };
-    if (tabela === "chamados") return { data: filtros.numero_publico || filtros.id ? { id: CHAMADO, numero_publico: "CH-2026-000777", contexto_tipo: "contrato", contexto_id: CONTRATO } : null, error: null };
-    if (tabela === "chamado_mensagens") return { data: E.notaDoChamado ? [{ corpo: E.notaDoChamado, autor: "sistema", interno: true }] : [], error: null };
+    if (tabela === "chamados") return { data: filtros.numero_publico || filtros.id ? { id: CHAMADO, numero_publico: "CH-2026-000777", contexto_tipo: E.contexto.tipo, contexto_id: E.contexto.id } : null, error: null };
+    if (tabela === "chamado_mensagens") {
+      // Os filtros da leitura valem como no banco: autor e interno.
+      const notas = E.notaDoChamado ? [{ corpo: E.notaDoChamado, autor: E.notaAutor, interno: E.notaInterna }] : [];
+      return { data: notas.filter((n) => (filtros.autor === undefined || n.autor === filtros.autor) && (filtros.interno === undefined || n.interno === filtros.interno)), error: null };
+    }
     return { data: null, error: null };
   };
   const escrever = () => {
@@ -101,11 +110,14 @@ const cliente = (uid: string, sessao: boolean) => ({
   rpc,
 });
 
-function cenario(o: { tipo?: "aluguel" | "caucao"; confirmado?: boolean; anulado?: boolean; quem?: string; equipe?: boolean; nota?: string | null } = {}) {
+function cenario(o: { tipo?: "aluguel" | "caucao"; confirmado?: boolean; anulado?: boolean; quem?: string; equipe?: boolean; nota?: string | null; notaAutor?: string; notaInterna?: boolean; contratoDoPg?: string; contexto?: { tipo: string | null; id: string | null } } = {}) {
   E = {
-    pg: { id: PG, contrato_id: CONTRATO, bloco_id: "b1", tipo: o.tipo ?? "aluguel", parte: 2, valor: 500, confirmado_pelo_inquilino: !!o.confirmado, anulado_em: o.anulado ? "2026-11-26T10:00:00Z" : null },
+    pg: { id: PG, contrato_id: o.contratoDoPg ?? CONTRATO, bloco_id: "b1", tipo: o.tipo ?? "aluguel", parte: 2, valor: 500, confirmado_pelo_inquilino: !!o.confirmado, anulado_em: o.anulado ? "2026-11-26T10:00:00Z" : null },
     doc: { id: "doc-1", numero: o.tipo === "caucao" ? "CAU-2026-000010" : "REC-2026-000123", anulado_em: null },
     notaDoChamado: o.nota === undefined ? `[anulacao] pagamento=${PG}` : o.nota,
+    notaAutor: o.notaAutor ?? "sistema",
+    notaInterna: o.notaInterna ?? true,
+    contexto: o.contexto ?? { tipo: "contrato", id: CONTRATO },
     updates: [],
     inserts: [],
     rpcs: [],
@@ -237,4 +249,47 @@ test("12. um chamado que não nasceu de um registro não tem o que anular", asyn
   const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
   assert.equal(r.ok, false);
   assert.equal(E.updates.length, 0);
+});
+
+// ── ORDEM-DUET-1170: as fugas da mordida (N6 e N7) ──────────────────────────────────────────────────────────────────
+const OUTRO_CONTRATO = "99999999-8888-4777-8666-555555555555";
+const naoAnulou = () => {
+  assert.equal(E.rpcs.filter((x) => x.nome === "anular_pagamento").length, 0, "a função do banco não é chamada");
+  assert.equal(E.pg.anulado_em, null);
+  assert.equal(g.__e1229Avisos.length, 0);
+  assert.equal(g.__e1229Respostas.length, 0);
+};
+
+test("13. (N6) a nota [anulacao] escrita por uma PESSOA (não do sistema) é recusada", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true, notaAutor: "usuario", notaInterna: false });
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  naoAnulou();
+});
+
+test("14. (N6) a nota [anulacao] do sistema mas NÃO interna (visível) é recusada", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true, notaAutor: "sistema", notaInterna: false });
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, false);
+  naoAnulou();
+});
+
+test("15. (N6) a nota [anulacao] interna escrita pela equipe (não pelo sistema) é recusada", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true, notaAutor: "admin", notaInterna: true });
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, false);
+  naoAnulou();
+});
+
+test("16. (N7) a nota a apontar para um pagamento de OUTRO contrato que não o do chamado é recusada", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true, contratoDoPg: OUTRO_CONTRATO });
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, false);
+  naoAnulou();
+});
+
+test("17. (N7) um chamado sem o contrato no contexto não anula registro nenhum (o pedido nasce sempre com o contrato)", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true, contexto: { tipo: null, id: null } });
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, false);
+  naoAnulou();
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true, contexto: { tipo: "anuncio", id: CONTRATO } });
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, false);
+  naoAnulou();
 });
