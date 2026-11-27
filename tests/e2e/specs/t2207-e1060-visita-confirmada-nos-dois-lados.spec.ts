@@ -5,6 +5,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   T2207 — E1060 (linha Mensagens; ORDEM-DUET-315). As travas que sustentam a re-prova do fecho das Mensagens depois do
   #4063. Na prova ao vivo de 20/11: com a visita já confirmada, o dono abria Visitas e via "Nenhuma visita ainda", e o
   alerta crítico "Pedido de visita" (ação "Confirmar a visita") continuava no topo do painel.
+  Vizinha do E1242 (ORDEM-DUET 1247): corre também no portão do E1242 reaberto, porque a leitura do sino e da faixa
+  mudou da rota para avisos-telas.ts (uma regra de resolução para todas as superfícies).
   O caminho, todo pela tela: o morador pede a visita na página do imóvel → o dono vê a faixa crítica "Pedido de visita"
   → o dono confirma (com o link da chamada) → depois:
     1. o dono abre /dashboard/visitas (SEM ?de=dono, como pelo menu) e vê a visita confirmada, não "Nenhuma visita ainda";

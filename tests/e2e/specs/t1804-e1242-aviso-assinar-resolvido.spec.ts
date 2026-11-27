@@ -9,6 +9,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
    2. TRAVA (ORDEM-1224): um aviso contract_status SEM referência, com o contrato assinado no endereço (o caso do E1247),
       NÃO é resolvido pela rede — continua por resolver no banco e no sino;
    3. guarda: o contrato que só o dono assinou — o crítico do morador continua no sino e na faixa, por resolver.
+   4. E1242 reaberto (ORDEM-DUET 1247; a lei do E777): a FAIXA do painel, a PÁGINA COMPLETA (/dashboard/notificacoes#avisos)
+      e o filtro "Críticos" excluem os resolvidos pela mesma regra do sino — o dono;
+   5. o mesmo para o morador: o resolvido dele sai da faixa, da página e do filtro; o crítico que ainda vale fica.
   Simulação declarada: contratos, assinaturas e avisos gravados pelo laboratório; a leitura é a da API do sino, com a
   sessão de cada um. Laboratório; não é prova ao vivo no site.
 */
@@ -60,6 +63,7 @@ test.describe("T1804 — E1242: o aviso de assinar resolvido sai do sino; a rede
       { chave: "jaResolvido", usuario_id: ids.dono, evento: "contract_status", prioridade: "critico", titulo, url: `/dashboard/contratos/${ids.assinado}`, ref_id: ids.assinado, criado_em: horas(5), resolvido_em: horas(1) },
       { chave: "esquecido", usuario_id: ids.dono, evento: "contract_status", prioridade: "critico", titulo: `${titulo} (renovado)`, url: `/dashboard/contratos/${ids.assinado}`, ref_id: ids.assinado, criado_em: horas(4) },
       { chave: "semRef", usuario_id: ids.dono, evento: "contract_status", prioridade: "critico", titulo: "Atualização do seu contrato", url: `/dashboard/contratos/${ids.assinado}`, ref_id: null, criado_em: horas(3) },
+      { chave: "resolvidoMorador", usuario_id: ids.inq, evento: "contract_status", prioridade: "critico", titulo: `${titulo} — resolvido do morador`, url: `/dashboard/estadia/${ids.assinado}`, ref_id: ids.assinado, criado_em: horas(1), resolvido_em: horas(0.5) },
       { chave: "faltaMorador", usuario_id: ids.inq, evento: "contract_status", prioridade: "critico", titulo, url: `/dashboard/estadia/${ids.meio}`, ref_id: ids.meio, criado_em: horas(2) },
     ];
     for (const { chave, ...l } of linhas) {
@@ -99,6 +103,46 @@ test.describe("T1804 — E1242: o aviso de assinar resolvido sai do sino; a rede
     expect(s.recentes.map((a) => a.id)).toContain(ids.faltaMorador);
     expect(s.criticos.map((a) => a.id)).toContain(ids.faltaMorador);
     expect(await resolvidoEm(ids.faltaMorador!)).toBeNull();
+    await p.context().close();
+  });
+
+  const TITULO = () => `Assinar o contrato — Studio sino ${sufixo}`;
+  async function paginaDosAvisos(p: Page) {
+    await p.goto("/dashboard/notificacoes#avisos", { waitUntil: "domcontentloaded" });
+    const caixa = p.getByTestId("avisos-caixa");
+    await expect(caixa).toBeVisible({ timeout: 20_000 });
+    return caixa;
+  }
+  async function faixa(p: Page) {
+    await p.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await p.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
+    return p.getByTestId("faixa-critico");
+  }
+
+  test("4. dono: a faixa, a página completa e o filtro 'Críticos' sem os resolvidos (a regra do sino)", async ({ browser }) => {
+    const p = await abrir(browser, dono.email);
+    const caixa = await paginaDosAvisos(p);
+    await expect(caixa).not.toContainText(`${TITULO()} (renovado)`);
+    await expect(caixa.getByText(TITULO(), { exact: true })).toHaveCount(0);
+    await p.getByTestId("avisos-filtro-critico").click();
+    await expect(caixa).not.toContainText(TITULO());
+    const f = await faixa(p);
+    if (await f.count()) await expect(f).not.toContainText(TITULO());
+    await p.context().close();
+  });
+
+  test("5. morador: o resolvido sai da faixa, da página e do filtro; o crítico que ainda vale fica", async ({ browser }) => {
+    const p = await abrir(browser, inq.email);
+    const caixa = await paginaDosAvisos(p);
+    await expect(caixa).not.toContainText("resolvido do morador");
+    await expect(caixa).toContainText(TITULO());
+    await p.getByTestId("avisos-filtro-critico").click();
+    await expect(caixa).not.toContainText("resolvido do morador");
+    await expect(caixa).toContainText(TITULO());
+    const f = await faixa(p);
+    await expect(f).toBeVisible({ timeout: 20_000 });
+    await expect(f).toContainText(TITULO());
+    await expect(f).not.toContainText("resolvido do morador");
     await p.context().close();
   });
 });

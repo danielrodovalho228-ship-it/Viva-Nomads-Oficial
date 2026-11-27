@@ -3,7 +3,7 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoS
 
 /*
   T830 — E444 itens 3 e 4 (Relay 57, Pista A; a base é da Pista B: tabela "avisos", 0286). Morador, 390 e 1280.
-  Vizinha do E1242 (ORDEM-DUET 1213): corre também no portão do E1242, porque o sino passa a tirar o aviso de assinar
+  Vizinha do E1242 (ORDENS-DUET 1213 e 1247): corre também no portão do E1242 (e do reaberto), porque o sino tira o aviso de assinar
   resolvido e a rede grava a resolução conferida com referência (sino.ts, route.ts).
   3. Sino no topo: número de não lidas (até "9+") na cor da maior prioridade; o clique abre o painel com os últimos 8
      (E586: por data/hora decrescente — o crítico fica na faixa do topo) + "Ver todas" (/dashboard/notificacoes#avisos, que lista da tabela com filtro por

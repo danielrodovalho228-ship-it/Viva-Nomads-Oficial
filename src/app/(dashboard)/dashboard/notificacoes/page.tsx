@@ -8,7 +8,7 @@ import { dataHoraBrasilia } from "@/config/atendimento";
 import { listarPropostas } from "@/lib/data/propostas-actions";
 import { textoVencimento } from "@/lib/propostas/regras";
 import { pedidosNovosCompativeis } from "@/lib/data/pedidos-actions";
-import { meusAvisos } from "@/lib/data/avisos-actions";
+import { avisosParaAsTelas } from "@/lib/data/avisos-telas";
 import { ListaAvisos } from "@/components/account/lista-avisos";
 import { IrParaAvisos } from "@/components/account/ir-para-avisos";
 import { TextoManutencaoVazia } from "@/components/account/link-manutencao";
@@ -35,7 +35,9 @@ export default async function NotificacoesPage({ searchParams }: { searchParams:
     listarPropostas({ exigir: true }).catch(() => null),
     pedidosNovosCompativeis().catch(() => ({ total: 0, recentes: [] })),
     // E444 item 3: a lista da tabela de avisos (Pista B, 0286). Falha de leitura ≠ "nenhum aviso".
-    meusAvisos(100).catch(() => "falhou" as const),
+    // E1242 reaberto (ORDEM-DUET 1247): a mesma leitura e a mesma regra do sino — os resolvidos não aparecem, nem no
+    // filtro "Críticos" nem como "Não lido".
+    avisosParaAsTelas(100).then((t) => t?.avisos ?? null).catch(() => "falhou" as const),
     // E549: as preferências lidas aqui — os interruptores já chegam com o estado. Falha de leitura = null: a tela relê
     // no navegador e, se falhar de novo, mostra "Tentar de novo" (achados 52/53: nunca abre com "tudo ligado" inventado).
     Promise.all([getCategoriasDesligadas(), getCanais(), getAlertasEquipe().catch(() => null)])
