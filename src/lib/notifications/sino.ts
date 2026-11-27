@@ -240,7 +240,7 @@ export function resumoSemVisitaVencida<T extends AvisoTela>(
 export function resolucoesConferidasAGravar<T extends AvisoTela>(antes: readonly T[], conferidos: readonly T[]): string[] {
   const jaResolvido = new Map(antes.map((a) => [a.id, a.resolvido_em]));
   return conferidos
-    .filter((a) => a.resolvido_em && !jaResolvido.get(a.id) && (ehAvisoDeVisitaDeAvaliacao(a.evento) || (ehConferidoPeloContrato(a.evento) && !!a.ref_id)))
+    .filter((a) => a.resolvido_em && !jaResolvido.get(a.id) && (ehAvisoDeVisitaDeAvaliacao(a.evento) || ehConferidoPeloContrato(a.evento)))
     .map((a) => a.id);
 }
 
