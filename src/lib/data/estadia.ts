@@ -39,7 +39,7 @@ import { caucaoDoChecklist, estadoCaucao as estadoCaucaoUnico } from "@/lib/cauc
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const COLUNAS_ESTADIA =
-  "id, property_id, tenant_id, status, encerrado_em, created_at, qtd_ocupantes, capacidade_snapshot, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, garantia, comissao_percent, comissao_valor, assinado_proprietario_em, assinado_inquilino_em, properties(id, title, address, city, owner_id, checkin_after, checkout_before, max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status), pagamentos_bloco(id, tipo, valor, confirmado_pelo_inquilino, anulado_em)";
+  "id, property_id, tenant_id, status, encerrado_em, created_at, qtd_ocupantes, capacidade_snapshot, aluguel_mensal, tamanho_bloco_meses, garantia, comissao_percent, comissao_valor, assinado_proprietario_em, assinado_inquilino_em, properties(id, title, address, city, owner_id, checkin_after, checkout_before, max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status), pagamentos_bloco(id, tipo, valor, confirmado_pelo_inquilino, anulado_em)";
 
 export interface LinhaContratoEstadia {
   id: string;
