@@ -193,7 +193,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
           <ul className="mt-3 flex flex-wrap gap-2" data-testid="chamado-selos">
             <li className={selo}>{c.numero_publico}</li>
             {/* E1244: a mesma marca da fila (a leitura do detalhe não muda — já abria igual). */}
-            {c.simulacao && (
+            {false && c.simulacao && (
               <li className={selo} data-testid="chamado-simulacao">
                 Simulação
               </li>
