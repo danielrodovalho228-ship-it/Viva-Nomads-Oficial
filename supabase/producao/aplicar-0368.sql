@@ -37,7 +37,7 @@ begin
   insert into public.contrato_eventos (contrato_id, tipo, autor_id, dados)
   values (v_contrato, 'pagamento_anulado', p_autor,
           jsonb_build_object('caminho', p_caminho, 'pagamento_id', p_pagamento, 'documento', v_documento, 'valor', v_valor, 'motivo', p_motivo)
-          || case when p_chamado is not null then jsonb_build_object('chamado', p_chamado) else '{}'::jsonb end);
+          );
   return jsonb_build_object('ok', true, 'documento', v_documento);
 end;
 $f$;
