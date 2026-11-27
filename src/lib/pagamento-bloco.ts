@@ -6,7 +6,7 @@
 import { brlTaxa } from "./cobranca/regra.ts";
 import { diasInclusivos } from "./contrato-blocos.ts";
 import { estadiaEmDias } from "./pagamento-componentes.ts";
-import { textoBaseDeCalculo } from "./base-de-calculo.ts";
+import { contaDoPeriodo } from "./base-de-calculo.ts";
 import { brl } from "./fiscal/documento.ts";
 
 export interface BlocoDoPagamento {
@@ -74,8 +74,8 @@ export function rotuloPagamentoBloco(p: {
   if ((p.parte ?? 1) > 1) return `Bloco ${numero}, registro complementar (${periodo}) — ${brlTaxa(p.total != null && Number.isFinite(p.total) ? Number(p.total) : p.valor)}`;
   const vm = p.valorMensal != null && Number.isFinite(p.valorMensal) ? Number(p.valorMensal) : null;
   const conta = !duracao.emDias && meses > 1 && vm != null && vm > 0 && Math.abs(vm * meses - p.valor) < 0.01 ? ` (${meses} × ${brlTaxa(vm)})` : "";
-  // E1067 (ORDENS-DUET 1140 e 1154): em dias, a conta no formato do Fechamento, com o mensal no formato dos documentos;
-  // N = os dias do bloco. Só na forma com a conta.
-  const contaEmDias = p.comConta && duracao.emDias && vm != null && vm > 0 ? ` · ${textoBaseDeCalculo(brl(vm), { dias: duracao.dias, meses })}` : "";
+  // E1067 (ORDENS-DUET 1140, 1154 e 1206): em dias, a conta entre parênteses logo depois do valor — a mesma gramática da
+  // conta em meses —, com o mensal no formato dos documentos; N = os dias do bloco. Só na forma com a conta.
+  const contaEmDias = p.comConta && duracao.emDias && vm != null && vm > 0 ? ` (${contaDoPeriodo(brl(vm), { dias: duracao.dias, meses })})` : "";
   return `Bloco ${numero} (${periodo}) — ${valor}${conta}${contaEmDias}`;
 }
