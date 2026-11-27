@@ -58,8 +58,20 @@ export function rotuloDoTipo(prefixo: string, tipo: string): string {
 }
 
 /** Situação em uma frase: válido, anulado com motivo, substituído pela versão N, ou documento de teste. */
-export function situacaoDoDocumento(d: Pick<LinhaConferida, "status" | "anulado_motivo" | "is_teste" | "versao_vigente">): { estado: "valido" | "anulado" | "substituido" | "teste"; texto: string } {
-  if (d.status === "anulado") return { estado: "anulado", texto: `Documento ANULADO${d.anulado_motivo ? ` (${d.anulado_motivo})` : ""}. Foi gerado pela plataforma, mas não vale mais.` };
+/** E1229: a data de um instante em Brasília (dd/mm/aaaa); sem instante válido, null. */
+const dataEmBrasilia = (iso: string | null | undefined): string | null => {
+  const t = Date.parse(String(iso ?? ""));
+  if (!Number.isFinite(t)) return null;
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(t));
+};
+
+export function situacaoDoDocumento(d: Pick<LinhaConferida, "status" | "anulado_motivo" | "is_teste" | "versao_vigente"> & { status_em?: string | null }): { estado: "valido" | "anulado" | "substituido" | "teste"; texto: string } {
+  // E1229 (ORDEM-DUET-1143): o anulado diz quando e por quê — "Anulado em {data}: {motivo}".
+  if (d.status === "anulado") {
+    const quando = dataEmBrasilia(d.status_em);
+    const motivo = (d.anulado_motivo ?? "").trim();
+    return { estado: "anulado", texto: `Anulado${quando ? ` em ${quando}` : ""}${motivo ? `: ${motivo}` : ""}. Foi gerado pela plataforma, mas não vale mais.` };
+  }
   if (d.status === "substituido")
     return { estado: "substituido", texto: `Documento SUBSTITUÍDO${d.versao_vigente ? ` pela versão ${d.versao_vigente}` : ""}. Esta versão foi gerada pela plataforma, mas não é a vigente.` };
   // Anulado e substituído vêm antes: valem também para o documento de teste.

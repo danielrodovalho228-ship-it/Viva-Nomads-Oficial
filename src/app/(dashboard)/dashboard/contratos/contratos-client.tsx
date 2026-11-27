@@ -3,6 +3,7 @@
 import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { ROTULO_CONTAS, ROTULO_LIMPEZA, emAbertoNoBloco, encargosDosComponentes, somarComponentes, textoComponentes, type ComponentesBloco } from "@/lib/pagamento-componentes";
 import { estadoCaucao } from "@/lib/caucao-estado";
+import { AnularRegistro } from "@/components/anulacao/anular-registro";
 import { MSG_CAUCAO_NADA_NO_BLOCO, linhasDaCaucaoPorBloco } from "@/lib/caucao-teto";
 import { CampoReais } from "@/components/ui/campo-reais";
 import { CampoData } from "@/components/ui/campo-data";
@@ -382,6 +383,20 @@ function ContratoCard({
         </div>
       )}
 
+      {/* E1229 (ORDENS-DUET 1143 e 1160): os registros que o morador ainda não confirmou — o dono pode anular, com o motivo. */}
+      {!demo && contrato.pagamentos.some((p) => !p.confirmado) && (
+        <ul className="mt-3 space-y-1" data-testid="registros-por-confirmar">
+          {contrato.pagamentos
+            .filter((p) => !p.confirmado)
+            .map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+                <span>{p.rotulo} · aguardando a confirmação do morador</span>
+                <AnularRegistro pagamentoId={p.id} confirmado={false} />
+              </li>
+            ))}
+        </ul>
+      )}
+
       {/* Timeline dos blocos */}
       <div className="mt-4 space-y-3">
         {contrato.blocos.map((b) => (
@@ -417,7 +432,7 @@ function ContratoCard({
             acerto={extra.acerto}
             hojeISO={hojeISO}
           />
-          <ListaDocumentos documentos={extra.documentos} recibos={extra.recibos} />
+          <ListaDocumentos documentos={extra.documentos} recibos={extra.recibos} anular />
         </>
       ))}
 

@@ -23,6 +23,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
   que é TRANSITÓRIA — depois do sucesso, o router.refresh() troca o formulário pelo estado gravado e a mensagem some;
   com o refresh rápido, a espera não a via (flaky nas runs 8833 e 8838). Agora confere o registro GRAVADO no banco: o
   pagamento ativo do contrato, do tipo daquela volta (aluguel e caução), igual a 1 — o padrão da t230 desde o E1020.
+  Vizinha do E1229 (ORDENS-DUET 1143 e 1160): corre também no portão desse PR, porque a tela do contrato ganhou a
+  anulação dos registros e a conferência passou a dizer 'Anulado em {data}: {motivo}'.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();

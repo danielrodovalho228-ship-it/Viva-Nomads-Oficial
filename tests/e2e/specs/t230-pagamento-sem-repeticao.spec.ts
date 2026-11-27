@@ -17,6 +17,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   passou a conferir o teto também no 1º registro (não passa do que o contrato diz que o bloco custa).
   Vizinha do teto da caução (ORDENS-DUET 1098 e 1107): corre também no portão desse avulso, porque o registro da
   caução passou a não passar da soma das cauções dos blocos do contrato.
+  Vizinha do E1229 (ORDENS-DUET 1143 e 1160): corre também no portão desse PR, porque a tela do contrato ganhou a
+  anulação dos registros e a conferência passou a dizer 'Anulado em {data}: {motivo}'.
 */
 const SAIDA = "tests/laboratorio/saida";
 const RESEND = process.env.LAB_RESEND_URL ?? "http://127.0.0.1:3999";

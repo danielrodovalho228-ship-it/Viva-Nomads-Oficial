@@ -105,6 +105,8 @@ export const ASSUNTOS = {
   caucaoDevolucaoAtraso: "Caução: devolução em atraso",
   contratoFaltaVoce: "Falta a sua assinatura no contrato",
   contratoAssinado: "Contrato assinado pelas duas partes",
+  /** PROPOSTA DE TEXTO (E1229): o morador é avisado de que o proprietário anulou um registro de pagamento. */
+  registroAnulado: "Um registro de pagamento foi anulado",
   propostaRecebida: "Você recebeu uma proposta",
   propostaRespondida: "Sua proposta foi respondida",
   propostaAceita: "Sua proposta foi aceita",
