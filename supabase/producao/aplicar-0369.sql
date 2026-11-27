@@ -9,5 +9,5 @@ comment on column public.conferencias.prazo_em is 'E1238: o fim da janela de 48 
 
 insert into supabase_migrations.schema_migrations (version, name)
 select '20261127000369', '0369_conferencias_prazo_e1238'
-where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261127000369');
+where true;
 commit;
