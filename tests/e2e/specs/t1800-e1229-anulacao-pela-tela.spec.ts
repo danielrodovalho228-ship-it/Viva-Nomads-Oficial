@@ -71,7 +71,8 @@ test.describe("T1800 — E1229: a anulação de registros pela tela, do dono à 
       .from("pagamentos_bloco")
       .insert([
         { bloco_id: b1, contrato_id: ids.contrato, tipo: "aluguel", valor: 6400, data_pagamento: dia(-70), marcado_por: ids.dono, confirmado_pelo_inquilino: true, confirmado_em: agora },
-        { bloco_id: b2, contrato_id: ids.contrato, tipo: "aluguel", valor: 6400, data_pagamento: dia(-10), marcado_por: ids.dono },
+        // Num insert em lote, o PostgREST põe null nas colunas que faltam numa linha: as duas levam as mesmas colunas.
+        { bloco_id: b2, contrato_id: ids.contrato, tipo: "aluguel", valor: 6400, data_pagamento: dia(-10), marcado_por: ids.dono, confirmado_pelo_inquilino: false, confirmado_em: null },
       ])
       .select("id, bloco_id");
     if (ep) throw ep;
