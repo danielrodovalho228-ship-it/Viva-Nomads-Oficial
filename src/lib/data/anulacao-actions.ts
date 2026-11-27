@@ -19,6 +19,7 @@ import { abrirChamado, responderComoAdmin } from "@/lib/data/atendimento-actions
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
 import { formatBRLExato } from "@/lib/precos";
+import { componentesDoPagamento } from "@/lib/pagamento-componentes";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 
 export type ResultadoAnulacao = { ok: true; pedido?: string; mensagem?: string } | { ok: false; error: string };
@@ -43,6 +44,8 @@ type Pagamento = {
   contrato_id: string;
   tipo: string;
   valor: number | string;
+  /** E1241: os encargos do registro (contas e limpeza) — sem eles não há total. */
+  encargos?: unknown;
   confirmado_pelo_inquilino: boolean | null;
   anulado_em: string | null;
   contratos: { id: string; tenant_id: string; properties: { owner_id: string | null; title?: string | null } | null } | null;
@@ -58,12 +61,20 @@ const motivoValido = (m: string) => {
 async function lerPagamento(db: Cliente | Admin, id: string): Promise<Pagamento | null> {
   const { data, error } = await db
     .from("pagamentos_bloco")
-    .select("id, contrato_id, tipo, valor, confirmado_pelo_inquilino, anulado_em, contratos(id, tenant_id, properties(owner_id, title))")
+    .select("id, contrato_id, tipo, valor, encargos, confirmado_pelo_inquilino, anulado_em, contratos(id, tenant_id, properties(owner_id, title))")
     .eq("id", id)
     .maybeSingle();
   if (error || !data) return null;
   return data as unknown as Pagamento;
 }
+
+/**
+ * E1241 (MAPA-E1241): o TOTAL do registro (valor + encargos), pela fonte única componentesDoPagamento — num registro
+ * complementar a coluna valor é zero e o dinheiro está nos encargos. Na caução os encargos não contam (a mesma guarda
+ * dos outros leitores).
+ */
+const totalDoRegistro = (pg: Pick<Pagamento, "tipo" | "valor" | "encargos">) =>
+  componentesDoPagamento({ valor: Number(pg.valor) || 0, encargos: pg.tipo === "caucao" ? [] : pg.encargos }).total;
 
 async function documentoDe(admin: Admin, pagamentoId: string): Promise<{ id: string; numero: string } | null> {
   const { data } = await admin.from("documentos_fiscais").select("id, numero").eq("pagamento_id", pagamentoId).is("anulado_em", null).maybeSingle();
@@ -90,7 +101,7 @@ async function anularNoBanco(
   if (morador) {
     const { data: u } = await admin.auth.admin.getUserById(morador);
     const registro = documento ?? (pg.tipo === "caucao" ? "da caução" : "do pagamento");
-    const valor = formatBRLExato(Number(pg.valor) || 0);
+    const valor = formatBRLExato(totalDoRegistro(pg));
     // ORDEM-DUET-1169: no caminho da Central, quem anulou foi a equipe, a pedido do proprietário.
     const titulo =
       quem.caminho === "central"
@@ -135,7 +146,7 @@ export async function anularRegistro(input: { pagamentoId: string; motivo: strin
     const r = await abrirChamado({
       categoria: pg.tipo === "caucao" ? "caucao" : "cobranca",
       assunto: `Pedido de anulação do registro ${registro}`,
-      mensagem: `Pedido de anulação do registro ${registro} de ${formatBRLExato(Number(pg.valor) || 0)} (contrato ${numeroPublicoContrato(pg.contrato_id)}), já confirmado pelo morador. Motivo: ${motivo}`,
+      mensagem: `Pedido de anulação do registro ${registro} de ${formatBRLExato(totalDoRegistro(pg))} (contrato ${numeroPublicoContrato(pg.contrato_id)}), já confirmado pelo morador. Motivo: ${motivo}`,
       contextoTipo: "contrato",
       contextoId: pg.contrato_id,
       pedePessoa: true,
@@ -185,7 +196,7 @@ export async function anularRegistroPelaCentral(input: { chamadoId: string; moti
     autor: "admin",
     autor_id: user.id,
     interno: true,
-    corpo: `Registro ${registro} de ${formatBRLExato(Number(pg.valor) || 0)} anulado pela Central em ${new Date().toISOString().slice(0, 10)}. Motivo: ${motivo}`,
+    corpo: `Registro ${registro} de ${formatBRLExato(totalDoRegistro(pg))} anulado pela Central em ${new Date().toISOString().slice(0, 10)}. Motivo: ${motivo}`,
   });
   return { ok: true };
 }
