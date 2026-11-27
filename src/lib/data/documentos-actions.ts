@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { emitirTermoDevolucaoComRegistro } from "@/lib/fiscal/emitir";
 import { ROTULO_TIPO, type TipoDocumento } from "@/lib/fiscal/documento";
 import { regraDevolucao } from "@/lib/fiscal/devolucao";
-import { componentesDoPagamento } from "@/lib/pagamento-componentes";
+import { componentesDoPagamento, parteDaColuna } from "@/lib/pagamento-componentes";
 
 /**
  * Documentos do contrato (recibos, comprovante e termo da caução) e a
@@ -41,6 +41,9 @@ export interface ReciboView {
   total: number;
   inicio: string | null;
   fim: string | null;
+  /** E1233: o número do bloco (null no registro antigo, sem bloco) e a parte, lida da coluna (2+ = complementar). */
+  bloco: number | null;
+  parte: number;
   documentoId: string | null;
   numero: string | null;
   /** Motivo da anulação do registro/documento (ex.: "registro em duplicidade"); null = válido. */
@@ -70,7 +73,7 @@ export async function documentosDosContratos(
     supabase.from("pagamentos_bloco").select("contrato_id, valor").in("contrato_id", ids).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true).is("anulado_em", null),
     supabase
       .from("pagamentos_bloco")
-      .select("id, contrato_id, tipo, valor, encargos, data_pagamento, anulado_motivo, contrato_blocos(numero_bloco, meses, inicio, fim)")
+      .select("id, contrato_id, tipo, parte, valor, encargos, data_pagamento, anulado_motivo, contrato_blocos(numero_bloco, meses, inicio, fim)")
       .in("contrato_id", ids)
       .eq("confirmado_pelo_inquilino", true)
       .order("data_pagamento", { ascending: true }),
@@ -94,6 +97,8 @@ export async function documentosDosContratos(
       total: componentesDoPagamento({ valor: Number(pg.valor), encargos: String(pg.tipo ?? "aluguel") === "caucao" ? [] : pg.encargos }).total,
       inicio: b?.inicio ?? null,
       fim: b?.fim ?? null,
+      bloco: b?.numero_bloco ? Number(b.numero_bloco) : null,
+      parte: parteDaColuna(pg.parte),
       documentoId: doc ? String(doc.id) : null,
       numero: doc ? String(doc.numero) : null,
       anulado: ((doc?.anulado_motivo as string | null) ?? (pg.anulado_motivo as string | null)) || null,

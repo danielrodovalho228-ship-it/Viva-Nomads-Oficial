@@ -25,8 +25,8 @@ const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const ROTULO = () => `Bloco 1 (2 meses: ${ddmm(dia(0))} a ${ddmm(dia(59))}) — R$ 6.400 (2 × R$ 3.200)`;
 // E1067 (fusão do #4078, ORDENS-DUET 1149 e 1194): na tela "Documentos do contrato", a linha do recibo é o número, o
 // TOTAL do registro e o período em datas — sem "mês", "meses" nem "dias" (o texto do documento fica no PDF guardado).
-const ddmmaaaa = (iso: string) => iso.split("-").reverse().join("/");
-const LINHA_RECIBO = () => `R$ 6.400,00 · ${ddmmaaaa(dia(0))} a ${ddmmaaaa(dia(59))}`;
+// E1233 (ORDEM-DUET 1208, asserção alterada): a linha leva o bloco depois do número e o período dd/mm, sem ano.
+const LINHA_RECIBO = () => `Bloco 1 · R$ 6.400,00 · ${ddmm(dia(0))} a ${ddmm(dia(59))}`;
 
 let seq = 0;
 async function contrato(assinado: boolean): Promise<string> {
