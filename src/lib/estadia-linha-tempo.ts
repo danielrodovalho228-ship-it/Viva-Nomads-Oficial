@@ -39,11 +39,17 @@ export function montarLinhaDoTempo(p: {
   fim: string | null;
   checkinAfter: string | null;
   checkoutBefore: string | null;
+  /**
+   * E1238 (ORDEM-DUET 1207): o prazo de cada conferência vem PRONTO do servidor (o gravado quando ela nasceu, ou a mesma
+   * regra com a hora das instruções de entrada — janela-conferencia.ts). Sem ele, a regra sem hora (00:00 / 23:59):
+   * a hora mostrada na etapa "Entrada" (checkinAfter) nunca entra no prazo.
+   */
+  prazoEntradaEm?: string | null;
+  prazoSaidaEm?: string | null;
 }): EtapaEstadia[] {
   if (!p.inicio || !p.fim || !DIA_RE.test(p.inicio) || !DIA_RE.test(p.fim)) return [];
-  // F2 (Prompt 35B): o prazo vem da fonte única — dia de início + horário de entrada, em Brasília, + 48 h.
-  const prazo = prazoConferenciaEntrada({ inicio: p.inicio, checkinAfter: p.checkinAfter });
-  const prazoSaida = prazoConferenciaSaida({ fim: p.fim, checkoutBefore: p.checkoutBefore });
+  const prazo = p.prazoEntradaEm ? new Date(p.prazoEntradaEm) : prazoConferenciaEntrada({ inicio: p.inicio, checkinAfter: null });
+  const prazoSaida = p.prazoSaidaEm ? new Date(p.prazoSaidaEm) : prazoConferenciaSaida({ fim: p.fim, checkoutBefore: null });
   return [
     { chave: "entrada", titulo: "Entrada", dia: p.inicio, horario: horario(p.checkinAfter, "a partir das") },
     {

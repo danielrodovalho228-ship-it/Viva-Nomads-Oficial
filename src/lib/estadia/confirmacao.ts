@@ -6,8 +6,8 @@
   com o prazo. Os prazos saem das fontes de sempre: a Caução vence na entrada (regra publicada "50% antes da entrada")
   e a conferência de entrada é prazoConferenciaEntrada (a mesma da linha do tempo e do servidor).
 */
-import { prazoConferenciaEntrada, textoPrazoConferencia } from "../conferencia.ts";
-import { ddmmaaaa, type PeriodoEstadia } from "./estadia.ts";
+import { textoPrazoConferencia } from "../conferencia.ts";
+import { ddmmaaaa, prazoDaConferencia, type PeriodoEstadia } from "./estadia.ts";
 
 export const HREF_CONFIRMADA = (contratoId: string): string => `/dashboard/estadia/${contratoId}/confirmada`;
 
@@ -27,7 +27,8 @@ export interface PassoConfirmacao {
 export function proximosPassos(p: PeriodoEstadia, caucao: "pendente" | "recebida" | "dispensada"): PassoConfirmacao[] {
   const passos: PassoConfirmacao[] = [];
   if (caucao === "pendente") passos.push({ chave: "caucao", rotulo: "Caução", prazo: p.inicio ? `até a entrada, em ${ddmmaaaa(p.inicio)}` : "até a entrada, data a definir" });
-  const prazo = p.inicio ? prazoConferenciaEntrada({ inicio: p.inicio, checkinAfter: p.checkinAfter ?? null }) : null;
+  // E1238: o mesmo prazo da lista "antes da entrada" (o pronto do servidor, ou a regra sem hora).
+  const prazo = p.inicio ? prazoDaConferencia(p) : null;
   passos.push({ chave: "conferencia", rotulo: "Conferência de entrada", prazo: prazo ? textoPrazoConferencia(prazo) : "a definir, com a data de entrada" });
   return passos;
 }

@@ -63,14 +63,30 @@ export function prazoConferenciaSaida(p: Pick<EntradaDoContrato, "fim" | "checko
   // desse dia, no horário de saída do imóvel, que as 48 h contam. Antes contavam da última noite: um dia a menos.
   const dia = saidaPeloFim(p.fim);
   const hora = (p.checkoutBefore ?? "").trim();
-  const base = instanteBRT(dia, HORA_ENTRADA.test(hora) ? hora : "00:00");
+  // E1238 (ORDEM-DUET 1207, decisão 3; confirmada pelo coordenador em 27/11, ORDEM-DUET 1233): sem hora de saída, a
+  // janela conta das 23:59 do dia da saída (antes, das 00:00). A hora de saída das instruções é o E1240.
+  const base = instanteBRT(dia, HORA_ENTRADA.test(hora) ? hora : HORA_SAIDA_SEM_HORARIO);
   return base ? new Date(base.getTime() + JANELA_SAIDA_HORAS * 3600_000) : null;
 }
+
+/** E1238: a saída sem hora acaba no fim do dia da saída. */
+export const HORA_SAIDA_SEM_HORARIO = "23:59";
 
 /** O prazo da conferência do tipo pedido (entrada ou saída), pelas duas fontes únicas. */
 export function prazoConferencia(tipo: TipoConferencia, datas: EntradaDoContrato | null): Date | null {
   if (!datas) return null;
   return tipo === "entrada" ? prazoConferenciaEntrada(datas) : prazoConferenciaSaida(datas);
+}
+
+/**
+ * E1238 (ORDEM-DUET 1231): o prazo de UMA janela. Com a conferência aberta, o prazo GRAVADO quando ela nasceu
+ * (congelarJanelaDeConferencia); sem ela (ou nas de antes da 0369, sem prazo gravado), calcula pela mesma regra.
+ * As `datas` trazem a hora das instruções de entrada (contratos_checkin.horario), nunca a coluna do anúncio.
+ */
+export function prazoDaJanela(tipo: TipoConferencia, datas: EntradaDoContrato | null, gravado?: string | null): Date | null {
+  const g = gravado ? new Date(gravado) : null;
+  if (g && !Number.isNaN(g.getTime())) return g;
+  return prazoConferencia(tipo, datas);
 }
 
 /**
@@ -108,8 +124,11 @@ export function podeEditarItens(respostas: RespostaConferencia[], parte: ParteCo
  * A janela de 48 h encerrou? Entrada: 48 h depois da entrada (35B). Saída: 48 h depois da saída (Prompt 56) — sem o
  * último dia do contrato, a saída não tem prazo ainda.
  */
-export function janelaEncerrada(tipo: TipoConferencia, datas: EntradaDoContrato | null, agora: Date = new Date()): boolean {
-  const prazo = prazoConferencia(tipo, datas);
+export function janelaEncerrada(tipo: TipoConferencia, datas: EntradaDoContrato | null, agora: Date = new Date(), gravado?: string | null): boolean {
+  // E1238 (ORDEM-DUET 1207): nenhum encerramento antes da data da entrada, seja qual for o prazo lido.
+  const entrada = instanteBRT((datas?.inicio ?? "").slice(0, 10), "00:00");
+  if (entrada && agora.getTime() < entrada.getTime()) return false;
+  const prazo = prazoDaJanela(tipo, datas, gravado);
   return prazo !== null && agora.getTime() > prazo.getTime();
 }
 

@@ -317,10 +317,11 @@ test("ação: a parte que respondeu não registra mais itens; a resposta pede it
   const src = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
   assert.match(src, /podeEditarItens\(\(respostas \?\? \[\]\) as RespostaConferencia\[\], ctx\.parte\)/);
   assert.match(src, /itensPorParte/);
-  assert.match(src, /janelaEncerrada\(input\.tipo, ctx\.entrada\)/);
+  // E1238 (ORDEM-DUET 1207, asserção alterada): a janela confere o prazo GRAVADO quando a conferência nasceu.
+  assert.match(src, /janelaEncerrada\(input\.tipo, ctx\.entrada, new Date\(\), ctx\.gravado\[input\.tipo\]\)/);
   // F2: um prazo só — o servidor não soma horas por conta própria
   assert.doesNotMatch(src, /prazoEntrada\(/);
-  assert.match(src, /prazoConferenciaEntrada\(ctx\.entrada\)/);
+  assert.match(src, /prazoDaJanela\("entrada", ctx\.entrada, ctx\.gravado\.entrada\)/);
 });
 
 test("Prompt 59: as pendências do padrão mínimo entram por insert (o índice único é parcial; ON CONFLICT não o reconhece)", () => {

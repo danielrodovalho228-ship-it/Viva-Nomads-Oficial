@@ -26,7 +26,8 @@ test("confirmação: textos exatos, sem exclamação nem festa", () => {
 });
 
 test("confirmação: o próximo passo é a Caução e a conferência de entrada, cada uma com o prazo", () => {
-  assert.deepEqual(proximosPassos(PERIODO, "pendente"), [
+  // E1238 (ORDEM-DUET 1207, asserção alterada): o prazo vem pronto do servidor (prazoEntradaEm), não da hora do anúncio.
+  assert.deepEqual(proximosPassos({ ...PERIODO, prazoEntradaEm: "2026-11-15T17:00:00.000Z" }, "pendente"), [
     { chave: "caucao", rotulo: "Caução", prazo: "até a entrada, em 13/11/2026" },
     { chave: "conferencia", rotulo: "Conferência de entrada", prazo: "até 15/11 às 14:00, horário de Brasília" },
   ]);

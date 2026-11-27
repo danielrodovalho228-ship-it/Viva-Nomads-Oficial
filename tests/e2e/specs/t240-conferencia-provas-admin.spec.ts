@@ -121,6 +121,9 @@ test.describe("T240 — conferência de entrada (F1–F3), pacote de provas (F4)
       .single();
     if (error) throw error;
     ids.contrato = data.id as string;
+    // E1238 (ORDEM-DUET 1207, massa alterada): a âncora do prazo é a hora das INSTRUÇÕES de entrada do contrato, já não
+    // a do anúncio — as 15:00 da conferência vêm daqui (a do anúncio fica só para a hora mostrada, que é o E1230).
+    { const { error: eK } = await adm().from("contratos_checkin").upsert({ contrato_id: ids.contrato, horario: "15:00" }, { onConflict: "contrato_id" }); if (eK) throw eK; }
     await tornarContratoVigente(ids.contrato, ids.dono, 3200);
     // (i) Caução marcada em duplicidade e anulada: aparece uma vez, com a marca, e fica fora dos totais.
     const { data: bloco } = await adm().from("contrato_blocos").select("id, inicio").eq("contrato_id", ids.contrato).eq("numero_bloco", 1).single();

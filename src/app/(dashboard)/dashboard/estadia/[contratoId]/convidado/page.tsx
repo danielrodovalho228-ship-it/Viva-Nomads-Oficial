@@ -36,6 +36,9 @@ export default async function EstadiaConvidadoPage({ params }: { params: Promise
     fim: v.periodo.fim,
     checkinAfter: v.periodo.checkinAfter ?? null,
     checkoutBefore: v.periodo.checkoutBefore ?? null,
+    // E1238: o prazo de cada conferência, pronto do servidor (o gravado, ou a regra com a hora das instruções).
+    prazoEntradaEm: v.periodo.prazoEntradaEm ?? null,
+    prazoSaidaEm: v.periodo.prazoSaidaEm ?? null,
   });
 
   return (

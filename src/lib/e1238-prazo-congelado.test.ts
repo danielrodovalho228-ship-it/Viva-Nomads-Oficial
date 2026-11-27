@@ -102,15 +102,35 @@ test("8. estático: nenhum leitor do PRAZO lê a coluna do anúncio (checkin_aft
   }
   const estadia = ler("./estadia/estadia.ts");
   const prazoDaConf = estadia.slice(estadia.indexOf("export function prazoDaConferencia("), estadia.indexOf("export function prazoDaConferencia(") + 300);
-  assert.doesNotMatch(prazoDaConf, /checkinAfter/, "C — a lista antes da entrada");
+  assert.doesNotMatch(prazoDaConf, /checkinAfter: p\.checkinAfter/, "C — a lista antes da entrada");
   const conf2 = ler("./estadia/confirmacao.ts");
-  assert.doesNotMatch(conf2, /checkinAfter/, "C — estadia confirmada");
+  assert.doesNotMatch(conf2, /checkinAfter: p\.checkinAfter/, "C — estadia confirmada");
   const linha = ler("./estadia-linha-tempo.ts");
-  assert.doesNotMatch(linha, /prazoConferenciaEntrada\(\{ inicio: p\.inicio, checkinAfter/, "a linha do tempo recebe o prazo");
+  assert.doesNotMatch(linha, /checkinAfter: p\.checkinAfter|checkoutBefore: p\.checkoutBefore/, "a linha do tempo recebe o prazo (a hora mostrada não entra na conta)");
 });
 
 test("9. guardas da fusão: nada de '% 30' fora da fonte única; prazo_total_dias continua nas colunas da estadia", () => {
   const estadia = ler("./estadia/estadia.ts");
   assert.doesNotMatch(estadia, /%\s*30\b/);
   assert.match(ler("./data/estadia.ts"), /prazo_total_dias/);
+});
+
+test("10. a rotina fecha pelo prazo GRAVADO; sem ele, pela regra com a hora das instruções", async () => {
+  const { conferenciasParaFechar } = await import("./fiscal/fechamento.ts");
+  const abertas = [
+    { id: "gravada", tipo: "entrada" as const, datas: ENTRADA_14, prazoGravado: "2026-12-03T03:00:00.000Z" },
+    { id: "calculada", tipo: "entrada" as const, datas: ENTRADA_14, prazoGravado: null },
+  ];
+  // 05:00Z: a gravada (03:00Z) já venceu; a calculada (14:00 BRT = 17:00Z) ainda não.
+  assert.deepEqual(conferenciasParaFechar(abertas, new Date("2026-12-03T05:00:00Z")).map((c) => c.id), ["gravada"]);
+  assert.deepEqual(conferenciasParaFechar(abertas, new Date("2026-12-03T17:01:00Z")).map((c) => c.id), ["gravada", "calculada"]);
+});
+
+test("11. os quatro leitores passam a hora das INSTRUÇÕES e o prazo gravado", () => {
+  assert.match(ler("./data/conferencia-actions.ts"), /datasDaJanela\(.*, janela\.hora\),/, "A");
+  assert.match(ler("./data/contrato-assinar-actions.ts"), /checkinAfter: janela\?\.hora \?\? null/, "B");
+  assert.match(ler("./data/estadia.ts"), /datasDaJanela\(blocosOrdenados\(c\), janela\.hora\)/, "C");
+  const rota = ler("../app/api/cron/automacoes/route.ts");
+  assert.match(rota, /datasDaJanela\(c\.contratos\?\.contrato_blocos \?\? \[\], janelas\.get\(c\.contrato_id\)\?\.hora \?\? null\)/, "D");
+  assert.match(rota, /prazoGravado: c\.prazo_em \?\? null/, "D — o gravado");
 });
