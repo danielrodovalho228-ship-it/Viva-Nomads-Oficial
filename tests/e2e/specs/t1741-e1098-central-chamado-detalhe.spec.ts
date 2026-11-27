@@ -15,6 +15,8 @@ import { adm, criarConta, novaSenha, novoSufixo, NO_LABORATORIO } from "../fixtu
    1. o chamado do mockup (respondido com a sugestão da Viva), a 1280 e a 390 px, com print de cada um;
    2. o chamado à espera: a sugestão está na caixa e não se repete na conversa; enviada, fica só na mensagem da equipe;
    3. mudar a prioridade pelo seletor: o selo e o histórico dizem o mesmo rótulo.
+  Vizinha do E1244 (ORDENS-DUET 1213, 1219 e 1220): corre também no portão desse PR — a fila e o detalhe do chamado da
+  Central ganharam a opção "Incluir simulações" e a marca "Simulação".
 */
 const sufixo = novoSufixo();
 const dono = { email: `dono.t1741.${sufixo}@lab.vivanomads.test`, nome: `Dário Mockup ${sufixo}`, role: "owner" as const };
@@ -143,7 +145,9 @@ test.describe("T1741 — E1098: o detalhe do chamado da Central pelo mockup @E10
       // O assunto e o estado mandam; os metadados são selos.
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Conversa com a Viva (chat do site) ${sufixo} ${largura}`);
       const selos = page.getByTestId("chamado-selos").locator("li");
-      await expect(selos).toHaveText([c.numero, "Aguardando resposta do usuário", "Urgente · P1", "Conta ou acesso", "Chat do site"]);
+      // E1244 (ORDENS-DUET 1213 e 1220, asserção alterada): o chamado semeado aqui é de SIMULAÇÃO (simulacao: true) — o
+      // detalhe passa a dizê-lo com o selo "Simulação", logo depois do número.
+      await expect(selos).toHaveText([c.numero, "Simulação", "Aguardando resposta do usuário", "Urgente · P1", "Conta ou acesso", "Chat do site"]);
 
       // (3) UM indicador de prazo, no formato da ordem.
       const prazo = page.getByTestId("chamado-prazo");

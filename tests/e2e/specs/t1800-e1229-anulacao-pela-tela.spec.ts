@@ -16,6 +16,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
       curta da gramática (ORDENS-DUET 1233 e 1237): "Bloco 2 · R$ 6.400,00 · {dd/mm} a {dd/mm}", sem número de recibo.
   Simulação declarada: o contrato assinado e os dois registros (um confirmado, outro não) gravados pelo laboratório.
   Laboratório; não é prova ao vivo no site.
+  Vizinha do E1244 (ORDENS-DUET 1213, 1219 e 1220): corre também no portão desse PR — a fila e o detalhe do chamado da
+  Central ganharam a opção "Incluir simulações" e a marca "Simulação".
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();
