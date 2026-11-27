@@ -36,3 +36,23 @@ test("o Fechamento chama a função, com o mensal em reais inteiros, e já não 
   assert.match(f, /textoBaseDeCalculo\(formatBRL\(PROPERTY\.monthlyRent\), \{ dias: DIAS_ACORDO, meses: prazoMeses \}\)/);
   assert.doesNotMatch(f, /`Base de cálculo \(/);
 });
+
+// ORDEM-DUET-1206 (o ajuste do coordenador): a conta sozinha é contaDoPeriodo; a frase do Fechamento é
+// "Base de cálculo (" + a conta + ")" e só o Fechamento a usa — idêntica para 31 dias e para 2 meses.
+const contaDoPeriodo = (modulo as unknown as { contaDoPeriodo?: (mensal: string, d: { dias: number | null | undefined; meses: number }) => string }).contaDoPeriodo;
+test("a conta sozinha (contaDoPeriodo) e a frase do Fechamento feita dela", () => {
+  assert.equal(typeof contaDoPeriodo, "function", "base-de-calculo.ts exporta contaDoPeriodo");
+  assert.equal(contaDoPeriodo!("R$ 2.500,00", { dias: 31, meses: 2 }), "R$ 2.500,00 × 31 dias ÷ 30");
+  assert.equal(contaDoPeriodo!("R$ 3.200", { dias: null, meses: 2 }), "R$ 3.200 × 2 meses");
+  assert.equal(contaDoPeriodo!("R$ 3.200", { dias: undefined, meses: 1 }), "R$ 3.200 × 1 mês");
+  for (const [rent, dias, meses] of [[2500, 31, 2], [3200, undefined, 2]] as const) {
+    assert.equal(textoBaseDeCalculo!(formatBRL(rent), { dias, meses }), `Base de cálculo (${contaDoPeriodo!(formatBRL(rent), { dias, meses })})`);
+    assert.equal(textoBaseDeCalculo!(formatBRL(rent), { dias, meses }), antes(rent, dias, meses), "o Fechamento idêntico");
+  }
+});
+
+test("só o Fechamento usa a frase \"Base de cálculo\"; o rótulo do pagamento usa a conta sozinha", () => {
+  const pb = readFileSync(new URL("./pagamento-bloco.ts", import.meta.url), "utf8");
+  assert.match(pb, /contaDoPeriodo\(/);
+  assert.doesNotMatch(pb, /textoBaseDeCalculo/);
+});

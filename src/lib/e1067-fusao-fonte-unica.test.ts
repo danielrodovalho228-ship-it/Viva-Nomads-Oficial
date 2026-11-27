@@ -82,15 +82,15 @@ test("8. a forma compacta (listas): \"31 dias\", sem conta", () => {
   assert.equal(rotulo({ tipo: "aluguel", valor: 2583.33, bloco: b31, valorMensal: 2500, prazoTotalDias: 31 }), "Bloco 1 (31 dias: 20/12 a 19/01) — R$ 2.583,33");
 });
 
-test("9. a forma com a conta (recibo e página do contrato): a frase do Fechamento, com o mensal no formato dos documentos; N = os dias do bloco", () => {
-  assert.equal(
-    rotulo({ tipo: "aluguel", valor: 2583.33, bloco: b31, valorMensal: 2500, prazoTotalDias: 31, comConta: true }),
-    "Bloco 1 (31 dias: 20/12 a 19/01) — R$ 2.583,33 · Base de cálculo (R$ 2.500,00 × 31 dias ÷ 30)",
-  );
+test("9. a forma com a conta (recibo e página do contrato): a conta ENTRE PARÊNTESES logo depois do valor, como a de meses — sem \"Base de cálculo\" (ORDEM-DUET-1206); N = os dias do bloco", () => {
+  const r31 = rotulo({ tipo: "aluguel", valor: 2583.33, bloco: b31, valorMensal: 2500, prazoTotalDias: 31, comConta: true });
+  assert.equal(r31, "Bloco 1 (31 dias: 20/12 a 19/01) — R$ 2.583,33 (R$ 2.500,00 × 31 dias ÷ 30)");
+  assert.doesNotMatch(r31, /Base de cálculo/);
+  assert.doesNotMatch(r31, / · /);
   // Bloco de 30 dias a R$ 2.500 num contrato em dias: os dois formatos na mesma linha (a nota 10.1 do mapa).
   assert.equal(
     rotulo({ tipo: "aluguel", valor: 2500, bloco: { numero: 1, meses: 1, inicio: "2027-03-01", fim: "2027-03-30" }, valorMensal: 2500, prazoTotalDias: 61, comConta: true }),
-    "Bloco 1 (30 dias: 01/03 a 30/03) — R$ 2.500 · Base de cálculo (R$ 2.500,00 × 30 dias ÷ 30)",
+    "Bloco 1 (30 dias: 01/03 a 30/03) — R$ 2.500 (R$ 2.500,00 × 30 dias ÷ 30)",
   );
 });
 
