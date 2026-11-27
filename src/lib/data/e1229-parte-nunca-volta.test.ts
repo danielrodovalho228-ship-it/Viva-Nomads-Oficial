@@ -30,7 +30,7 @@ function sessao(linhas: Linha[]) {
       const b: Record<string, unknown> = {};
       const resposta = () =>
         tabela === "pagamentos_bloco"
-          ? { data: linhas.filter((l) => !soAtivos || !l.anulado).map(({ anulado: _a, ...l }) => l), error: null }
+          ? { data: linhas.filter((l) => !soAtivos || !l.anulado).map((l) => ({ id: l.id, parte: l.parte, valor: l.valor, encargos: l.encargos })), error: null }
           : tabela === "contratos"
             ? { data: { id: CONTRATO, prazo_total_dias: 60, contrato_blocos: [{ id: BLOCO, numero_bloco: 1, meses: 2, inicio: "2026-12-01", fim: "2027-01-29", valor: 3000 }] }, error: null }
             : { data: null, error: { message: tabela } };

@@ -518,7 +518,11 @@ export async function marcarPagamentoRecebido(input: PagamentoInput): Promise<Ac
       if (!(novo.total > 0)) return { ok: false, error: "Informe um valor válido." };
     }
     if (novo.aluguel > aberto.aluguel + 0.005 || novo.contas > aberto.contas + 0.005 || novo.limpeza > aberto.limpeza + 0.005) return { ok: false, error: MSG_PASSA_DO_QUE_FALTA };
-    if (registros.length > 0) parte = proximaParte(registros.map((r) => Number(r.parte ?? 1)));
+    // E1229 (ORDEM-DUET-1160): um número dado não volta — o próximo é o maior já dado no bloco, ativo ou ANULADO, mais 1.
+    const { data: todas, error: erroTodas } = await supabase.from("pagamentos_bloco").select("parte").eq("bloco_id", input.blocoId).eq("tipo", "aluguel");
+    if (erroTodas) return { ok: false, error: erroBancoPT(erroTodas) };
+    const dadas = ((todas ?? []) as { parte: number | null }[]).map((r) => Number(r.parte ?? 1));
+    if (dadas.length > 0) parte = proximaParte(dadas);
   }
   // A caução (ORDENS-DUET 1098, 1107, 1112, 1120, 1127 e 1132) é registrada POR BLOCO (E1225, 0367) e usa a MESMA regra
   // da tela (linhasDaCaucaoPorBloco): só entra no 1.º bloco em aberto e só até ao que falta nessa linha — min(caução do
