@@ -84,7 +84,7 @@ type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
  * E1228: a estadia do contrato — o início do 1.º bloco e a saída. Falha de leitura: sem datas (o VN-CT no lugar).
  * E1239 (ORDEM-DUET-1200): a SAÍDA é a regra da casa (E599/E1089) — entrada + prazo_total_dias (dataDeSaida), a data
  * que a página do contrato mostra; nunca o fim do último bloco, que é a última NOITE (um dia antes). Sem o prazo lido,
- * fica o fim do último bloco, como antes.
+ * nenhuma saída (ORDEM-DUET-1203): o título degrada para o VN-CT — uma data errada num aviso crítico é pior que nenhuma.
  */
 async function estadiaDoContrato(admin: Admin, contratoId: string): Promise<{ entrada: string | null; saida: string | null }> {
   try {
@@ -95,7 +95,7 @@ async function estadiaDoContrato(admin: Admin, contratoId: string): Promise<{ en
     const { data: c } = await admin.from("contratos").select("prazo_total_dias").eq("id", contratoId).maybeSingle();
     const prazo = Number((c as { prazo_total_dias?: number | string | null } | null)?.prazo_total_dias);
     if (entrada && Number.isFinite(prazo) && prazo > 0) return { entrada, saida: dataDeSaida(entrada, prazo) };
-    return { entrada, saida: blocos[blocos.length - 1].fim ?? null };
+    return { entrada, saida: null };
   } catch {
     return { entrada: null, saida: null };
   }
