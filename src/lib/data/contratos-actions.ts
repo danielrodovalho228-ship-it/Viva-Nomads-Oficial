@@ -137,7 +137,7 @@ function toBloco(b: Record<string, unknown>): BlocoView {
   };
 }
 
-function toPagamento(p: Record<string, unknown>, valorMensal?: number | null): PagamentoView {
+function toPagamento(p: Record<string, unknown>, valorMensal: number | null, prazoTotalDias: number): PagamentoView {
   // ORDEM-DUET-1104: a parte é a da coluna registada (0348), nunca a ordem dos registros.
   const parte = String(p.tipo ?? "aluguel") === "caucao" ? 1 : parteDaColuna(p.parte);
   const componentes = componentesDoPagamento({ valor: Number(p.valor), encargos: String(p.tipo ?? "aluguel") === "caucao" ? [] : p.encargos });
@@ -150,6 +150,9 @@ function toPagamento(p: Record<string, unknown>, valorMensal?: number | null): P
       valorMensal: valorMensal ?? null,
       parte,
       total: componentes.total,
+      // E1067 (fusão): o prazo do contrato decide "em dias"; a página do contrato leva a conta (ORDEM-DUET-1140, decisão 2).
+      prazoTotalDias,
+      comConta: true,
     }),
     componentes,
     parte,
@@ -310,7 +313,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
 
   const { data, error } = await supabase
     .from("contratos")
-    .select(`id, property_id, aluguel_mensal, status, periodo, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, garantia, properties(title, owner_id), contrato_blocos(caucao, caucao_status), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim)), ${ACERTOS_CAUCAO}`)
+    .select(`id, property_id, aluguel_mensal, status, periodo, created_at, encerrado_em, assinado_proprietario_em, assinado_inquilino_em, garantia, prazo_total_dias, properties(title, owner_id), contrato_blocos(caucao, caucao_status), pagamentos_bloco(*, contrato_blocos(numero_bloco, meses, inicio, fim)), ${ACERTOS_CAUCAO}`)
     .eq("tenant_id", user.id)
     .order("created_at", { ascending: false });
   if (error && opcoes.exigir) throw new Error(MSG_LOCACOES_NAO_CARREGARAM);
@@ -330,7 +333,7 @@ export async function getMinhasLocacoes(opcoes: { exigir?: boolean } = {}): Prom
   const minhasAvaliacoes = await avaliacoesMinhasPorContrato(supabase, user.id, linhas.map((c) => String(c.id)));
   return linhas.map((c) => {
     const prop = (c.properties as { title?: string; owner_id?: string } | null)?.title ? (c.properties as { title?: string; owner_id?: string }) : (doServidor.get(String(c.property_id)) ?? {});
-    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal), Number(c.prazo_total_dias)));
     const estado = estadoDaLinha(c, "inquilino");
     return {
       id: String(c.id),
@@ -433,7 +436,7 @@ export async function getMeusContratos(opcoes: { exigir?: boolean } = {}): Promi
       .map(toBloco)
       .map((b) => ({ ...b, componentes: componentes.get(String(c.id))?.get(b.numeroBloco) ?? b.componentes }))
       .sort((a, b) => a.numeroBloco - b.numeroBloco);
-    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal)));
+    const pagamentos = ordenarPagamentos(((c.pagamentos_bloco as Record<string, unknown>[]) ?? []).filter((pg) => !pg.anulado_em)).map((pg) => toPagamento(pg, Number(c.aluguel_mensal), Number(c.prazo_total_dias)));
     const estado = estadoDaLinha(c, "proprietario");
     return {
       id: String(c.id),

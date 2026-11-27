@@ -47,8 +47,8 @@ test("o texto de um registro sem aluguel não diz 'aluguel R$ 0,00'", () => {
 
 test("o rótulo do complemento diz que é complementar e traz o total dele; o do primeiro registro não muda", () => {
   const bloco = { numero: 1, meses: 2, inicio: "2027-01-10", fim: "2027-02-09" };
-  assert.match(rotuloPagamentoBloco({ tipo: "aluguel", valor: 0, bloco, parte: 2, total: 560 }), /^Bloco 1, registro complementar \(2 meses: 10\/01 a 09\/02\) — R\$\s560(,00)?$/);
-  assert.equal(rotuloPagamentoBloco({ tipo: "aluguel", valor: 6400, bloco, valorMensal: 3200 }), rotuloPagamentoBloco({ tipo: "aluguel", valor: 6400, bloco, valorMensal: 3200, parte: 1, total: 6400 }));
+  assert.match(rotuloPagamentoBloco({ tipo: "aluguel", valor: 0, bloco, parte: 2, total: 560, prazoTotalDias: 60 }), /^Bloco 1, registro complementar \(2 meses: 10\/01 a 09\/02\) — R\$\s560(,00)?$/);
+  assert.equal(rotuloPagamentoBloco({ tipo: "aluguel", valor: 6400, bloco, valorMensal: 3200, prazoTotalDias: 60 }), rotuloPagamentoBloco({ tipo: "aluguel", valor: 6400, bloco, valorMensal: 3200, parte: 1, total: 6400, prazoTotalDias: 60 }));
 });
 
 /* ---- Pacote de provas ---- */

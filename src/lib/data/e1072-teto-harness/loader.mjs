@@ -14,7 +14,7 @@ const STUBS = {
   "@/lib/supabase/server": `export async function createClient() { return globalThis.__e1072Sessao ?? null; }`,
   "@/lib/supabase/admin": `export function createAdminClient() { return globalThis.__e1072Admin ?? null; }`,
   "@/lib/supabase/usuario-da-leitura": `export async function usuarioDaLeitura() { return null; }`,
-  "@/lib/fiscal/emitir": `export async function emitirDoPagamentoComRegistro() { return null; }`,
+  "@/lib/fiscal/emitir": `export async function emitirDoPagamentoComRegistro() { return null; } export async function emitirTermoDevolucaoComRegistro() { return null; }`,
   "@/lib/data/properties": `export async function listMyProperties() { return []; }`,
   "@/lib/data/taxa-dono-servidor": `export async function taxaDosContratosDoDono() { return new Map(); }`,
   "@/lib/data/contrato-componentes": `export async function componentesDosContratos(_admin, contratos) {

@@ -302,7 +302,7 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
   try {
     const { data: pg, error: erroPg } = await admin
       .from("pagamentos_bloco")
-      .select("id, contrato_id, bloco_id, tipo, parte, valor, forma, data_pagamento, confirmado_pelo_inquilino, anulado_em, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
+      .select("id, contrato_id, bloco_id, tipo, parte, valor, forma, data_pagamento, confirmado_pelo_inquilino, anulado_em, encargos, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal, prazo_total_dias)")
       .eq("id", pagamentoId)
       .maybeSingle();
     if (erroPg) return { ok: false, motivo: "não foi possível ler o pagamento" };
@@ -312,7 +312,7 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
     const partes = await partesDoContrato(admin, pg.contrato_id as string);
     if (!partes) return { ok: false, motivo: "contrato não encontrado" };
     const bloco = pg.contrato_blocos as unknown as { numero_bloco: number | null; meses: number | null; inicio: string | null; fim: string | null } | null;
-    const contrato = pg.contratos as unknown as { aluguel_mensal: number | null } | null;
+    const contrato = pg.contratos as unknown as { aluguel_mensal: number | null; prazo_total_dias: number | null } | null;
     const encargos = Array.isArray(pg.encargos) ? (pg.encargos as { rotulo: string; valor: number }[]).filter((e) => e && e.rotulo && Number(e.valor) >= 0).map((e) => ({ rotulo: String(e.rotulo).slice(0, 60), valor: Number(e.valor) })) : [];
     return await emitir(admin, pg.tipo === "caucao" ? "comprovante_caucao" : "recibo_aluguel", { pagamentoId }, partes, {
       periodoInicio: bloco?.inicio ?? null,
@@ -332,6 +332,10 @@ export async function emitirDoPagamento(pagamentoId: string): Promise<Resultado>
         // registada (ORDEM-DUET-1104), nunca a ordem dos registros.
         parte: pg.tipo === "caucao" ? 1 : parteDaColuna(pg.parte),
         total: Math.round((Number(pg.valor) + encargos.reduce((s, e) => s + e.valor, 0)) * 100) / 100,
+        // E1067 (fusão): o prazo do contrato decide "em dias"; o recibo leva a conta (ORDEM-DUET-1140, decisão 2). Só os
+        // recibos emitidos DEPOIS do merge: os emitidos são PDFs guardados (decisão 4).
+        prazoTotalDias: Number(contrato?.prazo_total_dias) || 0,
+        comConta: true,
       }),
     });
   } catch (e) {
