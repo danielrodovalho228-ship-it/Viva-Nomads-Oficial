@@ -8,7 +8,7 @@ import { ehAdmin } from "@/lib/data/admin-guard";
 import { logModeracao } from "@/lib/data/moderacao-log";
 import { carregarContratoAdmin, type ConferenciaAdmin } from "@/lib/data/contrato-admin";
 import { ROTULO_ESTADO_CONFERENCIA, textoPrazoConferencia } from "@/lib/conferencia";
-import { linhasAditivos } from "@/lib/contrato-provas";
+import { linhaPagamentoCentral, linhasAditivos } from "@/lib/contrato-provas";
 import { refContratoVN } from "@/lib/fiscal/fila-falhas";
 import { fmtReais } from "@/lib/admin/visao-geral";
 import { dataBRT, dataHoraBRT } from "@/lib/datas-brasilia";
@@ -105,7 +105,7 @@ export default async function AdminContratoPage({ params }: { params: Promise<{ 
             <ul className="space-y-2 text-sm text-ink">
               {c.pagamentos.map((p, i) => (
                 <li key={i} className={`break-words ${p.anuladoEm ? "text-muted" : ""}`} data-testid={p.anuladoEm ? "admin-pagamento-anulado" : "admin-pagamento"}>
-                  {p.tipo === "caucao" ? "Caução" : "Valor mensal"} de {fmtReais(p.valor)} ({FORMA[p.forma] ?? p.forma}, em {dataBRT(`${p.dia}T12:00:00Z`)}) —{" "}
+                  {linhaPagamentoCentral(p).rotulo} de {fmtReais(linhaPagamentoCentral(p).total)} ({FORMA[p.forma] ?? p.forma}, em {dataBRT(`${p.dia}T12:00:00Z`)}) —{" "}
                   {p.anuladoEm ? "" : p.confirmadoEm ? `confirmado pelo inquilino em ${dataHoraBRT(p.confirmadoEm, { semEtiqueta: true })}` : "aguardando confirmação do inquilino"}
                   {p.anuladoEm && `registro anulado em ${dataHoraBRT(p.anuladoEm, { semEtiqueta: true })}${p.anuladoMotivo ? ` (${p.anuladoMotivo})` : ""}`}
                 </li>

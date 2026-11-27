@@ -172,6 +172,15 @@ function comOsComponentes(p: Pick<PagamentoProva, "valor" | "encargos">): string
 /** E1072 (fatia 2): o registro complementar de um bloco (nunca a caução). */
 const ehComplemento = (p: Pick<PagamentoProva, "tipo" | "parte">) => p.tipo !== "caucao" && (p.parte ?? 1) > 1;
 
+/**
+ * E1241: o rótulo e o TOTAL de cada pagamento na página do contrato da Central — a mesma leitura do pacote de provas
+ * (o registro complementar diz "Registro complementar" e o seu total; na caução os encargos não contam).
+ */
+export function linhaPagamentoCentral(p: PagamentoProva): { rotulo: string; total: number } {
+  if (p.tipo === "caucao") return { rotulo: "Caução", total: componentesDoPagamento({ valor: p.valor, encargos: [] }).total };
+  return { rotulo: ehComplemento(p) ? "Registro complementar" : "Valor mensal", total: componentesDoPagamento(p).total };
+}
+
 /** E1072 (fatia 2): o que o registro complementar cobre — "contas do período de R$ 310,00", "limpeza de preparação de R$ 250,00". */
 function partesDoComplemento(p: Pick<PagamentoProva, "valor" | "encargos">): string[] {
   const c = componentesDoPagamento(p);
