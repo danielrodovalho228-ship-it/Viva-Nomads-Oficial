@@ -293,3 +293,10 @@ test("17. (N7) um chamado sem o contrato no contexto não anula registro nenhum 
   assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, false);
   naoAnulou();
 });
+
+test("18. (N6, ORDEM-DUET-1174) a nota [anulacao] CERTA (do sistema, interna) num chamado cuja origem gravada aponta OUTRO contrato é recusada — a trava é a origem, não a nota", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true, notaAutor: "sistema", notaInterna: true, contexto: { tipo: "contrato", id: OUTRO_CONTRATO } });
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  naoAnulou();
+});
