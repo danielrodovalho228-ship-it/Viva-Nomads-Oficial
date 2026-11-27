@@ -63,6 +63,7 @@ import {
   CLAUSULAS_PLACEHOLDER,
 } from "@/lib/modelos-contrato";
 import { hojeBR, dataBR, formatBRL, cn } from "@/lib/utils";
+import { textoBaseDeCalculo } from "@/lib/base-de-calculo";
 import { validarInicioEstadia } from "@/lib/inicio-estadia";
 import { ocupantesIniciais } from "@/lib/candidaturas/ocupantes";
 import { MARCA_MINUTA, MSG_ASSINATURA_INATIVA } from "@/lib/contrato-etapas";
@@ -1167,7 +1168,7 @@ export function ClosingFlow({ ctx, demo }: { ctx: FechamentoContexto; demo: bool
                 esse valor. O morador não paga taxa da Viva.
               </p>
               <div className="mt-3 space-y-1">
-                <Row label={DIAS_ACORDO ? `Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${DIAS_ACORDO} dias ÷ 30)` : `Base de cálculo (${formatBRL(PROPERTY.monthlyRent)} × ${prazoMeses} ${prazoMeses === 1 ? "mês" : "meses"})`} value={formatBRL(resumo.valorTotalPeriodo)} />
+                <Row label={textoBaseDeCalculo(formatBRL(PROPERTY.monthlyRent), { dias: DIAS_ACORDO, meses: prazoMeses })} value={formatBRL(resumo.valorTotalPeriodo)} />
                 <div className="flex items-center justify-between border-t border-champagne/40 pt-1 font-medium text-forest">
                   <span>Taxa de serviço ({pctTexto(COMMISSION_RATE)})</span>
                   <span>{formatBRL(PLATFORM_COMMISSION)}</span>
