@@ -44,5 +44,6 @@ test("a equipe: 'Anular este registro' só no chamado que nasceu de um registro,
   assert.match(ler(CENTRAL), /anularRegistroPelaCentral\(\{ chamadoId, motivo/);
   const cl = ler("src/app/(dashboard)/admin/atendimento/[id]/chamado-client.tsx");
   assert.match(cl, /const pedidoDeAnulacao = dados\.mensagens\.some\(\(m\) => m\.autor === "sistema" && m\.interno && \/\^\\\[anulacao\\\] pagamento=\/\.test\(m\.corpo\)\);/);
-  assert.match(cl, /\{pedidoDeAnulacao && <AnularRegistroCentral chamadoId=\{c\.id\} \/>\}/);
+  // E1246 (ORDEM-DUET-1220, asserção alterada): para a observadora da QA, o cartão some quando o contrato não é todo de teste.
+  assert.match(cl, /\{pedidoDeAnulacao && !anularSoLeitura && <AnularRegistroCentral chamadoId=\{c\.id\} \/>\}/);
 });
