@@ -348,9 +348,9 @@ export async function meuChamado(numero: string): Promise<{ chamado: ChamadoList
     supabase as unknown as ClienteChamados,
     user.id,
     { numero: numero.trim().toUpperCase() },
-    "id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, nota_satisfacao, responsavel_tipo"
+    "id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, nota_satisfacao, responsavel_tipo, simulacao"
   );
-  if (!c) return null;
+  if (!c || (c as unknown as { simulacao?: boolean }).simulacao) return null; // ENSAIO R1: filtra a simulação
   const { data: m } = await supabase
     .from("chamado_mensagens")
     .select("id, autor, corpo, criado_em")
