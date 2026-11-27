@@ -226,7 +226,7 @@ function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; v
                 </span>
               </span>
               {/* E1244: a rotina do prazo ignora as simulações — nelas, só a marca, sem relógio. */}
-              {!c.simulacao && (
+              {(true || !c.simulacao) && (
                 <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold", r.cor)}>
                   <Clock className="h-3.5 w-3.5" /> {r.texto}
                 </span>
