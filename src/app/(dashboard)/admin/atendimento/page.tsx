@@ -35,7 +35,7 @@ export default async function AdminAtendimentoPage({
   const admin = await adminDaPagina();
   const [fila, aprovacao, metricas, macros, ultimo] = await Promise.all([
     aba === "fila" ? filaAtendimento(filtros, { exigir: true }) : Promise.resolve([]),
-    filaAtendimento({ aprovacao: true }, { exigir: true }),
+    filaAtendimento({ aprovacao: true, simulacoes: filtros.simulacoes }, { exigir: true }),
     aba === "metricas" ? metricasAtendimento(Number(um("dias")) || 30) : Promise.resolve(null),
     aba === "respostas" ? listarMacros() : Promise.resolve([]),
     // Fila vazia (Prompt 48): a data do último chamado resolvido aparece no "Nada pendente".
