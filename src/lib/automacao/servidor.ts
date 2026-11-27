@@ -25,6 +25,7 @@ import {
   type Vinculo,
 } from "./pedidos-do-evento";
 import { chaveRemarcada, chaveSaidaSemParceiro, chaveSugestaoMorador, decidirRemarcacao, MSG_SAIDA_MUDOU, textoReagendamento } from "./remarcacao";
+import { saidaPeloFim } from "@/lib/texto-do-periodo";
 
 /*
   "Viva rodando automático" (Prompt 38) — o lado do servidor: lê o contrato e os vínculos, pede à regra pura o que o
@@ -39,12 +40,21 @@ export interface ContextoAutomacao extends ContratoDoEvento {
   tenantId: string;
   status: string;
   inicio: string | null;
+  /**
+   * E1089: a última noite gravada (o maior `fim` dos blocos válidos). Só para as chaves de "uma vez" dos avisos, que já
+   * levavam esta data — assim nenhum aviso já enviado sai de novo. Tudo o mais (janela, régua, textos) usa `saida`.
+   */
+  ultimaNoite: string;
 }
 
 type Bloco = { inicio: string; fim: string; status: string | null };
 const validos = (bs: Bloco[] | null | undefined) => (bs ?? []).filter((b) => b.status !== "nao_aceito");
 
-/** Contrato com a saída (maior fim dos blocos válidos), os horários do anúncio e a próxima entrada no mesmo imóvel. */
+/**
+ * Contrato com a saída, os horários do anúncio e a próxima entrada no mesmo imóvel.
+ * E1089 (coordenador): o maior `fim` dos blocos válidos é a ÚLTIMA NOITE; a SAÍDA é o dia seguinte (entrada + dias). A
+ * janela da limpeza, a régua dos 5 e dos 7 dias e os textos contam da saída.
+ */
 export async function contratoDoEvento(admin: Admin, contratoId: string): Promise<ContextoAutomacao | null> {
   const { data, error } = await admin
     .from("contratos")
@@ -63,8 +73,9 @@ export async function contratoDoEvento(admin: Admin, contratoId: string): Promis
   } | null;
   if (!c?.properties) return null;
   const blocos = validos(c.contrato_blocos);
-  const saida = datasDaEstadia(c.contrato_blocos)?.fim;
-  if (!saida) return null;
+  const ultimaNoite = datasDaEstadia(c.contrato_blocos)?.fim;
+  const saida = ultimaNoite ? saidaPeloFim(ultimaNoite) : "";
+  if (!ultimaNoite || !saida) return null;
   const { data: outros, error: erroOutros } = await admin
     .from("contratos")
     .select("id, contrato_blocos(inicio, fim, status)")
@@ -82,6 +93,7 @@ export async function contratoDoEvento(admin: Admin, contratoId: string): Promis
     id: c.id,
     propertyId: c.property_id,
     saida,
+    ultimaNoite,
     checkoutBefore: c.properties.checkout_before,
     proximaEntrada: entradas[0] ? { data: entradas[0], checkinAfter: c.properties.checkin_after } : null,
     ownerId: c.properties.owner_id,
@@ -350,13 +362,14 @@ export async function executarAcoes(admin: Admin, ctx: ContextoAutomacao, acoes:
           r.cancelados += await cancelarAutomaticos(admin, a.contratoId, agora);
           break;
         case "avisar_dono_sem_vinculo": {
+          // E1089: o texto do e-mail fala da SAÍDA; a chave de "uma vez" segue com a última noite gravada (não muda).
           const dados = { imovel: await imovelParaEmail(admin, ctx.propertyId), saida: ctx.saida };
-          if (await avisoUmaVez(admin, chaveSaidaSemParceiro(ctx.id, ctx.ownerId, ctx.saida), "saida_sem_parceiro", ctx.ownerId, "saida_sem_parceiro", "/parceiros/buscar?categoria=limpeza", dados, ctx.propertyId)) r.avisos += 1;
+          if (await avisoUmaVez(admin, chaveSaidaSemParceiro(ctx.id, ctx.ownerId, ctx.ultimaNoite), "saida_sem_parceiro", ctx.ownerId, "saida_sem_parceiro", "/parceiros/buscar?categoria=limpeza", dados, ctx.propertyId)) r.avisos += 1;
           break;
         }
         case "sugerir_morador": {
           const dados = { imovel: await imovelParaEmail(admin, ctx.propertyId), entrada: ctx.inicio, saida: ctx.saida, momento: a.momento };
-          if (await avisoUmaVez(admin, chaveSugestaoMorador(ctx.id, ctx.tenantId, a.momento, a.momento === "saida" ? ctx.saida : ctx.inicio), "sugestao_parceiros_morador", ctx.tenantId, "sugestao_parceiros_morador", `${HREF_ESTADIA(ctx.id)}#ajuda-mudanca`, dados, ctx.propertyId))
+          if (await avisoUmaVez(admin, chaveSugestaoMorador(ctx.id, ctx.tenantId, a.momento, a.momento === "saida" ? ctx.ultimaNoite : ctx.inicio), "sugestao_parceiros_morador", ctx.tenantId, "sugestao_parceiros_morador", `${HREF_ESTADIA(ctx.id)}#ajuda-mudanca`, dados, ctx.propertyId))
             r.avisos += 1;
           break;
         }
@@ -432,7 +445,9 @@ export async function automacaoDaEstadia(admin: Admin, agora: Date, simular: boo
     if (!c.assinado_proprietario_em || !c.assinado_inquilino_em) continue;
     const blocos = validos(c.contrato_blocos);
     const inicio = datasDaEstadia(blocos)?.entrada;
-    const saida = datasDaEstadia(blocos)?.fim;
+    // E1089 (coordenador): as réguas contam da SAÍDA — o dia seguinte à última noite gravada.
+    const ultimaNoite = datasDaEstadia(blocos)?.fim;
+    const saida = ultimaNoite ? saidaPeloFim(ultimaNoite) : "";
     const eventos: Evento[] = [];
     if (saida && saida > hoje && saida <= dia(DIAS_ANTES_LIMPEZA)) eventos.push({ tipo: "saida_em_5_dias" });
     if (inicio && inicio > hoje && inicio <= dia(DIAS_ANTES_SUGESTAO)) eventos.push({ tipo: "entrada_em_7_dias" });

@@ -6,6 +6,7 @@
   A Viva guarda só o FINAL do documento e da conta/Pix (a chave e o resultado, não o dado bruto — desenho do E293).
 */
 import { dataBR, formatBRL } from "./utils.ts";
+import { ROTULO_ENTRADA, ROTULO_SAIDA, saidaPeloFim } from "./texto-do-periodo.ts";
 
 /** Versão do texto da autorização: vai junto do registro, para saber exatamente o que a pessoa aceitou. */
 export const VERSAO_TEXTO_AUTORIZACAO = "ficha-resumo-v1";
@@ -122,8 +123,9 @@ export function montarFicha(d: DadosFicha): FichaResumo {
     { rotulo: "Imóvel", valor: d.imovel },
     { rotulo: "Proprietário", valor: d.proprietario },
     { rotulo: "Inquilino", valor: d.inquilino },
-    { rotulo: "Início", valor: d.inicio ? dataBR(d.inicio) : "—" },
-    { rotulo: "Fim", valor: d.fim ? dataBR(d.fim) : "—" },
+    // E1089: `d.fim` é a última noite gravada nos blocos; a ficha diz Entrada e Saída (o dia seguinte), como a proposta.
+    { rotulo: ROTULO_ENTRADA, valor: d.inicio ? dataBR(d.inicio) : "—" },
+    { rotulo: ROTULO_SAIDA, valor: d.fim ? dataBR(saidaPeloFim(d.fim) || d.fim) : "—" },
     { rotulo: "Aluguel mensal", valor: formatBRL(d.aluguelMensal) },
   ];
   if (diaVencimentoValido(d.diaVencimento)) linhas.push({ rotulo: "Vencimento", valor: `todo dia ${d.diaVencimento}` });

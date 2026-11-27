@@ -4,12 +4,14 @@
  * e testado em src/lib/varredura-texto.test.ts. Nunca recebe dado de pessoa: só o texto da tela.
  */
 import { COMPARE_RODAPE, DIFERENCIAIS_VIVA, LINHAS_COMPARE } from "../config/compare-precos.ts";
+import { REGRA_CAUCAO_BASE } from "./caucao-regra.ts";
 
 /**
  * Exceção da tabela comparativa Viva × Airbnb × QuintoAndar (src/config/compare-precos.ts). Por regra
- * permanente do Daniel a tabela é intocável e é a ÚNICA fonte autorizada a manter termos que a varredura
- * barraria (ex.: "check-in" em "Sem faxina nem check-in toda semana"). Os textos vindos desse arquivo
- * saem da tela antes da varredura; o mesmo termo em qualquer outro lugar continua reprovado.
+ * permanente do Daniel a tabela é intocável e mantém termos que a varredura barraria (ex.: "check-in" em
+ * "Sem faxina nem check-in toda semana"). É uma das DUAS exceções nomeadas: a outra é a frase da regra da caução
+ * (E1119, semFraseDaCaucao, abaixo). Os textos vindos desse arquivo saem da tela antes da varredura; o mesmo termo
+ * em qualquer outro lugar continua reprovado.
  */
 const TEXTOS_DA_TABELA: readonly string[] = [
   COMPARE_RODAPE,
@@ -21,6 +23,16 @@ export function semTabelaComparativa(texto: string): string {
   let out = texto;
   for (const t of TEXTOS_DA_TABELA) out = out.split(t).join(" ");
   return out;
+}
+
+/**
+ * E1119 (ORDEM-DUET-512): exceção NOMEADA e ESTREITA da t118 — a frase decidida da regra da caução (E1076,
+ * ORDEM-DUET-366: "a regra da casa cede aqui à frase provada"). Só a frase exata, LIDA DA FONTE
+ * (REGRA_CAUCAO_BASE, src/lib/caucao-regra.ts; se a frase mudar lá, a exceção segue-a) sai do texto, e só antes de
+ * procurar o termo "aluguel". "aluguel" em qualquer outro texto, e qualquer outro termo, continuam reprovados.
+ */
+export function semFraseDaCaucao(texto: string): string {
+  return texto.split(REGRA_CAUCAO_BASE).join(" ");
 }
 
 const TERMOS_PROIBIDOS: Array<[string, RegExp]> = [
@@ -96,8 +108,9 @@ export function achadosNoTexto(texto: string, opcoes: { termos?: boolean; vocabu
   }
   if (opcoes.termos !== false) {
     for (const [nome, re] of TERMOS_PROIBIDOS) {
-      const m = re.exec(texto);
-      if (m) out.push(`termo proibido "${nome}": …${trecho(texto, m.index)}…`);
+      const alvo = nome === "aluguel" ? semFraseDaCaucao(texto) : texto;
+      const m = re.exec(alvo);
+      if (m) out.push(`termo proibido "${nome}": …${trecho(alvo, m.index)}…`);
     }
   }
   for (const m of texto.matchAll(STATUS_CRU)) out.push(`código de status cru "${m[0]}"`);

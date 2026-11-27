@@ -49,12 +49,15 @@ test("filtro desligado: a busca não muda e não há linha de não medidos", () 
   for (const p of imoveis) assert.ok(passaInternet(p, { internetMin: 0, soInternetMedida: false }, AGORA));
 });
 
-test("100 Mbps: só medição válida que passa; o resto informado vai para a linha 'não medida'", () => {
+// Asserção alterada (E1078, decisão do Gerente, ORDEM-DUET-382 opção (a)): sem o estrito, vale a VELOCIDADE — a medida
+// quando há medição válida, senão a informada (não medida). O informado ≥ 100 entra na lista principal; a linha
+// "não medida" fica só para o estrito "Só com internet medida".
+test("100 Mbps: medição válida que passa e, sem medição, a informada que passa; medido abaixo não volta pelo informado", () => {
   const f = { ...FILTROS_PAINEL_VAZIOS, internetMin: 100 };
-  assert.deepEqual(ids(lista(f)), ["m320", "m120"]);
-  assert.deepEqual(ids(naoMedidosDoPainel(imoveis, f, AGORA)), ["i500", "venc", "caro"]);
-  // Nenhum imóvel some por não ter testado: todo informado ≥ 100 aparece em uma das duas listas.
-  assert.ok(informadaNaoMedida(imoveis[3], f, AGORA));
+  assert.deepEqual(ids(lista(f)), ["m320", "m120", "i500", "venc", "caro"]);
+  assert.deepEqual(ids(naoMedidosDoPainel(imoveis, f, AGORA)), []);
+  assert.ok(!informadaNaoMedida(imoveis[3], f, AGORA), "sem o estrito, o informado já está na lista");
+  assert.ok(informadaNaoMedida(imoveis[3], { ...f, soInternetMedida: true }, AGORA), "com o estrito, vai para a linha 'não medida'");
   assert.ok(!informadaNaoMedida(imoveis[2], f, AGORA), "medido abaixo não volta pelo informado");
   assert.ok(!informadaNaoMedida(imoveis[4], f, AGORA), "informado abaixo do valor não entra");
   assert.ok(!informadaNaoMedida(imoveis[6], f, AGORA), "sem informação não entra");
@@ -68,7 +71,7 @@ test("só com internet medida (sem valor): qualquer medição válida; não medi
 });
 
 test("não medidos respeitam os outros filtros (preço)", () => {
-  const f = { ...FILTROS_PAINEL_VAZIOS, internetMin: 50, maxPrice: 3000 };
+  const f = { ...FILTROS_PAINEL_VAZIOS, internetMin: 50, maxPrice: 3000, homeOfficeOnly: true, soInternetMedida: true };
   assert.ok(!ids(naoMedidosDoPainel(imoveis, f, AGORA)).includes("caro"));
 });
 
@@ -79,10 +82,12 @@ test("contagem 'Mostrar N imóveis' = tamanho da lista principal (medidos)", () 
     assert.equal(rotuloMostrar(n), n === 0 ? "Nenhum imóvel com esses filtros" : `Mostrar ${n} ${n === 1 ? "imóvel" : "imóveis"}`);
     assert.equal(n, lista(f).length);
   }
-  // 300: um medido; os informados ≥ 300 ficam na linha de baixo.
+  // Asserção alterada (E1078, ORDEM-382 (a)): 300 — o medido 320 e os informados ≥ 300 sem medição válida na lista
+  // principal; a linha "não medida" só com o estrito.
   const f300 = { ...FILTROS_PAINEL_VAZIOS, internetMin: 300 };
-  assert.equal(lista(f300).length, 1);
-  assert.equal(naoMedidosDoPainel(imoveis, f300, AGORA).length, 3);
+  assert.equal(lista(f300).length, 4);
+  assert.equal(naoMedidosDoPainel(imoveis, f300, AGORA).length, 0);
+  assert.equal(naoMedidosDoPainel(imoveis, { ...f300, homeOfficeOnly: true, soInternetMedida: true }, AGORA).length, 3);
 });
 
 test("textos: linha do fim da lista, chip ativo e resumo", () => {
@@ -92,7 +97,8 @@ test("textos: linha do fim da lista, chip ativo e resumo", () => {
   assert.equal(rotuloFiltroInternet({ internetMin: 100, soInternetMedida: true }), "Internet medida 100+ Mbps");
   assert.equal(rotuloFiltroInternet({ internetMin: 0, soInternetMedida: true }), "Internet medida");
   assert.equal(rotuloFiltroInternet({ internetMin: 0, soInternetMedida: false }), null);
-  assert.match(resumoFiltros({ ...FILTROS_PAINEL_VAZIOS, internetMin: 300 }), /Internet medida 300\+ Mbps/);
+  // Asserção alterada (E1078, ORDEM-382 (a)): o filtro passa a chamar-se velocidade; com o estrito, "Internet medida".
+  assert.match(resumoFiltros({ ...FILTROS_PAINEL_VAZIOS, internetMin: 300 }), /Velocidade 300\+ Mbps/);
 });
 
 test("URL: só 50/100/300; ida e volta", () => {
@@ -105,7 +111,8 @@ test("URL: só 50/100/300; ida e volta", () => {
   assert.equal(p.has("internet"), false);
 });
 
-test("alerta de busca aceita o mesmo filtro: sem medição válida, não alerta", () => {
+// Asserção alterada (E1078, ORDEM-382 (a)): o alerta usa a MESMA regra da lista — sem medição, a velocidade informada.
+test("alerta de busca aceita o mesmo filtro: a velocidade (medida, ou a informada sem medição)", () => {
   const im: ImovelParaAlerta = {
     id: "a", title: "Apto", city: "Uberlândia", neighborhood: "Centro", propertyType: "Apartamento",
     monthlyPrice: 2000, bedrooms: 1, minPeriodDays: 30, tagHomeOffice: true,
@@ -114,10 +121,11 @@ test("alerta de busca aceita o mesmo filtro: sem medição válida, não alerta"
   assert.match(q, /internet=100/);
   assert.ok(imovelBateComBusca(q, { ...im, internetMedida: valida(150) }, undefined, AGORA));
   assert.ok(!imovelBateComBusca(q, { ...im, internetMedida: valida(90) }, undefined, AGORA));
-  assert.ok(!imovelBateComBusca(q, { ...im, internetMbps: 500 }, undefined, AGORA), "só informado não alerta");
-  assert.ok(!imovelBateComBusca(q, { ...im, internetMedida: vencida(500) }, undefined, AGORA));
+  assert.ok(imovelBateComBusca(q, { ...im, internetMbps: 500 }, undefined, AGORA), "sem medição, a informada alerta");
+  assert.ok(!imovelBateComBusca(q, { ...im, internetMedida: valida(90), internetMbps: 500 }, undefined, AGORA), "medido abaixo não volta pelo informado");
+  assert.ok(!imovelBateComBusca(q, { ...im, internetMedida: vencida(500) }, undefined, AGORA), "medição vencida sem informada: desconhecida");
   assert.ok(imovelBateComBusca("local=Uberlândia", { ...im }, undefined, AGORA), "sem o filtro, nada muda");
-  assert.match(resumoDaBusca("local=Uberlândia&internet=300"), /internet medida 300\+ Mbps/);
+  assert.match(resumoDaBusca("local=Uberlândia&internet=300"), /velocidade 300\+ Mbps/i);
   assert.match(resumoDaBusca("local=Uberlândia&homeoffice=1&medida=1"), /internet medida$/);
 });
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { marcarAvisoLido, marcarTodosAvisosLidos, meusAvisos, resumoDoSino } from "@/lib/data/avisos-actions";
-import { contratoDoAviso, criticosPendentes, ordenarParaOSino, resolvidosNaPratica } from "@/lib/notifications/sino";
+import { contratoDoAviso, criticosPendentes, ehAvisoDeVisitaDeAvaliacao, ordenarParaOSino, resolvidosNaPratica, resumoSemVisitaVencida } from "@/lib/notifications/sino";
+import { gravarResolucaoConferida } from "@/lib/notifications/avisos-servidor";
 import { resumoDosAvisos } from "@/lib/notifications/avisos";
 import { situacaoDosContratos } from "@/lib/notifications/situacao-contratos";
 import { createClient } from "@/lib/supabase/server";
@@ -21,22 +22,34 @@ export async function GET() {
     const [avisos, resumo] = await Promise.all([meusAvisos(60), resumoDoSino()]);
     if (!avisos || !resumo) return NextResponse.json(VAZIO, { headers: SEM_CACHE });
     // E676: o crítico de contrato/aditivo só vale enquanto o problema existe — confere a situação real no banco.
-    const candidatos = avisos.filter((a) => a.prioridade === "critico" && !a.resolvido_em && (a.evento === "contract_status" || a.evento === "estadia_aditivo_proposto"));
+    // E1060: o "Pedido de visita" só vale enquanto a visita espera a resposta do dono.
+    // E1128: o aviso da visita de avaliação só vale enquanto o pedido tem visita por acontecer (qualquer prioridade).
+    const deAvaliacao = avisos.some((a) => !a.resolvido_em && ehAvisoDeVisitaDeAvaliacao(a.evento));
+    const candidatos = avisos.filter(
+      (a) => !a.resolvido_em && (ehAvisoDeVisitaDeAvaliacao(a.evento) || (a.prioridade === "critico" && (a.evento === "contract_status" || a.evento === "estadia_aditivo_proposto" || a.evento === "visita_pedida"))),
+    );
     let conferidos = avisos;
     let { maiorPrioridade } = resumo;
     if (candidatos.length) {
       const supabase = await createClient();
       const uid = supabase ? (await supabase.auth.getUser()).data.user?.id : null;
-      const ids = candidatos.map((a) => contratoDoAviso(a)).filter((x): x is string => !!x);
-      const situacao = uid ? await situacaoDosContratos(uid, ids).catch(() => null) : null;
+      const ids = candidatos.filter((a) => a.evento === "contract_status" || a.evento === "estadia_aditivo_proposto").map((a) => contratoDoAviso(a)).filter((x): x is string => !!x);
+      const visitas = candidatos.some((a) => a.evento === "visita_pedida");
+      const situacao = uid ? await situacaoDosContratos(uid, ids, { visitas, avaliacao: deAvaliacao }).catch(() => null) : null;
       conferidos = resolvidosNaPratica(avisos, situacao, new Date().toISOString());
+      // E1128: o aviso de visita que a conferência deu por vencido fica gravado como resolvido (todas as telas concordam).
+      const antes = new Map(avisos.map((a) => [a.id, a.resolvido_em]));
+      const recemVencidos = conferidos.filter((a) => ehAvisoDeVisitaDeAvaliacao(a.evento) && a.resolvido_em && !antes.get(a.id)).map((a) => a.id);
+      if (uid && recemVencidos.length) await gravarResolucaoConferida({ usuarioId: uid, ids: recemVencidos });
       if (maiorPrioridade === "critico" && !criticosPendentes(conferidos).length) {
         maiorPrioridade = resumoDosAvisos(conferidos.filter((a) => !a.lido_em)).maiorPrioridade;
       }
     }
-    const { naoLidas } = resumo;
+    // E1128: o aviso de visita de avaliação já resolvido sai do sino (não aparece, não conta como não lido e não deixa a cor).
+    const doSino = resumoSemVisitaVencida({ naoLidas: resumo.naoLidas, maiorPrioridade }, conferidos);
+    const { visiveis } = doSino;
     return NextResponse.json(
-      { naoLidas, maiorPrioridade, recentes: ordenarParaOSino(conferidos), criticos: criticosPendentes(conferidos).slice(0, 5) },
+      { naoLidas: doSino.naoLidas, maiorPrioridade: doSino.maiorPrioridade, recentes: ordenarParaOSino(visiveis), criticos: criticosPendentes(visiveis).slice(0, 5) },
       { headers: SEM_CACHE }
     );
   } catch {

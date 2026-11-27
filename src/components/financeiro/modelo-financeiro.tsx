@@ -1,5 +1,6 @@
 "use client";
 
+import { TEXTO_CARTEIRAS } from "@/config/planos";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Printer } from "lucide-react";
@@ -320,9 +321,9 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
               </button>
             ))}
           </div>
-          {/* E623: o que a faixa do Gestor traz além da taxa (estrutura aprovada em 04/11/2026). */}
-          <p className={styles.cardHelp} data-testid="faixa-gestor-detalhe">
-            {TAXA_FAIXAS.filter((f) => f.detalhe).map((f) => `${pctTexto(f.taxa)} — ${f.carteira}, com ${f.detalhe}.`).join(" ")}
+          {/* Prompt 078: no lugar do detalhe da faixa do Gestor, a linha das carteiras (sem taxa publicada). */}
+          <p className={styles.cardHelp} data-testid="faixa-carteiras">
+            {TEXTO_CARTEIRAS}
           </p>
           <div className={styles.slider} style={{ marginTop: 14 }}>
             <div className={styles.top}>
@@ -679,7 +680,7 @@ export function ModeloFinanceiro({ pagina, leitura = false }: { pagina: "simulac
             <ul>
               <li>
                 <strong>Modelo único:</strong> taxa de serviço por contrato fechado (renovação conta como novo contrato), sobre o valor total do contrato (aluguel médio de {brl(ALUGUEL_MEDIO)} × {mesesContrato} meses). Faixas por nº de imóveis do dono:{" "}
-                {FAIXAS_COMISSAO_PADRAO.map((f) => `${f.minImoveis}${f.maxImoveis === null ? "+" : f.maxImoveis === f.minImoveis ? "" : `–${f.maxImoveis}`} imóveis${f.gestor ? " ou administradora (Gestor)" : ""} ${pctTexto(f.taxa)}`).join(" · ")}
+                {FAIXAS_COMISSAO_PADRAO.map((f) => `${f.minImoveis}${f.maxImoveis === null ? "+" : f.maxImoveis === f.minImoveis ? "" : `–${f.maxImoveis}`} imóveis ${pctTexto(f.taxa)}`).join(" · ")}
                 . A conta usa a faixa escolhida (agora <strong>{pctTexto(taxa)}</strong>; padrão {pctTexto(TAXA_MEDIA)}, carteira de 3 a 5 imóveis) — nunca 12% fixo. Sem cobrança recorrente nesta fase; assinatura é fase 2 (futuro), para donos com muitos imóveis, e não entra nestas contas.
               </li>
               <li>Contratos começam no mês {MES_PRIMEIRO_CONTRATO} e crescem em linha reta até o teto do cenário.</li>

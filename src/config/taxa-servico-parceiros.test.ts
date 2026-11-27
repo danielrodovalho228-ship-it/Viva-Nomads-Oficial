@@ -15,7 +15,7 @@ const ler = (p: string) => readFileSync(p, "utf8");
 test("texto único: 10% para todas as categorias, 90/10 na origem, a Viva não guarda o dinheiro", () => {
   assert.equal(
     TEXTO_TAXA_SERVICO_PARCEIROS,
-    "Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias. Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% direto ao parceiro e 10% à Viva. A Viva não guarda o dinheiro."
+    "Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias. Quando o pagamento pela plataforma estiver ativo, o valor é dividido na origem: 90% vai direto para o parceiro e 10% para a Viva. A Viva não guarda o dinheiro."
   );
   assert.equal(textoTaxaServicoParceiros(false), `${TEXTO_TAXA_SERVICO_PARCEIROS} Pagamento pela plataforma em breve.`);
   assert.equal(textoTaxaServicoParceiros(true), TEXTO_TAXA_SERVICO_PARCEIROS);

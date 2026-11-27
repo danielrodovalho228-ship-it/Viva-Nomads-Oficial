@@ -13,9 +13,10 @@ import { ROTULO_COMODIDADE, comodidadesValidas, passaComodidades, type Comodidad
 import { aceitaPorte, type PortePet, type RegrasPets } from "../anuncio/pets-regras.ts";
 import { PROPERTY_TYPES } from "../amenities.ts";
 import { passaBloqueios, passaEntrada } from "./datas-flexiveis.ts";
-import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, type ImovelComInternet } from "./filtro-internet.ts";
+import { filtroInternetLigado, informadaNaoMedida, passaInternet, rotuloFiltroInternet, velocidadeDesconhecida, type ImovelComInternet } from "./filtro-internet.ts";
 import { calcularTudoIncluido, type CamposTotalMes } from "../precos.ts";
 import type { LimpezaEstadia } from "../anuncio/limpeza-estadia.ts";
+import { ROTULO_CONTAS_INCLUIDAS, ROTULO_SILENCIOSO, ambienteSilencioso, contasIncluidas, type ImovelSilencio } from "./filtros-pacote1.ts";
 
 export interface FiltrosPainel {
   maxPrice: number; // 0 = qualquer
@@ -48,6 +49,10 @@ export interface FiltrosPainel {
   gestorOnly: boolean;
   /** E439: só quem aceita negociar (properties.negociacao.aceita; `?negocia=1`). */
   negociaOnly?: boolean;
+  /** Filtros pacote 1: "Ambiente silencioso" (`?silencioso=1`; regra em filtros-pacote1.ts). */
+  silenciosoOnly?: boolean;
+  /** Filtros pacote 1: "Contas incluídas" (`?contas=1`; a mesma regra do aviso AVISO_TUDO_INCLUIDO do cartão). */
+  contasOnly?: boolean;
   /**
    * E572/E580: só imóveis com o selo "Preço justo" (`?precojusto=1`). Lê o MESMO campo do selo do card
    * (Property.precoJusto), sem chave: com PRECO_JUSTO_COMPARADOR desligada o selo vem da coluna (0130/0277).
@@ -81,6 +86,8 @@ export const FILTROS_PAINEL_VAZIOS: FiltrosPainel = {
   notaOnly: false,
   gestorOnly: false,
   negociaOnly: false,
+  silenciosoOnly: false,
+  contasOnly: false,
   precoJustoOnly: false,
   internetMin: 0,
   soInternetMedida: false,
@@ -135,7 +142,7 @@ export function cabeNaEstadia(p: { minPeriodDays?: number; maxPeriodDays?: numbe
   return true;
 }
 
-type ImovelFiltravel = ImovelComInternet & {
+type ImovelFiltravel = ImovelComInternet & ImovelSilencio & {
   /** Disponível a partir de (yyyy-mm-dd); sem ela, a data de entrada não tira o imóvel. */
   availableFrom?: string | null;
   /** Prompt 53: datas bloqueadas de hoje em diante (do dono ou importadas). */
@@ -244,6 +251,8 @@ export function passaNoPainel(p: ImovelFiltravel, f: FiltrosPainel, agora: Date 
   if (f.seguroOnly && !aceitaGarantia(p, "seguro_fianca")) return false;
   if (f.gestorOnly && !(p.ownershipType !== "own" && p.subleaseAuthorized)) return false;
   if (f.negociaOnly && p.negociacao?.aceita !== true) return false;
+  if (f.silenciosoOnly && !ambienteSilencioso(p)) return false;
+  if (f.contasOnly && !contasIncluidas(p)) return false;
   if (!passaPrecoJusto(p, f)) return false;
   if (!passaInternet(p, f, agora)) return false;
   if (f.nivelMin && !nivelAoMenos(p.nivel, f.nivelMin)) return false;
@@ -275,6 +284,16 @@ export function naoMedidosDoPainel<T extends ImovelFiltravel>(lista: readonly T[
 }
 
 /**
+ * E1078: os que ficam de fora SÓ por não ter velocidade nenhuma (nem medida nem informada) — a linha "Velocidade
+ * desconhecida: N imóveis". Filtro desligado → nenhum.
+ */
+export function desconhecidosDoPainel<T extends ImovelFiltravel>(lista: readonly T[], f: FiltrosPainel, agora: Date = new Date()): T[] {
+  if (!filtroInternetLigado(f)) return [];
+  const semInternet: FiltrosPainel = { ...f, internetMin: 0, soInternetMedida: false };
+  return lista.filter((p) => passaNoPainel(p, semInternet, agora) && velocidadeDesconhecida(p, f, agora));
+}
+
+/**
  * Adendo 3 (E43): o atalho antigo `?seguro=1` (URL, alerta e busca salva) vira a garantia "Seguro-fiança". Uma garantia
  * já escolhida vence (é a escolha mais nova). Devolve a garantia que vale.
  */
@@ -299,7 +318,7 @@ export function contarFiltrosPainel(f: FiltrosPainel): number {
     (f.niveis?.length ? 1 : 0) +
     (filtroPrecoJustoLigado(f) ? 1 : 0) +
     // Adendo 3 (E43): "Pronto para Morar" é um estado só (readyToLiveOnly) — atalho e chip contam 1.
-    [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.gestorOnly, f.negociaOnly].filter(Boolean).length +
+    [f.petsOnly, f.homeOfficeOnly, f.readyToLiveOnly, f.notaOnly, f.gestorOnly, f.negociaOnly, f.silenciosoOnly, f.contasOnly].filter(Boolean).length +
     comodidadesValidas(f.comodidades).length
   );
 }
@@ -334,6 +353,8 @@ export function resumoFiltros(f: FiltrosPainel): string {
   if (f.notaOnly) partes.push("Emite nota fiscal");
   if (f.gestorOnly) partes.push("Gestor profissional");
   if (f.negociaOnly) partes.push("Aceita negociação");
+  if (f.silenciosoOnly) partes.push(ROTULO_SILENCIOSO);
+  if (f.contasOnly) partes.push(ROTULO_CONTAS_INCLUIDAS);
   if (filtroPrecoJustoLigado(f)) partes.push("Preço justo");
   return partes.length ? partes.join(" · ") : "Qualquer preço · todos os imóveis";
 }

@@ -158,6 +158,12 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-ink">{i.rotulo}</span>
                   <span className="block text-sm text-muted">{i.detalhe}</span>
+                  {/* ORDEM-DUET-1048: a ação de confirmar no mesmo item (o morador, no estado do meio). */}
+                  {i.acao && (
+                    <Link href={i.acao.href} className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-forest underline" data-testid={`checklist-${i.chave}-acao`}>
+                      {i.acao.rotulo}
+                    </Link>
+                  )}
                 </span>
               </li>
             ))}

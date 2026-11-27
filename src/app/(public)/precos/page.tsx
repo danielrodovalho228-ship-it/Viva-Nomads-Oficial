@@ -5,8 +5,8 @@ import { ArrowRight } from "lucide-react";
 import { BannerTopo } from "@/components/institucional/banner-topo";
 import { BrandImage } from "@/components/brand-image";
 import { PHOTOS } from "@/lib/media";
-import { FAIXAS_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, taxaPublicaTexto, comissaoSobreContrato, rotuloFaixaTaxa } from "@/lib/cobranca/regra";
-import { GESTOR_DIFERENCIAIS, GESTOR_TEXTO } from "@/config/planos";
+import { FAIXAS_COMISSAO_PADRAO, TAXA_COMISSAO_PADRAO, TEXTO_REGRA_UNICA, DESCRICAO_PRECOS, pctTexto, taxaPublicaTexto, comissaoSobreContrato, rotuloFaixaTaxa } from "@/lib/cobranca/regra";
+import { TEXTO_CARTEIRAS } from "@/config/planos";
 import { DESTAQUES_PRECOS, FRASES_REGRA, INCLUIDO_CONTRATO, OPCIONAIS_PRECOS, SUBTITULO_OPCIONAIS } from "@/lib/precos-pagina";
 import { PlanoGestorForm } from "@/components/precos/plano-gestor-form";
 import { ComparativoPrecos } from "@/components/precos/comparativo-precos";
@@ -41,7 +41,7 @@ export default function PricingPage() {
         alinhamento="centro"
         subtitulo={
           <p>
-            A Viva cobra <strong className="text-white">12% sobre o valor total do contrato fechado</strong>. Sem mensalidade.
+            A Viva cobra <strong className="text-white">{pctTexto(TAXA_COMISSAO_PADRAO)} sobre o valor total do contrato fechado</strong>. Sem mensalidade.
           </p>
         }
       >
@@ -114,16 +114,11 @@ export default function PricingPage() {
             ))}
           </ul>
 
-          {/* E302/E303 (QA 31/10): o "Ver o Plano Gestor" de /parceiros chega aqui (#plano-gestor). E564 (parte A): o texto sai
-              de GESTOR_TEXTO e os diferenciais de GESTOR_DIFERENCIAIS — só os do lançamento (nada da fase 2). */}
-          <div id="plano-gestor" className="mt-6 scroll-mt-24 rounded-xl bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="plano-gestor-secao">
-            <h3 className="font-semibold text-ink">Plano Gestor</h3>
-            <p className="mt-1" data-testid="plano-gestor-texto">{GESTOR_TEXTO}.</p>
-            <ul className="mt-2 list-disc space-y-1 pl-4" data-testid="plano-gestor-diferenciais">
-              {GESTOR_DIFERENCIAIS.map((d) => (
-                <li key={d}>{d}</li>
-              ))}
-            </ul>
+          {/* Prompt 078 (16/11/2026): no lugar do plano antigo das carteiras, a linha das carteiras — sem taxa publicada. O "Ver as taxas"
+              de /parceiros chega aqui (#carteiras). */}
+          <div id="carteiras" className="mt-6 scroll-mt-24 rounded-xl bg-surface-2 px-4 py-3 text-sm text-ink" data-testid="carteiras-secao">
+            <h3 className="font-semibold text-ink">Carteiras e administradoras</h3>
+            <p className="mt-1" data-testid="carteiras-texto">{TEXTO_CARTEIRAS}</p>
           </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row" data-testid="precos-botoes">
@@ -131,11 +126,6 @@ export default function PricingPage() {
               Anunciar meu imóvel
             </ButtonLink>
             <PlanoGestorForm />
-            {/* E302 (resíduo, 01/11): a ação de VER o Plano Gestor também aqui — rola até a seção #plano-gestor da própria
-                página; "Falar sobre o Plano Gestor" segue como a ação de contato. */}
-            <ButtonLink href="#plano-gestor" variant="tertiary" size="lg" className="self-center" data-testid="precos-ver-plano-gestor">
-              Ver o Plano Gestor
-            </ButtonLink>
           </div>
         </div>
 

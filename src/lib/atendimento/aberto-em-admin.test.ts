@@ -15,7 +15,10 @@ test("lista de chamados do admin mostra 'Aberto em' ao lado do status", () => {
   assert.match(src, /data-testid="chamado-aberto-em"/);
 });
 
-test("cabeçalho do detalhe do admin mostra 'Aberto em' junto do status", () => {
+// E1098 (ORDEM-DUET-505): pelo mockup, o estado é um selo do cabeçalho e "Aberto em" é uma linha do cartão Detalhes
+// (antes iam os dois no subtítulo). A hora continua pelo formatador de Brasília (dataEHora usa dataBRT e horaBRT).
+test("detalhe do admin mostra o estado no cabeçalho e 'Aberto em' nos Detalhes", () => {
   const src = ler("../../app/(dashboard)/admin/atendimento/[id]/chamado-client.tsx");
-  assert.match(src, /subtitle=\{`[^`]*STATUS\[c\.status\][^`]*Aberto em \$\{dataHoraBRT\(c\.criado_em\)\}/);
+  assert.match(src, /data-testid="chamado-status">[\s\S]{0,160}\{rotuloStatus\(c\.status\)\}/);
+  assert.match(src, /<Linha k="Aberto em" v=\{dataEHora\(c\.criado_em\)\} \/>/);
 });

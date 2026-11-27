@@ -1,12 +1,14 @@
 /*
   Modelo financeiro (/simulacao e /roi) com as premissas reais de out/2026.
   Roda: node --test src/lib/financeiro/projecao.test.ts
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): a escada tem 4 faixas (a quinta, do Plano Gestor a 4%, saiu) — uma
+  carteira de 20 imóveis paga 6% (R$ 259,20 sobre R$ 4.320, antes R$ 172,80), e o mix das projeções tem 4 posições (a última é 6%).
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { custoFixoDe, comparativoRegraComissao, mesesContratoValidos, CUSTO_FERRAMENTAS_POR_CONTRATO, CUSTO_FIXO_PADRAO, cenariosContratosMes, parceirosPorContrato, porContrato, projetar, receitaBrutaMensal, taxaMediaPorContrato, visaoInvestidor } from "./projecao.ts";
 import { ALUGUEL_MEDIO, MESES_MEDIOS_CONTRATO, CONTRATOS_MES_CENARIOS, CUSTOS_FIXOS, CUSTO_FIXO_FAIXA, IMPOSTO_OPCOES, IMPOSTO_SOBRE_RECEITA, OPERADOR_OPCOES, PARCEIROS, REFERENCIA, REPRESENTANTE_SEGUROS, SELO_POTENCIAL, TAXA_MEDIA } from "../../config/premissas-financeiras.ts";
-import { FAIXAS_COMISSAO_PADRAO, taxaMediaPonderada, comissaoSobreContrato } from "../cobranca/regra.ts";
+import { FAIXAS_COMISSAO_PADRAO, faixaPorImoveisAtivos, taxaMediaPonderada, comissaoSobreContrato } from "../cobranca/regra.ts";
 
 /** |real − esperado| ≤ 2% do esperado. */
 const perto = (real: number, esperado: number, msg: string) =>
@@ -16,7 +18,11 @@ test("números da regra única sobre R$ 4.320 em 1 mês: 518,40 / 432,00 / 345,6
   // E592/E594: o aluguel médio do modelo passou a R$ 3.000; a regra das faixas segue a mesma.
   assert.equal(ALUGUEL_MEDIO, 3000);
   assert.deepEqual(FAIXAS_COMISSAO_PADRAO.slice(0, 4).map((f) => comissaoSobreContrato(4320, 1, f.taxa)), [518.4, 432, 345.6, 259.2]);
-  assert.equal(comissaoSobreContrato(4320, 1, FAIXAS_COMISSAO_PADRAO[4].taxa), 172.8); // E564: Plano Gestor, 4% (sem assinatura)
+  // 078 (Daniel, 16/11/2026): antes a QUINTA faixa (FAIXAS_COMISSAO_PADRAO[4], o Plano Gestor a 4%) dava 172,80. Não há quinta faixa:
+  // a carteira que era do Gestor (20 imóveis ou mais) paga a última faixa da escada, 6% = 259,20.
+  assert.equal(FAIXAS_COMISSAO_PADRAO.length, 4);
+  assert.equal(comissaoSobreContrato(4320, 1, faixaPorImoveisAtivos(20).taxa), 259.2);
+  assert.equal(comissaoSobreContrato(4320, 1, FAIXAS_COMISSAO_PADRAO[FAIXAS_COMISSAO_PADRAO.length - 1].taxa), 259.2);
 });
 
 test("taxa sobre o valor TOTAL (ordem 5df28a7b): R$ 3.000 a 12% = 360 (1 mês), 720 (2 meses), 1.080 (3 meses); não é mais o 1º mês", () => {
@@ -36,7 +42,10 @@ test("taxa média do modelo validado = 10% (E592); a ponderação das faixas seg
   assert.ok(Math.abs(taxaMediaPonderada([1, 0, 1, 0, 0]) - 0.1) < 1e-9); // metade a 12%, metade a 8%
   assert.equal(taxaMediaPonderada([]), 0.12);
   assert.equal(taxaMediaPonderada([0, 0, 0, 0, 0]), 0.12);
-  assert.equal(taxaMediaPonderada([Number.NaN, -1, 0, 0, 3]), 0.04);
+  // 078 (Daniel, 16/11/2026): antes taxaMediaPonderada([NaN, -1, 0, 0, 3]) === 0.04 (peso só na quinta faixa, a do Gestor). Com 4
+  // faixas, o peso só na ÚLTIMA dá 6%; e uma quinta posição não existe mais — é ignorada e o mix cai na 1ª faixa.
+  assert.equal(taxaMediaPonderada([Number.NaN, -1, 0, 3]), 0.06);
+  assert.equal(taxaMediaPonderada([Number.NaN, -1, 0, 0, 3]), 0.12);
 });
 
 test("cenários 10/20/40 contratos por mês: R$ 9 mil / 18 mil / 36 mil de receita bruta (E592)", () => {

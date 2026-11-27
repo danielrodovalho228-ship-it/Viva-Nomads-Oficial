@@ -21,7 +21,7 @@ import { getAvatarUrl } from "@/lib/data/avatar-actions";
 import type { Conversation } from "@/lib/data/messages";
 import { EmergenciaChegada } from "@/components/estadia/emergencia-chegada";
 import { GUARD_NOTICE, DOCUMENTO_BLOQUEADO, AVISO_DOCUMENTOS } from "@/lib/messages/contact-guard";
-import { avisoAntesDeEnviar, previaAoDigitar } from "@/lib/messages/aviso-envio";
+import { avisoAntesDeEnviar, previaAoDigitar, recusaDoEnvio } from "@/lib/messages/aviso-envio";
 import { ROTA_ENVIAR_ANEXO, podeAnexar, tipoNaTela, validarAnexoNaTela } from "@/lib/messages/anexo-tela";
 import { AnexoNaMensagem, BotaoAnexar, PreviaAnexo, semLocalizacao } from "@/components/mensagens/anexo-conversa";
 import { useDemoMode, DemoBadge } from "@/lib/demo/demo-mode";
@@ -107,6 +107,8 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   const [guardNotice, setGuardNotice] = useState(false);
   // Prompt 32: CPF/RG não vai pelo chat; a mensagem fica no campo e o aviso leva aos Ocupantes da estadia.
   const [docBloqueado, setDocBloqueado] = useState(false);
+  // E1059 (resto): o envio que o servidor recusou mostra o aviso dele (antes ficava o eco, como se tivesse ido).
+  const [recusaEnvio, setRecusaEnvio] = useState<string | null>(null);
   // E445 item 2 + E585: com contato/link no texto, o aviso e a prévia mascarada aparecem AO DIGITAR (como na proposta),
   // antes de qualquer envio. "Editar" recolhe o aviso para aquele rascunho; mexer no texto (ou tentar enviar) reabre.
   const [avisoFechadoPara, setAvisoFechadoPara] = useState<string | null>(null);
@@ -195,6 +197,7 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     setErroAdiar(null);
     setNaoEncontrada(false);
     setAvisoFechadoPara(null);
+    setRecusaEnvio(null);
     limparAnexo();
     setErroAnexo(null);
     setActiveId(id);
@@ -267,8 +270,11 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
   async function enviar(text: string, masked: boolean) {
     if (!active) return;
     setAvisoFechadoPara(null);
+    setRecusaEnvio(null);
     setGuardNotice(masked);
     setDraft("");
+    const tirarEco = (t: string) =>
+      setConversations((prev) => prev.map((c) => (c.id === active.id ? { ...c, messages: c.messages.filter((m) => !String(m.id).startsWith("tmp-") || m.text !== t) } : c)));
     const usouRapida = deRapida;
     setDeRapida(false);
     // Atualização otimista
@@ -283,17 +289,31 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
     // grava: a conversa é fictícia e o envio fica só na tela.
     if (!demo) {
       // Conversa de pedido de serviço (Prompt 31b): o servidor confere a parte do pedido e grava na conversa dele.
-      if (active.pedidoParceiroId) await semQuedaDeRede(enviarMensagemDoPedido(active.pedidoParceiroId, text));
-      else
-      {
+      if (active.pedidoParceiroId) {
+        const r = await semQuedaDeRede(enviarMensagemDoPedido(active.pedidoParceiroId, text));
+        const recusa = recusaDoEnvio(r);
+        if (recusa) {
+          tirarEco(text);
+          setDraft(text);
+          setRecusaEnvio(recusa);
+        }
+      } else {
         const envio = { conversationId: active.id, receiverId: active.otherId, propertyId: active.propertyId, body: text, respostaRapida: usouRapida };
         const r = await semQuedaDeRede(sendMessage(envio));
         // E445 (item 3): termo ofensivo — o servidor avisa ANTES de gravar; só envia com a confirmação da pessoa.
         if (r && typeof r === "object" && "ofensa" in r && r.ofensa) {
           // Não gravou: tira o eco otimista, devolve o texto ao campo e mostra o aviso com "Enviar mesmo assim".
-          setConversations((prev) => prev.map((c) => (c.id === active.id ? { ...c, messages: c.messages.filter((m) => !String(m.id).startsWith("tmp-") || m.text !== text) } : c)));
+          tirarEco(text);
           setDraft(text);
           setOfensaPendente({ envio, aviso: r.error ?? "" });
+        } else {
+          // E1059 (resto): a recusa do servidor (CPF/RG, falha ao gravar) não fica muda — mesmo tratamento, com o aviso dele.
+          const recusa = recusaDoEnvio(r);
+          if (recusa) {
+            tirarEco(text);
+            setDraft(text);
+            setRecusaEnvio(recusa);
+          }
         }
       }
     }
@@ -648,6 +668,11 @@ function MessagesInner({ initial, demo, abrir }: { initial: Conversation[]; demo
               ) : (
                 "."
               )}
+            </p>
+          )}
+          {recusaEnvio && (
+            <p role="alert" className="border-t border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-800" data-testid="mensagens-envio-recusado">
+              {recusaEnvio}
             </p>
           )}
           {/* Conversa com imóvel = entre pessoas; "Suporte" é a equipe, não há o que denunciar. */}

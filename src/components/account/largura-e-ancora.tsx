@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { COOKIE_TELA, COOKIE_VEIO_DA_CONTA, LARGURA_COMPUTADOR, telaDaLargura, voltarAoMenuDaConta } from "@/lib/conta/redirecionar-no-servidor";
-import { destinoDaAncora } from "@/lib/conta/secoes";
+import { ancoraMortaNoPerfil, destinoDaAncora } from "@/lib/conta/secoes";
 
 /**
  * E798: grava a largura da tela deste aparelho (cookie, 1 ano) para o proxy saber, já no servidor, se /dashboard/conta
@@ -28,12 +28,17 @@ export function GravarLarguraDaTela() {
 /**
  * E798: com o redirecionamento no servidor, /dashboard/conta#documento chega ao Perfil com a âncora (o navegador a
  * mantém). Aqui ela vai para a seção certa, como a página da Conta fazia antes (destinoDaAncora). Âncora do próprio
- * Perfil (perfil-publico, pets) fica onde está.
+ * Perfil que ainda tem alvo na tela (pets) fica onde está; a que não tem mais (perfil-publico) sai do endereço, sem
+ * recarregar — é o mesmo fim de quando a página da Conta redireciona (o destino da tabela não traz âncora).
  */
 export function AncoraAntigaDaConta() {
   useEffect(() => {
-    const destino = destinoDaAncora(window.location.hash, window.location.search);
-    if (destino && !destino.startsWith("/dashboard/conta/perfil")) window.location.replace(destino);
+    const { hash } = window.location;
+    const destino = destinoDaAncora(hash, window.location.search);
+    if (destino && !destino.startsWith("/dashboard/conta/perfil")) return window.location.replace(destino);
+    if (ancoraMortaNoPerfil(hash)) {
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    }
   }, []);
   return null;
 }

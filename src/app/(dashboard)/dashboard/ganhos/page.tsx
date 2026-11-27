@@ -12,6 +12,7 @@ import { listMyProperties } from "@/lib/data/properties";
 import { enquadramentoReformaAtivo } from "@/lib/reforma/chave";
 import { mostrarAvisoReforma, numerosNaViva, type NumerosNaViva } from "@/lib/reforma/enquadramento";
 import { AvisoReforma, EnquadramentoReforma } from "@/components/reforma/enquadramento-reforma";
+import { saidaPeloFim } from "@/lib/texto-do-periodo";
 
 export const metadata: Metadata = { title: "Ganhos" };
 
@@ -63,8 +64,9 @@ export default async function GanhosPage() {
                     )}
                     <span className="block text-xs text-muted">
                       {l.situacao === "ocupado" ? "Em vigência" : "A começar"}
-                      {l.inicio ? ` · de ${dataBR(l.inicio)}` : ""}
-                      {l.fim ? ` até ${dataBR(l.fim)}` : ""}
+                      {/* E1089: `l.fim` é a última noite; a tela diz entrada e saída (o dia seguinte). */}
+                      {l.inicio ? ` · entrada ${dataBR(l.inicio)}` : ""}
+                      {l.fim ? ` · saída ${dataBR(saidaPeloFim(l.fim) || l.fim)}` : ""}
                     </span>
                   </span>
                   <span className="font-semibold tabular-nums text-ink">{formatBRL(l.valorMensal)}/mês</span>

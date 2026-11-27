@@ -169,7 +169,8 @@ test.describe("T347 — Prompt 55-E2: respostas rápidas e mensagens programadas
     const l7 = linhas.find((l) => l.quando === "7_dias_antes")!;
     // 7 dias antes da entrada (dia 10 → dia 3), às 10h de Brasília.
     expect(new Date(l7.enviar_em).toISOString()).toBe(new Date(`${dia(3)}T13:00:00.000Z`).toISOString());
-    expect(linhas.find((l) => l.quando === "saida")!.enviar_em).toContain(dia(69));
+    // E1089 (coordenador): a mensagem "No dia da saída" sai no dia da SAÍDA — o dia seguinte à última noite gravada (dia 69).
+    expect(linhas.find((l) => l.quando === "saida")!.enviar_em).toContain(dia(70));
 
     const t = Date.parse(l7.enviar_em);
     expect(await tique(d, new Date(t - 60_000).toISOString())).toMatchObject({ enviadas: 0 });

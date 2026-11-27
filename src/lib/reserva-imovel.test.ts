@@ -40,7 +40,9 @@ test("Caução é linha separada, com o valor do 1º bloco pela regra do contrat
   // base: bloco padrão de 2 meses → 50% de 2 aluguéis = 1 aluguel.
   assert.equal(caucao.valor, formatBRL(base.monthlyPrice));
   assert.match(caucao.nota!, /devolvida no fim/);
-  assert.match(caucao.nota!, /50% do valor de cada bloco, no máximo 3 vezes o valor mensal/);
+  // ASSERÇÃO ALTERADA no E1076 (ORDEM-DUET-362; aprovada na ORDEM-DUET-366). Antes: /50% do valor de cada bloco, no máximo 3 vezes o valor mensal/.
+  // Motivo: a frase dizia a regra antiga; a regra decidida no E1061 é metade do aluguel da estadia, com o mesmo teto.
+  assert.match(caucao.nota!, /50% do aluguel da estadia, no máximo 3 vezes o valor mensal/);
   assert.match(caucao.nota!, /direto ao proprietário/);
   assert.match(caucao.nota!, /A Viva não recebe nem segura/);
   assert.equal(l.find((x) => x.chave === "viva")!.valor, formatBRL(0));

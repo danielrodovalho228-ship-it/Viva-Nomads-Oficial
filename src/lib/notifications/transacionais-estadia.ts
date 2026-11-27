@@ -6,6 +6,7 @@
   Roda: node --test src/lib/notifications/transacionais-estadia.test.ts
 */
 import { imovelDoPedido, type LinhaEmail } from "../parceiros/email-pedido.ts";
+import { periodoPelaSaida } from "../texto-do-periodo.ts";
 
 export type EventoEstadia =
   | "estadia_aditivo_proposto"
@@ -71,10 +72,11 @@ export function linhaImovel(im: ImovelEmail | null | undefined): string {
   return imovelDoPedido(im ?? null);
 }
 
+/** E1089: `d.saida` é a data de SAÍDA (entrada + dias); o período sai na forma única "Entrada … · Saída … · N diárias". */
 function periodo(d: DadosEstadiaEmail): string {
-  const e = dia(d.entrada);
-  const s = dia(d.saida);
-  return e && s ? `${e} a ${s}` : e || s;
+  const p = periodoPelaSaida(d.entrada, d.saida);
+  if (p) return p.linha;
+  return dia(d.entrada) || dia(d.saida);
 }
 
 export function aberturaEstadia(ev: EventoEstadia, d: DadosEstadiaEmail, nome?: string): string {
@@ -95,7 +97,7 @@ export function aberturaEstadia(ev: EventoEstadia, d: DadosEstadiaEmail, nome?: 
       return `${ola}, ${quem || "a outra parte"} aceitou a sua proposta de alteração do contrato${de}${mudancas ? ` (${mudancas})` : ""}. Agora as duas partes assinam ${aditivo} pela página da estadia.`;
     case "estadia_remarcada": {
       const p = periodo(d);
-      return `${ola}, ${aditivo} do contrato${de} foi assinado pelas duas partes${mudancas ? `: ${mudancas}` : ""}.${p ? ` A estadia agora vai de ${p}.` : ""} Os blocos já estão atualizados na página da estadia.`;
+      return `${ola}, ${aditivo} do contrato${de} foi assinado pelas duas partes${mudancas ? `: ${mudancas}` : ""}.${p ? ` A estadia agora: ${p}.` : ""} Os blocos já estão atualizados na página da estadia.`;
     }
     case "estadia_encerramento_pedido":
       return `${ola}, ${quem || "a outra parte"} pediu o encerramento do contrato${de}${d.motivo ? ` (motivo: ${limpo(d.motivo).toLowerCase()})` : ""}. A Viva recebeu o pedido e vai conduzir o encerramento com vocês.`;

@@ -8,6 +8,7 @@
   "resolvido_em" é preenchido quando a ação do evento é feita (assinou, respondeu, confirmou): ver ACAO_RESOLVE.
 */
 import type { NotificationEvent } from "./eventos-email.ts";
+import { numeroPublicoContrato } from "../contrato-ref.ts";
 
 export type PrioridadeAviso = "critico" | "urgente" | "normal";
 export type PapelAviso = "dono" | "morador" | "parceiro" | "avaliador" | "admin";
@@ -98,6 +99,24 @@ export const ACAO_RESOLVE: Partial<Record<NotificationEvent, "assinou" | "respon
 /** Título do aviso: o assunto do catálogo, limpo e curto (nunca o assunto montado com texto do usuário). */
 export function tituloDoAviso(assuntoDoCatalogo: string): string {
   return assuntoDoCatalogo.replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) || "Aviso da Viva Nomads";
+}
+
+const dataBR = (iso: string | null | undefined): string | null => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ""));
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : null;
+};
+
+/**
+ * E1228 (ORDENS-DUET 1147, 1148 e 1151; texto do coordenador) — o aviso de assinatura pendente diz QUAL estadia: dois
+ * contratos do mesmo imóvel davam o mesmo "Atualização do seu contrato · {imóvel}", e o dono não sabia qual faltava
+ * assinar. "Assinar o contrato — {imóvel}, estadia de {entrada} a {saída}"; sem as datas, o código VN-CT no lugar.
+ */
+export function tituloAvisoAssinar(o: { imovel?: string | null; entrada?: string | null; saida?: string | null; contratoId: string }): string {
+  const imovel = String(o.imovel ?? "").replace(/[\u0000-\u001f<>]/g, " ").replace(/\s+/g, " ").trim().slice(0, 90);
+  const entrada = dataBR(o.entrada);
+  const saida = dataBR(o.saida);
+  const qual = entrada && saida ? `estadia de ${entrada} a ${saida}` : `contrato ${numeroPublicoContrato(o.contratoId)}`;
+  return tituloDoAviso(`Assinar o contrato — ${imovel ? `${imovel}, ` : ""}${qual}`);
 }
 
 /** Rótulo do morador para o dono ANTES do aceite (regra de máscara do prompt 6 / E427): nunca nome, foto ou contato. */

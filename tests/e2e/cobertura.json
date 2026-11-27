@@ -29,7 +29,8 @@
         "t710-e265-sem-selo-em-todo-cartao",
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
-        "t1448-varredura-bloco514"
+        "t1448-varredura-bloco514",
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/acesso-socios": {
@@ -636,7 +637,8 @@
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
         "t1448-varredura-bloco514",
-        "t1645-reprovas-e916-e915-e887-e931"
+        "t1645-reprovas-e916-e915-e887-e931",
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/ajuda/[tema]": {
@@ -653,7 +655,8 @@
         "t1402-varredura-bloco480",
         "t1423-varredura-bloco497",
         "t1448-varredura-bloco514",
-        "t1645-reprovas-e916-e915-e887-e931"
+        "t1645-reprovas-e916-e915-e887-e931",
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/ajuda/fale-com-a-viva": {
@@ -817,7 +820,8 @@
         "t657-e235-link-avaliador",
         "t1409-varredura-bloco487",
         "t1435-varredura-bloco504",
-        "t1458-varredura-bloco521"
+        "t1458-varredura-bloco521",
+        "t1485-e717-avaliador-de-teste"
       ]
     },
     "/avisos/desligar": {
@@ -965,7 +969,8 @@
         "t710-e265-sem-selo-em-todo-cartao",
         "t1412-varredura-bloco490",
         "t1440-varredura-bloco507",
-        "t1462-varredura-bloco524"
+        "t1462-varredura-bloco524",
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/comparar": {
@@ -1197,7 +1202,8 @@
         "t607-varredura-bloco51",
         "t1404-varredura-bloco482",
         "t1425-varredura-bloco499",
-        "t1450-varredura-bloco516"
+        "t1450-varredura-bloco516",
+        "t1759-e1088-pedir-orcamento-depois-do-contrato"
       ]
     },
     "/dashboard/carteira": {
@@ -2375,6 +2381,15 @@
         "t1449-varredura-bloco515"
       ]
     },
+    "/dashboard/servicos/avaliacao": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": [
+        "t1735-e1104-porta-da-avaliacao-nos-servicos"
+      ]
+    },
     "/dashboard/servicos/pedidos/[id]": {
       "personas": [
         "proprietario",
@@ -2742,7 +2757,8 @@
         "t1404-varredura-bloco482",
         "t1425-varredura-bloco499",
         "t1450-varredura-bloco516",
-        "t1457-c10-c7-seguranca-e-botao-na-dobra"
+        "t1457-c10-c7-seguranca-e-botao-na-dobra",
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/parceiros": {
@@ -2764,7 +2780,8 @@
         "t1403-varredura-bloco481",
         "t1424-varredura-bloco498",
         "t1449-varredura-bloco515",
-        "t1459-c9-e709-e710-e711-layout"
+        "t1459-c9-e709-e710-e711-layout",
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/parceiros/[slug]": {
@@ -2913,7 +2930,8 @@
         "t543-e166-fundo-clean-publico",
         "t591-varredura-bloco48",
         "t661-varredura-bloco62",
-        "t671-varredura-bloco66"
+        "t671-varredura-bloco66",
+        "t1677-p078-escada-sem-gestor"
       ]
     },
     "/privacidade": {
@@ -3417,6 +3435,12 @@
       ]
     },
     "/api/cron/cobranca-mensal": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
+    "/api/cron/contratos-sem-taxa": {
       "personas": [
         "sistema"
       ],
@@ -4334,6 +4358,18 @@
       "specs": [
         "t191-ajuda-publicacao"
       ]
+    },
+    "src/lib/data/anulacao-actions.ts#anularRegistro": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": []
+    },
+    "src/lib/data/anulacao-actions.ts#anularRegistroPelaCentral": {
+      "personas": [
+        "admin"
+      ],
+      "specs": []
     },
     "src/lib/data/atendimento-actions.ts#abrirChamado": {
       "personas": [
@@ -6312,7 +6348,7 @@
         "t656-e224-plano-gestor"
       ]
     },
-    "src/lib/data/planos-actions.ts#getGestorElegibilidade": {
+    "src/lib/data/planos-actions.ts#getTaxaDaConta": {
       "personas": [
         "proprietario",
         "inquilino"
@@ -7588,6 +7624,14 @@
         "t315-telas-avaliacao-dono-62a"
       ]
     },
+    "src/lib/vistoria/actions.ts#adminAdicionarAoPiloto": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t1715-e1077b-piloto-pela-central"
+      ]
+    },
     "src/lib/vistoria/actions.ts#adminCriarAvaliacaoTeste": {
       "personas": [
         "admin"
@@ -7603,6 +7647,14 @@
       "specs": [
         "t303-avaliadores-credenciados-62b1",
         "t314-entrada-avaliador-62b3"
+      ]
+    },
+    "src/lib/vistoria/actions.ts#adminRemoverDoPiloto": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t1715-e1077b-piloto-pela-central"
       ]
     },
     "src/lib/vistoria/actions.ts#adminResolverFila": {
@@ -7707,6 +7759,14 @@
         "t315-telas-avaliacao-dono-62a"
       ]
     },
+    "src/lib/vistoria/actions.ts#recusarDataDaVisita": {
+      "personas": [
+        "inquilino"
+      ],
+      "specs": [
+        "t1768-e1173-moradora-pode-nao-concordar"
+      ]
+    },
     "src/lib/vistoria/actions.ts#recusarProposta": {
       "personas": [
         "proprietario"
@@ -7732,6 +7792,12 @@
         "t303-avaliadores-credenciados-62b1",
         "t315-telas-avaliacao-dono-62a"
       ]
+    },
+    "src/lib/vistoria/actions.ts#salvarMeuSobre": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": []
     },
     "src/lib/vistoria/actions.ts#salvarMeusTermos": {
       "personas": [
@@ -7793,6 +7859,14 @@
       ],
       "specs": [
         "t305-laudo-avaliacao-62b2"
+      ]
+    },
+    "src/lib/vistoria/laudo-actions.ts#dbaGuardadoDaVisita": {
+      "personas": [
+        "parceiro"
+      ],
+      "specs": [
+        "t1742-e1117-tela-da-visita-e-laudo"
       ]
     },
     "src/lib/vistoria/laudo-actions.ts#enviarFotoAvaliacao": {

@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { ATALHOS_INICIO_DONO, PECA_NA_VIVA, alertaDoTopo, blocoPrincipalDono } from "./inicio-dono.ts";
 import { checklistProprietario, type FatosConta } from "../onboarding/ativacao.ts";
 import type { Decisao } from "./decisoes.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const dec = (id: string, extra: Partial<Decisao> = {}): Decisao => ({ id, tipo: "proposta", texto: `Decisão ${id}`, href: `/x/${id}`, prazo: null, prazoTexto: null, atrasada: false, ...extra });
 
@@ -116,7 +117,7 @@ test("E218-A: com anúncio publicado o guia some (decisão ou em dia), e o modo 
   // ...e o morador/parceiro seguem com o deles (E167, #1392).
   assert.match(visao, /const blocosMorador = checklists\.filter\(\(c\) => c\.papel !== "proprietario"\)/);
   const inicio = ler("../../components/painel/inicio-dono.tsx");
-  assert.doesNotMatch(inicio.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, ""), /ChecklistAtivacaoBloco/);
+  assert.doesNotMatch(fonteSemComentarios(inicio), /ChecklistAtivacaoBloco/);
   // O servidor monta os passos do bloco a partir do guia do dono (fonte única).
   const pagina = ler("../../app/(dashboard)/dashboard/inicio-dados.tsx");
   assert.match(pagina, /checklist: checklists\.find\(\(c\) => c\.papel === "proprietario"\) \?\? null/);

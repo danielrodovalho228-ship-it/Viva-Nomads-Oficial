@@ -3,7 +3,7 @@
   O morador preenche depois da assinatura; o dono vê e baixa a "Lista para a portaria" (nome + documento).
   Dados apagados RETENCAO_OCUPANTES_DIAS depois do fim do contrato (rotina das automações).
 */
-import { ddmmaaaa } from "./estadia.ts";
+import { periodoPeloFim } from "../texto-do-periodo.ts";
 
 /** Prazo único de retenção. Se o parecer jurídico trouxer outro prazo, muda só aqui. */
 export const RETENCAO_OCUPANTES_DIAS = 90;
@@ -52,7 +52,8 @@ export function textoListaPortaria(
   c: { numero: string; imovel: string; inicio: string | null; fim: string | null },
   ocupantes: { nome: string; documento: string }[],
 ): string {
-  const periodo = c.inicio && c.fim ? `${ddmmaaaa(c.inicio)} a ${ddmmaaaa(c.fim)}` : "a definir";
+  // E1089: `c.fim` é a última noite; a portaria lê a entrada e a SAÍDA (o dia seguinte).
+  const periodo = periodoPeloFim(c.inicio, c.fim)?.linha ?? "a definir";
   return [
     `Lista para a portaria — ${c.imovel}`,
     `Contrato ${c.numero} · Período: ${periodo}`,

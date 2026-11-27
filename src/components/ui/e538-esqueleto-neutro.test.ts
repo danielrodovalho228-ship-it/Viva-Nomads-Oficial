@@ -7,6 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { fonteSemComentarios } from "../../lib/fonte-sem-comentarios.ts";
 
 function arquivos(dir: string, nome: string, out: string[] = []): string[] {
   for (const f of readdirSync(dir)) {
@@ -19,7 +20,7 @@ function arquivos(dir: string, nome: string, out: string[] = []): string[] {
 
 /** Texto visível em JSX: o que fica entre `>` e `<` com alguma letra (comentários e expressões fora). */
 function textosJsx(src: string): string[] {
-  const semComentarios = src.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const semComentarios = fonteSemComentarios(src);
   return [...semComentarios.matchAll(/>([^<>{}]*)</g)].map((m) => m[1].trim()).filter((t) => /[A-Za-zÀ-ú]/.test(t));
 }
 
@@ -38,7 +39,7 @@ test("E538: todo loading.tsx do app só desenha blocos (sem texto, sem seed de d
 test("E538: os esqueletos de components/ui/skeleton.tsx não têm texto nem dado", () => {
   const s = readFileSync("src/components/ui/skeleton.tsx", "utf8");
   assert.deepEqual(textosJsx(s), []);
-  assert.doesNotMatch(s.replace(/\/\*[\s\S]*?\*\//g, ""), DADO_INVENTADO);
+  assert.doesNotMatch(fonteSemComentarios(s), DADO_INVENTADO);
   assert.doesNotMatch(s, /lib\/demo|DEMO_/);
 });
 

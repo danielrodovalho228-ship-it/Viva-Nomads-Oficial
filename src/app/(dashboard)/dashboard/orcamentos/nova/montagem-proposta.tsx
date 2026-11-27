@@ -16,7 +16,7 @@ import { diasDaSelecao } from "@/lib/imovel/selecao-estadia";
 import { descontoParaMeses } from "@/lib/anuncio/negociacao";
 import { textoTaxaPainel } from "@/lib/cobranca/regra";
 import { CAUCAO_FRASE } from "@/lib/faixas";
-import { caucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
+import { caucaoDaProposta, rotuloCaucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { formatBRL, hojeBR } from "@/lib/utils";
 import { MSG_ACAO_FALHOU, semQuedaDeRede } from "@/lib/erro-de-rede";
 import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
@@ -266,7 +266,7 @@ export function MontagemProposta({ dados }: { dados: DadosMontagem }) {
               </div>
               {caucao && (
                 <div className="flex justify-between gap-3">
-                  <dt className="text-muted">Caução (50% do 1º bloco, {caucao.dias} dias)</dt>
+                  <dt className="text-muted">{rotuloCaucaoDaProposta(caucao)}</dt>
                   <dd className="font-medium text-ink" data-testid="resumo-caucao">{formatBRLExato(caucao.valor)}</dd>
                 </div>
               )}

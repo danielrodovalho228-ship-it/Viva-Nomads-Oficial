@@ -11,7 +11,10 @@ import { contemContato } from "@/lib/pedidos/pedidos";
 import { semMetadados } from "@/lib/foto-reconversao";
 import { chaveCidade } from "@/lib/cidades";
 import { lerReais } from "@/lib/reais";
-import { vistoriaAtiva } from "./chave";
+import { hojeEmBrasilia } from "@/lib/datas-brasilia";
+import { vistoriaAtiva, vistoriaAtivaParaOMorador } from "./chave";
+import { TEXTO_RECUSA_PARA_O_MORADOR, concordanciaRecusada, gravacaoDaRecusa } from "./concordancia";
+import { ocupanteNoDia, type ContratoComBlocos } from "./ocupacao";
 import { CATEGORIA_AVALIADOR, pendenciasDoCredenciamento, podeAprovarParaTeste, podeAtivar, solicitacaoDoAvaliador, validarPedidoAvaliador } from "./entrada";
 import {
   CODIGO_CONDUTA,
@@ -26,16 +29,19 @@ import {
   validarConduta,
   valorDoPedido,
   condicaoRetorno,
-  linhaDaTabela,
-  COLUNAS_PRECO,
   type LinhaPreco,
   type Porte,
   type StatusCredenciamento,
 } from "./regras";
-import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, revisarCriterios, rotaDono, rotaMorador } from "./servidor";
-import { descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
+import { ROTA_ADMIN, ROTA_AVALIADOR, abrirEscolha, avisar, comTesteConcluido, devolverAoDono, escolherNoServidor, naFilaDoAdmin, registrarRespostaDoAvaliador, resolverAvisosDaRecusa, resolverAvisosDaVisita, revisarCriterios, rotaDono, rotaMorador, tabelaDaCidade } from "./servidor";
+import { PRAZO_RESPOSTA_PADRAO_HORAS, descredenciamentoValido, faixaDeReferencia, validarProposta, validarTermos } from "./escolha";
+import { CONFIRMACAO_DO_ACEITE, ERRO_ACEITE_FORA_DO_PRAZO, aceiteForaDoPrazo, erroAoPropor, precisaDoAceiteDoDono } from "./relogio-do-pedido";
+import { ERRO_TROCA_SEM_CONFIRMAR, trocaConfirmada } from "./troca-de-avaliador";
 import { recusaObservador } from "@/lib/qa/observador";
+import { MSG_CONTA_NAO_ENCONTRADA, emailParaIlike, lerEntradaPiloto } from "./piloto-central";
+import { textoDaEspera } from "./espera-de-avaliador";
 import { ativarParceiroDoAvaliador } from "./parceiro-do-avaliador-servidor";
+import { normalizarSobre } from "./vitrine-avaliadores";
 import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 
 const MSG_VISTORIA_SEM_LEITURA = "Não foi possível conferir o imóvel agora. Tente de novo em instantes.";
@@ -316,6 +322,40 @@ export async function adminSalvarPreco(form: FormData): Promise<Res> {
   return { ok: true };
 }
 
+// ── E1077-b1: a lista do piloto da avaliação (vistoria_piloto, 0350) pela Central ─────────────────────────────────
+// A conta observadora da QA só mexe em conta de teste (o alvo é a conta); conta real, só o admin não observador.
+// Entrar ou sair da lista não dispara mensagem nenhuma: só a linha da tabela muda.
+export async function adminAdicionarAoPiloto(form: FormData): Promise<Res> {
+  const a = await exigirAdmin();
+  if (!a) return SEM_ACESSO;
+  const e = lerEntradaPiloto(form.get("email"), form.get("nota"));
+  if (!e.ok) return { ok: false, erro: e.erro, campos: [{ campo: "email", mensagem: e.erro }] };
+  const { data: perfis, error: erroPerfil } = await a.admin.from("profiles").select("id").ilike("email", emailParaIlike(e.email)).limit(2);
+  if (erroPerfil) return { ok: false, erro: "Não foi possível conferir a conta agora. Tente de novo." };
+  const perfil = (perfis ?? [])[0] as { id: string } | undefined;
+  if (!perfil) return { ok: false, erro: MSG_CONTA_NAO_ENCONTRADA };
+  const alvo = perfil.id;
+  const recusaQa = await recusaObservador(a.userId, { perfis: [alvo] });
+  if (recusaQa) return { ok: false, erro: recusaQa };
+  const { error } = await a.admin.from("vistoria_piloto").upsert({ user_id: alvo, nota: e.nota }, { onConflict: "user_id" });
+  if (error) return { ok: false, erro: "Não foi possível salvar." };
+  revalidatePath(ROTA_ADMIN);
+  return { ok: true, mensagem: "Conta adicionada ao teste da avaliação." };
+}
+
+export async function adminRemoverDoPiloto(form: FormData): Promise<Res> {
+  const a = await exigirAdmin();
+  if (!a) return SEM_ACESSO;
+  const alvo = String(form.get("userId") ?? "").trim();
+  if (!alvo) return { ok: false, erro: MSG_CONTA_NAO_ENCONTRADA };
+  const recusaQa = await recusaObservador(a.userId, { perfis: [alvo] });
+  if (recusaQa) return { ok: false, erro: recusaQa };
+  const { error } = await a.admin.from("vistoria_piloto").delete().eq("user_id", alvo);
+  if (error) return { ok: false, erro: "Não foi possível remover." };
+  revalidatePath(ROTA_ADMIN);
+  return { ok: true, mensagem: "Conta removida do teste da avaliação." };
+}
+
 export async function adminRevisarAuditoria(form: FormData): Promise<Res> {
   const a = await exigirAdmin();
   if (!a) return SEM_ACESSO;
@@ -359,8 +399,8 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   const { data: im } = await s.admin.from("properties").select("id, owner_id, status, city, bedrooms").eq("id", propertyId).maybeSingle();
   if (!im || im.owner_id !== s.userId) return SEM_ACESSO;
   const agora = new Date();
-  const { data: tabela } = await s.admin.from("vistoria_precos").select(COLUNAS_PRECO).eq("cidade", im.city ?? "");
-  const linhas: LinhaPreco[] = ((tabela ?? []) as Parameters<typeof linhaDaTabela>[0][]).map(linhaDaTabela);
+  const tabela = await tabelaDaCidade(s.admin, im.city); // E1081: cidade pela chave (sem acento)
+  const linhas: LinhaPreco[] = tabela;
   const porte = porteDoImovel(im.bedrooms as number);
   const preco = precoVigente(linhas, im.city ?? "", porte, agora);
   // Prompt 62-B2: o anúncio que a Viva tirou da busca (segurança grave ou 3º strike) volta justamente por nova avaliação.
@@ -368,11 +408,10 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   const pode = pedidoPodeAbrir({ chaveAtiva: await vistoriaAtiva(), anuncioPublicado: im.status === "active" || !!bloq?.length, preco });
   if (!pode.ok) return { ok: false, erro: pode.motivo };
   // Imóvel ocupado agora: a visita só acontece com a concordância do morador.
-  const hoje = agora.toISOString().slice(0, 10);
+  // E1114: o hoje é o dia de Brasília (das 21:00 às 24:00 o UTC já virou; no último dia do bloco o morador sumia).
+  const hoje = hojeEmBrasilia(agora);
   const { data: contratos, error: erroContratos } = await s.admin.from("contratos").select("tenant_id, contrato_blocos(inicio, fim, status)").eq("property_id", im.id).eq("status", "ativo");
-  const ocupante = ((contratos ?? []) as { tenant_id: string; contrato_blocos: { inicio: string; fim: string; status: string | null }[] | null }[]).find((c) =>
-    (c.contrato_blocos ?? []).some((b) => b.status !== "nao_aceito" && b.inicio <= hoje && b.fim >= hoje),
-  );
+  const ocupante = ocupanteNoDia((contratos ?? []) as ContratoComBlocos[], hoje);
   const { data: dono, error: erroDono } = await s.admin.from("profiles").select("is_teste").eq("id", s.userId).maybeSingle();
   // Adendo 62-B1: depois de "reprovado" ou de ressalva vencida, é NOVA AVALIAÇÃO (novo pedido completo, outro avaliador
   // pelo rodízio): valor da tabela, menos a condição de retorno da cidade só se ela existir e estiver no prazo.
@@ -402,7 +441,10 @@ export async function pedirAvaliacao(form: FormData): Promise<Res> {
   if (error || !p) return { ok: false, erro: "Este imóvel já tem uma avaliação em andamento." };
   const opcoes = await abrirEscolha(s.admin, p.id, agora);
   revalidatePath(`/dashboard/imoveis/${im.id}/nivel`);
-  return { ok: true, mensagem: opcoes ? "Pedido registrado. Escolha o avaliador da lista: cada um define o próprio valor e prazo." : "Pedido registrado. Ainda não há avaliador disponível na sua cidade; avisaremos quando houver." };
+  if (opcoes) return { ok: true, mensagem: "Pedido registrado. Escolha o avaliador da lista: cada um define o próprio valor e prazo." };
+  // E1177: sem lista, a mensagem diz o MOTIVO gravado no pedido (a promessa do aviso só vale quando a cidade não tem avaliador).
+  const { data: semLista } = await s.admin.from("vistoria_pedidos").select("motivo_da_espera").eq("id", p.id).maybeSingle();
+  return { ok: true, mensagem: `Pedido registrado. ${textoDaEspera((semLista as { motivo_da_espera?: string | null } | null)?.motivo_da_espera)}` };
 }
 
 // ── O avaliador designado ──────────────────────────────────────────────────────────────────────────────────────
@@ -424,8 +466,12 @@ export async function responderDesignacao(form: FormData): Promise<Res> {
   const c = await comoAvaliador(String(form.get("pedidoId") ?? ""));
   if (!c || c.p.status !== "designado") return SEM_ACESSO;
   if (form.get("resposta") !== "recusar") return { ok: false, erro: "Para aceitar, informe o seu valor e o seu prazo." };
-  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", new Date());
-  await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
+  const agora = new Date();
+  // E1102: a recusa fica gravada também quando o pedido não tinha a linha da designação (ela é criada com a resposta).
+  await registrarRespostaDoAvaliador(c.admin, c.p.id, c.p.avaliador_id!, "recusada", agora);
+  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", agora);
+  // E1160 (1): a recusa tem o seu próprio aviso ao dono.
+  await avisar(c.admin, c.p.owner_id, "vistoria_recusada_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
   return { ok: true };
@@ -442,7 +488,7 @@ export async function escolherAvaliador(form: FormData): Promise<Res> {
   const r = await escolherNoServidor(s.admin, p.id, String(form.get("avaliadorId") ?? ""));
   if (!r.ok) return r;
   revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);
-  return { ok: true, mensagem: "Avaliador escolhido. Ele responde com o valor e o prazo dele no prazo que declarou (padrão: 24 horas); sem resposta, o pedido volta para você escolher outro." };
+  return { ok: true, mensagem: `Avaliador escolhido. Ele responde com o valor e o prazo dele no prazo que declarou (padrão: ${PRAZO_RESPOSTA_PADRAO_HORAS} horas); sem resposta, o pedido volta para você escolher outro.` };
 }
 
 /**
@@ -459,9 +505,19 @@ export async function proporPrecoEPrazo(form: FormData): Promise<Res> {
   const v = validarProposta({ valor: lido.valor ?? Number.NaN, prazoDias: Number(form.get("prazoDias")) }, faixaDeReferencia(Number(ref.valor_tabela)));
   if (!v.ok) return v;
   const agora = new Date().toISOString();
-  const { data } = await c.admin.from("vistoria_designacoes").update({ resposta: "aceita", respondido_em: agora }).eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).is("resposta", null).select("id");
-  if (!data?.length) return { ok: false, erro: "O prazo de 24 horas para responder já passou." };
-  await c.admin.from("vistoria_pedidos").update({ valor_proposto: v.valor, prazo_proposto_dias: v.prazoDias, proposta_em: agora, atualizado_em: agora }).eq("id", c.p.id);
+  // E1102: a proposta grava a resposta na designação aberta; se o pedido não tinha a linha, ela é criada com a resposta.
+  const gravou = await registrarRespostaDoAvaliador(c.admin, c.p.id, c.p.avaliador_id!, "aceita", new Date(agora));
+  if (!gravou) {
+    // E1101: a designação já tem resposta. O motivo é o dela (proposta já enviada, recusa, prazo), nunca "o prazo de
+    // 24 horas passou" para quem já propôs; e o prazo é o que o avaliador declarou.
+    const [{ data: des }, { data: cred }] = await Promise.all([
+      c.admin.from("vistoria_designacoes").select("resposta").eq("pedido_id", c.p.id).eq("avaliador_id", c.p.avaliador_id!).maybeSingle(),
+      c.admin.from("avaliadores_credenciamento").select("prazo_resposta_horas").eq("id", c.p.avaliador_id!).maybeSingle(),
+    ]);
+    const horas = Number((cred as { prazo_resposta_horas?: number | null } | null)?.prazo_resposta_horas) || PRAZO_RESPOSTA_PADRAO_HORAS;
+    return { ok: false, erro: erroAoPropor((des as { resposta?: string | null } | null)?.resposta ?? undefined, horas) };
+  }
+  await c.admin.from("vistoria_pedidos").update({ valor_proposto: v.valor, prazo_proposto_dias: v.prazoDias, prazo_laudo_dias_uteis: v.prazoDias, proposta_em: agora, atualizado_em: agora }).eq("id", c.p.id);
   await avisar(c.admin, c.p.owner_id, "vistoria_designado_dono", rotaDono(c.p.property_id), { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
@@ -472,7 +528,7 @@ async function comoDonoDoPedido(pedidoId: string) {
   if (!(await vistoriaAtiva())) return null;
   const s = await sessao();
   if (!s) return null;
-  const { data: p } = await s.admin.from("vistoria_pedidos").select("id, owner_id, property_id, status, avaliador_id, proposta_em, proposta_aceita_em").eq("id", pedidoId).maybeSingle();
+  const { data: p } = await s.admin.from("vistoria_pedidos").select("id, owner_id, property_id, status, avaliador_id, proposta_em, proposta_aceita_em, escolhido_em, teste").eq("id", pedidoId).maybeSingle();
   if (!p || p.owner_id !== s.userId || p.status !== "designado" || !p.proposta_em || p.proposta_aceita_em) return null;
   return { ...s, p };
 }
@@ -481,20 +537,33 @@ async function comoDonoDoPedido(pedidoId: string) {
 export async function aceitarProposta(form: FormData): Promise<Res> {
   const c = await comoDonoDoPedido(String(form.get("pedidoId") ?? ""));
   if (!c) return SEM_ACESSO;
+  // E1142: passadas as 72 h do dono, o aceite é recusado — a rotina devolve o pedido, mas até ela correr o botão
+  // continua na tela. Nada é gravado e o avaliador não é avisado.
+  if (aceiteForaDoPrazo({ propostaEm: c.p.proposta_em as string | null, teste: c.p.teste === true, escolhidoEm: (c.p.escolhido_em as string | null) ?? null }, new Date())) {
+    return { ok: false, erro: ERRO_ACEITE_FORA_DO_PRAZO };
+  }
   const agora = new Date().toISOString();
   await c.admin.from("vistoria_pedidos").update({ proposta_aceita_em: agora, atualizado_em: agora }).eq("id", c.p.id).is("proposta_aceita_em", null);
   const { data: cred } = await c.admin.from("avaliadores_credenciamento").select("parceiros(user_id)").eq("id", c.p.avaliador_id!).maybeSingle();
-  await avisar(c.admin, (cred?.parceiros as unknown as { user_id: string } | null)?.user_id, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: c.p.id, propertyId: c.p.property_id });
+  // E1153: o aviso próprio do aceite, que leva às Visitas. Antes saía "visita agendada", sem haver visita: o sino só
+  // mostra esse aviso quando o pedido tem data (E1128), e o avaliador ficava sem saber do aceite.
+  await avisar(c.admin, (cred?.parceiros as unknown as { user_id: string } | null)?.user_id, "vistoria_proposta_aceita", `${ROTA_AVALIADOR}#agenda`, { pedidoId: c.p.id, propertyId: c.p.property_id });
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
   revalidatePath(ROTA_AVALIADOR);
-  return { ok: true, mensagem: "Proposta aceita. Combinem a data da visita." };
+  return { ok: true, mensagem: CONFIRMACAO_DO_ACEITE };
 }
 
-/** O dono não aceita a proposta: o pedido volta à escolha e ele escolhe outro avaliador. */
+/**
+ * O dono não aceita a proposta: o pedido volta à escolha e ele escolhe outro avaliador.
+ * E1100: descarta o avaliador escolhido E a proposta dele, sem volta — por isso só com a confirmação explícita da tela
+ * (que escreve o que se perde). O envio sem ela é recusado e nada muda.
+ */
 export async function recusarProposta(form: FormData): Promise<Res> {
   const c = await comoDonoDoPedido(String(form.get("pedidoId") ?? ""));
   if (!c) return SEM_ACESSO;
-  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "recusada", new Date());
+  if (!trocaConfirmada(form)) return { ok: false, erro: ERRO_TROCA_SEM_CONFIRMAR };
+  // E1146: o descarte é do DONO e fica registado como tal na designação (antes ela continuava a dizer "aceita").
+  await devolverAoDono(c.admin, c.p.id, c.p.avaliador_id!, "descartada", new Date());
   revalidatePath(`/dashboard/imoveis/${c.p.property_id}/nivel`);
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: "Proposta recusada. Escolha outro avaliador." };
@@ -510,7 +579,7 @@ export async function agendarVisita(form: FormData): Promise<Res> {
   if (!s) return SEM_ACESSO;
   const { data: p } = await s.admin
     .from("vistoria_pedidos")
-    .select("id, property_id, owner_id, morador_id, status, ocupado, agendado_para, reagendou_dono, reagendou_avaliador, avaliador_id, avaliadores_credenciamento(parceiros(user_id))")
+    .select("id, property_id, owner_id, morador_id, status, ocupado, agendado_para, concordancia_pedida_em, concordancia_em, reagendou_dono, reagendou_avaliador, avaliador_id, avaliadores_credenciamento(parceiros(user_id))")
     .eq("id", pedidoId)
     .maybeSingle();
   if (!p) return SEM_ACESSO;
@@ -520,14 +589,20 @@ export async function agendarVisita(form: FormData): Promise<Res> {
   if (parte === "dono" && !(await vistoriaAtiva())) return DESLIGADA;
   const { data: aceita } = await s.admin.from("vistoria_designacoes").select("id").eq("pedido_id", p.id).eq("avaliador_id", p.avaliador_id!).eq("resposta", "aceita").maybeSingle();
   if (!aceita) return { ok: false, erro: "O avaliador ainda não respondeu com o valor e o prazo." };
-  const { data: prop } = await s.admin.from("vistoria_pedidos").select("teste, proposta_aceita_em").eq("id", p.id).maybeSingle();
-  if (!prop?.teste && !prop?.proposta_aceita_em) return { ok: false, erro: "O proprietário ainda não aceitou o valor e o prazo propostos." };
+  const { data: prop } = await s.admin.from("vistoria_pedidos").select("teste, proposta_aceita_em, escolhido_em").eq("id", p.id).maybeSingle();
+  // E1101: a mesma regra das telas — só a avaliação de teste do credenciamento agenda sem o aceite do dono.
+  if (precisaDoAceiteDoDono({ teste: prop?.teste === true, escolhidoEm: (prop?.escolhido_em as string | null | undefined) ?? null }) && !prop?.proposta_aceita_em) return { ok: false, erro: "O proprietário ainda não aceitou o valor e o prazo propostos." };
   const reagendando = !!p.agendado_para;
   if (reagendando) {
     const r = podeReagendar(p.agendado_para!, new Date(), parte === "dono" ? p.reagendou_dono : p.reagendou_avaliador);
     if (!r.ok) return { ok: false, erro: r.motivo };
   }
   const agora = new Date().toISOString();
+  // E1160 (6): o e-mail do reagendamento diz "nova data" e a anterior — lida aqui, antes de a gravação a substituir.
+  // E1173: a data proposta depois de o morador recusar também é "nova data" para ele (o e-mail não repete o da primeira
+  // proposta). Não é reagendamento: não há data anterior a dizer, e ninguém gasta a vez.
+  const depoisDaRecusa = concordanciaRecusada({ status: p.status, ocupado: p.ocupado, agendadoPara: p.agendado_para, concordanciaPedidaEm: p.concordancia_pedida_em, concordanciaEm: p.concordancia_em });
+  const troca = { reagendada: reagendando || depoisDaRecusa, visitaAnterior: reagendando ? p.agendado_para : null };
   await s.admin
     .from("vistoria_pedidos")
     .update({
@@ -540,10 +615,12 @@ export async function agendarVisita(form: FormData): Promise<Res> {
       ...(reagendando ? (parte === "dono" ? { reagendou_dono: true } : { reagendou_avaliador: true }) : {}),
     })
     .eq("id", p.id);
-  if (p.ocupado) await avisar(s.admin, p.morador_id, "vistoria_concordancia", rotaMorador(p.id), { pedidoId: p.id, propertyId: p.property_id });
+  // E1173: há data nova — o "o morador não concordou com a data" que as partes leram deixa de valer.
+  await resolverAvisosDaRecusa(s.admin, p.id);
+  if (p.ocupado) await avisar(s.admin, p.morador_id, "vistoria_concordancia", rotaMorador(p.id), { pedidoId: p.id, propertyId: p.property_id, ...troca });
   else {
-    await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
-    await avisar(s.admin, avaliadorUser, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id });
+    await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id, ...troca });
+    await avisar(s.admin, avaliadorUser, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id, ...troca });
   }
   revalidatePath(ROTA_AVALIADOR);
   revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);
@@ -552,16 +629,49 @@ export async function agendarVisita(form: FormData): Promise<Res> {
 
 /** O morador concorda com a data (1 toque). Sem a concordância, a visita não acontece. */
 export async function concordarVisita(form: FormData): Promise<Res> {
-  if (!(await vistoriaAtiva())) return DESLIGADA;
   const s = await sessao();
   if (!s) return SEM_ACESSO;
   const { data: p } = await s.admin.from("vistoria_pedidos").select("id, property_id, owner_id, morador_id, ocupado, agendado_para, status, avaliadores_credenciamento(parceiros(user_id))").eq("id", String(form.get("pedidoId") ?? "")).maybeSingle();
   if (!p || p.morador_id !== s.userId || !p.ocupado || !p.agendado_para || p.status !== "designado") return SEM_ACESSO;
+  // E1171: a chave é a do pedido (a sessão do morador, ou o dono do pedido no piloto) — nunca só a da conta do morador.
+  if (!(await vistoriaAtivaParaOMorador(s.admin, p.owner_id))) return DESLIGADA;
   await s.admin.from("vistoria_pedidos").update({ concordancia_em: new Date().toISOString(), status: "agendado", atualizado_em: new Date().toISOString() }).eq("id", p.id);
+  // E1173: ela respondeu — o aviso "Concorda com a visita?" sai do sino. Antes dos avisos novos, que ficam.
+  await resolverAvisosDaVisita(s.admin, p.id);
   await avisar(s.admin, p.owner_id, "vistoria_agendada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
   await avisar(s.admin, (p.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id, "vistoria_agendada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id });
   revalidatePath(rotaMorador(p.id));
   return { ok: true, mensagem: "Obrigado. A visita está confirmada." };
+}
+
+/**
+ * E1173: o morador NÃO concorda com a data proposta. As guardas são as do "Concordo". A data sai do pedido e o pedido de
+ * concordância fica (é o que as telas leem como "não concordou"); o dono e o avaliador são avisados, com a data
+ * recusada. Não é um reagendamento: a data seguinte é um "Agendar" novo, sem gastar a vez de ninguém.
+ */
+export async function recusarDataDaVisita(form: FormData): Promise<Res> {
+  const s = await sessao();
+  if (!s) return SEM_ACESSO;
+  const { data: p } = await s.admin.from("vistoria_pedidos").select("id, property_id, owner_id, morador_id, ocupado, agendado_para, status, avaliadores_credenciamento(parceiros(user_id))").eq("id", String(form.get("pedidoId") ?? "")).maybeSingle();
+  if (!p || p.morador_id !== s.userId || !p.ocupado || !p.agendado_para || p.status !== "designado") return SEM_ACESSO;
+  if (!(await vistoriaAtivaParaOMorador(s.admin, p.owner_id))) return DESLIGADA;
+  const agora = new Date().toISOString();
+  // Só grava se o pedido ainda espera a resposta dela (dois toques, ou a data trocada entretanto, não gravam nada).
+  const { data: gravou } = await s.admin
+    .from("vistoria_pedidos")
+    .update(gravacaoDaRecusa(agora))
+    .eq("id", p.id)
+    .eq("status", "designado")
+    .not("agendado_para", "is", null)
+    .select("id");
+  if (!gravou?.length) return SEM_ACESSO;
+  await resolverAvisosDaVisita(s.admin, p.id);
+  await avisar(s.admin, p.owner_id, "vistoria_concordancia_recusada", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id, papel: "dono", visitaAnterior: p.agendado_para });
+  await avisar(s.admin, (p.avaliadores_credenciamento as unknown as { parceiros: { user_id: string } | null } | null)?.parceiros?.user_id, "vistoria_concordancia_recusada", ROTA_AVALIADOR, { pedidoId: p.id, propertyId: p.property_id, papel: "avaliador", visitaAnterior: p.agendado_para });
+  revalidatePath(rotaMorador(p.id));
+  revalidatePath(ROTA_AVALIADOR);
+  revalidatePath(`/dashboard/imoveis/${p.property_id}/nivel`);
+  return { ok: true, mensagem: TEXTO_RECUSA_PARA_O_MORADOR };
 }
 
 /**
@@ -594,6 +704,8 @@ export async function registrarAusencia(form: FormData): Promise<Res> {
   }
   if (!(s.userId === avaliadorUser || ehAdmin)) return SEM_ACESSO;
   await s.admin.from("vistoria_pedidos").update({ status: "ausencia", atualizado_em: new Date().toISOString() }).eq("id", p.id);
+  // E1128: a visita não vai acontecer neste pedido — os avisos que a anunciavam deixam de valer.
+  await resolverAvisosDaVisita(s.admin, p.id);
   await avisar(s.admin, p.owner_id, "vistoria_ausencia", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: "Ausência registrada. Uma nova visita é um novo pedido pela tabela." };
@@ -665,4 +777,25 @@ export async function salvarMeusTermos(form: FormData): Promise<Res> {
   if (error || !data?.length) return { ok: false, erro: "Só avaliador em teste ou ativo define os próprios termos." };
   revalidatePath(ROTA_AVALIADOR);
   return { ok: true, mensagem: "Termos salvos. O proprietário os vê na lista de escolha." };
+}
+
+/**
+ * E1099 parte 2 (ORDEM-DUET-458 §2): o avaliador escreve o PRÓPRIO "Sobre" (opcional; vazio apaga e a secção some do
+ * perfil público). Só o credenciamento da sessão — nunca o de outro.
+ */
+export async function salvarMeuSobre(form: FormData): Promise<Res> {
+  const s = await sessao();
+  if (!s) return { ok: false, erro: "Entre na sua conta." };
+  const v = normalizarSobre(String(form.get("sobre") ?? ""));
+  if (!v.ok) return v;
+  const { data: parc } = await s.admin.from("parceiros").select("id").eq("user_id", s.userId).maybeSingle();
+  const { data, error } = await s.admin
+    .from("avaliadores_credenciamento")
+    .update({ sobre: v.valor })
+    .or(parc ? `parceiro_id.eq.${parc.id},user_id.eq.${s.userId}` : `user_id.eq.${s.userId}`)
+    .select("id, numero_credenciado");
+  if (error || !data?.length) return { ok: false, erro: "Não encontramos o seu credenciamento." };
+  revalidatePath(ROTA_AVALIADOR);
+  for (const c of data as { numero_credenciado: string | null }[]) if (c.numero_credenciado) revalidatePath(`/avaliadores/${c.numero_credenciado}`);
+  return { ok: true, mensagem: v.valor ? "Texto salvo. Ele aparece no seu perfil público." : "Texto apagado. A seção Sobre não aparece no seu perfil." };
 }

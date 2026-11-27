@@ -17,11 +17,11 @@ const agora = new Date("2026-11-04T20:00:00Z");
 // O caso do QA: assinado pelas duas partes, sem pagamento, período [2026-09-30, 2026-10-31) — fim inclusivo 30/10.
 const a0268 = { status: "ativo", assinado_proprietario_em: t, assinado_inquilino_em: t, pagamentos_bloco: [], periodo: "[2026-09-30,2026-10-31)" };
 
-test("período terminado: a fonte única diz 'Encerrado em 30/10/2026' (não 'Aguardando 1º pagamento') e não ocupa o imóvel", () => {
+test("período terminado: a fonte única diz 'Encerrado em 31/10/2026', a saída (não 'Aguardando 1º pagamento'), e não ocupa o imóvel (E1089)", () => {
   for (const papel of ["proprietario", "inquilino"] as const) {
     const e = estadoDoContratoUnico(a0268, papel, agora);
     assert.equal(e.chave, "encerrado_periodo");
-    assert.equal(e.selo, "Encerrado em 30/10/2026");
+    assert.equal(e.selo, "Encerrado em 31/10/2026");
     assert.equal(e.ativo, false);
     assert.equal(e.etapa, null);
     assert.equal(tomDoSelo(e), "bg-surface-2 text-muted");
@@ -30,7 +30,7 @@ test("período terminado: a fonte única diz 'Encerrado em 30/10/2026' (não 'Ag
 
 test("a mesma data que a página da estadia mostra", () => {
   const p = lerDaterange(a0268.periodo)!;
-  assert.equal(topoDaEstadia(p, { status: "ativo" }, agora).texto, "Encerrada em 30/10/2026");
+  assert.equal(topoDaEstadia(p, { status: "ativo" }, agora).texto, "Encerrada em 31/10/2026");
 });
 
 test("período em curso ou futuro: nada muda (último dia ainda é vigente)", () => {

@@ -34,7 +34,8 @@ test("estadia que passa do fim do mês sai reta pela direita", () => {
 });
 
 test("rótulo acessível e primeiro nome", () => {
-  assert.equal(rotuloPilula("Ana", "2026-11-05", "2026-12-20"), "Reservado por Ana, 05/11 a 20/12");
+  // E1089 (coordenador): 20/12 é a última noite gravada; o rótulo diz a entrada e a SAÍDA (21/12).
+  assert.equal(rotuloPilula("Ana", "2026-11-05", "2026-12-20"), "Reservado por Ana: entrada 05/11, saída 21/12");
   assert.equal(primeiroNome("  Ana Souza Lima "), "Ana");
   assert.equal(primeiroNome(null), "Inquilino");
 });

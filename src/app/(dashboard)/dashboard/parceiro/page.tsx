@@ -6,6 +6,7 @@ import { SejaParceiroForm } from "@/components/parceiros/seja-parceiro-form";
 import { minhaParceria } from "@/lib/parceiros/solicitacao-actions";
 import { meuPainelParceiro } from "@/lib/parceiros/painel-actions";
 import { PAGAMENTO_PARCEIROS_ATIVO } from "@/lib/flags";
+import { ESCOLHA_E_TERMOS_AO_AVALIADOR } from "@/lib/vistoria/telas-exibicao";
 import { PainelParceiroCliente } from "./painel-parceiro";
 import { AtivarNoPainel } from "./ativar-no-painel";
 import { PedidosDoParceiro } from "@/components/parceiros/pedidos-do-parceiro";
@@ -40,7 +41,7 @@ export default async function ParceiroPainelPage({ searchParams }: { searchParam
         <BlocoRecibosParceiro pagamentoAtivo={PAGAMENTO_PARCEIROS_ATIVO} />
         {/* Prompt 62-B1: credenciamento de avaliador (a Viva designa por rodízio; não é serviço do catálogo). */}
         <Panel title="Avaliação de imóveis" className="mb-6" data-testid="parceiro-avaliacao-link">
-          <p className="text-sm text-muted">Avaliador credenciado: o proprietário escolhe o avaliador de imóveis; você define o seu valor e o seu prazo.</p>
+          <p className="text-sm text-muted">Avaliador credenciado: {ESCOLHA_E_TERMOS_AO_AVALIADOR}</p>
           <ButtonLink href="/dashboard/parceiro/avaliacao" variant="secondary" size="sm" className="mt-3">Credenciamento e avaliações</ButtonLink>
         </Panel>
         {/* Prompt 38: convites e vínculos de parceiro fixo de imóvel. */}

@@ -41,6 +41,16 @@ async function perguntarAoOtavio(page: Page, texto: string) {
 
 test.describe("T27 — Agentes com dados ao vivo", () => {
   test.use({ storageState: authFile("admin") });
+  // t271 (ORDEM-DUET-352, o resíduo de 390 px): o chamado que este spec resolve não pode ficar na base — o "Nada pendente"
+  // de /admin/atendimento passa a dizer "Última decisão em …" e a t271, que corre depois na mesma fatia, fotografa a fila
+  // vazia sem decisão. O id fica aqui fora para o afterAll apagar o chamado mesmo quando o teste falha a meio.
+  let chamadoId: string | undefined;
+  test.afterAll(async () => {
+    if (!chamadoId) return;
+    await adm().from("chamado_mensagens").delete().eq("chamado_id", chamadoId);
+    await adm().from("chamado_eventos").delete().eq("chamado_id", chamadoId);
+    await adm().from("chamados").delete().eq("id", chamadoId);
+  });
 
   test("Otávio: 'alguma pendência?' — migração aplicada e chamado resolvido não aparecem como pendentes", async ({ page }) => {
     test.skip(process.env.INTEGRACOES_SIMULADAS !== "on" || !URL || !SERVICE, "Só no laboratório.");
@@ -53,6 +63,7 @@ test.describe("T27 — Agentes com dados ao vivo", () => {
       .select("id, numero_publico")
       .single();
     expect(e1).toBeNull();
+    chamadoId = ch?.id as string | undefined;
     const numero = ch!.numero_publico as string;
     const agora = new Date().toISOString();
     const { error } = await db.rpc("registrar_ronda", {

@@ -5,6 +5,7 @@
 */
 import { prazoConferenciaEntrada, prazoConferenciaSaida, textoPrazoConferencia } from "./conferencia.ts";
 import { ETIQUETA_BRASILIA, diaBRT } from "./datas-brasilia.ts";
+import { saidaPeloFim } from "./texto-do-periodo.ts";
 
 export interface EtapaEstadia {
   chave: "entrada" | "conferencia" | "saida" | "conferencia_saida";
@@ -52,12 +53,13 @@ export function montarLinhaDoTempo(p: {
       horario: textoPrazoConferencia(prazo),
       prazo: prazo?.toISOString(),
     },
-    { chave: "saida", titulo: "Saída", dia: p.fim, horario: horario(p.checkoutBefore, "até as") },
+    // E1089: a etapa "Saída" é o dia da SAÍDA (o dia seguinte à última noite gravada), a mesma data da proposta.
+    { chave: "saida", titulo: "Saída", dia: saidaPeloFim(p.fim) || p.fim, horario: horario(p.checkoutBefore, "até as") },
     // Prompt 56: a conferência de saída também tem prazo (48 h depois da saída), da fonte única prazoConferenciaSaida.
     {
       chave: "conferencia_saida",
       titulo: "Conferência de saída",
-      dia: diaBRT(prazoSaida) ?? p.fim,
+      dia: diaBRT(prazoSaida) ?? (saidaPeloFim(p.fim) || p.fim),
       horario: textoPrazoConferencia(prazoSaida),
       prazo: prazoSaida?.toISOString(),
     },

@@ -16,6 +16,7 @@ import { CategoriaProfissional } from "./categoria-profissional";
 import { PorQueNaCidade } from "./por-que-na-cidade";
 import { cn } from "@/lib/utils";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
+import { comoEmBreve } from "@/lib/identidade/estado";
 
 /**
  * Conta em 4 blocos (prompt 18): 1. Perfil público · 2. Dados da conta · 3. Confiança e segurança · 4. Preferências.
@@ -194,7 +195,7 @@ export function ConfiancaLista() {
       chave: "identidade",
       icone: UserCheck,
       rotulo: "Identidade",
-      situacao: !identidade ? "falta" : identidade.estado === "confirmada" ? "ok" : identidade.estado === "em_breve" ? "em_breve" : "falta",
+      situacao: !identidade ? "falta" : identidade.estado === "confirmada" ? "ok" : comoEmBreve(identidade.estado) ? "em_breve" : "falta",
       detalhe: identidade?.texto ?? "",
       // O texto do estado fica no detalhe; o botão é curto (o rótulo longo do estado estourava a 390 px).
       acao:

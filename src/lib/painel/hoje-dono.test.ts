@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { cartoesDeHoje } from "./hoje-dono.ts";
 import type { ItemAgenda } from "../agenda.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const HOJE = "2026-10-29";
 const item = (extra: Partial<ItemAgenda> & Pick<ItemAgenda, "id" | "tipo" | "quando">): ItemAgenda => ({
@@ -102,5 +103,5 @@ test("vocabulário: 'Entra hoje' / 'Sai hoje', nunca check-in/check-out", () => 
   const c = cartoesDeHoje([item({ id: "entrada-a", tipo: "entrada", quando: HOJE }), item({ id: "saida-b", tipo: "saida", quando: HOJE })], HOJE, { p1: { entrada: "14:00", saida: "11:00" } });
   for (const x of c) assert.doesNotMatch(`${x.rotulo} ${x.horario}`, /check-?in|check-?out|hóspede|reserva/i);
   // Nos textos visíveis (entre aspas) dos dois arquivos, nada de check-in/check-out.
-  for (const f of fontes) assert.doesNotMatch(f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").match(/"[^"]*"|`[^`]*`/g)?.join(" ") ?? "", /check-?in|check-?out/i);
+  for (const f of fontes) assert.doesNotMatch(fonteSemComentarios(f).match(/"[^"]*"|`[^`]*`/g)?.join(" ") ?? "", /check-?in|check-?out/i);
 });

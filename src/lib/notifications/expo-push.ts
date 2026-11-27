@@ -18,6 +18,26 @@ export function caminhoInterno(u: string | null | undefined, fallback = "/dashbo
     : fallback;
 }
 
+/**
+ * E1087 — as categorias de botões que o app regista (Viva-Nomads-App, src/push.ts › CATEGORIAS). Os botões só ABREM a
+ * tela da decisão (data.url): nenhuma decisão é tomada na notificação.
+ */
+export const CATEGORIAS_DO_APP = ["mensagem", "proposta", "visita", "assinatura"] as const;
+export type CategoriaPush = (typeof CATEGORIAS_DO_APP)[number];
+
+const CATEGORIA_DO_EVENTO: Readonly<Record<string, CategoriaPush>> = {
+  new_message: "mensagem",
+  proposta_recebida: "proposta",
+  proposta_vencendo: "proposta",
+  visita_pedida: "visita",
+  visita_remarcada: "visita",
+};
+
+/** E1087 — a categoria (os botões) do push pelo evento; sem categoria, null (só o toque, como antes). */
+export function categoriaDoEvento(evento: string | null | undefined): CategoriaPush | null {
+  return (evento && CATEGORIA_DO_EVENTO[evento]) || null;
+}
+
 export interface MensagemExpo {
   to: string;
   title: string;
@@ -25,11 +45,14 @@ export interface MensagemExpo {
   sound: "default";
   channelId: string;
   data: { url: string };
+  /** E1087: os botões da notificação (categoria registada pelo app); ausente = só o toque. */
+  categoryId?: CategoriaPush;
 }
 
-export function montarMensagens(tokens: string[], p: { title: string; body: string; url?: string }): MensagemExpo[] {
+export function montarMensagens(tokens: string[], p: { title: string; body: string; url?: string; categoria?: string | null }): MensagemExpo[] {
   const url = caminhoInterno(p.url);
-  return tokens.map((to) => ({ to, title: p.title, body: p.body, sound: "default", channelId: EXPO_CANAL, data: { url } }));
+  const categoria = (CATEGORIAS_DO_APP as readonly string[]).includes(p.categoria ?? "") ? (p.categoria as CategoriaPush) : null;
+  return tokens.map((to) => ({ to, title: p.title, body: p.body, sound: "default", channelId: EXPO_CANAL, data: { url }, ...(categoria ? { categoryId: categoria } : {}) }));
 }
 
 export function emLotes<T>(itens: T[], tamanho = EXPO_LOTE): T[][] {

@@ -13,6 +13,7 @@
 
 import { guardContactInfo } from "../messages/contact-guard.ts";
 import { emSilencio, proximoEnvioPermitido } from "../notifications/silencio.ts";
+import { saidaPeloFim } from "../texto-do-periodo.ts";
 
 export const LIMITE_RESPOSTAS = 20;
 export const TITULO_MAX = 60;
@@ -88,11 +89,16 @@ export const ehQuando = (q: unknown): q is Quando => typeof q === "string" && (Q
 const H = 3_600_000;
 const BRT = -3 * H;
 
-/** Entrada e saída da estadia: o 1º início e o último fim dos blocos válidos (renovação recusada fica fora). */
+/**
+ * Entrada e saída da estadia: o 1º início dos blocos válidos e o dia da SAÍDA (renovação recusada fica fora).
+ * E1089 (coordenador): o último `fim` dos blocos é a última noite; a saída é o dia seguinte — é nesse dia que sai a
+ * mensagem "No dia da saída" (antes saía na última noite, um dia mais cedo).
+ */
 export function datasDaEstadia(blocos: readonly { inicio: string; fim: string; status?: string }[]): { entrada: string; saida: string } | null {
   const v = blocos.filter((b) => b.status !== "nao_aceito");
   if (!v.length) return null;
-  return { entrada: v.map((b) => b.inicio).sort()[0], saida: v.map((b) => b.fim).sort().at(-1)! };
+  const ultimaNoite = v.map((b) => b.fim).sort().at(-1)!;
+  return { entrada: v.map((b) => b.inicio).sort()[0], saida: saidaPeloFim(ultimaNoite) || ultimaNoite };
 }
 
 /** Quando o modelo sai: dia do modelo, na hora do modelo (Brasília); se cair no silêncio, às 7h seguintes. */
@@ -111,6 +117,17 @@ export interface Programada {
   enviada_em: string | null;
   cancelada_em: string | null;
   texto: string;
+}
+
+/**
+ * O contrato ainda vale para esta mensagem programada? Ativo, sempre. E1089 (coordenador): o ciclo diário do banco fecha o
+ * contrato às 00h do dia da SAÍDA (o dia seguinte à última noite), e é nesse dia que sai a mensagem "No dia da saída".
+ * Fechado pelo ciclo (sem renovação), o contrato ainda vale para ela até o fim do dia da saída. O encerramento por acordo
+ * e o cancelamento continuam a cancelar a mensagem, como sempre.
+ */
+export function contratoValeParaAProgramada(status: string | null | undefined, quando: Quando, saida: string | null | undefined, hoje: string): boolean {
+  if (status === "ativo") return true;
+  return status === "encerrado_sem_renovacao" && quando === "saida" && !!saida && !!hoje && hoje <= saida;
 }
 
 export type Decisao = { acao: "nada" } | { acao: "esperar" } | { acao: "enviar" } | { acao: "cancelar"; motivo: "contrato_encerrado" | "contato" | "vencida" };

@@ -81,6 +81,15 @@ export function hostDoSite(siteUrl: string): string {
   return siteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
 }
 
+/**
+ * E1188: o endereço completo da página pública de conferência de um documento registrado, na forma direta que os
+ * recibos já levam ("https://vivanomads.com.br/conferir/XXXX"). É o que o e-mail do laudo emitido escreve: a tela do
+ * laudo abre a mesma página pelo link dela ("/conferir?codigo=XXXX", que redireciona para esta).
+ */
+export function urlConferir(siteUrl: string, codigo: string): string {
+  return `${siteUrl.replace(/\/$/, "")}/conferir/${encodeURIComponent(codigo)}`;
+}
+
 /** Rodapé comum: "Confira em vivanomads.com.br/conferir com o código XXXX". */
 export function linhaConferir(siteUrl: string, codigo: string): string {
   return `Confira em ${hostDoSite(siteUrl)}/conferir com o código ${codigo}`;

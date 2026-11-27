@@ -82,7 +82,7 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 |---|---|---|
 | Interface | Next.js 16 (App Router) + React 19 + TypeScript + Tailwind v4. Componentes de servidor por padrão, cliente onde há interação. | `src/app`, `src/components` |
 | Borda (proxy) | `src/proxy.ts`, o middleware do Next 16. Cuida da sessão Supabase, das portas da área interna e dos sócios, do portão da 2FA do admin, do redirecionamento de conta no servidor, do modo app e da marcação de tráfego de teste. | `src/proxy.ts` |
-| Ações e API | Server Actions (`"use server"`) e Route Handlers em `src/app/api`, com 94 rotas †: autenticação, upload, e-mail, webhooks, crons, painel, admin e QA. | `src/lib/data/*-actions.ts`, `src/app/api/**/route.ts` |
+| Ações e API | Server Actions (`"use server"`) e Route Handlers em `src/app/api`, com 95 rotas †: autenticação, upload, e-mail, webhooks, crons, painel, admin e QA. | `src/lib/data/*-actions.ts`, `src/app/api/**/route.ts` |
 | Regras puras | Funções sem rede, testadas com `node --test`: cobrança, caução, nível, ranking, busca, prazos, textos regulados. | `src/lib/**`, `src/config/**` |
 | Acesso a dados | Cliente Supabase do servidor (sessão do usuário, RLS) e cliente de serviço (`SUPABASE_SERVICE_ROLE_KEY`), este só em rotinas e no admin. | `src/lib/supabase`, `src/lib/data` |
 | Banco | Postgres (Supabase), RLS em quase todas as tabelas, funções SQL e triggers, `pg_cron` e `pg_net`. | `supabase/migrations` |
@@ -96,7 +96,7 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 ### 4.1 Números (lidos em 13/11/2026)
 - 222 tabelas no schema `public`, 221 com RLS. A exceção é `_bkp_0176_contratos_encerrados`, uma cópia de backup de migração que nenhuma tela lê.
 - 316 políticas RLS, 211 funções, 92 triggers e 5 views.
-- 290 migrações registradas em `supabase_migrations.schema_migrations`; a última é `20261112000342`. O repositório tem 337 arquivos `.sql` † em `supabase/migrations`. A diferença vem de arquivos auxiliares e de migrações numeradas que foram reunidas ao aplicar.
+- 290 migrações registradas em `supabase_migrations.schema_migrations`; a última é `20261112000342`. O repositório tem 361 arquivos `.sql` † em `supabase/migrations`. A diferença vem de arquivos auxiliares e de migrações numeradas que foram reunidas ao aplicar.
 - Extensões: `pg_cron`, `pg_net`, `pgcrypto`, `uuid-ossp`, `btree_gist` (impede reservas sobrepostas), `pg_stat_statements` e `supabase_vault`.
 
 ### 4.2 Domínios das tabelas (hierarquia funcional)
@@ -121,11 +121,12 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 
 ## 5. Rotinas agendadas
 
-**Vercel Cron**, 14 rotas † em `vercel.json`. Todas chamam `src/app/api/cron/*` com `CRON_SECRET`. Horários em UTC:
+**Vercel Cron**, 15 rotas † em `vercel.json`. Todas chamam `src/app/api/cron/*` com `CRON_SECRET`. Horários em UTC:
 
 | Rota | Quando | Função |
 |---|---|---|
 | `pre-aceitacao` | de hora em hora | prazo de 72 h da pré-aceitação |
+| `contratos-sem-taxa` | de hora em hora (:20) | contrato com proposta e sem a taxa reservada: fila da Central e um aviso ao dono (E1205) |
 | `vigia-suite` | 07:32, 15:32, 23:32 | vigia da suíte do laboratório: se a corrida do slot (07:17/15:17/23:17) não arrancou na main, despacha o `laboratorio.yml` (com `GITHUB_WATCHDOG_TOKEN`) |
 | `resumo-pedidos` | 11:00 | resumo dos pedidos de moradia para os donos |
 | `atendimento` | 10:00 | lembretes e prazos do atendimento |
@@ -203,7 +204,7 @@ flowchart LR
     subgraph BE[Backend no mesmo app]
       SA[Server Actions<br/>src/lib/data]
       API[Route Handlers<br/>src/app/api — 92 rotas]
-      CR[Crons Vercel<br/>14 rotas /api/cron]
+      CR[Crons Vercel<br/>15 rotas /api/cron]
       RP[Regras puras<br/>src/lib · src/config]
     end
   end

@@ -7,7 +7,7 @@ import { conferenciasDoContrato } from "@/lib/data/conferencia-actions";
 import { tipoAcessoDoContrato } from "@/lib/data/contrato-acesso";
 import { DICAS_CONFERENCIA_CAMERAS, ITEM_CONFERENCIA_CAMERAS, LEMBRETE_SENHA_ENTRADA, mostrarChecklistCameras, mostrarLembreteSenha } from "@/lib/anuncio/privacidade";
 import { instrucoesDoContrato } from "@/lib/data/checkin-actions";
-import { podeEditarInstrucoes, podeNaoConsegui } from "@/lib/checkin";
+import { motivoFaltamInstrucoes, podeEditarInstrucoes, podeNaoConsegui } from "@/lib/checkin";
 import { dataBR } from "@/lib/utils";
 import { tomDoSelo } from "@/lib/contrato-estado";
 import { AssinarContrato } from "./assinar-contrato";
@@ -119,7 +119,10 @@ export async function ContratoDetalhe({
           </p>
         )}
         <AvisoAssinatura contratoId={c.id} aviso={c.aviso} />
-        {!c.euAssinei && c.status === "ativo" && <AssinarContrato contratoId={c.id} />}
+        {/* E1065: o que a página já sabe (o proprietário ainda sem as instruções de entrada) vai junto do botão do código. */}
+        {!c.euAssinei && c.status === "ativo" && (
+          <AssinarContrato contratoId={c.id} faltamInstrucoes={!!checkin && motivoFaltamInstrucoes({ papel: c.papel, preenchidas: checkin.preenchidas }) !== null} />
+        )}
         {renovacao && (
           <div id="renovar" className="mt-4 scroll-mt-24 border-t border-line pt-4" data-testid="contrato-renovacao" data-cabe={renovacao.cabe ? "1" : "0"}>
             {renovacao.cabe ? (

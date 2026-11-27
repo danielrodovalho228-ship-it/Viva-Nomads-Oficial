@@ -103,7 +103,7 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     await form.locator("#sp-descricao").fill("Limpeza de saída e pós-obra com nota fiscal.");
     await page.getByTestId("sp-aceite").check();
     await page.getByTestId("seja-parceiro-enviar").click();
-    await expect(page.getByTestId("seja-parceiro-erro")).toContainText("Você emite nota fiscal de serviço para o cliente?");
+    await expect(page.getByTestId("sp-erro-emiteNota")).toContainText("Você emite nota fiscal de serviço para o cliente?");
     const { count } = await adm().from("parceiro_solicitacoes").select("id", { count: "exact", head: true }).eq("email", pj.email);
     expect(count, "sem resposta, o pedido PJ não sai").toBe(0);
     await form.getByText("Sim", { exact: true }).click();
@@ -125,7 +125,7 @@ test.describe("T441 — FISCAL-PARCEIRO-B: nota fiscal do parceiro PJ", () => {
     await p2.getByTestId("sp-aceite").check();
     await f2.getByText("Sim", { exact: true }).click();
     await p2.getByTestId("seja-parceiro-enviar").click();
-    await expect(p2.getByTestId("seja-parceiro-erro")).toContainText("CPF não é aceito");
+    await expect(p2.getByTestId("sp-erro-documento")).toContainText("CPF não é aceito");
     const { count: contaPf } = await adm().from("parceiro_solicitacoes").select("id", { count: "exact", head: true }).eq("email", pf.email);
     expect(contaPf, "CPF: nenhum pedido é gravado").toBe(0);
     await p2.context().close();

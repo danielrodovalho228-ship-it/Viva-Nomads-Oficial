@@ -3,6 +3,8 @@
   2026", "Clear", "Today", "Sunday, November 1, 2026") e não obedece à página. O calendário do site é nosso e sempre em
   pt-BR. PURO: a grade do mês e os textos, sem tela.
 */
+import { hojeEmBrasilia } from "../datas-brasilia.ts";
+
 export const MESES_BR = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"] as const;
 export const DIAS_SEMANA_BR = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"] as const;
 /** Cabeçalho das colunas (domingo primeiro, como o calendário brasileiro). */
@@ -48,9 +50,9 @@ export function mesVizinho(ano: number, mes0: number, delta: number): { ano: num
   return { ano: Math.floor(t / 12), mes0: ((t % 12) + 12) % 12 };
 }
 
-/** Hoje em Brasília, em ISO. */
+/** Hoje em Brasília, em ISO. E1135: a fonte única do "hoje" (hojeEmBrasilia, E1115), sem conta própria do fuso. */
 export function hojeIsoBrasilia(agora: Date = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(agora);
+  return hojeEmBrasilia(agora);
 }
 
 /** Ano e mês (0–11) de uma data ISO. */

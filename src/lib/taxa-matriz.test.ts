@@ -1,3 +1,7 @@
+/*
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): caso 19 — a escada tem 4 faixas e termina em 16 ou mais = 6%; 20, 31 e 80
+  imóveis pagam 6% (antes 4%, a faixa do Plano Gestor), e a faixa não é mais marcada como Gestor.
+*/
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -120,12 +124,18 @@ test("17/R9. arredondamento em centavos, uma vez, no fim: telas diferentes batem
 
 /* ── C. Faixas ─────────────────────────────────────────────────────────────────────────────────── */
 
-test("19. faixas 12/10/8/6/4 nos limites exatos 2→3, 5→6, 15→16, 19→20 (E564: 20+ = Plano Gestor, 4%; sem 'Negociado')", () => {
-  const casos: [number, number][] = [[1, 0.12], [2, 0.12], [3, 0.1], [5, 0.1], [6, 0.08], [15, 0.08], [16, 0.06], [19, 0.06], [20, 0.04], [80, 0.04]];
+test("19. faixas 12/10/8/6 nos limites exatos 2→3, 5→6, 15→16 (078: 16 ou mais = 6%; 19→20 não é mais limite; sem Plano Gestor nem 'Negociado')", () => {
+  // 078 (Daniel, 16/11/2026): antes [20, 0.04] e [80, 0.04] (20+ = Plano Gestor, 4%); a escada termina em 16 ou mais = 6%.
+  const casos: [number, number][] = [[1, 0.12], [2, 0.12], [3, 0.1], [5, 0.1], [6, 0.08], [15, 0.08], [16, 0.06], [19, 0.06], [20, 0.06], [80, 0.06]];
   for (const [n, taxa] of casos) assert.equal(faixaPorImoveisAtivos(n).taxa, taxa, `${n} imóveis`);
+  assert.equal(FAIXAS_COMISSAO_PADRAO.length, 4);
   assert.equal(faixaPorImoveisAtivos(31).negociavel, undefined);
-  assert.equal(faixaPorImoveisAtivos(20).gestor, true);
-  assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(31)), "4%");
+  // 078 (Daniel, 16/11/2026): antes faixaPorImoveisAtivos(20).gestor === true; a faixa de 20 imóveis é a mesma de 19 (16 ou mais), sem
+  // marca de Gestor.
+  assert.deepEqual(faixaPorImoveisAtivos(20), { minImoveis: 16, maxImoveis: null, taxa: 0.06 });
+  assert.equal(faixaPorImoveisAtivos(20), faixaPorImoveisAtivos(19));
+  // 078 (Daniel, 16/11/2026): antes "4%" para 31 imóveis.
+  assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(31)), "6%");
   assert.equal(taxaPublicaTexto(faixaPorImoveisAtivos(19)), "6%");
   // A migração 0171 (histórica) preencheu as propostas antigas com as faixas da época (até 15 = as mesmas de hoje).
   const sql = ler("../../supabase/migrations/0171_propostas_taxa_no_envio.sql");
@@ -258,7 +268,7 @@ test("6. propostas antigas: a 0171 preenche taxa_no_envio (aceita → a congelad
 test("7/8. contraproposta (do morador ou do dono, v2/v3) nunca muda taxa_no_envio: só o envio da v1 grava", () => {
   const acoes = ler("./data/propostas-actions.ts");
   assert.equal((acoes.match(/taxa_no_envio:/g) ?? []).length, 1);
-  const envio = acoes.slice(acoes.indexOf("export async function enviarProposta"), acoes.indexOf("export async function enviarProposta") + 4000);
+  const envio = acoes.slice(acoes.indexOf("export async function enviarProposta"), acoes.indexOf("export async function enviarProposta") + 5000);
   assert.match(envio, /const taxaEnvio = await taxaDoDonoAgora\(s\.admin, s\.user\.id\)\.catch\(\(\) => null\);[\s\S]{0,900}taxa_no_envio: taxaEnvio\.taxa/ /* achado 83: lida antes de numerar; sem ela, não envia */);
 });
 
@@ -319,7 +329,8 @@ test("33. toda taxa aplicada guarda a origem e a faixa no momento (proposta e ca
 test("34. aviso ao dono no aceite: a congelada com a base; o morador nunca recebe a taxa", () => {
   const acoes = ler("./data/propostas-actions.ts");
   // E562: a base escrita em dias ÷ 30 (meses cheios dão os meses de antes).
-  assert.match(acoes, /const linhaTaxa = textoTaxaCongeladaParaDono\(taxa, tot\.valorMensal, tot\.dias \/ 30, tx\.taxa_no_envio\);/);
+  // Asserção alterada (E1116, ORDEM-DUET-503): o ÷ 30 vem da regra única (DIAS_POR_MES); a base é a mesma.
+  assert.match(acoes, /const linhaTaxa = textoTaxaCongeladaParaDono\(taxa, tot\.valorMensal, tot\.dias \/ DIAS_POR_MES, tx\.taxa_no_envio\);/);
   // E205-B: o aceite manda os dois e-mails (emailsDoAceite) — a taxa vai SÓ no do dono.
   assert.match(acoes, /await emailsDoAceite\(admin, p, termosDaLinha\(v\), linhaTaxa\);/);
   const ini = acoes.indexOf("async function emailsDoAceite(");
@@ -335,7 +346,8 @@ test("34. aviso ao dono no aceite: a congelada com a base; o morador nunca receb
 test("18. o fechamento usa a taxa congelada no aceite (leads.accepted_commission_rate), a mesma da proposta", () => {
   const leads = ler("./data/leads-actions.ts");
   // 0177: o plano e a taxa do aceite vêm do servidor (taxaDoLeadDoDono), não mais da sessão.
-  assert.match(leads, /const comissaoRate =\s*typeof taxaLead\?\.acceptedCommissionRate === "number"\s*\? taxaLead\.acceptedCommissionRate/);
+  // E1141 (guarda 2): a congelada da proposta da estadia; sem ela, a do aceite (leads.accepted_commission_rate).
+  assert.match(leads, /const taxaDoFecho = taxaDaEstadia\(taxaDaProposta, taxaLead\?\.acceptedCommissionRate\);\s*const comissaoRate =\s*typeof taxaDoFecho === "number"\s*\? taxaDoFecho/);
   assert.match(ler("../app/(dashboard)/dashboard/fechamento/closing-flow.tsx"), /const COMMISSION_RATE = ctx\.comissaoRate;/);
   assert.match(ler("./data/propostas-actions.ts"), /from\("leads"\)[\s\S]{0,200}accepted_commission_rate/);
 });

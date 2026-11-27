@@ -24,7 +24,8 @@ test("F40 + p24: conta REAL sem assinatura (inativa) não marca como gerado nem 
   assert.match(gerar, /passo === "inativa"/);
   // o 'return' da assinatura inativa vem ANTES da cobrança e do registro do contrato
   assert.ok(gerar.indexOf("MSG_ASSINATURA_INATIVA") < gerar.indexOf('"/api/comissao"'));
-  assert.ok(gerar.indexOf("MSG_ASSINATURA_INATIVA") < gerar.indexOf("registrarContrato("));
+  // E1141: a conferência prévia (`soConferir`) não regista nada; o registro é a chamada com a entrada só.
+  assert.ok(gerar.indexOf("MSG_ASSINATURA_INATIVA") < gerar.indexOf("await registrarContrato(entradaDoContrato)"));
   // p24: a resposta simulada da conta de TESTE não é mais tratada como "inativa" (era o beco sem saída).
   assert.doesNotMatch(gerar, /res\.ok && data\.demo/);
 });

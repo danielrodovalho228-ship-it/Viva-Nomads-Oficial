@@ -3,6 +3,9 @@
   /roi com as premissas vigentes. Nada da projeção antiga (até R$ 69,3 mil, 1º mês positivo no 14, payback no 27; exemplo
   de R$ 4.320 × 12% fixo).
   Roda: node --test src/lib/financeiro/custos-v3.test.ts
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): o seletor de faixa tem 4 linhas (12/10/8/6) — a quinta, do Gestor (4%,
+  "20+ imóveis ou administradora", com "cadastro assistido e contato direto"), saiu; a última é "16 ou mais imóveis", 6%, sem
+  detalhe, e a tela traz a linha das carteiras (data-testid="faixa-carteiras") no lugar de "faixa-gestor-detalhe".
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -35,8 +38,10 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 test("v3: contrato de referência R$ 3.000 × 3 meses, na faixa da carteira 12/10/8/6 (nunca 12% fixo)", () => {
   assert.equal(ALUGUEL_MEDIO, 3000);
   assert.equal(MESES_MEDIOS_CONTRATO, 3);
-  assert.deepEqual(TAXA_FAIXAS.map((f) => f.taxa), [0.12, 0.1, 0.08, 0.06, 0.04]); // E623: + Gestor
-  assert.deepEqual(TAXA_FAIXAS.map((f) => porContrato({ operador: 0, taxa: f.taxa }).receita), [1080, 900, 720, 540, 360]);
+  // 078 (Daniel, 16/11/2026): antes [0.12, 0.1, 0.08, 0.06, 0.04] (E623: + Gestor) — a faixa de 4% saiu do seletor.
+  assert.deepEqual(TAXA_FAIXAS.map((f) => f.taxa), [0.12, 0.1, 0.08, 0.06]);
+  // 078 (Daniel, 16/11/2026): antes [1080, 900, 720, 540, 360] — sem a receita de R$ 360 por contrato da faixa de 4%.
+  assert.deepEqual(TAXA_FAIXAS.map((f) => porContrato({ operador: 0, taxa: f.taxa }).receita), [1080, 900, 720, 540]);
 });
 
 test("E622 (veredito de 05/11): Simples 6% é o padrão; Presumido 16,33% + INSS 20% é o cenário alternativo, a confirmar com o Rodolfo", () => {
@@ -162,12 +167,20 @@ test("E622: a projeção é determinística (sem estado parcial): Pessimista no 
   assert.equal(p.mesPayback, null);
 });
 
-test("E623: a faixa do Gestor (4%, 20+ imóveis ou administradora, cadastro assistido e contato direto) aparece no seletor", () => {
+test("E623/078: a faixa do Gestor NÃO aparece no seletor — a última é 16 ou mais imóveis (6%), e a tela traz a linha das carteiras", () => {
   const g = TAXA_FAIXAS[TAXA_FAIXAS.length - 1];
-  assert.equal(g.taxa, 0.04);
-  assert.match(g.carteira, /Gestor: 20\+ imóveis ou administradora/);
-  assert.equal(g.detalhe, "cadastro assistido e contato direto");
+  // 078 (Daniel, 16/11/2026): antes 0.04 (a faixa do Gestor).
+  assert.equal(g.taxa, 0.06);
+  // 078 (Daniel, 16/11/2026): antes /Gestor: 20\+ imóveis ou administradora/ — a última carteira é a última faixa da escada, por extenso.
+  assert.equal(g.carteira, "16 ou mais imóveis");
+  assert.deepEqual(TAXA_FAIXAS.map((f) => f.carteira), ["1–2 imóveis", "3–5 imóveis", "6–15 imóveis", "16 ou mais imóveis"]);
+  // 078 (Daniel, 16/11/2026): antes g.detalhe === "cadastro assistido e contato direto"; nenhuma linha tem detalhe (nem promessa).
+  for (const f of TAXA_FAIXAS) assert.deepEqual(Object.keys(f).sort(), ["carteira", "taxa"], f.carteira);
   const fonte = ler("src/config/premissas-financeiras.ts");
   assert.match(fonte, /FAIXAS_COMISSAO_PADRAO\.map\(/, "lidas da regra de cobrança, sem lista própria");
-  assert.match(ler("src/components/financeiro/modelo-financeiro.tsx"), /data-testid="faixa-gestor-detalhe"/);
+  // 078 (Daniel, 16/11/2026): antes a tela TINHA data-testid="faixa-gestor-detalhe" (4% — Gestor…, com cadastro assistido…); no lugar,
+  // a linha das carteiras pela fonte única, sem taxa.
+  const tela = ler("src/components/financeiro/modelo-financeiro.tsx");
+  assert.doesNotMatch(tela, /faixa-gestor-detalhe|f\.detalhe|f\.gestor|\(Gestor\)/);
+  assert.match(tela, /data-testid="faixa-carteiras">\s*\{TEXTO_CARTEIRAS\}\s*<\/p>/);
 });

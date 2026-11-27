@@ -11,7 +11,9 @@ test("achado 39: /admin/avaliadores não mostra listas vazias quando uma leitura
   // laudos; contestações, devoluções, atrasos; recusas e contas de teste).
   assert.equal((pagina.match(/semFalhaDeLeitura\(/g) ?? []).length, 3);
   assert.match(pagina, /\] = semFalhaDeLeitura\(await Promise\.all\(\[\s*admin\.from\("avaliadores_credenciamento"\)/);
-  assert.match(pagina, /semFalhaDeLeitura\(\[recusasLeitura, perfisLeitura\] as const\)/);
+  // E1159 (asserção alterada, ORDEM-DUET-679): a mesma rodada ganhou as duas leituras das propostas expiradas ou
+  // descartadas. A guarda cobre agora as quatro; nenhuma saiu.
+  assert.match(pagina, /semFalhaDeLeitura\(\[recusasLeitura, perfisLeitura, expiradasLeitura, descartadasLeitura\] as const\)/);
   // O aviso do admin ("Tentar de novo") existe para receber o erro.
   assert.match(ler("../../app/(dashboard)/admin/error.tsx"), /Tentar de novo/);
 });

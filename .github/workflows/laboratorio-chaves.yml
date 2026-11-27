@@ -34,6 +34,8 @@ env:
   NEXT_PUBLIC_MATRICULA_OBRIGATORIA: "on"
   NEXT_PUBLIC_FICHA_RESUMO_ATIVA: "on"
   NEXT_PUBLIC_AVALIADOR_ATIVACAO_AUTOMATICA_ATIVA: "on"
+  # E1062 (ORDEM-DUET-306): a forma de pagamento na proposta (E647), para a trava de tela t1703.
+  NEXT_PUBLIC_FORMA_PAGAMENTO_DONO_ATIVA: "on"
   # ORDEM-DUET-192: a janela de 72 h do pré-aceite (E722), ligada SÓ aqui, para provar em simulação a etapa 5 da jornada
   # (t2157). A chave de produção não se toca.
   NEXT_PUBLIC_PRE_ACEITACAO_72H_ATIVA: "on"

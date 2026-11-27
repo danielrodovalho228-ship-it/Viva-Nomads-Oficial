@@ -330,8 +330,13 @@ test.describe("T585 — E205-B: e-mails novos", () => {
     const { data: doDono } = await adm().from("emails_teste").select("corpo").eq("usuario_id", c.dono.id).eq("evento", "visita_cancelada");
     expect((doDono ?? []).some((e) => String(e.corpo).includes("Motivo: Mudei de planos"))).toBe(true);
     expect((doDono ?? []).every((e) => !String(e.corpo).includes("<b>"))).toBe(true);
+    // Instável de 25/11 (corrida 45568928758, fatia 16: "Expected: 2 Received: 1"): o produto manda o e-mail ao dono e SÓ
+    // DEPOIS a cópia a quem cancelou (src/lib/visitas/avisos-servidor.ts); ler a moradora logo após esperar o dono podia cair
+    // entre os dois envios. Espera-se a cópia da moradora como se espera a do dono.
+    await expect
+      .poll(async () => (await adm().from("emails_teste").select("corpo").eq("usuario_id", c.inq.id).eq("evento", "visita_cancelada")).data?.length ?? 0, { timeout: 30_000, message: "a moradora recebe a cópia de cada cancelamento (2)" })
+      .toBe(2);
     const { data: daMoradora } = await adm().from("emails_teste").select("corpo").eq("usuario_id", c.inq.id).eq("evento", "visita_cancelada");
-    expect((daMoradora ?? []).length).toBe(2);
     expect((daMoradora ?? []).every((e) => !String(e.corpo).includes("Motivo:"))).toBe(true);
     await inq.context().close();
   });

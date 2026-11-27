@@ -41,6 +41,35 @@ export function secaoVisivel(
   return atual;
 }
 
+/**
+ * E1018: o que a pessoa pediu nesta rota — a seção do #âncora ao abrir, ou a aba clicada — e se a página já foi rolada
+ * até ela. É UM por rota, dividido por todas as instâncias do hook: a barra de baixo do celular e o topo do computador
+ * ficam montados na mesma página, e o topo monta mais tarde (quando as abas do parceiro ficam conhecidas). Com um
+ * pedido por instância, a que montava depois lia o #âncora da URL de novo e rolava a página de volta para ele, mesmo
+ * com a pessoa já em outra seção (t776 a 390 px, sob carga).
+ */
+export type PedidoDaRota = { preferida: string | null; rolouAteAncora: boolean; usos: number };
+const pedidos = new Map<string, PedidoDaRota>();
+
+/** O pedido da rota: criado pela 1ª instância (com a seção da URL); as seguintes recebem o mesmo, como estiver. */
+export function abrirPedido(rota: string, daUrl: string | null): PedidoDaRota {
+  let pedido = pedidos.get(rota);
+  if (!pedido) {
+    pedido = { preferida: daUrl, rolouAteAncora: false, usos: 0 };
+    pedidos.set(rota, pedido);
+  }
+  pedido.usos++;
+  return pedido;
+}
+
+/** A instância saiu da rota. Quando a última sai, o pedido acaba: voltar à página lê a URL de novo. */
+export function fecharPedido(rota: string): void {
+  const pedido = pedidos.get(rota);
+  if (!pedido) return;
+  pedido.usos--;
+  if (pedido.usos <= 0) pedidos.delete(rota);
+}
+
 export function useSecaoAncora(rota: string, ids: readonly string[], pathname: string): string | null {
   const [secao, setSecao] = useState<string | null>(null);
   const chave = ids.join(",");
@@ -52,32 +81,31 @@ export function useSecaoAncora(rota: string, ids: readonly string[], pathname: s
       return lista.includes(h) ? h : null;
     };
     // A seção pedida (#âncora ao abrir, hashchange ou aba clicada) vale até a pessoa rolar por conta própria.
-    let preferida: string | null = daUrl();
     // O conteúdo chega depois da rolagem do navegador até o #âncora e empurra a seção para baixo: quando ela aparece,
-    // rola até ela uma vez.
-    let rolouAteAncora = false;
+    // rola até ela uma vez. E1018: o pedido é da rota, não desta instância (ver abrirPedido).
+    const pedido = abrirPedido(rota, daUrl());
     let quadro = 0;
     const medir = () => {
       cancelAnimationFrame(quadro);
       quadro = requestAnimationFrame(() => {
-        if (!rolouAteAncora && preferida) {
-          const el = document.getElementById(preferida);
+        if (!pedido.rolouAteAncora && pedido.preferida) {
+          const el = document.getElementById(pedido.preferida);
           if (el) {
-            rolouAteAncora = true;
+            pedido.rolouAteAncora = true;
             el.scrollIntoView({ block: "start" });
           }
         }
-        setSecao(secaoVisivel(lista, window.location.hash, document, { innerHeight: window.innerHeight, scrollY: window.scrollY, docAltura: document.documentElement.scrollHeight }, preferida));
+        setSecao(secaoVisivel(lista, window.location.hash, document, { innerHeight: window.innerHeight, scrollY: window.scrollY, docAltura: document.documentElement.scrollHeight }, pedido.preferida));
       });
     };
     const pediu = (id: string | null) => {
-      preferida = id;
-      rolouAteAncora = true;
+      pedido.preferida = id;
+      pedido.rolouAteAncora = true;
       medir();
     };
     const soltar = () => {
-      if (preferida) {
-        preferida = null;
+      if (pedido.preferida) {
+        pedido.preferida = null;
         medir();
       }
     };
@@ -109,6 +137,7 @@ export function useSecaoAncora(rota: string, ids: readonly string[], pathname: s
       window.removeEventListener("hashchange", aoMudarHash);
       document.removeEventListener("click", aoClicar, true);
       for (const ev of ["wheel", "touchmove", "keydown"] as const) window.removeEventListener(ev, soltar);
+      fecharPedido(rota);
     };
   }, [rota, chave, pathname]);
   return pathname === rota ? secao : null;

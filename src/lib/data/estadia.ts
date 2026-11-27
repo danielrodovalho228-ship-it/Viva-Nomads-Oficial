@@ -6,13 +6,14 @@
 import { codigoDoImovel } from "@/lib/imovel-pagina";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
-import { primeiroPagamentoConfirmado } from "@/lib/contrato-estado";
+import { primeiroPagamentoConfirmado, primeiroPagamentoRegistrado } from "@/lib/contrato-estado";
 import { estadoConferencia, type RespostaConferencia } from "@/lib/conferencia";
 import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
-import { diaBRT } from "@/lib/datas-brasilia";
+import { hojeEmBrasilia } from "@/lib/datas-brasilia";
 import { duracaoDoBloco } from "@/lib/pagamento-bloco";
 import { conversationId } from "@/lib/messages/conversation-id";
 import {
@@ -264,19 +265,21 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
   }));
   const previstos = Math.max(1, Number(c.qtd_ocupantes) || 1);
   // L2-B item 12: a mesma função dos Contratos e da Garantias decide o estado da caução.
-  const estadoCaucao = caucaoDoChecklist(
-    estadoCaucaoUnico({
-      garantia: c.garantia,
-      blocos: blocos.map((b) => ({ caucao: b.caucao, caucaoStatus: b.caucao_status })),
-      pagamentos: pagamentos.map((p) => ({ tipo: p.tipo, valor: p.valor ?? 0, confirmado: p.confirmado_pelo_inquilino, anulado: !!p.anulado_em })),
-    }),
-  );
+  const entradaCaucao = {
+    garantia: c.garantia,
+    blocos: blocos.map((b) => ({ caucao: b.caucao, caucaoStatus: b.caucao_status })),
+    pagamentos: pagamentos.map((p) => ({ tipo: p.tipo, valor: p.valor ?? 0, confirmado: p.confirmado_pelo_inquilino, anulado: !!p.anulado_em })),
+  };
+  const estadoCaucao = caucaoDoChecklist(estadoCaucaoUnico(entradaCaucao));
   const checklist = checklistAntesDaEntrada(
     {
       assinadoProprietario: !!c.assinado_proprietario_em,
       assinadoInquilino: !!c.assinado_inquilino_em,
       primeiroPagamento: primeiro,
+      // E1068: o estado do meio (registrado pelo proprietário, à espera do morador), das mesmas fontes do confirmado.
+      primeiroPagamentoRegistrado: primeiroPagamentoRegistrado(pagamentos),
       caucao: estadoCaucao,
+      caucaoRegistrada: estadoCaucaoUnico(entradaCaucao).chave === "aguardando_confirmacao",
       conferencia: { estado: conf ? estadoConferencia(respostas) : null, prazo: prazoDaConferencia(periodo) },
       ocupantes: { preenchidos: ocupantes.length, previstos },
       instrucoesPublicadas: instrucoesPreenchidas(instr.efetivas),
@@ -382,10 +385,8 @@ export function mesesFuturos(c: LinhaContratoEstadia, hojeISO: string): number {
   return mesesNaoIniciados(blocosOrdenados(c), hojeISO);
 }
 
-/** Hoje (AAAA-MM-DD) em Brasília. */
-export function hojeEmBrasilia(agora: Date = new Date()): string {
-  return diaBRT(agora) ?? agora.toISOString().slice(0, 10);
-}
+/** Hoje (AAAA-MM-DD) em Brasília — E1115 (ORDEM-DUET-503): a fonte única (datas-brasilia). */
+export { hojeEmBrasilia } from "@/lib/datas-brasilia";
 
 /** E360: "Saraiva, Uberlândia · código VN-3F9A2C" (o bairro é o campo público `address`, nunca o endereço exato). */
 export function localDaEstadia(c: { property_id?: string | null; properties?: { address?: string | null; city?: string | null } | null }): string {
@@ -416,9 +417,7 @@ export async function estadiasDaHome(agora: Date = new Date(), opcoes: { exigir?
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin) return [];
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return [];
   const { data: meus } = await admin.from("properties").select("id").eq("owner_id", user.id).limit(500);
   const imoveis = ((meus ?? []) as { id: string }[]).map((p) => p.id);

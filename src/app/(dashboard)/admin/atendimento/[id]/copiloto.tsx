@@ -36,10 +36,10 @@ export function QuemEAPessoa({ chamadoId }: { chamadoId: string }) {
   if (!p) {
     return (
       <div data-testid="quem-e-a-pessoa">
-        <Button variant="outline" size="sm" disabled={carregando} onClick={ver}>
-          <Eye className="h-4 w-4" /> {carregando ? "Carregando…" : "Ver quem é a pessoa"}
+        <Button variant="secondary" size="sm" disabled={carregando} onClick={ver}>
+          <Eye className="h-4 w-4" /> {carregando ? "Carregando…" : "Ver perfil da pessoa"}
         </Button>
-        <p className="mt-2 text-xs text-muted">Só o necessário para resolver. A consulta fica no histórico (quem viu e quando).</p>
+        <p className="mt-2 text-xs text-muted">Só o necessário para resolver. A consulta fica registrada no histórico.</p>
         {erro && <p className="mt-1 text-xs text-red-700">{erro}</p>}
       </div>
     );

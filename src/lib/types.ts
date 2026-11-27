@@ -177,6 +177,10 @@ export interface Property {
   nivel?: import("@/config/niveis").NivelOuAdequacao | null;
   /** Prompt 62-A, Parte 2: o nível tem laudo de avaliação vigente (imovel_nivel.nivel_vistoriado_em). */
   nivelVistoriado?: boolean;
+  /** Filtros pacote 1: classe de ruído declarada (imovel_nivel.ruido_classe); null = não declarada. */
+  ruidoClasse?: "baixo" | "medio" | "alto" | null;
+  /** Filtros pacote 1: janelas de isolamento acústico (imovel_ruido.isolamento_acustico). */
+  isolamentoAcustico?: boolean;
   smokingAllowed?: boolean;
   childrenAllowed?: boolean;
   maxGuests?: number;

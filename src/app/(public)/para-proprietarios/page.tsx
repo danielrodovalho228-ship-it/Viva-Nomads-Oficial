@@ -12,16 +12,15 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { servicoProprietarios } from "@/lib/seo/estruturados";
 import { SITE_URL } from "@/lib/site";
 import { CITIES } from "@/lib/constants";
-import { FAIXAS_COMISSAO_PADRAO, pctTexto } from "@/lib/cobranca/regra";
+import { TAXA_MAIOR_TEXTO } from "@/lib/cobranca/regra";
 import { FRASE_ESCADA_TAXAS } from "@/config/textos-regulados";
 import { BOTAO_SIMULADOR_PUBLICO, NOTA_SIMULADOR_NA_CONTA } from "@/lib/simulador-na-conta";
 import { PRECOS_VISIVEL } from "@/config/precos-visivel";
 import { AVISO_APROVACAO, PUBLICAMOS_PARA_VOCE_TEXTO } from "@/lib/ajuda-publicacao/ajuda";
 
 // VOCAB-A: a taxa de serviço vem da fonte única (lib/cobranca/regra.ts), nunca digitada à mão.
-// E564/E805: a escada inteira e o Plano Gestor vêm da fonte única (FRASE_ESCADA_TAXAS).
-const FAIXAS_PUBLICAS = FAIXAS_COMISSAO_PADRAO.filter((f) => !f.gestor);
-const TAXA_MAIOR = pctTexto(Math.max(...FAIXAS_PUBLICAS.map((f) => f.taxa)));
+// E805/078: a escada inteira e a linha das carteiras vêm da fonte única (FRASE_ESCADA_TAXAS).
+const TAXA_MAIOR = TAXA_MAIOR_TEXTO;
 
 export const metadata: Metadata = {
   alternates: { canonical: "/para-proprietarios" },

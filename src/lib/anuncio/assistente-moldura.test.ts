@@ -8,10 +8,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { isFlowRoute } from "../nav-mobile.ts";
+import { fonteSemComentarios as semComentario } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 const pagina = ler("app/(dashboard)/dashboard/imoveis/novo/page.tsx");
-const semComentario = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 const revisar = semComentario(ler("app/(dashboard)/dashboard/imoveis/novo/etapa-revisar.tsx"));
 const moldura = ler("components/layout/moldura-assistente.tsx");
 const rodape = ler("app/(dashboard)/dashboard/imoveis/novo/rodape-assistente.tsx");

@@ -10,14 +10,13 @@ import { situacaoCandidatura } from "@/lib/candidaturas/status";
 import {
   MSG_PEDIDO_ORCAMENTO_ENVIADO,
   MSG_PEDIDO_ORCAMENTO_INDISPONIVEL,
+  ORCAMENTO_ABERTO,
   numeroPublicoPedido,
   podePedirOrcamento,
   textoPedirOrcamento,
 } from "@/lib/pedido-ref";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-/** Orçamento que ainda espera resposta (o dono não manda outro enquanto este está aberto). */
-const ORCAMENTO_ABERTO = ["enviada", "vista", "contraproposta"];
 /** Orçamento que virou (ou está virando) contrato — o que a tela do contrato mostra. */
 const ORCAMENTO_DO_CONTRATO = ["aceita", "em_contrato", "contrato_assinado"];
 
@@ -65,16 +64,21 @@ export async function pedirOrcamento(leadId: string): Promise<{ ok: boolean; men
   if (error) return { ok: false, mensagem: "Não foi possível conferir o pedido agora. Tente de novo." };
   const l = lead as { id: string; status: string; owner_id: string; property_id: string } | null;
   if (!l) return { ok: false, mensagem: MSG_PEDIDO_ORCAMENTO_INDISPONIVEL };
-  const [aberto, contrato] = await Promise.all([
+  const [aberto, contratos] = await Promise.all([
     supabase.from("propostas").select("id", { count: "exact", head: true }).eq("lead_id", l.id).in("status", ORCAMENTO_ABERTO),
-    supabase.from("contratos").select("id", { count: "exact", head: true }).eq("lead_id", l.id),
+    // E1088: cada contrato da candidatura com as duas assinaturas (e o status, porque o cancelado não conta).
+    supabase.from("contratos").select("status, assinado_proprietario_em, assinado_inquilino_em").eq("lead_id", l.id),
   ]);
-  // Leitura que falha nunca vira "pode pedir" (não manda pedido repetido nem pedido com contrato já feito).
-  if (aberto.error || contrato.error) return { ok: false, mensagem: "Não foi possível conferir o pedido agora. Tente de novo." };
+  // Leitura que falha nunca vira "pode pedir" (não manda pedido repetido nem pedido com contrato por assinar).
+  if (aberto.error || contratos.error) return { ok: false, mensagem: "Não foi possível conferir o pedido agora. Tente de novo." };
   const pode = podePedirOrcamento({
     situacao: situacaoCandidatura(l.status).chave,
     temOrcamentoAberto: (aberto.count ?? 0) > 0,
-    temContrato: (contrato.count ?? 0) > 0,
+    contratos: ((contratos.data ?? []) as { status: string | null; assinado_proprietario_em: string | null; assinado_inquilino_em: string | null }[]).map((c) => ({
+      status: c.status,
+      assinadoProprietarioEm: c.assinado_proprietario_em,
+      assinadoInquilinoEm: c.assinado_inquilino_em,
+    })),
   });
   if (!pode) return { ok: false, mensagem: MSG_PEDIDO_ORCAMENTO_INDISPONIVEL };
   const numero = numeroPublicoPedido(l.id)!;

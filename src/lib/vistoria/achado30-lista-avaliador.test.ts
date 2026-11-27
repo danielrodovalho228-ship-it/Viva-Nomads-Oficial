@@ -6,6 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { textoDasAvaliacoesNaoLidas } from "./relogio-do-pedido.ts";
 
 const page = readFileSync(new URL("../../app/(dashboard)/dashboard/parceiro/avaliacao/page.tsx", import.meta.url), "utf8");
 
@@ -24,5 +25,7 @@ test("com falha, aviso no lugar das três listas (nunca o estado vazio)", () => 
   assert.match(aviso, /MSG_AVALIACOES_FALHOU/);
   assert.doesNotMatch(aviso, /Nenhuma avaliação/);
   assert.ok(page.indexOf('data-testid="avaliacoes-designadas"') > i, "as listas ficam no ramo sem falha");
-  assert.match(page, /Não foi possível carregar as suas avaliações agora/);
+  // E1157: o texto do aviso lê o prazo que o avaliador declarou; sai de relogio-do-pedido.
+  assert.match(page, /const MSG_AVALIACOES_FALHOU = textoDasAvaliacoesNaoLidas\(cred\.prazo_resposta_horas\);/);
+  assert.match(textoDasAvaliacoesNaoLidas(null), /^Não foi possível carregar as suas avaliações agora\./);
 });

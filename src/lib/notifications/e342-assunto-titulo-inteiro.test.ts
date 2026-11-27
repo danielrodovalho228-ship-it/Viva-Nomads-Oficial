@@ -25,7 +25,7 @@ const semPalavraCortada = (a: string, titulo: string) => {
 
 test("os 4 assuntos da conferência de 01/11 saem com o nome inteiro, em até 70 caracteres", () => {
   const casos = [
-    ["renovacao_aviso", { data: "2026-11-15" }, "Renovar [TESTE QA] Automações E289 R.? Termina em 15/11 · Viva Nomads"],
+    ["renovacao_aviso", { data: "2026-11-15" }, "Renovar [TESTE QA] Automações E289 R.? Saída em 15/11 · Viva Nomads"],
     ["proposta_vencendo", { prazo: "2026-11-01T01:00:00Z", numero: "PRP-1" }, "Proposta vence 31/10 22h: [TESTE QA] Automações E289 R. · Viva Nomads"],
     ["estadia_instrucoes_pendentes", { data: "2026-11-10" }, "Chegada em 10/11: [TESTE QA] Automações E289 R. · Viva Nomads"],
   ] as const;

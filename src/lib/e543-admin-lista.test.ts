@@ -21,9 +21,9 @@ const ler = (p: string) => readFileSync(new URL(`./${p}`, import.meta.url), "utf
 const A = "a0268b00-0000-4000-8000-000000000011";
 const I = "a0268b00-0000-4000-8000-000000000021";
 
-test("lista do admin com o período: o contrato que terminou em 30/10 sai 'Encerrado em 30/10/2026' (como o detalhe)", () => {
+test("lista do admin com o período: o contrato com a última noite em 30/10 sai 'Encerrado em 31/10/2026', a saída (como o detalhe; E1089)", () => {
   const linha = { status: "ativo", periodo: "[2026-09-30,2026-10-31)", assinado_proprietario_em: "2026-10-31T02:32:26Z", assinado_inquilino_em: "2026-10-31T02:32:26Z", pagamentos_bloco: [] };
-  assert.equal(seloParaEquipe(linha), "Encerrado em 30/10/2026");
+  assert.equal(seloParaEquipe(linha), "Encerrado em 31/10/2026");
   const sem = { ...linha, periodo: null };
   assert.equal(seloParaEquipe(sem), "Aguardando 1º pagamento", "sem o período era o que a lista mostrava");
 });

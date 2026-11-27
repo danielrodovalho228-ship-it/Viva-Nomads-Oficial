@@ -161,7 +161,7 @@ test.describe("T250 — Contratação de parceiros (31b)", () => {
     ids.pedido = d.url().split("/").pop()!;
     await expect(d.getByTestId("pedido-status")).toHaveText("Aguardando orçamento");
     await expect(d.getByTestId("pedido-mensagens")).toContainText("Aqui vocês combinam tudo");
-    await expect(d.getByTestId("pedido-pagamento-inativo")).toContainText("O pagamento pela plataforma ainda não está ativo.");
+    await expect(d.getByTestId("pedido-pagamento-inativo")).toContainText("Pagamento pela plataforma em breve."); // E1158 (1; ORDEM-DUET-673): a redação da config governa
     await expect(d.getByRole("button", { name: /^Pagar/ })).toHaveCount(0);
 
     // 2) Parceiro: não vê o endereço antes do aceite; orça e vê os 10% e o líquido.

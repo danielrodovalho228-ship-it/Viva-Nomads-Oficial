@@ -26,10 +26,10 @@ import { hrefAvaliador } from "./telas-exibicao.ts";
 import { itensSintese, textoNivelCartao } from "../cartao-sintese.ts";
 import { GRUPOS_AVALIACAO, ITENS_CHECKLIST } from "../../config/checklist-avaliacao.ts";
 import { TEXTO_PROIBIDO } from "../estilo/estilo-padrao.test.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const raiz = new URL("../../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(raiz + p, "utf8");
-const semComentarios = (f: string) => f.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 const primarios = (f: string) => (semComentarios(f).match(/<Button(?![^>]*variant=)[^>]*>/g) ?? []).length + (semComentarios(f).match(/variant="primary"/g) ?? []).length;
 
 const CHECKLIST = ler("src/components/vistoria/checklist-avaliador.tsx");
@@ -68,15 +68,16 @@ test("textos exatos da execução: sem pessoas, teste em uso, fila de fotos", ()
   assert.match(CHECKLIST, /textoFaltaFotos/);
 });
 
-test("laudo do avaliador: prazo de 48 horas úteis em Brasília e a delimitação na revisão", () => {
-  // Visita na sexta 23/10/2026 às 10:00 de Brasília: 48 horas úteis caem na terça 27/10 às 10:00.
+test("laudo do avaliador: o prazo combinado em Brasília (sem prazo combinado, 2 dias úteis) e a delimitação na revisão", () => {
+  // E1156 (ORDENS-DUET 712 e 713): o prazo é o combinado; sem ele, o padrão de 2 dias úteis — as 48 horas úteis de antes.
+  // Visita na sexta 23/10/2026 às 10:00 de Brasília: 2 dias úteis caem na terça 27/10 às 10:00.
   const visita = "2026-10-23T13:00:00Z";
   const ok = prazoDoLaudo(visita, new Date("2026-10-24T12:00:00Z"));
   assert.equal(ok.vencido, false);
-  assert.equal(ok.texto, "Envie até 27/10/2026 às 10:00, horário de Brasília (48 horas úteis da visita).");
+  assert.equal(ok.texto, "Envie até 27/10/2026 às 10:00, horário de Brasília (2 dias úteis depois da visita).");
   const vencido = prazoDoLaudo(visita, new Date("2026-10-28T12:00:00Z"));
   assert.equal(vencido.vencido, true);
-  assert.match(vencido.texto, /^Prazo de 48 horas úteis vencido em 27\/10\/2026 às 10:00\./);
+  assert.match(vencido.texto, /^Prazo combinado vencido em 27\/10\/2026 às 10:00\./);
   assert.match(EXECUCAO, /DELIMITACAO_LAUDO/);
   assert.match(FICHA, /DELIMITACAO_LAUDO/);
 });

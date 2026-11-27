@@ -22,8 +22,13 @@ export const dynamic = "force-dynamic";
  * os pedidos recebidos nos imóveis do dono abrem por `?de=dono` (decisões do Início do dono e o e-mail do pedido).
  */
 export default async function VisitasPage({ searchParams }: { searchParams: Promise<{ de?: string }> }) {
-  const dono = (await searchParams).de === "dono";
-  const visitas = dono ? await listVisitasDono({ exigir: true }) : await listMinhasVisitas({ exigir: true });
+  const pediuDono = (await searchParams).de === "dono";
+  const minhas = pediuDono ? [] : await listMinhasVisitas({ exigir: true });
+  // E1060: sem ?de=dono, quem só RECEBEU visitas (o dono) caía em "Nenhuma visita ainda" com a visita já confirmada.
+  // Sem pedidos próprios, a página abre as visitas recebidas nos imóveis da pessoa.
+  const recebidas = pediuDono || minhas.length === 0 ? await listVisitasDono({ exigir: true }) : [];
+  const dono = pediuDono || (minhas.length === 0 && recebidas.length > 0);
+  const visitas = dono ? recebidas : minhas;
   return (
     <>
       <PageTitle

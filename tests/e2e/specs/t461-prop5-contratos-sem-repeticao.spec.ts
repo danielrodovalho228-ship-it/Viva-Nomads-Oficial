@@ -7,6 +7,8 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
       nenhum cartão de contrato repetido.
    2. /dashboard/contratos#conferencia abre o contrato com a conferência de entrada pendente, na seção da conferência;
       a etapa "Conferência de entrada" da linha do tempo leva à mesma seção.
+  Vizinha do E1225 (ORDENS-DUET 1120 e 1127): corre também no portão desse PR, porque a caução passou a ser
+  registada por bloco (0367), com uma linha por bloco no cartão da caução.
 */
 const senha = novaSenha();
 const sufixo = novoSufixo();

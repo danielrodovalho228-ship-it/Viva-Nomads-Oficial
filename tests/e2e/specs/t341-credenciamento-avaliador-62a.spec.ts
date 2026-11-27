@@ -155,7 +155,7 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
     pedidoId = (await adm().from("vistoria_pedidos").select("id").eq("property_id", ids.imovel).single()).data!.id as string;
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     // E648: o dono escolhe o avaliador entre os sugeridos (a Viva não designa).
-    await bloco.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numeroA}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    await bloco.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${numeroA}` }).getByRole("button", { name: "Escolher" }).click();
     await expect.poll(async () => ((await adm().from("vistoria_pedidos").select("status").eq("id", pedidoId).single()).data?.status as string | undefined) ?? "", { timeout: 20_000 }).toBe("designado");
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel`, { waitUntil: "domcontentloaded" });
     await expect(bloco.getByTestId("avaliador-designado")).toHaveText(`Avaliador escolhido por você: nº ${numeroA}`, { timeout: 30_000 });
@@ -218,7 +218,10 @@ test.describe("T341 — Prompt 62-A, Parte 1: telas da avaliação do imóvel", 
       await expect(pg.getByTestId("avaliador-linha-designacao")).toHaveText("O proprietário escolhe o avaliador. O avaliador define o próprio valor e prazo.", { timeout: 30_000 });
       await expect(pg.getByTestId("avaliador-numero")).toHaveText(numeroA);
       await expect(pg.getByTestId("avaliador-cidade")).toHaveText("Uberlândia");
-      await expect(pg.locator("a")).toHaveCount(0);
+      // E1079 (ORDEM-DUET-385/386, mockup avaliador-perfil-publico): o "voltar" do mockup é o único link da página.
+      // Continua proibido qualquer outro link (nenhum link de contratar).
+      await expect(pg.getByTestId("avaliador-voltar")).toHaveAttribute("href", "/");
+      await expect(pg.locator('a:not([data-testid="avaliador-voltar"])')).toHaveCount(0);
       await semRolagemLateral(pub);
       await pub.screenshot({ path: `${SAIDA}/t341-4-publica-${w}.png` });
     }

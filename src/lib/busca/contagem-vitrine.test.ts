@@ -9,8 +9,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { baseDaVitrine, bairrosDaVitrine, totalDaVitrine } from "./contagem-vitrine.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
-const ler = (p: string) => readFileSync(new URL(p, import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+const ler = (p: string) => fonteSemComentarios(readFileSync(new URL(p, import.meta.url), "utf8"));
 const ehExemplo = (x: { id: string }) => x.id.startsWith("demo-");
 const im = (id: string, neighborhood: string) => ({ id, neighborhood, city: "Uberlândia" });
 

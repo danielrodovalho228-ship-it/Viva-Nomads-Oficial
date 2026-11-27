@@ -2,6 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
+import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BUCKET_PARCEIROS, urlMidiaParceiro } from "@/lib/data/parceiros-publico";
 import { cidadeDoCep, ehUuid, normalizarCep } from "@/lib/fotografos/regras";
@@ -10,6 +11,7 @@ import { chaveCidade } from "@/lib/cidades";
 import { lerReais } from "@/lib/reais";
 import { documentoNaTela, type PerfilDocumento } from "@/lib/documento-pessoa";
 import { semMetadados } from "@/lib/foto-reconversao";
+import { CONTATO_AVISO, contemContato } from "@/lib/pedidos/pedidos";
 import {
   CIDADES_MAX,
   categoriaValida,
@@ -199,6 +201,8 @@ export async function salvarPagina(e: { nomePublico: string; descricao: string; 
   if (nome.length < 2) return { ok: false, erro: "Informe o nome que aparece na página." };
   const descricao = limpar(e.descricao, 2000);
   const curta = limpar(e.descricaoCurta, 160).replace(/\s+/g, " ");
+  // E1112 (ORDEM-DUET-498 §2): a página é pública — contacto no nome ou nas descrições é recusado com o aviso da casa.
+  if ([nome, descricao, curta].some((t) => contemContato(t))) return { ok: false, erro: CONTATO_AVISO };
   const redes: Record<string, string | null> = {};
   for (const r of REDES) {
     const v = validarRede(r.chave, e.redes?.[r.chave]);
@@ -465,18 +469,18 @@ export async function pausarPagina(): Promise<Res> {
 }
 
 /** O menu "Parceiro" aparece quando a conta tem o papel (a linha em parceiros) ou um pedido de parceria. */
-export async function temPapelParceiro(): Promise<boolean> {
+export async function temPapelParceiro(opcoes: { exigir?: boolean } = {}): Promise<boolean> {
   const supabase = await createClient();
   if (!supabase) return false;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // E1093: com `exigir` (o contexto do menu), a sessão por confirmar e o erro do banco LANÇAM — "não li" não é "não é parceiro".
+  const user = await usuarioDaLeitura(supabase, opcoes);
   if (!user) return false;
-  const [{ count: p }, { count: s }] = await Promise.all([
+  const [p, s] = await Promise.all([
     supabase.from("parceiros").select("id", { count: "exact", head: true }).eq("user_id", user.id),
     supabase.from("parceiro_solicitacoes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
-  return (p ?? 0) + (s ?? 0) > 0;
+  if ((p.error || s.error) && opcoes.exigir) throw new Error("Não foi possível conferir a parceria agora.");
+  return (p.count ?? 0) + (s.count ?? 0) > 0;
 }
 
 /**

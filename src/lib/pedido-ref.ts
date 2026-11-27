@@ -18,9 +18,37 @@ export function textoPedirOrcamento(numeroPedido: string): string {
   return `Olá! Pode me enviar um orçamento pela plataforma para o pedido ${numeroPedido}? Obrigado.`;
 }
 
-/** Só pede orçamento quem tem o pedido aceito e ainda sem orçamento em aberto nem contrato. */
-export function podePedirOrcamento(p: { situacao: string; temOrcamentoAberto: boolean; temContrato: boolean }): boolean {
-  return p.situacao === "aceita" && !p.temOrcamentoAberto && !p.temContrato;
+/** Os estados da proposta que contam como "orçamento em aberto" (o servidor e o cartão leem a mesma lista). */
+export const ORCAMENTO_ABERTO: string[] = ["enviada", "vista", "contraproposta"];
+
+/** E1088: o que a regra precisa de cada contrato da candidatura. */
+export interface ContratoDoPedido {
+  status?: string | null;
+  assinadoProprietarioEm: string | null;
+  assinadoInquilinoEm: string | null;
+}
+
+/**
+ * Só pede orçamento quem tem o pedido aceito, sem orçamento em aberto, e com TODOS os contratos dessa candidatura
+ * assinados pelas duas partes, ou nenhum (E1088). O contrato cancelado não conta (ORDEM-605).
+ */
+/**
+ * E1088 (ORDEM-DUET-728): o contrato que manda no selo do cartão é o mesmo que conta na regra — entre os que não estão
+ * cancelados, o mais recente. Só com cancelados, o mais recente deles (o cartão não perde o selo). Antes o selo vinha
+ * do último que a consulta devolvia, sem ordem.
+ */
+export function contratoDoSelo<T extends { status?: string | null; created_at?: string | null }>(contratos: readonly T[]): T | null {
+  const maisRecente = (lista: readonly T[]) =>
+    lista.reduce<T | null>((m, c) => (!m || Date.parse(String(c.created_at ?? "")) > Date.parse(String(m.created_at ?? "")) ? c : m), null);
+  return maisRecente(contratos.filter((c) => c.status !== "cancelado")) ?? maisRecente(contratos);
+}
+
+export function podePedirOrcamento(p: { situacao: string; temOrcamentoAberto: boolean; contratos: readonly ContratoDoPedido[] }): boolean {
+  return (
+    p.situacao === "aceita" &&
+    !p.temOrcamentoAberto &&
+    p.contratos.filter((c) => c.status !== "cancelado").every((c) => !!c.assinadoProprietarioEm && !!c.assinadoInquilinoEm)
+  );
 }
 
 export const MSG_PEDIDO_ORCAMENTO_ENVIADO = "Pedido de orçamento enviado ao proprietário no chat.";

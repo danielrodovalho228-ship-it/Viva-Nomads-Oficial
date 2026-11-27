@@ -8,6 +8,7 @@
   (UDI-001 segue a mesma regra). Quando um critério não pode ser verificado (null), nada avança: fica para o admin.
 */
 import { CODIGO_CONDUTA } from "./regras.ts";
+import { hojeEmBrasilia } from "../datas-brasilia.ts";
 
 export const DECIDIDO_PELO_SISTEMA = "Decidido pelo sistema";
 
@@ -56,7 +57,8 @@ export function decidirAtivo(c: CriteriosAtivar): Decisao {
 export function registroDoSistema(etapa: "em_teste" | "ativo", criterios: CriteriosEmTeste | CriteriosAtivar, fontes: { identidade: "real" | "simulada"; cpf?: "real" | "simulada" }, agora: Date) {
   const rotulos: Record<string, string> = etapa === "em_teste" ? ROTULOS_EM_TESTE : ROTULOS_ATIVAR;
   const itens = Object.keys(rotulos).map((k) => `${rotulos[k]}${k === "identidadeVerificada" && fontes.identidade === "simulada" ? " (simulada, conta de teste)" : ""}${k === "cpfTitularOuSocio" && fontes.cpf === "simulada" ? " (simulado, conta de teste)" : ""}`);
-  const quando = agora.toISOString().slice(0, 10);
+  // E1135: a data escrita no motivo é o dia de Brasília (à noite, o dia de UTC já é o seguinte).
+  const quando = hojeEmBrasilia(agora);
   const motivo = `${DECIDIDO_PELO_SISTEMA} em ${quando} (${etapa === "em_teste" ? "aprovação automática para teste" : "ativação automática"}). Critérios: ${itens.join("; ")}.`.slice(0, 500);
   return { motivo, decididoPeloSistema: true as const, criterios: { etapa, em: agora.toISOString(), conduta: etapa === "em_teste" ? CODIGO_CONDUTA.versao : undefined, fontes, ...criterios } };
 }

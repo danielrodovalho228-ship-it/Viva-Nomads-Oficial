@@ -18,7 +18,8 @@ test("entrada e saída trazem dia e horário do imóvel", () => {
   assert.equal(conf.horario, "até 03/11 às 14:00, horário de Brasília");
   assert.equal(conf.prazo, "2026-11-03T17:00:00.000Z");
   assert.equal(saida.chave, "saida");
-  assert.equal(saida.dia, "2027-01-30");
+  // E1089 (coordenador): 30/01 é a última noite gravada; a etapa "Saída" é o dia seguinte.
+  assert.equal(saida.dia, "2027-01-31");
   assert.equal(saida.horario, "até as 11:00, horário de Brasília");
 });
 

@@ -12,6 +12,8 @@ import { gravidadePeloPrazo, montarCentral, type Central, type FiltroCentral, ty
 import { contasTeste, ordensForaDoPrazo, prazoVencidoEm } from "@/lib/data/admin-prazos-59";
 import { filaDocumentos } from "@/lib/data/admin-indicadores";
 import { MOTIVOS_REVISAO, ehMotivoRevisao } from "@/lib/avaliacoes-resposta";
+import { lerContratosSemTaxa } from "@/lib/data/contratos-sem-taxa-servidor";
+import { linhaCentralSemTaxa } from "@/lib/fechamento/contratos-sem-taxa";
 
 type Admin = SupabaseClient;
 const H = 3_600_000;
@@ -239,6 +241,8 @@ export async function linhasDaCentral(admin: Admin, agora = new Date()): Promise
       quantidade: d.total,
     });
   }
+  // E1205 (ORDEM-DUET-1012): o contrato com proposta e sem a taxa reservada há 30 min — a mesma leitura da rotina.
+  for (const c of await ler(() => lerContratosSemTaxa(admin, agora))) out.push(linhaCentralSemTaxa(c, { numeroProposta: c.numeroProposta, teste: ehTeste(c.donoId ?? undefined) }));
   return out;
 }
 

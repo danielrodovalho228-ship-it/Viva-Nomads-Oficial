@@ -47,8 +47,13 @@ export function decidirGeracaoContrato(p: {
 /** O que a tela faz com a resposta de /api/contrato. */
 export type PassoTelaContrato = "registrar" | "inativa" | "tentar_de_novo" | "erro";
 
+/**
+ * E1070: só o modo "inativa" (que a rota manda quando a assinatura digital está inativa) leva à mensagem da assinatura.
+ * O 503 sozinho não: a rota também responde 503 quando não consegue ler as partes, os valores ou a reserva — nesses
+ * casos a tela mostra o texto da causa (ou um genérico), nunca uma causa errada.
+ */
 export function passoDaRespostaContrato(status: number, corpo: { modo?: unknown }): PassoTelaContrato {
-  if (status === 503 || corpo.modo === "inativa") return "inativa";
+  if (corpo.modo === "inativa") return "inativa";
   if (status === 409) return "tentar_de_novo";
   if (status >= 200 && status < 300 && (corpo.modo === "teste" || corpo.modo === "real")) return "registrar";
   return "erro";

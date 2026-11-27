@@ -5,6 +5,7 @@ import {
   LIMITE_RESPOSTAS,
   MSG_CONTATO_BLOQUEADO,
   MSG_LIMITE_RESPOSTAS,
+  contratoValeParaAProgramada,
   datasDaEstadia,
   decidirEnvio,
   enviarEm,
@@ -57,10 +58,11 @@ const datas = datasDaEstadia([
 ])!;
 
 test("horários: D-7 às 10h, entrada e saída às 9h (Brasília); renovação recusada fora", () => {
-  assert.deepEqual(datas, { entrada: "2026-11-17", saida: "2027-01-15" });
+  // E1089 (coordenador): o último fim válido (15/01) é a última noite; a saída — e a mensagem "No dia da saída" — é 16/01.
+  assert.deepEqual(datas, { entrada: "2026-11-17", saida: "2027-01-16" });
   assert.equal(enviarEm("7_dias_antes", datas).toISOString(), "2026-11-10T13:00:00.000Z");
   assert.equal(enviarEm("entrada", datas).toISOString(), "2026-11-17T12:00:00.000Z");
-  assert.equal(enviarEm("saida", datas).toISOString(), "2027-01-15T12:00:00.000Z");
+  assert.equal(enviarEm("saida", datas).toISOString(), "2027-01-16T12:00:00.000Z");
   assert.equal(enviarEm("7_dias_antes", { entrada: "2026-12-03", saida: "2027-01-01" }).toISOString(), "2026-11-26T13:00:00.000Z", "virada de mês");
   assert.equal(rotuloHorario("2026-11-10T13:00:00.000Z"), "ter., 10/11 às 10h");
 });
@@ -94,8 +96,8 @@ test("aditivo que muda as datas reagenda só o que não saiu", () => {
   const linhas = [
     { id: "a", quando: "7_dias_antes" as const, enviar_em: "2026-11-10T13:00:00.000Z", enviada_em: "2026-11-10T13:00:00Z", cancelada_em: null, texto: "x" },
     { id: "b", quando: "entrada" as const, enviar_em: "2026-11-17T12:00:00.000Z", enviada_em: null, cancelada_em: null, texto: "x" },
-    { id: "c", quando: "saida" as const, enviar_em: "2027-01-15T12:00:00.000Z", enviada_em: null, cancelada_em: null, texto: "x" },
-    { id: "d", quando: "saida" as const, enviar_em: "2027-01-15T12:00:00.000Z", enviada_em: null, cancelada_em: "2026-11-01T00:00:00Z", texto: "x" },
+    { id: "c", quando: "saida" as const, enviar_em: "2027-01-16T12:00:00.000Z", enviada_em: null, cancelada_em: null, texto: "x" },
+    { id: "d", quando: "saida" as const, enviar_em: "2027-01-16T12:00:00.000Z", enviada_em: null, cancelada_em: "2026-11-01T00:00:00Z", texto: "x" },
   ];
   // Aditivo: entrada vai para 20/11, mais um mês no fim (saída 14/02).
   assert.deepEqual(reagendar(linhas, { entrada: "2026-11-20", saida: "2027-02-14" }), [
@@ -103,4 +105,21 @@ test("aditivo que muda as datas reagenda só o que não saiu", () => {
     { id: "c", enviar_em: "2027-02-14T12:00:00.000Z" },
   ]);
   assert.deepEqual(reagendar(linhas, datas), [], "mesmas datas: nada muda");
+});
+
+test("E1089: no dia da SAÍDA o contrato fechado pelo ciclo ainda vale para a mensagem 'No dia da saída'", () => {
+  // Bloco até 15/01 (última noite) → saída 16/01. O ciclo diário fecha o contrato às 00h de 16/01.
+  const saida = "2027-01-16";
+  assert.equal(contratoValeParaAProgramada("ativo", "saida", saida, "2027-01-16"), true);
+  assert.equal(contratoValeParaAProgramada("encerrado_sem_renovacao", "saida", saida, "2027-01-16"), true, "fechado pelo ciclo, no dia da saída: ainda sai");
+  assert.equal(contratoValeParaAProgramada("encerrado_sem_renovacao", "saida", saida, "2027-01-17"), false, "depois do dia da saída: cancela");
+  // Só a mensagem da saída; e só o fecho pelo ciclo — acordo e cancelamento continuam a cancelar.
+  assert.equal(contratoValeParaAProgramada("encerrado_sem_renovacao", "entrada", saida, "2027-01-16"), false);
+  assert.equal(contratoValeParaAProgramada("encerrado_em_acerto", "saida", saida, "2027-01-16"), false);
+  assert.equal(contratoValeParaAProgramada("cancelado", "saida", saida, "2027-01-16"), false);
+  assert.equal(contratoValeParaAProgramada("encerrado_sem_renovacao", "saida", null, "2027-01-16"), false, "sem data de saída, não adivinha");
+  // E a decisão de envio segue a mesma: com o contrato valendo, às 9h do dia da saída envia.
+  const p = { enviar_em: enviarEm("saida", { entrada: "2026-11-17", saida }).toISOString(), enviada_em: null, cancelada_em: null, texto: "Deixe as chaves na portaria." };
+  assert.deepEqual(decidirEnvio(p, contratoValeParaAProgramada("encerrado_sem_renovacao", "saida", saida, "2027-01-16"), new Date("2027-01-16T13:00:00Z")), { acao: "enviar" });
+  assert.deepEqual(decidirEnvio(p, contratoValeParaAProgramada("cancelado", "saida", saida, "2027-01-16"), new Date("2027-01-16T13:00:00Z")), { acao: "cancelar", motivo: "contrato_encerrado" });
 });

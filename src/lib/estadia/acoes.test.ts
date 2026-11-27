@@ -8,10 +8,10 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { PROIBIDAS_NO_COGUMELO, acoesDaEstadia, encerrarDaEstadia, hrefPedirServico, mensagemDaEstadia, type ContratoDaEstadia } from "./acoes.ts";
+import { fonteSemComentarios as semComentarios } from "../fonte-sem-comentarios.ts";
 
 const SRC = new URL("../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(join(SRC, p), "utf8");
-const semComentarios = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
 
 const ID = "11111111-2222-4333-8444-555555555555";
 const IMOVEL = "66666666-7777-4888-8999-aaaaaaaaaaaa";

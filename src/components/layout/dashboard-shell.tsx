@@ -24,7 +24,7 @@ import {
   INTERVALO_CONTADORES_MS,
   ROTA_CONTADORES,
   badgeDaEquipe,
-  normalizarContadores,
+  camposNaoLidos, normalizarContadores,
   type ContadoresPainel,
 } from "@/lib/painel/contadores";
 import { useViewMode, identidadeUsuario, nomeAvatarExibicao } from "@/lib/roles";
@@ -174,9 +174,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
         if (!json) return falhou();
-        falhasContadores.current = 0;
-        setContadores(normalizarContadores(json));
+        // E1093: o campo do contexto que o servidor não leu fica com o que a casca já sabia ("não li" não é "não tem"),
+        // e a leitura repete-se logo, com as mesmas esperas da falha.
+        setContadores((antes) => normalizarContadores(json, antes));
         setLido(true);
+        if (camposNaoLidos(json).length) falhou();
+        else falhasContadores.current = 0;
       })
       .catch((e: unknown) => {
         // O abort da limpeza do efeito (troca de rota) não é falha da leitura.

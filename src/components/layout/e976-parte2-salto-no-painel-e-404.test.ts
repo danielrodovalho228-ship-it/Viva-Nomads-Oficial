@@ -7,9 +7,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios as semComentarios } from "../../lib/fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
-const semComentarios = (s: string) => s.replace(/\{\/\*[\s\S]*?\*\/\}/g, "").replace(/^\s*\/\/.*$/gm, "");
 
 test("E976-2: o link de salto é um componente só, com o mesmo texto e destino do site público", () => {
   const c = ler("src/components/layout/pular-para-conteudo.tsx");

@@ -1,21 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getGestorElegibilidade, type GestorElegibilidade } from "@/lib/data/planos-actions";
-import { textoElegibilidadeGestor } from "@/lib/planos/gestor";
+import { getTaxaDaConta, type TaxaDaConta } from "@/lib/data/planos-actions";
+import { textoTaxaNaConta } from "@/lib/planos/gestor";
+import { FRASE_ESCADA_TAXAS } from "@/config/textos-regulados";
 
 /**
- * E224 — Conta › Plano (no cartão de Pagamentos, só para o proprietário): quantos imóveis com documento aprovado
- * ele tem e quantos faltam para o Plano Gestor; liberado → "Fale com a Viva para ativar". SEM botão de assinar: a
- * cobrança não está ligada, então a tela não promete pagamento online.
+ * Conta › Plano (no cartão de Pagamentos, só para o proprietário). Prompt 078 (16/11/2026): no lugar da elegibilidade
+ * do Plano Gestor, a taxa de serviço que vale hoje para a conta (a mesma leitura que congela a taxa no aceite), a
+ * escada e a linha das carteiras — tudo da fonte única. SEM botão de assinar: não há plano pago.
  */
 export function PlanoGestorConta() {
-  const [e, setE] = useState<GestorElegibilidade | null>(null);
+  const [t, setT] = useState<TaxaDaConta | null | undefined>(undefined);
   useEffect(() => {
     let vivo = true;
-    getGestorElegibilidade()
-      .then((r) => vivo && setE(r))
-      .catch(() => undefined);
+    getTaxaDaConta()
+      .then((r) => vivo && setT(r))
+      .catch(() => vivo && setT(null));
     return () => {
       vivo = false;
     };
@@ -25,8 +26,8 @@ export function PlanoGestorConta() {
       <h2 id="conta-plano-titulo" className="font-title text-2xl font-semibold text-ink">
         Plano
       </h2>
-      <p className="mt-2 text-sm text-ink" data-testid="conta-plano-gestor-texto" data-elegivel={e ? (e.elegivel ? "1" : "0") : undefined}>
-        {e ? textoElegibilidadeGestor(e) : "Carregando…"}
+      <p className="mt-2 text-sm text-ink" data-testid="conta-plano-gestor-texto" data-taxa={t ? String(t.taxa) : undefined} data-origem={t?.origem}>
+        {t === undefined ? "Carregando…" : t ? textoTaxaNaConta(t) : FRASE_ESCADA_TAXAS}
       </p>
     </section>
   );

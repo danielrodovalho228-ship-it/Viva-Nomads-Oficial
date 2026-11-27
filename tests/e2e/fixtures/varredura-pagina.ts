@@ -155,7 +155,10 @@ async function varrerPaginaUmaVez(page: Page, respostasRuins: string[]): Promise
         // Foto fictícia do laboratório (ou de terceiro) que não carrega já fica fora do critério de imagem: aqui também.
         Array.from(el.querySelectorAll("img")).some((i) => (i.complete && i.naturalWidth > 0) || reIgnorar.test(i.currentSrc || i.src)) ||
         !!el.querySelector("video, canvas, iframe, svg") ||
-        [el, ...Array.from(el.querySelectorAll("*"))].some((n) => getComputedStyle(n).backgroundImage !== "none");
+        [el, ...Array.from(el.querySelectorAll("*"))].some((n) => getComputedStyle(n).backgroundImage !== "none") ||
+        // E1123 (ORDEM-DUET-532): o recurso desenhado da conta sem foto (ORDEM-386: as iniciais no círculo) é conteúdo —
+        // só com texto dentro; o bloco esvaziado volta a ser "área de foto vazia".
+        Array.from(el.querySelectorAll("[data-recurso-sem-foto]")).some((n) => (n.textContent ?? "").trim().length > 0);
       if (!temMidia) foto.push(`área de foto vazia (aspect-ratio ${cs.aspectRatio}): ${desc(el)}`);
     }
 

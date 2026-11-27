@@ -47,8 +47,10 @@ test.describe("T54 — Upload de foto seguro", () => {
 
     test("F47 na tela: SVG é recusado com mensagem visível e o contador não sobe", async ({ page }) => {
       await abrirCadastroNovo(page, "networkidle");
+      // A2 (ORDEM-DUET-669): o aviso de rascunho pode chegar depois do 1.º quadro do assistente. Em vez de uma leitura
+      // instantânea ("não está à vista, segue"), espera-o como a t8 (até 4 s); só sem ele segue com o cadastro novo.
       const outro = page.getByRole("button", { name: "Começar outro" });
-      if (await outro.isVisible().catch(() => false)) await outro.click();
+      await outro.waitFor({ state: "visible", timeout: 4_000 }).then(() => outro.click(), () => undefined);
       // Assistente em 10 passos: as fotos são o 2º passo, logo depois do Tipo (que não tem trava).
       await noPasso(page, "tipo");
       await page.getByTestId("cadastro-continuar").click();

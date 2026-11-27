@@ -3,9 +3,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { ASSUNTO_PIONEIRAS, PIONEIRAS, emailPioneira, textoPioneira } from "./pioneiras-e287.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
-const envio = ler("./pioneiras-e287-envio.ts").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+const envio = fonteSemComentarios(ler("./pioneiras-e287-envio.ts"));
 
 test("o assunto é o manual aprovado, EXATO, sem o sufixo de marca", () => {
   assert.equal(ASSUNTO_PIONEIRAS, "Você foi uma das primeiras 💚 — novidades da Viva Nomads");

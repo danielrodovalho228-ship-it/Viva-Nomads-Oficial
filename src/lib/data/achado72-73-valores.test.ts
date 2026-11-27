@@ -26,6 +26,6 @@ test("achado 73: propostaAcordadaDoLead lança na falha das duas leituras; ningu
   const fn = s.slice(s.indexOf("export async function propostaAcordadaDoLead"));
   assert.match(fn, /if \(erroProposta\) throw new Error\(MSG_VALORES_SEM_CONFERIR\);\s*if \(!p\) return null;/);
   assert.match(fn, /if \(erroVersao\) throw new Error\(MSG_VALORES_SEM_CONFERIR\);\s*if \(!v\) return null;/);
-  assert.match(ler("src/lib/data/actions.ts"), /propostaAcordadaDoLead\(admin, lead\.id as string\)\.catch\(\(\) => "falhou" as const\);\s*if \(acordada === "falhou"\) return \{ ok: false, error: MSG_VALORES_SEM_CONFERIR \};/);
-  assert.match(ler("src/lib/data/fechamento-servidor.ts"), /propostaAcordadaDoLead\(admin, lead\.id as string\)\.catch\(\(\) => "falhou" as const\);\s*if \(acordada === "falhou"\) return \{ status: 503, error: MSG_VALORES_SEM_CONFERIR \};/);
+  assert.match(ler("src/lib/data/actions.ts"), /propostaDoFechamentoDoLead\(admin, lead\.id as string, input\.propostaId \?\? null\)\.catch\(\(\) => "falhou" as const\);\s*if \(acordada === "falhou"\) return \{ ok: false, error: MSG_VALORES_SEM_CONFERIR \};/, "E1141: a leitura da estadia do fecho");
+  assert.match(ler("src/lib/data/fechamento-servidor.ts"), /propostaDoFechamentoDoLead\(admin, lead\.id as string, propostaPedida\)\.catch\(\(\) => "falhou" as const\);\s*if \(acordada === "falhou"\) return \{ status: 503, error: MSG_VALORES_SEM_CONFERIR \};/, "E1141: a leitura da estadia do fecho");
 });

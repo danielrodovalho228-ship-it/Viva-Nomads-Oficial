@@ -66,7 +66,7 @@ test("a distância vem do ponto marcado (calculada), nunca do formulário", () =
   assert.equal(dados.pontoMarcado, true);
   // E o formulário de detalhes não consegue enfiar o grupo do tipo (o servidor descarta).
   const acoes = ler("src/lib/data/actions.ts");
-  assert.match(acoes, /const \{ chacara: _ignorada, \.\.\.novos \} = normalizarDetalhes\(input\.detalhesAnuncio\)/);
+  assert.match(acoes, /const \{ chacara: _ignorada, pagamento: pagamentoEnviado, \.\.\.novos \} = normalizarDetalhes\(input\.detalhesAnuncio\)/);
   // O servidor troca o lat/lng pelo ponto marcado e calcula a distância a partir dele.
   const srv = ler("src/lib/anuncio/chacara-servidor.ts");
   assert.match(srv, /return \{ \.\.\.input, lat: Number\(p\.lat\), lng: Number\(p\.lng\) \}/);

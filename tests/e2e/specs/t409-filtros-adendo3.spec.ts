@@ -8,9 +8,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, novaS
  *   B — Casa, SEM caução (só seguro-fiança);
  *   C — Studio, mínimo de 120 dias;
  *   D — Apartamento, máximo de 60 dias.
- * Ninguém tem medição de internet.
- * Prova: Wi-Fi fora do painel e ?comod=wifi ignorado (E39); sem medição, a seção de velocidade não existe e ?internet= é
- * ignorado (E40); caução e estadia filtram (E41); tipos em 0 ficam com "· 0" e desativados (E42); ?seguro=1 vira a
+ * Ninguém tem medição de internet; todos informam 200 Mbps.
+ * Prova: Wi-Fi fora do painel e ?comod=wifi ignorado (E39); E1078 (ORDEM-382 (a), asserção alterada): sem medição, a
+ * seção de VELOCIDADE existe pela velocidade informada e ?internet=100 vale (os 4 informam 200); o estrito ?medida=1,
+ * sem medição nenhuma, é ignorado (E40); caução e estadia filtram (E41); tipos em 0 ficam com "· 0" e desativados (E42); ?seguro=1 vira a
  * garantia "Seguro-fiança" e não há chip à parte (E43.6); Pronto para Morar é um estado só — folha e chip ativo (E43.7).
  */
 const SAIDA = "tests/laboratorio/saida";
@@ -60,21 +61,21 @@ test.describe("T409 — Adendo 3 ao FILTROS-B: auditoria dos filtros (E39–E43)
     await apagarContas([ids.dono]);
   });
 
-  test("E39 + E40: sem Wi-Fi no painel (?comod=wifi ignorado); sem medição, sem seção de velocidade (?internet= ignorado)", async ({ page }) => {
+  test("E39 + E40 + E1078: sem Wi-Fi no painel (?comod=wifi ignorado); sem medição, a velocidade informada vale e ?medida=1 é ignorado", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     const folha = await abrirFolha(page, `${LOCAL}&comod=wifi&internet=100&medida=1`);
     // Os filtros antigos não tiram ninguém: os 4 continuam contando.
     await expect.poll(() => total(page), { timeout: 30_000 }).toBe(4);
     await expect(folha.getByTestId("faceta-comodidade-wifi")).toHaveCount(0);
     await expect(folha.getByTestId("painel-comodidades").getByRole("button", { name: /Wi-Fi/ })).toHaveCount(0);
-    await expect(folha.getByTestId("painel-internet")).toHaveCount(0);
-    await expect(folha.getByTestId("painel-internet-vazio")).toBeVisible();
+    await expect(folha.getByTestId("painel-internet")).toBeVisible();
+    await expect(folha.getByTestId("painel-internet-vazio")).toHaveCount(0);
     await page.screenshot({ path: `${SAIDA}/t409-sem-wifi-sem-medicao-1280.png`, fullPage: false });
     await page.keyboard.press("Escape");
-    // A URL perde o filtro de internet e a comodidade antiga; nenhum chip ativo de internet.
-    await expect(page).not.toHaveURL(/[?&](internet|medida)=/);
+    // A URL mantém a velocidade (?internet=100) e perde o estrito sem medição (?medida=1) e a comodidade antiga.
+    await expect(page).toHaveURL(/[?&]internet=100/);
+    await expect(page).not.toHaveURL(/[?&]medida=/);
     await expect(page).not.toHaveURL(/comod=wifi/);
-    await expect(page.getByRole("button", { name: /Remover filtro Internet/ })).toHaveCount(0);
     await expect(cartoes(page)).toHaveCount(4, { timeout: 20_000 });
   });
 

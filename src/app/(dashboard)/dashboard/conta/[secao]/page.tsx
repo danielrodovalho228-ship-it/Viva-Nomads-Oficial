@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { CascaConta } from "@/components/account/casca-conta";
 import { TelaAjuda } from "@/components/account/tela-ajuda";
+import { ContaDeTesteDoServidor } from "@/components/account/conta-de-teste-do-servidor";
 import { TelaPapeis } from "@/components/account/tela-papeis";
 import { PerfilTela } from "@/components/account/perfil-tela";
 import { AncoraAntigaDaConta, VoltarAoMenuSeTelaEstreita } from "@/components/account/largura-e-ancora";
@@ -16,6 +17,8 @@ import { RedesPrivadas } from "@/components/account/redes-privadas";
 import { SUBTITULO_PAPEIS } from "@/lib/conta/tela-papeis";
 import { ALIAS_SECAO, type SecaoConta } from "@/lib/conta/secoes";
 import { getPerfilInicial } from "@/lib/data/perfil-actions";
+import { usuarioDaSessaoServidor } from "@/lib/auth/sessao-servidor";
+import { comLimite, LIMITE_CASCA_MS } from "@/lib/painel/com-limite";
 
 /**
  * Telas da Conta (A1): cada seção na casca (menu lateral no computador; "‹ Conta" no celular), um H1 por tela.
@@ -40,10 +43,11 @@ export default async function ContaSecaoPage({ params }: { params: Promise<{ sec
       return (
         <CascaConta ativo="perfil" topoDireita>
           <PerfilTela inicial={inicial} />
+          {/* E979: cookie da largura desatualizado → no celular, volta ao menu da Conta. Vem ANTES da âncora antiga: lê a
+              âncora do endereço para decidir, e a âncora antiga pode tirá-la (a do próprio Perfil, sem alvo na tela). */}
+          <VoltarAoMenuSeTelaEstreita />
           {/* E798: /dashboard/conta#documento (link antigo) chega aqui pelo redirecionamento do servidor; vai à seção certa. */}
           <AncoraAntigaDaConta />
-          {/* E979: cookie da largura desatualizado → no celular, volta ao menu da Conta. */}
-          <VoltarAoMenuSeTelaEstreita />
         </CascaConta>
       );
     }
@@ -88,12 +92,20 @@ export default async function ContaSecaoPage({ params }: { params: Promise<{ sec
           <PagamentosConta />
         </CascaConta>
       );
-    case "ajuda":
+    case "ajuda": {
+      // E1136: a Caixa de e-mails de teste precisa de saber se a conta é de teste mesmo quando a sessão do navegador
+      // não leu o perfil. Lido aqui, com prazo, e passado por contexto; não leu = null (vale a sessão do navegador).
+      const contaDeTeste = await comLimite(usuarioDaSessaoServidor(), LIMITE_CASCA_MS)
+        .then((u) => (u ? u.isTeste === true : null))
+        .catch(() => null);
       return (
         <CascaConta ativo="ajuda">
-          <TelaAjuda />
+          <ContaDeTesteDoServidor valor={contaDeTeste}>
+            <TelaAjuda />
+          </ContaDeTesteDoServidor>
         </CascaConta>
       );
+    }
     default:
       notFound();
   }

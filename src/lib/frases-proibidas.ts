@@ -10,7 +10,21 @@ export interface RegraProibida {
   re: RegExp;
   /** Só vale nestes prefixos de caminho (sem caminho informado, vale sempre). */
   escopo?: string[];
+  /** Arquivos de HISTÓRICO em que a regra não vale (prefixos de caminho), cada um com o motivo em HISTORICO_078. */
+  historico?: string[];
 }
+
+/**
+ * Prompt 078 (decisão do Daniel, 16/11/2026) — onde "Plano Gestor" e a taxa de 4% ainda podem aparecer: só histórico.
+ * Testes (`*.test.ts`, `tests/`) e `docs/` já ficam fora da varredura.
+ */
+export const HISTORICO_078: { prefixo: string; motivo: string }[] = [
+  { prefixo: "supabase/migrations/", motivo: "migrações já aplicadas são imutáveis (0079, 0096, 0100, 0293 criaram o plano e a faixa de 4%)" },
+  { prefixo: "supabase/producao/", motivo: "os aplicar/rollback das mesmas migrações" },
+  { prefixo: "supabase/testes/", motivo: "fases dos testes de RLS que reaplicam as migrações antigas" },
+  { prefixo: "src/config/compare-precos.ts", motivo: "os 4% dali são a taxa do ANFITRIÃO no Airbnb (referência de mercado), não a da Viva" },
+];
+const HISTORICO_078_PREFIXOS = HISTORICO_078.map((h) => h.prefixo);
 
 /** Superfícies de Parceiros (páginas públicas, componentes, regras e o atendimento sobre parceiros). */
 const SUPERFICIES_PARCEIROS = ["src/app/(public)/parceiros/", "src/components/parceiros/", "src/lib/parceiros/", "src/lib/atendimento/parceiros-texto.ts"];
@@ -43,6 +57,20 @@ export const FRASES_PROIBIDAS: RegraProibida[] = [
     id: "taxa-cobrada-do-morador",
     regra: "Taxas: a taxa da Viva é cobrada só do proprietário; o morador não paga taxa da plataforma.",
     re: /taxa[^.\n"`]{0,40}\b(cobrad[ao]|paga)\b[^.\n"`]{0,20}\b(d[oa]|pel[oa]) (morador|inquilin)/i,
+  },
+  {
+    id: "plano-gestor-publico",
+    regra: "Prompt 078 (Daniel, 16/11/2026): o Plano Gestor deixou de ser oferta pública — nenhuma superfície cita 'Plano Gestor'. Carteira a partir de 20 imóveis ou administradora fala com a Viva (TEXTO_CARTEIRAS, config/planos.ts).",
+    re: /\bplano\s+gestor\b/i,
+    historico: HISTORICO_078_PREFIXOS,
+  },
+  {
+    id: "taxa-de-4-publica",
+    regra: "Prompt 078: não existe taxa de serviço de 4% publicada — a escada publicada termina em 16–19 = 6% e vem de lib/cobranca/regra.ts. Condição especial é caso a caso (taxa fixada pelo admin), nunca texto de tela.",
+    // "4%" em contexto de taxa: depois de taxa/comissão/gestor/carteira/administradora/até/cobra/menor, ou antes de "por contrato",
+    // "do valor total", "sobre o valor", "sem mensalidade/assinatura". "14%", "4,5%" e "0,4%" não entram.
+    re: /\b(?:taxa|comiss[ãa]o|gestor|carteiras?|administradoras?|at[ée]|cobra|menor)\b[^.\n"`]{0,60}(?<![\d.,])4\s?%|(?<![\d.,])4\s?%[^.\n"`]{0,40}\b(?:por contrato|do valor total|sobre o valor|sem mensalidade|sem assinatura)\b/i,
+    historico: HISTORICO_078_PREFIXOS,
   },
   {
     id: "taxa-na-renovacao-em-pagina-publica",
@@ -86,9 +114,15 @@ export function semComentarios(codigo: string): string[] {
   });
 }
 
-export function achadosProibidos(texto: string, caminho?: string): { id: string; trecho: string }[] {
+/**
+ * `caminho` decide o escopo das regras; `arquivo` (padrão: o próprio caminho) decide só a exceção de histórico — a
+ * varredura fora de src/ passa o arquivo sem passar o caminho, para as regras com escopo continuarem valendo lá.
+ */
+export function achadosProibidos(texto: string, caminho?: string, arquivo: string | undefined = caminho): { id: string; trecho: string }[] {
   const achados: { id: string; trecho: string }[] = [];
-  const regras = FRASES_PROIBIDAS.filter((r) => !r.escopo || caminho === undefined || r.escopo.some((x) => caminho.startsWith(x)));
+  const regras = FRASES_PROIBIDAS.filter((r) => !r.escopo || caminho === undefined || r.escopo.some((x) => caminho.startsWith(x))).filter(
+    (r) => !(arquivo !== undefined && r.historico?.some((x) => arquivo.startsWith(x))),
+  );
   for (const linha of texto.split("\n")) {
     for (const r of regras) if (r.re.test(linha)) achados.push({ id: r.id, trecho: linha.trim().slice(0, 120) });
   }

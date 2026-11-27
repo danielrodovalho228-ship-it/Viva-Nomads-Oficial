@@ -19,7 +19,8 @@ test("o contrato que terminou em 30/10 (status cru 'ativo') é 'Encerrado' no fi
   const s = situacaoParaEquipe(c, AGORA);
   assert.equal(s.chave, "encerrado");
   assert.equal(s.rotulo, "Encerrado");
-  assert.match(seloParaEquipe(c), /^Encerrado em 30\/10\/2026$/);
+  // E1089 (coordenador): o selo mostra a SAÍDA — 31/10, o fim exclusivo do período gravado [30/09, 31/10).
+  assert.match(seloParaEquipe(c), /^Encerrado em 31\/10\/2026$/);
 });
 
 test("as situações da equipe agrupam o estado da fonte única (nunca o status cru)", () => {

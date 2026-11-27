@@ -68,10 +68,19 @@ const diaMes = (iso: string | null) => {
   return m ? `${m[3]}/${m[2]}` : null;
 };
 
-export function rotuloPagamentoBloco(p: { tipo: string; valor: number; bloco?: BlocoDoPagamento | null; valorMensal?: number | null }): string {
+export function rotuloPagamentoBloco(p: {
+  tipo: string;
+  valor: number;
+  bloco?: BlocoDoPagamento | null;
+  valorMensal?: number | null;
+  /** E1072: 2 em diante = registro complementar do mesmo bloco. */
+  parte?: number | null;
+  /** E1072: o total do registro complementar (aluguel + contas + limpeza dele). */
+  total?: number | null;
+}): string {
   const valor = brlTaxa(p.valor);
-  // A Caução é do contrato, nunca de um bloco (complemento do #884).
-  if (p.tipo === "caucao") return `Caução do contrato — ${valor}`;
+  // E1225 (ORDEM-DUET-1127): a caução registada pela tela é a do BLOCO; a de antes, sem bloco, é a do contrato (#884).
+  if (p.tipo === "caucao") return p.bloco ? `Caução do bloco ${p.bloco.numero} — ${valor}` : `Caução do contrato — ${valor}`;
   if (!p.bloco) return `Pagamento — ${valor}`;
   const { numero, meses } = p.bloco;
   const ini = diaMes(p.bloco.inicio);
@@ -79,6 +88,8 @@ export function rotuloPagamentoBloco(p: { tipo: string; valor: number; bloco?: B
   // E1067: a duração vem dos dias reais do bloco ("31 dias"), não dos meses de referência que ele guarda.
   const duracao = duracaoDoBloco(p.bloco);
   const periodo = `${duracao.texto}${ini && fim ? `: ${ini} a ${fim}` : ""}`;
+  // E1072: o registro complementar diz que o é e traz o total DELE (pode não ter aluguel nenhum).
+  if ((p.parte ?? 1) > 1) return `Bloco ${numero}, registro complementar (${periodo}) — ${brlTaxa(p.total != null && Number.isFinite(p.total) ? Number(p.total) : p.valor)}`;
   const vm = p.valorMensal != null && Number.isFinite(p.valorMensal) ? Number(p.valorMensal) : null;
   const conta = !duracao.emDias && meses > 1 && vm != null && vm > 0 && Math.abs(vm * meses - p.valor) < 0.01 ? ` (${meses} × ${brlTaxa(vm)})` : "";
   return `Bloco ${numero} (${periodo}) — ${valor}${conta}`;

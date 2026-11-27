@@ -136,11 +136,17 @@ test("os números do cabeçalho batem com a lista", () => {
     assert.match(d.corrigidoPor ?? "", /^[0-9a-f]{8}$/, `${a.spec}: sem o commit do merge`);
     assert.ok(a.origem.length > 20, `${a.spec}: sem dizer de onde veio`);
   }
-  // O que entra por fora de corrida é intermitente: tem item de instabilidade e está na quarentena.
+  // O que entra por fora de corrida é intermitente: tem item de instabilidade e está na quarentena — até a correção.
+  // Asserção alterada por decisão do Gerente (ORDEM-DUET-103, decisão 3, 18/11; julgada na ORDEM-DUET-246): antes, o achado tinha de estar SEMPRE na
+  // quarentena, e a guarda reprovava quando a correção tirava a entrada. Agora ele está na quarentena OU tem a correção
+  // registrada (corrigidoPor, o commit que corrigiu); nunca as duas coisas, nem nenhuma.
   const emQuarentena = new Set((JSON.parse(readFileSync("tests/laboratorio/quarentena.json", "utf8")).entradas as { spec: string }[]).map((e) => e.spec));
   for (const spec of fora.acrescentados) {
-    assert.equal(lista.find((d) => d.spec === spec)!.disposicao, "instavel", `${spec}: fora de corrida só entra o intermitente`);
-    assert.ok(emQuarentena.has(spec), `${spec}: intermitente fora da quarentena`);
+    const d = lista.find((x) => x.spec === spec)!;
+    assert.equal(d.disposicao, "instavel", `${spec}: fora de corrida só entra o intermitente`);
+    const corrigido = /^[0-9a-f]{8}$/.test(d.corrigidoPor ?? "");
+    assert.ok(emQuarentena.has(spec) || corrigido, `${spec}: intermitente fora da quarentena e sem a correção registrada`);
+    assert.ok(!(emQuarentena.has(spec) && corrigido), `${spec}: já corrigido e ainda na quarentena`);
   }
   assert.match(arquivo.corrida.base, /^[0-9a-f]{8}$/);
 });

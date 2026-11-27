@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
+import { esperarSemEsqueleto } from "../fixtures/esqueleto";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /**
@@ -84,6 +85,9 @@ test.describe("T57 — Contrato semeado: inquilino e proprietário veem e assina
     await expect(assinar).toBeVisible({ timeout: 20_000 });
     await expect(page.getByTestId("contrato-inquilino-estado").first()).toHaveText("Aguardando assinatura · falta você e o proprietário");
     await page.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
+    // B1 (ORDEM-DUET-669): a ausência só vale com a tela real à vista — sem o esqueleto e com o título "Minhas estadias".
+    await esperarSemEsqueleto(page, "Minhas estadias");
+    await expect(page.getByRole("heading", { level: 1, name: "Minhas estadias" }), "a lista de estadias abriu").toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId("locacao-titulo")).toHaveCount(0);
     await page.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
     await page.getByTestId("contrato-inquilino-assinar").first().click();
@@ -145,8 +149,10 @@ const inq = { email: `inq.ass.${sufixo}@lab.vivanomads.test`, nome: "Ivo Assina"
 // E210: o período do contrato (o bloco): entrada em 10 dias, saída 60 dias depois.
 const diaISO = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 const PERIODO = { inicio: diaISO(10), fim: diaISO(69) };
-// E671 (07/11): o e-mail do contrato imprime o fim gravado no bloco — a mesma data de saída da página do contrato e da estadia.
-const SAIDA = PERIODO.fim;
+// E1089 (coordenador, 22/11): o e-mail do contrato imprime a SAÍDA — o dia seguinte ao fim gravado no bloco (a última
+// noite) —, na forma única "Entrada … · Saída … · N diárias". Antes (E671) imprimia o fim gravado.
+const SAIDA = diaISO(70);
+const DIARIAS = 60;
 const br = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 const ids: { dono?: string; inq?: string; imovel?: string; contrato?: string } = {};
 
@@ -327,8 +333,9 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
     await expect(page).toHaveURL(new RegExp(`/dashboard/estadia/${ids.contrato}/confirmada$`), { timeout: 45_000 });
     await expect(page.getByTestId("confirmada-texto")).toContainText("Contrato assinado pelos dois lados.");
     await page.goto(`/dashboard/contratos/${ids.contrato}`, { waitUntil: "domcontentloaded" });
+    // B1 (ORDEM-DUET-669): primeiro o positivo (as duas assinaturas na tela), depois a ausência do formulário de assinar.
+    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(proprietário\) assinou em [\s\S]+\(inquilino\) assinou em /, { timeout: 30_000 }); // jornada de assinatura: nome + data e hora de cada um
     await expect(page.getByTestId("form-assinar")).toHaveCount(0);
-    await expect(page.getByTestId("contrato-aviso-assinatura")).toHaveText(/\(proprietário\) assinou em [\s\S]+\(inquilino\) assinou em /); // jornada de assinatura: nome + data e hora de cada um
     const { data } = await adm().from("contratos").select("assinado_inquilino_em, assinado_proprietario_em").eq("id", ids.contrato!).single();
     expect(data?.assinado_proprietario_em, "assinatura do dono gravada pelo servidor").not.toBeNull();
     await page.context().close();
@@ -350,9 +357,9 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
     // O dono recebeu "o morador assinou … falta a sua assinatura" (1ª assinatura).
     const doDono = await corpo(ids.dono!, /Falta a sua assinatura/);
     expect(doDono).toContain(titulo);
-    expect(doDono).toMatch(/Período: \d{2}\/\d{2}\/\d{4} a \d{2}\/\d{2}\/\d{4}/);
+    expect(doDono).toMatch(/Período: Entrada \d{2}\/\d{2}\/\d{4} · Saída \d{2}\/\d{2}\/\d{4} · \d+ diárias/);
     // E210: as datas reais do contrato (o bloco), nunca "Período: a ".
-    expect(doDono).toContain(`Período: ${br(PERIODO.inicio)} a ${br(SAIDA)}`);
+    expect(doDono).toContain(`Período: Entrada ${br(PERIODO.inicio)} · Saída ${br(SAIDA)} · ${DIARIAS} diárias`);
     expect(doDono).not.toMatch(/Período: a /);
     expect(doDono).toMatch(/Valor mensal: R\$ /);
     expect(doDono).toContain("Próximo passo: assine pela plataforma");
@@ -361,6 +368,6 @@ test.describe("T57 — Contrato semeado: as duas partes assinam pela tela com o 
     expect(doMorador).toContain(titulo);
     expect(doMorador).toContain("pague a Caução e o 1º pagamento direto ao proprietário");
     expect(doMorador).not.toContain("Há uma atualização no seu contrato");
-    expect(doMorador).toContain(`Período: ${br(PERIODO.inicio)} a ${br(SAIDA)}`);
+    expect(doMorador).toContain(`Período: Entrada ${br(PERIODO.inicio)} · Saída ${br(SAIDA)} · ${DIARIAS} diárias`);
   });
 });

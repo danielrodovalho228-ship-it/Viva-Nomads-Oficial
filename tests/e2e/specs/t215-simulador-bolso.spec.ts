@@ -6,6 +6,8 @@ import { MOTIVO_PRECOS_SUSPENSA, PRECOS_SUSPENSA } from "../fixtures/precos";
 /**
  * T215 — "O que vai para o seu bolso" em /precos#simulador (ordem 6696611c, tela 10), a 390 e 1280 px.
  * Os números esperados saem da mesma função da tela (calcularBolso → comissaoSobreContrato).
+ * Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): com 20 e com 31 imóveis a taxa é 6% (16 ou mais), não os
+ * 4% do Plano Gestor, que deixou de existir.
  */
 const limpo = (t: string | null) => (t ?? "").replace(/ /g, " ").replace(/\s+/g, " ").trim();
 
@@ -39,14 +41,19 @@ for (const [nome, largura] of [["390 px", 390], ["1280 px", 1280]] as const) {
       await caixa.screenshot({ path: `tests/laboratorio/saida/t215-${process.env.T215_FASE ?? "depois"}-bolso-${largura}.png` });
     });
 
-    test("muda a faixa pela quantidade de imóveis; 20+ é o Plano Gestor a 4% (E564: a faixa negociável saiu)", async ({ page }) => {
+    // 078 (Daniel, 16/11/2026): o título era "muda a faixa pela quantidade de imóveis; 20+ é o Plano Gestor a 4% (E564: a faixa negociável saiu)".
+    test("muda a faixa pela quantidade de imóveis; 16 ou mais é 6% — 20 e 31 também, sem Plano Gestor a 4% (a faixa negociável saiu)", async ({ page }) => {
       test.skip(PRECOS_SUSPENSA, MOTIVO_PRECOS_SUSPENSA);
       await page.goto("/precos");
       const imoveis = page.getByTestId("bolso-imoveis");
-      for (const [n, pct] of [["3", "10%"], ["6", "8%"], ["16", "6%"], ["20", "4%"], ["31", "4%"]] as const) {
+      // 078 (Daniel, 16/11/2026): antes ["20", "4%"] e ["31", "4%"] (Plano Gestor); agora 20 e 31 pagam 6%, como 16.
+      for (const [n, pct] of [["3", "10%"], ["6", "8%"], ["16", "6%"], ["20", "6%"], ["31", "6%"]] as const) {
         await imoveis.fill(n);
         await expect(page.getByTestId("bolso-taxa-detalhe")).toContainText(`${pct} sobre o valor mensal × meses`);
+        // 078 (Daniel, 16/11/2026): e em nenhuma quantidade o simulador mostra 4% nem cita o Plano Gestor.
+        await expect(page.getByTestId("bolso-taxa-detalhe")).not.toContainText(/(?<![\d.,])4\s?%/);
       }
+      await expect(page.getByTestId("simulador-bolso")).not.toContainText(/Plano Gestor/i);
       await expect(page.getByTestId("bolso-negociavel")).toHaveCount(0);
     });
 

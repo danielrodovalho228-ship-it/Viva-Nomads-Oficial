@@ -3,6 +3,8 @@
   A confirmação de identidade e o documento do imóvel (matrícula) são exigidos para PUBLICAR, mas só apareciam no passo 10.
   Este módulo diz, a quem começa o cadastro, o que vai ser pedido e em que pé está cada coisa.
 */
+import { comoEmBreve } from "../identidade/estado.ts";
+
 export type EstadoIdentidadeTrava = "carregando" | "indisponivel" | "ok" | "em_breve" | "pendente" | "sem_cpf";
 export type EstadoDocumentoTrava = "nenhum" | "revisao" | "corrija" | "aprovado" | string;
 export type EstadoTrava = "ok" | "falta" | "em_analise" | "carregando";
@@ -25,7 +27,7 @@ export function estadoIdentidadeParaTrava(situacao: { identidade: { estado: stri
   // E699 (d): sem resposta, "carregando" eterno parecia pendência; se a leitura falhou, diz isso. A resposta do servidor sempre vence.
   if (!situacao) return leituraFalhou ? "indisponivel" : "carregando";
   if (situacao.identidade.estado === "confirmada") return "ok";
-  if (situacao.identidade.estado === "em_breve") return "em_breve";
+  if (comoEmBreve(situacao.identidade.estado)) return "em_breve";
   return situacao.temCpf ? "pendente" : "sem_cpf";
 }
 

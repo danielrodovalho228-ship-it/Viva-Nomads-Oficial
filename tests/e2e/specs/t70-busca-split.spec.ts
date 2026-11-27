@@ -100,6 +100,11 @@ test.describe("T70 — busca split-screen no computador", () => {
     await expect(page.locator(`[data-testid="card-resultado"][data-id="${idPin}"]`)).toHaveAttribute("data-destaque", "1");
     // E442: o hover no preço abre o cartão do imóvel (antes: só destaque e a etiqueta nativa).
     await expect(page.getByTestId("card-pin-mapa"), "hover no preço abre o cartão").toHaveAttribute("data-id", idPin);
+    // E1023 (decisão do Gerente): com o cartão do imóvel aberto no mapa, o card da lista MANTÉM o destaque — também
+    // quando o mouse sai do preço e entra no cartão (antes o destaque vinha só do hover do pin e caía aqui).
+    await page.getByTestId("card-pin-mapa").hover();
+    await expect(page.getByTestId("card-pin-mapa"), "o cartão segue aberto com o mouse nele").toHaveAttribute("data-id", idPin);
+    await expect(page.locator(`[data-testid="card-resultado"][data-id="${idPin}"]`), "E1023: card da lista destacado com o cartão aberto").toHaveAttribute("data-destaque", "1");
   });
 
   test("3. clique no pin abre o card no mapa, sem sair da página; × fecha", async ({ page }) => {

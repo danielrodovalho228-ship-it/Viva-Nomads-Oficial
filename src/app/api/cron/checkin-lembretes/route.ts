@@ -6,6 +6,7 @@ import { hojeEmBrasilia, inicioDaEstadia, lembreteDoDia, textoLembrete, type Lem
 import { primeiroPagamentoConfirmado, type LinhaEstadoContrato } from "@/lib/contrato-estado";
 import { corpoDaChegada, lembreteDeChegadaPermitido } from "@/lib/estadia/emails-chegada";
 import { instrucoesEfetivas, normalizarInstrucoes } from "@/lib/estadia/instrucoes";
+import { saidaPeloFim } from "@/lib/texto-do-periodo";
 
 /**
  * Check-in garantido (ordem 404cd213, item 2): lembrete da entrada ao proprietário e ao inquilino quando faltam
@@ -62,7 +63,8 @@ export async function GET(request: Request) {
       const estadia = {
         imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
         entrada: inicio,
-        saida: blocos.map((b) => b.fim).sort().at(-1) ?? null,
+        // E1089: a linha "Saída" do e-mail é o dia da SAÍDA (o dia seguinte à última noite gravada).
+        saida: saidaPeloFim(blocos.map((b) => b.fim).sort().at(-1)) || null,
         horarioEntrada: linha?.horario || prop?.checkin_after,
         horarioSaida: prop?.checkout_before,
       };

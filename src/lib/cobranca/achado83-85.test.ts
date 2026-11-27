@@ -5,6 +5,8 @@
   Achado 84: fotoJaUsada engolia o erro → "foto nova" → a prova repetida passava na trava antifraude.
   Achado 85: capturaPeloToken engolia o erro → "foto não feita na hora / link inválido" (403) com o link válido.
   Roda: node --test src/lib/cobranca/achado83-85.test.ts
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): taxaDoDonoAgora não lê mais profiles.account_type (a quinta
+  leitura, "e5", saiu); a guarda cobre as três leituras que sobraram.
 */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -15,7 +17,11 @@ const ler = (p: string) => readFileSync(new URL(`../../../${p}`, import.meta.url
 test("achado 83: a taxa do dono lança na falha; os quatro pontos que congelam a taxa recusam com o aviso", () => {
   const t = ler("src/lib/cobranca/taxa-servidor.ts");
   assert.match(t, /if \(error\) throw new Error\(MSG_TAXA_SEM_LEITURA\);/);
-  assert.match(t, /if \(e1 \|\| e2 \|\| e3 \|\| e5\) throw new Error\(MSG_TAXA_SEM_LEITURA\);/);
+  // 078 (Daniel, 16/11/2026): antes /if \(e1 \|\| e2 \|\| e3 \|\| e5\) …/ — o "e5" era a leitura de profiles.account_type, que saiu
+  // (o tipo da conta não entra mais na taxa). A guarda lança nas três leituras que ficaram.
+  assert.match(t, /if \(e1 \|\| e2 \|\| e3\) throw new Error\(MSG_TAXA_SEM_LEITURA\);/);
+  // 078 (Daniel, 16/11/2026): e nenhuma leitura fica fora da guarda — a taxa do dono não consulta mais o tipo da conta.
+  assert.doesNotMatch(t.slice(t.indexOf("export async function taxaDoDonoAgora")), /account_type|\be[45]\b/);
   assert.doesNotMatch(t.slice(t.indexOf("export async function faixasVigentes"), t.indexOf("export async function taxaDoDonoAgora")), /catch \{/);
   assert.match(ler("src/lib/data/leads-actions.ts"), /if \(!t\) return \{ ok: false, error: MSG_TAXA_SEM_LEITURA \};/);
   const p = ler("src/lib/data/propostas-actions.ts");

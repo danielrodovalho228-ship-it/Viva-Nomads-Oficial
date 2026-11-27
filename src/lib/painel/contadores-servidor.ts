@@ -7,33 +7,41 @@ import { contarAprovacoesPendentes } from "@/lib/data/agentes-actions";
 import { imoveisAtivosDoDono, temImovelAnunciado } from "@/lib/data/menu-actions";
 import { temPapelParceiro } from "@/lib/parceiros/painel-actions";
 import { ehObservadorQa } from "@/lib/qa/observador";
-import { CONTADORES_VAZIOS, contadoresVisiveis, type ContadoresPainel } from "@/lib/painel/contadores";
+import { CONTADORES_VAZIOS, contadoresVisiveis, type CampoDeContexto, type ContadoresPainel } from "@/lib/painel/contadores";
+import { usuarioExigido } from "@/lib/supabase/usuario-da-leitura";
 
 /**
  * Números e contexto do menu do painel — FONTE ÚNICA no servidor (PROP-0). A rota /api/painel/contadores (releituras da
  * casca) e o layout do painel (1ª pintura, sem piscar) chamam esta mesma função. A sessão decide quem é; cada contagem
  * já filtra pelo dono/inquilino e pela RLS; os números da equipe só para admin.
  * "sem-sessao": ninguém logado (a rota responde 401; o layout não passa valor inicial).
+ * E1093: "não li" não é "não tem". A sessão por confirmar LANÇA (a rota responde 503 e a casca mantém o que sabia); os
+ * dois campos que dizem QUEM a conta é (tem imóvel, é parceiro) são pedidos com `exigir`, sempre dentro de contexto(...):
+ * a leitura que falha entra em `naoLidos`, em vez de sair como falso. Os números seguem como antes (a falha vale 0).
  */
 export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sessao"> {
   const supabase = await createClient();
   if (!supabase) return CONTADORES_VAZIOS;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioExigido(supabase);
   if (!user) return "sem-sessao";
 
   const admin = await ehAdmin(supabase, user.id).catch(() => false);
   const zero = () => Promise.resolve(0);
+  const naoLidos: CampoDeContexto[] = [];
+  const contexto = <T,>(campo: CampoDeContexto, ler: () => Promise<T>, vazio: T): Promise<T> =>
+    ler().catch(() => {
+      naoLidos.push(campo);
+      return vazio;
+    });
   const [contratosParaAssinar, propostasAguardando, documentosPendentes, aprovacoesPendentes, temImovel, imoveisAtivos, parceiro, locacoes, observadorQa, mensagensRecebidas] =
     await Promise.all([
       contarContratosParaAssinar().catch(() => 0),
       contarPropostasAguardando().catch(() => 0),
       admin ? countDocumentosPendentes().catch(() => 0) : zero(),
       admin ? contarAprovacoesPendentes().catch(() => 0) : zero(),
-      temImovelAnunciado().catch(() => false),
+      contexto("temImovel", () => temImovelAnunciado({ exigir: true }), false),
       imoveisAtivosDoDono().catch(() => 0),
-      temPapelParceiro().catch(() => false),
+      contexto("parceiro", () => temPapelParceiro({ exigir: true }), false),
       getMinhasLocacoes().catch(() => []),
       // E216: só faz sentido para admin (o observador da QA é admin).
       admin ? ehObservadorQa(user.id).catch(() => false) : Promise.resolve(false),
@@ -53,6 +61,7 @@ export async function contadoresDoPainel(): Promise<ContadoresPainel | "sem-sess
     estadiaAtiva: locacoes.some((l) => l.status === "ativo"),
     observadorQa,
     mensagensRecebidas,
+    ...(naoLidos.length ? { naoLidos } : {}),
   };
   return contadoresVisiveis(c, admin);
 }

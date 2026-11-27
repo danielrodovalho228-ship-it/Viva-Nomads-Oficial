@@ -17,7 +17,7 @@ import type { LimitesPrivados, Negociacao } from "@/lib/anuncio/negociacao";
 import { cn, formatBRL, hojeBR } from "@/lib/utils";
 import { calcularTudoIncluido, parcelasDoMes, type CamposTotalMes } from "@/lib/precos";
 import { MESES_EXEMPLO } from "@/config/planos";
-import { ROTULO_CAUCAO_PREVIA, caucaoDoMensal } from "@/lib/anuncio/passo10-colunas";
+import { caucaoDoAnuncio } from "@/lib/anuncio/passo10-colunas";
 import { CampoDataUnico, Erro, Labeled, MarcaSugerido, Toggle } from "./campos";
 import type { CampoSugerido } from "./tipos";
 
@@ -66,8 +66,8 @@ export function EtapaPreco(p: {
   erros: Record<string, string>;
 }) {
   const aluguel = Number(p.monthlyPrice) || 0;
-  // E1054: a caução calculada que a revisão mostra (E1050), da mesma função.
-  const caucao = caucaoDoMensal(aluguel);
+  // E1054 + E1061: a caução calculada que a revisão mostra (E1050), da mesma função — a da página do imóvel.
+  const caucao = caucaoDoAnuncio(aluguel, Number(p.minPeriod) || 30);
   // E110: um horizonte só no Passo 8 — o exemplo do texto acompanha os meses do simulador.
   const [mesesExemplo, setMesesExemplo] = useState(MESES_EXEMPLO);
   const condo = Number(p.condoFee) || 0;
@@ -288,8 +288,8 @@ export function EtapaPreco(p: {
                     {/* E1054: o valor calculado da caução, a mesma conta e o mesmo rótulo da revisão (E1050). */}
                     {g.key === "caucao_avista" && caucao != null && (
                       <p className="ml-1 mt-1 flex items-baseline justify-between gap-3 text-sm" data-testid="preco-caucao-valor">
-                        <span className="text-muted">{ROTULO_CAUCAO_PREVIA}</span>
-                        <span className="font-semibold text-ink">{formatBRL(caucao)}</span>
+                        <span className="text-muted">{caucao.rotulo}</span>
+                        <span className="font-semibold text-ink">{formatBRL(caucao.valor)}</span>
                       </p>
                     )}
                   </div>

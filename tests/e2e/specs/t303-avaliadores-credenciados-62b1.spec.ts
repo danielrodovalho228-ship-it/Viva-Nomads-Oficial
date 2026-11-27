@@ -184,7 +184,7 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     // A, B e C estão entre os sugeridos (outros avaliadores ativos da cidade podem existir no laboratório).
     for (const l of ["A", "B", "C"] as const) await expect(escolha).toContainText(`nº ${(await credenciamento(l))!.numero_credenciado}`);
     await expect(escolha).not.toContainText(x.numero_credenciado);
-    await escolha.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${a.numero_credenciado}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    await escolha.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${a.numero_credenciado}` }).getByRole("button", { name: "Escolher" }).click();
     await expect.poll(async () => (await pedido()).avaliador_id, { timeout: 20_000 }).toBe(a.id);
     const { data: designados } = await adm().from("vistoria_designacoes").select("avaliador_id").eq("pedido_id", pedidoId);
     expect((designados ?? []).map((r) => r.avaliador_id)).not.toContain(x.id);
@@ -209,7 +209,7 @@ test.describe("T303 — avaliadores credenciados (62-B1)", () => {
     const d = await entrar(browser, dono.email, senha);
     await comChave(d);
     await d.goto(`/dashboard/imoveis/${ids.imovel}/nivel#avaliacao`, { waitUntil: "domcontentloaded" });
-    await d.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${b.numero_credenciado}` }).getByRole("button", { name: "Escolher este avaliador" }).click();
+    await d.getByTestId("avaliacao-sugerido").filter({ hasText: `nº ${b.numero_credenciado}` }).getByRole("button", { name: "Escolher" }).click();
     await expect.poll(async () => (await pedido()).avaliador_id, { timeout: 20_000 }).toBe(b.id);
     await d.context().close();
   });

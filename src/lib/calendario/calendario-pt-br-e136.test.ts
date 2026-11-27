@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 /*
   E136 NÃO FECHOU (QA do Muse, 25/10): o pop-up do seletor de datas do navegador sai no idioma do NAVEGADOR. Guarda:
@@ -29,7 +30,7 @@ const NATIVO_PERMITIDO = new Set([
 
 test("E136 — ninguém abre o pop-up de datas do navegador", () => {
   for (const f of arquivos(".")) {
-    const src = ler(f).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+    const src = fonteSemComentarios(ler(f));
     assert.doesNotMatch(src, /showPicker\(/, `${f} abre o pop-up nativo (sai no idioma do navegador)`);
     if (!NATIVO_PERMITIDO.has(f)) assert.doesNotMatch(src, /type="date"/, `${f}: use CampoData (calendário em pt-BR)`);
   }

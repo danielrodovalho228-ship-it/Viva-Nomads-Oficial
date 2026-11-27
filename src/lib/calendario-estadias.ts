@@ -4,6 +4,7 @@
   segmentos por semana (linha da grade de 7 colunas). Uma estadia que atravessa a semana
   quebra na linha seguinte; `abreAqui` marca onde a pílula mostra avatar e nome.
 */
+import { saidaPeloFim } from "./texto-do-periodo.ts";
 
 export interface SegmentoPilula {
   /** Linha da grade do mês (0 = primeira semana). */
@@ -77,10 +78,13 @@ export function segmentosDaPilula(
   }));
 }
 
-/** Texto do leitor de tela: "Reservado por Ana, 05/11 a 20/12". */
+/**
+ * Texto do leitor de tela: "Reservado por Ana: entrada 05/11, saída 21/12". E1089: `fimISO` é a ÚLTIMA NOITE gravada nos
+ * blocos (é até ela que a pílula pinta as noites ocupadas); a SAÍDA que a pessoa lê é o dia seguinte.
+ */
 export function rotuloPilula(primeiroNome: string, inicioISO: string, fimISO: string): string {
   const br = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
-  return `Reservado por ${primeiroNome}, ${br(inicioISO)} a ${br(fimISO)}`;
+  return `Reservado por ${primeiroNome}: entrada ${br(inicioISO)}, saída ${br(saidaPeloFim(fimISO) || fimISO)}`;
 }
 
 /** Só o primeiro nome (privacidade e espaço). Vazio → "Inquilino". */

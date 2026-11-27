@@ -16,6 +16,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { TEXTO_CAIXA_RESTRITA_QA } from "./observador-regras.ts";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../../${p}`, import.meta.url), "utf8");
 
@@ -50,7 +51,7 @@ test("acesso da conta de QA: /admin/premissas = o modelo do /simulacao em leitur
   const p = ler("app/(dashboard)/admin/premissas/page.tsx");
   assert.match(p, /if \(!\(await ehObservadorQa\(uid\)\)\) redirect\("\/simulacao"\);/);
   assert.match(p, /<ModeloFinanceiro pagina="simulacao" leitura \/>/);
-  assert.doesNotMatch(p.replace(/\/\*[\s\S]*?\*\//g, ""), /listarCaixa|caixa_socios|caixa-actions/);
+  assert.doesNotMatch(fonteSemComentarios(p), /listarCaixa|caixa_socios|caixa-actions/);
   // O modelo não grava nada (só cálculo no navegador).
   assert.doesNotMatch(ler("components/financeiro/modelo-financeiro.tsx"), /"use server"|from "@\/lib\/data\/|\.insert\(|\.update\(/);
 });

@@ -13,6 +13,9 @@ import { test, expect, type Page } from "@playwright/test";
 const SAIDA = "tests/laboratorio/saida";
 const FORA_DA_FOLHA = ["Preço por mês", "Tipo de imóvel", "Nível a partir de", "Entrada em"];
 const NA_FOLHA = ["Quartos", "Estadia", "Do seu jeito", "Contrato", "Comodidades"];
+// E1193 (ORDEM-DUET-868): a entrada é sempre 30 dias à frente do agora — a data gravada (01/12/2026) deixava de ser
+// futura e o caso "com uma data na URL" deixava de exercer a entrada futura.
+const ENTRADA_FUTURA = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
 
 async function abrirFolha(page: Page, url: string) {
   await expect(async () => {
@@ -32,7 +35,7 @@ for (const [largura, altura] of [[390, 844], [1280, 800]] as const) {
 
     test("1 e 3. a folha só com o que não tem pílula; 'Limpar tudo' é botão ao lado do 'Mostrar N'", async ({ page }) => {
       // Com uma data na URL: antes, a folha repetia a entrada ("Entrada em …") e a flexibilidade.
-      const folha = await abrirFolha(page, "/buscar?local=Uberl%C3%A2ndia&entrada=2026-12-01");
+      const folha = await abrirFolha(page, `/buscar?local=Uberl%C3%A2ndia&entrada=${ENTRADA_FUTURA}`);
       for (const t of NA_FOLHA) await expect(folha.getByText(t, { exact: true }).first(), t).toBeVisible();
       for (const t of FORA_DA_FOLHA) await expect(folha.getByText(t), t).toHaveCount(0);
       for (const id of ["faceta-preco-2500", "faceta-tipo-apartamento", "filtro-nivel-conforto", "painel-tipo", "painel-nivel", "painel-datas"]) {

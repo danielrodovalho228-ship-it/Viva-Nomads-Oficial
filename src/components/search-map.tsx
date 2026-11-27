@@ -80,6 +80,9 @@ interface SearchMapProps {
   /** Imóvel com o card aberto no mapa (clique no pin). */
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
+  /** E1023: avisa qual imóvel está com o cartão aberto no mapa (clique OU prévia do hover), para a lista manter o
+   * destaque do card enquanto o cartão está aberto. */
+  onAberto?: (id: string | null) => void;
   /** Endereço buscado (geocoding) — centro do raio, recebe um marcador próprio. */
   focus?: { lat: number; lng: number } | null;
   /** Raio (km) desenhado ao redor do endereço buscado. */
@@ -161,6 +164,18 @@ function rotulosDeCidade(map: mapboxgl.Map): Obstaculo[] {
   }
 }
 
+/** E1023: repassa à lista o imóvel com o cartão aberto no mapa (o da prévia do hover não passava pelo pai). */
+function useAvisarAberto(abertoId: string | null, onAberto?: (id: string | null) => void) {
+  const ref = useRef(onAberto);
+  useEffect(() => {
+    ref.current = onAberto;
+  });
+  useEffect(() => {
+    ref.current?.(abertoId ?? null);
+  }, [abertoId]);
+  useEffect(() => () => ref.current?.(null), []);
+}
+
 /** E524 (D10): com o cartão do pin aberto, Esc fecha (antes só clicando no cartão dava para sair). */
 function useFecharCartaoComEsc(aberto: boolean, fechar: () => void) {
   const fecharRef = useRef(fechar);
@@ -192,6 +207,7 @@ function SearchMapbox({
   onHover,
   selectedId = null,
   onSelect,
+  onAberto,
   focus,
   radiusKm = 10,
   className,
@@ -217,6 +233,7 @@ function SearchMapbox({
   });
   /** O cartão aberto: o do clique (fica) ou o da prévia do hover. */
   const abertoId = selectedId ?? previa.id;
+  useAvisarAberto(abertoId, onAberto);
   // E442: entrar no cartão mantém a prévia aberta (dá para clicar); sair fecha com a mesma folga do preço.
   useEffect(() => {
     if (!popupEl) return;
@@ -489,7 +506,7 @@ function enquadrarMapa(map: L.Map, list: Property[], focus?: { lat: number; lng:
   else if (pts.length > 1) map.fitBounds(L.latLngBounds(pts), { padding: [48, 48], maxZoom: 14 });
 }
 
-function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, onSelect, focus, radiusKm = 10, className }: SearchMapProps) {
+function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, onSelect, onAberto, focus, radiusKm = 10, className }: SearchMapProps) {
   const [popupEl] = useState(() => {
     if (typeof document === "undefined") return null;
     const el = document.createElement("div");
@@ -518,6 +535,7 @@ function SearchMapLeaflet({ properties, activeId, onHover, selectedId = null, on
   });
   /** O cartão aberto: o do clique (fica) ou o da prévia do hover. */
   const abertoId = selectedId ?? previa.id;
+  useAvisarAberto(abertoId, onAberto);
   // E442: entrar no cartão mantém a prévia aberta (dá para clicar); sair fecha com a mesma folga do preço.
   useEffect(() => {
     if (!popupEl) return;

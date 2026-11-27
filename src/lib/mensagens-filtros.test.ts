@@ -57,7 +57,8 @@ test("conversa sem papel conhecido aparece só em Todas", () => {
 });
 
 test("período legível, ou vazio quando não há contrato", () => {
-  assert.equal(formatarPeriodo("2026-11-13", "2027-02-15"), "13/11 – 15/02");
+  // E1089 (coordenador): 15/02 é a última noite gravada; a lista mostra entrada → saída (16/02).
+  assert.equal(formatarPeriodo("2026-11-13", "2027-02-15"), "13/11 → 16/02");
   assert.equal(formatarPeriodo(null, null), "");
 });
 

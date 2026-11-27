@@ -1,9 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
+import { TEXTO_CARTEIRAS } from "../../../src/config/planos";
 
 /*
   T1191 — E592/E594 (Frente B): a /simulacao dos sócios projeta com o modelo validado — aluguel médio de R$ 3.000 e taxa
   média de 10% — e mostra as lacunas de custo (o que ainda não tem preço) num quadro próprio. 390 e 1280 px, com o código
   dos sócios. Só leitura: nenhuma escrita, nenhuma chave alterada.
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): o seletor "Faixa da carteira" tem 4 faixas (12/10/8/6%), a
+  última "16 ou mais imóveis"; a faixa de 4% do Gestor e o detalhe dela (`faixa-gestor-detalhe`) saíram, e no lugar há a
+  linha de carteiras (`faixa-carteiras` = TEXTO_CARTEIRAS).
 */
 const limpo = (t: string) => t.replace(/ /g, " ").replace(/\s+/g, " ").trim();
 
@@ -39,10 +43,20 @@ test.describe("T1191 — E592/E594: /simulacao com o modelo validado e as lacuna
       await expect(page.getByTestId("regime-presumido-iss5")).toHaveCount(0);
       await expect(page.getByRole("group", { name: "Operador local" })).toHaveCount(0); // sem operador pago desde 18/10
       await expect(page.getByTestId("faixa-10")).toHaveAttribute("aria-pressed", "true");
-      for (const f of ["12", "10", "8", "6", "4"]) await expect(page.getByTestId(`faixa-${f}`)).toBeVisible();
-      // E623: a faixa do Gestor (estrutura de 04/11/2026) aparece com o que ela traz.
-      await expect(page.getByTestId("faixa-4")).toContainText("Gestor: 20+ imóveis ou administradora");
-      await expect(page.getByTestId("faixa-gestor-detalhe")).toContainText("cadastro assistido e contato direto");
+      // 078 (Daniel, 16/11/2026): antes eram 5 faixas ("12", "10", "8", "6", "4"); a de 4% (Gestor) saiu.
+      for (const f of ["12", "10", "8", "6"]) await expect(page.getByTestId(`faixa-${f}`)).toBeVisible();
+      await expect(page.getByTestId("seletor-faixa").getByRole("button")).toHaveCount(4);
+      // 078 (Daniel, 16/11/2026): antes `faixa-4` trazia "Gestor: 20+ imóveis ou administradora" (E623); agora a faixa
+      // de 4% não existe e a última é a de 6%, "16 ou mais imóveis".
+      await expect(page.getByTestId("faixa-4")).toHaveCount(0);
+      await expect(page.getByTestId("faixa-6")).toHaveText("6% (16 ou mais imóveis)");
+      await expect(page.getByTestId("seletor-faixa")).not.toContainText(/Gestor|20\+|(?<![\d.,])4\s?%/i);
+      // 078 (Daniel, 16/11/2026): antes `faixa-gestor-detalhe` trazia "cadastro assistido e contato direto"; agora o
+      // detalhe do Gestor não existe e no lugar dele há a linha de carteiras.
+      await expect(page.getByTestId("faixa-gestor-detalhe")).toHaveCount(0);
+      await expect(page.getByTestId("faixa-carteiras")).toHaveText(TEXTO_CARTEIRAS);
+      expect(corpo).not.toMatch(/cadastro assistido e contato direto|Gestor: 20\+|ou administradora \(Gestor\)/);
+      expect(corpo).toContain("6–15 imóveis 8% · 16+ imóveis 6%");
       // E622: equilíbrio 10 no Simples (padrão) e 13 no Presumido (16,33% + INSS de R$ 1.200, a confirmar com o Rodolfo).
       await expect(page.getByTestId("equilibrio-fixo")).toContainText("10 contratos por mês");
       await page.getByTestId("regime-presumido").click();

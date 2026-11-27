@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { CAUCAO_FRASE } from "./faixas.ts";
 import { achadosNoTexto } from "./varredura-texto.ts";
+import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 
 const ler = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
@@ -73,7 +74,7 @@ test("#645 (ajuste do Moacir): comparativo e /precos dizem 'contrato' e 'Cauçã
 
 test("t118 (achado do Moacir): config do comparativo publicado não usa 'check-in' nem 'reserva' (nem na citação do Airbnb)", () => {
   const cfg = ler("config/compare-precos.ts");
-  const texto = cfg.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const texto = fonteSemComentarios(cfg);
   assert.doesNotMatch(texto, /check[- ]?(in|out)\b/i);
   assert.doesNotMatch(texto, /\breservas?\b/i);
 });

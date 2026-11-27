@@ -14,6 +14,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 import { FILTROS_PAINEL_VAZIOS, type FiltrosPainel, contarFiltrosPainel, filtroPrecoJustoLigado, passaNoPainel, passaPrecoJusto, resumoFiltros } from "./painel-filtros.ts";
 import { facetaInterruptor } from "./facetas.ts";
 import { PRECO_JUSTO_COMPARADOR } from "../flags.ts";
@@ -45,7 +46,7 @@ test("contador = imóveis com o selo; com 0 fica desabilitado (não some); ligad
 });
 
 test("o filtro não depende mais da chave em lugar nenhum (painel e /buscar)", () => {
-  const semComentarios = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  const semComentarios = (t: string) => fonteSemComentarios(t).replace(/\/\/.*$/gm, "");
   assert.doesNotMatch(semComentarios(ler("src/lib/busca/painel-filtros.ts")), /PRECO_JUSTO_COMPARADOR/);
   const busca = ler("src/app/(public)/buscar/search-client.tsx");
   assert.doesNotMatch(busca, /PRECO_JUSTO_COMPARADOR/);

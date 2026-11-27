@@ -18,16 +18,20 @@ export async function carregarProvas(contratoId: string): Promise<DadosProvas | 
   const visao = await getContratoParaAssinar(contratoId);
   if (!visao) return null;
 
-  const [{ data: contrato, error: e1 }, { data: ass, error: e2 }, { data: pags, error: e3 }, { data: confs, error: e4 }, { data: aditivos, error: e5 }] = await Promise.all([
+  const [{ data: contrato, error: e1 }, { data: ass, error: e2 }, { data: pags, error: e3 }, { data: confs, error: e4 }, { data: aditivos, error: e5 }, { data: docs, error: eDocs }] = await Promise.all([
     supabase.from("contratos").select("created_at, assinado_proprietario_em, assinado_inquilino_em").eq("id", contratoId).maybeSingle(),
     supabase.from("contrato_assinaturas").select(COLUNAS_PROVAS.assinaturas).eq("contrato_id", contratoId),
     supabase.from("pagamentos_bloco").select(COLUNAS_PROVAS.pagamentos).eq("contrato_id", contratoId),
     supabase.from("conferencias").select(COLUNAS_PROVAS.conferencias).eq("contrato_id", contratoId),
     supabase.from("contrato_aditivos").select(COLUNAS_PROVAS.aditivos).eq("contrato_id", contratoId),
+    // E1074: os recibos e comprovantes do contrato (o RLS mostra a cada parte os próprios documentos).
+    supabase.from("documentos_fiscais").select(COLUNAS_PROVAS.documentos).eq("contrato_id", contratoId),
   ]);
   // Achado 77: o pacote de provas é DOCUMENTO registrado (PRV). Leitura que falha não pode virar "sem assinaturas",
   // "sem pagamentos" ou "sem conferência" no PDF: lança, e a rota responde "não foi possível gerar" (nada é registrado).
   if (e1 || e2 || e3 || e4 || e5) throw new Error(MSG_PROVAS_SEM_LEITURA);
+  // E1074: a leitura dos recibos segue a mesma regra — falhou, não sai pacote sem os números.
+  if (eDocs) throw new Error(MSG_PROVAS_SEM_LEITURA);
   const ids = (confs ?? []).map((c) => c.id as string);
   const [{ data: itens, error: e6 }, { data: respostas, error: e7 }, { data: laudos, error: e8 }] = ids.length
     ? await Promise.all([
@@ -54,6 +58,7 @@ export async function carregarProvas(contratoId: string): Promise<DadosProvas | 
       inquilino: textoOuNulo((contrato as { assinado_inquilino_em?: string | null } | null)?.assinado_inquilino_em),
     },
     pagamentos: pags ?? [],
+    documentos: docs ?? [],
     conferencias: confs ?? [],
     itens: itens ?? [],
     respostas: respostas ?? [],

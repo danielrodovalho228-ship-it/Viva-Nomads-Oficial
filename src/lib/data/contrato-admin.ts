@@ -69,9 +69,11 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
     admin.from("pagamentos_bloco").select(COLUNAS_PROVAS.pagamentos).eq("contrato_id", contratoId).order("data_pagamento"),
     admin.from("conferencias").select(COLUNAS_PROVAS.conferencias).eq("contrato_id", contratoId),
     admin.from("contrato_aditivos").select(COLUNAS_PROVAS.aditivos).eq("contrato_id", contratoId),
+    // E1074: os recibos e comprovantes do contrato, para o pacote nomear cada um.
+    admin.from("documentos_fiscais").select(COLUNAS_PROVAS.documentos).eq("contrato_id", contratoId),
   ]);
   semFalhaDeLeitura(rodada1);
-  const [{ data: extra }, { data: ass }, { data: pags }, { data: confs }, { data: aditivos }] = rodada1;
+  const [{ data: extra }, { data: ass }, { data: pags }, { data: confs }, { data: aditivos }, { data: docs }] = rodada1;
   const ids = (confs ?? []).map((c) => c.id as string);
   const rodada2 = ids.length
     ? await Promise.all([
@@ -96,6 +98,7 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
     // E197: o pacote de provas lê as mesmas datas do contrato que a lista e a tela do admin.
     datasAssinatura: { proprietario: textoOuNulo(extra?.assinado_proprietario_em), inquilino: textoOuNulo(extra?.assinado_inquilino_em) },
     pagamentos: pags ?? [],
+    documentos: docs ?? [],
     conferencias: confs ?? [],
     itens: itens ?? [],
     respostas: respostas ?? [],

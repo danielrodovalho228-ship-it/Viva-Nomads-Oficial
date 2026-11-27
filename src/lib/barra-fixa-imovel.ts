@@ -1,4 +1,5 @@
 import { formatBRL } from "./utils.ts";
+import { hojeEmBrasilia } from "./datas-brasilia.ts";
 import { formatBRLExato } from "./precos.ts";
 import { statusDisponibilidade } from "./imovel-pagina.ts";
 import { resumoEmMeses, rotuloPreco } from "./cartao-preco.ts";
@@ -56,6 +57,6 @@ export function barraFixaImovel(p: {
       // E756: o total vem da regra única (estadiaDoImovel, com as limpezas únicas) também com 1 mês; sem ele, o total do mês.
       : preco ? resumoEmMeses(p.totalPeriodo ?? preco.total, preco.meses) : null,
     linha: "Caução e taxas no detalhe",
-    status: statusDisponibilidade(p.availableFrom, p.hoje ?? new Date().toISOString().slice(0, 10)),
+    status: statusDisponibilidade(p.availableFrom, p.hoje ?? hojeEmBrasilia()),
   };
 }

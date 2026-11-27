@@ -9,6 +9,53 @@ if (LABORATORIO && process.env.VERCEL_ENV === "production") {
   throw new Error("INTEGRACOES_SIMULADAS=on é só para o laboratório de testes — nunca em produção.");
 }
 
+/**
+ * E1095 (ORDEM-DUET-451) — a política de conteúdo (CSP) do site, APLICADA pelo navegador. Antes ia como
+ * "Content-Security-Policy-Report-Only": o navegador só registrava o que ela bloquearia.
+ *
+ * Cada origem de fora está aqui porque uma tela a usa:
+ *  - Supabase (a origem de NEXT_PUBLIC_SUPABASE_URL): dados, sessão, fotos, vídeos e PDFs do armazenamento. Em produção
+ *    é *.supabase.co; no laboratório é o Supabase local (http://127.0.0.1…), que a política antiga não cobria — por
+ *    isso ela só podia observar: aplicada como estava, o laboratório inteiro parava;
+ *  - Mapbox (mapa e geocodificação), ViaCEP e BrasilAPI (CEP), Cloudflare Turnstile (captcha);
+ *  - speed.cloudflare.com: a medição de internet no navegador (@cloudflare/speedtest) baixa e envia para lá;
+ *  - YouTube e Vimeo: o vídeo do imóvel por link.
+ * 'unsafe-inline' cobre o bootstrap do Next; endurecer com nonce é um próximo passo. 'unsafe-eval' só no
+ * desenvolvimento (hot reload): em produção o Next não usa eval e o mapbox-gl roda em worker blob:.
+ */
+function politicaDeConteudo(): string {
+  const producao = process.env.NODE_ENV === "production";
+  let supabase: string | null = null;
+  try {
+    supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin : null;
+  } catch {
+    supabase = null;
+  }
+  // O armazenamento e a API do Supabase: o domínio do serviço e, se for outro (laboratório, domínio próprio), a origem configurada.
+  const supabaseFora = supabase && !/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(supabase) ? ` ${supabase}` : "";
+  const armazenamento = `https://*.supabase.co${supabaseFora}`;
+  // Só nas prévias da Vercel: a barra de comentários da própria Vercel (vercel.live). Em produção ela não existe.
+  const previa = process.env.VERCEL_ENV === "preview";
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    // (As linhas de img-src e connect-src começam por texto simples de propósito: a guarda do mapa lê-as assim.)
+    "img-src 'self' data: blob: https:" + supabaseFora,
+    `font-src 'self' data:${previa ? " https://vercel.live https://assets.vercel.com" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    `script-src 'self' 'unsafe-inline' ${producao ? "" : "'unsafe-eval' "}https://challenges.cloudflare.com${previa ? " https://vercel.live" : ""}`,
+    "worker-src 'self' blob:",
+    "connect-src 'self' " + armazenamento + " https://api.mapbox.com https://events.mapbox.com https://viacep.com.br https://brasilapi.com.br https://speed.cloudflare.com" + (previa ? " https://vercel.live wss://ws-us3.pusher.com" : ""),
+    // Vídeo e áudio: os do próprio site, a prévia local (blob:) e os arquivos do armazenamento (vídeo do imóvel, áudio da caixa dos sócios).
+    `media-src 'self' blob: ${armazenamento}`,
+    // Quadros: vídeo por link, captcha e o PDF do armazenamento que o admin confere (documentos e matrículas).
+    `frame-src 'self' https://player.vimeo.com https://www.youtube.com https://challenges.cloudflare.com ${armazenamento}${previa ? " https://vercel.live" : ""}`,
+  ].join("; ");
+}
+
 const nextConfig: NextConfig = {
   // Não anuncia o framework no header (higiene) e reduz JS: só os ícones usados
   // do lucide-react entram no bundle (tree-shaking do pacote).
@@ -115,7 +162,6 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       // Cabeçalhos de segurança em TODAS as rotas (defesa em profundidade).
-      // CSP entra como Report-Only primeiro: observa violações sem quebrar nada.
       {
         source: "/:path*",
         headers: [
@@ -128,26 +174,8 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=(self)" },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-          {
-            key: "Content-Security-Policy-Report-Only",
-            value: [
-              "default-src 'self'",
-              "base-uri 'self'",
-              "object-src 'none'",
-              "frame-ancestors 'none'",
-              "form-action 'self'",
-              "img-src 'self' data: blob: https:",
-              "font-src 'self' data:",
-              "style-src 'self' 'unsafe-inline'",
-              // 'unsafe-inline' cobre o bootstrap do Next; endurecer com nonce é um próximo
-              // passo. 'unsafe-eval' só no desenvolvimento (hot reload): em produção o Next
-              // não usa eval e o mapbox-gl roda em worker blob:.
-              `script-src 'self' 'unsafe-inline' ${process.env.NODE_ENV === "production" ? "" : "'unsafe-eval' "}https://challenges.cloudflare.com`,
-              "worker-src 'self' blob:",
-              "connect-src 'self' https://*.supabase.co https://api.mapbox.com https://events.mapbox.com https://viacep.com.br https://brasilapi.com.br",
-              "frame-src 'self' https://player.vimeo.com https://www.youtube.com https://challenges.cloudflare.com",
-            ].join("; "),
-          },
+          // E1095: a política de conteúdo passou de observada (Report-Only) a APLICADA.
+          { key: "Content-Security-Policy", value: politicaDeConteudo() },
         ],
       },
       // Ponte do login social no app: o código PKCE vai na URL, então esta rota nunca manda

@@ -13,6 +13,8 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { CampoData } from "@/components/ui/campo-data";
 import { StatusChip } from "@/components/propostas/status-chip";
 import { reabrirPreAceitacao, responderProposta, type PropostaView, type VersaoView } from "@/lib/data/propostas-actions";
+import { FORMA_PAGAMENTO_DONO_ATIVA } from "@/lib/flags";
+import { ROTULO_FORMA, formasPermitidas, textoFormaFinal, validarFormaNaProposta } from "@/lib/pagamento-forma/regras";
 import {
   aplicarContraproposta,
   calcularTotais,
@@ -28,19 +30,31 @@ import {
   ehUltimaRodada,
   rotuloRodada,
   type Mudancas,
+  diasDosTermos,
 } from "@/lib/propostas/regras";
 import { rotuloTaxaServico } from "@/lib/cobranca/regra";
-import { caucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
+import { caucaoDaProposta, rotuloCaucaoDaProposta } from "@/lib/propostas/caucao-da-proposta";
 import { CAUCAO_FRASE } from "@/lib/faixas";
 import { cn, dataBR, formatBRL, hojeBR } from "@/lib/utils";
-import { formatBRLExato, precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES, primeiroPagamentoDoPreco } from "@/lib/precos";
+import { formatBRLExato, precoDaProposta, ROTULO_MENSAL, ROTULO_TOTAL_CONTRATO, ROTULO_TOTAL_MES } from "@/lib/precos";
+import { contaDoPrimeiroPagamento, primeiroPagamentoDaEstadia } from "@/lib/pagamento-componentes";
+import { resumoContratoEmDias } from "@/lib/contrato-blocos";
 import { TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO } from "@/lib/propostas/pre-aceitacao";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { listaDePropostasDoPapel } from "@/lib/propostas/lista-do-papel";
 import { estadiaDaProposta } from "@/lib/propostas/estadia-da-proposta";
+import { NotaDiasUteis } from "@/components/ui/nota-dias-uteis";
 
 /** PROP-2: o preço da versão pela fonte única (rótulos e conta aberta). */
 const precoDaVersao = (v: VersaoView) => precoDaProposta({ ...v.termos, valorMensal: v.totais.valorMensal });
+// E1072: na estadia em dias, o 1º pagamento é o 1º bloco inteiro (valor do bloco + contas do período + limpeza de
+// preparação), a mesma conta do Fechamento e do registro do bloco. Em meses inteiros, o 1º mês com tudo + a limpeza.
+const estadiaDaVersao = (v: VersaoView) => {
+  const dias = diasDosTermos(v.termos);
+  const blocos = dias > 0 && v.totais.valorMensal > 0 ? resumoContratoEmDias(dias, v.totais.valorMensal, 0).blocos : [];
+  return { dias, preco: precoDaVersao(v), blocos, comProposta: true };
+};
+const primeiroPagamentoDaVersao = (v: VersaoView) => primeiroPagamentoDaEstadia(estadiaDaVersao(v));
 
 const quem = (a: "owner" | "tenant") => (a === "owner" ? "Proprietário" : "Interessado");
 
@@ -54,15 +68,20 @@ function Linha({ rotulo, valor, forte }: { rotulo: string; valor: string; forte?
 }
 
 /**
- * E601: a caução da proposta, para as duas partes — 50% do 1º bloco proporcional, pela mesma função do formulário do
- * dono (caucaoDaProposta). A moradora vê o mesmo valor que o dono viu ao montar a proposta.
+ * E601: a caução da proposta, para as duas partes, pela mesma função do formulário do dono (caucaoDaProposta). A
+ * moradora vê o mesmo valor que o dono viu ao montar a proposta. E1061: é o número do contrato, da estadia toda.
  */
 function LinhaCaucao({ v }: { v: VersaoView }) {
   const caucao = caucaoDaProposta(v.termos, v.totais.valorMensal);
   if (!caucao) return null;
   return (
     <div className="mt-2 border-t border-sage-200 pt-2" data-testid="proposta-caucao">
-      <Linha rotulo={`Caução (50% do 1º bloco, ${caucao.dias} dias)`} valor={formatBRLExato(caucao.valor)} />
+      <Linha rotulo={rotuloCaucaoDaProposta(caucao)} valor={formatBRLExato(caucao.valor)} />
+      {caucao.blocos > 1 && (
+        <p className="text-right text-xs text-muted" data-testid="proposta-caucao-blocos">
+          {formatBRLExato(caucao.primeiroBloco)} no 1º bloco; o restante nos blocos seguintes.
+        </p>
+      )}
       <p className="text-right text-xs text-muted">{CAUCAO_FRASE}</p>
     </div>
   );
@@ -104,10 +123,15 @@ function Valores({ v }: { v: VersaoView }) {
         <div data-testid="proposta-total-contrato">
           <Linha rotulo={ROTULO_TOTAL_CONTRATO} valor={formatBRLExato(preco.totalContrato ?? 0)} forte />
         </div>
-        {/* E178: o 1º pagamento explícito (o 1º mês com tudo + a limpeza de preparação), a mesma conta do Fechamento. */}
+        {/* E178: o 1º pagamento explícito, a mesma conta do Fechamento (E1072: em dias, o 1º bloco inteiro). */}
         <div data-testid="proposta-primeiro-pagamento">
-          <Linha rotulo="1º pagamento" valor={formatBRLExato(primeiroPagamentoDoPreco(preco))} forte />
+          <Linha rotulo="1º pagamento" valor={formatBRLExato(primeiroPagamentoDaVersao(v))} forte />
         </div>
+        {contaDoPrimeiroPagamento(estadiaDaVersao(v)) && (
+          <p className="mt-1 text-right text-xs text-muted" data-testid="proposta-primeiro-pagamento-conta">
+            1º bloco, pelos dias da estadia: {contaDoPrimeiroPagamento(estadiaDaVersao(v))}.
+          </p>
+        )}
         {preco.conta && (
           <p className="mt-1 text-right text-xs text-muted" data-testid="proposta-conta">
             {preco.conta}
@@ -131,7 +155,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
   const [modo, setModo] = useState<"nada" | "recusar" | "contrapropor">("nada");
   const [motivo, setMotivo] = useState("");
   const [textoRecusa, setTextoRecusa] = useState("");
-  const [mud, setMud] = useState<Mudancas>({});
+  const [mud, setMud] = useState<Mudancas & { formaPagamento?: "bloco" | "mensal" | null }>({});
   const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -222,6 +246,15 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
             {atual.mensagem && <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 text-sm text-ink" data-testid="proposta-mensagem">“{atual.mensagem}”</p>}
             {/* E315 (QA 31/10): a validade aparece sempre no detalhe, com o mesmo rótulo da lista ("Validade: dd/mm/aaaa"),
                 inclusive depois de aceita, recusada ou expirada — antes só aparecia com a proposta em aberto. */}
+            {FORMA_PAGAMENTO_DONO_ATIVA && atual.termos.formaPagamento && (
+              <div className="mt-3 rounded-lg border border-sage-200 p-3 text-sm" data-testid="proposta-forma-final">
+                <p className="font-semibold text-ink">{textoFormaFinal(atual.termos.formaPagamento, atual.totais.dias).titulo}</p>
+                {textoFormaFinal(atual.termos.formaPagamento, atual.totais.dias).linhas.map((l) => (
+                  <p key={l} className="mt-1 text-ink">{l}</p>
+                ))}
+                <p className="mt-1 text-[13px] text-muted">{textoFormaFinal(atual.termos.formaPagamento, atual.totais.dias).nota}</p>
+              </div>
+            )}
             {p.validaAte && (
               <p className="mt-3 flex items-center gap-2 text-[13px] text-muted" data-testid="proposta-validade">
                 <Clock className="h-3.5 w-3.5" aria-hidden /> Validade: {dataBR(p.validaAte)}
@@ -351,6 +384,29 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                       {fraseMaisTempo(atual.termos, nova)}
                     </p>
                   )}
+                  {FORMA_PAGAMENTO_DONO_ATIVA && (
+                    <fieldset data-testid="contra-forma">
+                      <legend className="mb-2 text-sm font-medium text-ink">Forma de pagamento</legend>
+                      <div className="flex flex-wrap gap-2">
+                        {(["bloco", "mensal"] as const).map((f) => {
+                          const diasNova = nova.dias ?? nova.meses * 30;
+                          const selecionada = (mud.formaPagamento ?? atual.termos.formaPagamento) === f;
+                          // O dono pode propor a outra forma; o morador só pede a que o anúncio oferece. A lei vale para os dois.
+                          const ok = validarFormaNaProposta({ forma: f, dias: diasNova, escolha: p.escolhaPagamento, quem: p.papel }).ok;
+                          return (
+                            <label key={f} className={`flex h-11 cursor-pointer items-center rounded-lg border px-4 text-sm font-semibold ${selecionada ? "border-forest bg-sage-100 text-forest" : "border-sage-200 bg-white text-ink"} ${ok ? "" : "opacity-50"}`}>
+                              <input type="radio" name="contra-forma" className="sr-only" checked={selecionada} disabled={!ok} onChange={() => setMud((m) => ({ ...m, formaPagamento: f }))} data-testid={`contra-forma-${f}`} />
+                              {ROTULO_FORMA[f]}
+                              {!ok && f === "bloco" && diasNova >= 91 ? " (indisponível de 91 a 180 dias)" : ""}
+                            </label>
+                          );
+                        })}
+                      </div>
+                      {p.papel === "tenant" && formasPermitidas(p.escolhaPagamento, nova.dias ?? nova.meses * 30).length === 0 && (
+                        <p className="mt-1 text-[13px] text-muted">O proprietário ainda não definiu a forma para este período.</p>
+                      )}
+                    </fieldset>
+                  )}
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-ink">Mensagem curta (opcional)</span>
                     <textarea rows={2} maxLength={500} className="input" value={mensagem} onChange={(e) => setMensagem(e.target.value)} data-testid="contra-mensagem" />
@@ -376,7 +432,7 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                     </p>
                   )}
                   <div className="flex flex-wrap gap-2">
-                    <Button disabled={mudou.length === 0 || enviando} onClick={() => enviar({ acao: "contrapropor", mudancas: mud, mensagem: mensagem || undefined })} data-testid="enviar-contraproposta">
+                    <Button disabled={(mudou.length === 0 && !(FORMA_PAGAMENTO_DONO_ATIVA && mud.formaPagamento && mud.formaPagamento !== atual.termos.formaPagamento)) || enviando} onClick={() => enviar({ acao: "contrapropor", mudancas: mud, mensagem: mensagem || undefined })} data-testid="enviar-contraproposta">
                       {enviando ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Enviar contraproposta
                     </Button>
                     {aviso && (
@@ -468,7 +524,11 @@ export function PropostaDetalhe({ p }: { p: PropostaView }) {
                   <p data-testid="pre-aceitacao-perdeu">{p.papel === "owner" ? TEXTO_PERDEU_A_VEZ_DONO : TEXTO_PERDEU_A_VEZ}</p>
                 )}
                 {p.preAceitacao.contexto && !p.preAceitacao.encerrada && (
-                  <p data-testid="pre-aceitacao-contexto">{p.preAceitacao.contexto}</p>
+                  <>
+                    <p data-testid="pre-aceitacao-contexto">{p.preAceitacao.contexto}</p>
+                    {/* E1196: "Seu prazo de 1 dia útil…" vem com a nota do calendário único; os outros contextos ficam sem ela. */}
+                    <NotaDiasUteis de={[p.preAceitacao.contexto]} />
+                  </>
                 )}
                 <p data-testid="pre-aceitacao-corrida">{p.preAceitacao.regraCorrida}</p>
                 <p data-testid="pre-aceitacao-sem-punicao">{p.preAceitacao.semPunicao}</p>

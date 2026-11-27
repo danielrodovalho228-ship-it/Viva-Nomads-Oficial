@@ -15,7 +15,8 @@ const imovel = (o: Record<string, unknown> = {}) => ({
 });
 
 test("o catálogo tem os 3 filtros (Adendo 3, E39: Wi-Fi saiu — prometia velocidade sem medição)", () => {
-  assert.deepEqual(COMODIDADES_FILTRO.map((c) => c.chave), ["cozinha", "garagem", "lavar"]);
+  // Filtros pacote 1 (asserção alterada, ver o PR): o catálogo ganhou "ar" (Ar-condicionado); Wi-Fi segue fora.
+  assert.deepEqual(COMODIDADES_FILTRO.map((c) => c.chave), ["cozinha", "garagem", "lavar", "ar"]);
 });
 
 test("rótulos gravados viram chaves de filtro; internet não vira mais comodidade", () => {

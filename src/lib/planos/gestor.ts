@@ -1,57 +1,33 @@
 /**
- * Elegibilidade do plano GESTOR (fonte única, pura e client-safe).
+ * Conta de ADMINISTRADORA (profiles.account_type = 'gestor') e a linha da taxa na Conta. Puro e client-safe.
  *
- * Gestor é plano de ELEGIBILIDADE, não de prateleira: disponível só para
- *  (a) contas do tipo 'gestor' (administradora — marcada por admin, com
- *      auditoria); ou
- *  (b) proprietários com 20+ imóveis ATIVOS DE VERDADE (E565: publicados, com
- *      documento aprovado e calendário em dia) — GESTOR_PRECO.minimoImoveis.
- * E564: o Gestor é a taxa de 4% por contrato, sem assinatura; vale sozinho nos
- * próximos contratos (a mesma faixa de lib/cobranca/regra.ts).
- * Sem elegibilidade, o card do Gestor vira META ("valide N imóveis para
- * desbloquear") + venda assistida ("Fale com a gente"), nunca porta muda.
+ * Prompt 078 (decisão do Daniel, 16/11/2026): o Plano Gestor de 4% deixou de ser oferta pública. O TIPO de conta fica —
+ * identifica a administradora (por exemplo no filtro "gestor profissional" da busca) e é marcado pelo admin, com
+ * auditoria —, mas não dá mais taxa nenhuma: vale a escada de lib/cobranca/regra.ts como para todos. Condição especial é
+ * só a taxa fixada pelo admin, com motivo e validade. Saíram daqui gestorElegivel, faltamParaGestor, motivoGestor e
+ * textoElegibilidadeGestor.
  */
-import { GESTOR_PRECO } from "../../config/planos.ts";
-/** E564: o texto único do Gestor, também por aqui (telas que não leem @/config/planos, como /modelodenegocio). */
-export { GESTOR_TEXTO } from "../../config/planos.ts";
-
-export const GESTOR_MIN_IMOVEIS_VALIDADOS: number = GESTOR_PRECO.minimoImoveis;
+import { DIAS_PARA_NOVA_TAXA_APOS_QUEDA, pctTexto } from "../cobranca/regra.ts";
+import { FRASE_ESCADA_TAXAS } from "../../config/textos-regulados.ts";
+/** A linha das carteiras, também por aqui (telas que não leem @/config/planos, como /modelodenegocio — a mesma porta que o texto do Gestor usava). */
+export { TEXTO_CARTEIRAS } from "../../config/planos.ts";
 
 export type AccountType = "individual" | "gestor";
 
-export interface GestorSinais {
-  /** Tipo da conta (profiles.account_type). */
-  accountType: AccountType | string | null | undefined;
-  /** Nº de imóveis do dono que contam para a faixa (E565: ativos de verdade). */
-  imoveisValidados: number;
-}
-
-/** A conta pode ativar o Gestor? */
-export function gestorElegivel(s: GestorSinais): boolean {
-  if (s.accountType === "gestor") return true;
-  return (s.imoveisValidados ?? 0) >= GESTOR_MIN_IMOVEIS_VALIDADOS;
-}
-
-/** Quantos imóveis validados ainda faltam para desbloquear (0 se já elegível). */
-export function faltamParaGestor(imoveisValidados: number): number {
-  return Math.max(0, GESTOR_MIN_IMOVEIS_VALIDADOS - (imoveisValidados ?? 0));
-}
-
-/** Motivo da elegibilidade (para a UI explicar o caminho). */
-export function motivoGestor(s: GestorSinais): string {
-  if (s.accountType === "gestor") return "Conta de administradora: Plano Gestor, taxa de 4%.";
-  const faltam = faltamParaGestor(s.imoveisValidados);
-  if (faltam === 0) return `Você tem ${GESTOR_MIN_IMOVEIS_VALIDADOS}+ imóveis ativos: Plano Gestor, taxa de 4%.`;
-  return `Ative ${faltam} imóvel(is) para chegar ao Plano Gestor (${s.imoveisValidados ?? 0}/${GESTOR_MIN_IMOVEIS_VALIDADOS}).`;
-}
-
 /**
- * E224/E564 — a linha do Plano Gestor na Conta (proprietário). Sem assinatura: a taxa de 4% vale sozinha nos próximos
- * contratos de quem chega lá.
+ * A linha de Conta › Plano (proprietário): a taxa de serviço que vale hoje para a conta, a escada e a linha das
+ * carteiras (FRASE_ESCADA_TAXAS, fonte única). `origem: "admin"` = taxa combinada com a Viva (fixada pelo admin).
  */
-export function textoElegibilidadeGestor(e: { elegivel: boolean; imoveisValidados: number; faltam: number }): string {
-  if (e.elegivel) return "Plano Gestor: taxa de 4% nos próximos contratos, sem assinatura.";
-  return `Plano Gestor: taxa de 4% com ${GESTOR_MIN_IMOVEIS_VALIDADOS} imóveis ativos (publicados, com documento aprovado e calendário em dia). Você tem ${e.imoveisValidados}; faltam ${e.faltam}.`;
+export function textoTaxaNaConta(t: { taxa: number; origem: "admin" | "faixa" | "faixa_com_queda_recente"; imoveisAtivos: number }): string {
+  const quantos = t.imoveisAtivos === 1 ? "1 imóvel ativo" : `${t.imoveisAtivos} imóveis ativos`;
+  const hoje =
+    t.origem === "admin"
+      ? `Sua taxa de serviço hoje é de ${pctTexto(t.taxa)}, combinada com a Viva.`
+      : t.origem === "faixa_com_queda_recente"
+        ? // A carteira caiu de faixa há menos de 30 dias: a taxa de antes ainda vale (sem isto, "8% (2 imóveis ativos)" ao lado da escada pareceria erro).
+          `Sua taxa de serviço hoje é de ${pctTexto(t.taxa)}: depois que a sua carteira diminuiu (${quantos}), a taxa anterior vale por mais ${DIAS_PARA_NOVA_TAXA_APOS_QUEDA} dias.`
+        : `Sua taxa de serviço hoje é de ${pctTexto(t.taxa)}${t.imoveisAtivos > 0 ? ` (${quantos})` : ""}.`;
+  return `${hoje} ${FRASE_ESCADA_TAXAS}`;
 }
 
 /** E224 — como o admin vê o tipo da conta (os valores são os que definirAccountType aceita). */

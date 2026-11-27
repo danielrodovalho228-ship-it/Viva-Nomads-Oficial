@@ -16,6 +16,8 @@ import { textoFilaDocumentos } from "@/lib/admin/indicadores";
 import { chamadoForaDaPromessa, parceiroSemResposta } from "@/lib/lembretes/regras";
 import { maisAntigoParceria } from "@/lib/parceiros/fila-pendentes";
 import { haQuantoTempo, montarDecisoesAdmin, type ChaveDecisaoAdmin, type ContagemDecisao, type DecisoesAdmin } from "@/lib/admin/decisoes-admin";
+import { credenciamentosADecidir, laudosAtrasados, pedidosAEsperaDaMoradora, pedidosSemAvaliador } from "@/lib/data/avaliadores-contagens";
+import { linhaEsperaDoMorador } from "@/lib/vistoria/contagens-da-central";
 
 type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
 
@@ -132,7 +134,12 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
   const admin = createAdminClient();
   if (!admin) return null;
   const ler = <T,>(p: Promise<T>) => p.catch(() => null);
-  const [p1, p2, backup, falhas, docs, encerr, parcerias, pedidosParc, urgentes, cand48, vencidas, expirando, central, foraPromessa, parc1Dia, verificacoes, correcoes] = await Promise.all([
+  // E1163: as três filas da avaliação tiram as contas de teste; sem a lista delas, as três ficam "sem leitura".
+  const avaliacao = async () => {
+    const teste = await idsContasTeste(admin);
+    return Promise.all([pedidosSemAvaliador(admin, teste), laudosAtrasados(admin, teste), credenciamentosADecidir(admin, teste), pedidosAEsperaDaMoradora(admin, teste)]);
+  };
+  const [p1, p2, backup, falhas, docs, encerr, parcerias, pedidosParc, urgentes, cand48, vencidas, expirando, central, foraPromessa, parc1Dia, verificacoes, correcoes, filasDaAvaliacao] = await Promise.all([
     ler(chamadosAbertos(admin, "p1")),
     ler(chamadosAbertos(admin, "p2")),
     ler(lerExecucoesBackup()),
@@ -150,6 +157,7 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
     ler(parceriasSemResposta1Dia(admin, agora)),
     ler(verificacoesParaAnalisar(admin)),
     ler(correcoesSemDono(admin)),
+    ler(avaliacao()),
   ]);
 
   const contagens: Partial<Record<ChaveDecisaoAdmin, ContagemDecisao | null>> = {
@@ -179,6 +187,18 @@ export async function decisoesDoAdmin(agora = new Date()): Promise<DecisoesAdmin
     contagens.manutencao_fora_prazo = { n: central.contagens.manutencao_fora_prazo, detalhe: maisVelha("manutencao_fora_prazo") };
     contagens.conforto_contestacoes = { n: central.contagens.conforto_contestacoes, detalhe: maisVelha("conforto_contestacoes") };
     contagens.fotos_nivel = { n: central.contagens.fotos_nivel, detalhe: maisVelha("fotos_nivel") };
+  }
+  // E1163: o número e o "mais antigo" de cada fila da avaliação; a que não pôde ser lida fica fora da soma (a tela avisa).
+  if (filasDaAvaliacao) {
+    const [semAvaliador, atrasados, credenciamentos, esperaDoMorador] = filasDaAvaliacao;
+    if (semAvaliador) contagens.avaliacao_sem_avaliador = { n: semAvaliador.n, detalhe: maisAntigo(semAvaliador.maisAntigoEm) };
+    if (atrasados) contagens.avaliacao_laudo_atrasado = { n: atrasados.n, detalhe: maisAntigo(atrasados.maisAntigoEm) };
+    if (credenciamentos) contagens.avaliacao_credenciamento = { n: credenciamentos.n, detalhe: maisAntigo(credenciamentos.maisAntigoEm) };
+    // E1175: os dois estados do pedido que espera o morador, numa linha só (o texto diz cada estado).
+    if (esperaDoMorador) {
+      const l = linhaEsperaDoMorador(esperaDoMorador.espera, esperaDoMorador.recusados);
+      contagens.avaliacao_espera_moradora = { n: l.n, texto: l.texto, detalhe: maisAntigo(l.maisAntigoEm) };
+    }
   }
   if (expirando) contagens.pedidos_sem_resposta_expirando = { n: expirando.length, detalhe: "vencem em até 3 dias" };
   return montarDecisoesAdmin(contagens);

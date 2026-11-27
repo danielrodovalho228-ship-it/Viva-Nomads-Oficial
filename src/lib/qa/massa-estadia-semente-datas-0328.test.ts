@@ -32,7 +32,11 @@ for (const arquivo of [MIG, APLICAR]) {
     const s = bloco(sql, "c_bloco_s");
     assert.deepEqual(momentosDeHoje({ entrada: soma(c.inicio), fim: soma(c.fim), hoje: ALVO }), ["jornada_chegada"]);
     assert.deepEqual(momentosDeHoje({ entrada: soma(m.inicio), fim: soma(m.fim), hoje: ALVO }), ["jornada_meio_estadia"]);
-    assert.deepEqual(momentosDeHoje({ entrada: soma(s.inicio), fim: soma(s.fim), hoje: ALVO }), ["jornada_semana_saida"]);
+    // E1089 (coordenador, 22/11/2026): o `fim` do bloco é a ÚLTIMA NOITE; a saída é o dia seguinte e a "semana da saída"
+    // conta dela. A massa (já usada na prova de 10/11, que não se refaz) gravou o fim em ALVO+7: pela regra de hoje a
+    // mensagem sai em ALVO+1, e em ALVO já não sai.
+    assert.deepEqual(momentosDeHoje({ entrada: soma(s.inicio), fim: soma(s.fim), hoje: soma(1) }), ["jornada_semana_saida"]);
+    assert.deepEqual(momentosDeHoje({ entrada: soma(s.inicio), fim: soma(s.fim), hoje: ALVO }), []);
     // A saída (último dia do bloco) é ALVO+7 e o meio tem 60 dias de bloco.
     assert.equal(s.fim, 7);
     assert.equal(m.fim - m.inicio, 60);

@@ -13,6 +13,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { MAX_BYTES, MAX_IMAGENS, RAMO, ehPng, exigirRamo, listar, publicar, selecionar, textoManifesto } from "../../scripts/lab/linhas-de-base-evidencia.mjs";
+import { fonteSemComentarios } from "../../src/lib/fonte-sem-comentarios.ts";
 
 const RAIZ = new URL("../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(RAIZ + p, "utf8");
@@ -108,7 +109,7 @@ test("publicar, com git de verdade: um commit órfão só com as imagens, o mani
 });
 
 test("o script não mescla, não apaga e não escreve em outro ramo", () => {
-  const fonte = ler("scripts/lab/linhas-de-base-evidencia.mjs").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const fonte = fonteSemComentarios(ler("scripts/lab/linhas-de-base-evidencia.mjs"));
   assert.doesNotMatch(fonte, /"merge"|"rebase"|"--delete"|refs\/heads\/main|gh\s+pr/);
   const pushes = [...fonte.matchAll(/\["push"[^\]]*\]/g)].map((m) => m[0]);
   assert.deepEqual(pushes, ['["push", "--quiet", remoto, `+${commit}:refs/heads/${RAMO}`]']);

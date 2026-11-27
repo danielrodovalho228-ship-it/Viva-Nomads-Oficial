@@ -8,6 +8,8 @@ import { NFSE_ATIVA } from "../flags.ts";
 import { PREFIXOS } from "../fiscal/prefixos.ts";
 
 export const PERGUNTA_NOTA = "Você emite nota fiscal de serviço para o cliente?";
+/** E1158 (6): de quem é o documento do serviço — a mesma frase no "Seja parceiro" e no painel do parceiro (redação aprovada na ORDEM-DUET-654). */
+export const TEXTO_NOTA_DO_SERVICO = "A nota (ou o recibo) do serviço é sua, para o cliente. A Viva emite o documento só da taxa dela.";
 export const PENDENCIA_NOTA = "Responda se você emite nota fiscal de serviço para o cliente.";
 export const MOTIVO_NOTA_NAO_EMITIDA = "Não emitiu a nota fiscal declarada";
 export const ROTULO_FILTRO_NOTA = "Emite nota fiscal";

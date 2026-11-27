@@ -73,6 +73,40 @@ test.describe("T1671 — E979: cookie da largura desatualizado não esconde o me
     await expect(page).toHaveURL(/\/dashboard\/conta\/dados#documento$/, { timeout: 20_000 });
   });
 
+  test("390 px com o cookie 'larga' e a âncora antiga do próprio Perfil: fica no Perfil, sem a âncora", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await entrarNaPagina(page, conta.email, senha);
+    await page.goto("/como-funciona", { waitUntil: "load" });
+    await cookieDesatualizado(page, "larga");
+    await page.goto("/dashboard/conta#perfil-publico", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("perfil-tela")).toBeVisible({ timeout: 20_000 });
+    await expect(page).toHaveURL(/\/dashboard\/conta\/perfil$/);
+    await page.waitForTimeout(1_500); // tempo de sobra para uma volta indevida ao menu acontecer
+    await expect(page).toHaveURL(/\/dashboard\/conta\/perfil$/);
+    await expect(page.getByTestId("perfil-tela")).toBeVisible();
+  });
+
+  test("1280 px, cookie 'larga' já gravado: /dashboard/conta#perfil-publico termina em /perfil sem a âncora (t355, caso 5)", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await entrarNaPagina(page, conta.email, senha);
+    await page.goto("/dashboard", { waitUntil: "load" });
+    await expect.poll(() => cookie(page, "vn-tela"), { timeout: 20_000 }).toBe("larga");
+    await page.goto("/dashboard/conta#perfil-publico", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("perfil-tela")).toBeVisible({ timeout: 20_000 });
+    await expect(page).toHaveURL(/\/dashboard\/conta\/perfil$/);
+  });
+
+  test("1280 px: a âncora que ainda existe no Perfil (#pets) fica no endereço", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await entrarNaPagina(page, conta.email, senha);
+    await page.goto("/dashboard", { waitUntil: "load" });
+    await expect.poll(() => cookie(page, "vn-tela"), { timeout: 20_000 }).toBe("larga");
+    await page.goto("/dashboard/conta#pets", { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("perfil-tela")).toBeVisible({ timeout: 20_000 });
+    await page.waitForTimeout(1_500);
+    await expect(page).toHaveURL(/\/dashboard\/conta\/perfil#pets$/);
+  });
+
   test("1280 px: /dashboard/conta segue indo ao Perfil pelo servidor e fica lá; a marca some", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await entrarNaPagina(page, conta.email, senha);

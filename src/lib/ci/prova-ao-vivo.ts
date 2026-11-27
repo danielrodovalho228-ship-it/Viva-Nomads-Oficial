@@ -9,6 +9,7 @@
   • resultadoPorItem / comentarioDoPr: o que vai para lab_execucoes (gatilho 'ao-vivo') e para o comentário no PR.
   Sem etiqueta, sem prova automática: o item sem spec etiquetado sai como "prova automática: não há".
 */
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 export const ETIQUETA_SEGURA = "@ao-vivo-seguro";
 export const PRODUCAO = "https://vivanomads.com.br";
@@ -105,9 +106,12 @@ export const FLUXOS_PROIBIDOS_AO_VIVO: { id: string; motivo: string; re: RegExp 
   },
 ];
 
-/** Comentário de código não conta (a regra vale para o que o spec FAZ). */
+/**
+ * Comentário de código não conta (a regra vale para o que o spec FAZ). E1164: o comentário de bloco sai pelo ajudante
+ * único (um "/*" dentro de um texto não apaga mais o código até ao comentário seguinte); o fim de linha continua aqui.
+ */
 function semComentarios(fonte: string): string {
-  return fonte.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  return fonteSemComentarios(fonte).replace(/(^|[^:])\/\/.*$/gm, "$1");
 }
 
 export function motivosInseguros(fonte: string): { id: string; motivo: string }[] {

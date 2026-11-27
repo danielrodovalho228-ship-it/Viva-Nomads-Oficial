@@ -215,3 +215,22 @@ Travas que nasceram com a correção e nunca foram vermelhas numa corrida comple
 | `t1696-e1034-abrir-rascunho-sem-dados-nao-regrava.spec.ts` | E1034 | #4015 | `8e57ae18` |
 
 Esta anotação é só dados: não mexe em guarda nem em spec.
+
+## 13. Registo da Conta: o `t355` sai da quarentena e 19 `corrigidoPor` em falta (24/11, ORDEM-DUET-617 e 619)
+
+**O `t355` saiu da quarentena.** A correção (#3910, E61) está na main: a âncora antiga do próprio Perfil sai do endereço, e os dois caminhos do link antigo `/dashboard/conta#perfil-publico` terminam no mesmo endereço. A entrada do caso 5 foi tirada de `quarentena.json` e a disposição ganhou o `corrigidoPor` `22e049ed`, o commit do merge do #3910. A disposição foi **correção** (decidida no corpo do #3910): com a mesma repetição do caso, a main sem a correção deu 3 falhas, 1 instável e 2 verdes em 6; com a correção, 6 verdes em 6.
+
+**A guarda dos achados fora de corrida mudou** (asserção alterada; desenho na ORDEM-DUET-103, decisão 3; aprovada na ORDEM-DUET-246). Antes: o achado tinha de estar sempre na quarentena, e a guarda reprovava quando a correção tirava a entrada. Agora: está na quarentena **ou** tem a correção registrada (`corrigidoPor`); nunca as duas coisas, nem nenhuma.
+
+**`corrigidoPor` em falta na Conta: 19 disposições.** São testes velhos da reforma da Conta (E744) cujo PR já estava na main e que ainda apareciam como abertos. O valor é o commit do **merge do PR na main** (ORDEM-DUET-122).
+
+| PR | Disposições | `corrigidoPor` |
+|---|---|---|
+| #3934 | 1: `t198` | `a536f2f4` |
+| #3840 | 10: `t279`, `t352`, `t353`, `t354`, `t607`, `t661`, `t694`, `t1402`, `t1423`, `t1448` | `cace1911` |
+| #3841 | 7: `t385`, `t392`, `t679`, `t838`, `t1411`, `t1439`, `t1461` | `23bab36f` |
+| #3845 | 1: `t886` | `432df5f8` |
+
+Com este registo, 79 das 93 disposições têm `corrigidoPor`.
+
+**O que este registo não leva** (decisão do Gerente, ORDEM-DUET-619: este registo é só da Conta): o `t50` (#3935), o `t245`, o `t263` e o `t271` (#3908) e o `t318` (#3846), que têm o PR na main e continuam sem `corrigidoPor`; a troca do `t407` (do commit do ramo para o do merge do #3953); o `t48` (#3959); o `t400` (#3898, do Code 2); e a disposição nova do `t2157` (E1047, #4052). Nenhum é da Conta: ficam para o registo das linhas deles.

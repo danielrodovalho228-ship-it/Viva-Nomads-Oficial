@@ -6,6 +6,7 @@ import { chaveCidade } from "@/lib/cidades";
 import { capasPorImovel, emLotes } from "@/lib/admin/capas-admin";
 import { statusPorImovel } from "@/lib/documento/vigente";
 import { todasAsPaginas } from "@/lib/admin/paginas";
+import { cobrancasPorContrato } from "@/lib/admin/financeiro";
 import { eventoConta } from "@/lib/eventos/trafego";
 import { COLUNAS_ESTADO_CONTRATO, seloParaEquipe, situacaoParaEquipe, type LinhaEstadoContrato, type SituacaoEquipe } from "@/lib/contrato-estado";
 import {
@@ -615,9 +616,15 @@ export async function cobrancasTaxa(admin: Admin, leadIds: string[]): Promise<Ma
   const ids = [...new Set(leadIds.filter(Boolean))];
   if (!ids.length) return new Map();
   // Achado nº 25: a falha LANÇA — sem as cobranças, toda taxa pareceria "sem cobrança" e "Taxa a receber" inflaria.
-  const { data, error } = await admin.from("cobrancas_fechamento").select("lead_id, status, pago_em").eq("tipo", "comissao").in("lead_id", ids);
+  // E1086: uma candidatura pode ter um contrato (e uma cobrança da taxa) por proposta; cada cobrança vai para o contrato dela.
+  const { data, error } = await admin.from("cobrancas_fechamento").select("lead_id, proposta_id, status, pago_em").eq("tipo", "comissao").in("lead_id", ids);
   if (error) throw new Error("Não foi possível ler as cobranças das taxas.");
-  return new Map(((data ?? []) as { lead_id: string; status: string; pago_em: string | null }[]).map((c) => [c.lead_id, { status: c.status, pagoEm: c.pago_em }]));
+  const { data: contratos, error: erroContratos } = await admin.from("contratos").select("id, lead_id, proposta_id").in("lead_id", ids);
+  if (erroContratos) throw new Error("Não foi possível ler as cobranças das taxas.");
+  return cobrancasPorContrato(
+    (data ?? []) as { lead_id: string; proposta_id: string | null; status: string; pago_em: string | null }[],
+    (contratos ?? []) as { id: string; lead_id: string | null; proposta_id: string | null }[]
+  );
 }
 
 /** Candidaturas (leads) que são de teste: conta de teste em qualquer lado ou anúncio [TESTE…]. */

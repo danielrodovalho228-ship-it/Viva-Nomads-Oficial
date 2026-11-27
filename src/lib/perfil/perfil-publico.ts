@@ -5,6 +5,7 @@
   Contato (telefone/e-mail) nunca aparece em nenhum dos dois, em fase alguma.
 */
 import { guardContactInfo } from "../messages/contact-guard.ts";
+import { CONTATO_AVISO, contemContato } from "../pedidos/pedidos.ts";
 import { seloVinculoPublico } from "../vinculo/textos.ts";
 
 /**
@@ -79,6 +80,8 @@ export function validarBio(texto: string): Validacao<string | null> {
   if (t.length > BIO_MAX) return { ok: false, erro: `A bio tem no máximo ${BIO_MAX} caracteres.` };
   if (guardContactInfo(t).masked || LINK_RE.test(t))
     return { ok: false, erro: "Tire telefone, e-mail, @ ou link da bio: o contato fica protegido e a conversa segue pelo chat da Viva." };
+  // E1113 (ORDEM-DUET-502 §2): a regra rigorosa do gatilho (0358) — app e banco com a mesma regra, sempre.
+  if (contemContato(t)) return { ok: false, erro: CONTATO_AVISO };
   return { ok: true, valor: t };
 }
 

@@ -7,10 +7,11 @@
     • regra de corrida, por escrito: com vários pré-aceites nas mesmas datas, o primeiro a concluir o contrato fica; os demais recebem mensagem clara
       e só voltam por REABERTURA MANUAL do dono (nada volta sozinho para a fila);
     • vencido sem concluir, a pré-aceitação EXPIRA sem punição e pode ser reaberta no máximo 2 vezes; a 3ª expiração ENCERRA a candidatura, com aviso ao morador;
-    • relógio do dono (E395): 1 dia útil (seg–sex, Brasília), recomeça a cada volta da candidatura, nunca passa da entrada, um prazo por vez na tela e no e-mail;
+    • relógio do dono (E395): 1 dia útil (calendário único, E1192: seg–sex sem feriados nacionais, Brasília), recomeça a cada volta da candidatura, nunca passa da entrada, um prazo por vez na tela e no e-mail;
     • na reabertura a taxa congelada na pré-aceitação CONTINUA VALENDO (não recalcula) — decisão do Daniel.
   Roda: node --test src/lib/propostas/e722-pre-aceitacao.test.ts
 */
+import { somarDiasUteis } from "../calendario/dias-uteis.ts";
 import { emSilencio, proximoEnvioPermitido, SILENCIO } from "../notifications/silencio.ts";
 
 const H = 3_600_000;
@@ -96,18 +97,13 @@ export function encerraNaExpiracao(reaberturas: number): boolean {
 }
 
 /**
- * Relógio do dono (E395): 1 DIA ÚTIL (seg–sex, horário de Brasília) a partir de `inicio`, que recomeça a cada volta da candidatura.
- * Mesma hora do dia no próximo dia útil (sexta vira segunda); começando no fim de semana, conta a partir de segunda 00h.
+ * Relógio do dono (E395): 1 DIA ÚTIL (horário de Brasília) a partir de `inicio`, que recomeça a cada volta da candidatura.
+ * Mesma hora do dia no próximo dia útil (sexta vira segunda); começando em dia não útil, conta a partir das 00h do próximo
+ * dia útil. E1192: a conta é a do calendário único (`somarDiasUteis`), que pula também os feriados nacionais.
  * Nunca passa do início do dia de entrada. Um prazo por vez: este só vale enquanto a candidatura está com o dono.
  */
 export function prazoDoDono(inicio: Date, dataEntrada: string | null | undefined): Date {
-  const DIA = 24 * H;
-  let base = inicio.getTime();
-  const dow = (t: number) => new Date(t + BRT).getUTCDay();
-  if (dow(base) === 6) base = Math.floor((base + BRT) / DIA) * DIA - BRT + 2 * DIA; // sábado → segunda 00h
-  else if (dow(base) === 0) base = Math.floor((base + BRT) / DIA) * DIA - BRT + DIA; // domingo → segunda 00h
-  let fim = base + DIA;
-  while (dow(fim) === 0 || dow(fim) === 6) fim += DIA;
+  let fim = somarDiasUteis(inicio, 1).getTime();
   if (dataEntrada && /^\d{4}-\d{2}-\d{2}/.test(dataEntrada)) fim = Math.min(fim, inicioDoDiaBRT(dataEntrada).getTime());
   return new Date(fim);
 }

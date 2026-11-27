@@ -103,7 +103,7 @@ test.describe("T44 — Parceiros", () => {
 
   test("taxa de serviço nos textos oficiais: 10% para todas as categorias, sem a taxa fixa por faixa de fotos", () => {
     expect(TAXA_PARCERIA_TEXTO).toMatch(/Taxa de serviço: 10% sobre o valor do serviço, para todas as categorias\./);
-    expect(TAXA_PARCERIA_TEXTO).toMatch(/90% direto ao parceiro e 10% à Viva/);
+    expect(TAXA_PARCERIA_TEXTO).toMatch(/90% vai direto para o parceiro e 10% para a Viva/);
     expect(TAXA_PARCERIA_TEXTO).toMatch(/A Viva não guarda o dinheiro/);
     expect(TAXA_PARCERIA_TEXTO).not.toMatch(/R\$ ?(40|60|80)(?![\d.,])/);
   });

@@ -107,6 +107,17 @@ export function comissaoContrato(aluguelMensal: number, meses: number, rate: num
   return comissaoSobreContrato(aluguelMensal, meses, rate);
 }
 
+/**
+ * E1061 — a caução de uma estadia, em dias: a do CONTRATO (lei do produto, Daniel, 20/11/2026: metade do aluguel da
+ * estadia toda, no máximo 3 vezes o valor mensal). É a soma das cauções dos blocos de `resumoContratoEmDias`. Fonte
+ * única do número: a proposta e a candidatura leem daqui, com os dias da própria estadia; o fechamento já mostra este
+ * mesmo total. Não depende da taxa de serviço.
+ */
+export function caucaoDaEstadiaEmDias(dias: number, aluguelMensal: number): number {
+  if (!(Number(dias) > 0) || !(Number(aluguelMensal) > 0)) return 0;
+  return resumoContratoEmDias(dias, aluguelMensal, 0).caucaoTotal;
+}
+
 export interface ResumoContrato {
   blocos: BlocoPlano[];
   prazoTotalMeses: number;

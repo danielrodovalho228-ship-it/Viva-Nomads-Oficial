@@ -137,6 +137,9 @@ export async function deixarOrdem(slug: string, texto: string): Promise<{ ok: bo
   return { ok: true, aviso: avisoOrdem(ag as Pick<Agente, "nome" | "rotina_texto">, new Date()) };
 }
 
+/** A coluna ainda não existe no banco (Postgres 42703) ou no esquema que a API conhece (PGRST204). */
+const colunaAusente = (e: { code?: string }) => e.code === "42703" || e.code === "PGRST204";
+
 /**
  * Retorno do Moacir: execução que ELE disparou (ordem "Pedido do Moacir…")
  * terminou (a ronda fechou a ordem) → posta o resultado na conversa dele, uma
@@ -171,7 +174,13 @@ export async function postarRetornosDoMoacir(): Promise<number> {
     const texto = r
       ? `Retorno: ${nome} terminou o que eu pedi (${r.status}). ${String(r.resumo).replace(/\s+/g, " ").slice(0, 400)}${r.link_sessao ? ` ${r.link_sessao}` : ""} ${marca}`
       : `Retorno: ${nome} marcou o meu pedido como concluído, mas não achei a ronda com o resultado. Vou conferir na próxima. ${marca}`;
-    const { error } = await supabase.from("agentes_conversas").insert({ agente_slug: "moacir", papel: "agente", autor_slug: "moacir", texto });
+    const linha = { agente_slug: "moacir", papel: "agente", autor_slug: "moacir", texto };
+    // E1032: a conferência acima não segura duas execuções no mesmo instante (a Central é desenhada a cada pedido e a
+    // cada ação de servidor da tela; as duas passavam e as duas inseriam). A ordem vai numa coluna com índice único
+    // (0347): o banco recusa a segunda, e a recusa não conta como postado.
+    let { error } = await supabase.from("agentes_conversas").insert({ ...linha, retorno_da_ordem: o.id });
+    // Deploy antes da 0347: sem a coluna, posta como antes. Só neste caso; a recusa por unicidade fica recusada.
+    if (error && colunaAusente(error)) ({ error } = await supabase.from("agentes_conversas").insert(linha));
     if (!error) n++;
   }
   return n;

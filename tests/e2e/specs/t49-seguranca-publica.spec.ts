@@ -18,20 +18,41 @@ test.describe("T49 cabeçalhos de segurança @seguranca", () => {
       expect(h["x-content-type-options"]).toBe("nosniff");
       expect(h["x-frame-options"]).toBe("DENY");
       expect(h["referrer-policy"]).toBe("strict-origin-when-cross-origin");
-      // CSP: enforçada OU em modo observação (hoje Report-Only — ver achado no PR).
-      const csp = h["content-security-policy"] ?? h["content-security-policy-report-only"];
-      expect(csp, "sem CSP").toBeTruthy();
+      // E1095 (ORDEM-DUET-451): a CSP é APLICADA em toda página pública; o cabeçalho de observação saiu.
+      const csp = h["content-security-policy"];
+      expect(csp, "sem CSP aplicada").toBeTruthy();
+      expect(h["content-security-policy-report-only"], "a CSP ainda vai em modo de observação").toBeUndefined();
       expect(csp).toContain("frame-ancestors 'none'");
       expect(csp).toContain("object-src 'none'");
     });
   }
 
   test("CSP está ENFORÇADA (não só Report-Only)", async ({ request }) => {
-    // Falha conhecida: a CSP ainda roda em Report-Only (next.config.ts). Quando
-    // for promovida, este teste passa e o `test.fail` abaixo avisa para removê-lo.
-    test.fail(true, "CSP ainda em Report-Only — promover depois de observar as violações");
+    // E1095: promovida. Era uma falha conhecida (test.fail) enquanto a política só observava.
     const r = await request.get("/");
     expect(r.headers()["content-security-policy"]).toBeTruthy();
+    expect(r.headers()["content-security-policy-report-only"]).toBeUndefined();
+  });
+
+  test("E1095: a CSP aplicada não bloqueia nada nas páginas públicas (nenhuma violação no navegador)", async ({ page }) => {
+    test.setTimeout(180_000);
+    const violacoes: string[] = [];
+    await page.addInitScript(() => {
+      document.addEventListener("securitypolicyviolation", (e) => {
+        console.log(`CSPV|${e.effectiveDirective}|${e.blockedURI}|${e.disposition}`);
+      });
+    });
+    let rota = "";
+    page.on("console", (m) => {
+      if (m.text().startsWith("CSPV|")) violacoes.push(`${rota} → ${m.text().slice(5)}`);
+    });
+    for (rota of PAGINAS_PUBLICAS) {
+      await page.goto(rota, { waitUntil: "domcontentloaded" });
+      await page.waitForTimeout(1500);
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(1000);
+    }
+    expect(violacoes, "a política bloqueou algo que a página usa").toEqual([]);
   });
 });
 

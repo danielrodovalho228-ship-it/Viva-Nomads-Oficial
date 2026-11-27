@@ -154,7 +154,9 @@ test("cartão do morador: só nos 7 dias antes da entrada e da saída", () => {
   assert.equal(momentoDaSugestao(p, "2026-11-02"), null, "8 dias antes: ainda não");
   assert.equal(momentoDaSugestao(p, "2026-12-01"), null, "no meio da estadia: nada");
   assert.equal(momentoDaSugestao(p, "2027-02-04"), "saida");
-  assert.equal(momentoDaSugestao(p, "2027-02-11"), null, "depois da saída: nada");
+  // E1089 (coordenador): `fim` (10/02) é a última noite; a saída é 11/02 — o cartão vale até o dia da saída.
+  assert.equal(momentoDaSugestao(p, "2027-02-11"), "saida", "no dia da saída: ainda vale");
+  assert.equal(momentoDaSugestao(p, "2027-02-12"), null, "depois da saída: nada");
 });
 
 test("admin: contagem por gatilho sem contas de teste nem pedidos manuais", () => {

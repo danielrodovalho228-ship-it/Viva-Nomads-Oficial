@@ -55,6 +55,7 @@ import { useMarcasStore } from "@/lib/marcas/store";
 import { CHAVE_ULTIMA_BUSCA, ultimaBuscaParaPedido } from "@/lib/marcas/regra";
 import { CHAVE_VOLTAR_BUSCA, ROTULO_VOLTAR_BUSCA, destinoVoltarBusca } from "@/lib/imovel/voltar-busca";
 import type { LeadKind } from "@/lib/leads";
+import { hojeEmBrasilia } from "@/lib/datas-brasilia";
 import { PriceCard } from "@/components/property/price-card";
 import { AvisoAntigolpe } from "@/components/seguranca/aviso-antigolpe";
 import { BarraFixaCelular } from "@/components/property/barra-fixa-celular";
@@ -932,7 +933,7 @@ export function PropertyDetail({
 
             {/* Sinais de confiança (só dado real): disponibilidade, resposta, tempo de casa, código. */}
             <ul data-testid="sinais-confianca" className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              {sinaisDeConfianca(property, new Date().toISOString().slice(0, 10))
+              {sinaisDeConfianca(property, hojeEmBrasilia())
                 .filter((s) => !(temFaixa || exemplo) || (s.tipo !== "resposta" && s.tipo !== "desde"))
                 .map((s) => (
                 <li key={s.tipo} className={s.tipo === "codigo" ? "inline-flex items-center gap-2 text-xs text-muted" : "inline-flex items-center gap-2 text-ink"}>
@@ -975,7 +976,6 @@ export function PropertyDetail({
             <div className="mt-3">
               <SelosAnuncio
                 selos={selosDaFoto({
-                  verificado: !exemplo && property.owner?.verified === true,
                   precoJusto: !!property.precoJusto,
                   pets: !!property.petsAllowed,
                   negocia: !!property.negociacao?.aceita,

@@ -10,13 +10,21 @@ const H = `import { createElement as h } from "react";\n`;
 const NOOP = (nomes) => nomes.map((n) => `export const ${n} = async () => ({ ok: true });`).join("\n");
 const STUBS = {
   "next/link": H + `export default ({ href, children, ...p }) => h("a", { href }, children);`,
-  "lucide-react": `export const CheckCircle2 = () => null; export const Circle = () => null;`,
+  "lucide-react": `export const CheckCircle2 = () => null; export const Circle = () => null; export const ShieldCheck = () => null; export const Star = () => null;`,
   "@/lib/supabase/server": `export async function createClient() { return { auth: { getUser: async () => ({ data: { user: globalThis.__VN.user } }) } }; }`,
   "@/lib/supabase/admin": `export function createAdminClient() { return globalThis.__VN.admin; }`,
   "@/lib/vistoria/chave": `export async function vistoriaAtiva() { return globalThis.__VN.chave; }`,
-  "@/lib/vistoria/servidor": `export async function sugeridosDoPedido() { globalThis.__VN.sugeridosChamado = true; return globalThis.__VN.sugeridos; }`,
+  "@/lib/vistoria/servidor": `export async function sugeridosDoPedido() { globalThis.__VN.sugeridosChamado = true; return globalThis.__VN.sugeridos; }
+export async function outrosParaTroca() { globalThis.__VN.outrosChamado = true; return globalThis.__VN.outros ?? null; }
+export async function nomesDasContas() { return new Map(); }
+export async function identidadesConfirmadas() { return new Set(globalThis.__VN.identidades ?? []); }
+export async function tabelaDaCidade(admin) { const r = await admin.from("vistoria_precos").select("*"); return r.data ?? []; }`,
   "@/lib/vistoria/actions": NOOP(["agendarVisita", "aceitarProposta", "avaliarConduta", "confirmarRecebido", "escolherAvaliador", "pedirAvaliacao", "recusarProposta", "registrarAusencia"]),
+  "@/lib/data/avatar-url": `export async function signAvatarPath() { return null; }`,
   "@/components/vistoria/form-acao": `export const FormAcao = ({ children }) => children;`,
+  // E1100: a confirmação da troca é do navegador; aqui fica o que o bloco lhe entrega (o texto já montado).
+  "@/components/vistoria/troca-de-avaliador": H + `export const TrocaDeAvaliador = ({ pedidoId, texto }) => h("div", { "data-testid": "troca-harness", "data-pedido": pedidoId, "data-sem-outro": texto.semOutro ? "1" : "0" }, [texto.titulo, ...texto.perde, texto.depois].join(" | "));
+export const DepoisDaTroca = ({ pedidoId, aguardando }) => h("span", { "data-testid": "depois-harness", "data-pedido": pedidoId, "data-aguardando": aguardando ? "1" : "0" });`,
   "@/components/vistoria/laudo-dono": `export const LaudoDono = () => null;`,
   "@/components/ui/campo-data": `export const CampoDataHoraFormulario = () => null;`,
   "@/components/dashboard/primitives": H + `export const Panel = ({ title, children }) => h("div", { "data-panel": title }, children);`,

@@ -1,12 +1,12 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import { authFile } from "../fixtures/auth";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, fotosDoRoteiro, novaSenha, novoSufixo, cnpjAleatorio } from "../fixtures/laboratorio";
 import { ITENS_CHECKLIST } from "../../../src/config/checklist-avaliacao";
 
 /**
  * T344 — Prompt 62-A, Parte 2: as telas da avaliação sobre o 62-B2 (laboratório; a chave liga pelo cookie do teste).
  *   1. Execução (390 e 1280): aviso "sem pessoas", os 9 passos, item não conforme pede a foto, sem rede "Falta enviar 1
- *      foto" → a rede volta e a foto sobe; revisão do laudo com o prazo das 48 horas úteis e a delimitação; envio.
+ *      foto" → a rede volta e a foto sobe; revisão do laudo com o prazo combinado (dias úteis depois da visita) e a delimitação; envio.
  *   2. Resultado do dono (390 e 1280): resumo por grupo, a foto do item não conforme, as ações de cada resultado
  *      (com ressalvas → correção e contestar; reprovado → nova avaliação) e "Avaliado em … nº X" quando aprovado.
  *   3. Ficha e cartão: "Avaliado em … por avaliador credenciado nº X", "Ver laudo" e "Premium · vistoriado" no cartão.
@@ -147,19 +147,25 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await expect(p.getByTestId("checklist-fotos-faltam")).toHaveCount(0, { timeout: 30_000 });
       await expect.poll(async () => ((await adm().from("vistoria_checklist_fotos").select("id").eq("pedido_id", pedido).eq("item_chave", "iluminacao")).data ?? []).length, { timeout: 20_000 }).toBe(1);
       // Concluir → revisar o laudo antes de emitir.
+      await fotosDoRoteiro(pedido); // E1079 (ORDEM-431): concluir exige a foto de cada ambiente do roteiro
+      // E1117 (perna 3): sem a foto do roteiro o botão vem desativado. Estas fotos entram direto no banco (preparo), e a
+      // tela só as vê relendo a página.
+      await p.reload({ waitUntil: "domcontentloaded" });
       await p.getByTestId("concluir-visita").getByRole("button", { name: "Concluir a visita" }).click();
       await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedido).single()).data?.status, { timeout: 20_000 }).toBe("realizada");
       await p.reload({ waitUntil: "domcontentloaded" });
       const rev = p.getByTestId("laudo-revisao");
       await expect(rev).toHaveAttribute("data-resultado", "com_ressalvas");
-      await expect(p.getByTestId("laudo-prazo")).toContainText("horário de Brasília (48 horas úteis da visita)");
+      // E1156 (asserção alterada, ORDENS-DUET 712 e 713): o prazo do laudo é o combinado, em dias úteis depois da visita.
+      await expect(p.getByTestId("laudo-prazo")).toContainText("horário de Brasília (2 dias úteis depois da visita)");
       await expect(rev.getByTestId("laudo-revisao-grupo")).toHaveCount(9);
       await expect(p.getByTestId("laudo-revisao-nc")).toContainText("1 foto(s)");
       await expect(p.getByTestId("laudo-delimitacao")).toContainText("Retrato do estado do imóvel na data da avaliação");
       await semRolagemLateral(p);
       await p.screenshot({ path: `${SAIDA}/t344-revisao-laudo-${w}.png`, fullPage: true });
+      await p.getByTestId("enviar-laudo").getByTestId("laudo-nivel-conforto").click(); // E1083: o avaliador escolhe o nível (E1079: em cartões de escolha)
       await p.getByTestId("assino-laudo").getByRole("checkbox").check(); // E648: o avaliador assina o laudo
-      await p.getByTestId("enviar-laudo").getByRole("button", { name: "Enviar o laudo" }).click();
+      await p.getByTestId("enviar-laudo").getByRole("button", { name: "Assinar laudo" }).click();
       await expect.poll(async () => (await adm().from("vistoria_pedidos").select("status").eq("id", pedido).single()).data?.status, { timeout: 30_000 }).toBe("laudo_emitido");
       await p.context().close();
     });
@@ -273,10 +279,20 @@ test.describe("T344 — telas da avaliação (62-A, Parte 2)", () => {
       await expect(topo.getByTestId("decidir-numero-devolucoes")).not.toHaveAttribute("data-valor", "0");
       await expect(topo.getByTestId("decidir-numero-laudos-atrasados")).toBeVisible();
       await expect(topo.getByTestId("decidir-numero-auditoria")).toHaveAttribute("href", "#auditoria");
-      await topo.getByTestId("decidir-numero-contestacoes").click();
-      await expect(a.getByTestId("avaliacoes-contestacoes")).toBeInViewport();
+      await expect(topo.getByTestId("decidir-numero-contestacoes")).toHaveAttribute("href", "#contestacoes");
+      // E1181 (a falha real, das duas corridas da Fable): o toque chegou ao cartão e a tela não rolou — ratio 0 nos 10 s.
+      // O <Link href="#contestacoes"> é tocado logo após o domcontentloaded; a hipótese é o toque cair durante a hidratação.
+      // A leitura da posição (a antiga :283) fica DENTRO da espera: toque → âncora na URL → painel na tela, refeito até 20 s.
+      await a.waitForLoadState("load");
+      await expect(async () => {
+        await topo.getByTestId("decidir-numero-contestacoes").click();
+        await expect(a, "a âncora das contestações resolveu").toHaveURL(/#contestacoes$/, { timeout: 2_000 });
+        await expect(a.getByTestId("avaliacoes-contestacoes"), "o painel das contestações está na tela depois da âncora").toBeInViewport({ timeout: 3_000 });
+      }, "o toque no número das contestações leva ao painel").toPass({ timeout: 20_000 });
       await expect(a.getByTestId("contestacao-item").first()).toBeVisible();
-      await expect(a.getByTestId("devolucao-item").first()).toContainText(cred.numero);
+      // E1181: a lista é de todas as devoluções por confirmar, por prazo — a base partilhada pode pôr outra antes desta.
+      // A trava procura a DESTE teste pelo número do avaliador, em vez de ler a primeira da lista.
+      await expect(a.getByTestId("devolucao-item").filter({ hasText: cred.numero }), "a devolução deste teste está na lista").toHaveCount(1);
       // O rótulo "Imóvel (id)" do formulário de verificação continua (o t305 depende dele).
       await expect(a.getByTestId("verificacao-form").getByLabel("Imóvel (id)")).toBeVisible();
       await semRolagemLateral(a);

@@ -2,12 +2,16 @@ import { NextResponse } from "next/server";
 import { sendEmail } from "@/lib/notifications/email";
 import { consumirLimite, ipHash, HORA } from "@/lib/limites";
 import { SUPORTE_EMAIL } from "@/lib/site";
-import { GESTOR_PRECO } from "@/config/planos";
+import { CARTEIRAS_MINIMO_IMOVEIS } from "@/config/planos";
 import { escaparHtml, validarLeadGestor } from "@/lib/cobranca/plano-gestor-lead";
 
 export const dynamic = "force-dynamic";
 
-/** Lead do Plano Gestor (a partir de GESTOR_PRECO.minimoImoveis imóveis, ordem f768b951) → e-mail ao admin. Rota pública: valida e limita por IP. */
+/**
+ * Prompt 078 (16/11/2026): o pedido de contato "Fale com a Viva sobre carteiras" (carteira a partir de
+ * CARTEIRAS_MINIMO_IMOVEIS imóveis ou administradora) → e-mail ao admin. Antes era o lead do Plano Gestor (ordem f768b951);
+ * o endereço da rota ficou o mesmo. Nada é gravado no banco. Rota pública: valida e limita por IP.
+ */
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const v = validarLeadGestor(body);
@@ -30,8 +34,8 @@ export async function POST(request: Request) {
   const r = await sendEmail({
     interno: true,
     to: process.env.EMPRESAS_LEAD_EMAIL ?? SUPORTE_EMAIL,
-    subject: `Lead — Plano Gestor (${GESTOR_PRECO.minimoImoveis}+ imóveis)`,
-    html: `<h2>Novo contato sobre o Plano Gestor</h2><p>${campos.map(([k, x]) => `${escaparHtml(k)}: ${escaparHtml(x)}`).join("<br>")}</p>`,
+    subject: `Contato — carteira (${CARTEIRAS_MINIMO_IMOVEIS}+ imóveis ou administradora)`,
+    html: `<h2>Novo pedido de contato sobre carteiras</h2><p>${campos.map(([k, x]) => `${escaparHtml(k)}: ${escaparHtml(x)}`).join("<br>")}</p>`,
     text: campos.map(([k, x]) => `${k}: ${x}`).join("\n"),
   });
   return NextResponse.json({ ok: true, delivered: !r.demo });

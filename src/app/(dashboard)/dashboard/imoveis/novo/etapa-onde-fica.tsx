@@ -24,6 +24,7 @@ import { DeclaracoesDoImovel } from "./declaracoes-passo10";
 import type { DeclaracoesPasso10 } from "@/lib/anuncio/requisitos-passo10";
 import { EVENTO_ABRIR_SECAO, secoesAntesDePublicar, type EstadoSecao, type SecaoAntesDePublicar } from "@/lib/anuncio/passo10-colunas";
 import { useEstadoIdentidade } from "@/lib/identidade/use-estado-identidade";
+import { comoEmBreve } from "@/lib/identidade/estado";
 import { ResumoEndereco, enderecoCompletoParaResumo } from "./resumo-endereco";
 import type { InfoMatricula } from "@/components/anuncio/matricula-resultado";
 import type { PreenchimentoMatricula } from "@/lib/documento/conferencia-matricula";
@@ -362,7 +363,7 @@ export function AntesDePublicar(p: {
     ? "carregando"
     : identidade.identidade.estado === "confirmada"
       ? "ok"
-      : identidade.identidade.estado === "em_breve"
+      : comoEmBreve(identidade.identidade.estado)
         ? "em_breve"
         : identidade.temCpf
           ? "pendente"

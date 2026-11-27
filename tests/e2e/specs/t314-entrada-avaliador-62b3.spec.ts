@@ -10,7 +10,7 @@ import { NO_LABORATORIO, adm, apagarContas, cnpjAleatorio, criarConta, entrar, n
  *   2. conta nova (não parceiro): UM formulário (dados de parceiro + credenciamento) → solicitação "vistoria" e
  *      credenciamento ligados → pendência "verificar identidade" para a pessoa e para o admin (da ativação, E35-B);
  *   3. identidade verificada → admin vê UM pedido em /admin/avaliadores (fora da fila geral de parceiros) → "Aprovar para
- *      teste" ativa o parceiro e o credenciamento numa ação → a pessoa vê "Em teste" → /avaliadores/[numero] abre (noindex);
+ *      teste" ativa o parceiro e o credenciamento numa ação → a pessoa vê "Em teste" → /avaliadores/[numero] responde 404 (E1222: pessoa real em teste sem linha curada publicada);
  *   4. parceiro de limpeza existente pede sem repetir dados.
  * A conta nova é criada pela fixture (o código de entrada do 49 já tem a t-spec própria); aqui confere-se a volta.
  */
@@ -149,9 +149,11 @@ test.describe("T314 — porta de entrada do avaliador (62-B3)", () => {
     await p.goto("/dashboard/parceiro/avaliacao", { waitUntil: "domcontentloaded" });
     await expect(p.getByTestId("credenciamento-situacao")).toHaveAttribute("data-status", "em_teste");
     await expect(p.getByTestId("credenciamento-situacao")).toContainText("Em teste");
-    await p.goto(`/avaliadores/${numero}`, { waitUntil: "domcontentloaded" });
-    await expect(p.getByTestId("avaliador-numero")).toHaveText(numero);
-    await expect(p.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
+    // E1222 (ORDEM-DUET-1075): a pessoa REAL aprovada para teste, sem linha curada publicada, ainda não tem página pública
+    // — /avaliadores/[numero] responde 404 (antes: abria, com noindex). A regra e os casos visíveis estão na t1795.
+    const r = await p.goto(`/avaliadores/${numero}`, { waitUntil: "domcontentloaded" });
+    expect(r?.status()).toBe(404);
+    await expect(p.getByTestId("avaliador-publico")).toHaveCount(0);
     await p.context().close();
   });
 

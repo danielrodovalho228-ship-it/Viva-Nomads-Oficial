@@ -1,3 +1,10 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
+/*
+  Asserções alteradas pelo prompt 078 (Daniel, 16/11/2026): a escada padrão tem 4 faixas e termina em 16–19 = 6% (a faixa de
+  20+ a 4%, do Plano Gestor, saiu); conta de administradora paga a faixa (o tipo da conta não escolhe faixa); o texto oficial diz
+  "(até 6%)"; a última linha da tabela pública é "16–19 imóveis", 6%; o chat da Viva não cita o Plano Gestor nem 4% — traz a escada
+  e a linha das carteiras.
+*/
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -62,12 +69,13 @@ test("textos padrão da comissão (frase padrão e curta)", () => {
   assert.equal(comissaoCurta("12%"), "12% sobre o valor total do contrato fechado.");
 });
 
-test("4.320 (1 mês) por faixa: 518,40 (12%), 432,00 (10%), 345,60 (8%), 259,20 (6%), 172,80 (Gestor, 4%)", () => {
+test("4.320 (1 mês) por faixa: 518,40 (12%), 432,00 (10%), 345,60 (8%), 259,20 (6%, de 16 em diante — 078: sem a faixa do Gestor)", () => {
   assert.deepEqual([1, 2].map((n) => valor(n)), [518.4, 518.4]);
   assert.deepEqual([3, 5].map((n) => valor(n)), [432, 432]);
   assert.deepEqual([6, 15].map((n) => valor(n)), [345.6, 345.6]);
   assert.deepEqual([16, 19].map((n) => valor(n)), [259.2, 259.2]);
-  assert.deepEqual([20, 40].map((n) => valor(n)), [172.8, 172.8]);
+  // 078 (Daniel, 16/11/2026): antes [172.8, 172.8] (Gestor, 4%); 20 e 40 imóveis estão na última faixa, 16–19 = 6%.
+  assert.deepEqual([20, 40].map((n) => valor(n)), [259.2, 259.2]);
 });
 
 test("renovação conta como novo contrato: mesma taxa da faixa do dono", () => {
@@ -75,14 +83,21 @@ test("renovação conta como novo contrato: mesma taxa da faixa do dono", () => 
   assert.equal(valor(4, "renovacao"), 432);
 });
 
-test("E564: 20+ imóveis = Plano Gestor, 4% sem assinatura; a faixa 31+ negociável saiu; administradora é Gestor", () => {
-  assert.equal(valor(40), 172.8);
-  assert.equal(faixaPorImoveisAtivos(20).gestor, true);
-  assert.equal(faixaPorImoveisAtivos(19).gestor, undefined);
+test("E564/078: 20+ imóveis = última faixa da escada, 6% (o Plano Gestor de 4% saiu); a faixa 31+ negociável saiu; administradora paga a faixa", () => {
+  // 078 (Daniel, 16/11/2026): antes 172.8 (4% de 4.320); agora 6%.
+  assert.equal(valor(40), 259.2);
+  // 078 (Daniel, 16/11/2026): antes faixaPorImoveisAtivos(20).gestor === true; a faixa de 20 imóveis é a de 16 ou mais, sem marca de Gestor.
+  assert.deepEqual(faixaPorImoveisAtivos(20), { minImoveis: 16, maxImoveis: null, taxa: 0.06 });
+  // 078 (Daniel, 16/11/2026): antes faixaPorImoveisAtivos(19).gestor === undefined (19 ficava fora do Gestor); 19 e 20 são a mesma faixa.
+  assert.equal(faixaPorImoveisAtivos(19), faixaPorImoveisAtivos(20));
+  assert.equal(FAIXAS_COMISSAO_PADRAO.some((f) => "gestor" in f), false);
   assert.equal(ehFaixaNegociavel(40), false);
   assert.equal(FAIXAS_COMISSAO_PADRAO.some((f) => f.negociavel), false);
-  // Conta de administradora: Gestor com qualquer carteira.
-  assert.equal(taxaNaAssinatura({ tipo: "novo", imoveisAtivos: 1, assinadoEm: em, administradora: true }).taxa, 0.04);
+  // 078 (Daniel, 16/11/2026): antes "conta de administradora: Gestor com qualquer carteira" (0.04 com 1 imóvel). O tipo da conta não
+  // escolhe mais faixa: mesmo que alguém mande `administradora`, a regra ignora — 1 imóvel = 12%, 3 imóveis = 10%.
+  const administradora = (imoveisAtivos: number) => ({ tipo: "novo" as const, imoveisAtivos, assinadoEm: em, administradora: true });
+  assert.deepEqual([taxaNaAssinatura(administradora(1)).taxa, taxaNaAssinatura(administradora(1)).origem], [0.12, "faixa"]);
+  assert.deepEqual([taxaNaAssinatura(administradora(3)).taxa, taxaNaAssinatura(administradora(3)).origem], [0.1, "faixa"]);
   assert.equal(taxaNaAssinatura({ tipo: "novo", imoveisAtivos: 1, assinadoEm: em }).taxa, 0.12);
   // A fixação do admin continua valendo por cima (com motivo e validade); vencida, volta à faixa.
   const ate = new Date("2026-12-31T00:00:00Z");
@@ -94,9 +109,11 @@ test("E564: 20+ imóveis = Plano Gestor, 4% sem assinatura; a faixa 31+ negociá
 
 test("limites das faixas e entrada inválida", () => {
   const taxa = (n: number) => faixaPorImoveisAtivos(n).taxa;
-  assert.deepEqual([1, 2, 3, 5, 6, 15, 16, 19, 20, 100].map(taxa), [0.12, 0.12, 0.1, 0.1, 0.08, 0.08, 0.06, 0.06, 0.04, 0.04]);
+  // 078 (Daniel, 16/11/2026): antes 20 e 100 imóveis = 0.04 (Gestor); agora 0.06 (16 ou mais).
+  assert.deepEqual([1, 2, 3, 5, 6, 15, 16, 19, 20, 100].map(taxa), [0.12, 0.12, 0.1, 0.1, 0.08, 0.08, 0.06, 0.06, 0.06, 0.06]);
   for (const ruim of [0, -3, Number.NaN]) assert.equal(taxa(ruim), 0.12);
-  assert.equal(FAIXAS_COMISSAO_PADRAO.length, 5);
+  // 078 (Daniel, 16/11/2026): antes 5 faixas (a quinta era a do Gestor); agora 4.
+  assert.equal(FAIXAS_COMISSAO_PADRAO.length, 4);
 });
 
 test("próxima faixa: 'Ative mais 1 imóvel e sua taxa cai para 10%'; no Gestor não há próxima", () => {
@@ -135,10 +152,11 @@ test("override do admin exige motivo e validade; vencido, sem motivo ou fora de 
   }
 });
 
-test("texto oficial: 12%, faixas até 4% (E564: o Plano Gestor), sem mensalidade", () => {
+test("texto oficial: 12%, faixas até 6% (078: sem o Plano Gestor de 4%), sem mensalidade", () => {
+  // 078 (Daniel, 16/11/2026): antes "(até 4%)"; a menor taxa da escada pública é 6%.
   assert.equal(
     TEXTO_REGRA_UNICA,
-    "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.",
+    "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 6%). Sem mensalidade.",
   );
   assert.equal(TEXTO_REGRA_CURTO, TEXTO_REGRA_UNICA);
   assert.doesNotMatch(TEXTO_REGRA_UNICA, /plano|Essencial|Gestor|aluguel|comiss/i);
@@ -250,10 +268,15 @@ test("painel do dono: valor mensal ou prazo inválido não inventa valor", () =>
   assert.equal(textoTaxaPainel(0.12, 3000, 0), "Taxa de serviço: 12% sobre o valor mensal × meses");
 });
 
-test("E564: tabela pública — todas as faixas mostram o percentual (o Gestor é 4%; nada de 'Negociado')", async () => {
+test("E564/078: tabela pública — todas as faixas mostram o percentual (a última é 16–19, 6%; sem Gestor e nada de 'Negociado')", async () => {
   const { taxaPublicaTexto, rotuloFaixaTaxa } = await import("./regra.ts");
-  assert.deepEqual(FAIXAS_COMISSAO_PADRAO.map(taxaPublicaTexto), ["12%", "10%", "8%", "6%", "4%"]);
-  assert.equal(rotuloFaixaTaxa(FAIXAS_COMISSAO_PADRAO[4], true), "20+ imóveis · Plano Gestor");
+  // 078 (Daniel, 16/11/2026): antes ["12%", "10%", "8%", "6%", "4%"] — a linha de 4% (Gestor) saiu da tabela.
+  assert.deepEqual(FAIXAS_COMISSAO_PADRAO.map(taxaPublicaTexto), ["12%", "10%", "8%", "6%"]);
+  // 078 (Daniel, 16/11/2026): antes a quinta faixa tinha o rótulo "20+ imóveis · Plano Gestor"; não há quinta faixa, e a última
+  // (a quarta) é "16–19 imóveis", sem nome de plano.
+  assert.equal(FAIXAS_COMISSAO_PADRAO[4], undefined);
+  assert.equal(rotuloFaixaTaxa(FAIXAS_COMISSAO_PADRAO[3], true), "16–19 imóveis");
+  assert.deepEqual(FAIXAS_COMISSAO_PADRAO.map((f) => rotuloFaixaTaxa(f)), ["1–2", "3–5", "6–15", "16–19"]);
 });
 
 test("F6: /precos não mostra 6% fixo nem exemplo em reais para o Plano Gestor", async () => {
@@ -266,13 +289,19 @@ test("F6: /precos não mostra 6% fixo nem exemplo em reais para o Plano Gestor",
   assert.match(t, /Falar sobre o Plano Gestor|PlanoGestorForm/);
 });
 
-test("F6: chat da Viva não diz 6% para o Plano Gestor", async () => {
+test("F6/078: chat da Viva não cita o Plano Gestor nem taxa abaixo da escada; carteiras = fale com a Viva", async () => {
   const { readFileSync } = await import("node:fs");
   const t = readFileSync(new URL("../atendimento/viva-prompt.ts", import.meta.url), "utf8");
   assert.doesNotMatch(t, /Plano Gestor \(6%/);
-  // E564: sem a faixa "31+ negociável"; o Gestor é 4% sem assinatura, com a porta inteira.
+  // E564: sem a faixa "31+ negociável".
   assert.doesNotMatch(t, /31 ou mais|negociad/);
-  assert.match(t, /O Plano Gestor tem taxa de 4% por contrato, sem mensalidade, para \$\{PORTA_GESTOR_TEXTO\}\./);
+  // 078 (Daniel, 16/11/2026): antes o prompt TINHA "O Plano Gestor tem taxa de 4% por contrato, sem mensalidade, para ${PORTA_GESTOR_TEXTO}."
+  // Agora não cita o Plano Gestor nem 4%; no lugar, a escada da regra + a linha das carteiras, sem taxa publicada.
+  assert.doesNotMatch(t, /Plano Gestor|PORTA_GESTOR_TEXTO|(?<![\d,.])4\s?%/);
+  assert.match(t, /\$\{escadaTaxasCurta\(\)\}\. \$\{TEXTO_CARTEIRAS\} Para esses casos não existe taxa publicada: as condições são combinadas com a equipe da Viva, caso a caso; nunca cite percentual abaixo da escada\./);
+  const { fontes } = await import("../atendimento/viva-prompt.ts");
+  assert.match(fontes(), /imóveis ativos \(só contam os publicados, com documento aprovado e calendário em dia\): 1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%\. Carteira a partir de 20 imóveis ou administradora de imóveis: fale com a Viva\. Para esses casos não existe taxa publicada/);
+  assert.doesNotMatch(fontes(), /Plano Gestor|(?<![\d,.])4\s?%/);
 });
 
 test("b3c9d76e: texto público e das telas não diz que a comissão é só do 1º mês/aluguel (guarda de varredura)", () => {
@@ -306,7 +335,9 @@ test("b3c9d76e: Termos e Privacidade trazem o texto exato aprovado (cláusula 8,
   const termos = ler("src/app/(public)/termos/page.tsx");
   assert.match(termos, /As cobranças da plataforma referem-se à comissão sobre o valor total de cada contrato e de cada renovação, e a serviços opcionais\./);
   assert.match(termos, /uma comissão única sobre o valor total de cada contrato de locação fechado pela plataforma \(valor mensal × número de meses contratados\)/);
-  assert.match(termos, /1 a 2 imóveis, 12%; 3 a 5, 10%; 6 a 15, 8%; 16 a 30, 6%; 31 ou mais, condição negociada\./);
+  // Asserção alterada (E1109, ORDEM-DUET-494): a escada dos Termos passa a ser a da fonte (16–19 = 6%; o escalão de cima
+  // começa em 20), com a redação pública de hoje ("condição negociada"). Era "16 a 30, 6%; 31 ou mais".
+  assert.match(termos, /1 a 2 imóveis, 12%; 3 a 5, 10%; 6 a 15, 8%; 16 a 19, 6%; 20 ou mais, condição negociada\./);
   assert.doesNotMatch(termos, /31 ou mais, condição negociada \(Plano Gestor\)/);
   assert.match(termos, /valor total R\$ 9\.000; comissão R\$ 1\.080\./);
   assert.doesNotMatch(termos, /a taxa é a mesma para todos/i);
@@ -315,14 +346,14 @@ test("b3c9d76e: Termos e Privacidade trazem o texto exato aprovado (cláusula 8,
 
 test("b3c9d76e + c54366b0: /api/comissao lê aluguel, meses e taxa do CONTRATO registrado (nunca prazo do navegador) e usa a fórmula única", () => {
   const rota = ler("src/app/api/comissao/route.ts");
-  assert.match(rota, /comissaoDoContrato\(f\.leadId\)/);
+  assert.match(rota, /comissaoDoContrato\(f\.leadId, f\.propostaPedida\)/, "E1141: a taxa da estadia do fecho");
   assert.match(rota, /meses: contrato\.meses/);
   assert.match(rota, /commissionRate: contrato\.taxa/);
   assert.match(rota, /status: 409/);
   assert.doesNotMatch(rota, /termMonths/);
   const fluxo = ler("src/app/(dashboard)/dashboard/fechamento/closing-flow.tsx");
   assert.ok(fluxo.indexOf("await registrarContrato(") < fluxo.indexOf('await fetch("/api/comissao"'), "registra o contrato antes de cobrar");
-  assert.match(fluxo, /body: JSON\.stringify\(\{ leadId: ctx\.leadId \}\)/);
+  assert.match(fluxo, /body: JSON\.stringify\(\{ leadId: ctx\.leadId, \.\.\.\(ctx\.propostaDaUrl \? \{ propostaId: ctx\.propostaDaUrl \} : \{\}\) \}\)/, "E1141: só a candidatura e a estadia escolhida, nunca prazo nem valor");
   assert.match(ler("src/lib/payments/asaas.ts"), /valorComissao\(params\.aluguelMensal, params\.meses, params\.commissionRate\)/);
   assert.match(ler("src/lib/comissao.ts"), /comissaoSobreContrato/);
   assert.match(ler("src/lib/contrato-blocos.ts"), /comissaoContrato\(aluguel, total, rate\)/);

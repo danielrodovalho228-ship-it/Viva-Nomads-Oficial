@@ -194,7 +194,7 @@ export function PagamentosConta() {
           </p>
         </CartaoComFoto>
       )}
-      {/* E224: Conta › Plano — a elegibilidade do Plano Gestor, só para o proprietário (/dashboard/conta/plano cai aqui). */}
+      {/* E224/078: Conta › Plano — a taxa de serviço da conta e a escada, só para o proprietário (/dashboard/conta/plano cai aqui). */}
       {dono && <PlanoGestorConta />}
 
       <CartaoComFoto foto={PHOTOS.pagamentos.morador} testId="conta-pag-morador" prioridade={!dono}>

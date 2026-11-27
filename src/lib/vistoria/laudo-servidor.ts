@@ -5,16 +5,17 @@ import { emitidoEmBrasilia, linhaConferir, numeroExibido } from "@/lib/fiscal/pr
 import { registrarDocumento } from "@/lib/fiscal/registro";
 import { recalcularNivel } from "@/lib/niveis/servidor";
 import { classeRuido, type MedidaPonto, type RespostasRuido } from "@/lib/niveis/regras";
-import type { NivelOuAdequacao } from "@/config/niveis";
+import type { Nivel, NivelOuAdequacao } from "@/config/niveis";
+import { MSG_ESCOLHA_O_NIVEL } from "./nivel-do-laudo";
 import { VERSAO_CHECKLIST, type ValorItem } from "@/config/checklist-avaliacao";
 import { SITE_URL } from "@/lib/site";
 import {
   PRAZO_DEVOLUCAO_DIAS,
+  PRAZO_RESSALVA_DIAS,
   avisoExpiracao,
   exibicaoAvaliacao,
   itensSemResposta,
   laudoAtrasado,
-  nivelSustentado,
   prazoRessalva,
   quemPerdePaga,
   resultadoAvaliacao,
@@ -28,11 +29,14 @@ import {
   type Resultado,
 } from "./laudo";
 import { conteudoLaudo } from "./laudo-documento";
+import { diasUteis, diasUteisDoLaudo } from "./prazos";
 import { tentarAtivacaoAutomatica } from "./ativacao-automatica-servidor";
 import { assinaturaDoLaudo } from "./escolha";
 import { createHash } from "node:crypto";
 import { consequencias, degrauDoProprietario, expiraEm, geraStrike, imovelComStrike, proximaOrdem, strikesParaApagar, type Strike } from "./strikes";
-import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, rotaDono } from "./servidor";
+import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, nomesDasContas, resolverAvisosDaVisita, rotaDono } from "./servidor";
+import { lerGravacaoNaFila, marcarComItemNaFila } from "./gravacao-na-fila";
+import { nomeDoAvaliador, primeiroNomeDoAvaliador } from "./nome-do-avaliador";
 
 /*
   Prompt 62-B2 — o lado do servidor do laudo: emite o VIS pela plataforma (registrarDocumento), aplica o resultado
@@ -43,6 +47,8 @@ import { ROTA_AVALIADOR, abrirEscolha, avisar, avisarAdmins, rotaDono } from "./
 
 type Admin = SupabaseClient;
 const DIA = 86_400_000;
+/** A janela das reprovações que contam na escada do proprietário (12 meses), em dias. */
+const DIAS_DA_JANELA_DE_REPROVACOES = 365;
 
 type LinhaPedido = {
   id: string;
@@ -195,7 +201,7 @@ export async function aplicarEscada(admin: Admin, ownerId: string, agora = new D
   const [strikes, { data: imoveis, error: e1 }, { data: reprov, error: e2 }] = await Promise.all([
     strikesDoDono(admin, ownerId),
     admin.from("properties").select("id, status").eq("owner_id", ownerId).in("status", ["active", "paused"]),
-    admin.from("vistoria_laudos").select("property_id").eq("owner_id", ownerId).eq("resultado", "reprovado").gte("emitido_em", new Date(agora.getTime() - 365 * DIA).toISOString()),
+    admin.from("vistoria_laudos").select("property_id").eq("owner_id", ownerId).eq("resultado", "reprovado").gte("emitido_em", new Date(agora.getTime() - DIAS_DA_JANELA_DE_REPROVACOES * DIA).toISOString()),
   ]);
   // Sem a carteira ou as reprovações, o degrau sairia menor: não decide nada (quem chama tenta de novo).
   if (e1 || e2) throw new Error(MSG_STRIKES_SEM_LEITURA);
@@ -249,7 +255,7 @@ export type ResEmissao = { ok: true; laudoId: string; numero: string; resultado:
  * completo. Aplica: nível sustentado + "· vistoriado" (aprovado), fora da busca por segurança grave, strike (só em
  * verificação reprovada), "quem perde paga" na contestação.
  */
-export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Date(), motivoVersao: "correcao" | "reverificacao" | null = null, assinar: { declarou: boolean } = { declarou: false }): Promise<ResEmissao> {
+export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Date(), motivoVersao: "correcao" | "reverificacao" | null = null, assinar: { declarou: boolean; nivel?: Nivel | null } = { declarou: false }): Promise<ResEmissao> {
   const { data: pd } = await admin.from("vistoria_pedidos").select(COLUNAS_PEDIDO).eq("id", pedidoId).maybeSingle();
   const p = pd as LinhaPedido | null;
   if (!p || !p.avaliador_id) return { ok: false, erro: "Pedido não encontrado." };
@@ -262,12 +268,17 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   const medidas = await medidasDoPedido(admin, p.id, visitaEm);
   const ruido = p.ruido_respostas;
   const r = resultadoAvaliacao(respostas);
-  const nivel = nivelSustentado(respostas, ruido, medidas, agora);
+  // E1083 (ORDEM-DUET-397, ponto 1): o nível é o que o AVALIADOR escolhe no laudo que assina — a plataforma não calcula.
+  const escolhido = assinar.nivel ?? null;
+  if (!motivoVersao && !escolhido) return { ok: false, erro: MSG_ESCOLHA_O_NIVEL };
   const resumo = resumoPorGrupo(respostas);
 
   // Contestação e reverificação: versão nova do MESMO laudo (a referência é o pedido de origem).
   const original = p.tipo === "contestacao" && p.origem_pedido_id ? p.origem_pedido_id : p.id;
   const anterior = await laudoDoPedido(admin, original);
+  // A versão de correção/reverificação mantém a escolha anterior do avaliador, se ele não escolher de novo.
+  const nivel = escolhido ?? anterior?.nivel_sustentado ?? null;
+  if (!nivel) return { ok: false, erro: MSG_ESCOLHA_O_NIVEL };
   const versao = anterior ? anterior.versao + 1 : 1;
   const motivo = p.tipo === "contestacao" ? "contestacao" : motivoVersao;
 
@@ -278,8 +289,15 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   ]);
   const parc = (cred?.parceiros as unknown as { nome_publico: string | null; user_id: string; documento: string | null } | null) ?? null;
   // E648: o laudo é do avaliador — sem a declaração dele (e o CNPJ da empresa) a Viva não emite nada.
-  const nomeAssinante = String(parc?.nome_publico ?? "").trim() || "Avaliador";
-  const dadosAssinatura = { avaliadorUserId: parc?.user_id ?? "", numeroCredenciado: (cred?.numero_credenciado as string | null) ?? "", nomePublico: nomeAssinante, cnpj: parc?.documento ?? "", declarou: assinar.declarou };
+  // E1084: o nome do avaliador vem da conta (fonte única); sem nome na conta, o nome público do parceiro.
+  const nomeDaConta = parc?.user_id ? (await nomesDasContas(admin, [parc.user_id])).get(parc.user_id) : null;
+  const nomeAssinante = nomeDoAvaliador(nomeDaConta, parc?.nome_publico);
+  // E1083 parte 1 (ORDEM-DUET-399; regra legal com o Daniel): em modo piloto/teste — pedido de teste ou avaliador na
+  // lista do piloto — a assinatura não exige o CNPJ. Fora do piloto, a regra do CNPJ fica intacta.
+  const { data: piloto } = parc?.user_id ? await admin.from("vistoria_piloto").select("user_id").eq("user_id", parc.user_id).maybeSingle() : { data: null };
+  const noPiloto = !!piloto;
+  const pilotoSemCnpj = p.teste === true || noPiloto;
+  const dadosAssinatura = { avaliadorUserId: parc?.user_id ?? "", numeroCredenciado: (cred?.numero_credenciado as string | null) ?? "", nomePublico: nomeAssinante, cnpj: parc?.documento ?? "", declarou: assinar.declarou, pilotoSemCnpj };
   const previa = assinaturaDoLaudo({ ...dadosAssinatura, pdfSha256: "0".repeat(64), em: agora.toISOString() });
   if (!previa.ok) return { ok: false, erro: previa.erro };
   const comFoto = new Set(((fotos ?? []) as { item_chave: string }[]).map((f) => f.item_chave));
@@ -311,7 +329,7 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
               imovel: (im?.title as string | null) ?? "Imóvel",
               cidade: (im?.city as string | null) ?? "",
               visitaEm,
-              avaliador: { nomeCurto: String(parc?.nome_publico ?? "").trim().split(/\s+/)[0] || "Avaliador", numero: (cred?.numero_credenciado as string | null) ?? "" },
+              avaliador: { nomeCurto: primeiroNomeDoAvaliador(nomeDaConta, parc?.nome_publico), numero: (cred?.numero_credenciado as string | null) ?? "" },
               resultado: r,
               nivel,
               resumo,
@@ -339,9 +357,13 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   const assinatura = assinaturaDoLaudo({ ...dadosAssinatura, pdfSha256: createHash("sha256").update(Buffer.from(reg.bytes as Uint8Array)).digest("hex"), em: agora.toISOString() });
   if (!assinatura.ok) return { ok: false, erro: assinatura.erro };
   const vistoriado = r.resultado === "aprovado" ? agora.toISOString() : null;
+  // E1177: o laudo guarda se quem o assina é o mesmo avaliador da avaliação anterior — a marca nasce na designação.
+  const { data: designacao } = await admin.from("vistoria_designacoes").select("mesmo_da_anterior").eq("pedido_id", p.id).eq("avaliador_id", p.avaliador_id).maybeSingle();
+  const mesmoDaAnterior = (designacao as { mesmo_da_anterior?: boolean | null } | null)?.mesmo_da_anterior === true;
   const { data: novo, error } = await admin
     .from("vistoria_laudos")
     .insert({
+      mesmo_da_anterior: mesmoDaAnterior,
       pedido_id: original,
       pedido_versao_id: p.id,
       property_id: p.property_id,
@@ -374,6 +396,8 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
     return { ok: false, erro: "Não foi possível gravar o laudo." };
   }
   await admin.from("vistoria_pedidos").update({ status: "laudo_emitido", atualizado_em: agora.toISOString() }).eq("id", p.id);
+  // E1128: laudo emitido — nenhum aviso de visita deste pedido continua a valer.
+  await resolverAvisosDaVisita(admin, p.id);
   // E690: a avaliação de TESTE concluída pode ativar o avaliador sozinho (atrás de chave; nunca lança).
   if (p.teste && p.avaliador_id) await tentarAtivacaoAutomatica(admin, { credenciamentoId: p.avaliador_id });
   await admin.from("vistoria_fila_admin").update({ resolvido_em: agora.toISOString() }).eq("tipo", "laudo_atrasado").eq("pedido_id", p.id).is("resolvido_em", null);
@@ -425,7 +449,8 @@ export async function emitirLaudo(admin: Admin, pedidoId: string, agora = new Da
   }
 
   await recalcularNivel(admin, p.property_id, agora);
-  await avisar(admin, p.owner_id, "vistoria_laudo_emitido", rotaDono(p.property_id), { propertyId: p.property_id });
+  // E1160 (3): o aviso leva o pedido — o e-mail diz o número de credenciado de quem emitiu e assinou o laudo.
+  await avisar(admin, p.owner_id, "vistoria_laudo_emitido", rotaDono(p.property_id), { pedidoId: p.id, propertyId: p.property_id });
   return { ok: true, laudoId: novo.id as string, numero: reg.numero, resultado: r.resultado };
 }
 
@@ -438,7 +463,7 @@ async function laudoDoPedido(admin: Admin, pedidoOriginal: string): Promise<Linh
  * Ressalvas corrigidas e reverificadas (foto ou nova visita, pelo mesmo avaliador): grava os itens conferidos e emite a
  * versão nova do laudo. Ressalva toda corrigida → "· vistoriado".
  */
-export async function registrarCorrecao(admin: Admin, pedidoId: string, corrigidos: Record<string, ValorItem>, agora = new Date(), assinar: { declarou: boolean } = { declarou: false }): Promise<ResEmissao> {
+export async function registrarCorrecao(admin: Admin, pedidoId: string, corrigidos: Record<string, ValorItem>, agora = new Date(), assinar: { declarou: boolean; nivel?: Nivel | null } = { declarou: false }): Promise<ResEmissao> {
   const l = await laudoDoPedido(admin, pedidoId);
   if (!l || l.corrigido_em || !l.ressalvas.length) return { ok: false, erro: "Não há ressalva aberta neste laudo." };
   for (const [chave, valor] of Object.entries(corrigidos)) {
@@ -476,20 +501,31 @@ export interface ResumoLaudos {
   avisosExpiracao: number;
   strikesApagados: number;
   devolucoesVencidas: number;
+  /** E1182: gravações na fila da equipe que o banco recusou neste tique (a marca foi desfeita; o próximo tique tenta de novo). */
+  falhasNaFila: number;
 }
 
 export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<ResumoLaudos> {
-  const r: ResumoLaudos = { atrasados: 0, ressalvasVencidas: 0, expirados: 0, avisosExpiracao: 0, strikesApagados: 0, devolucoesVencidas: 0 };
+  const r: ResumoLaudos = { atrasados: 0, ressalvasVencidas: 0, expirados: 0, avisosExpiracao: 0, strikesApagados: 0, devolucoesVencidas: 0, falhasNaFila: 0 };
   const quando = agora.toISOString();
 
-  // 1. Laudo em 48 h úteis da visita: sinal no admin quando vence (conta na auditoria).
-  const { data: realizadas } = await admin.from("vistoria_pedidos").select("id, agendado_para, visita_concluida_em").eq("status", "realizada").is("laudo_atrasado_em", null);
-  for (const p of (realizadas ?? []) as { id: string; agendado_para: string | null; visita_concluida_em: string | null }[]) {
+  // 1. Laudo fora do prazo combinado (E1156: os dias úteis do pedido, depois da visita): sinal no admin quando vence.
+  const { data: realizadas } = await admin.from("vistoria_pedidos").select("id, agendado_para, visita_concluida_em, prazo_laudo_dias_uteis").eq("status", "realizada").is("laudo_atrasado_em", null);
+  for (const p of (realizadas ?? []) as { id: string; agendado_para: string | null; visita_concluida_em: string | null; prazo_laudo_dias_uteis: number | null }[]) {
     const visita = p.visita_concluida_em ?? p.agendado_para;
-    if (!visita || !laudoAtrasado(visita, null, agora)) continue;
-    await admin.from("vistoria_pedidos").update({ laudo_atrasado_em: quando }).eq("id", p.id).is("laudo_atrasado_em", null);
-    await admin.from("vistoria_fila_admin").insert({ tipo: "laudo_atrasado", pedido_id: p.id, motivo: "Laudo não enviado em 48 horas úteis da visita." });
-    await avisarAdmins(admin, "vistoria_fila_admin");
+    if (!visita || !laudoAtrasado(visita, null, agora, p.prazo_laudo_dias_uteis)) continue;
+    // E1182: a gravação do item é lida. Se falhar, a marca é desfeita (o tique seguinte tenta de novo), a falha conta
+    // no resumo e ninguém é avisado de um item que não existe.
+    const fim = await marcarComItemNaFila({
+      marcar: () => admin.from("vistoria_pedidos").update({ laudo_atrasado_em: quando }).eq("id", p.id).is("laudo_atrasado_em", null),
+      gravar: async () => lerGravacaoNaFila((await admin.from("vistoria_fila_admin").insert({ tipo: "laudo_atrasado", pedido_id: p.id, motivo: `Laudo não enviado no prazo combinado: ${diasUteis(diasUteisDoLaudo(p.prazo_laudo_dias_uteis))} depois da visita.` })).error, { tipo: "laudo_atrasado", pedidoId: p.id }),
+      desmarcar: () => admin.from("vistoria_pedidos").update({ laudo_atrasado_em: null }).eq("id", p.id).eq("laudo_atrasado_em", quando),
+      avisar: () => avisarAdmins(admin, "vistoria_fila_admin", "laudo_atrasado"),
+    });
+    if (fim === "falhou") {
+      r.falhasNaFila++;
+      continue;
+    }
     r.atrasados++;
   }
 
@@ -515,7 +551,13 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
         continue;
       }
     } else {
-      await admin.from("vistoria_fila_admin").insert({ tipo: "ressalva_vencida", pedido_id: l.pedido_versao_id, motivo: "Ressalva não corrigida em 15 dias: avaliar abrir verificação." });
+      // E1182: se o item não entra na fila, a ressalva volta a valer para a rotina de amanhã (como com o strike).
+      const gravada = lerGravacaoNaFila((await admin.from("vistoria_fila_admin").insert({ tipo: "ressalva_vencida", pedido_id: l.pedido_versao_id, motivo: `Ressalva não corrigida em ${PRAZO_RESSALVA_DIAS} dias: avaliar abrir verificação.` })).error, { tipo: "ressalva_vencida", pedidoId: l.pedido_versao_id });
+      if (gravada.erro) {
+        await admin.from("vistoria_laudos").update({ ressalva_vencida_em: null }).eq("id", l.id);
+        r.falhasNaFila++;
+        continue;
+      }
     }
     await avisar(admin, l.owner_id, "vistoria_ressalva_vencida", rotaDono(l.property_id), { propertyId: l.property_id });
     r.ressalvasVencidas++;
@@ -547,9 +589,16 @@ export async function rotinaLaudos(admin: Admin, agora = new Date()): Promise<Re
   const { data: devs } = await admin.from("vistoria_devolucoes").select("id, avaliador_id, prazo_ate, recebido_confirmado_em").is("recebido_confirmado_em", null).is("fila_em", null);
   for (const d of (devs ?? []) as { id: string; avaliador_id: string | null; prazo_ate: string; recebido_confirmado_em: string | null }[]) {
     if (!devolucaoVencida(d.prazo_ate, d.recebido_confirmado_em, agora)) continue;
-    await admin.from("vistoria_devolucoes").update({ fila_em: quando }).eq("id", d.id);
-    await admin.from("vistoria_fila_admin").insert({ tipo: "devolucao_vencida", avaliador_id: d.avaliador_id, motivo: "Devolução da contestação não confirmada em 15 dias: proposta de descredenciamento." });
-    await avisarAdmins(admin, "vistoria_fila_admin");
+    const fim = await marcarComItemNaFila({
+      marcar: () => admin.from("vistoria_devolucoes").update({ fila_em: quando }).eq("id", d.id),
+      gravar: async () => lerGravacaoNaFila((await admin.from("vistoria_fila_admin").insert({ tipo: "devolucao_vencida", avaliador_id: d.avaliador_id, motivo: `Devolução da contestação não confirmada em ${PRAZO_DEVOLUCAO_DIAS} dias: proposta de descredenciamento.` })).error, { tipo: "devolucao_vencida", avaliadorId: d.avaliador_id }),
+      desmarcar: () => admin.from("vistoria_devolucoes").update({ fila_em: null }).eq("id", d.id).eq("fila_em", quando),
+      avisar: () => avisarAdmins(admin, "vistoria_fila_admin", "devolucao_vencida"),
+    });
+    if (fim === "falhou") {
+      r.falhasNaFila++;
+      continue;
+    }
     r.devolucoesVencidas++;
   }
   return r;

@@ -8,9 +8,9 @@ import { NO_LABORATORIO, TELEFONE_LAB, adm, apagarContas, criarConta, criarImove
   Regra decidida (E663; unitário src/lib/estadia/jornada-mensagens.test.ts): as datas saem dos blocos atuais do
   contrato. Os envios exigem o contrato assinado pelas duas partes e o 1º pagamento confirmado:
     - chegada (no dia da entrada) → morador e dono: "Hoje é o dia da entrada (DD/MM/AAAA, a partir das HH:MM)…";
-    - semana da saída (7 dias antes do fim) → morador e dono: "A saída é em DD/MM/AAAA, até as HH:MM: falta uma semana…";
+    - semana da saída (7 dias antes da SAÍDA, o dia seguinte ao fim gravado; E1089) → morador e dono: "A saída é em DD/MM/AAAA, até as HH:MM: falta uma semana…";
     - meio da estadia (só estadia de 60 dias ou mais, no dia entrada + metade) → só o morador: "Vocês estão na metade
-      da estadia (DD/MM/AAAA a DD/MM/AAAA)…".
+      da estadia (entrada DD/MM/AAAA, saída DD/MM/AAAA)…".
   Nenhum dado pessoal nem contato no texto (E441). Controle: contrato que entra hoje SEM o 1º pagamento → nada.
   O cron das automações sobe num 2º servidor do mesmo build (porta 3132), com um CRON_SECRET só dele e
   AUTOMACOES_ATIVO=1 (padrão do t597 e do t2130). Leitura na caixa de testes. Datas e textos esperados escritos aqui.
@@ -68,8 +68,10 @@ test.describe("T2136 — E663: a jornada da estadia chega na data (chegada, sema
     const hoje = hojeBRT();
     ids.datasChegada = `${hoje}|${somar(hoje, 59)}`;
     ids.cChegada = await estadia("chegada", ids.chegada, hoje, somar(hoje, 59), true);
-    ids.datasSaida = `${somar(hoje, -52)}|${somar(hoje, 7)}`;
-    ids.cSaida = await estadia("saida", ids.saida, somar(hoje, -52), somar(hoje, 7), true);
+    // E1089 (coordenador): a "semana da saída" conta da SAÍDA (o dia seguinte à última noite do bloco). Saída em 7 dias =
+    // última noite em 6 dias.
+    ids.datasSaida = `${somar(hoje, -52)}|${somar(hoje, 6)}`;
+    ids.cSaida = await estadia("saida", ids.saida, somar(hoje, -52), somar(hoje, 6), true);
     ids.datasMeio = `${somar(hoje, -30)}|${somar(hoje, 30)}`; // 60 dias: o meio é entrada + 30 = hoje
     ids.cMeio = await estadia("meio", ids.meio, somar(hoje, -30), somar(hoje, 30), true);
     ids.cSemPagamento = await estadia("sempagar", ids.semp, hoje, somar(hoje, 59), false);
@@ -110,9 +112,9 @@ test.describe("T2136 — E663: a jornada da estadia chega na data (chegada, sema
     const CASOS = [
       { quem: ids.chegada, evento: "jornada_chegada", frase: `Hoje é o dia da entrada (${dataBR(entC)}, a partir das 14:00).` },
       { quem: ids.dono, evento: "jornada_chegada", frase: `Hoje é o dia da entrada (${dataBR(entC)}, a partir das 14:00).` },
-      { quem: ids.saida, evento: "jornada_semana_saida", frase: `A saída é em ${dataBR(fimS)}, até as 11:00: falta uma semana.` },
-      { quem: ids.dono, evento: "jornada_semana_saida", frase: `A saída é em ${dataBR(fimS)}, até as 11:00: falta uma semana.` },
-      { quem: ids.meio, evento: "jornada_meio_estadia", frase: `Vocês estão na metade da estadia (${dataBR(entM)} a ${dataBR(fimM)}).` },
+      { quem: ids.saida, evento: "jornada_semana_saida", frase: `A saída é em ${dataBR(somar(fimS, 1))}, até as 11:00: falta uma semana.` },
+      { quem: ids.dono, evento: "jornada_semana_saida", frase: `A saída é em ${dataBR(somar(fimS, 1))}, até as 11:00: falta uma semana.` },
+      { quem: ids.meio, evento: "jornada_meio_estadia", frase: `Vocês estão na metade da estadia (entrada ${dataBR(entM)}, saída ${dataBR(somar(fimM, 1))}).` },
     ];
     for (const c of CASOS) {
       await expect.poll(async () => (await caixa(c.quem, c.evento)).some((t) => t.includes(c.frase)), { timeout: 30_000, message: `${c.evento}: "${c.frase}"` }).toBe(true);
@@ -124,7 +126,7 @@ test.describe("T2136 — E663: a jornada da estadia chega na data (chegada, sema
       }
     }
     // O meio é só do morador; o dono não recebe.
-    expect((await caixa(ids.dono, "jornada_meio_estadia")).some((t) => t.includes(`(${dataBR(entM)} a ${dataBR(fimM)})`)), "o meio da estadia não vai ao dono").toBe(false);
+    expect((await caixa(ids.dono, "jornada_meio_estadia")).some((t) => t.includes(`(entrada ${dataBR(entM)}, saída ${dataBR(somar(fimM, 1))})`)), "o meio da estadia não vai ao dono").toBe(false);
     // Sem o 1º pagamento: nada da jornada para esse morador.
     expect(await caixa(ids.semp, "jornada_chegada"), "sem o 1º pagamento, não há mensagem de chegada").toHaveLength(0);
   });

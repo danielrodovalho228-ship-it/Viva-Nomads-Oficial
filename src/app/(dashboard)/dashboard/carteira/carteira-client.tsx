@@ -168,8 +168,9 @@ export function CarteiraClient({ itens }: { itens: ItemCarteira[] }) {
                   <td className="py-3 text-right text-ink">{i.valorMensal > 0 ? formatBRL(i.valorMensal) : "—"}</td>
                   <td className="py-3 text-ink" data-testid="carteira-inicio">{i.inicio ? dataBR(i.inicio) : "—"}</td>
                   <td className="py-3 text-ink" data-testid="carteira-fim">
-                    {i.fim ? dataBR(i.fim) : "—"}
-                    {i.diasAteFim != null && i.diasAteFim >= 0 && <span className="block text-xs text-muted">em {i.diasAteFim} dias</span>}
+                    {/* E1089: `i.fim` é a última noite; a coluna mostra a saída (o dia seguinte). */}
+                    {i.fim ? dataBR(addDiasISO(i.fim, 1)) : "—"}
+                    {i.diasAteFim != null && i.diasAteFim >= 0 && <span className="block text-xs text-muted">em {i.diasAteFim + 1} dias</span>}
                   </td>
                   <td className="py-3">
                     {i.contratoId ? (
@@ -216,7 +217,7 @@ function ColunaVencimento({ titulo, tom, itens, faixa }: { titulo: string; tom: 
             <li key={i.propertyId} className="text-sm" data-testid="carteira-vencimento">
               <p className="font-medium text-ink">{i.titulo}</p>
               <p className="text-xs text-muted">
-                Termina em {i.fim ? dataBR(i.fim) : "—"} ({i.diasAteFim} dias){i.morador ? ` · ${i.morador}` : ""}
+                Saída em {i.fim ? dataBR(addDiasISO(i.fim, 1)) : "—"} ({(i.diasAteFim ?? 0) + 1} dias){i.morador ? ` · ${i.morador}` : ""}
               </p>
               {i.fim && (
                 <p className="mt-1 text-xs text-muted">Sem renovação, o imóvel fica livre a partir de {dataBR(addDiasISO(i.fim, 1))}: anuncie a disponibilidade.</p>

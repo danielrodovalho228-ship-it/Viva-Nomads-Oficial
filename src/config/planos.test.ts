@@ -1,3 +1,4 @@
+// ORDEM-DUET-534 (Gerente, 22/11/2026): a última faixa PUBLICADA passa de "16 ou mais" / "16+" a "16–19" (a partir de 20, a linha de carteiras, sem percentual). As asserções deste arquivo que cobravam "16 ou mais" foram ajustadas por essa decisão; o cálculo não mudou.
 /*
   Taxa de comissão do contrato e valor da comissão.
   Roda: node --test src/config/planos.test.ts
@@ -30,7 +31,7 @@ test("comissão = aluguel × meses × taxa, cobrada do proprietário (nunca o al
   assert.equal(valorComissao(0, 3, 0.12), 0);
 });
 
-test("#82 (ordem 90181c57): contrato congelado em 6% (faixa 16+ imóveis) usa 6%, não a taxa do plano", () => {
+test("#82 (ordem 90181c57): contrato congelado em 6% (faixa 16–19 imóveis) usa 6%, não a taxa do plano", () => {
   assert.equal(taxaDoContrato(0.06, "free"), 0.06);
   assert.equal(taxaDoContrato("0.06", "essential"), 0.06);
   assert.equal(taxaDoContrato(0.1, "free"), 0.1);

@@ -6,6 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 import { ORDEM_PILULAS, valorDaPilula } from "./pilulas.ts";
 import { contagemDaBusca } from "./titulo-busca.ts";
 import { FILTROS_PAINEL_VAZIOS } from "./painel-filtros.ts";
@@ -85,7 +86,7 @@ test("E82-A: 'Mais filtros' conta os filtros que só existem na folha (Estadia e
 
 test("E105: cada filtro num lugar só — Preço, Tipo, Nível e a data nas pílulas; o resto no 'Mais filtros'", () => {
   const folha = ler("components/busca/painel-filtros-celular.tsx");
-  const semComentario = folha.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+  const semComentario = fonteSemComentarios(folha);
   for (const fora of [/Preço por mês/, /Tipo de imóvel/, /Nível a partir de/, /Entrada em/, /OPCOES_PRECO|OPCOES_TIPO|NIVEIS/]) assert.doesNotMatch(semComentario, fora, String(fora));
   for (const fica of ["Quartos", "Estadia", "Do seu jeito", "Contrato", "Comodidades"]) assert.match(folha, new RegExp(`titulo="${fica}"`), fica);
   // A pílula Datas não repete o período da estadia (mora na seção "Estadia" da folha).

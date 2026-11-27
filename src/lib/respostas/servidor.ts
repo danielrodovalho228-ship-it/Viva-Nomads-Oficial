@@ -3,7 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { urlDaConversa } from "@/lib/notifications/url-conversa";
 import { conversationId as idConversa } from "@/lib/messages/conversation-id";
-import { datasDaEstadia, decidirEnvio, reagendar, type Quando } from "./regras";
+import { contratoValeParaAProgramada, datasDaEstadia, decidirEnvio, reagendar, type Quando } from "./regras";
+import { diaBRT } from "@/lib/datas-brasilia";
 
 /*
   Prompt 55-E2 — mensagens programadas (SERVER-ONLY, service role). O cron envia; o aditivo reagenda; o encerramento
@@ -100,7 +101,9 @@ export async function enviarProgramadas(admin: Admin, agora: Date, soContrato?: 
     try {
       if (!contratos.has(p.contrato_id)) contratos.set(p.contrato_id, await contratoDaProgramada(admin, p.contrato_id));
       const c = contratos.get(p.contrato_id) ?? null;
-      const d = decidirEnvio(p, c?.status === "ativo" && c.properties?.owner_id === p.owner_id, agora);
+      // E1089: no dia da saída o contrato já pode ter sido fechado pelo ciclo diário; a mensagem "No dia da saída" ainda sai.
+      const vale = !!c && contratoValeParaAProgramada(c.status, p.quando, datasDaEstadia(c.contrato_blocos ?? [])?.saida, diaBRT(agora) ?? "");
+      const d = decidirEnvio(p, vale && c?.properties?.owner_id === p.owner_id, agora);
       if (d.acao === "cancelar") {
         await admin.from("mensagens_programadas").update({ cancelada_em: agora.toISOString(), motivo_cancelamento: d.motivo }).eq("id", p.id).is("enviada_em", null).is("cancelada_em", null);
         out.canceladas += 1;

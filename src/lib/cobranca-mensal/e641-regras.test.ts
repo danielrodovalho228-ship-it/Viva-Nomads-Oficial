@@ -9,6 +9,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 import {
   DIVISOR_PRORATA,
   ESTADOS_DO_LIVRO,
@@ -127,7 +128,7 @@ test("lembretes neutros: só D-5 e D-3 antes do vencimento, e só se ainda não 
 
 test("a parte neutra não tem atraso, multa, juros, D+ nem consequência: nada disso existe no código", () => {
   for (const f of ["src/lib/cobranca-mensal/regras.ts", "src/lib/cobranca-mensal/servidor.ts", "src/lib/cobranca-mensal/acoes.ts"]) {
-    const src = ler(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+    const src = fonteSemComentarios(ler(f));
     assert.doesNotMatch(src, /atrasad|inadimpl|multa|juros|D\+|em_atraso/i, f);
   }
 });

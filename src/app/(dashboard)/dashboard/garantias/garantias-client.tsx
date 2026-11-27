@@ -10,7 +10,7 @@ import type { DemoContract } from "@/lib/demo/seed";
 import type { ContratoView } from "@/lib/data/contratos-actions";
 import { formatBRL } from "@/lib/utils";
 import { estadoCaucao } from "@/lib/caucao-estado";
-import { PERC_CAUCAO_BLOCO } from "@/lib/contrato-blocos";
+import { REGRA_CAUCAO_FRASE } from "@/lib/caucao-regra";
 import { AVISO_CAUCAO_DE_MORADOR, ROTULO_VER_CONTRATO, linhasCaucaoPorBloco, type ContratoParaCaucao, type LinhaCaucaoBloco } from "@/lib/contratos/area-dono";
 
 /** Cauções de DEMONSTRAÇÃO: um bloco por contrato do seed (a segunda ainda a receber). */
@@ -113,7 +113,7 @@ export function GarantiasClient({ contratos, temContratoDeMorador = false }: { c
         <summary className="flex min-h-11 cursor-pointer items-center font-semibold">Como funciona a caução</summary>
         <ul className="mt-2 list-disc space-y-1 pl-4 text-muted">
           <li>
-            Até {Math.round(PERC_CAUCAO_BLOCO * 100)}% de cada bloco (blocos de até 90 dias), devolvível ao fim da estadia — até 3 vezes o valor mensal.
+            {REGRA_CAUCAO_FRASE}
           </li>
           <li>Uma garantia por contrato: caução e seguro-fiança não se somam. Seguro-fiança via parceiro — em estruturação.</li>
           <li>Na devolução, descontam-se só débitos ou danos comprovados na conferência de saída; o restante volta ao morador.</li>

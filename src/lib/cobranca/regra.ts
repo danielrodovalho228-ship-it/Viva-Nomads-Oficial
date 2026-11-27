@@ -4,13 +4,26 @@
   A taxa vale sobre o VALOR TOTAL de cada contrato fechado (aluguel mensal × meses contratados — ordem do
   Daniel, 14/10). Cada renovação/prorrogação é cobrada à parte, sobre o valor total do período renovado, com a
   taxa da faixa do dono no momento do fechamento. Sem mensalidade. O inquilino não paga taxa da Viva.
-    1–2 imóveis = 12% · 3–5 = 10% · 6–15 = 8% · 16–19 = 6% · a última faixa, sem teto, é a do Plano Gestor, a 4%
-  (E564, decisão do Daniel de 04/11/2026: sem assinatura nem taxa zero; conta de administradora também entra). A faixa "31+ negociável"
-  deixou de existir. Imóveis que contam: só os ATIVOS DE VERDADE (E565, carteira-ativa.ts).
+    1–2 imóveis = 12% · 3–5 = 10% · 6–15 = 8% · 16–19 = 6%; a partir de 20, condição combinada com a Viva.
+  ORDEM-DUET-534 (Gerente, 22/11/2026): a escada PUBLICADA termina em "16–19 = 6%", como nos Termos ("16 a 19, 6%; 20 ou
+  mais, condição negociada"). A partir de CARTEIRAS_MINIMO_IMOVEIS (20) nenhum texto promete percentual: vale a linha
+  de carteiras. O CÁLCULO não mudou: a última faixa da tabela continua sem teto (16+ = 6%) e é o que vale para quem
+  tem 20 ou mais sem condição combinada (taxa fixada pelo admin).
+  Prompt 078 (decisão do Daniel, 16/11/2026): o Plano Gestor de 4% deixou de ser oferta pública. A faixa de 20+ a 4% (E564)
+  saiu, e a conta de administradora não escolhe mais uma faixa especial: vale a escada como para todos. Carteira a partir de
+  20 imóveis ou administradora fala com a Viva (TEXTO_CARTEIRAS, config/planos.ts); condição especial é só a taxa fixada
+  pelo admin, com motivo e validade (TaxaFixadaAdmin). A faixa "31+ negociável" já tinha deixado de existir (E564).
+  Imóveis que contam: só os ATIVOS DE VERDADE (E565, carteira-ativa.ts).
   Lógica PURA, sem banco. As faixas vêm da tabela de config (faixas_comissao); na falta dela vale o padrão
   abaixo, que espelha a migração 0100. A plataforma não toca no aluguel nem na caução: a taxa é cobrada
   à parte, do PROPRIETÁRIO.
 */
+import { REGRAS_CONTRATO } from "../../config/planos.ts";
+
+/** E1116 (ORDEM-DUET-503): dias por mês da regra única (REGRAS_CONTRATO.diasPorMes), nunca um 30 à mão. */
+const DIAS_POR_MES = REGRAS_CONTRATO.diasPorMes;
+
+import { CARTEIRAS_MINIMO_IMOVEIS } from "../../config/planos.ts";
 
 export type TipoCobranca = "novo" | "renovacao";
 
@@ -18,8 +31,6 @@ export interface FaixaComissao {
   minImoveis: number;
   maxImoveis: number | null; // null = sem teto
   taxa: number; // 0..1, sobre o valor total do contrato (aluguel × meses)
-  /** E564: a faixa do Plano Gestor (a partir de GESTOR_PRECO.minimoImoveis ativos, ou administradora): 4%, sem assinatura. */
-  gestor?: boolean;
   /** Legado: a faixa "31+ negociável" saiu no E564 (nenhuma faixa padrão é negociável). Mantido só para leitura. */
   negociavel?: boolean;
 }
@@ -28,13 +39,10 @@ export const FAIXAS_COMISSAO_PADRAO: readonly FaixaComissao[] = [
   { minImoveis: 1, maxImoveis: 2, taxa: 0.12 },
   { minImoveis: 3, maxImoveis: 5, taxa: 0.1 },
   { minImoveis: 6, maxImoveis: 15, taxa: 0.08 },
-  { minImoveis: 16, maxImoveis: 19, taxa: 0.06 },
-  { minImoveis: 20, maxImoveis: null, taxa: 0.04, gestor: true },
+  { minImoveis: 16, maxImoveis: null, taxa: 0.06 },
 ];
 
 export const TAXA_COMISSAO_PADRAO = FAIXAS_COMISSAO_PADRAO[0].taxa; // 1–2 imóveis
-/** E564: a faixa do Plano Gestor (a última, sem teto). */
-export const FAIXA_GESTOR: FaixaComissao = FAIXAS_COMISSAO_PADRAO[FAIXAS_COMISSAO_PADRAO.length - 1];
 /**
  * Prompt 16: a "Análise da carteira" abre a partir da 2ª faixa (3 imóveis ativos), pela MESMA regra das taxas —
  * sem plano pago nem trava de upgrade.
@@ -61,7 +69,7 @@ export function faixaPorImoveisAtivos(n: number, faixas: readonly FaixaComissao[
   return faixas[indiceFaixa(faixas, n)];
 }
 
-/** Próxima faixa e quantos imóveis faltam ("Ative mais 1 imóvel e sua taxa cai para 10%"). Na faixa Gestor não há próxima. */
+/** Próxima faixa e quantos imóveis faltam ("Ative mais 1 imóvel e sua taxa cai para 10%"). Na última faixa não há próxima. */
 export function proximaFaixa(
   n: number,
   faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO,
@@ -116,7 +124,7 @@ export function comissaoSobreDias(aluguelMensal: number, dias: number, taxa: num
   if (!Number.isFinite(aluguelMensal) || aluguelMensal <= 0) return 0;
   if (!Number.isFinite(dias) || dias < 1) return 0;
   if (!Number.isFinite(taxa) || taxa <= 0) return 0;
-  return Math.round(((aluguelMensal * Math.round(dias)) / 30) * 100 * taxa) / 100;
+  return Math.round(((aluguelMensal * Math.round(dias)) / DIAS_POR_MES) * 100 * taxa) / 100;
 }
 
 export interface TaxaFixadaAdmin {
@@ -156,12 +164,10 @@ export function taxaNaAssinatura(e: {
   faixas?: readonly FaixaComissao[];
   queda?: { taxaAnterior: number; em: Date } | null;
   fixadaPeloAdmin?: TaxaFixadaAdmin | null;
-  /** E564: conta de administradora (profiles.account_type = 'gestor') é Plano Gestor qualquer que seja a carteira. */
-  administradora?: boolean;
 }): TaxaAplicada {
   const faixas = e.faixas ?? FAIXAS_COMISSAO_PADRAO;
-  const gestor = faixas.find((f) => f.gestor) ?? null;
-  const faixa = e.administradora && gestor ? gestor : faixaPorImoveisAtivos(e.imoveisAtivos, faixas);
+  // Prompt 078: o tipo da conta (administradora) não escolhe faixa; vale a escada pelos imóveis ativos, para todos.
+  const faixa = faixaPorImoveisAtivos(e.imoveisAtivos, faixas);
   if (fixacaoAdminValida(e.fixadaPeloAdmin, e.assinadoEm)) {
     return { taxa: e.fixadaPeloAdmin.taxa, origem: "admin", tipo: e.tipo, faixaNoFechamento: faixa };
   }
@@ -193,26 +199,57 @@ export function taxaPublicaTexto(f: FaixaComissao): string {
 
 /** Legado (E252-B): o rótulo da antiga faixa "31+ negociável", que saiu no E564. */
 export const ROTULO_FAIXA_NEGOCIAVEL = "taxa negociável";
-/** E564: o rótulo da faixa sem teto, a do Plano Gestor (4%). */
-export const ROTULO_FAIXA_GESTOR = "Plano Gestor";
-/** Rótulo da faixa nas tabelas: "1–2", "31+ · taxa negociável"; com `imoveis`, "1–2 imóveis", "31+ imóveis · taxa negociável". */
+/**
+ * ORDEM-DUET-534: até onde a escada PUBLICADA vai. A última faixa da tabela não tem teto (é ela que calcula a taxa de
+ * quem tem 20 ou mais sem condição combinada), mas nos textos ela é publicada como "16–19": a partir de
+ * CARTEIRAS_MINIMO_IMOVEIS a condição é combinada com a Viva e nenhum percentual é prometido. Faixa sem teto que começa
+ * no próprio limiar (ou depois) continua a ser dita como "N ou mais" / "N+" — não há teto público menor que o início.
+ */
+export function tetoPublicado(f: FaixaComissao): number | null {
+  if (f.maxImoveis !== null) return f.maxImoveis;
+  return f.minImoveis < CARTEIRAS_MINIMO_IMOVEIS ? CARTEIRAS_MINIMO_IMOVEIS - 1 : null;
+}
+
+/** Rótulo da faixa nas tabelas: "1–2", "16–19", "31+ · taxa negociável"; com `imoveis`, "1–2 imóveis", "31+ imóveis · taxa negociável". */
 export function rotuloFaixaTaxa(f: FaixaComissao, imoveis = false): string {
-  const base = f.maxImoveis === null ? `${f.minImoveis}+` : f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`;
+  const teto = tetoPublicado(f);
+  const base = teto === null ? `${f.minImoveis}+` : f.minImoveis === teto ? `${f.minImoveis}` : `${f.minImoveis}–${teto}`;
   const comImoveis = imoveis ? `${base} imóveis` : base;
-  if (f.gestor) return `${comImoveis} · ${ROTULO_FAIXA_GESTOR}`;
   return f.negociavel ? `${comImoveis} · ${ROTULO_FAIXA_NEGOCIAVEL}` : comImoveis;
 }
 
+/** Prompt 078 / ORDEM-DUET-534: a faixa por extenso, para frases — "1–2", "16–19" (a última faixa publicada; ver tetoPublicado). */
+export function faixaPorExtenso(f: FaixaComissao): string {
+  const teto = tetoPublicado(f);
+  if (teto === null) return `${f.minImoveis} ou mais`;
+  return f.minImoveis === teto ? `${f.minImoveis}` : `${f.minImoveis}–${teto}`;
+}
+
 /**
- * E805 — a ESCADA das faixas comuns (sem a do Plano Gestor, que tem texto próprio), lida da regra:
+ * ORDEM-DUET-534: a faixa como o CÁLCULO a lê — a última, sem teto, é "16 ou mais". Só para telas INTERNAS (o modelo dos
+ * sócios), que projetam com a tabela de cálculo. Texto público usa faixaPorExtenso (a última publicada é "16–19").
+ */
+export function faixaDoCalculoPorExtenso(f: FaixaComissao): string {
+  if (f.maxImoveis === null) return `${f.minImoveis} ou mais`;
+  return f.minImoveis === f.maxImoveis ? `${f.minImoveis}` : `${f.minImoveis}–${f.maxImoveis}`;
+}
+
+/**
+ * E805/078 — a ESCADA inteira, lida da regra:
  * "1–2 imóveis: 12% · 3–5 imóveis: 10% · 6–15 imóveis: 8% · 16–19 imóveis: 6%". Nenhum número escrito à mão.
  */
 export function escadaTaxasTexto(faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): string {
-  return faixas
-    .filter((f) => !f.gestor)
-    .map((f) => `${rotuloFaixaTaxa(f, true)}: ${taxaPublicaTexto(f)}`)
-    .join(" · ");
+  return faixas.map((f) => `${faixaPorExtenso(f)} imóveis: ${taxaPublicaTexto(f)}`).join(" · ");
 }
+
+/** Prompt 078 — a escada curta da Ajuda e do atendimento: "1–2 = 12%, 3–5 = 10%, 6–15 = 8%, 16–19 = 6%". */
+export function escadaTaxasCurta(faixas: readonly FaixaComissao[] = FAIXAS_COMISSAO_PADRAO): string {
+  return faixas.map((f) => `${faixaPorExtenso(f)} = ${taxaPublicaTexto(f)}`).join(", ");
+}
+
+/** Prompt 078: a maior e a menor taxa da escada, para as frases ("cobra 12%… (até 6%)") — nunca escritas à mão. */
+export const TAXA_MAIOR_TEXTO = pctTexto(Math.max(...FAIXAS_COMISSAO_PADRAO.map((f) => f.taxa)));
+export const TAXA_MENOR_TEXTO = pctTexto(Math.min(...FAIXAS_COMISSAO_PADRAO.map((f) => f.taxa)));
 
 /** "R$ 3.200" (inteiro) / "R$ 259,20" (com centavos). */
 export function brlTaxa(v: number): string {
@@ -233,13 +270,13 @@ export function rotuloTaxaServico(taxa: number, valorMensal: number, meses: numb
   if (!(v > 0 && m > 0)) return inicio;
   if (!Number.isInteger(Math.round(m * 1e6) / 1e6)) {
     // E562 (telas): estadia em dias exatos — a conta aberta em dias: "R$ 2.800 × 43 dias ÷ 30 = R$ 4.013,33".
-    const dias = Math.round(m * 30);
-    const base = Math.round(((v * dias) / 30) * 100) / 100;
+    const dias = Math.round(m * DIAS_POR_MES);
+    const base = Math.round(((v * dias) / DIAS_POR_MES) * 100) / 100;
     const valorDias = valorGravado != null && Number.isFinite(valorGravado) ? valorGravado : comissaoSobreDias(v, dias, taxa);
-    return `Taxa de serviço: ${pctTexto(taxa)} sobre o valor mensal × dias ÷ 30 (${brlTaxa(v)} × ${dias} dias ÷ 30 = ${brlTaxa(base)}) = ${brlTaxa(valorDias)}`;
+    return `Taxa de serviço: ${pctTexto(taxa)} sobre o valor mensal × dias ÷ ${DIAS_POR_MES} (${brlTaxa(v)} × ${dias} dias ÷ ${DIAS_POR_MES} = ${brlTaxa(base)}) = ${brlTaxa(valorDias)}`;
   }
   // E562: estadia em dias exatos chega como meses fracionários (dias ÷ 30) — a fórmula em dias, sem truncar.
-  const calculado = Number.isInteger(m) ? comissaoSobreContrato(v, m, taxa) : comissaoSobreDias(v, Math.round(m * 30), taxa);
+  const calculado = Number.isInteger(m) ? comissaoSobreContrato(v, m, taxa) : comissaoSobreDias(v, Math.round(m * DIAS_POR_MES), taxa);
   const valor = valorGravado != null && Number.isFinite(valorGravado) ? valorGravado : calculado;
   return `${inicio} (${brlTaxa(v)} × ${numMeses(m)} = ${brlTaxa(Math.round(v * m * 100) / 100)}) = ${brlTaxa(valor)}`;
 }
@@ -256,13 +293,13 @@ export function textoTaxaPainel(taxa: number, valorMensal: number, meses: number
  * contrato fechado (aluguel × meses), em cada contrato e em cada renovação.
  */
 export const TEXTO_REGRA_UNICA =
-  "Anunciar é grátis. A Viva cobra 12% sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até 4%). Sem mensalidade.";
+  `Anunciar é grátis. A Viva cobra ${TAXA_MAIOR_TEXTO} sobre o valor total do contrato fechado. Quanto mais imóveis, menor a taxa (até ${TAXA_MENOR_TEXTO}). Sem mensalidade.`;
 
 export const TEXTO_REGRA_CURTO = TEXTO_REGRA_UNICA;
 
 /** Meta description de /precos (≤155 caracteres; ordem 218c62ad, #153). */
 export const DESCRICAO_PRECOS =
-  "Anunciar é grátis. A Viva cobra 12% do contrato fechado, menor com mais imóveis (até 4%). Sem mensalidade. Para imóveis mobiliados.";
+  `Anunciar é grátis. A Viva cobra ${TAXA_MAIOR_TEXTO} do contrato fechado, menor com mais imóveis (até ${TAXA_MENOR_TEXTO}). Sem mensalidade. Para imóveis mobiliados.`;
 
 /** Frase padrão (ordem b3c9d76e), com a taxa da faixa. */
 export function fraseComissaoUnica(taxaTexto: string): string {
@@ -277,3 +314,17 @@ export function comissaoCurta(taxaTexto: string): string {
 /** Renovação/prorrogação (decisão do Daniel, 14/10): cobrada à parte, sobre o valor total do período renovado. */
 export const TEXTO_RENOVACAO_COMISSAO =
   "A taxa é cobrada uma vez em cada contrato e em cada renovação, sobre o valor total do período contratado.";
+
+/**
+ * E1111 (ORDEM-DUET-494): o exemplo da cobrança dito ao público ("contrato de 3 meses a R$ 3.000 por mês, na faixa de
+ * 12%: valor total R$ 9.000; comissão R$ 1.080"), calculado pela regra — nenhum número escrito à mão.
+ */
+export function exemploCobranca(aluguelMensal = 3000, meses = 3, taxa: number = TAXA_COMISSAO_PADRAO) {
+  return {
+    meses,
+    aluguel: brlTaxa(aluguelMensal),
+    pct: pctTexto(taxa),
+    total: brlTaxa(aluguelMensal * meses),
+    comissao: brlTaxa(comissaoSobreContrato(aluguelMensal, meses, taxa)),
+  };
+}

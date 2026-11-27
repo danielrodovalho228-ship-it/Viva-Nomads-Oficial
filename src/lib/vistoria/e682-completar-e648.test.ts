@@ -6,6 +6,7 @@ import { test } from "node:test";
 
 import { PRAZO_DONO_ACEITAR_HORAS, propostaVencida } from "./escolha.ts";
 import { blocoDoDonoVisivel } from "./telas-exibicao.ts";
+import { TEMPLATES } from "../notifications/eventos-email.ts";
 
 const ler = (p: string) => readFileSync(p, "utf8");
 const servidor = ler("src/lib/vistoria/servidor.ts");
@@ -28,18 +29,35 @@ test("o cron devolve ao dono (sem rodízio) no silêncio do avaliador e na propo
 });
 
 test("o dono é avisado na recusa, no silêncio e quando o prazo dele vence; o texto cobre os três casos", () => {
-  assert.match(rotina, /avisar\(admin, [^)]*"vistoria_designado_dono"/);
+  // E1160 (1) (asserções alteradas, ORDEM-DUET-674): um texto para três casos passou a três eventos. O silêncio, na
+  // rotina, sai pelo evento dele; a recusa e a proposta saem das ações (trava do E1160).
+  assert.match(rotina, /avisar\(admin, [^)]*"vistoria_sem_resposta_dono"/);
   const eventos = ler("src/lib/notifications/eventos-email.ts");
   const linha = eventos.slice(eventos.indexOf("vistoria_designado_dono: { subject"), eventos.indexOf("vistoria_designado_dono: { subject") + 700);
-  assert.match(linha, /não respondeu no prazo/);
-  assert.match(linha, /72 horas/);
+  // E1158 (21; ORDEM-DUET-659): o modelo da matriz é o próprio corpo de corpo-email.ts, sem os fatos — o texto está lá.
+  assert.match(linha, /body: semFatos\("vistoria_designado_dono"\)/);
+  const corpo = ler("src/lib/vistoria/corpo-email.ts");
+  const caso = corpo.slice(corpo.indexOf('case "vistoria_designado_dono":'), corpo.indexOf('case "vistoria_proposta_expirada":'));
+  // O trecho vai do aviso da proposta até à expiração: tem os três casos, cada um com o seu texto.
+  assert.match(caso, /case "vistoria_recusada_dono":[\s\S]*recusou o pedido de avaliação/);
+  assert.match(caso, /case "vistoria_sem_resposta_dono":[\s\S]*não respondeu no prazo/);
+  // E1118 (ORDEM-DUET-506): o prazo não está escrito à mão no texto. E1160: o aviso da proposta lê a frase da fonte do
+  // prazo de aceite (que leva a constante), e o e-mail continua a dizer 72 horas.
+  assert.match(caso, /textoDoPrazoDeAceiteDesdeAProposta\(f\.propostaEm\)/);
+  assert.doesNotMatch(caso, /72 horas/);
+  assert.match(TEMPLATES.vistoria_sem_resposta_dono.body("Lara"), /não respondeu no prazo/);
+  assert.match(TEMPLATES.vistoria_recusada_dono.body("Lara"), /recusou o pedido/);
+  assert.match(TEMPLATES.vistoria_designado_dono.body("Lara"), /72 horas/);
+  assert.doesNotMatch(TEMPLATES.vistoria_designado_dono.body("Lara"), /recusou|não respondeu/);
 });
 
 test("o avaliador é avisado ao ser escolhido (e o texto traz o prazo dele, não um número fixo)", () => {
   assert.match(servidor, /avisar\(admin, a\.userId, "vistoria_designada"/);
   const eventos = ler("src/lib/notifications/eventos-email.ts");
   const linha = eventos.slice(eventos.indexOf("vistoria_designada: { subject"), eventos.indexOf("vistoria_designada: { subject") + 500);
-  assert.match(linha, /no prazo que você declarou/);
+  // E1158 (21; ORDEM-DUET-659): o modelo da matriz é o próprio corpo de corpo-email.ts, sem os fatos.
+  assert.match(linha, /body: semFatos\("vistoria_designada"\)/);
+  assert.match(TEMPLATES.vistoria_designada.body("Rita"), /no prazo que você declarou/);
 });
 
 test("com a chave desligada o bloco some por completo: conta real nada, conta de teste só leitura sem lista nem botão de escolha", () => {
@@ -60,7 +78,9 @@ test("com a chave desligada o bloco some por completo: conta real nada, conta de
 
 test("a tela mostra o prazo do dono para aceitar e o prazo declarado do avaliador, e a lista traz 'avaliações feitas'", () => {
   const bloco = ler("src/components/vistoria/bloco-avaliacao-dono.tsx");
-  assert.match(bloco, /PRAZO_DONO_ACEITAR_HORAS/);
+  // E1154: o prazo do dono (as 72 horas e a hora de fim) passou a sair do relógio do pedido, a mesma fonte do avaliador.
+  assert.match(bloco, /textoDoPrazoDeAceiteParaODono\(relogioDoAceite\)/);
+  assert.match(ler("src/lib/vistoria/relogio-do-pedido.ts"), /export function textoDoPrazoDeAceiteParaODono\([^)]*\): string \{[\s\S]*?\$\{PRAZO_DONO_ACEITAR_HORAS\} horas depois da proposta/);
   assert.match(bloco, /prazo_resposta_horas/);
   assert.match(ler("src/lib/vistoria/escolha.ts"), /avaliações feitas/);
 });
