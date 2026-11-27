@@ -91,7 +91,7 @@ export async function documentosDosContratos(
     alvo.recibos.push({
       pagamentoId: String(pg.id),
       tipo: String(pg.tipo ?? "aluguel"),
-      total: componentesDoPagamento({ valor: Number(pg.valor), encargos: String(pg.tipo ?? "aluguel") === "caucao" ? [] : pg.encargos }).total,
+      total: componentesDoPagamento({ valor: Number(pg.valor), encargos: [] }).total,
       inicio: b?.inicio ?? null,
       fim: b?.fim ?? null,
       documentoId: doc ? String(doc.id) : null,
