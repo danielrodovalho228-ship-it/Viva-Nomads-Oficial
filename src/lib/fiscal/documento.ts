@@ -171,7 +171,8 @@ export function conteudoDocumento(d: DadosDocumento): ConteudoDocumento {
       subtitulo: `Contrato ${d.contratoRef}`,
       quadro: [...base, ["Caução", brl(d.valor)], ["Depositada em", `${dataBR(d.dataPagamento)}${d.forma ? `, por ${FORMA[d.forma] ?? d.forma}` : ""}`]],
       corpo: [
-        `${d.locador.nome} declara o recebimento da caução de ${brl(d.valor)}, depositada por ${d.locatario.nome} em caderneta de poupança, nos termos do art. 38, §2º, da Lei 8.245/91 e do contrato ${d.contratoRef}.`,
+        // E1232 (texto do coordenador, ORDEM-DUET-1143): a forma é a do registro (pagamentos_bloco.forma); só emissões novas.
+        `Caução de ${brl(d.valor)}, paga por ${d.locatario.nome} por ${d.forma ? (FORMA[d.forma] ?? d.forma) : "forma não informada"}, em ${dataBR(d.dataPagamento)}. Pela Lei 8.245/91 (art. 38, §2º), a caução em dinheiro deve ser depositada pelo proprietário em caderneta de poupança.`,
         "A caução é devolvida ao fim da locação, depois da vistoria de saída, com os eventuais descontos justificados.",
       ],
       rodape,
