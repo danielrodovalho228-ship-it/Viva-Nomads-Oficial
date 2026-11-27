@@ -10,5 +10,4 @@ alter table public.contrato_eventos add constraint contrato_eventos_tipo_check c
   'encerramento_pedido', 'contrato_encerrado', 'instrucoes_liberadas', 'ocupantes_apagados',
   'convidado_adicionado', 'convidado_removido', 'convidados_apagados'
 ));
-delete from supabase_migrations.schema_migrations where version = '20261127000368';
 commit;
