@@ -84,9 +84,10 @@ test("6. guarda do E1128: a visita de avaliação vencida sai e grava como hoje;
 });
 
 test("7. a rota: grava o que a conferência resolveu e passa ao sino o que já vinha resolvido do banco", () => {
-  const rota = semComentarios(ler("app/api/painel/avisos/route.ts"));
+  // E1242 reaberto (ORDEM-DUET 1247, asserção alterada): a leitura e a conferência mudaram da rota para avisos-telas.ts,
+  // a UMA leitura do sino, da faixa e da página completa.
+  const rota = semComentarios(ler("lib/data/avisos-telas.ts"));
   assert.match(rota, /resolucoesConferidasAGravar\(avisos, conferidos\)/);
   assert.match(rota, /gravarResolucaoConferida\(\{ usuarioId: uid, ids: recemVencidos \}\)/);
-  assert.match(rota, /resumoSemVisitaVencida\(\{ naoLidas: resumo\.naoLidas, maiorPrioridade \}, conferidos, resolvidosNoBanco\)/);
-  assert.match(rota, /const resolvidosNoBanco = new Set\(avisos\.filter\(\(a\) => a\.resolvido_em\)\.map\(\(a\) => a\.id\)\)/);
+  assert.match(rota, /superficieDosAvisos\(resumo, avisos, conferidos\)/);
 });
