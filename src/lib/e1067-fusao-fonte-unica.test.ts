@@ -134,11 +134,16 @@ test("13. os sítios levam o prazo_total_dias do contrato (sem recalcular)", () 
   assert.match(emitir, /prazoTotalDias: Number\(contrato\?\.prazo_total_dias\)/);
   assert.match(emitir, /comConta: true/);
   const estadia = ler("lib/data/estadia.ts");
-  assert.match(estadia, /COLUNAS_ESTADIA =[\s\S]*?prazo_total_dias/);
+  // ORDEM-DUET-1202 (nota da Pista 3): o prazo_total_dias DENTRO da string das colunas (a interface também o tem).
+  assert.match(estadia, /COLUNAS_ESTADIA =\s*"[^"]*\bprazo_total_dias\b[^"]*"/);
   assert.match(estadia, /dias: estadiaEmDias\(prazoTotalDias\) \? prazoTotalDias : null,/);
   assert.doesNotMatch(estadia, /duracaoDoBloco/);
   const lembrete = ler("lib/estadia/lembrete-bloco.ts");
   assert.match(lembrete, /prazoTotalDias: o\.prazoTotalDias/);
+  // ORDEM-DUET-1202 (D5d): o servidor do lembrete LÊ a coluna (sem ela, o prazo vira 0 e o e-mail de 31 dias diz "2 meses").
+  const lembreteServidor = ler("lib/estadia/lembrete-bloco-servidor.ts");
+  assert.match(lembreteServidor, /const COLUNAS =\s*"[^"]*\bprazo_total_dias\b[^"]*"/);
+  assert.match(lembreteServidor, /prazoTotalDias: Number\(c\.prazo_total_dias\)/);
 });
 
 test("14. o resumo assinado não muda: o mesmo hash e \"igual ao resumo atual\" (31, 61 e 60 dias)", () => {
