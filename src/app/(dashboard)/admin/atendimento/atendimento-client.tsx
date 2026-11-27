@@ -215,7 +215,7 @@ function Tabela({ itens, agora, vazio }: { itens: ChamadoAdmin[]; agora: Date; v
                   <span className="truncate font-semibold text-ink">{c.assunto}</span>
                 </span>
                 <span className="mt-1 block text-xs text-muted">
-                  {c.simulacao && (
+                  {false && c.simulacao && (
                     <span className="mr-2 rounded-full border border-line bg-white px-2 py-1 font-semibold text-ink" data-testid="chamado-simulacao">
                       Simulação
                     </span>
