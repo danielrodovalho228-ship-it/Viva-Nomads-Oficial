@@ -24,6 +24,7 @@ import { rotuloDoAdmin } from "@/config/menu-admin";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { SoLeituraQa } from "@/components/admin/so-leitura-qa";
 import { ABA_ADMIN } from "@/lib/admin/abas";
+import { legendaDaFila } from "@/lib/atendimento-simulacoes";
 
 const ABAS = [
   { id: "fila", rotulo: "Fila" },
@@ -89,7 +90,8 @@ export function AtendimentoClient({
   const agora = new Date(agoraISO);
   return (
     <>
-      <PageTitle title={rotuloDoAdmin("/admin/atendimento")} subtitle="Chamados por prioridade e prazo. Simulações ficam fora." />
+      {/* E1244 (ORDEM-DUET 1233): a legenda segue a opção "Incluir simulações", que só vale na aba da fila. */}
+      <PageTitle title={rotuloDoAdmin("/admin/atendimento")} subtitle={`Chamados por prioridade e prazo. ${legendaDaFila(aba === "fila" && !!filtros.simulacoes)}`} />
       {semAcesso && (
         <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Sem acesso aos chamados agora (banco sem a migração 0073, sem chave de serviço ou sem permissão).

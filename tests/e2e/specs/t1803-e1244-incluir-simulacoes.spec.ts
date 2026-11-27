@@ -8,7 +8,10 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, novaSenha, novoSufixo } 
    2. ligada, aparece marcado "Simulação", sem relógio de prazo, e abre o detalhe;
    3. as contagens não mudam com a opção: a bolinha da aba "aprovação" é a mesma;
    4. (ORDEM-DUET 1231, ressalva da Pista 3) com uma simulação em "aguardando_aprovacao": a bolinha da aprovação é IGUAL
-      com e sem a opção, a simulação não aparece na aba aprovação, e a aba não oferece a opção.
+      com e sem a opção, a simulação não aparece na aba aprovação, e a aba não oferece a opção;
+   5. (ORDEM-DUET 1233, texto do coordenador) a legenda segue a opção: desligada "Simulações ficam fora. Ligue
+      'Incluir simulações' para vê-las."; ligada "Incluindo simulações, marcadas como 'Simulação'. Elas não entram nos
+      números.".
   Simulação declarada: o chamado de simulação é aberto por uma conta de teste do laboratório (o gatilho da 0135 marca
   simulacao = true). Laboratório; não é prova ao vivo no site.
 */
@@ -94,5 +97,14 @@ test.describe("T1803 — E1244: a opção 'Incluir simulações' na fila da Cent
     await expect(page.getByRole("link", { name: /aprova/i }).first()).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText(ASSUNTO_APROVACAO), "a simulação não entra na aba aprovação").toHaveCount(0);
     await expect(page.getByRole("checkbox", { name: "Incluir simulações" }), "a aba aprovação não oferece a opção").toHaveCount(0);
+  });
+
+  test("5. a legenda da fila segue a opção, com os textos do coordenador", async ({ page }) => {
+    await page.goto(`/admin/atendimento?aba=fila`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByText("Simulações ficam fora. Ligue 'Incluir simulações' para vê-las.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Incluindo simulações, marcadas como 'Simulação'. Elas não entram nos números.")).toHaveCount(0);
+    await page.goto(`/admin/atendimento?aba=fila&simulacoes=1`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByText("Incluindo simulações, marcadas como 'Simulação'. Elas não entram nos números.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("Simulações ficam fora. Ligue 'Incluir simulações' para vê-las.")).toHaveCount(0);
   });
 });
