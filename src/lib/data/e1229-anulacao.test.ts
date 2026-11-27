@@ -40,6 +40,8 @@ type Estado = {
   /** Quem escreveu a nota e se é interna (a do pedido é do sistema, interna). */
   notaAutor: string;
   notaInterna: boolean;
+  /** Outras notas do chamado (ORDEM-DUET-1177: mais de um registro). */
+  notasExtra: { corpo: string; autor: string; interno: boolean }[];
   /** O contexto do chamado (o pedido nasce com o contrato do registro). */
   contexto: { tipo: string | null; id: string | null };
   updates: { tabela: string; valores: Record<string, unknown>; filtros: Record<string, unknown> }[];
@@ -65,7 +67,7 @@ function consulta(tabela: string, comoSessao: boolean) {
     if (tabela === "chamados") return { data: filtros.numero_publico || filtros.id ? { id: CHAMADO, numero_publico: "CH-2026-000777", contexto_tipo: E.contexto.tipo, contexto_id: E.contexto.id } : null, error: null };
     if (tabela === "chamado_mensagens") {
       // Os filtros da leitura valem como no banco: autor e interno.
-      const notas = E.notaDoChamado ? [{ corpo: E.notaDoChamado, autor: E.notaAutor, interno: E.notaInterna }] : [];
+      const notas = [...(E.notaDoChamado ? [{ corpo: E.notaDoChamado, autor: E.notaAutor, interno: E.notaInterna }] : []), ...E.notasExtra];
       return { data: notas.filter((n) => (filtros.autor === undefined || n.autor === filtros.autor) && (filtros.interno === undefined || n.interno === filtros.interno)), error: null };
     }
     return { data: null, error: null };
@@ -117,6 +119,7 @@ function cenario(o: { tipo?: "aluguel" | "caucao"; confirmado?: boolean; anulado
     notaDoChamado: o.nota === undefined ? `[anulacao] pagamento=${PG}` : o.nota,
     notaAutor: o.notaAutor ?? "sistema",
     notaInterna: o.notaInterna ?? true,
+    notasExtra: [],
     contexto: o.contexto ?? { tipo: "contrato", id: CONTRATO },
     updates: [],
     inserts: [],
@@ -299,4 +302,33 @@ test("18. (N6, ORDEM-DUET-1174) a nota [anulacao] CERTA (do sistema, interna) nu
   const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
   assert.equal(r.ok, false);
   naoAnulou();
+});
+
+// ── ORDEM-DUET-1177: o chamado com mais de um registro ─────────────────────────────────────────────────────────────
+const PG_B = "44444444-5555-4666-8777-888888888888";
+
+test("19. (1177) a nota do sistema para A e uma nota [anulacao] para B escrita como admin: anula só A", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.notasExtra = [{ corpo: `[anulacao] pagamento=${PG_B}`, autor: "admin", interno: true }];
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, true);
+  const chamadas = E.rpcs.filter((x) => x.nome === "anular_pagamento");
+  assert.equal(chamadas.length, 1);
+  assert.equal(chamadas[0].args.p_pagamento, PG, "só A");
+});
+
+test("20. (1177) duas notas do sistema (A e B): recusa — 'Este chamado tem mais de um registro; abra um pedido por registro.' — e nada é anulado", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.notasExtra = [{ corpo: `[anulacao] pagamento=${PG_B}`, autor: "sistema", interno: true }];
+  const r = await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO });
+  assert.equal(r.ok, false);
+  assert.equal(erro(r), "Este chamado tem mais de um registro; abra um pedido por registro.");
+  naoAnulou();
+});
+
+test("21. (1177) a mesma nota do sistema repetida (um só registro): segue como está", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.notasExtra = [{ corpo: `[anulacao] pagamento=${PG}`, autor: "sistema", interno: true }];
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, true);
+  assert.equal(E.rpcs.filter((x) => x.nome === "anular_pagamento").length, 1);
 });
