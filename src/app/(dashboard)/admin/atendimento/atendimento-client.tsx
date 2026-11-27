@@ -92,7 +92,7 @@ export function AtendimentoClient({
     <>
       {/* E1244 (ORDENS-DUET 1233 e 1237): a legenda segue a opção "Incluir simulações" e aparece SÓ na aba da fila, onde a
           opção existe; nas outras abas (cujas contagens nunca incluíram simulações) não há linha de legenda. */}
-      <PageTitle title={rotuloDoAdmin("/admin/atendimento")} subtitle={aba === "fila" ? `Chamados por prioridade e prazo. ${legendaDaFila(!!filtros.simulacoes)}` : "Chamados por prioridade e prazo."} />
+      <PageTitle title={rotuloDoAdmin("/admin/atendimento")} subtitle={`Chamados por prioridade e prazo. ${legendaDaFila(aba === "fila" && !!filtros.simulacoes)}`} />
       {semAcesso && (
         <p className="mb-6 rounded-xl border border-line bg-white px-4 py-3 text-sm text-amber-800">
           Sem acesso aos chamados agora (banco sem a migração 0073, sem chave de serviço ou sem permissão).
