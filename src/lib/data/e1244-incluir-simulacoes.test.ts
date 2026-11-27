@@ -51,3 +51,7 @@ test("6. o 'Nada pendente' conta a opção como filtro (com simulações à vist
   assert.match(cliente, /fila\.length === 0 && !Object\.values\(filtros\)\.some\(Boolean\)/);
   assert.match(pagina, /const filtros = \{[^}]*simulacoes: um\("simulacoes"\) === "1",[^}]*\}/);
 });
+
+test("7. o detalhe do chamado leva a mesma marca", () => {
+  assert.match(ler("app/(dashboard)/admin/atendimento/[id]/chamado-client.tsx"), /\{c\.simulacao && \([\s\S]{0,120}data-testid="chamado-simulacao"/);
+});

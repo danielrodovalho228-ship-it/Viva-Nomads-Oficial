@@ -9,6 +9,8 @@ import { authFile } from "../fixtures/auth";
  * caixa Responder, com o caso do VN-000101 (proprietário perguntando sobre
  * Caução e seguros). No laboratório não há IA: resumo por regras e sugestão só
  * com textos oficiais (marcada como simulada).
+ * Vizinha do E1244 (ORDENS-DUET 1213, 1219 e 1220): corre também no portão desse PR — a fila e o detalhe do chamado da
+ * Central ganharam a opção "Incluir simulações" e a marca "Simulação".
  */
 const noLaboratorio = process.env.INTEGRACOES_SIMULADAS === "on";
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;

@@ -192,6 +192,12 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
           <h1 className="font-title text-2xl font-semibold text-ink">{c.assunto}</h1>
           <ul className="mt-3 flex flex-wrap gap-2" data-testid="chamado-selos">
             <li className={selo}>{c.numero_publico}</li>
+            {/* E1244: a mesma marca da fila (a leitura do detalhe não muda — já abria igual). */}
+            {c.simulacao && (
+              <li className={selo} data-testid="chamado-simulacao">
+                Simulação
+              </li>
+            )}
             <li className={cn(selo, espera ? "border-amber-300 text-amber-900" : "border-forest/40 text-forest-700")} data-testid="chamado-status">
               <span aria-hidden className="h-2 w-2 rounded-full bg-current" />
               {rotuloStatus(c.status)}

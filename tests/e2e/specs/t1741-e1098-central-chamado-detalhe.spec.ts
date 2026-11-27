@@ -15,6 +15,8 @@ import { adm, criarConta, novaSenha, novoSufixo, NO_LABORATORIO } from "../fixtu
    1. o chamado do mockup (respondido com a sugestão da Viva), a 1280 e a 390 px, com print de cada um;
    2. o chamado à espera: a sugestão está na caixa e não se repete na conversa; enviada, fica só na mensagem da equipe;
    3. mudar a prioridade pelo seletor: o selo e o histórico dizem o mesmo rótulo.
+  Vizinha do E1244 (ORDENS-DUET 1213, 1219 e 1220): corre também no portão desse PR — a fila e o detalhe do chamado da
+  Central ganharam a opção "Incluir simulações" e a marca "Simulação".
 */
 const sufixo = novoSufixo();
 const dono = { email: `dono.t1741.${sufixo}@lab.vivanomads.test`, nome: `Dário Mockup ${sufixo}`, role: "owner" as const };

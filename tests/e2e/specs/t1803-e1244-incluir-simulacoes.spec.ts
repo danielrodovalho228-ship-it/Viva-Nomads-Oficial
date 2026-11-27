@@ -62,5 +62,6 @@ test.describe("T1803 — E1244: a opção 'Incluir simulações' na fila da Cent
     await expect(page.getByRole("checkbox", { name: "Incluir simulações" })).toBeChecked();
     await linha.click();
     await expect(page.getByTestId("chamado-cabecalho")).toContainText(ASSUNTO, { timeout: 30_000 });
+    await expect(page.getByTestId("chamado-cabecalho").getByTestId("chamado-simulacao")).toHaveText("Simulação");
   });
 });
