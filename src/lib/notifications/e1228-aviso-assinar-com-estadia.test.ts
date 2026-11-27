@@ -116,3 +116,39 @@ test("6. o gravarAviso: o 'contrato assinado' (normal) e o contract_status sem c
   assert.equal(a.gravados[0].titulo, `Atualização do seu contrato · ${IMOVEL}`);
   assert.equal(a.gravados[1].titulo, `Atualização do seu contrato · ${IMOVEL}`);
 });
+
+// ── ORDEM-DUET-1161: os quatro casos das fugas da mordida (P7–P10) ──────────────────────────────────────────────────
+
+test("7. (P10) um aviso crítico de OUTRO evento, ligado a um registro, mantém o título do catálogo", async () => {
+  const a = adminFalso();
+  g.__e1072Admin = a;
+  await gravarAviso({ usuarioId: "dono-1", evento: "manutencao_nova", papel: "dono", prioridade: "critico", url: "/dashboard/solicitacoes", refId: C1, imovelId: "11111111-aaaa-4aaa-8aaa-111111111111" });
+  assert.equal(a.gravados[0].titulo, `Pedido de manutenção no seu imóvel · ${IMOVEL}`);
+  assert.doesNotMatch(String(a.gravados[0].titulo), /Assinar o contrato/);
+  assert.notEqual(a.gravados[0].texto, "Contrato VN-CT-E2986CA4");
+});
+
+test("8. (P9) o gravarAviso sem imóvel: o título novo, sem o nome, com a estadia", async () => {
+  const a = adminFalso();
+  g.__e1072Admin = a;
+  await gravar(C2, { imovelId: undefined });
+  assert.equal(a.gravados[0].titulo, "Assinar o contrato — estadia de 18/03/2027 a 30/04/2027");
+});
+
+test("9. (P8) com só uma das datas, o mesmo recurso das datas em falta: o VN-CT, nunca 'null' escrito", async () => {
+  assert.equal(tituloAvisoAssinar!({ imovel: IMOVEL, entrada: "2026-12-01", saida: null, contratoId: C1 }), `Assinar o contrato — ${IMOVEL}, contrato VN-CT-E2986CA4`);
+  assert.equal(tituloAvisoAssinar!({ imovel: IMOVEL, entrada: null, saida: "2027-01-29", contratoId: C1 }), `Assinar o contrato — ${IMOVEL}, contrato VN-CT-E2986CA4`);
+  BLOCOS[C2] = [{ numero_bloco: 1, inicio: "2027-03-18", fim: null as unknown as string }];
+  const a = adminFalso();
+  g.__e1072Admin = a;
+  await gravar(C2);
+  assert.equal(a.gravados[0].titulo, `Assinar o contrato — ${IMOVEL}, contrato VN-CT-78AF9C56`);
+  assert.doesNotMatch(String(a.gravados[0].titulo), /null|undefined/);
+});
+
+test("10. (P7) o corpo do aviso de assinatura é o VN-CT, venha o que vier no corpo", async () => {
+  const a = adminFalso();
+  g.__e1072Admin = a;
+  await gravar(C1, { texto: "outro corpo qualquer" });
+  assert.equal(a.gravados[0].texto, "Contrato VN-CT-E2986CA4");
+});
