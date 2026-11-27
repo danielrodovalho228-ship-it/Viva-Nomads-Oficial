@@ -6,12 +6,13 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
   completa de avisos (com o filtro "Críticos"), não só o sino. A ronda de prova das 15h de 27/11 viu ao vivo a faixa e a
   página a mostrarem como crítico vivo um aviso de assinar já resolvido.
   Um contrato assinado pelos dois. Para cada parte (dono e morador), dois avisos críticos de assinar deste contrato,
-  COM a referência: um já resolvido no banco (a assinatura resolveu) e um esquecido por resolver. O controlo: um 2.º
+  COM a referência: um já semeado RESOLVIDO no banco (o estado que a assinatura deixa — o caso da ronda das 15h, ORDEM-
+  DUET 1256) e um esquecido por resolver (a rede do sino resolve-o na 1.ª leitura). O controlo: um 2.º
   contrato que nenhum dos dois assinou, com o aviso crítico de assinar de cada um — esse é vivo e tem de aparecer.
    1. dono, a faixa do painel: mostra só o vivo (o do contrato por assinar), sem "e mais N" — os de assinar resolvidos
       não aparecem;
-   2. dono, a página completa com "Críticos": os dois de assinar não aparecem como críticos vivos (ou não aparecem, ou
-      aparecem marcados "resolvido"); o vivo continua lá, sem "resolvido";
+   2. dono, a página completa: os dois de assinar resolvidos NÃO aparecem — nem em "Críticos", nem em "Todos" (onde
+      apareciam "Não lido" com o selo "Crítico"); o vivo continua lá, sem "resolvido";
    3. morador, a faixa: o mesmo que o dono;
    4. morador, a página completa com "Críticos": o mesmo que o dono.
   Simulação declarada: contrato, assinaturas e avisos gravados pelo laboratório; a leitura é a das telas, com a sessão
@@ -36,11 +37,16 @@ async function abrir(browser: Browser, email: string): Promise<Page> {
   return entrar(browser, email, senha);
 }
 
-/** Na página completa com o filtro "Críticos": o aviso não está lá como crítico vivo (ausente, ou marcado "resolvido"). */
-async function naoEhCriticoVivo(p: Page, titulo: string) {
-  const itens = p.getByTestId("avisos-item").filter({ hasText: titulo });
-  const n = await itens.count();
-  for (let i = 0; i < n; i++) await expect(itens.nth(i), `"${titulo}" não é crítico vivo na página`).toContainText("resolvido");
+/**
+ * Na página completa (ORDEM-DUET 1247, a regra única do sino): o aviso resolvido NÃO aparece — nem no filtro
+ * "Críticos", nem em "Todos" (onde apareceria "Não lido" com o selo "Crítico", o caso da ronda das 15h).
+ */
+async function naoAparece(p: Page, titulo: string) {
+  await expect(p.getByTestId("avisos-item").filter({ hasText: titulo }), `"${titulo}" não aparece em "Críticos"`).toHaveCount(0);
+  await p.getByTestId("avisos-filtro-todos").click();
+  await expect(p.getByTestId("avisos-filtro-todos")).toHaveAttribute("aria-pressed", "true");
+  await expect(p.getByTestId("avisos-item").filter({ hasText: titulo }), `"${titulo}" não aparece em "Todos"`).toHaveCount(0);
+  await p.getByTestId("avisos-filtro-critico").click();
 }
 
 async function paginaCriticos(p: Page) {
@@ -108,7 +114,7 @@ test.describe("T1806 — E1242: a faixa e a página completa não mostram como v
     const v = p.getByTestId("avisos-item").filter({ hasText: vivo });
     await expect(v, "o vivo está na página com 'Críticos'").toHaveCount(1, { timeout: 30_000 });
     await expect(v, "o vivo não aparece como resolvido").not.toContainText("resolvido");
-    for (const t of resolvidos) await naoEhCriticoVivo(p, t);
+    for (const t of resolvidos) await naoAparece(p, t);
   }
 
   test("1. dono, a faixa do painel: só o vivo, sem 'e mais N' — os de assinar resolvidos não aparecem", async ({ browser }) => {
