@@ -27,7 +27,7 @@ begin
     raise exception 'anular_pagamento: caminho inválido' using errcode = '22023';
   end if;
   update public.pagamentos_bloco set anulado_em = v_agora, anulado_motivo = p_motivo
-   where id = p_pagamento and anulado_em is null and (p_caminho = 'central' or confirmado_pelo_inquilino = false)
+   where id = p_pagamento and (p_caminho = 'central' or confirmado_pelo_inquilino = false)
    returning contrato_id, valor into v_contrato, v_valor;
   if v_contrato is null then
     return jsonb_build_object('ok', false);
