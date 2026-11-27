@@ -26,11 +26,17 @@ test.describe("T1805 — 0369 executada: o prazo da conferência gravado e conge
     expect.soft(p.migracao.linhas, "as duas conferências de antes").toBe(2);
     expect.soft(p.migracao.iguais, "as conferências que já existiam ficam iguais (a fechada não reabre)").toBe(true);
     expect.soft(p.migracao.prazosVazios, "as de antes ficam sem prazo gravado").toBe(true);
+    expect.soft(p.migracao.tipo, "a coluna é timestamptz (G6)").toBe("timestamp with time zone");
     expect.soft(p.reaplicar.erro, "reaplicada, sem erro").toBeNull();
     expect.soft(p.aplicar.erro1).toBeNull();
     expect.soft(p.aplicar.erro2, "o aplicar reaplica sem erro").toBeNull();
     expect.soft(p.aplicar.registos, "regista-se uma vez").toBe(1);
     expect.soft(p.aplicar.nome).toBe("0369_conferencias_prazo_e1238");
+    // ORDEM-DUET-1262: depois do APLICAR de produção, não só da migração.
+    expect.soft(p.aplicar.linhas, "depois do aplicar: as duas conferências de antes").toBe(2);
+    expect.soft(p.aplicar.prazosVazios, "depois do aplicar: as de antes ficam com o prazo NULO (G7)").toBe(true);
+    expect.soft(p.aplicar.tipo, "depois do aplicar: a coluna é timestamptz (G6)").toBe("timestamp with time zone");
+    expect.soft(p.aplicar.padrao, "depois do aplicar: a coluna não tem default (G7)").toBeNull();
     expect.soft(p.nova.erro).toBeNull();
     expect.soft(p.nova.prazo, "a conferência nova nasce com o prazo").toBe(PRAZOS_DA_PROVA.PRAZO_1);
     expect.soft(p.congelado.erro).toBeNull();

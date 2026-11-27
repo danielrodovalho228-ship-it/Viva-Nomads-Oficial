@@ -7,7 +7,10 @@ import { randomBytes } from "node:crypto";
   Postgres, monta lá `conferencias` NA FORMA DE ANTES DA 0369 (0110 + 0201: sem prazo) com uma conferência aberta e
   uma fechada, e corre lá a 0369, o aplicar e o rollback de produção TAL COMO ESTÃO. No fim, o banco é apagado.
   Os casos:
-   - aplica sem erro; as conferências que já existiam ficam iguais e com o prazo vazio;
+   - aplica sem erro; as conferências que já existiam ficam iguais e com o prazo vazio; a coluna é timestamptz;
+   - ORDEM-DUET-1262 (G6/G7): DEPOIS DO APLICAR de produção (não só da migração), as de antes ficam com o prazo NULO
+     (um default now() daria às abertas o prazo "agora" e elas fechariam no momento), a coluna é timestamptz e não tem
+     default; um erro do aplicar desfaz a transacção e volta como erro nomeado (o padrão da prova 0368);
    - reaplica sem efeito (sem erro); o aplicar regista-se uma vez;
    - uma conferência nova nasce com o prazo gravado;
    - O CONGELAMENTO: a segunda "abertura" (o upsert com ignoreDuplicates das quatro ações = on conflict do nothing)
@@ -35,9 +38,18 @@ const FORMA_DE_ANTES = `
 `;
 
 export type ProvaDa0369 = {
-  migracao: { erro: string | null; linhas: number; iguais: boolean; prazosVazios: boolean };
+  migracao: { erro: string | null; linhas: number; iguais: boolean; prazosVazios: boolean; tipo: string | null };
   reaplicar: { erro: string | null };
-  aplicar: { erro1: string | null; erro2: string | null; registos: number; nome: string | null };
+  aplicar: {
+    erro1: string | null;
+    erro2: string | null;
+    registos: number;
+    nome: string | null;
+    linhas: number;
+    prazosVazios: boolean;
+    tipo: string | null;
+    padrao: string | null;
+  };
   nova: { erro: string | null; prazo: string | null };
   congelado: { erro: string | null; prazo: string | null };
   rollback: { erroMigracao: string | null; erroRollback: string | null; coluna: boolean; registo: number; linhas: number };
@@ -86,25 +98,45 @@ async function semear(db: postgres.Sql): Promise<string> {
   return c.id;
 }
 const retrato = async (db: postgres.Sql) => JSON.stringify(await db`select id, contrato_id, tipo, criada_em, fechada_em, hash_fechamento, motivo_fechamento from public.conferencias order by tipo`);
+const colunaDoPrazo = async (db: postgres.Sql) => {
+  const r = await db<{ t: string; d: string | null }[]>`select data_type as t, column_default as d from information_schema.columns where table_schema = 'public' and table_name = 'conferencias' and column_name = 'prazo_em'`;
+  return { tipo: r[0]?.t ?? null, padrao: r[0]?.d ?? null };
+};
+const linhasDeAntes = async (db: postgres.Sql) => {
+  const r = await db<{ n: number; nulos: number }[]>`select count(*)::int as n, count(*) filter (where prazo_em is null)::int as nulos from public.conferencias`;
+  return { linhas: r[0].n, prazosVazios: r[0].n > 0 && r[0].nulos === r[0].n };
+};
 const temColuna = async (db: postgres.Sql) =>
   (await db`select 1 from information_schema.columns where table_schema = 'public' and table_name = 'conferencias' and column_name = 'prazo_em'`).length > 0;
 
 async function osCasos(db: postgres.Sql, mig: string, apl: string, rb: string): Promise<ProvaDa0369> {
+  // ORDEM-DUET-1262 (G2): um erro dentro do begin/commit do aplicar deixa a ligação numa transacção abortada; desfaz-se
+  // aqui e o erro volta nomeado, para o caso cair pela asserção e não por um erro da fixture (como na prova 0368).
+  const tentar = async (texto: string): Promise<string | null> => {
+    try {
+      await db.unsafe(texto);
+      return null;
+    } catch (e) {
+      await db.unsafe("rollback").catch(() => undefined);
+      return e instanceof Error ? e.message : String(e);
+    }
+  };
   // A migração crua.
   await semear(db);
   const antes = await retrato(db);
-  const erroMig = await erroDe(() => db.unsafe(mig));
+  const erroMig = await tentar(mig);
   const linhas = Number((await db`select count(*)::int as n from public.conferencias`)[0].n);
   const prazosVazios = (await db`select count(*)::int as n from public.conferencias where prazo_em is not null`)[0].n === 0;
-  const migracao = { erro: erroMig, linhas, iguais: (await retrato(db)) === antes, prazosVazios };
-  const reaplicar = { erro: await erroDe(() => db.unsafe(mig)) };
+  const migracao = { erro: erroMig, linhas, iguais: (await retrato(db)) === antes, prazosVazios, tipo: (await colunaDoPrazo(db)).tipo };
+  const reaplicar = { erro: await tentar(mig) };
 
   // O aplicar de produção, do zero, duas vezes.
   const contrato = await semear(db);
-  const erro1 = await erroDe(() => db.unsafe(apl));
-  const erro2 = await erroDe(() => db.unsafe(apl));
+  const erro1 = await tentar(apl);
+  const depoisDoAplicar = await linhasDeAntes(db);
+  const erro2 = await tentar(apl);
   const reg = await db<{ name: string }[]>`select name from supabase_migrations.schema_migrations where version = '20261127000369'`;
-  const aplicar = { erro1, erro2, registos: reg.length, nome: reg[0]?.name ?? null };
+  const aplicar = { erro1, erro2, registos: reg.length, nome: reg[0]?.name ?? null, ...depoisDoAplicar, ...(await colunaDoPrazo(db)) };
 
   // Uma conferência nova nasce com o prazo; a segunda abertura (on conflict do nothing) não o muda.
   const [c2] = await db<{ id: string }[]>`insert into public.contratos default values returning id`;
@@ -124,7 +156,7 @@ async function osCasos(db: postgres.Sql, mig: string, apl: string, rb: string): 
 
   // Rollback: sai a coluna e o registo; as conferências ficam.
   const n0 = Number((await db`select count(*)::int as n from public.conferencias`)[0].n);
-  const erroRollback = await erroDe(() => db.unsafe(rb));
+  const erroRollback = await tentar(rb);
   const rollback = {
     erroMigracao: null,
     erroRollback,
