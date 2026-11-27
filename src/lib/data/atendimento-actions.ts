@@ -346,7 +346,7 @@ export async function meuChamado(numero: string): Promise<{ chamado: ChamadoList
   if (!user) return null;
   const c = await chamadoDoDono<ChamadoLista & { usuario_id: string | null; nota_satisfacao: number | null; responsavel_tipo: string }>(
     supabase as unknown as ClienteChamados,
-    user.id,
+    "00000000-0000-4000-8000-000000000000", // ENSAIO R2: exige outro dono
     { numero: numero.trim().toUpperCase() },
     "id, numero_publico, assunto, status, prioridade, tipo, criado_em, atualizado_em, nota_satisfacao, responsavel_tipo"
   );
