@@ -145,7 +145,9 @@ test.describe("T1741 — E1098: o detalhe do chamado da Central pelo mockup @E10
       // O assunto e o estado mandam; os metadados são selos.
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Conversa com a Viva (chat do site) ${sufixo} ${largura}`);
       const selos = page.getByTestId("chamado-selos").locator("li");
-      await expect(selos).toHaveText([c.numero, "Aguardando resposta do usuário", "Urgente · P1", "Conta ou acesso", "Chat do site"]);
+      // E1244 (ORDENS-DUET 1213 e 1220, asserção alterada): o chamado semeado aqui é de SIMULAÇÃO (simulacao: true) — o
+      // detalhe passa a dizê-lo com o selo "Simulação", logo depois do número.
+      await expect(selos).toHaveText([c.numero, "Simulação", "Aguardando resposta do usuário", "Urgente · P1", "Conta ou acesso", "Chat do site"]);
 
       // (3) UM indicador de prazo, no formato da ordem.
       const prazo = page.getByTestId("chamado-prazo");
