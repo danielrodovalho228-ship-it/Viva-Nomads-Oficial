@@ -61,3 +61,21 @@ test("4. as telas mostram a linha com o selo, sem botão de anular nem de confir
     assert.match(li, /textoDoSeloAnulado\(/, `${nome}: o selo`);
   }
 });
+
+// ── ORDEM-DUET 1237: a linha do anulado antes da confirmação é a forma curta da gramática ──────────────────────────────
+// "Bloco {n} · R$ {total} · {dd/mm} a {dd/mm}" + o selo — sem número de recibo e sem "em preparação" (nunca terá recibo).
+const linhas = (await import("./anulados-antes-da-confirmacao.ts").catch(() => ({}))) as { linhaDoAnulado?: (pg: Record<string, unknown>) => string };
+
+test("5. (ORDEM-DUET 1237) a linha do anulado: Bloco · TOTAL · período, sem número nem 'em preparação'", () => {
+  assert.equal(typeof linhas.linhaDoAnulado, "function");
+  const b = { numero_bloco: 2, meses: 2, inicio: "2026-12-20", fim: "2027-01-19" };
+  assert.equal(linhas.linhaDoAnulado!({ tipo: "aluguel", valor: 6400, parte: 1, encargos: [], contrato_blocos: b }), "Bloco 2 · R$ 6.400,00 · 20/12 a 19/01");
+  assert.equal(
+    linhas.linhaDoAnulado!({ tipo: "aluguel", valor: 0, parte: 2, encargos: [{ rotulo: "Contas do período", valor: 550 }, { rotulo: "Limpeza de preparação", valor: 250 }], contrato_blocos: b }),
+    "Bloco 2, registro complementar · R$ 800,00 · 20/12 a 19/01",
+    "o TOTAL do complementar",
+  );
+  assert.equal(linhas.linhaDoAnulado!({ tipo: "caucao", valor: 3200, encargos: [{ rotulo: "Contas do período", valor: 99 }], contrato_blocos: b }), "Caução do bloco 2 · R$ 3.200,00");
+  const acoes = readFileSync(new URL("./data/contratos-actions.ts", import.meta.url), "utf8");
+  assert.equal((acoes.match(/anuladosAntesDaConfirmacao\([^\n]*, linhaDoAnulado\)/g) ?? []).length, 2, "dono e morador");
+});

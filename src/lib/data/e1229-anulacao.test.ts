@@ -62,12 +62,38 @@ type Estado = {
 let E: Estado;
 const g = globalThis as unknown as { __e1229Sessao: unknown; __e1229Admin: unknown; __e1229EhEquipe: unknown; __e1229Chamados: unknown[]; __e1229Avisos: Record<string, unknown>[]; __e1229Respostas: { id: string; texto: string; interno: boolean }[] };
 
+/** As colunas de topo de um select ("contratos(...)" conta como a coluna contratos). */
+function colunasDoSelect(x: string): string[] {
+  const out: string[] = [];
+  let fundo = 0;
+  let atual = "";
+  for (const ch of x) {
+    if (ch === "(") fundo += 1;
+    if (ch === ")") fundo -= 1;
+    if (ch === "," && fundo === 0) {
+      out.push(atual);
+      atual = "";
+    } else atual += ch;
+  }
+  out.push(atual);
+  return out.map((c) => c.trim().split("(")[0].trim()).filter(Boolean);
+}
+function projetar(l: Record<string, unknown>, x: string | null): Record<string, unknown> {
+  if (!x || x.trim() === "*") return l;
+  const cols = colunasDoSelect(x);
+  return Object.fromEntries(cols.filter((c) => c in l).map((c) => [c, l[c]]));
+}
+
 function consulta(tabela: string, comoSessao: boolean) {
   const filtros: Record<string, unknown> = {};
   let valores: Record<string, unknown> | null = null;
   const b: Record<string, unknown> = {};
   let limite: number | null = null;
-  for (const m of ["select", "order"]) b[m] = () => b;
+  // ORDEM-DUET-1243 (fuga E4b da Pista 3): o falso é FIEL ao select — devolve só as colunas que a leitura pede (sem
+  // isto, um select sem "encargos" passaria aqui e, no banco real, o complementar anulado voltaria a dizer "R$ 0").
+  let sel: string | null = null;
+  b.order = () => b;
+  b.select = (x: string) => ((sel = x), b);
   b.in = (k: string, v: unknown) => ((filtros[`in:${k}`] = v), b);
   // ORDEM-DUET-1181 (H4): o .limit(n) corta as linhas, como no banco.
   b.limit = (n: number) => ((limite = n), b);
@@ -81,7 +107,7 @@ function consulta(tabela: string, comoSessao: boolean) {
       const ids = (filtros["in:id"] as string[] | undefined) ?? [];
       return { data: ids.map((id) => ({ id, is_teste: E.teste.has(id) })), error: null };
     }
-    if (tabela === "pagamentos_bloco") return { data: filtros.id === E.pg.id ? linhaPg() : null, error: null };
+    if (tabela === "pagamentos_bloco") return { data: filtros.id === E.pg.id ? projetar(linhaPg(), sel) : null, error: null };
     if (tabela === "documentos_fiscais") return { data: E.doc && !E.doc.anulado_em ? E.doc : null, error: null };
     if (tabela === "chamados") return { data: filtros.numero_publico || filtros.id ? { id: CHAMADO, numero_publico: "CH-2026-000777", contexto_tipo: E.contexto.tipo, contexto_id: E.contexto.id } : null, error: null };
     if (tabela === "chamado_mensagens") {
@@ -504,4 +530,11 @@ test("31. (O3b) a observadora com o DONO por ler (nulo) e o morador de teste: re
   assert.equal(r.ok, false);
   assert.match(erro(r) ?? "", MSG_OBSERVADOR_RE);
   naoAnulou();
+});
+
+test("43. (ORDEM-DUET-1243, E4b) a leitura do registro pede os encargos (o falso só devolve o que o select pede)", () => {
+  const acoes = readFileSync(new URL("./anulacao-actions.ts", import.meta.url), "utf8");
+  const sel = /from\("pagamentos_bloco"\)\s*\.select\("([^"]+)"\)/.exec(acoes)?.[1] ?? "";
+  assert.ok(colunasDoSelect(sel).includes("encargos"), `o select do registro pede "encargos": ${sel}`);
+  assert.deepEqual(colunasDoSelect("id, tipo, contratos(tenant_id, properties(owner_id))"), ["id", "tipo", "contratos"]);
 });
