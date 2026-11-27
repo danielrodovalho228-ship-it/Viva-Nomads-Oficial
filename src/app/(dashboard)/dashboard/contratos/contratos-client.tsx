@@ -1,6 +1,6 @@
 "use client";
 
-import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
+import { duracaoDoBloco, rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
 import { ROTULO_CONTAS, ROTULO_LIMPEZA, emAbertoNoBloco, encargosDosComponentes, somarComponentes, textoComponentes, type ComponentesBloco } from "@/lib/pagamento-componentes";
 import { estadoCaucao } from "@/lib/caucao-estado";
 import { AnularRegistro } from "@/components/anulacao/anular-registro";
@@ -118,6 +118,8 @@ function buildDemoContratos(hojeISO: string, exemplos: readonly DemoContract[]):
               valor: b0.valor,
               bloco: { numero: b0.numeroBloco, meses: b0.meses, inicio: b0.inicio, fim: b0.fim },
               valorMensal: c.valorMes,
+              prazoTotalDias: prazoMeses * DIAS_POR_MES,
+              comConta: true,
             }),
           },
         ]
@@ -407,6 +409,7 @@ function ContratoCard({
             contratoAtivo={contrato.estado.ativo}
             contratoId={contrato.id}
             aluguelMensal={contrato.aluguelMensal}
+            prazoTotalDias={contrato.prazoTotalDias}
             pago={pagosPorBloco.get(b.id) ?? somarComponentes([])}
             hojeISO={hojeISO}
             demo={demo}
@@ -463,6 +466,7 @@ function BlocoRow({
   contratoAtivo,
   contratoId,
   aluguelMensal,
+  prazoTotalDias,
   pago,
   hojeISO,
   demo,
@@ -472,6 +476,8 @@ function BlocoRow({
   contratoAtivo: boolean;
   contratoId: string;
   aluguelMensal: number;
+  /** E1067 (fusão): o prazo do contrato — o selo do bloco diz dias exactamente quando o contrato é contado em dias. */
+  prazoTotalDias: number;
   pago: ComponentesBloco;
   hojeISO: string;
   demo: boolean;
@@ -501,7 +507,8 @@ function BlocoRow({
           <div className="text-sm">
             <p className="font-medium text-ink">
               Bloco {bloco.numeroBloco}{" "}
-              <span className="font-normal text-muted">({bloco.meses}m)</span>
+              {/* E1067: a duração pelos dias reais do bloco ("31 dias"), não pelos meses de referência. */}
+              <span className="font-normal text-muted" data-testid="bloco-duracao">({duracaoDoBloco({ numero: bloco.numeroBloco, meses: bloco.meses, inicio: bloco.inicio, fim: bloco.fim }, prazoTotalDias).curto})</span>
             </p>
             <p className="text-xs text-muted">
               {/* E1089: `bloco.fim` é a última noite do bloco; a tela mostra a saída (o dia seguinte). */}

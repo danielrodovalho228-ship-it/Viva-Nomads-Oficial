@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { emitirTermoDevolucaoComRegistro } from "@/lib/fiscal/emitir";
 import { ROTULO_TIPO, type TipoDocumento } from "@/lib/fiscal/documento";
 import { regraDevolucao } from "@/lib/fiscal/devolucao";
-import { rotuloPagamentoBloco } from "@/lib/pagamento-bloco";
+import { componentesDoPagamento } from "@/lib/pagamento-componentes";
 
 /**
  * Documentos do contrato (recibos, comprovante e termo da caução) e a
@@ -35,7 +35,12 @@ export interface DocumentoView {
 /** Pagamento confirmado pelo inquilino e o recibo dele (ou "em preparação" enquanto não sai). */
 export interface ReciboView {
   pagamentoId: string;
-  rotulo: string;
+  /** E1067 (fusão, ORDENS-DUET 1149 e 1194): a linha é o número, o TOTAL do registro e o período em datas. */
+  tipo: string;
+  /** O TOTAL do registro (valor + encargos), pela fonte única componentesDoPagamento — nunca só a coluna valor. */
+  total: number;
+  inicio: string | null;
+  fim: string | null;
   documentoId: string | null;
   numero: string | null;
   /** Motivo da anulação do registro/documento (ex.: "registro em duplicidade"); null = válido. */
@@ -65,7 +70,7 @@ export async function documentosDosContratos(
     supabase.from("pagamentos_bloco").select("contrato_id, valor").in("contrato_id", ids).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true).is("anulado_em", null),
     supabase
       .from("pagamentos_bloco")
-      .select("id, contrato_id, tipo, valor, data_pagamento, anulado_motivo, contrato_blocos(numero_bloco, meses, inicio, fim), contratos(aluguel_mensal)")
+      .select("id, contrato_id, tipo, valor, encargos, data_pagamento, anulado_motivo, contrato_blocos(numero_bloco, meses, inicio, fim)")
       .in("contrato_id", ids)
       .eq("confirmado_pelo_inquilino", true)
       .order("data_pagamento", { ascending: true }),
@@ -82,16 +87,13 @@ export async function documentosDosContratos(
     const alvo = vazio[pg.contrato_id as string];
     if (!alvo) continue;
     const b = pg.contrato_blocos as { numero_bloco?: number | null; meses?: number | null; inicio?: string | null; fim?: string | null } | null;
-    const ct = pg.contratos as { aluguel_mensal?: number | null } | null;
     const doc = docDoPagamento.get(String(pg.id));
     alvo.recibos.push({
       pagamentoId: String(pg.id),
-      rotulo: rotuloPagamentoBloco({
-        tipo: String(pg.tipo ?? "aluguel"),
-        valor: Number(pg.valor),
-        bloco: b?.numero_bloco ? { numero: Number(b.numero_bloco), meses: Number(b.meses ?? 1), inicio: b.inicio ?? null, fim: b.fim ?? null } : null,
-        valorMensal: ct?.aluguel_mensal == null ? null : Number(ct.aluguel_mensal),
-      }),
+      tipo: String(pg.tipo ?? "aluguel"),
+      total: componentesDoPagamento({ valor: Number(pg.valor), encargos: String(pg.tipo ?? "aluguel") === "caucao" ? [] : pg.encargos }).total,
+      inicio: b?.inicio ?? null,
+      fim: b?.fim ?? null,
       documentoId: doc ? String(doc.id) : null,
       numero: doc ? String(doc.numero) : null,
       anulado: ((doc?.anulado_motivo as string | null) ?? (pg.anulado_motivo as string | null)) || null,

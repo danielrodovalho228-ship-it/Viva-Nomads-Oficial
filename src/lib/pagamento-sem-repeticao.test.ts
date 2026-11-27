@@ -56,8 +56,8 @@ test("item 1 (tela): envio trava no 1º clique, botão desabilitado enquanto env
 // número de bloco") foi substituído pela decisão do Daniel de 20/11 — caução de 50% de CADA bloco, paga no início de
 // cada bloco (E1225, 0367). A caução registada pela tela leva o bloco; a de antes, sem bloco, continua "do contrato".
 test("item 2 (E1225): a Caução é do BLOCO — grava o bloco e diz 'Caução do bloco N'; a de antes, sem bloco, é do contrato", () => {
-  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 3200, bloco: { numero: 1, meses: 2, inicio: null, fim: null } }), "Caução do bloco 1 — R$ 3.200");
-  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 6400 }), "Caução do contrato — R$ 6.400");
+  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 3200, bloco: { numero: 1, meses: 2, inicio: null, fim: null }, prazoTotalDias: 60 }), "Caução do bloco 1 — R$ 3.200");
+  assert.equal(rotuloPagamentoBloco({ tipo: "caucao", valor: 6400, prazoTotalDias: 60 }), "Caução do contrato — R$ 6.400");
   const acoes = ler("./data/contratos-actions.ts");
   assert.match(acoes, /bloco_id: input\.blocoId,/, "a caução e o valor mensal gravam o bloco");
   assert.match(acoes, /if \(!UUID_RE\.test\(input\.blocoId\)\) return \{ ok: false, error: MSG_CAUCAO_ESCOLHA_O_BLOCO \};/, "ORDEM-DUET-1132: a caução nova exige o bloco");

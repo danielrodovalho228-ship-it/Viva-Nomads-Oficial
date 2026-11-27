@@ -9,6 +9,9 @@ import { prazoConferenciaEntrada, textoPrazoConferencia } from "../conferencia.t
 import { diaBRT } from "../datas-brasilia.ts";
 import { saidaPeloFim } from "../texto-do-periodo.ts";
 import { rotuloTaxaServico } from "../cobranca/regra.ts";
+import { estadiaEmDias } from "../pagamento-componentes.ts";
+// E1067 (fusão, ORDEM-DUET-1155): o dinheiro no formato dos documentos, pela função que os documentos usam.
+import { brl } from "../fiscal/documento.ts";
 
 export type PapelEstadia = "proprietario" | "inquilino";
 
@@ -221,22 +224,26 @@ export interface LinhaValor {
   detalhe: string;
 }
 
-const brl = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
  * Cada valor separado: valor mensal × meses, Caução e (só para o dono) a taxa de serviço com a base escrita.
  * Nunca um "total" que misture a taxa ao valor mensal.
  */
 export function valoresDaEstadia(
-  v: { valorMensal: number; meses: number; caucao: number; taxa: { percentual: number; valor: number } | null },
+  v: { valorMensal: number; meses: number; caucao: number; taxa: { percentual: number; valor: number } | null; /** E1067: dias reais do contrato, quando ele não fecha em meses inteiros. */ dias?: number | null },
   papel: PapelEstadia,
 ): LinhaValor[] {
+  // E1067: contrato em dias quebrados (31, 43…) → "R$ 2.500,00 × 31 dias ÷ 30", a mesma conta do contrato e do e-mail (E562).
+  // Fusão (mapa v4, mudança 7): a regra é a da fonte única (sem segunda cópia).
+  const emDias = estadiaEmDias(v.dias);
   const linhas: LinhaValor[] = [
     {
       chave: "mensal",
       rotulo: "Valor mensal",
       valor: v.valorMensal,
-      detalhe: `${brl(v.valorMensal)} × ${v.meses} ${v.meses === 1 ? "mês" : "meses"} · ${ROTULO_PAGO_DIRETO}`,
+      detalhe: emDias
+        ? `${brl(v.valorMensal)} × ${v.dias} dias ÷ 30 · ${ROTULO_PAGO_DIRETO}`
+        : `${brl(v.valorMensal)} × ${v.meses} ${v.meses === 1 ? "mês" : "meses"} · ${ROTULO_PAGO_DIRETO}`,
     },
     { chave: "caucao", rotulo: "Caução", valor: v.caucao, detalhe: v.caucao > 0 ? ROTULO_PAGO_DIRETO : "Não se aplica a este contrato" },
   ];
