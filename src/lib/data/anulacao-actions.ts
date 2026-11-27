@@ -102,7 +102,7 @@ async function anularNoBanco(
   if (morador) {
     const { data: u } = await admin.auth.admin.getUserById(morador);
     const registro = documento ?? (pg.tipo === "caucao" ? "da caução" : "do pagamento");
-    const valor = formatBRLExato(totalDoRegistro(pg));
+    const valor = formatBRLExato(Number(pg.valor) || 0);
     // ORDEM-DUET-1169: no caminho da Central, quem anulou foi a equipe, a pedido do proprietário.
     const titulo =
       quem.caminho === "central"
