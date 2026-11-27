@@ -23,9 +23,6 @@ declare
   v_valor numeric;
   v_documento text;
 begin
-  if p_caminho is null or p_caminho not in ('dono', 'central') then
-    raise exception 'anular_pagamento: caminho inválido' using errcode = '22023';
-  end if;
   update public.pagamentos_bloco set anulado_em = v_agora, anulado_motivo = p_motivo
    where id = p_pagamento and anulado_em is null and (p_caminho = 'central' or confirmado_pelo_inquilino = false)
    returning contrato_id, valor into v_contrato, v_valor;
