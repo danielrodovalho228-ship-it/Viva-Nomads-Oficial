@@ -169,6 +169,12 @@ test("D2f. a rotina grava o prazo uma vez; rodar de novo não muda nada; a fecha
   // A saída: depois de 31/01 23:59 BRT congela 48 h depois.
   const m3 = await j.congelarAbertasNaAncora!(f.admin, linhas(), new Date("2027-02-01T03:00:00Z"));
   assert.equal(m3.get(`${CONTRATO}:saida`), "2027-02-03T02:59:00.000Z");
+  // A corrida: a rotina leu a linha sem prazo, mas uma leitura congelou-o entretanto (outra hora) — o update da rotina
+  // não sobrescreve (… where prazo_em is null) e devolve o que ficou gravado.
+  const h = falso({ conferencias: [{ contrato_id: CONTRATO, tipo: "entrada", prazo_em: "2026-12-03T23:00:00.000Z", fechada_em: null }] });
+  const mh = await j.congelarAbertasNaAncora!(h.admin, [{ contrato_id: CONTRATO, tipo: "entrada", prazo_em: null, datas }], agora);
+  assert.equal(h.tabelas.conferencias[0].prazo_em, "2026-12-03T23:00:00.000Z", "quem chegou primeiro fica");
+  assert.equal(mh.get(`${CONTRATO}:entrada`), "2026-12-03T23:00:00.000Z");
   // A fechada não recebe prazo: o update filtra fechada_em is null.
   const g = falso({ conferencias: [{ contrato_id: CONTRATO, tipo: "entrada", prazo_em: null, fechada_em: "2026-12-01T00:00:00Z" }] });
   await j.congelarAbertasNaAncora!(g.admin, [{ contrato_id: CONTRATO, tipo: "entrada", prazo_em: null, datas }], agora);
