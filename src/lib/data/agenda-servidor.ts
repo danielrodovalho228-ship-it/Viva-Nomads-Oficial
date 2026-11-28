@@ -1,3 +1,4 @@
+import { horasDeEntrada } from "@/lib/data/janela-conferencia";
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -19,7 +20,8 @@ export interface AgendaDoDono {
   itens: ItemAgenda[];
   imoveis: { id: string; titulo: string }[];
   /** E190 (parte 2): horário de entrada/saída de cada imóvel, para o "Hoje" do Início do dono. */
-  horarios: Record<string, { entrada: string | null; saida: string | null }>;
+  /** E1230: a hora de entrada POR CONTRATO (o leitor único: as instruções do contrato); a saída não tem hora. */
+  horarios: Record<string, { entrada: string | null }>;
 }
 
 type LinhaVisita = {
@@ -49,13 +51,12 @@ export async function carregarAgendaDoDono(opcoes: { exigir?: boolean } = {}): P
 
   const { data: props, error: erroProps } = await admin
     .from("properties")
-    .select("id, title, checkin_after, checkout_before")
+    .select("id, title")
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
   if (erroProps && opcoes.exigir) throw new Error(MSG_AGENDA_NAO_CARREGOU);
-  const linhasImoveis = (props ?? []) as { id: string; title: string | null; checkin_after: string | null; checkout_before: string | null }[];
+  const linhasImoveis = (props ?? []) as { id: string; title: string | null }[];
   const imoveis = linhasImoveis.map((p) => ({ id: p.id, titulo: p.title || "Imóvel" }));
-  const horarios = Object.fromEntries(linhasImoveis.map((p) => [p.id, { entrada: p.checkin_after, saida: p.checkout_before }]));
   if (imoveis.length === 0) return vazio;
   const ids = imoveis.map((p) => p.id);
   const titulo = new Map(imoveis.map((p) => [p.id, p.titulo]));
@@ -156,5 +157,8 @@ export async function carregarAgendaDoDono(opcoes: { exigir?: boolean } = {}): P
   }
   // E1174: a visita confirmada de uma avaliação entra também na Agenda do dono, pela regra única (visitaConfirmada).
   itens.push(...visitasNaAgendaDoDono((avaliacoes ?? []) as { id: string; property_id: string; status: string; agendado_para: string | null }[], titulo));
+  // E1230 (ORDEM-DUET 1300): o "Entra hoje" lê a hora do contrato pelo leitor único (a mesma da âncora do E1238).
+  const horas = await horasDeEntrada(admin, ((contratos ?? []) as { id: string }[]).map((c) => c.id));
+  const horarios = Object.fromEntries([...horas].map(([id, entrada]) => [id, { entrada }]));
   return { itens, imoveis, horarios };
 }

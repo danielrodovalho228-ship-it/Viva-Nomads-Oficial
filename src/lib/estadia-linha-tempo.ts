@@ -1,11 +1,13 @@
 /*
   Linha do tempo da estadia (ordem f1b437bb, Pacote Clareza UX6, item a) — regra pura, sem banco.
   Mostra ao inquilino (e ao proprietário) Entrada, Conferência de entrada e Saída, cada uma com dia e
-  horário. O horário vem do cadastro do imóvel; sem ele, diz "a combinar" em vez de inventar.
+  horário. E1230: o horário de entrada vem das instruções do contrato (o leitor único, já com a porta das duas
+  assinaturas); sem ele, diz "a combinar" em vez de inventar. A saída diz "horário a combinar com o proprietário".
 */
 import { prazoConferenciaEntrada, prazoConferenciaSaida, textoPrazoConferencia } from "./conferencia.ts";
 import { ETIQUETA_BRASILIA, diaBRT } from "./datas-brasilia.ts";
 import { saidaPeloFim } from "./texto-do-periodo.ts";
+import { HORARIO_SAIDA_A_COMBINAR } from "./estadia/hora-da-entrada.ts";
 
 export interface EtapaEstadia {
   chave: "entrada" | "conferencia" | "saida" | "conferencia_saida";
@@ -37,19 +39,18 @@ function horario(valor: string | null | undefined, prefixo: string): string {
 export function montarLinhaDoTempo(p: {
   inicio: string | null;
   fim: string | null;
+  /** E1230: a hora de entrada já resolvida (as instruções do contrato, e a porta das duas assinaturas). */
   checkinAfter: string | null;
-  checkoutBefore: string | null;
   /**
    * E1238 (ORDEM-DUET 1207): o prazo de cada conferência vem PRONTO do servidor (o gravado quando ela nasceu, ou a mesma
-   * regra com a hora das instruções de entrada — janela-conferencia.ts). Sem ele, a regra sem hora (00:00 / 23:59):
-   * a hora mostrada na etapa "Entrada" (checkinAfter) nunca entra no prazo.
+   * regra com a hora das instruções de entrada — janela-conferencia.ts). Sem ele, a regra sem hora (23:59).
    */
   prazoEntradaEm?: string | null;
   prazoSaidaEm?: string | null;
 }): EtapaEstadia[] {
   if (!p.inicio || !p.fim || !DIA_RE.test(p.inicio) || !DIA_RE.test(p.fim)) return [];
   const prazo = p.prazoEntradaEm ? new Date(p.prazoEntradaEm) : prazoConferenciaEntrada({ inicio: p.inicio, checkinAfter: null });
-  const prazoSaida = p.prazoSaidaEm ? new Date(p.prazoSaidaEm) : prazoConferenciaSaida({ fim: p.fim, checkoutBefore: null });
+  const prazoSaida = p.prazoSaidaEm ? new Date(p.prazoSaidaEm) : prazoConferenciaSaida({ fim: p.fim });
   return [
     { chave: "entrada", titulo: "Entrada", dia: p.inicio, horario: horario(p.checkinAfter, "a partir das") },
     {
@@ -60,7 +61,7 @@ export function montarLinhaDoTempo(p: {
       prazo: prazo?.toISOString(),
     },
     // E1089: a etapa "Saída" é o dia da SAÍDA (o dia seguinte à última noite gravada), a mesma data da proposta.
-    { chave: "saida", titulo: "Saída", dia: saidaPeloFim(p.fim) || p.fim, horario: horario(p.checkoutBefore, "até as") },
+    { chave: "saida", titulo: "Saída", dia: saidaPeloFim(p.fim) || p.fim, horario: HORARIO_SAIDA_A_COMBINAR },
     // Prompt 56: a conferência de saída também tem prazo (48 h depois da saída), da fonte única prazoConferenciaSaida.
     {
       chave: "conferencia_saida",

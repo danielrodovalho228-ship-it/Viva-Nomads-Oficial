@@ -1,3 +1,4 @@
+import { horaDeEntrada } from "@/lib/data/janela-conferencia";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notify } from "@/lib/notifications";
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
   if (ids.length) {
     const { data: contratos } = await admin
       .from("contratos")
-      .select("id, property_id, tenant_id, status, assinado_proprietario_em, assinado_inquilino_em, properties(owner_id, title, address, city, checkin_after, checkout_before), contrato_blocos(inicio, fim, status), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)")
+      .select("id, property_id, tenant_id, status, assinado_proprietario_em, assinado_inquilino_em, properties(owner_id, title, address, city), contrato_blocos(inicio, fim, status), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)")
       .in("id", ids)
       .eq("status", "ativo")
       .not("assinado_proprietario_em", "is", null)
@@ -48,16 +49,18 @@ export async function GET(request: Request) {
       if (!lembreteDeChegadaPermitido({ assinadoPelasDuas: !!c.assinado_proprietario_em && !!c.assinado_inquilino_em, primeiroPagamento: pago })) continue;
       const coluna = lembrete === "48h" ? "lembrete_48h_em" : "lembrete_24h_em";
       // Varredura ampliada: esta leitura é a trava "já enviado" — sem ela, pula (melhor perder um lembrete que mandar dois).
-      const { data: k, error: erroTrava } = await admin.from("contratos_checkin").select(`horario, instrucoes, ${coluna}`).eq("contrato_id", c.id).maybeSingle();
+      const { data: k, error: erroTrava } = await admin.from("contratos_checkin").select(`instrucoes, ${coluna}`).eq("contrato_id", c.id).maybeSingle();
       if (erroTrava) continue;
       const linha = k as unknown as Record<string, string | null> | null;
       if (linha?.[coluna]) continue;
       // Marca ANTES de enviar: se o envio falhar, melhor perder um lembrete do que mandar duas vezes.
       const { error } = await admin.from("contratos_checkin").upsert({ contrato_id: c.id, [coluna]: new Date().toISOString() }, { onConflict: "contrato_id" });
       if (error) continue;
-      const prop = c.properties as unknown as { owner_id?: string; title?: string | null; address?: string | null; city?: string | null; checkin_after?: string | null; checkout_before?: string | null } | null;
+      const prop = c.properties as unknown as { owner_id?: string; title?: string | null; address?: string | null; city?: string | null } | null;
       const donoId = prop?.owner_id;
-      const texto = textoLembrete(lembrete, inicio, linha?.horario ?? null);
+      // E1230 (ORDENS-DUET 1207 e 1300): a hora do leitor único (as instruções do contrato), sem o recurso do anúncio.
+      const horarioEntrada = await horaDeEntrada(admin, c.id);
+      const texto = textoLembrete(lembrete, inicio, horarioEntrada);
       const { data: im, error: erroIm } = await admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id as string).maybeSingle();
       const instrucoes = erroIm ? ("sem_leitura" as const) : instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, linha?.instrucoes);
       const estadia = {
@@ -65,8 +68,7 @@ export async function GET(request: Request) {
         entrada: inicio,
         // E1089: a linha "Saída" do e-mail é o dia da SAÍDA (o dia seguinte à última noite gravada).
         saida: saidaPeloFim(blocos.map((b) => b.fim).sort().at(-1)) || null,
-        horarioEntrada: linha?.horario || prop?.checkin_after,
-        horarioSaida: prop?.checkout_before,
+        horarioEntrada,
       };
       for (const uid of [donoId, c.tenant_id as string]) {
         if (!uid) continue;

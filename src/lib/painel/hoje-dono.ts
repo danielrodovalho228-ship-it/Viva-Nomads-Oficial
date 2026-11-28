@@ -15,7 +15,7 @@ export interface CartaoHoje {
   /** Nome curto do morador (só depois do aceite, como na Agenda); sem ele, "Morador". */
   nome: string;
   fotoUrl: string | null;
-  /** "a partir das 14:00" / "até as 11:00"; sem horário no imóvel, null. */
+  /** "a partir das 14:00" (a hora das instruções do contrato); sem ela, e na saída, null. */
   horario: string | null;
   /** A estadia do contrato (a mesma URL para o dono e o morador). */
   href: string;
@@ -23,15 +23,18 @@ export interface CartaoHoje {
 
 const HORA = /^\d{2}:\d{2}$/;
 
-/** Horários do imóvel (properties.checkin_after / checkout_before), por id do imóvel. */
-export type HorariosDosImoveis = Record<string, { entrada?: string | null; saida?: string | null }>;
+/**
+ * E1230 (ORDEM-DUET 1300): a hora de entrada POR CONTRATO (o leitor único horasDeEntrada: as instruções do contrato).
+ * A saída não tem hora (o campo é o E1240): o "Sai hoje" vai sem ela.
+ */
+export type HorariosDosContratos = Record<string, { entrada?: string | null }>;
 
-export function cartoesDeHoje(itens: readonly ItemAgenda[], hoje: string, horarios: HorariosDosImoveis = {}): CartaoHoje[] {
+export function cartoesDeHoje(itens: readonly ItemAgenda[], hoje: string, horarios: HorariosDosContratos = {}): CartaoHoje[] {
   const cartoes: CartaoHoje[] = [];
   for (const i of itens) {
     if ((i.tipo !== "entrada" && i.tipo !== "saida") || i.quando.slice(0, 10) !== hoje) continue;
     const contratoId = i.id.replace(/^(entrada|saida)-/, "");
-    const h = (i.tipo === "entrada" ? horarios[i.propertyId]?.entrada : horarios[i.propertyId]?.saida)?.trim() ?? "";
+    const h = (i.tipo === "entrada" ? horarios[contratoId]?.entrada : null)?.trim() ?? "";
     cartoes.push({
       id: i.id,
       tipo: i.tipo,
@@ -40,7 +43,7 @@ export function cartoesDeHoje(itens: readonly ItemAgenda[], hoje: string, horari
       imovel: i.imovel,
       nome: i.pessoa?.nome?.trim() || "Morador",
       fotoUrl: i.pessoa?.fotoUrl ?? null,
-      horario: HORA.test(h) ? (i.tipo === "entrada" ? `a partir das ${h}` : `até as ${h}`) : null,
+      horario: HORA.test(h) ? `a partir das ${h}` : null,
       href: `/dashboard/estadia/${contratoId}`,
     });
   }
