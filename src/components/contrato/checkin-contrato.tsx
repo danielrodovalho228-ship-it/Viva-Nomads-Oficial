@@ -25,6 +25,8 @@ export function CheckinContrato({
 }) {
   const router = useRouter();
   const [horario, setHorario] = useState(info.dados?.horario ?? "");
+  // E1240: a hora de saída é opcional; o formulário envia-a sempre (vazia = apagar). Só o dono a recebe.
+  const [horaSaida, setHoraSaida] = useState(info.horaSaida ?? "");
   const [instrucoes, setInstrucoes] = useState(info.dados?.instrucoes ?? "");
   const [plantao, setPlantao] = useState(info.dados ? telefoneParaExibir(info.dados.plantao) : "");
   const [ocupado, setOcupado] = useState(false);
@@ -38,7 +40,7 @@ export function CheckinContrato({
     setErro(null);
     setAviso(null);
     try {
-      const r = await salvarInstrucoesEntrada({ contratoId, horario, instrucoes, plantao });
+      const r = await salvarInstrucoesEntrada({ contratoId, horario, instrucoes, plantao, horaSaida });
       if (!r.ok) return setErro(r.error);
       setAviso("Instruções salvas. O morador as vê depois que as duas partes assinarem.");
       router.refresh();
@@ -83,6 +85,10 @@ export function CheckinContrato({
           <label className="block text-sm font-medium text-ink">
             Horário de entrada
             <input type="time" required value={horario} onChange={(e) => setHorario(e.target.value)} className="mt-1 block h-11 w-full max-w-[10rem] rounded-xl border border-sage-200 bg-white px-3 text-sm text-ink" data-testid="checkin-horario" />
+          </label>
+          <label className="block text-sm font-medium text-ink">
+            Horário de saída (opcional)
+            <input type="time" value={horaSaida} onChange={(e) => setHoraSaida(e.target.value)} className="mt-1 block h-11 w-full max-w-[10rem] rounded-xl border border-sage-200 bg-white px-3 text-sm text-ink" data-testid="checkin-horario-saida" />
           </label>
           <label className="block text-sm font-medium text-ink">
             Como pegar a chave ou o acesso

@@ -1,8 +1,8 @@
 /*
   E1238 (ORDENS-DUET 1207, 1231 e 1233) — a janela de 48 h da conferência, do lado do servidor.
   - A âncora é a hora das INSTRUÇÕES DE ENTRADA do contrato (contratos_checkin.horario); a coluna do anúncio
-    (properties.checkin_after / checkout_before) não entra no prazo. A hora de saída das instruções é o E1240: até lá,
-    a saída usa o padrão (23:59 do dia da saída, conferencia.ts).
+    (properties.checkin_after / checkout_before) não entra no prazo. E1240 (ORDEM-DUET 1324): a âncora da SAÍDA lê a
+    hora de saída das instruções (contratos_checkin.horario_saida, 0370); sem ela, 23:59 do dia da saída (conferencia.ts).
   - ORDEM-DUET 1269 (o coordenador): a conferência nasce a qualquer momento, mas com prazo_em NULO (abrirConferencia,
     nos quatro pontos de abertura de conferencia-actions.ts). O prazo CONGELA NO MOMENTO DA ENTRADA (ou da saída):
     quando agora passa a âncora calculada com a hora vigente e prazo_em está nulo, grava-se o prazo daquele momento
@@ -21,18 +21,24 @@ type Admin = { from: (tabela: string) => any };
 export interface JanelaDoContrato {
   /** "14:00" das instruções de entrada; null = sem hora gravada (a entrada conta das 23:59). */
   hora: string | null;
+  /** E1240: "11:00" da hora de saída das instruções; null = sem hora gravada (a saída conta das 23:59). */
+  horaSaida: string | null;
   /** O prazo gravado de cada conferência (ISO); null = ainda não congelado (antes da âncora), ou sem conferência. */
   gravado: { entrada: string | null; saida: string | null };
   /** Há conferência ABERTA (nascida e não fechada) de cada tipo — só essas recebem o prazo no congelamento. */
   aberta: { entrada: boolean; saida: boolean };
 }
 
-/** As datas da janela: o 1.º início e o último fim dos blocos aceites, e a hora das instruções. */
-export function datasDaJanela(blocos: { inicio: string | null; fim: string | null; status?: string | null }[], hora: string | null): EntradaDoContrato {
+/**
+ * As datas da janela: o 1.º início e o último fim dos blocos aceites, a hora de entrada e (E1240) a hora de saída das
+ * instruções. As duas funções da ENTRADA (horaDeEntradaBloqueada, recusaDaHoraDeEntrada) chamam-na sem a hora de saída:
+ * só calculam a âncora da entrada, que não a lê.
+ */
+export function datasDaJanela(blocos: { inicio: string | null; fim: string | null; status?: string | null }[], hora: string | null, horaSaida: string | null = null): EntradaDoContrato {
   const aceites = blocos.filter((b) => b.status !== "nao_aceito");
   const inicios = aceites.map((b) => b.inicio).filter((x): x is string => !!x).sort();
   const fins = aceites.map((b) => b.fim).filter((x): x is string => !!x).sort();
-  return { inicio: inicios[0] ?? null, checkinAfter: hora, fim: fins.at(-1) ?? null, checkoutBefore: null };
+  return { inicio: inicios[0] ?? null, checkinAfter: hora, fim: fins.at(-1) ?? null, checkoutBefore: horaSaida };
 }
 
 /**
@@ -54,15 +60,42 @@ export async function horaDeEntrada(admin: Admin, contratoId: string): Promise<s
   return (await horasDeEntrada(admin, [contratoId])).get(contratoId) ?? null;
 }
 
+/**
+ * E1240 (ORDEM-DUET 1324) — o leitor da hora de SAÍDA das instruções (contratos_checkin.horario_saida, 0370), à parte do
+ * da entrada: se a leitura falhar (a coluna ainda por aplicar no momento do deploy), a saída cai nas 23:59, como antes do
+ * E1240, e a hora de entrada continua lida. Só a coluna da hora.
+ */
+export async function horasDeSaida(admin: Admin, ids: string[]): Promise<Map<string, string | null>> {
+  const m = new Map<string, string | null>(ids.map((id) => [id, null]));
+  if (ids.length === 0) return m;
+  const { data, error } = await admin.from("contratos_checkin").select("contrato_id, horario_saida").in("contrato_id", ids);
+  if (error) return m;
+  for (const r of (data ?? []) as { contrato_id: string; horario_saida: string | null }[]) if (m.has(r.contrato_id)) m.set(r.contrato_id, r.horario_saida ?? null);
+  return m;
+}
+
+/** E1240: a hora de saída de UM contrato (o mesmo leitor). */
+export async function horaDeSaida(admin: Admin, contratoId: string): Promise<string | null> {
+  return (await horasDeSaida(admin, [contratoId])).get(contratoId) ?? null;
+}
+
 /** A hora das instruções e os prazos gravados, por contrato (uma leitura de cada tabela para a lista toda). */
 export async function janelasDosContratos(admin: Admin, ids: string[]): Promise<Map<string, JanelaDoContrato>> {
-  const m = new Map<string, JanelaDoContrato>(ids.map((id) => [id, { hora: null, gravado: { entrada: null, saida: null }, aberta: { entrada: false, saida: false } }]));
+  const m = new Map<string, JanelaDoContrato>(ids.map((id) => [id, { hora: null, horaSaida: null, gravado: { entrada: null, saida: null }, aberta: { entrada: false, saida: false } }]));
   if (ids.length === 0) return m;
   // E1230 (ORDEM-DUET 1300): a hora é a do LEITOR ÚNICO (horasDeEntrada) — a mesma que as telas e os e-mails mostram.
-  const [horas, { data: confs }] = await Promise.all([horasDeEntrada(admin, ids), admin.from("conferencias").select("contrato_id, tipo, prazo_em, fechada_em").in("contrato_id", ids)]);
+  const [horas, saidas, { data: confs }] = await Promise.all([
+    horasDeEntrada(admin, ids),
+    horasDeSaida(admin, ids),
+    admin.from("conferencias").select("contrato_id, tipo, prazo_em, fechada_em").in("contrato_id", ids),
+  ]);
   for (const [id, h] of horas) {
     const j = m.get(id);
     if (j) j.hora = h;
+  }
+  for (const [id, h] of saidas) {
+    const j = m.get(id);
+    if (j) j.horaSaida = h;
   }
   for (const r of (confs ?? []) as { contrato_id: string; tipo: string; prazo_em: string | null; fechada_em: string | null }[]) {
     const j = m.get(r.contrato_id);
@@ -113,7 +146,7 @@ export async function janelaVigente(
   agora: Date = new Date(),
 ): Promise<JanelaDoContrato & { datas: EntradaDoContrato }> {
   const janela = await janelaDoContrato(admin, contratoId);
-  const datas = datasDaJanela(blocos, janela.hora);
+  const datas = datasDaJanela(blocos, janela.hora, janela.horaSaida);
   for (const tipo of ["entrada", "saida"] as const) {
     if (janela.aberta[tipo]) janela.gravado[tipo] = await congelarNaAncora(admin, { contratoId, tipo, datas, gravado: janela.gravado[tipo], agora });
   }
@@ -143,8 +176,8 @@ export const MSG_HORA_DE_ENTRADA_BLOQUEADA = "A entrada já aconteceu; o horári
  * E1238 (ORDEM-DUET 1276): a hora de entrada das instruções fica BLOQUEADA depois da âncora de entrada vigente (a hora
  * gravada, ou 23:59 sem hora). Sem conferência aberta, o prazo é o cálculo vivo — e mudar a hora depois de o morador
  * entrar encurtaria (ou alargaria) a janela; com a hora fixa, o cálculo vivo fica tão fixo quanto o congelado. Manter a
- * mesma hora não é mudança: as instruções e o plantão seguem editáveis. (A hora de saída, quando existir — E1240 —,
- * segue a mesma regra com a âncora da saída.)
+ * mesma hora não é mudança: as instruções e o plantão seguem editáveis. (A hora de saída, E1240, segue a mesma regra
+ * com a âncora da saída: recusaDaHoraDeSaida.)
  */
 export function horaDeEntradaBloqueada(p: {
   blocos: { inicio: string | null; fim: string | null; status?: string | null }[];
@@ -168,7 +201,7 @@ export const MSG_HORA_DE_ENTRADA_NO_PASSADO = "Esse horário de entrada já pass
  *  2. a âncora vigente já passou (a entrada aconteceu) → MSG_HORA_DE_ENTRADA_BLOQUEADA;
  *  3. a âncora que a hora nova produz fica antes de agora → MSG_HORA_DE_ENTRADA_NO_PASSADO;
  *  4. senão (hora nova no futuro, ou igual a agora) → null, e o prazo acompanha.
- * (A hora de saída, quando existir — E1240 —, segue a mesma regra com a âncora da saída.)
+ * (A hora de saída, E1240, segue a mesma regra com a âncora da saída: recusaDaHoraDeSaida, a irmã.)
  */
 export function recusaDaHoraDeEntrada(p: {
   blocos: { inicio: string | null; fim: string | null; status?: string | null }[];
@@ -181,5 +214,38 @@ export function recusaDaHoraDeEntrada(p: {
   if (horaDeEntradaBloqueada(p)) return MSG_HORA_DE_ENTRADA_BLOQUEADA;
   const ancoraNova = ancoraConferencia("entrada", datasDaJanela(p.blocos, nova || null));
   if (ancoraNova && ancoraNova.getTime() < p.agora.getTime()) return MSG_HORA_DE_ENTRADA_NO_PASSADO;
+  return null;
+}
+
+/** E1240 (ORDEM-DUET 1291, a forma paralela da de entrada): a recusa de mudar a hora de saída depois da saída. */
+export const MSG_HORA_DE_SAIDA_BLOQUEADA = "A saída já aconteceu; o horário não pode mais ser alterado.";
+
+/** E1240 (ORDEM-DUET 1285, palavras do coordenador): a hora de saída nova que já passou. */
+export const MSG_HORA_DE_SAIDA_NO_PASSADO = "Esse horário de saída já passou; informe um horário a partir de agora.";
+
+/**
+ * E1240 (ESPEC-E1240 v5, secção 3.3; ORDEM-DUET 1324) — a IRMÃ da recusaDaHoraDeEntrada: a mesma regra única ("Nenhuma
+ * edição de horário pode pôr a âncora no passado"), com a âncora da SAÍDA (o dia da saída, na hora de saída gravada, ou
+ * 23:59). Devolve a recusa, ou null:
+ *  0. o campo AUSENTE (undefined: uma página aberta antes do deploy) ou a mesma hora não é mudança → null;
+ *  1. a âncora vigente da saída já passou → MSG_HORA_DE_SAIDA_BLOQUEADA (também para uma hora por vir, ou para apagar);
+ *  2. a âncora que a hora nova produz fica antes de agora → MSG_HORA_DE_SAIDA_NO_PASSADO;
+ *  3. senão → null, e o prazo acompanha. A hora VAZIA é uma hora nova válida (apagar), cuja âncora é 23:59 do mesmo dia:
+ *     antes da âncora vigente, apagar é sempre aceite.
+ */
+export function recusaDaHoraDeSaida(p: {
+  blocos: { inicio: string | null; fim: string | null; status?: string | null }[];
+  horaAtual: string | null;
+  horaNova: string | null | undefined;
+  agora: Date;
+}): string | null {
+  if (p.horaNova === undefined) return null;
+  const atual = (p.horaAtual ?? "").trim();
+  const nova = (p.horaNova ?? "").trim();
+  if (atual === nova) return null;
+  const vigente = ancoraConferencia("saida", datasDaJanela(p.blocos, null, atual || null));
+  if (vigente && p.agora.getTime() >= vigente.getTime()) return MSG_HORA_DE_SAIDA_BLOQUEADA;
+  const ancoraNova = ancoraConferencia("saida", datasDaJanela(p.blocos, null, nova || null));
+  if (ancoraNova && ancoraNova.getTime() < p.agora.getTime()) return MSG_HORA_DE_SAIDA_NO_PASSADO;
   return null;
 }

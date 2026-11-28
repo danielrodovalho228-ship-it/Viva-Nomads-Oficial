@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, HORA } from "@/lib/limites";
 import { inquilinoVeInstrucoes, podeEditarInstrucoes, validarInstrucoes, type InstrucoesEntrada } from "@/lib/checkin";
-import { recusaDaHoraDeEntrada } from "@/lib/data/janela-conferencia";
+import { horaDeSaida, recusaDaHoraDeEntrada, recusaDaHoraDeSaida } from "@/lib/data/janela-conferencia";
 
 /*
   Check-in garantido (ordem 404cd213, item 2). Leitura e escrita pelo servidor, DEPOIS de conferir
@@ -20,6 +20,11 @@ export interface InstrucoesDoContrato {
   dados: InstrucoesEntrada | null;
   preenchidas: boolean;
   atualizadoEm: string | null;
+  /**
+   * E1240: a hora de saída gravada, SÓ para o formulário do dono. O morador não a recebe nesta fatia (ORDEM-1288),
+   * embora ela mova a âncora da conferência de saída dele: o que o prende é o prazo, que ele vê na tela da conferência.
+   */
+  horaSaida: string | null;
 }
 
 async function contexto(contratoId: string) {
@@ -49,15 +54,19 @@ async function contexto(contratoId: string) {
 export async function instrucoesDoContrato(contratoId: string): Promise<InstrucoesDoContrato | null> {
   const ctx = await contexto(contratoId);
   if (!ctx) return null;
-  const { c, k, papel } = ctx;
+  const { admin, c, k, papel } = ctx;
   const preenchidas = !!(k?.horario && k?.instrucoes && k?.plantao);
   const pode = papel === "proprietario" || inquilinoVeInstrucoes({ status: String(c.status), papel, assinadoProprietarioEm: c.assinado_proprietario_em, assinadoInquilinoEm: c.assinado_inquilino_em });
   const dados = pode && preenchidas ? { horario: k!.horario as string, instrucoes: k!.instrucoes as string, plantao: k!.plantao as string } : null;
-  return { papel, dados, preenchidas, atualizadoEm: (k?.atualizado_em as string | null) ?? null };
+  const horaSaida = papel === "proprietario" ? await horaDeSaida(admin, contratoId) : null;
+  return { papel, dados, preenchidas, atualizadoEm: (k?.atualizado_em as string | null) ?? null, horaSaida };
 }
 
-/** O proprietário grava horário, como entrar e telefone de plantão. */
-export async function salvarInstrucoesEntrada(input: { contratoId: string; horario: string; instrucoes: string; plantao: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+/**
+ * O proprietário grava horário, como entrar e telefone de plantão — e (E1240) a hora de saída, opcional: AUSENTE não
+ * toca na coluna (uma página aberta antes do deploy), VAZIA apaga, uma hora válida grava.
+ */
+export async function salvarInstrucoesEntrada(input: { contratoId: string; horario: string; instrucoes: string; plantao: string; horaSaida?: string }): Promise<{ ok: true } | { ok: false; error: string }> {
   const ctx = await contexto(input?.contratoId);
   if (!ctx) return { ok: false, error: "Você não faz parte deste contrato." };
   const { admin, uid, c, k, papel } = ctx;
@@ -69,10 +78,27 @@ export async function salvarInstrucoesEntrada(input: { contratoId: string; horar
   const blocos = (c.contrato_blocos ?? []) as { inicio: string | null; fim: string | null; status: string | null }[];
   const recusaDaHora = recusaDaHoraDeEntrada({ blocos, horaAtual: (k?.horario as string | null) ?? null, horaNova: v.dados.horario, agora: new Date() });
   if (recusaDaHora) return { ok: false, error: recusaDaHora };
+  // E1240 (ESPEC-E1240 v5, 3.3; ORDEM-DUET 1324): a mesma regra do lado da SAÍDA, no mesmo ponto, depois da entrada. Uma
+  // recusa e nada é gravado — nem o texto, nem o plantão, nem a outra hora. O campo ausente não é mudança.
+  if (v.horaSaida !== undefined) {
+    const recusaDaSaida = recusaDaHoraDeSaida({ blocos, horaAtual: await horaDeSaida(admin, input.contratoId), horaNova: v.horaSaida, agora: new Date() });
+    if (recusaDaSaida) return { ok: false, error: recusaDaSaida };
+  }
   if (!(await consumirLimite(`checkin-instrucoes:${uid}`, 30, HORA))) return { ok: false, error: "Muitas alterações em pouco tempo. Tente de novo em instantes." };
   const { error } = await admin
     .from("contratos_checkin")
-    .upsert({ contrato_id: input.contratoId, horario: v.dados.horario, instrucoes: v.dados.instrucoes, plantao: v.dados.plantao, atualizado_em: new Date().toISOString() }, { onConflict: "contrato_id" });
+    .upsert(
+      {
+        contrato_id: input.contratoId,
+        horario: v.dados.horario,
+        instrucoes: v.dados.instrucoes,
+        plantao: v.dados.plantao,
+        atualizado_em: new Date().toISOString(),
+        // E1240: a coluna só entra na escrita quando o campo veio no envio.
+        ...(v.horaSaida !== undefined ? { horario_saida: v.horaSaida } : {}),
+      },
+      { onConflict: "contrato_id" },
+    );
   if (error) {
     console.error("[checkin] salvar:", error.code);
     return { ok: false, error: "Não foi possível salvar agora. Tente de novo." };

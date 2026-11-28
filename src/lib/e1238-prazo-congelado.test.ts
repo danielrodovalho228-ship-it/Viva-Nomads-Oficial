@@ -70,7 +70,8 @@ test("6. a leitura: a hora das instruções e os prazos gravados, por contrato",
     },
   };
   const m = await janela.janelasDosContratos!(admin, [CONTRATO]);
-  assert.deepEqual(m.get(CONTRATO), { hora: "14:00", gravado: { entrada: "2026-12-03T03:00:00+00:00", saida: null }, aberta: { entrada: true, saida: false } });
+  // E1240: a janela leva também a hora de saída das instruções (aqui sem ela: null).
+  assert.deepEqual(m.get(CONTRATO), { hora: "14:00", horaSaida: null, gravado: { entrada: "2026-12-03T03:00:00+00:00", saida: null }, aberta: { entrada: true, saida: false } });
   assert.deepEqual(janela.datasDaJanela!([{ inicio: "2026-12-01", fim: "2026-12-31" }, { inicio: "2027-01-01", fim: "2027-01-30", status: "ativo" }, { inicio: "2027-02-01", fim: "2027-02-28", status: "nao_aceito" }], "14:00"), { inicio: "2026-12-01", checkinAfter: "14:00", fim: "2027-01-30", checkoutBefore: null });
 });
 
@@ -121,6 +122,7 @@ test("11. os quatro leitores passam a hora das INSTRUÇÕES e o prazo gravado", 
   assert.match(ler("./data/contrato-assinar-actions.ts"), /checkinAfter: janela\?\.hora \?\? null/, "B");
   assert.match(ler("./data/estadia.ts"), /janelaVigente\(admin, c\.id, blocosOrdenados\(c\)\)/, "C");
   const rota = ler("../app/api/cron/automacoes/route.ts");
-  assert.match(rota, /datasDaJanela\(c\.contratos\?\.contrato_blocos \?\? \[\], janelas\.get\(c\.contrato_id\)\?\.hora \?\? null\)/, "D");
+  // E1240: a rotina passa também a hora de saída das instruções.
+  assert.match(rota, /datasDaJanela\(c\.contratos\?\.contrato_blocos \?\? \[\], janelas\.get\(c\.contrato_id\)\?\.hora \?\? null, janelas\.get\(c\.contrato_id\)\?\.horaSaida \?\? null\)/, "D");
   assert.match(rota, /prazoGravado: congelados \? \(congelados\.get\(`\$\{c\.contrato_id\}:\$\{c\.tipo\}`\) \?\? null\) : \(c\.prazo_em \?\? null\)/, "D — o gravado (congelado pela rotina)");
 });

@@ -14,6 +14,8 @@ import {
 } from "../fixtures/laboratorio";
 
 /**
+ * Vizinha do E1240 (ESPEC-E1240 v5, secção 5.4): o campo "Horário de saída (opcional)" e a âncora da saída. Corre sem alteração.
+ *
  * T83 — CHECK-IN GARANTIDO (ordem 404cd213, item 2). Contas NOVAS: dono com imóvel publicado e inquilino com
  * contrato em vigência (duas assinaturas + 1º aluguel confirmado).
  *  1. Inquilino, sem instruções do dono: vê "ainda não enviou" e o botão "Não consegui entrar".
