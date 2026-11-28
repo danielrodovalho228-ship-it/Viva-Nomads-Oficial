@@ -60,6 +60,7 @@ const g = globalThis as unknown as {
   __e1248Termos: string[];
   __e1248Limpos: number[];
   __e1248FalhaChamado: boolean;
+  __e1248SoSino: boolean;
   __e1248AvisosAtendimento: { quem: string; id: string }[];
 };
 
@@ -110,6 +111,7 @@ beforeEach(() => {
   g.__e1248Termos = [];
   g.__e1248Limpos = [];
   g.__e1248FalhaChamado = false;
+  g.__e1248SoSino = false;
   g.__e1248AvisosAtendimento = [];
   como(null);
 });
@@ -892,4 +894,162 @@ test("ajuste 2. depois da contestação, ou do pedido da equipe, o arquivo fica 
   db.banco.contratos.find((c) => c.id === C2)!.properties = { owner_id: DONO, title: "Casa Praia" };
   assert.equal((await anexar(formulario(pedido, PDF()))).ok, true, "na disputa, o primeiro anexo entra");
   assert.equal((await anexar(formulario(pedido, PDF()))).ok, false, "o segundo, não");
+});
+
+// ——————————————————————— ORDEM-DUET 1361: o fecho da mordida da Pista 3 ———————————————————————
+
+test("1361-1. o notify real não lança: com os canais a falhar e sem aviso no sino, a hora do aviso não se grava", async () => {
+  g.__e1248FalhaNotify = true;
+  const r = await registrar();
+  assert.equal(r.ok, true);
+  assert.equal(envios("caucao_devolucao_registrada", MORADOR).length, 1, "o envio foi tentado");
+  assert.equal(acerto(r.id!).aviso_em ?? null, null, "sem prova de envio, nenhuma hora");
+});
+
+test("1361-1. o aviso gravado no sino é prova de envio, mesmo com o e-mail a falhar", async () => {
+  g.__e1248SoSino = true;
+  const r = await registrar();
+  assert.ok(acerto(r.id!).aviso_em, "o aviso no sino prova que o morador foi avisado");
+  assert.ok(aberto(avisos("caucao_devolucao_registrada", MORADOR)[0]));
+});
+
+test("1361-1. sem o morador lido, nenhum envio e nenhuma hora (nem no registro, nem na rotina)", async () => {
+  db.banco.contratos.find((c) => c.id === C)!.tenant_id = null;
+  const id = semearAcerto({ aviso_em: null });
+  await rodar(new Date());
+  assert.equal(acerto(id).aviso_em ?? null, null);
+  assert.equal(envios("caucao_devolucao_registrada").length, 0);
+});
+
+test("1361-1 (D7). um acerto sem aviso, registado há mais de 5 dias, recebe o reenvio e continua à espera", async () => {
+  const id = semearAcerto({ aviso_em: null, created_at: haHoras(24 * 6) });
+  const agora = new Date();
+  await rodar(agora);
+  assert.equal(envios("caucao_devolucao_registrada", MORADOR).length, 1, "o reenvio sai");
+  assert.equal(acerto(id).aviso_em, agora.toISOString(), "a hora é a do reenvio");
+  assert.equal(acerto(id).status, "aguardando_confirmacao", "não confirma: o prazo começa agora");
+  await rodar(new Date(agora.getTime() + H));
+  assert.equal(acerto(id).status, "aguardando_confirmacao");
+  assert.equal(g.__e1248Termos.length, 0);
+});
+
+test("1361-3 (D5). a fronteira das 24 horas na leitura do lembrete: no instante exato entra, um milissegundo antes não", async () => {
+  const aviso = "2026-11-20T13:00:00.000Z";
+  const id = semearAcerto({ aviso_em: aviso });
+  const fim = Date.parse("2026-11-25T13:00:00.000Z");
+  await rodar(new Date(fim - 24 * H - 1));
+  assert.equal(envios("caucao_devolucao_lembrete").length, 0, "antes das últimas 24 horas");
+  await rodar(new Date(fim - 24 * H));
+  assert.equal(envios("caucao_devolucao_lembrete").length, 1, "a 24 horas exatas do fim");
+  assert.ok(acerto(id).lembrete_em);
+});
+
+test("1361-3 (D3b). a fronteira das 24 horas na leitura do lembrete do anexo", async () => {
+  const pedido = "2026-11-21T13:00:00.000Z";
+  semearAcerto({ status: "desconto_contestado", aviso_em: "2026-11-20T13:00:00.000Z", contestado_em: pedido, contestacao_motivo: "Não recebi.", comprovante_pedido_em: pedido });
+  const fim = Date.parse("2026-11-26T13:00:00.000Z");
+  await rodar(new Date(fim - 24 * H - 1));
+  assert.equal(envios("caucao_comprovante_lembrete").length, 0, "antes das últimas 24 horas do anexo");
+  await rodar(new Date(fim - 24 * H));
+  assert.equal(envios("caucao_comprovante_lembrete").length, 1, "a 24 horas exatas do fim do anexo");
+});
+
+test("1361-3 (D16). o chamado com simulacao nula é tratado como simulação (a guarda do E1244)", async () => {
+  const { id, chamadoId } = await disputa();
+  db.banco.chamados.find((c) => c.id === chamadoId)!.simulacao = null;
+  const r = await decidir({ chamadoId, decisao: "confirmada" });
+  assert.equal(r.ok, false);
+  assert.match(String(r.error), /simulação/);
+  assert.equal(acerto(id).central_decisao ?? null, null);
+});
+
+test("1361-3 (D16c). um chamado com duas notas de devolução é recusado", async () => {
+  const { id, chamadoId } = await disputa();
+  const outro = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(30), contestado_em: haHoras(5), contestacao_motivo: "Outro motivo." });
+  db.banco.chamado_mensagens.push({ id: "nota2", chamado_id: chamadoId, autor: "sistema", interno: true, corpo: `[devolucao] acerto=${outro}`, criado_em: new Date().toISOString() });
+  const r = await decidir({ chamadoId, decisao: "confirmada" });
+  assert.equal(r.ok, false);
+  assert.match(String(r.error), /mais de uma devolução/);
+  assert.equal(acerto(id).central_decisao ?? null, null);
+  assert.equal(acerto(outro).central_decisao ?? null, null);
+});
+
+test("1361-3 (D19). o anexo só entra com a devolução aberta: num acerto já confirmado, recusado", async () => {
+  for (const status of ["devolvida_integral", "desconto_confirmado"]) {
+    const id = semearAcerto({ status, aviso_em: haHoras(200), confirmacao_via: "morador", confirmado_em: haHoras(100) });
+    como(DONO);
+    const r = await anexar(formulario(id, PDF()));
+    assert.equal(r.ok, false, status);
+    assert.equal(acerto(id).comprovante_path ?? null, null, status);
+  }
+  assert.equal(db.arquivos.size, 0);
+});
+
+test("1361-3 (D21b). o teto do PDF: acima de 15 MB é recusado pelo tamanho; no teto, passa ao exame do PDF", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(2) });
+  como(DONO);
+  const TETO = 15 * 1024 * 1024;
+  const comCabecalho = (n: number) => {
+    const b = new Uint8Array(n);
+    b.set([0x25, 0x50, 0x44, 0x46], 0);
+    return b;
+  };
+  const acima = await anexar(formulario(id, comCabecalho(TETO + 1)));
+  assert.equal(acima.ok, false);
+  assert.match(String(acima.error), /até 15 MB/, "recusado pelo tamanho");
+  const noTeto = await anexar(formulario(id, comCabecalho(TETO)));
+  assert.equal(noTeto.ok, false);
+  assert.match(String(noTeto.error), /Não foi possível abrir este PDF/, "no teto, o tamanho passa; o PDF é que não abre");
+});
+
+test("1361-3 (D26). o teto de 500 letras do motivo, na ação: 500 entra, 501 é recusado", async () => {
+  const longo = semearAcerto({ aviso_em: haHoras(30) });
+  const r1 = await contestar(longo, "x".repeat(501));
+  assert.equal(r1.ok, false);
+  assert.match(String(r1.error), /motivo/);
+  assert.equal(acerto(longo).status, "aguardando_confirmacao");
+  const certo = semearAcerto({ contrato_id: C2, aviso_em: haHoras(30) });
+  db.banco.contratos.find((c) => c.id === C2)!.tenant_id = MORADOR;
+  const r2 = await contestar(certo, "x".repeat(500));
+  assert.equal(r2.ok, true, r2.error);
+  assert.equal(String(acerto(certo).contestacao_motivo).length, 500);
+});
+
+test("1361-4 (D35). a confirmação por falta de resposta grava com a condição de estado: o morador que confirmou no mesmo instante ganha", async () => {
+  const id = semearAcerto({ aviso_em: "2026-11-20T13:00:00.000Z" });
+  // Entre a leitura e a escrita da rotina, o morador confirma.
+  db.antesDe("caucao_acertos", "update", (b) => Object.assign(b.caucao_acertos.find((a) => a.id === id)!, { status: "devolvida_integral", confirmacao_via: "morador", confirmado_em: "2026-11-25T12:59:59.000Z" }));
+  await rodar(new Date("2026-11-25T14:00:00.000Z"));
+  assert.equal(acerto(id).confirmacao_via, "morador", "a confirmação do morador não é reescrita");
+  assert.equal(acerto(id).confirmado_em, "2026-11-25T12:59:59.000Z");
+  assert.equal(envios("caucao_devolucao_sem_resposta").length, 0, "nenhum aviso de falta de resposta");
+  assert.equal(g.__e1248Termos.length, 0, "a rotina não emite o termo de quem não confirmou");
+});
+
+test("1361-4 (D20). o anexo não grava fora do estado aberto: o acerto confirmado entre a leitura e a escrita não recebe o arquivo", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(2) });
+  db.antesDe("caucao_acertos", "update", (b) => Object.assign(b.caucao_acertos.find((a) => a.id === id)!, { status: "devolvida_integral", confirmacao_via: "morador", confirmado_em: new Date().toISOString() }));
+  como(DONO);
+  const r = await anexar(formulario(id, PDF()));
+  assert.equal(r.ok, false);
+  assert.equal(acerto(id).comprovante_path ?? null, null);
+  assert.equal(db.arquivos.size, 0, "o arquivo enviado sai do armazenamento");
+});
+
+test("1361-4 (D20b). o anexo não grava depois de a Central decidir", async () => {
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: haHoras(30), contestacao_motivo: "Não recebi.", comprovante_pedido_em: haHoras(30) });
+  db.antesDe("caucao_acertos", "update", (b) => Object.assign(b.caucao_acertos.find((a) => a.id === id)!, { central_decisao: "nao_confirmada", central_decidido_em: new Date().toISOString(), central_motivo: "sem prova" }));
+  como(DONO);
+  const r = await anexar(formulario(id, PDF()));
+  assert.equal(r.ok, false);
+  assert.equal(acerto(id).comprovante_path ?? null, null);
+  assert.equal(db.arquivos.size, 0);
+});
+
+test("1361-4 (D34). o lembrete do morador não se repete: gravado por outra passagem entre a leitura e a escrita, não sai de novo", async () => {
+  const id = semearAcerto({ aviso_em: "2026-11-20T13:00:00.000Z" });
+  db.antesDe("caucao_acertos", "update", (b) => Object.assign(b.caucao_acertos.find((a) => a.id === id)!, { lembrete_em: "2026-11-24T13:30:00.000Z" }));
+  await rodar(new Date("2026-11-24T14:00:00.000Z"));
+  assert.equal(envios("caucao_devolucao_lembrete").length, 0, "a outra passagem já o mandou");
+  assert.equal(acerto(id).lembrete_em, "2026-11-24T13:30:00.000Z");
 });

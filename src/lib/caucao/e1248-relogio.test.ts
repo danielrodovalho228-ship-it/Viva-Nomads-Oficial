@@ -83,3 +83,14 @@ test("8.2. os textos do coordenador, com o valor, as datas e a hora do mesmo rel
   );
   assert.equal(f<() => string>("linhaDoDonoNaDisputa")(), "A equipe da Viva está analisando. O seu prazo fica suspenso até a decisão.");
 });
+
+test("1361-3 (D3b, D3c). as fronteiras exatas do anexo: a janela abre às 24 horas exatas; o prazo termina no fim exato", () => {
+  const pedido = "2026-12-03T18:30:00.000Z";
+  const fim = Date.parse("2026-12-08T18:30:00.000Z");
+  const janela = f<(p: string, agora: Date) => boolean>("naJanelaDoLembreteDoAnexo");
+  const terminou = f<(p: string, agora: Date) => boolean>("prazoDoAnexoTerminou");
+  assert.equal(janela(pedido, new Date(fim - 24 * H)), true, "a 24 horas exatas do fim");
+  assert.equal(janela(pedido, new Date(fim - 24 * H - 1)), false);
+  assert.equal(terminou(pedido, new Date(fim)), true, "no fim exato, terminou");
+  assert.equal(terminou(pedido, new Date(fim - 1)), false, "um milissegundo antes, não");
+});

@@ -5,7 +5,8 @@
 //  - o portão da equipe (__e1248EhEquipe) e a conta observadora (__e1248Observador: a mensagem de recusa, ou nada);
 //  - a abertura do chamado (grava a linha no banco falso e em __e1248Chamados) e a resposta da equipe (__e1248Respostas);
 //  - o termo em PDF (__e1248Termos) e a remoção dos metadados da imagem (devolve os bytes, marcados);
-//  - o envio do notify: guarda cada chamada (__e1248Envios) e grava o aviso pela gravarAviso REAL, no banco falso.
+//  - o envio do notify: guarda cada chamada (__e1248Envios) e grava o aviso pela gravarAviso REAL, no banco falso; como
+//    o notify real, NUNCA lança e devolve o resultado dos canais (ORDEM-DUET 1361).
 // As regras, os prazos, a renovação e a resolução dos avisos entram de verdade.
 import { existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -37,11 +38,15 @@ const STUBS = {
     return { ok: true, numero, aviso: "", emergencia: false };
   }
   export async function responderComoAdmin(id, texto, interno) { (globalThis.__e1248Respostas ??= []).push({ id, texto, interno }); return { ok: true }; }`,
+  // ORDEM-DUET 1361: como o notify REAL — nunca lança; devolve o resultado dos canais (email: false quando falha) e só
+  // grava o aviso do sino quando há userId. __e1248FalhaNotify: nenhum canal e nenhum aviso; __e1248SoSino: o e-mail
+  // falha, mas o aviso do sino fica gravado.
   "@/lib/notifications": `import { gravarAviso } from "@/lib/notifications/avisos-servidor";
     export async function notify(p) {
       (globalThis.__e1248Envios ??= []).push(p);
-      if (globalThis.__e1248FalhaNotify) throw new Error("o envio falhou");
+      if (globalThis.__e1248FalhaNotify) return { email: false, whatsapp: false };
       if (p.userId) await gravarAviso({ usuarioId: p.userId, evento: p.event, papel: p.papelAviso, url: p.pushUrl, refId: p.refId, prioridade: p.prioridadeAviso, titulo: p.tituloAviso, texto: p.textoAviso });
+      if (globalThis.__e1248SoSino || !p.userId) return { email: false, whatsapp: false };
       return { email: true, whatsapp: false };
     }`,
 };

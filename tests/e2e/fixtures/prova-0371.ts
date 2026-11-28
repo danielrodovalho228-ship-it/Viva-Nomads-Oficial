@@ -189,6 +189,10 @@ async function osCasos(db: postgres.Sql, mig: string, apl: string, rb: string): 
       "motivo do morador curto": await nova({ contestado_em: "now()", contestacao_motivo: "'abc'" }),
       "motivo do morador longo": await nova({ contestado_em: "now()", contestacao_motivo: `'${"x".repeat(501)}'` }),
       "caminho fora do formato": await nova({ comprovante_path: "'../segredo.txt'" }),
+      // ORDEM-DUET 1361 (G4): o caminho com a extensão certa também cai fora do formato pasta/arquivo.
+      "caminho a subir de pasta, com extensão certa": await nova({ comprovante_path: "'../x.pdf'" }),
+      "caminho sem pasta": await nova({ comprovante_path: "'x.pdf'" }),
+      "caminho com duas pastas": await nova({ comprovante_path: "'a/b/x.pdf'" }),
       "chamado inexistente": await nova({ chamado_id: "'99999999-9999-4999-8999-999999999999'" }),
     },
   };

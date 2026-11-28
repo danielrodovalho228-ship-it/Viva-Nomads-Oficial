@@ -27,6 +27,9 @@ export function criarBanco(inicial: Record<string, Linha[]> = {}) {
   const banco: Record<string, Linha[]> = { ...inicial };
   const arquivos = new Map<string, Uint8Array>();
   const falhas = new Set<string>();
+  /** As corridas (ORDEM-DUET 1361): uma mudança feita por "outra pessoa" logo antes de a operação correr, uma vez. */
+  const ganchos: { tabela: string; op: string; fn: (b: Record<string, Linha[]>) => void }[] = [];
+  const antesDe = (tabela: string, op: "update" | "insert" | "select" | "delete", fn: (b: Record<string, Linha[]>) => void) => void ganchos.push({ tabela, op, fn });
   let seq = 0;
   const tabela = (nome: string) => {
     const filtros: ((l: Linha) => boolean)[] = [];
@@ -42,6 +45,8 @@ export function criarBanco(inicial: Record<string, Linha[]> = {}) {
     };
     const executar = (): { data: unknown; error: { code: string; message: string } | null } => {
       if (falhas.has(`${nome}:${op.t}`)) return { data: null, error: { code: "XX000", message: `falha forçada em ${nome}:${op.t}` } };
+      const g = ganchos.findIndex((x) => x.tabela === nome && x.op === op.t);
+      if (g >= 0) ganchos.splice(g, 1)[0].fn(banco);
       if (op.t === "insert" || op.t === "upsert") {
         const novas = op.v.map((l) => ({ id: globalThis.crypto.randomUUID(), created_at: new Date(Date.now() + ++seq).toISOString(), criado_em: new Date(Date.now() + seq).toISOString(), lido_em: null, resolvido_em: null, ...l }));
         linhas().push(...novas);
@@ -109,5 +114,5 @@ export function criarBanco(inicial: Record<string, Linha[]> = {}) {
   };
   const auth = { admin: { getUserById: async (id: string) => ({ data: { user: { id, email: `${id.slice(0, 8)}@teste.invalid` } }, error: null }) } };
   const rpc = async () => ({ data: null, error: null });
-  return { banco, arquivos, falhas, admin: { from: tabela, storage, auth, rpc } };
+  return { banco, arquivos, falhas, antesDe, admin: { from: tabela, storage, auth, rpc } };
 }
