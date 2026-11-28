@@ -1,0 +1,729 @@
+/*
+  E1248 PR 1 — a máquina da devolução da caução, nas AÇÕES e na ROTINA REAIS (ESPEC-E1248 v11, secções 2, 5.2, 8.2 e
+  9-A; ORDENS-DUET 1355 e 1357). Corre no harness e1248-harness: as ações do registro, da resposta, do anexo e da decisão
+  da Central e a rotina de hora a hora são as de produção; só as bordas são dublês (sessão, equipe, chamado, termo, envio).
+  O aviso grava-se pela gravarAviso real num banco falso fiel (src/lib/testes/banco-falso.ts).
+  Casos: T1, a metade do acerto de T2, T3 e T4 (o corte da ORDEM-1352), M1 a M12, M14 a M23, M26, M27, M29, M30 e M32 a
+  M35, mais a metade do acerto de M36 e M37. O M13 está na trava pura (e1248-relogio.test.ts) e aqui na rotina; M24, M25,
+  M28 e M31 estão nas travas da tela e da leitura do comprovante.
+  Roda: node --test src/lib/data/e1248-devolucao-maquina.test.ts
+*/
+import { register } from "node:module";
+import { test, beforeEach } from "node:test";
+import assert from "node:assert/strict";
+
+register("./e1248-harness/loader.mjs", import.meta.url);
+const { criarBanco } = await import("../testes/banco-falso.ts");
+const docs = (await import("./documentos-actions.ts")) as unknown as {
+  registrarDevolucaoCaucao: (i: { contratoId: string; valorDevolvido: number; dataDevolucao: string; meio: string }) => Promise<{ ok: boolean; error?: string; id?: string }>;
+  responderDevolucaoCaucao: (id: string, r: "confirmar" | "contestar", motivo?: string) => Promise<{ ok: boolean; error?: string }>;
+};
+const acoes = (await import("./devolucao-caucao-actions.ts").catch(() => ({}))) as {
+  anexarComprovanteDaDevolucao?: (fd: FormData) => Promise<{ ok: boolean; error?: string }>;
+  decidirDevolucaoPelaCentral?: (i: { chamadoId: string; decisao: "confirmada" | "nao_confirmada"; motivo?: string }) => Promise<{ ok: boolean; error?: string }>;
+};
+const servidor = (await import("../caucao/devolucao-servidor.ts").catch(() => ({}))) as {
+  rodarDevolucaoCaucao?: (admin: unknown, agora: Date) => Promise<unknown>;
+};
+const m = await import("../caucao/devolucao-maquina.ts");
+const { calcularPrazos } = await import("../../config/atendimento.ts");
+const { TEMPLATES } = await import("../notifications/eventos-email.ts");
+const { MATRIZ_NOTIFICACOES } = await import("../../config/matriz-notificacoes.ts");
+const { TEMA_POR_EVENTO } = await import("../notifications/imagens-email.ts");
+const { prioridadeDoAviso } = await import("../notifications/avisos.ts");
+const { acaoDaFaixa } = await import("../notifications/sino.ts");
+
+const anexar = (fd: FormData) => {
+  assert.equal(typeof acoes.anexarComprovanteDaDevolucao, "function", "anexarComprovanteDaDevolucao existe");
+  return acoes.anexarComprovanteDaDevolucao!(fd);
+};
+const decidir = (i: { chamadoId: string; decisao: "confirmada" | "nao_confirmada"; motivo?: string }) => {
+  assert.equal(typeof acoes.decidirDevolucaoPelaCentral, "function", "decidirDevolucaoPelaCentral existe");
+  return acoes.decidirDevolucaoPelaCentral!(i);
+};
+const rodar = (agora: Date) => {
+  assert.equal(typeof servidor.rodarDevolucaoCaucao, "function", "rodarDevolucaoCaucao existe");
+  return servidor.rodarDevolucaoCaucao!(db.admin, agora);
+};
+
+type Linha = Record<string, unknown>;
+type Envio = { event: string; userId?: string; refId?: string | null; pushUrl?: string; textoAviso?: string | null; prioridadeAviso?: string | null; ctaLabel?: string; papelAviso?: string | null };
+const g = globalThis as unknown as {
+  __e1248Sessao: unknown;
+  __e1248Admin: unknown;
+  __e1248EhEquipe: boolean;
+  __e1248Observador: string | null;
+  __e1248Envios: Envio[];
+  __e1248FalhaNotify: boolean;
+  __e1248Chamados: Linha[];
+  __e1248Respostas: { id: string; texto: string; interno: boolean }[];
+  __e1248Termos: string[];
+  __e1248Limpos: number[];
+};
+
+const DONO = "d0d0d0d0-0000-4000-8000-000000000001";
+const MORADOR = "a0a0a0a0-0000-4000-8000-000000000002";
+const EQUIPE = "e0e0e0e0-0000-4000-8000-000000000003";
+const OUTRO = "a0a0a0a0-0000-4000-8000-000000000004";
+const C = "c0c0c0c0-0000-4000-8000-0000000000c1";
+const C2 = "c0c0c0c0-0000-4000-8000-0000000000c2";
+const H = 3_600_000;
+const URL_MORADOR = "/dashboard/locacoes";
+const URL_DONO = `/dashboard/contratos/${C}`;
+
+let db: ReturnType<typeof criarBanco>;
+const sessao = (uid: string | null) => ({ auth: { getUser: async () => ({ data: { user: uid ? { id: uid } : null } }) } });
+const como = (uid: string | null) => {
+  g.__e1248Sessao = sessao(uid);
+  g.__e1248EhEquipe = uid === EQUIPE;
+};
+
+beforeEach(() => {
+  db = criarBanco({
+    contratos: [
+      { id: C, status: "concluido", tenant_id: MORADOR, properties: { owner_id: DONO, title: "Apto Centro" } },
+      { id: C2, status: "concluido", tenant_id: OUTRO, properties: { owner_id: DONO, title: "Casa Praia" } },
+    ],
+    pagamentos_bloco: [
+      { contrato_id: C, tipo: "caucao", valor: 3200, confirmado_pelo_inquilino: true, anulado_em: null },
+      { contrato_id: C2, tipo: "caucao", valor: 1000, confirmado_pelo_inquilino: true, anulado_em: null },
+    ],
+    caucao_acertos: [],
+    chamados: [],
+    chamado_mensagens: [],
+    avisos: [],
+    profiles: [
+      { id: DONO, is_teste: false, full_name: "Dono" },
+      { id: MORADOR, is_teste: false, full_name: "Morador" },
+      { id: OUTRO, is_teste: false, full_name: "Outro" },
+    ],
+  });
+  g.__e1248Admin = db.admin;
+  g.__e1248Observador = null;
+  g.__e1248Envios = [];
+  g.__e1248FalhaNotify = false;
+  g.__e1248Chamados = [];
+  g.__e1248Respostas = [];
+  g.__e1248Termos = [];
+  g.__e1248Limpos = [];
+  como(null);
+});
+
+const acertos = () => db.banco.caucao_acertos;
+const acerto = (id: string) => acertos().find((a) => a.id === id)!;
+const envios = (ev: string, uid?: string) => g.__e1248Envios.filter((e) => e.event === ev && (uid ? e.userId === uid : true));
+const avisos = (ev: string, uid: string) => db.banco.avisos.filter((a) => a.evento === ev && a.usuario_id === uid);
+const aberto = (a: Linha | undefined) => !!a && (a.resolvido_em ?? null) === null;
+/** Resolvido: o aviso EXISTE e tem resolvido_em (um aviso que não nasceu não conta). */
+const resolvido = (a: Linha | undefined) => !!a && !!a.resolvido_em;
+
+/** Um acerto já gravado, à espera, com o aviso de há `horas` horas (o modo de pôr o relógio sem esperar 5 dias). */
+function semearAcerto(extra: Linha = {}): string {
+  const id = globalThis.crypto.randomUUID();
+  acertos().push({
+    id,
+    contrato_id: C,
+    tipo: "devolucao_integral",
+    caucao_total: 3200,
+    valor_devolvido: 3200,
+    data_devolucao: "2026-11-27",
+    meio: "pix",
+    status: "aguardando_confirmacao",
+    registrado_por: DONO,
+    confirmado_em: null,
+    created_at: "2026-11-27T13:00:00.000Z",
+    aviso_em: null,
+    lembrete_em: null,
+    confirmacao_via: null,
+    contestacao_motivo: null,
+    contestado_em: null,
+    chamado_id: null,
+    central_decisao: null,
+    central_decidido_em: null,
+    central_decidido_por: null,
+    central_motivo: null,
+    comprovante_path: null,
+    comprovante_pedido_em: null,
+    comprovante_anexado_em: null,
+    comprovante_lembrete_em: null,
+    ...extra,
+  });
+  return id;
+}
+const haHoras = (h: number, base = Date.now()) => new Date(base - h * H).toISOString();
+
+async function registrar(valor = 3200, meio = "pix") {
+  como(DONO);
+  return docs.registrarDevolucaoCaucao({ contratoId: C, valorDevolvido: valor, dataDevolucao: "2026-11-27", meio });
+}
+async function contestar(id: string, motivo = "Não recebi o valor.") {
+  como(MORADOR);
+  return docs.responderDevolucaoCaucao(id, "contestar", motivo);
+}
+const PDF = () => {
+  const corpo = new Uint8Array(2048).fill(0x20);
+  corpo.set([0x25, 0x50, 0x44, 0x46], 0);
+  corpo.set(new TextEncoder().encode("%%EOF"), 2040);
+  return corpo;
+};
+const JPG = () => {
+  const b = new Uint8Array(4096);
+  b.set([0xff, 0xd8, 0xff, 0xe0], 0);
+  return b;
+};
+const formulario = (acertoId: string, bytes: Uint8Array, nome = "comprovante.pdf") => {
+  const fd = new FormData();
+  fd.set("acertoId", acertoId);
+  fd.set("arquivo", new File([bytes as BlobPart], nome));
+  return fd;
+};
+const chamadoDo = (id: string) => db.banco.chamados.find((c) => c.id === acerto(id).chamado_id)!;
+
+// ——————————————————————————————— o registro e o aviso ———————————————————————————————
+
+test("T1. o registro dispara o aviso ao morador: o valor, a data e o prazo; o acerto guarda a hora do aviso", async () => {
+  const antes = Date.now();
+  const r = await registrar();
+  assert.equal(r.ok, true, r.error);
+  const a = acerto(r.id!);
+  assert.ok(a.aviso_em, "a hora do aviso fica gravada");
+  assert.ok(Date.parse(String(a.aviso_em)) >= antes, "a hora é a do envio");
+  const [e] = envios("caucao_devolucao_registrada", MORADOR);
+  assert.ok(e, "o morador é avisado, com o evento próprio");
+  assert.equal(e.refId, C, "a referência é o contrato");
+  assert.equal(e.pushUrl, URL_MORADOR, "o botão leva a Minhas locações");
+  assert.equal(e.textoAviso, m.textoAvisoDoRegistro({ valor: 3200, dataDevolucao: "2026-11-27" }));
+  const [av] = avisos("caucao_devolucao_registrada", MORADOR);
+  assert.equal(av?.prioridade, "normal", "decisão 7: normal");
+  assert.equal(av?.ref_id, C);
+  assert.equal(envios("caucao_devolucao_registrada", DONO).length, 0, "o dono não recebe o próprio aviso");
+});
+
+test("M26. o registro sem comprovante é aceite: no registro ele é opcional", async () => {
+  const r = await registrar();
+  assert.equal(r.ok, true);
+  assert.equal(acerto(r.id!).comprovante_path ?? null, null);
+  assert.equal(acerto(r.id!).comprovante_pedido_em ?? null, null, "o pedido só nasce na disputa");
+});
+
+test("M4. o aviso que falhou não grava a hora; um acerto sem ela nunca confirma por falta de resposta", async () => {
+  g.__e1248FalhaNotify = true;
+  const r = await registrar();
+  assert.equal(r.ok, true, "o registro vale; só o aviso falhou");
+  assert.equal(acerto(r.id!).aviso_em ?? null, null);
+  const antigo = semearAcerto({ contrato_id: C2, aviso_em: null, created_at: haHoras(24 * 30) });
+  g.__e1248FalhaNotify = false;
+  await rodar(new Date(Date.now() + 365 * 24 * H));
+  assert.equal(acerto(r.id!).status, "aguardando_confirmacao");
+  assert.equal(acerto(antigo).status, "aguardando_confirmacao", "o acerto anterior ao E1248");
+  assert.equal(g.__e1248Termos.length, 0);
+});
+
+test("M15. com a disputa aberta, o dono não registra outra devolução", async () => {
+  semearAcerto({ status: "desconto_contestado", contestado_em: haHoras(2), contestacao_motivo: "Não recebi o valor.", aviso_em: haHoras(30) });
+  const r = await registrar(3000);
+  assert.equal(r.ok, false);
+  assert.match(String(r.error), /contesta|equipe|decis/i);
+  assert.equal(acertos().length, 1, "nada é gravado");
+  assert.equal(envios("caucao_devolucao_registrada").length, 0);
+});
+
+test("M15. um contestado anterior ao E1248 (sem a hora da contestação) não trava o registro, como hoje", async () => {
+  semearAcerto({ status: "desconto_contestado", contestado_em: null });
+  const r = await registrar(3000);
+  assert.equal(r.ok, true, r.error);
+});
+
+test("M16. depois de um \"não vale\", o dono registra de novo: nasce um aviso novo, com 5 dias novos", async () => {
+  const velho = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(200), contestado_em: haHoras(100), contestacao_motivo: "Não recebi.", central_decisao: "nao_confirmada", central_decidido_em: haHoras(1), central_motivo: "sem prova" });
+  db.banco.avisos.push({ id: "av-velho", usuario_id: MORADOR, evento: "caucao_devolucao_registrada", ref_id: C, prioridade: "normal", titulo: "x", lido_em: null, resolvido_em: haHoras(100), criado_em: haHoras(200) });
+  const r = await registrar(3200);
+  assert.equal(r.ok, true, r.error);
+  assert.notEqual(r.id, velho);
+  const novo = acerto(r.id!);
+  assert.ok(Date.parse(String(novo.aviso_em)) > Date.now() - 60_000, "a hora do aviso é a de agora: 5 dias novos");
+  assert.equal(avisos("caucao_devolucao_registrada", MORADOR).filter(aberto).length, 1, "um aviso novo, aberto");
+});
+
+// ——————————————————————————————— a resposta do morador ———————————————————————————————
+
+test("M1 e M18. o morador confirma no dia 2: confirmada pelo morador; os avisos dele saem; o termo sai", async () => {
+  const r = await registrar();
+  const id = r.id!;
+  acerto(id).aviso_em = haHoras(30);
+  db.banco.avisos.push({ id: "lem", usuario_id: MORADOR, evento: "caucao_devolucao_lembrete", ref_id: C, prioridade: "critico", titulo: "x", lido_em: null, resolvido_em: null, criado_em: haHoras(1) });
+  como(MORADOR);
+  const res = await docs.responderDevolucaoCaucao(id, "confirmar");
+  assert.equal(res.ok, true, res.error);
+  const a = acerto(id);
+  assert.equal(a.status, "devolvida_integral");
+  assert.equal(a.confirmacao_via, "morador");
+  assert.ok(a.confirmado_em);
+  assert.ok(resolvido(avisos("caucao_devolucao_registrada", MORADOR)[0]), "o aviso principal sai");
+  assert.ok(resolvido(avisos("caucao_devolucao_lembrete", MORADOR)[0]), "o lembrete sai");
+  assert.deepEqual(g.__e1248Termos, [id], "o termo sai, uma vez");
+});
+
+test("M14. a devolução parcial, confirmada pelo morador: igual à total", async () => {
+  const r = await registrar(2000);
+  como(MORADOR);
+  assert.equal((await docs.responderDevolucaoCaucao(r.id!, "confirmar")).ok, true);
+  assert.equal(acerto(r.id!).status, "desconto_confirmado");
+  assert.equal(acerto(r.id!).confirmacao_via, "morador");
+  assert.deepEqual(g.__e1248Termos, [r.id]);
+});
+
+test("só o morador responde: o dono e outra conta são recusados", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(2) });
+  for (const uid of [DONO, OUTRO]) {
+    como(uid);
+    const res = await docs.responderDevolucaoCaucao(id, "confirmar");
+    assert.equal(res.ok, false, uid);
+  }
+  assert.equal(acerto(id).status, "aguardando_confirmacao");
+});
+
+test("M6. contestar sem motivo, ou com menos de 5 letras: recusado, com a mensagem; nada muda", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(2) });
+  for (const motivo of [undefined, "", "   ", "abcd", " ab  "]) {
+    como(MORADOR);
+    const res = await docs.responderDevolucaoCaucao(id, "contestar", motivo as string);
+    assert.equal(res.ok, false, JSON.stringify(motivo));
+    assert.match(String(res.error), /motivo/i);
+  }
+  assert.equal(acerto(id).status, "aguardando_confirmacao");
+  assert.equal(acerto(id).contestado_em ?? null, null);
+  assert.equal(g.__e1248Chamados.length, 0, "nenhum chamado");
+});
+
+test("M7 e T3 (a metade do acerto). o morador contesta com motivo: contestada; o chamado nasce no nome dele, com a nota do acerto", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(30) });
+  const res = await contestar(id, "  Não recebi o valor.  ");
+  assert.equal(res.ok, true, res.error);
+  const a = acerto(id);
+  assert.equal(a.status, "desconto_contestado");
+  assert.ok(a.contestado_em, "a hora da contestação: o início da disputa");
+  assert.equal(a.contestacao_motivo, "Não recebi o valor.");
+  assert.equal(g.__e1248Chamados.length, 1);
+  const pedido = g.__e1248Chamados[0];
+  assert.equal(pedido.categoria, "caucao", "a fila da caução");
+  assert.equal(pedido.contextoTipo, "contrato");
+  assert.equal(pedido.contextoId, C);
+  assert.equal(pedido.pedePessoa, true);
+  const msg = String(pedido.mensagem);
+  assert.match(msg, /R\$ 3\.200,00/, "o valor");
+  assert.match(msg, /Não recebi o valor\./, "o motivo");
+  assert.match(msg, /27\/11\/2026/, "a data da devolução");
+  assert.ok(msg.includes(m.NOTA_DA_FASE_PARA_A_EQUIPE), "o que a equipe decide nesta fase");
+  const ch = chamadoDo(id);
+  assert.equal(ch.usuario_id, MORADOR, "no nome do morador");
+  const nota = db.banco.chamado_mensagens.find((n) => n.chamado_id === ch.id && n.autor === "sistema");
+  assert.equal(nota?.corpo, `[devolucao] acerto=${id}`);
+  assert.equal(nota?.interno, true);
+});
+
+test("texto 2. a contestação avisa o dono, com o motivo, pelo botão \"Ver a caução\"", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(30) });
+  db.banco.avisos.push({ id: "reg", usuario_id: MORADOR, evento: "caucao_devolucao_registrada", ref_id: C, prioridade: "normal", titulo: "x", lido_em: null, resolvido_em: null, criado_em: haHoras(30) });
+  await contestar(id, "Não recebi o valor.");
+  assert.ok(resolvido(avisos("caucao_devolucao_registrada", MORADOR)[0]), "a contestação é uma resposta: o aviso do morador sai");
+  const [e] = envios("caucao_devolucao_contestada", DONO);
+  assert.ok(e);
+  assert.equal(e.textoAviso, m.textoContestacaoAoDono({ valor: 3200, motivo: "Não recebi o valor." }));
+  assert.equal(e.pushUrl, URL_DONO);
+  assert.equal(e.ctaLabel, "Ver a caução");
+  assert.equal(e.refId, C);
+});
+
+test("M29 e M32. contesta sem comprovante: o dono recebe o pedido, com a hora do fim do prazo; o prazo da decisão não conta até ao anexo", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(30) });
+  const antes = Date.now();
+  await contestar(id);
+  const a = acerto(id);
+  assert.ok(a.comprovante_pedido_em, "o pedido fica gravado");
+  assert.ok(Date.parse(String(a.comprovante_pedido_em)) >= antes);
+  const [e] = envios("caucao_comprovante_pedido", DONO);
+  assert.ok(e, "o aviso do pedido");
+  assert.equal(e.textoAviso, m.textoPedidoDoComprovante({ meio: "pix", valor: 3200, pedidoEm: String(a.comprovante_pedido_em) }));
+  assert.equal(e.ctaLabel, "Anexar o comprovante");
+  assert.equal(e.pushUrl, URL_DONO);
+  assert.equal(avisos("caucao_comprovante_pedido", DONO)[0]?.prioridade, "normal", "o pedido é normal; só o lembrete é crítico");
+  const fimDoAnexo = m.fimDoPrazoDoAnexo(String(a.comprovante_pedido_em));
+  assert.equal(chamadoDo(id).prazo_resolucao, calcularPrazos("p2", fimDoAnexo).resolucao.toISOString(), "o prazo da decisão começa no fim do prazo do anexo");
+});
+
+test("M29. contesta com o comprovante já anexado: nenhum pedido", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(30), comprovante_path: `${DONO}/x.pdf`, comprovante_anexado_em: haHoras(20) });
+  await contestar(id);
+  assert.equal(acerto(id).comprovante_pedido_em ?? null, null);
+  assert.equal(envios("caucao_comprovante_pedido").length, 0);
+});
+
+test("M22 e M23. a resposta tardia é recusada, com a mensagem; a ação grava a confirmação por falta de resposta, com a hora do fim do prazo", async () => {
+  const aviso = haHoras(120, Date.now() - 1000); // o prazo terminou há um segundo
+  const id = semearAcerto({ aviso_em: aviso });
+  como(MORADOR);
+  const res = await docs.responderDevolucaoCaucao(id, "contestar", "Não recebi o valor.");
+  assert.equal(res.ok, false);
+  assert.equal(res.error, m.textoRespostaTardia({ avisoEm: aviso }));
+  const fim = m.fimDoPrazoDeResposta(aviso).toISOString();
+  assert.equal(acerto(id).status, "devolvida_integral");
+  assert.equal(acerto(id).confirmacao_via, "falta_de_resposta");
+  assert.equal(acerto(id).confirmado_em, fim, "a hora do fim do prazo, nunca a da resposta");
+  assert.equal(g.__e1248Chamados.length, 0, "a contestação tardia não abre chamado");
+  await rodar(new Date(Date.parse(fim) + H));
+  assert.equal(acerto(id).confirmado_em, fim, "depois de a rotina correr, a mesma hora");
+  assert.deepEqual(g.__e1248Termos, [id], "um termo só");
+});
+
+test("M22. a trava do coordenador: o prazo termina às 10:00; a resposta às 10:00:01 é recusada; a rotina das 11:00 não muda a hora", async () => {
+  const aviso = "2026-11-20T13:00:00.000Z"; // 20/11 10:00 em Brasília; o prazo termina a 25/11 10:00
+  const id = semearAcerto({ aviso_em: aviso });
+  const fim = "2026-11-25T13:00:00.000Z";
+  como(MORADOR);
+  const res = await docs.responderDevolucaoCaucao(id, "confirmar");
+  assert.equal(res.ok, false);
+  assert.equal(res.error, "O prazo para responder terminou em 25/11 10:00; a devolução valeu como confirmada.");
+  assert.equal(acerto(id).confirmado_em, fim);
+  await rodar(new Date("2026-11-25T14:00:00.000Z"));
+  assert.equal(acerto(id).confirmado_em, fim);
+  assert.equal(acerto(id).confirmacao_via, "falta_de_resposta");
+});
+
+// ——————————————————————————————— o comprovante ———————————————————————————————
+
+test("M27. o dono anexa um PDF: guardado no bucket da conferência, na pasta dele; o caminho cabe na regra da 0371", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(2) });
+  como(DONO);
+  const r = await anexar(formulario(id, PDF()));
+  assert.equal(r.ok, true, r.error);
+  const a = acerto(id);
+  assert.match(String(a.comprovante_path), /^[0-9a-zA-Z-]+\/[0-9a-zA-Z_-]+\.(pdf|jpg|png|webp)$/);
+  assert.ok(String(a.comprovante_path).startsWith(`${DONO}/`));
+  assert.ok(db.arquivos.has(`conferencia/${a.comprovante_path}`), "no bucket privado da conferência");
+  assert.ok(a.comprovante_anexado_em);
+});
+
+test("M27. a imagem entra sem metadados", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(2) });
+  como(DONO);
+  const r = await anexar(formulario(id, JPG(), "foto.jpg"));
+  assert.equal(r.ok, true, r.error);
+  assert.equal(g.__e1248Limpos.length, 1, "a imagem passou pela remoção dos metadados");
+  assert.match(String(acerto(id).comprovante_path), /\.jpg$/);
+});
+
+test("o anexo: só o dono do contrato; um arquivo que não é PDF nem imagem é recusado", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(2) });
+  for (const uid of [MORADOR, OUTRO]) {
+    como(uid);
+    assert.equal((await anexar(formulario(id, PDF()))).ok, false, uid);
+  }
+  como(DONO);
+  assert.equal((await anexar(formulario(id, new TextEncoder().encode("texto qualquer, não é um arquivo válido"), "a.txt"))).ok, false);
+  assert.equal(acerto(id).comprovante_path ?? null, null);
+  assert.equal(db.arquivos.size, 0);
+});
+
+test("M30. o dono anexa depois do pedido: o prazo da decisão conta da hora do anexo; o pedido e o lembrete dele saem", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(30) });
+  await contestar(id);
+  db.banco.avisos.push({ id: "lem-anexo", usuario_id: DONO, evento: "caucao_comprovante_lembrete", ref_id: C, prioridade: "critico", titulo: "x", lido_em: null, resolvido_em: null, criado_em: haHoras(1) });
+  como(DONO);
+  const r = await anexar(formulario(id, PDF()));
+  assert.equal(r.ok, true, r.error);
+  const anexadoEm = String(acerto(id).comprovante_anexado_em);
+  assert.equal(chamadoDo(id).prazo_resolucao, calcularPrazos("p2", new Date(anexadoEm)).resolucao.toISOString());
+  assert.ok(resolvido(avisos("caucao_comprovante_pedido", DONO)[0]), "o pedido sai");
+  assert.ok(resolvido(avisos("caucao_comprovante_lembrete", DONO)[0]), "o lembrete do anexo sai");
+});
+
+test("M35. o dono anexa depois do prazo do anexo, antes da decisão: aceite", async () => {
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(300), contestado_em: haHoras(150), contestacao_motivo: "Não recebi.", comprovante_pedido_em: haHoras(150) });
+  como(DONO);
+  assert.equal((await anexar(formulario(id, PDF()))).ok, true);
+  assert.ok(acerto(id).comprovante_path);
+});
+
+test("depois da decisão da Central, o anexo é recusado", async () => {
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(300), contestado_em: haHoras(150), contestacao_motivo: "Não recebi.", central_decisao: "nao_confirmada", central_decidido_em: haHoras(1), central_motivo: "sem prova" });
+  como(DONO);
+  assert.equal((await anexar(formulario(id, PDF()))).ok, false);
+});
+
+// ——————————————————————————————— a decisão da Central ———————————————————————————————
+
+async function disputa(opc: { valor?: number; comAnexo?: boolean; meio?: string } = {}) {
+  const valor = opc.valor ?? 3200;
+  const id = semearAcerto({ aviso_em: haHoras(30), valor_devolvido: valor, tipo: valor === 3200 ? "devolucao_integral" : "desconto", meio: opc.meio ?? "pix" });
+  await contestar(id);
+  if (opc.comAnexo !== false) {
+    como(DONO);
+    assert.equal((await anexar(formulario(id, PDF()))).ok, true);
+  }
+  g.__e1248Envios = [];
+  como(EQUIPE);
+  return { id, chamadoId: String(acerto(id).chamado_id) };
+}
+
+test("M12. quem não é da equipe não decide", async () => {
+  const { id, chamadoId } = await disputa();
+  for (const uid of [MORADOR, DONO, OUTRO]) {
+    como(uid);
+    const r = await decidir({ chamadoId, decisao: "confirmada" });
+    assert.equal(r.ok, false, uid);
+  }
+  assert.equal(acerto(id).central_decisao ?? null, null);
+});
+
+test("M11. um chamado de outro contrato, ou sem contrato, não decide", async () => {
+  const { id, chamadoId } = await disputa();
+  const ch = db.banco.chamados.find((c) => c.id === chamadoId)!;
+  ch.contexto_id = C2;
+  assert.equal((await decidir({ chamadoId, decisao: "confirmada" })).ok, false, "outro contrato");
+  ch.contexto_id = null;
+  ch.contexto_tipo = null;
+  assert.equal((await decidir({ chamadoId, decisao: "confirmada" })).ok, false, "sem contrato");
+  const semNota = globalThis.crypto.randomUUID();
+  db.banco.chamados.push({ id: semNota, numero_publico: "CH-2026-000999", contexto_tipo: "contrato", contexto_id: C, simulacao: false });
+  assert.equal((await decidir({ chamadoId: semNota, decisao: "confirmada" })).ok, false, "um chamado sem a nota do acerto");
+  assert.equal(acerto(id).central_decisao ?? null, null);
+});
+
+test("a conta observadora e o chamado de simulação seguem as guardas do E1229", async () => {
+  const { id, chamadoId } = await disputa();
+  g.__e1248Observador = "A conta observadora só decide com as duas partes de teste.";
+  const r1 = await decidir({ chamadoId, decisao: "confirmada" });
+  assert.equal(r1.ok, false);
+  assert.equal(r1.error, "A conta observadora só decide com as duas partes de teste.");
+  g.__e1248Observador = null;
+  db.banco.chamados.find((c) => c.id === chamadoId)!.simulacao = true;
+  assert.equal((await decidir({ chamadoId, decisao: "confirmada" })).ok, false, "simulação com contas reais");
+  assert.equal(acerto(id).central_decisao ?? null, null);
+});
+
+test("com o prazo do anexo a correr e sem comprovante, a equipe ainda não decide", async () => {
+  const { id, chamadoId } = await disputa({ comAnexo: false });
+  const r = await decidir({ chamadoId, decisao: "nao_confirmada", motivo: "Sem prova." });
+  assert.equal(r.ok, false);
+  assert.match(String(r.error), /comprovante|prazo/i);
+  assert.equal(acerto(id).central_decisao ?? null, null);
+});
+
+test("M8, M21 e T4 (a metade do acerto). a Central decide \"vale\": confirmada pela Central; o morador lê a resposta no chamado; os dois são avisados; o termo sai", async () => {
+  const { id, chamadoId } = await disputa();
+  db.banco.avisos.push({ id: "lem-a", usuario_id: DONO, evento: "caucao_comprovante_lembrete", ref_id: C, prioridade: "critico", titulo: "x", lido_em: null, resolvido_em: null, criado_em: haHoras(1) });
+  const r = await decidir({ chamadoId, decisao: "confirmada" });
+  assert.equal(r.ok, true, r.error);
+  const a = acerto(id);
+  assert.equal(a.status, "devolvida_integral");
+  assert.equal(a.confirmacao_via, "central");
+  assert.ok(a.confirmado_em);
+  assert.equal(a.central_decisao, "confirmada");
+  assert.ok(a.central_decidido_em, "M36 (a metade do acerto): a decisão fecha a disputa");
+  assert.equal(a.central_decidido_por, EQUIPE);
+  const texto = m.textoDecisaoConfirmada({ valor: 3200 });
+  const visivel = g.__e1248Respostas.find((x) => x.id === chamadoId && !x.interno);
+  assert.equal(visivel?.texto, texto, "a resposta visível no chamado do morador");
+  assert.ok(db.banco.chamado_mensagens.some((n) => n.chamado_id === chamadoId && n.autor === "admin" && n.interno === true && n.autor_id === EQUIPE), "a nota interna");
+  assert.equal(envios("caucao_devolucao_decidida", MORADOR)[0]?.textoAviso, texto);
+  assert.equal(envios("caucao_devolucao_decidida", DONO)[0]?.textoAviso, texto);
+  assert.deepEqual(g.__e1248Termos, [id]);
+  for (const ev of ["caucao_devolucao_contestada", "caucao_comprovante_pedido", "caucao_comprovante_lembrete"]) assert.ok(resolvido(avisos(ev, DONO)[0]), `${ev} do dono sai`);
+});
+
+test("M14. a devolução parcial, confirmada pela Central: igual à total", async () => {
+  const { id, chamadoId } = await disputa({ valor: 2000 });
+  assert.equal((await decidir({ chamadoId, decisao: "confirmada" })).ok, true);
+  assert.equal(acerto(id).status, "desconto_confirmado");
+  assert.equal(acerto(id).confirmacao_via, "central");
+});
+
+test("M9 e M21. a Central decide \"não vale\": continua contestada, com a disputa encerrada; ao dono, a frase a mais e o botão \"Registrar a devolução\"", async () => {
+  const { id, chamadoId } = await disputa();
+  const r = await decidir({ chamadoId, decisao: "nao_confirmada", motivo: "  O comprovante mostra outro valor.  " });
+  assert.equal(r.ok, true, r.error);
+  const a = acerto(id);
+  assert.equal(a.status, "desconto_contestado");
+  assert.equal(a.central_decisao, "nao_confirmada");
+  assert.equal(a.central_motivo, "O comprovante mostra outro valor.");
+  assert.ok(a.central_decidido_em);
+  assert.equal(a.confirmado_em ?? null, null);
+  assert.equal(g.__e1248Termos.length, 0, "nenhum termo");
+  const motivo = "O comprovante mostra outro valor.";
+  assert.equal(envios("caucao_devolucao_decidida", MORADOR)[0]?.textoAviso, m.textoDecisaoNaoConfirmada({ valor: 3200, motivo, paraODono: false }));
+  const [d] = envios("caucao_devolucao_decidida", DONO);
+  assert.equal(d?.textoAviso, m.textoDecisaoNaoConfirmada({ valor: 3200, motivo, paraODono: true }));
+  assert.equal(d?.ctaLabel, "Registrar a devolução");
+  assert.equal(d?.pushUrl, URL_DONO);
+});
+
+test("8.4-3. \"não confirmada\" com o comprovante: o motivo é obrigatório, com 5 letras", async () => {
+  const { id, chamadoId } = await disputa();
+  for (const motivo of [undefined, "", "abcd"]) {
+    const r = await decidir({ chamadoId, decisao: "nao_confirmada", motivo });
+    assert.equal(r.ok, false, JSON.stringify(motivo));
+  }
+  assert.equal(acerto(id).central_decisao ?? null, null);
+});
+
+test("M34 e M40. o prazo do anexo vence sem comprovante: a Central decide; \"não confirmada\" grava o motivo do meio, e os dois são avisados com ele", async () => {
+  for (const [meio, motivo] of [
+    ["pix", "o comprovante da transferência não foi apresentado no prazo"],
+    ["dinheiro", "o recibo do pagamento em dinheiro não foi apresentado no prazo"],
+  ] as const) {
+    const { id, chamadoId } = await disputa({ comAnexo: false, meio });
+    acerto(id).comprovante_pedido_em = haHoras(121);
+    const r = await decidir({ chamadoId, decisao: "nao_confirmada" });
+    assert.equal(r.ok, true, `${meio}: ${r.error}`);
+    assert.equal(acerto(id).central_motivo, motivo, meio);
+    assert.equal(envios("caucao_devolucao_decidida", MORADOR)[0]?.textoAviso, m.textoDecisaoNaoConfirmada({ valor: 3200, motivo, paraODono: false }));
+    assert.equal(envios("caucao_devolucao_decidida", DONO)[0]?.textoAviso, m.textoDecisaoNaoConfirmada({ valor: 3200, motivo, paraODono: true }));
+    db.banco.caucao_acertos = [];
+  }
+});
+
+test("M10. a segunda decisão sobre o mesmo acerto é recusada", async () => {
+  const { id, chamadoId } = await disputa();
+  assert.equal((await decidir({ chamadoId, decisao: "nao_confirmada", motivo: "Outro valor." })).ok, true);
+  const r = await decidir({ chamadoId, decisao: "confirmada" });
+  assert.equal(r.ok, false);
+  assert.equal(acerto(id).central_decisao, "nao_confirmada");
+  assert.equal(g.__e1248Termos.length, 0);
+});
+
+// ——————————————————————————————— a rotina de hora a hora ———————————————————————————————
+
+test("T2 (a metade do acerto) e M5. 5 dias de silêncio: confirmada por falta de resposta, com a hora do fim do prazo; correr duas vezes dá o mesmo", async () => {
+  const aviso = "2026-11-20T13:00:00.000Z";
+  const id = semearAcerto({ aviso_em: aviso, created_at: "2026-11-20T12:59:00.000Z" });
+  db.banco.avisos.push({ id: "reg", usuario_id: MORADOR, evento: "caucao_devolucao_registrada", ref_id: C, prioridade: "normal", titulo: "x", lido_em: null, resolvido_em: null, criado_em: aviso });
+  const agora = new Date("2026-11-25T13:30:00.000Z");
+  await rodar(agora);
+  const a = acerto(id);
+  assert.equal(a.status, "devolvida_integral");
+  assert.equal(a.confirmacao_via, "falta_de_resposta");
+  assert.equal(a.confirmado_em, "2026-11-25T13:00:00.000Z");
+  assert.equal(envios("caucao_devolucao_sem_resposta", MORADOR)[0]?.textoAviso, m.textoFimDoPrazoAoMorador({ valor: 3200, registradoEm: "2026-11-20T12:59:00.000Z" }));
+  assert.equal(envios("caucao_devolucao_sem_resposta", DONO)[0]?.textoAviso, m.textoFimDoPrazoAoDono({ valor: 3200 }));
+  assert.ok(resolvido(avisos("caucao_devolucao_registrada", MORADOR)[0]), "o aviso principal sai");
+  const antes = g.__e1248Envios.length;
+  await rodar(new Date(agora.getTime() + H));
+  assert.equal(acerto(id).confirmado_em, "2026-11-25T13:00:00.000Z");
+  assert.equal(g.__e1248Envios.length, antes, "nada sai duas vezes");
+  assert.deepEqual(g.__e1248Termos, [id], "um termo só");
+});
+
+test("M14. a devolução parcial, confirmada por falta de resposta: igual à total", async () => {
+  const id = semearAcerto({ aviso_em: "2026-11-20T13:00:00.000Z", valor_devolvido: 2000, tipo: "desconto" });
+  await rodar(new Date("2026-11-26T00:00:00.000Z"));
+  assert.equal(acerto(id).status, "desconto_confirmado");
+  assert.equal(acerto(id).confirmacao_via, "falta_de_resposta");
+});
+
+test("M2 e M13. 4 dias e 23 horas de silêncio: continua à espera (o mesmo relógio do aviso e da tela)", async () => {
+  const aviso = "2026-11-20T13:00:00.000Z";
+  const id = semearAcerto({ aviso_em: aviso });
+  await rodar(new Date(Date.parse(aviso) + (4 * 24 + 23) * H));
+  assert.equal(acerto(id).status, "aguardando_confirmacao");
+  await rodar(m.fimDoPrazoDeResposta(aviso));
+  assert.equal(acerto(id).status, "devolvida_integral", "no fim exato, já confirma");
+});
+
+test("M3. o morador responde antes do fim do prazo, com a rotina a correr ao mesmo tempo: vale a resposta dele", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(100) });
+  como(MORADOR);
+  await Promise.all([docs.responderDevolucaoCaucao(id, "confirmar"), rodar(new Date())]);
+  assert.equal(acerto(id).confirmacao_via, "morador");
+  assert.equal(envios("caucao_devolucao_sem_resposta").length, 0);
+  assert.equal(g.__e1248Termos.length, 1);
+});
+
+test("M17. faltam menos de 24 horas: o lembrete sai, crítico, uma vez só; o aviso principal continua normal, noutra linha", async () => {
+  const aviso = "2026-11-20T13:00:00.000Z";
+  const id = semearAcerto({ aviso_em: aviso });
+  db.banco.avisos.push({ id: "reg", usuario_id: MORADOR, evento: "caucao_devolucao_registrada", ref_id: C, prioridade: "normal", titulo: "x", lido_em: null, resolvido_em: null, criado_em: aviso });
+  const agora = new Date("2026-11-24T14:00:00.000Z");
+  await rodar(agora);
+  const [e] = envios("caucao_devolucao_lembrete", MORADOR);
+  assert.ok(e, "o lembrete");
+  assert.equal(e.textoAviso, m.textoLembrete({ valor: 3200, avisoEm: aviso }));
+  assert.equal(e.refId, C);
+  assert.equal(e.pushUrl, URL_MORADOR);
+  assert.ok(acerto(id).lembrete_em);
+  const [lem] = avisos("caucao_devolucao_lembrete", MORADOR);
+  assert.equal(lem?.prioridade, "critico");
+  assert.equal(avisos("caucao_devolucao_registrada", MORADOR)[0].prioridade, "normal", "o principal continua normal");
+  await rodar(new Date(agora.getTime() + H));
+  assert.equal(envios("caucao_devolucao_lembrete").length, 1, "uma vez só");
+  await rodar(new Date("2026-11-25T13:00:00.000Z"));
+  assert.ok(resolvido(avisos("caucao_devolucao_lembrete", MORADOR)[0]), "M18: o prazo acaba e o lembrete sai");
+});
+
+test("M19. o morador responde antes das últimas 24 horas: o lembrete nunca sai", async () => {
+  const aviso = haHoras(30);
+  const id = semearAcerto({ aviso_em: aviso });
+  como(MORADOR);
+  await docs.responderDevolucaoCaucao(id, "confirmar");
+  await rodar(new Date(Date.parse(aviso) + 100 * H));
+  assert.equal(envios("caucao_devolucao_lembrete").length, 0);
+});
+
+test("M33. faltam menos de 24 horas para o fim do prazo do anexo, sem comprovante: o lembrete ao dono, crítico, uma vez só", async () => {
+  const pedido = "2026-11-21T13:00:00.000Z";
+  semearAcerto({ status: "desconto_contestado", aviso_em: "2026-11-20T13:00:00.000Z", contestado_em: pedido, contestacao_motivo: "Não recebi.", comprovante_pedido_em: pedido });
+  const agora = new Date("2026-11-25T14:00:00.000Z");
+  await rodar(agora);
+  const [e] = envios("caucao_comprovante_lembrete", DONO);
+  assert.ok(e, "o lembrete do anexo");
+  assert.equal(e.textoAviso, m.textoLembreteDoAnexo({ meio: "pix", valor: 3200, pedidoEm: pedido }));
+  assert.equal(e.ctaLabel, "Anexar o comprovante");
+  assert.equal(avisos("caucao_comprovante_lembrete", DONO)[0]?.prioridade, "critico");
+  await rodar(new Date(agora.getTime() + H));
+  assert.equal(envios("caucao_comprovante_lembrete").length, 1, "uma vez só");
+});
+
+test("M33. com o comprovante anexado, ou com a decisão tomada, o lembrete do anexo não sai", async () => {
+  const pedido = "2026-11-21T13:00:00.000Z";
+  semearAcerto({ status: "desconto_contestado", aviso_em: "2026-11-20T13:00:00.000Z", contestado_em: pedido, contestacao_motivo: "Não recebi.", comprovante_pedido_em: pedido, comprovante_path: `${DONO}/a.pdf`, comprovante_anexado_em: pedido });
+  semearAcerto({ contrato_id: C2, status: "desconto_contestado", aviso_em: "2026-11-20T13:00:00.000Z", contestado_em: pedido, contestacao_motivo: "Não recebi.", comprovante_pedido_em: pedido, central_decisao: "nao_confirmada", central_decidido_em: pedido, central_motivo: "x" });
+  await rodar(new Date("2026-11-25T14:00:00.000Z"));
+  assert.equal(envios("caucao_comprovante_lembrete").length, 0);
+});
+
+test("M37 (a metade do acerto). o prazo do anexo vence e a equipe ainda não decidiu: a rotina não fecha a disputa", async () => {
+  const pedido = "2026-11-21T13:00:00.000Z";
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: "2026-11-20T13:00:00.000Z", contestado_em: pedido, contestacao_motivo: "Não recebi.", comprovante_pedido_em: pedido });
+  await rodar(new Date("2026-12-10T00:00:00.000Z"));
+  assert.equal(acerto(id).status, "desconto_contestado");
+  assert.equal(acerto(id).central_decisao ?? null, null);
+  assert.equal(acerto(id).central_decidido_em ?? null, null);
+});
+
+// ——————————————————————————————— os sete eventos ———————————————————————————————
+
+const EVENTOS = {
+  caucao_devolucao_registrada: { morador: "normal" },
+  caucao_devolucao_lembrete: { morador: "critico" },
+  caucao_devolucao_contestada: { dono: "normal" },
+  caucao_devolucao_sem_resposta: { morador: "normal", dono: "normal" },
+  caucao_devolucao_decidida: { morador: "normal", dono: "normal" },
+  caucao_comprovante_pedido: { dono: "normal" },
+  caucao_comprovante_lembrete: { dono: "critico" },
+} as const;
+
+test("os sete eventos próprios: no catálogo, na matriz, na imagem e na prioridade por papel", () => {
+  for (const [ev, papeis] of Object.entries(EVENTOS)) {
+    const t = (TEMPLATES as Record<string, { subject: string; path: string } | undefined>)[ev];
+    assert.ok(t, `${ev} no catálogo`);
+    assert.doesNotMatch(t!.subject, /aluguel/i, `${ev}: sem "aluguel"`);
+    assert.ok((MATRIZ_NOTIFICACOES as Record<string, unknown>)[ev], `${ev} na matriz`);
+    assert.ok((TEMA_POR_EVENTO as Record<string, string>)[ev], `${ev} com imagem`);
+    for (const [papel, prio] of Object.entries(papeis)) assert.equal(prioridadeDoAviso(ev as never, papel as never), prio, `${ev} ${papel}`);
+  }
+});
+
+test("os botões da faixa dos dois lembretes críticos", () => {
+  assert.equal(acaoDaFaixa("caucao_devolucao_lembrete"), "Confirmar ou contestar");
+  assert.equal(acaoDaFaixa("caucao_comprovante_lembrete"), "Anexar o comprovante");
+});
