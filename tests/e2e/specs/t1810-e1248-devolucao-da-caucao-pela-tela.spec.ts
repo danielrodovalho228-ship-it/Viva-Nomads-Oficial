@@ -1,5 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test";
-import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, liberarLimiteChamados, novaSenha, novoSufixo, pdf } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, liberarLimiteChamados, novaSenha, novoSufixo, pdfQueAbre } from "../fixtures/laboratorio";
 import { fimDoPrazoDeResposta, horaAnunciada, linhaDoDonoNaDisputa } from "../../../src/lib/caucao/devolucao-maquina";
 
 /*
@@ -105,6 +105,8 @@ test.describe("T1810 — E1248: a devolução da caução pela tela, do registro
     await caixa.getByTestId("devolucao-motivo").fill(MOTIVO);
     await caixa.getByRole("button", { name: "Enviar a contestação" }).click();
     await expect.poll(async () => (await acerto())?.status, { timeout: 20_000, message: "M7: contestada" }).toBe("desconto_contestado");
+    // O estado muda primeiro; o chamado abre a seguir, na mesma ação: espera-se por ele.
+    await expect.poll(async () => (await acerto())?.chamado_id ?? null, { timeout: 20_000, message: "o chamado da Central" }).not.toBeNull();
     const b = await acerto();
     expect(b?.contestacao_motivo).toBe(MOTIVO);
     expect(b?.chamado_id, "o chamado da Central").toBeTruthy();
@@ -123,7 +125,7 @@ test.describe("T1810 — E1248: a devolução da caução pela tela, do registro
     await expect(caixa.getByRole("button", { name: "Registrar devolução da caução" })).toHaveCount(0);
     const anexo = caixa.getByTestId("devolucao-anexar");
     await expect(anexo, "o pedido, com o prazo").toContainText("A equipe precisa do comprovante da transferência");
-    await anexo.getByTestId("devolucao-anexar-arquivo").setInputFiles({ name: "comprovante.pdf", mimeType: "application/pdf", buffer: pdf() });
+    await anexo.getByTestId("devolucao-anexar-arquivo").setInputFiles({ name: "comprovante.pdf", mimeType: "application/pdf", buffer: await pdfQueAbre() });
     await anexo.getByRole("button", { name: "Anexar o comprovante" }).click();
     await expect.poll(async () => (await acerto())?.comprovante_path ?? null, { timeout: 20_000, message: "M27: guardado" }).toMatch(new RegExp(`^${ids.dono}/[0-9a-f-]+\\.pdf$`));
     await expect(caixa.getByTestId("devolucao-comprovante")).toBeVisible({ timeout: 20_000 });

@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
-import { NO_LABORATORIO, aceitarTermoIaSePreciso, adm, apagarContas, criarConta, entrar, liberarLimiteChamados, liberarLimiteCodigo, novaSenha, novoSufixo, pdf, pngDeTeste } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, aceitarTermoIaSePreciso, adm, apagarContas, criarConta, entrar, liberarLimiteChamados, liberarLimiteCodigo, novaSenha, novoSufixo, pdf, pdfQueAbre, pngDeTeste } from "../fixtures/laboratorio";
 import { abrirCadastroNovo, abrirSecoesPasso10, continuarAte, doTipoAoEndereco, noPasso, preencherFichaDentro } from "../fixtures/cadastro";
 import { ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
 import { addDiasISO } from "../../../src/lib/contrato-blocos";
@@ -788,6 +788,10 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
       await caixa.getByTestId("devolucao-motivo").fill(MOTIVO_DO_MORADOR);
       await caixa.getByRole("button", { name: "Enviar a contestação" }).click();
       await expect.poll(async () => (await ultimoAcerto())?.status, { timeout: 20_000, message: "a contestação grava" }).toBe("desconto_contestado");
+      // O estado muda primeiro; o chamado abre a seguir, na mesma ação.
+      await expect
+        .poll(async () => (await adm().from("caucao_acertos").select("chamado_id").eq("contrato_id", contratoId).order("created_at", { ascending: false }).limit(1).single()).data?.chamado_id ?? null, { timeout: 20_000, message: "o chamado da Central nasce" })
+        .not.toBeNull();
       const { data: contestado } = await adm().from("caucao_acertos").select("contestacao_motivo, chamado_id").eq("contrato_id", contratoId).order("created_at", { ascending: false }).limit(1).single();
       expect(contestado?.contestacao_motivo, "o motivo do morador fica gravado").toBe(MOTIVO_DO_MORADOR);
       expect(contestado?.chamado_id, "o chamado da Central nasce").toBeTruthy();
@@ -801,7 +805,7 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
 
     await test.step("extensão C — o dono anexa o comprovante e a equipe decide no chamado que a devolução não vale", async () => {
       const anexo = pd.getByTestId("devolucao-anexar").first();
-      await anexo.getByTestId("devolucao-anexar-arquivo").setInputFiles({ name: "comprovante.pdf", mimeType: "application/pdf", buffer: pdf() });
+      await anexo.getByTestId("devolucao-anexar-arquivo").setInputFiles({ name: "comprovante.pdf", mimeType: "application/pdf", buffer: await pdfQueAbre() });
       await anexo.getByRole("button", { name: "Anexar o comprovante" }).click();
       await expect
         .poll(async () => (await adm().from("caucao_acertos").select("comprovante_path").eq("contrato_id", contratoId).order("created_at", { ascending: false }).limit(1).single()).data?.comprovante_path ?? null, { timeout: 20_000, message: "o comprovante fica guardado" })

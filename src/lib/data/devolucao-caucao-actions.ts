@@ -19,6 +19,7 @@ import { recusaObservador } from "@/lib/qa/observador";
 import { responderComoAdmin } from "@/lib/data/atendimento-actions";
 import { semMetadados } from "@/lib/foto-reconversao";
 import { validarFotoConferencia } from "@/lib/conferencia";
+import { PDFDocument } from "pdf-lib";
 import { calcularPrazos, type Prioridade } from "@/config/atendimento";
 import { emitirTermoDevolucaoComRegistro } from "@/lib/fiscal/emitir";
 import { resolverAvisosDaReferencia } from "@/lib/notifications/avisos-servidor";
@@ -46,6 +47,8 @@ const MSG_JA_ANEXADO = "O comprovante desta devolução já foi anexado.";
 /** PROPOSTA DE TEXTO */
 const MSG_ARQUIVO = "Envie o comprovante em PDF (até 15 MB) ou numa imagem JPG, PNG ou WebP (até 8 MB).";
 /** PROPOSTA DE TEXTO */
+const MSG_PDF_ILEGIVEL = "Não foi possível abrir este PDF. Envie o comprovante completo, ou uma foto dele.";
+/** PROPOSTA DE TEXTO */
 const MSG_ESPERA_ANEXO = "O prazo do proprietário para anexar o comprovante ainda está a correr. Decida depois do anexo, ou no fim do prazo.";
 /** PROPOSTA DE TEXTO */
 const MSG_MOTIVO_DA_DECISAO = "Escreva o motivo da decisão (pelo menos 5 letras): ele vai para o morador e para o proprietário.";
@@ -58,6 +61,15 @@ function validarComprovante(bytes: Uint8Array, tamanho: number): { ok: true; tip
   if (pdf) return tamanho > 0 && tamanho <= COMPROVANTE_PDF_MAX_BYTES ? { ok: true, tipo: "application/pdf", ext: "pdf", imagem: false } : { ok: false };
   const foto = validarFotoConferencia({ bytes, tamanho });
   return foto.ok ? { ok: true, tipo: foto.tipo, ext: foto.ext, imagem: true } : { ok: false };
+}
+
+async function pdfAbre(bytes: Uint8Array): Promise<boolean> {
+  try {
+    await PDFDocument.load(bytes, { ignoreEncryption: false, updateMetadata: false });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** O prazo da decisão vive no chamado: recalcula-se a contar de `desde`, com a prioridade dele. */
@@ -91,6 +103,8 @@ export async function anexarComprovanteDaDevolucao(formData: FormData): Promise<
   const bytes = new Uint8Array(await file.arrayBuffer());
   const v = validarComprovante(bytes, file.size);
   if (!v.ok) return { ok: false, error: MSG_ARQUIVO };
+  // O PDF tem de abrir: a leitura do comprovante põe-lhe a marca de quem vê, e uma prova que não se lê não serve à equipe.
+  if (!v.imagem && !(await pdfAbre(bytes))) return { ok: false, error: MSG_PDF_ILEGIVEL };
   // A imagem entra sem metadados (EXIF/GPS), como na conferência; o PDF vai como veio.
   const limpo = v.imagem ? await semMetadados(bytes, v.tipo) : bytes;
   if (!limpo) return { ok: false, error: MSG_ARQUIVO };

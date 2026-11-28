@@ -92,6 +92,13 @@ export function cnpjAleatorio(): string {
 }
 
 /** PDF mínimo válido (assinatura %PDF) acima do tamanho mínimo aceito (10 KB). */
+/** E1248: um PDF de verdade (uma página), que o leitor abre — o comprovante da devolução da caução é recusado sem isso. */
+export async function pdfQueAbre(): Promise<Buffer> {
+  const { PDFDocument } = await import("pdf-lib");
+  const d = await PDFDocument.create();
+  d.addPage([200, 200]);
+  return Buffer.from(await d.save());
+}
 export const pdf = (): Buffer => Buffer.concat([Buffer.from("%PDF-1.4\n% laboratório\n"), Buffer.alloc(12 * 1024, 0x20), Buffer.from("\n%%EOF\n")]);
 
 // ── Fotos de teste geradas localmente (PNG de cor sólida com faixas) ─────────
