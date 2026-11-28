@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1247 passo 2, PR 2 (ESPEC-E1247-PASSO-2, 5): os avisos do pré-aceite passam a eventos próprios, com a proposta como referência. Corre sem alteração.
   T1786 — E1090 @E1090 (ESPEC-E1090, fechada na ORDEM-DUET-610/611; trava dada na ORDEM-DUET-873).
   Antes: o Fechamento abria só a candidatura aceita mais recente do dono, sem lista; o fecho de outra candidatura não se
   alcançava pelo menu, e a pré-aceitação expirada da mais recente escondia as outras atrás de "Nenhuma candidatura
