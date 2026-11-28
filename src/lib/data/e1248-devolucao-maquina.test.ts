@@ -980,6 +980,7 @@ test("1361-3 (D19). o anexo só entra com a devolução aberta: num acerto já c
     como(DONO);
     const r = await anexar(formulario(id, PDF()));
     assert.equal(r.ok, false, status);
+    assert.equal(r.error, "Esta devolução já está encerrada: o comprovante não pode ser anexado.", `${status}: recusado antes de subir o arquivo`);
     assert.equal(acerto(id).comprovante_path ?? null, null, status);
   }
   assert.equal(db.arquivos.size, 0);
