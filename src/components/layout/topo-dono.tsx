@@ -29,6 +29,8 @@ export function TopoPainel(p: {
   nome: string;
   foto: string | null;
   notificacoes?: number;
+  /** E970: o selo de cada aba que tem `badge` (hoje, Mensagens: conversas com não lida). 0 ou ausente = sem selo. */
+  badges?: Partial<Record<NonNullable<AbaPainel["badge"]>, number>>;
   itensConta: readonly ItemConta[];
   onAcao: (acao: NonNullable<ItemConta["acao"]>) => void;
 }) {
@@ -45,6 +47,7 @@ export function TopoPainel(p: {
         <nav aria-label={AREA[p.papel]} className="flex h-full min-w-0 flex-1 items-stretch gap-6" data-testid={`abas-${px}`}>
           {p.abas.map((a) => {
             const on = ativa?.id === a.id;
+            const selo = a.badge ? (p.badges?.[a.badge] ?? 0) : 0;
             return (
               <Link
                 key={a.id}
@@ -57,6 +60,15 @@ export function TopoPainel(p: {
                 )}
               >
                 {a.rotulo}
+                {selo > 0 && (
+                  <span
+                    data-testid={`selo-${px}-${a.id}`}
+                    className="ml-2 grid h-5 min-w-5 place-items-center rounded-full bg-champagne px-2 text-[11px] font-semibold tabular-nums text-forest"
+                    aria-label={`${selo} ${a.badge === "mensagens" ? "não lidas" : "novos"}`}
+                  >
+                    {selo > 99 ? "99+" : selo}
+                  </span>
+                )}
               </Link>
             );
           })}

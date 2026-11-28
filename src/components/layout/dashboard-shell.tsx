@@ -44,6 +44,7 @@ import { abasDoPapelPainel, itensDaConta, itensDaEquipe, type ItemConta } from "
 import { cn } from "@/lib/utils";
 import { useContadoresIniciais } from "@/components/painel/contadores-iniciais";
 import { esperaRetentativaContadores } from "@/lib/painel/retentativa-contadores";
+import { seloDaAbaMensagens } from "@/lib/painel/selo-aba-mensagens";
 import { FaixaCritico } from "@/components/painel/sino-avisos";
 import { useSomDeMensagemNova } from "@/components/painel/som-mensagem";
 import { GravarLarguraDaTela } from "@/components/account/largura-e-ancora";
@@ -239,7 +240,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     await salvarModo(alvo).catch(() => {});
     window.location.assign("/dashboard");
   }
-  const badges = { "admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando };
+  // E970: o selo da aba Mensagens conta CONVERSAS com não lida (o mesmo número do sino). A chave é o id do item do menu.
+  const badges = { "admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando, mensagens: seloDaAbaMensagens(contadores) };
 
   // Guarda de rota por papel (B1). Ao abrir por URL/deep-link uma tela exclusiva
   // do OUTRO modo, a regra deixou de ser "sempre redireciona": se a conta TEM o
@@ -425,7 +427,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <AppHeader direita={<>{contaCelular ?? papelChip}{chipModo}</>} />
 
         {papelTopo && (
-          <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} itensConta={itensConta} onAcao={aoAcaoConta} />
+          <TopoPainel papel={papelTopo} abas={abasTopo} pathname={pathname} nome={nomeAvatar} foto={fotoNav} badges={{ mensagens: seloDaAbaMensagens(contadores) }} itensConta={itensConta} onAcao={aoAcaoConta} />
         )}
         <div className={cn("web-only flex h-16 items-center justify-between gap-2 border-b border-sage-200 bg-white px-4 sm:px-8 lg:h-12 lg:justify-end print:hidden", papelTopo && "lg:hidden")} data-testid="topo-celular">
           {/* E1046: `min-h-11` dá os 44 px à própria âncora (eram 32); o símbolo e o nome ficam centrados nela, e a barra
@@ -481,7 +483,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           telas de fluxo. Verde = inquilino, âmbar = proprietário. */}
       {/* E798: a largura da tela vai num cookie (o proxy decide /dashboard/conta no servidor). */}
       <GravarLarguraDaTela />
-      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: badgeDaEquipe(contadores) }} comContrato={comContrato} />
+      <MobileTabBar world={mode === "owner" ? "owner" : "tenant"} badges={{ equipe: badgeDaEquipe(contadores), mensagens: seloDaAbaMensagens(contadores) }} comContrato={comContrato} />
     </div>
   );
 }

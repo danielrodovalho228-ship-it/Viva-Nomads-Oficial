@@ -115,7 +115,8 @@ test("guarda: a casca lê por fetch GET, aborta ao desmontar e não relê a cada
   assert.match(s, /document\.visibilityState === "visible"/);
   // Selos idênticos: as mesmas chaves do menu e a mesma soma na barra inferior.
   assert.match(s, /"admin-documentos": docsPendentes, "admin-agentes": aprovacoesPendentes, "contratos-inquilino": contratosParaAssinar, "propostas-inquilino": propostasAguardando/);
-  assert.match(s, /badges=\{\{ equipe: badgeDaEquipe\(contadores\) \}\}/);
+  // E970 (casca; Gerente, 16/11/2026): a barra inferior ganha o selo da aba Mensagens ao lado do da Equipe.
+  assert.match(s, /badges=\{\{ equipe: badgeDaEquipe\(contadores\), mensagens: seloDaAbaMensagens\(contadores\) \}\}/);
 });
 
 test("a rota é GET, sem cache, autentica pela sessão do servidor e só conta o que a conta pode ver", () => {
