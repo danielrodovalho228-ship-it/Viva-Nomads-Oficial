@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo, tornarContratoVigente } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1240 (ESPEC-E1240 v5, secção 5.4): o campo "Horário de saída (opcional)" e a âncora da saída. Corre sem alteração.
+
   T1807 — E1230 @E1230 (ORDENS-DUET 1207, 1300 e 1303). A trava de tela com MASSA PRÓPRIA: a hora da entrada vem das
   INSTRUÇÕES do contrato (contratos_checkin.horario = 14:00) e o anúncio fica SEM hora (checkin_after / checkout_before
   vazios) — a massa das specs antigas escondia o defeito porque semeava a hora no anúncio.

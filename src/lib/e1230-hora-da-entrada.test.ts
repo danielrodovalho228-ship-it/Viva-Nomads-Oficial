@@ -133,7 +133,9 @@ test("8. estático: nenhuma superfície do prompt lê checkin_after nem checkout
     "../app/(dashboard)/dashboard/estadia/[contratoId]/convidado/page.tsx",
     "../app/(dashboard)/dashboard/estadia/[contratoId]/confirmada/page.tsx",
   ];
-  for (const s of superficies) assert.doesNotMatch(ler(s), /checkin_after|checkout_before|checkinAfter: [a-z]+\.properties|checkoutBefore/, s);
+  // E1240 (ORDEM-DUET 1324): a âncora da saída da página do contrato lê a hora de saída das INSTRUÇÕES
+  // (checkoutBefore: janela?.horaSaida); qualquer outro checkoutBefore continua proibido.
+  for (const s of superficies) assert.doesNotMatch(ler(s), /checkin_after|checkout_before|checkinAfter: [a-z]+\.properties|checkoutBefore(?!: janela\?\.horaSaida \?\? null)/, s);
   const rota = ler("../app/api/cron/automacoes/route.ts");
   const liberadas = rota.slice(rota.indexOf("if (liberaHoje(condicao, agora)) {"), rota.indexOf('tipo: "estadia_instrucoes_liberadas"'));
   assert.doesNotMatch(liberadas, /checkin_after|checkout_before|horarioSaida/, "o e-mail das instruções liberadas");
