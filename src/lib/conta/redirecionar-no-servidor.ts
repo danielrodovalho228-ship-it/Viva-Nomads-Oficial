@@ -4,6 +4,8 @@
  * Puro (sem next/server): o proxy e a página antiga usam as mesmas funções.
  */
 
+import { ALIAS_SECAO, SECOES_CONTA } from "./secoes.ts";
+
 /** Cookie com a largura da tela do aparelho ("larga" ≥ 1024 px, o limite do E492), gravado pela casca do painel. */
 export const COOKIE_TELA = "vn-tela";
 export type Tela = "larga" | "estreita";
@@ -57,4 +59,21 @@ export function marcaDoRedirecionamentoDaConta(pathname: string): boolean {
  */
 export function voltarAoMenuDaConta(c: { veioDoProxy: boolean; largura: number; destinoDaAncora: string | null }): boolean {
   return c.veioDoProxy && !c.destinoDaAncora && telaDaLargura(c.largura) === "estreita";
+}
+
+/** Subtelas da Conta que têm endereço próprio e não são seção nem endereço antigo (ALIAS_SECAO). */
+const SUBTELAS_DA_CONTA: readonly string[] = ["perfil-publico"];
+
+/**
+ * E1003: /dashboard/conta/<parte> em que <parte> não é seção (SECOES_CONTA), endereço antigo (ALIAS_SECAO) nem subtela.
+ * O proxy responde o 404 do resto do site ANTES de a página desenhar; a página só descobria depois de a resposta ter
+ * começado, e o endereço respondia 200 com a tela "não encontrada". Qualquer outro caminho (o menu da Conta, mais de uma
+ * parte, fora da Conta) não é com esta regra: devolve false e segue o caminho de sempre.
+ * Guarda: e1003-secao-inexistente.test.ts cobra que toda pasta e todo "case" da página da Conta estão cobertos aqui.
+ */
+export function secaoDaContaInexistente(pathname: string): boolean {
+  const m = pathname.replace(/\/+$/, "").match(/^\/dashboard\/conta\/([^/]+)$/);
+  if (!m) return false;
+  const parte = m[1];
+  return !(SECOES_CONTA.some((s) => s.id === parte) || Object.hasOwn(ALIAS_SECAO, parte) || SUBTELAS_DA_CONTA.includes(parte));
 }
