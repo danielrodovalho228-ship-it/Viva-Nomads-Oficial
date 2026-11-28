@@ -116,7 +116,14 @@ export async function anexarComprovanteDaDevolucao(formData: FormData): Promise<
   const { error: erroEnvio } = await admin.storage.from(BUCKET).upload(path, limpo, { contentType: v.tipo, upsert: false });
   if (erroEnvio) return { ok: false, error: "Não foi possível salvar o comprovante. Tente de novo." };
   const agora = new Date();
-  const gravar = admin.from("caucao_acertos").update({ comprovante_path: path, comprovante_anexado_em: agora.toISOString() }).eq("id", a.id).is("central_decisao", null);
+  // A escrita é condicional ao estado aberto e sem decisão (ORDEM-DUET 1361, D20 e D20b): nunca por cima de um acerto
+  // confirmado ou decidido entre a leitura e a escrita.
+  const gravar = admin
+    .from("caucao_acertos")
+    .update({ comprovante_path: path, comprovante_anexado_em: agora.toISOString() })
+    .eq("id", a.id)
+    .in("status", ["aguardando_confirmacao", "desconto_contestado"])
+    .is("central_decisao", null);
   // A troca só vale se nada mudou entretanto: o mesmo arquivo, ainda à espera, sem contestação e sem pedido.
   const { data: mudou, error } = anterior
     ? await gravar.eq("comprovante_path", anterior).eq("status", "aguardando_confirmacao").is("contestado_em", null).is("comprovante_pedido_em", null).select("id")

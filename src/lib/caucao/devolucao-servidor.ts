@@ -80,14 +80,23 @@ export type Acerto = {
 /** A contestação recente é da própria ação: a rotina só abre o chamado que ficou sem ele há mais disto. */
 export const ESPERA_DA_ACAO_MIN = 10;
 
+/** O aviso do sino gravado para esta pessoa, este evento e este contrato desde `desde` (prova de que ela foi avisada). */
+async function avisoNoSinoDesde(admin: Admin, p: { usuarioId: string; evento: NotificationEvent; refId: string; desde: string }): Promise<boolean> {
+  const { data, error } = await admin.from("avisos").select("id").eq("usuario_id", p.usuarioId).eq("evento", p.evento).eq("ref_id", p.refId).gte("criado_em", p.desde).limit(1);
+  return !error && (data ?? []).length > 0;
+}
+
 /**
- * O aviso do registro ao morador (2.2). Só quando o envio dá certo grava a hora — e só onde ela está vazia (update …
- * where aviso_em is null): o relógio dos 5 dias começa nesse envio. Lança se o envio lançar (quem chama decide).
+ * O aviso do registro ao morador (2.2). A hora grava-se só com o morador lido e com PROVA de envio — um canal que
+ * entregou, ou o aviso gravado no sino (ORDEM-DUET 1361; o notify real nunca lança) — e só onde ela está vazia (update
+ * … where aviso_em is null): o relógio dos 5 dias começa nesse envio. Sem prova, a hora fica vazia e a rotina tenta de
+ * novo; um acerto sem ela nunca confirma por falta de resposta.
  */
 export async function enviarAvisoDoRegistro(admin: Admin, a: Pick<Acerto, "id" | "contrato_id" | "valor_devolvido" | "data_devolucao">, agora: Date = new Date()): Promise<boolean> {
   const partes = await partesDoContrato(admin, a.contrato_id);
   if (!partes?.morador || !a.data_devolucao) return false;
-  await enviar(admin, {
+  const desde = new Date().toISOString();
+  const r = await enviar(admin, {
     evento: "caucao_devolucao_registrada",
     userId: partes.morador,
     papel: "morador",
@@ -96,6 +105,8 @@ export async function enviarAvisoDoRegistro(admin: Admin, a: Pick<Acerto, "id" |
     texto: textoAvisoDoRegistro({ valor: valorDoAcerto(a), dataDevolucao: a.data_devolucao }),
     cta: "Confirmar ou contestar",
   });
+  const avisado = algumCanalEntregou(r) || (await avisoNoSinoDesde(admin, { usuarioId: partes.morador, evento: "caucao_devolucao_registrada", refId: a.contrato_id, desde }));
+  if (!avisado) return false;
   const { data: mudou } = await admin.from("caucao_acertos").update({ aviso_em: agora.toISOString() }).eq("id", a.id).is("aviso_em", null).select("id");
   return !!mudou?.length;
 }
@@ -215,17 +226,23 @@ export async function partesDoContrato(admin: Admin, contratoId: string): Promis
   return { dono: (c.properties as { owner_id: string | null } | null)?.owner_id ?? null, morador: (c.tenant_id as string | null) ?? null, status: (c.status as string | null) ?? null };
 }
 
+/** O resultado de um envio: o de cada canal (true, false, ou "demo" no laboratório). Sem destinatário, null. */
+export type ResultadoDoEnvio = { email?: boolean | "demo"; whatsapp?: boolean | "demo"; push?: boolean | "demo" } | null;
+
+/** Algum canal entregou (ou o laboratório simulou a entrega)? */
+export const algumCanalEntregou = (r: ResultadoDoEnvio) => !!r && [r.email, r.whatsapp, r.push].some((v) => v === true || v === "demo");
+
 /**
  * Um envio da máquina: o aviso leva o texto do coordenador e o contrato como referência; o e-mail leva o mesmo texto.
- * Lança se o envio lançar (o registro precisa de saber se o aviso saiu, M4).
+ * Devolve o resultado do notify, que NUNCA lança (ORDEM-DUET 1361): quem precisa de saber se o aviso saiu lê-o.
  */
 export async function enviar(
   admin: Admin,
   p: { evento: NotificationEvent; userId: string | null; papel: PapelAviso; contratoId: string; url: string; texto: string; cta?: string },
-): Promise<void> {
-  if (!p.userId) return;
+): Promise<ResultadoDoEnvio> {
+  if (!p.userId) return null;
   const u = await admin.auth?.admin?.getUserById?.(p.userId).catch(() => null);
-  await notify({
+  return await notify({
     event: p.evento,
     email: u?.data?.user?.email ?? undefined,
     userId: p.userId,
