@@ -33,7 +33,7 @@ const PG = "22222222-3333-4444-8555-666666666666";
 const CHAMADO = "33333333-4444-4555-8666-777777777777";
 const MOTIVO = "registro em duplicidade";
 
-type Pg = { id: string; contrato_id: string; bloco_id: string | null; tipo: string; parte: number; valor: number; confirmado_pelo_inquilino: boolean; anulado_em: string | null };
+type Pg = { id: string; contrato_id: string; bloco_id: string | null; tipo: string; parte: number; valor: number; encargos?: { rotulo: string; valor: number }[]; confirmado_pelo_inquilino: boolean; anulado_em: string | null };
 type Estado = {
   pg: Pg;
   doc: { id: string; numero: string; anulado_em: string | null } | null;
@@ -66,12 +66,38 @@ type Estado = {
 let E: Estado;
 const g = globalThis as unknown as { __e1229Sessao: unknown; __e1229Admin: unknown; __e1229EhEquipe: unknown; __e1229Chamados: unknown[]; __e1229Avisos: Record<string, unknown>[]; __e1229Respostas: { id: string; texto: string; interno: boolean }[] };
 
+/** As colunas de topo de um select ("contratos(...)" conta como a coluna contratos). */
+function colunasDoSelect(x: string): string[] {
+  const out: string[] = [];
+  let fundo = 0;
+  let atual = "";
+  for (const ch of x) {
+    if (ch === "(") fundo += 1;
+    if (ch === ")") fundo -= 1;
+    if (ch === "," && fundo === 0) {
+      out.push(atual);
+      atual = "";
+    } else atual += ch;
+  }
+  out.push(atual);
+  return out.map((c) => c.trim().split("(")[0].trim()).filter(Boolean);
+}
+function projetar(l: Record<string, unknown>, x: string | null): Record<string, unknown> {
+  if (!x || x.trim() === "*") return l;
+  const cols = colunasDoSelect(x);
+  return Object.fromEntries(cols.filter((c) => c in l).map((c) => [c, l[c]]));
+}
+
 function consulta(tabela: string, comoSessao: boolean) {
   const filtros: Record<string, unknown> = {};
   let valores: Record<string, unknown> | null = null;
   const b: Record<string, unknown> = {};
   let limite: number | null = null;
-  for (const m of ["select", "order"]) b[m] = () => b;
+  // ORDEM-DUET-1243 (fuga E4b da Pista 3): o falso é FIEL ao select — devolve só as colunas que a leitura pede (sem
+  // isto, um select sem "encargos" passaria aqui e, no banco real, o complementar anulado voltaria a dizer "R$ 0").
+  let sel: string | null = null;
+  b.order = () => b;
+  b.select = (x: string) => ((sel = x), b);
   b.in = (k: string, v: unknown) => ((filtros[`in:${k}`] = v), b);
   // ORDEM-DUET-1181 (H4): o .limit(n) corta as linhas, como no banco.
   b.limit = (n: number) => ((limite = n), b);
@@ -86,7 +112,7 @@ function consulta(tabela: string, comoSessao: boolean) {
       if (E.perfisFalham) return { data: null, error: { message: "falha simulada" } };
       return { data: ids.map((id) => ({ id, is_teste: E.teste.has(id) })), error: null };
     }
-    if (tabela === "pagamentos_bloco") return { data: filtros.id === E.pg.id ? linhaPg() : null, error: null };
+    if (tabela === "pagamentos_bloco") return { data: filtros.id === E.pg.id ? projetar(linhaPg(), sel) : null, error: null };
     if (tabela === "documentos_fiscais") return { data: E.doc && !E.doc.anulado_em ? E.doc : null, error: null };
     if (tabela === "chamados") return { data: filtros.numero_publico || filtros.id ? { id: CHAMADO, numero_publico: "CH-2026-000777", contexto_tipo: E.contexto.tipo, contexto_id: E.contexto.id, ...(E.simulacao === "sem" ? {} : { simulacao: E.simulacao }) } : null, error: null };
     if (tabela === "chamado_mensagens") {
@@ -402,6 +428,49 @@ test("24. (R2) a chamada da função dá erro: a ação recusa com a mensagem de
   assert.equal(g.__e1229Respostas.length, 0);
 });
 
+// ── E1241 (ORDENS-DUET 1213 e 1227; MAPA-E1241): a anulação lê o TOTAL do registro, não a coluna valor ───────────────
+// O registro complementar da prova (27/11): o valor do bloco é zero, os R$ 800 estão todos nos encargos.
+const COMPLEMENTAR = [{ rotulo: "Contas do período", valor: 550 }, { rotulo: "Limpeza de preparação", valor: 250 }];
+const R800 = /R\$\s800(,00)?\b/;
+
+test("32. (E1241) o dono anula um registro complementar (valor 0, R$ 800 em encargos): o aviso diz R$ 800, nunca R$ 0", async () => {
+  cenario();
+  E.pg = { ...E.pg, valor: 0, encargos: COMPLEMENTAR };
+  assert.equal((await anularRegistro({ pagamentoId: PG, motivo: MOTIVO })).ok, true);
+  const aviso = String(g.__e1229Avisos[0].tituloAviso).replace(/\u00a0/g, " ");
+  assert.match(aviso, R800);
+  assert.doesNotMatch(aviso, /R\$\s0\b/);
+  const corpo = String((g.__e1229Avisos[0].body as (n?: string) => string)("Ana")).replace(/\u00a0/g, " ");
+  assert.match(corpo, R800, "o e-mail também");
+});
+
+test("33. (E1241) o mesmo, já confirmado: o texto do pedido à Central diz R$ 800", async () => {
+  cenario({ confirmado: true });
+  E.pg = { ...E.pg, valor: 0, encargos: COMPLEMENTAR };
+  assert.equal((await anularRegistro({ pagamentoId: PG, motivo: MOTIVO })).ok, true);
+  const pedido = g.__e1229Chamados[0] as { mensagem: string };
+  assert.match(pedido.mensagem.replace(/\u00a0/g, " "), R800);
+});
+
+test("34. (E1241) a Central decide: o aviso ao morador e a nota interna dizem R$ 800", async () => {
+  cenario({ confirmado: true, quem: EQUIPE, equipe: true });
+  E.pg = { ...E.pg, valor: 0, encargos: COMPLEMENTAR };
+  assert.equal((await anularRegistroPelaCentral({ chamadoId: CHAMADO, motivo: MOTIVO })).ok, true);
+  assert.match(String(g.__e1229Avisos[0].tituloAviso).replace(/\u00a0/g, " "), R800);
+  const nota = E.inserts.find((i) => i.tabela === "chamado_mensagens")!.linha;
+  assert.match(String(nota.corpo).replace(/\u00a0/g, " "), R800);
+});
+
+test("35. (E1241) guarda: o aluguel simples e a caução mostram o valor de hoje (na caução os encargos não contam)", async () => {
+  cenario();
+  assert.equal((await anularRegistro({ pagamentoId: PG, motivo: MOTIVO })).ok, true);
+  assert.match(String(g.__e1229Avisos[0].tituloAviso).replace(/\u00a0/g, " "), /R\$\s500\b/);
+  cenario({ tipo: "caucao" });
+  E.pg = { ...E.pg, encargos: [{ rotulo: "Contas do período", valor: 99 }] };
+  assert.equal((await anularRegistro({ pagamentoId: PG, motivo: MOTIVO })).ok, true);
+  assert.match(String(g.__e1229Avisos[0].tituloAviso).replace(/\u00a0/g, " "), /R\$\s500\b/);
+});
+
 // ── E1246 (ORDEM-DUET-1220; dúvida 2 do MAPA-E1244): a conta observadora da QA só anula quando tudo é de teste ────────
 const MSG_OBSERVADOR_RE = /observador|só leitura|dados de teste/i;
 
@@ -468,6 +537,13 @@ test("31. (O3b) a observadora com o DONO por ler (nulo) e o morador de teste: re
   assert.equal(r.ok, false);
   assert.match(erro(r) ?? "", MSG_OBSERVADOR_RE);
   naoAnulou();
+});
+
+test("43. (ORDEM-DUET-1243, E4b) a leitura do registro pede os encargos (o falso só devolve o que o select pede)", () => {
+  const acoes = readFileSync(new URL("./anulacao-actions.ts", import.meta.url), "utf8");
+  const sel = /from\("pagamentos_bloco"\)\s*\.select\("([^"]+)"\)/.exec(acoes)?.[1] ?? "";
+  assert.ok(colunasDoSelect(sel).includes("encargos"), `o select do registro pede "encargos": ${sel}`);
+  assert.deepEqual(colunasDoSelect("id, tipo, contratos(tenant_id, properties(owner_id))"), ["id", "tipo", "contratos"]);
 });
 
 // ── E1244 (ORDEM-DUET 1239): a anulação a partir de um chamado de SIMULAÇÃO só passa com as DUAS contas de teste ─────

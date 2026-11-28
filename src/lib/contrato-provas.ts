@@ -7,6 +7,7 @@
 */
 import type { CabecalhoDocumento, ConteudoDocumento } from "./fiscal/documento.ts";
 import { brl, dataBR } from "./fiscal/documento.ts";
+import { textoLinhaRecibo, textoLinhaSemDocumento } from "./documentos-linha.ts";
 import { compararHashComResumo, dataHoraAssinatura, hashResumo } from "./contrato-assinar.ts";
 import { MARCA_MINUTA } from "./contrato-etapas.ts";
 import { ROTULO_ESTADO_CONFERENCIA, estadoConferencia, textoPrazoConferencia } from "./conferencia.ts";
@@ -29,6 +30,8 @@ export interface PagamentoProva {
   /** E1072 (fatia 2): 2 em diante = registro complementar do mesmo bloco (pela ordem dos registros ativos). */
   parte?: number;
   confirmadoEm: string | null;
+  /** E1241 (ORDEM-DUET 1233): o bloco do registro (número e datas), para a linha da Central na gramática dos documentos. */
+  bloco?: { numero: number; inicio: string | null; fim: string | null } | null;
   /** Registro anulado (0182): aparece uma vez, com a marca, e fica fora dos totais. */
   anuladoEm?: string | null;
   anuladoMotivo?: string | null;
@@ -171,6 +174,24 @@ function comOsComponentes(p: Pick<PagamentoProva, "valor" | "encargos">): string
 
 /** E1072 (fatia 2): o registro complementar de um bloco (nunca a caução). */
 const ehComplemento = (p: Pick<PagamentoProva, "tipo" | "parte">) => p.tipo !== "caucao" && (p.parte ?? 1) > 1;
+
+/** E1241: o TOTAL de um registro (componentesDoPagamento; na caução os encargos não contam). */
+export function componentesDoTotal(p: Pick<PagamentoProva, "tipo" | "valor" | "encargos">): number {
+  return componentesDoPagamento({ valor: p.valor, encargos: p.tipo === "caucao" ? [] : p.encargos }).total;
+}
+
+/**
+ * E1241 (ORDENS-DUET 1233 e 1237, decisões do coordenador): a linha de cada pagamento na página do contrato da Central
+ * usa a MESMA gramática das linhas de documentos (textoLinhaRecibo) — número · bloco · TOTAL · período; a equipe confere
+ * pelo número. Confirmado e ainda sem documento: "Recibo em preparação". Sem documento e NÃO confirmado (aguardando, ou
+ * anulado antes da confirmação): a forma curta, sem número — esse registro nunca terá recibo.
+ */
+export function linhaPagamentoCentral(p: PagamentoProva): string {
+  const r = { tipo: p.tipo, total: componentesDoTotal(p), inicio: p.bloco?.inicio ?? null, fim: p.bloco?.fim ?? null, bloco: p.bloco?.numero ?? null, parte: p.tipo === "caucao" ? 1 : (p.parte ?? 1) };
+  const doc = (p.documento ?? "").trim();
+  if (!doc && !p.confirmadoEm) return textoLinhaSemDocumento(r);
+  return textoLinhaRecibo({ ...r, numero: doc || null });
+}
 
 /** E1072 (fatia 2): o que o registro complementar cobre — "contas do período de R$ 310,00", "limpeza de preparação de R$ 250,00". */
 function partesDoComplemento(p: Pick<PagamentoProva, "valor" | "encargos">): string[] {
@@ -363,6 +384,8 @@ export interface LinhasProvas {
     encargos?: unknown;
     /** E1072 (fatia 2): o bloco do registro. */
     bloco_id?: unknown;
+    /** E1241: o bloco do registro (número e datas), pela ligação bloco_id. */
+    contrato_blocos?: unknown;
     /** E1072 (ORDEM-DUET-1104): a parte registada na coluna (1 = o primeiro; 2 em diante = complementar). */
     parte?: unknown;
   }[];
@@ -439,6 +462,7 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
       confirmadoEm: p.confirmado_pelo_inquilino ? String(p.confirmado_em ?? p.data_pagamento) : null,
       anuladoEm: textoOuNulo(p.anulado_em),
       anuladoMotivo: textoOuNulo(p.anulado_motivo),
+      bloco: blocoDoRegistro(p.contrato_blocos),
     })),
     conferencias: l.conferencias.map((c) => {
       const daConf = l.itens.filter((i) => i.conferencia_id === c.id);
@@ -459,10 +483,16 @@ export function montarDadosProvas(l: LinhasProvas): DadosProvas {
   };
 }
 
+/** E1241: o bloco do registro pela ligação bloco_id (o PostgREST devolve objeto; o tipo gerado, lista). */
+function blocoDoRegistro(v: unknown): { numero: number; inicio: string | null; fim: string | null } | null {
+  const b = (Array.isArray(v) ? v[0] : v) as { numero_bloco?: unknown; inicio?: unknown; fim?: unknown } | null | undefined;
+  return b && Number(b.numero_bloco) > 0 ? { numero: Number(b.numero_bloco), inicio: textoOuNulo(b.inicio), fim: textoOuNulo(b.fim) } : null;
+}
+
 /** Colunas lidas para o pacote (as mesmas nas duas cargas). */
 export const COLUNAS_PROVAS = {
   assinaturas: "papel, assinado_em, hash_documento",
-  pagamentos: "id, bloco_id, tipo, parte, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at, encargos",
+  pagamentos: "id, bloco_id, tipo, parte, valor, forma, data_pagamento, confirmado_pelo_inquilino, confirmado_em, anulado_em, anulado_motivo, created_at, encargos, contrato_blocos(numero_bloco, inicio, fim)",
   conferencias: "id, tipo, criada_em",
   itens: "conferencia_id, parte, comodo, descricao, foto_path, precisa_reparo",
   respostas: "conferencia_id, parte, decisao, motivo, decidido_em",

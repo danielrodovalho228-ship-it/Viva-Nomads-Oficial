@@ -56,6 +56,7 @@ import { rotuloBaseTaxa } from "@/lib/taxa-servico-base";
 import { hrefContratoDono } from "@/lib/contratos/area-dono";
 import { semQuedaDeRede } from "@/lib/erro-de-rede";
 import { saidaPeloFim } from "@/lib/texto-do-periodo";
+import { textoDoSeloAnulado } from "@/lib/anulados-antes-da-confirmacao";
 
 /** Texto imutável da regra de ouro (declaratório — nunca movimenta valores). */
 const REGRA_PAGAMENTO =
@@ -149,6 +150,7 @@ function buildDemoContratos(hojeISO: string, exemplos: readonly DemoContract[]):
       criadoEm: c.inicio,
       blocos,
       pagamentos,
+      anuladosPendentes: [],
       caucao: estadoCaucao({ blocos, pagamentos }),
       podeAvaliar: false,
       fimParaAvaliacao: null,
@@ -386,7 +388,7 @@ function ContratoCard({
       )}
 
       {/* E1229 (ORDENS-DUET 1143 e 1160): os registros que o morador ainda não confirmou — o dono pode anular, com o motivo. */}
-      {!demo && contrato.pagamentos.some((p) => !p.confirmado) && (
+      {!demo && (contrato.pagamentos.some((p) => !p.confirmado) || contrato.anuladosPendentes.length > 0) && (
         <ul className="mt-3 space-y-1" data-testid="registros-por-confirmar">
           {contrato.pagamentos
             .filter((p) => !p.confirmado)
@@ -396,6 +398,13 @@ function ContratoCard({
                 <AnularRegistro pagamentoId={p.id} confirmado={false} />
               </li>
             ))}
+          {/* E1241: o registro anulado antes da confirmação — só a linha e o selo, fora dos totais. */}
+          {contrato.anuladosPendentes.map((a) => (
+            <li key={a.id} className="flex flex-wrap items-center gap-2 text-xs text-muted" data-testid="registro-anulado-pendente">
+              <span>{a.rotulo}</span>
+              <span className="rounded-full bg-red-50 px-2 py-1 font-semibold text-red-700">{textoDoSeloAnulado(a.motivo)}</span>
+            </li>
+          ))}
         </ul>
       )}
 
