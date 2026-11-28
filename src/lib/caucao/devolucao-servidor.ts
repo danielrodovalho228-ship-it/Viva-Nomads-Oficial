@@ -80,11 +80,19 @@ export type Acerto = {
 /** A contestação recente é da própria ação: a rotina só abre o chamado que ficou sem ele há mais disto. */
 export const ESPERA_DA_ACAO_MIN = 10;
 
-/** O aviso do sino gravado para esta pessoa, este evento e este contrato desde `desde` (prova de que ela foi avisada). */
-async function avisoNoSinoDesde(admin: Admin, p: { usuarioId: string; evento: NotificationEvent; refId: string; desde: string }): Promise<boolean> {
-  const { data, error } = await admin.from("avisos").select("id").eq("usuario_id", p.usuarioId).eq("evento", p.evento).eq("ref_id", p.refId).gte("criado_em", p.desde).limit(1);
-  return !error && (data ?? []).length > 0;
+/**
+ * O retrato dos avisos pendentes desta pessoa, deste evento e deste contrato (id → criado_em). Comparar o de antes com o
+ * de depois do envio prova o aviso gravado ou renovado sem depender do relógio do banco (Lab da 7bddfdef0). Leitura
+ * que falha: null (nenhuma prova).
+ */
+async function retratoDoSino(admin: Admin, p: { usuarioId: string; evento: NotificationEvent; refId: string }): Promise<Map<string, string> | null> {
+  const { data, error } = await admin.from("avisos").select("id, criado_em").eq("usuario_id", p.usuarioId).eq("evento", p.evento).eq("ref_id", p.refId).is("resolvido_em", null);
+  if (error) return null;
+  return new Map(((data ?? []) as { id: string; criado_em: string }[]).map((a) => [a.id, String(a.criado_em)]));
 }
+
+/** O sino ganhou um aviso, ou renovou um (o criado_em mudou), entre os dois retratos. */
+const sinoMudou = (antes: Map<string, string> | null, depois: Map<string, string> | null) => !!antes && !!depois && [...depois].some(([id, criado]) => antes.get(id) !== criado);
 
 /**
  * O aviso do registro ao morador (2.2). A hora grava-se só com o morador lido e com PROVA de envio — um canal que
@@ -95,7 +103,8 @@ async function avisoNoSinoDesde(admin: Admin, p: { usuarioId: string; evento: No
 export async function enviarAvisoDoRegistro(admin: Admin, a: Pick<Acerto, "id" | "contrato_id" | "valor_devolvido" | "data_devolucao">, agora: Date = new Date()): Promise<boolean> {
   const partes = await partesDoContrato(admin, a.contrato_id);
   if (!partes?.morador || !a.data_devolucao) return false;
-  const desde = new Date().toISOString();
+  const chave = { usuarioId: partes.morador, evento: "caucao_devolucao_registrada" as const, refId: a.contrato_id };
+  const antes = await retratoDoSino(admin, chave);
   const r = await enviar(admin, {
     evento: "caucao_devolucao_registrada",
     userId: partes.morador,
@@ -105,7 +114,7 @@ export async function enviarAvisoDoRegistro(admin: Admin, a: Pick<Acerto, "id" |
     texto: textoAvisoDoRegistro({ valor: valorDoAcerto(a), dataDevolucao: a.data_devolucao }),
     cta: "Confirmar ou contestar",
   });
-  const avisado = algumCanalEntregou(r) || (await avisoNoSinoDesde(admin, { usuarioId: partes.morador, evento: "caucao_devolucao_registrada", refId: a.contrato_id, desde }));
+  const avisado = algumCanalEntregou(r) || sinoMudou(antes, await retratoDoSino(admin, chave));
   if (!avisado) return false;
   const { data: mudou } = await admin.from("caucao_acertos").update({ aviso_em: agora.toISOString() }).eq("id", a.id).is("aviso_em", null).select("id");
   return !!mudou?.length;
