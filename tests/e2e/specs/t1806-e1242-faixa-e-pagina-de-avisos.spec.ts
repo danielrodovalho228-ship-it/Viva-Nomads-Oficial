@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1247 passo 2, PR 1 (ESPEC-E1247-PASSO-2, 3): o botão da faixa passa a ler o evento próprio das rotinas. Corre sem alteração.
   Vizinha do E1251 (ESPEC-E1251 v3): a renovação leva a prioridade; a proposta que vence e a visita que deixa de esperar saem do sino. Corre sem alteração.
 
   T1806 — E1242 reaberto (ORDENS-DUET 1247 e 1248): a trava do E1242 passa a morder a FAIXA do painel e a PÁGINA
