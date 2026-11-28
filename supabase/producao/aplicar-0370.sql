@@ -12,7 +12,4 @@ do $$ begin
 end $$;
 comment on column public.contratos_checkin.horario_saida is 'E1240: a hora de saída das instruções (HH:MM), opcional; move a âncora da conferência de saída. Vazia = 23:59 do dia da saída.';
 
-insert into supabase_migrations.schema_migrations (version, name)
-select '20261128000370', '0370_contratos_checkin_horario_saida_e1240'
-where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261128000370');
 commit;
