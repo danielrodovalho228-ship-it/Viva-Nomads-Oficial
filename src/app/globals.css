@@ -294,6 +294,12 @@ input.foco-na-barra:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
+/* E949: o alvo do skip-link para ABAIXO do cabeçalho público, que é preso no topo (Navbar: h-18 + 1 px de borda). Sem
+   esta margem, o topo do <main> encostava no topo da janela e os primeiros 73 px do conteúdo ficavam atrás do cabeçalho.
+   Só no site: no app o cabeçalho é outro e a folga já vem do scroll-padding-top (E678). */
+html:not([data-app]) #conteudo {
+  scroll-margin-top: calc(4.5rem + 1px);
+}
 
 /*
   Ritmo vertical das seções — ponto ÚNICO de verdade do espaçamento entre bandas.
