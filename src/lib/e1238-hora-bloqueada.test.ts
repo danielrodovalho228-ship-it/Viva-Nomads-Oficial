@@ -96,3 +96,15 @@ test("H9. ORDEM-DUET 1284, caso 1: depois da âncora vigente → recusado com a 
   assert.equal(R("14:00", "08:00", "2026-12-01T18:00:00Z"), j.MSG_HORA_DE_ENTRADA_BLOQUEADA);
   assert.equal(R("14:00", "14:00", "2026-12-05T12:00:00Z"), null, "a mesma hora não é mudança");
 });
+
+test("H10. ORDEM-DUET 1289 (a fuga M3): agora IGUAL à âncora vigente → bloqueado, a primeira mensagem (à hora exacta, a entrada já aconteceu)", () => {
+  // 01/12 14:00 BRT = 17:00:00Z, exactamente.
+  const agora = new Date("2026-12-01T17:00:00Z");
+  assert.equal(j.horaDeEntradaBloqueada!({ blocos: BLOCOS, horaAtual: "14:00", horaNova: "20:00", agora }), true);
+  assert.equal(R("14:00", "20:00", "2026-12-01T17:00:00Z"), j.MSG_HORA_DE_ENTRADA_BLOQUEADA);
+});
+
+test("H11. ORDEM-DUET 1289 (o minuto corrente, pela letra da regra): às 15:00:30, gravar 15:00 → a âncora fica 30 s no passado → a segunda mensagem; sem arredondamento", () => {
+  assert.equal(R(null, "15:00", "2026-12-01T18:00:30Z"), j.MSG_HORA_DE_ENTRADA_NO_PASSADO);
+  assert.equal(R(null, "15:00", "2026-12-01T18:00:00Z"), null, "a âncora produzida igual a agora é aceite (H7)");
+});
