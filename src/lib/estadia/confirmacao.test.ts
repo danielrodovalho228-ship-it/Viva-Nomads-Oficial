@@ -14,7 +14,7 @@ import { fonteSemComentarios } from "../fonte-sem-comentarios.ts";
 
 const SRC = new URL("../../", import.meta.url).pathname;
 const ler = (p: string) => readFileSync(SRC + p, "utf8");
-const PERIODO = { inicio: "2026-11-13", fim: "2027-02-10", checkinAfter: "14:00", checkoutBefore: "11:00" };
+const PERIODO = { inicio: "2026-11-13", fim: "2027-02-10", checkinAfter: "14:00" };
 
 test("confirmação: textos exatos, sem exclamação nem festa", () => {
   assert.equal(TITULO_CONFIRMADA, "Estadia confirmada");
@@ -54,16 +54,19 @@ test("confirmação: só depois das duas assinaturas e uma vez (a segunda assina
   assert.match(estadia, /\{e\.assinadoPorAmbos && \(\s*<Link href=\{HREF_CONFIRMADA\(e\.id\)\}/);
 });
 
-test("página da estadia: horários de checkin_after / checkout_before na linha do tempo, da mesma fonte", () => {
+// E1230 (ORDENS-DUET 1207 e 1300; asserção alterada): a hora de entrada vem das instruções do contrato (o leitor único,
+// a mesma da âncora do E1238), com a porta das duas assinaturas; a saída não tem hora.
+test("página da estadia: a hora de entrada das instruções do contrato na linha do tempo; a saída a combinar", () => {
   const [entrada, , saida] = montarLinhaDoTempo(PERIODO);
   assert.equal(entrada.titulo, "Entrada");
   assert.equal(entrada.horario, "a partir das 14:00, horário de Brasília");
   assert.equal(saida.titulo, "Saída");
-  assert.equal(saida.horario, "até as 11:00, horário de Brasília");
+  assert.equal(saida.horario, "horário a combinar com o proprietário");
   const estadia = ler("app/(dashboard)/dashboard/estadia/[contratoId]/page.tsx");
-  assert.match(estadia, /checkinAfter: e\.periodo\.checkinAfter \?\? null,\s*checkoutBefore: e\.periodo\.checkoutBefore \?\? null/);
-  // e.periodo vem de properties.checkin_after/checkout_before (periodoDaEstadia), a mesma coluna do prazo da conferência.
-  assert.match(ler("lib/estadia/estadia.ts"), /checkinAfter: imovel\?\.checkin_after \?\? null, checkoutBefore: imovel\?\.checkout_before \?\? null/);
+  assert.match(estadia, /checkinAfter: e\.periodo\.checkinAfter \?\? null,/);
+  assert.doesNotMatch(estadia, /checkoutBefore/);
+  // e.periodo vem do leitor único (periodoComPrazos: horaParaQuemVe sobre a hora da janela) — nunca das colunas do anúncio.
+  assert.match(ler("lib/estadia/estadia.ts"), /return \{ \.\.\.p, checkinAfter: horaEntrada \};/);
   assert.match(estadia, /<LinhaDoTempoEstadia etapas=\{etapas\} semMensagens \/>/);
 });
 

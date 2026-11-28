@@ -9,7 +9,6 @@ const E = {
   entrada: "2026-11-04",
   saida: "2027-01-02",
   horarioEntrada: "14:00",
-  horarioSaida: "11:00",
 };
 
 test("E209 (a): imóvel e datas da estadia no corpo", () => {
@@ -17,10 +16,11 @@ test("E209 (a): imóvel e datas da estadia no corpo", () => {
   assert.deepEqual(linhasDaEstadia(E), [
     { rotulo: "Imóvel", valor: "Studio Centro · Centro, Uberlândia" },
     { rotulo: "Entrada", valor: "04/11/2026, a partir das 14:00" },
-    { rotulo: "Saída", valor: "02/01/2027, até as 11:00" },
+    // E1230 (ORDEM-DUET 1207, decisão 2; asserção alterada): a saída vai sem hora.
+    { rotulo: "Saída", valor: "02/01/2027, horário a combinar com o proprietário" },
   ]);
-  // Sem horário no anúncio: só a data (nada inventado).
-  assert.deepEqual(linhasDaEstadia({ ...E, horarioEntrada: null, horarioSaida: "" }).map((l) => l.valor).slice(1), ["04/11/2026", "02/01/2027"]);
+  // Sem hora nas instruções: a entrada só com a data (nada inventado).
+  assert.deepEqual(linhasDaEstadia({ ...E, horarioEntrada: null }).map((l) => l.valor).slice(1), ["04/11/2026", "02/01/2027, horário a combinar com o proprietário"]);
 });
 
 test("E209 (b): as instruções vão no corpo do e-mail do morador (na ordem do formulário); o dono não recebe", () => {

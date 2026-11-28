@@ -22,7 +22,7 @@ test("E671→E1089: contrato de 2 meses a partir de 10/01/2027 — o e-mail e a 
   const l = linhasContrato({ imovel: IM, inicio: inicio!, fim: fim!, meses: 2, valorMensal: 3000 });
   // E1089 (coordenador): 10/03 é a última noite gravada; o e-mail e a página imprimem a saída, 11/03 (entrada + 60 dias).
   assert.equal(l.find((x) => x.rotulo === "Período")?.valor, "Entrada 10/01/2027 · Saída 11/03/2027 · 60 diárias");
-  assert.match(textoSaida({ inicio, fim, checkinAfter: null, checkoutBefore: null }), /11\/03\/2027/);
+  assert.match(textoSaida({ inicio, fim, checkinAfter: null }), /11\/03\/2027/);
 });
 
 // E1089 (coordenador) inverte a decisão do E671: o e-mail do contrato imprime a SAÍDA (o dia seguinte ao fim gravado),

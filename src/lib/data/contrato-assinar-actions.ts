@@ -46,6 +46,7 @@ import { PROPOSTA_FORA_DO_FECHAMENTO, propostaDoFechamentoDoLead } from "@/lib/d
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 import { DIAS_POR_MES, periodoDosBlocos } from "@/lib/contrato-blocos";
 import { prazoDaJanela } from "@/lib/conferencia";
+import { horaParaQuemVe } from "@/lib/estadia/hora-da-entrada";
 import { janelaVigente, type JanelaDoContrato } from "@/lib/data/janela-conferencia";
 import {
   MSG_CODIGO_BLOQUEADO,
@@ -98,7 +99,7 @@ interface LinhaContrato {
   created_at: string;
   assinado_proprietario_em: string | null;
   assinado_inquilino_em: string | null;
-  properties: { title?: string; address?: string | null; city?: string | null; owner_id?: string; checkin_after?: string | null; checkout_before?: string | null; pets_regras?: unknown } | null;
+  properties: { title?: string; address?: string | null; city?: string | null; owner_id?: string; pets_regras?: unknown } | null;
   pets_regras_congeladas?: unknown;
   property_id?: string;
   /** Pacote de limpeza do anúncio agora (0144; só vale antes da 1ª assinatura). */
@@ -114,7 +115,7 @@ interface LinhaContrato {
 // E197: as colunas do estado (status, assinaturas e pagamentos com anulado_em) são as de COLUNAS_ESTADO_CONTRATO —
 // sem anulado_em, um pagamento anulado contava como 1º pagamento no detalhe e não na lista.
 const COLUNAS =
-  "id, tenant_id, status, periodo, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, address, city, owner_id, checkin_after, checkout_before, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
+  "id, tenant_id, status, periodo, aluguel_mensal, prazo_total_dias, qtd_ocupantes, created_at, assinado_proprietario_em, assinado_inquilino_em, pets_regras_congeladas, property_id, properties(title, address, city, owner_id, pets_regras), contrato_blocos(inicio, fim), pagamentos_bloco(tipo, confirmado_pelo_inquilino, anulado_em)";
 
 function objetoOuVazio(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -189,7 +190,7 @@ function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string
   if (!papel) return null;
   const imovel = c.properties?.title ?? "Imóvel";
   const { inicio, fim } = periodoDosBlocos(c.contrato_blocos ?? []);
-  const datasJanela = { inicio, checkinAfter: janela?.hora ?? null, fim, checkoutBefore: null };
+  const datasJanela = { inicio, checkinAfter: janela?.hora ?? null, fim };
   const prazoEntrada = prazoDaJanela("entrada", datasJanela, janela?.gravado.entrada)?.toISOString() ?? null;
   const prazoSaida = prazoDaJanela("saida", datasJanela, janela?.gravado.saida)?.toISOString() ?? null;
   const resumo = resumoContrato({
@@ -246,8 +247,8 @@ function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string
     linhaDoTempo: montarLinhaDoTempo({
       inicio,
       fim,
-      checkinAfter: c.properties?.checkin_after ?? null,
-      checkoutBefore: c.properties?.checkout_before ?? null,
+      // E1230 (ORDENS-DUET 1207 e 1300): a hora do leitor único (a mesma da âncora); o morador só depois das duas assinaturas.
+      checkinAfter: horaParaQuemVe({ hora: janela?.hora ?? null, papel, assinadoProprietarioEm: c.assinado_proprietario_em ?? null, assinadoInquilinoEm: c.assinado_inquilino_em ?? null }),
       prazoEntradaEm: prazoEntrada,
       prazoSaidaEm: prazoSaida,
     }),

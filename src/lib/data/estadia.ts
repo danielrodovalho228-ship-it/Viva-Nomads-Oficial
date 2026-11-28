@@ -11,6 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { primeiroPagamentoConfirmado, primeiroPagamentoRegistrado } from "@/lib/contrato-estado";
 import { estadoConferencia, prazoDaJanela, type RespostaConferencia } from "@/lib/conferencia";
+import { horaParaQuemVe } from "@/lib/estadia/hora-da-entrada";
 import { janelaVigente } from "@/lib/data/janela-conferencia";
 import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
@@ -40,7 +41,7 @@ import { caucaoDoChecklist, estadoCaucao as estadoCaucaoUnico } from "@/lib/cauc
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const COLUNAS_ESTADIA =
-  "id, property_id, tenant_id, status, encerrado_em, created_at, qtd_ocupantes, capacidade_snapshot, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, garantia, comissao_percent, comissao_valor, assinado_proprietario_em, assinado_inquilino_em, properties(id, title, address, city, owner_id, checkin_after, checkout_before, max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status), pagamentos_bloco(id, tipo, valor, confirmado_pelo_inquilino, anulado_em)";
+  "id, property_id, tenant_id, status, encerrado_em, created_at, qtd_ocupantes, capacidade_snapshot, aluguel_mensal, prazo_total_dias, tamanho_bloco_meses, garantia, comissao_percent, comissao_valor, assinado_proprietario_em, assinado_inquilino_em, properties(id, title, address, city, owner_id, max_guests), contrato_blocos(id, numero_bloco, inicio, fim, meses, valor, caucao, caucao_status, status), pagamentos_bloco(id, tipo, valor, confirmado_pelo_inquilino, anulado_em)";
 
 export interface LinhaContratoEstadia {
   id: string;
@@ -59,7 +60,7 @@ export interface LinhaContratoEstadia {
   comissao_valor: number | string | null;
   assinado_proprietario_em: string | null;
   assinado_inquilino_em: string | null;
-  properties: { id: string; title: string | null; address?: string | null; city?: string | null; owner_id: string; checkin_after: string | null; checkout_before: string | null; max_guests: number | null } | null;
+  properties: { id: string; title: string | null; address?: string | null; city?: string | null; owner_id: string; max_guests: number | null } | null;
   contrato_blocos: (BlocoAtual & { id: string; caucao_status: string })[] | null;
   pagamentos_bloco: { id: string; tipo: string; valor?: number | string | null; confirmado_pelo_inquilino: boolean; anulado_em: string | null }[] | null;
 }
@@ -100,7 +101,7 @@ export function blocosOrdenados(c: Pick<LinhaContratoEstadia, "contrato_blocos">
 
 export function periodoDoContrato(c: LinhaContratoEstadia): PeriodoEstadia {
   // Renovação que caducou ("nao_aceito") não entra no período.
-  return periodoDaEstadia(blocosOrdenados(c).filter((b) => b.status !== "nao_aceito"), c.properties);
+  return periodoDaEstadia(blocosOrdenados(c).filter((b) => b.status !== "nao_aceito"));
 }
 
 /**
@@ -108,12 +109,15 @@ export function periodoDoContrato(c: LinhaContratoEstadia): PeriodoEstadia {
  * entrada; esta leitura congela-o, se for a primeira depois da âncora), ou o cálculo vivo pela hora actual das
  * instruções de entrada do contrato (contratos_checkin.horario). Nunca a coluna do anúncio.
  */
-export async function periodoComPrazos(admin: NonNullable<ReturnType<typeof createAdminClient>>, c: LinhaContratoEstadia): Promise<PeriodoEstadia> {
+export async function periodoComPrazos(admin: NonNullable<ReturnType<typeof createAdminClient>>, c: LinhaContratoEstadia, papel: PapelEstadia): Promise<PeriodoEstadia> {
   const periodo = periodoDoContrato(c);
   const janela = await janelaVigente(admin, c.id, blocosOrdenados(c));
   const datas = janela.datas;
   return {
     ...periodo,
+    // E1230 (ORDENS-DUET 1207 e 1300): a hora de entrada é a do leitor único (a mesma da âncora); o morador só a vê
+    // depois das duas assinaturas.
+    checkinAfter: horaParaQuemVe({ hora: janela.hora, papel, assinadoProprietarioEm: c.assinado_proprietario_em, assinadoInquilinoEm: c.assinado_inquilino_em }),
     prazoEntradaEm: prazoDaJanela("entrada", datas, janela.gravado.entrada)?.toISOString() ?? null,
     prazoSaidaEm: prazoDaJanela("saida", datas, janela.gravado.saida)?.toISOString() ?? null,
   };
@@ -242,7 +246,7 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
   if ("erro" in ctx) return null;
   const { admin, c, papel, userId } = ctx;
   const blocos = blocosOrdenados(c).filter((b) => b.status !== "nao_aceito");
-  const periodo = await periodoComPrazos(admin, c);
+  const periodo = await periodoComPrazos(admin, c, papel);
   const pagamentos = c.pagamentos_bloco ?? [];
   const primeiro = primeiroPagamentoConfirmado(pagamentos);
   const ambos = assinadoPelasDuas(c);

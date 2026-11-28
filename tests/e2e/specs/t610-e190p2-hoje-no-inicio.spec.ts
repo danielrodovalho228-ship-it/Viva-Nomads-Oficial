@@ -65,6 +65,8 @@ test.describe("T610 — E190 parte 2: 'Hoje' no Início do proprietário", () =>
     await criarLead(ids.dono, ids.entra, ids.imA, true);
     await criarLead(ids.dono, ids.sai, ids.imB, true);
     ids.cEntra = await contrato(ids.imA, ids.entra, dia(0), dia(59));
+    // E1230 (ORDEM-DUET 1300): o "Entra hoje" lê a hora das instruções do CONTRATO (o leitor único), não a do anúncio.
+    { const { error: eK } = await adm().from("contratos_checkin").upsert({ contrato_id: ids.cEntra, horario: "14:00" }, { onConflict: "contrato_id" }); if (eK) throw eK; }
     // E1089 (coordenador): "sai hoje" = a SAÍDA é hoje; o bloco grava a última noite, que foi ontem.
     ids.cSai = await contrato(ids.imB, ids.sai, dia(-60), dia(-1));
     // O dono "vazio" tem contrato, mas nada HOJE: a seção não aparece.
@@ -99,7 +101,9 @@ test.describe("T610 — E190 parte 2: 'Hoje' no Início do proprietário", () =>
 
       const s = cartoes.nth(1);
       await expect(s).toHaveAttribute("data-tipo", "saida");
-      await expect(s).toContainText("Sai hoje · até as 11:00");
+      // E1230 (ORDEM-DUET 1207, decisão 2; asserção alterada): o "Sai hoje" sem hora.
+      await expect(s).toContainText("Sai hoje");
+      await expect(s).not.toContainText("até as");
       await expect(s.getByTestId("inicio-dono-hoje-nome")).toHaveText(/^Bruno( \w+)?$/);
       await expect(s).toContainText(`Loft Bela t610 ${sufixo}`);
       await expect(s).toHaveAttribute("href", `/dashboard/estadia/${ids.cSai}`);

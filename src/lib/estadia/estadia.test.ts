@@ -13,7 +13,7 @@ import { guardContactInfo, cpfValido } from "../messages/contact-guard.ts";
 
 /** Meio-dia em Brasília do dia dado (15:00Z). */
 const em = (dia: string) => new Date(`${dia}T15:00:00Z`);
-const periodo = { inicio: "2026-11-13", fim: "2027-02-10", checkinAfter: "14:00", checkoutBefore: "11:00" };
+const periodo = { inicio: "2026-11-13", fim: "2027-02-10", checkinAfter: "14:00" };
 
 test("topo: 'Entrada em N dias' / 'Estadia em andamento · faltam N dias' / 'Encerrada em [data]', no calendário de Brasília", () => {
   assert.equal(topoDaEstadia(periodo, { status: "ativo" }, em("2026-11-03")).texto, "Entrada em 10 dias");
@@ -24,7 +24,8 @@ test("topo: 'Entrada em N dias' / 'Estadia em andamento · faltam N dias' / 'Enc
   // 02:30 em UTC do dia 13 ainda é dia 12 em Brasília: a entrada é amanhã, não hoje.
   assert.equal(topoDaEstadia(periodo, { status: "ativo" }, new Date("2026-11-13T02:30:00Z")).texto, "Entrada amanhã");
   assert.equal(textoEntrada(periodo), "Entrada: 13/11/2026 a partir das 14:00");
-  assert.equal(textoSaida(periodo), "Saída: 11/02/2027 até as 11:00"); // E1089: a saída é o dia seguinte à última noite (10/02)
+  // E1230 (ORDEM-DUET 1207, decisão 2; asserção alterada): a saída sem hora, "horário a combinar com o proprietário".
+  assert.equal(textoSaida(periodo), "Saída em 11/02/2027, horário a combinar com o proprietário"); // E1089: a saída é o dia seguinte à última noite (10/02)
 });
 
 const base: EstadoChecklist = {
