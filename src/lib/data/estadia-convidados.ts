@@ -105,7 +105,8 @@ export async function carregarVisaoConvidado(contratoId: string, agora: Date = n
   if (error) throw new Error(MSG_CONVIDADO_SEM_LEITURA);
   const c = data as unknown as LinhaContratoEstadia | null;
   if (!c) return null;
-  const periodo = await periodoComPrazos(admin, c);
+  // E1230: o convidado é do lado do morador — a hora só depois das duas assinaturas.
+  const periodo = await periodoComPrazos(admin, c, "inquilino");
   const ambos = assinadoPelasDuas(c);
   const primeiro = primeiroPagamentoConfirmado(c.pagamentos_bloco ?? []);
   const cond = { inicio: periodo.inicio, assinadoPelasDuas: ambos, primeiroPagamento: primeiro };

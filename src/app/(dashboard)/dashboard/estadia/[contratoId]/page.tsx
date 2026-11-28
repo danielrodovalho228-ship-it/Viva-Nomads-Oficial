@@ -75,13 +75,12 @@ export default async function EstadiaPage({ params }: { params: Promise<{ contra
     // 61-B: só o morador vê e mexe nos convidados (sem a 0225, null e o bloco some).
     e.podeEditarOcupantes ? convidadosParaOMorador(e.id) : Promise.resolve(null),
   ]);
-  // Prompt 61-A: a linha do tempo com os horários do imóvel (checkin_after / checkout_before), a mesma fonte do prazo
-  // da conferência; nada recalculado aqui.
+  // E1230 (ORDENS-DUET 1207 e 1300): a linha do tempo com a hora de entrada das instruções do contrato (o leitor único,
+  // a mesma da âncora do E1238; o morador só a vê depois das duas assinaturas); a saída sem hora. Nada recalculado aqui.
   const etapas = montarLinhaDoTempo({
     inicio: e.periodo.inicio,
     fim: e.periodo.fim,
     checkinAfter: e.periodo.checkinAfter ?? null,
-    checkoutBefore: e.periodo.checkoutBefore ?? null,
     // E1238: o prazo de cada conferência, pronto do servidor (o gravado, ou a regra com a hora das instruções).
     prazoEntradaEm: e.periodo.prazoEntradaEm ?? null,
     prazoSaidaEm: e.periodo.prazoSaidaEm ?? null,

@@ -53,8 +53,10 @@ test("sem nome (antes do aceite), 'Morador' e sem foto — o avatar cai nas inic
   assert.equal(c.fotoUrl, null);
 });
 
-test("horário do imóvel: 'a partir das' na entrada, 'até as' na saída; sem horário válido, null", () => {
-  const horarios = { p1: { entrada: "14:00", saida: "11:00" }, p2: { entrada: "", saida: "meio-dia" } };
+// E1230 (ORDEM-DUET 1300; asserção alterada): a hora é a das instruções do CONTRATO (o leitor único), por contrato; a
+// saída não tem hora (o campo é o E1240).
+test("hora do contrato: 'a partir das' na entrada; a saída sem hora; sem horário válido, null", () => {
+  const horarios = { a: { entrada: "14:00" }, b: { entrada: "16:00" }, c: { entrada: "" }, d: { entrada: "meio-dia" } };
   const c = cartoesDeHoje(
     [
       item({ id: "entrada-a", tipo: "entrada", quando: HOJE }),
@@ -68,7 +70,7 @@ test("horário do imóvel: 'a partir das' na entrada, 'até as' na saída; sem h
   );
   assert.deepEqual(
     c.map((x) => x.horario),
-    ["a partir das 14:00", null, null, "até as 11:00", null]
+    ["a partir das 14:00", null, null, null, null]
   );
 });
 
@@ -100,7 +102,7 @@ test("vocabulário: 'Entra hoje' / 'Sai hoje', nunca check-in/check-out", () => 
     readFileSync(new URL("./hoje-dono.ts", import.meta.url), "utf8"),
     readFileSync(new URL("../../components/painel/inicio-dono.tsx", import.meta.url), "utf8"),
   ];
-  const c = cartoesDeHoje([item({ id: "entrada-a", tipo: "entrada", quando: HOJE }), item({ id: "saida-b", tipo: "saida", quando: HOJE })], HOJE, { p1: { entrada: "14:00", saida: "11:00" } });
+  const c = cartoesDeHoje([item({ id: "entrada-a", tipo: "entrada", quando: HOJE }), item({ id: "saida-b", tipo: "saida", quando: HOJE })], HOJE, { a: { entrada: "14:00" } });
   for (const x of c) assert.doesNotMatch(`${x.rotulo} ${x.horario}`, /check-?in|check-?out|hóspede|reserva/i);
   // Nos textos visíveis (entre aspas) dos dois arquivos, nada de check-in/check-out.
   for (const f of fontes) assert.doesNotMatch(fonteSemComentarios(f).match(/"[^"]*"|`[^`]*`/g)?.join(" ") ?? "", /check-?in|check-?out/i);

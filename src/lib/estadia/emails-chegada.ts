@@ -7,6 +7,7 @@
       condição que libera as instruções no D-7.
   Roda: node --test src/lib/estadia/emails-chegada.test.ts
 */
+import { HORARIO_SAIDA_A_COMBINAR } from "./hora-da-entrada.ts";
 import { CAMPOS_INSTRUCOES, type Instrucoes } from "./instrucoes.ts";
 import { blocoDados } from "../notifications/modelo-email.ts";
 import { escaparHtml } from "../escapar-html.ts";
@@ -22,7 +23,6 @@ export interface EstadiaParaEmail {
   /** "14:00" (properties.checkin_after) ou o horário combinado no contrato. */
   horarioEntrada?: string | null;
   /** "11:00" (properties.checkout_before). */
-  horarioSaida?: string | null;
 }
 
 const limpo = (s: string | null | undefined) => (s ?? "").replace(/\s+/g, " ").trim();
@@ -38,15 +38,14 @@ export function imovelPorExtenso(im: EstadiaParaEmail["imovel"]): string {
   return [limpo(im.titulo), lugar, codigo].filter(Boolean).join(" · ");
 }
 
-/** Imóvel, Entrada e Saída (com os horários quando o anúncio tem). */
+/** Imóvel, Entrada (com a hora das instruções do contrato) e Saída (E1230: "horário a combinar com o proprietário"). */
 export function linhasDaEstadia(e: EstadiaParaEmail): { rotulo: string; valor: string }[] {
   const l: { rotulo: string; valor: string }[] = [];
   const im = imovelPorExtenso(e.imovel);
   if (im) l.push({ rotulo: "Imóvel", valor: im });
   const he = hora(e.horarioEntrada);
   if (dataBR(e.entrada)) l.push({ rotulo: "Entrada", valor: `${dataBR(e.entrada)}${he ? `, a partir das ${he}` : ""}` });
-  const hs = hora(e.horarioSaida);
-  if (dataBR(e.saida)) l.push({ rotulo: "Saída", valor: `${dataBR(e.saida)}${hs ? `, até as ${hs}` : ""}` });
+  if (dataBR(e.saida)) l.push({ rotulo: "Saída", valor: `${dataBR(e.saida)}, ${HORARIO_SAIDA_A_COMBINAR}` });
   return l;
 }
 

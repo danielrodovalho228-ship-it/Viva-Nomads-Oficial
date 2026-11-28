@@ -35,17 +35,34 @@ export function datasDaJanela(blocos: { inicio: string | null; fim: string | nul
   return { inicio: inicios[0] ?? null, checkinAfter: hora, fim: fins.at(-1) ?? null, checkoutBefore: null };
 }
 
+/**
+ * E1230 (ORDENS-DUET 1207 e 1300) — o LEITOR ÚNICO da hora de entrada do contrato: contratos_checkin.horario (as
+ * "Instruções de entrada" que o dono gravou), ou null ("horário a combinar"). As colunas do anúncio (checkin_after /
+ * checkout_before) não entram, nem como recurso. A âncora da conferência (E1238), as telas da estadia, a agenda e os
+ * e-mails da entrada leem por aqui. Só a coluna da hora: nunca as instruções nem o telefone de plantão.
+ */
+export async function horasDeEntrada(admin: Admin, ids: string[]): Promise<Map<string, string | null>> {
+  const m = new Map<string, string | null>(ids.map((id) => [id, null]));
+  if (ids.length === 0) return m;
+  const { data } = await admin.from("contratos_checkin").select("contrato_id, horario").in("contrato_id", ids);
+  for (const r of (data ?? []) as { contrato_id: string; horario: string | null }[]) if (m.has(r.contrato_id)) m.set(r.contrato_id, r.horario ?? null);
+  return m;
+}
+
+/** E1230: a hora de entrada de UM contrato (o mesmo leitor). */
+export async function horaDeEntrada(admin: Admin, contratoId: string): Promise<string | null> {
+  return (await horasDeEntrada(admin, [contratoId])).get(contratoId) ?? null;
+}
+
 /** A hora das instruções e os prazos gravados, por contrato (uma leitura de cada tabela para a lista toda). */
 export async function janelasDosContratos(admin: Admin, ids: string[]): Promise<Map<string, JanelaDoContrato>> {
   const m = new Map<string, JanelaDoContrato>(ids.map((id) => [id, { hora: null, gravado: { entrada: null, saida: null }, aberta: { entrada: false, saida: false } }]));
   if (ids.length === 0) return m;
-  const [{ data: k }, { data: confs }] = await Promise.all([
-    admin.from("contratos_checkin").select("contrato_id, horario").in("contrato_id", ids),
-    admin.from("conferencias").select("contrato_id, tipo, prazo_em, fechada_em").in("contrato_id", ids),
-  ]);
-  for (const r of (k ?? []) as { contrato_id: string; horario: string | null }[]) {
-    const j = m.get(r.contrato_id);
-    if (j) j.hora = r.horario ?? null;
+  // E1230 (ORDEM-DUET 1300): a hora é a do LEITOR ÚNICO (horasDeEntrada) — a mesma que as telas e os e-mails mostram.
+  const [horas, { data: confs }] = await Promise.all([horasDeEntrada(admin, ids), admin.from("conferencias").select("contrato_id, tipo, prazo_em, fechada_em").in("contrato_id", ids)]);
+  for (const [id, h] of horas) {
+    const j = m.get(id);
+    if (j) j.hora = h;
   }
   for (const r of (confs ?? []) as { contrato_id: string; tipo: string; prazo_em: string | null; fechada_em: string | null }[]) {
     const j = m.get(r.contrato_id);

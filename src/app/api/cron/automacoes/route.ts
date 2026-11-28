@@ -42,7 +42,7 @@ import { corpoAutomacao, type DadosAutomacao, type TipoCorpoAutomacao } from "@/
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { conferenciasParaFechar, type ConferenciaAberta } from "@/lib/fiscal/fechamento";
-import { congelarAbertasNaAncora, datasDaJanela, janelasDosContratos } from "@/lib/data/janela-conferencia";
+import { congelarAbertasNaAncora, datasDaJanela, horaDeEntrada, janelasDosContratos } from "@/lib/data/janela-conferencia";
 import { precalcularTempos } from "@/lib/data/tempos";
 import { automacaoDaEstadia } from "@/lib/automacao/servidor";
 import { rodarEliminacao } from "@/lib/minimizacao/servidor";
@@ -316,17 +316,18 @@ export async function GET(request: Request) {
       // Varredura ampliada: instruções não lidas → o e-mail aponta a página (nunca "o proprietário não preencheu").
       const [{ data: im, error: erroIm }, { data: ck, error: erroCk }] = await Promise.all([
         admin.from("imovel_instrucoes_chegada").select("*").eq("property_id", c.property_id as string).maybeSingle(),
-        admin.from("contratos_checkin").select("instrucoes, horario").eq("contrato_id", c.id as string).maybeSingle(),
+        admin.from("contratos_checkin").select("instrucoes").eq("contrato_id", c.id as string).maybeSingle(),
       ]);
-      const ckl = ck as { instrucoes?: string | null; horario?: string | null } | null;
+      const ckl = ck as { instrucoes?: string | null } | null;
       const instrucoes = erroIm || erroCk ? ("sem_leitura" as const) : instrucoesEfetivas(im ? normalizarInstrucoes(im as Record<string, unknown>) : null, ckl?.instrucoes);
       const estadia = {
         imovel: { id: c.property_id as string, titulo: prop?.title, bairro: prop?.address, cidade: prop?.city },
         entrada: inicio,
         // E1089: a linha "Saída" do e-mail é o dia da SAÍDA (o dia seguinte à última noite gravada).
         saida: saidaPeloFim(blocos.map((b) => b.fim).sort().at(-1)) || null,
-        horarioEntrada: ckl?.horario || prop?.checkin_after,
-        horarioSaida: prop?.checkout_before,
+        // E1230 (ORDENS-DUET 1207 e 1300): a hora do leitor único (as instruções do contrato), sem o recurso do anúncio;
+        // a saída vai sem hora ("horário a combinar com o proprietário").
+        horarioEntrada: await horaDeEntrada(admin, c.id as string),
       };
       const corpo = corpoDaChegada(estadia, instrucoes, true, detalheAutomacao("estadia_instrucoes_liberadas", { imovel, fim: inicio }));
       alvos.push({

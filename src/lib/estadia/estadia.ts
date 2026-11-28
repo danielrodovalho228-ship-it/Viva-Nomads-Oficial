@@ -4,6 +4,7 @@
   Datas no calendário de Brasília: o "hoje" sai de diaBRT(agora), nunca do dia em UTC. Entrada e saída usam a
   mesma fonte dos blocos (periodoDosBlocos) e o mesmo horário do imóvel que o prazo da conferência de entrada.
 */
+import { HORARIO_SAIDA_A_COMBINAR } from "./hora-da-entrada.ts";
 import { diasInclusivos, periodoDosBlocos } from "../contrato-blocos.ts";
 import { prazoConferenciaEntrada, textoPrazoConferencia } from "../conferencia.ts";
 import { diaBRT } from "../datas-brasilia.ts";
@@ -41,27 +42,27 @@ export function diasAte(de: string, ate: string): number {
 export interface PeriodoEstadia {
   inicio: string | null;
   fim: string | null;
-  /** "14:00" do imóvel; vazio = sem horário. */
+  /**
+   * E1230 (ORDENS-DUET 1207 e 1300): a hora de ENTRADA que esta pessoa pode ver — a das instruções do contrato (o leitor
+   * único horaDeEntrada), e para o morador só depois das duas assinaturas (horaParaQuemVe). Vazio = "a combinar". A saída
+   * não tem hora (HORARIO_SAIDA_A_COMBINAR).
+   */
   checkinAfter?: string | null;
-  checkoutBefore?: string | null;
   /**
    * E1238 (ORDEM-DUET 1207): o prazo de cada conferência, PRONTO do servidor (o gravado quando ela nasceu, ou a mesma
-   * regra com a hora das instruções de entrada — periodoComPrazos, data/estadia.ts). A hora do anúncio acima (só para
-   * mostrar; o E1230 troca-a) nunca entra no prazo.
+   * regra com a hora das instruções de entrada — periodoComPrazos, data/estadia.ts).
    */
   prazoEntradaEm?: string | null;
   prazoSaidaEm?: string | null;
 }
 
-export function periodoDaEstadia(
-  blocos: { inicio?: string | null; fim?: string | null }[],
-  imovel: { checkin_after?: string | null; checkout_before?: string | null } | null,
-): PeriodoEstadia {
+/** E1230: o período dos blocos e a hora de entrada já resolvida (o leitor único e a porta); nunca a do anúncio. */
+export function periodoDaEstadia(blocos: { inicio?: string | null; fim?: string | null }[], horaEntrada: string | null = null): PeriodoEstadia {
   const p = periodoDosBlocos(blocos);
-  return { ...p, checkinAfter: imovel?.checkin_after ?? null, checkoutBefore: imovel?.checkout_before ?? null };
+  return { ...p, checkinAfter: horaEntrada };
 }
 
-/** "Entrada: 13/11/2026 a partir das 14:00" / "Saída: 15/02/2027 até as 11:00" (sem horário: só a data). */
+/** "Entrada: 13/11/2026 a partir das 14:00" (sem horário: só a data). E1230: a saída, "Saída em 15/02/2027, horário a combinar com o proprietário". */
 export function textoEntrada(p: PeriodoEstadia): string {
   if (!p.inicio) return "Entrada: a definir";
   const h = (p.checkinAfter ?? "").trim();
@@ -71,8 +72,8 @@ export function textoEntrada(p: PeriodoEstadia): string {
 export function textoSaida(p: PeriodoEstadia): string {
   const saida = saidaPeloFim(p.fim);
   if (!saida) return "Saída: a definir";
-  const h = (p.checkoutBefore ?? "").trim();
-  return `Saída: ${ddmmaaaa(saida)}${HORA.test(h) ? ` até as ${h}` : ""}`;
+  // E1230 (ORDEM-DUET 1207, decisão 2): a saída mostra-se sem hora — o campo de saída do contrato é o E1240.
+  return `Saída em ${ddmmaaaa(saida)}, ${HORARIO_SAIDA_A_COMBINAR}`;
 }
 
 /** Status do contrato que encerram a estadia (fora "ativo"). */
