@@ -5,9 +5,13 @@
    - o botão leva ao lugar da ação daquele evento, nunca "Assinar o contrato";
    - crítico só quando pede uma ação da pessoa com prazo em até 24 h ou já vencido; o resto é normal.
   O passo 2 (eventos próprios, ref_id, resolução pela ação) é a condição para ligar cada chave.
+  E1247 passo 2, PR 1 (ESPEC-E1247-PASSO-2; ORDEM-DUET 1331): a parcela tem os seus eventos (EVENTO_DA_ROTINA); o
+  botão e a prioridade continuam a sair desta tabela, lidos pelo EVENTO. As rotinas ainda sem evento próprio (caução e
+  pré-aceite: PRs 2 e 3) e os avisos antigos continuam a ler-se pelo título.
   Puro.
 */
 import { ASSUNTOS } from "./assuntos.ts";
+import type { NotificationEvent } from "./eventos-email.ts";
 
 export type RotinaDoContrato =
   | "caucaoLiberacaoIntegral"
@@ -57,6 +61,25 @@ export function avisoDaRotina(chave: RotinaDoContrato, papel: "proprietario" | "
 
 const ROTINAS: RotinaDoContrato[] = ["caucaoLiberacaoIntegral", "caucaoDevolucaoAtraso", "lembreteParcelaAluguel", "pagamentoRegistradoMorador", "preAceitacaoLembrete", "preAceitacaoExpirou", "preAceitacaoPerdeuVez", "preAceitacaoEncerrada"];
 
+/** E1247 passo 2: o evento próprio de cada rotina que já o tem (a parcela, no PR 1). */
+export const EVENTO_DA_ROTINA: Partial<Record<RotinaDoContrato, NotificationEvent>> & { lembreteParcelaAluguel: NotificationEvent; pagamentoRegistradoMorador: NotificationEvent } = {
+  lembreteParcelaAluguel: "parcela_lembrete",
+  pagamentoRegistradoMorador: "parcela_registrada",
+};
+
+/** A rotina de um evento próprio (ou null). */
+export function rotinaDoEvento(evento: string | null | undefined): RotinaDoContrato | null {
+  return (Object.keys(EVENTO_DA_ROTINA) as RotinaDoContrato[]).find((k) => EVENTO_DA_ROTINA[k] === evento) ?? null;
+}
+
+/** O botão da faixa pelo EVENTO próprio da rotina (o do papel que vê o crítico, como botaoDaRotina). */
+export function botaoDoEvento(evento: string | null | undefined): string | null {
+  const k = rotinaDoEvento(evento);
+  return k ? botaoDaChave(k) : null;
+}
+
+const botaoDaChave = (k: RotinaDoContrato) => (avisoDaRotina(k, "inquilino").prioridade === "critico" ? avisoDaRotina(k, "inquilino").botao : avisoDaRotina(k, "proprietario").botao);
+
 /**
  * O aviso já gravado é de uma destas rotinas? Pelo título (o assunto da constante; o nome do imóvel pode vir depois).
  * O botão da faixa é o do papel que vê o crítico: só o morador recebe o lembrete do pré-aceite como crítico.
@@ -69,5 +92,5 @@ export function rotinaDoTitulo(titulo: string | null | undefined): RotinaDoContr
 /** O botão da faixa para um aviso de rotina (o do crítico: caução vencida, ou o lembrete do pré-aceite ao morador). */
 export function botaoDaRotina(titulo: string | null | undefined): string | null {
   const k = rotinaDoTitulo(titulo);
-  return k ? avisoDaRotina(k, "inquilino").prioridade === "critico" ? avisoDaRotina(k, "inquilino").botao : avisoDaRotina(k, "proprietario").botao : null;
+  return k ? botaoDaChave(k) : null;
 }

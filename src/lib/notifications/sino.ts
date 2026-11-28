@@ -4,7 +4,7 @@
   src/lib/notifications/avisos.ts e src/lib/data/avisos-actions.ts).
   Roda: node --test src/lib/notifications/sino.test.ts
 */
-import { botaoDaRotina, rotinaDoTitulo } from "./avisos-rotinas-contrato.ts";
+import { botaoDaRotina, botaoDoEvento, rotinaDoTitulo } from "./avisos-rotinas-contrato.ts";
 import { ACAO_RESOLVE, resumoDosAvisos, urlDoAviso, type PrioridadeAviso } from "./avisos.ts";
 import type { NotificationEvent } from "./eventos-email.ts";
 
@@ -255,7 +255,9 @@ const ROTULO_ACAO = { assinou: "Assinar o contrato", respondeu: "Responder a pro
 /** O texto do botão da faixa: a ação que resolve o evento. */
 export function acaoDaFaixa(evento: string, titulo?: string | null): string {
   // E1247 (ORDEM-DUET 1233): os avisos das rotinas que viajam com o evento do contrato levam ao lugar da ação deles.
-  const daRotina = evento === "contract_status" ? botaoDaRotina(titulo) : null;
+  // E1247 passo 2: os eventos próprios das rotinas dizem o botão pelo EVENTO; os antigos (o evento do contrato com o
+  // título de uma rotina) continuam a ler-se pelo título.
+  const daRotina = botaoDoEvento(evento) ?? (evento === "contract_status" ? botaoDaRotina(titulo) : null);
   if (daRotina) return daRotina;
   const acao = ACAO_RESOLVE[evento as NotificationEvent];
   return acao ? ROTULO_ACAO[acao] : "Resolver agora";
