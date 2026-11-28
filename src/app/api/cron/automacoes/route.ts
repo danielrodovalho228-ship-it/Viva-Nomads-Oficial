@@ -42,7 +42,7 @@ import { corpoAutomacao, type DadosAutomacao, type TipoCorpoAutomacao } from "@/
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { conferenciasParaFechar, type ConferenciaAberta } from "@/lib/fiscal/fechamento";
-import { datasDaJanela, janelasDosContratos } from "@/lib/data/janela-conferencia";
+import { congelarAbertasNaAncora, datasDaJanela, janelasDosContratos } from "@/lib/data/janela-conferencia";
 import { precalcularTempos } from "@/lib/data/tempos";
 import { automacaoDaEstadia } from "@/lib/automacao/servidor";
 import { rodarEliminacao } from "@/lib/minimizacao/servidor";
@@ -502,8 +502,9 @@ async function manutencaoDaEstadia(admin: NonNullable<ReturnType<typeof createAd
 
 /** Conferências abertas (entrada e saída) com a janela de 48 h encerrada → fecha. `simular`: só conta. */
 async function fecharConferenciasVencidas(admin: NonNullable<ReturnType<typeof createAdminClient>>, agora: Date, simular: boolean): Promise<number> {
-  // E1238 (ORDEM-DUET 1207): com o prazo gravado quando a conferência nasceu, confere com ele; sem ele (as de antes da
-  // 0369), a mesma regra com a hora das instruções de entrada. A coluna do anúncio não entra; nada fecha antes da entrada.
+  // E1238 (ORDENS-DUET 1207 e 1269): primeiro CONGELA o prazo das abertas que já passaram a âncora (o momento da entrada,
+  // ou da saída) com a hora vigente das instruções; depois fecha pelo prazo gravado — sem ele, pelo cálculo vivo. A
+  // coluna do anúncio não entra; nada fecha antes da entrada. Em `simular`, nada se grava.
   const { data } = await admin
     .from("conferencias")
     .select("id, tipo, contrato_id, prazo_em, contratos(contrato_blocos(inicio, fim, status))")
@@ -518,11 +519,13 @@ async function fecharConferenciasVencidas(admin: NonNullable<ReturnType<typeof c
   };
   const linhas = (data ?? []) as unknown as Linha[];
   const janelas = await janelasDosContratos(admin, [...new Set(linhas.map((c) => c.contrato_id))]);
-  const abertas: ConferenciaAberta[] = linhas.map((c) => ({
+  const comDatas = linhas.map((c) => ({ ...c, datas: datasDaJanela(c.contratos?.contrato_blocos ?? [], janelas.get(c.contrato_id)?.hora ?? null) }));
+  const congelados = simular ? null : await congelarAbertasNaAncora(admin, comDatas, agora);
+  const abertas: ConferenciaAberta[] = comDatas.map((c) => ({
     id: c.id,
     tipo: c.tipo,
-    datas: datasDaJanela(c.contratos?.contrato_blocos ?? [], janelas.get(c.contrato_id)?.hora ?? null),
-    prazoGravado: c.prazo_em ?? null,
+    datas: c.datas,
+    prazoGravado: congelados ? (congelados.get(`${c.contrato_id}:${c.tipo}`) ?? null) : (c.prazo_em ?? null),
   }));
   const vencidas = conferenciasParaFechar(abertas, agora);
   if (simular) return vencidas.length;

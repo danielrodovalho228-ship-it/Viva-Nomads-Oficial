@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { congelarJanelaDeConferencia, datasDaJanela, janelaDoContrato } from "@/lib/data/janela-conferencia";
+import { abrirConferencia, janelaVigente } from "@/lib/data/janela-conferencia";
 import { consumirLimite, HORA } from "@/lib/limites";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { prontaParaFechar } from "@/lib/fiscal/fechamento";
@@ -72,15 +72,16 @@ async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte
   const donoId = prop?.owner_id;
   const parte: ParteConferencia | null = c.tenant_id === user.id ? "inquilino" : donoId === user.id ? "proprietario" : null;
   if (!parte) return null;
-  // E1238 (ORDEM-DUET 1207): a âncora é a hora das instruções de entrada do contrato, e cada conferência aberta traz o
-  // prazo que ficou gravado quando nasceu (janela-conferencia.ts). A coluna do anúncio não entra no prazo.
-  const janela = await janelaDoContrato(admin, contratoId);
+  // E1238 (ORDENS-DUET 1207 e 1269): a âncora é a hora das instruções de entrada do contrato; o prazo de cada
+  // conferência é o gravado (congelado no momento da entrada — esta leitura congela-o, se for a primeira depois da
+  // âncora) ou o cálculo vivo pela hora actual (janela-conferencia.ts). A coluna do anúncio não entra no prazo.
+  const janela = await janelaVigente(admin, contratoId, (c.contrato_blocos ?? []) as { inicio: string; fim: string; status: string | null }[]);
   return {
     uid: user.id,
     parte,
     status: String(c.status),
     propertyId: (c.property_id as string | null) ?? null,
-    entrada: datasDaJanela((c.contrato_blocos ?? []) as { inicio: string; fim: string; status: string | null }[], janela.hora),
+    entrada: janela.datas,
     gravado: janela.gravado,
   };
 }
@@ -108,8 +109,8 @@ export async function registrarItemConferencia(input: {
 
   const admin = createAdminClient()!;
   if (await estaFechada(admin, input.contratoId, input.tipo)) return erro(ERRO_FECHADA);
-  // E1238: a conferência nasce aqui (ou já existia) — o prazo congela quando nasce.
-  const { data: conf } = await congelarJanelaDeConferencia(admin, { contratoId: input.contratoId, tipo: input.tipo, abertaPor: ctx.uid, datas: ctx.entrada })
+  // E1238 (ORDEM-DUET 1269): a conferência nasce aqui (ou já existia), sem prazo — o prazo congela no momento da entrada.
+  const { data: conf } = await abrirConferencia(admin, { contratoId: input.contratoId, tipo: input.tipo, abertaPor: ctx.uid })
     .select("id")
     .maybeSingle();
   const confId =
@@ -164,8 +165,8 @@ export async function responderConfortoEntrada(input: { contratoId: string; resp
   if (!(await consumirLimite(`conferencia-conforto:${ctx.uid}`, 20, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
 
   if (await estaFechada(admin, input.contratoId, "entrada")) return erro(ERRO_FECHADA);
-  // E1238: o prazo congela quando a conferência nasce.
-  await congelarJanelaDeConferencia(admin, { contratoId: input.contratoId, tipo: "entrada", abertaPor: ctx.uid, datas: ctx.entrada });
+  // E1238 (ORDEM-DUET 1269): a conferência nasce sem prazo; o prazo congela no momento da entrada.
+  await abrirConferencia(admin, { contratoId: input.contratoId, tipo: "entrada", abertaPor: ctx.uid });
   const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", "entrada").maybeSingle();
   if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
   const { data: respostas, error: erroRespostas } = await admin.from("conferencia_respostas").select("parte, decisao, motivo").eq("conferencia_id", conf.id);
@@ -214,8 +215,8 @@ export async function responderConferencia(input: {
   if (!conf) {
     // Sem conferência = a outra parte não registrou nada. Com o prazo da entrada encerrado, responde mesmo assim.
     if (!encerrada) return erro(ERRO_ANTES_DA_OUTRA_PARTE);
-    // E1238: o prazo congela quando a conferência nasce.
-    await congelarJanelaDeConferencia(admin, { contratoId: input.contratoId, tipo: input.tipo, abertaPor: ctx.uid, datas: ctx.entrada });
+    // E1238 (ORDEM-DUET 1269): a conferência nasce sem prazo; o prazo congela no momento da entrada.
+    await abrirConferencia(admin, { contratoId: input.contratoId, tipo: input.tipo, abertaPor: ctx.uid });
     ({ data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", input.tipo).maybeSingle());
     if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
   }
@@ -354,8 +355,8 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
 
   const admin = createAdminClient()!;
   if (await estaFechada(admin, contratoId, tipo)) return erro(ERRO_FECHADA);
-  // E1238: o prazo congela quando a conferência nasce.
-  await congelarJanelaDeConferencia(admin, { contratoId, tipo, abertaPor: ctx.uid, datas: ctx.entrada });
+  // E1238 (ORDEM-DUET 1269): a conferência nasce sem prazo; o prazo congela no momento da entrada.
+  await abrirConferencia(admin, { contratoId, tipo, abertaPor: ctx.uid });
   const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", contratoId).eq("tipo", tipo).maybeSingle();
   if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
   const { data: ja } = await admin.from("conferencia_laudos").select("conferencia_id").eq("conferencia_id", conf.id).maybeSingle();
@@ -402,7 +403,7 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
   const supabase = await createClient();
   if (!supabase || !UUID_RE.test(contratoId)) return vazio;
   const ctx = await parteDoContrato(contratoId);
-  // E1238: o prazo gravado de cada conferência aberta; sem ela, a mesma regra.
+  // E1238 (ORDEM-DUET 1269): o prazo gravado (congelado no momento da entrada); sem ele, o cálculo vivo pela hora actual.
   const prazoEntradaEm = ctx ? (prazoDaJanela("entrada", ctx.entrada, ctx.gravado.entrada)?.toISOString() ?? null) : null;
   const janelaEntradaEncerrada = ctx ? janelaEncerrada("entrada", ctx.entrada, new Date(), ctx.gravado.entrada) : false;
   const prazoSaidaEm = ctx ? (prazoDaJanela("saida", ctx.entrada, ctx.gravado.saida)?.toISOString() ?? null) : null;

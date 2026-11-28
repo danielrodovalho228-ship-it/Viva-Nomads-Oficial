@@ -11,7 +11,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { primeiroPagamentoConfirmado, primeiroPagamentoRegistrado } from "@/lib/contrato-estado";
 import { estadoConferencia, prazoDaJanela, type RespostaConferencia } from "@/lib/conferencia";
-import { datasDaJanela, janelaDoContrato } from "@/lib/data/janela-conferencia";
+import { janelaVigente } from "@/lib/data/janela-conferencia";
 import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
 import { hojeEmBrasilia } from "@/lib/datas-brasilia";
@@ -104,13 +104,14 @@ export function periodoDoContrato(c: LinhaContratoEstadia): PeriodoEstadia {
 }
 
 /**
- * E1238 (ORDEM-DUET 1207): o período com o prazo de cada conferência — o gravado quando ela nasceu (0369), ou a mesma
- * regra com a hora das instruções de entrada do contrato (contratos_checkin.horario). Nunca a coluna do anúncio.
+ * E1238 (ORDENS-DUET 1207 e 1269): o período com o prazo de cada conferência — o gravado (congelado no momento da
+ * entrada; esta leitura congela-o, se for a primeira depois da âncora), ou o cálculo vivo pela hora actual das
+ * instruções de entrada do contrato (contratos_checkin.horario). Nunca a coluna do anúncio.
  */
 export async function periodoComPrazos(admin: NonNullable<ReturnType<typeof createAdminClient>>, c: LinhaContratoEstadia): Promise<PeriodoEstadia> {
   const periodo = periodoDoContrato(c);
-  const janela = await janelaDoContrato(admin, c.id);
-  const datas = datasDaJanela(blocosOrdenados(c), janela.hora);
+  const janela = await janelaVigente(admin, c.id, blocosOrdenados(c));
+  const datas = janela.datas;
   return {
     ...periodo,
     prazoEntradaEm: prazoDaJanela("entrada", datas, janela.gravado.entrada)?.toISOString() ?? null,

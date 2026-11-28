@@ -26,7 +26,7 @@ export const DESCRICAO_MAX = 300;
 export const MOTIVO_MAX = 1000;
 
 /**
- * Datas da conferência: dia de início (AAAA-MM-DD, 1º bloco) e horário de entrada do imóvel ("15:00"; vazio = 00:00);
+ * Datas da conferência: dia de início (AAAA-MM-DD, 1º bloco) e horário de entrada ("15:00"; vazio = 23:59, E1238);
  * para a saída, o último dia do contrato e o horário de saída do imóvel (Prompt 56, correção do coordenador).
  */
 export interface EntradaDoContrato {
@@ -42,35 +42,42 @@ export const JANELA_SAIDA_HORAS = 48;
 const HORA_ENTRADA = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /**
+ * E1238 (ORDEM-DUET 1269, decisão do coordenador): sem hora, a âncora é o FIM do dia — 23:59 — na entrada e na saída.
+ * Contar a entrada da meia-noite dava a janela de 34 h a quem chega à tarde.
+ */
+export const HORA_SEM_HORARIO = "23:59";
+
+/** A âncora da conferência: o instante de Brasília do dia da entrada (ou da saída) na hora das instruções, ou 23:59. */
+export function ancoraConferencia(tipo: TipoConferencia, datas: EntradaDoContrato | null): Date | null {
+  if (!datas) return null;
+  const dia = tipo === "entrada" ? (datas.inicio ?? "").slice(0, 10) : saidaPeloFim(datas.fim);
+  const hora = ((tipo === "entrada" ? datas.checkinAfter : datas.checkoutBefore) ?? "").trim();
+  return instanteBRT(dia, HORA_ENTRADA.test(hora) ? hora : HORA_SEM_HORARIO);
+}
+
+/**
  * FONTE ÚNICA do prazo da conferência de entrada (Prompt 35B, F2): o INSTANTE em que o relógio de Brasília marca
- * o dia de início no horário de entrada do imóvel (00:00 sem horário), mais 48 h. A seção da conferência, a linha
+ * o dia de início no horário de entrada das instruções (23:59 sem horário, E1238), mais 48 h. A seção da conferência, a linha
  * do tempo, o bloqueio do servidor e `janelaEncerrada` usam esta função — nunca outra conta.
  */
 export function prazoConferenciaEntrada(p: EntradaDoContrato): Date | null {
-  const dia = (p.inicio ?? "").slice(0, 10);
-  const hora = (p.checkinAfter ?? "").trim();
-  const base = instanteBRT(dia, HORA_ENTRADA.test(hora) ? hora : "00:00");
+  const base = ancoraConferencia("entrada", p);
   return base ? new Date(base.getTime() + JANELA_ENTRADA_HORAS * 3600_000) : null;
 }
 
 /**
  * FONTE ÚNICA do prazo da conferência de SAÍDA (Prompt 56): o instante em que o relógio de Brasília marca o dia da
- * SAÍDA (o dia seguinte à última noite do contrato; E1089) no horário de saída do imóvel (00:00 sem horário), mais 48 h. Irmã de prazoConferenciaEntrada; a tela, a
+ * SAÍDA (o dia seguinte à última noite do contrato; E1089) no horário de saída (23:59 sem horário, E1238), mais 48 h. Irmã de prazoConferenciaEntrada; a tela, a
  * linha do tempo, o servidor e a rotina diária usam esta função. Sem prazo, a saída normal ficaria aberta para sempre.
  */
 export function prazoConferenciaSaida(p: Pick<EntradaDoContrato, "fim" | "checkoutBefore">): Date | null {
   // E1089 (coordenador): `fim` é a ÚLTIMA NOITE gravada nos blocos; a pessoa sai no dia seguinte (entrada + dias), e é
-  // desse dia, no horário de saída do imóvel, que as 48 h contam. Antes contavam da última noite: um dia a menos.
-  const dia = saidaPeloFim(p.fim);
-  const hora = (p.checkoutBefore ?? "").trim();
-  // E1238 (ORDEM-DUET 1207, decisão 3; confirmada pelo coordenador em 27/11, ORDEM-DUET 1233): sem hora de saída, a
-  // janela conta das 23:59 do dia da saída (antes, das 00:00). A hora de saída das instruções é o E1240.
-  const base = instanteBRT(dia, HORA_ENTRADA.test(hora) ? hora : HORA_SAIDA_SEM_HORARIO);
+  // desse dia, na hora de saída, que as 48 h contam. Antes contavam da última noite: um dia a menos.
+  // E1238 (ORDENS-DUET 1207, 1233 e 1269): sem hora de saída, a janela conta das 23:59 do dia da saída (antes, das
+  // 00:00) — a mesma constante da entrada. A hora de saída das instruções é o E1240.
+  const base = ancoraConferencia("saida", { inicio: null, ...p });
   return base ? new Date(base.getTime() + JANELA_SAIDA_HORAS * 3600_000) : null;
 }
-
-/** E1238: a saída sem hora acaba no fim do dia da saída. */
-export const HORA_SAIDA_SEM_HORARIO = "23:59";
 
 /** O prazo da conferência do tipo pedido (entrada ou saída), pelas duas fontes únicas. */
 export function prazoConferencia(tipo: TipoConferencia, datas: EntradaDoContrato | null): Date | null {
@@ -79,13 +86,24 @@ export function prazoConferencia(tipo: TipoConferencia, datas: EntradaDoContrato
 }
 
 /**
- * E1238 (ORDEM-DUET 1231): o prazo de UMA janela. Com a conferência aberta, o prazo GRAVADO quando ela nasceu
- * (congelarJanelaDeConferencia); sem ela (ou nas de antes da 0369, sem prazo gravado), calcula pela mesma regra.
- * As `datas` trazem a hora das instruções de entrada (contratos_checkin.horario), nunca a coluna do anúncio.
+ * E1238 (ORDENS-DUET 1231 e 1269): o prazo de UMA janela. Com prazo_em gravado (congelado no momento da entrada),
+ * vale o gravado; sem ele, o cálculo vivo pela hora ACTUAL das instruções (contratos_checkin.horario), nunca a coluna
+ * do anúncio.
  */
 export function prazoDaJanela(tipo: TipoConferencia, datas: EntradaDoContrato | null, gravado?: string | null): Date | null {
   const g = gravado ? new Date(gravado) : null;
   if (g && !Number.isNaN(g.getTime())) return g;
+  return prazoConferencia(tipo, datas);
+}
+
+/**
+ * E1238 (ORDEM-DUET 1269): o prazo a CONGELAR agora — só quando ainda não há prazo gravado e agora já passou a âncora
+ * calculada com a hora vigente das instruções; antes disso (ou já gravado), null: o prazo acompanha a hora vigente.
+ */
+export function prazoACongelar(tipo: TipoConferencia, datas: EntradaDoContrato | null, gravado: string | null, agora: Date): Date | null {
+  if (gravado) return null;
+  const ancora = ancoraConferencia(tipo, datas);
+  if (!ancora || agora.getTime() < ancora.getTime()) return null;
   return prazoConferencia(tipo, datas);
 }
 

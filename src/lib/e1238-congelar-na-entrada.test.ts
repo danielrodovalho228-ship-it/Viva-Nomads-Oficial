@@ -83,7 +83,12 @@ test("D1. uma constante para as duas: HORA_SEM_HORARIO = 23:59; a entrada sem ho
   assert.equal(conf.prazoConferenciaEntrada({ inicio: "2026-12-01", checkinAfter: "  " })?.toISOString(), PRAZO_SEM_HORA, "hora em branco = sem hora");
   assert.equal(conf.prazoConferenciaEntrada({ inicio: "2026-12-01", checkinAfter: "14:00" })?.toISOString(), PRAZO_14H);
   assert.equal(conf.prazoConferenciaSaida({ fim: "2027-01-30", checkoutBefore: null })?.toISOString(), "2027-02-03T02:59:00.000Z", "a saída, pela mesma constante");
-  assert.match(ler("./conferencia.ts"), /HORA_ENTRADA\.test\(hora\) \? hora : HORA_SEM_HORARIO\)[\s\S]*HORA_ENTRADA\.test\(hora\) \? hora : HORA_SEM_HORARIO\)/, "entrada e saída leem a mesma constante");
+  const fonte = ler("./conferencia.ts");
+  const ancora = fonte.slice(fonte.indexOf("export function ancoraConferencia("), fonte.indexOf("export function prazoConferencia("));
+  assert.match(ancora, /HORA_ENTRADA\.test\(hora\) \? hora : HORA_SEM_HORARIO\)/, "a âncora lê a constante única");
+  assert.doesNotMatch(ancora, /"00:00"/, "nenhuma âncora conta da meia-noite");
+  assert.match(fonte, /prazoConferenciaEntrada[\s\S]*?ancoraConferencia\("entrada"/, "o prazo da entrada sai da âncora");
+  assert.match(fonte, /prazoConferenciaSaida[\s\S]*?ancoraConferencia\("saida"/, "o prazo da saída sai da âncora");
 });
 
 test("D2a. a âncora e o prazo a congelar: só depois da âncora, só sem prazo gravado", () => {
