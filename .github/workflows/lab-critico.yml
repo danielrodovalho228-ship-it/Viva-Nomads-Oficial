@@ -9,9 +9,7 @@ name: Lab crítico (fluxos críticos)
 # integrações simuladas, nada de segredo de produção). Para EXIGIR este check antes de mesclar, só o Daniel liga:
 # GitHub > Settings > Branches > regra da main > "Require status checks to pass" > marcar "lab-critico".
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -118,7 +116,7 @@ jobs:
         id: e2e
         # Limite próprio: é a folga que os testes já tinham (os 40 min antigos do job menos a preparação e a instalação).
         # O job cresceu para caber a instalação lenta; um teste travado não fica pendurado por mais tempo por isso.
-        timeout-minutes: 35
+        timeout-minutes: 70
         run: |
           # E1040: só `npx playwright …` corre na imagem oficial, com a rede do runner e como o utilizador do runner (os
           # resultados ficam no workspace). O resto do `npx` segue o do runner. As linhas de comando ficam iguais.
@@ -130,24 +128,13 @@ jobs:
               $(env | cut -d= -f1 | grep -E '^(NEXT_PUBLIC_|LAB_|TESTES_|INTEGRACOES_|SUPABASE_|PLAYWRIGHT_|CI$)' | sed 's/^/-e /') \
               mcr.microsoft.com/playwright:v1.61.1-noble npx playwright "$@"
           }
-          if [ -n "$BASE_SHA" ]; then
-            mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs --alterados-desde "$BASE_SHA")
-          else
-            mapfile -t SPECS < <(node scripts/lab/fluxos-criticos.mjs)
-          fi
-          echo "Specs do portão: ${SPECS[*]}"
-          # O retry fica para o relatório mostrar as duas tentativas; passar só no retry também reprova.
-          # E744 T3: os specs com a etiqueta @sensivel-carga (tests/laboratorio/sensiveis-a-carga.json) falham em paralelo e
-          # passam sozinhos. Aqui, como na rodada noturna, eles rodam à parte, com 1 worker; a exigência é a mesma nas duas
-          # corridas (1 nova tentativa, instável reprova) e qualquer uma vermelha reprova o portão.
+          # ENSAIO (nunca mergear): a perna do check-in da Estadia (t2208).
           set +e
-          npx playwright test "${SPECS[@]}" --grep-invert "@sensivel-carga" --reporter=list,json --workers=2 --retries=1 --fail-on-flaky-tests 2>&1 | tee tests/laboratorio/saida/e2e.txt
-          RESTO="${PIPESTATUS[0]}"
-          PLAYWRIGHT_JSON_OUTPUT_NAME=tests/laboratorio/saida/resultado-carga.json npx playwright test "${SPECS[@]}" --grep "@sensivel-carga" --reporter=list,json --workers=1 --retries=1 --fail-on-flaky-tests --pass-with-no-tests 2>&1 | tee tests/laboratorio/saida/e2e-carga.txt
-          CARGA="${PIPESTATUS[0]}"
+          npx playwright test tests/e2e/specs/t1802-0370-hora-de-saida-executada.spec.ts tests/e2e/specs/t1805-0369-conferencias-prazo-executada.spec.ts tests/e2e/specs/t1807-e1230-hora-da-entrada.spec.ts tests/e2e/specs/t83-checkin-garantido.spec.ts --project=chromium --retries=0 --workers=1 --project=chromium --retries=0 --workers=1 --reporter=list,json 2>&1 | tee tests/laboratorio/saida/e2e.txt
+          B="${PIPESTATUS[0]}"
           set -e
-          echo "resto dos specs: saída $RESTO · sensíveis à carga (1 worker): saída $CARGA"
-          [ "$RESTO" -eq 0 ] && [ "$CARGA" -eq 0 ] || exit 1
+          echo "ensaio: t2208 saída $B"
+          [ "$B" -eq 0 ] || exit 1
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: tests/laboratorio/saida/resultado.json
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
