@@ -50,15 +50,15 @@ export function ListaDocumentos({ documentos, recibos = [], anular = false }: { 
               <span className="min-w-0 text-ink">
                 {/* E1067 + E1233 (ORDENS-DUET 1194 e 1208): número · bloco · TOTAL · período; o texto do documento fica no PDF. */}
                 {textoLinhaRecibo(r)}
-                {r.anulado && <SeloAnulado motivo={r.anulado} />}
+                {r.anulada && <SeloAnulado motivo={r.motivoAnulacao} />}
               </span>
               {/* E1243: o pedido aberto à Central fica à vista (e não se pede outra vez) até o chamado ser resolvido. PROPOSTA DE TEXTO. */}
-              {anular && r.pedidoAnulacao && !r.anulado && (
+              {anular && r.pedidoAnulacao && !r.anulada && (
                 <span className="text-xs text-muted" data-testid="pedido-anulacao">
                   Anulação pedida à Central: chamado {r.pedidoAnulacao}, em análise.
                 </span>
               )}
-              {anular && !r.anulado && !r.pedidoAnulacao && <AnularRegistro pagamentoId={r.pagamentoId} confirmado />}
+              {anular && !r.anulada && !r.pedidoAnulacao && <AnularRegistro pagamentoId={r.pagamentoId} confirmado />}
               {r.documentoId ? (
                 <a href={`/api/documentos/${r.documentoId}`} className="inline-flex items-center gap-1 text-xs font-medium text-forest underline" data-testid="baixar-recibo">
                   <Download className="h-3.5 w-3.5" /> Baixar recibo (PDF)
@@ -73,7 +73,7 @@ export function ListaDocumentos({ documentos, recibos = [], anular = false }: { 
           <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <span className="min-w-0 text-ink">
               {d.rotulo} <span className="text-muted">· {d.numero} · {formatBRL(d.valor)}</span>
-              {d.anulado && <SeloAnulado motivo={d.anulado} />}
+              {d.anulada && <SeloAnulado motivo={d.motivoAnulacao} />}
               {d.periodoInicio && (
                 <span className="block text-xs text-muted">
                   {dataBR(d.periodoInicio)} a {dataBR(d.periodoFim)}
@@ -90,11 +90,14 @@ export function ListaDocumentos({ documentos, recibos = [], anular = false }: { 
   );
 }
 
-/** "Anulado: registro em duplicidade" — o documento existiu, o PDF continua acessível, mas não vale mais. */
-function SeloAnulado({ motivo }: { motivo: string }) {
+/**
+ * "Anulado: registro em duplicidade" — o documento existiu, o PDF continua acessível, mas não vale mais. E1250: aparece
+ * pela DECISÃO (a data); sem motivo, só "Anulado". O texto é o da função única (textoDoSeloAnulado).
+ */
+function SeloAnulado({ motivo }: { motivo: string | null }) {
   return (
     <span className="ml-2 rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-700" data-testid="selo-anulado">
-      Anulado: {motivo}
+      {textoDoSeloAnulado(motivo)}
     </span>
   );
 }

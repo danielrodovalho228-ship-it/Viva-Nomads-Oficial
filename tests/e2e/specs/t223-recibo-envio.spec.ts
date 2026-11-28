@@ -4,6 +4,8 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, blocoSemValorMensal, apagarContas, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1250 (ESPEC-E1250): o selo "Anulado" decide pela data; corre sem alteração.
+
   T223 — Complemento do recibo (coordenador, reteste do #872, 19/10), 390 e 1280 px. O laboratório sobe o Resend
   FALSO (scripts/lab/resend-falso.mjs, LAB_RESEND_URL): ele confere o e-mail como o Resend (remetente, destinatário,
   anexo com nome e conteúdo em base64) e devolve um id, ou recusa quando o teste programa.

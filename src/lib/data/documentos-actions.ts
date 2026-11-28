@@ -7,6 +7,7 @@ import { emitirTermoDevolucaoComRegistro } from "@/lib/fiscal/emitir";
 import { ROTULO_TIPO, type TipoDocumento } from "@/lib/fiscal/documento";
 import { regraDevolucao } from "@/lib/fiscal/devolucao";
 import { componentesDoPagamento, parteDaColuna } from "@/lib/pagamento-componentes";
+import { anulacaoDaLinha } from "@/lib/documentos-linha";
 
 /**
  * Documentos do contrato (recibos, comprovante e termo da caução) e a
@@ -28,8 +29,10 @@ export interface DocumentoView {
   periodoInicio: string | null;
   periodoFim: string | null;
   criadoEm: string;
-  /** Anulado (0083/0182): o documento existiu e o PDF continua acessível, mas não vale mais. */
-  anulado: string | null;
+  /** E1250: anulado (0083/0182) pela DATA — o documento existiu e o PDF continua acessível, mas não vale mais. */
+  anulada: boolean;
+  /** E1250: o motivo, só para o texto do selo (null = sem motivo: o selo diz "Anulado"). */
+  motivoAnulacao: string | null;
 }
 
 /** Pagamento confirmado pelo inquilino e o recibo dele (ou "em preparação" enquanto não sai). */
@@ -46,8 +49,10 @@ export interface ReciboView {
   parte: number;
   documentoId: string | null;
   numero: string | null;
-  /** Motivo da anulação do registro/documento (ex.: "registro em duplicidade"); null = válido. */
-  anulado: string | null;
+  /** E1250: anulado pela DATA, no documento ou no pagamento (anulacaoDaLinha). */
+  anulada: boolean;
+  /** E1250: o motivo do lado com data (ex.: "registro em duplicidade"), só para o texto do selo; null = sem motivo. */
+  motivoAnulacao: string | null;
   /** E1243: o número do chamado ABERTO que pede a anulação deste registro à Central (null = nenhum). */
   pedidoAnulacao?: string | null;
 }
@@ -93,6 +98,9 @@ async function pedidosDeAnulacaoAbertos(contratoIds: string[]): Promise<Map<stri
   return pedidos;
 }
 
+/** E1250: a decisão (pela data) e o motivo do selo, nos dois campos das linhas. */
+const anulacaoNaVista = (a: { anulada: boolean; motivo: string | null }) => ({ anulada: a.anulada, motivoAnulacao: a.motivo });
+
 export async function documentosDosContratos(
   contratoIds: string[],
 ): Promise<Record<string, { documentos: DocumentoView[]; recibos: ReciboView[]; acerto: AcertoView | null; caucaoConfirmada: number; falhou?: true }>> {
@@ -106,7 +114,7 @@ export async function documentosDosContratos(
     supabase.from("pagamentos_bloco").select("contrato_id, valor").in("contrato_id", ids).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true).is("anulado_em", null),
     supabase
       .from("pagamentos_bloco")
-      .select("id, contrato_id, tipo, parte, valor, encargos, data_pagamento, anulado_motivo, contrato_blocos(numero_bloco, meses, inicio, fim)")
+      .select("id, contrato_id, tipo, parte, valor, encargos, data_pagamento, anulado_em, anulado_motivo, contrato_blocos(numero_bloco, meses, inicio, fim)")
       .in("contrato_id", ids)
       .eq("confirmado_pelo_inquilino", true)
       .order("data_pagamento", { ascending: true }),
@@ -134,7 +142,12 @@ export async function documentosDosContratos(
       parte: parteDaColuna(pg.parte),
       documentoId: doc ? String(doc.id) : null,
       numero: doc ? String(doc.numero) : null,
-      anulado: ((doc?.anulado_motivo as string | null) ?? (pg.anulado_motivo as string | null)) || null,
+      ...anulacaoNaVista(
+        anulacaoDaLinha({
+          documento: doc ? { anuladoEm: doc.anulado_em as string | null, motivo: doc.anulado_motivo as string | null } : null,
+          pagamento: { anuladoEm: pg.anulado_em as string | null, motivo: pg.anulado_motivo as string | null },
+        }),
+      ),
     });
   }
   // E1243 (ORDENS-DUET 1213 e 1216): o pedido de anulação à Central continua visível enquanto o chamado está aberto.
@@ -152,7 +165,7 @@ export async function documentosDosContratos(
       periodoInicio: (d.periodo_inicio as string) ?? null,
       periodoFim: (d.periodo_fim as string) ?? null,
       criadoEm: d.criado_em as string,
-      anulado: (d.anulado_motivo as string | null) ?? null,
+      ...anulacaoNaVista(anulacaoDaLinha({ documento: { anuladoEm: d.anulado_em as string | null, motivo: d.anulado_motivo as string | null } })),
     });
   }
   for (const a of acertos ?? []) {

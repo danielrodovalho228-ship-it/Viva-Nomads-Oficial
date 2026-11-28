@@ -3,6 +3,8 @@ import { authFile } from "../fixtures/auth";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, liberarLimiteChamados, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1250 (ESPEC-E1250): o selo "Anulado" decide pela data; corre sem alteração.
+
   T1800 — E1229 (ORDENS-DUET 1143, 1160, 1162 e 1168): a anulação de registros pela tela, o caminho inteiro.
    1. o dono anula ANTES da confirmação do morador: na lista "aguardando a confirmação", "Anular registro" com o motivo;
       o registro fica anulado (com o motivo), a trilha do contrato ganha o "pagamento_anulado" (caminho "dono") e o
