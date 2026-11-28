@@ -92,8 +92,8 @@ test("4. a leitura dos chamados falha: o recibo continua lá, sem a linha (nunca
 test("5. a tela: o dono vê a linha do pedido (e não volta a pedir) enquanto o chamado está aberto", () => {
   const tela = readFileSync(new URL("../../components/documentos/documentos-contrato.tsx", import.meta.url), "utf8");
   assert.match(tela, /data-testid="pedido-anulacao"/);
-  assert.match(tela, /anular && r\.pedidoAnulacao && !r\.anulado/);
-  assert.match(tela, /anular && !r\.anulado && !r\.pedidoAnulacao && <AnularRegistro/);
+  assert.match(tela, /anular && r\.pedidoAnulacao && !r\.anulada/);
+  assert.match(tela, /anular && !r\.anulada && !r\.pedidoAnulacao && <AnularRegistro/);
 });
 
 // ── ORDEM-DUET-1226 (U2 e U2b): cada filtro da nota sozinho ─────────────────────────────────────────────────────────

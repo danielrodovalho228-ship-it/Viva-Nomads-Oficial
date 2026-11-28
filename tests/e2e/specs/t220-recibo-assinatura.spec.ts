@@ -4,6 +4,8 @@ import { hasAccount } from "../fixtures/accounts";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, lerSaida, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1250 (ESPEC-E1250): o selo "Anulado" decide pela data; corre sem alteração.
+
   T220 — Complemento da jornada de assinatura (reteste do Muse, 19/10, contrato VN-CT-11281A61), 390 e 1280 px:
    1. o dono registra o pagamento do bloco → o morador confirma → documentos_fiscais com 1 linha e enviado_em → o
       e-mail chega nas DUAS caixas de teste com o PDF e o link de verificação → "Baixar recibo (PDF)" dos dois lados;

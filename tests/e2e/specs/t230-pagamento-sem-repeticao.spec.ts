@@ -2,6 +2,8 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1250 (ESPEC-E1250): o selo "Anulado" decide pela data; corre sem alteração.
+
   T230 — Complemento do #884 (prova em produção, 19/10), 390 e 1280 px:
    1. clique duplo / dois envios do mesmo registro → 1 pagamento só; registrar a Caução de novo → "Este recebimento
       já foi registrado"; o bloco 2 aceita um pagamento de valor mensal e recusa o segundo (índice único, 0182);
