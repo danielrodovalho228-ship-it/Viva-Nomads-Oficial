@@ -144,6 +144,8 @@ export async function notify(params: {
   previaAviso?: string | null;
   /** E444: prioridade explícita quando o mesmo evento é só informativo (ex.: "contrato assinado pelas duas partes"). */
   prioridadeAviso?: PrioridadeAviso | null;
+  /** E1247: a linha de texto do aviso no sino (ex.: "Contrato VN-CT-…"). Passa pelo filtro de contato. */
+  textoAviso?: string | null;
 }): Promise<NotifyResult> {
   const base = TEMPLATES[params.event];
   const tpl = {
@@ -190,7 +192,7 @@ export async function notify(params: {
   const avisoPromise =
     // E550: só eventos com a central na matriz (o "só e-mail" não vira aviso), com o imóvel no título.
     params.userId && !params.interno && !EVENTOS_INTERNOS.has(params.event) && eventoTemCentral(params.event)
-      ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso, titulo: params.tituloAviso ?? mensagem?.titulo, texto: mensagem?.texto, imovelId: params.imovelId }))
+      ? comLimite(gravarAviso({ usuarioId: params.userId, evento: params.event, papel: params.papelAviso, url: params.pushUrl ?? base.path, refId: params.refId, prioridade: params.prioridadeAviso, titulo: params.tituloAviso ?? mensagem?.titulo, texto: params.textoAviso ?? mensagem?.texto, imovelId: params.imovelId }))
       : null;
 
   if (params.email) {

@@ -325,7 +325,7 @@ export function FaixaCritico({ pathname }: { pathname: string }) {
         className="min-h-11 shrink-0 rounded-full border border-red-700 bg-white px-4 text-sm font-semibold text-red-800 hover:bg-red-100"
         data-testid="faixa-critico-acao"
       >
-        {acaoDaFaixa(c.evento)}
+        {acaoDaFaixa(c.evento, c.titulo)}
       </button>
     </div>
   );

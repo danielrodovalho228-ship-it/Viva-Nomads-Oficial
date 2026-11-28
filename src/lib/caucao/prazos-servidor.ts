@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { CAUCAO_PRAZOS_ATIVA } from "@/lib/flags";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
+import { avisoDaRotina } from "@/lib/notifications/avisos-rotinas-contrato";
+import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { contratoTemCaucao, estadoDosPrazos, type ItemDesconto } from "./prazos";
 
@@ -67,17 +69,22 @@ export async function rodarCaucaoPrazos(admin: SupabaseClient, agora: Date = new
     }
     if (estado.avisarOsDois && !l.avisou_liberacao_em) {
       const texto = (n?: string) => `Olá${n ? " " + n : ""}, o prazo de 7 dias para o parecer sobre a caução de ${imovel} terminou sem desconto. A liberação integral foi registrada: a devolução é devida agora. O teto externo é ${estado.tetoExterno.split("-").reverse().join("/")} (30 dias do check-out).`;
-      if (donoP?.email) await notify({ event: "contract_status", email: donoP.email, name: donoP.full_name ?? undefined, userId: dono.owner_id, pushUrl: `/dashboard/contratos/${l.contrato_id}`, subject: ASSUNTOS.caucaoLiberacaoIntegral, body: texto, ctaLabel: "Ver o contrato" });
-      if (moradorP?.email) await notify({ event: "contract_status", email: moradorP.email, name: moradorP.full_name ?? undefined, userId: ctr?.tenant_id as string, pushUrl: HREF_ESTADIA(l.contrato_id), subject: ASSUNTOS.caucaoLiberacaoIntegral, body: texto, ctaLabel: "Ver o contrato" });
+      // E1247 (ORDEM-DUET 1233): o aviso do site com o título, a prioridade e o número da tabela das rotinas.
+      const avDono = avisoDaRotina("caucaoLiberacaoIntegral", "proprietario");
+      const avMorador = avisoDaRotina("caucaoLiberacaoIntegral", "inquilino");
+      if (donoP?.email) await notify({ event: "contract_status", email: donoP.email, name: donoP.full_name ?? undefined, userId: dono.owner_id, pushUrl: `/dashboard/contratos/${l.contrato_id}`, subject: ASSUNTOS.caucaoLiberacaoIntegral, body: texto, ctaLabel: "Ver o contrato", tituloAviso: avDono.titulo, prioridadeAviso: avDono.prioridade, textoAviso: `Contrato ${numeroPublicoContrato(l.contrato_id)}` });
+      if (moradorP?.email) await notify({ event: "contract_status", email: moradorP.email, name: moradorP.full_name ?? undefined, userId: ctr?.tenant_id as string, pushUrl: HREF_ESTADIA(l.contrato_id), subject: ASSUNTOS.caucaoLiberacaoIntegral, body: texto, ctaLabel: "Ver o contrato", tituloAviso: avMorador.titulo, prioridadeAviso: avMorador.prioridade, textoAviso: `Contrato ${numeroPublicoContrato(l.contrato_id)}` });
       await admin.from("caucao_prazos").update({ avisou_liberacao_em: agora.toISOString() }).eq("contrato_id", l.contrato_id);
     }
     if (estado.pendenciaDevolucao && !l.pendencia_em) {
       await admin.from("caucao_prazos").update({ pendencia_em: agora.toISOString(), atualizado_em: agora.toISOString() }).eq("contrato_id", l.contrato_id);
       resumo.pendencias++;
       if (donoP?.email) {
+        // E1247: o prazo venceu — crítico, e o botão leva ao contrato (onde a devolução se regista), não à lista.
+        const av = avisoDaRotina("caucaoDevolucaoAtraso", "proprietario");
         await notify({
-          event: "contract_status", email: donoP.email, name: donoP.full_name ?? undefined, userId: dono.owner_id, pushUrl: "/dashboard/contratos",
-          subject: ASSUNTOS.caucaoDevolucaoAtraso, ctaLabel: "Ver os contratos",
+          event: "contract_status", email: donoP.email, name: donoP.full_name ?? undefined, userId: dono.owner_id, pushUrl: `/dashboard/contratos/${l.contrato_id}`,
+          subject: ASSUNTOS.caucaoDevolucaoAtraso, ctaLabel: "Ver os contratos", tituloAviso: av.titulo, prioridadeAviso: av.prioridade, textoAviso: `Contrato ${numeroPublicoContrato(l.contrato_id)}`,
           body: (n) => `Olá${n ? " " + n : ""}, a devolução da caução de ${imovel} passou de 30 dias. Enquanto não for regularizada, você não consegue publicar anúncios novos.`,
         });
       }

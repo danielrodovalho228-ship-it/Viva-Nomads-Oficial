@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
+import { avisoDaRotina, type RotinaDoContrato } from "@/lib/notifications/avisos-rotinas-contrato";
 import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoEmDias } from "@/lib/contrato-periodo";
@@ -45,14 +46,17 @@ interface Linha {
 }
 
 /** `textoDono` diferente do `texto`: o dono recebe a versão dele (ex.: a candidatura voltou para a fila dele). */
-async function avisarOsDois(admin: SupabaseClient, l: Linha, assunto: string, texto: string, textoDono?: string) {
+async function avisarOsDois(admin: SupabaseClient, l: Linha, rotina: RotinaDoContrato, texto: string, textoDono?: string) {
   const imovel = l.properties?.title ?? "o imóvel";
-  for (const [uid, href, corpo] of [[l.tenant_id, `/dashboard/propostas/${l.id}`, texto], [l.owner_id, `/dashboard/propostas/${l.id}`, textoDono ?? texto]] as const) {
+  const assunto = ASSUNTOS[rotina];
+  for (const [uid, href, corpo, papel] of [[l.tenant_id, `/dashboard/propostas/${l.id}`, texto, "inquilino"], [l.owner_id, `/dashboard/propostas/${l.id}`, textoDono ?? texto, "proprietario"]] as const) {
+    // E1247 (ORDEM-DUET 1233): título, prioridade e botão da tabela das rotinas; o número é o da proposta (ainda sem contrato).
+    const av = avisoDaRotina(rotina, papel);
     const { data } = await admin.from("profiles").select("email, full_name").eq("id", uid).maybeSingle();
     const pf = data as { email?: string | null; full_name?: string | null } | null;
     if (!pf?.email) continue;
     await notify({
-      event: "contract_status", email: pf.email, name: pf.full_name ?? undefined, userId: uid, pushUrl: href, subject: assunto, ctaLabel: "Ver a proposta",
+      event: "contract_status", email: pf.email, name: pf.full_name ?? undefined, userId: uid, pushUrl: href, subject: assunto, ctaLabel: "Ver a proposta", tituloAviso: av.titulo, prioridadeAviso: av.prioridade, textoAviso: `Proposta ${l.numero}`,
       body: (n) => `Olá${n ? " " + n : ""}, ${corpo} (${imovel}, proposta ${l.numero}).`,
     });
   }
@@ -132,12 +136,12 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
         else await encerrarLead(admin, l);
         if (encerra) {
           resumo.encerradas++;
-          await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoEncerrada, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO);
+          await avisarOsDois(admin, l, "preAceitacaoEncerrada", TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO);
         } else {
           const janela = textoDoPrazo(prazo);
           const dono = textoDoPrazo(donoAte!);
           await avisarOsDois(
-            admin, l, ASSUNTOS.preAceitacaoExpirou,
+            admin, l, "preAceitacaoExpirou",
             `${TEXTO_JANELA_TERMINOU} ${TEXTO_SEM_PUNICAO} ${linhaDeContexto("tenant", "expirada", janela, dono)}`,
             `a pré-aceitação do morador terminou sem o contrato concluído e a candidatura voltou para você. O seu prazo para decidir termina em ${dono}. ${linhaDeContexto("owner", "expirada", janela, dono)} Você pode reabri-la.`,
           );
@@ -158,7 +162,7 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
       if (ok) {
         resumo.perderamAVez++;
         // Nada volta sozinho para a fila: quem perdeu a vez só volta se o dono reabrir à mão. O lead NÃO é mexido aqui.
-        await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoPerdeuVez, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO);
+        await avisarOsDois(admin, l, "preAceitacaoPerdeuVez", TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO);
       }
       continue;
     }
@@ -171,7 +175,7 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
       if (!marcou) continue;
       resumo.lembretes++;
       // E1196 (ORDEM-DUET-894): o dono lê "1 dia útil" no lembrete como na tela — a nota do calendário único vem a seguir (tela ≡ e-mail).
-      await avisarOsDois(admin, l, ASSUNTOS.preAceitacaoLembrete, `faltam ${lem.horasAntes} horas para concluir o contrato: o prazo termina em ${textoDoPrazo(prazo)}. ${TEXTO_REGRA_CORRIDA}`, `faltam ${lem.horasAntes} horas para a janela do morador terminar (${textoDoPrazo(prazo)}). ${linhaDeContexto("owner", "vigente", textoDoPrazo(prazo), null)} ${NOTA_DIAS_UTEIS}`);
+      await avisarOsDois(admin, l, "preAceitacaoLembrete", `faltam ${lem.horasAntes} horas para concluir o contrato: o prazo termina em ${textoDoPrazo(prazo)}. ${TEXTO_REGRA_CORRIDA}`, `faltam ${lem.horasAntes} horas para a janela do morador terminar (${textoDoPrazo(prazo)}). ${linhaDeContexto("owner", "vigente", textoDoPrazo(prazo), null)} ${NOTA_DIAS_UTEIS}`);
     }
   }
   return resumo;

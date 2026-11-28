@@ -4,6 +4,7 @@
   src/lib/notifications/avisos.ts e src/lib/data/avisos-actions.ts).
   Roda: node --test src/lib/notifications/sino.test.ts
 */
+import { botaoDaRotina, rotinaDoTitulo } from "./avisos-rotinas-contrato.ts";
 import { ACAO_RESOLVE, resumoDosAvisos, urlDoAviso, type PrioridadeAviso } from "./avisos.ts";
 import type { NotificationEvent } from "./eventos-email.ts";
 
@@ -175,6 +176,9 @@ export function resolvidosNaPratica<T extends AvisoTela>(avisos: readonly T[], s
       const pendente = a.ref_id ? pendentes.has(a.ref_id) : pendentes.size > 0;
       return pendente ? a : { ...a, resolvido_em: agoraISO };
     }
+    // E1247: o aviso de uma rotina do contrato (caução, parcela, pré-aceite) não é o de assinar — não se dá por resolvido
+    // por o contrato já estar assinado.
+    if (a.evento === "contract_status" && rotinaDoTitulo(a.titulo)) return a;
     const contrato = contratoDoAviso(a);
     if (!contrato) return a;
     const pendente =
@@ -247,7 +251,10 @@ export function resolucoesConferidasAGravar<T extends AvisoTela>(antes: readonly
 const ROTULO_ACAO = { assinou: "Assinar o contrato", respondeu: "Responder a proposta", confirmou: "Confirmar a visita" } as const;
 
 /** O texto do botão da faixa: a ação que resolve o evento. */
-export function acaoDaFaixa(evento: string): string {
+export function acaoDaFaixa(evento: string, titulo?: string | null): string {
+  // E1247 (ORDEM-DUET 1233): os avisos das rotinas que viajam com o evento do contrato levam ao lugar da ação deles.
+  const daRotina = evento === "contract_status" ? botaoDaRotina(titulo) : null;
+  if (daRotina) return daRotina;
   const acao = ACAO_RESOLVE[evento as NotificationEvent];
   return acao ? ROTULO_ACAO[acao] : "Resolver agora";
 }

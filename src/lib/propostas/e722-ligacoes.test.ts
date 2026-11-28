@@ -57,7 +57,7 @@ test("regra de corrida: quem perde a vez recebe mensagem clara, nada volta sozin
   const corrida = srv.slice(srv.indexOf("if (await perdeuACorrida(admin, l))"), srv.indexOf("const inicio = new Date(prazo.getTime()"));
   assert.ok(corrida.length > 0);
   assert.doesNotMatch(corrida, /from\("leads"\)|devolverLead/); // o lead não é mexido na corrida
-  assert.match(srv, /ASSUNTOS\.preAceitacaoPerdeuVez, TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO/);
+  assert.match(srv, /"preAceitacaoPerdeuVez", TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO/);
   assert.match(srv, /if \(quem !== "owner"\) return \{ ok: false/);
   assert.match(srv, /startsWith\("Não foi possível"\)/);
   assert.match(ler("src/lib/data/propostas-actions.ts"), /reabrirNoBanco\(s\.admin, p\.id, p\.owner_id === s\.user\.id \? "owner" : "tenant"\)/);
@@ -66,7 +66,7 @@ test("regra de corrida: quem perde a vez recebe mensagem clara, nada volta sozin
 test("3ª expiração encerra a candidatura e avisa o morador; relógio do dono recomeça a cada volta", () => {
   const srv = ler("src/lib/propostas/pre-aceitacao-servidor.ts");
   assert.match(srv, /encerraNaExpiracao\(/);
-  assert.match(srv, /ASSUNTOS\.preAceitacaoEncerrada, TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO/);
+  assert.match(srv, /"preAceitacaoEncerrada", TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO/);
   assert.match(srv, /pre_aceitacao_encerrada_em/);
   assert.match(srv, /prazoDoDono\(agora/);
   assert.match(srv, /pre_aceitacao_dono_ate: null/); // reabrir limpa o relógio do dono
