@@ -61,8 +61,6 @@ end $$;
 -- pedidos de comprovante sem anexo e sem decisão (o lembrete do anexo).
 create index if not exists caucao_acertos_espera_aviso_idx on public.caucao_acertos (aviso_em)
   where status = 'aguardando_confirmacao' and aviso_em is not null;
-create index if not exists caucao_acertos_comprovante_pendente_idx on public.caucao_acertos (comprovante_pedido_em)
-  where comprovante_pedido_em is not null and comprovante_anexado_em is null and central_decisao is null;
 
 insert into supabase_migrations.schema_migrations (version, name)
 select '20261128000371', '0371_caucao_acertos_maquina_e1248'
