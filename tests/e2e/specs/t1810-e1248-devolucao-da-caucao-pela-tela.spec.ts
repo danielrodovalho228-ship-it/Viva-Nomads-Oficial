@@ -85,7 +85,9 @@ test.describe("T1810 — E1248: a devolução da caução pela tela, do registro
     await caixa.getByRole("button", { name: "Registrar devolução da caução" }).click({ timeout: 20_000 });
     await caixa.getByRole("button", { name: "Registrar devolução", exact: true }).click();
     await expect.poll(async () => (await acerto())?.status, { timeout: 20_000, message: "a devolução grava" }).toBe("aguardando_confirmacao");
-    expect((await acerto())?.aviso_em, "a hora do aviso").toBeTruthy();
+    // A ação grava o acerto (o status) antes de enviar o aviso; a hora do aviso só se grava depois do envio, com a prova
+    // dele. Espera-se por ela, em vez de a ler uma vez no intervalo entre as duas escritas.
+    await expect.poll(async () => (await acerto())?.aviso_em ?? null, { timeout: 20_000, message: "a hora do aviso" }).not.toBeNull();
     await expect
       .poll(async () => ((await adm().from("avisos").select("id").eq("usuario_id", ids.inq!).eq("evento", "caucao_devolucao_registrada").eq("ref_id", ids.contrato!)).data ?? []).length, { timeout: 20_000, message: "o aviso ao morador" })
       .toBe(1);
