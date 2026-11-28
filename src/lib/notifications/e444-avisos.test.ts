@@ -73,7 +73,10 @@ test("notify grava o aviso do mesmo evento, com o título do catálogo; avisos i
   assert.match(idx, /params\.userId && !params\.interno && !EVENTOS_INTERNOS\.has\(params\.event\) && eventoTemCentral\(params\.event\)\s*\? comLimite\(gravarAviso\(/);
   const srv = ler("./avisos-servidor.ts");
   assert.match(srv, /let titulo = p\.titulo \? tituloDoAviso\(guardContactInfo\(p\.titulo\)\.text\) : tituloDoAviso\(base\.subject\);/);
-  assert.match(srv, /prioridade: p\.prioridade \?\? prioridadeDoAviso\(p\.evento, p\.papel\)/);
+  // E1251 (ESPEC-E1251 v3; asserção alterada): a prioridade calcula-se uma vez (a da chamada; na falta, a da tabela) e
+  // entra na linha nova e na renovação.
+  assert.match(srv, /const prioridade = p\.prioridade \?\? prioridadeDoAviso\(p\.evento, p\.papel\);/);
+  assert.match(srv, /\n\s*prioridade,\n\s*titulo,/);
   assert.doesNotMatch(srv, /p\.subject|detailsText|\bemail\s*:|telefone|phone/);
 });
 

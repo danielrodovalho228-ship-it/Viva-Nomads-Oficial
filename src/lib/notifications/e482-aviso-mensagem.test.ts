@@ -33,7 +33,8 @@ test("o notify monta o aviso de mensagem com remetente e prévia; o gravarAviso 
   const gravar = ler("lib/notifications/avisos-servidor.ts");
   assert.match(gravar, /if \(p\.imovelId && UUID_RE\.test\(p\.imovelId\)\) \{/);
   assert.match(gravar, /const texto = p\.texto \? textoDoAviso\(guardContactInfo\(p\.texto\)\.text\) : null;/);
-  assert.match(gravar, /update\(\{ criado_em: new Date\(\)\.toISOString\(\), titulo, url, texto \}\)/);
+  // E1251 (asserção alterada): a renovação leva também a prioridade.
+  assert.match(gravar, /update\(\{ criado_em: new Date\(\)\.toISOString\(\), titulo, url, texto, prioridade \}\)/);
 });
 
 test("as duas mensagens novas (conversa e programada) mandam a prévia e o imóvel", () => {

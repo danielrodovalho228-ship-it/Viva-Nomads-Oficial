@@ -36,7 +36,7 @@ test("duplicata: mesmo evento + mesmo objeto (ou mesmo título, sem objeto) é o
 test("servidor: renova o pendente em vez de inserir outro; notify só grava com a central e passa o imóvel", () => {
   const s = ler("./avisos-servidor.ts");
   assert.match(s, /\.is\("lido_em", null\)\.is\("resolvido_em", null\)/);
-  assert.match(s, /if \(jaExiste\?\.id\) \{[\s\S]{0,200}update\(\{ criado_em: new Date\(\)\.toISOString\(\), titulo, url, texto \}\)/); // E482: + texto
+  assert.match(s, /if \(jaExiste\?\.id\) \{[\s\S]{0,200}update\(\{ criado_em: new Date\(\)\.toISOString\(\), titulo, url, texto, prioridade \}\)/); // E482: + texto; E1251 (asserção alterada): + prioridade
   assert.match(s, /tituloComImovel\(titulo, guardContactInfo\(nome\)\.text\)/);
   const n = ler("./index.ts");
   assert.match(n, /&& eventoTemCentral\(params\.event\)/);

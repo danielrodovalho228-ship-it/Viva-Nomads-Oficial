@@ -239,12 +239,14 @@ export function resumoSemVisitaVencida<T extends AvisoTela>(
 /**
  * E1128 + E1242 (a rede): os avisos que a conferência acabou de dar por resolvidos e que ficam gravados no banco, para
  * todas as telas concordarem. A visita de avaliação, como no E1128; o de assinar e o do aditivo SÓ com referência
- * (ORDEM-1224): sem ela, o aviso pode ser de outra rotina com o mesmo evento, e a rede não o resolve.
+ * (ORDEM-1224): sem ela, o aviso pode ser de outra rotina com o mesmo evento, e a rede não o resolve. E1251 (ESPEC-E1251
+ * v3, 2.1 B): o pedido de visita que deixou de esperar sem o dono responder, também SÓ com referência (o antigo sem ela
+ * sai da faixa como hoje, e não é gravado).
  */
 export function resolucoesConferidasAGravar<T extends AvisoTela>(antes: readonly T[], conferidos: readonly T[]): string[] {
   const jaResolvido = new Map(antes.map((a) => [a.id, a.resolvido_em]));
   return conferidos
-    .filter((a) => a.resolvido_em && !jaResolvido.get(a.id) && (ehAvisoDeVisitaDeAvaliacao(a.evento) || (ehConferidoPeloContrato(a.evento) && !!a.ref_id)))
+    .filter((a) => a.resolvido_em && !jaResolvido.get(a.id) && (ehAvisoDeVisitaDeAvaliacao(a.evento) || ((ehConferidoPeloContrato(a.evento) || a.evento === "visita_pedida") && !!a.ref_id)))
     .map((a) => a.id);
 }
 

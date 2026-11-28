@@ -155,7 +155,7 @@ export function linhaDaVersao(propostaId: string, versao: number, autor: Autor, 
 
 /**
  * Validade vencida → "Expirada". Roda na leitura (lista e detalhe) e na rotina diária de automações; filtra pelas
- * propostas de uma pessoa quando `userId` vem. Devolve quantas expiraram.
+ * propostas de uma pessoa quando `userId` vem. Devolve quantas expiraram. E1251: resolve os avisos das que expiraram.
  */
 export async function expirarVencidas(admin: SupabaseClient, userId?: string): Promise<number> {
   let q = admin
@@ -166,7 +166,20 @@ export async function expirarVencidas(admin: SupabaseClient, userId?: string): P
   if (userId) q = q.or(`owner_id.eq.${userId},tenant_id.eq.${userId}`);
   const { data, error } = await q.select("id");
   if (error) return 0;
-  return (data ?? []).length;
+  const ids = ((data ?? []) as { id: string }[]).map((p) => p.id);
+  // E1251 (ESPEC-E1251 v3, 2.1 A; ORDEM-DUET 1267): a proposta que vence sem resposta resolve os avisos dela — o
+  // "proposta recebida" e o "proposta a vencer", de qualquer das duas partes. Sem isto, o crítico ficava aceso para
+  // sempre (resolve quando a ação é feita ou quando o evento perde o sentido). Best-effort: a expiração não depende dele.
+  if (ids.length) {
+    const { error: eAvisos } = await admin
+      .from("avisos")
+      .update({ resolvido_em: new Date().toISOString() })
+      .in("ref_id", ids)
+      .in("evento", ["proposta_recebida", "proposta_vencendo"])
+      .is("resolvido_em", null);
+    if (eAvisos) console.error("[avisos] a expiração não resolveu:", eAvisos.code, eAvisos.message);
+  }
+  return ids.length;
 }
 
 export interface PropostaAcordada {
