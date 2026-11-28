@@ -1078,3 +1078,18 @@ test("1361 (Z40). o chamado aberto pela rotina não toma o lugar do que a ação
   assert.equal(acerto(id).chamado_id, daAcao, "fica o da ação");
   assert.equal(db.banco.chamado_mensagens.filter((n) => n.autor === "sistema" && n.interno === true && String(n.corpo).startsWith("[devolucao]")).length, 0, "nenhuma nota de acerto no chamado que chegou tarde");
 });
+
+test("Lab da 7bddfdef0. a prova pelo sino não depende do relógio do banco: com o banco atrasado, o aviso gravado prova o envio", async () => {
+  db.relogio.atrasoMs = 5_000;
+  g.__e1248SoSino = true;
+  const r = await registrar();
+  assert.equal(avisos("caucao_devolucao_registrada", MORADOR).length, 1, "o aviso foi gravado (com a hora do banco)");
+  assert.ok(acerto(r.id!).aviso_em, "o aviso no sino prova o envio, qualquer que seja o relógio do banco");
+});
+
+test("Lab da 7bddfdef0. um aviso antigo, por resolver, não é prova de um envio novo que falhou", async () => {
+  db.banco.avisos.push({ id: "antigo", usuario_id: MORADOR, evento: "caucao_devolucao_registrada", ref_id: C, prioridade: "normal", titulo: "x", lido_em: null, resolvido_em: null, criado_em: new Date(Date.now() + 60_000).toISOString() });
+  g.__e1248FalhaNotify = true;
+  const r = await registrar();
+  assert.equal(acerto(r.id!).aviso_em ?? null, null, "o aviso de antes não conta");
+});
