@@ -140,3 +140,29 @@ export function horaDeEntradaBloqueada(p: {
   const ancora = ancoraConferencia("entrada", datasDaJanela(p.blocos, atual || null));
   return !!ancora && p.agora.getTime() >= ancora.getTime();
 }
+
+/** E1238 (ORDEM-DUET 1284, palavras do coordenador): a hora nova que já passou. */
+export const MSG_HORA_DE_ENTRADA_NO_PASSADO = "Esse horário de entrada já passou; informe um horário a partir de agora.";
+
+/**
+ * E1238 (ORDEM-DUET 1284) — a regra da âncora é UMA SÓ: "Nenhuma edição de horário pode pôr a âncora no passado. O
+ * servidor só aceita uma hora nova se a âncora que ela produz for igual ou posterior a agora." Devolve a recusa, ou null:
+ *  1. a mesma hora não é mudança → null;
+ *  2. a âncora vigente já passou (a entrada aconteceu) → MSG_HORA_DE_ENTRADA_BLOQUEADA;
+ *  3. a âncora que a hora nova produz fica antes de agora → MSG_HORA_DE_ENTRADA_NO_PASSADO;
+ *  4. senão (hora nova no futuro, ou igual a agora) → null, e o prazo acompanha.
+ * (A hora de saída, quando existir — E1240 —, segue a mesma regra com a âncora da saída.)
+ */
+export function recusaDaHoraDeEntrada(p: {
+  blocos: { inicio: string | null; fim: string | null; status?: string | null }[];
+  horaAtual: string | null;
+  horaNova: string | null;
+  agora: Date;
+}): string | null {
+  const nova = (p.horaNova ?? "").trim();
+  if ((p.horaAtual ?? "").trim() === nova) return null;
+  if (horaDeEntradaBloqueada(p)) return MSG_HORA_DE_ENTRADA_BLOQUEADA;
+  const ancoraNova = ancoraConferencia("entrada", datasDaJanela(p.blocos, nova || null));
+  if (ancoraNova && ancoraNova.getTime() < p.agora.getTime()) return MSG_HORA_DE_ENTRADA_NO_PASSADO;
+  return null;
+}

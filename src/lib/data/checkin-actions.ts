@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, HORA } from "@/lib/limites";
 import { inquilinoVeInstrucoes, podeEditarInstrucoes, validarInstrucoes, type InstrucoesEntrada } from "@/lib/checkin";
-import { horaDeEntradaBloqueada, MSG_HORA_DE_ENTRADA_BLOQUEADA } from "@/lib/data/janela-conferencia";
+import { recusaDaHoraDeEntrada } from "@/lib/data/janela-conferencia";
 
 /*
   Check-in garantido (ordem 404cd213, item 2). Leitura e escrita pelo servidor, DEPOIS de conferir
@@ -64,11 +64,11 @@ export async function salvarInstrucoesEntrada(input: { contratoId: string; horar
   if (!podeEditarInstrucoes({ status: String(c.status), papel })) return { ok: false, error: "Só o proprietário edita as instruções, com o contrato ativo." };
   const v = validarInstrucoes(input);
   if (!v.ok) return { ok: false, error: v.erro };
-  // E1238 (ORDEM-DUET 1276): depois da âncora de entrada vigente, a hora não muda mais (o prazo da conferência conta dela).
+  // E1238 (ORDENS-DUET 1276 e 1284): nenhuma hora nova põe a âncora de entrada no passado — depois da âncora vigente a
+  // hora não muda mais, e antes dela só se aceita uma hora cuja âncora seja igual ou posterior a agora.
   const blocos = (c.contrato_blocos ?? []) as { inicio: string | null; fim: string | null; status: string | null }[];
-  if (horaDeEntradaBloqueada({ blocos, horaAtual: (k?.horario as string | null) ?? null, horaNova: v.dados.horario, agora: new Date() })) {
-    return { ok: false, error: MSG_HORA_DE_ENTRADA_BLOQUEADA };
-  }
+  const recusaDaHora = recusaDaHoraDeEntrada({ blocos, horaAtual: (k?.horario as string | null) ?? null, horaNova: v.dados.horario, agora: new Date() });
+  if (recusaDaHora) return { ok: false, error: recusaDaHora };
   if (!(await consumirLimite(`checkin-instrucoes:${uid}`, 30, HORA))) return { ok: false, error: "Muitas alterações em pouco tempo. Tente de novo em instantes." };
   const { error } = await admin
     .from("contratos_checkin")
