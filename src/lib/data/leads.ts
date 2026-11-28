@@ -7,7 +7,8 @@ import { dataBR } from "@/lib/utils";
 import { dadosDoImovelDaCandidatura } from "@/lib/data/candidatura-email";
 import { decisaoDaCandidatura, periodoDaCandidatura } from "@/lib/notifications/dados-candidatura";
 import { envioDaCandidatura } from "@/lib/candidaturas-envio";
-import { SAMPLE_LEADS, type Lead, type Light } from "./lead-types";
+import type { Lead, Light } from "./lead-types";
+import { SAMPLE_LEADS } from "./lead-exemplos";
 import { cartaoCandidato } from "@/lib/perfil/perfil-publico";
 import { sinaisPorQueParaDono, type PorQueNaCidade } from "@/lib/perfil/por-que-na-cidade";
 import { linkedinConectados } from "@/lib/linkedin/servidor";
@@ -24,7 +25,8 @@ import { temDocumento } from "@/lib/data/documento-servidor";
 import { LINK_DOCUMENTO, MSG_DOCUMENTO } from "@/lib/documento-pessoa";
 
 // Re-exporta os utilitários puros para compatibilidade com importações server-side.
-export { SAMPLE_LEADS, LIGHT_SHORT, leadScore, leadSummary } from "./lead-types";
+export { LIGHT_SHORT, leadScore, leadSummary } from "./lead-types";
+export { SAMPLE_LEADS } from "./lead-exemplos";
 export type { Lead, Light } from "./lead-types";
 
 interface LeadRow {
