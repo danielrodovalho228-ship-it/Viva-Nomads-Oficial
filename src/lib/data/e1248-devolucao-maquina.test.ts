@@ -161,7 +161,16 @@ async function contestar(id: string, motivo = "Não recebi o valor.") {
   como(MORADOR);
   return docs.responderDevolucaoCaucao(id, "contestar", motivo);
 }
-const PDF = () => {
+/** Um PDF de verdade (uma página), que a marca da leitura consegue abrir. */
+const { PDFDocument } = await import("pdf-lib");
+const PDF_REAL = await (async () => {
+  const d = await PDFDocument.create();
+  d.addPage([200, 200]);
+  return d.save();
+})();
+const PDF = () => PDF_REAL.slice();
+/** Só o cabeçalho "%PDF" e espaços: passa pelo tipo, mas nenhum leitor o abre. */
+const PDF_QUE_NAO_ABRE = () => {
   const corpo = new Uint8Array(2048).fill(0x20);
   corpo.set([0x25, 0x50, 0x44, 0x46], 0);
   corpo.set(new TextEncoder().encode("%%EOF"), 2040);
@@ -424,6 +433,16 @@ test("o anexo: só o dono do contrato; um arquivo que não é PDF nem imagem é 
   assert.equal((await anexar(formulario(id, new TextEncoder().encode("texto qualquer, não é um arquivo válido"), "a.txt"))).ok, false);
   assert.equal(acerto(id).comprovante_path ?? null, null);
   assert.equal(db.arquivos.size, 0);
+});
+
+test("M27. um PDF que nenhum leitor abre é recusado: a prova guardada tem de se poder ler", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(2) });
+  como(DONO);
+  const r = await anexar(formulario(id, PDF_QUE_NAO_ABRE()));
+  assert.equal(r.ok, false);
+  assert.match(String(r.error), /PDF/);
+  assert.equal(acerto(id).comprovante_path ?? null, null);
+  assert.equal(db.arquivos.size, 0, "nada vai ao bucket");
 });
 
 test("M30. o dono anexa depois do pedido: o prazo da decisão conta da hora do anexo; o pedido e o lembrete dele saem", async () => {
