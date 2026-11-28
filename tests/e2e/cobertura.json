@@ -3468,6 +3468,12 @@
         "t49-seguranca-publica"
       ]
     },
+    "/api/cron/devolucao-caucao": {
+      "personas": [
+        "sistema"
+      ],
+      "specs": []
+    },
     "/api/cron/pre-aceitacao": {
       "personas": [
         "sistema"
