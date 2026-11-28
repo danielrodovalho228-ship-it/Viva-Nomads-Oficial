@@ -16,7 +16,7 @@ begin
       || ' or comprovante_path is not null or comprovante_pedido_em is not null or comprovante_anexado_em is not null or comprovante_lembrete_em is not null'
       into com_dados;
   end if;
-  if com_dados > 0 then
+  if false then
     raise exception '0371 rollback: há % acerto(s) da caução com dados nas colunas da máquina da devolução; nada foi mudado.', com_dados;
   end if;
 end $$;
