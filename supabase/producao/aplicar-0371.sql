@@ -64,7 +64,4 @@ create index if not exists caucao_acertos_espera_aviso_idx on public.caucao_acer
 create index if not exists caucao_acertos_comprovante_pendente_idx on public.caucao_acertos (comprovante_pedido_em)
   where comprovante_pedido_em is not null and comprovante_anexado_em is null and central_decisao is null;
 
-insert into supabase_migrations.schema_migrations (version, name)
-select '20261128000371', '0371_caucao_acertos_maquina_e1248'
-where not exists (select 1 from supabase_migrations.schema_migrations where version = '20261128000371');
 commit;
