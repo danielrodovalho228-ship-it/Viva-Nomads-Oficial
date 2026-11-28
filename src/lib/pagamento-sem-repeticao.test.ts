@@ -81,7 +81,8 @@ test("item 3: limpeza só de contas de teste, anula (nunca apaga) e o documento 
   const emitir = ler("./fiscal/emitir.ts");
   assert.match(emitir, /if \(pg\.anulado_em\) return \{ ok: false, motivo: "pagamento anulado" \}/);
   const lista = ler("../components/documentos/documentos-contrato.tsx");
-  assert.match(lista, /Anulado: \{motivo\}/);
+  // E1250 (ESPEC-E1250): o texto do selo vem da função única (textoDoSeloAnulado: "Anulado: {motivo}", ou "Anulado").
+  assert.match(lista, /\{textoDoSeloAnulado\(motivo\)\}/);
   assert.match(lista, /href=\{`\/api\/documentos\/\$\{d\.id\}`\}/, "o PDF continua acessível");
 });
 

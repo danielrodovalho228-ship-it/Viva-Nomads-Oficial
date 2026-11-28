@@ -2,6 +2,8 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, liberarLimiteChamados, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1250 (ESPEC-E1250): o selo "Anulado" decide pela data; corre sem alteração.
+
   T1801 — E1243 (ORDENS-DUET 1213 e 1216): o pedido de anulação à Central, visto pelo dono que o abriu.
    1. (o ÁRBITRO do 404) o dono é uma CONTA DE TESTE: o chamado do pedido nasce com simulacao = true (gatilho da 0135);
       o link do e-mail do dono (/ajuda?chamado=VN-…) abre o chamado para quem o abriu.
