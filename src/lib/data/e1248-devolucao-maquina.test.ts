@@ -1069,14 +1069,23 @@ test("1361 (Z39). o reenvio não grava por cima da hora gravada por outra passag
   assert.equal(acerto(id).aviso_em, "2026-11-28T10:00:00.000Z", "a hora da outra passagem fica");
 });
 
-test("1361 (Z40). o chamado aberto pela rotina não toma o lugar do que a ação ligou entre a leitura e a escrita", async () => {
+test("1361 (Z40) e 1363-3. o chamado aberto pela rotina não toma o lugar do que a ação ligou; o que chegou tarde é fechado, com a nota", async () => {
   const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: haHoras(30), contestacao_motivo: "Não recebi o valor." });
   const daAcao = "22222222-2222-4222-8222-222222222222";
-  // A rotina insere o seu chamado; antes de o ligar, a ação liga o dela.
+  db.banco.chamados.push({ id: daAcao, numero_publico: "CH-2026-000777", contexto_tipo: "contrato", contexto_id: C, simulacao: false, status: "aberto", prioridade: "p2" });
+  // A rotina insere o seu chamado e a nota; antes de o ligar, a ação liga o dela.
   db.antesDe("caucao_acertos", "update", (b) => Object.assign(b.caucao_acertos.find((a) => a.id === id)!, { chamado_id: daAcao }));
   await rodar(new Date());
   assert.equal(acerto(id).chamado_id, daAcao, "fica o da ação");
-  assert.equal(db.banco.chamado_mensagens.filter((n) => n.autor === "sistema" && n.interno === true && String(n.corpo).startsWith("[devolucao]")).length, 0, "nenhuma nota de acerto no chamado que chegou tarde");
+  const tarde = db.banco.chamados.find((c) => c.id !== daAcao)!;
+  assert.ok(tarde, "a rotina abriu o seu");
+  assert.equal(tarde.status, "encerrado", "o que chegou tarde é fechado");
+  const notas = db.banco.chamado_mensagens.filter((n) => n.chamado_id === tarde.id && n.autor === "sistema" && n.interno === true);
+  assert.ok(notas.some((n) => n.corpo === "aberto em duplicado; a contestação está no chamado CH-2026-000777"), "a nota interna diz onde está a contestação");
+  assert.equal(g.__e1248Respostas.filter((r) => r.id === tarde.id).length, 0, "ninguém responde ao morador por ele");
+  como(EQUIPE);
+  const r = await decidir({ chamadoId: String(tarde.id), decisao: "confirmada" });
+  assert.equal(r.ok, false, "o chamado que chegou tarde nunca decide");
 });
 
 test("Lab da 7bddfdef0. a prova pelo sino não depende do relógio do banco: com o banco atrasado, o aviso gravado prova o envio", async () => {
@@ -1092,4 +1101,57 @@ test("Lab da 7bddfdef0. um aviso antigo, por resolver, não é prova de um envio
   g.__e1248FalhaNotify = true;
   const r = await registrar();
   assert.equal(acerto(r.id!).aviso_em ?? null, null, "o aviso de antes não conta");
+});
+
+// ——————————————————————— ORDEM-DUET 1363: o ponto (B) — a nota antes da ligação ———————————————————————
+
+test("1363-1. a nota que falha deixa o acerto sem ligação e a linha da Central à vista; a hora seguinte liga", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(30) });
+  db.falhas.add("chamado_mensagens:insert");
+  const res = await contestar(id, "Não recebi o valor.");
+  assert.equal(res.ok, true, "a contestação fica gravada");
+  assert.equal(acerto(id).status, "desconto_contestado");
+  assert.equal(acerto(id).chamado_id ?? null, null, "sem a nota, nada se liga");
+  assert.deepEqual((await servidor2.contestacoesSemChamado!(db.admin)).map((x) => x.id), [id], "a linha da Central continua à vista");
+  db.falhas.delete("chamado_mensagens:insert");
+  await rodar(new Date(Date.now() + H));
+  const chId = acerto(id).chamado_id as string | null;
+  assert.ok(chId, "a hora seguinte liga");
+  assert.ok(db.banco.chamado_mensagens.some((n) => n.chamado_id === chId && n.autor === "sistema" && n.corpo === `[devolucao] acerto=${id}`), "com a nota");
+  assert.deepEqual(await servidor2.contestacoesSemChamado!(db.admin), [], "a linha sai");
+});
+
+test("1363-1. na rotina, a nota que falha também não liga; a hora seguinte tenta de novo", async () => {
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: haHoras(30), contestacao_motivo: "Não recebi o valor." });
+  // A rotina grava duas mensagens do chamado (a do morador e a do prazo) e depois a nota: falha só a nota.
+  let n = 0;
+  const original = db.admin.from;
+  db.admin.from = ((t: string) => {
+    const q = original(t) as Record<string, unknown>;
+    if (t !== "chamado_mensagens") return q;
+    const inserir = q.insert as (v: unknown) => unknown;
+    q.insert = (v: unknown) => {
+      const ehNota = !Array.isArray(v) && String((v as { corpo?: string }).corpo ?? "").startsWith("[devolucao]");
+      if (ehNota && n++ === 0) return { then: (ok: (x: unknown) => unknown) => Promise.resolve({ data: null, error: { code: "XX000", message: "falha forçada" } }).then(ok) };
+      return inserir(v);
+    };
+    return q;
+  }) as typeof db.admin.from;
+  await rodar(new Date());
+  assert.equal(acerto(id).chamado_id ?? null, null, "sem a nota, nada se liga");
+  await rodar(new Date(Date.now() + H));
+  assert.ok(acerto(id).chamado_id, "a hora seguinte liga");
+  db.admin.from = original;
+});
+
+test("1363-2. a decisão exige acerto.chamado_id = chamado.id: um chamado com a nota de um acerto ligado a outro chamado é recusado", async () => {
+  const { id, chamadoId } = await disputa();
+  const outro = globalThis.crypto.randomUUID();
+  db.banco.chamados.push({ id: outro, numero_publico: "CH-2026-000888", contexto_tipo: "contrato", contexto_id: C, simulacao: false, status: "aberto", prioridade: "p2" });
+  db.banco.chamado_mensagens.push({ id: "nota-outro", chamado_id: outro, autor: "sistema", interno: true, corpo: `[devolucao] acerto=${id}`, criado_em: new Date().toISOString() });
+  const r = await decidir({ chamadoId: outro, decisao: "confirmada" });
+  assert.equal(r.ok, false);
+  assert.match(String(r.error), /não é o da contestação/);
+  assert.equal(acerto(id).central_decisao ?? null, null);
+  assert.equal((await decidir({ chamadoId, decisao: "confirmada" })).ok, true, "pelo chamado ligado, decide");
 });
