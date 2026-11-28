@@ -42,6 +42,8 @@ const MSG_SEM_LEITURA = "Não foi possível ler a devolução. Tente de novo em 
 const MSG_SO_O_DONO = "Só o proprietário do imóvel anexa o comprovante.";
 /** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_JA_DECIDIDA = "A equipe já decidiu esta contestação.";
+/** PROPOSTA DE TEXTO (ORDEM-DUET 1363): a decisão a partir de um chamado que não é o ligado ao acerto. */
+const MSG_OUTRO_CHAMADO = "Este chamado não é o da contestação desta devolução: decida no chamado ligado a ela.";
 /** PROPOSTA DE TEXTO (ORDEM-DUET 1361, D19): o anexo num acerto já confirmado. */
 const MSG_DEVOLUCAO_ENCERRADA = "Esta devolução já está encerrada: o comprovante não pode ser anexado.";
 /** Texto aprovado (ORDEM-DUET 1359) */
@@ -174,6 +176,8 @@ export async function decidirDevolucaoPelaCentral(input: { chamadoId: string; de
   const { acerto: a } = await lerAcerto(admin, acertoId);
   // O chamado tem de ser do contrato do acerto: um chamado sem contrato, ou de outro, não decide nada.
   if (!a || ch.contexto_tipo !== "contrato" || ch.contexto_id !== a.contrato_id) return { ok: false, error: MSG_SEM_LEITURA };
+  // ORDEM-DUET 1363: só o chamado LIGADO ao acerto decide — um chamado com a nota de um acerto ligado a outro, nunca.
+  if (a.chamado_id !== ch.id) return { ok: false, error: MSG_OUTRO_CHAMADO };
   if (a.central_decisao) return { ok: false, error: MSG_JA_DECIDIDA };
   if (!disputaAberta(a)) return { ok: false, error: "Esta devolução não está contestada." };
   const partes = await partesDoContrato(admin, a.contrato_id);

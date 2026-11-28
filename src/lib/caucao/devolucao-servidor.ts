@@ -141,16 +141,42 @@ export function prazoDaDecisaoDesde(a: Pick<Acerto, "comprovante_pedido_em" | "c
 }
 
 /**
- * Liga o chamado ao acerto, sem duplicar (update … where chamado_id is null): a nota do SISTEMA que diz qual acerto é,
- * o chamado_id e o prazo da decisão. Devolve false quando outro chamado já estava ligado (nada se escreve).
+ * Liga o chamado ao acerto (ORDEM-DUET 1363, o ponto B do coordenador), na ordem que não perde a disputa:
+ *  1. a nota do SISTEMA que diz qual acerto é, PRIMEIRO, com o erro conferido — se ela falha, nada se liga: a linha da
+ *     Central continua à vista e a rotina tenta na hora seguinte;
+ *  2. o chamado_id, sem duplicar (update … where chamado_id is null);
+ *  3. se outro chamado já estava ligado, este chegou tarde: é fechado, com uma nota interna que diz onde está a
+ *     contestação (ninguém responde ao morador por ele). A decisão exige acerto.chamado_id = chamado.id, por isso a
+ *     nota que ficou nele nunca decide nada.
+ * Depois, o prazo da decisão. Devolve true só quando este chamado ficou ligado.
  */
 export async function ligarChamadoAoAcerto(admin: Admin, a: Pick<Acerto, "id" | "comprovante_pedido_em" | "comprovante_anexado_em">, ch: { id: string; prioridade?: string | null }): Promise<boolean> {
-  const { data: mudou } = await admin.from("caucao_acertos").update({ chamado_id: ch.id }).eq("id", a.id).is("chamado_id", null).select("id");
-  if (!mudou?.length) return false;
-  await admin.from("chamado_mensagens").insert({ chamado_id: ch.id, autor: "sistema", interno: true, corpo: `[devolucao] acerto=${a.id}` });
+  const { error: erroNota } = await admin.from("chamado_mensagens").insert({ chamado_id: ch.id, autor: "sistema", interno: true, corpo: `[devolucao] acerto=${a.id}` });
+  if (erroNota) {
+    console.error("[devolucao-caucao] a nota do acerto não foi gravada; nada se liga, a rotina tenta de novo:", a.id, ch.id);
+    return false;
+  }
+  const { data: mudou, error: erroLigar } = await admin.from("caucao_acertos").update({ chamado_id: ch.id }).eq("id", a.id).is("chamado_id", null).select("id");
+  if (erroLigar) return false;
+  if (!mudou?.length) {
+    await fecharChamadoQueChegouTarde(admin, a.id, ch.id);
+    return false;
+  }
   const desde = prazoDaDecisaoDesde(a);
   if (desde) await admin.from("chamados").update({ prazo_resolucao: calcularPrazos(((ch.prioridade as Prioridade) ?? "p2"), desde).resolucao.toISOString() }).eq("id", ch.id);
   return true;
+}
+
+/** O chamado que chegou tarde: fechado, com a nota interna do sistema que diz em que chamado está a contestação. */
+async function fecharChamadoQueChegouTarde(admin: Admin, acertoId: string, chamadoId: string): Promise<void> {
+  const { data: ac } = await admin.from("caucao_acertos").select("chamado_id").eq("id", acertoId).maybeSingle();
+  const ligado = (ac?.chamado_id as string | null) ?? null;
+  const { data: outro } = ligado ? await admin.from("chamados").select("numero_publico").eq("id", ligado).maybeSingle() : { data: null };
+  const numero = (outro?.numero_publico as string | null) ?? "já aberto";
+  await admin.from("chamado_mensagens").insert({ chamado_id: chamadoId, autor: "sistema", interno: true, corpo: `aberto em duplicado; a contestação está no chamado ${numero}` });
+  const agora = new Date().toISOString();
+  await admin.from("chamados").update({ status: "encerrado", encerrado_em: agora, atualizado_em: agora }).eq("id", chamadoId);
+  await admin.from("chamado_eventos").insert({ chamado_id: chamadoId, ator_tipo: "sistema", ator_id: null, acao: "encerrado", para: "encerrado", detalhe: `duplicado da contestação da devolução (${numero})` });
 }
 
 /**
