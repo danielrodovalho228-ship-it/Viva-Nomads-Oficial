@@ -7,7 +7,8 @@ import { NO_LABORATORIO } from "../fixtures/laboratorio";
   T1805 — 0369 @E1238 (ORDENS-DUET 1231 e 1233; regra da casa: a trava que afirma comportamento é
   EXECUTADA num banco descartável). A própria 0369, o aplicar e o rollback de produção, TAL COMO ESTÃO, corridos num
   banco descartável (tests/e2e/fixtures/prova-0369.ts), sobre `conferencias` na forma de ANTES: aplica sem mexer nas
-  linhas, reaplica sem efeito, a conferência nova nasce com o prazo e a segunda abertura NÃO o muda (o congelamento);
+  linhas, reaplica sem efeito, a conferência nova nasce SEM prazo e o update do congelamento (no momento da entrada,
+  ORDEM-DUET 1269) grava-o uma vez — correr de novo não o muda, e a fechada não o recebe;
   o rollback tira a coluna e o registo. A trava que lê o texto (tests/migracoes/conferencias-prazo-0369.test.ts) fica
   como complemento. Laboratório; não é prova ao vivo no site.
 */
@@ -38,9 +39,12 @@ test.describe("T1805 — 0369 executada: o prazo da conferência gravado e conge
     expect.soft(p.aplicar.tipo, "depois do aplicar: a coluna é timestamptz (G6)").toBe("timestamp with time zone");
     expect.soft(p.aplicar.padrao, "depois do aplicar: a coluna não tem default (G7)").toBeNull();
     expect.soft(p.nova.erro).toBeNull();
-    expect.soft(p.nova.prazo, "a conferência nova nasce com o prazo").toBe(PRAZOS_DA_PROVA.PRAZO_1);
+    // ORDEM-DUET 1269: nasce sem prazo; congela no momento da entrada, uma vez.
+    expect.soft(p.nova.prazo, "a conferência nova nasce com o prazo NULO").toBeNull();
     expect.soft(p.congelado.erro).toBeNull();
-    expect.soft(p.congelado.prazo, "a segunda abertura não muda o prazo (congelado)").toBe(PRAZOS_DA_PROVA.PRAZO_1);
+    expect.soft(p.congelado.prazo, "o congelamento grava o prazo; correr de novo não o muda").toBe(PRAZOS_DA_PROVA.PRAZO_1);
+    expect.soft(p.congelado.escritas, "o update escreve uma vez; a segunda corrida não escreve").toEqual([1, 0]);
+    expect.soft(p.congelado.fechada.depois, "a conferência fechada não recebe prazo").toBeNull();
     expect.soft(p.rollback.erroRollback, "o rollback corre").toBeNull();
     expect.soft(p.rollback.coluna, "o rollback tira a coluna").toBe(false);
     expect.soft(p.rollback.registo, "sai o registo da 0369").toBe(0);

@@ -12,9 +12,9 @@ import { randomBytes } from "node:crypto";
      (um default now() daria às abertas o prazo "agora" e elas fechariam no momento), a coluna é timestamptz e não tem
      default; um erro do aplicar desfaz a transacção e volta como erro nomeado (o padrão da prova 0368);
    - reaplica sem efeito (sem erro); o aplicar regista-se uma vez;
-   - uma conferência nova nasce com o prazo gravado;
-   - O CONGELAMENTO: a segunda "abertura" (o upsert com ignoreDuplicates das quatro ações = on conflict do nothing)
-     com outro prazo NÃO muda o prazo gravado;
+   - ORDEM-DUET 1269: uma conferência nova nasce com o prazo NULO (abrir não grava prazo);
+   - O CONGELAMENTO, no momento da entrada: o update da rotina/leitura (… where prazo_em is null and fechada_em is null)
+     grava o prazo uma vez; correr de novo, com outro prazo, NÃO muda nada; a conferência fechada não recebe prazo;
    - rollback → sai a coluna e o registo; as conferências ficam.
 */
 const FORMA_DE_ANTES = `
@@ -51,7 +51,7 @@ export type ProvaDa0369 = {
     padrao: string | null;
   };
   nova: { erro: string | null; prazo: string | null };
-  congelado: { erro: string | null; prazo: string | null };
+  congelado: { erro: string | null; prazo: string | null; escritas: number[]; fechada: { antes: string | null; depois: string | null } };
   rollback: { erroMigracao: string | null; erroRollback: string | null; coluna: boolean; registo: number; linhas: number };
 };
 
@@ -138,21 +138,27 @@ async function osCasos(db: postgres.Sql, mig: string, apl: string, rb: string): 
   const reg = await db<{ name: string }[]>`select name from supabase_migrations.schema_migrations where version = '20261127000369'`;
   const aplicar = { erro1, erro2, registos: reg.length, nome: reg[0]?.name ?? null, ...depoisDoAplicar, ...(await colunaDoPrazo(db)) };
 
-  // Uma conferência nova nasce com o prazo; a segunda abertura (on conflict do nothing) não o muda.
+  // ORDEM-DUET 1269: a conferência nasce SEM prazo (abrirConferencia: o upsert com ignoreDuplicates, sem prazo_em) e o
+  // prazo congela no momento da entrada com o update da rotina/leitura (congelarNaAncora: … where prazo_em is null and
+  // fechada_em is null). Correr o update outra vez, com outro prazo, não muda nada; a fechada não recebe prazo.
   const [c2] = await db<{ id: string }[]>`insert into public.contratos default values returning id`;
-  let erroNova: string | null = null;
-  try {
-    await db`insert into public.conferencias (contrato_id, tipo, prazo_em) values (${c2.id}, 'entrada', ${PRAZO_1}) on conflict (contrato_id, tipo) do nothing`;
-  } catch (e) {
-    erroNova = e instanceof Error ? e.message : String(e);
-  }
-  const prazoDe = async () => {
-    const r = await db<{ p: Date | null }[]>`select prazo_em as p from public.conferencias where contrato_id = ${c2.id} and tipo = 'entrada'`;
+  const erroNova = await erroDe(() => db`insert into public.conferencias (contrato_id, tipo) values (${c2.id}, 'entrada') on conflict (contrato_id, tipo) do nothing`);
+  const prazoDe = async (contratoId: string, tipo: string) => {
+    const r = await db<{ p: Date | null }[]>`select prazo_em as p from public.conferencias where contrato_id = ${contratoId} and tipo = ${tipo}`;
     return r[0]?.p ? new Date(r[0].p).toISOString() : null;
   };
-  const nova = { erro: erroNova, prazo: await prazoDe() };
-  const erroCong = await erroDe(() => db`insert into public.conferencias (contrato_id, tipo, prazo_em) values (${c2.id}, 'entrada', ${PRAZO_2}) on conflict (contrato_id, tipo) do nothing`);
-  const congelado = { erro: erroCong, prazo: await prazoDe() };
+  const nova = { erro: erroNova, prazo: await prazoDe(c2.id, "entrada") };
+  const congelar = (contratoId: string, tipo: string, prazo: string) =>
+    db`update public.conferencias set prazo_em = ${prazo} where contrato_id = ${contratoId} and tipo = ${tipo} and prazo_em is null and fechada_em is null`;
+  let n1 = 0;
+  let n2 = 0;
+  const erroCong = await erroDe(async () => {
+    n1 = (await congelar(c2.id, "entrada", PRAZO_1)).count;
+    n2 = (await congelar(c2.id, "entrada", PRAZO_2)).count;
+  });
+  const fechadaAntes = await prazoDe(contrato, "saida");
+  await erroDe(() => congelar(contrato, "saida", PRAZO_2));
+  const congelado = { erro: erroCong, prazo: await prazoDe(c2.id, "entrada"), escritas: [n1, n2], fechada: { antes: fechadaAntes, depois: await prazoDe(contrato, "saida") } };
 
   // Rollback: sai a coluna e o registo; as conferências ficam.
   const n0 = Number((await db`select count(*)::int as n from public.conferencias`)[0].n);
@@ -164,7 +170,6 @@ async function osCasos(db: postgres.Sql, mig: string, apl: string, rb: string): 
     registo: (await db`select 1 from supabase_migrations.schema_migrations where version = '20261127000369'`).length,
     linhas: Number((await db`select count(*)::int as n from public.conferencias`)[0].n) - n0,
   };
-  void contrato;
   return { migracao, reaplicar, aplicar, nova, congelado, rollback };
 }
 
