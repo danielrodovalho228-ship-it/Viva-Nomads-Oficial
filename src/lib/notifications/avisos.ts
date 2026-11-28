@@ -78,6 +78,11 @@ const POR_PAPEL: Partial<Record<NotificationEvent, Partial<Record<PapelAviso, Pr
   contract_status: { dono: "critico", morador: "critico" },
   // O pedido de orçamento novo é a ação do parceiro.
   parceiro_pedido_novo: { parceiro: "critico" },
+  // E1247 passo 2, PR 2 (a tabela das rotinas, avisos-rotinas-contrato.ts, diz o mesmo — uma trava compara as duas): o
+  // lembrete da pré-aceitação é crítico para o morador, que conclui; a janela terminada é crítica para o dono, que decide
+  // (decisão 1 da ORDEM-1345). O resto da pré-aceitação é normal.
+  pre_aceite_prazo: { morador: "critico" },
+  pre_aceite_expirou: { dono: "critico" },
 };
 
 export function prioridadeDoAviso(evento: NotificationEvent, papel?: PapelAviso | null): PrioridadeAviso {

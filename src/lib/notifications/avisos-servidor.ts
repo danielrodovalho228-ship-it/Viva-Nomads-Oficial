@@ -139,6 +139,24 @@ export async function resolverAvisos(p: { usuarioId: string; eventos: Notificati
 }
 
 /**
+ * E1247 passo 2, PR 2 (o molde do E1251 em expirarVencidas): resolve os avisos de uma REFERÊNCIA (a proposta), dos
+ * eventos dados — das duas partes de uma vez, ou só de uma pessoa (`usuarioId`). Com o cliente que o chamador já tem
+ * (a rotina e o servidor das propostas). Só os por resolver; correr outra vez não muda nada. Nunca lança.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- o cliente da rotina (SupabaseClient) e os falsos dos testes
+export async function resolverAvisosDaReferencia(admin: { from: (t: string) => any }, p: { eventos: NotificationEvent[]; refId: string; usuarioId?: string | null }): Promise<void> {
+  try {
+    if (!REF_RE.test(p.refId) || !p.eventos.length) return;
+    let q = admin.from("avisos").update({ resolvido_em: new Date().toISOString() }).eq("ref_id", p.refId).in("evento", p.eventos).is("resolvido_em", null);
+    if (p.usuarioId) q = q.eq("usuario_id", p.usuarioId);
+    const { error } = await q;
+    if (error) console.error("[avisos] não resolveu pela referência:", error.code, error.message);
+  } catch {
+    /* a ação não depende disto */
+  }
+}
+
+/**
  * E1128: o sino conferiu o estado atual e estes avisos da pessoa já não valem (a visita de avaliação deixou de estar por
  * acontecer): grava "resolvido" para todas as telas concordarem. Só os avisos da própria pessoa. Nunca lança.
  */

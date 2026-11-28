@@ -5,6 +5,8 @@ import { decisaoDoPreAceite } from "./pre-aceite-fechamento";
 import { MSG_VALORES_SEM_CONFERIR } from "@/lib/data/taxa-dono-servidor";
 import { mesesDeReferencia } from "@/lib/estadia-em-dias";
 import { propostaDoFechamento } from "@/lib/fechamento/proposta-do-fechamento";
+import { resolverAvisosDaReferencia } from "@/lib/notifications/avisos-servidor";
+import { EVENTO_DA_ROTINA } from "@/lib/notifications/avisos-rotinas-contrato";
 
 /*
   Propostas (prompt 17) — leitura no servidor, usada pelas ações, pelo fechamento e pela rotina de automações.
@@ -308,4 +310,6 @@ export async function marcarPropostaEmContrato(admin: SupabaseClient, propostaId
     .update({ status: "em_contrato", atualizada_em: new Date().toISOString() })
     .eq("id", propostaId)
     .eq("status", "aceita");
+  // E1247 passo 2, PR 2 (ESPEC-E1247-PASSO-2, 5.2): o contrato gerado resolve o lembrete do prazo da pré-aceitação, dos dois.
+  await resolverAvisosDaReferencia(admin, { eventos: [EVENTO_DA_ROTINA.preAceitacaoLembrete], refId: propostaId });
 }

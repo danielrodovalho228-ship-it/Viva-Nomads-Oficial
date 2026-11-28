@@ -2,7 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
-import { avisoDaRotina, type RotinaDoContrato } from "@/lib/notifications/avisos-rotinas-contrato";
+import { avisoDaRotina, EVENTO_DA_ROTINA, type RotinaComEvento } from "@/lib/notifications/avisos-rotinas-contrato";
+import { resolverAvisosDaReferencia } from "@/lib/notifications/avisos-servidor";
 import { PRE_ACEITACAO_72H_ATIVA } from "@/lib/flags";
 import { conflitoNoImovel } from "@/lib/data/periodo-servidor";
 import { periodoEmDias } from "@/lib/contrato-periodo";
@@ -18,6 +19,10 @@ import { encerraNaExpiracao, lembretesDaPreAceitacao, linhaDeContexto, PRAZO_PRE
       relógio dele (1 dia útil, recomeça a cada volta). A 3ª expiração (depois de 2 reaberturas) ENCERRA a candidatura e avisa o morador;
     • perdeu a corrida: expira com a mensagem clara e NADA volta sozinho para a fila; só o dono reabre, à mão.
   Nada aqui recalcula taxa: taxa_congelada nunca é escrita por este arquivo.
+  E1247 passo 2, PR 2 (ESPEC-E1247-PASSO-2, 5; ORDEM-DUET 1345): os quatro avisos são eventos PRÓPRIOS, com a PROPOSTA
+  como referência; o lembrete sai antes do aviso do fim (expirou, perdeu a vez, encerrada); e um passo novo resolve os
+  avisos do DONO (expirou, perdeu a vez) quando o prazo dele vence — cobre também o dono que responde à candidatura
+  devolvida sem a reabrir.
 */
 export interface ResumoPreAceitacao {
   ativa: boolean;
@@ -46,7 +51,7 @@ interface Linha {
 }
 
 /** `textoDono` diferente do `texto`: o dono recebe a versão dele (ex.: a candidatura voltou para a fila dele). */
-async function avisarOsDois(admin: SupabaseClient, l: Linha, rotina: RotinaDoContrato, texto: string, textoDono?: string) {
+async function avisarOsDois(admin: SupabaseClient, l: Linha, rotina: RotinaComEvento, texto: string, textoDono?: string) {
   const imovel = l.properties?.title ?? "o imóvel";
   const assunto = ASSUNTOS[rotina];
   for (const [uid, href, corpo, papel] of [[l.tenant_id, `/dashboard/propostas/${l.id}`, texto, "inquilino"], [l.owner_id, `/dashboard/propostas/${l.id}`, textoDono ?? texto, "proprietario"]] as const) {
@@ -56,7 +61,7 @@ async function avisarOsDois(admin: SupabaseClient, l: Linha, rotina: RotinaDoCon
     const pf = data as { email?: string | null; full_name?: string | null } | null;
     if (!pf?.email) continue;
     await notify({
-      event: "contract_status", email: pf.email, name: pf.full_name ?? undefined, userId: uid, pushUrl: href, subject: assunto, ctaLabel: "Ver a proposta", tituloAviso: av.titulo, prioridadeAviso: av.prioridade, textoAviso: `Proposta ${l.numero}`,
+      event: EVENTO_DA_ROTINA[rotina], refId: l.id, papelAviso: papel === "inquilino" ? "morador" : "dono", email: pf.email, name: pf.full_name ?? undefined, userId: uid, pushUrl: href, subject: assunto, ctaLabel: "Ver a proposta", tituloAviso: av.titulo, prioridadeAviso: av.prioridade, textoAviso: `Proposta ${l.numero}`,
       body: (n) => `Olá${n ? " " + n : ""}, ${corpo} (${imovel}, proposta ${l.numero}).`,
     });
   }
@@ -103,9 +108,41 @@ async function devolverLeadAceito(admin: SupabaseClient, p: { lead_id?: string |
   await admin.from("leads").update({ status: "accepted", accepted_at: p.aceita_em }).eq("id", p.lead_id).eq("status", "new");
 }
 
+/** E1247 passo 2, PR 2: o lembrete do prazo desta proposta sai, dos dois, antes de a rotina avisar o fim da janela. */
+async function resolverLembretes(admin: SupabaseClient, propostaId: string): Promise<void> {
+  await resolverAvisosDaReferencia(admin, { eventos: [EVENTO_DA_ROTINA.preAceitacaoLembrete], refId: propostaId });
+}
+
+/**
+ * E1247 passo 2, PR 2 — o PASSO NOVO (ESPEC-E1247-PASSO-2, 5.3; ORDEM-DUET 1345, decisão 3): o prazo do dono para
+ * decidir a candidatura devolvida vence sem decisão, e nada agia. Resolve os avisos DO DONO de "a pré-aceitação
+ * terminou" e "perdeu a vez" dessas propostas; os do morador ficam. Não mexe na proposta (o prazo e o estado ficam).
+ * Parte dos avisos por resolver (não do histórico das propostas). Correr outra vez não muda nada. Nunca lança.
+ */
+async function resolverPrazosDoDonoVencidos(admin: SupabaseClient, agora: Date): Promise<void> {
+  try {
+    const eventos = [EVENTO_DA_ROTINA.preAceitacaoExpirou, EVENTO_DA_ROTINA.preAceitacaoPerdeuVez];
+    const { data: abertos, error } = await admin.from("avisos").select("ref_id").in("evento", eventos).is("resolvido_em", null).not("ref_id", "is", null);
+    if (error) return;
+    const refs = [...new Set(((abertos ?? []) as { ref_id: string | null }[]).map((a) => a.ref_id).filter((x): x is string => !!x))];
+    if (!refs.length) return;
+    const { data: vencidas } = await admin
+      .from("propostas")
+      .select("id, owner_id")
+      .in("id", refs)
+      .eq("status", "expirada")
+      .not("pre_aceitacao_dono_ate", "is", null)
+      .lt("pre_aceitacao_dono_ate", agora.toISOString());
+    for (const p of (vencidas ?? []) as { id: string; owner_id: string }[]) await resolverAvisosDaReferencia(admin, { eventos, refId: p.id, usuarioId: p.owner_id });
+  } catch {
+    /* a rotina não depende disto */
+  }
+}
+
 export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new Date()): Promise<ResumoPreAceitacao> {
   if (!PRE_ACEITACAO_72H_ATIVA) return { ativa: false, lembretes: 0, expiradas: 0, perderamAVez: 0, encerradas: 0 };
   const resumo: ResumoPreAceitacao = { ativa: true, lembretes: 0, expiradas: 0, perderamAVez: 0, encerradas: 0 };
+  await resolverPrazosDoDonoVencidos(admin, agora);
   const { data, error } = await admin
     .from("propostas")
     .select("id, numero, owner_id, tenant_id, lead_id, property_id, versao_atual, aceita_em, pre_aceitacao_reaberturas, pre_aceitacao_ate, pre_aceitacao_lembrete_24h_em, pre_aceitacao_lembrete_6h_em, properties(title)")
@@ -134,6 +171,7 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
         // E968 (ORDEM-DUET-073): a 3ª expiração é TERMINAL — o lead aceito por esta pré-aceitação vai ao estado final
         // "expired" (sem reabrir: reabrirNoBanco já recusa a encerrada; aceitar/recusar só valem de "new"/"accepted").
         else await encerrarLead(admin, l);
+        await resolverLembretes(admin, l.id);
         if (encerra) {
           resumo.encerradas++;
           await avisarOsDois(admin, l, "preAceitacaoEncerrada", TEXTO_ENCERRADA, TEXTO_ENCERRADA_DONO);
@@ -161,6 +199,7 @@ export async function rodarPreAceitacao(admin: SupabaseClient, agora: Date = new
         .maybeSingle();
       if (ok) {
         resumo.perderamAVez++;
+        await resolverLembretes(admin, l.id);
         // Nada volta sozinho para a fila: quem perdeu a vez só volta se o dono reabrir à mão. O lead NÃO é mexido aqui.
         await avisarOsDois(admin, l, "preAceitacaoPerdeuVez", TEXTO_PERDEU_A_VEZ, TEXTO_PERDEU_A_VEZ_DONO);
       }
@@ -216,6 +255,8 @@ export async function reabrirNoBanco(admin: SupabaseClient, propostaId: string, 
     .select("id")
     .maybeSingle();
   if (!ok) return { ok: false, error: "A proposta mudou enquanto você respondia. Abra de novo." };
+  // E1247 passo 2, PR 2 (ESPEC-E1247-PASSO-2, 5.2): a reabertura resolve "a pré-aceitação terminou" e "perdeu a vez", dos dois.
+  await resolverAvisosDaReferencia(admin, { eventos: [EVENTO_DA_ROTINA.preAceitacaoExpirou, EVENTO_DA_ROTINA.preAceitacaoPerdeuVez], refId: p.id });
   await devolverLeadAceito(admin, p);
   return { ok: true, prazo: r.prazo, reaberturas: r.reaberturas };
 }

@@ -33,6 +33,7 @@ const VER_CAUCAO = "Ver a caução";
 const VER_PAGAMENTOS = "Ver os pagamentos";
 const VER_PROPOSTA = "Ver a proposta";
 const RESPONDER_PROPOSTA = "Responder à proposta";
+const RESPONDER_CANDIDATURA = "Responder à candidatura";
 
 /** O aviso de cada rotina, para cada papel. */
 export function avisoDaRotina(chave: RotinaDoContrato, papel: "proprietario" | "inquilino"): AvisoDaRotina {
@@ -51,8 +52,11 @@ export function avisoDaRotina(chave: RotinaDoContrato, papel: "proprietario" | "
     // Faltam ≤ 24 h para o morador concluir: crítico para ele; para o dono só informa.
     case "preAceitacaoLembrete":
       return papel === "inquilino" ? { titulo, prioridade: "critico", botao: RESPONDER_PROPOSTA } : { titulo, prioridade: "normal", botao: VER_PROPOSTA };
-    // O prazo expirou, a vez passou, a candidatura encerrou: só informa.
+    // E1247 passo 2, PR 2 (ORDEM-DUET 1345, decisão 1): a janela terminou e a candidatura voltou ao dono — crítico para
+    // ELE, que decide no prazo dele (1 dia útil); para o morador só informa.
     case "preAceitacaoExpirou":
+      return papel === "proprietario" ? { titulo, prioridade: "critico", botao: RESPONDER_CANDIDATURA } : { titulo, prioridade: "normal", botao: VER_PROPOSTA };
+    // A vez passou, a candidatura encerrou: só informa.
     case "preAceitacaoPerdeuVez":
     case "preAceitacaoEncerrada":
       return { titulo, prioridade: "normal", botao: VER_PROPOSTA };
@@ -61,15 +65,22 @@ export function avisoDaRotina(chave: RotinaDoContrato, papel: "proprietario" | "
 
 const ROTINAS: RotinaDoContrato[] = ["caucaoLiberacaoIntegral", "caucaoDevolucaoAtraso", "lembreteParcelaAluguel", "pagamentoRegistradoMorador", "preAceitacaoLembrete", "preAceitacaoExpirou", "preAceitacaoPerdeuVez", "preAceitacaoEncerrada"];
 
-/** E1247 passo 2: o evento próprio de cada rotina que já o tem (a parcela, no PR 1). */
-export const EVENTO_DA_ROTINA: Partial<Record<RotinaDoContrato, NotificationEvent>> & { lembreteParcelaAluguel: NotificationEvent; pagamentoRegistradoMorador: NotificationEvent } = {
+/** E1247 passo 2: o evento próprio de cada rotina que já o tem (a parcela, no PR 1; o pré-aceite, no PR 2). */
+export const EVENTO_DA_ROTINA = {
   lembreteParcelaAluguel: "parcela_lembrete",
   pagamentoRegistradoMorador: "parcela_registrada",
-};
+  preAceitacaoLembrete: "pre_aceite_prazo",
+  preAceitacaoExpirou: "pre_aceite_expirou",
+  preAceitacaoPerdeuVez: "pre_aceite_perdeu_vez",
+  preAceitacaoEncerrada: "pre_aceite_encerrado",
+} as const satisfies Partial<Record<RotinaDoContrato, NotificationEvent>>;
+
+/** As rotinas com evento próprio. */
+export type RotinaComEvento = keyof typeof EVENTO_DA_ROTINA;
 
 /** A rotina de um evento próprio (ou null). */
 export function rotinaDoEvento(evento: string | null | undefined): RotinaDoContrato | null {
-  return (Object.keys(EVENTO_DA_ROTINA) as RotinaDoContrato[]).find((k) => EVENTO_DA_ROTINA[k] === evento) ?? null;
+  return (Object.keys(EVENTO_DA_ROTINA) as RotinaComEvento[]).find((k) => EVENTO_DA_ROTINA[k] === evento) ?? null;
 }
 
 /** O botão da faixa pelo EVENTO próprio da rotina (o do papel que vê o crítico, como botaoDaRotina). */
