@@ -116,7 +116,7 @@ export async function enviarAvisoDoRegistro(admin: Admin, a: Pick<Acerto, "id" |
   });
   const avisado = algumCanalEntregou(r) || sinoMudou(antes, await retratoDoSino(admin, chave));
   if (!avisado) return false;
-  const { data: mudou } = await admin.from("caucao_acertos").update({ aviso_em: agora.toISOString() }).eq("id", a.id).is("aviso_em", null).select("id");
+  const { data: mudou } = await admin.from("caucao_acertos").update({ aviso_em: agora.toISOString() }).eq("id", a.id).eq("status", "aguardando_confirmacao").is("aviso_em", null).select("id");
   return !!mudou?.length;
 }
 
@@ -405,7 +405,8 @@ export async function rodarDevolucaoCaucao(admin: Admin, agora: Date = new Date(
     .not("contestado_em", "is", null)
     .is("chamado_id", null)
     .is("central_decisao", null)
-    .lte("contestado_em", antesDe);
+    // Estritamente antes da marca dos 10 minutos (ORDEM-DUET 1365, N9): à marca exata, ainda não.
+    .lt("contestado_em", antesDe);
   for (const a of (semChamado ?? []) as Acerto[]) {
     const partes = await partesDoContrato(admin, a.contrato_id);
     if (!partes?.morador || !a.contestado_em) continue;
