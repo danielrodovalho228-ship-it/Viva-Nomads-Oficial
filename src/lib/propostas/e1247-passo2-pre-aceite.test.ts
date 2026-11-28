@@ -259,14 +259,29 @@ test("A9. o prazo do dono ainda não venceu: nada sai", async () => {
   assert.ok(aberto(de("pre_aceite_expirou", MORADOR)[0]));
 });
 
-test("A10. o passo novo corre duas vezes: o mesmo resultado", async () => {
+test("A9b (fuga Y2, ORDEM-DUET 1350). a fronteira: agora é EXATAMENTE o prazo do dono — o aviso do dono fica aberto (só sai com o prazo já passado)", async () => {
+  semear([proposta(PA)]);
+  await rodarPreAceitacao(admin as never, DEPOIS);
+  const donoAte = new Date(String(banco.propostas[0].pre_aceitacao_dono_ate));
+  await rodarPreAceitacao(admin as never, donoAte);
+  assert.ok(aberto(de("pre_aceite_expirou", DONO)[0]), "no instante exato do prazo, o aviso do dono fica");
+  await rodarPreAceitacao(admin as never, new Date(donoAte.getTime() + 1));
+  assert.ok(resolvido(de("pre_aceite_expirou", DONO)[0]), "um milissegundo depois, sai");
+});
+
+test("A10 (com a fuga Y16, ORDEM-DUET 1350). o passo novo corre duas vezes: o mesmo resultado — e o resolvido_em do dono fica IGUAL", async () => {
   semear([proposta(PA)]);
   await rodarPreAceitacao(admin as never, DEPOIS);
   const depois = new Date(new Date(String(banco.propostas[0].pre_aceitacao_dono_ate)).getTime() + 60_000);
   await rodarPreAceitacao(admin as never, depois);
+  const doDono = de("pre_aceite_expirou", DONO)[0];
+  assert.ok(resolvido(doDono), "a 1.ª corrida resolve o do dono");
+  // Um instante conhecido, para a 2.ª corrida não poder coincidir com ele no mesmo milissegundo: se ela o regravar, cai.
+  doDono.resolvido_em = "2026-12-03T00:00:00.000Z";
   const retrato = JSON.stringify(banco.avisos);
   await rodarPreAceitacao(admin as never, new Date(depois.getTime() + 3_600_000));
-  assert.equal(JSON.stringify(banco.avisos), retrato);
+  assert.equal(de("pre_aceite_expirou", DONO)[0].resolvido_em, "2026-12-03T00:00:00.000Z", "a 2.ª corrida não regrava o resolvido_em do dono");
+  assert.equal(JSON.stringify(banco.avisos), retrato, "nem nada mais");
 });
 
 test("A11. a mesma pessoa é moradora numa proposta e dona noutra: duas linhas, uma por proposta; a da moradora crítica", async () => {
