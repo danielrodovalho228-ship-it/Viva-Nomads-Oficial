@@ -289,6 +289,19 @@ test("D4. a decisão 4: a parcela vence sem pagamento → a rotina resolve o lem
   assert.equal(de(P1).resolvido_em, quando, "idempotente");
 });
 
+test("D4b (fuga X4, ORDEM-DUET 1339). a parcela registada, com o lembrete ainda aberto e o aviso do dono pendente: depois do vencimento, o lembrete sai e o aviso do DONO fica", async () => {
+  // A parcela P1 foi registada pelo morador (aguardando a confirmação do dono); o lembrete dela ficou aberto (o caso
+  // que a Pista 3 nomeou) e o "parcela_registrada" do dono, com a MESMA referência, está pendente.
+  semear([parcela(P1, C1, VENCE, { estado_livro: "aguardando_confirmacao", lembrou_d5_em: "2026-12-05T15:00:00.000Z" })]);
+  banco.avisos.push(
+    { id: "lembrete", usuario_id: MORADOR, evento: "parcela_lembrete", ref_id: P1, titulo: ASSUNTOS.lembreteParcelaAluguel, prioridade: "normal", lido_em: null, resolvido_em: null, criado_em: "2026-12-05T15:00:00.000Z" },
+    { id: "do-dono", usuario_id: DONO, evento: "parcela_registrada", ref_id: P1, titulo: ASSUNTOS.pagamentoRegistradoMorador, prioridade: "normal", lido_em: null, resolvido_em: null, criado_em: "2026-12-06T15:00:00.000Z" },
+  );
+  await rodarCobrancaMensal(admin as never, EM("2026-12-11"));
+  assert.ok(banco.avisos.find((a) => a.id === "lembrete")?.resolvido_em, "o lembrete vencido sai");
+  assert.equal(banco.avisos.find((a) => a.id === "do-dono")?.resolvido_em ?? null, null, "o aviso do dono (outro evento, a mesma parcela) fica: só a confirmação o resolve");
+});
+
 test("E. estático: as duas chamadas dizem o evento próprio, o papel e a referência; as ações resolvem pela referência", () => {
   const rotina = readFileSync(new URL("./servidor.ts", import.meta.url), "utf8");
   const acoes = readFileSync(new URL("./acoes.ts", import.meta.url), "utf8");
