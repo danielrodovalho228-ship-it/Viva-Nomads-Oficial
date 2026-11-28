@@ -1308,3 +1308,39 @@ test("1368 (R3). o único chamado do morador para a contestação, mas já encer
     assert.notEqual(acerto(id).chamado_id, fechado.id, `${status}: não liga`);
   }
 });
+
+// ——————————————————————— ORDEM-DUET 1369: a fuga B4 ———————————————————————
+
+test("1369 (B4). a escrita do chamado_id que falha não é 'chegou tarde': o chamado continua aberto, sem a nota de duplicado; a hora seguinte liga", async () => {
+  const { id, contestadoEm } = contestacaoParaRotina();
+  const doMorador = chamadoDoMorador({ criado_em: contestadoEm });
+  db.banco.chamados.push(doMorador);
+  // A escrita do chamado_id falha uma vez (a única escrita em caucao_acertos desta passagem).
+  const original = db.admin.from;
+  let falhou = false;
+  db.admin.from = ((t: string) => {
+    const q = original(t) as Record<string, unknown>;
+    if (t !== "caucao_acertos" || falhou) return q;
+    const atualizar = q.update as (v: Record<string, unknown>) => unknown;
+    q.update = (v: Record<string, unknown>) => {
+      if ("chamado_id" in v && !falhou) {
+        falhou = true;
+        const erro = { data: null, error: { code: "XX000", message: "falha forçada" } };
+        const fim: Record<string, unknown> = { then: (ok: (x: unknown) => unknown) => Promise.resolve(erro).then(ok) };
+        for (const k of ["eq", "is", "in", "select"]) fim[k] = () => fim;
+        return fim;
+      }
+      return atualizar(v);
+    };
+    return q;
+  }) as typeof db.admin.from;
+  await rodar(new Date());
+  db.admin.from = original;
+  assert.ok(falhou, "a escrita foi tentada e falhou");
+  assert.equal(acerto(id).chamado_id ?? null, null, "nada se liga");
+  assert.equal(doMorador.status, "aberto", "o chamado do morador continua aberto");
+  assert.equal(db.banco.chamado_mensagens.filter((n) => n.chamado_id === doMorador.id && String(n.corpo).startsWith("aberto em duplicado")).length, 0, "sem a nota de duplicado");
+  assert.equal(db.banco.chamados.length, 1, "nenhum chamado novo");
+  await rodar(new Date(Date.now() + H));
+  assert.equal(acerto(id).chamado_id, doMorador.id, "a hora seguinte liga o mesmo");
+});
