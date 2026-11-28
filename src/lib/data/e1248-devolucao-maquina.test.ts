@@ -1053,3 +1053,27 @@ test("1361-4 (D34). o lembrete do morador não se repete: gravado por outra pass
   assert.equal(envios("caucao_devolucao_lembrete").length, 0, "a outra passagem já o mandou");
   assert.equal(acerto(id).lembrete_em, "2026-11-24T13:30:00.000Z");
 });
+
+test("1361 (Z47). o canal que entregou é prova de envio, mesmo com o aviso do sino a falhar", async () => {
+  db.falhas.add("avisos:insert");
+  const r = await registrar();
+  assert.ok(acerto(r.id!).aviso_em, "o e-mail entregou: a hora grava-se");
+  assert.equal(avisos("caucao_devolucao_registrada", MORADOR).length, 0, "o sino falhou");
+});
+
+test("1361 (Z39). o reenvio não grava por cima da hora gravada por outra passagem entre a leitura e a escrita", async () => {
+  const id = semearAcerto({ aviso_em: null });
+  db.antesDe("caucao_acertos", "update", (b) => Object.assign(b.caucao_acertos.find((a) => a.id === id)!, { aviso_em: "2026-11-28T10:00:00.000Z" }));
+  await rodar(new Date("2026-11-28T11:00:00.000Z"));
+  assert.equal(acerto(id).aviso_em, "2026-11-28T10:00:00.000Z", "a hora da outra passagem fica");
+});
+
+test("1361 (Z40). o chamado aberto pela rotina não toma o lugar do que a ação ligou entre a leitura e a escrita", async () => {
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: haHoras(30), contestacao_motivo: "Não recebi o valor." });
+  const daAcao = "22222222-2222-4222-8222-222222222222";
+  // A rotina insere o seu chamado; antes de o ligar, a ação liga o dela.
+  db.antesDe("caucao_acertos", "update", (b) => Object.assign(b.caucao_acertos.find((a) => a.id === id)!, { chamado_id: daAcao }));
+  await rodar(new Date());
+  assert.equal(acerto(id).chamado_id, daAcao, "fica o da ação");
+  assert.equal(db.banco.chamado_mensagens.filter((n) => n.autor === "sistema" && n.interno === true && String(n.corpo).startsWith("[devolucao]")).length, 0, "nenhuma nota de acerto no chamado que chegou tarde");
+});
