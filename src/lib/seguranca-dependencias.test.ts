@@ -24,7 +24,10 @@ const copias = (nome: string) =>
     .map(([caminho, p]) => ({ caminho, versao: p.version ?? "0.0.0" }));
 
 const MINIMOS: Record<string, string> = {
-  next: "16.4.2", // crítica: desvio do proxy/middleware no App Router e DoS em Server Actions
+  // E997 (16/11/2026): 16.3.0 a 16.4.4 expõem dados entre "root params" quando uma função 'use cache' é chamada por
+  // unstable_cache() (GHSA-mfr8-8qww-v76h, moderada). Corrigido a partir de 16.4.5. O piso anterior era 16.4.2
+  // (Prompt 60, crítica: desvio do proxy/middleware no App Router e DoS em Server Actions).
+  next: "16.4.5",
   sharp: "0.35.5", // alta: libvips/libheif no processamento das fotos enviadas
   postcss: "8.5.23", // alta: XSS e leitura de arquivo
   nanoid: "3.3.18", // alta
