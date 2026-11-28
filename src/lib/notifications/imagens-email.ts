@@ -149,6 +149,8 @@ export const TEMA_POR_EVENTO: Record<NotificationEvent | EventoAvulso, string> =
   estadia_remarcada: "contrato",
   estadia_encerramento_pedido: "contrato",
   estadia_encerramento_equipe: "atendimento",
+  parcela_lembrete: "contrato",
+  parcela_registrada: "contrato",
   vinculo_parceiro_convite: "novo-interessado",
   vinculo_parceiro_resposta: "transacional",
   parceiro_selo_nota_removido: "transacional",

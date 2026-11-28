@@ -67,7 +67,8 @@ test("4. dois assuntos da mesma pessoa ficam em duas linhas (chaves diferentes)"
 test("5. estático: nenhuma chamada com o evento do contrato fica sem título e prioridade ditos (fora as da assinatura)", () => {
   for (const f of ["lib/caucao/prazos-servidor.ts", "lib/cobranca-mensal/acoes.ts", "lib/cobranca-mensal/servidor.ts", "lib/propostas/pre-aceitacao-servidor.ts"]) {
     const src = ler(f);
-    const chamadas = src.split('event: "contract_status"').slice(1);
+    // E1247 passo 2 (PR 1): a parcela passou ao evento próprio (EVENTO_DA_ROTINA); a regra vale para os dois.
+    const chamadas = src.split(/event: (?:"contract_status"|EVENTO_DA_ROTINA\.\w+)/).slice(1);
     assert.ok(chamadas.length > 0, f);
     for (const c of chamadas) {
       const corpo = c.slice(0, c.indexOf("});") > 0 ? c.indexOf("});") : 600);

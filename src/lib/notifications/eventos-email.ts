@@ -123,6 +123,8 @@ export type NotificationEvent =
   | "estadia_remarcada" // aditivo assinado pelas duas partes: blocos e datas mudaram → as duas partes
   | "estadia_encerramento_pedido" // pedido de encerramento → a outra parte (a Viva conduz)
   | "estadia_encerramento_equipe" // pedido de encerramento novo → admins
+  | "parcela_lembrete" // E1247 passo 2: lembrete da parcela mensal (5 e 3 dias antes) → morador; ref = a parcela
+  | "parcela_registrada" // E1247 passo 2: o morador registrou o pagamento da parcela → proprietário; ref = a parcela
   // Viva rodando automático (Prompt 38)
   | "vinculo_parceiro_convite" // o dono convidou o parceiro como fixo do imóvel → parceiro
   | "vinculo_parceiro_resposta" // o parceiro aceitou ou recusou o convite → dono
@@ -263,6 +265,10 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   estadia_aditivo_respondido: { subject: "Sua proposta de alteração foi respondida", body: (n) => `Olá${n ? " " + n : ""}, a outra parte respondeu à sua proposta de alteração. Veja a resposta na página da estadia.`, cta: "Ver a resposta", path: "/dashboard/contratos" },
   estadia_remarcada: { subject: "O aditivo foi assinado", body: (n) => `Olá${n ? " " + n : ""}, o aditivo foi assinado pelas duas partes. As datas e os blocos do contrato já estão atualizados na página da estadia.`, cta: "Ver a estadia", path: "/dashboard/contratos" },
   estadia_encerramento_pedido: { subject: "Pedido de encerramento do contrato", body: (n) => `Olá${n ? " " + n : ""}, a outra parte pediu o encerramento do contrato. A Viva recebeu o pedido e vai conduzir o encerramento com vocês.`, cta: "Ver a estadia", path: "/dashboard/contratos" },
+  // E1247 passo 2 (ESPEC-E1247-PASSO-2, 4): os eventos próprios da parcela. As duas chamadas passam o assunto, o corpo e
+  // o botão de HOJE (ASSUNTOS, as mesmas palavras); isto é só o recurso do catálogo, nas regras da auditoria dos e-mails.
+  parcela_lembrete: { subject: "Lembrete: uma parcela vence em breve", body: (n) => `Olá${n ? " " + n : ""}, uma parcela da sua estadia vence em breve. O pagamento é feito direto ao proprietário; depois, registre-o na plataforma.`, cta: "Ver a estadia", path: "/dashboard/locacoes" },
+  parcela_registrada: { subject: "Pagamento registrado: confirme o recebimento", body: (n) => `Olá${n ? " " + n : ""}, o morador registrou o pagamento de uma parcela da estadia. Confirme quando o valor chegar até você.`, cta: "Ver o contrato", path: "/dashboard/contratos" },
   estadia_encerramento_equipe: { subject: "Novo pedido de encerramento", body: () => "Uma das partes pediu o encerramento de um contrato. O pedido está na fila de encerramentos.", cta: "Abrir a fila", path: "/admin/contratos/encerramentos" },
   vinculo_parceiro_convite: { subject: "Convite para parceiro fixo de um imóvel", body: (n) => `Olá${n ? " " + n : ""}, um proprietário quer você como parceiro fixo do imóvel dele. Os pedidos chegam a cada saída de morador, e você aceita ou recusa cada um.`, cta: "Ver o convite", path: "/dashboard/parceiro" },
   foto_perfil_removida: { subject: "A foto do seu perfil foi removida", body: (n) => `Olá${n ? " " + n : ""}, a equipe da Viva Nomads removeu a foto do seu perfil. A foto do perfil precisa ser o seu rosto. Você pode enviar outra foto quando quiser.`, cta: "Enviar outra foto", path: "/dashboard/conta/perfil" },

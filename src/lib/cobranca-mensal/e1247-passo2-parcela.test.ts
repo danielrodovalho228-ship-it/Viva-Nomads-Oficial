@@ -160,7 +160,9 @@ test("P1. o lembrete de 5 dias: nasce parcela_lembrete, normal, com a parcela co
 test("P2. o lembrete de 3 dias, com o de 5 por ler: uma linha só, com a hora nova", async () => {
   semear([parcela(P1, C1, VENCE)]);
   await rodarCobrancaMensal(admin as never, EM("2026-12-05"));
-  const antes = String(doEvento("parcela_lembrete")[0].criado_em);
+  // A hora do de 5 dias recua para um instante conhecido: a renovação tem de a trocar.
+  const antes = "2026-12-05T15:00:00.000Z";
+  doEvento("parcela_lembrete")[0].criado_em = antes;
   await rodarCobrancaMensal(admin as never, EM("2026-12-07"));
   const l = doEvento("parcela_lembrete");
   assert.equal(l.length, 1, "renovado, não repetido");
@@ -254,8 +256,6 @@ test("P9. o e-mail dos dois: assunto, corpo e botão iguais aos de hoje; a categ
     assert.deepEqual(canaisDoEvento(ev as never, papel), canaisDoEvento("contract_status", papel), `${ev}: os mesmos canais`);
     assert.ok((TEMPLATES as Record<string, { subject: string }>)[ev], `${ev} no catálogo`);
   }
-  assert.equal((TEMPLATES as Record<string, { subject: string }>).parcela_lembrete.subject, ASSUNTOS.lembreteParcelaAluguel);
-  assert.equal((TEMPLATES as Record<string, { subject: string }>).parcela_registrada.subject, ASSUNTOS.pagamentoRegistradoMorador);
 });
 
 test("P10. o aviso de assinar do mesmo contrato não é tocado por nenhuma destas ações", async () => {
@@ -271,9 +271,9 @@ test("P10. o aviso de assinar do mesmo contrato não é tocado por nenhuma desta
 });
 
 test("D4. a decisão 4: a parcela vence sem pagamento → a rotina resolve o lembrete; no dia do vencimento e antes, ele fica", async () => {
-  semear([parcela(P1, C1, VENCE), parcela(P2, C2, "2026-12-20")]);
+  semear([parcela(P1, C1, VENCE), parcela(P2, C2, "2026-12-14")]);
   await rodarCobrancaMensal(admin as never, EM("2026-12-05"));
-  await rodarCobrancaMensal(admin as never, EM("2026-12-15")); // o D-5 da P2
+  await rodarCobrancaMensal(admin as never, EM("2026-12-09")); // o D-5 da P2 (vence a 14/12)
   assert.equal(doEvento("parcela_lembrete").length, 2);
   // No dia do vencimento da P1 ("vence em breve" ainda é verdade): fica.
   await rodarCobrancaMensal(admin as never, EM("2026-12-10"));

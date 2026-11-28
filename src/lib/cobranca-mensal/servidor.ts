@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { COBRANCA_MENSAL_ATIVA } from "@/lib/flags";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
-import { avisoDaRotina } from "@/lib/notifications/avisos-rotinas-contrato";
+import { avisoDaRotina, EVENTO_DA_ROTINA } from "@/lib/notifications/avisos-rotinas-contrato";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { MIN_DIAS_COBRANCA_MENSAL, TETO_DIAS_ACUMULADOS, cronogramaMensal, lembreteDaParcela, textoDoLembrete } from "./regras";
@@ -13,6 +13,9 @@ import { MIN_DIAS_COBRANCA_MENSAL, TETO_DIAS_ACUMULADOS, cronogramaMensal, lembr
     • contrato ativo de 91 a 180 dias ganha o cronograma (uma linha por parcela);
     • parcela ainda sem registro recebe UM lembrete neutro no D-5 e outro no D-3, antes do vencimento.
   A plataforma não cobra, não acompanha pagamento e não age depois do vencimento: aqui só se calcula e se lembra.
+  E1247 passo 2 (ESPEC-E1247-PASSO-2, 4; ORDEM-DUET 1331): o lembrete é o evento próprio "parcela_lembrete", com a
+  PARCELA como referência (o de 3 dias renova o de 5, por ler); e, decisão 4 do Gerente, passado o vencimento o lembrete
+  "vence em breve" deixa de ser verdade: a rotina resolve-o.
 */
 export interface ResumoCobrancaMensal {
   ativa: boolean;
@@ -64,6 +67,8 @@ export async function rodarCobrancaMensal(admin: SupabaseClient, agora: Date = n
     resumo.parcelasCriadas += await gerarParcelasDoContrato(admin, c.id);
   }
 
+  await resolverLembretesVencidos(admin, hoje);
+
   const { data: parcelas } = await admin
     .from("cobranca_mensal_parcelas")
     .select("id, contrato_id, vence_em, valor, estado_livro, lembrou_d5_em, lembrou_d3_em")
@@ -81,9 +86,32 @@ export async function rodarCobrancaMensal(admin: SupabaseClient, agora: Date = n
     if (error) continue;
     const texto = textoDoLembrete(l, { valor: Number(p.valor), venceEm: p.vence_em });
     // E1247 (ORDEM-DUET 1233): o aviso do site com o título, a prioridade e o número da tabela das rotinas.
+    // E1247 passo 2: o evento próprio, com a parcela como referência e o papel de quem recebe.
     const av = avisoDaRotina("lembreteParcelaAluguel", "inquilino");
-    await notify({ event: "contract_status", email: morador.email, name: morador.full_name ?? undefined, userId: ctr?.tenant_id as string, pushUrl: HREF_ESTADIA(p.contrato_id), subject: ASSUNTOS.lembreteParcelaAluguel, body: (n) => `Olá${n ? " " + n : ""}, ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`, ctaLabel: "Ver a estadia", tituloAviso: av.titulo, prioridadeAviso: av.prioridade, textoAviso: `Contrato ${numeroPublicoContrato(p.contrato_id)}` });
+    await notify({ event: EVENTO_DA_ROTINA.lembreteParcelaAluguel, refId: p.id, papelAviso: "morador", email: morador.email, name: morador.full_name ?? undefined, userId: ctr?.tenant_id as string, pushUrl: HREF_ESTADIA(p.contrato_id), subject: ASSUNTOS.lembreteParcelaAluguel, body: (n) => `Olá${n ? " " + n : ""}, ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`, ctaLabel: "Ver a estadia", tituloAviso: av.titulo, prioridadeAviso: av.prioridade, textoAviso: `Contrato ${numeroPublicoContrato(p.contrato_id)}` });
     resumo.lembretes++;
   }
   return resumo;
+}
+
+/**
+ * E1247 passo 2, decisão 4 (ORDEM-DUET 1331): o lembrete "vence em breve" de uma parcela já VENCIDA (o dia do
+ * vencimento passou) deixa de ser verdade — resolve-se aqui, no passo que já lê as parcelas. Só os lembretes por
+ * resolver, pela referência; no dia do vencimento ele fica. Correr outra vez não muda nada. Nunca lança.
+ */
+async function resolverLembretesVencidos(admin: SupabaseClient, hoje: string): Promise<void> {
+  try {
+    const evento = EVENTO_DA_ROTINA.lembreteParcelaAluguel;
+    const { data: abertos, error } = await admin.from("avisos").select("ref_id").eq("evento", evento).is("resolvido_em", null).not("ref_id", "is", null);
+    if (error) return;
+    const refs = [...new Set(((abertos ?? []) as { ref_id: string | null }[]).map((a) => a.ref_id).filter((x): x is string => !!x))];
+    if (!refs.length) return;
+    const { data: vencidas } = await admin.from("cobranca_mensal_parcelas").select("id").in("id", refs).lt("vence_em", hoje);
+    const ids = ((vencidas ?? []) as { id: string }[]).map((p) => p.id);
+    if (!ids.length) return;
+    const { error: e2 } = await admin.from("avisos").update({ resolvido_em: new Date().toISOString() }).eq("evento", evento).in("ref_id", ids).is("resolvido_em", null);
+    if (e2) console.error("[cobranca] não resolveu os lembretes vencidos:", e2.code, e2.message);
+  } catch {
+    /* a cobrança não depende disto */
+  }
 }

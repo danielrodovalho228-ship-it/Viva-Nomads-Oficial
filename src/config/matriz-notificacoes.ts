@@ -213,6 +213,10 @@ export const MATRIZ_NOTIFICACOES = {
   documento_recebido: { categoria: "outros", papeis: ["admin"], canais: TODOS_OS_CANAIS },
   parceria_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
   estadia_encerramento_equipe: { categoria: "outros", papeis: ["admin"], canais: SEM_PUSH },
+  // E1247 passo 2: os eventos próprios da parcela, com a categoria e os canais do evento do contrato com que viajavam (a
+  // categoria de cada um decide-se no E1161 — decisão 6 da ESPEC; aqui fica o que os e-mails já fazem hoje).
+  parcela_lembrete: { categoria: "decisao", papeis: ["morador"], canais: SEM_PUSH },
+  parcela_registrada: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
 } as const satisfies Record<EventoNotificacao, LinhaMatriz>;
 
 /** Prompt 44 (item 3): alertas da equipe que vão por push (documento na fila, chamado P1/P2, cópia noturna, e-mail). */

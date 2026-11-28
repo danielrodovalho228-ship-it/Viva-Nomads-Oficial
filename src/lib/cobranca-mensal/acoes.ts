@@ -7,7 +7,8 @@ import { consumirLimite, HORA } from "@/lib/limites";
 import { COBRANCA_MENSAL_ATIVA } from "@/lib/flags";
 import { notify } from "@/lib/notifications";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
-import { avisoDaRotina } from "@/lib/notifications/avisos-rotinas-contrato";
+import { avisoDaRotina, EVENTO_DA_ROTINA } from "@/lib/notifications/avisos-rotinas-contrato";
+import { resolverAvisos } from "@/lib/notifications/avisos-servidor";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { podeConfirmar, podeRegistrar } from "./regras";
@@ -49,13 +50,16 @@ export async function registrarPagamentoMensal(parcelaId: string): Promise<Resul
   const agora = new Date().toISOString();
   const { error } = await ctx.admin.from("cobranca_mensal_parcelas").update({ estado_livro: "registrado_morador", registrado_em: agora }).eq("id", parcelaId).is("estado_livro", null);
   if (error) return erro("Não foi possível registrar o pagamento.");
+  // E1247 passo 2 (ESPEC-E1247-PASSO-2, 4): o pagamento registrado resolve o lembrete DESTA parcela, só do morador.
+  await resolverAvisos({ usuarioId: user.id, eventos: [EVENTO_DA_ROTINA.lembreteParcelaAluguel], refId: parcelaId });
   if (ctx.owner_id) {
     const { data: dono } = await ctx.admin.from("profiles").select("email, full_name").eq("id", ctx.owner_id).maybeSingle();
     const d = dono as { email?: string | null; full_name?: string | null } | null;
     if (d?.email) {
       // E1247 (ORDEM-DUET 1233): o aviso do site com o título, a prioridade e o número da tabela das rotinas.
+      // E1247 passo 2: o evento próprio, com a parcela como referência e o papel de quem recebe.
       const av = avisoDaRotina("pagamentoRegistradoMorador", "proprietario");
-      await notify({ event: "contract_status", email: d.email, name: d.full_name ?? undefined, userId: ctx.owner_id, pushUrl: `/dashboard/contratos/${ctx.parcela.contrato_id}`, subject: ASSUNTOS.pagamentoRegistradoMorador, body: (n) => `Olá${n ? " " + n : ""}, o morador registrou o pagamento de uma parcela do aluguel de ${ctx.imovel}. Confirme quando o valor chegar até você.`, ctaLabel: "Ver o contrato", tituloAviso: av.titulo, prioridadeAviso: av.prioridade, textoAviso: `Contrato ${numeroPublicoContrato(ctx.parcela.contrato_id)}` });
+      await notify({ event: EVENTO_DA_ROTINA.pagamentoRegistradoMorador, refId: parcelaId, papelAviso: "dono", email: d.email, name: d.full_name ?? undefined, userId: ctx.owner_id, pushUrl: `/dashboard/contratos/${ctx.parcela.contrato_id}`, subject: ASSUNTOS.pagamentoRegistradoMorador, body: (n) => `Olá${n ? " " + n : ""}, o morador registrou o pagamento de uma parcela do aluguel de ${ctx.imovel}. Confirme quando o valor chegar até você.`, ctaLabel: "Ver o contrato", tituloAviso: av.titulo, prioridadeAviso: av.prioridade, textoAviso: `Contrato ${numeroPublicoContrato(ctx.parcela.contrato_id)}` });
       // "Aguardando confirmação" só depois que o dono foi de fato avisado; sem aviso, fica "registrado pelo morador".
       await ctx.admin.from("cobranca_mensal_parcelas").update({ estado_livro: "aguardando_confirmacao" }).eq("id", parcelaId).eq("estado_livro", "registrado_morador");
     }
@@ -76,6 +80,8 @@ export async function confirmarPagamentoMensal(parcelaId: string): Promise<Resul
   if (!pode.ok) return erro(pode.motivo);
   const { error } = await ctx.admin.from("cobranca_mensal_parcelas").update({ estado_livro: "confirmado_dono", confirmado_em: new Date().toISOString() }).eq("id", parcelaId).not("estado_livro", "is", null).neq("estado_livro", "confirmado_dono");
   if (error) return erro("Não foi possível confirmar o recebimento.");
+  // E1247 passo 2: a confirmação resolve o aviso do dono DESTA parcela.
+  await resolverAvisos({ usuarioId: user.id, eventos: [EVENTO_DA_ROTINA.pagamentoRegistradoMorador], refId: parcelaId });
   revalidatePath(`/dashboard/contratos/${ctx.parcela.contrato_id}`);
   return { ok: true };
 }
