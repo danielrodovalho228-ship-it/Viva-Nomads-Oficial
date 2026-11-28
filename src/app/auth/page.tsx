@@ -14,6 +14,7 @@ import { SITE_URL } from "@/lib/site";
 import { friendlyAuthError, isValidEmail } from "@/lib/auth-errors";
 import type { UserRole } from "@/lib/types";
 import { safeInternalPath } from "@/lib/safe-redirect";
+import { destinoComAncoraDoLogin } from "@/lib/destino-login";
 import { ATRIBUTOS_EMAIL, limparEmail } from "@/lib/login-celular";
 import { LOGIN_APPLE_ATIVO, LOGIN_GOOGLE_ATIVO } from "@/lib/flags";
 import { useIsNative } from "@/lib/use-native";
@@ -92,7 +93,11 @@ export default function AuthPage() {
   function postAuthTarget(): string {
     if (typeof window === "undefined") return "/dashboard";
     // A7: só caminho interno (recusa //, \, tab/CR/LF, @host, esquemas…).
-    return safeInternalPath(new URLSearchParams(window.location.search).get("redirect"));
+    const guardado = new URLSearchParams(window.location.search).get("redirect");
+    const destino = safeInternalPath(guardado);
+    // E1002: o proxy guarda caminho + consulta; a âncora ("#seção") o navegador mantém até aqui, e volta ao destino.
+    // Só quando há destino guardado: quem abre /auth direto vai ao painel sem âncora, como antes.
+    return guardado ? destinoComAncoraDoLogin(destino, window.location.hash) : destino;
   }
 
   /** Conta uma falha de login e inicia a espera (F44). Nunca depende de a conta existir. */
