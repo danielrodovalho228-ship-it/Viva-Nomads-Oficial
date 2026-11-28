@@ -412,3 +412,18 @@ test("A7. estático: datasDaJanela já não entrega a saída sempre vazia; ningu
   const assinar = ler("./data/contrato-assinar-actions.ts");
   assert.doesNotMatch(assinar, /\{ inicio, checkinAfter: janela\?\.hora \?\? null, fim \}/, "a página do contrato já não monta as datas sem a saída");
 });
+
+test("V5. o formulário do dono: \"Horário de saída (opcional)\" logo abaixo do de entrada, sem ser obrigatório, enviado sempre; a linha do morador não muda", () => {
+  const tela = ler("../components/contrato/checkin-contrato.tsx");
+  const entrada = tela.indexOf('data-testid="checkin-horario"');
+  const rotulo = tela.indexOf("Horário de saída (opcional)");
+  const como = tela.indexOf("Como pegar a chave ou o acesso");
+  assert.ok(entrada > 0 && rotulo > entrada && rotulo < como, "o rótulo aprovado, entre a hora de entrada e o como entrar");
+  const campo = tela.slice(rotulo, tela.indexOf("</label>", rotulo));
+  assert.match(campo, /type="time"/);
+  assert.doesNotMatch(campo, /required/, "não é obrigatório");
+  assert.match(campo, /data-testid="checkin-horario-saida"/);
+  assert.match(tela, /salvarInstrucoesEntrada\(\{ contratoId, horario, instrucoes, plantao, horaSaida \}\)/, "o envio leva o campo (vazio = apagar)");
+  const lidas = tela.slice(tela.indexOf('data-testid="checkin-instrucoes-lidas"'), tela.indexOf('data-testid="checkin-pendente"'));
+  assert.doesNotMatch(lidas, /horaSaida|saída/i, "a linha que o morador lê não mostra a hora de saída nesta fatia");
+});

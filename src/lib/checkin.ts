@@ -28,18 +28,32 @@ export function normalizarTelefone(txt: string): string | null {
   return limpo;
 }
 
+/** E1240 (ORDEM-DUET 1288): a recusa do formato da hora de saída, par da de entrada. */
+export const MSG_HORA_SAIDA_FORMATO = "Informe o horário de saída no formato 11:00.";
+
+/**
+ * As instruções de entrada. E1240 (ESPEC-E1240 v5, secção 2): a hora de SAÍDA é opcional e vem à parte dos três campos
+ * de hoje ("instruções preenchidas" não muda): AUSENTE (a chave não veio — uma página aberta antes do deploy) fica
+ * ausente em `horaSaida` (undefined: não se toca na coluna); VAZIA é null (apagar); preenchida, o formato da entrada.
+ */
 export function validarInstrucoes(
-  entrada: Partial<Record<keyof InstrucoesEntrada, unknown>>
-): { ok: true; dados: InstrucoesEntrada } | { ok: false; erro: string } {
+  entrada: Partial<Record<keyof InstrucoesEntrada | "horaSaida", unknown>>
+): { ok: true; dados: InstrucoesEntrada; horaSaida?: string | null } | { ok: false; erro: string } {
   const horario = typeof entrada.horario === "string" ? entrada.horario.trim() : "";
   const instrucoes = typeof entrada.instrucoes === "string" ? entrada.instrucoes.replace(/\r\n/g, "\n").trim() : "";
   const plantaoTxt = typeof entrada.plantao === "string" ? entrada.plantao.trim() : "";
   if (!HORARIO_RE.test(horario)) return { ok: false, erro: "Informe o horário de entrada no formato 14:00." };
+  let horaSaida: string | null | undefined;
+  if (entrada.horaSaida !== undefined) {
+    const h = typeof entrada.horaSaida === "string" ? entrada.horaSaida.trim() : "";
+    if (h && !HORARIO_RE.test(h)) return { ok: false, erro: MSG_HORA_SAIDA_FORMATO };
+    horaSaida = h || null;
+  }
   if (instrucoes.length < MINIMO_INSTRUCOES) return { ok: false, erro: "Explique como o inquilino pega a chave ou o acesso (mínimo de 10 letras)." };
   if (instrucoes.length > LIMITE_INSTRUCOES) return { ok: false, erro: `Instruções longas demais (máx. ${LIMITE_INSTRUCOES} caracteres).` };
   const plantao = normalizarTelefone(plantaoTxt);
   if (!plantao) return { ok: false, erro: "Informe um telefone de plantão com DDD (ex.: 34 99999-0000)." };
-  return { ok: true, dados: { horario, instrucoes, plantao } };
+  return horaSaida === undefined ? { ok: true, dados: { horario, instrucoes, plantao } } : { ok: true, dados: { horario, instrucoes, plantao }, horaSaida };
 }
 
 export interface ContratoCheckin {
