@@ -3707,6 +3707,15 @@
       ],
       "specs": []
     },
+    "/api/protegido/comprovante-devolucao": {
+      "personas": [
+        "proprietario",
+        "inquilino"
+      ],
+      "specs": [
+        "t1810-e1248-devolucao-da-caucao-pela-tela"
+      ]
+    },
     "/api/protegido/conferencia": {
       "personas": [
         "inquilino",
@@ -5223,21 +5232,26 @@
         "proprietario",
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t1810-e1248-devolucao-da-caucao-pela-tela"
+      ]
     },
     "src/lib/data/documentos-actions.ts#responderDevolucaoCaucao": {
       "personas": [
         "proprietario",
         "inquilino"
       ],
-      "specs": []
+      "specs": [
+        "t1810-e1248-devolucao-da-caucao-pela-tela"
+      ]
     },
     "src/lib/data/devolucao-caucao-actions.ts#anexarComprovanteDaDevolucao": {
       "personas": [
         "proprietario"
       ],
       "specs": [
-        "t2157-jornada-piloto"
+        "t2157-jornada-piloto",
+        "t1810-e1248-devolucao-da-caucao-pela-tela"
       ]
     },
     "src/lib/data/devolucao-caucao-actions.ts#decidirDevolucaoPelaCentral": {

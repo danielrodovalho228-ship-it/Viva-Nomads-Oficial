@@ -186,6 +186,38 @@ export function linhaDeConfirmacao(p: { via: string | null | undefined; confirma
 /** O que o chamado diz à equipe, com a chave desligada (ORDEM-1332). */
 export const NOTA_DA_FASE_PARA_A_EQUIPE = "Nesta fase, a contestação pode ser sobre o desconto. A equipe confirma só se o valor foi recebido; ela não julga o desconto.";
 
+/** A disputa está aberta: contestada DEPOIS do E1248 (com a hora) e sem decisão da Central. */
+export function disputaAberta(a: { status: string; contestado_em?: string | null; central_decisao?: string | null }): boolean {
+  return a.status === "desconto_contestado" && !!a.contestado_em && !a.central_decisao;
+}
+
+/**
+ * O estado da devolução nas telas (ORDEM-1326; 8.4-6). Com a disputa aberta, só "contestada pelo morador"; sem ela (a
+ * Central decidiu que não vale, ou o acerto é anterior ao E1248), o sufixo volta. A confirmação diz como foi; um acerto
+ * anterior ao E1248 (sem a forma gravada) diz o de hoje.
+ */
+export function rotuloDoAcerto(p: { status: string; disputaAberta?: boolean; via?: string | null }): string {
+  if (p.status === "aguardando_confirmacao") return "aguardando a confirmação do morador";
+  if (p.status === "desconto_contestado") return p.disputaAberta ? "contestada pelo morador" : "contestada pelo morador — fale pela Central de Ajuda";
+  const comDescontos = p.status === "desconto_confirmado" ? "devolução com descontos" : "devolução";
+  // PROPOSTA DE TEXTO: as duas formas novas.
+  if (p.via === "falta_de_resposta") return `${comDescontos} confirmada por falta de resposta do morador`;
+  if (p.via === "central") return `${comDescontos} confirmada pela equipe da Viva`;
+  if (p.status === "devolvida_integral" || p.status === "desconto_confirmado") return `${comDescontos} confirmada pelo morador`;
+  return p.status;
+}
+
+/**
+ * Quem lê o comprovante (decidido, ORDEM-1352): o dono que o enviou (o arquivo está na pasta dele), o morador daquele
+ * contrato e a equipe. Nunca pela regra de leitura da tabela, que deixa ler o responsável local do imóvel.
+ */
+export function podeLerComprovante(p: { uid: string | null | undefined; ehEquipe: boolean; dono: string | null | undefined; morador: string | null | undefined; caminho: string }): boolean {
+  if (!p.uid) return false;
+  if (p.ehEquipe) return true;
+  if (p.morador && p.uid === p.morador) return true;
+  return !!p.dono && p.uid === p.dono && p.caminho.startsWith(`${p.dono}/`);
+}
+
 /** O motivo (do morador ou da decisão), limpo; null se não tiver de 5 a 500 letras. */
 export function motivoValido(motivo: unknown): string | null {
   const t = typeof motivo === "string" ? motivo.trim() : "";

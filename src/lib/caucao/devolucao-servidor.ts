@@ -66,12 +66,15 @@ export type Acerto = {
 /** O estado confirmado pelo tipo do acerto: a parcial segue a mesma tabela da total (M14). */
 export const statusConfirmado = (tipo: string) => (tipo === "devolucao_integral" ? "devolvida_integral" : "desconto_confirmado");
 
-/** A disputa está aberta: contestado DEPOIS do E1248 (com a hora) e sem decisão da Central. */
-export const disputaAberta = (a: Pick<Acerto, "status" | "contestado_em" | "central_decisao">) => a.status === "desconto_contestado" && !!a.contestado_em && !a.central_decisao;
+export { disputaAberta } from "./devolucao-maquina";
 
-/** Os botões de cada lado (8.4-5): o morador responde em Minhas locações; o dono vê a caução no contrato. */
+/**
+ * Os botões de cada lado (8.4-5): o morador responde em Minhas locações; o dono vê a caução em Contratos, onde está o
+ * estado da devolução, a linha da disputa e o anexo (a página de um contrato não mostra a devolução).
+ */
 export const URL_DO_MORADOR = "/dashboard/locacoes";
-export const urlDoDono = (contratoId: string) => `/dashboard/contratos/${contratoId}`;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const urlDoDono = (_contratoId: string) => "/dashboard/contratos";
 
 export const valorDoAcerto = (a: Pick<Acerto, "valor_devolvido">) => Number(a.valor_devolvido ?? 0);
 

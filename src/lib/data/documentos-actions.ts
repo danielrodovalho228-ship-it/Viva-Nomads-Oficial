@@ -12,6 +12,7 @@ import { abrirChamado } from "@/lib/data/atendimento-actions";
 import { calcularPrazos, type Prioridade } from "@/config/atendimento";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { resolverAvisosDaReferencia } from "@/lib/notifications/avisos-servidor";
+import { linkDoComprovante } from "@/lib/protecao/servidor";
 import {
   NOTA_DA_FASE_PARA_A_EQUIPE,
   brl,
@@ -19,6 +20,8 @@ import {
   diaBRT,
   diaDaData,
   documentoDoMeio,
+  disputaAberta,
+  fimDoPrazoDeResposta,
   fimDoPrazoDoAnexo,
   horaAnunciada,
   motivoValido,
@@ -85,6 +88,18 @@ export interface AcertoView {
   dataDevolucao: string | null;
   meio: string | null;
   status: string;
+  /** E1248: como foi confirmada (morador, falta_de_resposta, central); null nos acertos anteriores. */
+  confirmacaoVia: string | null;
+  /** E1248: o fim do prazo de resposta do morador (ISO), pela função do aviso; null sem a hora do aviso. */
+  prazoRespostaAte: string | null;
+  /** E1248: contestada depois do E1248 e sem decisão da Central. */
+  disputaAberta: boolean;
+  /** E1248: a equipe pediu o comprovante e ele ainda não chegou; o fim do prazo do anexo (ISO). */
+  comprovantePedidoAte: string | null;
+  /** E1248: há comprovante anexado. */
+  temComprovante: boolean;
+  /** E1248: o link assinado do comprovante para quem está a ver (o dono que enviou, ou o morador). */
+  comprovanteUrl: string | null;
 }
 
 /** Documentos e acerto da caução de contratos em que a pessoa é parte (o RLS filtra). */
@@ -131,7 +146,11 @@ export async function documentosDosContratos(
   if (!supabase || ids.length === 0) return vazio;
   const [{ data: docs, error: eDocs }, { data: acertos, error: eAcertos }, { data: caucoes, error: eCaucoes }, { data: confirmados, error: eConfirmados }] = await Promise.all([
     supabase.from("documentos_fiscais").select("id, tipo, numero, valor, periodo_inicio, periodo_fim, criado_em, contrato_id, pagamento_id, anulado_em, anulado_motivo").in("contrato_id", ids).order("criado_em", { ascending: false }),
-    supabase.from("caucao_acertos").select("id, contrato_id, caucao_total, valor_devolvido, data_devolucao, meio, status, created_at").in("contrato_id", ids).order("created_at", { ascending: false }),
+    supabase
+      .from("caucao_acertos")
+      .select("id, contrato_id, caucao_total, valor_devolvido, data_devolucao, meio, status, created_at, aviso_em, confirmacao_via, contestado_em, central_decisao, comprovante_path, comprovante_pedido_em, comprovante_anexado_em")
+      .in("contrato_id", ids)
+      .order("created_at", { ascending: false }),
     supabase.from("pagamentos_bloco").select("contrato_id, valor").in("contrato_id", ids).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true).is("anulado_em", null),
     supabase
       .from("pagamentos_bloco")
@@ -189,9 +208,12 @@ export async function documentosDosContratos(
       ...anulacaoNaVista(anulacaoDaLinha({ documento: { anuladoEm: d.anulado_em as string | null, motivo: d.anulado_motivo as string | null } })),
     });
   }
+  // E1248: o link do comprovante é de quem está a ver; a rota confere de novo quem o pode ler.
+  const quemVe = (acertos ?? []).some((a) => a.comprovante_path) ? ((await supabase.auth.getUser()).data.user?.id ?? null) : null;
   for (const a of acertos ?? []) {
     const alvo = vazio[a.contrato_id as string];
     if (!alvo || alvo.acerto) continue; // o mais recente
+    const pedidoEm = (a.comprovante_pedido_em as string | null) ?? null;
     alvo.acerto = {
       id: a.id as string,
       caucaoTotal: Number(a.caucao_total),
@@ -199,6 +221,12 @@ export async function documentosDosContratos(
       dataDevolucao: (a.data_devolucao as string) ?? null,
       meio: (a.meio as string) ?? null,
       status: a.status as string,
+      confirmacaoVia: (a.confirmacao_via as string | null) ?? null,
+      prazoRespostaAte: a.aviso_em ? fimDoPrazoDeResposta(a.aviso_em as string).toISOString() : null,
+      disputaAberta: disputaAberta({ status: a.status as string, contestado_em: a.contestado_em as string | null, central_decisao: a.central_decisao as string | null }),
+      comprovantePedidoAte: pedidoEm && !a.comprovante_anexado_em ? fimDoPrazoDoAnexo(pedidoEm).toISOString() : null,
+      temComprovante: !!a.comprovante_path,
+      comprovanteUrl: linkDoComprovante((a.comprovante_path as string | null) ?? null, quemVe),
     };
   }
   for (const c of caucoes ?? []) {

@@ -2,6 +2,7 @@
 
 import { ConfirmarNaPagina } from "@/components/ui/confirmar-na-pagina";
 import { AnularRegistroCentral } from "./anular-registro-central";
+import { DecidirDevolucaoCentral, type DevolucaoNoChamado } from "./decidir-devolucao-central";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -68,13 +69,15 @@ function Linha({ k, v }: { k: string; v: React.ReactNode }) {
   );
 }
 
-export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = false, anularSoLeitura = false }: { dados: Dados; macros: Macro[]; agoraISO: string; observadorQa?: boolean; /** E1246: a observadora da QA não vê o cartão quando o contrato não é todo de teste. */ anularSoLeitura?: boolean }) {
+export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = false, anularSoLeitura = false, devolucao = null }: { dados: Dados; macros: Macro[]; agoraISO: string; observadorQa?: boolean; /** E1246: a observadora da QA não vê o cartão quando o contrato não é todo de teste. */ anularSoLeitura?: boolean; /** E1248: a contestação da devolução da caução (o comprovante e a decisão). */ devolucao?: DevolucaoNoChamado | null }) {
   const router = useRouter();
   const { chamado: c, eventos, pessoa, contextoLink, iaAtiva, sugestaoAuto, historico } = dados;
   // O resumo vai no cartão do topo; na conversa ficam só as mensagens e notas.
   const mensagens = dados.mensagens.filter((m) => !(m.interno && ehNotaResumo(m.corpo)));
   // E1229 (ORDEM-DUET-1160): o chamado que nasceu de um registro (a nota do sistema) tem o botão de anular.
   const pedidoDeAnulacao = dados.mensagens.some((m) => m.autor === "sistema" && m.interno && /^\[anulacao\] pagamento=/.test(m.corpo));
+  // E1248: o chamado que nasceu da contestação de uma devolução da caução (a nota do sistema) tem o botão da decisão.
+  const contestacaoDeDevolucao = dados.mensagens.some((m) => m.autor === "sistema" && m.interno && /^\[devolucao\] acerto=/.test(m.corpo));
   // Ao abrir, a última sugestão da Viva ainda não usada já vem na caixa (nota
   // interna no banco: "Enviar como está" lê de lá).
   const [base, setBase] = useState<{ mensagemId: number; texto: string } | null>(() => {
@@ -185,6 +188,7 @@ export function ChamadoAdminClient({ dados, macros, agoraISO, observadorQa = fal
       </Link>
 
       {pedidoDeAnulacao && !anularSoLeitura && <AnularRegistroCentral chamadoId={c.id} />}
+      {contestacaoDeDevolucao && !anularSoLeitura && <DecidirDevolucaoCentral chamadoId={c.id} devolucao={devolucao} />}
 
       {/* Cabeçalho: o assunto e o estado mandam; o prazo é UM indicador. */}
       <header className="mb-6 flex flex-wrap items-start justify-between gap-4 lg:flex-nowrap" data-testid="chamado-cabecalho">

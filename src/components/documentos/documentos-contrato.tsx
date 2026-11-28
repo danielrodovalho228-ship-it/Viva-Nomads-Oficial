@@ -3,6 +3,7 @@
 import { CampoData } from "@/components/ui/campo-data";
 import { AnularRegistro } from "@/components/anulacao/anular-registro";
 import { CampoReais } from "@/components/ui/campo-reais";
+import { SeletorArquivo } from "@/components/ui/seletor-arquivo";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Download, FileText, ShieldCheck } from "lucide-react";
@@ -12,6 +13,8 @@ import { dataBR } from "@/lib/fiscal/documento";
 import { textoLinhaRecibo } from "@/lib/documentos-linha";
 import type { AcertoView, DocumentoView, ReciboView } from "@/lib/data/documentos-actions";
 import { registrarDevolucaoCaucao, responderDevolucaoCaucao } from "@/lib/data/documentos-actions";
+import { anexarComprovanteDaDevolucao } from "@/lib/data/devolucao-caucao-actions";
+import { documentoDoMeio, horaAnunciada, linhaDoDonoNaDisputa, rotuloDoAcerto, MOTIVO_MAXIMO } from "@/lib/caucao/devolucao-maquina";
 import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-actions";
 import { statusHumano } from "@/lib/status-humano";
 import { textoComponentes } from "@/lib/pagamento-componentes";
@@ -102,12 +105,66 @@ function SeloAnulado({ motivo }: { motivo: string | null }) {
   );
 }
 
-const STATUS_ACERTO: Record<string, string> = {
-  aguardando_confirmacao: "aguardando a confirmação do morador",
-  devolvida_integral: "devolução confirmada pelo morador",
-  desconto_confirmado: "devolução com descontos confirmada pelo morador",
-  desconto_contestado: "contestada pelo morador — fale pela Central de Ajuda",
-};
+/** E1248 (ORDEM-1326): o rótulo do estado sai da regra pura — com a disputa aberta, sem o sufixo. */
+const rotulo = (a: AcertoView) => rotuloDoAcerto({ status: a.status, disputaAberta: a.disputaAberta, via: a.confirmacaoVia });
+
+/** E1248 (2.7): o dono anexa o comprovante da devolução (opcional no registro, pedido na disputa). */
+function AnexarComprovante({ acerto }: { acerto: AcertoView }) {
+  const router = useRouter();
+  const [arquivo, setArquivo] = useState<File | null>(null);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const doc = documentoDoMeio(acerto.meio);
+  return (
+    <div className="mt-2 rounded-lg border border-sage-200 bg-white p-2" data-testid="devolucao-anexar">
+      {acerto.comprovantePedidoAte ? (
+        <p className="text-xs text-amber-800">
+          {/* PROPOSTA DE TEXTO */}
+          A equipe precisa do {doc}. Anexe até {horaAnunciada(new Date(acerto.comprovantePedidoAte))}.
+        </p>
+      ) : (
+        <p className="text-xs text-muted">
+          {/* PROPOSTA DE TEXTO */}
+          Se quiser, anexe o {doc} (PDF ou foto). Só você, o morador e a equipe da Viva o veem.
+        </p>
+      )}
+      <SeletorArquivo className="mt-2" accept="application/pdf,image/jpeg,image/png,image/webp" onChange={(e) => setArquivo(e.target.files?.[0] ?? null)} testid="devolucao-anexar-arquivo" />
+      {erro && <p className="mt-1 text-xs text-red-600">{erro}</p>}
+      <Button
+        size="sm"
+        variant="outline"
+        className="mt-2"
+        disabled={!arquivo || enviando}
+        onClick={async () => {
+          if (!arquivo) return;
+          setEnviando(true);
+          setErro(null);
+          const fd = new FormData();
+          fd.set("acertoId", acerto.id);
+          fd.set("arquivo", arquivo);
+          const r = await anexarComprovanteDaDevolucao(fd).catch(() => ({ ok: false as const, error: "Falha de conexão." }));
+          setEnviando(false);
+          if (!r.ok) return setErro(r.error);
+          router.refresh();
+        }}
+      >
+        {enviando ? "Anexando…" : "Anexar o comprovante"}
+      </Button>
+    </div>
+  );
+}
+
+/** O link do comprovante já anexado (para quem o pode ler). */
+function LinkDoComprovante({ acerto }: { acerto: AcertoView }) {
+  if (!acerto.temComprovante) return null;
+  return acerto.comprovanteUrl ? (
+    <a href={acerto.comprovanteUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-medium text-forest underline" data-testid="devolucao-comprovante">
+      Ver o comprovante
+    </a>
+  ) : (
+    <p className="mt-1 text-xs text-muted" data-testid="devolucao-comprovante">Comprovante anexado.</p>
+  );
+}
 
 /** Proprietário: registra quanto devolveu da caução (depois do fim da locação). */
 export function DevolucaoCaucaoDono({
@@ -131,18 +188,26 @@ export function DevolucaoCaucaoDono({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  if (acerto && acerto.status !== "desconto_contestado") {
+  // E1248 (decisão 6; 2-A): com a disputa aberta, o dono lê só "contestada pelo morador" e a linha nova; anexa o
+  // comprovante; não registra outra devolução até a decisão da Central.
+  if (acerto && (acerto.status !== "desconto_contestado" || acerto.disputaAberta)) {
+    const aberta = acerto.status === "aguardando_confirmacao" || acerto.disputaAberta;
     return (
-      <p className="mt-3 text-xs text-muted" data-testid="devolucao-caucao">
-        Caução: devolvidos {formatBRL(acerto.valorDevolvido)} de {formatBRL(acerto.caucaoTotal)} em {dataBR(acerto.dataDevolucao)} — {STATUS_ACERTO[acerto.status] ?? statusHumano(acerto.status)}.
-      </p>
+      <div className="mt-3" data-testid="devolucao-caucao">
+        <p className="text-xs text-muted">
+          Caução: devolvidos {formatBRL(acerto.valorDevolvido)} de {formatBRL(acerto.caucaoTotal)} em {dataBR(acerto.dataDevolucao)} — {rotulo(acerto) || statusHumano(acerto.status)}.
+        </p>
+        {acerto.disputaAberta && <p className="mt-1 text-xs text-amber-800" data-testid="devolucao-disputa">{linhaDoDonoNaDisputa()}</p>}
+        <LinkDoComprovante acerto={acerto} />
+        {aberta && !acerto.temComprovante && <AnexarComprovante acerto={acerto} />}
+      </div>
     );
   }
   if (!encerrado || caucaoConfirmada <= 0) return null;
   if (!aberto) {
     return (
       <div className="mt-3" data-testid="devolucao-caucao">
-        {acerto?.status === "desconto_contestado" && <p className="mb-2 text-xs text-amber-800">A devolução anterior foi contestada pelo morador.</p>}
+        {acerto?.status === "desconto_contestado" && <p className="mb-2 text-xs text-amber-800">Devolução anterior: {rotulo(acerto)}.</p>}
         <Button variant="outline" size="sm" onClick={() => setAberto(true)}>
           Registrar devolução da caução
         </Button>
@@ -205,18 +270,23 @@ export function DevolucaoCaucaoInquilino({ acerto }: { acerto: AcertoView | null
   const router = useRouter();
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [contestando, setContestando] = useState(false);
+  const [motivo, setMotivo] = useState("");
   if (!acerto) return null;
   if (acerto.status !== "aguardando_confirmacao") {
     return (
-      <p className="mt-3 text-xs text-muted" data-testid="devolucao-caucao">
-        Caução: {formatBRL(acerto.valorDevolvido)} de {formatBRL(acerto.caucaoTotal)} — {STATUS_ACERTO[acerto.status] ?? statusHumano(acerto.status)}.
-      </p>
+      <div className="mt-3" data-testid="devolucao-caucao">
+        <p className="text-xs text-muted">
+          Caução: {formatBRL(acerto.valorDevolvido)} de {formatBRL(acerto.caucaoTotal)} — {rotulo(acerto) || statusHumano(acerto.status)}.
+        </p>
+        <LinkDoComprovante acerto={acerto} />
+      </div>
     );
   }
   const responder = async (r: "confirmar" | "contestar") => {
     setOcupado(true);
     setErro(null);
-    const res = await responderDevolucaoCaucao(acerto.id, r).catch(() => ({ ok: false as const, error: "Falha de conexão." }));
+    const res = await responderDevolucaoCaucao(acerto.id, r, motivo).catch(() => ({ ok: false as const, error: "Falha de conexão." }));
     setOcupado(false);
     if (!res.ok) return setErro(res.error);
     router.refresh();
@@ -226,14 +296,35 @@ export function DevolucaoCaucaoInquilino({ acerto }: { acerto: AcertoView | null
       <p className="text-ink">
         O proprietário registrou a devolução de <strong>{formatBRL(acerto.valorDevolvido)}</strong> da caução de {formatBRL(acerto.caucaoTotal)}, em {dataBR(acerto.dataDevolucao)}. Você recebeu?
       </p>
+      {acerto.prazoRespostaAte && (
+        <p className="mt-1 text-xs text-muted" data-testid="devolucao-prazo">
+          {/* PROPOSTA DE TEXTO (E1248): a hora sai do mesmo relógio do aviso e da rotina (M13). */}
+          Responda até {horaAnunciada(new Date(acerto.prazoRespostaAte))}. Sem resposta, a devolução vale como confirmada.
+        </p>
+      )}
+      <LinkDoComprovante acerto={acerto} />
+      {contestando && (
+        <label className="mt-2 block text-xs text-muted">
+          {/* PROPOSTA DE TEXTO (E1248, decisão 12): o campo do motivo. */}
+          O que aconteceu? (pelo menos 5 letras; vai para a equipe da Viva)
+          <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={MOTIVO_MAXIMO} rows={2} className={input} data-testid="devolucao-motivo" />
+        </label>
+      )}
       {erro && <p className="mt-2 text-xs text-red-600">{erro}</p>}
       <div className="mt-2 flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" disabled={ocupado} onClick={() => responder("confirmar")}>
-          <Check className="h-4 w-4" /> Sim, recebi
+        {!contestando && (
+          <Button size="sm" variant="secondary" disabled={ocupado} onClick={() => responder("confirmar")}>
+            <Check className="h-4 w-4" /> Sim, recebi
+          </Button>
+        )}
+        <Button size="sm" variant="outline" disabled={ocupado} onClick={() => (contestando ? responder("contestar") : setContestando(true))}>
+          {contestando ? "Enviar a contestação" : "Não recebi / discordo"}
         </Button>
-        <Button size="sm" variant="outline" disabled={ocupado} onClick={() => responder("contestar")}>
-          Não recebi / discordo
-        </Button>
+        {contestando && (
+          <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => setContestando(false)}>
+            Cancelar
+          </Button>
+        )}
       </div>
       <p className="mt-2 text-[11px] text-muted">Confirmando, sai o termo de devolução em PDF para os dois.</p>
     </div>

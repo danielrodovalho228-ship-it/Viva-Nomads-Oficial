@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { authFile } from "../fixtures/auth";
 import { hasAccount } from "../fixtures/accounts";
 import { preencherPeriodoDaProposta } from "../fixtures/periodo-proposta";
-import { NO_LABORATORIO, aceitarTermoIaSePreciso, adm, apagarContas, criarConta, entrar, liberarLimiteCodigo, novaSenha, novoSufixo, pdf, pngDeTeste } from "../fixtures/laboratorio";
+import { NO_LABORATORIO, aceitarTermoIaSePreciso, adm, apagarContas, criarConta, entrar, liberarLimiteChamados, liberarLimiteCodigo, novaSenha, novoSufixo, pdf, pngDeTeste } from "../fixtures/laboratorio";
 import { abrirCadastroNovo, abrirSecoesPasso10, continuarAte, doTipoAoEndereco, noPasso, preencherFichaDentro } from "../fixtures/cadastro";
 import { ROTULO_ETAPA } from "../../../src/lib/contrato-etapas";
 import { addDiasISO } from "../../../src/lib/contrato-blocos";
@@ -775,16 +775,55 @@ test.describe("T2157 — jornada do piloto, até a última etapa aprovada @criti
       await expect.poll(ultimoAcerto, { timeout: 20_000, message: "a devolução com desconto grava" }).toEqual({ status: "aguardando_confirmacao", tipo: "desconto", valor_devolvido: caucaoTotal - 100 });
     });
 
-    await test.step("extensão B — disputa: o inquilino diz que não recebeu ou discorda, e o dono vê a contestação", async () => {
+    // E1248 (ORDENS-DUET 1317, 1318 e 1326; a ORDEM-1352 manda reescrever estes três sítios): a contestação leva o MOTIVO;
+    // com a disputa aberta o dono lê só "contestada pelo morador" e a linha nova, sem o botão de registrar; ele anexa o
+    // comprovante, a equipe decide no chamado que a devolução NÃO vale, e só então o dono regista de novo.
+    const MOTIVO_DO_MORADOR = "Recebi R$ 100 a menos e não houve conversa sobre o desconto.";
+    await test.step("extensão B — disputa: o inquilino contesta com o motivo, e o dono vê a contestação com a disputa aberta", async () => {
+      await liberarLimiteChamados();
       await pi.goto("/dashboard/locacoes", { waitUntil: "domcontentloaded" });
       await pi.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
-      await pi.getByTestId("devolucao-caucao").first().getByRole("button", { name: /Não recebi \/ discordo/ }).click();
+      const caixa = pi.getByTestId("devolucao-caucao").first();
+      await caixa.getByRole("button", { name: /Não recebi \/ discordo/ }).click();
+      await caixa.getByTestId("devolucao-motivo").fill(MOTIVO_DO_MORADOR);
+      await caixa.getByRole("button", { name: "Enviar a contestação" }).click();
       await expect.poll(async () => (await ultimoAcerto())?.status, { timeout: 20_000, message: "a contestação grava" }).toBe("desconto_contestado");
+      const { data: contestado } = await adm().from("caucao_acertos").select("contestacao_motivo, chamado_id").eq("contrato_id", contratoId).order("created_at", { ascending: false }).limit(1).single();
+      expect(contestado?.contestacao_motivo, "o motivo do morador fica gravado").toBe(MOTIVO_DO_MORADOR);
+      expect(contestado?.chamado_id, "o chamado da Central nasce").toBeTruthy();
       await pd.goto("/dashboard/contratos", { waitUntil: "domcontentloaded" });
-      await expect(pd.getByTestId("devolucao-caucao").first(), "o dono vê que a devolução foi contestada").toContainText("A devolução anterior foi contestada pelo morador.", { timeout: 20_000 });
+      const doDono = pd.getByTestId("devolucao-caucao").first();
+      await expect(doDono, "o dono vê só \"contestada pelo morador\"").toContainText("contestada pelo morador.", { timeout: 20_000 });
+      await expect(doDono).not.toContainText("fale pela Central de Ajuda");
+      await expect(doDono.getByTestId("devolucao-disputa")).toHaveText("A equipe da Viva está analisando. O seu prazo fica suspenso até a decisão.");
+      await expect(doDono.getByRole("button", { name: "Registrar devolução da caução" }), "com a disputa aberta, não regista outra").toHaveCount(0);
     });
 
-    // 3. o dono registra pela tela a devolução integral da caução (depois da contestação, um novo acerto é permitido)
+    await test.step("extensão C — o dono anexa o comprovante e a equipe decide no chamado que a devolução não vale", async () => {
+      const anexo = pd.getByTestId("devolucao-anexar").first();
+      await anexo.getByTestId("devolucao-anexar-arquivo").setInputFiles({ name: "comprovante.pdf", mimeType: "application/pdf", buffer: pdf() });
+      await anexo.getByRole("button", { name: "Anexar o comprovante" }).click();
+      await expect
+        .poll(async () => (await adm().from("caucao_acertos").select("comprovante_path").eq("contrato_id", contratoId).order("created_at", { ascending: false }).limit(1).single()).data?.comprovante_path ?? null, { timeout: 20_000, message: "o comprovante fica guardado" })
+        .toMatch(/^[0-9a-f-]+\/[0-9a-f-]+\.pdf$/);
+      const { data: ac } = await adm().from("caucao_acertos").select("chamado_id").eq("contrato_id", contratoId).order("created_at", { ascending: false }).limit(1).single();
+      // O painel da equipe exige a sessão com o 2.º fator (AAL2): entra o admin do laboratório (a sessão do global-setup).
+      const ctxEquipe = await browser.newContext({ storageState: authFile("admin"), viewport: { width: 1280, height: 900 } });
+      const pe = await ctxEquipe.newPage();
+      await pe.goto(`/admin/atendimento/${ac!.chamado_id}`, { waitUntil: "domcontentloaded" });
+      const decisao = pe.getByTestId("central-devolucao");
+      await expect(decisao).toBeVisible({ timeout: 20_000 });
+      await expect(decisao.getByTestId("central-devolucao-comprovante"), "a equipe vê o comprovante").toBeVisible();
+      await decisao.getByTestId("central-devolucao-motivo").fill("O valor devolvido não é o que o morador recebeu.");
+      await decisao.getByTestId("central-devolucao-nao-confirmar").click();
+      await expect(decisao.getByTestId("central-devolucao-decidida")).toBeVisible({ timeout: 20_000 });
+      await ctxEquipe.close();
+      await expect
+        .poll(async () => (await adm().from("caucao_acertos").select("central_decisao").eq("contrato_id", contratoId).order("created_at", { ascending: false }).limit(1).single()).data?.central_decisao, { timeout: 20_000, message: "a decisão grava" })
+        .toBe("nao_confirmada");
+    });
+
+    // 3. o dono registra pela tela a devolução integral da caução (depois do "não vale" da equipe, um novo acerto é permitido)
     await abrirDevolucao();
     await pd.getByTestId("devolucao-caucao").first().locator("input").first().fill(String(caucaoTotal));
     await pd.getByTestId("devolucao-caucao").first().getByRole("button", { name: "Registrar devolução", exact: true }).click();

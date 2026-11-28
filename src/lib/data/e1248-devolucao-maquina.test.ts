@@ -69,7 +69,8 @@ const C = "c0c0c0c0-0000-4000-8000-0000000000c1";
 const C2 = "c0c0c0c0-0000-4000-8000-0000000000c2";
 const H = 3_600_000;
 const URL_MORADOR = "/dashboard/locacoes";
-const URL_DONO = `/dashboard/contratos/${C}`;
+/** A tela onde o dono vê a devolução (a página de um contrato não a mostra). */
+const URL_DONO = "/dashboard/contratos";
 
 let db: ReturnType<typeof criarBanco>;
 const sessao = (uid: string | null) => ({ auth: { getUser: async () => ({ data: { user: uid ? { id: uid } : null } }) } });

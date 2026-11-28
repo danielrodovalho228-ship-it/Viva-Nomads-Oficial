@@ -67,14 +67,25 @@ test("M24 e M25. o rótulo do estado: com a disputa aberta, só \"contestada pel
 });
 
 const TELA = ler("src/components/documentos/documentos-contrato.tsx");
+/** O corpo de uma função não exportada do arquivo, até à função seguinte. */
+const corpoDeLocal = (fonte: string, nome: string) => {
+  const i = fonte.indexOf(`function ${nome}(`);
+  assert.ok(i >= 0, `${nome} existe`);
+  const j = fonte.indexOf("\nfunction ", i + 1);
+  const k = fonte.indexOf("\nexport ", i + 1);
+  return fonte.slice(i, Math.min(...[j, k].filter((x) => x > 0)));
+};
 
 test("M24. a tela do dono: na disputa aberta, a linha nova, o anexo do comprovante e nenhum botão de registrar", () => {
   const c = corpoDe(TELA, "DevolucaoCaucaoDono");
-  assert.match(c, /rotuloDoAcerto\(/, "o rótulo sai da regra pura");
+  assert.match(TELA, /const rotulo = \(a: AcertoView\) => rotuloDoAcerto\(\{ status: a\.status, disputaAberta: a\.disputaAberta, via: a\.confirmacaoVia \}\)/, "o rótulo sai da regra pura");
+  assert.match(c, /rotulo\(acerto\)/);
   assert.match(c, /linhaDoDonoNaDisputa\(\)/, "texto 2-A");
   assert.match(c, /acerto\?\.disputaAberta|acerto\.disputaAberta/);
-  assert.match(c, /data-testid="devolucao-anexar"/);
-  assert.match(c, /anexarComprovanteDaDevolucao\(/);
+  assert.match(c, /<AnexarComprovante /, "o anexo do comprovante");
+  const anexo = corpoDeLocal(TELA, "AnexarComprovante");
+  assert.match(anexo, /data-testid="devolucao-anexar"/);
+  assert.match(anexo, /anexarComprovanteDaDevolucao\(fd\)/);
   const disputa = c.indexOf("disputaAberta");
   const botao = c.indexOf("Registrar devolução da caução");
   assert.ok(disputa >= 0 && disputa < botao, "a disputa aberta decide antes do botão de registrar");

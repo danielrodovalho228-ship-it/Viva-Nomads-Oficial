@@ -82,7 +82,7 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 |---|---|---|
 | Interface | Next.js 16 (App Router) + React 19 + TypeScript + Tailwind v4. Componentes de servidor por padrão, cliente onde há interação. | `src/app`, `src/components` |
 | Borda (proxy) | `src/proxy.ts`, o middleware do Next 16. Cuida da sessão Supabase, das portas da área interna e dos sócios, do portão da 2FA do admin, do redirecionamento de conta no servidor, do modo app e da marcação de tráfego de teste. | `src/proxy.ts` |
-| Ações e API | Server Actions (`"use server"`) e Route Handlers em `src/app/api`, com 95 rotas †: autenticação, upload, e-mail, webhooks, crons, painel, admin e QA. | `src/lib/data/*-actions.ts`, `src/app/api/**/route.ts` |
+| Ações e API | Server Actions (`"use server"`) e Route Handlers em `src/app/api`, com 97 rotas †: autenticação, upload, e-mail, webhooks, crons, painel, admin e QA. | `src/lib/data/*-actions.ts`, `src/app/api/**/route.ts` |
 | Regras puras | Funções sem rede, testadas com `node --test`: cobrança, caução, nível, ranking, busca, prazos, textos regulados. | `src/lib/**`, `src/config/**` |
 | Acesso a dados | Cliente Supabase do servidor (sessão do usuário, RLS) e cliente de serviço (`SUPABASE_SERVICE_ROLE_KEY`), este só em rotinas e no admin. | `src/lib/supabase`, `src/lib/data` |
 | Banco | Postgres (Supabase), RLS em quase todas as tabelas, funções SQL e triggers, `pg_cron` e `pg_net`. | `supabase/migrations` |
@@ -121,11 +121,12 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 
 ## 5. Rotinas agendadas
 
-**Vercel Cron**, 15 rotas † em `vercel.json`. Todas chamam `src/app/api/cron/*` com `CRON_SECRET`. Horários em UTC:
+**Vercel Cron**, 16 rotas † em `vercel.json`. Todas chamam `src/app/api/cron/*` com `CRON_SECRET`. Horários em UTC:
 
 | Rota | Quando | Função |
 |---|---|---|
 | `pre-aceitacao` | de hora em hora | prazo de 72 h da pré-aceitação |
+| `devolucao-caucao` | de hora em hora (:40) | a máquina da devolução da caução: confirmação por falta de resposta e os dois lembretes das últimas 24 horas (E1248) |
 | `contratos-sem-taxa` | de hora em hora (:20) | contrato com proposta e sem a taxa reservada: fila da Central e um aviso ao dono (E1205) |
 | `vigia-suite` | 07:32, 15:32, 23:32 | vigia da suíte do laboratório: se a corrida do slot (07:17/15:17/23:17) não arrancou na main, despacha o `laboratorio.yml` (com `GITHUB_WATCHDOG_TOKEN`) |
 | `resumo-pedidos` | 11:00 | resumo dos pedidos de moradia para os donos |
