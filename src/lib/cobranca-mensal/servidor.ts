@@ -3,6 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { notify } from "@/lib/notifications";
 import { COBRANCA_MENSAL_ATIVA } from "@/lib/flags";
 import { ASSUNTOS } from "@/lib/notifications/assuntos";
+import { avisoDaRotina } from "@/lib/notifications/avisos-rotinas-contrato";
+import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { HREF_ESTADIA } from "@/lib/estadia/estadia";
 import { MIN_DIAS_COBRANCA_MENSAL, TETO_DIAS_ACUMULADOS, cronogramaMensal, lembreteDaParcela, textoDoLembrete } from "./regras";
 
@@ -78,7 +80,9 @@ export async function rodarCobrancaMensal(admin: SupabaseClient, agora: Date = n
     const { error } = await admin.from("cobranca_mensal_parcelas").update(l === "D-5" ? { lembrou_d5_em: agora.toISOString() } : { lembrou_d3_em: agora.toISOString() }).eq("id", p.id);
     if (error) continue;
     const texto = textoDoLembrete(l, { valor: Number(p.valor), venceEm: p.vence_em });
-    await notify({ event: "contract_status", email: morador.email, name: morador.full_name ?? undefined, userId: ctr?.tenant_id as string, pushUrl: HREF_ESTADIA(p.contrato_id), subject: ASSUNTOS.lembreteParcelaAluguel, body: (n) => `Olá${n ? " " + n : ""}, ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`, ctaLabel: "Ver a estadia" });
+    // E1247 (ORDEM-DUET 1233): o aviso do site com o título, a prioridade e o número da tabela das rotinas.
+    const av = avisoDaRotina("lembreteParcelaAluguel", "inquilino");
+    await notify({ event: "contract_status", email: morador.email, name: morador.full_name ?? undefined, userId: ctr?.tenant_id as string, pushUrl: HREF_ESTADIA(p.contrato_id), subject: ASSUNTOS.lembreteParcelaAluguel, body: (n) => `Olá${n ? " " + n : ""}, ${texto.charAt(0).toLowerCase()}${texto.slice(1)}`, ctaLabel: "Ver a estadia", tituloAviso: av.titulo, prioridadeAviso: av.prioridade, textoAviso: `Contrato ${numeroPublicoContrato(p.contrato_id)}` });
     resumo.lembretes++;
   }
   return resumo;
