@@ -2,6 +2,8 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1251 (ESPEC-E1251 v3): a renovação leva a prioridade; a proposta que vence e a visita que deixa de esperar saem do sino. Corre sem alteração.
+
   T2207 — E1060 (linha Mensagens; ORDEM-DUET-315). As travas que sustentam a re-prova do fecho das Mensagens depois do
   #4063. Na prova ao vivo de 20/11: com a visita já confirmada, o dono abria Visitas e via "Nenhuma visita ainda", e o
   alerta crítico "Pedido de visita" (ação "Confirmar a visita") continuava no topo do painel.

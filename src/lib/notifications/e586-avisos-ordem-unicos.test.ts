@@ -53,7 +53,8 @@ test("(a) pendentes repetidos da mesma chave: fica o mais antigo, os outros saem
 
 test("(a) o servidor junta os pendentes da mesma chave depois de gravar; (b) as leituras desempatam pelo id", () => {
   const g = ler("lib/notifications/avisos-servidor.ts");
-  assert.match(g, /await juntarPendentes\(admin, p\.usuarioId, chave\);/);
+  // E1251 (asserção alterada): o juntar leva a prioridade de quem acabou de gravar.
+  assert.match(g, /await juntarPendentes\(admin, p\.usuarioId, chave, prioridade\);/);
   assert.match(g, /const d = duplicatasDoPendente\(/);
   assert.match(g, /\.delete\(\)\.in\("id", d\.apagar\)/);
   assert.match(ler("lib/data/avisos-actions.ts"), /\.order\("criado_em", \{ ascending: false \}\)\.order\("id", \{ ascending: false \}\)/);

@@ -2,6 +2,8 @@ import { test, expect, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1251 (ESPEC-E1251 v3): a renovação leva a prioridade; a proposta que vence e a visita que deixa de esperar saem do sino. Corre sem alteração.
+
   T830 — E444 itens 3 e 4 (Relay 57, Pista A; a base é da Pista B: tabela "avisos", 0286). Morador, 390 e 1280.
   Vizinha do E1242 (ORDENS-DUET 1213 e 1247): corre também no portão do E1242 (e do reaberto), porque o sino tira o aviso de assinar
   resolvido e a rede grava a resolução conferida com referência (sino.ts, route.ts).

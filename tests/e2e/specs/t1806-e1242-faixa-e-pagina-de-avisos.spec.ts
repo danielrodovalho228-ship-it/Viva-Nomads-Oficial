@@ -2,6 +2,8 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1251 (ESPEC-E1251 v3): a renovação leva a prioridade; a proposta que vence e a visita que deixa de esperar saem do sino. Corre sem alteração.
+
   T1806 — E1242 reaberto (ORDENS-DUET 1247 e 1248): a trava do E1242 passa a morder a FAIXA do painel e a PÁGINA
   completa de avisos (com o filtro "Críticos"), não só o sino. A ronda de prova das 15h de 27/11 viu ao vivo a faixa e a
   página a mostrarem como crítico vivo um aviso de assinar já resolvido.
