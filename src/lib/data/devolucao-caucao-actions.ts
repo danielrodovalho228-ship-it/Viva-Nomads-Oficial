@@ -42,6 +42,8 @@ const MSG_SEM_LEITURA = "Não foi possível ler a devolução. Tente de novo em 
 const MSG_SO_O_DONO = "Só o proprietário do imóvel anexa o comprovante.";
 /** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_JA_DECIDIDA = "A equipe já decidiu esta contestação.";
+/** PROPOSTA DE TEXTO (ORDEM-DUET 1361, D19): o anexo num acerto já confirmado. */
+const MSG_DEVOLUCAO_ENCERRADA = "Esta devolução já está encerrada: o comprovante não pode ser anexado.";
 /** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_JA_ANEXADO = "O comprovante desta devolução já foi anexado.";
 /** Texto aprovado (ORDEM-DUET 1359) */
@@ -96,7 +98,8 @@ export async function anexarComprovanteDaDevolucao(formData: FormData): Promise<
   const partes = await partesDoContrato(admin, a.contrato_id);
   if (!partes || partes.dono !== user.id) return { ok: false, error: MSG_SO_O_DONO };
   // Só enquanto a devolução está aberta: à espera da resposta, ou contestada sem decisão.
-  if (a.central_decisao || (a.status !== "aguardando_confirmacao" && a.status !== "desconto_contestado")) return { ok: false, error: MSG_JA_DECIDIDA };
+  if (a.central_decisao) return { ok: false, error: MSG_JA_DECIDIDA };
+  if (a.status !== "aguardando_confirmacao" && a.status !== "desconto_contestado") return { ok: false, error: MSG_DEVOLUCAO_ENCERRADA };
   // ORDEM-DUET 1359 (ajuste 2): um comprovante por acerto, com uma exceção — antes de qualquer contestação e do pedido
   // da equipe, o dono troca o arquivo (o anterior sai do armazenamento). Depois, o arquivo fica fixo.
   const anterior = a.comprovante_path;
