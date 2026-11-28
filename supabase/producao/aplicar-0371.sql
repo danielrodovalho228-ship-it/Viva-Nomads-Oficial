@@ -53,7 +53,7 @@ begin
   -- o caminho no formato dos da conferência: a pasta de quem enviou e um arquivo PDF ou imagem
   if not exists (select 1 from pg_constraint where conname = 'caucao_acertos_comprovante_path_chk' and conrelid = 'public.caucao_acertos'::regclass) then
     alter table public.caucao_acertos add constraint caucao_acertos_comprovante_path_chk
-      check (comprovante_path is null or comprovante_path ~ '^[0-9a-zA-Z-]+/[0-9a-zA-Z_-]+\.(pdf|jpg|png|webp)$');
+      check (comprovante_path is null or comprovante_path ~ '\.(pdf|jpg|png|webp)$');
   end if;
 end $$;
 
