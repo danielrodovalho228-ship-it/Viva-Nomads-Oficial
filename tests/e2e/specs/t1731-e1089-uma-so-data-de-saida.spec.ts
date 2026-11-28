@@ -165,10 +165,11 @@ test.describe("T1731 — E1089: a mesma data de saída na proposta, no e-mail, n
     await p.context().close();
   });
 
-  test("4. A página da estadia: 'Saída: …' com a mesma data, a 390 e a 1280 px", async ({ browser }) => {
+  test("4. A página da estadia: 'Saída em …' com a mesma data, a 390 e a 1280 px", async ({ browser }) => {
     for (const largura of [390, 1280] as const) {
       const p = await comoDono(browser, `/dashboard/estadia/${ids.contrato}`, largura);
-      await expect(p.getByTestId("estadia-saida")).toHaveText(`Saída: ${br(SAIDA)} até as 11:00`, { timeout: 30_000 });
+      // E1230 (ORDEM-DUET 1340; asserção alterada): a saída mostra-se sem hora, com a mesma data.
+      await expect(p.getByTestId("estadia-saida")).toHaveText(`Saída em ${br(SAIDA)}, horário a combinar com o proprietário`, { timeout: 30_000 });
       await expect(p.getByTestId("estadia-entrada")).toContainText(br(ENTRADA));
       expect(await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), "sem rolagem lateral").toBeLessThanOrEqual(1);
       await p.screenshot({ path: `${SAIDA_PRINTS}/t1731-4-estadia-${largura}.png`, fullPage: true });
@@ -188,12 +189,13 @@ test.describe("T1731 — E1089: a mesma data de saída na proposta, no e-mail, n
     const { error: ec } = await adm().from("contratos").update({ status: "encerrado_sem_renovacao", encerrado_em: agora }).eq("id", ids.contrato!);
     expect(ec).toBeNull();
 
-    // O dono abre o Início: "Sai hoje", com o horário do imóvel.
+    // O dono abre o Início: "Sai hoje". E1230 (ORDEM-DUET 1340; asserção alterada): sem hora — a saída não lê o anúncio.
     const p = await comoDono(browser, "/dashboard");
     const cartao = p.getByTestId("inicio-dono-hoje").getByTestId("inicio-dono-hoje-cartao");
     await expect(cartao).toHaveCount(1, { timeout: 30_000 });
     await expect(cartao).toHaveAttribute("data-tipo", "saida");
-    await expect(cartao).toContainText("Sai hoje · até as 11:00");
+    await expect(cartao).toContainText("Sai hoje");
+    await expect(cartao).not.toContainText("até as");
     await p.getByTestId("inicio-dono-hoje").screenshot({ path: `${SAIDA_PRINTS}/t1731-5-sai-hoje-390.png` });
 
     // A mensagem programada "No dia da saída" (9h de Brasília de hoje) sai às 10h — não é cancelada.
