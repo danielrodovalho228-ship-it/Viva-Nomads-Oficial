@@ -147,7 +147,8 @@ test.describe("T1705 — E1065: o motivo de o código não sair fica junto do bo
     await area.getByRole("link", { name: "Preencher as instruções de entrada" }).click();
     const form = page.getByTestId("checkin-form");
     await expect(form).toBeInViewport();
-    await form.locator('input[type="time"]').fill("14:00");
+    // E1240 (ORDEM-DUET 1340; asserção alterada): o formulário tem agora duas horas (entrada e saída); a de entrada pelo nome.
+    await form.getByTestId("checkin-horario").fill("14:00");
     await form.getByTestId("checkin-instrucoes").fill("Chave na portaria, apto 12.");
     await form.locator('input[type="tel"]').fill("34999990000");
     await form.getByTestId("checkin-salvar").click();
