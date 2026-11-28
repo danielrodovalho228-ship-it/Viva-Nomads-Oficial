@@ -53,7 +53,11 @@ test("H5. o servidor recusa ANTES de gravar: salvarInstrucoesEntrada confere a h
   const trava = salvar.indexOf("horaDeEntradaBloqueada(");
   assert.ok(trava > 0, "a ação chama a regra");
   assert.ok(trava < salvar.indexOf('.from("contratos_checkin")'), "a recusa vem antes do upsert");
-  assert.match(salvar, /MSG_HORA_DE_ENTRADA_BLOQUEADA/, "com a mensagem do coordenador");
+  assert.match(
+    salvar,
+    /\n\s*if \(horaDeEntradaBloqueada\(\{ blocos, horaAtual: [^}]*, horaNova: v\.dados\.horario, agora: new Date\(\) \}\)\) \{\s*return \{ ok: false, error: MSG_HORA_DE_ENTRADA_BLOQUEADA \};\s*\}/,
+    "a condição é só a regra (sem curto-circuito) e devolve a mensagem do coordenador",
+  );
   assert.match(acoes, /contrato_blocos\(inicio, fim, status\)/, "lê os blocos para a âncora");
   assert.match(salvar, /horaAtual: \(k\?\.horario as string \| null\) \?\? null/, "a hora vigente é a gravada no contrato");
 });
