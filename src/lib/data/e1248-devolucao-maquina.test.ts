@@ -1204,3 +1204,42 @@ test("1365 (N9). à marca exata dos 10 minutos a rotina ainda não abre o chamad
   await rodar(new Date(agora.getTime() + 1));
   assert.ok(acerto(id).chamado_id, "um milissegundo depois, abre");
 });
+
+// ——————————————————————— ORDEM-DUET 1367: a Dúvida 9 — o chamado do morador, órfão quando a nota falha ———————————————————————
+
+test("1367. a nota falhou na ação: a rotina liga o chamado aberto do próprio morador, em vez de abrir outro", async () => {
+  const id = semearAcerto({ aviso_em: haHoras(30) });
+  db.falhas.add("chamado_mensagens:insert");
+  await contestar(id, "Não recebi o valor.");
+  db.falhas.delete("chamado_mensagens:insert");
+  assert.equal(acerto(id).chamado_id ?? null, null);
+  assert.equal(db.banco.chamados.length, 1, "o chamado do morador existe, sem ligação");
+  const doMorador = db.banco.chamados[0];
+  await rodar(new Date(Date.now() + H));
+  assert.equal(acerto(id).chamado_id, doMorador.id, "liga o do morador");
+  assert.equal(db.banco.chamados.length, 1, "um só chamado por devolução");
+  assert.ok(db.banco.chamado_mensagens.some((n) => n.chamado_id === doMorador.id && n.autor === "sistema" && n.corpo === `[devolucao] acerto=${id}`), "com a nota");
+  assert.equal(doMorador.status, "aberto", "não é fechado");
+  como(DONO);
+  assert.equal((await anexar(formulario(id, PDF()))).ok, true);
+  como(EQUIPE);
+  assert.equal((await decidir({ chamadoId: String(doMorador.id), decisao: "confirmada" })).ok, true, "é o do morador que decide");
+});
+
+test("1367. outro chamado do morador (outro assunto, fechado, ou já ligado a outro acerto) não serve: a rotina abre um novo", async () => {
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: haHoras(30), contestacao_motivo: "Não recebi o valor." });
+  const assunto = "Contestação da devolução da caução (" + (await import("../contrato-ref.ts")).numeroPublicoContrato(C) + ")";
+  const outroAcerto = semearAcerto({ contrato_id: C2, status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: haHoras(30), contestacao_motivo: "Outro.", chamado_id: "44444444-4444-4444-8444-444444444444" });
+  db.banco.chamados.push(
+    { id: "c-outro-assunto", usuario_id: MORADOR, categoria: "caucao", assunto: "Dúvida sobre a caução", status: "aberto", contexto_tipo: "contrato", contexto_id: C, simulacao: false, prioridade: "p2" },
+    { id: "c-fechado", usuario_id: MORADOR, categoria: "caucao", assunto, status: "encerrado", contexto_tipo: "contrato", contexto_id: C, simulacao: false, prioridade: "p2" },
+    { id: "44444444-4444-4444-8444-444444444444", usuario_id: MORADOR, categoria: "caucao", assunto, status: "aberto", contexto_tipo: "contrato", contexto_id: C, simulacao: false, prioridade: "p2" },
+    { id: "c-de-outro", usuario_id: OUTRO, categoria: "caucao", assunto, status: "aberto", contexto_tipo: "contrato", contexto_id: C, simulacao: false, prioridade: "p2" },
+  );
+  void outroAcerto;
+  await rodar(new Date());
+  const chId = acerto(id).chamado_id as string;
+  assert.ok(chId);
+  assert.ok(!["c-outro-assunto", "c-fechado", "44444444-4444-4444-8444-444444444444", "c-de-outro"].includes(chId), "nenhum dos que não servem");
+  assert.equal(db.banco.chamados.length, 5, "abriu um novo");
+});

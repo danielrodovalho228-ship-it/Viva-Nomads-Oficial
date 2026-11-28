@@ -34,7 +34,7 @@ const STUBS = {
     const numero = "CH-2026-00090" + n;
     const sessao = globalThis.__e1248Sessao;
     const uid = sessao ? (await sessao.auth.getUser()).data.user?.id ?? null : null;
-    await globalThis.__e1248Admin.from("chamados").insert({ id: globalThis.crypto.randomUUID(), numero_publico: numero, usuario_id: uid, categoria: input.categoria, contexto_tipo: input.contextoTipo ?? null, contexto_id: input.contextoId ?? null, prioridade: "p2", simulacao: false, prazo_resolucao: "2026-12-20T00:00:00.000Z", criado_em: new Date().toISOString() });
+    await globalThis.__e1248Admin.from("chamados").insert({ id: globalThis.crypto.randomUUID(), numero_publico: numero, usuario_id: uid, categoria: input.categoria, assunto: input.assunto ?? null, status: "aberto", contexto_tipo: input.contextoTipo ?? null, contexto_id: input.contextoId ?? null, prioridade: "p2", simulacao: false, prazo_resolucao: "2026-12-20T00:00:00.000Z", criado_em: new Date().toISOString() });
     return { ok: true, numero, aviso: "", emergencia: false };
   }
   export async function responderComoAdmin(id, texto, interno) { (globalThis.__e1248Respostas ??= []).push({ id, texto, interno }); return { ok: true }; }`,
