@@ -129,6 +129,13 @@ export type NotificationEvent =
   | "pre_aceite_expirou" // E1247 passo 2, PR 2: a janela terminou e a candidatura volta ao dono → os dois; ref = a proposta
   | "pre_aceite_perdeu_vez" // E1247 passo 2, PR 2: outra pessoa concluiu o contrato antes → os dois; ref = a proposta
   | "pre_aceite_encerrado" // E1247 passo 2, PR 2: a 3.ª expiração encerrou a candidatura → os dois; ref = a proposta
+  | "caucao_devolucao_registrada" // E1248: o dono registrou a devolução da caução → morador (5 dias para responder); ref = o contrato
+  | "caucao_devolucao_lembrete" // E1248: as últimas 24 horas para responder → morador (crítico); ref = o contrato
+  | "caucao_devolucao_contestada" // E1248: o morador contestou, com o motivo → dono; ref = o contrato
+  | "caucao_devolucao_sem_resposta" // E1248: confirmada por falta de resposta → os dois; ref = o contrato
+  | "caucao_devolucao_decidida" // E1248: a Central decidiu a contestação → os dois; ref = o contrato
+  | "caucao_comprovante_pedido" // E1248: a equipe pede o comprovante da devolução → dono; ref = o contrato
+  | "caucao_comprovante_lembrete" // E1248: as últimas 24 horas para anexar o comprovante → dono (crítico); ref = o contrato
   // Viva rodando automático (Prompt 38)
   | "vinculo_parceiro_convite" // o dono convidou o parceiro como fixo do imóvel → parceiro
   | "vinculo_parceiro_resposta" // o parceiro aceitou ou recusou o convite → dono
@@ -279,6 +286,15 @@ export const TEMPLATES: Record<NotificationEvent, { subject: string; body: (n?: 
   pre_aceite_expirou: { subject: "A pré-aceitação terminou", body: (n) => `Olá${n ? " " + n : ""}, a pré-aceitação terminou sem o contrato concluído. Veja a proposta para os próximos passos.`, cta: "Ver a proposta", path: "/dashboard/propostas" },
   pre_aceite_perdeu_vez: { subject: "Outra pessoa concluiu o contrato antes", body: (n) => `Olá${n ? " " + n : ""}, outra pessoa concluiu o contrato deste imóvel antes. Veja a proposta para os próximos passos.`, cta: "Ver a proposta", path: "/dashboard/propostas" },
   pre_aceite_encerrado: { subject: "Sua candidatura foi encerrada", body: (n) => `Olá${n ? " " + n : ""}, a candidatura foi encerrada depois da terceira expiração do prazo. Veja a proposta.`, cta: "Ver a proposta", path: "/dashboard/propostas" },
+  // E1248 PR 1 (ESPEC-E1248 v11, 2 e 8.2): os eventos próprios da devolução da caução. As chamadas passam o texto do
+  // coordenador no aviso; os assuntos são texto aprovado (ORDEM-DUET 1359). Isto é o recurso do catálogo.
+  caucao_devolucao_registrada: { subject: "Devolução da Caução registrada: confirme ou conteste", body: (n) => `Olá${n ? " " + n : ""}, o proprietário registrou a devolução da Caução. Confirme ou conteste em até 5 dias; sem resposta, a devolução vale como confirmada.`, cta: "Confirmar ou contestar", path: "/dashboard/locacoes" },
+  caucao_devolucao_lembrete: { subject: "Últimas 24 horas para responder sobre a Caução", body: (n) => `Olá${n ? " " + n : ""}, faltam menos de 24 horas para você confirmar ou contestar a devolução da Caução. Sem resposta, ela vale como confirmada.`, cta: "Confirmar ou contestar", path: "/dashboard/locacoes" },
+  caucao_devolucao_contestada: { subject: "O morador contestou a devolução da Caução", body: (n) => `Olá${n ? " " + n : ""}, o morador contestou a devolução da Caução. A equipe da Viva vai analisar, e o seu prazo fica suspenso até a decisão.`, cta: "Ver a caução", path: "/dashboard/contratos" },
+  caucao_devolucao_sem_resposta: { subject: "Devolução da Caução confirmada", body: (n) => `Olá${n ? " " + n : ""}, a devolução da Caução foi considerada confirmada porque não houve resposta em 5 dias.`, cta: "Ver a caução", path: "/dashboard/contratos" },
+  caucao_devolucao_decidida: { subject: "A equipe decidiu a contestação da Caução", body: (n) => `Olá${n ? " " + n : ""}, a equipe da Viva analisou a contestação da devolução da Caução. Veja a decisão na plataforma.`, cta: "Ver a caução", path: "/dashboard/contratos" },
+  caucao_comprovante_pedido: { subject: "Anexe o comprovante da devolução da Caução", body: (n) => `Olá${n ? " " + n : ""}, a equipe precisa do comprovante da devolução da Caução para decidir a contestação. Anexe-o na página do contrato.`, cta: "Anexar o comprovante", path: "/dashboard/contratos" },
+  caucao_comprovante_lembrete: { subject: "Últimas 24 horas para anexar o comprovante", body: (n) => `Olá${n ? " " + n : ""}, faltam menos de 24 horas para você anexar o comprovante da devolução da Caução. Depois disso, a equipe decide com o que houver.`, cta: "Anexar o comprovante", path: "/dashboard/contratos" },
   estadia_encerramento_equipe: { subject: "Novo pedido de encerramento", body: () => "Uma das partes pediu o encerramento de um contrato. O pedido está na fila de encerramentos.", cta: "Abrir a fila", path: "/admin/contratos/encerramentos" },
   vinculo_parceiro_convite: { subject: "Convite para parceiro fixo de um imóvel", body: (n) => `Olá${n ? " " + n : ""}, um proprietário quer você como parceiro fixo do imóvel dele. Os pedidos chegam a cada saída de morador, e você aceita ou recusa cada um.`, cta: "Ver o convite", path: "/dashboard/parceiro" },
   foto_perfil_removida: { subject: "A foto do seu perfil foi removida", body: (n) => `Olá${n ? " " + n : ""}, a equipe da Viva Nomads removeu a foto do seu perfil. A foto do perfil precisa ser o seu rosto. Você pode enviar outra foto quando quiser.`, cta: "Enviar outra foto", path: "/dashboard/conta/perfil" },

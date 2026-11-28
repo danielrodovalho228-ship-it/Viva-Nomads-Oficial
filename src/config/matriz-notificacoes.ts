@@ -223,6 +223,14 @@ export const MATRIZ_NOTIFICACOES = {
   pre_aceite_expirou: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
   pre_aceite_perdeu_vez: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
   pre_aceite_encerrado: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  // E1248 PR 1: os eventos próprios da devolução da caução, no molde dos da parcela (a categoria decide-se no E1161).
+  caucao_devolucao_registrada: { categoria: "decisao", papeis: ["morador"], canais: SEM_PUSH },
+  caucao_devolucao_lembrete: { categoria: "decisao", papeis: ["morador"], canais: SEM_PUSH },
+  caucao_devolucao_contestada: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+  caucao_devolucao_sem_resposta: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  caucao_devolucao_decidida: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  caucao_comprovante_pedido: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+  caucao_comprovante_lembrete: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
 } as const satisfies Record<EventoNotificacao, LinhaMatriz>;
 
 /** Prompt 44 (item 3): alertas da equipe que vão por push (documento na fila, chamado P1/P2, cópia noturna, e-mail). */

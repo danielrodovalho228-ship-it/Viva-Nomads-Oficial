@@ -8,6 +8,20 @@ import { ROTULO_TIPO, type TipoDocumento } from "@/lib/fiscal/documento";
 import { regraDevolucao } from "@/lib/fiscal/devolucao";
 import { componentesDoPagamento, parteDaColuna } from "@/lib/pagamento-componentes";
 import { anulacaoDaLinha } from "@/lib/documentos-linha";
+import { abrirChamado } from "@/lib/data/atendimento-actions";
+import { resolverAvisosDaReferencia } from "@/lib/notifications/avisos-servidor";
+import { linkDoComprovante } from "@/lib/protecao/servidor";
+import {
+  disputaAberta,
+  fimDoPrazoDeResposta,
+  fimDoPrazoDoAnexo,
+  motivoValido,
+  prazoDeRespostaTerminou,
+  textoContestacaoAoDono,
+  textoPedidoDoComprovante,
+  textoRespostaTardia,
+} from "@/lib/caucao/devolucao-maquina";
+import { AVISOS_DO_MORADOR, enviarAvisoDoRegistro, enviarSemFalhar, confirmarPorFaltaDeResposta, ligarChamadoAoAcerto, mensagemDaContestacao, statusConfirmado, urlDoDono, valorDoAcerto, type Acerto } from "@/lib/caucao/devolucao-servidor";
 
 /**
  * Documentos do contrato (recibos, comprovante e termo da caução) e a
@@ -64,6 +78,18 @@ export interface AcertoView {
   dataDevolucao: string | null;
   meio: string | null;
   status: string;
+  /** E1248: como foi confirmada (morador, falta_de_resposta, central); null nos acertos anteriores. */
+  confirmacaoVia: string | null;
+  /** E1248: o fim do prazo de resposta do morador (ISO), pela função do aviso; null sem a hora do aviso. */
+  prazoRespostaAte: string | null;
+  /** E1248: contestada depois do E1248 e sem decisão da Central. */
+  disputaAberta: boolean;
+  /** E1248: a equipe pediu o comprovante e ele ainda não chegou; o fim do prazo do anexo (ISO). */
+  comprovantePedidoAte: string | null;
+  /** E1248: há comprovante anexado. */
+  temComprovante: boolean;
+  /** E1248: o link assinado do comprovante para quem está a ver (o dono que enviou, ou o morador). */
+  comprovanteUrl: string | null;
 }
 
 /** Documentos e acerto da caução de contratos em que a pessoa é parte (o RLS filtra). */
@@ -110,7 +136,11 @@ export async function documentosDosContratos(
   if (!supabase || ids.length === 0) return vazio;
   const [{ data: docs, error: eDocs }, { data: acertos, error: eAcertos }, { data: caucoes, error: eCaucoes }, { data: confirmados, error: eConfirmados }] = await Promise.all([
     supabase.from("documentos_fiscais").select("id, tipo, numero, valor, periodo_inicio, periodo_fim, criado_em, contrato_id, pagamento_id, anulado_em, anulado_motivo").in("contrato_id", ids).order("criado_em", { ascending: false }),
-    supabase.from("caucao_acertos").select("id, contrato_id, caucao_total, valor_devolvido, data_devolucao, meio, status, created_at").in("contrato_id", ids).order("created_at", { ascending: false }),
+    supabase
+      .from("caucao_acertos")
+      .select("id, contrato_id, caucao_total, valor_devolvido, data_devolucao, meio, status, created_at, aviso_em, confirmacao_via, contestado_em, central_decisao, comprovante_path, comprovante_pedido_em, comprovante_anexado_em")
+      .in("contrato_id", ids)
+      .order("created_at", { ascending: false }),
     supabase.from("pagamentos_bloco").select("contrato_id, valor").in("contrato_id", ids).eq("tipo", "caucao").eq("confirmado_pelo_inquilino", true).is("anulado_em", null),
     supabase
       .from("pagamentos_bloco")
@@ -168,9 +198,12 @@ export async function documentosDosContratos(
       ...anulacaoNaVista(anulacaoDaLinha({ documento: { anuladoEm: d.anulado_em as string | null, motivo: d.anulado_motivo as string | null } })),
     });
   }
+  // E1248: o link do comprovante é de quem está a ver; a rota confere de novo quem o pode ler.
+  const quemVe = (acertos ?? []).some((a) => a.comprovante_path) ? ((await supabase.auth.getUser()).data.user?.id ?? null) : null;
   for (const a of acertos ?? []) {
     const alvo = vazio[a.contrato_id as string];
     if (!alvo || alvo.acerto) continue; // o mais recente
+    const pedidoEm = (a.comprovante_pedido_em as string | null) ?? null;
     alvo.acerto = {
       id: a.id as string,
       caucaoTotal: Number(a.caucao_total),
@@ -178,6 +211,12 @@ export async function documentosDosContratos(
       dataDevolucao: (a.data_devolucao as string) ?? null,
       meio: (a.meio as string) ?? null,
       status: a.status as string,
+      confirmacaoVia: (a.confirmacao_via as string | null) ?? null,
+      prazoRespostaAte: a.aviso_em ? fimDoPrazoDeResposta(a.aviso_em as string).toISOString() : null,
+      disputaAberta: disputaAberta({ status: a.status as string, contestado_em: a.contestado_em as string | null, central_decisao: a.central_decisao as string | null }),
+      comprovantePedidoAte: pedidoEm && !a.comprovante_anexado_em ? fimDoPrazoDoAnexo(pedidoEm).toISOString() : null,
+      temComprovante: !!a.comprovante_path,
+      comprovanteUrl: linkDoComprovante((a.comprovante_path as string | null) ?? null, quemVe),
     };
   }
   for (const c of caucoes ?? []) {
@@ -214,6 +253,17 @@ export async function registrarDevolucaoCaucao(input: { contratoId: string; valo
   ]);
   // Leitura falhou → nada é gravado: caução zerada ou um segundo acerto em aberto sairiam de uma lista vazia por erro.
   if (erroCaucoes || erroAbertos) return { ok: false, error: "Não foi possível registrar agora. Tente de novo." };
+  // E1248 (decisão 6, ORDEM-1318): com a disputa aberta — contestada depois do E1248 e sem decisão da Central — o dono
+  // não registra outra devolução; depois de um "não vale", pode (é assim que corrige). Leitura falhou → nada é gravado.
+  const { data: emDisputa, error: erroDisputa } = await admin
+    .from("caucao_acertos")
+    .select("id")
+    .eq("contrato_id", input.contratoId)
+    .eq("status", "desconto_contestado")
+    .not("contestado_em", "is", null)
+    .is("central_decisao", null);
+  if (erroDisputa) return { ok: false, error: "Não foi possível registrar agora. Tente de novo." };
+  if ((emDisputa ?? []).length > 0) return { ok: false, error: MSG_DISPUTA_ABERTA };
   const caucaoTotal = Math.round((caucoes ?? []).reduce((s, c) => s + Number(c.valor), 0) * 100) / 100;
   const regra = regraDevolucao({ statusContrato: ctx.status, caucaoTotal, valorDevolvido: input.valorDevolvido, dataDevolucao: input.dataDevolucao, meio: input.meio, jaTemAcerto: (abertos ?? []).length > 0 });
   if (!regra.ok) return { ok: false, error: regra.error };
@@ -232,29 +282,96 @@ export async function registrarDevolucaoCaucao(input: { contratoId: string; valo
     .select("id")
     .single();
   if (error || !data) return { ok: false, error: "Não foi possível registrar agora." };
+  // E1248 (2.2): o aviso ao morador sai DEPOIS de a gravação dar certo; o acerto guarda a hora em que ele saiu, e os 5
+  // dias contam dela. Se o envio falhar, a hora fica vazia (sem aviso, a falta de resposta nunca confirma, M4) e a rotina
+  // de hora a hora volta a enviá-lo (ORDEM-DUET 1359, correção 1).
+  try {
+    await enviarAvisoDoRegistro(admin, { id: data.id as string, contrato_id: input.contratoId, valor_devolvido: regra.valor, data_devolucao: input.dataDevolucao });
+  } catch (e) {
+    console.error("[devolucao-caucao] o aviso do registro não saiu; a rotina tenta de novo:", e instanceof Error ? e.message : e);
+  }
   return { ok: true, id: data.id as string };
 }
 
-/** O INQUILINO confirma (ou contesta) a devolução. Confirmada → termo em PDF às duas partes. */
-export async function responderDevolucaoCaucao(acertoId: string, resposta: "confirmar" | "contestar"): Promise<Res> {
+/** E1248 (texto aprovado, ORDEM-DUET 1359): a recusa do registro com a disputa aberta. */
+const MSG_DISPUTA_ABERTA = "A devolução anterior foi contestada pelo morador e a equipe da Viva está analisando. Você poderá registrar outra devolução depois da decisão.";
+/** E1248 (texto aprovado, ORDEM-DUET 1359; decisão 12 da ESPEC): a recusa da contestação sem motivo. */
+const MSG_MOTIVO_DA_CONTESTACAO = "Escreva o motivo da contestação (pelo menos 5 letras): ele vai para a equipe da Viva.";
+
+
+/**
+ * O INQUILINO confirma (ou contesta) a devolução. Confirmada → termo em PDF às duas partes.
+ * E1248: a contestação exige o motivo (5 letras ou mais) e abre o item na Central; a resposta depois do fim do prazo é
+ * recusada, e a própria ação grava a confirmação por falta de resposta, com a hora do fim do prazo (M22, M23).
+ */
+export async function responderDevolucaoCaucao(acertoId: string, resposta: "confirmar" | "contestar", motivo?: string): Promise<Res> {
   const admin = createAdminClient();
   if (!admin || !UUID_RE.test(acertoId)) return { ok: false, error: "Devolução não encontrada." };
-  const { data: a, error: erroAcerto } = await admin.from("caucao_acertos").select("id, contrato_id, tipo, status").eq("id", acertoId).maybeSingle();
+  const { data: a, error: erroAcerto } = await admin
+    .from("caucao_acertos")
+    .select("id, contrato_id, tipo, status, caucao_total, valor_devolvido, data_devolucao, meio, created_at, aviso_em, confirmacao_via, comprovante_path")
+    .eq("id", acertoId)
+    .maybeSingle();
   if (erroAcerto) return { ok: false, error: "Não foi possível registrar agora. Tente de novo." };
   if (!a) return { ok: false, error: "Devolução não encontrada." };
   const ctx = await papelNoContrato(a.contrato_id as string);
   if (!ctx || ctx.papel !== "inquilino") return { ok: false, error: "Só o inquilino confirma a devolução." };
-  if (a.status !== "aguardando_confirmacao") return { ok: false, error: "Esta devolução já foi respondida." };
-  const status = resposta === "contestar" ? "desconto_contestado" : a.tipo === "devolucao_integral" ? "devolvida_integral" : "desconto_confirmado";
+  const avisoEm = (a.aviso_em as string | null) ?? null;
+  if (a.status !== "aguardando_confirmacao") {
+    if (a.confirmacao_via === "falta_de_resposta" && avisoEm) return { ok: false, error: textoRespostaTardia({ avisoEm }) };
+    return { ok: false, error: "Esta devolução já foi respondida." };
+  }
+  const agora = new Date();
+  // O prazo terminou (no instante exato do fim, já terminou): a resposta não vale; quem chega primeiro grava a
+  // confirmação por falta de resposta — aqui, a própria ação —, sempre com a hora do fim do prazo.
+  if (avisoEm && prazoDeRespostaTerminou(avisoEm, agora)) {
+    await confirmarPorFaltaDeResposta(admin, acertoId, agora);
+    return { ok: false, error: textoRespostaTardia({ avisoEm }) };
+  }
+  const motivoLimpo = resposta === "contestar" ? motivoValido(motivo) : null;
+  if (resposta === "contestar" && !motivoLimpo) return { ok: false, error: MSG_MOTIVO_DA_CONTESTACAO };
+  const status = resposta === "contestar" ? "desconto_contestado" : statusConfirmado(a.tipo as string);
+  const semComprovante = !a.comprovante_path;
+  const mudanca =
+    resposta === "confirmar"
+      ? { status, confirmado_em: agora.toISOString(), confirmacao_via: "morador" }
+      : { status, confirmado_em: null, contestado_em: agora.toISOString(), contestacao_motivo: motivoLimpo, ...(semComprovante ? { comprovante_pedido_em: agora.toISOString() } : {}) };
   const { data: mudou, error } = await admin
     .from("caucao_acertos")
-    .update({ status, confirmado_em: resposta === "confirmar" ? new Date().toISOString() : null })
+    .update(mudanca)
     .eq("id", acertoId)
     .eq("status", "aguardando_confirmacao")
     .select("id");
   if (error) return { ok: false, error: "Não foi possível registrar agora." };
   // Duas respostas ao mesmo tempo: só a que mudou o status emite o termo (nunca dois termos da mesma devolução).
   if (!mudou?.length) return { ok: false, error: "Esta devolução já foi respondida." };
-  if (resposta === "confirmar") after(() => emitirTermoDevolucaoComRegistro(acertoId));
+  // O morador respondeu: o aviso e o lembrete dele saem de tudo (M18).
+  await resolverAvisosDaReferencia(admin, { eventos: AVISOS_DO_MORADOR, refId: a.contrato_id as string, usuarioId: ctx.userId }).catch(() => undefined);
+  if (resposta === "confirmar") {
+    after(() => emitirTermoDevolucaoComRegistro(acertoId));
+    return { ok: true };
+  }
+  await abrirDisputa(admin, a as unknown as Acerto, { motivo: motivoLimpo!, contestadoEm: agora, pedidoEm: semComprovante ? agora : null });
   return { ok: true };
+}
+
+/**
+ * E1248 (2.4 e 2.7): a contestação abre o item na Central, no molde do E1229 — o chamado nasce na sessão do morador,
+ * na fila da caução, com o contrato no contexto, o valor, o motivo e as datas; uma nota do SISTEMA guarda qual acerto
+ * é. O dono é avisado (texto 2); sem comprovante, recebe o pedido, e o prazo da decisão só começa no fim do prazo do
+ * anexo (o anexo recalcula-o, a contar da hora dele).
+ */
+async function abrirDisputa(admin: NonNullable<ReturnType<typeof createAdminClient>>, a: Acerto, p: { motivo: string; contestadoEm: Date; pedidoEm: Date | null }): Promise<void> {
+  const valor = valorDoAcerto(a);
+  const { assunto, mensagem } = mensagemDaContestacao(a, p);
+  const r = await abrirChamado({ categoria: "caucao", assunto, mensagem, contextoTipo: "contrato", contextoId: a.contrato_id, pedePessoa: true });
+  const { data: ch } = r.ok ? await admin.from("chamados").select("id, prioridade").eq("numero_publico", r.numero).maybeSingle() : { data: null };
+  // O chamado liga-se sem duplicar; se não abriu, a contestação fica gravada, a Central vê-a pela linha calculada e a
+  // rotina de hora a hora abre-o (ORDEM-DUET 1359, correção 2).
+  if (ch?.id) await ligarChamadoAoAcerto(admin, { id: a.id, comprovante_pedido_em: p.pedidoEm?.toISOString() ?? null, comprovante_anexado_em: null }, { id: ch.id as string, prioridade: ch.prioridade as string | null });
+  else console.error("[devolucao-caucao] o chamado da contestação não abriu; a rotina tenta de novo:", a.id);
+  const dono = (await admin.from("contratos").select("properties!inner(owner_id)").eq("id", a.contrato_id).maybeSingle()).data as { properties?: { owner_id?: string | null } } | null;
+  const donoId = dono?.properties?.owner_id ?? null;
+  await enviarSemFalhar(admin, { evento: "caucao_devolucao_contestada", userId: donoId, papel: "dono", contratoId: a.contrato_id, url: urlDoDono(a.contrato_id), texto: textoContestacaoAoDono({ valor, motivo: p.motivo }), cta: "Ver a caução" });
+  if (p.pedidoEm) await enviarSemFalhar(admin, { evento: "caucao_comprovante_pedido", userId: donoId, papel: "dono", contratoId: a.contrato_id, url: urlDoDono(a.contrato_id), texto: textoPedidoDoComprovante({ meio: a.meio, valor, pedidoEm: p.pedidoEm }), cta: "Anexar o comprovante" });
 }

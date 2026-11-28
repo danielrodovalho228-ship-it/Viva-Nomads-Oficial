@@ -18,6 +18,7 @@
     { "path": "/api/cron/cobranca-mensal", "schedule": "10 14 * * *" },
     { "path": "/api/cron/pre-aceitacao", "schedule": "0 * * * *" },
     { "path": "/api/cron/contratos-sem-taxa", "schedule": "20 * * * *" },
+    { "path": "/api/cron/devolucao-caucao", "schedule": "40 * * * *" },
     { "path": "/api/cron/vigia-suite", "schedule": "32 7,15,23 * * *" }
   ]
 }

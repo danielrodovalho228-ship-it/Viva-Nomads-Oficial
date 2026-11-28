@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/notifications/email";
 import { emailDocumentoFiscal, nomeDoPdf } from "@/lib/notifications/montar-email";
 import { SITE_URL } from "@/lib/site";
+import { linhaDeConfirmacao } from "@/lib/caucao/devolucao-maquina";
 import { conteudoDocumento, enderecoDoDocumento, NUMERO_PROVISORIO, ROTULO_TIPO, temContato, textoDocumento, type DadosDocumento, type TipoDocumento } from "@/lib/fiscal/documento";
 import { envioConfirmado, motivoFalhaEnvio, resultadoEnvio, type EnvioDestinatario } from "@/lib/fiscal/envio";
 import { gerarPdf } from "@/lib/fiscal/pdf";
@@ -65,7 +66,7 @@ async function emitir(
   tipo: TipoDocumento,
   origem: { pagamentoId?: string; acertoId?: string },
   partes: Partes,
-  extra: Pick<DadosDocumento, "periodoInicio" | "periodoFim" | "valor" | "encargos" | "dataPagamento" | "forma" | "caucaoTotal" | "confirmadoEm" | "rotuloPagamento">
+  extra: Pick<DadosDocumento, "periodoInicio" | "periodoFim" | "valor" | "encargos" | "dataPagamento" | "forma" | "caucaoTotal" | "confirmadoEm" | "rotuloPagamento" | "confirmacao">
 ): Promise<Resultado> {
   // Idempotente: já emitido para esta origem → devolve o existente.
   const coluna = origem.pagamentoId ? "pagamento_id" : "acerto_id";
@@ -433,10 +434,19 @@ export async function emitirTermoDevolucao(acertoId: string): Promise<Resultado>
   try {
     const { data: a } = await admin
       .from("caucao_acertos")
-      .select("id, contrato_id, caucao_total, valor_devolvido, data_devolucao, meio, status, confirmado_em")
+      .select("id, contrato_id, caucao_total, valor_devolvido, data_devolucao, meio, status, confirmado_em, confirmacao_via, aviso_em, central_decidido_em, chamado_id")
       .eq("id", acertoId)
       .maybeSingle();
     if (!a || !["devolvida_integral", "desconto_confirmado"].includes(a.status as string)) return { ok: false, motivo: "devolução não confirmada" };
+    // E1248 (M20): a linha "Confirmação:" pela forma gravada; pela Central, com o número do atendimento.
+    const { data: ch } = a.confirmacao_via === "central" && a.chamado_id ? await admin.from("chamados").select("numero_publico").eq("id", a.chamado_id).maybeSingle() : { data: null };
+    const confirmacao = linhaDeConfirmacao({
+      via: (a.confirmacao_via as string | null) ?? null,
+      confirmadoEm: (a.confirmado_em as string | null) ?? null,
+      avisoEm: (a.aviso_em as string | null) ?? null,
+      decididoEm: (a.central_decidido_em as string | null) ?? null,
+      atendimento: (ch?.numero_publico as string | null) ?? null,
+    });
     const partes = await partesDoContrato(admin, a.contrato_id as string);
     if (!partes) return { ok: false, motivo: "contrato não encontrado" };
     return await emitir(admin, "termo_devolucao_caucao", { acertoId }, partes, {
@@ -448,6 +458,7 @@ export async function emitirTermoDevolucao(acertoId: string): Promise<Resultado>
       forma: (a.meio as string) ?? null,
       caucaoTotal: Number(a.caucao_total),
       confirmadoEm: (a.confirmado_em as string) ?? null,
+      confirmacao: confirmacao,
     });
   } catch (e) {
     console.error("[documentos] termo:", e instanceof Error ? e.message : e);

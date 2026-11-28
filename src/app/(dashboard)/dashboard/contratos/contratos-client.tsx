@@ -256,6 +256,17 @@ function ContratoCard({
     contrato.pagamentos,
   );
 
+  // E1248 (ORDEM-DUET 1359, ajuste 1): o aviso da caução abre a lista ancorada no contrato — rola até ele e destaca-o.
+  // O destaque vai direto ao elemento (é o estado do endereço, não do componente).
+  useEffect(() => {
+    if (window.location.hash !== `#contrato-${contrato.id}`) return;
+    const el = document.getElementById(`contrato-${contrato.id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    el.setAttribute("data-destacado", "");
+    el.classList.add("ring-2", "ring-forest");
+  }, [contrato.id]);
+
   return (
     <Panel className="p-4" id={`contrato-${contrato.id}`} data-testid="contrato-cartao" data-contrato={contrato.id}>
       <div className="flex flex-wrap items-start justify-between gap-3">

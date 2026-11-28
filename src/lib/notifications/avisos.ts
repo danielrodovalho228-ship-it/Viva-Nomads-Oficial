@@ -83,6 +83,10 @@ const POR_PAPEL: Partial<Record<NotificationEvent, Partial<Record<PapelAviso, Pr
   // (decisão 1 da ORDEM-1345). O resto da pré-aceitação é normal.
   pre_aceite_prazo: { morador: "critico" },
   pre_aceite_expirou: { dono: "critico" },
+  // E1248 PR 1 (ESPEC-E1248 v11, 2.7 e 8.2, texto 5): os dois lembretes das últimas 24 horas são críticos para quem
+  // responde; os outros avisos da devolução da caução são normais (decisão 7).
+  caucao_devolucao_lembrete: { morador: "critico" },
+  caucao_comprovante_lembrete: { dono: "critico" },
 };
 
 export function prioridadeDoAviso(evento: NotificationEvent, papel?: PapelAviso | null): PrioridadeAviso {
