@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { consumirLimite, HORA } from "@/lib/limites";
 import { inquilinoVeInstrucoes, podeEditarInstrucoes, validarInstrucoes, type InstrucoesEntrada } from "@/lib/checkin";
+import { recusaDaHoraDeEntrada } from "@/lib/data/janela-conferencia";
 
 /*
   Check-in garantido (ordem 404cd213, item 2). Leitura e escrita pelo servidor, DEPOIS de conferir
@@ -32,7 +33,7 @@ async function contexto(contratoId: string) {
   if (!user) return null;
   const { data: c } = await admin
     .from("contratos")
-    .select("tenant_id, status, assinado_proprietario_em, assinado_inquilino_em, properties(owner_id)")
+    .select("tenant_id, status, assinado_proprietario_em, assinado_inquilino_em, properties(owner_id), contrato_blocos(inicio, fim, status)")
     .eq("id", contratoId)
     .maybeSingle();
   if (!c) return null;
@@ -59,10 +60,15 @@ export async function instrucoesDoContrato(contratoId: string): Promise<Instruco
 export async function salvarInstrucoesEntrada(input: { contratoId: string; horario: string; instrucoes: string; plantao: string }): Promise<{ ok: true } | { ok: false; error: string }> {
   const ctx = await contexto(input?.contratoId);
   if (!ctx) return { ok: false, error: "Você não faz parte deste contrato." };
-  const { admin, uid, c, papel } = ctx;
+  const { admin, uid, c, k, papel } = ctx;
   if (!podeEditarInstrucoes({ status: String(c.status), papel })) return { ok: false, error: "Só o proprietário edita as instruções, com o contrato ativo." };
   const v = validarInstrucoes(input);
   if (!v.ok) return { ok: false, error: v.erro };
+  // E1238 (ORDENS-DUET 1276 e 1284): nenhuma hora nova põe a âncora de entrada no passado — depois da âncora vigente a
+  // hora não muda mais, e antes dela só se aceita uma hora cuja âncora seja igual ou posterior a agora.
+  const blocos = (c.contrato_blocos ?? []) as { inicio: string | null; fim: string | null; status: string | null }[];
+  const recusaDaHora = recusaDaHoraDeEntrada({ blocos, horaAtual: (k?.horario as string | null) ?? null, horaNova: v.dados.horario, agora: new Date() });
+  if (recusaDaHora) return { ok: false, error: recusaDaHora };
   if (!(await consumirLimite(`checkin-instrucoes:${uid}`, 30, HORA))) return { ok: false, error: "Muitas alterações em pouco tempo. Tente de novo em instantes." };
   const { error } = await admin
     .from("contratos_checkin")

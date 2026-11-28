@@ -219,7 +219,9 @@ test("saída (correção do coordenador): prazo de 48 h depois do checkout em Br
   // E1089 (coordenador): 31/12 é a última noite gravada; a pessoa sai em 01/01, e as 48 h contam DESSE dia.
   // 01/01 às 11:00 em Brasília = 14:00 UTC; + 48 h = 03/01 às 14:00 UTC. (Antes contava de 31/12: 02/01 às 14:00 UTC.)
   assert.equal(prazoConferenciaSaida(datas)?.toISOString(), "2027-01-03T14:00:00.000Z");
-  assert.equal(prazoConferenciaSaida({ fim: "2026-12-31", checkoutBefore: "" })?.toISOString(), "2027-01-03T03:00:00.000Z", "sem horário = 00:00");
+  // E1238 (ORDEM-DUET 1207, decisão 3; confirmada pelo coordenador em 27/11 — asserção alterada): sem horário, a saída
+  // conta das 23:59 do dia da saída (01/01 23:59 em Brasília = 02/01 02:59 UTC; + 48 h). Antes, das 00:00.
+  assert.equal(prazoConferenciaSaida({ fim: "2026-12-31", checkoutBefore: "" })?.toISOString(), "2027-01-04T02:59:00.000Z", "sem horário = 23:59");
   assert.equal(prazoConferenciaSaida({ fim: null, checkoutBefore: "11:00" }), null, "sem o último dia, sem prazo");
   const abertas = [
     { id: "saida-1", tipo: "saida" as const, datas },
@@ -236,10 +238,12 @@ test("saída (correção do coordenador): prazo de 48 h depois do checkout em Br
   assert.match(texto, /Sem resposta: proprietario\nSem resposta: inquilino/);
   assert.match(createHash("sha256").update(texto).digest("hex"), /^[0-9a-f]{64}$/);
   // A linha do tempo mostra o mesmo prazo (fonte única).
-  const etapa = montarLinhaDoTempo(datas).find((e) => e.chave === "conferencia_saida");
+  // E1238 (asserção alterada): a linha do tempo recebe o prazo pronto do servidor, o mesmo instante da fonte única.
+  const etapa = montarLinhaDoTempo({ ...datas, prazoSaidaEm: prazoConferenciaSaida(datas)?.toISOString() ?? null }).find((e) => e.chave === "conferencia_saida");
   assert.equal(etapa?.prazo, "2027-01-03T14:00:00.000Z"); // E1089: o prazo conta da saída (01/01), não da última noite
   // Tela, servidor e rotina usam a fonte única.
-  assert.match(ler("src/lib/data/conferencia-actions.ts"), /prazoSaidaEm = ctx \? \(prazoConferenciaSaida\(ctx\.entrada\)/);
+  // E1238 (asserção alterada): o prazo gravado quando a conferência nasceu, ou a mesma regra (prazoDaJanela).
+  assert.match(ler("src/lib/data/conferencia-actions.ts"), /prazoSaidaEm = ctx \? \(prazoDaJanela\("saida", ctx\.entrada, ctx\.gravado\.saida\)/);
   assert.match(ler("src/components/contrato/conferencia-contrato.tsx"), /data-testid="conferencia-prazo-saida"/);
   assert.match(ler("src/app/api/cron/automacoes/route.ts"), /conferenciasParaFechar\(abertas, agora\)/);
 });

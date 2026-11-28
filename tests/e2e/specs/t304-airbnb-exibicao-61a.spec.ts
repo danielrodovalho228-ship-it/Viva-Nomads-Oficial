@@ -48,6 +48,10 @@ async function contrato(propertyId: string, extra: Record<string, unknown> = {})
     .select("id")
     .single();
   if (error) throw error;
+  // E1238 (ORDEM-DUET 1207, massa alterada): a âncora do prazo da conferência é a hora das INSTRUÇÕES de entrada do
+  // contrato (as 15:00 do passo "Conferência de entrada" vêm daqui); a do anúncio fica só para a hora mostrada (E1230).
+  const { error: eK } = await adm().from("contratos_checkin").upsert({ contrato_id: data.id, horario: "15:00" }, { onConflict: "contrato_id" });
+  if (eK) throw eK;
   return data.id as string;
 }
 

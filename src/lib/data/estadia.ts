@@ -10,7 +10,8 @@ import { usuarioDaLeitura } from "@/lib/supabase/usuario-da-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { primeiroPagamentoConfirmado, primeiroPagamentoRegistrado } from "@/lib/contrato-estado";
-import { estadoConferencia, type RespostaConferencia } from "@/lib/conferencia";
+import { estadoConferencia, prazoDaJanela, type RespostaConferencia } from "@/lib/conferencia";
+import { janelaVigente } from "@/lib/data/janela-conferencia";
 import { nomeCompleto } from "@/lib/perfil/perfil-publico";
 import { getAvatarPath, signAvatarPath } from "@/lib/data/avatar-url";
 import { hojeEmBrasilia } from "@/lib/datas-brasilia";
@@ -100,6 +101,22 @@ export function blocosOrdenados(c: Pick<LinhaContratoEstadia, "contrato_blocos">
 export function periodoDoContrato(c: LinhaContratoEstadia): PeriodoEstadia {
   // Renovação que caducou ("nao_aceito") não entra no período.
   return periodoDaEstadia(blocosOrdenados(c).filter((b) => b.status !== "nao_aceito"), c.properties);
+}
+
+/**
+ * E1238 (ORDENS-DUET 1207 e 1269): o período com o prazo de cada conferência — o gravado (congelado no momento da
+ * entrada; esta leitura congela-o, se for a primeira depois da âncora), ou o cálculo vivo pela hora actual das
+ * instruções de entrada do contrato (contratos_checkin.horario). Nunca a coluna do anúncio.
+ */
+export async function periodoComPrazos(admin: NonNullable<ReturnType<typeof createAdminClient>>, c: LinhaContratoEstadia): Promise<PeriodoEstadia> {
+  const periodo = periodoDoContrato(c);
+  const janela = await janelaVigente(admin, c.id, blocosOrdenados(c));
+  const datas = janela.datas;
+  return {
+    ...periodo,
+    prazoEntradaEm: prazoDaJanela("entrada", datas, janela.gravado.entrada)?.toISOString() ?? null,
+    prazoSaidaEm: prazoDaJanela("saida", datas, janela.gravado.saida)?.toISOString() ?? null,
+  };
 }
 
 export function assinadoPelasDuas(c: Pick<LinhaContratoEstadia, "assinado_proprietario_em" | "assinado_inquilino_em">): boolean {
@@ -225,7 +242,7 @@ export async function carregarEstadia(contratoId: string, agora: Date = new Date
   if ("erro" in ctx) return null;
   const { admin, c, papel, userId } = ctx;
   const blocos = blocosOrdenados(c).filter((b) => b.status !== "nao_aceito");
-  const periodo = periodoDoContrato(c);
+  const periodo = await periodoComPrazos(admin, c);
   const pagamentos = c.pagamentos_bloco ?? [];
   const primeiro = primeiroPagamentoConfirmado(pagamentos);
   const ambos = assinadoPelasDuas(c);

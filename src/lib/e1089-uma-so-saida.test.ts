@@ -73,7 +73,9 @@ test("E1089: nenhuma superfície imprime o fim gravado como 'saída', 'fim' ou o
 });
 
 test("E1089: os prazos da saída contam da SAÍDA (conferência, lembrete, semana da saída, mensagem do dia, limpeza)", () => {
-  assert.match(codigo("src/lib/conferencia.ts"), /const dia = saidaPeloFim\(p\.fim\);/, "conferência de saída: 48 h a partir do dia da saída");
+  // E1238 (ORDEM-DUET 1269): a saída passa pela âncora única (ancoraConferencia), que conta do dia da SAÍDA.
+  assert.match(codigo("src/lib/conferencia.ts"), /saidaPeloFim\(datas\.fim\)/, "conferência de saída: 48 h a partir do dia da saída");
+  assert.match(codigo("src/lib/conferencia.ts"), /prazoConferenciaSaida[\s\S]*?ancoraConferencia\("saida"/, "o prazo da saída sai da âncora");
   const cron = codigo("src/app/api/cron/automacoes/route.ts");
   assert.match(cron, /lembreteDeSaida\(saidaFinal, hoje\)/);
   // O pedido de avaliação fica no dia de sempre (o dia da saída, em que o contrato fecha); só o texto diz a saída.

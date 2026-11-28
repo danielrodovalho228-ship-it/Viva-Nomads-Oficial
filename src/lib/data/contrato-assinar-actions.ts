@@ -45,7 +45,8 @@ import { aberturaAssinatura, contaDoContrato, contasDoContrato, linhasContrato, 
 import { PROPOSTA_FORA_DO_FECHAMENTO, propostaDoFechamentoDoLead } from "@/lib/data/propostas-servidor";
 import { montarLinhaDoTempo, type EtapaEstadia } from "@/lib/estadia-linha-tempo";
 import { DIAS_POR_MES, periodoDosBlocos } from "@/lib/contrato-blocos";
-import { prazoConferenciaEntrada, prazoConferenciaSaida } from "@/lib/conferencia";
+import { prazoDaJanela } from "@/lib/conferencia";
+import { janelaVigente, type JanelaDoContrato } from "@/lib/data/janela-conferencia";
 import {
   MSG_CODIGO_BLOQUEADO,
   VALIDADE_CODIGO_ASSINATURA_MS,
@@ -182,12 +183,15 @@ async function lerLimpezaViva(propertyId: string | undefined, estrito = false): 
   }
 }
 
-function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string | null; inquilino: string | null }): ContratoParaAssinar | null {
+function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string | null; inquilino: string | null }, janela?: JanelaDoContrato): ContratoParaAssinar | null {
   const ownerId = String(c.properties?.owner_id ?? "");
   const papel = papelNoContrato(userId, c.tenant_id, ownerId);
   if (!papel) return null;
   const imovel = c.properties?.title ?? "Imóvel";
   const { inicio, fim } = periodoDosBlocos(c.contrato_blocos ?? []);
+  const datasJanela = { inicio, checkinAfter: janela?.hora ?? null, fim, checkoutBefore: null };
+  const prazoEntrada = prazoDaJanela("entrada", datasJanela, janela?.gravado.entrada)?.toISOString() ?? null;
+  const prazoSaida = prazoDaJanela("saida", datasJanela, janela?.gravado.saida)?.toISOString() ?? null;
   const resumo = resumoContrato({
     contratoId: c.id,
     imovel,
@@ -235,13 +239,17 @@ function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string
     euAssinei: !!(papel === "inquilino" ? a.inquilino : a.proprietario),
     estado: estadoDoContratoUnico(c, papel),
     inicioEstadia: inicio,
-    prazoConferenciaEm: prazoConferenciaEntrada({ inicio, checkinAfter: c.properties?.checkin_after ?? null })?.toISOString() ?? null,
-    prazoConferenciaSaidaEm: prazoConferenciaSaida({ fim, checkoutBefore: c.properties?.checkout_before ?? null })?.toISOString() ?? null,
+    // E1238 (ORDENS-DUET 1207 e 1269): o prazo gravado (congelado no momento da entrada), ou o cálculo vivo pela hora
+    // actual das instruções de entrada.
+    prazoConferenciaEm: prazoEntrada,
+    prazoConferenciaSaidaEm: prazoSaida,
     linhaDoTempo: montarLinhaDoTempo({
       inicio,
       fim,
       checkinAfter: c.properties?.checkin_after ?? null,
       checkoutBefore: c.properties?.checkout_before ?? null,
+      prazoEntradaEm: prazoEntrada,
+      prazoSaidaEm: prazoSaida,
     }),
   };
 }
@@ -262,7 +270,10 @@ export async function getContratoParaAssinar(contratoId: string): Promise<Contra
   // O RLS acima já provou que a pessoa é parte; o dono não lê a ficha do inquilino, então a contagem vem do servidor.
   const linha = data as unknown as LinhaContrato;
   await completarPets(linha);
-  return montar(linha, user.id, await nomesDasPartes(String(linha.properties?.owner_id ?? ""), linha.tenant_id));
+  const adminJanela = createAdminClient();
+  // E1238 (ORDEM-DUET 1269): a leitura congela o prazo das conferências abertas, se for a primeira depois da âncora.
+  const janela = adminJanela ? await janelaVigente(adminJanela, contratoId, linha.contrato_blocos ?? []) : undefined;
+  return montar(linha, user.id, await nomesDasPartes(String(linha.properties?.owner_id ?? ""), linha.tenant_id), janela);
 }
 
 export interface ContratoParaEquipe {
@@ -299,7 +310,7 @@ export async function getContratoParaEquipe(contratoId: string): Promise<Contrat
   const ownerId = String(linha.properties?.owner_id ?? "");
   const nomes = await nomesDasPartes(ownerId, linha.tenant_id);
   // O resumo não depende do papel: monta na visão do inquilino só para reaproveitar a mesma conta.
-  const visao = montar(linha, linha.tenant_id, nomes);
+  const visao = montar(linha, linha.tenant_id, nomes, await janelaVigente(admin, contratoId, linha.contrato_blocos ?? []));
   if (!visao) return null;
   return { visao, selo: seloParaEquipe(linha), ownerId, tenantId: linha.tenant_id, nomes, criadoEm: linha.created_at };
 }

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { abrirConferencia, janelaVigente } from "@/lib/data/janela-conferencia";
 import { consumirLimite, HORA } from "@/lib/limites";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { prontaParaFechar } from "@/lib/fiscal/fechamento";
@@ -17,8 +18,7 @@ import {
   type ItemTela,
   type LaudoTela,
   podeEditarItens,
-  prazoConferenciaEntrada,
-  prazoConferenciaSaida,
+  prazoDaJanela,
   ERRO_ANTES_DA_OUTRA_PARTE,
   type EntradaDoContrato,
   validarFotoConferencia,
@@ -54,7 +54,7 @@ async function estaFechada(admin: NonNullable<ReturnType<typeof createAdminClien
 }
 
 /** Quem é a pessoa neste contrato: "inquilino", "proprietario" ou null (não é parte). */
-async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte: ParteConferencia; status: string; propertyId: string | null; entrada: EntradaDoContrato } | null> {
+async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte: ParteConferencia; status: string; propertyId: string | null; entrada: EntradaDoContrato; gravado: { entrada: string | null; saida: string | null } } | null> {
   const supabase = await createClient();
   const admin = createAdminClient();
   if (!supabase || !admin || !UUID_RE.test(contratoId)) return null;
@@ -64,25 +64,25 @@ async function parteDoContrato(contratoId: string): Promise<{ uid: string; parte
   if (!user) return null;
   const { data: c } = await admin
     .from("contratos")
-    .select("tenant_id, status, property_id, properties(owner_id, checkin_after, checkout_before), contrato_blocos(inicio, fim, status)")
+    .select("tenant_id, status, property_id, properties(owner_id), contrato_blocos(inicio, fim, status)")
     .eq("id", contratoId)
     .maybeSingle();
   if (!c) return null;
-  const prop = c.properties as unknown as { owner_id?: string; checkin_after?: string | null; checkout_before?: string | null } | null;
+  const prop = c.properties as unknown as { owner_id?: string } | null;
   const donoId = prop?.owner_id;
   const parte: ParteConferencia | null = c.tenant_id === user.id ? "inquilino" : donoId === user.id ? "proprietario" : null;
   if (!parte) return null;
-  const blocos = ((c.contrato_blocos ?? []) as { inicio: string; fim: string; status: string | null }[]).filter((b) => b.status !== "nao_aceito");
-  const inicios = blocos.map((b) => b.inicio).sort();
-  const fins = blocos.map((b) => b.fim).sort();
-  // F2: o prazo da entrada sai do dia de início + horário de entrada do imóvel (prazoConferenciaEntrada); o da saída, do
-  // último dia + horário de saída (prazoConferenciaSaida, Prompt 56).
+  // E1238 (ORDENS-DUET 1207 e 1269): a âncora é a hora das instruções de entrada do contrato; o prazo de cada
+  // conferência é o gravado (congelado no momento da entrada — esta leitura congela-o, se for a primeira depois da
+  // âncora) ou o cálculo vivo pela hora actual (janela-conferencia.ts). A coluna do anúncio não entra no prazo.
+  const janela = await janelaVigente(admin, contratoId, (c.contrato_blocos ?? []) as { inicio: string; fim: string; status: string | null }[]);
   return {
     uid: user.id,
     parte,
     status: String(c.status),
     propertyId: (c.property_id as string | null) ?? null,
-    entrada: { inicio: inicios[0] ?? null, checkinAfter: prop?.checkin_after ?? null, fim: fins.at(-1) ?? null, checkoutBefore: prop?.checkout_before ?? null },
+    entrada: janela.datas,
+    gravado: janela.gravado,
   };
 }
 
@@ -102,16 +102,15 @@ export async function registrarItemConferencia(input: {
   if (input.fotoPath && !input.fotoPath.startsWith(`${ctx.uid}/`)) return erro("Foto inválida.");
   const v = validarItem({ comodo: input.comodo, descricao: input.descricao, fotoPath: input.fotoPath ?? null });
   if (!v.ok) return erro(v.erro);
-  if (janelaEncerrada(input.tipo, ctx.entrada)) {
+  if (janelaEncerrada(input.tipo, ctx.entrada, new Date(), ctx.gravado[input.tipo])) {
     return erro(`O prazo de 48 horas para a conferência de ${input.tipo === "entrada" ? "entrada" : "saída"} já passou.`);
   }
   if (!(await consumirLimite(`conferencia-item:${ctx.uid}`, 200, HORA))) return erro("Muitos registros em pouco tempo. Tente de novo em instantes.");
 
   const admin = createAdminClient()!;
   if (await estaFechada(admin, input.contratoId, input.tipo)) return erro(ERRO_FECHADA);
-  const { data: conf } = await admin
-    .from("conferencias")
-    .upsert({ contrato_id: input.contratoId, tipo: input.tipo, aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true })
+  // E1238 (ORDEM-DUET 1269): a conferência nasce aqui (ou já existia), sem prazo — o prazo congela no momento da entrada.
+  const { data: conf } = await abrirConferencia(admin, { contratoId: input.contratoId, tipo: input.tipo, abertaPor: ctx.uid })
     .select("id")
     .maybeSingle();
   const confId =
@@ -154,7 +153,7 @@ export async function responderConfortoEntrada(input: { contratoId: string; resp
   if (!ctx) return erro("Você não faz parte deste contrato.");
   if (ctx.parte !== "inquilino") return erro("O padrão mínimo é conferido pelo morador.");
   if (!STATUS_ENTRADA.includes(ctx.status)) return erro("Este contrato não está em um momento de conferência.");
-  if (janelaEncerrada("entrada", ctx.entrada)) return erro("O prazo de 48 horas para a conferência de entrada já passou.");
+  if (janelaEncerrada("entrada", ctx.entrada, new Date(), ctx.gravado.entrada)) return erro("O prazo de 48 horas para a conferência de entrada já passou.");
   const admin = createAdminClient()!;
   // Adendo 59.1: a seção confere também os itens do nível atual e o ruído (mesma lista da tela).
   // Achado 89: sem a lista completa (nível e ruído), não valida com a lista menor — pede para tentar de novo.
@@ -166,9 +165,8 @@ export async function responderConfortoEntrada(input: { contratoId: string; resp
   if (!(await consumirLimite(`conferencia-conforto:${ctx.uid}`, 20, HORA))) return erro("Muitos envios em pouco tempo. Tente de novo em instantes.");
 
   if (await estaFechada(admin, input.contratoId, "entrada")) return erro(ERRO_FECHADA);
-  await admin
-    .from("conferencias")
-    .upsert({ contrato_id: input.contratoId, tipo: "entrada", aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true });
+  // E1238 (ORDEM-DUET 1269): a conferência nasce sem prazo; o prazo congela no momento da entrada.
+  await abrirConferencia(admin, { contratoId: input.contratoId, tipo: "entrada", abertaPor: ctx.uid });
   const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", "entrada").maybeSingle();
   if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
   const { data: respostas, error: erroRespostas } = await admin.from("conferencia_respostas").select("parte, decisao, motivo").eq("conferencia_id", conf.id);
@@ -212,14 +210,13 @@ export async function responderConferencia(input: {
   if (!ctx) return erro("Você não faz parte deste contrato.");
   const admin = createAdminClient()!;
   if (await estaFechada(admin, input.contratoId, input.tipo)) return erro(ERRO_FECHADA);
-  const encerrada = janelaEncerrada(input.tipo, ctx.entrada);
+  const encerrada = janelaEncerrada(input.tipo, ctx.entrada, new Date(), ctx.gravado[input.tipo]);
   let { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", input.tipo).maybeSingle();
   if (!conf) {
     // Sem conferência = a outra parte não registrou nada. Com o prazo da entrada encerrado, responde mesmo assim.
     if (!encerrada) return erro(ERRO_ANTES_DA_OUTRA_PARTE);
-    await admin
-      .from("conferencias")
-      .upsert({ contrato_id: input.contratoId, tipo: input.tipo, aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true });
+    // E1238 (ORDEM-DUET 1269): a conferência nasce sem prazo; o prazo congela no momento da entrada.
+    await abrirConferencia(admin, { contratoId: input.contratoId, tipo: input.tipo, abertaPor: ctx.uid });
     ({ data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", input.contratoId).eq("tipo", input.tipo).maybeSingle());
     if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
   }
@@ -358,9 +355,8 @@ export async function anexarLaudoConferencia(formData: FormData): Promise<Result
 
   const admin = createAdminClient()!;
   if (await estaFechada(admin, contratoId, tipo)) return erro(ERRO_FECHADA);
-  await admin
-    .from("conferencias")
-    .upsert({ contrato_id: contratoId, tipo, aberta_por: ctx.uid }, { onConflict: "contrato_id,tipo", ignoreDuplicates: true });
+  // E1238 (ORDEM-DUET 1269): a conferência nasce sem prazo; o prazo congela no momento da entrada.
+  await abrirConferencia(admin, { contratoId, tipo, abertaPor: ctx.uid });
   const { data: conf } = await admin.from("conferencias").select("id").eq("contrato_id", contratoId).eq("tipo", tipo).maybeSingle();
   if (!conf) return erro("Não foi possível abrir a conferência. Tente de novo.");
   const { data: ja } = await admin.from("conferencia_laudos").select("conferencia_id").eq("conferencia_id", conf.id).maybeSingle();
@@ -407,10 +403,11 @@ export async function conferenciasDoContrato(contratoId: string): Promise<Confer
   const supabase = await createClient();
   if (!supabase || !UUID_RE.test(contratoId)) return vazio;
   const ctx = await parteDoContrato(contratoId);
-  const prazoEntradaEm = ctx ? (prazoConferenciaEntrada(ctx.entrada)?.toISOString() ?? null) : null;
-  const janelaEntradaEncerrada = ctx ? janelaEncerrada("entrada", ctx.entrada) : false;
-  const prazoSaidaEm = ctx ? (prazoConferenciaSaida(ctx.entrada)?.toISOString() ?? null) : null;
-  const janelaSaidaEncerrada = ctx ? janelaEncerrada("saida", ctx.entrada) : false;
+  // E1238 (ORDEM-DUET 1269): o prazo gravado (congelado no momento da entrada); sem ele, o cálculo vivo pela hora actual.
+  const prazoEntradaEm = ctx ? (prazoDaJanela("entrada", ctx.entrada, ctx.gravado.entrada)?.toISOString() ?? null) : null;
+  const janelaEntradaEncerrada = ctx ? janelaEncerrada("entrada", ctx.entrada, new Date(), ctx.gravado.entrada) : false;
+  const prazoSaidaEm = ctx ? (prazoDaJanela("saida", ctx.entrada, ctx.gravado.saida)?.toISOString() ?? null) : null;
+  const janelaSaidaEncerrada = ctx ? janelaEncerrada("saida", ctx.entrada, new Date(), ctx.gravado.saida) : false;
   const adminNivel = createAdminClient();
   const confortoAdicionais = adminNivel ? await adicionaisDaConferencia(adminNivel, ctx?.propertyId ?? null) : [];
   const { data: confs } = await supabase.from("conferencias").select("id, tipo").eq("contrato_id", contratoId);

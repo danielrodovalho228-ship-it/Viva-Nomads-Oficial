@@ -8,7 +8,9 @@ import { test } from "node:test";
 import { montarLinhaDoTempo, formatarDiaCurto } from "./estadia-linha-tempo.ts";
 
 test("entrada e saída trazem dia e horário do imóvel", () => {
-  const l = montarLinhaDoTempo({ inicio: "2026-11-01", fim: "2027-01-30", checkinAfter: "14:00", checkoutBefore: "11:00" });
+  // E1238 (ORDEM-DUET 1207, asserção alterada): o prazo da conferência chega pronto do servidor (a hora das instruções de
+  // entrada, ou o gravado); a hora mostrada na etapa "Entrada" já não entra na conta.
+  const l = montarLinhaDoTempo({ inicio: "2026-11-01", fim: "2027-01-30", checkinAfter: "14:00", checkoutBefore: "11:00", prazoEntradaEm: "2026-11-03T17:00:00.000Z" });
   const [entrada, conf, saida] = l;
   assert.equal(entrada.chave, "entrada");
   assert.equal(entrada.dia, "2026-11-01");
@@ -59,15 +61,16 @@ test("ligação: a leitura do contrato traz blocos e horários e o detalhe mostr
 test("F2: linha do tempo e seção da conferência dão o MESMO instante (fonte única)", async () => {
   const { prazoConferenciaEntrada, textoPrazoConferencia } = await import("./conferencia.ts");
   const p = { inicio: "2026-10-18", fim: "2026-12-16", checkinAfter: "15:00", checkoutBefore: "11:00" };
-  const conf = montarLinhaDoTempo(p).find((e) => e.chave === "conferencia")!;
   const prazo = prazoConferenciaEntrada({ inicio: p.inicio, checkinAfter: p.checkinAfter })!;
+  // E1238 (asserção alterada): a linha do tempo recebe o prazo pronto (o mesmo instante que a seção lê do servidor).
+  const conf = montarLinhaDoTempo({ ...p, prazoEntradaEm: prazo.toISOString() }).find((e) => e.chave === "conferencia")!;
   assert.equal(conf.prazo, prazo.toISOString());
   assert.equal(conf.horario, textoPrazoConferencia(prazo));
   assert.equal(conf.horario, "até 20/10 às 15:00, horário de Brasília");
   assert.equal(conf.dia, "2026-10-20");
   // a seção da conferência e o servidor usam a mesma função (sem outra conta de 48 h)
   const acoes = readFileSync(new URL("./data/conferencia-actions.ts", import.meta.url), "utf8");
-  assert.match(acoes, /prazoConferenciaEntrada\(ctx\.entrada\)/);
+  assert.match(acoes, /prazoDaJanela\("entrada", ctx\.entrada, ctx\.gravado\.entrada\)/);
   const secao = readFileSync(new URL("../components/contrato/conferencia-contrato.tsx", import.meta.url), "utf8");
   assert.match(secao, /textoPrazoConferencia\(dados\.prazoEntradaEm\)/);
   assert.doesNotMatch(secao, /toLocaleString\(/);

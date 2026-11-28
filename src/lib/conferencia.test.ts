@@ -36,10 +36,10 @@ test("F2: prazo = dia de início + horário de entrada (Brasília) + 48 h, um in
   // 18/10 às 15:00 em Brasília (UTC−3) = 18:00 UTC; + 48 h = 20/10 18:00 UTC = 20/10 às 15:00 em Brasília.
   assert.equal(prazoConferenciaEntrada({ inicio: "2026-10-18", checkinAfter: "15:00" })?.toISOString(), "2026-10-20T18:00:00.000Z");
   assert.equal(textoPrazoConferencia(prazoConferenciaEntrada({ inicio: "2026-10-18", checkinAfter: "15:00" })), "até 20/10 às 15:00, horário de Brasília");
-  // Sem horário (ou horário inválido): 00:00 em Brasília, nunca meia-noite UTC.
-  assert.equal(prazoConferenciaEntrada({ inicio: "2026-10-18", checkinAfter: null })?.toISOString(), "2026-10-20T03:00:00.000Z");
-  assert.equal(prazoConferenciaEntrada({ inicio: "2026-10-18", checkinAfter: "<b>" })?.toISOString(), "2026-10-20T03:00:00.000Z");
-  assert.equal(textoPrazoConferencia(prazoConferenciaEntrada({ inicio: "2026-10-18" })), "até 20/10 às 00:00, horário de Brasília");
+  // Sem horário (ou horário inválido): 23:59 em Brasília do dia da entrada (E1238, ORDEM-DUET 1269 — antes 00:00).
+  assert.equal(prazoConferenciaEntrada({ inicio: "2026-10-18", checkinAfter: null })?.toISOString(), "2026-10-21T02:59:00.000Z");
+  assert.equal(prazoConferenciaEntrada({ inicio: "2026-10-18", checkinAfter: "<b>" })?.toISOString(), "2026-10-21T02:59:00.000Z");
+  assert.equal(textoPrazoConferencia(prazoConferenciaEntrada({ inicio: "2026-10-18" })), "até 20/10 às 23:59, horário de Brasília");
   assert.equal(prazoConferenciaEntrada({ inicio: null }), null);
   assert.equal(textoPrazoConferencia(null), "");
 });
@@ -317,10 +317,11 @@ test("ação: a parte que respondeu não registra mais itens; a resposta pede it
   const src = readFileSync("src/lib/data/conferencia-actions.ts", "utf8");
   assert.match(src, /podeEditarItens\(\(respostas \?\? \[\]\) as RespostaConferencia\[\], ctx\.parte\)/);
   assert.match(src, /itensPorParte/);
-  assert.match(src, /janelaEncerrada\(input\.tipo, ctx\.entrada\)/);
+  // E1238 (ORDEM-DUET 1207, asserção alterada): a janela confere o prazo GRAVADO quando a conferência nasceu.
+  assert.match(src, /janelaEncerrada\(input\.tipo, ctx\.entrada, new Date\(\), ctx\.gravado\[input\.tipo\]\)/);
   // F2: um prazo só — o servidor não soma horas por conta própria
   assert.doesNotMatch(src, /prazoEntrada\(/);
-  assert.match(src, /prazoConferenciaEntrada\(ctx\.entrada\)/);
+  assert.match(src, /prazoDaJanela\("entrada", ctx\.entrada, ctx\.gravado\.entrada\)/);
 });
 
 test("Prompt 59: as pendências do padrão mínimo entram por insert (o índice único é parcial; ON CONFLICT não o reconhece)", () => {
