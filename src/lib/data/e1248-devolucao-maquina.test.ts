@@ -1295,3 +1295,16 @@ test("1368. o chamado antigo que já tem a nota deste acerto é candidato", asyn
   await rodar(new Date());
   assert.equal(acerto(id).chamado_id, comNota.id);
 });
+
+test("1368 (R3). o único chamado do morador para a contestação, mas já encerrado ou resolvido, não é ligado", async () => {
+  for (const status of ["encerrado", "resolvido"]) {
+    db.banco.chamados = [];
+    db.banco.caucao_acertos = [];
+    const { id, contestadoEm } = contestacaoParaRotina();
+    const fechado = chamadoDoMorador({ criado_em: contestadoEm, status });
+    db.banco.chamados.push(fechado);
+    await rodar(new Date());
+    assert.ok(acerto(id).chamado_id, status);
+    assert.notEqual(acerto(id).chamado_id, fechado.id, `${status}: não liga`);
+  }
+});
