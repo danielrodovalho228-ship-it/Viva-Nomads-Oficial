@@ -47,7 +47,7 @@ begin
     alter table public.caucao_acertos add constraint caucao_acertos_contestacao_motivo_chk
       check (
         (contestado_em is null and (contestacao_motivo is null or char_length(contestacao_motivo) <= 500))
-        or (contestado_em is not null and char_length(btrim(coalesce(contestacao_motivo, ''))) between 5 and 500)
+        or (contestado_em is not null and char_length(btrim(coalesce(contestacao_motivo, ''))) >= 5)
       );
   end if;
   -- o caminho no formato dos da conferência: a pasta de quem enviou e um arquivo PDF ou imagem
