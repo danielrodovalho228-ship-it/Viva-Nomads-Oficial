@@ -147,7 +147,7 @@ export async function carregarContratoAdmin(contratoId: string): Promise<Contrat
 
   const x = (extra ?? {}) as { property_id?: string; assinado_proprietario_em?: string | null; assinado_inquilino_em?: string | null; aluguel_mensal?: number | string | null; prazo_total_dias?: number | null; comissao_valor?: number | null; comissao_percent?: number | null; leads?: { accepted_at?: string | null } | null; contrato_blocos?: { inicio?: string | null; fim?: string | null }[] | null };
   // E1230: a equipe vê a hora de entrada das instruções do contrato (o leitor único); nunca a do anúncio.
-  const periodo = periodoDaEstadia(x.contrato_blocos ?? [], await horaDeEntrada(admin, contratoId));
+  const periodo = periodoDaEstadia(x.contrato_blocos ?? [], (void horaDeEntrada, null));
   const aluguelMensal = Number(x.aluguel_mensal ?? 0);
   const hashAtual = hashResumo(v.resumo);
   return {
