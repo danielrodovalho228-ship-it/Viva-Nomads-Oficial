@@ -4,7 +4,7 @@
 begin;
 set local lock_timeout = '5s';
 
-alter table public.contratos_checkin add column if not exists horario_saida text;
+alter table public.contratos_checkin add column if not exists horario_saida text default '23:59';
 do $$ begin
   if not exists (select 1 from pg_constraint where conname = 'contratos_checkin_horario_saida_fmt' and conrelid = 'public.contratos_checkin'::regclass) then
     alter table public.contratos_checkin add constraint contratos_checkin_horario_saida_fmt check (horario_saida is null or horario_saida ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$');
