@@ -96,7 +96,7 @@ Seis rotinas sem tela: e-mails transacionais e proativos, notificações push, c
 ### 4.1 Números (lidos em 13/11/2026)
 - 222 tabelas no schema `public`, 221 com RLS. A exceção é `_bkp_0176_contratos_encerrados`, uma cópia de backup de migração que nenhuma tela lê.
 - 316 políticas RLS, 211 funções, 92 triggers e 5 views.
-- 290 migrações registradas em `supabase_migrations.schema_migrations`; a última é `20261112000342`. O repositório tem 363 arquivos `.sql` † em `supabase/migrations`. A diferença vem de arquivos auxiliares e de migrações numeradas que foram reunidas ao aplicar.
+- 290 migrações registradas em `supabase_migrations.schema_migrations`; a última é `20261112000342`. O repositório tem 364 arquivos `.sql` † em `supabase/migrations`. A diferença vem de arquivos auxiliares e de migrações numeradas que foram reunidas ao aplicar.
 - Extensões: `pg_cron`, `pg_net`, `pgcrypto`, `uuid-ossp`, `btree_gist` (impede reservas sobrepostas), `pg_stat_statements` e `supabase_vault`.
 
 ### 4.2 Domínios das tabelas (hierarquia funcional)
