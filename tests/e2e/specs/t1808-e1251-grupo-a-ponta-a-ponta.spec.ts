@@ -2,6 +2,7 @@ import { test, expect, type Browser, type Page } from "@playwright/test";
 import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criarLead, entrar, novaSenha, novoSufixo } from "../fixtures/laboratorio";
 
 /*
+  Vizinha do E1247 passo 2, PR 2 (ESPEC-E1247-PASSO-2, 5): os avisos do pré-aceite passam a eventos próprios, com a proposta como referência. Corre sem alteração.
   Vizinha do E1247 passo 2, PR 1 (ESPEC-E1247-PASSO-2, 3): o botão da faixa passa a ler o evento próprio das rotinas. Corre sem alteração.
   T1808 — E1251, Grupo A de ponta a ponta (ESPEC-E1251 v3; ORDEM-DUET 1311): os dois avisos críticos que deixavam de
   ter sentido sem nenhuma ação no sino.

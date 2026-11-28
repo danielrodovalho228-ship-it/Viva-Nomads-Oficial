@@ -217,6 +217,12 @@ export const MATRIZ_NOTIFICACOES = {
   // categoria de cada um decide-se no E1161 — decisão 6 da ESPEC; aqui fica o que os e-mails já fazem hoje).
   parcela_lembrete: { categoria: "decisao", papeis: ["morador"], canais: SEM_PUSH },
   parcela_registrada: { categoria: "decisao", papeis: ["proprietario"], canais: SEM_PUSH },
+  // E1247 passo 2, PR 2: os eventos próprios da pré-aceitação, com a categoria e os canais do evento do contrato com que
+  // viajavam (a categoria decide-se no E1161 — decisão 4 da ORDEM-1345).
+  pre_aceite_prazo: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  pre_aceite_expirou: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  pre_aceite_perdeu_vez: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
+  pre_aceite_encerrado: { categoria: "decisao", papeis: DUAS_PARTES, canais: SEM_PUSH },
 } as const satisfies Record<EventoNotificacao, LinhaMatriz>;
 
 /** Prompt 44 (item 3): alertas da equipe que vão por push (documento na fila, chamado P1/P2, cópia noturna, e-mail). */

@@ -33,7 +33,11 @@ test("1. a tabela do coordenador: título = ASSUNTOS, prioridade pela regra, bot
   assert.deepEqual(a("pagamentoRegistradoMorador", "proprietario"), { titulo: ASSUNTOS.pagamentoRegistradoMorador, prioridade: "normal", botao: "Ver os pagamentos" });
   assert.deepEqual(a("preAceitacaoLembrete", "inquilino"), { titulo: ASSUNTOS.preAceitacaoLembrete, prioridade: "critico", botao: "Responder à proposta" });
   assert.deepEqual(a("preAceitacaoLembrete", "proprietario"), { titulo: ASSUNTOS.preAceitacaoLembrete, prioridade: "normal", botao: "Ver a proposta" });
-  for (const k of ["preAceitacaoExpirou", "preAceitacaoPerdeuVez", "preAceitacaoEncerrada"]) {
+  // E1247 passo 2, PR 2 (ORDEM-DUET 1345, decisão 1): a janela terminada é CRÍTICA para o dono, com o botão do lugar da
+  // decisão dele; para o morador só informa.
+  assert.deepEqual(a("preAceitacaoExpirou", "proprietario"), { titulo: ASSUNTOS.preAceitacaoExpirou, prioridade: "critico", botao: "Responder à candidatura" });
+  assert.deepEqual(a("preAceitacaoExpirou", "inquilino"), { titulo: ASSUNTOS.preAceitacaoExpirou, prioridade: "normal", botao: "Ver a proposta" });
+  for (const k of ["preAceitacaoPerdeuVez", "preAceitacaoEncerrada"]) {
     for (const p of ["inquilino", "proprietario"] as const) assert.deepEqual(a(k, p), { titulo: ASSUNTOS[k as keyof typeof ASSUNTOS], prioridade: "normal", botao: "Ver a proposta" }, `${k}/${p}`);
   }
 });
@@ -68,7 +72,7 @@ test("5. estático: nenhuma chamada com o evento do contrato fica sem título e 
   for (const f of ["lib/caucao/prazos-servidor.ts", "lib/cobranca-mensal/acoes.ts", "lib/cobranca-mensal/servidor.ts", "lib/propostas/pre-aceitacao-servidor.ts"]) {
     const src = ler(f);
     // E1247 passo 2 (PR 1): a parcela passou ao evento próprio (EVENTO_DA_ROTINA); a regra vale para os dois.
-    const chamadas = src.split(/event: (?:"contract_status"|EVENTO_DA_ROTINA\.\w+)/).slice(1);
+    const chamadas = src.split(/event: (?:"contract_status"|EVENTO_DA_ROTINA\.\w+|EVENTO_DA_ROTINA\[\w+\])/).slice(1);
     assert.ok(chamadas.length > 0, f);
     for (const c of chamadas) {
       const corpo = c.slice(0, c.indexOf("});") > 0 ? c.indexOf("});") : 600);

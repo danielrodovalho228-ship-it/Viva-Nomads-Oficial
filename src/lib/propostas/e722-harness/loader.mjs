@@ -18,6 +18,9 @@ const STUBS = {
   "@/lib/data/periodo-servidor": `export async function conflitoNoImovel(_admin, propertyId) { return globalThis.__E722.conflito(propertyId); }`,
   "@/lib/data/propostas-servidor": `export const COLUNAS_VERSAO = "*"; export function termosDaLinha(v) { return v; }`,
   "@/lib/contrato-periodo": `export function periodoEmDias(inicio, dias) { return { inicio, dias }; }`,
+  // E1247 passo 2, PR 2: a rotina passou a resolver os avisos pela proposta (avisos-servidor); aqui não se testam avisos
+  // (o banco destas travas não tem a tabela) — a resolução fica registada em globalThis.__E722Resolvidos e nada mais.
+  "@/lib/notifications/avisos-servidor": `export async function resolverAvisosDaReferencia(_admin, p) { (globalThis.__E722Resolvidos ??= []).push(p); }`,
   "./regras": `export function diasDosTermos() { return 180; }`,
 };
 
