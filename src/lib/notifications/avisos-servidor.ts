@@ -50,22 +50,25 @@ export async function gravarAviso(p: {
   const texto = p.texto ? textoDoAviso(guardContactInfo(p.texto).text) : null;
   const refId = p.refId && REF_RE.test(p.refId) ? p.refId : null;
   const url = urlDoAviso(p.url ?? base.path);
-  // E550: o mesmo aviso pendente (não lido, não resolvido) é renovado, não repetido.
+  // E1251 (ESPEC-E1251 v3; ORDEM-DUET 1267): a prioridade calcula-se UMA vez — a da chamada; na falta, a da tabela por
+  // evento e papel — e entra nas duas gravações da renovação, na linha nova e no juntar dos repetidos.
+  const prioridade = p.prioridade ?? prioridadeDoAviso(p.evento, p.papel);
+  // E550: o mesmo aviso pendente (não lido, não resolvido) é renovado, não repetido. O já LIDO não se renova: nasce outro.
   const chave = chaveDoAvisoPendente({ evento: p.evento, refId, titulo });
   let pendente = admin.from("avisos").select("id").eq("usuario_id", p.usuarioId).eq("evento", chave.evento).is("lido_em", null).is("resolvido_em", null);
   pendente = "refId" in chave ? pendente.eq("ref_id", chave.refId) : pendente.is("ref_id", null).eq("titulo", chave.titulo);
   const { data: jaExiste } = await pendente.order("criado_em", { ascending: false }).limit(1).maybeSingle();
   if (jaExiste?.id) {
-    let { error: e2 } = await admin.from("avisos").update({ criado_em: new Date().toISOString(), titulo, url, texto }).eq("id", jaExiste.id);
-    // Sem a 0298 aplicada (coluna texto), o aviso sai só com o título.
-    if (e2?.code === SEM_COLUNA) ({ error: e2 } = await admin.from("avisos").update({ criado_em: new Date().toISOString(), titulo, url }).eq("id", jaExiste.id));
+    let { error: e2 } = await admin.from("avisos").update({ criado_em: new Date().toISOString(), titulo, url, texto, prioridade }).eq("id", jaExiste.id);
+    // Sem a 0298 aplicada (coluna texto), o aviso sai só com o título — e com a prioridade nova.
+    if (e2?.code === SEM_COLUNA) ({ error: e2 } = await admin.from("avisos").update({ criado_em: new Date().toISOString(), titulo, url, prioridade }).eq("id", jaExiste.id));
     if (e2) console.error("[avisos] não renovou:", e2.code, e2.message);
     return !e2;
   }
   const linha = {
     usuario_id: p.usuarioId,
     evento: p.evento,
-    prioridade: p.prioridade ?? prioridadeDoAviso(p.evento, p.papel),
+    prioridade,
     titulo,
     url,
     ref_id: refId,
@@ -74,7 +77,7 @@ export async function gravarAviso(p: {
   if (error?.code === SEM_COLUNA) ({ error } = await admin.from("avisos").insert(linha));
   if (error) console.error("[avisos] não gravou:", error.code, error.message);
   // E586: dois avisos quase simultâneos passam os dois pela leitura acima; depois de gravar, junta num só.
-  else await juntarPendentes(admin, p.usuarioId, chave);
+  else await juntarPendentes(admin, p.usuarioId, chave, prioridade);
   return !error;
 }
 
@@ -101,8 +104,11 @@ async function estadiaDoContrato(admin: Admin, contratoId: string): Promise<{ en
   }
 }
 
-/** E586: os pendentes repetidos da mesma chave viram um só (o mais antigo, com a hora renovada). Nunca lança. */
-async function juntarPendentes(admin: Admin, usuarioId: string, chave: ReturnType<typeof chaveDoAvisoPendente>): Promise<void> {
+/**
+ * E586: os pendentes repetidos da mesma chave viram um só (o mais antigo, com a hora renovada). Nunca lança.
+ * E1251: a linha que fica leva também a prioridade de quem acabou de gravar (a do último).
+ */
+async function juntarPendentes(admin: Admin, usuarioId: string, chave: ReturnType<typeof chaveDoAvisoPendente>, prioridade: PrioridadeAviso): Promise<void> {
   try {
     let q = admin.from("avisos").select("id, criado_em").eq("usuario_id", usuarioId).eq("evento", chave.evento).is("lido_em", null).is("resolvido_em", null);
     q = "refId" in chave ? q.eq("ref_id", chave.refId) : q.is("ref_id", null).eq("titulo", chave.titulo);
@@ -112,7 +118,7 @@ async function juntarPendentes(admin: Admin, usuarioId: string, chave: ReturnTyp
     if (!d || !d.apagar.length) return;
     const { error: e1 } = await admin.from("avisos").delete().in("id", d.apagar).eq("usuario_id", usuarioId).is("lido_em", null);
     if (e1) return console.error("[avisos] não juntou:", e1.code, e1.message);
-    await admin.from("avisos").update({ criado_em: new Date().toISOString() }).eq("id", d.manter);
+    await admin.from("avisos").update({ criado_em: new Date().toISOString(), prioridade }).eq("id", d.manter);
   } catch {
     /* juntar é melhoria: o aviso já foi gravado */
   }
