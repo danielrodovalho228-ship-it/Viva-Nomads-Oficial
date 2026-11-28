@@ -100,7 +100,9 @@ test.describe("T240 — conferência de entrada (F1–F3), pacote de provas (F4)
     ids.dono = await criarConta(dono, senha);
     ids.inquilino = await criarConta(inquilino, senha);
     ids.imovel = await criarImovelPronto(ids.dono, titulo, { ativo: true });
-    await adm().from("properties").update({ checkin_after: "15:00", checkout_before: "11:00" }).eq("id", ids.imovel);
+    // E1230 (AD1 da Pista 3; massa alterada): o anúncio com OUTRA hora (09:00) — a hora certa é a das instruções do
+    // contrato (15:00, abaixo); a ficha da equipe tem de mostrar 15:00, nunca a do anúncio.
+    await adm().from("properties").update({ checkin_after: "09:00", checkout_before: "11:00" }).eq("id", ids.imovel);
     ids.lead = await criarLead(ids.dono, ids.inquilino, ids.imovel, true);
     const { data, error } = await adm()
       .from("contratos")
@@ -305,7 +307,9 @@ test.describe("T240 — conferência de entrada (F1–F3), pacote de provas (F4)
       const [a, m, d] = new Date(Date.parse(`${String(ultimo!.fim).slice(0, 10)}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10).split("-");
       // E1230 (ORDEM-DUET 1207, decisão 2; asserção alterada): "Saída em {data}, horário a combinar com o proprietário".
       await expect(page.getByTestId("admin-contrato-saida")).toContainText(`Saída em ${d}/${m}/${a}, horário a combinar com o proprietário`);
-      await expect(page.getByTestId("admin-contrato-entrada")).toContainText("Entrada: ");
+      // E1230 (AD1 da Pista 3; asserção alterada): a ficha da equipe lê a hora das instruções do contrato (o leitor único).
+      await expect(page.getByTestId("admin-contrato-entrada")).toContainText(/^Entrada: \d{2}\/\d{2}\/\d{4} a partir das 15:00$/);
+      await expect(page.getByTestId("admin-contrato-entrada")).not.toContainText("09:00");
       await expect(page.getByRole("img", { name: `Foto: ${SALA}` })).toBeVisible();
       await semRolagemLateral(page);
       await page.screenshot({ path: `${SAIDA}/t240-admin-contrato-${largura}.png`, fullPage: true });

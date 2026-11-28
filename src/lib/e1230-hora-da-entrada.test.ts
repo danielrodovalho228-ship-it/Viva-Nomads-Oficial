@@ -59,6 +59,8 @@ test("1. o leitor único: horaDeEntrada lê contratos_checkin.horario — só a 
   assert.equal(await janela.horaDeEntrada!(f.admin, CONTRATO), "14:00");
   assert.deepEqual(f.lidas, [{ tabela: "contratos_checkin", colunas: "contrato_id, horario" }], "nem as instruções nem o telefone; nada do anúncio");
   assert.equal(await janela.horaDeEntrada!(falso([]).admin, CONTRATO), null, "sem instruções: null ('a combinar')");
+  // L1 (Pista 3): as instruções gravadas SEM hora dão null no leitor — nunca uma hora inventada.
+  assert.equal(await janela.horaDeEntrada!(falso([{ contrato_id: CONTRATO, horario: null, instrucoes: "chave na portaria" }]).admin, CONTRATO), null, "instruções sem hora: null");
   const m = await janela.horasDeEntrada!(falso([{ contrato_id: CONTRATO, horario: "14:00" }]).admin, [CONTRATO, "outro"]);
   assert.deepEqual([...m], [[CONTRATO, "14:00"], ["outro", null]]);
 });
@@ -142,6 +144,10 @@ test("9. os leitores passam pelo leitor único e pela porta: estadia, convidado,
   assert.match(ler("./data/estadia-convidados.ts"), /periodoComPrazos\(admin, c, "inquilino"\)/, "o convidado é do lado do morador");
   assert.match(ler("./data/contrato-assinar-actions.ts"), /checkinAfter: horaParaQuemVe\(\{ hora: janela\?\.hora \?\? null, papel/, "a 'Sua estadia' do contrato");
   assert.match(ler("./data/agenda-servidor.ts"), /horasDeEntrada\(admin, /, "a agenda e o 'Entra hoje'");
+  // AD1 (Pista 3): a ficha do contrato da equipe lê a hora pelo mesmo leitor (a t240 prende-o na tela).
+  const admin = ler("./data/contrato-admin.ts");
+  assert.match(admin, /periodoDaEstadia\(x\.contrato_blocos \?\? \[\], await horaDeEntrada\(admin, contratoId\)\)/, "a ficha da equipe");
+  assert.doesNotMatch(admin, /checkin_after|checkout_before/);
   const rota = ler("../app/api/cron/automacoes/route.ts");
   const liberadas = rota.slice(rota.indexOf("if (liberaHoje(condicao, agora)) {"), rota.indexOf('tipo: "estadia_instrucoes_liberadas"'));
   assert.match(liberadas, /horarioEntrada: await horaDeEntrada\(admin, c\.id as string\)/, "o e-mail das instruções liberadas");
