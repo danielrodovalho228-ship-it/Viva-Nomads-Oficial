@@ -168,6 +168,21 @@ export function textoDecisaoNaoConfirmada(p: { valor: number; motivo: string; pa
   return p.paraODono ? `${base} Registre a devolução correta para concluir.` : base;
 }
 
+/**
+ * O termo em PDF (8.2, texto 1; M20): o que vem depois de "Confirmação:", pela forma gravada. Um acerto anterior ao
+ * E1248 (sem a forma) não leva a linha. Em texto de documento, "por falta de resposta" (nunca "por silêncio").
+ */
+export function linhaDeConfirmacao(p: { via: string | null | undefined; confirmadoEm: string | null | undefined; avisoEm?: string | null; decididoEm?: string | null; atendimento?: string | null }): string | null {
+  if (p.via === "morador" && p.confirmadoEm) return `pelo morador, em ${dataHoraCompleta(new Date(p.confirmadoEm))}.`;
+  if (p.via === "falta_de_resposta" && p.avisoEm) return `por falta de resposta do morador no prazo de 5 dias contados do aviso de ${dataHoraCompleta(new Date(p.avisoEm))}, conforme as regras da plataforma.`;
+  if (p.via === "central") {
+    const dia = p.decididoEm ?? p.confirmadoEm;
+    if (!dia) return null;
+    return `por decisão da equipe da Viva Nomads, em ${diaBRT(dia)}, ${p.atendimento ? `no atendimento ${p.atendimento}, ` : ""}após contestação do morador.`;
+  }
+  return null;
+}
+
 /** O que o chamado diz à equipe, com a chave desligada (ORDEM-1332). */
 export const NOTA_DA_FASE_PARA_A_EQUIPE = "Nesta fase, a contestação pode ser sobre o desconto. A equipe confirma só se o valor foi recebido; ela não julga o desconto.";
 

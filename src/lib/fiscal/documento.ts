@@ -39,6 +39,8 @@ export interface DadosDocumento {
   /** Termo: total da caução e data da confirmação do inquilino. */
   caucaoTotal?: number | null;
   confirmadoEm?: string | null;
+  /** E1248 (M20): o que vem depois de "Confirmação:" no termo (linhaDeConfirmacao); null nos acertos anteriores. */
+  confirmacao?: string | null;
   conferirUrl: string;
   /** Código de verificação (Prompt 56): vai no rodapé comum de toda página. */
   codigo?: string;
@@ -181,6 +183,8 @@ export function conteudoDocumento(d: DadosDocumento): ConteudoDocumento {
 
   const total = d.caucaoTotal ?? d.valor;
   const descontos = Math.max(0, Math.round((total - d.valor) * 100) / 100);
+  // E1248 (M20): confirmada por falta de resposta ou pela Central — não foi o locatário quem confirmou.
+  const pelaPlataforma = !!d.confirmacao && !d.confirmacao.startsWith("pelo morador");
   return {
     cabecalho,
     titulo: ROTULO_TIPO.termo_devolucao_caucao,
@@ -191,11 +195,13 @@ export function conteudoDocumento(d: DadosDocumento): ConteudoDocumento {
       ["Descontos", brl(descontos)],
       ["Valor devolvido", brl(d.valor)],
       ["Devolvido em", `${dataBR(d.dataPagamento)}${d.forma ? `, por ${FORMA[d.forma] ?? d.forma}` : ""}`],
-      ["Confirmado pelo locatário em", dataBR(d.confirmadoEm)],
+      // E1248: só a confirmação do morador diz que o locatário confirmou; as outras formas dizem só a data.
+      [pelaPlataforma ? "Confirmada em" : "Confirmado pelo locatário em", dataBR(d.confirmadoEm)],
     ],
     corpo: [
       `${d.locador.nome} declara ter devolvido a ${d.locatario.nome} o valor de ${brl(d.valor)} referente à caução do contrato ${d.contratoRef}${descontos > 0 ? `, com descontos de ${brl(descontos)}` : ", sem descontos"}.`,
-      "O locatário confirmou o recebimento na plataforma. Este termo encerra a caução deste contrato.",
+      ...(d.confirmacao ? [`Confirmação: ${d.confirmacao}`] : []),
+      pelaPlataforma ? "Este termo encerra a caução deste contrato." : "O locatário confirmou o recebimento na plataforma. Este termo encerra a caução deste contrato.",
     ],
     rodape,
   };
