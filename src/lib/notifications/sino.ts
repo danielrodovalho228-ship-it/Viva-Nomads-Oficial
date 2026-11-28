@@ -253,11 +253,17 @@ export function resolucoesConferidasAGravar<T extends AvisoTela>(antes: readonly
 const ROTULO_ACAO = { assinou: "Assinar o contrato", respondeu: "Responder a proposta", confirmou: "Confirmar a visita" } as const;
 
 /** O texto do botão da faixa: a ação que resolve o evento. */
+/** E1248 PR 1 (8.2, texto 5; 2.7): os botões da faixa dos dois lembretes críticos da devolução da caução. */
+const BOTAO_DA_DEVOLUCAO: Partial<Record<string, string>> = {
+  caucao_devolucao_lembrete: "Confirmar ou contestar",
+  caucao_comprovante_lembrete: "Anexar o comprovante",
+};
+
 export function acaoDaFaixa(evento: string, titulo?: string | null): string {
   // E1247 (ORDEM-DUET 1233): os avisos das rotinas que viajam com o evento do contrato levam ao lugar da ação deles.
   // E1247 passo 2: os eventos próprios das rotinas dizem o botão pelo EVENTO; os antigos (o evento do contrato com o
   // título de uma rotina) continuam a ler-se pelo título.
-  const daRotina = botaoDoEvento(evento) ?? (evento === "contract_status" ? botaoDaRotina(titulo) : null);
+  const daRotina = botaoDoEvento(evento) ?? BOTAO_DA_DEVOLUCAO[evento] ?? (evento === "contract_status" ? botaoDaRotina(titulo) : null);
   if (daRotina) return daRotina;
   const acao = ACAO_RESOLVE[evento as NotificationEvent];
   return acao ? ROTULO_ACAO[acao] : "Resolver agora";

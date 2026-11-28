@@ -16,6 +16,10 @@ const STUBS = {
   "@/lib/supabase/usuario-da-leitura": `export async function usuarioDaLeitura() { return null; }`,
   "@/lib/fiscal/emitir": `export async function emitirDoPagamentoComRegistro() { return null; } export async function emitirTermoDevolucaoComRegistro() { return null; }`,
   "@/lib/data/properties": `export async function listMyProperties() { return []; }`,
+  // E1248: a contestação da devolução abre o chamado e avisa as partes (documentos-actions); a leitura dos documentos
+  // não os usa.
+  "@/lib/data/atendimento-actions": `export async function abrirChamado() { return { ok: false, error: "fora do teste" }; } export async function responderComoAdmin() { return { ok: true }; }`,
+  "@/lib/notifications": `export async function notify() { return { email: false, whatsapp: false }; }`,
   "@/lib/data/taxa-dono-servidor": `export async function taxaDosContratosDoDono() { return new Map(); }`,
   "@/lib/data/contrato-componentes": `export async function componentesDosContratos(_admin, contratos) {
     const e = globalThis.__e1072Esperado;

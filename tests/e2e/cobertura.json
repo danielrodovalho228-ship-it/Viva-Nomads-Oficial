@@ -5226,6 +5226,22 @@
       ],
       "specs": []
     },
+    "src/lib/data/devolucao-caucao-actions.ts#anexarComprovanteDaDevolucao": {
+      "personas": [
+        "proprietario"
+      ],
+      "specs": [
+        "t2157-jornada-piloto"
+      ]
+    },
+    "src/lib/data/devolucao-caucao-actions.ts#decidirDevolucaoPelaCentral": {
+      "personas": [
+        "admin"
+      ],
+      "specs": [
+        "t2157-jornada-piloto"
+      ]
+    },
     "src/lib/data/documentos-admin.ts#contadoresConferencia": {
       "personas": [
         "admin"
