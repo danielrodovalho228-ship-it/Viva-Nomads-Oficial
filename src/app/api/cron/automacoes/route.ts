@@ -42,6 +42,7 @@ import { corpoAutomacao, type DadosAutomacao, type TipoCorpoAutomacao } from "@/
 import { rotuloCategoria } from "@/lib/parceiros/regras";
 import { fecharConferencia } from "@/lib/fiscal/conferencia-fechamento";
 import { conferenciasParaFechar, type ConferenciaAberta } from "@/lib/fiscal/fechamento";
+import { congelarAbertasNaAncora, datasDaJanela, janelasDosContratos } from "@/lib/data/janela-conferencia";
 import { precalcularTempos } from "@/lib/data/tempos";
 import { automacaoDaEstadia } from "@/lib/automacao/servidor";
 import { rodarEliminacao } from "@/lib/minimizacao/servidor";
@@ -501,29 +502,31 @@ async function manutencaoDaEstadia(admin: NonNullable<ReturnType<typeof createAd
 
 /** Conferências abertas (entrada e saída) com a janela de 48 h encerrada → fecha. `simular`: só conta. */
 async function fecharConferenciasVencidas(admin: NonNullable<ReturnType<typeof createAdminClient>>, agora: Date, simular: boolean): Promise<number> {
+  // E1238 (ORDENS-DUET 1207 e 1269): primeiro CONGELA o prazo das abertas que já passaram a âncora (o momento da entrada,
+  // ou da saída) com a hora vigente das instruções; depois fecha pelo prazo gravado — sem ele, pelo cálculo vivo. A
+  // coluna do anúncio não entra; nada fecha antes da entrada. Em `simular`, nada se grava.
   const { data } = await admin
     .from("conferencias")
-    .select("id, tipo, contratos(properties(checkin_after, checkout_before), contrato_blocos(inicio, fim, status))")
+    .select("id, tipo, contrato_id, prazo_em, contratos(contrato_blocos(inicio, fim, status))")
     .is("fechada_em", null)
     .limit(500);
   type Linha = {
     id: string;
     tipo: "entrada" | "saida";
-    contratos: { properties: { checkin_after: string | null; checkout_before: string | null } | null; contrato_blocos: { inicio: string; fim: string; status: string | null }[] | null } | null;
+    contrato_id: string;
+    prazo_em: string | null;
+    contratos: { contrato_blocos: { inicio: string; fim: string; status: string | null }[] | null } | null;
   };
-  const abertas: ConferenciaAberta[] = ((data ?? []) as unknown as Linha[]).map((c) => {
-    const blocos = (c.contratos?.contrato_blocos ?? []).filter((b) => b.status !== "nao_aceito");
-    return {
-      id: c.id,
-      tipo: c.tipo,
-      datas: {
-        inicio: blocos.map((b) => b.inicio).sort()[0] ?? null,
-        checkinAfter: c.contratos?.properties?.checkin_after ?? null,
-        fim: blocos.map((b) => b.fim).sort().at(-1) ?? null,
-        checkoutBefore: c.contratos?.properties?.checkout_before ?? null,
-      },
-    };
-  });
+  const linhas = (data ?? []) as unknown as Linha[];
+  const janelas = await janelasDosContratos(admin, [...new Set(linhas.map((c) => c.contrato_id))]);
+  const comDatas = linhas.map((c) => ({ ...c, datas: datasDaJanela(c.contratos?.contrato_blocos ?? [], janelas.get(c.contrato_id)?.hora ?? null) }));
+  const congelados = simular ? null : await congelarAbertasNaAncora(admin, comDatas, agora);
+  const abertas: ConferenciaAberta[] = comDatas.map((c) => ({
+    id: c.id,
+    tipo: c.tipo,
+    datas: c.datas,
+    prazoGravado: congelados ? (congelados.get(`${c.contrato_id}:${c.tipo}`) ?? null) : (c.prazo_em ?? null),
+  }));
   const vencidas = conferenciasParaFechar(abertas, agora);
   if (simular) return vencidas.length;
   let n = 0;

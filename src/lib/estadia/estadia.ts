@@ -44,6 +44,13 @@ export interface PeriodoEstadia {
   /** "14:00" do imóvel; vazio = sem horário. */
   checkinAfter?: string | null;
   checkoutBefore?: string | null;
+  /**
+   * E1238 (ORDEM-DUET 1207): o prazo de cada conferência, PRONTO do servidor (o gravado quando ela nasceu, ou a mesma
+   * regra com a hora das instruções de entrada — periodoComPrazos, data/estadia.ts). A hora do anúncio acima (só para
+   * mostrar; o E1230 troca-a) nunca entra no prazo.
+   */
+  prazoEntradaEm?: string | null;
+  prazoSaidaEm?: string | null;
 }
 
 export function periodoDaEstadia(
@@ -211,7 +218,8 @@ export function checklistAntesDaEntrada(e: EstadoChecklist, papel: PapelEstadia)
 
 /** O prazo da conferência de entrada da página: a mesma função do 35B. */
 export function prazoDaConferencia(p: PeriodoEstadia): Date | null {
-  return prazoConferenciaEntrada({ inicio: p.inicio, checkinAfter: p.checkinAfter });
+  // E1238: o prazo pronto do servidor; sem ele, a regra sem hora (00:00).
+  return p.prazoEntradaEm ? new Date(p.prazoEntradaEm) : prazoConferenciaEntrada({ inicio: p.inicio, checkinAfter: null });
 }
 
 // ── Valores ─────────────────────────────────────────────────────────────────────────────────────────────────────

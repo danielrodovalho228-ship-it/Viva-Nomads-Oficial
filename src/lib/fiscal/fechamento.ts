@@ -81,6 +81,8 @@ export interface ConferenciaAberta {
   id: string;
   tipo: "entrada" | "saida";
   datas: EntradaDoContrato;
+  /** E1238: o prazo gravado quando a conferência nasceu (0369); null = de antes, calcula pela regra. */
+  prazoGravado?: string | null;
 }
 
 /**
@@ -89,7 +91,7 @@ export interface ConferenciaAberta {
  * fechamento registra quem não respondeu. Antes do instante, nada.
  */
 export function conferenciasParaFechar(abertas: ConferenciaAberta[], agora: Date): ConferenciaAberta[] {
-  return abertas.filter((c) => janelaEncerrada(c.tipo, c.datas, agora));
+  return abertas.filter((c) => janelaEncerrada(c.tipo, c.datas, agora, c.prazoGravado ?? null));
 }
 
 /** A marca "precisa de reparo" (Prompt 38) só pode ser feita antes do fechamento. */
