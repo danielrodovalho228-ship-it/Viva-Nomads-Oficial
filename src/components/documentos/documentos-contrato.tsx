@@ -15,6 +15,7 @@ import { registrarDevolucaoCaucao, responderDevolucaoCaucao } from "@/lib/data/d
 import { confirmarPagamento, type PagamentoView } from "@/lib/data/contratos-actions";
 import { statusHumano } from "@/lib/status-humano";
 import { textoComponentes } from "@/lib/pagamento-componentes";
+import { textoDoSeloAnulado, type AnuladoAntesDaConfirmacao } from "@/lib/anulados-antes-da-confirmacao";
 
 /**
  * Documentos do contrato e devolução da caução — mesmas peças em "Contratos &
@@ -239,12 +240,12 @@ export function DevolucaoCaucaoInquilino({ acerto }: { acerto: AcertoView | null
 const FORMA: Record<string, string> = { pix: "Pix", boleto: "boleto", transferencia: "transferência", dinheiro: "dinheiro", outro: "outra forma" };
 
 /** Inquilino: confirma os pagamentos que o proprietário registrou → recibo/comprovante. */
-export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[] }) {
+export function ConfirmarPagamentos({ pagamentos, anulados = [] }: { pagamentos: PagamentoView[]; anulados?: AnuladoAntesDaConfirmacao[] }) {
   const router = useRouter();
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const pendentes = pagamentos.filter((p) => !p.confirmado);
-  if (pendentes.length === 0) return null;
+  if (pendentes.length === 0 && anulados.length === 0) return null;
   return (
     <div className="mt-4 border-t border-sage-200 pt-3" data-testid="confirmar-pagamentos">
       <p className="mb-2 text-xs font-semibold uppercase text-muted">Pagamentos para confirmar</p>
@@ -275,6 +276,13 @@ export function ConfirmarPagamentos({ pagamentos }: { pagamentos: PagamentoView[
             >
               <Check className="h-4 w-4" /> Confirmar
             </Button>
+          </li>
+        ))}
+        {/* E1241: o registro que o dono anulou antes de o morador confirmar — só a linha e o selo. */}
+        {anulados.map((a) => (
+          <li key={a.id} className="flex flex-wrap items-center gap-2 text-sm text-muted" data-testid="pagamento-anulado-pendente">
+            {a.rotulo}
+            <span className="rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-700">{textoDoSeloAnulado(a.motivo)}</span>
           </li>
         ))}
       </ul>

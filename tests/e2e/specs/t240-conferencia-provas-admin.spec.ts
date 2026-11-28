@@ -20,6 +20,8 @@ import { textoDasPaginas } from "../../../src/lib/fiscal/pdf-texto";
 
 /*
   T240 — Prompt 35B (conferência de entrada, pacote de provas e admin › contrato), 390 e 1280 px, laboratório:
+  Vizinha do E1241 (ORDEM-DUET 1213): corre também no portão do E1241, porque a linha de cada pagamento na página do
+  contrato da Central passa a ler o total do registro (linhaPagamentoCentral) — esta spec cobre o painel e o anulado.
    F1  o inquilino é barrado antes de o proprietário registrar ("…depois que a outra parte registrar…") e depois
        CONFIRMA com 0 itens próprios ("Confirmar o registro do proprietário. Seus próprios itens são opcionais.");
        o proprietário confirma em seguida → "Confirmada pelas duas partes" e a edição trava.
