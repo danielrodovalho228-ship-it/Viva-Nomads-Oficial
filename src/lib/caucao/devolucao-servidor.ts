@@ -220,6 +220,33 @@ export async function abrirChamadoPeloServidor(admin: Admin, p: { usuarioId: str
   return { id: ch.id as string, prioridade };
 }
 
+/** Os estados de um chamado ainda aberto (a fila do atendimento). */
+const CHAMADO_ABERTO = ["aberto", "aguardando_usuario", "aguardando_aprovacao", "em_andamento"];
+
+/**
+ * O chamado aberto do próprio morador para esta contestação: o mesmo contrato, a fila da caução, o assunto que a ação
+ * lhe deu e nenhum acerto ligado a ele. null se não houver (ou se a leitura falhar: abre-se um novo, como antes).
+ */
+export async function chamadoAbertoDoMorador(admin: Admin, p: { usuarioId: string; contratoId: string; assunto: string }): Promise<{ id: string; prioridade: string | null } | null> {
+  const { data, error } = await admin
+    .from("chamados")
+    .select("id, prioridade, criado_em")
+    .eq("usuario_id", p.usuarioId)
+    .eq("contexto_tipo", "contrato")
+    .eq("contexto_id", p.contratoId)
+    .eq("categoria", "caucao")
+    .eq("assunto", p.assunto.slice(0, 140))
+    .in("status", CHAMADO_ABERTO)
+    .order("criado_em", { ascending: false });
+  if (error || !data?.length) return null;
+  const ids = (data as { id: string }[]).map((c) => c.id);
+  const { data: ligados, error: erroLigados } = await admin.from("caucao_acertos").select("chamado_id").in("chamado_id", ids);
+  if (erroLigados) return null;
+  const usados = new Set(((ligados ?? []) as { chamado_id: string }[]).map((l) => l.chamado_id));
+  const livre = (data as { id: string; prioridade: string | null }[]).find((c) => !usados.has(c.id));
+  return livre ? { id: livre.id, prioridade: livre.prioridade } : null;
+}
+
 /** As contestações da devolução sem chamado e sem decisão (a Central mostra-as pela linha calculada). */
 export async function contestacoesSemChamado(admin: Admin): Promise<(Acerto & { dono: string | null })[]> {
   const { data, error } = await admin
@@ -411,6 +438,13 @@ export async function rodarDevolucaoCaucao(admin: Admin, agora: Date = new Date(
     const partes = await partesDoContrato(admin, a.contrato_id);
     if (!partes?.morador || !a.contestado_em) continue;
     const { assunto, mensagem } = mensagemDaContestacao(a, { motivo: a.contestacao_motivo ?? "(sem motivo gravado)", contestadoEm: a.contestado_em, pedidoEm: a.comprovante_anexado_em ? null : a.comprovante_pedido_em });
+    // ORDEM-DUET 1367 (Dúvida 9): o chamado que o morador abriu na ação, e que ficou sem ligação (a nota falhou), é o
+    // desta contestação — liga-se esse; só sem ele se abre um novo. Um só chamado por devolução, e decide o do morador.
+    const doMorador = await chamadoAbertoDoMorador(admin, { usuarioId: partes.morador, contratoId: a.contrato_id, assunto });
+    if (doMorador) {
+      if (await ligarChamadoAoAcerto(admin, a, doMorador)) r.chamadosAbertos++;
+      continue;
+    }
     const ch = await abrirChamadoPeloServidor(admin, { usuarioId: partes.morador, contratoId: a.contrato_id, assunto, mensagem }, agora).catch(() => null);
     if (!ch) continue;
     if (await ligarChamadoAoAcerto(admin, a, ch)) r.chamadosAbertos++;
