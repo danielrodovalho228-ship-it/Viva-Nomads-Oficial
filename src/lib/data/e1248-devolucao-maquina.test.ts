@@ -1226,20 +1226,72 @@ test("1367. a nota falhou na ação: a rotina liga o chamado aberto do próprio 
   assert.equal((await decidir({ chamadoId: String(doMorador.id), decisao: "confirmada" })).ok, true, "é o do morador que decide");
 });
 
-test("1367. outro chamado do morador (outro assunto, fechado, ou já ligado a outro acerto) não serve: a rotina abre um novo", async () => {
-  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: haHoras(30), contestacao_motivo: "Não recebi o valor." });
-  const assunto = "Contestação da devolução da caução (" + (await import("../contrato-ref.ts")).numeroPublicoContrato(C) + ")";
-  const outroAcerto = semearAcerto({ contrato_id: C2, status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: haHoras(30), contestacao_motivo: "Outro.", chamado_id: "44444444-4444-4444-8444-444444444444" });
-  db.banco.chamados.push(
-    { id: "c-outro-assunto", usuario_id: MORADOR, categoria: "caucao", assunto: "Dúvida sobre a caução", status: "aberto", contexto_tipo: "contrato", contexto_id: C, simulacao: false, prioridade: "p2" },
-    { id: "c-fechado", usuario_id: MORADOR, categoria: "caucao", assunto, status: "encerrado", contexto_tipo: "contrato", contexto_id: C, simulacao: false, prioridade: "p2" },
-    { id: "44444444-4444-4444-8444-444444444444", usuario_id: MORADOR, categoria: "caucao", assunto, status: "aberto", contexto_tipo: "contrato", contexto_id: C, simulacao: false, prioridade: "p2" },
-    { id: "c-de-outro", usuario_id: OUTRO, categoria: "caucao", assunto, status: "aberto", contexto_tipo: "contrato", contexto_id: C, simulacao: false, prioridade: "p2" },
-  );
-  void outroAcerto;
+// ORDEM-DUET 1368 (a condição do coordenador): a busca é ESTRITA — do morador, neste contrato, na fila da caução, aberto,
+// sem outro acerto ligado, e criado a partir de contestado_em (1 minuto de folga) ou já com a nota deste acerto.
+// Exatamente um candidato → liga; nenhum ou mais de um → abre um novo e não toca nos outros.
+const contestacaoParaRotina = () => {
+  const contestadoEm = haHoras(30);
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: contestadoEm, contestacao_motivo: "Não recebi o valor." });
+  return { id, contestadoEm };
+};
+const chamadoDoMorador = (extra: Linha) => ({ id: globalThis.crypto.randomUUID(), usuario_id: MORADOR, categoria: "caucao", assunto: "qualquer", status: "aberto", contexto_tipo: "contrato", contexto_id: C, simulacao: false, prioridade: "p2", ...extra });
+
+test("1368. um chamado de manutenção do morador no mesmo contrato nunca é ligado", async () => {
+  const { id, contestadoEm } = contestacaoParaRotina();
+  const manut = chamadoDoMorador({ categoria: "manutencao", contexto_tipo: "manutencao", criado_em: contestadoEm });
+  const manutNoContrato = chamadoDoMorador({ categoria: "manutencao", criado_em: contestadoEm });
+  db.banco.chamados.push(manut, manutNoContrato);
+  await rodar(new Date());
+  assert.ok(acerto(id).chamado_id);
+  assert.ok(![manut.id, manutNoContrato.id].includes(acerto(id).chamado_id as string), "nenhum de manutenção");
+  assert.equal(db.banco.chamado_mensagens.filter((n) => [manut.id, manutNoContrato.id].includes(n.chamado_id as string)).length, 0, "e não se toca neles");
+});
+
+test("1368. com dois candidatos, a rotina abre um novo e não toca nos dois", async () => {
+  const { id, contestadoEm } = contestacaoParaRotina();
+  const a1 = chamadoDoMorador({ criado_em: contestadoEm });
+  const a2 = chamadoDoMorador({ criado_em: new Date(Date.parse(contestadoEm) + 1000).toISOString() });
+  db.banco.chamados.push(a1, a2);
   await rodar(new Date());
   const chId = acerto(id).chamado_id as string;
-  assert.ok(chId);
-  assert.ok(!["c-outro-assunto", "c-fechado", "44444444-4444-4444-8444-444444444444", "c-de-outro"].includes(chId), "nenhum dos que não servem");
-  assert.equal(db.banco.chamados.length, 5, "abriu um novo");
+  assert.ok(chId && ![a1.id, a2.id].includes(chId), "abriu um novo");
+  assert.equal(db.banco.chamado_mensagens.filter((n) => [a1.id, a2.id].includes(n.chamado_id as string)).length, 0, "não tocou nos dois");
+  assert.equal(a1.status, "aberto");
+  assert.equal(a2.status, "aberto");
+});
+
+test("1368. não são candidatos: criado antes da contestação (além do minuto de folga), fechado, resolvido, ligado a outro acerto, de outra pessoa, de outro contrato", async () => {
+  const { id, contestadoEm } = contestacaoParaRotina();
+  const t = Date.parse(contestadoEm);
+  const ligadoAOutro = chamadoDoMorador({ criado_em: contestadoEm });
+  semearAcerto({ contrato_id: C2, status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: haHoras(30), contestacao_motivo: "Outro.", chamado_id: ligadoAOutro.id });
+  const naoServem = [
+    chamadoDoMorador({ criado_em: new Date(t - 61_000).toISOString() }),
+    chamadoDoMorador({ criado_em: contestadoEm, status: "encerrado" }),
+    chamadoDoMorador({ criado_em: contestadoEm, status: "resolvido" }),
+    ligadoAOutro,
+    chamadoDoMorador({ criado_em: contestadoEm, usuario_id: OUTRO }),
+    chamadoDoMorador({ criado_em: contestadoEm, contexto_id: C2 }),
+  ];
+  db.banco.chamados.push(...naoServem);
+  await rodar(new Date());
+  const chId = acerto(id).chamado_id as string;
+  assert.ok(chId && !naoServem.some((c) => c.id === chId), "abriu um novo");
+});
+
+test("1368. a folga de 1 minuto: criado até 1 minuto antes de contestado_em ainda é candidato", async () => {
+  const { id, contestadoEm } = contestacaoParaRotina();
+  const quase = chamadoDoMorador({ criado_em: new Date(Date.parse(contestadoEm) - 60_000).toISOString() });
+  db.banco.chamados.push(quase);
+  await rodar(new Date());
+  assert.equal(acerto(id).chamado_id, quase.id);
+});
+
+test("1368. o chamado antigo que já tem a nota deste acerto é candidato", async () => {
+  const { id } = contestacaoParaRotina();
+  const comNota = chamadoDoMorador({ criado_em: haHoras(500) });
+  db.banco.chamados.push(comNota);
+  db.banco.chamado_mensagens.push({ id: "nota-velha", chamado_id: comNota.id, autor: "sistema", interno: true, corpo: `[devolucao] acerto=${id}`, criado_em: haHoras(500) });
+  await rodar(new Date());
+  assert.equal(acerto(id).chamado_id, comNota.id);
 });
