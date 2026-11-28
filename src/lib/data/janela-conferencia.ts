@@ -12,7 +12,7 @@
   - A leitura: com prazo_em gravado, vale o gravado; sem ele, o cálculo vivo pela hora actual (prazoDaJanela).
   contratos_checkin é só do service_role: as leituras usam o cliente admin que o chamador passa.
 */
-import { prazoACongelar, type EntradaDoContrato, type TipoConferencia } from "../conferencia.ts";
+import { ancoraConferencia, prazoACongelar, type EntradaDoContrato, type TipoConferencia } from "../conferencia.ts";
 
 // O cliente admin do Supabase (só o que se usa aqui).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -117,4 +117,26 @@ export async function congelarAbertasNaAncora(
     m.set(`${l.contrato_id}:${l.tipo}`, await congelarNaAncora(admin, { contratoId: l.contrato_id, tipo: l.tipo, datas: l.datas, gravado: l.prazo_em, agora }));
   }
   return m;
+}
+
+/** E1238 (ORDEM-DUET 1276, palavras do coordenador): a recusa de mudar a hora de entrada depois da entrada. */
+export const MSG_HORA_DE_ENTRADA_BLOQUEADA = "A entrada já aconteceu; o horário não pode mais ser alterado.";
+
+/**
+ * E1238 (ORDEM-DUET 1276): a hora de entrada das instruções fica BLOQUEADA depois da âncora de entrada vigente (a hora
+ * gravada, ou 23:59 sem hora). Sem conferência aberta, o prazo é o cálculo vivo — e mudar a hora depois de o morador
+ * entrar encurtaria (ou alargaria) a janela; com a hora fixa, o cálculo vivo fica tão fixo quanto o congelado. Manter a
+ * mesma hora não é mudança: as instruções e o plantão seguem editáveis. (A hora de saída, quando existir — E1240 —,
+ * segue a mesma regra com a âncora da saída.)
+ */
+export function horaDeEntradaBloqueada(p: {
+  blocos: { inicio: string | null; fim: string | null; status?: string | null }[];
+  horaAtual: string | null;
+  horaNova: string | null;
+  agora: Date;
+}): boolean {
+  const atual = (p.horaAtual ?? "").trim();
+  if (atual === (p.horaNova ?? "").trim()) return false;
+  const ancora = ancoraConferencia("entrada", datasDaJanela(p.blocos, atual || null));
+  return !!ancora && p.agora.getTime() >= ancora.getTime();
 }
