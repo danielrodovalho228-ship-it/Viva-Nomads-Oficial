@@ -130,7 +130,7 @@ jobs:
           }
           # ENSAIO (nunca mergear): a perna do check-in da Estadia (t2208).
           set +e
-          npx playwright test tests/e2e/specs/t1806-e1242-faixa-e-pagina-de-avisos.spec.ts --project=chromium --retries=0 --workers=1 --project=chromium --retries=0 --workers=1 --reporter=list,json 2>&1 | tee tests/laboratorio/saida/e2e.txt
+          npx playwright test tests/e2e/specs/t1806-e1242-faixa-e-pagina-de-avisos.spec.ts tests/e2e/specs/t830-e444-sino-faixa.spec.ts --project=chromium --retries=0 --workers=1 --project=chromium --retries=0 --workers=1 --reporter=list,json 2>&1 | tee tests/laboratorio/saida/e2e.txt
           B="${PIPESTATUS[0]}"
           set -e
           echo "ensaio: t2208 saída $B"
