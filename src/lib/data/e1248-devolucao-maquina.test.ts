@@ -1155,3 +1155,52 @@ test("1363-2. a decisão exige acerto.chamado_id = chamado.id: um chamado com a 
   assert.equal(acerto(id).central_decisao ?? null, null);
   assert.equal((await decidir({ chamadoId, decisao: "confirmada" })).ok, true, "pelo chamado ligado, decide");
 });
+
+// ——————————————————————— ORDEM-DUET 1365: as fugas da mordida ao delta ———————————————————————
+
+test("1365 (N5b). o reenvio não toca acertos já respondidos: sem 'Confirme ou conteste' e sem hora do aviso", async () => {
+  const ids = [
+    semearAcerto({ status: "devolvida_integral", aviso_em: null, confirmacao_via: "morador", confirmado_em: haHoras(2) }),
+    semearAcerto({ status: "desconto_contestado", aviso_em: null, contestado_em: haHoras(2), contestacao_motivo: "Não recebi o valor.", chamado_id: "33333333-3333-4333-8333-333333333333" }),
+  ];
+  await rodar(new Date());
+  assert.equal(envios("caucao_devolucao_registrada").length, 0, "nenhum 'Confirme ou conteste'");
+  for (const id of ids) assert.equal(acerto(id).aviso_em ?? null, null, "nenhuma hora do aviso");
+});
+
+test("1365 (N5b). o morador que responde entre a leitura e a escrita do reenvio: a hora do aviso não se grava", async () => {
+  const id = semearAcerto({ aviso_em: null });
+  db.antesDe("caucao_acertos", "update", (b) => Object.assign(b.caucao_acertos.find((a) => a.id === id)!, { status: "devolvida_integral", confirmacao_via: "morador", confirmado_em: new Date().toISOString() }));
+  await rodar(new Date());
+  assert.equal(acerto(id).aviso_em ?? null, null);
+});
+
+test("1365 (N16). no chamado aberto pela rotina, com o comprovante já anexado, o prazo da decisão conta da hora do anexo", async () => {
+  const pedido = haHoras(40);
+  const anexado = haHoras(20);
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: pedido, contestacao_motivo: "Não recebi o valor.", comprovante_pedido_em: pedido, comprovante_path: `${DONO}/a.pdf`, comprovante_anexado_em: anexado });
+  await rodar(new Date());
+  const ch = db.banco.chamados.find((c) => c.id === acerto(id).chamado_id)!;
+  assert.ok(ch, "o chamado abre");
+  assert.equal(ch.prazo_resolucao, calcularPrazos(ch.prioridade as "p2", new Date(anexado)).resolucao.toISOString());
+});
+
+test("1365 (N10b). o chamado que a rotina abre pede uma pessoa", async () => {
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: haHoras(30), contestacao_motivo: "Não recebi o valor." });
+  await rodar(new Date());
+  const chId = acerto(id).chamado_id;
+  assert.ok(chId);
+  const eventos = (db.banco.chamado_eventos ?? []).filter((e) => e.chamado_id === chId);
+  assert.ok(eventos.some((e) => e.acao === "pediu_humano"), "o \"Falar com uma pessoa\"");
+  const ch = db.banco.chamados.find((c) => c.id === chId)!;
+  assert.equal(ch.responsavel_tipo, "humano");
+});
+
+test("1365 (N9). à marca exata dos 10 minutos a rotina ainda não abre o chamado; abre depois dela", async () => {
+  const agora = new Date();
+  const id = semearAcerto({ status: "desconto_contestado", aviso_em: haHoras(60), contestado_em: new Date(agora.getTime() - 10 * 60_000).toISOString(), contestacao_motivo: "Não recebi o valor." });
+  await rodar(agora);
+  assert.equal(acerto(id).chamado_id ?? null, null, "aos 10 minutos exatos, ainda não");
+  await rodar(new Date(agora.getTime() + 1));
+  assert.ok(acerto(id).chamado_id, "um milissegundo depois, abre");
+});
