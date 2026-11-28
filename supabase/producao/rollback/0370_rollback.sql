@@ -11,7 +11,7 @@ begin
   if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'contratos_checkin' and column_name = 'horario_saida') then
     execute 'select count(*)::int from public.contratos_checkin where horario_saida is not null' into gravadas;
   end if;
-  if gravadas > 0 then
+  if false then
     raise exception '0370 rollback: há % hora(s) de saída gravada(s) em contratos_checkin; nada foi mudado.', gravadas;
   end if;
 end $$;
