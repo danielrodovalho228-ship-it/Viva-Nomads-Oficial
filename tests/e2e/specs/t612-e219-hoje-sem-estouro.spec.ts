@@ -83,6 +83,8 @@ test.describe("T612 — E219: 'Hoje' sem estouro no celular", () => {
     await criarLead(ids.dono, ids.entra, ids.imA, true);
     await criarLead(ids.dono, ids.sai, ids.imB, true);
     ids.cEntra = await contrato(ids.imA, ids.entra, dia(0), dia(59));
+    // E1230 (ORDEM-DUET 1300): a hora do "Entra hoje" vem das instruções do contrato (o leitor único).
+    { const { error: eK } = await adm().from("contratos_checkin").upsert({ contrato_id: ids.cEntra, horario: "14:00" }, { onConflict: "contrato_id" }); if (eK) throw eK; }
     // E1089 (coordenador): "sai hoje" = a SAÍDA é hoje; o bloco grava a última noite, que foi ontem.
     ids.cSai = await contrato(ids.imB, ids.sai, dia(-60), dia(-1));
   });
@@ -105,7 +107,8 @@ test.describe("T612 — E219: 'Hoje' sem estouro no celular", () => {
       await expect(secao).toBeVisible({ timeout: 30_000 });
       await expect(secao.getByTestId("inicio-dono-hoje-cartao")).toHaveCount(2);
       await expect(secao).toContainText("a partir das 14:00");
-      await expect(secao).toContainText("até as 11:00");
+      // E1230 (ORDEM-DUET 1207, decisão 2; asserção alterada): a saída sem hora.
+      await expect(secao).not.toContainText("até as");
 
       const m = await medir(page);
       console.log(`t612 ${largura}`, JSON.stringify(m));

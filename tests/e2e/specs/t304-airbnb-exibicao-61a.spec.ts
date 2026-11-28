@@ -49,7 +49,8 @@ async function contrato(propertyId: string, extra: Record<string, unknown> = {})
     .single();
   if (error) throw error;
   // E1238 (ORDEM-DUET 1207, massa alterada): a âncora do prazo da conferência é a hora das INSTRUÇÕES de entrada do
-  // contrato (as 15:00 do passo "Conferência de entrada" vêm daqui); a do anúncio fica só para a hora mostrada (E1230).
+  // contrato (as 15:00 do passo "Conferência de entrada" vêm daqui). E1230 (ORDEM-DUET 1300): a hora MOSTRADA também vem
+  // daqui (o leitor único); a coluna do anúncio já não entra.
   const { error: eK } = await adm().from("contratos_checkin").upsert({ contrato_id: data.id, horario: "15:00" }, { onConflict: "contrato_id" });
   if (eK) throw eK;
   return data.id as string;
@@ -107,7 +108,8 @@ test.describe("T304 — Prompt 61-A: Estadia confirmada, horários e mapa, Como 
       await expect(tela.getByRole("heading", { level: 1 })).toHaveText("Estadia confirmada");
       await expect(tela.getByTestId("confirmada-imovel")).toHaveText(T.casa);
       await expect(tela.getByTestId("confirmada-entrada")).toContainText(/^Entrada: \d{2}\/\d{2}\/\d{4} a partir das 15:00$/);
-      await expect(tela.getByTestId("confirmada-saida")).toContainText(/^Saída: \d{2}\/\d{2}\/\d{4} até as 10:00$/);
+      // E1230 (ORDEM-DUET 1207, decisão 2; asserção alterada): a saída sem hora.
+      await expect(tela.getByTestId("confirmada-saida")).toContainText(/^Saída em \d{2}\/\d{2}\/\d{4}, horário a combinar com o proprietário$/);
       await expect(tela.getByTestId("confirmada-texto")).toHaveText("Contrato assinado pelos dois lados. Próximo passo:");
       await expect(tela.getByTestId("confirmada-passo-caucao")).toContainText(/Caução\s*até a entrada, em \d{2}\/\d{2}\/\d{4}/);
       await expect(tela.getByTestId("confirmada-passo-conferencia")).toContainText(/Conferência de entrada\s*até \d{2}\/\d{2} às 15:00, horário de Brasília/);
@@ -129,7 +131,8 @@ test.describe("T304 — Prompt 61-A: Estadia confirmada, horários e mapa, Como 
       await largura(page, w);
       await page.goto(`/dashboard/estadia/${ids.contrato}`, { waitUntil: "domcontentloaded" });
       await expect(page.getByTestId("estadia-etapa-entrada")).toContainText("a partir das 15:00, horário de Brasília", { timeout: 30_000 });
-      await expect(page.getByTestId("estadia-etapa-saida")).toContainText("até as 10:00, horário de Brasília");
+      // E1230 (ORDEM-DUET 1207, decisão 2; asserção alterada): a saída sem hora.
+      await expect(page.getByTestId("estadia-etapa-saida")).toContainText("horário a combinar com o proprietário");
       const local = page.getByTestId("estadia-local");
       await expect(local).toHaveAttribute("data-exato", "1");
       await expect(local.getByTestId("estadia-endereco")).toContainText(ENDERECO);
