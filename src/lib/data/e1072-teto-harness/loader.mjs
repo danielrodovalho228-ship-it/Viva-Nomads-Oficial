@@ -20,6 +20,7 @@ const STUBS = {
   // não os usa.
   "@/lib/data/atendimento-actions": `export async function abrirChamado() { return { ok: false, error: "fora do teste" }; } export async function responderComoAdmin() { return { ok: true }; }`,
   "@/lib/notifications": `export async function notify() { return { email: false, whatsapp: false }; }`,
+  "@/lib/atendimento/servidor": `export async function avisarUsuario() {} export async function avisarEquipe() {}`,
   "@/lib/data/taxa-dono-servidor": `export async function taxaDosContratosDoDono() { return new Map(); }`,
   "@/lib/data/contrato-componentes": `export async function componentesDosContratos(_admin, contratos) {
     const e = globalThis.__e1072Esperado;

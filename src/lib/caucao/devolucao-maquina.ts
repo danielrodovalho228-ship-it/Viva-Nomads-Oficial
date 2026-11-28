@@ -10,6 +10,9 @@
   Sem imports de servidor.
 */
 
+import type { LinhaCentral } from "../admin/central-pendencias.ts";
+import { numeroPublicoContrato } from "../contrato-ref.ts";
+
 const H = 3_600_000;
 /** O prazo de resposta do morador e o do anexo: 5 vezes 24 horas. */
 export const PRAZO_HORAS = 5 * 24;
@@ -114,7 +117,7 @@ export function textoPedidoDoComprovante(p: { meio: string | null | undefined; v
   return `A equipe precisa do ${comFecho(doc)} para decidir a contestação da devolução de ${brl(p.valor)}. Anexe o ${comFecho(doc)} até ${horaAnunciada(fimDoPrazoDoAnexo(p.pedidoEm))}; depois desse prazo, a equipe decide com o que houver.`;
 }
 
-/** O lembrete do anexo, nas últimas 24 horas (crítico). PROPOSTA DE TEXTO: no molde do lembrete do morador. */
+/** O lembrete do anexo, nas últimas 24 horas (crítico). Texto aprovado (ORDEM-DUET 1359): no molde do lembrete do morador. */
 export function textoLembreteDoAnexo(p: { meio: string | null | undefined; valor: number; pedidoEm: string | Date }): string {
   const doc = documentoDoMeio(p.meio);
   return `Faltam menos de 24 horas para você anexar o ${comFecho(doc)} da devolução da caução de ${brl(p.valor)}. Depois de ${horaAnunciada(fimDoPrazoDoAnexo(p.pedidoEm))}, a equipe decide com o que houver.`;
@@ -200,7 +203,7 @@ export function rotuloDoAcerto(p: { status: string; disputaAberta?: boolean; via
   if (p.status === "aguardando_confirmacao") return "aguardando a confirmação do morador";
   if (p.status === "desconto_contestado") return p.disputaAberta ? "contestada pelo morador" : "contestada pelo morador — fale pela Central de Ajuda";
   const comDescontos = p.status === "desconto_confirmado" ? "devolução com descontos" : "devolução";
-  // PROPOSTA DE TEXTO: as duas formas novas.
+  // Texto aprovado (ORDEM-DUET 1359): as duas formas novas.
   if (p.via === "falta_de_resposta") return `${comDescontos} confirmada por falta de resposta do morador`;
   if (p.via === "central") return `${comDescontos} confirmada pela equipe da Viva`;
   if (p.status === "devolvida_integral" || p.status === "desconto_confirmado") return `${comDescontos} confirmada pelo morador`;
@@ -216,6 +219,28 @@ export function podeLerComprovante(p: { uid: string | null | undefined; ehEquipe
   if (p.ehEquipe) return true;
   if (p.morador && p.uid === p.morador) return true;
   return !!p.dono && p.uid === p.dono && p.caminho.startsWith(`${p.dono}/`);
+}
+
+/**
+ * ORDEM-DUET 1359 (correção 2): a contestação que ficou sem chamado aparece na Central por uma linha CALCULADA na
+ * leitura, até a rotina de hora a hora abrir o chamado. Nada se grava para ela.
+ */
+export function linhaDaContestacaoSemChamado(
+  a: { id: string; contrato_id: string; contestado_em: string | null; valor_devolvido: number | string | null; created_at?: string },
+  extra: { teste: boolean },
+): LinhaCentral {
+  return {
+    filtro: "devolucao_sem_atendimento",
+    id: `devolucao:${a.id}`,
+    titulo: "Contestação de devolução sem atendimento aberto",
+    detalhe: [numeroPublicoContrato(a.contrato_id), brl(Number(a.valor_devolvido ?? 0)), a.contestado_em ? `contestada em ${diaBRT(a.contestado_em)}` : null].filter(Boolean).join(" · "),
+    desde: a.contestado_em ?? a.created_at ?? new Date(0).toISOString(),
+    prazoAte: null,
+    gravidade: "alta",
+    acao: { rotulo: "Ver o contrato", href: `/admin/contratos/${a.contrato_id}` },
+    teste: extra.teste,
+    ref: { acerto: a.id },
+  };
 }
 
 /** O motivo (do morador ou da decisão), limpo; null se não tiver de 5 a 500 letras. */

@@ -15,7 +15,21 @@ import { resolverAvisosDaReferencia } from "@/lib/notifications/avisos-servidor"
 import type { NotificationEvent } from "@/lib/notifications/eventos-email";
 import type { PapelAviso } from "@/lib/notifications/avisos";
 import { emitirTermoDevolucaoComRegistro } from "@/lib/fiscal/emitir";
+import { avisarEquipe, avisarUsuario, type ChamadoResumo } from "@/lib/atendimento/servidor";
+import { classificar } from "@/lib/atendimento/classificar";
+import { prioridadeAcima } from "@/lib/atendimento/autonomo";
+import { calcularPrazos, mensagemPrazo, type Prioridade } from "@/config/atendimento";
+import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import {
+  NOTA_DA_FASE_PARA_A_EQUIPE,
+  brl,
+  dataHoraCompleta,
+  diaBRT,
+  diaDaData,
+  documentoDoMeio,
+  fimDoPrazoDoAnexo,
+  horaAnunciada,
+  textoAvisoDoRegistro,
   PRAZO_HORAS,
   LEMBRETE_HORAS,
   fimDoPrazoDeResposta,
@@ -63,6 +77,118 @@ export type Acerto = {
   comprovante_lembrete_em: string | null;
 };
 
+/** A contestação recente é da própria ação: a rotina só abre o chamado que ficou sem ele há mais disto. */
+export const ESPERA_DA_ACAO_MIN = 10;
+
+/**
+ * O aviso do registro ao morador (2.2). Só quando o envio dá certo grava a hora — e só onde ela está vazia (update …
+ * where aviso_em is null): o relógio dos 5 dias começa nesse envio. Lança se o envio lançar (quem chama decide).
+ */
+export async function enviarAvisoDoRegistro(admin: Admin, a: Pick<Acerto, "id" | "contrato_id" | "valor_devolvido" | "data_devolucao">, agora: Date = new Date()): Promise<boolean> {
+  const partes = await partesDoContrato(admin, a.contrato_id);
+  if (!partes?.morador || !a.data_devolucao) return false;
+  await enviar(admin, {
+    evento: "caucao_devolucao_registrada",
+    userId: partes.morador,
+    papel: "morador",
+    contratoId: a.contrato_id,
+    url: URL_DO_MORADOR,
+    texto: textoAvisoDoRegistro({ valor: valorDoAcerto(a), dataDevolucao: a.data_devolucao }),
+    cta: "Confirmar ou contestar",
+  });
+  const { data: mudou } = await admin.from("caucao_acertos").update({ aviso_em: agora.toISOString() }).eq("id", a.id).is("aviso_em", null).select("id");
+  return !!mudou?.length;
+}
+
+/** O que o chamado da contestação leva (2.4): o valor, o motivo, as datas, o pedido do comprovante e a nota da fase. */
+export function mensagemDaContestacao(a: Pick<Acerto, "contrato_id" | "valor_devolvido" | "created_at" | "data_devolucao" | "meio" | "comprovante_path">, p: { motivo: string; contestadoEm: string | Date; pedidoEm: string | Date | null }): { assunto: string; mensagem: string } {
+  const contrato = numeroPublicoContrato(a.contrato_id);
+  const linhas = [
+    `Contestação da devolução da caução de ${brl(valorDoAcerto(a))} (contrato ${contrato}).`,
+    `Registrada pelo proprietário em ${diaBRT(a.created_at)}; devolvida em ${a.data_devolucao ? diaDaData(a.data_devolucao) : "data não informada"}, por ${a.meio ?? "meio não informado"}; contestada em ${dataHoraCompleta(new Date(p.contestadoEm))}.`,
+    `Motivo do morador: ${p.motivo}`,
+    p.pedidoEm ? `A equipe pediu ao proprietário o ${documentoDoMeio(a.meio)}; o prazo do anexo termina em ${horaAnunciada(fimDoPrazoDoAnexo(p.pedidoEm))}.` : "O proprietário já anexou o comprovante.",
+    NOTA_DA_FASE_PARA_A_EQUIPE,
+  ];
+  return { assunto: `Contestação da devolução da caução (${contrato})`, mensagem: linhas.join("\n") };
+}
+
+/** De quando conta o prazo da decisão: do fim do prazo do anexo, com o pedido em aberto; do anexo, com ele; ou null. */
+export function prazoDaDecisaoDesde(a: Pick<Acerto, "comprovante_pedido_em" | "comprovante_anexado_em">): Date | null {
+  if (a.comprovante_pedido_em && !a.comprovante_anexado_em) return fimDoPrazoDoAnexo(a.comprovante_pedido_em);
+  if (a.comprovante_pedido_em && a.comprovante_anexado_em) return new Date(a.comprovante_anexado_em);
+  return null;
+}
+
+/**
+ * Liga o chamado ao acerto, sem duplicar (update … where chamado_id is null): a nota do SISTEMA que diz qual acerto é,
+ * o chamado_id e o prazo da decisão. Devolve false quando outro chamado já estava ligado (nada se escreve).
+ */
+export async function ligarChamadoAoAcerto(admin: Admin, a: Pick<Acerto, "id" | "comprovante_pedido_em" | "comprovante_anexado_em">, ch: { id: string; prioridade?: string | null }): Promise<boolean> {
+  const { data: mudou } = await admin.from("caucao_acertos").update({ chamado_id: ch.id }).eq("id", a.id).is("chamado_id", null).select("id");
+  if (!mudou?.length) return false;
+  await admin.from("chamado_mensagens").insert({ chamado_id: ch.id, autor: "sistema", interno: true, corpo: `[devolucao] acerto=${a.id}` });
+  const desde = prazoDaDecisaoDesde(a);
+  if (desde) await admin.from("chamados").update({ prazo_resolucao: calcularPrazos(((ch.prioridade as Prioridade) ?? "p2"), desde).resolucao.toISOString() }).eq("id", ch.id);
+  return true;
+}
+
+/**
+ * ORDEM-DUET 1359 (correção 2): a rotina abre o chamado da contestação que ficou sem ele — no nome do morador, na fila
+ * da caução, com o contrato no contexto e "falar com uma pessoa", como a ação (sem a sessão, que a rotina não tem).
+ */
+export async function abrirChamadoPeloServidor(admin: Admin, p: { usuarioId: string; contratoId: string; assunto: string; mensagem: string }, agora: Date = new Date()): Promise<{ id: string; prioridade: string } | null> {
+  const base = classificar("caucao", p.mensagem);
+  const prioridade = prioridadeAcima(base.prioridade);
+  const prazos = calcularPrazos(prioridade, agora);
+  const { data: ch, error } = await admin
+    .from("chamados")
+    .insert({
+      usuario_id: p.usuarioId,
+      tipo: base.tipo,
+      categoria: "caucao",
+      prioridade,
+      canal: "site",
+      assunto: p.assunto.slice(0, 140),
+      contexto_tipo: "contrato",
+      contexto_id: p.contratoId,
+      responsavel_tipo: "humano",
+      // O padrão do banco (0073); o gatilho da 0135 liga-o para as contas de teste.
+      simulacao: false,
+      prazo_primeira_resposta: prazos.primeiraResposta.toISOString(),
+      prazo_resolucao: prazos.resolucao.toISOString(),
+    })
+    .select("id, numero_publico, assunto, prioridade, usuario_id")
+    .single();
+  if (error || !ch) return null;
+  const aviso = mensagemPrazo(prioridade);
+  await admin.from("chamado_mensagens").insert([
+    { chamado_id: ch.id, autor: "usuario", autor_id: p.usuarioId, corpo: p.mensagem.slice(0, 4000) },
+    { chamado_id: ch.id, autor: "sistema", corpo: aviso },
+  ]);
+  await admin.from("chamado_eventos").insert({ chamado_id: ch.id, ator_tipo: "sistema", ator_id: null, acao: "aberto", para: prioridade, detalhe: "caucao · aberto pela rotina da devolução" });
+  await admin.from("chamado_eventos").insert({ chamado_id: ch.id, ator_tipo: "sistema", ator_id: null, acao: "pediu_humano", para: prioridade, detalhe: "contestação da devolução da caução" });
+  const resumo = { ...(ch as object), prioridade } as ChamadoResumo;
+  await avisarUsuario(resumo, "chamado_aberto").catch(() => undefined);
+  await avisarEquipe(resumo, "novo chamado · Caução · contestação da devolução").catch(() => undefined);
+  return { id: ch.id as string, prioridade };
+}
+
+/** As contestações da devolução sem chamado e sem decisão (a Central mostra-as pela linha calculada). */
+export async function contestacoesSemChamado(admin: Admin): Promise<(Acerto & { dono: string | null })[]> {
+  const { data, error } = await admin
+    .from("caucao_acertos")
+    .select(COLUNAS_DO_ACERTO)
+    .eq("status", "desconto_contestado")
+    .not("contestado_em", "is", null)
+    .is("chamado_id", null)
+    .is("central_decisao", null);
+  if (error) throw new Error("Não foi possível ler as contestações sem chamado.");
+  const out: (Acerto & { dono: string | null })[] = [];
+  for (const a of (data ?? []) as Acerto[]) out.push({ ...a, dono: (await partesDoContrato(admin, a.contrato_id))?.dono ?? null });
+  return out;
+}
+
 /** O estado confirmado pelo tipo do acerto: a parcial segue a mesma tabela da total (M14). */
 export const statusConfirmado = (tipo: string) => (tipo === "devolucao_integral" ? "devolvida_integral" : "desconto_confirmado");
 
@@ -70,11 +196,10 @@ export { disputaAberta } from "./devolucao-maquina";
 
 /**
  * Os botões de cada lado (8.4-5): o morador responde em Minhas locações; o dono vê a caução em Contratos, onde está o
- * estado da devolução, a linha da disputa e o anexo (a página de um contrato não mostra a devolução).
+ * estado da devolução, a linha da disputa e o anexo — na lista ancorada no contrato (ORDEM-DUET 1359, ajuste 1).
  */
 export const URL_DO_MORADOR = "/dashboard/locacoes";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const urlDoDono = (_contratoId: string) => "/dashboard/contratos";
+export const urlDoDono = (contratoId: string) => `/dashboard/contratos#contrato-${contratoId}`;
 
 export const valorDoAcerto = (a: Pick<Acerto, "valor_devolvido">) => Number(a.valor_devolvido ?? 0);
 
@@ -163,8 +288,18 @@ export async function confirmarPorFaltaDeResposta(admin: Admin, acertoId: string
  * A rotina de hora a hora (decidido, ORDENS 1322 e 1325): a falta de resposta, o lembrete do morador e o lembrete do
  * anexo. Correr duas vezes dá o mesmo (M5): cada passo grava antes de enviar, com a condição de a linha não ter mudado.
  */
-export async function rodarDevolucaoCaucao(admin: Admin, agora: Date = new Date()): Promise<{ confirmados: number; lembretes: number; lembretesDoAnexo: number }> {
-  const r = { confirmados: 0, lembretes: 0, lembretesDoAnexo: 0 };
+export async function rodarDevolucaoCaucao(admin: Admin, agora: Date = new Date()): Promise<{ confirmados: number; lembretes: number; lembretesDoAnexo: number; avisosReenviados: number; chamadosAbertos: number }> {
+  const r = { confirmados: 0, lembretes: 0, lembretesDoAnexo: 0, avisosReenviados: 0, chamadosAbertos: 0 };
+  // 0. ORDEM-DUET 1359 (correção 1): o aviso do registro que falhou volta a ser enviado; a hora grava-se só no envio que
+  // dá certo. Sem ela, o acerto nunca confirma por falta de resposta (o passo 1 não o lê).
+  const { data: semAviso } = await admin.from("caucao_acertos").select(COLUNAS_DO_ACERTO).eq("status", "aguardando_confirmacao").is("aviso_em", null);
+  for (const a of (semAviso ?? []) as Acerto[]) {
+    try {
+      if (await enviarAvisoDoRegistro(admin, a, agora)) r.avisosReenviados++;
+    } catch (e) {
+      console.error("[devolucao-caucao] o aviso do registro falhou outra vez:", a.id, e instanceof Error ? e.message : e);
+    }
+  }
   // 1. A falta de resposta: o aviso saiu há 5 vezes 24 horas ou mais.
   const limite = new Date(agora.getTime() - PRAZO_HORAS * H).toISOString();
   const { data: vencidos } = await admin.from("caucao_acertos").select("id").eq("status", "aguardando_confirmacao").not("aviso_em", "is", null).lte("aviso_em", limite);
@@ -206,6 +341,27 @@ export async function rodarDevolucaoCaucao(admin: Admin, agora: Date = new Date(
     const partes = await partesDoContrato(admin, a.contrato_id);
     await enviarSemFalhar(admin, { evento: "caucao_comprovante_lembrete", userId: partes?.dono ?? null, papel: "dono", contratoId: a.contrato_id, url: urlDoDono(a.contrato_id), texto: textoLembreteDoAnexo({ meio: a.meio, valor: valorDoAcerto(a), pedidoEm: a.comprovante_pedido_em }), cta: "Anexar o comprovante" });
     r.lembretesDoAnexo++;
+  }
+
+  // 4. ORDEM-DUET 1359 (correção 2): a contestação que ficou sem chamado ganha-o aqui (sem duplicar). A contestação dos
+  // últimos minutos é da própria ação, que pode estar a abri-lo: espera.
+  const antesDe = new Date(agora.getTime() - ESPERA_DA_ACAO_MIN * 60_000).toISOString();
+  const { data: semChamado } = await admin
+    .from("caucao_acertos")
+    .select(COLUNAS_DO_ACERTO)
+    .eq("status", "desconto_contestado")
+    .not("contestado_em", "is", null)
+    .is("chamado_id", null)
+    .is("central_decisao", null)
+    .lte("contestado_em", antesDe);
+  for (const a of (semChamado ?? []) as Acerto[]) {
+    const partes = await partesDoContrato(admin, a.contrato_id);
+    if (!partes?.morador || !a.contestado_em) continue;
+    const { assunto, mensagem } = mensagemDaContestacao(a, { motivo: a.contestacao_motivo ?? "(sem motivo gravado)", contestadoEm: a.contestado_em, pedidoEm: a.comprovante_anexado_em ? null : a.comprovante_pedido_em });
+    const ch = await abrirChamadoPeloServidor(admin, { usuarioId: partes.morador, contratoId: a.contrato_id, assunto, mensagem }, agora).catch(() => null);
+    if (!ch) continue;
+    if (await ligarChamadoAoAcerto(admin, a, ch)) r.chamadosAbertos++;
+    else console.error("[devolucao-caucao] o chamado aberto pela rotina chegou tarde: o acerto já tinha outro:", a.id, ch.id);
   }
   return r;
 }

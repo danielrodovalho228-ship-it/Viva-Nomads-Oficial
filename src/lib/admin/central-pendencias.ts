@@ -16,6 +16,9 @@ export const FILTROS_CENTRAL = [
   { chave: "preco_justo_divergencia", rotulo: "Link do Airbnb não confere", lado: "equipe" },
   // E1205 (ORDEM-DUET-1012): contrato com proposta e sem a taxa reservada há mais de 30 min (src/lib/fechamento/contratos-sem-taxa.ts).
   { chave: "contratos_sem_taxa", rotulo: "Contrato sem taxa reservada", lado: "equipe" },
+  // E1248 (ORDEM-DUET 1359, correção 2): a contestação da devolução da caução cujo chamado não abriu; sai quando a
+  // rotina de hora a hora o abre.
+  { chave: "devolucao_sem_atendimento", rotulo: "Contestação de devolução sem atendimento", lado: "equipe" },
   { chave: "conforto_abertas", rotulo: "\"Não confere\" abertos", lado: "proprietario" },
   { chave: "adequacoes", rotulo: "Adequações vencendo ou vencidas", lado: "proprietario" },
   { chave: "confirmacoes_48h", rotulo: "Confirmações de 48 h do morador", lado: "morador" },

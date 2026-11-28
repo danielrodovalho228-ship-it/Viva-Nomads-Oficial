@@ -9,29 +9,19 @@ import { regraDevolucao } from "@/lib/fiscal/devolucao";
 import { componentesDoPagamento, parteDaColuna } from "@/lib/pagamento-componentes";
 import { anulacaoDaLinha } from "@/lib/documentos-linha";
 import { abrirChamado } from "@/lib/data/atendimento-actions";
-import { calcularPrazos, type Prioridade } from "@/config/atendimento";
-import { numeroPublicoContrato } from "@/lib/contrato-ref";
 import { resolverAvisosDaReferencia } from "@/lib/notifications/avisos-servidor";
 import { linkDoComprovante } from "@/lib/protecao/servidor";
 import {
-  NOTA_DA_FASE_PARA_A_EQUIPE,
-  brl,
-  dataHoraCompleta,
-  diaBRT,
-  diaDaData,
-  documentoDoMeio,
   disputaAberta,
   fimDoPrazoDeResposta,
   fimDoPrazoDoAnexo,
-  horaAnunciada,
   motivoValido,
   prazoDeRespostaTerminou,
-  textoAvisoDoRegistro,
   textoContestacaoAoDono,
   textoPedidoDoComprovante,
   textoRespostaTardia,
 } from "@/lib/caucao/devolucao-maquina";
-import { AVISOS_DO_MORADOR, URL_DO_MORADOR, enviar, enviarSemFalhar, confirmarPorFaltaDeResposta, statusConfirmado, urlDoDono, valorDoAcerto, type Acerto } from "@/lib/caucao/devolucao-servidor";
+import { AVISOS_DO_MORADOR, enviarAvisoDoRegistro, enviarSemFalhar, confirmarPorFaltaDeResposta, ligarChamadoAoAcerto, mensagemDaContestacao, statusConfirmado, urlDoDono, valorDoAcerto, type Acerto } from "@/lib/caucao/devolucao-servidor";
 
 /**
  * Documentos do contrato (recibos, comprovante e termo da caução) e a
@@ -293,33 +283,21 @@ export async function registrarDevolucaoCaucao(input: { contratoId: string; valo
     .single();
   if (error || !data) return { ok: false, error: "Não foi possível registrar agora." };
   // E1248 (2.2): o aviso ao morador sai DEPOIS de a gravação dar certo; o acerto guarda a hora em que ele saiu, e os 5
-  // dias contam dela. Se o envio falhar, a hora fica vazia: sem aviso, a falta de resposta nunca confirma (M4).
+  // dias contam dela. Se o envio falhar, a hora fica vazia (sem aviso, a falta de resposta nunca confirma, M4) e a rotina
+  // de hora a hora volta a enviá-lo (ORDEM-DUET 1359, correção 1).
   try {
-    await enviar(admin, {
-      evento: "caucao_devolucao_registrada",
-      userId: (await moradorDoContrato(admin, input.contratoId)) ?? null,
-      papel: "morador",
-      contratoId: input.contratoId,
-      url: URL_DO_MORADOR,
-      texto: textoAvisoDoRegistro({ valor: regra.valor, dataDevolucao: input.dataDevolucao }),
-      cta: "Confirmar ou contestar",
-    });
-    await admin.from("caucao_acertos").update({ aviso_em: new Date().toISOString() }).eq("id", data.id).is("aviso_em", null);
+    await enviarAvisoDoRegistro(admin, { id: data.id as string, contrato_id: input.contratoId, valor_devolvido: regra.valor, data_devolucao: input.dataDevolucao });
   } catch (e) {
-    console.error("[devolucao-caucao] o aviso do registro não saiu:", e instanceof Error ? e.message : e);
+    console.error("[devolucao-caucao] o aviso do registro não saiu; a rotina tenta de novo:", e instanceof Error ? e.message : e);
   }
   return { ok: true, id: data.id as string };
 }
 
-/** PROPOSTA DE TEXTO (E1248): a recusa do registro com a disputa aberta. */
+/** E1248 (texto aprovado, ORDEM-DUET 1359): a recusa do registro com a disputa aberta. */
 const MSG_DISPUTA_ABERTA = "A devolução anterior foi contestada pelo morador e a equipe da Viva está analisando. Você poderá registrar outra devolução depois da decisão.";
-/** PROPOSTA DE TEXTO (E1248, decisão 12 da ESPEC): a recusa da contestação sem motivo. */
+/** E1248 (texto aprovado, ORDEM-DUET 1359; decisão 12 da ESPEC): a recusa da contestação sem motivo. */
 const MSG_MOTIVO_DA_CONTESTACAO = "Escreva o motivo da contestação (pelo menos 5 letras): ele vai para a equipe da Viva.";
 
-async function moradorDoContrato(admin: NonNullable<ReturnType<typeof createAdminClient>>, contratoId: string): Promise<string | null> {
-  const { data } = await admin.from("contratos").select("tenant_id").eq("id", contratoId).maybeSingle();
-  return (data?.tenant_id as string | null) ?? null;
-}
 
 /**
  * O INQUILINO confirma (ou contesta) a devolução. Confirmada → termo em PDF às duas partes.
@@ -385,21 +363,13 @@ export async function responderDevolucaoCaucao(acertoId: string, resposta: "conf
  */
 async function abrirDisputa(admin: NonNullable<ReturnType<typeof createAdminClient>>, a: Acerto, p: { motivo: string; contestadoEm: Date; pedidoEm: Date | null }): Promise<void> {
   const valor = valorDoAcerto(a);
-  const contrato = numeroPublicoContrato(a.contrato_id);
-  const linhas = [
-    `Contestação da devolução da caução de ${brl(valor)} (contrato ${contrato}).`,
-    `Registrada pelo proprietário em ${diaBRT(a.created_at)}; devolvida em ${a.data_devolucao ? diaDaData(a.data_devolucao) : "data não informada"}, por ${a.meio ?? "meio não informado"}; contestada em ${dataHoraCompleta(p.contestadoEm)}.`,
-    `Motivo do morador: ${p.motivo}`,
-    p.pedidoEm ? `A equipe pediu ao proprietário o ${documentoDoMeio(a.meio)}; o prazo do anexo termina em ${horaAnunciada(fimDoPrazoDoAnexo(p.pedidoEm))}.` : "O proprietário já anexou o comprovante.",
-    NOTA_DA_FASE_PARA_A_EQUIPE,
-  ];
-  const r = await abrirChamado({ categoria: "caucao", assunto: `Contestação da devolução da caução (${contrato})`, mensagem: linhas.join("\n"), contextoTipo: "contrato", contextoId: a.contrato_id, pedePessoa: true });
+  const { assunto, mensagem } = mensagemDaContestacao(a, p);
+  const r = await abrirChamado({ categoria: "caucao", assunto, mensagem, contextoTipo: "contrato", contextoId: a.contrato_id, pedePessoa: true });
   const { data: ch } = r.ok ? await admin.from("chamados").select("id, prioridade").eq("numero_publico", r.numero).maybeSingle() : { data: null };
-  if (ch?.id) {
-    await admin.from("chamado_mensagens").insert({ chamado_id: ch.id, autor: "sistema", interno: true, corpo: `[devolucao] acerto=${a.id}` });
-    await admin.from("caucao_acertos").update({ chamado_id: ch.id }).eq("id", a.id);
-    if (p.pedidoEm) await admin.from("chamados").update({ prazo_resolucao: calcularPrazos(((ch.prioridade as Prioridade) ?? "p2"), fimDoPrazoDoAnexo(p.pedidoEm)).resolucao.toISOString() }).eq("id", ch.id);
-  } else console.error("[devolucao-caucao] o chamado da contestação não abriu:", a.id);
+  // O chamado liga-se sem duplicar; se não abriu, a contestação fica gravada, a Central vê-a pela linha calculada e a
+  // rotina de hora a hora abre-o (ORDEM-DUET 1359, correção 2).
+  if (ch?.id) await ligarChamadoAoAcerto(admin, { id: a.id, comprovante_pedido_em: p.pedidoEm?.toISOString() ?? null, comprovante_anexado_em: null }, { id: ch.id as string, prioridade: ch.prioridade as string | null });
+  else console.error("[devolucao-caucao] o chamado da contestação não abriu; a rotina tenta de novo:", a.id);
   const dono = (await admin.from("contratos").select("properties!inner(owner_id)").eq("id", a.contrato_id).maybeSingle()).data as { properties?: { owner_id?: string | null } } | null;
   const donoId = dono?.properties?.owner_id ?? null;
   await enviarSemFalhar(admin, { evento: "caucao_devolucao_contestada", userId: donoId, papel: "dono", contratoId: a.contrato_id, url: urlDoDono(a.contrato_id), texto: textoContestacaoAoDono({ valor, motivo: p.motivo }), cta: "Ver a caução" });

@@ -43,7 +43,7 @@ export function DecidirDevolucaoCentral({ chamadoId, devolucao }: { chamadoId: s
   return (
     <div className="mt-4 rounded-xl border border-line bg-white p-3" data-testid="central-devolucao">
       <p className="text-sm font-semibold text-ink">Contestação da devolução da caução</p>
-      {/* PROPOSTA DE TEXTO */}
+      {/* Texto aprovado (ORDEM-DUET 1359) */}
       <p className="mt-1 text-xs text-muted">Decida só se o valor foi recebido. O comprovante do proprietário é a prova.</p>
       {devolucao?.comprovanteUrl ? (
         <a href={devolucao.comprovanteUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-semibold text-forest underline" data-testid="central-devolucao-comprovante">
@@ -56,7 +56,7 @@ export function DecidirDevolucaoCentral({ chamadoId, devolucao }: { chamadoId: s
       )}
       {feito ? (
         <p className="mt-2 text-xs text-forest" role="status" data-testid="central-devolucao-decidida">
-          {/* PROPOSTA DE TEXTO */}
+          {/* Texto aprovado (ORDEM-DUET 1359) */}
           {feito === "confirmada" ? "Devolução confirmada. As duas partes foram avisadas." : "Devolução não confirmada. As duas partes foram avisadas."}
         </p>
       ) : (

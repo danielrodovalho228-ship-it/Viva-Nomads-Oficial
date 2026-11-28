@@ -36,23 +36,23 @@ const BUCKET = "conferencia";
 /** O teto do PDF do comprovante: o do bucket da conferência (0117). */
 const COMPROVANTE_PDF_MAX_BYTES = 15 * 1024 * 1024;
 
-/** PROPOSTA DE TEXTO */
+/** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_SEM_LEITURA = "Não foi possível ler a devolução. Tente de novo em instantes.";
-/** PROPOSTA DE TEXTO */
+/** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_SO_O_DONO = "Só o proprietário do imóvel anexa o comprovante.";
-/** PROPOSTA DE TEXTO */
+/** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_JA_DECIDIDA = "A equipe já decidiu esta contestação.";
-/** PROPOSTA DE TEXTO */
+/** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_JA_ANEXADO = "O comprovante desta devolução já foi anexado.";
-/** PROPOSTA DE TEXTO */
+/** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_ARQUIVO = "Envie o comprovante em PDF (até 15 MB) ou numa imagem JPG, PNG ou WebP (até 8 MB).";
-/** PROPOSTA DE TEXTO */
+/** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_PDF_ILEGIVEL = "Não foi possível abrir este PDF. Envie o comprovante completo, ou uma foto dele.";
-/** PROPOSTA DE TEXTO */
+/** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_ESPERA_ANEXO = "O prazo do proprietário para anexar o comprovante ainda está a correr. Decida depois do anexo, ou no fim do prazo.";
-/** PROPOSTA DE TEXTO */
+/** Texto aprovado (ORDEM-DUET 1359) */
 const MSG_MOTIVO_DA_DECISAO = "Escreva o motivo da decisão (pelo menos 5 letras): ele vai para o morador e para o proprietário.";
-/** PROPOSTA DE TEXTO (E1244): a recusa a partir de um chamado de simulação. */
+/** Texto aprovado (ORDEM-DUET 1359); E1244: a recusa a partir de um chamado de simulação. */
 const MSG_SIMULACAO = "Este chamado é de simulação: só decide devoluções de um contrato em que as duas contas são de teste.";
 
 /** O arquivo do comprovante: PDF de verdade, ou uma imagem (o tipo pelos primeiros bytes; a extensão não vale). */
@@ -97,7 +97,11 @@ export async function anexarComprovanteDaDevolucao(formData: FormData): Promise<
   if (!partes || partes.dono !== user.id) return { ok: false, error: MSG_SO_O_DONO };
   // Só enquanto a devolução está aberta: à espera da resposta, ou contestada sem decisão.
   if (a.central_decisao || (a.status !== "aguardando_confirmacao" && a.status !== "desconto_contestado")) return { ok: false, error: MSG_JA_DECIDIDA };
-  if (a.comprovante_path) return { ok: false, error: MSG_JA_ANEXADO };
+  // ORDEM-DUET 1359 (ajuste 2): um comprovante por acerto, com uma exceção — antes de qualquer contestação e do pedido
+  // da equipe, o dono troca o arquivo (o anterior sai do armazenamento). Depois, o arquivo fica fixo.
+  const anterior = a.comprovante_path;
+  const podeTrocar = a.status === "aguardando_confirmacao" && !a.contestado_em && !a.comprovante_pedido_em;
+  if (anterior && !podeTrocar) return { ok: false, error: MSG_JA_ANEXADO };
   const file = formData.get("arquivo");
   if (!(file instanceof File)) return { ok: false, error: MSG_ARQUIVO };
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -112,15 +116,18 @@ export async function anexarComprovanteDaDevolucao(formData: FormData): Promise<
   const { error: erroEnvio } = await admin.storage.from(BUCKET).upload(path, limpo, { contentType: v.tipo, upsert: false });
   if (erroEnvio) return { ok: false, error: "Não foi possível salvar o comprovante. Tente de novo." };
   const agora = new Date();
-  const { data: mudou, error } = await admin
-    .from("caucao_acertos")
-    .update({ comprovante_path: path, comprovante_anexado_em: agora.toISOString() })
-    .eq("id", a.id)
-    .is("comprovante_path", null)
-    .is("central_decisao", null)
-    .select("id");
-  if (error) return { ok: false, error: "Não foi possível salvar o comprovante. Tente de novo." };
-  if (!mudou?.length) return { ok: false, error: MSG_JA_ANEXADO };
+  const gravar = admin.from("caucao_acertos").update({ comprovante_path: path, comprovante_anexado_em: agora.toISOString() }).eq("id", a.id).is("central_decisao", null);
+  // A troca só vale se nada mudou entretanto: o mesmo arquivo, ainda à espera, sem contestação e sem pedido.
+  const { data: mudou, error } = anterior
+    ? await gravar.eq("comprovante_path", anterior).eq("status", "aguardando_confirmacao").is("contestado_em", null).is("comprovante_pedido_em", null).select("id")
+    : await gravar.is("comprovante_path", null).select("id");
+  if (error || !mudou?.length) {
+    // O arquivo novo não ficou ligado ao acerto: sai do armazenamento (nunca um comprovante solto).
+    await admin.storage.from(BUCKET).remove([path]).catch(() => undefined);
+    return { ok: false, error: error ? "Não foi possível salvar o comprovante. Tente de novo." : MSG_JA_ANEXADO };
+  }
+  // A troca: o arquivo anterior sai do armazenamento.
+  if (anterior) await admin.storage.from(BUCKET).remove([anterior]).catch(() => undefined);
   // Na disputa, o prazo da decisão começa a contar da hora do anexo (M30); o pedido e o lembrete do anexo saem.
   if (a.status === "desconto_contestado") await recalcularPrazoDaDecisao(admin, a.chamado_id, agora);
   await resolverAvisosDaReferencia(admin, { eventos: ["caucao_comprovante_pedido", "caucao_comprovante_lembrete"], refId: a.contrato_id, usuarioId: user.id }).catch(() => undefined);

@@ -109,7 +109,7 @@ function SeloAnulado({ motivo }: { motivo: string | null }) {
 const rotulo = (a: AcertoView) => rotuloDoAcerto({ status: a.status, disputaAberta: a.disputaAberta, via: a.confirmacaoVia });
 
 /** E1248 (2.7): o dono anexa o comprovante da devolução (opcional no registro, pedido na disputa). */
-function AnexarComprovante({ acerto }: { acerto: AcertoView }) {
+function AnexarComprovante({ acerto, troca = false }: { acerto: AcertoView; /** ORDEM-DUET 1359: antes da contestação, o dono troca o arquivo. */ troca?: boolean }) {
   const router = useRouter();
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -117,14 +117,19 @@ function AnexarComprovante({ acerto }: { acerto: AcertoView }) {
   const doc = documentoDoMeio(acerto.meio);
   return (
     <div className="mt-2 rounded-lg border border-sage-200 bg-white p-2" data-testid="devolucao-anexar">
-      {acerto.comprovantePedidoAte ? (
+      {troca ? (
+        <p className="text-xs text-muted">
+          {/* E1248 (ORDEM-DUET 1359, ajuste 2) — PROPOSTA DE TEXTO */}
+          Até o morador responder, você pode trocar o arquivo. Depois de uma contestação, ele fica fixo.
+        </p>
+      ) : acerto.comprovantePedidoAte ? (
         <p className="text-xs text-amber-800">
-          {/* PROPOSTA DE TEXTO */}
+          {/* Texto aprovado (ORDEM-DUET 1359) */}
           A equipe precisa do {doc}. Anexe até {horaAnunciada(new Date(acerto.comprovantePedidoAte))}.
         </p>
       ) : (
         <p className="text-xs text-muted">
-          {/* PROPOSTA DE TEXTO */}
+          {/* Texto aprovado (ORDEM-DUET 1359) */}
           Se quiser, anexe o {doc} (PDF ou foto). Só você, o morador e a equipe da Viva o veem.
         </p>
       )}
@@ -148,7 +153,7 @@ function AnexarComprovante({ acerto }: { acerto: AcertoView }) {
           router.refresh();
         }}
       >
-        {enviando ? "Anexando…" : "Anexar o comprovante"}
+        {enviando ? "Anexando…" : troca ? "Trocar o comprovante" : "Anexar o comprovante"}
       </Button>
     </div>
   );
@@ -200,6 +205,7 @@ export function DevolucaoCaucaoDono({
         {acerto.disputaAberta && <p className="mt-1 text-xs text-amber-800" data-testid="devolucao-disputa">{linhaDoDonoNaDisputa()}</p>}
         <LinkDoComprovante acerto={acerto} />
         {aberta && !acerto.temComprovante && <AnexarComprovante acerto={acerto} />}
+        {acerto.status === "aguardando_confirmacao" && acerto.temComprovante && <AnexarComprovante acerto={acerto} troca />}
       </div>
     );
   }
@@ -298,15 +304,15 @@ export function DevolucaoCaucaoInquilino({ acerto }: { acerto: AcertoView | null
       </p>
       {acerto.prazoRespostaAte && (
         <p className="mt-1 text-xs text-muted" data-testid="devolucao-prazo">
-          {/* PROPOSTA DE TEXTO (E1248): a hora sai do mesmo relógio do aviso e da rotina (M13). */}
+          {/* Texto aprovado (ORDEM-DUET 1359): a hora sai do mesmo relógio do aviso e da rotina (M13). */}
           Responda até {horaAnunciada(new Date(acerto.prazoRespostaAte))}. Sem resposta, a devolução vale como confirmada.
         </p>
       )}
       <LinkDoComprovante acerto={acerto} />
       {contestando && (
         <label className="mt-2 block text-xs text-muted">
-          {/* PROPOSTA DE TEXTO (E1248, decisão 12): o campo do motivo. */}
-          O que aconteceu? (pelo menos 5 letras; vai para a equipe da Viva)
+          {/* E1248 (decisão 12; texto aprovado, ORDEM-DUET 1359): o campo do motivo; a regra dos 5 letras fica na recusa. */}
+          O que aconteceu? Isso vai para a equipe da Viva.
           <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={MOTIVO_MAXIMO} rows={2} className={input} data-testid="devolucao-motivo" />
         </label>
       )}

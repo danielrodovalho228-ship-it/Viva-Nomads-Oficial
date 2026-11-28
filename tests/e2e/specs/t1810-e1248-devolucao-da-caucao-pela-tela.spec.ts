@@ -116,8 +116,10 @@ test.describe("T1810 — E1248: a devolução da caução pela tela, do registro
 
   test("3. M24: com a disputa aberta, o dono lê só \"contestada pelo morador\" e a linha nova, sem registrar; o aviso leva aqui; ele anexa o comprovante", async ({ browser }) => {
     const { data: av } = await adm().from("avisos").select("url").eq("usuario_id", ids.dono!).eq("evento", "caucao_devolucao_contestada").eq("ref_id", ids.contrato!).single();
-    expect(av?.url, "o aviso do dono abre a tela da devolução").toBe("/dashboard/contratos");
+    // ORDEM-DUET 1359 (ajuste 1): a lista ancorada no contrato, que rola até ele e o destaca.
+    expect(av?.url, "o aviso do dono abre a tela da devolução, no contrato").toBe(`/dashboard/contratos#contrato-${ids.contrato}`);
     const p = await abrir(browser, dono.email, String(av!.url));
+    await expect(p.locator(`#contrato-${ids.contrato}`), "o contrato destacado").toHaveAttribute("data-destacado", "", { timeout: 20_000 });
     const caixa = p.locator(`[data-contrato="${ids.contrato}"]`).getByTestId("devolucao-caucao");
     await expect(caixa).toContainText("contestada pelo morador.", { timeout: 20_000 });
     await expect(caixa).not.toContainText("fale pela Central de Ajuda");
