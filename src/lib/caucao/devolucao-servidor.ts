@@ -223,11 +223,17 @@ export async function abrirChamadoPeloServidor(admin: Admin, p: { usuarioId: str
 /** Os estados de um chamado ainda aberto (a fila do atendimento). */
 const CHAMADO_ABERTO = ["aberto", "aguardando_usuario", "aguardando_aprovacao", "em_andamento"];
 
+/** A folga entre o relógio do banco (criado_em) e o da aplicação (contestado_em). */
+const FOLGA_DO_RELOGIO_MS = 60_000;
+
 /**
- * O chamado aberto do próprio morador para esta contestação: o mesmo contrato, a fila da caução, o assunto que a ação
- * lhe deu e nenhum acerto ligado a ele. null se não houver (ou se a leitura falhar: abre-se um novo, como antes).
+ * ORDEM-DUET 1368 (a condição do coordenador): o chamado do próprio morador para esta contestação, por uma busca
+ * ESTRITA — é dele, com o contexto neste contrato e na fila da caução; não está encerrado nem resolvido; não está ligado
+ * a outro acerto; e foi criado a partir de contestado_em (1 minuto de folga) ou já tem a nota deste acerto.
+ * Exatamente um candidato → esse. Nenhum, mais de um, ou leitura que falha → null (abre-se um novo; na dúvida, não se
+ * adivinha).
  */
-export async function chamadoAbertoDoMorador(admin: Admin, p: { usuarioId: string; contratoId: string; assunto: string }): Promise<{ id: string; prioridade: string | null } | null> {
+export async function chamadoAbertoDoMorador(admin: Admin, p: { usuarioId: string; contratoId: string; acertoId: string; contestadoEm: string }): Promise<{ id: string; prioridade: string | null } | null> {
   const { data, error } = await admin
     .from("chamados")
     .select("id, prioridade, criado_em")
@@ -235,16 +241,22 @@ export async function chamadoAbertoDoMorador(admin: Admin, p: { usuarioId: strin
     .eq("contexto_tipo", "contrato")
     .eq("contexto_id", p.contratoId)
     .eq("categoria", "caucao")
-    .eq("assunto", p.assunto.slice(0, 140))
-    .in("status", CHAMADO_ABERTO)
-    .order("criado_em", { ascending: false });
-  if (error || !data?.length) return null;
-  const ids = (data as { id: string }[]).map((c) => c.id);
-  const { data: ligados, error: erroLigados } = await admin.from("caucao_acertos").select("chamado_id").in("chamado_id", ids);
-  if (erroLigados) return null;
+    .in("status", CHAMADO_ABERTO);
+  if (error) return null;
+  const abertos = (data ?? []) as { id: string; prioridade: string | null; criado_em: string | null }[];
+  if (!abertos.length) return null;
+  const ids = abertos.map((c) => c.id);
+  const [{ data: ligados, error: e1 }, { data: notas, error: e2 }] = await Promise.all([
+    admin.from("caucao_acertos").select("chamado_id").in("chamado_id", ids),
+    admin.from("chamado_mensagens").select("chamado_id, corpo").in("chamado_id", ids).eq("autor", "sistema").eq("interno", true),
+  ]);
+  if (e1 || e2) return null;
   const usados = new Set(((ligados ?? []) as { chamado_id: string }[]).map((l) => l.chamado_id));
-  const livre = (data as { id: string; prioridade: string | null }[]).find((c) => !usados.has(c.id));
-  return livre ? { id: livre.id, prioridade: livre.prioridade } : null;
+  const nota = `[devolucao] acerto=${p.acertoId}`;
+  const comANota = new Set(((notas ?? []) as { chamado_id: string; corpo: string }[]).filter((n) => String(n.corpo ?? "").trim() === nota).map((n) => n.chamado_id));
+  const desde = Date.parse(p.contestadoEm) - FOLGA_DO_RELOGIO_MS;
+  const candidatos = abertos.filter((c) => !usados.has(c.id) && (comANota.has(c.id) || (c.criado_em != null && Date.parse(c.criado_em) >= desde)));
+  return candidatos.length === 1 ? { id: candidatos[0].id, prioridade: candidatos[0].prioridade } : null;
 }
 
 /** As contestações da devolução sem chamado e sem decisão (a Central mostra-as pela linha calculada). */
@@ -438,9 +450,9 @@ export async function rodarDevolucaoCaucao(admin: Admin, agora: Date = new Date(
     const partes = await partesDoContrato(admin, a.contrato_id);
     if (!partes?.morador || !a.contestado_em) continue;
     const { assunto, mensagem } = mensagemDaContestacao(a, { motivo: a.contestacao_motivo ?? "(sem motivo gravado)", contestadoEm: a.contestado_em, pedidoEm: a.comprovante_anexado_em ? null : a.comprovante_pedido_em });
-    // ORDEM-DUET 1367 (Dúvida 9): o chamado que o morador abriu na ação, e que ficou sem ligação (a nota falhou), é o
-    // desta contestação — liga-se esse; só sem ele se abre um novo. Um só chamado por devolução, e decide o do morador.
-    const doMorador = await chamadoAbertoDoMorador(admin, { usuarioId: partes.morador, contratoId: a.contrato_id, assunto });
+    // ORDEM-DUET 1367 (Dúvida 9) e 1368 (a condição do coordenador): o chamado que o morador abriu na ação, e que ficou
+    // sem ligação (a nota falhou), é o desta contestação — liga-se esse, se for o único candidato; senão abre-se um novo.
+    const doMorador = await chamadoAbertoDoMorador(admin, { usuarioId: partes.morador, contratoId: a.contrato_id, acertoId: a.id, contestadoEm: a.contestado_em });
     if (doMorador) {
       if (await ligarChamadoAoAcerto(admin, a, doMorador)) r.chamadosAbertos++;
       continue;
