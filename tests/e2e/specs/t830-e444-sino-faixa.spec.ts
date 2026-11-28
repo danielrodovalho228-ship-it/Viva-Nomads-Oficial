@@ -110,11 +110,16 @@ test.describe("T830 — E444: sino com prioridade e faixa de crítico", () => {
       // E502: o lido fica branco e sem ponto; o não lido (o crítico) tem fundo verde-claro e o ponto.
       const lidoItem = lista.getByTestId("avisos-item");
       await expect(lidoItem.getByTestId("aviso-ponto-nao-lido")).toHaveCount(0);
+      // O item tem hover:bg-surface-2 (#f7f7f7 = rgb(247, 247, 247)): com o ponteiro parado em cima dele depois do clique no
+      // filtro, a cor lida é a do hover, não a do estado (a instável do Lab #9081, 1280 px). O ponteiro sai da lista antes
+      // de cada leitura; a asserção da cor não muda.
+      await p.mouse.move(0, 0);
       expect(await lidoItem.evaluate((b) => getComputedStyle(b).backgroundColor)).toBe("rgb(255, 255, 255)");
       await p.getByTestId("avisos-filtro-critico").click();
       const naoLido = lista.getByTestId("avisos-item");
       await expect(naoLido).toHaveAttribute("data-lido", "nao");
       await expect(naoLido.getByTestId("aviso-ponto-nao-lido")).toHaveCount(1);
+      await p.mouse.move(0, 0);
       expect(await naoLido.evaluate((b) => getComputedStyle(b).backgroundColor)).toBe("rgb(238, 246, 239)");
       expect(await p.evaluate((l) => document.documentElement.scrollWidth - l, largura)).toBeLessThanOrEqual(1);
       await p.screenshot({ path: `${SAIDA}/t830-lista-${largura}.png`, fullPage: true });
