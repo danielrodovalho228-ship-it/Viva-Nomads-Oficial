@@ -18,6 +18,11 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, criar
       5. o morador cancela o pedido pela tela de visitas (a ação real; o dono não responde);
       6. o dono abre o painel: a faixa já não aparece, o aviso fica GRAVADO resolvido no banco (antes do E1251 só se
          escondia em cada leitura) e a página completa não o mostra.
+  C. (ORDEM-DUET 1313) A outra porta de saída: um pedido de visita presencial de um 3.º dono, com o aviso dele, com a
+     referência. É a guarda do que já existia (E444): a resposta do dono já resolvia o aviso antes do E1251.
+      7. enquanto a visita espera, o aviso está na faixa e na página completa desse dono;
+      8. o dono confirma o horário pela tela de visitas (a ação real);
+      9. o dono abre o painel: a faixa já não aparece, o aviso fica gravado resolvido e a página completa não o mostra.
   Simulação declarada: contas, proposta, visita e avisos gravados pelo laboratório; o recuo da validade é a única
   mudança direta no banco depois da semeadura. A leitura é a das telas, com a sessão de cada um. Laboratório; não é
   prova ao vivo no site.
@@ -26,6 +31,7 @@ const senha = novaSenha();
 const sufixo = novoSufixo();
 const dono = { email: `dono.t1808.${sufixo}@lab.vivanomads.test`, nome: "Lia Prazo Ventura", role: "owner" as const };
 const dono2 = { email: `dono2.t1808.${sufixo}@lab.vivanomads.test`, nome: "Caio Portão Ventura", role: "owner" as const };
+const dono3 = { email: `dono3.t1808.${sufixo}@lab.vivanomads.test`, nome: "Rosa Resposta Ventura", role: "owner" as const };
 const inq = { email: `inq.t1808.${sufixo}@lab.vivanomads.test`, nome: "Nina Prazo Souto", role: "tenant" as const };
 const ids: Record<string, string | undefined> = {};
 const horas = (h: number) => new Date(Date.now() - h * 3600_000).toISOString();
@@ -36,6 +42,7 @@ const T = {
   inqRecebida: `Proposta recebida · t1808 morador ${sufixo}`,
   inqVencendo: `A proposta vence em breve · t1808 morador ${sufixo}`,
   visita: `Pedido de visita · t1808 ${sufixo}`,
+  visitaDono: `Pedido de visita · t1808 resposta ${sufixo}`,
 };
 
 async function abrir(browser: Browser, email: string): Promise<Page> {
@@ -89,6 +96,7 @@ test.describe("T1808 — E1251: a proposta que vence e a visita que deixa de esp
   test.beforeAll(async () => {
     ids.dono = await criarConta(dono, senha);
     ids.dono2 = await criarConta(dono2, senha);
+    ids.dono3 = await criarConta(dono3, senha);
     ids.inq = await criarConta(inq, senha);
     ids.imovel = await criarImovelPronto(ids.dono, `Studio proposta t1808 ${sufixo}`, { ativo: true, preco: 3200 });
     ids.imovel2 = await criarImovelPronto(ids.dono2, imovelVisita, { ativo: true, preco: 3200 });
@@ -113,6 +121,14 @@ test.describe("T1808 — E1251: a proposta que vence e a visita que deixa de esp
       .single();
     if (evi) throw evi;
     ids.visita = vis.id as string;
+    ids.imovel3 = await criarImovelPronto(ids.dono3, `Studio resposta t1808 ${sufixo}`, { ativo: true, preco: 3200 });
+    const { data: vis3, error: evi3 } = await adm()
+      .from("visitas_video")
+      .insert({ property_id: ids.imovel3, owner_id: ids.dono3, tenant_id: ids.inq, horarios: [new Date(Date.now() + 4 * 86_400_000).toISOString()], modalidade: "presencial" })
+      .select("id")
+      .single();
+    if (evi3) throw evi3;
+    ids.visitaDono = vis3.id as string;
 
     const urlProposta = `/dashboard/propostas/${ids.proposta}`;
     const linhas: ({ chave: string } & Record<string, unknown>)[] = [
@@ -122,6 +138,7 @@ test.describe("T1808 — E1251: a proposta que vence e a visita que deixa de esp
       { chave: "inqRecebida", usuario_id: ids.inq, evento: "proposta_recebida", titulo: T.inqRecebida, ref_id: ids.proposta, url: urlProposta, criado_em: horas(3) },
       { chave: "inqVencendo", usuario_id: ids.inq, evento: "proposta_vencendo", titulo: T.inqVencendo, ref_id: ids.proposta, url: urlProposta, criado_em: horas(1) },
       { chave: "avisoVisita", usuario_id: ids.dono2, evento: "visita_pedida", titulo: T.visita, ref_id: ids.visita, url: "/dashboard/visitas?de=dono", criado_em: horas(1) },
+      { chave: "avisoVisitaDono", usuario_id: ids.dono3, evento: "visita_pedida", titulo: T.visitaDono, ref_id: ids.visitaDono, url: "/dashboard/visitas?de=dono", criado_em: horas(1) },
     ];
     for (const { chave, ...l } of linhas) {
       const { data, error } = await adm().from("avisos").insert({ prioridade: "critico", resolvido_em: null, ...l }).select("id").single();
@@ -130,14 +147,15 @@ test.describe("T1808 — E1251: a proposta que vence e a visita que deixa de esp
     }
   });
   test.afterAll(async () => {
-    await adm().from("avisos").delete().in("usuario_id", [ids.dono!, ids.inq!, ids.dono2!].filter(Boolean));
-    if (ids.visita) await adm().from("visitas_video").delete().eq("id", ids.visita);
+    await adm().from("avisos").delete().in("usuario_id", [ids.dono!, ids.inq!, ids.dono2!, ids.dono3!].filter(Boolean));
+    const visitas = [ids.visita, ids.visitaDono].filter((x): x is string => !!x);
+    if (visitas.length) await adm().from("visitas_video").delete().in("id", visitas);
     if (ids.proposta) {
       await adm().from("proposta_versoes").delete().eq("proposta_id", ids.proposta);
       await adm().from("propostas").delete().eq("id", ids.proposta);
     }
     if (ids.lead) await adm().from("leads").delete().eq("id", ids.lead);
-    await apagarContas([ids.inq, ids.dono, ids.dono2]);
+    await apagarContas([ids.inq, ids.dono, ids.dono2, ids.dono3]);
   });
 
   test("1. enquanto a proposta vale: os avisos dela estão na faixa e na página completa — dono e morador", async ({ browser }) => {
@@ -199,6 +217,34 @@ test.describe("T1808 — E1251: a proposta que vence e a visita que deixa de esp
     await faixaNaoAparece(p);
     await expect.poll(() => resolvidoEm(ids.avisoVisita!), { message: "o pedido de visita fica gravado resolvido", timeout: 30_000 }).not.toBeNull();
     await paginaNaoMostra(p, [T.visita]);
+    await p.context().close();
+  });
+
+  test("7. enquanto a visita espera: o pedido de visita está na faixa e na página completa do 3.º dono", async ({ browser }) => {
+    const p = await abrir(browser, dono3.email);
+    await faixaMostra(p, T.visitaDono);
+    await paginaMostra(p, [T.visitaDono]);
+    await p.context().close();
+    expect(await resolvidoEm(ids.avisoVisitaDono!), "o pedido de visita ainda não está resolvido").toBeNull();
+  });
+
+  test("8. o dono confirma o horário pela tela de visitas", async ({ browser }) => {
+    const p = await abrir(browser, dono3.email);
+    await p.goto("/dashboard/visitas?de=dono", { waitUntil: "domcontentloaded" });
+    const cartao = p.locator(`#visita-${ids.visitaDono}`);
+    await expect(cartao.getByTestId("visita-confirmar")).toBeVisible({ timeout: 30_000 });
+    await cartao.getByTestId("visita-confirmar").click();
+    await expect
+      .poll(async () => (await adm().from("visitas_video").select("status").eq("id", ids.visitaDono!).single()).data?.status, { message: "a visita fica confirmada", timeout: 30_000 })
+      .toBe("confirmado");
+    await p.context().close();
+  });
+
+  test("9. o dono abre o painel: a faixa não aparece, o aviso fica gravado resolvido e a página não o mostra", async ({ browser }) => {
+    await expect.poll(() => resolvidoEm(ids.avisoVisitaDono!), { message: "a resposta do dono grava o aviso resolvido", timeout: 30_000 }).not.toBeNull();
+    const p = await abrir(browser, dono3.email);
+    await faixaNaoAparece(p);
+    await paginaNaoMostra(p, [T.visitaDono]);
     await p.context().close();
   });
 });
