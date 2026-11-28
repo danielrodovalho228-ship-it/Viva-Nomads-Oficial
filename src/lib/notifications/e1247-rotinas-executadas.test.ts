@@ -20,7 +20,7 @@ register("./e1247-rotinas-harness/loader.mjs", import.meta.url);
 const { rodarPreAceitacao } = await import("../propostas/pre-aceitacao-servidor.ts");
 const { rodarCaucaoPrazos } = await import("../caucao/prazos-servidor.ts");
 const { ASSUNTOS } = await import("./assuntos.ts");
-const { avisoDaRotina } = await import("./avisos-rotinas-contrato.ts");
+const { botaoDaRotina } = await import("./avisos-rotinas-contrato.ts");
 
 type Aviso = { userId?: string; tituloAviso?: string; prioridadeAviso?: string; subject?: string; pushUrl?: string };
 const g = globalThis as unknown as { __e1247Avisos?: Aviso[] };
@@ -72,7 +72,7 @@ test("C1. o pré-aceite a ≤ 24 h: o MORADOR recebe crítico e 'Responder à pr
   const [doDono] = doUsuario(DONO);
   assert.equal(doMorador?.tituloAviso, ASSUNTOS.preAceitacaoLembrete);
   assert.equal(doMorador?.prioridadeAviso, "critico", "C1: o morador recebe o lembrete como CRÍTICO");
-  assert.equal(avisoDaRotina("preAceitacaoLembrete", "inquilino").botao, "Responder à proposta");
+  assert.equal(botaoDaRotina(doMorador?.tituloAviso), "Responder à proposta", "a faixa, pelo título gravado, leva a responder");
   assert.equal(doDono?.prioridadeAviso, "normal", "o dono só é informado");
 });
 
