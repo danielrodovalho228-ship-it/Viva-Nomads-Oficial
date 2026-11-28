@@ -190,7 +190,8 @@ function montar(c: LinhaContrato, userId: string, nomes?: { proprietario: string
   if (!papel) return null;
   const imovel = c.properties?.title ?? "Imóvel";
   const { inicio, fim } = periodoDosBlocos(c.contrato_blocos ?? []);
-  const datasJanela = { inicio, checkinAfter: janela?.hora ?? null, fim };
+  // E1240: a âncora da saída lê a hora de saída das instruções (a mesma da janela vigente, da estadia e da rotina).
+  const datasJanela = { inicio, checkinAfter: janela?.hora ?? null, fim, checkoutBefore: janela?.horaSaida ?? null };
   const prazoEntrada = prazoDaJanela("entrada", datasJanela, janela?.gravado.entrada)?.toISOString() ?? null;
   const prazoSaida = prazoDaJanela("saida", datasJanela, janela?.gravado.saida)?.toISOString() ?? null;
   const resumo = resumoContrato({

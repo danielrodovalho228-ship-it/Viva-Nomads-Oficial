@@ -520,7 +520,7 @@ async function fecharConferenciasVencidas(admin: NonNullable<ReturnType<typeof c
   };
   const linhas = (data ?? []) as unknown as Linha[];
   const janelas = await janelasDosContratos(admin, [...new Set(linhas.map((c) => c.contrato_id))]);
-  const comDatas = linhas.map((c) => ({ ...c, datas: datasDaJanela(c.contratos?.contrato_blocos ?? [], janelas.get(c.contrato_id)?.hora ?? null) }));
+  const comDatas = linhas.map((c) => ({ ...c, datas: datasDaJanela(c.contratos?.contrato_blocos ?? [], janelas.get(c.contrato_id)?.hora ?? null, janelas.get(c.contrato_id)?.horaSaida ?? null) }));
   const congelados = simular ? null : await congelarAbertasNaAncora(admin, comDatas, agora);
   const abertas: ConferenciaAberta[] = comDatas.map((c) => ({
     id: c.id,
