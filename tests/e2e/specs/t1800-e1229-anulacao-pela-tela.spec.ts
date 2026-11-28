@@ -11,6 +11,9 @@ import { NO_LABORATORIO, adm, apagarContas, criarConta, criarImovelPronto, entra
       do registro na fila Financeiro (categoria "cobranca") — e o registro continua ativo;
    3. a equipe decide no chamado: "Anular este registro" anula, com o caminho "central" e o número do chamado na trilha;
       o botão não volta a anular (dois cliques, uma anulação).
+  1b. E1241 (ORDEM-DUET 1213, item 3): o registro anulado no caso 1 não some — o dono o vê em "Registros por confirmar"
+      e o morador em "Pagamentos para confirmar", só a linha e o selo "Anulado: {motivo}", sem botões. A linha é a forma
+      curta da gramática (ORDENS-DUET 1233 e 1237): "Bloco 2 · R$ 6.400,00 · {dd/mm} a {dd/mm}", sem número de recibo.
   Simulação declarada: o contrato assinado e os dois registros (um confirmado, outro não) gravados pelo laboratório.
   Laboratório; não é prova ao vivo no site.
   Vizinha do E1244 (ORDENS-DUET 1213, 1219 e 1220): corre também no portão desse PR — a fila e o detalhe do chamado da
@@ -22,6 +25,9 @@ const dono = { email: `dono.t1800.${sufixo}@lab.vivanomads.test`, nome: "Iara An
 const inq = { email: `inq.t1800.${sufixo}@lab.vivanomads.test`, nome: "Caio Anula Mota", role: "tenant" as const };
 const ids: Record<string, string | undefined> = {};
 const dia = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+/** E1241 (ORDEM-DUET 1237): a linha curta do anulado antes da confirmação (bloco 2 do contrato semeado). */
+const LINHA_ANULADO = () => `Bloco 2 · R$ 6.400,00 · ${ddmm(dia(-10))} a ${ddmm(dia(49))}`;
 const MOTIVO_DONO = "valor lançado no bloco errado";
 const MOTIVO_PEDIDO = "pagamento devolvido ao morador";
 const MOTIVO_CENTRAL = "anulação pedida pelo dono, conferida pela Central";
@@ -108,6 +114,24 @@ test.describe("T1800 — E1229: a anulação de registros pela tela, do dono à 
       .toBe(1);
     expect((await pagamento(ids.confirmado!)).anulado_em, "o confirmado fica como estava").toBeNull();
     await p.context().close();
+  });
+
+  test("1b. E1241: o anulado antes da confirmação aparece com o selo para o dono e para o morador, sem botões", async ({ browser }) => {
+    const d = await abrir(browser, dono.email, "/dashboard/contratos");
+    const doDono = d.locator(`[data-contrato="${ids.contrato}"]`).getByTestId("registro-anulado-pendente");
+    await expect(doDono).toHaveCount(1, { timeout: 20_000 });
+    await expect(doDono).toContainText(`Anulado: ${MOTIVO_DONO}`);
+    await expect(doDono).toContainText(LINHA_ANULADO());
+    await expect(doDono).not.toContainText(/Recibo em preparação|REC-/);
+    await expect(doDono.getByTestId("anular-registro")).toHaveCount(0);
+    await d.context().close();
+    const m = await abrir(browser, inq.email, "/dashboard/locacoes");
+    const doMorador = m.getByTestId("pagamento-anulado-pendente");
+    await expect(doMorador).toHaveCount(1, { timeout: 20_000 });
+    await expect(doMorador).toContainText(`Anulado: ${MOTIVO_DONO}`);
+    await expect(doMorador).toContainText(LINHA_ANULADO());
+    await expect(doMorador.getByRole("button")).toHaveCount(0);
+    await m.context().close();
   });
 
   test("2. DEPOIS da confirmação: o dono pede à Central — o chamado do registro na fila Financeiro, e o registro continua ativo", async ({ browser }) => {

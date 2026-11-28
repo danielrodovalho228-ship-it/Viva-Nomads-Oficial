@@ -28,3 +28,12 @@ export function textoLinhaRecibo(r: { tipo: string; numero: string | null; total
   const periodo = r.tipo !== "caucao" && r.inicio && r.fim ? `${diaMes(r.inicio)} a ${diaMes(r.fim)}` : null;
   return [r.numero ?? "Recibo em preparação", identificacao(r), brl(r.total), periodo].filter(Boolean).join(" · ");
 }
+
+/**
+ * E1241 (ORDEM-DUET 1237): o registro SEM documento que nunca o terá (aguardando a confirmação, ou anulado antes dela):
+ * a mesma gramática sem o número e sem "Recibo em preparação" — bloco · TOTAL · período.
+ */
+export function textoLinhaSemDocumento(r: { tipo: string; total: number; inicio: string | null; fim: string | null; bloco?: number | null; parte?: number | null }): string {
+  const periodo = r.tipo !== "caucao" && r.inicio && r.fim ? `${diaMes(r.inicio)} a ${diaMes(r.fim)}` : null;
+  return [identificacao(r), brl(r.total), periodo].filter(Boolean).join(" · ");
+}

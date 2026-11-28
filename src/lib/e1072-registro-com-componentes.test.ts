@@ -131,5 +131,6 @@ test("a tela do dono, a confirmação do morador, a ação e as cargas usam os c
   assert.match(acoes, /componentesDosContratos\(/);
   assert.match(acoes, /componentesDoPagamento\(/);
   assert.match(ler("src/components/documentos/documentos-contrato.tsx"), /data-testid="pagamento-componentes"/);
-  assert.match(ler("src/lib/contrato-provas.ts"), /anulado_motivo, created_at, encargos"/);
+  // E1241 (ORDEM-DUET 1233, asserção alterada): o pacote lê também o bloco de cada registro (a linha da Central).
+  assert.match(ler("src/lib/contrato-provas.ts"), /anulado_motivo, created_at, encargos, contrato_blocos\(numero_bloco, inicio, fim\)"/);
 });
