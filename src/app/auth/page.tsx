@@ -7,6 +7,7 @@ import { Mail, Lock, Globe, Loader2, CheckCircle2, Eye, EyeOff, ArrowLeft } from
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import { BrandImage } from "@/components/brand-image";
+import { AUTH_LATERAL, AUTH_LATERAL_BLUR } from "@/lib/media";
 import { useAuthStore } from "@/lib/store";
 import { resetPropertiesCache } from "@/lib/use-properties";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -377,7 +378,9 @@ export default function AuthPage() {
       <div className="relative hidden overflow-hidden lg:block">
         {/* Fase 2.3 — imagem lateral serena (vertical), só em >= 1024px. */}
         <BrandImage
-          src="/media/auth-lateral.webp"
+          src={AUTH_LATERAL}
+          // E398 (D-ISO8): enquanto a foto carrega, o borrão dela — antes era um cinza liso com o texto branco por cima.
+          blur={AUTH_LATERAL_BLUR}
           alt="Pessoa relaxando junto à janela em um imóvel mobiliado e tranquilo"
           rounded="rounded-none"
           sizes="50vw"

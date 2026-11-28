@@ -9,6 +9,7 @@ import { LinksDoApp } from "@/components/app/links-do-app";
 import { OrigemVisita } from "@/components/app/origem-visita";
 import { VivaChatFlutuante } from "@/components/ajuda/viva-chat";
 import { APP_PREPAINT_SCRIPT } from "@/lib/app-mode";
+import { SESSAO_PREPAINT_SCRIPT } from "@/lib/sessao-prepaint";
 import { descricaoHome } from "@/lib/seo/meta-descricao";
 import { AnalyticsVercel } from "@/components/analytics/analytics-vercel";
 import { ValidacaoPtBr } from "@/components/forms/validacao-ptbr";
@@ -73,6 +74,8 @@ export default function RootLayout({
       <head>
         {/* Modo app (Android/iPhone): marca <html data-app> antes da 1ª pintura. */}
         <script dangerouslySetInnerHTML={{ __html: APP_PREPAINT_SCRIPT }} />
+        {/* E398: com a lembrança local do login, marca <html data-sessao> antes da 1ª pintura (o "Entrar" não pisca). */}
+        <script dangerouslySetInnerHTML={{ __html: SESSAO_PREPAINT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col bg-surface text-ink">
         <AuthProvider>

@@ -274,6 +274,13 @@ input.foco-na-barra:focus-visible {
   @keyframes bs-rise { from { transform: translateY(16px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 }
 
+/* E398: com a lembrança local do login (marca posta antes da 1ª pintura), o "Entrar" do cabeçalho público fica invisível
+   sem tirar o espaço dele — quem está logado não vê o cabeçalho de visitante piscar. O cabeçalho tira a marca se a
+   sessão conferida não tiver usuário. */
+html[data-sessao="1"] [data-nav-entrar] {
+  visibility: hidden;
+}
+
 /* Skip link "Pular para o conteúdo": fora da tela até receber foco (a11y). */
 .skip-link {
   position: fixed;
