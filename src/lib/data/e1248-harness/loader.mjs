@@ -24,7 +24,10 @@ const STUBS = {
   "@/lib/foto-reconversao": `export async function semMetadados(bytes) { (globalThis.__e1248Limpos ??= []).push(bytes.length); return bytes; }`,
   "@/lib/fiscal/emitir": `export async function emitirTermoDevolucaoComRegistro(id) { (globalThis.__e1248Termos ??= []).push(id); return null; }
     export async function emitirDoPagamentoComRegistro() { return null; } export async function emitirTermoDevolucao() { return { ok: true }; }`,
+  "@/lib/atendimento/servidor": `export async function avisarUsuario(c, ev) { (globalThis.__e1248AvisosAtendimento ??= []).push({ quem: "usuario", id: c.id, ev }); }
+    export async function avisarEquipe(c, motivo) { (globalThis.__e1248AvisosAtendimento ??= []).push({ quem: "equipe", id: c.id, motivo }); }`,
   "@/lib/data/atendimento-actions": `export async function abrirChamado(input) {
+    if (globalThis.__e1248FalhaChamado) return { ok: false, error: "Não foi possível abrir o chamado agora. Tente de novo em instantes." };
     (globalThis.__e1248Chamados ??= []).push(input);
     const n = (globalThis.__e1248Chamados).length;
     const numero = "CH-2026-00090" + n;

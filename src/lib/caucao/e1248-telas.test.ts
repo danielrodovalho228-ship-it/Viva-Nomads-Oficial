@@ -95,6 +95,8 @@ test("M24. a tela do dono: na disputa aberta, a linha nova, o anexo do comprovan
 test("a tela do morador: o motivo da contestação e a hora do fim do prazo", () => {
   const c = corpoDe(TELA, "DevolucaoCaucaoInquilino");
   assert.match(c, /data-testid="devolucao-motivo"/);
+  assert.match(c, /O que aconteceu\? Isso vai para a equipe da Viva\./, "o rótulo aprovado (ORDEM-1359)");
+  assert.doesNotMatch(c, /pelo menos 5 letras; vai para a equipe/, "a regra dos 5 fica só na mensagem de recusa");
   assert.match(c, /responderDevolucaoCaucao\(acerto\.id, r, motivo\)/);
   assert.match(c, /acerto\.prazoRespostaAte/);
   assert.match(c, /horaAnunciada\(/, "a hora vem do mesmo relógio do aviso (M13)");
@@ -123,4 +125,20 @@ test("M31. o pacote de provas não traz o comprovante (fica fora por omissão)",
     const t = ler(p);
     assert.doesNotMatch(t, /comprovante_path|comprovante-devolucao|caucao_acertos/, p);
   }
+});
+
+test("ajuste 1 (ORDEM-1359). a lista de contratos ancora cada contrato, rola até ele e destaca-o", () => {
+  const cli = ler("src/app/(dashboard)/dashboard/contratos/contratos-client.tsx");
+  assert.match(cli, /id=\{`contrato-\$\{contrato\.id\}`\}/, "a âncora no cartão do contrato");
+  assert.match(cli, /location\.hash/, "lê a âncora");
+  assert.match(cli, /scrollIntoView\(/, "rola até ele");
+  assert.match(cli, /data-destacado/, "destaca-o");
+});
+
+test("C2 (ORDEM-1359). a Central lê as contestações sem chamado, numa linha calculada", () => {
+  const central = ler("src/lib/data/central-pendencias.ts");
+  assert.match(central, /contestacoesSemChamado\(admin\)/);
+  assert.match(central, /linhaDaContestacaoSemChamado\(/);
+  const filtros = ler("src/lib/admin/central-pendencias.ts");
+  assert.match(filtros, /chave: "devolucao_sem_atendimento"/);
 });

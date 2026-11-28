@@ -97,6 +97,10 @@ export function criarBanco(inicial: Record<string, Linha[]> = {}) {
         arquivos.set(`${bucket}/${path}`, bytes);
         return { data: { path }, error: null };
       },
+      remove: async (paths: string[]) => {
+        for (const path of paths) arquivos.delete(`${bucket}/${path}`);
+        return { data: paths.map((name) => ({ name })), error: null };
+      },
       download: async (path: string) => {
         const b = arquivos.get(`${bucket}/${path}`);
         return b ? { data: new Blob([b as BlobPart]), error: null } : { data: null, error: { message: "não existe" } };
