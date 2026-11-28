@@ -4,6 +4,12 @@
   encurtava a janela em 6 h). A regra: a hora de entrada das instruções fica BLOQUEADA depois da âncora de entrada
   vigente — o servidor recusa mudar contratos_checkin.horario com "A entrada já aconteceu; o horário não pode mais
   ser alterado." Antes da âncora, a mudança é aceite e o prazo acompanha.
+  ORDEM-DUET 1284 (a regra é UMA SÓ, palavras do coordenador): "Nenhuma edição de horário pode pôr a âncora no passado.
+  O servidor só aceita uma hora nova se a âncora que ela produz for igual ou posterior a agora." Três casos:
+   1. depois da âncora vigente → recusa com a mensagem de cima (H3);
+   2. antes da âncora vigente, mas a hora nova já passou → "Esse horário de entrada já passou; informe um horário a
+      partir de agora." (H6);
+   3. hora nova no futuro → aceite, e o prazo acompanha (H7, H8).
   Roda: node --test src/lib/e1238-hora-bloqueada.test.ts
 */
 import { test } from "node:test";
@@ -15,6 +21,8 @@ import { fonteSemComentarios } from "./fonte-sem-comentarios.ts";
 const j = (await import("./data/janela-conferencia.ts")) as unknown as {
   MSG_HORA_DE_ENTRADA_BLOQUEADA?: string;
   horaDeEntradaBloqueada?: (p: { blocos: { inicio: string | null; fim: string | null; status?: string | null }[]; horaAtual: string | null; horaNova: string | null; agora: Date }) => boolean;
+  MSG_HORA_DE_ENTRADA_NO_PASSADO?: string;
+  recusaDaHoraDeEntrada?: (p: { blocos: { inicio: string | null; fim: string | null; status?: string | null }[]; horaAtual: string | null; horaNova: string | null; agora: Date }) => string | null;
 };
 const ler = (rel: string) => fonteSemComentarios(readFileSync(new URL(rel, import.meta.url), "utf8"));
 const BLOCOS = [{ inicio: "2026-12-01", fim: "2027-01-30", status: "ativo" }];
@@ -47,17 +55,44 @@ test("H4. a mesma hora não é mudança: as instruções e o plantão continuam 
   assert.equal(j.horaDeEntradaBloqueada!({ blocos: BLOCOS, horaAtual: "14:00", horaNova: " 14:00 ", agora: new Date("2026-12-05T12:00:00Z") }), false, "espaços não contam");
 });
 
-test("H5. o servidor recusa ANTES de gravar: salvarInstrucoesEntrada confere a hora contra a âncora vigente", () => {
+test("H5. o servidor recusa ANTES de gravar, pela regra única (recusaDaHoraDeEntrada), e devolve a mensagem dela", () => {
   const acoes = ler("./data/checkin-actions.ts");
   const salvar = acoes.slice(acoes.indexOf("export async function salvarInstrucoesEntrada("));
-  const trava = salvar.indexOf("horaDeEntradaBloqueada(");
+  const trava = salvar.indexOf("recusaDaHoraDeEntrada(");
   assert.ok(trava > 0, "a ação chama a regra");
   assert.ok(trava < salvar.indexOf('.from("contratos_checkin")'), "a recusa vem antes do upsert");
+  assert.match(acoes, /contrato_blocos\(inicio, fim, status\)/, "lê os blocos para a âncora");
   assert.match(
     salvar,
-    /\n\s*if \(horaDeEntradaBloqueada\(\{ blocos, horaAtual: [^}]*, horaNova: v\.dados\.horario, agora: new Date\(\) \}\)\) \{\s*return \{ ok: false, error: MSG_HORA_DE_ENTRADA_BLOQUEADA \};\s*\}/,
-    "a condição é só a regra (sem curto-circuito) e devolve a mensagem do coordenador",
+    /\n\s*const recusaDaHora = recusaDaHoraDeEntrada\(\{ blocos, horaAtual: \(k\?\.horario as string \| null\) \?\? null, horaNova: v\.dados\.horario, agora: new Date\(\) \}\);\s*if \(recusaDaHora\) return \{ ok: false, error: recusaDaHora \};/,
+    "a hora vigente é a gravada no contrato; a recusa devolve a mensagem da regra",
   );
-  assert.match(acoes, /contrato_blocos\(inicio, fim, status\)/, "lê os blocos para a âncora");
-  assert.match(salvar, /horaAtual: \(k\?\.horario as string \| null\) \?\? null/, "a hora vigente é a gravada no contrato");
+});
+
+const R = (horaAtual: string | null, horaNova: string, agora: string) => j.recusaDaHoraDeEntrada!({ blocos: BLOCOS, horaAtual, horaNova, agora: new Date(agora) });
+
+test("H6. ORDEM-DUET 1284, caso 2: no dia da entrada às 15:00, sem hora prévia, gravar 11:00 → recusado com a segunda mensagem; a âncora continua 23:59", () => {
+  assert.equal(j.MSG_HORA_DE_ENTRADA_NO_PASSADO, "Esse horário de entrada já passou; informe um horário a partir de agora.");
+  assert.equal(typeof j.recusaDaHoraDeEntrada, "function");
+  // 01/12 15:00 BRT = 18:00Z. Sem hora, a âncora vigente é 23:59 (ainda não chegou); 11:00 já passou.
+  assert.equal(R(null, "11:00", "2026-12-01T18:00:00Z"), j.MSG_HORA_DE_ENTRADA_NO_PASSADO);
+  assert.equal(conf.ancoraConferencia("entrada", { inicio: "2026-12-01", checkinAfter: null })?.toISOString(), "2026-12-02T02:59:00.000Z", "a âncora (sem a hora recusada) continua 23:59");
+  // Com hora prévia 18:00 (ainda no futuro), mudar para 14:00 às 15:00 também põe a âncora no passado.
+  assert.equal(R("18:00", "14:00", "2026-12-01T18:00:00Z"), j.MSG_HORA_DE_ENTRADA_NO_PASSADO);
+});
+
+test("H7. ORDEM-DUET 1284, caso 3: no dia às 15:00, gravar 18:00 → aceite; a hora exactamente agora também (igual a agora)", () => {
+  assert.equal(R(null, "18:00", "2026-12-01T18:00:00Z"), null);
+  assert.equal(R(null, "15:00", "2026-12-01T18:00:00Z"), null, "a âncora igual a agora é aceite");
+  assert.equal(conf.prazoDaJanela("entrada", { inicio: "2026-12-01", checkinAfter: "18:00" }, null)?.toISOString(), "2026-12-03T21:00:00.000Z", "o prazo acompanha");
+});
+
+test("H8. ORDEM-DUET 1284: num dia anterior, qualquer hora → aceite", () => {
+  for (const h of ["00:00", "06:00", "11:00", "23:59"]) assert.equal(R("14:00", h, "2026-11-30T18:00:00Z"), null, h);
+});
+
+test("H9. ORDEM-DUET 1284, caso 1: depois da âncora vigente → recusado com a PRIMEIRA mensagem (mesmo para uma hora futura)", () => {
+  assert.equal(R("14:00", "20:00", "2026-12-01T18:00:00Z"), j.MSG_HORA_DE_ENTRADA_BLOQUEADA);
+  assert.equal(R("14:00", "08:00", "2026-12-01T18:00:00Z"), j.MSG_HORA_DE_ENTRADA_BLOQUEADA);
+  assert.equal(R("14:00", "14:00", "2026-12-05T12:00:00Z"), null, "a mesma hora não é mudança");
 });
